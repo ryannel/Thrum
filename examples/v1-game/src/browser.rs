@@ -119,7 +119,8 @@ pub async fn create_browser_game(canvas: HtmlCanvasElement) -> Result<BrowserGam
 
 #[wasm_bindgen]
 impl BrowserGame {
-    /// Advance the fixed clock once per browser animation callback and present if due.
+    /// Advance the fixed clock once per browser animation callback, then acquire
+    /// a drawable only if the admitted world has a frame to submit.
     ///
     /// # Errors
     /// Returns a JavaScript error for an authoritative tick or GPU host fault.
@@ -129,10 +130,6 @@ impl BrowserGame {
             return Ok(());
         }
         self.callbacks += 1;
-        let due = self
-            .host
-            .next_due_in()
-            .is_some_and(|delay| now.saturating_sub(self.last_frame) >= delay);
         self.last_frame = now;
         let extent = [self.canvas.width(), self.canvas.height()];
         let mut resize = extent != [self.config.width, self.config.height];
@@ -148,8 +145,12 @@ impl BrowserGame {
             self.needs_reconfigure = false;
             resize = false;
         }
-        let can_acquire =
-            due && extent[0] > 0 && extent[1] > 0 && !resize && self.host.pending_frames() < 3;
+        let advanced = self.host.advance(now).map_err(js_error)?;
+        let can_acquire = advanced.can_acquire_serial()
+            && extent[0] > 0
+            && extent[1] > 0
+            && !resize
+            && !self.needs_reconfigure;
         let report = if can_acquire {
             let frame = match self.surface.get_current_texture() {
                 wgpu::CurrentSurfaceTexture::Success(frame) => Some(frame),
@@ -174,15 +175,11 @@ impl BrowserGame {
                 let view = frame
                     .texture
                     .create_view(&wgpu::TextureViewDescriptor::default());
-                let report = self
-                    .host
-                    .drive(
-                        now,
-                        Some(&SurfaceOutput {
-                            view: &view,
-                            extent: [self.config.width, self.config.height],
-                        }),
-                    )
+                let report = advanced
+                    .submit(Some(&SurfaceOutput {
+                        view: &view,
+                        extent: [self.config.width, self.config.height],
+                    }))
                     .map_err(js_error)?;
                 if report.surface_presented {
                     self.queue.present(frame);
@@ -190,10 +187,10 @@ impl BrowserGame {
                 }
                 report
             } else {
-                self.host.drive(now, None).map_err(js_error)?
+                advanced.submit(None).map_err(js_error)?
             }
         } else {
-            self.host.drive(now, None).map_err(js_error)?
+            advanced.submit(None).map_err(js_error)?
         };
         if let Some(refused_ticks) = report.overload {
             self.recover_overload(refused_ticks, now)?;

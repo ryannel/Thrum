@@ -171,6 +171,78 @@ pub struct DriveReport {
     pub wall: Duration,
 }
 
+/// One admitted simulation callback awaiting optional presentation. Consuming
+/// it once keeps a delayed surface acquisition tied to the exact world step.
+pub struct AdvancedFrame<'a> {
+    host: &'a mut FrameHost,
+    report: Option<DriveReport>,
+    tick_cpu: Duration,
+    wall_start: Instant,
+    recovered_publication: bool,
+}
+
+impl AdvancedFrame<'_> {
+    /// Whether a serial frame can use a drawable after world admission.
+    /// Native extraction may finish later and remains separately scheduled.
+    pub fn can_acquire_serial(&self) -> bool {
+        #[cfg(not(target_arch = "wasm32"))]
+        if self.host.worker.is_some() {
+            return false;
+        }
+        let Some(report) = self.report.as_ref() else {
+            return false;
+        };
+        report.overload.is_none()
+            && self.host.sim.has_current_page()
+            && (report.completed_ticks > 0 || self.recovered_publication)
+            && self.host.presenter.is_some()
+            && self
+                .host
+                .slots
+                .iter()
+                .any(|slot| matches!(slot.state, SlotState::Free))
+    }
+
+    /// Encode and submit the admitted frame once, with an optional acquired surface.
+    /// # Errors
+    /// Returns a presentation fault after simulation admission; committed ticks
+    /// remain committed even when optional rendering fails.
+    pub fn submit(mut self, surface: Option<&SurfaceOutput<'_>>) -> Result<DriveReport, String> {
+        let report = self
+            .report
+            .take()
+            .ok_or("advanced frame already consumed")?;
+        self.host.finish_advance(
+            report,
+            self.tick_cpu,
+            self.wall_start,
+            self.recovered_publication,
+            surface,
+        )
+    }
+}
+
+impl Drop for AdvancedFrame<'_> {
+    fn drop(&mut self) {
+        let Some(report) = self.report.as_ref() else {
+            return;
+        };
+        if report.overload.is_some() {
+            self.host.dropped_views = self
+                .host
+                .dropped_views
+                .saturating_add(u64::from(report.completed_ticks > 0));
+        } else if self.host.sim.has_current_page()
+            && (report.completed_ticks > 0 || self.recovered_publication)
+        {
+            self.host.dropped_views = self.host.dropped_views.saturating_add(1);
+            if self.host.presenter.is_some() {
+                self.host.dropped_surface = self.host.dropped_surface.saturating_add(1);
+            }
+        }
+    }
+}
+
 /// An acquired texture view supplied by the platform's single surface owner.
 /// The platform calls `present` only when `DriveReport::surface_presented` is true.
 pub struct SurfaceOutput<'a> {
@@ -816,6 +888,15 @@ impl FrameHost {
         if surface.is_some() && self.presenter.is_none() {
             return Err("host has no surface presenter".to_owned());
         }
+        self.advance(now)?.submit(surface)
+    }
+
+    /// Admit authoritative time before deciding whether to acquire a drawable.
+    /// The returned frame owns the exclusive host borrow until it is submitted
+    /// or dropped; a dropped frame skips only optional presentation.
+    /// # Errors
+    /// Returns a clock or simulation fault without an incomplete world update.
+    pub fn advance(&mut self, now: Duration) -> Result<AdvancedFrame<'_>, String> {
         let wall_start = Instant::now();
         self.poll_gpu()?;
         let mut tick_cpu = Duration::ZERO;
@@ -891,7 +972,7 @@ impl FrameHost {
                 Err(error) => return Err(format!("world page: {error:?}")),
             }
         };
-        let mut report = DriveReport {
+        let report = DriveReport {
             tick: self.sim.tick(),
             overload: (clock.state == ClockState::Overloaded).then_some(clock.refused_on_overload),
             completed_ticks: clock.completed,
@@ -907,6 +988,26 @@ impl FrameHost {
             wall: Duration::ZERO,
         };
         self.dropped_views = self.dropped_views.saturating_add(skipped_publications);
+        Ok(AdvancedFrame {
+            host: self,
+            report: Some(report),
+            tick_cpu,
+            wall_start,
+            recovered_publication,
+        })
+    }
+
+    fn finish_advance(
+        &mut self,
+        mut report: DriveReport,
+        tick_cpu: Duration,
+        wall_start: Instant,
+        recovered_publication: bool,
+        surface: Option<&SurfaceOutput<'_>>,
+    ) -> Result<DriveReport, String> {
+        if surface.is_some() && self.presenter.is_none() {
+            return Err("host has no surface presenter".to_owned());
+        }
         if report.overload.is_some() {
             if report.completed_ticks > 0 {
                 self.dropped_views = self.dropped_views.saturating_add(1);
@@ -925,7 +1026,7 @@ impl FrameHost {
             report.wall = wall_start.elapsed();
             return Ok(report);
         }
-        if clock.completed == 0 && !recovered_publication {
+        if report.completed_ticks == 0 && !recovered_publication {
             report.wall = wall_start.elapsed();
             return Ok(report);
         }
@@ -966,6 +1067,8 @@ impl FrameHost {
         );
         drop(snapshot);
         let extract_cpu = extract_start.elapsed();
+        let completed_ticks = report.completed_ticks;
+        let queued_ticks = report.queued_ticks;
         self.submit_extracted(
             slot_index,
             &mut report,
@@ -976,12 +1079,13 @@ impl FrameHost {
                 worker_queue_cpu: Duration::ZERO,
                 worker_ready_cpu: Duration::ZERO,
                 tick_cpu,
-                completed_ticks: clock.completed,
-                queued_ticks: clock.queued,
+                completed_ticks,
+                queued_ticks,
                 frame_tick: self.sim.tick(),
             },
             wall_start,
         )?;
+        report.wall = wall_start.elapsed();
         Ok(report)
     }
 
