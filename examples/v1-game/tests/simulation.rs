@@ -445,3 +445,36 @@ fn four_peer_ten_thousand_entity_serial_and_rayon_replay_match() {
     sim.set_execution_mode(ExecutionMode::Rayon);
     assert_eq!(run(&mut sim), serial);
 }
+
+#[test]
+fn restore_after_swap_remove_preserves_canonical_dirty_order() {
+    let mut sim = Simulation::new(WorldEpoch(24), config(6)).expect("game");
+    for id in 1..=6 {
+        sim.seed(entity(id, 1.0)).expect("moving entity");
+    }
+    sim.published_page().expect("baseline");
+    let retired = sim.handle(StableId(2)).expect("retired handle");
+    sim.step(&[Command::Despawn(retired), Command::Spawn(entity(7, 1.0))])
+        .expect("swap-remove churn");
+    let capture = sim.capture();
+    sim.step(&[]).expect("first future tick");
+    let expected = sim
+        .published_page()
+        .expect("first future page")
+        .dirty()
+        .position()
+        .to_vec();
+    sim.restore(&capture).expect("restore after churn");
+    sim.step(&[]).expect("replayed future tick");
+    let replayed = sim
+        .published_page()
+        .expect("replayed page")
+        .dirty()
+        .position()
+        .to_vec();
+    assert_eq!(
+        replayed, expected,
+        "restore cannot change the published order"
+    );
+    assert_eq!(replayed.as_slice(), &[0, 1, 2, 3, 4, 5]);
+}

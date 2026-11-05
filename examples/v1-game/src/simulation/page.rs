@@ -9,6 +9,11 @@ use thrum_core::{
 
 use super::types::{Health, Ownership, Position, Velocity, Visual};
 
+const POSITION_DIRTY: u8 = 1;
+const VELOCITY_DIRTY: u8 = 2;
+const HEALTH_DIRTY: u8 = 4;
+const STRUCTURAL_DIRTY: u8 = 8;
+
 /// Changed physical slots in one complete V1 game tick.
 #[derive(Default)]
 pub struct DirtySlots {
@@ -59,6 +64,7 @@ pub(crate) struct Page {
     ids: Vec<Option<StableId>>,
     generations: Vec<u64>,
     present_marks: Vec<u64>,
+    dirty_flags: Vec<u8>,
     positions: Vec<Position>,
     velocities: Vec<Velocity>,
     health: Vec<u16>,
@@ -79,6 +85,7 @@ impl Page {
             ids: vec![None; capacity],
             generations: vec![0; capacity],
             present_marks: vec![u64::MAX; capacity],
+            dirty_flags: vec![0; capacity],
             positions: vec![Position::default(); capacity],
             velocities: vec![Velocity::default(); capacity],
             health: vec![0; capacity],
@@ -110,13 +117,24 @@ impl Page {
         timeline: u64,
         first: bool,
     ) {
-        let since = self.initialized.then_some(self.id.tick);
+        let since = (self.initialized && !first).then_some(self.id.tick);
         self.id.tick = tick;
         self.timeline = timeline;
         self.baseline = first;
         self.dirty.clear();
         self.events.clear();
         self.live = 0;
+        if !first {
+            self.events.extend_from_slice(events);
+            for event in events {
+                let slot = match event {
+                    StructuralChange::Despawn(handle) | StructuralChange::Spawn(handle) => {
+                        handle.slot
+                    }
+                };
+                self.dirty_flags[slot as usize] |= STRUCTURAL_DIRTY;
+            }
+        }
         query.visit_with_changes(
             world,
             (position_read, velocity_read, health_read),
@@ -144,16 +162,16 @@ impl Page {
                     self.health[slot] = health.0;
                 }
                 if first || structural_tick == tick || position_tick == tick {
-                    self.dirty.position.push(handle.slot);
+                    self.dirty_flags[slot] |= POSITION_DIRTY;
                 }
                 if first || structural_tick == tick || velocity_tick == tick {
-                    self.dirty.velocity.push(handle.slot);
+                    self.dirty_flags[slot] |= VELOCITY_DIRTY;
                 }
                 if first || structural_tick == tick || health_tick == tick {
-                    self.dirty.health.push(handle.slot);
+                    self.dirty_flags[slot] |= HEALTH_DIRTY;
                 }
                 if first || structural_tick == tick {
-                    self.dirty.structural.push(handle.slot);
+                    self.dirty_flags[slot] |= STRUCTURAL_DIRTY;
                 }
             },
         );
@@ -161,30 +179,30 @@ impl Page {
             if id.is_some() && self.present_marks[slot] != tick {
                 *id = None;
             }
-        }
-        if first {
-            for (slot, id) in self.ids.iter().enumerate() {
-                if id.is_some() {
-                    self.events.push(StructuralChange::Spawn(Handle {
-                        epoch: self.id.epoch,
-                        slot: u32::try_from(slot).expect("validated slot capacity"),
-                        generation: self.generations[slot],
-                    }));
+            let flags = std::mem::take(&mut self.dirty_flags[slot]);
+            if flags != 0 {
+                let slot = u32::try_from(slot).expect("validated slot capacity");
+                if flags & POSITION_DIRTY != 0 {
+                    self.dirty.position.push(slot);
+                }
+                if flags & VELOCITY_DIRTY != 0 {
+                    self.dirty.velocity.push(slot);
+                }
+                if flags & HEALTH_DIRTY != 0 {
+                    self.dirty.health.push(slot);
+                }
+                if flags & STRUCTURAL_DIRTY != 0 {
+                    self.dirty.structural.push(slot);
                 }
             }
-        } else {
-            self.events.extend_from_slice(events);
-            for event in events {
-                let slot = match event {
-                    StructuralChange::Despawn(handle) | StructuralChange::Spawn(handle) => {
-                        handle.slot
-                    }
-                };
-                self.dirty.structural.push(slot);
+            if first && id.is_some() {
+                self.events.push(StructuralChange::Spawn(Handle {
+                    epoch: self.id.epoch,
+                    slot: u32::try_from(slot).expect("validated slot capacity"),
+                    generation: self.generations[slot],
+                }));
             }
         }
-        self.dirty.structural.sort_unstable();
-        self.dirty.structural.dedup();
         self.initialized = true;
     }
 
@@ -196,6 +214,7 @@ impl Page {
             + bytes(&self.ids)
             + bytes(&self.generations)
             + bytes(&self.present_marks)
+            + bytes(&self.dirty_flags)
             + bytes(&self.positions)
             + bytes(&self.velocities)
             + bytes(&self.health)
