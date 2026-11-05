@@ -63,6 +63,24 @@ fn presentation_fraction_advances_between_world_ticks_without_extra_steps() {
 }
 
 #[test]
+fn display_target_lead_changes_only_interpolation_not_world_time() {
+    let mut clock = TickClock::new(ClockConfig::default(), Duration::ZERO).expect("clock");
+    clock
+        .advance(Duration::from_nanos(4_166_667), 4, || Ok::<_, ()>(()))
+        .expect("quarter tick");
+    assert!((clock.presentation_alpha() - 0.25).abs() < 1e-6);
+    assert!((clock.presentation_alpha_at(Duration::from_nanos(8_333_333)) - 0.75).abs() < 1e-6);
+    assert_eq!(clock.presentation_alpha_at(Duration::from_secs(1)), 1.0);
+    assert_eq!(clock.queued_ticks(), 0);
+    assert_eq!(clock.next_due_in(), Some(Duration::from_micros(12_500)));
+    clock.pause();
+    assert_eq!(
+        clock.presentation_alpha_at(Duration::from_nanos(8_333_333)),
+        1.0
+    );
+}
+
+#[test]
 fn a_game_can_select_a_higher_world_update_rate() {
     let config = ClockConfig {
         tick_hz: NonZeroU32::new(120).expect("test setup or assertion requires a value"),
