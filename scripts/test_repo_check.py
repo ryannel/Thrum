@@ -96,6 +96,15 @@ class RepositoryChecks(unittest.TestCase):
             self.assertEqual(repo_check.check_manifest_inventory(root, metadata),
                              ["unregistered package manifest: crates/new_module/Cargo.toml"])
 
+    def test_ios_runtime_closure_rejects_authoring_and_sqlite(self):
+        tree = "v1-game-ios v0.1.0\nv1-game v0.1.0\nthrum-cook v0.1.0\nthrum-source v0.1.0\nrusqlite v0.40.2\nlibsqlite3-sys v0.38.0\n"
+        with patch.object(repo_check.subprocess, "run") as run:
+            run.return_value.returncode = 0
+            run.return_value.stdout = tree
+            errors = repo_check.check_ios_runtime_closure(Path("."), "1.99.1")
+        self.assertEqual(len(errors), 4)
+        self.assertTrue(all("iOS runtime includes authoring package" in error for error in errors))
+
     def test_unused_direct_dependency_requires_a_source_use_or_reasoned_macro_record(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory).resolve()

@@ -205,6 +205,53 @@ fn local_controls_use_validated_input_and_hold_until_replaced() {
 }
 
 #[test]
+#[ignore = "requires a native GPU for the ready-view N to N+1 worker handoff"]
+fn ready_worker_view_does_not_skip_the_next_committed_tick() {
+    pollster::block_on(async {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let adapter = instance
+            .request_adapter(&wgpu::RequestAdapterOptions::default())
+            .await
+            .expect("native adapter");
+        let (device, queue) = adapter
+            .request_device(&wgpu::DeviceDescriptor::default())
+            .await
+            .expect("native device");
+        let mut host = FrameHost::new(&device, &queue, None)
+            .await
+            .expect("prepared game");
+        let (wake, woke) = mpsc::sync_channel(2);
+        host.enable_native_worker(move || {
+            let _ = wake.try_send(());
+        })
+        .expect("worker");
+        let first_time = Duration::from_nanos(16_666_667);
+        let second_time = Duration::from_nanos(33_333_334);
+        let first = host.drive(first_time, None).expect("tick one dispatches");
+        assert_eq!(first.tick, 1);
+        assert!(!first.submitted);
+        woke.recv_timeout(Duration::from_secs(2))
+            .expect("tick one extract is ready");
+
+        let second = host
+            .drive(second_time, None)
+            .expect("tick two commits while tick one view is ready");
+        assert_eq!((second.tick, second.completed_ticks), (2, 1));
+        assert!(second.submitted, "tick one can still be shown");
+        woke.recv_timeout(Duration::from_secs(2))
+            .expect("tick two extract must be dispatched and ready");
+
+        let third = host
+            .drive(second_time, None)
+            .expect("tick two view submits without a third world tick");
+        assert_eq!((third.tick, third.completed_ticks), (2, 0));
+        assert!(third.submitted, "tick two was not silently skipped");
+        assert_eq!(await_sample(&mut host, &device).tick, 1);
+        assert_eq!(await_sample(&mut host, &device).tick, 2);
+    });
+}
+
+#[test]
 #[ignore = "requires a real native GPU adapter for the worker-to-frame handoff"]
 fn native_extract_wake_submits_same_tick_and_a_stalled_worker_does_not_hold_world_ticks() {
     pollster::block_on(async {
@@ -279,6 +326,9 @@ fn native_extract_wake_submits_same_tick_and_a_stalled_worker_does_not_hold_worl
             .expect("release second wake");
         assert_eq!(host.dropped_stale_views(), 0);
         let native_pixels = host.capture_pixels().expect("native world capture");
+        awakened
+            .recv_timeout(Duration::from_secs(2))
+            .expect("release the latest worker wake before teardown");
         let mut serial = FrameHost::new(&device, &queue, None)
             .await
             .expect("same serial fixture");

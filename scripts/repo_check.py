@@ -16,6 +16,7 @@ from design_hashes import check_hashes
 
 ROOT = Path(__file__).resolve().parents[1]
 LINK = re.compile(r"\[[^\]\n]*\]\(([^)\n]+)\)")
+IOS_FORBIDDEN_RUNTIME_PACKAGES = {"thrum-cook", "thrum-source", "rusqlite", "libsqlite3-sys"}
 
 
 def prose(text):
@@ -178,6 +179,23 @@ def check_manifest_inventory(root, metadata):
     return errors
 
 
+def check_ios_runtime_closure(root, channel):
+    """Keep authoring and SQLite out of the normal iOS game dependency graph."""
+    command = [
+        "rustup", "run", channel, "cargo", "tree", "--package", "v1-game-ios",
+        "--target", "aarch64-apple-ios", "--edges", "normal", "--prefix", "none",
+        "--color", "never", "--locked", "--offline",
+    ]
+    result = subprocess.run(command, cwd=root, capture_output=True, text=True, check=False)
+    if result.returncode:
+        return [f"iOS runtime dependency tree failed: {result.stderr.strip()}"]
+    present = {line.split(" ", 1)[0] for line in result.stdout.splitlines()}
+    return [
+        f"iOS runtime includes authoring package: {name}"
+        for name in sorted(present & IOS_FORBIDDEN_RUNTIME_PACKAGES)
+    ]
+
+
 def check_skills(root):
     errors = []
     for path in (root / ".agents/skills").glob("*/SKILL.md"):
@@ -310,6 +328,7 @@ def main():
     output = subprocess.check_output(["rustup", "run", channel, "cargo", "metadata", "--no-deps", "--format-version", "1", "--locked", "--offline"], cwd=ROOT, encoding="utf-8")
     metadata = json.loads(output)
     errors += check_packages(ROOT, metadata, policy)
+    errors += check_ios_runtime_closure(ROOT, channel)
     errors += check_unused_direct_dependencies(metadata, policy)
     errors += check_manifest_inventory(ROOT, metadata)
     if errors:

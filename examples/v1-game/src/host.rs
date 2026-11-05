@@ -14,7 +14,7 @@ use std::{
 use web_time::Instant;
 
 #[cfg(not(target_arch = "wasm32"))]
-use thrum_cook::EnvironmentProduct;
+use thrum_content_runtime::EnvironmentProduct;
 use thrum_core::{ClockConfig, ClockState, TickClock};
 #[cfg(not(target_arch = "wasm32"))]
 use thrum_render::extract::SourceTick;
@@ -33,7 +33,7 @@ use thrum_render::{
 use crate::{
     projection::{GameProjection, ProjectionGap, ProjectionOutbox},
     scene::{self, ApplyReport, ENTITY_COUNT},
-    simulation::Simulation,
+    simulation::{SimError, Simulation},
 };
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -100,7 +100,9 @@ pub struct FrameSample {
     /// exceeds its capacity. The fixed fixture prepares them once.
     pub dropped_light_references: usize,
     /// Authored presentation light channels clamped during preparation.
-    pub clamped_light_channels: usize,
+    pub clamped_light_channels: u32,
+    /// Active casters flattened to a prepared shadow depth plane.
+    pub clamped_shadow_casters: u32,
     /// Cooked visual product used by this submitted frame, if selected.
     pub visual_revision: Option<[u8; 32]>,
 }
@@ -757,14 +759,12 @@ impl FrameHost {
         let sim = &mut self.sim;
         let projections = &mut self.projections;
         let mut projected_changes = 0;
+        let mut skipped_publications = 0_u64;
         let clock = self
             .clock
             .advance(now, 4, || {
                 let start = Instant::now();
                 let result = (|| {
-                    if !sim.can_publish_next() {
-                        return Err("world publication busy; retry due tick".to_owned());
-                    }
                     if desired_axes
                         .iter()
                         .zip(admitted_axes.iter())
@@ -786,11 +786,20 @@ impl FrameHost {
                     }
                     sim.step(&[])
                         .map_err(|error| format!("simulation step: {error:?}"))?;
-                    let page = sim
-                        .published_page()
-                        .map_err(|error| format!("world page: {error:?}"))?;
-                    if let Some(outbox) = projections.as_mut() {
-                        projected_changes += outbox.capture(&page);
+                    if sim.has_current_page() {
+                        let page = sim
+                            .published_page()
+                            .map_err(|error| format!("world page: {error:?}"))?;
+                        if let Some(outbox) = projections.as_mut() {
+                            if page.is_baseline() {
+                                outbox.reset_full(&page);
+                                projected_changes += page.len();
+                            } else {
+                                projected_changes += outbox.capture(&page);
+                            }
+                        }
+                    } else {
+                        skipped_publications = skipped_publications.saturating_add(1);
                     }
                     Ok::<(), String>(())
                 })();
@@ -801,6 +810,21 @@ impl FrameHost {
         if let Some(error) = clock.step_error {
             return Err(format!("simulation tick failed: {error:?}"));
         }
+        let recovered_publication = if self.sim.has_current_page() {
+            false
+        } else {
+            match self.sim.published_page() {
+                Ok(page) => {
+                    if let Some(outbox) = self.projections.as_mut() {
+                        outbox.reset_full(&page);
+                        projected_changes += page.len();
+                    }
+                    true
+                }
+                Err(SimError::PublicationBusy) => false,
+                Err(error) => return Err(format!("world page: {error:?}")),
+            }
+        };
         let mut report = DriveReport {
             tick: self.sim.tick(),
             overload: (clock.state == ClockState::Overloaded).then_some(clock.refused_on_overload),
@@ -813,14 +837,19 @@ impl FrameHost {
                 .map_or(0, ProjectionOutbox::lost_ticks),
             submitted: false,
             surface_presented: false,
-            dropped_view: false,
+            dropped_view: skipped_publications != 0,
             wall: Duration::ZERO,
         };
+        self.dropped_views = self.dropped_views.saturating_add(skipped_publications);
         if report.overload.is_some() {
             if report.completed_ticks > 0 {
                 self.dropped_views = self.dropped_views.saturating_add(1);
                 report.dropped_view = true;
             }
+            report.wall = wall_start.elapsed();
+            return Ok(report);
+        }
+        if !self.sim.has_current_page() {
             report.wall = wall_start.elapsed();
             return Ok(report);
         }
@@ -830,7 +859,7 @@ impl FrameHost {
             report.wall = wall_start.elapsed();
             return Ok(report);
         }
-        if clock.completed == 0 {
+        if clock.completed == 0 && !recovered_publication {
             report.wall = wall_start.elapsed();
             return Ok(report);
         }
@@ -949,10 +978,12 @@ impl FrameHost {
                     + frame.extracted.dropped_duplicate
                     + frame.extracted.dropped_invalid
                     + dropped_invalid
-                    + uploaded.dropped_invalid
-                    + uploaded.dropped_shadow_envelope,
+                    + uploaded.dropped_invalid,
                 dropped_light_references: self.prepared.dropped_light_references(),
-                clamped_light_channels: self.prepared.presentation_light_clamps(),
+                clamped_light_channels: u32::try_from(self.prepared.presentation_light_clamps())
+                    .unwrap_or(u32::MAX),
+                clamped_shadow_casters: u32::try_from(uploaded.clamped_shadow_casters)
+                    .unwrap_or(u32::MAX),
                 visual_revision,
             },
             wall_start,
@@ -1110,7 +1141,9 @@ impl FrameHost {
                 moving: 0,
                 dropped_presentation: 0,
                 dropped_light_references: self.prepared.dropped_light_references(),
-                clamped_light_channels: self.prepared.presentation_light_clamps(),
+                clamped_light_channels: u32::try_from(self.prepared.presentation_light_clamps())
+                    .unwrap_or(u32::MAX),
+                clamped_shadow_casters: 0,
                 visual_revision: self.current_visual_revision(),
             },
             wall_start,
@@ -1139,51 +1172,19 @@ impl FrameHost {
             self.worker_ready = Some(completed);
         }
         if self.worker_ready.is_none() {
-            if report.completed_ticks > 0 {
-                if self
-                    .worker
-                    .as_ref()
-                    .expect("native worker enabled")
-                    .is_busy()
-                {
-                    self.dropped_views = self.dropped_views.saturating_add(1);
-                    report.dropped_view = true;
-                    self.try_submit_reused_view(report, tick_cpu, wall_start, surface)?;
-                    return Ok(());
-                }
-                let publication_start = Instant::now();
-                let snapshot = self
-                    .sim
-                    .published_page()
-                    .map_err(|error| format!("world page: {error:?}"))?;
-                let publication_cpu = publication_start.elapsed();
-                let extractor = self
-                    .extractor
-                    .take()
-                    .expect("idle worker returns extractor");
-                self.worker
-                    .as_mut()
-                    .expect("native worker enabled")
-                    .dispatch(
-                        extractor,
-                        snapshot,
-                        ExtractRequest {
-                            generation: self.visual_generation,
-                            publication_cpu,
-                            tick_cpu,
-                            completed_ticks: report.completed_ticks,
-                            queued_ticks: report.queued_ticks,
-                        },
-                    );
-                return Ok(());
-            }
             if self
                 .worker
                 .as_ref()
                 .expect("native worker enabled")
                 .is_busy()
             {
+                if report.completed_ticks > 0 {
+                    self.dropped_views = self.dropped_views.saturating_add(1);
+                    report.dropped_view = true;
+                }
                 self.try_submit_reused_view(report, tick_cpu, wall_start, surface)?;
+            } else {
+                self.dispatch_latest_native(report, tick_cpu)?;
             }
             return Ok(());
         }
@@ -1249,7 +1250,55 @@ impl FrameHost {
                 frame_tick: completed.tick,
             }
         };
-        self.submit_extracted(slot_index, report, surface, frame, wall_start)
+        self.submit_extracted(slot_index, report, surface, frame, wall_start)?;
+        self.dispatch_latest_native(report, tick_cpu)?;
+        Ok(())
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    fn dispatch_latest_native(
+        &mut self,
+        report: &DriveReport,
+        tick_cpu: Duration,
+    ) -> Result<(), String> {
+        if !self.sim.has_current_page()
+            || self
+                .worker
+                .as_ref()
+                .expect("native worker enabled")
+                .is_busy()
+            || self.extractor.is_none()
+            || self.last_view_source.is_some_and(|source| {
+                source.epoch == self.sim.epoch().0 && source.tick == self.sim.tick()
+            })
+        {
+            return Ok(());
+        }
+        let publication_start = Instant::now();
+        let snapshot = self
+            .sim
+            .published_page()
+            .map_err(|error| format!("world page: {error:?}"))?;
+        let publication_cpu = publication_start.elapsed();
+        let extractor = self
+            .extractor
+            .take()
+            .expect("idle worker returns extractor");
+        self.worker
+            .as_mut()
+            .expect("native worker enabled")
+            .dispatch(
+                extractor,
+                snapshot,
+                ExtractRequest {
+                    generation: self.visual_generation,
+                    publication_cpu,
+                    tick_cpu,
+                    completed_ticks: report.completed_ticks,
+                    queued_ticks: report.queued_ticks,
+                },
+            );
+        Ok(())
     }
 
     #[cfg(not(target_arch = "wasm32"))]
@@ -1331,8 +1380,7 @@ impl FrameHost {
                     + extracted.dropped_duplicate
                     + extracted.dropped_invalid
                     + applied.dropped_invalid
-                    + uploaded.dropped_invalid
-                    + uploaded.dropped_shadow_envelope,
+                    + uploaded.dropped_invalid,
             )
             .unwrap_or(u64::MAX);
             self.dropped_capture_rows = self.dropped_capture_rows.saturating_add(dropped);

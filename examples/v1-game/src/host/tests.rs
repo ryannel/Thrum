@@ -26,6 +26,7 @@ fn sample(tick: u64) -> FrameSample {
         dropped_presentation: 0,
         dropped_light_references: 0,
         clamped_light_channels: 0,
+        clamped_shadow_casters: 0,
         visual_revision: None,
     }
 }
@@ -154,6 +155,49 @@ fn capture_applies_a_reclaimed_worker_view_even_when_its_tick_is_current() {
             before, after,
             "same-tick worker columns reach the GPU scene"
         );
+    });
+}
+
+#[test]
+#[ignore = "requires a real native GPU adapter for held-page publication recovery"]
+fn held_publication_drops_one_view_then_recovers_on_a_paused_zero_tick_callback() {
+    pollster::block_on(async {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let adapter = instance
+            .request_adapter(&wgpu::RequestAdapterOptions::default())
+            .await
+            .expect("native GPU adapter");
+        let (device, queue) = adapter
+            .request_device(&wgpu::DeviceDescriptor::default())
+            .await
+            .expect("device");
+        let mut host = super::FrameHost::new(&device, &queue, None)
+            .await
+            .expect("prepared scene");
+        let zero = host.sim.published_page().expect("baseline lease");
+        host.sim.step(&[]).expect("first held tick");
+        let one = host.sim.published_page().expect("first lease");
+        host.sim.step(&[]).expect("second held tick");
+        let two = host.sim.published_page().expect("second lease");
+        host.sim.step(&[]).expect("third held tick");
+        let three = host.sim.published_page().expect("third lease");
+
+        let now = Duration::from_nanos(16_666_667);
+        let busy = host.drive(now, None).expect("busy page is optional");
+        assert_eq!((busy.tick, busy.completed_ticks), (4, 1));
+        assert!(busy.dropped_view);
+        assert!(!busy.submitted);
+        assert_eq!(host.dropped_views(), 1);
+        host.pause();
+        drop(zero);
+        let recovered = host.drive(now, None).expect("paused recovery");
+        assert_eq!((recovered.tick, recovered.completed_ticks), (4, 0));
+        assert!(recovered.submitted);
+        assert_eq!(
+            host.sim.published_page().expect("current page").id().tick,
+            4
+        );
+        assert_eq!((one.id().tick, two.id().tick, three.id().tick), (1, 2, 3));
     });
 }
 

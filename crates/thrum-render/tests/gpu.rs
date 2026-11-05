@@ -3,8 +3,8 @@
 
 use thrum_render::abi::{InstanceRecord, MaterialRecord};
 use thrum_render::synthetic::{
-    OffscreenTarget, PreparedSynthetic, SyntheticLight, SyntheticPointLight, SyntheticScene,
-    SyntheticView,
+    DEPTH_FORMAT, OffscreenTarget, PreparedSynthetic, SyntheticLight, SyntheticPointLight,
+    SyntheticScene, SyntheticView,
 };
 use thrum_render::timing::GpuTimings;
 
@@ -16,6 +16,7 @@ use thrum_render::timing::GpuTimings;
     reason = "one explicitly opted-in adapter/device lifecycle proves the coupled render, readback and timing paths"
 )]
 fn prepared_scene_pixels_timestamps_and_disabled_path() {
+    assert_eq!(DEPTH_FORMAT, wgpu::TextureFormat::Depth32Float);
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
         let adapter = instance
@@ -777,15 +778,22 @@ fn two_sun_cascades_shadow_near_and_far_receivers_from_off_camera_casters() {
                 scene.instances[1].current[3][2] = 50.0;
                 let report = shadowed
                     .upload_instances(&queue, &scene.instances, &[1])
-                    .expect("out-of-envelope presentation update is diagnosed");
-                assert_eq!(
-                    (report.changed_rows, report.dropped_shadow_envelope),
-                    (0, 1)
+                    .expect("out-of-envelope presentation update is accepted");
+                assert_eq!(report.changed_rows, 1);
+                assert_eq!(report.clamped_shadow_casters, 1);
+                assert!(
+                    shadowed
+                        .upload_instances(&queue, &scene.instances, &[1, 1])
+                        .is_err()
                 );
-                assert_eq!(
+                let steady = shadowed
+                    .upload_instances(&queue, &scene.instances, &[])
+                    .expect("unchanged frame retains clamp telemetry");
+                assert_eq!((steady.changed_rows, steady.clamped_shadow_casters), (0, 1));
+                assert_ne!(
                     render_pixels(&device, &queue, &shadowed, &target),
                     shaded,
-                    "out-of-envelope caster retains its last valid GPU pose"
+                    "moved caster must not remain at its previous GPU pose"
                 );
             }
         }

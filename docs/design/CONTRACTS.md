@@ -81,11 +81,10 @@ retention; they do not pin arbitrary whole-world epochs forever. V2 extraction c
 staging/GPU resource leases. Release the world snapshot only when CPU extraction and required copies finish; GPU
 submission completion governs the packet/resources independently. Region retirement cannot free leased old data.
 
-When retained snapshots or optional presentation work create pressure, cancel/defer optional unsubmitted stale-view work and
-invalidate its histories, then await actual lease release. Never reuse in-use pages. A required reader that cannot
-finish causes backpressure or the explicit overload state, not unbounded retention or silent tick loss. A skipped
-view outside its retained sample horizon resets history and resumes from a valid snapshot. Count/backlog limits and
-explicit failure states remain necessary for correctness; implementation byte budgets are measured and tuned against
+V1 presentation and projections are optional. When every page is leased, commit the tick, count the omitted view,
+and seal a full baseline when a page frees. Never reuse leased pages or label stale pages current. Defer stale
+unsubmitted views and reset history outside its horizon. Required readers need explicit backpressure or overload;
+never lose a tick silently or retain pages without bound. Implementation byte budgets are measured and tuned against
 named workloads rather than imposed as a universal hard memory cap.
 In a selected bounded host profile that promises admitted-input progress under competing pool use, each accepted input protects its
 future rule-created immutable output bytes separately from snapshot and group storage. Rule callbacks in that profile spend only

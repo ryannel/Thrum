@@ -31,7 +31,7 @@ pub use view::SyntheticView;
 /// Synthetic source revision; not a substitute for an F4 product identity.
 pub const SYNTHETIC_REVISION: u64 = 6;
 /// Portable opaque depth; no sampling or separate prepass is needed.
-pub const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth24Plus;
+pub const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
 const VIEW_BYTES: usize = 160;
 const LIGHT_BYTES: usize = 64;
 const PRE_EXPOSURE: f32 = 1.0 / 1024.0;
@@ -320,8 +320,8 @@ pub struct InstanceUploadReport {
     pub changed_rows: usize,
     /// Malformed presentation rows kept at their previously valid GPU value.
     pub dropped_invalid: usize,
-    /// Valid rows outside the prepared shadow depth envelope; prior GPU rows remain.
-    pub dropped_shadow_envelope: usize,
+    /// Active casters flattened to a prepared cascade depth plane.
+    pub clamped_shadow_casters: usize,
     /// Queue write calls made for this update.
     pub writes: usize,
     /// Payload bytes enqueued, including unchanged rows in a full fallback.
@@ -503,7 +503,7 @@ impl PreparedSynthetic {
             storage_buffer(device, queue, "synthetic materials", &packed_materials);
         let instance_buffer =
             storage_buffer(device, queue, "synthetic forward opaque", &packed_instances);
-        let instance_upload = InstanceUpload::new(
+        let mut instance_upload = InstanceUpload::new(
             instance_buffer,
             packed_instances,
             material_count,
@@ -652,6 +652,11 @@ impl PreparedSynthetic {
         } else {
             None
         };
+        if let Some(shadow) = shadow.as_ref() {
+            instance_upload.seed_shadow_clamps(&scene.instances, |instance| {
+                instance.ids[3] != 0 && !shadow.contains_caster(instance)
+            });
+        }
         let views: Vec<wgpu::TextureView> = classes
             .arrays()
             .iter()
@@ -849,7 +854,8 @@ impl PreparedSynthetic {
         let shadow = self.shadow.as_ref();
         self.instance_upload
             .replace(queue, instances, changed_slots, |instance| {
-                shadow.is_none_or(|shadow| shadow.contains_caster(instance))
+                instance.ids[3] != 0
+                    && shadow.is_some_and(|shadow| !shadow.contains_caster(instance))
             })
     }
     /// Prepared generation-local finite draw tuple.
