@@ -678,7 +678,7 @@ impl FrameHost {
         self.dropped_views
     }
 
-    /// Completed native views rejected after their visual age or generation expired.
+    /// Completed native views discarded after their source or visual generation expired.
     pub fn dropped_stale_views(&self) -> u64 {
         self.dropped_stale_views
     }
@@ -997,14 +997,16 @@ impl FrameHost {
         let frame_source = self
             .extractor
             .as_ref()
-            .and_then(|extractor| extractor.frame().source())
-            .ok_or("submitted frame has no committed source")?;
+            .and_then(|extractor| extractor.frame().source());
         #[cfg(not(target_arch = "wasm32"))]
-        if frame_source.tick != frame.frame_tick
-            || frame_source.epoch != self.sim.epoch().0
-            || frame_source.timeline != self.sim.timeline()
-        {
-            return Err("submitted frame has stale world source".to_owned());
+        if frame_source.is_none_or(|source| {
+            source.tick != frame.frame_tick
+                || source.epoch != self.sim.epoch().0
+                || source.timeline != self.sim.timeline()
+        }) {
+            self.dropped_stale_views = self.dropped_stale_views.saturating_add(1);
+            report.dropped_view = true;
+            return Ok(());
         }
         let upload_start = Instant::now();
         let ApplyReport {
@@ -1086,7 +1088,7 @@ impl FrameHost {
         )?;
         #[cfg(not(target_arch = "wasm32"))]
         {
-            self.last_view_source = Some(frame_source);
+            self.last_view_source = frame_source;
             self.last_render_slot = Some(slot_index);
         }
         Ok(())
