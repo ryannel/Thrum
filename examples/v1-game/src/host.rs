@@ -15,7 +15,6 @@ use web_time::Instant;
 
 #[cfg(not(target_arch = "wasm32"))]
 use thrum_content_runtime::EnvironmentProduct;
-use thrum_core::{ClockConfig, ClockState, TickClock};
 #[cfg(not(target_arch = "wasm32"))]
 use thrum_render::extract::SourceTick;
 #[cfg(not(target_arch = "wasm32"))]
@@ -32,15 +31,16 @@ use thrum_render::{
 };
 
 use crate::{
-    projection::{GameProjection, ProjectionGap, ProjectionOutbox},
+    projection::{GameProjection, ProjectionGap},
     scene::{self, ENTITY_COUNT},
-    simulation::{SimError, Simulation},
 };
 
 #[cfg(not(target_arch = "wasm32"))]
 mod native_worker;
 #[cfg(not(target_arch = "wasm32"))]
 use native_worker::{CompletedExtract, ExtractRequest, NativeWorker};
+mod world;
+use world::WorldDriver;
 
 const GENERATION: u64 = 1;
 const DEFAULT_RENDER_EXTENT: [u32; 2] = [640, 360];
@@ -202,7 +202,7 @@ impl<'a> AdvancedFrame<'a> {
             return false;
         };
         report.overload.is_none()
-            && host.sim.has_current_page()
+            && host.world.sim.has_current_page()
             && host.presenter.is_some()
             && host
                 .slots
@@ -281,7 +281,7 @@ impl Drop for AdvancedFrame<'_> {
             host.dropped_views = host
                 .dropped_views
                 .saturating_add(u64::from(report.completed_ticks > 0));
-        } else if host.sim.has_current_page()
+        } else if host.world.sim.has_current_page()
             && (report.completed_ticks > 0 || self.recovered_publication)
         {
             host.dropped_views = host.dropped_views.saturating_add(1);
@@ -538,13 +538,8 @@ impl VisualPrepareInputs {
 pub struct FrameHost {
     device: wgpu::Device,
     queue: wgpu::Queue,
-    clock: TickClock,
     presentation_lead: Duration,
-    sim: Simulation,
-    projections: Option<ProjectionOutbox>,
-    desired_axes: [f32; 3],
-    admitted_axes: [f32; 3],
-    input_sequence: u64,
+    world: WorldDriver,
     extractor: Option<RenderExtractor>,
     #[cfg(not(target_arch = "wasm32"))]
     worker: Option<NativeWorker>,
@@ -592,7 +587,7 @@ impl FrameHost {
     }
 
     fn presentation_alpha(&self) -> f32 {
-        self.clock.presentation_alpha_at(self.presentation_lead)
+        self.world.presentation_alpha_at(self.presentation_lead)
     }
 
     #[cfg_attr(
@@ -659,9 +654,10 @@ impl FrameHost {
         if width == 0 || height == 0 {
             return Err("render extent must be nonzero".to_owned());
         }
-        let mut sim = scene::simulation()?;
+        let mut world = WorldDriver::new()?;
         let mut extractor = RenderExtractor::new(ENTITY_COUNT, ENTITY_COUNT);
-        let initial = sim
+        let initial = world
+            .sim
             .published_page()
             .map_err(|error| format!("initial world page: {error:?}"))?;
         scene::extract(&mut extractor, &initial);
@@ -732,24 +728,17 @@ impl FrameHost {
                 state: SlotState::Free,
             });
         }
-        let clock = TickClock::new(ClockConfig::default(), Duration::ZERO)
-            .map_err(|error| format!("clock: {error:?}"))?;
         #[cfg(not(target_arch = "wasm32"))]
         let initial_source = SourceTick {
-            epoch: sim.epoch().0,
-            tick: sim.tick(),
-            timeline: sim.timeline(),
+            epoch: world.sim.epoch().0,
+            tick: world.sim.tick(),
+            timeline: world.sim.timeline(),
         };
         Ok(Self {
             device: device.clone(),
             queue: queue.clone(),
-            clock,
             presentation_lead: Duration::ZERO,
-            sim,
-            projections: None,
-            desired_axes: [0.0; 3],
-            admitted_axes: [0.0; 3],
-            input_sequence: 1,
+            world,
             extractor: Some(extractor),
             #[cfg(not(target_arch = "wasm32"))]
             worker: None,
@@ -834,9 +823,9 @@ impl FrameHost {
             && self.extractor.is_some()
             && self.worker.as_ref().is_some_and(|worker| !worker.is_busy())
             && self.last_view_source.is_some_and(|source| {
-                source.epoch == self.sim.epoch().0
-                    && source.timeline == self.sim.timeline()
-                    && source.tick == self.sim.tick()
+                source.epoch == self.world.sim.epoch().0
+                    && source.timeline == self.world.sim.timeline()
+                    && source.tick == self.world.sim.tick()
             })
             && self
                 .slots
@@ -849,7 +838,8 @@ impl FrameHost {
     pub fn has_reusable_view(&self) -> bool {
         self.worker.as_ref().is_some_and(NativeWorker::is_busy)
             && self.last_view_source.is_some_and(|source| {
-                source.epoch == self.sim.epoch().0 && source.timeline == self.sim.timeline()
+                source.epoch == self.world.sim.epoch().0
+                    && source.timeline == self.world.sim.timeline()
             })
             && self.last_render_slot.is_some_and(|index| {
                 self.slots
@@ -925,12 +915,12 @@ impl FrameHost {
 
     /// Delay until the next world update is due; the platform owns actual sleep.
     pub fn next_due_in(&self) -> Option<Duration> {
-        self.clock.next_due_in()
+        self.world.next_due_in()
     }
 
     /// Pause wall-time admission while retaining already queued world updates.
     pub fn pause(&mut self) {
-        self.clock.pause();
+        self.world.pause();
     }
 
     /// Resume from a new monotonic time origin after queued work has drained.
@@ -938,9 +928,7 @@ impl FrameHost {
     /// # Errors
     /// Returns a clock error for an active clock, pending updates or backwards time.
     pub fn resume(&mut self, now: Duration) -> Result<(), String> {
-        self.clock
-            .resume(now)
-            .map_err(|error| format!("clock resume: {error:?}"))
+        self.world.resume(now)
     }
 
     /// Finish previously admitted work before starting a fresh platform time
@@ -963,7 +951,7 @@ impl FrameHost {
 
     /// Last committed world tick.
     pub fn tick(&self) -> u64 {
-        self.sim.tick()
+        self.world.sim.tick()
     }
 
     /// Sample continuous local controls for the next authoritative tick.
@@ -973,19 +961,12 @@ impl FrameHost {
     /// # Errors
     /// Returns a normalized-axis validation error without changing the held input.
     pub fn set_controls(&mut self, axes: [f32; 3]) -> Result<(), String> {
-        scene::control_frame(scene::LOCAL_PEER, axes, 0, 0)
-            .validate_axes()
-            .map_err(|error| format!("local controls: {error:?}"))?;
-        self.desired_axes = axes;
-        Ok(())
+        self.world.set_controls(axes)
     }
 
     /// Committed world position of the fixture's controlled actor.
     pub fn controlled_position(&self) -> Option<[f64; 3]> {
-        self.sim
-            .handle(scene::CONTROLLED_ID)
-            .and_then(|handle| self.sim.get(handle).ok())
-            .map(|entity| entity.position.0)
+        self.world.controlled_position()
     }
 
     /// Number of optional views skipped because all GPU packet slots were held.
@@ -1064,16 +1045,7 @@ impl FrameHost {
     /// # Errors
     /// Returns a world publication fault without enabling the output.
     pub fn enable_projection(&mut self) -> Result<(), String> {
-        if self.projections.is_none() {
-            let page = self
-                .sim
-                .published_page()
-                .map_err(|error| format!("world page: {error:?}"))?;
-            let mut outbox = ProjectionOutbox::new(ENTITY_COUNT);
-            outbox.reset_full(&page);
-            self.projections = Some(outbox);
-        }
-        Ok(())
+        self.world.enable_projection()
     }
 
     /// Consume the oldest detached projection in source-tick order. A gap
@@ -1086,17 +1058,12 @@ impl FrameHost {
         &mut self,
         consume: impl FnOnce(&GameProjection),
     ) -> Result<Option<bool>, ProjectionGap> {
-        self.projections
-            .as_mut()
-            .map(|outbox| outbox.poll(self.sim.timeline(), consume))
-            .transpose()
+        self.world.poll_projection(consume)
     }
 
     /// Reserved detached projection payload bytes, excluding allocator bookkeeping.
     pub fn projection_reserved_bytes(&self) -> usize {
-        self.projections
-            .as_ref()
-            .map_or(0, ProjectionOutbox::reserved_bytes)
+        self.world.projection_reserved_bytes()
     }
 
     /// Replace undeliverable deltas with a full current-state projection.
@@ -1104,16 +1071,7 @@ impl FrameHost {
     /// # Errors
     /// Returns a world publication fault without changing the pending outbox.
     pub fn reset_projection_baseline(&mut self) -> Result<(), String> {
-        let outbox = self
-            .projections
-            .as_mut()
-            .ok_or("projection output is disabled")?;
-        let page = self
-            .sim
-            .published_page()
-            .map_err(|error| format!("world page: {error:?}"))?;
-        outbox.reset_full(&page);
-        Ok(())
+        self.world.reset_projection_baseline()
     }
 
     /// Admit monotonic host time through the shared fixed-step clock. Every due
@@ -1142,100 +1100,28 @@ impl FrameHost {
     pub fn advance(&mut self, now: Duration) -> Result<AdvancedFrame<'_>, String> {
         let wall_start = Instant::now();
         self.poll_gpu()?;
-        let mut tick_cpu = Duration::ZERO;
-        let desired_axes = self.desired_axes;
-        let admitted_axes = &mut self.admitted_axes;
-        let input_sequence = &mut self.input_sequence;
-        let sim = &mut self.sim;
-        let projections = &mut self.projections;
-        let mut projected_changes = 0;
-        let mut skipped_publications = 0_u64;
-        let clock = self
-            .clock
-            .advance(now, 4, || {
-                let start = Instant::now();
-                let result = (|| {
-                    if desired_axes
-                        .iter()
-                        .zip(admitted_axes.iter())
-                        .any(|(desired, admitted)| desired.to_bits() != admitted.to_bits())
-                    {
-                        let tick = sim.tick().checked_add(1).ok_or("input tick exhausted")?;
-                        let frame = scene::control_frame(
-                            scene::LOCAL_PEER,
-                            desired_axes,
-                            tick,
-                            *input_sequence,
-                        );
-                        sim.admit_frame(frame)
-                            .map_err(|error| format!("local input admission: {error:?}"))?;
-                        *admitted_axes = desired_axes;
-                        *input_sequence = input_sequence
-                            .checked_add(1)
-                            .ok_or("input sequence exhausted")?;
-                    }
-                    sim.step(&[])
-                        .map_err(|error| format!("simulation step: {error:?}"))?;
-                    if sim.has_current_page() {
-                        let page = sim
-                            .published_page()
-                            .map_err(|error| format!("world page: {error:?}"))?;
-                        if let Some(outbox) = projections.as_mut() {
-                            if page.is_baseline() {
-                                outbox.reset_full(&page);
-                                projected_changes += page.len();
-                            } else {
-                                projected_changes += outbox.capture(&page);
-                            }
-                        }
-                    } else {
-                        skipped_publications = skipped_publications.saturating_add(1);
-                    }
-                    Ok::<(), String>(())
-                })();
-                tick_cpu += start.elapsed();
-                result
-            })
-            .map_err(|error| format!("clock advance: {error:?}"))?;
-        if let Some(error) = clock.step_error {
-            return Err(format!("simulation tick failed: {error:?}"));
-        }
-        let recovered_publication = if self.sim.has_current_page() {
-            false
-        } else {
-            match self.sim.published_page() {
-                Ok(page) => {
-                    if let Some(outbox) = self.projections.as_mut() {
-                        projected_changes += outbox.capture(&page);
-                    }
-                    true
-                }
-                Err(SimError::PublicationBusy) => false,
-                Err(error) => return Err(format!("world page: {error:?}")),
-            }
-        };
+        let advanced = self.world.advance(now)?;
         let report = DriveReport {
-            tick: self.sim.tick(),
-            overload: (clock.state == ClockState::Overloaded).then_some(clock.refused_on_overload),
-            completed_ticks: clock.completed,
-            queued_ticks: clock.queued,
-            projected_changes,
-            projection_lost_ticks: self
-                .projections
-                .as_ref()
-                .map_or(0, ProjectionOutbox::lost_ticks),
+            tick: advanced.tick,
+            overload: advanced.overload,
+            completed_ticks: advanced.completed_ticks,
+            queued_ticks: advanced.queued_ticks,
+            projected_changes: advanced.projected_changes,
+            projection_lost_ticks: advanced.projection_lost_ticks,
             submitted: false,
             surface_presented: false,
-            dropped_view: skipped_publications != 0,
+            dropped_view: advanced.skipped_publications != 0,
             wall: Duration::ZERO,
         };
-        self.dropped_views = self.dropped_views.saturating_add(skipped_publications);
+        self.dropped_views = self
+            .dropped_views
+            .saturating_add(advanced.skipped_publications);
         Ok(AdvancedFrame {
             host: Some(self),
             report: Some(report),
-            tick_cpu,
+            tick_cpu: advanced.tick_cpu,
             wall_start,
-            recovered_publication,
+            recovered_publication: advanced.recovered_publication,
         })
     }
 
@@ -1258,7 +1144,7 @@ impl FrameHost {
             report.wall = wall_start.elapsed();
             return Ok(report);
         }
-        if !self.sim.has_current_page() {
+        if !self.world.sim.has_current_page() {
             report.wall = wall_start.elapsed();
             return Ok(report);
         }
@@ -1312,6 +1198,7 @@ impl FrameHost {
     ) -> Result<SubmitFrame, String> {
         let extract_start = Instant::now();
         let snapshot = self
+            .world
             .sim
             .published_page()
             .map_err(|error| format!("world page: {error:?}"))?;
@@ -1330,7 +1217,7 @@ impl FrameHost {
             tick_cpu,
             completed_ticks,
             queued_ticks,
-            frame_tick: self.sim.tick(),
+            frame_tick: self.world.sim.tick(),
             presentation_alpha: self.presentation_alpha(),
         })
     }
@@ -1379,8 +1266,8 @@ impl FrameHost {
         };
         #[cfg(not(target_arch = "wasm32"))]
         if frame_source.tick != frame.frame_tick
-            || frame_source.epoch != self.sim.epoch().0
-            || frame_source.timeline != self.sim.timeline()
+            || frame_source.epoch != self.world.sim.epoch().0
+            || frame_source.timeline != self.world.sim.timeline()
         {
             self.dropped_stale_views = self.dropped_stale_views.saturating_add(1);
             report.dropped_view = true;
@@ -1403,8 +1290,11 @@ impl FrameHost {
             self.render_extent,
         )?;
         let lighting = self.frame_lighting(frame.frame_tick, frame.presentation_alpha);
-        self.prepared
-            .synchronize_history(&self.queue, self.sim.epoch().0, self.sim.timeline());
+        self.prepared.synchronize_history(
+            &self.queue,
+            self.world.sim.epoch().0,
+            self.world.sim.timeline(),
+        );
         let view_update_start = Instant::now();
         self.prepared
             .update_frame(
@@ -1436,8 +1326,10 @@ impl FrameHost {
                 extract_cpu: frame.extract_cpu,
                 worker_queue_ns: duration_ns_u32(frame.worker_queue_cpu),
                 worker_ready_ns: duration_ns_u32(frame.worker_ready_cpu),
-                visual_age_ticks: u32::try_from(self.sim.tick().saturating_sub(frame.frame_tick))
-                    .unwrap_or(u32::MAX),
+                visual_age_ticks: u32::try_from(
+                    self.world.sim.tick().saturating_sub(frame.frame_tick),
+                )
+                .unwrap_or(u32::MAX),
                 reused_visual: false,
                 upload_cpu,
                 view_update_ns: duration_ns_u32(view_update_cpu),
@@ -1626,7 +1518,7 @@ impl FrameHost {
                 extract_cpu: Duration::ZERO,
                 worker_queue_ns: 0,
                 worker_ready_ns: 0,
-                visual_age_ticks: u32::try_from(self.sim.tick().saturating_sub(source.tick))
+                visual_age_ticks: u32::try_from(self.world.sim.tick().saturating_sub(source.tick))
                     .unwrap_or(u32::MAX),
                 reused_visual: true,
                 upload_cpu: Duration::ZERO,
@@ -1698,7 +1590,7 @@ impl FrameHost {
                         tick_cpu,
                         completed_ticks: report.completed_ticks,
                         queued_ticks: report.queued_ticks,
-                        frame_tick: self.sim.tick(),
+                        frame_tick: self.world.sim.tick(),
                         presentation_alpha: self.presentation_alpha(),
                     };
                     self.submit_extracted(slot_index, report, surface, frame, wall_start)?;
@@ -1733,10 +1625,10 @@ impl FrameHost {
             return Ok(());
         };
         let completed = self.worker_ready.take().expect("checked ready view");
-        let stale = completed.epoch != self.sim.epoch().0
-            || completed.timeline != self.sim.timeline()
+        let stale = completed.epoch != self.world.sim.epoch().0
+            || completed.timeline != self.world.sim.timeline()
             || completed.generation != self.visual_generation
-            || self.sim.tick().saturating_sub(completed.tick) > 2;
+            || self.world.sim.tick().saturating_sub(completed.tick) > 2;
         self.extractor = Some(completed.extractor);
         let frame = if stale {
             self.dropped_stale_views = self.dropped_stale_views.saturating_add(1);
@@ -1744,6 +1636,7 @@ impl FrameHost {
             extractor.invalidate_history();
             let start = Instant::now();
             let snapshot = self
+                .world
                 .sim
                 .published_page()
                 .map_err(|error| format!("world page: {error:?}"))?;
@@ -1757,7 +1650,7 @@ impl FrameHost {
                 tick_cpu,
                 completed_ticks: report.completed_ticks,
                 queued_ticks: report.queued_ticks,
-                frame_tick: self.sim.tick(),
+                frame_tick: self.world.sim.tick(),
                 presentation_alpha: self.presentation_alpha(),
             }
         } else {
@@ -1770,7 +1663,7 @@ impl FrameHost {
                 completed_ticks: completed.completed_ticks,
                 queued_ticks: completed.queued_ticks,
                 frame_tick: completed.tick,
-                presentation_alpha: if completed.tick == self.sim.tick() {
+                presentation_alpha: if completed.tick == self.world.sim.tick() {
                     self.presentation_alpha()
                 } else {
                     1.0
@@ -1788,7 +1681,7 @@ impl FrameHost {
         report: &DriveReport,
         tick_cpu: Duration,
     ) -> Result<(), String> {
-        if !self.sim.has_current_page()
+        if !self.world.sim.has_current_page()
             || self
                 .worker
                 .as_ref()
@@ -1796,15 +1689,16 @@ impl FrameHost {
                 .is_busy()
             || self.extractor.is_none()
             || self.last_view_source.is_some_and(|source| {
-                source.epoch == self.sim.epoch().0
-                    && source.timeline == self.sim.timeline()
-                    && source.tick == self.sim.tick()
+                source.epoch == self.world.sim.epoch().0
+                    && source.timeline == self.world.sim.timeline()
+                    && source.tick == self.world.sim.tick()
             })
         {
             return Ok(());
         }
         let publication_start = Instant::now();
         let snapshot = self
+            .world
             .sim
             .published_page()
             .map_err(|error| format!("world page: {error:?}"))?;
@@ -1841,8 +1735,8 @@ impl FrameHost {
         let Some((surface, source)) = surface.zip(self.last_view_source) else {
             return Ok(());
         };
-        if source.epoch != self.sim.epoch().0
-            || source.timeline != self.sim.timeline()
+        if source.epoch != self.world.sim.epoch().0
+            || source.timeline != self.world.sim.timeline()
             || self
                 .presenter
                 .as_ref()
@@ -1881,12 +1775,13 @@ impl FrameHost {
             .frame()
             .source()
             .is_none_or(|source| {
-                source.epoch != self.sim.epoch().0
-                    || source.timeline != self.sim.timeline()
-                    || source.tick != self.sim.tick()
+                source.epoch != self.world.sim.epoch().0
+                    || source.timeline != self.world.sim.timeline()
+                    || source.tick != self.world.sim.tick()
             });
         let extracted = if needs_extract {
             let snapshot = self
+                .world
                 .sim
                 .published_page()
                 .map_err(|error| format!("world page: {error:?}"))?;
@@ -1924,8 +1819,8 @@ impl FrameHost {
         )
         .unwrap_or(u64::MAX);
         self.dropped_capture_rows = self.dropped_capture_rows.saturating_add(dropped);
-        self.scene.view = frame_view(self.sim.tick(), capture_alpha, self.render_extent)?;
-        let lighting = self.frame_lighting(self.sim.tick(), capture_alpha);
+        self.scene.view = frame_view(self.world.sim.tick(), capture_alpha, self.render_extent)?;
+        let lighting = self.frame_lighting(self.world.sim.tick(), capture_alpha);
         let mut target = OffscreenTarget::new(
             &self.device,
             &self.prepared,

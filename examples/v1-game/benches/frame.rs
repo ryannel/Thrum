@@ -20,6 +20,19 @@ fn main() {
         print_g0_inventory();
         return;
     }
+    if std::env::args().any(|argument| argument == "--g3b-frame-batch") {
+        measure(
+            None,
+            true,
+            [1920, 1080],
+            Some([1920, 1080]),
+            true,
+            Duration::from_nanos(16_666_667),
+            false,
+            200,
+        );
+        return;
+    }
     divan::main();
 }
 
@@ -272,7 +285,7 @@ fn game_restore_capture(bencher: divan::Bencher<'_, '_>, entity_count: usize) {
 }
 
 fn measure(
-    bencher: divan::Bencher<'_, '_>,
+    bencher: Option<divan::Bencher<'_, '_>>,
     gpu_timestamps: bool,
     render_extent: [u32; 2],
     surface_extent: Option<[u32; 2]>,
@@ -338,7 +351,7 @@ fn measure(
     let mut now = Duration::ZERO;
     let mut samples: Vec<FrameSample> = Vec::with_capacity(16_384);
     let mut callbacks = 0_usize;
-    bencher.bench_local(|| {
+    let mut run = || {
         for _ in 0..callbacks_per_sample {
             callbacks += 1;
             now += callback_period;
@@ -376,7 +389,12 @@ fn measure(
             samples.push(complete);
             divan::black_box(complete);
         }
-    });
+    };
+    if let Some(bencher) = bencher {
+        bencher.bench_local(&mut run);
+    } else {
+        run();
+    }
     assert!(
         !samples.is_empty() && samples.len() >= callbacks / 2,
         "baseline needs frames from at least half its callbacks: {} of {callbacks}",
@@ -424,6 +442,7 @@ fn report_frame_cpu(
             values[values.len() * 99 / 100],
         )
     };
+    let tick = percentile(|sample| sample.tick_cpu.as_secs_f64() * 1e6);
     let upload = percentile(|sample| sample.upload_cpu.as_secs_f64() * 1e6);
     let extract = percentile(|sample| sample.extract_cpu.as_secs_f64() * 1e6);
     let view = percentile(|sample| f64::from(sample.view_update_ns) / 1e3);
@@ -436,13 +455,15 @@ fn report_frame_cpu(
         percentile(|sample| sample.wall.saturating_sub(sample.tick_cpu).as_secs_f64() * 1e6);
     let host_wall = percentile(|sample| sample.wall.as_secs_f64() * 1e6);
     eprintln!(
-        "V1 offscreen frame CPU submitted={} callbacks={} render={}x{} timestamps={} surface={:?} extract p50/p95={:.1}/{:.1} us live-view p50/p95={:.1}/{:.1} us upload p50/p95={:.1}/{:.1} us encode p50/p95={:.1}/{:.1} us upload+encode p50/p95={:.1}/{:.1} us stages p50/p95/p99={:.1}/{:.1}/{:.1} us host-minus-tick p50/p95/p99={:.1}/{:.1}/{:.1} us host-wall p50/p95/p99={:.1}/{:.1}/{:.1} us",
+        "V1 offscreen frame CPU submitted={} callbacks={} render={}x{} timestamps={} surface={:?} tick p50/p95={:.1}/{:.1} us extract p50/p95={:.1}/{:.1} us live-view p50/p95={:.1}/{:.1} us upload p50/p95={:.1}/{:.1} us encode p50/p95={:.1}/{:.1} us upload+encode p50/p95={:.1}/{:.1} us stages p50/p95/p99={:.1}/{:.1}/{:.1} us host-minus-tick p50/p95/p99={:.1}/{:.1}/{:.1} us host-wall p50/p95/p99={:.1}/{:.1}/{:.1} us",
         samples.len(),
         callbacks,
         render_extent[0],
         render_extent[1],
         gpu_timestamps,
         surface_extent,
+        tick.0,
+        tick.1,
         extract.0,
         extract.1,
         view.0,
@@ -509,7 +530,7 @@ fn report_frame_cpu(
 #[divan::bench]
 fn assembled_frame_with_gpu_timestamps(bencher: divan::Bencher<'_, '_>) {
     measure(
-        bencher,
+        Some(bencher),
         true,
         [640, 360],
         None,
@@ -523,7 +544,7 @@ fn assembled_frame_with_gpu_timestamps(bencher: divan::Bencher<'_, '_>) {
 #[divan::bench]
 fn assembled_frame_without_gpu_timestamps(bencher: divan::Bencher<'_, '_>) {
     measure(
-        bencher,
+        Some(bencher),
         false,
         [640, 360],
         None,
@@ -537,7 +558,7 @@ fn assembled_frame_without_gpu_timestamps(bencher: divan::Bencher<'_, '_>) {
 #[divan::bench]
 fn assembled_frame_with_surface_pass(bencher: divan::Bencher<'_, '_>) {
     measure(
-        bencher,
+        Some(bencher),
         true,
         [640, 360],
         Some([1280, 720]),
@@ -551,7 +572,7 @@ fn assembled_frame_with_surface_pass(bencher: divan::Bencher<'_, '_>) {
 #[divan::bench]
 fn assembled_frame_1080p_with_surface_pass(bencher: divan::Bencher<'_, '_>) {
     measure(
-        bencher,
+        Some(bencher),
         true,
         [1920, 1080],
         Some([1920, 1080]),
@@ -565,7 +586,7 @@ fn assembled_frame_1080p_with_surface_pass(bencher: divan::Bencher<'_, '_>) {
 #[divan::bench]
 fn assembled_frame_1080p_late_surface(bencher: divan::Bencher<'_, '_>) {
     measure(
-        bencher,
+        Some(bencher),
         true,
         [1920, 1080],
         Some([1920, 1080]),
@@ -579,7 +600,7 @@ fn assembled_frame_1080p_late_surface(bencher: divan::Bencher<'_, '_>) {
 #[divan::bench]
 fn g0_120hz_callbacks_at_1080p(bencher: divan::Bencher<'_, '_>) {
     measure(
-        bencher,
+        Some(bencher),
         true,
         [1920, 1080],
         Some([1920, 1080]),
