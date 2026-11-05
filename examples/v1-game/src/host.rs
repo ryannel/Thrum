@@ -447,7 +447,7 @@ impl FrameHost {
         let initial_source = SourceTick {
             epoch: sim.epoch().0,
             tick: sim.tick(),
-            timeline: 0,
+            timeline: sim.timeline(),
         };
         Ok(Self {
             device: device.clone(),
@@ -534,9 +534,9 @@ impl FrameHost {
     #[cfg(not(target_arch = "wasm32"))]
     pub fn has_reusable_view(&self) -> bool {
         self.worker.as_ref().is_some_and(NativeWorker::is_busy)
-            && self
-                .last_view_source
-                .is_some_and(|source| source.epoch == self.sim.epoch().0)
+            && self.last_view_source.is_some_and(|source| {
+                source.epoch == self.sim.epoch().0 && source.timeline == self.sim.timeline()
+            })
             && self.last_render_slot.is_some_and(|index| {
                 self.slots
                     .get(index)
@@ -993,6 +993,19 @@ impl FrameHost {
         frame: SubmitFrame,
         wall_start: Instant,
     ) -> Result<(), String> {
+        #[cfg(not(target_arch = "wasm32"))]
+        let frame_source = self
+            .extractor
+            .as_ref()
+            .and_then(|extractor| extractor.frame().source())
+            .ok_or("submitted frame has no committed source")?;
+        #[cfg(not(target_arch = "wasm32"))]
+        if frame_source.tick != frame.frame_tick
+            || frame_source.epoch != self.sim.epoch().0
+            || frame_source.timeline != self.sim.timeline()
+        {
+            return Err("submitted frame has stale world source".to_owned());
+        }
         let upload_start = Instant::now();
         let ApplyReport {
             moving,
@@ -1073,11 +1086,7 @@ impl FrameHost {
         )?;
         #[cfg(not(target_arch = "wasm32"))]
         {
-            self.last_view_source = Some(SourceTick {
-                epoch: self.sim.epoch().0,
-                tick: frame.frame_tick,
-                timeline: 0,
-            });
+            self.last_view_source = Some(frame_source);
             self.last_render_slot = Some(slot_index);
         }
         Ok(())
@@ -1299,6 +1308,7 @@ impl FrameHost {
         };
         let completed = self.worker_ready.take().expect("checked ready view");
         let stale = completed.epoch != self.sim.epoch().0
+            || completed.timeline != self.sim.timeline()
             || completed.generation != self.visual_generation
             || self.sim.tick().saturating_sub(completed.tick) > 2;
         self.extractor = Some(completed.extractor);
@@ -1354,7 +1364,9 @@ impl FrameHost {
                 .is_busy()
             || self.extractor.is_none()
             || self.last_view_source.is_some_and(|source| {
-                source.epoch == self.sim.epoch().0 && source.tick == self.sim.tick()
+                source.epoch == self.sim.epoch().0
+                    && source.timeline == self.sim.timeline()
+                    && source.tick == self.sim.tick()
             })
         {
             return Ok(());
@@ -1398,6 +1410,7 @@ impl FrameHost {
             return Ok(());
         };
         if source.epoch != self.sim.epoch().0
+            || source.timeline != self.sim.timeline()
             || self
                 .presenter
                 .as_ref()
