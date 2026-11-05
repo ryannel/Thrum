@@ -14,6 +14,9 @@ type ValueAt<C> = fn(&C, usize) -> &dyn Any;
 type ApplyValue = fn(&mut RegisteredWorld, usize, Handle, &dyn Any);
 type Presence = fn(&RegisteredWorld, usize, u32) -> bool;
 type Fill<C> = fn(&C, usize, &mut EntityWriter<'_>) -> Result<(), RegisteredWorldError>;
+type BatchValidate =
+    fn(&RegisteredWorld, usize, &dyn Any, &mut EditScratch) -> Result<(), EditError>;
+type BatchApply = fn(&mut RegisteredWorld, usize, &dyn Any, u64);
 
 /// One reusable candidate operation. Values remain in game-owned candidate
 /// columns; the edit contains only checked identity and function pointers.
@@ -33,6 +36,14 @@ enum EditKind<C> {
         apply: ApplyValue,
         present: Presence,
         valid_value: fn(&dyn Any) -> bool,
+    },
+    BatchReplace {
+        component: usize,
+        nonce: u64,
+        system: SystemId,
+        values: fn(&C) -> &dyn Any,
+        validate: BatchValidate,
+        apply: BatchApply,
     },
     Despawn {
         handle: Handle,
@@ -125,10 +136,44 @@ fn remove<T: Send + Sync + 'static>(
     world.remove_prevalidated::<T>(component, handle.slot);
 }
 
+fn validate_batch_replace<T: Clone + Send + Sync + 'static>(
+    world: &RegisteredWorld,
+    component: usize,
+    values: &dyn Any,
+    scratch: &mut EditScratch,
+) -> Result<(), EditError> {
+    let rows = values
+        .downcast_ref::<Vec<(Handle, T)>>()
+        .ok_or(EditError::WrongValueType)?;
+    for (handle, _) in rows {
+        scratch.validate_component(
+            world,
+            *handle,
+            component,
+            ComponentEditKind::Replace,
+            present::<T>,
+        )?;
+    }
+    Ok(())
+}
+
+fn apply_batch_replace<T: Clone + Send + Sync + 'static>(
+    world: &mut RegisteredWorld,
+    component: usize,
+    values: &dyn Any,
+    tick: u64,
+) {
+    let rows = values
+        .downcast_ref::<Vec<(Handle, T)>>()
+        .expect("prevalidated batch value type");
+    world.replace_batch_prevalidated(component, rows, tick);
+}
+
 impl<C> Edit<C> {
     pub(super) fn system(&self) -> SystemId {
         match self.inner {
             EditKind::Component { system, .. }
+            | EditKind::BatchReplace { system, .. }
             | EditKind::Despawn { system, .. }
             | EditKind::Spawn { system, .. } => system,
         }
@@ -152,6 +197,24 @@ impl<C> Edit<C> {
                 apply: replace::<T>,
                 present: present::<T>,
                 valid_value: is_type::<T>,
+            },
+        }
+    }
+
+    /// Stage a homogeneous replacement batch in caller-owned reusable storage.
+    /// Every handle is checked with the rest of the tick before any edit applies.
+    pub fn replace_batch<T: Clone + Send + Sync + 'static>(
+        permit: &WritePermit<T>,
+        values: fn(&C) -> &dyn Any,
+    ) -> Self {
+        Self {
+            inner: EditKind::BatchReplace {
+                component: permit.component,
+                nonce: permit.nonce,
+                system: permit.system,
+                values,
+                validate: validate_batch_replace::<T>,
+                apply: apply_batch_replace::<T>,
             },
         }
     }
@@ -278,29 +341,24 @@ impl EditScratch {
                     if *token != nonce {
                         return Err(EditError::WrongRuntime);
                     }
-                    world.entity(*handle).map_err(EditError::World)?;
-                    let slot = handle.slot as usize;
-                    if self.retired[slot] == self.generation {
-                        return Err(EditError::Conflict);
-                    }
-                    let mark = slot * self.components + *component;
-                    if self.marks[mark] == self.generation {
-                        return Err(EditError::Conflict);
-                    }
-                    self.marks[mark] = self.generation;
-                    let exists = present(world, *component, handle.slot);
-                    if exists != (*kind != ComponentEditKind::Insert) {
-                        return Err(EditError::World(if exists {
-                            RegisteredWorldError::DuplicateComponent
-                        } else {
-                            RegisteredWorldError::MissingComponent
-                        }));
-                    }
+                    self.validate_component(world, *handle, *component, *kind, *present)?;
                     if let Some(value) = value
                         && !valid_value(value(candidate, *index))
                     {
                         return Err(EditError::WrongValueType);
                     }
+                }
+                EditKind::BatchReplace {
+                    component,
+                    nonce: token,
+                    values,
+                    validate,
+                    ..
+                } => {
+                    if *token != nonce {
+                        return Err(EditError::WrongRuntime);
+                    }
+                    validate(world, *component, values(candidate), self)?;
                 }
                 EditKind::Despawn {
                     handle,
@@ -354,6 +412,35 @@ impl EditScratch {
         Ok(())
     }
 
+    fn validate_component(
+        &mut self,
+        world: &RegisteredWorld,
+        handle: Handle,
+        component: usize,
+        kind: ComponentEditKind,
+        present: Presence,
+    ) -> Result<(), EditError> {
+        world.entity(handle).map_err(EditError::World)?;
+        let slot = handle.slot as usize;
+        if self.retired[slot] == self.generation {
+            return Err(EditError::Conflict);
+        }
+        let mark = slot * self.components + component;
+        if self.marks[mark] == self.generation {
+            return Err(EditError::Conflict);
+        }
+        self.marks[mark] = self.generation;
+        let exists = present(world, component, handle.slot);
+        if exists != (kind != ComponentEditKind::Insert) {
+            return Err(EditError::World(if exists {
+                RegisteredWorldError::DuplicateComponent
+            } else {
+                RegisteredWorldError::MissingComponent
+            }));
+        }
+        Ok(())
+    }
+
     pub(super) fn apply<C>(
         &mut self,
         world: &mut RegisteredWorld,
@@ -365,19 +452,27 @@ impl EditScratch {
         journal.clear();
         world.begin_tick();
         for edit in edits {
-            if let EditKind::Component {
-                handle,
-                index,
-                value,
-                apply,
-                component,
-                ..
-            } = &edit.inner
-            {
-                let empty: &dyn Any = &();
-                let value = value.map_or(empty, |get| get(candidate, *index));
-                apply(world, *component, *handle, value);
-                world.mark_changed(*component, *handle, tick);
+            match &edit.inner {
+                EditKind::Component {
+                    handle,
+                    index,
+                    value,
+                    apply,
+                    component,
+                    ..
+                } => {
+                    let empty: &dyn Any = &();
+                    let value = value.map_or(empty, |get| get(candidate, *index));
+                    apply(world, *component, *handle, value);
+                    world.mark_changed(*component, *handle, tick);
+                }
+                EditKind::BatchReplace {
+                    component,
+                    values,
+                    apply,
+                    ..
+                } => apply(world, *component, values(candidate), tick),
+                EditKind::Despawn { .. } | EditKind::Spawn { .. } => {}
             }
         }
         for edit in edits {

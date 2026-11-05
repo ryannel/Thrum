@@ -787,6 +787,32 @@ impl RegisteredWorld {
         std::mem::replace(current, value)
     }
 
+    pub(super) fn replace_batch_prevalidated<T: Clone + Send + Sync + 'static>(
+        &mut self,
+        component: usize,
+        rows: &[(Handle, T)],
+        tick: u64,
+    ) {
+        let component_count = self.registry.entries.len();
+        let column = self.columns[component]
+            .as_any_mut()
+            .downcast_mut::<TypedStore<T>>()
+            .expect("registered storage column type");
+        let changed = &mut self.changed[component];
+        for (handle, value) in rows {
+            let slot = handle.slot as usize;
+            *column
+                .get_mut(slot)
+                .expect("prevalidated replacement component") = value.clone();
+            self.change_ticks[slot * component_count + component] = tick;
+            changed.push(handle.slot);
+            if !self.pending_marks[slot] {
+                self.pending_marks[slot] = true;
+                self.pending_slots.push(handle.slot);
+            }
+        }
+    }
+
     pub(super) fn insert_prevalidated<T: Send + Sync + 'static>(
         &mut self,
         component: usize,

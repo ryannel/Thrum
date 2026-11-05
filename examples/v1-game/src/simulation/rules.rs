@@ -33,8 +33,8 @@ fn velocity_at(candidate: &Candidate, row: usize) -> &dyn Any {
     &candidate.velocities[row]
 }
 
-fn position_at(candidate: &Candidate, row: usize) -> &dyn Any {
-    &candidate.positions[row]
+fn position_batch(candidate: &Candidate) -> &dyn Any {
+    &candidate.position_edits
 }
 
 fn health_at(candidate: &Candidate, row: usize) -> &dyn Any {
@@ -66,6 +66,7 @@ pub(super) struct Candidate {
     pub(super) capture_query: Read2<Position, Health>,
     motion_jobs: Vec<MotionJob>,
     positions: Vec<Position>,
+    position_edits: Vec<(Handle, Position)>,
     base_positions: Vec<Position>,
     position_loaded: Vec<bool>,
     position_changed: Vec<bool>,
@@ -110,6 +111,7 @@ impl Candidate {
             capture_query,
             motion_jobs: Vec::with_capacity(capacity.min(2_048)),
             positions: vec![Position::default(); capacity],
+            position_edits: Vec::with_capacity(capacity.min(2_048)),
             base_positions: vec![Position::default(); capacity],
             position_loaded: vec![false; capacity],
             position_changed: vec![false; capacity],
@@ -148,6 +150,7 @@ impl Candidate {
         }
         self.despawned.clear();
         self.motion_jobs.clear();
+        self.position_edits.clear();
         self.spawns.clear();
         self.edits.clear();
     }
@@ -353,12 +356,9 @@ impl Rules {
                 }
                 if candidate.base_positions[row] != candidate.positions[row] {
                     candidate.position_changed[row] = true;
-                    candidate.edits.push(Edit::replace(
-                        &self.position_write,
-                        handle,
-                        row,
-                        position_at,
-                    ));
+                    candidate
+                        .position_edits
+                        .push((handle, candidate.positions[row]));
                 }
             }
             if !candidate.velocity_present[row] {
@@ -406,6 +406,11 @@ impl Rules {
                     .edits
                     .push(Edit::replace(&self.health_write, handle, row, health_at));
             }
+        }
+        if !candidate.position_edits.is_empty() {
+            candidate
+                .edits
+                .push(Edit::replace_batch(&self.position_write, position_batch));
         }
         for command in &self.commands {
             if let Command::Despawn(handle) = command {
