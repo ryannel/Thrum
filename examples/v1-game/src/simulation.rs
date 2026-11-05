@@ -33,6 +33,8 @@ const SIMULATE: SystemId = SystemId(1);
 const RESOLVE: SystemId = SystemId(2);
 const PUBLISH: SystemId = SystemId(3);
 const STRUCTURE: u64 = 7;
+// V1 game policy: bound one axis of admitted player motion in metres/second.
+const MAX_CONTROL_SPEED: f64 = 1_000.0;
 
 fn component(key: ComponentKey, mode: AccessMode) -> Access {
     Access {
@@ -294,6 +296,7 @@ impl Simulation {
         if config.entity_capacity > u32::MAX as usize
             || !config.movement_speed.is_finite()
             || config.movement_speed < 0.0
+            || config.movement_speed > MAX_CONTROL_SPEED
         {
             return Err(SimError::InvalidConfig);
         }
@@ -574,12 +577,20 @@ fn validate_frame_actions(
     if frame.actions.len() > config.actions_per_frame {
         return Err(FrameError::TooManyActions);
     }
-    if frame
-        .actions
-        .iter()
-        .any(|action| matches!(action, SimAction::Impulse(values) if !finite(*values)))
-    {
-        return Err(FrameError::InvalidAction);
+    for (axis, &held) in frame.axes.iter().enumerate() {
+        let mut speed = f64::from(held) * config.movement_speed;
+        for action in &frame.actions {
+            if let SimAction::Impulse(values) = action {
+                let impulse = values[axis];
+                if !impulse.is_finite() || impulse.abs() > MAX_CONTROL_SPEED {
+                    return Err(FrameError::InvalidAction);
+                }
+                speed += impulse;
+                if !speed.is_finite() || speed.abs() > MAX_CONTROL_SPEED {
+                    return Err(FrameError::InvalidAction);
+                }
+            }
+        }
     }
     Ok(())
 }
