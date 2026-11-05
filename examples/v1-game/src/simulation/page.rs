@@ -129,6 +129,7 @@ impl Page {
         ownership_read: &ReadPermit<Ownership>,
         visual_read: &ReadPermit<Visual>,
         current_positions: &[(Handle, Position)],
+        ordered_positions: bool,
         events: &[StructuralChange],
         tick: u64,
         timeline: u64,
@@ -165,6 +166,7 @@ impl Page {
                 world,
                 position_read,
                 current_positions,
+                ordered_positions,
                 since.expect("position source"),
                 tick,
             );
@@ -325,7 +327,9 @@ impl Page {
                 }
             }
         }
-        self.collect_dirty();
+        if !(position_only && ordered_positions) {
+            self.collect_dirty();
+        }
         self.initialized = true;
     }
 
@@ -379,14 +383,12 @@ impl Page {
         world: &WorldRead<'_>,
         position_read: &ReadPermit<Position>,
         current_positions: &[(Handle, Position)],
+        ordered_positions: bool,
         since: u64,
         tick: u64,
     ) {
         if world.prior_changes_covered_by_current(since, tick, false) {
-            for &(handle, position) in current_positions {
-                self.positions[handle.slot as usize] = position;
-                self.mark_dirty(handle.slot as usize, POSITION_DIRTY);
-            }
+            self.write_current_positions(current_positions, ordered_positions);
             return;
         }
         let positions = world.column(position_read).expect("declared position read");
@@ -400,8 +402,25 @@ impl Page {
                 .expect("V1 position");
         });
         debug_assert!(retained, "position interval was checked");
-        for &(handle, _) in current_positions {
-            self.mark_dirty(handle.slot as usize, POSITION_DIRTY);
+        self.write_current_positions(current_positions, ordered_positions);
+    }
+
+    fn write_current_positions(
+        &mut self,
+        current_positions: &[(Handle, Position)],
+        ordered_positions: bool,
+    ) {
+        if ordered_positions {
+            // The fast motion query visits each slot once in physical order.
+            for &(handle, position) in current_positions {
+                self.positions[handle.slot as usize] = position;
+                self.dirty.position.push(handle.slot);
+            }
+        } else {
+            for &(handle, position) in current_positions {
+                self.positions[handle.slot as usize] = position;
+                self.mark_dirty(handle.slot as usize, POSITION_DIRTY);
+            }
         }
     }
 

@@ -68,6 +68,7 @@ struct Rules {
     churn: Option<(Handle, StableId)>,
     optional_edit: Option<(Handle, bool)>,
     duplicate_batch: bool,
+    motion_enabled: bool,
 }
 
 fn tag_at(_candidate: &Candidate, _index: usize) -> &dyn std::any::Any {
@@ -86,17 +87,19 @@ impl Rules {
         candidate
             .order_query
             .visit_canonical(world, |_, id, _, _| candidate.order.push(id));
-        candidate.motion.visit(world, |handle, _, height, drift| {
-            if self.churn.is_none_or(|(old, _)| old != handle) {
-                candidate.batch.push((handle, Height(height.0 + drift.0)));
+        if self.motion_enabled {
+            candidate.motion.visit(world, |handle, _, height, drift| {
+                if self.churn.is_none_or(|(old, _)| old != handle) {
+                    candidate.batch.push((handle, Height(height.0 + drift.0)));
+                }
+            });
+            if self.duplicate_batch {
+                candidate.batch.push(candidate.batch[0]);
             }
-        });
-        if self.duplicate_batch {
-            candidate.batch.push(candidate.batch[0]);
+            candidate
+                .edits
+                .push(Edit::replace_batch(&self.write, height_batch));
         }
-        candidate
-            .edits
-            .push(Edit::replace_batch(&self.write, height_batch));
         if let Some((old, replacement)) = self.churn {
             world
                 .with(&self.height_read, old, |height| height.0)
@@ -401,6 +404,7 @@ fn game_owned_components_rules_and_pages_commit_once_after_rejection_and_churn()
         "a numerically adjacent tick from another branch is not contiguous"
     );
     assert_optional_component_history(&mut runtime, &mut game, &mut candidate);
+    assert_coalesced_optional_component_history(&mut runtime, &mut game, &mut candidate);
     assert_undo_is_one_shot_and_busy_tick_cannot_fake_patch(
         &mut runtime,
         &mut game,
@@ -508,6 +512,7 @@ fn test_rules(runtime: &GameRuntime<Page, Rules>) -> Rules {
         churn: None,
         optional_edit: None,
         duplicate_batch: false,
+        motion_enabled: true,
     }
 }
 
@@ -564,6 +569,72 @@ fn assert_optional_component_history(
         runtime.read().with(&game.tag_read, handle, |tag| *tag),
         Ok(Tag(7))
     );
+}
+
+fn assert_coalesced_optional_component_history(
+    runtime: &mut GameRuntime<Page, Rules>,
+    game: &mut Rules,
+    candidate: &mut Candidate,
+) {
+    let handle = runtime.handle(StableId(2)).expect("unchanged entity");
+    let first_tick = runtime.tick();
+    let initial_height = runtime
+        .read()
+        .with(&game.height_read, handle, |height| *height)
+        .expect("initial height");
+    game.motion_enabled = false;
+    runtime.publish_initial(game, candidate);
+    let mut undos = (0..8).map(|_| runtime.new_undo()).collect::<Vec<_>>();
+    for (index, undo) in undos.iter_mut().enumerate() {
+        game.optional_edit = Some((handle, index % 2 != 0));
+        runtime
+            .step_recording(
+                game,
+                candidate,
+                undo,
+                thrum_core::sim::PublicationMode::Defer,
+            )
+            .expect("optional edit tick");
+    }
+    assert_eq!(
+        runtime.read().with(&game.tag_read, handle, |tag| *tag),
+        Ok(Tag(7))
+    );
+    runtime.rewind_many(&mut undos).expect("coalesced undo");
+    assert_eq!(runtime.tick(), first_tick);
+    assert_eq!(
+        runtime.read().with(&game.tag_read, handle, |tag| *tag),
+        Ok(Tag(7))
+    );
+    assert_eq!(
+        runtime
+            .read()
+            .with(&game.height_read, handle, |height| *height),
+        Ok(initial_height)
+    );
+    game.optional_edit = Some((handle, false));
+    runtime.publish_initial(game, candidate);
+    runtime.step(game, candidate).expect("remove initial tag");
+    let missing_tick = runtime.tick();
+    let mut undos = (0..8).map(|_| runtime.new_undo()).collect::<Vec<_>>();
+    for (index, undo) in undos.iter_mut().enumerate() {
+        game.optional_edit = Some((handle, index % 2 == 0));
+        runtime
+            .step_recording(
+                game,
+                candidate,
+                undo,
+                thrum_core::sim::PublicationMode::Defer,
+            )
+            .expect("optional edit tick");
+    }
+    runtime.rewind_many(&mut undos).expect("undo to absent tag");
+    assert_eq!(runtime.tick(), missing_tick);
+    assert_eq!(
+        runtime.read().with(&game.tag_read, handle, |tag| *tag),
+        Err(RegisteredWorldError::MissingComponent)
+    );
+    game.motion_enabled = true;
 }
 
 fn seed_test_world(runtime: &mut GameRuntime<Page, Rules>) -> Handle {

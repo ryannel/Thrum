@@ -583,9 +583,33 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
             tick = step.from;
             revision = step.from_revision;
         }
-        for step in steps.iter_mut().rev() {
-            step.world.restore(&mut self.world, &step.events);
-            step.spent = true;
+        let coalesced_component = (steps.len() > 1
+            && steps.iter().all(|step| step.events.is_empty()))
+        .then(|| {
+            steps
+                .iter()
+                .find_map(|step| step.world.first_changed_component())
+        })
+        .flatten()
+        .filter(|&component| {
+            steps.iter().all(|step| {
+                step.world.changes_only(component)
+                    && step.world.can_coalesce_without_drop_order(component)
+            })
+        });
+        if let Some(component) = coalesced_component {
+            self.world.begin_tick(None);
+            for step in steps.iter_mut() {
+                self.world.restore_first_seen(&mut step.world, component);
+                step.spent = true;
+            }
+            self.world.begin_tick(None);
+            self.world.invalidate_change_frames();
+        } else {
+            for step in steps.iter_mut().rev() {
+                step.world.restore(&mut self.world, &step.events);
+                step.spent = true;
+            }
         }
         self.tick = tick;
         self.revision = revision;

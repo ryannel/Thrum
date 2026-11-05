@@ -89,6 +89,14 @@ impl WorldUndo {
                 .enumerate()
                 .all(|(index, column)| index == component || !column.has_rows())
     }
+
+    pub(super) fn first_changed_component(&self) -> Option<usize> {
+        self.columns.iter().position(|column| column.has_rows())
+    }
+
+    pub(super) fn can_coalesce_without_drop_order(&self, component: usize) -> bool {
+        self.columns[component].can_coalesce_without_drop_order()
+    }
     pub(super) fn reserve_for(&mut self, counts: &[usize], structural: usize, despawns: usize) {
         self.slots.reserve(structural);
         self.structural_ticks
@@ -209,14 +217,7 @@ impl WorldUndo {
             column.restore_into(storage.as_mut(), &mut world.change_ticks, component, count);
         }
         world.begin_tick(None);
-        for frame in &mut world.change_frames {
-            frame.tick = 0;
-            frame.words.fill(0);
-            frame.structural_words.fill(0);
-            frame.structural_slots.clear();
-            frame.components.fill(0);
-            frame.structural = false;
-        }
+        world.invalidate_change_frames();
     }
 }
 
@@ -475,6 +476,29 @@ pub(super) struct RegisteredWorld {
 }
 
 impl RegisteredWorld {
+    pub(super) fn restore_first_seen(&mut self, undo: &mut WorldUndo, component: usize) {
+        let stride = self.columns.len();
+        undo.columns[component].restore_first_seen_into(
+            self.columns[component].as_mut(),
+            &mut self.change_ticks,
+            component,
+            stride,
+            &mut self.pending_marks,
+            &mut self.pending_slots,
+        );
+    }
+
+    pub(super) fn invalidate_change_frames(&mut self) {
+        for frame in &mut self.change_frames {
+            frame.tick = 0;
+            frame.words.fill(0);
+            frame.structural_words.fill(0);
+            frame.structural_slots.clear();
+            frame.components.fill(0);
+            frame.structural = false;
+        }
+    }
+
     pub(super) fn empty_undo(&self) -> WorldUndo {
         WorldUndo {
             slots: Vec::new(),
