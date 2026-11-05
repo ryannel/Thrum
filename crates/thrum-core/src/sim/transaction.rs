@@ -6,13 +6,14 @@ use std::{any::Any, collections::HashSet};
 use crate::{Handle, StableId};
 
 use super::{
-    ComponentKey, EntityWriter, RegisteredWorldError, StructuralChange, StructuralPermit, SystemId,
-    WritePermit, column_store::EntityBundle, registered_world::RegisteredWorld,
+    EntityWriter, RegisteredWorldError, StructuralChange, StructuralPermit, SystemId, WritePermit,
+    column_store::EntityBundle, registered_world::RegisteredWorld,
 };
 
 type ValueAt<C> = fn(&C, usize) -> &dyn Any;
-type ApplyValue = fn(&mut RegisteredWorld, Handle, &dyn Any) -> Result<(), RegisteredWorldError>;
-type Presence = fn(&RegisteredWorld, Handle) -> Result<bool, RegisteredWorldError>;
+type ApplyValue =
+    fn(&mut RegisteredWorld, usize, Handle, &dyn Any) -> Result<(), RegisteredWorldError>;
+type Presence = fn(&RegisteredWorld, usize, Handle) -> Result<bool, RegisteredWorldError>;
 type Fill<C> = fn(&C, usize, &mut EntityWriter<'_>) -> Result<(), RegisteredWorldError>;
 
 /// One reusable candidate operation. Values remain in game-owned candidate
@@ -24,7 +25,7 @@ pub struct Edit<C> {
 enum EditKind<C> {
     Component {
         handle: Handle,
-        key: ComponentKey,
+        component: usize,
         nonce: u64,
         system: SystemId,
         kind: ComponentEditKind,
@@ -78,9 +79,10 @@ pub enum EditError {
 
 fn present<T: Send + Sync + 'static>(
     world: &RegisteredWorld,
+    component: usize,
     handle: Handle,
 ) -> Result<bool, RegisteredWorldError> {
-    match world.with::<T, _>(handle, |_| ()) {
+    match world.with_index::<T, _>(component, handle, |_| ()) {
         Ok(()) => Ok(true),
         Err(RegisteredWorldError::MissingComponent) => Ok(false),
         Err(error) => Err(error),
@@ -93,10 +95,12 @@ fn is_type<T: 'static>(value: &dyn Any) -> bool {
 
 fn replace<T: Clone + Send + Sync + 'static>(
     world: &mut RegisteredWorld,
+    component: usize,
     handle: Handle,
     value: &dyn Any,
 ) -> Result<(), RegisteredWorldError> {
     world.replace(
+        component,
         handle,
         value
             .downcast_ref::<T>()
@@ -108,10 +112,12 @@ fn replace<T: Clone + Send + Sync + 'static>(
 
 fn insert<T: Clone + Send + Sync + 'static>(
     world: &mut RegisteredWorld,
+    component: usize,
     handle: Handle,
     value: &dyn Any,
 ) -> Result<(), RegisteredWorldError> {
     world.insert(
+        component,
         handle,
         value
             .downcast_ref::<T>()
@@ -122,10 +128,11 @@ fn insert<T: Clone + Send + Sync + 'static>(
 
 fn remove<T: Send + Sync + 'static>(
     world: &mut RegisteredWorld,
+    component: usize,
     handle: Handle,
     _value: &dyn Any,
 ) -> Result<(), RegisteredWorldError> {
-    world.remove::<T>(handle)?;
+    world.remove::<T>(component, handle)?;
     Ok(())
 }
 
@@ -147,7 +154,7 @@ impl<C> Edit<C> {
         Self {
             inner: EditKind::Component {
                 handle,
-                key: ComponentKey::of::<T>(),
+                component: permit.component,
                 nonce: permit.nonce,
                 system: permit.system,
                 kind: ComponentEditKind::Replace,
@@ -170,7 +177,7 @@ impl<C> Edit<C> {
         Self {
             inner: EditKind::Component {
                 handle,
-                key: ComponentKey::of::<T>(),
+                component: permit.component,
                 nonce: permit.nonce,
                 system: permit.system,
                 kind: ComponentEditKind::Insert,
@@ -188,7 +195,7 @@ impl<C> Edit<C> {
         Self {
             inner: EditKind::Component {
                 handle,
-                key: ComponentKey::of::<T>(),
+                component: permit.component,
                 nonce: permit.nonce,
                 system: permit.system,
                 kind: ComponentEditKind::Remove,
@@ -270,7 +277,7 @@ impl EditScratch {
             match &edit.inner {
                 EditKind::Component {
                     handle,
-                    key,
+                    component,
                     nonce: token,
                     kind,
                     index,
@@ -287,15 +294,12 @@ impl EditScratch {
                     if self.retired[slot] == self.generation {
                         return Err(EditError::Conflict);
                     }
-                    let component = world.component_index(*key).ok_or(EditError::World(
-                        RegisteredWorldError::UnregisteredComponent,
-                    ))?;
-                    let mark = slot * self.components + component;
+                    let mark = slot * self.components + *component;
                     if self.marks[mark] == self.generation {
                         return Err(EditError::Conflict);
                     }
                     self.marks[mark] = self.generation;
-                    let exists = present(world, *handle).map_err(EditError::World)?;
+                    let exists = present(world, *component, *handle).map_err(EditError::World)?;
                     if exists != (*kind != ComponentEditKind::Insert) {
                         return Err(EditError::World(if exists {
                             RegisteredWorldError::DuplicateComponent
@@ -377,14 +381,14 @@ impl EditScratch {
                 index,
                 value,
                 apply,
-                key,
+                component,
                 ..
             } = &edit.inner
             {
                 let empty: &dyn Any = &();
                 let value = value.map_or(empty, |get| get(candidate, *index));
-                apply(world, *handle, value).expect("whole batch prevalidated");
-                world.mark_changed(*key, *handle, tick);
+                apply(world, *component, *handle, value).expect("whole batch prevalidated");
+                world.mark_changed(*component, *handle, tick);
             }
         }
         for edit in edits {
