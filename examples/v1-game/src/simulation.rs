@@ -317,9 +317,15 @@ impl Simulation {
     pub fn timeline(&self) -> u64 {
         self.runtime.timeline()
     }
-    /// Select the engine's serial or native Rayon candidate executor.
+    /// Select the engine executor. Preferred Rayon stays serial for this game
+    /// until a measured crossover; forced Rayon exercises the resident pool.
     pub fn set_execution_mode(&mut self, mode: ExecutionMode) {
-        self.runtime.set_execution_mode(mode);
+        let selected = if mode == ExecutionMode::Rayon {
+            ExecutionMode::Serial
+        } else {
+            mode
+        };
+        self.runtime.set_execution_mode(selected);
     }
     /// Checked world generation.
     pub fn epoch(&self) -> WorldEpoch {

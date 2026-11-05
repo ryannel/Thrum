@@ -175,6 +175,30 @@ fn thousand_randomized_world_ticks_replay_identically_in_serial_and_rayon() {
 }
 
 #[test]
+fn repeated_mover_preimages_restore_the_first_state_and_replay() {
+    for mode in [ExecutionMode::Serial, ExecutionMode::RayonForced] {
+        let mut sim = simulation_with_count(256).expect("game");
+        sim.set_execution_mode(mode);
+        let ids = (0..256_u128).map(StableId).collect::<Vec<_>>();
+        let before = whole_world_hash(&sim, &ids);
+        let mut history = sim
+            .begin_history(NonZeroUsize::new(16).expect("window"))
+            .expect("history");
+        for _ in 0..8 {
+            history.step(&mut sim, &[]).expect("moving tick");
+        }
+        let after = whole_world_hash(&sim, &ids);
+        assert_ne!(before, after, "mode {mode:?} did not exercise movement");
+        history.rewind(&mut sim, 8).expect("eight-tick rewind");
+        assert_eq!(whole_world_hash(&sim, &ids), before, "mode {mode:?}");
+        for _ in 0..8 {
+            assert!(history.replay_next(&mut sim).expect("retained tick"));
+        }
+        assert_eq!(whole_world_hash(&sim, &ids), after, "mode {mode:?}");
+    }
+}
+
+#[test]
 fn rewind_after_partial_replay_retains_the_remaining_future() {
     let mut sim = simulation_with_count(32).expect("game");
     let ids = (0..32_u128).map(StableId).collect::<Vec<_>>();

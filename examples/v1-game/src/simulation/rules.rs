@@ -646,6 +646,7 @@ impl TickGame<Page> for Rules {
             &self.ownership_read,
             &self.visual_read,
             &candidate.position_edits,
+            candidate.fast_motion,
             events,
             tick,
             timeline,

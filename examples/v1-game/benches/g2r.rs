@@ -396,6 +396,16 @@ fn paired_four_peer_case(count: usize, damage: bool) {
 )]
 fn main() {
     println!("case,p50_ns,p95_ns,p99_ns,allocations_all_threads");
+    if std::env::args().any(|argument| argument == "--profile-recorded-10k") {
+        let mut sim = fixture(10_000, false, ExecutionMode::Serial);
+        let mut history = sim
+            .begin_history(NonZeroUsize::new(64).expect("window"))
+            .expect("history endpoint");
+        for _ in 0..100_000 {
+            black_box(history.step(&mut sim, &[]).expect("recorded tick"));
+        }
+        return;
+    }
     if std::env::args().any(|argument| argument == "--tick") {
         for count in [10_000, 100_000] {
             paired_tick_case(count, false);
