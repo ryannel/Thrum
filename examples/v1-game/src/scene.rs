@@ -6,10 +6,7 @@ use crate::simulation::{
     ComponentEntity, Ownership, Position, PublishedPage, SimAction, SimConfig, Simulation, Velocity,
 };
 use thrum_core::{ActorId, Origin, PeerId, StableId, WorldEpoch, sim::InputFrame};
-use thrum_render::{
-    extract::{ExtractReport, RenderColumns, RenderExtractor, SourceTick},
-    synthetic::SyntheticScene,
-};
+use thrum_render::extract::{ExtractReport, RenderExtractor, SourceTick};
 
 pub(crate) const ENTITY_COUNT: usize = 10_000;
 pub(crate) const MOVING_COUNT: usize = 1_500;
@@ -121,79 +118,6 @@ pub(crate) fn extract(extractor: &mut RenderExtractor, snapshot: &PublishedPage)
     )
 }
 
-#[derive(Clone, Copy, Debug, Default)]
-pub(crate) struct ApplyReport {
-    pub(crate) moving: usize,
-    pub(crate) dropped_invalid: usize,
-}
-
-pub(crate) fn apply_frame_to_scene(
-    scene: &mut SyntheticScene,
-    frame: &RenderColumns,
-    changed_slots: &mut Vec<u32>,
-) -> ApplyReport {
-    changed_slots.clear();
-    let mut report = ApplyReport::default();
-    let material_count = scene.materials.len();
-    // The worker may discard extracted frames. Retire against the last scene
-    // actually applied to the GPU, never the extractor's previous frame.
-    for (slot, instance) in scene.instances.iter_mut().enumerate() {
-        if instance.ids[3] != 0 && !frame.contains_slot(slot) {
-            instance.ids[3] = 0;
-            changed_slots.push(u32::try_from(slot).expect("bounded synthetic scene slots"));
-        }
-    }
-    for row in 0..frame.len() {
-        let Ok(index) = usize::try_from(frame.slots()[row]) else {
-            report.dropped_invalid += 1;
-            continue;
-        };
-        let Some(instance) = scene.instances.get_mut(index) else {
-            report.dropped_invalid += 1;
-            continue;
-        };
-        let Some(material) = u32::try_from(frame.visuals()[row])
-            .ok()
-            .filter(|material| usize::try_from(*material).is_ok_and(|row| row < material_count))
-        else {
-            report.dropped_invalid += 1;
-            continue;
-        };
-        let world_current = frame.current()[row];
-        let previous = frame.previous()[row];
-        // The GPU ABI reserves zero for an inactive row. A nonzero wrapping
-        // token distinguishes consecutive slot generations even past u32::MAX.
-        let Some(generation) = frame
-            .generation_at_slot(index)
-            .filter(|generation| *generation != 0)
-        else {
-            report.dropped_invalid += 1;
-            continue;
-        };
-        let source_generation = u32::try_from((generation - 1) % u64::from(u32::MAX) + 1)
-            .expect("nonzero wrapped generation fits u32");
-        let previous = if frame.history_valid()[row] {
-            previous
-        } else {
-            world_current
-        };
-        if instance.current[3][..3] != world_current
-            || instance.previous[3][..3] != previous
-            || instance.ids[1] != material
-            || instance.ids[3] != source_generation
-        {
-            instance.current[3][..3].copy_from_slice(&world_current);
-            instance.previous[3][..3].copy_from_slice(&previous);
-            instance.ids[1] = material;
-            instance.ids[3] = source_generation;
-            changed_slots.push(u32::try_from(index).expect("10k fixture slot fits u32"));
-        }
-        report.moving += usize::from((world_current[0] - previous[0]).abs() > 1e-6);
-    }
-    changed_slots.sort_unstable();
-    report
-}
-
 #[cfg(test)]
 mod tests {
     use thrum_core::{PeerId, StableId, sim::FrameError};
@@ -203,8 +127,7 @@ mod tests {
     };
 
     use super::{
-        ENTITY_COUNT, PEER_COUNT, apply_frame_to_scene, control_frame, extract, simulation,
-        simulation_with_count,
+        ENTITY_COUNT, PEER_COUNT, control_frame, extract, simulation, simulation_with_count,
     };
     use crate::simulation::{Command, Position};
 
@@ -247,7 +170,7 @@ mod tests {
             },
         );
         let mut changed = Vec::new();
-        let report = apply_frame_to_scene(&mut scene, extractor.frame(), &mut changed);
+        let report = scene.apply_render_columns(extractor.frame(), &mut changed);
         assert_eq!(report.dropped_invalid, 0);
         assert_eq!(changed, [0, 1]);
         assert_eq!(scene.instances[0].current[3][0], 0.75);
@@ -275,7 +198,7 @@ mod tests {
                 assert!(sink.push(0, 1, ids[0].0, [0.9, 0.0, 0.0], 1));
             },
         );
-        apply_frame_to_scene(&mut scene, extractor.frame(), &mut changed);
+        scene.apply_render_columns(extractor.frame(), &mut changed);
         assert_eq!(scene.instances[1].ids[3], 0, "retired slot is hidden");
         extractor.extract(
             SourceTick {
@@ -288,7 +211,7 @@ mod tests {
                 assert!(sink.push(1, 2, 11, [0.3, 0.0, 0.0], 0));
             },
         );
-        apply_frame_to_scene(&mut scene, extractor.frame(), &mut changed);
+        scene.apply_render_columns(extractor.frame(), &mut changed);
         assert_eq!(
             scene.instances[1].ids[3], 2,
             "reused slot has a new GPU history token"
@@ -309,7 +232,7 @@ mod tests {
             [0.0; 3],
             |sink| assert!(sink.push(0, u64::from(u32::MAX), 7, [0.0; 3], 0)),
         );
-        apply_frame_to_scene(&mut scene, extractor.frame(), &mut changed);
+        scene.apply_render_columns(extractor.frame(), &mut changed);
         assert_eq!(scene.instances[0].ids[3], u32::MAX);
         extractor.extract(
             SourceTick {
@@ -321,7 +244,7 @@ mod tests {
             |sink| assert!(sink.push(0, u64::from(u32::MAX) + 1, 8, [0.0; 3], 0)),
         );
         assert!(!extractor.frame().history_valid()[0]);
-        apply_frame_to_scene(&mut scene, extractor.frame(), &mut changed);
+        scene.apply_render_columns(extractor.frame(), &mut changed);
         assert_eq!(changed, [0]);
         assert_eq!(scene.instances[0].ids[3], 1);
         extractor.extract(
@@ -333,7 +256,7 @@ mod tests {
             [0.0; 3],
             |sink| assert!(sink.push(0, u64::from(u32::MAX) + 2, 9, [0.0; 3], 0)),
         );
-        apply_frame_to_scene(&mut scene, extractor.frame(), &mut changed);
+        scene.apply_render_columns(extractor.frame(), &mut changed);
         assert_eq!(changed, [0], "next wrapped generation must retag the slot");
         assert_eq!(scene.instances[0].ids[3], 2);
     }
@@ -361,7 +284,7 @@ mod tests {
             [0.0; 3],
             |sink| assert!(sink.push(0, 1, 1, [1.0, 0.0, 0.0], 0)),
         );
-        apply_frame_to_scene(&mut scene, extractor.frame(), &mut changed);
+        scene.apply_render_columns(extractor.frame(), &mut changed);
         assert_eq!(scene.instances[0].current[3][0], 1.0);
         assert_eq!(scene.instances[0].previous[3][0], 0.0);
         assert_eq!(changed, [0, 1]);
@@ -374,7 +297,7 @@ mod tests {
             [0.0; 3],
             |sink| assert!(sink.push(0, 1, 1, [1.0, 0.0, 0.0], 0)),
         );
-        apply_frame_to_scene(&mut scene, extractor.frame(), &mut changed);
+        scene.apply_render_columns(extractor.frame(), &mut changed);
         assert_eq!(scene.instances[0].current[3][0], 1.0);
         assert_eq!(changed, []);
     }

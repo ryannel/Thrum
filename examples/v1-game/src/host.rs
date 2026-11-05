@@ -25,15 +25,15 @@ use thrum_render::{
     extract::{ExtractReport, RenderExtractor},
     present::{PresentationBinding, SurfacePresenter, SurfaceProfile},
     synthetic::{
-        FrameLighting, OffscreenTarget, PreparedSynthetic, SyntheticLight, SyntheticPointLight,
-        SyntheticScene, SyntheticView,
+        FrameLighting, OffscreenTarget, PreparedSynthetic, SceneApplyReport, SyntheticLight,
+        SyntheticPointLight, SyntheticScene, SyntheticView,
     },
     timing::GpuTimings,
 };
 
 use crate::{
     projection::{GameProjection, ProjectionGap, ProjectionOutbox},
-    scene::{self, ApplyReport, ENTITY_COUNT},
+    scene::{self, ENTITY_COUNT},
     simulation::{SimError, Simulation},
 };
 
@@ -693,7 +693,7 @@ impl FrameHost {
         })
         .to_vec();
         let mut changed_slots = Vec::with_capacity(ENTITY_COUNT);
-        scene::apply_frame_to_scene(&mut scene, extractor.frame(), &mut changed_slots);
+        scene.apply_render_columns(extractor.frame(), &mut changed_slots);
         let prepared = PreparedSynthetic::prepare_with_capabilities(
             capabilities,
             queue,
@@ -1387,11 +1387,10 @@ impl FrameHost {
             return Ok(None);
         }
         let upload_start = Instant::now();
-        let ApplyReport {
+        let SceneApplyReport {
             moving,
             dropped_invalid,
-        } = scene::apply_frame_to_scene(
-            &mut self.scene,
+        } = self.scene.apply_render_columns(
             self.extractor
                 .as_ref()
                 .expect("completed extractor belongs to host")
@@ -1905,8 +1904,7 @@ impl FrameHost {
         // A capture describes the current committed endpoint, regardless of
         // the last display sample or a delayed native extraction worker.
         let capture_alpha = 1.0;
-        let applied = scene::apply_frame_to_scene(
-            &mut self.scene,
+        let applied = self.scene.apply_render_columns(
             self.extractor
                 .as_ref()
                 .ok_or("capture extractor unavailable")?
