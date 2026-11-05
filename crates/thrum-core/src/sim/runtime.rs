@@ -3,6 +3,7 @@
 
 use std::{
     collections::HashMap,
+    hash::{Hash, Hasher},
     marker::PhantomData,
     mem::size_of,
     panic::{AssertUnwindSafe, catch_unwind, resume_unwind},
@@ -164,6 +165,13 @@ impl Executor {
 }
 
 impl RuntimeCapture {
+    /// Hash cold authority metadata for replay diagnostics. The caller also
+    /// hashes its game component and resource values to cover the full state.
+    pub fn hash_authority_metadata(&self, hash: &mut impl Hasher) {
+        self.tick.hash(hash);
+        self.world.hash_metadata(hash);
+    }
+
     /// Whether a one-tick delta follows this exact committed endpoint.
     pub fn accepts_delta(&self, delta: &RuntimeDelta) -> bool {
         delta.nonce == self.nonce && delta.from == self.tick && delta.from_revision == self.revision
