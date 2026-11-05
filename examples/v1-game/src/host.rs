@@ -368,7 +368,7 @@ impl EncodedFrame<'_> {
             encode_cpu,
             presented,
         )?;
-        self.host.prepared.commit_frame(&self.host.queue);
+        self.host.prepared.commit_frame();
         #[cfg(not(target_arch = "wasm32"))]
         {
             self.host.last_view_source = Some(self.source);
@@ -682,7 +682,7 @@ impl FrameHost {
         })
         .to_vec();
         let mut changed_slots = Vec::with_capacity(ENTITY_COUNT);
-        scene::apply_frame_to_scene(&mut scene, extractor.frame(), &mut changed_slots, 1.0);
+        scene::apply_frame_to_scene(&mut scene, extractor.frame(), &mut changed_slots);
         let prepared = PreparedSynthetic::prepare_with_capabilities(
             capabilities,
             queue,
@@ -1367,7 +1367,6 @@ impl FrameHost {
                 .expect("completed extractor belongs to host")
                 .frame(),
             &mut self.changed_slots,
-            frame.presentation_alpha,
         );
         self.scene.view = frame_view(
             frame.frame_tick,
@@ -1384,6 +1383,7 @@ impl FrameHost {
                 &mut self.slots[slot_index].target,
                 &self.scene,
                 lighting,
+                frame.presentation_alpha,
             )
             .map_err(|error| format!("live view update: {error:?}"))?;
         let view_update_cpu = view_update_start.elapsed();
@@ -1490,7 +1490,7 @@ impl FrameHost {
             scene_encode_cpu + present_start.elapsed(),
             surface_presented,
         )?;
-        self.prepared.commit_frame(&self.queue);
+        self.prepared.commit_frame();
         Ok(())
     }
 
@@ -1863,7 +1863,6 @@ impl FrameHost {
                 .ok_or("capture extractor unavailable")?
                 .frame(),
             &mut self.changed_slots,
-            capture_alpha,
         );
         let uploaded = self
             .prepared
@@ -1888,7 +1887,13 @@ impl FrameHost {
         )
         .map_err(|error| format!("capture target: {error:?}"))?;
         self.prepared
-            .update_frame(&self.queue, &mut target, &self.scene, lighting)
+            .update_frame(
+                &self.queue,
+                &mut target,
+                &self.scene,
+                lighting,
+                capture_alpha,
+            )
             .map_err(|error| format!("capture view update: {error:?}"))?;
         let mut pixels = target.readback(&self.device);
         let mut encoder = self

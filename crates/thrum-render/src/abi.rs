@@ -203,7 +203,8 @@ impl MaterialRecord {
 pub struct InstanceRecord {
     /// Column-major current object-to-view-origin-relative-world matrix.
     pub current: [[f32; 4]; 4],
-    /// Column-major matrix for the explicitly retained history sample.
+    /// Column-major previous simulation endpoint for presentation interpolation.
+    /// Submitted motion history is retained separately by the renderer.
     pub previous: [[f32; 4]; 4],
     /// Three padded inverse-transpose normal matrix columns.
     pub normal: [[f32; 4]; 3],

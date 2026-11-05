@@ -72,6 +72,10 @@ struct Serials {
     previous_hi: u32,
     current_lo: u32,
     current_hi: u32,
+    presentation_alpha: f32,
+    padding0: u32,
+    padding1: u32,
+    padding2: u32,
 }
 @group(3) @binding(1) var<storage, read> history: array<HistoryRecord>;
 @group(3) @binding(2) var<uniform> serials: Serials;
@@ -95,7 +99,9 @@ struct VertexOutput {
     let local = n + t*p.x + cross(n,t)*p.y;
     let instance = instances[instance_index];
     var output: VertexOutput;
-    let world = instance.current * vec4(local,1.0);
+    var model = instance.current;
+    model[3] = vec4(mix(instance.previous[3].xyz, instance.current[3].xyz, serials.presentation_alpha), instance.current[3].w);
+    let world = model * vec4(local,1.0);
     output.position = view.view_proj * world;
     if instance.ids.w == 0u { output.position = vec4(2.0, 2.0, 2.0, 1.0); }
     output.world_position = world.xyz;

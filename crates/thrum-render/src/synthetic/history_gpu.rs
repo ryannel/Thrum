@@ -7,7 +7,7 @@ use crate::timing::GpuTimings;
 use super::{RenderError, abi, storage_layout, uniform_layout};
 
 pub(super) const ENTRY_BYTES: u64 = 80;
-const SERIAL_BYTES: u64 = 16;
+pub(super) const SERIAL_BYTES: u64 = 32;
 const WORKGROUP: u32 = 64;
 
 pub(super) struct TransformHistory {
@@ -18,6 +18,7 @@ pub(super) struct TransformHistory {
     read_side: usize,
     next_serial: u64,
     submitted_serial: u64,
+    presentation_alpha: f32,
     extent: Option<[u32; 2]>,
 }
 
@@ -126,6 +127,7 @@ impl TransformHistory {
             read_side: 0,
             next_serial: 1,
             submitted_serial: 0,
+            presentation_alpha: 1.0,
             extent: None,
         };
         history.write_serials(queue);
@@ -148,6 +150,15 @@ impl TransformHistory {
         }
     }
 
+    pub(super) fn set_presentation_alpha(&mut self, queue: &wgpu::Queue, alpha: f32) {
+        self.presentation_alpha = if alpha.is_finite() {
+            alpha.clamp(0.0, 1.0)
+        } else {
+            1.0
+        };
+        self.write_serials(queue);
+    }
+
     fn write_serials(&self, queue: &wgpu::Queue) {
         let words = [
             u32::try_from(self.submitted_serial & u64::from(u32::MAX))
@@ -155,8 +166,12 @@ impl TransformHistory {
             u32::try_from(self.submitted_serial >> 32).expect("high serial word fits u32"),
             u32::try_from(self.next_serial & u64::from(u32::MAX)).expect("masked serial fits u32"),
             u32::try_from(self.next_serial >> 32).expect("high serial word fits u32"),
+            self.presentation_alpha.to_bits(),
+            0,
+            0,
+            0,
         ];
-        let bytes: [u8; 16] = std::array::from_fn(|byte| words[byte / 4].to_le_bytes()[byte % 4]);
+        let bytes: [u8; 32] = std::array::from_fn(|byte| words[byte / 4].to_le_bytes()[byte % 4]);
         queue.write_buffer(&self.serial_buffer, 0, &bytes);
     }
 
@@ -177,11 +192,10 @@ impl TransformHistory {
         Ok(())
     }
 
-    pub(super) fn submitted(&mut self, queue: &wgpu::Queue) {
+    pub(super) fn submitted(&mut self) {
         self.read_side = 1 - self.read_side;
         self.submitted_serial = self.next_serial;
         self.next_serial = self.next_serial.wrapping_add(1).max(1);
-        self.write_serials(queue);
     }
 }
 

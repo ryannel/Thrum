@@ -690,6 +690,7 @@ fn live_frame_matches_fresh_preparation_without_recreating_the_target() {
                 &mut target,
                 &scene,
                 FrameLighting::Diagnostic(changed_light),
+                1.0,
             )
             .expect("live update");
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
@@ -698,7 +699,7 @@ fn live_frame_matches_fresh_preparation_without_recreating_the_target() {
             Err(thrum_render::synthetic::RenderError::StaleTarget)
         ));
         let after = render_pixels_bound(&device, &queue, &prepared, &target);
-        prepared.commit_frame(&queue);
+        prepared.commit_frame();
         // A full CPU clustered preparation is the image oracle. These dark
         // extras force that path without changing scene illumination.
         scene.local_lights.extend(
@@ -763,7 +764,7 @@ fn two_submitted_views_keep_their_own_camera_pixels() {
             )
             .expect("first frame");
         queue.submit([first_encoder.finish()]);
-        prepared.commit_frame(&queue);
+        prepared.commit_frame();
 
         scene.view = view([0.8, 0.2, 2.7]);
         prepared
@@ -772,6 +773,7 @@ fn two_submitted_views_keep_their_own_camera_pixels() {
                 &mut second_target,
                 &scene,
                 FrameLighting::Diagnostic(SyntheticLight::default()),
+                1.0,
             )
             .expect("second camera update");
         let mut second_pixels = second_target.readback(&device);
@@ -787,7 +789,7 @@ fn two_submitted_views_keep_their_own_camera_pixels() {
             )
             .expect("second frame");
         let second_submission = queue.submit([second_encoder.finish()]);
-        prepared.commit_frame(&queue);
+        prepared.commit_frame();
         device
             .poll(wgpu::PollType::Wait {
                 submission_index: Some(second_submission),
