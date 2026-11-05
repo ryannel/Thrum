@@ -71,13 +71,13 @@ struct VertexOutput {
     @location(3) world_position: vec3<f32>,
 }
 @vertex fn vertex(@builtin(vertex_index) vertex_index: u32, @builtin(instance_index) instance_index: u32) -> VertexOutput {
-    let positions = array<vec2<f32>,6>(vec2(-1.0,-1.0),vec2(1.0,-1.0),vec2(-1.0,1.0),vec2(-1.0,1.0),vec2(1.0,-1.0),vec2(1.0,1.0));
+    let positions = array<vec2<f32>,4>(vec2(-1.0,-1.0),vec2(1.0,-1.0),vec2(-1.0,1.0),vec2(1.0,1.0));
     let normals = array<vec3<f32>,6>(vec3(0.0,0.0,-1.0),vec3(1.0,0.0,0.0),vec3(0.0,0.0,1.0),vec3(-1.0,0.0,0.0),vec3(0.0,1.0,0.0),vec3(0.0,-1.0,0.0));
     let tangents = array<vec3<f32>,6>(vec3(1.0,0.0,0.0),vec3(0.0,0.0,1.0),vec3(-1.0,0.0,0.0),vec3(0.0,0.0,-1.0),vec3(1.0,0.0,0.0),vec3(1.0,0.0,0.0));
-    let face = vertex_index / 6u;
+    let face = vertex_index / 4u;
     let n = normals[face];
     let t = tangents[face];
-    let p = positions[vertex_index % 6u];
+    let p = positions[vertex_index % 4u];
     let local = n + t*p.x + cross(n,t)*p.y;
     let instance = instances[instance_index];
     var output: VertexOutput;

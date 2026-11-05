@@ -192,6 +192,7 @@ impl ShadowPrepared {
         encoder: &mut wgpu::CommandEncoder,
         target: &ShadowTarget,
         instances: &wgpu::BindGroup,
+        cube_indices: &wgpu::Buffer,
         count: u32,
         generation: u64,
         index: usize,
@@ -222,7 +223,8 @@ impl ShadowPrepared {
         pass.set_pipeline(&self.pipeline);
         pass.set_bind_group(0, &cascade.view_group, &[]);
         pass.set_bind_group(1, instances, &[]);
-        pass.draw(0..36, 0..count);
+        pass.set_index_buffer(cube_indices.slice(..), wgpu::IndexFormat::Uint16);
+        pass.draw_indexed(0..36, 0, 0..count);
         Ok(())
     }
 }

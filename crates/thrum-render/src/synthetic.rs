@@ -35,7 +35,7 @@ use view::AUX_BYTES;
 pub use view::SyntheticView;
 
 /// Synthetic source revision; not a substitute for an F4 product identity.
-pub const SYNTHETIC_REVISION: u64 = 7;
+pub const SYNTHETIC_REVISION: u64 = 8;
 /// Portable opaque depth; no sampling or separate prepass is needed.
 pub const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
 const VIEW_BYTES: usize = 160;
@@ -43,6 +43,11 @@ const LIGHT_BYTES: usize = 64;
 const PRE_EXPOSURE: f32 = 1.0 / 1024.0;
 const DISPLAY_BYTES: u64 = 16;
 const SCENE_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba16Float;
+const CUBE_INDICES: [u16; 36] = [
+    0, 1, 2, 2, 1, 3, 4, 5, 6, 6, 5, 7, 8, 9, 10, 10, 9, 11, 12, 13, 14, 14, 13, 15, 16, 17, 18,
+    18, 17, 19, 20, 21, 22, 22, 21, 23,
+];
+const CUBE_INDEX_BYTES: u64 = 72;
 /// Explicit shader sRGB encoding after exposure, tone and gamut mapping.
 pub const OUTPUT_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba8Unorm;
 
@@ -365,6 +370,7 @@ pub struct PreparedSynthetic {
     owner: Arc<()>,
     key: PipelineKey,
     pipeline: wgpu::RenderPipeline,
+    cube_indices: wgpu::Buffer,
     display_pipeline: wgpu::RenderPipeline,
     display_layout: wgpu::BindGroupLayout,
     view_layout: wgpu::BindGroupLayout,
@@ -849,6 +855,13 @@ impl PreparedSynthetic {
             multiview_mask: None,
             cache: None,
         });
+        let index_bytes: [u8; 72] =
+            std::array::from_fn(|byte| CUBE_INDICES[byte / 2].to_le_bytes()[byte % 2]);
+        let cube_indices = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("synthetic shared cube indices"),
+            contents: &index_bytes,
+            usage: wgpu::BufferUsages::INDEX,
+        });
         let (display_pipeline, display_layout) = prepare_display_pipeline(device);
         if let Some(error) = scope.pop().await {
             return Err(RenderError::Validation(error.to_string()));
@@ -862,6 +875,7 @@ impl PreparedSynthetic {
                 role: 0,
             },
             pipeline,
+            cube_indices,
             display_pipeline,
             display_layout,
             view_layout,
@@ -1096,6 +1110,13 @@ impl PreparedSynthetic {
             },
             ResourceScope::Imported { initialized: true },
         )?;
+        let cube_indices = graph.resource(
+            ResourceDescriptor::Buffer {
+                bytes: CUBE_INDEX_BYTES,
+                usage: wgpu::BufferUsages::INDEX,
+            },
+            ResourceScope::Imported { initialized: true },
+        )?;
         let mut accesses = vec![
             Access {
                 resource: material,
@@ -1109,10 +1130,21 @@ impl PreparedSynthetic {
                 kind: AccessKind::StorageRead,
                 store: true,
             },
+            Access {
+                resource: cube_indices.clone(),
+                range: 0..CUBE_INDEX_BYTES,
+                kind: AccessKind::IndexRead,
+                store: true,
+            },
         ];
         let mut prepared_keys = BTreeSet::from([self.key, self.display_key()]);
-        let shadow =
-            self.append_shadow_passes(&mut graph, &instance, &mut accesses, &mut prepared_keys)?;
+        let shadow = self.append_shadow_passes(
+            &mut graph,
+            &instance,
+            &cube_indices,
+            &mut accesses,
+            &mut prepared_keys,
+        )?;
         for bytes in [VIEW_BYTES as u64, AUX_BYTES as u64, LIGHT_BYTES as u64] {
             let uniform = graph.resource(
                 ResourceDescriptor::Buffer {
@@ -1193,6 +1225,27 @@ impl PreparedSynthetic {
             accesses,
             external_side_effect: false,
         });
+        let output =
+            self.append_display_passes(&mut graph, &scene, width, height, row_bytes, readback)?;
+        Ok((
+            graph.compile(self.key.device_generation, &prepared_keys)?,
+            TargetResources {
+                depth,
+                scene,
+                output,
+                shadow,
+            },
+        ))
+    }
+    fn append_display_passes(
+        &self,
+        graph: &mut FrameGraph,
+        scene: &ResourceId,
+        width: u32,
+        height: u32,
+        row_bytes: u32,
+        readback: bool,
+    ) -> Result<ResourceId, RenderError> {
         let output = graph.resource(
             ResourceDescriptor::Texture {
                 width,
@@ -1270,20 +1323,13 @@ impl PreparedSynthetic {
                 external_side_effect: true,
             });
         }
-        Ok((
-            graph.compile(self.key.device_generation, &prepared_keys)?,
-            TargetResources {
-                depth,
-                scene,
-                output,
-                shadow,
-            },
-        ))
+        Ok(output)
     }
     fn append_shadow_passes(
         &self,
         graph: &mut FrameGraph,
         instance: &ResourceId,
+        cube_indices: &ResourceId,
         accesses: &mut Vec<Access>,
         prepared_keys: &mut BTreeSet<PipelineKey>,
     ) -> Result<Option<ResourceId>, RenderError> {
@@ -1328,6 +1374,12 @@ impl PreparedSynthetic {
                         resource: instance.clone(),
                         range: 0..self.instance_bytes,
                         kind: AccessKind::StorageRead,
+                        store: true,
+                    },
+                    Access {
+                        resource: cube_indices.clone(),
+                        range: 0..CUBE_INDEX_BYTES,
+                        kind: AccessKind::IndexRead,
                         store: true,
                     },
                     Access {
@@ -1476,6 +1528,7 @@ impl PreparedSynthetic {
                     encoder,
                     shadow_target,
                     &self.instances,
+                    &self.cube_indices,
                     self.instance_count,
                     generation,
                     index,
@@ -1535,7 +1588,8 @@ impl PreparedSynthetic {
         pass.set_bind_group(1, &self.light, &[]);
         pass.set_bind_group(2, &self.materials, &[]);
         pass.set_bind_group(3, &self.instances, &[]);
-        pass.draw(0..36, 0..self.instance_count);
+        pass.set_index_buffer(self.cube_indices.slice(..), wgpu::IndexFormat::Uint16);
+        pass.draw_indexed(0..36, 0, 0..self.instance_count);
         Ok(())
     }
 
