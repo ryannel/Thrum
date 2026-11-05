@@ -331,6 +331,40 @@ pub struct CompiledGraph {
     pub lifetimes: Vec<Lifetime>,
     /// Number of transient slots after exact-descriptor reuse.
     pub transient_slots: usize,
+    pipeline_pass_count: usize,
+    passes: Vec<CompiledPass>,
+}
+
+/// One closed pass handed to an encoder callback in compiled order.
+#[derive(Clone, Debug)]
+pub(crate) struct CompiledPass {
+    /// Stable diagnostic label chosen at graph closure.
+    pub(crate) name: String,
+    /// Pipeline identity checked during closure; copy passes have none.
+    pub(crate) pipeline: Option<PipelineKey>,
+}
+
+impl CompiledGraph {
+    /// Execute each prepared recorder in graph order without graph analysis or
+    /// allocation on the frame path. The callback owns concrete GPU commands.
+    ///
+    /// # Errors
+    ///
+    /// Returns the first callback error and stops before later passes.
+    pub(crate) fn record<E>(
+        &self,
+        mut recorder: impl FnMut(&CompiledPass) -> Result<(), E>,
+    ) -> Result<(), E> {
+        for pass in &self.passes {
+            recorder(pass)?;
+        }
+        Ok(())
+    }
+
+    /// Number of render or compute pipelines requiring timestamp slots.
+    pub(crate) fn pipeline_pass_count(&self) -> usize {
+        self.pipeline_pass_count
+    }
 }
 
 impl FrameGraph {
@@ -516,6 +550,19 @@ impl FrameGraph {
             hazards,
             lifetimes,
             transient_slots: slots.len(),
+            pipeline_pass_count: self
+                .passes
+                .iter()
+                .filter(|pass| pass.pipeline.is_some())
+                .count(),
+            passes: self
+                .passes
+                .iter()
+                .map(|pass| CompiledPass {
+                    name: pass.name.clone(),
+                    pipeline: pass.pipeline,
+                })
+                .collect(),
         })
     }
 }
@@ -552,4 +599,57 @@ fn remove_range(ranges: &mut Vec<Range<u64>>, cut: &Range<u64>) {
         }
     }
     *ranges = remaining;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        Access, AccessKind, FrameGraph, Pass, PassScope, ResourceDescriptor, ResourceScope,
+    };
+    use std::collections::BTreeSet;
+
+    #[test]
+    fn compiled_recording_stops_at_the_failed_pass_before_its_consumer() {
+        let mut graph = FrameGraph::default();
+        let buffer = graph
+            .resource(
+                ResourceDescriptor::Buffer {
+                    bytes: 16,
+                    usage: wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::COPY_DST,
+                },
+                ResourceScope::Transient,
+            )
+            .expect("buffer");
+        for (name, kind) in [
+            ("producer", AccessKind::CopyWrite),
+            ("consumer", AccessKind::CopyRead),
+            ("present", AccessKind::CopyRead),
+        ] {
+            graph.pass(Pass {
+                name: name.into(),
+                scope: PassScope::View(1),
+                pipeline: None,
+                accesses: vec![Access {
+                    resource: buffer.clone(),
+                    range: 0..16,
+                    kind,
+                    store: true,
+                }],
+                external_side_effect: name == "present",
+            });
+        }
+        let compiled = graph.compile(1, &BTreeSet::new()).expect("valid closure");
+        assert_eq!(compiled.dependencies, vec![(0, 1), (0, 2)]);
+        let mut visited = Vec::new();
+        let result = compiled.record(|pass| {
+            visited.push(pass.name.clone());
+            if pass.name == "consumer" {
+                Err("encoder refused")
+            } else {
+                Ok(())
+            }
+        });
+        assert_eq!(result, Err("encoder refused"));
+        assert_eq!(visited, ["producer", "consumer"]);
+    }
 }

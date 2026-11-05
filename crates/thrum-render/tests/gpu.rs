@@ -56,6 +56,15 @@ fn prepared_scene_pixels_timestamps_and_disabled_path() {
         );
         // Non-square/non-aligned row extent catches padded-row copy mistakes.
         let target = OffscreenTarget::new(&device, &prepared, 65, 33).unwrap();
+        let other_preparation = PreparedSynthetic::prepare(&device, &queue, 41, &scene)
+            .await
+            .unwrap();
+        let mut stale_encoder =
+            device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+        assert!(matches!(
+            other_preparation.encode(&mut stale_encoder, 41, &target, None),
+            Err(thrum_render::synthetic::RenderError::StaleTarget)
+        ));
         let graph = prepared.graph(&target, true).unwrap();
         assert_eq!(graph.dependencies, [(0, 1), (1, 2)]);
         assert_eq!(

@@ -203,44 +203,44 @@ impl ShadowPrepared {
         })
     }
 
-    pub(super) fn encode(
+    pub(super) fn encode_cascade(
         &self,
         encoder: &mut wgpu::CommandEncoder,
         target: &ShadowTarget,
         instances: &wgpu::BindGroup,
         count: u32,
         generation: u64,
-        mut timings: Option<&mut crate::timing::GpuTimings>,
+        index: usize,
+        name: &str,
+        timings: Option<&mut crate::timing::GpuTimings>,
     ) -> Result<(), RenderError> {
-        for (index, cascade) in self.cascades.iter().enumerate() {
-            let name = if index == 0 {
-                "synthetic Sun shadow near"
-            } else {
-                "synthetic Sun shadow far"
-            };
-            let writes = match timings.as_deref_mut() {
-                Some(timings) => timings.pass_writes(generation, name)?,
-                None => None,
-            };
-            let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: Some(name),
-                color_attachments: &[],
-                depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
-                    view: &target.views[index],
-                    depth_ops: Some(wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(0.0),
-                        store: wgpu::StoreOp::Store,
-                    }),
-                    stencil_ops: None,
+        let (cascade, view) = self
+            .cascades
+            .get(index)
+            .zip(target.views.get(index))
+            .ok_or(RenderError::StaleTarget)?;
+        let writes = match timings {
+            Some(timings) => timings.pass_writes(generation, name)?,
+            None => None,
+        };
+        let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+            label: Some(name),
+            color_attachments: &[],
+            depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
+                view,
+                depth_ops: Some(wgpu::Operations {
+                    load: wgpu::LoadOp::Clear(0.0),
+                    store: wgpu::StoreOp::Store,
                 }),
-                timestamp_writes: writes,
-                ..Default::default()
-            });
-            pass.set_pipeline(&self.pipeline);
-            pass.set_bind_group(0, &cascade.view_group, &[]);
-            pass.set_bind_group(1, instances, &[]);
-            pass.draw(0..36, 0..count);
-        }
+                stencil_ops: None,
+            }),
+            timestamp_writes: writes,
+            ..Default::default()
+        });
+        pass.set_pipeline(&self.pipeline);
+        pass.set_bind_group(0, &cascade.view_group, &[]);
+        pass.set_bind_group(1, instances, &[]);
+        pass.draw(0..36, 0..count);
         Ok(())
     }
 }
