@@ -3,7 +3,7 @@
 
 use std::{collections::VecDeque, mem::size_of, num::NonZeroUsize};
 
-use thrum_core::sim::RuntimeDelta;
+use thrum_core::sim::{RuntimeCapture, RuntimeDelta};
 
 use super::{
     Page, PeerControl, SimError, Simulation, SimulationCapture, map_runtime, peer_storage_bytes,
@@ -28,6 +28,7 @@ impl SimulationDelta {
 /// One full baseline advances as old deltas leave the window.
 pub struct SimulationHistory {
     base: SimulationCapture,
+    restore_scratch: RuntimeCapture,
     deltas: VecDeque<SimulationDelta>,
     spare: Vec<SimulationDelta>,
     window: NonZeroUsize,
@@ -50,6 +51,7 @@ impl SimulationHistory {
     pub fn reserved_bytes(&self) -> usize {
         size_of::<Self>()
             + self.base.reserved_bytes()
+            + self.restore_scratch.reserved_bytes()
             + self.deltas.capacity() * size_of::<SimulationDelta>()
             + self
                 .deltas
@@ -125,19 +127,23 @@ impl SimulationHistory {
         if target < self.oldest_tick() || target > self.latest_tick() {
             return Err(SimError::InvalidSnapshot);
         }
-        let mut restored = self.base.runtime.clone_independent();
+        self.restore_scratch
+            .copy_from(&self.base.runtime)
+            .map_err(map_runtime)?;
         let mut peers = &self.base.peers;
         for delta in &self.deltas {
             if delta.tick() > target {
                 break;
             }
-            restored.advance(&delta.runtime).map_err(map_runtime)?;
+            self.restore_scratch
+                .advance(&delta.runtime)
+                .map_err(map_runtime)?;
             peers = &delta.peers;
         }
         let epoch = sim.runtime.epoch();
         let capacity = sim.rules.config.entity_capacity;
         sim.runtime
-            .restore(&restored, || Page::new(epoch, capacity))
+            .restore(&self.restore_scratch, || Page::new(epoch, capacity))
             .map_err(map_runtime)?;
         sim.rules.peers.clone_from(peers);
         sim.rules.commands.clear();
@@ -161,10 +167,13 @@ impl SimulationHistory {
 impl Simulation {
     /// Start an opt-in rolling history at this committed game endpoint.
     pub fn begin_history(&self, window: NonZeroUsize) -> SimulationHistory {
+        let base = self.capture();
+        let restore_scratch = base.runtime.clone_independent();
         SimulationHistory {
-            base: self.capture(),
+            base,
+            restore_scratch,
             deltas: VecDeque::with_capacity(window.get()),
-            spare: Vec::with_capacity(1),
+            spare: Vec::with_capacity(window.get()),
             window,
         }
     }

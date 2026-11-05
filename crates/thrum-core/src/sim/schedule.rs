@@ -326,6 +326,7 @@ use super::{
 pub(super) trait SnapshotColumn: Send + Sync {
     fn restore_into(&self, column: &mut dyn StorageColumn);
     fn clone_box(&self) -> Box<dyn SnapshotColumn>;
+    fn copy_from(&mut self, source: &dyn SnapshotColumn);
     fn clear(&mut self);
     fn capture_slot(&mut self, world: &RegisteredWorld, slot: u32);
     fn overlay(&mut self, delta: &dyn SnapshotColumn, changed: &[(u32, u64)]);
@@ -367,6 +368,20 @@ impl<T: Send + Sync + 'static> SnapshotColumn for TypedColumn<T> {
             snapshot: self.snapshot,
             nested_bytes: self.nested_bytes,
         })
+    }
+
+    fn copy_from(&mut self, source: &dyn SnapshotColumn) {
+        let source = source
+            .as_any()
+            .downcast_ref::<Self>()
+            .expect("same registered snapshot schema");
+        self.rows.clear();
+        self.rows.extend(
+            source
+                .rows
+                .iter()
+                .map(|(slot, value)| (*slot, (self.snapshot)(value))),
+        );
     }
 
     fn clear(&mut self) {

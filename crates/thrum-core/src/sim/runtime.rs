@@ -108,6 +108,21 @@ impl RuntimeCapture {
         }
     }
 
+    /// Reuse a compatible capture's storage while copying its complete state.
+    ///
+    /// # Errors
+    ///
+    /// The source belongs to another runtime generation.
+    pub fn copy_from(&mut self, source: &Self) -> Result<(), RuntimeError> {
+        if self.nonce != source.nonce {
+            return Err(RuntimeError::WrongCapture);
+        }
+        self.world.copy_from(&source.world);
+        self.tick = source.tick;
+        self.revision = source.revision;
+        Ok(())
+    }
+
     /// Advance a full baseline with one contiguous delta from the same runtime.
     ///
     /// # Errors

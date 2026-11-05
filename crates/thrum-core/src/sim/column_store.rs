@@ -9,6 +9,7 @@ pub(super) trait StorageColumn: Send + Sync {
     fn as_any(&self) -> &dyn Any;
     fn as_any_mut(&mut self) -> &mut dyn Any;
     fn clear_slot(&mut self, slot: usize);
+    fn clear_all(&mut self);
 }
 
 pub(super) struct TypedStore<T> {
@@ -66,6 +67,13 @@ impl<T: Send + Sync + 'static> StorageColumn for TypedStore<T> {
 
     fn clear_slot(&mut self, slot: usize) {
         self.remove(slot);
+    }
+
+    fn clear_all(&mut self) {
+        for value in &mut self.values {
+            *value = None;
+        }
+        self.presence.fill(0);
     }
 }
 
