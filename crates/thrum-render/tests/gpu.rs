@@ -133,10 +133,13 @@ fn prepared_scene_pixels_timestamps_and_disabled_path() {
                 device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
             assert!(prepared.encode(&mut encoder, 42, &target, None).is_err());
             prepared
-                .encode(&mut encoder, 41, &target, Some(&mut timings))
+                .encode_with_readback(&mut encoder, 41, &target, Some(&mut timings), &mut pixels)
                 .unwrap();
-            pixels.encode(&mut encoder, &target).unwrap();
-            assert!(pixels.encode(&mut encoder, &target).is_err());
+            assert!(
+                prepared
+                    .encode_with_readback(&mut encoder, 41, &target, None, &mut pixels)
+                    .is_err()
+            );
             timings.finish_render(41, &encoder).unwrap();
             if enabled {
                 assert_eq!(timings.discard_unsubmitted(41), Err(TimingError::Busy));
@@ -216,10 +219,7 @@ fn prepared_scene_pixels_timestamps_and_disabled_path() {
         let mut indexed_pixels = indexed_target.readback(&device);
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
         indexed
-            .encode(&mut encoder, 41, &indexed_target, None)
-            .unwrap();
-        indexed_pixels
-            .encode(&mut encoder, &indexed_target)
+            .encode_with_readback(&mut encoder, 41, &indexed_target, None, &mut indexed_pixels)
             .unwrap();
         let submission = queue.submit([encoder.finish()]);
         device
@@ -1076,10 +1076,7 @@ fn render_pixels_bound(
     let mut pixels = target.readback(device);
     let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
     prepared
-        .encode(&mut encoder, 41, target, None)
-        .expect("explicit GPU host operation must succeed");
-    pixels
-        .encode(&mut encoder, target)
+        .encode_with_readback(&mut encoder, 41, target, None, &mut pixels)
         .expect("explicit GPU host operation must succeed");
     submit_wait(device, queue, encoder);
     pixels

@@ -14,11 +14,8 @@ fn pixels(
     let mut readback = target.readback(device);
     let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
     prepared
-        .encode(&mut encoder, 1, target, None)
-        .expect("valid prepared view");
-    readback
-        .encode(&mut encoder, target)
-        .expect("free readback slot");
+        .encode_with_readback(&mut encoder, 1, target, None, &mut readback)
+        .expect("valid prepared view and free readback slot");
     let submitted = queue.submit([encoder.finish()]);
     device
         .poll(wgpu::PollType::Wait {

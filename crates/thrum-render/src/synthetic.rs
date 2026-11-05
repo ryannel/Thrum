@@ -418,6 +418,7 @@ struct SceneContext<'a> {
     encoder: &'a mut wgpu::CommandEncoder,
     timings: Option<&'a mut GpuTimings>,
     generation: u64,
+    readback: Option<&'a mut PixelReadback>,
 }
 
 impl SceneContext<'_> {
@@ -481,6 +482,13 @@ impl SceneContext<'_> {
             pass,
             self.timings.as_deref_mut(),
         )
+    }
+
+    fn copy(&mut self, _pass: &CompiledPass) -> Result<(), RenderError> {
+        self.readback
+            .as_deref_mut()
+            .ok_or(RenderError::GraphPassMismatch)?
+            .copy_into(self.encoder, self.target)
     }
 }
 
@@ -1179,8 +1187,7 @@ impl PreparedSynthetic {
         }
         Ok(())
     }
-    /// Compile the actual draw, display + optional readback declaration. Allocation and
-    /// graph analysis happen at preparation/target changes, not per instance.
+    /// Inspect the prepared scene or its scene-plus-readback graph.
     /// # Errors
     /// Refuses a stale target generation or invalid typed resource/pass declarations.
     pub fn graph(
@@ -1189,8 +1196,11 @@ impl PreparedSynthetic {
         readback: bool,
     ) -> Result<CompiledGraph, RenderError> {
         self.check_target(target)?;
-        self.compile_graph(target.width, target.height, target.row_bytes, readback)
-            .map(|(graph, _)| graph)
+        Ok(if readback {
+            target.readback_graph.plan().clone()
+        } else {
+            target.graph.plan().clone()
+        })
     }
 
     fn compile_graph(
@@ -1198,8 +1208,7 @@ impl PreparedSynthetic {
         width: u32,
         height: u32,
         row_bytes: u32,
-        readback: bool,
-    ) -> Result<(CompiledGraph, TargetResources), RenderError> {
+    ) -> Result<(CompiledGraph, CompiledGraph, TargetResources), RenderError> {
         let mut graph = FrameGraph::default();
         let material = graph.resource(
             ResourceDescriptor::Buffer {
@@ -1330,10 +1339,13 @@ impl PreparedSynthetic {
             accesses,
             external_side_effect: false,
         });
-        let output =
-            self.append_display_passes(&mut graph, &scene, width, height, row_bytes, readback)?;
+        let output = self.append_display_passes(&mut graph, &scene, width, height)?;
+        let scene_graph = graph.compile(self.key.device_generation, &prepared_keys)?;
+        Self::append_readback_pass(&mut graph, &output, height, row_bytes)?;
+        let readback_graph = graph.compile(self.key.device_generation, &prepared_keys)?;
         Ok((
-            graph.compile(self.key.device_generation, &prepared_keys)?,
+            scene_graph,
+            readback_graph,
             TargetResources {
                 depth,
                 scene,
@@ -1342,14 +1354,49 @@ impl PreparedSynthetic {
             },
         ))
     }
+
+    fn append_readback_pass(
+        graph: &mut FrameGraph,
+        output: &ResourceId,
+        height: u32,
+        row_bytes: u32,
+    ) -> Result<(), RenderError> {
+        let bytes = u64::from(row_bytes) * u64::from(height);
+        let destination = graph.resource(
+            ResourceDescriptor::Buffer {
+                bytes,
+                usage: wgpu::BufferUsages::COPY_DST,
+            },
+            ResourceScope::Imported { initialized: false },
+        )?;
+        graph.pass(Pass {
+            name: "output readback".into(),
+            scope: PassScope::View(1),
+            pipeline: None,
+            accesses: vec![
+                Access {
+                    resource: output.clone(),
+                    range: 0..1,
+                    kind: AccessKind::CopyRead,
+                    store: true,
+                },
+                Access {
+                    resource: destination,
+                    range: 0..bytes,
+                    kind: AccessKind::CopyWrite,
+                    store: true,
+                },
+            ],
+            external_side_effect: true,
+        });
+        Ok(())
+    }
     fn append_display_passes(
         &self,
         graph: &mut FrameGraph,
         scene: &ResourceId,
         width: u32,
         height: u32,
-        row_bytes: u32,
-        readback: bool,
     ) -> Result<ResourceId, RenderError> {
         let output = graph.resource(
             ResourceDescriptor::Texture {
@@ -1396,38 +1443,8 @@ impl PreparedSynthetic {
                     store: true,
                 },
             ],
-            external_side_effect: !readback,
+            external_side_effect: true,
         });
-        if readback {
-            let bytes = u64::from(row_bytes) * u64::from(height);
-            let destination = graph.resource(
-                ResourceDescriptor::Buffer {
-                    bytes,
-                    usage: wgpu::BufferUsages::COPY_DST,
-                },
-                ResourceScope::Imported { initialized: false },
-            )?;
-            graph.pass(Pass {
-                name: "output readback".into(),
-                scope: PassScope::View(1),
-                pipeline: None,
-                accesses: vec![
-                    Access {
-                        resource: output.clone(),
-                        range: 0..1,
-                        kind: AccessKind::CopyRead,
-                        store: true,
-                    },
-                    Access {
-                        resource: destination,
-                        range: 0..bytes,
-                        kind: AccessKind::CopyWrite,
-                        store: true,
-                    },
-                ],
-                external_side_effect: true,
-            });
-        }
         Ok(output)
     }
     fn append_shadow_passes(
@@ -1626,6 +1643,11 @@ impl PreparedSynthetic {
                         frame.tone(pass)
                     })
                 }
+                None if pass.kind == Some(PassKind::Copy) => {
+                    RecordBinding::<SceneFamily>::new(id, PassKind::Copy, |frame, pass| {
+                        frame.copy(pass)
+                    })
+                }
                 _ => return Err(RenderError::GraphPassMismatch),
             };
             bindings.push(binding);
@@ -1642,13 +1664,44 @@ impl PreparedSynthetic {
         encoder: &mut wgpu::CommandEncoder,
         generation: u64,
         target: &OffscreenTarget,
-        mut timings: Option<&mut GpuTimings>,
+        timings: Option<&mut GpuTimings>,
+    ) -> Result<(), RenderError> {
+        self.encode_inner(encoder, generation, target, timings, None)
+    }
+
+    /// Encode the same scene with its dependent Copy pass in one checked graph.
+    /// The readback buffer maps only when the caller submits the encoder.
+    /// # Errors
+    /// Refuses a pending or foreign readback before recording any GPU pass.
+    pub fn encode_with_readback(
+        &self,
+        encoder: &mut wgpu::CommandEncoder,
+        generation: u64,
+        target: &OffscreenTarget,
+        timings: Option<&mut GpuTimings>,
+        readback: &mut PixelReadback,
+    ) -> Result<(), RenderError> {
+        readback.check_target(target)?;
+        self.encode_inner(encoder, generation, target, timings, Some(readback))
+    }
+
+    fn encode_inner<'a>(
+        &'a self,
+        encoder: &'a mut wgpu::CommandEncoder,
+        generation: u64,
+        target: &'a OffscreenTarget,
+        mut timings: Option<&'a mut GpuTimings>,
+        readback: Option<&'a mut PixelReadback>,
     ) -> Result<(), RenderError> {
         self.check_target(target)?;
         if generation != self.key.device_generation {
             return Err(RenderError::StaleTarget);
         }
-        let graph = &target.graph;
+        let graph = if readback.is_some() {
+            &target.readback_graph
+        } else {
+            &target.graph
+        };
         if graph.plan().device_generation != generation {
             return Err(RenderError::StaleTarget);
         }
@@ -1663,6 +1716,7 @@ impl PreparedSynthetic {
             encoder,
             timings,
             generation,
+            readback,
         })
     }
 
@@ -1902,6 +1956,7 @@ pub struct OffscreenTarget {
     device: wgpu::Device,
     prepared_owner: Arc<()>,
     graph: ExecutableGraph<SceneFamily>,
+    readback_graph: ExecutableGraph<SceneFamily>,
     textures: GraphTextures,
     ids: TargetResources,
     view: wgpu::TextureView,
@@ -1951,8 +2006,9 @@ impl OffscreenTarget {
         if u64::from(row_bytes) * u64::from(height) > limits.max_buffer_size {
             return Err(RenderError::TargetExtent);
         }
-        let (graph, ids) = prepared.compile_graph(width, height, row_bytes, false)?;
-        let textures = GraphTextures::new(device, &graph);
+        let (graph, readback_graph, ids) = prepared.compile_graph(width, height, row_bytes)?;
+        // The Copy variant retains output longer and safely supplies both plans.
+        let textures = GraphTextures::new(device, &readback_graph);
         let view = textures
             .texture(&ids.output)
             .ok_or(RenderError::GraphPassMismatch)?
@@ -2018,10 +2074,12 @@ impl OffscreenTarget {
             entries: &view_entries,
         });
         let graph = prepared.bind_scene_graph(graph)?;
+        let readback_graph = prepared.bind_scene_graph(readback_graph)?;
         Ok(Self {
             device: device.clone(),
             prepared_owner: Arc::clone(&prepared.owner),
             graph,
+            readback_graph,
             textures,
             ids,
             view,
@@ -2083,20 +2141,21 @@ pub struct PixelReadback {
     pending: Option<Receiver<Result<(), wgpu::BufferAsyncError>>>,
 }
 impl PixelReadback {
-    /// Encode a copy and map on submission; no CPU wait or private submission.
-    /// # Errors
-    /// Refuses a pending readback or mismatched target generation/extent.
-    pub fn encode(
-        &mut self,
-        encoder: &mut wgpu::CommandEncoder,
-        target: &OffscreenTarget,
-    ) -> Result<(), RenderError> {
+    fn check_target(&self, target: &OffscreenTarget) -> Result<(), RenderError> {
         if self.pending.is_some() {
             return Err(RenderError::Readback);
         }
         if self.generation != target.generation || self.extent != target.extent() {
             return Err(RenderError::StaleTarget);
         }
+        Ok(())
+    }
+
+    fn copy_into(
+        &mut self,
+        encoder: &mut wgpu::CommandEncoder,
+        target: &OffscreenTarget,
+    ) -> Result<(), RenderError> {
         encoder.copy_texture_to_buffer(
             wgpu::TexelCopyTextureInfo {
                 texture: target
