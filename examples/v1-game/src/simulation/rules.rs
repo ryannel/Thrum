@@ -6,7 +6,7 @@ use std::any::Any;
 use thrum_core::{
     Handle, Origin,
     sim::{
-        Edit, EntityWriter, Executor, InputFrame, Read2, ReadPermit, RegisteredWorldError,
+        Edit, EntityWriter, Executor, InputFrame, ReadPermit, RegisteredWorldError,
         StructuralPermit, TickGame, WorldRead, WorldTxn, WritePermit, WriteRead2,
     },
 };
@@ -64,7 +64,6 @@ fn fill_spawn(
 
 pub(super) struct Candidate {
     pub(super) motion: WriteRead2<Position, Velocity>,
-    pub(super) capture_query: Read2<Position, Health>,
     positions: Vec<Position>,
     position_edits: Vec<(Handle, Position)>,
     base_positions: Vec<Position>,
@@ -95,14 +94,9 @@ pub(super) struct ParallelOutput {
 }
 
 impl Candidate {
-    pub(super) fn new(
-        capacity: usize,
-        motion: WriteRead2<Position, Velocity>,
-        capture_query: Read2<Position, Health>,
-    ) -> Self {
+    pub(super) fn new(capacity: usize, motion: WriteRead2<Position, Velocity>) -> Self {
         Self {
             motion,
-            capture_query,
             positions: vec![Position::default(); capacity],
             position_edits: Vec::with_capacity(capacity.min(2_048)),
             base_positions: vec![Position::default(); capacity],
@@ -197,14 +191,10 @@ pub(super) struct Rules {
     pub(super) velocity_write: WritePermit<Velocity>,
     pub(super) health_write: WritePermit<Health>,
     pub(super) structure: StructuralPermit,
-    pub(super) position_read: ReadPermit<Position>,
-    pub(super) velocity_read: ReadPermit<Velocity>,
-    pub(super) health_read: ReadPermit<Health>,
     pub(super) input_health_read: ReadPermit<Health>,
     pub(super) resolve_health_read: ReadPermit<Health>,
     pub(super) resolve_velocity_read: ReadPermit<Velocity>,
     pub(super) resolve_ownership_read: ReadPermit<Ownership>,
-    pub(super) ownership_read: ReadPermit<Ownership>,
     pub(super) visual_read: ReadPermit<Visual>,
 }
 
@@ -302,39 +292,51 @@ impl Rules {
             }
         }
         let motion = candidate.motion;
-        world.visit(&motion, |handle, _, position, base_velocity| {
-            let row = handle.slot as usize;
-            if candidate.despawn_marks[row] {
-                return Ok(false);
-            }
-            if candidate.position_marks[row] == tick {
-                candidate.position_marks[row] = 0;
-                let next = candidate.positions[row];
-                if next != *position {
-                    *position = next;
-                    candidate.direct_positions += 1;
-                    return Ok(true);
+        world.visit_if_indexed(
+            &motion,
+            candidate,
+            |candidate, mark| {
+                for &row in &candidate.touched {
+                    mark(row);
                 }
-                return Ok(false);
-            }
-            let effective = candidate.velocity(row, *base_velocity, tick);
-            if candidate.velocity_marks[row] == tick {
-                candidate.base_velocity[row] = *base_velocity;
-                candidate.velocity_present[row] = true;
-            }
-            if effective != Velocity::default() {
-                let next = integrate_position(*position, effective, dt);
-                if !finite(next.0) {
-                    return Err(SimError::NonFinite);
+            },
+            |candidate, handle, _, _, base_velocity| {
+                let row = handle.slot as usize;
+                !candidate.despawn_marks[row]
+                    && (candidate.position_marks[row] == tick
+                        || candidate.velocity(row, *base_velocity, tick) != Velocity::default())
+            },
+            |candidate, handle, _, position, base_velocity| {
+                let row = handle.slot as usize;
+                if candidate.position_marks[row] == tick {
+                    candidate.position_marks[row] = 0;
+                    let next = candidate.positions[row];
+                    if next != *position {
+                        *position = next;
+                        candidate.direct_positions += 1;
+                        return Ok(true);
+                    }
+                    return Ok(false);
                 }
-                if next != *position {
-                    *position = next;
-                    candidate.direct_positions += 1;
-                    return Ok(true);
+                let effective = candidate.velocity(row, *base_velocity, tick);
+                if candidate.velocity_marks[row] == tick {
+                    candidate.base_velocity[row] = *base_velocity;
+                    candidate.velocity_present[row] = true;
                 }
-            }
-            Ok(false)
-        })
+                if effective != Velocity::default() {
+                    let next = integrate_position(*position, effective, dt);
+                    if !finite(next.0) {
+                        return Err(SimError::NonFinite);
+                    }
+                    if next != *position {
+                        *position = next;
+                        candidate.direct_positions += 1;
+                        return Ok(true);
+                    }
+                }
+                Ok(false)
+            },
+        )
     }
 
     pub(super) fn resolve(
@@ -501,31 +503,6 @@ impl TickGame<Page> for Rules {
                 peer.recompute_velocity = command_overrode_velocity;
             }
         }
-    }
-
-    fn capture(
-        &mut self,
-        world: &WorldRead<'_>,
-        candidate: &mut Candidate,
-        events: &[thrum_core::sim::StructuralChange],
-        page: &mut Page,
-        first: bool,
-        tick: u64,
-        timeline: u64,
-    ) {
-        page.capture(
-            world,
-            &mut candidate.capture_query,
-            &self.position_read,
-            &self.velocity_read,
-            &self.health_read,
-            &self.ownership_read,
-            &self.visual_read,
-            events,
-            tick,
-            timeline,
-            first,
-        );
     }
 }
 

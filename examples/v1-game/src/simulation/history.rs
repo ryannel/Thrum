@@ -214,19 +214,8 @@ impl SimulationHistory {
                 |_, page, old_timeline, target, latest| {
                     page.source_tick(old_timeline, target, latest)
                 },
-                |rules, world, page, source, target, timeline, steps| {
-                    page.patch_rewind(
-                        world,
-                        &rules.position_read,
-                        &rules.velocity_read,
-                        &rules.health_read,
-                        &rules.ownership_read,
-                        &rules.visual_read,
-                        steps,
-                        source,
-                        target,
-                        timeline,
-                    );
+                |_, world, page, source, target, timeline, steps| {
+                    page.patch_rewind(world, steps, source, target, timeline);
                 },
             )
             .map_err(map_history)?;

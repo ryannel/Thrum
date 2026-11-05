@@ -73,6 +73,36 @@ impl<T> BatchUndoWriter<'_, T> {
 }
 
 impl WorldUndo {
+    pub(super) fn copy_from(&mut self, source: &Self) {
+        self.slots.clone_from(&source.slots);
+        self.structural_ticks.clone_from(&source.structural_ticks);
+        if let (Some(target), Some(source)) = (&mut self.changed_words, &source.changed_words) {
+            target.copy_from_slice(source);
+        }
+        for (target, source) in self.columns.iter_mut().zip(&source.columns) {
+            target.copy_from(source.as_ref());
+        }
+    }
+
+    pub(super) fn visit_changed_components(&self, mut visit: impl FnMut(usize, u32)) {
+        for (component, column) in self.columns.iter().enumerate() {
+            column.visit_changed_slots(&mut |slot| visit(component, slot));
+        }
+    }
+
+    pub(super) fn visit_first_preimages<T: Send + Sync + 'static>(
+        &self,
+        component: usize,
+        seen_words: &mut [u64],
+        visit: impl FnMut(u32, Option<&T>),
+    ) {
+        self.columns[component]
+            .as_any()
+            .downcast_ref::<TypedUndo<T>>()
+            .expect("registered undo column type")
+            .visit_first_preimages(seen_words, visit);
+    }
+
     pub(super) fn batch_writer<T: Send + Sync + 'static>(
         &mut self,
         component: usize,
@@ -99,12 +129,12 @@ impl WorldUndo {
                 .all(|(index, column)| index == component || !column.has_rows())
     }
 
-    pub(super) fn first_changed_component(&self) -> Option<usize> {
-        self.columns.iter().position(|column| column.has_rows())
-    }
-
     pub(super) fn can_coalesce_without_drop_order(&self, component: usize) -> bool {
         self.columns[component].can_coalesce_without_drop_order()
+    }
+
+    pub(super) fn has_component_rows(&self, component: usize) -> bool {
+        self.columns[component].has_rows()
     }
     pub(super) fn reserve_for(&mut self, counts: &[usize], structural: usize, despawns: usize) {
         self.slots.reserve(structural);
@@ -518,6 +548,22 @@ pub(super) struct RegisteredWorld {
 }
 
 impl RegisteredWorld {
+    pub(super) fn capacity(&self) -> usize {
+        self.slots.len()
+    }
+
+    pub(super) fn component_count(&self) -> usize {
+        self.columns.len()
+    }
+
+    pub(super) fn visit_changed_components(&self, mut visit: impl FnMut(usize, u32)) {
+        for (component, slots) in self.changed.iter().enumerate() {
+            for &slot in slots {
+                visit(component, slot);
+            }
+        }
+    }
+
     pub(super) fn restore_first_seen(&mut self, undo: &mut WorldUndo, component: usize) {
         let stride = self.columns.len();
         undo.columns[component].restore_first_seen_into(
@@ -809,6 +855,14 @@ impl RegisteredWorld {
             .entries
             .iter()
             .position(|entry| entry.key == key)
+    }
+
+    pub(super) fn has_active_index(&self, component: usize) -> bool {
+        self.columns[component].active_presence().is_some()
+    }
+
+    pub(super) fn registry(&self) -> &ComponentRegistry {
+        &self.registry
     }
 
     pub(super) fn new_bundle(&self) -> EntityBundle {
@@ -1242,11 +1296,9 @@ impl RegisteredWorld {
         slot: u32,
         value: T,
     ) -> T {
-        let current = self
-            .column_mut_index::<T>(component)
-            .get_mut(slot as usize)
-            .expect("prevalidated replacement component");
-        std::mem::replace(current, value)
+        self.column_mut_index::<T>(component)
+            .insert(slot as usize, value)
+            .expect("prevalidated replacement component")
     }
 
     pub(super) fn replace_batch_prevalidated<T: Clone + Send + Sync + 'static>(
@@ -1269,12 +1321,9 @@ impl RegisteredWorld {
         }
         for (handle, value) in rows {
             let slot = handle.slot as usize;
-            let prior = std::mem::replace(
-                column
-                    .get_mut(slot)
-                    .expect("prevalidated replacement component"),
-                value.clone(),
-            );
+            let prior = column
+                .insert(slot, value.clone())
+                .expect("prevalidated replacement component");
             let old_tick = self.change_ticks[slot * component_count + component];
             save_old(handle.slot, prior, old_tick);
             self.change_ticks[slot * component_count + component] = tick;
@@ -1334,16 +1383,25 @@ impl RegisteredWorld {
         })
     }
 
-    /// Visit distinct typed columns in physical-slot order. The first write
+    /// Visit selected typed columns in physical-slot order. The first write
     /// to a slot records its preimage before invoking game code, including if
     /// that code later refuses the tick or unwinds.
-    pub(super) fn visit_mut2<T: Clone + Send + Sync + 'static, U: Send + Sync + 'static, E>(
+    pub(super) fn visit_mut2_if<
+        T: Clone + Send + Sync + 'static,
+        U: Send + Sync + 'static,
+        C,
+        E,
+    >(
         &mut self,
         first: usize,
         second: usize,
+        indexed: bool,
+        supplemental_words: Option<&[u64]>,
         undo: &mut WorldUndo,
         dirty: &mut impl TentativeDirty,
-        mut visit: impl FnMut(Handle, StableId, &mut T, &U) -> Result<bool, E>,
+        context: &mut C,
+        mut select: impl FnMut(&C, Handle, StableId, &T, &U) -> bool,
+        mut visit: impl FnMut(&mut C, Handle, StableId, &mut T, &U) -> Result<bool, E>,
     ) -> Result<(), E> {
         assert_ne!(first, second, "mutable query components must be distinct");
         let (write, read) = if first < second {
@@ -1361,6 +1419,11 @@ impl RegisteredWorld {
             .as_any()
             .downcast_ref::<TypedStore<U>>()
             .expect("prepared shared component type");
+        let active_words = if indexed {
+            Some(read.active_presence().expect("indexed shared component"))
+        } else {
+            None
+        };
         let undo_column = undo.columns[first]
             .as_any_mut()
             .downcast_mut::<TypedUndo<T>>()
@@ -1369,6 +1432,10 @@ impl RegisteredWorld {
         let stride = self.registry.entries.len();
         for word in 0..write.presence().len() {
             let mut matching = write.presence()[word] & read.presence()[word];
+            if let Some(active) = active_words {
+                matching &=
+                    active[word] | supplemental_words.map_or(0, |supplemental| supplemental[word]);
+            }
             while matching != 0 {
                 let bit = matching.trailing_zeros() as usize;
                 matching &= matching - 1;
@@ -1379,6 +1446,20 @@ impl RegisteredWorld {
                     .stable
                     .expect("stored component belongs to a live slot");
                 let value = write.get_mut(index).expect("presence bit has value");
+                let handle = Handle {
+                    epoch: self.epoch,
+                    slot: key,
+                    generation: slot.generation,
+                };
+                if !select(
+                    context,
+                    handle,
+                    id,
+                    value,
+                    read.get(index).expect("presence bit has value"),
+                ) {
+                    continue;
+                }
                 let first_write = dirty.mark_first(first, key);
                 if first_write {
                     undo_column.push_component(
@@ -1387,17 +1468,14 @@ impl RegisteredWorld {
                         self.change_ticks[index * stride + first],
                     );
                 }
-                let handle = Handle {
-                    epoch: self.epoch,
-                    slot: key,
-                    generation: slot.generation,
-                };
                 let changed = visit(
+                    context,
                     handle,
                     id,
                     value,
                     read.get(index).expect("presence bit has value"),
                 )?;
+                write.refresh_active(index);
                 if first_write {
                     if changed {
                         if let Some(words) = changed_words.as_deref_mut() {

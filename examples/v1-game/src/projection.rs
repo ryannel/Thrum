@@ -14,6 +14,7 @@ use thrum_core::{
 pub struct GameProjection {
     id: Option<SnapshotId>,
     timeline: u64,
+    source: Option<(SnapshotId, u64)>,
     baseline: bool,
     positions: Vec<(Handle, Position)>,
     velocities: Vec<(Handle, Velocity)>,
@@ -27,6 +28,7 @@ impl GameProjection {
         Self {
             id: None,
             timeline: 0,
+            source: None,
             baseline: false,
             positions: Vec::with_capacity(capacity),
             velocities: Vec::with_capacity(capacity),
@@ -118,6 +120,7 @@ impl GameProjection {
         }
         self.id = Some(page.id());
         self.timeline = page.timeline();
+        self.source = page.source_endpoint();
     }
 
     fn capture_full(&mut self, page: &PublishedPage) {
@@ -141,6 +144,7 @@ impl GameProjection {
         });
         self.id = Some(page.id());
         self.timeline = page.timeline();
+        self.source = None;
         self.baseline = true;
     }
 }
@@ -158,6 +162,7 @@ pub(crate) struct ProjectionOutbox {
     slots: Vec<GameProjection>,
     free: Vec<usize>,
     pending: VecDeque<usize>,
+    delivered: Option<(SnapshotId, u64)>,
     lost_ticks: u64,
     needs_resync: bool,
 }
@@ -170,15 +175,34 @@ impl ProjectionOutbox {
                 .collect(),
             free: (0..4).rev().collect(),
             pending: VecDeque::with_capacity(4),
+            delivered: None,
             lost_ticks: 0,
             needs_resync: false,
         }
     }
 
     pub(crate) fn capture(&mut self, page: &PublishedPage) -> usize {
-        if page.patch_source().is_some() {
+        if page.is_baseline() {
             self.reset_full(page);
             return page.len();
+        }
+        if self.needs_resync {
+            self.lost_ticks = self.lost_ticks.saturating_add(1);
+            return 0;
+        }
+        let expected = self
+            .pending
+            .back()
+            .and_then(|&index| {
+                self.slots[index]
+                    .id
+                    .map(|id| (id, self.slots[index].timeline))
+            })
+            .or(self.delivered);
+        if page.source_endpoint() != expected {
+            self.needs_resync = true;
+            self.lost_ticks = self.lost_ticks.saturating_add(1);
+            return 0;
         }
         let index = self.free.pop().unwrap_or_else(|| {
             self.needs_resync = true;
@@ -201,8 +225,16 @@ impl ProjectionOutbox {
         if !self.needs_resync
             && self
                 .pending
-                .front()
+                .back()
                 .is_some_and(|&index| self.slots[index].timeline != timeline)
+        {
+            self.lost_ticks = self.lost_ticks.saturating_add(self.pending.len() as u64);
+            self.needs_resync = true;
+        }
+        if !self.needs_resync
+            && self.pending.front().is_some_and(|&index| {
+                !self.slots[index].baseline && self.slots[index].source != self.delivered
+            })
         {
             self.lost_ticks = self.lost_ticks.saturating_add(self.pending.len() as u64);
             self.needs_resync = true;
@@ -216,6 +248,9 @@ impl ProjectionOutbox {
             return Ok(false);
         };
         consume(&self.slots[index]);
+        self.delivered = self.slots[index]
+            .id
+            .map(|id| (id, self.slots[index].timeline));
         self.free.push(index);
         Ok(true)
     }
@@ -227,6 +262,7 @@ impl ProjectionOutbox {
         let index = self.free.pop().expect("fixed outbox has one free slot");
         self.slots[index].capture_full(page);
         self.pending.push_back(index);
+        self.delivered = None;
         self.needs_resync = false;
         self.lost_ticks = 0;
     }
@@ -443,5 +479,77 @@ mod tests {
         );
         outbox.reset_full(&sim.published_page().expect("restored page"));
         assert!(outbox.poll(sim.timeline(), |_| {}).expect("new baseline"));
+    }
+
+    #[test]
+    fn matching_rewind_source_stays_a_selective_projection() {
+        let mut sim = Simulation::new(
+            WorldEpoch(9),
+            SimConfig {
+                tick_hz: NonZeroU32::new(60).expect("rate"),
+                entity_capacity: 1,
+                peer_capacity: 0,
+                actions_per_frame: 0,
+                movement_speed: 0.0,
+            },
+        )
+        .expect("world");
+        sim.seed(ComponentEntity {
+            id: StableId(1),
+            position: Position::default(),
+            velocity: Velocity([1.0, 0.0, 0.0]),
+            health: 1,
+            ownership: None,
+            visual: None,
+        })
+        .expect("entity");
+        let mut history = sim
+            .begin_history(NonZeroUsize::new(4).expect("window"))
+            .expect("history");
+        let mut outbox = ProjectionOutbox::new(1);
+        let mut stale = ProjectionOutbox::new(1);
+        outbox.capture(&sim.published_page().expect("baseline"));
+        stale.capture(&sim.published_page().expect("baseline"));
+        assert!(
+            outbox
+                .poll(sim.timeline(), |_| {})
+                .expect("baseline delivery")
+        );
+        assert!(stale.poll(sim.timeline(), |_| {}).expect("stale baseline"));
+        for _ in 0..2 {
+            history.step(&mut sim, &[]).expect("future tick");
+            outbox.capture(&sim.published_page().expect("future page"));
+            assert!(
+                outbox
+                    .poll(sim.timeline(), |_| {})
+                    .expect("future delivery")
+            );
+        }
+        let source = sim.published_page().expect("old source");
+        history.rewind(&mut sim, 1).expect("rewind");
+        let patch = sim.published_page().expect("rewound patch");
+        assert_eq!(
+            patch.source_endpoint(),
+            Some((source.id(), source.timeline()))
+        );
+        assert!(!patch.is_baseline());
+        assert_eq!(outbox.capture(&patch), 1);
+        assert!(
+            outbox
+                .poll(sim.timeline(), |projection| {
+                    assert!(!projection.is_baseline());
+                    assert_eq!(projection.source, Some((source.id(), source.timeline())));
+                    assert_eq!(projection.positions().len(), 1);
+                })
+                .expect("selective patch delivery")
+        );
+        assert_eq!(stale.capture(&patch), 0, "foreign source needs resync");
+        assert!(
+            stale
+                .poll(sim.timeline(), |_| panic!(
+                    "stale consumer cannot apply patch"
+                ))
+                .is_err()
+        );
     }
 }

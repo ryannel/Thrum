@@ -45,6 +45,10 @@ pub enum RegistrationError {
     DuplicateType,
     /// This stable schema identity belongs to another component type.
     DuplicateSchema,
+    /// Publication selection names a component type absent from the catalogue.
+    UnregisteredType,
+    /// This component already has a publication policy.
+    DuplicatePublication,
 }
 
 impl ComponentRegistry {
@@ -58,6 +62,26 @@ impl ComponentRegistry {
         schema: ComponentSchemaId,
     ) -> Result<ComponentKey, RegistrationError> {
         self.register_with_snapshot(schema, |value: &T| *value, |_| 0)
+    }
+
+    /// Register a component with a maintained predicate index. The predicate
+    /// must be pure and depend only on its component value; it selects present
+    /// values for indexed queries without changing component membership.
+    ///
+    /// # Errors
+    ///
+    /// The type or schema identity was already registered.
+    pub fn register_indexed<T: Copy + PartialEq + Send + Sync + 'static>(
+        &mut self,
+        schema: ComponentSchemaId,
+        predicate: fn(&T) -> bool,
+    ) -> Result<ComponentKey, RegistrationError> {
+        self.register_component(
+            schema,
+            |value: &T| *value,
+            |_| 0,
+            Box::new(move |capacity| Box::new(TypedStore::<T>::new_indexed(capacity, predicate))),
+        )
     }
 
     /// Register a non-Copy value with an explicit independent snapshot copy.
@@ -74,6 +98,21 @@ impl ComponentRegistry {
         snapshot: fn(&T) -> T,
         nested_bytes: fn(&T) -> usize,
     ) -> Result<ComponentKey, RegistrationError> {
+        self.register_component(
+            schema,
+            snapshot,
+            nested_bytes,
+            Box::new(|capacity| Box::new(TypedStore::<T>::new(capacity))),
+        )
+    }
+
+    fn register_component<T: Send + Sync + 'static>(
+        &mut self,
+        schema: ComponentSchemaId,
+        snapshot: fn(&T) -> T,
+        nested_bytes: fn(&T) -> usize,
+        storage: CreateStorage,
+    ) -> Result<ComponentKey, RegistrationError> {
         let key = ComponentKey::of::<T>();
         if self.entries.iter().any(|entry| entry.key == key) {
             return Err(RegistrationError::DuplicateType);
@@ -84,10 +123,15 @@ impl ComponentRegistry {
         self.entries.push(ComponentEntry {
             key,
             schema,
+            publication_copy: Box::new(super::publication::PublicationCopy {
+                snapshot,
+                nested_bytes,
+            }),
+            publication: None,
             capture: Box::new(move |world| capture_component(world, snapshot, nested_bytes)),
-            storage: Box::new(|capacity| Box::new(TypedStore::<T>::new(capacity))),
+            storage,
             pending: Box::new(|| Box::new(Pending::<T> { value: None })),
-            undo: Box::new(|| Box::new(super::undo::TypedUndo::<T>::new())),
+            undo: Box::new(move || Box::new(super::undo::TypedUndo::<T>::new(snapshot))),
             empty: Box::new(move || {
                 Box::new(TypedColumn::<T> {
                     rows: Vec::new(),
@@ -97,6 +141,47 @@ impl ComponentRegistry {
             }),
         });
         Ok(key)
+    }
+
+    /// Select an engine-owned publication column for a registered game type.
+    /// `temporal` reserves a previous-value column for adjacent-tick sampling.
+    /// Equality compares complete typed values; snapshot copying reuses the
+    /// callback supplied at component registration.
+    ///
+    /// # Errors
+    ///
+    /// The type is unregistered or already selected for publication.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if the internal registered-type invariant is violated.
+    pub fn select_publication<T: PartialEq + Send + Sync + 'static>(
+        &mut self,
+        temporal: bool,
+    ) -> Result<(), RegistrationError> {
+        let entry = self
+            .entries
+            .iter_mut()
+            .find(|entry| entry.key == ComponentKey::of::<T>())
+            .ok_or(RegistrationError::UnregisteredType)?;
+        if entry.publication.is_some() {
+            return Err(RegistrationError::DuplicatePublication);
+        }
+        let copy = entry
+            .publication_copy
+            .downcast_ref::<super::publication::PublicationCopy<T>>()
+            .expect("registered component snapshot policy");
+        let snapshot = copy.snapshot;
+        let nested_bytes = copy.nested_bytes;
+        entry.publication = Some(Box::new(move |capacity| {
+            Box::new(super::publication::PublicationColumn::<T>::new(
+                capacity,
+                temporal,
+                snapshot,
+                nested_bytes,
+            ))
+        }));
+        Ok(())
     }
 
     /// Stable schema identity for a registered process-local component key.
@@ -336,6 +421,7 @@ pub(super) trait SnapshotColumn: Send + Sync {
 }
 
 type CaptureColumn = Box<dyn Fn(&RegisteredWorld) -> Box<dyn SnapshotColumn> + Send + Sync>;
+type CreateStorage = Box<dyn Fn(usize) -> Box<dyn StorageColumn> + Send + Sync>;
 
 struct TypedColumn<T> {
     rows: Vec<(u32, T)>,
@@ -435,8 +521,10 @@ impl<T: Send + Sync + 'static> SnapshotColumn for TypedColumn<T> {
 pub(super) struct ComponentEntry {
     pub(super) key: ComponentKey,
     pub(super) schema: ComponentSchemaId,
+    publication_copy: Box<dyn Any + Send + Sync>,
+    pub(super) publication: Option<super::publication::PublicationFactory>,
     pub(super) capture: CaptureColumn,
-    pub(super) storage: Box<dyn Fn(usize) -> Box<dyn StorageColumn> + Send + Sync>,
+    pub(super) storage: CreateStorage,
     pub(super) pending: Box<dyn Fn() -> Box<dyn PendingValue> + Send + Sync>,
     pub(super) undo: Box<dyn Fn() -> Box<dyn super::undo::UndoColumn> + Send + Sync>,
     pub(super) empty: Box<dyn Fn() -> Box<dyn SnapshotColumn> + Send + Sync>,
@@ -470,7 +558,39 @@ fn capture_component<T: Send + Sync + 'static>(
 
 #[cfg(test)]
 mod tests {
-    use super::{SnapshotColumn, TypedColumn};
+    use super::{
+        ComponentRegistry, ComponentSchemaId, RegistrationError, SnapshotColumn, TypedColumn,
+        TypedStore,
+    };
+
+    #[test]
+    fn indexed_registration_selects_its_factory_and_rejection_preserves_it() {
+        let mut registry = ComponentRegistry::default();
+        registry
+            .register_indexed::<u32>(ComponentSchemaId(1), |value| *value > 0)
+            .expect("indexed type");
+        assert_eq!(
+            registry.register_indexed::<u32>(ComponentSchemaId(2), |_| true),
+            Err(RegistrationError::DuplicateType)
+        );
+        assert_eq!(
+            registry.register_indexed::<u64>(ComponentSchemaId(1), |_| true),
+            Err(RegistrationError::DuplicateSchema)
+        );
+        registry
+            .register::<u64>(ComponentSchemaId(2))
+            .expect("ordinary type after refused schema");
+        let mut indexed = (registry.entries[0].storage)(65);
+        let typed = indexed
+            .as_any_mut()
+            .downcast_mut::<TypedStore<u32>>()
+            .expect("registered type");
+        typed.insert(0, 0);
+        typed.insert(64, 1);
+        assert_eq!(indexed.active_presence(), Some(&[0, 1][..]));
+        let ordinary = (registry.entries[1].storage)(65);
+        assert_eq!(ordinary.active_presence(), None);
+    }
 
     #[test]
     fn noncopy_column_delta_overlays_values_membership_and_independent_copy() {

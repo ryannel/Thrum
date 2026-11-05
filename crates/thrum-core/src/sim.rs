@@ -4,6 +4,7 @@
 mod column_store;
 mod history;
 mod input;
+mod publication;
 mod registered_world;
 mod runtime;
 mod schedule;
@@ -14,6 +15,9 @@ mod undo;
 
 pub use history::{HistoryError, HistoryGame, RuntimeHistory};
 pub use input::{ControlBinding, FrameError, InputFrame};
+pub use publication::{
+    PublicationChanges, PublicationColumn, PublicationColumns, PublicationDiff, PublicationPage,
+};
 pub use registered_world::{EntityWriter, RegisteredWorldError};
 pub use runtime::{
     ColumnRead, ExecutionMode, Executor, GameRuntime, LiveSlot, PublicationMode, Read2, ReadPermit,
@@ -25,5 +29,5 @@ pub use schedule::{
     RegistrationError, Schedule, ScheduleError, Stage, SystemId, SystemSpec,
 };
 pub use snapshot::{SnapshotId, StructuralChange};
-pub use snapshot_ring::{PublicationBusy, SnapshotRing};
+pub use snapshot_ring::{DirtyPage, PublicationBusy, SnapshotRing};
 pub use transaction::{Edit, EditError};

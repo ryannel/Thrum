@@ -1176,8 +1176,7 @@ impl FrameHost {
             match self.sim.published_page() {
                 Ok(page) => {
                     if let Some(outbox) = self.projections.as_mut() {
-                        outbox.reset_full(&page);
-                        projected_changes += page.len();
+                        projected_changes += outbox.capture(&page);
                     }
                     true
                 }

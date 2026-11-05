@@ -9,6 +9,7 @@ use std::{
 use super::column_store::{StorageColumn, TypedStore};
 
 pub(super) trait UndoColumn: Send + Sync {
+    fn as_any(&self) -> &dyn Any;
     fn as_any_mut(&mut self) -> &mut dyn Any;
     fn restore_into(
         &mut self,
@@ -30,6 +31,7 @@ pub(super) trait UndoColumn: Send + Sync {
     fn has_rows(&self) -> bool;
     fn can_coalesce_without_drop_order(&self) -> bool;
     fn clear(&mut self);
+    fn copy_from(&mut self, source: &dyn UndoColumn);
     fn reserve(&mut self, additional: usize);
     fn reserved_bytes(&self) -> usize;
 }
@@ -37,13 +39,15 @@ pub(super) trait UndoColumn: Send + Sync {
 pub(super) struct TypedUndo<T> {
     rows: Vec<(u32, Option<T>)>,
     prior_ticks: Vec<u64>,
+    snapshot: fn(&T) -> T,
 }
 
 impl<T> TypedUndo<T> {
-    pub(super) fn new() -> Self {
+    pub(super) fn new(snapshot: fn(&T) -> T) -> Self {
         Self {
             rows: Vec::new(),
             prior_ticks: Vec::new(),
+            snapshot,
         }
     }
 
@@ -60,6 +64,25 @@ impl<T> TypedUndo<T> {
             .expect("tentative change tick exists");
     }
 
+    pub(super) fn visit_first_preimages(
+        &self,
+        seen_words: &mut [u64],
+        mut visit: impl FnMut(u32, Option<&T>),
+    ) {
+        debug_assert!(seen_words.iter().all(|&word| word == 0));
+        for (slot, prior) in &self.rows {
+            let word = &mut seen_words[*slot as usize / 64];
+            let bit = 1_u64 << (*slot % 64);
+            if *word & bit == 0 {
+                *word |= bit;
+                visit(*slot, prior.as_ref());
+            }
+        }
+        for (slot, _) in &self.rows {
+            seen_words[*slot as usize / 64] &= !(1_u64 << (*slot % 64));
+        }
+    }
+
     pub(super) fn push_structural(&mut self, slot: u32, prior: Option<T>) {
         self.rows.push((slot, prior));
         self.prior_ticks.push(u64::MAX);
@@ -67,6 +90,10 @@ impl<T> TypedUndo<T> {
 }
 
 impl<T: Send + Sync + 'static> UndoColumn for TypedUndo<T> {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
     fn as_any_mut(&mut self) -> &mut dyn Any {
         self
     }
@@ -157,6 +184,21 @@ impl<T: Send + Sync + 'static> UndoColumn for TypedUndo<T> {
         self.prior_ticks.clear();
     }
 
+    fn copy_from(&mut self, source: &dyn UndoColumn) {
+        let source = source
+            .as_any()
+            .downcast_ref::<Self>()
+            .expect("registered undo column type");
+        self.rows.clear();
+        self.rows.extend(
+            source
+                .rows
+                .iter()
+                .map(|(slot, prior)| (*slot, prior.as_ref().map(self.snapshot))),
+        );
+        self.prior_ticks.clone_from(&source.prior_ticks);
+    }
+
     fn reserve(&mut self, additional: usize) {
         self.rows.reserve(additional);
         self.prior_ticks.reserve(additional);
@@ -166,5 +208,28 @@ impl<T: Send + Sync + 'static> UndoColumn for TypedUndo<T> {
         size_of::<Self>()
             + self.rows.capacity() * size_of::<(u32, Option<T>)>()
             + self.prior_ticks.capacity() * size_of::<u64>()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::TypedUndo;
+
+    #[test]
+    fn first_preimage_wins_after_multiple_writes_and_seen_storage_is_reusable() {
+        let mut undo = TypedUndo::new(|value| *value);
+        undo.push_component(3, Some(10_u32), 1);
+        undo.push_component(3, Some(20), 2);
+        undo.push_component(5, None, 0);
+        undo.push_component(3, Some(30), 3);
+        let mut seen = [0_u64; 1];
+        for _ in 0..2 {
+            let mut preimages = Vec::new();
+            undo.visit_first_preimages(&mut seen, |slot, prior| {
+                preimages.push((slot, prior.copied()));
+            });
+            assert_eq!(preimages, [(3, Some(10)), (5, None)]);
+            assert_eq!(seen, [0]);
+        }
     }
 }

@@ -9,6 +9,7 @@ use super::undo::{TypedUndo, UndoColumn};
 pub(super) trait StorageColumn: Send + Sync {
     fn as_any(&self) -> &dyn Any;
     fn as_any_mut(&mut self) -> &mut dyn Any;
+    fn active_presence(&self) -> Option<&[u64]>;
     fn clear_slot(&mut self, slot: usize);
     fn clear_all(&mut self);
     fn take_into_undo(&mut self, slot: u32, undo: &mut dyn UndoColumn);
@@ -17,6 +18,12 @@ pub(super) trait StorageColumn: Send + Sync {
 pub(super) struct TypedStore<T> {
     values: Vec<Option<T>>,
     presence: Vec<u64>,
+    active: Option<ActiveIndex<T>>,
+}
+
+struct ActiveIndex<T> {
+    predicate: fn(&T) -> bool,
+    words: Vec<u64>,
 }
 
 impl<T> TypedStore<T> {
@@ -24,6 +31,17 @@ impl<T> TypedStore<T> {
         Self {
             values: std::iter::repeat_with(|| None).take(capacity).collect(),
             presence: vec![0; capacity.div_ceil(64)],
+            active: None,
+        }
+    }
+
+    pub(super) fn new_indexed(capacity: usize, predicate: fn(&T) -> bool) -> Self {
+        Self {
+            active: Some(ActiveIndex {
+                predicate,
+                words: vec![0; capacity.div_ceil(64)],
+            }),
+            ..Self::new(capacity)
         }
     }
 
@@ -35,9 +53,30 @@ impl<T> TypedStore<T> {
         self.values[slot].as_mut()
     }
 
+    /// Reevaluate an indexed value after direct mutable access, before any
+    /// active-presence query can observe the store. Ordinary columns do no work.
+    pub(super) fn refresh_active(&mut self, slot: usize) {
+        if let Some(active) = &mut self.active {
+            let bit = 1_u64 << (slot % 64);
+            let word = &mut active.words[slot / 64];
+            if self.values[slot].as_ref().is_some_and(active.predicate) {
+                *word |= bit;
+            } else {
+                *word &= !bit;
+            }
+        }
+    }
+
+    /// Present slots satisfying the registered predicate, when indexing was
+    /// selected. Direct writes must call `refresh_active` before reading this.
+    pub(super) fn active_presence(&self) -> Option<&[u64]> {
+        self.active.as_ref().map(|active| active.words.as_slice())
+    }
+
     pub(super) fn insert(&mut self, slot: usize, value: T) -> Option<T> {
         let prior = self.values[slot].replace(value);
         self.presence[slot / 64] |= 1_u64 << (slot % 64);
+        self.refresh_active(slot);
         prior
     }
 
@@ -45,6 +84,9 @@ impl<T> TypedStore<T> {
         let prior = self.values[slot].take();
         if prior.is_some() {
             self.presence[slot / 64] &= !(1_u64 << (slot % 64));
+        }
+        if let Some(active) = &mut self.active {
+            active.words[slot / 64] &= !(1_u64 << (slot % 64));
         }
         prior
     }
@@ -67,6 +109,10 @@ impl<T: Send + Sync + 'static> StorageColumn for TypedStore<T> {
         self
     }
 
+    fn active_presence(&self) -> Option<&[u64]> {
+        Self::active_presence(self)
+    }
+
     fn clear_slot(&mut self, slot: usize) {
         self.remove(slot);
     }
@@ -76,6 +122,9 @@ impl<T: Send + Sync + 'static> StorageColumn for TypedStore<T> {
             *value = None;
         }
         self.presence.fill(0);
+        if let Some(active) = &mut self.active {
+            active.words.fill(0);
+        }
     }
 
     fn take_into_undo(&mut self, slot: u32, undo: &mut dyn UndoColumn) {
@@ -159,5 +208,76 @@ impl EntityBundle {
         for (value, column) in self.values.iter_mut().zip(columns) {
             value.commit(column.as_mut(), slot);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{StorageColumn, TypedStore, TypedUndo, UndoColumn};
+
+    #[test]
+    fn predicate_index_tracks_presence_replacement_and_direct_mutation_across_words() {
+        let mut store = TypedStore::new_indexed(130, |value: &u32| *value != 0);
+        assert_eq!(store.active_presence(), Some(&[0, 0, 0][..]));
+        assert_eq!(store.insert(0, 1), None);
+        assert_eq!(store.insert(64, 0), None);
+        assert_eq!(store.insert(129, 9), None);
+        assert_eq!(store.presence(), &[1, 1, 2]);
+        assert_eq!(store.active_presence(), Some(&[1, 0, 2][..]));
+        assert_eq!(store.insert(0, 0), Some(1));
+        assert_eq!(store.insert(64, 3), Some(0));
+        assert_eq!(store.active_presence(), Some(&[0, 1, 2][..]));
+        *store.get_mut(0).expect("present inactive value") = 5;
+        store.refresh_active(0);
+        *store.get_mut(64).expect("present active value") = 0;
+        store.refresh_active(64);
+        let erased: &dyn StorageColumn = &store;
+        assert_eq!(erased.active_presence(), Some(&[1, 0, 2][..]));
+        assert_eq!(store.remove(129), Some(9));
+        assert_eq!(store.remove(129), None);
+        assert_eq!(store.presence(), &[1, 1, 0]);
+        assert_eq!(store.active_presence(), Some(&[1, 0, 0][..]));
+        store.clear_all();
+        store.refresh_active(0);
+        assert_eq!(store.presence(), &[0, 0, 0]);
+        assert_eq!(store.active_presence(), Some(&[0, 0, 0][..]));
+    }
+
+    #[test]
+    fn undo_removal_and_restore_maintain_the_predicate_index() {
+        let mut store = TypedStore::new_indexed(65, |value: &u32| *value >= 10);
+        store.insert(64, 12);
+        let mut undo = TypedUndo::<u32>::new(|value| *value);
+        store.take_into_undo(64, &mut undo);
+        assert_eq!(store.get(64), None);
+        assert_eq!(store.active_presence(), Some(&[0, 0][..]));
+        undo.restore_into(&mut store, &mut [0; 65], 0, 1);
+        assert_eq!(store.get(64), Some(&12));
+        assert_eq!(store.active_presence(), Some(&[0, 1][..]));
+        undo.clear();
+        undo.push_component(64, Some(2), 0);
+        undo.restore_into(&mut store, &mut [0; 65], 0, 1);
+        assert_eq!(store.get(64), Some(&2));
+        assert_eq!(store.active_presence(), Some(&[0, 0][..]));
+    }
+
+    #[test]
+    fn ordinary_store_has_no_index_and_an_index_never_selects_absent_values() {
+        let mut ordinary = TypedStore::new(1);
+        ordinary.insert(0, 3_u32);
+        *ordinary.get_mut(0).expect("ordinary value") = 4;
+        ordinary.refresh_active(0);
+        assert_eq!(ordinary.get(0), Some(&4));
+        assert_eq!(ordinary.active_presence(), None);
+        ordinary.remove(0);
+        ordinary.clear_all();
+        assert_eq!(ordinary.active_presence(), None);
+        let mut indexed = TypedStore::new_indexed(1, |_: &u32| true);
+        indexed.refresh_active(0);
+        assert_eq!(indexed.active_presence(), Some(&[0][..]));
+        indexed.insert(0, 0);
+        assert_eq!(indexed.active_presence(), Some(&[1][..]));
+        indexed.clear_slot(0);
+        assert_eq!(indexed.active_presence(), Some(&[0][..]));
     }
 }
