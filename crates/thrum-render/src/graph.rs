@@ -9,6 +9,8 @@ use std::collections::BTreeSet;
 use std::ops::Range;
 use std::sync::Arc;
 
+use crate::timing::{GpuTimings, TimingError};
+
 /// A graph-local resource identity. Constructed only by its owning graph.
 #[derive(Clone, Debug)]
 pub struct ResourceId {
@@ -356,6 +358,20 @@ struct CompiledAttachment {
     store: bool,
 }
 
+pub(crate) struct GraphColorAttachment<'a> {
+    pub(crate) resource: &'a ResourceId,
+    pub(crate) range: Range<u64>,
+    pub(crate) view: &'a wgpu::TextureView,
+    pub(crate) clear: wgpu::Color,
+}
+
+pub(crate) struct GraphDepthAttachment<'a> {
+    pub(crate) resource: &'a ResourceId,
+    pub(crate) range: Range<u64>,
+    pub(crate) view: &'a wgpu::TextureView,
+    pub(crate) clear: f32,
+}
+
 impl CompiledPass {
     /// The executor, not a recorder, owns attachment load and store decisions.
     pub(crate) fn attachment_ops<T>(
@@ -379,6 +395,73 @@ impl CompiledPass {
                     wgpu::StoreOp::Discard
                 },
             })
+    }
+
+    /// Open the declared render attachments without allocating on the frame path.
+    /// Recorders receive a pass and cannot substitute load/store operations.
+    pub(crate) fn begin_render<'a>(
+        &self,
+        encoder: &'a mut wgpu::CommandEncoder,
+        color: Option<GraphColorAttachment<'_>>,
+        depth: Option<GraphDepthAttachment<'_>>,
+        generation: u64,
+        timings: Option<&mut GpuTimings>,
+    ) -> Result<Option<wgpu::RenderPass<'a>>, TimingError> {
+        if color.is_none() && depth.is_none()
+            || self.attachments.len() != usize::from(color.is_some()) + usize::from(depth.is_some())
+        {
+            return Ok(None);
+        }
+        let color = match color {
+            Some(attachment) => {
+                let Some(ops) =
+                    self.attachment_ops(attachment.resource, attachment.range, attachment.clear)
+                else {
+                    return Ok(None);
+                };
+                Some(wgpu::RenderPassColorAttachment {
+                    view: attachment.view,
+                    depth_slice: None,
+                    resolve_target: None,
+                    ops,
+                })
+            }
+            None => None,
+        };
+        let depth = match depth {
+            Some(attachment) => {
+                let Some(ops) =
+                    self.attachment_ops(attachment.resource, attachment.range, attachment.clear)
+                else {
+                    return Ok(None);
+                };
+                Some(wgpu::RenderPassDepthStencilAttachment {
+                    view: attachment.view,
+                    depth_ops: Some(ops),
+                    stencil_ops: None,
+                })
+            }
+            None => None,
+        };
+        let colors = [color];
+        let color_attachments = if colors[0].is_some() {
+            &colors[..]
+        } else {
+            &[]
+        };
+        let timestamp_writes = timings
+            .map(|timings| timings.pass_writes(generation, &self.name))
+            .transpose()?
+            .flatten();
+        Ok(Some(encoder.begin_render_pass(
+            &wgpu::RenderPassDescriptor {
+                label: Some(&self.name),
+                color_attachments,
+                depth_stencil_attachment: depth,
+                timestamp_writes,
+                ..Default::default()
+            },
+        )))
     }
 }
 

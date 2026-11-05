@@ -8,8 +8,9 @@
 
 use crate::abi::{self, AbiError, InstanceRecord, MaterialRecord, TextureClasses};
 use crate::graph::{
-    Access, AccessKind, CompiledGraph, CompiledPass, FrameGraph, GraphError, GraphTextures, Pass,
-    PassScope, PipelineKey, ResourceDescriptor, ResourceId, ResourceScope,
+    Access, AccessKind, CompiledGraph, CompiledPass, FrameGraph, GraphColorAttachment,
+    GraphDepthAttachment, GraphError, GraphTextures, Pass, PassScope, PipelineKey,
+    ResourceDescriptor, ResourceId, ResourceScope,
 };
 use crate::timing::{GpuTimings, TimingError};
 use glam::Vec3;
@@ -1296,32 +1297,25 @@ impl PreparedSynthetic {
         compiled: &CompiledPass,
         timings: Option<&mut GpuTimings>,
     ) -> Result<(), RenderError> {
-        let timestamps = match timings {
-            Some(timings) => timings.pass_writes(generation, &compiled.name)?,
-            None => None,
-        };
-        let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-            label: Some(&compiled.name),
-            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                view: &target.scene_view,
-                depth_slice: None,
-                resolve_target: None,
-                ops: compiled
-                    .attachment_ops(&target.ids.scene, 0..1, self.background)
-                    .ok_or(RenderError::GraphPassMismatch)?,
-            })],
-            depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
-                view: &target.depth,
-                depth_ops: Some(
-                    compiled
-                        .attachment_ops(&target.ids.depth, 0..1, 0.0)
-                        .ok_or(RenderError::GraphPassMismatch)?,
-                ),
-                stencil_ops: None,
-            }),
-            timestamp_writes: timestamps,
-            ..Default::default()
-        });
+        let mut pass = compiled
+            .begin_render(
+                encoder,
+                Some(GraphColorAttachment {
+                    resource: &target.ids.scene,
+                    range: 0..1,
+                    view: &target.scene_view,
+                    clear: self.background,
+                }),
+                Some(GraphDepthAttachment {
+                    resource: &target.ids.depth,
+                    range: 0..1,
+                    view: &target.depth,
+                    clear: 0.0,
+                }),
+                generation,
+                timings,
+            )?
+            .ok_or(RenderError::GraphPassMismatch)?;
         pass.set_pipeline(&self.pipeline);
         pass.set_bind_group(0, &target.view_bind_group, &[]);
         pass.set_bind_group(1, &self.light, &[]);
@@ -1339,23 +1333,20 @@ impl PreparedSynthetic {
         compiled: &CompiledPass,
         timings: Option<&mut GpuTimings>,
     ) -> Result<(), RenderError> {
-        let timestamps = match timings {
-            Some(timings) => timings.pass_writes(generation, &compiled.name)?,
-            None => None,
-        };
-        let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-            label: Some(&compiled.name),
-            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                view: &target.view,
-                depth_slice: None,
-                resolve_target: None,
-                ops: compiled
-                    .attachment_ops(&target.ids.output, 0..1, wgpu::Color::BLACK)
-                    .ok_or(RenderError::GraphPassMismatch)?,
-            })],
-            timestamp_writes: timestamps,
-            ..Default::default()
-        });
+        let mut pass = compiled
+            .begin_render(
+                encoder,
+                Some(GraphColorAttachment {
+                    resource: &target.ids.output,
+                    range: 0..1,
+                    view: &target.view,
+                    clear: wgpu::Color::BLACK,
+                }),
+                None,
+                generation,
+                timings,
+            )?
+            .ok_or(RenderError::GraphPassMismatch)?;
         pass.set_pipeline(&self.display_pipeline);
         pass.set_bind_group(0, &target.display, &[]);
         pass.draw(0..3, 0..1);
