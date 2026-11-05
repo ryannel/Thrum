@@ -6,8 +6,8 @@ use std::any::Any;
 use thrum_core::{
     Handle, Origin,
     sim::{
-        Edit, EntityWriter, ExecutionMode, Executor, InputFrame, Read2, ReadPermit,
-        RegisteredWorldError, StructuralPermit, TickGame, WorldRead, WritePermit,
+        Edit, EntityWriter, Executor, InputFrame, Read2, ReadPermit, RegisteredWorldError,
+        StructuralPermit, TickGame, WorldRead, WorldTxn, WritePermit, WriteRead2,
     },
 };
 
@@ -63,16 +63,13 @@ fn fill_spawn(
 }
 
 pub(super) struct Candidate {
-    pub(super) motion: Option<Read2<Position, Velocity>>,
+    pub(super) motion: WriteRead2<Position, Velocity>,
     pub(super) capture_query: Read2<Position, Health>,
-    motion_jobs: Vec<MotionJob>,
     positions: Vec<Position>,
     position_edits: Vec<(Handle, Position)>,
     base_positions: Vec<Position>,
     position_loaded: Vec<bool>,
-    velocity_updates: usize,
-    health_updates: usize,
-    fast_motion: bool,
+    direct_positions: usize,
     velocities: Vec<Velocity>,
     health: Vec<Health>,
     base_velocity: Vec<Velocity>,
@@ -97,29 +94,20 @@ pub(super) struct ParallelOutput {
     health: Vec<(Handle, u16)>,
 }
 
-struct MotionJob {
-    handle: Handle,
-    position: Position,
-    velocity: Velocity,
-}
-
 impl Candidate {
     pub(super) fn new(
         capacity: usize,
-        motion: Read2<Position, Velocity>,
+        motion: WriteRead2<Position, Velocity>,
         capture_query: Read2<Position, Health>,
     ) -> Self {
         Self {
-            motion: Some(motion),
+            motion,
             capture_query,
-            motion_jobs: Vec::with_capacity(capacity.min(2_048)),
             positions: vec![Position::default(); capacity],
             position_edits: Vec::with_capacity(capacity.min(2_048)),
             base_positions: vec![Position::default(); capacity],
             position_loaded: vec![false; capacity],
-            velocity_updates: 0,
-            health_updates: 0,
-            fast_motion: false,
+            direct_positions: 0,
             velocities: vec![Velocity::default(); capacity],
             health: vec![Health(0); capacity],
             base_velocity: vec![Velocity::default(); capacity],
@@ -153,13 +141,10 @@ impl Candidate {
             self.despawn_marks[row] = false;
         }
         self.despawned.clear();
-        self.motion_jobs.clear();
         self.position_edits.clear();
         self.spawns.clear();
         self.edits.clear();
-        self.velocity_updates = 0;
-        self.health_updates = 0;
-        self.fast_motion = false;
+        self.direct_positions = 0;
     }
 
     fn touch(&mut self, handle: Handle, tick: u64) -> usize {
@@ -181,14 +166,12 @@ impl Candidate {
 
     fn set_velocity(&mut self, handle: Handle, value: Velocity, tick: u64) {
         let row = self.touch(handle, tick);
-        self.velocity_updates += usize::from(self.velocity_marks[row] != tick);
         self.velocities[row] = value;
         self.velocity_marks[row] = tick;
     }
 
     fn set_health(&mut self, handle: Handle, value: u16, tick: u64) {
         let row = self.touch(handle, tick);
-        self.health_updates += usize::from(self.health_marks[row] != tick);
         self.health[row] = Health(value);
         self.health_marks[row] = tick;
     }
@@ -303,77 +286,55 @@ impl Rules {
 
     pub(super) fn simulate(
         &self,
-        world: &WorldRead<'_>,
-        executor: Executor,
+        world: &mut WorldTxn<'_>,
+        _executor: Executor,
         tick: u64,
         candidate: &mut Candidate,
-    ) {
+    ) -> Result<(), SimError> {
         let dt = 1.0 / f64::from(self.config.tick_hz.get());
-        let mut motion = candidate.motion.take().expect("prepared motion query");
-        if self
-            .commands
-            .iter()
-            .all(|command| matches!(command, Command::Spawn(_) | Command::Despawn(_)))
-        {
-            candidate.fast_motion = true;
-            for command in &self.commands {
-                if let Command::Despawn(handle) = command {
-                    let row = handle.slot as usize;
-                    candidate.despawn_marks[row] = true;
-                    candidate.despawned.push(row);
-                }
-            }
-            motion.visit(world, |handle, _, position, velocity| {
+        for command in &self.commands {
+            if let Command::Despawn(handle) = command {
                 let row = handle.slot as usize;
-                if candidate.despawn_marks[row] {
-                    return;
-                }
-                let effective = candidate.velocity(row, *velocity, tick);
-                if candidate.velocity_marks[row] == tick {
-                    candidate.base_velocity[row] = *velocity;
-                    candidate.velocity_present[row] = true;
-                }
-                if effective != Velocity::default() {
-                    let next = integrate_position(*position, effective, dt);
-                    if next != *position {
-                        candidate.position_edits.push((handle, next));
-                    }
-                }
-            });
-            candidate.motion = Some(motion);
-            return;
+                candidate.despawn_marks[row] = true;
+                candidate.despawned.push(row);
+            } else if let Command::SetPosition(handle, position) = command {
+                candidate.set_position(*handle, *position, tick);
+            }
         }
-        // No parallel crossover has been measured for this V1 motion kernel
-        // through 500k rows; preferred Rayon stays serial until one is.
-        let parallel_motion = executor.mode() == ExecutionMode::RayonForced;
-        motion.visit(world, |handle, _, position, base_velocity| {
-            let row = candidate.touch(handle, tick);
-            candidate.base_velocity[row] = *base_velocity;
-            candidate.base_positions[row] = *position;
-            candidate.position_loaded[row] = true;
-            candidate.velocity_present[row] = true;
-            let velocity = candidate.velocity(row, *base_velocity, tick);
-            if velocity != Velocity::default() {
-                if parallel_motion {
-                    candidate.motion_jobs.push(MotionJob {
-                        handle,
-                        position: *position,
-                        velocity,
-                    });
-                } else {
-                    candidate.positions[row] = integrate_position(*position, velocity, dt);
-                    candidate.position_marks[row] = tick;
+        let motion = candidate.motion;
+        world.visit(&motion, |handle, _, position, base_velocity| {
+            let row = handle.slot as usize;
+            if candidate.despawn_marks[row] {
+                return Ok(false);
+            }
+            if candidate.position_marks[row] == tick {
+                candidate.position_marks[row] = 0;
+                let next = candidate.positions[row];
+                if next != *position {
+                    *position = next;
+                    candidate.direct_positions += 1;
+                    return Ok(true);
+                }
+                return Ok(false);
+            }
+            let effective = candidate.velocity(row, *base_velocity, tick);
+            if candidate.velocity_marks[row] == tick {
+                candidate.base_velocity[row] = *base_velocity;
+                candidate.velocity_present[row] = true;
+            }
+            if effective != Velocity::default() {
+                let next = integrate_position(*position, effective, dt);
+                if !finite(next.0) {
+                    return Err(SimError::NonFinite);
+                }
+                if next != *position {
+                    *position = next;
+                    candidate.direct_positions += 1;
+                    return Ok(true);
                 }
             }
-        });
-        candidate.motion = Some(motion);
-        executor.for_each_mut(&mut candidate.motion_jobs, |job| {
-            job.position = integrate_position(job.position, job.velocity, dt);
-        });
-        for index in 0..candidate.motion_jobs.len() {
-            let job = &candidate.motion_jobs[index];
-            candidate.set_position(job.handle, job.position, tick);
-        }
+            Ok(false)
+        })
     }
 
     pub(super) fn resolve(
@@ -383,100 +344,15 @@ impl Rules {
         tick: u64,
         candidate: &mut Candidate,
     ) -> Result<(), SimError> {
-        if candidate.fast_motion {
-            for &row in &candidate.touched {
-                if candidate.despawn_marks[row] {
-                    continue;
-                }
-                let handle = candidate.handles[row].expect("touched row has handle");
-                if candidate.velocity_marks[row] == tick {
-                    let value = candidate.velocities[row];
-                    if !finite(value.0) {
-                        return Err(SimError::NonFinite);
-                    }
-                    if candidate.base_velocity[row] != value {
-                        candidate.edits.push(Edit::replace(
-                            &self.velocity_write,
-                            handle,
-                            row,
-                            velocity_at,
-                        ));
-                    }
-                }
-                if candidate.health_marks[row] == tick {
-                    let original = world
-                        .with(&self.resolve_health_read, handle, |value| value.0)
-                        .map_err(|_| SimError::InvalidHandle)?;
-                    if original != candidate.health[row].0 {
-                        candidate.edits.push(Edit::replace(
-                            &self.health_write,
-                            handle,
-                            row,
-                            health_at,
-                        ));
-                    }
-                }
-            }
-            if candidate
-                .position_edits
-                .iter()
-                .any(|(_, position)| !finite(position.0))
-            {
-                return Err(SimError::NonFinite);
-            }
-            if !candidate.position_edits.is_empty() {
-                candidate
-                    .edits
-                    .push(Edit::replace_batch(&self.position_write, position_batch));
-            }
-            self.append_structural_edits(candidate);
-            return Ok(());
-        }
-        if self.commands.is_empty()
-            && candidate.velocity_updates == 0
-            && candidate.health_updates == 0
-        {
-            for &row in &candidate.touched {
-                if candidate.position_marks[row] != tick {
-                    continue;
-                }
-                let position = candidate.positions[row];
-                if !finite(position.0) {
-                    return Err(SimError::NonFinite);
-                }
-                if candidate.base_positions[row] != position {
-                    candidate.position_edits.push((
-                        candidate.handles[row].expect("touched row has handle"),
-                        position,
-                    ));
-                }
-            }
-            if !candidate.position_edits.is_empty() {
-                candidate
-                    .edits
-                    .push(Edit::replace_batch(&self.position_write, position_batch));
-            }
-            return Ok(());
-        }
-        for command in &self.commands {
-            if let Command::Despawn(handle) = command {
-                let row = handle.slot as usize;
-                candidate.despawn_marks[row] = true;
-                candidate.despawned.push(row);
-            }
-        }
         for command in &self.commands {
             match command {
-                Command::SetPosition(handle, value) => {
-                    candidate.set_position(*handle, *value, tick);
-                }
                 Command::SetVelocity(handle, value) => {
                     candidate.set_velocity(*handle, *value, tick);
                 }
                 Command::SetHealth(handle, value) => {
                     candidate.set_health(*handle, *value, tick);
                 }
-                Command::Spawn(_) | Command::Despawn(_) => {}
+                Command::SetPosition(_, _) | Command::Spawn(_) | Command::Despawn(_) => {}
             }
         }
         for &row in &candidate.touched {
@@ -600,7 +476,7 @@ impl TickGame<Page> for Rules {
                 self.committed_inputs.push(frame.origin);
             }
         }
-        self.changed_positions = candidate.position_edits.len();
+        self.changed_positions = candidate.direct_positions + candidate.position_edits.len();
         for command in &self.commands {
             if let Command::Despawn(handle) = command
                 && let Some(peer) = self.peers.iter_mut().find(|peer| peer.handle == *handle)
@@ -645,8 +521,6 @@ impl TickGame<Page> for Rules {
             &self.health_read,
             &self.ownership_read,
             &self.visual_read,
-            &candidate.position_edits,
-            candidate.fast_motion,
             events,
             tick,
             timeline,

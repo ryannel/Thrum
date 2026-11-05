@@ -18,7 +18,7 @@ pub use registered_world::{EntityWriter, RegisteredWorldError};
 pub use runtime::{
     ColumnRead, ExecutionMode, Executor, GameRuntime, LiveSlot, PublicationMode, Read2, ReadPermit,
     RegisteredSystem, RuntimeCapture, RuntimeDelta, RuntimeEndpoint, RuntimeError, RuntimeUndo,
-    StructuralPermit, TickError, TickGame, WorldRead, WritePermit,
+    StructuralPermit, TickError, TickGame, WorldRead, WorldTxn, WritePermit, WriteRead2,
 };
 pub use schedule::{
     Access, AccessKey, AccessMode, ComponentKey, ComponentRegistry, ComponentSchemaId,

@@ -128,8 +128,6 @@ impl Page {
         health_read: &ReadPermit<Health>,
         ownership_read: &ReadPermit<Ownership>,
         visual_read: &ReadPermit<Visual>,
-        current_positions: &[(Handle, Position)],
-        ordered_positions: bool,
         events: &[StructuralChange],
         tick: u64,
         timeline: u64,
@@ -144,8 +142,6 @@ impl Page {
         self.patch_source = None;
         self.dirty.clear();
         self.events.clear();
-        let (position_only, position_and_structure) =
-            Self::sparse_modes(world, position_read, since, tick, full_refresh);
         if full_refresh {
             self.live = 0;
             self.present_marks.fill(u64::MAX);
@@ -161,29 +157,7 @@ impl Page {
                 self.mark_dirty(slot as usize, STRUCTURAL_DIRTY);
             }
         }
-        if position_only {
-            self.capture_position_only(
-                world,
-                position_read,
-                current_positions,
-                ordered_positions,
-                since.expect("position source"),
-                tick,
-            );
-        } else if position_and_structure {
-            self.capture_position_and_structure(
-                world,
-                position_read,
-                velocity_read,
-                health_read,
-                ownership_read,
-                visual_read,
-                current_positions,
-                events,
-                since.expect("retained structural source"),
-                tick,
-            );
-        } else if full_refresh {
+        if full_refresh {
             query.visit_with_changes(
                 world,
                 (position_read, velocity_read, health_read),
@@ -327,30 +301,8 @@ impl Page {
                 }
             }
         }
-        if !(position_only && ordered_positions) {
-            self.collect_dirty();
-        }
+        self.collect_dirty();
         self.initialized = true;
-    }
-
-    fn sparse_modes(
-        world: &WorldRead<'_>,
-        position_read: &ReadPermit<Position>,
-        since: Option<u64>,
-        tick: u64,
-        full_refresh: bool,
-    ) -> (bool, bool) {
-        let Some(old) = since.filter(|_| !full_refresh) else {
-            return (false, false);
-        };
-        let only_position = world
-            .only_component_changes_since(position_read, old, tick, false)
-            .expect("declared position read");
-        let position_or_structure = !only_position
-            && world
-                .only_component_changes_since(position_read, old, tick, true)
-                .expect("declared position read");
-        (only_position, position_or_structure)
     }
 
     fn collect_dirty(&mut self) {
@@ -374,143 +326,6 @@ impl Page {
                 if flags & STRUCTURAL_DIRTY != 0 {
                     self.dirty.structural.push(key);
                 }
-            }
-        }
-    }
-
-    fn capture_position_only(
-        &mut self,
-        world: &WorldRead<'_>,
-        position_read: &ReadPermit<Position>,
-        current_positions: &[(Handle, Position)],
-        ordered_positions: bool,
-        since: u64,
-        tick: u64,
-    ) {
-        if world.prior_changes_covered_by_current(since, tick, false) {
-            self.write_current_positions(current_positions, ordered_positions);
-            return;
-        }
-        let positions = world.column(position_read).expect("declared position read");
-        let retained = world.visit_changes_since(since, tick, |key| {
-            let row = world
-                .live_at_slot(key)
-                .expect("position-only edit keeps membership");
-            self.positions[key as usize] = *positions
-                .get(row)
-                .expect("same runtime slot")
-                .expect("V1 position");
-        });
-        debug_assert!(retained, "position interval was checked");
-        self.write_current_positions(current_positions, ordered_positions);
-    }
-
-    fn write_current_positions(
-        &mut self,
-        current_positions: &[(Handle, Position)],
-        ordered_positions: bool,
-    ) {
-        if ordered_positions {
-            // The fast motion query visits each slot once in physical order.
-            for &(handle, position) in current_positions {
-                self.positions[handle.slot as usize] = position;
-                self.dirty.position.push(handle.slot);
-            }
-        } else {
-            for &(handle, position) in current_positions {
-                self.positions[handle.slot as usize] = position;
-                self.mark_dirty(handle.slot as usize, POSITION_DIRTY);
-            }
-        }
-    }
-
-    #[expect(
-        clippy::too_many_arguments,
-        reason = "one sparse V1 refresh binds its declared columns and current structural journal"
-    )]
-    fn capture_position_and_structure(
-        &mut self,
-        world: &WorldRead<'_>,
-        position_read: &ReadPermit<Position>,
-        velocity_read: &ReadPermit<Velocity>,
-        health_read: &ReadPermit<Health>,
-        ownership_read: &ReadPermit<Ownership>,
-        visual_read: &ReadPermit<Visual>,
-        current_positions: &[(Handle, Position)],
-        events: &[StructuralChange],
-        since: u64,
-        tick: u64,
-    ) {
-        let positions = world.column(position_read).expect("declared position read");
-        let velocities = world.column(velocity_read).expect("declared velocity read");
-        let healths = world.column(health_read).expect("declared health read");
-        let owners = world
-            .column(ownership_read)
-            .expect("declared ownership read");
-        let visuals = world.column(visual_read).expect("declared visual read");
-        let covered = world.prior_changes_covered_by_current(since, tick, true);
-        if covered {
-            for &(handle, position) in current_positions {
-                self.positions[handle.slot as usize] = position;
-                self.mark_dirty(handle.slot as usize, POSITION_DIRTY);
-            }
-        }
-        let mut refresh = |key| {
-            let slot = key as usize;
-            let live = world.live_at_slot(key);
-            let current = live.map(|row| (row.stable_id(), row.handle().generation));
-            let previous = self.ids[slot].map(|id| (id, self.generations[slot]));
-            if previous != current {
-                if previous.is_some() {
-                    self.live -= 1;
-                }
-                if let Some(row) = live {
-                    self.live += 1;
-                    self.ids[slot] = Some(row.stable_id());
-                    self.generations[slot] = row.handle().generation;
-                    self.velocities[slot] = velocities
-                        .get(row)
-                        .expect("same runtime slot")
-                        .copied()
-                        .unwrap_or_default();
-                    self.health[slot] = healths
-                        .get(row)
-                        .expect("same runtime slot")
-                        .expect("V1 health")
-                        .0;
-                    self.ownership[slot] = owners.get(row).expect("same runtime slot").copied();
-                    self.visuals[slot] = visuals
-                        .get(row)
-                        .expect("same runtime slot")
-                        .map(|value| value.0);
-                } else {
-                    self.ids[slot] = None;
-                }
-            }
-            if let Some(row) = live {
-                self.positions[slot] = *positions
-                    .get(row)
-                    .expect("same runtime slot")
-                    .expect("V1 position");
-            }
-        };
-        let retained = if covered {
-            world.visit_structural_since(since, tick, &mut refresh)
-        } else {
-            world.visit_changes_since(since, tick, &mut refresh)
-        };
-        debug_assert!(retained, "sparse interval was checked");
-        if !covered {
-            for &(handle, _) in current_positions {
-                self.mark_dirty(handle.slot as usize, POSITION_DIRTY);
-            }
-        }
-        for event in events {
-            if let StructuralChange::Spawn(handle) = event {
-                self.mark_dirty(
-                    handle.slot as usize,
-                    POSITION_DIRTY | VELOCITY_DIRTY | HEALTH_DIRTY,
-                );
             }
         }
     }

@@ -49,6 +49,11 @@ pub(super) struct WorldUndo {
     changed_words: Option<Vec<u64>>,
 }
 
+pub(super) trait TentativeDirty {
+    fn mark_first(&mut self, component: usize, slot: u32) -> bool;
+    fn unmark_last(&mut self, component: usize, slot: u32);
+}
+
 pub(super) struct BatchUndoWriter<'a, T> {
     column: &'a mut TypedUndo<T>,
     changed_words: Option<&'a mut [u64]>,
@@ -126,6 +131,20 @@ impl WorldUndo {
         }
     }
 
+    /// Roll back component writes made before commit metadata is published.
+    /// The prior change journal is untouched because tentative writes did not
+    /// call `begin_tick` or mark a committed change.
+    pub(super) fn abort_tentative(&mut self, world: &mut RegisteredWorld) {
+        assert!(self.slots.is_empty(), "structural edits are not tentative");
+        let count = self.columns.len();
+        for (component, (column, storage)) in
+            self.columns.iter_mut().zip(&mut world.columns).enumerate()
+        {
+            column.restore_into(storage.as_mut(), &mut world.change_ticks, component, count);
+        }
+        self.clear();
+    }
+
     pub(super) fn reserved_bytes(&self) -> usize {
         size_of::<Self>()
             + self.slots.capacity() * size_of::<(u32, Slot)>()
@@ -156,6 +175,39 @@ impl WorldUndo {
             .downcast_mut::<TypedUndo<T>>()
             .expect("registered undo column type")
             .push_component(slot, prior, tick);
+    }
+
+    fn record_tentative<T: Send + Sync + 'static>(
+        &mut self,
+        component: usize,
+        slot: u32,
+        tick: u64,
+        prior: T,
+    ) {
+        self.columns[component]
+            .as_any_mut()
+            .downcast_mut::<TypedUndo<T>>()
+            .expect("registered undo column type")
+            .push_component(slot, Some(prior), tick);
+    }
+
+    fn finish_tentative<T: Send + Sync + 'static>(
+        &mut self,
+        component: usize,
+        slot: u32,
+        changed: bool,
+    ) {
+        if changed {
+            if let Some(words) = &mut self.changed_words {
+                words[slot as usize / 64] |= 1_u64 << (slot % 64);
+            }
+        } else {
+            self.columns[component]
+                .as_any_mut()
+                .downcast_mut::<TypedUndo<T>>()
+                .expect("registered undo column type")
+                .pop_tentative(slot);
+        }
     }
 
     pub(super) fn record_structural(&mut self, world: &RegisteredWorld, slot: u32) {
@@ -1273,6 +1325,77 @@ impl RegisteredWorld {
             second,
             marker: PhantomData,
         })
+    }
+
+    /// Visit distinct typed columns in physical-slot order. The first write
+    /// to a slot records its preimage before invoking game code, including if
+    /// that code later refuses the tick or unwinds.
+    pub(super) fn visit_mut2<T: Clone + Send + Sync + 'static, U: Send + Sync + 'static, E>(
+        &mut self,
+        first: usize,
+        second: usize,
+        undo: &mut WorldUndo,
+        dirty: &mut impl TentativeDirty,
+        mut visit: impl FnMut(Handle, StableId, &mut T, &U) -> Result<bool, E>,
+    ) -> Result<(), E> {
+        assert_ne!(first, second, "mutable query components must be distinct");
+        let (write, read) = if first < second {
+            let (left, right) = self.columns.split_at_mut(second);
+            (&mut left[first], &right[0])
+        } else {
+            let (left, right) = self.columns.split_at_mut(first);
+            (&mut right[0], &left[second])
+        };
+        let write = write
+            .as_any_mut()
+            .downcast_mut::<TypedStore<T>>()
+            .expect("prepared mutable component type");
+        let read = read
+            .as_any()
+            .downcast_ref::<TypedStore<U>>()
+            .expect("prepared shared component type");
+        let stride = self.registry.entries.len();
+        for word in 0..write.presence().len() {
+            let mut matching = write.presence()[word] & read.presence()[word];
+            while matching != 0 {
+                let bit = matching.trailing_zeros() as usize;
+                matching &= matching - 1;
+                let index = word * 64 + bit;
+                let key = u32::try_from(index).expect("validated slot capacity");
+                let slot = self.slots[index];
+                let id = slot
+                    .stable
+                    .expect("stored component belongs to a live slot");
+                let value = write.get_mut(index).expect("presence bit has value");
+                let first_write = dirty.mark_first(first, key);
+                if first_write {
+                    undo.record_tentative(
+                        first,
+                        key,
+                        self.change_ticks[index * stride + first],
+                        value.clone(),
+                    );
+                }
+                let handle = Handle {
+                    epoch: self.epoch,
+                    slot: key,
+                    generation: slot.generation,
+                };
+                let changed = visit(
+                    handle,
+                    id,
+                    value,
+                    read.get(index).expect("presence bit has value"),
+                )?;
+                if first_write {
+                    undo.finish_tentative::<T>(first, key, changed);
+                    if !changed {
+                        dirty.unmark_last(first, key);
+                    }
+                }
+            }
+        }
+        Ok(())
     }
 
     /// Visit matching components in canonical physical-slot order for

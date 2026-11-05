@@ -960,6 +960,94 @@ fn admission_rejects_finite_motion_beyond_game_speed_limit_without_consuming_seq
 }
 
 #[test]
+fn direct_query_refusal_restores_earlier_rows_and_keeps_the_tick_retriable() {
+    let mut sim = Simulation::new(WorldEpoch(342), config(2)).expect("game");
+    let first = sim.seed(entity(1, 1.0)).expect("first mover");
+    let mut overflowing = entity(2, f64::MAX);
+    overflowing.position = Position([f64::MAX, 0.0, 0.0]);
+    let second = sim.seed(overflowing).expect("second mover");
+    let baseline = sim.published_page().expect("initial page");
+    let before = sim.get(first).expect("first row");
+    assert_eq!(sim.step(&[]), Err(SimError::NonFinite));
+    assert_eq!(sim.tick(), 0);
+    assert_eq!(sim.get(first).expect("restored first row"), before);
+    assert_eq!(
+        sim.get(second).expect("restored second row").position,
+        overflowing.position
+    );
+    assert_eq!(baseline.id().tick, 0);
+
+    sim.step(&[Command::Despawn(second)])
+        .expect("retire invalid mover and retry tick");
+    assert_eq!(sim.tick(), 1);
+    assert_ne!(
+        sim.get(first).expect("moving row").position,
+        before.position
+    );
+}
+
+#[test]
+fn unchanged_mutable_query_row_does_not_publish_a_position_change() {
+    let mut sim = Simulation::new(WorldEpoch(343), config(1)).expect("game");
+    let owned = Ownership {
+        peer: PeerId(1),
+        connection_epoch: 1,
+        actor: ActorId(1),
+    };
+    let mut player = entity(1, 0.0);
+    player.ownership = Some(owned);
+    let handle = sim.seed(player).expect("player with velocity column");
+    sim.register_peer(owned, handle).expect("peer");
+    sim.published_page().expect("initial page");
+    assert_eq!(sim.step(&[]).expect("no-op tick").changed_positions, 0);
+    let page = sim.published_page().expect("committed page");
+    assert_eq!(page.dirty().position(), []);
+    assert_eq!(page.position(handle), Some(Position::default()));
+}
+
+#[test]
+fn position_command_overrides_motion_without_a_false_change_or_double_count() {
+    let mut diagnostic = Simulation::new(WorldEpoch(345), config(1)).expect("game");
+    let diagnostic_handle = diagnostic.seed(entity(1, 6.0)).expect("mover");
+    assert_eq!(
+        diagnostic
+            .step(&[Command::SetPosition(diagnostic_handle, Position::default(),)])
+            .expect("overridden motion")
+            .changed_positions,
+        0
+    );
+    let mut sim = Simulation::new(WorldEpoch(344), config(1)).expect("game");
+    let handle = sim.seed(entity(1, 6.0)).expect("mover");
+    sim.published_page().expect("initial page");
+    let mut history = sim
+        .begin_history(NonZeroUsize::new(4).expect("window"))
+        .expect("history");
+    let commands = [Command::SetPosition(handle, Position::default())];
+    history
+        .step(&mut sim, &commands)
+        .expect("overridden motion");
+    assert_eq!(
+        sim.get(handle).expect("live mover").position,
+        Position::default()
+    );
+    assert_eq!(sim.published_page().expect("page").dirty().position(), []);
+    history.rewind(&mut sim, 1).expect("rewind no-op position");
+    assert_eq!(
+        sim.get(handle).expect("restored mover").position,
+        Position::default()
+    );
+    assert!(
+        history
+            .replay_next(&mut sim)
+            .expect("replay retained command")
+    );
+    assert_eq!(
+        sim.get(handle).expect("replayed mover").position,
+        Position::default()
+    );
+}
+
+#[test]
 fn one_tick_impulse_reverts_to_held_axes_on_the_following_tick() {
     let mut sim = Simulation::new(WorldEpoch(34), config(1)).expect("game");
     let owned = Ownership {
