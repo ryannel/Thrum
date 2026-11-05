@@ -431,22 +431,19 @@ fn check_edit_system<C, E>(
 
 struct DirectDirty {
     words: Vec<Vec<u64>>,
-    slots: Vec<(usize, u32)>,
 }
 
 impl DirectDirty {
     fn new(components: usize, capacity: usize) -> Self {
         Self {
             words: vec![vec![0; capacity.div_ceil(64)]; components],
-            slots: Vec::with_capacity(capacity),
         }
     }
 
     fn clear(&mut self) {
-        for &(component, slot) in &self.slots {
-            self.words[component][slot as usize / 64] &= !(1_u64 << (slot % 64));
+        for words in &mut self.words {
+            words.fill(0);
         }
-        self.slots.clear();
     }
 }
 
@@ -488,12 +485,10 @@ impl TentativeDirty for DirectDirty {
             return false;
         }
         *word |= bit;
-        self.slots.push((component, slot));
         true
     }
 
     fn unmark_last(&mut self, component: usize, slot: u32) {
-        assert_eq!(self.slots.pop(), Some((component, slot)));
         self.words[component][slot as usize / 64] &= !(1_u64 << (slot % 64));
     }
 }
@@ -1534,7 +1529,6 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
             candidate,
             next,
             &mut self.structural_journal,
-            &self.direct_dirty.slots,
             Some(txn_undo),
         );
         self.world

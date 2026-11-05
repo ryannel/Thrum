@@ -492,7 +492,6 @@ impl EditScratch {
         candidate: &C,
         tick: u64,
         journal: &mut Vec<StructuralChange>,
-        direct_dirty: &[(usize, u32)],
         mut undo: Option<&mut WorldUndo>,
     ) {
         if let Some(undo) = undo.as_deref_mut() {
@@ -521,8 +520,10 @@ impl EditScratch {
         }
         journal.clear();
         world.begin_tick(Some(tick));
-        for &(component, slot) in direct_dirty {
-            world.mark_changed(component, world.handle_at(slot), tick);
+        if let Some(undo) = undo.as_ref() {
+            undo.visit_changed_components(|component, slot| {
+                world.mark_changed(component, world.handle_at(slot), tick);
+            });
         }
         for edit in edits {
             match &edit.inner {
