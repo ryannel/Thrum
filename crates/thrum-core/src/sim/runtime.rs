@@ -425,7 +425,10 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
         self.delta_ready = false;
         self.world.begin_tick();
         self.structural_journal.clear();
-        self.pages = SnapshotRing::new(make_page);
+        self.pages.reset_timeline();
+        if !self.pages.can_capture() {
+            self.pages = SnapshotRing::new(make_page);
+        }
         self.publication_skipped = false;
         Ok(())
     }

@@ -84,6 +84,13 @@ impl<T> SnapshotRing<T> {
         self.previous.clone()
     }
 
+    /// Retire this timeline while retaining unleased page storage for a new
+    /// baseline. Existing external leases continue to own their old pages.
+    pub(crate) fn reset_timeline(&mut self) {
+        self.latest = None;
+        self.previous = None;
+    }
+
     /// Reserved payload and ring storage for diagnostics. `payload_bytes`
     /// reports one page including its nested allocations.
     pub fn reserved_bytes(&self, payload_bytes: impl Fn(&T) -> usize) -> usize {
@@ -180,5 +187,22 @@ mod tests {
         })
         .expect("adjacent continuation");
         assert_eq!(*ring.previous().expect("new adjacent previous"), 5);
+    }
+
+    #[test]
+    fn reset_reuses_pages_and_preserves_an_old_lease() {
+        let mut ring = SnapshotRing::new(|| Vec::<u8>::with_capacity(16));
+        ring.capture(false, |page, _| page.push(1))
+            .expect("initial page");
+        let old = ring.latest().expect("old lease");
+        ring.reset_timeline();
+        assert!(!ring.has_latest());
+        ring.capture(false, |page, first| {
+            assert!(first);
+            page.push(2);
+        })
+        .expect("unleased page is reused");
+        assert_eq!(&*old, &[1]);
+        assert_eq!(&*ring.latest().expect("new baseline"), &[2]);
     }
 }
