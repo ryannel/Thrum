@@ -4,12 +4,14 @@
 use std::any::Any;
 
 use super::ComponentRegistry;
+use super::undo::{TypedUndo, UndoColumn};
 
 pub(super) trait StorageColumn: Send + Sync {
     fn as_any(&self) -> &dyn Any;
     fn as_any_mut(&mut self) -> &mut dyn Any;
     fn clear_slot(&mut self, slot: usize);
     fn clear_all(&mut self);
+    fn take_into_undo(&mut self, slot: u32, undo: &mut dyn UndoColumn);
 }
 
 pub(super) struct TypedStore<T> {
@@ -74,6 +76,14 @@ impl<T: Send + Sync + 'static> StorageColumn for TypedStore<T> {
             *value = None;
         }
         self.presence.fill(0);
+    }
+
+    fn take_into_undo(&mut self, slot: u32, undo: &mut dyn UndoColumn) {
+        let prior = self.remove(slot as usize);
+        undo.as_any_mut()
+            .downcast_mut::<TypedUndo<T>>()
+            .expect("registered undo column type")
+            .push(slot, prior);
     }
 }
 

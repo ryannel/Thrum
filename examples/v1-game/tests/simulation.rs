@@ -240,10 +240,15 @@ fn rolling_history_reuses_deltas_and_replays_after_churn() {
     let player_handle = sim.seed(player).expect("player");
     let old = sim.seed(entity(2, 1.0)).expect("mover");
     sim.register_peer(owned, player_handle).expect("peer");
-    let mut history = sim.begin_history(NonZeroUsize::new(4).expect("window"));
-    sim.step(&[Command::Despawn(old), Command::Spawn(entity(3, 2.0))])
+    let mut history = sim
+        .begin_history(NonZeroUsize::new(4).expect("window"))
+        .expect("committed endpoint");
+    history
+        .step(
+            &mut sim,
+            &[Command::Despawn(old), Command::Spawn(entity(3, 2.0))],
+        )
         .expect("churn");
-    history.record(&sim).expect("first delta");
     let replacement = sim.handle(StableId(3)).expect("replacement");
     let mut frame = InputFrame::new(
         Origin {
@@ -257,28 +262,37 @@ fn rolling_history_reuses_deltas_and_replays_after_churn() {
     );
     frame.actions.push(SimAction::Damage(9));
     sim.admit_frame(frame).expect("admitted");
-    sim.step(&[]).expect("input tick");
-    history.record(&sim).expect("input delta");
+    history.step(&mut sim, &[]).expect("input tick");
     for _ in 0..2 {
-        sim.step(&[]).expect("moving tick");
-        history.record(&sim).expect("moving delta");
+        history.step(&mut sim, &[]).expect("moving tick");
     }
     let target = sim.tick();
     assert_eq!(target, 4);
+    let at_target = sim.published_page().expect("target endpoint");
     let command = Command::SetVelocity(replacement, Velocity([3.0, 0.0, 0.0]));
-    sim.step(&[command]).expect("future tick");
-    history.record(&sim).expect("future delta");
+    history.step(&mut sim, &[command]).expect("future tick");
     let expected = sim.published_page().expect("future page");
-    sim.step(&[]).expect("advance window");
-    history.record(&sim).expect("bounded delta");
+    history.step(&mut sim, &[]).expect("advance window");
     assert_eq!((history.oldest_tick(), history.latest_tick()), (2, 6));
     history
         .restore_to(&mut sim, target)
         .expect("retained endpoint");
-    assert!(sim.published_page().expect("replay baseline").is_baseline());
+    let patched = sim.published_page().expect("inverse page patch");
+    assert!(!patched.is_baseline());
+    assert_eq!(patched.id().tick, target);
+    assert!(patched.patch_source().is_some());
+    let mut original_rows = Vec::new();
+    at_target.visit(|handle, id, position, visual| {
+        original_rows.push((handle, id, position, visual));
+    });
+    let mut restored_rows = Vec::new();
+    patched.visit(|handle, id, position, visual| {
+        restored_rows.push((handle, id, position, visual));
+    });
+    assert_eq!(restored_rows, original_rows);
+    assert_eq!(patched.len(), at_target.len());
     assert_eq!(sim.tick(), 4);
-    sim.step(&[command]).expect("replayed future");
-    history.record(&sim).expect("replayed delta");
+    history.step(&mut sim, &[command]).expect("replayed future");
     let actual = sim.published_page().expect("replayed page");
     assert_eq!(actual.position(replacement), expected.position(replacement));
     assert_eq!(actual.velocity(replacement), expected.velocity(replacement));
@@ -288,22 +302,52 @@ fn rolling_history_reuses_deltas_and_replays_after_churn() {
 }
 
 #[test]
+fn rewind_with_every_page_leased_keeps_authority_live_and_defers_view() {
+    let mut sim = Simulation::new(WorldEpoch(31), config(1)).expect("game");
+    sim.seed(entity(1, 0.0)).expect("entity");
+    let mut history = sim
+        .begin_history(NonZeroUsize::new(8).expect("window"))
+        .expect("committed endpoint");
+    let mut held = vec![sim.published_page().expect("tick zero")];
+    for _ in 0..3 {
+        history.step(&mut sim, &[]).expect("tick");
+        held.push(sim.published_page().expect("held page"));
+    }
+    ALLOCATIONS.with(|count| count.set(0));
+    COUNTING.with(|active| active.set(true));
+    history.restore_to(&mut sim, 1).expect("authority rewind");
+    COUNTING.with(|active| active.set(false));
+    assert_eq!(ALLOCATIONS.with(Cell::get), 0);
+    assert!(!sim.has_current_page());
+    assert!(matches!(
+        sim.published_page(),
+        Err(SimError::PublicationBusy)
+    ));
+    history.step(&mut sim, &[]).expect("authority advances");
+    assert_eq!(sim.tick(), 2);
+    drop(held);
+    let first = sim.published_page().expect("released page baseline");
+    assert_eq!(first.id().tick, 2);
+    assert!(first.is_baseline());
+}
+
+#[test]
 fn rolling_history_has_bounded_reused_storage_at_game_scales() {
     for count in [10_000, 100_000] {
         let mut sim = simulation_with_count(count).expect("game fixture");
         let full_bytes = sim.capture().reserved_bytes();
-        let mut history = sim.begin_history(NonZeroUsize::new(64).expect("window"));
+        let mut history = sim
+            .begin_history(NonZeroUsize::new(64).expect("window"))
+            .expect("committed endpoint");
         for _ in 0..65 {
-            sim.step(&[]).expect("warm tick");
-            history.record(&sim).expect("warm delta");
+            history.step(&mut sim, &[]).expect("warm tick");
         }
         let retained_bytes = history.reserved_bytes();
         assert!(retained_bytes < full_bytes * 6);
         ALLOCATIONS.with(|count| count.set(0));
         COUNTING.with(|active| active.set(true));
         for _ in 0..100 {
-            sim.step(&[]).expect("steady tick");
-            history.record(&sim).expect("reused delta");
+            history.step(&mut sim, &[]).expect("steady tick");
         }
         COUNTING.with(|active| active.set(false));
         assert_eq!(ALLOCATIONS.with(Cell::get), 0);
@@ -323,18 +367,26 @@ fn rolling_history_has_bounded_reused_storage_at_game_scales() {
 fn rolling_history_refuses_a_divergent_same_tick_future() {
     let mut sim = Simulation::new(WorldEpoch(30), config(2)).expect("game");
     let moving = sim.seed(entity(1, 1.0)).expect("moving entity");
-    let mut history = sim.begin_history(NonZeroUsize::new(4).expect("window"));
-    sim.step(&[]).expect("tick one");
-    history.record(&sim).expect("first delta");
+    let mut history = sim
+        .begin_history(NonZeroUsize::new(4).expect("window"))
+        .expect("committed endpoint");
+    history.step(&mut sim, &[]).expect("tick one");
     let saved = sim.capture();
-    sim.step(&[Command::SetVelocity(moving, Velocity([2.0, 0.0, 0.0]))])
+    history
+        .step(
+            &mut sim,
+            &[Command::SetVelocity(moving, Velocity([2.0, 0.0, 0.0]))],
+        )
         .expect("first future");
-    history.record(&sim).expect("first future delta");
     sim.restore(&saved).expect("branch point");
     sim.step(&[Command::SetVelocity(moving, Velocity([3.0, 0.0, 0.0]))])
         .expect("divergent future");
-    sim.step(&[]).expect("numerically next tick");
-    assert_eq!(history.record(&sim), Err(SimError::InvalidSnapshot));
+    assert_eq!(sim.tick(), history.latest_tick());
+    assert_eq!(history.step(&mut sim, &[]), Err(SimError::InvalidSnapshot));
+    assert_eq!(
+        history.restore_to(&mut sim, 1),
+        Err(SimError::InvalidSnapshot)
+    );
     assert_eq!(history.latest_tick(), 2);
 }
 
@@ -553,6 +605,168 @@ fn four_peer_ten_thousand_entity_serial_and_rayon_replay_match() {
     sim.restore(&capture).expect("tick-zero capture");
     sim.set_execution_mode(ExecutionMode::Rayon);
     assert_eq!(run(&mut sim), serial);
+}
+
+#[test]
+fn sparse_history_readmits_four_peer_inputs_once_after_churn() {
+    let mut sim = simulation_with_count(10_000).expect("running game");
+    let old = sim.handle(StableId(9_995)).expect("churn target");
+    let mut history = sim
+        .begin_history(NonZeroUsize::new(8).expect("window"))
+        .expect("committed endpoint");
+    for tick in 1..=3 {
+        if tick <= 2 {
+            for peer_number in 1..=4_u64 {
+                let mut frame = InputFrame::new(
+                    Origin {
+                        peer: PeerId(peer_number),
+                        connection_epoch: 1,
+                        sequence: tick,
+                    },
+                    ActorId(peer_number),
+                    tick,
+                    [0.25 * tick as f32, 0.0, 0.0],
+                );
+                frame.actions.push(SimAction::Damage(1));
+                sim.admit_frame(frame).expect("input");
+            }
+        }
+        let commands = if tick == 1 {
+            vec![Command::Despawn(old), Command::Spawn(entity(20_000, 1.0))]
+        } else {
+            Vec::new()
+        };
+        history.step(&mut sim, &commands).expect("committed tick");
+    }
+    let expected = sim.published_page().expect("future page");
+    let mut expected_rows = Vec::new();
+    expected.visit(|handle, id, position, _| {
+        expected_rows.push((
+            handle,
+            id,
+            position.0.map(f64::to_bits),
+            expected.health(handle),
+        ));
+    });
+    history.restore_to(&mut sim, 0).expect("rewind branch");
+    for _ in 0..3 {
+        assert!(history.replay_next(&mut sim).expect("retained tick"));
+    }
+    assert!(!history.replay_next(&mut sim).expect("drained replay"));
+    let actual = sim.published_page().expect("replayed page");
+    let mut actual_rows = Vec::new();
+    actual.visit(|handle, id, position, _| {
+        actual_rows.push((
+            handle,
+            id,
+            position.0.map(f64::to_bits),
+            actual.health(handle),
+        ));
+    });
+    assert_eq!(actual_rows, expected_rows);
+    assert_eq!(history.latest_tick(), 3);
+}
+
+#[test]
+fn retained_replay_refuses_fourth_peer_conflict_without_partial_admission() {
+    let mut sim = simulation_with_count(10_000).expect("running game");
+    let mut history = sim
+        .begin_history(NonZeroUsize::new(2).expect("window"))
+        .expect("history");
+    for peer_number in 1..=4_u64 {
+        sim.admit_frame(InputFrame::new(
+            Origin {
+                peer: PeerId(peer_number),
+                connection_epoch: 1,
+                sequence: 1,
+            },
+            ActorId(peer_number),
+            1,
+            [0.25, 0.0, 0.0],
+        ))
+        .expect("original input");
+    }
+    history.step(&mut sim, &[]).expect("original tick");
+    history.restore_to(&mut sim, 0).expect("branch point");
+    sim.admit_frame(InputFrame::new(
+        Origin {
+            peer: PeerId(4),
+            connection_epoch: 1,
+            sequence: 1,
+        },
+        ActorId(4),
+        1,
+        [0.5, 0.0, 0.0],
+    ))
+    .expect("conflicting correction");
+    assert_eq!(
+        history.replay_next(&mut sim),
+        Err(SimError::InvalidSnapshot)
+    );
+    sim.admit_frame(InputFrame::new(
+        Origin {
+            peer: PeerId(1),
+            connection_epoch: 1,
+            sequence: 1,
+        },
+        ActorId(1),
+        1,
+        [0.25, 0.0, 0.0],
+    ))
+    .expect("earlier peer remained unadmitted");
+}
+
+#[test]
+fn history_seals_setup_and_detects_external_peer_registration() {
+    let mut sim = Simulation::new(WorldEpoch(33), config(2)).expect("game");
+    let binding = Ownership {
+        peer: PeerId(1),
+        connection_epoch: 1,
+        actor: ActorId(1),
+    };
+    let mut player = entity(1, 0.0);
+    player.ownership = Some(binding);
+    let handle = sim.seed(player).expect("player");
+    let mut history = sim
+        .begin_history(NonZeroUsize::new(2).expect("window"))
+        .expect("sealed setup");
+    assert_eq!(sim.seed(entity(2, 0.0)), Err(SimError::AlreadyStarted));
+    sim.register_peer(binding, handle)
+        .expect("external peer registration");
+    assert_eq!(history.step(&mut sim, &[]), Err(SimError::InvalidSnapshot));
+    assert_eq!(sim.tick(), 0);
+}
+
+#[test]
+fn history_rejects_same_numeric_resource_revision_on_restored_branch() {
+    let mut sim = Simulation::new(WorldEpoch(34), config(2)).expect("game");
+    let first = Ownership {
+        peer: PeerId(1),
+        connection_epoch: 1,
+        actor: ActorId(1),
+    };
+    let second = Ownership {
+        peer: PeerId(2),
+        connection_epoch: 1,
+        actor: ActorId(2),
+    };
+    let mut a = entity(1, 0.0);
+    a.ownership = Some(first);
+    let a_handle = sim.seed(a).expect("first player");
+    let mut b = entity(2, 0.0);
+    b.ownership = Some(second);
+    let b_handle = sim.seed(b).expect("second player");
+    let before_registration = sim.capture();
+    sim.register_peer(first, a_handle)
+        .expect("first branch peer");
+    let mut history = sim
+        .begin_history(NonZeroUsize::new(2).expect("window"))
+        .expect("history");
+    sim.restore(&before_registration).expect("old branch");
+    sim.register_peer(second, b_handle)
+        .expect("different peer at same revision number");
+    assert_eq!(sim.tick(), history.latest_tick());
+    assert_eq!(history.step(&mut sim, &[]), Err(SimError::InvalidSnapshot));
 }
 
 #[test]

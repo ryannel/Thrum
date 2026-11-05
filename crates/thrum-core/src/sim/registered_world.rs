@@ -11,6 +11,7 @@ use super::{
     ComponentKey, ComponentRegistry, ComponentSchemaId,
     column_store::{EntityBundle, StorageColumn, TypedStore},
     schedule::SnapshotColumn,
+    undo::{TypedUndo, UndoColumn},
 };
 
 #[derive(Clone, Copy)]
@@ -35,6 +36,133 @@ pub(super) struct WorldDelta {
     events: Vec<super::StructuralChange>,
     changed: Vec<Vec<(u32, u64)>>,
     columns: Vec<Box<dyn SnapshotColumn>>,
+}
+
+pub(super) struct WorldUndo {
+    slots: Vec<(u32, Slot)>,
+    structural_ticks: Vec<u64>,
+    component_ticks: Vec<(usize, u32, u64)>,
+    columns: Vec<Box<dyn UndoColumn>>,
+}
+
+impl WorldUndo {
+    pub(super) fn reserve_for(&mut self, counts: &[usize], structural: usize, despawns: usize) {
+        self.slots.reserve(structural);
+        self.structural_ticks
+            .reserve(structural * self.columns.len());
+        self.component_ticks.reserve(counts.iter().sum());
+        for (column, &count) in self.columns.iter_mut().zip(counts) {
+            column.reserve(count + despawns);
+        }
+    }
+
+    pub(super) fn visit_changed_slots(&self, mut visit: impl FnMut(u32)) {
+        for &(_, slot, _) in &self.component_ticks {
+            visit(slot);
+        }
+        for &(slot, _) in &self.slots {
+            visit(slot);
+        }
+    }
+
+    pub(super) fn clear(&mut self) {
+        self.slots.clear();
+        self.structural_ticks.clear();
+        self.component_ticks.clear();
+        for column in &mut self.columns {
+            column.clear();
+        }
+    }
+
+    pub(super) fn reserved_bytes(&self) -> usize {
+        size_of::<Self>()
+            + self.slots.capacity() * size_of::<(u32, Slot)>()
+            + self.structural_ticks.capacity() * size_of::<u64>()
+            + self.component_ticks.capacity() * size_of::<(usize, u32, u64)>()
+            + self
+                .columns
+                .iter()
+                .map(|column| column.reserved_bytes())
+                .sum::<usize>()
+    }
+
+    pub(super) fn record_component<T: Send + Sync + 'static>(
+        &mut self,
+        component: usize,
+        slot: u32,
+        tick: u64,
+        prior: Option<T>,
+    ) {
+        self.component_ticks.push((component, slot, tick));
+        self.columns[component]
+            .as_any_mut()
+            .downcast_mut::<TypedUndo<T>>()
+            .expect("registered undo column type")
+            .push(slot, prior);
+    }
+
+    pub(super) fn record_structural(&mut self, world: &RegisteredWorld, slot: u32) {
+        self.slots.push((slot, world.slots[slot as usize]));
+        let count = self.columns.len();
+        self.structural_ticks.extend_from_slice(
+            &world.change_ticks[slot as usize * count..(slot as usize + 1) * count],
+        );
+    }
+
+    pub(super) fn restore(
+        &mut self,
+        world: &mut RegisteredWorld,
+        events: &[super::StructuralChange],
+    ) {
+        assert_eq!(
+            events.len(),
+            self.slots.len(),
+            "one preimage per structural edit"
+        );
+        let count = self.columns.len();
+        for (index, event) in events.iter().enumerate().rev() {
+            let (recorded_slot, before) = self.slots[index];
+            match event {
+                super::StructuralChange::Spawn(handle) => {
+                    assert_eq!(handle.slot, recorded_slot, "recorded spawn slot");
+                    let slot = handle.slot as usize;
+                    let id = world.slots[slot].stable.expect("committed spawned ID");
+                    world.ids.remove(id);
+                    for column in &mut world.columns {
+                        column.clear_slot(slot);
+                    }
+                    world.slots[slot].stable = None;
+                    world.live -= 1;
+                    world.free.push(handle.slot);
+                }
+                super::StructuralChange::Despawn(handle) => {
+                    assert_eq!(handle.slot, recorded_slot, "recorded despawn slot");
+                    if before.generation != u64::MAX {
+                        assert_eq!(world.free.pop(), Some(handle.slot), "reverse free order");
+                    }
+                    world
+                        .ids
+                        .insert(before.stable.expect("prior live ID"), handle.slot);
+                    world.live += 1;
+                }
+            }
+            world.slots[recorded_slot as usize] = before;
+            world.change_ticks
+                [recorded_slot as usize * count..(recorded_slot as usize + 1) * count]
+                .copy_from_slice(&self.structural_ticks[index * count..(index + 1) * count]);
+        }
+        for (column, storage) in self.columns.iter_mut().zip(&mut world.columns) {
+            column.restore_into(storage.as_mut());
+        }
+        for &(component, slot, tick) in self.component_ticks.iter().rev() {
+            world.change_ticks[slot as usize * count + component] = tick;
+        }
+        world.begin_tick();
+        for frame in &mut world.change_frames {
+            frame.tick = 0;
+            frame.slots.clear();
+        }
+    }
 }
 
 impl WorldDelta {
@@ -287,6 +415,20 @@ pub(super) struct RegisteredWorld {
 }
 
 impl RegisteredWorld {
+    pub(super) fn empty_undo(&self) -> WorldUndo {
+        WorldUndo {
+            slots: Vec::new(),
+            structural_ticks: Vec::new(),
+            component_ticks: Vec::new(),
+            columns: self
+                .registry
+                .entries
+                .iter()
+                .map(|entry| (entry.undo)())
+                .collect(),
+        }
+    }
+
     pub(super) fn empty_delta(&self) -> WorldDelta {
         WorldDelta {
             slots: Vec::new(),
@@ -505,6 +647,10 @@ impl RegisteredWorld {
         self.free.len()
     }
 
+    pub(super) fn next_free_slot(&self) -> u32 {
+        *self.free.last().expect("prevalidated spawn capacity")
+    }
+
     pub(super) fn component_index(&self, key: ComponentKey) -> Option<usize> {
         self.registry
             .entries
@@ -551,6 +697,10 @@ impl RegisteredWorld {
         self.change_ticks[handle.slot as usize * self.registry.entries.len() + component] = tick;
         self.changed[component].push(handle.slot);
         self.mark_pending(handle.slot);
+    }
+
+    pub(super) fn change_tick_at(&self, component: usize, slot: u32) -> u64 {
+        self.change_ticks[slot as usize * self.registry.entries.len() + component]
     }
 
     pub(super) fn begin_tick(&mut self) {
@@ -730,12 +880,35 @@ impl RegisteredWorld {
     ///
     /// The handle is stale or from another world.
     pub(super) fn despawn(&mut self, handle: Handle) -> Result<(), RegisteredWorldError> {
+        self.despawn_impl(handle, None)
+    }
+
+    pub(super) fn despawn_into_undo(
+        &mut self,
+        handle: Handle,
+        undo: &mut WorldUndo,
+    ) -> Result<(), RegisteredWorldError> {
+        self.despawn_impl(handle, Some(undo))
+    }
+
+    fn despawn_impl(
+        &mut self,
+        handle: Handle,
+        undo: Option<&mut WorldUndo>,
+    ) -> Result<(), RegisteredWorldError> {
         self.entity(handle)?;
         let id = self.slots[handle.slot as usize]
             .stable
             .ok_or(RegisteredWorldError::InvalidHandle)?;
-        for column in &mut self.columns {
-            column.clear_slot(handle.slot as usize);
+        if let Some(undo) = undo {
+            undo.record_structural(self, handle.slot);
+            for (column, preimage) in self.columns.iter_mut().zip(&mut undo.columns) {
+                column.take_into_undo(handle.slot, preimage.as_mut());
+            }
+        } else {
+            for column in &mut self.columns {
+                column.clear_slot(handle.slot as usize);
+            }
         }
         let slot = &mut self.slots[handle.slot as usize];
         self.ids.remove(id);
@@ -803,6 +976,7 @@ impl RegisteredWorld {
         component: usize,
         rows: &[(Handle, T)],
         tick: u64,
+        mut save_old: impl FnMut(u32, T, u64),
     ) {
         let component_count = self.registry.entries.len();
         let column = self.columns[component]
@@ -812,9 +986,14 @@ impl RegisteredWorld {
         let changed = &mut self.changed[component];
         for (handle, value) in rows {
             let slot = handle.slot as usize;
-            *column
-                .get_mut(slot)
-                .expect("prevalidated replacement component") = value.clone();
+            let prior = std::mem::replace(
+                column
+                    .get_mut(slot)
+                    .expect("prevalidated replacement component"),
+                value.clone(),
+            );
+            let old_tick = self.change_ticks[slot * component_count + component];
+            save_old(handle.slot, prior, old_tick);
             self.change_ticks[slot * component_count + component] = tick;
             changed.push(handle.slot);
             if !self.pending_marks[slot] {

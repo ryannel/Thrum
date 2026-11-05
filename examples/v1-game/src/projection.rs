@@ -13,6 +13,7 @@ use thrum_core::{
 /// It owns no page lease, so a delayed peer cannot pin the simulation ring.
 pub struct GameProjection {
     id: Option<SnapshotId>,
+    timeline: u64,
     baseline: bool,
     positions: Vec<(Handle, Position)>,
     velocities: Vec<(Handle, Velocity)>,
@@ -25,6 +26,7 @@ impl GameProjection {
     pub(crate) fn new(capacity: usize) -> Self {
         Self {
             id: None,
+            timeline: 0,
             baseline: false,
             positions: Vec::with_capacity(capacity),
             velocities: Vec::with_capacity(capacity),
@@ -115,6 +117,7 @@ impl GameProjection {
             }
         }
         self.id = Some(page.id());
+        self.timeline = page.timeline();
     }
 
     fn capture_full(&mut self, page: &PublishedPage) {
@@ -137,6 +140,7 @@ impl GameProjection {
             ));
         });
         self.id = Some(page.id());
+        self.timeline = page.timeline();
         self.baseline = true;
     }
 }
@@ -172,6 +176,10 @@ impl ProjectionOutbox {
     }
 
     pub(crate) fn capture(&mut self, page: &PublishedPage) -> usize {
+        if page.patch_source().is_some() {
+            self.reset_full(page);
+            return page.len();
+        }
         let index = self.free.pop().unwrap_or_else(|| {
             self.needs_resync = true;
             self.lost_ticks = self.lost_ticks.saturating_add(1);
@@ -187,8 +195,18 @@ impl ProjectionOutbox {
 
     pub(crate) fn poll(
         &mut self,
+        timeline: u64,
         consume: impl FnOnce(&GameProjection),
     ) -> Result<bool, ProjectionGap> {
+        if !self.needs_resync
+            && self
+                .pending
+                .front()
+                .is_some_and(|&index| self.slots[index].timeline != timeline)
+        {
+            self.lost_ticks = self.lost_ticks.saturating_add(self.pending.len() as u64);
+            self.needs_resync = true;
+        }
         if self.needs_resync {
             return Err(ProjectionGap {
                 lost_ticks: self.lost_ticks,
@@ -239,7 +257,7 @@ impl ProjectionOutbox {
 mod tests {
     use super::{GameProjection, ProjectionOutbox};
     use crate::simulation::{Command, ComponentEntity, Position, SimConfig, Simulation, Velocity};
-    use std::num::NonZeroU32;
+    use std::num::{NonZeroU32, NonZeroUsize};
     use thrum_core::{StableId, WorldEpoch};
 
     #[test]
@@ -340,7 +358,7 @@ mod tests {
         }
         let mut seen = Vec::new();
         while outbox
-            .poll(|projection| {
+            .poll(sim.timeline(), |projection| {
                 let id = projection.id().expect("queued page identity");
                 seen.push((
                     id.tick,
@@ -366,7 +384,7 @@ mod tests {
         }
         assert_eq!(
             outbox
-                .poll(|_| panic!("gap cannot deliver deltas"))
+                .poll(sim.timeline(), |_| panic!("gap cannot deliver deltas"))
                 .expect_err("gap")
                 .lost_ticks,
             1
@@ -374,12 +392,51 @@ mod tests {
         outbox.reset_full(&sim.published_page().expect("latest"));
         assert!(
             outbox
-                .poll(|projection| {
+                .poll(sim.timeline(), |projection| {
                     assert!(projection.is_baseline());
                     assert_eq!(projection.id().expect("baseline identity").tick, 8);
                     assert_eq!(projection.spawns().len(), 1);
                 })
                 .expect("reset baseline")
         );
+    }
+
+    #[test]
+    fn rewind_invalidates_queued_old_branch_before_projection_poll() {
+        let mut sim = Simulation::new(
+            WorldEpoch(8),
+            SimConfig {
+                tick_hz: NonZeroU32::new(60).expect("rate"),
+                entity_capacity: 1,
+                peer_capacity: 0,
+                actions_per_frame: 0,
+                movement_speed: 0.0,
+            },
+        )
+        .expect("world");
+        sim.seed(ComponentEntity {
+            id: StableId(1),
+            position: Position::default(),
+            velocity: Velocity([1.0, 0.0, 0.0]),
+            health: 1,
+            ownership: None,
+            visual: None,
+        })
+        .expect("entity");
+        let mut history = sim
+            .begin_history(NonZeroUsize::new(2).expect("window"))
+            .expect("history");
+        let mut outbox = ProjectionOutbox::new(1);
+        outbox.reset_full(&sim.published_page().expect("baseline"));
+        history.step(&mut sim, &[]).expect("future tick");
+        outbox.capture(&sim.published_page().expect("future page"));
+        history.restore_to(&mut sim, 0).expect("rewind");
+        assert!(
+            outbox
+                .poll(sim.timeline(), |_| panic!("old branch must not escape"))
+                .is_err()
+        );
+        outbox.reset_full(&sim.published_page().expect("restored page"));
+        assert!(outbox.poll(sim.timeline(), |_| {}).expect("new baseline"));
     }
 }

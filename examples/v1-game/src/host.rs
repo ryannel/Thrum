@@ -707,7 +707,7 @@ impl FrameHost {
     ) -> Result<Option<bool>, ProjectionGap> {
         self.projections
             .as_mut()
-            .map(|outbox| outbox.poll(consume))
+            .map(|outbox| outbox.poll(self.sim.timeline(), consume))
             .transpose()
     }
 

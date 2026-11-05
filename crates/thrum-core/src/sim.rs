@@ -9,13 +9,14 @@ mod schedule;
 mod snapshot;
 mod snapshot_ring;
 mod transaction;
+mod undo;
 
 pub use input::{ControlBinding, FrameError, InputFrame};
 pub use registered_world::{EntityWriter, RegisteredWorldError};
 pub use runtime::{
     ColumnRead, ExecutionMode, Executor, GameRuntime, LiveSlot, Read2, ReadPermit,
-    RegisteredSystem, RuntimeCapture, RuntimeDelta, RuntimeError, StructuralPermit, TickError,
-    TickGame, WorldRead, WritePermit,
+    RegisteredSystem, RuntimeCapture, RuntimeDelta, RuntimeEndpoint, RuntimeError, RuntimeUndo,
+    StructuralPermit, TickError, TickGame, WorldRead, WritePermit,
 };
 pub use schedule::{
     Access, AccessKey, AccessMode, ComponentKey, ComponentRegistry, ComponentSchemaId,
