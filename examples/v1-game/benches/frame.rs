@@ -240,7 +240,7 @@ fn report_frame_cpu(samples: &[FrameSample], gpu_timestamps: bool, present_surfa
     );
     if gpu_timestamps && samples.iter().all(|sample| sample.gpu_pass_ns.is_some()) {
         let scene_gpu =
-            percentile(|sample| sample.gpu_pass_ns.unwrap_or([0.0; 4]).iter().sum::<f64>() / 1e6);
+            percentile(|sample| sample.gpu_pass_ns.unwrap_or([0.0; 5]).iter().sum::<f64>() / 1e6);
         eprintln!(
             "V1 scene GPU pass-sum p50/p95={:.3}/{:.3} ms",
             scene_gpu.0, scene_gpu.1

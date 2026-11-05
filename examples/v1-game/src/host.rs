@@ -111,14 +111,14 @@ pub struct FrameSample {
     pub upload_cpu: Duration,
     /// Nanoseconds within upload for live camera, local lights and cascade refit.
     pub view_update_ns: u32,
-    /// CPU time for render command encoding and timestamp registration.
+    /// CPU time through command encoding, finish, submit and completion registration.
     pub encode_cpu: Duration,
     /// CPU wall time for this drive call, including nonblocking GPU polling.
     /// Separate completed-report draining is outside this value.
     pub wall: Duration,
-    /// Actual GPU pass durations for near/far Sun shadows, forward and display.
-    /// Disabled shadow passes report zero in their slots.
-    pub gpu_pass_ns: Option<[f64; 4]>,
+    /// Actual GPU pass durations: near/far Sun shadows, local clusters,
+    /// forward and display. Disabled passes report zero in their slots.
+    pub gpu_pass_ns: Option<[f64; 5]>,
     /// GPU time for the optional surface blit, when it was submitted and timed.
     pub gpu_present_ns: Option<f64>,
     /// This frame also wrote an acquired platform surface.
@@ -131,8 +131,8 @@ pub struct FrameSample {
     pub uploaded_bytes: usize,
     /// Accepted movers with valid adjacent-tick previous positions.
     pub moving: u32,
-    /// Presentation samples/updates dropped with explicit telemetry.
-    pub dropped_presentation: usize,
+    /// Presentation samples, updates or local-light sources dropped.
+    pub dropped_presentation: u32,
     /// Local-light references omitted from this prepared view after a cluster
     /// exceeds its capacity. The fixed fixture prepares them once.
     pub dropped_light_references: usize,
@@ -403,7 +403,7 @@ impl FrameHost {
                     device,
                     queue,
                     GENERATION,
-                    if surface.is_some() { 5 } else { 4 },
+                    prepared.scene_pass_count() + u32::from(presenter.is_some()),
                 )
                 .map_err(|error| format!("GPU timings: {error:?}"))?,
                 render_done: Arc::new(AtomicBool::new(false)),
@@ -1020,11 +1020,15 @@ impl FrameHost {
                 uploaded_rows: u32::try_from(uploaded.changed_rows).unwrap_or(u32::MAX),
                 uploaded_bytes: uploaded.bytes,
                 moving: u32::try_from(moving).unwrap_or(u32::MAX),
-                dropped_presentation: frame.extracted.dropped_capacity
-                    + frame.extracted.dropped_duplicate
-                    + frame.extracted.dropped_invalid
-                    + dropped_invalid
-                    + uploaded.dropped_invalid,
+                dropped_presentation: u32::try_from(
+                    frame.extracted.dropped_capacity
+                        + frame.extracted.dropped_duplicate
+                        + frame.extracted.dropped_invalid
+                        + dropped_invalid
+                        + uploaded.dropped_invalid
+                        + self.prepared.dropped_light_sources(),
+                )
+                .unwrap_or(u32::MAX),
                 dropped_light_references: self.prepared.dropped_light_references(),
                 clamped_light_channels: u32::try_from(self.prepared.presentation_light_clamps())
                     .unwrap_or(u32::MAX),
@@ -1115,13 +1119,12 @@ impl FrameHost {
         slot.timings
             .finish_render(GENERATION, &encoder)
             .map_err(|error| format!("finish timestamps: {error:?}"))?;
-        let encode_cpu = encode_start.elapsed();
         slot.render_done.store(false, Ordering::Release);
         self.queue.submit([encoder.finish()]);
         let done = Arc::clone(&slot.render_done);
         self.queue
             .on_submitted_work_done(move || done.store(true, Ordering::Release));
-        sample.encode_cpu = encode_cpu;
+        sample.encode_cpu = encode_start.elapsed();
         sample.wall = wall_start.elapsed();
         sample.surface_presented = surface_presented;
         sample.submission_order = self.next_submission_order;
@@ -1528,12 +1531,9 @@ impl FrameHost {
                 }
                 SlotState::Resolving(mut sample) => match slot.timings.try_collect(GENERATION) {
                     Ok(Some(passes)) => {
-                        if let Some((scene, present)) = pass_durations(
-                            &passes,
-                            sample.surface_presented,
-                            self.prepared.scene_pass_count() == 4,
-                            sample.reused_visual,
-                        ) {
+                        if let Some((scene, present)) =
+                            pass_durations(&passes, &sample, &self.prepared)
+                        {
                             sample.gpu_pass_ns = Some(scene);
                             sample.gpu_present_ns = present;
                         } else {
@@ -1565,26 +1565,32 @@ fn new_timings(
 
 fn pass_durations(
     passes: &[thrum_render::timing::PassTiming],
-    presented: bool,
-    shadows: bool,
-    reused_visual: bool,
-) -> Option<([f64; 4], Option<f64>)> {
-    if reused_visual {
-        return (passes.len() == 1
-            && presented
-            && passes[0].name.as_ref() == thrum_render::present::PASS_NAME)
-            .then(|| ([0.0; 4], Some(passes[0].nanoseconds)));
-    }
-    let shadow_names = [
+    sample: &FrameSample,
+    prepared: &PreparedSynthetic,
+) -> Option<([f64; 5], Option<f64>)> {
+    const ALL: [&str; 5] = [
         "synthetic Sun shadow near",
         "synthetic Sun shadow far",
+        "synthetic cluster build",
         "synthetic forward opaque",
         "synthetic tone encode",
     ];
-    let names: &[&str] = if shadows {
-        &shadow_names
-    } else {
-        &shadow_names[2..]
+    const SHADOW_ONLY: [&str; 4] = [ALL[0], ALL[1], ALL[3], ALL[4]];
+    const CLUSTER_ONLY: [&str; 3] = [ALL[2], ALL[3], ALL[4]];
+    let presented = sample.surface_presented;
+    if sample.reused_visual {
+        return (passes.len() == 1
+            && presented
+            && passes[0].name.as_ref() == thrum_render::present::PASS_NAME)
+            .then(|| ([0.0; 5], Some(passes[0].nanoseconds)));
+    }
+    let shadows = prepared.shadowed();
+    let clusters = prepared.gpu_clustered();
+    let names: &[&str] = match (shadows, clusters) {
+        (true, true) => &ALL,
+        (true, false) => &SHADOW_ONLY,
+        (false, true) => &CLUSTER_ONLY,
+        (false, false) => &ALL[3..],
     };
     (passes.len() == names.len() + usize::from(presented)
         && passes
@@ -1593,9 +1599,16 @@ fn pass_durations(
             .all(|(pass, name)| pass.name.as_ref() == *name)
         && (!presented || passes[names.len()].name.as_ref() == thrum_render::present::PASS_NAME))
         .then(|| {
-            let mut scene = [0.0; 4];
-            for (index, pass) in passes.iter().take(names.len()).enumerate() {
-                scene[index + if shadows { 0 } else { 2 }] = pass.nanoseconds;
+            let mut scene = [0.0; 5];
+            for pass in passes.iter().take(names.len()) {
+                let slot = match pass.name.as_ref() {
+                    "synthetic Sun shadow near" => 0,
+                    "synthetic Sun shadow far" => 1,
+                    "synthetic cluster build" => 2,
+                    "synthetic forward opaque" => 3,
+                    _ => 4,
+                };
+                scene[slot] = pass.nanoseconds;
             }
             (scene, presented.then(|| passes[names.len()].nanoseconds))
         })

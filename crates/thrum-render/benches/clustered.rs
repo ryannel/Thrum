@@ -102,7 +102,12 @@ fn render_gpu_pass(
         .try_collect(GENERATION)
         .expect("valid GPU counter order")
         .expect("completed timestamp batch");
-    passes[0].nanoseconds / 1_000_000.0
+    passes
+        .iter()
+        .find(|pass| pass.name.as_ref() == "synthetic forward opaque")
+        .expect("forward pass timing")
+        .nanoseconds
+        / 1_000_000.0
 }
 
 #[expect(
@@ -146,6 +151,7 @@ fn main() {
             .expect("four-local-light preparation");
         let dark_target = OffscreenTarget::new(&device, &dark, 640, 360).expect("dark target");
         let lit_target = OffscreenTarget::new(&device, &lit, 640, 360).expect("lit target");
+        let max_scene_passes = dark.scene_pass_count().max(lit.scene_pass_count());
         let variants = [(&dark, &dark_target), (&lit, &lit_target)];
         for _ in 0..WARMUP_BLOCKS {
             for index in [0, 1, 1, 0] {
@@ -177,8 +183,8 @@ fn main() {
             "adapter={adapter_name}; 640x360 10k static cubes; ABBA {BLOCKS} blocks, 400 samples/variant after 50 warmup submissions/variant; no GPU timestamps; encode+submit+GPU-wait wall p50/p95/max ms: zero local={:.3}/{:.3}/{:.3}, four local={:.3}/{:.3}/{:.3}; within-block four-minus-zero delta p05/p50/p95={:.3}/{:.3}/{:.3} ms",
             dark.0, dark.1, dark.2, lit.0, lit.1, lit.2, wall_delta.0, wall_delta.1, wall_delta.2
         );
-        let mut timings =
-            GpuTimings::new(&device, &queue, GENERATION, 2).expect("optional GPU timestamp batch");
+        let mut timings = GpuTimings::new(&device, &queue, GENERATION, max_scene_passes)
+            .expect("optional GPU timestamp batch");
         if timings.is_enabled() {
             let mut dark_gpu = Vec::with_capacity(GPU_BLOCKS * 2);
             let mut lit_gpu = Vec::with_capacity(GPU_BLOCKS * 2);
@@ -201,7 +207,7 @@ fn main() {
             let lit_gpu = gpu_percentiles(&mut lit_gpu);
             let gpu_delta = delta_percentiles(&mut gpu_deltas);
             println!(
-                "paired GPU forward pass: ABBA {GPU_BLOCKS} blocks, 200 samples/variant; p50/p95 ms zero={:.3}/{:.3}, four={:.3}/{:.3}; within-block four-minus-zero delta p05/p50/p95={:.3}/{:.3}/{:.3} ms",
+                "paired GPU forward pass (cluster compute excluded): ABBA {GPU_BLOCKS} blocks, 200 samples/variant; p50/p95 ms zero={:.3}/{:.3}, four={:.3}/{:.3}; within-block four-minus-zero delta p05/p50/p95={:.3}/{:.3}/{:.3} ms",
                 dark_gpu.0, dark_gpu.1, lit_gpu.0, lit_gpu.1, gpu_delta.0, gpu_delta.1, gpu_delta.2
             );
         } else {

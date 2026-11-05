@@ -373,6 +373,28 @@ pub(crate) struct GraphDepthAttachment<'a> {
 }
 
 impl CompiledPass {
+    /// Open a declared compute pass with the graph's automatic timestamps.
+    pub(crate) fn begin_compute<'a>(
+        &self,
+        encoder: &'a mut wgpu::CommandEncoder,
+        generation: u64,
+        timings: Option<&mut GpuTimings>,
+    ) -> Result<Option<wgpu::ComputePass<'a>>, TimingError> {
+        if !self.attachments.is_empty() || self.pipeline.is_none() {
+            return Ok(None);
+        }
+        let timestamp_writes = timings
+            .map(|timings| timings.compute_writes(generation, &self.name))
+            .transpose()?
+            .flatten();
+        Ok(Some(encoder.begin_compute_pass(
+            &wgpu::ComputePassDescriptor {
+                label: Some(&self.name),
+                timestamp_writes,
+            },
+        )))
+    }
+
     /// The executor, not a recorder, owns attachment load and store decisions.
     pub(crate) fn attachment_ops<T>(
         &self,
