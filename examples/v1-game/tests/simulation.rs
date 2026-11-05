@@ -307,6 +307,15 @@ fn rolling_history_has_bounded_reused_storage_at_game_scales() {
         }
         COUNTING.with(|active| active.set(false));
         assert_eq!(ALLOCATIONS.with(Cell::get), 0);
+        let target = history.latest_tick() - 8;
+        ALLOCATIONS.with(|count| count.set(0));
+        COUNTING.with(|active| active.set(true));
+        history
+            .restore_to(&mut sim, target)
+            .expect("eight retained ticks restore");
+        COUNTING.with(|active| active.set(false));
+        assert_eq!(ALLOCATIONS.with(Cell::get), 0);
+        assert_eq!(sim.tick(), target);
     }
 }
 

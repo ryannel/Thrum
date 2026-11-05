@@ -89,6 +89,20 @@ impl WorldCapture {
         }
     }
 
+    pub(super) fn copy_from(&mut self, source: &Self) {
+        assert_eq!(
+            self.columns.len(),
+            source.columns.len(),
+            "same snapshot schema"
+        );
+        self.slots.clone_from(&source.slots);
+        self.free.clone_from(&source.free);
+        self.change_ticks.clone_from(&source.change_ticks);
+        for (target, source) in self.columns.iter_mut().zip(&source.columns) {
+            target.copy_from(source.as_ref());
+        }
+    }
+
     pub(super) fn advance(&mut self, delta: &WorldDelta) {
         for event in &delta.events {
             match event {
@@ -167,6 +181,10 @@ impl IdIndex {
                 _ => bucket = (bucket + 1) & self.mask,
             }
         }
+    }
+
+    fn clear(&mut self) {
+        self.buckets.fill(None);
     }
 
     fn insert(&mut self, id: StableId, slot: u32) {
@@ -384,34 +402,27 @@ impl RegisteredWorld {
         {
             return Err(RegisteredWorldError::SnapshotMismatch);
         }
-        let mut columns: Vec<_> = self
-            .registry
-            .entries
-            .iter()
-            .map(|entry| (entry.storage)(capture.slots.len()))
-            .collect();
-        for (snapshot, column) in capture.columns.iter().zip(&mut columns) {
+        for column in &mut self.columns {
+            column.clear_all();
+        }
+        for (snapshot, column) in capture.columns.iter().zip(&mut self.columns) {
             snapshot.restore_into(column.as_mut());
         }
-        let mut slots = Vec::with_capacity(capture.slots.len());
-        let mut ids = IdIndex::new(capture.slots.len());
+        self.ids.clear();
         let mut live = 0;
         for (index, saved) in capture.slots.iter().enumerate() {
             if let Some(id) = saved.stable {
                 let key = u32::try_from(index).expect("validated slot capacity");
-                ids.insert(id, key);
+                self.ids.insert(id, key);
                 live += 1;
             }
-            slots.push(Slot {
+            self.slots[index] = Slot {
                 generation: saved.generation,
                 stable: saved.stable,
                 structural_tick: saved.structural_tick,
-            });
+            };
         }
-        self.columns = columns;
         self.builder.clear();
-        self.slots = slots;
-        self.ids = ids;
         self.free.clone_from(&capture.free);
         self.change_ticks.clone_from(&capture.change_ticks);
         for frame in &mut self.change_frames {
