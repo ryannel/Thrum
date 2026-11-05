@@ -2942,7 +2942,7 @@
     "ARCHITECTURE-DECISIONS.md",
     "BASELINE-SPEC.md"
   ],
-  "contract_sha256": "bbdabdf00055e7ca139b3c35c19fc5da01a7ba916d9044c8e5177d13707bc00d",
+  "contract_sha256": "af8b38f0a556765405d9d9fe27720ea43a379ea676eceaa4e41ef83609e29506",
   "composition_supplement": {
     "design": "COMPOSITION.md",
     "decision": "selected",
@@ -3687,7 +3687,7 @@
     "record": "ARCHITECTURE-DECISIONS.md",
     "record_sha256": "74c97a7ec3330b2b9821c15b8a1aa9d722e2bf119c51bc8e4f2b40b3faa9d4ad",
     "contract_revision": "C4",
-    "contract_sha256": "bbdabdf00055e7ca139b3c35c19fc5da01a7ba916d9044c8e5177d13707bc00d",
+    "contract_sha256": "af8b38f0a556765405d9d9fe27720ea43a379ea676eceaa4e41ef83609e29506",
     "specifications": {
       "BASELINE-SPEC.md": "416dd3d834187b060f33d107ea30fa1bb6bfcdee935f260bf3c086449f9a8f96",
       "FOUNDATION-SPEC.md": "9293b1eb3beb690d96f88d5fcb8260fc42a1d21c2688fbe515a05e8f3027c1e0",
@@ -4068,7 +4068,7 @@
       "CAPABILITY-SURVEY.md": "bbeb32fb27ce6d177ef951037e380dc1f7a3e8772d7c1176e37914d85134f357",
       "COMPOSITION.md": "392c9254d576fe771ff98f0b4937c41f0ec7ef90079e77d7155b83c0a4b40d01",
       "CONSTRUCTION-PLAN.md": "8084b1fd0ced016cd362da7be54b1ea26b93918b33bb74f10cc304570512d68a",
-      "CONTRACTS.md": "bbdabdf00055e7ca139b3c35c19fc5da01a7ba916d9044c8e5177d13707bc00d",
+      "CONTRACTS.md": "af8b38f0a556765405d9d9fe27720ea43a379ea676eceaa4e41ef83609e29506",
       "DESIGN-PROGRAMME.md": "1d5d87fcf28fad58b00a997a64d8ec992f0e9befd6b8f32213ea044fec802223",
       "ENGINE-EXPERIENCE.md": "61e9eccf49c95ee6ac6bd9699d2fe3bd11ce9f196eb4467331ed210eda29e937",
       "ENGINE-STRUCTURE-RESEARCH.md": "2f23bc45998fa99a98f6c411cd446709669e4a66bdd3eaa5083ee396c3115dc6",
