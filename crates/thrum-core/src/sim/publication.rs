@@ -7,6 +7,7 @@ use crate::{Handle, StableId, WorldEpoch};
 
 use super::{
     ComponentKey, ComponentRegistry, DirtyPage, SnapshotId, StructuralChange,
+    dense_directory::DenseDirectory,
     registered_world::{RegisteredWorld, WorldUndo},
 };
 
@@ -22,6 +23,8 @@ pub(super) struct WarmColumnCapture<'a> {
     world: &'a RegisteredWorld,
     component: usize,
     source: &'a dyn ErasedPublicationColumn,
+    directory: Option<&'a DenseDirectory>,
+    source_directory: Option<&'a DenseDirectory>,
     page_words: &'a [u64],
     page_structural: &'a [u64],
     outbound_words: &'a [u64],
@@ -37,7 +40,12 @@ pub(super) struct WarmColumnCapture<'a> {
 
 pub(super) trait ErasedPublicationColumn: Send + Sync {
     fn as_any(&self) -> &dyn Any;
-    fn capture(&mut self, world: &RegisteredWorld, component: usize);
+    fn capture(
+        &mut self,
+        world: &RegisteredWorld,
+        component: usize,
+        directory: Option<&DenseDirectory>,
+    );
     fn capture_warm(&mut self, capture: WarmColumnCapture<'_>);
     fn refresh_words(
         &mut self,
@@ -45,12 +53,19 @@ pub(super) trait ErasedPublicationColumn: Send + Sync {
         component: usize,
         component_words: &[u64],
         structural_words: &[u64],
+        directory: Option<&DenseDirectory>,
     );
-    fn reset_previous(&mut self, slots: &[u32]);
+    fn reset_previous(&mut self, slots: &[u32], directory: Option<&DenseDirectory>);
     fn clear_previous_overrides(&mut self);
     fn prior_slots(&self) -> &[u32];
     fn is_temporal(&self) -> bool;
-    fn apply_previous(&mut self, undo: &WorldUndo, component: usize, seen_words: &mut [u64]);
+    fn apply_previous(
+        &mut self,
+        undo: &WorldUndo,
+        component: usize,
+        seen_words: &mut [u64],
+        directory: Option<&DenseDirectory>,
+    );
     fn diff(
         &self,
         baseline: &dyn ErasedPublicationColumn,
@@ -58,8 +73,9 @@ pub(super) trait ErasedPublicationColumn: Send + Sync {
         dirty: &mut [u64],
         temporal_pair: bool,
         identities: Option<&[u64]>,
+        directories: (Option<&DenseDirectory>, Option<&DenseDirectory>),
     );
-    fn mark_present(&self, dirty: &mut [u64]);
+    fn mark_present(&self, dirty: &mut [u64], directory: Option<&DenseDirectory>);
     fn patch(
         &mut self,
         world: &RegisteredWorld,
@@ -67,15 +83,18 @@ pub(super) trait ErasedPublicationColumn: Send + Sync {
         slots: &[u32],
         dirty: &mut [u64],
         identities: &[u64],
+        directory: Option<&DenseDirectory>,
     );
+    fn swap_rows(&mut self, row: usize, other: usize);
     fn reserved_bytes(&self) -> usize;
 }
 
-/// Slot-indexed values owned by an immutable publication page. A previous
+/// Physical-row values owned by an immutable publication page. A previous
 /// column exists only when the registry selected temporal sampling for `T`.
-pub struct PublicationColumn<T> {
+pub(super) struct PublicationColumn<T> {
     current: Vec<Option<T>>,
     previous: Option<Vec<Option<T>>>,
+    // Overrides address physical rows; candidates and undo identities stay logical.
     override_words: Vec<u64>,
     prior_slots: Vec<u32>,
     snapshot: fn(&T) -> T,
@@ -103,25 +122,8 @@ impl<T> PublicationColumn<T> {
         }
     }
 
-    /// Current component at a physical slot, absent for a missing component or
-    /// an address outside this page's capacity.
-    pub fn current(&self, slot: u32) -> Option<&T> {
-        self.current.get(slot as usize)?.as_ref()
-    }
-
-    /// Previous-tick component at a physical slot. Returns `None` when temporal
-    /// sampling is disabled, the component was absent, or the slot is invalid.
-    pub fn previous(&self, slot: u32) -> Option<&T> {
-        self.previous_at(slot as usize)
-    }
-
-    /// Bind the typed current column once before a consumer's slot loop.
-    pub fn current_values(&self) -> &[Option<T>] {
-        &self.current
-    }
-
     /// Whether this selected column stores adjacent-tick previous values.
-    pub fn supports_previous(&self) -> bool {
+    fn supports_previous(&self) -> bool {
         self.previous.is_some()
     }
 
@@ -136,10 +138,10 @@ impl<T> PublicationColumn<T> {
     }
 
     /// Clear selected previous-tick overrides so previous equals current.
-    fn reset_previous(&mut self, slots: &[u32]) {
+    fn reset_previous(&mut self, slots: &[u32], directory: Option<&DenseDirectory>) {
         if let Some(previous) = &mut self.previous {
             for &slot in slots {
-                let index = slot as usize;
+                let index = row_of(directory, slot as usize);
                 self.override_words[index / 64] &= !(1 << (index % 64));
                 previous[index] = None;
             }
@@ -149,8 +151,13 @@ impl<T> PublicationColumn<T> {
     fn clear_previous_overrides(&mut self) {
         if let Some(previous) = &mut self.previous {
             if std::mem::needs_drop::<T>() {
-                for &slot in &self.prior_slots {
-                    previous[slot as usize] = None;
+                for (word, &overrides) in self.override_words.iter().enumerate() {
+                    let mut bits = overrides;
+                    while bits != 0 {
+                        let row = word * 64 + bits.trailing_zeros() as usize;
+                        bits &= bits - 1;
+                        previous[row] = None;
+                    }
                 }
             }
             self.prior_slots.clear();
@@ -160,21 +167,21 @@ impl<T> PublicationColumn<T> {
 
     /// Overlay an owned independent copy of one final-tick preimage. Bind this
     /// typed column once, then apply preimages without per-row type lookup.
-    fn set_previous(&mut self, slot: u32, prior: Option<&T>) {
+    fn set_previous(&mut self, slot: u32, row: usize, prior: Option<&T>) {
         if let Some(previous) = &mut self.previous {
-            let index = slot as usize;
+            let index = row;
             previous[index] = prior.map(self.snapshot);
             self.override_words[index / 64] |= 1 << (index % 64);
             self.prior_slots.push(slot);
         }
     }
 
-    fn refresh_slot(&mut self, source: &[Option<T>], slot: usize)
+    fn refresh_slot(&mut self, source: &[Option<T>], slot: usize, source_row: usize)
     where
         T: PartialEq,
     {
-        if self.current[slot] != source[slot] {
-            self.current[slot] = source[slot].as_ref().map(self.snapshot);
+        if self.current[slot] != source[source_row] {
+            self.current[slot] = source[source_row].as_ref().map(self.snapshot);
         }
     }
 }
@@ -184,12 +191,19 @@ impl<T: PartialEq + Send + Sync + 'static> ErasedPublicationColumn for Publicati
         self
     }
 
-    fn capture(&mut self, world: &RegisteredWorld, component: usize) {
+    fn capture(
+        &mut self,
+        world: &RegisteredWorld,
+        component: usize,
+        directory: Option<&DenseDirectory>,
+    ) {
         self.clear_previous_overrides();
         let source = world.column_at::<T>(component).values();
         assert_eq!(source.len(), self.current.len(), "publication capacity");
-        for (destination, value) in self.current.iter_mut().zip(source) {
-            *destination = value.as_ref().map(self.snapshot);
+        for (page_row, destination) in self.current.iter_mut().enumerate() {
+            let slot = directory.map_or(page_row, |directory| directory.slot_at(page_row));
+            let row = world.row_of_slot(u32::try_from(slot).expect("validated capacity"));
+            *destination = source[row].as_ref().map(self.snapshot);
         }
     }
 
@@ -200,18 +214,24 @@ impl<T: PartialEq + Send + Sync + 'static> ErasedPublicationColumn for Publicati
             .downcast_ref::<Self>()
             .expect("publication registry schema");
         if let Some(undo) = capture.final_undo {
-            self.apply_previous(undo, capture.component, capture.scratch);
+            self.apply_previous(undo, capture.component, capture.scratch, capture.directory);
         } else {
             self.clear_previous_overrides();
         }
         let world = capture.world.column_at::<T>(capture.component).values();
         let temporal = self.supports_previous();
+        capture.scratch.fill(0);
+        if temporal {
+            for &slot in self.prior_slots.iter().chain(&source.prior_slots) {
+                capture.scratch[slot as usize / 64] |= 1 << (slot % 64);
+            }
+        }
         for word in 0..capture.page_words.len() {
             let refresh = capture.page_words[word] | capture.page_structural[word];
             let mut candidates =
                 refresh | capture.outbound_words[word] | capture.outbound_structural[word];
             if temporal {
-                candidates |= self.override_words[word] | source.override_words[word];
+                candidates |= capture.scratch[word];
             }
             let mut endpoint = 0;
             let mut pair = 0;
@@ -223,22 +243,28 @@ impl<T: PartialEq + Send + Sync + 'static> ErasedPublicationColumn for Publicati
                 if index >= self.current.len() {
                     continue;
                 }
+                let page_row = row_of(capture.directory, index);
+                let source_row = row_of(capture.source_directory, index);
                 if refresh & mask != 0 {
-                    self.refresh_slot(world, index);
+                    let row = capture
+                        .world
+                        .row_of_slot(u32::try_from(index).expect("validated capacity"));
+                    self.refresh_slot(world, page_row, row);
                 }
                 if temporal && capture.pair_valid[word] & mask == 0 {
-                    self.override_words[word] &= !mask;
-                    self.previous.as_mut().expect("temporal column")[index] = None;
+                    self.override_words[page_row / 64] &= !(1 << (page_row % 64));
+                    self.previous.as_mut().expect("temporal column")[page_row] = None;
                 }
-                let current_changed = self.current[index] != source.current[index]
-                    || (self.current[index].is_some() && capture.identities[word] & mask != 0);
+                let current_changed = self.current[page_row] != source.current[source_row]
+                    || (self.current[page_row].is_some() && capture.identities[word] & mask != 0);
                 let slot = u32::try_from(index).expect("validated slot address");
                 if current_changed {
                     endpoint |= mask;
                     capture.changed.slots.push(slot);
                 }
                 if temporal
-                    && (current_changed || self.previous_at(index) != source.previous_at(index))
+                    && (current_changed
+                        || self.previous_at(page_row) != source.previous_at(source_row))
                 {
                     pair |= mask;
                     capture.changed.temporal.push(slot);
@@ -255,6 +281,7 @@ impl<T: PartialEq + Send + Sync + 'static> ErasedPublicationColumn for Publicati
         component: usize,
         component_words: &[u64],
         structural_words: &[u64],
+        directory: Option<&DenseDirectory>,
     ) {
         let source = world.column_at::<T>(component).values();
         for (word, (&component, &structural)) in
@@ -265,14 +292,15 @@ impl<T: PartialEq + Send + Sync + 'static> ErasedPublicationColumn for Publicati
                 let index = word * 64 + bits.trailing_zeros() as usize;
                 bits &= bits - 1;
                 if index < self.current.len() {
-                    self.refresh_slot(source, index);
+                    let row = world.row_of_slot(u32::try_from(index).expect("validated capacity"));
+                    self.refresh_slot(source, row_of(directory, index), row);
                 }
             }
         }
     }
 
-    fn reset_previous(&mut self, slots: &[u32]) {
-        Self::reset_previous(self, slots);
+    fn reset_previous(&mut self, slots: &[u32], directory: Option<&DenseDirectory>) {
+        Self::reset_previous(self, slots, directory);
     }
 
     fn clear_previous_overrides(&mut self) {
@@ -287,12 +315,18 @@ impl<T: PartialEq + Send + Sync + 'static> ErasedPublicationColumn for Publicati
         self.previous.is_some()
     }
 
-    fn apply_previous(&mut self, undo: &WorldUndo, component: usize, seen_words: &mut [u64]) {
+    fn apply_previous(
+        &mut self,
+        undo: &WorldUndo,
+        component: usize,
+        seen_words: &mut [u64],
+        directory: Option<&DenseDirectory>,
+    ) {
         if self.previous.is_some() {
             self.clear_previous_overrides();
             seen_words.fill(0);
             undo.visit_first_preimages::<T>(component, seen_words, |slot, value| {
-                self.set_previous(slot, value);
+                self.set_previous(slot, row_of(directory, slot as usize), value);
             });
         }
     }
@@ -304,6 +338,7 @@ impl<T: PartialEq + Send + Sync + 'static> ErasedPublicationColumn for Publicati
         dirty: &mut [u64],
         temporal_pair: bool,
         identities: Option<&[u64]>,
+        directories: (Option<&DenseDirectory>, Option<&DenseDirectory>),
     ) {
         let baseline = baseline
             .as_any()
@@ -321,9 +356,12 @@ impl<T: PartialEq + Send + Sync + 'static> ErasedPublicationColumn for Publicati
                 if index >= self.current.len() {
                     continue;
                 }
-                if self.current[index] != baseline.current[index]
-                    || (temporal_pair && self.previous_at(index) != baseline.previous_at(index))
-                    || (self.current[index].is_some()
+                let row = row_of(directories.0, index);
+                let baseline_row = row_of(directories.1, index);
+                if self.current[row] != baseline.current[baseline_row]
+                    || (temporal_pair
+                        && self.previous_at(row) != baseline.previous_at(baseline_row))
+                    || (self.current[row].is_some()
                         && identities.is_some_and(|words| words[word] & (1 << bit) != 0))
                 {
                     dirty[word] |= 1_u64 << bit;
@@ -332,9 +370,10 @@ impl<T: PartialEq + Send + Sync + 'static> ErasedPublicationColumn for Publicati
         }
     }
 
-    fn mark_present(&self, dirty: &mut [u64]) {
-        for (slot, value) in self.current.iter().enumerate() {
+    fn mark_present(&self, dirty: &mut [u64], directory: Option<&DenseDirectory>) {
+        for (row, value) in self.current.iter().enumerate() {
             if value.is_some() {
+                let slot = directory.map_or(row, |directory| directory.slot_at(row));
                 dirty[slot / 64] |= 1 << (slot % 64);
             }
         }
@@ -347,18 +386,25 @@ impl<T: PartialEq + Send + Sync + 'static> ErasedPublicationColumn for Publicati
         slots: &[u32],
         dirty: &mut [u64],
         identities: &[u64],
+        directory: Option<&DenseDirectory>,
     ) {
         let source = world.column_at::<T>(component).values();
         for &slot in slots {
             let index = slot as usize;
-            if self.current[index] != source[index]
-                || (source[index].is_some() && identities[index / 64] & (1 << (index % 64)) != 0)
+            let row = world.row_of_slot(slot);
+            let page_row = row_of(directory, index);
+            if self.current[page_row] != source[row]
+                || (source[row].is_some() && identities[index / 64] & (1 << (index % 64)) != 0)
             {
                 dirty[index / 64] |= 1 << (index % 64);
             }
-            self.refresh_slot(source, index);
+            self.refresh_slot(source, row_of(directory, index), row);
         }
         self.clear_previous_overrides();
+    }
+
+    fn swap_rows(&mut self, row: usize, other: usize) {
+        self.current.swap(row, other);
     }
 
     fn reserved_bytes(&self) -> usize {
@@ -387,14 +433,15 @@ struct SelectedColumn {
 /// Registry-selected page storage. Construction and initial capture are cold;
 /// refresh and diff reuse fixed-capacity storage. Snapshot callbacks for values
 /// with nested allocations remain responsible for their own copying costs.
-pub struct PublicationColumns {
+struct PublicationColumns {
     selected: Vec<SelectedColumn>,
+    directory: Option<DenseDirectory>,
     capacity: usize,
 }
 
 impl PublicationColumns {
     /// Allocate every selected component's page storage during runtime setup.
-    pub fn new(registry: &ComponentRegistry, capacity: usize) -> Self {
+    fn new(registry: &ComponentRegistry, capacity: usize) -> Self {
         Self {
             selected: registry
                 .entries
@@ -408,12 +455,15 @@ impl PublicationColumns {
                     })
                 })
                 .collect(),
+            directory: registry
+                .activity_partition
+                .map(|_| DenseDirectory::new(capacity)),
             capacity,
         }
     }
 
     /// Resolve a selected type once before reading a page's slot loop.
-    pub fn column<T: 'static>(&self) -> Option<&PublicationColumn<T>> {
+    fn column<T: 'static>(&self) -> Option<&PublicationColumn<T>> {
         self.selected
             .iter()
             .find(|column| column.key == ComponentKey::of::<T>())?
@@ -423,8 +473,31 @@ impl PublicationColumns {
     }
 
     pub(super) fn capture(&mut self, world: &RegisteredWorld) {
+        match (&mut self.directory, world.directory()) {
+            (Some(directory), Some(source)) => directory.clone_from(source),
+            (None, None) => {}
+            _ => panic!("publication activity partition schema"),
+        }
         for column in &mut self.selected {
-            column.values.capture(world, column.component);
+            column
+                .values
+                .capture(world, column.component, self.directory.as_ref());
+        }
+    }
+
+    fn reconcile_layout(&mut self, world: &RegisteredWorld, component: &[u64], structural: &[u64]) {
+        // Only current rows move. Final-tick preimages rebuild the adjacent pair
+        // after this page's independent directory has reached current membership.
+        self.clear_previous_overrides();
+        let Some(directory) = &mut self.directory else {
+            return;
+        };
+        for slot in dirty_slots(component, structural, self.capacity) {
+            if let Some(swap) = directory.transition(slot as usize, world.active_at_slot(slot)) {
+                for column in &mut self.selected {
+                    column.values.swap_rows(swap.row, swap.boundary_row);
+                }
+            }
         }
     }
 
@@ -448,9 +521,13 @@ impl PublicationColumns {
             "structural dirty capacity"
         );
         if let Some(column) = self.selected.iter_mut().find(|column| column.key == key) {
-            column
-                .values
-                .refresh_words(world, column.component, component_words, structural_words);
+            column.values.refresh_words(
+                world,
+                column.component,
+                component_words,
+                structural_words,
+                self.directory.as_ref(),
+            );
         }
     }
 
@@ -459,7 +536,7 @@ impl PublicationColumns {
     /// value, so a stopped component does not retain an old interpolation pose.
     pub(super) fn reset_previous(&mut self, slots: &[u32]) {
         for column in &mut self.selected {
-            column.values.reset_previous(slots);
+            column.values.reset_previous(slots, self.directory.as_ref());
         }
     }
 
@@ -477,15 +554,22 @@ impl PublicationColumns {
             "publication scratch capacity"
         );
         for column in &mut self.selected {
-            column
-                .values
-                .apply_previous(undo, column.component, seen_words);
+            column.values.apply_previous(
+                undo,
+                column.component,
+                seen_words,
+                self.directory.as_ref(),
+            );
         }
     }
 
     /// Inline and nested component storage retained by this page.
-    pub fn reserved_bytes(&self) -> usize {
+    fn reserved_bytes(&self) -> usize {
         size_of::<Self>()
+            + self
+                .directory
+                .as_ref()
+                .map_or(0, DenseDirectory::reserved_bytes)
             + self.selected.capacity() * size_of::<SelectedColumn>()
             + self
                 .selected
@@ -497,13 +581,13 @@ impl PublicationColumns {
 
 /// Reusable per-component page differences. Structural identity and generation
 /// differences are owned by the runtime and are separate from these values.
-pub struct PublicationDiff {
+struct PublicationDiff {
     columns: Vec<(ComponentKey, Vec<u64>)>,
 }
 
 impl PublicationDiff {
     /// Allocate bitsets once for the selected page schema and slot capacity.
-    pub fn new(columns: &PublicationColumns) -> Self {
+    fn new(columns: &PublicationColumns) -> Self {
         Self {
             columns: columns
                 .selected
@@ -514,18 +598,15 @@ impl PublicationDiff {
     }
 
     /// Clear the prior publication's changes while retaining every allocation.
-    pub fn clear(&mut self) {
+    fn clear(&mut self) {
         for (_, words) in &mut self.columns {
             words.fill(0);
         }
     }
+}
 
-    /// Bind one component's physical-slot change bitset.
-    pub fn component(&self, key: ComponentKey) -> Option<&[u64]> {
-        self.columns
-            .iter()
-            .find_map(|(candidate, words)| (*candidate == key).then_some(words.as_slice()))
-    }
+fn row_of(directory: Option<&DenseDirectory>, slot: usize) -> usize {
+    directory.map_or(slot, |directory| directory.row_of(slot))
 }
 
 fn dirty_slots<'a>(
@@ -731,20 +812,32 @@ impl PublicationPage {
             generation: self.generations[slot as usize],
         })
     }
-    /// Bind one selected typed column once before a consumer's slot loop.
-    pub fn column<T: 'static>(&self) -> Option<&PublicationColumn<T>> {
+    fn column<T: 'static>(&self) -> Option<&PublicationColumn<T>> {
         self.columns.column()
     }
     /// Component read guarded by this page's epoch and slot generation.
     pub fn component<T: 'static>(&self, handle: Handle) -> Option<&T> {
         (self.handle(handle.slot) == Some(handle))
-            .then(|| self.column::<T>()?.current(handle.slot))
+            .then(|| {
+                self.column::<T>()?
+                    .current
+                    .get(row_of(
+                        self.columns.directory.as_ref(),
+                        handle.slot as usize,
+                    ))?
+                    .as_ref()
+            })
             .flatten()
     }
     /// Previous component only when the same entity existed in the adjacent tick.
     pub fn previous_component<T: 'static>(&self, handle: Handle) -> Option<&T> {
         (self.handle(handle.slot) == Some(handle) && self.pair_valid(handle.slot))
-            .then(|| self.column::<T>()?.previous(handle.slot))
+            .then(|| {
+                self.column::<T>()?.previous_at(row_of(
+                    self.columns.directory.as_ref(),
+                    handle.slot as usize,
+                ))
+            })
             .flatten()
     }
     /// Whether temporal sampling preserves this slot's entity identity.
@@ -837,6 +930,13 @@ impl PublicationPage {
                 self.refresh_identity(world, u32::try_from(slot).expect("validated capacity"));
             }
         } else {
+            if let Some(component) = world.activity_component() {
+                self.columns.reconcile_layout(
+                    world,
+                    page_dirty.component_words(component),
+                    page_dirty.structural_words(),
+                );
+            }
             for slot in page_dirty.structural_slots() {
                 self.refresh_identity(world, slot);
             }
@@ -897,6 +997,8 @@ impl PublicationPage {
                     world,
                     component: column.component,
                     source: baseline.values.as_ref(),
+                    directory: self.columns.directory.as_ref(),
+                    source_directory: source.columns.directory.as_ref(),
                     page_words: page_dirty.component_words(column.component),
                     page_structural: page_dirty.structural_words(),
                     outbound_words: outbound_dirty.component_words(column.component),
@@ -933,11 +1035,15 @@ impl PublicationPage {
                 self.compare_source(source, outbound_dirty);
             } else {
                 for (index, column) in self.columns.selected.iter().enumerate() {
-                    column
-                        .values
-                        .mark_present(&mut self.endpoint.columns[index].1);
+                    column.values.mark_present(
+                        &mut self.endpoint.columns[index].1,
+                        self.columns.directory.as_ref(),
+                    );
                     if column.values.is_temporal() {
-                        column.values.mark_present(&mut self.pair.columns[index].1);
+                        column.values.mark_present(
+                            &mut self.pair.columns[index].1,
+                            self.columns.directory.as_ref(),
+                        );
                     }
                 }
             }
@@ -972,6 +1078,10 @@ impl PublicationPage {
                 &mut self.endpoint.columns[index].1,
                 false,
                 Some(&self.identities),
+                (
+                    self.columns.directory.as_ref(),
+                    source.columns.directory.as_ref(),
+                ),
             );
             column.values.diff(
                 baseline.values.as_ref(),
@@ -979,6 +1089,10 @@ impl PublicationPage {
                 &mut self.pair.columns[index].1,
                 true,
                 Some(&self.identities),
+                (
+                    self.columns.directory.as_ref(),
+                    source.columns.directory.as_ref(),
+                ),
             );
         }
     }
@@ -1054,6 +1168,8 @@ impl PublicationPage {
             &self.scratch_words,
             self.ids.len(),
         ));
+        self.columns
+            .reconcile_layout(world, &self.scratch_words, &self.scratch_words);
         self.endpoint.clear();
         self.pair.clear();
         self.dirty.clear();
@@ -1074,6 +1190,7 @@ impl PublicationPage {
                 &self.candidates,
                 &mut self.endpoint.columns[index].1,
                 &self.identities,
+                self.columns.directory.as_ref(),
             );
             if column.values.is_temporal() {
                 self.pair.columns[index]

@@ -300,3 +300,274 @@ fn sparse_inverse_patch_compares_selected_source_and_rejects_stale_generations()
         Some(&1)
     );
 }
+
+fn partitioned_fixture(capacity: usize) -> (RegisteredWorld, SnapshotRing<PublicationPage>) {
+    let mut registry = ComponentRegistry::default();
+    registry
+        .register::<u32>(ComponentSchemaId(1))
+        .expect("position schema");
+    registry
+        .register_indexed::<u64>(ComponentSchemaId(2), |value| *value != 0)
+        .expect("activity schema");
+    registry
+        .select_activity_partition::<u64>()
+        .expect("activity partition");
+    registry
+        .select_publication::<u32>(true)
+        .expect("temporal position");
+    registry
+        .select_publication::<u64>(false)
+        .expect("activity publication");
+    let pages = SnapshotRing::new(capacity, 2, || {
+        PublicationPage::new(&registry, WorldEpoch(1), capacity)
+    });
+    let mut world = RegisteredWorld::new(WorldEpoch(1), capacity, registry).expect("world");
+    for slot in 0..4_u32 {
+        world
+            .spawn(StableId(u128::from(slot)), |entity| {
+                entity.add(slot + 10)?.add(u64::from(slot % 2))?;
+                Ok(())
+            })
+            .expect("interleaved entity");
+    }
+    (world, pages)
+}
+
+fn change_partitioned(
+    world: &mut RegisteredWorld,
+    pages: &mut SnapshotRing<PublicationPage>,
+    tick: u64,
+    changes: &[(u32, u64, u32)],
+) -> WorldUndo {
+    world.begin_tick(Some(tick));
+    let mut undo = world.empty_undo();
+    for &(slot, active, position) in changes {
+        let handle = world.live_at_slot(slot).expect("changed live identity").0;
+        let old_activity = world.replace_prevalidated(1, slot, active);
+        let old_position = world.replace_prevalidated(0, slot, position);
+        undo.record_component(1, slot, tick - 1, Some(old_activity));
+        undo.record_component(0, slot, tick - 1, Some(old_position));
+        world.mark_changed(1, handle, tick);
+        world.mark_changed(0, handle, tick);
+        pages.mark_component(1, slot);
+        pages.mark_component(0, slot);
+    }
+    world.finalize_activity(&[], &mut undo);
+    world.finish_tick(tick);
+    undo
+}
+
+fn assert_partitioned_values(page: &PublicationPage, positions: &[u32; 4], active: &[u64; 4]) {
+    let directory = page.columns.directory.as_ref().expect("page directory");
+    assert_eq!(
+        directory.active_len(),
+        active.iter().filter(|&&value| value != 0).count()
+    );
+    for slot in 0..4_u32 {
+        let handle = page.handle(slot).expect("published identity");
+        assert_eq!(
+            page.component::<u32>(handle),
+            Some(&positions[slot as usize])
+        );
+        assert_eq!(page.component::<u64>(handle), Some(&active[slot as usize]));
+        assert_eq!(
+            directory.row_of(slot as usize) < directory.active_len(),
+            active[slot as usize] != 0
+        );
+    }
+}
+
+#[test]
+fn partitioned_pages_keep_held_values_and_exact_pairs_across_independent_layouts() {
+    let (mut world, mut pages) = partitioned_fixture(8);
+    publish(&mut pages, &world, 0, 0, None, &[]);
+    let held = pages.latest().expect("held baseline");
+    assert_partitioned_values(&held, &[10, 11, 12, 13], &[0, 1, 0, 1]);
+    let bytes = pages.reserved_bytes(PublicationPage::reserved_bytes);
+    let mut positions = [10, 11, 12, 13];
+    let mut activity = [0, 1, 0, 1];
+    let mut prior_pair = positions;
+    let mut source_layout_differed = false;
+    let mut authority_layout_differed = false;
+    for tick in 1..=8 {
+        let old_positions = positions;
+        let old_activity = activity;
+        // Authority applies these changes in reverse slot order. A warm page
+        // partitions its own rows in logical order, producing a different tail.
+        let moving = tick % 2 == 0;
+        activity[0] = u64::from(!moving);
+        activity[3] = u64::from(moving);
+        positions[0] += 2;
+        positions[3] += 3;
+        let undo = change_partitioned(
+            &mut world,
+            &mut pages,
+            tick,
+            &[
+                (3, activity[3], positions[3]),
+                (0, activity[0], positions[0]),
+            ],
+        );
+        let source = pages.latest().expect("source partitioned page");
+        publish(&mut pages, &world, tick, 0, Some(&undo), &[]);
+        let page = pages.latest().expect("current partitioned page");
+        let directory = page.columns.directory.as_ref().expect("page directory");
+        let source_directory = source.columns.directory.as_ref().expect("source directory");
+        source_layout_differed |=
+            (0..8).any(|row| directory.slot_at(row) != source_directory.slot_at(row));
+        authority_layout_differed |=
+            (0..8).any(|row| directory.slot_at(row) != world.slot_at_row(row));
+        assert_partitioned_values(&page, &positions, &activity);
+        let expected_endpoint: Vec<_> = (0..4_u32)
+            .filter(|&slot| positions[slot as usize] != old_positions[slot as usize])
+            .collect();
+        let expected_pair: Vec<_> = (0..4_u32)
+            .filter(|&slot| {
+                positions[slot as usize] != old_positions[slot as usize]
+                    || old_positions[slot as usize] != prior_pair[slot as usize]
+            })
+            .collect();
+        let expected_activity: Vec<_> = (0..4_u32)
+            .filter(|&slot| activity[slot as usize] != old_activity[slot as usize])
+            .collect();
+        assert_eq!(page.dirty().component::<u32>(), expected_endpoint);
+        assert_eq!(page.dirty().temporal::<u32>(), expected_pair);
+        assert_eq!(page.dirty().component::<u64>(), expected_activity);
+        for slot in 0..4_u32 {
+            assert_eq!(
+                page.previous_component::<u32>(page.handle(slot).expect("current handle")),
+                Some(&old_positions[slot as usize])
+            );
+        }
+        assert_partitioned_values(&held, &[10, 11, 12, 13], &[0, 1, 0, 1]);
+        prior_pair = old_positions;
+    }
+    assert!(source_layout_differed);
+    assert!(authority_layout_differed);
+    let empty = world.empty_undo();
+    for tick in 9..=12 {
+        publish(&mut pages, &world, tick, 0, Some(&empty), &[]);
+        let page = pages.latest().expect("stopped partitioned page");
+        assert_partitioned_values(&page, &positions, &activity);
+        assert_eq!(page.dirty().component::<u32>(), &[]);
+        assert_eq!(
+            page.dirty().temporal::<u32>(),
+            if tick == 9 { &[0, 3][..] } else { &[] }
+        );
+        for slot in 0..4_u32 {
+            assert_eq!(
+                page.previous_component::<u32>(page.handle(slot).expect("stopped handle")),
+                Some(&positions[slot as usize])
+            );
+        }
+    }
+    assert_eq!(pages.reserved_bytes(PublicationPage::reserved_bytes), bytes);
+}
+
+#[test]
+fn partitioned_rewind_swaps_neighbors_without_reporting_layout_changes() {
+    let (mut world, mut pages) = partitioned_fixture(8);
+    publish(&mut pages, &world, 0, 0, None, &[]);
+    let mut undo = change_partitioned(&mut world, &mut pages, 1, &[(3, 0, 33), (0, 1, 20)]);
+    publish(&mut pages, &world, 1, 0, Some(&undo), &[]);
+    let held = pages.latest().expect("held changed endpoint");
+    publish(&mut pages, &world, 2, 0, None, &[]);
+    let mut inverse = Vec::new();
+    undo.visit_changed_slots(|slot| inverse.push(slot));
+    undo.restore(&mut world, &[]);
+    drop(held);
+    pages.reset_timeline();
+    pages
+        .patch_rewind(
+            |page| page.source_tick(0, 1, 1),
+            |page, _| {
+                page.patch_changed(
+                    &world,
+                    |mark| {
+                        for &slot in &inverse {
+                            mark(slot);
+                        }
+                    },
+                    0,
+                    1,
+                );
+            },
+        )
+        .expect("rewind page");
+    let page = pages.latest().expect("restored publication");
+    assert_partitioned_values(&page, &[10, 11, 12, 13], &[0, 1, 0, 1]);
+    assert_eq!(page.dirty().component::<u32>(), &[0, 3]);
+    assert_eq!(page.dirty().component::<u64>(), &[0, 3]);
+    assert_eq!(page.dirty().structural(), &[]);
+    assert_eq!(page.previous_id(), None);
+    assert_eq!(page.source_endpoint().expect("patch source").0.tick, 1);
+}
+
+#[test]
+fn partitioned_boundary_deletion_and_reuse_preserve_neighbor_identity() {
+    let (mut world, mut pages) = partitioned_fixture(8);
+    for tick in 0..4 {
+        publish(&mut pages, &world, tick, 0, None, &[]);
+    }
+    let held = pages.latest().expect("held original endpoint");
+    let old = held.handle(1).expect("active original identity");
+    world.despawn(old).expect("delete active boundary neighbor");
+    let new = world
+        .spawn(StableId(99), |entity| {
+            entity.add(51_u32)?.add(1_u64)?;
+            Ok(())
+        })
+        .expect("reuse active slot");
+    pages.mark_structural(old.slot);
+    let events = [StructuralChange::Despawn(old), StructuralChange::Spawn(new)];
+    let undo = world.empty_undo();
+    publish(&mut pages, &world, 4, 0, Some(&undo), &events);
+    let page = pages.latest().expect("reused endpoint");
+    assert_partitioned_values(&page, &[10, 51, 12, 13], &[0, 1, 0, 1]);
+    assert_eq!(page.structural_events(), events);
+    assert_eq!(page.dirty().component::<u32>(), &[1]);
+    assert_eq!(page.dirty().component::<u64>(), &[1]);
+    assert_eq!(page.component::<u32>(old), None);
+    assert_eq!(page.previous_component::<u32>(new), None);
+    assert_partitioned_values(&held, &[10, 11, 12, 13], &[0, 1, 0, 1]);
+}
+
+#[test]
+fn partitioned_warm_two_hundred_spawns_keep_reservations_and_existing_neighbors() {
+    let (mut world, mut pages) = partitioned_fixture(256);
+    for tick in 0..4 {
+        publish(&mut pages, &world, tick, 0, None, &[]);
+    }
+    let bytes = pages.reserved_bytes(PublicationPage::reserved_bytes);
+    let mut events = Vec::with_capacity(200);
+    for slot in 4..204_u32 {
+        let handle = world
+            .spawn(StableId(u128::from(slot)), |entity| {
+                entity.add(slot + 10)?.add(u64::from(slot % 2))?;
+                Ok(())
+            })
+            .expect("partitioned burst entity");
+        pages.mark_structural(handle.slot);
+        events.push(StructuralChange::Spawn(handle));
+    }
+    let undo = world.empty_undo();
+    publish(&mut pages, &world, 4, 0, Some(&undo), &events);
+    let page = pages.latest().expect("partitioned burst publication");
+    assert_eq!(page.len(), 204);
+    assert_eq!(page.structural_events(), events);
+    assert_eq!(page.dirty().component::<u32>().len(), 200);
+    assert_eq!(page.dirty().component::<u64>().len(), 200);
+    let directory = page.columns.directory.as_ref().expect("burst directory");
+    assert_eq!(directory.active_len(), 102);
+    for slot in 0..204_u32 {
+        let handle = page.handle(slot).expect("burst identity");
+        assert_eq!(page.component::<u32>(handle), Some(&(slot + 10)));
+        assert_eq!(page.component::<u64>(handle), Some(&u64::from(slot % 2)));
+        if slot < 4 {
+            assert_eq!(page.previous_component::<u32>(handle), Some(&(slot + 10)));
+        } else {
+            assert_eq!(page.previous_component::<u32>(handle), None);
+        }
+    }
+    assert_eq!(pages.reserved_bytes(PublicationPage::reserved_bytes), bytes);
+}

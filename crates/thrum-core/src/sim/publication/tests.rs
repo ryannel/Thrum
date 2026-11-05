@@ -1,9 +1,32 @@
 use super::super::registered_world::RegisteredWorld;
-use super::{PublicationColumns, PublicationDiff};
+use super::{PublicationColumn, PublicationColumns, PublicationDiff};
 use crate::{
     StableId, WorldEpoch,
     sim::{ComponentKey, ComponentRegistry, ComponentSchemaId, RegistrationError},
 };
+
+// Raw physical rows are only inspected by publication's internal tests.
+impl<T> PublicationColumn<T> {
+    pub(super) fn current(&self, row: u32) -> Option<&T> {
+        self.current.get(row as usize)?.as_ref()
+    }
+
+    pub(super) fn previous(&self, row: u32) -> Option<&T> {
+        self.previous_at(row as usize)
+    }
+
+    pub(super) fn current_values(&self) -> &[Option<T>] {
+        &self.current
+    }
+}
+
+impl PublicationDiff {
+    fn component(&self, key: ComponentKey) -> Option<&[u64]> {
+        self.columns
+            .iter()
+            .find_map(|(candidate, words)| (*candidate == key).then_some(words.as_slice()))
+    }
+}
 
 fn refresh_component(
     page: &mut PublicationColumns,
@@ -41,9 +64,14 @@ fn diff_into(
         .zip(&baseline.selected)
         .zip(&mut output.columns)
     {
-        column
-            .values
-            .diff(baseline.values.as_ref(), &candidates, words, pair, None);
+        column.values.diff(
+            baseline.values.as_ref(),
+            &candidates,
+            words,
+            pair,
+            None,
+            (None, None),
+        );
     }
 }
 
@@ -410,6 +438,7 @@ fn fused_capture_matches_separate_refresh_and_exact_pair_oracle() {
             &mut expected_endpoint,
             false,
             Some(&structural),
+            (None, None),
         );
         reference.selected[index].values.diff(
             source.selected[index].values.as_ref(),
@@ -417,6 +446,7 @@ fn fused_capture_matches_separate_refresh_and_exact_pair_oracle() {
             &mut expected_pair,
             true,
             Some(&structural),
+            (None, None),
         );
         let component = page.selected[index].component;
         page.selected[index]
@@ -425,6 +455,8 @@ fn fused_capture_matches_separate_refresh_and_exact_pair_oracle() {
                 world: &world,
                 component,
                 source: source.selected[index].values.as_ref(),
+                directory: None,
+                source_directory: None,
                 page_words: &pending[index],
                 page_structural: &structural,
                 outbound_words: &outbound[index],

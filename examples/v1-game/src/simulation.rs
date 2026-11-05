@@ -54,6 +54,9 @@ fn setup(
     let velocity = registry
         .register_indexed::<Velocity>(ComponentSchemaId(2), |value| *value != Velocity::default())
         .map_err(|_| SimError::InvalidConfig)?;
+    registry
+        .select_activity_partition::<Velocity>()
+        .map_err(|_| SimError::InvalidConfig)?;
     let health = registry
         .register::<Health>(ComponentSchemaId(3))
         .map_err(|_| SimError::InvalidConfig)?;

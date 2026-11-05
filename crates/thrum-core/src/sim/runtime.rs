@@ -718,7 +718,9 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
             revision = step.from_revision;
         }
         let coalesced = steps.len() > 1
-            && steps.iter().all(|step| step.events.is_empty())
+            && steps
+                .iter()
+                .all(|step| step.events.is_empty() && !step.world.has_layout_swaps())
             && (0..self.world.component_count()).all(|component| {
                 steps.iter().all(|step| {
                     !step.world.has_component_rows(component)
@@ -1535,6 +1537,8 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
             &self.direct_dirty.slots,
             Some(txn_undo),
         );
+        self.world
+            .finalize_activity(&self.structural_journal, txn_undo);
         self.direct_dirty.clear();
         self.mark_publication_changes();
         game.apply(
@@ -1775,7 +1779,12 @@ impl WorldTxn<'_> {
         assert_eq!(query.system, self.system, "query belongs to another system");
         assert!(query.indexed, "query has no active index");
         self.query_extra.clear();
-        supplemental(context, &mut |slot| self.query_extra.mark(slot));
+        supplemental(context, &mut |slot| {
+            let row = self
+                .world
+                .row_of_slot(u32::try_from(slot).expect("validated slot"));
+            self.query_extra.mark(row);
+        });
         let result = self.world.visit_mut2_if(
             query.first,
             query.second,
@@ -1816,6 +1825,7 @@ impl LiveSlot<'_> {
 /// Read-only registered column bound once to a checked authority view.
 pub struct ColumnRead<'a, T: Send + Sync + 'static> {
     column: &'a TypedStore<T>,
+    world: &'a RegisteredWorld,
     nonce: u64,
 }
 
@@ -1829,13 +1839,16 @@ impl<T: Send + Sync + 'static> ColumnRead<'_, T> {
         if slot.nonce != self.nonce {
             return Err(RegisteredWorldError::WrongRuntime);
         }
-        Ok(self.column.get(slot.handle.slot as usize))
+        Ok(self.column.get(self.world.row_of_slot(slot.handle.slot)))
     }
 
     /// Read a physical slot in a page capture after the column's permit has
     /// been checked at binding. Absence also covers a despawned slot.
     pub fn at_slot(&self, slot: u32) -> Option<&T> {
-        self.column.values().get(slot as usize)?.as_ref()
+        if slot as usize >= self.world.capacity() {
+            return None;
+        }
+        self.column.get(self.world.row_of_slot(slot))
     }
 }
 
@@ -1974,6 +1987,7 @@ impl WorldRead<'_> {
         }
         Ok(ColumnRead {
             column: self.world.column_at(permit.component),
+            world: self.world,
             nonce: self.nonce,
         })
     }
