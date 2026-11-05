@@ -16,12 +16,10 @@ use web_time::Instant;
 #[cfg(not(target_arch = "wasm32"))]
 use thrum_content_runtime::EnvironmentProduct;
 #[cfg(not(target_arch = "wasm32"))]
-use thrum_render::extract::SourceTick;
-#[cfg(not(target_arch = "wasm32"))]
 use thrum_render::synthetic::PhotometricEnvironment;
 use thrum_render::{
     capabilities::DeviceCapabilities,
-    extract::{ExtractReport, RenderExtractor},
+    extract::{ExtractReport, RenderExtractor, SourceTick},
     present::{PresentationBinding, SurfacePresenter, SurfaceProfile},
     synthetic::{
         FrameLighting, OffscreenTarget, PreparedSynthetic, SceneApplyReport, SyntheticLight,
@@ -452,6 +450,7 @@ struct FrameSlot {
 #[derive(Clone, Copy)]
 struct SubmitFrame {
     extracted: ExtractReport,
+    reused_source: bool,
     extract_cpu: Duration,
     worker_queue_cpu: Duration,
     worker_ready_cpu: Duration,
@@ -563,6 +562,8 @@ pub struct FrameHost {
     #[cfg(not(target_arch = "wasm32"))]
     last_presentation_alpha: Option<f32>,
     scene: SyntheticScene,
+    last_extracted: ExtractReport,
+    last_scene_apply: SceneApplyReport,
     render_extent: [u32; 2],
     changed_slots: Vec<u32>,
     prepared: PreparedSynthetic,
@@ -791,7 +792,7 @@ impl FrameHost {
         let initial = world
             .published_page()
             .map_err(|error| format!("initial world page: {error:?}"))?;
-        scene::extract(&mut extractor, &initial);
+        let initial_extracted = scene::extract(&mut extractor, &initial);
         drop(initial);
         let count = u32::try_from(ENTITY_COUNT).map_err(|_| "fixture exceeds u32 slots")?;
         let mut scene =
@@ -820,7 +821,7 @@ impl FrameHost {
         })
         .to_vec();
         let mut changed_slots = Vec::with_capacity(ENTITY_COUNT);
-        scene.apply_render_columns(extractor.frame(), &mut changed_slots);
+        let initial_scene_apply = scene.apply_render_columns(extractor.frame(), &mut changed_slots);
         let prepared = PreparedSynthetic::prepare_with_capabilities(
             capabilities,
             queue,
@@ -885,6 +886,8 @@ impl FrameHost {
             #[cfg(not(target_arch = "wasm32"))]
             last_presentation_alpha: None,
             scene,
+            last_extracted: initial_extracted,
+            last_scene_apply: initial_scene_apply,
             render_extent: config.render_extent,
             changed_slots,
             prepared,
@@ -1344,15 +1347,29 @@ impl FrameHost {
             .world
             .published_page()
             .map_err(|error| format!("world page: {error:?}"))?;
-        let extracted = scene::extract(
-            self.extractor
-                .as_mut()
-                .ok_or("serial extractor unavailable")?,
-            &snapshot,
-        );
+        let source = SourceTick {
+            epoch: snapshot.id().epoch.0,
+            tick: snapshot.id().tick,
+            timeline: snapshot.timeline(),
+        };
+        let extractor = self
+            .extractor
+            .as_mut()
+            .ok_or("serial extractor unavailable")?;
+        #[cfg(not(target_arch = "wasm32"))]
+        let reused_source =
+            extractor.frame().source() == Some(source) && self.last_view_source == Some(source);
+        #[cfg(target_arch = "wasm32")]
+        let reused_source = extractor.frame().source() == Some(source);
+        let extracted = if reused_source {
+            self.last_extracted
+        } else {
+            scene::extract(extractor, &snapshot)
+        };
         drop(snapshot);
         Ok(SubmitFrame {
             extracted,
+            reused_source,
             extract_cpu: extract_start.elapsed(),
             worker_queue_cpu: Duration::ZERO,
             worker_ready_cpu: Duration::ZERO,
@@ -1419,13 +1436,21 @@ impl FrameHost {
         let SceneApplyReport {
             moving,
             dropped_invalid,
-        } = self.scene.apply_render_columns(
-            self.extractor
-                .as_ref()
-                .expect("completed extractor belongs to host")
-                .frame(),
-            &mut self.changed_slots,
-        );
+        } = if frame.reused_source {
+            self.changed_slots.clear();
+            self.last_scene_apply
+        } else {
+            let applied = self.scene.apply_render_columns(
+                self.extractor
+                    .as_ref()
+                    .expect("completed extractor belongs to host")
+                    .frame(),
+                &mut self.changed_slots,
+            );
+            self.last_scene_apply = applied;
+            applied
+        };
+        self.last_extracted = frame.extracted;
         self.scene.view = frame_view(
             frame.frame_tick,
             frame.presentation_alpha,
@@ -1728,6 +1753,7 @@ impl FrameHost {
                 {
                     let frame = SubmitFrame {
                         extracted: ExtractReport::default(),
+                        reused_source: false,
                         extract_cpu: Duration::ZERO,
                         worker_queue_cpu: Duration::ZERO,
                         worker_ready_cpu: Duration::ZERO,
@@ -1787,6 +1813,7 @@ impl FrameHost {
             drop(snapshot);
             SubmitFrame {
                 extracted,
+                reused_source: false,
                 extract_cpu: start.elapsed(),
                 worker_queue_cpu: completed.queue_wait,
                 worker_ready_cpu: completed.completed_at.elapsed(),
@@ -1799,6 +1826,7 @@ impl FrameHost {
         } else {
             SubmitFrame {
                 extracted: completed.report,
+                reused_source: false,
                 extract_cpu: completed.publication_cpu + completed.cpu,
                 worker_queue_cpu: completed.queue_wait,
                 worker_ready_cpu: completed.completed_at.elapsed(),

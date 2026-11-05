@@ -381,6 +381,7 @@ fn stale_frame_source_drops_the_view_without_touching_the_scene() {
             None,
             super::SubmitFrame {
                 extracted: thrum_render::extract::ExtractReport::default(),
+                reused_source: false,
                 extract_cpu: Duration::ZERO,
                 worker_queue_cpu: Duration::ZERO,
                 worker_ready_cpu: Duration::ZERO,
