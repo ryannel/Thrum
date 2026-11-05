@@ -11,9 +11,8 @@ use super::{
 };
 
 type ValueAt<C> = fn(&C, usize) -> &dyn Any;
-type ApplyValue =
-    fn(&mut RegisteredWorld, usize, Handle, &dyn Any) -> Result<(), RegisteredWorldError>;
-type Presence = fn(&RegisteredWorld, usize, Handle) -> Result<bool, RegisteredWorldError>;
+type ApplyValue = fn(&mut RegisteredWorld, usize, Handle, &dyn Any);
+type Presence = fn(&RegisteredWorld, usize, u32) -> bool;
 type Fill<C> = fn(&C, usize, &mut EntityWriter<'_>) -> Result<(), RegisteredWorldError>;
 
 /// One reusable candidate operation. Values remain in game-owned candidate
@@ -77,16 +76,8 @@ pub enum EditError {
     Capacity,
 }
 
-fn present<T: Send + Sync + 'static>(
-    world: &RegisteredWorld,
-    component: usize,
-    handle: Handle,
-) -> Result<bool, RegisteredWorldError> {
-    match world.with_index::<T, _>(component, handle, |_| ()) {
-        Ok(()) => Ok(true),
-        Err(RegisteredWorldError::MissingComponent) => Ok(false),
-        Err(error) => Err(error),
-    }
+fn present<T: Send + Sync + 'static>(world: &RegisteredWorld, component: usize, slot: u32) -> bool {
+    world.present_at::<T>(component, slot)
 }
 
 fn is_type<T: 'static>(value: &dyn Any) -> bool {
@@ -98,16 +89,15 @@ fn replace<T: Clone + Send + Sync + 'static>(
     component: usize,
     handle: Handle,
     value: &dyn Any,
-) -> Result<(), RegisteredWorldError> {
-    world.replace(
+) {
+    world.replace_prevalidated(
         component,
-        handle,
+        handle.slot,
         value
             .downcast_ref::<T>()
             .expect("prevalidated value type")
             .clone(),
-    )?;
-    Ok(())
+    );
 }
 
 fn insert<T: Clone + Send + Sync + 'static>(
@@ -115,15 +105,15 @@ fn insert<T: Clone + Send + Sync + 'static>(
     component: usize,
     handle: Handle,
     value: &dyn Any,
-) -> Result<(), RegisteredWorldError> {
-    world.insert(
+) {
+    world.insert_prevalidated(
         component,
-        handle,
+        handle.slot,
         value
             .downcast_ref::<T>()
             .expect("prevalidated value type")
             .clone(),
-    )
+    );
 }
 
 fn remove<T: Send + Sync + 'static>(
@@ -131,9 +121,8 @@ fn remove<T: Send + Sync + 'static>(
     component: usize,
     handle: Handle,
     _value: &dyn Any,
-) -> Result<(), RegisteredWorldError> {
-    world.remove::<T>(component, handle)?;
-    Ok(())
+) {
+    world.remove_prevalidated::<T>(component, handle.slot);
 }
 
 impl<C> Edit<C> {
@@ -299,7 +288,7 @@ impl EditScratch {
                         return Err(EditError::Conflict);
                     }
                     self.marks[mark] = self.generation;
-                    let exists = present(world, *component, *handle).map_err(EditError::World)?;
+                    let exists = present(world, *component, handle.slot);
                     if exists != (*kind != ComponentEditKind::Insert) {
                         return Err(EditError::World(if exists {
                             RegisteredWorldError::DuplicateComponent
@@ -387,7 +376,7 @@ impl EditScratch {
             {
                 let empty: &dyn Any = &();
                 let value = value.map_or(empty, |get| get(candidate, *index));
-                apply(world, *component, *handle, value).expect("whole batch prevalidated");
+                apply(world, *component, *handle, value);
                 world.mark_changed(*component, *handle, tick);
             }
         }

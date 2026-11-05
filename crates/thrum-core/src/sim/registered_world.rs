@@ -770,44 +770,45 @@ impl RegisteredWorld {
         Ok(read(value))
     }
 
-    pub(super) fn replace<T: Send + Sync + 'static>(
+    pub(super) fn present_at<T: Send + Sync + 'static>(&self, component: usize, slot: u32) -> bool {
+        self.column_at::<T>(component).get(slot as usize).is_some()
+    }
+
+    pub(super) fn replace_prevalidated<T: Send + Sync + 'static>(
         &mut self,
         component: usize,
-        handle: Handle,
+        slot: u32,
         value: T,
-    ) -> Result<T, RegisteredWorldError> {
-        self.entity(handle)?;
+    ) -> T {
         let current = self
             .column_mut_index::<T>(component)
-            .get_mut(handle.slot as usize)
-            .ok_or(RegisteredWorldError::MissingComponent)?;
-        Ok(std::mem::replace(current, value))
+            .get_mut(slot as usize)
+            .expect("prevalidated replacement component");
+        std::mem::replace(current, value)
     }
 
-    pub(super) fn insert<T: Send + Sync + 'static>(
+    pub(super) fn insert_prevalidated<T: Send + Sync + 'static>(
         &mut self,
         component: usize,
-        handle: Handle,
+        slot: u32,
         value: T,
-    ) -> Result<(), RegisteredWorldError> {
-        self.entity(handle)?;
-        let column = self.column_mut_index::<T>(component);
-        if column.get(handle.slot as usize).is_some() {
-            return Err(RegisteredWorldError::DuplicateComponent);
-        }
-        column.insert(handle.slot as usize, value);
-        Ok(())
+    ) {
+        assert!(
+            self.column_mut_index::<T>(component)
+                .insert(slot as usize, value)
+                .is_none(),
+            "prevalidated insertion slot is empty"
+        );
     }
 
-    pub(super) fn remove<T: Send + Sync + 'static>(
+    pub(super) fn remove_prevalidated<T: Send + Sync + 'static>(
         &mut self,
         component: usize,
-        handle: Handle,
-    ) -> Result<T, RegisteredWorldError> {
-        self.entity(handle)?;
+        slot: u32,
+    ) -> T {
         self.column_mut_index::<T>(component)
-            .remove(handle.slot as usize)
-            .ok_or(RegisteredWorldError::MissingComponent)
+            .remove(slot as usize)
+            .expect("prevalidated removal component")
     }
 
     /// Prepare one two-component storage-order query for repeated ticks.
@@ -968,9 +969,7 @@ mod tests {
         let height = world
             .component_index(super::ComponentKey::of::<Height>())
             .expect("registered height");
-        world
-            .replace(height, first, Height(6.0))
-            .expect("registered value");
+        world.replace_prevalidated(height, first.slot, Height(6.0));
         assert_eq!(world.with::<Height, _>(first, |value| value.0), Ok(6.0));
         world.despawn(first).expect("first entity live");
         assert_eq!(
