@@ -8,18 +8,8 @@ Make one frame fast end to end, then widen. One reusable engine powers `examples
 
 **A gate passes only when its fixed real-game rows meet every budget** on the named target, the same game runs through public engine APIs, `./dev check` is green, and an independent reviewer has tried to break the code and raw results. Record p50/p95/p99, allocations and the hot-path profile on one evidence page per gate. The physical iPhone is unavailable: the iPhone 18 Pro simulator proves function, never speed. Label Mac substitutes “proxy”: CPU gets half the iPhone budget on at most two busy frame threads; GPU time at iPhone native resolution ×5 must fit 6.25 ms. iPhone gates may close only as **Mac-qualified, device pending**; the ledger records no iPhone result. At V1 exit, stop with numbers and outstanding device runs. CI remains manual-only by owner decision.
 
-## Fix first — regression test for each
-
-- [x] Dispatch the newest committed page whenever the native extract worker becomes idle; do not silently miss tick N+1 while a view is ready.
-- [x] Never freeze a moving instance outside the prepared shadow envelope; make shadows degrade without dropping its transform.
-- [x] A busy publication page drops a presentation frame; it does not end or stall authority.
-- [x] Remove the SQLite authoring link from the iOS game by moving product types into a small runtime content crate.
-- [x] Use reversed-Z `Depth32Float` throughout the scene and shadows.
-- [x] Preserve canonical published order and byte-identical published game state across restore; publish sorted dirty slots.
-
 ## Active gate order and budgets
 
-- [x] **G0/G1 — boundary and publication foundation.** Prior correctness work remains; its speed is requalified in G2R. [G0](evidence/integration/G0-BOUNDARY-2026-11-04.md), [G1](evidence/integration/G1-PUBLICATION-2026-11-04.md).
 - [ ] **G0 — integrity and fixed baselines.** Metal/device tests fail without hardware and run through `./dev check` on Mac; constant assertions become behavioral tests. Put every gate row in a benchmark with an honest baseline, including explicit unsupported rows. Delete the unused mobile shell and old source/cook crates, keep parked scripts out of the check, and guard the iOS runtime dependency tree against SQLite/authoring crates. Report check wall time before/after. Cleanup and GPU-test changes are in progress; the full baseline matrix is open.
 - [ ] **G2S — simulation as engine machinery.** Typed `&mut`/shared queries, in-place trusted systems under sparse undo, input validation at admission, dirty-union publication across gaps/rewinds/held pages, previous/current tick pairs, amendable retained inputs and correction replay. Remove game-owned staging, edit, permit and page capture. **S1:** four peers, shuffled movers, one Damage and one SetHealth per tick; tick plus publication p95 ≤25/300 µs at 10k/100k and one more action ≤10% impact. **S2:** rewind eight, amend one input, resimulate and publish p95 ≤100 µs at 10k, full-state equal to straight corrected run. Zero warmed allocations including a 200-spawn burst. Earlier [G2R evidence](evidence/v1-workload/G2R-CONSOLIDATED-2026-11-05.md) covers easier rows and does not qualify this gate.
 - [x] **G3a — graph and live scene functionality.** Render, Compute and Copy closures execute in dependency order; scene camera, lights, cascades, reversed-Z `Depth32Float`, indexed draws and GPU previous transforms run. Its former encode-only CPU budget is reopened as the complete-frame G3b row.

@@ -3,9 +3,9 @@
   "target": "custom-hardware-native-3d-engine",
   "as_of": "2026-11-05",
   "contract_revision": "C4",
-  "scope_note": "Historical entries preserve measurements, not current priority. G2R and G3a speed gates reopened on real-game rows as G2S and G3b. G0 integrity is active. No general runtime, real transport, cooked game loop or iPhone result is qualified.",
+  "scope_note": "Historical rows remain; G2R/G3a speed reopens as G2S/G3b. G0 active. No runtime, transport or iPhone result is qualified.",
   "execution_plan": {
-    "milestone": "V1: one external-consumer 10k-entity game with cooked lit rendering, Mac budgets and labelled iPhone proxy rows; Chrome WebGPU smoke; then four rendered peers over conditioned native QUIC. Physical iPhone remains device pending",
+    "milestone": "V1: one 10k game on Mac, labelled iPhone proxies, Chrome WebGPU smoke and four rendered peers over conditioned QUIC; physical iPhone pending",
     "active": [
       "G0 integrity, dead-crate removal and fixed budget baselines"
     ],
@@ -24,7 +24,7 @@
       "cloud cohort lab",
       "environment, clouds and water implementation until after G7"
     ],
-    "interpretation": "G2R friendly rows are historical. G2S four-peer command and correction rows are open. G3a graph functionality stands, but its complete-frame CPU budget moved to G3b. Mac display and iPhone proxy qualification remain open; parked tracks inactive."
+    "interpretation": "G2S real-game rows and G3b full-frame budget open; G3a graph functionality stands. Mac display and iPhone proxies open; parked tracks inactive."
   },
   "v1_slices": {
     "G0_boundary": {
