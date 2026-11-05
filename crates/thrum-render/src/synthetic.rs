@@ -43,6 +43,7 @@ pub const SYNTHETIC_REVISION: u64 = 10;
 /// Portable opaque depth; no sampling or separate prepass is needed.
 pub const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
 const VIEW_BYTES: usize = 160;
+const VIEW_SLOTS: u32 = 2;
 const LIGHT_BYTES: usize = 64;
 const PRE_EXPOSURE: f32 = 1.0 / 1024.0;
 const DISPLAY_BYTES: u64 = 16;
@@ -385,6 +386,7 @@ pub struct PreparedSynthetic {
     display_layout: wgpu::BindGroupLayout,
     view_layout: wgpu::BindGroupLayout,
     view_buffer: wgpu::Buffer,
+    view_stride: u32,
     view_sample: SyntheticView,
     pending_view: Option<SyntheticView>,
     frame_revision: u64,
@@ -682,18 +684,39 @@ impl PreparedSynthetic {
             material_count,
             instance_count,
         );
-        let view_data = scene.view.pack_view(&scene.view, exposure);
-        let view_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        let view_alignment = limits.min_uniform_buffer_offset_alignment.max(1);
+        let view_stride = u32::try_from(VIEW_BYTES)
+            .expect("view record fits u32")
+            .checked_add(view_alignment - 1)
+            .map(|bytes| bytes / view_alignment * view_alignment)
+            .filter(|stride| *stride <= u32::MAX / VIEW_SLOTS)
+            .ok_or(RenderError::SceneCapacity)?;
+        let view_capacity = u64::from(view_stride) * u64::from(VIEW_SLOTS);
+        if view_capacity > limits.max_buffer_size {
+            return Err(RenderError::SceneCapacity);
+        }
+        let view_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("synthetic ABI2 view"),
-            contents: &view_data,
+            size: view_capacity,
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
         });
+        queue.write_buffer(
+            &view_buffer,
+            0,
+            &scene.view.pack_view(&scene.view, exposure),
+        );
         let mut view_entries = vec![
-            uniform_layout(
-                0,
-                VIEW_BYTES as u64,
-                wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT,
-            ),
+            wgpu::BindGroupLayoutEntry {
+                binding: 0,
+                visibility: wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT,
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Uniform,
+                    has_dynamic_offset: true,
+                    min_binding_size: wgpu::BufferSize::new(VIEW_BYTES as u64),
+                },
+                count: None,
+            },
             uniform_layout(1, AUX_BYTES as u64, wgpu::ShaderStages::FRAGMENT),
         ];
         if shadow_enabled {
@@ -1038,6 +1061,7 @@ impl PreparedSynthetic {
             display_layout,
             view_layout,
             view_buffer,
+            view_stride,
             view_sample: scene.view,
             pending_view: None,
             frame_revision: 0,
@@ -1155,9 +1179,11 @@ impl PreparedSynthetic {
         if scene.view.history_reset() {
             self.history.reset(queue);
         }
+        let next_revision = self.frame_revision.wrapping_add(1);
+        let view_offset = self.view_stride * u32::from(next_revision & 1 != 0);
         queue.write_buffer(
             &self.view_buffer,
-            0,
+            u64::from(view_offset),
             &scene
                 .view
                 .pack_view(&self.view_sample, f32::from_bits(self.exposure_bits)),
@@ -1179,7 +1205,7 @@ impl PreparedSynthetic {
         self.presentation_light_clamps = clamps;
         self.background = background;
         self.pending_view = Some(scene.view);
-        self.frame_revision = self.frame_revision.wrapping_add(1);
+        self.frame_revision = next_revision;
         target.frame_revision = self.frame_revision;
         Ok(())
     }
@@ -1947,7 +1973,8 @@ impl PreparedSynthetic {
         } else {
             &self.pipeline_two_sided
         });
-        pass.set_bind_group(0, &target.view_bind_group, &[]);
+        let view_offset = self.view_stride * u32::from(target.frame_revision & 1 != 0);
+        pass.set_bind_group(0, &target.view_bind_group, &[view_offset]);
         pass.set_bind_group(1, &self.light, &[]);
         pass.set_bind_group(2, &self.materials, &[]);
         pass.set_bind_group(3, self.history.read_group(), &[]);
@@ -2256,7 +2283,11 @@ impl OffscreenTarget {
         let mut view_entries = vec![
             wgpu::BindGroupEntry {
                 binding: 0,
-                resource: prepared.view_buffer.as_entire_binding(),
+                resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
+                    buffer: &prepared.view_buffer,
+                    offset: 0,
+                    size: wgpu::BufferSize::new(VIEW_BYTES as u64),
+                }),
             },
             wgpu::BindGroupEntry {
                 binding: 1,
