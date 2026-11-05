@@ -20,7 +20,7 @@ counters and the audited native VFS. It does **not** bound ordinary staging
 SQL, sync or metadata work, APFS copy-on-write allocation, or other volume
 users. No accepted-source physical reservation follows.
 
-The checked-in test-only [native VFS observer](../../../crates/thrum-source/src/provisional_store_vfs_test.rs)
+The checked-in test-only [native VFS observer](https://github.com/ryannel/Thrum/blob/db06365d12de/crates/thrum-source/src/provisional_store_vfs_test.rs)
 records actual main-file calls and injects a main-write error. Its unsafe
 callbacks are absent from production builds. Tests cover no automatic,
 `NOOP` or last-close main writes; a partially backfilled `PASSIVE`; blocked

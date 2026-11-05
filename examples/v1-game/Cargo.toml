@@ -42,11 +42,6 @@ thrum-content-runtime = { path = "../../crates/thrum-content-runtime" }
 [dev-dependencies]
 divan = "=0.1.21"
 
-[target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
-serde_json = { version = "=1.0.154", features = ["float_roundtrip", "raw_value"] }
-thrum-cook = { path = "../../crates/thrum-cook" }
-thrum-source = { path = "../../crates/thrum-source" }
-
 [[bench]]
 name = "frame"
 harness = false

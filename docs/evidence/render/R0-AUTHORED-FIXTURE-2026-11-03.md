@@ -21,12 +21,12 @@ original repository research content, with no external assets/code imported.
 `core.project@2` lists four record paths and one entry scene; its game-schema
 list is empty and its required `core.registry-history@1` has empty field/version
 arrays. These spellings match the existing
-[constant-light source fixture](../../../crates/thrum-source/src/sqlite_store.rs)
-and [project parser](../../../crates/thrum-source/src/project_v2_json.rs).
+[constant-light source fixture](https://github.com/ryannel/Thrum/blob/db06365d12de/crates/thrum-source/src/sqlite_store.rs)
+and [project parser](https://github.com/ryannel/Thrum/blob/db06365d12de/crates/thrum-source/src/project_v2_json.rs).
 The scene selects one environment and one render source through
 `environment.source` and `render.source`. The render root has no second
 active-environment selector. The environment/Sun records preserve the
-[existing constant-light grammar](../../../crates/thrum-source/src/environment_json.rs):
+[existing constant-light grammar](https://github.com/ryannel/Thrum/blob/db06365d12de/crates/thrum-source/src/environment_json.rs):
 Sun-only identity/driver, raw receiver-to-source direction, unattenuated lux,
 unit-luminance colour, angular radius, ambient/background and all seven explicit
 unsupported quantities. No new environment schema or light identity meaning is

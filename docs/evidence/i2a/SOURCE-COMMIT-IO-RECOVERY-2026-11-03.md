@@ -19,7 +19,7 @@ its durable row retained. Immediately before attempting the final commit,
 the transaction disables rusqlite's automatic rollback-on-drop, preventing
 hidden SQL after the error. Earlier precommit failures retain normal rollback.
 
-The test-only [native VFS](../../../crates/thrum-source/src/provisional_store_vfs_test.rs)
+The test-only [native VFS](https://github.com/ryannel/Thrum/blob/db06365d12de/crates/thrum-source/src/provisional_store_vfs_test.rs)
 observes successful commit-frame writes and native syncs under the store's
 verified 4096-byte page profile. Tests persist B's pending intent and complete
 blobs first, so its identical retry's next WAL transaction is the final

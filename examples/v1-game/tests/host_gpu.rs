@@ -26,7 +26,6 @@ fn await_sample(host: &mut FrameHost, device: &wgpu::Device) -> FrameSample {
 }
 
 #[test]
-#[ignore = "requires a real native GPU adapter; run explicitly for device evidence"]
 fn committed_ticks_drive_latest_gpu_frame_and_overload_is_explicit() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
@@ -165,7 +164,6 @@ fn committed_ticks_drive_latest_gpu_frame_and_overload_is_explicit() {
 }
 
 #[test]
-#[ignore = "requires a real native GPU adapter for the local InputFrame-to-world route"]
 fn local_controls_use_validated_input_and_hold_until_replaced() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
@@ -211,23 +209,17 @@ fn local_controls_use_validated_input_and_hold_until_replaced() {
 }
 
 #[test]
-#[ignore = "requires Metal; ./dev check runs this regression on macOS"]
+#[cfg(target_os = "macos")]
 fn ready_worker_view_does_not_skip_the_next_committed_tick() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
             backends: wgpu::Backends::METAL,
             ..wgpu::InstanceDescriptor::new_without_display_handle()
         });
-        let adapter = match instance
+        let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions::default())
             .await
-        {
-            Ok(adapter) => adapter,
-            Err(error) => {
-                eprintln!("SKIP ready-view tick regression: no Metal adapter ({error})");
-                return;
-            }
-        };
+            .expect("Metal adapter required for ready-view tick regression");
         let (device, queue) = adapter
             .request_device(&wgpu::DeviceDescriptor::default())
             .await
@@ -279,7 +271,6 @@ fn ready_worker_view_does_not_skip_the_next_committed_tick() {
 }
 
 #[test]
-#[ignore = "requires a real native GPU adapter for the worker-to-frame handoff"]
 fn native_extract_wake_submits_same_tick_and_a_stalled_worker_does_not_hold_world_ticks() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
@@ -376,7 +367,6 @@ fn native_extract_wake_submits_same_tick_and_a_stalled_worker_does_not_hold_worl
 }
 
 #[test]
-#[ignore = "requires a real native GPU adapter for stale-view refresh"]
 fn native_view_beyond_two_ticks_refreshes_from_the_latest_committed_world() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
@@ -457,7 +447,6 @@ fn native_view_beyond_two_ticks_refreshes_from_the_latest_committed_world() {
 }
 
 #[test]
-#[ignore = "requires a real native GPU adapter for persistent slow-worker presentation"]
 fn slow_native_extraction_keeps_presenting_the_last_scene_with_explicit_age() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());

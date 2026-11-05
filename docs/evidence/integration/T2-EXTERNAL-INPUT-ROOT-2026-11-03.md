@@ -2,7 +2,7 @@
 
 The ordinary Unix regression
 `tests::external_same_volume_input_owner_survives_source_admission` in
-[thrum-cook](../../../crates/thrum-cook/src/lib.rs) proves one root-placement
+[thrum-cook](https://github.com/ryannel/Thrum/blob/db06365d12de/crates/thrum-cook/src/lib.rs) proves one root-placement
 interaction from the [provisional T2 account design](../../design/research/T2-SAME-VOLUME-JOB-ACCOUNT-2026-11-03.md).
 It uses existing public F3/F4 APIs without changing their policies. The local
 run used baseline `9489a37`, macOS 26.6.2 build 25G83 arm64 and Rust 1.99.1.

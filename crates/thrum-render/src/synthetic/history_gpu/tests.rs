@@ -99,13 +99,10 @@ fn submitted_motion_x(
 fn metal_motion_history_follows_submitted_frames_and_resets() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let Ok(adapter) = instance
+        let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions::default())
             .await
-        else {
-            eprintln!("SKIP motion history: no Metal adapter");
-            return;
-        };
+            .expect("Metal adapter required for motion history regression");
         let (device, queue) = adapter
             .request_device(&wgpu::DeviceDescriptor::default())
             .await

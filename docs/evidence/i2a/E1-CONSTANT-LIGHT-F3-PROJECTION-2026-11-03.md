@@ -3,7 +3,7 @@
 3 November 2026. The existing F3 parsers for `core.scene@2`,
 `thrum.environment.authored@1` and `thrum.light.identity@1` now expose
 narrow read-only typed projections from exact JSON bytes in
-[`environment_json.rs`](../../../crates/thrum-source/src/environment_json.rs).
+[`environment_json.rs`](https://github.com/ryannel/Thrum/blob/db06365d12de/crates/thrum-source/src/environment_json.rs).
 The same strict parser and unchanged built-in descriptors still validate the
 staged registry; this slice does not change source meaning, hashes or
 admission. It makes the validated raw numeric values available to the first
