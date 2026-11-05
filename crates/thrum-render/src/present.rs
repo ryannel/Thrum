@@ -5,8 +5,8 @@ use std::{collections::BTreeSet, sync::Arc};
 
 use crate::{
     graph::{
-        Access, AccessKind, CompiledGraph, FrameGraph, GraphError, Pass, PassScope, PipelineKey,
-        ResourceDescriptor, ResourceId, ResourceScope,
+        Access, AccessKind, CompiledGraph, FrameGraph, GraphColorAttachment, GraphError, Pass,
+        PassScope, PipelineKey, ResourceDescriptor, ResourceId, ResourceScope,
     },
     synthetic::{OUTPUT_FORMAT, OffscreenTarget},
     timing::{GpuTimings, TimingError},
@@ -246,25 +246,21 @@ impl SurfacePresenter {
                 return Err(PresentError::GraphPassMismatch);
             }
             let viewport = letterbox(self.source_extent, surface_extent);
-            let writes = match timings.as_deref_mut() {
-                Some(timings) => timings
-                    .pass_writes(self.generation, &compiled.name)
-                    .map_err(PresentError::Timing)?,
-                None => None,
-            };
-            let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: Some(&compiled.name),
-                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                    view: surface_view,
-                    depth_slice: None,
-                    resolve_target: None,
-                    ops: compiled
-                        .attachment_ops(&self.surface_resource, 0..1, wgpu::Color::BLACK)
-                        .ok_or(PresentError::GraphPassMismatch)?,
-                })],
-                timestamp_writes: writes,
-                ..Default::default()
-            });
+            let mut pass = compiled
+                .begin_render(
+                    encoder,
+                    Some(GraphColorAttachment {
+                        resource: &self.surface_resource,
+                        range: 0..1,
+                        view: surface_view,
+                        clear: wgpu::Color::BLACK,
+                    }),
+                    None,
+                    self.generation,
+                    timings.as_deref_mut(),
+                )
+                .map_err(PresentError::Timing)?
+                .ok_or(PresentError::GraphPassMismatch)?;
             pass.set_pipeline(&self.pipeline);
             pass.set_bind_group(0, &binding.group, &[]);
             pass.set_viewport(

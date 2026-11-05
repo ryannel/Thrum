@@ -7,7 +7,7 @@ use wgpu::util::DeviceExt;
 
 use super::view::{Projection, SyntheticView};
 use super::{InstanceRecord, RenderError};
-use crate::graph::{CompiledPass, ResourceId};
+use crate::graph::{CompiledPass, GraphDepthAttachment, ResourceId};
 
 pub(super) const SIZE: u32 = 1024;
 pub(super) const FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
@@ -219,30 +219,21 @@ impl ShadowPrepared {
             .get(index)
             .zip(target.views.get(index))
             .ok_or(RenderError::StaleTarget)?;
-        let writes = match timings {
-            Some(timings) => timings.pass_writes(generation, &compiled.name)?,
-            None => None,
-        };
-        let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-            label: Some(&compiled.name),
-            color_attachments: &[],
-            depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
-                view,
-                depth_ops: Some(
-                    compiled
-                        .attachment_ops(
-                            resource,
-                            u64::try_from(index).expect("two cascades")
-                                ..u64::try_from(index + 1).expect("two cascades"),
-                            0.0,
-                        )
-                        .ok_or(RenderError::GraphPassMismatch)?,
-                ),
-                stencil_ops: None,
-            }),
-            timestamp_writes: writes,
-            ..Default::default()
-        });
+        let mut pass = compiled
+            .begin_render(
+                encoder,
+                None,
+                Some(GraphDepthAttachment {
+                    resource,
+                    range: u64::try_from(index).expect("two cascades")
+                        ..u64::try_from(index + 1).expect("two cascades"),
+                    view,
+                    clear: 0.0,
+                }),
+                generation,
+                timings,
+            )?
+            .ok_or(RenderError::GraphPassMismatch)?;
         pass.set_pipeline(&self.pipeline);
         pass.set_bind_group(0, &cascade.view_group, &[]);
         pass.set_bind_group(1, instances, &[]);
