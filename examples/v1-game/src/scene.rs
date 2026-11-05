@@ -162,6 +162,15 @@ pub(crate) fn apply_frame_to_scene(
         };
         let world_current = frame.current()[row];
         let previous = frame.previous()[row];
+        // The GPU ABI reserves zero for an inactive row. A nonzero wrapping
+        // token distinguishes consecutive slot generations even past u32::MAX.
+        let Some(generation) = frame.generation_at_slot(index) else {
+            report.dropped_invalid += 1;
+            continue;
+        };
+        let source_generation = u32::try_from(generation & u64::from(u32::MAX))
+            .expect("masked generation fits u32")
+            .max(1);
         let current = if frame.history_valid()[row] {
             std::array::from_fn(|axis| {
                 previous[axis] + (world_current[axis] - previous[axis]) * alpha
@@ -172,12 +181,12 @@ pub(crate) fn apply_frame_to_scene(
         if instance.current[3][..3] != current
             || instance.previous[3][..3] != previous
             || instance.ids[1] != material
-            || instance.ids[3] == 0
+            || instance.ids[3] != source_generation
         {
             instance.current[3][..3].copy_from_slice(&current);
             instance.previous[3][..3].copy_from_slice(&previous);
             instance.ids[1] = material;
-            instance.ids[3] = 1;
+            instance.ids[3] = source_generation;
             changed_slots.push(u32::try_from(index).expect("10k fixture slot fits u32"));
         }
         report.moving += usize::from((world_current[0] - previous[0]).abs() > 1e-6);
@@ -281,7 +290,41 @@ mod tests {
             },
         );
         apply_frame_to_scene(&mut scene, extractor.frame(), &mut changed, 1.0);
-        assert_eq!(scene.instances[1].ids[3], 1, "reused slot is visible");
+        assert_eq!(
+            scene.instances[1].ids[3], 2,
+            "reused slot has a new GPU history token"
+        );
+    }
+
+    #[test]
+    fn reused_slot_retags_gpu_history_even_when_pose_is_unchanged() {
+        let mut scene = SyntheticScene::grid(1).expect("one GPU slot");
+        let mut extractor = RenderExtractor::new(1, 1);
+        let mut changed = Vec::new();
+        extractor.extract(
+            SourceTick {
+                epoch: 1,
+                tick: 1,
+                timeline: 0,
+            },
+            [0.0; 3],
+            |sink| assert!(sink.push(0, u64::from(u32::MAX), 7, [0.0; 3], 0)),
+        );
+        apply_frame_to_scene(&mut scene, extractor.frame(), &mut changed, 1.0);
+        assert_eq!(scene.instances[0].ids[3], u32::MAX);
+        extractor.extract(
+            SourceTick {
+                epoch: 1,
+                tick: 2,
+                timeline: 0,
+            },
+            [0.0; 3],
+            |sink| assert!(sink.push(0, u64::from(u32::MAX) + 1, 8, [0.0; 3], 0)),
+        );
+        assert!(!extractor.frame().history_valid()[0]);
+        apply_frame_to_scene(&mut scene, extractor.frame(), &mut changed, 1.0);
+        assert_eq!(changed, [0]);
+        assert_eq!(scene.instances[0].ids[3], 1);
     }
 
     #[test]
