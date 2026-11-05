@@ -814,26 +814,6 @@ impl FrameHost {
         self.worker_ready.is_some()
     }
 
-    /// A retained current-tick extraction can be sampled at a later display
-    /// time without asking the worker or advancing the authoritative world.
-    #[cfg(not(target_arch = "wasm32"))]
-    pub fn can_interpolate_current_source(&self) -> bool {
-        self.worker.as_ref().is_some_and(|worker| !worker.is_busy())
-            && self
-                .extractor
-                .as_ref()
-                .and_then(|extractor| extractor.frame().source())
-                .is_some_and(|source| {
-                    source.epoch == self.sim.epoch().0
-                        && source.timeline == self.sim.timeline()
-                        && source.tick == self.sim.tick()
-                })
-            && self
-                .slots
-                .iter()
-                .any(|slot| matches!(slot.state, SlotState::Free))
-    }
-
     /// A previously prepared scene can be shown while the native worker is late.
     #[cfg(not(target_arch = "wasm32"))]
     pub fn has_reusable_view(&self) -> bool {
@@ -1678,7 +1658,6 @@ impl FrameHost {
                 self.try_submit_reused_view(report, tick_cpu, wall_start, surface)?;
             } else {
                 self.dispatch_latest_native(report, tick_cpu)?;
-                self.try_submit_interpolated_view(report, tick_cpu, wall_start, surface)?;
             }
             return Ok(());
         }
@@ -1832,77 +1811,6 @@ impl FrameHost {
             return Ok(());
         };
         self.submit_reused_view(slot_index, report, surface, source, tick_cpu, wall_start)
-    }
-
-    /// Re-sample the retained extracted endpoints for a new display time even
-    /// when no world tick or extraction ran. This keeps high-refresh motion
-    /// smooth without inventing another authoritative state or worker task.
-    #[cfg(not(target_arch = "wasm32"))]
-    fn try_submit_interpolated_view(
-        &mut self,
-        report: &mut DriveReport,
-        tick_cpu: Duration,
-        wall_start: Instant,
-        surface: Option<&SurfaceOutput<'_>>,
-    ) -> Result<(), String> {
-        let Some(surface) = surface else {
-            return Ok(());
-        };
-        if self
-            .presenter
-            .as_ref()
-            .is_none_or(|presenter| presenter.extent() != surface.extent)
-        {
-            return Ok(());
-        }
-        let Some(source) = self
-            .extractor
-            .as_ref()
-            .and_then(|extractor| extractor.frame().source())
-        else {
-            return Ok(());
-        };
-        if source.epoch != self.sim.epoch().0
-            || source.timeline != self.sim.timeline()
-            || source.tick != self.sim.tick()
-        {
-            return Ok(());
-        }
-        let alpha = self.clock.presentation_alpha();
-        if self.last_view_source == Some(source)
-            && self
-                .last_presentation_alpha
-                .is_some_and(|previous| previous.to_bits() == alpha.to_bits())
-        {
-            return Ok(());
-        }
-        let Some(slot_index) = self
-            .slots
-            .iter()
-            .position(|slot| matches!(slot.state, SlotState::Free))
-        else {
-            self.dropped_views = self.dropped_views.saturating_add(1);
-            report.dropped_view = true;
-            return Ok(());
-        };
-        self.submit_extracted(
-            slot_index,
-            report,
-            Some(surface),
-            SubmitFrame {
-                extracted: ExtractReport::default(),
-                extract_cpu: Duration::ZERO,
-                worker_queue_cpu: Duration::ZERO,
-                worker_ready_cpu: Duration::ZERO,
-                tick_cpu,
-                completed_ticks: report.completed_ticks,
-                queued_ticks: report.queued_ticks,
-                frame_tick: source.tick,
-                presentation_alpha: alpha,
-            },
-            wall_start,
-        )?;
-        Ok(())
     }
 
     #[cfg(not(target_arch = "wasm32"))]

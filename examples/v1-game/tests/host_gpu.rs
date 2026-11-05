@@ -211,98 +211,6 @@ fn local_controls_use_validated_input_and_hold_until_replaced() {
 }
 
 #[test]
-#[ignore = "requires a real native GPU adapter for repeated worker-extracted display samples"]
-fn native_worker_renders_a_new_interpolated_view_without_another_tick() {
-    pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("native adapter");
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("device");
-        let extent = [640, 360];
-        let mut host = FrameHost::new(
-            &device,
-            &queue,
-            v1_game::FrameConfig {
-                surface: Some(SurfaceProfile {
-                    format: wgpu::TextureFormat::Bgra8Unorm,
-                    extent,
-                }),
-                ..Default::default()
-            },
-        )
-        .await
-        .expect("prepared game");
-        let (send, receive) = mpsc::channel();
-        host.enable_native_worker(move || {
-            let _ = send.send(());
-        })
-        .expect("native extractor");
-        let surface = device.create_texture(&wgpu::TextureDescriptor {
-            label: Some("interpolated worker view"),
-            size: wgpu::Extent3d {
-                width: extent[0],
-                height: extent[1],
-                depth_or_array_layers: 1,
-            },
-            mip_level_count: 1,
-            sample_count: 1,
-            dimension: wgpu::TextureDimension::D2,
-            format: wgpu::TextureFormat::Bgra8Unorm,
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-            view_formats: &[],
-        });
-        let view = surface.create_view(&wgpu::TextureViewDescriptor::default());
-        let output = SurfaceOutput {
-            view: &view,
-            extent,
-        };
-        let tick_time = Duration::from_nanos(16_666_667);
-        let due = host
-            .drive(tick_time, None)
-            .expect("first tick dispatches extraction");
-        assert_eq!(
-            (due.tick, due.completed_ticks, due.submitted),
-            (1, 1, false)
-        );
-        receive
-            .recv_timeout(Duration::from_secs(2))
-            .expect("worker completed first extraction");
-        let first = host
-            .drive(tick_time, Some(&output))
-            .expect("first sample submits");
-        assert!(first.submitted && first.surface_presented);
-        let first_sample = await_sample(&mut host, &device);
-        assert_eq!(first_sample.tick, 1);
-        assert!(first_sample.presentation_alpha < 0.01);
-
-        let half_tick = tick_time + Duration::from_nanos(8_333_333);
-        let second = host
-            .drive(half_tick, Some(&output))
-            .expect("second display sample of the same world tick");
-        assert_eq!((second.tick, second.completed_ticks), (1, 0));
-        assert!(second.submitted && second.surface_presented);
-        let second_sample = await_sample(&mut host, &device);
-        assert_eq!(second_sample.tick, 1);
-        assert!((second_sample.presentation_alpha - 0.5).abs() < 0.01);
-        assert_eq!(second_sample.uploaded_rows, 1_500);
-        assert!(!second_sample.reused_visual);
-        assert_eq!(host.tick(), 1, "display sampling cannot advance authority");
-        assert!(
-            !host
-                .drive(half_tick, Some(&output))
-                .expect("same target time")
-                .submitted,
-            "same sample time must not submit twice"
-        );
-    });
-}
-
-#[test]
 #[ignore = "requires Metal; ./dev check runs this regression on macOS"]
 fn ready_worker_view_does_not_skip_the_next_committed_tick() {
     pollster::block_on(async {
@@ -356,12 +264,17 @@ fn ready_worker_view_does_not_skip_the_next_committed_tick() {
             .expect("tick two extract must be dispatched and ready");
 
         let third = host
-            .drive(second_time, None)
+            .drive(second_time + Duration::from_nanos(8_333_333), None)
             .expect("tick two view submits without a third world tick");
         assert_eq!((third.tick, third.completed_ticks), (2, 0));
         assert!(third.submitted, "tick two was not silently skipped");
         assert_eq!(await_sample(&mut host, &device).tick, 1);
-        assert_eq!(await_sample(&mut host, &device).tick, 2);
+        let second_sample = await_sample(&mut host, &device);
+        assert_eq!(second_sample.tick, 2);
+        assert!(
+            (second_sample.presentation_alpha - 0.5).abs() < 0.001,
+            "native presentation must use current clock alpha: {second_sample:?}"
+        );
     });
 }
 

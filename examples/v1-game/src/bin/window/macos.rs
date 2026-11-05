@@ -136,7 +136,6 @@ struct App {
     host: Option<FrameHost>,
     held_keys: u8,
     origin: Instant,
-    display_interval: Duration,
     last_call: Duration,
     presented: usize,
     callbacks: usize,
@@ -168,7 +167,6 @@ impl App {
             host: None,
             held_keys: 0,
             origin: Instant::now(),
-            display_interval: Duration::from_nanos(16_666_667),
             last_call: Duration::ZERO,
             presented: 0,
             callbacks: 0,
@@ -290,7 +288,6 @@ impl App {
             let _ = extract_wake.send_event(UserEvent::Extracted);
         })?;
         self.origin = Instant::now();
-        self.display_interval = monitor_period(&window);
         self.window = Some(window);
         self.surface_format = Some(config.format);
         self.surface_extent = [config.width, config.height];
@@ -548,42 +545,6 @@ fn axis(negative: bool, positive: bool) -> f32 {
     }
 }
 
-fn monitor_period(window: &Window) -> Duration {
-    window
-        .current_monitor()
-        .and_then(|monitor| monitor.refresh_rate_millihertz())
-        .filter(|rate| *rate != 0)
-        .map_or(Duration::from_nanos(16_666_667), |rate| {
-            Duration::from_nanos(1_000_000_000_000 / u64::from(rate))
-        })
-}
-
-fn callback_delay(
-    due: Duration,
-    since_call: Duration,
-    display_interval: Duration,
-    display_candidate: bool,
-) -> Duration {
-    let tick_delay = due.saturating_sub(since_call);
-    if display_candidate {
-        tick_delay.min(display_interval.saturating_sub(since_call))
-    } else {
-        tick_delay
-    }
-}
-
-fn should_acquire(
-    ready: bool,
-    reusable: bool,
-    interpolatable: bool,
-    tick_delay: Duration,
-    display_delay: Duration,
-) -> bool {
-    ready
-        || (reusable && (display_delay.is_zero() || tick_delay.is_zero()))
-        || (interpolatable && display_delay.is_zero() && display_delay < tick_delay)
-}
-
 impl ApplicationHandler<UserEvent> for App {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         if self.window.is_some() {
@@ -629,12 +590,6 @@ impl ApplicationHandler<UserEvent> for App {
                 self.held_keys = 0;
                 self.update_controls()
             }
-            WindowEvent::Moved(_) => {
-                if let Some(window) = &self.window {
-                    self.display_interval = monitor_period(window);
-                }
-                Ok(())
-            }
             _ => Ok(()),
         };
         if let Err(error) = result {
@@ -651,19 +606,9 @@ impl ApplicationHandler<UserEvent> for App {
             let extent = [size.width, size.height];
             let reconfigure = self.needs_reconfigure || extent != self.worker_extent;
             let since_call = self.origin.elapsed().saturating_sub(self.last_call);
-            let interpolatable = host.can_interpolate_current_source();
-            let reusable = host.has_reusable_view();
-            let display_candidate = interpolatable || reusable;
-            let tick_delay = due.saturating_sub(since_call);
-            let display_delay = self.display_interval.saturating_sub(since_call);
-            let delay = callback_delay(due, since_call, self.display_interval, display_candidate);
-            if should_acquire(
-                host.has_ready_view(),
-                reusable,
-                interpolatable,
-                tick_delay,
-                display_delay,
-            ) && !self.acquiring
+            let delay = due.saturating_sub(since_call);
+            if (host.has_ready_view() || (delay.is_zero() && host.has_reusable_view()))
+                && !self.acquiring
                 && host.pending_frames()
                     < if reconfigure {
                         1
@@ -721,40 +666,5 @@ pub(super) fn run() {
             eprintln!("v1-game: {error}");
             std::process::exit(1);
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::{callback_delay, should_acquire};
-    use std::time::Duration;
-
-    #[test]
-    fn display_cadence_wakes_between_world_ticks_only_with_a_retained_source() {
-        let tick = Duration::from_nanos(16_666_667);
-        let display = Duration::from_nanos(8_333_333);
-        assert_eq!(callback_delay(tick, Duration::ZERO, display, true), display);
-        assert_eq!(callback_delay(tick, Duration::ZERO, display, false), tick);
-        assert_eq!(callback_delay(tick, display, display, true), Duration::ZERO);
-        assert_eq!(
-            callback_delay(tick, display, display, false),
-            tick.checked_sub(display).expect("display is before tick")
-        );
-        assert_eq!(
-            callback_delay(Duration::ZERO, Duration::ZERO, display, false),
-            Duration::ZERO
-        );
-        assert!(should_acquire(false, false, true, tick, Duration::ZERO));
-        assert!(!should_acquire(
-            false,
-            false,
-            true,
-            Duration::ZERO,
-            Duration::ZERO
-        ));
-        assert!(!should_acquire(false, false, true, tick, display));
-        assert!(should_acquire(true, false, false, tick, display));
-        assert!(should_acquire(false, true, false, Duration::ZERO, display));
-        assert!(should_acquire(false, true, false, tick, Duration::ZERO));
     }
 }
