@@ -382,6 +382,78 @@ fn abandoned_advanced_frame_keeps_its_tick_and_counts_the_skipped_view() {
 }
 
 #[test]
+#[ignore = "requires a real native GPU adapter for late surface acquisition"]
+fn abandoned_encoded_scene_reuses_slot_and_timestamp_batch() {
+    pollster::block_on(async {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let adapter = instance
+            .request_adapter(&wgpu::RequestAdapterOptions::default())
+            .await
+            .expect("native GPU adapter");
+        let (device, queue) = adapter
+            .request_device(&wgpu::DeviceDescriptor {
+                required_features: thrum_render::timing::GpuTimings::requested_features(&adapter),
+                ..Default::default()
+            })
+            .await
+            .expect("device");
+        let extent = [640, 360];
+        let mut host = super::FrameHost::new(
+            &device,
+            &queue,
+            super::FrameConfig {
+                surface: Some(thrum_render::present::SurfaceProfile {
+                    format: wgpu::TextureFormat::Bgra8Unorm,
+                    extent,
+                }),
+                ..Default::default()
+            },
+        )
+        .await
+        .expect("prepared scene");
+        for tick in 1..=64 {
+            let encoded = host
+                .advance(Duration::from_nanos(tick * 16_666_667))
+                .expect("admitted tick")
+                .encode_scene()
+                .expect("scene encoded before acquisition");
+            let report = encoded.skip();
+            assert_eq!(report.tick, tick);
+            assert!(report.dropped_view && !report.submitted);
+            assert_eq!(host.pending_frames(), 0);
+        }
+        assert_eq!((host.tick(), host.dropped_views()), (64, 64));
+        let surface = device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("late surface test target"),
+            size: wgpu::Extent3d {
+                width: extent[0],
+                height: extent[1],
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Bgra8Unorm,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+            view_formats: &[],
+        });
+        let view = surface.create_view(&wgpu::TextureViewDescriptor::default());
+        let report = host
+            .advance(Duration::from_nanos(65 * 16_666_667))
+            .expect("next tick admitted")
+            .encode_scene()
+            .expect("timestamp labels reusable")
+            .submit(Some(&super::SurfaceOutput {
+                view: &view,
+                extent,
+            }))
+            .expect("scene and surface submit once");
+        assert!(report.submitted && report.surface_presented);
+        assert_eq!(host.tick(), 65);
+    });
+}
+
+#[test]
 #[ignore = "requires a real native GPU adapter for queued overload admission"]
 fn abandoned_overload_frame_counts_its_completed_queued_ticks() {
     pollster::block_on(async {

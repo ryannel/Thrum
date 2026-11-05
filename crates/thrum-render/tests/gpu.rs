@@ -6,7 +6,7 @@ use thrum_render::synthetic::{
     DEPTH_FORMAT, FrameLighting, OffscreenTarget, PreparedSynthetic, SyntheticLight,
     SyntheticPointLight, SyntheticScene, SyntheticView,
 };
-use thrum_render::timing::GpuTimings;
+use thrum_render::timing::{GpuTimings, TimingError};
 
 /// Opt-in integration test: a real adapter is required, never replaced by a mock.
 #[test]
@@ -82,7 +82,7 @@ fn prepared_scene_pixels_timestamps_and_disabled_path() {
             assert!(matches!(
                 prepared.encode(&mut encoder, 41, &target, Some(&mut one_pass)),
                 Err(thrum_render::synthetic::RenderError::Timing(
-                    thrum_render::timing::TimingError::Capacity
+                    TimingError::Capacity
                 ))
             ));
             // No timestamp labels were reserved by the rejected whole-view check.
@@ -90,9 +90,21 @@ fn prepared_scene_pixels_timestamps_and_disabled_path() {
             prepared
                 .encode(&mut encoder, 41, &target, Some(&mut timings))
                 .unwrap();
-            // This is deliberately unsubmitted preparation validation. Start a
-            // fresh timing batch for the submitted measurements below.
-            timings = GpuTimings::new(&device, &queue, 41, 2).unwrap();
+            // Dropping an unsubmitted encoder must release its reservations
+            // without recreating the reusable timestamp batch.
+            drop(encoder);
+            assert_eq!(
+                timings.discard_unsubmitted(42),
+                Err(TimingError::StaleGeneration)
+            );
+            assert!(matches!(
+                timings.pass_writes(41, "still full"),
+                Err(TimingError::Capacity)
+            ));
+            timings.discard_unsubmitted(41).unwrap();
+            // Discarding an empty batch is harmless, too. The submitted frame
+            // below reuses both reserved pairs and their retained labels.
+            timings.discard_unsubmitted(41).unwrap();
         }
 
         let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
@@ -106,6 +118,9 @@ fn prepared_scene_pixels_timestamps_and_disabled_path() {
             pixels.encode(&mut encoder, &target).unwrap();
             assert!(pixels.encode(&mut encoder, &target).is_err());
             timings.finish_render(41, &encoder).unwrap();
+            if enabled {
+                assert_eq!(timings.discard_unsubmitted(41), Err(TimingError::Busy));
+            }
             // The render encoder has not been submitted; collection must return
             // immediately without recording a same-submission resolve.
             let mut early =
@@ -148,6 +163,7 @@ fn prepared_scene_pixels_timestamps_and_disabled_path() {
                 let mut resolve =
                     device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
                 assert!(timings.resolve_if_ready(41, &mut resolve).unwrap());
+                assert_eq!(timings.discard_unsubmitted(41), Err(TimingError::Busy));
                 let submission = queue.submit([resolve.finish()]);
                 device
                     .poll(wgpu::PollType::Wait {
@@ -483,6 +499,11 @@ fn prepared_scene_pixels_timestamps_and_disabled_path() {
         let mut disabled = GpuTimings::new(&plain_device, &plain_queue, 42, 1).unwrap();
         assert!(!disabled.is_enabled());
         assert!(disabled.pass_writes(42, "unsupported").unwrap().is_none());
+        disabled.discard_unsubmitted(42).unwrap();
+        assert_eq!(
+            disabled.discard_unsubmitted(41),
+            Err(TimingError::StaleGeneration)
+        );
         let mut encoder =
             plain_device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
         disabled.finish_render(42, &encoder).unwrap();

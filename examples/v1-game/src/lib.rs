@@ -11,7 +11,9 @@ pub mod simulation;
 
 #[cfg(target_arch = "wasm32")]
 pub use browser::{BrowserGame, create_browser_game};
-pub use host::{AdvancedFrame, DriveReport, FrameConfig, FrameHost, FrameSample, SurfaceOutput};
+pub use host::{
+    AdvancedFrame, DriveReport, EncodedFrame, FrameConfig, FrameHost, FrameSample, SurfaceOutput,
+};
 pub use projection::{GameProjection, ProjectionGap};
 #[doc(hidden)]
 pub use scene::simulation_with_count;

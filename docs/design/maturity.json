@@ -260,7 +260,7 @@
     },
     "V1_browser_surface": {
       "implementation": "partial_thin_chrome_webgpu_canvas_adapter_over_existing_serial_v1_frame_host",
-      "functional_validation": "chrome_156_real_webgpu_600_complete_frames_plus_two_second_pause_960x540_resize_and_250ms_visible_overload_recovery_probes; strict_wasm_clippy_and_overridden_cargo_target_dir_build_pass",
+      "functional_validation": "chrome_156_real_webgpu_600_complete_frames_plus_two_second_pause_960x540_resize_and_250ms_visible_overload_recovery_probes_on_prior_path; new_late_acquire_path_wasm_compile_and_native_metal_surface_pixels_and_abandon_reuse_pass_only",
       "experienced_quality": "synthetic_lit_grid_and_fixed_aspect_bars_visually_inspected_not_v1_art_acceptance",
       "platform_performance": {
         "mac": "browser_on_apple_m3_max_diagnostic_not_native_window_qualification",
@@ -273,7 +273,7 @@
       "evidence": [
         "../evidence/render/V1-CHROME-WEBGPU-2026-11-04.md"
       ],
-      "scope": "A Wasm-bindgen canvas adapter owns WebGPU surface acquisition, configuration and presentation; the existing fixed-step FrameHost owns one serial simulation and render path. Hidden-time pause, queued-tick drain, counted RAF timestamp clamp, explicit visible overload/refused-tick recovery, conditional acquisition and deferred resize preserve authority progress without silently applying refused wall-time ticks. The scene is synthetic. Cooked hot reload, actual background-tab visibility, surface loss/device recreation, full browser callback cost, long-run memory, visual acceptance, non-Chrome browsers, physical iPhone rendering and sustained device budgets remain open."
+      "scope": "A Wasm-bindgen canvas adapter owns WebGPU surface acquisition, configuration and presentation; the serial FrameHost now encodes its scene before acquiring the drawable and appends present to the same encoder. Missing drawables discard the scene and flush staged uploads without publishing temporal history. Chrome runtime evidence predates this change. Hidden-time pause, queued-tick drain, counted RAF timestamp clamp, explicit visible overload/refused-tick recovery, conditional acquisition and deferred resize preserve authority progress without silently applying refused wall-time ticks. Cooked hot reload, actual background-tab visibility, surface loss/device recreation, full browser callback cost, long-run memory, visual acceptance, non-Chrome browsers, physical iPhone rendering and sustained device budgets remain open."
     },
     "V1_ios_sim_surface": {
       "implementation": "partial_thin_uikit_scene_bridge_and_serial_shared_v1_frame_host",

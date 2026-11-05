@@ -142,6 +142,7 @@ fn measure(
     gpu_timestamps: bool,
     render_extent: [u32; 2],
     surface_extent: Option<[u32; 2]>,
+    late_surface: bool,
 ) {
     let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
     let adapter =
@@ -197,9 +198,17 @@ fn measure(
             .as_ref()
             .zip(surface_extent)
             .map(|(view, extent)| SurfaceOutput { view, extent });
-        let frame = host
-            .drive(now, output.as_ref())
-            .expect("the measured fixed-clock host must keep progressing");
+        let frame = if late_surface {
+            host.advance(now)
+                .expect("the measured world step must keep progressing")
+                .encode_scene()
+                .expect("the serial scene must encode before acquisition")
+                .submit(output.as_ref())
+                .expect("the encoded scene and surface must submit once")
+        } else {
+            host.drive(now, output.as_ref())
+                .expect("the measured fixed-clock host must keep progressing")
+        };
         assert!(frame.submitted, "one update gets a free view slot");
         assert_eq!(frame.surface_presented, surface_extent.is_some());
         let complete = loop {
@@ -289,20 +298,25 @@ fn report_frame_cpu(
 
 #[divan::bench]
 fn assembled_frame_with_gpu_timestamps(bencher: divan::Bencher<'_, '_>) {
-    measure(bencher, true, [640, 360], None);
+    measure(bencher, true, [640, 360], None, false);
 }
 
 #[divan::bench]
 fn assembled_frame_without_gpu_timestamps(bencher: divan::Bencher<'_, '_>) {
-    measure(bencher, false, [640, 360], None);
+    measure(bencher, false, [640, 360], None, false);
 }
 
 #[divan::bench]
 fn assembled_frame_with_surface_pass(bencher: divan::Bencher<'_, '_>) {
-    measure(bencher, true, [640, 360], Some([1280, 720]));
+    measure(bencher, true, [640, 360], Some([1280, 720]), false);
 }
 
 #[divan::bench]
 fn assembled_frame_1080p_with_surface_pass(bencher: divan::Bencher<'_, '_>) {
-    measure(bencher, true, [1920, 1080], Some([1920, 1080]));
+    measure(bencher, true, [1920, 1080], Some([1920, 1080]), false);
+}
+
+#[divan::bench]
+fn assembled_frame_1080p_late_surface(bencher: divan::Bencher<'_, '_>) {
+    measure(bencher, true, [1920, 1080], Some([1920, 1080]), true);
 }

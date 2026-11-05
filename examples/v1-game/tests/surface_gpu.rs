@@ -87,6 +87,9 @@ async fn render_surface(
         .advance(Duration::from_nanos(16_666_667))
         .expect("world advances before surface acquisition");
     assert!(advanced.can_acquire_serial());
+    let encoded = advanced
+        .encode_scene()
+        .expect("scene encodes before surface acquisition");
     let surface = device.create_texture(&wgpu::TextureDescriptor {
         label: Some("surface-format test target"),
         size: wgpu::Extent3d {
@@ -102,7 +105,7 @@ async fn render_surface(
         view_formats: &[],
     });
     let view = surface.create_view(&wgpu::TextureViewDescriptor::default());
-    let report = advanced
+    let report = encoded
         .submit(Some(&SurfaceOutput {
             view: &view,
             extent: [SIZE, SIZE],
