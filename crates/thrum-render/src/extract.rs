@@ -108,6 +108,11 @@ impl RenderColumns {
         &self.slots
     }
 
+    /// Generation of a visible physical slot, retained in the extraction index.
+    pub fn generation_at_slot(&self, slot: usize) -> Option<u64> {
+        self.index.get(slot)?.map(|(generation, _)| generation)
+    }
+
     /// Whether this extraction retained a visible row at a physical slot.
     pub fn contains_slot(&self, slot: usize) -> bool {
         self.index.get(slot).is_some_and(Option::is_some)

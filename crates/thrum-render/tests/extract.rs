@@ -168,6 +168,7 @@ fn slot_reuse_invalidates_pose_and_retired_slots_are_reported_once() {
         assert!(sink.push(0, 2, 1, [4.0, 0.0, 0.0], 1));
     });
     assert_eq!(reused.history_reused, 0);
+    assert_eq!(extractor.frame().generation_at_slot(0), Some(2));
     assert!(!extractor.frame().contains_slot(1));
     assert_eq!(extractor.frame().previous(), extractor.frame().current());
     extractor.extract(source(1, 2), [0.0; 3], |sink| {
