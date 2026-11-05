@@ -1893,11 +1893,8 @@ impl FrameHost {
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
         self.prepared
-            .encode(&mut encoder, GENERATION, &target, None)
-            .map_err(|error| format!("capture render: {error:?}"))?;
-        pixels
-            .encode(&mut encoder, &target)
-            .map_err(|error| format!("capture readback: {error:?}"))?;
+            .encode_with_readback(&mut encoder, GENERATION, &target, None, &mut pixels)
+            .map_err(|error| format!("capture render/readback: {error:?}"))?;
         let submitted = self.queue.submit([encoder.finish()]);
         self.wait(submitted, "capture")?;
         pixels
