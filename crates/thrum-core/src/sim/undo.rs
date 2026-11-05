@@ -17,7 +17,7 @@ pub(super) trait UndoColumn: Send + Sync {
         storage: &mut dyn StorageColumn,
         change_ticks: &mut [u64],
         component: usize,
-        stride: usize,
+        capacity: usize,
         directory: Option<&DenseDirectory>,
     );
     fn restore_first_seen_into(
@@ -25,7 +25,7 @@ pub(super) trait UndoColumn: Send + Sync {
         storage: &mut dyn StorageColumn,
         change_ticks: &mut [u64],
         component: usize,
-        stride: usize,
+        capacity: usize,
         directory: Option<&DenseDirectory>,
         seen: &mut [bool],
         visited: &mut Vec<u32>,
@@ -106,7 +106,7 @@ impl<T: Send + Sync + 'static> UndoColumn for TypedUndo<T> {
         storage: &mut dyn StorageColumn,
         change_ticks: &mut [u64],
         component: usize,
-        stride: usize,
+        capacity: usize,
         directory: Option<&DenseDirectory>,
     ) {
         let storage = storage
@@ -130,7 +130,7 @@ impl<T: Send + Sync + 'static> UndoColumn for TypedUndo<T> {
                 }
             }
             if tick != u64::MAX {
-                change_ticks[*slot as usize * stride + component] = tick;
+                change_ticks[component * capacity + *slot as usize] = tick;
             }
         }
     }
@@ -140,7 +140,7 @@ impl<T: Send + Sync + 'static> UndoColumn for TypedUndo<T> {
         storage: &mut dyn StorageColumn,
         change_ticks: &mut [u64],
         component: usize,
-        stride: usize,
+        capacity: usize,
         directory: Option<&DenseDirectory>,
         seen: &mut [bool],
         visited: &mut Vec<u32>,
@@ -167,7 +167,7 @@ impl<T: Send + Sync + 'static> UndoColumn for TypedUndo<T> {
                     storage.remove(row);
                 }
             }
-            change_ticks[index * stride + component] = tick;
+            change_ticks[component * capacity + index] = tick;
         }
     }
 

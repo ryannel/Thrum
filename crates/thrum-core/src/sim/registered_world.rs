@@ -22,6 +22,10 @@ use super::{
 // them. This threshold selects the smaller record below that measured bracket.
 const UNDO_BITSET_MIN_SLOTS: usize = 32_768;
 
+fn tick_index(component: usize, slot: usize, capacity: usize) -> usize {
+    component * capacity + slot
+}
+
 #[derive(Clone, Copy)]
 struct CapturedSlot {
     generation: u64,
@@ -186,7 +190,7 @@ impl WorldUndo {
             self.layout_swaps.is_empty(),
             "layout edits are not tentative"
         );
-        let count = self.columns.len();
+        let capacity = world.slots.len();
         for (component, (column, storage)) in
             self.columns.iter_mut().zip(&mut world.columns).enumerate()
         {
@@ -194,7 +198,7 @@ impl WorldUndo {
                 storage.as_mut(),
                 &mut world.change_ticks,
                 component,
-                count,
+                capacity,
                 world.directory.as_ref(),
             );
         }
@@ -239,10 +243,10 @@ impl WorldUndo {
             words[slot as usize / 64] |= 1_u64 << (slot % 64);
         }
         self.slots.push((slot, world.slots[slot as usize]));
-        let count = self.columns.len();
-        self.structural_ticks.extend_from_slice(
-            &world.change_ticks[slot as usize * count..(slot as usize + 1) * count],
-        );
+        for component in 0..self.columns.len() {
+            self.structural_ticks
+                .push(world.change_ticks[tick_index(component, slot as usize, world.capacity())]);
+        }
     }
 
     pub(super) fn restore(
@@ -264,6 +268,7 @@ impl WorldUndo {
             "one preimage per structural edit"
         );
         let count = self.columns.len();
+        let capacity = world.slots.len();
         for (index, event) in events.iter().enumerate().rev() {
             let (recorded_slot, before) = self.slots[index];
             match event {
@@ -292,9 +297,10 @@ impl WorldUndo {
                 }
             }
             world.slots[recorded_slot as usize] = before;
-            world.change_ticks
-                [recorded_slot as usize * count..(recorded_slot as usize + 1) * count]
-                .copy_from_slice(&self.structural_ticks[index * count..(index + 1) * count]);
+            for component in 0..count {
+                world.change_ticks[tick_index(component, recorded_slot as usize, capacity)] =
+                    self.structural_ticks[index * count + component];
+            }
         }
         for (component, (column, storage)) in
             self.columns.iter_mut().zip(&mut world.columns).enumerate()
@@ -303,7 +309,7 @@ impl WorldUndo {
                 storage.as_mut(),
                 &mut world.change_ticks,
                 component,
-                count,
+                capacity,
                 world.directory.as_ref(),
             );
         }
@@ -428,11 +434,10 @@ impl WorldCapture {
                 directory.replay(swap);
             }
         }
-        let component_count = self.columns.len();
         for (index, (column, changed)) in self.columns.iter_mut().zip(&delta.changed).enumerate() {
             column.overlay(&*delta.columns[index], changed);
             for &(slot, tick) in changed {
-                self.change_ticks[slot as usize * component_count + index] = tick;
+                self.change_ticks[tick_index(index, slot as usize, self.slots.len())] = tick;
             }
         }
     }
@@ -652,12 +657,12 @@ impl RegisteredWorld {
     }
 
     pub(super) fn restore_first_seen(&mut self, undo: &mut WorldUndo, component: usize) {
-        let stride = self.columns.len();
+        let capacity = self.slots.len();
         undo.columns[component].restore_first_seen_into(
             self.columns[component].as_mut(),
             &mut self.change_ticks,
             component,
-            stride,
+            capacity,
             self.directory.as_ref(),
             &mut self.pending_marks,
             &mut self.pending_slots,
@@ -742,7 +747,7 @@ impl RegisteredWorld {
             changed.extend(self.changed[index].iter().map(|slot| {
                 (
                     *slot,
-                    self.change_ticks[*slot as usize * self.registry.entries.len() + index],
+                    self.change_ticks[tick_index(index, *slot as usize, self.capacity())],
                 )
             }));
             changed.sort_unstable_by_key(|(slot, _)| *slot);
@@ -995,17 +1000,17 @@ impl RegisteredWorld {
     }
 
     pub(super) fn change_ticks3_at(&self, slot: u32, components: [usize; 3]) -> [u64; 4] {
-        let row = slot as usize * self.registry.entries.len();
+        let capacity = self.capacity();
         [
             self.slots[slot as usize].structural_tick,
-            self.change_ticks[row + components[0]],
-            self.change_ticks[row + components[1]],
-            self.change_ticks[row + components[2]],
+            self.change_ticks[tick_index(components[0], slot as usize, capacity)],
+            self.change_ticks[tick_index(components[1], slot as usize, capacity)],
+            self.change_ticks[tick_index(components[2], slot as usize, capacity)],
         ]
     }
 
     pub(super) fn mark_changed(&mut self, component: usize, handle: Handle, tick: u64) {
-        self.change_ticks[handle.slot as usize * self.registry.entries.len() + component] = tick;
+        self.change_ticks[tick_index(component, handle.slot as usize, self.slots.len())] = tick;
         self.changed[component].push(handle.slot);
         if let Some(index) = self.active_change_frame {
             self.change_frames[index].components[component / 64] |= 1_u64 << (component % 64);
@@ -1014,7 +1019,7 @@ impl RegisteredWorld {
     }
 
     pub(super) fn change_tick_at(&self, component: usize, slot: u32) -> u64 {
-        self.change_ticks[slot as usize * self.registry.entries.len() + component]
+        self.change_ticks[tick_index(component, slot as usize, self.capacity())]
     }
 
     pub(super) fn begin_tick(&mut self, next: Option<u64>) {
@@ -1504,7 +1509,7 @@ impl RegisteredWorld {
         tick: u64,
         mut save_old: impl FnMut(u32, T, u64),
     ) {
-        let component_count = self.registry.entries.len();
+        let capacity = self.slots.len();
         let directory = self.directory.as_ref();
         let column = self.columns[component]
             .as_any_mut()
@@ -1522,9 +1527,9 @@ impl RegisteredWorld {
             let prior = column
                 .insert(row, value.clone())
                 .expect("prevalidated replacement component");
-            let old_tick = self.change_ticks[slot * component_count + component];
+            let old_tick = self.change_ticks[tick_index(component, slot, capacity)];
             save_old(handle.slot, prior, old_tick);
-            self.change_ticks[slot * component_count + component] = tick;
+            self.change_ticks[tick_index(component, slot, capacity)] = tick;
             changed.push(handle.slot);
             if !self.pending_marks[slot] {
                 self.pending_marks[slot] = true;
@@ -1630,7 +1635,7 @@ impl RegisteredWorld {
             .downcast_mut::<TypedUndo<T>>()
             .expect("registered undo column type");
         let mut changed_words = undo.changed_words.as_deref_mut();
-        let stride = self.registry.entries.len();
+        let capacity = self.slots.len();
         for word in 0..write.presence().len() {
             let mut matching = write.presence()[word] & read.presence()[word];
             if let Some(active) = active_words {
@@ -1666,7 +1671,7 @@ impl RegisteredWorld {
                     undo_column.push_component(
                         key,
                         Some(value.clone()),
-                        self.change_ticks[logical * stride + first],
+                        self.change_ticks[tick_index(first, logical, capacity)],
                     );
                 }
                 let changed = visit(
@@ -1857,6 +1862,85 @@ mod tests {
             world.put_tentative(drift, handle, Drift(6.0), &mut undo, &mut marks),
             Err(RegisteredWorldError::InvalidHandle)
         );
+    }
+
+    #[test]
+    fn component_ticks_survive_tentative_abort_committed_undo_and_slot_reuse() {
+        let mut world = world();
+        let first = world
+            .spawn(StableId(1), |entity| {
+                entity.add(Height(1.0))?;
+                entity.add(Drift(2.0))?;
+                Ok(())
+            })
+            .expect("first entity");
+        let second = world
+            .spawn(StableId(2), |entity| {
+                entity.add(Height(3.0))?;
+                entity.add(Drift(4.0))?;
+                Ok(())
+            })
+            .expect("second entity");
+        let height = world
+            .component_index(super::ComponentKey::of::<Height>())
+            .expect("height component");
+        let drift = world
+            .component_index(super::ComponentKey::of::<Drift>())
+            .expect("drift component");
+        world.mark_changed(height, first, 3);
+        world.mark_changed(drift, second, 5);
+        let expected = [(3, 0), (0, 5)];
+        let ticks = |world: &RegisteredWorld| {
+            [first, second].map(|handle| {
+                (
+                    world.change_tick_at(height, handle.slot),
+                    world.change_tick_at(drift, handle.slot),
+                )
+            })
+        };
+        assert_eq!(ticks(&world), expected);
+
+        let mut tentative = world.empty_undo();
+        let mut marks = TestDirty([false; 4]);
+        world
+            .put_tentative(height, first, Height(9.0), &mut tentative, &mut marks)
+            .expect("tentative write");
+        tentative.abort_tentative(&mut world);
+        assert_eq!(ticks(&world), expected);
+        assert_eq!(world.with::<Height, _>(first, |value| value.0), Ok(1.0));
+
+        let mut committed = world.empty_undo();
+        world.begin_tick(Some(8));
+        let prior = world.replace_prevalidated(height, first.slot, Height(10.0));
+        committed.record_component(height, first.slot, 3, Some(prior));
+        world.mark_changed(height, first, 8);
+        committed.restore(&mut world, &[]);
+        assert_eq!(ticks(&world), expected);
+
+        let mut structural = world.empty_undo();
+        world.begin_tick(Some(9));
+        world
+            .despawn_into_undo(second, &mut structural)
+            .expect("retire second entity");
+        structural.record_structural(&world, world.next_free_slot());
+        let replacement = world
+            .spawn(StableId(3), |entity| {
+                entity.add(Height(5.0))?;
+                entity.add(Drift(6.0))?;
+                Ok(())
+            })
+            .expect("reuse second slot");
+        assert_eq!(replacement.slot, second.slot);
+        structural.restore(
+            &mut world,
+            &[
+                crate::sim::StructuralChange::Despawn(second),
+                crate::sim::StructuralChange::Spawn(replacement),
+            ],
+        );
+        assert_eq!(world.handle(StableId(2)), Some(second));
+        assert_eq!(ticks(&world), expected);
+        assert_eq!(world.with::<Drift, _>(second, |value| value.0), Ok(4.0));
     }
 
     #[test]
