@@ -155,6 +155,7 @@ fn setup(
     );
     let rules = Rules {
         config,
+        resource_revision: 0,
         peers: Vec::with_capacity(config.peer_capacity),
         commands: Vec::with_capacity(128),
         committed_inputs: Vec::with_capacity(config.peer_capacity),
@@ -226,7 +227,6 @@ pub struct Simulation {
     runtime: GameRuntime<Page, Rules>,
     rules: Rules,
     candidate: Candidate,
-    resource_revision: u64,
 }
 
 /// Game-owned resource state paired with the engine's opaque registered capture.
@@ -259,7 +259,7 @@ impl Simulation {
         SimulationCapture {
             runtime: self.runtime.capture(),
             peers: self.rules.peers.clone(),
-            resource_revision: self.resource_revision,
+            resource_revision: self.rules.resource_revision,
         }
     }
 
@@ -276,7 +276,7 @@ impl Simulation {
             .restore(&capture.runtime, || Page::new(epoch, capacity))
             .map_err(map_runtime)?;
         self.rules.peers.clone_from(&capture.peers);
-        self.resource_revision = capture.resource_revision;
+        self.rules.resource_revision = capture.resource_revision;
         self.rules.commands.clear();
         self.rules.committed_inputs.clear();
         self.rules.changed_positions = 0;
@@ -302,7 +302,6 @@ impl Simulation {
             runtime,
             rules,
             candidate,
-            resource_revision: 0,
         })
     }
 
@@ -444,6 +443,7 @@ impl Simulation {
     /// Binding, epoch, actor, handle or peer capacity is invalid.
     pub fn register_peer(&mut self, binding: Ownership, handle: Handle) -> Result<(), SimError> {
         let next_revision = self
+            .rules
             .resource_revision
             .checked_add(1)
             .ok_or(SimError::TickExhausted)?;
@@ -479,7 +479,7 @@ impl Simulation {
                 pending: None,
                 recompute_velocity: true,
             };
-            self.resource_revision = next_revision;
+            self.rules.resource_revision = next_revision;
             return Ok(());
         }
         if self.rules.peers.len() == self.rules.config.peer_capacity {
@@ -497,7 +497,7 @@ impl Simulation {
         self.rules
             .peers
             .sort_unstable_by_key(|peer| peer.binding.peer);
-        self.resource_revision = next_revision;
+        self.rules.resource_revision = next_revision;
         Ok(())
     }
 
@@ -507,17 +507,7 @@ impl Simulation {
     ///
     /// The action count or payload fails V1 admission.
     pub fn validate_frame_actions(&self, frame: &InputFrame<SimAction>) -> Result<(), FrameError> {
-        if frame.actions.len() > self.rules.config.actions_per_frame {
-            return Err(FrameError::TooManyActions);
-        }
-        if frame
-            .actions
-            .iter()
-            .any(|action| matches!(action, SimAction::Impulse(values) if !finite(*values)))
-        {
-            return Err(FrameError::InvalidAction);
-        }
-        Ok(())
+        validate_frame_actions(&self.rules.config, frame)
     }
 
     /// Admit exactly one validated frame for a peer's next tick.
@@ -526,7 +516,7 @@ impl Simulation {
     ///
     /// Input identity, timing, sequence, axes, actions or control binding fails.
     pub fn admit_frame(&mut self, frame: InputFrame<SimAction>) -> Result<(), FrameError> {
-        self.validate_frame(&frame)?;
+        validate_frame(&self.runtime, &self.rules, &frame)?;
         let peer = self
             .rules
             .peers
@@ -535,48 +525,6 @@ impl Simulation {
             .ok_or(FrameError::UnknownPeer)?;
         peer.last_sequence = Some(frame.origin.sequence);
         peer.pending = Some(frame);
-        Ok(())
-    }
-
-    fn validate_frame(&self, frame: &InputFrame<SimAction>) -> Result<(), FrameError> {
-        frame.validate_axes()?;
-        self.validate_frame_actions(frame)?;
-        let peer = self
-            .rules
-            .peers
-            .iter()
-            .find(|peer| peer.binding.peer == frame.origin.peer)
-            .ok_or(FrameError::UnknownPeer)?;
-        if peer.binding.connection_epoch != frame.origin.connection_epoch {
-            return Err(FrameError::WrongConnection);
-        }
-        if peer.binding.actor != frame.actor {
-            return Err(FrameError::WrongActor);
-        }
-        if !peer.active {
-            return Err(FrameError::InvalidControl);
-        }
-        if self.runtime.tick().checked_add(1) != Some(frame.tick) {
-            return Err(FrameError::WrongTick);
-        }
-        if peer
-            .last_sequence
-            .is_some_and(|last| frame.origin.sequence <= last)
-        {
-            return Err(FrameError::StaleSequence);
-        }
-        if peer.pending.is_some() {
-            return Err(FrameError::PendingFrame);
-        }
-        if self
-            .runtime
-            .read()
-            .with(&self.rules.ownership_read, peer.handle, |value| *value)
-            .ok()
-            != Some(peer.binding)
-        {
-            return Err(FrameError::InvalidControl);
-        }
         Ok(())
     }
 
@@ -591,34 +539,13 @@ impl Simulation {
     ///
     /// Panics only if a game callback violates its validated commit invariant.
     pub fn step(&mut self, commands: &[Command]) -> Result<TickOutcome<'_>, SimError> {
-        self.step_internal(commands, None)
-    }
-
-    fn step_recording(
-        &mut self,
-        commands: &[Command],
-        undo: &mut thrum_core::sim::RuntimeUndo,
-    ) -> Result<TickOutcome<'_>, SimError> {
-        self.step_internal(commands, Some(undo))
-    }
-
-    fn step_internal(
-        &mut self,
-        commands: &[Command],
-        undo: Option<&mut thrum_core::sim::RuntimeUndo>,
-    ) -> Result<TickOutcome<'_>, SimError> {
-        self.validate_commands(commands)?;
+        validate_commands(&self.runtime, commands)?;
         self.runtime
             .publish_initial(&mut self.rules, &mut self.candidate);
         let simulated_entities = self.runtime.len();
         self.rules.commands.clear();
         self.rules.commands.extend_from_slice(commands);
-        let outcome = if let Some(undo) = undo {
-            self.runtime
-                .step_recording(&mut self.rules, &mut self.candidate, undo)
-        } else {
-            self.runtime.step(&mut self.rules, &mut self.candidate)
-        };
+        let outcome = self.runtime.step(&mut self.rules, &mut self.candidate);
         let tick = outcome.map_err(|error| match error {
             TickError::TickExhausted | TickError::RevisionExhausted => SimError::TickExhausted,
             TickError::BaselineRequired => SimError::PublicationBusy,
@@ -632,73 +559,137 @@ impl Simulation {
             committed_inputs: &self.rules.committed_inputs,
         })
     }
+}
 
-    fn validate_commands(&self, commands: &[Command]) -> Result<(), SimError> {
-        let mut free = self.runtime.free_count();
-        let mut spawns = 0;
-        for (index, command) in commands.iter().enumerate() {
-            match command {
-                Command::Spawn(entity) => {
-                    if !finite(entity.position.0) || !finite(entity.velocity.0) {
-                        return Err(SimError::NonFinite);
-                    }
-                    if self.runtime.handle(entity.id).is_some()
-                        || commands[..index].iter().any(
-                            |prior| matches!(prior, Command::Spawn(other) if other.id == entity.id),
-                        )
-                    {
-                        return Err(SimError::DuplicateId);
-                    }
-                    spawns += 1;
-                }
-                Command::Despawn(handle) => {
-                    self.runtime
-                        .read()
-                        .stable_id(*handle)
-                        .map_err(|_| SimError::InvalidHandle)?;
-                    free += usize::from(
-                        self.runtime
-                            .reusable_after_despawn(*handle)
-                            .map_err(|_| SimError::InvalidHandle)?,
-                    );
-                }
-                Command::SetPosition(handle, value) => {
-                    self.runtime
-                        .read()
-                        .stable_id(*handle)
-                        .map_err(|_| SimError::InvalidHandle)?;
-                    if !finite(value.0) {
-                        return Err(SimError::NonFinite);
-                    }
-                }
-                Command::SetVelocity(handle, value) => {
-                    self.runtime
-                        .read()
-                        .stable_id(*handle)
-                        .map_err(|_| SimError::InvalidHandle)?;
-                    if !finite(value.0) {
-                        return Err(SimError::NonFinite);
-                    }
-                }
-                Command::SetHealth(handle, _) => {
-                    self.runtime
-                        .read()
-                        .stable_id(*handle)
-                        .map_err(|_| SimError::InvalidHandle)?;
-                }
-            }
-            if commands[..index]
-                .iter()
-                .any(|prior| command_conflict(prior, command))
-            {
-                return Err(SimError::ConflictingCommands);
-            }
-        }
-        if spawns > free {
-            return Err(SimError::Capacity);
-        }
-        Ok(())
+fn validate_frame_actions(
+    config: &SimConfig,
+    frame: &InputFrame<SimAction>,
+) -> Result<(), FrameError> {
+    if frame.actions.len() > config.actions_per_frame {
+        return Err(FrameError::TooManyActions);
     }
+    if frame
+        .actions
+        .iter()
+        .any(|action| matches!(action, SimAction::Impulse(values) if !finite(*values)))
+    {
+        return Err(FrameError::InvalidAction);
+    }
+    Ok(())
+}
+
+fn validate_frame(
+    runtime: &GameRuntime<Page, Rules>,
+    rules: &Rules,
+    frame: &InputFrame<SimAction>,
+) -> Result<(), FrameError> {
+    frame.validate_axes()?;
+    validate_frame_actions(&rules.config, frame)?;
+    let peer = rules
+        .peers
+        .iter()
+        .find(|peer| peer.binding.peer == frame.origin.peer)
+        .ok_or(FrameError::UnknownPeer)?;
+    if peer.binding.connection_epoch != frame.origin.connection_epoch {
+        return Err(FrameError::WrongConnection);
+    }
+    if peer.binding.actor != frame.actor {
+        return Err(FrameError::WrongActor);
+    }
+    if !peer.active {
+        return Err(FrameError::InvalidControl);
+    }
+    if runtime.tick().checked_add(1) != Some(frame.tick) {
+        return Err(FrameError::WrongTick);
+    }
+    if peer
+        .last_sequence
+        .is_some_and(|last| frame.origin.sequence <= last)
+    {
+        return Err(FrameError::StaleSequence);
+    }
+    if peer.pending.is_some() {
+        return Err(FrameError::PendingFrame);
+    }
+    if runtime
+        .read()
+        .with(&rules.ownership_read, peer.handle, |value| *value)
+        .ok()
+        != Some(peer.binding)
+    {
+        return Err(FrameError::InvalidControl);
+    }
+    Ok(())
+}
+
+fn validate_commands(
+    runtime: &GameRuntime<Page, Rules>,
+    commands: &[Command],
+) -> Result<(), SimError> {
+    let mut free = runtime.free_count();
+    let mut spawns = 0;
+    for (index, command) in commands.iter().enumerate() {
+        match command {
+            Command::Spawn(entity) => {
+                if !finite(entity.position.0) || !finite(entity.velocity.0) {
+                    return Err(SimError::NonFinite);
+                }
+                if runtime.handle(entity.id).is_some()
+                    || commands[..index].iter().any(
+                        |prior| matches!(prior, Command::Spawn(other) if other.id == entity.id),
+                    )
+                {
+                    return Err(SimError::DuplicateId);
+                }
+                spawns += 1;
+            }
+            Command::Despawn(handle) => {
+                runtime
+                    .read()
+                    .stable_id(*handle)
+                    .map_err(|_| SimError::InvalidHandle)?;
+                free += usize::from(
+                    runtime
+                        .reusable_after_despawn(*handle)
+                        .map_err(|_| SimError::InvalidHandle)?,
+                );
+            }
+            Command::SetPosition(handle, value) => {
+                runtime
+                    .read()
+                    .stable_id(*handle)
+                    .map_err(|_| SimError::InvalidHandle)?;
+                if !finite(value.0) {
+                    return Err(SimError::NonFinite);
+                }
+            }
+            Command::SetVelocity(handle, value) => {
+                runtime
+                    .read()
+                    .stable_id(*handle)
+                    .map_err(|_| SimError::InvalidHandle)?;
+                if !finite(value.0) {
+                    return Err(SimError::NonFinite);
+                }
+            }
+            Command::SetHealth(handle, _) => {
+                runtime
+                    .read()
+                    .stable_id(*handle)
+                    .map_err(|_| SimError::InvalidHandle)?;
+            }
+        }
+        if commands[..index]
+            .iter()
+            .any(|prior| command_conflict(prior, command))
+        {
+            return Err(SimError::ConflictingCommands);
+        }
+    }
+    if spawns > free {
+        return Err(SimError::Capacity);
+    }
+    Ok(())
 }
 
 fn command_target(command: &Command) -> Option<(Handle, u8)> {

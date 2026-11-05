@@ -416,7 +416,12 @@ fn assert_undo_is_one_shot_and_busy_tick_cannot_fake_patch(
     runtime.publish_initial(game, candidate);
     let mut undo = runtime.new_undo();
     runtime
-        .step_recording(game, candidate, &mut undo)
+        .step_recording(
+            game,
+            candidate,
+            &mut undo,
+            thrum_core::sim::PublicationMode::Capture,
+        )
         .expect("record one committed revision");
     let future = runtime.capture();
     let future_height = runtime

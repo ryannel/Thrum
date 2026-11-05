@@ -1,4 +1,4 @@
-//! Opt-in real-device synthetic renderer integration test.
+//! Synthetic renderer coverage, including automatic Metal regression checks.
 #![cfg(not(target_arch = "wasm32"))]
 
 use thrum_render::abi::{InstanceRecord, MaterialRecord};
@@ -8,6 +8,12 @@ use thrum_render::synthetic::{
 };
 use thrum_render::timing::{GpuTimings, TimingError};
 
+#[test]
+#[ignore = "requires the Metal host gate; ./dev check runs this regression on macOS"]
+fn scene_depth_uses_32_bit_float() {
+    assert_eq!(DEPTH_FORMAT, wgpu::TextureFormat::Depth32Float);
+}
+
 /// Opt-in integration test: a real adapter is required, never replaced by a mock.
 #[test]
 #[ignore = "requires a real native GPU adapter; run explicitly for device evidence"]
@@ -16,7 +22,6 @@ use thrum_render::timing::{GpuTimings, TimingError};
     reason = "one explicitly opted-in adapter/device lifecycle proves the coupled render, readback and timing paths"
 )]
 fn prepared_scene_pixels_timestamps_and_disabled_path() {
-    assert_eq!(DEPTH_FORMAT, wgpu::TextureFormat::Depth32Float);
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
         let adapter = instance
@@ -800,14 +805,23 @@ fn place_box(instance: &mut InstanceRecord, center: [f32; 3], scale: [f32; 3]) {
 }
 
 #[test]
-#[ignore = "requires a real native GPU adapter; run explicitly for device evidence"]
+#[ignore = "requires Metal; ./dev check runs this regression on macOS"]
 fn two_sun_cascades_shadow_near_and_far_receivers_from_off_camera_casters() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
+            backends: wgpu::Backends::METAL,
+            ..wgpu::InstanceDescriptor::new_without_display_handle()
+        });
+        let adapter = match instance
             .request_adapter(&wgpu::RequestAdapterOptions::default())
             .await
-            .expect("native adapter");
+        {
+            Ok(adapter) => adapter,
+            Err(error) => {
+                eprintln!("SKIP moving shadow caster regression: no Metal adapter ({error})");
+                return;
+            }
+        };
         let (device, queue) = adapter
             .request_device(&wgpu::DeviceDescriptor::default())
             .await

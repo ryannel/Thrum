@@ -94,8 +94,19 @@ impl RuntimeUndo {
 pub enum ExecutionMode {
     /// Run each job on the tick caller.
     Serial,
-    /// Run independent jobs through the native Rayon pool.
+    /// Permit Rayon dispatch under the game's measured work policy.
     Rayon,
+    /// Force native Rayon dispatch for correctness and crossover qualification.
+    RayonForced,
+}
+
+/// Whether a committed tick also refreshes an optional presentation page.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum PublicationMode {
+    /// Capture this committed endpoint for presentation.
+    Capture,
+    /// Keep authority advancing; the next capture rebuilds any missed view.
+    Defer,
 }
 
 /// Engine-owned dispatch over independent mutable candidate jobs. Both modes
@@ -114,7 +125,7 @@ impl Executor {
     /// Execute independent candidate jobs, never direct committed-world edits.
     pub fn for_each_mut<T: Send>(self, jobs: &mut [T], run: impl Fn(&mut T) + Send + Sync) {
         #[cfg(not(target_arch = "wasm32"))]
-        if self.mode == ExecutionMode::Rayon {
+        if self.mode != ExecutionMode::Serial && jobs.len() > 1 {
             jobs.par_iter_mut().for_each(run);
             return;
         }
@@ -975,7 +986,7 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
     where
         G: Sync,
     {
-        self.step_inner(game, candidate, None)
+        self.step_inner(game, candidate, None, PublicationMode::Capture)
     }
 
     /// Commit one tick and retain moved preimages for a prediction branch.
@@ -988,6 +999,7 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
         game: &mut G,
         candidate: &mut G::Candidate,
         undo: &mut RuntimeUndo,
+        publication: PublicationMode,
     ) -> Result<u64, TickError<G::Error>>
     where
         G: Sync,
@@ -995,7 +1007,7 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
         if undo.nonce != self.nonce {
             return Err(TickError::Edit(EditError::WrongRuntime));
         }
-        self.step_inner(game, candidate, Some(undo))
+        self.step_inner(game, candidate, Some(undo), publication)
     }
 
     fn step_inner(
@@ -1003,6 +1015,7 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
         game: &mut G,
         candidate: &mut G::Candidate,
         mut undo: Option<&mut RuntimeUndo>,
+        publication: PublicationMode,
     ) -> Result<u64, TickError<G::Error>>
     where
         G: Sync,
@@ -1018,8 +1031,9 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
         game.reset_candidate(candidate);
         for wave in &mut self.waves {
             #[cfg(not(target_arch = "wasm32"))]
-            if self.executor.mode == ExecutionMode::Rayon
-                && wave.len() > 1
+            // Two tiny input callbacks stay on the tick caller to avoid pool scheduling.
+            if self.executor.mode != ExecutionMode::Serial
+                && (wave.len() > 3 || self.executor.mode == ExecutionMode::RayonForced)
                 && wave
                     .iter()
                     .all(|bound| matches!(&bound.callback, Callback::Parallel(_)))
@@ -1124,7 +1138,7 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
             nonce: self.nonce,
             system: None,
         };
-        if !self.pages.can_capture() {
+        if publication == PublicationMode::Defer || !self.pages.can_capture() {
             self.publication_skipped = true;
             return Ok(next);
         }

@@ -204,6 +204,7 @@ impl Candidate {
 
 pub(super) struct Rules {
     pub(super) config: SimConfig,
+    pub(super) resource_revision: u64,
     pub(super) peers: Vec<PeerControl>,
     pub(super) commands: Vec<Command>,
     pub(super) committed_inputs: Vec<Origin>,
@@ -309,15 +310,10 @@ impl Rules {
     ) {
         let dt = 1.0 / f64::from(self.config.tick_hz.get());
         let mut motion = candidate.motion.take().expect("prepared motion query");
-        if executor.mode() == ExecutionMode::Serial
-            && self
-                .commands
-                .iter()
-                .all(|command| matches!(command, Command::Spawn(_) | Command::Despawn(_)))
-            && self
-                .peers
-                .iter()
-                .all(|peer| !peer.active || (peer.pending.is_none() && !peer.recompute_velocity))
+        if self
+            .commands
+            .iter()
+            .all(|command| matches!(command, Command::Spawn(_) | Command::Despawn(_)))
         {
             candidate.fast_motion = true;
             for command in &self.commands {
@@ -328,10 +324,17 @@ impl Rules {
                 }
             }
             motion.visit(world, |handle, _, position, velocity| {
-                if !candidate.despawn_marks[handle.slot as usize]
-                    && *velocity != Velocity::default()
-                {
-                    let next = integrate_position(*position, *velocity, dt);
+                let row = handle.slot as usize;
+                if candidate.despawn_marks[row] {
+                    return;
+                }
+                let effective = candidate.velocity(row, *velocity, tick);
+                if candidate.velocity_marks[row] == tick {
+                    candidate.base_velocity[row] = *velocity;
+                    candidate.velocity_present[row] = true;
+                }
+                if effective != Velocity::default() {
+                    let next = integrate_position(*position, effective, dt);
                     if next != *position {
                         candidate.position_edits.push((handle, next));
                     }
@@ -340,6 +343,9 @@ impl Rules {
             candidate.motion = Some(motion);
             return;
         }
+        // No parallel crossover has been measured for this V1 motion kernel
+        // through 500k rows; preferred Rayon stays serial until one is.
+        let parallel_motion = executor.mode() == ExecutionMode::RayonForced;
         motion.visit(world, |handle, _, position, base_velocity| {
             let row = candidate.touch(handle, tick);
             candidate.base_velocity[row] = *base_velocity;
@@ -348,15 +354,15 @@ impl Rules {
             candidate.velocity_present[row] = true;
             let velocity = candidate.velocity(row, *base_velocity, tick);
             if velocity != Velocity::default() {
-                if executor.mode() == ExecutionMode::Serial {
-                    candidate.positions[row] = integrate_position(*position, velocity, dt);
-                    candidate.position_marks[row] = tick;
-                } else {
+                if parallel_motion {
                     candidate.motion_jobs.push(MotionJob {
                         handle,
                         position: *position,
                         velocity,
                     });
+                } else {
+                    candidate.positions[row] = integrate_position(*position, velocity, dt);
+                    candidate.position_marks[row] = tick;
                 }
             }
         });
@@ -378,6 +384,39 @@ impl Rules {
         candidate: &mut Candidate,
     ) -> Result<(), SimError> {
         if candidate.fast_motion {
+            for &row in &candidate.touched {
+                if candidate.despawn_marks[row] {
+                    continue;
+                }
+                let handle = candidate.handles[row].expect("touched row has handle");
+                if candidate.velocity_marks[row] == tick {
+                    let value = candidate.velocities[row];
+                    if !finite(value.0) {
+                        return Err(SimError::NonFinite);
+                    }
+                    if candidate.base_velocity[row] != value {
+                        candidate.edits.push(Edit::replace(
+                            &self.velocity_write,
+                            handle,
+                            row,
+                            velocity_at,
+                        ));
+                    }
+                }
+                if candidate.health_marks[row] == tick {
+                    let original = world
+                        .with(&self.resolve_health_read, handle, |value| value.0)
+                        .map_err(|_| SimError::InvalidHandle)?;
+                    if original != candidate.health[row].0 {
+                        candidate.edits.push(Edit::replace(
+                            &self.health_write,
+                            handle,
+                            row,
+                            health_at,
+                        ));
+                    }
+                }
+            }
             if candidate
                 .position_edits
                 .iter()

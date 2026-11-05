@@ -50,3 +50,7 @@ thrum-source = { path = "../../crates/thrum-source" }
 [[bench]]
 name = "frame"
 harness = false
+
+[[bench]]
+name = "g2r"
+harness = false

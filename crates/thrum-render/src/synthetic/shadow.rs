@@ -415,6 +415,11 @@ mod tests {
     use super::*;
 
     #[test]
+    fn both_cascades_use_32_bit_float_depth() {
+        assert_eq!(FORMAT, wgpu::TextureFormat::Depth32Float);
+    }
+
+    #[test]
     fn practical_split_and_reverse_light_depth() {
         let near = 0.1_f32;
         let far = 20.0_f32;
