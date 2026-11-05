@@ -164,13 +164,15 @@ pub(crate) fn apply_frame_to_scene(
         let previous = frame.previous()[row];
         // The GPU ABI reserves zero for an inactive row. A nonzero wrapping
         // token distinguishes consecutive slot generations even past u32::MAX.
-        let Some(generation) = frame.generation_at_slot(index) else {
+        let Some(generation) = frame
+            .generation_at_slot(index)
+            .filter(|generation| *generation != 0)
+        else {
             report.dropped_invalid += 1;
             continue;
         };
-        let source_generation = u32::try_from(generation & u64::from(u32::MAX))
-            .expect("masked generation fits u32")
-            .max(1);
+        let source_generation = u32::try_from((generation - 1) % u64::from(u32::MAX) + 1)
+            .expect("nonzero wrapped generation fits u32");
         let current = if frame.history_valid()[row] {
             std::array::from_fn(|axis| {
                 previous[axis] + (world_current[axis] - previous[axis]) * alpha
@@ -325,6 +327,18 @@ mod tests {
         apply_frame_to_scene(&mut scene, extractor.frame(), &mut changed, 1.0);
         assert_eq!(changed, [0]);
         assert_eq!(scene.instances[0].ids[3], 1);
+        extractor.extract(
+            SourceTick {
+                epoch: 1,
+                tick: 3,
+                timeline: 0,
+            },
+            [0.0; 3],
+            |sink| assert!(sink.push(0, u64::from(u32::MAX) + 2, 9, [0.0; 3], 0)),
+        );
+        apply_frame_to_scene(&mut scene, extractor.frame(), &mut changed, 1.0);
+        assert_eq!(changed, [0], "next wrapped generation must retag the slot");
+        assert_eq!(scene.instances[0].ids[3], 2);
     }
 
     #[test]
