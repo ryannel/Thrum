@@ -80,16 +80,10 @@ impl RuntimeUndo {
         self.to
     }
 
-    /// Visit physical slots edited by this tick, including structural edits.
+    /// Visit logical slots edited by this tick, including structural edits.
     /// A slot may appear more than once; consumers deduplicate as needed.
     pub fn visit_changed_slots(&self, visit: impl FnMut(u32)) {
         self.world.visit_changed_slots(visit);
-    }
-
-    /// Physical slots changed by this tick, in a fixed-capacity bitset when
-    /// one is beneficial at this world size. The words survive rewind.
-    pub fn changed_words(&self) -> Option<&[u64]> {
-        self.world.changed_words()
     }
 
     /// Whether this tick changed only one permitted component and no entity

@@ -18,10 +18,6 @@ use super::{
     undo::{TypedUndo, UndoColumn},
 };
 
-// The 10k workload meets rewind budgets without recording words; 100k needs
-// them. This threshold selects the smaller record below that measured bracket.
-const UNDO_BITSET_MIN_SLOTS: usize = 32_768;
-
 fn tick_index(component: usize, slot: usize, capacity: usize) -> usize {
     component * capacity + slot
 }
@@ -57,7 +53,6 @@ pub(super) struct WorldUndo {
     slots: Vec<(u32, Slot)>,
     structural_ticks: Vec<u64>,
     columns: Vec<Box<dyn UndoColumn>>,
-    changed_words: Option<Vec<u64>>,
     layout_swaps: Vec<RowSwap>,
 }
 
@@ -68,14 +63,10 @@ pub(super) trait TentativeDirty {
 
 pub(super) struct BatchUndoWriter<'a, T> {
     column: &'a mut TypedUndo<T>,
-    changed_words: Option<&'a mut [u64]>,
 }
 
 impl<T> BatchUndoWriter<'_, T> {
     pub(super) fn push(&mut self, slot: u32, prior: T, tick: u64) {
-        if let Some(words) = &mut self.changed_words {
-            words[slot as usize / 64] |= 1_u64 << (slot % 64);
-        }
         self.column.push_component(slot, Some(prior), tick);
     }
 }
@@ -85,9 +76,6 @@ impl WorldUndo {
         self.slots.clone_from(&source.slots);
         self.structural_ticks.clone_from(&source.structural_ticks);
         self.layout_swaps.clone_from(&source.layout_swaps);
-        if let (Some(target), Some(source)) = (&mut self.changed_words, &source.changed_words) {
-            target.copy_from_slice(source);
-        }
         for (target, source) in self.columns.iter_mut().zip(&source.columns) {
             target.copy_from(source.as_ref());
         }
@@ -121,12 +109,7 @@ impl WorldUndo {
                 .as_any_mut()
                 .downcast_mut::<TypedUndo<T>>()
                 .expect("registered undo column type"),
-            changed_words: self.changed_words.as_deref_mut(),
         }
-    }
-
-    pub(super) fn changed_words(&self) -> Option<&[u64]> {
-        self.changed_words.as_deref()
     }
 
     pub(super) fn changes_only(&self, component: usize) -> bool {
@@ -173,9 +156,6 @@ impl WorldUndo {
         self.slots.clear();
         self.structural_ticks.clear();
         self.layout_swaps.clear();
-        if let Some(words) = &mut self.changed_words {
-            words.fill(0);
-        }
         for column in &mut self.columns {
             column.clear();
         }
@@ -211,10 +191,6 @@ impl WorldUndo {
             + self.structural_ticks.capacity() * size_of::<u64>()
             + self.layout_swaps.capacity() * size_of::<RowSwap>()
             + self
-                .changed_words
-                .as_ref()
-                .map_or(0, |words| words.capacity() * size_of::<u64>())
-            + self
                 .columns
                 .iter()
                 .map(|column| column.reserved_bytes())
@@ -228,9 +204,6 @@ impl WorldUndo {
         tick: u64,
         prior: Option<T>,
     ) {
-        if let Some(words) = &mut self.changed_words {
-            words[slot as usize / 64] |= 1_u64 << (slot % 64);
-        }
         self.columns[component]
             .as_any_mut()
             .downcast_mut::<TypedUndo<T>>()
@@ -239,9 +212,6 @@ impl WorldUndo {
     }
 
     pub(super) fn record_structural(&mut self, world: &RegisteredWorld, slot: u32) {
-        if let Some(words) = &mut self.changed_words {
-            words[slot as usize / 64] |= 1_u64 << (slot % 64);
-        }
         self.slots.push((slot, world.slots[slot as usize]));
         for component in 0..self.columns.len() {
             self.structural_ticks
@@ -684,8 +654,6 @@ impl RegisteredWorld {
         WorldUndo {
             slots: Vec::new(),
             structural_ticks: Vec::new(),
-            changed_words: (self.slots.len() >= UNDO_BITSET_MIN_SLOTS)
-                .then(|| vec![0; self.slots.len().div_ceil(64)]),
             layout_swaps: Vec::with_capacity(256),
             columns: self
                 .registry
@@ -1634,7 +1602,6 @@ impl RegisteredWorld {
             .as_any_mut()
             .downcast_mut::<TypedUndo<T>>()
             .expect("registered undo column type");
-        let mut changed_words = undo.changed_words.as_deref_mut();
         let capacity = self.slots.len();
         for word in 0..write.presence().len() {
             let mut matching = write.presence()[word] & read.presence()[word];
@@ -1682,15 +1649,9 @@ impl RegisteredWorld {
                     read.get(index).expect("presence bit has value"),
                 )?;
                 write.refresh_active(index);
-                if first_write {
-                    if changed {
-                        if let Some(words) = changed_words.as_deref_mut() {
-                            words[key as usize / 64] |= 1_u64 << (key % 64);
-                        }
-                    } else {
-                        undo_column.pop_tentative(key);
-                        dirty.unmark_last(first, key);
-                    }
+                if first_write && !changed {
+                    undo_column.pop_tentative(key);
+                    dirty.unmark_last(first, key);
                 }
             }
         }
