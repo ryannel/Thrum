@@ -11,7 +11,6 @@ const SIZE: u32 = 640;
 const ROW_BYTES: u32 = SIZE * 4;
 
 #[test]
-#[ignore = "requires a real native GPU adapter and texture readback"]
 fn surface_pass_letterboxes_and_preserves_sdr_bytes_across_srgb_formats() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
@@ -190,7 +189,6 @@ async fn render_surface(
 }
 
 #[test]
-#[ignore = "requires a real native GPU adapter to exercise missed and resized surface frames"]
 fn unavailable_surface_drops_only_views_and_resize_reuses_preparation() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());

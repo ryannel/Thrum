@@ -1,8 +1,8 @@
 # Evidence
 
-`handoffs/` contains the dated independent research/review reports imported with the plan. They are
-historical inputs, not current policy. Use the canonical specifications and maturity ledger for selected
-scope. Statements such as “not yet selected” in an earlier report refer to its reviewed baseline.
+`handoffs/` and dated source/cook proofs are historical, not current policy. Reproduction commands
+for crates removed at G0 require their recorded Git revision; they cannot run on current main. Use
+the specifications, build plan and maturity ledger for current scope.
 
 For new running evidence, record exact revision/dirty patch, command, fixture/inputs, target/device,
 observed result and limits in a small task-specific report. Preserve required reproducible inputs; keep

@@ -83,7 +83,6 @@ fn full_report_queue_drops_the_oldest_tick_even_when_it_finishes_late() {
 }
 
 #[test]
-#[ignore = "requires a real native GPU adapter to compare stale and refreshed captures"]
 fn capture_refreshes_the_latest_committed_world_after_an_unsent_view() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
@@ -130,7 +129,6 @@ fn capture_refreshes_the_latest_committed_world_after_an_unsent_view() {
 }
 
 #[test]
-#[ignore = "requires a real native GPU adapter for capture after worker extraction"]
 fn capture_applies_a_reclaimed_worker_view_even_when_its_tick_is_current() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
@@ -162,7 +160,6 @@ fn capture_applies_a_reclaimed_worker_view_even_when_its_tick_is_current() {
 }
 
 #[test]
-#[ignore = "requires a real native GPU adapter for held-page publication recovery"]
 fn held_publication_drops_one_view_then_recovers_on_a_paused_zero_tick_callback() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
@@ -205,7 +202,6 @@ fn held_publication_drops_one_view_then_recovers_on_a_paused_zero_tick_callback(
 }
 
 #[test]
-#[ignore = "requires a real native GPU adapter for a changed visual generation"]
 fn worker_result_from_a_retired_visual_generation_resets_pose_history() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
@@ -251,7 +247,6 @@ fn worker_result_from_a_retired_visual_generation_resets_pose_history() {
 }
 
 #[test]
-#[ignore = "requires a real native GPU adapter for replayed worker extraction"]
 fn worker_result_from_an_old_timeline_is_replaced_after_restore() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
@@ -295,7 +290,6 @@ fn worker_result_from_an_old_timeline_is_replaced_after_restore() {
 }
 
 #[test]
-#[ignore = "requires a real native GPU adapter for stale frame submission"]
 fn stale_frame_source_drops_the_view_without_touching_the_scene() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
@@ -353,7 +347,6 @@ fn stale_frame_source_drops_the_view_without_touching_the_scene() {
 }
 
 #[test]
-#[ignore = "requires a real native GPU adapter for abandoned frame admission"]
 fn abandoned_advanced_frame_keeps_its_tick_and_counts_the_skipped_view() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
@@ -384,7 +377,6 @@ fn abandoned_advanced_frame_keeps_its_tick_and_counts_the_skipped_view() {
 }
 
 #[test]
-#[ignore = "requires a real native GPU adapter for late surface acquisition"]
 fn abandoned_encoded_scene_reuses_slot_and_timestamp_batch() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
@@ -473,7 +465,6 @@ fn abandoned_encoded_scene_reuses_slot_and_timestamp_batch() {
 }
 
 #[test]
-#[ignore = "requires a real native GPU adapter for capture after a skipped interpolated view"]
 fn capture_after_abandoned_fractional_view_uses_last_submitted_sample() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
@@ -539,7 +530,6 @@ fn capture_after_abandoned_fractional_view_uses_last_submitted_sample() {
 }
 
 #[test]
-#[ignore = "requires a real native GPU adapter for queued overload admission"]
 fn abandoned_overload_frame_counts_its_completed_queued_ticks() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());

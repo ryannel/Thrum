@@ -67,7 +67,6 @@ unsafe impl GlobalAlloc for CountingAllocator {
 }
 
 #[test]
-#[ignore = "requires a real Metal adapter for measured native frame dispatch"]
 fn bounded_native_handoff_reports_main_and_worker_allocation_cost() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
@@ -173,7 +172,6 @@ fn bounded_native_handoff_reports_main_and_worker_allocation_cost() {
 }
 
 #[test]
-#[ignore = "requires a real Metal adapter for measured late surface submission"]
 fn late_surface_submit_reports_main_thread_allocation_cost() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
