@@ -276,14 +276,17 @@ impl BrowserGame {
             let forward = percentile(&self.samples, |sample| {
                 sample.gpu_pass_ns.map_or(0.0, |passes| passes[3]) / 1e6
             });
-            let display = percentile(&self.samples, |sample| {
+            let history = percentile(&self.samples, |sample| {
                 sample.gpu_pass_ns.map_or(0.0, |passes| passes[4]) / 1e6
+            });
+            let display = percentile(&self.samples, |sample| {
+                sample.gpu_pass_ns.map_or(0.0, |passes| passes[5]) / 1e6
             });
             let present = percentile(&self.samples, |sample| {
                 sample.gpu_present_ns.unwrap_or_default() / 1e6
             });
             format!(
-                "GPU near/far/cluster/forward/display/present p50-p95 ms={:.3}/{:.3}, {:.3}/{:.3}, {:.3}/{:.3}, {:.3}/{:.3}, {:.3}/{:.3}, {:.3}/{:.3}",
+                "GPU near/far/cluster/forward/history/display/present p50-p95 ms={:.3}/{:.3}, {:.3}/{:.3}, {:.3}/{:.3}, {:.3}/{:.3}, {:.3}/{:.3}, {:.3}/{:.3}, {:.3}/{:.3}",
                 near.0,
                 near.1,
                 far.0,
@@ -292,6 +295,8 @@ impl BrowserGame {
                 cluster.1,
                 forward.0,
                 forward.1,
+                history.0,
+                history.1,
                 display.0,
                 display.1,
                 present.0,

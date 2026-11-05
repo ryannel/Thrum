@@ -1,4 +1,4 @@
-//! Opt-in native GPU test of the exact five-pass host submission into an
+//! Opt-in native GPU test of the scene and present graph submission into an
 //! acquired-format texture. A real window/swapchain is exercised separately.
 #![cfg(not(target_arch = "wasm32"))]
 
@@ -85,9 +85,11 @@ async fn render_surface(
         },
     )
     .await
-    .expect("five prepared passes");
+    .expect("prepared scene passes");
+    // Sample immediately before the second tick so interpolation reaches the
+    // first committed endpoint used by the diagnostic capture below.
     let advanced = host
-        .advance(Duration::from_nanos(16_666_667))
+        .advance(Duration::from_nanos(33_333_333))
         .expect("world advances before surface acquisition");
     assert!(advanced.can_acquire_serial());
     let encoded = advanced

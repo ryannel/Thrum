@@ -98,12 +98,12 @@ fn record_present(
     let mut pass = compiled
         .begin_render(
             frame.encoder,
-            Some(GraphColorAttachment {
+            [Some(GraphColorAttachment {
                 resource: &presenter.surface_resource,
                 range: 0..1,
                 view: frame.surface_view,
                 clear: wgpu::Color::BLACK,
-            }),
+            })],
             None,
             presenter.generation,
             frame.timings.as_deref_mut(),

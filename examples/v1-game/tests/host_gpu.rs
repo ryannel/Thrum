@@ -106,7 +106,12 @@ fn committed_ticks_drive_latest_gpu_frame_and_overload_is_explicit() {
                     .expect("GPU wait");
             };
             assert_eq!(sample.tick, expected_tick);
-            assert_eq!(sample.uploaded_rows, 1_500);
+            // Alpha zero uses the prepared pose; the later catch-up image
+            // uploads only the movers whose visible pose changed.
+            assert_eq!(
+                sample.uploaded_rows,
+                if expected_tick == 1 { 0 } else { 1_500 }
+            );
             assert_eq!(sample.dropped_presentation, 0);
             assert!(!sample.timing_fault);
             assert!(sample.gpu_pass_ns.is_some());
@@ -353,10 +358,14 @@ fn native_extract_wake_submits_same_tick_and_a_stalled_worker_does_not_hold_worl
             .drive(Duration::from_nanos(50_000_001), None)
             .expect("serial world reaches tick three");
         assert_eq!(serial.tick(), host.tick());
+        let serial_pixels = serial.capture_pixels().expect("serial world capture");
+        let first_difference = native_pixels
+            .iter()
+            .zip(&serial_pixels)
+            .position(|(native, serial)| native != serial);
         assert_eq!(
-            native_pixels,
-            serial.capture_pixels().expect("serial world capture"),
-            "worker extraction cannot change the authoritative or visual result"
+            first_difference, None,
+            "worker extraction cannot change the authoritative or visual result; first byte differs at {first_difference:?}"
         );
     });
 }
@@ -541,7 +550,7 @@ fn slow_native_extraction_keeps_presenting_the_last_scene_with_explicit_age() {
             assert_eq!(sample.uploaded_rows, 0);
             assert!(!sample.timing_fault);
             if device.features().contains(wgpu::Features::TIMESTAMP_QUERY) {
-                assert_eq!(sample.gpu_pass_ns, Some([0.0; 5]));
+                assert_eq!(sample.gpu_pass_ns, Some([0.0; 6]));
                 assert!(sample.gpu_present_ns.is_some());
             }
         }

@@ -37,7 +37,7 @@ fn packed_rows_put_active_slots_first_without_changing_logical_identity() {
     for (row, &logical) in rows.iter().zip(&packed.physical_to_slot) {
         assert_eq!(
             *row,
-            pack_synthetic_instance(&instances[logical as usize], 1).unwrap()
+            pack_synthetic_instance(&instances[logical as usize], 1, logical).unwrap()
         );
     }
 }
@@ -55,16 +55,25 @@ fn reflected_or_degenerate_rows_need_the_two_sided_fallback() {
 #[test]
 fn shared_pack_validation_refuses_invalid_updates() {
     let mut instance = abi::InstanceRecord::identity(0, 0);
-    assert!(pack_synthetic_instance(&instance, 1).is_ok());
+    assert!(pack_synthetic_instance(&instance, 1, 0).is_ok());
     instance.current[3][0] = f32::NAN;
     assert!(matches!(
-        pack_synthetic_instance(&instance, 1),
+        pack_synthetic_instance(&instance, 1, 0),
         Err(RenderError::InvalidLighting)
     ));
     instance.current[3][0] = 0.0;
     instance.ids[1] = 1;
     assert!(matches!(
-        pack_synthetic_instance(&instance, 1),
+        pack_synthetic_instance(&instance, 1, 0),
         Err(RenderError::Abi(abi::AbiError::MaterialIndex))
+    ));
+    let mut duplicate = [
+        abi::InstanceRecord::identity(0, 0),
+        abi::InstanceRecord::identity(1, 0),
+    ];
+    duplicate[1].ids[0] = 0;
+    assert!(matches!(
+        PackedInstances::new(&duplicate, 1),
+        Err(RenderError::InvalidInstanceIdentity)
     ));
 }
