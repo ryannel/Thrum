@@ -62,13 +62,16 @@ fn photometric(product: &EnvironmentProduct) -> PhotometricEnvironment {
     }
 }
 
-fn frame_phase(tick: u64) -> f32 {
-    let cycle = u16::try_from(tick % 360).expect("phase is less than 360");
-    f32::from(cycle) * (std::f32::consts::TAU / 360.0)
+fn frame_phase(tick: u64, alpha: f32) -> f32 {
+    if tick == 0 {
+        return 0.0;
+    }
+    let cycle = u16::try_from(tick.saturating_sub(1) % 360).expect("phase is less than 360");
+    (f32::from(cycle) + alpha) * (std::f32::consts::TAU / 360.0)
 }
 
-fn frame_view(tick: u64, extent: [u32; 2]) -> Result<SyntheticView, String> {
-    let phase = frame_phase(tick);
+fn frame_view(tick: u64, alpha: f32, extent: [u32; 2]) -> Result<SyntheticView, String> {
+    let phase = frame_phase(tick, alpha);
     SyntheticView::perspective(
         [phase.sin() * 0.08, (phase.cos() - 1.0) * 0.04, 2.0],
         [0.0, 0.0, 0.0],
@@ -106,6 +109,8 @@ pub struct FrameSample {
     pub visual_age_ticks: u32,
     /// A completed scene target was presented again while native extraction was busy.
     pub reused_visual: bool,
+    /// Fraction between the previous and current committed world ticks.
+    pub presentation_alpha: f32,
     /// CPU time for scene mapping, ABI packing and queue writes.
     pub upload_cpu: Duration,
     /// Nanoseconds within upload for live camera, local lights and cascade refit.
@@ -197,7 +202,6 @@ impl<'a> AdvancedFrame<'a> {
         };
         report.overload.is_none()
             && host.sim.has_current_page()
-            && (report.completed_ticks > 0 || self.recovered_publication)
             && host.presenter.is_some()
             && host
                 .slots
@@ -352,6 +356,8 @@ impl EncodedFrame<'_> {
         let encode_cpu = self.scene_encode_cpu + present_start.elapsed();
         let mut report = self.report.take().ok_or("encoded report consumed")?;
         let sample = self.sample.take().ok_or("encoded sample consumed")?;
+        #[cfg(not(target_arch = "wasm32"))]
+        let submitted_alpha = sample.presentation_alpha;
         self.host.finish_encoded(
             self.slot_index,
             &mut report,
@@ -365,6 +371,7 @@ impl EncodedFrame<'_> {
         #[cfg(not(target_arch = "wasm32"))]
         {
             self.host.last_view_source = Some(self.source);
+            self.host.last_view_alpha = submitted_alpha;
             self.host.last_render_slot = Some(self.slot_index);
         }
         Ok(report)
@@ -442,6 +449,7 @@ struct SubmitFrame {
     completed_ticks: u32,
     queued_ticks: u32,
     frame_tick: u64,
+    presentation_alpha: f32,
 }
 
 struct PreparedSample {
@@ -546,6 +554,8 @@ pub struct FrameHost {
     #[cfg(not(target_arch = "wasm32"))]
     last_view_source: Option<SourceTick>,
     #[cfg(not(target_arch = "wasm32"))]
+    last_view_alpha: f32,
+    #[cfg(not(target_arch = "wasm32"))]
     last_render_slot: Option<usize>,
     scene: SyntheticScene,
     render_extent: [u32; 2],
@@ -572,13 +582,13 @@ impl FrameHost {
     /// Maximum submitted scene frames awaiting GPU completion.
     pub const MAX_IN_FLIGHT: usize = IN_FLIGHT;
 
-    fn frame_lighting(&self, tick: u64) -> FrameLighting {
+    fn frame_lighting(&self, tick: u64, alpha: f32) -> FrameLighting {
         #[cfg(not(target_arch = "wasm32"))]
         if let Some(product) = &self.visual_product {
             return FrameLighting::Photometric(photometric(product));
         }
         FrameLighting::Diagnostic(SyntheticLight {
-            direction_to_light: [0.4 + frame_phase(tick).sin() * 0.1, -0.6, 1.0],
+            direction_to_light: [0.4 + frame_phase(tick, alpha).sin() * 0.1, -0.6, 1.0],
             ..GAME_SUN
         })
     }
@@ -632,7 +642,7 @@ impl FrameHost {
         })
         .to_vec();
         let mut changed_slots = Vec::with_capacity(ENTITY_COUNT);
-        scene::apply_frame_to_scene(&mut scene, extractor.frame(), &mut changed_slots);
+        scene::apply_frame_to_scene(&mut scene, extractor.frame(), &mut changed_slots, 1.0);
         let prepared =
             PreparedSynthetic::prepare_with_light(device, queue, GENERATION, &scene, GAME_SUN)
                 .await
@@ -693,6 +703,8 @@ impl FrameHost {
             visual_generation: 0,
             #[cfg(not(target_arch = "wasm32"))]
             last_view_source: Some(initial_source),
+            #[cfg(not(target_arch = "wasm32"))]
+            last_view_alpha: 1.0,
             #[cfg(not(target_arch = "wasm32"))]
             last_render_slot: None,
             scene,
@@ -827,6 +839,7 @@ impl FrameHost {
         self.visual_product = candidate.product.take();
         self.visual_generation = self.visual_generation.wrapping_add(1);
         self.last_view_source = None;
+        self.last_view_alpha = 1.0;
         self.last_render_slot = None;
         if let Some(extractor) = self.extractor.as_mut() {
             extractor.invalidate_history();
@@ -1180,7 +1193,7 @@ impl FrameHost {
             report.wall = wall_start.elapsed();
             return Ok(report);
         }
-        if report.completed_ticks == 0 && !recovered_publication {
+        if report.completed_ticks == 0 && !recovered_publication && surface.is_none() {
             report.wall = wall_start.elapsed();
             return Ok(report);
         }
@@ -1243,6 +1256,7 @@ impl FrameHost {
             completed_ticks,
             queued_ticks,
             frame_tick: self.sim.tick(),
+            presentation_alpha: self.clock.presentation_alpha(),
         })
     }
 
@@ -1257,10 +1271,13 @@ impl FrameHost {
         let Some(prepared) = self.prepare_extracted(slot_index, report, frame)? else {
             return Ok(());
         };
+        #[cfg(not(target_arch = "wasm32"))]
+        let submitted_alpha = prepared.sample.presentation_alpha;
         self.encode_prepared(slot_index, report, surface, prepared.sample, wall_start)?;
         #[cfg(not(target_arch = "wasm32"))]
         {
             self.last_view_source = Some(prepared.source);
+            self.last_view_alpha = submitted_alpha;
             self.last_render_slot = Some(slot_index);
         }
         Ok(())
@@ -1305,9 +1322,14 @@ impl FrameHost {
                 .expect("completed extractor belongs to host")
                 .frame(),
             &mut self.changed_slots,
+            frame.presentation_alpha,
         );
-        self.scene.view = frame_view(frame.frame_tick, self.render_extent)?;
-        let lighting = self.frame_lighting(frame.frame_tick);
+        self.scene.view = frame_view(
+            frame.frame_tick,
+            frame.presentation_alpha,
+            self.render_extent,
+        )?;
+        let lighting = self.frame_lighting(frame.frame_tick, frame.presentation_alpha);
         let view_update_start = Instant::now();
         self.prepared
             .update_frame(
@@ -1330,6 +1352,7 @@ impl FrameHost {
         Ok(Some(PreparedSample {
             sample: FrameSample {
                 tick: frame.frame_tick,
+                presentation_alpha: frame.presentation_alpha,
                 submission_order: 0,
                 completed_ticks: frame.completed_ticks,
                 queued_ticks: frame.queued_ticks,
@@ -1372,6 +1395,10 @@ impl FrameHost {
         }))
     }
 
+    #[expect(
+        clippy::large_types_passed_by_value,
+        reason = "ownership transfers the sample into an in-flight GPU slot; borrowing would require the same copy"
+    )]
     fn encode_prepared(
         &mut self,
         slot_index: usize,
@@ -1512,6 +1539,7 @@ impl FrameHost {
             encoder,
             FrameSample {
                 tick: source.tick,
+                presentation_alpha: 1.0,
                 submission_order: 0,
                 completed_ticks: report.completed_ticks,
                 queued_ticks: report.queued_ticks,
@@ -1632,6 +1660,7 @@ impl FrameHost {
                 completed_ticks: report.completed_ticks,
                 queued_ticks: report.queued_ticks,
                 frame_tick: self.sim.tick(),
+                presentation_alpha: 1.0,
             }
         } else {
             SubmitFrame {
@@ -1643,6 +1672,7 @@ impl FrameHost {
                 completed_ticks: completed.completed_ticks,
                 queued_ticks: completed.queued_ticks,
                 frame_tick: completed.tick,
+                presentation_alpha: 1.0,
             }
         };
         self.submit_extracted(slot_index, report, surface, frame, wall_start)?;
@@ -1742,14 +1772,18 @@ impl FrameHost {
     pub fn capture_pixels(&mut self) -> Result<Vec<u8>, String> {
         #[cfg(not(target_arch = "wasm32"))]
         self.reclaim_extractor_for_capture()?;
-        if self
+        let needs_extract = self
             .extractor
             .as_ref()
             .ok_or("capture extractor unavailable")?
             .frame()
             .source()
-            .is_none_or(|source| source.tick != self.sim.tick())
-        {
+            .is_none_or(|source| {
+                source.epoch != self.sim.epoch().0
+                    || source.timeline != self.sim.timeline()
+                    || source.tick != self.sim.tick()
+            });
+        let extracted = if needs_extract {
             let snapshot = self
                 .sim
                 .published_page()
@@ -1761,30 +1795,47 @@ impl FrameHost {
                 &snapshot,
             );
             drop(snapshot);
-            let applied = scene::apply_frame_to_scene(
-                &mut self.scene,
-                self.extractor
-                    .as_ref()
-                    .ok_or("capture extractor unavailable")?
-                    .frame(),
-                &mut self.changed_slots,
-            );
-            let uploaded = self
-                .prepared
-                .upload_instances(&self.queue, &self.scene.instances, &self.changed_slots)
-                .map_err(|error| format!("capture instance update: {error:?}"))?;
-            let dropped = u64::try_from(
-                extracted.dropped_capacity
-                    + extracted.dropped_duplicate
-                    + extracted.dropped_invalid
-                    + applied.dropped_invalid
-                    + uploaded.dropped_invalid,
-            )
-            .unwrap_or(u64::MAX);
-            self.dropped_capture_rows = self.dropped_capture_rows.saturating_add(dropped);
-        }
-        self.scene.view = frame_view(self.sim.tick(), self.render_extent)?;
-        let lighting = self.frame_lighting(self.sim.tick());
+            extracted
+        } else {
+            ExtractReport::default()
+        };
+        #[cfg(not(target_arch = "wasm32"))]
+        let capture_alpha = self.last_view_source.map_or(1.0, |source| {
+            if source.epoch == self.sim.epoch().0
+                && source.timeline == self.sim.timeline()
+                && source.tick == self.sim.tick()
+            {
+                self.last_view_alpha
+            } else {
+                1.0
+            }
+        });
+        #[cfg(target_arch = "wasm32")]
+        let capture_alpha = 1.0;
+        let applied = scene::apply_frame_to_scene(
+            &mut self.scene,
+            self.extractor
+                .as_ref()
+                .ok_or("capture extractor unavailable")?
+                .frame(),
+            &mut self.changed_slots,
+            capture_alpha,
+        );
+        let uploaded = self
+            .prepared
+            .upload_instances(&self.queue, &self.scene.instances, &self.changed_slots)
+            .map_err(|error| format!("capture instance update: {error:?}"))?;
+        let dropped = u64::try_from(
+            extracted.dropped_capacity
+                + extracted.dropped_duplicate
+                + extracted.dropped_invalid
+                + applied.dropped_invalid
+                + uploaded.dropped_invalid,
+        )
+        .unwrap_or(u64::MAX);
+        self.dropped_capture_rows = self.dropped_capture_rows.saturating_add(dropped);
+        self.scene.view = frame_view(self.sim.tick(), capture_alpha, self.render_extent)?;
+        let lighting = self.frame_lighting(self.sim.tick(), capture_alpha);
         let mut target = OffscreenTarget::new(
             &self.device,
             &self.prepared,
@@ -1969,6 +2020,10 @@ fn duration_ns_u32(value: Duration) -> u32 {
     u32::try_from(value.as_nanos()).unwrap_or(u32::MAX)
 }
 
+#[expect(
+    clippy::large_types_passed_by_value,
+    reason = "ownership transfers the completed sample into the report queue without a clone"
+)]
 fn retain_sample(queue: &mut VecDeque<FrameSample>, dropped: &mut u64, sample: FrameSample) {
     if queue.len() == IN_FLIGHT {
         if queue

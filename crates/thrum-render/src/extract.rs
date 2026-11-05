@@ -175,6 +175,7 @@ impl RenderExtractor {
         origin: [f64; 3],
         gather: impl FnOnce(&mut RenderSink<'_>),
     ) -> ExtractReport {
+        let same_source = self.front.source == Some(source);
         let adjacent = self.front.source.is_some_and(|previous| {
             previous.epoch == source.epoch
                 && previous.timeline == source.timeline
@@ -183,13 +184,20 @@ impl RenderExtractor {
         self.back.clear(
             source,
             origin,
-            if adjacent { self.front.origin } else { origin },
+            if same_source {
+                self.front.previous_origin
+            } else if adjacent {
+                self.front.origin
+            } else {
+                origin
+            },
         );
         let mut sink = RenderSink {
             previous: &self.front,
             staging: &mut self.back,
             origin,
             adjacent,
+            same_source,
             capacity: self.capacity,
             report: ExtractReport::default(),
         };
@@ -207,6 +215,7 @@ pub struct RenderSink<'a> {
     staging: &'a mut RenderColumns,
     origin: [f64; 3],
     adjacent: bool,
+    same_source: bool,
     capacity: usize,
     report: ExtractReport,
 }
@@ -257,15 +266,21 @@ impl RenderSink<'_> {
             return false;
         }
         let current = relative.map(|value| value as f32);
-        let prior = self
-            .adjacent
+        let prior = (self.adjacent || self.same_source)
             .then(|| self.previous.index[slot_index])
             .flatten()
             .filter(|&(old_generation, old)| {
                 old_generation == generation && self.previous.visuals[old] == visual
             })
-            .map(|(_, old)| old);
-        let previous = prior.map_or(current, |old| self.previous.current[old]);
+            .map(|(_, old)| old)
+            .filter(|&old| !self.same_source || self.previous.history_valid[old]);
+        let previous = prior.map_or(current, |old| {
+            if self.same_source {
+                self.previous.previous[old]
+            } else {
+                self.previous.current[old]
+            }
+        });
         self.staging.index[slot_index] = Some((generation, index));
         self.staging.ids.push(id);
         self.staging.slots.push(slot);

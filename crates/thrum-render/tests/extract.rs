@@ -57,6 +57,26 @@ fn source(epoch: u128, tick: u64) -> SourceTick {
 }
 
 #[test]
+fn repeating_one_tick_preserves_its_prior_pose_for_display_interpolation() {
+    let mut extractor = RenderExtractor::new(1, 1);
+    extractor.extract(source(1, 4), [0.0; 3], |sink| {
+        assert!(sink.push(0, 1, 1, [0.0, 0.0, 0.0], 0));
+    });
+    extractor.extract(source(1, 5), [0.0; 3], |sink| {
+        assert!(sink.push(0, 1, 1, [1.0, 0.0, 0.0], 0));
+    });
+    assert_eq!(extractor.frame().previous()[0][0], 0.0);
+    for _ in 0..4 {
+        let report = extractor.extract(source(1, 5), [0.0; 3], |sink| {
+            assert!(sink.push(0, 1, 1, [1.0, 0.0, 0.0], 0));
+        });
+        assert_eq!(report.history_reused, 1);
+        assert_eq!(extractor.frame().previous()[0][0], 0.0);
+        assert_eq!(extractor.frame().current()[0][0], 1.0);
+    }
+}
+
+#[test]
 fn replay_generation_blocks_adjacent_pose_reuse() {
     let mut extractor = RenderExtractor::new(1, 1);
     extractor.extract(source(1, 2), [0.0; 3], |sink| {

@@ -4,6 +4,7 @@ use std::{collections::VecDeque, time::Duration};
 fn sample(tick: u64) -> FrameSample {
     FrameSample {
         tick,
+        presentation_alpha: 1.0,
         submission_order: tick,
         completed_ticks: 1,
         queued_ticks: 0,
@@ -338,6 +339,7 @@ fn stale_frame_source_drops_the_view_without_touching_the_scene() {
                 completed_ticks: 0,
                 queued_ticks: 0,
                 frame_tick: 0,
+                presentation_alpha: 1.0,
             },
             std::time::Instant::now(),
         )
@@ -450,6 +452,86 @@ fn abandoned_encoded_scene_reuses_slot_and_timestamp_batch() {
             .expect("scene and surface submit once");
         assert!(report.submitted && report.surface_presented);
         assert_eq!(host.tick(), 65);
+        let between = host
+            .advance(Duration::from_nanos(65 * 16_666_667 + 8_333_333))
+            .expect("display callback between world ticks");
+        assert!(between.can_acquire_serial());
+        let report = between
+            .encode_scene()
+            .expect("same committed page has another display sample")
+            .submit(Some(&super::SurfaceOutput {
+                view: &view,
+                extent,
+            }))
+            .expect("second display image submits");
+        assert_eq!((report.tick, report.completed_ticks), (65, 0));
+        assert!(report.submitted && report.surface_presented);
+    });
+}
+
+#[test]
+#[ignore = "requires a real native GPU adapter for capture after a skipped interpolated view"]
+fn capture_after_abandoned_fractional_view_uses_last_submitted_sample() {
+    pollster::block_on(async {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let adapter = instance
+            .request_adapter(&wgpu::RequestAdapterOptions::default())
+            .await
+            .expect("native GPU adapter");
+        let (device, queue) = adapter
+            .request_device(&wgpu::DeviceDescriptor::default())
+            .await
+            .expect("device");
+        let extent = [640, 360];
+        let mut host = super::FrameHost::new(
+            &device,
+            &queue,
+            super::FrameConfig {
+                surface: Some(thrum_render::present::SurfaceProfile {
+                    format: wgpu::TextureFormat::Bgra8Unorm,
+                    extent,
+                }),
+                ..Default::default()
+            },
+        )
+        .await
+        .expect("prepared scene");
+        let texture = device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("fractional capture surface"),
+            size: wgpu::Extent3d {
+                width: extent[0],
+                height: extent[1],
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Bgra8Unorm,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+            view_formats: &[],
+        });
+        let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+        host.advance(Duration::from_nanos(16_666_667))
+            .expect("first tick")
+            .encode_scene()
+            .expect("first view")
+            .submit(Some(&super::SurfaceOutput {
+                view: &view,
+                extent,
+            }))
+            .expect("first submit");
+        let baseline = host
+            .capture_pixels()
+            .expect("last submitted sample capture");
+        host.advance(Duration::from_millis(25))
+            .expect("half tick")
+            .encode_scene()
+            .expect("fractional view")
+            .skip();
+        let after = host
+            .capture_pixels()
+            .expect("capture restores submitted sample");
+        assert_eq!(after, baseline);
     });
 }
 
