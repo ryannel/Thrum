@@ -337,7 +337,7 @@ impl RegisteredWorld {
                 .registry
                 .entries
                 .iter()
-                .map(|entry| (entry.capture)(&self.world))
+                .map(|entry| (entry.capture)(self))
                 .collect(),
             free: self.free.clone(),
             change_ticks: self.change_ticks.clone(),
@@ -374,7 +374,14 @@ impl RegisteredWorld {
             let entity = saved.stable.map(|id| {
                 let key = u32::try_from(index).expect("validated slot capacity");
                 for (column, cursor) in capture.columns.iter().zip(&mut cursors) {
-                    column.build_at(key, cursor, &mut builder);
+                    column.build_at(
+                        key,
+                        cursor,
+                        &mut EntityWriter {
+                            builder: &mut builder,
+                            registry: &self.registry,
+                        },
+                    );
                 }
                 builder.add(SlotKey(key));
                 let entity = world.spawn(builder.build());
