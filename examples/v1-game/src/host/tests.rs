@@ -292,3 +292,60 @@ fn worker_result_from_an_old_timeline_is_replaced_after_restore() {
         assert_eq!(host.last_view_source.map(|source| source.tick), Some(0));
     });
 }
+
+#[test]
+#[ignore = "requires a real native GPU adapter for stale frame submission"]
+fn stale_frame_source_drops_the_view_without_touching_the_scene() {
+    pollster::block_on(async {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let adapter = instance
+            .request_adapter(&wgpu::RequestAdapterOptions::default())
+            .await
+            .expect("native GPU adapter");
+        let (device, queue) = adapter
+            .request_device(&wgpu::DeviceDescriptor::default())
+            .await
+            .expect("device");
+        let mut host = super::FrameHost::new(&device, &queue, super::FrameConfig::default())
+            .await
+            .expect("prepared scene");
+        let original = host.scene.instances[0].current;
+        let capture = host.sim.capture();
+        host.sim.step(&[]).expect("advance world");
+        host.sim.restore(&capture).expect("replay same tick");
+        let mut report = super::DriveReport {
+            tick: 0,
+            overload: None,
+            completed_ticks: 0,
+            queued_ticks: 0,
+            projected_changes: 0,
+            projection_lost_ticks: 0,
+            submitted: false,
+            surface_presented: false,
+            dropped_view: false,
+            wall: Duration::ZERO,
+        };
+        host.submit_extracted(
+            0,
+            &mut report,
+            None,
+            super::SubmitFrame {
+                extracted: thrum_render::extract::ExtractReport::default(),
+                extract_cpu: Duration::ZERO,
+                worker_queue_cpu: Duration::ZERO,
+                worker_ready_cpu: Duration::ZERO,
+                tick_cpu: Duration::ZERO,
+                completed_ticks: 0,
+                queued_ticks: 0,
+                frame_tick: 0,
+            },
+            std::time::Instant::now(),
+        )
+        .expect("stale presentation degrades");
+        assert!(report.dropped_view);
+        assert!(!report.submitted);
+        assert_eq!(host.dropped_stale_views(), 1);
+        assert_eq!(host.scene.instances[0].current, original);
+        assert_eq!(host.pending_frames(), 0);
+    });
+}
