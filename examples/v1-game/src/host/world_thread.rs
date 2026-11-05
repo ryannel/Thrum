@@ -81,6 +81,27 @@ impl WorldControls {
         self.shared.wake.notify_one();
         Ok(())
     }
+
+    /// Observe a world fault without scheduling a render callback.
+    /// # Errors
+    /// Reports a failed owner, a fixed-clock overload or a poisoned mailbox.
+    pub fn check_health(&self) -> Result<u64, String> {
+        let state = self
+            .shared
+            .state
+            .lock()
+            .map_err(|_| "world state mailbox poisoned".to_owned())?;
+        if let Some(error) = &state.fault {
+            return Err(format!("world owner: {error}"));
+        }
+        if let Some(refused) = state.snapshot.overload {
+            return Err(format!("fixed-clock overload: {refused} ticks refused"));
+        }
+        if state.shutdown {
+            return Err("world owner has stopped".to_owned());
+        }
+        Ok(state.snapshot.tick)
+    }
 }
 
 pub(super) struct WorldClient {
