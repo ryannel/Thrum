@@ -27,7 +27,8 @@ use winit::{
     window::{Window, WindowId},
 };
 
-const FRAMES: usize = 600;
+const DEFAULT_FRAMES: usize = 600;
+const MAX_FRAMES: usize = 100_000;
 const KEY_A: u8 = 1;
 const KEY_D: u8 = 2;
 const KEY_W: u8 = 4;
@@ -186,6 +187,8 @@ struct App {
     origin: Instant,
     last_call: Duration,
     presented: usize,
+    target_frames: usize,
+    run_deadline: Duration,
     callbacks: usize,
     unavailable: usize,
     occluded: usize,
@@ -202,7 +205,13 @@ struct App {
 }
 
 impl App {
-    fn new(wake: EventLoopProxy<UserEvent>) -> Self {
+    fn new(wake: EventLoopProxy<UserEvent>, target_frames: usize) -> Self {
+        let run_deadline = Duration::from_secs(30).max(
+            Duration::from_secs(10)
+                + Duration::from_millis(
+                    u64::try_from(target_frames).expect("bounded frame count") * 10,
+                ),
+        );
         Self {
             wake,
             display_link: None,
@@ -226,6 +235,8 @@ impl App {
             origin: Instant::now(),
             last_call: Duration::ZERO,
             presented: 0,
+            target_frames,
+            run_deadline,
             callbacks: 0,
             unavailable: 0,
             occluded: 0,
@@ -233,9 +244,9 @@ impl App {
             acquiring: false,
             stale_acquire: 0,
             surface_faults: 0,
-            callback_walls: Vec::with_capacity(FRAMES * 8),
-            worker_walls: Vec::with_capacity(FRAMES * 4),
-            samples: Vec::with_capacity(FRAMES * 2),
+            callback_walls: Vec::with_capacity(target_frames * 8),
+            worker_walls: Vec::with_capacity(target_frames * 4),
+            samples: Vec::with_capacity(target_frames * 2),
             profiler_title_at: Duration::ZERO,
             adapter_name: String::new(),
             error: None,
@@ -508,9 +519,10 @@ impl App {
             .map_err(|_| "bounded render worker refused an idle request".to_owned())?;
         self.submitted_sequence = self.request_sequence;
         self.render_in_flight = Some(self.submitted_sequence);
-        if now >= Duration::from_secs(30) {
+        if now >= self.run_deadline {
             return Err(format!(
-                "600 presented frames unavailable: presented={}, tick={}, display_link_callbacks={}, unavailable={}, occluded={}, waiting_acquire={}, stale_acquire={}, surface_faults={}, dropped_views={}, dropped_stale_views={}, reused_views={}, dropped_surface={}",
+                "{} presented frames unavailable: presented={}, tick={}, display_link_callbacks={}, unavailable={}, occluded={}, waiting_acquire={}, stale_acquire={}, surface_faults={}, dropped_views={}, dropped_stale_views={}, reused_views={}, dropped_surface={}",
+                self.target_frames,
                 self.presented,
                 self.ready.tick,
                 self.display_link_callbacks,
@@ -739,7 +751,7 @@ impl ApplicationHandler<UserEvent> for App {
             }
             WindowEvent::RedrawRequested => {
                 let result = self.draw();
-                if self.presented >= FRAMES {
+                if self.presented >= self.target_frames {
                     event_loop.exit();
                 }
                 result
@@ -835,10 +847,17 @@ impl ApplicationHandler<UserEvent> for App {
     reason = "the diagnostic reports setup or GPU faults"
 )]
 pub(super) fn run() {
+    let target_frames = match run_frames(std::env::var("THRUM_V1_FRAMES").ok().as_deref()) {
+        Ok(frames) => frames,
+        Err(error) => {
+            eprintln!("v1-game: {error}");
+            std::process::exit(2);
+        }
+    };
     let event_loop = EventLoop::<UserEvent>::with_user_event()
         .build()
         .expect("macOS event loop");
-    let mut app = App::new(event_loop.create_proxy());
+    let mut app = App::new(event_loop.create_proxy(), target_frames);
     if let Err(error) = event_loop.run_app(&mut app) {
         app.error = Some(format!("event loop: {error}"));
     }
@@ -848,5 +867,34 @@ pub(super) fn run() {
             eprintln!("v1-game: {error}");
             std::process::exit(1);
         }
+    }
+}
+
+fn run_frames(value: Option<&str>) -> Result<usize, String> {
+    let Some(value) = value else {
+        return Ok(DEFAULT_FRAMES);
+    };
+    let frames = value
+        .parse::<usize>()
+        .map_err(|_| "THRUM_V1_FRAMES must be a positive integer".to_owned())?;
+    if !(1..=MAX_FRAMES).contains(&frames) {
+        return Err(format!(
+            "THRUM_V1_FRAMES must be between 1 and {MAX_FRAMES}"
+        ));
+    }
+    Ok(frames)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::run_frames;
+
+    #[test]
+    fn frame_count_for_present_qualification_is_bounded() {
+        assert_eq!(run_frames(None).expect("default"), 600);
+        assert_eq!(run_frames(Some("75000")).expect("ten minute run"), 75_000);
+        assert!(run_frames(Some("0")).is_err());
+        assert!(run_frames(Some("100001")).is_err());
+        assert!(run_frames(Some("nan")).is_err());
     }
 }
