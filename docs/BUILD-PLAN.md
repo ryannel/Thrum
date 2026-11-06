@@ -51,8 +51,9 @@ The native Metal recorder stays in G3t. The later dedicated performance phase ow
 - [ ] **G2S — simulation correctness and multiplayer fitness.** Typed shared/mutable queries, validated admission,
   trusted in-place rules under sparse undo, engine-owned publication with dirty unions across gaps/rewinds/held pages,
   adjacent previous/current endpoints, retained-input amendment and corrected replay. Require complete authority-state
-  equality against the straight corrected run and structural churn/refusal recovery. The complete presence-aware 10k corrected-run proof now passes. Remaining:
-  staged resolve/edit/permit ownership. Requested Rayon currently runs serial game systems and proves no parallel fitness.
+  equality against the straight corrected run and structural churn/refusal recovery. Presence-aware 10k corrected replay
+  and engine-owned append-only edit descriptors pass. Remaining: game-side Resolve staging and permit handling.
+  Requested Rayon currently runs serial game systems and proves no parallel fitness.
   [Recorded quiet S1/S2 figures](evidence/v1-workload/G2R-CONSOLIDATED-2026-11-05.md) are history; old CPU/allocation
   limits are retired. Do not close on a partial hash or an easier row.
 - [x] **G3a — executing graph and live scene.** Render/Compute/Copy closures execute in dependency order with culling,

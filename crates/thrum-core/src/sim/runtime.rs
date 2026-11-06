@@ -30,7 +30,7 @@ use super::{
         WorldCapture, WorldDelta, WorldUndo,
     },
     snapshot_ring::PAGE_COUNT,
-    transaction::{Edit, EditError, EditScratch},
+    transaction::{Edit, EditError, EditScratch, EditWriter},
 };
 
 /// Cold-path registered state capture for replay. Component values remain
@@ -289,8 +289,10 @@ pub enum TickError<E> {
 }
 
 /// Game-owned rules for one registered authority. Preparation receives only
-/// immutable game state and mutable candidate scratch. `apply` and `capture`
-/// run only after complete candidate validation and must be infallible.
+/// immutable game state, mutable shared candidate scratch and an append-only
+/// engine edit writer. Values stay late-bound until final preflight; later
+/// callbacks cannot replace or remove earlier queued operations. `apply` and
+/// `capture` run only after complete validation and must be infallible.
 pub trait TickGame<P> {
     /// Expected game-rule or input error.
     type Error: Send;
@@ -305,20 +307,16 @@ pub trait TickGame<P> {
     /// Clear one private parallel buffer before every callback, retaining capacity.
     fn reset_parallel_output(&self, output: &mut Self::ParallelOutput);
 
-    /// Merge one completed private output in compiled system order.
+    /// Merge one completed private output in compiled system order. Operations
+    /// appended through `edits` must use this system's permits.
     fn merge_parallel(
         &self,
         system: SystemId,
         output: &mut Self::ParallelOutput,
         candidate: &mut Self::Candidate,
         tick: u64,
+        edits: &mut EditWriter<'_, Self::Candidate>,
     );
-
-    /// Typed edits prepared in reusable game-owned candidate storage. The
-    /// engine validates the entire list before applying any of its members.
-    fn edits<'a>(&self, _candidate: &'a Self::Candidate) -> &'a [Edit<Self::Candidate>] {
-        &[]
-    }
 
     /// Apply the fully validated candidate. All target handles and registered
     /// component presence must have been checked during `prepare`.
@@ -353,6 +351,7 @@ type SystemCallback<P, G> = fn(
     Executor,
     u64,
     &mut <G as TickGame<P>>::Candidate,
+    &mut EditWriter<'_, <G as TickGame<P>>::Candidate>,
 ) -> Result<(), <G as TickGame<P>>::Error>;
 
 type ParallelCallback<P, G> = fn(
@@ -369,6 +368,7 @@ type DirectCallback<P, G> = fn(
     Executor,
     u64,
     &mut <G as TickGame<P>>::Candidate,
+    &mut EditWriter<'_, <G as TickGame<P>>::Candidate>,
 ) -> Result<(), <G as TickGame<P>>::Error>;
 
 enum Callback<P, G: TickGame<P>> {
@@ -417,7 +417,7 @@ fn check_edit_system<C, E>(
     before: usize,
     system: SystemId,
 ) -> Result<(), TickError<E>> {
-    if edits.len() < before || edits[before..].iter().any(|edit| edit.system() != system) {
+    if edits[before..].iter().any(|edit| edit.system() != system) {
         return Err(TickError::Edit(EditError::WrongSystem));
     }
     Ok(())
@@ -527,6 +527,7 @@ pub struct GameRuntime<P, G: TickGame<P>> {
     executor: Executor,
     nonce: u64,
     edit_scratch: EditScratch,
+    edits: Vec<Edit<G::Candidate>>,
     direct_dirty: DirectDirty,
     query_exclusions: QueryExclusions,
     abort_undo: WorldUndo,
@@ -879,6 +880,7 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
             },
             nonce,
             edit_scratch: EditScratch::new(capacity, component_count),
+            edits: Vec::new(),
             direct_dirty: DirectDirty::new(component_count, capacity),
             query_exclusions: QueryExclusions::new(capacity),
             abort_undo,
@@ -1398,6 +1400,7 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
             None => (&mut self.abort_undo, None),
         };
         txn_undo.clear();
+        self.edits.clear();
         game.reset_candidate(candidate);
         let preparation = catch_unwind(AssertUnwindSafe(|| -> Result<(), TickError<G::Error>> {
             for wave in &mut self.waves {
@@ -1436,14 +1439,20 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
                             .take()
                             .expect("callback ran")
                             .map_err(TickError::Game)?;
-                        let before = game.edits(candidate).len();
-                        game.merge_parallel(bound.id, &mut bound.output, candidate, next);
-                        check_edit_system(game.edits(candidate), before, bound.id)?;
+                        let before = self.edits.len();
+                        game.merge_parallel(
+                            bound.id,
+                            &mut bound.output,
+                            candidate,
+                            next,
+                            &mut EditWriter::new(&mut self.edits),
+                        );
+                        check_edit_system(&self.edits, before, bound.id)?;
                     }
                     continue;
                 }
                 for bound in wave {
-                    let before = game.edits(candidate).len();
+                    let before = self.edits.len();
                     match &bound.callback {
                         Callback::Serial(callback) => callback(
                             game,
@@ -1455,6 +1464,7 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
                             self.executor,
                             next,
                             candidate,
+                            &mut EditWriter::new(&mut self.edits),
                         ),
                         Callback::Parallel(callback) => {
                             game.reset_parallel_output(&mut bound.output);
@@ -1483,18 +1493,24 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
                             self.executor,
                             next,
                             candidate,
+                            &mut EditWriter::new(&mut self.edits),
                         ),
                     }
                     .map_err(TickError::Game)?;
                     if matches!(&bound.callback, Callback::Parallel(_)) {
-                        game.merge_parallel(bound.id, &mut bound.output, candidate, next);
+                        game.merge_parallel(
+                            bound.id,
+                            &mut bound.output,
+                            candidate,
+                            next,
+                            &mut EditWriter::new(&mut self.edits),
+                        );
                     }
-                    check_edit_system(game.edits(candidate), before, bound.id)?;
+                    check_edit_system(&self.edits, before, bound.id)?;
                 }
             }
-            let edits = game.edits(candidate);
             self.edit_scratch
-                .validate(&self.world, self.nonce, edits, candidate)
+                .validate(&self.world, self.nonce, &self.edits, candidate)
                 .map_err(TickError::Edit)?;
             Ok(())
         }));
@@ -1513,7 +1529,7 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
                 resume_unwind(payload);
             }
         }
-        let edits = game.edits(candidate);
+        let edits = &self.edits;
         if let Some(events) = undo_events.as_deref_mut() {
             events.reserve(edits.len());
         }

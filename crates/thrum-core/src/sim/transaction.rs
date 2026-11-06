@@ -26,6 +26,35 @@ pub struct Edit<C> {
     inner: EditKind<C>,
 }
 
+/// Append-only access to this tick's engine-owned operation queue. Callbacks
+/// cannot replace or remove operations emitted by an earlier system. The
+/// runtime checks each callback's permits before accepting its output.
+///
+/// Values remain in shared game-owned candidate columns until final preflight;
+/// this writer does not freeze payloads or isolate candidate fields by system.
+///
+/// ```compile_fail
+/// use thrum_core::sim::{Edit, EditWriter};
+/// fn replace_prior<C>(writer: &mut EditWriter<'_, C>, edit: Edit<C>) {
+///     writer[0] = edit;
+/// }
+/// ```
+pub struct EditWriter<'a, C> {
+    edits: &'a mut Vec<Edit<C>>,
+}
+
+impl<'a, C> EditWriter<'a, C> {
+    pub(super) fn new(edits: &'a mut Vec<Edit<C>>) -> Self {
+        Self { edits }
+    }
+
+    /// Append an operation. A foreign permit refuses the complete tick at the
+    /// callback boundary, even if the callback otherwise returns success.
+    pub fn push(&mut self, edit: Edit<C>) {
+        self.edits.push(edit);
+    }
+}
+
 enum EditKind<C> {
     Component {
         handle: Handle,

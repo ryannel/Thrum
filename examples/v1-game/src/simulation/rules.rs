@@ -6,7 +6,7 @@ use std::any::Any;
 use thrum_core::{
     Handle, Origin,
     sim::{
-        Edit, EntityWriter, Executor, InputFrame, ReadPermit, RegisteredWorldError,
+        Edit, EditWriter, EntityWriter, Executor, InputFrame, ReadPermit, RegisteredWorldError,
         StructuralPermit, TickGame, WorldRead, WorldTxn, WritePermit, WriteRead2,
     },
 };
@@ -83,7 +83,6 @@ pub(super) struct Candidate {
     despawned: Vec<usize>,
     touched: Vec<usize>,
     spawns: Vec<super::types::ComponentEntity>,
-    edits: Vec<Edit<Candidate>>,
 }
 
 impl Candidate {
@@ -110,7 +109,6 @@ impl Candidate {
             despawned: Vec::with_capacity(128),
             touched: Vec::with_capacity(capacity),
             spawns: Vec::with_capacity(128),
-            edits: Vec::with_capacity(128),
         }
     }
 
@@ -130,7 +128,6 @@ impl Candidate {
         self.despawned.clear();
         self.position_edits.clear();
         self.spawns.clear();
-        self.edits.clear();
         self.direct_positions = 0;
     }
 
@@ -186,21 +183,21 @@ pub(super) struct Rules {
 }
 
 impl Rules {
-    fn append_structural_edits(&self, candidate: &mut Candidate) {
+    fn append_structural_edits(
+        &self,
+        candidate: &mut Candidate,
+        edits: &mut EditWriter<'_, Candidate>,
+    ) {
         for command in &self.commands {
             if let Command::Despawn(handle) = command {
-                candidate
-                    .edits
-                    .push(Edit::despawn(&self.structure, *handle));
+                edits.push(Edit::despawn(&self.structure, *handle));
             }
         }
         for command in &self.commands {
             if let Command::Spawn(entity) = command {
                 let index = candidate.spawns.len();
                 candidate.spawns.push(*entity);
-                candidate
-                    .edits
-                    .push(Edit::spawn(&self.structure, entity.id, index, fill_spawn));
+                edits.push(Edit::spawn(&self.structure, entity.id, index, fill_spawn));
             }
         }
     }
@@ -211,6 +208,7 @@ impl Rules {
         _executor: Executor,
         _tick: u64,
         _candidate: &mut Candidate,
+        _edits: &mut EditWriter<'_, Candidate>,
     ) -> Result<(), SimError> {
         for peer in &self.peers {
             if !peer.active || (peer.pending.is_none() && !peer.recompute_velocity) {
@@ -238,6 +236,7 @@ impl Rules {
         _executor: Executor,
         _tick: u64,
         _candidate: &mut Candidate,
+        _edits: &mut EditWriter<'_, Candidate>,
     ) -> Result<(), SimError> {
         for peer in &self.peers {
             if !peer.active {
@@ -273,6 +272,7 @@ impl Rules {
         _executor: Executor,
         tick: u64,
         candidate: &mut Candidate,
+        _edits: &mut EditWriter<'_, Candidate>,
     ) -> Result<(), SimError> {
         let dt = 1.0 / f64::from(self.config.tick_hz.get());
         for command in &self.commands {
@@ -317,6 +317,7 @@ impl Rules {
         _executor: Executor,
         tick: u64,
         candidate: &mut Candidate,
+        edits: &mut EditWriter<'_, Candidate>,
     ) -> Result<(), SimError> {
         for command in &self.commands {
             match command {
@@ -383,22 +384,18 @@ impl Rules {
                     } else {
                         Edit::insert(&self.velocity_write, handle, row, velocity_at)
                     };
-                candidate.edits.push(edit);
+                edits.push(edit);
             }
             if candidate.health_marks[row] == tick
                 && candidate.base_health[row] != candidate.health[row].0
             {
-                candidate
-                    .edits
-                    .push(Edit::replace(&self.health_write, handle, row, health_at));
+                edits.push(Edit::replace(&self.health_write, handle, row, health_at));
             }
         }
         if !candidate.position_edits.is_empty() {
-            candidate
-                .edits
-                .push(Edit::replace_batch(&self.position_write, position_batch));
+            edits.push(Edit::replace_batch(&self.position_write, position_batch));
         }
-        self.append_structural_edits(candidate);
+        self.append_structural_edits(candidate, edits);
         Ok(())
     }
 }
@@ -420,11 +417,8 @@ impl TickGame<Page> for Rules {
         _output: &mut (),
         _candidate: &mut Candidate,
         _tick: u64,
+        _edits: &mut EditWriter<'_, Candidate>,
     ) {
-    }
-
-    fn edits<'a>(&self, candidate: &'a Candidate) -> &'a [Edit<Candidate>] {
-        &candidate.edits
     }
 
     fn apply(&mut self, _world: &WorldRead<'_>, _tick: u64, candidate: &Candidate) {

@@ -8,6 +8,12 @@
 
 Registration binds process `TypeId` to stable schema ID and snapshot/undo operations; systems declare stage, ID, dependencies and typed accesses. The engine validates the access union and compiles conflict-free waves; structural edits and external resources need explicit capability. Callbacks see scoped queries and typed batches, never raw storage; sparse lookup checks `Handle`. Independent kernels use deterministic storage order; order-sensitive rules and published lists use canonical slot order. Measure after archetype row moves.
 
+The engine owns a reusable operation queue. Sequential callbacks and ordered parallel merges receive only an
+append-only `EditWriter`; each callback's new descriptors must use its own permits. Later callbacks cannot replace
+or remove earlier operations. Candidate payloads and batch handles remain shared game-owned scratch, intentionally
+evaluated at final preflight; this is capability routing, not per-system payload isolation. Trusted direct kernels
+retain in-place sparse undo, without additional per-row validation.
+
 ## Tick, publication and replay
 
 The input gate validates generic `InputFrame<GameAction>` identity, sequence, count and axes; the game validates actions. Frames remain pending until commit. Callbacks read committed state and write reusable typed candidate buffers; dependencies see staged values only through the candidate view. The engine validates outputs, checked identity, game-declared finite values and structural conflicts before applying. It never commits a partial candidate: apply in stable order, mark changes, consume inputs and advance the clock once. Refusal retains due tick and admitted frames. A busy page drops only a view; the next free page gets a baseline. Games declare read-model components; render and replication consume `SnapshotId`, dirty slots and journal, not another authority.

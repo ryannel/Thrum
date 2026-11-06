@@ -13,17 +13,23 @@
 
 S1 includes four peers, shuffled movers, Damage and SetHealth, tick plus publication. S2 rewinds eight, amends retained input, replays and publishes. All measured rows, including a 200-spawn burst, allocate zero. Burst p50/p95/p99: 104.084/123.958/139.375 and 103.708/115.167/123.792 µs; no separate burst CPU budget.
 
-| S1 extra action | p95 run 1 / 2, µs |
-| --- | ---: |
-| 10k Command | 54.875 / 52.000 |
-| 10k Damage | 55.667 / 52.083 |
-| 100k Command | 849.750 / 646.166 |
-| 100k Damage | 906.459 / 646.167 |
+**Engine-owned descriptors, 6 November:** late systems can append but cannot replace/remove prior operations;
+foreign permits refuse the tick. Shared candidate values stay late-bound. Serial/parallel merge refusal, final
+payload/handle validation, direct rollback, recorded retry/rewind and held pages pass public-API tests; direct kernels gain no per-row check.
+Shared M3 Max ABBA (other sessions active, load ~9–12), unchanged `--g2s-qualify` rows, two run p95 ranges:
 
-Former paired extra-action reference: 10%, now retired. First-run 10k Damage pair rises 91.417→106.000 µs p95 (+15.95%); repeat 53.667→54.167 (+0.93%). Other paired action rows stay within 10%. Keep both repeats; no numeric admission claim. Every variant's p50/p95/p99 remains in the raw logs.
+| Row | Before `3f7ab60`, µs | Engine queue, µs | Warm allocations |
+| --- | ---: | ---: | ---: |
+| S1 10k | 47.708–48.792 | 50.291–53.167 | 0 |
+| S1 100k | 683.958–716.959 | 662.583–737.041 | 0 |
+| S2 10k | 280.583–319.333 | 281.834–285.791 | 0 |
+| Spawn200 | 123.208–133.209 | 125.459–128.959 | 0 |
+
+All rows retain p50/p95/p99/all-thread counts in `tmp/g2s-edit-ownership/paired-*.log`; no speed claim.
+The old quiet extra-action pairs remain in their raw logs; both favorable and adverse repeats are retained.
 
 **S2 profile:** rewind p50/p95 39.042/47.959 and 39.125/42.750 µs; replay-eight including final publication 203.459/233.208 and 201.250/217.333 µs. Amendment and page lease are ~0.04 µs. Phase quantiles are not additive. Resimulation/publication dominates; small traversal changes have not met the budget.
 
 Forced-Rayon crossover p95 serial/forced: 10k 49.750/50.917 then 50.209/48.834 µs; 100k 472.709/476.583 then 459.792/461.750 µs. Both allocate zero, but the game declares Direct/Serial systems: requesting RayonForced does not dispatch parallel jobs. These rows establish neither a parallel crossover nor “never slower”.
 
-Reproduce: `RUSTC_WRAPPER= rustup run 1.99.1 cargo bench -p v1-game --bench g2r --locked --offline -- --g2s-qualify`. Presence-aware hashing and 10k amended replay now match the straight corrected world; randomized/held-page proofs remain. Staged Resolve ownership keeps G2S open; tune later.
+Reproduce: `RUSTC_WRAPPER= rustup run 1.99.1 cargo bench -p v1-game --bench g2r --locked --offline -- --g2s-qualify`. Presence-aware hashing and 10k amended replay now match the straight corrected world; randomized/held-page proofs remain. Game-side Resolve staging and permit handling keep G2S open; tune later.
