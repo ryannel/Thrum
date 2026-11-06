@@ -1,22 +1,22 @@
 # G3b checkpoint — M3 Max / portable Metal, 6 November 2026
 
-**Gate open.** Rust 1.99.1 / wgpu 30.0.1, 10k entities / 1.5k movers, 1080p, uncontrolled shared CPU/GPU load. Render CPU p95 ≤300 µs and zero frame allocations remain unmet; displayed cadence, latency and device recovery unqualified; no iPhone result.
+**Gate open:** 10k/1080p render CPU p95 ≤300 µs and zero frame-thread allocations unmet. Real 120 Hz ten-minute cadence, latency and device recovery unqualified; no iPhone result.
 
-| Clock ownership transfer: render CPU, µs | p50 | p95 | p99 |
-| --- | ---: | ---: | ---: |
-| Game-clock control A1 | 410.9 | 571.3 | 1028.3 |
-| Engine clock B1 | 399.9 | 779.3 | 1333.1 |
-| Engine clock B2 | 413.3 | 605.4 | 1092.2 |
-| Game-clock control A2 | 412.0 | 643.0 | 862.8 |
+| Threaded offscreen render CPU, µs | p50 | p95 | p99 | Submitted/callbacks |
+| --- | ---: | ---: | ---: | ---: |
+| Game host A1 | 379.1 | 481.4 | 1062.8 | 199/200 |
+| Engine host B1 | 378.5 | 521.4 | 1535.1 | 199/200 |
+| Engine host B2 | 373.1 | 485.1 | 1099.3 | 199/200 |
+| Game host A2 | 381.0 | 521.3 | 1055.5 | 188/200 |
 
-Each run completed 200/200 offscreen frames. Control `e7095ae`; candidate is this checkpoint's source. Raw output and executable identities: `tmp/g3b-clock/checkpoint-*`. Candidate tails worsen in B1; **CPU non-regression is unproven**. Tick p50 A1/B1/B2/A2 is 56.0/63.2/63.0/58.5 µs, also adverse. Upload and recording dominate; GPU p99 spans 183.959–1478.035 ms. This is a local ownership checkpoint, not performance promotion.
+Control `91ad52d`, candidate this checkpoint; Rust 1.99.1/wgpu 30.0.1, 1.5k movers, timing enabled, uncontrolled shared CPU/GPU load. Forecasts at 120 Hz, synthetic surface texture, no drawable or real presents. Full callbacks including poll p95 A1/B1/B2/A2: 484.3/522.1/486.1/522.2 µs. B1 has an adverse CPU tail; **no speed/non-regression qualification**. GPU p99 1.083–19.640 ms. Raw logs/identities: `tmp/g3b-runtime/`.
 
-Clock admission, catch-up, failure retention, pause/resume and native handoff now share `thrum-core::ClockedWorld<G>`. Game rules and projection policy stay in the game. Eleven clock tests plus game admission and held-page Metal tests cover failure/recovery; full `./dev check` (Metal and Wasm) passes. Independent code review found no defect; frame-host transfer remains open.
+Separate unpaced inline ABBA, each 200/200: render p95 606.5/472.2/373.5/524.5 µs; GPU p99 0.992–1957.056 ms. Candidate B2 upload/encode p50 206.0/102.8 µs dominate; this is not the threaded or display row.
 
-Current threaded fixture, timing enabled, 100 warmed submitted samples at 640×360: render allocations median/max **374/380**, bytes **55,371/55,955**; world **0/0** after wake five. It needed 565 callbacks for 120 submissions and coalesced 125 displays. Timing-mailbox comparison previously matched 120/120 callbacks: channels 380→374 allocations, 57,407→55,479 bytes. These count Rust allocations only and exclude drawable/platform costs; unequal completion cadence does not establish allocation non-regression.
+Threaded allocator A1/B/A2, 100 warmed successful samples each: render median **374 allocations / 55,371 B** throughout; maxima 380/380/382. World **0/0** after wake five. Each submitted 120 frames but needed 215/1154/204 callbacks: no throughput parity. Rust counts exclude drawable/Objective-C costs. Separate inline 600-frame phase medians/maxima: advance 0/0, scene encode 93/102, submit 233/234; submit bytes 25,313/25,353.
 
-Earlier sparse extraction reduced extraction p95 143.9/144.2→108.9/104.2 µs; whole-frame tails were mixed. A moving capture matched pre-sparse pixels at 640×360. Independent review of 12 live screenshots found no corruption or sampled flashes; grid aliasing and continuous motion remain open. Counts of missed views do not qualify displayed intervals or latency.
+Core owns clock/lane; generic thrum-render `FrameHost` owns two slots, tokens, completion and history. Game retains schema, scene mapping and camera policy. Review found retry dirty-loss and mapping-reuse defects; fixed with GPU regressions, plus uniform source-identity checks. Full `./dev check`, Wasm and iOS simulator compile pass. Independent review found no remaining defect. Fixed initial/moving pixels match control bitwise; this proves two stills, not sequence quality. Grid aliasing persists.
 
-**Metal System Trace, `ce7aa3f`, eight seconds.** After trace time 2 s, PID5128 had 525 CA wait spans: p50/p95/p99 0.170/0.683/0.879 ms, 132.715 ms total. Only 0.585 ms (0.44%) overlapped this app's GPU execution; other processes may use it. Span quantiles are not frame quantiles. Native encoding occurs at `finish`, after acquisition. Raw trace/analysis: `tmp/g3b-metal-system-trace/`.
+**Earlier trace `ce7aa3f`, eight seconds:** 525 CA wait spans after time 2 s, p99 0.879 ms, total 132.715 ms; only 0.585 ms (0.44%) overlaps this app's GPU execution. Span quantiles are not frame quantiles; raw: `tmp/g3b-metal-system-trace/`. Native encoding occurs at `finish` after acquisition. No raw bridge selected; mixed raw/wgpu unsupported. Split pre-submit remains parked at `30ae560` (308→335 timing-disabled allocations).
 
-Pre-submit `30ae560` stays parked: timing-disabled allocations 308→335, no CPU win. No raw drawable bridge selected; pinned wgpu forbids mixed raw/wgpu recording. Reproduce CPU: `cargo bench -p v1-game --bench frame -- --g3b-frame-batch`; allocations: `cargo test -p v1-game --test frame_alloc -- --nocapture`. Live cadence needs a separate display run. Earlier evidence remains in Git.
+Reproduce: `rustup run 1.99.1 cargo bench -p v1-game --bench frame -- --g3b-threaded-batch`; `cargo test -p v1-game --test frame_alloc -- --nocapture`. Earlier evidence remains in Git.

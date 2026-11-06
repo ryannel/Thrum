@@ -26,6 +26,7 @@ use wgpu::util::DeviceExt;
 
 mod cluster;
 mod cluster_gpu;
+mod frame_stats;
 mod history_gpu;
 mod scene_apply;
 mod shadow;
@@ -34,6 +35,7 @@ mod view;
 use cluster::ClusterTable;
 pub use cluster::SyntheticPointLight;
 use cluster_gpu::ClusterCompute;
+pub(crate) use frame_stats::pass_durations;
 use history_gpu::TransformHistory;
 pub use scene_apply::SceneApplyReport;
 use shadow::{ShadowPrepared, ShadowTarget};
