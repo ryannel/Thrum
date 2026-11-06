@@ -245,6 +245,16 @@ fn aerial_transport_changes_a_distant_surface_in_the_live_forward_pass() {
                 .try_collect(52)
                 .expect("aerial readback")
                 .expect("mapped pixels");
+            let horizon = &pixels[(32 * 128 + 24) * 4..][..3];
+            assert!(
+                u16::from(horizon[0]) < 2 * u16::from(horizon[1]),
+                "the high Sun must not create a red band on the horizon: {horizon:?}"
+            );
+            let sun = &pixels[(3 * 128 + 64) * 4..][..3];
+            assert!(
+                sun.iter().all(|channel| *channel > 200),
+                "the filtered solar disk must remain visible: {sun:?}"
+            );
             if let Some(directory) = std::env::var_os("THRUM_G3S_AERIAL_CAPTURE_DIR") {
                 let directory = std::path::PathBuf::from(directory);
                 std::fs::create_dir_all(&directory).expect("aerial capture directory");
@@ -266,6 +276,66 @@ fn aerial_transport_changes_a_distant_surface_in_the_live_forward_pass() {
         assert!(
             i16::from(far[2]) - i16::from(far[0]) > i16::from(near[2]) - i16::from(near[0]) + 4,
             "aerial distance must increase the blue tint: near={near:?}, far={far:?}"
+        );
+    });
+}
+
+#[test]
+#[cfg(not(target_arch = "wasm32"))]
+fn orthographic_sky_keeps_a_finite_solar_disk() {
+    use crate::capabilities::DeviceCapabilities;
+    use crate::synthetic::{FrameLighting, OffscreenTarget, PreparedSynthetic, SyntheticScene};
+
+    pollster::block_on(async {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let adapter = instance
+            .request_adapter(&wgpu::RequestAdapterOptions::default())
+            .await
+            .expect("real adapter required for orthographic sky");
+        #[cfg(target_os = "macos")]
+        assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
+        let (device, queue) = adapter
+            .request_device(&wgpu::DeviceDescriptor::default())
+            .await
+            .expect("orthographic device");
+        let capabilities = DeviceCapabilities::capture(&adapter, &device, 53);
+        let mut scene = SyntheticScene::grid(1).expect("orthographic fixture");
+        scene.instances[0].current[3][0] = 10.0;
+        scene.instances[0].previous = scene.instances[0].current;
+        let frame =
+            AtmosphereFrame::new([0.007_812_5, 0.007_812_5, 1.0], 127_000.0, [1.0; 3], 2.0, 1)
+                .expect("Sun aligned with the view");
+        let mut prepared = PreparedSynthetic::prepare_with_capabilities(
+            &capabilities,
+            &queue,
+            &scene,
+            FrameLighting::Atmosphere(frame),
+            1.0 / 16_000.0,
+        )
+        .await
+        .expect("orthographic sky pipeline");
+        let target = OffscreenTarget::new(&device, &prepared, 32, 32).expect("orthographic target");
+        let mut readback = target.readback(&device);
+        let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+        prepared
+            .encode_with_readback(&mut encoder, 53, &target, None, &mut readback)
+            .expect("orthographic graph execution");
+        let submission = queue.submit([encoder.finish()]);
+        prepared.commit_frame();
+        device
+            .poll(wgpu::PollType::Wait {
+                submission_index: Some(submission),
+                timeout: Some(std::time::Duration::from_secs(20)),
+            })
+            .expect("orthographic GPU completion");
+        let pixels = readback
+            .try_collect(53)
+            .expect("orthographic readback")
+            .expect("mapped pixels");
+        let centre = &pixels[(15 * 32 + 16) * 4..][..3];
+        assert!(
+            centre[0] > 200 && centre[1] > 150,
+            "aligned orthographic Sun must light sky without undefined coverage: {centre:?}"
         );
     });
 }
