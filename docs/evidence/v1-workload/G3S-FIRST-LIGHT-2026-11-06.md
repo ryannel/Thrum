@@ -16,7 +16,8 @@ The test-only referee integrates declared coefficient bands, not measured Earth 
 retain identical CPU results across the horizon correction. At Sun 0°, green single-scatter GPU/reference just
 below/above the curved horizon changes 9.30/0.36→1.04/0.99. Metal two-colour tests prohibit cross-half filtering
 at heights 0/2/100 km; tangent/pole/zenith-Sun/azimuth and 128B/160B ABI checks pass. LUT footprint/pass count
-stay unchanged. Ordinary sky errors are not uniformly improved; no whole-sky tolerance pass.
+stay unchanged. Nonlinear M sampling (`11cb21e`) is parked: one well-sampled sky error grew 3.11%→23.00%;
+retain `e061671`. No whole-sky tolerance pass.
 A profile-cached GroundE table adds reflected sky light at the actual planet hit: 1 KiB logical texels, one
 cooperative profile kernel, no new ordinary-frame kernel. Controlled Metal πL/zero/scaling/terminator/cache tests pass.
 All 198 first-order and 144 sky-side full values stay exact. Ground median sampled-MC disagreement at Sun 45°/0°

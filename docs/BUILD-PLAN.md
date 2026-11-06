@@ -61,7 +61,7 @@ The native Metal recorder stays in G3t. The later dedicated performance phase ow
 - [ ] **G3b — functional engine frame runtime.** Display-link targets drive Mac/iOS/browser presentation; world/render
   work is off Apple's main thread, at most two frames are in flight, interpolation is on GPU and acquisition is late.
   Core owns clock/lane; thrum-render owns `FrameHost`, slots, tokens, completion and history without game schema.
-  Finish surface/background/device-loss recovery and simulator function. Instrument input-to-photon/present intervals;
+  Finish threaded pause/drain/resume, surface/device-loss recovery and simulator function. Instrument input-to-photon/present intervals;
   visible stutter, dropped frames and hitches trigger investigation. [Quiet frame figures and later comparisons](evidence/render/V1-BOUNDED-FRAMES-2026-11-04.md)
   remain baselines; wgpu frame allocation is not a gate or reason to bring native work forward.
 - [ ] **G3s — physical sky, Sun and atmosphere.** Hillaire (2020) transmittance, multiple-scattering, sky-view and aerial
@@ -119,4 +119,5 @@ profiles whole frames, derives targets, and revisits retained commands, mapped u
 
 Retain parked work in Git: F3 limits/receipts, T2 retained-root proofs, N1 ledger/credit, publication accounting, R0 exact
 predicates, R3 optics, moving shore, cohort cloud lab, water/cloud implementation and in-memory protocol hardening.
-Retained-forward optimization is parked at `a4b9da8`; portable split pre-submit at `30ae560`. Neither is merged.
+Retained-forward is parked at `a4b9da8`; split pre-submit at `30ae560`; nonlinear M-LUT layout at `11cb21e`
+(`codex/g3s-multiple-layout`, mixed oracle accuracy). None is merged; the selected sky remains `e061671`.
