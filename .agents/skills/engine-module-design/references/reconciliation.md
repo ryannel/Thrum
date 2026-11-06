@@ -7,7 +7,12 @@ stubs or acceptance claims. Do not reopen research merely to make the old implem
 Map current responsibilities and contracts onto the target. Recommend retention, replacement, restructuring or
 removal for consequential differences. Code earns retention by satisfying the selected model and interfaces;
 volume, sunk effort and tests of old assumptions are not evidence of fit. Useful assets, authoring inputs,
-observations and regression cases can survive replacement.
+observations and regression cases can survive replacement. An earlier prototype that looks better (another
+language, an older engine) sets a look bar and supplies references; its technique still has to earn its place against
+the target, since it may be too heavy or physically wrong.
+
+When porting a module into this engine, map it onto the engine's existing owners: the one sky and atmosphere, the
+frame contract, the capability registry, cooked products. Don't bring a parallel stack along with it.
 
 Prefer clean boundaries over adapters or duplicate producers that preserve an inferior design. Include neighbouring
 changes needed for cohesion; a compatibility layer needs an actual consumer and retirement condition. Identify

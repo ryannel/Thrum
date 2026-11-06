@@ -1,108 +1,72 @@
 # Performance as a system property
 
-Use during architecture selection, quality design, optimization and final qualification. Preserve the experience;
-design for efficient execution and qualify actual gains without equating a faster calculation with a faster application.
+The owner's policy: make best-practice decisions for high performance up front, lay the best foundation you can, build
+with tripwires, and tune later. Don't invent numeric budget gates. Record before-and-after figures, and keep the
+experience intact. See [AI performance](../../../../docs/design/AI-PERFORMANCE.md) and the
+[hardware-native decision](../../../../docs/design/decisions/HARDWARE-NATIVE-ENGINE.md).
 
-## Design broadly; verify consequential complexity
+## Design for cost from the start
 
-Investigate expensive operations, frequently repeated cheap work, transfers and waits, including build/edit/test loops.
-Derive counts, frequency, scale, bytes, working set and critical path before choosing representations. For a new module,
-select from analytical models and relevant evidence, then qualify a correct executable slice. Do not require a slow
-implementation before considering a faster representation. For an existing path, establish the measured baseline.
+- **Write a cost account before choosing representations.** Cover:
+  - counts, frequency, scale and bytes;
+  - working set and critical path;
+  - transfers and waits;
+  - frequently repeated cheap work as well as obvious hot spots.
 
-When AI development makes deeper specialization practical, compare generated code, compact layouts, precomputation,
-incremental work and target-specific paths on their useful benefit and verification cost. Keep invariants, dispatch,
-validity, regeneration and failure behavior explicit; provide a reference or independent oracle where useful. A simple
-public model can contain sophisticated internals. Neither extra complexity nor genericity is inherently preferable.
+  A new module doesn't need a slow implementation first to justify a fast design.
+- **Treat heavy-by-design as a design defect.** If the chosen mechanism needs offline sample counts, per-frame
+  full-resolution copies, redundant transforms or CPU–GPU round trips to reach the look, the design isn't finished. A
+  look that exists only at many seconds per frame is a reference, not a product.
+- **Specialize where it pays.** Generated code, compact layouts, precomputation, incremental work and target-specific
+  paths are welcome when the benefit is real and checkable. Keep the invariants, validity, fallback and an independent
+  oracle explicit. A simple public model can hide sophisticated internals.
+- **Use registry-selected recipes.** Accelerated paths, a portable fallback, and promotion only by a measured win.
 
-Pursue cumulative small gains as well as major bottlenecks within the commissioned scope. Kernel/count/byte evidence
-can support a small change whose frame-time effect is below noise; retain integrated non-regression and label the
-limited claim. Meeting an initial budget need not end a performance commission. Record remaining opportunities and
-stop at its outcome/resource boundary or when evidence no longer justifies further work, not at the first working result.
+## Measure honestly
 
-## Establish cost and evidence
-
-Identify the irreducible shared/source floor and relevant compute, submission, GPU, bandwidth, allocation, resident
-memory and preparation costs. Attribute work to owners and update frequency. State actual product budgets when known;
-unknown hardware does not prevent selecting viable reductions, but it prevents device-specific certification.
-
-For an existing executable path, measure a representative end-to-end workload before claiming an improvement. Retain
-build/loaded-artifact identity, inputs, quality,
-viewport/DPR, device/backend, visibility, warmup and timing conditions. Record time-series cadence and tails as well as
-central values; periodic failures can disappear in a short median. Include sustained use and consequential transitions.
-State sampling windows, overwritten records and exclusions; keep observer work bounded and avoid captures/probes that
-contend with the workload during timing. Avoid concurrent benchmark jobs when they would confound the comparison.
-
-Distinguish CPU elapsed stages, driver waits, GPU execution, callback cadence and displayed latency. A wait location
-is evidence about where execution blocked, not its ultimate cause. Label logical resource estimates separately from
-measured residency. Synthetic CPU slowdown does not emulate a low-end GPU/device. Capability fallbacks, resource
-restoration and high-tier costs need their own scope of qualification.
+- **Measure an existing path before claiming a gain.** Use a representative end-to-end workload, and record the build
+  identity, inputs, quality, viewport, device and backend, warm-up and timing conditions. Report tails and cadence, not
+  only medians.
+- **Treat a shared GPU as noisy.** Several agents share this machine's GPU. Label contended timings, repeat identical
+  builds before attributing a change, and keep exclusive hardware measurement for decisions that need it.
+- **Keep different kinds of time separate.** CPU stages, driver waits, GPU execution, callback cadence and displayed
+  latency are different things. A wait location shows where execution blocked, not why.
+- **Compare fairly.** Use paired, matched runs, and alternate their order when drift matters. Several simultaneous
+  changes limit attribution. Watch long runs for growth in allocation or resources.
+- **Rerun after integrating.** Isolated kernels explain attribution; only the assembled workload shows the effect.
+  Keep adverse results and compact records of rejected experiments.
 
 ## Remove work before weakening fidelity
 
-Use the cost model and, when available, profiling to form a concrete hypothesis; compare executable alternatives
-against the retained baseline. Useful opportunities include exact
-reuse with complete invalidation, invariant preparation, transform/symmetry reuse, compact data access, batching,
-shared pass/resource ownership and removing duplicate draws or uploads. Select them from the predicted dependency
-path and qualify that attribution when executable; an extra full-screen intermediate can reduce submissions while
-increasing memory or fill cost.
+- **Exact savings first.** Look for:
+  - reuse with complete invalidation;
+  - invariant preparation;
+  - symmetry;
+  - compact access and batching;
+  - shared ownership of passes and resources;
+  - removing duplicate draws, uploads and copies.
+- **Make fidelity reductions explicit.** For each one, state what is disabled or simplified, the work saved, the cues
+  at risk and the transitions. Hiding a consumer can leave its producer fully active.
+- **Rank reductions by visible loss per saving.** Rank them for the actual bottleneck, by the least visible loss per
+  useful saving. Controls changed together don't establish their individual ranking.
+- **Keep source-off behaviour.** A cheaper zero-input path must keep delayed emissions, persistent history and source-off
+  tails, such as a wake that persists after the boat stops.
+- **Keep graphics quality away from physics.** Graphics quality must never silently change physical propagation,
+  history or query meaning. A simulation fidelity change needs an explicit profile and a state-transfer contract.
+- **Keep fixed time on hitches.** Dropping simulation time is not a free speedup. Catch-up must be bounded and must
+  recover after a hitch, not freeze.
 
-Prefer a clear local data structure or helper to a general framework unless several real consumers justify it.
-Hoisting, specialization and reuse need explicit validity/lifetime conditions, including reset, changing inputs and
-resource restoration. A cheaper zero-input path must preserve delayed emissions, persistent history and source-off
-behaviour. Check numerical equivalence with appropriate identities, independent references or tolerances; label
-intentional approximation separately from floating-point reordering.
+## Sustained optimization campaigns
 
-Measure useful isolated kernels to understand attribution, then integrate and rerun the assembled workload. Repeat
-paired comparisons under matched conditions; alternate/reverse order when scheduling or thermal drift matters.
-Preserve adverse measurements used in comparisons and compact records of rejected experiments; this does not require retaining every rejected build or full trace. Multiple simultaneous changes limit attribution. Keep claimed gains only
-when evidence supports the relevant cost/scale improvement while the required experience is preserved; a faster microbenchmark can
-regress frame pacing or another tier.
+When one is commissioned:
+- **Pin the terms.** Fix the objective, workload, quality constraints, evaluator revision and resource limits.
+- **Give room to change.** Let agents change algorithms, representations, schedules and cooked products, not just
+  local code.
+- **Keep the evaluator separate.** Keep candidates apart from the evaluator and its thresholds. Screen cheaply, then
+  rebuild and retest finalists on fresh workloads, because repeated search can select noise.
+- **Keep the right evidence.** Retain the baseline and finalist sources, the evaluator and the decisive evidence under
+  the [storage lifecycle](../../../../docs/ASSET-LIFECYCLE.md). Before retiring a worker, verify its adopted changes
+  in their destination.
 
-## Rank reductions by saved work and perceptual cost
-
-Separate exact optimizations from fidelity changes. For each proposed reduction, name what is disabled, replaced,
-simplified or updated less often; the actual work/residency saved; important cues at risk; dependencies; and transition
-or preparation requirements. Hiding a consumer may leave its producer and buffers fully active.
-
-Rank reductions for the actual bottleneck and intended experience. Compare held inputs and moving use to find the
-least visible loss per useful saving. Memory pressure, fill cost and CPU cost can require different orders. If controls
-are changed together, do not claim their individual visual/cost ranking was measured. Keep an initial ordering a
-hypothesis until qualified, and revise it when hardware or scenes change the bottleneck.
-
-Preserve the experience floor, meaningful interactions, physical clock, persistent identity/history and downstream
-query meaning. Graphics quality must not silently change physical propagation or erase tails. A simulation/world
-fidelity change needs an explicit profile and state-transfer contract. Specify which controls change live, which
-need rebuilding, and how detail moves between resolved, authored and statistical representations without duplication
-or discontinuity. Use [system diagnosis](system-diagnosis.md) for consequential reconstruction handoffs.
-
-## Sustained agent optimization
-
-When a sustained optimization campaign is commissioned, pin its objective, workload/target, semantic and quality
-constraints, evaluator revision and resource limits. Give agents room to change algorithms, representations, schedules
-and cooked products, not just local code. Coordinate consequential contract changes with affected owners. A cost/error
-model narrows credible alternatives; repeated measurement tests compiler/hardware contingencies within that design.
-
-Keep candidate edits separate from the evaluator, references and thresholds. Track candidate ancestry and failures;
-screen cheaply, then independently rebuild/retest finalists on fresh workloads and the integrated product. Repeated
-search can select noise or overfit known cases. Keep hardware measurement jobs exclusive on contended resources.
-Separate equivalent-experience cost reductions from accepted quality/capacity improvements at a fixed budget.
-Stop within the commission's limits and retain the best verified result, with tradeoffs and unqualified targets explicit.
-Apply the repository's [storage lifecycle](../../../../docs/ASSET-LIFECYCLE.md): baseline/finalist source,
-evaluator and decisive evidence survive; owned dominated bulk can retire at checkpoints. Keep exact unpublished
-source deltas and unique inputs needed for the selected result, not merely a commit label. Before a worker is retired,
-verify its adopted changes and evidence in their destination; local speed does not establish integrated qualification.
-For this engine's planned tooling and ownership, see [AI performance](../../../../docs/design/AI-PERFORMANCE.md).
-
-## Requalify after integration
-
-Compare the final loaded build with the retained baseline, ordinary visuals/motion and required lifecycle/fallback
-paths. Report percentiles, maxima, duration, workload and memory scope rather than a single speedup. Match simulation
-elapsed time to intended physical time and expose discarded/deferred work; dropping simulation is not a free speedup.
-Investigate tails and long-run allocation/resource growth when observations warrant it.
-
-Review optimization correctness and claims independently when available, including whether caching, batching, depth/
-composition changes or lower sampling introduced a new artifact. State what improved, what overlapped or regressed,
-what was rejected and what remains unmeasured. Native/headless results do not certify a different client or user tab.
-Deliver a maintainable selected path and reproducible compact evidence, retaining only useful rebuild inputs and
-comparisons under repository storage rules.
+Report what improved, what regressed, what was rejected and what remains unmeasured. Native or headless results don't
+certify another client.
