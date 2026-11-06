@@ -4,7 +4,7 @@ Revision C4, 1 November 2026. Reconciled source, iteration and multiplayer basel
 [Decision record](ARCHITECTURE-DECISIONS.md) resolves A01–A05/J01–J04 and integrates the whole-plan review.
 All domain authors read this contract set and the [brief](ARCHITECTURE-BRIEF.md). Propose changes with affected owners;
 do not create a private alternative. The coordinator reconciles both producer and consumers before accepting a change.
-[The build plan](../BUILD-PLAN.md) sets V1 targets and gate budgets; [the baseline specification](BASELINE-SPEC.md) fixes the initial admitted implementations and post-V1 envelopes.
+[The build plan](../BUILD-PLAN.md) sets functional gates and recorded baselines; [the baseline specification](BASELINE-SPEC.md) fixes the initial admitted implementations and post-V1 envelopes.
 This document owns cross-module invariants; the five baseline specifications own selected algorithms and adapter
 policies; module designs own responsibility and consumer consequences. These are responsibilities, not
 a demand for separate crates or a universal messaging framework.
@@ -159,8 +159,8 @@ Hardware selection has one owner. F2 builds one immutable capability registry pe
 features and limits, tile/unified memory, CPU features and core classes, display, thermal, IO and ML hardware) and
 resolves a frame recipe from it: Apple tile, Android tile, desktop high or portable. Quality tiers scale within a
 recipe. Passes, systems and providers read the registry; none probes the device privately. Portable is always
-prepared as the reference and fallback, and a dedicated recipe or path is admitted only with a measured win on its own
-hardware ([hardware-native decision](decisions/HARDWARE-NATIVE-ENGINE.md)). A closed-loop quality governor adjusts render
+prepared as reference/fallback. Dedicated paths use best-practice review during construction; performance claims need
+measurements ([hardware-native decision](decisions/HARDWARE-NATIVE-ENGINE.md)). A quality governor adjusts render
 scale, effect quality and time-sliced cadence from GPU/CPU time, missed presents, thermal and power state, with
 hysteresis; it never changes simulation rate, authority or replicated state.
 
@@ -522,9 +522,9 @@ model's validity/error envelope needs its provider's derivation and
 outside-regime outcome. A supported capacity is a finite promise of one named
 implementation profile, not automatically a source-format or SDK-wide limit.
 Operational disk/queue/quality thresholds are configurable policy and observed
-backpressure, not guaranteed OS/driver bounds. Frame, memory, startup and
-visual objectives are named workload/device qualification targets, not
-implemented safety checks. Enlarging a processing allowance with unchanged
+backpressure, not guaranteed OS/driver bounds. Performance figures are workload/device baselines and regression tripwires
+during construction, not admission gates or safety checks; correctness, oracle
+tolerance, lifecycle and visual review remain required. Enlarging a processing allowance with unchanged
 meaning requires profile and cost qualification. If a limit is encoded in a
 hashed definition or product dependency, changing it also changes that
 definition and dependent cook keys, even when existing selected values and
@@ -565,7 +565,8 @@ never gates. Neither certifies performance; a fast frame does not certify the co
 evidence is unassessed until its applicability to the new assembly is established. Performance evidence names the
 recipe and the capability-registry digest. A dedicated recipe or path records its frame time, bandwidth or latency
 against the portable recipe on the same device, its image difference from portable within the declared tolerance, and
-thermal state after a sustained run; without that comparison it is implemented, not qualified.
+thermal state after a sustained run; without comparison it is not performance-qualified. Functional delivery does not
+wait for numeric tuning; the [6 November owner decision](decisions/PERFORMANCE-PHILOSOPHY-2026-11-06.md) governs.
 
 [RENDER-SPEC](RENDER-SPEC.md) and [PLAY-ENVIRONMENT-SPEC](PLAY-ENVIRONMENT-SPEC.md) select
 their initial algorithms and limits. The [V1 N1 transport/codec decision](decisions/A0-N1-TRANSPORT-CODEC.md)

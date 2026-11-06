@@ -1,8 +1,8 @@
 # G2S CPU evidence — 6 November 2026
 
-**Gate open: quiet fixed rows fail.** Owner-run M3 Max, release `91ad52d`, clean worktree, agents paused and builds drained, 10:50–10:52 CET. The two runs below retain both results; uptime/load averages and complete output are in `tmp/quiet-run-2026-11-06/g2s-qualify{,-repeat}.log`. Exit zero means measurement completed, not budget passage. Historical G2R passes used easier rows; Git retains them.
+**Recorded quiet baseline; old CPU targets retired at 11:15 on 6 November.** Owner-run M3 Max, release `91ad52d`, clean worktree, agents paused and builds drained, 10:50–10:52 CET. The two runs below retain both results; uptime/load averages and complete output are in `tmp/quiet-run-2026-11-06/g2s-qualify{,-repeat}.log`. Exit zero means measurement completed, not budget passage. Historical G2R passes used easier rows; Git retains them.
 
-| Fixed row | Target p95 µs | Run | p50 µs | p95 µs | p99 µs | Rust allocations, all threads |
+| Fixed row | Former p95 reference µs | Run | p50 µs | p95 µs | p99 µs | Rust allocations, all threads |
 | --- | ---: | --- | ---: | ---: | ---: | ---: |
 | S1 10k | ≤25 | 1 | 49.458 | 59.458 | 72.958 | 0 |
 | S1 10k | ≤25 | 2 | 44.208 | 54.458 | 62.167 | 0 |
@@ -20,10 +20,10 @@ S1 includes four peers, shuffled movers, Damage and SetHealth, tick plus publica
 | 100k Command | 849.750 / 646.166 |
 | 100k Damage | 906.459 / 646.167 |
 
-Paired extra-action gate: ≤10%. First-run 10k Damage pair rises 91.417→106.000 µs p95 (+15.95%); repeat 53.667→54.167 (+0.93%). Other paired action rows stay within 10%. Do not qualify marginal cost from the friendlier repeat. Every variant's p50/p95/p99 remains in the raw logs.
+Former paired extra-action reference: 10%, now retired. First-run 10k Damage pair rises 91.417→106.000 µs p95 (+15.95%); repeat 53.667→54.167 (+0.93%). Other paired action rows stay within 10%. Keep both repeats; no numeric admission claim. Every variant's p50/p95/p99 remains in the raw logs.
 
 **S2 profile:** rewind p50/p95 39.042/47.959 and 39.125/42.750 µs; replay-eight including final publication 203.459/233.208 and 201.250/217.333 µs. Amendment and page lease are ~0.04 µs. Phase quantiles are not additive. Resimulation/publication dominates; small traversal changes have not met the budget.
 
 Forced-Rayon crossover p95 serial/forced: 10k 49.750/50.917 then 50.209/48.834 µs; 100k 472.709/476.583 then 459.792/461.750 µs. Both allocate zero, but the game declares Direct/Serial systems: requesting RayonForced does not dispatch parallel jobs. These rows establish neither a parallel crossover nor “never slower”.
 
-Reproduce: `RUSTC_WRAPPER= rustup run 1.99.1 cargo bench -p v1-game --bench g2r --locked --offline -- --g2s-qualify`. Full-world randomized replay and held-page tests establish correctness separately. CPU budgets remain unchanged; continue independent G3b/G3s work while representation changes are evaluated.
+Reproduce: `RUSTC_WRAPPER= rustup run 1.99.1 cargo bench -p v1-game --bench g2r --locked --offline -- --g2s-qualify`. Full-world randomized replay and held-page tests establish correctness separately. Correctness gaps, not these timings, keep G2S open. Build independent G3b/G3s; revisit numeric tuning in the dedicated phase.

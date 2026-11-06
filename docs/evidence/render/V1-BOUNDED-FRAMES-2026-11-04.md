@@ -1,6 +1,6 @@
 # G3b checkpoint — M3 Max / portable Metal, 6 November 2026
 
-**Gate open:** 10k/1080p render CPU p95 ≤300 µs and zero frame-thread allocations unmet. Real 120 Hz ten-minute cadence, latency and device recovery unqualified; no iPhone result.
+**Functional gate open.** Numeric CPU/allocation/cadence targets retired by the 6 Nov 11:15 owner decision. Preserve measured history; lifecycle, displayed function and visual motion remain open. No iPhone result.
 
 | Owner quiet row, `91ad52d` | p50 | p95 | p99 |
 | --- | ---: | ---: | ---: |
@@ -8,7 +8,7 @@
 | Submitted render CPU, µs | 624.5 | 1318.6 | 2132.0 |
 | Scene GPU pass-sum, ms | 0.695 | 1.099 | 1.236 |
 
-Owner-run 10:50–10:52 CET, clean worktree, agents paused, builds drained; uptime retained in `tmp/quiet-run-2026-11-06/g3b-threaded.log`. M3 Max, portable Metal, 10k/1.5k movers, 1080p, timing enabled. Submitted 199/200 callbacks; forecasts at 120 Hz, synthetic surface texture, no drawable or real presents. Upload/encode p50 279.5/239.0 µs dominate; their p95 values 546.0/521.3 µs are not additive. The quiet run fails the CPU target.
+Owner-run 10:50–10:52 CET, clean worktree, agents paused, builds drained; uptime retained in `tmp/quiet-run-2026-11-06/g3b-threaded.log`. M3 Max, portable Metal, 10k/1.5k movers, 1080p, timing enabled. Submitted 199/200 callbacks; forecasts at 120 Hz, synthetic surface texture, no drawable or real presents. Upload/encode p50 279.5/239.0 µs dominate; their p95 values 546.0/521.3 µs are not additive. This missed the former CPU target; it is now a recorded baseline.
 
 **Newer ownership checkpoint `8bb3979`, shared load:** threaded offscreen ABBA control/candidate/candidate/control render p50/p95/p99 µs: 379.1/481.4/1062.8; 378.5/521.4/1535.1; 373.1/485.1/1099.3; 381.0/521.3/1055.5. Submitted 199/199/199/188 of 200; GPU p99 1.083–19.640 ms. B1 has an adverse CPU tail; no speed/non-regression qualification. These do not replace the quiet `91ad52d` row. Raw logs/identities: `tmp/g3b-runtime/`.
 

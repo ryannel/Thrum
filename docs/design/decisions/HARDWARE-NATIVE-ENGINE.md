@@ -25,7 +25,11 @@ A recipe is a graph configuration chosen per GPU family: pass organisation, atta
 | Desktop high | Vulkan/D3D12 on NVIDIA, AMD, Intel | GPU-driven visibility buffer, mesh shaders where available, async compute, ray query, vendor reconstruction and latency APIs |
 | Portable | WebGPU and every native device | Forward+ with GPU culling and indirect draws within WebGPU limits; own temporal reconstruction |
 
-The portable recipe builds and runs on every native device. It is the reference for image comparison and the fallback when a dedicated path fails pipeline closure. A dedicated recipe or path is promoted only with a measured win on its own hardware. The win is either at least 10% lower GPU frame time or bandwidth, a lower p99 or latency, or a capability portable cannot express. Its image must also stay within the declared tolerance against portable. A path whose win disappears is removed. The browser runs portable at showcase quality, because website demos run there, and never limits a native recipe.
+Portable runs on every native device as the image reference and fallback when a dedicated path fails closure.
+Foundation choices use best-practice review; functional delivery does not wait for a numeric win. Performance claims
+need same-device comparison within image tolerance. The [6 November owner decision](PERFORMANCE-PHILOSOPHY-2026-11-06.md)
+uses visible hitches, about 25% comparable regression and unexpected scaling as tripwires; dedicated tuning follows
+later. Chrome runs portable at showcase quality and never limits native.
 
 ## Frame contract
 
@@ -42,7 +46,7 @@ Providers include Thrum's own TAAU, MetalFX spatial and temporal, DLSS, FSR, XeS
 
 ## Quality governor
 
-A closed loop holds the frame within budget. Its inputs are GPU pass time, CPU tick and encode time, missed presents, thermal state, power mode and link quality. Its outputs are render scale (feeding reconstruction), per-effect quality and update cadence for time-sliced passes. It applies hysteresis and records every change in the profiler. It never changes simulation rate, authority or replicated state.
+A closed loop responds to observed frame, thermal and power conditions. Its inputs are GPU pass time, CPU tick and encode time, missed presents, thermal state, power mode and link quality. Its outputs are render scale (feeding reconstruction), per-effect quality and update cadence for time-sliced passes. It applies hysteresis and records every change in the profiler. It never changes simulation rate, authority or replicated state.
 
 ## Hardware use by layer
 
@@ -93,7 +97,7 @@ Each recipe has named devices:
 * **V1:** Apple tile and portable on this M3 Max; the iPhone 18 Pro simulator for function only; portable in Chrome WebGPU on this Mac at showcase quality.
 * **After V1:** Apple tile on a physical iPhone, Android tile on Adreno and Mali, and desktop high on NVIDIA, AMD and Intel, on rented machines and devices.
 
-Evidence records frame time per recipe against portable on the same device, image difference, pipeline-closure hitches, and memory and thermal state after ten minutes. An unmeasured recipe is implemented, not qualified. Repository checks prove none of these.
+Later performance qualification records same-device frame time, image difference, hitches, memory and sustained thermal behavior. Unmeasured speed is unqualified; it does not block functional delivery. Repository checks prove no device or visual result.
 
 ## Sequencing
 
@@ -102,4 +106,4 @@ Evidence records frame time per recipe against portable on the same device, imag
 | G3b–G3c | Display-link pacing, QoS-classed simulation and render threads, input-to-photon measurement (G3b); the registry, the portable and Apple tile recipes, the frame contract fields, executor-derived attachments, mapped rings, pipeline caches and timestamps (G3t); indirect GPU culling (G3c). The ray-tracing readiness constraints. The shading-library decision. |
 | G4 | EDR/HDR output, dynamic resolution with MetalFX and own TAAU, and the governor. |
 | G5 | Meshlets, KTX2 ASTC/BC7, BLAKE3, memory-mapped products and dev-server cache sharing. |
-| After V1 | Android tile, desktop high and physical iPhone on rented hardware; Quinn GSO/GRO and residual coding with the network track; vendor providers, ray tracing, GI, frame generation and ML inference, each promoted by measurement. |
+| After V1 | Android tile, desktop high and physical iPhone on rented hardware; Quinn GSO/GRO and residual coding with the network track; vendor providers, ray tracing, GI, frame generation and ML inference, with separate later performance qualification. |

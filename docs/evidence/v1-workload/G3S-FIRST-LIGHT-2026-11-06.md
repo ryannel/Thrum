@@ -4,7 +4,7 @@
 
 | Row | Target | Observation | Status |
 | --- | ---: | --- | --- |
-| Sky + LUT + aerial GPU, 1080p | p95 ≤0.3 ms | Complete row unavailable; loaded compute p50/p95 0.257/2.510–0.403/3.960 ms | Open |
+| Sky + LUT + aerial GPU, 1080p | Recorded figure; tripwire | Complete row unavailable; loaded compute p50/p95 0.257/2.510–0.403/3.960 ms | Open |
 | Spectral radiance | declared oracle tolerance | Independent spectral oracle absent | Open |
 | Twilight and sweep | visible, no banding/flicker | Dark geometry, quantization and grid moiré | Partial review |
 
