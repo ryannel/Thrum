@@ -12,6 +12,22 @@ allowed_workspace_dependencies = []
 manifest = "crates/thrum-content-runtime/Cargo.toml"
 allowed_workspace_dependencies = []
 
+[packages.thrum-asset]
+manifest = "crates/thrum-asset/Cargo.toml"
+# Runtime half of G5: shipping games read cooked products through this package only.
+allowed_workspace_dependencies = []
+
+[packages.thrum-cook]
+manifest = "crates/thrum-cook/Cargo.toml"
+# Authoring-only G5 cooker; no shipping package may depend on it.
+# Its only other edge is a dev-dependency on the asset-loop viewer for the edit-to-visible harness.
+allowed_workspace_dependencies = ["thrum-asset", "asset-loop"]
+
+[packages.asset-loop]
+manifest = "examples/asset-loop/Cargo.toml"
+# Shipping-shaped G5 viewer: maps cooked products; must never reach thrum-cook.
+allowed_workspace_dependencies = ["thrum-asset", "thrum-render"]
+
 [packages.thrum-render]
 manifest = "crates/thrum-render/Cargo.toml"
 allowed_workspace_dependencies = ["thrum-core"]
@@ -122,3 +138,57 @@ requirement = "=1.0.1"
 license = "Apache-2.0/MIT"
 purpose = "Block first mobile adapter/device creation in the initial shell and opt-in local renderer device tests"
 target_cost = "Small native/test dependency; runtime startup blocking must be measured and replaced if it harms responsiveness"
+
+[external_dependencies.blake3]
+requirement = "=1.8.7"
+license = "CC0-1.0 OR Apache-2.0 OR Apache-2.0 WITH LLVM-exception"
+purpose = "G5 content addresses for cooked products, manifests, sources and cook actions"
+target_cost = "Runtime: one hash per HEAD/manifest name check and optional product verification; NEON/AVX2/AVX-512 selected internally. Cooker adds the rayon feature for multi-core hashing of large sources"
+
+[external_dependencies.bytemuck]
+requirement = "=1.25.2"
+license = "Zlib OR Apache-2.0 OR MIT"
+purpose = "Checked zero-copy casts between mapped G5 product bytes and repr(C) section element types"
+target_cost = "Already transitive in the locked closure; derive macro at build time, no runtime cost beyond alignment/length checks once per product open"
+
+[external_dependencies.memmap2]
+requirement = "=0.9.12"
+license = "MIT OR Apache-2.0"
+purpose = "Read-only memory mapping of immutable G5 content-addressed products on native targets"
+target_cost = "Native-only; one mmap per product open, pages faulted on first touch during GPU upload; one narrow documented unsafe call"
+
+[external_dependencies.meshopt]
+requirement = "=0.7.0"
+license = "MIT OR Apache-2.0"
+purpose = "Authoring-only meshoptimizer: vertex welding, cache/overdraw/fetch optimisation, meshlet building and meshlet culling bounds"
+target_cost = "Compiles vendored meshoptimizer C++ for the cooker only; never in a shipping closure"
+
+[external_dependencies.intel_tex_2]
+requirement = "=0.5.0"
+license = "MIT OR Apache-2.0"
+purpose = "Authoring-only ISPC BC7 texture and BC4 volume block compression"
+target_cost = "Prebuilt ISPC kernels linked into the cooker only (macOS link prints a platform-load-command note); its ASTC entry point is unimplemented upstream and unused"
+
+[external_dependencies.astcenc-rs]
+requirement = "=0.2.0"
+license = "Unlicense (bindings); vendored ARM astc-encoder is Apache-2.0"
+purpose = "Authoring-only ASTC 4x4 texture compression with ARM's reference encoder"
+target_cost = "Builds astc-encoder C++ and bindgen bindings (needs libclang) for the cooker only"
+
+[external_dependencies.gltf]
+requirement = "=1.4.1"
+license = "MIT OR Apache-2.0"
+purpose = "Authoring-only glTF 2.0 and GLB import for the mesh cooker"
+target_cost = "Cooker only; JSON and buffer import plus its image dependency"
+
+[external_dependencies.image]
+requirement = "=0.25.10"
+license = "MIT OR Apache-2.0"
+purpose = "Authoring-only PNG/JPEG decode for the texture cooker and demo sources"
+target_cost = "Cooker only, PNG and JPEG codecs enabled"
+
+[external_dependencies.notify]
+requirement = "=8.2.1"
+license = "CC0-1.0"
+purpose = "Authoring-only filesystem watcher (FSEvents on macOS) that drives G5 cook cycles"
+target_cost = "Cooker only; events are hints re-checked by the stat cache"
