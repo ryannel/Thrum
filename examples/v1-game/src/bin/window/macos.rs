@@ -494,7 +494,7 @@ impl App {
 
     fn deadline_error(&self) -> String {
         format!(
-            "{} presented frames unavailable: presented={}, tick={}, display_link_callbacks={}, render_callbacks={}, unavailable={}, occluded={}, waiting_acquire={}, stale_acquire={}, surface_faults={}, dropped_views={}, dropped_stale_views={}, reused_views={}, dropped_surface={}",
+            "{} presented frames unavailable: presented={}, tick={}, display_link_callbacks={}, render_callbacks={}, unavailable={}, occluded={}, waiting_acquire={}, stale_acquire={}, surface_faults={}, dropped_views={}, dropped_stale_views={}, dropped_surface={}",
             self.target_frames,
             self.presented,
             self.world_tick,
@@ -507,7 +507,6 @@ impl App {
             self.surface_faults,
             self.ready.dropped_views,
             self.ready.dropped_stale_views,
-            self.ready.reused_views,
             self.ready.dropped_surface
         )
     }
@@ -677,7 +676,7 @@ impl App {
             "GPU timestamps unavailable".to_owned()
         };
         Ok(format!(
-            "adapter={}; surface={:?} {}x{}; presented={}; callbacks={}; display_link_callbacks={}; late_target_evaluations={}; invalid_target_evaluations={}; clamped_target_evaluations={}; committed_ticks={}; unavailable={}; occluded={}; waiting_acquire={}; stale_acquire={}; surface_faults={}; dropped_surface={}; dropped_views={}; dropped_stale_views={}; reused_views={}; dropped_reports={}; callback CPU p50/p95={:.3}/{:.3} ms; render-worker CPU p50/p95={:.3}/{:.3} ms; tick CPU p50/p95={:.3}/{:.3} us; live-view CPU p50/p95={:.3}/{:.3} us; upload CPU p50/p95={:.3}/{:.3} us; encode CPU p50/p95={:.3}/{:.3} us; upload+encode CPU p50/p95={:.3}/{:.3} us; {gpu}",
+            "adapter={}; surface={:?} {}x{}; presented={}; callbacks={}; display_link_callbacks={}; late_target_evaluations={}; invalid_target_evaluations={}; clamped_target_evaluations={}; committed_ticks={}; unavailable={}; occluded={}; waiting_acquire={}; stale_acquire={}; surface_faults={}; dropped_surface={}; dropped_views={}; dropped_stale_views={}; dropped_reports={}; callback CPU p50/p95={:.3}/{:.3} ms; render-worker CPU p50/p95={:.3}/{:.3} ms; tick CPU p50/p95={:.3}/{:.3} us; live-view CPU p50/p95={:.3}/{:.3} us; upload CPU p50/p95={:.3}/{:.3} us; encode CPU p50/p95={:.3}/{:.3} us; upload+encode CPU p50/p95={:.3}/{:.3} us; {gpu}",
             self.adapter_name,
             self.surface_format.ok_or("surface format missing")?,
             self.surface_extent[0],
@@ -697,7 +696,6 @@ impl App {
             self.ready.dropped_surface,
             self.ready.dropped_views,
             self.ready.dropped_stale_views,
-            self.ready.reused_views,
             self.ready.dropped_reports,
             wall.0,
             wall.1,
@@ -748,15 +746,12 @@ fn profiler_title(sample: &FrameSample) -> String {
         },
     );
     format!(
-        "Thrum V1 | tick {} ({} updates, view age {}, reused {}) | CPU tick {:.3}, extract {:.3}, queue {:.3}, ready {:.3}, upload {:.3}, encode {:.3} ms | {gpu}",
+        "Thrum V1 | tick {} ({} updates, view age {}) | CPU tick {:.3}, extract {:.3}, upload {:.3}, encode {:.3} ms | {gpu}",
         sample.tick,
         sample.completed_ticks,
         sample.visual_age_ticks,
-        sample.reused_visual,
         sample.tick_cpu.as_secs_f64() * 1e3,
         sample.extract_cpu.as_secs_f64() * 1e3,
-        f64::from(sample.worker_queue_ns) / 1e6,
-        f64::from(sample.worker_ready_ns) / 1e6,
         sample.upload_cpu.as_secs_f64() * 1e3,
         sample.encode_cpu.as_secs_f64() * 1e3,
     )
