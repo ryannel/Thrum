@@ -45,6 +45,7 @@ struct Enabled {
     period: f64,
     capacity: u32,
     names: PassNames,
+    results: Vec<PassTiming>,
     render_pending: Option<Receiver<()>>,
     pending: Option<Receiver<Result<(), wgpu::BufferAsyncError>>>,
 }
@@ -156,6 +157,7 @@ impl GpuTimings {
                 period,
                 capacity: max_passes,
                 names: PassNames::with_capacity(max_passes as usize),
+                results: Vec::with_capacity(max_passes as usize),
                 render_pending: None,
                 pending: None,
             }),
@@ -355,6 +357,7 @@ impl GpuTimings {
     }
     /// Nonblocking collection. `None` means unsupported, no batch, or not ready;
     /// use `is_enabled` to distinguish unsupported. The host polls its device.
+    /// Results borrow reusable storage until the next mutable timing operation.
     /// The current generation is checked before old callbacks can publish data.
     ///
     /// # Errors
@@ -365,7 +368,7 @@ impl GpuTimings {
     ///
     /// Panics only if the bounded query buffer no longer contains the recorded
     /// 64-bit timestamp pairs, which would violate the internal buffer invariant.
-    pub fn try_collect(&mut self, generation: u64) -> Result<Option<Vec<PassTiming>>, TimingError> {
+    pub fn try_collect(&mut self, generation: u64) -> Result<Option<&[PassTiming]>, TimingError> {
         self.check_generation(generation)?;
         let Some(enabled) = &mut self.enabled else {
             return Ok(None);
@@ -391,7 +394,7 @@ impl GpuTimings {
             enabled.names.clear();
             return Err(TimingError::MapFailed);
         };
-        let mut timings = Vec::with_capacity(enabled.names.len());
+        enabled.results.clear();
         let mut invalid = None;
         for (index, name) in enabled.names.iter().enumerate() {
             let base = index * 16;
@@ -404,7 +407,7 @@ impl GpuTimings {
             );
             if start != 0 && start != u64::MAX && end != u64::MAX && end >= start {
                 let delta = end - start;
-                timings.push(PassTiming {
+                enabled.results.push(PassTiming {
                     name: Arc::clone(name),
                     nanoseconds: delta as f64 * enabled.period,
                 });
@@ -416,9 +419,10 @@ impl GpuTimings {
         enabled.readback.unmap();
         enabled.names.clear();
         if let Some((start, end)) = invalid {
+            enabled.results.clear();
             return Err(TimingError::InvalidTimestamp { start, end });
         }
-        Ok(Some(timings))
+        Ok(Some(&enabled.results))
     }
 }
 
