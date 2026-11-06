@@ -1,10 +1,12 @@
 # G3s first light — open
 
-6 November 2026, Apple M3 Max Metal. Exact game build after `04d0d7b`; `./dev check` passed. G3s is **not qualified**: the spectral oracle, an isolated sky/LUT/aerial GPU budget, and scene lighting at twilight remain open. The 120 Hz display path belongs to G3b.
+6 November, M3 Max Metal. Shaders after `04d0d7b`, diagnostics at `784102d`; `./dev check` passed. **Not qualified:** spectral accuracy, atmosphere GPU budget and twilight scene lighting remain open. Display timing belongs to G3b.
 
 ![Fixed solar cameras](g3s-first-light/solar-contact.png) · [Sun-facing 1080p still](g3s-first-light/sun-facing-1080p.png) · [96-sample solar sweep](g3s-first-light/solar-sweep.mp4)
 
-The game selects Sun time. The engine's Hillaire-style LUT path lights the sky and surfaces; the tone pass shares the live view record. A bounded view exposure makes the 0.77 twilight sky pixel sum 100/765, versus 20/765 at fixed exposure. A fine 17-step Metal dawn/dusk test and independent review of the 96-frame sequence found no brightness reversal at six sky points. The reviewer found the scene itself still too dark at twilight and pre-existing grid moiré. Recommendation: keep this exposure as an incremental sky improvement, then improve physically sourced twilight ambient light and compare sky radiance with the spectral oracle before closing G3s.
+The game selects Sun time; Hillaire-style LUTs light sky and surfaces. Independent review of 96 frames found no reversal at six sky points; dark geometry and grid moiré remain.
+
+**Storage isolation:** unchanged equations/grid/transmittance, paired pre-store GPU f32 and raw/scaled-half readbacks at −3°, −6°, −9°. At −9°, changing only sky storage raises GPU-sampled horizontal illuminance 0.296578→0.308025 lux (+3.86%); at −6°, +0.120%; at −3°, unchanged. Canonical stores match, and repeated −6° sidecars match exactly. Independent review corrected half-format counters on a f32 comparison. This isolates representation loss, not physical accuracy; CPU reference interpolation and host summation differ from the production reduction. No encoding change was promoted. Raw data, gains, source hashes and fixed-exposure brackets remain in `tmp/g3s-precision/`. Next: separate exposure from transport; do not conceal the latter with an ambient multiplier.
 
 | Row | Target | Current observation | Status |
 | --- | ---: | --- | --- |
@@ -13,4 +15,4 @@ The game selects Sun time. The engine's Hillaire-style LUT path lights the sky a
 | Twilight and sweep | visible, no banding/flicker | Visible sky gradient; no sampled flash; dark scene remains | Partial agent review |
 | Spectral sky radiance | declared oracle tolerance | Oracle not yet built/qualified | Open |
 
-Three GPU agents and Blender shared the Mac. Candidate/control CPU runs were interleaved; the control was a temporary fixed-exposure build with the same engine frame path. Their GPU pass sums varied by multiples, so no GPU performance claim follows. Raw local logs: `tmp/g3s-exposure-{a1,b1,a2}.log`, `tmp/g3s-exposure-dev-check.log`. Selected stills and clip above are retained; raw PPM sweeps are disposable.
+Shared GPU/Blender load; interleaved logs: `tmp/g3s-exposure-{a1,b1,a2}.log`. GPU variation prevents a performance claim.
