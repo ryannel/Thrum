@@ -248,33 +248,58 @@ fn autonomous_world_and_render_callback_report_warm_allocations() {
         let mut render_allocations = Vec::with_capacity(100);
         let mut render_bytes = Vec::with_capacity(100);
         let mut submitted = 0;
-        for callback in 1_u32..=120 {
-            let target = origin + Duration::from_nanos(8_333_333).saturating_mul(callback);
+        let mut callbacks = 0;
+        let mut previous_display = 0_u32;
+        let mut coalesced_displays = 0_u32;
+        let period = Duration::from_nanos(8_333_333);
+        let deadline = Instant::now() + Duration::from_secs(60);
+        // Allocation sampling needs actual warm submissions, independently of
+        // GPU throughput. The timing benchmark retains its fixed callback row.
+        while render_allocations.len() < 100 && Instant::now() < deadline {
+            callbacks += 1;
+            // Coalesce expired forecasts like the live display link. Setup
+            // and driver stalls must not turn 120 callbacks into a burst.
+            let display = u32::try_from(origin.elapsed().as_nanos() / period.as_nanos())
+                .expect("bounded allocation sample")
+                + 1;
+            coalesced_displays += display.saturating_sub(previous_display + 1);
+            previous_display = display;
+            let target = origin + period.saturating_mul(display);
             if let Some(delay) = target.checked_duration_since(Instant::now()) {
                 std::thread::sleep(delay);
             }
             ALLOCS.with(|count| count.set(0));
             BYTES.with(|count| count.set(0));
             TRACK.with(|track| track.set(true));
-            let report = render
-                .drive(origin.elapsed(), Some(&output))
-                .expect("threaded render callback");
+            let advanced = render
+                .advance(origin.elapsed())
+                .expect("threaded world observation");
+            let report = if advanced.can_acquire_serial() {
+                advanced
+                    .encode_scene()
+                    .expect("threaded scene recording")
+                    .submit(Some(&output))
+                    .expect("threaded scene and presentation submit")
+            } else {
+                advanced.submit(None).expect("threaded render callback")
+            };
             submitted += usize::from(report.submitted);
             while render.poll_completed().expect("GPU progress").is_some() {}
             TRACK.with(|track| track.set(false));
-            if callback > 20 && report.submitted {
+            if submitted > 20 && report.submitted {
                 render_allocations.push(ALLOCS.with(Cell::get));
                 render_bytes.push(BYTES.with(Cell::get));
             }
         }
-        assert!(
-            render_allocations.len() >= 10,
-            "at least ten warmed submitted frames are needed for allocation samples; submitted={submitted}/120"
+        assert_eq!(
+            render_allocations.len(),
+            100,
+            "allocation batch did not finish within 60s; submitted={submitted}/{callbacks} callbacks"
         );
         assert!(world_wakes.load(Ordering::Acquire) >= 10);
         let max = |values: &[u64]| values.iter().copied().max().expect("measured frames");
         println!(
-            "G3b threaded 120 callbacks (100 warm opportunities): submitted={submitted}/120, sampled_submitted={}; render allocations median/max={}/{}, bytes median/max={}/{}; world allocations/bytes after wake 5={}/{}",
+            "G3b threaded 100 warm submissions: submitted={submitted}/{callbacks} callbacks, coalesced_displays={coalesced_displays}, sampled_submitted={}; render allocations median/max={}/{}, bytes median/max={}/{}; world allocations/bytes after wake 5={}/{}",
             render_allocations.len(),
             median(&render_allocations),
             max(&render_allocations),
