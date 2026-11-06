@@ -56,10 +56,10 @@ pub(super) struct Medium {
     pub ground_albedo: f64,
 }
 #[derive(Clone, Copy)]
-struct Coefficients {
-    rayleigh: f64,
-    mie: f64,
-    extinction: f64,
+pub(super) struct Coefficients {
+    pub(super) rayleigh: f64,
+    pub(super) mie: f64,
+    pub(super) extinction: f64,
 }
 impl Medium {
     pub(super) fn band(band: usize) -> Self {
@@ -74,7 +74,7 @@ impl Medium {
     fn majorant(self) -> f64 {
         self.rayleigh + self.mie_extinction + self.ozone
     }
-    fn at(self, point: Vec3) -> Coefficients {
+    pub(super) fn at(self, point: Vec3) -> Coefficients {
         let height = (point.length() - geometry::RADIUS).max(0.0);
         let rayleigh = self.rayleigh * (-height / 8000.0).exp();
         let mie_density = (-height / 1200.0).exp();

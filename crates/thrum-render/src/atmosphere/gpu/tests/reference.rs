@@ -6,6 +6,7 @@
 
 mod geometry;
 mod gpu;
+mod multiple;
 mod quadrature;
 mod random;
 mod transport;

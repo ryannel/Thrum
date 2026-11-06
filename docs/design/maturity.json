@@ -83,7 +83,7 @@
     },
     "G3s_first_light": {
       "implementation": "partial_physical_LUTs_horizon_ground_SH9_camera_SDR_browser_controls",
-      "functional_validation": "Metal_SH9_analytic_eight_solar_rows_refinement_units_and_probe_tests;_198_ray_transport_and_spectral_accuracy_open",
+      "functional_validation": "Metal_SH9_and_continuous_closure_falsifiers;_phase_seed_rejected;_transport_and_spectral_accuracy_open",
       "experienced_quality": "agent_reviewed_Chrome_directional_twilight_faces;_noon_silhouette_grid_contrast_motion_accuracy_open",
       "platform_performance": {
         "mac": "offscreen_Metal_function_pass;_live_zero_display_link_callbacks_no_new_speed_claim",

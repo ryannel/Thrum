@@ -203,6 +203,30 @@ fn gpu_transport_reference_reports_every_prescribed_row() {
             }
         }
         assert_eq!(count, 198);
+        let multiple = probe.multiple(&device, &queue);
+        assert_eq!(multiple.len(), 32 * 32);
+        assert!(
+            multiple
+                .iter()
+                .flatten()
+                .all(|value| value.is_finite() && (0.0..=65_504.0).contains(value)),
+            "complete stored M field must fit its finite presentation format"
+        );
+        if let Some(path) = std::env::var_os("THRUM_G3S_MULTIPLE_OUTPUT") {
+            let mut table = String::from("x\ty\tband\tencoded_radiance\n");
+            for (index, channels) in multiple.iter().enumerate() {
+                for (band, value) in channels.iter().enumerate() {
+                    writeln!(
+                        table,
+                        "{}\t{}\t{band}\t{value:.17e}",
+                        index % 32,
+                        index / 32
+                    )
+                    .expect("write M field into String");
+                }
+            }
+            std::fs::write(path, table).expect("write explicit M observations");
+        }
         if let Some(path) = std::env::var_os("THRUM_G3S_REFERENCE_OUTPUT") {
             std::fs::write(path, report).expect("write explicit reference observations");
         }
