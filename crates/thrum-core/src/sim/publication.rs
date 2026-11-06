@@ -880,6 +880,33 @@ impl PublicationPage {
     ///
     /// Panics only if runtime setup violated the u32 slot address bound.
     pub fn visit(&self, mut visit: impl FnMut(Handle, StableId)) {
+        self.visit_rows(|handle, id, _| visit(handle, id));
+    }
+
+    /// Visit two selected game components while binding their typed columns
+    /// once. Missing columns or absent values are reported as `None` for each
+    /// live identity; the game decides which components it requires.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if runtime setup violated the u32 slot address bound.
+    pub fn visit2<T: 'static, U: 'static>(
+        &self,
+        mut visit: impl FnMut(Handle, StableId, Option<&T>, Option<&U>),
+    ) {
+        let first = self.column::<T>();
+        let second = self.column::<U>();
+        self.visit_rows(|handle, id, row| {
+            visit(
+                handle,
+                id,
+                first.and_then(|column| column.current[row].as_ref()),
+                second.and_then(|column| column.current[row].as_ref()),
+            );
+        });
+    }
+
+    fn visit_rows(&self, mut visit: impl FnMut(Handle, StableId, usize)) {
         for (slot, id) in self.ids.iter().enumerate() {
             if let Some(id) = id {
                 let slot = u32::try_from(slot).expect("validated slot capacity");
@@ -890,6 +917,7 @@ impl PublicationPage {
                         generation: self.generations[slot as usize],
                     },
                     *id,
+                    row_of(self.columns.directory.as_ref(), slot as usize),
                 );
             }
         }

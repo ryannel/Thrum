@@ -375,6 +375,19 @@ fn assert_partitioned_values(page: &PublicationPage, positions: &[u32; 4], activ
             active[slot as usize] != 0
         );
     }
+    let mut seen = [false; 4];
+    page.visit2::<u32, u64>(|handle, _, position, activity| {
+        let slot = handle.slot as usize;
+        assert!(slot < 4 && !seen[slot]);
+        seen[slot] = true;
+        assert_eq!(position, Some(&positions[slot]));
+        assert_eq!(activity, Some(&active[slot]));
+    });
+    assert!(seen.into_iter().all(|seen| seen));
+    page.visit2::<u32, String>(|handle, _, position, absent| {
+        assert_eq!(position, Some(&positions[handle.slot as usize]));
+        assert!(absent.is_none());
+    });
 }
 
 #[test]
