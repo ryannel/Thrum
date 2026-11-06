@@ -1,6 +1,7 @@
 //! Registered game simulation: checked identity, schedule access, one committed
 //! tick and immutable endpoint leases. Concrete fields and rules belong to games.
 
+mod clocked_world;
 mod column_store;
 mod dense_directory;
 mod history;
@@ -16,6 +17,10 @@ mod undo;
 #[cfg(not(target_arch = "wasm32"))]
 mod world_lane;
 
+pub use clocked_world::{
+    ClockedWorld, ClockedWorldError, WorldAdvance, WorldGame, WorldPublication, WorldStep,
+    WorldUpdate,
+};
 pub use history::{HistoryError, HistoryGame, RuntimeHistory};
 pub use input::{ControlBinding, FrameError, InputFrame};
 pub use publication::{PublicationChanges, PublicationPage};
@@ -33,7 +38,4 @@ pub use snapshot::{SnapshotId, StructuralChange};
 pub use snapshot_ring::{DirtyPage, PublicationBusy, SnapshotRing};
 pub use transaction::{Edit, EditError};
 #[cfg(not(target_arch = "wasm32"))]
-pub use world_lane::{
-    WorldLane, WorldLaneAdvance, WorldLaneControls, WorldLaneFault, WorldPublication, WorldTask,
-    WorldUpdate,
-};
+pub use world_lane::{WorldLane, WorldLaneControls, WorldLaneFault, WorldTask};

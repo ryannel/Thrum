@@ -177,8 +177,8 @@ pub struct FrameSample {
 pub struct DriveReport {
     /// Last complete authoritative tick after this callback.
     pub tick: u64,
-    /// Refused elapsed ticks when the bounded clock overloaded. `Some(0)`
-    /// means it remains overloaded and requires explicit pause/drain/resume.
+    /// First refused tick count for the current stopped overload episode.
+    /// Repeats until successful resume; this is state, not an increment.
     pub overload: Option<u64>,
     /// World updates committed in this callback.
     pub completed_ticks: u32,

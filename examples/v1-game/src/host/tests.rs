@@ -99,6 +99,8 @@ fn capture_refreshes_the_latest_committed_world_after_an_unsent_view() {
         for _ in 0..100 {
             host.world
                 .inline_mut()
+                .world
+                .game_mut()
                 .sim
                 .step(&[])
                 .expect("committed world update");
@@ -138,39 +140,53 @@ fn held_publication_drops_one_view_then_recovers_on_a_paused_zero_tick_callback(
         let zero = host
             .world
             .inline_mut()
+            .world
+            .game_mut()
             .sim
             .published_page()
             .expect("baseline lease");
         host.world
             .inline_mut()
+            .world
+            .game_mut()
             .sim
             .step(&[])
             .expect("first held tick");
         let one = host
             .world
             .inline_mut()
+            .world
+            .game_mut()
             .sim
             .published_page()
             .expect("first lease");
         host.world
             .inline_mut()
+            .world
+            .game_mut()
             .sim
             .step(&[])
             .expect("second held tick");
         let two = host
             .world
             .inline_mut()
+            .world
+            .game_mut()
             .sim
             .published_page()
             .expect("second lease");
         host.world
             .inline_mut()
+            .world
+            .game_mut()
             .sim
             .step(&[])
             .expect("third held tick");
         let three = host
             .world
             .inline_mut()
+            .world
+            .game_mut()
             .sim
             .published_page()
             .expect("third lease");
@@ -183,12 +199,20 @@ fn held_publication_drops_one_view_then_recovers_on_a_paused_zero_tick_callback(
         assert_eq!(host.dropped_views(), 1);
         host.pause();
         drop(zero);
+        assert!(
+            thrum_core::sim::WorldGame::publication(host.world.inline_mut().world.game_mut())
+                .expect("lease-only publication")
+                .is_none(),
+            "leasing must not recover a page outside the clock's recovery hook"
+        );
         let recovered = host.drive(now, None).expect("paused recovery");
         assert_eq!((recovered.tick, recovered.completed_ticks), (4, 0));
         assert!(recovered.submitted);
         assert_eq!(
             host.world
                 .inline_mut()
+                .world
+                .game_mut()
                 .sim
                 .published_page()
                 .expect("current page")
@@ -216,14 +240,18 @@ fn stale_frame_source_drops_the_view_without_touching_the_scene() {
             .await
             .expect("prepared scene");
         let original = host.scene.instances[0].current;
-        let capture = host.world.inline_mut().sim.capture();
+        let capture = host.world.inline_mut().world.game_mut().sim.capture();
         host.world
             .inline_mut()
+            .world
+            .game_mut()
             .sim
             .step(&[])
             .expect("advance world");
         host.world
             .inline_mut()
+            .world
+            .game_mut()
             .sim
             .restore(&capture)
             .expect("replay same tick");

@@ -12,47 +12,7 @@ use std::{
 
 use crate::{ClockSample, WorldEpoch};
 
-use super::SnapshotId;
-
-/// A publication's payload and its matching authority identity travel together.
-pub struct WorldPublication<P> {
-    /// Exact committed endpoint identity.
-    pub id: SnapshotId,
-    /// Replay branch; equal numeric ticks on different branches are distinct.
-    pub timeline: u64,
-    /// Immutable, cheaply cloned page lease.
-    pub page: P,
-}
-
-/// One owner update. Counts are increments; the lane accumulates them for readers.
-pub struct WorldUpdate<P> {
-    /// Committed authority epoch.
-    pub epoch: WorldEpoch,
-    /// Committed authority tick.
-    pub tick: u64,
-    /// Replay branch generation.
-    pub timeline: u64,
-    /// Read-only phase sample from the owner's clock.
-    pub clock: ClockSample,
-    /// Updates committed by this call.
-    pub completed_ticks: u32,
-    /// Updates still due after this call.
-    pub queued_ticks: u32,
-    /// Authoritative tick callback CPU time.
-    pub tick_cpu: Duration,
-    /// Views omitted while authority continued.
-    pub skipped_publications: u64,
-    /// Optional derived output changed by this call.
-    pub projected_changes: usize,
-    /// Cumulative loss of optional derived output.
-    pub projection_lost_ticks: u64,
-    /// First refused tick count, if the clock overloaded.
-    pub overload: Option<u64>,
-    /// New page, or `None` when optional publication is busy or unchanged.
-    pub publication: Option<WorldPublication<P>>,
-    /// Delay to the next authority wake, measured from this call's input time.
-    pub next_due: Option<Duration>,
-}
+use super::{SnapshotId, WorldAdvance, WorldPublication, WorldUpdate};
 
 /// A game-owned clock and rules task moved into the resident engine lane.
 /// Continuous controls replace one sampled state; discrete actions use the
@@ -256,29 +216,6 @@ pub struct WorldLane<T: WorldTask> {
     sample_now: Duration,
 }
 
-/// Progress since this render reader's previous poll.
-#[derive(Clone, Copy, Debug)]
-pub struct WorldLaneAdvance {
-    /// Latest authority tick, even when publication is unavailable.
-    pub tick: u64,
-    /// Sticky first refused tick count after overload.
-    pub overload: Option<u64>,
-    /// Ticks committed since the preceding poll.
-    pub completed_ticks: u32,
-    /// Due ticks remaining.
-    pub queued_ticks: u32,
-    /// Optional derived changes since the preceding poll.
-    pub projected_changes: usize,
-    /// Cumulative optional output loss.
-    pub projection_lost_ticks: u64,
-    /// Views omitted since the preceding poll.
-    pub skipped_publications: u64,
-    /// A page appeared without a new committed tick.
-    pub recovered_publication: bool,
-    /// Tick callback CPU since the preceding poll.
-    pub tick_cpu: Duration,
-}
-
 impl<T: WorldTask> WorldLane<T> {
     /// Consume one task and start its autonomous deadline-driven world owner.
     /// # Errors
@@ -366,7 +303,7 @@ impl<T: WorldTask> WorldLane<T> {
     /// Poll metadata and the matching latest page without waiting for the owner.
     /// # Errors
     /// Returns a retained authority or synchronization fault.
-    pub fn poll(&mut self, now: Duration) -> Result<WorldLaneAdvance, WorldLaneFault> {
+    pub fn poll(&mut self, now: Duration) -> Result<WorldAdvance, WorldLaneFault> {
         self.sample_now = now;
         match self.shared.state.try_lock() {
             Ok(state) => {
@@ -411,7 +348,7 @@ impl<T: WorldTask> WorldLane<T> {
         self.last_projected = self.snapshot.projected_total;
         self.last_tick_cpu = self.snapshot.tick_cpu_total;
         self.last_page_sequence = self.snapshot.page_sequence;
-        Ok(WorldLaneAdvance {
+        Ok(WorldAdvance {
             tick: self.snapshot.tick,
             overload: self.snapshot.overload,
             completed_ticks: u32::try_from(completed).unwrap_or(u32::MAX),

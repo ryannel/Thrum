@@ -2,16 +2,16 @@
 
 use std::time::{Duration, Instant};
 
-use thrum_core::sim::{WorldLane, WorldLaneControls};
+use thrum_core::sim::{ClockedWorld, WorldLane, WorldLaneControls};
 
 use crate::simulation::{PublishedPage, SimError};
 
-use super::world::{WorldAdvance, WorldDriver};
+use super::world::{GameWorld, WorldAdvance, WorldDriver};
 
 /// Validated local controls for the resident world. Discrete game actions use
 /// the simulation's admitted-input path instead of this latest-state mailbox.
 #[derive(Clone)]
-pub struct WorldControls(WorldLaneControls<WorldDriver>);
+pub struct WorldControls(WorldLaneControls<ClockedWorld<GameWorld>>);
 
 impl WorldControls {
     /// Replace continuous local axes for the next world update.
@@ -29,7 +29,7 @@ impl WorldControls {
     }
 }
 
-pub(super) struct WorldClient(WorldLane<WorldDriver>);
+pub(super) struct WorldClient(WorldLane<ClockedWorld<GameWorld>>);
 
 impl WorldClient {
     pub(super) fn start(
@@ -38,24 +38,13 @@ impl WorldClient {
         wake: impl Fn() + Send + 'static,
     ) -> Result<(Self, WorldControls), String> {
         let initial_controls = driver.held_controls();
-        let (lane, controls) = WorldLane::start(driver, initial_controls, origin, wake)
+        let (lane, controls) = WorldLane::start(driver.world, initial_controls, origin, wake)
             .map_err(|error| error.to_string())?;
         Ok((Self(lane), WorldControls(controls)))
     }
 
     pub(super) fn poll(&mut self, now: Duration) -> Result<WorldAdvance, String> {
-        let report = self.0.poll(now).map_err(|error| error.to_string())?;
-        Ok(WorldAdvance {
-            tick: report.tick,
-            overload: report.overload,
-            completed_ticks: report.completed_ticks,
-            queued_ticks: report.queued_ticks,
-            projected_changes: report.projected_changes,
-            projection_lost_ticks: report.projection_lost_ticks,
-            skipped_publications: report.skipped_publications,
-            recovered_publication: report.recovered_publication,
-            tick_cpu: report.tick_cpu,
-        })
+        self.0.poll(now).map_err(|error| error.to_string())
     }
 
     pub(super) fn tick(&self) -> u64 {

@@ -66,8 +66,8 @@ target_cost = "Browser V1 scene only with canvas and diagnostic console bindings
 [external_dependencies.web-time]
 requirement = "=1.1.0"
 license = "MIT OR Apache-2.0"
-purpose = "Measure browser frame callback CPU stages with the Web Performance monotonic clock"
-target_cost = "Browser V1 scene only; one monotonic clock read per measured stage, with native std::time retained"
+purpose = "Measure browser frame and engine world-tick CPU stages with the Web Performance monotonic clock"
+target_cost = "Wasm-only game/core timing; two boundary clock reads per measured span; native std::time retained"
 
 [external_dependencies.divan]
 requirement = "=0.1.21"

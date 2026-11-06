@@ -472,7 +472,7 @@
       "current_tree_status": "retired_from_main_at_G0; historical measurements retained"
     },
     "V1_bounded_frame_host": {
-      "implementation": "partial_two_slot_display_link_render_actor_and_autonomous_world_in_v1_game",
+      "implementation": "partial_core_clock_world_lane_and_game_owned_frame_host",
       "functional_validation": "real_metal_tick_interpolation_capture_ordered_timing_overload_and_short_live_surface_runs; surface_generation_and_nonblocking_close_reviewed; lifecycle_qualification_open",
       "experienced_quality": "synthetic_grid_capture_agent_reviewed; motion_and_showcase_quality_open",
       "platform_performance": {
@@ -486,7 +486,7 @@
       "evidence": [
         "../evidence/render/V1-BOUNDED-FRAMES-2026-11-04.md"
       ],
-      "scope": "The Mac render actor owns two GPU slots and late drawable acquisition; one independent world thread publishes tick pairs. Adjacent render columns use page differences with full reconstruction on discontinuity or capacity failure. FrameHost still contains game types; scene pre-submit, generic engine ownership, typed device recovery and Chrome runtime remain open."
+      "scope": "Core owns ClockedWorld and the resident WorldLane; the game supplies rules, input and projections. The Mac actor owns two GPU slots and late acquisition; adjacent columns use page differences with full fallback. FrameHost still contains game types; generic render ownership, scene pre-submit, device recovery and Chrome runtime remain open."
     },
     "V1_cooked_constant_light": {
       "implementation": "partial_native_accepted_source_product_and_offscreen_visual_publication",
