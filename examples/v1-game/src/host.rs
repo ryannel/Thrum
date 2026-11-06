@@ -621,6 +621,14 @@ impl ThreadedFrameHost {
         self.inner.drive(now, surface)
     }
 
+    /// Admit the world observation before scene encoding and late drawable
+    /// acquisition on the render owner.
+    /// # Errors
+    /// Returns a clock, publication or GPU fault without rolling back a tick.
+    pub fn advance(&mut self, now: Duration) -> Result<AdvancedFrame<'_>, String> {
+        self.inner.advance(now)
+    }
+
     /// Whether a serial render view can use an available GPU slot.
     pub fn has_serial_view(&self) -> bool {
         self.inner.has_serial_view()

@@ -1,14 +1,17 @@
 //! Game callback bound to the engine's bounded native frame worker.
 
 use std::{
-    sync::Arc,
+    sync::{
+        Arc,
+        atomic::{AtomicU64, Ordering},
+    },
     time::{Duration, Instant},
 };
 
 use objc2_quartz_core::CACurrentMediaTime;
 use thrum_render::frame::{FrameWorker, TargetLeadStatus, display_target_lead};
 use v1_game::{DriveReport, FrameHost, FrameSample, SurfaceOutput, ThreadedFrameHost};
-use wgpu::{SurfaceTexture, TextureViewDescriptor};
+use wgpu::{CurrentSurfaceTexture, TextureViewDescriptor};
 use winit::event_loop::EventLoopProxy;
 
 use super::UserEvent;
@@ -17,7 +20,8 @@ pub(super) enum RenderJob {
     Frame {
         sequence: u64,
         target_media_seconds: f64,
-        frame: Option<(SurfaceTexture, [u32; 2])>,
+        extent: [u32; 2],
+        surface_generation: u64,
         time_of_day: Option<f32>,
         camera_pitch: Option<f32>,
     },
@@ -25,32 +29,31 @@ pub(super) enum RenderJob {
 }
 
 #[derive(Clone, Copy, Default)]
-pub(super) struct ReadyState {
-    pub(super) ready_view: bool,
-    pub(super) current_scene: bool,
-    pub(super) pending_frames: usize,
-    pub(super) dropped_views: u64,
-    pub(super) dropped_stale_views: u64,
-    pub(super) dropped_surface: u64,
-    pub(super) dropped_reports: u64,
+pub(super) struct FrameCounters {
+    pub(super) skipped_views: u64,
+    pub(super) expired_views: u64,
+    pub(super) missed_surfaces: u64,
+    pub(super) lost_reports: u64,
 }
 
-impl ReadyState {
+impl FrameCounters {
     pub(super) fn read(host: &ThreadedFrameHost) -> Self {
         Self {
-            ready_view: host.has_serial_view(),
-            current_scene: host.has_current_scene_for_display(),
-            pending_frames: host.pending_frames(),
-            dropped_views: host.dropped_views(),
-            dropped_stale_views: host.dropped_stale_views(),
-            dropped_surface: host.dropped_surface(),
-            dropped_reports: host.dropped_reports(),
+            skipped_views: host.dropped_views(),
+            expired_views: host.dropped_stale_views(),
+            missed_surfaces: host.dropped_surface(),
+            lost_reports: host.dropped_reports(),
         }
     }
+}
 
-    pub(super) fn can_present(self) -> bool {
-        self.ready_view || self.current_scene
-    }
+#[derive(Clone, Copy, Debug)]
+pub(super) enum SurfaceStatus {
+    NotAttempted,
+    Presented,
+    Unavailable,
+    Occluded,
+    NeedsReconfigure,
 }
 
 pub(super) enum RenderOutcome {
@@ -62,38 +65,52 @@ pub(super) struct RenderReply {
     pub(super) sequence: u64,
     pub(super) outcome: RenderOutcome,
     pub(super) samples: [Option<FrameSample>; FrameHost::MAX_IN_FLIGHT],
-    pub(super) ready: ReadyState,
+    pub(super) counters: FrameCounters,
     pub(super) worker_wall: Duration,
     pub(super) target_status: Option<TargetLeadStatus>,
+    pub(super) acquire_wall: Option<Duration>,
+    pub(super) surface_status: SurfaceStatus,
+    pub(super) surface_extent: [u32; 2],
+}
+
+pub(super) struct SurfaceState {
+    pub(super) surface: Arc<wgpu::Surface<'static>>,
+    pub(super) config: wgpu::SurfaceConfiguration,
+    pub(super) generation: Arc<AtomicU64>,
 }
 
 pub(super) fn start(
     mut host: ThreadedFrameHost,
     device: wgpu::Device,
     queue: wgpu::Queue,
-    surface_owner: Arc<wgpu::Surface<'static>>,
-    initial_extent: [u32; 2],
+    surface: SurfaceState,
     origin: Instant,
     wake: &EventLoopProxy<UserEvent>,
 ) -> Result<FrameWorker<RenderJob, RenderReply>, String> {
     let signal = wake.clone();
-    let mut current_extent = initial_extent;
+    let SurfaceState {
+        surface: surface_owner,
+        config: mut surface_config,
+        generation: active_surface_generation,
+    } = surface;
+    let mut current_extent = [surface_config.width, surface_config.height];
+    let mut needs_reconfigure = false;
     FrameWorker::start(
         "thrum-v1-render",
         move |job| {
             let job_start = Instant::now();
-            // The actor may be detached during a platform teardown. Keep the
-            // surface registered for any drawable still inside its job.
-            let _surface_owner = &surface_owner;
             match job {
                 RenderJob::Frame {
                     sequence,
                     target_media_seconds,
-                    frame,
+                    extent,
+                    surface_generation,
                     time_of_day,
                     camera_pitch,
                 } => {
                     let mut target_status = None;
+                    let mut acquire_wall = None;
+                    let mut surface_status = SurfaceStatus::NotAttempted;
                     let report = (|| {
                         if let Some(time_of_day) = time_of_day {
                             host.set_time_of_day(time_of_day)?;
@@ -101,33 +118,92 @@ pub(super) fn start(
                         if let Some(camera_pitch) = camera_pitch {
                             host.set_camera_pitch(camera_pitch)?;
                         }
-                        let view = frame.as_ref().map(|(frame, _)| {
-                            frame.texture.create_view(&TextureViewDescriptor::default())
-                        });
-                        let surface =
-                            view.as_ref()
-                                .zip(frame.as_ref())
-                                .map(|(view, (_, extent))| SurfaceOutput {
-                                    view,
-                                    extent: *extent,
-                                });
-                        if let Some((_, extent)) = &frame
-                            && *extent != current_extent
-                        {
-                            host.resize_surface(*extent)?;
-                            current_extent = *extent;
+                        let surface_current =
+                            active_surface_generation.load(Ordering::Acquire) == surface_generation;
+                        if !surface_current {
+                            needs_reconfigure = true;
                         }
-                        // Sample both clocks after preparation. The target may
-                        // expire while this bounded job waits for its worker.
+                        let surface_ready = surface_current
+                            && !extent.contains(&0)
+                            && (extent == current_extent && !needs_reconfigure
+                                || host.pending_frames() == 0);
+                        if surface_ready && (extent != current_extent || needs_reconfigure) {
+                            host.resize_surface(extent)?;
+                            surface_config.width = extent[0];
+                            surface_config.height = extent[1];
+                            surface_owner.configure(&device, &surface_config);
+                            current_extent = extent;
+                            needs_reconfigure = false;
+                        }
+                        // Surface preparation can consume the forecast. Sample
+                        // both clocks only after it has finished.
                         let now = origin.elapsed();
                         let lead = display_target_lead(target_media_seconds, CACurrentMediaTime());
                         target_status = Some(lead.status);
                         host.set_presentation_lead(lead.duration);
-                        let report = host.drive(now, surface.as_ref())?;
-                        if report.surface_presented {
-                            queue.present(frame.ok_or("surface pass without drawable")?.0);
+                        if !surface_ready {
+                            surface_status = if surface_current {
+                                SurfaceStatus::Unavailable
+                            } else {
+                                SurfaceStatus::NeedsReconfigure
+                            };
+                            return host.drive(now, None);
                         }
-                        Ok::<_, String>(report)
+                        let advanced = host.advance(now)?;
+                        if !advanced.can_acquire_serial() {
+                            return advanced.submit(None);
+                        }
+                        // The scene is encoded before requesting a drawable.
+                        // Missing presentation sheds only this optional view.
+                        let encoded = advanced.encode_scene()?;
+                        if active_surface_generation.load(Ordering::Acquire) != surface_generation {
+                            needs_reconfigure = true;
+                            surface_status = SurfaceStatus::NeedsReconfigure;
+                            return Ok(encoded.skip());
+                        }
+                        let acquire_start = Instant::now();
+                        let acquired = surface_owner.get_current_texture();
+                        acquire_wall = Some(acquire_start.elapsed());
+                        let frame = match acquired {
+                            CurrentSurfaceTexture::Success(frame) => frame,
+                            CurrentSurfaceTexture::Suboptimal(frame) => {
+                                needs_reconfigure = true;
+                                frame
+                            }
+                            CurrentSurfaceTexture::Timeout => {
+                                surface_status = SurfaceStatus::Unavailable;
+                                return Ok(encoded.skip());
+                            }
+                            CurrentSurfaceTexture::Occluded => {
+                                surface_status = SurfaceStatus::Occluded;
+                                return Ok(encoded.skip());
+                            }
+                            CurrentSurfaceTexture::Outdated
+                            | CurrentSurfaceTexture::Lost
+                            | CurrentSurfaceTexture::Validation => {
+                                needs_reconfigure = true;
+                                surface_status = SurfaceStatus::NeedsReconfigure;
+                                return Ok(encoded.skip());
+                            }
+                        };
+                        if active_surface_generation.load(Ordering::Acquire) != surface_generation {
+                            needs_reconfigure = true;
+                            surface_status = SurfaceStatus::NeedsReconfigure;
+                            return Ok(encoded.skip());
+                        }
+                        let view = frame.texture.create_view(&TextureViewDescriptor::default());
+                        let surface = SurfaceOutput {
+                            view: &view,
+                            extent,
+                        };
+                        let report = encoded.submit(Some(&surface))?;
+                        if report.surface_presented {
+                            queue.present(frame);
+                            surface_status = SurfaceStatus::Presented;
+                        } else {
+                            surface_status = SurfaceStatus::Unavailable;
+                        }
+                        Ok(report)
                     })();
                     let mut samples = [None; FrameHost::MAX_IN_FLIGHT];
                     for sample in &mut samples {
@@ -138,9 +214,12 @@ pub(super) fn start(
                                     sequence,
                                     outcome: RenderOutcome::Frame(Err(error)),
                                     samples,
-                                    ready: ReadyState::read(&host),
+                                    counters: FrameCounters::read(&host),
                                     worker_wall: job_start.elapsed(),
                                     target_status,
+                                    acquire_wall,
+                                    surface_status,
+                                    surface_extent: current_extent,
                                 };
                             }
                         }
@@ -152,9 +231,12 @@ pub(super) fn start(
                         sequence,
                         outcome: RenderOutcome::Frame(report),
                         samples,
-                        ready: ReadyState::read(&host),
+                        counters: FrameCounters::read(&host),
                         worker_wall: job_start.elapsed(),
                         target_status,
+                        acquire_wall,
+                        surface_status,
+                        surface_extent: current_extent,
                     }
                 }
                 RenderJob::Finish => {
@@ -180,9 +262,12 @@ pub(super) fn start(
                         sequence: 0,
                         outcome: RenderOutcome::Finish(result),
                         samples: [None; FrameHost::MAX_IN_FLIGHT],
-                        ready: ReadyState::read(&host),
+                        counters: FrameCounters::read(&host),
                         worker_wall: job_start.elapsed(),
                         target_status: None,
+                        acquire_wall: None,
+                        surface_status: SurfaceStatus::NotAttempted,
+                        surface_extent: current_extent,
                     }
                 }
             }

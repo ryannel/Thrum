@@ -7,21 +7,21 @@ mod display_link;
 mod render_actor;
 
 use std::{
-    sync::Arc,
-    sync::mpsc::{self, Receiver, SyncSender, TryRecvError},
-    thread,
+    sync::{
+        Arc,
+        atomic::{AtomicU64, Ordering},
+    },
     time::{Duration, Instant},
 };
 
 use display_link::ViewDisplayLink;
-use render_actor::{ReadyState, RenderJob, RenderOutcome, RenderReply};
+use render_actor::{FrameCounters, RenderJob, RenderOutcome, RenderReply, SurfaceStatus};
 use thrum_render::{
     capabilities::DeviceCapabilities,
     frame::{FrameWorker, TargetLeadStatus},
     present::SurfaceProfile,
 };
 use v1_game::{FrameConfig, FrameHost, FrameSample, WorldControls};
-use wgpu::CurrentSurfaceTexture;
 use winit::{
     application::ApplicationHandler,
     event::{ElementState, WindowEvent},
@@ -44,127 +44,8 @@ const KEY_DOWN: u8 = 128;
 #[derive(Clone, Copy, Debug)]
 enum UserEvent {
     WorldAdvanced,
-    SurfaceAcquired,
     DisplayTarget(f64),
     RenderDone,
-}
-
-struct SurfaceState {
-    surface: Arc<wgpu::Surface<'static>>,
-    config: wgpu::SurfaceConfiguration,
-}
-
-#[derive(Clone, Copy)]
-struct AcquireRequest {
-    extent: [u32; 2],
-    reconfigure: bool,
-}
-
-enum Acquired {
-    Frame(wgpu::SurfaceTexture, [u32; 2]),
-    Unavailable,
-    Occluded,
-    NeedsReconfigure,
-    Fault(String),
-}
-
-struct SurfaceWorker {
-    request: SyncSender<AcquireRequest>,
-    result: Receiver<Acquired>,
-    join: thread::JoinHandle<()>,
-    surface_owner: Arc<wgpu::Surface<'static>>,
-}
-
-impl SurfaceWorker {
-    fn start(
-        mut state: SurfaceState,
-        device: wgpu::Device,
-        wake: EventLoopProxy<UserEvent>,
-    ) -> Result<Self, String> {
-        let surface_owner = Arc::clone(&state.surface);
-        // A zero-capacity request handshake prevents reconfigure until the
-        // event loop has presented or dropped the previously acquired frame.
-        let (request, requests) = mpsc::sync_channel::<AcquireRequest>(0);
-        let (results, result) = mpsc::sync_channel(1);
-        let join = thread::Builder::new()
-            .name("v1-surface-acquire".into())
-            .spawn(move || {
-                let mut needs_reconfigure = false;
-                while let Ok(request) = requests.recv() {
-                    let extent = request.extent;
-                    let answer = if extent.contains(&0) {
-                        Acquired::Unavailable
-                    } else {
-                        if state.config.width != extent[0]
-                            || state.config.height != extent[1]
-                            || needs_reconfigure
-                        {
-                            if !request.reconfigure {
-                                drop(results.send(Acquired::Fault(
-                                    "uncoordinated surface reconfigure".into(),
-                                )));
-                                let _ = wake.send_event(UserEvent::SurfaceAcquired);
-                                break;
-                            }
-                            state.config.width = extent[0];
-                            state.config.height = extent[1];
-                            state.surface.configure(&device, &state.config);
-                            needs_reconfigure = false;
-                        }
-                        match state.surface.get_current_texture() {
-                            CurrentSurfaceTexture::Success(frame)
-                            | CurrentSurfaceTexture::Suboptimal(frame) => {
-                                Acquired::Frame(frame, extent)
-                            }
-                            CurrentSurfaceTexture::Timeout => Acquired::Unavailable,
-                            CurrentSurfaceTexture::Occluded => Acquired::Occluded,
-                            CurrentSurfaceTexture::Outdated | CurrentSurfaceTexture::Lost => {
-                                needs_reconfigure = true;
-                                Acquired::NeedsReconfigure
-                            }
-                            CurrentSurfaceTexture::Validation => {
-                                Acquired::Fault("surface acquire validation failure".into())
-                            }
-                        }
-                    };
-                    if results.send(answer).is_err() {
-                        break;
-                    }
-                    if wake.send_event(UserEvent::SurfaceAcquired).is_err() {
-                        break;
-                    }
-                }
-            })
-            .map_err(|error| format!("surface worker: {error}"))?;
-        Ok(Self {
-            request,
-            result,
-            join,
-            surface_owner,
-        })
-    }
-
-    fn shutdown(self) {
-        let Self {
-            request,
-            result,
-            join,
-            surface_owner,
-        } = self;
-        // Both channels close first: the worker may be blocked on the next
-        // request or a full result slot holding a drawable.
-        drop(request);
-        drop(result);
-        // Metal may wait indefinitely inside nextDrawable after a hide/close
-        // race. Never block AppKit teardown on that call. The detached worker
-        // retains its own surface/device owners until the call returns.
-        if join.is_finished() {
-            drop(join.join());
-        } else {
-            drop(join);
-        }
-        drop(surface_owner);
-    }
 }
 
 struct App {
@@ -180,16 +61,15 @@ struct App {
     invalid_target_evaluations: usize,
     clamped_target_evaluations: usize,
     pending_display_target: bool,
-    surface: Option<SurfaceWorker>,
     surface_format: Option<wgpu::TextureFormat>,
     surface_extent: [u32; 2],
-    worker_extent: [u32; 2],
-    needs_reconfigure: bool,
+    observed_extent: [u32; 2],
+    surface_generation: Arc<AtomicU64>,
     render: Option<FrameWorker<RenderJob, RenderReply>>,
     world_controls: Option<WorldControls>,
     world_tick: u64,
     render_in_flight: Option<u64>,
-    ready: ReadyState,
+    counters: FrameCounters,
     held_keys: u8,
     time_of_day: f32,
     pending_time_of_day: Option<f32>,
@@ -203,16 +83,15 @@ struct App {
     callbacks: usize,
     unavailable: usize,
     occluded: usize,
-    waiting_acquire: usize,
-    acquiring: bool,
-    stale_acquire: usize,
     surface_faults: usize,
     callback_walls: Vec<Duration>,
     worker_walls: Vec<Duration>,
+    acquire_walls: Vec<Duration>,
     samples: Vec<FrameSample>,
     profiler_title_at: Duration,
     adapter_name: String,
     error: Option<String>,
+    closed_by_user: bool,
 }
 
 impl App {
@@ -236,16 +115,15 @@ impl App {
             invalid_target_evaluations: 0,
             clamped_target_evaluations: 0,
             pending_display_target: false,
-            surface: None,
             surface_format: None,
             surface_extent: [0, 0],
-            worker_extent: [0, 0],
-            needs_reconfigure: false,
+            observed_extent: [0, 0],
+            surface_generation: Arc::new(AtomicU64::new(1)),
             render: None,
             world_controls: None,
             world_tick: 0,
             render_in_flight: None,
-            ready: ReadyState::default(),
+            counters: FrameCounters::default(),
             held_keys: 0,
             time_of_day: 0.5,
             pending_time_of_day: None,
@@ -259,17 +137,33 @@ impl App {
             callbacks: 0,
             unavailable: 0,
             occluded: 0,
-            waiting_acquire: 0,
-            acquiring: false,
-            stale_acquire: 0,
             surface_faults: 0,
             callback_walls: Vec::with_capacity(target_frames * 8),
             worker_walls: Vec::with_capacity(target_frames * 4),
+            acquire_walls: Vec::with_capacity(target_frames * 4),
             samples: Vec::with_capacity(target_frames * 2),
             profiler_title_at: Duration::ZERO,
             adapter_name: String::new(),
             error: None,
+            closed_by_user: false,
         }
+    }
+
+    fn invalidate_surface(&self) -> Result<(), String> {
+        self.surface_generation
+            .try_update(Ordering::AcqRel, Ordering::Acquire, |generation| {
+                generation.checked_add(1)
+            })
+            .map(|_| ())
+            .map_err(|_| "surface generation exhausted".to_owned())
+    }
+
+    fn observe_extent(&mut self, extent: [u32; 2]) -> Result<(), String> {
+        if extent != self.observed_extent {
+            self.invalidate_surface()?;
+            self.observed_extent = extent;
+        }
+        Ok(())
     }
 
     fn controls(&self) -> [f32; 3] {
@@ -418,7 +312,7 @@ impl App {
             let _ = world_wake.send_event(UserEvent::WorldAdvanced);
         })?;
         self.world_controls = Some(controls);
-        self.ready = ReadyState::read(&host);
+        self.counters = FrameCounters::read(&host);
         self.window = Some(window);
         self.display_link = Some(ViewDisplayLink::start(
             self.window.as_ref().ok_or("window missing")?,
@@ -426,20 +320,16 @@ impl App {
         )?);
         self.surface_format = Some(config.format);
         self.surface_extent = [config.width, config.height];
-        self.worker_extent = self.surface_extent;
-        let render_surface_owner = Arc::clone(&surface);
-        let configured_extent = [config.width, config.height];
-        self.surface = Some(SurfaceWorker::start(
-            SurfaceState { surface, config },
-            device.clone(),
-            wake.clone(),
-        )?);
+        self.observed_extent = self.surface_extent;
         self.render = Some(render_actor::start(
             host,
             device,
             queue,
-            render_surface_owner,
-            configured_extent,
+            render_actor::SurfaceState {
+                surface,
+                config,
+                generation: Arc::clone(&self.surface_generation),
+            },
             self.origin,
             wake,
         )?);
@@ -448,7 +338,20 @@ impl App {
 
     fn receive_render(&mut self, reply: RenderReply) -> Result<(), String> {
         self.render_in_flight = None;
-        self.ready = reply.ready;
+        self.counters = reply.counters;
+        self.surface_extent = reply.surface_extent;
+        if let Some(acquire_wall) = reply.acquire_wall {
+            self.acquire_walls.push(acquire_wall);
+        }
+        match reply.surface_status {
+            SurfaceStatus::Presented | SurfaceStatus::NotAttempted => {}
+            SurfaceStatus::Unavailable => self.unavailable += 1,
+            SurfaceStatus::Occluded => {
+                self.unavailable += 1;
+                self.occluded += 1;
+            }
+            SurfaceStatus::NeedsReconfigure => self.surface_faults += 1,
+        }
         match reply.target_status {
             Some(TargetLeadStatus::Late) => self.late_target_evaluations += 1,
             Some(TargetLeadStatus::Invalid) => self.invalid_target_evaluations += 1,
@@ -494,7 +397,7 @@ impl App {
 
     fn deadline_error(&self) -> String {
         format!(
-            "{} presented frames unavailable: presented={}, tick={}, display_link_callbacks={}, render_callbacks={}, unavailable={}, occluded={}, waiting_acquire={}, stale_acquire={}, surface_faults={}, dropped_views={}, dropped_stale_views={}, dropped_surface={}",
+            "{} presented frames unavailable: presented={}, tick={}, display_link_callbacks={}, render_callbacks={}, unavailable={}, occluded={}, surface_faults={}, dropped_views={}, dropped_stale_views={}, dropped_surface={}",
             self.target_frames,
             self.presented,
             self.world_tick,
@@ -502,12 +405,10 @@ impl App {
             self.callbacks,
             self.unavailable,
             self.occluded,
-            self.waiting_acquire,
-            self.stale_acquire,
             self.surface_faults,
-            self.ready.dropped_views,
-            self.ready.dropped_stale_views,
-            self.ready.dropped_surface
+            self.counters.skipped_views,
+            self.counters.expired_views,
+            self.counters.missed_surfaces
         )
     }
 
@@ -523,59 +424,23 @@ impl App {
                 return Ok(());
             }
         }
-        if self.request_sequence == self.submitted_sequence || !self.pending_display_target {
+        if self.presented >= self.target_frames
+            || self.request_sequence == self.submitted_sequence
+            || !self.pending_display_target
+        {
             return Ok(());
         }
         let now = self.origin.elapsed();
         self.last_call = now;
         self.callbacks += 1;
         let size = self.window.as_ref().ok_or("window missing")?.inner_size();
-        let state = self.surface.as_ref().ok_or("surface missing")?;
-        let frame = if self.acquiring {
-            match state.result.try_recv() {
-                Ok(Acquired::Frame(frame, extent)) if extent == [size.width, size.height] => {
-                    self.acquiring = false;
-                    self.surface_extent = extent;
-                    self.needs_reconfigure = false;
-                    Some((frame, extent))
-                }
-                Ok(Acquired::Frame(_, _)) => {
-                    self.acquiring = false;
-                    self.stale_acquire += 1;
-                    self.needs_reconfigure = true;
-                    None
-                }
-                Ok(Acquired::Unavailable) => {
-                    self.acquiring = false;
-                    self.unavailable += 1;
-                    None
-                }
-                Ok(Acquired::Occluded) => {
-                    self.acquiring = false;
-                    self.unavailable += 1;
-                    self.occluded += 1;
-                    None
-                }
-                Ok(Acquired::NeedsReconfigure) => {
-                    self.acquiring = false;
-                    self.surface_faults += 1;
-                    self.needs_reconfigure = true;
-                    None
-                }
-                Ok(Acquired::Fault(error)) => return Err(error),
-                Err(TryRecvError::Empty) => {
-                    self.waiting_acquire += 1;
-                    None
-                }
-                Err(TryRecvError::Disconnected) => return Err("surface worker stopped".into()),
-            }
-        } else {
-            None
-        };
+        let extent = [size.width, size.height];
+        self.observe_extent(extent)?;
         let job = RenderJob::Frame {
             sequence: self.target_sequence,
             target_media_seconds: self.display_target.ok_or("display target missing")?,
-            frame,
+            extent,
+            surface_generation: self.surface_generation.load(Ordering::Acquire),
             time_of_day: self.pending_time_of_day,
             camera_pitch: self.pending_camera_pitch,
         };
@@ -622,7 +487,7 @@ impl App {
             .ok_or("render worker missing")?
             .recv_timeout(Duration::from_secs(15))
             .ok_or("render worker did not finish GPU drain")?;
-        self.ready = final_reply.ready;
+        self.counters = final_reply.counters;
         match final_reply.outcome {
             RenderOutcome::Finish(result) => self.samples.extend(result?),
             RenderOutcome::Frame(_) => {
@@ -636,6 +501,7 @@ impl App {
             duration.as_secs_f64() * 1e3
         });
         let worker_wall = percentile(&self.worker_walls, |duration| duration.as_secs_f64() * 1e3);
+        let acquire_wall = percentile(&self.acquire_walls, |duration| duration.as_secs_f64() * 1e3);
         let presented: Vec<_> = self
             .samples
             .iter()
@@ -676,7 +542,7 @@ impl App {
             "GPU timestamps unavailable".to_owned()
         };
         Ok(format!(
-            "adapter={}; surface={:?} {}x{}; presented={}; callbacks={}; display_link_callbacks={}; late_target_evaluations={}; invalid_target_evaluations={}; clamped_target_evaluations={}; committed_ticks={}; unavailable={}; occluded={}; waiting_acquire={}; stale_acquire={}; surface_faults={}; dropped_surface={}; dropped_views={}; dropped_stale_views={}; dropped_reports={}; callback CPU p50/p95={:.3}/{:.3} ms; render-worker CPU p50/p95={:.3}/{:.3} ms; tick CPU p50/p95={:.3}/{:.3} us; live-view CPU p50/p95={:.3}/{:.3} us; upload CPU p50/p95={:.3}/{:.3} us; encode CPU p50/p95={:.3}/{:.3} us; upload+encode CPU p50/p95={:.3}/{:.3} us; {gpu}",
+            "adapter={}; surface={:?} {}x{}; presented={}; callbacks={}; display_link_callbacks={}; late_target_evaluations={}; invalid_target_evaluations={}; clamped_target_evaluations={}; committed_ticks={}; unavailable={}; occluded={}; surface_faults={}; dropped_surface={}; dropped_views={}; dropped_stale_views={}; dropped_reports={}; callback wall p50/p95={:.3}/{:.3} ms; render-worker wall p50/p95={:.3}/{:.3} ms; drawable-acquire wall p50/p95={:.3}/{:.3} ms; tick CPU p50/p95={:.3}/{:.3} us; live-view CPU p50/p95={:.3}/{:.3} us; upload CPU p50/p95={:.3}/{:.3} us; encode CPU p50/p95={:.3}/{:.3} us; upload+encode CPU p50/p95={:.3}/{:.3} us; {gpu}",
             self.adapter_name,
             self.surface_format.ok_or("surface format missing")?,
             self.surface_extent[0],
@@ -690,17 +556,17 @@ impl App {
             self.world_tick,
             self.unavailable,
             self.occluded,
-            self.waiting_acquire,
-            self.stale_acquire,
             self.surface_faults,
-            self.ready.dropped_surface,
-            self.ready.dropped_views,
-            self.ready.dropped_stale_views,
-            self.ready.dropped_reports,
+            self.counters.missed_surfaces,
+            self.counters.skipped_views,
+            self.counters.expired_views,
+            self.counters.lost_reports,
             wall.0,
             wall.1,
             worker_wall.0,
             worker_wall.1,
+            acquire_wall.0,
+            acquire_wall.1,
             tick.0,
             tick.1,
             view.0,
@@ -720,9 +586,6 @@ impl Drop for App {
         drop(self.display_link.take());
         if let Some(render) = self.render.take() {
             render.shutdown();
-        }
-        if let Some(surface) = self.surface.take() {
-            surface.shutdown();
         }
     }
 }
@@ -804,9 +667,6 @@ impl ApplicationHandler<UserEvent> for App {
                 }
                 return;
             }
-            UserEvent::SurfaceAcquired => {
-                self.request_sequence = self.request_sequence.saturating_add(1);
-            }
             UserEvent::RenderDone => {}
         }
         if let Some(window) = &self.window {
@@ -820,9 +680,19 @@ impl ApplicationHandler<UserEvent> for App {
         }
         let result = match event {
             WindowEvent::CloseRequested => {
+                self.closed_by_user = true;
+                let result = self.invalidate_surface();
                 event_loop.exit();
-                Ok(())
+                result
             }
+            WindowEvent::Destroyed => {
+                self.closed_by_user |= self.presented < self.target_frames;
+                let result = self.invalidate_surface();
+                event_loop.exit();
+                result
+            }
+            WindowEvent::Resized(size) => self.observe_extent([size.width, size.height]),
+            WindowEvent::Occluded(_) => self.invalidate_surface(),
             WindowEvent::RedrawRequested => {
                 let result = self.draw();
                 if self.presented >= self.target_frames {
@@ -850,39 +720,7 @@ impl ApplicationHandler<UserEvent> for App {
     }
 
     fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
-        if let (Some(window), Some(surface)) = (&self.window, &self.surface) {
-            let size = window.inner_size();
-            let extent = [size.width, size.height];
-            let reconfigure = self.needs_reconfigure || extent != self.worker_extent;
-            if self.pending_display_target
-                && self.ready.can_present()
-                && !self.acquiring
-                && self.render_in_flight.is_none()
-                && self.ready.pending_frames
-                    < if reconfigure {
-                        1
-                    } else {
-                        FrameHost::MAX_IN_FLIGHT
-                    }
-            {
-                match surface.request.try_send(AcquireRequest {
-                    extent,
-                    reconfigure,
-                }) {
-                    Ok(()) => {
-                        self.acquiring = true;
-                        if !extent.contains(&0) {
-                            self.worker_extent = extent;
-                        }
-                    }
-                    Err(mpsc::TrySendError::Full(_)) => {}
-                    Err(mpsc::TrySendError::Disconnected(_)) => {
-                        self.error = Some("surface worker stopped".into());
-                        event_loop.exit();
-                        return;
-                    }
-                }
-            }
+        if self.window.is_some() && self.render.is_some() {
             if self.origin.elapsed() >= self.run_deadline {
                 self.error = Some(self.deadline_error());
                 event_loop.exit();
@@ -916,6 +754,10 @@ pub(super) fn run() {
     let mut app = App::new(event_loop.create_proxy(), target_frames);
     if let Err(error) = event_loop.run_app(&mut app) {
         app.error = Some(format!("event loop: {error}"));
+    }
+    if app.closed_by_user {
+        println!("v1-game: closed before qualification; pending presentation cancelled");
+        return;
     }
     match app.error.take().map_or_else(|| app.finish(), Err) {
         Ok(report) => println!("{report}"),
