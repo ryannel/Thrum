@@ -2,8 +2,10 @@
 //! nothing and still encode the same rendering work. Readback is asynchronous;
 //! the owning host polls its device/event loop and bounds outstanding batches.
 
-use std::sync::Arc;
-use std::sync::mpsc::{self, Receiver, TryRecvError};
+use std::sync::{
+    Arc,
+    atomic::{AtomicU8, Ordering},
+};
 
 use crate::capabilities::DeviceCapabilities;
 
@@ -46,8 +48,61 @@ struct Enabled {
     capacity: u32,
     names: PassNames,
     results: Vec<PassTiming>,
-    render_pending: Option<Receiver<()>>,
-    pending: Option<Receiver<Result<(), wgpu::BufferAsyncError>>>,
+    completion: Completion,
+    phase: Phase,
+}
+
+enum Phase {
+    Recording,
+    Rendering,
+    Mapping,
+}
+
+const WAITING: u8 = 0;
+const READY: u8 = 1;
+const FAILED: u8 = 2;
+
+// One sequential producer at a time: render completion, then map completion.
+// Each timing owner has its own mailbox, retained across batches.
+struct Completion(Arc<AtomicU8>);
+
+impl Completion {
+    fn new() -> Self {
+        Self(Arc::new(AtomicU8::new(WAITING)))
+    }
+
+    fn arm(&self) -> CompletionTicket {
+        self.0.store(WAITING, Ordering::Release);
+        CompletionTicket(Some(Arc::clone(&self.0)))
+    }
+
+    fn ready(&self) -> Result<bool, TimingError> {
+        match self.0.load(Ordering::Acquire) {
+            WAITING => Ok(false),
+            READY => Ok(true),
+            _ => Err(TimingError::MapFailed),
+        }
+    }
+}
+
+// A callback dropped without delivery reports the same failure as a disconnected
+// channel. Taking its handle MUST precede the terminal store: the owner may
+// immediately rearm while this disarmed ticket is still being destroyed.
+struct CompletionTicket(Option<Arc<AtomicU8>>);
+
+impl CompletionTicket {
+    fn complete(&mut self, succeeded: bool) {
+        let state = self.0.take().expect("completion is delivered once");
+        state.store(if succeeded { READY } else { FAILED }, Ordering::Release);
+    }
+}
+
+impl Drop for CompletionTicket {
+    fn drop(&mut self) {
+        if let Some(state) = &self.0 {
+            state.store(FAILED, Ordering::Release);
+        }
+    }
 }
 
 // Keep the owned labels across batches. A static graph records the same pass
@@ -158,8 +213,8 @@ impl GpuTimings {
                 capacity: max_passes,
                 names: PassNames::with_capacity(max_passes as usize),
                 results: Vec::with_capacity(max_passes as usize),
-                render_pending: None,
-                pending: None,
+                completion: Completion::new(),
+                phase: Phase::Recording,
             }),
         })
     }
@@ -180,7 +235,7 @@ impl GpuTimings {
         let Some(enabled) = &self.enabled else {
             return Ok(());
         };
-        if enabled.pending.is_some() || enabled.render_pending.is_some() {
+        if !matches!(enabled.phase, Phase::Recording) {
             return Err(TimingError::Busy);
         }
         let additional = usize::try_from(additional).map_err(|_| TimingError::Capacity)?;
@@ -240,7 +295,7 @@ impl GpuTimings {
         let Some(enabled) = &mut self.enabled else {
             return Ok(None);
         };
-        if enabled.pending.is_some() || enabled.render_pending.is_some() {
+        if !matches!(enabled.phase, Phase::Recording) {
             return Err(TimingError::Busy);
         }
         let index = u32::try_from(enabled.names.len()).map_err(|_| TimingError::Capacity)?;
@@ -264,7 +319,7 @@ impl GpuTimings {
         let Some(enabled) = &mut self.enabled else {
             return Ok(());
         };
-        if enabled.pending.is_some() || enabled.render_pending.is_some() {
+        if !matches!(enabled.phase, Phase::Recording) {
             return Err(TimingError::Busy);
         }
         enabled.names.clear();
@@ -286,17 +341,17 @@ impl GpuTimings {
         let Some(enabled) = &mut self.enabled else {
             return Ok(());
         };
-        if enabled.pending.is_some() || enabled.render_pending.is_some() {
+        if !matches!(enabled.phase, Phase::Recording) {
             return Err(TimingError::Busy);
         }
         if enabled.names.is_empty() {
             return Ok(());
         }
-        let (send, receive) = mpsc::channel();
+        let mut ticket = enabled.completion.arm();
+        enabled.phase = Phase::Rendering;
         encoder.on_submitted_work_done(move || {
-            let _ = send.send(());
+            ticket.complete(true);
         });
-        enabled.render_pending = Some(receive);
         Ok(())
     }
     /// Encode resolve/copy in a *later* host-owned command buffer, only after
@@ -317,25 +372,25 @@ impl GpuTimings {
         let Some(enabled) = &mut self.enabled else {
             return Ok(false);
         };
-        if enabled.pending.is_some() {
+        if matches!(enabled.phase, Phase::Mapping) {
             return Err(TimingError::Busy);
         }
         if enabled.names.is_empty() {
             return Ok(false);
         }
-        let Some(completion) = &enabled.render_pending else {
+        let Phase::Rendering = enabled.phase else {
             return Err(TimingError::Busy);
         };
-        match completion.try_recv() {
-            Err(TryRecvError::Empty) => return Ok(false),
-            Err(TryRecvError::Disconnected) => {
-                enabled.render_pending = None;
+        match enabled.completion.ready() {
+            Ok(false) => return Ok(false),
+            Err(error) => {
+                enabled.phase = Phase::Recording;
                 enabled.names.clear();
-                return Err(TimingError::MapFailed);
+                return Err(error);
             }
-            Ok(()) => {}
+            Ok(true) => {}
         }
-        enabled.render_pending = None;
+        enabled.phase = Phase::Recording;
         let count = u32::try_from(enabled.names.len())
             .ok()
             .and_then(|n| n.checked_mul(2))
@@ -343,16 +398,16 @@ impl GpuTimings {
         let bytes = u64::from(count) * u64::from(wgpu::QUERY_SIZE);
         encoder.resolve_query_set(&enabled.query, 0..count, &enabled.resolve, 0);
         encoder.copy_buffer_to_buffer(&enabled.resolve, 0, &enabled.readback, 0, bytes);
-        let (send, receive) = mpsc::channel();
+        let mut ticket = enabled.completion.arm();
+        enabled.phase = Phase::Mapping;
         encoder.map_buffer_on_submit(
             &enabled.readback,
             wgpu::MapMode::Read,
             0..bytes,
             move |result| {
-                let _ = send.send(result);
+                ticket.complete(result.is_ok());
             },
         );
-        enabled.pending = Some(receive);
         Ok(true)
     }
     /// Nonblocking collection. `None` means unsupported, no batch, or not ready;
@@ -373,19 +428,19 @@ impl GpuTimings {
         let Some(enabled) = &mut self.enabled else {
             return Ok(None);
         };
-        let Some(pending) = &enabled.pending else {
+        let Phase::Mapping = enabled.phase else {
             return Ok(None);
         };
-        match pending.try_recv() {
-            Err(TryRecvError::Empty) => return Ok(None),
-            Err(TryRecvError::Disconnected) | Ok(Err(_)) => {
-                enabled.pending = None;
+        match enabled.completion.ready() {
+            Ok(false) => return Ok(None),
+            Err(error) => {
+                enabled.phase = Phase::Recording;
                 enabled.names.clear();
-                return Err(TimingError::MapFailed);
+                return Err(error);
             }
-            Ok(Ok(())) => {}
+            Ok(true) => {}
         }
-        enabled.pending = None;
+        enabled.phase = Phase::Recording;
         let bytes = u64::try_from(enabled.names.len())
             .ok()
             .and_then(|n| n.checked_mul(2 * u64::from(wgpu::QUERY_SIZE)))
@@ -427,25 +482,4 @@ impl GpuTimings {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::PassNames;
-    use std::sync::Arc;
-
-    #[test]
-    fn pass_names_reuse_slots_across_batches_and_replace_changed_roles() {
-        let mut names = PassNames::with_capacity(2);
-        assert_eq!(names.push("depth"), 0);
-        assert_eq!(names.push("forward"), 1);
-        let first = Arc::clone(&names.slots[0]);
-        let second = Arc::clone(&names.slots[1]);
-        names.clear();
-        assert_eq!(names.push("depth"), 0);
-        assert_eq!(names.push("forward"), 1);
-        assert!(Arc::ptr_eq(&first, &names.slots[0]));
-        assert!(Arc::ptr_eq(&second, &names.slots[1]));
-        names.clear();
-        assert_eq!(names.push("shadow"), 0);
-        assert!(!Arc::ptr_eq(&first, &names.slots[0]));
-        assert_eq!(names.slots[1].as_ref(), "forward");
-    }
-}
+mod tests;
