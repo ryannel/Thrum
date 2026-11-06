@@ -61,14 +61,14 @@ The native Metal recorder stays in G3t. The later dedicated performance phase ow
 - [ ] **G3b — functional engine frame runtime.** Display-link targets drive Mac/iOS/browser presentation; world/render
   work is off Apple's main thread, at most two frames are in flight, interpolation is on GPU and acquisition is late.
   Core owns clock/lane; thrum-render owns `FrameHost`, slots, tokens, completion and history without game schema.
-  Submitted Metal pause/replacement and six headless Chrome function rows pass; live P/loss, actual tab and simulator lifecycle remain. Instrument latency/present intervals;
+  Submitted Metal pause/replacement and six headless Chrome function rows pass; live P/loss, actual tab and simulator lifecycle remain; a long Chrome run lost its GPU silently. Instrument latency/present intervals;
   visible stutter, dropped frames and hitches trigger investigation. [Quiet frame figures and later comparisons](evidence/render/V1-BOUNDED-FRAMES-2026-11-04.md)
   remain baselines; wgpu frame allocation is not a gate or reason to bring native work forward.
 - [ ] **G3s — physical sky, Sun and atmosphere.** Hillaire (2020) transmittance, multiple-scattering, sky-view and aerial
   LUTs; Sun disk; physical illuminance drives lights and shadows. Time controls run dawn through sunset to night.
   Scaled half storage, metering and smooth SDR highlights pass Metal checks; Chrome time/camera controls show twilight.
-  The matched-medium CPU referee drove horizon separation and reflected sky on the planet. Remaining:
-  multiple-scattering model error, spectral accuracy, declared radiance tolerance and final contrast choice. Review cameras/sweep for
+  SH9 now lights faces by normal; the direct cosine referee bounds its approximation. Remaining:
+  multiple-scattering/spectral error, declared radiance tolerance, motion and contrast. Review cameras/sweep for
   colour, banding and flicker. [First-light evidence](evidence/v1-workload/G3S-FIRST-LIGHT-2026-11-06.md) is partial;
   record complete atmosphere cost when available, without a numeric admission target. Follow the Broadsides reading
   map and public-domain/CC0 provenance rules; no code/assets or GPL-derived values are imported.
@@ -120,4 +120,4 @@ profiles whole frames, derives targets, and revisits retained commands, mapped u
 Retain parked work in Git: F3 limits/receipts, T2 retained-root proofs, N1 ledger/credit, publication accounting, R0 exact
 predicates, R3 optics, moving shore, cohort cloud lab, water/cloud implementation and in-memory protocol hardening.
 Retained-forward is parked at `a4b9da8`; split pre-submit at `30ae560`; nonlinear M-LUT layout at `11cb21e`
-(`codex/g3s-multiple-layout`, mixed oracle accuracy). None is merged; the selected sky remains `e061671`.
+(`codex/g3s-multiple-layout`, mixed oracle accuracy). None is merged; the selected transport remains `e061671`.

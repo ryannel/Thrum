@@ -41,10 +41,15 @@ fn shipping_atmosphere_shader_layouts_keep_mapping_and_view_aux_separate() {
             include_str!("../ground.wgsl")
         ),
         format!("{common}\n{}", include_str!("../sky.wgsl")),
-        format!("{common}\n{}", include_str!("../diffuse.wgsl")),
+        format!(
+            "{common}\n{}\n{}",
+            include_str!("../irradiance.wgsl"),
+            include_str!("../diffuse.wgsl")
+        ),
         format!("{common}\n{}", include_str!("../aerial.wgsl")),
         format!(
-            "{}\n{}",
+            "{}\n{}\n{}",
+            include_str!("../irradiance.wgsl"),
             include_str!("../../synthetic.wgsl"),
             include_str!("../../synthetic_aerial.wgsl")
         ),

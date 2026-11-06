@@ -1,3 +1,4 @@
+mod diffuse;
 mod ground;
 mod mapping;
 mod reference;
@@ -65,13 +66,13 @@ fn encoded_constant_sky_integrates_in_physical_illuminance_units() {
         });
         let directional = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("constant sky illuminance"),
-            size: 64,
+            size: crate::synthetic::LIGHT_BYTES as u64,
             usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
             mapped_at_creation: false,
         });
         let readback = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("constant sky illuminance readback"),
-            size: 64,
+            size: crate::synthetic::LIGHT_BYTES as u64,
             usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
             mapped_at_creation: false,
         });

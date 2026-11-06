@@ -1,6 +1,6 @@
 # G3b checkpoint — M3 Max / portable Metal, 6 November 2026
 
-**Functional gate open.** Numeric CPU/allocation/cadence targets retired by the 6 Nov 11:15 owner decision. Preserve measured history; lifecycle, displayed function and visual motion remain open. No iPhone result.
+**Functional gate open.** Numeric targets retired by the 6 Nov 11:15 decision; measured history retained. Lifecycle, display and visual motion remain open. No iPhone result.
 
 | Owner quiet row, `91ad52d` | p50 | p95 | p99 |
 | --- | ---: | ---: | ---: |
@@ -22,7 +22,8 @@ Metal lifecycle pixels, full checks, Wasm and iOS-simulator compilation pass.
 Metal replacement tests cover candidates, retry, camera/shadow/exposure and old callbacks. The 10k game keeps exact
 paused twilight pixels (peak delta 0), authority and controls; a running world advances without its GPU.
 Review found redraw-dependent recovery and lost profiling reports; both are corrected before this checkpoint.
-Raw: `tmp/g3b-device-recovery/`. No live loss/drawable/timing claim.
+Raw: `tmp/g3b-device-recovery/`. No live loss/drawable/timing claim. One later recovery fixture failed its first-drive
+submission assertion (cause unproved); it now permits bounded optional-view retries and fails immediately on overload.
 
 **Chrome function:** `sh examples/v1-game/web/build.sh`, then Node 24 `scripts/check_v1_browser.mjs --case all --output tmp/new-browser-run`.
 Chrome 156 / ANGLE Metal M3 Max, actual HTTP-200 Wasm hash checked. Normal, pause hook, resize, deliberate overload,
@@ -30,7 +31,8 @@ input and controls each complete ≥600 GPU samples. Controls keep RAF live whil
 pause across visibility hooks, resume/re-pause and keep running beyond the profiling window (655 presents).
 A temporary missing `host.pause()` mutation fails this row; source restored byte-for-byte. Review caught the former
 false pass from cancelling RAF. Raw: `tmp/g3b-browser-six-qualified/`, `tmp/g3b-pause-mutant/`.
-Headless function only; actual tab changes, browser device loss, live Mac P/loss and iOS lifecycle remain open.
+Headless function only. A later long Chrome run lost its GPU and showed black without a page fault; handling is open,
+as are actual tab changes, live Mac P/loss and iOS lifecycle. Raw loss: `tmp/g3s-directional/chrome.log`.
 Repeated capture on shared load showed ~16 ms tails even in the trivial blit, unlike the function batch; no controlled
 regression/speed conclusion. Dense-grid aliasing persists. No new allocation or physical-display measurement.
 

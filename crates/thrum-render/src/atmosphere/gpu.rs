@@ -316,7 +316,7 @@ fn prepare_diffuse(
                 ty: wgpu::BindingType::Buffer {
                     ty: wgpu::BufferBindingType::Storage { read_only: false },
                     has_dynamic_offset: false,
-                    min_binding_size: wgpu::BufferSize::new(64),
+                    min_binding_size: wgpu::BufferSize::new(crate::synthetic::LIGHT_BYTES as u64),
                 },
                 count: None,
             },
@@ -332,6 +332,8 @@ fn prepare_diffuse(
         source: wgpu::ShaderSource::Wgsl(
             concat!(
                 include_str!("common.wgsl"),
+                "\n",
+                include_str!("irradiance.wgsl"),
                 "\n",
                 include_str!("diffuse.wgsl")
             )

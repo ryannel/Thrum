@@ -4,35 +4,38 @@
 
 | Row | Evidence | Status |
 | --- | --- | --- |
-| Storage/units | Six-angle finite LUTs; πL × Sun diffuse regression | Scoped pass |
-| Camera/SDR | GPU meter/history/cancellation/resize; f64 shoulder within 1 byte | Pass |
+| Storage/camera/SDR | Six-angle LUTs, πL, meter/history, shoulder f64 within 1 byte | Scoped pass |
+| Directional diffuse | Analytic/zero/colour/rotation/127000 scaling; eight actual solar/azimuth rows, 14 normals | Scoped pass |
+| Projection/reference | Worst coefficient error 0.0645% M0; direct-reference refinement ≤0.0483% M0 on actual skies | Sampling pass |
+| SH approximation | Worst direct error 5.225% M0; relative error up to 331% on faint directions | Accuracy open |
 | Transport | 198 matched-medium rays; horizon and reflected planet boundary | Accuracy open |
-| Chrome controls | Solar presets/sliders, camera, live-render pause; six function rows | Pass, headless |
-| Look | Readable twilight; neutral subject reveals flat ambient; grid moiré/pastel contrast | Open |
+| Look | Clearer twilight faces; noon silhouette, grid aliasing/pastel contrast remain | Partial |
 
-![Six held Chrome solar phases](g3s-first-light/solar-contact.png) · [held-phase clip](g3s-first-light/solar-sweep.mp4) · [earlier native 1080p Sun](g3s-first-light/sun-facing-1080p.png)
+![Six held Chrome solar phases](g3s-first-light/solar-contact.png) · [held-phase clip](g3s-first-light/solar-sweep.mp4) · [earlier native Sun](g3s-first-light/sun-facing-1080p.png)
 
-Current contact/clip: actual served Wasm `0816025e4d84f6bd602bda124cfe5a5dbb7c56866d0b217879ef842b98affa86`,
-Chrome 156.0.8078.81, ANGLE Metal M3 Max, 1252×704, world tick 4. Six held phases, **not motion/cadence**.
-Pause, then scene/noon; Sunrise; Noon; Sunset; Twilight; scene view. Presets encode time/yaw/pitch in the page;
-scene view resets camera only. The clip repeats each captured phase for one second; decoded frames reviewed.
-Source: game scene/control code; 65° FOV, 18% rough neutral material and one enlarged existing static entity.
-Root/independent review finds flat faces, grid aliasing and a one-pixel horizon step; none is showcase quality.
-PNG checks: no pure-black pixels; twilight has 7.1% clipped-channel pixels. Explicit-sRGB H.264 adds grid chroma
-artifacts (sky-only mean byte error <0.62). Keep calibration; address directional diffuse before contrast grading.
-Actual tab visibility, device loss and physical display intervals are unqualified.
+Current contact/clip: served Wasm `fe6d60406d83f3d862df184cf8e497bb7d04f3e08d3f537842104615832f456e`,
+Chrome 156.0.8078.81, ANGLE Metal M3 Max, 1252×704, world tick 2. Six held phases, **not cadence**.
+Pause; scene/noon; Sunrise; Noon; Sunset; Twilight; scene view. Page presets own time/yaw/pitch;
+scene view resets camera only. Clip repeats each captured phase for one second, explicit sRGB H.264;
+decoded frames reviewed (grid/chroma compression remains). Code/recipe: 65° FOV, 18% rough neutral material,
+one enlarged static entity. Root/independent review retain the distinct pink side/violet top/dark front at twilight.
+No new broad clipping/banding; noon silhouette, grid moiré, jagged shadows and a one-pixel horizon step remain.
+Sky-only upper-300-row sunrise/sunset/twilight comparison against `0ab189d`: peak delta 1 SDR byte.
 
-The CPU referee integrates declared coefficient bands, not measured Earth spectra/CIE/lux. All 198 first-order
-values stay exact. At Sun 0°, green single-scatter below/above curved horizon changed 9.30/0.36→1.04/0.99.
-Metal two-colour tests prohibit cross-half filtering at 0/2/100 km. Tangent/pole/zenith/azimuth and ABI checks pass.
-Nonlinear M sampling `11cb21e` is parked: one sky error grew 3.11%→23.00%; retain `e061671`. No whole-sky pass.
-GroundE adds reflected sky at the actual planet hit: 1 KiB logical texels, one cooperative profile kernel, no new
-ordinary-frame kernel. πL/zero/scaling/terminator/cache tests pass; 144 sky-side full values stay exact.
-Ground median sampled-MC disagreement at Sun 45°/0° changed 6.98%/92.09%→0.24%/3.56%; −3°/−6° remains
-16.71%/22.16%, with adverse horizon rows (−6° blue +188.68%). 32768 paths/ray leave 18 zero/41 sparse unresolved.
+[SH9 design](../../design/modules/ENVIRONMENT.md#selected-mathematical-relationships-and-domains) keeps
+horizontal metering independent: 144-byte signed tail, 1024 additional cached LUT fetches, no new pass/readback.
+Only final irradiance clamps; 64 normal probes report risk, not pixels. Flag16 cannot change gain/history.
+The `3M0/32` kernel envelope is not measured accuracy. Independent midpoint refinement must pass first;
+the narrow reference needed 256→512 without relaxing tolerance. Review corrected horizon sampling,
+zenith/rotated Sun and solar scaling. Dark-direction SH errors remain; no whole-sky pass.
+Browser normal forward+sky p50/p95 0.131/0.197 ms versus earlier 0.197/0.197: quantized, shared load, no speed win.
+No new full-frame CPU/allocation or complete-atmosphere cost claim.
 
-LUT gains 65536/1024 preserve twilight. C250 metering has no readback and follows submitted history.
-Game `NeutralHighlights` uses Khronos highlight compression/desaturation, omitting its material toe; not standard
-PBR Neutral. No new pass; calibration is unchanged. Earlier twilight side/Sun-facing clipped-channel fractions fell
-36.6%→0% / 100%→5.85%: headroom, not physical accuracy. Spectral accuracy/model error remain open.
-Native Q/E turns, R/F tilts, brackets edit time; Chrome exposes sliders/presets. Raw: `tmp/g3s-{storage,exposure,shoulder,reference,horizon,ground}/`, `tmp/g3b-browser/`, `tmp/g3b-browser-six-qualified/`.
+A sampled sunset run hit WebGPU loss/black output: **rejected as motion evidence**; browser loss handling is next.
+Raw numerical/capture/failure logs: `tmp/g3s-directional/`; baseline `tmp/g3b-browser/`.
+
+Transport remains separate: declared coefficient bands are not measured Earth spectra/CIE. Horizon filtering
+and GroundE improve selected rays, but adverse full transport remains (−6° blue +188.68%, sparse MC rows).
+Nonlinear M layout `11cb21e` is parked; keep `e061671`. LUT gains 65536/1024 preserve twilight; C250 metering
+has no readback. Game NeutralHighlights preserves calibration, with no material toe; not standard PBR Neutral.
+Physical display motion, actual tab/mobile lifecycle, spectral accuracy and final contrast remain open.

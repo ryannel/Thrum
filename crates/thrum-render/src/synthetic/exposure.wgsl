@@ -26,6 +26,8 @@ const FLOOR: u32 = 1u;
 const CLAMP: u32 = 2u;
 const NOT_METERED: u32 = 4u;
 const INVALID: u32 = 8u;
+// Informational SH risk on fixed normal probes; not a pixel-clamp count.
+const SKY_SH_NEGATIVE_PROBE: u32 = 16u;
 fn finite(value: f32) -> bool {
     return (bitcast<u32>(value) & 0x7f800000u) != 0x7f800000u;
 }
@@ -59,6 +61,7 @@ fn resolve() {
             }
         }
     }
+    if policy.atmosphere!=0u && directional[3].w>1.0 { flags|=SKY_SH_NEGATIVE_PROBE; }
     result.values = vec4(policy.pre_exposure, inverse, ev, lux);
     result.metadata = vec4(flags, serials.current, policy.sdr_tone_map);
 }

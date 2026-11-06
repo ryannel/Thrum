@@ -39,27 +39,13 @@ These are engine capabilities, not a requirement for every game to enable every 
 
 ### Selected bounded authored source and light handoff
 
-The first authored E1 source has two selected **semantic** profiles.
-`constant-light-v1` now has a bounded provisional F3 staged-source proof as
-`thrum.environment.authored` schema 1; its F4 product and runnable build remain
-open. The proposed `authored-vertical-rain-v1` uses schema 2 and is still
-refused by F3. `constant-light-v1` is
-the R0 provider: one geometric Sun direction and raw perpendicular illuminance,
-one isotropic ambient irradiance, and a separate terminal background radiance.
-It has no clock update, wind/rain/cloud grid, sky draw, GPU resource or weather
-job. `authored-vertical-rain-v1` adds prescribed day/weather phase maps,
-layered wind, a periodic planar cloud-optical-depth field, static vertical-rain
-cells and optional gas facts. Fog remains outside the first proposed source
-grammar. These are selectable
-profiles of one source contract, not simultaneous authorities for the same
-quantity. The [implementor recipe](../research/ENVIRONMENT-IMPLEMENTOR-DOGFOOD-2026-11-02.md)
-fixes the bounded first fixture, operator formulas, source records, cost and
-refusal cases. The isolated [schema-2 grammar proof](../research/E1-AUTHORED-RAIN-F3-SCHEMA-2026-11-03.md)
-narrows their meanings and tests a typed parser/reference closure; its five
-source decisions still need owner adoption. Its storm and fixture JSON spellings remain proposed until F3
-accepts them; the constant-light numeric/array source and typed light link
-pass provisional staged validation only. The semantic quantities and
-ownership below are selected now.
+The authored profiles select one authority per quantity: `constant-light-v1` (schema 1, the R0 Sun,
+isotropic ambient and independent background) and proposed `authored-vertical-rain-v1` (schema 2).
+The constant staged-source proof does not qualify a runnable build; schema 2 remains refused by F3.
+The constant profile has no clock, wind/rain/cloud grid, sky draw, GPU resource or weather job. Rain adds
+prescribed phase maps, wind, periodic cloud optical depth, vertical rain and optional gas facts; fog is separate.
+The [recipe](../research/ENVIRONMENT-IMPLEMENTOR-DOGFOOD-2026-11-02.md) fixes the fixture/operators;
+[schema-2 proof](../research/E1-AUTHORED-RAIN-F3-SCHEMA-2026-11-03.md) retains proposed decisions and spelling.
 
 | Source quantity | Producer and semantic handoff | Retained consumer rule |
 | --- | --- | --- |
@@ -192,17 +178,20 @@ GPU pipeline before R0 view readiness. A failed cook, stale async result or
 source edit cannot mix a new Sun with old ambient/background; the prior
 identified ready build remains until a complete replacement is published.
 
-The first proof needs independent cardinal/non-cardinal normalization,
-negative direction components and signed-zero vectors; golden
-byte/UUID/endian/hash cases; a cache matrix for
-semantic versus formatting/opaque/label edits, identity and definition
-changes; corrupted-cache and stale-result refusal; source lease versus
-checkout isolation; and zero selected-source cost counters. Measure cook and
-decode elapsed work, allocations and simultaneous product/binding bytes. These
-are build/headless checks; the R0 image, ABI, device and assembled frame-cost
-gates remain separate.
-
 ### Selected mathematical relationships and domains
+
+G3s sky diffuse uses a full-sphere nine-coefficient irradiance polynomial, including the planet boundary but
+excluding the separate Sun disk. With `M0=∫L`, `M1=∫Lω`, `Q=∫L(ωωᵀ−I/3)`, evaluate
+`E(n)=M0/4+n·M1/2+15 nᵀQn/32` on the final world shading normal. Keep signed coefficients; clamp only the
+final reconstructed irradiance. The kernel differs from clamped cosine by at most `3/32`, giving absolute
+channel error ≤`3M0/32` plus quadrature error, not a universal relative tolerance. Compare independently
+against direct cosine integration of the same filtered LUT before promotion; transport/spectral error is separate.
+The existing 256-sample upper horizontal meter stays independent. A private 144-byte tail follows the 64-byte
+light prefix; Lambert `/π`, AO, solar colour/lux and storage scale apply once. One cached diffuse workgroup
+adds 1024 samples: horizon-split GL16 in squared μ-distance ×32 azimuths, ~10 KiB shared storage, no new pass,
+readback or per-pixel atomics. Fixed authored ambient is unchanged. Sixty-four normal probes record negative raw
+RGB risk (count/minimum, not affected pixels); exposure flag16 is informational and never changes gain/history.
+This follows [Ramamoorthi/Hanrahan](https://cseweb.ucsd.edu/~ravir/papers/envmap/), re-derived without copied code.
 
 The shared environment contract carries **fields and fluxes**, not a mandatory global fluid solver. For a physically driven provider, material transport follows `∂_t q + ∇·(q u) = S_q − D_q` for a conserved concentration/coverage proxy `q` with wind/flow `u`, source `S_q` and sink `D_q`. Authored/keyframed providers may publish the same query fields without solving this PDE; they are marked authored and cannot claim dynamical conservation. A front, gust or cloud cell must therefore be represented as a time-varying spatial field, not a camera-tied screen animation. `u(x,y,z,t)` uses C01's right-handed Y-up frame and is sampled at the consumer's height; plant drag, rain drift, cloud advection and water forcing use the same field with their own response laws. Grid spacing, timestep and numerical diffusion bound a simulated provider; the interface exposes interpolation support and a validity region rather than concealing that error.
 
