@@ -4,6 +4,7 @@
 #[cfg(not(target_arch = "wasm32"))]
 mod native {
     use std::{
+        panic::{AssertUnwindSafe, catch_unwind},
         sync::{
             Arc, Condvar, Mutex, PoisonError,
             atomic::{AtomicBool, Ordering},
@@ -32,6 +33,52 @@ mod native {
         closed: AtomicBool,
     }
 
+    impl<Request, Reply> Shared<Request, Reply> {
+        fn close(&self) -> bool {
+            // Hold both predicate locks while closing so a waiter cannot miss
+            // the notification between checking the state and sleeping.
+            let request = self
+                .request
+                .value
+                .lock()
+                .unwrap_or_else(PoisonError::into_inner);
+            let reply = self
+                .reply
+                .value
+                .lock()
+                .unwrap_or_else(PoisonError::into_inner);
+            let was_closed = self.closed.swap(true, Ordering::AcqRel);
+            self.request.ready.notify_all();
+            self.reply.ready.notify_all();
+            drop(reply);
+            drop(request);
+            was_closed
+        }
+    }
+
+    struct WorkerOwner<Request, Reply, W: FnMut()> {
+        shared: Arc<Shared<Request, Reply>>,
+        wake: W,
+        wake_in_progress: bool,
+    }
+
+    impl<Request, Reply, W: FnMut()> WorkerOwner<Request, Reply, W> {
+        fn notify(&mut self) {
+            self.wake_in_progress = true;
+            (self.wake)();
+            self.wake_in_progress = false;
+        }
+    }
+
+    impl<Request, Reply, W: FnMut()> Drop for WorkerOwner<Request, Reply, W> {
+        fn drop(&mut self) {
+            if !self.shared.close() && !self.wake_in_progress {
+                // A panicking observer cannot turn a worker fault into a process abort.
+                drop(catch_unwind(AssertUnwindSafe(|| (self.wake)())));
+            }
+        }
+    }
+
     /// One in-flight request and one completed reply. The worker does not hold
     /// a game, window or GPU type in this interface.
     pub struct FrameWorker<Request, Reply> {
@@ -55,30 +102,37 @@ mod native {
         pub fn start(
             name: &str,
             mut work: impl FnMut(Request) -> Reply + Send + 'static,
-            mut wake: impl FnMut() + Send + 'static,
+            wake: impl FnMut() + Send + 'static,
         ) -> std::io::Result<Self> {
             let shared = Arc::new(Shared {
                 request: Slot::empty(),
                 reply: Slot::empty(),
                 closed: AtomicBool::new(false),
             });
-            let worker = Arc::clone(&shared);
+            let worker = WorkerOwner {
+                shared: Arc::clone(&shared),
+                wake,
+                wake_in_progress: false,
+            };
             let join = thread::Builder::new().name(name.into()).spawn(move || {
+                let mut worker = worker;
                 loop {
                     let request = {
                         let mut slot = worker
+                            .shared
                             .request
                             .value
                             .lock()
                             .unwrap_or_else(PoisonError::into_inner);
-                        while slot.is_none() && !worker.closed.load(Ordering::Acquire) {
+                        while slot.is_none() && !worker.shared.closed.load(Ordering::Acquire) {
                             slot = worker
+                                .shared
                                 .request
                                 .ready
                                 .wait(slot)
                                 .unwrap_or_else(PoisonError::into_inner);
                         }
-                        if worker.closed.load(Ordering::Acquire) {
+                        if worker.shared.closed.load(Ordering::Acquire) {
                             return;
                         }
                         match slot.take() {
@@ -88,24 +142,26 @@ mod native {
                     };
                     let reply = work(request);
                     let mut slot = worker
+                        .shared
                         .reply
                         .value
                         .lock()
                         .unwrap_or_else(PoisonError::into_inner);
-                    while slot.is_some() && !worker.closed.load(Ordering::Acquire) {
+                    while slot.is_some() && !worker.shared.closed.load(Ordering::Acquire) {
                         slot = worker
+                            .shared
                             .reply
                             .ready
                             .wait(slot)
                             .unwrap_or_else(PoisonError::into_inner);
                     }
-                    if worker.closed.load(Ordering::Acquire) {
+                    if worker.shared.closed.load(Ordering::Acquire) {
                         return;
                     }
                     *slot = Some(reply);
-                    worker.reply.ready.notify_one();
+                    worker.shared.reply.ready.notify_one();
                     drop(slot);
-                    wake();
+                    worker.notify();
                 }
             })?;
             Ok(Self {
@@ -151,6 +207,11 @@ mod native {
             reply
         }
 
+        /// Whether the render owner has stopped or was explicitly closed.
+        pub fn is_closed(&self) -> bool {
+            self.shared.closed.load(Ordering::Acquire)
+        }
+
         /// Wait for a reply during explicit shutdown or qualification only.
         pub fn recv_timeout(&self, timeout: Duration) -> Option<Reply> {
             let mut slot = self
@@ -192,26 +253,7 @@ mod native {
 
     impl<Request, Reply> FrameWorker<Request, Reply> {
         fn close(&self) {
-            // A notification must be paired with the mutex that protects the
-            // wait predicate. Otherwise close can race between a worker's
-            // predicate check and its actual wait.
-            let request = self
-                .shared
-                .request
-                .value
-                .lock()
-                .unwrap_or_else(PoisonError::into_inner);
-            let reply = self
-                .shared
-                .reply
-                .value
-                .lock()
-                .unwrap_or_else(PoisonError::into_inner);
-            self.shared.closed.store(true, Ordering::Release);
-            self.shared.request.ready.notify_all();
-            self.shared.reply.ready.notify_all();
-            drop(reply);
-            drop(request);
+            self.shared.close();
         }
     }
 
@@ -227,7 +269,7 @@ mod native {
         use std::{
             sync::{
                 Arc,
-                atomic::{AtomicBool, Ordering},
+                atomic::{AtomicBool, AtomicU32, Ordering},
                 mpsc,
             },
             thread,
@@ -291,6 +333,68 @@ mod native {
             entering.recv().expect("worker entered again");
             resume.send(()).expect("resume second");
             assert_eq!(worker.recv_timeout(Duration::from_secs(1)), Some(8));
+            worker.shutdown();
+        }
+
+        #[test]
+        fn panicking_job_closes_worker_and_wakes_the_window() {
+            let (wake, observed) = mpsc::sync_channel(1);
+            let worker = FrameWorker::start(
+                "frame-panic-test",
+                |()| -> () { panic!("render job failed") },
+                move || {
+                    let _ = wake.try_send(());
+                },
+            )
+            .expect("worker");
+            worker
+                .try_send(())
+                .unwrap_or_else(|_| panic!("first request"));
+            observed
+                .recv_timeout(Duration::from_secs(1))
+                .expect("terminal wake");
+            assert!(worker.is_closed());
+            assert!(matches!(worker.try_send(()), Err(SendFault::Closed(()))));
+            assert!(worker.recv_timeout(Duration::from_millis(10)).is_none());
+            worker.shutdown();
+        }
+
+        #[test]
+        fn panicking_wake_does_not_retry_or_leave_a_live_worker() {
+            let (entered, observed) = mpsc::sync_channel(1);
+            let calls = Arc::new(AtomicU32::new(0));
+            let count = Arc::clone(&calls);
+            let worker = FrameWorker::start(
+                "frame-wake-panic-test",
+                |value| value + 1,
+                move || {
+                    count.fetch_add(1, Ordering::AcqRel);
+                    let _ = entered.try_send(());
+                    panic!("observer failed");
+                },
+            )
+            .expect("worker");
+            worker
+                .try_send(1)
+                .unwrap_or_else(|_| panic!("first request"));
+            observed
+                .recv_timeout(Duration::from_secs(1))
+                .expect("callback entered");
+            let deadline = Instant::now() + Duration::from_secs(1);
+            while !worker.is_closed() {
+                assert!(
+                    Instant::now() < deadline,
+                    "worker did not report callback failure"
+                );
+                thread::yield_now();
+            }
+            assert_eq!(calls.load(Ordering::Acquire), 1);
+            assert_eq!(
+                worker.try_recv(),
+                Some(2),
+                "published reply remains consumable"
+            );
+            assert!(matches!(worker.try_send(3), Err(SendFault::Closed(3))));
             worker.shutdown();
         }
     }
