@@ -1,18 +1,11 @@
 //! The game's single authoritative clock, rules and optional projection output.
 
 use std::time::Duration;
-#[cfg(not(target_arch = "wasm32"))]
-use std::time::Instant;
-#[cfg(target_arch = "wasm32")]
-use web_time::Instant;
 
-#[cfg(not(target_arch = "wasm32"))]
-use thrum_core::ClockSample;
-use thrum_core::{ClockConfig, ClockState, TickClock};
-#[cfg(not(target_arch = "wasm32"))]
+pub(super) use thrum_core::sim::WorldAdvance;
 use thrum_core::{
-    WorldEpoch,
-    sim::{WorldPublication, WorldTask, WorldUpdate},
+    ClockConfig,
+    sim::{ClockedWorld, SnapshotId, WorldGame, WorldPublication, WorldStep},
 };
 
 use crate::{
@@ -186,8 +179,12 @@ impl WorldPort {
     }
 }
 
+/// The game body stays here; scheduling and the fixed clock belong to core.
 pub(super) struct WorldDriver {
-    pub(super) clock: TickClock,
+    pub(super) world: ClockedWorld<GameWorld>,
+}
+
+pub(super) struct GameWorld {
     pub(super) sim: Simulation,
     projections: Option<ProjectionOutbox>,
     desired_axes: [f32; 3],
@@ -195,104 +192,90 @@ pub(super) struct WorldDriver {
     input_sequence: u64,
 }
 
-#[derive(Clone, Copy)]
-pub(super) struct WorldAdvance {
-    pub(super) tick: u64,
-    pub(super) overload: Option<u64>,
-    pub(super) completed_ticks: u32,
-    pub(super) queued_ticks: u32,
-    pub(super) projected_changes: usize,
-    pub(super) projection_lost_ticks: u64,
-    pub(super) skipped_publications: u64,
-    pub(super) recovered_publication: bool,
-    pub(super) tick_cpu: Duration,
-}
-
 impl WorldDriver {
     pub(super) fn new() -> Result<Self, String> {
-        Ok(Self {
-            clock: TickClock::new(ClockConfig::default(), Duration::ZERO)
-                .map_err(|error| format!("clock: {error:?}"))?,
+        let game = GameWorld {
             sim: scene::simulation()?,
             projections: None,
             desired_axes: [0.0; 3],
             admitted_axes: [0.0; 3],
             input_sequence: 1,
+        };
+        Ok(Self {
+            world: ClockedWorld::new(game, ClockConfig::default(), Duration::ZERO)
+                .map_err(|error| error.to_string())?,
         })
     }
 
     pub(super) fn presentation_alpha_at(&self, lead: Duration) -> f32 {
-        self.clock.presentation_alpha_at(lead)
-    }
-
-    #[cfg(not(target_arch = "wasm32"))]
-    pub(super) fn clock_sample(&self) -> ClockSample {
-        self.clock.presentation_sample()
+        self.world.presentation_alpha_at(lead)
     }
 
     #[cfg(not(target_arch = "wasm32"))]
     pub(super) fn held_controls(&self) -> [f32; 3] {
-        self.desired_axes
+        self.world.game().desired_axes
     }
 
     pub(super) fn tick(&self) -> u64 {
-        self.sim.tick()
+        self.world.game().sim.tick()
     }
 
     pub(super) fn epoch(&self) -> u128 {
-        self.sim.epoch().0
+        self.world.game().sim.epoch().0
     }
 
     pub(super) fn timeline(&self) -> u64 {
-        self.sim.timeline()
+        self.world.game().sim.timeline()
     }
 
     pub(super) fn has_current_page(&self) -> bool {
-        self.sim.has_current_page()
+        self.world.game().sim.has_current_page()
     }
 
     pub(super) fn published_page(&mut self) -> Result<PublishedPage, SimError> {
-        self.sim.published_page()
+        let game = self.world.game_mut();
+        game.recover_page()?;
+        if !game.sim.has_current_page() {
+            return Err(SimError::PublicationBusy);
+        }
+        game.sim.published_page()
     }
 
     pub(super) fn next_due_in(&self) -> Option<Duration> {
-        self.clock.next_due_in()
+        self.world.next_due_in()
     }
 
     pub(super) fn pause(&mut self) {
-        self.clock.pause();
+        self.world.pause();
     }
 
     pub(super) fn resume(&mut self, now: Duration) -> Result<(), String> {
-        self.clock
-            .resume(now)
-            .map_err(|error| format!("clock resume: {error:?}"))
+        self.world.resume(now).map_err(|error| error.to_string())
     }
 
     pub(super) fn set_controls(&mut self, axes: [f32; 3]) -> Result<(), String> {
-        scene::control_frame(scene::LOCAL_PEER, axes, 0, 0)
-            .validate_axes()
-            .map_err(|error| format!("local controls: {error:?}"))?;
-        self.desired_axes = axes;
-        Ok(())
+        self.world
+            .set_controls(axes)
+            .map_err(|error| error.to_string())
     }
 
     pub(super) fn controlled_position(&self) -> Option<[f64; 3]> {
-        self.sim
-            .handle(scene::CONTROLLED_ID)
-            .and_then(|handle| self.sim.get(handle).ok())
+        let sim = &self.world.game().sim;
+        sim.handle(scene::CONTROLLED_ID)
+            .and_then(|handle| sim.get(handle).ok())
             .map(|entity| entity.position.0)
     }
 
     pub(super) fn enable_projection(&mut self) -> Result<(), String> {
-        if self.projections.is_none() {
-            let page = self
+        let game = self.world.game_mut();
+        if game.projections.is_none() {
+            let page = game
                 .sim
                 .published_page()
                 .map_err(|error| format!("world page: {error:?}"))?;
             let mut outbox = ProjectionOutbox::new(ENTITY_COUNT);
             outbox.reset_full(&page);
-            self.projections = Some(outbox);
+            game.projections = Some(outbox);
         }
         Ok(())
     }
@@ -301,24 +284,29 @@ impl WorldDriver {
         &mut self,
         consume: impl FnOnce(&GameProjection),
     ) -> Result<Option<bool>, ProjectionGap> {
-        self.projections
+        let game = self.world.game_mut();
+        let timeline = game.sim.timeline();
+        game.projections
             .as_mut()
-            .map(|outbox| outbox.poll(self.sim.timeline(), consume))
+            .map(|outbox| outbox.poll(timeline, consume))
             .transpose()
     }
 
     pub(super) fn projection_reserved_bytes(&self) -> usize {
-        self.projections
+        self.world
+            .game()
+            .projections
             .as_ref()
             .map_or(0, ProjectionOutbox::reserved_bytes)
     }
 
     pub(super) fn reset_projection_baseline(&mut self) -> Result<(), String> {
-        let outbox = self
+        let game = self.world.game_mut();
+        let outbox = game
             .projections
             .as_mut()
             .ok_or("projection output is disabled")?;
-        let page = self
+        let page = game
             .sim
             .published_page()
             .map_err(|error| format!("world page: {error:?}"))?;
@@ -327,97 +315,28 @@ impl WorldDriver {
     }
 
     pub(super) fn advance(&mut self, now: Duration) -> Result<WorldAdvance, String> {
-        let mut tick_cpu = Duration::ZERO;
-        let desired_axes = self.desired_axes;
-        let admitted_axes = &mut self.admitted_axes;
-        let input_sequence = &mut self.input_sequence;
-        let sim = &mut self.sim;
-        let projections = &mut self.projections;
-        let mut projected_changes = 0;
-        let mut skipped_publications = 0_u64;
-        let clock = self
-            .clock
-            .advance(now, 4, || {
-                let start = Instant::now();
-                let result = (|| {
-                    if desired_axes
-                        .iter()
-                        .zip(admitted_axes.iter())
-                        .any(|(desired, admitted)| desired.to_bits() != admitted.to_bits())
-                    {
-                        let tick = sim.tick().checked_add(1).ok_or("input tick exhausted")?;
-                        let frame = scene::control_frame(
-                            scene::LOCAL_PEER,
-                            desired_axes,
-                            tick,
-                            *input_sequence,
-                        );
-                        sim.admit_frame(frame)
-                            .map_err(|error| format!("local input admission: {error:?}"))?;
-                        *admitted_axes = desired_axes;
-                        *input_sequence = input_sequence
-                            .checked_add(1)
-                            .ok_or("input sequence exhausted")?;
-                    }
-                    sim.step(&[])
-                        .map_err(|error| format!("simulation step: {error:?}"))?;
-                    if sim.has_current_page() {
-                        let page = sim
-                            .published_page()
-                            .map_err(|error| format!("world page: {error:?}"))?;
-                        if let Some(outbox) = projections.as_mut() {
-                            if page.is_baseline() {
-                                outbox.reset_full(&page);
-                                projected_changes += page.len();
-                            } else {
-                                projected_changes += outbox.capture(&page);
-                            }
-                        }
-                    } else {
-                        skipped_publications = skipped_publications.saturating_add(1);
-                    }
-                    Ok::<(), String>(())
-                })();
-                tick_cpu += start.elapsed();
-                result
-            })
-            .map_err(|error| format!("clock advance: {error:?}"))?;
-        if let Some(error) = clock.step_error {
-            return Err(format!("simulation tick failed: {error:?}"));
-        }
-        let recovered_publication = if self.sim.has_current_page() {
-            false
-        } else {
-            match self.sim.published_page() {
-                Ok(page) => {
-                    if let Some(outbox) = self.projections.as_mut() {
-                        projected_changes += outbox.capture(&page);
-                    }
-                    true
-                }
-                Err(SimError::PublicationBusy) => false,
-                Err(error) => return Err(format!("world page: {error:?}")),
-            }
-        };
-        Ok(WorldAdvance {
-            tick: self.sim.tick(),
-            overload: (clock.state == ClockState::Overloaded).then_some(clock.refused_on_overload),
-            completed_ticks: clock.completed,
-            queued_ticks: clock.queued,
-            projected_changes,
-            projection_lost_ticks: self
-                .projections
-                .as_ref()
-                .map_or(0, ProjectionOutbox::lost_ticks),
-            skipped_publications,
-            recovered_publication,
-            tick_cpu,
-        })
+        self.world.advance(now).map_err(|error| error.to_string())
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
-impl WorldTask for WorldDriver {
+impl GameWorld {
+    fn recover_page(&mut self) -> Result<Option<usize>, SimError> {
+        if self.sim.has_current_page() {
+            return Ok(None);
+        }
+        match self.sim.published_page() {
+            Ok(page) => Ok(Some(
+                self.projections
+                    .as_mut()
+                    .map_or(0, |outbox| outbox.capture(&page)),
+            )),
+            Err(SimError::PublicationBusy) => Ok(None),
+            Err(error) => Err(error),
+        }
+    }
+}
+
+impl WorldGame for GameWorld {
     type Control = [f32; 3];
     type Page = PublishedPage;
     type Error = String;
@@ -434,65 +353,92 @@ impl WorldTask for WorldDriver {
             .all(|(left, right)| left.to_bits() == right.to_bits())
     }
 
-    fn initial(&mut self) -> Result<WorldUpdate<Self::Page>, Self::Error> {
-        let page = self
-            .published_page()
-            .map_err(|error| format!("initial world page: {error:?}"))?;
-        Ok(WorldUpdate {
-            epoch: WorldEpoch(self.epoch()),
-            tick: self.tick(),
-            timeline: self.timeline(),
-            clock: self.clock_sample(),
-            completed_ticks: 0,
-            queued_ticks: 0,
-            tick_cpu: Duration::ZERO,
-            skipped_publications: 0,
-            projected_changes: 0,
-            projection_lost_ticks: 0,
-            overload: None,
-            publication: Some(WorldPublication {
+    fn apply_control(&mut self, control: Self::Control) -> Result<(), Self::Error> {
+        self.desired_axes = control;
+        Ok(())
+    }
+
+    fn endpoint(&self) -> (SnapshotId, u64) {
+        (
+            SnapshotId {
+                epoch: self.sim.epoch(),
+                tick: self.sim.tick(),
+            },
+            self.sim.timeline(),
+        )
+    }
+
+    fn step(&mut self) -> Result<WorldStep, Self::Error> {
+        if !Self::same_control(self.desired_axes, self.admitted_axes) {
+            let tick = self
+                .sim
+                .tick()
+                .checked_add(1)
+                .ok_or("input tick exhausted")?;
+            let next_sequence = self
+                .input_sequence
+                .checked_add(1)
+                .ok_or("input sequence exhausted")?;
+            let frame = scene::control_frame(
+                scene::LOCAL_PEER,
+                self.desired_axes,
+                tick,
+                self.input_sequence,
+            );
+            self.sim
+                .admit_frame(frame)
+                .map_err(|error| format!("local input admission: {error:?}"))?;
+            self.admitted_axes = self.desired_axes;
+            self.input_sequence = next_sequence;
+        }
+        self.sim
+            .step(&[])
+            .map_err(|error| format!("simulation step: {error:?}"))?;
+        let skipped_publication = !self.sim.has_current_page();
+        let projected_changes = if skipped_publication {
+            0
+        } else {
+            let page = self
+                .sim
+                .published_page()
+                .map_err(|error| format!("world page: {error:?}"))?;
+            // capture owns baseline handling as well as ordinary deltas.
+            self.projections
+                .as_mut()
+                .map_or(0, |outbox| outbox.capture(&page))
+        };
+        Ok(WorldStep {
+            projected_changes,
+            skipped_publication,
+        })
+    }
+
+    fn recover_publication(&mut self) -> Result<Option<usize>, Self::Error> {
+        self.recover_page()
+            .map_err(|error| format!("world page: {error:?}"))
+    }
+
+    fn publication(&mut self) -> Result<Option<WorldPublication<Self::Page>>, Self::Error> {
+        // Recovery belongs to the clock's recovery hook, which also captures
+        // derived output. A lease arriving here must not create another page.
+        if !self.sim.has_current_page() {
+            return Ok(None);
+        }
+        match self.sim.published_page() {
+            Ok(page) => Ok(Some(WorldPublication {
                 id: page.id(),
                 timeline: page.timeline(),
                 page,
-            }),
-            next_due: self.next_due_in(),
-        })
+            })),
+            Err(SimError::PublicationBusy) => Ok(None),
+            Err(error) => Err(format!("world page: {error:?}")),
+        }
     }
 
-    fn apply_control(&mut self, control: Self::Control) -> Result<(), Self::Error> {
-        self.set_controls(control)
-    }
-
-    fn advance(&mut self, now: Duration) -> Result<WorldUpdate<Self::Page>, Self::Error> {
-        let report = Self::advance(self, now)?;
-        let publication = if report.completed_ticks != 0 || report.recovered_publication {
-            match self.published_page() {
-                Ok(page) => Some(WorldPublication {
-                    id: page.id(),
-                    timeline: page.timeline(),
-                    page,
-                }),
-                Err(SimError::PublicationBusy) => None,
-                Err(error) => return Err(format!("world page: {error:?}")),
-            }
-        } else {
-            None
-        };
-        Ok(WorldUpdate {
-            epoch: WorldEpoch(self.epoch()),
-            tick: report.tick,
-            timeline: self.timeline(),
-            clock: self.clock_sample(),
-            completed_ticks: report.completed_ticks,
-            queued_ticks: report.queued_ticks,
-            tick_cpu: report.tick_cpu,
-            skipped_publications: report.skipped_publications,
-            projected_changes: report.projected_changes,
-            projection_lost_ticks: report.projection_lost_ticks,
-            overload: report.overload,
-            publication,
-            next_due: self.next_due_in(),
-        })
+    fn projection_lost_ticks(&self) -> u64 {
+        self.projections
+            .as_ref()
+            .map_or(0, ProjectionOutbox::lost_ticks)
     }
 }
 

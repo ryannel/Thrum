@@ -1577,6 +1577,7 @@ dependencies = [
  "divan",
  "rayon",
  "smallvec",
+ "web-time",
 ]
 
 [[package]]
