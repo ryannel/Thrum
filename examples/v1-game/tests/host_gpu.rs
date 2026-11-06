@@ -72,6 +72,31 @@ fn game_atmosphere_capture_has_visible_finite_pixels() {
             changed > 640 * 360 / 10,
             "time control changes the game image"
         );
+        host.set_time_of_day(0.77).expect("twilight control");
+        let twilight = host.capture_pixels().expect("adapted twilight pixels");
+        let sky = &twilight[(80 * 640 + 20) * 4..][..3];
+        let brightness = sky.iter().map(|channel| u16::from(*channel)).sum::<u16>();
+        assert!(
+            brightness >= 80,
+            "adapted twilight sky must exceed fixed-exposure baseline (20): {sky:?}"
+        );
+        for (label, horizon, direction) in [("dusk", 0.75_f32, 1.0), ("dawn", 0.25, -1.0)] {
+            let mut prior = None;
+            for step in 0..=16 {
+                let time = horizon + direction * step as f32 * 0.001_875;
+                host.set_time_of_day(time).expect("fine solar step");
+                let pixels = host.capture_pixels().expect("fine solar pixels");
+                let sky = &pixels[(80 * 640 + 20) * 4..][..3];
+                let brightness = sky.iter().map(|channel| u16::from(*channel)).sum::<u16>();
+                if let Some(prior) = prior {
+                    assert!(
+                        brightness <= prior + 8,
+                        "{label} adaptation flashed at {time}: prior={prior}, now={brightness}, sky={sky:?}"
+                    );
+                }
+                prior = Some(brightness);
+            }
+        }
         if let Some(directory) = std::env::var_os("THRUM_V1_CAPTURE_DIR") {
             let directory = std::path::PathBuf::from(directory);
             std::fs::create_dir_all(&directory).expect("capture directory");

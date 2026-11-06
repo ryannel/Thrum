@@ -725,7 +725,7 @@ fn live_frame_matches_fresh_preparation_without_recreating_the_target() {
 }
 
 #[test]
-fn two_submitted_views_keep_their_own_camera_pixels() {
+fn two_submitted_views_keep_their_own_camera_and_exposure_pixels() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
         let adapter = instance
@@ -741,7 +741,9 @@ fn two_submitted_views_keep_their_own_camera_pixels() {
                 .expect("finite camera")
         };
         let mut scene = SyntheticScene::grid(2).expect("two boxes");
-        scene.view = view([0.0, 0.0, 3.0]);
+        scene.view = view([0.0, 0.0, 3.0])
+            .with_exposure(0.25)
+            .expect("first view exposure");
         let mut prepared = PreparedSynthetic::prepare(&device, &queue, 41, &scene)
             .await
             .expect("prepared scene");
@@ -766,7 +768,9 @@ fn two_submitted_views_keep_their_own_camera_pixels() {
         queue.submit([first_encoder.finish()]);
         prepared.commit_frame();
 
-        scene.view = view([0.8, 0.2, 2.7]);
+        scene.view = view([0.8, 0.2, 2.7])
+            .with_exposure(1.0)
+            .expect("second view exposure");
         prepared
             .update_frame(
                 &queue,
@@ -816,11 +820,11 @@ fn two_submitted_views_keep_their_own_camera_pixels() {
         );
         assert_eq!(
             first, first_reference,
-            "first submission used the wrong view"
+            "first submission used the wrong camera or exposure"
         );
         assert_eq!(
             second, second_reference,
-            "second submission used the wrong view"
+            "second submission used the wrong camera or exposure"
         );
     });
 }

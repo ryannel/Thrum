@@ -3,7 +3,7 @@
 
 use glam::{Mat4, Vec3, Vec4};
 
-use super::RenderError;
+use super::{RenderError, checked_display_gain};
 
 const VIEW_BYTES: usize = 160;
 pub(super) const AUX_BYTES: usize = 128;
@@ -27,6 +27,7 @@ pub struct SyntheticView {
     projection: Projection,
     view_proj: Mat4,
     camera: Vec3,
+    exposure: Option<f32>,
     history_reset: bool,
 }
 
@@ -45,6 +46,7 @@ impl Default for SyntheticView {
             projection: Projection::OrthographicFixture,
             view_proj: reverse_z,
             camera: Vec3::new(0.0, 0.0, -3.0),
+            exposure: None,
             history_reset: false,
         }
     }
@@ -124,8 +126,19 @@ impl SyntheticView {
             },
             view_proj,
             camera: eye,
+            exposure: None,
             history_reset: false,
         })
+    }
+
+    /// Select one checked scene-to-display exposure for this view. The
+    /// prepared exposure remains the fallback when no override is selected.
+    /// # Errors
+    /// Refuses a nonpositive, nonfinite or unrepresentable exposure.
+    pub fn with_exposure(mut self, exposure: f32) -> Result<Self, RenderError> {
+        checked_display_gain(exposure)?;
+        self.exposure = Some(exposure);
+        Ok(self)
     }
 
     /// Mark a camera cut or another invalid correspondence for this sample.
@@ -155,7 +168,7 @@ impl SyntheticView {
             bytes[128 + axis * 4..132 + axis * 4].copy_from_slice(&value.to_le_bytes());
         }
         bytes[144..148].copy_from_slice(&super::PRE_EXPOSURE.to_le_bytes());
-        bytes[148..152].copy_from_slice(&(1.0 / exposure).to_le_bytes());
+        bytes[148..152].copy_from_slice(&(1.0 / self.exposure.unwrap_or(exposure)).to_le_bytes());
         bytes
     }
 
@@ -236,6 +249,26 @@ mod tests {
                 10.0
             )
             .is_err()
+        );
+    }
+
+    #[test]
+    fn view_exposure_is_checked_and_packed_without_replacing_the_camera() {
+        let view = SyntheticView::default();
+        for invalid in [0.0, -1.0, f32::NAN, f32::INFINITY] {
+            assert!(view.with_exposure(invalid).is_err());
+        }
+        let selected = view.with_exposure(0.25).expect("finite exposure");
+        assert_eq!(selected.view_proj, view.view_proj);
+        let packed = selected.pack_view(&view, 1.0);
+        assert_eq!(
+            f32::from_le_bytes(packed[148..152].try_into().unwrap()),
+            4.0
+        );
+        let fallback = view.pack_view(&view, 1.0);
+        assert_eq!(
+            f32::from_le_bytes(fallback[148..152].try_into().unwrap()),
+            1.0
         );
     }
 
