@@ -494,11 +494,11 @@ fn measure(
     }
     if mode == FrameMode::Threaded {
         report_coalesced_displays(coalesced_displays);
+        report_threaded_callback(&callback_cpu);
     }
     assert!(
-        !samples.is_empty() && samples.len() >= callbacks / 2,
-        "baseline needs frames from at least half its callbacks: {} of {callbacks}",
-        samples.len()
+        !samples.is_empty(),
+        "baseline produced no completed frames in {callbacks} callbacks"
     );
     report_frame_cpu(
         &samples,
@@ -507,9 +507,13 @@ fn measure(
         render_extent,
         surface_extent,
     );
-    if mode == FrameMode::Threaded {
-        report_threaded_callback(&callback_cpu);
-    }
+    // Preserve partial profiles for diagnosis, but keep the fixed row failing
+    // when it did not complete enough frames to support a baseline.
+    assert!(
+        samples.len() >= callbacks / 2,
+        "baseline needs frames from at least half its callbacks: {} of {callbacks}",
+        samples.len()
+    );
 }
 
 #[expect(
