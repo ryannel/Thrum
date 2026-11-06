@@ -10,6 +10,27 @@ import repo_check
 
 
 class RepositoryChecks(unittest.TestCase):
+    def test_markdown_walk_keeps_local_docs_but_excludes_nested_git_roots(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            (root / ".git").mkdir()
+            local = root / ".claude" / "notes.md"
+            local.parent.mkdir()
+            local.write_text("[broken local link](missing.md)\n")
+            for name, worktree in (("worktrees/g5", True), ("clone", False)):
+                nested = root / ".claude" / name
+                nested.mkdir(parents=True)
+                if worktree:
+                    (nested / ".git").write_text("gitdir: /some/main/.git/worktrees/g5\n")
+                else:
+                    (nested / ".git").mkdir()
+                (nested / "README.md").write_text("[unfinished](missing.md)\n")
+            files = repo_check.markdown_files(root)
+            self.assertEqual(files, [local])
+            errors, count = repo_check.check_links(root.resolve(), files)
+            self.assertEqual(count, 1)
+            self.assertEqual(len(errors), 1)
+
     def test_links_reject_missing_file_anchor_and_escape(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory).resolve()
