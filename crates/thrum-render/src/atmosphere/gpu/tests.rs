@@ -1,3 +1,5 @@
+mod reference;
+
 #[test]
 fn encoded_constant_sky_integrates_in_physical_illuminance_units() {
     pollster::block_on(async {
