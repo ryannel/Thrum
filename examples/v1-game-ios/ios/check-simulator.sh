@@ -3,7 +3,22 @@ set -euo pipefail
 cd -- "$(dirname -- "$0")/../../.."
 
 # Function check only. Simulator CPU and GPU timings are never gate evidence.
-thrum_device=$(xcrun simctl list devices available --json | python3 -c '
+run_simctl() {
+    python3 - "$@" <<'PY'
+import subprocess
+import sys
+
+command = ["xcrun", "simctl", *sys.argv[1:]]
+try:
+    result = subprocess.run(command, check=False, timeout=90)
+except subprocess.TimeoutExpired:
+    print(f"simctl {sys.argv[1]} did not finish within 90 seconds", file=sys.stderr)
+    sys.exit(124)
+sys.exit(result.returncode)
+PY
+}
+
+thrum_device=$(run_simctl list devices available --json | python3 -c '
 import json, sys
 devices = [device for runtime, entries in json.load(sys.stdin)["devices"].items()
            if runtime.endswith("iOS-27-2")
@@ -13,27 +28,34 @@ if len(devices) != 1:
 print(devices[0]["udid"])
 ')
 
-if ! xcrun simctl list devices booted --json | python3 -c '
+if ! run_simctl list devices booted --json | python3 -c '
 import json, sys
 udid = sys.argv[1]
 sys.exit(0 if any(device["udid"] == udid
                   for entries in json.load(sys.stdin)["devices"].values()
                   for device in entries) else 1)
 ' "$thrum_device"; then
-    xcrun simctl boot "$thrum_device"
+    run_simctl boot "$thrum_device"
 fi
-xcrun simctl bootstatus "$thrum_device" -b
+run_simctl bootstatus "$thrum_device" -b
 
 RUSTC_WRAPPER= examples/v1-game-ios/ios/build-simulator.sh
 thrum_target="${CARGO_TARGET_DIR:-$PWD/target}"
-if xcrun simctl get_app_container "$thrum_device" org.thrum.v1 data >/dev/null 2>&1; then
-    xcrun simctl terminate "$thrum_device" org.thrum.v1 >/dev/null 2>&1 || true
-    xcrun simctl uninstall "$thrum_device" org.thrum.v1
+if run_simctl get_app_container "$thrum_device" org.thrum.v1 data >/dev/null 2>&1; then
+    run_simctl terminate "$thrum_device" org.thrum.v1 >/dev/null 2>&1 || true
+    run_simctl uninstall "$thrum_device" org.thrum.v1
+else
+    thrum_lookup_status=$?
+    if [[ "$thrum_lookup_status" -eq 124 ]]; then
+        echo "simulator app container lookup timed out" >&2
+        exit 124
+    fi
 fi
-xcrun simctl install "$thrum_device" "$thrum_target/v1-game-ios-sim/ThrumV1.app"
-xcrun simctl launch "$thrum_device" org.thrum.v1
-thrum_container=$(xcrun simctl get_app_container "$thrum_device" org.thrum.v1 data)
+run_simctl install "$thrum_device" "$thrum_target/v1-game-ios-sim/ThrumV1.app"
+thrum_container=$(run_simctl get_app_container "$thrum_device" org.thrum.v1 data)
 thrum_report="$thrum_container/tmp/thrum-v1-ios-report.txt"
+rm -f -- "$thrum_report"
+run_simctl launch "$thrum_device" org.thrum.v1
 for ((thrum_attempt = 0; thrum_attempt < 90; thrum_attempt++)); do
     if [[ -f "$thrum_report" ]]; then
         break

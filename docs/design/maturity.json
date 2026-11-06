@@ -1,18 +1,18 @@
 {
   "schema_version": 1,
   "target": "custom-hardware-native-3d-engine",
-  "as_of": "2026-11-05",
+  "as_of": "2026-11-06",
   "contract_revision": "C4",
   "scope_note": "Historical rows remain; G2R/G3a speed reopens as G2S/G3b. G0 checks complete; no runtime, transport or iPhone result is qualified. V1 was redirected on 2026-11-05 to a single-player showcase scene; transport moves after V1.",
   "execution_plan": {
     "milestone": "V1: one beautiful single-player 10k scene on this Mac at 120 Hz with physical sky, cooked assets, shadows, MetalFX and EDR; Chrome portable at showcase quality; demo controls; headless multiplayer fitness; labelled iPhone proxies, physical iPhone pending",
     "active": [
       "G2S real-game simulation",
+      "G3b engine frame runtime",
       "G3s physical atmosphere"
     ],
     "next_parallel": [
-      "G3b after G2S",
-      "G3s alongside G3b (disjoint owners)"
+      "G3b and G3s use disjoint runtime and atmosphere owners"
     ],
     "parked": [
       "network transport track until after V1: wire redesign, relevance, residuals, clock sync, Quinn sessions, conditioner budget, four rendered peers and A5 lane work",
@@ -219,11 +219,11 @@
       "scope": "A committed W1 visual read-model page copies only IDs, positions and visual selectors into preallocated SoA columns; held Arc leases survive later ticks and capacity pressure sheds optional views. The serial V1 host releases its lease after V2 extraction. Stable-ID prior matching and explicit drop telemetry feed the prepared GPU instance table. Real Mac offscreen consumer and pixel change pass. Worker execution, the full C02 multi-consumer bundle, owned RenderPacket, submission/fence lifetime, sustained pacing and Chrome/iPhone execution remain open."
     },
     "A3_native_extraction": {
-      "implementation": "partial_one_bounded_native_worker_over_committed_visual_page_with_serial_browser_route",
-      "functional_validation": "native_column_equivalence_and_page_release_unit_test_plus_real_metal_same_tick_wake_busy_tick_capture_over_horizon_generation_and_600_tick_slow_worker_reuse_tests",
+      "implementation": "superseded_inactive_extraction_lane_removed_from_v1_game_on_2026_11_06",
+      "functional_validation": "historical_native_worker_tests_retained_in_git;_current_render_actor_and_world_thread_checked_by_dev_check",
       "experienced_quality": "not_reviewed_visible_window_locked",
       "platform_performance": {
-        "mac": "diagnostic_offscreen_600_frame_runs_and_blocked_worker_reuse_not_qualified_whole_frame_or_visible_surface",
+        "mac": "historical_offscreen_worker_diagnostics_only;_removed_lane_has_no_current_performance_claim",
         "windows": "not_run",
         "browser": "compile_only_not_run",
         "ios": "not_run",
@@ -235,7 +235,7 @@
         "../evidence/render/A3-SLOW-WORKER-2026-11-04.md",
         "../evidence/render/A3-ABBA-2026-11-04.md"
       ],
-      "scope": "One native Rayon extraction lane owns a committed page lease and reused extractor, returns columns before a macOS surface request, and lets zero-update callbacks submit a ready view. Busy fresh views are counted and can re-present a pinned completed target with explicit age and reuse telemetry; retired-generation and over-horizon results refresh from the latest committed page. The serial browser route remains. Combined F1 graph, generic system parallelism, owned GPU packets, controlled overlap/allocations, GPU-pressure cadence, visible macOS surface run and browser/iPhone runtime remain open."
+      "scope": "Historical A3 experiment. Its optional Rayon extraction lane had no V1 game or fixed frame-benchmark consumer and was removed; the running macOS window uses one render actor and one world thread. Historical evidence remains in Git. The G3b frame-runtime, visible display and browser work remain open."
     },
     "V1_serial_frame_host": {
       "implementation": "partial_fixed_clock_serial_offscreen_simulation_to_gpu_host",

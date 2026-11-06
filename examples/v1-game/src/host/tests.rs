@@ -10,10 +10,7 @@ fn sample(tick: u64) -> FrameSample {
         queued_ticks: 0,
         tick_cpu: Duration::ZERO,
         extract_cpu: Duration::ZERO,
-        worker_queue_ns: 0,
-        worker_ready_ns: 0,
         visual_age_ticks: 0,
-        reused_visual: false,
         upload_cpu: Duration::ZERO,
         view_update_ns: 0,
         encode_cpu: Duration::ZERO,
@@ -107,12 +104,7 @@ fn capture_refreshes_the_latest_committed_world_after_an_unsent_view() {
                 .expect("committed world update");
         }
         assert_ne!(
-            host.extractor
-                .as_ref()
-                .expect("serial extractor")
-                .frame()
-                .source()
-                .map(|source| source.tick),
+            host.extractor.frame().source().map(|source| source.tick),
             Some(100)
         );
         let after = host.capture_pixels().expect("refreshed capture");
@@ -121,46 +113,10 @@ fn capture_refreshes_the_latest_committed_world_after_an_unsent_view() {
             "moving presentation must use committed tick 100"
         );
         assert_eq!(
-            host.extractor
-                .as_ref()
-                .expect("serial extractor")
-                .frame()
-                .source()
-                .map(|source| source.tick),
+            host.extractor.frame().source().map(|source| source.tick),
             Some(100)
         );
         assert_eq!(host.dropped_capture_rows(), 0);
-    });
-}
-
-#[test]
-fn capture_applies_a_reclaimed_worker_view_even_when_its_tick_is_current() {
-    pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("native GPU adapter");
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("device");
-        let mut host = super::FrameHost::new(&device, &queue, super::FrameConfig::default())
-            .await
-            .expect("prepared scene");
-        let before = host.scene.instances[0].current[3][0];
-        host.enable_native_worker(|| {}).expect("worker");
-        let dispatch = host
-            .drive(Duration::from_nanos(16_666_667), None)
-            .expect("committed tick dispatches extraction");
-        assert_eq!(dispatch.tick, 1);
-        assert!(!dispatch.submitted);
-        host.capture_pixels().expect("capture waits and refreshes");
-        let after = host.scene.instances[0].current[3][0];
-        assert_ne!(
-            before, after,
-            "same-tick worker columns reach the GPU scene"
-        );
     });
 }
 
@@ -245,98 +201,6 @@ fn held_publication_drops_one_view_then_recovers_on_a_paused_zero_tick_callback(
 }
 
 #[test]
-fn worker_result_from_a_retired_visual_generation_resets_pose_history() {
-    pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("native GPU adapter");
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("device");
-        let mut host = super::FrameHost::new(&device, &queue, super::FrameConfig::default())
-            .await
-            .expect("prepared scene");
-        host.enable_native_worker(|| {}).expect("worker");
-        let now = Duration::from_nanos(16_666_667);
-        host.drive(now, None).expect("dispatch first visual page");
-        host.visual_generation += 1;
-        let deadline = std::time::Instant::now() + Duration::from_secs(2);
-        loop {
-            let report = host.drive(now, None).expect("retired result handled");
-            if report.submitted {
-                break;
-            }
-            assert!(
-                std::time::Instant::now() < deadline,
-                "worker did not return"
-            );
-            std::thread::sleep(Duration::from_millis(1));
-        }
-        assert_eq!(host.dropped_stale_views(), 1);
-        assert!(
-            host.extractor
-                .as_ref()
-                .expect("returned extractor")
-                .frame()
-                .history_valid()
-                .iter()
-                .all(|valid| !valid),
-            "retired generation cannot carry prior poses into the replacement"
-        );
-    });
-}
-
-#[test]
-fn worker_result_from_an_old_timeline_is_replaced_after_restore() {
-    pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("native GPU adapter");
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("device");
-        let mut host = super::FrameHost::new(&device, &queue, super::FrameConfig::default())
-            .await
-            .expect("prepared scene");
-        let capture = host.world.inline_mut().sim.capture();
-        host.enable_native_worker(|| {}).expect("worker");
-        let now = Duration::from_nanos(16_666_667);
-        let dispatched = host.drive(now, None).expect("dispatch old timeline");
-        assert_eq!((dispatched.tick, dispatched.completed_ticks), (1, 1));
-        host.world
-            .inline_mut()
-            .sim
-            .restore(&capture)
-            .expect("restore tick zero");
-        assert_eq!(host.world.inline_mut().sim.tick(), 0);
-        assert_eq!(host.world.inline_mut().sim.timeline(), 1);
-
-        let deadline = std::time::Instant::now() + Duration::from_secs(2);
-        loop {
-            let report = host.drive(now, None).expect("replace stale worker result");
-            if report.submitted {
-                assert_eq!(report.tick, 0);
-                break;
-            }
-            assert!(
-                std::time::Instant::now() < deadline,
-                "worker did not return"
-            );
-            std::thread::sleep(Duration::from_millis(1));
-        }
-        assert_eq!(host.dropped_stale_views(), 1);
-        assert_eq!(host.last_view_source.map(|source| source.timeline), Some(1));
-        assert_eq!(host.last_view_source.map(|source| source.tick), Some(0));
-    });
-}
-
-#[test]
 fn stale_frame_source_drops_the_view_without_touching_the_scene() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
@@ -383,8 +247,6 @@ fn stale_frame_source_drops_the_view_without_touching_the_scene() {
                 extracted: thrum_render::extract::ExtractReport::default(),
                 reused_source: false,
                 extract_cpu: Duration::ZERO,
-                worker_queue_cpu: Duration::ZERO,
-                worker_ready_cpu: Duration::ZERO,
                 tick_cpu: Duration::ZERO,
                 completed_ticks: 0,
                 queued_ticks: 0,

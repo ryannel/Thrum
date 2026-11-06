@@ -35,10 +35,6 @@ use crate::{
     scene::{self, ENTITY_COUNT},
 };
 
-#[cfg(not(target_arch = "wasm32"))]
-mod native_worker;
-#[cfg(not(target_arch = "wasm32"))]
-use native_worker::{CompletedExtract, ExtractRequest, NativeWorker};
 mod world;
 use world::{WorldDriver, WorldPort};
 #[cfg(not(target_arch = "wasm32"))]
@@ -129,14 +125,8 @@ pub struct FrameSample {
     pub tick_cpu: Duration,
     /// CPU time for committed-world visit and render-column extraction.
     pub extract_cpu: Duration,
-    /// Native worker queue delay; zero for serial extraction.
-    pub worker_queue_ns: u32,
-    /// Time a completed native CPU view waited before submission.
-    pub worker_ready_ns: u32,
     /// Committed ticks newer than this view at submission.
     pub visual_age_ticks: u32,
-    /// A completed scene target was presented again while native extraction was busy.
-    pub reused_visual: bool,
     /// Fraction between the previous and current committed world ticks.
     pub presentation_alpha: f32,
     /// CPU time for scene mapping, ABI packing and queue writes.
@@ -226,10 +216,6 @@ impl<'a> AdvancedFrame<'a> {
         let Some(host) = self.host.as_deref() else {
             return false;
         };
-        #[cfg(not(target_arch = "wasm32"))]
-        if host.worker.is_some() {
-            return false;
-        }
         let Some(report) = self.report.as_ref() else {
             return false;
         };
@@ -389,8 +375,6 @@ impl EncodedFrame<'_> {
         let encode_cpu = self.scene_encode_cpu + present_start.elapsed();
         let mut report = self.report.take().ok_or("encoded report consumed")?;
         let sample = self.sample.take().ok_or("encoded sample consumed")?;
-        #[cfg(not(target_arch = "wasm32"))]
-        let presentation_alpha = sample.presentation_alpha;
         self.host.finish_encoded(
             self.slot_index,
             &mut report,
@@ -405,8 +389,6 @@ impl EncodedFrame<'_> {
         #[cfg(not(target_arch = "wasm32"))]
         {
             self.host.last_view_source = Some(self.source);
-            self.host.last_render_slot = Some(self.slot_index);
-            self.host.last_presentation_alpha = Some(presentation_alpha);
         }
         Ok(report)
     }
@@ -478,8 +460,6 @@ struct SubmitFrame {
     extracted: ExtractReport,
     reused_source: bool,
     extract_cpu: Duration,
-    worker_queue_cpu: Duration,
-    worker_ready_cpu: Duration,
     tick_cpu: Duration,
     completed_ticks: u32,
     queued_ticks: u32,
@@ -577,19 +557,9 @@ pub struct FrameHost {
     camera_pitch: f32,
     history_reset_pending: bool,
     world: WorldPort,
-    extractor: Option<RenderExtractor>,
-    #[cfg(not(target_arch = "wasm32"))]
-    worker: Option<NativeWorker>,
-    #[cfg(not(target_arch = "wasm32"))]
-    worker_ready: Option<CompletedExtract>,
-    #[cfg(not(target_arch = "wasm32"))]
-    visual_generation: u64,
+    extractor: RenderExtractor,
     #[cfg(not(target_arch = "wasm32"))]
     last_view_source: Option<SourceTick>,
-    #[cfg(not(target_arch = "wasm32"))]
-    last_render_slot: Option<usize>,
-    #[cfg(not(target_arch = "wasm32"))]
-    last_presentation_alpha: Option<f32>,
     scene: SyntheticScene,
     last_extracted: ExtractReport,
     last_scene_apply: SceneApplyReport,
@@ -602,8 +572,6 @@ pub struct FrameHost {
     next_submission_order: u64,
     dropped_views: u64,
     dropped_stale_views: u64,
-    #[cfg(not(target_arch = "wasm32"))]
-    reused_views: u64,
     dropped_reports: u64,
     dropped_capture_rows: u64,
     dropped_surface: u64,
@@ -658,19 +626,9 @@ impl ThreadedFrameHost {
         self.inner.has_serial_view()
     }
 
-    /// Whether an extraction worker returned a view.
-    pub fn has_ready_view(&self) -> bool {
-        self.inner.has_ready_view()
-    }
-
     /// Whether the last committed page can be resampled.
     pub fn has_current_scene_for_display(&self) -> bool {
         self.inner.has_current_scene_for_display()
-    }
-
-    /// Whether a previously submitted scene can be shown again.
-    pub fn has_reusable_view(&self) -> bool {
-        self.inner.has_reusable_view()
     }
 
     /// Number of GPU frames still in flight.
@@ -702,11 +660,6 @@ impl ThreadedFrameHost {
         self.inner.dropped_stale_views()
     }
 
-    /// Prior scene views reused.
-    pub fn reused_views(&self) -> u64 {
-        self.inner.reused_views()
-    }
-
     /// Surface views dropped.
     pub fn dropped_surface(&self) -> u64 {
         self.inner.dropped_surface()
@@ -734,9 +687,6 @@ impl FrameHost {
         origin: Instant,
         wake: impl Fn() + Send + 'static,
     ) -> Result<(ThreadedFrameHost, WorldControls), String> {
-        if self.worker.is_some() {
-            return Err("stop native extraction before moving the world".to_owned());
-        }
         let WorldPort::Inline(driver) = std::mem::replace(&mut self.world, WorldPort::Starting)
         else {
             return Err("world is already threaded".to_owned());
@@ -929,20 +879,9 @@ impl FrameHost {
             camera_pitch: 0.0,
             history_reset_pending: false,
             world: WorldPort::Inline(Box::new(world)),
-            extractor: Some(extractor),
-            #[cfg(not(target_arch = "wasm32"))]
-            worker: None,
-            #[cfg(not(target_arch = "wasm32"))]
-            worker_ready: None,
-            #[cfg(not(target_arch = "wasm32"))]
-            visual_generation: 0,
+            extractor,
             #[cfg(not(target_arch = "wasm32"))]
             last_view_source: Some(initial_source),
-            #[cfg(not(target_arch = "wasm32"))]
-            #[cfg(not(target_arch = "wasm32"))]
-            last_render_slot: None,
-            #[cfg(not(target_arch = "wasm32"))]
-            last_presentation_alpha: None,
             scene,
             last_extracted: initial_extracted,
             last_scene_apply: initial_scene_apply,
@@ -955,8 +894,6 @@ impl FrameHost {
             next_submission_order: 0,
             dropped_views: 0,
             dropped_stale_views: 0,
-            #[cfg(not(target_arch = "wasm32"))]
-            reused_views: 0,
             dropped_reports: 0,
             dropped_capture_rows: 0,
             dropped_surface: 0,
@@ -982,37 +919,11 @@ impl FrameHost {
         }
     }
 
-    /// Move native CPU extraction to one long-lived worker. World ticks remain
-    /// on the caller and never wait for this optional presentation task.
-    /// `wake` must notify the platform loop after a result becomes available.
-    ///
-    /// # Errors
-    ///
-    /// Returns a native worker startup fault, leaving serial extraction active.
-    #[cfg(not(target_arch = "wasm32"))]
-    pub fn enable_native_worker(
-        &mut self,
-        wake: impl Fn() + Send + Sync + 'static,
-    ) -> Result<(), String> {
-        if self.worker.is_some() {
-            return Err("frame worker already enabled".to_owned());
-        }
-        self.worker = Some(NativeWorker::new(wake)?);
-        Ok(())
-    }
-
-    /// A completed CPU view is waiting for a surface and free GPU slot.
-    #[cfg(not(target_arch = "wasm32"))]
-    pub fn has_ready_view(&self) -> bool {
-        self.worker_ready.is_some()
-    }
-
-    /// A native render lane can extract the current publication itself, with
-    /// no third busy worker and without waiting for a world update.
+    /// The native render lane extracts the current publication itself, without
+    /// waiting for a world update.
     #[cfg(not(target_arch = "wasm32"))]
     pub fn has_serial_view(&self) -> bool {
-        self.worker.is_none()
-            && self.presenter.is_some()
+        self.presenter.is_some()
             && self.world.has_current_page()
             && self
                 .slots
@@ -1024,38 +935,14 @@ impl FrameHost {
     /// without waiting for another simulation update or extraction.
     #[cfg(not(target_arch = "wasm32"))]
     pub fn has_current_scene_for_display(&self) -> bool {
-        self.worker_ready.is_none()
-            && self.extractor.is_some()
-            && self.worker.as_ref().is_some_and(|worker| !worker.is_busy())
-            && self.last_view_source.is_some_and(|source| {
-                source.epoch == self.world.epoch()
-                    && source.timeline == self.world.timeline()
-                    && source.tick == self.world.tick()
-            })
-            && self
-                .slots
-                .iter()
-                .any(|slot| matches!(slot.state, SlotState::Free))
-    }
-
-    /// A previously prepared scene can be shown while the native worker is late.
-    #[cfg(not(target_arch = "wasm32"))]
-    pub fn has_reusable_view(&self) -> bool {
-        self.worker.as_ref().is_some_and(NativeWorker::is_busy)
-            && self.last_view_source.is_some_and(|source| {
-                source.epoch == self.world.epoch() && source.timeline == self.world.timeline()
-            })
-            && self.last_render_slot.is_some_and(|index| {
-                self.slots
-                    .get(index)
-                    .is_some_and(|slot| matches!(slot.state, SlotState::Free))
-            })
-    }
-
-    /// Surface frames drawn from an older prepared scene while extraction was busy.
-    #[cfg(not(target_arch = "wasm32"))]
-    pub fn reused_views(&self) -> u64 {
-        self.reused_views
+        self.last_view_source.is_some_and(|source| {
+            source.epoch == self.world.epoch()
+                && source.timeline == self.world.timeline()
+                && source.tick == self.world.tick()
+        }) && self
+            .slots
+            .iter()
+            .any(|slot| matches!(slot.state, SlotState::Free))
     }
 
     /// Select a fully prepared cooked view at a GPU-safe extraction barrier.
@@ -1107,13 +994,8 @@ impl FrameHost {
         self.prepared = candidate.prepared.take().expect("checked candidate");
         self.slots = candidate.slots.take().expect("checked candidate");
         self.visual_product = candidate.product.take();
-        self.visual_generation = self.visual_generation.wrapping_add(1);
         self.last_view_source = None;
-        self.last_render_slot = None;
-        self.last_presentation_alpha = None;
-        if let Some(extractor) = self.extractor.as_mut() {
-            extractor.invalidate_history();
-        }
+        self.extractor.invalidate_history();
         Ok(true)
     }
 
@@ -1281,8 +1163,8 @@ impl FrameHost {
     /// Admit monotonic host time through the shared fixed-step clock. Every due
     /// update commits once before a visual page can be published. A full
     /// presentation ring skips an optional view with a counter, never the world
-    /// update. Native worker completion can submit on a zero-update callback;
-    /// serial extraction submits only after a due update. Overload is explicit.
+    /// update. A display callback may resample a complete publication with a
+    /// new interpolation fraction. Overload is explicit.
     /// # Errors
     /// Returns a clock, simulation or GPU fault; never silently skips an update.
     pub fn drive(
@@ -1352,12 +1234,6 @@ impl FrameHost {
             report.wall = wall_start.elapsed();
             return Ok(report);
         }
-        #[cfg(not(target_arch = "wasm32"))]
-        if self.worker.is_some() {
-            self.drive_native_view(&mut report, tick_cpu, wall_start, surface)?;
-            report.wall = wall_start.elapsed();
-            return Ok(report);
-        }
         if report.completed_ticks == 0 && !recovered_publication && surface.is_none() {
             report.wall = wall_start.elapsed();
             return Ok(report);
@@ -1410,10 +1286,7 @@ impl FrameHost {
             tick: snapshot.id().tick,
             timeline: snapshot.timeline(),
         };
-        let extractor = self
-            .extractor
-            .as_mut()
-            .ok_or("serial extractor unavailable")?;
+        let extractor = &mut self.extractor;
         #[cfg(not(target_arch = "wasm32"))]
         let reused_source =
             extractor.frame().source() == Some(source) && self.last_view_source == Some(source);
@@ -1429,8 +1302,6 @@ impl FrameHost {
             extracted,
             reused_source,
             extract_cpu: extract_start.elapsed(),
-            worker_queue_cpu: Duration::ZERO,
-            worker_ready_cpu: Duration::ZERO,
             tick_cpu,
             completed_ticks,
             queued_ticks,
@@ -1450,14 +1321,10 @@ impl FrameHost {
         let Some(prepared) = self.prepare_extracted(slot_index, report, frame)? else {
             return Ok(());
         };
-        #[cfg(not(target_arch = "wasm32"))]
-        let presentation_alpha = prepared.sample.presentation_alpha;
         self.encode_prepared(slot_index, report, surface, prepared.sample, wall_start)?;
         #[cfg(not(target_arch = "wasm32"))]
         {
             self.last_view_source = Some(prepared.source);
-            self.last_render_slot = Some(slot_index);
-            self.last_presentation_alpha = Some(presentation_alpha);
         }
         Ok(())
     }
@@ -1471,10 +1338,7 @@ impl FrameHost {
         #[cfg(target_arch = "wasm32")]
         let _ = report;
         #[cfg(not(target_arch = "wasm32"))]
-        let frame_source = self
-            .extractor
-            .as_ref()
-            .and_then(|extractor| extractor.frame().source());
+        let frame_source = self.extractor.frame().source();
         #[cfg(not(target_arch = "wasm32"))]
         let Some(frame_source) = frame_source else {
             self.dropped_stale_views = self.dropped_stale_views.saturating_add(1);
@@ -1498,13 +1362,9 @@ impl FrameHost {
             self.changed_slots.clear();
             self.last_scene_apply
         } else {
-            let applied = self.scene.apply_render_columns(
-                self.extractor
-                    .as_ref()
-                    .expect("completed extractor belongs to host")
-                    .frame(),
-                &mut self.changed_slots,
-            );
+            let applied = self
+                .scene
+                .apply_render_columns(self.extractor.frame(), &mut self.changed_slots);
             self.last_scene_apply = applied;
             applied
         };
@@ -1550,11 +1410,8 @@ impl FrameHost {
                 queued_ticks: frame.queued_ticks,
                 tick_cpu: frame.tick_cpu,
                 extract_cpu: frame.extract_cpu,
-                worker_queue_ns: duration_ns_u32(frame.worker_queue_cpu),
-                worker_ready_ns: duration_ns_u32(frame.worker_ready_cpu),
                 visual_age_ticks: u32::try_from(self.world.tick().saturating_sub(frame.frame_tick))
                     .unwrap_or(u32::MAX),
-                reused_visual: false,
                 upload_cpu,
                 view_update_ns: duration_ns_u32(view_update_cpu),
                 encode_cpu: Duration::ZERO,
@@ -1708,286 +1565,6 @@ impl FrameHost {
     }
 
     #[cfg(not(target_arch = "wasm32"))]
-    fn submit_reused_view(
-        &mut self,
-        slot_index: usize,
-        report: &mut DriveReport,
-        surface: &SurfaceOutput<'_>,
-        source: SourceTick,
-        tick_cpu: Duration,
-        wall_start: Instant,
-    ) -> Result<(), String> {
-        let encode_start = Instant::now();
-        let mut encoder = self
-            .device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-        let slot = &mut self.slots[slot_index];
-        self.presenter
-            .as_ref()
-            .ok_or("reused view needs a presenter")?
-            .encode(
-                &mut encoder,
-                slot.presentation
-                    .as_ref()
-                    .ok_or("reused view source binding unavailable")?,
-                surface.view,
-                surface.extent,
-                Some(&mut slot.timings),
-            )
-            .map_err(|error| format!("reused surface encode: {error:?}"))?;
-        self.finish_encoded(
-            slot_index,
-            report,
-            encoder,
-            FrameSample {
-                tick: source.tick,
-                presentation_alpha: self.last_presentation_alpha.unwrap_or(1.0),
-                submission_order: 0,
-                completed_ticks: report.completed_ticks,
-                queued_ticks: report.queued_ticks,
-                tick_cpu,
-                extract_cpu: Duration::ZERO,
-                worker_queue_ns: 0,
-                worker_ready_ns: 0,
-                visual_age_ticks: u32::try_from(self.world.tick().saturating_sub(source.tick))
-                    .unwrap_or(u32::MAX),
-                reused_visual: true,
-                upload_cpu: Duration::ZERO,
-                view_update_ns: 0,
-                encode_cpu: Duration::ZERO,
-                wall: Duration::ZERO,
-                render_cpu: Duration::ZERO,
-                gpu_pass_ns: None,
-                gpu_present_ns: None,
-                surface_presented: false,
-                timing_fault: false,
-                uploaded_rows: 0,
-                uploaded_bytes: 0,
-                moving: 0,
-                dropped_presentation: 0,
-                dropped_light_references: self.prepared.dropped_light_references(),
-                clamped_light_channels: u32::try_from(self.prepared.presentation_light_clamps())
-                    .unwrap_or(u32::MAX),
-                clamped_shadow_casters: 0,
-                visual_revision: self.current_visual_revision(),
-            },
-            wall_start,
-            encode_start.elapsed(),
-            true,
-        )?;
-        self.reused_views = self.reused_views.saturating_add(1);
-        Ok(())
-    }
-
-    #[cfg(not(target_arch = "wasm32"))]
-    fn drive_native_view(
-        &mut self,
-        report: &mut DriveReport,
-        tick_cpu: Duration,
-        wall_start: Instant,
-        surface: Option<&SurfaceOutput<'_>>,
-    ) -> Result<(), String> {
-        if let Some(completed) = self
-            .worker
-            .as_mut()
-            .expect("native worker enabled")
-            .try_complete()?
-        {
-            debug_assert!(self.worker_ready.is_none());
-            self.worker_ready = Some(completed);
-        }
-        if self.worker_ready.is_none() {
-            if self
-                .worker
-                .as_ref()
-                .expect("native worker enabled")
-                .is_busy()
-            {
-                if report.completed_ticks > 0 {
-                    self.dropped_views = self.dropped_views.saturating_add(1);
-                    report.dropped_view = true;
-                }
-                self.try_submit_reused_view(report, tick_cpu, wall_start, surface)?;
-            } else if self.has_current_scene_for_display() && surface.is_some() {
-                if let Some(slot_index) = self
-                    .slots
-                    .iter()
-                    .position(|slot| matches!(slot.state, SlotState::Free))
-                {
-                    let frame = SubmitFrame {
-                        extracted: ExtractReport::default(),
-                        reused_source: false,
-                        extract_cpu: Duration::ZERO,
-                        worker_queue_cpu: Duration::ZERO,
-                        worker_ready_cpu: Duration::ZERO,
-                        tick_cpu,
-                        completed_ticks: report.completed_ticks,
-                        queued_ticks: report.queued_ticks,
-                        frame_tick: self.world.tick(),
-                        presentation_alpha: self.presentation_alpha(),
-                    };
-                    self.submit_extracted(slot_index, report, surface, frame, wall_start)?;
-                }
-            } else {
-                self.dispatch_latest_native(report, tick_cpu)?;
-            }
-            return Ok(());
-        }
-        if self.presenter.is_some()
-            && surface.is_none_or(|surface| {
-                self.presenter
-                    .as_ref()
-                    .is_none_or(|presenter| presenter.extent() != surface.extent)
-            })
-        {
-            if report.completed_ticks > 0 {
-                self.dropped_views = self.dropped_views.saturating_add(1);
-                report.dropped_view = true;
-            }
-            return Ok(());
-        }
-        let Some(slot_index) = self
-            .slots
-            .iter()
-            .position(|slot| matches!(slot.state, SlotState::Free))
-        else {
-            if report.completed_ticks > 0 {
-                self.dropped_views = self.dropped_views.saturating_add(1);
-                report.dropped_view = true;
-            }
-            return Ok(());
-        };
-        let completed = self.worker_ready.take().expect("checked ready view");
-        let stale = completed.epoch != self.world.epoch()
-            || completed.timeline != self.world.timeline()
-            || completed.generation != self.visual_generation
-            || self.world.tick().saturating_sub(completed.tick) > 2;
-        self.extractor = Some(completed.extractor);
-        let frame = if stale {
-            self.dropped_stale_views = self.dropped_stale_views.saturating_add(1);
-            let extractor = self.extractor.as_mut().expect("returned extractor");
-            extractor.invalidate_history();
-            let start = Instant::now();
-            let snapshot = self
-                .world
-                .published_page()
-                .map_err(|error| format!("world page: {error:?}"))?;
-            let extracted = scene::extract(extractor, &snapshot);
-            drop(snapshot);
-            SubmitFrame {
-                extracted,
-                reused_source: false,
-                extract_cpu: start.elapsed(),
-                worker_queue_cpu: completed.queue_wait,
-                worker_ready_cpu: completed.completed_at.elapsed(),
-                tick_cpu,
-                completed_ticks: report.completed_ticks,
-                queued_ticks: report.queued_ticks,
-                frame_tick: self.world.tick(),
-                presentation_alpha: self.presentation_alpha(),
-            }
-        } else {
-            SubmitFrame {
-                extracted: completed.report,
-                reused_source: false,
-                extract_cpu: completed.publication_cpu + completed.cpu,
-                worker_queue_cpu: completed.queue_wait,
-                worker_ready_cpu: completed.completed_at.elapsed(),
-                tick_cpu: completed.tick_cpu,
-                completed_ticks: completed.completed_ticks,
-                queued_ticks: completed.queued_ticks,
-                frame_tick: completed.tick,
-                presentation_alpha: if completed.tick == self.world.tick() {
-                    self.presentation_alpha()
-                } else {
-                    1.0
-                },
-            }
-        };
-        self.submit_extracted(slot_index, report, surface, frame, wall_start)?;
-        self.dispatch_latest_native(report, tick_cpu)?;
-        Ok(())
-    }
-
-    #[cfg(not(target_arch = "wasm32"))]
-    fn dispatch_latest_native(
-        &mut self,
-        report: &DriveReport,
-        tick_cpu: Duration,
-    ) -> Result<(), String> {
-        if !self.world.has_current_page()
-            || self
-                .worker
-                .as_ref()
-                .expect("native worker enabled")
-                .is_busy()
-            || self.extractor.is_none()
-            || self.last_view_source.is_some_and(|source| {
-                source.epoch == self.world.epoch()
-                    && source.timeline == self.world.timeline()
-                    && source.tick == self.world.tick()
-            })
-        {
-            return Ok(());
-        }
-        let publication_start = Instant::now();
-        let snapshot = self
-            .world
-            .published_page()
-            .map_err(|error| format!("world page: {error:?}"))?;
-        let publication_cpu = publication_start.elapsed();
-        let extractor = self
-            .extractor
-            .take()
-            .expect("idle worker returns extractor");
-        self.worker
-            .as_mut()
-            .expect("native worker enabled")
-            .dispatch(
-                extractor,
-                snapshot,
-                ExtractRequest {
-                    generation: self.visual_generation,
-                    publication_cpu,
-                    tick_cpu,
-                    completed_ticks: report.completed_ticks,
-                    queued_ticks: report.queued_ticks,
-                },
-            );
-        Ok(())
-    }
-
-    #[cfg(not(target_arch = "wasm32"))]
-    fn try_submit_reused_view(
-        &mut self,
-        report: &mut DriveReport,
-        tick_cpu: Duration,
-        wall_start: Instant,
-        surface: Option<&SurfaceOutput<'_>>,
-    ) -> Result<(), String> {
-        let Some((surface, source)) = surface.zip(self.last_view_source) else {
-            return Ok(());
-        };
-        if source.epoch != self.world.epoch()
-            || source.timeline != self.world.timeline()
-            || self
-                .presenter
-                .as_ref()
-                .is_none_or(|presenter| presenter.extent() != surface.extent)
-        {
-            return Ok(());
-        }
-        let Some(slot_index) = self.last_render_slot.filter(|&index| {
-            self.slots
-                .get(index)
-                .is_some_and(|slot| matches!(slot.state, SlotState::Free))
-        }) else {
-            return Ok(());
-        };
-        self.submit_reused_view(slot_index, report, surface, source, tick_cpu, wall_start)
-    }
-
-    #[cfg(not(target_arch = "wasm32"))]
     fn current_visual_revision(&self) -> Option<[u8; 32]> {
         self.visual_product
             .as_ref()
@@ -1999,45 +1576,28 @@ impl FrameHost {
     /// # Errors
     /// Returns a GPU encode, completion or readback error.
     pub fn capture_pixels(&mut self) -> Result<Vec<u8>, String> {
-        #[cfg(not(target_arch = "wasm32"))]
-        self.reclaim_extractor_for_capture()?;
-        let needs_extract = self
-            .extractor
-            .as_ref()
-            .ok_or("capture extractor unavailable")?
-            .frame()
-            .source()
-            .is_none_or(|source| {
-                source.epoch != self.world.epoch()
-                    || source.timeline != self.world.timeline()
-                    || source.tick != self.world.tick()
-            });
+        let needs_extract = self.extractor.frame().source().is_none_or(|source| {
+            source.epoch != self.world.epoch()
+                || source.timeline != self.world.timeline()
+                || source.tick != self.world.tick()
+        });
         let extracted = if needs_extract {
             let snapshot = self
                 .world
                 .published_page()
                 .map_err(|error| format!("world page: {error:?}"))?;
-            let extracted = scene::extract(
-                self.extractor
-                    .as_mut()
-                    .ok_or("capture extractor unavailable")?,
-                &snapshot,
-            );
+            let extracted = scene::extract(&mut self.extractor, &snapshot);
             drop(snapshot);
             extracted
         } else {
             ExtractReport::default()
         };
         // A capture describes the current committed endpoint, regardless of
-        // the last display sample or a delayed native extraction worker.
+        // the last display sample.
         let capture_alpha = 1.0;
-        let applied = self.scene.apply_render_columns(
-            self.extractor
-                .as_ref()
-                .ok_or("capture extractor unavailable")?
-                .frame(),
-            &mut self.changed_slots,
-        );
+        let applied = self
+            .scene
+            .apply_render_columns(self.extractor.frame(), &mut self.changed_slots);
         let uploaded = self
             .prepared
             .upload_instances(&self.queue, &self.scene.instances, &self.changed_slots)
@@ -2090,29 +1650,6 @@ impl FrameHost {
             .try_collect(GENERATION)
             .map_err(|error| format!("capture collect: {error:?}"))?
             .ok_or_else(|| "capture readback incomplete".to_owned())
-    }
-
-    #[cfg(not(target_arch = "wasm32"))]
-    fn reclaim_extractor_for_capture(&mut self) -> Result<(), String> {
-        if self.extractor.is_some() {
-            return Ok(());
-        }
-        let completed = if let Some(ready) = self.worker_ready.take() {
-            ready
-        } else {
-            self.worker
-                .as_mut()
-                .expect("worker owns absent extractor")
-                .wait_complete(Duration::from_secs(2))?
-        };
-        let mut extractor = completed.extractor;
-        // The returned columns have not been mapped or uploaded to the scene.
-        // Force the ordinary capture refresh even when their source tick equals
-        // the current world tick.
-        extractor.invalidate_history();
-        self.extractor = Some(extractor);
-        self.dropped_views = self.dropped_views.saturating_add(1);
-        Ok(())
     }
 
     fn wait(&self, submitted: wgpu::SubmissionIndex, operation: &str) -> Result<(), String> {
@@ -2211,12 +1748,6 @@ fn pass_durations(
     const SHADOW_ONLY: [&str; 5] = [ALL[0], ALL[1], ALL[3], ALL[4], ALL[5]];
     const CLUSTER_ONLY: [&str; 4] = [ALL[2], ALL[3], ALL[4], ALL[5]];
     let presented = sample.surface_presented;
-    if sample.reused_visual {
-        return (passes.len() == 1
-            && presented
-            && passes[0].name.as_ref() == thrum_render::present::PASS_NAME)
-            .then(|| ([0.0; 11], Some(passes[0].nanoseconds)));
-    }
     let shadows = prepared.shadowed();
     let clusters = prepared.gpu_clustered();
     let names: &[&str] = match (shadows, clusters) {

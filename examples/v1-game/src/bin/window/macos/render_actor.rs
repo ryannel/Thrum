@@ -28,11 +28,9 @@ pub(super) enum RenderJob {
 pub(super) struct ReadyState {
     pub(super) ready_view: bool,
     pub(super) current_scene: bool,
-    pub(super) reusable_view: bool,
     pub(super) pending_frames: usize,
     pub(super) dropped_views: u64,
     pub(super) dropped_stale_views: u64,
-    pub(super) reused_views: u64,
     pub(super) dropped_surface: u64,
     pub(super) dropped_reports: u64,
 }
@@ -40,20 +38,18 @@ pub(super) struct ReadyState {
 impl ReadyState {
     pub(super) fn read(host: &ThreadedFrameHost) -> Self {
         Self {
-            ready_view: host.has_ready_view() || host.has_serial_view(),
+            ready_view: host.has_serial_view(),
             current_scene: host.has_current_scene_for_display(),
-            reusable_view: host.has_reusable_view(),
             pending_frames: host.pending_frames(),
             dropped_views: host.dropped_views(),
             dropped_stale_views: host.dropped_stale_views(),
-            reused_views: host.reused_views(),
             dropped_surface: host.dropped_surface(),
             dropped_reports: host.dropped_reports(),
         }
     }
 
     pub(super) fn can_present(self) -> bool {
-        self.ready_view || self.current_scene || self.reusable_view
+        self.ready_view || self.current_scene
     }
 }
 

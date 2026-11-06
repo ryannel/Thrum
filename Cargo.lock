@@ -1678,7 +1678,6 @@ dependencies = [
  "objc2-foundation 0.3.2",
  "objc2-quartz-core 0.3.2",
  "pollster",
- "rayon",
  "thrum-content-runtime",
  "thrum-core",
  "thrum-render",
