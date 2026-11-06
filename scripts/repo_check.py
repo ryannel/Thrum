@@ -306,7 +306,11 @@ def check_rust_layout(root, files):
 def markdown_files(root):
     result = []
     for directory, names, files in os.walk(root):
-        names[:] = [n for n in names if n not in {".git", "target", "tmp", "__pycache__"}]
+        # A nested checkout owns its own checks, including in-progress docs.
+        # Worktrees use a .git file; ordinary clones use a directory.
+        names[:] = [n for n in names
+                    if n not in {".git", "target", "tmp", "__pycache__"}
+                    and not (Path(directory) / n / ".git").exists()]
         result.extend(Path(directory) / f for f in files if f.endswith(".md"))
     return sorted(result)
 
