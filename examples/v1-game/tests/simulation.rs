@@ -78,16 +78,26 @@ fn entity(id: u128, speed: f64) -> ComponentEntity {
 }
 
 fn whole_world_hash(sim: &Simulation, ids: &[StableId]) -> u64 {
+    assert_eq!(ids.len(), sim.len(), "hash must cover every live identity");
+    let mut ids = ids.to_vec();
+    ids.sort_unstable_by_key(|id| id.0);
+    assert!(
+        ids.windows(2).all(|pair| pair[0] != pair[1]),
+        "hash identities must be unique"
+    );
     let mut hash = std::collections::hash_map::DefaultHasher::new();
+    // Capture metadata includes exact presence for every registered column;
+    // get() below contributes all five declared V1 component values. The
+    // comparison uses the same fixed game recipe, excluding derived pages and
+    // intentionally distinct runtime/replay-branch identities.
     sim.capture().hash_authority_metadata(&mut hash);
     sim.len().hash(&mut hash);
     sim.tick().hash(&mut hash);
     for id in ids {
-        let handle = sim.handle(*id).expect("tracked world identity");
+        let handle = sim.handle(id).expect("tracked world identity");
         let row = sim.get(handle).expect("committed world row");
         id.0.hash(&mut hash);
-        handle.slot.hash(&mut hash);
-        handle.generation.hash(&mut hash);
+        handle.hash(&mut hash);
         row.position.0.map(f64::to_bits).hash(&mut hash);
         row.velocity.0.map(f64::to_bits).hash(&mut hash);
         row.health.hash(&mut hash);
@@ -303,6 +313,132 @@ fn corrected_retained_peer_input_matches_the_straight_player_row() {
             .tick,
         8
     );
+}
+
+fn correction_frame(peer: u64, tick: u64, corrected: bool) -> InputFrame<SimAction> {
+    let correction = corrected && peer == 2 && tick == 5;
+    let mut frame = InputFrame::new(
+        Origin {
+            peer: PeerId(peer),
+            connection_epoch: 1,
+            sequence: tick,
+        },
+        ActorId(peer),
+        tick,
+        if correction {
+            [0.75, -0.25, 0.0]
+        } else {
+            [0.25, 0.0, 0.0]
+        },
+    );
+    if peer == 1 {
+        frame.actions.push(SimAction::Damage(1));
+    }
+    if correction {
+        frame.actions.push(SimAction::Impulse([0.125, 0.0, 0.0]));
+        frame.actions.push(SimAction::Damage(2));
+    }
+    frame
+}
+
+#[test]
+fn ten_thousand_entity_retained_correction_matches_the_straight_complete_world() {
+    let ids = (0..10_000_u128).map(StableId).collect::<Vec<_>>();
+    let mut reversed_ids = ids.clone();
+    reversed_ids.reverse();
+    for mode in [ExecutionMode::Serial, ExecutionMode::RayonForced] {
+        let mut predicted = simulation_with_count(10_000).expect("predicted 10k game");
+        let mut straight = simulation_with_count(10_000).expect("straight corrected 10k game");
+        predicted.set_execution_mode(mode);
+        straight.set_execution_mode(mode);
+        let mut history = predicted
+            .begin_history(NonZeroUsize::new(16).expect("retained window"))
+            .expect("history");
+        for tick in 1..=12 {
+            for peer in 1..=4 {
+                predicted
+                    .admit_frame(correction_frame(peer, tick, false))
+                    .expect("predicted peer input");
+                straight
+                    .admit_frame(correction_frame(peer, tick, true))
+                    .expect("straight corrected peer input");
+            }
+            let health = 80 + u16::try_from(tick).expect("bounded tick");
+            let velocity = Velocity([if tick % 2 == 0 { 0.0 } else { 0.5 }, 0.0, 0.0]);
+            // A non-peer health row and an initially static mover exercise
+            // unrelated values and Velocity insertion/removal during replay.
+            let predicted_commands = [
+                Command::SetHealth(predicted.handle(StableId(7)).expect("health row"), health),
+                Command::SetVelocity(
+                    predicted.handle(StableId(1_700)).expect("static row"),
+                    velocity,
+                ),
+            ];
+            let straight_commands = [
+                Command::SetHealth(straight.handle(StableId(7)).expect("health row"), health),
+                Command::SetVelocity(
+                    straight.handle(StableId(1_700)).expect("static row"),
+                    velocity,
+                ),
+            ];
+            history
+                .step(&mut predicted, &predicted_commands)
+                .expect("retained complete tick");
+            straight
+                .step(&straight_commands)
+                .expect("straight complete tick");
+        }
+        assert_ne!(
+            whole_world_hash(&predicted, &ids),
+            whole_world_hash(&straight, &reversed_ids),
+            "correction must change the endpoint in {mode:?}"
+        );
+        history
+            .rewind(&mut predicted, 8)
+            .expect("retain and rewind exactly eight ticks");
+        assert_eq!(predicted.tick(), 4);
+        history
+            .amend_input(&predicted, correction_frame(2, 5, true))
+            .expect("amend one retained peer input");
+        for _ in 0..8 {
+            assert!(
+                history
+                    .replay_next(&mut predicted)
+                    .expect("corrected retained replay")
+            );
+        }
+        assert!(
+            !history
+                .replay_next(&mut predicted)
+                .expect("future exhausted")
+        );
+        assert_eq!(
+            (predicted.tick(), straight.tick(), predicted.len()),
+            (12, 12, 10_000)
+        );
+        assert_eq!(
+            whole_world_hash(&predicted, &ids),
+            whole_world_hash(&straight, &reversed_ids),
+            "10k corrected world differs in component values/presence, identities or authority metadata in {mode:?}"
+        );
+        let corrected_page = predicted
+            .published_page()
+            .expect("final reconstructed publication");
+        let straight_page = straight.published_page().expect("straight publication");
+        assert_eq!(corrected_page.id(), straight_page.id());
+        assert_eq!(corrected_page.len(), 10_000);
+        assert_ne!(
+            corrected_page.timeline(),
+            straight_page.timeline(),
+            "replay branch identity remains distinct"
+        );
+        corrected_page.visit(|handle, id, position, visual| {
+            assert_eq!(straight_page.handle(handle.slot), Some(handle));
+            assert_eq!(straight_page.stable_id(handle.slot), Some(id));
+            assert_eq!(straight_page.position(handle), Some(position));
+            assert_eq!(straight_page.visual(handle), visual);
+        });
+    }
 }
 
 #[test]

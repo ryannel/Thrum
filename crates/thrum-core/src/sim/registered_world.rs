@@ -322,6 +322,10 @@ impl WorldCapture {
         }
         self.free.hash(hash);
         self.change_ticks.hash(hash);
+        self.columns.len().hash(hash);
+        for column in &self.columns {
+            column.hash_presence(hash);
+        }
         self.id_index_slots.hash(hash);
         if let Some(directory) = &self.directory {
             directory.hash(hash);

@@ -26,4 +26,4 @@ Former paired extra-action reference: 10%, now retired. First-run 10k Damage pai
 
 Forced-Rayon crossover p95 serial/forced: 10k 49.750/50.917 then 50.209/48.834 µs; 100k 472.709/476.583 then 459.792/461.750 µs. Both allocate zero, but the game declares Direct/Serial systems: requesting RayonForced does not dispatch parallel jobs. These rows establish neither a parallel crossover nor “never slower”.
 
-Reproduce: `RUSTC_WRAPPER= rustup run 1.99.1 cargo bench -p v1-game --bench g2r --locked --offline -- --g2s-qualify`. Full-world randomized replay and held-page tests establish correctness separately. Correctness gaps, not these timings, keep G2S open. Build independent G3b/G3s; revisit numeric tuning in the dedicated phase.
+Reproduce: `RUSTC_WRAPPER= rustup run 1.99.1 cargo bench -p v1-game --bench g2r --locked --offline -- --g2s-qualify`. Presence-aware hashing and 10k amended replay now match the straight corrected world; randomized/held-page proofs remain. Staged Resolve ownership keeps G2S open; tune later.

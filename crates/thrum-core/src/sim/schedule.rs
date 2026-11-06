@@ -445,6 +445,7 @@ use super::{
 };
 
 pub(super) trait SnapshotColumn: Send + Sync {
+    fn hash_presence(&self, hash: &mut dyn std::hash::Hasher);
     fn restore_into(&self, column: &mut dyn StorageColumn, directory: Option<&DenseDirectory>);
     fn clone_box(&self) -> Box<dyn SnapshotColumn>;
     fn copy_from(&mut self, source: &dyn SnapshotColumn);
@@ -465,6 +466,16 @@ struct TypedColumn<T> {
 }
 
 impl<T: Send + Sync + 'static> SnapshotColumn for TypedColumn<T> {
+    fn hash_presence(&self, hash: &mut dyn std::hash::Hasher) {
+        // Captures and overlays retain canonical logical-slot order. Values
+        // remain game-owned; presence is exact authority metadata even when a
+        // game's read model supplies a default for a missing component.
+        hash.write_usize(self.rows.len());
+        for (slot, _) in &self.rows {
+            hash.write_u32(*slot);
+        }
+    }
+
     fn restore_into(&self, column: &mut dyn StorageColumn, directory: Option<&DenseDirectory>) {
         let typed = column
             .as_any_mut()
