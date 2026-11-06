@@ -495,3 +495,30 @@ fn block_compressed_profiles_refuse_partial_blocks_but_the_portable_product_publ
             .is_none()
     );
 }
+
+#[test]
+fn a_running_reader_follows_a_store_that_is_wiped_and_recreated() {
+    let fixture = Fixture::new();
+    let mut cooker = Cooker::open(fixture.config()).expect("open");
+    cooker.cook_all().expect("cook");
+    let path = fixture.source().join("textures/checker.png");
+    demo::write_checker_png(&path, 64, [40, 40, 200]).expect("edit");
+    cooker
+        .cook_changed(std::slice::from_ref(&path))
+        .expect("cook");
+    let mut watcher = HeadWatcher::new(fixture.store());
+    assert_eq!(watcher.poll().expect("poll").expect("head").generation, 2);
+    drop(cooker);
+
+    make_writable(&fixture.root.join("store"));
+    std::fs::remove_dir_all(fixture.root.join("store")).expect("wipe store");
+    let mut cooker = Cooker::open(fixture.config()).expect("recreate");
+    let head = cooker.cook_all().expect("cook").published.expect("publish");
+    assert_eq!(head.generation, 1);
+    assert_eq!(
+        watcher.poll().expect("poll"),
+        Some(head),
+        "a new store epoch is a new publication"
+    );
+    assert_eq!(watcher.poll().expect("poll"), None);
+}

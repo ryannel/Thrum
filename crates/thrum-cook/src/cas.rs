@@ -28,6 +28,9 @@ pub enum Durability {
 pub struct Cas {
     store: AssetStore,
     durability: Durability,
+    epoch: u32,
+    /// Exclusive writer lock on the store, held for this writer's lifetime.
+    _lock: fs::File,
 }
 
 static TEMPORARY: AtomicU64 = AtomicU64::new(0);
@@ -36,11 +39,58 @@ impl Cas {
     /// Open (creating directories as needed) a store root for writing.
     ///
     /// # Errors
-    /// I/O failure creating the store layout.
+    /// I/O failure creating the store layout, or another writer already holds the store.
     pub fn open(root: impl Into<PathBuf>, durability: Durability) -> std::io::Result<Self> {
         let store = AssetStore::new(root);
         fs::create_dir_all(store.root().join("cas").join("tmp"))?;
-        Ok(Self { store, durability })
+        // One writer per store: two publishers would both claim the next generation.
+        let lock = fs::File::options()
+            .create(true)
+            .truncate(false)
+            .write(true)
+            .open(store.root().join("LOCK"))?;
+        lock.try_lock().map_err(|error| match error {
+            fs::TryLockError::WouldBlock => {
+                std::io::Error::other("store is locked by another cooker")
+            }
+            fs::TryLockError::Error(error) => error,
+        })?;
+        let epoch = Self::epoch_of(&store)?;
+        Ok(Self {
+            store,
+            durability,
+            epoch,
+            _lock: lock,
+        })
+    }
+
+    /// The store instance's epoch, created with the store and written into every `HEAD`.
+    fn epoch_of(store: &AssetStore) -> std::io::Result<u32> {
+        let path = store.root().join("EPOCH");
+        if let Ok(bytes) = fs::read(&path)
+            && let Ok(bytes) = <[u8; 4]>::try_from(bytes.as_slice())
+        {
+            return Ok(u32::from_le_bytes(bytes));
+        }
+        let nanos = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map_or(0, |elapsed| elapsed.as_nanos());
+        let seed = blake3::hash(
+            &[
+                nanos.to_le_bytes().as_slice(),
+                &std::process::id().to_le_bytes(),
+                store.root().as_os_str().as_encoded_bytes(),
+            ]
+            .concat(),
+        );
+        let epoch = u32::from_le_bytes(seed.as_bytes()[..4].try_into().expect("four bytes"));
+        fs::write(&path, epoch.to_le_bytes())?;
+        Ok(epoch)
+    }
+
+    /// Epoch to record in this store's publications.
+    pub fn epoch(&self) -> u32 {
+        self.epoch
     }
 
     /// Reader view of the same store.

@@ -8,7 +8,10 @@ use crate::{AssetError, ContentHash};
 /// BLAKE3 check so a damaged file is refused rather than misread.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Head {
-    /// Strictly increasing publication number.
+    /// Identity of the store instance. A store that is deleted and recreated gets a new epoch, so
+    /// readers accept its generation 1 instead of ignoring it as older than what they saw.
+    pub epoch: u32,
+    /// Strictly increasing publication number within one epoch.
     pub generation: u64,
     /// Content hash of the selected manifest product.
     pub manifest: ContentHash,
@@ -20,6 +23,7 @@ impl Head {
         let mut out = [0; HEAD_LEN];
         out[..8].copy_from_slice(&HEAD_MAGIC);
         out[8..12].copy_from_slice(&HEAD_FORMAT.to_le_bytes());
+        out[12..16].copy_from_slice(&self.epoch.to_le_bytes());
         out[16..24].copy_from_slice(&self.generation.to_le_bytes());
         out[24..56].copy_from_slice(self.manifest.as_bytes());
         let check = blake3::hash(&out[..56]);
@@ -42,7 +46,7 @@ impl Head {
         if format != HEAD_FORMAT {
             return Err(AssetError::UnsupportedVersion(format));
         }
-        if blake3::hash(&bytes[..56]).as_bytes()[..8] != bytes[56..] || bytes[12..16] != [0; 4] {
+        if blake3::hash(&bytes[..56]).as_bytes()[..8] != bytes[56..] {
             return Err(AssetError::Malformed("HEAD check"));
         }
         let mut generation = [0; 8];
@@ -50,6 +54,7 @@ impl Head {
         let mut manifest = [0; 32];
         manifest.copy_from_slice(&bytes[24..56]);
         Ok(Self {
+            epoch: u32::from_le_bytes([bytes[12], bytes[13], bytes[14], bytes[15]]),
             generation: u64::from_le_bytes(generation),
             manifest: ContentHash::from_bytes(manifest),
         })
@@ -64,6 +69,7 @@ mod tests {
     #[test]
     fn head_round_trips_and_refuses_damage() {
         let head = Head {
+            epoch: 0x5eed,
             generation: 7,
             manifest: ContentHash::of(b"manifest"),
         };

@@ -1,7 +1,9 @@
 use std::path::{Path, PathBuf};
 
 use crate::layout::HEAD_LEN;
-use crate::{AssetError, ContentHash, Head, Manifest, ProductBytes};
+use crate::{AssetError, ContentHash, Head};
+#[cfg(not(target_arch = "wasm32"))]
+use crate::{Manifest, ProductBytes};
 
 /// A content-addressed product store on the local filesystem.
 ///
@@ -83,7 +85,7 @@ impl AssetStore {
 #[derive(Debug)]
 pub struct HeadWatcher {
     store: AssetStore,
-    seen: Option<u64>,
+    seen: Option<(u32, u64)>,
 }
 
 impl HeadWatcher {
@@ -100,10 +102,15 @@ impl HeadWatcher {
         let Some(head) = self.store.read_head()? else {
             return Ok(None);
         };
-        if self.seen.is_some_and(|seen| head.generation <= seen) {
+        // Generations only order publications of one store instance; a new epoch (the store was
+        // wiped and recreated) always counts as new.
+        if self
+            .seen
+            .is_some_and(|(epoch, generation)| head.epoch == epoch && head.generation <= generation)
+        {
             return Ok(None);
         }
-        self.seen = Some(head.generation);
+        self.seen = Some((head.epoch, head.generation));
         Ok(Some(head))
     }
 
