@@ -28,6 +28,10 @@ impl<'a> DirtySlots<'a> {
     pub fn health(self) -> &'a [u32] {
         self.0.component::<Health>()
     }
+    /// Visual selector or material changed since the preceding publication.
+    pub fn visual(self) -> &'a [u32] {
+        self.0.component::<Visual>()
+    }
     /// Membership or identity changed since the preceding publication.
     pub fn structural(self) -> &'a [u32] {
         self.0.structural()

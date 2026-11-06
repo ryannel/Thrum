@@ -101,12 +101,19 @@ pub fn simulation_with_count(entity_count: usize) -> Result<Simulation, String> 
 }
 
 pub(crate) fn extract(extractor: &mut RenderExtractor, snapshot: &PublishedPage) -> ExtractReport {
-    extractor.extract(
-        SourceTick {
-            epoch: snapshot.id().epoch.0,
-            tick: snapshot.id().tick,
-            timeline: snapshot.timeline(),
-        },
+    let source = SourceTick {
+        epoch: snapshot.id().epoch.0,
+        tick: snapshot.id().tick,
+        timeline: snapshot.timeline(),
+    };
+    let source_endpoint = snapshot.source_endpoint().map(|(id, timeline)| SourceTick {
+        epoch: id.epoch.0,
+        tick: id.tick,
+        timeline,
+    });
+    extractor.extract_adaptive(
+        source,
+        source_endpoint,
         [0.0; 3],
         |sink| {
             snapshot.visit(|handle, id, position, visual| {
@@ -114,6 +121,32 @@ pub(crate) fn extract(extractor: &mut RenderExtractor, snapshot: &PublishedPage)
                     sink.push(handle.slot, handle.generation, id.0, position.0, visual);
                 }
             });
+        },
+        |sink| {
+            let dirty = snapshot.dirty();
+            let lists = [dirty.position(), dirty.visual(), dirty.structural()];
+            let mut next_index = [0; 3];
+            while let Some(slot) = (0..lists.len())
+                .filter_map(|index| lists[index].get(next_index[index]).copied())
+                .min()
+            {
+                for (index, list) in lists.iter().enumerate() {
+                    while list.get(next_index[index]) == Some(&slot) {
+                        next_index[index] += 1;
+                    }
+                }
+                if let Some(handle) = snapshot.handle(slot)
+                    && let (Some(id), Some(position), Some(visual)) = (
+                        snapshot.stable_id(slot),
+                        snapshot.position(handle),
+                        snapshot.visual(handle),
+                    )
+                {
+                    sink.set(slot, handle.generation, id.0, position.0, visual);
+                } else {
+                    sink.remove(slot);
+                }
+            }
         },
     )
 }
@@ -129,7 +162,94 @@ mod tests {
     use super::{
         ENTITY_COUNT, PEER_COUNT, control_frame, extract, simulation, simulation_with_count,
     };
-    use crate::simulation::{Command, Position};
+    use crate::simulation::{Command, ComponentEntity, Position, Velocity};
+
+    #[test]
+    fn published_deltas_match_full_visual_extraction_through_churn_and_skips() {
+        let mut sim = simulation_with_count(100).expect("small visual game");
+        let mut sparse = RenderExtractor::new(100, 100);
+        let mut full = RenderExtractor::new(100, 100);
+        let mut churn_id = StableId(1);
+        for step in 0..20 {
+            let commands = if step % 4 == 3 {
+                let old = sim.handle(churn_id).expect("churn target");
+                churn_id = StableId(100 + step);
+                vec![
+                    Command::Despawn(old),
+                    Command::Spawn(ComponentEntity {
+                        id: churn_id,
+                        position: Position([0.25, 0.0, 0.5]),
+                        velocity: Velocity::default(),
+                        health: 100,
+                        ownership: None,
+                        visual: Some(1),
+                    }),
+                ]
+            } else if step == 5 {
+                vec![Command::SetVelocity(
+                    sim.handle(StableId(0)).expect("mover"),
+                    Velocity::default(),
+                )]
+            } else if step == 12 {
+                vec![Command::SetPosition(
+                    sim.handle(StableId(2)).expect("static"),
+                    Position([0.6, 0.1, 0.5]),
+                )]
+            } else {
+                Vec::new()
+            };
+            sim.step(&commands).expect("committed tick");
+            if step == 10 {
+                continue;
+            }
+            let page = sim.published_page().expect("published endpoint");
+            let sparse_report = extract(&mut sparse, &page);
+            let source = SourceTick {
+                epoch: page.id().epoch.0,
+                tick: page.id().tick,
+                timeline: page.timeline(),
+            };
+            let full_report = full.extract(source, [0.0; 3], |sink| {
+                page.visit(|handle, id, position, visual| {
+                    if let Some(visual) = visual {
+                        sink.push(handle.slot, handle.generation, id.0, position.0, visual);
+                    }
+                });
+            });
+            assert_eq!(sparse_report, full_report, "tick {}", page.id().tick);
+            let actual = sparse.frame();
+            let expected = full.frame();
+            assert_eq!(actual.len(), expected.len());
+            for slot in 0..100_u32 {
+                let actual_row = actual.slots().iter().position(|value| *value == slot);
+                let expected_row = expected.slots().iter().position(|value| *value == slot);
+                assert_eq!(actual_row.is_some(), expected_row.is_some(), "slot {slot}");
+                if let (Some(actual_row), Some(expected_row)) = (actual_row, expected_row) {
+                    assert_eq!(actual.ids()[actual_row], expected.ids()[expected_row]);
+                    assert_eq!(
+                        actual.current()[actual_row],
+                        expected.current()[expected_row]
+                    );
+                    assert_eq!(
+                        actual.previous()[actual_row],
+                        expected.previous()[expected_row]
+                    );
+                    assert_eq!(
+                        actual.history_valid()[actual_row],
+                        expected.history_valid()[expected_row]
+                    );
+                    assert_eq!(
+                        actual.visuals()[actual_row],
+                        expected.visuals()[expected_row]
+                    );
+                    assert_eq!(
+                        actual.generation_at_slot(slot as usize),
+                        expected.generation_at_slot(slot as usize)
+                    );
+                }
+            }
+        }
+    }
 
     #[test]
     fn skipped_replay_baseline_invalidates_render_pose_history() {
