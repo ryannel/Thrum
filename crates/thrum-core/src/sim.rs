@@ -13,6 +13,8 @@ mod snapshot;
 mod snapshot_ring;
 mod transaction;
 mod undo;
+#[cfg(not(target_arch = "wasm32"))]
+mod world_lane;
 
 pub use history::{HistoryError, HistoryGame, RuntimeHistory};
 pub use input::{ControlBinding, FrameError, InputFrame};
@@ -30,3 +32,8 @@ pub use schedule::{
 pub use snapshot::{SnapshotId, StructuralChange};
 pub use snapshot_ring::{DirtyPage, PublicationBusy, SnapshotRing};
 pub use transaction::{Edit, EditError};
+#[cfg(not(target_arch = "wasm32"))]
+pub use world_lane::{
+    WorldLane, WorldLaneAdvance, WorldLaneControls, WorldLaneFault, WorldPublication, WorldTask,
+    WorldUpdate,
+};
