@@ -220,7 +220,7 @@ fn ambient_irradiance(n: vec3<f32>) -> vec3<f32> {
     return max(evaluate_sky_diffuse(light.sky_diffuse,n),vec3(0.0));
 }
 
-fn shade(input: VertexOutput, sun_factor: f32) -> vec4<f32> {
+fn shade(input: VertexOutput, sun_factor: f32, front_facing: bool) -> vec4<f32> {
     let material=materials[input.material];
     let base=textureSample(base_textures,material_sampler,input.uv,i32(material.texture_layers.x));
     let orm=textureSample(orm_textures,material_sampler,input.uv,i32(material.texture_layers.z));
@@ -230,7 +230,7 @@ fn shade(input: VertexOutput, sun_factor: f32) -> vec4<f32> {
     let surface_base = material.base.rgb*base.rgb;
     let metalness = material.surface.z*orm.b;
     let roughness = material.surface.y*orm.g;
-    let n = normalize(input.normal);
+    var n = normalize(input.normal);
     var v = vec3(0.0,0.0,-1.0);
     var h = light.half_vector_fresnel.xyz;
     var fresnel_power = light.half_vector_fresnel.w;
@@ -241,6 +241,11 @@ fn shade(input: VertexOutput, sun_factor: f32) -> vec4<f32> {
         if dot(hv,hv)>0.000001 { h = normalize(hv); }
         fresnel_power = pow(clamp(1.0-dot(v,h),0.0,1.0),5.0);
     }
+    // Smooth interpolation can put a shading normal behind V on a geometrically
+    // front-facing triangle. Reflect it across V's tangent plane once, so direct,
+    // local and environment lighting share a valid normal. Preserve real raster
+    // backfaces and the authored normal used above for geometric shadow bias.
+    if front_facing { n -= 2.0*min(dot(n,v),0.0)*v; }
     let colour = direct_brdf(surface_base,metalness,roughness,n,
             light.direction_to_light.xyz,v,light.irradiance.rgb*sun_factor,h,fresnel_power)
         + local_radiance(surface_base,metalness,roughness,n,v,input.world_position,input.position)
@@ -268,9 +273,9 @@ fn motion_vector(input: VertexOutput) -> vec2<f32> {
         (0.5 - previous_ndc.y * 0.5) * extent.y);
     return clamp(previous_pixel - input.position.xy, vec2(-65504.0), vec2(65504.0));
 }
-@fragment fn fragment(input:VertexOutput)->FragmentOutput {
-    return FragmentOutput(shade(input,1.0), motion_vector(input));
+@fragment fn fragment(input:VertexOutput, @builtin(front_facing) front_facing: bool)->FragmentOutput {
+    return FragmentOutput(shade(input,1.0,front_facing), motion_vector(input));
 }
-@fragment fn shadowed_fragment(input:VertexOutput)->FragmentOutput {
-    return FragmentOutput(shade(input,sun_visibility(input,normalize(input.normal))), motion_vector(input));
+@fragment fn shadowed_fragment(input:VertexOutput, @builtin(front_facing) front_facing: bool)->FragmentOutput {
+    return FragmentOutput(shade(input,sun_visibility(input,normalize(input.normal)),front_facing), motion_vector(input));
 }

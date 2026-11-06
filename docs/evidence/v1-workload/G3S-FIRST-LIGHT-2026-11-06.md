@@ -8,7 +8,7 @@
 | SH9 diffuse | Projection 0.0645% M0; reference refinement ≤0.0483% M0 | Sampling pass |
 | SH approximation | Direct error 5.225% M0; up to 331% on faint directions | Accuracy open |
 | GGX cube/DFG | Actual Metal constants, axes/edges/corners, rotated Sun, independent f64 hemisphere integral | Pass |
-| Material/energy | 120 GPU consumer cases: metal/roughness/view, solar 0/1/2, furnace and back hemisphere | Pass |
+| Material/energy | 120 GPU cases: metal/roughness/view, solar 0/1/2, furnace/back hemisphere; front-raster normal repair | Pass |
 | Cache/lifecycle | Cold/warm cancellation, Sun/profile/altitude changes, amplitude/view reuse; browser replacement | Pass |
 | Look | Noon/sunrise/twilight subjects; 24 camera/Sun samples independently reviewed | Partial |
 
@@ -20,6 +20,13 @@ and 24 UI-driven camera/Sun samples in one healthy generation; world paused (fin
 clip is 24 samples at 5 fps, **not live cadence**. Source PNGs and all decoded frames were inspected independently.
 Metallic foreground uses the ONE disk-free Sky; nearby 18% rough neutral stays outside local-light spheres.
 Sunrise coverage was added after review; first occluded fixture was rejected. Twilight colours read on both materials.
+7 November: actual Metal regression fails before the smooth-normal repair and passes after, including unrepaired
+raster backfaces. Independent code review has no findings. Private cooked-terrain captures lose their black seams;
+landscape composition, low-Sun terraces and grounding remain unqualified. Chrome all11 and 24 sampled views pass
+at Wasm `11308dde593463a392cde4bddc86228fdd1ca3aef0a580cf88527320ee511d3a`; independent visual review retains
+the scoped repair. Private valley ABBA (61,312 triangles +10k entities,1080p, shared M3 Max load3–11): callback p95
+0.741–0.772→0.734–0.738ms; scene GPU p50 1.561–1.566→1.570–1.571ms. No speed/isolated-GPU claim; first before
+may overlap owned capture startup. Raw builds, images and runs: `tmp/g3s-showcase/`. No geometric-horizon claim.
 No broad clipping/banding, blackouts or cube seams observed; grid moiré, regular shadow stipples/stairs and pastel
 contrast remain. Motion PNGs have zero black/clipped pixels; H.264 damages the dense grid, so source PNGs govern.
 Three sky-only 280-row comparisons against prior SH9 captures peak at 1 SDR byte. Transport/spectral accuracy,

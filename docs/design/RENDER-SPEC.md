@@ -127,7 +127,10 @@ lossless conversion or explicit refusal under Thrum's one-sampler ORM layout.
 [Khronos glTF 2.0 materials](https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#materials).
 Texture-presence flags may skip absent reads but cannot change these results.
 An absent normal map uses the admitted geometric/shading normal and does not
-evaluate a tangent basis. A present normal map requires a validated tangent
+evaluate a tangent basis. On front-facing raster fragments, reflect a negative-view-cosine shading normal
+across the view tangent plane before lighting; retain the original normal for shadow bias and leave real
+backfaces and low-level BRDF hemisphere checks unchanged. This is a raster correction, not geometric visibility
+([production rationale](https://github.com/Unity-Technologies/Graphics/blob/master/Packages/com.unity.render-pipelines.core/ShaderLibrary/CommonLighting.hlsl#L412-L447)). A present normal map requires a validated tangent
 basis and a separately supported evaluator; the first bounded R0 proof refuses
 it before ready-product publication. A later mapped-normal profile must cook
 tangents with a declared method. Material factors, alpha cutoff and
