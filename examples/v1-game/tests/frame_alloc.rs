@@ -188,7 +188,13 @@ fn autonomous_world_and_render_callback_report_warm_allocations() {
             .await
             .expect("native Metal adapter");
         let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
+            .request_device(&wgpu::DeviceDescriptor {
+                required_features:
+                    thrum_render::capabilities::DeviceCapabilities::requested_timing_features(
+                        &adapter,
+                    ),
+                ..Default::default()
+            })
             .await
             .expect("device");
         let extent = [640, 360];
