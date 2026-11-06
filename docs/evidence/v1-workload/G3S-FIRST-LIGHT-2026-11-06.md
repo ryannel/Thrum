@@ -34,8 +34,13 @@ No new full-frame CPU/allocation or complete-atmosphere cost claim.
 A sampled sunset run hit WebGPU loss/black output: **rejected as motion evidence**; loss reporting/authority now pass; reconstruction remains open.
 Raw numerical/capture/failure logs: `tmp/g3s-directional/`; baseline `tmp/g3b-browser/`.
 
-Transport remains separate: declared coefficient bands are not measured Earth spectra/CIE. Horizon filtering
-and GroundE improve selected rays, but adverse full transport remains (−6° blue +188.68%, sparse MC rows).
-Nonlinear M layout `11cb21e` is parked; keep `e061671`. LUT gains 65536/1024 preserve twilight; C250 metering
-has no readback. Game NeutralHighlights preserves calibration, with no material toe; not standard PBR Neutral.
-Physical display motion, actual tab/mobile lifecycle, spectral accuracy and final contrast remain open.
+Transport uses declared bands, not measured Earth spectra/CIE. Nonlinear M layout `11cb21e` stays parked;
+selected transport remains `e061671`, gains 65536/1024. A true-phase first-scattering seed was also rejected:
+Sun−3° resolved-row median error worsened 14.34→17.24%; Sun0°/+1°/0° blue improved 3.11→0.25%, while
+Sun−3°/+15°/180° green worsened 25.92→29.01%. Comparison holds all 198 first-order/CPU rows fixed against
+retained 32768-path estimates; it is not a whole-sky tolerance pass. Raw patch/tables: `tmp/g3s-source-quality/`.
+Independent continuous local-closure referee separates angular/path refinement from LUT sampling. Four cells agree within
+0.25% on separate axes: angular 8→16 (fourth 16→32), path refinement at16. Its vacuum falsifier exposes inherited
+self-feedback, motivating a coupled spatial atmosphere/ground experiment, not a brightness gain.
+C250 metering has no readback. NeutralHighlights preserves calibration; not standard PBR Neutral. Physical display
+motion, actual tab/mobile lifecycle, spectral accuracy and final contrast remain open.

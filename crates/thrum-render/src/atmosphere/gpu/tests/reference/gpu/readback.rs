@@ -184,11 +184,37 @@ impl Probe {
         }
         self.transport_ready = true;
         Sky {
-            full: full.collect(),
-            single: single.collect(),
-            rays_full: decode(&rays_full),
-            rays_single: decode(&rays_single),
+            full: full.collect(1024.0),
+            single: single.collect(1024.0),
+            rays_full: decode(&rays_full, 1024.0),
+            rays_single: decode(&rays_single, 1024.0),
         }
+    }
+
+    pub(super) fn multiple(&self, device: &wgpu::Device, queue: &wgpu::Queue) -> Vec<[f64; 3]> {
+        assert!(
+            self.transport_ready,
+            "profile has executed before observation"
+        );
+        let snapshot = Snapshot::new(device, &self.reader, &self.atmosphere.textures[1]);
+        let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+        snapshot.encode(&mut encoder, &self.reader);
+        let (send, receive) = mpsc::channel();
+        encoder.map_buffer_on_submit(&snapshot.readback, wgpu::MapMode::Read, .., move |result| {
+            send.send(result).expect("M observation receiver alive");
+        });
+        let submitted = queue.submit([encoder.finish()]);
+        device
+            .poll(wgpu::PollType::Wait {
+                submission_index: Some(submitted),
+                timeout: Some(Duration::from_secs(10)),
+            })
+            .expect("M observation completes");
+        receive
+            .recv()
+            .expect("M mapping callback")
+            .expect("M mapped");
+        snapshot.collect(1.0)
     }
 
     fn dispatch(&self, encoder: &mut wgpu::CommandEncoder, index: usize, group: &wgpu::BindGroup) {
@@ -274,12 +300,12 @@ impl Snapshot {
         encoder.copy_buffer_to_buffer(&self.output, 0, &self.readback, 0, self.output.size());
     }
 
-    fn collect(&self) -> Vec<[f64; 3]> {
-        decode(&self.readback)
+    fn collect(&self, gain: f64) -> Vec<[f64; 3]> {
+        decode(&self.readback, gain)
     }
 }
 
-fn decode(readback: &wgpu::Buffer) -> Vec<[f64; 3]> {
+fn decode(readback: &wgpu::Buffer, gain: f64) -> Vec<[f64; 3]> {
     let mapped = readback
         .slice(..)
         .get_mapped_range()
@@ -295,7 +321,7 @@ fn decode(readback: &wgpu::Buffer) -> Vec<[f64; 3]> {
                     encoded.is_finite() && encoded >= 0.0,
                     "invalid production sky radiance"
                 );
-                f64::from(encoded) / 1024.0
+                f64::from(encoded) / gain
             })
         })
         .collect()
