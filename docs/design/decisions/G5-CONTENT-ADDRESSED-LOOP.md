@@ -37,7 +37,7 @@ map the same products, and they never link the cooker. The work splits into thre
 | Baked volumes | Brief, cloud port | `.tvol` source cooks to 3D KTX2: BC4 sliced-3D for desktop, R8 for portable. | Tested; cook and map only, as commissioned |
 | Profile selection | Hardware-native, C06 | The consumer orders profiles from one `DeviceCapabilities` record (ASTC → AppleAstc, BC → DesktopBc, else Portable). No private probes. The cooker always adds Portable. The runtime rejects partial compressed blocks; the loader rejects extents over device limits and unenabled formats, and records GPU validation errors instead of aborting. | Tested |
 | Watcher | G5 | notify/FSEvents. Events are only hints: an 8 ms quiet window closes a batch (250 ms maximum), `need_rescan` triggers a full scan, and the stat cache stays the authority. | Implemented; latency in bench |
-| Dev server | G5 | Loopback HTTP: `/head`, a `/head?after=N` long poll, and immutable `/cas/<hash>`. Clients verify bytes against the hash. | Tested; no browser client yet |
+| Dev server | G5 | Loopback HTTP: `/head`, a `/head?after=N` long poll, and immutable `/cas/<hash>`; `Host` checked, loopback `Origin` echoed. Client: `thrum-asset::DevClient`, target-independent protocol over a `Fetch` transport (`BrowserFetch`, the global `fetch`, on Wasm). It decodes `HEAD` with the native parser, never goes back a generation within an epoch, fetches the manifest and only the unheld products its per-kind profile preferences resolve, issues them together, and checks length and BLAKE3 before parsing. Products are 64-aligned owned bytes shared by reference count. | Server tested; client protocol unit-tested natively; Wasm client run end to end in Node against `thrum-cook watch --serve`; no browser page run |
 | No-stall swap | G5 | A loader thread maps, validates and uploads into new resources in 1 MiB chunks. The render thread exchanges a pointer between frames and never waits; wgpu retires old resources after their last submission. | GPU test plus hitch bench |
 | Shipping excludes authoring | G5 | Registry edges plus a dependency-graph and symbol check of the release viewer binary. | Recorded in evidence |
 
@@ -52,6 +52,9 @@ Ordinary work is designed around the frequent operations:
 - **Publishing is O(entries).** It writes one manifest (64 bytes per entry) and one 64-byte `HEAD`.
 - **The runtime polls cheaply.** A `HEAD` poll is one 64-byte read. Loading maps the manifest and does a binary search
   per resolve; mapping is O(1) and validation is O(sections), with reference validation linear and optional.
+- **Remote loads fetch only changed products.** The dev client holds the resident generation's products by hash, so a
+  publication costs one `HEAD` reply, one manifest and the changed products, each copied once from the JS heap into
+  aligned memory and hashed once.
 - **Uploads are only for changed products.** The loader keeps products by content hash, so unchanged products are
   reused (asserted in the GPU test).
 - **The render thread pays almost nothing.** Per swap it does one `try_recv` and drops an `Arc`; it never runs
@@ -122,14 +125,13 @@ Alternatives were rejected for these reasons:
 - EAC R11 iPhone volume products.
 - Mirrored-transform winding and normal sign in glTF import.
 - Rejection of compressed textures whose base size is not a multiple of 4.
-- Browser dev-server client.
+- A Chrome page run of the Wasm dev-server client (the CORS path); it is tested natively and in Node only.
 - V1-game integration that keeps the G3s lighting (see the boundary note).
 - Meshlet draw path (mesh shaders / GPU-driven, tied to G3c).
 - Texture quality comparison (PSNR against the source).
 - Physical iPhone, Chrome and sustained measurements.
 - Tripwires are recorded, not asserted; no regression history yet.
-- The dev server allows any origin (`Access-Control-Allow-Origin: *`) and opens one thread per connection. A web page
-  the developer visits can read the loopback store. That is acceptable for non-secret dev assets, but an origin
-  allow-list is needed before wider use.
+- The dev server opens one thread per connection (at most 32). Only loopback origins may read it; a page served from
+  another device needs an explicit origin allow-list before wider use.
 - An asset whose compressed profile fails permanently (for example a partial-block size) keeps serving its last good
   compressed product while its portable product updates.
