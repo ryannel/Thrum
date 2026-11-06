@@ -1,0 +1,29 @@
+[package]
+name = "thrum-cook"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+description = "Authoring-only Thrum asset cooker: stat cache, BLAKE3 CAS, cookers, atomic manifest, watcher and dev server"
+
+[lints]
+workspace = true
+
+[dependencies]
+astcenc-rs = "=0.2.0"
+blake3 = { version = "=1.8.7", default-features = false, features = ["std", "rayon"] }
+bytemuck = { version = "=1.25.2", features = ["derive"] }
+gltf = { version = "=1.4.1", default-features = false, features = ["import", "utils"] }
+image = { version = "=0.25.10", default-features = false, features = ["png", "jpeg"] }
+intel_tex_2 = "=0.5.0"
+meshopt = "=0.7.0"
+notify = { version = "=8.2.1", default-features = false, features = ["macos_fsevent"] }
+rayon = "=1.12.0"
+thrum-asset = { path = "../thrum-asset" }
+
+[dev-dependencies]
+asset-loop = { path = "../../examples/asset-loop" }
+
+[[bench]]
+name = "edit_to_visible"
+harness = false

@@ -505,6 +505,24 @@
         "../evidence/render/V1-COOKED-ENVIRONMENT-2026-11-04.md"
       ],
       "scope": "F3 pin closes the selected scene@2/environment@1/light@1 records; F4 product key uses four direct exact-input hashes and authenticates artifact bytes on load. The V1 native host prepares photometric Sun/ambient/background and three new targets off the tick path, selects only after old GPU packets retire, reports visual revision and invalidates prior-pose extraction history on every successful target replacement. There is no live watcher, worker-scheduled preparation, radius/penumbra response, full temporal-image history handling, deterministic held-packet proof, failure UI, Chrome/iPhone runtime or device budget qualification."
+    },
+    "G5_content_addressed_loop": {
+      "implementation": "complete_native_loop_runtime_thrum_asset_authoring_thrum_cook_shipping_shaped_asset_loop_viewer; partial_no_v1_game_integration_no_browser_client_no_meshlet_draw_path_no_EAC_volumes_no_CAS_gc",
+      "functional_validation": "25_G5_tests_in_dev_check_cook_loop_watcher_dev_server_hostile_product_mutation_and_real_Metal_edit_to_visible; independent_design_review_findings_fixed_with_regression_tests; shipping_link_graph_and_symbol_scan_with_positive_control",
+      "experienced_quality": "agent_reviewed_stills_and_8_frame_orbit_offscreen_diagnostic_viewer_no_msaa_motion_shimmer_unreviewed",
+      "platform_performance": {
+        "mac": "tripwires_recorded_shared_machine_not_budget_qualified",
+        "windows": "not_run",
+        "browser": "not_run_no_client",
+        "ios": "not_run",
+        "android": "not_run"
+      },
+      "diagnostic_measurement": "Apple M3 Max release, shared machine: warm no-change scan 10k files 27.3 ms, watcher-targeted 0.06 ms; write->visible median 93 ms texture (1024^2, three profiles, ASTC drawn, 1.3 MiB chunked upload) and 62.5 ms mesh; swap-frame render CPU max 0.33 ms vs steady max 3.44 ms; GPU completion interval within 50 ms of swap max 10.2 ms vs steady 13.5 ms; startup to first resident frame 23.5 ms warm, 199.7 ms cold. Offscreen, no present.",
+      "scope": "Stat cache, BLAKE3 CAS, action cache, aligned mmap products, glTF meshopt meshlets, KTX2 RGBA8/BC7/ASTC4x4 textures and R8/BC4 volumes, atomic HEAD/manifest, FSEvents watcher, loopback dev server, loader-thread upload and render-thread swap. Preview publication of working files; T1 admission, build binding, residency admission and device-generation tagging are recorded contract questions.",
+      "evidence": [
+        "../evidence/integration/G5-CONTENT-ADDRESSED-LOOP-2026-11-06.md",
+        "decisions/G5-CONTENT-ADDRESSED-LOOP.md"
+      ]
     }
   },
   "user_selected": [
