@@ -37,3 +37,7 @@ harness = false
 [[bench]]
 name = "visibility"
 harness = false
+
+[[bench]]
+name = "frame_target"
+harness = false

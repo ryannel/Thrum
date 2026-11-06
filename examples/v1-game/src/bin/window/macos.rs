@@ -14,9 +14,12 @@ use std::{
 };
 
 use display_link::ViewDisplayLink;
-use objc2_quartz_core::CACurrentMediaTime;
 use render_actor::{ReadyState, RenderJob, RenderOutcome, RenderReply};
-use thrum_render::{capabilities::DeviceCapabilities, frame::FrameWorker, present::SurfaceProfile};
+use thrum_render::{
+    capabilities::DeviceCapabilities,
+    frame::{FrameWorker, TargetLeadStatus},
+    present::SurfaceProfile,
+};
 use v1_game::{FrameConfig, FrameHost, FrameSample, WorldControls};
 use wgpu::CurrentSurfaceTexture;
 use winit::{
@@ -173,6 +176,9 @@ struct App {
     request_sequence: u64,
     submitted_sequence: u64,
     display_link_callbacks: usize,
+    late_target_evaluations: usize,
+    invalid_target_evaluations: usize,
+    clamped_target_evaluations: usize,
     pending_display_target: bool,
     surface: Option<SurfaceWorker>,
     surface_format: Option<wgpu::TextureFormat>,
@@ -226,6 +232,9 @@ impl App {
             request_sequence: 0,
             submitted_sequence: 0,
             display_link_callbacks: 0,
+            late_target_evaluations: 0,
+            invalid_target_evaluations: 0,
+            clamped_target_evaluations: 0,
             pending_display_target: false,
             surface: None,
             surface_format: None,
@@ -431,6 +440,7 @@ impl App {
             queue,
             render_surface_owner,
             configured_extent,
+            self.origin,
             wake,
         )?);
         Ok(())
@@ -439,6 +449,12 @@ impl App {
     fn receive_render(&mut self, reply: RenderReply) -> Result<(), String> {
         self.render_in_flight = None;
         self.ready = reply.ready;
+        match reply.target_status {
+            Some(TargetLeadStatus::Late) => self.late_target_evaluations += 1,
+            Some(TargetLeadStatus::Invalid) => self.invalid_target_evaluations += 1,
+            Some(TargetLeadStatus::Clamped) => self.clamped_target_evaluations += 1,
+            Some(TargetLeadStatus::Future) | None => {}
+        }
         match reply.outcome {
             RenderOutcome::Frame(report) => {
                 self.worker_walls.push(reply.worker_wall);
@@ -512,7 +528,6 @@ impl App {
             return Ok(());
         }
         let now = self.origin.elapsed();
-        let media_now = CACurrentMediaTime();
         self.last_call = now;
         self.callbacks += 1;
         let size = self.window.as_ref().ok_or("window missing")?.inner_size();
@@ -558,18 +573,9 @@ impl App {
         } else {
             None
         };
-        let lead = self.display_target.map_or(Duration::ZERO, |target| {
-            let seconds = target - media_now;
-            if seconds.is_finite() && seconds > 0.0 {
-                Duration::from_secs_f64(seconds.min(0.05))
-            } else {
-                Duration::ZERO
-            }
-        });
         let job = RenderJob::Frame {
             sequence: self.target_sequence,
-            now,
-            lead,
+            target_media_seconds: self.display_target.ok_or("display target missing")?,
             frame,
             time_of_day: self.pending_time_of_day,
             camera_pitch: self.pending_camera_pitch,
@@ -671,7 +677,7 @@ impl App {
             "GPU timestamps unavailable".to_owned()
         };
         Ok(format!(
-            "adapter={}; surface={:?} {}x{}; presented={}; callbacks={}; display_link_callbacks={}; committed_ticks={}; unavailable={}; occluded={}; waiting_acquire={}; stale_acquire={}; surface_faults={}; dropped_surface={}; dropped_views={}; dropped_stale_views={}; reused_views={}; dropped_reports={}; callback CPU p50/p95={:.3}/{:.3} ms; render-worker CPU p50/p95={:.3}/{:.3} ms; tick CPU p50/p95={:.3}/{:.3} us; live-view CPU p50/p95={:.3}/{:.3} us; upload CPU p50/p95={:.3}/{:.3} us; encode CPU p50/p95={:.3}/{:.3} us; upload+encode CPU p50/p95={:.3}/{:.3} us; {gpu}",
+            "adapter={}; surface={:?} {}x{}; presented={}; callbacks={}; display_link_callbacks={}; late_target_evaluations={}; invalid_target_evaluations={}; clamped_target_evaluations={}; committed_ticks={}; unavailable={}; occluded={}; waiting_acquire={}; stale_acquire={}; surface_faults={}; dropped_surface={}; dropped_views={}; dropped_stale_views={}; reused_views={}; dropped_reports={}; callback CPU p50/p95={:.3}/{:.3} ms; render-worker CPU p50/p95={:.3}/{:.3} ms; tick CPU p50/p95={:.3}/{:.3} us; live-view CPU p50/p95={:.3}/{:.3} us; upload CPU p50/p95={:.3}/{:.3} us; encode CPU p50/p95={:.3}/{:.3} us; upload+encode CPU p50/p95={:.3}/{:.3} us; {gpu}",
             self.adapter_name,
             self.surface_format.ok_or("surface format missing")?,
             self.surface_extent[0],
@@ -679,6 +685,9 @@ impl App {
             self.presented,
             self.callbacks,
             self.display_link_callbacks,
+            self.late_target_evaluations,
+            self.invalid_target_evaluations,
+            self.clamped_target_evaluations,
             self.world_tick,
             self.unavailable,
             self.occluded,

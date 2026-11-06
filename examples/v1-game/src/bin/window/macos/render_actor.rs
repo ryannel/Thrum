@@ -5,7 +5,8 @@ use std::{
     time::{Duration, Instant},
 };
 
-use thrum_render::frame::FrameWorker;
+use objc2_quartz_core::CACurrentMediaTime;
+use thrum_render::frame::{FrameWorker, TargetLeadStatus, display_target_lead};
 use v1_game::{DriveReport, FrameHost, FrameSample, SurfaceOutput, ThreadedFrameHost};
 use wgpu::{SurfaceTexture, TextureViewDescriptor};
 use winit::event_loop::EventLoopProxy;
@@ -15,8 +16,7 @@ use super::UserEvent;
 pub(super) enum RenderJob {
     Frame {
         sequence: u64,
-        now: Duration,
-        lead: Duration,
+        target_media_seconds: f64,
         frame: Option<(SurfaceTexture, [u32; 2])>,
         time_of_day: Option<f32>,
         camera_pitch: Option<f32>,
@@ -68,6 +68,7 @@ pub(super) struct RenderReply {
     pub(super) samples: [Option<FrameSample>; FrameHost::MAX_IN_FLIGHT],
     pub(super) ready: ReadyState,
     pub(super) worker_wall: Duration,
+    pub(super) target_status: Option<TargetLeadStatus>,
 }
 
 pub(super) fn start(
@@ -76,6 +77,7 @@ pub(super) fn start(
     queue: wgpu::Queue,
     surface_owner: Arc<wgpu::Surface<'static>>,
     initial_extent: [u32; 2],
+    origin: Instant,
     wake: &EventLoopProxy<UserEvent>,
 ) -> Result<FrameWorker<RenderJob, RenderReply>, String> {
     let signal = wake.clone();
@@ -90,12 +92,12 @@ pub(super) fn start(
             match job {
                 RenderJob::Frame {
                     sequence,
-                    now,
-                    lead,
+                    target_media_seconds,
                     frame,
                     time_of_day,
                     camera_pitch,
                 } => {
+                    let mut target_status = None;
                     let report = (|| {
                         if let Some(time_of_day) = time_of_day {
                             host.set_time_of_day(time_of_day)?;
@@ -103,7 +105,6 @@ pub(super) fn start(
                         if let Some(camera_pitch) = camera_pitch {
                             host.set_camera_pitch(camera_pitch)?;
                         }
-                        host.set_presentation_lead(lead);
                         let view = frame.as_ref().map(|(frame, _)| {
                             frame.texture.create_view(&TextureViewDescriptor::default())
                         });
@@ -120,6 +121,12 @@ pub(super) fn start(
                             host.resize_surface(*extent)?;
                             current_extent = *extent;
                         }
+                        // Sample both clocks after preparation. The target may
+                        // expire while this bounded job waits for its worker.
+                        let now = origin.elapsed();
+                        let lead = display_target_lead(target_media_seconds, CACurrentMediaTime());
+                        target_status = Some(lead.status);
+                        host.set_presentation_lead(lead.duration);
                         let report = host.drive(now, surface.as_ref())?;
                         if report.surface_presented {
                             queue.present(frame.ok_or("surface pass without drawable")?.0);
@@ -137,6 +144,7 @@ pub(super) fn start(
                                     samples,
                                     ready: ReadyState::read(&host),
                                     worker_wall: job_start.elapsed(),
+                                    target_status,
                                 };
                             }
                         }
@@ -150,6 +158,7 @@ pub(super) fn start(
                         samples,
                         ready: ReadyState::read(&host),
                         worker_wall: job_start.elapsed(),
+                        target_status,
                     }
                 }
                 RenderJob::Finish => {
@@ -177,6 +186,7 @@ pub(super) fn start(
                         samples: [None; FrameHost::MAX_IN_FLIGHT],
                         ready: ReadyState::read(&host),
                         worker_wall: job_start.elapsed(),
+                        target_status: None,
                     }
                 }
             }
