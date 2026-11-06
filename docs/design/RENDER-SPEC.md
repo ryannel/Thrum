@@ -297,7 +297,8 @@ are separate celestial emitters with one named light identity each. Generate
 sky-derived diffuse SH and a prefiltered specular cubemap over several frames;
 an authored HDRI is an optional override, no longer a mandatory terminal
 background. Begin with [Hillaire 2020](https://sebh.github.io/publications/egsr2020.pdf);
-G3s measures LUT cost on this M3 Max and sky error against a brute-force CPU spectral oracle.
+G3s records LUT cost on this M3 Max. An independent all-orders scalar CPU referee first checks the same
+declared coefficient bands; measured spectral/CIE validation remains distinct and open.
 
 V3 owns one source-to-receiver transport closure. E1 supplies deterministic
 headless Sun direction, light level, wind and visibility from seed, time and
