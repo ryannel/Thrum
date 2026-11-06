@@ -25,6 +25,15 @@ fn await_sample(host: &mut FrameHost, device: &wgpu::Device) -> FrameSample {
     }
 }
 
+fn write_ppm(path: impl AsRef<std::path::Path>, rgba: &[[u8; 4]], extent: [u32; 2]) {
+    let mut ppm = Vec::with_capacity(rgba.len() * 3 + 32);
+    ppm.extend_from_slice(format!("P6\n{} {}\n255\n", extent[0], extent[1]).as_bytes());
+    for pixel in rgba {
+        ppm.extend_from_slice(&pixel[..3]);
+    }
+    std::fs::write(path, ppm).expect("write explicit visual capture");
+}
+
 #[test]
 fn game_atmosphere_capture_has_visible_finite_pixels() {
     pollster::block_on(async {
@@ -47,12 +56,78 @@ fn game_atmosphere_capture_has_visible_finite_pixels() {
         assert!(rgba.iter().all(|pixel| pixel[3] == 255));
         assert!(rgba.iter().any(|pixel| pixel[..3] != [0; 3]));
         if let Some(path) = std::env::var_os("THRUM_V1_CAPTURE_PPM") {
-            let mut ppm = Vec::with_capacity(640 * 360 * 3 + 20);
-            ppm.extend_from_slice(b"P6\n640 360\n255\n");
-            for pixel in rgba {
-                ppm.extend_from_slice(&pixel[..3]);
+            write_ppm(path, rgba, [640, 360]);
+        }
+        assert!(host.set_time_of_day(f32::NAN).is_err());
+        assert!(host.set_camera_pitch(f32::NAN).is_err());
+        assert!(host.set_camera_pitch(0.7).is_err());
+        host.set_time_of_day(0.25).expect("sunrise control");
+        let sunrise = host.capture_pixels().expect("sunrise pixels");
+        let changed = rgba
+            .iter()
+            .zip(sunrise.as_chunks::<4>().0)
+            .filter(|(noon, sunrise)| noon[..3] != sunrise[..3])
+            .count();
+        assert!(
+            changed > 640 * 360 / 10,
+            "time control changes the game image"
+        );
+        if let Some(directory) = std::env::var_os("THRUM_V1_CAPTURE_DIR") {
+            let directory = std::path::PathBuf::from(directory);
+            std::fs::create_dir_all(&directory).expect("capture directory");
+            for (name, time) in [
+                ("midnight", 0.0),
+                ("sunrise", 0.25),
+                ("noon", 0.5),
+                ("sunset", 0.75),
+                ("twilight", 0.77),
+            ] {
+                host.set_time_of_day(time).expect("fixed solar time");
+                let pixels = host.capture_pixels().expect("fixed game camera");
+                write_ppm(
+                    directory.join(format!("{name}.ppm")),
+                    pixels.as_chunks::<4>().0,
+                    [640, 360],
+                );
             }
-            std::fs::write(path, ppm).expect("write explicit visual capture");
+            host.set_time_of_day(0.5).expect("Sun-facing noon");
+            host.set_camera_pitch(0.35).expect("Sun-facing view");
+            let pixels = host.capture_pixels().expect("Sun-facing camera");
+            write_ppm(
+                directory.join("sun-facing.ppm"),
+                pixels.as_chunks::<4>().0,
+                [640, 360],
+            );
+            let mut full = FrameHost::new(
+                &device,
+                &queue,
+                FrameConfig {
+                    render_extent: [1920, 1080],
+                    surface: None,
+                },
+            )
+            .await
+            .expect("prepared full-resolution game scene");
+            full.set_time_of_day(0.5).expect("full-resolution noon");
+            full.set_camera_pitch(0.35)
+                .expect("full-resolution Sun view");
+            let pixels = full.capture_pixels().expect("full-resolution Sun capture");
+            write_ppm(
+                directory.join("sun-facing-1080p.ppm"),
+                pixels.as_chunks::<4>().0,
+                [1920, 1080],
+            );
+            host.set_camera_pitch(0.0).expect("level sweep camera");
+            for sample in 0..96 {
+                host.set_time_of_day(sample as f32 / 96.0)
+                    .expect("sweep time");
+                let pixels = host.capture_pixels().expect("sweep camera");
+                write_ppm(
+                    directory.join(format!("sweep_{sample:03}.ppm")),
+                    pixels.as_chunks::<4>().0,
+                    [640, 360],
+                );
+            }
         }
     });
 }

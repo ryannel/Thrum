@@ -18,6 +18,8 @@ pub(super) enum RenderJob {
         now: Duration,
         lead: Duration,
         frame: Option<(SurfaceTexture, [u32; 2])>,
+        time_of_day: Option<f32>,
+        camera_pitch: Option<f32>,
     },
     Finish,
 }
@@ -91,8 +93,16 @@ pub(super) fn start(
                     now,
                     lead,
                     frame,
+                    time_of_day,
+                    camera_pitch,
                 } => {
                     let report = (|| {
+                        if let Some(time_of_day) = time_of_day {
+                            host.set_time_of_day(time_of_day)?;
+                        }
+                        if let Some(camera_pitch) = camera_pitch {
+                            host.set_camera_pitch(camera_pitch)?;
+                        }
                         host.set_presentation_lead(lead);
                         let view = frame.as_ref().map(|(frame, _)| {
                             frame.texture.create_view(&TextureViewDescriptor::default())

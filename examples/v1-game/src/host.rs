@@ -53,8 +53,8 @@ const DEFAULT_RENDER_EXTENT: [u32; 2] = [640, 360];
 const GPU_WAIT: Duration = Duration::from_secs(10);
 const IN_FLIGHT: usize = 2;
 
-fn atmosphere_lighting(tick: u64, alpha: f32) -> FrameLighting {
-    let sun = DayCycle::sample(tick, alpha);
+fn atmosphere_lighting(tick: u64, alpha: f32, phase_offset: f32) -> FrameLighting {
+    let sun = DayCycle::sample(tick, alpha, phase_offset);
     let frame = AtmosphereFrame::new(
         sun.toward_sun,
         sun.top_illuminance_lux,
@@ -86,11 +86,16 @@ fn frame_phase(tick: u64, alpha: f32) -> f32 {
     (f32::from(cycle) + alpha) * (std::f32::consts::TAU / 360.0)
 }
 
-fn frame_view(tick: u64, alpha: f32, extent: [u32; 2]) -> Result<SyntheticView, String> {
+fn frame_view(
+    tick: u64,
+    alpha: f32,
+    extent: [u32; 2],
+    camera_pitch: f32,
+) -> Result<SyntheticView, String> {
     let phase = frame_phase(tick, alpha);
     SyntheticView::perspective(
         [phase.sin() * 0.08, (phase.cos() - 1.0) * 0.04, 2.0],
-        [0.0, 0.0, 0.0],
+        [0.0, 2.0 * camera_pitch.tan(), 0.0],
         [0.0, 1.0, 0.0],
         1.0,
         extent[0] as f32 / extent[1] as f32,
@@ -389,6 +394,7 @@ impl EncodedFrame<'_> {
             presented,
         )?;
         self.host.prepared.commit_frame();
+        self.host.history_reset_pending = false;
         #[cfg(not(target_arch = "wasm32"))]
         {
             self.host.last_view_source = Some(self.source);
@@ -560,6 +566,9 @@ pub struct FrameHost {
     device: wgpu::Device,
     queue: wgpu::Queue,
     presentation_lead: Duration,
+    day_phase_offset: f32,
+    camera_pitch: f32,
+    history_reset_pending: bool,
     world: WorldPort,
     extractor: Option<RenderExtractor>,
     #[cfg(not(target_arch = "wasm32"))]
@@ -610,6 +619,20 @@ impl ThreadedFrameHost {
     /// Set the next display target without advancing the fixed-step world.
     pub fn set_presentation_lead(&mut self, lead: Duration) {
         self.inner.set_presentation_lead(lead);
+    }
+
+    /// Select the game's visual time of day without changing simulation time.
+    /// # Errors
+    /// Refuses a fraction outside the normalized day.
+    pub fn set_time_of_day(&mut self, fraction: f32) -> Result<(), String> {
+        self.inner.set_time_of_day(fraction)
+    }
+
+    /// Change the game camera elevation and reset GPU history on the next draw.
+    /// # Errors
+    /// Refuses an unsupported or nonfinite pitch.
+    pub fn set_camera_pitch(&mut self, radians: f32) -> Result<(), String> {
+        self.inner.set_camera_pitch(radians)
     }
 
     /// Render the latest immutable world publication.
@@ -722,23 +745,46 @@ impl FrameHost {
         self.presentation_lead = lead;
     }
 
+    /// Select a visual time of day for this game, with zero at midnight and
+    /// one half at noon. The Sun still advances from the committed world tick.
+    /// This parameter is presentation state; it does not affect game rules.
+    /// # Errors
+    /// Refuses a nonfinite or out-of-range fraction without changing the Sun.
+    pub fn set_time_of_day(&mut self, fraction: f32) -> Result<(), String> {
+        let offset = DayCycle::offset_for_time(self.world.tick(), fraction)
+            .ok_or_else(|| "time of day must be finite and in [0, 1]".to_owned())?;
+        if self.day_phase_offset.to_bits() != offset.to_bits() {
+            self.day_phase_offset = offset;
+            self.history_reset_pending = true;
+        }
+        Ok(())
+    }
+
+    /// Set the game camera elevation; a changed view invalidates temporal
+    /// correspondence on the next submitted scene frame.
+    /// # Errors
+    /// Refuses a nonfinite pitch outside the supported sky/scene view range.
+    pub fn set_camera_pitch(&mut self, radians: f32) -> Result<(), String> {
+        if !radians.is_finite() || !(-0.6..=0.6).contains(&radians) {
+            return Err("camera pitch must be finite and within ±0.6 rad".to_owned());
+        }
+        if self.camera_pitch.to_bits() != radians.to_bits() {
+            self.camera_pitch = radians;
+            self.history_reset_pending = true;
+        }
+        Ok(())
+    }
+
     fn presentation_alpha(&self) -> f32 {
         self.world.presentation_alpha_at(self.presentation_lead)
     }
 
-    #[cfg_attr(
-        target_arch = "wasm32",
-        expect(
-            clippy::unused_self,
-            reason = "the browser has no cooked visual product; native frames select it through self"
-        )
-    )]
     fn frame_lighting(&self, tick: u64, alpha: f32) -> FrameLighting {
         #[cfg(not(target_arch = "wasm32"))]
         if let Some(product) = &self.visual_product {
             return FrameLighting::Photometric(photometric(product));
         }
-        atmosphere_lighting(tick, alpha)
+        atmosphere_lighting(tick, alpha, self.day_phase_offset)
     }
 
     /// Prepare one 10k-entity scene, all four scene passes and an optional
@@ -826,7 +872,7 @@ impl FrameHost {
             capabilities,
             queue,
             &scene,
-            atmosphere_lighting(world.tick(), 0.0),
+            atmosphere_lighting(world.tick(), 0.0, 0.0),
             // Physical noon light reaches ~127 klux. Keep the full daylight
             // range in the scene target until the display tone curve.
             1.0 / 16_000.0,
@@ -872,6 +918,9 @@ impl FrameHost {
             device: device.clone(),
             queue: queue.clone(),
             presentation_lead: Duration::ZERO,
+            day_phase_offset: 0.0,
+            camera_pitch: 0.0,
+            history_reset_pending: false,
             world: WorldPort::Inline(Box::new(world)),
             extractor: Some(extractor),
             #[cfg(not(target_arch = "wasm32"))]
@@ -1457,7 +1506,9 @@ impl FrameHost {
             frame.frame_tick,
             frame.presentation_alpha,
             self.render_extent,
-        )?;
+            self.camera_pitch,
+        )?
+        .with_history_reset(self.history_reset_pending);
         let lighting = self.frame_lighting(frame.frame_tick, frame.presentation_alpha);
         self.prepared
             .synchronize_history(&self.queue, self.world.epoch(), self.world.timeline());
@@ -1577,6 +1628,7 @@ impl FrameHost {
             surface_presented,
         )?;
         self.prepared.commit_frame();
+        self.history_reset_pending = false;
         Ok(())
     }
 
@@ -1990,7 +2042,13 @@ impl FrameHost {
         )
         .unwrap_or(u64::MAX);
         self.dropped_capture_rows = self.dropped_capture_rows.saturating_add(dropped);
-        self.scene.view = frame_view(self.world.tick(), capture_alpha, self.render_extent)?;
+        self.scene.view = frame_view(
+            self.world.tick(),
+            capture_alpha,
+            self.render_extent,
+            self.camera_pitch,
+        )?
+        .with_history_reset(self.history_reset_pending);
         let lighting = self.frame_lighting(self.world.tick(), capture_alpha);
         let mut target = OffscreenTarget::new(
             &self.device,

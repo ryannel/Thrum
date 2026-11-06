@@ -185,6 +185,10 @@ struct App {
     render_in_flight: Option<u64>,
     ready: ReadyState,
     held_keys: u8,
+    time_of_day: f32,
+    pending_time_of_day: Option<f32>,
+    camera_pitch: f32,
+    pending_camera_pitch: Option<f32>,
     origin: Instant,
     last_call: Duration,
     presented: usize,
@@ -234,6 +238,10 @@ impl App {
             render_in_flight: None,
             ready: ReadyState::default(),
             held_keys: 0,
+            time_of_day: 0.5,
+            pending_time_of_day: None,
+            camera_pitch: 0.0,
+            pending_camera_pitch: None,
             origin: Instant::now(),
             last_call: Duration::ZERO,
             presented: 0,
@@ -279,6 +287,37 @@ impl App {
     }
 
     fn set_key(&mut self, code: KeyCode, pressed: bool) -> Result<(), String> {
+        if pressed && matches!(code, KeyCode::KeyR | KeyCode::KeyF) {
+            let step = if code == KeyCode::KeyR {
+                0.087_266_46
+            } else {
+                -0.087_266_46
+            };
+            let next = (self.camera_pitch + step).clamp(-0.6, 0.6);
+            if next.to_bits() != self.camera_pitch.to_bits() {
+                self.camera_pitch = next;
+                self.pending_camera_pitch = Some(next);
+                self.request_sequence = self.request_sequence.saturating_add(1);
+                if let Some(window) = &self.window {
+                    window.request_redraw();
+                }
+            }
+            return Ok(());
+        }
+        if pressed && matches!(code, KeyCode::BracketLeft | KeyCode::BracketRight) {
+            let step = if code == KeyCode::BracketRight {
+                1.0 / 24.0
+            } else {
+                -1.0 / 24.0
+            };
+            self.time_of_day = (self.time_of_day + step).rem_euclid(1.0);
+            self.pending_time_of_day = Some(self.time_of_day);
+            self.request_sequence = self.request_sequence.saturating_add(1);
+            if let Some(window) = &self.window {
+                window.request_redraw();
+            }
+            return Ok(());
+        }
         let mask = match code {
             KeyCode::KeyA => KEY_A,
             KeyCode::KeyD => KEY_D,
@@ -532,6 +571,8 @@ impl App {
             now,
             lead,
             frame,
+            time_of_day: self.pending_time_of_day,
+            camera_pitch: self.pending_camera_pitch,
         };
         match self
             .render
@@ -547,6 +588,8 @@ impl App {
                 return Err("bounded render worker refused an idle request".into());
             }
         }
+        self.pending_time_of_day = None;
+        self.pending_camera_pitch = None;
         self.submitted_sequence = self.request_sequence;
         self.render_in_flight = Some(self.submitted_sequence);
         if now >= self.run_deadline {
