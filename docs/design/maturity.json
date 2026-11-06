@@ -7,7 +7,8 @@
   "execution_plan": {
     "milestone": "V1: one beautiful single-player 10k scene on this Mac at 120 Hz with physical sky, cooked assets, shadows, MetalFX and EDR; Chrome portable at showcase quality; demo controls; headless multiplayer fitness; labelled iPhone proxies, physical iPhone pending",
     "active": [
-      "G2S real-game simulation"
+      "G2S real-game simulation",
+      "G3s physical atmosphere"
     ],
     "next_parallel": [
       "G3b after G2S",
@@ -77,6 +78,19 @@
       "scope": "V1 game still owns schema, rules, input and page layout; G2S moves publication into the engine. FrameHost waits for G3b; no iPhone result.",
       "evidence": [
         "../evidence/v1-workload/G2R-CONSOLIDATED-2026-11-05.md"
+      ]
+    },
+    "G3s_first_light": {
+      "implementation": "partial_physical_LUTs_sun_disk_diffuse_light_and_live_view_exposure",
+      "functional_validation": "Mac_Metal_capture_and_dawn_dusk_regressions_passed_full_dev_check_green",
+      "experienced_quality": "agent_reviewed_sky_gradient_and_sweep;_twilight_scene_dark_grid_moire_open",
+      "platform_performance": {
+        "mac": "loaded_offscreen_diagnostics_only_G3s_GPU_budget_open",
+        "browser": "not_run",
+        "ios": "not_run"
+      },
+      "evidence": [
+        "../evidence/v1-workload/G3S-FIRST-LIGHT-2026-11-06.md"
       ]
     },
     "A1_simulation": {

@@ -66,6 +66,13 @@ fn atmosphere_lighting(tick: u64, alpha: f32, phase_offset: f32) -> FrameLightin
     FrameLighting::Atmosphere(frame)
 }
 
+fn display_exposure(lighting: FrameLighting) -> f32 {
+    match lighting {
+        FrameLighting::Atmosphere(frame) => DayCycle::display_exposure(frame.toward_sun()[1]),
+        FrameLighting::Diagnostic(_) | FrameLighting::Photometric(_) => 1.0 / 16_000.0,
+    }
+}
+
 #[cfg(not(target_arch = "wasm32"))]
 fn photometric(product: &EnvironmentProduct) -> PhotometricEnvironment {
     let values = product.values();
@@ -1502,14 +1509,16 @@ impl FrameHost {
             applied
         };
         self.last_extracted = frame.extracted;
+        let lighting = self.frame_lighting(frame.frame_tick, frame.presentation_alpha);
         self.scene.view = frame_view(
             frame.frame_tick,
             frame.presentation_alpha,
             self.render_extent,
             self.camera_pitch,
         )?
-        .with_history_reset(self.history_reset_pending);
-        let lighting = self.frame_lighting(frame.frame_tick, frame.presentation_alpha);
+        .with_history_reset(self.history_reset_pending)
+        .with_exposure(display_exposure(lighting))
+        .map_err(|error| format!("view exposure: {error:?}"))?;
         self.prepared
             .synchronize_history(&self.queue, self.world.epoch(), self.world.timeline());
         let view_update_start = Instant::now();
@@ -2042,14 +2051,16 @@ impl FrameHost {
         )
         .unwrap_or(u64::MAX);
         self.dropped_capture_rows = self.dropped_capture_rows.saturating_add(dropped);
+        let lighting = self.frame_lighting(self.world.tick(), capture_alpha);
         self.scene.view = frame_view(
             self.world.tick(),
             capture_alpha,
             self.render_extent,
             self.camera_pitch,
         )?
-        .with_history_reset(self.history_reset_pending);
-        let lighting = self.frame_lighting(self.world.tick(), capture_alpha);
+        .with_history_reset(self.history_reset_pending)
+        .with_exposure(display_exposure(lighting))
+        .map_err(|error| format!("capture exposure: {error:?}"))?;
         let mut target = OffscreenTarget::new(
             &self.device,
             &self.prepared,
