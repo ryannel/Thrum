@@ -310,6 +310,11 @@ impl FrameHost {
         }
         Ok(())
     }
+    /// Current committed solar time: midnight is zero, noon is one half.
+    /// This observes the world's clock; display interpolation may lag one tick.
+    pub fn time_of_day(&self) -> f32 {
+        DayCycle::time_of_day(self.tick(), self.inner.source().day_phase_offset)
+    }
     /// Change the game camera elevation and reset presentation history.
     /// # Errors
     /// Refuses a nonfinite pitch outside the supported scene range.

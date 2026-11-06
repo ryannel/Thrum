@@ -1,35 +1,38 @@
 # G3s first light — open
 
-6 November, M3 Max Metal. Partial functional/visual checkpoint. No imported spectral data or new speed claim.
+6 November, M3 Max Metal / Chrome 156 WebGPU. Partial function/visual checkpoint; no imported spectra or speed claim.
 
 | Row | Evidence | Status |
 | --- | --- | --- |
-| Storage/units | Six-angle LUT readings finite; known πL × Sun diffuse regression | Scoped pass |
-| Incident camera | GPU calibration/history/cancellation/resize and adjacent-tick probes | Pass |
-| SDR shoulder | GPU f64 reference within 1 byte; old default pixels bitwise exact; full `./dev check` | Pass |
-| Transport | 198 matched-medium rays; horizon separation and reflected sky boundary | Model/accuracy open |
-| Visible/live | Readable twilight; pastel contrast/grid aliasing open; live run got 0 display-link callbacks | Partial |
+| Storage/units | Six-angle finite LUTs; πL × Sun diffuse regression | Scoped pass |
+| Camera/SDR | GPU meter/history/cancellation/resize; f64 shoulder within 1 byte | Pass |
+| Transport | 198 matched-medium rays; horizon and reflected planet boundary | Accuracy open |
+| Chrome controls | Solar presets/sliders, camera, live-render pause; six function rows | Pass, headless |
+| Look | Readable twilight; neutral subject reveals flat ambient; grid moiré/pastel contrast | Open |
 
-![Fixed solar cameras](g3s-first-light/solar-contact.png) · [1080p setting Sun](g3s-first-light/sun-facing-1080p.png) · [96-frame solar sweep](g3s-first-light/solar-sweep.mp4)
+![Six held Chrome solar phases](g3s-first-light/solar-contact.png) · [held-phase clip](g3s-first-light/solar-sweep.mp4) · [earlier native 1080p Sun](g3s-first-light/sun-facing-1080p.png)
 
-The test-only referee integrates declared coefficient bands, not measured Earth spectra/CIE/lux. All 198 fixed rays
-retain identical CPU results across the horizon correction. At Sun 0°, green single-scatter GPU/reference just
-below/above the curved horizon changes 9.30/0.36→1.04/0.99. Metal two-colour tests prohibit cross-half filtering
-at heights 0/2/100 km; tangent/pole/zenith-Sun/azimuth and 128B/160B ABI checks pass. LUT footprint/pass count
-stay unchanged. Nonlinear M sampling (`11cb21e`) is parked: one well-sampled sky error grew 3.11%→23.00%;
-retain `e061671`. No whole-sky tolerance pass.
-A profile-cached GroundE table adds reflected sky light at the actual planet hit: 1 KiB logical texels, one
-cooperative profile kernel, no new ordinary-frame kernel. Controlled Metal πL/zero/scaling/terminator/cache tests pass.
-All 198 first-order and 144 sky-side full values stay exact. Ground median sampled-MC disagreement at Sun 45°/0°
-changes 6.98%/92.09%→0.24%/3.56%; at −3°/−6° it remains 16.71%/22.16%. Adverse horizon rows remain
-(including −6° blue +188.68%). 32768 paths/ray leave 18 zero and 41 sparse rows unresolved; no whole-sky pass.
-LUT gains 65536/1024 preserve twilight; C250 metering uses no readback and follows submitted history.
+Current contact/clip: actual served Wasm `0816025e4d84f6bd602bda124cfe5a5dbb7c56866d0b217879ef842b98affa86`,
+Chrome 156.0.8078.81, ANGLE Metal M3 Max, 1252×704, world tick 4. Six held phases, **not motion/cadence**.
+Pause, then scene/noon; Sunrise; Noon; Sunset; Twilight; scene view. Presets encode time/yaw/pitch in the page;
+scene view resets camera only. The clip repeats each captured phase for one second; decoded frames reviewed.
+Source: game scene/control code; 65° FOV, 18% rough neutral material and one enlarged existing static entity.
+Root/independent review finds flat faces, grid aliasing and a one-pixel horizon step; none is showcase quality.
+PNG checks: no pure-black pixels; twilight has 7.1% clipped-channel pixels. Explicit-sRGB H.264 adds grid chroma
+artifacts (sky-only mean byte error <0.62). Keep calibration; address directional diffuse before contrast grading.
+Actual tab visibility, device loss and physical display intervals are unqualified.
 
-The game explicitly selects `NeutralHighlights`; diagnostic `Reinhard` remains default. Khronos highlight
-compression/desaturation omits its material shadow toe and is not standard PBR Neutral. No pass/resource is added;
-scene radiance and exposure are unchanged. GPU ramps cover extreme gains. Clear-sky side pixels with a 255 channel fall from 36.6% to 0% at twilight; Sun-facing from 100% to 5.85%.
-This is headroom, not a physical-accuracy metric. Root/independent review find smooth gradients and compact Sun/halo;
-the brighter pastel look and photographic contrast stay open. Keep calibration and resolve physics before grading.
+The CPU referee integrates declared coefficient bands, not measured Earth spectra/CIE/lux. All 198 first-order
+values stay exact. At Sun 0°, green single-scatter below/above curved horizon changed 9.30/0.36→1.04/0.99.
+Metal two-colour tests prohibit cross-half filtering at 0/2/100 km. Tangent/pole/zenith/azimuth and ABI checks pass.
+Nonlinear M sampling `11cb21e` is parked: one sky error grew 3.11%→23.00%; retain `e061671`. No whole-sky pass.
+GroundE adds reflected sky at the actual planet hit: 1 KiB logical texels, one cooperative profile kernel, no new
+ordinary-frame kernel. πL/zero/scaling/terminator/cache tests pass; 144 sky-side full values stay exact.
+Ground median sampled-MC disagreement at Sun 45°/0° changed 6.98%/92.09%→0.24%/3.56%; −3°/−6° remains
+16.71%/22.16%, with adverse horizon rows (−6° blue +188.68%). 32768 paths/ray leave 18 zero/41 sparse unresolved.
 
-Q/E turns, R/F tilts, brackets change time. The eight-second day sweep cannot qualify real-time cadence. Source
-hashes, raw frames/readings and logs: `tmp/g3s-storage/`, `tmp/g3s-exposure/`, `tmp/g3s-shoulder/`, `tmp/g3s-reference/`, `tmp/g3s-horizon/`, `tmp/g3s-ground/`.
+LUT gains 65536/1024 preserve twilight. C250 metering has no readback and follows submitted history.
+Game `NeutralHighlights` uses Khronos highlight compression/desaturation, omitting its material toe; not standard
+PBR Neutral. No new pass; calibration is unchanged. Earlier twilight side/Sun-facing clipped-channel fractions fell
+36.6%→0% / 100%→5.85%: headroom, not physical accuracy. Spectral accuracy/model error remain open.
+Native Q/E turns, R/F tilts, brackets edit time; Chrome exposes sliders/presets. Raw: `tmp/g3s-{storage,exposure,shoulder,reference,horizon,ground}/`, `tmp/g3b-browser/`, `tmp/g3b-browser-six-qualified/`.

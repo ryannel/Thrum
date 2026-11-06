@@ -1,0 +1,383 @@
+#!/usr/bin/env node
+// Actual built-game qualification, not display cadence or a performance measurement.
+import fs from 'node:fs/promises';
+import { createServer } from 'node:http';
+import { spawn } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const repo = fileURLToPath(new URL('../', import.meta.url));
+const cases = ['normal', 'pause', 'resize', 'overload', 'input', 'controls'];
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+const sha = bytes => createHash('sha256').update(bytes).digest('hex');
+let interrupted;
+for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => { interrupted = new Error(signal); });
+
+function options(args) {
+  const result = { case: 'all', 'web-root': 'target/v1-game-web', chrome: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', 'timeout-ms': 90000 };
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === '--help') return null;
+    const key = args[i].slice(2);
+    if (!args[i].startsWith('--') || !['case', 'web-root', 'chrome', 'output', 'timeout-ms'].includes(key) || !args[i + 1]) throw new Error(`Unknown or incomplete argument: ${args[i]}`);
+    result[key] = args[++i];
+  }
+  if (result.case !== 'all' && !cases.includes(result.case)) throw new Error(`Unknown case: ${result.case}`);
+  result['timeout-ms'] = Number(result['timeout-ms']);
+  if (!Number.isSafeInteger(result['timeout-ms']) || result['timeout-ms'] < 10000 || result['timeout-ms'] > 600000) throw new Error('--timeout-ms must be 10000..600000 per case');
+  return result;
+}
+
+async function waitFor(check, milliseconds, description) {
+  const deadline = Date.now() + milliseconds;
+  while (Date.now() < deadline) {
+    const value = await check();
+    if (value) return value;
+    await sleep(100);
+  }
+  throw new Error(`Timed out: ${description}`);
+}
+
+class Cdp {
+  constructor(socket) {
+    this.socket = socket;
+    this.next = 0;
+    this.pending = new Map();
+    this.event = () => {};
+    socket.addEventListener('message', event => {
+      const packet = JSON.parse(event.data);
+      if (!packet.id) return this.event(packet);
+      const item = this.pending.get(packet.id);
+      if (!item) return;
+      clearTimeout(item.timer);
+      this.pending.delete(packet.id);
+      packet.error ? item.reject(new Error(JSON.stringify(packet.error))) : item.resolve(packet.result);
+    });
+    socket.addEventListener('close', () => {
+      for (const item of this.pending.values()) { clearTimeout(item.timer); item.reject(new Error('CDP connection closed')); }
+      this.pending.clear();
+    });
+  }
+  call(method, params = {}, sessionId) {
+    return new Promise((resolve, reject) => {
+      const id = ++this.next;
+      const timer = setTimeout(() => { this.pending.delete(id); reject(new Error(`CDP timeout: ${method}`)); }, 15000);
+      this.pending.set(id, { resolve, reject, timer });
+      try { this.socket.send(JSON.stringify({ id, method, params, ...(sessionId ? { sessionId } : {}) })); }
+      catch (error) { clearTimeout(timer); this.pending.delete(id); reject(error); }
+    });
+  }
+}
+
+async function assets(directory) {
+  const result = new Map();
+  for (const [name, type] of [['index.html', 'text/html'], ['v1_game.js', 'text/javascript'], ['v1_game_bg.wasm', 'application/wasm']]) {
+    const bytes = await fs.readFile(path.join(directory, name));
+    result.set(`/${name}`, { bytes, type, sha256: sha(bytes) });
+  }
+  return result;
+}
+
+async function serve(files) {
+  const server = createServer((request, response) => {
+    let pathname;
+    try { pathname = new URL(request.url, 'http://localhost').pathname; }
+    catch { response.writeHead(400).end(); return; }
+    const file = files.get(pathname === '/' ? '/index.html' : pathname);
+    if (!file || !['GET', 'HEAD'].includes(request.method)) { response.writeHead(404).end(); return; }
+    response.writeHead(200, { 'Content-Type': file.type, 'Content-Length': file.bytes.length, 'Cache-Control': 'no-store' });
+    response.end(request.method === 'HEAD' ? undefined : file.bytes);
+  });
+  await new Promise((resolve, reject) => { server.once('error', reject); server.listen(0, '127.0.0.1', resolve); });
+  return { server, origin: `http://127.0.0.1:${server.address().port}` };
+}
+
+function hardware(gpu) {
+  const devices = JSON.stringify(gpu.gpu.devices);
+  if (/swiftshader|llvmpipe|lavapipe|software raster|basic render/i.test(devices)) throw new Error(`Software GPU rejected: ${devices}`);
+  if (!/Apple M3 Max/i.test(devices) || !/Metal/i.test(devices)) throw new Error(`Expected this qualification target's Apple M3 Max/Metal GPU: ${devices}`);
+  if (gpu.gpu.featureStatus.webgpu !== 'enabled') throw new Error(`Hardware WebGPU unavailable: ${gpu.gpu.featureStatus.webgpu}`);
+}
+
+const observeFaults = `document.addEventListener('DOMContentLoaded', () => {
+  const status = document.querySelector('#status');
+  if (!status) return;
+  const inspect = () => { if (/fault:/i.test(status.textContent)) console.error(status.textContent); };
+  new MutationObserver(inspect).observe(status, {childList:true,subtree:true,characterData:true}); inspect();
+});`;
+const readState = `JSON.stringify({status:document.querySelector('#status')?.textContent,player:document.querySelector('#player')?.textContent,width:document.querySelector('canvas')?.width,height:document.querySelector('canvas')?.height,hidden:document.hidden})`;
+const playerX = state => { const match = /player x=([-\d.]+)/.exec(state.player ?? ''); return match ? Number(match[1]) : undefined; };
+const field = (status, key) => Number(new RegExp(`(?:^|[ ;])${key}=(\\d+)(?:[ ;]|$)`).exec(status)?.[1]);
+
+async function existingGame(cdp, sessionId) {
+  const prototype = await cdp.call('Runtime.evaluate', { expression: "import('/v1_game.js').then(m => m.BrowserGame.prototype)", awaitPromise: true }, sessionId);
+  if (prototype.exceptionDetails || !prototype.result.objectId) throw new Error('Existing BrowserGame prototype unavailable');
+  const { objects } = await cdp.call('Runtime.queryObjects', { prototypeObjectId: prototype.result.objectId }, sessionId);
+  await cdp.call('Runtime.releaseObject', { objectId: prototype.result.objectId }, sessionId);
+  const invoke = async (body, args = []) => {
+    const result = await cdp.call('Runtime.callFunctionOn', { objectId: objects.objectId, returnByValue: true,
+      functionDeclaration: `function(...args){if(this.length!==1)throw new Error(\`Expected one existing BrowserGame, found \${this.length}\`);const game=this[0];${body}}`,
+      arguments: args.map(value => ({ value })) }, sessionId);
+    if (result.exceptionDetails) throw new Error(JSON.stringify(result.exceptionDetails));
+    return result.result.value;
+  };
+  return {
+    read: () => invoke('return {report:game.report(),complete:game.complete(),paused:game.paused(),time:game.time_of_day()};'),
+    setVisible: visible => invoke('game.set_visible(args[0],performance.now());return true;', [visible]),
+  };
+}
+
+async function qualifyControls(cdp, sessionId, poll, timeout) {
+  const deadline = Date.now() + timeout;
+  const until = (check, description) => waitFor(check, Math.max(0, deadline - Date.now()), description);
+  const evaluate = async expression => {
+    const result = await cdp.call('Runtime.evaluate', { expression, returnByValue: true }, sessionId);
+    if (result.exceptionDetails) throw new Error(JSON.stringify(result.exceptionDetails));
+    return result.result.value;
+  };
+  await until(async () => /^Running/.test((await poll()).status ?? ''), 'continuous demo startup');
+  const game = await existingGame(cdp, sessionId);
+  const snapshots = {};
+  const read = async name => {
+    const state = await poll();
+    if (!/^Running/.test(state.status ?? '')) throw new Error(`Continuous demo stopped: ${state.status}`);
+    const value = await game.read();
+    if (!Number.isFinite(field(value.report, 'ticks'))) throw new Error('Public world tick unavailable');
+    snapshots[name] = value;
+    return value;
+  };
+  const hold = async (name, base, paused, presents, milliseconds) => {
+    const start = Date.now();
+    return until(async () => {
+      const value = await read(name);
+      if (value.paused !== paused || field(value.report, 'ticks') !== field(base.report, 'ticks')) throw new Error(`World tick or pause preference changed during ${name}: baseline=${JSON.stringify(base)} observed=${JSON.stringify(value)}`);
+      return Date.now() - start >= milliseconds && field(value.report, 'presented') >= field(base.report, 'presented') + presents ? value : undefined;
+    }, name);
+  };
+  const clickPause = () => evaluate('document.querySelector("#pause-world").click()');
+  const pauseAndSettle = async name => {
+    await clickPause();
+    const requested = await read(`${name}Requested`);
+    // This game's eight-update queue drains in two capped callbacks. Observe
+    // three actual presents before the hold check instead of assuming a sleep
+    // gave the browser enough callbacks to drain already accepted work.
+    return until(async () => {
+      const value = await read(name);
+      return value.paused && field(value.report, 'presented') >= field(requested.report, 'presented') + 3 ? value : undefined;
+    }, `${name} accepted-work drain`);
+  };
+  const firstPause = await pauseAndSettle('firstPause');
+  await hold('pauseWithPresentation', firstPause, true, 12, 600);
+  await evaluate('document.querySelector("[data-sky=sunrise]").click();const solar=document.querySelector("#solar-time");solar.value=18.48;solar.dispatchEvent(new Event("input",{bubbles:true}));document.querySelector("#camera-yaw").focus()');
+  const before = await evaluate('Number(document.querySelector("#camera-yaw").value)');
+  for (const type of ['keyDown', 'keyUp']) await cdp.call('Input.dispatchKeyEvent', { type, key: 'ArrowRight', code: 'ArrowRight', windowsVirtualKeyCode: 39 }, sessionId);
+  const after = await evaluate('Number(document.querySelector("#camera-yaw").value)');
+  const edited = await hold('edited', firstPause, true, 24, 350);
+  if (after !== before + 1 || !Number.isFinite(edited.time) || Math.abs(edited.time - 18.48 / 24) > 1e-6) throw new Error('Paused camera/solar controls did not apply');
+  await game.setVisible(false);
+  await hold('hiddenPaused', firstPause, true, 0, 350);
+  await game.setVisible(true);
+  const shown = await read('shown');
+  await hold('shownStillPaused', firstPause, true, field(shown.report, 'presented') - field(firstPause.report, 'presented') + 12, 350);
+  await game.setVisible(false);
+  await clickPause();
+  await hold('hiddenResume', firstPause, false, 0, 350);
+  await game.setVisible(true);
+  await until(async () => {
+    const value = await read('resumed');
+    return !value.paused && field(value.report, 'ticks') > field(firstPause.report, 'ticks');
+  }, 'visible resume advances world');
+  const secondPause = await pauseAndSettle('secondPause');
+  const complete = await until(async () => {
+    const value = await read('complete');
+    if (!value.paused || field(value.report, 'ticks') !== field(secondPause.report, 'ticks')) throw new Error('Re-paused world advanced during continuous presentation');
+    return value.complete && field(value.report, 'samples') === 600 && field(value.report, 'presented') >= 650 ? value : undefined;
+  }, 'continuous presentation beyond 600 GPU samples');
+  if (field(complete.report, 'overload_events') !== 0) throw new Error('Manual pause/visibility composition caused overload');
+  return { snapshots, rangeKeyboard: { before, after } };
+}
+
+async function screenshot(cdp, sessionId, output, mode) {
+  const image = await cdp.call('Page.captureScreenshot', { format: 'png' }, sessionId);
+  await fs.writeFile(path.join(output, `${mode}-final.png`), Buffer.from(image.data, 'base64'));
+}
+
+async function qualify(cdp, mode, origin, output, directory, wasm, timeout) {
+  const { targetId } = await cdp.call('Target.createTarget', { url: 'about:blank' });
+  let sessionId, state, response, input, game, pausedAt, pause, controls;
+  let failed = false;
+  const faults = [], timeline = [];
+  const url = mode === 'controls' ? `${origin}/` : `${origin}/?qualify${['normal', 'input'].includes(mode) ? '' : `&${mode}-probe`}`;
+  const log = line => { timeline.push(line); console.log(`${mode}: ${line}`); };
+  try {
+    ({ sessionId } = await cdp.call('Target.attachToTarget', { targetId, flatten: true }));
+    cdp.event = packet => {
+      if (packet.sessionId !== sessionId) return;
+      if (packet.method === 'Runtime.exceptionThrown') faults.push(packet.params.exceptionDetails);
+      if (packet.method === 'Runtime.consoleAPICalled' && packet.params.type === 'error') faults.push(packet.params.args.map(arg => arg.value ?? arg.description));
+      if (packet.method === 'Network.responseReceived' && packet.params.response.url === `${origin}/v1_game_bg.wasm`) response = packet.params;
+    };
+    for (const domain of ['Runtime', 'Page']) await cdp.call(`${domain}.enable`, {}, sessionId);
+    await cdp.call('Network.enable', { maxResourceBufferSize: wasm.bytes.length * 2, maxTotalBufferSize: wasm.bytes.length * 3 }, sessionId);
+    await cdp.call('Network.setCacheDisabled', { cacheDisabled: true }, sessionId);
+    await cdp.call('Page.addScriptToEvaluateOnNewDocument', { source: observeFaults }, sessionId);
+    await cdp.call('Emulation.setDeviceMetricsOverride', { width: 1280, height: 1100, deviceScaleFactor: 1, mobile: false }, sessionId);
+    await cdp.call('Target.activateTarget', { targetId });
+    await cdp.call('Page.navigate', { url }, sessionId);
+    let last = '', pressedAt, releasedAt;
+    const poll = async () => {
+      if (interrupted) throw interrupted;
+      const evaluated = await cdp.call('Runtime.evaluate', { expression: readState, returnByValue: true }, sessionId);
+      if (evaluated.exceptionDetails) throw new Error(JSON.stringify(evaluated.exceptionDetails));
+      state = JSON.parse(evaluated.result.value ?? '{}');
+      if (state.status !== last) { log(state.status ?? ''); last = state.status; }
+      if (faults.length || /fault:/i.test(state.status ?? '')) throw new Error(`Browser fault: ${JSON.stringify(faults)} ${state.status}`);
+      return state;
+    };
+    if (mode === 'controls') controls = await qualifyControls(cdp, sessionId, poll, timeout);
+    else await waitFor(async () => {
+      await poll();
+      if (mode === 'pause' && /^Paused/.test(state.status ?? '')) {
+        if (!game) {
+          game = await existingGame(cdp, sessionId);
+          const value = await game.read();
+          pause = { startTick: field(value.report, 'ticks') };
+          pausedAt = Date.now();
+        } else if (pause.heldTick === undefined && Date.now() - pausedAt >= 600) {
+          const value = await game.read();
+          pause.heldTick = field(value.report, 'ticks');
+          if (!Number.isFinite(pause.startTick) || pause.heldTick !== pause.startTick || value.complete) throw new Error('Existing game advanced while explicitly paused');
+        }
+      }
+      if (mode === 'input') {
+        const x = playerX(state);
+        if (pressedAt === undefined && Number.isFinite(x)) {
+          input = { initialX: x };
+          await cdp.call('Input.dispatchKeyEvent', { type: 'keyDown', code: 'KeyD', key: 'd', windowsVirtualKeyCode: 68 }, sessionId);
+          pressedAt = Date.now();
+        }
+        if (pressedAt !== undefined && releasedAt === undefined && Date.now() - pressedAt >= 700) {
+          await cdp.call('Input.dispatchKeyEvent', { type: 'keyUp', code: 'KeyD', key: 'd', windowsVirtualKeyCode: 68 }, sessionId);
+          releasedAt = Date.now();
+        }
+        if (releasedAt !== undefined && Date.now() - releasedAt >= 900 && input.stoppedX === undefined && Number.isFinite(x)) input.stoppedX = x;
+      }
+      return /^adapter=/.test(state.status ?? '');
+    }, timeout, `${mode} 600 completed GPU samples`);
+    const report = controls?.snapshots.complete.report ?? state.status;
+    if (field(report, 'samples') !== 600 || !(field(report, 'presented') >= 600)) throw new Error('Qualification requires 600 GPU-complete samples and at least 600 present calls');
+    if (state.hidden) throw new Error('Qualification target finished hidden');
+    if (mode === 'pause' && (!timeline.some(line => /^Paused/.test(line)) || !timeline.some(line => /^Resumed/.test(line)) || field(state.status, 'overload_events') !== 0 || pause?.heldTick !== pause?.startTick || !Number.isFinite(pause?.heldTick) || !(field(state.status, 'ticks') > pause.heldTick))) throw new Error('Explicit two-second pause/resume was not observed without overload');
+    if (mode === 'resize' && (state.width !== 960 || state.height !== 540 || !/extent=960x540;/.test(state.status))) throw new Error('Canvas/surface resize to 960x540 not applied');
+    if (mode === 'overload' && !(field(state.status, 'overload_events') > 0 && field(state.status, 'refused_ticks') > 0)) throw new Error('Intentional visible delay did not report refused ticks');
+    if (mode === 'input' && !(input?.stoppedX > input?.initialX + 0.01 && Math.abs(playerX(state) - input.stoppedX) <= 0.001)) throw new Error(`Held/released KeyD failed: ${JSON.stringify(input)}, final=${playerX(state)}`);
+    if (!response || response.response.status !== 200) throw new Error('Actual Wasm response missing or not HTTP 200');
+    const body = await cdp.call('Network.getResponseBody', { requestId: response.requestId }, sessionId);
+    const actualWasmSha256 = sha(Buffer.from(body.body, body.base64Encoded ? 'base64' : 'utf8'));
+    const disk = sha(await fs.readFile(path.join(directory, 'v1_game_bg.wasm')));
+    if (actualWasmSha256 !== disk || disk !== wasm.sha256) throw new Error('Loaded Wasm differs from the built artifact on disk');
+    if (faults.length) throw new Error(`Runtime faults: ${JSON.stringify(faults)}`);
+    await screenshot(cdp, sessionId, output, mode);
+    if (faults.length) throw new Error(`Runtime faults: ${JSON.stringify(faults)}`);
+    const scope = mode === 'controls' ? 'Manual pause with ongoing RAF and explicit visibility-hook composition; not actual tab visibility' : mode === 'pause' ? 'Explicit set_visible(false/true) hook; not actual tab visibility' : 'Headless WebGPU function; not display/cadence qualification';
+    const result = { case: mode, url, state, actualWasmSha256, responseStatus: 200, input, pause, controls, timeline, scope };
+    await fs.writeFile(path.join(output, `${mode}.json`), JSON.stringify(result, null, 2));
+    log(`PASS actualWasmSha256=${actualWasmSha256}`);
+    return result;
+  } catch (error) {
+    failed = true;
+    log(`FAIL ${error.message}`);
+    await fs.writeFile(path.join(output, `${mode}-failed.json`), JSON.stringify({ url, state, error: String(error), faults, timeline, wasmResponse: response?.response }, null, 2));
+    throw error;
+  } finally {
+    if (sessionId && failed) {
+      try { await screenshot(cdp, sessionId, output, mode); }
+      catch (error) { log(`Failure screenshot unavailable: ${error.message}`); }
+    }
+    await fs.writeFile(path.join(output, `${mode}.log`), timeline.join('\n') + '\n');
+    try { await cdp.call('Target.closeTarget', { targetId }); }
+    catch (error) { if (!failed) throw error; }
+    cdp.event = () => {};
+  }
+}
+
+async function cleanup(child, exited, cdp, server, profile) {
+  const failures = [];
+  if (child?.pid && !exited()) {
+    if (!cdp) failures.push('Chrome could not be closed through its own DevTools connection');
+    try { if (cdp) await cdp.call('Browser.close'); else child.kill('SIGTERM'); } catch { /* Browser.close may close its own CDP connection first. */ }
+    try { await waitFor(() => exited(), 10000, 'owned Chrome graceful exit'); }
+    catch (error) {
+      failures.push(error.message);
+      child.kill('SIGTERM');
+      try { await waitFor(() => exited(), 3000, 'owned Chrome SIGTERM exit'); }
+      catch {
+        child.kill('SIGKILL'); failures.push('Owned Chrome needed SIGKILL');
+        try { await waitFor(() => exited(), 3000, 'owned Chrome forced exit'); } catch (error) { failures.push(error.message); }
+      }
+    }
+    if (child.exitCode !== 0 || child.signalCode) failures.push(`Chrome did not exit cleanly: code=${child.exitCode} signal=${child.signalCode}`);
+  } else if (child?.pid) failures.push('Owned Chrome exited before graceful cleanup');
+  cdp?.socket.close();
+  if (server) {
+    try { await new Promise((resolve, reject) => { const timer = setTimeout(() => { server.closeAllConnections(); reject(new Error('Owned HTTP server did not close')); }, 3000); server.close(error => { clearTimeout(timer); error ? reject(error) : resolve(); }); }); }
+    catch (error) { failures.push(error.message); }
+  }
+  if (profile && !failures.length) {
+    try { await fs.rm(profile, { recursive: true }); } catch (error) { failures.push(`Profile cleanup: ${error.message}`); }
+  }
+  if (failures.length) throw new Error(`Cleanup failed; profile preserved at ${profile}: ${failures.join('; ')}`);
+}
+
+async function main() {
+  const args = options(process.argv.slice(2));
+  if (!args) { console.log('node scripts/check_v1_browser.mjs [--case all|normal|pause|resize|overload|input|controls] [--web-root target/v1-game-web] [--chrome /path/to/Chrome] [--output tmp/new-run] [--timeout-ms 90000]\nRequires Node 24+, an already-built game, and this Mac\'s Apple M3 Max/Metal Chrome. Controls checks manual pause with ongoing RAF; visibility checks use the explicit hook, not tab hiding. No timing claim.'); return; }
+  if (Number(process.versions.node.split('.')[0]) < 24 || typeof WebSocket !== 'function') throw new Error('Node 24+ with builtin WebSocket is required');
+  const directory = await fs.realpath(path.resolve(repo, args['web-root']));
+  const files = await assets(directory);
+  const output = path.resolve(repo, args.output ?? `tmp/v1-browser-${Date.now()}`);
+  const temp = await fs.realpath(path.join(repo, 'tmp'));
+  if (!output.startsWith(temp + path.sep)) throw new Error('--output must name a new directory under repository tmp/');
+  const parent = await fs.realpath(path.dirname(output));
+  if (parent !== temp && !parent.startsWith(temp + path.sep)) throw new Error('Output parent escapes repository tmp/');
+  await fs.mkdir(output);
+  const profile = await fs.mkdtemp(path.join(output, 'chrome-profile-'));
+  let server, child, cdp, ended = false, failure;
+  const results = [];
+  try {
+    const serving = await serve(files); server = serving.server;
+    const chromeLog = await fs.open(path.join(output, 'chrome.log'), 'a');
+    let startupError;
+    child = spawn(args.chrome, [`--user-data-dir=${profile}`, '--remote-debugging-port=0', '--headless=new', '--no-first-run', '--no-default-browser-check', '--disable-background-networking', '--disable-component-update', '--window-size=1280,1100', 'about:blank'], { stdio: ['ignore', chromeLog.fd, chromeLog.fd] });
+    child.once('error', error => { startupError = error; ended = true; });
+    child.once('exit', () => { ended = true; });
+    await chromeLog.close();
+    const endpoint = await waitFor(async () => {
+      if (interrupted || startupError || ended) throw interrupted ?? startupError ?? new Error('Owned Chrome exited before DevTools startup');
+      try { return (await fs.readFile(path.join(profile, 'DevToolsActivePort'), 'utf8')).trim().split('\n'); }
+      catch (error) { if (error.code !== 'ENOENT') throw error; return undefined; }
+    }, 15000, 'owned Chrome DevTools endpoint');
+    if (!/^\d+$/.test(endpoint[0]) || !/^\/devtools\/browser\/[\w-]+$/.test(endpoint[1])) throw new Error('Malformed owned Chrome DevTools endpoint');
+    const socket = new WebSocket(`ws://127.0.0.1:${endpoint[0]}${endpoint[1]}`);
+    await new Promise((resolve, reject) => {
+      const timer = setTimeout(() => { socket.close(); reject(new Error('Owned Chrome WebSocket did not open')); }, 15000);
+      socket.addEventListener('open', () => { clearTimeout(timer); resolve(); }, { once: true });
+      socket.addEventListener('error', error => { clearTimeout(timer); socket.close(); reject(error); }, { once: true });
+    });
+    cdp = new Cdp(socket);
+    const version = await cdp.call('Browser.getVersion');
+    const gpu = await cdp.call('SystemInfo.getInfo');
+    await fs.writeFile(path.join(output, 'browser-gpu.json'), JSON.stringify({ version, gpu }, null, 2));
+    hardware(gpu);
+    for (const mode of args.case === 'all' ? cases : [args.case]) results.push(await qualify(cdp, mode, serving.origin, output, directory, files.get('/v1_game_bg.wasm'), args['timeout-ms']));
+  } catch (error) { failure = error; }
+  finally {
+    try { await cleanup(child, () => ended, cdp, server, profile); }
+    catch (error) { failure = failure ? new AggregateError([failure, error], 'Qualification and cleanup failed') : error; }
+    await fs.writeFile(path.join(output, 'run.json'), JSON.stringify({ passed: !failure, results, artifacts: Object.fromEntries([...files].map(([name, value]) => [name, value.sha256])), error: failure ? String(failure) : undefined, scope: 'Actual built game; headless Apple M3 Max/Metal WebGPU function only; no timing/cadence claim' }, null, 2));
+  }
+  if (failure) throw failure;
+  console.log(`PASS ${results.length} case(s); artifacts: ${output}`);
+}
+
+main().catch(error => { console.error(error); process.exitCode = 1; });

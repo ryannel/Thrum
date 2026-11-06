@@ -15,7 +15,9 @@ Cargo comes first on PATH. PowerShell users can use `./dev.ps1` with the same co
 | `./dev refresh-design-hashes` | Explicitly refresh current design digests after reviewing a design edit |
 
 Before the web compile check, install `rustup target add --toolchain 1.99.1 wasm32-unknown-unknown`.
-This compiles the game library, not a browser runtime/rendering test. The GitHub Actions
+For actual Chrome function: build with `sh examples/v1-game/web/build.sh`, then run
+`node scripts/check_v1_browser.mjs --case all --output tmp/browser-check` (new output directory, Node 24, this M3 Max).
+The compile alone proves no browser runtime behavior. The GitHub Actions
 workflow is manual-only by owner decision; it describes Linux, macOS and Windows checks, plus Wasm
 compilation. Run `./dev check` locally before committing. A configured job is not evidence it has run.
 On macOS with Xcode, `./dev check-mobile-core` needs the pinned Rust targets

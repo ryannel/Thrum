@@ -30,10 +30,18 @@ impl DayCycle {
         } else {
             time_of_day - 0.5
         };
-        let committed_phase = (tick % Self::TICKS_PER_DAY) as f32 / Self::TICKS_PER_DAY as f32;
+        let committed_phase = Self::committed_phase(tick);
         let offset = (solar_phase - committed_phase).rem_euclid(1.0);
         // f32 can round a tiny negative residue plus one to exactly one.
         Some(if offset >= 1.0 { 0.0 } else { offset })
+    }
+
+    pub(crate) fn time_of_day(tick: u64, phase_offset: f32) -> f32 {
+        (Self::committed_phase(tick) + phase_offset + 0.5).rem_euclid(1.0)
+    }
+
+    fn committed_phase(tick: u64) -> f32 {
+        (tick % Self::TICKS_PER_DAY) as f32 / Self::TICKS_PER_DAY as f32
     }
 
     pub(crate) fn sample(tick: u64, alpha: f32, phase_offset: f32) -> SunSample {
@@ -101,6 +109,8 @@ mod tests {
         ] {
             let offset = DayCycle::offset_for_time(0, time).expect("valid time of day");
             let selected = DayCycle::sample(0, 0.0, offset);
+            let displayed = DayCycle::time_of_day(0, offset);
+            assert!((displayed - time).abs() < 1e-6);
             assert!(
                 selected
                     .toward_sun

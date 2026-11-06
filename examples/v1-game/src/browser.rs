@@ -23,6 +23,7 @@ pub struct BrowserGame {
     first_frame_ms: Option<f64>,
     last_frame: Duration,
     visible: bool,
+    user_paused: bool,
     callbacks: u64,
     presented: u64,
     unavailable: u64,
@@ -108,6 +109,7 @@ pub async fn create_browser_game(canvas: HtmlCanvasElement) -> Result<BrowserGam
         first_frame_ms: None,
         last_frame: Duration::ZERO,
         visible: true,
+        user_paused: false,
         callbacks: 0,
         presented: 0,
         unavailable: 0,
@@ -121,6 +123,33 @@ pub async fn create_browser_game(canvas: HtmlCanvasElement) -> Result<BrowserGam
 
 #[wasm_bindgen]
 impl BrowserGame {
+    /// Select the solar time without changing the authoritative world clock.
+    /// Zero/one is midnight, one quarter sunrise and three quarters sunset.
+    /// # Errors
+    /// Refuses a nonfinite time or one outside the normalized day.
+    pub fn set_time_of_day(&mut self, fraction: f32) -> Result<(), JsValue> {
+        self.host.set_time_of_day(fraction).map_err(js_error)
+    }
+
+    /// Observe the solar time of the latest committed world endpoint.
+    pub fn time_of_day(&self) -> f32 {
+        self.host.time_of_day()
+    }
+
+    /// Look up/down within the scene's supported camera range.
+    /// # Errors
+    /// Refuses a nonfinite pitch or one outside plus/minus 0.6 radians.
+    pub fn set_camera_pitch(&mut self, radians: f32) -> Result<(), JsValue> {
+        self.host.set_camera_pitch(radians).map_err(js_error)
+    }
+
+    /// Turn the camera within plus/minus pi radians.
+    /// # Errors
+    /// Refuses a nonfinite yaw or one outside that range.
+    pub fn set_camera_yaw(&mut self, radians: f32) -> Result<(), JsValue> {
+        self.host.set_camera_yaw(radians).map_err(js_error)
+    }
+
     /// Advance the fixed clock and encode the scene before acquiring a drawable.
     ///
     /// # Errors
@@ -229,14 +258,22 @@ impl BrowserGame {
     /// Returns a JavaScript error if a retained tick or clock restart fails.
     pub fn set_visible(&mut self, visible: bool, timestamp_ms: f64) -> Result<(), JsValue> {
         let now = self.time_from_browser(timestamp_ms)?;
-        if visible && !self.visible {
-            self.host.drain_and_resume(now).map_err(js_error)?;
-        } else if !visible && self.visible {
-            self.host.pause().map_err(js_error)?;
-        }
-        self.visible = visible;
-        self.last_frame = now;
-        Ok(())
+        self.set_play_state(visible, self.user_paused, now)
+    }
+
+    /// Stop admitting world time while retaining camera and sky controls.
+    /// Already accepted updates drain through ordinary frame callbacks.
+    /// Tab visibility cannot override this explicit local pause preference.
+    /// # Errors
+    /// Returns a timestamp, retained-update or clock restart failure.
+    pub fn set_paused(&mut self, paused: bool, timestamp_ms: f64) -> Result<(), JsValue> {
+        let now = self.time_from_browser(timestamp_ms)?;
+        self.set_play_state(self.visible, paused, now)
+    }
+
+    /// Whether the local user requested pause, independent of tab visibility.
+    pub fn paused(&self) -> bool {
+        self.user_paused
     }
 
     /// Number of surface frames actually presented.
@@ -335,6 +372,25 @@ impl BrowserGame {
 }
 
 impl BrowserGame {
+    fn set_play_state(
+        &mut self,
+        visible: bool,
+        user_paused: bool,
+        now: Duration,
+    ) -> Result<(), JsValue> {
+        let was_running = self.visible && !self.user_paused;
+        let will_run = visible && !user_paused;
+        if will_run && !was_running {
+            self.host.drain_and_resume(now).map_err(js_error)?;
+        } else if !will_run && was_running {
+            self.host.pause().map_err(js_error)?;
+        }
+        self.visible = visible;
+        self.user_paused = user_paused;
+        self.last_frame = now;
+        Ok(())
+    }
+
     fn recover_overload(&mut self, refused_ticks: u64, now: Duration) -> Result<(), JsValue> {
         self.overload_events += 1;
         self.refused_ticks = self.refused_ticks.saturating_add(refused_ticks);

@@ -9,11 +9,31 @@
       main { max-width: 1280px; margin: auto; padding: 1rem; }
       canvas { display: block; width: 100%; aspect-ratio: 16 / 9; background: #101824; }
       output { display: block; margin-top: 1rem; white-space: pre-wrap; overflow-wrap: anywhere; }
+      .sky-controls, .sky-presets { display: flex; flex-wrap: wrap; gap: .75rem 1.5rem; margin-top: 1rem; }
+      .sky-controls label { display: grid; grid-template-columns: 6rem 10rem 4rem; align-items: center; gap: .5rem; }
+      .sky-controls output { display: inline; margin: 0; }
+      button { border: 1px solid #6f86a3; border-radius: .3rem; background: #1a2b40; color: inherit; padding: .4rem .8rem; cursor: pointer; }
+      button:focus-visible, input:focus-visible { outline: 2px solid #a2cfff; outline-offset: 3px; }
     </style>
   </head>
   <body>
     <main>
       <canvas id="scene" width="1280" height="720" aria-label="Thrum V1 scene"></canvas>
+      <section aria-label="Sky and camera controls">
+        <div class="sky-controls">
+          <label>Solar time <input id="solar-time" type="range" min="0" max="24" step="0.01" value="12"><output id="solar-time-value" for="solar-time">12:00</output></label>
+          <label>Look around <input id="camera-yaw" type="range" min="-180" max="180" step="1" value="0"><output id="camera-yaw-value" for="camera-yaw">0°</output></label>
+          <label>Look up/down <input id="camera-pitch" type="range" min="-34" max="34" step="1" value="0"><output id="camera-pitch-value" for="camera-pitch">0°</output></label>
+        </div>
+        <div class="sky-presets">
+          <button type="button" data-sky="sunrise">Sunrise</button>
+          <button type="button" data-sky="noon">Noon</button>
+          <button type="button" data-sky="sunset">Sunset</button>
+          <button type="button" data-sky="twilight">Twilight</button>
+          <button type="button" id="scene-view">Look at the scene</button>
+          <button type="button" id="pause-world" aria-pressed="false">Pause</button>
+        </div>
+      </section>
       <p>Move the local player with WASD or arrow keys. <span id="player"></span></p>
       <output id="status">Starting WebGPU…</output>
     </main>
@@ -31,10 +51,52 @@
         const pauseProbe = probe.has("pause-probe");
         const resizeProbe = probe.has("resize-probe");
         const overloadProbe = probe.has("overload-probe");
+        const qualify = probe.has("qualify") || pauseProbe || resizeProbe || overloadProbe;
         let simulatedHidden = false;
         let rafId = 0;
         let stopped = false;
         const pressed = new Set();
+        const solarTime = document.querySelector("#solar-time");
+        const cameraYaw = document.querySelector("#camera-yaw");
+        const cameraPitch = document.querySelector("#camera-pitch");
+        const showTime = (hours) => {
+          const minutes = Math.round(hours * 60) % 1440;
+          document.querySelector("#solar-time-value").textContent = `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
+        };
+        const editSky = (edit) => {
+          if (stopped) return;
+          try { edit(); }
+          catch (error) { status.textContent = `Control fault: ${error}`; }
+        };
+        const setCamera = (yaw, pitch) => {
+          game.set_camera_yaw(yaw * Math.PI / 180);
+          game.set_camera_pitch(pitch * Math.PI / 180);
+          cameraYaw.value = yaw;
+          cameraPitch.value = pitch;
+          document.querySelector("#camera-yaw-value").textContent = `${yaw}°`;
+          document.querySelector("#camera-pitch-value").textContent = `${pitch}°`;
+        };
+        solarTime.addEventListener("input", () => editSky(() => {
+          game.set_time_of_day(solarTime.valueAsNumber / 24);
+          showTime(solarTime.valueAsNumber);
+        }));
+        cameraYaw.addEventListener("input", () => editSky(() => setCamera(cameraYaw.valueAsNumber, cameraPitch.valueAsNumber)));
+        cameraPitch.addEventListener("input", () => editSky(() => setCamera(cameraYaw.valueAsNumber, cameraPitch.valueAsNumber)));
+        const skies = { sunrise: [6.1, 90, 0], noon: [12, 0, 20], sunset: [17.9, -90, 0], twilight: [18.48, -90, 0] };
+        document.querySelectorAll("[data-sky]").forEach((button) => button.addEventListener("click", () => editSky(() => {
+          const [hours, yaw, pitch] = skies[button.dataset.sky];
+          game.set_time_of_day(hours / 24);
+          solarTime.value = hours;
+          showTime(hours);
+          setCamera(yaw, pitch);
+        })));
+        document.querySelector("#scene-view").addEventListener("click", () => editSky(() => setCamera(0, 0)));
+        document.querySelector("#pause-world").addEventListener("click", () => editSky(() => {
+          const paused = !game.paused();
+          game.set_paused(paused, performance.now());
+          document.querySelector("#pause-world").textContent = paused ? "Resume" : "Pause";
+          document.querySelector("#pause-world").setAttribute("aria-pressed", String(paused));
+        }));
         const movementKeys = new Set(["KeyW", "KeyA", "KeyS", "KeyD", "ArrowUp", "ArrowLeft", "ArrowDown", "ArrowRight"]);
         const updateControls = () => {
           const x = Number(pressed.has("KeyD") || pressed.has("ArrowRight"))
@@ -49,6 +111,7 @@
         };
         window.addEventListener("keydown", (event) => {
           if (!movementKeys.has(event.code) || stopped) return;
+          if (event.target instanceof Element && event.target.closest("input, button")) return;
           event.preventDefault();
           if (pressed.has(event.code)) return;
           pressed.add(event.code);
@@ -62,6 +125,9 @@
           updateControls();
         });
         window.addEventListener("blur", clearControls);
+        document.addEventListener("focusin", (event) => {
+          if (event.target instanceof Element && event.target.closest("input, button")) clearControls();
+        });
         let lastPlayerUpdate = 0;
         const schedule = () => {
           if (!rafId && !stopped && !document.hidden && !simulatedHidden) {
@@ -79,9 +145,12 @@
             game.frame(time);
             if (time - lastPlayerUpdate >= 500) {
               player.textContent = game.controlled_position();
+              const hours = game.time_of_day() * 24;
+              solarTime.value = hours;
+              showTime(hours);
               lastPlayerUpdate = time;
             }
-            if (game.complete()) {
+            if (qualify && game.complete()) {
               status.textContent = game.report();
               stopped = true;
             } else {
