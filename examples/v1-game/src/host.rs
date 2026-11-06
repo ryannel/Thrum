@@ -1700,7 +1700,7 @@ impl FrameHost {
                 SlotState::Resolving(mut sample) => match slot.timings.try_collect(GENERATION) {
                     Ok(Some(passes)) => {
                         if let Some((scene, present)) =
-                            pass_durations(&passes, &sample, &self.prepared)
+                            pass_durations(passes, &sample, &self.prepared)
                         {
                             sample.gpu_pass_ns = Some(scene);
                             sample.gpu_present_ns = present;
