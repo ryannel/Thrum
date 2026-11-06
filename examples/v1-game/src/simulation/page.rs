@@ -124,9 +124,10 @@ impl PublishedPage {
     ///
     /// Only if an engine-owned live page lacks the V1 required Position.
     pub fn visit(&self, mut visit: impl FnMut(Handle, StableId, Position, Option<u64>)) {
-        self.0.visit(|handle, id| {
-            let position = self.position(handle).expect("V1 live entity has position");
-            visit(handle, id, position, self.visual(handle));
-        });
+        self.0
+            .visit2::<Position, Visual>(|handle, id, position, visual| {
+                let position = *position.expect("V1 live entity has position");
+                visit(handle, id, position, visual.map(|value| value.0));
+            });
     }
 }
