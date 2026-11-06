@@ -778,7 +778,7 @@ fn slow_native_extraction_keeps_presenting_the_last_scene_with_explicit_age() {
             assert_eq!(sample.uploaded_rows, 0);
             assert!(!sample.timing_fault);
             if device.features().contains(wgpu::Features::TIMESTAMP_QUERY) {
-                assert_eq!(sample.gpu_pass_ns, Some([0.0; 10]));
+                assert_eq!(sample.gpu_pass_ns, Some([0.0; 11]));
                 assert!(sample.gpu_present_ns.is_some());
             }
         }

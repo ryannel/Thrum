@@ -80,8 +80,8 @@ fn portable_lut_graph_renders_live_sun_and_rejects_mode_changes() {
         assert_eq!(prepared.presentation_light_clamps(), 3);
         let mut target = OffscreenTarget::new(&device, &prepared, 128, 64).expect("sky target");
         let graph = prepared.graph(&target, false).expect("atmosphere closure");
-        assert_eq!(graph.pipeline_pass_count(), 7);
-        assert_eq!(prepared.scene_pass_count(), 7);
+        assert_eq!(graph.pipeline_pass_count(), 8);
+        assert_eq!(prepared.scene_pass_count(), 8);
         assert!(matches!(
             prepared.update_frame(
                 &queue,
@@ -162,5 +162,110 @@ fn portable_lut_graph_renders_live_sun_and_rejects_mode_changes() {
             .filter(|(a, b)| a[..3] != b[..3])
             .count();
         assert!(changed > 4_000, "live Sun must change the sky broadly");
+    });
+}
+
+#[test]
+#[cfg(not(target_arch = "wasm32"))]
+fn aerial_transport_changes_a_distant_surface_in_the_live_forward_pass() {
+    use crate::capabilities::DeviceCapabilities;
+    use crate::synthetic::{
+        FrameLighting, OffscreenTarget, PreparedSynthetic, SyntheticScene, SyntheticView,
+    };
+
+    pollster::block_on(async {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let adapter = instance
+            .request_adapter(&wgpu::RequestAdapterOptions::default())
+            .await
+            .expect("real adapter required for aerial transport");
+        #[cfg(target_os = "macos")]
+        assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
+        let (device, queue) = adapter
+            .request_device(&wgpu::DeviceDescriptor::default())
+            .await
+            .expect("aerial device");
+        let capabilities = DeviceCapabilities::capture(&adapter, &device, 52);
+        // A 2 km observer can see the 10 km target over the curved ground;
+        // a ground-level observer cannot, so its aerial integral stops early.
+        let atmosphere = AtmosphereFrame::new([0.0, 0.6, -0.8], 127_000.0, [1.0; 3], 2_000.0, 1)
+            .expect("fixed noon atmosphere");
+        let mut centres = Vec::new();
+        for distance in [100.0_f32, 10_000.0] {
+            let mut scene = SyntheticScene::grid(1).expect("one neutral target");
+            let scale = distance * 0.15;
+            scene.instances[0].current = [
+                [scale, 0.0, 0.0, 0.0],
+                [0.0, scale, 0.0, 0.0],
+                [0.0, 0.0, scale, 0.0],
+                [0.0, 0.0, -distance, 1.0],
+            ];
+            scene.instances[0].previous = scene.instances[0].current;
+            scene.instances[0].normal = [
+                [1.0 / scale, 0.0, 0.0, 0.0],
+                [0.0, 1.0 / scale, 0.0, 0.0],
+                [0.0, 0.0, 1.0 / scale, 0.0],
+            ];
+            scene.materials[0].base_rgba = [0.8, 0.7, 0.6, 1.0];
+            scene.view = SyntheticView::perspective(
+                [0.0, 0.0, 2.0],
+                [0.0, 0.0, -1.0],
+                [0.0, 1.0, 0.0],
+                1.4,
+                2.0,
+                0.1,
+                50_000.0,
+            )
+            .expect("distant view");
+            let mut prepared = PreparedSynthetic::prepare_with_capabilities(
+                &capabilities,
+                &queue,
+                &scene,
+                FrameLighting::Atmosphere(atmosphere),
+                1.0 / 16_000.0,
+            )
+            .await
+            .expect("aerial scene");
+            let target = OffscreenTarget::new(&device, &prepared, 128, 64).expect("aerial target");
+            let mut readback = target.readback(&device);
+            let mut encoder =
+                device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+            prepared
+                .encode_with_readback(&mut encoder, 52, &target, None, &mut readback)
+                .expect("aerial graph execution");
+            let submission = queue.submit([encoder.finish()]);
+            prepared.commit_frame();
+            device
+                .poll(wgpu::PollType::Wait {
+                    submission_index: Some(submission),
+                    timeout: Some(std::time::Duration::from_secs(20)),
+                })
+                .expect("aerial GPU completion");
+            let pixels = readback
+                .try_collect(52)
+                .expect("aerial readback")
+                .expect("mapped pixels");
+            if let Some(directory) = std::env::var_os("THRUM_G3S_AERIAL_CAPTURE_DIR") {
+                let directory = std::path::PathBuf::from(directory);
+                std::fs::create_dir_all(&directory).expect("aerial capture directory");
+                let mut ppm = b"P6\n128 64\n255\n".to_vec();
+                for pixel in pixels.as_chunks::<4>().0 {
+                    ppm.extend_from_slice(&pixel[..3]);
+                }
+                std::fs::write(directory.join(format!("aerial-{distance:.0}.ppm")), ppm)
+                    .expect("aerial visual capture");
+            }
+            centres.push(pixels[(32 * 128 + 64) * 4..(32 * 128 + 64) * 4 + 3].to_vec());
+        }
+        let near = &centres[0];
+        let far = &centres[1];
+        assert!(
+            far[2] > near[2] + 4,
+            "aerial distance must add blue sky radiance to the neutral forward surface: near={near:?}, far={far:?}"
+        );
+        assert!(
+            i16::from(far[2]) - i16::from(far[0]) > i16::from(near[2]) - i16::from(near[0]) + 4,
+            "aerial distance must increase the blue tint: near={near:?}, far={far:?}"
+        );
     });
 }

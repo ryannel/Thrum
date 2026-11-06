@@ -5,7 +5,11 @@ use crate::graph::{
     ResourceScope,
 };
 
-use super::gpu::{AtmospherePrepared, EXTENTS};
+use super::gpu::{AERIAL_EXTENT, AtmospherePrepared, EXTENTS};
+
+const LUT_OWNER_BASE: u64 = 0x4154_4d4f;
+const AERIAL_OWNER_BASE: u64 = 0x4154_4d60;
+const _: () = assert!(AERIAL_OWNER_BASE >= LUT_OWNER_BASE + 3);
 
 impl AtmospherePrepared {
     pub(crate) fn append_graph(
@@ -35,7 +39,7 @@ impl AtmospherePrepared {
                     usage: self.textures[index].usage(),
                 },
                 ResourceScope::Persistent {
-                    owner: 0x4154_4d4f + index as u64,
+                    owner: LUT_OWNER_BASE + index as u64,
                     epoch: self.epoch,
                     initialized: false,
                 },
@@ -104,6 +108,70 @@ impl AtmospherePrepared {
             ],
             external_side_effect: false,
         });
+        let aerial = self
+            .aerial_textures
+            .iter()
+            .enumerate()
+            .map(|(index, texture)| {
+                graph.resource(
+                    ResourceDescriptor::Texture {
+                        width: AERIAL_EXTENT[0],
+                        height: AERIAL_EXTENT[1],
+                        layers: AERIAL_EXTENT[2],
+                        mips: 1,
+                        samples: 1,
+                        format: texture.format(),
+                        usage: texture.usage(),
+                    },
+                    ResourceScope::Persistent {
+                        owner: AERIAL_OWNER_BASE + index as u64,
+                        epoch: self.epoch,
+                        initialized: false,
+                    },
+                )
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        let aerial_key = self.key(4);
+        keys.insert(aerial_key);
+        graph.pass(Pass {
+            name: "atmosphere aerial perspective".into(),
+            scope: PassScope::View(1),
+            pipeline: Some(aerial_key),
+            accesses: [
+                Access {
+                    resource: uniform.clone(),
+                    range: 0..128,
+                    kind: AccessKind::UniformRead,
+                    store: true,
+                },
+                Access {
+                    resource: resources[0].clone(),
+                    range: 0..1,
+                    kind: AccessKind::SampledRead,
+                    store: true,
+                },
+                Access {
+                    resource: resources[1].clone(),
+                    range: 0..1,
+                    kind: AccessKind::SampledRead,
+                    store: true,
+                },
+                Access {
+                    resource: aerial[0].clone(),
+                    range: 0..u64::from(AERIAL_EXTENT[2]),
+                    kind: AccessKind::StorageWrite,
+                    store: true,
+                },
+                Access {
+                    resource: aerial[1].clone(),
+                    range: 0..u64::from(AERIAL_EXTENT[2]),
+                    kind: AccessKind::StorageWrite,
+                    store: true,
+                },
+            ]
+            .to_vec(),
+            external_side_effect: false,
+        });
         forward_accesses.push(Access {
             resource: uniform,
             range: 0..128,
@@ -114,6 +182,14 @@ impl AtmospherePrepared {
             forward_accesses.push(Access {
                 resource: resources[index].clone(),
                 range: 0..1,
+                kind: AccessKind::SampledRead,
+                store: true,
+            });
+        }
+        for resource in aerial {
+            forward_accesses.push(Access {
+                resource,
+                range: 0..u64::from(AERIAL_EXTENT[2]),
                 kind: AccessKind::SampledRead,
                 store: true,
             });
