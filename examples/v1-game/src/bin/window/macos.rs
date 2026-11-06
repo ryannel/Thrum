@@ -459,13 +459,12 @@ impl App {
 
     fn draw_inner(&mut self) -> Result<(), String> {
         if self.render_in_flight.is_some() {
-            let completed = self
-                .render
-                .as_ref()
-                .ok_or("render worker missing")?
-                .try_recv();
+            let render = self.render.as_ref().ok_or("render worker missing")?;
+            let completed = render.try_recv();
             if let Some(reply) = completed {
                 self.receive_render(reply)?;
+            } else if render.is_closed() {
+                return Err("render worker stopped before replying".into());
             } else {
                 return Ok(());
             }
@@ -534,11 +533,20 @@ impl App {
             lead,
             frame,
         };
-        self.render
+        match self
+            .render
             .as_ref()
             .ok_or("render worker missing")?
             .try_send(job)
-            .map_err(|_| "bounded render worker refused an idle request".to_owned())?;
+        {
+            Ok(()) => {}
+            Err(thrum_render::frame::SendFault::Closed(_)) => {
+                return Err("render worker stopped".into());
+            }
+            Err(thrum_render::frame::SendFault::Busy(_)) => {
+                return Err("bounded render worker refused an idle request".into());
+            }
+        }
         self.submitted_sequence = self.request_sequence;
         self.render_in_flight = Some(self.submitted_sequence);
         if now >= self.run_deadline {
