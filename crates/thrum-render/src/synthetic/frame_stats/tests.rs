@@ -1,0 +1,45 @@
+use super::*;
+use crate::timing::PassTiming;
+
+fn timings(atmosphere: &[&str]) -> Vec<PassTiming> {
+    atmosphere
+        .iter()
+        .copied()
+        .chain([
+            "synthetic forward opaque",
+            "synthetic transform history",
+            "synthetic exposure resolve",
+            "synthetic tone encode",
+        ])
+        .map(|name| PassTiming {
+            name: name.into(),
+            nanoseconds: 1.0,
+        })
+        .collect()
+}
+
+#[test]
+fn cold_and_cached_ground_queries_keep_the_report_shape_and_profile_bucket() {
+    let cold = timings(&[
+        "atmosphere transmittance",
+        "atmosphere multiple scattering",
+        "atmosphere ground irradiance",
+        "atmosphere sky view",
+        "atmosphere diffuse irradiance",
+        "atmosphere aerial perspective",
+    ]);
+    let (values, present) = collect_pass_durations(&cold, false, false, false).unwrap();
+    assert_eq!(&values[6..], &[1.0, 2.0, 1.0, 1.0, 1.0]);
+    assert_eq!(values[5], 2.0, "exposure resolve remains in display bucket");
+    assert!(present.is_none());
+    let cached = timings(&[
+        "atmosphere sky view",
+        "atmosphere diffuse irradiance",
+        "atmosphere aerial perspective",
+    ]);
+    let (values, _) = collect_pass_durations(&cached, false, false, false).unwrap();
+    assert_eq!(&values[6..], &[0.0, 0.0, 1.0, 1.0, 1.0]);
+    let ground_only = timings(&["atmosphere ground irradiance"]);
+    let (values, _) = collect_pass_durations(&ground_only, false, false, false).unwrap();
+    assert_eq!(&values[6..], &[0.0, 1.0, 0.0, 0.0, 0.0]);
+}

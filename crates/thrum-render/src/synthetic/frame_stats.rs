@@ -7,6 +7,20 @@ pub(crate) fn pass_durations(
     presented: bool,
     prepared: &PreparedSynthetic,
 ) -> Option<([f64; 11], Option<f64>)> {
+    collect_pass_durations(
+        passes,
+        presented,
+        prepared.shadowed(),
+        prepared.gpu_clustered(),
+    )
+}
+
+fn collect_pass_durations(
+    passes: &[crate::timing::PassTiming],
+    presented: bool,
+    shadows: bool,
+    clusters: bool,
+) -> Option<([f64; 11], Option<f64>)> {
     const ALL: [&str; 7] = [
         "synthetic Sun shadow near",
         "synthetic Sun shadow far",
@@ -18,8 +32,6 @@ pub(crate) fn pass_durations(
     ];
     const SHADOW_ONLY: [&str; 6] = [ALL[0], ALL[1], ALL[3], ALL[4], ALL[5], ALL[6]];
     const CLUSTER_ONLY: [&str; 5] = [ALL[2], ALL[3], ALL[4], ALL[5], ALL[6]];
-    let shadows = prepared.shadowed();
-    let clusters = prepared.gpu_clustered();
     let names: &[&str] = match (shadows, clusters) {
         (true, true) => &ALL,
         (true, false) => &SHADOW_ONLY,
@@ -29,20 +41,20 @@ pub(crate) fn pass_durations(
     let mut atmosphere = [0.0; 5];
     let mut offset = 0;
     for (index, name) in [
-        "atmosphere transmittance",
-        "atmosphere multiple scattering",
-        "atmosphere sky view",
-        "atmosphere diffuse irradiance",
-        "atmosphere aerial perspective",
-    ]
-    .into_iter()
-    .enumerate()
-    {
+        (0, "atmosphere transmittance"),
+        (1, "atmosphere multiple scattering"),
+        // Keep the existing report shape: profile-only M and GroundE share
+        // the transport-preparation bucket; raw queries retain distinct names.
+        (1, "atmosphere ground irradiance"),
+        (2, "atmosphere sky view"),
+        (3, "atmosphere diffuse irradiance"),
+        (4, "atmosphere aerial perspective"),
+    ] {
         if passes
             .get(offset)
             .is_some_and(|pass| pass.name.as_ref() == name)
         {
-            atmosphere[index] = passes[offset].nanoseconds;
+            atmosphere[index] += passes[offset].nanoseconds;
             offset += 1;
         }
     }
@@ -73,3 +85,6 @@ pub(crate) fn pass_durations(
             )
         })
 }
+
+#[cfg(test)]
+mod tests;

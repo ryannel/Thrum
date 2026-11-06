@@ -49,7 +49,7 @@ pub use view::SyntheticView;
 use view::{AUX_BYTES, Projection};
 
 /// Synthetic source revision; not a substitute for an F4 product identity.
-pub const SYNTHETIC_REVISION: u64 = 13;
+pub const SYNTHETIC_REVISION: u64 = 14;
 /// Portable opaque depth; no sampling or separate prepass is needed.
 pub const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
 const VIEW_BYTES: usize = 160;
@@ -1232,7 +1232,7 @@ impl PreparedSynthetic {
     pub fn scene_pass_count(&self) -> u32 {
         4 + u32::from(self.shadow.is_some()) * 2
             + u32::from(self.cluster_compute.is_some())
-            + u32::from(self.atmosphere.is_some()) * 5
+            + u32::from(self.atmosphere.is_some()) * 6
     }
     /// Whether this prepared scene builds selective local-light lists on GPU.
     pub fn gpu_clustered(&self) -> bool {
@@ -1975,7 +1975,7 @@ impl PreparedSynthetic {
         let mut bindings = Vec::with_capacity(graph.pass_order.len());
         for (id, pass) in graph.pass_bindings() {
             let binding = match pass.pipeline {
-                Some(key) if self.atmosphere.is_some() && (10..=14).contains(&key.role) => {
+                Some(key) if self.atmosphere.is_some() && (10..=15).contains(&key.role) => {
                     let index = usize::try_from(key.role - 10)
                         .map_err(|_| RenderError::GraphPassMismatch)?;
                     RecordBinding::<SceneFamily>::new(id, PassKind::Compute, move |frame, pass| {
