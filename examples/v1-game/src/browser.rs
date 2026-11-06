@@ -1,5 +1,9 @@
 //! Browser WebGPU surface adapter for the same fixed-step V1 frame host.
 
+use std::sync::{
+    Arc, Mutex,
+    atomic::{AtomicBool, Ordering},
+};
 use std::time::Duration;
 
 use thrum_render::{capabilities::DeviceCapabilities, present::SurfaceProfile};
@@ -18,6 +22,7 @@ pub struct BrowserGame {
     surface: wgpu::Surface<'static>,
     config: wgpu::SurfaceConfiguration,
     device: wgpu::Device,
+    graphics: Arc<GraphicsFault>,
     queue: wgpu::Queue,
     host: FrameHost,
     first_frame_ms: Option<f64>,
@@ -64,6 +69,7 @@ pub async fn create_browser_game(canvas: HtmlCanvasElement) -> Result<BrowserGam
         })
         .await
         .map_err(js_error)?;
+    let graphics = GraphicsFault::register(&device);
     let capabilities = DeviceCapabilities::capture(&adapter, &device, FrameHost::DEVICE_GENERATION);
     let mut config = surface
         .get_default_config(&adapter, canvas.width().max(1), canvas.height().max(1))
@@ -104,6 +110,7 @@ pub async fn create_browser_game(canvas: HtmlCanvasElement) -> Result<BrowserGam
         surface,
         config,
         device,
+        graphics,
         queue,
         host,
         first_frame_ms: None,
@@ -161,6 +168,16 @@ impl BrowserGame {
         }
         self.callbacks += 1;
         self.last_frame = now;
+        if self.graphics.is_lost() {
+            self.unavailable += 1;
+            // No polling, completion collection, resize or GPU encoding after
+            // loss. Authority and controls continue on the same resident world.
+            let report = self.host.advance_without_rendering(now).map_err(js_error)?;
+            if let Some(refused_ticks) = report.overload {
+                self.recover_overload(refused_ticks, now)?;
+            }
+            return Ok(());
+        }
         let extent = [self.canvas.width(), self.canvas.height()];
         let mut resize = extent != [self.config.width, self.config.height];
         if (resize || self.needs_reconfigure)
@@ -276,7 +293,13 @@ impl BrowserGame {
         self.user_paused
     }
 
-    /// Number of surface frames actually presented.
+    /// Persistent device-loss diagnostic. Rendering stops while the world and
+    /// local controls remain usable; reloading creates a new graphics owner.
+    pub fn graphics_fault(&self) -> Option<String> {
+        self.graphics.message()
+    }
+
+    /// Number of surface presentation calls, not physical displayed frames.
     #[must_use]
     pub fn presented(&self) -> u64 {
         self.presented
@@ -414,6 +437,46 @@ impl BrowserGame {
             return Ok(self.last_frame);
         }
         Ok(now)
+    }
+}
+
+// The callback owns no world/renderer reference. The hot path observes one
+// atomic; the cold diagnostic allocates only when loss is reported/read.
+struct GraphicsFault {
+    lost: AtomicBool,
+    first: Mutex<Option<String>>,
+}
+impl GraphicsFault {
+    fn register(device: &wgpu::Device) -> Arc<Self> {
+        let fault = Arc::new(Self {
+            lost: AtomicBool::new(false),
+            first: Mutex::new(None),
+        });
+        let signal = Arc::clone(&fault);
+        device.set_device_lost_callback(move |reason, message| {
+            if let Ok(mut first) = signal.first.lock()
+                && first.is_none()
+            {
+                *first = Some(format!("{reason:?}: {message}"));
+            }
+            signal.lost.store(true, Ordering::Release);
+        });
+        fault
+    }
+    fn is_lost(&self) -> bool {
+        self.lost.load(Ordering::Acquire)
+    }
+    fn message(&self) -> Option<String> {
+        if !self.is_lost() {
+            return None;
+        }
+        Some(
+            self.first
+                .lock()
+                .ok()
+                .and_then(|first| first.clone())
+                .unwrap_or_else(|| "Graphics device lost".to_owned()),
+        )
     }
 }
 

@@ -108,21 +108,10 @@ impl<'a, W: FrameWorld, V: SceneSource<W::Page>> AdvancedFrame<'a, W, V> {
 
 impl<W: FrameWorld, V: SceneSource<W::Page>> Drop for AdvancedFrame<'_, W, V> {
     fn drop(&mut self) {
-        let Some((host, report)) = self.host.as_deref_mut().zip(self.report.as_ref()) else {
+        let Some((host, report)) = self.host.as_deref_mut().zip(self.report.as_mut()) else {
             return;
         };
-        if report.overload.is_some() {
-            host.dropped_views = host
-                .dropped_views
-                .saturating_add(u64::from(report.completed_ticks > 0));
-        } else if host.world.has_current_page()
-            && (report.completed_ticks > 0 || self.recovered_publication)
-        {
-            host.dropped_views = host.dropped_views.saturating_add(1);
-            if host.presenter.is_some() {
-                host.dropped_surface = host.dropped_surface.saturating_add(1);
-            }
-        }
+        host.skip_advance(report, self.recovered_publication);
     }
 }
 

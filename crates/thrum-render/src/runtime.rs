@@ -665,6 +665,36 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     pub fn advance(&mut self, now: Duration) -> Result<AdvancedFrame<'_, W, V>, FrameError> {
         let wall_start = Instant::now();
         self.poll_gpu()?;
+        let (report, advanced) = self.admit_world(now)?;
+        Ok(AdvancedFrame {
+            host: Some(self),
+            report: Some(report),
+            tick_cpu: advanced.tick_cpu,
+            wall_start,
+            recovered_publication: advanced.recovered_publication,
+        })
+    }
+
+    /// Advance or observe authority while explicitly omitting optional rendering.
+    /// This never polls the device, collects GPU completions, samples scene
+    /// policy, extracts rows, uploads, encodes or submits. Pending GPU packets
+    /// and submitted history remain unchanged, including after device loss.
+    /// Skip counters follow dropped admission-token semantics: count one omitted
+    /// view for completed updates or recovered publication with an available
+    /// page, or for completed updates alongside overload. This does not pause
+    /// the world.
+    /// # Errors
+    /// Returns the world's clock, game or publication failure. Already committed
+    /// ticks retain the world's existing failure/retry semantics.
+    pub fn advance_without_rendering(&mut self, now: Duration) -> Result<DriveReport, FrameError> {
+        let wall_start = Instant::now();
+        let (mut report, advanced) = self.admit_world(now)?;
+        self.skip_advance(&mut report, advanced.recovered_publication);
+        report.wall = wall_start.elapsed();
+        Ok(report)
+    }
+
+    fn admit_world(&mut self, now: Duration) -> Result<(DriveReport, WorldAdvance), FrameError> {
         let advanced = self.world.advance(now).map_err(FrameError::World)?;
         let report = DriveReport {
             tick: advanced.tick,
@@ -681,13 +711,24 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.dropped_views = self
             .dropped_views
             .saturating_add(advanced.skipped_publications);
-        Ok(AdvancedFrame {
-            host: Some(self),
-            report: Some(report),
-            tick_cpu: advanced.tick_cpu,
-            wall_start,
-            recovered_publication: advanced.recovered_publication,
-        })
+        Ok((report, advanced))
+    }
+
+    fn skip_advance(&mut self, report: &mut DriveReport, recovered_publication: bool) {
+        if report.overload.is_some() {
+            if report.completed_ticks > 0 {
+                self.dropped_views = self.dropped_views.saturating_add(1);
+                report.dropped_view = true;
+            }
+        } else if self.world.has_current_page()
+            && (report.completed_ticks > 0 || recovered_publication)
+        {
+            self.dropped_views = self.dropped_views.saturating_add(1);
+            if self.presenter.is_some() {
+                self.dropped_surface = self.dropped_surface.saturating_add(1);
+            }
+            report.dropped_view = true;
+        }
     }
 
     fn finish_advance(
@@ -702,10 +743,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             return Err(FrameError::InvalidState("host has no surface presenter"));
         }
         if report.overload.is_some() {
-            if report.completed_ticks > 0 {
-                self.dropped_views = self.dropped_views.saturating_add(1);
-                report.dropped_view = true;
-            }
+            self.skip_advance(&mut report, recovered_publication);
             report.wall = wall_start.elapsed();
             return Ok(report);
         }
@@ -932,12 +970,9 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.last_view_source = None;
     }
 
-    #[cfg_attr(
-        not(target_arch = "wasm32"),
-        expect(
-            clippy::large_types_passed_by_value,
-            reason = "ownership transfers the sample into an in-flight GPU slot; borrowing would require the same copy"
-        )
+    #[expect(
+        clippy::large_types_passed_by_value,
+        reason = "ownership transfers the sample into an in-flight GPU slot; borrowing would require the same copy"
     )]
     fn encode_prepared(
         &mut self,
@@ -1248,12 +1283,9 @@ fn duration_ns_u32(value: Duration) -> u32 {
     u32::try_from(value.as_nanos()).unwrap_or(u32::MAX)
 }
 
-#[cfg_attr(
-    not(target_arch = "wasm32"),
-    expect(
-        clippy::large_types_passed_by_value,
-        reason = "ownership transfers the completed sample into the report queue without a clone"
-    )
+#[expect(
+    clippy::large_types_passed_by_value,
+    reason = "ownership transfers the completed sample into the report queue without a clone"
 )]
 fn retain_sample(queue: &mut VecDeque<FrameSample>, dropped: &mut u64, sample: FrameSample) {
     if queue.len() == IN_FLIGHT {

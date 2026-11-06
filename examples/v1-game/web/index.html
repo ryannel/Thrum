@@ -129,6 +129,7 @@
           if (event.target instanceof Element && event.target.closest("input, button")) clearControls();
         });
         let lastPlayerUpdate = 0;
+        let graphicsFault = null;
         const schedule = () => {
           if (!rafId && !stopped && !document.hidden && !simulatedHidden) {
             rafId = requestAnimationFrame(draw);
@@ -150,7 +151,15 @@
               showTime(hours);
               lastPlayerUpdate = time;
             }
-            if (qualify && game.complete()) {
+            if (!graphicsFault) {
+              graphicsFault = game.graphics_fault();
+              if (graphicsFault) {
+                status.textContent = `Graphics fault: ${graphicsFault}\nSimulation continues. Reload to restore graphics.`;
+              }
+            }
+            if (graphicsFault) {
+              schedule();
+            } else if (qualify && game.complete()) {
               status.textContent = game.report();
               stopped = true;
             } else {

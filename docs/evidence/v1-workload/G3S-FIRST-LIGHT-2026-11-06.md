@@ -31,7 +31,7 @@ zenith/rotated Sun and solar scaling. Dark-direction SH errors remain; no whole-
 Browser normal forward+sky p50/p95 0.131/0.197 ms versus earlier 0.197/0.197: quantized, shared load, no speed win.
 No new full-frame CPU/allocation or complete-atmosphere cost claim.
 
-A sampled sunset run hit WebGPU loss/black output: **rejected as motion evidence**; browser loss handling is next.
+A sampled sunset run hit WebGPU loss/black output: **rejected as motion evidence**; loss reporting/authority now pass; reconstruction remains open.
 Raw numerical/capture/failure logs: `tmp/g3s-directional/`; baseline `tmp/g3b-browser/`.
 
 Transport remains separate: declared coefficient bands are not measured Earth spectra/CIE. Horizon filtering

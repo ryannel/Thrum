@@ -25,17 +25,21 @@ Review found redraw-dependent recovery and lost profiling reports; both are corr
 Raw: `tmp/g3b-device-recovery/`. No live loss/drawable/timing claim. One later recovery fixture failed its first-drive
 submission assertion (cause unproved); it now permits bounded optional-view retries and fails immediately on overload.
 
-**Chrome function:** `sh examples/v1-game/web/build.sh`, then Node 24 `scripts/check_v1_browser.mjs --case all --output tmp/new-browser-run`.
-Chrome 156 / ANGLE Metal M3 Max, actual HTTP-200 Wasm hash checked. Normal, pause hook, resize, deliberate overload,
-input and controls each complete ≥600 GPU samples. Controls keep RAF live while paused, edit camera/time, preserve
-pause across visibility hooks, resume/re-pause and keep running beyond the profiling window (655 presents).
-A temporary missing `host.pause()` mutation fails this row; source restored byte-for-byte. Review caught the former
-false pass from cancelling RAF. Raw: `tmp/g3b-browser-six-qualified/`, `tmp/g3b-pause-mutant/`.
-Headless function only. A later long Chrome run lost its GPU and showed black without a page fault; handling is open,
-as are actual tab changes, live Mac P/loss and iOS lifecycle. Raw loss: `tmp/g3s-directional/chrome.log`.
-Repeated capture on shared load showed ~16 ms tails even in the trivial blit, unlike the function batch; no controlled
-regression/speed conclusion. Dense-grid aliasing persists. No new allocation or physical-display measurement.
+**Chrome function:** build with `sh examples/v1-game/web/build.sh`, then Node 24
+`scripts/check_v1_browser.mjs --case all --output tmp/new-browser-run`. Chrome156 / ANGLE Metal M3 Max;
+actual HTTP-200 Wasm identity checked. Six healthy rows cover normal, pause hook, resize, overload, input and
+controls beyond 600 samples. Two standard `GPUDevice.destroy()` rows cover early loss and loss after 600 samples.
+Once the running loop observes loss, it makes no configure/acquire/poll/encode/submit/completion calls. The same world and input
+advance; pause holds, hidden gaps exclude time, resume and overload remain explicit. Present/sample counters stop.
+The first diagnostic persists in HTML; status writes once, healthy qualification refuses any graphics fault.
+Engine authority-only admission shares the normal body/skip accounting. Resume drains accepted work through it.
+Actual Metal pending-work destruction, invalid time and partial failed-tick retry pass. A missing callback-flag
+mutation fails; source is restored byte-for-byte. Review found no remaining scoped defect.
+Raw: `tmp/g3b-browser-loss/`. Earlier long-run loss/black recording: `tmp/g3s-directional/`; rejected as motion evidence.
+No reconstruction, actual-tab, physical display or speed claim. Mac P/loss and iOS lifecycle remain open.
+Wasm Clippy now runs in `./dev check`: four latent findings→0. Existing ownership-transfer expectations apply
+on both targets; two narrow Wasm expectations preserve the native fallible/threaded facade. No policy change.
 
-**Trace `ce7aa3f`:** 0.44% of 132.715 ms CA wait spans overlaps this app's GPU work. Span quantiles do not qualify frames; raw: `tmp/g3b-metal-system-trace/`. Native encoding occurs at `finish` after acquisition. No raw bridge selected; mixed raw/wgpu unsupported. Split pre-submit remains parked at `30ae560` (308→335 timing-disabled allocations).
+**Trace `ce7aa3f`:** CA-wait/app-GPU overlap 0.44%, not frame qualification; raw `tmp/g3b-metal-system-trace/`. Raw bridge unselected; split pre-submit parked at `30ae560`.
 
 Reproduce: `rustup run 1.99.1 cargo bench -p v1-game --bench frame -- --g3b-threaded-batch`; `cargo test -p v1-game --test frame_alloc -- --nocapture`. Earlier evidence remains in Git.

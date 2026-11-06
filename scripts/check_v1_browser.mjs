@@ -8,7 +8,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
-const cases = ['normal', 'pause', 'resize', 'overload', 'input', 'controls'];
+const cases = ['normal', 'pause', 'resize', 'overload', 'input', 'controls', 'device-loss', 'late-device-loss'];
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 let interrupted;
@@ -122,7 +122,7 @@ async function existingGame(cdp, sessionId) {
     return result.result.value;
   };
   return {
-    read: () => invoke('return {report:game.report(),complete:game.complete(),paused:game.paused(),time:game.time_of_day()};'),
+    read: () => invoke('return {report:game.report(),complete:game.complete(),paused:game.paused(),time:game.time_of_day(),fault:game.graphics_fault()};'),
     setVisible: visible => invoke('game.set_visible(args[0],performance.now());return true;', [visible]),
   };
 }
@@ -197,6 +197,82 @@ async function qualifyControls(cdp, sessionId, poll, timeout) {
   return { snapshots, rangeKeyboard: { before, after } };
 }
 
+async function qualifyDeviceLoss(cdp, sessionId, poll, timeout, late) {
+  const deadline = Date.now() + timeout;
+  const until = (check, description) => waitFor(check, Math.max(0, deadline - Date.now()), description);
+  await until(async () => /^Running/.test((await poll()).status ?? ''), 'loss demo startup');
+  const game = await existingGame(cdp, sessionId);
+  const snapshots = {};
+  const read = async name => {
+    await poll();
+    const value = await game.read(); snapshots[name] = value; return value;
+  };
+  await until(async () => {
+    const value = await read('beforeLoss');
+    return Number.isFinite(playerX(await poll())) && (late ? value.complete : field(value.report, 'presented') >= 12);
+  }, late ? 'healthy profile completes before loss' : 'healthy views before loss');
+  const prototype = await cdp.call('Runtime.evaluate', { expression: 'GPUDevice.prototype' }, sessionId);
+  if (prototype.exceptionDetails || !prototype.result.objectId) throw new Error('Actual WebGPU device prototype unavailable');
+  const { objects } = await cdp.call('Runtime.queryObjects', { prototypeObjectId: prototype.result.objectId }, sessionId);
+  const destroyed = await cdp.call('Runtime.callFunctionOn', { objectId: objects.objectId,
+    functionDeclaration: 'function(){if(this.length!==1)throw new Error(`Expected one actual GPUDevice, found ${this.length}`);this[0].destroy();return true;}', returnByValue: true }, sessionId);
+  if (destroyed.exceptionDetails || destroyed.result.value !== true) throw new Error('Actual WebGPU device destruction failed');
+  const fault = await until(async () => {
+    const value = await read('lossObserved');
+    return value.fault?.startsWith('Destroyed:') && /^Graphics fault: Destroyed:/.test((await poll()).status ?? '') ? value : undefined;
+  }, 'persistent device-loss status');
+  const assertStoppedGpu = value => {
+    if (value.fault !== fault.fault || field(value.report, 'presented') !== field(fault.report, 'presented') || field(value.report, 'samples') !== field(fault.report, 'samples')) throw new Error(`Lost GPU was used or first fault changed: ${JSON.stringify(value)}`);
+  };
+  for (const type of ['keyDown', 'keyUp']) {
+    const before = await poll();
+    await cdp.call('Input.dispatchKeyEvent', { type, code: 'KeyD', key: 'd', windowsVirtualKeyCode: 68 }, sessionId);
+    if (type === 'keyDown') {
+      snapshots.inputStart = { x: playerX(before) };
+      await new Promise(resolve => setTimeout(resolve, 700));
+    }
+  }
+  await until(async () => {
+    const value = await read('runningAfterLoss'); assertStoppedGpu(value);
+    return field(value.report, 'ticks') > field(fault.report, 'ticks') + 5 && playerX(await poll()) > snapshots.inputStart.x + 0.01;
+  }, 'same world and input advance after actual device loss');
+  const clickPause = async () => {
+    const result = await cdp.call('Runtime.evaluate', { expression: 'document.querySelector("#pause-world").click()' }, sessionId);
+    if (result.exceptionDetails) throw new Error(JSON.stringify(result.exceptionDetails));
+  };
+  await clickPause();
+  const requested = await read('pauseRequested');
+  const paused = await until(async () => {
+    const value = await read('pausedAfterLoss'); assertStoppedGpu(value);
+    return value.paused && field(value.report, 'callbacks') >= field(requested.report, 'callbacks') + 3 ? value : undefined;
+  }, 'accepted ticks drain without GPU');
+  await until(async () => {
+    const value = await read('heldPause'); assertStoppedGpu(value);
+    if (field(value.report, 'ticks') !== field(paused.report, 'ticks')) throw new Error('Paused lost-GPU world advanced');
+    return field(value.report, 'callbacks') >= field(paused.report, 'callbacks') + 12;
+  }, 'lost-GPU pause holds through ongoing callbacks');
+  await game.setVisible(false);
+  await clickPause();
+  const hidden = await read('hiddenResume');
+  await sleep(350);
+  const stillHidden = await read('hiddenHeld'); assertStoppedGpu(stillHidden);
+  if (stillHidden.paused || field(stillHidden.report, 'ticks') !== field(hidden.report, 'ticks')) throw new Error('Lost GPU hidden gap advanced authority');
+  await game.setVisible(true);
+  await until(async () => {
+    const value = await read('resumedAfterLoss'); assertStoppedGpu(value);
+    return !value.paused && field(value.report, 'ticks') > field(paused.report, 'ticks') + 5;
+  }, 'lost-GPU visibility resume without GPU polling');
+  const beforeDelay = await read('beforeOverload');
+  await cdp.call('Runtime.evaluate', { expression: '(()=>{const end=performance.now()+250;while(performance.now()<end){}return true;})()' }, sessionId);
+  await until(async () => {
+    const value = await read('overloadAfterLoss'); assertStoppedGpu(value);
+    return field(value.report, 'overload_events') > field(beforeDelay.report, 'overload_events') && field(value.report, 'refused_ticks') > field(beforeDelay.report, 'refused_ticks');
+  }, 'lost-GPU clock overload remains explicit');
+  const finalState = await read('final'); assertStoppedGpu(finalState);
+  if (late && !snapshots.beforeLoss.complete) throw new Error('Late loss did not follow profile completion');
+  return { snapshots, scope: 'Actual GPUDevice.destroy; authority/input/pause/hooks/overload stay live; no graphics reconstruction' };
+}
+
 async function screenshot(cdp, sessionId, output, mode) {
   const image = await cdp.call('Page.captureScreenshot', { format: 'png' }, sessionId);
   await fs.writeFile(path.join(output, `${mode}-final.png`), Buffer.from(image.data, 'base64'));
@@ -206,15 +282,20 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout) {
   const { targetId } = await cdp.call('Target.createTarget', { url: 'about:blank' });
   let sessionId, state, response, input, game, pausedAt, pause, controls;
   let failed = false;
+  const lossCase = mode === 'device-loss' || mode === 'late-device-loss';
   const faults = [], timeline = [];
-  const url = mode === 'controls' ? `${origin}/` : `${origin}/?qualify${['normal', 'input'].includes(mode) ? '' : `&${mode}-probe`}`;
+  let loss;
+  const url = mode === 'controls' || lossCase ? `${origin}/` : `${origin}/?qualify${['normal', 'input'].includes(mode) ? '' : `&${mode}-probe`}`;
   const log = line => { timeline.push(line); console.log(`${mode}: ${line}`); };
   try {
     ({ sessionId } = await cdp.call('Target.attachToTarget', { targetId, flatten: true }));
     cdp.event = packet => {
       if (packet.sessionId !== sessionId) return;
       if (packet.method === 'Runtime.exceptionThrown') faults.push(packet.params.exceptionDetails);
-      if (packet.method === 'Runtime.consoleAPICalled' && packet.params.type === 'error') faults.push(packet.params.args.map(arg => arg.value ?? arg.description));
+      if (packet.method === 'Runtime.consoleAPICalled' && packet.params.type === 'error') {
+        const messages = packet.params.args.map(arg => arg.value ?? arg.description);
+        if (!(lossCase && messages.length === 1 && /^Graphics fault: Destroyed:/.test(messages[0] ?? ''))) faults.push(messages);
+      }
       if (packet.method === 'Network.responseReceived' && packet.params.response.url === `${origin}/v1_game_bg.wasm`) response = packet.params;
     };
     for (const domain of ['Runtime', 'Page']) await cdp.call(`${domain}.enable`, {}, sessionId);
@@ -231,10 +312,11 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout) {
       if (evaluated.exceptionDetails) throw new Error(JSON.stringify(evaluated.exceptionDetails));
       state = JSON.parse(evaluated.result.value ?? '{}');
       if (state.status !== last) { log(state.status ?? ''); last = state.status; }
-      if (faults.length || /fault:/i.test(state.status ?? '')) throw new Error(`Browser fault: ${JSON.stringify(faults)} ${state.status}`);
+      if (faults.length || (/fault:/i.test(state.status ?? '') && !(lossCase && /^Graphics fault: Destroyed:/.test(state.status ?? '')))) throw new Error(`Browser fault: ${JSON.stringify(faults)} ${state.status}`);
       return state;
     };
-    if (mode === 'controls') controls = await qualifyControls(cdp, sessionId, poll, timeout);
+    if (lossCase) loss = await qualifyDeviceLoss(cdp, sessionId, poll, timeout, mode === 'late-device-loss');
+    else if (mode === 'controls') controls = await qualifyControls(cdp, sessionId, poll, timeout);
     else await waitFor(async () => {
       await poll();
       if (mode === 'pause' && /^Paused/.test(state.status ?? '')) {
@@ -264,8 +346,8 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout) {
       }
       return /^adapter=/.test(state.status ?? '');
     }, timeout, `${mode} 600 completed GPU samples`);
-    const report = controls?.snapshots.complete.report ?? state.status;
-    if (field(report, 'samples') !== 600 || !(field(report, 'presented') >= 600)) throw new Error('Qualification requires 600 GPU-complete samples and at least 600 present calls');
+    const report = loss?.snapshots.final.report ?? controls?.snapshots.complete.report ?? state.status;
+    if (!lossCase && (field(report, 'samples') !== 600 || !(field(report, 'presented') >= 600))) throw new Error('Qualification requires 600 GPU-complete samples and at least 600 present calls');
     if (state.hidden) throw new Error('Qualification target finished hidden');
     if (mode === 'pause' && (!timeline.some(line => /^Paused/.test(line)) || !timeline.some(line => /^Resumed/.test(line)) || field(state.status, 'overload_events') !== 0 || pause?.heldTick !== pause?.startTick || !Number.isFinite(pause?.heldTick) || !(field(state.status, 'ticks') > pause.heldTick))) throw new Error('Explicit two-second pause/resume was not observed without overload');
     if (mode === 'resize' && (state.width !== 960 || state.height !== 540 || !/extent=960x540;/.test(state.status))) throw new Error('Canvas/surface resize to 960x540 not applied');
@@ -277,10 +359,12 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout) {
     const disk = sha(await fs.readFile(path.join(directory, 'v1_game_bg.wasm')));
     if (actualWasmSha256 !== disk || disk !== wasm.sha256) throw new Error('Loaded Wasm differs from the built artifact on disk');
     if (faults.length) throw new Error(`Runtime faults: ${JSON.stringify(faults)}`);
+    game ??= await existingGame(cdp, sessionId);
+    if (!lossCase && (await game.read()).fault) throw new Error('Graphics device fault invalidated qualification');
     await screenshot(cdp, sessionId, output, mode);
     if (faults.length) throw new Error(`Runtime faults: ${JSON.stringify(faults)}`);
-    const scope = mode === 'controls' ? 'Manual pause with ongoing RAF and explicit visibility-hook composition; not actual tab visibility' : mode === 'pause' ? 'Explicit set_visible(false/true) hook; not actual tab visibility' : 'Headless WebGPU function; not display/cadence qualification';
-    const result = { case: mode, url, state, actualWasmSha256, responseStatus: 200, input, pause, controls, timeline, scope };
+    const scope = lossCase ? loss.scope : mode === 'controls' ? 'Manual pause with ongoing RAF and explicit visibility-hook composition; not actual tab visibility' : mode === 'pause' ? 'Explicit set_visible(false/true) hook; not actual tab visibility' : 'Headless WebGPU function; not display/cadence qualification';
+    const result = { case: mode, url, state, actualWasmSha256, responseStatus: 200, input, pause, controls, loss, timeline, scope };
     await fs.writeFile(path.join(output, `${mode}.json`), JSON.stringify(result, null, 2));
     log(`PASS actualWasmSha256=${actualWasmSha256}`);
     return result;
@@ -331,7 +415,7 @@ async function cleanup(child, exited, cdp, server, profile) {
 
 async function main() {
   const args = options(process.argv.slice(2));
-  if (!args) { console.log('node scripts/check_v1_browser.mjs [--case all|normal|pause|resize|overload|input|controls] [--web-root target/v1-game-web] [--chrome /path/to/Chrome] [--output tmp/new-run] [--timeout-ms 90000]\nRequires Node 24+, an already-built game, and this Mac\'s Apple M3 Max/Metal Chrome. Controls checks manual pause with ongoing RAF; visibility checks use the explicit hook, not tab hiding. No timing claim.'); return; }
+  if (!args) { console.log('node scripts/check_v1_browser.mjs [--case all|normal|pause|resize|overload|input|controls|device-loss|late-device-loss] [--web-root target/v1-game-web] [--chrome /path/to/Chrome] [--output tmp/new-run] [--timeout-ms 90000]\nRequires Node 24+, an already-built game, and this Mac\'s Apple M3 Max/Metal Chrome. Controls checks manual pause with ongoing RAF; visibility checks use the explicit hook, not tab hiding. No timing claim.'); return; }
   if (Number(process.versions.node.split('.')[0]) < 24 || typeof WebSocket !== 'function') throw new Error('Node 24+ with builtin WebSocket is required');
   const directory = await fs.realpath(path.resolve(repo, args['web-root']));
   const files = await assets(directory);

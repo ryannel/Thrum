@@ -399,7 +399,7 @@ impl FrameHost {
     pub fn drain_and_resume(&mut self, now: Duration) -> Result<(), String> {
         self.inner.world_mut().inline_lifecycle()?;
         loop {
-            let report = self.drive(now, None)?;
+            let report = self.advance_without_rendering(now)?;
             if report.queued_ticks == 0 {
                 break;
             }
@@ -465,6 +465,14 @@ impl FrameHost {
     /// Returns a world or GPU polling failure.
     pub fn advance(&mut self, now: Duration) -> Result<AdvancedFrame<'_>, runtime::FrameError> {
         self.inner.advance(now).map(AdvancedFrame)
+    }
+    /// Advance the same world without polling, preparing or submitting GPU work.
+    /// # Errors
+    /// Returns an authoritative world or clock failure.
+    pub fn advance_without_rendering(&mut self, now: Duration) -> Result<DriveReport, String> {
+        self.inner
+            .advance_without_rendering(now)
+            .map_err(|error| error.to_string())
     }
     /// Submitted GPU packets not yet fully retired.
     pub fn pending_frames(&self) -> usize {
