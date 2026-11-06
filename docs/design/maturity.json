@@ -472,7 +472,7 @@
       "current_tree_status": "retired_from_main_at_G0; historical measurements retained"
     },
     "V1_bounded_frame_host": {
-      "implementation": "partial_core_clock_world_lane_and_game_owned_frame_host",
+      "implementation": "partial_engine_clock_world_lane_and_frame_runtime",
       "functional_validation": "real_metal_tick_interpolation_capture_ordered_timing_overload_and_short_live_surface_runs; surface_generation_and_nonblocking_close_reviewed; lifecycle_qualification_open",
       "experienced_quality": "synthetic_grid_capture_agent_reviewed; motion_and_showcase_quality_open",
       "platform_performance": {
@@ -486,7 +486,7 @@
       "evidence": [
         "../evidence/render/V1-BOUNDED-FRAMES-2026-11-04.md"
       ],
-      "scope": "Core owns ClockedWorld and the resident WorldLane; the game supplies rules, input and projections. The Mac actor owns two GPU slots and late acquisition; adjacent columns use page differences with full fallback. FrameHost still contains game types; generic render ownership, scene pre-submit, device recovery and Chrome runtime remain open."
+      "scope": "Core owns ClockedWorld/WorldLane; thrum-render owns the generic two-slot FrameHost. The game supplies rules, projections and scene mapping. Mac late acquisition and adjacent sparse columns run; native pre-submit, device recovery, Chrome runtime and timing qualification remain open."
     },
     "V1_cooked_constant_light": {
       "implementation": "partial_native_accepted_source_product_and_offscreen_visual_publication",

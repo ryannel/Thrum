@@ -14,7 +14,7 @@ allowed_workspace_dependencies = []
 
 [packages.thrum-render]
 manifest = "crates/thrum-render/Cargo.toml"
-allowed_workspace_dependencies = []
+allowed_workspace_dependencies = ["thrum-core"]
 
 [packages.thrum-network]
 manifest = "crates/thrum-network/Cargo.toml"
@@ -67,7 +67,7 @@ target_cost = "Browser V1 scene only with canvas and diagnostic console bindings
 requirement = "=1.1.0"
 license = "MIT OR Apache-2.0"
 purpose = "Measure browser frame and engine world-tick CPU stages with the Web Performance monotonic clock"
-target_cost = "Wasm-only game/core timing; two boundary clock reads per measured span; native std::time retained"
+target_cost = "Wasm-only core/render timing; two boundary clock reads per measured span; native std::time retained"
 
 [external_dependencies.divan]
 requirement = "=0.1.21"

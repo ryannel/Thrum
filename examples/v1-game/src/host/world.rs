@@ -179,6 +179,45 @@ impl WorldPort {
     }
 }
 
+impl thrum_render::runtime::FrameWorld for WorldPort {
+    type Page = PublishedPage;
+
+    fn source(&self) -> thrum_render::extract::SourceTick {
+        thrum_render::extract::SourceTick {
+            epoch: self.epoch(),
+            tick: self.tick(),
+            timeline: self.timeline(),
+        }
+    }
+
+    fn has_current_page(&self) -> bool {
+        Self::has_current_page(self)
+    }
+
+    fn is_threaded(&self) -> bool {
+        Self::is_threaded(self)
+    }
+
+    fn advance(&mut self, now: Duration) -> Result<WorldAdvance, String> {
+        Self::advance(self, now)
+    }
+
+    fn publication(&mut self) -> Result<WorldPublication<Self::Page>, String> {
+        let page = self
+            .published_page()
+            .map_err(|error| format!("world page: {error:?}"))?;
+        Ok(WorldPublication {
+            id: page.id(),
+            timeline: page.timeline(),
+            page,
+        })
+    }
+
+    fn presentation_alpha_at(&self, lead: Duration) -> f32 {
+        Self::presentation_alpha_at(self, lead)
+    }
+}
+
 /// The game body stays here; scheduling and the fixed clock belong to core.
 pub(super) struct WorldDriver {
     pub(super) world: ClockedWorld<GameWorld>,
