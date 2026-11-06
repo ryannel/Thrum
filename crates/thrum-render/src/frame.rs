@@ -1,6 +1,67 @@
 //! Bounded native frame handoff. The shell keeps OS events on its thread while
 //! a worker owns the frame operation; neither request nor reply grows a queue.
 
+use std::time::Duration;
+
+/// How a platform display target related to the worker's consumption time.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum TargetLeadStatus {
+    /// The target is still within the bounded lookahead.
+    Future,
+    /// The display deadline has already passed; render from current time.
+    Late,
+    /// The platform supplied an invalid timestamp; render from current time.
+    Invalid,
+    /// The target is farther ahead than the supported presentation lookahead.
+    Clamped,
+}
+
+/// A bounded future sample for interpolation, plus a nonfatal timing status.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct TargetLead {
+    /// Duration from the worker's current media-clock sample to the target.
+    pub duration: Duration,
+    /// Whether the target was future, expired, invalid or clamped.
+    pub status: TargetLeadStatus,
+}
+
+/// Convert a platform media-clock target at the point the worker consumes it.
+/// Expired and invalid targets use the current sample. A 50 ms cap prevents a
+/// bad platform forecast from interpolating far past the next world tick.
+#[must_use]
+#[inline]
+pub fn display_target_lead(target_seconds: f64, observed_seconds: f64) -> TargetLead {
+    const MAX_LEAD_SECONDS: f64 = 0.05;
+    let zero = |status| TargetLead {
+        duration: Duration::ZERO,
+        status,
+    };
+    if !target_seconds.is_finite()
+        || !observed_seconds.is_finite()
+        || target_seconds < 0.0
+        || observed_seconds < 0.0
+    {
+        return zero(TargetLeadStatus::Invalid);
+    }
+    let remaining = target_seconds - observed_seconds;
+    if !remaining.is_finite() {
+        return zero(TargetLeadStatus::Invalid);
+    }
+    if remaining <= 0.0 {
+        return zero(TargetLeadStatus::Late);
+    }
+    if remaining > MAX_LEAD_SECONDS {
+        return TargetLead {
+            duration: Duration::from_millis(50),
+            status: TargetLeadStatus::Clamped,
+        };
+    }
+    TargetLead {
+        duration: Duration::from_secs_f64(remaining),
+        status: TargetLeadStatus::Future,
+    }
+}
+
 #[cfg(not(target_arch = "wasm32"))]
 mod native {
     use std::{
@@ -266,6 +327,7 @@ mod native {
     #[cfg(test)]
     mod tests {
         use super::{FrameWorker, SendFault};
+        use crate::frame::{TargetLeadStatus, display_target_lead};
         use std::{
             sync::{
                 Arc,
@@ -277,6 +339,36 @@ mod native {
         };
 
         struct ExitSignal(Arc<AtomicBool>);
+
+        #[test]
+        fn delayed_worker_classifies_a_consumed_display_target_as_late() {
+            let origin = Instant::now();
+            let (entered, observed) = mpsc::sync_channel(1);
+            let (release, paused) = mpsc::sync_channel(1);
+            let worker = FrameWorker::start(
+                "target-deadline-test",
+                move |target_seconds| {
+                    entered.send(()).expect("worker entered");
+                    paused.recv().expect("worker released");
+                    display_target_lead(target_seconds, origin.elapsed().as_secs_f64()).status
+                },
+                || {},
+            )
+            .expect("worker");
+            worker
+                .try_send(0.008)
+                .unwrap_or_else(|_| panic!("target queued"));
+            observed
+                .recv_timeout(Duration::from_secs(1))
+                .expect("entered");
+            thread::sleep(Duration::from_millis(20));
+            release.send(()).expect("release");
+            assert_eq!(
+                worker.recv_timeout(Duration::from_secs(1)),
+                Some(TargetLeadStatus::Late)
+            );
+            worker.shutdown();
+        }
 
         impl Drop for ExitSignal {
             fn drop(&mut self) {
@@ -402,3 +494,51 @@ mod native {
 
 #[cfg(not(target_arch = "wasm32"))]
 pub use native::{FrameWorker, SendFault};
+
+#[cfg(test)]
+mod target_tests {
+    use super::{TargetLeadStatus, display_target_lead};
+    use std::time::Duration;
+
+    #[test]
+    fn worker_consumption_uses_current_target_slack() {
+        let target = 100.008;
+        let queued = display_target_lead(target, 100.0);
+        assert_eq!(queued.status, TargetLeadStatus::Future);
+        assert!((queued.duration.as_secs_f64() - 0.008).abs() < 1e-9);
+        let consumed = display_target_lead(target, 100.012);
+        assert_eq!(consumed.status, TargetLeadStatus::Late);
+        assert_eq!(consumed.duration, Duration::ZERO);
+
+        let future = display_target_lead(100.020, 100.012);
+        assert_eq!(future.status, TargetLeadStatus::Future);
+        assert!((100.012 + future.duration.as_secs_f64() - 100.020).abs() < 1e-9);
+    }
+
+    #[test]
+    fn bad_or_far_targets_degrade_without_panicking() {
+        for (target, now) in [
+            (f64::NAN, 1.0),
+            (1.0, f64::INFINITY),
+            (-1.0, 1.0),
+            (1.0, -1.0),
+        ] {
+            assert_eq!(
+                display_target_lead(target, now).status,
+                TargetLeadStatus::Invalid
+            );
+        }
+        assert_eq!(display_target_lead(1.0, 1.0).status, TargetLeadStatus::Late);
+        let capped = display_target_lead(f64::MAX, 0.0);
+        assert_eq!(capped.status, TargetLeadStatus::Clamped);
+        assert_eq!(capped.duration, Duration::from_millis(50));
+        assert_eq!(
+            display_target_lead(0.05, 0.0).status,
+            TargetLeadStatus::Future
+        );
+        assert_eq!(
+            display_target_lead(1.051, 1.0).status,
+            TargetLeadStatus::Clamped
+        );
+    }
+}
