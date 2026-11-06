@@ -3,7 +3,13 @@
 **Initial implementation specification:** [BASELINE-SPEC.md](../BASELINE-SPEC.md) now selects the concrete baseline mechanisms,
 limits and failure rules. This family document retains the wider responsibility; specification does not imply runtime qualification.
 
-1 November 2026. **Design status:** selected operating model under [C4 decisions](../ARCHITECTURE-DECISIONS.md); minimum devices and platform-specific API compatibility are unqualified. **Implementation/proof status:** partial I1 headless and phone-shell implementation, with local core tests and iOS compile/link checks; no device qualification. The operating model below is derived from time, ownership, dependency and resource invariants before implementation. Tests validate its predictions; they do not select those foundations by trial and error. This design follows the [architecture brief](../ARCHITECTURE-BRIEF.md) and supersedes the host options in the earlier [host assessment](../HOST-AND-PLATFORMS.md); the user selected a custom host. Ideas or licensed code from other engines remain research/reuse candidates with provenance. The [hardware-native decision](../decisions/HARDWARE-NATIVE-ENGINE.md) governs capability selection, frame recipes and the quality governor. Evidence and inspected source sections are in [platform sources](../research/PLATFORM-SOURCES.md).
+6 November 2026. **Design status:** selected operating model under [C4 decisions](../ARCHITECTURE-DECISIONS.md).
+**Implementation/proof:** generic clock, resident world and bounded frame runtime with scoped Metal lifecycle tests;
+live display, browser/mobile lifecycle and minimum-device compatibility remain unqualified. The model follows
+[the architecture brief](../ARCHITECTURE-BRIEF.md) and supersedes [earlier host options](../HOST-AND-PLATFORMS.md):
+the owner selected a custom host. External code remains a research/reuse candidate requiring provenance.
+[Hardware-native selection](../decisions/HARDWARE-NATIVE-ENGINE.md) governs recipes and the governor;
+[platform sources](../research/PLATFORM-SOURCES.md) retain evidence and API inspection.
 
 ## Scope and observable success
 
@@ -38,21 +44,23 @@ The custom host is **not** a promise to build every utility. Its irreducible own
 window/surface and display-link callbacks. Presentation loss never implies an authority pause: explicit local-game
 policy chooses pause, while a headless or multiplayer authority may continue. Rendering cannot create a second clock.
 
-Explicit native pause/resume uses one ordered lifecycle request slot, separate from replaceable continuous controls.
-A designated controller receives typed Busy while a request is queued, draining, or has an unconsumed reply; accepted
-requests are never overwritten. The worker delegates to its clock owner. Pause preserves the existing `TickClock`
-cutoff at the last admission sample, clears fractional time and drains already accepted ticks through ordinary capped
-updates before acknowledging. It does not first admit unsampled elapsed time. Resume uses the worker's monotonic
-origin after draining, excluding paused wall time; repeated Pause/active Resume are idempotent without resetting an
-active clock. The immutable reply carries operation, snapshot identity, timeline and matching clock sample even if
-later updates replace the shared observation. Zero-tick acknowledgements wake the observer. Stopped/faulted tasks
-report failure; a failed tick is never acknowledged as completed. Paused publication recovery remains bounded.
+Explicit native pause/resume uses one ordered slot, separate from replaceable continuous controls. A designated
+controller receives typed Busy until the immutable reply is consumed. Pause stops at `TickClock`'s last admission
+sample, clears fractional time and drains accepted ticks under ordinary caps; it does not admit unsampled elapsed
+time. Resume uses the worker origin, excluding paused wall time. Replies preserve operation, snapshot, timeline and
+clock sample; zero-tick acknowledgements wake observers. Refused/faulted/stopped tasks cannot acknowledge success.
+Mac P ignores repeat and retains pending intent. Inline browser calls remain synchronous; mode misuse returns an
+error. Surface loss/occlusion never implicitly pauses authority. Camera controls remain usable while the world pauses;
+pause alone changes neither world epoch/timeline nor submitted transform history.
 
-Mac P is an explicit game action, ignores key repeat and retains desired state across an outstanding transition.
-It uses the asynchronous native controller; inline browser pause/drain/resume remains synchronous. Mode misuse must
-return an error rather than reach an inline-only world through a threaded handle. Surface loss/occlusion alone does
-not issue a lifecycle request. Camera/presentation may continue while the chosen world is paused. Pause does not
-change world epoch/timeline or reset submitted transform history by itself.
+Device recovery rebuilds presentation from retained scene/cooked inputs. The platform owns fresh adapter/device
+selection, a loss callback registered before preparation and one immutable capability record. Detached preparation
+builds pipelines/targets/bindings; publication resamples current camera/lighting and fits shadows before packing.
+It preserves dynamic lighting and exposure. Host/base-generation checks require a different, newer device; successful
+publication invalidates competing candidates, abandons old slots/reports without lost-fence waits, and resets
+extraction/upload/history. Callbacks have generation-local mailboxes. World, clock, controls and cooked selection
+survive. Mac serializes reconstruction/configuration on its render actor, checks pending-candidate loss and rejects
+stale work. Failure leaves presentation unavailable with R retry and the world alive. Surface/device epochs differ.
 
 Mobile adapters retain separate surface, foreground and local-play policy. Release a surface before suspend returns,
 reject old-generation input/completions and recreate only surface-dependent resources on resume. A local single-player
@@ -63,10 +71,10 @@ acquisition migration and simulator lifecycle sequence remain G3b work; Android 
 checks prove function, never device speed. Historical [I1 core](../../evidence/i1-headless/MOBILE-CORE-PORTABILITY.md)
 and [shell](../../evidence/i1-headless/MOBILE-APP-SHELL.md) records describe retired prototypes, not V1 qualification.
 
-Native developer play uses a separate player process by default with pinned SourceRevision/BuildRevision/profile,
-fresh SessionId/WorldEpoch and private save authority. Browser/mobile hosts use isolated world instances and workers
-where supported; this is not a security sandbox. F1 cancellation drains owned leases; old-session completions cannot
-publish into a restarted run. Shared MatchId and wire identity are N1 concepts, not local session handles. Memory observation and pressure response cover every world/view/prediction instance; per-world counters alone cannot describe aggregate process use.
+Developer play defaults to a separate player process with pinned source/build/profile, fresh session/world identity
+and private save authority. Browser/mobile isolate worlds and workers where supported, without claiming a security
+sandbox. Cancellation drains owned leases; stale session work cannot publish after restart. Shared wire identity
+belongs to N1. Memory/pressure observations cover all world/view/prediction instances, not one world's counters.
 
 W1 owns the selected component columns; F1 owns the explicit dependency/access schedule. Standalone, authoritative server,
 replica and prediction roles have distinct permitted stages. No framework scheduler or storage backend changes those

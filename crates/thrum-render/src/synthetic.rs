@@ -1213,6 +1213,10 @@ impl PreparedSynthetic {
     pub fn capabilities(&self) -> &DeviceCapabilities {
         &self.capabilities
     }
+    #[cfg(not(target_arch = "wasm32"))]
+    pub(crate) fn fallback_exposure(&self) -> f32 {
+        f32::from_bits(self.exposure_bits)
+    }
     /// Local-light references dropped when a cluster exceeds its declared
     /// capacity. This is presentation telemetry, not a gameplay light count.
     pub fn dropped_light_references(&self) -> usize {

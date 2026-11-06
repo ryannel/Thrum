@@ -1,3 +1,6 @@
+#[cfg(not(target_arch = "wasm32"))]
+mod device;
+
 use super::{FrameSample, IN_FLIGHT, pop_report_before_pending, retain_sample};
 use std::{collections::VecDeque, time::Duration};
 
