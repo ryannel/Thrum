@@ -1,5 +1,8 @@
 use super::{AtmosphereFrame, model};
 
+#[cfg(target_os = "macos")]
+mod cache;
+
 #[test]
 fn sample_admission_and_direct_transport_have_physical_limits() {
     for direction in [[0.0; 3], [f32::NAN, 1.0, 0.0]] {
@@ -80,8 +83,8 @@ fn portable_lut_graph_renders_live_sun_and_rejects_mode_changes() {
         assert_eq!(prepared.presentation_light_clamps(), 3);
         let mut target = OffscreenTarget::new(&device, &prepared, 128, 64).expect("sky target");
         let graph = prepared.graph(&target, false).expect("atmosphere closure");
-        assert_eq!(graph.pipeline_pass_count(), 10);
-        assert_eq!(prepared.scene_pass_count(), 10);
+        assert_eq!(graph.pipeline_pass_count(), 18);
+        assert_eq!(prepared.scene_pass_count(), 18);
         assert!(matches!(
             prepared.update_frame(
                 &queue,

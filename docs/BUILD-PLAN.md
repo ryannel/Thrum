@@ -66,7 +66,7 @@ The native Metal recorder stays in G3t. The later dedicated performance phase ow
 - [ ] **G3s — physical sky, Sun and atmosphere.** Hillaire (2020) transmittance, multiple-scattering, sky-view and aerial
   LUTs; Sun disk; physical illuminance drives lights and shadows. Time controls run dawn through sunset to night.
   Scaled half storage, metering and smooth SDR highlights pass Metal checks; Chrome time/camera controls show twilight.
-  SH9 now lights faces by normal; the direct cosine referee bounds its approximation. Remaining:
+  SH9 diffuse and GGX sky reflections now light real materials; direct referees bound their approximations. Remaining:
   multiple-scattering/spectral error, declared radiance tolerance, motion and contrast. Review cameras/sweep for
   colour, banding and flicker. [First-light evidence](evidence/v1-workload/G3S-FIRST-LIGHT-2026-11-06.md) is partial;
   record complete atmosphere cost when available, without a numeric admission target. Follow the Broadsides reading

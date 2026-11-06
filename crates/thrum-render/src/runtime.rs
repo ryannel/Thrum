@@ -154,7 +154,7 @@ pub struct FrameSample {
     pub render_cpu: Duration,
     /// Actual GPU pass durations: near/far Sun shadows, local clusters,
     /// forward, history, tone, then atmosphere transmittance, multiple/ground
-    /// irradiance preparation, sky view, diffuse irradiance and aerial perspective. The sky draw is included
+    /// irradiance preparation, sky view/specular preparation, diffuse irradiance and aerial perspective. The sky draw is included
     /// in forward. Disabled or cached compute passes report zero.
     pub gpu_pass_ns: Option<[f64; 11]>,
     /// GPU time for the optional surface blit, when it was submitted and timed.

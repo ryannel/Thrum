@@ -8,7 +8,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
-const cases = ['normal', 'pause', 'resize', 'overload', 'input', 'controls', 'device-loss', 'late-device-loss', 'device-recovery', 'device-recovery-retry'];
+const cases = ['normal', 'pause', 'resize', 'overload', 'input', 'controls', 'device-loss', 'late-device-loss', 'device-recovery', 'device-recovery-retry', 'sky-reflections'];
 const configureFailureSentinel = 'THRUM_G3B_CONFIGURE_ONCE';
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -469,9 +469,87 @@ async function qualifyDeviceRecovery(cdp, sessionId, poll, timeout, evidence, on
     : 'Two actual GPUDevice.destroy/button replacements on the same BrowserGame; generations1→2→3, CPU controls/lifecycle during pending zero extent, fresh GPU samples. Old-device re-destroy is not callback replay or display/cadence qualification.';
 }
 
-async function screenshot(cdp, sessionId, output, mode) {
-  const image = await cdp.call('Page.captureScreenshot', { format: 'png' }, sessionId);
-  await fs.writeFile(path.join(output, `${mode}-final.png`), Buffer.from(image.data, 'base64'));
+async function screenshot(cdp, sessionId, output, mode, options = {}) {
+  const image = await cdp.call('Page.captureScreenshot', { format: 'png', ...(options.clip ? { clip: options.clip, captureBeyondViewport: true } : {}) }, sessionId);
+  const bytes = Buffer.from(image.data, 'base64');
+  if (options.maximumBytes !== undefined && bytes.length > options.maximumBytes) throw new Error('Screenshot image budget exceeded');
+  const file = options.file ?? `${mode}-final.png`;
+  await fs.writeFile(path.join(output, file), bytes);
+  return { file, bytes: bytes.length, sha256: sha(bytes), width: bytes.readUInt32BE(16), height: bytes.readUInt32BE(20) };
+}
+
+async function qualifySkyReflections(cdp, sessionId, poll, timeout, output, evidence) {
+  const deadline = Date.now() + timeout;
+  const until = (check, description) => waitFor(check, Math.max(0, deadline - Date.now()), description);
+  await until(async () => /^Running/.test((await poll()).status ?? ''), 'continuous sky demo startup');
+  const game = await existingGame(cdp, sessionId);
+  const controls = `({hours:document.querySelector('#solar-time').valueAsNumber,yaw:document.querySelector('#camera-yaw').valueAsNumber,pitch:document.querySelector('#camera-pitch').valueAsNumber,solarLabel:document.querySelector('#solar-time-value').textContent})`;
+  const read = async () => {
+    const state = await poll();
+    const value = await game.read();
+    if (!/^Running/.test(state.status ?? '') || !Number.isFinite(value.time) || value.fault || value.recovering || value.recoveryError || field(value.report, 'generation') !== 1 || field(value.report, 'recovery_attempts') !== 0 || field(value.report, 'recovered') !== 0) throw new Error('Sky capture lost its healthy original graphics generation');
+    return value;
+  };
+  await game.invoke('document.querySelector("#pause-world").click();return true;');
+  const requested = await read();
+  evidence.pauseRequested = requested;
+  const paused = await until(async () => {
+    const value = await read();
+    return value.paused && field(value.report, 'presented') >= field(requested.report, 'presented') + 3 ? value : undefined;
+  }, 'sky pause drains accepted ticks through actual presents');
+  evidence.paused = paused;
+  const assertPaused = value => {
+    if (!value.paused || field(value.report, 'ticks') !== field(paused.report, 'ticks')) throw new Error('Authoritative tick changed during paused sky captures');
+  };
+  const capture = async (name, file, clip) => {
+    const before = await read(); assertPaused(before);
+    const image = await screenshot(cdp, sessionId, output, name, { file, clip, maximumBytes: 56 * 1024 * 1024 - evidence.captureBytes });
+    evidence.captureBytes += image.bytes;
+    const after = await read(); assertPaused(after);
+    return { ...image, clip: clip ?? null, before, after };
+  };
+  const held = async (name, body, expected, fullUi) => {
+    const edited = await game.invoke(`${body};return {snapshot:${gameState},controls:${controls}};`);
+    assertPaused(edited.snapshot);
+    if (![edited.controls.hours, edited.controls.yaw, edited.controls.pitch, edited.snapshot.time].every(Number.isFinite) || Math.abs(edited.controls.hours - expected.hours) > 0.0051 || Math.abs(edited.controls.yaw - expected.yaw) > 0.5001 || Math.abs(edited.controls.pitch - expected.pitch) > 0.5001 || Math.abs(edited.snapshot.time - edited.controls.hours / 24) > 1e-6) throw new Error(`Sky controls did not apply ${name}: ${JSON.stringify(edited)}`);
+    const settled = await until(async () => {
+      const value = await read(); assertPaused(value);
+      if (Math.abs(value.time - edited.snapshot.time) > 1e-6) throw new Error('Solar time changed while the world was paused');
+      return field(value.report, 'presented') >= field(edited.snapshot.report, 'presented') + 3 ? value : undefined;
+    }, `${name} three present calls after real UI edits`);
+    const clip = await game.invoke(`const r=document.querySelector('canvas').getBoundingClientRect();return {x:r.x+scrollX,y:r.y+scrollY,width:r.width,height:r.height,scale:1};`);
+    if (![clip.x, clip.y, clip.width, clip.height].every(Number.isFinite) || clip.width <= 0 || clip.height <= 0) throw new Error('Canvas screenshot clip unavailable');
+    const record = { name, requested: expected, edited, settled, images: [] };
+    // Retain partial metadata before I/O too, so a failed case is reviewable.
+    (fullUi ? evidence.phases : evidence.motion).push(record);
+    record.images.push(await capture(name, `sky-reflections-${name}.png`, clip));
+    if (fullUi) record.images.push(await capture(name, `sky-reflections-${name}-ui.png`));
+  };
+  for (const [name, preset, sceneView, hours, yaw, pitch] of [
+    ['phase-paused-scene-noon', 'noon', true, 12, 0, 0],
+    ['phase-sunrise', 'sunrise', false, 6.1, 90, 0],
+    ['phase-scene-sunrise', 'sunrise', true, 6.1, 0, 0],
+    ['phase-noon', 'noon', false, 12, 0, 20],
+    ['phase-sunset', 'sunset', false, 17.9, -90, 0],
+    ['phase-twilight', 'twilight', false, 18.48, -90, 0],
+    ['phase-scene-twilight', 'twilight', true, 18.48, 0, 0],
+  ]) {
+    await held(name, `document.querySelector('[data-sky=${preset}]').click();${sceneView ? 'document.querySelector("#scene-view").click();' : ''}`, { hours, yaw, pitch }, true);
+  }
+  // This is a sampled sequence, not a real-time playback or cadence recording.
+  // Range step=1 quantizes camera yaw; record the actual accepted UI values.
+  for (let index = 0; index < 24; index++) {
+    const fraction = index / 23;
+    const hours = 17.5 + 1.3 * fraction;
+    const yaw = -10 + 20 * fraction;
+    await held(`motion-${String(index).padStart(2, '0')}`, `
+      document.querySelector('#scene-view').click();
+      for(const [selector,value] of [['#solar-time',${hours}],['#camera-yaw',${yaw}],['#camera-pitch',0]]){
+        const control=document.querySelector(selector);control.value=String(value);control.dispatchEvent(new Event('input',{bubbles:true}));
+      }`, { hours, yaw, pitch: 0 }, false);
+  }
+  evidence.final = await read(); assertPaused(evidence.final);
+  evidence.scope = 'One continuous built BrowserGame: seven paused held sky/scene phases and 24 range-driven camera/Sun samples, three present calls after every edit; healthy generation 1 and fixed authoritative tick. Canvas PNGs are compositor captures, not physical display cadence, GPU timing or transport-accuracy qualification.';
 }
 
 async function qualify(cdp, mode, origin, output, directory, wasm, timeout) {
@@ -482,10 +560,11 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout) {
   const retryCase = mode === 'device-recovery-retry';
   const recoveryCase = mode === 'device-recovery' || retryCase;
   const destroyCase = lossCase || recoveryCase;
+  const skyCase = mode === 'sky-reflections';
   const faults = [], timeline = [];
-  let loss, recovery, intentionalDestroys = 0;
+  let loss, recovery, sky, intentionalDestroys = 0;
   const onDestroy = () => { intentionalDestroys++; };
-  const url = mode === 'controls' || destroyCase ? `${origin}/` : `${origin}/?qualify${['normal', 'input'].includes(mode) ? '' : `&${mode}-probe`}`;
+  const url = mode === 'controls' || destroyCase || skyCase ? `${origin}/` : `${origin}/?qualify${['normal', 'input'].includes(mode) ? '' : `&${mode}-probe`}`;
   const log = line => { timeline.push(line); console.log(`${mode}: ${line}`); };
   try {
     ({ sessionId } = await cdp.call('Target.attachToTarget', { targetId, flatten: true }));
@@ -517,7 +596,10 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout) {
       if (faults.length || (/fault:/i.test(state.status ?? '') && !(destroyCase && intentionalDestroys > 0 && /^Graphics fault: Destroyed:/.test(state.status ?? '')))) throw new Error(`Browser fault: ${JSON.stringify(faults)} ${state.status}`);
       return state;
     };
-    if (recoveryCase) {
+    if (skyCase) {
+      sky = { phases: [], motion: [], captureBytes: 0 };
+      await qualifySkyReflections(cdp, sessionId, poll, timeout, output, sky);
+    } else if (recoveryCase) {
       recovery = { snapshots: {}, destroyedDeviceCounts: [] };
       await qualifyDeviceRecovery(cdp, sessionId, poll, timeout, recovery, onDestroy, retryCase, async phase => {
         const name = `${mode}-${phase}`;
@@ -555,8 +637,8 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout) {
       }
       return /^adapter=/.test(state.status ?? '');
     }, timeout, `${mode} 600 completed GPU samples`);
-    const report = recovery?.snapshots.final.report ?? loss?.snapshots.final.report ?? controls?.snapshots.complete.report ?? state.status;
-    if (!destroyCase && (field(report, 'samples') !== 600 || !(field(report, 'presented') >= 600))) throw new Error('Qualification requires 600 GPU-complete samples and at least 600 present calls');
+    const report = sky?.final.report ?? recovery?.snapshots.final.report ?? loss?.snapshots.final.report ?? controls?.snapshots.complete.report ?? state.status;
+    if (!destroyCase && !skyCase && (field(report, 'samples') !== 600 || !(field(report, 'presented') >= 600))) throw new Error('Qualification requires 600 GPU-complete samples and at least 600 present calls');
     if (state.hidden) throw new Error('Qualification target finished hidden');
     if (mode === 'pause' && (!timeline.some(line => /^Paused/.test(line)) || !timeline.some(line => /^Resumed/.test(line)) || field(state.status, 'overload_events') !== 0 || pause?.heldTick !== pause?.startTick || !Number.isFinite(pause?.heldTick) || !(field(state.status, 'ticks') > pause.heldTick))) throw new Error('Explicit two-second pause/resume was not observed without overload');
     if (mode === 'resize' && (state.width !== 960 || state.height !== 540 || !/extent=960x540;/.test(state.status))) throw new Error('Canvas/surface resize to 960x540 not applied');
@@ -567,20 +649,21 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout) {
     const actualWasmSha256 = sha(Buffer.from(body.body, body.base64Encoded ? 'base64' : 'utf8'));
     const disk = sha(await fs.readFile(path.join(directory, 'v1_game_bg.wasm')));
     if (actualWasmSha256 !== disk || disk !== wasm.sha256) throw new Error('Loaded Wasm differs from the built artifact on disk');
+    if (sky) sky.actualWasmSha256 = actualWasmSha256;
     if (faults.length) throw new Error(`Runtime faults: ${JSON.stringify(faults)}`);
     game ??= await existingGame(cdp, sessionId);
     if (!lossCase && (await game.read()).fault) throw new Error('Graphics device fault invalidated qualification');
     await screenshot(cdp, sessionId, output, mode);
     if (faults.length) throw new Error(`Runtime faults: ${JSON.stringify(faults)}`);
-    const scope = recovery?.scope ?? (lossCase ? loss.scope : mode === 'controls' ? 'Manual pause with ongoing RAF and explicit visibility-hook composition; not actual tab visibility' : mode === 'pause' ? 'Explicit set_visible(false/true) hook; not actual tab visibility' : 'Headless WebGPU function; not display/cadence qualification');
-    const result = { case: mode, url, state, actualWasmSha256, responseStatus: 200, input, pause, controls, loss, recovery, timeline, scope };
+    const scope = sky?.scope ?? recovery?.scope ?? (lossCase ? loss.scope : mode === 'controls' ? 'Manual pause with ongoing RAF and explicit visibility-hook composition; not actual tab visibility' : mode === 'pause' ? 'Explicit set_visible(false/true) hook; not actual tab visibility' : 'Headless WebGPU function; not display/cadence qualification');
+    const result = { case: mode, url, state, actualWasmSha256, responseStatus: 200, input, pause, controls, loss, recovery, sky, timeline, scope };
     await fs.writeFile(path.join(output, `${mode}.json`), JSON.stringify(result, null, 2));
     log(`PASS actualWasmSha256=${actualWasmSha256}`);
     return result;
   } catch (error) {
     failed = true;
     log(`FAIL ${error.message}`);
-    await fs.writeFile(path.join(output, `${mode}-failed.json`), JSON.stringify({ url, state, error: String(error), faults, timeline, recovery, wasmResponse: response?.response }, null, 2));
+    await fs.writeFile(path.join(output, `${mode}-failed.json`), JSON.stringify({ url, state, error: String(error), faults, timeline, recovery, sky, wasmResponse: response?.response }, null, 2));
     throw error;
   } finally {
     if (sessionId && failed) {
@@ -624,7 +707,7 @@ async function cleanup(child, exited, cdp, server, profile) {
 
 async function main() {
   const args = options(process.argv.slice(2));
-  if (!args) { console.log('node scripts/check_v1_browser.mjs [--case all|normal|pause|resize|overload|input|controls|device-loss|late-device-loss|device-recovery|device-recovery-retry] [--web-root target/v1-game-web] [--chrome /path/to/Chrome] [--output tmp/new-run] [--timeout-ms 90000]\nRequires Node 24+, an already-built game, and this Mac\'s Apple M3 Max/Metal Chrome. Controls checks manual pause with ongoing RAF; visibility checks use the explicit hook, not tab hiding. Recovery uses the real restore button; retry injects exactly one standard canvas configure failure. No timing claim.'); return; }
+  if (!args) { console.log('node scripts/check_v1_browser.mjs [--case all|normal|pause|resize|overload|input|controls|device-loss|late-device-loss|device-recovery|device-recovery-retry|sky-reflections] [--web-root target/v1-game-web] [--chrome /path/to/Chrome] [--output tmp/new-run] [--timeout-ms 90000]\nRequires Node 24+, an already-built game, and this Mac\'s Apple M3 Max/Metal Chrome. Controls checks manual pause with ongoing RAF; visibility checks use the explicit hook, not tab hiding. Recovery uses the real restore button; retry injects exactly one standard canvas configure failure. Sky reflections saves seven paused phases and 24 camera/Sun samples. No timing claim.'); return; }
   if (Number(process.versions.node.split('.')[0]) < 24 || typeof WebSocket !== 'function') throw new Error('Node 24+ with builtin WebSocket is required');
   const directory = await fs.realpath(path.resolve(repo, args['web-root']));
   const files = await assets(directory);

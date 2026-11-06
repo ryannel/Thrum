@@ -1,5 +1,5 @@
 // ABI2 opaque clustered forward diagnostic: Lambert + GGX/Smith/Schlick.
-// Checked finite reverse-Z camera, no normal maps, indirect light or shadows.
+// Checked finite reverse-Z camera; prepared lighting selects indirect resources.
 struct ViewRecord {
     view_proj: mat4x4<f32>,
     previous_view_proj: mat4x4<f32>,
@@ -126,7 +126,7 @@ fn direct_brdf(base: vec3<f32>, metalness: f32, roughness: f32, n: vec3<f32>,
     let co = clamp(dot(n,v),0.0,1.0);
     if ci <= 0.0 || co <= 0.0 { return vec3(0.0); }
     let ch = clamp(dot(n,h),0.0,1.0);
-    let alpha = max(0.045,roughness)*max(0.045,roughness);
+    let alpha = ggx_alpha(roughness);
     let a2 = alpha*alpha;
     let d_base = (1.0-ch*ch)+ch*ch*a2;
     let d = a2/(3.14159265359*d_base*d_base);
@@ -244,7 +244,7 @@ fn shade(input: VertexOutput, sun_factor: f32) -> vec4<f32> {
     let colour = direct_brdf(surface_base,metalness,roughness,n,
             light.direction_to_light.xyz,v,light.irradiance.rgb*sun_factor,h,fresnel_power)
         + local_radiance(surface_base,metalness,roughness,n,v,input.world_position,input.position)
-        + orm.r*(1.0-metalness)*surface_base*ambient_irradiance(n)/3.14159265359
+        + indirect_radiance(surface_base,metalness,roughness,n,v,orm.r)
         + material.emissive_cutoff.rgb*emissive.rgb;
     // Keep scene radiance above one. Repair unsupported presentation arithmetic
     // before pre-exposure and bound only to the finite fp16 storage envelope.
