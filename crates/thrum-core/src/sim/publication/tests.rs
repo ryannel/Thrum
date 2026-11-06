@@ -457,6 +457,8 @@ fn fused_capture_matches_separate_refresh_and_exact_pair_oracle() {
                 source: source.selected[index].values.as_ref(),
                 directory: None,
                 source_directory: None,
+                page_matches_world: true,
+                page_matches_source: true,
                 page_words: &pending[index],
                 page_structural: &structural,
                 outbound_words: &outbound[index],
