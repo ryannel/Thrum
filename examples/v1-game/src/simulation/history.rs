@@ -244,3 +244,6 @@ impl Simulation {
         })
     }
 }
+
+#[cfg(test)]
+mod tests;

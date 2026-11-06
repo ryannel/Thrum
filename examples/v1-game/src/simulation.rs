@@ -348,8 +348,8 @@ impl Simulation {
     pub fn timeline(&self) -> u64 {
         self.runtime.timeline()
     }
-    /// Select the engine executor. Preferred Rayon stays serial for this game
-    /// until a measured crossover; forced Rayon exercises the resident pool.
+    /// Select the requested executor. This game declares Direct/Serial systems,
+    /// so even RayonForced does not dispatch parallel work for these callbacks.
     pub fn set_execution_mode(&mut self, mode: ExecutionMode) {
         let selected = if mode == ExecutionMode::Rayon {
             ExecutionMode::Serial
