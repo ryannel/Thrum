@@ -61,7 +61,7 @@ fn multiple_main(@builtin(global_invocation_id) id: vec3<u32>) {
         }
     }
     let multiple=luminance/max(vec3(0.001),vec3(1.0)-feedback);
-    textureStore(output_lut,vec2<i32>(id.xy),vec4(multiple,1.0));
+    textureStore(output_lut,vec2<i32>(id.xy),vec4(multiple*MULTIPLE_LUT_GAIN,1.0));
 }
 @compute @workgroup_size(8,8)
 fn sky_main(@builtin(global_invocation_id) id: vec3<u32>) {
@@ -92,7 +92,7 @@ fn sky_main(@builtin(global_invocation_id) id: vec3<u32>) {
         let single=(vec3(5.802e-6,13.558e-6,33.100e-6)*exp(-ah/8000.0)*rayleigh_phase
             +vec3(3.996e-6)*exp(-ah/1200.0)*mie_phase)*sun_transmittance(p,sun);
         let mu=dot(normalize(p+vec3(0.0,R,0.0)),sun);
-        let multiple=textureSampleLevel(multiple_scattering,lut_sampler,vec2(mu*0.5+0.5,ah/H),0.0).rgb;
+        let multiple=textureSampleLevel(multiple_scattering,lut_sampler,vec2(mu*0.5+0.5,ah/H),0.0).rgb/MULTIPLE_LUT_GAIN;
         luminance+=throughput*safe_segment(single+scattering(ah)*multiple,ext,dt);
         throughput*=exp(-ext*dt);
     }
@@ -101,5 +101,5 @@ fn sky_main(@builtin(global_invocation_id) id: vec3<u32>) {
         let n=normalize(p+vec3(0.0,R,0.0));
         luminance+=throughput*sun_transmittance(p+n*0.1,sun)*max(0.0,dot(n,sun))*(0.1/PI);
     }
-    textureStore(output_lut,vec2<i32>(id.xy),vec4(luminance,1.0));
+    textureStore(output_lut,vec2<i32>(id.xy),vec4(luminance*SKY_LUT_GAIN,1.0));
 }

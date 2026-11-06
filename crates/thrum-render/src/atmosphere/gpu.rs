@@ -7,6 +7,9 @@ use crate::timing::GpuTimings;
 
 use super::AtmosphereFrame;
 
+#[cfg(all(test, not(target_arch = "wasm32")))]
+mod tests;
+
 pub(super) const EXTENTS: [[u32; 2]; 3] = [[256, 64], [32, 32], [192, 108]];
 pub(super) const AERIAL_EXTENT: [u32; 3] = [32, 32, 33];
 const UNIFORM_BYTES: u64 = 128;

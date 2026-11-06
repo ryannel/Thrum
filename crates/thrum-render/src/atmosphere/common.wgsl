@@ -10,6 +10,14 @@ struct Atmosphere {
 const PI: f32 = 3.14159265359;
 const R: f32 = 6371000.0;
 const H: f32 = 100000.0;
+// Encode only LUT RGB stores; all transport math and consumers use per-unit
+// physical radiance. Fixed powers of two preserve normal-range fp16 precision
+// while retaining much fainter twilight values. Recheck these gains if the
+// fixed Earth profile, phase function or ground albedo changes: the full
+// multiple LUT peaks below 0.05 (encoded <3277), and sky radiance is bounded
+// by phase <=3.582, multiple <0.05 and ground <=0.1/PI (encoded <3752).
+const MULTIPLE_LUT_GAIN: f32 = 65536.0;
+const SKY_LUT_GAIN: f32 = 1024.0;
 fn altitude(p: vec3<f32>) -> f32 {
     let n = dot(p,p)+2.0*R*p.y;
     return max(0.0,n/(sqrt(max(0.0,R*R+n))+R));
