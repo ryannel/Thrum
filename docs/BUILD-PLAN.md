@@ -5,10 +5,10 @@ Updated 6 November 2026. Active status page; Git retains history. [Contracts](de
 
 ## Purpose
 
-Thrum is a native-first, production-grade Rust 3D engine for learning, craft and a showcase of AI-driven engineering.
-Its first outlet is high-end interactive teaching demos on the owner's website, then games later. Aim for exceptional
-performance and graphics that nobody recognises as homemade. Single-player fidelity leads; shared authority and rules
-keep multiplayer additive. Native uses each device's hardware; Chrome runs a strong portable WebGPU recipe.
+Thrum is a native-first production Rust 3D engine and AI engineering showcase: exceptional performance and
+professional graphics, first for high-end teaching demos on the owner's website, then games. Single-player fidelity
+leads; shared authority/rules keep multiplayer additive. Native uses each device; Chrome runs portable WebGPU at
+showcase quality.
 
 ## Goal and exit rule
 
@@ -33,11 +33,10 @@ and never record them as iPhone results. At V1 exit report outstanding physical-
 
 ## Steering and visual review
 
-Build continuously; reports and owner digests are asynchronous. Visible changes need fixed cameras, a short sequence,
-automated image checks, root inspection and independent agent review. Fix artifacts or record remaining look questions
-with a recommendation; owner acceptance is steering, never a gate. Stop to ask only for purpose/exit/order changes,
-spending, publishing/deployment/licensing or irreversible actions; continue unblocked work meanwhile. No push without
-explicit authorization. Keep local verified checkpoints.
+Keep building; owner reports/digests are asynchronous. Visible changes need fixed cameras, a sequence, image checks
+and independent agent review. Fix or record open look questions with a recommendation; acceptance never blocks.
+Ask only for purpose/exit/order changes, spending, publishing/deployment/licensing or irreversible actions; continue
+unblocked work. Local verified commits are useful; no push without authorization.
 
 <a id="active-gate-order-and-budgets"></a>
 
@@ -61,7 +60,7 @@ The native Metal recorder stays in G3t. The later dedicated performance phase ow
 - [ ] **G3b — functional engine frame runtime.** Display-link targets drive Mac/iOS/browser presentation; world/render
   work is off Apple's main thread, at most two frames are in flight, interpolation is on GPU and acquisition is late.
   Core owns clock/lane; thrum-render owns `FrameHost`, slots, tokens, completion and history without game schema.
-  Submitted Metal pause/replacement and six headless Chrome function rows pass; live P/loss, actual tab and simulator lifecycle remain; a long Chrome run lost its GPU silently. Instrument latency/present intervals;
+  Metal pause/replacement and eight Chrome function rows pass. Browser loss keeps authority/input live without GPU calls; reconstruction, actual tabs, live Mac P/loss and simulator lifecycle remain. Instrument latency/present intervals;
   visible stutter, dropped frames and hitches trigger investigation. [Quiet frame figures and later comparisons](evidence/render/V1-BOUNDED-FRAMES-2026-11-04.md)
   remain baselines; wgpu frame allocation is not a gate or reason to bring native work forward.
 - [ ] **G3s — physical sky, Sun and atmosphere.** Hillaire (2020) transmittance, multiple-scattering, sky-view and aerial
@@ -100,13 +99,12 @@ The native Metal recorder stays in G3t. The later dedicated performance phase ow
 
 ## Working constraints
 
-Choose data layout, ownership, scheduling and hardware seams by best practice before entrenching APIs. Reuse hot-path
-storage and keep one publication spine, one job graph and scalar references for specialized kernels. Performance claims
-need measurements, but building does not wait for benchmarks. Correctness, oracle tolerance and visual review remain
-blocking for their changes. Keep validate-at-admission, checked identities, pipeline closure and temporal history.
-Use [engine-contributor](../.agents/skills/engine-contributor/SKILL.md), scoped checks and `./dev check`; each capability
-records functional, visual and device evidence separately. Evidence stays one compact page per gate. Shrink existing
-plan/ledger/evidence rather than growing process; the dated owner performance decision is the authorized new record.
+Choose layout, ownership, scheduling and hardware seams by best practice. Reuse hot storage; keep one publication
+spine/job graph and scalar kernel references. Measure claimed wins; building does not wait for benchmarks.
+Correctness/oracle/visual checks remain blocking. Preserve admission validation, checked IDs, pipeline closure and
+history. Use [engine-contributor](../.agents/skills/engine-contributor/SKILL.md), scoped checks and `./dev check`.
+Record function/visual/device evidence separately; shrink existing plan/ledger/evidence. One compact evidence page
+per gate; the dated performance decision is the authorized new record.
 
 ## After V1 and parked work
 

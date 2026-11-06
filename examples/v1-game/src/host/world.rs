@@ -26,6 +26,13 @@ pub(super) enum WorldPort {
 }
 
 impl WorldPort {
+    #[cfg_attr(
+        target_arch = "wasm32",
+        expect(
+            clippy::unused_self,
+            reason = "the shared world-port method dispatches native threaded variants; Wasm currently retains only inline"
+        )
+    )]
     pub(super) fn is_threaded(&self) -> bool {
         #[cfg(not(target_arch = "wasm32"))]
         {
@@ -137,6 +144,13 @@ impl WorldPort {
         }
     }
 
+    #[cfg_attr(
+        target_arch = "wasm32",
+        expect(
+            clippy::unnecessary_wraps,
+            reason = "the shared lifecycle boundary must refuse native threaded variants, which Wasm excludes"
+        )
+    )]
     pub(super) fn inline_lifecycle(&mut self) -> Result<&mut WorldDriver, String> {
         match self {
             Self::Inline(driver) => Ok(driver),

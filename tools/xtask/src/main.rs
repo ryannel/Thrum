@@ -43,6 +43,22 @@ fn python(args: &[&str]) -> TaskResult {
     )
 }
 
+fn check_web() -> TaskResult {
+    cargo(&[
+        "clippy",
+        "--locked",
+        "--offline",
+        "--package",
+        "v1-game",
+        "--lib",
+        "--target",
+        "wasm32-unknown-unknown",
+        "--",
+        "-D",
+        "warnings",
+    ])
+}
+
 fn baseline_inventory() -> TaskResult {
     if !cfg!(target_os = "macos") {
         return Err("G0 baseline inventory requires the named M-series Mac".into());
@@ -137,22 +153,13 @@ fn main() -> TaskResult {
     }
     match args.first().map_or("help", String::as_str) {
         "help" | "--help" | "-h" => println!(
-            "Thrum contributor commands:\n  check                  Repository guard, guard tests, fmt, Clippy, Rust tests (including Mac Metal), game Wasm compile\n  check-docs             Links, metadata, design hashes and crate policy\n  baseline-inventory     Run G0 fixed budget baselines and list absent consumers on the M-series Mac\n  check-web              Compile the V1 game for wasm32-unknown-unknown\n  check-mobile-core      Compile the portable core for ARM64 iOS, iOS simulator and Android\n  fmt                    Apply rustfmt\n  refresh-design-hashes  Refresh current digests after reviewing design changes"
+            "Thrum contributor commands:\n  check                  Repository guard, guard tests, fmt, Clippy, Rust tests (including Mac Metal), game Wasm Clippy\n  check-docs             Links, metadata, design hashes and crate policy\n  baseline-inventory     Run G0 fixed budget baselines and list absent consumers on the M-series Mac\n  check-web              Lint/compile the V1 game for wasm32-unknown-unknown\n  check-mobile-core      Compile the portable core for ARM64 iOS, iOS simulator and Android\n  fmt                    Apply rustfmt\n  refresh-design-hashes  Refresh current digests after reviewing design changes"
         ),
         "check-docs" => python(&["scripts/repo_check.py"])?,
         "baseline-inventory" => baseline_inventory()?,
         "refresh-design-hashes" => python(&["scripts/design_hashes.py", "--write"])?,
         "fmt" => cargo(&["fmt", "--all"])?,
-        "check-web" => cargo(&[
-            "check",
-            "--locked",
-            "--offline",
-            "--package",
-            "v1-game",
-            "--lib",
-            "--target",
-            "wasm32-unknown-unknown",
-        ])?,
+        "check-web" => check_web()?,
         "check-mobile-core" => {
             for target in [
                 "aarch64-apple-ios",
@@ -192,16 +199,7 @@ fn main() -> TaskResult {
                 "-D",
                 "warnings",
             ])?;
-            cargo(&[
-                "check",
-                "--locked",
-                "--offline",
-                "--package",
-                "v1-game",
-                "--lib",
-                "--target",
-                "wasm32-unknown-unknown",
-            ])?;
+            check_web()?;
             cargo(&["test", "--locked", "--offline", "--workspace"])?;
         }
         other => return Err(format!("unknown command {other:?}; see ./dev help").into()),

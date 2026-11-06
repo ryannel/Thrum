@@ -6,10 +6,10 @@ Cargo comes first on PATH. PowerShell users can use `./dev.ps1` with the same co
 | Command | What it does |
 | --- | --- |
 | `./dev help` | List implemented contributor commands |
-| `./dev check` | Repository checks and their tests, rustfmt, Clippy, workspace tests (including Mac Metal) and V1 game Wasm compile |
+| `./dev check` | Repository checks and their tests, rustfmt, Clippy, workspace tests (including Mac Metal) and V1 game Wasm Clippy |
 | `./dev check-docs` | Local Markdown links/anchors, skill metadata, maturity hashes and dependency policy |
 | `./dev baseline-inventory` | Run the G0 fixed budget baselines on the M-series Mac and list absent consumers |
-| `./dev check-web` | Compile the V1 game for `wasm32-unknown-unknown` |
+| `./dev check-web` | Lint/compile the V1 game for `wasm32-unknown-unknown` |
 | `./dev check-mobile-core` | Compile the portable core for ARM64 iOS device, iOS simulator and Android |
 | `./dev fmt` | Apply rustfmt |
 | `./dev refresh-design-hashes` | Explicitly refresh current design digests after reviewing a design edit |

@@ -51,7 +51,10 @@ impl SceneSource<SourceTick> for Policy {
 
 type Host = FrameHost<StaticWorld, Policy>;
 
-async fn gpu(instance: &wgpu::Instance, generation: u64) -> (DeviceCapabilities, wgpu::Queue) {
+pub(super) async fn gpu(
+    instance: &wgpu::Instance,
+    generation: u64,
+) -> (DeviceCapabilities, wgpu::Queue) {
     let adapter = instance
         .request_adapter(&wgpu::RequestAdapterOptions::default())
         .await
@@ -98,7 +101,7 @@ async fn host(capabilities: &DeviceCapabilities, queue: &wgpu::Queue) -> Host {
     .expect("host")
 }
 
-fn surface() -> SurfaceProfile {
+pub(super) fn surface() -> SurfaceProfile {
     SurfaceProfile {
         format: wgpu::TextureFormat::Rgba8Unorm,
         extent: [64, 64],
