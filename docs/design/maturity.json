@@ -480,7 +480,7 @@
         "mac": "owner_quiet_91ad52d_baseline_recorded_lifecycle_open",
         "windows": "not_run",
         "browser": "Chrome156_M3Max_Metal_headless_10_rows_pass;_actual_tab_open",
-        "ios": "not_run",
+        "ios": "618b5f7_simulator_build_link_pass;_app_container_RPC_timeout90s_and15s;_function_and_lifecycle_unqualified_no_timings",
         "android": "not_run"
       },
       "diagnostic_measurement": "Quiet/newer history: V1-BOUNDED-FRAMES-2026-11-04.md. CPU/allocations/cadence are tripwires, not gates; lifecycle remains open.",
