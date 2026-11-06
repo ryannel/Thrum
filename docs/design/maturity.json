@@ -81,9 +81,9 @@
       ]
     },
     "G3s_first_light": {
-      "implementation": "partial_physical_LUTs_sun_disk_diffuse_light_and_live_view_exposure",
-      "functional_validation": "Mac_Metal_capture_and_dawn_dusk_regressions_passed_full_dev_check_green",
-      "experienced_quality": "agent_reviewed_sky_gradient_and_sweep;_twilight_scene_dark_grid_moire_open",
+      "implementation": "partial_physical_LUTs_scaled_half_storage_sun_and_camera_exposure",
+      "functional_validation": "Metal_known_radiance_units_six_angle_finite_readbacks_and_full_dev_check_pass",
+      "experienced_quality": "agent_reviewed_storage_visual_regression;_twilight_dark_grid_moire_open",
       "platform_performance": {
         "mac": "recorded_GPU_baseline_not_gate_oracle_and_visuals_open",
         "browser": "not_run",

@@ -17,7 +17,8 @@ fn diffuse_main(@builtin(local_invocation_index) index: u32) {
         let radius=sqrt(max(0.0,1.0-mu*mu));
         let direction=vec3(radius*cos(phi),mu,radius*sin(phi));
         let uv=sky_uv(direction,atmosphere.sun_lux.xyz);
-        sum+=textureSampleLevel(sky,lut_sampler,uv,0.0).rgb*(mu*2.0*PI/256.0);
+        let radiance=textureSampleLevel(sky,lut_sampler,uv,0.0).rgb/SKY_LUT_GAIN;
+        sum+=radiance*(mu*2.0*PI/256.0);
     }
     irradiance[index]=sum;
     workgroupBarrier();

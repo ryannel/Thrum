@@ -48,7 +48,7 @@ fn aerial_main(@builtin(global_invocation_id) id: vec3<u32>) {
                 let single = (vec3(5.802e-6, 13.558e-6, 33.100e-6) * exp(-ah / 8000.0) * rayleigh_phase
                     + vec3(3.996e-6) * exp(-ah / 1200.0) * mie_phase) * solar_transmittance(p, sun);
                 let sun_mu = dot(normalize(p + vec3(0.0, R, 0.0)), sun);
-                let multiple = textureSampleLevel(multiple_scattering, lut_sampler, vec2(sun_mu * 0.5 + 0.5, ah / H), 0.0).rgb;
+                let multiple = textureSampleLevel(multiple_scattering, lut_sampler, vec2(sun_mu * 0.5 + 0.5, ah / H), 0.0).rgb / MULTIPLE_LUT_GAIN;
                 radiance += throughput * safe_segment(single + scattering(ah) * multiple, ext, dt);
                 throughput *= exp(-ext * dt);
             }

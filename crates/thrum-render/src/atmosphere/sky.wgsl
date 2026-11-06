@@ -13,7 +13,7 @@ struct SkyOutput { @location(0) colour: vec4<f32>, @location(1) motion: vec2<f32
     let sun=atmosphere.sun_lux.xyz;
     let uv=sky_uv(direction,sun);
     let size=vec2<f32>(textureDimensions(sky));
-    var radiance=textureSampleLevel(sky,lut_sampler,clamp(uv,0.5/size,1.0-0.5/size),0.0).rgb;
+    var radiance=textureSampleLevel(sky,lut_sampler,clamp(uv,0.5/size,1.0-0.5/size),0.0).rgb/SKY_LUT_GAIN;
     let angular_radius=0.00465421;
     let cosine=dot(direction,sun);
     // Approximate coverage in angular space. A cosine derivative expands the
