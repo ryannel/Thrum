@@ -49,7 +49,6 @@ const VIEW_BYTES: usize = 160;
 const VIEW_SLOTS: u32 = 2;
 const LIGHT_BYTES: usize = 64;
 pub(crate) const PRE_EXPOSURE: f32 = 1.0 / 1024.0;
-const DISPLAY_BYTES: u64 = 16;
 const SCENE_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba16Float;
 const MOTION_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rg16Float;
 const CUBE_INDICES: [u16; 36] = [
@@ -427,7 +426,6 @@ pub struct PreparedSynthetic {
     material_bytes: u64,
     instance_bytes: u64,
     instance_count: u32,
-    display_gain: f32,
     exposure_bits: u32,
     local_light_bytes: u64,
     cluster_head_bytes: u64,
@@ -648,7 +646,7 @@ impl PreparedSynthetic {
     ) -> Result<Self, RenderError> {
         let device = capabilities.device();
         let generation = capabilities.generation();
-        let display_gain = checked_display_gain(exposure)?;
+        checked_display_gain(exposure)?;
         let (mut light_data, background, presentation_light_clamps) =
             pack_frame_lighting(lighting)?;
         // Prepare the declared shadow recipe even while the Sun is dark, so a
@@ -1177,7 +1175,6 @@ impl PreparedSynthetic {
             material_bytes,
             instance_bytes,
             instance_count,
-            display_gain,
             exposure_bits: exposure.to_bits(),
             local_light_bytes,
             cluster_head_bytes,
@@ -1398,8 +1395,6 @@ impl PreparedSynthetic {
     fn check_owner(&self, target: &OffscreenTarget) -> Result<(), RenderError> {
         if !Arc::ptr_eq(&self.owner, &target.prepared_owner)
             || target.generation != self.key.device_generation
-            || target.display_gain.to_bits() != self.display_gain.to_bits()
-            || target.exposure_bits != self.exposure_bits
         {
             return Err(RenderError::StaleTarget);
         }
@@ -1497,7 +1492,7 @@ impl PreparedSynthetic {
             },
         ];
         let mut prepared_keys = BTreeSet::from([self.key, self.display_key()]);
-        let directional = Self::append_frame_uniform_reads(&mut graph, &mut accesses)?;
+        let (directional, view) = Self::append_frame_uniform_reads(&mut graph, &mut accesses)?;
         if let Some(atmosphere) = self.atmosphere.as_ref() {
             atmosphere.append_graph(&mut graph, &mut prepared_keys, &mut accesses, directional)?;
         }
@@ -1601,7 +1596,7 @@ impl PreparedSynthetic {
             history_write,
             history_bytes,
         )?;
-        let output = self.append_display_passes(&mut graph, &scene, width, height)?;
+        let output = self.append_display_passes(&mut graph, &scene, &view, width, height)?;
         let scene_graph = graph.compile(self.key.device_generation, &prepared_keys)?;
         Self::append_readback_pass(&mut graph, &output, height, row_bytes)?;
         let readback_graph = graph.compile(self.key.device_generation, &prepared_keys)?;
@@ -1621,7 +1616,7 @@ impl PreparedSynthetic {
     fn append_frame_uniform_reads(
         graph: &mut FrameGraph,
         accesses: &mut Vec<Access>,
-    ) -> Result<ResourceId, GraphError> {
+    ) -> Result<(ResourceId, ResourceId), GraphError> {
         let directional = graph.resource(
             ResourceDescriptor::Buffer {
                 bytes: LIGHT_BYTES as u64,
@@ -1635,22 +1630,33 @@ impl PreparedSynthetic {
             kind: AccessKind::UniformRead,
             store: true,
         });
-        for bytes in [VIEW_BYTES as u64, AUX_BYTES as u64] {
-            let uniform = graph.resource(
-                ResourceDescriptor::Buffer {
-                    bytes,
-                    usage: wgpu::BufferUsages::UNIFORM,
-                },
-                ResourceScope::Imported { initialized: true },
-            )?;
-            accesses.push(Access {
-                resource: uniform,
-                range: 0..bytes,
-                kind: AccessKind::UniformRead,
-                store: true,
-            });
-        }
-        Ok(directional)
+        let view = graph.resource(
+            ResourceDescriptor::Buffer {
+                bytes: VIEW_BYTES as u64,
+                usage: wgpu::BufferUsages::UNIFORM,
+            },
+            ResourceScope::Imported { initialized: true },
+        )?;
+        accesses.push(Access {
+            resource: view.clone(),
+            range: 0..VIEW_BYTES as u64,
+            kind: AccessKind::UniformRead,
+            store: true,
+        });
+        let aux = graph.resource(
+            ResourceDescriptor::Buffer {
+                bytes: AUX_BYTES as u64,
+                usage: wgpu::BufferUsages::UNIFORM,
+            },
+            ResourceScope::Imported { initialized: true },
+        )?;
+        accesses.push(Access {
+            resource: aux,
+            range: 0..AUX_BYTES as u64,
+            kind: AccessKind::UniformRead,
+            store: true,
+        });
+        Ok((directional, view))
     }
 
     fn history_resources(
@@ -1748,6 +1754,7 @@ impl PreparedSynthetic {
         &self,
         graph: &mut FrameGraph,
         scene: &ResourceId,
+        view: &ResourceId,
         width: u32,
         height: u32,
     ) -> Result<ResourceId, RenderError> {
@@ -1765,13 +1772,6 @@ impl PreparedSynthetic {
             },
             ResourceScope::Transient,
         )?;
-        let display = graph.resource(
-            ResourceDescriptor::Buffer {
-                bytes: DISPLAY_BYTES,
-                usage: wgpu::BufferUsages::UNIFORM,
-            },
-            ResourceScope::Imported { initialized: true },
-        )?;
         graph.pass(Pass {
             name: "synthetic tone encode".into(),
             scope: PassScope::View(1),
@@ -1784,8 +1784,8 @@ impl PreparedSynthetic {
                     store: true,
                 },
                 Access {
-                    resource: display,
-                    range: 0..DISPLAY_BYTES,
+                    resource: view.clone(),
+                    range: 0..VIEW_BYTES as u64,
                     kind: AccessKind::UniformRead,
                     store: true,
                 },
@@ -2167,7 +2167,8 @@ impl PreparedSynthetic {
             )?
             .ok_or(RenderError::GraphPassMismatch)?;
         pass.set_pipeline(&self.display_pipeline);
-        pass.set_bind_group(0, &target.display, &[]);
+        let view_slot = usize::from(target.frame_revision & 1 != 0);
+        pass.set_bind_group(0, &target.display[view_slot], &[]);
         pass.draw(0..3, 0..1);
         Ok(())
     }
@@ -2209,7 +2210,7 @@ fn prepare_display_pipeline(
                 ty: wgpu::BindingType::Buffer {
                     ty: wgpu::BufferBindingType::Uniform,
                     has_dynamic_offset: false,
-                    min_binding_size: wgpu::BufferSize::new(DISPLAY_BYTES),
+                    min_binding_size: wgpu::BufferSize::new(VIEW_BYTES as u64),
                 },
                 count: None,
             },
@@ -2256,15 +2257,9 @@ fn prepare_display_group(
     device: &wgpu::Device,
     layout: &wgpu::BindGroupLayout,
     scene: &wgpu::TextureView,
-    gain: f32,
+    view: &wgpu::Buffer,
+    offset: u64,
 ) -> wgpu::BindGroup {
-    let mut bytes = [0; 16];
-    bytes[..4].copy_from_slice(&gain.to_le_bytes());
-    let uniform = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-        label: Some("synthetic checked display e/p"),
-        contents: &bytes,
-        usage: wgpu::BufferUsages::UNIFORM,
-    });
     device.create_bind_group(&wgpu::BindGroupDescriptor {
         label: Some("synthetic display inputs"),
         layout,
@@ -2275,7 +2270,11 @@ fn prepare_display_group(
             },
             wgpu::BindGroupEntry {
                 binding: 1,
-                resource: uniform.as_entire_binding(),
+                resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
+                    buffer: view,
+                    offset,
+                    size: wgpu::BufferSize::new(VIEW_BYTES as u64),
+                }),
             },
         ],
     })
@@ -2350,10 +2349,8 @@ pub struct OffscreenTarget {
     view: wgpu::TextureView,
     scene_view: wgpu::TextureView,
     motion_view: wgpu::TextureView,
-    display: wgpu::BindGroup,
+    display: [wgpu::BindGroup; 2],
     view_bind_group: wgpu::BindGroup,
-    display_gain: f32,
-    exposure_bits: u32,
     aux_buffer: wgpu::Buffer,
     shadow: Option<ShadowTarget>,
     depth: wgpu::TextureView,
@@ -2364,8 +2361,8 @@ pub struct OffscreenTarget {
     frame_revision: u64,
 }
 impl OffscreenTarget {
-    /// Allocate a nonempty bounded target and immutable display bind group from
-    /// one prepared view's generation/exposure, on the executor's device. The
+    /// Allocate a nonempty bounded target and display bind group from
+    /// one prepared view's generation, on the executor's device. The
     /// prepared view retains both pipelines across resize and additional targets.
     /// # Errors
     /// Refuses empty/overflowing targets or extents beyond the device limits.
@@ -2414,12 +2411,15 @@ impl OffscreenTarget {
             .texture(&ids.motion)
             .ok_or(RenderError::GraphPassMismatch)?
             .create_view(&wgpu::TextureViewDescriptor::default());
-        let display = prepare_display_group(
-            device,
-            &prepared.display_layout,
-            &scene_view,
-            prepared.display_gain,
-        );
+        let display = [0, u64::from(prepared.view_stride)].map(|offset| {
+            prepare_display_group(
+                device,
+                &prepared.display_layout,
+                &scene_view,
+                &prepared.view_buffer,
+                offset,
+            )
+        });
         let aux = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("synthetic target view aux"),
             contents: &prepared
@@ -2484,8 +2484,6 @@ impl OffscreenTarget {
             motion_view,
             display,
             view_bind_group,
-            display_gain: prepared.display_gain,
-            exposure_bits: prepared.exposure_bits,
             aux_buffer: aux,
             shadow,
             depth,
