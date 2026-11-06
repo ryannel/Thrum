@@ -33,11 +33,15 @@ fn fixture() -> (PathBuf, CookConfig) {
 }
 
 fn get(address: std::net::SocketAddr, target: &str) -> (u16, Vec<u8>, String) {
+    get_with(address, target, "Host: localhost\r\n")
+}
+
+fn get_with(address: std::net::SocketAddr, target: &str, headers: &str) -> (u16, Vec<u8>, String) {
     let mut stream = TcpStream::connect(address).expect("connect");
     stream
         .set_read_timeout(Some(Duration::from_secs(30)))
         .expect("timeout");
-    write!(stream, "GET {target} HTTP/1.1\r\nHost: localhost\r\n\r\n").expect("request");
+    write!(stream, "GET {target} HTTP/1.1\r\n{headers}\r\n").expect("request");
     let mut response = Vec::new();
     stream.read_to_end(&mut response).expect("response");
     let split = response
@@ -122,6 +126,47 @@ fn the_dev_server_serves_head_verified_products_and_long_polls() {
         waited < Duration::from_secs(10),
         "woken by publication, not timeout"
     );
+    drop(server);
+    cleanup(&root);
+}
+
+#[test]
+fn web_pages_cannot_read_the_dev_server() {
+    let (root, config) = fixture();
+    let store = AssetStore::new(&config.store);
+    let server =
+        DevServer::start("127.0.0.1:0", store, Arc::new(Publications::default())).expect("bind");
+    let address = server.address();
+    // DNS rebinding: the page's own host name arrives in Host.
+    assert_eq!(
+        get_with(address, "/head", "Host: evil.example:80\r\n").0,
+        421
+    );
+    assert_eq!(get_with(address, "/head", "").0, 421, "Host is required");
+    // A cross-origin page is refused outright, not merely denied CORS.
+    let (status, _, header) = get_with(
+        address,
+        "/head",
+        "Host: localhost\r\nOrigin: https://evil.example\r\n",
+    );
+    assert_eq!(status, 403);
+    assert!(!header.contains("Access-Control-Allow-Origin"));
+    // A loopback page (the browser game's dev host) is allowed by name, never by wildcard.
+    let (status, _, header) = get_with(
+        address,
+        "/head",
+        &format!(
+            "Host: 127.0.0.1:{}\r\nOrigin: http://localhost:5173\r\n",
+            address.port()
+        ),
+    );
+    assert_eq!(status, 204);
+    assert!(header.contains("Access-Control-Allow-Origin: http://localhost:5173"));
+    assert!(!header.contains("Access-Control-Allow-Origin: *"));
+    // Native clients send no Origin and get no CORS header.
+    let (status, _, header) = get(address, "/head");
+    assert_eq!(status, 204);
+    assert!(!header.contains("Access-Control"));
     drop(server);
     cleanup(&root);
 }

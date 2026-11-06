@@ -19,7 +19,7 @@ pub const CONTAINER_FORMAT: u32 = 1;
 /// Magic of the 64-byte `HEAD` record that selects the current manifest.
 pub const HEAD_MAGIC: [u8; 8] = *b"THRMHEAD";
 /// Current `HEAD` record version.
-pub const HEAD_FORMAT: u32 = 1;
+pub const HEAD_FORMAT: u32 = 2;
 /// Exact length of a `HEAD` record.
 pub const HEAD_LEN: usize = 64;
 

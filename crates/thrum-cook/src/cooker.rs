@@ -87,8 +87,6 @@ pub struct Cooker {
     /// Products whose bytes this process has verified against their names.
     verified: HashSet<ContentHash>,
     generation: u64,
-    /// Exclusive writer lock on the store, held for the cooker's lifetime.
-    _lock: std::fs::File,
 }
 
 impl Cooker {
@@ -105,18 +103,6 @@ impl Cooker {
         }
         let cas = Cas::open(&config.store, config.durability)?;
         std::fs::create_dir_all(config.store.join("actions"))?;
-        // One writer per store: two publishers would both claim the next generation.
-        let lock = std::fs::File::options()
-            .create(true)
-            .truncate(false)
-            .write(true)
-            .open(config.store.join("LOCK"))?;
-        lock.try_lock().map_err(|error| match error {
-            std::fs::TryLockError::WouldBlock => {
-                CookError::Io(std::io::Error::other("store is locked by another cooker"))
-            }
-            std::fs::TryLockError::Error(error) => CookError::Io(error),
-        })?;
         let stat = StatCache::load(&config.store.join("stat-cache.bin"));
         let mut cooker = Self {
             config,
@@ -127,7 +113,6 @@ impl Cooker {
             published: BTreeMap::new(),
             verified: HashSet::new(),
             generation: 0,
-            _lock: lock,
         };
         cooker.recover();
         Ok(cooker)
@@ -473,6 +458,7 @@ impl Cooker {
         Manifest::parse(thrum_asset::ProductBytes::copy_from(&bytes))?;
         let manifest = self.cas.put(&bytes)?;
         let head = Head {
+            epoch: self.cas.epoch(),
             generation,
             manifest,
         };
