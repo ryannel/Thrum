@@ -98,6 +98,12 @@ impl Probe {
                     binding: 4,
                     resource: wgpu::BindingResource::Sampler(&sampler),
                 },
+                wgpu::BindGroupEntry {
+                    binding: 5,
+                    // Indirect ground paths are excluded from the first-order
+                    // observation, alongside the zero multiple-scattering input.
+                    resource: wgpu::BindingResource::TextureView(&views[1]),
+                },
             ],
         });
         let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
@@ -136,6 +142,7 @@ impl Probe {
             for index in 0..2 {
                 self.dispatch(&mut encoder, index, &self.atmosphere.groups[index]);
             }
+            self.dispatch(&mut encoder, 3, &self.atmosphere.groups[3]);
         }
         self.dispatch(&mut encoder, 2, &self.atmosphere.groups[2]);
         full.encode(&mut encoder, &self.reader);
@@ -189,7 +196,12 @@ impl Probe {
         pass.set_pipeline(&self.atmosphere.compute[index]);
         pass.set_bind_group(0, group, &[]);
         let [width, height] = EXTENTS[index];
-        pass.dispatch_workgroups(width.div_ceil(8), height.div_ceil(8), 1);
+        if index == 3 {
+            // Ground irradiance cooperates across 64 lanes per solar entry.
+            pass.dispatch_workgroups(width, 1, 1);
+        } else {
+            pass.dispatch_workgroups(width.div_ceil(8), height.div_ceil(8), 1);
+        }
     }
 }
 

@@ -7,7 +7,7 @@
 | Storage/units | Six-angle LUT readings finite; known πL × Sun diffuse regression | Scoped pass |
 | Incident camera | GPU calibration/history/cancellation/resize and adjacent-tick probes | Pass |
 | SDR shoulder | GPU f64 reference within 1 byte; old default pixels bitwise exact; full `./dev check` | Pass |
-| Transport | Independent f64 quadrature/all-orders CPU; 198 matched-medium Metal rays | Ground light/accuracy open |
+| Transport | 198 matched-medium rays; horizon separation and reflected sky boundary | Model/accuracy open |
 | Visible/live | Readable twilight; pastel contrast/grid aliasing open; live run got 0 display-link callbacks | Partial |
 
 ![Fixed solar cameras](g3s-first-light/solar-contact.png) · [1080p setting Sun](g3s-first-light/sun-facing-1080p.png) · [96-frame solar sweep](g3s-first-light/solar-sweep.mp4)
@@ -17,8 +17,11 @@ retain identical CPU results across the horizon correction. At Sun 0°, green si
 below/above the curved horizon changes 9.30/0.36→1.04/0.99. Metal two-colour tests prohibit cross-half filtering
 at heights 0/2/100 km; tangent/pole/zenith-Sun/azimuth and 128B/160B ABI checks pass. LUT footprint/pass count
 stay unchanged. Ordinary sky errors are not uniformly improved; no whole-sky tolerance pass.
-32768 paths/ray (8 batches) leave 18 zero and 41 sparse rows unresolved. Missing indirect ground light remains:
-Sun −3°, ground −15°, green GPU 5.51e−8 versus CPU 3.15e−5 ±1.49e−6 batch SE (L/E0 sr⁻¹).
+A profile-cached GroundE table adds reflected sky light at the actual planet hit: 1 KiB logical texels, one
+cooperative profile kernel, no new ordinary-frame kernel. Controlled Metal πL/zero/scaling/terminator/cache tests pass.
+All 198 first-order and 144 sky-side full values stay exact. Ground median sampled-MC disagreement at Sun 45°/0°
+changes 6.98%/92.09%→0.24%/3.56%; at −3°/−6° it remains 16.71%/22.16%. Adverse horizon rows remain
+(including −6° blue +188.68%). 32768 paths/ray leave 18 zero and 41 sparse rows unresolved; no whole-sky pass.
 LUT gains 65536/1024 preserve twilight; C250 metering uses no readback and follows submitted history.
 
 The game explicitly selects `NeutralHighlights`; diagnostic `Reinhard` remains default. Khronos highlight
@@ -28,4 +31,4 @@ This is headroom, not a physical-accuracy metric. Root/independent review find s
 the brighter pastel look and photographic contrast stay open. Keep calibration and resolve physics before grading.
 
 Q/E turns, R/F tilts, brackets change time. The eight-second day sweep cannot qualify real-time cadence. Source
-hashes, raw frames/readings and logs: `tmp/g3s-storage/`, `tmp/g3s-exposure/`, `tmp/g3s-shoulder/`, `tmp/g3s-reference/`, `tmp/g3s-horizon/`.
+hashes, raw frames/readings and logs: `tmp/g3s-storage/`, `tmp/g3s-exposure/`, `tmp/g3s-shoulder/`, `tmp/g3s-reference/`, `tmp/g3s-horizon/`, `tmp/g3s-ground/`.

@@ -10,24 +10,32 @@ use super::AtmosphereFrame;
 #[cfg(all(test, not(target_arch = "wasm32")))]
 mod tests;
 
-pub(super) const EXTENTS: [[u32; 2]; 3] = [[256, 64], [32, 32], [192, 108]];
+pub(super) const EXTENTS: [[u32; 2]; 4] = [[256, 64], [32, 32], [192, 108], [128, 1]];
 pub(super) const AERIAL_EXTENT: [u32; 3] = [32, 32, 33];
+const LUT_SHADER: &str = concat!(
+    include_str!("common.wgsl"),
+    "\n",
+    include_str!("lut.wgsl"),
+    "\n",
+    include_str!("ground.wgsl")
+);
 const UNIFORM_BYTES: u64 = 128;
 const TRANSPORT_VALID: u8 = 1;
 const SKY_VALID: u8 = 2;
 const DIFFUSE_VALID: u8 = 4;
 const AERIAL_VALID: u8 = 8;
+const GROUND_VALID: u8 = 16;
 
 pub(crate) struct AtmospherePrepared {
     pub(super) generation: u64,
     pub(super) epoch: u64,
-    pub(super) textures: [wgpu::Texture; 3],
+    pub(super) textures: [wgpu::Texture; 4],
     pub(super) aerial_textures: [wgpu::Texture; 2],
     aerial_views: [wgpu::TextureView; 2],
     aerial_sampler: wgpu::Sampler,
     uniform: wgpu::Buffer,
-    compute: [wgpu::ComputePipeline; 3],
-    groups: [wgpu::BindGroup; 3],
+    compute: [wgpu::ComputePipeline; 4],
+    groups: [wgpu::BindGroup; 4],
     sky_pipeline: wgpu::RenderPipeline,
     sky_group: wgpu::BindGroup,
     diffuse_pipeline: wgpu::ComputePipeline,
@@ -110,15 +118,13 @@ impl AtmospherePrepared {
         });
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("atmosphere LUT integration"),
-            source: wgpu::ShaderSource::Wgsl(
-                concat!(include_str!("common.wgsl"), "\n", include_str!("lut.wgsl")).into(),
-            ),
+            source: wgpu::ShaderSource::Wgsl(LUT_SHADER.into()),
         });
-        let prepared: [(wgpu::ComputePipeline, wgpu::BindGroup); 3] =
+        let prepared: [(wgpu::ComputePipeline, wgpu::BindGroup); 4] =
             std::array::from_fn(|index| {
                 prepare_compute(device, index, &uniform, &views, &sampler, &shader)
             });
-        let [first, second, third] = prepared;
+        let [first, second, third, ground] = prepared;
         let (sky_pipeline, sky_group) = prepare_sky(device, &uniform, &views, &sampler);
         let (diffuse_pipeline, diffuse_group) =
             prepare_diffuse(device, &uniform, &views[2], &sampler, directional);
@@ -132,8 +138,8 @@ impl AtmospherePrepared {
             aerial_views,
             aerial_sampler,
             uniform,
-            compute: [first.0, second.0, third.0],
-            groups: [first.1, second.1, third.1],
+            compute: [first.0, second.0, third.0, ground.0],
+            groups: [first.1, second.1, third.1, ground.1],
             sky_pipeline,
             sky_group,
             diffuse_pipeline,
@@ -213,7 +219,7 @@ impl AtmospherePrepared {
     }
 
     pub(crate) fn commit(&mut self) {
-        self.validity = TRANSPORT_VALID | SKY_VALID | DIFFUSE_VALID | AERIAL_VALID;
+        self.validity = TRANSPORT_VALID | SKY_VALID | DIFFUSE_VALID | AERIAL_VALID | GROUND_VALID;
     }
 
     pub(crate) fn key(&self, index: u32) -> PipelineKey {
@@ -247,6 +253,7 @@ impl AtmospherePrepared {
             || (index == 2 && self.validity & SKY_VALID != 0)
             || (index == 3 && self.validity & DIFFUSE_VALID != 0)
             || (index == 4 && self.validity & AERIAL_VALID != 0)
+            || (index == 5 && self.validity & GROUND_VALID != 0)
         {
             return Ok(());
         }
@@ -267,6 +274,12 @@ impl AtmospherePrepared {
                 AERIAL_EXTENT[1].div_ceil(8),
                 1,
             );
+            return Ok(());
+        }
+        if index == 5 {
+            compute.set_pipeline(&self.compute[3]);
+            compute.set_bind_group(0, &self.groups[3], &[]);
+            compute.dispatch_workgroups(EXTENTS[3][0], 1, 1);
             return Ok(());
         }
         compute.set_pipeline(&self.compute[index]);
@@ -361,7 +374,7 @@ fn prepare_diffuse(
 fn prepare_aerial(
     device: &wgpu::Device,
     uniform: &wgpu::Buffer,
-    views: &[wgpu::TextureView; 3],
+    views: &[wgpu::TextureView; 4],
     aerial: &[wgpu::TextureView; 2],
     sampler: &wgpu::Sampler,
 ) -> (wgpu::ComputePipeline, wgpu::BindGroup) {
@@ -483,7 +496,7 @@ fn prepare_compute(
     device: &wgpu::Device,
     index: usize,
     uniform: &wgpu::Buffer,
-    views: &[wgpu::TextureView; 3],
+    views: &[wgpu::TextureView; 4],
     sampler: &wgpu::Sampler,
     shader: &wgpu::ShaderModule,
 ) -> (wgpu::ComputePipeline, wgpu::BindGroup) {
@@ -493,12 +506,22 @@ fn prepare_compute(
         binding: 0,
         resource: uniform.as_entire_binding(),
     }];
-    for (input, view) in views.iter().enumerate().take(index) {
-        let binding = u32::try_from(input + 1).expect("at most two LUT inputs");
+    let inputs: &[usize] = match index {
+        0 => &[],
+        1 => &[0],
+        2 => &[0, 1, 3],
+        _ => &[0, 1],
+    };
+    for &input in inputs {
+        let binding = if input == 3 {
+            5
+        } else {
+            u32::try_from(input + 1).expect("two transport inputs")
+        };
         entries.push(sampled_entry(binding, visibility));
         bindings.push(wgpu::BindGroupEntry {
             binding,
-            resource: wgpu::BindingResource::TextureView(view),
+            resource: wgpu::BindingResource::TextureView(&views[input]),
         });
     }
     entries.push(wgpu::BindGroupLayoutEntry {
@@ -535,7 +558,14 @@ fn prepare_compute(
         label: Some("atmosphere LUT"),
         layout: Some(&pipeline_layout),
         module: shader,
-        entry_point: Some(["transmittance_main", "multiple_main", "sky_main"][index]),
+        entry_point: Some(
+            [
+                "transmittance_main",
+                "multiple_main",
+                "sky_main",
+                "ground_main",
+            ][index],
+        ),
         compilation_options: wgpu::PipelineCompilationOptions::default(),
         cache: None,
     });
@@ -550,7 +580,7 @@ fn prepare_compute(
 fn prepare_sky(
     device: &wgpu::Device,
     uniform: &wgpu::Buffer,
-    views: &[wgpu::TextureView; 3],
+    views: &[wgpu::TextureView; 4],
     sampler: &wgpu::Sampler,
 ) -> (wgpu::RenderPipeline, wgpu::BindGroup) {
     let visibility = wgpu::ShaderStages::FRAGMENT;

@@ -35,7 +35,11 @@ fn sky_mapping_matches_planet_horizon_and_angular_spans() {
 fn shipping_atmosphere_shader_layouts_keep_mapping_and_view_aux_separate() {
     let common = include_str!("../common.wgsl");
     for source in [
-        format!("{common}\n{}", include_str!("../lut.wgsl")),
+        format!(
+            "{common}\n{}\n{}",
+            include_str!("../lut.wgsl"),
+            include_str!("../ground.wgsl")
+        ),
         format!("{common}\n{}", include_str!("../sky.wgsl")),
         format!("{common}\n{}", include_str!("../diffuse.wgsl")),
         format!("{common}\n{}", include_str!("../aerial.wgsl")),

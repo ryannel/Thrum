@@ -2,6 +2,7 @@
 @group(0) @binding(2) var multiple_scattering: texture_2d<f32>;
 @group(0) @binding(3) var output_lut: texture_storage_2d<rgba16float,write>;
 @group(0) @binding(4) var lut_sampler: sampler;
+@group(0) @binding(5) var ground_irradiance: texture_2d<f32>;
 fn sun_transmittance(p: vec3<f32>, sun: vec3<f32>) -> vec3<f32> {
     let h = altitude(p);
     let up = normalize(p+vec3(0.0,R,0.0));
@@ -63,15 +64,10 @@ fn multiple_main(@builtin(global_invocation_id) id: vec3<u32>) {
     let multiple=luminance/max(vec3(0.001),vec3(1.0)-feedback);
     textureStore(output_lut,vec2<i32>(id.xy),vec4(multiple*MULTIPLE_LUT_GAIN,1.0));
 }
-@compute @workgroup_size(8,8)
-fn sky_main(@builtin(global_invocation_id) id: vec3<u32>) {
-    let size=textureDimensions(output_lut);
-    if any(id.xy>=size) { return; }
-    let ray=sky_view_ray((vec2<f32>(id.xy)+0.5)/vec2<f32>(size),id.y);
-    let sun=atmosphere.sun_lux.xyz;
-    let direction=ray.direction;
-    let h=atmosphere.camera_altitude.w;
-    let distance=ray.distance;
+struct SkyTransport { radiance: vec3<f32>, transmission: vec3<f32> }
+// Shared unit-Sun volume transport. No terminal ground, disk or unscattered beam;
+// GroundE integrates this same body upward from h=0 without depending on Sky.
+fn sky_transport(h: f32, direction: vec3<f32>, sun: vec3<f32>, distance: f32) -> SkyTransport {
     let cosine=dot(direction,sun);
     let rayleigh_phase=3.0*(1.0+cosine*cosine)/(16.0*PI);
     let g=0.8;
@@ -93,10 +89,26 @@ fn sky_main(@builtin(global_invocation_id) id: vec3<u32>) {
         luminance+=throughput*safe_segment(single+scattering(ah)*multiple,ext,dt);
         throughput*=exp(-ext*dt);
     }
+    return SkyTransport(luminance,throughput);
+}
+@compute @workgroup_size(8,8)
+fn sky_main(@builtin(global_invocation_id) id: vec3<u32>) {
+    let size=textureDimensions(output_lut);
+    if any(id.xy>=size) { return; }
+    let ray=sky_view_ray((vec2<f32>(id.xy)+0.5)/vec2<f32>(size),id.y);
+    let sun=atmosphere.sun_lux.xyz;
+    let direction=ray.direction;
+    let h=atmosphere.camera_altitude.w;
+    let distance=ray.distance;
+    let transport=sky_transport(h,direction,sun,distance);
+    var luminance=transport.radiance;
     if ray.terminal_ground!=0u {
         let p=vec3(0.0,h,0.0)+direction*distance;
         let n=normalize(p+vec3(0.0,R,0.0));
-        luminance+=throughput*sun_transmittance(p+n*0.1,sun)*max(0.0,dot(n,sun))*(0.1/PI);
+        let local_sun_mu=dot(n,sun);
+        let direct=sun_transmittance(p+n*0.1,sun)*max(0.0,local_sun_mu);
+        let indirect=textureSampleLevel(ground_irradiance,lut_sampler,ground_irradiance_uv(local_sun_mu),0.0).rgb/GROUND_IRRADIANCE_GAIN;
+        luminance+=transport.transmission*(direct+indirect)*(0.1/PI);
     }
     textureStore(output_lut,vec2<i32>(id.xy),vec4(luminance*SKY_LUT_GAIN,1.0));
 }

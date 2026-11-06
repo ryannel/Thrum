@@ -10,14 +10,37 @@ struct Atmosphere {
 const PI: f32 = 3.14159265359;
 const R: f32 = 6371000.0;
 const H: f32 = 100000.0;
-// Encode only LUT RGB stores; all transport math and consumers use per-unit
-// physical radiance. Fixed powers of two preserve normal-range fp16 precision
-// while retaining much fainter twilight values. Recheck these gains if the
-// fixed Earth profile, phase function or ground albedo changes: the full
-// multiple LUT peaks below 0.05 (encoded <3277), and sky radiance is bounded
-// by phase <=3.582, multiple <0.05 and ground <=0.1/PI (encoded <3752).
+// LUT RGB is encoded only at storage boundaries; transport stays per unit Sun.
+// For this unchanged M<0.05 closure, upward L<=3.582+0.05, so GroundE<=pi*3.632
+// and rho=0.1 gives terminal L<=0.1/pi+0.1*3.632. Thus encoded GroundE<11685
+// and full Sky<4125 fit fp16. These fixed-profile envelopes do not certify the
+// isotropic multiple-scattering/ground-feedback approximation; recheck on change.
 const MULTIPLE_LUT_GAIN: f32 = 65536.0;
 const SKY_LUT_GAIN: f32 = 1024.0;
+const GROUND_IRRADIANCE_GAIN: f32 = 1024.0;
+const GROUND_SUN_ENTRIES: u32 = 128u;
+const GROUND_MU_SAMPLES: u32 = 16u;
+const GROUND_AZIMUTH_SAMPLES: u32 = 16u;
+fn ground_sun_mu(entry: u32) -> f32 {
+    if entry==0u { return -1.0; }
+    if entry==GROUND_SUN_ENTRIES-1u { return 1.0; }
+    let t=2.0*f32(entry)/f32(GROUND_SUN_ENTRIES-1u)-1.0;
+    return sin(sign(t)*t*t*PI*0.5);
+}
+fn ground_irradiance_uv(mu: f32) -> vec2<f32> {
+    let elevation=asin(clamp(mu,-1.0,1.0));
+    let q=sign(elevation)*sqrt(abs(elevation)/(PI*0.5));
+    let unit=(q+1.0)*0.5;
+    return vec2((0.5+f32(GROUND_SUN_ENTRIES-1u)*unit)/f32(GROUND_SUN_ENTRIES),0.5);
+}
+// Uniform midpoint mu/azimuth quadrature on the upward horizontal hemisphere.
+// The weight already contains cos(theta): sum weights=pi for constant radiance.
+fn ground_hemisphere_sample(index: u32, mu_samples: u32, azimuth_samples: u32) -> vec4<f32> {
+    let mu=(f32(index/azimuth_samples)+0.5)/f32(mu_samples);
+    let phi=2.0*PI*(f32(index%azimuth_samples)+0.5)/f32(azimuth_samples);
+    let radial=sqrt(max(0.0,1.0-mu*mu));
+    return vec4(radial*cos(phi),mu,radial*sin(phi),mu*2.0*PI/f32(mu_samples*azimuth_samples));
+}
 fn altitude(p: vec3<f32>) -> f32 {
     let n = dot(p,p)+2.0*R*p.y;
     return max(0.0,n/(sqrt(max(0.0,R*R+n))+R));

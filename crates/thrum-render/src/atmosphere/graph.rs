@@ -9,7 +9,7 @@ use super::gpu::{AERIAL_EXTENT, AtmospherePrepared, EXTENTS};
 
 const LUT_OWNER_BASE: u64 = 0x4154_4d4f;
 const AERIAL_OWNER_BASE: u64 = 0x4154_4d60;
-const _: () = assert!(AERIAL_OWNER_BASE >= LUT_OWNER_BASE + 3);
+const _: () = assert!(AERIAL_OWNER_BASE >= LUT_OWNER_BASE + 4);
 
 impl AtmospherePrepared {
     pub(crate) fn append_graph(
@@ -19,7 +19,6 @@ impl AtmospherePrepared {
         forward_accesses: &mut Vec<Access>,
         directional: crate::graph::ResourceId,
     ) -> Result<(), GraphError> {
-        let mut resources: Vec<crate::graph::ResourceId> = Vec::with_capacity(3);
         let uniform = graph.resource(
             ResourceDescriptor::Buffer {
                 bytes: 128,
@@ -27,50 +26,70 @@ impl AtmospherePrepared {
             },
             ResourceScope::Imported { initialized: true },
         )?;
-        for (index, [width, height]) in EXTENTS.into_iter().enumerate() {
-            let resource = graph.resource(
-                ResourceDescriptor::Texture {
-                    width,
-                    height,
-                    layers: 1,
-                    mips: 1,
-                    samples: 1,
-                    format: self.textures[index].format(),
-                    usage: self.textures[index].usage(),
-                },
-                ResourceScope::Persistent {
-                    owner: LUT_OWNER_BASE + index as u64,
-                    epoch: self.epoch,
-                    initialized: false,
-                },
-            )?;
+        let resources = EXTENTS
+            .into_iter()
+            .enumerate()
+            .map(|(index, [width, height])| {
+                graph.resource(
+                    ResourceDescriptor::Texture {
+                        width,
+                        height,
+                        layers: 1,
+                        mips: 1,
+                        samples: 1,
+                        format: self.textures[index].format(),
+                        usage: self.textures[index].usage(),
+                    },
+                    ResourceScope::Persistent {
+                        owner: LUT_OWNER_BASE + index as u64,
+                        epoch: self.epoch,
+                        initialized: false,
+                    },
+                )
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        // Resource indices remain T=0,M=1,Sky=2; GroundE=3 is appended. Its
+        // producer runs before Sky and has no dependency on the camera sky.
+        for index in [0_usize, 1, 3, 2] {
             let mut accesses = vec![Access {
                 resource: uniform.clone(),
                 range: 0..128,
                 kind: AccessKind::UniformRead,
                 store: true,
             }];
-            for input in &resources {
+            let inputs: &[usize] = match index {
+                0 => &[],
+                1 => &[0],
+                2 => &[0, 1, 3],
+                _ => &[0, 1],
+            };
+            for &input in inputs {
                 accesses.push(Access {
-                    resource: input.clone(),
+                    resource: resources[input].clone(),
                     range: 0..1,
                     kind: AccessKind::SampledRead,
                     store: true,
                 });
             }
             accesses.push(Access {
-                resource: resource.clone(),
+                resource: resources[index].clone(),
                 range: 0..1,
                 kind: AccessKind::StorageWrite,
                 store: true,
             });
-            let key = self.key(u32::try_from(index).expect("three atmosphere LUTs"));
+            let role = if index == 3 {
+                5
+            } else {
+                u32::try_from(index).expect("three original atmosphere LUTs")
+            };
+            let key = self.key(role);
             keys.insert(key);
             graph.pass(Pass {
                 name: [
                     "atmosphere transmittance",
                     "atmosphere multiple scattering",
                     "atmosphere sky view",
+                    "atmosphere ground irradiance",
                 ][index]
                     .into(),
                 scope: PassScope::View(1),
@@ -78,7 +97,6 @@ impl AtmospherePrepared {
                 accesses,
                 external_side_effect: false,
             });
-            resources.push(resource);
         }
         let diffuse_key = self.key(3);
         keys.insert(diffuse_key);

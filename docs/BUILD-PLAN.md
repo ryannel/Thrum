@@ -67,8 +67,8 @@ The native Metal recorder stays in G3t. The later dedicated performance phase ow
 - [ ] **G3s — physical sky, Sun and atmosphere.** Hillaire (2020) transmittance, multiple-scattering, sky-view and aerial
   LUTs; Sun disk; physical illuminance drives lights and shadows. Time controls run dawn through sunset to night.
   Scaled half storage, incident metering and smooth SDR highlights pass scoped Metal checks; twilight is visible.
-  The matched-medium CPU referee exposed horizon mixing, now corrected, and missing indirect ground light; fix it before
-  spectral accuracy, declared radiance tolerance and final contrast choice. Review cameras/sweep for
+  The matched-medium CPU referee drove horizon separation and reflected sky on the planet. Remaining:
+  multiple-scattering model error, spectral accuracy, declared radiance tolerance and final contrast choice. Review cameras/sweep for
   colour, banding and flicker. [First-light evidence](evidence/v1-workload/G3S-FIRST-LIGHT-2026-11-06.md) is partial;
   record complete atmosphere cost when available, without a numeric admission target. Follow the Broadsides reading
   map and public-domain/CC0 provenance rules; no code/assets or GPL-derived values are imported.
