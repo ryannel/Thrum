@@ -82,12 +82,12 @@
       ]
     },
     "G3s_first_light": {
-      "implementation": "partial_physical_LUTs_horizon_disjoint_reflected_sky_boundary_GPU_camera_and_SDR_highlights",
+      "implementation": "partial_physical_LUTs_horizon_ground_camera_SDR_and_browser_solar_controls",
       "functional_validation": "Metal_display_meter_history_horizon_and_ground_boundary_198_ray_reference;_multiple_model_and_spectral_accuracy_open",
-      "experienced_quality": "agent_reviewed_readable_twilight_smooth_highlights;_pastel_contrast_grid_moire_and_spectral_accuracy_open",
+      "experienced_quality": "agent_reviewed_Chrome_solar_phases_neutral_subject;_flat_diffuse_pastel_contrast_grid_moire_accuracy_open",
       "platform_performance": {
         "mac": "offscreen_Metal_function_pass;_live_zero_display_link_callbacks_no_new_speed_claim",
-        "browser": "not_run",
+        "browser": "Chrome156_M3Max_Metal_headless_6_function_rows_pass;_no_display_timing_claim",
         "ios": "not_run"
       },
       "evidence": [
@@ -474,12 +474,12 @@
     },
     "V1_bounded_frame_host": {
       "implementation": "partial_engine_clock_lane_lifecycle_gpu_replacement_and_frame_runtime",
-      "functional_validation": "real_Metal_submitted_pause_and_gpu_replacement_pixels_authority_controls_retry_stale_candidates_pass;_live_keyboard_loss_mobile_open",
+      "functional_validation": "Metal_pause_replacement_and_Chrome_6_rows_live_render_pause_controls_pass;_live_loss_mobile_open",
       "experienced_quality": "submitted_offscreen_pause_camera_resume_gpu_replacement_reviewed;_live_motion_grid_aliasing_open",
       "platform_performance": {
         "mac": "owner_quiet_91ad52d_baseline_recorded_lifecycle_open",
         "windows": "not_run",
-        "browser": "not_run",
+        "browser": "Chrome156_M3Max_Metal_headless_6_rows_pass;_actual_tab_and_device_loss_open",
         "ios": "not_run",
         "android": "not_run"
       },
@@ -487,7 +487,7 @@
       "evidence": [
         "../evidence/render/V1-BOUNDED-FRAMES-2026-11-04.md"
       ],
-      "scope": "Core owns clock/lane; thrum-render owns the two-slot FrameHost and retained-input GPU replacement. Mac P requests lifecycle; GPU recovery retains world/controls. Inline browser/mobile pause remains synchronous. Live input/loss, iOS worker/lifecycle and Chrome runtime stay open; native recording stays G3t."
+      "scope": "Core owns clock/lane; renderer owns FrameHost and retained-input GPU replacement. Browser manual pause survives visibility-hook changes; RAF continues after profile completion. Live Mac input/loss, actual tab and iOS worker/lifecycle stay open; native recording stays G3t."
     },
     "V1_cooked_constant_light": {
       "implementation": "partial_native_accepted_source_product_and_offscreen_visual_publication",
@@ -643,7 +643,7 @@
       "reviewed_design_sha256": "d0d80e788cf6356f80dccdb10460a88f12ffd29ca646cbce2b5f498f86c725be",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Later architectural decision audit reopened named boundaries; earlier review scope remains historical. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
       "open_architecture_findings": [],
-      "current_design_sha256": "8f72f31436cbbd161e40ca27d865d161b12942560754e4fed74d773024bcbbd4",
+      "current_design_sha256": "d2961a1418ebf9f7b2797b42ff7d299f081bf5bcb95fb3d90b62df7f3806c0f9",
       "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled; focused mobile simulator and package qualification remains open after iOS 27 scene finding. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
       "historical_architecture_findings": [
         "A01"
@@ -4119,7 +4119,7 @@
       "modules/AUDIO-UI.md": "f001d7c3cc79a2fb3657982baee9850490ad3f3ce253cfd8bb2637e9f690ae1f",
       "modules/ENVIRONMENT.md": "e2210ab82fc0a2fbb50fdeef31d0a6fd0cba542f18ec1bb78cc08c7643e302e5",
       "modules/NETWORKING.md": "2e32bdf2e57737a88b957380da801de21bf287b6cba6f15144530f635f778494",
-      "modules/PLATFORM-RUNTIME.md": "8f72f31436cbbd161e40ca27d865d161b12942560754e4fed74d773024bcbbd4",
+      "modules/PLATFORM-RUNTIME.md": "d2961a1418ebf9f7b2797b42ff7d299f081bf5bcb95fb3d90b62df7f3806c0f9",
       "modules/PLAY-SYSTEMS.md": "86279be04e72643989cecc3a0e562fa4c948fa27c956180dbe6079c830efcd57",
       "modules/RENDERING.md": "becaf05714ca88f1fe92c120c8ddf6a523da8048cb7a22cfccc547bd023a96e0",
       "modules/TOOLS-DELIVERY.md": "242035edb43a8e414f839fed4fd4949969967d9d0859e7344be001d237c4e088",

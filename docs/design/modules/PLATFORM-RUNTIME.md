@@ -5,7 +5,7 @@ limits and failure rules. This family document retains the wider responsibility;
 
 6 November 2026. **Design status:** selected operating model under [C4 decisions](../ARCHITECTURE-DECISIONS.md).
 **Implementation/proof:** generic clock, resident world and bounded frame runtime with scoped Metal lifecycle tests;
-live display, browser/mobile lifecycle and minimum-device compatibility remain unqualified. The model follows
+six headless Chrome rows pass; live display, actual tab/mobile lifecycle and minimum devices remain unqualified. The model follows
 [the architecture brief](../ARCHITECTURE-BRIEF.md) and supersedes [earlier host options](../HOST-AND-PLATFORMS.md):
 the owner selected a custom host. External code remains a research/reuse candidate requiring provenance.
 [Hardware-native selection](../decisions/HARDWARE-NATIVE-ENGINE.md) governs recipes and the governor;
@@ -49,7 +49,7 @@ controller receives typed Busy until the immutable reply is consumed. Pause stop
 sample, clears fractional time and drains accepted ticks under ordinary caps; it does not admit unsampled elapsed
 time. Resume uses the worker origin, excluding paused wall time. Replies preserve operation, snapshot, timeline and
 clock sample; zero-tick acknowledgements wake observers. Refused/faulted/stopped tasks cannot acknowledge success.
-Mac P ignores repeat and retains pending intent. Inline browser calls remain synchronous; mode misuse returns an
+Mac P ignores repeat and retains intent. Browser user pause and visibility compose; rendering stays live while paused. Inline calls remain synchronous; mode misuse returns an
 error. Surface loss/occlusion never implicitly pauses authority. Camera controls remain usable while the world pauses;
 pause alone changes neither world epoch/timeline nor submitted transform history.
 

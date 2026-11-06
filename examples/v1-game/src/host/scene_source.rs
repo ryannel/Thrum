@@ -61,7 +61,8 @@ fn frame_view(
             2.0 - 2.0 * camera_yaw.cos(),
         ],
         [0.0, 1.0, 0.0],
-        1.0,
+        // Keep the initial edge rows and the neutral subject inside the view.
+        65.0_f32.to_radians(),
         extent[0] as f32 / extent[1] as f32,
         0.1,
         20.0,
@@ -87,6 +88,25 @@ impl GameScene {
         let count = u32::try_from(scene::ENTITY_COUNT).map_err(|_| "fixture exceeds u32 slots")?;
         let mut scene =
             SyntheticScene::grid(count).map_err(|error| format!("synthetic scene: {error:?}"))?;
+        scene.materials[0].base_rgba = [0.18, 0.18, 0.18, 1.0];
+        scene.materials[0].surface = [1.0, 1.0, 0.0, 1.0];
+        // Static even slot 5050 is near the centre, outside the moving prefix
+        // and four controlled slots. Its rotated faces expose lighting direction.
+        // A 0.18 halfextent also stays outside the coloured local-light spheres.
+        let subject = &mut scene.instances[5050];
+        let basis_length = subject.current[0][..3]
+            .iter()
+            .map(|value| value * value)
+            .sum::<f32>()
+            .sqrt();
+        let scale = 0.18 / basis_length;
+        for axis in 0..3 {
+            for component in 0..3 {
+                subject.current[axis][component] *= scale;
+                subject.previous[axis][component] *= scale;
+                subject.normal[axis][component] /= scale;
+            }
+        }
         scene.view = frame_view(0, 0.0, extent, 0.0, 0.0)?;
         scene.sun_shadows = true;
         scene.local_lights = [
