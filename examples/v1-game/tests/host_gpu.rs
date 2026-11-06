@@ -374,10 +374,11 @@ fn committed_ticks_drive_latest_gpu_frame_and_overload_is_explicit() {
         }
         assert_eq!(host.pending_frames(), 0);
         assert_eq!(host.dropped_views(), 0);
-        assert_eq!(
-            host.capture_pixels().expect("visible capture").len(),
-            640 * 360 * 4
-        );
+        let pixels = host.capture_pixels().expect("visible capture");
+        assert_eq!(pixels.len(), 640 * 360 * 4);
+        if let Some(path) = std::env::var_os("THRUM_V1_DYNAMIC_CAPTURE_PPM") {
+            write_ppm(path, pixels.as_chunks::<4>().0, [640, 360]);
+        }
         let overload = host
             .drive(Duration::from_millis(200), None)
             .expect("nine due updates are reported as overload");
