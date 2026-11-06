@@ -228,3 +228,86 @@ fn mirrored_row_uses_two_sided_fallback_and_keeps_near_surface() {
         assert_eq!(original, pixels(&device, &queue, &prepared, &target));
     });
 }
+
+#[test]
+fn front_raster_surface_repairs_a_smoothed_normal_behind_the_view() {
+    pollster::block_on(async {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let adapter = instance
+            .request_adapter(&wgpu::RequestAdapterOptions::default())
+            .await
+            .expect("real GPU required for shading-normal regression");
+        let (device, queue) = adapter
+            .request_device(&wgpu::DeviceDescriptor::default())
+            .await
+            .expect("device");
+        let mut scene = SyntheticScene::grid(1).unwrap();
+        scene.view = SyntheticView::perspective(
+            [0.0, 0.0, 2.0],
+            [0.0; 3],
+            [0.0, 1.0, 0.0],
+            1.0,
+            1.0,
+            0.1,
+            20.0,
+        )
+        .unwrap();
+        let row = &mut scene.instances[0];
+        row.current = [
+            [0.6, 0.0, 0.0, 0.0],
+            [0.0, 0.6, 0.0, 0.0],
+            [0.0, 0.0, 0.6, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
+        ];
+        row.previous = row.current;
+        // At the exact centre pixel V is +Z. These two shading normals are
+        // symmetric about its tangent plane; neither changes raster winding.
+        row.normal = [
+            [1.0, 0.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0, 0.0],
+            [1.0, 0.0, 0.02, 0.0],
+        ];
+        scene.materials[0].base_rgba = [0.65; 4];
+        scene.materials[0].surface = [1.0, 0.8, 0.0, 1.0];
+        let mut prepared = PreparedSynthetic::prepare_with_light(
+            &device,
+            &queue,
+            1,
+            &scene,
+            SyntheticLight {
+                direction_to_light: [1.0, 0.0, 0.0],
+                irradiance: [1.0; 3],
+            },
+        )
+        .await
+        .unwrap();
+        let target = OffscreenTarget::new(&device, &prepared, 65, 65).unwrap();
+        let offset = (32 * 65 + 32) * 4;
+        let reference = pixels(&device, &queue, &prepared, &target);
+        assert!(
+            reference[offset] > 40,
+            "positive-hemisphere reference must be lit"
+        );
+        scene.instances[0].normal[2][2] = -0.02;
+        prepared
+            .upload_instances(&queue, &scene.instances, &[0])
+            .unwrap();
+        let repaired = pixels(&device, &queue, &prepared, &target);
+        for channel in 0..3 {
+            assert!(
+                reference[offset + channel].abs_diff(repaired[offset + channel]) <= 2,
+                "front surface must not turn black from a slightly negative shading NoV"
+            );
+        }
+        // Mirroring reverses the geometric winding and selects the existing
+        // two-sided fallback. A real back-facing raster surface is not repaired.
+        scene.instances[0].current[0][0] *= -1.0;
+        scene.instances[0].previous = scene.instances[0].current;
+        prepared
+            .upload_instances(&queue, &scene.instances, &[0])
+            .unwrap();
+        assert_eq!(prepared.two_sided_instance_count(), 1);
+        let back = pixels(&device, &queue, &prepared, &target);
+        assert_eq!(&back[offset..offset + 3], &[0_u8; 3]);
+    });
+}
