@@ -42,17 +42,17 @@ impl<'a> AdvancedFrame<'a> {
     /// Submit the optional presentation of the already admitted world callback.
     /// # Errors
     /// Returns an engine frame failure without undoing world authority.
-    pub fn submit(self, surface: Option<&SurfaceOutput<'_>>) -> Result<DriveReport, String> {
-        self.0.submit(surface).map_err(|error| error.to_string())
+    pub fn submit(
+        self,
+        surface: Option<&SurfaceOutput<'_>>,
+    ) -> Result<DriveReport, runtime::FrameError> {
+        self.0.submit(surface)
     }
     /// Record the scene before the platform acquires its drawable.
     /// # Errors
     /// Returns an engine extraction or recording failure.
-    pub fn encode_scene(self) -> Result<EncodedFrame<'a>, String> {
-        self.0
-            .encode_scene()
-            .map(EncodedFrame)
-            .map_err(|error| error.to_string())
+    pub fn encode_scene(self) -> Result<EncodedFrame<'a>, runtime::FrameError> {
+        self.0.encode_scene().map(EncodedFrame)
     }
 }
 /// One unsubmitted engine scene token, held across late drawable acquisition.
@@ -65,8 +65,11 @@ impl EncodedFrame<'_> {
     /// Append the optional drawable consumer and submit through the engine.
     /// # Errors
     /// Returns an engine submission failure.
-    pub fn submit(self, surface: Option<&SurfaceOutput<'_>>) -> Result<DriveReport, String> {
-        self.0.submit(surface).map_err(|error| error.to_string())
+    pub fn submit(
+        self,
+        surface: Option<&SurfaceOutput<'_>>,
+    ) -> Result<DriveReport, runtime::FrameError> {
+        self.0.submit(surface)
     }
 }
 
@@ -111,6 +114,25 @@ pub struct ThreadedFrameHost {
 
 #[cfg(not(target_arch = "wasm32"))]
 impl ThreadedFrameHost {
+    /// Snapshot GPU reconstruction inputs without moving the resident world.
+    /// # Errors
+    /// Returns a failure while sampling the current camera or lighting policy.
+    pub fn device_prepare_inputs(
+        &self,
+    ) -> Result<runtime::DevicePrepareInputs, runtime::FrameError> {
+        self.inner.inner.device_prepare_inputs()
+    }
+
+    /// Install a host-bound replacement without polling the lost device.
+    /// # Errors
+    /// Refuses stale, consumed or foreign reconstruction resources.
+    pub fn publish_device(
+        &mut self,
+        candidate: &mut runtime::PreparedDevice,
+    ) -> Result<(), runtime::FrameError> {
+        self.inner.inner.publish_device(candidate)
+    }
+
     /// Set the next display target without advancing the fixed-step world.
     pub fn set_presentation_lead(&mut self, lead: Duration) {
         self.inner.set_presentation_lead(lead);
@@ -144,15 +166,15 @@ impl ThreadedFrameHost {
         &mut self,
         now: Duration,
         surface: Option<&SurfaceOutput<'_>>,
-    ) -> Result<DriveReport, String> {
-        self.inner.drive(now, surface)
+    ) -> Result<DriveReport, runtime::FrameError> {
+        self.inner.inner.drive(now, surface)
     }
 
     /// Admit the world observation before scene encoding and late drawable
     /// acquisition on the render owner.
     /// # Errors
     /// Returns a clock, publication or GPU fault without rolling back a tick.
-    pub fn advance(&mut self, now: Duration) -> Result<AdvancedFrame<'_>, String> {
+    pub fn advance(&mut self, now: Duration) -> Result<AdvancedFrame<'_>, runtime::FrameError> {
         self.inner.advance(now)
     }
 
@@ -174,15 +196,15 @@ impl ThreadedFrameHost {
     /// Poll one completed GPU sample.
     /// # Errors
     /// Returns a device fault.
-    pub fn poll_completed(&mut self) -> Result<Option<FrameSample>, String> {
-        self.inner.poll_completed()
+    pub fn poll_completed(&mut self) -> Result<Option<FrameSample>, runtime::FrameError> {
+        self.inner.inner.poll_completed()
     }
 
     /// Resize the surface binding after a coordinated platform change.
     /// # Errors
     /// Refuses an invalid or unavailable surface.
-    pub fn resize_surface(&mut self, extent: [u32; 2]) -> Result<(), String> {
-        self.inner.resize_surface(extent)
+    pub fn resize_surface(&mut self, extent: [u32; 2]) -> Result<(), runtime::FrameError> {
+        self.inner.inner.resize_surface(extent)
     }
 
     /// Optional scene views skipped.
@@ -209,7 +231,7 @@ impl ThreadedFrameHost {
 impl FrameHost {
     /// Maximum submitted scene packets retained by the engine.
     pub const MAX_IN_FLIGHT: usize = Runtime::MAX_IN_FLIGHT;
-    /// Device generation selected by the current V1 platform setup.
+    /// Initial generation for simple callers; live platforms own later generations.
     pub const DEVICE_GENERATION: u64 = 1;
 
     /// Prepare the fixed V1 scene using a platform-owned device and queue.
@@ -225,14 +247,14 @@ impl FrameHost {
     }
     /// Prepare from the platform's immutable capability record.
     /// # Errors
-    /// Refuses a mismatched device/generation or game/engine preparation failure.
+    /// Refuses a mismatched device or game/engine preparation failure.
     pub async fn new_with_capabilities(
         device: &wgpu::Device,
         queue: &wgpu::Queue,
         capabilities: &DeviceCapabilities,
         config: FrameConfig,
     ) -> Result<Self, String> {
-        if !capabilities.matches(device) || capabilities.generation() != Self::DEVICE_GENERATION {
+        if !capabilities.matches(device) {
             return Err("capability record does not match the host device".to_owned());
         }
         let scene = GameScene::scene(config.render_extent)?;
@@ -436,11 +458,8 @@ impl FrameHost {
     /// Admit or observe the world before late surface acquisition.
     /// # Errors
     /// Returns a world or GPU polling failure.
-    pub fn advance(&mut self, now: Duration) -> Result<AdvancedFrame<'_>, String> {
-        self.inner
-            .advance(now)
-            .map(AdvancedFrame)
-            .map_err(|error| error.to_string())
+    pub fn advance(&mut self, now: Duration) -> Result<AdvancedFrame<'_>, runtime::FrameError> {
+        self.inner.advance(now).map(AdvancedFrame)
     }
     /// Submitted GPU packets not yet fully retired.
     pub fn pending_frames(&self) -> usize {

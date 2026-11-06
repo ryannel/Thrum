@@ -1,7 +1,11 @@
 use std::time::Duration;
 
 #[cfg(not(target_arch = "wasm32"))]
+mod gpu_support;
+#[cfg(not(target_arch = "wasm32"))]
 mod lifecycle_gpu;
+#[cfg(not(target_arch = "wasm32"))]
+mod recovery_gpu;
 
 #[test]
 fn capture_refreshes_the_latest_committed_world_after_an_unsent_view() {

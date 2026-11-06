@@ -1,27 +1,35 @@
 //! The platform owns the surface and event loop; the shared host owns world
 //! ticks, GPU scene packets and the prepared presentation pass.
 
+#[path = "macos/device.rs"]
+mod device;
 #[path = "macos/display_link.rs"]
 mod display_link;
 #[path = "macos/pause.rs"]
 mod pause;
+#[path = "macos/recovery.rs"]
+mod recovery;
 #[path = "macos/render_actor.rs"]
 mod render_actor;
 
 use std::{
     sync::{
         Arc,
-        atomic::{AtomicU64, Ordering},
+        atomic::{AtomicBool, AtomicU64, Ordering},
     },
     time::{Duration, Instant},
 };
 
+use device::DeviceRecipe;
 use display_link::ViewDisplayLink;
 use pause::PauseIntent;
-use render_actor::{FrameCounters, RenderJob, RenderOutcome, RenderReply, SurfaceStatus};
+use recovery::Recovery;
+use render_actor::{
+    FrameCounters, FrameRequest, RecoveryFailure, RenderJob, RenderOutcome, RenderReply,
+    SurfaceStatus,
+};
 use thrum_core::sim::WorldLaneFault;
 use thrum_render::{
-    capabilities::DeviceCapabilities,
     frame::{FrameWorker, TargetLeadStatus},
     present::SurfaceProfile,
 };
@@ -50,6 +58,7 @@ enum UserEvent {
     WorldAdvanced,
     DisplayTarget(f64),
     RenderDone,
+    DeviceLost(u64),
 }
 
 struct App {
@@ -69,9 +78,13 @@ struct App {
     surface_extent: [u32; 2],
     observed_extent: [u32; 2],
     surface_generation: Arc<AtomicU64>,
+    render_stopped: Arc<AtomicBool>,
     render: Option<FrameWorker<RenderJob, RenderReply>>,
     world_controls: Option<WorldControls>,
     pause: PauseIntent,
+    recovery: Recovery,
+    recovery_error: Option<String>,
+    device_losses: u64,
     world_tick: u64,
     render_in_flight: Option<u64>,
     counters: FrameCounters,
@@ -126,9 +139,13 @@ impl App {
             surface_extent: [0, 0],
             observed_extent: [0, 0],
             surface_generation: Arc::new(AtomicU64::new(1)),
+            render_stopped: Arc::new(AtomicBool::new(false)),
             render: None,
             world_controls: None,
             pause: PauseIntent::default(),
+            recovery: Recovery::new(FrameHost::DEVICE_GENERATION),
+            recovery_error: None,
+            device_losses: 0,
             world_tick: 0,
             render_in_flight: None,
             counters: FrameCounters::default(),
@@ -221,12 +238,68 @@ impl App {
                 Err(error) => return Err(error.to_string()),
             }
         }
+        self.refresh_title();
+        Ok(())
+    }
+
+    fn refresh_title(&self) {
         if let Some(window) = &self.window {
             let title = self.samples.last().map_or_else(
-                || format!("Thrum V1 | {}", self.pause.label()),
-                |sample| profiler_title(sample, self.pause.label()),
+                || format!("Thrum V1 | {}{}", self.pause.label(), self.recovery.label()),
+                |sample| profiler_title(sample, self.pause.label(), self.recovery.label()),
             );
+            let title = if self.recovery.failed()
+                && let Some(error) = &self.recovery_error
+            {
+                format!("{title} | {error}")
+            } else {
+                title
+            };
             window.set_title(&title);
+        }
+    }
+
+    fn device_lost(&mut self, generation: u64) -> Result<(), String> {
+        if self.recovery.lost(generation)? {
+            self.device_losses = self.device_losses.saturating_add(1);
+            self.invalidate_surface()?;
+            self.request_sequence = self.request_sequence.saturating_add(1);
+        }
+        self.refresh_title();
+        if let Some(window) = &self.window {
+            window.request_redraw();
+        }
+        Ok(())
+    }
+
+    fn admit_recovery(&mut self) -> Result<(), String> {
+        if self.render_in_flight.is_some() {
+            return Ok(());
+        }
+        let Some(generation) = self.recovery.queued() else {
+            return Ok(());
+        };
+        let size = self.window.as_ref().ok_or("window missing")?.inner_size();
+        let job = RenderJob::Recover {
+            from_generation: self.recovery.active,
+            generation,
+            extent: [size.width, size.height],
+            surface_generation: self.surface_generation.load(Ordering::Acquire),
+        };
+        match self
+            .render
+            .as_ref()
+            .ok_or("render worker missing")?
+            .try_send(job)
+        {
+            Ok(()) => {
+                self.recovery.accepted(generation);
+                self.render_in_flight = Some(0);
+            }
+            Err(thrum_render::frame::SendFault::Busy(_)) => {}
+            Err(thrum_render::frame::SendFault::Closed(_)) => {
+                return Err("render worker stopped during recovery".to_owned());
+            }
         }
         Ok(())
     }
@@ -323,52 +396,43 @@ impl App {
                 .create_surface(Arc::clone(&window))
                 .map_err(|error| format!("surface: {error}"))?,
         );
-        let adapter = pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
-            compatible_surface: Some(&surface),
-            power_preference: wgpu::PowerPreference::HighPerformance,
-            ..Default::default()
-        }))
-        .map_err(|error| format!("adapter: {error:?}"))?;
-        self.adapter_name = adapter.get_info().name;
-        let (device, queue) = pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor {
-            required_features: DeviceCapabilities::requested_timing_features(&adapter),
-            ..Default::default()
-        }))
-        .map_err(|error| format!("device: {error:?}"))?;
-        let capabilities =
-            DeviceCapabilities::capture(&adapter, &device, FrameHost::DEVICE_GENERATION);
         let size = window.inner_size();
-        let mut config = surface
-            .get_default_config(&adapter, size.width.max(1), size.height.max(1))
-            .ok_or("no compatible surface configuration")?;
-        let formats = surface.get_capabilities(&adapter).formats;
-        config.format = [
-            wgpu::TextureFormat::Bgra8Unorm,
-            wgpu::TextureFormat::Rgba8Unorm,
-            wgpu::TextureFormat::Bgra8UnormSrgb,
-            wgpu::TextureFormat::Rgba8UnormSrgb,
-        ]
-        .into_iter()
-        .find(|format| formats.contains(format))
-        .ok_or("no supported 8-bit SDR surface format")?;
-        surface.configure(&device, &config);
+        let recipe = DeviceRecipe { instance, surface };
+        let gpu = pollster::block_on(recipe.create(
+            FrameHost::DEVICE_GENERATION,
+            [size.width, size.height],
+            wake,
+        ))?;
+        if gpu.watch.is_lost() {
+            return Err("initial device lost before preparation".to_owned());
+        }
+        recipe.surface.configure(&gpu.device, &gpu.config);
+        if gpu.watch.is_lost() {
+            return Err("initial device lost during surface configuration".to_owned());
+        }
         let host = pollster::block_on(FrameHost::new_with_capabilities(
-            &device,
-            &queue,
-            &capabilities,
+            &gpu.device,
+            &gpu.queue,
+            &gpu.capabilities,
             FrameConfig {
                 render_extent: [1920, 1080],
                 surface: Some(SurfaceProfile {
-                    format: config.format,
-                    extent: [config.width, config.height],
+                    format: gpu.config.format,
+                    extent: [gpu.config.width, gpu.config.height],
                 }),
             },
         ))?;
+        if gpu.watch.is_lost() {
+            return Err("initial device lost during preparation".to_owned());
+        }
         self.origin = Instant::now();
         let world_wake = wake.clone();
         let (host, controls) = host.into_threaded(self.origin, move || {
             let _ = world_wake.send_event(UserEvent::WorldAdvanced);
         })?;
+        if gpu.watch.is_lost() {
+            return Err("initial device lost before render owner ready".to_owned());
+        }
         self.world_controls = Some(controls);
         self.counters = FrameCounters::read(&host);
         self.window = Some(window);
@@ -376,18 +440,16 @@ impl App {
             self.window.as_ref().ok_or("window missing")?,
             wake.clone(),
         )?);
-        self.surface_format = Some(config.format);
-        self.surface_extent = [config.width, config.height];
+        self.adapter_name.clone_from(&gpu.adapter_name);
+        self.surface_format = Some(gpu.config.format);
+        self.surface_extent = [gpu.config.width, gpu.config.height];
         self.observed_extent = self.surface_extent;
         self.render = Some(render_actor::start(
             host,
-            device,
-            queue,
-            render_actor::SurfaceState {
-                surface,
-                config,
-                generation: Arc::clone(&self.surface_generation),
-            },
+            gpu,
+            recipe,
+            Arc::clone(&self.surface_generation),
+            Arc::clone(&self.render_stopped),
             self.origin,
             wake,
         )?);
@@ -395,14 +457,60 @@ impl App {
     }
 
     fn receive_render(&mut self, reply: RenderReply) -> Result<(), String> {
+        if let RenderOutcome::Recovered { attempted, result } = reply.outcome {
+            let success = result.is_ok();
+            if !self
+                .recovery
+                .complete(attempted, reply.device_generation, success)
+            {
+                return Ok(());
+            }
+            self.render_in_flight = None;
+            self.counters = reply.counters;
+            self.samples.extend(reply.samples.into_iter().flatten());
+            match result {
+                Ok(info) => {
+                    self.adapter_name = info.adapter_name;
+                    self.surface_format = Some(info.format);
+                    self.surface_extent = reply.surface_extent;
+                    self.recovery_error = if self.recovery.ready() {
+                        None
+                    } else {
+                        Some("replacement device lost".to_owned())
+                    };
+                    // Replay the latest desired presentation policy, including
+                    // edits accepted by a frame cancelled during device loss.
+                    self.pending_time_of_day = Some(self.time_of_day);
+                    self.pending_camera_pitch = Some(self.camera_pitch);
+                    self.pending_camera_yaw = Some(self.camera_yaw);
+                    self.pending_display_target = self.display_target.is_some();
+                    self.request_sequence = self.request_sequence.saturating_add(1);
+                }
+                Err(RecoveryFailure::Unavailable(error)) => self.recovery_error = Some(error),
+                Err(RecoveryFailure::Fatal(error)) => return Err(error),
+            }
+            self.refresh_title();
+            return Ok(());
+        }
+        if reply.device_generation != self.recovery.active {
+            return Ok(());
+        }
         self.render_in_flight = None;
         self.counters = reply.counters;
+        self.samples.extend(reply.samples.into_iter().flatten());
         self.surface_extent = reply.surface_extent;
+        self.worker_walls.push(reply.worker_wall);
         if let Some(acquire_wall) = reply.acquire_wall {
             self.acquire_walls.push(acquire_wall);
         }
         match reply.surface_status {
-            SurfaceStatus::Presented | SurfaceStatus::NotAttempted => {}
+            SurfaceStatus::Presented => {
+                self.presented += 1;
+                if reply.sequence == self.target_sequence {
+                    self.pending_display_target = false;
+                }
+            }
+            SurfaceStatus::NotAttempted => {}
             SurfaceStatus::Unavailable => self.unavailable += 1,
             SurfaceStatus::Occluded => {
                 self.unavailable += 1;
@@ -418,7 +526,6 @@ impl App {
         }
         match reply.outcome {
             RenderOutcome::Frame(report) => {
-                self.worker_walls.push(reply.worker_wall);
                 let report = report?;
                 if let Some(refused_ticks) = report.overload {
                     return Err(format!(
@@ -426,20 +533,21 @@ impl App {
                         refused_ticks, report.queued_ticks
                     ));
                 }
-                if report.surface_presented {
-                    self.presented += 1;
-                    if reply.sequence == self.target_sequence {
-                        self.pending_display_target = false;
-                    }
-                }
-                self.samples.extend(reply.samples.into_iter().flatten());
                 if self.last_call.saturating_sub(self.profiler_title_at)
                     >= Duration::from_millis(500)
                     && let (Some(window), Some(sample)) = (&self.window, self.samples.last())
                 {
-                    window.set_title(&profiler_title(sample, self.pause.label()));
+                    window.set_title(&profiler_title(
+                        sample,
+                        self.pause.label(),
+                        self.recovery.label(),
+                    ));
                     self.profiler_title_at = self.last_call;
                 }
+            }
+            RenderOutcome::DeviceLost => self.device_lost(reply.device_generation)?,
+            RenderOutcome::Recovered { .. } => {
+                unreachable!("replacement handled before frame metadata")
             }
             RenderOutcome::Finish(_) => return Err("unexpected final render reply".into()),
         }
@@ -471,6 +579,17 @@ impl App {
     }
 
     fn draw_inner(&mut self) -> Result<(), String> {
+        if !self.poll_render()? {
+            return Ok(());
+        }
+        if !self.recovery.ready() {
+            self.admit_recovery()?;
+            return Ok(());
+        }
+        self.draw_ready()
+    }
+
+    fn poll_render(&mut self) -> Result<bool, String> {
         if self.render_in_flight.is_some() {
             let render = self.render.as_ref().ok_or("render worker missing")?;
             let completed = render.try_recv();
@@ -479,9 +598,13 @@ impl App {
             } else if render.is_closed() {
                 return Err("render worker stopped before replying".into());
             } else {
-                return Ok(());
+                return Ok(false);
             }
         }
+        Ok(true)
+    }
+
+    fn draw_ready(&mut self) -> Result<(), String> {
         if self.presented >= self.target_frames
             || self.request_sequence == self.submitted_sequence
             || !self.pending_display_target
@@ -494,15 +617,16 @@ impl App {
         let size = self.window.as_ref().ok_or("window missing")?.inner_size();
         let extent = [size.width, size.height];
         self.observe_extent(extent)?;
-        let job = RenderJob::Frame {
+        let job = RenderJob::Frame(FrameRequest {
             sequence: self.target_sequence,
+            device_generation: self.recovery.active,
             target_media_seconds: self.display_target.ok_or("display target missing")?,
             extent,
             surface_generation: self.surface_generation.load(Ordering::Acquire),
             time_of_day: self.pending_time_of_day,
             camera_pitch: self.pending_camera_pitch,
             camera_yaw: self.pending_camera_yaw,
-        };
+        });
         match self
             .render
             .as_ref()
@@ -548,12 +672,18 @@ impl App {
             .recv_timeout(Duration::from_secs(15))
             .ok_or("render worker did not finish GPU drain")?;
         self.counters = final_reply.counters;
-        match final_reply.outcome {
-            RenderOutcome::Finish(result) => self.samples.extend(result?),
-            RenderOutcome::Frame(_) => {
+        let final_device_loss = match final_reply.outcome {
+            RenderOutcome::Finish(result) => {
+                let finished = result?;
+                self.samples.extend(finished.samples);
+                finished.lost_device
+            }
+            RenderOutcome::Frame(_)
+            | RenderOutcome::DeviceLost
+            | RenderOutcome::Recovered { .. } => {
                 return Err("frame reply arrived during final drain".into());
             }
-        }
+        };
         if let Some(worker) = self.render.take() {
             worker.shutdown();
         }
@@ -567,14 +697,18 @@ impl App {
             .iter()
             .filter(|sample| sample.surface_presented)
             .collect();
-        if presented.is_empty() {
+        if self.presented == 0 {
             return Err("no surface frames were presented".into());
         }
-        if presented.len() != self.presented {
-            return Err(format!(
-                "{} presented samples for {} presents",
-                presented.len(),
-                self.presented
+        let missing = recovery::missing_profiles(
+            self.presented,
+            presented.len(),
+            self.device_losses != 0 || final_device_loss,
+        )?;
+        if presented.is_empty() {
+            return Ok(format!(
+                "adapter={}; presented={}; committed_ticks={}; device_losses={}; final_drain_device_lost={final_device_loss}; missing_presented_profiles={missing}; GPU/CPU frame profiles unavailable after device loss",
+                self.adapter_name, self.presented, self.world_tick, self.device_losses
             ));
         }
         let tick = percentile(&presented, |sample| sample.tick_cpu.as_secs_f64() * 1e6);
@@ -602,7 +736,7 @@ impl App {
             "GPU timestamps unavailable".to_owned()
         };
         Ok(format!(
-            "adapter={}; surface={:?} {}x{}; presented={}; callbacks={}; display_link_callbacks={}; late_target_evaluations={}; invalid_target_evaluations={}; clamped_target_evaluations={}; committed_ticks={}; unavailable={}; occluded={}; surface_faults={}; dropped_surface={}; dropped_views={}; dropped_stale_views={}; dropped_reports={}; callback wall p50/p95={:.3}/{:.3} ms; render-worker wall p50/p95={:.3}/{:.3} ms; drawable-acquire wall p50/p95={:.3}/{:.3} ms; tick CPU p50/p95={:.3}/{:.3} us; live-view CPU p50/p95={:.3}/{:.3} us; upload CPU p50/p95={:.3}/{:.3} us; encode CPU p50/p95={:.3}/{:.3} us; upload+encode CPU p50/p95={:.3}/{:.3} us; {gpu}",
+            "adapter={}; surface={:?} {}x{}; presented={}; callbacks={}; display_link_callbacks={}; late_target_evaluations={}; invalid_target_evaluations={}; clamped_target_evaluations={}; committed_ticks={}; unavailable={}; occluded={}; surface_faults={}; dropped_surface={}; dropped_views={}; dropped_stale_views={}; dropped_reports={}; callback wall p50/p95={:.3}/{:.3} ms; render-worker wall p50/p95={:.3}/{:.3} ms; drawable-acquire wall p50/p95={:.3}/{:.3} ms; tick CPU p50/p95={:.3}/{:.3} us; live-view CPU p50/p95={:.3}/{:.3} us; upload CPU p50/p95={:.3}/{:.3} us; encode CPU p50/p95={:.3}/{:.3} us; upload+encode CPU p50/p95={:.3}/{:.3} us; {gpu}; device_losses={}; final_drain_device_lost={final_device_loss}; retained_presented_profiles={}; missing_presented_profiles={missing}; profiles describe retained samples",
             self.adapter_name,
             self.surface_format.ok_or("surface format missing")?,
             self.surface_extent[0],
@@ -637,12 +771,15 @@ impl App {
             encode.1,
             frame_cpu.0,
             frame_cpu.1,
+            self.device_losses,
+            presented.len(),
         ))
     }
 }
 
 impl Drop for App {
     fn drop(&mut self) {
+        self.render_stopped.store(true, Ordering::Release);
         drop(self.display_link.take());
         if let Some(render) = self.render.take() {
             render.shutdown();
@@ -650,7 +787,7 @@ impl Drop for App {
     }
 }
 
-fn profiler_title(sample: &FrameSample, world_status: &str) -> String {
+fn profiler_title(sample: &FrameSample, world_status: &str, gpu_status: &str) -> String {
     let gpu = sample.gpu_pass_ns.map_or_else(
         || "GPU timestamps unavailable".to_owned(),
         |passes| {
@@ -669,7 +806,7 @@ fn profiler_title(sample: &FrameSample, world_status: &str) -> String {
         },
     );
     format!(
-        "Thrum V1 | {world_status} | tick {} ({} updates, view age {}) | CPU tick {:.3}, extract {:.3}, upload {:.3}, encode {:.3} ms | {gpu}",
+        "Thrum V1 | {world_status}{gpu_status} | tick {} ({} updates, view age {}) | CPU tick {:.3}, extract {:.3}, upload {:.3}, encode {:.3} ms | {gpu}",
         sample.tick,
         sample.completed_ticks,
         sample.visual_age_ticks,
@@ -708,6 +845,19 @@ impl ApplicationHandler<UserEvent> for App {
 
     fn user_event(&mut self, event_loop: &ActiveEventLoop, event: UserEvent) {
         match event {
+            UserEvent::DeviceLost(generation) => {
+                let result = self.device_lost(generation).and_then(|()| {
+                    if self.poll_render()? && self.presented < self.target_frames {
+                        self.admit_recovery()?;
+                    }
+                    Ok(())
+                });
+                if let Err(error) = result {
+                    self.error = Some(error);
+                    event_loop.exit();
+                    return;
+                }
+            }
             UserEvent::DisplayTarget(target) => {
                 self.display_target = Some(target);
                 self.target_sequence = self.target_sequence.saturating_add(1);
@@ -732,7 +882,23 @@ impl ApplicationHandler<UserEvent> for App {
                 }
                 return;
             }
-            UserEvent::RenderDone => {}
+            UserEvent::RenderDone => {
+                let result = self.poll_render().and_then(|idle| {
+                    if idle && self.presented < self.target_frames && !self.recovery.ready() {
+                        self.admit_recovery()?;
+                    }
+                    Ok(())
+                });
+                if let Err(error) = result {
+                    self.error = Some(error);
+                    event_loop.exit();
+                    return;
+                }
+            }
+        }
+        if self.presented >= self.target_frames {
+            event_loop.exit();
+            return;
         }
         if let Some(window) = &self.window {
             window.request_redraw();
@@ -745,6 +911,7 @@ impl ApplicationHandler<UserEvent> for App {
         }
         let result = match event {
             WindowEvent::CloseRequested | WindowEvent::Destroyed => {
+                self.render_stopped.store(true, Ordering::Release);
                 self.closed_by_user |= self.presented < self.target_frames;
                 let result = self.invalidate_surface();
                 event_loop.exit();
@@ -761,7 +928,22 @@ impl ApplicationHandler<UserEvent> for App {
             }
             WindowEvent::KeyboardInput { event, .. } => {
                 if let PhysicalKey::Code(code) = event.physical_key {
-                    if code == KeyCode::KeyP {
+                    if code == KeyCode::KeyR && !self.recovery.ready() {
+                        if self.recovery.failed()
+                            && event.state == ElementState::Pressed
+                            && !event.repeat
+                        {
+                            self.recovery.retry().and_then(|()| {
+                                self.refresh_title();
+                                if let Some(window) = &self.window {
+                                    window.request_redraw();
+                                }
+                                self.admit_recovery()
+                            })
+                        } else {
+                            Ok(())
+                        }
+                    } else if code == KeyCode::KeyP {
                         if self
                             .pause
                             .key(event.state == ElementState::Pressed, event.repeat)

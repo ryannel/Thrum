@@ -25,9 +25,14 @@ use crate::{
 };
 use thrum_core::sim::{WorldAdvance, WorldPublication};
 
+#[cfg(not(target_arch = "wasm32"))]
+mod device;
+mod preparation;
 mod tokens;
 #[cfg(not(target_arch = "wasm32"))]
 mod visual;
+#[cfg(not(target_arch = "wasm32"))]
+pub use device::{DevicePrepareInputs, PreparedDevice};
 pub use tokens::{AdvancedFrame, EncodedFrame};
 #[cfg(not(target_arch = "wasm32"))]
 pub use visual::{PreparedVisual, VisualPrepareInputs};
@@ -345,6 +350,8 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     }
 
     /// Prepare a bounded renderer using the caller's selected device generation.
+    /// `queue` must be the queue returned with `capabilities`' device; the
+    /// platform owns this pairing and the renderer does not privately probe it.
     /// # Errors
     /// Returns invalid extent, initial publication or GPU preparation failure.
     pub async fn new(
@@ -383,15 +390,16 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             .frame(world.source(), 0.0, config.render_extent, None)
             .map_err(FrameError::Scene)?;
         scene.view = initial_frame.view;
-        let prepared = PreparedSynthetic::prepare_with_capabilities(
+        let mut gpu = preparation::prepare_scene(
             capabilities,
             queue,
             &scene,
             initial_frame.lighting,
             exposure,
+            config.render_extent,
+            config.surface.is_some(),
         )
-        .await
-        .map_err(|error| format!("prepare: {error:?}"))?;
+        .await?;
         let presenter = match config.surface {
             Some(profile) => Some(
                 SurfacePresenter::prepare(capabilities, config.render_extent, profile)
@@ -400,27 +408,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             ),
             None => None,
         };
-        let mut slots = Vec::with_capacity(IN_FLIGHT);
-        for _ in 0..IN_FLIGHT {
-            let target = OffscreenTarget::new(device, &prepared, width, height)
-                .map_err(|error| format!("target: {error:?}"))?;
-            slots.push(FrameSlot {
-                presentation: presenter
-                    .as_ref()
-                    .map(|presenter| presenter.bind_target(device, &target))
-                    .transpose()
-                    .map_err(|error| format!("surface binding: {error:?}"))?,
-                target,
-                timings: GpuTimings::new(
-                    capabilities,
-                    queue,
-                    prepared.scene_pass_count() + u32::from(presenter.is_some()),
-                )
-                .map_err(|error| format!("GPU timings: {error:?}"))?,
-                render_done: Arc::new(AtomicBool::new(false)),
-                state: SlotState::Free,
-            });
-        }
+        gpu.bind_presenter(presenter.as_ref())?;
         Ok(Self {
             device: device.clone(),
             queue: queue.clone(),
@@ -437,9 +425,9 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             last_scene_apply: initial_scene_apply,
             render_extent: config.render_extent,
             changed_slots,
-            prepared,
+            prepared: gpu.prepared,
             presenter,
-            slots,
+            slots: gpu.slots,
             completed: VecDeque::with_capacity(IN_FLIGHT),
             next_submission_order: 0,
             dropped_views: 0,
@@ -459,7 +447,6 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     #[cfg(not(target_arch = "wasm32"))]
     pub fn visual_prepare_inputs(&self) -> VisualPrepareInputs {
         VisualPrepareInputs {
-            device: self.device.clone(),
             queue: self.queue.clone(),
             capabilities: self.prepared.capabilities().clone(),
             scene: self.scene.clone(),
@@ -499,52 +486,87 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     ///
     /// Returns a binding or full-table upload fault without replacing the active view.
     ///
-    /// # Panics
-    ///
-    /// Panics only if a checked candidate loses an owned resource during the
-    /// final single-threaded move into the active host.
     #[cfg(not(target_arch = "wasm32"))]
     pub fn publish_visual(&mut self, candidate: &mut PreparedVisual) -> Result<bool, FrameError> {
         if !Arc::ptr_eq(&candidate.owner, &self.visual_owner) {
             return Err(FrameError::InvalidState(
-                "visual candidate belongs to another host",
+                "stale or foreign visual candidate",
             ));
         }
         self.poll_gpu()?;
         if self.pending_frames() != 0 {
             return Ok(false);
         }
-        let slots = candidate
-            .slots
-            .as_mut()
-            .ok_or_else(|| "visual candidate already published".to_owned())?;
-        for slot in slots.iter_mut() {
-            slot.presentation = self
-                .presenter
-                .as_ref()
-                .map(|presenter| presenter.bind_target(&self.device, &slot.target))
-                .transpose()
-                .map_err(|error| format!("cooked surface binding: {error:?}"))?;
-        }
-        self.changed_slots.clear();
-        for index in 0..self.scene.instances.len() {
-            self.changed_slots
-                .push(u32::try_from(index).map_err(|_| "visual instance slot exceeds u32")?);
-        }
-        candidate
-            .prepared
-            .as_mut()
-            .ok_or_else(|| "visual candidate already published".to_owned())?
-            .upload_instances(&self.queue, &self.scene.instances, &self.changed_slots)
-            .map_err(|error| format!("cooked full upload: {error:?}"))?;
-        self.prepared = candidate.prepared.take().expect("checked candidate");
-        self.slots = candidate.slots.take().expect("checked candidate");
+        let scene = candidate.scene.as_mut().ok_or(FrameError::InvalidState(
+            "visual candidate already published",
+        ))?;
+        scene.bind_presenter(self.presenter.as_ref())?;
+        let queue = self.queue.clone();
+        let view = self.refresh_replacement(scene, &queue, Some(candidate.lighting))?;
+        let scene = candidate.scene.take().ok_or(FrameError::InvalidState(
+            "visual candidate already published",
+        ))?;
+        self.prepared = scene.prepared;
+        self.slots = scene.slots;
+        self.scene.view = view;
         self.visual_lighting = Some(candidate.lighting);
         self.visual_revision = candidate.revision;
-        self.upload_reset_pending = false;
+        self.reset_replacement_history();
+        self.visual_owner = Arc::new(());
+        Ok(true)
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    fn refresh_replacement(
+        &mut self,
+        replacement: &mut preparation::PreparedScene,
+        queue: &wgpu::Queue,
+        lighting: Option<FrameLighting>,
+    ) -> Result<SyntheticView, FrameError> {
+        let authority = self.world.source();
+        let alpha = self.presentation_alpha();
+        let frame = self
+            .source
+            .frame(authority, alpha, self.render_extent, lighting)
+            .map_err(FrameError::Scene)?;
+        let view = frame.view.with_history_reset(true);
+        let previous = std::mem::replace(&mut self.scene.view, view);
+        let refreshed: Result<(), FrameError> = (|| {
+            replacement
+                .prepared
+                .synchronize_history(queue, authority.epoch, authority.timeline);
+            // Fit current view/cascades before instance packing uses caster bounds.
+            replacement
+                .prepared
+                .update_frame(
+                    queue,
+                    &mut replacement.slots[0].target,
+                    &self.scene,
+                    frame.lighting,
+                    alpha,
+                )
+                .map_err(|error| FrameError::Gpu(format!("replacement frame: {error:?}")))?;
+            self.changed_slots.clear();
+            let count = u32::try_from(self.scene.instances.len())
+                .map_err(|_| FrameError::InvalidState("scene instance slots exceed u32"))?;
+            self.changed_slots.extend(0..count);
+            replacement
+                .prepared
+                .upload_instances(queue, &self.scene.instances, &self.changed_slots)
+                .map_err(|error| FrameError::Gpu(format!("replacement full upload: {error:?}")))?;
+            Ok(())
+        })();
+        self.scene.view = previous;
+        refreshed?;
+        Ok(view)
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    fn reset_replacement_history(&mut self) {
+        self.history_reset_pending = true;
+        self.upload_reset_pending = true;
         self.last_view_source = None;
         self.extractor.invalidate_history();
-        Ok(true)
     }
 
     /// Number of optional views skipped because all GPU packet slots were held.
@@ -557,8 +579,9 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.dropped_stale_views
     }
 
-    /// Completed profiler samples discarded when the caller did not drain the
-    /// bounded result queue. This never affects authoritative ticks or GPU work.
+    /// Profiler reports discarded by the bounded queue or device replacement.
+    /// Replacement includes abandoned pending reports, without claiming GPU
+    /// completion. This never changes authoritative ticks.
     pub fn dropped_reports(&self) -> u64 {
         self.dropped_reports
     }

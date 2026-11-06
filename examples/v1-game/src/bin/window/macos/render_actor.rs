@@ -1,34 +1,45 @@
-//! Game callback bound to the engine's bounded native frame worker.
-
+//! One render owner serializes frames, configuration and GPU replacement.
+use super::{
+    UserEvent,
+    device::{DeviceRecipe, DeviceWatch, PlatformGpu},
+};
+use objc2_quartz_core::CACurrentMediaTime;
 use std::{
     sync::{
         Arc,
-        atomic::{AtomicU64, Ordering},
+        atomic::{AtomicBool, AtomicU64, Ordering},
     },
     time::{Duration, Instant},
 };
-
-use objc2_quartz_core::CACurrentMediaTime;
-use thrum_render::frame::{FrameWorker, TargetLeadStatus, display_target_lead};
+use thrum_render::{
+    frame::{FrameWorker, TargetLeadStatus, display_target_lead},
+    present::SurfaceProfile,
+    runtime::FrameError,
+};
 use v1_game::{DriveReport, FrameHost, FrameSample, SurfaceOutput, ThreadedFrameHost};
 use wgpu::{CurrentSurfaceTexture, TextureViewDescriptor};
 use winit::event_loop::EventLoopProxy;
 
-use super::UserEvent;
-
+pub(super) struct FrameRequest {
+    pub(super) sequence: u64,
+    pub(super) device_generation: u64,
+    pub(super) target_media_seconds: f64,
+    pub(super) extent: [u32; 2],
+    pub(super) surface_generation: u64,
+    pub(super) time_of_day: Option<f32>,
+    pub(super) camera_pitch: Option<f32>,
+    pub(super) camera_yaw: Option<f32>,
+}
 pub(super) enum RenderJob {
-    Frame {
-        sequence: u64,
-        target_media_seconds: f64,
+    Frame(FrameRequest),
+    Recover {
+        from_generation: u64,
+        generation: u64,
         extent: [u32; 2],
         surface_generation: u64,
-        time_of_day: Option<f32>,
-        camera_pitch: Option<f32>,
-        camera_yaw: Option<f32>,
     },
     Finish,
 }
-
 #[derive(Clone, Copy, Default)]
 pub(super) struct FrameCounters {
     pub(super) skipped_views: u64,
@@ -36,7 +47,6 @@ pub(super) struct FrameCounters {
     pub(super) missed_surfaces: u64,
     pub(super) lost_reports: u64,
 }
-
 impl FrameCounters {
     pub(super) fn read(host: &ThreadedFrameHost) -> Self {
         Self {
@@ -47,23 +57,47 @@ impl FrameCounters {
         }
     }
 }
-
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Default)]
 pub(super) enum SurfaceStatus {
+    #[default]
     NotAttempted,
     Presented,
     Unavailable,
     Occluded,
     NeedsReconfigure,
 }
-
+pub(super) struct RecoveryInfo {
+    pub(super) format: wgpu::TextureFormat,
+    pub(super) adapter_name: String,
+}
+pub(super) enum RecoveryFailure {
+    Unavailable(String),
+    Fatal(String),
+}
+impl RecoveryFailure {
+    fn frame(error: FrameError) -> Self {
+        match error {
+            FrameError::Gpu(message) => Self::Unavailable(message),
+            other => Self::Fatal(other.to_string()),
+        }
+    }
+}
 pub(super) enum RenderOutcome {
     Frame(Result<DriveReport, String>),
-    Finish(Result<Vec<FrameSample>, String>),
+    DeviceLost,
+    Recovered {
+        attempted: u64,
+        result: Result<RecoveryInfo, RecoveryFailure>,
+    },
+    Finish(Result<Finished, String>),
 }
-
+pub(super) struct Finished {
+    pub(super) samples: Vec<FrameSample>,
+    pub(super) lost_device: bool,
+}
 pub(super) struct RenderReply {
     pub(super) sequence: u64,
+    pub(super) device_generation: u64,
     pub(super) outcome: RenderOutcome,
     pub(super) samples: [Option<FrameSample>; FrameHost::MAX_IN_FLIGHT],
     pub(super) counters: FrameCounters,
@@ -73,213 +107,347 @@ pub(super) struct RenderReply {
     pub(super) surface_status: SurfaceStatus,
     pub(super) surface_extent: [u32; 2],
 }
-
-pub(super) struct SurfaceState {
-    pub(super) surface: Arc<wgpu::Surface<'static>>,
-    pub(super) config: wgpu::SurfaceConfiguration,
-    pub(super) generation: Arc<AtomicU64>,
+struct Actor {
+    host: ThreadedFrameHost,
+    gpu: PlatformGpu,
+    recipe: DeviceRecipe,
+    surface_generation: Arc<AtomicU64>,
+    stopped: Arc<AtomicBool>,
+    needs_reconfigure: bool,
+    origin: Instant,
+    wake: EventLoopProxy<UserEvent>,
 }
-
 pub(super) fn start(
-    mut host: ThreadedFrameHost,
-    device: wgpu::Device,
-    queue: wgpu::Queue,
-    surface: SurfaceState,
+    host: ThreadedFrameHost,
+    gpu: PlatformGpu,
+    recipe: DeviceRecipe,
+    surface_generation: Arc<AtomicU64>,
+    stopped: Arc<AtomicBool>,
     origin: Instant,
     wake: &EventLoopProxy<UserEvent>,
 ) -> Result<FrameWorker<RenderJob, RenderReply>, String> {
     let signal = wake.clone();
-    let SurfaceState {
-        surface: surface_owner,
-        config: mut surface_config,
-        generation: active_surface_generation,
-    } = surface;
-    let mut current_extent = [surface_config.width, surface_config.height];
-    let mut needs_reconfigure = false;
+    let mut actor = Actor {
+        host,
+        gpu,
+        recipe,
+        surface_generation,
+        stopped,
+        needs_reconfigure: false,
+        origin,
+        wake: wake.clone(),
+    };
     FrameWorker::start(
         "thrum-v1-render",
-        move |job| {
-            let job_start = Instant::now();
-            match job {
-                RenderJob::Frame {
-                    sequence,
-                    target_media_seconds,
-                    extent,
-                    surface_generation,
-                    time_of_day,
-                    camera_pitch,
-                    camera_yaw,
-                } => {
-                    let mut target_status = None;
-                    let mut acquire_wall = None;
-                    let mut surface_status = SurfaceStatus::NotAttempted;
-                    let report = (|| {
-                        if let Some(time_of_day) = time_of_day {
-                            host.set_time_of_day(time_of_day)?;
-                        }
-                        if let Some(camera_pitch) = camera_pitch {
-                            host.set_camera_pitch(camera_pitch)?;
-                        }
-                        if let Some(camera_yaw) = camera_yaw {
-                            host.set_camera_yaw(camera_yaw)?;
-                        }
-                        let surface_current =
-                            active_surface_generation.load(Ordering::Acquire) == surface_generation;
-                        if !surface_current {
-                            needs_reconfigure = true;
-                        }
-                        let surface_ready = surface_current
-                            && !extent.contains(&0)
-                            && (extent == current_extent && !needs_reconfigure
-                                || host.pending_frames() == 0);
-                        if surface_ready && (extent != current_extent || needs_reconfigure) {
-                            host.resize_surface(extent)?;
-                            surface_config.width = extent[0];
-                            surface_config.height = extent[1];
-                            surface_owner.configure(&device, &surface_config);
-                            current_extent = extent;
-                            needs_reconfigure = false;
-                        }
-                        // Surface preparation can consume the forecast. Sample
-                        // both clocks only after it has finished.
-                        let now = origin.elapsed();
-                        let lead = display_target_lead(target_media_seconds, CACurrentMediaTime());
-                        target_status = Some(lead.status);
-                        host.set_presentation_lead(lead.duration);
-                        if !surface_ready {
-                            surface_status = if surface_current {
-                                SurfaceStatus::Unavailable
-                            } else {
-                                SurfaceStatus::NeedsReconfigure
-                            };
-                            return host.drive(now, None);
-                        }
-                        let advanced = host.advance(now)?;
-                        if !advanced.can_acquire_serial() {
-                            return advanced.submit(None);
-                        }
-                        // The scene is encoded before requesting a drawable.
-                        // Missing presentation sheds only this optional view.
-                        let encoded = advanced.encode_scene()?;
-                        if active_surface_generation.load(Ordering::Acquire) != surface_generation {
-                            needs_reconfigure = true;
-                            surface_status = SurfaceStatus::NeedsReconfigure;
-                            return Ok(encoded.skip());
-                        }
-                        let acquire_start = Instant::now();
-                        let acquired = surface_owner.get_current_texture();
-                        acquire_wall = Some(acquire_start.elapsed());
-                        let frame = match acquired {
-                            CurrentSurfaceTexture::Success(frame) => frame,
-                            CurrentSurfaceTexture::Suboptimal(frame) => {
-                                needs_reconfigure = true;
-                                frame
-                            }
-                            CurrentSurfaceTexture::Timeout => {
-                                surface_status = SurfaceStatus::Unavailable;
-                                return Ok(encoded.skip());
-                            }
-                            CurrentSurfaceTexture::Occluded => {
-                                surface_status = SurfaceStatus::Occluded;
-                                return Ok(encoded.skip());
-                            }
-                            CurrentSurfaceTexture::Outdated
-                            | CurrentSurfaceTexture::Lost
-                            | CurrentSurfaceTexture::Validation => {
-                                needs_reconfigure = true;
-                                surface_status = SurfaceStatus::NeedsReconfigure;
-                                return Ok(encoded.skip());
-                            }
-                        };
-                        if active_surface_generation.load(Ordering::Acquire) != surface_generation {
-                            needs_reconfigure = true;
-                            surface_status = SurfaceStatus::NeedsReconfigure;
-                            return Ok(encoded.skip());
-                        }
-                        let view = frame.texture.create_view(&TextureViewDescriptor::default());
-                        let surface = SurfaceOutput {
-                            view: &view,
-                            extent,
-                        };
-                        let report = encoded.submit(Some(&surface))?;
-                        if report.surface_presented {
-                            queue.present(frame);
-                            surface_status = SurfaceStatus::Presented;
-                        } else {
-                            surface_status = SurfaceStatus::Unavailable;
-                        }
-                        Ok(report)
-                    })();
-                    let mut samples = [None; FrameHost::MAX_IN_FLIGHT];
-                    for sample in &mut samples {
-                        match host.poll_completed() {
-                            Ok(next) => *sample = next,
-                            Err(error) => {
-                                return RenderReply {
-                                    sequence,
-                                    outcome: RenderOutcome::Frame(Err(error)),
-                                    samples,
-                                    counters: FrameCounters::read(&host),
-                                    worker_wall: job_start.elapsed(),
-                                    target_status,
-                                    acquire_wall,
-                                    surface_status,
-                                    surface_extent: current_extent,
-                                };
-                            }
-                        }
-                        if sample.is_none() {
-                            break;
-                        }
-                    }
-                    RenderReply {
-                        sequence,
-                        outcome: RenderOutcome::Frame(report),
-                        samples,
-                        counters: FrameCounters::read(&host),
-                        worker_wall: job_start.elapsed(),
-                        target_status,
-                        acquire_wall,
-                        surface_status,
-                        surface_extent: current_extent,
-                    }
-                }
-                RenderJob::Finish => {
-                    let result = (|| {
-                        let mut samples = Vec::with_capacity(FrameHost::MAX_IN_FLIGHT * 2);
-                        loop {
-                            while let Some(sample) = host.poll_completed()? {
-                                samples.push(sample);
-                            }
-                            if host.pending_frames() == 0 {
-                                break;
-                            }
-                            device
-                                .poll(wgpu::PollType::Wait {
-                                    submission_index: None,
-                                    timeout: Some(Duration::from_secs(10)),
-                                })
-                                .map_err(|error| format!("GPU drain: {error:?}"))?;
-                        }
-                        Ok::<_, String>(samples)
-                    })();
-                    RenderReply {
-                        sequence: 0,
-                        outcome: RenderOutcome::Finish(result),
-                        samples: [None; FrameHost::MAX_IN_FLIGHT],
-                        counters: FrameCounters::read(&host),
-                        worker_wall: job_start.elapsed(),
-                        target_status: None,
-                        acquire_wall: None,
-                        surface_status: SurfaceStatus::NotAttempted,
-                        surface_extent: current_extent,
-                    }
-                }
-            }
-        },
+        move |job| actor.work(job),
         move || {
             let _ = signal.send_event(UserEvent::RenderDone);
         },
     )
     .map_err(|error| format!("render worker: {error}"))
 }
+impl Actor {
+    fn work(&mut self, job: RenderJob) -> RenderReply {
+        let start = Instant::now();
+        let mut reply = RenderReply {
+            sequence: 0,
+            device_generation: self.gpu.watch.generation,
+            outcome: RenderOutcome::DeviceLost,
+            samples: [None; FrameHost::MAX_IN_FLIGHT],
+            counters: FrameCounters::read(&self.host),
+            worker_wall: Duration::ZERO,
+            target_status: None,
+            acquire_wall: None,
+            surface_status: SurfaceStatus::NotAttempted,
+            surface_extent: [self.gpu.config.width, self.gpu.config.height],
+        };
+        reply.outcome = match job {
+            RenderJob::Frame(request) => {
+                reply.sequence = request.sequence;
+                match self.frame(&request, &mut reply) {
+                    Ok(report) => {
+                        let mut failure = None;
+                        if !self.gpu.watch.is_lost() {
+                            for sample in &mut reply.samples {
+                                match self.host.poll_completed() {
+                                    Ok(next) => *sample = next,
+                                    Err(error) => {
+                                        failure = Some(error);
+                                        break;
+                                    }
+                                }
+                                if sample.is_none() {
+                                    break;
+                                }
+                            }
+                        }
+                        if let Some(error) = failure {
+                            frame_failure(error, self.gpu.watch.is_lost())
+                        } else if self.gpu.watch.is_lost() {
+                            RenderOutcome::DeviceLost
+                        } else {
+                            RenderOutcome::Frame(Ok(report))
+                        }
+                    }
+                    Err(error) => frame_failure(error, self.gpu.watch.is_lost()),
+                }
+            }
+            RenderJob::Recover {
+                from_generation,
+                generation,
+                extent,
+                surface_generation,
+            } => RenderOutcome::Recovered {
+                attempted: generation,
+                result: self.recover(from_generation, generation, extent, surface_generation),
+            },
+            RenderJob::Finish => RenderOutcome::Finish(self.finish()),
+        };
+        reply.device_generation = self.gpu.watch.generation;
+        reply.surface_extent = [self.gpu.config.width, self.gpu.config.height];
+        reply.counters = FrameCounters::read(&self.host);
+        reply.worker_wall = start.elapsed();
+        reply
+    }
+    fn frame(
+        &mut self,
+        request: &FrameRequest,
+        reply: &mut RenderReply,
+    ) -> Result<DriveReport, FrameError> {
+        if request.device_generation != self.gpu.watch.generation {
+            return Err(FrameError::InvalidState("stale frame device generation"));
+        }
+        // CPU policy errors remain fatal even when a loss is concurrent.
+        if let Some(value) = request.time_of_day {
+            self.host
+                .set_time_of_day(value)
+                .map_err(FrameError::Scene)?;
+        }
+        if let Some(value) = request.camera_pitch {
+            self.host
+                .set_camera_pitch(value)
+                .map_err(FrameError::Scene)?;
+        }
+        if let Some(value) = request.camera_yaw {
+            self.host.set_camera_yaw(value).map_err(FrameError::Scene)?;
+        }
+        ensure_device(&self.gpu.watch)?;
+        ensure_running(&self.stopped)?;
+        let current = self.surface_generation.load(Ordering::Acquire) == request.surface_generation;
+        if !current {
+            self.needs_reconfigure = true;
+        }
+        let extent = [self.gpu.config.width, self.gpu.config.height];
+        let ready = current
+            && !request.extent.contains(&0)
+            && (request.extent == extent && !self.needs_reconfigure
+                || self.host.pending_frames() == 0);
+        if ready && (request.extent != extent || self.needs_reconfigure) {
+            self.host.resize_surface(request.extent)?;
+            self.gpu.config.width = request.extent[0];
+            self.gpu.config.height = request.extent[1];
+            self.recipe
+                .surface
+                .configure(&self.gpu.device, &self.gpu.config);
+            ensure_device(&self.gpu.watch)?;
+            self.needs_reconfigure = false;
+        }
+        let now = self.origin.elapsed();
+        let lead = display_target_lead(request.target_media_seconds, CACurrentMediaTime());
+        reply.target_status = Some(lead.status);
+        self.host.set_presentation_lead(lead.duration);
+        if !ready {
+            reply.surface_status = if current {
+                SurfaceStatus::Unavailable
+            } else {
+                SurfaceStatus::NeedsReconfigure
+            };
+            return self.host.drive(now, None);
+        }
+        let advanced = self.host.advance(now)?;
+        if !advanced.can_acquire_serial() {
+            return advanced.submit(None);
+        }
+        let encoded = advanced.encode_scene()?;
+        if self.surface_generation.load(Ordering::Acquire) != request.surface_generation {
+            self.needs_reconfigure = true;
+            reply.surface_status = SurfaceStatus::NeedsReconfigure;
+            return Ok(encoded.skip());
+        }
+        ensure_device(&self.gpu.watch)?;
+        ensure_running(&self.stopped)?;
+        let acquire = Instant::now();
+        let acquired = self.recipe.surface.get_current_texture();
+        reply.acquire_wall = Some(acquire.elapsed());
+        let frame = match acquired {
+            CurrentSurfaceTexture::Success(frame) => frame,
+            CurrentSurfaceTexture::Suboptimal(frame) => {
+                self.needs_reconfigure = true;
+                frame
+            }
+            CurrentSurfaceTexture::Timeout => {
+                reply.surface_status = SurfaceStatus::Unavailable;
+                return Ok(encoded.skip());
+            }
+            CurrentSurfaceTexture::Occluded => {
+                reply.surface_status = SurfaceStatus::Occluded;
+                return Ok(encoded.skip());
+            }
+            CurrentSurfaceTexture::Outdated
+            | CurrentSurfaceTexture::Lost
+            | CurrentSurfaceTexture::Validation => {
+                self.needs_reconfigure = true;
+                reply.surface_status = SurfaceStatus::NeedsReconfigure;
+                return Ok(encoded.skip());
+            }
+        };
+        ensure_device(&self.gpu.watch)?;
+        if self.surface_generation.load(Ordering::Acquire) != request.surface_generation {
+            self.needs_reconfigure = true;
+            reply.surface_status = SurfaceStatus::NeedsReconfigure;
+            return Ok(encoded.skip());
+        }
+        let view = frame.texture.create_view(&TextureViewDescriptor::default());
+        let output = SurfaceOutput {
+            view: &view,
+            extent: request.extent,
+        };
+        let report = encoded.submit(Some(&output))?;
+        ensure_device(&self.gpu.watch)?;
+        if report.surface_presented {
+            self.gpu.queue.present(frame);
+            reply.surface_status = SurfaceStatus::Presented;
+        } else {
+            reply.surface_status = SurfaceStatus::Unavailable;
+        }
+        Ok(report)
+    }
+    fn recover(
+        &mut self,
+        from: u64,
+        generation: u64,
+        extent: [u32; 2],
+        surface_generation: u64,
+    ) -> Result<RecoveryInfo, RecoveryFailure> {
+        if from != self.gpu.watch.generation || generation <= from {
+            return Err(RecoveryFailure::Fatal(
+                "stale replacement generation".to_owned(),
+            ));
+        }
+        ensure_running(&self.stopped).map_err(RecoveryFailure::frame)?;
+        let inputs = self
+            .host
+            .device_prepare_inputs()
+            .map_err(RecoveryFailure::frame)?;
+        let replacement = pollster::block_on(self.recipe.create(generation, extent, &self.wake))
+            .map_err(RecoveryFailure::Unavailable)?;
+        ensure_device(&replacement.watch).map_err(RecoveryFailure::frame)?;
+        let profile = SurfaceProfile {
+            format: replacement.config.format,
+            extent: [replacement.config.width, replacement.config.height],
+        };
+        let mut prepared = pollster::block_on(inputs.prepare(
+            &replacement.capabilities,
+            &replacement.queue,
+            Some(profile),
+        ))
+        .map_err(RecoveryFailure::frame)?;
+        ensure_device(&replacement.watch).map_err(RecoveryFailure::frame)?;
+        ensure_running(&self.stopped).map_err(RecoveryFailure::frame)?;
+        self.host
+            .publish_device(&mut prepared)
+            .map_err(RecoveryFailure::frame)?;
+        self.gpu = replacement;
+        // Prior jobs have dropped every SurfaceTexture before this boundary.
+        self.needs_reconfigure = extent.contains(&0)
+            || self.surface_generation.load(Ordering::Acquire) != surface_generation;
+        ensure_running(&self.stopped).map_err(RecoveryFailure::frame)?;
+        if !self.needs_reconfigure {
+            self.recipe
+                .surface
+                .configure(&self.gpu.device, &self.gpu.config);
+        }
+        ensure_device(&self.gpu.watch).map_err(RecoveryFailure::frame)?;
+        Ok(RecoveryInfo {
+            format: self.gpu.config.format,
+            adapter_name: self.gpu.adapter_name.clone(),
+        })
+    }
+    fn finish(&mut self) -> Result<Finished, String> {
+        let mut samples = Vec::with_capacity(FrameHost::MAX_IN_FLIGHT * 2);
+        loop {
+            if self.gpu.watch.is_lost() {
+                return Ok(Finished {
+                    samples,
+                    lost_device: true,
+                });
+            }
+            match self.host.poll_completed() {
+                Ok(Some(sample)) => {
+                    samples.push(sample);
+                    continue;
+                }
+                Ok(None) => {}
+                Err(FrameError::Gpu(_)) if self.gpu.watch.is_lost() => {
+                    return Ok(Finished {
+                        samples,
+                        lost_device: true,
+                    });
+                }
+                Err(error) => return Err(error.to_string()),
+            }
+            if self.host.pending_frames() == 0 {
+                return Ok(Finished {
+                    samples,
+                    lost_device: self.gpu.watch.is_lost(),
+                });
+            }
+            let waited = self.gpu.device.poll(wgpu::PollType::Wait {
+                submission_index: None,
+                timeout: Some(Duration::from_secs(10)),
+            });
+            if drain_wait(waited, self.gpu.watch.is_lost())? {
+                return Ok(Finished {
+                    samples,
+                    lost_device: true,
+                });
+            }
+        }
+    }
+}
+fn drain_wait(
+    result: Result<wgpu::PollStatus, wgpu::PollError>,
+    lost: bool,
+) -> Result<bool, String> {
+    match result {
+        Ok(_) => Ok(lost),
+        Err(wgpu::PollError::Timeout) if lost => Ok(true),
+        Err(error) => Err(format!("GPU drain: {error:?}")),
+    }
+}
+fn ensure_device(watch: &DeviceWatch) -> Result<(), FrameError> {
+    if watch.is_lost() {
+        Err(FrameError::Gpu(
+            "device loss reported by callback".to_owned(),
+        ))
+    } else {
+        Ok(())
+    }
+}
+fn ensure_running(stopped: &AtomicBool) -> Result<(), FrameError> {
+    if stopped.load(Ordering::Acquire) {
+        Err(FrameError::InvalidState("render owner is stopping"))
+    } else {
+        Ok(())
+    }
+}
+fn frame_failure(error: FrameError, lost: bool) -> RenderOutcome {
+    match error {
+        FrameError::Gpu(_) if lost => RenderOutcome::DeviceLost,
+        other => RenderOutcome::Frame(Err(other.to_string())),
+    }
+}
+
+#[cfg(test)]
+#[path = "render_actor_tests.rs"]
+mod tests;
