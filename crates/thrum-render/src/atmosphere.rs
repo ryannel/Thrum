@@ -8,8 +8,44 @@ use crate::synthetic::RenderError;
 mod gpu;
 mod graph;
 mod model;
+mod reflection;
 
 pub(crate) use gpu::AtmospherePrepared;
+
+pub(crate) const STAGE_NAMES: [&str; 14] = [
+    "atmosphere transmittance",
+    "atmosphere multiple scattering",
+    "atmosphere sky view",
+    "atmosphere diffuse irradiance",
+    "atmosphere aerial perspective",
+    "atmosphere ground irradiance",
+    "atmosphere DFG integration",
+    "atmosphere reflection mip 0",
+    "atmosphere reflection mip 1",
+    "atmosphere reflection mip 2",
+    "atmosphere reflection mip 3",
+    "atmosphere reflection mip 4",
+    "atmosphere reflection mip 5",
+    "atmosphere reflection mip 6",
+];
+// Logical stage, existing five-slot atmosphere timing bucket. Specular
+// preparation stays in the sky-view bucket; raw queries keep distinct names.
+pub(crate) const TIMING_ORDER: [(usize, usize); 14] = [
+    (0, 0),
+    (1, 1),
+    (5, 1),
+    (2, 2),
+    (3, 3),
+    (4, 4),
+    (6, 2),
+    (7, 2),
+    (8, 2),
+    (9, 2),
+    (10, 2),
+    (11, 2),
+    (12, 2),
+    (13, 2),
+];
 
 /// Checked presentation sample for the fixed Earth atmosphere profile.
 /// Directions use world +Y up; illuminance is perpendicular, above atmosphere.

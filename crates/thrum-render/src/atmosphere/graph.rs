@@ -5,10 +5,15 @@ use crate::graph::{
     ResourceScope,
 };
 
-use super::gpu::{AERIAL_EXTENT, AtmospherePrepared, EXTENTS};
+use super::{
+    STAGE_NAMES,
+    gpu::{AERIAL_EXTENT, AtmospherePrepared, EXTENTS},
+    reflection::{CUBE_SIZE, DFG_SIZE, MIP_COUNT, SAMPLE_BYTES},
+};
 
 const LUT_OWNER_BASE: u64 = 0x4154_4d4f;
 const AERIAL_OWNER_BASE: u64 = 0x4154_4d60;
+const REFLECTION_OWNER_BASE: u64 = 0x4154_4d70;
 const _: () = assert!(AERIAL_OWNER_BASE >= LUT_OWNER_BASE + 4);
 
 impl AtmospherePrepared {
@@ -85,13 +90,7 @@ impl AtmospherePrepared {
             let key = self.key(role);
             keys.insert(key);
             graph.pass(Pass {
-                name: [
-                    "atmosphere transmittance",
-                    "atmosphere multiple scattering",
-                    "atmosphere sky view",
-                    "atmosphere ground irradiance",
-                ][index]
-                    .into(),
+                name: STAGE_NAMES[usize::try_from(role).expect("prepared atmosphere stage")].into(),
                 scope: PassScope::View(1),
                 pipeline: Some(key),
                 accesses,
@@ -101,7 +100,7 @@ impl AtmospherePrepared {
         let diffuse_key = self.key(3);
         keys.insert(diffuse_key);
         graph.pass(Pass {
-            name: "atmosphere diffuse irradiance".into(),
+            name: STAGE_NAMES[3].into(),
             scope: PassScope::View(1),
             pipeline: Some(diffuse_key),
             accesses: vec![
@@ -152,7 +151,7 @@ impl AtmospherePrepared {
         let aerial_key = self.key(4);
         keys.insert(aerial_key);
         graph.pass(Pass {
-            name: "atmosphere aerial perspective".into(),
+            name: STAGE_NAMES[4].into(),
             scope: PassScope::View(1),
             pipeline: Some(aerial_key),
             accesses: [
@@ -190,6 +189,7 @@ impl AtmospherePrepared {
             .to_vec(),
             external_side_effect: false,
         });
+        self.append_reflection(graph, keys, &uniform, &resources[2], forward_accesses)?;
         forward_accesses.push(Access {
             resource: uniform,
             range: 0..128,
@@ -208,6 +208,124 @@ impl AtmospherePrepared {
             forward_accesses.push(Access {
                 resource,
                 range: 0..u64::from(AERIAL_EXTENT[2]),
+                kind: AccessKind::SampledRead,
+                store: true,
+            });
+        }
+        Ok(())
+    }
+
+    fn append_reflection(
+        &self,
+        graph: &mut FrameGraph,
+        keys: &mut BTreeSet<PipelineKey>,
+        uniform: &crate::graph::ResourceId,
+        sky: &crate::graph::ResourceId,
+        forward: &mut Vec<Access>,
+    ) -> Result<(), GraphError> {
+        let resources = [
+            (&self.reflection.dfg, DFG_SIZE, 1, 1, self.generation),
+            (&self.reflection.cube, CUBE_SIZE, 6, MIP_COUNT, self.epoch),
+        ]
+        .into_iter()
+        .enumerate()
+        .map(|(index, (texture, size, layers, mips, epoch))| {
+            graph.resource(
+                ResourceDescriptor::Texture {
+                    width: size,
+                    height: size,
+                    layers,
+                    mips,
+                    samples: 1,
+                    format: texture.format(),
+                    usage: texture.usage(),
+                },
+                ResourceScope::Persistent {
+                    owner: REFLECTION_OWNER_BASE + index as u64,
+                    epoch,
+                    initialized: false,
+                },
+            )
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+        let dfg_key = self.key(6);
+        let samples = graph.resource(
+            ResourceDescriptor::Buffer {
+                bytes: SAMPLE_BYTES,
+                usage: wgpu::BufferUsages::STORAGE,
+            },
+            ResourceScope::Persistent {
+                owner: REFLECTION_OWNER_BASE + 2,
+                epoch: self.generation,
+                initialized: false,
+            },
+        )?;
+        keys.insert(dfg_key);
+        graph.pass(Pass {
+            name: STAGE_NAMES[6].into(),
+            scope: PassScope::View(1),
+            pipeline: Some(dfg_key),
+            accesses: vec![
+                Access {
+                    resource: resources[0].clone(),
+                    range: 0..1,
+                    kind: AccessKind::StorageWrite,
+                    store: true,
+                },
+                Access {
+                    resource: samples.clone(),
+                    range: 0..SAMPLE_BYTES,
+                    kind: AccessKind::StorageWrite,
+                    store: true,
+                },
+            ],
+            external_side_effect: false,
+        });
+        for mip in 0..MIP_COUNT {
+            let stage = 7 + mip;
+            let key = self.key(stage);
+            keys.insert(key);
+            graph.pass(Pass {
+                name: STAGE_NAMES[usize::try_from(stage).expect("prepared reflection stage")]
+                    .into(),
+                scope: PassScope::View(1),
+                pipeline: Some(key),
+                accesses: vec![
+                    Access {
+                        resource: samples.clone(),
+                        range: 0..SAMPLE_BYTES,
+                        kind: AccessKind::StorageRead,
+                        store: true,
+                    },
+                    Access {
+                        resource: uniform.clone(),
+                        range: 0..128,
+                        kind: AccessKind::UniformRead,
+                        store: true,
+                    },
+                    Access {
+                        resource: sky.clone(),
+                        range: 0..1,
+                        kind: AccessKind::SampledRead,
+                        store: true,
+                    },
+                    Access {
+                        resource: resources[1].clone(),
+                        range: u64::from(mip * 6)..u64::from((mip + 1) * 6),
+                        kind: AccessKind::StorageWrite,
+                        store: true,
+                    },
+                ],
+                external_side_effect: false,
+            });
+        }
+        for (resource, end) in [
+            (resources[0].clone(), 1),
+            (resources[1].clone(), u64::from(MIP_COUNT * 6)),
+        ] {
+            forward.push(Access {
+                resource,
+                range: 0..end,
                 kind: AccessKind::SampledRead,
                 store: true,
             });

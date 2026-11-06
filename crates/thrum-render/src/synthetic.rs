@@ -49,7 +49,7 @@ pub use view::SyntheticView;
 use view::{AUX_BYTES, Projection};
 
 /// Synthetic source revision; not a substitute for an F4 product identity.
-pub const SYNTHETIC_REVISION: u64 = 15;
+pub const SYNTHETIC_REVISION: u64 = 16;
 /// Portable opaque depth; no sampling or separate prepass is needed.
 pub const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
 const VIEW_BYTES: usize = 160;
@@ -681,6 +681,13 @@ impl PreparedSynthetic {
         let [local_light_bytes, cluster_head_bytes, cluster_index_bytes] = clusters.capacities();
         let dropped_light_references = clusters.dropped_references;
         let limits = capabilities.limits();
+        if matches!(lighting, FrameLighting::Atmosphere(_))
+            && (limits.max_sampled_textures_per_shader_stage < 8 + u32::from(shadow_enabled)
+                || limits.max_samplers_per_shader_stage < 3 + u32::from(shadow_enabled)
+                || limits.max_bindings_per_bind_group < 11)
+        {
+            return Err(AbiError::DeviceLimits.into());
+        }
         if [local_light_bytes, cluster_head_bytes, cluster_index_bytes]
             .into_iter()
             .any(|bytes| bytes > limits.max_storage_buffer_binding_size)
@@ -808,24 +815,31 @@ impl PreparedSynthetic {
             storage_layout(3, wgpu::ShaderStages::FRAGMENT, 4),
         ];
         if matches!(lighting, FrameLighting::Atmosphere(_)) {
-            for binding in [4, 5] {
+            for (binding, dimension) in [
+                (4, wgpu::TextureViewDimension::D2Array),
+                (5, wgpu::TextureViewDimension::D2Array),
+                (8, wgpu::TextureViewDimension::Cube),
+                (9, wgpu::TextureViewDimension::D2),
+            ] {
                 light_entries.push(wgpu::BindGroupLayoutEntry {
                     binding,
                     visibility: wgpu::ShaderStages::FRAGMENT,
                     ty: wgpu::BindingType::Texture {
                         sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                        view_dimension: wgpu::TextureViewDimension::D2Array,
+                        view_dimension: dimension,
                         multisampled: false,
                     },
                     count: None,
                 });
             }
-            light_entries.push(wgpu::BindGroupLayoutEntry {
-                binding: 6,
-                visibility: wgpu::ShaderStages::FRAGMENT,
-                ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-                count: None,
-            });
+            for binding in [6, 10] {
+                light_entries.push(wgpu::BindGroupLayoutEntry {
+                    binding,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                    count: None,
+                });
+            }
             light_entries.push(uniform_layout(7, 128, wgpu::ShaderStages::FRAGMENT));
         }
         let light_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -903,6 +917,7 @@ impl PreparedSynthetic {
         ];
         if let Some(atmosphere) = &atmosphere {
             let (views, sampler, uniform) = atmosphere.aerial_sampled();
+            let (reflection, dfg, reflection_sampler) = atmosphere.reflection_sampled();
             light_bindings.extend([
                 wgpu::BindGroupEntry {
                     binding: 4,
@@ -919,6 +934,18 @@ impl PreparedSynthetic {
                 wgpu::BindGroupEntry {
                     binding: 7,
                     resource: uniform.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 8,
+                    resource: wgpu::BindingResource::TextureView(reflection),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 9,
+                    resource: wgpu::BindingResource::TextureView(dfg),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 10,
+                    resource: wgpu::BindingResource::Sampler(reflection_sampler),
                 },
             ]);
         }
@@ -1072,8 +1099,10 @@ impl PreparedSynthetic {
             immediate_size: 0,
         });
         let shader_source = format!(
-            "{}\n{}",
+            "{}\n{}\n{}",
             concat!(
+                include_str!("atmosphere/brdf.wgsl"),
+                "\n",
                 include_str!("atmosphere/irradiance.wgsl"),
                 "\n",
                 include_str!("synthetic.wgsl")
@@ -1082,6 +1111,11 @@ impl PreparedSynthetic {
                 include_str!("synthetic_aerial.wgsl")
             } else {
                 include_str!("synthetic_plain.wgsl")
+            },
+            if atmosphere.is_some() {
+                include_str!("synthetic_environment.wgsl")
+            } else {
+                ""
             }
         );
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
@@ -1239,7 +1273,10 @@ impl PreparedSynthetic {
     pub fn scene_pass_count(&self) -> u32 {
         4 + u32::from(self.shadow.is_some()) * 2
             + u32::from(self.cluster_compute.is_some())
-            + u32::from(self.atmosphere.is_some()) * 6
+            + self
+                .atmosphere
+                .as_ref()
+                .map_or(0, AtmospherePrepared::pass_count)
     }
     /// Whether this prepared scene builds selective local-light lists on GPU.
     pub fn gpu_clustered(&self) -> bool {
@@ -1982,9 +2019,17 @@ impl PreparedSynthetic {
         let mut bindings = Vec::with_capacity(graph.pass_order.len());
         for (id, pass) in graph.pass_bindings() {
             let binding = match pass.pipeline {
-                Some(key) if self.atmosphere.is_some() && (10..=15).contains(&key.role) => {
-                    let index = usize::try_from(key.role - 10)
-                        .map_err(|_| RenderError::GraphPassMismatch)?;
+                Some(key)
+                    if self
+                        .atmosphere
+                        .as_ref()
+                        .is_some_and(|atmosphere| atmosphere.stage_index(key.role).is_some()) =>
+                {
+                    let index = self
+                        .atmosphere
+                        .as_ref()
+                        .and_then(|atmosphere| atmosphere.stage_index(key.role))
+                        .ok_or(RenderError::GraphPassMismatch)?;
                     RecordBinding::<SceneFamily>::new(id, PassKind::Compute, move |frame, pass| {
                         frame.atmosphere(index, pass)
                     })

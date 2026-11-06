@@ -295,7 +295,8 @@ Planet boundary light includes a profile-cached ground sky-irradiance table, sam
 Use a spherical planet with Rayleigh, Mie and ozone coefficients; update LUTs only when their Sun,
 weather, camera-height or profile dependencies change. The Sun disk and Moon
 are separate celestial emitters with one named light identity each. Generate
-sky-derived diffuse SH and a prefiltered specular cubemap over several frames;
+sky-derived diffuse SH and a prefiltered specular cubemap from the same disk-free Sky LUT.
+Initially complete each changed-sky cube coherently; add staggered cadence only when measured work needs it;
 an authored HDRI is an optional override, no longer a mandatory terminal
 background. Begin with [Hillaire 2020](https://sebh.github.io/publications/egsr2020.pdf);
 G3s records LUT cost on this M3 Max. An independent all-orders scalar CPU referee first checks the same

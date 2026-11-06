@@ -40,16 +40,8 @@ fn collect_pass_durations(
     };
     let mut atmosphere = [0.0; 5];
     let mut offset = 0;
-    for (index, name) in [
-        (0, "atmosphere transmittance"),
-        (1, "atmosphere multiple scattering"),
-        // Keep the existing report shape: profile-only M and GroundE share
-        // the transport-preparation bucket; raw queries retain distinct names.
-        (1, "atmosphere ground irradiance"),
-        (2, "atmosphere sky view"),
-        (3, "atmosphere diffuse irradiance"),
-        (4, "atmosphere aerial perspective"),
-    ] {
+    for (stage, index) in crate::atmosphere::TIMING_ORDER {
+        let name = crate::atmosphere::STAGE_NAMES[stage];
         if passes
             .get(offset)
             .is_some_and(|pass| pass.name.as_ref() == name)

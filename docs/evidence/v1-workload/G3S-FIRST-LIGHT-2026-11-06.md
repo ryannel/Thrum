@@ -1,46 +1,50 @@
 # G3s first light — open
 
-6 November, M3 Max Metal / Chrome 156 WebGPU. Partial function/visual checkpoint; no imported spectra or speed claim.
+6 November, M3 Max Metal / Chrome 156. Partial visual/function checkpoint; no imported spectra or speed claim.
 
-| Row | Evidence | Status |
+| Check | Result | Scope |
 | --- | --- | --- |
-| Storage/camera/SDR | Six-angle LUTs, πL, meter/history, shoulder f64 within 1 byte | Scoped pass |
-| Directional diffuse | Analytic/zero/colour/rotation/127000 scaling; eight actual solar/azimuth rows, 14 normals | Scoped pass |
-| Projection/reference | Worst coefficient error 0.0645% M0; direct-reference refinement ≤0.0483% M0 on actual skies | Sampling pass |
-| SH approximation | Worst direct error 5.225% M0; relative error up to 331% on faint directions | Accuracy open |
-| Transport | 198 matched-medium rays; horizon and reflected planet boundary | Accuracy open |
-| Look | Clearer twilight faces; noon silhouette, grid aliasing/pastel contrast remain | Partial |
+| Storage/camera/SDR | LUTs, πL, meter/history, shoulder f64 within 1 byte | Pass |
+| SH9 diffuse | Projection 0.0645% M0; reference refinement ≤0.0483% M0 | Sampling pass |
+| SH approximation | Direct error 5.225% M0; up to 331% on faint directions | Accuracy open |
+| GGX cube/DFG | Actual Metal constants, axes/edges/corners, rotated Sun, independent f64 hemisphere integral | Pass |
+| Material/energy | 120 GPU consumer cases: metal/roughness/view, solar 0/1/2, furnace and back hemisphere | Pass |
+| Cache/lifecycle | Cold/warm cancellation, Sun/profile/altitude changes, amplitude/view reuse; browser replacement | Pass |
+| Look | Noon/sunrise/twilight subjects; 24 camera/Sun samples independently reviewed | Partial |
 
-![Six held Chrome solar phases](g3s-first-light/solar-contact.png) · [held-phase clip](g3s-first-light/solar-sweep.mp4) · [earlier native Sun](g3s-first-light/sun-facing-1080p.png)
+![Six selected Chrome views](g3s-first-light/solar-contact.png) · [sampled camera/Sun clip](g3s-first-light/solar-sweep.mp4) · [earlier native Sun](g3s-first-light/sun-facing-1080p.png)
 
-Current contact/clip: served Wasm `fe6d60406d83f3d862df184cf8e497bb7d04f3e08d3f537842104615832f456e`,
-Chrome 156.0.8078.81, ANGLE Metal M3 Max, 1252×704, world tick 2. Six held phases, **not cadence**.
-Pause; scene/noon; Sunrise; Noon; Sunset; Twilight; scene view. Page presets own time/yaw/pitch;
-scene view resets camera only. Clip repeats each captured phase for one second, explicit sRGB H.264;
-decoded frames reviewed (grid/chroma compression remains). Code/recipe: 65° FOV, 18% rough neutral material,
-one enlarged static entity. Root/independent review retain the distinct pink side/violet top/dark front at twilight.
-No new broad clipping/banding; noon silhouette, grid moiré, jagged shadows and a one-pixel horizon step remain.
-Sky-only upper-300-row sunrise/sunset/twilight comparison against `0ab189d`: peak delta 1 SDR byte.
+Served Wasm `5d5988bcbe8a2b0e5f2b886eee030c09982e57565c3feabfce19fff9acfa3940`, Chrome 156.0.8078.81,
+ANGLE Metal M3 Max, 1252×704. `node scripts/check_v1_browser.mjs --case sky-reflections` captures seven held phases
+and 24 UI-driven camera/Sun samples in one healthy generation; world paused (final run tick2). Contact selects six;
+clip is 24 samples at 5 fps, **not live cadence**. Source PNGs and all decoded frames were inspected independently.
+Metallic foreground uses the ONE disk-free Sky; nearby 18% rough neutral stays outside local-light spheres.
+Sunrise coverage was added after review; first occluded fixture was rejected. Twilight colours read on both materials.
+No broad clipping/banding, blackouts or cube seams observed; grid moiré, regular shadow stipples/stairs and pastel
+contrast remain. Motion PNGs have zero black/clipped pixels; H.264 damages the dense grid, so source PNGs govern.
+Three sky-only 280-row comparisons against prior SH9 captures peak at 1 SDR byte. Transport/spectral accuracy,
+physical display motion and actual tab/mobile lifecycle remain open; the scoped reflection slice is retainable.
 
-[SH9 design](../../design/modules/ENVIRONMENT.md#selected-mathematical-relationships-and-domains) keeps
-horizontal metering independent: 144-byte signed tail, 1024 additional cached LUT fetches, no new pass/readback.
-Only final irradiance clamps; 64 normal probes report risk, not pixels. Flag16 cannot change gain/history.
-The `3M0/32` kernel envelope is not measured accuracy. Independent midpoint refinement must pass first;
-the narrow reference needed 256→512 without relaxing tolerance. Review corrected horizon sampling,
-zenith/rotated Sun and solar scaling. Dark-direction SH errors remain; no whole-sky pass.
-Browser normal forward+sky p50/p95 0.131/0.197 ms versus earlier 0.197/0.197: quantized, shared load, no speed win.
-No new full-frame CPU/allocation or complete-atmosphere cost claim.
+**Recorded cost, not a win:** 10k/1080p threaded Metal, 200 callbacks/run, same harness; baseline `614156e` and current
+fixture. ABBA ran after owned Chrome exited, other sessions active (load ~12–14). Each range is two run p95s:
 
-A sampled sunset run hit WebGPU loss/black output: **rejected as motion evidence**; loss reporting/authority now pass; reconstruction remains open.
-Raw numerical/capture/failure logs: `tmp/g3s-directional/`; baseline `tmp/g3b-browser/`.
+| Hot path | Before | With reflections |
+| --- | ---: | ---: |
+| Render callback incl. GPU poll | 0.732–0.863 ms | 0.921–1.120 ms |
+| Scene GPU pass sum | 1.763–1.914 ms | 3.278–3.310 ms |
+| Atmosphere compute incl. aerial | 0.343–0.344 ms | 0.958–0.978 ms |
 
-Transport uses declared bands, not measured Earth spectra/CIE. Nonlinear M layout `11cb21e` stays parked;
-selected transport remains `e061671`, gains 65536/1024. A true-phase first-scattering seed was also rejected:
-Sun−3° resolved-row median error worsened 14.34→17.24%; Sun0°/+1°/0° blue improved 3.11→0.25%, while
-Sun−3°/+15°/180° green worsened 25.92→29.01%. Comparison holds all 198 first-order/CPU rows fixed against
-retained 32768-path estimates; it is not a whole-sky tolerance pass. Raw patch/tables: `tmp/g3s-source-quality/`.
-Independent continuous local-closure referee separates angular/path refinement from LUT sampling. Four cells agree within
-0.25% on separate axes: angular 8→16 (fourth 16→32), path refinement at16. Its vacuum falsifier exposes inherited
-self-feedback. A coupled scalar prototype fixes that boundary but remains mixed: green+25.9→+3.9%, blue−3.1→−10.1%; parked in `tmp/g3s-spatial-prototype/`.
-C250 metering has no readback. NeutralHighlights preserves calibration; not standard PBR Neutral. Physical display
-motion, actual tab/mobile lifecycle, spectral accuracy and final contrast remain open.
+New work increases cost: ~4.19M sky fetches/changed sky, ~0.30MiB products, device-prepared 896 GGX directions.
+Forward and unchanged tone buckets also rise; fixture/load confound isolation. No whole-frame attribution solely to
+prefiltering. Earlier overlapping-Chrome block had 14–17ms GPU tails and remains raw; no clean-device timing claim.
+Retain this feature baseline for the later whole-frame profile; no numeric admission target or allocation claim.
+
+[Design](../../design/modules/ENVIRONMENT.md#selected-mathematical-relationships-and-domains): GGX split-sum,
+64²×6/seven mips, 65² endpoint DFG, 128/1024 samples, correlated Smith; Sun/aerial/pre-exposure apply once.
+SH9 retains independent horizontal metering; dark-direction and transport errors are separate. Selected transport
+stays `e061671`, gains65536/1024; phase seed rejected (Sun−3° median14.34→17.24%), scalar/moment prototypes mixed.
+Continuous closure refinement passes four cells but exposes inherited vacuum self-feedback; no whole-sky pass.
+Raw refs/prototypes remain `tmp/g3s-{source-quality,spatial-prototype,rayleigh-moment}/`; no GPL-derived inputs.
+Final captures/oracles, both timing blocks and rejected fixture metadata: `tmp/g3s-environment-reflections/`.
+`./dev check`, actual Metal referees and all11 Chrome cases pass; no iPhone result. C250 has no readback;
+NeutralHighlights preserves calibration but is not standard PBR Neutral. G3s remains open.

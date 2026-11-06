@@ -43,3 +43,17 @@ fn cold_and_cached_ground_queries_keep_the_report_shape_and_profile_bucket() {
     let (values, _) = collect_pass_durations(&ground_only, false, false, false).unwrap();
     assert_eq!(&values[6..], &[0.0, 1.0, 0.0, 0.0, 0.0]);
 }
+
+#[test]
+fn reflection_queries_keep_raw_identity_and_the_existing_sky_bucket() {
+    let names =
+        crate::atmosphere::TIMING_ORDER.map(|(stage, _)| crate::atmosphere::STAGE_NAMES[stage]);
+    let cold = timings(&names);
+    let (values, _) = collect_pass_durations(&cold, false, false, false).unwrap();
+    assert_eq!(&values[6..], &[1.0, 2.0, 9.0, 1.0, 1.0]);
+    let cached = timings(&names[7..]);
+    let (values, _) = collect_pass_durations(&cached, false, false, false).unwrap();
+    assert_eq!(&values[6..], &[0.0, 0.0, 7.0, 0.0, 0.0]);
+    let unexpected = timings(&["atmosphere reflection mip 99"]);
+    assert!(collect_pass_durations(&unexpected, false, false, false).is_none());
+}

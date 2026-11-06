@@ -193,6 +193,24 @@ readback or per-pixel atomics. Fixed authored ambient is unchanged. Sixty-four n
 RGB risk (count/minimum, not affected pixels); exposure flag16 is informational and never changes gain/history.
 This follows [Ramamoorthi/Hanrahan](https://cseweb.ucsd.edu/~ravir/papers/envmap/), re-derived without copied code.
 
+G3s specular selection uses the same disk-free Sky LUT: a 64² six-face RGBA16F cube, seven roughness mips,
+`r=.045+.955*m/6`, and a 65² endpoint-inclusive DFG table. GGX split-sum assumes `N=V=R` in prefiltering;
+one camera-height environment lights nearby objects, with no local geometry reflection. Start with 128 GGX
+sample attempts per cube texel (normalize accepted positive weights) and 1024 VNDF samples per DFG texel,
+matching correlated Smith and `alpha=r²`.
+Prepare the 896 invariant local GGX directions/weights once per device in a 14KiB storage buffer;
+changed-sky texels rotate/reuse them rather than repeat the same trigonometry.
+With `s(x)=sqrt(alpha²+(1-alpha²)x²)`, VNDF weight is `NoL*(NoV+s(NoV))/(NoL*s(NoV)+NoV*s(NoL))` for
+`NoL>0`; rejected samples count as zero. `A=<W*(1-Fc)>`, `B=<W*Fc>`, `Fc=(1-VoH)^5`; thus `A+B≤1`.
+Atmosphere indirect uses `Es=F0*A+B`, specular `prefiltered*Es` and diffuse `(1-metalness)*base*(1-Es)*E/π`.
+This hemispherical energy allocation and single-scatter GGX loss are approximations; Fixed lighting stays exact.
+Cube storage retains gain1024; forward applies unattenuated solar RGB once, then existing aerial/pre-exposure once.
+All changed-sky mips complete in one submitted frame; cancelled work never becomes valid. Cube dependencies match
+Sky; DFG/sample preparation depends only on device/BRDF. ~0.30MiB resident and ~4.19M fetches per changed Sky are cost accounts,
+not timing claims. Validate analytic DFG/energy, cube axes/seams/horizon, source scaling, cache/cancel/replacement
+and noon/twilight materials before retention. [Karis](https://cdn2.unrealengine.com/Resources/files/2013SiggraphPresentationsNotes-26915738.pdf)
+and [Heitz VNDF](https://jcgt.org/published/0007/04/01/paper.pdf) supply the technique; code is independently derived.
+
 The shared environment contract carries **fields and fluxes**, not a mandatory global fluid solver. For a physically driven provider, material transport follows `∂_t q + ∇·(q u) = S_q − D_q` for a conserved concentration/coverage proxy `q` with wind/flow `u`, source `S_q` and sink `D_q`. Authored/keyframed providers may publish the same query fields without solving this PDE; they are marked authored and cannot claim dynamical conservation. A front, gust or cloud cell must therefore be represented as a time-varying spatial field, not a camera-tied screen animation. `u(x,y,z,t)` uses C01's right-handed Y-up frame and is sampled at the consumer's height; plant drag, rain drift, cloud advection and water forcing use the same field with their own response laws. Grid spacing, timestep and numerical diffusion bound a simulated provider; the interface exposes interpolation support and a validity region rather than concealing that error.
 
 For sunlight under cloud, optical depth is `τ_c(x,ω_s,t)=∫_ray σ_{t,c}(x+sω_s,t)ds`, and direct transmittance is `T_c=e^{-τ_c}`. An authored 2D field may store `τ_c` for one chosen light direction/altitude regime; it cannot predict side views, cloud self-shadowing or a rapidly moving Sun without reprojecting or recomputing. A volumetric `σ_{t,c}` can produce both view-ray cloud radiance and source-ray shadow attenuation, at greater sample/bandwidth cost. Thus the structural selection is **one cloud source field with independent shadow and visible projections**, with explicit approximation domain. A cloud-free source yields `τ_c=0`, `T_c=1`. Atmosphere and fog use the ordered `(transmittance, in-scattered radiance)` segment algebra only on **disjoint ordered ray intervals**; overlapping media require joint coefficient/source integration or one provider that precomposes the entire overlap with shared lighting. Independently lit preintegrated overlapping pairs cannot be composed exactly. A declared approximate layer policy may be selected for a named profile with its limits exposed. A display-only overlay is excluded from light/visibility authority.

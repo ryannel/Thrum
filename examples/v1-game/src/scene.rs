@@ -10,6 +10,10 @@ use thrum_render::extract::{ExtractReport, RenderExtractor, SourceTick};
 
 pub(crate) const ENTITY_COUNT: usize = 10_000;
 pub(crate) const MOVING_COUNT: usize = 1_500;
+pub(crate) const NEUTRAL_SUBJECT_SLOT: usize = 5050;
+pub(crate) const REFLECTION_SUBJECT_SLOT: usize = 5052;
+pub(crate) const REFLECTION_SUBJECT_POSITION: [f32; 3] = [-0.5, 0.009, 0.78];
+pub(crate) const REFLECTION_SUBJECT_MATERIAL: u64 = 2;
 pub(crate) const CONTROLLED_ID: StableId = StableId((ENTITY_COUNT - 1) as u128);
 pub(crate) const LOCAL_PEER: PeerId = PeerId(1);
 pub(crate) const PEER_COUNT: usize = 4;
@@ -71,6 +75,7 @@ pub fn simulation_with_count(entity_count: usize) -> Result<Simulation, String> 
         let x = -0.9 + (index % 100) as f64 * 0.018 + 0.009;
         let y = -0.9 + (index / 100) as f64 * 0.018 + 0.009;
         let peer_number = entity_count - index;
+        let reflection_subject = entity_count == ENTITY_COUNT && index == REFLECTION_SUBJECT_SLOT;
         let ownership = if peer_number <= PEER_COUNT {
             Some(binding(PeerId(
                 u64::try_from(peer_number).map_err(|error| error.to_string())?,
@@ -80,11 +85,19 @@ pub fn simulation_with_count(entity_count: usize) -> Result<Simulation, String> 
         };
         sim.seed(ComponentEntity {
             id: StableId(index as u128),
-            position: Position([x, y, 0.5]),
+            position: Position(if reflection_subject {
+                REFLECTION_SUBJECT_POSITION.map(f64::from)
+            } else {
+                [x, y, 0.5]
+            }),
             velocity: Velocity([if index < moving_count { 0.05 } else { 0.0 }, 0.0, 0.0]),
             health: 100,
             ownership,
-            visual: Some((index % 2) as u64),
+            visual: Some(if reflection_subject {
+                REFLECTION_SUBJECT_MATERIAL
+            } else {
+                (index % 2) as u64
+            }),
         })
         .map_err(|error| format!("seed entity {index}: {error:?}"))?;
     }

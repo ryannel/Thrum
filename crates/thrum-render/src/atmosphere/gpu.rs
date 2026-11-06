@@ -5,7 +5,7 @@ use crate::graph::{CompiledPass, PipelineKey};
 use crate::synthetic::{DEPTH_FORMAT, RenderError, SyntheticView};
 use crate::timing::GpuTimings;
 
-use super::AtmosphereFrame;
+use super::{AtmosphereFrame, reflection::ReflectionPrepared};
 
 #[cfg(all(test, not(target_arch = "wasm32")))]
 mod tests;
@@ -25,6 +25,8 @@ const SKY_VALID: u8 = 2;
 const DIFFUSE_VALID: u8 = 4;
 const AERIAL_VALID: u8 = 8;
 const GROUND_VALID: u8 = 16;
+const REFLECTION_VALID: u8 = 32;
+const DFG_VALID: u8 = 64;
 
 pub(crate) struct AtmospherePrepared {
     pub(super) generation: u64,
@@ -42,6 +44,7 @@ pub(crate) struct AtmospherePrepared {
     diffuse_group: wgpu::BindGroup,
     aerial_pipeline: wgpu::ComputePipeline,
     aerial_group: wgpu::BindGroup,
+    pub(super) reflection: ReflectionPrepared,
     validity: u8,
     sky_dependencies: [u32; 4],
     diffuse_dependencies: [u32; 4],
@@ -130,6 +133,7 @@ impl AtmospherePrepared {
             prepare_diffuse(device, &uniform, &views[2], &sampler, directional);
         let (aerial_pipeline, aerial_group) =
             prepare_aerial(device, &uniform, &views, &aerial_views, &sampler);
+        let reflection = ReflectionPrepared::new(device, &uniform, &views[2], &sampler);
         let mut result = Self {
             generation,
             epoch: frame.profile_epoch,
@@ -146,6 +150,7 @@ impl AtmospherePrepared {
             diffuse_group,
             aerial_pipeline,
             aerial_group,
+            reflection,
             validity: 0,
             sky_dependencies: [0; 4],
             diffuse_dependencies: [0; 4],
@@ -163,7 +168,7 @@ impl AtmospherePrepared {
         extent: [u32; 2],
     ) {
         if frame.profile_epoch != self.epoch {
-            self.validity = 0;
+            self.validity &= DFG_VALID;
             self.epoch = frame.profile_epoch;
         }
         let dependencies = [
@@ -173,7 +178,7 @@ impl AtmospherePrepared {
             frame.camera_altitude_m.to_bits(),
         ];
         if dependencies != self.sky_dependencies {
-            self.validity &= !SKY_VALID;
+            self.validity &= !(SKY_VALID | REFLECTION_VALID);
             self.sky_dependencies = dependencies;
         }
         let diffuse_dependencies = [
@@ -219,7 +224,29 @@ impl AtmospherePrepared {
     }
 
     pub(crate) fn commit(&mut self) {
-        self.validity = TRANSPORT_VALID | SKY_VALID | DIFFUSE_VALID | AERIAL_VALID | GROUND_VALID;
+        self.validity = TRANSPORT_VALID
+            | SKY_VALID
+            | DIFFUSE_VALID
+            | AERIAL_VALID
+            | GROUND_VALID
+            | REFLECTION_VALID
+            | DFG_VALID;
+    }
+
+    pub(crate) fn pass_count(&self) -> u32 {
+        7 + u32::try_from(self.reflection.mip_count())
+            .expect("prepared reflection mip count fits u32")
+    }
+
+    pub(crate) fn stage_index(&self, role: u32) -> Option<usize> {
+        let index = role.checked_sub(10)?;
+        (index < self.pass_count()).then(|| usize::try_from(index).expect("bounded stage index"))
+    }
+
+    pub(crate) fn reflection_sampled(
+        &self,
+    ) -> (&wgpu::TextureView, &wgpu::TextureView, &wgpu::Sampler) {
+        self.reflection.sampled()
     }
 
     pub(crate) fn key(&self, index: u32) -> PipelineKey {
@@ -254,12 +281,17 @@ impl AtmospherePrepared {
             || (index == 3 && self.validity & DIFFUSE_VALID != 0)
             || (index == 4 && self.validity & AERIAL_VALID != 0)
             || (index == 5 && self.validity & GROUND_VALID != 0)
+            || (index == 6 && self.validity & DFG_VALID != 0)
+            || (index > 6 && self.validity & REFLECTION_VALID != 0)
         {
             return Ok(());
         }
         let mut compute = pass
             .begin_compute(encoder, self.generation, timings)?
             .ok_or(RenderError::GraphPassMismatch)?;
+        if index >= 6 {
+            return self.reflection.encode(index - 6, &mut compute);
+        }
         if index == 3 {
             compute.set_pipeline(&self.diffuse_pipeline);
             compute.set_bind_group(0, &self.diffuse_group, &[]);
