@@ -19,15 +19,6 @@ pub(crate) struct SunSample {
 impl DayCycle {
     pub(crate) const TICKS_PER_DAY: u64 = 60 * 60 * 5;
 
-    /// Authored clear-sky eye adaptation for this showcase camera. The
-    /// renderer applies the view exposure; gameplay remains in lux/metres.
-    pub(crate) fn display_exposure(sun_up: f32) -> f32 {
-        // Adapt more slowly than clear-sky radiance falls below the horizon.
-        // Cap the gain before the sky reaches its near-black night floor.
-        let depth = (-sun_up).max(0.0);
-        (34.0 * depth).exp2().min(16.0) / 16_000.0
-    }
-
     pub(crate) fn offset_for_time(tick: u64, time_of_day: f32) -> Option<f32> {
         if !time_of_day.is_finite() || !(0.0..=1.0).contains(&time_of_day) {
             return None;

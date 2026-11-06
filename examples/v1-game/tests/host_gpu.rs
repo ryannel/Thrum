@@ -46,6 +46,11 @@ fn game_atmosphere_capture_has_visible_finite_pixels() {
         let mut host = FrameHost::new(&device, &queue, FrameConfig::default())
             .await
             .expect("prepared game scene");
+        let capture_directory =
+            std::env::var_os("THRUM_V1_CAPTURE_DIR").map(std::path::PathBuf::from);
+        if let Some(directory) = &capture_directory {
+            std::fs::create_dir_all(directory).expect("capture directory");
+        }
         let pixels = host.capture_pixels().expect("game atmosphere pixels");
         assert_eq!(pixels.len(), 640 * 360 * 4);
         let (rgba, remainder) = pixels.as_chunks::<4>();
@@ -58,6 +63,8 @@ fn game_atmosphere_capture_has_visible_finite_pixels() {
         assert!(host.set_time_of_day(f32::NAN).is_err());
         assert!(host.set_camera_pitch(f32::NAN).is_err());
         assert!(host.set_camera_pitch(0.7).is_err());
+        assert!(host.set_camera_yaw(f32::NAN).is_err());
+        assert!(host.set_camera_yaw(4.0).is_err());
         host.set_time_of_day(0.25).expect("sunrise control");
         let sunrise = host.capture_pixels().expect("sunrise pixels");
         let changed = rgba
@@ -75,28 +82,38 @@ fn game_atmosphere_capture_has_visible_finite_pixels() {
         let brightness = sky.iter().map(|channel| u16::from(*channel)).sum::<u16>();
         assert!(
             brightness >= 80,
-            "adapted twilight sky must exceed fixed-exposure baseline (20): {sky:?}"
+            "authored twilight camera must retain visible sky colour: {sky:?}"
         );
         for (label, horizon, direction) in [("dusk", 0.75_f32, 1.0), ("dawn", 0.25, -1.0)] {
-            let mut prior = None;
             for step in 0..=16 {
                 let time = horizon + direction * step as f32 * 0.001_875;
                 host.set_time_of_day(time).expect("fine solar step");
                 let pixels = host.capture_pixels().expect("fine solar pixels");
                 let sky = &pixels[(80 * 640 + 20) * 4..][..3];
                 let brightness = sky.iter().map(|channel| u16::from(*channel)).sum::<u16>();
-                if let Some(prior) = prior {
-                    assert!(
-                        brightness <= prior + 8,
-                        "{label} adaptation flashed at {time}: prior={prior}, now={brightness}, sky={sky:?}"
+                if let Some(directory) = &capture_directory {
+                    write_ppm(
+                        directory.join(format!("{label}_{step:02}.ppm")),
+                        pixels.as_chunks::<4>().0,
+                        [640, 360],
                     );
                 }
-                prior = Some(brightness);
+                // A display sample advances by one of the game's 18,000
+                // ticks/day, not the 33.75 ticks between these probe locations.
+                host.set_time_of_day(time + direction / 18_000.0)
+                    .expect("adjacent game tick");
+                let adjacent = host.capture_pixels().expect("adjacent solar pixels");
+                let next = adjacent[(80 * 640 + 20) * 4..][..3]
+                    .iter()
+                    .map(|channel| u16::from(*channel))
+                    .sum::<u16>();
+                assert!(
+                    brightness.abs_diff(next) <= 8,
+                    "{label} camera flashed over one tick at {time}: before={brightness}, after={next}"
+                );
             }
         }
-        if let Some(directory) = std::env::var_os("THRUM_V1_CAPTURE_DIR") {
-            let directory = std::path::PathBuf::from(directory);
-            std::fs::create_dir_all(&directory).expect("capture directory");
+        if let Some(directory) = capture_directory {
             for (name, time) in [
                 ("midnight", 0.0),
                 ("sunrise", 0.25),
@@ -139,6 +156,16 @@ fn game_atmosphere_capture_has_visible_finite_pixels() {
                 pixels.as_chunks::<4>().0,
                 [1920, 1080],
             );
+            full.set_camera_yaw(-std::f32::consts::FRAC_PI_2)
+                .expect("face the setting Sun");
+            full.set_camera_pitch(0.0).expect("sunset horizon");
+            full.set_time_of_day(0.745).expect("Sun above horizon");
+            let pixels = full.capture_pixels().expect("full-resolution sunset");
+            write_ppm(
+                directory.join("sunset-sun-1080p.ppm"),
+                pixels.as_chunks::<4>().0,
+                [1920, 1080],
+            );
             host.set_camera_pitch(0.0).expect("level sweep camera");
             for sample in 0..96 {
                 host.set_time_of_day(sample as f32 / 96.0)
@@ -146,6 +173,17 @@ fn game_atmosphere_capture_has_visible_finite_pixels() {
                 let pixels = host.capture_pixels().expect("sweep camera");
                 write_ppm(
                     directory.join(format!("sweep_{sample:03}.ppm")),
+                    pixels.as_chunks::<4>().0,
+                    [640, 360],
+                );
+            }
+            host.set_camera_yaw(-std::f32::consts::FRAC_PI_2)
+                .expect("Sun-facing solar sequence");
+            for (name, time) in [("sunset-sun", 0.745), ("twilight-sun", 0.77)] {
+                host.set_time_of_day(time).expect("Sun-facing solar time");
+                let pixels = host.capture_pixels().expect("Sun-facing solar view");
+                write_ppm(
+                    directory.join(format!("{name}.ppm")),
                     pixels.as_chunks::<4>().0,
                     [640, 360],
                 );

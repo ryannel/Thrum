@@ -75,6 +75,8 @@ struct App {
     pending_time_of_day: Option<f32>,
     camera_pitch: f32,
     pending_camera_pitch: Option<f32>,
+    camera_yaw: f32,
+    pending_camera_yaw: Option<f32>,
     origin: Instant,
     last_call: Duration,
     presented: usize,
@@ -129,6 +131,8 @@ impl App {
             pending_time_of_day: None,
             camera_pitch: 0.0,
             pending_camera_pitch: None,
+            camera_yaw: 0.0,
+            pending_camera_yaw: None,
             origin: Instant::now(),
             last_call: Duration::ZERO,
             presented: 0,
@@ -190,6 +194,22 @@ impl App {
     }
 
     fn set_key(&mut self, code: KeyCode, pressed: bool) -> Result<(), String> {
+        if pressed && matches!(code, KeyCode::KeyQ | KeyCode::KeyE) {
+            let step = if code == KeyCode::KeyQ {
+                -0.087_266_46
+            } else {
+                0.087_266_46
+            };
+            self.camera_yaw = (self.camera_yaw + step + std::f32::consts::PI)
+                .rem_euclid(std::f32::consts::TAU)
+                - std::f32::consts::PI;
+            self.pending_camera_yaw = Some(self.camera_yaw);
+            self.request_sequence = self.request_sequence.saturating_add(1);
+            if let Some(window) = &self.window {
+                window.request_redraw();
+            }
+            return Ok(());
+        }
         if pressed && matches!(code, KeyCode::KeyR | KeyCode::KeyF) {
             let step = if code == KeyCode::KeyR {
                 0.087_266_46
@@ -443,6 +463,7 @@ impl App {
             surface_generation: self.surface_generation.load(Ordering::Acquire),
             time_of_day: self.pending_time_of_day,
             camera_pitch: self.pending_camera_pitch,
+            camera_yaw: self.pending_camera_yaw,
         };
         match self
             .render
@@ -460,6 +481,7 @@ impl App {
         }
         self.pending_time_of_day = None;
         self.pending_camera_pitch = None;
+        self.pending_camera_yaw = None;
         self.submitted_sequence = self.request_sequence;
         self.render_in_flight = Some(self.submitted_sequence);
         if now >= self.run_deadline {

@@ -134,6 +134,14 @@ impl TransformHistory {
         history
     }
 
+    pub(super) fn write_side(&self) -> usize {
+        1 - self.read_side
+    }
+
+    pub(super) fn serial_buffer(&self) -> &wgpu::Buffer {
+        &self.serial_buffer
+    }
+
     pub(super) fn read_group(&self) -> &wgpu::BindGroup {
         &self.read_groups[self.read_side]
     }
@@ -187,7 +195,7 @@ impl TransformHistory {
             .begin_compute(encoder, generation, timings)?
             .ok_or(RenderError::GraphPassMismatch)?;
         pass.set_pipeline(&self.pipeline);
-        pass.set_bind_group(0, &self.write_groups[1 - self.read_side], &[]);
+        pass.set_bind_group(0, &self.write_groups[self.write_side()], &[]);
         pass.dispatch_workgroups(active_count.div_ceil(WORKGROUP), 1, 1);
         Ok(())
     }
