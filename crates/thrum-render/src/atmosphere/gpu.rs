@@ -8,12 +8,20 @@ use crate::timing::GpuTimings;
 use super::AtmosphereFrame;
 
 pub(super) const EXTENTS: [[u32; 2]; 3] = [[256, 64], [32, 32], [192, 108]];
+pub(super) const AERIAL_EXTENT: [u32; 3] = [32, 32, 33];
 const UNIFORM_BYTES: u64 = 128;
+const TRANSPORT_VALID: u8 = 1;
+const SKY_VALID: u8 = 2;
+const DIFFUSE_VALID: u8 = 4;
+const AERIAL_VALID: u8 = 8;
 
 pub(crate) struct AtmospherePrepared {
     pub(super) generation: u64,
     pub(super) epoch: u64,
     pub(super) textures: [wgpu::Texture; 3],
+    pub(super) aerial_textures: [wgpu::Texture; 2],
+    aerial_views: [wgpu::TextureView; 2],
+    aerial_sampler: wgpu::Sampler,
     uniform: wgpu::Buffer,
     compute: [wgpu::ComputePipeline; 3],
     groups: [wgpu::BindGroup; 3],
@@ -21,11 +29,12 @@ pub(crate) struct AtmospherePrepared {
     sky_group: wgpu::BindGroup,
     diffuse_pipeline: wgpu::ComputePipeline,
     diffuse_group: wgpu::BindGroup,
-    cache_valid: bool,
-    sky_valid: bool,
+    aerial_pipeline: wgpu::ComputePipeline,
+    aerial_group: wgpu::BindGroup,
+    validity: u8,
     sky_dependencies: [u32; 4],
-    diffuse_valid: bool,
     diffuse_dependencies: [u32; 4],
+    aerial_dependencies: [u8; 80],
 }
 
 impl AtmospherePrepared {
@@ -68,6 +77,34 @@ impl AtmospherePrepared {
             min_filter: wgpu::FilterMode::Linear,
             ..Default::default()
         });
+        let aerial_textures = std::array::from_fn(|_| {
+            device.create_texture(&wgpu::TextureDescriptor {
+                label: Some("atmosphere aerial volume"),
+                size: wgpu::Extent3d {
+                    width: AERIAL_EXTENT[0],
+                    height: AERIAL_EXTENT[1],
+                    depth_or_array_layers: AERIAL_EXTENT[2],
+                },
+                mip_level_count: 1,
+                sample_count: 1,
+                dimension: wgpu::TextureDimension::D2,
+                format: wgpu::TextureFormat::Rgba16Float,
+                usage: wgpu::TextureUsages::STORAGE_BINDING | wgpu::TextureUsages::TEXTURE_BINDING,
+                view_formats: &[],
+            })
+        });
+        let aerial_views = aerial_textures.each_ref().map(|texture| {
+            texture.create_view(&wgpu::TextureViewDescriptor {
+                dimension: Some(wgpu::TextureViewDimension::D2Array),
+                ..Default::default()
+            })
+        });
+        let aerial_sampler = device.create_sampler(&wgpu::SamplerDescriptor {
+            label: Some("atmosphere aerial bilinear"),
+            mag_filter: wgpu::FilterMode::Linear,
+            min_filter: wgpu::FilterMode::Linear,
+            ..Default::default()
+        });
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("atmosphere LUT integration"),
             source: wgpu::ShaderSource::Wgsl(
@@ -82,10 +119,15 @@ impl AtmospherePrepared {
         let (sky_pipeline, sky_group) = prepare_sky(device, &uniform, &views, &sampler);
         let (diffuse_pipeline, diffuse_group) =
             prepare_diffuse(device, &uniform, &views[2], &sampler, directional);
+        let (aerial_pipeline, aerial_group) =
+            prepare_aerial(device, &uniform, &views, &aerial_views, &sampler);
         let mut result = Self {
             generation,
             epoch: frame.profile_epoch,
             textures,
+            aerial_textures,
+            aerial_views,
+            aerial_sampler,
             uniform,
             compute: [first.0, second.0, third.0],
             groups: [first.1, second.1, third.1],
@@ -93,11 +135,12 @@ impl AtmospherePrepared {
             sky_group,
             diffuse_pipeline,
             diffuse_group,
-            cache_valid: false,
-            sky_valid: false,
+            aerial_pipeline,
+            aerial_group,
+            validity: 0,
             sky_dependencies: [0; 4],
-            diffuse_valid: false,
             diffuse_dependencies: [0; 4],
+            aerial_dependencies: [0; 80],
         };
         result.update(queue, frame, view, [1, 1]);
         result
@@ -111,8 +154,7 @@ impl AtmospherePrepared {
         extent: [u32; 2],
     ) {
         if frame.profile_epoch != self.epoch {
-            self.cache_valid = false;
-            self.sky_valid = false;
+            self.validity = 0;
             self.epoch = frame.profile_epoch;
         }
         let dependencies = [
@@ -122,7 +164,7 @@ impl AtmospherePrepared {
             frame.camera_altitude_m.to_bits(),
         ];
         if dependencies != self.sky_dependencies {
-            self.sky_valid = false;
+            self.validity &= !SKY_VALID;
             self.sky_dependencies = dependencies;
         }
         let diffuse_dependencies = [
@@ -131,8 +173,8 @@ impl AtmospherePrepared {
             frame.solar_colour[1].to_bits(),
             frame.solar_colour[2].to_bits(),
         ];
-        if !self.sky_valid || diffuse_dependencies != self.diffuse_dependencies {
-            self.diffuse_valid = false;
+        if self.validity & SKY_VALID == 0 || diffuse_dependencies != self.diffuse_dependencies {
+            self.validity &= !DIFFUSE_VALID;
             self.diffuse_dependencies = diffuse_dependencies;
         }
         let mut bytes = [0_u8; 128];
@@ -152,13 +194,18 @@ impl AtmospherePrepared {
             bytes[80 + index * 4..84 + index * 4].copy_from_slice(&value.to_le_bytes());
         }
         bytes[112..128].copy_from_slice(&aux[64..80]);
+        let mut aerial_dependencies = [0_u8; 80];
+        aerial_dependencies[..64].copy_from_slice(&bytes[..64]);
+        aerial_dependencies[64..80].copy_from_slice(&bytes[64..80]);
+        if self.validity & SKY_VALID == 0 || aerial_dependencies != self.aerial_dependencies {
+            self.validity &= !AERIAL_VALID;
+            self.aerial_dependencies = aerial_dependencies;
+        }
         queue.write_buffer(&self.uniform, 0, &bytes);
     }
 
     pub(crate) fn commit(&mut self) {
-        self.cache_valid = true;
-        self.sky_valid = true;
-        self.diffuse_valid = true;
+        self.validity = TRANSPORT_VALID | SKY_VALID | DIFFUSE_VALID | AERIAL_VALID;
     }
 
     pub(crate) fn key(&self, index: u32) -> PipelineKey {
@@ -167,6 +214,16 @@ impl AtmospherePrepared {
             revision: super::super::synthetic::SYNTHETIC_REVISION,
             role: 10 + index,
         }
+    }
+
+    pub(crate) fn aerial_sampled(
+        &self,
+    ) -> ([&wgpu::TextureView; 2], &wgpu::Sampler, &wgpu::Buffer) {
+        (
+            [&self.aerial_views[0], &self.aerial_views[1]],
+            &self.aerial_sampler,
+            &self.uniform,
+        )
     }
 
     pub(crate) fn encode(
@@ -178,9 +235,10 @@ impl AtmospherePrepared {
     ) -> Result<(), RenderError> {
         // Cached dependencies retain their graph identity without adding empty
         // GPU passes or timestamp work to an ordinary frame.
-        if (index < 2 && self.cache_valid)
-            || (index == 2 && self.sky_valid)
-            || (index == 3 && self.diffuse_valid)
+        if (index < 2 && self.validity & TRANSPORT_VALID != 0)
+            || (index == 2 && self.validity & SKY_VALID != 0)
+            || (index == 3 && self.validity & DIFFUSE_VALID != 0)
+            || (index == 4 && self.validity & AERIAL_VALID != 0)
         {
             return Ok(());
         }
@@ -191,6 +249,16 @@ impl AtmospherePrepared {
             compute.set_pipeline(&self.diffuse_pipeline);
             compute.set_bind_group(0, &self.diffuse_group, &[]);
             compute.dispatch_workgroups(1, 1, 1);
+            return Ok(());
+        }
+        if index == 4 {
+            compute.set_pipeline(&self.aerial_pipeline);
+            compute.set_bind_group(0, &self.aerial_group, &[]);
+            compute.dispatch_workgroups(
+                AERIAL_EXTENT[0].div_ceil(8),
+                AERIAL_EXTENT[1].div_ceil(8),
+                1,
+            );
             return Ok(());
         }
         compute.set_pipeline(&self.compute[index]);
@@ -276,6 +344,92 @@ fn prepare_diffuse(
             wgpu::BindGroupEntry {
                 binding: 3,
                 resource: directional.as_entire_binding(),
+            },
+        ],
+    });
+    (pipeline, group)
+}
+
+fn prepare_aerial(
+    device: &wgpu::Device,
+    uniform: &wgpu::Buffer,
+    views: &[wgpu::TextureView; 3],
+    aerial: &[wgpu::TextureView; 2],
+    sampler: &wgpu::Sampler,
+) -> (wgpu::ComputePipeline, wgpu::BindGroup) {
+    let visibility = wgpu::ShaderStages::COMPUTE;
+    let output = |binding| wgpu::BindGroupLayoutEntry {
+        binding,
+        visibility,
+        ty: wgpu::BindingType::StorageTexture {
+            access: wgpu::StorageTextureAccess::WriteOnly,
+            format: wgpu::TextureFormat::Rgba16Float,
+            view_dimension: wgpu::TextureViewDimension::D2Array,
+        },
+        count: None,
+    };
+    let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+        label: Some("atmosphere aerial integration"),
+        entries: &[
+            uniform_entry(visibility),
+            sampled_entry(1, visibility),
+            sampled_entry(2, visibility),
+            output(3),
+            output(4),
+            sampler_entry(5, visibility),
+        ],
+    });
+    let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+        label: Some("atmosphere aerial"),
+        bind_group_layouts: &[Some(&layout)],
+        immediate_size: 0,
+    });
+    let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+        label: Some("atmosphere aerial integration"),
+        source: wgpu::ShaderSource::Wgsl(
+            concat!(
+                include_str!("common.wgsl"),
+                "\n",
+                include_str!("aerial.wgsl")
+            )
+            .into(),
+        ),
+    });
+    let pipeline = device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+        label: Some("atmosphere aerial integration"),
+        layout: Some(&pipeline_layout),
+        module: &shader,
+        entry_point: Some("aerial_main"),
+        compilation_options: wgpu::PipelineCompilationOptions::default(),
+        cache: None,
+    });
+    let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+        label: Some("atmosphere aerial resources"),
+        layout: &layout,
+        entries: &[
+            wgpu::BindGroupEntry {
+                binding: 0,
+                resource: uniform.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 1,
+                resource: wgpu::BindingResource::TextureView(&views[0]),
+            },
+            wgpu::BindGroupEntry {
+                binding: 2,
+                resource: wgpu::BindingResource::TextureView(&views[1]),
+            },
+            wgpu::BindGroupEntry {
+                binding: 3,
+                resource: wgpu::BindingResource::TextureView(&aerial[0]),
+            },
+            wgpu::BindGroupEntry {
+                binding: 4,
+                resource: wgpu::BindingResource::TextureView(&aerial[1]),
+            },
+            wgpu::BindGroupEntry {
+                binding: 5,
+                resource: wgpu::BindingResource::Sampler(sampler),
             },
         ],
     });

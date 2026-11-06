@@ -776,23 +776,45 @@ impl PreparedSynthetic {
             label: Some("synthetic view and target aux"),
             entries: &view_entries,
         });
-        let light_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            label: Some("synthetic directional and clustered sources"),
-            entries: &[
-                wgpu::BindGroupLayoutEntry {
-                    binding: 0,
+        let mut light_entries = vec![
+            wgpu::BindGroupLayoutEntry {
+                binding: 0,
+                visibility: wgpu::ShaderStages::FRAGMENT,
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Uniform,
+                    has_dynamic_offset: false,
+                    min_binding_size: wgpu::BufferSize::new(LIGHT_BYTES as u64),
+                },
+                count: None,
+            },
+            storage_layout(1, wgpu::ShaderStages::FRAGMENT, 32),
+            storage_layout(2, wgpu::ShaderStages::FRAGMENT, 8),
+            storage_layout(3, wgpu::ShaderStages::FRAGMENT, 4),
+        ];
+        if matches!(lighting, FrameLighting::Atmosphere(_)) {
+            for binding in [4, 5] {
+                light_entries.push(wgpu::BindGroupLayoutEntry {
+                    binding,
                     visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: wgpu::BufferSize::new(LIGHT_BYTES as u64),
+                    ty: wgpu::BindingType::Texture {
+                        sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                        view_dimension: wgpu::TextureViewDimension::D2Array,
+                        multisampled: false,
                     },
                     count: None,
-                },
-                storage_layout(1, wgpu::ShaderStages::FRAGMENT, 32),
-                storage_layout(2, wgpu::ShaderStages::FRAGMENT, 8),
-                storage_layout(3, wgpu::ShaderStages::FRAGMENT, 4),
-            ],
+                });
+            }
+            light_entries.push(wgpu::BindGroupLayoutEntry {
+                binding: 6,
+                visibility: wgpu::ShaderStages::FRAGMENT,
+                ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                count: None,
+            });
+            light_entries.push(uniform_layout(7, 128, wgpu::ShaderStages::FRAGMENT));
+        }
+        let light_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("synthetic directional and clustered sources"),
+            entries: &light_entries,
         });
         let directional = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("synthetic directional source"),
@@ -845,27 +867,49 @@ impl PreparedSynthetic {
             );
             ClusterCompute::new(device, bounds, &cluster_heads, &cluster_indices)
         });
+        let mut light_bindings = vec![
+            wgpu::BindGroupEntry {
+                binding: 0,
+                resource: directional.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 1,
+                resource: local_lights.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 2,
+                resource: cluster_heads.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 3,
+                resource: cluster_indices.as_entire_binding(),
+            },
+        ];
+        if let Some(atmosphere) = &atmosphere {
+            let (views, sampler, uniform) = atmosphere.aerial_sampled();
+            light_bindings.extend([
+                wgpu::BindGroupEntry {
+                    binding: 4,
+                    resource: wgpu::BindingResource::TextureView(views[0]),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 5,
+                    resource: wgpu::BindingResource::TextureView(views[1]),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 6,
+                    resource: wgpu::BindingResource::Sampler(sampler),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 7,
+                    resource: uniform.as_entire_binding(),
+                },
+            ]);
+        }
         let light = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("synthetic clustered light lists"),
             layout: &light_layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: directional.as_entire_binding(),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 1,
-                    resource: local_lights.as_entire_binding(),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 2,
-                    resource: cluster_heads.as_entire_binding(),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 3,
-                    resource: cluster_indices.as_entire_binding(),
-                },
-            ],
+            entries: &light_bindings,
         });
         let mut entries = vec![storage_layout(
             0,
@@ -1011,9 +1055,18 @@ impl PreparedSynthetic {
             bind_group_layouts: &bind_group_layouts,
             immediate_size: 0,
         });
+        let shader_source = format!(
+            "{}\n{}",
+            include_str!("synthetic.wgsl"),
+            if atmosphere.is_some() {
+                include_str!("synthetic_aerial.wgsl")
+            } else {
+                include_str!("synthetic_plain.wgsl")
+            }
+        );
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("prepared synthetic shader ABI2"),
-            source: wgpu::ShaderSource::Wgsl(include_str!("synthetic.wgsl").into()),
+            source: wgpu::ShaderSource::Wgsl(shader_source.into()),
         });
         let create_pipeline = |cull_mode| {
             device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
@@ -1159,7 +1212,7 @@ impl PreparedSynthetic {
     pub fn scene_pass_count(&self) -> u32 {
         3 + u32::from(self.shadow.is_some()) * 2
             + u32::from(self.cluster_compute.is_some())
-            + u32::from(self.atmosphere.is_some()) * 4
+            + u32::from(self.atmosphere.is_some()) * 5
     }
     /// Whether this prepared scene builds selective local-light lists on GPU.
     pub fn gpu_clustered(&self) -> bool {
@@ -1921,7 +1974,7 @@ impl PreparedSynthetic {
         let mut bindings = Vec::with_capacity(graph.pass_order.len());
         for (id, pass) in graph.pass_bindings() {
             let binding = match pass.pipeline {
-                Some(key) if self.atmosphere.is_some() && (10..=13).contains(&key.role) => {
+                Some(key) if self.atmosphere.is_some() && (10..=14).contains(&key.role) => {
                     let index = usize::try_from(key.role - 10)
                         .map_err(|_| RenderError::GraphPassMismatch)?;
                     RecordBinding::<SceneFamily>::new(id, PassKind::Compute, move |frame, pass| {

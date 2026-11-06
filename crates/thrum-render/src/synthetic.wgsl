@@ -242,7 +242,8 @@ fn shade(input: VertexOutput, sun_factor: f32) -> vec4<f32> {
     // before pre-exposure and bound only to the finite fp16 storage envelope.
     let finite = select(vec3(0.0), colour, colour >= vec3(0.0));
     let bounded = min(finite, vec3(3.402823e38));
-    return vec4(clamp(bounded*view.pre_exposure_inv_exposure_jitter.x,vec3(0.0),vec3(65504.0)),1.0);
+    let aerial = aerial_colour(bounded, input.world_position, input.position);
+    return vec4(clamp(aerial*view.pre_exposure_inv_exposure_jitter.x,vec3(0.0),vec3(65504.0)),1.0);
 }
 struct FragmentOutput {
     @location(0) colour: vec4<f32>,

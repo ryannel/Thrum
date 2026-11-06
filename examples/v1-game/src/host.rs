@@ -146,9 +146,9 @@ pub struct FrameSample {
     pub render_cpu: Duration,
     /// Actual GPU pass durations: near/far Sun shadows, local clusters,
     /// forward, history, tone, then atmosphere transmittance, multiple
-    /// scattering, sky view and diffuse irradiance. The sky draw is included
+    /// scattering, sky view, diffuse irradiance and aerial perspective. The sky draw is included
     /// in forward. Disabled or cached compute passes report zero.
-    pub gpu_pass_ns: Option<[f64; 10]>,
+    pub gpu_pass_ns: Option<[f64; 11]>,
     /// GPU time for the optional surface blit, when it was submitted and timed.
     pub gpu_present_ns: Option<f64>,
     /// This frame also wrote an acquired platform surface.
@@ -2188,7 +2188,7 @@ fn pass_durations(
     passes: &[thrum_render::timing::PassTiming],
     sample: &FrameSample,
     prepared: &PreparedSynthetic,
-) -> Option<([f64; 10], Option<f64>)> {
+) -> Option<([f64; 11], Option<f64>)> {
     const ALL: [&str; 6] = [
         "synthetic Sun shadow near",
         "synthetic Sun shadow far",
@@ -2204,7 +2204,7 @@ fn pass_durations(
         return (passes.len() == 1
             && presented
             && passes[0].name.as_ref() == thrum_render::present::PASS_NAME)
-            .then(|| ([0.0; 10], Some(passes[0].nanoseconds)));
+            .then(|| ([0.0; 11], Some(passes[0].nanoseconds)));
     }
     let shadows = prepared.shadowed();
     let clusters = prepared.gpu_clustered();
@@ -2214,13 +2214,14 @@ fn pass_durations(
         (false, true) => &CLUSTER_ONLY,
         (false, false) => &ALL[3..],
     };
-    let mut atmosphere = [0.0; 4];
+    let mut atmosphere = [0.0; 5];
     let mut offset = 0;
     for (index, name) in [
         "atmosphere transmittance",
         "atmosphere multiple scattering",
         "atmosphere sky view",
         "atmosphere diffuse irradiance",
+        "atmosphere aerial perspective",
     ]
     .into_iter()
     .enumerate()
@@ -2241,7 +2242,7 @@ fn pass_durations(
         && (!presented
             || passes[offset + names.len()].name.as_ref() == thrum_render::present::PASS_NAME))
         .then(|| {
-            let mut scene = [0.0; 10];
+            let mut scene = [0.0; 11];
             scene[6..].copy_from_slice(&atmosphere);
             for pass in passes[offset..].iter().take(names.len()) {
                 let slot = match pass.name.as_ref() {

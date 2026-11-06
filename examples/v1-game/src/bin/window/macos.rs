@@ -658,7 +658,7 @@ impl App {
             .all(|sample| sample.gpu_present_ns.is_some())
         {
             let scene = percentile(&presented, |sample| {
-                sample.gpu_pass_ns.unwrap_or([0.0; 10]).iter().sum::<f64>() / 1e6
+                sample.gpu_pass_ns.unwrap_or([0.0; 11]).iter().sum::<f64>() / 1e6
             });
             let present = percentile(&presented, |sample| {
                 sample.gpu_present_ns.unwrap_or(0.0) / 1e6
