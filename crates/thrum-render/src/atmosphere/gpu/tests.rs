@@ -1,3 +1,4 @@
+mod mapping;
 mod reference;
 
 #[test]
@@ -26,6 +27,7 @@ fn encoded_constant_sky_integrates_in_physical_illuminance_units() {
         frame[20] = 1.0; // Unit receiver-to-Sun direction, +X.
         frame[23] = solar_illuminance;
         frame[24..28].copy_from_slice(&[1.0, 1.0, 1.0, 1.0 / 1024.0]);
+        frame[28..32].copy_from_slice(&super::super::model::sky_mapping(0.0));
         queue.write_buffer(&uniform, 0, frame.map(f32::to_le_bytes).as_flattened());
 
         let sky = device.create_texture(&wgpu::TextureDescriptor {

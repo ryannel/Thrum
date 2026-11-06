@@ -4,7 +4,7 @@ struct Atmosphere {
     camera_altitude: vec4<f32>,
     sun_lux: vec4<f32>,
     colour_pre_exposure: vec4<f32>,
-    viewport: vec4<f32>,
+    sky_mapping: vec4<f32>, // Horizon mu/elevation, sky/ground angular spans.
 }
 @group(0) @binding(0) var<uniform> atmosphere: Atmosphere;
 const PI: f32 = 3.14159265359;
@@ -64,18 +64,85 @@ fn trans_params(uv: vec2<f32>) -> vec2<f32> {
 fn safe_segment(source: vec3<f32>, ext: vec3<f32>, dt: f32) -> vec3<f32> {
     return source*(vec3(1.0)-exp(-ext*dt))/max(ext,vec3(1e-12));
 }
-// The sky LUT concentrates vertical samples at the horizon, independent of
-// view rotation. Its horizontal coordinate is relative azimuth toward the Sun.
+// Two disjoint 54-row angular-square halves. The two horizon rows store
+// distinct one-sided limits at the same direction, at texel centres 53.5/108
+// and 54.5/108. Lookups choose the sky side at exact tangency; neither half's
+// filtering footprint crosses the discontinuity. Keep this fixed profile in
+// step with gpu::EXTENTS[2].
+const SKY_HALF_ROWS: u32 = 54u;
+const SKY_ROWS: f32 = 108.0;
+const SKY_HALF_INTERVALS: f32 = 53.0;
+fn sun_azimuth(sun: vec3<f32>) -> f32 {
+    if dot(sun.xz,sun.xz)<=1e-10 { return 0.0; }
+    return atan2(sun.z,sun.x);
+}
 fn sky_angles(uv: vec2<f32>) -> vec2<f32> {
-    let a = uv.y*2.0-1.0;
-    return vec2((uv.x*2.0-1.0)*PI,sign(a)*a*a*PI*0.5);
+    let mapping=atmosphere.sky_mapping;
+    var elevation: f32;
+    if uv.y<0.5 {
+        let q=clamp((53.5-uv.y*SKY_ROWS)/SKY_HALF_INTERVALS,0.0,1.0);
+        elevation=mapping.y-mapping.w*q*q;
+    } else {
+        let q=clamp((uv.y*SKY_ROWS-54.5)/SKY_HALF_INTERVALS,0.0,1.0);
+        elevation=mapping.y+mapping.z*q*q;
+    }
+    return vec2((uv.x*2.0-1.0)*PI,elevation);
 }
 fn sky_uv(direction: vec3<f32>, sun: vec3<f32>) -> vec2<f32> {
-    var azimuth = 0.0;
+    var azimuth=0.0;
     if dot(direction.xz,direction.xz)>1e-10 {
-        azimuth = atan2(direction.z,direction.x)-atan2(sun.z,sun.x);
-        azimuth = atan2(sin(azimuth),cos(azimuth));
+        let relative=atan2(direction.z,direction.x)-sun_azimuth(sun);
+        azimuth=atan2(sin(relative),cos(relative));
     }
-    let elevation = asin(clamp(direction.y,-1.0,1.0))/(PI*0.5);
-    return vec2(azimuth/(2.0*PI)+0.5,0.5+0.5*sign(elevation)*sqrt(abs(elevation)));
+    let mapping=atmosphere.sky_mapping;
+    let elevation=asin(clamp(direction.y,-1.0,1.0));
+    var vertical: f32;
+    if direction.y>=mapping.x {
+        if direction.y==mapping.x { vertical=54.5/SKY_ROWS; }
+        else if direction.y>=1.0 { vertical=107.5/SKY_ROWS; }
+        else {
+            let q=sqrt(clamp((elevation-mapping.y)/mapping.z,0.0,1.0));
+            vertical=(54.5+SKY_HALF_INTERVALS*q)/SKY_ROWS;
+        }
+    } else {
+        if direction.y<=-1.0 { vertical=0.5/SKY_ROWS; }
+        else {
+            let q=sqrt(clamp((mapping.y-elevation)/mapping.w,0.0,1.0));
+            vertical=(53.5-SKY_HALF_INTERVALS*q)/SKY_ROWS;
+        }
+    }
+    return vec2(azimuth/(2.0*PI)+0.5,vertical);
+}
+struct SkyViewRay {
+    direction: vec3<f32>,
+    distance: f32,
+    terminal_ground: u32,
+}
+fn sky_view_ray(uv: vec2<f32>, row: u32) -> SkyViewRay {
+    let angles=sky_angles(uv);
+    let azimuth=angles.x+sun_azimuth(atmosphere.sun_lux.xyz);
+    let h=atmosphere.camera_altitude.w;
+    let ground=row<SKY_HALF_ROWS;
+    let horizon=row==SKY_HALF_ROWS-1u || row==SKY_HALF_ROWS;
+    var mu=sin(angles.y);
+    if row==0u { mu=-1.0; }
+    else if row==107u { mu=1.0; }
+    else if horizon { mu=atmosphere.sky_mapping.x; }
+    let radial=sqrt(max(0.0,1.0-mu*mu));
+    let direction=vec3(radial*cos(azimuth),mu,radial*sin(azimuth));
+    var distance=top_distance(h,mu);
+    if ground {
+        if horizon {
+            // The ground-side tangent ends at the planet, even when a rounded
+            // classifier would call it sky. At h=0 this valid segment is zero.
+            distance=sqrt(max(0.0,h*(2.0*R+h)));
+        } else {
+            // This row's side is known from its construction. Do not classify
+            // it again from a rounded direction cosine.
+            let b=(R+h)*mu;
+            let c=h*(2.0*R+h);
+            distance=c/max(0.001,-b+sqrt(max(0.0,b*b-c)));
+        }
+    }
+    return SkyViewRay(direction,distance,select(0u,1u,ground));
 }

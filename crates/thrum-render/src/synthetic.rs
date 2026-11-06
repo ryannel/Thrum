@@ -49,7 +49,7 @@ pub use view::SyntheticView;
 use view::{AUX_BYTES, Projection};
 
 /// Synthetic source revision; not a substitute for an F4 product identity.
-pub const SYNTHETIC_REVISION: u64 = 12;
+pub const SYNTHETIC_REVISION: u64 = 13;
 /// Portable opaque depth; no sampling or separate prepass is needed.
 pub const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
 const VIEW_BYTES: usize = 160;

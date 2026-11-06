@@ -5,6 +5,7 @@ var<workgroup> irradiance: array<vec3<f32>,64>;
 
 // Integrate incident sky radiance over the upper hemisphere with its physical
 // projected-solid-angle weight: E = integral L(omega) cos(theta) d omega.
+// Curvature changes the LUT lookup horizon, not this horizontal mu=0..1 domain.
 // This is horizontal illuminance; the existing material closure uses it as
 // an isotropic diffuse approximation until directional environment SH lands.
 @compute @workgroup_size(64)

@@ -290,8 +290,8 @@ is not a V1 gate.
 
 Select Hillaire-style atmospheric precomputation for the first dynamic sky:
 transmittance (proposed 256×64), multiple scattering (32²), sky view
-(192×108) and aerial perspective (32³). Use a spherical planet with
-Rayleigh, Mie and ozone coefficients; update LUTs only when their Sun,
+(192×108) and aerial perspective (32³). Sky-view filtering separates the curved horizon’s sky/ground limits.
+Use a spherical planet with Rayleigh, Mie and ozone coefficients; update LUTs only when their Sun,
 weather, camera-height or profile dependencies change. The Sun disk and Moon
 are separate celestial emitters with one named light identity each. Generate
 sky-derived diffuse SH and a prefiltered specular cubemap over several frames;
