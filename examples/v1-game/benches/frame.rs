@@ -386,13 +386,21 @@ fn measure(
     let mut samples: Vec<FrameSample> = Vec::with_capacity(16_384);
     let mut callback_cpu = Vec::with_capacity(callbacks_per_sample);
     let mut callbacks = 0_usize;
+    let mut previous_display = 0_u32;
+    let mut coalesced_displays = 0_u32;
     let mut run = || {
         for _ in 0..callbacks_per_sample {
             callbacks += 1;
             if mode == FrameMode::Threaded {
-                let target = origin
-                    + callback_period
-                        .saturating_mul(u32::try_from(callbacks).expect("bounded frame batch"));
+                // A display link forecasts the next display, rather than
+                // replaying overdue callbacks after setup or a driver stall.
+                let display =
+                    u32::try_from(origin.elapsed().as_nanos() / callback_period.as_nanos())
+                        .expect("bounded frame batch")
+                        + 1;
+                coalesced_displays += display.saturating_sub(previous_display + 1);
+                previous_display = display;
+                let target = origin + callback_period.saturating_mul(display);
                 if let Some(delay) = target.checked_duration_since(Instant::now()) {
                     std::thread::sleep(delay);
                 }
@@ -406,9 +414,18 @@ fn measure(
                 .map(|(view, extent)| SurfaceOutput { view, extent });
             let callback_start = Instant::now();
             let frame = if let Some((threaded_host, _controls)) = &mut threaded_host {
-                threaded_host
-                    .drive(now, output.as_ref())
-                    .expect("threaded frame progresses")
+                let advanced = threaded_host
+                    .advance(now)
+                    .expect("threaded world observation");
+                if advanced.can_acquire_serial() {
+                    advanced
+                        .encode_scene()
+                        .expect("threaded scene recording")
+                        .submit(output.as_ref())
+                        .expect("threaded scene and presentation submit")
+                } else {
+                    advanced.submit(None).expect("threaded frame progresses")
+                }
             } else if late_surface {
                 host.as_mut()
                     .expect("inline host")
@@ -475,6 +492,9 @@ fn measure(
         }
         drain_threaded(threaded_host, &mut samples);
     }
+    if mode == FrameMode::Threaded {
+        report_coalesced_displays(coalesced_displays);
+    }
     assert!(
         !samples.is_empty() && samples.len() >= callbacks / 2,
         "baseline needs frames from at least half its callbacks: {} of {callbacks}",
@@ -490,6 +510,14 @@ fn measure(
     if mode == FrameMode::Threaded {
         report_threaded_callback(&callback_cpu);
     }
+}
+
+#[expect(
+    clippy::print_stdout,
+    reason = "the benchmark labels missed display forecasts under load"
+)]
+fn report_coalesced_displays(count: u32) {
+    println!("V1 threaded coalesced display forecasts={count}");
 }
 
 fn drain_threaded(host: &mut ThreadedFrameHost, samples: &mut Vec<FrameSample>) {
