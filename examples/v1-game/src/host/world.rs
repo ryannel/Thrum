@@ -137,12 +137,24 @@ impl WorldPort {
         }
     }
 
-    pub(super) fn pause(&mut self) {
-        self.inline_mut().pause();
+    pub(super) fn inline_lifecycle(&mut self) -> Result<&mut WorldDriver, String> {
+        match self {
+            Self::Inline(driver) => Ok(driver),
+            #[cfg(not(target_arch = "wasm32"))]
+            Self::Threaded(_) | Self::Starting => Err(
+                "inline world lifecycle unavailable: use WorldControls native requests and replies"
+                    .to_owned(),
+            ),
+        }
+    }
+
+    pub(super) fn pause(&mut self) -> Result<(), String> {
+        self.inline_lifecycle()?.pause();
+        Ok(())
     }
 
     pub(super) fn resume(&mut self, now: Duration) -> Result<(), String> {
-        self.inline_mut().resume(now)
+        self.inline_lifecycle()?.resume(now)
     }
 
     pub(super) fn set_controls(&mut self, axes: [f32; 3]) -> Result<(), String> {

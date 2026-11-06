@@ -1,5 +1,8 @@
 use std::time::Duration;
 
+#[cfg(not(target_arch = "wasm32"))]
+mod lifecycle_gpu;
+
 #[test]
 fn capture_refreshes_the_latest_committed_world_after_an_unsent_view() {
     pollster::block_on(async {
@@ -117,7 +120,7 @@ fn held_publication_drops_one_view_then_recovers_on_a_paused_zero_tick_callback(
         assert!(busy.dropped_view);
         assert!(!busy.submitted);
         assert_eq!(host.dropped_views(), 1);
-        host.pause();
+        host.pause().expect("inline world pause");
         drop(zero);
         assert!(
             thrum_core::sim::WorldGame::publication(

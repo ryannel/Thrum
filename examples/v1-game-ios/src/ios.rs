@@ -247,7 +247,7 @@ impl App {
         } else {
             stop_display_link();
             self.pending_target = None;
-            host.pause();
+            host.pause()?;
         }
         self.visible = visible;
         Ok(())
@@ -333,7 +333,7 @@ impl App {
         if let Some(refused) = report.overload {
             self.overloads += 1;
             self.refused_ticks = self.refused_ticks.saturating_add(refused);
-            host.pause();
+            host.pause()?;
             host.drain_and_resume(now)?;
         }
         while let Some(sample) = host.poll_completed()? {

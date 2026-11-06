@@ -12,9 +12,18 @@ Owner-run 10:50–10:52 CET, clean worktree, agents paused, builds drained; upti
 
 **Newer ownership checkpoint `8bb3979`, shared load:** threaded offscreen ABBA control/candidate/candidate/control render p50/p95/p99 µs: 379.1/481.4/1062.8; 378.5/521.4/1535.1; 373.1/485.1/1099.3; 381.0/521.3/1055.5. Submitted 199/199/199/188 of 200; GPU p99 1.083–19.640 ms. B1 has an adverse CPU tail; no speed/non-regression qualification. These do not replace the quiet `91ad52d` row. Raw logs/identities: `tmp/g3b-runtime/`.
 
-Separate inline ABBA p95 606.5/472.2/373.5/524.5 µs, 200/200 each. Threaded allocator A1/B/A2, 100 warmed successful samples: median **374 allocations / 55,371 B** throughout, maxima 380/380/382; world **0/0** after wake five. Each submitted 120 but needed 215/1154/204 callbacks: no throughput parity. Rust counts exclude drawable/Objective-C costs. Inline 600-frame phase median/max allocations: advance 0/0, scene 93/102, submit 233/234.
+**Native lifecycle checkpoint:** Core owns one ordered Pause/Resume slot and immutable replies. It drains accepted
+ticks before acknowledging pause; worker-time resume excludes the stopped interval. Mac P ignores repeat and retains
+pending intent. Surface loss never pauses authority implicitly. Core backlog/failure/refusal/shutdown/recovery tests,
+10k game adapter tests, full `./dev check`, Wasm and iOS simulator compilation pass. One old 55 ms scheduling assumption
+was replaced with observed tick progress; control assertions remain unchanged.
 
-Core owns clock/lane; thrum-render owns two-slot frame execution. Game owns schema, mapping and camera policy. Retry/mapping review defects have GPU regressions; source identity is checked on all targets. Full `./dev check`, Wasm and iOS simulator compile pass. Review found no remaining defect. Initial/moving stills match bitwise; sequence quality and grid aliasing remain open.
+The actual Metal presentation path to a 640×360 offscreen surface proxy has pixel-identical paused frames, alpha=1,
+a responsive camera and same-world resume. Root/independent review finds no new corruption; dense-grid aliasing
+remains. [Contact](V1-PAUSE-PHASES.png): paused, camera while paused, resumed endpoint.
+[Four held phase samples](V1-PAUSE-PHASES.mp4) are scripted captures, not live cadence or keyboard qualification.
+Live P, device recovery, iOS worker/lifecycle and Chrome runtime remain open. Older allocation/inline ABBA details stay
+in Git and `tmp/g3b-runtime/`; no new CPU/allocation measurement is claimed.
 
 **Trace `ce7aa3f`:** 0.44% of 132.715 ms CA wait spans overlaps this app's GPU work. Span quantiles do not qualify frames; raw: `tmp/g3b-metal-system-trace/`. Native encoding occurs at `finish` after acquisition. No raw bridge selected; mixed raw/wgpu unsupported. Split pre-submit remains parked at `30ae560` (308→335 timing-disabled allocations).
 

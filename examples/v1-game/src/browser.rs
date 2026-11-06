@@ -232,7 +232,7 @@ impl BrowserGame {
         if visible && !self.visible {
             self.host.drain_and_resume(now).map_err(js_error)?;
         } else if !visible && self.visible {
-            self.host.pause();
+            self.host.pause().map_err(js_error)?;
         }
         self.visible = visible;
         self.last_frame = now;
@@ -338,7 +338,7 @@ impl BrowserGame {
     fn recover_overload(&mut self, refused_ticks: u64, now: Duration) -> Result<(), JsValue> {
         self.overload_events += 1;
         self.refused_ticks = self.refused_ticks.saturating_add(refused_ticks);
-        self.host.pause();
+        self.host.pause().map_err(js_error)?;
         self.host.drain_and_resume(now).map_err(js_error)
     }
 

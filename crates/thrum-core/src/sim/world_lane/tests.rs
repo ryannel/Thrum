@@ -1,3 +1,5 @@
+mod lifecycle;
+
 use std::{
     sync::{
         Arc,
@@ -71,6 +73,17 @@ impl WorldTask for ScriptedWorld {
     fn apply_control(&mut self, control: Self::Control) -> Result<(), Self::Error> {
         self.applied_control.store(control, Ordering::Release);
         Ok(())
+    }
+
+    fn pause(&mut self) {
+        self.clock.pause();
+    }
+
+    fn resume(&mut self, now: Duration) -> Result<(), Self::Error> {
+        if self.clock.state() == crate::ClockState::Active {
+            return Ok(());
+        }
+        self.clock.resume(now).map_err(|_| "resume refused")
     }
 
     fn advance(&mut self, _now: Duration) -> Result<WorldUpdate<Self::Page>, Self::Error> {
@@ -165,6 +178,9 @@ fn panicking_owner_wakes_health_only_observer_and_stops_controls() {
         let _ = wakes.try_send(());
     })
     .expect("world lane");
+    controls
+        .request_lifecycle(super::WorldLifecycle::Pause)
+        .expect("pending pause before panic");
     steps.send(Step::Panic).expect("inject task panic");
     notified
         .recv_timeout(Duration::from_secs(1))
@@ -174,6 +190,13 @@ fn panicking_owner_wakes_health_only_observer_and_stops_controls() {
         "panic must be visible without render polling"
     );
     assert!(controls.set(1).is_err(), "dead owner must refuse controls");
+    assert!(
+        matches!(
+            controls.poll_lifecycle_reply(),
+            Err(super::WorldLaneFault::Stopped)
+        ),
+        "panic resolves a pending lifecycle poll to a retained fault"
+    );
     drop(lane);
 }
 
