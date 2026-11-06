@@ -80,15 +80,51 @@ fn conversion_preserves_held_controls_until_a_new_valid_input() {
     driver
         .set_controls([1.0, 0.0, 0.0])
         .expect("held control before handoff");
-    let (client, controls) =
-        WorldClient::start(driver, Instant::now(), || {}).expect("resident world");
-    controls
-        .set_controls([0.0; 3])
-        .expect("reset earlier held control");
-    let state = controls.shared.state.lock().expect("control state");
-    assert_eq!(state.control_sequence, 1);
-    assert_eq!(state.controls, [0.0; 3]);
-    drop(state);
+    let origin = Instant::now();
+    let (mut client, controls) = WorldClient::start(driver, origin, || {}).expect("resident world");
+    let initial = client.published_page().expect("initial page");
+    let slot = u32::try_from(scene::ENTITY_COUNT - 1).expect("fixture slot");
+    let handle = initial.handle(slot).expect("controlled handle");
+    let initial_x = initial.position(handle).expect("initial position").0[0];
+    drop(initial);
+    thread::sleep(Duration::from_millis(55));
+    client
+        .poll(origin.elapsed())
+        .expect("held control progress");
+    let moved = client.published_page().expect("moved page");
+    let moved_x = moved.position(handle).expect("moved position").0[0];
+    assert!(moved_x > initial_x, "handoff kept the held control");
+    drop(moved);
+    controls.set_controls([0.0; 3]).expect("reset held control");
+    let target = client.tick() + 3;
+    let deadline = Instant::now() + Duration::from_secs(1);
+    while client
+        .poll(origin.elapsed())
+        .expect("reset control progress")
+        .tick
+        < target
+    {
+        assert!(Instant::now() < deadline, "reset controls did not advance");
+        thread::sleep(Duration::from_millis(5));
+    }
+    let stopped = client.published_page().expect("stopped page");
+    let stopped_x = stopped.position(handle).expect("stopped position").0[0];
+    drop(stopped);
+    let target = client.tick() + 1;
+    while client
+        .poll(origin.elapsed())
+        .expect("stable control progress")
+        .tick
+        < target
+    {
+        assert!(Instant::now() < deadline, "stable controls did not advance");
+        thread::sleep(Duration::from_millis(5));
+    }
+    let still = client.published_page().expect("stable page");
+    assert_eq!(
+        still.position(handle).expect("stable position").0[0],
+        stopped_x
+    );
     drop(client);
 }
 

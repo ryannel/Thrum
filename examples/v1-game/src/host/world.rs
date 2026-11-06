@@ -9,6 +9,11 @@ use web_time::Instant;
 #[cfg(not(target_arch = "wasm32"))]
 use thrum_core::ClockSample;
 use thrum_core::{ClockConfig, ClockState, TickClock};
+#[cfg(not(target_arch = "wasm32"))]
+use thrum_core::{
+    WorldEpoch,
+    sim::{WorldPublication, WorldTask, WorldUpdate},
+};
 
 use crate::{
     projection::{GameProjection, ProjectionGap, ProjectionOutbox},
@@ -410,3 +415,86 @@ impl WorldDriver {
         })
     }
 }
+
+#[cfg(not(target_arch = "wasm32"))]
+impl WorldTask for WorldDriver {
+    type Control = [f32; 3];
+    type Page = PublishedPage;
+    type Error = String;
+
+    fn validate_control(control: Self::Control) -> Result<(), Self::Error> {
+        scene::control_frame(scene::LOCAL_PEER, control, 0, 0)
+            .validate_axes()
+            .map_err(|error| format!("local controls: {error:?}"))
+    }
+
+    fn same_control(left: Self::Control, right: Self::Control) -> bool {
+        left.iter()
+            .zip(right)
+            .all(|(left, right)| left.to_bits() == right.to_bits())
+    }
+
+    fn initial(&mut self) -> Result<WorldUpdate<Self::Page>, Self::Error> {
+        let page = self
+            .published_page()
+            .map_err(|error| format!("initial world page: {error:?}"))?;
+        Ok(WorldUpdate {
+            epoch: WorldEpoch(self.epoch()),
+            tick: self.tick(),
+            timeline: self.timeline(),
+            clock: self.clock_sample(),
+            completed_ticks: 0,
+            queued_ticks: 0,
+            tick_cpu: Duration::ZERO,
+            skipped_publications: 0,
+            projected_changes: 0,
+            projection_lost_ticks: 0,
+            overload: None,
+            publication: Some(WorldPublication {
+                id: page.id(),
+                timeline: page.timeline(),
+                page,
+            }),
+            next_due: self.next_due_in(),
+        })
+    }
+
+    fn apply_control(&mut self, control: Self::Control) -> Result<(), Self::Error> {
+        self.set_controls(control)
+    }
+
+    fn advance(&mut self, now: Duration) -> Result<WorldUpdate<Self::Page>, Self::Error> {
+        let report = Self::advance(self, now)?;
+        let publication = if report.completed_ticks != 0 || report.recovered_publication {
+            match self.published_page() {
+                Ok(page) => Some(WorldPublication {
+                    id: page.id(),
+                    timeline: page.timeline(),
+                    page,
+                }),
+                Err(SimError::PublicationBusy) => None,
+                Err(error) => return Err(format!("world page: {error:?}")),
+            }
+        } else {
+            None
+        };
+        Ok(WorldUpdate {
+            epoch: WorldEpoch(self.epoch()),
+            tick: report.tick,
+            timeline: self.timeline(),
+            clock: self.clock_sample(),
+            completed_ticks: report.completed_ticks,
+            queued_ticks: report.queued_ticks,
+            tick_cpu: report.tick_cpu,
+            skipped_publications: report.skipped_publications,
+            projected_changes: report.projected_changes,
+            projection_lost_ticks: report.projection_lost_ticks,
+            overload: report.overload,
+            publication,
+            next_due: self.next_due_in(),
+        })
+    }
+}
+
+#[cfg(all(test, not(target_arch = "wasm32")))]
+mod tests;
