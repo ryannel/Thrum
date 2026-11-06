@@ -40,6 +40,8 @@ Normal 600-frame shared-load encode CPU / forward GPU p50/p95: earlier 0.0/0.2 m
 final 0.1/0.3 / 0.524/2.163; identical-build repeat 0.1/0.2 / 0.197/ 0.197. The broad GPU tripwire is retained;
 repeat returned near the quantized baseline without a source change. Cause unattributed, not a controlled speed result.
 No full-frame CPU/allocation, physical display or speed claim. Actual tabs, live Mac P/loss and iOS lifecycle remain.
+At `618b5f7`, iOS simulator build/link pass; the already-booted iPhone18Pro/iOS27.2 app-container RPC times out
+at90s and a bounded15s retry. Function remains unqualified; shared services were left running. Raw: `tmp/g3b-ios-lifecycle/`.
 Wasm Clippy runs in `./dev check`; no new expectations or policy changes. The earlier black/lost-sky recording
 in `tmp/g3s-directional/` remains rejected motion evidence.
 
