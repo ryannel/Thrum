@@ -16,8 +16,11 @@ struct SkyOutput { @location(0) colour: vec4<f32>, @location(1) motion: vec2<f32
     var radiance=textureSampleLevel(sky,lut_sampler,clamp(uv,0.5/size,1.0-0.5/size),0.0).rgb;
     let angular_radius=0.00465421;
     let cosine=dot(direction,sun);
-    let edge=max(fwidth(cosine),1e-8);
-    let disk=smoothstep(cos(angular_radius)-edge,cos(angular_radius)+edge,cosine);
+    // Approximate coverage in angular space. A cosine derivative expands the
+    // filter far from the Sun and can paint a false disk on the horizon.
+    // Orthographic views have constant direction, so keep distinct edges.
+    let pixel_radius=clamp(0.5*max(length(dpdx(direction)),length(dpdy(direction))),0.0001,0.05);
+    let disk=smoothstep(cos(angular_radius+pixel_radius),cos(max(0.0,angular_radius-pixel_radius)),cosine);
     let h=atmosphere.camera_altitude.w;
     if !blocked(h,direction.y) {
         let trans=textureSampleLevel(transmittance,lut_sampler,trans_uv(h,direction.y),0.0).rgb;
