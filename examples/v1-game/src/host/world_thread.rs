@@ -2,7 +2,9 @@
 
 use std::time::{Duration, Instant};
 
-use thrum_core::sim::{ClockedWorld, WorldLane, WorldLaneControls};
+use thrum_core::sim::{
+    ClockedWorld, WorldLane, WorldLaneControls, WorldLaneFault, WorldLifecycle, WorldLifecycleReply,
+};
 
 use crate::simulation::{PublishedPage, SimError};
 
@@ -14,6 +16,23 @@ use super::world::{GameWorld, WorldAdvance, WorldDriver};
 pub struct WorldControls(WorldLaneControls<ClockedWorld<GameWorld>>);
 
 impl WorldControls {
+    /// Request a native world transition without waiting for its completion.
+    /// One designated caller must consume replies before another request enters.
+    /// # Errors
+    /// Returns `Busy` while a request or unconsumed reply occupies the slot,
+    /// or the world's retained fault after its owner stops.
+    pub fn request_lifecycle(&self, request: WorldLifecycle) -> Result<(), WorldLaneFault> {
+        self.0.request_lifecycle(request)
+    }
+
+    /// Consume the requested transition's immutable authority acknowledgement.
+    /// `None` means it is still pending; enqueueing alone is not completion.
+    /// # Errors
+    /// Reports a refused transition or a failed/stopped world owner.
+    pub fn poll_lifecycle_reply(&self) -> Result<Option<WorldLifecycleReply>, WorldLaneFault> {
+        self.0.poll_lifecycle_reply()
+    }
+
     /// Replace continuous local axes for the next world update.
     /// # Errors
     /// Refuses invalid axes or a stopped simulation owner.

@@ -4,8 +4,31 @@ use std::{
     time::{Duration, Instant},
 };
 
-use super::WorldClient;
+use super::{WorldClient, WorldControls};
 use crate::{host::world::WorldDriver, scene};
+use thrum_core::sim::{WorldLaneFault, WorldLifecycle, WorldLifecycleReply};
+
+fn transition(controls: &WorldControls, request: WorldLifecycle) -> WorldLifecycleReply {
+    controls
+        .request_lifecycle(request)
+        .expect("admit transition");
+    assert!(matches!(
+        controls.request_lifecycle(request),
+        Err(WorldLaneFault::Busy)
+    ));
+    let deadline = Instant::now() + Duration::from_secs(3);
+    loop {
+        if let Some(reply) = controls.poll_lifecycle_reply().expect("world transition") {
+            assert_eq!(reply.request, request);
+            return reply;
+        }
+        assert!(
+            Instant::now() < deadline,
+            "world transition did not complete"
+        );
+        thread::sleep(Duration::from_millis(1));
+    }
+}
 
 #[test]
 fn world_advances_and_accepts_controls_while_render_is_idle() {
@@ -87,10 +110,18 @@ fn conversion_preserves_held_controls_until_a_new_valid_input() {
     let handle = initial.handle(slot).expect("controlled handle");
     let initial_x = initial.position(handle).expect("initial position").0[0];
     drop(initial);
-    thread::sleep(Duration::from_millis(55));
-    client
+    // Observe actual progress; scheduling under concurrent GPU preparation
+    // does not promise the worker has run after a fixed sleep.
+    let deadline = Instant::now() + Duration::from_secs(3);
+    while client
         .poll(origin.elapsed())
-        .expect("held control progress");
+        .expect("held control progress")
+        .tick
+        == 0
+    {
+        assert!(Instant::now() < deadline, "held controls did not advance");
+        thread::sleep(Duration::from_millis(1));
+    }
     let moved = client.published_page().expect("moved page");
     let moved_x = moved.position(handle).expect("moved position").0[0];
     assert!(moved_x > initial_x, "handoff kept the held control");
@@ -163,4 +194,95 @@ fn first_overload_refusal_remains_visible_after_stopped_clock_polls() {
             .overload,
         Some(refused)
     );
+}
+
+#[test]
+fn native_pause_retains_authority_and_controls_without_render_callbacks() {
+    let mut driver = WorldDriver::new().expect("10k fixture");
+    driver.set_controls([1.0, 0.0, 0.0]).unwrap();
+    let origin = Instant::now();
+    let (mut client, controls) = WorldClient::start(driver, origin, || {}).unwrap();
+    let initial = client.published_page().unwrap();
+    let handle = initial
+        .handle(u32::try_from(scene::ENTITY_COUNT - 1).unwrap())
+        .unwrap();
+    let initial_x = initial.position(handle).unwrap().0[0];
+    let initial_id = initial.id();
+    drop(initial);
+    let deadline = Instant::now() + Duration::from_secs(3);
+    while client.poll(origin.elapsed()).unwrap().tick < 2 {
+        assert!(Instant::now() < deadline, "initial world progress");
+        thread::sleep(Duration::from_millis(1));
+    }
+    let paused = transition(&controls, WorldLifecycle::Pause);
+    assert_eq!(paused.id.epoch, initial_id.epoch);
+    assert_eq!(paused.clock.alpha_at(Duration::MAX), 1.0);
+    let progress = client.poll(origin.elapsed()).unwrap();
+    assert_eq!(progress.tick, paused.id.tick);
+    assert_eq!(progress.queued_ticks, 0);
+    assert_eq!(client.timeline(), paused.timeline);
+    let page = client.published_page().unwrap();
+    assert_eq!(page.id(), paused.id);
+    let paused_x = page.position(handle).unwrap().0[0];
+    assert!(paused_x > initial_x);
+    drop(page);
+
+    controls.set_controls([-1.0, 0.0, 0.0]).unwrap();
+    assert!(controls.set_controls([2.0, 0.0, 0.0]).is_err());
+    // No render/poll callback supplies time, and controls cannot resume time.
+    thread::sleep(Duration::from_millis(70));
+    let idle = client.poll(origin.elapsed()).unwrap();
+    assert_eq!((idle.tick, idle.completed_ticks), (paused.id.tick, 0));
+    assert_eq!(client.presentation_alpha_at(Duration::from_secs(1)), 1.0);
+    let page = client.published_page().unwrap();
+    assert_eq!(page.position(handle).unwrap().0[0], paused_x);
+    drop(page);
+    let repeated = transition(&controls, WorldLifecycle::Pause);
+    assert_eq!(
+        (repeated.id, repeated.timeline),
+        (paused.id, paused.timeline)
+    );
+
+    let resumed = transition(&controls, WorldLifecycle::Resume);
+    assert_eq!((resumed.id, resumed.timeline), (paused.id, paused.timeline));
+    assert_eq!(resumed.clock.alpha_at(Duration::MAX), 1.0);
+    let target = resumed.id.tick + 2;
+    let deadline = Instant::now() + Duration::from_secs(3);
+    while client.poll(origin.elapsed()).unwrap().tick < target {
+        assert!(Instant::now() < deadline, "resumed world progress");
+        thread::sleep(Duration::from_millis(1));
+    }
+    let final_pause = transition(&controls, WorldLifecycle::Pause);
+    client.poll(origin.elapsed()).unwrap();
+    let page = client.published_page().unwrap();
+    assert_eq!(page.id(), final_pause.id);
+    assert!(page.position(handle).unwrap().0[0] < paused_x);
+    assert_eq!(final_pause.id.epoch, initial_id.epoch);
+    assert_eq!(final_pause.timeline, paused.timeline);
+    drop(page);
+    drop(client);
+    assert!(matches!(
+        controls.poll_lifecycle_reply(),
+        Err(WorldLaneFault::Stopped)
+    ));
+}
+
+#[test]
+fn inline_lifecycle_facade_explicitly_refuses_a_threaded_world() {
+    use crate::host::world::WorldPort;
+
+    let origin = Instant::now();
+    let (client, controls) =
+        WorldClient::start(WorldDriver::new().unwrap(), origin, || {}).unwrap();
+    let mut port = WorldPort::Threaded(Box::new(client));
+    assert!(port.pause().unwrap_err().contains("inline world lifecycle"));
+    assert!(
+        port.resume(origin.elapsed())
+            .unwrap_err()
+            .contains("inline world lifecycle")
+    );
+    assert!(port.inline_lifecycle().is_err());
+    // Refusing an inline API does not kill or implicitly pause its world owner.
+    let reply = transition(&controls, WorldLifecycle::Pause);
+    assert_eq!(port.advance(origin.elapsed()).unwrap().tick, reply.id.tick);
 }

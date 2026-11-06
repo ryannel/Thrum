@@ -473,9 +473,9 @@
       "current_tree_status": "retired_from_main_at_G0; historical measurements retained"
     },
     "V1_bounded_frame_host": {
-      "implementation": "partial_engine_clock_world_lane_and_frame_runtime",
-      "functional_validation": "real_metal_tick_interpolation_capture_ordered_timing_overload_and_short_live_surface_runs; surface_generation_and_nonblocking_close_reviewed; lifecycle_qualification_open",
-      "experienced_quality": "synthetic_grid_capture_agent_reviewed; motion_and_showcase_quality_open",
+      "implementation": "partial_engine_clock_lane_ordered_lifecycle_and_frame_runtime",
+      "functional_validation": "real_Metal_submitted_pause_pixels_alpha_camera_resume_and_core_ordered_lifecycle_tests_pass;_live_keyboard_device_mobile_lifecycle_open",
+      "experienced_quality": "submitted_offscreen_pause_camera_resume_agent_reviewed;_live_motion_grid_aliasing_showcase_open",
       "platform_performance": {
         "mac": "owner_quiet_91ad52d_baseline_recorded_lifecycle_open",
         "windows": "not_run",
@@ -487,7 +487,7 @@
       "evidence": [
         "../evidence/render/V1-BOUNDED-FRAMES-2026-11-04.md"
       ],
-      "scope": "Core owns ClockedWorld/WorldLane; thrum-render owns the generic two-slot FrameHost. The game supplies rules, projections and scene mapping. Mac late acquisition and adjacent sparse columns run; native pre-submit, device recovery, Chrome runtime and timing qualification remain open."
+      "scope": "Core owns ClockedWorld/WorldLane; thrum-render owns the generic two-slot FrameHost. The game supplies rules, projections and scene mapping. Explicit Mac P uses native lifecycle requests; inline browser/mobile calls remain synchronous. Live input, device recovery, iOS worker/lifecycle and Chrome runtime remain open; native recording stays G3t."
     },
     "V1_cooked_constant_light": {
       "implementation": "partial_native_accepted_source_product_and_offscreen_visual_publication",
@@ -643,7 +643,7 @@
       "reviewed_design_sha256": "d0d80e788cf6356f80dccdb10460a88f12ffd29ca646cbce2b5f498f86c725be",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Later architectural decision audit reopened named boundaries; earlier review scope remains historical. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
       "open_architecture_findings": [],
-      "current_design_sha256": "25f106910aec910d6af1c8ea84d132d6f249defd0551cf65a38826248bca959c",
+      "current_design_sha256": "131e19385716ab4799a27eb6a2faa8ec694f23264a6ece5da7c6b28f334b53f8",
       "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled; focused mobile simulator and package qualification remains open after iOS 27 scene finding. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
       "historical_architecture_findings": [
         "A01"
@@ -4119,7 +4119,7 @@
       "modules/AUDIO-UI.md": "f001d7c3cc79a2fb3657982baee9850490ad3f3ce253cfd8bb2637e9f690ae1f",
       "modules/ENVIRONMENT.md": "e2210ab82fc0a2fbb50fdeef31d0a6fd0cba542f18ec1bb78cc08c7643e302e5",
       "modules/NETWORKING.md": "2e32bdf2e57737a88b957380da801de21bf287b6cba6f15144530f635f778494",
-      "modules/PLATFORM-RUNTIME.md": "25f106910aec910d6af1c8ea84d132d6f249defd0551cf65a38826248bca959c",
+      "modules/PLATFORM-RUNTIME.md": "131e19385716ab4799a27eb6a2faa8ec694f23264a6ece5da7c6b28f334b53f8",
       "modules/PLAY-SYSTEMS.md": "86279be04e72643989cecc3a0e562fa4c948fa27c956180dbe6079c830efcd57",
       "modules/RENDERING.md": "becaf05714ca88f1fe92c120c8ddf6a523da8048cb7a22cfccc547bd023a96e0",
       "modules/TOOLS-DELIVERY.md": "242035edb43a8e414f839fed4fd4949969967d9d0859e7344be001d237c4e088",

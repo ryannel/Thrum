@@ -328,6 +328,19 @@ where
             .map_err(ClockedWorldError::Game)
     }
 
+    fn pause(&mut self) {
+        if self.clock.state() != ClockState::Paused {
+            Self::pause(self);
+        }
+    }
+
+    fn resume(&mut self, now: Duration) -> Result<(), Self::Error> {
+        if self.clock.state() == ClockState::Active {
+            return Ok(());
+        }
+        Self::resume(self, now)
+    }
+
     fn advance(&mut self, now: Duration) -> Result<WorldUpdate<Self::Page>, Self::Error> {
         let progress = Self::advance(self, now)?;
         let (id, timeline) = self.game.endpoint();

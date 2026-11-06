@@ -43,6 +43,44 @@ pub trait WorldTask: Send + 'static {
     /// # Errors
     /// Returns the task's authoritative failure.
     fn advance(&mut self, now: Duration) -> Result<WorldUpdate<Self::Page>, Self::Error>;
+    /// Stop new time admission at the last observed sample, retaining accepted
+    /// ticks for ordinary bounded advances. Repeated pause is idempotent.
+    fn pause(&mut self);
+    /// Resume a drained task at worker-observed time. Already running is an
+    /// idempotent success without changing its origin or phase.
+    /// # Errors
+    /// Refuses an invalid transition without changing the task's clock.
+    fn resume(&mut self, now: Duration) -> Result<(), Self::Error>;
+}
+
+/// Explicit authority policy, independent of surface availability or occlusion.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum WorldLifecycle {
+    /// Stop admission and drain already accepted ticks before acknowledgement.
+    Pause,
+    /// Restart from the worker's observed time, excluding the paused interval.
+    Resume,
+}
+
+/// Immutable summary from the exact update acknowledging one lifecycle request.
+/// Later world progress cannot change this reply's identity or clock sample.
+#[derive(Clone, Copy, Debug)]
+pub struct WorldLifecycleReply {
+    /// The completed request.
+    pub request: WorldLifecycle,
+    /// Committed authority identity after the operation.
+    pub id: SnapshotId,
+    /// Replay timeline at acknowledgement.
+    pub timeline: u64,
+    /// Read-only presentation phase at acknowledgement.
+    pub clock: ClockSample,
+}
+
+enum LifecycleSlot {
+    Empty,
+    Queued(WorldLifecycle),
+    Processing(WorldLifecycle),
+    Ready(Result<WorldLifecycleReply, WorldLaneFault>),
 }
 
 /// The caller must retry input, stop, or rebuild; a render fault never owns the world.
@@ -54,6 +92,10 @@ pub enum WorldLaneFault {
     Task(Arc<str>),
     /// A control was rejected before entering the mailbox.
     InvalidControl(Arc<str>),
+    /// A lifecycle request or its unconsumed reply still occupies the slot.
+    Busy,
+    /// A lifecycle operation was refused; authority remains available.
+    Lifecycle(Arc<str>),
     /// The fixed clock refused elapsed work.
     Overload(u64),
     /// The world owner stopped.
@@ -68,6 +110,8 @@ impl fmt::Display for WorldLaneFault {
             Self::Start(error) => write!(formatter, "world lane start: {error}"),
             Self::Task(error) => write!(formatter, "world owner: {error}"),
             Self::InvalidControl(error) => write!(formatter, "world control: {error}"),
+            Self::Busy => formatter.write_str("world lifecycle request or reply is pending"),
+            Self::Lifecycle(error) => write!(formatter, "world lifecycle: {error}"),
             Self::Overload(refused) => {
                 write!(formatter, "fixed-clock overload: {refused} ticks refused")
             }
@@ -100,6 +144,7 @@ struct SharedState<P, C> {
     page: Option<WorldPublication<P>>,
     control: C,
     control_sequence: u64,
+    lifecycle: LifecycleSlot,
     shutdown: bool,
     fault: Option<WorldLaneFault>,
 }
@@ -152,6 +197,64 @@ impl<T: WorldTask> Clone for WorldLaneControls<T> {
 }
 
 impl<T: WorldTask> WorldLaneControls<T> {
+    /// Queue one explicit lifecycle operation without waiting for execution.
+    /// Exactly one designated lifecycle consumer must request and consume replies,
+    /// even when handles are cloned for continuous controls. Accepted operations
+    /// are never coalesced. The slot stays busy until its reply is consumed.
+    /// Pause cuts off admission at the task's last observed sample; it does not
+    /// admit the unsampled interval before the worker processes the request.
+    /// # Errors
+    /// Returns `Busy` for an occupied slot or a retained owner fault.
+    pub fn request_lifecycle(&self, request: WorldLifecycle) -> Result<(), WorldLaneFault> {
+        let mut state = self
+            .shared
+            .state
+            .lock()
+            .map_err(|_| WorldLaneFault::Poisoned)?;
+        if let Some(error) = &state.fault {
+            return Err(error.clone());
+        }
+        if state.shutdown {
+            return Err(WorldLaneFault::Stopped);
+        }
+        if !matches!(state.lifecycle, LifecycleSlot::Empty) {
+            return Err(WorldLaneFault::Busy);
+        }
+        state.lifecycle = LifecycleSlot::Queued(request);
+        drop(state);
+        self.shared.wake.notify_one();
+        Ok(())
+    }
+
+    /// Consume the one ready lifecycle reply without waiting for execution.
+    /// `None` means no reply is ready. The designated lifecycle consumer must
+    /// also consume a refused-operation error before submitting another request.
+    /// # Errors
+    /// Returns a transition refusal or retained owner fault; a dead owner never
+    /// leaves its pending operation permanently busy.
+    pub fn poll_lifecycle_reply(&self) -> Result<Option<WorldLifecycleReply>, WorldLaneFault> {
+        let mut state = self
+            .shared
+            .state
+            .lock()
+            .map_err(|_| WorldLaneFault::Poisoned)?;
+        if let Some(error) = &state.fault {
+            return Err(error.clone());
+        }
+        if state.shutdown {
+            return Err(WorldLaneFault::Stopped);
+        }
+        if !matches!(state.lifecycle, LifecycleSlot::Ready(_)) {
+            return Ok(None);
+        }
+        let LifecycleSlot::Ready(reply) =
+            std::mem::replace(&mut state.lifecycle, LifecycleSlot::Empty)
+        else {
+            unreachable!("ready lifecycle slot checked under its lock");
+        };
+        reply.map(Some)
+    }
+
     /// Replace the sampled continuous state without waiting for a render job.
     /// # Errors
     /// Refuses invalid input or a stopped owner.
@@ -260,6 +363,7 @@ impl<T: WorldTask> WorldLane<T> {
                 }),
                 control: initial_control,
                 control_sequence: 0,
+                lifecycle: LifecycleSlot::Empty,
                 shutdown: false,
                 fault: None,
             }),
@@ -424,12 +528,18 @@ fn run_world<T: WorldTask>(
 ) -> Result<(), WorldLaneFault> {
     let mut applied_controls = 0;
     loop {
-        let (control, sequence) = {
-            let state = shared.state.lock().map_err(|_| WorldLaneFault::Poisoned)?;
+        let (control, sequence, request) = {
+            let mut state = shared.state.lock().map_err(|_| WorldLaneFault::Poisoned)?;
             if state.shutdown {
                 return Ok(());
             }
-            (state.control, state.control_sequence)
+            let request = if let LifecycleSlot::Queued(request) = state.lifecycle {
+                state.lifecycle = LifecycleSlot::Processing(request);
+                Some(request)
+            } else {
+                None
+            };
+            (state.control, state.control_sequence, request)
         };
         if sequence != applied_controls {
             task.apply_control(control)
@@ -437,12 +547,26 @@ fn run_world<T: WorldTask>(
             applied_controls = sequence;
         }
         let sampled_now = origin.elapsed();
+        let refusal = match request {
+            Some(WorldLifecycle::Pause) => {
+                task.pause();
+                None
+            }
+            Some(WorldLifecycle::Resume) => task
+                .resume(sampled_now)
+                .err()
+                .map(|error| WorldLaneFault::Lifecycle(Arc::from(error.to_string()))),
+            None => None,
+        };
         let update = task
             .advance(sampled_now)
             .map_err(|error| WorldLaneFault::Task(Arc::from(error.to_string())))?;
         let deadline =
             sampled_now.saturating_add(update.next_due.unwrap_or(Duration::from_millis(100)));
         let mut state = shared.state.lock().map_err(|_| WorldLaneFault::Poisoned)?;
+        if state.shutdown {
+            return Ok(());
+        }
         let status = &mut state.snapshot;
         status.epoch = update.epoch;
         status.tick = update.tick;
@@ -464,14 +588,36 @@ fn run_world<T: WorldTask>(
             (Some(first), Some(0)) => Some(first),
             (_, current) => current,
         };
+        let published = update.publication.is_some();
         if let Some(page) = update.publication {
             state.page = Some(page);
             state.snapshot.page_sequence = state.snapshot.page_sequence.wrapping_add(1);
         }
+        let acknowledged = if let LifecycleSlot::Processing(request) = state.lifecycle {
+            if let Some(error) = refusal {
+                state.lifecycle = LifecycleSlot::Ready(Err(error));
+                true
+            } else if request == WorldLifecycle::Resume || update.queued_ticks == 0 {
+                state.lifecycle = LifecycleSlot::Ready(Ok(WorldLifecycleReply {
+                    request,
+                    id: SnapshotId {
+                        epoch: update.epoch,
+                        tick: update.tick,
+                    },
+                    timeline: update.timeline,
+                    clock: update.clock,
+                }));
+                true
+            } else {
+                false
+            }
+        } else {
+            false
+        };
         let completed = update.completed_ticks;
         let overloaded = update.overload.is_some();
         drop(state);
-        if completed != 0 || overloaded {
+        if completed != 0 || overloaded || published || acknowledged {
             notify.notify();
         }
         let delay = deadline.saturating_sub(origin.elapsed());
@@ -480,7 +626,9 @@ fn run_world<T: WorldTask>(
             shared
                 .wake
                 .wait_timeout_while(state, delay, |state| {
-                    !state.shutdown && state.control_sequence == applied_controls
+                    !state.shutdown
+                        && state.control_sequence == applied_controls
+                        && !matches!(state.lifecycle, LifecycleSlot::Queued(_))
                 })
                 .map_err(|_| WorldLaneFault::Poisoned)?,
         );

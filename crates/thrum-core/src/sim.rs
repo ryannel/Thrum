@@ -38,4 +38,6 @@ pub use snapshot::{SnapshotId, StructuralChange};
 pub use snapshot_ring::{DirtyPage, PublicationBusy, SnapshotRing};
 pub use transaction::{Edit, EditError};
 #[cfg(not(target_arch = "wasm32"))]
-pub use world_lane::{WorldLane, WorldLaneControls, WorldLaneFault, WorldTask};
+pub use world_lane::{
+    WorldLane, WorldLaneControls, WorldLaneFault, WorldLifecycle, WorldLifecycleReply, WorldTask,
+};

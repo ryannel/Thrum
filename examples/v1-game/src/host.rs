@@ -353,20 +353,24 @@ impl FrameHost {
     pub fn next_due_in(&self) -> Option<Duration> {
         self.inner.world().next_due_in()
     }
-    /// Stop wall-time admission, retaining accepted ticks.
-    pub fn pause(&mut self) {
-        self.inner.world_mut().pause();
+    /// Stop inline wall-time admission, retaining accepted ticks.
+    /// Native threaded transitions use `WorldControls` requests and replies.
+    /// # Errors
+    /// Refuses a threaded world instead of presenting enqueueing as completion.
+    pub fn pause(&mut self) -> Result<(), String> {
+        self.inner.world_mut().pause()
     }
     /// Resume the drained inline world from a new monotonic origin.
     /// # Errors
-    /// Returns a clock state or timestamp failure.
+    /// Returns a clock state/timestamp failure, or refuses a threaded world.
     pub fn resume(&mut self, now: Duration) -> Result<(), String> {
         self.inner.world_mut().resume(now)
     }
     /// Drain accepted ticks before resuming; hidden elapsed time stays excluded.
     /// # Errors
-    /// Returns a world/engine fault or a backlog that made no progress.
+    /// Refuses a threaded world, or returns a world/engine fault or stalled backlog.
     pub fn drain_and_resume(&mut self, now: Duration) -> Result<(), String> {
+        self.inner.world_mut().inline_lifecycle()?;
         loop {
             let report = self.drive(now, None)?;
             if report.queued_ticks == 0 {

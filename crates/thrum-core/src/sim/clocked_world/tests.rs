@@ -452,3 +452,32 @@ fn first_overload_survives_native_adoption_and_clears_only_after_resume() {
         None
     );
 }
+
+#[cfg(not(target_arch = "wasm32"))]
+#[test]
+fn task_lifecycle_is_idempotent_without_weakening_the_strict_clock_api() {
+    use crate::sim::WorldTask;
+
+    let mut world = world(Game::default(), 1);
+    world
+        .advance(Duration::from_millis(50))
+        .expect("active fraction");
+    WorldTask::resume(&mut world, Duration::from_secs(10)).expect("already running");
+    assert!((world.presentation_alpha_at(Duration::ZERO) - 0.5).abs() < f32::EPSILON);
+    assert!(matches!(
+        world.resume(Duration::from_millis(50)),
+        Err(ClockedWorldError::Clock(ClockError::AlreadyActive))
+    ));
+    WorldTask::pause(&mut world);
+    WorldTask::pause(&mut world);
+    assert_eq!(world.presentation_alpha_at(Duration::ZERO), 1.0);
+    WorldTask::resume(&mut world, Duration::from_secs(10)).expect("new running origin");
+    WorldTask::resume(&mut world, Duration::from_secs(20)).expect("already running retains origin");
+    assert_eq!(
+        world
+            .advance(Duration::from_millis(10_100))
+            .expect("one new tick")
+            .tick,
+        1
+    );
+}

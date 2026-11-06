@@ -3,6 +3,8 @@
 
 #[path = "macos/display_link.rs"]
 mod display_link;
+#[path = "macos/pause.rs"]
+mod pause;
 #[path = "macos/render_actor.rs"]
 mod render_actor;
 
@@ -15,7 +17,9 @@ use std::{
 };
 
 use display_link::ViewDisplayLink;
+use pause::PauseIntent;
 use render_actor::{FrameCounters, RenderJob, RenderOutcome, RenderReply, SurfaceStatus};
+use thrum_core::sim::WorldLaneFault;
 use thrum_render::{
     capabilities::DeviceCapabilities,
     frame::{FrameWorker, TargetLeadStatus},
@@ -67,6 +71,7 @@ struct App {
     surface_generation: Arc<AtomicU64>,
     render: Option<FrameWorker<RenderJob, RenderReply>>,
     world_controls: Option<WorldControls>,
+    pause: PauseIntent,
     world_tick: u64,
     render_in_flight: Option<u64>,
     counters: FrameCounters,
@@ -123,6 +128,7 @@ impl App {
             surface_generation: Arc::new(AtomicU64::new(1)),
             render: None,
             world_controls: None,
+            pause: PauseIntent::default(),
             world_tick: 0,
             render_in_flight: None,
             counters: FrameCounters::default(),
@@ -189,6 +195,38 @@ impl App {
         self.request_sequence = self.request_sequence.saturating_add(1);
         if let Some(window) = &self.window {
             window.request_redraw();
+        }
+        Ok(())
+    }
+
+    fn reconcile_pause(&mut self) -> Result<(), String> {
+        // Ordinary world notifications do not touch the lifecycle mailbox.
+        if !self.pause.needs_reply() && self.pause.next_request().is_none() {
+            return Ok(());
+        }
+        let Some(controls) = &self.world_controls else {
+            return Ok(());
+        };
+        if self.pause.needs_reply()
+            && let Some(reply) = controls
+                .poll_lifecycle_reply()
+                .map_err(|error| error.to_string())?
+        {
+            self.pause.acknowledge(reply.request)?;
+        }
+        if let Some(request) = self.pause.next_request() {
+            match controls.request_lifecycle(request) {
+                Ok(()) => self.pause.accepted(request),
+                Err(WorldLaneFault::Busy) => {}
+                Err(error) => return Err(error.to_string()),
+            }
+        }
+        if let Some(window) = &self.window {
+            let title = self.samples.last().map_or_else(
+                || format!("Thrum V1 | {}", self.pause.label()),
+                |sample| profiler_title(sample, self.pause.label()),
+            );
+            window.set_title(&title);
         }
         Ok(())
     }
@@ -399,7 +437,7 @@ impl App {
                     >= Duration::from_millis(500)
                     && let (Some(window), Some(sample)) = (&self.window, self.samples.last())
                 {
-                    window.set_title(&profiler_title(sample));
+                    window.set_title(&profiler_title(sample, self.pause.label()));
                     self.profiler_title_at = self.last_call;
                 }
             }
@@ -612,7 +650,7 @@ impl Drop for App {
     }
 }
 
-fn profiler_title(sample: &FrameSample) -> String {
+fn profiler_title(sample: &FrameSample, world_status: &str) -> String {
     let gpu = sample.gpu_pass_ns.map_or_else(
         || "GPU timestamps unavailable".to_owned(),
         |passes| {
@@ -631,7 +669,7 @@ fn profiler_title(sample: &FrameSample) -> String {
         },
     );
     format!(
-        "Thrum V1 | tick {} ({} updates, view age {}) | CPU tick {:.3}, extract {:.3}, upload {:.3}, encode {:.3} ms | {gpu}",
+        "Thrum V1 | {world_status} | tick {} ({} updates, view age {}) | CPU tick {:.3}, extract {:.3}, upload {:.3}, encode {:.3} ms | {gpu}",
         sample.tick,
         sample.completed_ticks,
         sample.visual_age_ticks,
@@ -684,8 +722,13 @@ impl ApplicationHandler<UserEvent> for App {
                         Err(error) => {
                             self.error = Some(error);
                             event_loop.exit();
+                            return;
                         }
                     }
+                }
+                if let Err(error) = self.reconcile_pause() {
+                    self.error = Some(error);
+                    event_loop.exit();
                 }
                 return;
             }
@@ -718,7 +761,18 @@ impl ApplicationHandler<UserEvent> for App {
             }
             WindowEvent::KeyboardInput { event, .. } => {
                 if let PhysicalKey::Code(code) = event.physical_key {
-                    self.set_key(code, event.state == ElementState::Pressed)
+                    if code == KeyCode::KeyP {
+                        if self
+                            .pause
+                            .key(event.state == ElementState::Pressed, event.repeat)
+                        {
+                            self.reconcile_pause()
+                        } else {
+                            Ok(())
+                        }
+                    } else {
+                        self.set_key(code, event.state == ElementState::Pressed)
+                    }
                 } else {
                     Ok(())
                 }
