@@ -35,6 +35,27 @@ pub struct PreparedDevice {
     presenter: Option<SurfacePresenter>,
 }
 
+impl PreparedDevice {
+    /// Fit the candidate to a surface resized during detached preparation.
+    /// This touches only the candidate device and retains it on failure.
+    /// # Errors
+    /// Refuses an invalid extent, consumed candidate or absent presenter.
+    pub fn resize_surface(&mut self, extent: [u32; 2]) -> Result<(), FrameError> {
+        if self.scene.is_none() {
+            return Err(FrameError::InvalidState(
+                "device replacement already published",
+            ));
+        }
+        self.presenter
+            .as_mut()
+            .ok_or(FrameError::InvalidState(
+                "candidate has no surface presenter",
+            ))?
+            .resize(self.capabilities.device(), extent)
+            .map_err(|error| FrameError::Gpu(format!("replacement surface resize: {error:?}")))
+    }
+}
+
 impl DevicePrepareInputs {
     /// Prepare on a different device with a strictly newer platform generation.
     /// `queue` must be the queue returned with `capabilities`' device. As with

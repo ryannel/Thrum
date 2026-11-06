@@ -25,13 +25,11 @@ use crate::{
 };
 use thrum_core::sim::{WorldAdvance, WorldPublication};
 
-#[cfg(not(target_arch = "wasm32"))]
 mod device;
 mod preparation;
 mod tokens;
 #[cfg(not(target_arch = "wasm32"))]
 mod visual;
-#[cfg(not(target_arch = "wasm32"))]
 pub use device::{DevicePrepareInputs, PreparedDevice};
 pub use tokens::{AdvancedFrame, EncodedFrame};
 #[cfg(not(target_arch = "wasm32"))]
@@ -303,7 +301,6 @@ pub struct FrameHost<W: FrameWorld, V: SceneSource<W::Page>> {
     dropped_surface: u64,
     visual_lighting: Option<FrameLighting>,
     visual_revision: Option<[u8; 32]>,
-    #[cfg(not(target_arch = "wasm32"))]
     visual_owner: Arc<()>,
 }
 
@@ -437,7 +434,6 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             dropped_surface: 0,
             visual_lighting: None,
             visual_revision: None,
-            #[cfg(not(target_arch = "wasm32"))]
             visual_owner: Arc::new(()),
         })
     }
@@ -516,7 +512,6 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         Ok(true)
     }
 
-    #[cfg(not(target_arch = "wasm32"))]
     fn refresh_replacement(
         &mut self,
         replacement: &mut preparation::PreparedScene,
@@ -561,7 +556,6 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         Ok(view)
     }
 
-    #[cfg(not(target_arch = "wasm32"))]
     fn reset_replacement_history(&mut self) {
         self.history_reset_pending = true;
         self.upload_reset_pending = true;

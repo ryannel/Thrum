@@ -211,8 +211,23 @@ fn gpu_device_replacement_abandons_slots_and_isolates_old_candidates_and_callbac
             .prepare(&replacement, &new_queue, Some(surface()))
             .await
             .expect("competing resources");
+        assert!(candidate.resize_surface([0, 64]).is_err());
+        candidate
+            .resize_surface([96, 48])
+            .expect("resize during preparation");
         host.publish_device(&mut candidate)
             .expect("publish without polling destroyed device");
+        assert_eq!(
+            host.presenter
+                .as_ref()
+                .expect("published presenter")
+                .extent(),
+            [96, 48]
+        );
+        assert!(
+            candidate.resize_surface([64, 64]).is_err(),
+            "consumed candidate cannot resize"
+        );
         assert_eq!(host.world.source(), world);
         assert_eq!(host.generation, 8);
         assert_eq!(host.device, *replacement.device());

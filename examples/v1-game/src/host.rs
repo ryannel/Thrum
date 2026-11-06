@@ -234,6 +234,25 @@ impl FrameHost {
     /// Initial generation for simple callers; live platforms own later generations.
     pub const DEVICE_GENERATION: u64 = 1;
 
+    /// Retain CPU presentation inputs for detached GPU reconstruction.
+    /// # Errors
+    /// Returns a current camera or lighting policy failure.
+    pub fn device_prepare_inputs(
+        &self,
+    ) -> Result<runtime::DevicePrepareInputs, runtime::FrameError> {
+        self.inner.device_prepare_inputs()
+    }
+
+    /// Install complete GPU resources while keeping this game's resident world.
+    /// # Errors
+    /// Refuses a stale, foreign or consumed device candidate.
+    pub fn publish_device(
+        &mut self,
+        candidate: &mut runtime::PreparedDevice,
+    ) -> Result<(), runtime::FrameError> {
+        self.inner.publish_device(candidate)
+    }
+
     /// Prepare the fixed V1 scene using a platform-owned device and queue.
     /// # Errors
     /// Returns a scene, world or engine preparation failure.

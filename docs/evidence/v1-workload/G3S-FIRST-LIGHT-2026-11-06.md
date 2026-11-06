@@ -41,6 +41,6 @@ Sun−3°/+15°/180° green worsened 25.92→29.01%. Comparison holds all 198 fi
 retained 32768-path estimates; it is not a whole-sky tolerance pass. Raw patch/tables: `tmp/g3s-source-quality/`.
 Independent continuous local-closure referee separates angular/path refinement from LUT sampling. Four cells agree within
 0.25% on separate axes: angular 8→16 (fourth 16→32), path refinement at16. Its vacuum falsifier exposes inherited
-self-feedback, motivating a coupled spatial atmosphere/ground experiment, not a brightness gain.
+self-feedback. A coupled scalar prototype fixes that boundary but remains mixed: green+25.9→+3.9%, blue−3.1→−10.1%; parked in `tmp/g3s-spatial-prototype/`.
 C250 metering has no readback. NeutralHighlights preserves calibration; not standard PBR Neutral. Physical display
 motion, actual tab/mobile lifecycle, spectral accuracy and final contrast remain open.
