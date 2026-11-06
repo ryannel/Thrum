@@ -1217,7 +1217,6 @@ impl PreparedSynthetic {
     pub fn capabilities(&self) -> &DeviceCapabilities {
         &self.capabilities
     }
-    #[cfg(not(target_arch = "wasm32"))]
     pub(crate) fn fallback_exposure(&self) -> f32 {
         f32::from_bits(self.exposure_bits)
     }

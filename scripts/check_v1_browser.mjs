@@ -8,7 +8,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
-const cases = ['normal', 'pause', 'resize', 'overload', 'input', 'controls', 'device-loss', 'late-device-loss'];
+const cases = ['normal', 'pause', 'resize', 'overload', 'input', 'controls', 'device-loss', 'late-device-loss', 'device-recovery', 'device-recovery-retry'];
+const configureFailureSentinel = 'THRUM_G3B_CONFIGURE_ONCE';
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 let interrupted;
@@ -108,6 +109,7 @@ const observeFaults = `document.addEventListener('DOMContentLoaded', () => {
 const readState = `JSON.stringify({status:document.querySelector('#status')?.textContent,player:document.querySelector('#player')?.textContent,width:document.querySelector('canvas')?.width,height:document.querySelector('canvas')?.height,hidden:document.hidden})`;
 const playerX = state => { const match = /player x=([-\d.]+)/.exec(state.player ?? ''); return match ? Number(match[1]) : undefined; };
 const field = (status, key) => Number(new RegExp(`(?:^|[ ;])${key}=(\\d+)(?:[ ;]|$)`).exec(status)?.[1]);
+const gameState = '({report:game.report(),complete:game.complete(),paused:game.paused(),time:game.time_of_day(),fault:game.graphics_fault(),recovering:game.recovering(),recoveryError:game.graphics_recovery_error(),player:game.controlled_position()})';
 
 async function existingGame(cdp, sessionId) {
   const prototype = await cdp.call('Runtime.evaluate', { expression: "import('/v1_game.js').then(m => m.BrowserGame.prototype)", awaitPromise: true }, sessionId);
@@ -122,9 +124,59 @@ async function existingGame(cdp, sessionId) {
     return result.result.value;
   };
   return {
-    read: () => invoke('return {report:game.report(),complete:game.complete(),paused:game.paused(),time:game.time_of_day(),fault:game.graphics_fault()};'),
+    read: () => invoke(`return ${gameState};`),
     setVisible: visible => invoke('game.set_visible(args[0],performance.now());return true;', [visible]),
+    invoke,
   };
+}
+
+async function destroyActualDevice(cdp, sessionId, previous, onDestroy) {
+  const prototype = await cdp.call('Runtime.evaluate', { expression: 'GPUDevice.prototype' }, sessionId);
+  if (prototype.exceptionDetails || !prototype.result.objectId) throw new Error('Actual WebGPU device prototype unavailable');
+  const { objects } = await cdp.call('Runtime.queryObjects', { prototypeObjectId: prototype.result.objectId }, sessionId);
+  await cdp.call('Runtime.releaseObject', { objectId: prototype.result.objectId }, sessionId);
+  const selected = await cdp.call('Runtime.callFunctionOn', { objectId: objects.objectId,
+    functionDeclaration: 'function(previous){const fresh=this.filter(device=>!previous?.includes(device));if(fresh.length!==1)throw new Error(`Expected one fresh actual GPUDevice, found ${fresh.length}`);return fresh[0];}',
+    arguments: [previous ? { objectId: previous } : { value: null }] }, sessionId);
+  if (selected.exceptionDetails || !selected.result.objectId) throw new Error('Unique current GPUDevice unavailable');
+  onDestroy();
+  await destroyRetainedDevice(cdp, sessionId, selected.result.objectId);
+  const count = await cdp.call('Runtime.callFunctionOn', { objectId: objects.objectId,
+    functionDeclaration: 'function(){return this.length;}', returnByValue: true }, sessionId);
+  return { allDevices: objects.objectId, device: selected.result.objectId, count: count.result.value };
+}
+
+async function destroyRetainedDevice(cdp, sessionId, objectId) {
+  const result = await cdp.call('Runtime.callFunctionOn', { objectId,
+    functionDeclaration: 'function(){this.destroy();return true;}', returnByValue: true }, sessionId);
+  if (result.exceptionDetails || result.result.value !== true) throw new Error('Actual WebGPU device destruction failed');
+}
+
+async function injectConfigureFailure(cdp, sessionId) {
+  const result = await cdp.call('Runtime.evaluate', { expression: `(()=>{
+    const prototype=GPUCanvasContext.prototype;
+    const descriptor=Object.getOwnPropertyDescriptor(prototype,'configure');
+    if(typeof descriptor?.value!=='function'||(!descriptor.configurable&&!descriptor.writable))throw new Error('Canvas configure cannot be wrapped');
+    const canvas=document.querySelector('canvas');const state={hits:0};
+    state.restored=()=>Object.getOwnPropertyDescriptor(prototype,'configure').value===descriptor.value;
+    const wrapper=function(...args){
+      if(this.canvas!==canvas)return Reflect.apply(descriptor.value,this,args);
+      Object.defineProperty(prototype,'configure',descriptor);state.hits++;
+      throw new Error('${configureFailureSentinel}');
+    };
+    Object.defineProperty(prototype,'configure',{...descriptor,value:wrapper});
+    if(prototype.configure!==wrapper)throw new Error('Canvas configure wrapper was not installed');
+    return state;
+  })()` }, sessionId);
+  if (result.exceptionDetails || !result.result.objectId) throw new Error(`Configure injection unavailable: ${JSON.stringify(result.exceptionDetails)}`);
+  return result.result.objectId;
+}
+
+async function readConfigureInjection(cdp, sessionId, objectId) {
+  const result = await cdp.call('Runtime.callFunctionOn', { objectId, returnByValue: true,
+    functionDeclaration: 'function(){return {hits:this.hits,restored:this.restored()};}' }, sessionId);
+  if (result.exceptionDetails) throw new Error(JSON.stringify(result.exceptionDetails));
+  return result.result.value;
 }
 
 async function qualifyControls(cdp, sessionId, poll, timeout) {
@@ -197,7 +249,7 @@ async function qualifyControls(cdp, sessionId, poll, timeout) {
   return { snapshots, rangeKeyboard: { before, after } };
 }
 
-async function qualifyDeviceLoss(cdp, sessionId, poll, timeout, late) {
+async function qualifyDeviceLoss(cdp, sessionId, poll, timeout, late, onDestroy) {
   const deadline = Date.now() + timeout;
   const until = (check, description) => waitFor(check, Math.max(0, deadline - Date.now()), description);
   await until(async () => /^Running/.test((await poll()).status ?? ''), 'loss demo startup');
@@ -211,12 +263,7 @@ async function qualifyDeviceLoss(cdp, sessionId, poll, timeout, late) {
     const value = await read('beforeLoss');
     return Number.isFinite(playerX(await poll())) && (late ? value.complete : field(value.report, 'presented') >= 12);
   }, late ? 'healthy profile completes before loss' : 'healthy views before loss');
-  const prototype = await cdp.call('Runtime.evaluate', { expression: 'GPUDevice.prototype' }, sessionId);
-  if (prototype.exceptionDetails || !prototype.result.objectId) throw new Error('Actual WebGPU device prototype unavailable');
-  const { objects } = await cdp.call('Runtime.queryObjects', { prototypeObjectId: prototype.result.objectId }, sessionId);
-  const destroyed = await cdp.call('Runtime.callFunctionOn', { objectId: objects.objectId,
-    functionDeclaration: 'function(){if(this.length!==1)throw new Error(`Expected one actual GPUDevice, found ${this.length}`);this[0].destroy();return true;}', returnByValue: true }, sessionId);
-  if (destroyed.exceptionDetails || destroyed.result.value !== true) throw new Error('Actual WebGPU device destruction failed');
+  await destroyActualDevice(cdp, sessionId, undefined, onDestroy);
   const fault = await until(async () => {
     const value = await read('lossObserved');
     return value.fault?.startsWith('Destroyed:') && /^Graphics fault: Destroyed:/.test((await poll()).status ?? '') ? value : undefined;
@@ -273,6 +320,155 @@ async function qualifyDeviceLoss(cdp, sessionId, poll, timeout, late) {
   return { snapshots, scope: 'Actual GPUDevice.destroy; authority/input/pause/hooks/overload stay live; no graphics reconstruction' };
 }
 
+async function qualifyDeviceRecovery(cdp, sessionId, poll, timeout, evidence, onDestroy, failFirst, capturePhase) {
+  const deadline = Date.now() + timeout;
+  const until = (check, description) => waitFor(check, Math.max(0, deadline - Date.now()), description);
+  await until(async () => /^Running/.test((await poll()).status ?? ''), 'recovery demo startup');
+  const game = await existingGame(cdp, sessionId); // Retain this exact BrowserGame through both replacements.
+  let lastTick = 0, devices, expectedRecoveryFailure = false;
+  const read = async name => {
+    await poll();
+    const value = await game.read(); evidence.snapshots[name] = value;
+    const tick = field(value.report, 'ticks');
+    if (!Number.isFinite(tick) || tick < lastTick || !Number.isFinite(playerX(value))) throw new Error('World identity/position reset or became unavailable');
+    lastTick = tick;
+    if (value.recoveryError && !expectedRecoveryFailure) throw new Error(`Graphics replacement failed: ${value.recoveryError}`);
+    return value;
+  };
+  const clickPause = () => game.invoke('document.querySelector("#pause-world").click();return true;');
+  const pauseAndSettle = async name => {
+    await clickPause(); const requested = await read(`${name}Requested`);
+    return until(async () => {
+      const value = await read(name);
+      return value.paused && field(value.report, 'callbacks') >= field(requested.report, 'callbacks') + 3 ? value : undefined;
+    }, `${name} accepted-work drain`);
+  };
+  await until(async () => field((await read('initial')).report, 'presented') >= 12, 'healthy views before recovery');
+  for (let round = 1; round <= (failFirst ? 1 : 2); round++) {
+    const before = await read(`beforeLoss${round}`);
+    const extent = await poll();
+    if (!(extent.width > 0 && extent.height > 0)) throw new Error('Healthy canvas has no extent');
+    if (before.fault || before.recovering || field(before.report, 'generation') !== round || field(before.report, 'recovered') !== round - 1) throw new Error('Unexpected graphics generation before loss');
+    devices = await destroyActualDevice(cdp, sessionId, devices?.allDevices, onDestroy);
+    evidence.destroyedDeviceCounts.push(devices.count);
+    const lost = await until(async () => {
+      const value = await read(`lost${round}`);
+      return value.fault?.startsWith('Destroyed:') && /^Graphics fault: Destroyed:/.test((await poll()).status ?? '') ? value : undefined;
+    }, `generation${round} actual device loss`);
+    if (failFirst) await capturePhase('lost');
+    const assertUnavailable = value => {
+      if (value.fault !== lost.fault || field(value.report, 'generation') !== round || field(value.report, 'presented') !== field(lost.report, 'presented') || field(value.report, 'samples') !== field(lost.report, 'samples')) throw new Error('Unavailable generation performed GPU work or changed identity');
+    };
+    await game.invoke('game.set_controls(1,0);return true;');
+    await until(async () => {
+      const value = await read(`lostInput${round}`); assertUnavailable(value);
+      return field(value.report, 'ticks') >= field(lost.report, 'ticks') + 6 && playerX(value) > playerX(lost) + 0.01;
+    }, 'input advances the same lost-GPU world');
+    const paused = await pauseAndSettle(`paused${round}`); assertUnavailable(paused);
+    let injection;
+    if (failFirst) {
+      injection = await injectConfigureFailure(cdp, sessionId);
+      expectedRecoveryFailure = true;
+    }
+    // First replacement also covers a zero-extent ready-candidate deferral.
+    // Batch edits immediately after the REAL button click, before detached
+    // preparation microtasks can complete. No production test hook is installed.
+    const request = await game.invoke(`
+      const button=document.querySelector('#restore-graphics');
+      if(button.hidden||button.disabled)throw new Error('Restore button unavailable');
+      button.click();const pending=game.recovering();
+      ${round === 1 ? "document.querySelector('canvas').width=0;document.querySelector('canvas').height=0;" : ''}
+      game.set_paused(false,performance.now());game.set_controls(1,0);
+      ${round === 2 ? 'game.set_paused(true,performance.now());' : ''}
+      const solar=document.querySelector('#solar-time');solar.value=18.48;solar.dispatchEvent(new Event('input',{bubbles:true}));
+      return {pending,buttonDisabled:button.disabled,snapshot:${gameState}};`);
+    evidence.snapshots[`requested${round}`] = request;
+    if (!request.pending || !request.buttonDisabled || field(request.snapshot.report, 'recovery_attempts') !== round) throw new Error('Restore button did not admit one asynchronous attempt');
+    let retained = request.snapshot;
+    if (failFirst) {
+      await until(async () => {
+        const value = await read('configurePending'); assertUnavailable(value);
+        if (!value.recovering) throw new Error('Zero-extent replacement stopped preparing before configure injection');
+        return field(value.report, 'callbacks') >= field(request.snapshot.report, 'callbacks') + 3;
+      }, 'pending configure attempt with ongoing CPU callbacks');
+      await capturePhase('pending');
+      await game.invoke('document.querySelector("canvas").width=args[0];document.querySelector("canvas").height=args[1];return true;', [extent.width, extent.height]);
+      const expectedError = 'replacement canvas configuration did not become usable';
+      const failed = await until(async () => {
+        const value = await read('configureFailed'); assertUnavailable(value);
+        if (value.recovering) return undefined;
+        if (value.recoveryError !== expectedError || field(value.report, 'recovery_attempts') !== 1 || field(value.report, 'recovered') !== 0) throw new Error('Injected configure failure was not retained as a failed attempt');
+        return value;
+      }, 'injected configure failure ends the first attempt');
+      evidence.configureInjection = await readConfigureInjection(cdp, sessionId, injection);
+      if (evidence.configureInjection.hits !== 1 || !evidence.configureInjection.restored) throw new Error('Configure wrapper did not throw exactly once and restore itself');
+      if (!await game.invoke('const button=document.querySelector("#restore-graphics");return !button.hidden&&!button.disabled;')) throw new Error('Failed attempt did not offer an enabled retry button');
+      await capturePhase('failed');
+      await until(async () => {
+        const value = await read('inputAfterFailure'); assertUnavailable(value);
+        if (value.recovering || value.recoveryError !== expectedError || value.paused) throw new Error('Failed attempt lost its diagnostic or changed play state');
+        return field(value.report, 'ticks') >= field(failed.report, 'ticks') + 6 && playerX(value) > playerX(failed) + 0.01;
+      }, 'failed replacement keeps world and input live without GPU work');
+      await pauseAndSettle('pausedAfterFailure');
+      const retry = await game.invoke(`
+        const button=document.querySelector('#restore-graphics');button.click();
+        game.set_paused(false,performance.now());game.set_controls(1,0);game.set_paused(true,performance.now());
+        const solar=document.querySelector('#solar-time');solar.value=18.48;solar.dispatchEvent(new Event('input',{bubbles:true}));
+        return {pending:game.recovering(),buttonDisabled:button.disabled,snapshot:${gameState}};`);
+      evidence.snapshots.retryRequested = retry;
+      if (!retry.pending || !retry.buttonDisabled || retry.snapshot.recoveryError || field(retry.snapshot.report, 'recovery_attempts') !== 2) throw new Error('Real-button retry did not clear failure and admit one new attempt');
+      expectedRecoveryFailure = false;
+      retained = retry.snapshot;
+    } else if (round === 1) {
+      const pending = await until(async () => {
+        const value = await read('zeroExtentPending'); assertUnavailable(value);
+        if (!value.recovering) throw new Error('Zero-extent candidate published before a valid surface');
+        return field(value.report, 'callbacks') >= field(request.snapshot.report, 'callbacks') + 6 && field(value.report, 'ticks') >= field(paused.report, 'ticks') + 4 && playerX(value) > playerX(paused) + 0.01 ? value : undefined;
+      }, 'CPU input and clock continue during zero-extent preparation');
+      if (pending.paused) throw new Error('Pending recovery ignored explicit resume');
+      await pauseAndSettle('pendingPause');
+      retained = await game.invoke(`
+        const solar=document.querySelector('#solar-time');solar.value=18.48;solar.dispatchEvent(new Event('input',{bubbles:true}));
+        document.querySelector('canvas').width=args[0];document.querySelector('canvas').height=args[1];return ${gameState};`,
+      [extent.width, extent.height]);
+    }
+    evidence.snapshots[`retained${round}`] = retained;
+    const targetGeneration = round + 1 + Number(failFirst);
+    const targetAttempts = round + Number(failFirst);
+    const ready = await until(async () => {
+      const value = await read(`restored${round}`);
+      if (!value.paused || field(value.report, 'ticks') !== field(retained.report, 'ticks') || Math.abs(playerX(value) - playerX(retained)) > 0.001 || Math.abs(value.time - retained.time) > 1e-6) throw new Error('Replacement restarted or changed paused world/player/solar state');
+      if (value.recovering && field(value.report, 'generation') === round) { assertUnavailable(value); return undefined; }
+      if (value.fault || field(value.report, 'generation') !== targetGeneration || field(value.report, 'recovered') !== round || field(value.report, 'recovery_attempts') !== targetAttempts) throw new Error('Replacement completion/generation mismatch');
+      if (value.recovering) return undefined; // Published generation awaits its first actual present call.
+      return field(value.report, 'presented') >= field(lost.report, 'presented') + 12 && field(value.report, 'samples') >= 12 && /^Running/.test((await poll()).status ?? '') ? value : undefined;
+    }, `new generation${targetGeneration} presents and collects fresh samples`);
+    if (!await game.invoke('const button=document.querySelector("#restore-graphics");return button.hidden&&!button.disabled;')) throw new Error('Restore button did not return to healthy state');
+    if (failFirst) await capturePhase('restored');
+    await destroyRetainedDevice(cdp, sessionId, devices.device);
+    await until(async () => {
+      const value = await read(`oldDeviceRecheck${round}`);
+      if (value.fault || value.recovering || field(value.report, 'generation') !== targetGeneration || !value.paused || field(value.report, 'ticks') !== field(ready.report, 'ticks')) throw new Error('Retained old device refaulted or changed the new generation');
+      return field(value.report, 'presented') >= field(ready.report, 'presented') + 6;
+    }, 'healthy new generation survives re-destroy of retained old device');
+    await clickPause();
+    await until(async () => {
+      const value = await read(`resumed${round}`);
+      return !value.paused && field(value.report, 'ticks') >= field(ready.report, 'ticks') + 6 && playerX(value) > playerX(ready) + 0.01;
+    }, 'held controls survive GPU replacement');
+    const released = await game.invoke(`game.set_controls(0,0);return ${gameState};`);
+    await until(async () => {
+      const value = await read(`released${round}`);
+      if (Math.abs(playerX(value) - playerX(released)) > 0.001) throw new Error('Released controls moved the actor');
+      return field(value.report, 'ticks') >= field(released.report, 'ticks') + 6;
+    }, 'input release remains effective after recovery');
+  }
+  evidence.snapshots.final = await read('final');
+  evidence.scope = failFirst
+    ? 'Actual GPUDevice.destroy; one caught main-canvas configure failure, failed attempt2 then real-button retry publishes generation3; same world/input/pause/time and fresh GPU samples. No timing/display claim.'
+    : 'Two actual GPUDevice.destroy/button replacements on the same BrowserGame; generations1→2→3, CPU controls/lifecycle during pending zero extent, fresh GPU samples. Old-device re-destroy is not callback replay or display/cadence qualification.';
+}
+
 async function screenshot(cdp, sessionId, output, mode) {
   const image = await cdp.call('Page.captureScreenshot', { format: 'png' }, sessionId);
   await fs.writeFile(path.join(output, `${mode}-final.png`), Buffer.from(image.data, 'base64'));
@@ -283,9 +479,13 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout) {
   let sessionId, state, response, input, game, pausedAt, pause, controls;
   let failed = false;
   const lossCase = mode === 'device-loss' || mode === 'late-device-loss';
+  const retryCase = mode === 'device-recovery-retry';
+  const recoveryCase = mode === 'device-recovery' || retryCase;
+  const destroyCase = lossCase || recoveryCase;
   const faults = [], timeline = [];
-  let loss;
-  const url = mode === 'controls' || lossCase ? `${origin}/` : `${origin}/?qualify${['normal', 'input'].includes(mode) ? '' : `&${mode}-probe`}`;
+  let loss, recovery, intentionalDestroys = 0;
+  const onDestroy = () => { intentionalDestroys++; };
+  const url = mode === 'controls' || destroyCase ? `${origin}/` : `${origin}/?qualify${['normal', 'input'].includes(mode) ? '' : `&${mode}-probe`}`;
   const log = line => { timeline.push(line); console.log(`${mode}: ${line}`); };
   try {
     ({ sessionId } = await cdp.call('Target.attachToTarget', { targetId, flatten: true }));
@@ -294,7 +494,9 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout) {
       if (packet.method === 'Runtime.exceptionThrown') faults.push(packet.params.exceptionDetails);
       if (packet.method === 'Runtime.consoleAPICalled' && packet.params.type === 'error') {
         const messages = packet.params.args.map(arg => arg.value ?? arg.description);
-        if (!(lossCase && messages.length === 1 && /^Graphics fault: Destroyed:/.test(messages[0] ?? ''))) faults.push(messages);
+        const expectedDestroyed = destroyCase && intentionalDestroys > 0 && messages.length === 1 && /^Graphics fault: Destroyed:/.test(messages[0] ?? '');
+        const expectedConfigure = retryCase && intentionalDestroys > 0 && messages.length === 1 && /^Surface configuration failed:/.test(messages[0] ?? '') && messages[0].includes(configureFailureSentinel) && messages[0].includes('The surface will report as lost until it is successfully reconfigured.');
+        if (!expectedDestroyed && !expectedConfigure) faults.push(messages);
       }
       if (packet.method === 'Network.responseReceived' && packet.params.response.url === `${origin}/v1_game_bg.wasm`) response = packet.params;
     };
@@ -312,10 +514,17 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout) {
       if (evaluated.exceptionDetails) throw new Error(JSON.stringify(evaluated.exceptionDetails));
       state = JSON.parse(evaluated.result.value ?? '{}');
       if (state.status !== last) { log(state.status ?? ''); last = state.status; }
-      if (faults.length || (/fault:/i.test(state.status ?? '') && !(lossCase && /^Graphics fault: Destroyed:/.test(state.status ?? '')))) throw new Error(`Browser fault: ${JSON.stringify(faults)} ${state.status}`);
+      if (faults.length || (/fault:/i.test(state.status ?? '') && !(destroyCase && intentionalDestroys > 0 && /^Graphics fault: Destroyed:/.test(state.status ?? '')))) throw new Error(`Browser fault: ${JSON.stringify(faults)} ${state.status}`);
       return state;
     };
-    if (lossCase) loss = await qualifyDeviceLoss(cdp, sessionId, poll, timeout, mode === 'late-device-loss');
+    if (recoveryCase) {
+      recovery = { snapshots: {}, destroyedDeviceCounts: [] };
+      await qualifyDeviceRecovery(cdp, sessionId, poll, timeout, recovery, onDestroy, retryCase, async phase => {
+        const name = `${mode}-${phase}`;
+        await screenshot(cdp, sessionId, output, name);
+        (recovery.captures ??= []).push(`${name}-final.png`);
+      });
+    } else if (lossCase) loss = await qualifyDeviceLoss(cdp, sessionId, poll, timeout, mode === 'late-device-loss', onDestroy);
     else if (mode === 'controls') controls = await qualifyControls(cdp, sessionId, poll, timeout);
     else await waitFor(async () => {
       await poll();
@@ -346,8 +555,8 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout) {
       }
       return /^adapter=/.test(state.status ?? '');
     }, timeout, `${mode} 600 completed GPU samples`);
-    const report = loss?.snapshots.final.report ?? controls?.snapshots.complete.report ?? state.status;
-    if (!lossCase && (field(report, 'samples') !== 600 || !(field(report, 'presented') >= 600))) throw new Error('Qualification requires 600 GPU-complete samples and at least 600 present calls');
+    const report = recovery?.snapshots.final.report ?? loss?.snapshots.final.report ?? controls?.snapshots.complete.report ?? state.status;
+    if (!destroyCase && (field(report, 'samples') !== 600 || !(field(report, 'presented') >= 600))) throw new Error('Qualification requires 600 GPU-complete samples and at least 600 present calls');
     if (state.hidden) throw new Error('Qualification target finished hidden');
     if (mode === 'pause' && (!timeline.some(line => /^Paused/.test(line)) || !timeline.some(line => /^Resumed/.test(line)) || field(state.status, 'overload_events') !== 0 || pause?.heldTick !== pause?.startTick || !Number.isFinite(pause?.heldTick) || !(field(state.status, 'ticks') > pause.heldTick))) throw new Error('Explicit two-second pause/resume was not observed without overload');
     if (mode === 'resize' && (state.width !== 960 || state.height !== 540 || !/extent=960x540;/.test(state.status))) throw new Error('Canvas/surface resize to 960x540 not applied');
@@ -363,15 +572,15 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout) {
     if (!lossCase && (await game.read()).fault) throw new Error('Graphics device fault invalidated qualification');
     await screenshot(cdp, sessionId, output, mode);
     if (faults.length) throw new Error(`Runtime faults: ${JSON.stringify(faults)}`);
-    const scope = lossCase ? loss.scope : mode === 'controls' ? 'Manual pause with ongoing RAF and explicit visibility-hook composition; not actual tab visibility' : mode === 'pause' ? 'Explicit set_visible(false/true) hook; not actual tab visibility' : 'Headless WebGPU function; not display/cadence qualification';
-    const result = { case: mode, url, state, actualWasmSha256, responseStatus: 200, input, pause, controls, loss, timeline, scope };
+    const scope = recovery?.scope ?? (lossCase ? loss.scope : mode === 'controls' ? 'Manual pause with ongoing RAF and explicit visibility-hook composition; not actual tab visibility' : mode === 'pause' ? 'Explicit set_visible(false/true) hook; not actual tab visibility' : 'Headless WebGPU function; not display/cadence qualification');
+    const result = { case: mode, url, state, actualWasmSha256, responseStatus: 200, input, pause, controls, loss, recovery, timeline, scope };
     await fs.writeFile(path.join(output, `${mode}.json`), JSON.stringify(result, null, 2));
     log(`PASS actualWasmSha256=${actualWasmSha256}`);
     return result;
   } catch (error) {
     failed = true;
     log(`FAIL ${error.message}`);
-    await fs.writeFile(path.join(output, `${mode}-failed.json`), JSON.stringify({ url, state, error: String(error), faults, timeline, wasmResponse: response?.response }, null, 2));
+    await fs.writeFile(path.join(output, `${mode}-failed.json`), JSON.stringify({ url, state, error: String(error), faults, timeline, recovery, wasmResponse: response?.response }, null, 2));
     throw error;
   } finally {
     if (sessionId && failed) {
@@ -415,7 +624,7 @@ async function cleanup(child, exited, cdp, server, profile) {
 
 async function main() {
   const args = options(process.argv.slice(2));
-  if (!args) { console.log('node scripts/check_v1_browser.mjs [--case all|normal|pause|resize|overload|input|controls|device-loss|late-device-loss] [--web-root target/v1-game-web] [--chrome /path/to/Chrome] [--output tmp/new-run] [--timeout-ms 90000]\nRequires Node 24+, an already-built game, and this Mac\'s Apple M3 Max/Metal Chrome. Controls checks manual pause with ongoing RAF; visibility checks use the explicit hook, not tab hiding. No timing claim.'); return; }
+  if (!args) { console.log('node scripts/check_v1_browser.mjs [--case all|normal|pause|resize|overload|input|controls|device-loss|late-device-loss|device-recovery|device-recovery-retry] [--web-root target/v1-game-web] [--chrome /path/to/Chrome] [--output tmp/new-run] [--timeout-ms 90000]\nRequires Node 24+, an already-built game, and this Mac\'s Apple M3 Max/Metal Chrome. Controls checks manual pause with ongoing RAF; visibility checks use the explicit hook, not tab hiding. Recovery uses the real restore button; retry injects exactly one standard canvas configure failure. No timing claim.'); return; }
   if (Number(process.versions.node.split('.')[0]) < 24 || typeof WebSocket !== 'function') throw new Error('Node 24+ with builtin WebSocket is required');
   const directory = await fs.realpath(path.resolve(repo, args['web-root']));
   const files = await assets(directory);

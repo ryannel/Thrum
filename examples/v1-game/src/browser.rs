@@ -1,16 +1,21 @@
 //! Browser WebGPU surface adapter for the same fixed-step V1 frame host.
 
-use std::sync::{
-    Arc, Mutex,
-    atomic::{AtomicBool, Ordering},
-};
 use std::time::Duration;
+use std::{
+    rc::Rc,
+    sync::{
+        Arc, Mutex,
+        atomic::{AtomicBool, Ordering},
+    },
+};
 
-use thrum_render::{capabilities::DeviceCapabilities, present::SurfaceProfile};
+use thrum_render::present::SurfaceProfile;
 use wasm_bindgen::prelude::*;
 use web_sys::HtmlCanvasElement;
 
 use crate::{FrameConfig, FrameHost, FrameSample, SurfaceOutput};
+
+mod recovery;
 
 const FRAMES: usize = 600;
 
@@ -19,7 +24,8 @@ const FRAMES: usize = 600;
 pub struct BrowserGame {
     canvas: HtmlCanvasElement,
     adapter_name: String,
-    surface: wgpu::Surface<'static>,
+    surface: Rc<wgpu::Surface<'static>>,
+    recovery: recovery::Recovery,
     config: wgpu::SurfaceConfiguration,
     device: wgpu::Device,
     graphics: Arc<GraphicsFault>,
@@ -51,67 +57,44 @@ pub async fn create_browser_game(canvas: HtmlCanvasElement) -> Result<BrowserGam
     let mut descriptor = wgpu::InstanceDescriptor::new_without_display_handle();
     descriptor.backends = wgpu::Backends::BROWSER_WEBGPU;
     let instance = wgpu::Instance::new(descriptor);
-    let surface = instance
-        .create_surface(wgpu::SurfaceTarget::Canvas(canvas.clone()))
-        .map_err(js_error)?;
-    let adapter = instance
-        .request_adapter(&wgpu::RequestAdapterOptions {
-            compatible_surface: Some(&surface),
-            power_preference: wgpu::PowerPreference::HighPerformance,
-            ..Default::default()
-        })
-        .await
-        .map_err(js_error)?;
-    let (device, queue) = adapter
-        .request_device(&wgpu::DeviceDescriptor {
-            required_features: DeviceCapabilities::requested_timing_features(&adapter),
-            ..Default::default()
-        })
-        .await
-        .map_err(js_error)?;
-    let graphics = GraphicsFault::register(&device);
-    let capabilities = DeviceCapabilities::capture(&adapter, &device, FrameHost::DEVICE_GENERATION);
-    let mut config = surface
-        .get_default_config(&adapter, canvas.width().max(1), canvas.height().max(1))
-        .ok_or_else(|| js_error("no compatible canvas surface configuration"))?;
-    let formats = surface.get_capabilities(&adapter).formats;
-    config.format = [
-        wgpu::TextureFormat::Bgra8Unorm,
-        wgpu::TextureFormat::Rgba8Unorm,
-        wgpu::TextureFormat::Bgra8UnormSrgb,
-        wgpu::TextureFormat::Rgba8UnormSrgb,
-    ]
-    .into_iter()
-    .find(|format| formats.contains(format))
-    .ok_or_else(|| js_error("no compatible 8-bit SDR canvas format"))?;
-    surface.configure(&device, &config);
+    let surface = Rc::new(
+        instance
+            .create_surface(wgpu::SurfaceTarget::Canvas(canvas.clone()))
+            .map_err(js_error)?,
+    );
+    let gpu = recovery::request_device(
+        &instance,
+        &surface,
+        [canvas.width().max(1), canvas.height().max(1)],
+        FrameHost::DEVICE_GENERATION,
+    )
+    .await
+    .map_err(js_error)?;
+    surface.configure(&gpu.device, &gpu.config);
     let host = FrameHost::new_with_capabilities(
-        &device,
-        &queue,
-        &capabilities,
+        &gpu.device,
+        &gpu.queue,
+        &gpu.capabilities,
         FrameConfig {
-            render_extent: [config.width, config.height],
+            render_extent: [gpu.config.width, gpu.config.height],
             surface: Some(SurfaceProfile {
-                format: config.format,
-                extent: [config.width, config.height],
+                format: gpu.config.format,
+                extent: [gpu.config.width, gpu.config.height],
             }),
         },
     )
     .await
     .map_err(js_error)?;
-    let adapter_info = adapter.get_info();
+    let recovery = recovery::Recovery::new(instance, Rc::clone(&surface));
     Ok(BrowserGame {
         canvas,
-        adapter_name: if adapter_info.name.is_empty() {
-            "browser WebGPU (adapter name withheld)".to_owned()
-        } else {
-            adapter_info.name
-        },
+        adapter_name: gpu.adapter_name,
         surface,
-        config,
-        device,
-        graphics,
-        queue,
+        recovery,
+        config: gpu.config,
+        device: gpu.device,
+        graphics: gpu.fault,
+        queue: gpu.queue,
         host,
         first_frame_ms: None,
         last_frame: Duration::ZERO,
@@ -168,7 +151,20 @@ impl BrowserGame {
         }
         self.callbacks += 1;
         self.last_frame = now;
+        let extent = [self.canvas.width(), self.canvas.height()];
+        if let Some((gpu, reconfigure)) = self.recovery.poll(&mut self.host, extent) {
+            self.adapter_name = gpu.adapter_name;
+            self.config = gpu.config;
+            self.device = gpu.device;
+            self.queue = gpu.queue;
+            self.graphics = gpu.fault;
+            self.needs_reconfigure = reconfigure;
+            // Timings belong to one device generation, while world/platform
+            // counters retain their identity across graphics reconstruction.
+            self.samples.clear();
+        }
         if self.graphics.is_lost() {
+            self.recovery.awaiting_first_present = false;
             self.unavailable += 1;
             // No polling, completion collection, resize or GPU encoding after
             // loss. Authority and controls continue on the same resident world.
@@ -178,7 +174,6 @@ impl BrowserGame {
             }
             return Ok(());
         }
-        let extent = [self.canvas.width(), self.canvas.height()];
         let mut resize = extent != [self.config.width, self.config.height];
         if (resize || self.needs_reconfigure)
             && extent[0] > 0
@@ -232,6 +227,7 @@ impl BrowserGame {
                 if report.surface_presented {
                     self.queue.present(frame);
                     self.presented += 1;
+                    self.recovery.awaiting_first_present = false;
                 }
                 report
             } else {
@@ -294,9 +290,31 @@ impl BrowserGame {
     }
 
     /// Persistent device-loss diagnostic. Rendering stops while the world and
-    /// local controls remain usable; reloading creates a new graphics owner.
+    /// local controls remain usable until a complete replacement is published.
     pub fn graphics_fault(&self) -> Option<String> {
         self.graphics.message()
+    }
+
+    /// Start detached graphics reconstruction without borrowing the running world.
+    /// # Errors
+    /// Refuses a healthy device, duplicate attempt or invalid retained inputs.
+    pub fn request_graphics_recovery(&mut self) -> Result<(), JsValue> {
+        if !self.graphics.is_lost() {
+            return Err(js_error("graphics device is still available"));
+        }
+        self.recovery
+            .request(&self.host, [self.config.width, self.config.height])
+            .map_err(js_error)
+    }
+
+    /// Whether an explicit attempt is preparing or awaiting its first present call.
+    pub fn recovering(&self) -> bool {
+        self.recovery.is_pending() || self.recovery.awaiting_first_present
+    }
+
+    /// Last failed reconstruction attempt; a fresh explicit request clears it.
+    pub fn graphics_recovery_error(&self) -> Option<String> {
+        self.recovery.error.clone()
     }
 
     /// Number of surface presentation calls, not physical displayed frames.
@@ -366,7 +384,7 @@ impl BrowserGame {
             "GPU timestamps unavailable or incomplete".to_owned()
         };
         format!(
-            "adapter={} format={:?} extent={}x{}; callbacks={} presented={} samples={} ticks={} elapsed={:.3}s unavailable={} overload_events={} refused_ticks={} timestamp_clamps={} shed_views={} report_drops={} GPU_timed={} latest_visual_age={}; tick CPU p50/p95={:.1}/{:.1} us; encode CPU p50/p95={:.1}/{:.1} us; {gpu}",
+            "adapter={} format={:?} extent={}x{}; callbacks={} presented={} samples={} ticks={} elapsed={:.3}s unavailable={} overload_events={} refused_ticks={} timestamp_clamps={} shed_views={} report_drops={} generation={} recovery_attempts={} recovered={} GPU_timed={} latest_visual_age={}; tick CPU p50/p95={:.1}/{:.1} us; encode CPU p50/p95={:.1}/{:.1} us; {gpu}",
             self.adapter_name,
             self.config.format,
             self.config.width,
@@ -382,6 +400,9 @@ impl BrowserGame {
             self.timestamp_clamps,
             self.host.dropped_views(),
             self.host.dropped_reports(),
+            self.recovery.generation,
+            self.recovery.attempts,
+            self.recovery.recovered,
             timed,
             self.samples
                 .last()

@@ -5,7 +5,7 @@ limits and failure rules. This family document retains the wider responsibility;
 
 6 November 2026. **Design status:** selected operating model under [C4 decisions](../ARCHITECTURE-DECISIONS.md).
 **Implementation/proof:** generic clock, resident world and bounded frame runtime with scoped Metal lifecycle tests;
-eight headless Chrome rows pass, including GPU-loss degraded authority; live display/tab/mobile and reconstruction remain open. The model follows
+ten headless Chrome rows pass, including GPU loss/reconstruction/retry; live display/tab/mobile remain open. The model follows
 [the architecture brief](../ARCHITECTURE-BRIEF.md) and supersedes [earlier host options](../HOST-AND-PLATFORMS.md):
 the owner selected a custom host. External code remains a research/reuse candidate requiring provenance.
 [Hardware-native selection](../decisions/HARDWARE-NATIVE-ENGINE.md) governs recipes and the governor;
@@ -60,7 +60,10 @@ It preserves dynamic lighting and exposure. Host/base-generation checks require 
 publication invalidates competing candidates, abandons old slots/reports without lost-fence waits, and resets
 extraction/upload/history. Callbacks have generation-local mailboxes. World, clock, controls and cooked selection
 survive. Mac serializes reconstruction/configuration on its render actor, checks pending-candidate loss and rejects
-stale work. Failure leaves presentation unavailable with R retry and the world alive. Surface/device epochs differ.
+stale work. Browser uses one weak detached mailbox and fresh adapter per attempt; zero canvas defers activation.
+Candidate presenter resize and a real surface lease precede publication. Failed configuration enables explicit retry;
+UI retains restoration status until a new present call. Samples restart per generation; authority counters do not.
+Failure leaves the world alive. Surface/device epochs differ.
 
 Mobile adapters retain separate surface, foreground and local-play policy. Release a surface before suspend returns,
 reject old-generation input/completions and recreate only surface-dependent resources on resume. A local single-player

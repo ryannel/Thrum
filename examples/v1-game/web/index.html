@@ -13,6 +13,7 @@
       .sky-controls label { display: grid; grid-template-columns: 6rem 10rem 4rem; align-items: center; gap: .5rem; }
       .sky-controls output { display: inline; margin: 0; }
       button { border: 1px solid #6f86a3; border-radius: .3rem; background: #1a2b40; color: inherit; padding: .4rem .8rem; cursor: pointer; }
+      button:disabled { opacity: .65; cursor: progress; }
       button:focus-visible, input:focus-visible { outline: 2px solid #a2cfff; outline-offset: 3px; }
     </style>
   </head>
@@ -32,6 +33,7 @@
           <button type="button" data-sky="twilight">Twilight</button>
           <button type="button" id="scene-view">Look at the scene</button>
           <button type="button" id="pause-world" aria-pressed="false">Pause</button>
+          <button type="button" id="restore-graphics" hidden>Restore graphics</button>
         </div>
       </section>
       <p>Move the local player with WASD or arrow keys. <span id="player"></span></p>
@@ -129,7 +131,33 @@
           if (event.target instanceof Element && event.target.closest("input, button")) clearControls();
         });
         let lastPlayerUpdate = 0;
-        let graphicsFault = null;
+        const restoreGraphics = document.querySelector("#restore-graphics");
+        let graphicsUnavailable = false;
+        let restoreError = null;
+        const updateGraphicsState = () => {
+          const fault = game.graphics_fault();
+          const recovering = game.recovering();
+          const error = game.graphics_recovery_error() ?? restoreError;
+          const hidden = !fault && !recovering;
+          const buttonText = recovering ? "Restoring graphics…" : "Restore graphics";
+          if (restoreGraphics.hidden !== hidden) restoreGraphics.hidden = hidden;
+          if (restoreGraphics.disabled !== recovering) restoreGraphics.disabled = recovering;
+          if (restoreGraphics.textContent !== buttonText) restoreGraphics.textContent = buttonText;
+          const wasUnavailable = graphicsUnavailable;
+          graphicsUnavailable = Boolean(fault || recovering);
+          if (graphicsUnavailable) {
+            const progress = recovering ? "Restoring graphics… Simulation and controls remain available."
+              : error ? `Restore failed: ${error}\nSimulation continues. You can retry Restore graphics.`
+                : "Simulation continues. Choose Restore graphics to try again.";
+            const message = fault ? `Graphics fault: ${fault}\n${progress}`
+              : "Restoring graphics… Waiting for the first frame.\nSimulation and controls remain available.";
+            if (status.textContent !== message) status.textContent = message;
+          } else if (wasUnavailable) {
+            restoreError = null;
+            status.textContent = "Running the 10,000-entity scene…";
+          }
+          return graphicsUnavailable;
+        };
         const schedule = () => {
           if (!rafId && !stopped && !document.hidden && !simulatedHidden) {
             rafId = requestAnimationFrame(draw);
@@ -139,6 +167,14 @@
           if (rafId) cancelAnimationFrame(rafId);
           rafId = 0;
         };
+        restoreGraphics.addEventListener("click", () => {
+          if (stopped) return;
+          restoreError = null;
+          try { game.request_graphics_recovery(); }
+          catch (error) { restoreError = String(error); }
+          updateGraphicsState();
+          schedule();
+        });
         const draw = (time) => {
           rafId = 0;
           if (document.hidden || simulatedHidden || stopped) return;
@@ -151,13 +187,7 @@
               showTime(hours);
               lastPlayerUpdate = time;
             }
-            if (!graphicsFault) {
-              graphicsFault = game.graphics_fault();
-              if (graphicsFault) {
-                status.textContent = `Graphics fault: ${graphicsFault}\nSimulation continues. Reload to restore graphics.`;
-              }
-            }
-            if (graphicsFault) {
+            if (updateGraphicsState()) {
               schedule();
             } else if (qualify && game.complete()) {
               status.textContent = game.report();

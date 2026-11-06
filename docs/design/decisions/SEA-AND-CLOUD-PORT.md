@@ -1,6 +1,6 @@
 # Sea and cloud providers: port profile from the Broadsides Rust work
 
-4 November 2026. **Selected design direction. Implementation follows G7.** Broadsides is building a Rust sea and Rust volumetric clouds that are intended to move into Thrum. This record fixes how that work maps onto Thrum's contracts and the [hardware-native decision](HARDWARE-NATIVE-ENGINE.md), so both sides prepare for a cheap, reviewed port.
+6 November 2026. **Selected direction; the owner decides port timing when Thrum is ready.** Broadsides is building a Rust sea and Rust volumetric clouds that are intended to move into Thrum. This record fixes how that work maps onto Thrum's contracts and the [hardware-native decision](HARDWARE-NATIVE-ENGINE.md), so both sides prepare for a cheap, reviewed port.
 
 The reference revisions are committed Broadsides commits `70cf98122` (`codex/water-rust-system`) and `8b6262f13` (`codex/clouds-procedural-publish-20261104`). Broadsides is not a build dependency. Its earlier `THRUM-ALIGNMENT` mapping of the TypeScript lake lab is superseded.
 
@@ -23,7 +23,7 @@ This record selects weather-map volumetric clouds as the visible `E1.clouds` pro
 Cloud presentation combines procedural weather layers with placed voxel volumes under the same E1 provider and light-transmittance contract. G5 cooks baked 3D volumes as content-addressed products, including cloud density: KTX2 BC4 on desktop, R8 or EAC slices on iPhone, and R8 for the portable recipe. Placement, product identity and history invalidation are explicit inputs; the weather field remains the source for headless queries and precipitation.
 
 * **Authority.** The E1 cloud source is a deterministic weather field: a function of seed, preset, integrated wind travel and `t_sim`. Its outputs are coverage, genus, top height, age and column optical depth `τ`. A CPU evaluator answers point queries headless. A test asserts the GPU weather map matches it within tolerance. Wind travel is integrated per tick, never computed as mean wind × absolute time. Rain and precipitation derive from this field.
-* **Light.** One cloud transmittance product with `τ` semantics feeds V3 once, as `exp(-τ)`. A shadow-only mode runs without the view march, for the hidden-clouds scenario.
+* **Light.** Thrum G3s is the sole sky/Sun/atmosphere source for both clouds and water; no Broadsides sky is ported alongside it. One cloud transmittance product with `τ` semantics feeds V3 once, as `exp(-τ)`. Shadow-only mode omits the view march. Water reflection and cloud illumination consume the same environment identity.
 * **Presentation.** The march, Beer shadow map, multi-scattering octaves and sky capture are presentation. Aerial perspective is applied once. Cloud and froxel-fog `(T,S)` intervals must be ordered and disjoint.
 
 ## Ownership
@@ -70,18 +70,22 @@ The G3 graph design must support:
 * an async-compute-eligible pass declaration;
 * WESL-style shader modules, or their equivalent in the shading-library decision.
 
-## Current state and targets
+## Readiness, 6 November
 
-| | Measured (M3 Max, Metal) | Broadsides target |
-|---|---|---|
-| Sea | 22.0/22.8 ms whole-frame GPU (median/p95, 1440p); turning the water surface off saves 5.5 ms and the reflection trace 1.1 ms; other water passes are within run-to-run drift | Surface ≤1.5 ms; waves, interaction and foam ≤0.8 ms |
-| Clouds | About 20 ms and 365 MiB at 1080p | ≤2 ms and ≤64 MB at 1440p |
+Thrum is **not yet ready for the port**. Executing Render/Compute/Copy closures, dependency order, 2D-array textures,
+ping-pong history, automatic timestamps and immutable device capabilities exist. These seams still need consumers:
+* G3s: finish and qualify the one shared sky, Sun, light-transmittance and environment-reflection products.
+* Graph: implement 3D/cube resources and cadence; async-compute eligibility remains a design seam, not overlap proof.
+* Frame/V4: effects must supply their own motion/reactivity and reset epochs; reconstruction remains G4 work.
+* G5: cook/map the named mesh/texture/3D-volume products into the small runtime; cloud volumes are not loaded yet.
+* Recipes/governor: resource/quality selection and history-safe cadence still need G3t/G4 integration and measurements.
 
-Neither system has been measured on an iPhone or a non-Apple GPU, and neither has passed visual review. Thrum qualifies these per recipe.
+Historical Broadsides Mac observations were about 22 ms whole-frame sea at 1440p and 20 ms / 365 MiB clouds at 1080p.
+They qualify no Thrum recipe, physical iPhone result or visual acceptance. Re-measure each reviewed module here.
 
 ## Porting policy
 
-Port module by module after V1 (G7), as the website demos need them; design work may start earlier.
+Port module by module only when the owner schedules it. Keep the foundation converging on the readiness above; no automatic import at G7 and no Broadsides build dependency.
 * **Lift:** the `bw_water` maths and the WESL algorithms (FFT, LEAN, eWave, foam, density, lighting, phase), each through review. Re-derive the golden tests in Thrum. Record the source commit, path and licence for each lifted file.
 * **Rewrite:** the `RenderModule`, `pass_list` and `TargetPool` plumbing becomes the Thrum executor. The `bw_frame` packets become the tick page and `ViewPacket`. The Bevy host glue is rewritten.
 * **Never:** a wholesale import, or a Broadsides build dependency.

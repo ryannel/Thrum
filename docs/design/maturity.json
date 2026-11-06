@@ -25,7 +25,7 @@
       "moving-shore research",
       "cloud cohort lab",
       "nonlinear M-LUT layout candidate: codex/g3s-multiple-layout at 11cb21e; mixed oracle accuracy, not selected",
-      "clouds and water implementation until after V1; G3s atmosphere is the only V1 environment work"
+      "sea/cloud port awaits owner timing; converge on readiness with the single G3s sky"
     ],
     "interpretation": "Functional gates govern; quiet figures remain history. Investigate visible hitches, >~25% comparable regression or unexpected growth; no iPhone result."
   },
@@ -473,13 +473,13 @@
       "current_tree_status": "retired_from_main_at_G0; historical measurements retained"
     },
     "V1_bounded_frame_host": {
-      "implementation": "partial_engine_runtime_lifecycle_gpu_replacement_browser_loss_degraded_authority",
-      "functional_validation": "Metal_pause_replacement_and_Chrome_8_rows_early_late_loss_input_pause_overload_pass;_live_mobile_open",
+      "implementation": "partial_engine_runtime_lifecycle_Metal_and_browser_gpu_reconstruction_retry",
+      "functional_validation": "Metal_pause_replacement_and_Chrome_10_rows_loss_reconstruction_configure_retry_pass;_live_mobile_open",
       "experienced_quality": "submitted_offscreen_pause_camera_resume_gpu_replacement_reviewed;_live_motion_grid_aliasing_open",
       "platform_performance": {
         "mac": "owner_quiet_91ad52d_baseline_recorded_lifecycle_open",
         "windows": "not_run",
-        "browser": "Chrome156_M3Max_Metal_headless_8_rows_pass;_actual_tab_reconstruction_open",
+        "browser": "Chrome156_M3Max_Metal_headless_10_rows_pass;_actual_tab_open",
         "ios": "not_run",
         "android": "not_run"
       },
@@ -487,7 +487,7 @@
       "evidence": [
         "../evidence/render/V1-BOUNDED-FRAMES-2026-11-04.md"
       ],
-      "scope": "Core owns clock/lane; renderer owns FrameHost. Browser loss latches first fault, advances authority without GPU calls, and keeps pause/input/hooks/overload. Reconstruction, actual tabs, live Mac loss and iOS lifecycle stay open; native recording stays G3t."
+      "scope": "Core owns clock/lane; renderer owns FrameHost. Browser old-device work stops on loss; detached GPU reconstruction/retry preserves authority/input/pause/solar state. Actual tabs, live Mac loss and iOS lifecycle stay open; native recording stays G3t."
     },
     "V1_cooked_constant_light": {
       "implementation": "partial_native_accepted_source_product_and_offscreen_visual_publication",
@@ -643,7 +643,7 @@
       "reviewed_design_sha256": "d0d80e788cf6356f80dccdb10460a88f12ffd29ca646cbce2b5f498f86c725be",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Later architectural decision audit reopened named boundaries; earlier review scope remains historical. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
       "open_architecture_findings": [],
-      "current_design_sha256": "017d429c3b328a0fe3ae0c24976ae07c6d73a537f4cfc361506347c7f5346b00",
+      "current_design_sha256": "46772f3327cda645f67f09021e43c23a6ea623388788fb1cbf799447d5ddc933",
       "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled; focused mobile simulator and package qualification remains open after iOS 27 scene finding. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
       "historical_architecture_findings": [
         "A01"
@@ -4119,7 +4119,7 @@
       "modules/AUDIO-UI.md": "f001d7c3cc79a2fb3657982baee9850490ad3f3ce253cfd8bb2637e9f690ae1f",
       "modules/ENVIRONMENT.md": "e79d92cf1c39a52ab4c3df158b75cc9115f73cf250b7a3e20496950a7e1d3ae8",
       "modules/NETWORKING.md": "2e32bdf2e57737a88b957380da801de21bf287b6cba6f15144530f635f778494",
-      "modules/PLATFORM-RUNTIME.md": "017d429c3b328a0fe3ae0c24976ae07c6d73a537f4cfc361506347c7f5346b00",
+      "modules/PLATFORM-RUNTIME.md": "46772f3327cda645f67f09021e43c23a6ea623388788fb1cbf799447d5ddc933",
       "modules/PLAY-SYSTEMS.md": "86279be04e72643989cecc3a0e562fa4c948fa27c956180dbe6079c830efcd57",
       "modules/RENDERING.md": "becaf05714ca88f1fe92c120c8ddf6a523da8048cb7a22cfccc547bd023a96e0",
       "modules/TOOLS-DELIVERY.md": "242035edb43a8e414f839fed4fd4949969967d9d0859e7344be001d237c4e088",
@@ -4392,7 +4392,7 @@
     "device_evidence": []
   },
   "sea_and_cloud_port_design": {
-    "as_of": "2026-11-04",
+    "as_of": "2026-11-06",
     "decision": "selected",
     "requirement_basis": [
       "E03",
@@ -4403,7 +4403,7 @@
     "source_reference": {
       "broadsides_water": "codex/water-rust-system@70cf98122",
       "broadsides_clouds": "codex/clouds-procedural-publish-20261104@8b6262f13",
-      "dependency": "none; reviewed module-by-module port after G7"
+      "dependency": "none; reviewed module-by-module port when the owner schedules it after readiness"
     },
     "scope": "Spectral sea E1.water profile (GPU authority per gpu_water_authority), weather-map volumetric E1.clouds provider over a CPU-queryable tau source, ownership split, hardware and frame-contract obligations, G3 consumers and porting policy.",
     "implementation": "not_started",
