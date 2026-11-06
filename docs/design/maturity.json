@@ -65,7 +65,7 @@
       ]
     },
     "G2_generic_simulation": {
-      "implementation": "partial_engine_undo_publication; staged_resolve_open",
+      "implementation": "partial_engine_undo_publication_and_append_only_edit_queue;_game_resolve_staging_open",
       "functional_validation": "full_dev_check_three_metal_regressions_world_1000_tick_randomized_replay_with_serial_and_requested_rayon_four_peer_refusal_churn_held_page_zero_warmed_allocations_and_independent_review_no_findings",
       "experienced_quality": "synthetic_game_path_runs_no_v1_visual_acceptance",
       "platform_performance": {
@@ -75,8 +75,8 @@
         "ios": "not_run",
         "android": "not_run"
       },
-      "diagnostic_measurement": "Quiet 91ad52d history: G2R-CONSOLIDATED-2026-11-05.md. CPU targets retired; functional resolve/equality work remains.",
-      "scope": "Presence-aware 10k corrected-run equality passes; staged Resolve remains. Requested Rayon uses serial game systems; no parallel/iPhone claim.",
+      "diagnostic_measurement": "Quiet 91ad52d and shared-Mac edit-queue ABBA: G2R-CONSOLIDATED-2026-11-05.md. Zero warmed allocations; no speed win or numeric admission claim.",
+      "scope": "Presence-aware 10k corrected replay and engine-owned descriptor routing pass. Candidate values remain shared and late-bound; game-side Resolve staging and permits remain. Requested Rayon uses serial game systems; no parallel/iPhone claim.",
       "evidence": [
         "../evidence/v1-workload/G2R-CONSOLIDATED-2026-11-05.md"
       ]

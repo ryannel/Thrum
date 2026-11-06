@@ -5,7 +5,7 @@ use thrum_core::{
     Handle, StableId, WorldEpoch,
     sim::{
         Access, AccessKey, AccessMode, ComponentKey, ComponentRegistry, ComponentSchemaId, Edit,
-        EntityWriter, Executor, GameRuntime, Read2, ReadPermit, RegisteredSystem,
+        EditWriter, EntityWriter, Executor, GameRuntime, Read2, ReadPermit, RegisteredSystem,
         RegisteredWorldError, RuntimeError, Stage, StructuralPermit, SystemId, SystemSpec,
         TickError, TickGame, WorldRead, WritePermit,
     },
@@ -32,7 +32,6 @@ struct Candidate {
     order: Vec<StableId>,
     capture: Read2<Height, Drift>,
     batch: Vec<(Handle, Height)>,
-    edits: Vec<Edit<Candidate>>,
     spawns: Vec<StableId>,
 }
 
@@ -82,6 +81,7 @@ impl Rules {
         _executor: Executor,
         _tick: u64,
         candidate: &mut Candidate,
+        edits: &mut EditWriter<'_, Candidate>,
     ) -> Result<(), GameError> {
         candidate.order.clear();
         candidate
@@ -96,9 +96,7 @@ impl Rules {
             if self.duplicate_batch {
                 candidate.batch.push(candidate.batch[0]);
             }
-            candidate
-                .edits
-                .push(Edit::replace_batch(&self.write, height_batch));
+            edits.push(Edit::replace_batch(&self.write, height_batch));
         }
         if let Some((old, replacement)) = self.churn {
             world
@@ -107,23 +105,19 @@ impl Rules {
             if world.handle(replacement).is_some() {
                 return Err(GameError::InvalidChurn);
             }
-            candidate.edits.push(Edit::despawn(&self.structure, old));
+            edits.push(Edit::despawn(&self.structure, old));
             candidate.spawns.push(replacement);
-            candidate
-                .edits
-                .push(Edit::spawn(&self.structure, replacement, 0, fill_spawn));
+            edits.push(Edit::spawn(&self.structure, replacement, 0, fill_spawn));
         }
         if self.reject {
             return Err(GameError::Rejected);
         }
         if let Some(handle) = self.bad_edit {
-            candidate.edits.push(Edit::despawn(&self.structure, handle));
-            candidate
-                .edits
-                .push(Edit::spawn(&self.structure, StableId(2), 0, fill_spawn));
+            edits.push(Edit::despawn(&self.structure, handle));
+            edits.push(Edit::spawn(&self.structure, StableId(2), 0, fill_spawn));
         }
         if let Some((handle, insert)) = self.optional_edit {
-            candidate.edits.push(if insert {
+            edits.push(if insert {
                 Edit::insert(&self.tag_write, handle, 0, tag_at)
             } else {
                 Edit::remove(&self.tag_write, handle)
@@ -141,7 +135,6 @@ impl TickGame<Page> for Rules {
     fn reset_candidate(&self, candidate: &mut Candidate) {
         candidate.batch.clear();
         candidate.order.clear();
-        candidate.edits.clear();
         candidate.spawns.clear();
     }
 
@@ -153,11 +146,8 @@ impl TickGame<Page> for Rules {
         _output: &mut (),
         _candidate: &mut Candidate,
         _tick: u64,
+        _edits: &mut EditWriter<'_, Candidate>,
     ) {
-    }
-
-    fn edits<'a>(&self, candidate: &'a Candidate) -> &'a [Edit<Candidate>] {
-        &candidate.edits
     }
 
     fn apply(&mut self, _world: &WorldRead<'_>, _tick: u64, _candidate: &Candidate) {
@@ -257,7 +247,7 @@ fn game_owned_components_rules_and_pages_commit_once_after_rejection_and_churn()
                     ],
                     false,
                 ),
-                |_, _, _, _, _| Ok(()),
+                |_, _, _, _, _, _| Ok(()),
             ),
         ],
         Page::default,
@@ -672,7 +662,6 @@ fn test_candidate(runtime: &GameRuntime<Page, Rules>) -> Candidate {
             .read2::<Height, Drift>(SystemId(2))
             .expect("declared capture read"),
         batch: Vec::new(),
-        edits: Vec::new(),
         spawns: Vec::new(),
     }
 }
