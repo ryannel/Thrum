@@ -18,17 +18,19 @@ use thrum_content_runtime::EnvironmentProduct;
 #[cfg(not(target_arch = "wasm32"))]
 use thrum_render::synthetic::PhotometricEnvironment;
 use thrum_render::{
+    atmosphere::AtmosphereFrame,
     capabilities::DeviceCapabilities,
     extract::{ExtractReport, RenderExtractor, SourceTick},
     present::{PresentationBinding, SurfacePresenter, SurfaceProfile},
     synthetic::{
-        FrameLighting, OffscreenTarget, PreparedSynthetic, SceneApplyReport, SyntheticLight,
-        SyntheticPointLight, SyntheticScene, SyntheticView,
+        FrameLighting, OffscreenTarget, PreparedSynthetic, SceneApplyReport, SyntheticPointLight,
+        SyntheticScene, SyntheticView,
     },
     timing::GpuTimings,
 };
 
 use crate::{
+    environment::DayCycle,
     projection::{GameProjection, ProjectionGap},
     scene::{self, ENTITY_COUNT},
 };
@@ -50,10 +52,19 @@ const GENERATION: u64 = 1;
 const DEFAULT_RENDER_EXTENT: [u32; 2] = [640, 360];
 const GPU_WAIT: Duration = Duration::from_secs(10);
 const IN_FLIGHT: usize = 2;
-const GAME_SUN: SyntheticLight = SyntheticLight {
-    direction_to_light: [0.4, -0.6, 1.0],
-    irradiance: [4.0; 3],
-};
+
+fn atmosphere_lighting(tick: u64, alpha: f32) -> FrameLighting {
+    let sun = DayCycle::sample(tick, alpha);
+    let frame = AtmosphereFrame::new(
+        sun.toward_sun,
+        sun.top_illuminance_lux,
+        sun.colour,
+        sun.camera_altitude_m,
+        sun.profile_epoch,
+    )
+    .expect("fixed game day cycle produces a valid atmosphere frame");
+    FrameLighting::Atmosphere(frame)
+}
 
 #[cfg(not(target_arch = "wasm32"))]
 fn photometric(product: &EnvironmentProduct) -> PhotometricEnvironment {
@@ -129,8 +140,10 @@ pub struct FrameSample {
     /// tick callback; threaded hosts keep the full render callback wall.
     pub render_cpu: Duration,
     /// Actual GPU pass durations: near/far Sun shadows, local clusters,
-    /// forward and display. Disabled passes report zero in their slots.
-    pub gpu_pass_ns: Option<[f64; 6]>,
+    /// forward, history, tone, then atmosphere transmittance, multiple
+    /// scattering, sky view and diffuse irradiance. The sky draw is included
+    /// in forward. Disabled or cached compute passes report zero.
+    pub gpu_pass_ns: Option<[f64; 10]>,
     /// GPU time for the optional surface blit, when it was submitted and timed.
     pub gpu_present_ns: Option<f64>,
     /// This frame also wrote an acquired platform surface.
@@ -725,10 +738,7 @@ impl FrameHost {
         if let Some(product) = &self.visual_product {
             return FrameLighting::Photometric(photometric(product));
         }
-        FrameLighting::Diagnostic(SyntheticLight {
-            direction_to_light: [0.4 + frame_phase(tick, alpha).sin() * 0.1, -0.6, 1.0],
-            ..GAME_SUN
-        })
+        atmosphere_lighting(tick, alpha)
     }
 
     /// Prepare one 10k-entity scene, all four scene passes and an optional
@@ -816,8 +826,10 @@ impl FrameHost {
             capabilities,
             queue,
             &scene,
-            FrameLighting::Diagnostic(GAME_SUN),
-            1.0,
+            atmosphere_lighting(world.tick(), 0.0),
+            // Physical noon light reaches ~127 klux. Keep the full daylight
+            // range in the scene target until the display tone curve.
+            1.0 / 16_000.0,
         )
         .await
         .map_err(|error| format!("prepare: {error:?}"))?;
@@ -2118,7 +2130,7 @@ fn pass_durations(
     passes: &[thrum_render::timing::PassTiming],
     sample: &FrameSample,
     prepared: &PreparedSynthetic,
-) -> Option<([f64; 6], Option<f64>)> {
+) -> Option<([f64; 10], Option<f64>)> {
     const ALL: [&str; 6] = [
         "synthetic Sun shadow near",
         "synthetic Sun shadow far",
@@ -2134,7 +2146,7 @@ fn pass_durations(
         return (passes.len() == 1
             && presented
             && passes[0].name.as_ref() == thrum_render::present::PASS_NAME)
-            .then(|| ([0.0; 6], Some(passes[0].nanoseconds)));
+            .then(|| ([0.0; 10], Some(passes[0].nanoseconds)));
     }
     let shadows = prepared.shadowed();
     let clusters = prepared.gpu_clustered();
@@ -2144,15 +2156,36 @@ fn pass_durations(
         (false, true) => &CLUSTER_ONLY,
         (false, false) => &ALL[3..],
     };
-    (passes.len() == names.len() + usize::from(presented)
-        && passes
+    let mut atmosphere = [0.0; 4];
+    let mut offset = 0;
+    for (index, name) in [
+        "atmosphere transmittance",
+        "atmosphere multiple scattering",
+        "atmosphere sky view",
+        "atmosphere diffuse irradiance",
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        if passes
+            .get(offset)
+            .is_some_and(|pass| pass.name.as_ref() == name)
+        {
+            atmosphere[index] = passes[offset].nanoseconds;
+            offset += 1;
+        }
+    }
+    (passes.len() == offset + names.len() + usize::from(presented)
+        && passes[offset..]
             .iter()
             .zip(names)
             .all(|(pass, name)| pass.name.as_ref() == *name)
-        && (!presented || passes[names.len()].name.as_ref() == thrum_render::present::PASS_NAME))
+        && (!presented
+            || passes[offset + names.len()].name.as_ref() == thrum_render::present::PASS_NAME))
         .then(|| {
-            let mut scene = [0.0; 6];
-            for pass in passes.iter().take(names.len()) {
+            let mut scene = [0.0; 10];
+            scene[6..].copy_from_slice(&atmosphere);
+            for pass in passes[offset..].iter().take(names.len()) {
                 let slot = match pass.name.as_ref() {
                     "synthetic Sun shadow near" => 0,
                     "synthetic Sun shadow far" => 1,
@@ -2163,7 +2196,10 @@ fn pass_durations(
                 };
                 scene[slot] = pass.nanoseconds;
             }
-            (scene, presented.then(|| passes[names.len()].nanoseconds))
+            (
+                scene,
+                presented.then(|| passes[offset + names.len()].nanoseconds),
+            )
         })
 }
 

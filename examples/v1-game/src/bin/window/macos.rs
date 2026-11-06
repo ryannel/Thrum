@@ -615,7 +615,7 @@ impl App {
             .all(|sample| sample.gpu_present_ns.is_some())
         {
             let scene = percentile(&presented, |sample| {
-                sample.gpu_pass_ns.unwrap_or([0.0; 6]).iter().sum::<f64>() / 1e6
+                sample.gpu_pass_ns.unwrap_or([0.0; 10]).iter().sum::<f64>() / 1e6
             });
             let present = percentile(&presented, |sample| {
                 sample.gpu_present_ns.unwrap_or(0.0) / 1e6
@@ -683,13 +683,14 @@ fn profiler_title(sample: &FrameSample) -> String {
         |passes| {
             let present = sample.gpu_present_ns.unwrap_or(0.0) / 1e6;
             format!(
-                "GPU shadow near/far {:.3}/{:.3}, cluster {:.3}, forward {:.3}, history {:.3}, display {:.3}, present {:.3} ms",
+                "GPU shadow near/far {:.3}/{:.3}, cluster {:.3}, forward {:.3}, history {:.3}, display {:.3}, atmosphere compute {:.3}, present {:.3} ms",
                 passes[0] / 1e6,
                 passes[1] / 1e6,
                 passes[2] / 1e6,
                 passes[3] / 1e6,
                 passes[4] / 1e6,
                 passes[5] / 1e6,
+                passes[6..].iter().sum::<f64>() / 1e6,
                 present,
             )
         },

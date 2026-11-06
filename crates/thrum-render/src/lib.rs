@@ -8,6 +8,7 @@
 //! or a cooked-content readiness claim.
 
 pub mod abi;
+pub mod atmosphere;
 pub mod capabilities;
 pub mod extract;
 pub mod frame;

@@ -143,7 +143,7 @@ impl SyntheticView {
         self.projection
     }
 
-    pub(super) fn pack_view(&self, previous: &Self, exposure: f32) -> [u8; VIEW_BYTES] {
+    pub(crate) fn pack_view(&self, previous: &Self, exposure: f32) -> [u8; VIEW_BYTES] {
         let mut bytes = [0; VIEW_BYTES];
         for (offset, value) in self.view_proj.to_cols_array().into_iter().enumerate() {
             bytes[offset * 4..offset * 4 + 4].copy_from_slice(&value.to_le_bytes());
@@ -159,7 +159,7 @@ impl SyntheticView {
         bytes
     }
 
-    pub(super) fn pack_aux(&self, width: u32, height: u32) -> [u8; AUX_BYTES] {
+    pub(crate) fn pack_aux(&self, width: u32, height: u32) -> [u8; AUX_BYTES] {
         let mut bytes = [0; AUX_BYTES];
         for (offset, value) in self
             .view_proj
