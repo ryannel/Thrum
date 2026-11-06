@@ -167,6 +167,21 @@ fn gpu_meter_calibration_fixed_bits_bounds_zero_and_invalid_inputs() {
             policy.pack(16_000.0, true, SdrToneMap::Reinhard),
             sky,
         );
+        let mut probe_warning = sky;
+        probe_warning[15] = 4.0; // Atmosphere marker plus three negative normal probes.
+        let warned = resolve(
+            &device,
+            &queue,
+            &exposure,
+            &light_buffer,
+            policy.pack(16_000.0, true, SdrToneMap::Reinhard),
+            probe_warning,
+        );
+        assert_eq!(
+            warned.values.map(f32::to_bits),
+            base.values.map(f32::to_bits)
+        );
+        assert_eq!(warned.flags, base.flags | 16, "probe risk is informational");
         let brighter = resolve(
             &device,
             &queue,

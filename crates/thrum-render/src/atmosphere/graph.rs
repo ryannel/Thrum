@@ -119,7 +119,7 @@ impl AtmospherePrepared {
                 },
                 Access {
                     resource: directional,
-                    range: 48..64,
+                    range: 48..crate::synthetic::LIGHT_BYTES as u64,
                     kind: AccessKind::StorageWrite,
                     store: true,
                 },

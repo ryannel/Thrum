@@ -82,9 +82,9 @@
       ]
     },
     "G3s_first_light": {
-      "implementation": "partial_physical_LUTs_horizon_ground_camera_SDR_and_browser_solar_controls",
-      "functional_validation": "Metal_display_meter_history_horizon_and_ground_boundary_198_ray_reference;_multiple_model_and_spectral_accuracy_open",
-      "experienced_quality": "agent_reviewed_Chrome_solar_phases_neutral_subject;_flat_diffuse_pastel_contrast_grid_moire_accuracy_open",
+      "implementation": "partial_physical_LUTs_horizon_ground_SH9_camera_SDR_browser_controls",
+      "functional_validation": "Metal_SH9_analytic_eight_solar_rows_refinement_units_and_probe_tests;_198_ray_transport_and_spectral_accuracy_open",
+      "experienced_quality": "agent_reviewed_Chrome_directional_twilight_faces;_noon_silhouette_grid_contrast_motion_accuracy_open",
       "platform_performance": {
         "mac": "offscreen_Metal_function_pass;_live_zero_display_link_callbacks_no_new_speed_claim",
         "browser": "Chrome156_M3Max_Metal_headless_6_function_rows_pass;_no_display_timing_claim",
@@ -2277,7 +2277,7 @@
         "A04",
         "A05"
       ],
-      "current_design_sha256": "e2210ab82fc0a2fbb50fdeef31d0a6fd0cba542f18ec1bb78cc08c7643e302e5",
+      "current_design_sha256": "e79d92cf1c39a52ab4c3df158b75cc9115f73cf250b7a3e20496950a7e1d3ae8",
       "current_design_delta": "C4 source/run/network consumers, bounded authored source quantities and V3 light handoff, and moving-shore rain exposure reconciled. The constant-light subset has provisional staged F3 and test-only exact-root proofs; its historical F4 160-byte pure codec was golden-tested and is now parked in Git, while admitted pin-to-product cooking and publication remain open. A restricted exact-rational moving-shore first-hit proof selects affine-area source integration for prescribed tide. Adversarial material review found opposite-direction transitions within one homogenized cell require a whole-cell chronology bound. Fixed columns fail general stocked-coast coverage under the studied 8192-column/local-error profile. Source-height density cohorts close a restricted tide law; exact Q(sqrt401) validation carries canonical true-area cap/refill on the 1:20 bank, while eight bands refuse some weather/deposition histories. Nine named fresh-history f64 episodes pass a conditional mass+density-L1 certificate, but its rational source predicates and verifier cost do not qualify incremental runtime or saved-state receipts. General metrics, film/water response, authored rain schema 2, admitted lease/F4 integration, smooth finite-shore numerics, visuals and device cost remain open. Prior reviewed hash retained.",
       "architecture_selection_review": {
         "status": "reconciled_for_selected_scope",
@@ -2318,7 +2318,7 @@
       },
       "reviewed_design_sha256": "19d6e802c436baaca2fd0d2d01d3956a0d88958918f0d46754e00617b22c9ba0",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
-      "current_design_sha256": "e2210ab82fc0a2fbb50fdeef31d0a6fd0cba542f18ec1bb78cc08c7643e302e5",
+      "current_design_sha256": "e79d92cf1c39a52ab4c3df158b75cc9115f73cf250b7a3e20496950a7e1d3ae8",
       "current_design_delta": "C4 file-first admission/restart and bounded authored Sun, phase, layered-wind, static-rain and interval-receipt semantics selected. An isolated proposed schema-2 F3 grammar/fixture closure now has independent parser and phase-oracle evidence, but owner adoption, production F3/F4 binding and runtime proof remain open; prior reviewed hash retained.",
       "architecture_selection_review": {
         "status": "reconciled_for_selected_scope",
@@ -2356,7 +2356,7 @@
       },
       "reviewed_design_sha256": "19d6e802c436baaca2fd0d2d01d3956a0d88958918f0d46754e00617b22c9ba0",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
-      "current_design_sha256": "e2210ab82fc0a2fbb50fdeef31d0a6fd0cba542f18ec1bb78cc08c7643e302e5",
+      "current_design_sha256": "e79d92cf1c39a52ab4c3df158b75cc9115f73cf250b7a3e20496950a7e1d3ae8",
       "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
       "architecture_selection_review": {
         "status": "reconciled_for_selected_scope",
@@ -2399,7 +2399,7 @@
       },
       "reviewed_design_sha256": "19d6e802c436baaca2fd0d2d01d3956a0d88958918f0d46754e00617b22c9ba0",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
-      "current_design_sha256": "e2210ab82fc0a2fbb50fdeef31d0a6fd0cba542f18ec1bb78cc08c7643e302e5",
+      "current_design_sha256": "e79d92cf1c39a52ab4c3df158b75cc9115f73cf250b7a3e20496950a7e1d3ae8",
       "current_design_delta": "C4 file-first admission/restart and bounded periodic cloud optical-depth source, wind advection, low-Sun fallback and V3 single-attenuation handoff selected. Visible volume, F3 payload and runtime/device proof remain open; prior reviewed hash retained.",
       "architecture_selection_review": {
         "status": "reconciled_for_selected_scope",
@@ -2444,7 +2444,7 @@
       },
       "reviewed_design_sha256": "19d6e802c436baaca2fd0d2d01d3956a0d88958918f0d46754e00617b22c9ba0",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
-      "current_design_sha256": "e2210ab82fc0a2fbb50fdeef31d0a6fd0cba542f18ec1bb78cc08c7643e302e5",
+      "current_design_sha256": "e79d92cf1c39a52ab4c3df158b75cc9115f73cf250b7a3e20496950a7e1d3ae8",
       "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
       "architecture_selection_review": {
         "status": "reconciled_for_selected_scope",
@@ -2483,7 +2483,7 @@
       },
       "reviewed_design_sha256": "19d6e802c436baaca2fd0d2d01d3956a0d88958918f0d46754e00617b22c9ba0",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
-      "current_design_sha256": "e2210ab82fc0a2fbb50fdeef31d0a6fd0cba542f18ec1bb78cc08c7643e302e5",
+      "current_design_sha256": "e79d92cf1c39a52ab4c3df158b75cc9115f73cf250b7a3e20496950a7e1d3ae8",
       "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
       "architecture_selection_review": {
         "status": "reconciled_for_selected_scope",
@@ -2525,7 +2525,7 @@
       },
       "reviewed_design_sha256": "19d6e802c436baaca2fd0d2d01d3956a0d88958918f0d46754e00617b22c9ba0",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
-      "current_design_sha256": "e2210ab82fc0a2fbb50fdeef31d0a6fd0cba542f18ec1bb78cc08c7643e302e5",
+      "current_design_sha256": "e79d92cf1c39a52ab4c3df158b75cc9115f73cf250b7a3e20496950a7e1d3ae8",
       "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prescribed tide's moving-shore first-hit source receipts have a restricted exact-rational offline proof. Fixed columns fail useful stocked-coast coverage under the studied 8192-column/local-error profile. Source-height density cohorts pass an independent exact restricted tide law and canonical true-area bridge on a 1:20 bank, but exceed eight bands under some weather/deposition histories. Nine fresh-history f64 cases pass an independent interval certificate; rational source predicates, high verifier cost, incremental saved-state/receipt error, general metrics, finite-water capacity/HLL, full material exchange and runtime remain unqualified. Prior reviewed hashes retained.",
       "architecture_selection_review": {
         "status": "reconciled_for_selected_scope",
@@ -4117,7 +4117,7 @@
       "TRAVELLER-APP.md": "93edf76b93b66f47a2db7b132bbfa56c8d2e2572343694a15dcad51c9060a25d",
       "WHOLE-ENGINE-REVIEW.md": "3999c06d7b02bee4549ada0ab043f54a7ec72ed7c6d8de8a5db8f6a3c1656d0c",
       "modules/AUDIO-UI.md": "f001d7c3cc79a2fb3657982baee9850490ad3f3ce253cfd8bb2637e9f690ae1f",
-      "modules/ENVIRONMENT.md": "e2210ab82fc0a2fbb50fdeef31d0a6fd0cba542f18ec1bb78cc08c7643e302e5",
+      "modules/ENVIRONMENT.md": "e79d92cf1c39a52ab4c3df158b75cc9115f73cf250b7a3e20496950a7e1d3ae8",
       "modules/NETWORKING.md": "2e32bdf2e57737a88b957380da801de21bf287b6cba6f15144530f635f778494",
       "modules/PLATFORM-RUNTIME.md": "d2961a1418ebf9f7b2797b42ff7d299f081bf5bcb95fb3d90b62df7f3806c0f9",
       "modules/PLAY-SYSTEMS.md": "86279be04e72643989cecc3a0e562fa4c948fa27c956180dbe6079c830efcd57",
@@ -4422,5 +4422,13 @@
     "implementation": "not_started",
     "device_evidence": []
   },
-  "technique_register": []
+  "technique_register": [
+    {
+      "technique": "SH9 diffuse irradiance polynomial",
+      "source": "https://cseweb.ucsd.edu/~ravir/papers/envmap/",
+      "owner": "thrum-render portable",
+      "status": "partial; analytic and sampled-LUT reference; twilight faces reviewed; dark-direction error open",
+      "evidence": "../evidence/v1-workload/G3S-FIRST-LIGHT-2026-11-06.md"
+    }
+  ]
 }

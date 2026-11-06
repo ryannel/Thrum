@@ -43,10 +43,36 @@ pub(super) fn draw(
         view: &view,
         extent: [640, 360],
     };
-    let report = host
-        .drive(origin.elapsed(), Some(&output))
-        .expect("draw current world");
-    assert!(report.submitted && report.surface_presented);
+    let deadline = Instant::now() + Duration::from_secs(10);
+    let mut attempts = 0_u32;
+    loop {
+        device.poll(wgpu::PollType::Poll).expect("GPU progress");
+        while host
+            .poll_completed()
+            .expect("drain prior reports")
+            .is_some()
+        {}
+        if host.pending_frames() == 0 {
+            attempts += 1;
+            let report = host
+                .drive(origin.elapsed(), Some(&output))
+                .expect("draw current world");
+            assert!(report.overload.is_none(), "clock refusal: {report:?}");
+            if report.submitted {
+                assert!(
+                    report.surface_presented,
+                    "submitted without surface: {report:?}"
+                );
+                break;
+            }
+            eprintln!("optional view not submitted on attempt {attempts}: {report:?}");
+        }
+        assert!(
+            Instant::now() < deadline,
+            "view not submitted after {attempts} attempts"
+        );
+        std::thread::sleep(Duration::from_millis(1));
+    }
     // Copy the actual submitted blit target, not a separate diagnostic render.
     let readback = device.create_buffer(&wgpu::BufferDescriptor {
         label: Some("submitted pause frame"),

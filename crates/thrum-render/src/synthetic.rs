@@ -49,12 +49,12 @@ pub use view::SyntheticView;
 use view::{AUX_BYTES, Projection};
 
 /// Synthetic source revision; not a substitute for an F4 product identity.
-pub const SYNTHETIC_REVISION: u64 = 14;
+pub const SYNTHETIC_REVISION: u64 = 15;
 /// Portable opaque depth; no sampling or separate prepass is needed.
 pub const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
 const VIEW_BYTES: usize = 160;
 const VIEW_SLOTS: u32 = 2;
-const LIGHT_BYTES: usize = 64;
+pub(crate) const LIGHT_BYTES: usize = 208;
 pub(crate) const PRE_EXPOSURE: f32 = 1.0 / 1024.0;
 const SCENE_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba16Float;
 const MOTION_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rg16Float;
@@ -1073,7 +1073,11 @@ impl PreparedSynthetic {
         });
         let shader_source = format!(
             "{}\n{}",
-            include_str!("synthetic.wgsl"),
+            concat!(
+                include_str!("atmosphere/irradiance.wgsl"),
+                "\n",
+                include_str!("synthetic.wgsl")
+            ),
             if atmosphere.is_some() {
                 include_str!("synthetic_aerial.wgsl")
             } else {

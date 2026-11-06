@@ -38,7 +38,7 @@ impl Probe {
     pub(super) fn new(device: &wgpu::Device, queue: &wgpu::Queue, directions: &[[f32; 4]]) -> Self {
         let directional = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("reference directional output"),
-            size: 64,
+            size: crate::synthetic::LIGHT_BYTES as u64,
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::STORAGE,
             mapped_at_creation: false,
         });
