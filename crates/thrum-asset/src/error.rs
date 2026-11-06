@@ -14,6 +14,10 @@ pub enum AssetError {
     HashMismatch,
     /// A KTX2 file uses a format, supercompression or shape this runtime does not load.
     UnsupportedTexture(&'static str),
+    /// The dev server answered with a status the protocol does not allow at that point.
+    Status(u16),
+    /// A dev-server request did not complete (connection refused, reset or aborted).
+    Transport(String),
 }
 
 impl fmt::Display for AssetError {
@@ -26,6 +30,8 @@ impl fmt::Display for AssetError {
             }
             Self::HashMismatch => f.write_str("product bytes do not match their content hash"),
             Self::UnsupportedTexture(what) => write!(f, "unsupported KTX2 texture: {what}"),
+            Self::Status(status) => write!(f, "dev server answered HTTP {status}"),
+            Self::Transport(what) => write!(f, "dev server request failed: {what}"),
         }
     }
 }

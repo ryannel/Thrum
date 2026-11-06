@@ -1,4 +1,5 @@
 use std::ops::Deref;
+use std::sync::Arc;
 
 use bytemuck::{Pod, Zeroable};
 
@@ -7,16 +8,19 @@ use bytemuck::{Pod, Zeroable};
 /// Native targets memory-map the content-addressed file, so opening a product costs a page-table
 /// entry rather than a read and the kernel pages data in as the GPU upload touches it. Targets
 /// without files (the browser) or bytes fetched from a dev server use an owned 64-byte-aligned
-/// copy. Either way, section casts never need an unaligned fallback.
+/// copy. Either way, section casts never need an unaligned fallback. Clones share the same bytes
+/// (a reference-count increment), so a cache and a consumer can hold one product without copying.
+#[derive(Clone)]
 pub struct ProductBytes {
     inner: Inner,
 }
 
+#[derive(Clone)]
 enum Inner {
     #[cfg(not(target_arch = "wasm32"))]
-    Mapped(memmap2::Mmap),
+    Mapped(Arc<memmap2::Mmap>),
     Owned {
-        blocks: Vec<Align64>,
+        blocks: Arc<[Align64]>,
         len: usize,
     },
 }
@@ -28,13 +32,19 @@ struct Align64([u8; 64]);
 impl ProductBytes {
     /// Copy bytes (for example a dev-server response) into aligned owned storage.
     pub fn copy_from(bytes: &[u8]) -> Self {
-        let mut blocks = vec![Align64([0; 64]); bytes.len().div_ceil(64)];
-        bytemuck::cast_slice_mut::<Align64, u8>(&mut blocks)[..bytes.len()].copy_from_slice(bytes);
+        Self::fill(bytes.len(), |out| out.copy_from_slice(bytes))
+    }
+
+    /// Allocate `len` aligned zeroed bytes and let `write` fill them, so a transport can copy a
+    /// response body straight into its final storage.
+    pub(crate) fn fill(len: usize, write: impl FnOnce(&mut [u8])) -> Self {
+        // `repeat_n` has a trusted length, so the shared slice is allocated once in place.
+        let mut blocks: Arc<[Align64]> =
+            std::iter::repeat_n(Align64([0; 64]), len.div_ceil(64)).collect();
+        let slice = Arc::get_mut(&mut blocks).expect("a fresh allocation has one owner");
+        write(&mut bytemuck::cast_slice_mut::<Align64, u8>(slice)[..len]);
         Self {
-            inner: Inner::Owned {
-                blocks,
-                len: bytes.len(),
-            },
+            inner: Inner::Owned { blocks, len },
         }
     }
 
@@ -59,7 +69,7 @@ impl ProductBytes {
         // mapping valid on POSIX). Mapped bytes are only read through `&[u8]`.
         let map = unsafe { memmap2::Mmap::map(file)? };
         Ok(Self {
-            inner: Inner::Mapped(map),
+            inner: Inner::Mapped(Arc::new(map)),
         })
     }
 
@@ -106,5 +116,7 @@ mod tests {
         assert_eq!(bytes.as_ptr().align_offset(64), 0);
         assert!(!bytes.is_mapped());
         assert!(ProductBytes::copy_from(&[]).is_empty());
+        let shared = bytes.clone();
+        assert_eq!(shared.as_ptr(), bytes.as_ptr(), "clones share storage");
     }
 }

@@ -160,7 +160,10 @@ These are reported plainly, and the design record tracks them:
 - **Not built:**
   - EAC iPhone volume products.
   - Meshlet draw path; the meshlets are cooked and validated, but drawn through the indexed path.
-  - Browser dev-server client.
+  - A Chrome page run of the Wasm dev-server client. The client exists (7 November): native protocol tests and a Node
+    run under `wasm-bindgen-test-runner` against `thrum-cook watch --serve` (`sh scripts/check_g5_wasm_dev_client.sh`),
+    which loaded generation 1, then long-polled generation 2 and fetched only the edited volume. Node sends no
+    `Origin`, so the CORS path is not exercised.
   - V1-game integration, which must keep the G3s lighting.
   - CAS garbage collection.
   - Texture PSNR quality check.
