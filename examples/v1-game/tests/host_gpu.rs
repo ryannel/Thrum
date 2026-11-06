@@ -26,6 +26,38 @@ fn await_sample(host: &mut FrameHost, device: &wgpu::Device) -> FrameSample {
 }
 
 #[test]
+fn game_atmosphere_capture_has_visible_finite_pixels() {
+    pollster::block_on(async {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let adapter = instance
+            .request_adapter(&wgpu::RequestAdapterOptions::default())
+            .await
+            .expect("real Metal adapter required for game atmosphere capture");
+        let (device, queue) = adapter
+            .request_device(&wgpu::DeviceDescriptor::default())
+            .await
+            .expect("device");
+        let mut host = FrameHost::new(&device, &queue, FrameConfig::default())
+            .await
+            .expect("prepared game scene");
+        let pixels = host.capture_pixels().expect("game atmosphere pixels");
+        assert_eq!(pixels.len(), 640 * 360 * 4);
+        let (rgba, remainder) = pixels.as_chunks::<4>();
+        assert_eq!(remainder, []);
+        assert!(rgba.iter().all(|pixel| pixel[3] == 255));
+        assert!(rgba.iter().any(|pixel| pixel[..3] != [0; 3]));
+        if let Some(path) = std::env::var_os("THRUM_V1_CAPTURE_PPM") {
+            let mut ppm = Vec::with_capacity(640 * 360 * 3 + 20);
+            ppm.extend_from_slice(b"P6\n640 360\n255\n");
+            for pixel in rgba {
+                ppm.extend_from_slice(&pixel[..3]);
+            }
+            std::fs::write(path, ppm).expect("write explicit visual capture");
+        }
+    });
+}
+
+#[test]
 fn repeated_display_target_reuses_world_columns_but_advances_interpolation() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
@@ -671,7 +703,7 @@ fn slow_native_extraction_keeps_presenting_the_last_scene_with_explicit_age() {
             assert_eq!(sample.uploaded_rows, 0);
             assert!(!sample.timing_fault);
             if device.features().contains(wgpu::Features::TIMESTAMP_QUERY) {
-                assert_eq!(sample.gpu_pass_ns, Some([0.0; 6]));
+                assert_eq!(sample.gpu_pass_ns, Some([0.0; 10]));
                 assert!(sample.gpu_present_ns.is_some());
             }
         }

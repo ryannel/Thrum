@@ -7,6 +7,7 @@
 //! remain open.
 
 use crate::abi::{self, AbiError, InstanceRecord, MaterialRecord, TextureClasses};
+use crate::atmosphere::{AtmosphereFrame, AtmospherePrepared};
 use crate::capabilities::DeviceCapabilities;
 use crate::graph::{
     Access, AccessKind, CompiledGraph, CompiledPass, FrameGraph, GraphColorAttachment,
@@ -47,7 +48,7 @@ pub const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
 const VIEW_BYTES: usize = 160;
 const VIEW_SLOTS: u32 = 2;
 const LIGHT_BYTES: usize = 64;
-const PRE_EXPOSURE: f32 = 1.0 / 1024.0;
+pub(crate) const PRE_EXPOSURE: f32 = 1.0 / 1024.0;
 const DISPLAY_BYTES: u64 = 16;
 const SCENE_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba16Float;
 const MOTION_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rg16Float;
@@ -190,6 +191,8 @@ pub enum FrameLighting {
     Diagnostic(SyntheticLight),
     /// Photometric environment converted at the presentation boundary.
     Photometric(PhotometricEnvironment),
+    /// Checked physical Earth atmosphere and its single directional Sun.
+    Atmosphere(AtmosphereFrame),
 }
 
 fn pack_frame_lighting(
@@ -207,6 +210,24 @@ fn pack_frame_lighting(
             0,
         )),
         FrameLighting::Photometric(environment) => environment.pack(),
+        FrameLighting::Atmosphere(frame) => {
+            const SOLAR_DISK_SOLID_ANGLE: f32 = 6.805_165e-5;
+            let (direction, illuminance) = frame.directional();
+            // The disk shader converts incident lux to radiance over the
+            // apparent solar solid angle. Count channels whose direct disk
+            // term alone exceeds the current fp16 scene envelope. G3t's
+            // coordinated pre-exposure/EDR path must remove this repair.
+            let stored_lux_limit = 65_504.0 * SOLAR_DISK_SOLID_ANGLE / PRE_EXPOSURE;
+            let disk_clamps = illuminance
+                .iter()
+                .filter(|&&lux| lux > stored_lux_limit)
+                .count();
+            Ok((
+                pack_directional(direction.map(f64::from), illuminance, [0.0; 3])?,
+                wgpu::Color::BLACK,
+                disk_clamps,
+            ))
+        }
     }
 }
 
@@ -415,6 +436,7 @@ pub struct PreparedSynthetic {
     presentation_light_clamps: usize,
     background: wgpu::Color,
     shadow: Option<ShadowPrepared>,
+    atmosphere: Option<AtmospherePrepared>,
 }
 
 struct SceneFamily;
@@ -434,6 +456,14 @@ struct SceneContext<'a> {
 }
 
 impl SceneContext<'_> {
+    fn atmosphere(&mut self, index: usize, pass: &CompiledPass) -> Result<(), RenderError> {
+        self.prepared
+            .atmosphere
+            .as_ref()
+            .ok_or(RenderError::GraphPassMismatch)?
+            .encode(index, self.encoder, pass, self.timings.as_deref_mut())
+    }
+
     fn shadow(&mut self, index: usize, pass: &CompiledPass) -> Result<(), RenderError> {
         let shadow = self
             .prepared
@@ -767,10 +797,23 @@ impl PreparedSynthetic {
         let directional = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("synthetic directional source"),
             size: LIGHT_BYTES as u64,
-            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            usage: wgpu::BufferUsages::UNIFORM
+                | wgpu::BufferUsages::COPY_DST
+                | wgpu::BufferUsages::STORAGE,
             mapped_at_creation: false,
         });
         queue.write_buffer(&directional, 0, &light_data);
+        let atmosphere = match lighting {
+            FrameLighting::Atmosphere(frame) => Some(AtmospherePrepared::new(
+                device,
+                queue,
+                generation,
+                frame,
+                &scene.view,
+                &directional,
+            )),
+            _ => None,
+        };
         let local_lights = storage_buffer(
             device,
             queue,
@@ -1090,6 +1133,7 @@ impl PreparedSynthetic {
             presentation_light_clamps,
             background,
             shadow,
+            atmosphere,
         })
     }
     /// Immutable facts shared by every preparation on this adapter generation.
@@ -1113,7 +1157,9 @@ impl PreparedSynthetic {
     }
     /// Number of prepared GPU scene passes for this scene's shadow recipe.
     pub fn scene_pass_count(&self) -> u32 {
-        3 + u32::from(self.shadow.is_some()) * 2 + u32::from(self.cluster_compute.is_some())
+        3 + u32::from(self.shadow.is_some()) * 2
+            + u32::from(self.cluster_compute.is_some())
+            + u32::from(self.atmosphere.is_some()) * 4
     }
     /// Whether this prepared scene builds selective local-light lists on GPU.
     pub fn gpu_clustered(&self) -> bool {
@@ -1147,6 +1193,9 @@ impl PreparedSynthetic {
         presentation_alpha: f32,
     ) -> Result<(), RenderError> {
         self.check_owner(target)?;
+        if self.atmosphere.is_some() != matches!(lighting, FrameLighting::Atmosphere(_)) {
+            return Err(RenderError::InvalidLighting);
+        }
         if scene.instances.len()
             != usize::try_from(self.instance_count).map_err(|_| RenderError::SceneCapacity)?
         {
@@ -1198,7 +1247,13 @@ impl PreparedSynthetic {
             0,
             &scene.view.pack_aux(target.width, target.height),
         );
-        queue.write_buffer(&self.directional_buffer, 0, &light_data);
+        // Atmosphere owns the ambient tail on GPU; preserve its cached value.
+        let cpu_light_bytes = if self.atmosphere.is_some() {
+            48
+        } else {
+            LIGHT_BYTES
+        };
+        queue.write_buffer(&self.directional_buffer, 0, &light_data[..cpu_light_bytes]);
         queue.write_buffer(&self.local_light_buffer, 0, &self.clusters.lights);
         if let Some(compute) = self.cluster_compute.as_ref() {
             queue.write_buffer(&compute.bounds, 0, &self.clusters.bounds);
@@ -1209,6 +1264,11 @@ impl PreparedSynthetic {
         self.dropped_light_references = self.clusters.dropped_references;
         self.presentation_light_clamps = clamps;
         self.background = background;
+        if let (Some(atmosphere), FrameLighting::Atmosphere(frame)) =
+            (&mut self.atmosphere, lighting)
+        {
+            atmosphere.update(queue, frame, &scene.view, target.extent());
+        }
         self.pending_view = Some(scene.view);
         self.frame_revision = next_revision;
         target.frame_revision = self.frame_revision;
@@ -1217,6 +1277,9 @@ impl PreparedSynthetic {
 
     /// Advance previous-view history after the host submits the encoded frame.
     pub fn commit_frame(&mut self) {
+        if let Some(atmosphere) = self.atmosphere.as_mut() {
+            atmosphere.commit();
+        }
         if let Some(view) = self.pending_view.take() {
             self.view_sample = view;
             self.history.submitted();
@@ -1381,6 +1444,10 @@ impl PreparedSynthetic {
             },
         ];
         let mut prepared_keys = BTreeSet::from([self.key, self.display_key()]);
+        let directional = Self::append_frame_uniform_reads(&mut graph, &mut accesses)?;
+        if let Some(atmosphere) = self.atmosphere.as_ref() {
+            atmosphere.append_graph(&mut graph, &mut prepared_keys, &mut accesses, directional)?;
+        }
         let shadow = self.append_shadow_passes(
             &mut graph,
             &instance,
@@ -1388,21 +1455,6 @@ impl PreparedSynthetic {
             &mut accesses,
             &mut prepared_keys,
         )?;
-        for bytes in [VIEW_BYTES as u64, AUX_BYTES as u64, LIGHT_BYTES as u64] {
-            let uniform = graph.resource(
-                ResourceDescriptor::Buffer {
-                    bytes,
-                    usage: wgpu::BufferUsages::UNIFORM,
-                },
-                ResourceScope::Imported { initialized: true },
-            )?;
-            accesses.push(Access {
-                resource: uniform,
-                range: 0..bytes,
-                kind: AccessKind::UniformRead,
-                store: true,
-            });
-        }
         self.append_cluster_reads(&mut graph, &mut accesses, &mut prepared_keys)?;
         let depth = graph.resource(
             ResourceDescriptor::Texture {
@@ -1511,6 +1563,41 @@ impl PreparedSynthetic {
                 shadow,
             },
         ))
+    }
+
+    fn append_frame_uniform_reads(
+        graph: &mut FrameGraph,
+        accesses: &mut Vec<Access>,
+    ) -> Result<ResourceId, GraphError> {
+        let directional = graph.resource(
+            ResourceDescriptor::Buffer {
+                bytes: LIGHT_BYTES as u64,
+                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::STORAGE,
+            },
+            ResourceScope::Imported { initialized: true },
+        )?;
+        accesses.push(Access {
+            resource: directional.clone(),
+            range: 0..LIGHT_BYTES as u64,
+            kind: AccessKind::UniformRead,
+            store: true,
+        });
+        for bytes in [VIEW_BYTES as u64, AUX_BYTES as u64] {
+            let uniform = graph.resource(
+                ResourceDescriptor::Buffer {
+                    bytes,
+                    usage: wgpu::BufferUsages::UNIFORM,
+                },
+                ResourceScope::Imported { initialized: true },
+            )?;
+            accesses.push(Access {
+                resource: uniform,
+                range: 0..bytes,
+                kind: AccessKind::UniformRead,
+                store: true,
+            });
+        }
+        Ok(directional)
     }
 
     fn history_resources(
@@ -1834,6 +1921,13 @@ impl PreparedSynthetic {
         let mut bindings = Vec::with_capacity(graph.pass_order.len());
         for (id, pass) in graph.pass_bindings() {
             let binding = match pass.pipeline {
+                Some(key) if self.atmosphere.is_some() && (10..=13).contains(&key.role) => {
+                    let index = usize::try_from(key.role - 10)
+                        .map_err(|_| RenderError::GraphPassMismatch)?;
+                    RecordBinding::<SceneFamily>::new(id, PassKind::Compute, move |frame, pass| {
+                        frame.atmosphere(index, pass)
+                    })
+                }
                 Some(key) if key == self.shadow_key(0) || key == self.shadow_key(1) => {
                     let index = usize::try_from(key.role - 2)
                         .map_err(|_| RenderError::GraphPassMismatch)?;
@@ -1973,6 +2067,9 @@ impl PreparedSynthetic {
                 timings,
             )?
             .ok_or(RenderError::GraphPassMismatch)?;
+        if let Some(atmosphere) = self.atmosphere.as_ref() {
+            atmosphere.draw(&mut pass);
+        }
         pass.set_pipeline(if self.instance_upload.two_sided_count() == 0 {
             &self.pipeline
         } else {

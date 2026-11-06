@@ -605,21 +605,25 @@ fn report_frame_cpu(
     );
     if gpu_timestamps {
         let scene_gpu =
-            percentile(|sample| sample.gpu_pass_ns.unwrap_or([0.0; 6]).iter().sum::<f64>() / 1e6);
+            percentile(|sample| sample.gpu_pass_ns.unwrap_or([0.0; 10]).iter().sum::<f64>() / 1e6);
         eprintln!(
             "V1 scene GPU pass-sum p50/p95/p99={:.3}/{:.3}/{:.3} ms",
             scene_gpu.0, scene_gpu.1, scene_gpu.2
         );
         let shadow = percentile(|sample| {
-            let passes = sample.gpu_pass_ns.unwrap_or([0.0; 6]);
+            let passes = sample.gpu_pass_ns.unwrap_or([0.0; 10]);
             (passes[0] + passes[1]) / 1e6
         });
-        let cluster = percentile(|sample| sample.gpu_pass_ns.unwrap_or([0.0; 6])[2] / 1e6);
-        let forward = percentile(|sample| sample.gpu_pass_ns.unwrap_or([0.0; 6])[3] / 1e6);
-        let history = percentile(|sample| sample.gpu_pass_ns.unwrap_or([0.0; 6])[4] / 1e6);
-        let tone = percentile(|sample| sample.gpu_pass_ns.unwrap_or([0.0; 6])[5] / 1e6);
+        let cluster = percentile(|sample| sample.gpu_pass_ns.unwrap_or([0.0; 10])[2] / 1e6);
+        let forward = percentile(|sample| sample.gpu_pass_ns.unwrap_or([0.0; 10])[3] / 1e6);
+        let history = percentile(|sample| sample.gpu_pass_ns.unwrap_or([0.0; 10])[4] / 1e6);
+        let tone = percentile(|sample| sample.gpu_pass_ns.unwrap_or([0.0; 10])[5] / 1e6);
+        let atmosphere = percentile(|sample| {
+            let passes = sample.gpu_pass_ns.unwrap_or([0.0; 10]);
+            passes[6..].iter().sum::<f64>() / 1e6
+        });
         eprintln!(
-            "V1 GPU p50/p95 ms shadow={:.3}/{:.3} cluster={:.3}/{:.3} forward={:.3}/{:.3} history={:.3}/{:.3} tone={:.3}/{:.3}",
+            "V1 GPU p50/p95 ms shadow={:.3}/{:.3} cluster={:.3}/{:.3} forward+sky={:.3}/{:.3} history={:.3}/{:.3} tone={:.3}/{:.3} atmosphere-compute={:.3}/{:.3}",
             shadow.0,
             shadow.1,
             cluster.0,
@@ -629,7 +633,9 @@ fn report_frame_cpu(
             history.0,
             history.1,
             tone.0,
-            tone.1
+            tone.1,
+            atmosphere.0,
+            atmosphere.1
         );
     }
 }
