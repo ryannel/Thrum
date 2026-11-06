@@ -130,6 +130,13 @@ impl ThreadedFrameHost {
         self.inner.set_camera_pitch(radians)
     }
 
+    /// Turn the game camera and reset GPU history on the next draw.
+    /// # Errors
+    /// Refuses a nonfinite yaw or one outside ±π radians.
+    pub fn set_camera_yaw(&mut self, radians: f32) -> Result<(), String> {
+        self.inner.set_camera_yaw(radians)
+    }
+
     /// Render the latest immutable world publication.
     /// # Errors
     /// Returns a render or authoritative-world fault.
@@ -290,6 +297,22 @@ impl FrameHost {
         }
         if self.inner.source().camera_pitch.to_bits() != radians.to_bits() {
             self.inner.source_mut().camera_pitch = radians;
+            self.inner.invalidate_history();
+        }
+        Ok(())
+    }
+
+    /// Turn the game camera and reset presentation history.
+    /// # Errors
+    /// Refuses a nonfinite yaw or one outside ±π radians.
+    pub fn set_camera_yaw(&mut self, radians: f32) -> Result<(), String> {
+        if !radians.is_finite()
+            || !(-std::f32::consts::PI..=std::f32::consts::PI).contains(&radians)
+        {
+            return Err("camera yaw must be finite and within ±π rad".to_owned());
+        }
+        if self.inner.source().camera_yaw.to_bits() != radians.to_bits() {
+            self.inner.source_mut().camera_yaw = radians;
             self.inner.invalidate_history();
         }
         Ok(())

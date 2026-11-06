@@ -7,16 +7,17 @@ pub(crate) fn pass_durations(
     presented: bool,
     prepared: &PreparedSynthetic,
 ) -> Option<([f64; 11], Option<f64>)> {
-    const ALL: [&str; 6] = [
+    const ALL: [&str; 7] = [
         "synthetic Sun shadow near",
         "synthetic Sun shadow far",
         "synthetic cluster build",
         "synthetic forward opaque",
         "synthetic transform history",
+        "synthetic exposure resolve",
         "synthetic tone encode",
     ];
-    const SHADOW_ONLY: [&str; 5] = [ALL[0], ALL[1], ALL[3], ALL[4], ALL[5]];
-    const CLUSTER_ONLY: [&str; 4] = [ALL[2], ALL[3], ALL[4], ALL[5]];
+    const SHADOW_ONLY: [&str; 6] = [ALL[0], ALL[1], ALL[3], ALL[4], ALL[5], ALL[6]];
+    const CLUSTER_ONLY: [&str; 5] = [ALL[2], ALL[3], ALL[4], ALL[5], ALL[6]];
     let shadows = prepared.shadowed();
     let clusters = prepared.gpu_clustered();
     let names: &[&str] = match (shadows, clusters) {
@@ -63,7 +64,8 @@ pub(crate) fn pass_durations(
                     "synthetic transform history" => 4,
                     _ => 5,
                 };
-                scene[slot] = pass.nanoseconds;
+                // Preserve the existing display bucket, including its scalar resolve.
+                scene[slot] += pass.nanoseconds;
             }
             (
                 scene,

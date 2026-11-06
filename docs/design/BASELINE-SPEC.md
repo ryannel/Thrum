@@ -128,7 +128,7 @@ intended input produces visible feedback; a required collider, font, rule or mas
 shrink it. R0/R2 planning caps are a compressed payload of 8/16 MiB (code 4/5, products 3/9, shaders and metadata
 1/2), ≤16/≤48 distinct device-ready pipeline tuples with no first-draw compilation, and CPU/GPU preparation scratch of
 24/40 and 16/32 MiB inside the staging share, serialized so the combined R2 peak stays ≤48 MiB. The first inventory
-budgets R0 at 10 boot tuples (2 depth, 2 shadow, 2 forward, tone, spatial AA, output and one optional UI) and R2 at 40.
+budgets R0 at 11 boot tuples (2 depth, 2 shadow, 2 forward, exposure resolve, tone, spatial AA, output and optional UI) and R2 at 40.
 With three dependency turns (0.12 s) and nonoverlapped critical-path allowances of 1.5 s (R0) and 1.8 s (R2), simple
 sums are 2.96 s and 4.60 s against 5 s. These are estimates: a target build reports its actual closure, bytes, cold
 pipeline time and browser memory, and [Rendering](RENDER-SPEC.md#3-shader-closure-keys-and-readiness) owns demand and

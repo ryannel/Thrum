@@ -25,13 +25,6 @@ fn atmosphere_lighting(tick: u64, alpha: f32, phase_offset: f32) -> FrameLightin
     FrameLighting::Atmosphere(frame)
 }
 
-fn display_exposure(lighting: FrameLighting) -> f32 {
-    match lighting {
-        FrameLighting::Atmosphere(frame) => DayCycle::display_exposure(frame.toward_sun()[1]),
-        FrameLighting::Diagnostic(_) | FrameLighting::Photometric(_) => 1.0 / 16_000.0,
-    }
-}
-
 #[cfg(not(target_arch = "wasm32"))]
 pub(super) fn photometric(product: &EnvironmentProduct) -> PhotometricEnvironment {
     let values = product.values();
@@ -57,11 +50,16 @@ fn frame_view(
     alpha: f32,
     extent: [u32; 2],
     camera_pitch: f32,
+    camera_yaw: f32,
 ) -> Result<SyntheticView, String> {
     let phase = frame_phase(tick, alpha);
     SyntheticView::perspective(
         [phase.sin() * 0.08, (phase.cos() - 1.0) * 0.04, 2.0],
-        [0.0, 2.0 * camera_pitch.tan(), 0.0],
+        [
+            2.0 * camera_yaw.sin(),
+            2.0 * camera_pitch.tan(),
+            2.0 - 2.0 * camera_yaw.cos(),
+        ],
         [0.0, 1.0, 0.0],
         1.0,
         extent[0] as f32 / extent[1] as f32,
@@ -74,19 +72,21 @@ fn frame_view(
 pub(super) struct GameScene {
     pub(super) day_phase_offset: f32,
     pub(super) camera_pitch: f32,
+    pub(super) camera_yaw: f32,
 }
 impl GameScene {
     pub(super) fn new() -> Self {
         Self {
             day_phase_offset: 0.0,
             camera_pitch: 0.0,
+            camera_yaw: 0.0,
         }
     }
     pub(super) fn scene(extent: [u32; 2]) -> Result<SyntheticScene, String> {
         let count = u32::try_from(scene::ENTITY_COUNT).map_err(|_| "fixture exceeds u32 slots")?;
         let mut scene =
             SyntheticScene::grid(count).map_err(|error| format!("synthetic scene: {error:?}"))?;
-        scene.view = frame_view(0, 0.0, extent, 0.0)?;
+        scene.view = frame_view(0, 0.0, extent, 0.0, 0.0)?;
         scene.sun_shadows = true;
         scene.local_lights = [
             ([-0.55, -0.55, 1.0], [5.0, 0.8, 0.4]),
@@ -116,9 +116,20 @@ impl SceneSource<PublishedPage> for GameScene {
     ) -> Result<SceneFrame, String> {
         let lighting = lighting
             .unwrap_or_else(|| atmosphere_lighting(source.tick, alpha, self.day_phase_offset));
-        let view = frame_view(source.tick, alpha, extent, self.camera_pitch)?
-            .with_exposure(display_exposure(lighting))
-            .map_err(|error| format!("view exposure: {error:?}"))?;
+        let view = frame_view(
+            source.tick,
+            alpha,
+            extent,
+            self.camera_pitch,
+            self.camera_yaw,
+        )?;
+        let view = match lighting {
+            FrameLighting::Atmosphere(_) => view.with_incident_exposure(0.0, 0.0, 18.0),
+            FrameLighting::Diagnostic(_) | FrameLighting::Photometric(_) => {
+                view.with_exposure(1.0 / 16_000.0)
+            }
+        }
+        .map_err(|error| format!("view exposure: {error:?}"))?;
         Ok(SceneFrame { view, lighting })
     }
 }

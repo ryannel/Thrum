@@ -26,6 +26,7 @@ use wgpu::util::DeviceExt;
 
 mod cluster;
 mod cluster_gpu;
+mod exposure;
 mod frame_stats;
 mod history_gpu;
 mod scene_apply;
@@ -35,6 +36,7 @@ mod view;
 use cluster::ClusterTable;
 pub use cluster::SyntheticPointLight;
 use cluster_gpu::ClusterCompute;
+use exposure::ExposureResolve;
 pub(crate) use frame_stats::pass_durations;
 use history_gpu::TransformHistory;
 pub use scene_apply::SceneApplyReport;
@@ -44,7 +46,7 @@ pub use view::SyntheticView;
 use view::{AUX_BYTES, Projection};
 
 /// Synthetic source revision; not a substitute for an F4 product identity.
-pub const SYNTHETIC_REVISION: u64 = 10;
+pub const SYNTHETIC_REVISION: u64 = 11;
 /// Portable opaque depth; no sampling or separate prepass is needed.
 pub const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
 const VIEW_BYTES: usize = 160;
@@ -352,7 +354,7 @@ pub enum RenderError {
     InvalidLighting,
     /// Nonfinite or degenerate camera projection.
     InvalidView,
-    /// Authored exposure or its required reciprocal/storage gain is not positive finite.
+    /// Exposure gain is unrepresentable or incident EV settings are unsupported.
     InvalidExposure,
     /// Target/readback belongs to another generation, grid or prepared exposure.
     StaleTarget,
@@ -423,6 +425,7 @@ pub struct PreparedSynthetic {
     light: wgpu::BindGroup,
     materials: wgpu::BindGroup,
     history: TransformHistory,
+    exposure: ExposureResolve,
     history_source: Option<(u128, u64)>,
     instance_upload: InstanceUpload,
     material_bytes: u64,
@@ -527,6 +530,16 @@ impl SceneContext<'_> {
             )
     }
 
+    fn exposure(&mut self, pass: &CompiledPass) -> Result<(), RenderError> {
+        self.prepared.exposure.encode(
+            self.encoder,
+            self.generation,
+            pass,
+            self.prepared.history.write_side(),
+            self.timings.as_deref_mut(),
+        )
+    }
+
     fn tone(&mut self, pass: &CompiledPass) -> Result<(), RenderError> {
         self.prepared.encode_tone(
             self.encoder,
@@ -571,8 +584,8 @@ impl PreparedSynthetic {
     ) -> Result<Self, RenderError> {
         Self::prepare_with_light_and_exposure(device, queue, generation, scene, light, 1.0).await
     }
-    /// Prepare with one authored positive exposure shared by the ABI2 view and
-    /// target display transform. Exposure is immutable after preparation.
+    /// Prepare with a checked fixed camera fallback. Live views may select a
+    /// fixed override or physical incident metering without changing storage p.
     /// # Errors
     /// Refuses invalid exposure or its derived reciprocals, unsupported scene
     /// data, device capacity or GPU validation failure.
@@ -1138,6 +1151,11 @@ impl PreparedSynthetic {
             contents: &reversed_bytes,
             usage: wgpu::BufferUsages::INDEX,
         });
+        let exposure_resolve = ExposureResolve::new(device, &directional, history.serial_buffer());
+        exposure_resolve.update(
+            queue,
+            scene.view.exposure_policy(exposure, atmosphere.is_some()),
+        );
         let (display_pipeline, display_layout) = prepare_display_pipeline(device);
         if let Some(error) = scope.pop().await {
             return Err(RenderError::Validation(error.to_string()));
@@ -1172,6 +1190,7 @@ impl PreparedSynthetic {
             light,
             materials,
             history,
+            exposure: exposure_resolve,
             history_source: None,
             instance_upload,
             material_bytes,
@@ -1209,7 +1228,7 @@ impl PreparedSynthetic {
     }
     /// Number of prepared GPU scene passes for this scene's shadow recipe.
     pub fn scene_pass_count(&self) -> u32 {
-        3 + u32::from(self.shadow.is_some()) * 2
+        4 + u32::from(self.shadow.is_some()) * 2
             + u32::from(self.cluster_compute.is_some())
             + u32::from(self.atmosphere.is_some()) * 5
     }
@@ -1321,6 +1340,13 @@ impl PreparedSynthetic {
         {
             atmosphere.update(queue, frame, &scene.view, target.extent());
         }
+        self.exposure.update(
+            queue,
+            scene.view.exposure_policy(
+                f32::from_bits(self.exposure_bits),
+                self.atmosphere.is_some(),
+            ),
+        );
         self.pending_view = Some(scene.view);
         self.frame_revision = next_revision;
         target.frame_revision = self.frame_revision;
@@ -1370,6 +1396,13 @@ impl PreparedSynthetic {
     pub fn pipeline_key(&self) -> PipelineKey {
         self.key
     }
+    fn exposure_key(&self) -> PipelineKey {
+        PipelineKey {
+            role: 6,
+            ..self.key
+        }
+    }
+
     fn display_key(&self) -> PipelineKey {
         PipelineKey {
             role: 1,
@@ -1493,10 +1526,15 @@ impl PreparedSynthetic {
                 store: true,
             },
         ];
-        let mut prepared_keys = BTreeSet::from([self.key, self.display_key()]);
-        let (directional, view) = Self::append_frame_uniform_reads(&mut graph, &mut accesses)?;
+        let mut prepared_keys = BTreeSet::from([self.key, self.display_key(), self.exposure_key()]);
+        let directional = Self::append_frame_uniform_reads(&mut graph, &mut accesses)?;
         if let Some(atmosphere) = self.atmosphere.as_ref() {
-            atmosphere.append_graph(&mut graph, &mut prepared_keys, &mut accesses, directional)?;
+            atmosphere.append_graph(
+                &mut graph,
+                &mut prepared_keys,
+                &mut accesses,
+                directional.clone(),
+            )?;
         }
         let shadow = self.append_shadow_passes(
             &mut graph,
@@ -1598,7 +1636,10 @@ impl PreparedSynthetic {
             history_write,
             history_bytes,
         )?;
-        let output = self.append_display_passes(&mut graph, &scene, &view, width, height)?;
+        let exposure_sample =
+            ExposureResolve::append_graph(&mut graph, self.exposure_key(), directional)?;
+        let output =
+            self.append_display_passes(&mut graph, &scene, &exposure_sample, width, height)?;
         let scene_graph = graph.compile(self.key.device_generation, &prepared_keys)?;
         Self::append_readback_pass(&mut graph, &output, height, row_bytes)?;
         let readback_graph = graph.compile(self.key.device_generation, &prepared_keys)?;
@@ -1618,7 +1659,7 @@ impl PreparedSynthetic {
     fn append_frame_uniform_reads(
         graph: &mut FrameGraph,
         accesses: &mut Vec<Access>,
-    ) -> Result<(ResourceId, ResourceId), GraphError> {
+    ) -> Result<ResourceId, GraphError> {
         let directional = graph.resource(
             ResourceDescriptor::Buffer {
                 bytes: LIGHT_BYTES as u64,
@@ -1658,7 +1699,7 @@ impl PreparedSynthetic {
             kind: AccessKind::UniformRead,
             store: true,
         });
-        Ok((directional, view))
+        Ok(directional)
     }
 
     fn history_resources(
@@ -1756,7 +1797,7 @@ impl PreparedSynthetic {
         &self,
         graph: &mut FrameGraph,
         scene: &ResourceId,
-        view: &ResourceId,
+        exposure: &ResourceId,
         width: u32,
         height: u32,
     ) -> Result<ResourceId, RenderError> {
@@ -1786,8 +1827,8 @@ impl PreparedSynthetic {
                     store: true,
                 },
                 Access {
-                    resource: view.clone(),
-                    range: 0..VIEW_BYTES as u64,
+                    resource: exposure.clone(),
+                    range: 0..exposure::SAMPLE_BYTES,
                     kind: AccessKind::UniformRead,
                     store: true,
                 },
@@ -2005,6 +2046,11 @@ impl PreparedSynthetic {
                         frame.publish_history(pass)
                     })
                 }
+                Some(key) if key == self.exposure_key() => {
+                    RecordBinding::<SceneFamily>::new(id, PassKind::Compute, |frame, pass| {
+                        frame.exposure(pass)
+                    })
+                }
                 Some(key) if key == self.display_key() => {
                     RecordBinding::<SceneFamily>::new(id, PassKind::Render, |frame, pass| {
                         frame.tone(pass)
@@ -2169,8 +2215,7 @@ impl PreparedSynthetic {
             )?
             .ok_or(RenderError::GraphPassMismatch)?;
         pass.set_pipeline(&self.display_pipeline);
-        let view_slot = usize::from(target.frame_revision & 1 != 0);
-        pass.set_bind_group(0, &target.display[view_slot], &[]);
+        pass.set_bind_group(0, &target.display[self.history.write_side()], &[]);
         pass.draw(0..3, 0..1);
         Ok(())
     }
@@ -2212,7 +2257,7 @@ fn prepare_display_pipeline(
                 ty: wgpu::BindingType::Buffer {
                     ty: wgpu::BufferBindingType::Uniform,
                     has_dynamic_offset: false,
-                    min_binding_size: wgpu::BufferSize::new(VIEW_BYTES as u64),
+                    min_binding_size: wgpu::BufferSize::new(exposure::SAMPLE_BYTES),
                 },
                 count: None,
             },
@@ -2259,8 +2304,7 @@ fn prepare_display_group(
     device: &wgpu::Device,
     layout: &wgpu::BindGroupLayout,
     scene: &wgpu::TextureView,
-    view: &wgpu::Buffer,
-    offset: u64,
+    exposure: &wgpu::Buffer,
 ) -> wgpu::BindGroup {
     device.create_bind_group(&wgpu::BindGroupDescriptor {
         label: Some("synthetic display inputs"),
@@ -2273,9 +2317,9 @@ fn prepare_display_group(
             wgpu::BindGroupEntry {
                 binding: 1,
                 resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
-                    buffer: view,
-                    offset,
-                    size: wgpu::BufferSize::new(VIEW_BYTES as u64),
+                    buffer: exposure,
+                    offset: 0,
+                    size: wgpu::BufferSize::new(exposure::SAMPLE_BYTES),
                 }),
             },
         ],
@@ -2413,13 +2457,12 @@ impl OffscreenTarget {
             .texture(&ids.motion)
             .ok_or(RenderError::GraphPassMismatch)?
             .create_view(&wgpu::TextureViewDescriptor::default());
-        let display = [0, u64::from(prepared.view_stride)].map(|offset| {
+        let display = [0, 1].map(|side| {
             prepare_display_group(
                 device,
                 &prepared.display_layout,
                 &scene_view,
-                &prepared.view_buffer,
-                offset,
+                &prepared.exposure.samples[side],
             )
         });
         let aux = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {

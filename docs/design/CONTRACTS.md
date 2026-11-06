@@ -272,6 +272,12 @@ motion vectors in the convention above, reversed-Z depth, exposure, reactive/tra
 optional guide buffers (albedo, normals, roughness, hit distance). V4 reconstruction, frame interpolation and
 denoising providers, whether Thrum's own, platform hardware (MetalFX) or vendor (DLSS, FSR, XeSS), consume only this
 contract and are selected through F2's registry.
+Exposure distinguishes the CPU camera request from its GPU-resolved sample: the request selects fixed gain or a
+declared physical incident meter; the resolved resource carries storage scale, inverse gain, actual metered lux,
+validity and the submitted sample identity. A fixed fallback is not a host-known metered result. Retain an immutable
+copy of the matching sample with the image actually accepted as history, or prevent overwrite until consumer release;
+otherwise reset. A handle to two mutable submitted ping-pong slots does not retain a skipped image's exposure.
+GPU-invalid metering uses the prepared fixed fallback and flags invalidity without a readback or authoritative failure.
 V3/E1/V5 own their effect-specific histories; V1 owns persistent GPU lifetime. Shared invalidation reaches all affected
 owners. Detailed derivation is in the [temporal composition study](research/TEMPORAL-COMPOSITION.md).
 Effect histories for volumetric and water effects key on view, resolution and epoch, use ping-pong or world-anchored

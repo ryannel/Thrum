@@ -3,7 +3,7 @@
 
 use glam::{Mat4, Vec3, Vec4};
 
-use super::{RenderError, checked_display_gain};
+use super::{RenderError, checked_display_gain, exposure::ExposurePolicy};
 
 const VIEW_BYTES: usize = 160;
 pub(super) const AUX_BYTES: usize = 128;
@@ -27,7 +27,7 @@ pub struct SyntheticView {
     projection: Projection,
     view_proj: Mat4,
     camera: Vec3,
-    exposure: Option<f32>,
+    exposure: Option<ExposurePolicy>,
     history_reset: bool,
 }
 
@@ -137,8 +137,37 @@ impl SyntheticView {
     /// Refuses a nonpositive, nonfinite or unrepresentable exposure.
     pub fn with_exposure(mut self, exposure: f32) -> Result<Self, RenderError> {
         checked_display_gain(exposure)?;
-        self.exposure = Some(exposure);
+        self.exposure = Some(ExposurePolicy::Fixed {
+            inverse: 1.0 / exposure,
+        });
         Ok(self)
+    }
+
+    /// Select a flat horizontal incident-light camera meter for physical atmosphere.
+    /// Positive compensation brightens the camera; bounds are EV at ISO 100.
+    /// Other lighting profiles use the prepared fixed fallback, flagged unmetered.
+    /// # Errors
+    /// Refuses nonfinite settings, reversed bounds or EV settings outside -24..=24.
+    pub fn with_incident_exposure(
+        mut self,
+        compensation_ev: f32,
+        min_ev100: f32,
+        max_ev100: f32,
+    ) -> Result<Self, RenderError> {
+        self.exposure = Some(ExposurePolicy::incident(
+            compensation_ev,
+            min_ev100,
+            max_ev100,
+        )?);
+        Ok(self)
+    }
+
+    pub(super) fn exposure_policy(&self, fallback: f32, atmosphere: bool) -> [u8; 32] {
+        self.exposure
+            .unwrap_or(ExposurePolicy::Fixed {
+                inverse: 1.0 / fallback,
+            })
+            .pack(1.0 / fallback, atmosphere)
     }
 
     /// Mark a camera cut or another invalid correspondence for this sample.
@@ -168,7 +197,14 @@ impl SyntheticView {
             bytes[128 + axis * 4..132 + axis * 4].copy_from_slice(&value.to_le_bytes());
         }
         bytes[144..148].copy_from_slice(&super::PRE_EXPOSURE.to_le_bytes());
-        bytes[148..152].copy_from_slice(&(1.0 / self.exposure.unwrap_or(exposure)).to_le_bytes());
+        // This legacy field describes only a CPU-known fixed request. Metered
+        // exposure is GPU-authoritative in the separately bound sample record.
+        let inverse = match self.exposure {
+            Some(ExposurePolicy::Fixed { inverse }) => inverse,
+            Some(ExposurePolicy::IncidentHorizontal { .. }) => 0.0,
+            None => 1.0 / exposure,
+        };
+        bytes[148..152].copy_from_slice(&inverse.to_le_bytes());
         bytes
     }
 

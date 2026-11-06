@@ -24,6 +24,7 @@ pub(super) enum RenderJob {
         surface_generation: u64,
         time_of_day: Option<f32>,
         camera_pitch: Option<f32>,
+        camera_yaw: Option<f32>,
     },
     Finish,
 }
@@ -107,6 +108,7 @@ pub(super) fn start(
                     surface_generation,
                     time_of_day,
                     camera_pitch,
+                    camera_yaw,
                 } => {
                     let mut target_status = None;
                     let mut acquire_wall = None;
@@ -117,6 +119,9 @@ pub(super) fn start(
                         }
                         if let Some(camera_pitch) = camera_pitch {
                             host.set_camera_pitch(camera_pitch)?;
+                        }
+                        if let Some(camera_yaw) = camera_yaw {
+                            host.set_camera_yaw(camera_yaw)?;
                         }
                         let surface_current =
                             active_surface_generation.load(Ordering::Acquire) == surface_generation;

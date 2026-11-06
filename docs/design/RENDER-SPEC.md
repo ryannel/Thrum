@@ -438,21 +438,34 @@ linear Rec.709 photometric RGB, in lux; the reference fixture uses
 `AO*(1-metallic)*base*E_ambient/pi`, with no second hemisphere or cosine factor.
 The separate terminal background is black radiance in cd/m². Sun lux and
 local candela use section 4's direct-light convention; neither ambient nor
-background stands in for an unselected reflection source. V4 uses a positive
-authored fixed exposure `e` and first-fixture storage scale `p=1/1024`.
+background stands in for an unselected reflection source. V4 keeps storage scale `p=1/1024` separate from camera gain
+`e`. Explicit Fixed preserves the authored positive gain and CPU-packed reciprocal bits. The outdoor atmosphere
+camera may instead select a horizontal incident meter: `E = sky_horizontal + Sun_perpendicular*max(sun.y,0)` in
+physical RGB lux, with Rec.709 luminance weights. Sky irradiance already includes its cosine hemisphere integral.
+One GPU resolve after diffuse lighting computes `EV100=clamp(log2(max(E_lux,E_floor)*100/250)-compensation,minEV,maxEV)`
+and `e=2^(-EV100)/1.2`; the game initially authors compensation 0 and EV bounds 0–18.
+`E_floor=2.5*2^(minEV+compensation)` reaches the lower EV bound without adding illumination; recorded lux stays unfloored.
+This flat-receptor calibration follows [Filament's camera model](https://google.github.io/filament/main/filament.html#imagingpipeline/physicallybasedcamera)
+and [illuminance conversion](https://github.com/google/filament/blob/main/filament/src/Exposure.cpp); no implementation is copied.
+The separate GPU sample carries `p`, inverse gain, actual unfloored lux, EV, flags and submitted identity. Fixed mode
+is flagged unmetered; invalid physical input uses the prepared fixed fallback. Resolve every encoded view, including
+cached atmosphere views. Tone declares a read of this resource; policy and physical-light inputs are declared graph
+reads. Two sample sides follow submitted-transform history, never prepared-view parity; cancellation/capture cannot
+advance history. Future reconstruction retains the sample with its accepted image. The 160-byte view ABI and reserved
+jitter fields are unchanged; its legacy inverse gain is fixed-request compatibility data, not a resolved meter value.
 After undoing storage scale, set `C_e=e*L`,
 `C_t=C_e/(1+Y(C_e))`, then `C_d=C_t/max(1,max(C_t.r,C_t.g,C_t.b))`.
 Encode `C_d` to sRGB for the spatial filter, decode its result to
 display-linear for UI composition, then encode the selected output once,
 either in the shader or by an sRGB attachment conversion, never both.
 Presentation repairs nonfinite radiance and clamps after pre-exposure before half-float storage, with per-pass counters and a visible developer diagnostic. This
-simple SDR curve is a bounded first profile; it is not an HDR, automatic
-exposure or photographic-look promise.
+simple SDR curve is a bounded first profile, not an HDR or photographic-look promise. Incident metering is immediate;
+histogram metering and temporal camera adaptation are not implemented.
 
 **Finite demand and proof.** The spatial fixture reaches six geometry-role
-tuples (opaque/mask × depth/shadow/forward), tone, spatial AA and output,
-plus one UI tuple only if the authored fixture uses it: nine or ten boot
-descriptors, within BASELINE-SPEC's ten-tuple worksheet and the 16-tuple
+tuples (opaque/mask × depth/shadow/forward), exposure resolve, tone, spatial AA and output,
+plus one UI tuple only if the authored fixture uses it: ten or eleven boot
+descriptors, within BASELINE-SPEC's eleven-tuple worksheet and the 16-tuple
 R0 recipe cap. Velocity roles are available to a separately admitted
 temporal profile/transition but are not prepared or retained by unused R0
 spatial content. F4 enumerates the actual descriptors/keys and V1 verifies
