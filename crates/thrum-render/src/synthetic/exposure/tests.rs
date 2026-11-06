@@ -58,7 +58,7 @@ fn policy_shader_layouts_validate_without_a_device() {
             &[("Policy", 32), ("ExposureSample", 32), ("Serials", 32)][..],
         ),
         (
-            include_str!("../../synthetic_display.wgsl"),
+            crate::synthetic::display::SHADER,
             &[("ExposureSample", 32)][..],
         ),
     ] {

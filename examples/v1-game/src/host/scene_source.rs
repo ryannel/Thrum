@@ -9,7 +9,7 @@ use thrum_render::{
     atmosphere::AtmosphereFrame,
     extract::{ExtractReport, RenderExtractor, SourceTick},
     runtime::{SceneFrame, SceneSource},
-    synthetic::{FrameLighting, SyntheticPointLight, SyntheticScene, SyntheticView},
+    synthetic::{FrameLighting, SdrToneMap, SyntheticPointLight, SyntheticScene, SyntheticView},
 };
 
 fn atmosphere_lighting(tick: u64, alpha: f32, phase_offset: f32) -> FrameLighting {
@@ -66,6 +66,7 @@ fn frame_view(
         0.1,
         20.0,
     )
+    .map(|view| view.with_sdr_tone_map(SdrToneMap::NeutralHighlights))
     .map_err(|error| format!("live camera: {error:?}"))
 }
 

@@ -1,7 +1,7 @@
 //! Per-view camera policy and GPU-resolved exposure. Physical light and the
 //! fixed scene storage scale remain independent of the camera.
 
-use super::{PRE_EXPOSURE, RenderError, history_gpu, uniform_layout};
+use super::{PRE_EXPOSURE, RenderError, SdrToneMap, history_gpu, uniform_layout};
 use crate::graph::{
     Access, AccessKind, CompiledPass, FrameGraph, GraphError, Pass, PassScope, PipelineKey,
     ResourceDescriptor, ResourceId, ResourceScope,
@@ -46,7 +46,12 @@ impl ExposurePolicy {
         })
     }
 
-    pub(super) fn pack(self, fallback_inverse: f32, atmosphere: bool) -> [u8; 32] {
+    pub(super) fn pack(
+        self,
+        fallback_inverse: f32,
+        atmosphere: bool,
+        tone_map: SdrToneMap,
+    ) -> [u8; 32] {
         let (inverse, compensation, min, max, mode) = match self {
             Self::Fixed { inverse } => (inverse, 0.0, 0.0, 0.0, 0),
             Self::IncidentHorizontal {
@@ -63,7 +68,7 @@ impl ExposurePolicy {
             mode,
             PRE_EXPOSURE.to_bits(),
             u32::from(atmosphere),
-            0,
+            tone_map as u32,
         ];
         std::array::from_fn(|byte| words[byte / 4].to_le_bytes()[byte % 4])
     }
