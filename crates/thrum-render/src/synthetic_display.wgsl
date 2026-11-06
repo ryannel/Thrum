@@ -13,8 +13,7 @@ struct ExposureSample {
 fn srgb_encode(linear: vec3<f32>) -> vec3<f32> {
     return select(1.055*pow(linear,vec3(1.0/2.4))-vec3(0.055),12.92*linear,linear<=vec3(0.0031308));
 }
-@fragment fn fragment(@builtin(position) position: vec4<f32>) -> @location(0) vec4<f32> {
-    let stored = textureLoad(scene,vec2<i32>(position.xy),0).rgb;
+fn reinhard(stored: vec3<f32>) -> vec3<f32> {
     // Scaling first avoids overflow for valid large gains: algebraically this is
     // C_e/(1+Y(C_e)), followed by the specified shared maximum-channel gamut map.
     let peak = max(1.0,max(stored.r,max(stored.g,stored.b)));
@@ -22,6 +21,15 @@ fn srgb_encode(linear: vec3<f32>) -> vec3<f32> {
     let reciprocal_scale = (exposure.values.x*exposure.values.y)/peak;
     let denominator = max(reciprocal_scale+dot(scaled,vec3(0.2126,0.7152,0.0722)),max(scaled.r,max(scaled.g,scaled.b)));
     // A black scene has zero denominator only when a subnormal reciprocal flushes.
-    let mapped = scaled/max(denominator,1e-30);
+    return scaled/max(denominator,1e-30);
+}
+@fragment fn fragment(@builtin(position) position: vec4<f32>) -> @location(0) vec4<f32> {
+    let stored = textureLoad(scene,vec2<i32>(position.xy),0).rgb;
+    var mapped: vec3<f32>;
+    if exposure.metadata.w == 1u {
+        mapped = neutral_highlights(stored, exposure.values.x * exposure.values.y);
+    } else {
+        mapped = reinhard(stored);
+    }
     return vec4(srgb_encode(mapped),1.0);
 }

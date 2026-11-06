@@ -26,6 +26,7 @@ use wgpu::util::DeviceExt;
 
 mod cluster;
 mod cluster_gpu;
+mod display;
 mod exposure;
 mod frame_stats;
 mod history_gpu;
@@ -36,6 +37,8 @@ mod view;
 use cluster::ClusterTable;
 pub use cluster::SyntheticPointLight;
 use cluster_gpu::ClusterCompute;
+pub use display::SdrToneMap;
+use display::{DisplayPrepared, DisplayTarget};
 use exposure::ExposureResolve;
 pub(crate) use frame_stats::pass_durations;
 use history_gpu::TransformHistory;
@@ -46,7 +49,7 @@ pub use view::SyntheticView;
 use view::{AUX_BYTES, Projection};
 
 /// Synthetic source revision; not a substitute for an F4 product identity.
-pub const SYNTHETIC_REVISION: u64 = 11;
+pub const SYNTHETIC_REVISION: u64 = 12;
 /// Portable opaque depth; no sampling or separate prepass is needed.
 pub const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
 const VIEW_BYTES: usize = 160;
@@ -408,8 +411,7 @@ pub struct PreparedSynthetic {
     pipeline_two_sided: wgpu::RenderPipeline,
     cube_indices: wgpu::Buffer,
     cube_reversed_indices: wgpu::Buffer,
-    display_pipeline: wgpu::RenderPipeline,
-    display_layout: wgpu::BindGroupLayout,
+    display: DisplayPrepared,
     view_layout: wgpu::BindGroupLayout,
     view_buffer: wgpu::Buffer,
     view_stride: u32,
@@ -541,11 +543,12 @@ impl SceneContext<'_> {
     }
 
     fn tone(&mut self, pass: &CompiledPass) -> Result<(), RenderError> {
-        self.prepared.encode_tone(
+        self.prepared.display.encode(
             self.encoder,
             self.generation,
             self.target,
             pass,
+            self.prepared.history.write_side(),
             self.timings.as_deref_mut(),
         )
     }
@@ -1156,7 +1159,7 @@ impl PreparedSynthetic {
             queue,
             scene.view.exposure_policy(exposure, atmosphere.is_some()),
         );
-        let (display_pipeline, display_layout) = prepare_display_pipeline(device);
+        let display = DisplayPrepared::new(device);
         if let Some(error) = scope.pop().await {
             return Err(RenderError::Validation(error.to_string()));
         }
@@ -1173,8 +1176,7 @@ impl PreparedSynthetic {
             pipeline_two_sided,
             cube_indices,
             cube_reversed_indices,
-            display_pipeline,
-            display_layout,
+            display,
             view_layout,
             view_buffer,
             view_stride,
@@ -1638,8 +1640,14 @@ impl PreparedSynthetic {
         )?;
         let exposure_sample =
             ExposureResolve::append_graph(&mut graph, self.exposure_key(), directional)?;
-        let output =
-            self.append_display_passes(&mut graph, &scene, &exposure_sample, width, height)?;
+        let output = DisplayPrepared::append_graph(
+            &mut graph,
+            self.display_key(),
+            &scene,
+            &exposure_sample,
+            width,
+            height,
+        )?;
         let scene_graph = graph.compile(self.key.device_generation, &prepared_keys)?;
         Self::append_readback_pass(&mut graph, &output, height, row_bytes)?;
         let readback_graph = graph.compile(self.key.device_generation, &prepared_keys)?;
@@ -1792,56 +1800,6 @@ impl PreparedSynthetic {
             external_side_effect: true,
         });
         Ok(())
-    }
-    fn append_display_passes(
-        &self,
-        graph: &mut FrameGraph,
-        scene: &ResourceId,
-        exposure: &ResourceId,
-        width: u32,
-        height: u32,
-    ) -> Result<ResourceId, RenderError> {
-        let output = graph.resource(
-            ResourceDescriptor::Texture {
-                width,
-                height,
-                layers: 1,
-                mips: 1,
-                samples: 1,
-                format: OUTPUT_FORMAT,
-                usage: wgpu::TextureUsages::RENDER_ATTACHMENT
-                    | wgpu::TextureUsages::COPY_SRC
-                    | wgpu::TextureUsages::TEXTURE_BINDING,
-            },
-            ResourceScope::Transient,
-        )?;
-        graph.pass(Pass {
-            name: "synthetic tone encode".into(),
-            scope: PassScope::View(1),
-            pipeline: Some(self.display_key()),
-            accesses: vec![
-                Access {
-                    resource: scene.clone(),
-                    range: 0..1,
-                    kind: AccessKind::SampledRead,
-                    store: true,
-                },
-                Access {
-                    resource: exposure.clone(),
-                    range: 0..exposure::SAMPLE_BYTES,
-                    kind: AccessKind::UniformRead,
-                    store: true,
-                },
-                Access {
-                    resource: output.clone(),
-                    range: 0..1,
-                    kind: AccessKind::AttachmentClear,
-                    store: true,
-                },
-            ],
-            external_side_effect: true,
-        });
-        Ok(output)
     }
     fn append_shadow_passes(
         &self,
@@ -2191,34 +2149,6 @@ impl PreparedSynthetic {
         pass.draw_indexed(0..36, 0, 0..self.instance_upload.active_count());
         Ok(())
     }
-
-    fn encode_tone(
-        &self,
-        encoder: &mut wgpu::CommandEncoder,
-        generation: u64,
-        target: &OffscreenTarget,
-        compiled: &CompiledPass,
-        timings: Option<&mut GpuTimings>,
-    ) -> Result<(), RenderError> {
-        let mut pass = compiled
-            .begin_render(
-                encoder,
-                [Some(GraphColorAttachment {
-                    resource: &target.ids.output,
-                    range: 0..1,
-                    view: &target.view,
-                    clear: wgpu::Color::BLACK,
-                })],
-                None,
-                generation,
-                timings,
-            )?
-            .ok_or(RenderError::GraphPassMismatch)?;
-        pass.set_pipeline(&self.display_pipeline);
-        pass.set_bind_group(0, &target.display[self.history.write_side()], &[]);
-        pass.draw(0..3, 0..1);
-        Ok(())
-    }
 }
 fn checked_display_gain(exposure: f32) -> Result<f32, RenderError> {
     let inverse = 1.0 / exposure;
@@ -2233,97 +2163,6 @@ fn checked_display_gain(exposure: f32) -> Result<f32, RenderError> {
         return Err(RenderError::InvalidExposure);
     }
     Ok(gain)
-}
-
-fn prepare_display_pipeline(
-    device: &wgpu::Device,
-) -> (wgpu::RenderPipeline, wgpu::BindGroupLayout) {
-    let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-        label: Some("synthetic display layout"),
-        entries: &[
-            wgpu::BindGroupLayoutEntry {
-                binding: 0,
-                visibility: wgpu::ShaderStages::FRAGMENT,
-                ty: wgpu::BindingType::Texture {
-                    sample_type: wgpu::TextureSampleType::Float { filterable: false },
-                    view_dimension: wgpu::TextureViewDimension::D2,
-                    multisampled: false,
-                },
-                count: None,
-            },
-            wgpu::BindGroupLayoutEntry {
-                binding: 1,
-                visibility: wgpu::ShaderStages::FRAGMENT,
-                ty: wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Uniform,
-                    has_dynamic_offset: false,
-                    min_binding_size: wgpu::BufferSize::new(exposure::SAMPLE_BYTES),
-                },
-                count: None,
-            },
-        ],
-    });
-    let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-        label: Some("synthetic display"),
-        bind_group_layouts: &[Some(&layout)],
-        immediate_size: 0,
-    });
-    let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-        label: Some("synthetic authored SDR display"),
-        source: wgpu::ShaderSource::Wgsl(include_str!("synthetic_display.wgsl").into()),
-    });
-    let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-        label: Some("prepared synthetic tone encode role"),
-        layout: Some(&pipeline_layout),
-        vertex: wgpu::VertexState {
-            module: &shader,
-            entry_point: Some("vertex"),
-            compilation_options: wgpu::PipelineCompilationOptions::default(),
-            buffers: &[],
-        },
-        primitive: wgpu::PrimitiveState::default(),
-        depth_stencil: None,
-        multisample: wgpu::MultisampleState::default(),
-        fragment: Some(wgpu::FragmentState {
-            module: &shader,
-            entry_point: Some("fragment"),
-            compilation_options: wgpu::PipelineCompilationOptions::default(),
-            targets: &[Some(wgpu::ColorTargetState {
-                format: OUTPUT_FORMAT,
-                blend: None,
-                write_mask: wgpu::ColorWrites::ALL,
-            })],
-        }),
-        multiview_mask: None,
-        cache: None,
-    });
-    (pipeline, layout)
-}
-
-fn prepare_display_group(
-    device: &wgpu::Device,
-    layout: &wgpu::BindGroupLayout,
-    scene: &wgpu::TextureView,
-    exposure: &wgpu::Buffer,
-) -> wgpu::BindGroup {
-    device.create_bind_group(&wgpu::BindGroupDescriptor {
-        label: Some("synthetic display inputs"),
-        layout,
-        entries: &[
-            wgpu::BindGroupEntry {
-                binding: 0,
-                resource: wgpu::BindingResource::TextureView(scene),
-            },
-            wgpu::BindGroupEntry {
-                binding: 1,
-                resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
-                    buffer: exposure,
-                    offset: 0,
-                    size: wgpu::BufferSize::new(exposure::SAMPLE_BYTES),
-                }),
-            },
-        ],
-    })
 }
 
 fn uniform_layout(
@@ -2395,7 +2234,7 @@ pub struct OffscreenTarget {
     view: wgpu::TextureView,
     scene_view: wgpu::TextureView,
     motion_view: wgpu::TextureView,
-    display: [wgpu::BindGroup; 2],
+    display: DisplayTarget,
     view_bind_group: wgpu::BindGroup,
     aux_buffer: wgpu::Buffer,
     shadow: Option<ShadowTarget>,
@@ -2457,14 +2296,9 @@ impl OffscreenTarget {
             .texture(&ids.motion)
             .ok_or(RenderError::GraphPassMismatch)?
             .create_view(&wgpu::TextureViewDescriptor::default());
-        let display = [0, 1].map(|side| {
-            prepare_display_group(
-                device,
-                &prepared.display_layout,
-                &scene_view,
-                &prepared.exposure.samples[side],
-            )
-        });
+        let display = prepared
+            .display
+            .target(device, &scene_view, &prepared.exposure.samples);
         let aux = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("synthetic target view aux"),
             contents: &prepared

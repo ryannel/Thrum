@@ -7,6 +7,7 @@ struct Sample {
     values: [f32; 4],
     flags: u32,
     serial: u64,
+    tone_map: u32,
 }
 
 fn read_sample(
@@ -42,6 +43,7 @@ fn read_sample(
         values: std::array::from_fn(|word| f32::from_bits(words[word])),
         flags: words[4],
         serial: u64::from(words[5]) | (u64::from(words[6]) << 32),
+        tone_map: words[7],
     }
 }
 
@@ -113,7 +115,7 @@ fn gpu_meter_calibration_fixed_bits_bounds_zero_and_invalid_inputs() {
                 &queue,
                 &exposure,
                 &light_buffer,
-                ExposurePolicy::Fixed { inverse }.pack(16_000.0, false),
+                ExposurePolicy::Fixed { inverse }.pack(16_000.0, false, SdrToneMap::Reinhard),
                 [0.0; 16],
             );
             assert_eq!(sample.values[1].to_bits(), inverse.to_bits());
@@ -145,7 +147,7 @@ fn gpu_meter_calibration_fixed_bits_bounds_zero_and_invalid_inputs() {
                 &queue,
                 &exposure,
                 &light_buffer,
-                policy.pack(16_000.0, true),
+                policy.pack(16_000.0, true, SdrToneMap::Reinhard),
                 values,
             );
             assert!(
@@ -162,7 +164,7 @@ fn gpu_meter_calibration_fixed_bits_bounds_zero_and_invalid_inputs() {
             &queue,
             &exposure,
             &light_buffer,
-            policy.pack(16_000.0, true),
+            policy.pack(16_000.0, true, SdrToneMap::Reinhard),
             sky,
         );
         let brighter = resolve(
@@ -170,9 +172,11 @@ fn gpu_meter_calibration_fixed_bits_bounds_zero_and_invalid_inputs() {
             &queue,
             &exposure,
             &light_buffer,
-            ExposurePolicy::incident(1.0, 0.0, 18.0)
-                .unwrap()
-                .pack(16_000.0, true),
+            ExposurePolicy::incident(1.0, 0.0, 18.0).unwrap().pack(
+                16_000.0,
+                true,
+                SdrToneMap::Reinhard,
+            ),
             sky,
         );
         assert!(
@@ -190,7 +194,7 @@ fn gpu_meter_calibration_fixed_bits_bounds_zero_and_invalid_inputs() {
                 &queue,
                 &exposure,
                 &light_buffer,
-                policy.pack(16_000.0, true),
+                policy.pack(16_000.0, true, SdrToneMap::Reinhard),
                 values,
             );
             assert_eq!(sample.flags, 12);
@@ -202,7 +206,7 @@ fn gpu_meter_calibration_fixed_bits_bounds_zero_and_invalid_inputs() {
             &queue,
             &exposure,
             &light_buffer,
-            policy.pack(16_000.0, false),
+            policy.pack(16_000.0, false, SdrToneMap::Reinhard),
             sky,
         );
         assert_eq!(
@@ -260,9 +264,14 @@ fn gpu_meter_follows_cached_light_policy_submission_cancellation_and_capture() {
         prepared.commit_frame();
         let retained_side = 1 - prepared.history.write_side();
         let retained_serial = initial.serial;
+        assert_eq!(initial.tone_map, SdrToneMap::Reinhard as u32);
         // Prepared revision 2 is cancelled; revision 3 repeats revision 1's view
         // parity but must write opposite the actual retained history sample.
-        scene.view = scene.view.with_incident_exposure(1.0, 0.0, 18.0).unwrap();
+        scene.view = scene
+            .view
+            .with_incident_exposure(1.0, 0.0, 18.0)
+            .unwrap()
+            .with_sdr_tone_map(SdrToneMap::NeutralHighlights);
         prepared
             .update_frame(
                 &queue,
@@ -300,6 +309,8 @@ fn gpu_meter_follows_cached_light_policy_submission_cancellation_and_capture() {
             initial.values.map(f32::to_bits)
         );
         assert_eq!(second.serial, initial.serial + 1);
+        assert_eq!(second.tone_map, SdrToneMap::NeutralHighlights as u32);
+        assert_eq!(retained.tone_map, initial.tone_map);
         assert!((second.values[3] / initial.values[3] - 1.0).abs() < 1e-5);
         assert!((initial.values[1] / second.values[1] - 2.0).abs() < 1e-4);
         // Capture submits an image but intentionally doesn't commit view history.
@@ -318,6 +329,7 @@ fn gpu_meter_follows_cached_light_policy_submission_cancellation_and_capture() {
         );
         assert_eq!(pixels.try_collect(41).unwrap().unwrap().len(), 16 * 16 * 4);
         assert_eq!(captured.serial, second.serial);
+        assert_eq!(captured.tone_map, second.tone_map);
         prepared.commit_frame();
         assert_eq!(prepared.history.write_side(), retained_side);
         let stronger = AtmosphereFrame::new([0.0, 1.0, 0.0], 254_000.0, [1.0; 3], 2.0, 1).unwrap();
@@ -338,6 +350,7 @@ fn gpu_meter_follows_cached_light_policy_submission_cancellation_and_capture() {
         prepared.commit_frame();
         prepared.synchronize_history(&queue, 1, 1);
         scene.view = scene.view.with_history_reset(true);
+        target = OffscreenTarget::new(&device, &prepared, 32, 16).unwrap();
         prepared
             .update_frame(
                 &queue,
@@ -354,6 +367,7 @@ fn gpu_meter_follows_cached_light_policy_submission_cancellation_and_capture() {
             "reset never manufactures a second exposure cursor"
         );
         assert_eq!(reset.flags, 0);
+        assert_eq!(reset.tone_map, SdrToneMap::NeutralHighlights as u32);
         assert!(scope.pop().await.is_none());
     });
 }

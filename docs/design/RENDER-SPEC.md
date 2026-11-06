@@ -453,13 +453,23 @@ cached atmosphere views. Tone declares a read of this resource; policy and physi
 reads. Two sample sides follow submitted-transform history, never prepared-view parity; cancellation/capture cannot
 advance history. Future reconstruction retains the sample with its accepted image. The 160-byte view ABI and reserved
 jitter fields are unchanged; its legacy inverse gain is fixed-request compatibility data, not a resolved meter value.
-After undoing storage scale, set `C_e=e*L`,
-`C_t=C_e/(1+Y(C_e))`, then `C_d=C_t/max(1,max(C_t.r,C_t.g,C_t.b))`.
+Display selection is independent of metering. Default `Reinhard` preserves `C_e=e*L`,
+`C_t=C_e/(1+Y(C_e))`, `C_d=C_t/max(1,max(C_t.r,C_t.g,C_t.b))` and existing diagnostic pixels.
+The game selects `NeutralHighlights`: identity below peak `K=0.76`; above it, with `P=max(C_e)`,
+`N=1-(1-K)^2/(P+1-2K)`, `g=1/(1+0.15*(P-N))`, `C_d=N*mix(white,C_e/P,g)`.
+This uses [Khronos's highlight shoulder/desaturation](https://github.com/KhronosGroup/ToneMapping/tree/main/PBR_Neutral)
+without the material/Fresnel shadow offset; it is not a standard PBR Neutral reproduction or material-colour guarantee.
+Evaluate black first and branch before computing reciprocal peak; the reciprocal formulation handles every checked
+gain without forming overflowing exposed RGB. This adds scalar ALU per output pixel in the existing tone pass,
+without another pass, texture or queue. The request/sample reserved word carries the operator; the view jitter ABI
+and scene-linear colour remain untouched. `[0,1]` is relative to SDR display white; future HDR selects its transform
+before SDR compression. [GT7's 2025 display pipeline](https://www.polyphony.co.jp/publications/) is a later cross-display
+reference requiring explicit display nits and output gamut, rather than an undeclared replacement here.
 Encode `C_d` to sRGB for the spatial filter, decode its result to
 display-linear for UI composition, then encode the selected output once,
 either in the shader or by an sRGB attachment conversion, never both.
 Presentation repairs nonfinite radiance and clamps after pre-exposure before half-float storage, with per-pass counters and a visible developer diagnostic. This
-simple SDR curve is a bounded first profile, not an HDR or photographic-look promise. Incident metering is immediate;
+SDR profiles are bounded initial choices, not an HDR or photographic-look promise. Incident metering is immediate;
 histogram metering and temporal camera adaptation are not implemented.
 
 **Finite demand and proof.** The spatial fixture reaches six geometry-role
