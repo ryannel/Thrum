@@ -67,14 +67,11 @@ fn multiple_main(@builtin(global_invocation_id) id: vec3<u32>) {
 fn sky_main(@builtin(global_invocation_id) id: vec3<u32>) {
     let size=textureDimensions(output_lut);
     if any(id.xy>=size) { return; }
-    let angles=sky_angles((vec2<f32>(id.xy)+0.5)/vec2<f32>(size));
+    let ray=sky_view_ray((vec2<f32>(id.xy)+0.5)/vec2<f32>(size),id.y);
     let sun=atmosphere.sun_lux.xyz;
-    let azimuth=angles.x+atan2(sun.z,sun.x);
-    let direction=vec3(cos(angles.y)*cos(azimuth),sin(angles.y),cos(angles.y)*sin(azimuth));
+    let direction=ray.direction;
     let h=atmosphere.camera_altitude.w;
-    let ground=ground_distance(h,direction.y);
-    var distance=top_distance(h,direction.y);
-    if ground>=0.0 { distance=ground; }
+    let distance=ray.distance;
     let cosine=dot(direction,sun);
     let rayleigh_phase=3.0*(1.0+cosine*cosine)/(16.0*PI);
     let g=0.8;
@@ -96,7 +93,7 @@ fn sky_main(@builtin(global_invocation_id) id: vec3<u32>) {
         luminance+=throughput*safe_segment(single+scattering(ah)*multiple,ext,dt);
         throughput*=exp(-ext*dt);
     }
-    if ground>=0.0 {
+    if ray.terminal_ground!=0u {
         let p=vec3(0.0,h,0.0)+direction*distance;
         let n=normalize(p+vec3(0.0,R,0.0));
         luminance+=throughput*sun_transmittance(p+n*0.1,sun)*max(0.0,dot(n,sun))*(0.1/PI);

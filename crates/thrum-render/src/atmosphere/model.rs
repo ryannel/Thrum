@@ -33,3 +33,19 @@ pub(super) fn sun_transmittance(height: f32, mu: f32) -> [f32; 3] {
     }
     (-depth).exp().to_array()
 }
+
+/// Horizon cosine/elevation and sky/ground angular spans for the fixed sky LUT.
+/// This small CPU product is shared by every GPU producer and lookup consumer.
+pub(super) fn sky_mapping(height: f32) -> [f32; 4] {
+    let horizon_mu = -(height * (2.0 * RADIUS + height)).sqrt() / (RADIUS + height);
+    let horizon_elevation = horizon_mu.asin();
+    [
+        horizon_mu,
+        horizon_elevation,
+        std::f32::consts::FRAC_PI_2 - horizon_elevation,
+        std::f32::consts::FRAC_PI_2 + horizon_elevation,
+    ]
+}
+
+#[cfg(test)]
+mod tests;

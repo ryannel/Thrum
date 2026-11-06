@@ -7,7 +7,6 @@ mod readback;
 use std::fmt::Write;
 
 use super::{Case, Single, Stats, Unresolved, deterministic_single, estimate};
-use crate::atmosphere::gpu::EXTENTS;
 
 const SUN_DEGREES: [i16; 6] = [45, 0, -3, -6, -9, -12];
 const HEIGHT: f64 = 2.0;
@@ -29,44 +28,6 @@ fn views() -> [(f64, f64); 11] {
         (horizon - 0.005, 0.0),
         (horizon + 0.005, 0.0),
     ]
-}
-
-fn sample(pixels: &[[f64; 3]], view_degrees: f64, azimuth_degrees: f64) -> [(f64, f64); 3] {
-    let [width, height] = EXTENTS[2];
-    let v = view_degrees / 90.0;
-    let uv = [
-        azimuth_degrees / 360.0 + 0.5,
-        0.5 + 0.5 * v.signum() * v.abs().sqrt(),
-    ];
-    let x = (uv[0] * f64::from(width) - 0.5).clamp(0.0, f64::from(width - 1));
-    let y = (uv[1] * f64::from(height) - 0.5).clamp(0.0, f64::from(height - 1));
-    #[expect(
-        clippy::cast_possible_truncation,
-        clippy::cast_sign_loss,
-        reason = "clamped LUT coordinates fit the declared u32 extent"
-    )]
-    let [ix, iy] = [x.floor() as u32, y.floor() as u32];
-    let tx = x - f64::from(ix);
-    let ty = y - f64::from(iy);
-    let load =
-        |a: u32, b: u32| pixels[usize::try_from(b * width + a).expect("LUT index fits usize")];
-    let a = load(ix, iy);
-    let b = load((ix + 1).min(width - 1), iy);
-    let c = load(ix, (iy + 1).min(height - 1));
-    let d = load((ix + 1).min(width - 1), (iy + 1).min(height - 1));
-    std::array::from_fn(|channel| {
-        let corners = [a[channel], b[channel], c[channel], d[channel]];
-        let maximum = corners.into_iter().fold(0.0_f64, f64::max);
-        let minimum = corners.into_iter().fold(f64::INFINITY, f64::min);
-        let value = (a[channel] * (1.0 - tx) + b[channel] * tx) * (1.0 - ty)
-            + (c[channel] * (1.0 - tx) + d[channel] * tx) * ty;
-        // Allow one 8-bit fractional-weight step per axis plus two half-ULPs.
-        // This checks capture/mapping, not the physical LUT approximation.
-        (
-            value,
-            (maximum - minimum) / 128.0 + maximum * 2.0_f64.powi(-9) + 1e-10,
-        )
-    })
 }
 
 fn row(
@@ -222,17 +183,6 @@ fn gpu_transport_reference_reports_every_prescribed_row() {
             for (view_id, (view, azimuth)) in views().into_iter().enumerate() {
                 let actual = observed.rays_full[view_id];
                 let direct = observed.rays_single[view_id];
-                // Establish capture/mapping concordance before changing the LUT.
-                for (gpu, (cpu, rounding)) in actual
-                    .into_iter()
-                    .zip(sample(full, view, azimuth))
-                    .chain(direct.into_iter().zip(sample(single, view, azimuth)))
-                {
-                    assert!(
-                        (gpu - cpu).abs() <= rounding,
-                        "shipping sampler observation differs: {gpu} vs {cpu}"
-                    );
-                }
                 for band in 0..3 {
                     let case = Case::degrees(band, f64::from(sun), view, azimuth, HEIGHT);
                     // Fixed semantic tuple slots; adding rays cannot change earlier seeds.

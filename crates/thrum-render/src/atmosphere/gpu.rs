@@ -196,7 +196,12 @@ impl AtmospherePrepared {
         {
             bytes[80 + index * 4..84 + index * 4].copy_from_slice(&value.to_le_bytes());
         }
-        bytes[112..128].copy_from_slice(&aux[64..80]);
+        for (index, value) in super::model::sky_mapping(frame.camera_altitude_m)
+            .into_iter()
+            .enumerate()
+        {
+            bytes[112 + index * 4..116 + index * 4].copy_from_slice(&value.to_le_bytes());
+        }
         let mut aerial_dependencies = [0_u8; 80];
         aerial_dependencies[..64].copy_from_slice(&bytes[..64]);
         aerial_dependencies[64..80].copy_from_slice(&bytes[64..80]);
