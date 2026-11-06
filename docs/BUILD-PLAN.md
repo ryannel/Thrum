@@ -84,9 +84,12 @@ The native Metal recorder stays in G3t. The later dedicated performance phase ow
   governor reacts to GPU/thermal/present evidence. Compare Apple tile and portable on this Mac with image tolerance and
   counters. Record the measured difference without a required percentage win. No pipeline compilation during play.
   Physical iPhone comparison remains pending.
-- [ ] **G5 — content-addressed loop.** Stat cache, BLAKE3 CAS, aligned mmap products, glTF meshlets, KTX2 ASTC/BC7,
+- [x] **G5 — content-addressed loop.** Stat cache, BLAKE3 CAS, aligned mmap products, glTF meshlets, KTX2 ASTC/BC7,
   atomic manifest, watcher and dev server. Keep only runtime validation the game needs; shipping never links authoring.
   Prove visible asset edits without GPU stalls; track scan/edit-to-visible latency and startup/hitch tripwires.
+  Native Mac loop qualified ([design](design/decisions/G5-CONTENT-ADDRESSED-LOOP.md),
+  [evidence](evidence/integration/G5-CONTENT-ADDRESSED-LOOP-2026-11-06.md)); V1-game integration, browser client,
+  meshlet draw path, EAC volumes and iPhone/Chrome measurement remain open.
 - [ ] **G6 — creator experience and demo controls.** Native/browser text, sliders, toggles and field overlays bound to
   typed parameters. One command produces a lit scene, sky, cooked mesh, camera and slider; diagnostics and hot reload
   support asset/shader/parameter edits. A fresh agent uses only public docs/starter, builds a small scene without reading

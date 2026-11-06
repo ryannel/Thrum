@@ -16,7 +16,11 @@ from design_hashes import check_hashes
 
 ROOT = Path(__file__).resolve().parents[1]
 LINK = re.compile(r"\[[^\]\n]*\]\(([^)\n]+)\)")
-IOS_FORBIDDEN_RUNTIME_PACKAGES = {"thrum-cook", "thrum-source", "rusqlite", "libsqlite3-sys"}
+IOS_FORBIDDEN_RUNTIME_PACKAGES = {
+    "thrum-cook", "thrum-source", "rusqlite", "libsqlite3-sys",
+    # G5 authoring closure: importers, encoders and the watcher never ship.
+    "meshopt", "intel_tex_2", "astcenc-rs", "gltf", "notify",
+}
 
 
 def prose(text):
