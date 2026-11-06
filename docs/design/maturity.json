@@ -65,17 +65,17 @@
     },
     "G2_generic_simulation": {
       "implementation": "partial_owned_columns_changed_pages_sparse_undo_and_history; G2S_real_game_budgets_open",
-      "functional_validation": "full_dev_check_three_metal_regressions_world_1000_tick_randomized_serial_and_forced_rayon_replay_four_peer_refusal_churn_held_page_zero_warmed_allocations_and_independent_review_no_findings",
+      "functional_validation": "full_dev_check_three_metal_regressions_world_1000_tick_randomized_replay_with_serial_and_requested_rayon_four_peer_refusal_churn_held_page_zero_warmed_allocations_and_independent_review_no_findings",
       "experienced_quality": "synthetic_game_path_runs_no_v1_visual_acceptance",
       "platform_performance": {
-        "mac": "Apple_M3_Max_G2R_easy_rows_only_G2S_real_game_rows_open",
+        "mac": "Apple_M3_Max_owner_quiet_91ad52d_G2S_CPU_rows_failed_zero_allocations",
         "windows": "not_run",
         "browser": "not_run",
         "ios": "not_run",
         "android": "not_run"
       },
-      "diagnostic_measurement": "See G2R consolidated evidence page for complete-command p50/p95/p99, process-wide allocation counts and paired before/after rewind medians.",
-      "scope": "V1 game still owns schema, rules, input and page layout; G2S moves publication into the engine. FrameHost waits for G3b; no iPhone result.",
+      "diagnostic_measurement": "Owner quiet runs at 91ad52d fail G2S CPU budgets; all-thread allocations zero. Both repeats and profiles: G2R-CONSOLIDATED-2026-11-05.md.",
+      "scope": "G2S CPU budgets and actual parallel fitness remain open; requested Rayon uses serial game systems. Clock/frame orchestration is engine-owned; no iPhone result.",
       "evidence": [
         "../evidence/v1-workload/G2R-CONSOLIDATED-2026-11-05.md"
       ]
@@ -476,13 +476,13 @@
       "functional_validation": "real_metal_tick_interpolation_capture_ordered_timing_overload_and_short_live_surface_runs; surface_generation_and_nonblocking_close_reviewed; lifecycle_qualification_open",
       "experienced_quality": "synthetic_grid_capture_agent_reviewed; motion_and_showcase_quality_open",
       "platform_performance": {
-        "mac": "not_qualified_short_live_display_and_offscreen_diagnostics_only",
+        "mac": "owner_quiet_91ad52d_frame_CPU_failed_presentation_unqualified",
         "windows": "not_run",
         "browser": "not_run",
         "ios": "not_run",
         "android": "not_run"
       },
-      "diagnostic_measurement": "Current loaded A/B, allocation and pixel diagnostics are recorded once in V1-BOUNDED-FRAMES-2026-11-04.md. Frame CPU, zero allocations, ten-minute presentation timestamps, latency and lifecycle budgets remain open; no iPhone result.",
+      "diagnostic_measurement": "Owner quiet 91ad52d rows and newer loaded 8bb3979 comparisons: V1-BOUNDED-FRAMES-2026-11-04.md. Frame CPU, allocations, cadence, latency and lifecycle remain unqualified.",
       "evidence": [
         "../evidence/render/V1-BOUNDED-FRAMES-2026-11-04.md"
       ],
