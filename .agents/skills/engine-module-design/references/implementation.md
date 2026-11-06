@@ -1,86 +1,70 @@
-# Build and prove the selected system
+# Build and prove
 
-## Let the design govern the queue
+The outcome is the commissioned behaviour running in the engine on the shipped path, judged in motion against its
+cues, with measured cost and honest limits. Continue through building, running, looking and correcting without adding
+approval stops.
 
-Read the canonical module design and relevant engine contracts before choosing the next substantial slice. State the
-required outcome or architectural decision being tested, affected consumers, rejection condition and what remains
-unqualified. Choose work by dependency and architectural risk, not by the latest demo's easiest extension.
+## Let the design choose the next slice
 
-After a proof, update the governing design's evidence and decision status before promoting the implementation as a
-foundation. If it overturns a structural assumption, revise that assumption and affected contracts before adding
-dependent features. Distinguish implementation defects, representation limits and changed requirements. Small local
-fixes that preserve the design stay local; they do not require a new architecture exercise.
+- **Choose by risk and dependency.** Pick the next slice by architectural risk and dependency, not by what extends
+  the latest demo most easily. Name the requirement or decision it tests, the affected consumers and what would reject
+  it.
+- **Update the design after each proof.** Do this before treating the code as a foundation. If evidence overturns a
+  structural assumption, revise the design and affected contracts before building dependent features. Small local
+  fixes stay local.
+- **Build the core behaviour and its consumers together.** Build the defining behaviour together with its important
+  consumers before widening regimes or generalizing infrastructure. A diagnostic stub may exercise plumbing, but its
+  real replacement stays on the critical path.
 
-## Commission a complete interaction
+## Make the first visual checkpoint real
 
-Carry the chosen operating model into the proof: runtime mechanisms, prepared content, authoritative state, derived
-detail and comparators retain explicit roles. Start from the saved system design and its worked interactions. If a
-required producer, query or feedback contract is missing, resolve that design gap before substantial construction
-depends on it. Select a bounded interaction that exercises the consequential handoffs; define observed outcomes,
-conditions and rejection criteria. Trace outcomes to producers and consumers before dividing work.
+- **Render the interaction itself.** The first promised visual checkpoint is a rendered interaction with the required
+  cue visible. A solver or geometry inspector is a diagnostic.
+- **Exercise the shipped path.** Use the selected runtime path, configuration and budget. An offline or high-sample
+  look shows what's possible; it doesn't show the product.
+- **Supply what the judgement needs.** Provide the content, references and surroundings needed to judge at the
+  intended distances and speeds, and reject inadequate content before expensive preparation.
+- **Rebuild before reusing evidence.** When a source or recipe changes, rebuild the affected products and recheck the
+  loaded artifact before carrying evidence forward.
 
-Carry the reviewed capability inventory into the build. Track required capabilities and consequential connections
-through implementation and actual proof, keeping planned evidence distinct from demonstrated results. A bounded first
-slice may cover a subset; it cannot establish completion of the whole commissioned capability set.
+## Make the model produce the behaviour
 
-Build the defining behaviour and its important consumers together before expanding regimes or generalizing infrastructure.
-Supply the reference material, authored content and surroundings needed to judge it at intended distances and speeds.
-Reject inadequate content or dynamics before expensive preparation and integration. Missing content or coupling is
-implementation work, not automatically future polish. A diagnostic stub can exercise plumbing without qualifying the
-behaviour it replaces; keep its replacement on the critical path. Narrow the proof's scale rather than removing the
-interaction that could expose an incompatible representation. Correct design assumptions exposed by the running
-proof and carry those corrections through affected consumers.
+- **Drive simulated behaviour with its real drivers.** Use established relationships and real inputs. A correct
+  solver with invented inputs, or amplitudes set by hand-tuned gains, still gives the wrong experience. Authored
+  effects are legitimate when their role and limits are stated.
+- **Ask whether the model can produce a cue before tuning it.** When a cue stays missing or weak, check the model
+  ([system diagnosis](system-diagnosis.md)). If it can't produce the cue, replace the mechanism and keep the
+  independently qualified parts. Raise resolution, sample counts or preparation cost only when they address the
+  identified failure.
+- **Test the joins.** Test transitions and overlaps between representations, bands and levels of detail, not only
+  each part's resolution. Use [system diagnosis](system-diagnosis.md) to separate an implementation error from a
+  missing or incompatible model.
+- **Keep the code where it belongs.** Keep pure calculation, GPU work and orchestration with their owners. Share
+  invariant data and contracts rather than duplicating formulas or keeping competing producers alive.
 
-Make the first promised visual checkpoint an actual rendered interaction with the required cue visible; label a solver
-or geometry inspector as a diagnostic. Exercise the prepared product and runtime path the plan selected, rather than
-accepting a tool's own output as proof that its consumer works. When a source or recipe changes, rebuild the affected
-products and recheck the loaded artifact before carrying forward visual or performance evidence.
+## Look, measure, review
 
-## Make the governing model produce the behaviour
+- **Look at the output yourself.** Watch stills and motion against the cues and references, including normal motion,
+  starts and stops, turns, camera and scale changes, and quality transitions. Judge at the player's camera, distance and
+  real frame rate, side by side with the reference; close inspection views and offline-paced clips are diagnostics.
+  Tests and source review don't replace looking.
+- **Vary the suspects.** When a defect persists, vary the variables that could plausibly cause it; don't hold them
+  fixed across trials. Time-box spikes with a kill criterion, and give each a fair push before calling it.
+- **Get independent visual review.** Have a reviewer judge the images and sequences, and record the result as
+  `agent_reviewed`. Say plainly when output is poor. Owner feedback steers later slices; it is never a pause.
+- **Tie evidence to the build.** Tie captures and timings to the actual loaded build, inputs and quality state.
+- **Measure cost on the assembled path.** For performance-sensitive work, follow [performance](performance.md),
+  ending with an assembled measurement. Label timings taken on a shared, contended GPU as such.
+- **Review, fix, recheck.** Use [review](review.md) for design, code, output and performance claims. Resolve
+  actionable findings, then check whether a fix weakened another cue.
 
-Use established relationships for behaviour meant to be simulated, including driving inputs, coupling and time
-response. A correct solver with invented inputs can still produce the wrong experience. Do not reverse-engineer a
-convincing still with arbitrary animation and call it physical validation. Authored effects and approximations are
-legitimate when their roles and limits preserve the defining behaviour.
+Deliver:
+- the result;
+- what was verified, with evidence;
+- the measured cost;
+- what remains unqualified or failed.
 
-Check that inputs, operator support and reconstruction jointly span the required scales, times and conditions.
-Prepared content needs a rebuildable artifact, declared range and active consumer. Test transitions and overlap
-between representations, not merely each component's resolution. When a visual or interaction fault appears, use
-[system diagnosis](system-diagnosis.md) to distinguish an implementation error from a missing or incompatible model.
-
-Keep pure calculations, render/resource work and orchestration under their intended owners. Share invariant data and
-contracts rather than duplicate formulas or keep competing production producers alive. A small helper with a precise
-role can remove hot-path work without creating a framework. Replace the combination when evidence overturns it;
-repeated local tuning is not a substitute for a sound operating model. After a failed proof, identify the failed
-assumption and the evidence a proposed change should affect. Raise resolution, sample counts or preparation cost
-only when they address that failure. If the mechanism cannot produce a required cue, replace that mechanism while
-retaining independently qualified parts and useful reference tools.
-
-## Validate experience and cost
-
-Use focused invariants and independent producer/consumer checks for correctness, then inspect the assembled outcome
-against the defining cues and plausible-wrong counterexample from the proof plan. For changing structure, compare
-local development and disappearance as well as persistent identity; reprojection can be correct while the underlying
-evolution is absent. Include ordinary motion, source changes, shutdown/restart, camera/scale changes and quality transitions
-where they matter. Local lifecycle changes such as resize, resource loss or capability fallback must preserve the
-relevant contract; unavailable paths remain unqualified rather than silently passing.
-
-Verify that captures and timings belong to the actual loaded build, commissioned inputs and quality state. A local
-source hash alone cannot establish which application the browser ran. Retain source/artifact identity and fixture
-conditions with meaningful evidence. Do not silently relabel earlier results after source changes.
-
-For performance-sensitive work, execute the [performance workflow](performance.md), including a final assembled
-measurement after integration. Mathematical equivalence, a faster helper and fewer submissions each prove something
-different; none substitutes for usable frame pacing and preserved experience.
-
-Use [review](review.md) for design, implementation, experienced output and performance claims as appropriate. Resolve
-actionable findings, verify consequential resolutions independently when available, and rerun affected checks. Check
-whether a fix weakened another required cue. Visible output passes agent visual review on the named target:
-automated image checks, your own inspection of stills and a sequence, and an independent reviewer agent; record it as
-`agent_reviewed`. Tests and source review do not substitute for looking at the output. Owner feedback steers later
-slices and is never a pause.
-
-Continue commissioned work through running, inspection and correction. Deliver the result, meaningful verification,
-measured cost and remaining limits. Separate a bounded prototype from full-regime delivery, and unrun qualification
-from a known failed requirement. Preserve unrelated work and follow the repository's commit/push conventions at
-coherent, verified checkpoints; skill use itself grants no additional external-action permission.
+Keep a bounded prototype distinct from full-range delivery, and keep unrun qualification distinct from a known failure.
+Unavailable paths (a fallback, a device, a resource-loss case) stay unqualified; they don't silently pass. For
+evolving structure, check local development and disappearance, not only persistent identity. Commit and push verified checkpoints according to the
+repository's rules, and preserve others' work. Using this skill grants no extra permission for external actions.

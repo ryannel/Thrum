@@ -1,186 +1,131 @@
-# Blue-sky research and design
+# Research and design
 
-## Connect the commission to the engine
+The outcome is a saved design that another implementer could build from without inventing a core mechanism. Each
+defining behaviour is traced from its driver to what the player sees, and is shown to work across the full range the
+module must serve.
 
-Start with the engine brief's required experiences, module responsibility, external consumers and budget. Resolve
-missing context only as far as it affects this module; use [engine architecture](../../engine-architecture/SKILL.md)
-for whole-engine questions. A proposed boundary change belongs in both the engine brief and the module design.
+## Start from the experience, not the code
 
-Use one canonical design as the current recommendation. Research notes and experiments support it. Track requirement
-coverage, decision status, implementation and proof separately; a researched or implemented component is not an
-accepted system. Scope changes update this design and its queue, not only the latest experiment's README.
-
-When the engine serves multiple games, cover contrasting supported profiles and their important combinations.
-Specify required/optional dependencies, substitutes and disabled-resource behaviour, including consumers that need
-an effect without its visible source. Prove these boundaries alongside the most demanding enabled configuration.
-Keep research challengers distinct from the reliable default until their complete interaction and costs qualify.
-
-## Define the experience independently
-
-Describe observable success, consequential interactions, conditions and transitions. Separate requested requirements,
-preferences, assumptions and stretch goals. Save the independent target before inspecting existing module code or old
-technical plans. If already exposed, disclose that limitation and use a separate requirements brief and external
-evidence rather than claiming a blind study. Read repository/product instructions relevant to the decision.
-
-Itemise the module's capability inventory from the brief and representative use cases before selecting techniques.
-List observable outcomes rather than subsystem names. Include required presentation, dynamics, queries, interactions,
-authoring/control and lifecycle/operating conditions where relevant. Use these as discovery prompts, not a universal
-feature checklist. Distinguish explicit requirements, necessary implications, assumptions, optional extensions and
-exclusions; inferred scenarios must not silently become product requirements.
-Split entries when their outcomes have different requirement bases instead of labelling a mixed bundle as required.
-
-Discover dependencies through inputs → evolving state → representations → consumers and feedback. Give capabilities
-stable references and a compact coverage account: requirement basis and observable success, selected mechanism/owner,
-important dependencies or coupled consumers, and planned proof plus actual status. A table is useful; use the smallest
-format that keeps omissions visible. Keep undecided mechanisms explicit during discovery, then close required design
-gaps before substantial construction. Research support, implementation and demonstrated quality are separate states.
-Scale detail to the commissioned stage: a preliminary inventory may leave mechanisms provisional and research pending;
-that does not satisfy the later build-ready design criterion. Do not turn capability discovery into a compulsory
-literature survey or implementation exercise.
-
-Use an independent subagent, when available and authorized, to derive missing capabilities from the original brief
-and use cases, rather than only checking the author's inventory; follow [review](review.md). Reconcile its discoveries
-into the inventory and design.
-Maintain coverage when requirements, assumptions or fidelity change. Revisit sparse paths independently of where the
-bibliography is largest. Similar appearance need not imply shared dynamics or ownership.
-
-Translate broad words such as realistic, coherent or evolving into indispensable observable cues. If the user relaxes
-physical fidelity, revise methods and validation burden while preserving their remaining experience requirements.
-An honestly labelled approximation can still fail the commissioned result.
+- **Connect to the engine.** Take the required experiences, responsibility, consumers and budget from the engine
+  brief. Use [engine architecture](../../engine-architecture/SKILL.md) only for questions that cross module
+  boundaries. A proposed boundary change goes into both the brief and the module design.
+- **Write the target before reading existing code or old plans.** If you have already seen them, say so; don't claim
+  a blind study.
+- **List outcomes, not subsystems.** Inventory what must be observable: presentation, dynamics, queries,
+  interactions, authoring and lifecycle. For each, record its basis: explicit requirement, necessary implication,
+  assumption, option or exclusion.
+- **Turn broad words into cues.** Words such as "realistic", "natural" or "convincing" become specific cues: a Kelvin
+  wedge that keeps its angle as the boat slows, a darker flat cloud base at the condensation level, foam that persists
+  and decays.
+- **Make each cue readable where it's used.** It must read at the intended camera, distance and speed. A physically
+  calibrated effect that the player can't see fails the cue.
+- **State the operating range for each cue.** Give scales, speeds, distances, lighting and transitions (for example
+  start, stop, turn, resize, device loss, or load and unload). For a module meant to grow, such as water from puddles
+  to oceans, choose representations that extend to the far end without a rewrite. Build and prove only the
+  commissioned scope, though, and give neighbouring systems explicit contracts, not unsolicited implementation.
+- **Use a reviewer to find what you missed.** Where delegation is available, give a fresh subagent the brief alone
+  and have it derive the capabilities independently ([review](review.md)), then reconcile its findings.
 
 ## Research the decisions that matter
 
-Research is followed by analytical synthesis, not an open-ended search through prototypes. Derive the state,
-operators, invariants, approximation regimes and consequential error/cost behaviour of the recommended design.
-Use published results and domain mathematics to resolve representation choices as far as they allow. Identify
-which uncertainty genuinely requires measurement, what the design predicts, and how a contrary observation would
-change it. Do not defer missing producers or essential coupling under a promise to experiment later.
+Prefer current primary sources:
+- papers and supplements;
+- author code;
+- shipped-game talks and developer articles;
+- official engine documentation and source.
 
-Use current primary papers, supplements, author implementations, developer-authored technical articles and white
-papers, substantive conference material and official engine documentation/source. Research competing whole-system
-approaches as well as component algorithms. Search recent successors and credible competitors, then trace useful lineage. Reuse retained
-substantive research; update decisions where recency or uncovered responsibilities matter. Novelty alone is not a
-selection criterion. Stop expanding a covered topic when more sources would not change a decision or resolve a
-consequential uncertainty.
+Search for recent successors and competing whole-system approaches, not only component algorithms.
+- **Read sources substantively.** Cite the slide, page or timestamp, and say what you actually inspected. A title or
+  abstract supplies no algorithm.
+- **Trace reference code end to end.** Pin the revision and follow the actual producer and consumer path. Record the
+  licence. Restrictive-licence code may inform ideas only: copy nothing. No GPL or share-alike code or data.
+- **Prefer the modern technique.** An older method needs a stated reason that it beats the current one here. Existing
+  code, including a better-looking earlier prototype, is a look bar, not a technique choice. It may be heavy or wrong
+  by design.
+- **Stop when more sources would not change the decision.**
 
-Inspect conference recordings, slides or detailed transcripts substantively. Cite useful timestamps, slides/pages or
-passages and their design consequences. State what was actually inspected; slides are not a watched recording. An
-inaccessible title or abstract does not supply an algorithm. Try legitimate author/institutional copies for important
-access gaps, then record their effect on the decision.
+Keep a compact evidence account for each consequential choice:
+- the alternatives considered and why this one was chosen;
+- the sources and what was inspected;
+- the assumptions and cost conditions;
+- what would change the decision.
 
-For accessible reference code, pin the revision and inspect the actual producer, consumer and preparation paths that
-matter to the choice. Record the supported configuration, licence, reusable algorithm or contract, and what remains
-undisclosed. Translate source findings into the proposed design; a repository link or feature demo alone is not
-implementation evidence for an entire production system.
+## Check the mechanism before you invest in it
 
-Retain a compact evidence account for consequential choices:
+For every defining cue, show that the chosen mechanism produces it across the stated operating range. Use analysis, a
+published result or a small numerical reproduction: a short CPU script of the core equations is often the cheapest
+decisive evidence. Then ask:
+- **Does the behaviour hold across the range?** Check that it still holds as speed, scale or lighting changes, not only
+  at the demo point.
+- **Is each amplitude derived from physical inputs?** Mass, draft, velocity, depth and optical density should set it,
+  not a hand-set gain or a constant that changes with grid resolution.
+- **Do the boundaries behave?** Shores, obstacles and domain edges must reflect, absorb or hand off. They must not
+  wrap or vanish.
+- **Will it compose?** It must layer with the module's other regimes, such as swell plus wake, or procedural plus
+  baked clouds, without replacing them.
+- **Can it run within the shipped budget?** A look that exists only in an offline or reference configuration is a
+  comparator, not a design.
 
-- Choice, affected experience, credible alternatives and selection reason.
-- Primary links, useful locators, version/date and material actually inspected.
-- Assumptions, applicability, cost conditions, evidence maturity and adaptation.
-- Remaining uncertainty, what would change the decision and a discriminating experiment where needed.
+A cue the mechanism can't produce is a design defect. Change the mechanism; don't plan to tune it in later.
 
-A broad engine document or governing law does not establish every algorithm under its heading. Distinguish disclosed
-methods, mathematical deductions, authored choices and unrun qualification. Published demonstrations, shipped practice
-and proposed combinations support different claims. Depth follows consequence and uncertainty, not equal paper counts.
+A reproduction or experiment tests a stated prediction or settles an uncertainty that analysis can't. It doesn't stand
+in for a missing design. Analytical confidence doesn't turn unrun numerical, perceptual or device measurements into
+passed evidence; keep those visible as unrun.
 
-Investigate major engines as systems where relevant: state/resource owners, preparation, streaming, scheduling,
-consumers and invalidation. Compare their content, camera, world and hardware constraints with the brief. Published
-limitations and disabled capabilities are design evidence. A demonstrated result may depend on prepared content,
-artist intervention or an undisclosed subsystem; identify that dependency rather than assigning the whole result to
-one component. Rendering moving detail, for example, does not establish structural evolution.
+## Design the whole system as it will run
 
-## Design how the whole system works in practice
+Choose the governing relationships, state, representations, owners, update order and public contracts, including
+prepared content and authoring. Prefer combinations already proven in production; justify departures. Credible
+individual techniques do not establish that they work together.
 
-Choose governing relationships, drivers, state, representations, ownership, update order and public contracts, including
-prepared content and authoring. Prefer demonstrated production combinations where they fit; justify consequential
-departures. Individually credible techniques do not establish compatibility.
+- **Causal chain.** For each defining behaviour, connect driver → state change → operator → representation →
+  observed response. Fill publication gaps with explicit, testable deductions. Naming a governing law is not a
+  mechanism.
+- **Handoffs.** For each consequential connection, name the quantity, its producer and consumers, units, frame,
+  timestamp, sampling and normalization. Assign every contribution exactly once across normal, bypass and fallback
+  paths. A surface can look right while contact queries describe a different surface.
+- **Roles and placement.** Give authoritative state, derived detail, prepared content and reference comparators
+  explicit roles. Choose each consumer's fidelity, update rate and CPU or GPU placement. Shared causes don't require a
+  universal solver.
+- **Worked cases.** Walk the initial state, a normal frame, a coupled interaction and a consequential transition or
+  failure in execution order. Estimate the combined cost with the important consumers active together.
+- **Creator journey.** Trace an editable source through preparation, versioned products, loading and observation. Then
+  change the source and trace what rebuilds, invalidates or resets.
+- **Shared owners.** Name one owner for each kind of state. Check the engine's existing owners (for example the one
+  sky, the frame contract and the capability registry) before creating a parallel one.
+- **Reuse.** For a reusable module, cover the supported capability profiles and their important combinations, and
+  optional presentation versus the services other consumers keep. State the disabled cost, and how a game registers,
+  replaces or removes the module through the engine's composition model. A flag that hides output while all the work
+  continues is not modularity.
 
-Save this design before substantial implementation. Cover all required responsibilities together, including nonvisual
-queries, interactions and feedback, rather than completing the most visible component and leaving its neighbours as
-future integration. Bound the design to the commissioned experience; external systems need explicit contracts, not
-unsolicited implementation. A subsystem inventory, bibliography or boxes-and-arrows diagram alone is insufficient.
+Keep one canonical design. Track each decision's status (proposed, provisional, selected, superseded) separately from
+implementation and proof. Experiments link back to the design rather than becoming competing targets.
 
-Complete the causal chain with domain knowledge where publications leave gaps. For each defining behaviour, connect
-its driver, state change, mathematical operator or authoring operation, representation and observed response. Derive
-consequential couplings and time/length scales. Identify published, inferred and authored links, with a discriminating
-proof for uncertain ones. Equations need sufficient inputs, boundary conditions and closure assumptions to explain
-the response; naming the governing law is insufficient. Do not claim this synthesis reveals private engine internals.
+The design is build-ready when an implementer can follow the worked cases without inventing a core algorithm,
+coupling or convention. Tuning values and bounded feasibility questions may stay open, labelled as such. For a
+substantial design, try building a hard component on paper from the saved text, and resolve each point where you
+would have had to invent something.
 
-Assign authoritative state, derived detail, prepared content and reference comparators explicit roles. Name actual
-producers behind downstream inputs; base state does not automatically supply every required quantity. Select each
-consumer's fidelity, update rate and CPU/GPU placement. Shared causality does not require a universal solver or make
-every rendered detail authoritative.
+## Plan the proof around what could invalidate the design
 
-For consequential connections, specify the actual input/output quantities or queries, their producing/consuming owners,
-and the mathematical relationship or operation that joins them. Describe how consumers refer to the same event,
-location and time, including any inverse lookup or reconstruction. When representations differ, state which
-differences are acceptable and how consistency is maintained. A surface can look correct while contact queries or
-interaction-generated disturbances describe a different surface.
+- **Prove the riskiest behaviour first.** Put the least-established defining behaviour first: before broad
+  infrastructure, content production or polish.
+- **Make the first proof a small complete experience.** Use real consumers, representative inputs, normal
+  presentation and the intended distances and speeds. Shrink the world or content count, but keep the interaction that
+  could break the model.
+- **Name a plausible wrong substitute and the observation that rejects it.** For example, a single-speed wave equation
+  can pass a still-image check at one speed, but it fails a check of wake angle against speed.
+- **Check structural change, not its presentation.** For evolving structure, such as clouds growing and breaking up
+  or foam forming and decaying, separate transport, deformation, creation, destruction and changes in connectivity.
+  Moving texture, an age label, a global scale or a fade doesn't show them, and correct reprojection can hide absent
+  evolution.
+- **Check motion with motion.** A still cannot qualify motion. Normal speed shows pacing; accelerated speed shows
+  repetition and missing development.
+- **Separate error sources.** Distinguish missing-model error from sampling error: more resolution cannot supply an
+  absent mechanism.
 
-Check handoffs for definitions, units, signs, coordinate frames, normalization, support, timestamps and sampling.
-Preserve necessary identity and local relationships as well as totals. Assign contributions exactly once across
-ordinary, bypass and fallback paths. Define cache validity and failure behaviour. Use [system diagnosis](system-diagnosis.md)
-for consequential reconstruction or integration risks, and [performance](performance.md) for practical cost controls
-and ranked reductions. Unknown hardware can defer numeric certification, but not a viable reduction strategy.
+Keep deferrals explicit: a bounded first slice can't establish the whole commissioned set, and a deferral doesn't
+quietly shrink the deliverable.
 
-Work through representative operating cases in the saved design: initial state, a normal step/frame, a coupled
-interaction and a consequential transition or failure. Trace inputs, queries, state updates, feedback, derived data
-and observed outputs in execution order. Resolve circular dependencies, timestep differences, CPU/GPU transfers,
-latency and invalidation where they affect behaviour. Estimate combined work/residency with the important consumers
-active together; individually affordable components can exceed the assembled budget.
-
-The design is detailed enough when another implementer can follow these cases and explain what each consumer reads,
-what changes next and why the results agree, without choosing a missing core algorithm or coupling contract. Resolve
-structural choices upfront; tuning values and bounded feasibility uncertainties may remain explicit. Use small probes
-to settle such uncertainties, then update the design. Do not require perfect predictions or exhaustive pseudocode,
-but do not defer an essential mechanism under a capability name or a promise to integrate later.
-
-Trace one creator journey from editable inputs through preparation, validation, versioned products, runtime loading
-and observation. Then change a source recipe or provider and trace what rebuilds, invalidates, persists or resets.
-Name the real tools and output contracts where known; label proposed tools as unbuilt. A runtime diagram is incomplete
-when essential content cannot be produced, rebuilt or delivered, or when a test consumes a different product than the
-shipping path. Scale this journey to the module: procedural content may have no offline bake, but still needs a
-reproducible source and configuration lifecycle.
-
-For a substantial build-ready design, dogfood the saved plan from the implementer's side for a difficult component
-or coupled interaction. From the written design, list concrete inputs, operations, outputs, first fixture and failure
-conditions; record where a developer must invent a law, representation, coordinate or time convention, handoff or
-dependency. Resolve those choices in the owning design and contracts, then reread the revised instructions. Keep the
-original gaps visible; new answers do not prove the earlier plan was complete. This is a build-readiness check, not
-an implementation or proof claim.
-
-Check the design against every required capability and consequential connection, including reviewer discoveries.
-An impressive worked case must not conceal an unowned requirement elsewhere. Deferrals remain explicit and do not
-silently reduce the commissioned deliverable; whole-system acceptance requires its required capabilities to pass.
-
-Keep the target distinct from the first proof and constrained profiles. Coding effort or migration convenience alone
-is not a reason to weaken it. Retained research must have an explicit adopted contract and present role; earlier
-qualification does not automatically transfer to a new assembly.
-
-## Prove what could invalidate the design
-
-Put the least-established defining behaviour on the critical path, ahead of broad infrastructure or costly content
-production. Choose a small complete experience with consequential consumers, representative inputs, ordinary
-presentation, intended distances/speeds and explicit rejection criteria. When content is uncertain, inspect a prepared
-sample before a larger bake; when coupling is uncertain, include that coupling in the proof.
-
-Derive the proof from the worked interactions. Reduce world size, content count or regime breadth while preserving
-the required connections. Isolated component tests support this proof; they cannot replace observing the components
-responding to the same interaction together. Keep any unexercised required connection explicitly unqualified.
-
-Name a plausible wrong substitute that could pass the proposed checks while missing the goal, and the observation
-that rejects it. A still cannot qualify motion; global conservation does not establish local behaviour. For evolving
-structure, distinguish transport, deformation, creation/destruction and connectivity changes where relevant. An age
-label, global scale or fade is insufficient evidence of those changes. Normal speed establishes pacing; accelerated
-speed can reveal repetition, discontinuities and absent development. Neither alone qualifies the other.
-
-Use governing identities, independent formulations, measured references and perceptual comparisons where they
-discriminate plausible errors. Two evaluators sharing an omission cannot bound it. Separate missing-model error from
-sampling/reconstruction error: refinement cannot supply an absent mechanism. Bound expensive qualification to the
-uncertainty it can resolve, and label proposed thresholds as proposals.
-
-Save the recommendation, evidence account and dependency-ordered proof/build plan before [review](review.md). Keep
-current-code inventory and migration advice separate. Design is ready when consequential paths have justified
-mechanisms or genuine explicit limits, and remaining qualification has candidates and rejection rules. Continue
-through implementation when commissioned; research alone does not authorize building the proposal.
+Save the recommendation, evidence account and dependency-ordered proof plan, then continue into
+[implementation](implementation.md) if the build was commissioned.

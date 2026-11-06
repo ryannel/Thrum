@@ -1,54 +1,66 @@
 # Diagnose a fault at its system boundary
 
-Use when an artifact, mismatch or unstable interaction might come from inconsistent representations, ownership or
-integration. Seek the smallest sound correction to the general system; a local bug can still have a local fix.
+Use this when an artifact, mismatch, weak cue or unstable interaction might come from the model, the representation,
+ownership or integration rather than from a local bug. The outcome is a correction at the responsible layer that
+restores the intended behaviour, verified across its consumers. A local bug can still have a local fix.
 
-## Isolate cause without confusing isolation with repair
+## Find the cause before changing parameters
 
-Reproduce with known inputs and build identity. Hold state, camera, lighting or presentation constant as useful;
-separate a local appearance jump from an application-wide hitch. Compare intermediate state and output, not only the
-final image. Controlled ablations can isolate a contribution without proving that deleting it satisfies the design.
+- **Reproduce first.** Use known inputs and a known build. Hold the camera, lighting or presentation constant where
+  that helps, and compare intermediate state, not only the final image. Separate a local appearance jump from an
+  application-wide hitch.
+- **Ask whether the model can produce the missing behaviour at all.** Reproduce the core equations outside the engine,
+  for example in a short CPU script with the shipped constants, and compare the result with the cue and a reference.
+  This often settles in minutes what visual iteration doesn't settle in hours.
+- **Trace the path.** Follow it from source through state, transforms, reconstruction and composition to every
+  important consumer. Ask who owns the quantity and whether another path derives a conflicting version. A visible
+  fault can start upstream in support, timing, encoding, sampling or resource lifecycle.
+- **Look for one shared cause.** When several symptoms appear together, such as a weak wake, no wake when turning,
+  sudden starts and stops and missing foam, look for a common cause before fixing each one: a frozen input, a pinned
+  domain, a filter cancelling the signal, or state that stops updating after a hitch.
+- **Classify the failure:**
+  - an implementation mistake;
+  - a missing or incompatible mechanism;
+  - missing input or content;
+  - calibration;
+  - a representation or scale error;
+  - a presentation fault;
+  - a lifecycle fault (hitch, reset, resize, device loss).
 
-Trace the suspect path from source through state, transforms, reconstruction and final composition to all important
-consumers. Ask who owns the quantity, which assumptions it needs, and whether another path derives a conflicting
-version. A visible shader fault can originate in upstream support, timing, encoding, sampling or resource lifecycle.
+  Correct it at that layer. Damping a response, turning a term off or adding noise can isolate a defect or hide it;
+  keep such a change only if it restores the intended contract.
+- **Bound the next experiment.** After a negative result, choose a bounded experiment that can change the responsible
+  decision. Don't run a more expensive version of the same test. More resolution can't supply an absent mechanism or
+  fix another quantity's calibration.
 
-Classify the failure: implementation mistake, unsupported model/combination, missing input/content, calibration,
-representation error or presentation fault. Choose a correction at that responsibility. Turning a term off, changing
-axes, adding randomness or damping a response may isolate or conceal a defect; retain such a change only when it
-restores the intended contract or legitimately removes an unneeded contribution.
+## Make shared representations explicit
 
-Ask whether the present model can produce the missing behaviour at all before tuning its parameters. Separate a
-missing mechanism from an unresolved scale, inadequate driving content and an optical/presentation mismatch. Compare
-them under held conditions; increasing spatial detail cannot supply absent time evolution or correct a different
-quantity's calibration. After a negative result, choose a bounded experiment that can change the responsible design
-decision rather than repeating a more expensive version of the same test.
+For each quantity that crosses a boundary, state:
+- its source or band;
+- units and coordinate frame;
+- spatial and temporal support;
+- physical time;
+- encoding;
+- composition rule;
+- each consumer's fidelity.
 
-## Make the representation contract explicit
+Where consumers must agree, use one authority. Others may approximate it within a stated bound.
 
-For shared quantities, identify source/band identity, units and coordinate frame, spatial/temporal support, physical
-time, transfer encoding, composition rule and consumer fidelity. Use one authority where these quantities must agree;
-different consumers may approximate it with a stated bound. Do not force all appearance detail into simulation.
+- **Derived quantities follow their source.** Displacement and its shading differential need compatible derivatives.
+  A changing frequency needs an integrated phase.
+- **Detail is resolved, filtered or statistical; never counted twice.** Filtering one representation may need a
+  matching statistical response in another. Never count a contribution twice, or amplify unresolved detail until it
+  resembles the target.
+- **Shared resources live where they're reused,** for example as a view or frame service, not allocated by every
+  instance.
 
-Derived quantities must follow the represented object and its transformations. For example, a geometric displacement
-and its shading differential need compatible derivatives; localization of a field needs product-rule terms, and
-changing frequency needs an integrated phase rather than applying the new frequency to all elapsed time. Specify
-Jacobian/normal transformations for vector charts instead of assuming every surface is a heightfield. These are
-examples of consistency requirements, not a prescribed representation for every module.
+## Verify the correction
 
-Check retained and unresolved detail across pixel, mesh, solver and query scales. Filtering one representation can
-require compensating statistical response in another; do not count the same contribution twice or amplify unresolved
-detail until it resembles the target. Legitimate independent authored/statistical detail should declare its role
-rather than masquerade as a physically simulated quantity. Shared resources belong at the scope of reuse—such as a
-view/frame service—rather than being allocated independently by every feature instance.
-
-## Verify the correction across consumers
-
-Select tests that expose the broken relationship, with an analytic or independent reference when meaningful. Exercise
-relevant rotations/transforms, physical time, source tails, mixed contributions, resolution changes and fallback paths.
-Compare ordinary output and motion as well as differential/transfer correctness. Distinguish bounded sampling error
-from exact evaluator agreement; two agreeing evaluators can share the same mistake.
-
-Reinspect adjacent consumers and measure resulting cost. Record what the ablation established, why the final repair
-preserves the design, and which broader integration remains unproved. A generalized contract does not itself deliver
-every regime or justify an unnecessary rewrite.
+- **Test against a reference.** Write tests that expose the broken relationship, with an analytic or independent
+  reference where one is meaningful. Two evaluators that share an omission can't bound it.
+- **Exercise the conditions.** Cover transforms, physical time, source tails, mixed contributions, resolution
+  changes, hitches and fallback paths.
+- **Look again in motion.** Re-inspect the ordinary output in motion and the adjacent consumers, and measure the
+  cost.
+- **Record what you learnt.** Record what the ablation established, why the repair preserves the design, and what
+  remains unproved.

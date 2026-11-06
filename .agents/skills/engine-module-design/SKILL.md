@@ -1,83 +1,98 @@
 ---
 name: engine-module-design
-description: Research, design and prove new or substantially redesigned game-engine modules against requirements and shared contracts.
+description: Use when designing or substantially redesigning a Thrum engine module (choosing its technique and representations, then proving them) or reconciling an existing or ported module with its target. Not for ordinary fixes inside an existing design.
 ---
 
-# Engine Module Design
+# Engine module design
 
-Design the complete required module, then build and prove it in increments governed by that design. Select foundational
-representations against all required behaviours and external contracts, not the first attractive demonstration.
+**Outcome:** a module whose chosen mechanisms produce every required behaviour across the range it must serve, at a
+cost that fits the shipped configuration. It is proven in the running engine and described by one governing design.
 
-## Start at the right scope
+You choose the techniques. Research current practice, decide, build, check the result and change course when the
+evidence says so. For whatever was commissioned (design only, or design through build), continue through running,
+inspecting and correcting without adding approval stops. Research alone doesn't commission a build. Only the actions
+[AGENTS.md](../../../AGENTS.md) reserves for the owner need the owner.
 
-Use the engine architecture brief as the module's commission: game requirements, responsibility, neighbouring systems,
-budget, consequential interactions and design maturity sought. If these are unresolved, clarify the relevant boundary
-using [engine-architecture](../engine-architecture/SKILL.md). A bounded module task needs only its relevant engine context;
-an ordinary bug fix does not require redesigning the engine. Discovery and research alone do not commission a build.
+## What good looks like
 
-For reusable engines, design against supported capability profiles and combinations. Separate optional presentation
-from services other consumers retain. Specify dependencies, provider substitutions, disabled cost and configuration
-lifecycle; a feature flag that hides output while retaining all work is not a complete modularity contract.
-When a module is extensible or pluggable, define its developer-facing registration, component/system contribution,
-compatibility and removal contract. Show how a game uses or replaces it without importing private implementation or
-creating another state authority; inherit the engine's composition model rather than inventing a local plugin framework.
+- **Each defining behaviour is shown to work before it's built on.** Analysis, a published result or a small numerical
+  reproduction shows the mechanism produces it across the operating range, not only at the demo point. An experiment
+  tests a stated prediction; it doesn't stand in for a missing design.
+- **It's judged as it ships.** It is judged at the shipped configuration, budget, camera and frame rate. Offline,
+  high-sample or close-inspection results are references and diagnostics.
+- **It's driven by real causes.** Simulated responses come from physical inputs, not hand-set gains or constants
+  tied to a grid size. Authored exaggeration is legitimate when its role is stated and kept separate from the physical
+  quantity.
+- **It can grow.** Representations can extend to the module's far end (puddles to oceans, near clouds to the
+  horizon) without a rewrite. Fixed domains, constant depths and wrapping edges won't do. Build only the commissioned
+  scope; neighbours get explicit contracts, not unsolicited implementation.
+- **It has one owner per kind of state.** It uses the engine's existing owners: the one sky, the frame contract, the
+  capability registry and cooked products. Shared [C4 contracts](../../../docs/design/CONTRACTS.md) are agreed with
+  their producers and consumers.
+- **It has been checked by eye.** Visible output was watched in motion against references and judged by an independent
+  reviewer ([visual review](../../../docs/design/AI-DEVELOPMENT.md#visual-review-and-human-steering)). Owner feedback
+  steers; it is never a gate.
+- **It's performant by design.** Best-practice foundations, tripwires, tuning later ([performance](references/performance.md)).
+- **Its status is honest.** Research, implementation, correctness, visual quality and device measurements are recorded
+  separately in the [maturity ledger](../../../docs/design/maturity.json). Unrun or unavailable paths stay
+  unqualified; a failure stays open.
 
-Choose the target independently of existing implementation, using research, production practice and domain knowledge.
-Then reconcile existing code with that target. Previously encountered code is not a reason to claim blind independence.
+## Failure patterns this engine has already paid for
 
-## Load the relevant workflow
+- **Tuning a mechanism that can't make the cue.** Hours of gain, resolution, foam and shading work went into a wake
+  whose wave model could not form a Kelvin wedge at varying speed. A short CPU reproduction showed it. When a cue stays
+  wrong after tuning, question the model.
+- **Correct but invisible.** Physically calibrated wakes and foam came out true to scale and unreadable at the game
+  camera. A cue must read where the player sees it.
+- **Judged in the lab.** A cloud look judged at seconds per frame shipped as a 288 ms fog. Critics gated on close
+  views and offline-paced clips while the real run stuttered.
+- **Trials that hold the suspect fixed.** Six rounds of horizon-shelf fixes all kept base height, profile and lighting
+  constant.
+- **Swinging between cost-only and look-only work.** Chasing invented budgets before the look existed, then ignoring
+  cost, produced designs that were heavy by design.
+- **Copying the better-looking prototype.** An earlier implementation looked better but was too heavy; it was a look
+  bar, not a technique.
+- **Attractive frames without the behaviour.** Moving texture passed for growth and breakup. A fade or age label is
+  not structural change.
+- **Paperwork displacing the defect.** Notes and qualification grew while the visible defect stayed. Contracts and the
+  ledger still matter; they just don't count as progress on the cue.
+- **Verdicts from descriptions.** Techniques were endorsed from their write-ups and critics' passes were relayed as
+  fact, then proved wrong. Trust reproductions, measurements and your own look.
+- **Idling at self-imposed stops.** Take the reversible option, record the question and continue.
 
-- **Research/design:** [blue-sky research](references/blue-sky.md); use [review](references/review.md) to challenge the proposal.
-- **Compare or replace existing code:** [reconciliation](references/reconciliation.md), using the selected target.
-- **Prototype/build:** [implementation](references/implementation.md), carrying the design into a complete interaction.
-- **Representation or integration faults:** [system diagnosis](references/system-diagnosis.md).
-- **Cost/scaling decisions, runtime budgets, quality tiers or optimization:** [performance](references/performance.md), during design and implementation.
+## Routes
 
-Read only relevant references. Research alone does not commission implementation. When several stages are commissioned,
-continue through running, inspection and correction without adding approval stops.
+Load only the reference you need:
+- **Researching or designing a module:** [research and design](references/blue-sky.md).
+- **Comparing with existing code, or porting in:** [reconciliation](references/reconciliation.md).
+- **Building and proving:** [implementation](references/implementation.md).
+- **A weak behaviour, artifact or integration fault:** [system diagnosis](references/system-diagnosis.md).
+- **Cost, budgets, quality tiers or optimization:** [performance](references/performance.md).
+- **Getting or giving an independent review:** [review](references/review.md).
 
-## Keep one governing design
+Elsewhere:
+- **Boundary and whole-engine questions** go to [engine-architecture](../engine-architecture/SKILL.md). Return
+  contract changes and unresolved dependencies to that owner.
+- **A coordinated programme** follows the [design programme](../../../docs/design/DESIGN-PROGRAMME.md). Report the
+  evidence level you actually reached, and don't claim another module's result as this module's proof.
+- **Code changes** follow [engine-contributor](../engine-contributor/SKILL.md).
 
-Maintain a canonical module design linking requirements, selected mechanisms, external contracts, decisions and proof
-status. Itemise required capabilities and interactions before choosing foundational representations; distinguish user
-requirements and necessary implications from assumptions, options and exclusions. Keep decision status (proposed,
-provisional, selected, superseded) separate from implementation and validation. Experiments and evidence link back to
-this design rather than becoming competing targets.
+## Working permissions
 
-Select a complete operating model, including content and authoring. Explain how its drivers, state and operators
-produce each defining behaviour. Complete gaps in publications with explicit, testable deductions; a capability label
-or governing equation is not a missing producer. Give shared causes clear owners and consumers appropriate fidelity.
-Cohesion does not require a universal solver. Use mathematical and systems knowledge to derive representations,
-coupling, approximation regimes, invariants and cost/error bounds before building. Work through representative
-interactions across the full required scope without inventing missing core mechanisms or interfaces. An experiment
-must test a stated prediction or an uncertainty analysis cannot resolve; it must not substitute for a missing design.
-Keep such gaps explicitly unfinished. Numerical/perceptual/hardware qualification may remain unrun after a reasoned
-design is complete; analytical confidence does not turn those measurements into passed evidence.
+Without asking, you may:
+- research;
+- delegate research or review within AGENTS.md's delegation terms;
+- write throwaway reproductions in `tmp/<task>/`;
+- run local tests, GPU correctness fixtures and captures;
+- change your module's design and code;
+- replace a mechanism the evidence rejects;
+- commit verified checkpoints.
 
-For a substantial build-ready design, walk representative developer and content journeys from the saved plan. Resolve
-consequential choices the implementer would otherwise have to invent; keep unrun qualification visible.
+Push, publish and start a port only as AGENTS.md and the owner allow. Port timing for water and clouds belongs to the
+owner ([port decision](../../../docs/design/decisions/SEA-AND-CLOUD-PORT.md)).
 
-Include a cost account when selecting the module's representation: workload multipliers, repeated work/data movement,
-working set, critical path, alternatives and verification. Investigate frequent cheap operations as well as expensive
-ones. AI can absorb substantial internal complexity when specialization is worthwhile and checkable; hand-editing
-convenience alone is not a selection rule. Use [performance](references/performance.md) for the relevant design or
-measurement stage; a new module does not need an existing implementation to justify its cost-conscious design.
-
-Derive the proof/build queue from architectural risk and dependency. Each slice names the requirement or decision it
-tests, affected contracts and rejection conditions. Prove the least-established consequential coupling early. Reduce
-content count or world extent without removing the interaction that could invalidate the model. Successful local
-experiments qualify only what they exercise; they do not automatically promote their architecture.
-
-When evidence contradicts a structural assumption or a new requirement changes representation needs, revise the
-governing design and affected engine contracts before extending dependent code. Do not preserve a failing foundation
-through successive local patches. Use independent capability discovery and design challenge when available and
-authorized; [review](references/review.md) describes the scope. Visible output needs agent visual review; owner
-acceptance is asynchronous steering, recorded separately and never a gate ([steering](../../../docs/design/AI-DEVELOPMENT.md#visual-review-and-human-steering)).
-
-Keep research support, implementation correctness, experienced quality and runtime viability distinct. An honestly
-labelled failure remains unfinished. Scale investigation to decisions it can change. Correct the responsible model
-or contract; retain qualified parts, but give sunk effort and small diffs no preference over a sound replacement.
-
-For a coordinated module programme, follow the project's [design programme](../../../docs/design/DESIGN-PROGRAMME.md):
-return contract changes and unresolved dependencies to the architecture owner, bound any child study by a decision it
-can change, and report the achieved evidence level. Do not claim another module's conclusion as this module's proof.
+Keep bulk output under the [storage rules](../../../docs/ASSET-LIFECYCLE.md). Record licences and provenance. The
+owner's current policy:
+- Restrictive-licence code may inform ideas only; copy nothing.
+- No GPL or share-alike code.
+- Anything else goes to the owner.
