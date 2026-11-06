@@ -1,60 +1,29 @@
-# G2R consolidated CPU evidence — 5 November 2026
+# G2S CPU evidence — 6 November 2026
 
-Apple M3 Max, release profile, 10,000/100,000 entities with 15% movers. Reproduce the full table with `RUSTC_WRAPPER= cargo bench -p v1-game --bench g2r`; its one process runs 1,000 measured samples per case after warmup. The global counting allocator observes Rust allocations on every thread while each sample runs. Values below are microseconds (µs); allocations are total calls over the 1,000 samples. `Rayon` is the production selection policy, which runs serial below the measured crossover; `RayonForced` is a diagnostic using the resident pool.
+**Gate open: quiet fixed rows fail.** Owner-run M3 Max, release `91ad52d`, clean worktree, agents paused and builds drained, 10:50–10:52 CET. The two runs below retain both results; uptime/load averages and complete output are in `tmp/quiet-run-2026-11-06/g2s-qualify{,-repeat}.log`. Exit zero means measurement completed, not budget passage. Historical G2R passes used easier rows; Git retains them.
 
-**Qualification:** The complete command after the direct dirty-page path and coalesced, no-drop single-component rewind passed every G2R CPU p95 gate at both history windows, with zero warmed allocations. The preceding full run under shared host load missed the 10k rewind gate at 105 µs p95; the repeat's 10k unrecorded tick p95 of 16.2 µs versus 41.7 µs in that run documents the load change. Both runs and their tails are retained under `tmp/g2r-`. The earlier 27.2 µs churn excursion was a **p99 tail**, not a one-in-five p95 result.
+| Fixed row | Target p95 µs | Run | p50 µs | p95 µs | p99 µs | Rust allocations, all threads |
+| --- | ---: | --- | ---: | ---: | ---: | ---: |
+| S1 10k | ≤25 | 1 | 49.458 | 59.458 | 72.958 | 0 |
+| S1 10k | ≤25 | 2 | 44.208 | 54.458 | 62.167 | 0 |
+| S1 100k | ≤300 | 1 | 473.042 | 894.791 | 1207.834 | 0 |
+| S1 100k | ≤300 | 2 | 473.833 | 700.167 | 955.917 | 0 |
+| S2 10k | ≤100 | 1 | 243.667 | 277.250 | 290.917 | 0 |
+| S2 10k | ≤100 | 2 | 240.500 | 257.916 | 266.375 | 0 |
 
-A further complete rerun while the competing benchmark was paused also passed: recorded tick p95 was 23.8/225.6 µs at 10k/100k; rewind-8 p95 was 47.0/656.6 µs at window 16 and 45.6/655.3 µs at window 64. All budgeted cases had zero warmed allocations. The full p50/p95/p99 output, including churn and forced Rayon tails, is `tmp/g2r-quiet-rerun-2026-11-05.log`; this run does not replace the table below.
+S1 includes four peers, shuffled movers, Damage and SetHealth, tick plus publication. S2 rewinds eight, amends retained input, replays and publishes. All measured rows, including a 200-spawn burst, allocate zero. Burst p50/p95/p99: 104.084/123.958/139.375 and 103.708/115.167/123.792 µs; no separate burst CPU budget.
 
-| Case (count, mode, options) | p50 µs | p95 µs | p99 µs | Allocations |
-| --- | ---: | ---: | ---: | ---: |
-| `tick,10000,Serial,false,false` | 15.2 | 16.2 | 19.3 | 0 |
-| `tick,10000,Rayon,false,false` | 15.2 | 16.2 | 19.2 | 0 |
-| `tick,10000,Serial,false,true` | 19.1 | 23.7 | 25.5 | 0 |
-| `tick,10000,Rayon,false,true` | 19.1 | 22.8 | 24.9 | 0 |
-| `four_peers,10000,Serial,shuffled,damagefalse` | 24.5 | 29.5 | 31.4 | 0 |
-| `four_peers,10000,Rayon,shuffled,damagefalse` | 24.4 | 29.8 | 31.6 | 0 |
-| `four_peers,10000,Serial,shuffled,damagetrue` | 43.9 | 49.0 | 54.8 | 0 |
-| `four_peers,10000,Rayon,shuffled,damagetrue` | 43.7 | 48.8 | 53.2 | 0 |
-| `churn,10000,Serial,shuffled` | 27.4 | 31.8 | 35.0 | 0 |
-| `rewind8,10000,Serial,true,w16,heldfalse` | 37.6 | 42.9 | 48.1 | 0 |
-| `resim8,10000,Serial,true,w16,heldfalse` | 424.6 | 451.1 | 465.5 | 0 |
-| `rewind8,10000,Serial,true,w64,heldfalse` | 37.5 | 42.6 | 48.1 | 0 |
-| `resim8,10000,Serial,true,w64,heldfalse` | 422.4 | 450.6 | 484.4 | 0 |
-| `rewind8,10000,Serial,true,w16,heldtrue` | 13.2 | 13.7 | 17.0 | 0 |
-| `resim8,10000,Serial,true,w16,heldtrue` | 172.8 | 185.3 | 196.4 | 0 |
-| `tick,100000,Serial,false,false` | 161.9 | 177.2 | 185.9 | 0 |
-| `tick,100000,Rayon,false,false` | 161.7 | 177.2 | 186.8 | 0 |
-| `tick,100000,Serial,false,true` | 199.7 | 213.9 | 221.7 | 0 |
-| `tick,100000,Rayon,false,true` | 199.7 | 213.0 | 221.5 | 0 |
-| `four_peers,100000,Serial,shuffled,damagefalse` | 267.3 | 297.8 | 306.2 | 0 |
-| `four_peers,100000,Rayon,shuffled,damagefalse` | 267.0 | 295.7 | 308.9 | 0 |
-| `four_peers,100000,Serial,shuffled,damagetrue` | 432.6 | 590.6 | 826.0 | 0 |
-| `four_peers,100000,Rayon,shuffled,damagetrue` | 431.7 | 597.1 | 842.8 | 0 |
-| `churn,100000,Serial,shuffled` | 286.1 | 318.2 | 328.5 | 0 |
-| `rewind8,100000,Serial,true,w16,heldfalse` | 374.9 | 554.0 | 672.8 | 0 |
-| `resim8,100000,Serial,true,w16,heldfalse` | 4714.7 | 5991.9 | 9690.6 | 0 |
-| `rewind8,100000,Serial,true,w64,heldfalse` | 546.3 | 857.6 | 944.9 | 0 |
-| `resim8,100000,Serial,true,w64,heldfalse` | 5869.1 | 7924.1 | 8672.7 | 0 |
-| `rewind8,100000,Serial,true,w16,heldtrue` | 140.1 | 188.4 | 246.9 | 0 |
-| `resim8,100000,Serial,true,w16,heldtrue` | 2423.1 | 3563.5 | 4273.6 | 0 |
-| `crossover,10000,Serial` | 34.2 | 37.5 | 41.2 | 0 |
-| `crossover,10000,RayonForced` | 115.8 | 254.0 | 320.9 | 32 |
-| `crossover,100000,Serial` | 345.7 | 368.3 | 411.0 | 0 |
-| `crossover,100000,RayonForced` | 645.0 | 891.0 | 1018.9 | 32 |
-| `crossover,200000,Serial` | 691.1 | 736.5 | 815.0 | 0 |
-| `crossover,200000,RayonForced` | 1097.0 | 1402.3 | 1608.8 | 31 |
-| `crossover,500000,Serial` | 1810.8 | 1917.6 | 2097.8 | 0 |
-| `crossover,500000,RayonForced` | 2460.5 | 2839.8 | 3573.0 | 32 |
+| S1 extra action | p95 run 1 / 2, µs |
+| --- | ---: |
+| 10k Command | 54.875 / 52.000 |
+| 10k Damage | 55.667 / 52.083 |
+| 100k Command | 849.750 / 646.166 |
+| 100k Damage | 906.459 / 646.167 |
 
-`tick,…,true` records history and publishes the changed page; `false` is an unrecorded tick. `rewind8` restores eight ticks, and `resim8` re-simulates them without intermediate publication. `w16`/`w64` are history windows; `heldtrue` retains page leases, so publication is deferred while authority continues. `churn` uses shuffled movers and one moving despawn/spawn per tick. Four peers use admitted input and optional damage. Admission occurs outside the timed interval. `crossover` compares serial against forced Rayon at 10k–500k; the forced path has pool dispatch allocations and no measured speed crossover, so the production policy remains serial for this workload. Every non-crossover case asserted zero warmed allocations.
+Paired extra-action gate: ≤10%. First-run 10k Damage pair rises 91.417→106.000 µs p95 (+15.95%); repeat 53.667→54.167 (+0.93%). Other paired action rows stay within 10%. Do not qualify marginal cost from the friendlier repeat. Every variant's p50/p95/p99 remains in the raw logs.
 
-| Budgeted path | 10k p95 budget | 100k p95 budget | Complete-run p95 10k/100k | Result |
-| --- | ---: | ---: | ---: | --- |
-| Recorded tick plus page | ≤25 µs | ≤300 µs | 23.7/213.9 µs | Pass |
-| Eight-tick rewind, window 16 | ≤100 µs | ≤1,000 µs | 42.9/554.0 µs | Pass |
-| Eight-tick rewind, window 64 | ≤100 µs | ≤1,000 µs | 42.6/857.6 µs | Pass |
+**S2 profile:** rewind p50/p95 39.042/47.959 and 39.125/42.750 µs; replay-eight including final publication 203.459/233.208 and 201.250/217.333 µs. Amendment and page lease are ~0.04 µs. Phase quantiles are not additive. Resimulation/publication dominates; small traversal changes have not met the budget.
 
-Shuffled moving churn is a required diagnostic in the table, with no separate numeric gate. At 100k, the changed-slot bitset retains 12,504 bytes per undo (200,064 bytes at window 16; 800,256 bytes at window 64); 10k uses the original sparse visitor and retains no bitset. The position-only page path appends physically ordered dirty slots directly; mixed and structural edits retain the bitset comparison. Coalesced rewind applies each repeated no-drop component preimage once using reused world scratch; structural, mixed-component and drop-sensitive histories keep reverse-order restore. In paired focus runs, 100k rewind window-16 median moved from 572.5 to 420.5 µs (old→new) and 713.8 to 533.6 µs (new→old); window-64 moved 540.5→477.4 and 714.9→532.7 µs. The paired p95 tails varied with shared load, so these median comparisons are directional.
+Forced-Rayon crossover p95 serial/forced: 10k 49.750/50.917 then 50.209/48.834 µs; 100k 472.709/476.583 then 459.792/461.750 µs. Both allocate zero, but the game declares Direct/Serial systems: requesting RayonForced does not dispatch parallel jobs. These rows establish neither a parallel crossover nor “never slower”.
 
-Earlier integrated baseline before sparse history: recorded tick p95 61/514 µs and rewind-8 p95 81/696 µs at 10k/100k. Those were separate runs with different host load and are directional, not controlled A/B speedups. Whole-world randomized replay proof, review and Metal gate are correctness checks, not CPU-budget evidence. The host-load condition is recorded rather than filtered from the result.
+Reproduce: `RUSTC_WRAPPER= rustup run 1.99.1 cargo bench -p v1-game --bench g2r --locked --offline -- --g2s-qualify`. Full-world randomized replay and held-page tests establish correctness separately. CPU budgets remain unchanged; continue independent G3b/G3s work while representation changes are evaluated.
