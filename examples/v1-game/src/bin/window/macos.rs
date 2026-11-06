@@ -679,13 +679,7 @@ impl ApplicationHandler<UserEvent> for App {
             return;
         }
         let result = match event {
-            WindowEvent::CloseRequested => {
-                self.closed_by_user = true;
-                let result = self.invalidate_surface();
-                event_loop.exit();
-                result
-            }
-            WindowEvent::Destroyed => {
+            WindowEvent::CloseRequested | WindowEvent::Destroyed => {
                 self.closed_by_user |= self.presented < self.target_frames;
                 let result = self.invalidate_surface();
                 event_loop.exit();
@@ -755,14 +749,17 @@ pub(super) fn run() {
     if let Err(error) = event_loop.run_app(&mut app) {
         app.error = Some(format!("event loop: {error}"));
     }
-    if app.closed_by_user {
-        println!("v1-game: closed before qualification; pending presentation cancelled");
-        return;
+    if app.closed_by_user && app.error.is_none() {
+        app.error = Some(format!(
+            "presentation cancelled after {}/{} requested frames",
+            app.presented, app.target_frames
+        ));
     }
     match app.error.take().map_or_else(|| app.finish(), Err) {
         Ok(report) => println!("{report}"),
         Err(error) => {
             eprintln!("v1-game: {error}");
+            drop(app);
             std::process::exit(1);
         }
     }
