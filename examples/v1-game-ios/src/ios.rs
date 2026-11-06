@@ -2,7 +2,7 @@
 
 use std::{
     fs,
-    sync::Arc,
+    sync::{Arc, OnceLock},
     time::{Duration, Instant},
 };
 
@@ -11,7 +11,7 @@ use wgpu::{CurrentSurfaceTexture, TextureViewDescriptor};
 use winit::{
     application::ApplicationHandler,
     event::WindowEvent,
-    event_loop::{ActiveEventLoop, ControlFlow, EventLoop},
+    event_loop::{ActiveEventLoop, ControlFlow, EventLoop, EventLoopProxy},
     raw_window_handle::{HasWindowHandle, RawWindowHandle},
     window::{Window, WindowId},
 };
@@ -20,6 +20,31 @@ use v1_game::{FrameConfig, FrameHost, FrameSample, SurfaceOutput};
 
 const FRAMES: usize = 600;
 const REPORT_NAME: &str = "thrum-v1-ios-report.txt";
+static DISPLAY_WAKE: OnceLock<EventLoopProxy<DisplayEvent>> = OnceLock::new();
+
+#[derive(Clone, Copy, Debug)]
+enum DisplayEvent {
+    Target { lead: Duration, received: Instant },
+}
+
+#[expect(
+    unsafe_code,
+    reason = "Swift owns the UIKit display link and calls this C ABI wake"
+)]
+#[unsafe(no_mangle)]
+extern "C" fn thrum_v1_display_target(lead_seconds: f64) {
+    if let Some(wake) = DISPLAY_WAKE.get() {
+        let lead = if lead_seconds.is_finite() && lead_seconds > 0.0 {
+            Duration::from_secs_f64(lead_seconds.min(0.05))
+        } else {
+            Duration::ZERO
+        };
+        let _ = wake.send_event(DisplayEvent::Target {
+            lead,
+            received: Instant::now(),
+        });
+    }
+}
 
 #[expect(
     unsafe_code,
@@ -27,6 +52,28 @@ const REPORT_NAME: &str = "thrum-v1-ios-report.txt";
 )]
 unsafe extern "C" {
     fn thrum_v1_attach_view(view: *mut std::ffi::c_void);
+    fn thrum_v1_start_display_link() -> i32;
+    fn thrum_v1_stop_display_link();
+}
+
+#[expect(
+    unsafe_code,
+    reason = "UIKit owns this synchronous start bridge on its main thread"
+)]
+fn start_display_link() -> Result<(), String> {
+    // SAFETY: UIKit owns the link on its main thread, which runs this event loop.
+    (unsafe { thrum_v1_start_display_link() } != 0)
+        .then_some(())
+        .ok_or_else(|| "iOS display link has no connected scene".to_owned())
+}
+
+#[expect(
+    unsafe_code,
+    reason = "UIKit owns this synchronous stop bridge on its main thread"
+)]
+fn stop_display_link() {
+    // SAFETY: The app lifecycle callback runs on UIKit's main thread.
+    unsafe { thrum_v1_stop_display_link() };
 }
 
 #[expect(
@@ -48,7 +95,7 @@ fn attach_to_scene(window: &Window) -> Result<(), String> {
 
 struct App {
     origin: Instant,
-    last_call: Duration,
+    pending_target: Option<(Duration, Instant)>,
     instance: Option<wgpu::Instance>,
     adapter: Option<wgpu::Adapter>,
     device: Option<wgpu::Device>,
@@ -60,6 +107,7 @@ struct App {
     visible: bool,
     reconfigure: bool,
     callbacks: u64,
+    display_link_callbacks: u64,
     presented: u64,
     unavailable: u64,
     overloads: u64,
@@ -73,7 +121,7 @@ impl App {
     fn new() -> Self {
         Self {
             origin: Instant::now(),
-            last_call: Duration::ZERO,
+            pending_target: None,
             instance: None,
             adapter: None,
             device: None,
@@ -85,6 +133,7 @@ impl App {
             visible: false,
             reconfigure: false,
             callbacks: 0,
+            display_link_callbacks: 0,
             presented: 0,
             unavailable: 0,
             overloads: 0,
@@ -176,17 +225,13 @@ impl App {
                 },
             ))?);
             self.origin = Instant::now();
-            self.last_call = Duration::ZERO;
         }
         self.window = Some(window);
         self.surface = Some(surface);
         self.config = Some(config);
         self.visible = true;
         self.reconfigure = false;
-        self.window
-            .as_ref()
-            .ok_or("iOS window missing")?
-            .request_redraw();
+        start_display_link()?;
         Ok(())
     }
 
@@ -198,11 +243,10 @@ impl App {
         let host = self.host.as_mut().ok_or("iOS host missing")?;
         if visible {
             host.drain_and_resume(now)?;
-            self.last_call = now;
-            if let Some(window) = &self.window {
-                window.request_redraw();
-            }
+            start_display_link()?;
         } else {
+            stop_display_link();
+            self.pending_target = None;
             host.pause();
         }
         self.visible = visible;
@@ -213,7 +257,9 @@ impl App {
         if !self.visible {
             return Ok(());
         }
-        let now = self.origin.elapsed();
+        let Some((target_lead, target_received)) = self.pending_target.take() else {
+            return Ok(());
+        };
         self.callbacks += 1;
         let window = self.window.as_ref().ok_or("iOS window missing")?;
         let size = window.inner_size();
@@ -232,12 +278,7 @@ impl App {
             host.resize_surface(extent)?;
             self.reconfigure = false;
         }
-        let due = host
-            .next_due_in()
-            .is_some_and(|delay| now.saturating_sub(self.last_call) >= delay);
-        self.last_call = now;
-        let can_acquire = due
-            && !extent.contains(&0)
+        let can_acquire = !extent.contains(&0)
             && !self.reconfigure
             && extent == [config.width, config.height]
             && host.pending_frames() < FrameHost::MAX_IN_FLIGHT;
@@ -276,6 +317,11 @@ impl App {
             view,
             extent: [config.width, config.height],
         });
+        let observed = Instant::now();
+        let now = observed.saturating_duration_since(self.origin);
+        host.set_presentation_lead(
+            target_lead.saturating_sub(observed.saturating_duration_since(target_received)),
+        );
         let report = host.drive(now, output.as_ref())?;
         if report.surface_presented {
             self.queue
@@ -316,18 +362,14 @@ impl App {
             .iter()
             .filter(|sample| sample.gpu_pass_ns.is_some())
             .count();
-        let tick_cpu = percentile(&self.samples, |sample| sample.tick_cpu.as_secs_f64() * 1e6);
-        let encode_cpu = percentile(&self.samples, |sample| {
-            sample.encode_cpu.as_secs_f64() * 1e6
-        });
-        let wall = percentile(&self.samples, |sample| sample.wall.as_secs_f64() * 1e3);
         let report = format!(
-            "iOS simulator synthetic scene; adapter={} format={:?} extent={}x{}; callbacks={} presented={} completed_gpu={} surface_samples={} gpu_timed={} ticks={} unavailable={} overloads={} refused_ticks={} shed_views={} report_drops={}; host wall p50/p95={:.3}/{:.3} ms; tick CPU p50/p95={:.1}/{:.1} us; encode CPU p50/p95={:.1}/{:.1} us\n",
+            "iOS simulator function; adapter={} format={:?} extent={}x{}; callbacks={} display_link_callbacks={} presented={} completed_gpu={} surface_samples={} gpu_timed={} ticks={} unavailable={} overloads={} refused_ticks={} shed_views={} report_drops={}\n",
             adapter.get_info().name,
             config.format,
             config.width,
             config.height,
             self.callbacks,
+            self.display_link_callbacks,
             self.presented,
             self.samples.len(),
             surface_samples,
@@ -338,12 +380,6 @@ impl App {
             self.refused_ticks,
             host.dropped_views(),
             host.dropped_reports(),
-            wall.0,
-            wall.1,
-            tick_cpu.0,
-            tick_cpu.1,
-            encode_cpu.0,
-            encode_cpu.1,
         );
         fs::write(std::env::temp_dir().join(REPORT_NAME), report)
             .map_err(|error| format!("iOS report: {error}"))
@@ -359,7 +395,7 @@ impl App {
     }
 }
 
-impl ApplicationHandler for App {
+impl ApplicationHandler<DisplayEvent> for App {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         if self.window.is_none() {
             if let Err(error) = self.prepare(event_loop) {
@@ -376,6 +412,15 @@ impl ApplicationHandler for App {
         }
         self.surface = None;
         self.window = None;
+    }
+
+    fn user_event(&mut self, _event_loop: &ActiveEventLoop, event: DisplayEvent) {
+        let DisplayEvent::Target { lead, received } = event;
+        self.display_link_callbacks += 1;
+        self.pending_target = Some((lead, received));
+        if let Some(window) = &self.window {
+            window.request_redraw();
+        }
     }
 
     fn window_event(&mut self, event_loop: &ActiveEventLoop, id: WindowId, event: WindowEvent) {
@@ -397,27 +442,17 @@ impl ApplicationHandler for App {
     }
 
     fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
-        if let (Some(window), Some(host)) = (&self.window, &self.host) {
-            if self.visible {
-                if let Some(due) = host.next_due_in() {
-                    let delay =
-                        due.saturating_sub(self.origin.elapsed().saturating_sub(self.last_call));
-                    if delay.is_zero() {
-                        window.request_redraw();
-                        event_loop.set_control_flow(ControlFlow::Wait);
-                    } else {
-                        event_loop.set_control_flow(ControlFlow::WaitUntil(Instant::now() + delay));
-                    }
-                }
-            } else {
-                event_loop.set_control_flow(ControlFlow::Wait);
-            }
-        }
+        event_loop.set_control_flow(ControlFlow::Wait);
     }
 }
 
 pub(super) fn run() {
-    let event_loop = EventLoop::new().expect("iOS event loop");
+    let event_loop = EventLoop::<DisplayEvent>::with_user_event()
+        .build()
+        .expect("iOS event loop");
+    DISPLAY_WAKE
+        .set(event_loop.create_proxy())
+        .unwrap_or_else(|_| panic!("one iOS display loop"));
     let mut app = App::new();
     if let Err(error) = event_loop.run_app(&mut app) {
         app.error = Some(format!("iOS event loop: {error}"));
@@ -428,10 +463,4 @@ pub(super) fn run() {
             format!("fault: {error}\n"),
         ));
     }
-}
-
-fn percentile(samples: &[FrameSample], value: impl Fn(&FrameSample) -> f64) -> (f64, f64) {
-    let mut values: Vec<_> = samples.iter().map(value).collect();
-    values.sort_by(f64::total_cmp);
-    (values[values.len() / 2], values[values.len() * 95 / 100])
 }
