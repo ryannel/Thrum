@@ -315,6 +315,11 @@ pub struct FrameGraph {
 pub enum GraphError {
     /// A zero extent/capacity or invalid texture descriptor.
     EmptyResource,
+    /// A retained identity names more than one independent resource.
+    DuplicatePersistentOwner {
+        /// Conflicting stable owner identity.
+        owner: u64,
+    },
     /// Missing/empty/out-of-bounds resource range.
     InvalidRange {
         /// Offending pass.
@@ -697,6 +702,24 @@ impl FrameGraph {
     ) -> Result<ResourceId, GraphError> {
         if descriptor.units() == 0 {
             return Err(GraphError::EmptyResource);
+        }
+        let conflict = match scope {
+            ResourceScope::Persistent { owner, .. } => self.resources.iter().any(|resource| {
+                matches!(resource.scope, ResourceScope::Persistent { owner: existing, .. } | ResourceScope::History { owner: existing, .. } if existing == owner)
+            }),
+            ResourceScope::History { owner, .. } => self.resources.iter().any(|resource| {
+                matches!(resource.scope, ResourceScope::Persistent { owner: existing, .. } if existing == owner)
+            }),
+            ResourceScope::Transient | ResourceScope::Imported { .. } => false,
+        };
+        if conflict {
+            let owner = match scope {
+                ResourceScope::Persistent { owner, .. } | ResourceScope::History { owner, .. } => {
+                    owner
+                }
+                ResourceScope::Transient | ResourceScope::Imported { .. } => unreachable!(),
+            };
+            return Err(GraphError::DuplicatePersistentOwner { owner });
         }
         let id = ResourceId {
             index: self.resources.len(),
@@ -1457,6 +1480,41 @@ mod tests {
             graph.compile(1, &BTreeSet::new()).unwrap_err(),
             super::GraphError::DependencyCycle
         );
+    }
+
+    #[test]
+    fn persistent_identity_cannot_name_a_second_resource_or_history_pair() {
+        let mut graph = FrameGraph::default();
+        let descriptor = ResourceDescriptor::Buffer {
+            bytes: 16,
+            usage: wgpu::BufferUsages::STORAGE,
+        };
+        let persistent = ResourceScope::Persistent {
+            owner: 7,
+            epoch: 1,
+            initialized: false,
+        };
+        let history = ResourceScope::History {
+            owner: 7,
+            epoch: 1,
+            initialized: false,
+        };
+        graph
+            .resource(descriptor.clone(), persistent)
+            .expect("first retained owner");
+        for scope in [persistent, history] {
+            assert!(matches!(
+                graph.resource(descriptor.clone(), scope),
+                Err(super::GraphError::DuplicatePersistentOwner { owner: 7 })
+            ));
+        }
+        let mut other = FrameGraph::default();
+        other
+            .resource(descriptor.clone(), history)
+            .expect("first history side");
+        other
+            .resource(descriptor, history)
+            .expect("the same history owner has two physical sides");
     }
 
     #[test]
