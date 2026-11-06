@@ -7,16 +7,16 @@ description: Implement, refactor or review Thrum engine code toward the active b
 
 Thrum is a showcase of AI-driven engineering: butter-smooth, high-end visuals and performance beyond what a human
 team would build and maintain, first shown in teaching demos on the owner's website. Engine code succeeds when it
-runs on named targets within budget and looks right there. Judge each change by whether it moves the active gate in
+runs correctly and looks right on named targets. Judge each change by whether it moves the active gate in
 [the build plan](../../../docs/BUILD-PLAN.md) forward, not by how much it proves.
 
 ## Pick the work
 
-- Take the next unchecked gate in the build plan's active order. Prefer the smallest change that makes a path run end
-  to end, removes a measured cost or raises visible quality.
+- Follow the build plan's current priority and permitted parallel work. Prefer a complete interaction or visible
+  quality improvement; investigate measured regressions without turning target chasing into the work queue.
 - Aim for showcase quality, not parity. Prefer named techniques, paper reproductions and specialisations agents can
-  sustain (per-family kernels, exhaustive variant search, autotuned parameters). Each needs a measured win over
-  portable or a reproduced reference result, and joins the
+  sustain (per-family kernels, specialization, prepared work). Foundation choices use best-practice review; claimed
+  wins need measurements. Record actual sources and evidence, including unqualified results, in the
   [technique register](../../../docs/design/AI-PERFORMANCE.md#technique-register). Other engines are context, not gates.
 - Native leads and uses every hardware feature; the browser runs the portable recipe at showcase quality and never
   limits native. Single-player fidelity and performance lead; G2S proves multiplayer headless and transport is parked
@@ -57,7 +57,7 @@ and size backstops. When designing types, APIs, errors, decoders or test support
 
 For per-tick, per-frame and per-message code:
 
-- No heap allocation in steady state. Reuse buffers, use frame arenas, move instead of cloning.
+- Design hot paths to reuse buffers/arenas and move values. Record dependency allocations; they are not admission gates.
 - Store iterated data as columns. Encode or validate once and pass the checked form on.
 - Use a fast non-cryptographic hasher for internal maps.
 - Account cost before choosing a representation, using
@@ -78,8 +78,9 @@ For per-tick, per-frame and per-message code:
   iPhone simulator (function only, never speed) and Chrome. Label Mac stand-ins for iPhone
   “proxy”. Record results in the maturity ledger, separately for implementation, correctness,
   visuals and device.
-- A dedicated recipe or accelerated path records its win against portable on the same device and
-  its image or result difference within tolerance. Without that, it is implemented, not qualified.
+- Keep benchmarks as history and investigate visible hitches, about 25% regression from a comparable baseline, or
+  unexpected scaling. Foundation choices use best-practice review; numeric tuning waits for the dedicated phase.
+- A recipe keeps portable fallback and checked image/result tolerance. Claim performance wins only with measurements.
 - Visible output passes agent visual review before the change lands; agents can and do inspect images:
   1. Capture fixed cameras and a short sequence from the exact build on the named target.
   2. Run automated image checks: a perceptual difference such as FLIP against the portable recipe
@@ -100,8 +101,8 @@ For per-tick, per-frame and per-message code:
 
 ## Before committing
 
-- Did this add a second path for an existing behaviour? A registry-selected hardware path with a
-  portable fallback and a measured win is intended; any other duplicate is not.
+- Did this add a second path for an existing behaviour? A registry-selected hardware path with a checked portable
+  fallback is intended; ordinary behavior still has one body. Performance claims require separate evidence.
 - Did the public API grow, and does each new public item need to be public?
 - Is the rigour proportional to the state it protects?
 - Is there an allocation, clone or repeated decode on a hot path?

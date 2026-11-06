@@ -1,53 +1,122 @@
 # Thrum build plan
 
-Updated 6 November 2026. This is the active status page. Git retains earlier plans. [Contracts](design/CONTRACTS.md) own shared invariants; [maturity](design/maturity.json) records implementation, correctness, visuals and device results separately.
+Updated 6 November 2026. Active status page; Git retains history. [Contracts](design/CONTRACTS.md) own invariants;
+[maturity](design/maturity.json) separates implementation, correctness, visuals and device results.
 
 ## Purpose
 
-Thrum is a native-first, production-grade 3D engine. It exists for learning, for craft and as a showcase of how far AI-driven engineering can push performance and visual quality beyond what human teams would build and maintain. Its first outlet is interactive demos on the owner's website with public source, for example a physically simulated cloud-formation lesson or a water sandbox that explains what happens under the hood. Each demo is tailored when it is chosen; no single demo is the target. A game is a later, back-burner project.
-
-Success is butter-smooth, high-end graphics that nobody would recognise as homemade, built from named techniques, paper reproductions and AI-scale specialisations with measured wins. Failure would be learning that an off-the-shelf engine would have served better. Single-player visual fidelity and performance lead. Multiplayer stays first-class in the architecture so it never forces a rebuild, but it gets no transport work in V1.
-
-Native leads and uses every hardware feature the [capability registry](design/decisions/HARDWARE-NATIVE-ENGINE.md) finds. The browser ships the portable recipe at showcase quality, because website demos run there; nothing native is compromised for the web. Proof runs on this M3 Max, the iOS simulator (function only) and Chrome. Emulate and simulate first. Rented cloud machines or devices are welcome when a recipe needs them, under the [steering rules](#steering-and-visual-review). The owner does no manual device testing.
+Thrum is a native-first, production-grade Rust 3D engine for learning, craft and a showcase of AI-driven engineering.
+Its first outlet is high-end interactive teaching demos on the owner's website, then games later. Aim for exceptional
+performance and graphics that nobody recognises as homemade. Single-player fidelity leads; shared authority and rules
+keep multiplayer additive. Native uses each device's hardware; Chrome runs a strong portable WebGPU recipe.
 
 ## Goal and exit rule
 
-Make one frame fast and beautiful end to end, then widen. **V1 exit:** one reusable engine powers `examples/v1-game`, a single-player scene on this M3 Max and its built-in 120 Hz ProMotion display. It has a physically based sky, sun and aerial perspective under a time-of-day control, cooked meshes and textures, live camera, lights and cascaded shadows, GPU culling, MetalFX reconstruction, EDR, display-link interpolation, hot reload and a profiler, with 10,000 entities and 1,000–2,000 movers. Each accelerated technique records its measured win over portable. The same scene runs in Chrome WebGPU on the portable recipe at showcase quality. Demo controls (text, sliders, toggles and field overlays) drive it natively and in the browser. Headless rollback, amended-input replay and full-state equality prove multiplayer fitness (G2S). A fresh agent builds a new small scene from public docs alone (G6). The fixed 60 Hz game tick is not an engine ceiling.
+Make one frame fast and beautiful end to end, then widen. **V1 exit:** one reusable engine powers `examples/v1-game`,
+a single-player showcase on this M3 Max and its built-in 120 Hz ProMotion display, and the same scene in Chrome.
+It has physical sky, Sun and aerial perspective with time controls; cooked meshes/textures; live camera, lights and
+cascaded shadows; GPU culling; MetalFX, EDR and a quality governor; display-link interpolation; hot reload, profiler and
+native/browser demo UI. Keep 10,000 entities and 1,000–2,000 movers as the representative scene. Headless corrected-run
+replay proves multiplayer fitness; transport stays after V1. A fresh agent builds a small scene from public docs alone.
+The initial 60 Hz game clock is configurable, not an engine ceiling.
 
-**A gate passes only when its fixed real-game rows meet every budget** on the named target, the same game runs through public engine APIs, `./dev check` is green, a gate with visible output passes [agent visual review](#steering-and-visual-review), and an independent reviewer has tried to break the code and raw results. Record p50/p95/p99, allocations and the hot-path profile on one evidence page per gate. The physical iPhone is unavailable: the iPhone 18 Pro simulator proves function, never speed. Label Mac substitutes “proxy”: CPU gets half the iPhone budget on at most two busy frame threads; GPU time at iPhone native resolution ×5 must fit 6.25 ms. iPhone gates may close only as **Mac-qualified, device pending**; the ledger records no iPhone result. At V1 exit, stop with numbers and outstanding device runs. CI remains manual-only by owner decision.
+A gate closes when its functional outcome runs in the game through public engine APIs, correctness and lifecycle
+checks pass, `./dev check` is green, required oracle tolerance and agent visual review pass, and an independent reviewer
+has tried to break the code and evidence. **Numeric performance and allocation figures are recorded baselines, not
+admission gates**, following the [11:15 owner decision](design/decisions/PERFORMANCE-PHILOSOPHY-2026-11-06.md).
+Design performance foundations up front; investigate visible stutter/hitches, about 25% regression from a comparable
+baseline, or unexpected scaling. Tune later from whole-frame profiles and set targets then.
+
+Mac is a real target. The iPhone 18 Pro simulator proves build/link, lifecycle, input, surface and display-link function,
+never speed; fail if it cannot boot. No physical iPhone is available: do not ask or wait. Label Mac stand-ins **proxy**
+and never record them as iPhone results. At V1 exit report outstanding physical-device runs. CI remains manual-only.
 
 ## Steering and visual review
 
-Agents build continuously. Reporting never pauses building. [AI development](design/AI-DEVELOPMENT.md#visual-review-and-human-steering) owns the detail.
+Build continuously; reports and owner digests are asynchronous. Visible changes need fixed cameras, a short sequence,
+automated image checks, root inspection and independent agent review. Fix artifacts or record remaining look questions
+with a recommendation; owner acceptance is steering, never a gate. Stop to ask only for purpose/exit/order changes,
+spending, publishing/deployment/licensing or irreversible actions; continue unblocked work meanwhile. No push without
+explicit authorization. Keep local verified checkpoints.
 
-- **Agent visual review** applies to every change with visible output and is blocking for that change. Capture fixed cameras and a short sequence on the named target. Automated checks bound the difference from the portable or ground-truth reference and catch NaN, black, clipped and flickering output. An agent then inspects the stills and sequence against the gate's look target and its paper or reference images. An independent reviewer agent hunts for artifacts. Findings are fixed or recorded before the gate closes.
-- **Owner steer** is asynchronous and never blocking. When a gate closes or something first becomes visible, the agent adds a visual digest to the gate's evidence page and notifies the owner: a contact sheet, a short clip, the numbers, and open look questions with its recommended answer. It then carries on with the next gate on that recommendation. Owner feedback steers the current or next slice. Owner acceptance is recorded as experienced quality; it is never a gate condition.
-- **Stop and ask only** to change purpose, V1 exit or gate order; to spend money, such as renting machines or devices; to push, publish, license or deploy; or for destructive or irreversible actions. While one of these waits, continue with unblocked work.
+<a id="active-gate-order-and-budgets"></a>
 
-## Active gate order and budgets
+## Active work and gates
 
-- [x] **G0 — integrity and fixed baselines.** Mac `./dev check` runs real Metal regressions and prints no `SKIP`; the negative adapter test fails. One verified `./dev baseline-inventory` command measures runnable fixed rows and names every unsupported future consumer. The unused mobile shell and source/cook crates and their only game test are removed; parked scripts leave the check, and the iOS normal dependency tree excludes SQLite/authoring crates. See [G0 evidence](evidence/v1-workload/G0-INTEGRITY-2026-11-05.md). Unsupported rows remain open at their owning gates.
-- [ ] **G2S — simulation as engine machinery and multiplayer fitness.** Typed `&mut`/shared queries, in-place trusted systems under sparse undo, input validation at admission, dirty-union publication across gaps/rewinds/held pages, previous/current tick pairs, amendable retained inputs and correction replay. Remove game-owned staging, edit, permit and page capture. This is the V1 multiplayer proof; transport waits until after V1. **S1:** four simulated peers' inputs, shuffled movers, one Damage and one SetHealth per tick; tick plus publication p95 ≤25/300 µs at 10k/100k and one more action ≤10% impact. **S2:** rewind eight, amend one input, resimulate and publish p95 ≤100 µs at 10k, full-state equal to straight corrected run. Zero warmed allocations including a 200-spawn burst. [Quiet CPU evidence](evidence/v1-workload/G2R-CONSOLIDATED-2026-11-05.md) records failed fixed rows; G2S stays open.
-- [x] **G3a — graph and live scene functionality.** Render, Compute and Copy closures execute in dependency order; scene camera, lights, cascades, reversed-Z `Depth32Float`, indexed draws and GPU previous transforms run. Its former encode-only CPU budget is reopened as the complete-frame G3b row.
-- [ ] **G3b — engine frame runtime.** A display link drives macOS/iOS/browser presentation from a target time; simulation and render work run off Apple's main thread, with at most two frames in flight, GPU interpolation, late drawable acquisition and typed lifecycle recovery. Engine `FrameHost` now owns execution; timing and lifecycle remain open. **Budgets:** real 120 Hz ProMotion display, ten-minute present-interval p99 within 1 ms, frame CPU p95 ≤0.3 ms at 10k/1080p with zero allocations on every frame thread, input-to-photon breakdown, and surface/background/device-loss recovery. Mac display qualifies timing; iPhone simulator qualifies only function.
-- [ ] **G3s — first light: sky, sun and atmosphere.** A physically based atmosphere after Hillaire (2020): transmittance, multiple-scattering, sky-view and aerial-perspective LUTs, a sun disk, and physical sun and sky illuminance driving the existing lights, cascades, exposure and EDR tone mapping. A time-of-day control runs from dawn through sunset to night. A brute-force CPU spectral integrator is the ground-truth oracle. It may run alongside G3b because their owners are disjoint (render passes, not the frame host). **Budgets:** sky, LUT updates and aerial perspective GPU ≤0.3 ms at 1080p on this Mac; sky radiance within the declared tolerance of the oracle at fixed sun angles; agent visual review passes at fixed sunrise, noon, sunset and twilight cameras and a time-of-day sweep without banding or flicker. [First-light evidence and visual digest](evidence/v1-workload/G3S-FIRST-LIGHT-2026-11-06.md) are partial; the gate stays open.
-- [ ] **G3t — tile dataflow and Metal boundary.** Direct forward output without post passes, derived memoryless depth and transient motion, mapped upload ring, ≤64 B instances, GPU light binning for every count, separate mirrored range, shared GPU-only targets and one scene/present graph. One registry-selected Metal boundary owns mapped rings, EDR, MetalFX and binary archives with portable fallback. **Budgets:** ≤10 MB screen attachment traffic per 1080p frame confirmed by Metal counters, GPU ≤0.30 ms at 1080p including present (sky excluded, budgeted in G3s), no steady `write_buffer`, ≤5% CPU change from 4→64 lights and ≤5% GPU change for a mirrored row.
-- [ ] **G3c — GPU-driven culling.** Compute frustum and Hi-Z, one `draw_indexed_indirect` per mesh/pipeline bucket with GPU-written counts, stable mesh offsets and compute-readable material table. **Budget:** full-visibility 10k GPU time no worse than without culling, with time falling with visibility.
-- [ ] **G4 — Apple reconstruction and governor.** MetalFX, EDR and binary archives use the G3t boundary; quality follows GPU/thermal/present evidence. Apple tile must beat portable by ≥10% in GPU time or bandwidth on this Mac within image tolerance, with Metal counters; cold play compiles no pipeline. iPhone comparison remains device pending.
-- [ ] **G5 — content-addressed loop.** Build a small stat cache, BLAKE3 file/action CAS, aligned mmap products, glTF meshlets, KTX2 ASTC/BC7, atomic manifest, watcher and dev server. Keep only path/JSON/record validation the game needs. **Budgets:** no-change scan ≤50 ms; one-texture edit visible ≤500 ms without GPU stall; shipping targets link no authoring crates.
-- [ ] **G6 — developer experience and demo controls.** An engine UI layer draws text, sliders, toggles and overlays of engine fields bound to typed game parameters, natively and in the browser. Make authoring direct: one command takes an empty project to a lit scene with sky, a cooked mesh, a camera and a slider, with actionable diagnostics for common mistakes and asset, shader and parameter hot reload. Follow [the creator guide](design/ENGINE-EXPERIENCE.md). **Budgets:** a fresh agent given only public docs and the starter builds a new small scene, such as a sunset over terrain with a time slider, without reading engine internals; its friction log is fixed or recorded; that scene needs ≤100 lines of game code; `v1-game` reports game lines and zero engine-side game types; UI CPU ≤0.05 ms per frame with zero steady allocations.
-- [ ] **G7 — V1 showcase scene.** Assemble the [V1 exit](#goal-and-exit-rule) scene on Mac Apple tile and portable and in Chrome portable. **Budgets:** with the complete scene, the G3b present-interval and frame CPU rows still hold; Chrome sustains 60 Hz at 1080p on this Mac with p95 presented interval ≤1.05× period; Apple tile keeps its G4 win; agent visual review passes on the fixed route. Its closing digest is the owner's V1 check-in. Physical iPhone runs remain device pending.
+**Now: finish G3s sky, Sun, sunset and twilight.** Functional G3b and G2S correctness can proceed on disjoint owners.
+The native Metal recorder stays in G3t. The later dedicated performance phase owns numeric tuning.
+
+- [x] **G0 — integrity and baselines.** Real Metal regressions fail without a device; no successful skips. One baseline
+  command records runnable rows and absent consumers. Dead source/cook/mobile crates are removed and shipping trees
+  exclude SQLite/authoring. [Evidence](evidence/v1-workload/G0-INTEGRITY-2026-11-05.md).
+- [ ] **G2S — simulation correctness and multiplayer fitness.** Typed shared/mutable queries, validated admission,
+  trusted in-place rules under sparse undo, engine-owned publication with dirty unions across gaps/rewinds/held pages,
+  adjacent previous/current endpoints, retained-input amendment and corrected replay. Require complete authority-state
+  equality against the straight corrected run and structural churn/refusal recovery. Remaining review findings: staged
+  resolve/edit/permit ownership and a component-presence hole in the equality oracle; add the representative 10k
+  corrected-run proof. Requested Rayon currently runs serial game systems and proves no parallel fitness.
+  [Recorded quiet S1/S2 figures](evidence/v1-workload/G2R-CONSOLIDATED-2026-11-05.md) are history; old CPU/allocation
+  limits are retired. Do not close on a partial hash or an easier row.
+- [x] **G3a — executing graph and live scene.** Render/Compute/Copy closures execute in dependency order with culling,
+  derived attachment ops, live camera/lights/cascades, reversed-Z `Depth32Float`, indexed draws and submitted transforms.
+- [ ] **G3b — functional engine frame runtime.** Display-link targets drive Mac/iOS/browser presentation; world/render
+  work is off Apple's main thread, at most two frames are in flight, interpolation is on GPU and acquisition is late.
+  Core owns clock/lane; thrum-render owns `FrameHost`, slots, tokens, completion and history without game schema.
+  Finish surface/background/device-loss recovery and simulator function. Instrument input-to-photon/present intervals;
+  visible stutter, dropped frames and hitches trigger investigation. [Quiet frame figures and later comparisons](evidence/render/V1-BOUNDED-FRAMES-2026-11-04.md)
+  remain baselines; wgpu frame allocation is not a gate or reason to bring native work forward.
+- [ ] **G3s — physical sky, Sun and atmosphere.** Hillaire (2020) transmittance, multiple-scattering, sky-view and aerial
+  LUTs; Sun disk; physical illuminance drives lights and shadows. Time controls run dawn through sunset to night.
+  Fix near-black twilight as correctness and visible quality. Finish half-float encoding, independent CPU spectral
+  reference and declared radiance tolerance. Review fixed sunrise/noon/sunset/twilight cameras and a time sweep for
+  colour, banding and flicker. [First-light evidence](evidence/v1-workload/G3S-FIRST-LIGHT-2026-11-06.md) is partial;
+  record complete atmosphere cost when available, without a numeric admission target. Follow the Broadsides reading
+  map and public-domain/CC0 provenance rules; no code/assets or GPL-derived values are imported.
+- [ ] **G3t — tile dataflow and Metal boundary.** Direct forward output, derived memoryless/transient attachments,
+  mapped upload ring, compact instances, GPU light binning, mirrored ranges, shared targets and one scene/present graph.
+  One registry-selected boundary supports native archives, MetalFX and EDR with portable fallback. The complete Metal
+  recorder stays a later performance candidate in the [boundary record](design/decisions/G3T-METAL-BOUNDARY.md).
+  Record attachment traffic, full GPU work, upload behavior and light/mirror scaling; investigate regressions, not old
+  numeric targets. No partial raw/wgpu encoder splice or rival queue.
+- [ ] **G3c — GPU-driven culling.** Compute frustum and Hi-Z, GPU-written indirect counts, one indexed indirect draw per
+  mesh/pipeline bucket, stable mesh offsets and compute-readable materials. Validate visibility and image equivalence;
+  record full/partial-visibility cost and unexpected growth as tripwires.
+- [ ] **G4 — Apple reconstruction and governor.** MetalFX, EDR and binary archives through the native boundary;
+  governor reacts to GPU/thermal/present evidence. Compare Apple tile and portable on this Mac with image tolerance and
+  counters. Record the measured difference without a required percentage win. No pipeline compilation during play.
+  Physical iPhone comparison remains pending.
+- [ ] **G5 — content-addressed loop.** Stat cache, BLAKE3 CAS, aligned mmap products, glTF meshlets, KTX2 ASTC/BC7,
+  atomic manifest, watcher and dev server. Keep only runtime validation the game needs; shipping never links authoring.
+  Prove visible asset edits without GPU stalls; track scan/edit-to-visible latency and startup/hitch tripwires.
+- [ ] **G6 — creator experience and demo controls.** Native/browser text, sliders, toggles and field overlays bound to
+  typed parameters. One command produces a lit scene, sky, cooked mesh, camera and slider; diagnostics and hot reload
+  support asset/shader/parameter edits. A fresh agent uses only public docs/starter, builds a small scene without reading
+  internals, and records friction. Keep that scene to about 100 game lines, report game lines and zero engine game
+  types. See [creator guide](design/ENGINE-EXPERIENCE.md). UI cost is recorded, not an admission target.
+- [ ] **G7 — V1 showcase.** Assemble the exit scene on Mac Apple tile/portable and Chrome portable. The fixed route
+  passes correctness and agent visual review; record whole frames and visible stutter/startup/hitches. Native and web
+  share scene/controls; performance comparisons remain historical until the dedicated push. Close with visual digest,
+  functional/platform status and physical-device runs owed.
 
 ## Working constraints
 
-Profile before optimising. Each slice reports a before/after hot-path number and net lines per crate; a slower budgeted path stays off main. Zero steady tick/frame allocations are tested. One publication spine, one job graph with serial and core-class-aware execution, and SIMD chosen from the capability registry with a scalar reference. No recipe lands before portable runs through the graph. The game owns schema, rules, scene and assets; engine crates never import game types. Report game lines and engine-side game-type references at each gate. No new fixture binary.
+Choose data layout, ownership, scheduling and hardware seams by best practice before entrenching APIs. Reuse hot-path
+storage and keep one publication spine, one job graph and scalar references for specialized kernels. Performance claims
+need measurements, but building does not wait for benchmarks. Correctness, oracle tolerance and visual review remain
+blocking for their changes. Keep validate-at-admission, checked identities, pipeline closure and temporal history.
+Use [engine-contributor](../.agents/skills/engine-contributor/SKILL.md), scoped checks and `./dev check`; each capability
+records functional, visual and device evidence separately. Evidence stays one compact page per gate. Shrink existing
+plan/ledger/evidence rather than growing process; the dated owner performance decision is the authorized new record.
 
-Each accelerated path or reproduced paper joins the [technique register](design/AI-PERFORMANCE.md#technique-register) with its source, measured win and why it would not scale with human authors. Do not grow design, maturity, evidence or provenance files until V1; correct or shrink them. Evidence is at most one page per gate, including its visual digest. Keep the fixed-step clock, checked identities, validate-at-admission authority with a debug/test validator, pipeline closure, temporal history and strict codecs. Use [engine-contributor](../.agents/skills/engine-contributor/SKILL.md), `./dev check` and independent review at each gate. Local commits are checkpoints; do not push without authorization.
+## After V1 and parked work
 
-## After V1
+Teaching demos follow, chosen individually: cloud formation, water and others under the [port decision](design/decisions/SEA-AND-CLOUD-PORT.md).
+Transport reopens after V1: compact wire, Quinn, clock sync, relevance/prediction and four rendered peers under conditioning.
+Android/desktop-high recipes and physical iPhone runs follow on suitable hardware. A dedicated AI performance phase
+profiles whole frames, derives targets, and revisits retained commands, mapped uploads and complete native recording.
 
-Website demos come next, each tailored when chosen: physical cloud formation, a water sandbox and others, under the [sea/cloud port](design/decisions/SEA-AND-CLOUD-PORT.md) where it applies. The network track reopens with the former wire and QUIC gate and four rendered peers under a conditioner. The desktop-high and Android recipes follow on rented hardware, and physical iPhone runs on rented devices. [Hardware-native](design/decisions/HARDWARE-NATIVE-ENGINE.md) governs every recipe.
+<a id="parked-retained-in-git-history"></a>
 
-## Parked, retained in Git history
-
-The network transport track is parked until after V1: the ≤12-byte wire, relevance, residual coding, clock sync, Quinn sessions, the 64 kbit/s conditioner budget, four rendered peers and A5 lane hardening. G2S keeps the authority, rollback and replay contracts that make it additive. F3 limits/receipts, T2 retained-root proofs, N1 ledger extensions, publication-pool accounting, R0 exact predicates, R3 optics, moving-shore research and water/cloud implementation stay parked; the G3s atmosphere is the only environment work in V1.
+Retain parked work in Git: F3 limits/receipts, T2 retained-root proofs, N1 ledger/credit, publication accounting, R0 exact
+predicates, R3 optics, moving shore, cohort cloud lab, water/cloud implementation and in-memory protocol hardening.
+Retained-forward optimization is parked at `a4b9da8`; portable split pre-submit at `30ae560`. Neither is merged.

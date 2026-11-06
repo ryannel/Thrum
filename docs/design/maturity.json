@@ -3,7 +3,7 @@
   "target": "custom-hardware-native-3d-engine",
   "as_of": "2026-11-06",
   "contract_revision": "C4",
-  "scope_note": "Historical rows remain; G2R/G3a speed reopens as G2S/G3b. G0 checks complete; no runtime, transport or iPhone result is qualified. V1 was redirected on 2026-11-05 to a single-player showcase scene; transport moves after V1.",
+  "scope_note": "6 Nov 11:15 owner policy: foundation by best practice, regression/visible tripwires, later performance tuning. Numeric targets are retired; correctness, lifecycle, oracle tolerance and visuals remain. Historical device facts are unchanged.",
   "execution_plan": {
     "milestone": "V1: one beautiful single-player 10k scene on this Mac at 120 Hz with physical sky, cooked assets, shadows, MetalFX and EDR; Chrome portable at showcase quality; demo controls; headless multiplayer fitness; labelled iPhone proxies, physical iPhone pending",
     "active": [
@@ -26,7 +26,7 @@
       "cloud cohort lab",
       "clouds and water implementation until after V1; G3s atmosphere is the only V1 environment work"
     ],
-    "interpretation": "G0 measured or marked absent every row. G2S/G3b budgets and Mac display remain open; no iPhone result."
+    "interpretation": "Functional gates govern; quiet figures remain history. Investigate visible hitches, >~25% comparable regression or unexpected growth; no iPhone result."
   },
   "v1_slices": {
     "G0_boundary": {
@@ -64,18 +64,18 @@
       ]
     },
     "G2_generic_simulation": {
-      "implementation": "partial_owned_columns_changed_pages_sparse_undo_and_history; G2S_real_game_budgets_open",
+      "implementation": "partial_owned_columns_undo_history; staged_resolve_and_complete_equality_open",
       "functional_validation": "full_dev_check_three_metal_regressions_world_1000_tick_randomized_replay_with_serial_and_requested_rayon_four_peer_refusal_churn_held_page_zero_warmed_allocations_and_independent_review_no_findings",
       "experienced_quality": "synthetic_game_path_runs_no_v1_visual_acceptance",
       "platform_performance": {
-        "mac": "Apple_M3_Max_owner_quiet_91ad52d_G2S_CPU_rows_failed_zero_allocations",
+        "mac": "owner_quiet_91ad52d_recorded_baseline_not_admission",
         "windows": "not_run",
         "browser": "not_run",
         "ios": "not_run",
         "android": "not_run"
       },
-      "diagnostic_measurement": "Owner quiet runs at 91ad52d fail G2S CPU budgets; all-thread allocations zero. Both repeats and profiles: G2R-CONSOLIDATED-2026-11-05.md.",
-      "scope": "G2S CPU budgets and actual parallel fitness remain open; requested Rayon uses serial game systems. Clock/frame orchestration is engine-owned; no iPhone result.",
+      "diagnostic_measurement": "Quiet 91ad52d history: G2R-CONSOLIDATED-2026-11-05.md. CPU targets retired; functional resolve/equality work remains.",
+      "scope": "Functional gaps: staged resolve and full-state presence/equality. Requested Rayon uses serial game systems; no parallel or iPhone qualification.",
       "evidence": [
         "../evidence/v1-workload/G2R-CONSOLIDATED-2026-11-05.md"
       ]
@@ -85,7 +85,7 @@
       "functional_validation": "Mac_Metal_capture_and_dawn_dusk_regressions_passed_full_dev_check_green",
       "experienced_quality": "agent_reviewed_sky_gradient_and_sweep;_twilight_scene_dark_grid_moire_open",
       "platform_performance": {
-        "mac": "loaded_offscreen_diagnostics_only_G3s_GPU_budget_open",
+        "mac": "recorded_GPU_baseline_not_gate_oracle_and_visuals_open",
         "browser": "not_run",
         "ios": "not_run"
       },
@@ -476,13 +476,13 @@
       "functional_validation": "real_metal_tick_interpolation_capture_ordered_timing_overload_and_short_live_surface_runs; surface_generation_and_nonblocking_close_reviewed; lifecycle_qualification_open",
       "experienced_quality": "synthetic_grid_capture_agent_reviewed; motion_and_showcase_quality_open",
       "platform_performance": {
-        "mac": "owner_quiet_91ad52d_frame_CPU_failed_presentation_unqualified",
+        "mac": "owner_quiet_91ad52d_baseline_recorded_lifecycle_open",
         "windows": "not_run",
         "browser": "not_run",
         "ios": "not_run",
         "android": "not_run"
       },
-      "diagnostic_measurement": "Owner quiet 91ad52d rows and newer loaded 8bb3979 comparisons: V1-BOUNDED-FRAMES-2026-11-04.md. Frame CPU, allocations, cadence, latency and lifecycle remain unqualified.",
+      "diagnostic_measurement": "Quiet/newer history: V1-BOUNDED-FRAMES-2026-11-04.md. CPU/allocations/cadence are tripwires, not gates; lifecycle remains open.",
       "evidence": [
         "../evidence/render/V1-BOUNDED-FRAMES-2026-11-04.md"
       ],
@@ -2964,7 +2964,7 @@
     "ARCHITECTURE-DECISIONS.md",
     "BASELINE-SPEC.md"
   ],
-  "contract_sha256": "fea24c25a88867bf73098dc80075477dac091bdfe1aca1f717909081d34d5261",
+  "contract_sha256": "2f0fe32fba0242bf074639ebbf51f3c65e03af4cff58a9e3f1b61ca1c461635d",
   "composition_supplement": {
     "design": "COMPOSITION.md",
     "decision": "selected",
@@ -3709,7 +3709,7 @@
     "record": "ARCHITECTURE-DECISIONS.md",
     "record_sha256": "0ec345f0ed162c3c0c6898fb3913a8952f5b4d65d75f1cf3ff6270c9f58725b4",
     "contract_revision": "C4",
-    "contract_sha256": "fea24c25a88867bf73098dc80075477dac091bdfe1aca1f717909081d34d5261",
+    "contract_sha256": "2f0fe32fba0242bf074639ebbf51f3c65e03af4cff58a9e3f1b61ca1c461635d",
     "specifications": {
       "BASELINE-SPEC.md": "c9671d2b2e468a670c5c52e4011d7df0f7a77d846208cdd7e1e3b39292b5f657",
       "FOUNDATION-SPEC.md": "9293b1eb3beb690d96f88d5fcb8260fc42a1d21c2688fbe515a05e8f3027c1e0",
@@ -4082,7 +4082,7 @@
     "record_sha256": "4077358422c06ab2426742834168c0bd419809ad59268d0da765c5ba0ed29c3e",
     "current_files": {
       "AI-DEVELOPMENT.md": "a6d85098df8d524f90d71142e5d6750828be5672d07e372910f5f61c14c893df",
-      "AI-PERFORMANCE.md": "27cba963dbe5873787f61a9654306bcb84d728a429c4db8222649b40afeb7ca6",
+      "AI-PERFORMANCE.md": "84cc89f0331c38dde12d87a114311bdeb9fd705caf359926322412786576d077",
       "ARCHITECTURE-AUDIT.md": "378286904828c06f460ed808bf24a6bb8aad3382b7d4f9c866754522f124938b",
       "ARCHITECTURE-BRIEF.md": "0db033cae315b8ddc36241a6dd5d48eb30b2023db1135a75ad58326fd15a4b88",
       "ARCHITECTURE-DECISIONS.md": "0ec345f0ed162c3c0c6898fb3913a8952f5b4d65d75f1cf3ff6270c9f58725b4",
@@ -4090,7 +4090,7 @@
       "CAPABILITY-SURVEY.md": "bd88f686bc3dcf56fc38009f2567df2d0200ffc23fea0ad16b406007c8c96530",
       "COMPOSITION.md": "392c9254d576fe771ff98f0b4937c41f0ec7ef90079e77d7155b83c0a4b40d01",
       "CONSTRUCTION-PLAN.md": "722c548d62132c80af79354056d7d14e023102133a678487bbd82f3f3887f660",
-      "CONTRACTS.md": "fea24c25a88867bf73098dc80075477dac091bdfe1aca1f717909081d34d5261",
+      "CONTRACTS.md": "2f0fe32fba0242bf074639ebbf51f3c65e03af4cff58a9e3f1b61ca1c461635d",
       "DESIGN-PROGRAMME.md": "0fcbaa525bec8a06485adf6e14f8eeb2178efcbc3ccb11d575caba1a788844e2",
       "ENGINE-EXPERIENCE.md": "646930ad1b72811368365de4d1ea4d7fab5df6465140fe2549bfeaed9df7d3b1",
       "ENGINE-STRUCTURE-RESEARCH.md": "aa05d06102a9dc9bd53505538188c728fa13ab58f72d33597c6d945e2ddc9a28",

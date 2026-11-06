@@ -13,37 +13,31 @@ We should invest in those mechanisms early, while retaining a small understandab
 ## Performance investment from the first design
 
 **User-selected ambition, 1 November 2026:** shocking performance, pursued deeply with mature engineering.
-The user cites Zed as an experience reference for exceptional speed and responsiveness; this does not select its
-architecture or establish a benchmark comparison. Meeting a frame budget is admission, not the ceiling of ambition.
-Pursue fast startup, immediate input/edit feedback, stable frame pacing, efficient memory and sustained throughput,
-including browser/mobile constraints. Quality, correctness and application stability remain requirements throughout.
+Zed remains an experience reference for speed and responsiveness, not an architecture choice or engine comparator.
+Fast startup, immediate feedback, stable pacing, efficient memory and throughput remain ambitions alongside quality,
+correctness and stability. Native uses the hardware fully; portable remains a capable fallback.
 
-AI development changes the investment economics: investigate expensive work, frequently repeated cheap work and
-repeated developer work more broadly than a conventional human-maintained implementation might justify. A path
-need not already dominate a profiler before its representation and avoidable costs deserve design attention.
-Cost-aware design begins before code; measured qualification begins when a correct executable slice exists.
-Neither a minimal first game nor a portable baseline defines the engine's eventual performance ceiling.
+**Owner decision, 6 November 2026, 11:15:** [foundation, tripwires, then tuning](decisions/PERFORMANCE-PHILOSOPHY-2026-11-06.md).
+This replaces numeric performance admission gates during feature construction, including allocation targets.
 
-**Full use of the hardware, 4 November 2026.** Performance comes from using what each device actually has, not from
-one path tuned for the weakest target. The [hardware-native decision](decisions/HARDWARE-NATIVE-ENGINE.md) selects a
-capability registry, four frame recipes (Apple tile, Android tile, desktop high, portable), one frame contract for
-reconstruction, interpolation and denoising providers, and a closed-loop quality governor. CPU core classes, vector
-units, unified memory, platform IO, display timing and network offload are investment fronts as much as GPU features.
-A dedicated path keeps a portable fallback and is promoted only by a measured win on its own hardware.
+1. **Design the foundation for high performance.** Give expensive-to-reverse choices the most care: column storage,
+   GPU-driven rendering, threading, memory ownership, reuse in hot paths and hardware-native recipe seams. Review
+   against current best practice and the [hardware-native decision](decisions/HARDWARE-NATIVE-ENGINE.md). These
+   choices do not wait for a benchmark. Prefer no allocation by design; unavoidable dependency allocations are
+   recorded rather than made a reason to replace a backend during feature construction.
+2. **Build with tripwires.** Investigate visible stutter, dropped frames, startup delays and hitches in running demos;
+   a tracked figure more than about 25% worse than its last comparable baseline; or cost growing faster than its
+   algorithm should. Keep historical measurements with source, workload, device and recipe identity. Investigate and
+   fix confirmed causes while other building continues. Benchmarks inform development; their targets do not block it.
+3. **Tune in a dedicated performance phase.** Once enough engine and demo content exists, profile whole frames on
+   real devices, including Mac and iPhone when available, and set targets from that data. That is the AI performance
+   push. Correctness, oracle tolerances, lifecycle and agent visual review remain delivery requirements now.
 
-Lower the threshold for investigation and controlled specialization. Agent effort can absorb difficult layouts,
-generated code, compile/cook specialization, SIMD, GPU kernels, incremental updates and distinct hardware paths.
-Internal authoring convenience alone does not veto a credible performance advantage. Keep the public engine model
-small and useful; document internal invariants and make changes verifiable. Specialization can also improve game
-creator workflows, but every creator-facing restriction must expose its benefit and supported domain explicitly.
-
-Retain a specialized implementation when its useful advantage and maintenance/qualification costs are justified.
-Count binary size, build time, variant coverage, debugging and regeneration burden as real costs, even with AI.
-Use a test-only reference or independent oracle where useful; shared tests alone do not establish correctness.
-Generated sources need owned inputs, a pinned generator and reproducible regeneration, not manual edits to outputs.
-Unsafe code or native API paths require narrow justified boundaries and relevant safety/conformance checks; this policy
-does not relax workspace lints or preselect a backend replacement. Revisit selected libraries/backends when evidence
-shows a consequential ceiling, with the shared-contract owners. Reuse and custom code compete on the same outcomes.
+Specialized internals, generated code, SIMD, incremental work and accelerated recipes remain welcome when justified.
+Keep public boundaries small, invariants clear, portable fallbacks working and safety checks intact. Claim measured
+wins only from measurements; neither best-practice review nor a functioning implementation proves one. Count binary
+size, builds, debugging, variants and regeneration as real costs. The campaign machinery below applies when a later
+optimization campaign is actually commissioned, not as a prerequisite for each feature.
 
 ### Capability investment map
 
@@ -75,12 +69,13 @@ Thrum's showcase claim rests on named techniques, not on comparisons with other 
 uncontrolled factors. The register is the maturity ledger's `technique_register` list, not a new document. Each entry gives:
 * the technique and its paper or production source;
 * the owner and the recipe or device family;
-* the measured win against portable on the same device, or the reproduced reference result within tolerance;
+* its implementation, correctness and visual status; measured comparisons or reference results when available;
 * why it would not scale with human authors, for example per-family kernels, exhaustive variant search or
   autotuned parameters kept current by agents.
 
-A paper reproduction compares against the paper's reference views and an independent ground-truth oracle. A
-technique whose win disappears leaves the register, together with its path.
+Pending and unqualified entries are allowed; they make no speed or reproduction claim. Paper reproduction still
+requires reference views and an independent oracle. If a measured win disappears, retire that claim and investigate
+the regression; do not automatically remove a useful functional path.
 
 ### The cost account in each owning design
 
@@ -122,8 +117,8 @@ Continue through the meaningful opportunities within its scope and resources. St
 boundary, when remaining gain is unsupported or below uncertainty, or when further variants cost more than their
 useful benefit. Record why and what would reopen the decision. No endless search or spending is implied.
 
-Promotion requires preserved semantics, stability and required quality, plus evidence for the claimed benefit and
-its supported targets. The existing campaign/evaluation/retention mechanisms below provide the deeper workflow.
+Functional delivery requires preserved semantics, stability, lifecycle and required visuals. Performance claims need
+evidence, but benchmarks are tripwires during feature construction. Later campaigns use the deeper workflow below.
 
 ## What changes in the architecture
 
