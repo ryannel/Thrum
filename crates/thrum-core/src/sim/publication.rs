@@ -25,6 +25,8 @@ pub(super) struct WarmColumnCapture<'a> {
     source: &'a dyn ErasedPublicationColumn,
     directory: Option<&'a DenseDirectory>,
     source_directory: Option<&'a DenseDirectory>,
+    page_matches_world: bool,
+    page_matches_source: bool,
     page_words: &'a [u64],
     page_structural: &'a [u64],
     outbound_words: &'a [u64],
@@ -244,11 +246,19 @@ impl<T: PartialEq + Send + Sync + 'static> ErasedPublicationColumn for Publicati
                     continue;
                 }
                 let page_row = row_of(capture.directory, index);
-                let source_row = row_of(capture.source_directory, index);
+                let source_row = if capture.page_matches_source {
+                    page_row
+                } else {
+                    row_of(capture.source_directory, index)
+                };
                 if refresh & mask != 0 {
-                    let row = capture
-                        .world
-                        .row_of_slot(u32::try_from(index).expect("validated capacity"));
+                    let row = if capture.page_matches_world {
+                        page_row
+                    } else {
+                        capture
+                            .world
+                            .row_of_slot(u32::try_from(index).expect("validated capacity"))
+                    };
                     self.refresh_slot(world, page_row, row);
                 }
                 if temporal && capture.pair_valid[word] & mask == 0 {
@@ -607,6 +617,14 @@ impl PublicationDiff {
 
 fn row_of(directory: Option<&DenseDirectory>, slot: usize) -> usize {
     directory.map_or(slot, |directory| directory.row_of(slot))
+}
+
+fn same_layout(left: Option<&DenseDirectory>, right: Option<&DenseDirectory>) -> bool {
+    match (left, right) {
+        (Some(left), Some(right)) => left.shares_layout(right),
+        (None, None) => true,
+        _ => false,
+    }
 }
 
 fn dirty_slots<'a>(
@@ -990,6 +1008,12 @@ impl PublicationPage {
             }
         }
         if let Some(source) = source.filter(|_| !cold) {
+            let page_matches_world =
+                same_layout(self.columns.directory.as_ref(), world.directory());
+            let page_matches_source = same_layout(
+                self.columns.directory.as_ref(),
+                source.columns.directory.as_ref(),
+            );
             for (index, column) in self.columns.selected.iter_mut().enumerate() {
                 let baseline = &source.columns.selected[index];
                 assert_eq!(column.key, baseline.key, "publication schema");
@@ -999,6 +1023,8 @@ impl PublicationPage {
                     source: baseline.values.as_ref(),
                     directory: self.columns.directory.as_ref(),
                     source_directory: source.columns.directory.as_ref(),
+                    page_matches_world,
+                    page_matches_source,
                     page_words: page_dirty.component_words(column.component),
                     page_structural: page_dirty.structural_words(),
                     outbound_words: outbound_dirty.component_words(column.component),

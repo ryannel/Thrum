@@ -1,14 +1,34 @@
 //! Logical identity stays fixed while active component rows occupy a dense prefix.
 
-use std::mem::size_of;
+use std::{
+    hash::{Hash, Hasher},
+    mem::size_of,
+    sync::atomic::{AtomicU64, Ordering},
+};
+
+static NEXT_LAYOUT_ID: AtomicU64 = AtomicU64::new(1);
+
+fn next_layout_id() -> u64 {
+    NEXT_LAYOUT_ID
+        .try_update(Ordering::Relaxed, Ordering::Relaxed, |id| id.checked_add(1))
+        .expect("layout identities exhausted")
+}
 
 /// Full-capacity inverse maps, including inactive and currently vacant slots.
 /// Component columns must apply every returned row swap in the same order.
-#[derive(Hash)]
 pub(super) struct DenseDirectory {
     slot_to_row: Vec<usize>,
     row_to_slot: Vec<usize>,
     active_len: usize,
+    layout_id: u64,
+}
+
+impl Hash for DenseDirectory {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.slot_to_row.hash(state);
+        self.row_to_slot.hash(state);
+        self.active_len.hash(state);
+    }
 }
 
 /// One membership change, including changes that do not move any row.
@@ -26,6 +46,7 @@ impl Clone for DenseDirectory {
             slot_to_row: self.slot_to_row.clone(),
             row_to_slot: self.row_to_slot.clone(),
             active_len: self.active_len,
+            layout_id: self.layout_id,
         }
     }
 
@@ -34,6 +55,7 @@ impl Clone for DenseDirectory {
         self.slot_to_row.clone_from(&source.slot_to_row);
         self.row_to_slot.clone_from(&source.row_to_slot);
         self.active_len = source.active_len;
+        self.layout_id = source.layout_id;
     }
 }
 
@@ -44,6 +66,7 @@ impl DenseDirectory {
             slot_to_row: (0..capacity).collect(),
             row_to_slot: (0..capacity).collect(),
             active_len: 0,
+            layout_id: next_layout_id(),
         }
     }
 
@@ -57,6 +80,12 @@ impl DenseDirectory {
 
     pub(super) fn active_len(&self) -> usize {
         self.active_len
+    }
+
+    /// Equal IDs prove identical row maps; independently evolved but equal
+    /// maps may have different IDs and take the general path.
+    pub(super) fn shares_layout(&self, other: &Self) -> bool {
+        self.layout_id == other.layout_id
     }
 
     pub(super) fn reserved_bytes(&self) -> usize {
@@ -78,6 +107,7 @@ impl DenseDirectory {
             self.active_len - 1
         };
         self.swap_rows(row, boundary_row);
+        self.layout_id = next_layout_id();
         if active {
             self.active_len += 1;
         } else {
@@ -100,6 +130,7 @@ impl DenseDirectory {
             "layout replay starts at the recorded active prefix"
         );
         self.swap_rows(swap.row, swap.boundary_row);
+        self.layout_id = next_layout_id();
         self.active_len = swap.resulting_active_len;
     }
 
@@ -108,6 +139,7 @@ impl DenseDirectory {
     /// component columns must reverse the same swaps before reuse.
     pub(super) fn undo(&mut self, swap: RowSwap) {
         self.swap_rows(swap.row, swap.boundary_row);
+        self.layout_id = next_layout_id();
         self.active_len = swap.previous_active_len;
     }
 
@@ -122,6 +154,8 @@ impl DenseDirectory {
 
 #[cfg(test)]
 mod tests {
+    use std::hash::{Hash, Hasher};
+
     use super::DenseDirectory;
 
     fn assert_layout(directory: &DenseDirectory, active_len: usize, slots: &[usize]) {
@@ -233,5 +267,24 @@ mod tests {
         );
         assert_layout(&target, 1, &[3, 1, 2, 0]);
         assert_layout(&DenseDirectory::new(0), 0, &[]);
+    }
+
+    #[test]
+    fn shared_layout_identity_is_conservative_and_does_not_change_world_hash() {
+        let mut authority = DenseDirectory::new(5);
+        let mut page = authority.clone();
+        assert!(authority.shares_layout(&page));
+        authority.transition(3, true).expect("authority transition");
+        page.transition(3, true)
+            .expect("independent page transition");
+        assert!(!authority.shares_layout(&page));
+        let hash = |directory: &DenseDirectory| {
+            let mut state = std::collections::hash_map::DefaultHasher::new();
+            directory.hash(&mut state);
+            state.finish()
+        };
+        assert_eq!(hash(&authority), hash(&page));
+        page.clone_from(&authority);
+        assert!(authority.shares_layout(&page));
     }
 }
