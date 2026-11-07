@@ -19,6 +19,8 @@ use crate::graph::{
 };
 use crate::graph_record::{ExecutableGraph, RecordBinding, RecordFamily};
 use crate::timing::{GpuTimings, TimingError};
+pub use crate::visibility::CullMode;
+use crate::visibility::{self, MeshRecord, VisibilityPrepared, VisibilityTarget};
 use glam::Vec3;
 use std::collections::BTreeSet;
 use std::sync::{
@@ -81,6 +83,16 @@ const CUBE_INDICES: [u16; 36] = [
     18, 17, 19, 20, 21, 22, 22, 21, 23,
 ];
 const CUBE_INDEX_BYTES: u64 = 72;
+/// Stable mesh row 0: the diagnostic cube's index range and local bounds.
+const CUBE_MESH: MeshRecord = MeshRecord {
+    first_index: 0,
+    index_count: 36,
+    base_vertex: 0,
+    bounds_min: [-1.0; 3],
+    bounds_max: [1.0; 3],
+};
+/// Forward view-group binding of the camera's visible slot list.
+const VISIBLE_BINDING: u32 = 5;
 /// Explicit shader sRGB encoding after exposure, tone and gamut mapping.
 pub const OUTPUT_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba8Unorm;
 
@@ -98,6 +110,8 @@ pub struct SyntheticScene {
     pub view: SyntheticView,
     /// Prepare two finite perspective Sun cascades; off avoids their maps and passes.
     pub sun_shadows: bool,
+    /// Camera opaque draw: the direct oracle or GPU frustum compaction.
+    pub camera_culling: CullMode,
 }
 impl SyntheticScene {
     /// Generate a bounded regular grid. Instance IDs remain stable; one draw
@@ -153,6 +167,7 @@ impl SyntheticScene {
             local_lights: Vec::new(),
             view: SyntheticView::default(),
             sun_shadows: false,
+            camera_culling: CullMode::Direct,
         })
     }
 }
@@ -464,6 +479,8 @@ pub struct PreparedSynthetic {
     atmosphere: Option<AtmospherePrepared>,
     surface: SurfaceParts,
     contribution_passes: ContributionPasses,
+    visibility: VisibilityPrepared,
+    camera_culling: CullMode,
 }
 
 struct SceneFamily;
@@ -534,6 +551,20 @@ impl SceneContext<'_> {
                 None
             },
         )
+    }
+
+    fn visibility(&mut self, pass: &CompiledPass) -> Result<(), RenderError> {
+        let view_offset =
+            self.prepared.view_stride * u32::from(self.target.frame_revision & 1 != 0);
+        let encoded = self.prepared.visibility.encode(
+            self.encoder,
+            &self.target.visibility,
+            view_offset,
+            self.generation,
+            pass,
+            self.timings.as_deref_mut(),
+        )?;
+        encoded.then_some(()).ok_or(RenderError::GraphPassMismatch)
     }
 
     fn opaque(&mut self, pass: &CompiledPass) -> Result<(), RenderError> {
@@ -849,6 +880,7 @@ impl PreparedSynthetic {
                 count: None,
             },
             uniform_layout(1, AUX_BYTES as u64, wgpu::ShaderStages::FRAGMENT),
+            storage_layout(VISIBLE_BINDING, wgpu::ShaderStages::VERTEX, 4),
         ];
         if shadow_enabled {
             view_entries.extend([
@@ -1074,6 +1106,18 @@ impl PreparedSynthetic {
             &instance_layout,
             instance_count,
         );
+        let visibility = VisibilityPrepared::new(
+            device,
+            queue,
+            PipelineKey {
+                device_generation: generation,
+                revision: SYNTHETIC_REVISION,
+                role: visibility::ROLE,
+            },
+            instance_count,
+            &[CUBE_MESH],
+            instance_upload.active_count(),
+        );
         let shadow = if shadow_enabled {
             let direction = packed_light_direction(&light_data);
             Some(ShadowPrepared::new(
@@ -1213,13 +1257,17 @@ impl PreparedSynthetic {
         } else {
             "fragment"
         };
+        let vertex_entry = match scene.camera_culling {
+            CullMode::Direct => "vertex",
+            CullMode::Frustum => "compacted_vertex",
+        };
         let create_pipeline = |cull_mode| {
             device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
                 label: Some("prepared opaque synthetic role"),
                 layout: Some(&layout),
                 vertex: wgpu::VertexState {
                     module: &shader,
-                    entry_point: Some("vertex"),
+                    entry_point: Some(vertex_entry),
                     compilation_options: wgpu::PipelineCompilationOptions::default(),
                     buffers: &[],
                 },
@@ -1317,6 +1365,8 @@ impl PreparedSynthetic {
             light,
             materials,
             history,
+            visibility,
+            camera_culling: scene.camera_culling,
             exposure: exposure_resolve,
             history_source: None,
             instance_upload,
@@ -1529,11 +1579,15 @@ impl PreparedSynthetic {
         changed_slots: &[u32],
     ) -> Result<InstanceUploadReport, RenderError> {
         let shadow = self.shadow.as_ref();
-        self.instance_upload
+        let report = self
+            .instance_upload
             .replace(queue, instances, changed_slots, |instance| {
                 instance.ids[3] != 0
                     && shadow.is_some_and(|shadow| !shadow.contains_caster(instance))
-            })
+            })?;
+        self.visibility
+            .set_active(queue, self.instance_upload.active_count());
+        Ok(report)
     }
     /// Prepared generation-local finite draw tuple.
     pub fn pipeline_key(&self) -> PipelineKey {
@@ -1715,7 +1769,7 @@ impl PreparedSynthetic {
             },
         ];
         let mut prepared_keys = BTreeSet::from([self.key, self.display_key(), self.exposure_key()]);
-        let directional = Self::append_frame_uniform_reads(&mut graph, &mut accesses)?;
+        let (directional, view) = Self::append_frame_uniform_reads(&mut graph, &mut accesses)?;
         if let Some(atmosphere) = self.atmosphere.as_ref() {
             atmosphere.append_graph(
                 &mut graph,
@@ -1770,6 +1824,38 @@ impl PreparedSynthetic {
         let scene = Self::view_attachment(attachment, SCENE_FORMAT, AttachmentUse::Scene)?;
         let attachment = (width, height, &mut graph, &mut accesses);
         let motion = Self::view_attachment(attachment, MOTION_FORMAT, AttachmentUse::Motion)?;
+        if self.camera_culling == CullMode::Frustum {
+            let reads = vec![
+                Access {
+                    resource: view,
+                    range: 0..VIEW_BYTES as u64,
+                    kind: AccessKind::UniformRead,
+                    store: true,
+                },
+                Access {
+                    resource: instance.clone(),
+                    range: 0..self.instance_bytes,
+                    kind: AccessKind::StorageRead,
+                    store: true,
+                },
+            ];
+            let outputs = self.visibility.append_graph(&mut graph, reads)?;
+            prepared_keys.insert(self.visibility.key());
+            accesses.extend([
+                Access {
+                    resource: outputs.visible,
+                    range: 0..self.visibility.visible_bytes(),
+                    kind: AccessKind::StorageRead,
+                    store: true,
+                },
+                Access {
+                    resource: outputs.args,
+                    range: 0..visibility::ARGS_BYTES,
+                    kind: AccessKind::IndirectRead,
+                    store: true,
+                },
+            ]);
+        }
         let forward = graph.pass(Pass {
             name: "synthetic forward opaque".into(),
             scope: PassScope::View(1),
@@ -1815,7 +1901,7 @@ impl PreparedSynthetic {
     fn append_frame_uniform_reads(
         graph: &mut FrameGraph,
         accesses: &mut Vec<Access>,
-    ) -> Result<ResourceId, GraphError> {
+    ) -> Result<(ResourceId, ResourceId), GraphError> {
         let directional = graph.resource(
             ResourceDescriptor::Buffer {
                 bytes: LIGHT_BYTES as u64,
@@ -1855,7 +1941,7 @@ impl PreparedSynthetic {
             kind: AccessKind::UniformRead,
             store: true,
         });
-        Ok(directional)
+        Ok((directional, view))
     }
 
     fn history_resources(
@@ -2151,6 +2237,11 @@ impl PreparedSynthetic {
                         frame.shadow(index, pass)
                     })
                 }
+                Some(key) if key == self.visibility.key() => {
+                    RecordBinding::<SceneFamily>::new(id, PassKind::Compute, |frame, pass| {
+                        frame.visibility(pass)
+                    })
+                }
                 Some(key) if key == self.key => {
                     RecordBinding::<SceneFamily>::new(id, PassKind::Render, |frame, pass| {
                         frame.opaque(pass)
@@ -2348,7 +2439,12 @@ impl PreparedSynthetic {
             &self.cube_indices
         };
         pass.set_index_buffer(indices.slice(..), wgpu::IndexFormat::Uint16);
-        pass.draw_indexed(0..36, 0, 0..self.instance_upload.active_count());
+        match self.camera_culling {
+            CullMode::Direct => {
+                pass.draw_indexed(0..36, 0, 0..self.instance_upload.active_count());
+            }
+            CullMode::Frustum => pass.draw_indexed_indirect(target.visibility.args(), 0),
+        }
         if let Some(contribution) = contribution {
             contribution.draw(&mut pass);
         }
@@ -2445,6 +2541,7 @@ pub struct OffscreenTarget {
     aux_buffer: wgpu::Buffer,
     shadow: Option<ShadowTarget>,
     air_shadow: Option<AirShadowTarget>,
+    visibility: VisibilityTarget,
     depth: wgpu::TextureView,
     width: u32,
     height: u32,
@@ -2531,6 +2628,12 @@ impl OffscreenTarget {
             (None, None) => None,
             _ => return Err(RenderError::GraphPassMismatch),
         };
+        let visibility = prepared.visibility.target(
+            device,
+            &prepared.view_buffer,
+            prepared.instance_upload.buffer(),
+            prepared.history.serial_buffer(),
+        );
         let mut view_entries = vec![
             wgpu::BindGroupEntry {
                 binding: 0,
@@ -2543,6 +2646,11 @@ impl OffscreenTarget {
             wgpu::BindGroupEntry {
                 binding: 1,
                 resource: aux.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: VISIBLE_BINDING,
+                // Unread by the direct vertex entry.
+                resource: visibility.visible().as_entire_binding(),
             },
         ];
         if let (Some(prepared_shadow), Some(target_shadow)) = (&prepared.shadow, &shadow) {
@@ -2580,6 +2688,7 @@ impl OffscreenTarget {
             aux_buffer: aux,
             shadow,
             air_shadow,
+            visibility,
             depth,
             width,
             height,
