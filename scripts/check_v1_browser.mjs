@@ -1194,8 +1194,7 @@ async function qualifyRoute(cdp, sessionId, poll, timeout, output, mode, file, f
   const expected = { hours: preset['sky.solar_time'] ?? 12, yaw: preset['camera.yaw'] ?? 0, pitch: preset['camera.pitch'] ?? 0 };
   if (preset['world.paused'] !== true) throw new Error(`${file} must pause the world`);
   const page = `({status:document.querySelector('#params-status').textContent,hidden:document.querySelector('#params').hidden,hours:document.querySelector('#solar-time').valueAsNumber,yaw:document.querySelector('#camera-yaw').valueAsNumber,pitch:document.querySelector('#camera-pitch').valueAsNumber,paused:document.querySelector('#pause-world').checked})`;
-  await until(async () => /^Running/.test((await poll()).status ?? ''), `${mode} startup`);
-  const game = await existingGame(cdp, sessionId);
+  const { startup, game } = await observeRouteStartup(cdp, sessionId, poll, deadline, mode, file);
   const applied = await until(async () => { await poll(); const value = await game.invoke(`return ${page};`); return value.status ? value : undefined; }, `${mode} parameter report`);
   if (applied.hidden || !new RegExp(`^${file.replaceAll('.', '\\.')}: \\d+ changed, \\d+ unchanged, 0 refused$`).test(applied.status)) throw new Error(`${mode}: parameter report wrong: ${applied.status}`);
   if (!applied.paused || Math.abs(applied.hours - expected.hours) > 0.0051 || Math.abs(applied.yaw - expected.yaw) > 0.5001 || Math.abs(applied.pitch - expected.pitch) > 0.5001) throw new Error(`${mode}: controls do not show the preset: ${JSON.stringify({ applied, expected })}`);
@@ -1220,8 +1219,68 @@ async function qualifyRoute(cdp, sessionId, poll, timeout, output, mode, file, f
   const after = await read();
   const cooked = await cookedStatus();
   if (!(cooked?.drawn >= drawn.cooked.drawn)) throw new Error(`${mode}: cooked valley stopped drawing: ${JSON.stringify(cooked)}`);
-  return { file, preset, sha256: source.sha256, expected, applied, settled, after, cooked, image: { ...image, clip },
+  return { file, preset, sha256: source.sha256, expected, applied, settled, after, cooked, startup, image: { ...image, clip },
     scope: 'Fresh page launched with ?assets and ?params; preset applied with nothing refused, world paused at one tick and the cooked valley drawn before a canvas capture; no timing claim' };
+}
+
+// Startup proxy for one route page, observed on the page's own clock (performance.now(), milliseconds since its
+// navigation started). The page fetches and attaches the cooked valley before it reports Running and starts its frame
+// loop, so nothing cooked is drawn before Running. Until the page starts fetching the valley only the clock and status
+// line are read; from then on the clock, status and cooked_status() are read in one call. The first draw lies between the last observation without one and
+// the first with one: the latter is an upper bound, and the gap between them is the observation granularity. This is
+// a CDP polling proxy, not physical first-paint latency.
+async function observeRouteStartup(cdp, sessionId, poll, deadline, mode, file) {
+  const observe = `JSON.stringify({now:performance.now(),origin:performance.timeOrigin,href:location.href,status:document.querySelector('#status')?.textContent ?? null})`;
+  const rows = [];
+  let game, origin, lastWithout, firstWith, final, phases = {};
+  while (!firstWith) {
+    if (Date.now() > deadline) throw new Error(`Timed out: ${mode} first cooked draw`);
+    await poll();
+    if (!game) {
+      const evaluated = await cdp.call('Runtime.evaluate', { expression: observe, returnByValue: true }, sessionId);
+      if (evaluated.exceptionDetails) throw new Error(JSON.stringify(evaluated.exceptionDetails));
+      const value = JSON.parse(evaluated.result.value);
+      // Until the route page commits, the old document answers; its clock is not this page's.
+      if (!value.href.includes(`params=${file}`)) { await sleep(5); continue; }
+      if (origin === undefined) origin = value.origin;
+      if (value.origin !== origin) throw new Error(`${mode}: page clock origin changed during startup`);
+      const phase = /^Running/.test(value.status ?? '') ? 'running' : /^Fetching/.test(value.status ?? '') ? 'fetching' : 'loading';
+      phases[phase] ??= value.now;
+      lastWithout = value.now; rows.push({ now: value.now, phase, drawn: 0 });
+      // The game exists once the page starts fetching the valley; find it then, well before the first draw.
+      if (phase === 'loading') { await sleep(5); continue; }
+      game = await existingGame(cdp, sessionId);
+    }
+    const value = await game.invoke(`return {now:performance.now(),origin:performance.timeOrigin,status:document.querySelector('#status')?.textContent ?? null,cooked:game.cooked_status()};`);
+    if (value.origin !== origin) throw new Error(`${mode}: page clock origin changed during startup`);
+    const cooked = JSON.parse(value.cooked ?? 'null');
+    if (cooked?.errors.length) throw new Error(`${mode}: cooked valley failed during startup: ${JSON.stringify(cooked)}`);
+    const phase = /^Running/.test(value.status ?? '') ? 'running' : 'fetching';
+    phases[phase] ??= value.now;
+    rows.push({ now: value.now, phase, drawn: cooked?.drawn ?? 0 });
+    if (cooked?.drawn >= 1) { firstWith = value.now; final = cooked; } else { lastWithout = value.now; await sleep(5); }
+  }
+  // Where the time went: the navigation, the Wasm and the cooked products, from the page's own timing entries.
+  const timing = await game.invoke(`const nav=performance.getEntriesByType('navigation')[0];
+    const pick=e=>({name:e.name,start:e.startTime,end:e.responseEnd,transfer:e.transferSize,decoded:e.decodedBodySize});
+    const resources=performance.getEntriesByType('resource');
+    const cooked=resources.filter(e=>!e.name.startsWith(location.origin));
+    return {navigation:nav&&{responseEnd:nav.responseEnd,domContentLoaded:nav.domContentLoadedEventEnd,load:nav.loadEventEnd,transfer:nav.transferSize},
+      wasm:resources.filter(e=>e.name.endsWith('/v1_game_bg.wasm')).map(pick),
+      cooked:{count:cooked.length,start:Math.min(...cooked.map(e=>e.startTime)),end:Math.max(...cooked.map(e=>e.responseEnd)),
+        sizes:'not exposed: the cooked server is cross-origin and sends no Timing-Allow-Origin; see uploadedBytes'}};`);
+  const gaps = rows.slice(1).map((row, index) => row.now - rows[index].now);
+  return {
+    game,
+    startup: {
+      clock: 'page performance.now(), ms since navigation start; timeOrigin recorded', timeOrigin: origin,
+      lowerMs: lastWithout ?? 0, upperMs: firstWith, granularityMs: firstWith - (lastWithout ?? 0),
+      medianPollMs: gaps.sort((a, b) => a - b)[Math.floor(gaps.length / 2)] ?? null, polls: rows.length,
+      phases, timing, uploadedBytes: final.uploadedBytes, rows,
+      cache: 'HTTP cache disabled for the page (Network.setCacheDisabled); one fresh Chrome profile per checker run',
+      scope: 'Headless CDP polling proxy for the first observed cooked draw; the upper bound includes up to one poll interval. Not physical first-paint latency.',
+    },
+  };
 }
 
 // Field oracle views: headings all round, level and tilted down, at the paused tick.

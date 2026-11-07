@@ -13,9 +13,9 @@ poses read from artifacts, split M1 boxes, and a baseline that survives a clean 
   findings, all taken (see the log).
 - M2 fixes @ fe9e26d5, same reviewer, brief: the fix list in its follow-up (report
   `tmp/g7-showcase/review/M2-REREVIEW-REPORT.md`, local), accept. Three wording nits, all taken.
-Milestone: M2 Repeatable route and first baseline · Updated: 2026-11-07
-Now: M1 and M2 done; this slice's plan is complete (M2 on main at 664a4ff0)
-Next: the items owed for final G7 belong to later work, listed in the design's "Still owed for final G7"
+Milestone: M3 Screen-independent proofs · Updated: 2026-11-07
+Now: M1 and M2 done (on main at 664a4ff0). M3, commissioned by root, has started from main 961541f0
+Next: root's verdict on the checker seam (posted); the startup rows and the edited-source run from a clean commit
 Blocked: none. The on-screen Mac walk waits on screen control (one request denied).
 
 ## M1 Local cooked valley on both targets: done
@@ -79,6 +79,29 @@ Work:
 - [x] Add the baseline save and compare (`check --save-baseline`, automatic compare).
 - [x] Switch the stop frames to the preset-driven path. Recalibrate only if the numbers move. (They did not.)
 
+## M3 Screen-independent proofs: in progress
+Commission: root, `tmp/g7-boundary/NOTES.md` "Root commission for the remaining screen-independent G7 proofs". The
+on-screen Mac walk and the renderer findings stay with root.
+
+Done when:
+- [ ] Chrome startup proxy: repeated fresh-process rows from navigation to the first observed cooked draw, with
+      the clock, poll granularity, cache state and artifact hashes; cold and warm pages apart; range and median.
+      Build, cook and scripted time kept separate. The checker's instrumentation seam is approved by root before
+      it is pushed.
+- [ ] Edited source: the ground texture is retinted in a scratch copy, cooked through the normal route, and every
+      stop runs on both targets. The run shows the new source root, the edited region on both targets, parity, and
+      the canonical baseline refusing the new identity.
+- [ ] A reviewed replacement is saved at a scratch baseline path, and a rerun compares against it.
+- [ ] A canonical check in the same session passes against the checked-in baseline, as the control. Both proofs
+      name the main revision they ran on.
+- [ ] An independent milestone review agrees; its brief and verdict are on the Reviews line.
+
+Work:
+- [x] Checker: route-specific startup observation in `qualifyRoute`; exact diff posted to root
+      (`tmp/g7-boundary/m3-checker-startup.diff`).
+- [x] Script: `startup` command; `--source` and `--recalibrate` for `check`.
+- [ ] Runs, evidence and review.
+
 ## Log
 - 2026-11-07 Plan written with the design.
 - 2026-11-07 Root approved both seams in principle and asked for the 17.4 h clear-Sun stop as a distinct cue. Added it
@@ -137,3 +160,5 @@ Work:
   `--baseline` help says it is relative to the current directory.
 - 2026-11-07 Root approved the revised checker diff (03f1476c) and kept the native approval. After a clean building
   check, field-oracle, params and controls passed on the main tip, M2 landed as a fast-forward at 664a4ff0. M2 done.
+- 2026-11-07 Root commissioned M3: the Chrome startup proxy and a whole route run from an edited source. Started on
+  a fresh branch from main 961541f0.

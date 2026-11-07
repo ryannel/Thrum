@@ -7,8 +7,9 @@ in run.json there. The route's values live only in examples/v1-game/params/showc
 
   mac [--stop NAME] [--frames N]   windowed game on a watched copy of the valley source
   chrome [--stop NAME] [--no-open] Chrome page on a watched, served copy; Ctrl-C stops it
-  check [--save-baseline] [--baseline PATH]
+  check [--save-baseline] [--baseline PATH] [--source DIR [--recalibrate]]
                                    visible check: the cooked valley on both targets, not a fallback
+  startup [--runs N]               Chrome startup proxy: N fresh browsers, navigation to first observed cooked draw
 """
 
 import argparse
@@ -135,7 +136,8 @@ def build(run, web):
 
 def identities(web, built):
     # Under --no-build the binaries may predate the commit; only a run that builds proves they match it.
-    found = {'commit': git('rev-parse', 'HEAD'), 'dirty': bool(git('status', '--porcelain')), 'built_by_this_run': built}
+    found = {'commit': git('rev-parse', 'HEAD'), 'origin_main': git('rev-parse', 'origin/main'),
+             'dirty': bool(git('status', '--porcelain')), 'built_by_this_run': built}
     for name, path in [('thrum_cook', COOK), ('v1_game', GAME)] + ([('wasm', WASM)] if web else []):
         if not path.exists():
             raise Failure(f'{path} is not built; run without --no-build')
@@ -143,10 +145,18 @@ def identities(web, built):
     return found
 
 
-def copy_source(run):
+def copy_source(run, origin=SOURCE):
     source = run / 'source'
-    shutil.copytree(SOURCE, source)
+    shutil.copytree(origin, source)
     return source
+
+
+def store_root(store):
+    """The generation-1 root of a cooked store, refusing any other generation."""
+    head = (store / 'HEAD').read_bytes()
+    if head[:8] != b'THRMHEAD' or struct.unpack('<Q', head[16:24])[0] != 1:
+        raise Failure(f'the cooked store {store} is not at generation 1')
+    return head[24:56].hex()
 
 
 def watch(run, source, serve):
@@ -400,7 +410,13 @@ def compare_baseline(baseline_path, grids, identity, thresholds):
     saved = json.loads(baseline_path.read_text())
     differs = sorted(key for key in identity if saved['identity'].get(key) != identity[key])
     if differs:
-        return {'status': 'other identity', 'differs': differs, 'baseline_identity': saved['identity']}
+        result = {'status': 'other identity', 'differs': differs, 'baseline_identity': saved['identity']}
+        # Same comparator, frames and route on other content: the difference locates what the content change moved.
+        # It is information only and never judged.
+        if differs == ['source_root']:
+            result['informational'] = {f'{target}/{stop}': difference(cells, unpack(saved['grids'][target][stop]))
+                                       for target, stops in grids.items() for stop, cells in stops.items()}
+        return result
     result = {'status': 'compared', 'stops': {}, 'over': []}
     for target, stops in grids.items():
         for stop, cells in stops.items():
@@ -435,24 +451,25 @@ def bounded(command, log, seconds, **options):
 def check(args):
     stops = route()
     run = new_run('check')
-    report = {'command': 'check', 'route': stops, 'comparator': COMPARATOR, 'passed': False, 'failures': []}
+    origin = Path(args.source).resolve()
+    baseline_path = Path(args.baseline).resolve()
+    if args.recalibrate and args.save_baseline and baseline_path == BASELINE:
+        raise Failure('--recalibrate cannot save the canonical baseline: update THRESHOLDS and CALIBRATED_ROOT by review')
+    report = {'command': 'check', 'route': stops, 'comparator': COMPARATOR, 'passed': False, 'failures': [],
+              'source': {'path': str(origin), 'canonical': origin == SOURCE}, 'recalibrate': args.recalibrate}
     report['build_seconds'] = None if args.no_build else build(run, web=True)
     report['builds'] = identities(web=True, built=not args.no_build)
     write_json(run / 'run.json', report)
     failures = report['failures']
     timings = report['timings_seconds'] = {}
     try:
-        source = copy_source(run)
+        source = copy_source(run, origin)
         started = time.monotonic()
         with open(run / 'cook.log', 'w') as log:
             if bounded([str(COOK), 'cook', str(source), str(run / 'store')], log, 120):
                 raise Failure('thrum-cook cook failed')
         timings['cook'] = time.monotonic() - started
-        head = (run / 'store/HEAD').read_bytes()
-        if head[:8] != b'THRMHEAD' or struct.unpack('<Q', head[16:24])[0] != 1:
-            raise Failure('the cooked store is not at generation 1')
-        root = head[24:56].hex()
-        report['generation_1_root'] = root
+        root = report['generation_1_root'] = store_root(run / 'store')
 
         # Native: THRUM_SCENE=valley makes capture require the store and refuse unless it is drawn.
         native = run / 'native'
@@ -534,10 +551,12 @@ def check(args):
         worst = [max(values['valley'][i] for values in statistics.values()) for i in range(3)]
         rule = [max(1.0, 3 * value) for value in worst]
         report['calibration'] = {'worst_valley': worst, 'rule_thresholds': rule, 'fixed_thresholds': THRESHOLDS}
-        if THRESHOLDS and root != CALIBRATED_ROOT:
+        if THRESHOLDS and root != CALIBRATED_ROOT and not args.recalibrate:
             raise Failure(f'thresholds were calibrated on source root {CALIBRATED_ROOT[:8]}, not {root[:8]}: '
-                          'recalibrate by the design rule and record it')
-        thresholds = THRESHOLDS or rule
+                          'recalibrate by the design rule (--recalibrate) and record it')
+        # --recalibrate judges this run, both controls included, by the rule rather than the fixed thresholds.
+        thresholds = rule if args.recalibrate else THRESHOLDS or rule
+        report['calibration']['applied'] = 'rule (--recalibrate)' if args.recalibrate else 'fixed' if THRESHOLDS else 'rule (calibration run)'
         report['thresholds'] = thresholds
         names = ['median', 'p95', 'max']
         for stop, values in statistics.items():
@@ -550,7 +569,6 @@ def check(args):
             failures.append('positive control: the retinted texture did not exceed any threshold')
         identity = {'comparator': COMPARATOR, 'frames': FRAMES, 'source_root': root,
                     'route': {stop: sha256(PARAMS / f'showcase-{stop}.params.json') for stop in ROUTE}}
-        baseline_path = Path(args.baseline).resolve()
         baseline = report['baseline'] = compare_baseline(baseline_path, grids, identity, thresholds)
         baseline['path'] = str(baseline_path.relative_to(REPO)) if baseline_path.is_relative_to(REPO) else str(baseline_path)
         drifted = baseline['status'] == 'compared' and baseline['over']
@@ -582,6 +600,8 @@ def check(args):
         print(f'baseline: worst difference {" ".join(f"{v:.3f}" for v in worst)} over {len(baseline["stops"])} frames')
     elif baseline:
         print(f'baseline: {baseline["status"]} {baseline.get("differs", "")}')
+        for name, values in baseline.get('informational', {}).items():
+            print(f'  informational difference from it, {name:>24}: {" ".join(f"{v:7.3f}" for v in values)}')
     if baseline.get('saved'):
         replaced = f' (replacing drift at {", ".join(baseline["replaced_drift"])})' if baseline.get('replaced_drift') else ''
         print(f'baseline saved: {baseline["saved"]}{replaced}')
@@ -592,13 +612,91 @@ def check(args):
         raise SystemExit(1)
 
 
+def spread(values):
+    values = sorted(values)
+    return {'count': len(values), 'min': values[0], 'median': values[len(values) // 2] if len(values) % 2
+            else (values[len(values) // 2 - 1] + values[len(values) // 2]) / 2, 'max': values[-1]} if values else None
+
+
+def startup(args):
+    """Chrome startup proxy: each launch is the checker's route case in a fresh Chrome process and profile."""
+    stops = route()
+    run = new_run('startup')
+    report = {'command': 'startup', 'runs': args.runs, 'passed': False, 'failures': [],
+              'build_seconds': None if args.no_build else build(run, web=True)}
+    report['builds'] = identities(web=True, built=not args.no_build)
+    web_presets()
+    source = copy_source(run)
+    rows = report['rows'] = []
+    launches = report['launches'] = []
+    try:
+        for launch in range(1, args.runs + 1):
+            output = run / f'launch-{launch}'
+            started = time.monotonic()
+            with open(run / f'launch-{launch}.log', 'w') as log:
+                code = bounded(['node', str(CHECKER), '--case', 'route', '--cook', str(COOK), '--web-root', str(WEB),
+                                '--assets-source', str(source), '--output', str(output)], log, 900, cwd=REPO)
+            seconds = time.monotonic() - started
+            if code:
+                raise Failure(f'launch {launch}: checker --case route failed (see {run / f"launch-{launch}.log"})')
+            results = json.loads((output / 'run.json').read_text())['results']
+            root = store_root(output / 'store')
+            launches.append({'launch': launch, 'checker_seconds': seconds, 'generation_1_root': root, 'pages': len(results)})
+            # Pages run one after another in one browser; the earliest page clock is the launch's first page.
+            for order, result in enumerate(sorted(results, key=lambda r: r['route']['startup']['timeOrigin'])):
+                stop = result['case'].removeprefix('route-')
+                stage, observed = result['route'], result['route']['startup']
+                if result['actualWasmSha256'] != report['builds']['wasm_sha256']:
+                    raise Failure(f'launch {launch} {stop}: Chrome loaded Wasm {result["actualWasmSha256"]}, not the build')
+                if stage['sha256'] != sha256(PARAMS / f'showcase-{stop}.params.json'):
+                    raise Failure(f'launch {launch} {stop}: served preset differs from the repository')
+                rows.append({'launch': launch, 'page': order + 1, 'cold': order == 0, 'stop': stop,
+                             'lower_ms': observed['lowerMs'], 'upper_ms': observed['upperMs'],
+                             'granularity_ms': observed['granularityMs'], 'median_poll_ms': observed['medianPollMs'],
+                             'phases_ms': observed['phases'], 'wasm': observed['timing']['wasm'],
+                             'cooked_fetch_ms': [observed['timing']['cooked']['start'], observed['timing']['cooked']['end']],
+                             'uploaded_bytes': observed['uploadedBytes'], 'preset_sha256': stage['sha256']})
+        roots = {launch['generation_1_root'] for launch in launches}
+        if len(roots) != 1:
+            raise Failure(f'launches cooked different roots: {sorted(roots)}')
+        report['generation_1_root'] = roots.pop()
+        report['summary_upper_ms'] = {'cold': spread([row['upper_ms'] for row in rows if row['cold']]),
+                                      'warm': spread([row['upper_ms'] for row in rows if not row['cold']])}
+        report['summary_granularity_ms'] = spread([row['granularity_ms'] for row in rows])
+        report['clock'] = 'page performance.now(), ms since navigation start'
+        report['cache'] = 'fresh Chrome process and profile per launch; HTTP cache disabled for each page'
+        report['scope'] = ('Headless CDP polling proxy for navigation to the first observed cooked draw on hardware WebGPU; '
+                           'an upper bound within one poll; not physical first-paint latency. Build, cook and checker '
+                           'time are recorded apart and not counted.')
+    except Failure as error:
+        report['failures'].append(str(error))
+    except Exception:
+        report['failures'].append(traceback.format_exc())
+    except KeyboardInterrupt:
+        report['failures'].append('interrupted')
+    report['passed'] = not report['failures']
+    write_json(run / 'run.json', report)
+    print(f'{"launch":>6} {"page":>4} {"stop":>16} {"cold":>4} {"lower":>7} {"upper":>7} {"gran":>6}')
+    for row in rows:
+        print(f'{row["launch"]:>6} {row["page"]:>4} {row["stop"]:>16} {"yes" if row["cold"] else "":>4} '
+              f'{row["lower_ms"]:7.1f} {row["upper_ms"]:7.1f} {row["granularity_ms"]:6.1f}')
+    for kind, values in report.get('summary_upper_ms', {}).items():
+        if values:
+            print(f'{kind} upper bound ms: n {values["count"]} min {values["min"]:.1f} median {values["median"]:.1f} max {values["max"]:.1f}')
+    print(f'{"PASS" if report["passed"] else "FAIL"}: {run / "run.json"}')
+    for failure in report['failures']:
+        print(f'  {failure}')
+    if report['failures']:
+        raise SystemExit(1)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     commands = parser.add_subparsers(dest='command', required=True)
-    for name in ('mac', 'chrome', 'check'):
+    for name in ('mac', 'chrome', 'check', 'startup'):
         command = commands.add_parser(name)
         command.add_argument('--no-build', action='store_true', help='use the existing release and web builds')
-        if name != 'check':
+        if name in ('mac', 'chrome'):
             command.add_argument('--stop', choices=ROUTE, default=ROUTE[0])
     commands.choices['mac'].add_argument('--frames', type=int, help='bound the run (THRUM_V1_FRAMES)')
     commands.choices['check'].add_argument('--save-baseline', action='store_true',
@@ -607,12 +705,18 @@ def main():
     commands.choices['check'].add_argument('--baseline', default=str(BASELINE),
                                            help='baseline file to compare with or save, relative to the current directory '
                                                 '(default: the checked-in one)')
+    commands.choices['check'].add_argument('--source', default=str(SOURCE),
+                                           help='valley source directory to cook and check (default: the checked-in one)')
+    commands.choices['check'].add_argument('--recalibrate', action='store_true',
+                                           help='judge this run by the calibration rule instead of the fixed thresholds '
+                                                '(another source root); cannot save the canonical baseline')
+    commands.choices['startup'].add_argument('--runs', type=int, default=5, help='fresh Chrome launches (default 5)')
     commands.choices['chrome'].add_argument('--no-open', action='store_true', help='print the URL instead of opening Chrome')
     args = parser.parse_args()
     # A terminated launcher stops its watcher, servers and game the same way Ctrl-C does.
     signal.signal(signal.SIGTERM, lambda *_: (_ for _ in ()).throw(KeyboardInterrupt))
     try:
-        {'mac': mac, 'chrome': chrome, 'check': check}[args.command](args)
+        {'mac': mac, 'chrome': chrome, 'check': check, 'startup': startup}[args.command](args)
     except Failure as error:
         print(f'FAIL: {error}', file=sys.stderr)
         raise SystemExit(1)
