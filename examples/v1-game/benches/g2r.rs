@@ -142,7 +142,7 @@ fn report(label: &str, samples: &mut [u64], allocations: u64) {
         quantile(99),
         allocations
     );
-    if !label.starts_with("crossover,") && !label.starts_with("G0,") {
+    if !label.starts_with("crossover") && !label.starts_with("G0,") {
         assert_eq!(
             allocations, 0,
             "warmed {label} allocated on a process thread"
@@ -171,6 +171,81 @@ fn crossover_case(count: usize, mode: ExecutionMode) {
         &mut samples,
         allocations,
     );
+}
+
+/// Interleaved Serial/RayonForced crossover: both worlds stay warm and run in
+/// A-B-B-A blocks, so drift in host load hits both modes alike. Per-round
+/// p50s give the run-to-run spread a win must exceed. Prints the host load
+/// first; rows under load qualify nothing.
+#[expect(
+    clippy::print_stdout,
+    reason = "the explicit benchmark emits its reproducible evidence table"
+)]
+fn crossover_abba_case(count: usize) {
+    const ROUNDS: usize = 8;
+    const BLOCK: usize = SAMPLES / (ROUNDS * 2);
+    let modes = [ExecutionMode::Serial, ExecutionMode::RayonForced];
+    let mut worlds = modes.map(|mode| fixture(count, false, mode));
+    let commands = worlds.each_ref().map(|sim| {
+        [Command::SetHealth(
+            sim.handle(StableId(0)).expect("first mover"),
+            100,
+        )]
+    });
+    for (sim, command) in worlds.iter_mut().zip(&commands) {
+        for _ in 0..80 {
+            sim.step(command).expect("warm candidate tick");
+        }
+    }
+    let mut samples = [Vec::with_capacity(SAMPLES), Vec::with_capacity(SAMPLES)];
+    let mut allocations = [0, 0];
+    let mut round_p50 = [Vec::with_capacity(ROUNDS), Vec::with_capacity(ROUNDS)];
+    for _ in 0..ROUNDS {
+        let mut round = [Vec::with_capacity(BLOCK * 2), Vec::with_capacity(BLOCK * 2)];
+        for index in [0, 1, 1, 0] {
+            for _ in 0..BLOCK / 2 {
+                let (ns, allocs) = measured(|| {
+                    black_box(
+                        worlds[index]
+                            .step(&commands[index])
+                            .expect("candidate tick"),
+                    );
+                });
+                round[index].push(ns);
+                allocations[index] += allocs;
+            }
+        }
+        for (index, mut round) in round.into_iter().enumerate() {
+            round.sort_unstable();
+            round_p50[index].push(round[round.len() / 2]);
+            samples[index].extend_from_slice(&round);
+        }
+    }
+    for (index, mode) in modes.iter().enumerate() {
+        report(
+            &format!("crossover-abba,{count},{mode:?}"),
+            &mut samples[index],
+            allocations[index],
+        );
+        let spread = &round_p50[index];
+        println!(
+            "\"crossover-abba-round-p50,{count},{mode:?}\",{},{}",
+            spread.iter().min().expect("rounds"),
+            spread.iter().max().expect("rounds"),
+        );
+    }
+}
+
+#[expect(
+    clippy::print_stdout,
+    reason = "the explicit benchmark emits its reproducible evidence table"
+)]
+fn print_host_load() {
+    let load = std::process::Command::new("uptime").output().map_or_else(
+        |_| "unavailable".to_owned(),
+        |output| String::from_utf8_lossy(&output.stdout).trim().to_owned(),
+    );
+    println!("\"host-load\",\"{load}\"");
 }
 
 fn paired_tick_case(count: usize, recording: bool) {
@@ -901,6 +976,14 @@ fn main() {
     }
     if std::env::args().any(|argument| argument == "--g0-burst") {
         s1_spawn_burst_case();
+        return;
+    }
+    if std::env::args().any(|argument| argument == "--crossover-abba") {
+        print_host_load();
+        for count in [10_000, 100_000, 200_000, 500_000] {
+            crossover_abba_case(count);
+        }
+        print_host_load();
         return;
     }
     if std::env::args().any(|argument| argument == "--crossover") {
