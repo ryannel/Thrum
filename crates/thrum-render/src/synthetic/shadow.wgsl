@@ -1,6 +1,9 @@
 // Depth-only synthetic cube caster. Uses the same instance ABI and cube face
 // construction as the forward diagnostic until a cooked mesh stream replaces it.
-struct ShadowView { light_view_proj: mat4x4<f32> }
+struct ShadowView {
+    light_view_proj: mat4x4<f32>,
+    clip_upstream: vec4<u32>,
+}
 struct InstanceRecord {
     current: mat4x4<f32>,
     previous: mat4x4<f32>,
@@ -38,8 +41,12 @@ struct Serials {
     var model = instance.current;
     model[3] = vec4(mix(instance.previous[3].xyz, instance.current[3].xyz, serials.presentation_alpha), instance.current[3].w);
     var clip = shadow_view.light_view_proj * model * vec4(local, 1.0);
-    // Keep the current transform even when a caster leaves the prepared depth range.
-    // Flatten its excess depth onto the nearest cascade plane.
-    clip.z = clamp(clip.z, 0.0, clip.w);
+    // Clip intentionally excluded upstream geometry. Unexpected depth
+    // outside the fitted support retains the existing clamp fallback.
+    if shadow_view.clip_upstream.x==0u {
+        clip.z = clamp(clip.z, 0.0, clip.w);
+    } else {
+        clip.z = max(clip.z, 0.0);
+    }
     return clip;
 }

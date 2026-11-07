@@ -1,11 +1,11 @@
 # Atmosphere milestones
 
 Design: [ATMOSPHERE.md](ATMOSPHERE.md)
-Reviews: Optical design and plan over `a91cdd0e`, final design `f9d0c12a` and plan `c3cc5748` · [optical brief](#optical-review-brief) · initial changes required, final M1 implementation cleared. Frame graph and ownership at the same revisions · [graph brief](#graph-review-brief) · initial changes required, final design cleared. First valley captures, Metal build `dfae5b21` and Chrome Wasm `bc15ea7d` (SHA-256 prefixes) · [capture brief](#capture-review-brief) · held ground view passes, M1 remains open. Chrome late-twilight Wasm `134e271c` · [sweep brief](#sweep-review-brief) · silhouette and reflection visible, warm contour and live motion open. Packed reflection candidate over `c2ac94d8`, Wasm `132f992f` · [reflection brief](#reflection-review-brief) · visual improvement, rejected on measured Metal cost. Four-lane candidate over `4fecd095`, Metal `c6e7b102` and Chrome `4afa8b38` · [four-lane brief](#four-lane-review-brief) · held visuals pass with faint residual streaks; no code findings; live cadence open. Live captures over `16dc9da2` · [follow-up brief](#four-lane-review-brief) · late-twilight progression passes; early object shadow pop verified on both targets; physical cadence open.
+Reviews: Optical design and plan over `a91cdd0e`, final design `f9d0c12a` and plan `c3cc5748` · [optical brief](#optical-review-brief) · initial changes required, final M1 implementation cleared. Frame graph and ownership at the same revisions · [graph brief](#graph-review-brief) · initial changes required, final design cleared. First valley captures, Metal build `dfae5b21` and Chrome Wasm `bc15ea7d` (SHA-256 prefixes) · [capture brief](#capture-review-brief) · held ground view passes, M1 remains open. Chrome late-twilight Wasm `134e271c` · [sweep brief](#sweep-review-brief) · silhouette and reflection visible, warm contour and live motion open. Packed reflection candidate over `c2ac94d8`, Wasm `132f992f` · [reflection brief](#reflection-review-brief) · visual improvement, rejected on measured Metal cost. Four-lane candidate over `4fecd095`, Metal `c6e7b102` and Chrome `4afa8b38` · [four-lane brief](#four-lane-review-brief) · held visuals pass with faint residual streaks; no code findings; live cadence open. Live captures over `16dc9da2` · [follow-up brief](#four-lane-review-brief) · late-twilight progression passes; early object shadow pop verified on both targets; physical cadence open. Shadow partition over `9f13c5f6`, Metal `510e62ce` and Chrome `c6500ef7` · [shadow brief](#shadow-review-brief) · fixed three ownership and coverage gaps; matched visual checks pass.
 Updated: 2026-11-07
 Milestone: M1 moonless midnight
 Now: the held and live-sampled Metal and Chrome valley is legible into the night. The four-lane filter softens the twilight reflection contour. Metal sky, incident meter and finite aerial transport pass the f64 oracle.
-Next: isolate the one-tick object shadow-tail loss. Physical cadence stays with the frame-runtime qualification.
+Next: review the corrected foreground nightfall route and complete the M1 closeout. Physical cadence stays with the frame runtime.
 Blocked: none. G3s stays open.
 
 ## M1 The valley remains legible at moonless midnight: in progress
@@ -122,6 +122,16 @@ reviewer rechecked the finite-shell revision. The GPU and in-game checks are ope
 > reflection and limits of the cadence evidence. Recheck the early handoff
 > using consecutive Metal frames, closely spaced Chrome captures and the
 > terrain-only ray reference. Judge each M1 done-when check independently.
+
+### Shadow review brief
+
+> Review the renderer diff over `9f13c5f6` with review-agent. Follow the
+> cascade fit, caster clipping, sampling, fallback and GPU fixtures.
+> Inspect the matching Metal and Chrome shadow-crossing sequences and
+> daylight/night stills in the handoff's scratch paths. Judge the local
+> tails, distant blockers, contact shadows and frame cost from raw pairs.
+> Report defects and which milestone cues pass. Separate timed samples
+> from presentation cadence. Read only.
 
 ## Log
 

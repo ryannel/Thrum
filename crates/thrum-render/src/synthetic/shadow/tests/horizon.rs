@@ -1,5 +1,5 @@
 //! The shipping height-map march against a flat plateau at a known height and extent.
-use super::observer::{constant_depth_maps, device, pipeline, read_visibility};
+use super::observer::{SAMPLE_FLOATS, constant_depth_maps, device, pipeline, read_visibility};
 use super::{HORIZON_RADIUS, SIZE, SUN_ANGULAR_RADIUS, Vec3, height_matrix};
 
 const OBSERVER: &str = r"
@@ -21,9 +21,9 @@ fn a_below_horizontal_sun_is_partially_hidden_by_distant_lower_terrain() {
         let (matrix, _) = height_matrix(Vec3::ZERO, Some((0.0, 0.0))).expect("height map fit");
         let texel = 2.0 * HORIZON_RADIUS / SIZE as f32;
         let depth = matrix.row(2);
-        let mut samples = [0.0; 68];
+        let mut samples = [0.0; SAMPLE_FLOATS];
         samples[48..64].copy_from_slice(&matrix.to_cols_array());
-        samples[64..].copy_from_slice(&[depth.y, depth.w, 0.5 / HORIZON_RADIUS, texel]);
+        samples[64..68].copy_from_slice(&[depth.y, depth.w, 0.5 / HORIZON_RADIUS, texel]);
         let maps = constant_depth_maps(&device, &queue, SIZE, &[0.0, 0.0, depth.w]);
         let elevation = -0.1_f32.to_radians();
         let (sin, cos) = elevation.sin_cos();

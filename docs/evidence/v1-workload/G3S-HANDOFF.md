@@ -181,9 +181,47 @@ The Codex goal remains active. Its attachment is
   blocker as the ridge enters the map. A scratch 64 m light-depth
   restriction keeps the sphere tail at 97.0 → 97.1 and the rock tail
   at 101.2 → 101.1 across the failing tick. Dawn, noon, sunset, late
-  twilight and midnight stills are byte-identical. M1 stays open. The
-  scratch restriction is diagnostic. A general fix must preserve
-  distant blockers and the synthetic caster depth contract.
+  twilight and midnight stills are byte-identical. The engine fix
+  partitions the two existing cascades in light depth using an
+  eight-near-texel penumbra reach. The last map fits all fallback
+  receivers. It accepts depth-partitioned blockers against an absolute
+  clip plane and evaluates spatial support in receiver-relative units.
+  Metal verifies sloped taps on both sides of the plane; the first
+  implementation leaked 0.5096 visibility on a fully blocked witness.
+  The narrow-camera fixture proves a 60 m excluded caster and its 5 m
+  receiver both reach the last map. The normal caster clamp still applies
+  outside intentional upstream clipping. A standalone instance upload
+  can leave the prepared height bound stale. The height estimate sizes
+  the search while absolute clip ownership remains in force. The added
+  GPU witness otherwise returned fully lit for an excluded blocker.
+  The 82-tick Metal replay and
+  37 held Chrome views preserve both object tails through the old pop.
+  Independent review passed those sequences and matched stills. Noon
+  differs at a few pixels on the rock; all other checked stills match.
+  Capture builds are Metal `510e62ce` and Chrome `c6500ef7`
+  (SHA-256 prefixes). See `partition-valley-release-{metal,chrome}/`.
+  The same Chrome Wasm passed independent review of 62 unpaused
+  compositor samples from 17.66–20.27 h. The screenshot run recorded
+  19 overloads. The revised foreground Metal capture reported no
+  foreground window. Metal's final evidence is the offscreen replay;
+  keep the foreground review open. Full workspace check passed 499 tests.
+
+  Exact Metal 1080p offscreen ABBA/BAAB against `9f13c5f6` at load 24–27,
+  medians of four run p95s. The same textures and passes are retained.
+  The sampled uniform grows by 16 bytes and the three caster uniforms
+  by 48 bytes in total.
+
+  | Starting solar hour | Scene GPU p95 ms, before → after | Render callback p95 ms, before → after |
+  | --- | --- | --- |
+  | 12.00 | 5.09 → 5.42 | 2.83 → 2.90 |
+  | 17.69 | 9.10 → 9.20 | 3.11 → 3.14 |
+  | 18.97 | 7.04 → 6.75 | 3.13 → 3.06 |
+
+  Noon has extra work in the forward bucket. Crossing callback p99
+  is 3.71 → 5.46 ms, with wide overlapping run ranges under shared
+  load. Live cadence and paired Chrome cost remain open. Raw per-run
+  and per-stage values and executable hashes are in
+  `partition-perf/paired*/`.
   Physical presentation cadence remains open. Raw inputs are under
   `live-metal-foreground-retry/`, `final-live-chrome/` and
   `idle-live-chrome/`; see also `shadow-step-{metal,chrome}-pixels.log`

@@ -85,9 +85,9 @@
     "G3s_first_light": {
       "implementation": "partial_eight_wavelength_LUTs_receiver_Sun_SH9_GGX_native_cooked_cascades_terrain_horizon_and_moonless_background",
       "functional_validation": "Metal_sky_horizon_and_cascade_window_referees_authored_recovery_cooked_shadow_and_packed_spectral_twilight_pass;_night_GPU_meter_clamp_and_Metal_sky_incident_aerial_oracles_pass;_dim_card_HDR_and_SDR_match_Metal_and_Chrome;_midnight_recovery_pixels_match",
-      "experienced_quality": "agent_reviewed_native_contact_shadows_blue_twilight_and_gradual_finite_Sun_ridge_crossing_with_low_Sun_contact,_low-light_twilight_key,_dithered_SDR_gradients,_terrain-shadowed_aerial_in-scatter_and_offscreen_consecutive-tick_sunset;_held_midnight_and_live-sampled_late-twilight_reviewed_on_Metal_and_Chrome;_terrain_silhouette_steps_and_early_object_shadow_pop_open",
+      "experienced_quality": "agent_reviewed_native_contact_shadows_blue_twilight_and_gradual_finite_Sun_ridge_crossing_with_low_Sun_contact,_low-light_twilight_key,_dithered_SDR_gradients,_terrain-shadowed_aerial_in-scatter_and_offscreen_consecutive-tick_sunset;_held_midnight_and_live-sampled_late-twilight_reviewed_on_Metal_and_Chrome;_terrain_silhouette_steps_and_object_shadow_pop_repaired_in_matched_replay;_final_Metal_foreground_review_open",
       "platform_performance": {
-        "mac": "Metal_oracles_spectral_valley_shadowed_aerial_and_moonless_ABBA_recorded_under_shared_load;_foreground_sequence_reviewed;_physical_cadence_unqualified",
+        "mac": "Metal_oracles_spectral_valley_shadowed_aerial_and_moonless_ABBA_recorded_under_shared_load;_prior_foreground_sequence_reviewed;_final_shadow_replay_passes;_physical_cadence_unqualified",
         "browser": "Chrome156_M3Max_spectral_sky_route_passes_with_held_midnight_and_sampled_late_twilight;_no_overload_in_screenshot-free_repeat;_physical_cadence_unqualified",
         "ios": "not_run"
       },
@@ -4493,7 +4493,7 @@
       "technique": "Cascaded Sun shadows with finite-disk PCSS and receiver-plane PCF",
       "source": "https://learn.microsoft.com/en-us/windows/win32/dxtecharts/cascaded-shadow-maps",
       "owner": "thrum-render portable",
-      "status": "Metal off-camera cast, native low-Sun contact and finite-Sun ridge crossing reviewed against CPU ray truth. Unpadded near map with distant blockers in the padded last cascade. A near/last composition GPU oracle remains. Frame cost recorded.",
+      "status": "Metal off-camera cast, native low-Sun contact and finite-Sun ridge crossing reviewed against CPU ray truth. Unpadded near map with distant blockers in the padded last cascade. Near/last spatial and absolute-depth handoff verified with sloped and stale-height cases. The last map covers narrow-camera fallback receivers. Frame cost recorded.",
       "evidence": "../evidence/v1-workload/G3S-SOLAR-PENUMBRA-2026-11-07.md"
     },
     {
