@@ -158,10 +158,31 @@ pool, so wake-up and preemption cost dominates. The fixed overhead of bucketing 
 An earlier version visited every page row in each chunk, rather than only the bucketed candidates. It cost 2.7 ms at
 100k on the full pool and 1.9 ms on one thread (`abba-capture-1.log`), so it was replaced.
 
+## Quiet ABBA rows
+
+This was an owner-arranged quiet window: every agent was holding, the solvers were suspended and the GPU was idle. There
+were two runs of `cargo bench -p v1-game --bench g2r -- --crossover-abba` on main `961541f0`, an M3 Max. The 1-minute
+load average was 2.20 before run 1 and 2.10 between the runs. It was 2.01 after run 2. Forced runs both the parallel
+kernel and parallel capture. The raw logs are `tmp/g2s-parallel/abba-quiet-{1,2}.log` (local).
+
+| Rows | Serial p50 µs, run 1 / run 2 (round p50 range) | Forced p50 µs, run 1 / run 2 (round p50 range) | Forced allocations |
+|---|---:|---:|---:|
+| 10k (no dispatch) | 47 / 47 (47–47) | 47 / 47 (47–49) | 0 |
+| 100k | 463 / 460 (453–476) | 652 / 660 (629–705) | 16 |
+| 200k | 926 / 907 (906–947) | 1,137 / 1,116 (1,101–1,153) | 16 |
+| 500k | 2,285 / 2,297 (2,282–2,358) | 2,364 / 2,406 (2,344–2,578) | 16 |
+
+**There is no crossover.** Forced is slower than Serial at every dispatched row, in both runs, by more than the round
+spread at 100k and 200k. The gap narrows with size: 190–200 µs at 100k, about 210 µs at 200k, and 80–110 µs at 500k,
+where it is no longer outside the spread. So the parallel work does gain, but not enough to cover its fixed cost per tick at these densities.
+`PARALLEL_MOVER_CROSSOVER` and `PARALLEL_CAPTURE_CROSSOVER` stay `None`, and requested `Rayon` remains the documented
+serial fallback.
+
 ## Open, for root and the performance phase
 
-1. **Quiet crossover.** Promote requested Rayon only on an owner-quiet ABBA win: the same command at 100k–500k,
-   agents paused.
+1. **Quiet crossover.** Measured above: no win at 100k–500k. Requested Rayon stays serial. Any later promotion
+   needs a new quiet win, for example after a one-install-per-tick experiment that root allows only if profiling
+   isolates injection or pool wakes.
 2. **Injector allocations.** Running the world tick inside the Rayon pool would remove these. That is the world-thread
    adapter, so it is a root seam.
 3. **Parallel publication capture.** Implemented and proven identical (above). Promotion needs the same quiet ABBA:
