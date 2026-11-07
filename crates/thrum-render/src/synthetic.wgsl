@@ -277,8 +277,8 @@ fn cascade_visibility(index: u32, receiver: ShadowReceiver) -> f32 {
     let search_radius = search_gap*scale;
     var nearest_gap = 1.0;
     var blockers = 0.0;
-    for(var i=0u;i<16u;i++) {
-        let offset=select(SHADOW_DISK[i*2u],vec2(0.0),i==0u);
+    for(var i=0u;i<8u;i++) {
+        let offset=select(SHADOW_DISK[i*4u],vec2(0.0),i==0u);
         let q=uv+offset*search_radius;
         if any(q<vec2(0.0)) || any(q>vec2(1.0)) { continue; }
         let texel=clamp(vec2<i32>(q*extent),vec2(0),vec2<i32>(extent)-1);
@@ -296,6 +296,8 @@ fn cascade_visibility(index: u32, receiver: ShadowReceiver) -> f32 {
     if blockers==0.0 {
         return shadow_filter(index,uv,p.z,reference,depth_gradient,extent,uv);
     }
+    // Eight search and sixteen disk taps match the 16/32 truth scores on the
+    // solar crossing at about half the shadowed-fragment cost.
     // Prefer the nearest upstream blocker when depths overlap. Bound the
     // broad plane offset to half its gap; local texel bias remains separate.
     let physical_radius=nearest_gap*scale;
@@ -305,11 +307,11 @@ fn cascade_visibility(index: u32, receiver: ShadowReceiver) -> f32 {
         return shadow_filter(index,uv,p.z,reference,depth_gradient,extent,uv);
     }
     var visible=0.0;
-    for(var i=0u;i<32u;i++) {
-        let q=uv+SHADOW_DISK[i]*radius;
+    for(var i=0u;i<16u;i++) {
+        let q=uv+SHADOW_DISK[i*2u+1u]*radius;
         visible+=shadow_filter(index,q,p.z,reference,depth_gradient,extent,uv);
     }
-    return visible/32.0;
+    return visible/16.0;
 }
 
 // Receiver-plane reconstruction follows each physical disk sample. The
