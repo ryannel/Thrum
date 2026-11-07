@@ -1757,7 +1757,9 @@ impl WorldTxn<'_> {
 
     /// Visit matching rows in deterministic slot order. Return `true` for a
     /// changed value and `false` for an unchanged value. A callback refusal
-    /// restores all tentative writes before returning.
+    /// stops the visit and returns at once. Earlier rows stay written until
+    /// the system returns that error, which refuses the tick, and the abort
+    /// restores every tentative write. A system must not swallow the error.
     ///
     /// # Errors
     ///
@@ -1794,7 +1796,8 @@ impl WorldTxn<'_> {
     ///
     /// # Errors
     ///
-    /// The game callback refuses one selected row.
+    /// The game callback refuses one selected row. Return the error to refuse
+    /// the tick: writes made before the refusal are restored only by the abort.
     ///
     /// # Panics
     ///
@@ -1827,7 +1830,8 @@ impl WorldTxn<'_> {
     ///
     /// # Errors
     ///
-    /// The game callback refuses one selected row.
+    /// The game callback refuses one selected row. Return the error to refuse
+    /// the tick: writes made before the refusal are restored only by the abort.
     ///
     /// # Panics
     ///
@@ -1879,13 +1883,15 @@ impl WorldTxn<'_> {
     /// storage chunks. Chunks are independent: under a non-serial executor
     /// they run on the Rayon pool, and serial runs execute the same chunk code
     /// on the caller in storage order. Callbacks share the context immutably
-    /// and must not depend on row order. A refusal from any chunk restores all
-    /// tentative writes when the tick aborts; the earliest chunk's error is
-    /// returned. Returns the number of rows whose visit reported a change.
+    /// and must not depend on row order. Other chunks may keep writing after
+    /// one refuses; returning the earliest chunk's error refuses the tick, and
+    /// the abort restores every tentative write. A system must not swallow it.
+    /// Returns the number of rows whose visit reported a change.
     ///
     /// # Errors
     ///
-    /// The game callback refuses one selected row.
+    /// The game callback refuses one selected row. Return the error to refuse
+    /// the tick: writes made before the refusal are restored only by the abort.
     ///
     /// # Panics
     ///
