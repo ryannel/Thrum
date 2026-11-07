@@ -2,7 +2,7 @@
 struct StarView {
     clip_from_catalogue: mat4x4<f32>,
     extent_and_tan_half_fov: vec4<f32>,
-    catalogue_zenith: vec4<f32>,
+    catalogue_zenith_and_strength: vec4<f32>,
 }
 struct ExposureSample {
     values: vec4<f32>,
@@ -37,8 +37,8 @@ fn vertex(@builtin(vertex_index) index: u32, @builtin(instance_index) star: u32)
     let clip = view.clip_from_catalogue * vec4(source.xyz, 0.0);
     if clip.w <= 0.0 { return rejected(); }
     let centre_ndc = clip.xy / clip.w;
-    if any(abs(centre_ndc) > vec2(2.0)) { return rejected(); }
-    let mu = dot(source.xyz, view.catalogue_zenith.xyz);
+    if any(abs(centre_ndc) > vec2(MAX_CENTRE_NDC)) { return rejected(); }
+    let mu = dot(source.xyz, view.catalogue_zenith_and_strength.xyz);
     let altitude_m = observer.world_position_and_altitude.w;
     if blocked(altitude_m, mu) { return rejected(); }
     let extent = view.extent_and_tan_half_fov.xy;
@@ -50,8 +50,8 @@ fn vertex(@builtin(vertex_index) index: u32, @builtin(instance_index) star: u32)
     let pixel_step = 2.0 * tan_half_fov / extent;
     let slope_squared = 1.0 + dot(slopes, slopes);
     let omega = pixel_step.x * pixel_step.y / (slope_squared * sqrt(slope_squared));
-    let sigma = max(0.7, radians(0.045) / sqrt(omega));
-    let radius = 4.0 * sigma + 0.5;
+    let sigma = max(PIXEL_SIGMA, radians(ANGULAR_SIGMA_DEGREES) / sqrt(omega));
+    let radius = RADIUS_SIGMAS * sigma + PIXEL_HALF_WIDTH;
     if any(centre + radius < vec2(0.0)) || any(centre - radius >= extent) { return rejected(); }
     if all(centre >= vec2(0.0)) && all(centre < extent) {
         if textureLoad(depth, vec2<i32>(centre), 0) > 0.0 { return rejected(); }
@@ -63,7 +63,7 @@ fn vertex(@builtin(vertex_index) index: u32, @builtin(instance_index) star: u32)
     let point = centre + corner[index] * radius;
     let position = point / extent * vec2(2.0, -2.0) + vec2(-1.0, 1.0);
     let transmission = sample_sun_transmittance(altitude_m, mu, transmittance, lut_sampler);
-    let scale = transmission * (source.w * exposure.values.x / omega);
+    let scale = transmission * (source.w * view.catalogue_zenith_and_strength.w * exposure.values.x / omega);
     return VertexOut(vec4(position, 0.0, 1.0), centre, sigma, scale);
 }
 
@@ -80,6 +80,6 @@ fn normal_cdf(t: vec2<f32>) -> vec2<f32> {
 fn fragment(input: VertexOut) -> @location(0) vec4<f32> {
     if textureLoad(depth, vec2<i32>(input.position.xy), 0) > 0.0 { discard; }
     let offset = input.position.xy - input.centre;
-    let weight = max(normal_cdf((offset + 0.5) / input.sigma) - normal_cdf((offset - 0.5) / input.sigma), vec2(0.0));
+    let weight = max(normal_cdf((offset + PIXEL_HALF_WIDTH) / input.sigma) - normal_cdf((offset - PIXEL_HALF_WIDTH) / input.sigma), vec2(0.0));
     return vec4(input.scale * weight.x * weight.y, 0.0);
 }

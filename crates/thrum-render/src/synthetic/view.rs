@@ -203,6 +203,28 @@ impl SyntheticView {
             )
     }
 
+    pub(super) fn star_camera_inverse_floor(&self, direct_lux: f32) -> Option<f64> {
+        let Some(ExposurePolicy::IncidentHorizontal {
+            compensation_ev,
+            max_ev100,
+            ..
+        }) = self.exposure
+        else {
+            return None;
+        };
+        if self.sdr_tone_map != SdrToneMap::NeutralHighlights
+            || self.display_overlay != DisplayOverlay::Off
+            || direct_lux < 1_000.0
+        {
+            return None;
+        }
+        // The fixed Earth LUTs produce finite nonnegative sky lux for checked
+        // atmosphere inputs. Their bright incident meter branch has no key.
+        // The EV ceiling may still increase camera gain.
+        let direct = 0.48 * f64::from(direct_lux) * (-f64::from(compensation_ev)).exp2();
+        Some(direct.min(1.2 * f64::from(max_ev100).exp2()))
+    }
+
     /// Select the SDR display transform independently of the camera exposure.
     #[must_use]
     pub fn with_sdr_tone_map(mut self, tone_map: SdrToneMap) -> Self {
