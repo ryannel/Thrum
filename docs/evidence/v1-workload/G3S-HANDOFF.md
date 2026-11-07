@@ -34,11 +34,32 @@ The Codex goal remains active. Its attachment is
 - Metal reproduced and verified the below-horizontal horizon fix. The analytic plateau
   and near/last blocker-window oracles now pass, with identical valley images on Metal and
   Chrome. [Terrain horizon evidence](G3S-TERRAIN-HORIZON-2026-11-07.md)
-  Measure browser prepare on edits and replacement before choosing a scheduling change.
-- G6 may prepare the native runner extraction. The rebased diff and raw checks still need
-  root review before push. Native starter is the recommendation. The owner has the Chrome
-  starter scope decision. The cooked material shader reload is approved for a separate
-  G6 checkpoint, with candidate validation and recovery requirements in the boundary notes.
+- Chrome's cooked edit and replacement probe found no missed next animation callback at
+  the measured swaps. Retain the current loader for the valley and carry the tripwire
+  forward for heavier authored edits. [Chrome measurements](G7-CHROME-VALLEY-2026-11-07.md)
+- G6's re-split controls and macOS runner commits are approved. The native starter and
+  cooked material shader reload are separate reviews. ExposureZones follows the first
+  G3s tone-scale checkpoint. See `tmp/g6-boundary/NOTES.md`.
+
+## Exposure audit decision
+
+The audit is `tmp/research-2026-11-07/EXPOSURE-AUDIT.md`. G3s owns a global SDR tone-scale
+comparison now. Keep the incident meter and low-light key. Compare a scene-referred
+toe and shoulder against the current valley and the dawn, noon and dusk references.
+Select mid-grey placement with the curve and keep the output path extensible to EDR.
+Use [Polyphony's GT7 reference](https://s3.amazonaws.com/gran-turismo.com/pdi_publications/s2025_PBS_Physically_Based_Tone_Mapping_GT7.pdf)
+as a candidate. The audit's performance figures are estimates.
+
+- **Night and EV floor remain open with G3s.** Fix the floor and key interaction with the
+  first dim-light scene that can qualify it. Moon, stars and mesopic response need a
+  legible night reference and sufficient scene storage. Keep the current Sun-only output
+  explicit in the interim.
+- **G3t/G4 own HDR.** G3t owns storage and the native boundary. G4 owns the shared display
+  mapping and SDR/EDR comparison, including history scale and dynamic headroom.
+- **G4 camera work owns occlusion-aware and local exposure.** Keep the open-sky incident
+  mode for the valley. Compare a view- or position-dependent meter when there is a shaded
+  consumer. Reassess local exposure on the backlit route after the global curve. Include
+  the later cloud provider at the camera-light seam.
 
 ## Claude root session (6–7 November)
 
