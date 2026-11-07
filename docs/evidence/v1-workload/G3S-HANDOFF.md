@@ -36,6 +36,17 @@ The Codex goal remains active. Its attachment is
   The local `harvard-1908/layout-pages/scan-table.sh` retains each completed
   scan and transcription for restart. The production cutoff and catalogue
   admission remain open.
+- Catalogue WIP `98e0be1` brings 6,632 original Table I rows into the opt-in
+  valley. Independent review verified all 183 page headers and 23 rollovers,
+  recovered 16 source rows and reproduced the 106,112-byte pack independently
+  of the comparison catalogue. The source transcript, date and hashes sit
+  beside the asset. `./dev check` passed 513 tests. On Metal the matched
+  noon frames are byte-identical and all 4,820 fixed-midnight changed pixels
+  lie above the ridge. Chrome shows gradual emergence in 33 settled poses
+  and coherent motion in 49 sampled pan poses. The same upper-sky rebound
+  after 18:51 occurs with stars disabled. Diagnose background exposure,
+  qualify the daylight cut and collect live motion. Exact hashes, raw pairs and rerun commands
+  are in `tmp/g3s-star-catalog/NOTES.md`.
 - M1 closeout at `b8f230e7` used the same cooked scene hash on Metal and
   Chrome. The Chrome compositor sweep ran from 17.659 to 24.053 h with 75
   samples. All eight overloads were inside screenshot brackets. The same
