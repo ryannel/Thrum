@@ -29,7 +29,7 @@ use super::{
         EntityWriter, PreparedRead2, RegisteredWorld, RegisteredWorldError, TentativeDirty,
         WorldCapture, WorldDelta, WorldUndo,
     },
-    snapshot_ring::PAGE_COUNT,
+    snapshot_ring::{PAGE_COUNT, PublicationBusy},
     transaction::{Edit, EditError, EditScratch, EditWriter},
 };
 
@@ -510,6 +510,18 @@ type EnginePageCapture<P> = fn(
     Option<&WorldUndo>,
     &[StructuralChange],
 );
+
+/// Which final-tick preimages an engine page capture receives.
+#[derive(Clone, Copy)]
+enum FinalUndo<'a> {
+    None,
+    /// The unrecorded tick's transaction scratch.
+    Abort,
+    /// Preimages kept for a deferred publication.
+    Deferred,
+    /// A recorded tick's undo.
+    Record(&'a WorldUndo),
+}
 
 #[derive(Clone, Copy, Eq, PartialEq)]
 enum PublicationState {
@@ -1196,43 +1208,13 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
         if !self.pages.can_capture() {
             return false;
         }
-        let world = WorldRead {
-            world: &self.world,
-            nonce: self.nonce,
-            system: None,
+        let final_undo = if self.publication_state == PublicationState::SkippedWithUndo {
+            FinalUndo::Deferred
+        } else {
+            FinalUndo::None
         };
         if self
-            .pages
-            .capture(|page, cold, page_dirty, outbound_dirty, source| {
-                if let Some(capture) = self.engine_capture {
-                    capture(
-                        page,
-                        &self.world,
-                        cold,
-                        page_dirty,
-                        outbound_dirty,
-                        source,
-                        self.tick,
-                        self.timeline,
-                        (self.publication_state == PublicationState::SkippedWithUndo)
-                            .then_some(&self.deferred_undo),
-                        &self.structural_journal,
-                    );
-                } else {
-                    game.capture(
-                        &world,
-                        candidate,
-                        &self.structural_journal,
-                        page,
-                        cold,
-                        page_dirty,
-                        outbound_dirty,
-                        source,
-                        self.tick,
-                        self.timeline,
-                    );
-                }
-            })
+            .capture_latest(game, candidate, final_undo, true)
             .is_err()
         {
             return false;
@@ -1256,41 +1238,7 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
     pub fn publish_initial(&mut self, game: &mut G, candidate: &mut G::Candidate) {
         self.assert_usable();
         if !self.initial_published {
-            let world = WorldRead {
-                world: &self.world,
-                nonce: self.nonce,
-                system: None,
-            };
-            self.pages
-                .capture(|page, cold, page_dirty, outbound_dirty, source| {
-                    if let Some(capture) = self.engine_capture {
-                        capture(
-                            page,
-                            &self.world,
-                            cold,
-                            page_dirty,
-                            outbound_dirty,
-                            source,
-                            self.tick,
-                            self.timeline,
-                            None,
-                            &[],
-                        );
-                    } else {
-                        game.capture(
-                            &world,
-                            candidate,
-                            &[],
-                            page,
-                            cold,
-                            page_dirty,
-                            outbound_dirty,
-                            source,
-                            self.tick,
-                            self.timeline,
-                        );
-                    }
-                })
+            self.capture_latest(game, candidate, FinalUndo::None, false)
                 .expect("unpublished ring has a free page");
             self.initial_published = true;
         }
@@ -1375,44 +1323,76 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
             }
             return;
         }
-        let world = WorldRead {
-            world: &self.world,
-            nonce: self.nonce,
-            system: None,
-        };
-        self.pages
-            .capture(|page, cold, page_dirty, outbound_dirty, source| {
-                if let Some(capture) = self.engine_capture {
-                    let final_undo = undo.map_or(&self.abort_undo, |record| &record.world);
-                    capture(
-                        page,
-                        &self.world,
-                        cold,
-                        page_dirty,
-                        outbound_dirty,
-                        source,
-                        self.tick,
-                        self.timeline,
-                        Some(final_undo),
-                        &self.structural_journal,
-                    );
-                } else {
-                    game.capture(
-                        &world,
-                        candidate,
-                        &self.structural_journal,
-                        page,
-                        cold,
-                        page_dirty,
-                        outbound_dirty,
-                        source,
-                        self.tick,
-                        self.timeline,
-                    );
-                }
-            })
+        let final_undo = undo.map_or(FinalUndo::Abort, |record| FinalUndo::Record(&record.world));
+        self.capture_latest(game, candidate, final_undo, true)
             .expect("unleased page remained available during exclusive tick");
         self.publication_state = PublicationState::Current;
+    }
+
+    /// Capture the current endpoint into the next free page, through the
+    /// engine capture when one is registered and the game capture otherwise.
+    /// `journal` passes this tick's structural changes; the tick-zero seal
+    /// passes none.
+    fn capture_latest(
+        &mut self,
+        game: &mut G,
+        candidate: &mut G::Candidate,
+        final_undo: FinalUndo<'_>,
+        journal: bool,
+    ) -> Result<(), PublicationBusy> {
+        let Self {
+            world,
+            pages,
+            engine_capture,
+            nonce,
+            tick,
+            timeline,
+            abort_undo,
+            deferred_undo,
+            structural_journal,
+            ..
+        } = self;
+        let final_undo = match final_undo {
+            FinalUndo::None => None,
+            FinalUndo::Abort => Some(&*abort_undo),
+            FinalUndo::Deferred => Some(&*deferred_undo),
+            FinalUndo::Record(record) => Some(record),
+        };
+        let events: &[StructuralChange] = if journal { structural_journal } else { &[] };
+        let (tick, timeline) = (*tick, *timeline);
+        pages.capture(|page, cold, page_dirty, outbound_dirty, source| {
+            if let Some(capture) = engine_capture {
+                capture(
+                    page,
+                    world,
+                    cold,
+                    page_dirty,
+                    outbound_dirty,
+                    source,
+                    tick,
+                    timeline,
+                    final_undo,
+                    events,
+                );
+            } else {
+                game.capture(
+                    &WorldRead {
+                        world,
+                        nonce: *nonce,
+                        system: None,
+                    },
+                    candidate,
+                    events,
+                    page,
+                    cold,
+                    page_dirty,
+                    outbound_dirty,
+                    source,
+                    tick,
+                    timeline,
+                );
+            }
+        })
     }
 
     fn step_inner(
