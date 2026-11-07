@@ -83,7 +83,7 @@
     },
     "G3s_first_light": {
       "implementation": "partial_LUTs_receiver_Sun_SH9_GGX_native_cooked_cascades",
-      "functional_validation": "Metal_sky_referees_authored_recovery_and_off_camera_cooked_shadow_pass;_spectral_and_closure_accuracy_open",
+      "functional_validation": "Metal_sky_referees_authored_recovery_and_cooked_shadow_pass;_eight_wavelength_candidate_measured_integration_open",
       "experienced_quality": "agent_reviewed_native_contact_shadows;_low_Sun_polish_colour_and_live_motion_open",
       "platform_performance": {
         "mac": "Metal_oracles_and_cooked_shadow_ABBA_recorded;_live_display_unqualified",
