@@ -4,12 +4,19 @@
 was gathered at. The first native rows and the first Chrome rows were gathered on branch `claude/g3c-gpu-culling`
 on main `a346d60f`. The closing reruns come from the culling counts readback on branch `claude/g3c-stats-main`:
 - the first ones on main `b8f230e7`, before root asked for counts to stop holding the render slot;
-- the final ones at `a2cf00f3` on main `a3a973cc`, after that change. Its code equals the commit that adds this
-  record; only this file differs.
+- the final ones at `a2cf00f3` on main `a3a973cc`, after that change.
+
+The code on main (`935ddd14`) is not identical to `a2cf00f3`:
+- `aaf30165` changed what happens when a slot is re-armed while its count mapping is still pending;
+- main itself added simulation-publication diagnostics.
+
+The changed branch never ran in the final runs: no frame went uncounted in the full path, and Chrome counted 600
+of 600. The release full path and Chrome were not rerun on the landed code. Only `./dev check` (the debug field
+test to tick 460, plus the device tests, including the late-map witness) and `./dev check-web` ran on it.
 Each section names which run it reports.
 
-**Labelled contended:** other sessions shared the CPU and GPU throughout (load average 19–21), so p95 tails are
-noisy.
+**Labelled contended:** other sessions shared the CPU and GPU throughout (load average 19–57; each run names its
+own), so p95 tails are noisy.
 
 ## The field
 
@@ -38,7 +45,8 @@ The four local peers control the last four props. A scripted camera flies a 250 
 - **The culled host really culls.** The test asserts each host's prepared mode, read from the renderer
   (`FrameHost::camera_culling`). Direct frames report no counts. A Frustum frame reports its read-back draw count
   when the count has settled by the time the frame retires. Counts never hold a frame. In the final full-path run,
-  all 1,930 Frustum frames were counted. At its fewest, the Frustum host must draw more than zero and fewer than half of the active instances. A
+  all 1,930 Frustum frames were counted. That figure comes from the log's printed count; the test prints how many
+  frames went uncounted but does not bound it. At its fewest, the Frustum host must draw more than zero and fewer than half of the active instances. A
   mutant that drops the mode between `GameSetup` and `SyntheticScene` fails the test before the first tick.
 - **Default release run:** 79 sampled ticks to tick 1,930 (every 30th tick, plus each event and its neighbours).
   Byte-equal. Debug builds, as run by `./dev check`, stop at tick 460 after the first snap turn (about 65 s).
@@ -168,6 +176,13 @@ caller-owned capture token (Q2c, d0f9cce4).
   headless host above uses the same `FrameHost` path. So the title's mode and forward ms, and the native end-of-run
   report's new forward GPU ms and culling counts, are checked only by reading the code. The Chrome frame report
   is observed showing the mode, forward GPU ms and draw counts.
+- **The landed code in release and Chrome:** see the provenance above.
+- **Untested count paths:**
+  - a failed mapping, which reports no count;
+  - the count taken in the timestamp-retry (Resolving) arm.
+  Both were checked only by reading the code.
+- **Replacement witness strength:** a new target owns new buffers, so the replacement case discriminates weakly. It
+  also does not assert that the old mappings were still pending when the device was replaced.
 - **Uncontended numbers.**
 - **Realistic meshes:** M3.
 - **Occlusion:** M2.

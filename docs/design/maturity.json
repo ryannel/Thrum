@@ -108,13 +108,13 @@
       "functional_validation": "native_Frustum_byte-equal_to_Direct_over_ticks_1-1930_of_the_100513-instance_field_flythrough_with_mode_and_draw_counts_asserted;_Chrome_Frustum_byte-equal_to_Chrome_Direct_at_16_paused_views;_mode_survives_resize_and_device_replacement;_independent_milestone_review_pass_with_changes",
       "experienced_quality": "agent_and_independent_motion_review_of_567_Frustum_frames_around_turns_and_the_cut_found_no_edge_pops;_live_window_title_not_observed",
       "platform_performance": {
-        "mac": "contended_paired_ABBA_field_rows:_Frustum_forward_GPU_about_0.22-0.30_ms_below_Direct_on_12-triangle_boxes;_provisional_until_realistic_meshes",
+        "mac": "contended_paired_ABBA_field_rows:_Frustum_forward_GPU_about_0.21-0.28_ms_below_Direct_(paired_medians)_on_12-triangle_boxes;_provisional_until_realistic_meshes",
         "windows": "not_run",
         "browser": "Chrome_M3Max_field_and_field-direct_pass;_contended_forward_p50_steps_only",
         "ios": "not_run",
         "android": "not_run"
       },
-      "diagnostic_measurement": "Contended (load about 20): about 22% of instance centres in view; Chrome read-back draw count p50 21,951 of 100,513. Defaults: field Frustum, grid Direct. No speed claim beyond the paired forward rows.",
+      "diagnostic_measurement": "Contended (load 19-57): about 22% of instance centres in view; Chrome read-back draw count p50 21,951 of 100,513. Defaults: field Frustum, grid Direct. No speed claim beyond the paired forward rows.",
       "scope": "M1 of the G3c plan: GPU frustum compaction drawn through one indexed indirect draw, chosen at launch. Shipped occlusion (M3, after the M2 branch experiment), mixed meshes (M3), live toggle and iOS are open.",
       "evidence": [
         "../evidence/render/G3C-CAMERA-CULLING-2026-11-07.md",
