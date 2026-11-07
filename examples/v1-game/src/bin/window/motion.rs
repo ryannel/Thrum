@@ -41,6 +41,7 @@ pub(super) fn record(
     cooked_generation: Option<u64>,
 ) -> Result<(), String> {
     apply_initial_parameters(host)?;
+    let pan = CameraPan::from_env(host.camera_orientation()[1], frames)?;
     let rate = ClockConfig::default().tick_hz;
     let target = CaptureTarget::new(device);
     let surface = SurfaceOutput {
@@ -61,6 +62,9 @@ pub(super) fn record(
     let mut time = Duration::ZERO;
     host.resume(time)?;
     for index in 0..frames.get() {
+        if let Some(pan) = pan {
+            host.set_camera_yaw(pan.yaw(index))?;
+        }
         let tick = host.tick();
         // Use the existing clock's nanosecond rounding at the next boundary.
         time += host.next_due_in().ok_or("motion capture clock stopped")?;
@@ -86,13 +90,56 @@ pub(super) fn record(
             &serde_json::json!({
                 "frame": index, "tick": sample.tick, "submission": sample.submission_order,
                 "simulation_ns": time.as_nanos(), "alpha": sample.presentation_alpha,
-                "solar_hours": host.time_of_day() * 24.0, "gpu_pass_ns": pass_ns,
+                "committed_solar_hours": host.time_of_day() * 24.0,
+                "camera_yaw_radians": host.camera_orientation()[1], "gpu_pass_ns": pass_ns,
                 "gpu_blit_ns": blit_ns, "gpu_pass_sum_ns": pass_ns.iter().sum::<f64>() + blit_ns,
                 "visual_revision": sample.visual_revision,
             }),
         )?;
     }
     pixels.flush().map_err(|error| error.to_string())
+}
+
+#[derive(Clone, Copy)]
+struct CameraPan {
+    start: f32,
+    end: f32,
+    intervals: NonZeroU32,
+}
+
+impl CameraPan {
+    fn from_env(start: f32, frames: NonZeroU32) -> Result<Option<Self>, String> {
+        let text = match std::env::var("THRUM_CAPTURE_PAN_TO_DEGREES") {
+            Ok(text) => text,
+            Err(std::env::VarError::NotPresent) => return Ok(None),
+            Err(error) => return Err(error.to_string()),
+        };
+        let degrees: f32 = text
+            .parse()
+            .map_err(|error| format!("invalid motion pan endpoint: {error}"))?;
+        if !(-180.0..=180.0).contains(&degrees) {
+            return Err("motion pan endpoint needs degrees in [-180, 180]".to_owned());
+        }
+        let intervals =
+            NonZeroU32::new(frames.get() - 1).ok_or("motion pan needs at least two frames")?;
+        Ok(Some(Self {
+            start,
+            end: degrees.to_radians(),
+            intervals,
+        }))
+    }
+
+    #[expect(
+        clippy::cast_precision_loss,
+        reason = "camera yaw uses f32, and subpixel rounding at very long capture lengths is acceptable"
+    )]
+    fn yaw(self, index: u32) -> f32 {
+        if index == self.intervals.get() {
+            return self.end;
+        }
+        let fraction = index as f32 / self.intervals.get() as f32;
+        (self.end - self.start).mul_add(fraction, self.start)
+    }
 }
 
 fn apply_initial_parameters(host: &mut FrameHost) -> Result<(), String> {
