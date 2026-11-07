@@ -1,6 +1,7 @@
 //! G2S parallel fitness of the chunked in-place kernel through the public
 //! runtime: forced Rayon runs independent chunks at the same time, and every
-//! mode commits, refuses, restores and rewinds the same complete state.
+//! mode commits, refuses, restores and rewinds the same complete state. A
+//! runtime whose commit unwound refuses reuse instead of re-applying a tick.
 
 use std::{
     sync::atomic::{AtomicBool, AtomicUsize, Ordering},
@@ -64,6 +65,7 @@ impl Probe {
 #[derive(Default)]
 struct Rules {
     refuse_slot: Option<u32>,
+    panic_apply: bool,
     probe: Probe,
 }
 
@@ -120,7 +122,9 @@ impl TickGame<Page> for Rules {
     ) {
     }
 
-    fn apply(&mut self, _world: &WorldRead<'_>, _tick: u64, _candidate: &Candidate) {}
+    fn apply(&mut self, _world: &WorldRead<'_>, _tick: u64, _candidate: &Candidate) {
+        assert!(!self.panic_apply, "game apply panicked after commit");
+    }
 }
 
 struct Fixture {
@@ -298,4 +302,32 @@ fn serial_rayon_and_forced_chunks_commit_refuse_and_rewind_identically() {
     assert_eq!(serial.1, movers - 1, "every mover except the excluded one");
     assert_eq!(run(ExecutionMode::Rayon), serial);
     assert_eq!(run(ExecutionMode::RayonForced), serial);
+}
+
+#[test]
+fn a_runtime_whose_commit_unwound_refuses_reuse() {
+    let mut world = fixture(ExecutionMode::Serial);
+    world.step().expect("first tick");
+    let capture = world.runtime.capture();
+    let committed = world.heights();
+    world.rules.panic_apply = true;
+    let unwound = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| world.step()));
+    assert!(unwound.is_err(), "apply panic propagates");
+    // The world already holds the next tick's values; stepping again would
+    // apply that tick's rules twice under the old tick number.
+    world.rules.panic_apply = false;
+    let reused = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| world.step()));
+    assert!(reused.is_err(), "a poisoned runtime must refuse to step");
+    let mut undo = [world.runtime.new_undo()];
+    let rewound = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        world.runtime.rewind_many(&mut undo)
+    }));
+    assert!(rewound.is_err(), "a poisoned runtime must refuse to rewind");
+    // A full restore replaces the half-committed state and recovers the runtime.
+    world.runtime.restore(&capture, || Page).expect("restore");
+    world
+        .runtime
+        .publish_initial(&mut world.rules, &mut world.candidate);
+    assert_eq!(world.heights(), committed);
+    assert_eq!(world.step(), Ok(2));
 }
