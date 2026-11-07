@@ -69,6 +69,8 @@ struct InstanceRecord {
 @group(2) @binding(4) var emissive_textures: texture_2d_array<f32>;
 @group(2) @binding(5) var material_sampler: sampler;
 @group(3) @binding(0) var<storage, read> instances: array<InstanceRecord>;
+// Camera-visible physical slots, read only by `compacted_vertex`.
+@group(0) @binding(5) var<storage, read> visible: array<u32>;
 struct HistoryRecord {
     current: mat4x4<f32>,
     identity: vec4<u32>,
@@ -94,7 +96,15 @@ struct VertexOutput {
     @location(4) previous_clip: vec4<f32>,
     @location(5) @interpolate(flat) history_valid: u32,
 }
+// Direct draws read the physical slot; compacted draws fetch it from the
+// camera-visible list. History always uses the physical slot.
 @vertex fn vertex(@builtin(vertex_index) vertex_index: u32, @builtin(instance_index) instance_index: u32) -> VertexOutput {
+    return vertex_at(vertex_index, instance_index);
+}
+@vertex fn compacted_vertex(@builtin(vertex_index) vertex_index: u32, @builtin(instance_index) instance_index: u32) -> VertexOutput {
+    return vertex_at(vertex_index, visible[instance_index]);
+}
+fn vertex_at(vertex_index: u32, slot: u32) -> VertexOutput {
     let positions = array<vec2<f32>,4>(vec2(-1.0,-1.0),vec2(1.0,-1.0),vec2(-1.0,1.0),vec2(1.0,1.0));
     let normals = array<vec3<f32>,6>(vec3(0.0,0.0,-1.0),vec3(1.0,0.0,0.0),vec3(0.0,0.0,1.0),vec3(-1.0,0.0,0.0),vec3(0.0,1.0,0.0),vec3(0.0,-1.0,0.0));
     let tangents = array<vec3<f32>,6>(vec3(1.0,0.0,0.0),vec3(0.0,0.0,1.0),vec3(-1.0,0.0,0.0),vec3(0.0,0.0,-1.0),vec3(1.0,0.0,0.0),vec3(1.0,0.0,0.0));
@@ -103,7 +113,7 @@ struct VertexOutput {
     let t = tangents[face];
     let p = positions[vertex_index % 4u];
     let local = n + t*p.x + cross(n,t)*p.y;
-    let instance = instances[instance_index];
+    let instance = instances[slot];
     var output: VertexOutput;
     var model = instance.current;
     model[3] = vec4(mix(instance.previous[3].xyz, instance.current[3].xyz, serials.presentation_alpha), instance.current[3].w);
@@ -114,7 +124,7 @@ struct VertexOutput {
     output.normal = mat3x3(instance.normal0.xyz,instance.normal1.xyz,instance.normal2.xyz) * n;
     output.uv = p*0.5+vec2(0.5);
     output.material = instance.ids.y;
-    let prior = history[instance_index];
+    let prior = history[slot];
     let valid = (serials.previous_lo != 0u || serials.previous_hi != 0u)
         && prior.identity.x == instance.ids.x
         && prior.identity.y == instance.ids.w
