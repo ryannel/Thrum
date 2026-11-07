@@ -1813,3 +1813,32 @@ fn parallel_movers_match_the_straight_corrected_run_after_churn_and_refusal() {
     assert_eq!(parallel_corrected_run(ExecutionMode::Rayon), serial);
     assert_eq!(parallel_corrected_run(ExecutionMode::RayonForced), serial);
 }
+
+#[test]
+fn refused_tick_keeps_the_deferred_publication_previous_transform() {
+    // Ultra review #1: a refused tick after an unrecorded deferred commit must
+    // not discard the preimages that publication needs for previous values.
+    let mut sim = Simulation::new(WorldEpoch(163), config(2)).expect("game");
+    let handle = sim.seed(entity(1, 1.0)).expect("mover");
+    let held = std::array::from_fn::<_, 4, _>(|index| {
+        if index != 0 {
+            sim.step(&[]).expect("published tick");
+        }
+        sim.published_page().expect("held page")
+    });
+    let previous = sim.get(handle).expect("live body").position;
+    // The deferred tick spawns a body whose next integration overflows, so
+    // the following tick refuses inside the engine step.
+    let mut overflowing = entity(2, f64::MAX);
+    overflowing.position = Position([f64::MAX, 0.0, 0.0]);
+    sim.step(&[Command::Spawn(overflowing)])
+        .expect("authority tick while pages are held");
+    assert!(!sim.has_current_page());
+    assert_eq!(sim.step(&[]), Err(SimError::NonFinite));
+    assert_eq!(sim.tick(), 4);
+    drop(held);
+    let recovered = sim.published_page().expect("delayed publication");
+    assert_eq!(recovered.id().tick, 4);
+    assert_ne!(recovered.position(handle), Some(previous));
+    assert_eq!(recovered.previous_position(handle), Some(previous));
+}
