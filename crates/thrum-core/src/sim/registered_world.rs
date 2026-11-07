@@ -2,6 +2,7 @@
 //! G2 replacement seam for the fixed A1 store; only checked handles escape.
 
 use std::{
+    any::Any,
     collections::hash_map::RandomState,
     hash::{BuildHasher, Hash, Hasher},
     marker::PhantomData,
@@ -20,6 +21,27 @@ use super::{
 
 fn tick_index(component: usize, slot: usize, capacity: usize) -> usize {
     component * capacity + slot
+}
+
+/// Run word-aligned kernel chunks in storage order on the caller.
+fn run_serial_chunks<T, O>(
+    values: &mut [Option<T>],
+    mut active: Option<&mut [u64]>,
+    outputs: &mut [O],
+    rows: usize,
+    run: &impl Fn(usize, &mut [Option<T>], &mut [u64], &mut O),
+) {
+    for (chunk, (values, output)) in values.chunks_mut(rows).zip(outputs).enumerate() {
+        let words = match active.as_deref_mut() {
+            Some(active) => {
+                let start = chunk * KERNEL_CHUNK_WORDS;
+                let end = (start + KERNEL_CHUNK_WORDS).min(active.len());
+                &mut active[start..end]
+            }
+            None => &mut [],
+        };
+        run(chunk, values, words, output);
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -57,6 +79,7 @@ pub(super) struct WorldUndo {
 }
 
 pub(super) trait TentativeDirty {
+    fn is_marked(&self, component: usize, slot: u32) -> bool;
     fn mark_first(&mut self, component: usize, slot: u32) -> bool;
     fn unmark_last(&mut self, component: usize, slot: u32);
 }
@@ -580,6 +603,28 @@ pub(super) struct RegisteredWorld {
     pending_marks: Vec<bool>,
     active_change_frame: Option<usize>,
     live: usize,
+    /// Per-component reusable chunk outputs for chunked in-place kernels.
+    chunk_scratch: Vec<Option<Box<dyn Any + Send + Sync>>>,
+}
+
+/// Storage words per chunk of a word-aligned in-place kernel (4,096 rows),
+/// sized so one Rayon task outweighs its dispatch on small row kernels.
+pub(super) const KERNEL_CHUNK_WORDS: usize = 64;
+
+/// One chunk's private kernel output, merged on the caller in chunk order.
+struct ChunkOutput<T> {
+    /// First-write preimages: logical slot, prior value and prior change tick.
+    preimages: Vec<(u32, T, u64)>,
+    changed: usize,
+}
+
+impl<T> Default for ChunkOutput<T> {
+    fn default() -> Self {
+        Self {
+            preimages: Vec::new(),
+            changed: 0,
+        }
+    }
 }
 
 impl RegisteredWorld {
@@ -915,6 +960,7 @@ impl RegisteredWorld {
             pending_marks: vec![false; capacity],
             active_change_frame: None,
             live: 0,
+            chunk_scratch: (0..component_count).map(|_| None).collect(),
         })
     }
 
@@ -1662,6 +1708,211 @@ impl RegisteredWorld {
         Ok(())
     }
 
+    /// Chunked form of [`Self::visit_mut2_if`] for independent row kernels
+    /// over an indexed shared component. Each chunk of [`KERNEL_CHUNK_WORDS`]
+    /// storage words owns its values and active words; first-write preimages
+    /// stay private until the caller merges them in storage order. Every
+    /// chunk's preimages are kept on refusal so the transaction abort restores
+    /// rows any chunk already wrote; the earliest chunk's error is returned.
+    /// Serial and parallel dispatch run the same chunk code. Returns the number
+    /// of rows whose visit reported a change.
+    pub(super) fn visit_mut2_chunked<
+        T: Clone + Send + Sync + 'static,
+        U: Send + Sync + 'static,
+        C: Sync,
+        E: Send,
+    >(
+        &mut self,
+        first: usize,
+        second: usize,
+        excluded_words: &[u64],
+        parallel: bool,
+        undo: &mut WorldUndo,
+        dirty: &mut (impl TentativeDirty + Sync),
+        context: &C,
+        select: impl Fn(&C, Handle, StableId, &T, &U) -> bool + Sync,
+        visit: impl Fn(&C, Handle, StableId, &mut T, &U) -> Result<bool, E> + Sync,
+    ) -> Result<usize, E> {
+        assert_ne!(first, second, "mutable query components must be distinct");
+        let mut scratch = self.chunk_scratch[first]
+            .take()
+            .unwrap_or_else(|| Box::new(Vec::<ChunkOutput<T>>::new()));
+        let outputs = scratch
+            .downcast_mut::<Vec<ChunkOutput<T>>>()
+            .expect("chunk scratch matches its component type");
+        let capacity = self.slots.len();
+        let words = capacity.div_ceil(64);
+        // Activity partitions keep active rows dense, so only chunks up to the
+        // last active word carry work.
+        let active_words = self.columns[second]
+            .active_presence()
+            .expect("indexed shared component");
+        let last = active_words.iter().rposition(|word| *word != 0);
+        let chunks = last.map_or(0, |last| (last + 1).div_ceil(KERNEL_CHUNK_WORDS));
+        if outputs.len() < chunks {
+            outputs.resize_with(chunks, ChunkOutput::default);
+        }
+        let epoch = self.epoch;
+        let directory = self.directory.as_ref();
+        let slots = self.slots.as_slice();
+        let change_ticks = self.change_ticks.as_slice();
+        let (write, read) = if first < second {
+            let (left, right) = self.columns.split_at_mut(second);
+            (&mut left[first], &right[0])
+        } else {
+            let (left, right) = self.columns.split_at_mut(first);
+            (&mut right[0], &left[second])
+        };
+        let write = write
+            .as_any_mut()
+            .downcast_mut::<TypedStore<T>>()
+            .expect("prepared mutable component type");
+        let read = read
+            .as_any()
+            .downcast_ref::<TypedStore<U>>()
+            .expect("prepared shared component type");
+        let read_active = read.active_presence().expect("indexed shared component");
+        let read_presence = read.presence();
+        let parts = write.split_for_chunks();
+        let presence = parts.presence;
+        let predicate = parts.active.as_ref().map(|(_, predicate)| *predicate);
+        let refusal = std::sync::Mutex::new(None::<(usize, E)>);
+        let marks: &(dyn TentativeDirty + Sync) = &*dirty;
+        let run = |chunk: usize,
+                   values: &mut [Option<T>],
+                   active: &mut [u64],
+                   output: &mut ChunkOutput<T>| {
+            output.preimages.clear();
+            output.changed = 0;
+            let start = chunk * KERNEL_CHUNK_WORDS;
+            for word in start..(start + KERNEL_CHUNK_WORDS).min(words) {
+                let mut matching = presence[word]
+                    & read_presence[word]
+                    & read_active[word]
+                    & !excluded_words[word];
+                while matching != 0 {
+                    let bit = matching.trailing_zeros() as usize;
+                    matching &= matching - 1;
+                    let index = word * 64 + bit;
+                    let local = index - start * 64;
+                    let logical = directory.map_or(index, |directory| directory.slot_at(index));
+                    let key = u32::try_from(logical).expect("validated slot capacity");
+                    let slot = slots[logical];
+                    let id = slot
+                        .stable
+                        .expect("stored component belongs to a live slot");
+                    let handle = Handle {
+                        epoch,
+                        slot: key,
+                        generation: slot.generation,
+                    };
+                    let shared = read.get(index).expect("presence bit has value");
+                    let value = values[local].as_mut().expect("presence bit has value");
+                    if !select(context, handle, id, value, shared) {
+                        continue;
+                    }
+                    let first_write = !marks.is_marked(first, key);
+                    if first_write {
+                        output.preimages.push((
+                            key,
+                            value.clone(),
+                            change_ticks[tick_index(first, logical, capacity)],
+                        ));
+                    }
+                    let result = visit(context, handle, id, value, shared);
+                    if let Some(predicate) = predicate {
+                        let mask = 1_u64 << bit;
+                        let target = &mut active[word - start];
+                        if values[local].as_ref().is_some_and(predicate) {
+                            *target |= mask;
+                        } else {
+                            *target &= !mask;
+                        }
+                    }
+                    match result {
+                        Ok(true) => output.changed += 1,
+                        Ok(false) => {
+                            if first_write {
+                                output.preimages.pop();
+                            }
+                        }
+                        Err(error) => {
+                            let mut refusal = refusal.lock().expect("refusal lock");
+                            if refusal
+                                .as_ref()
+                                .is_none_or(|(earliest, _)| chunk < *earliest)
+                            {
+                                *refusal = Some((chunk, error));
+                            }
+                            return;
+                        }
+                    }
+                }
+            }
+        };
+        let rows = KERNEL_CHUNK_WORDS * 64;
+        let used = &mut outputs[..chunks];
+        let values = &mut parts.values[..(chunks * rows).min(capacity)];
+        match parts.active {
+            Some((active, _)) => {
+                let active = &mut active[..(chunks * KERNEL_CHUNK_WORDS).min(words)];
+                #[cfg(not(target_arch = "wasm32"))]
+                if parallel && chunks > 1 {
+                    use rayon::prelude::*;
+                    values
+                        .par_chunks_mut(rows)
+                        .zip(active.par_chunks_mut(KERNEL_CHUNK_WORDS))
+                        .zip(used.par_iter_mut())
+                        .enumerate()
+                        .for_each(|(chunk, ((values, active), output))| {
+                            run(chunk, values, active, output);
+                        });
+                } else {
+                    run_serial_chunks(values, Some(active), used, rows, &run);
+                }
+                #[cfg(target_arch = "wasm32")]
+                run_serial_chunks(values, Some(active), used, rows, &run);
+            }
+            None => {
+                #[cfg(not(target_arch = "wasm32"))]
+                if parallel && chunks > 1 {
+                    use rayon::prelude::*;
+                    values
+                        .par_chunks_mut(rows)
+                        .zip(used.par_iter_mut())
+                        .enumerate()
+                        .for_each(|(chunk, (values, output))| {
+                            run(chunk, values, &mut [], output);
+                        });
+                } else {
+                    run_serial_chunks(values, None, used, rows, &run);
+                }
+                #[cfg(target_arch = "wasm32")]
+                run_serial_chunks(values, None, used, rows, &run);
+            }
+        }
+        #[cfg(target_arch = "wasm32")]
+        let _ = parallel;
+        let undo_column = undo.columns[first]
+            .as_any_mut()
+            .downcast_mut::<TypedUndo<T>>()
+            .expect("registered undo column type");
+        let mut changed = 0;
+        for output in &mut outputs[..chunks] {
+            changed += output.changed;
+            for (key, prior, tick) in output.preimages.drain(..) {
+                let marked = dirty.mark_first(first, key);
+                debug_assert!(marked, "chunk preimage is the first write");
+                undo_column.push_component(key, Some(prior), tick);
+            }
+        }
+        self.chunk_scratch[first] = Some(scratch);
+        match refusal.into_inner().expect("refusal lock") {
+            Some((_, error)) => Err(error),
+            None => Ok(changed),
+        }
+    }
+
     /// Visit matching components in canonical physical-slot order for
     /// order-sensitive reductions and events. Independent kernels should use
     /// the prepared storage-order cursor instead.
@@ -1762,6 +2013,10 @@ mod tests {
     struct TestDirty([bool; 4]);
 
     impl TentativeDirty for TestDirty {
+        fn is_marked(&self, component: usize, slot: u32) -> bool {
+            self.0[component * 2 + slot as usize]
+        }
+
         fn mark_first(&mut self, component: usize, slot: u32) -> bool {
             let mark = &mut self.0[component * 2 + slot as usize];
             let first = !*mark;

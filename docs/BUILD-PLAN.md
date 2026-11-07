@@ -50,8 +50,10 @@ The native Metal recorder stays in G3t. The later dedicated performance phase ow
   trusted in-place rules under sparse undo, engine-owned publication with dirty unions across gaps/rewinds/held pages,
   adjacent previous/current endpoints, retained-input amendment and corrected replay. Require complete authority-state
   equality against the straight corrected run and structural churn/refusal recovery. Presence-aware 10k corrected replay
-  and engine-owned append-only edit descriptors pass. Remaining: game-side Resolve staging and permit handling.
-  Requested Rayon currently runs serial game systems and proves no parallel fitness.
+  and engine-owned append-only edit descriptors pass. Resolve stages privately under its own permits; forced Rayon
+  runs the chunked mover kernel concurrently and matches the straight corrected 100k run after churn and kernel/Resolve
+  refusal in every mode. Requested Rayon awaits a quiet measured crossover.
+  [Parallel and Resolve evidence](evidence/v1-workload/G2S-PARALLEL-RESOLVE-2026-11-07.md).
   [Recorded quiet S1/S2 figures](evidence/v1-workload/G2R-CONSOLIDATED-2026-11-05.md) are history; old CPU/allocation
   limits are retired. Do not close on a partial hash or an easier row.
 - [x] **G3a — executing graph and live scene.** Render/Compute/Copy closures execute in dependency order with culling,
