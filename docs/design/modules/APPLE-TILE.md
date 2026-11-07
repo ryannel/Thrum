@@ -79,7 +79,8 @@ SDK 27.2 headers and documentation, wgpu 30.0.1 source, and the governing docume
    The Apple upload ring is a persistently mapped `MTLStorageModeShared` buffer, imported once per generation with
    `Device::create_buffer_from_hal`. The CPU writes through its contents pointer only after the slot's previous
    submission completes. This is not an encoder splice and adds no queue.
-3. *Native segment (proposed boundary change; see seam 1).* Some work has no wgpu path, such as a MetalFX scaler.
+3. *Native segment (a proposed boundary amendment, seam 1; the current boundary remains in effect until Thrum Core
+   rules).* Some work has no wgpu path, such as a MetalFX scaler.
    - The executor closes the current wgpu encoder and opens a dedicated wgpu `CommandEncoder` used **only** through
      `as_hal_mut`. In it the provider records into wgpu-hal's `raw_command_buffer()`. The executor then resumes a fresh
      wgpu encoder.
@@ -87,6 +88,18 @@ SDK 27.2 headers and documentation, wgpu 30.0.1 source, and the governing docume
    - wgpu-core permits a whole-Raw encoder (`record_as_hal_mut` sets `EncodingApi::Raw`; `finish` accepts it) and
      panics on mixing. The design never mixes, never writes the drawable natively and never uses a second queue.
    - MetalFX's classic scalers encode into an `MTLCommandBuffer` they do not own, so they fit this shape.
+   - *Producer to segment.* Each wgpu `CommandEncoder` becomes one `MTLCommandBuffer`, and the one submit commits them
+     in order on one queue. The producing encoder E1 is therefore committed before the segment's buffer N. wgpu creates
+     Metal resources hazard-tracked by default, so Metal orders N's reads after E1's writes to the same resource.
+     wgpu-hal's Metal texture transitions are no-ops, so no barrier is emitted or needed.
+   - *Segment to wgpu.* The resuming encoder E2 is committed after N, and tracking orders E2's reads of native-written
+     textures after N's writes. Command buffers retain the resources they reference by default.
+   - *What wgpu-core cannot observe.* Native writes (its initialization state never sees them), native-only resource
+     lifetimes, errors raised inside N, and the provider's internal history, which MetalFX advances at encode. Each has
+     an answer below: native-written textures are cleared once and never aliased or discarded; the generation owns
+     their lifetime; a command-buffer error takes the device-loss path; and the executor resets the provider after any
+     frame that was encoded but not executed.
+   - Thrum Core reviews this exact seam, the transitions above and the G3t M10 stand-in, before any experiment starts.
 4. *Complete native recorder.* This remains the later candidate.
 
 **If seam 1 is refused:** MetalFX is unreachable until the complete recorder exists. The Apple recipe then ships
@@ -171,10 +184,18 @@ visible in the report until G4 gives motion a reader.
   retired with their generation after GPU completion.
 - *Executor and runtime (`thrum-render::runtime`).* The one owner of queue, submission, completion and retirement.
   - A frame is an ordered encoder list (wgpu and native), submitted once.
-  - Frames encoded before acquisition are never discarded: if acquisition fails, the frame is submitted without its
-    present phase, so every history-producing pass that was encoded also executes. On iOS this applies only while the
-    app is in the foreground. Background GPU submission is forbidden there, so an encoded frame found after
-    suspension is dropped and history is reset instead, which is not treated as device loss.
+  - The existing presentation-drop contract is preserved until the runtime seam is reviewed. On portable, if
+    acquisition fails, views drop and pre-acquire work may still be cancelled; the existing
+    `unavailable_surface_drops_only_views_and_resize_reuses_preparation` test stays as it is. Temporal history commits
+    only when a frame carrying an accepted sample is successfully submitted (`history.rs`), so a cancelled frame
+    leaves history at the last submitted sample.
+  - A frame containing a native segment whose provider keeps internal history is the exception, because that history
+    advanced at encode. The proposed runtime seam (seam 3) submits such a frame without its present phase. If Thrum
+    Core refuses it, the frame is discarded and the provider resets on its next encode.
+  - On iOS, background GPU submission is forbidden, so an encoded frame found after suspension is dropped and every
+    history reset, native or not. This is not device loss.
+  - Each outcome (submitted without present, discarded with a reset, iOS background refusal) is counted and observable
+    in the proof (G3t M10–M11, G4 M8).
   - `FrameSample` timing becomes a list keyed by graph pass names instead of the fixed 11-slot array.
 - *`apple_tile` backend (`thrum-render/src/apple_tile/`, `cfg(target_vendor = "apple")`).* Owns:
   - the shared-storage rings;
@@ -217,8 +238,9 @@ cluster-bounds buffers are single buffers that both slots share, ordered by `que
   segment's pass name.
 
 **Archives.** V1 has no tier-3 pipeline that can use an `MTLBinaryArchive`: classic MetalFX scalers take no archive,
-and wgpu 30 cannot build pipelines from native objects or from a Metal cache. Under option (b) (seam 5), BUILD-PLAN's
-V1 "binary archives" item therefore covers nothing. That is stated plainly for the owner.
+and wgpu 30 cannot build pipelines from native objects or from a Metal cache. Seam 5 therefore puts the archive choice to
+the owner, with both options open. Option (b) cannot count as the V1 archive deliverable, and this design changes no V1
+exit wording.
 
 **A normal frame (Apple tile, after G3t).** The steps run in order:
 1. Encode stage on the render owner. The slot's shared buffers are written once its previous use has completed.
@@ -236,7 +258,7 @@ V1 "binary archives" item therefore covers nothing. That is stated plainly for t
 4. Phase 2: the present pass encodes tone and display into the drawable.
 5. One submit; completion retires the slot.
 
-If acquisition fails, step 4 is skipped and the frame is still submitted.
+If acquisition fails, the existing drop contract applies; a frame carrying a stateful native segment follows seam 3.
 
 Valley baseline at 1080p offscreen on this M3 Max: GPU pass sum p50 3.86 ms (forward and sky 1.94, atmosphere 1.24,
 shadow 0.50); upload p50 628 µs; encode p50 1.63 ms. These are host-shared baselines, not budgets.
@@ -317,8 +339,9 @@ is owed. Whole-frame present intervals on the Mac also depend on G3b's open live
 
 ## Seams for Thrum Core (proposals)
 
-1. **Boundary amendment.** Admit the tier-3 *whole-encoder native segment* inside the one submission, as defined
-   above. The decision currently excludes a "partial raw splice". If this is refused, see *If seam 1 is refused*.
+1. **Boundary amendment (proposed).** Admit the tier-3 *whole-encoder native segment* inside the one submission, as
+   defined above, including its producer and consumer transitions and what wgpu-core cannot observe. The current
+   boundary remains in effect; Thrum Core reviews this exact seam before an experiment starts. The decision currently excludes a "partial raw splice". If this is refused, see *If seam 1 is refused*.
 2. **Registry.** `Recipe`, `NativeFeatures` and the digest in `DeviceCapabilities`. Per-display facts go to the
    platform's display record, not the registry.
 3. **Graph.**
@@ -327,16 +350,28 @@ is owed. Whole-frame present intervals on the Mac also depend on G3b's open live
    - Native-written textures as generation-persistent.
    - One graph per generation with split execution and an execute-time surface binding.
    - The `FrameSample` timing schema keyed by pass name.
-   - Encoded frames always submitted.
+   - Submit-without-present only for frames carrying a stateful native segment; the portable presentation-drop
+     contract is unchanged.
 4. **Per-slot frame buffers.** For both recipes, with per-slot bind groups in forward, shadow, visibility, history and
    atmosphere (atmosphere and G3c owners to review).
-5. **Archives.** For wgpu-built pipelines, choose:
-   - (a) patch wgpu-hal's Metal `PipelineCache` onto `MTLBinaryArchive`, then contribute it upstream. This is about
-     2–3 days and a temporary `[patch]` dependency.
-   - (b) accept closure-time preparation plus the OS shader cache, with recorded cold-start time, and reword
-     BUILD-PLAN's V1 "binary archives" item, which otherwise covers nothing.
+5. **Archives (owner ruling; both options stay open).** For wgpu-built pipelines:
+   - (a) *Minimum maintained scope.* wgpu-hal's Metal backend implements `create_pipeline_cache` over
+     `MTLBinaryArchive` (loaded from the cache data through a temporary file URL), sets the archive on each render and
+     compute pipeline descriptor and adds the pipeline's functions to it, and serialises it in
+     `pipeline_cache_get_data`; wgpu-core and wgpu-types expose `PIPELINE_CACHE` on Metal. Thrum keeps one cache per
+     adapter, driver and recipe, persists it, and passes it at every pipeline site. It ships as a `[patch.crates-io]`
+     fork pinned to 30.0.1 and rebased at each wgpu upgrade until upstream accepts it; the upstream contribution is
+     publishing and needs owner approval. About 2–3 days, plus that upkeep.
+     *Proof an archive hit was used:* a warm-launch test mode with `failOnBinaryArchiveMiss` in which every pipeline
+     still succeeds; cold against warm pipeline-creation time; and a stale or corrupted archive that compiles at build,
+     with the counter showing zero creations in play.
+   - (b) *Exact V1 scope change.* Closure-time preparation plus the OS shader cache, with recorded cold and warm
+     launch-to-ready times and zero post-readiness compiles. (b) cannot count as the V1 archive deliverable. Taking it
+     would need the owner to reword BUILD-PLAN's V1 "binary archives" item to "closure-time preparation with recorded
+     cold/warm launch-to-ready and zero post-readiness compiles; archives deferred".
 
-   The plans assume (b) until the owner rules.
+   No V1 exit wording changes with this docs landing. G4 M9 records cold start under either option; G4 M10 runs under
+   (a).
 6. **Compact instance ABI.** 80 B rows for both recipes: `abi.rs`, `synthetic.wgsl`, `shadow.wgsl`,
    `history_gpu.wgsl`, `visibility.wgsl`, `thrum-app/src/sky.rs` and `tests/contracts.rs`. Reviewed by G3c and the
    G3b interpolation owner.
