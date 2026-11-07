@@ -93,11 +93,14 @@ SDK 27.2 headers and documentation, wgpu 30.0.1 source, and the governing docume
      Metal resources hazard-tracked by default, so Metal orders N's reads after E1's writes to the same resource.
      wgpu-hal's Metal texture transitions are no-ops, so no barrier is emitted or needed.
    - *Segment to wgpu.* The resuming encoder E2 is committed after N, and tracking orders E2's reads of native-written
-     textures after N's writes. Command buffers retain the resources they reference by default.
+     textures after N's writes. Command buffers retain the resources they reference only
+     because wgpu-hal 30's `retain_command_buffer_references` defaults to true; the lifetime guarantee is generation
+     ownership, proven by G3t D10.3, not that default.
    - *What wgpu-core cannot observe.* Native writes (its initialization state never sees them), native-only resource
      lifetimes, errors raised inside N, and the provider's internal history, which MetalFX advances at encode. Each has
      an answer below: native-written textures are cleared once and never aliased or discarded; the generation owns
-     their lifetime; a command-buffer error takes the device-loss path; and the executor resets the provider after any
+     their lifetime; the segment registers a completed handler on N's raw `MTLCommandBuffer` that reads its `status` and `error` and
+     raises device loss; and the executor resets the provider after any
      frame that was encoded but not executed.
    - Thrum Core reviews this exact seam, the transitions above and the G3t M10 stand-in, before any experiment starts.
 4. *Complete native recorder.* This remains the later candidate.
