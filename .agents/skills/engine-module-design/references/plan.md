@@ -19,7 +19,9 @@ the module; what matters is below.
   when you'll stop.
 - **Keep the status current.** A few lines at the top: the milestone in progress, what you're doing now and since
   when, what's next
-  and anything blocking you (what you tried, the evidence, and what would unblock it). Update it when it changes.
+  and anything blocking you (what you tried, the evidence, and what would unblock it). Probe a blocker directly
+  before you record it, and again before you work around it; a cause inferred from a symptom is a hypothesis.
+  Update the status when it changes.
   Keep these as plain `Milestone:`, `Now:`, `Next:` and `Blocked:` lines, and milestone headings as
   `## M<n> <name>: <state>`, so tools can read them; everything else is yours to shape.
 - **Rewrite in place.** The plan reflects what is true now. A one-line log at the end records meaningful changes.
