@@ -205,7 +205,10 @@ fn lagging_or_replayed_publication_is_shed_before_camera_scene_mutation_or_submi
         let mut host = FrameHost::new(
             &capabilities,
             &queue,
-            FrameConfig::default(),
+            FrameConfig {
+                surface: Some(device::surface()),
+                ..FrameConfig::default()
+            },
             world,
             StaticScene::default(),
             scene,
@@ -248,10 +251,25 @@ fn lagging_or_replayed_publication_is_shed_before_camera_scene_mutation_or_submi
                 .expect("stale presentation degrades");
             assert!(report.dropped_view);
             assert!(!report.submitted);
+            let mut advanced = host.advance(Duration::ZERO).expect("admit late callback");
+            assert!(advanced.can_acquire_serial());
+            advanced
+                .report
+                .as_mut()
+                .expect("admitted report")
+                .completed_ticks = 1;
+            let encoded = advanced.encode_scene().expect("stale late view degrades");
+            assert!(!encoded.can_acquire_surface());
+            let report = encoded.submit(None).expect("consume the dropped view");
+            assert_eq!(report.completed_ticks, 1);
+            assert!(report.dropped_view);
+            assert!(!report.submitted);
             assert_eq!(
                 host.dropped_stale_views(),
-                u64::try_from(index + 1).expect("bounded cases")
+                u64::try_from(2 * (index + 1)).expect("bounded cases")
             );
+            assert_eq!(host.dropped_views(), 0, "stale view is counted once");
+            assert_eq!(host.dropped_surface(), 0, "no drawable was acquired");
             assert_eq!(
                 host.source.frames.get(),
                 1,

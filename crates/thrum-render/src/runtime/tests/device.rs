@@ -113,6 +113,55 @@ pub(super) fn surface() -> SurfaceProfile {
     }
 }
 
+#[test]
+fn a_missing_surface_binding_has_one_drop_and_one_scene_commit_on_both_routes() {
+    pollster::block_on(async {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let (capabilities, queue) = gpu(&instance, 7).await;
+        let profile = surface();
+        let texture = capabilities
+            .device()
+            .create_texture(&wgpu::TextureDescriptor {
+                label: Some("unbound drawable fixture"),
+                size: wgpu::Extent3d {
+                    width: profile.extent[0],
+                    height: profile.extent[1],
+                    depth_or_array_layers: 1,
+                },
+                mip_level_count: 1,
+                sample_count: 1,
+                dimension: wgpu::TextureDimension::D2,
+                format: profile.format,
+                usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+                view_formats: &[],
+            });
+        let output = super::super::SurfaceOutput {
+            view: &texture.create_view(&wgpu::TextureViewDescriptor::default()),
+            extent: profile.extent,
+        };
+        for late in [false, true] {
+            let mut host = host(&capabilities, &queue, Policy::default()).await;
+            host.slots[0].presentation = None;
+            let report = if late {
+                host.advance(Duration::ZERO)
+                    .expect("admit")
+                    .encode_scene()
+                    .expect("record")
+                    .submit(Some(&output))
+            } else {
+                host.drive(Duration::ZERO, Some(&output))
+            }
+            .expect("missing binding degrades");
+            assert!(report.submitted);
+            assert!(report.dropped_view);
+            assert!(!report.surface_presented);
+            assert_eq!(host.dropped_surface(), 1);
+            assert_eq!(host.last_view_source, Some(host.world.source()));
+            assert_eq!(host.pending_frames(), 1);
+        }
+    });
+}
+
 fn pending_slots(host: &mut Host) {
     let mut report = host
         .advance(Duration::ZERO)

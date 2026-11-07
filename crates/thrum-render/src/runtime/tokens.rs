@@ -1,10 +1,9 @@
 //! Exclusive tokens for late drawable acquisition and cancellation.
 
 use super::{
-    DriveReport, FrameError, FrameHost, FrameSample, FrameWorld, Instant, SceneSource, SlotState,
+    DriveReport, FrameError, FrameHost, FrameWorld, Instant, RecordedScene, SceneSource, SlotState,
     SurfaceOutput,
 };
-use crate::extract::SourceTick;
 use std::time::Duration;
 
 /// One admitted simulation callback awaiting optional presentation. Consuming
@@ -61,7 +60,7 @@ impl<'a, W: FrameWorld, V: SceneSource<W::Page>> AdvancedFrame<'a, W, V> {
     }
 
     /// Encode the serial scene while the platform has not yet acquired its
-    /// drawable. The returned token owns the encoder and its frame slot.
+    /// drawable. A stale publication returns a dropped report in the token.
     /// # Errors
     /// Returns an extraction or GPU encoding fault; a failed optional view
     /// never rolls back an admitted world update.
@@ -80,28 +79,19 @@ impl<'a, W: FrameWorld, V: SceneSource<W::Page>> AdvancedFrame<'a, W, V> {
         let report = self.report.as_mut().ok_or("advanced report consumed")?;
         let frame =
             host.extract_serial(self.tick_cpu, report.completed_ticks, report.queued_ticks)?;
-        let prepared = match host.prepare_extracted(slot_index, report, frame) {
-            Ok(Some(prepared)) => prepared,
-            Ok(None) => {
-                return Err(FrameError::InvalidState(
-                    "serial extraction had no current source",
-                ));
-            }
+        let ready = match host.prepare_extracted(slot_index, report, frame) {
+            Ok(Some(prepared)) => Some(host.encode_scene_only(slot_index, prepared)?),
+            Ok(None) => None,
             Err(error) => {
                 host.queue.submit([]);
                 return Err(error);
             }
         };
-        let (encoder, scene_encode_cpu) = host.encode_scene_only(slot_index)?;
+        let host = self.host.take().ok_or("advanced host consumed")?;
         Ok(EncodedFrame {
-            host: self.host.take().ok_or("advanced host consumed")?,
-            report: self.report.take(),
-            encoder: Some(encoder),
-            sample: Some(prepared.sample),
-            slot_index,
+            ready: ready.map(|recorded| ReadyFrame { host, recorded }),
+            report: self.report.take().ok_or("advanced report consumed")?,
             wall_start: self.wall_start,
-            scene_encode_cpu,
-            source: prepared.source,
         })
     }
 }
@@ -115,106 +105,69 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> Drop for AdvancedFrame<'_, W, V> {
     }
 }
 
-/// One offscreen scene encoded before the platform acquires a drawable.
-/// Dropping it discards the unsubmitted encoder and its timestamp reservations.
+/// The result of attempting to encode before drawable acquisition.
+/// Dropping a ready frame discards its unsubmitted encoder and timing reservations.
 pub struct EncodedFrame<'a, W: FrameWorld, V: SceneSource<W::Page>> {
-    host: &'a mut FrameHost<W, V>,
-    report: Option<DriveReport>,
-    encoder: Option<wgpu::CommandEncoder>,
-    sample: Option<FrameSample>,
-    slot_index: usize,
+    ready: Option<ReadyFrame<'a, W, V>>,
+    report: DriveReport,
     wall_start: Instant,
-    scene_encode_cpu: Duration,
-    source: SourceTick,
+}
+
+struct ReadyFrame<'a, W: FrameWorld, V: SceneSource<W::Page>> {
+    host: &'a mut FrameHost<W, V>,
+    recorded: RecordedScene,
 }
 
 impl<W: FrameWorld, V: SceneSource<W::Page>> EncodedFrame<'_, W, V> {
-    /// Discard an encoded scene when drawable acquisition failed. The world
-    /// update remains committed; queued uploads are flushed without a scene
-    /// pass or temporal-history publication.
-    /// # Panics
-    /// Panics only if the frame's privately owned report was taken without
-    /// consuming the frame, which no public operation permits.
-    pub fn skip(mut self) -> DriveReport {
-        let mut report = self.report.take().expect("encoded report belongs to frame");
-        report.dropped_view = true;
-        report.wall = self.wall_start.elapsed();
-        report
+    /// Whether a scene is ready for the platform to acquire a drawable.
+    pub fn can_acquire_surface(&self) -> bool {
+        self.ready.is_some()
     }
 
-    /// Append the presentation pass to the existing encoder and submit once.
-    /// A missing drawable submits only the scene and counts the missed surface.
+    /// Drop optional presentation and return the admitted world progress.
+    /// Pending uploads are flushed without a scene or history submission.
+    pub fn skip(mut self) -> DriveReport {
+        self.report.dropped_view = true;
+        self.report.wall = self.wall_start.elapsed();
+        self.report
+    }
+
+    /// Submit the recorded scene and optional surface pass once, or return
+    /// the dropped report if the publication was stale.
     /// # Errors
     /// Returns a GPU submission fault; committed world ticks remain committed.
     pub fn submit(
         mut self,
         surface: Option<&SurfaceOutput<'_>>,
     ) -> Result<DriveReport, FrameError> {
-        if surface.is_some() && self.host.presenter.is_none() {
-            return Err(FrameError::InvalidState(
-                "encoded host has no surface presenter",
-            ));
-        }
-        let mut encoder = self.encoder.take().ok_or("encoded scene consumed")?;
-        let present_start = Instant::now();
-        let slot = &mut self.host.slots[self.slot_index];
-        let presented = if let (Some(presenter), Some(binding), Some(surface)) = (
-            self.host.presenter.as_ref(),
-            slot.presentation.as_ref(),
-            surface,
-        ) {
-            presenter
-                .encode(
-                    &mut encoder,
-                    binding,
-                    surface.view,
-                    surface.extent,
-                    Some(&mut slot.timings),
-                )
-                .is_ok()
+        if let Some(ready) = self.ready.take() {
+            ready.host.finish_encoded(
+                ready.recorded,
+                &mut self.report,
+                surface,
+                self.wall_start,
+            )?;
         } else {
-            false
-        };
-        if self.host.presenter.is_some() && !presented {
-            self.host.dropped_surface = self.host.dropped_surface.saturating_add(1);
-            if let Some(report) = self.report.as_mut() {
-                report.dropped_view = true;
-            }
+            self.report.wall = self.wall_start.elapsed();
         }
-        let encode_cpu = self.scene_encode_cpu + present_start.elapsed();
-        let mut report = self.report.take().ok_or("encoded report consumed")?;
-        let sample = self.sample.take().ok_or("encoded sample consumed")?;
-        self.host.finish_encoded(
-            self.slot_index,
-            &mut report,
-            encoder,
-            sample,
-            self.wall_start,
-            encode_cpu,
-            presented,
-        )?;
-        self.host.prepared.commit_frame();
-        self.host.history_reset_pending = false;
-        self.host.last_view_source = Some(self.source);
-        Ok(report)
+        Ok(self.report)
     }
 }
 
 impl<W: FrameWorld, V: SceneSource<W::Page>> Drop for EncodedFrame<'_, W, V> {
     fn drop(&mut self) {
-        if let Some(encoder) = self.encoder.take() {
-            drop(encoder);
-            let discarded = self.host.slots[self.slot_index]
+        if let Some(ReadyFrame { host, recorded }) = self.ready.take() {
+            drop(recorded.encoder);
+            let discarded = host.slots[recorded.slot_index]
                 .timings
-                .discard_unsubmitted(self.host.generation);
+                .discard_unsubmitted(host.generation);
             debug_assert!(discarded.is_ok(), "unsubmitted scene timing state changed");
-            // Queue::write_buffer stages bytes until submit, even if the
-            // command encoder is dropped. Empty submit releases that staging
-            // after GPU completion without rendering the hidden scene.
-            self.host.queue.submit([]);
-            self.host.dropped_views = self.host.dropped_views.saturating_add(1);
-            if self.host.presenter.is_some() {
-                self.host.dropped_surface = self.host.dropped_surface.saturating_add(1);
+            // Queue::write_buffer stages bytes until submit. Release that staging
+            // even when this encoder is discarded without a scene submission.
+            host.queue.submit([]);
+            host.dropped_views = host.dropped_views.saturating_add(1);
+            if host.presenter.is_some() {
+                host.dropped_surface = host.dropped_surface.saturating_add(1);
             }
         }
     }

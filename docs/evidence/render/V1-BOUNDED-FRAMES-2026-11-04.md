@@ -12,6 +12,12 @@ Owner-run 10:50–10:52 CET, clean worktree, agents paused, builds drained; raw:
 10k/1.5k movers, 1080p, timing on; 199/200 callbacks, forecasts at 120 Hz, synthetic surface, no real presents.
 Upload/encode p50 279.5/239.0 µs dominate. Later noisy ABBA history: `tmp/g3b-runtime/`; no controlled speed win.
 
+**Late acquisition:** a stale extracted page returns one drop before drawable acquisition. Both submit routes
+share surface-drop accounting and commit scene history only after submission. Metal regressions cover stale pages
+and a missing binding. On the 1080p cooked valley ABBA (shared load 13.9–14.3), render-owner wall p95 was
+1.93–1.94 → 1.49–1.90 ms and scene GPU pass-sum p95 was 7.65–8.29 → 6.32–8.46 ms.
+Raw rows and binary hashes: `tmp/ultrareview-2026-11-07/frame-submit/`.
+
 **Native lifecycle:** ordered pause/resume drains accepted ticks; stopped wall time is excluded. Mac P retains intent;
 surface loss never pauses authority. Mac overload now drains admitted ticks through Pause, then resumes at the
 acknowledged tick without changing epoch/timeline; manual pause wins. Refused time is counted, not replayed.
