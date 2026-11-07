@@ -8,9 +8,9 @@ Commission: Thrum Core's G3b iOS boundary (`tmp/g3b-ios-boundary/NOTES.md`).
 Reviews: 2026-11-07 independent design/plan review (fresh subagent given the commission, this plan, the contracts and
 the work-in-progress tree): changes required, two blocking. Answered below; see *Review answers*. Thrum Core's
 rulings on seam 2 (approved with conditions) are answered in *Root conditions*.
-Milestone: M1 off-main frames · Updated: 2026-11-07
-Now: seam 2 approved and applied; committed-position witness and the raced-present row added to the route.
-Next: fresh-device checker, `./dev check` with Wasm, M1–M3 closes, push.
+Milestone: M4 closeout · Updated: 2026-11-07
+Now: M1–M3 closed and pushed (`ccce4402`); evidence and iOS maturity updated.
+Next: Thrum Core's G3b checkbox wording.
 Blocked: none.
 
 Scope: the iPhone 18 Pro / iOS 27.2 simulator as a function target. Simulator timing, a physical iPhone, device
@@ -207,8 +207,9 @@ Thrum Core approved seam 2(a) and 2(b) with conditions. Each, in turn:
    there are no manual steps, and logs each `simctl`, Darwin notification and XCUITest command with its time.
 6. *Stale input on the actual old window id, with before/after positions.* The held finger's later events arrive under
    the detached window's id (`old_window_touches`); the committed position sampled after the replacement cleared input
-   and again after those events must match within 1 mm, and no moving axes may be sent after the clear. UIKit delivers
-   one or two such events, sometimes before the first sample; they always follow the clear, and the log says which.
+   and again after those events must match within 1 mm, and no moving axes may be sent after the clear. In every
+   logged run UIKit delivered the events before the first sample, so the samples do not bracket them: the proof is
+   that no moving axes were sent after the clear, and the actor then stays put. The log says which case occurred.
 7. *Exact lifecycle guarantee and a race exercised without a GPU/fence wait.* See *Linearization point* above and the
    raced-present row.
 
@@ -230,29 +231,36 @@ Work:
 - [x] Absolute display target and owner-side lead.
 - [x] State file and checker v2 (startup and stall rows); iOS Clippy in the checker.
 
-## M2 Touch input: pending
+## M2 Touch input: done
 Done when:
-- [ ] One real simulator swipe moves the controlled actor's committed position and visibly moves the player
+- [x] One real simulator swipe moves the controlled actor's committed position and visibly moves the player
   (before/after captures). The actor is the grid's top-right square, unidentifiable among 10,000; a one-eighth nudge
   steps it just past the grid edge, where the cropped before/after captures show it alone against the sky.
-- [ ] A cancelled touch clears the axes, and the actor stops.
+- [x] A cancelled touch clears the axes, and the actor stops: held input clears on background and replacement on the
+  simulator; a UIKit `Cancelled` phase is covered by the gesture unit test (the simulator route never produced one).
+Close review (2026-11-07, fresh subagent, `route-fresh-8` at `ccce4402`): PASS. Visual: the nudge crop shows the
+actor alone past the grid edge, about 130 px right of it, matching +0.412 m; the swipes leave the frame and are
+witnessed by committed position.
 Work:
-- [ ] Gesture state machine with unit tests (hold, cancel, epoch, stale release, second finger).
-- [ ] Touch rows in the checker with a bounded wait window for the driver.
+- [x] Gesture state machine with unit tests (hold, cancel, epoch, stale release, second finger).
+- [x] Touch rows in the checker with a bounded wait window for the driver.
 
-## M3 Lifecycle and surface recovery: pending
+## M3 Lifecycle and surface recovery: done
 Done when:
-- [ ] A real background (Settings) / foreground (`simctl launch`) round trip keeps the PID and world epoch. Ticks freeze while
+- [x] A real background (Settings) / foreground (`simctl launch`) round trip keeps the PID and world epoch. Ticks freeze while
   backgrounded, presentation resumes on a new epoch, revocation held when `suspended` returned, and no detached
   window stays alive.
-- [ ] A foreground surface replacement presents again on a new window and epoch with the same world, with ticks
+- [x] A foreground surface replacement presents again on a new window and epoch with the same world, with ticks
   continuing; a finger held across it has its later release counted stale, and the actor stays at rest.
-- [ ] A replacement during a lease-section stall defers release, rejects the old epoch's drawable and recovers; a
+- [x] A replacement during a lease-section stall defers release, rejects the old epoch's drawable and recovers; a
   background during a stall recovers too.
-- [ ] Hiding the view denies drawables, counted apart from missing ones, while ticks continue; showing it resumes.
-- [ ] After background and replacement, a new swipe still moves the player.
+- [x] Hiding the view denies drawables, counted apart from missing ones, while ticks continue; showing it resumes.
+- [x] After background and replacement, a new swipe still moves the player.
+Close review (2026-11-07, fresh subagent, `route-fresh-8` at `ccce4402`): PASS, both earlier blockers verified fixed.
+Visual: hidden is black; the scene returns after replacement, both resumes and the recovered swipe. The
+resume-during-preparation branch is proven by review only; no route row exercises it.
 Work:
-- [ ] Shell state machine, Swift detach bridge, world lifecycle requests/replies; Darwin-notification route commands.
+- [x] Shell state machine, Swift detach bridge, world lifecycle requests/replies; Darwin-notification route commands.
 
 ## M4 Closeout: pending
 Done when:

@@ -73,9 +73,18 @@ fresh iPhone 18 Pro / iOS 27.2 simulator and cleans up its own device. The iOS s
 before requesting a drawable, using the same frame tokens as Chrome. A missing drawable discards the
 optional view without undoing committed ticks. On the simulator it drew 601 frames with 600 completed
 surface samples. The previous build at `ccaca038` also drew 601 frames and returned from Settings with the
-same PID. Raw: `tmp/g3b-ios-lifecycle/{late-acquire,current}/`. Simulator function only. Independent review
-confirmed the token order and identified the remaining UIKit main-thread work and missing recovery from
-unrecoverable surface loss. Input and live Mac pause, loss and cadence also remain open.
+same PID. Raw: `tmp/g3b-ios-lifecycle/{late-acquire,current}/`. Simulator function only.
+
+**Off-main iOS world, touch and recovery (7 November):** UIKit now only forwards display targets, touches and
+lifecycle. The world runs on its lane, and a render owner thread prepares, encodes, acquires late and presents under
+an epoch-checked surface lease that UIKit never waits on. On a fresh iPhone 18 Pro / iOS 27.2 simulator, one app
+passed every row. A 5 s held lease section kept display callbacks and world ticks running, with UIKit handlers under
+13 ms. Hidden-view denial is counted apart from missing drawables. Surface replacement, replacement during a held
+section, and one exactly-counted present after a revocation past the final check all recover. Background/foreground,
+including during a stall, keeps the PID, world epoch and tick. Real HID touches move the controlled actor's committed
+position: visibly past the grid edge, and 9.7 m per swipe. Held input clears on background and replacement. The
+detached window's late events move the actor 0 m. See [the route record](G3B-IOS-SIM-ROUTE-2026-11-07.md). Physical
+iPhone timing and live Mac pause, loss and cadence remain open.
 The package check requires the [iPhone ProMotion opt-in](https://developer.apple.com/documentation/bundleresources/information-property-list/cadisableminimumframedurationonphone).
 The build takes the Rust, C and Swift deployment minimum from the app's plist. Clean linkage reports
 iOS simulator 18.0 minimum and SDK 27.2. An older Cargo cache retained a BLAKE3 object targeting 27.2.
