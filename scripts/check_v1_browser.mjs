@@ -77,11 +77,6 @@ async function assets(directory) {
     const bytes = await fs.readFile(path.join(directory, name));
     result.set(`/${name}`, { bytes, type, sha256: sha(bytes) });
   }
-  // The showcase route's stops, as the web build ships them beside the page.
-  for (const name of (await fs.readdir(directory)).filter(name => /^showcase-[a-z-]+\.params\.json$/.test(name)).sort()) {
-    const bytes = await fs.readFile(path.join(directory, name));
-    result.set(`/${name}`, { bytes, type: 'application/json', sha256: sha(bytes) });
-  }
   return result;
 }
 
@@ -1163,11 +1158,28 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
   }
 }
 
-// One fresh page per shipped showcase preset, as a person launches each stop.
-function routeStops(files) {
-  const stops = [...files.keys()].map(name => /^\/showcase-([a-z-]+)\.params\.json$/.exec(name)?.[1]).filter(Boolean);
-  if (!stops.length) throw new Error('The web root ships no showcase-*.params.json presets');
-  return stops.map(stop => `route-${stop}`);
+// One fresh page per checked-in showcase preset, as a person launches each stop. The checked-in
+// files are the expectation: the web build must ship each one byte for byte and nothing else, so a
+// missing or stale built preset fails before any page loads.
+const routeSource = path.join(repo, 'examples/v1-game/params');
+const routePreset = /^showcase-([a-z-]+)\.params\.json$/;
+async function routeStops(files, directory) {
+  const presets = async folder => (await fs.readdir(folder)).filter(name => routePreset.test(name)).sort();
+  const source = await presets(routeSource);
+  if (!source.length) throw new Error(`No showcase-*.params.json presets in ${routeSource}`);
+  const built = await presets(directory);
+  const missing = source.filter(name => !built.includes(name));
+  const extra = built.filter(name => !source.includes(name));
+  if (missing.length || extra.length) throw new Error(`Web build route presets differ from the checked-in ones: missing ${JSON.stringify(missing)}, extra ${JSON.stringify(extra)}`);
+  files.routeExpected = new Map();
+  for (const name of source) {
+    const expected = await fs.readFile(path.join(routeSource, name));
+    const bytes = await fs.readFile(path.join(directory, name));
+    if (sha(bytes) !== sha(expected)) throw new Error(`Web build ships a stale ${name}: ${sha(bytes)}, checked in ${sha(expected)}`);
+    files.set(`/${name}`, { bytes, type: 'application/json', sha256: sha(bytes) });
+    files.routeExpected.set(name, { bytes: expected, sha256: sha(expected) });
+  }
+  return source.map(name => `route-${routePreset.exec(name)[1]}`);
 }
 
 // Launch the cooked valley with a showcase preset in the URL. The page must report the file
@@ -1176,7 +1188,9 @@ function routeStops(files) {
 async function qualifyRoute(cdp, sessionId, poll, timeout, output, mode, file, files) {
   const deadline = Date.now() + timeout;
   const until = (check, description) => waitFor(check, Math.max(0, deadline - Date.now()), description);
-  const preset = JSON.parse(files.get(`/${file}`).bytes.toString('utf8'));
+  const source = files.routeExpected.get(file);
+  if (!source || files.get(`/${file}`)?.sha256 !== source.sha256) throw new Error(`${mode}: served ${file} is not the checked-in preset`);
+  const preset = JSON.parse(source.bytes.toString('utf8'));
   const expected = { hours: preset['sky.solar_time'] ?? 12, yaw: preset['camera.yaw'] ?? 0, pitch: preset['camera.pitch'] ?? 0 };
   if (preset['world.paused'] !== true) throw new Error(`${file} must pause the world`);
   const page = `({status:document.querySelector('#params-status').textContent,hidden:document.querySelector('#params').hidden,hours:document.querySelector('#solar-time').valueAsNumber,yaw:document.querySelector('#camera-yaw').valueAsNumber,pitch:document.querySelector('#camera-pitch').valueAsNumber,paused:document.querySelector('#pause-world').checked})`;
@@ -1206,7 +1220,7 @@ async function qualifyRoute(cdp, sessionId, poll, timeout, output, mode, file, f
   const after = await read();
   const cooked = await cookedStatus();
   if (!(cooked?.drawn >= drawn.cooked.drawn)) throw new Error(`${mode}: cooked valley stopped drawing: ${JSON.stringify(cooked)}`);
-  return { file, preset, sha256: files.get(`/${file}`).sha256, expected, applied, settled, after, cooked, image: { ...image, clip },
+  return { file, preset, sha256: source.sha256, expected, applied, settled, after, cooked, image: { ...image, clip },
     scope: 'Fresh page launched with ?assets and ?params; preset applied with nothing refused, world paused at one tick and the cooked valley drawn before a canvas capture; no timing claim' };
 }
 
@@ -1330,7 +1344,7 @@ async function cleanup(child, exited, cdp, server, profile) {
 
 async function main() {
   const args = options(process.argv.slice(2));
-  if (!args) { console.log('node scripts/check_v1_browser.mjs [--case all|normal|pause|resize|overload|input|controls|tabs|params|device-loss|late-device-loss|device-recovery|device-recovery-retry|sky-reflections|valley|valley-recovery|material|material-disabled|field|field-direct|field-oracle|route] [--web-root target/v1-game-web] [--cook target/debug/thrum-cook] [--assets-source examples/v1-game/assets/showcase] [--chrome /path/to/Chrome] [--output tmp/new-run] [--timeout-ms 90000]\nRequires Node 24+, an already-built game, and this Mac\'s Apple M3 Max/Metal Chrome. Controls checks manual pause with ongoing RAF; tabs switches real Chrome tabs and checks authority, input release and manual pause; params applies, explains and reloads a parameter file; visibility checks use the explicit hook, not tab hiding. Recovery uses the real restore button; retry injects exactly one standard canvas configure failure. Sky reflections saves nine paused phases and 24 camera/Sun samples; valley repeats them on the cooked valley served by thrum-cook; valley-recovery runs device recovery with that valley attached; material reloads a WGSL hook on that valley (valid, refused, and outstanding across a destroyed device) and records contended frame intervals around the valid reload; it needs the development page (web/build.sh --dev), so all leaves it out. material-disabled loads the default page with ?material and proves it starts no material work. Field qualifies the 100,513-instance flythrough with Frustum camera culling; field-direct qualifies it with Direct for a paired comparison; field-oracle pauses two fresh pages and compares Frustum captures with Direct byte for byte. Route launches one fresh page per shipped showcase-*.params.json preset with the cooked valley, proves the preset applied and the valley drew, and captures the paused canvas. The other cases make no timing claim.'); return; }
+  if (!args) { console.log('node scripts/check_v1_browser.mjs [--case all|normal|pause|resize|overload|input|controls|tabs|params|device-loss|late-device-loss|device-recovery|device-recovery-retry|sky-reflections|valley|valley-recovery|material|material-disabled|field|field-direct|field-oracle|route] [--web-root target/v1-game-web] [--cook target/debug/thrum-cook] [--assets-source examples/v1-game/assets/showcase] [--chrome /path/to/Chrome] [--output tmp/new-run] [--timeout-ms 90000]\nRequires Node 24+, an already-built game, and this Mac\'s Apple M3 Max/Metal Chrome. Controls checks manual pause with ongoing RAF; tabs switches real Chrome tabs and checks authority, input release and manual pause; params applies, explains and reloads a parameter file; visibility checks use the explicit hook, not tab hiding. Recovery uses the real restore button; retry injects exactly one standard canvas configure failure. Sky reflections saves nine paused phases and 24 camera/Sun samples; valley repeats them on the cooked valley served by thrum-cook; valley-recovery runs device recovery with that valley attached; material reloads a WGSL hook on that valley (valid, refused, and outstanding across a destroyed device) and records contended frame intervals around the valid reload; it needs the development page (web/build.sh --dev), so all leaves it out. material-disabled loads the default page with ?material and proves it starts no material work. Field qualifies the 100,513-instance flythrough with Frustum camera culling; field-direct qualifies it with Direct for a paired comparison; field-oracle pauses two fresh pages and compares Frustum captures with Direct byte for byte. Route launches one fresh page per checked-in examples/v1-game/params/showcase-*.params.json preset with the cooked valley, after requiring the web root to ship each byte for byte and no others; it proves the preset applied and the valley drew, and captures the paused canvas. The other cases make no timing claim.'); return; }
   if (Number(process.versions.node.split('.')[0]) < 24 || typeof WebSocket !== 'function') throw new Error('Node 24+ with builtin WebSocket is required');
   const directory = await fs.realpath(path.resolve(repo, args['web-root']));
   const files = await assets(directory);
@@ -1378,8 +1392,10 @@ async function main() {
     await fs.writeFile(path.join(output, 'browser-gpu.json'), JSON.stringify({ version, gpu }, null, 2));
     hardware(gpu);
     // `all` checks the default page; `material` needs the development page, so it runs on its own.
-    const modes = (args.case === 'all' ? cases.filter(mode => mode !== 'material') : [args.case])
-      .flatMap(mode => mode === 'field-oracle' ? ['field-oracle-direct', 'field-oracle-frustum'] : mode === 'route' ? routeStops(files) : [mode]);
+    const modes = [];
+    for (const mode of args.case === 'all' ? cases.filter(mode => mode !== 'material') : [args.case]) {
+      modes.push(...(mode === 'field-oracle' ? ['field-oracle-direct', 'field-oracle-frustum'] : mode === 'route' ? await routeStops(files, directory) : [mode]));
+    }
     let assetsOrigin;
     let assetsSource;
     if (modes.some(mode => ['valley', 'valley-recovery', 'params', 'material', 'material-disabled'].includes(mode) || mode.startsWith('route-'))) ({ cook, origin: assetsOrigin, source: assetsSource } = await serveCooked(args, output));
