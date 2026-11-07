@@ -75,7 +75,7 @@ The author then does one of these:
 - records a genuine open decision with a discriminating experiment.
 
 Fix the class a finding belongs to, not only the instance the reviewer named: search the change for the same kind of
-fault before bringing it back. Narrowing a claim removes an overclaim; it doesn't deliver the excluded experience. A review report alone doesn't
+fault before bringing it back. When you resubmit a held change, answer each point of the latest hold in turn: how it's now met, or why it doesn't apply. A revision that skips a held point comes back held. Narrowing a claim removes an overclaim; it doesn't deliver the excluded experience. A review report alone doesn't
 close the gap it found.
 
 Verify consequential fixes against the revised assembly. Old reviews apply only to the revision they inspected. Agreement
