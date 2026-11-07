@@ -1,5 +1,6 @@
-//! Camera frustum compaction against the direct-draw oracle: the indirect
-//! draw of the compacted list must produce byte-identical pixels.
+//! Camera frustum compaction and two-phase occlusion against the direct-draw
+//! oracle: the indirect draws of the compacted lists must produce
+//! byte-identical pixels.
 
 use thrum_render::capabilities::DeviceCapabilities;
 use thrum_render::synthetic::{
@@ -298,5 +299,192 @@ fn frustum_pass_is_timed_within_the_scene_pass_budget() {
         }
         assert_eq!(counts[1].0, counts[0].0 + 1, "{counts:?}");
         assert_eq!(counts[1].1, counts[0].1 + 1, "{counts:?}");
+    });
+}
+
+/// A live sequence: one prepared scene and target per mode, the same frame
+/// updates, readback of every frame.
+struct Sequence {
+    prepared: PreparedSynthetic,
+    target: OffscreenTarget,
+}
+
+impl Sequence {
+    async fn new(
+        capabilities: &DeviceCapabilities,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        scene: &SyntheticScene,
+    ) -> Self {
+        let prepared = PreparedSynthetic::prepare_with_capabilities(
+            capabilities,
+            queue,
+            scene,
+            FrameLighting::Diagnostic(SyntheticLight::default()),
+            1.0,
+        )
+        .await
+        .expect("prepare");
+        let target = OffscreenTarget::new(device, &prepared, EXTENT[0], EXTENT[1]).expect("target");
+        Self { prepared, target }
+    }
+
+    /// Update, encode and submit one frame; `None` drops the encoded frame
+    /// unsubmitted, as a cancelled frame.
+    async fn frame(
+        &mut self,
+        capabilities: &DeviceCapabilities,
+        (device, queue): (&wgpu::Device, &wgpu::Queue),
+        scene: &SyntheticScene,
+        submit: bool,
+    ) -> Option<Vec<u8>> {
+        self.prepared
+            .update_frame(
+                queue,
+                &mut self.target,
+                scene,
+                FrameLighting::Diagnostic(SyntheticLight::default()),
+                0.5,
+            )
+            .expect("update");
+        let mut pixels = self.target.readback(device);
+        let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
+        let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+        self.prepared
+            .encode_with_readback(
+                &mut encoder,
+                capabilities.generation(),
+                &self.target,
+                None,
+                &mut pixels,
+            )
+            .expect("encode");
+        assert!(scope.pop().await.is_none(), "no validation error");
+        if !submit {
+            return None;
+        }
+        let submission = queue.submit([encoder.finish()]);
+        self.prepared.commit_frame();
+        device
+            .poll(wgpu::PollType::Wait {
+                submission_index: Some(submission),
+                timeout: Some(std::time::Duration::from_secs(10)),
+            })
+            .expect("poll");
+        Some(
+            pixels
+                .try_collect(capabilities.generation())
+                .expect("collect")
+                .expect("mapped pixels"),
+        )
+    }
+}
+
+/// Slot 1 becomes a wall across the grazing view, in front of most of the
+/// grid, so the late phase really hides slots (counted in the crate's
+/// camera-culling tests).
+fn walled(mut scene: SyntheticScene) -> SyntheticScene {
+    let wall = &mut scene.instances[1];
+    let half = [0.005, 0.3, 0.2];
+    for (axis, extent) in half.into_iter().enumerate() {
+        for row in 0..3 {
+            let unit = if axis == row { 1.0 } else { 0.0 };
+            wall.current[axis][row] = unit * extent;
+            wall.normal[axis][row] = unit / extent;
+        }
+    }
+    wall.current[3] = [0.0, 0.05, 0.55, 1.0];
+    wall.previous = wall.current;
+    wall.ids[3] = 1;
+    scene
+}
+
+#[test]
+fn occlusion_matches_direct_draw_through_cuts_recycled_rows_and_a_dropped_frame() {
+    pollster::block_on(async {
+        let (adapter, device, queue) = device().await;
+        let capabilities = DeviceCapabilities::capture(&adapter, &device, 41);
+        // Grazing views along the grid occlude most of it; one sits inside
+        // the cube layer (near-plane crossings), one looks away (empty).
+        let grazing = view([-0.2, 0.05, 0.6], [1.0, 0.0, 0.45]);
+        let views = [
+            grazing,
+            grazing,
+            view([1.2, 0.08, 0.6], [-0.2, 0.0, 0.45]),
+            view([-0.2, -0.1, 0.503], [0.6, 0.3, 0.497]),
+            view([0.0, 0.0, 3.0], [0.0, 0.0, 6.0]),
+            grazing,
+            grazing,
+        ];
+        let base = walled(scene(grazing, CullMode::Direct, false, 37));
+        let mut direct = Sequence::new(&capabilities, &device, &queue, &base).await;
+        let mut occluded = Sequence::new(
+            &capabilities,
+            &device,
+            &queue,
+            &walled(scene(grazing, CullMode::Occlusion, false, 37)),
+        )
+        .await;
+        assert_eq!(occluded.prepared.camera_culling(), CullMode::Occlusion);
+        let mut covered = Vec::new();
+        for (index, camera) in views.into_iter().enumerate() {
+            let mut frame = base.clone();
+            frame.view = camera;
+            if index == 5 {
+                // Recycled rows: other objects in previously visible slots,
+                // and newly hidden and shown rows.
+                for slot in (0..frame.instances.len()).step_by(5) {
+                    let other = frame.instances[(slot + 2_500) % frame.instances.len()].clone();
+                    frame.instances[slot] = other;
+                }
+                let slots: Vec<u32> = (0..frame.instances.len())
+                    .step_by(5)
+                    .map(|slot| u32::try_from(slot).expect("slot"))
+                    .collect();
+                for sequence in [&mut direct, &mut occluded] {
+                    sequence
+                        .prepared
+                        .upload_instances(&queue, &frame.instances, &slots)
+                        .expect("upload");
+                }
+            }
+            if index == 3 {
+                // A cancelled frame: encoded with this view, never submitted.
+                occluded
+                    .frame(&capabilities, (&device, &queue), &frame, false)
+                    .await;
+            }
+            let reference = direct
+                .frame(&capabilities, (&device, &queue), &frame, true)
+                .await
+                .expect("direct pixels");
+            let culled = occluded
+                .frame(&capabilities, (&device, &queue), &frame, true)
+                .await
+                .expect("occlusion pixels");
+            let changed = differing(&reference, &culled);
+            assert_eq!(
+                changed, 0,
+                "frame {index}: occlusion changes {changed} pixels"
+            );
+            covered.push(reference);
+        }
+        let backdrop = render(
+            &capabilities,
+            &device,
+            &queue,
+            &scene(grazing, CullMode::Direct, false, 1),
+        )
+        .await;
+        assert!(
+            differing(&covered[0], &backdrop) > 1_000,
+            "the grazing view draws"
+        );
+        assert!(
+            covered
+                .windows(2)
+                .any(|pair| differing(&pair[0], &pair[1]) > 1_000),
+            "the cuts change the image"
+        );
     });
 }

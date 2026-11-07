@@ -140,7 +140,12 @@ pub async fn create_field_game(
     let camera_culling = match culling.as_str() {
         "direct" => thrum_render::synthetic::CullMode::Direct,
         "frustum" => thrum_render::synthetic::CullMode::Frustum,
-        _ => return Err(JsValue::from_str("culling must be direct or frustum")),
+        "occlusion" => thrum_render::synthetic::CullMode::Occlusion,
+        _ => {
+            return Err(JsValue::from_str(
+                "culling must be direct, frustum or occlusion",
+            ));
+        }
     };
     create_game(
         canvas,
@@ -781,6 +786,12 @@ impl BrowserGame {
             .filter_map(|sample| sample.camera_culling.map(|counts| counts.drawn))
             .collect();
         drawn.sort_unstable();
+        let mut late: Vec<u32> = self
+            .samples
+            .iter()
+            .filter_map(|sample| sample.camera_culling.map(|counts| counts.late))
+            .collect();
+        late.sort_unstable();
         let culling = match self
             .samples
             .iter()
@@ -788,11 +799,12 @@ impl BrowserGame {
             .find_map(|sample| sample.camera_culling)
         {
             Some(last) => format!(
-                "; culling_counted={}/{} culling_drawn_p50={} culling_drawn_p95={} culling_active={}",
+                "; culling_counted={}/{} culling_drawn_p50={} culling_drawn_p95={} culling_late_p50={} culling_active={}",
                 drawn.len(),
                 self.samples.len(),
                 drawn[drawn.len() / 2],
                 drawn[drawn.len() * 95 / 100],
+                late[late.len() / 2],
                 last.active
             ),
             None => String::new(),

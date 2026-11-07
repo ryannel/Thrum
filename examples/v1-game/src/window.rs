@@ -37,12 +37,20 @@ pub fn run_window() {
         }) => ("Thrum V1 — field / Frustum culling", "Thrum V1 field"),
         Ok(crate::GameSetup {
             content: crate::GameContent::Field,
+            camera_culling: CullMode::Occlusion,
+        }) => ("Thrum V1 — field / Occlusion culling", "Thrum V1 field"),
+        Ok(crate::GameSetup {
+            content: crate::GameContent::Field,
             ..
         }) => ("Thrum V1 — field / Direct", "Thrum V1 field"),
         Ok(crate::GameSetup {
             camera_culling: CullMode::Frustum,
             ..
         }) => ("Thrum V1 — 10k world / Frustum culling", "Thrum V1"),
+        Ok(crate::GameSetup {
+            camera_culling: CullMode::Occlusion,
+            ..
+        }) => ("Thrum V1 — 10k world / Occlusion culling", "Thrum V1"),
         _ => ("Thrum V1 — 10k world / clustered forward+", "Thrum V1"),
     };
     thrum_app::run(
