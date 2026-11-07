@@ -1,6 +1,6 @@
-//! Recording of the opaque forward passes: the early pass with atmosphere,
-//! the camera draw and a contribution, and the shared attachments, pipeline
-//! and bindings the occlusion late pass reuses.
+//! Recording of the opaque forward pass: atmosphere, the camera draw and a
+//! contribution, and the pipeline choice and bindings Occlusion's depth
+//! prepass shares with it.
 
 use super::{
     CompiledPass, GpuTimings, GraphColorAttachment, GraphDepthAttachment, OffscreenTarget,
@@ -21,7 +21,13 @@ impl PreparedSynthetic {
         if let Some(atmosphere) = self.atmosphere.as_ref() {
             atmosphere.draw(&mut pass, exposure_side);
         }
-        self.bind_forward(&mut pass, target, &target.view_bind_group, exposure_side);
+        self.bind_forward(
+            &mut pass,
+            target,
+            &target.view_bind_group,
+            exposure_side,
+            false,
+        )?;
         self.draw_camera(&mut pass, target);
         if let Some(contribution) = contribution {
             contribution.draw(&mut pass);
@@ -29,7 +35,7 @@ impl PreparedSynthetic {
         Ok(())
     }
 
-    /// The forward attachments; the graph chooses clear or load per pass.
+    /// The forward attachments, cleared.
     pub(super) fn begin_forward<'e>(
         &self,
         encoder: &'e mut wgpu::CommandEncoder,
@@ -66,19 +72,29 @@ impl PreparedSynthetic {
             .ok_or(RenderError::GraphPassMismatch)
     }
 
-    /// The opaque pipeline, its bind groups with `view_group`, and indices.
+    /// The opaque pipeline, or with `depth_only` its depth-only twin (same
+    /// vertex entry and primitive state), chosen by the same two-sided
+    /// count; its bind groups with `view_group`; and indices.
     pub(super) fn bind_forward(
         &self,
         pass: &mut wgpu::RenderPass<'_>,
         target: &OffscreenTarget,
         view_group: &wgpu::BindGroup,
         exposure_side: usize,
-    ) {
-        pass.set_pipeline(if self.instance_upload.two_sided_count() == 0 {
+        depth_only: bool,
+    ) -> Result<(), RenderError> {
+        let two_sided = usize::from(self.instance_upload.two_sided_count() != 0);
+        let pipeline = if depth_only {
+            &self
+                .depth_prepass
+                .as_ref()
+                .ok_or(RenderError::GraphPassMismatch)?[two_sided]
+        } else if two_sided == 0 {
             &self.pipeline
         } else {
             &self.pipeline_two_sided
-        });
+        };
+        pass.set_pipeline(pipeline);
         let view_offset = self.view_stride * u32::from(target.frame_revision & 1 != 0);
         pass.set_bind_group(0, view_group, &[view_offset]);
         pass.set_bind_group(1, &self.light[exposure_side], &[]);
@@ -91,5 +107,6 @@ impl PreparedSynthetic {
             &self.cube_indices
         };
         pass.set_index_buffer(indices.slice(..), wgpu::IndexFormat::Uint16);
+        Ok(())
     }
 }
