@@ -145,6 +145,11 @@ impl ThreadedFrameHost {
         self.inner.set_time_of_day(fraction)
     }
 
+    /// Committed solar time of the world lane's latest tick: midnight zero, noon one half.
+    pub fn time_of_day(&self) -> f32 {
+        self.inner.time_of_day()
+    }
+
     /// Change the game camera elevation and reset GPU history on the next draw.
     /// # Errors
     /// Refuses an unsupported or nonfinite pitch.

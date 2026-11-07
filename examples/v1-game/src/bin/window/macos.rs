@@ -28,12 +28,16 @@ use render_actor::{
     FrameCounters, FrameRequest, RecoveryFailure, RenderJob, RenderOutcome, RenderReply,
     SurfaceStatus,
 };
+use thrum_controls::macos::MacPanel;
 use thrum_core::sim::WorldLaneFault;
 use thrum_render::{
     frame::{FrameWorker, TargetLeadStatus},
     present::SurfaceProfile,
 };
-use v1_game::{FrameConfig, FrameHost, FrameSample, WorldControls};
+use v1_game::{
+    FrameConfig, FrameHost, FrameSample, WorldControls,
+    controls::{ControlEdits, GameControls},
+};
 use winit::{
     application::ApplicationHandler,
     event::{ElementState, WindowEvent},
@@ -59,6 +63,7 @@ enum UserEvent {
     DisplayTarget(f64),
     RenderDone,
     DeviceLost(u64),
+    ControlsEdited,
 }
 
 struct App {
@@ -89,12 +94,11 @@ struct App {
     render_in_flight: Option<u64>,
     counters: FrameCounters,
     held_keys: u8,
-    time_of_day: f32,
-    pending_time_of_day: Option<f32>,
-    camera_pitch: f32,
-    pending_camera_pitch: Option<f32>,
-    camera_yaw: f32,
-    pending_camera_yaw: Option<f32>,
+    /// Solar time and camera controls shared by keys and the panel. Edits travel to the
+    /// render owner in the next frame request.
+    demo: GameControls,
+    panel: Option<MacPanel>,
+    pending_edits: ControlEdits,
     origin: Instant,
     last_call: Duration,
     presented: usize,
@@ -115,14 +119,14 @@ struct App {
 }
 
 impl App {
-    fn new(wake: EventLoopProxy<UserEvent>, target_frames: usize) -> Self {
+    fn new(wake: EventLoopProxy<UserEvent>, target_frames: usize) -> Result<Self, String> {
         let run_deadline = Duration::from_secs(30).max(
             Duration::from_secs(10)
                 + Duration::from_millis(
                     u64::try_from(target_frames).expect("bounded frame count") * 10,
                 ),
         );
-        Self {
+        Ok(Self {
             wake,
             display_link: None,
             window: None,
@@ -150,12 +154,9 @@ impl App {
             render_in_flight: None,
             counters: FrameCounters::default(),
             held_keys: 0,
-            time_of_day: 0.5,
-            pending_time_of_day: None,
-            camera_pitch: 0.0,
-            pending_camera_pitch: None,
-            camera_yaw: 0.0,
-            pending_camera_yaw: None,
+            demo: GameControls::new().map_err(|error| error.to_string())?,
+            panel: None,
+            pending_edits: ControlEdits::default(),
             origin: Instant::now(),
             last_call: Duration::ZERO,
             presented: 0,
@@ -173,7 +174,7 @@ impl App {
             adapter_name: String::new(),
             error: None,
             closed_by_user: false,
-        }
+        })
     }
 
     fn invalidate_surface(&self) -> Result<(), String> {
@@ -203,6 +204,36 @@ impl App {
             self.held_keys & (KEY_W | KEY_UP) != 0,
         );
         [horizontal, vertical, 0.0]
+    }
+
+    /// Take edits from keys, the panel or a parameter file. Presentation edits ride the next
+    /// frame request; the pause toggle takes the same path as the P key.
+    fn controls_edited(&mut self) -> Result<(), String> {
+        let edits = self.demo.take_edits();
+        if let Some(paused) = edits.paused
+            && self.pause.request(paused)
+        {
+            self.reconcile_pause()?;
+        }
+        let presentation = ControlEdits {
+            paused: None,
+            ..edits
+        };
+        if !presentation.is_empty() {
+            self.pending_edits = merge_edits(self.pending_edits, presentation);
+            self.request_sequence = self.request_sequence.saturating_add(1);
+            if let Some(window) = &self.window {
+                window.request_redraw();
+            }
+        }
+        self.sync_panel();
+        Ok(())
+    }
+
+    fn sync_panel(&mut self) {
+        if let Some(panel) = &mut self.panel {
+            panel.sync(self.demo.model());
+        }
     }
 
     fn update_controls(&mut self) -> Result<(), String> {
@@ -313,52 +344,28 @@ impl App {
     }
 
     fn set_key(&mut self, code: KeyCode, pressed: bool) -> Result<(), String> {
-        if pressed && matches!(code, KeyCode::KeyQ | KeyCode::KeyE) {
-            let step = if code == KeyCode::KeyQ {
-                -0.087_266_46
-            } else {
-                0.087_266_46
-            };
-            self.camera_yaw = (self.camera_yaw + step + std::f32::consts::PI)
-                .rem_euclid(std::f32::consts::TAU)
-                - std::f32::consts::PI;
-            self.pending_camera_yaw = Some(self.camera_yaw);
-            self.request_sequence = self.request_sequence.saturating_add(1);
-            if let Some(window) = &self.window {
-                window.request_redraw();
+        const FIVE_DEGREES: f32 = 0.087_266_46;
+        if pressed {
+            match code {
+                KeyCode::KeyQ => self.demo.turn(-FIVE_DEGREES),
+                KeyCode::KeyE => self.demo.turn(FIVE_DEGREES),
+                KeyCode::KeyR => self.demo.tilt(FIVE_DEGREES),
+                KeyCode::KeyF => self.demo.tilt(-FIVE_DEGREES),
+                KeyCode::BracketLeft => self.demo.advance_hours(-1.0),
+                KeyCode::BracketRight => self.demo.advance_hours(1.0),
+                _ => {}
             }
-            return Ok(());
-        }
-        if pressed && matches!(code, KeyCode::KeyR | KeyCode::KeyF) {
-            let step = if code == KeyCode::KeyR {
-                0.087_266_46
-            } else {
-                -0.087_266_46
-            };
-            let next = (self.camera_pitch + step).clamp(-0.6, 0.6);
-            if next.to_bits() != self.camera_pitch.to_bits() {
-                self.camera_pitch = next;
-                self.pending_camera_pitch = Some(next);
-                self.request_sequence = self.request_sequence.saturating_add(1);
-                if let Some(window) = &self.window {
-                    window.request_redraw();
-                }
+            if matches!(
+                code,
+                KeyCode::KeyQ
+                    | KeyCode::KeyE
+                    | KeyCode::KeyR
+                    | KeyCode::KeyF
+                    | KeyCode::BracketLeft
+                    | KeyCode::BracketRight
+            ) {
+                return self.controls_edited();
             }
-            return Ok(());
-        }
-        if pressed && matches!(code, KeyCode::BracketLeft | KeyCode::BracketRight) {
-            let step = if code == KeyCode::BracketRight {
-                1.0 / 24.0
-            } else {
-                -1.0 / 24.0
-            };
-            self.time_of_day = (self.time_of_day + step).rem_euclid(1.0);
-            self.pending_time_of_day = Some(self.time_of_day);
-            self.request_sequence = self.request_sequence.saturating_add(1);
-            if let Some(window) = &self.window {
-                window.request_redraw();
-            }
-            return Ok(());
         }
         let mask = match code {
             KeyCode::KeyA => KEY_A,
@@ -431,7 +438,7 @@ impl App {
             },
         ))?;
         v1_game::attach_cooked_scene(&mut host)?;
-        [self.camera_pitch, self.camera_yaw] = host.camera_orientation();
+        self.demo.observe_camera(host.camera_orientation());
         if gpu.watch.is_lost() {
             return Err("initial device lost during preparation".to_owned());
         }
@@ -446,6 +453,16 @@ impl App {
         self.world_controls = Some(controls);
         self.counters = FrameCounters::read(&host);
         self.window = Some(window);
+        let panel_wake = wake.clone();
+        let panel = MacPanel::new(
+            self.demo.model(),
+            "Thrum demo",
+            Some(Box::new(move || {
+                let _ = panel_wake.send_event(UserEvent::ControlsEdited);
+            })),
+        )?;
+        panel.show(None);
+        self.panel = Some(panel);
         self.display_link = Some(ViewDisplayLink::start(
             self.window.as_ref().ok_or("window missing")?,
             wake.clone(),
@@ -490,9 +507,7 @@ impl App {
                     };
                     // Replay the latest desired presentation policy, including
                     // edits accepted by a frame cancelled during device loss.
-                    self.pending_time_of_day = Some(self.time_of_day);
-                    self.pending_camera_pitch = Some(self.camera_pitch);
-                    self.pending_camera_yaw = Some(self.camera_yaw);
+                    self.pending_edits = merge_edits(self.pending_edits, self.demo.replay());
                     self.pending_display_target = self.display_target.is_some();
                     self.request_sequence = self.request_sequence.saturating_add(1);
                 }
@@ -509,6 +524,8 @@ impl App {
         self.counters = reply.counters;
         self.samples.extend(reply.samples.into_iter().flatten());
         self.surface_extent = reply.surface_extent;
+        self.demo.observe_time(reply.time_of_day);
+        self.sync_panel();
         self.worker_walls.push(reply.worker_wall);
         if let Some(acquire_wall) = reply.acquire_wall {
             self.acquire_walls.push(acquire_wall);
@@ -630,9 +647,9 @@ impl App {
             target_media_seconds: self.display_target.ok_or("display target missing")?,
             extent,
             surface_generation: self.surface_generation.load(Ordering::Acquire),
-            time_of_day: self.pending_time_of_day,
-            camera_pitch: self.pending_camera_pitch,
-            camera_yaw: self.pending_camera_yaw,
+            time_of_day: self.pending_edits.time_of_day,
+            camera_pitch: self.pending_edits.camera_pitch,
+            camera_yaw: self.pending_edits.camera_yaw,
         });
         match self
             .render
@@ -648,9 +665,7 @@ impl App {
                 return Err("bounded render worker refused an idle request".into());
             }
         }
-        self.pending_time_of_day = None;
-        self.pending_camera_pitch = None;
-        self.pending_camera_yaw = None;
+        self.pending_edits = ControlEdits::default();
         self.submitted_sequence = self.request_sequence;
         self.render_in_flight = Some(self.submitted_sequence);
         if now >= self.run_deadline {
@@ -837,6 +852,16 @@ fn percentile<T>(items: &[T], value: impl Fn(&T) -> f64) -> (f64, f64) {
     (sorted[sorted.len() / 2], sorted[sorted.len() * 95 / 100])
 }
 
+/// Combine edits waiting for the render owner; a newer value replaces an older one.
+fn merge_edits(older: ControlEdits, newer: ControlEdits) -> ControlEdits {
+    ControlEdits {
+        time_of_day: newer.time_of_day.or(older.time_of_day),
+        camera_pitch: newer.camera_pitch.or(older.camera_pitch),
+        camera_yaw: newer.camera_yaw.or(older.camera_yaw),
+        paused: newer.paused.or(older.paused),
+    }
+}
+
 fn axis(negative: bool, positive: bool) -> f32 {
     match (negative, positive) {
         (true, false) => -1.0,
@@ -881,6 +906,16 @@ impl ApplicationHandler<UserEvent> for App {
             }
             UserEvent::WorldAdvanced => {
                 if let Err(error) = self.reconcile_pause() {
+                    self.error = Some(error);
+                    event_loop.exit();
+                }
+                return;
+            }
+            UserEvent::ControlsEdited => {
+                if let Some(panel) = &mut self.panel {
+                    panel.apply_edits(self.demo.model_mut());
+                }
+                if let Err(error) = self.controls_edited() {
                     self.error = Some(error);
                     event_loop.exit();
                 }
@@ -952,6 +987,8 @@ impl ApplicationHandler<UserEvent> for App {
                             .pause
                             .key(event.state == ElementState::Pressed, event.repeat)
                         {
+                            self.demo.observe_paused(self.pause.desired());
+                            self.sync_panel();
                             self.reconcile_pause()
                         } else {
                             Ok(())
@@ -1007,7 +1044,13 @@ pub(super) fn run() {
     let event_loop = EventLoop::<UserEvent>::with_user_event()
         .build()
         .expect("macOS event loop");
-    let mut app = App::new(event_loop.create_proxy(), target_frames);
+    let mut app = match App::new(event_loop.create_proxy(), target_frames) {
+        Ok(app) => app,
+        Err(error) => {
+            eprintln!("v1-game: {error}");
+            std::process::exit(2);
+        }
+    };
     if let Err(error) = event_loop.run_app(&mut app) {
         app.error = Some(format!("event loop: {error}"));
     }

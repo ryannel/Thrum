@@ -16,7 +16,11 @@ use thrum_render::present::SurfaceProfile;
 use wasm_bindgen::prelude::*;
 use web_sys::HtmlCanvasElement;
 
-use crate::{FrameConfig, FrameHost, FrameSample, SurfaceOutput};
+use crate::{
+    FrameConfig, FrameHost, FrameSample, SurfaceOutput,
+    controls::{ControlEdits, GameControls},
+};
+use thrum_controls::Value;
 
 mod recovery;
 
@@ -87,6 +91,10 @@ pub struct BrowserGame {
     queue: wgpu::Queue,
     host: FrameHost,
     cooked: Option<Arc<Mutex<CookedStats>>>,
+    /// Typed demo controls shared with the page and the macOS panel.
+    demo: GameControls,
+    /// Model revision the page last synced to.
+    page_seen: u64,
     first_frame_ms: Option<f64>,
     last_frame: Duration,
     visible: bool,
@@ -142,6 +150,9 @@ pub async fn create_browser_game(canvas: HtmlCanvasElement) -> Result<BrowserGam
     .await
     .map_err(js_error)?;
     let recovery = recovery::Recovery::new(instance, Rc::clone(&surface));
+    let mut demo = GameControls::new().map_err(js_error)?;
+    demo.observe_camera(host.camera_orientation());
+    demo.observe_time(host.time_of_day());
     Ok(BrowserGame {
         canvas,
         adapter_name: gpu.adapter_name,
@@ -153,6 +164,8 @@ pub async fn create_browser_game(canvas: HtmlCanvasElement) -> Result<BrowserGam
         queue: gpu.queue,
         host,
         cooked: None,
+        demo,
+        page_seen: 0,
         first_frame_ms: None,
         last_frame: Duration::ZERO,
         visible: true,
@@ -185,6 +198,7 @@ impl BrowserGame {
             .set_scene_contribution(Box::new(assets))
             .map_err(js_error)?;
         self.host.set_scene_camera(camera);
+        self.demo.observe_camera(self.host.camera_orientation());
         self.cooked = Some(stats);
         Ok(())
     }
@@ -209,7 +223,9 @@ impl BrowserGame {
     /// # Errors
     /// Refuses a nonfinite time or one outside the normalized day.
     pub fn set_time_of_day(&mut self, fraction: f32) -> Result<(), JsValue> {
-        self.host.set_time_of_day(fraction).map_err(js_error)
+        self.host.set_time_of_day(fraction).map_err(js_error)?;
+        self.demo.observe_time(self.host.time_of_day());
+        Ok(())
     }
 
     /// Observe the solar time of the latest committed world endpoint.
@@ -221,14 +237,86 @@ impl BrowserGame {
     /// # Errors
     /// Refuses a nonfinite pitch or one outside plus/minus 0.6 radians.
     pub fn set_camera_pitch(&mut self, radians: f32) -> Result<(), JsValue> {
-        self.host.set_camera_pitch(radians).map_err(js_error)
+        self.host.set_camera_pitch(radians).map_err(js_error)?;
+        self.demo.observe_camera(self.host.camera_orientation());
+        Ok(())
     }
 
     /// Turn the camera within plus/minus pi radians.
     /// # Errors
     /// Refuses a nonfinite yaw or one outside that range.
     pub fn set_camera_yaw(&mut self, radians: f32) -> Result<(), JsValue> {
-        self.host.set_camera_yaw(radians).map_err(js_error)
+        self.host.set_camera_yaw(radians).map_err(js_error)?;
+        self.demo.observe_camera(self.host.camera_orientation());
+        Ok(())
+    }
+
+    /// Every demo control as JSON for `thrum-controls.js` to build the page's widgets:
+    /// keys, labels, kinds, ranges and values in display units. The page is then in sync.
+    pub fn controls_json(&mut self) -> String {
+        self.page_seen = self.demo.model().revision();
+        self.demo.model().describe_json()
+    }
+
+    /// Controls changed since the page last synced, as JSON, or `undefined` when none did.
+    /// The page calls this after edits and each frame; the running clock changes solar time
+    /// once per slider stop.
+    pub fn control_changes(&mut self) -> Option<String> {
+        let model = self.demo.model();
+        if model.revision() == self.page_seen {
+            return None;
+        }
+        let changes = model.changes_json(self.page_seen);
+        self.page_seen = model.revision();
+        Some(changes)
+    }
+
+    /// Apply a person's edit from the page and route it through the game's checked setters
+    /// at once. Sliders take a display value (hours, degrees) and snap to their stops;
+    /// toggles take a boolean; text fields a string. `world.paused` takes the same path as
+    /// [`Self::set_paused`]. Returns whether the value changed.
+    /// # Errors
+    /// Names an unknown key (with the nearest declared one), a value of the wrong type,
+    /// or a setter or lifecycle refusal.
+    pub fn edit_control(
+        &mut self,
+        key: &str,
+        value: &JsValue,
+        timestamp_ms: f64,
+    ) -> Result<bool, JsValue> {
+        let id = self.demo.model().lookup(key).map_err(js_error)?;
+        let model = self.demo.model_mut();
+        let changed = if let Some(on) = value.as_bool() {
+            model.edit_value(id, Value::Flag(on))
+        } else if let Some(number) = value.as_f64() {
+            model.edit_display(id, number)
+        } else if let Some(text) = value.as_string() {
+            model.edit_value(id, Value::Text(text))
+        } else {
+            return Err(js_error(format!(
+                "control \"{key}\" needs a number, boolean or string"
+            )));
+        };
+        let edits = self.demo.take_edits();
+        self.apply_control_edits(edits, timestamp_ms)?;
+        Ok(changed)
+    }
+
+    /// Apply a parameter file: a JSON object of control keys to display values. Valid
+    /// entries apply at once; the result lists how many changed and explains each refusal.
+    /// # Errors
+    /// Refuses text that is not a JSON object, or a setter or lifecycle refusal.
+    pub fn apply_parameters(&mut self, json: &str, timestamp_ms: f64) -> Result<String, JsValue> {
+        let report = self.demo.model_mut().apply_file(json).map_err(js_error)?;
+        let edits = self.demo.take_edits();
+        self.apply_control_edits(edits, timestamp_ms)?;
+        let problems: Vec<String> = report.problems.iter().map(ToString::to_string).collect();
+        Ok(format!(
+            "{{\"changed\":{},\"unchanged\":{},\"problems\":{}}}",
+            report.changed,
+            report.unchanged,
+            serde_json::to_string(&problems).map_err(js_error)?
+        ))
     }
 
     /// Advance the fixed clock and encode the scene before acquiring a drawable.
@@ -237,6 +325,7 @@ impl BrowserGame {
     /// Returns a JavaScript error for an authoritative tick or GPU host fault.
     pub fn frame(&mut self, timestamp_ms: f64) -> Result<(), JsValue> {
         let now = self.time_from_browser(timestamp_ms)?;
+        self.demo.observe_time(self.host.time_of_day());
         if !self.visible {
             return Ok(());
         }
@@ -372,7 +461,9 @@ impl BrowserGame {
     /// Returns a timestamp, retained-update or clock restart failure.
     pub fn set_paused(&mut self, paused: bool, timestamp_ms: f64) -> Result<(), JsValue> {
         let now = self.time_from_browser(timestamp_ms)?;
-        self.set_play_state(self.visible, paused, now)
+        self.set_play_state(self.visible, paused, now)?;
+        self.demo.observe_paused(self.user_paused);
+        Ok(())
     }
 
     /// Whether the local user requested pause, independent of tab visibility.
@@ -507,6 +598,26 @@ impl BrowserGame {
 }
 
 impl BrowserGame {
+    fn apply_control_edits(
+        &mut self,
+        edits: ControlEdits,
+        timestamp_ms: f64,
+    ) -> Result<(), JsValue> {
+        if let Some(time) = edits.time_of_day {
+            self.host.set_time_of_day(time).map_err(js_error)?;
+        }
+        if let Some(pitch) = edits.camera_pitch {
+            self.host.set_camera_pitch(pitch).map_err(js_error)?;
+        }
+        if let Some(yaw) = edits.camera_yaw {
+            self.host.set_camera_yaw(yaw).map_err(js_error)?;
+        }
+        if let Some(paused) = edits.paused {
+            self.set_paused(paused, timestamp_ms)?;
+        }
+        Ok(())
+    }
+
     fn set_play_state(
         &mut self,
         visible: bool,
