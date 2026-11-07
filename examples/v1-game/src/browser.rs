@@ -193,12 +193,13 @@ impl BrowserGame {
     pub fn cooked_status(&self) -> Option<String> {
         let stats = self.cooked.as_ref()?.lock().ok()?;
         Some(format!(
-            "{{\"drawn\":{},\"swaps\":{},\"uploadedBytes\":{},\"errors\":{:?}}}",
+            "{{\"drawn\":{},\"swaps\":{},\"uploadedBytes\":{},\"submittedFrames\":{},\"errors\":{:?}}}",
             stats
                 .drawn
                 .map_or("null".to_owned(), |generation| generation.to_string()),
             stats.swaps.len(),
             stats.swaps.last().map_or(0, |swap| swap.uploaded_bytes),
+            stats.submitted_frames,
             stats.errors,
         ))
     }

@@ -519,7 +519,7 @@
       "platform_performance": {
         "mac": "tripwires_recorded_shared_machine_not_budget_qualified",
         "windows": "not_run",
-        "browser": "Chrome156_M3Max_cooked_valley_fetched_from_dev_server_drawn_and_live_texture_edit_swapped_function_only",
+        "browser": "Chrome156_M3Max_cooked_valley_fetched_from_dev_server_drawn_live_texture_edit_swapped_and_restaged_after_device_recovery_function_only",
         "ios": "not_run",
         "android": "not_run"
       },
