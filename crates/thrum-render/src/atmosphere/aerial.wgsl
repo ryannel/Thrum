@@ -7,19 +7,11 @@
 // The Sun's single-scattered part of lit_step: its multiple-scattering source is zero.
 // Consumers that know terrain visibility along the ray attenuate only this part.
 fn single_step(
-    ray: SpectralRay, densities: vec3<f32>, h: f32, mu: f32, phase: vec2<f32>, dt: f32,
-    transmittance: texture_2d<f32>, linear: sampler,
+    ray: SpectralRay, densities: vec3<f32>, phase: vec2<f32>, dt: f32,
+    direct: array<vec4<f32>,2>,
 ) -> SpectralRay {
-    var direct_lo=vec4(0.0);
-    var direct_hi=vec4(0.0);
-    if !blocked(h,mu) {
-        let size=plane_size(textureDimensions(transmittance),TRANS_PLANES);
-        let sun_uv=trans_uv(h,mu,size);
-        direct_lo=textureSampleLevel(transmittance,linear,plane_uv(sun_uv,size.y,1u,TRANS_PLANES),0.0);
-        direct_hi=textureSampleLevel(transmittance,linear,plane_uv(sun_uv,size.y,2u,TRANS_PLANES),0.0);
-    }
-    let lo=scattering_step(densities,phase,dt,0u,direct_lo,vec4(0.0));
-    let hi=scattering_step(densities,phase,dt,1u,direct_hi,vec4(0.0));
+    let lo=scattering_step(densities,phase,dt,0u,direct[0],vec4(0.0));
+    let hi=scattering_step(densities,phase,dt,1u,direct[1],vec4(0.0));
     return SpectralRay(extend_ray(ray.lo,lo),extend_ray(ray.hi,hi));
 }
 
@@ -57,14 +49,14 @@ fn aerial_main(@builtin(global_invocation_id) id: vec3<u32>) {
                 let ah = altitude(p);
                 let densities = medium_densities(ah);
                 let mu = local_sun_mu(p,sun);
-                ray = lit_step(ray, densities, ah, mu, phase, dt,
-                    transmittance, multiple_scattering, lut_sampler);
-                single = single_step(single, densities, ah, mu, phase, dt, transmittance, lut_sampler);
+                let direct = spectral_sun_pair(ah,mu,transmittance,lut_sampler);
+                ray = lit_step(ray, densities, ah, mu, phase, dt, direct, multiple_scattering, lut_sampler);
+                single = single_step(single, densities, phase, dt, direct);
                 throughput *= exp(-surface_extinction(densities)*dt);
             }
         }
         let radiance = project_spectrum(ray.lo.radiance,ray.hi.radiance);
-        let single_luminance = dot(project_spectrum(single.lo.radiance,single.hi.radiance), vec3(0.2126,0.7152,0.0722));
+        let single_luminance = dot(project_spectrum(single.lo.radiance,single.hi.radiance), SPECTRUM_LUMA);
         textureStore(scatter_out, vec2<i32>(id.xy), i32(layer), vec4(radiance * SKY_LUT_GAIN, single_luminance * SKY_LUT_GAIN));
         textureStore(trans_out, vec2<i32>(id.xy), i32(layer), vec4(throughput, 1.0));
     }

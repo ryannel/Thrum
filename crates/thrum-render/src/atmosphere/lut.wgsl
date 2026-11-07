@@ -39,7 +39,7 @@ fn multiple_at(h: f32, sun: vec3<f32>, bank: u32) -> vec4<f32> {
             let p=vec3(0.0,h,0.0)+direction*(f32(step)+0.5)*dt;
             let ah=altitude(p);
             let densities=medium_densities(ah);
-            let scatter=RAYLEIGH_BETA[bank]*densities.x+3.996e-6*densities.y;
+            let scatter=RAYLEIGH_BETA[bank]*densities.x+MIE_SCATTERING*densities.y;
             let segment=integrate_segment(scatter,extinction(densities,bank),dt);
             let direct=spectral_sun(ah,local_sun_mu(p,sun),bank,transmittance,lut_sampler);
             luminance+=throughput*segment.radiance*direct/(4.0*PI*32.0);
@@ -82,8 +82,9 @@ fn sky_transport(h: f32, direction: vec3<f32>, sun: vec3<f32>, distance: f32) ->
         let t=0.5*(a*a+b*b)*distance;
         let p=vec3(0.0,h,0.0)+direction*t;
         let ah=altitude(p);
-        ray=lit_step(ray,medium_densities(ah),ah,local_sun_mu(p,sun),phase,dt,
-            transmittance,multiple_scattering,lut_sampler);
+        let mu=local_sun_mu(p,sun);
+        let direct=spectral_sun_pair(ah,mu,transmittance,lut_sampler);
+        ray=lit_step(ray,medium_densities(ah),ah,mu,phase,dt,direct,multiple_scattering,lut_sampler);
     }
     return ray;
 }

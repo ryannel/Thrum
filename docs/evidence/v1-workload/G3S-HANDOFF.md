@@ -61,6 +61,13 @@ The Codex goal remains active. Its attachment is
   radiance p99 change is 0.027% and 0.098% respectively over the sampled sky.
   Neither probe is selected. Scripts and curvature images are in
   `tmp/handback-review/empty-timing/sky-bands/`. Resume after the ultra-review fixes.
+- The ultra-review atmosphere fixes keep the five fixed Metal valley phases
+  byte-identical. The two-bank Sun query is shared by full and single aerial
+  scattering. In the repeated 1080p ABBA at shared load 25–29, scene GPU p50
+  was 6.20–6.36 → 6.27–6.68 ms and aerial p50 was 0.096–0.098 → 0.098–0.124 ms.
+  The second candidate sample had elevated tone, forward and aerial tails.
+  No throughput claim. Raw logs and hashes are in
+  `tmp/ultrareview-2026-11-07/atmosphere/`.
 
 ## Exposure audit decision
 

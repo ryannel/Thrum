@@ -46,13 +46,31 @@ fn extend_ray(ray: Segment, step: Segment) -> Segment {
     return Segment(ray.radiance+ray.transmission*step.radiance,ray.transmission*step.transmission);
 }
 
+struct SunLookup {
+    uv: vec2<f32>,
+    rows: u32,
+}
+fn spectral_sun_lookup(h: f32, mu: f32, lookup: texture_2d<f32>) -> SunLookup {
+    let size=plane_size(textureDimensions(lookup),TRANS_PLANES);
+    return SunLookup(trans_uv(h,mu,size),size.y);
+}
+fn spectral_sun_plane(
+    query: SunLookup, bank: u32, lookup: texture_2d<f32>, linear: sampler,
+) -> vec4<f32> {
+    return textureSampleLevel(lookup,linear,plane_uv(query.uv,query.rows,bank+1u,TRANS_PLANES),0.0);
+}
 fn spectral_sun(
     h: f32, mu: f32, bank: u32, lookup: texture_2d<f32>, linear: sampler,
 ) -> vec4<f32> {
     if blocked(h,mu) { return vec4(0.0); }
-    let size=plane_size(textureDimensions(lookup),TRANS_PLANES);
-    let uv=plane_uv(trans_uv(h,mu,size),size.y,bank+1u,TRANS_PLANES);
-    return textureSampleLevel(lookup,linear,uv,0.0);
+    return spectral_sun_plane(spectral_sun_lookup(h,mu,lookup),bank,lookup,linear);
+}
+fn spectral_sun_pair(
+    h: f32, mu: f32, lookup: texture_2d<f32>, linear: sampler,
+) -> array<vec4<f32>,2> {
+    if blocked(h,mu) { return array(vec4(0.0),vec4(0.0)); }
+    let query=spectral_sun_lookup(h,mu,lookup);
+    return array(spectral_sun_plane(query,0u,lookup,linear),spectral_sun_plane(query,1u,lookup,linear));
 }
 fn spectral_lut(
     uv: vec2<f32>, bank: u32, lookup: texture_2d<f32>, linear: sampler,
@@ -65,26 +83,18 @@ fn scattering_step(
     direct: vec4<f32>, multiple: vec4<f32>,
 ) -> Segment {
     let rayleigh=RAYLEIGH_BETA[bank]*densities.x;
-    let mie=3.996e-6*densities.y;
+    let mie=MIE_SCATTERING*densities.y;
     let single=(rayleigh*phase.x+mie*phase.y)*direct;
     return integrate_segment(single+(rayleigh+mie)*multiple,extinction(densities,bank),dt);
 }
 fn lit_step(
     ray: SpectralRay, densities: vec3<f32>, h: f32, mu: f32, phase: vec2<f32>, dt: f32,
-    transmittance: texture_2d<f32>, multiple: texture_2d<f32>, linear: sampler,
+    direct: array<vec4<f32>,2>, multiple: texture_2d<f32>, linear: sampler,
 ) -> SpectralRay {
     let uv=vec2(mu*0.5+0.5,h/H);
-    var direct_lo=vec4(0.0);
-    var direct_hi=vec4(0.0);
-    if !blocked(h,mu) {
-        let size=plane_size(textureDimensions(transmittance),TRANS_PLANES);
-        let sun_uv=trans_uv(h,mu,size);
-        direct_lo=textureSampleLevel(transmittance,linear,plane_uv(sun_uv,size.y,1u,TRANS_PLANES),0.0);
-        direct_hi=textureSampleLevel(transmittance,linear,plane_uv(sun_uv,size.y,2u,TRANS_PLANES),0.0);
-    }
-    let lo=scattering_step(densities,phase,dt,0u,direct_lo,
+    let lo=scattering_step(densities,phase,dt,0u,direct[0],
         spectral_lut(uv,0u,multiple,linear)/MULTIPLE_LUT_GAIN);
-    let hi=scattering_step(densities,phase,dt,1u,direct_hi,
+    let hi=scattering_step(densities,phase,dt,1u,direct[1],
         spectral_lut(uv,1u,multiple,linear)/MULTIPLE_LUT_GAIN);
     return SpectralRay(extend_ray(ray.lo,lo),extend_ray(ray.hi,hi));
 }

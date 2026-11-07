@@ -3,7 +3,7 @@
 
 use glam::Vec3;
 
-use super::spectrum::{EARTH, MIE_EXTINCTION};
+use super::spectrum::EARTH;
 
 const RADIUS: f32 = 6_371_000.0;
 const TOP: f32 = 100_000.0;
@@ -34,8 +34,9 @@ pub(super) fn sun_transmittance(height: f32, mu: f32) -> [f32; 3] {
         ) * step;
     }
     EARTH.project(std::array::from_fn(|i| {
-        let depth =
-            EARTH.rayleigh[i] * columns.x + MIE_EXTINCTION * columns.y + EARTH.ozone[i] * columns.z;
+        let depth = EARTH.rayleigh[i] * columns.x
+            + EARTH.mie_extinction * columns.y
+            + EARTH.ozone[i] * columns.z;
         (-depth).exp()
     }))
 }
