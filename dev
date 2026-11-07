@@ -4,14 +4,15 @@ cd -- "$(dirname -- "$0")"
 # Use rustup explicitly: some machines put a standalone Cargo ahead of its shims.
 thrum_rustc="$(rustup which --toolchain 1.99.1 rustc)"
 export PATH="$(dirname -- "$thrum_rustc"):$PATH"
-# A creator's new scene package is not in the committed lockfile yet. Before running a scene,
-# add workspace packages to Cargo.lock offline (no registry changes) and say so.
+# A creator's new scene package is not in the committed lockfile yet, and the xtask runner below
+# needs a current lockfile. Resolve the scene from Cargo's metadata first, then add it offline
+# (no registry changes) only if it resolves.
 case "${1:-}" in
-  scene|starter)
-    if ! rustup run 1.99.1 cargo metadata --locked --offline --format-version 1 >/dev/null 2>&1; then
-      echo "Adding new workspace packages to Cargo.lock (offline); commit the change with them." >&2
-      rustup run 1.99.1 cargo update --offline --workspace --quiet
-    fi
-    ;;
+  scene) scene_folder="${2:-}" ;;
+  starter) scene_folder=examples/starter ;;
+  *) scene_folder= ;;
 esac
+if [ -n "$scene_folder" ]; then
+  "${THRUM_PYTHON:-python3}" scripts/scene_package.py --lock "$scene_folder" >/dev/null || exit 1
+fi
 exec rustup run 1.99.1 cargo run --locked --offline --quiet --package xtask -- "$@"
