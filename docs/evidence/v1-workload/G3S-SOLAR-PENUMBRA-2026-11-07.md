@@ -117,10 +117,13 @@ zero and produced black BRDF noise. The grazing GPU oracle was updated to the li
 ## Open
 
 - **Distant terrain.** Resolved by [terrain horizon shadows](G3S-TERRAIN-HORIZON-2026-11-07.md).
-- **Sky brightening at sunset.** Mean sky luminance rises from 219 to 229 as the Sun sets. This is unexplained;
-  check it with exposure and the illumination path.
-- **Solar 77→78 step.** A 100-code foreground step appears even with shadows off, so it comes from the
-  twilight/illumination path.
+- **Sky brightening at sunset.** Explained; it is not a radiance error. The capture meters incident light on a
+  horizontal plane: sky irradiance plus direct Sun scaled by its elevation sine. The direct term vanishes first,
+  so exposure rises. With a fixed camera (EV 13), the top-of-frame sky falls steadily from 145 codes at frame 14
+  to 133 at 30, 112 at 50 and 72 at 80, and the floor falls with it. Whether sunsets should use a
+  scene-weighted meter instead is a look choice for later.
+- **Solar 77→78 step.** Fixed by [two-sided cooked casters](G3S-SUNSET-CASTERS-2026-11-07.md). It was a shadow
+  leak.
 - **Sphere shadow edge.** It is serrated at noon at the 1024² near-cascade resolution, as on main. A 1.5-texel
   minimum filter radius smoothed it but doubled the contact error, so it was not kept.
 - **Two-map composition.** The near/last split has a fit test and capture truth scores, but no shipping GPU
