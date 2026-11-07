@@ -83,8 +83,20 @@ A fresh-context reviewer saw only Chrome and native stills and a 24-sample Chrom
   ridge fringes. The banding was 8-bit contouring, now dithered
   ([evidence](G3S-DISPLAY-DITHER-2026-11-07.md)). The fringes are a smooth crest fall-off, not a defect.
 
-## Open
+## Edit and replacement timing
 
-- **Look items.** Those above, shared with native.
-- **Edit latency.** Chrome edit-to-visible latency is not measured beyond the watcher's publish time.
-- **Measurements.** No Chrome frame-time or startup measurement.
+Instrumented headless Chrome WebGPU on the shared M3 Max, with the paused cooked valley.
+Preparation runs from the fetched-generation handoff to filled staging. Callback time is
+`game.frame` wall time. Values are ranges from repeated cases.
+
+| Swap | Bytes uploaded | Prepare (ms) | Game callback (ms) |
+|---|---:|---:|---:|
+| Initial set | 1,523,712 | 2.1–2.8 | 4.8–5.3 |
+| Shared texture edit | 5,376 | 0.2–1.6 | 0.6–2.2 |
+| Terrain mesh edit | 1,457,968 | 0.7–1.0 | 1.2–1.9 |
+| Replacement restage | 1,523,712 | 0.6–0.8 | 4.3–6.0 |
+
+The next animation callback came after 16.6–16.7 ms at every sampled swap. Keep the
+current scheduling for this workload. End-to-end startup, edit-to-visible time and
+physical presentation cadence remain open. Raw timestamps, load and harness are in
+`tmp/handback-review/browser-prepare/`.
