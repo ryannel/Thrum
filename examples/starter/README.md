@@ -107,7 +107,8 @@ you need not know its bounds, and it follows edits to the asset. The default mat
 placement, so a stretched, sheared or mirrored transform would draw wrongly. The builder cannot make one. If you
 write `transform` by hand, a bad one is refused when the scene starts, naming the placement, the cause and the fix,
 for example `mesh placement 2 ("meshes/rock") scales its axes unevenly (X 1, Y 3, Z 1); ...`. To stretch a mesh,
-reshape it in its source file.
+reshape it in its source file. The scale must lie within 0.0001–10000 and the origin within 1,000 km of the world
+origin on each axis, where the transform's inverse and the mesh's world bounds stay representable.
 
 The starter's rock spans X −1.54 to 1.36 m, Y −0.83 to 1.00 m and Z −1.06 to 0.94 m around its origin, so it is
 widest along X. `on_ground` rests it whichever way you turn it.

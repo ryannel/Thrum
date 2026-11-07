@@ -139,22 +139,24 @@ fn baseline_inventory() -> TaskResult {
     Ok(())
 }
 
-/// The package name declared in a scene folder's `Cargo.toml`.
-fn package_name(manifest: &Path) -> Result<String, Box<dyn Error>> {
-    let text = std::fs::read_to_string(manifest)
-        .map_err(|error| format!("{}: {error}", manifest.display()))?;
-    let mut in_package = false;
-    for line in text.lines().map(str::trim) {
-        if line.starts_with('[') {
-            in_package = line == "[package]";
-        } else if in_package
-            && let Some(value) = line.strip_prefix("name")
-            && let Some(value) = value.trim_start().strip_prefix('=')
-        {
-            return Ok(value.trim().trim_matches('"').to_owned());
-        }
+/// The workspace package and window binary for a scene folder, as Cargo's own metadata reads
+/// them (`scripts/scene_package.py`, which `./dev` also runs before touching the lockfile).
+fn scene_package(folder: &str) -> Result<(String, String), Box<dyn Error>> {
+    let output = Command::new(env::var("THRUM_PYTHON").unwrap_or_else(|_| "python3".into()))
+        .args(["scripts/scene_package.py", folder])
+        .stderr(std::process::Stdio::inherit())
+        .output()?;
+    if !output.status.success() {
+        return Err(
+            format!("{folder} is not a runnable scene package; the reason is above").into(),
+        );
     }
-    Err(format!("{} declares no [package] name", manifest.display()).into())
+    let line = String::from_utf8(output.stdout)?;
+    let (package, binary) = line
+        .trim_end()
+        .split_once('\t')
+        .ok_or("scripts/scene_package.py printed no package and binary")?;
+    Ok((package.to_owned(), binary.to_owned()))
 }
 
 /// Build a scene package and the cooker, cook the scene's `assets/` into a store under the
@@ -168,23 +170,7 @@ fn scene(root: &Path, folder: &str) -> TaskResult {
     }
     let folder = folder.trim_end_matches('/');
     let directory = root.join(folder);
-    let manifest = directory.join("Cargo.toml");
-    if !manifest.is_file() {
-        return Err(format!(
-            "{folder} has no Cargo.toml; a scene is a package folder such as examples/starter \
-             (see examples/starter/README.md, \"Make your own scene\")"
-        )
-        .into());
-    }
-    let package = package_name(&manifest)?;
-    let workspace = std::fs::read_to_string(root.join("Cargo.toml"))?;
-    if !workspace.contains(&format!("\"{folder}\"")) {
-        return Err(format!(
-            "{folder} is not a workspace member; add \"{folder}\" to [workspace] members in \
-             Cargo.toml and a [packages.{package}] entry to .config/architecture.toml"
-        )
-        .into());
-    }
+    let (package, binary) = scene_package(folder)?;
     // `./dev` has already added a new scene package to Cargo.lock.
     cargo(&[
         "build",
@@ -193,6 +179,8 @@ fn scene(root: &Path, folder: &str) -> TaskResult {
         "--release",
         "--package",
         &package,
+        "--bin",
+        &binary,
         "--package",
         "thrum-cook",
         "--bins",
@@ -223,7 +211,7 @@ fn scene(root: &Path, folder: &str) -> TaskResult {
         )
         .into());
     }
-    let mut run = Command::new(release.join(&package));
+    let mut run = Command::new(release.join(&binary));
     run.env("THRUM_ASSET_STORE", &store);
     let name = Path::new(folder).file_name().unwrap_or_default();
     let params = directory.join(format!("{}.params.json", name.to_string_lossy()));
@@ -309,6 +297,15 @@ fn main() -> TaskResult {
                 "scripts",
                 "-p",
                 "test_repo_check.py",
+            ])?;
+            python(&[
+                "-m",
+                "unittest",
+                "discover",
+                "-s",
+                "scripts",
+                "-p",
+                "test_scene_package.py",
             ])?;
             cargo(&["fmt", "--all", "--", "--check"])?;
             cargo(&[

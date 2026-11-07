@@ -6,7 +6,16 @@ use crate::CookedMaterial;
 
 /// Relative tolerance of the rigid-transform check: axis lengths and right angles may differ
 /// by this fraction of the scale, which absorbs `f32` rounding in hand-built matrices.
-const RIGID_TOLERANCE: f32 = 1e-3;
+const RIGID_TOLERANCE: f64 = 1e-3;
+
+/// Uniform scales a placement may use. Outside this range the model matrix's inverse (uploaded
+/// for normals) and the mesh's world bounds stop being representable in `f32`.
+const SCALE_RANGE: std::ops::RangeInclusive<f32> = 1e-4..=1e4;
+
+/// Furthest a placement's origin may be from the world origin on any axis, in metres. World
+/// positions beyond it have less than a metre of `f32` precision and their inverse transforms
+/// overflow at small scales.
+const MAX_DISTANCE: f64 = 1e6;
 
 /// A cooked mesh, its base-colour texture and where it stands in the world.
 ///
@@ -27,8 +36,9 @@ const RIGID_TOLERANCE: f32 = 1e-3;
 ///
 /// A transform written by hand must be rigid with one uniform positive scale (rotation, scale
 /// and translation only), because normals, culling bounds and shadow bounds are transformed by
-/// it. [`crate::CookedAssets::new`] refuses any other transform with a [`PlacementError`]
-/// naming the placement, the cause and the fix.
+/// it. Its scale must lie within 0.0001–10000 and its origin within 1,000 km of the world
+/// origin on each axis. [`crate::CookedAssets::new`] refuses any other transform with a
+/// [`PlacementError`] naming the placement, the cause and the fix.
 #[derive(Clone, Debug)]
 pub struct MeshPlacement {
     /// Manifest name of the mesh product: its source path under the cooked folder without the
@@ -131,27 +141,41 @@ impl MeshPlacement {
         if matrix.row(3) != glam::Vec4::W {
             return refuse(Fault::Projective);
         }
-        let axes = [matrix.x_axis, matrix.y_axis, matrix.z_axis].map(glam::Vec4::truncate);
-        let scales = axes.map(glam::Vec3::length);
-        let largest = scales.into_iter().fold(0.0_f32, f32::max);
-        if scales.iter().any(|scale| *scale <= f32::EPSILON) {
+        // Every product and sum of finite `f32` values is finite in `f64`, so these lengths, dot
+        // products and the determinant cannot overflow into infinity or NaN and slip past a
+        // comparison. Each test below states what is accepted, so a NaN would be refused.
+        let axes = [matrix.x_axis, matrix.y_axis, matrix.z_axis].map(|axis| wide(axis.truncate()));
+        let lengths = axes.map(|axis| dot(axis, axis).sqrt());
+        let largest = lengths.into_iter().fold(0.0_f64, f64::max);
+        let smallest = lengths.into_iter().fold(f64::INFINITY, f64::min);
+        let scales = lengths.map(reported);
+        if !above(smallest, f64::from(f32::EPSILON)) {
             return refuse(Fault::Flattened(scales));
         }
-        if scales
-            .iter()
-            .any(|scale| (scale - largest).abs() > RIGID_TOLERANCE * largest)
-        {
+        if !at_most(largest - smallest, RIGID_TOLERANCE * largest) {
             return refuse(Fault::Stretched(scales));
         }
         let skew = [(0, 1), (0, 2), (1, 2)]
             .into_iter()
-            .map(|(a, b)| axes[a].dot(axes[b]).abs())
-            .fold(0.0_f32, f32::max);
-        if skew > RIGID_TOLERANCE * largest * largest {
+            .map(|(a, b)| dot(axes[a], axes[b]).abs())
+            .fold(0.0_f64, f64::max);
+        if !at_most(skew, RIGID_TOLERANCE * largest * largest) {
             return refuse(Fault::Sheared);
         }
-        if axes[0].cross(axes[1]).dot(axes[2]) < 0.0 {
+        if !above(dot(cross(axes[0], axes[1]), axes[2]), 0.0) {
             return refuse(Fault::Mirrored);
+        }
+        // Compared at the precision the scale was written in, so `.scale(1e-4)` is accepted.
+        if !SCALE_RANGE.contains(&reported(largest)) {
+            return refuse(Fault::ScaleOutOfRange(reported(largest)));
+        }
+        let origin = matrix.w_axis.truncate();
+        if !wide(origin).iter().all(|value| value.abs() <= MAX_DISTANCE) {
+            return refuse(Fault::TooFar(origin.to_array()));
+        }
+        // Within those bounds the inverse is finite; this guards the derived transform itself.
+        if !matrix.inverse().is_finite() {
+            return refuse(Fault::NotInvertible);
         }
         Ok(())
     }
@@ -174,6 +198,46 @@ enum Fault {
     Stretched([f32; 3]),
     Sheared,
     Mirrored,
+    ScaleOutOfRange(f32),
+    TooFar([f32; 3]),
+    NotInvertible,
+}
+
+/// `value > limit`, false for NaN: the check accepts only what it can order.
+fn above(value: f64, limit: f64) -> bool {
+    value.partial_cmp(&limit) == Some(std::cmp::Ordering::Greater)
+}
+
+/// `value <= limit`, false for NaN.
+fn at_most(value: f64, limit: f64) -> bool {
+    value
+        .partial_cmp(&limit)
+        .is_some_and(std::cmp::Ordering::is_le)
+}
+
+fn wide(v: glam::Vec3) -> [f64; 3] {
+    v.to_array().map(f64::from)
+}
+
+fn dot(a: [f64; 3], b: [f64; 3]) -> f64 {
+    a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
+}
+
+fn cross(a: [f64; 3], b: [f64; 3]) -> [f64; 3] {
+    [
+        a[1] * b[2] - a[2] * b[1],
+        a[2] * b[0] - a[0] * b[2],
+        a[0] * b[1] - a[1] * b[0],
+    ]
+}
+
+/// A length for a message, at the precision the transform was written in.
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "the lengths of finite f32 axes are reported back in f32, the transform's own precision"
+)]
+fn reported(length: f64) -> f32 {
+    length as f32
 }
 
 impl fmt::Display for PlacementError {
@@ -189,6 +253,25 @@ impl fmt::Display for PlacementError {
             }
             Fault::Sheared => f.write_str("shears: its axes are not at right angles"),
             Fault::Mirrored => f.write_str("mirrors the mesh (a negative scale)"),
+            Fault::ScaleOutOfRange(scale) => {
+                return write!(
+                    f,
+                    "scales the mesh by {scale}, outside {}–{}; resize the mesh in its source \
+                     file so that its scale stays in that range, where its transform's inverse \
+                     and world bounds are representable",
+                    SCALE_RANGE.start(),
+                    SCALE_RANGE.end()
+                );
+            }
+            Fault::TooFar([x, y, z]) => {
+                return write!(
+                    f,
+                    "places its origin at ({x}, {y}, {z}), more than {MAX_DISTANCE} m from the \
+                     world origin on an axis; move the scene nearer the origin, where positions \
+                     keep their precision"
+                );
+            }
+            Fault::NotInvertible => f.write_str("has a transform with no representable inverse"),
         }?;
         f.write_str(
             "; cooked meshes need a rigid transform with one uniform positive scale, because \

@@ -75,6 +75,62 @@ fn non_rigid_transforms_are_refused_by_name_and_cause() {
 }
 
 #[test]
+fn finite_transforms_too_large_to_derive_from_are_refused() {
+    // Axes of 1e20 square to 1e40, past f32: in f32 the lengths, the tolerance and the
+    // determinant all overflow and NaN comparisons admitted this matrix.
+    let huge = rock().scale(1e20);
+    let message = huge.check(2).unwrap_err().to_string();
+    assert!(
+        message.contains("mesh placement 2 (\"meshes/rock\")"),
+        "{message}"
+    );
+    assert!(
+        message.contains("scales the mesh by 100000000000000000000, outside 0.0001–10000"),
+        "{message}"
+    );
+    assert!(
+        message.contains("resize the mesh in its source file"),
+        "{message}"
+    );
+
+    // The largest finite values, unevenly: lengths overflow f32, and the stretch must still show.
+    let mut extreme = rock();
+    extreme.transform[0][0] = f32::MAX;
+    extreme.transform[1][1] = f32::MAX;
+    extreme.transform[2][2] = f32::MAX / 2.0;
+    assert!(matches!(
+        extreme.check(0).unwrap_err().fault,
+        Fault::Stretched(_)
+    ));
+    let mut extreme_shear = rock().scale(f32::MAX);
+    extreme_shear.transform[1][0] = f32::MAX;
+    assert!(matches!(
+        extreme_shear.check(0).unwrap_err().fault,
+        Fault::Stretched(_) | Fault::Sheared
+    ));
+
+    assert_eq!(
+        rock().scale(1e-6).check(0).unwrap_err().fault,
+        Fault::ScaleOutOfRange(1e-6)
+    );
+    let far = rock().at([0.0, 0.0, -3e6]).check(1).unwrap_err();
+    assert_eq!(far.fault, Fault::TooFar([0.0, 0.0, -3e6]));
+    assert!(
+        far.to_string()
+            .contains("more than 1000000 m from the world origin"),
+        "{far}"
+    );
+
+    // The edges of the accepted range still draw.
+    for placement in [
+        rock().scale(1e4).at([1e6, -1e6, 1e6]),
+        rock().scale(1e-4).at([-1e6; 3]),
+    ] {
+        placement.check(0).unwrap();
+    }
+}
+
+#[test]
 fn resting_placements_put_the_lowest_vertex_at_their_height() {
     // A tapered shape: its box corner at (-1.5, -0.8) is not a vertex.
     let points = [
