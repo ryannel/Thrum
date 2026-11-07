@@ -68,6 +68,7 @@ pub(super) struct Candidate {
     pub(super) motion: WriteRead2<Position, Velocity>,
     position_edits: Vec<(Handle, Position)>,
     direct_positions: usize,
+    kernel_chunks: usize,
     velocities: Vec<Velocity>,
     health: Vec<Health>,
     spawns: Vec<super::types::ComponentEntity>,
@@ -79,6 +80,7 @@ impl Candidate {
             motion,
             position_edits: Vec::with_capacity(capacity.min(2_048)),
             direct_positions: 0,
+            kernel_chunks: 0,
             velocities: vec![Velocity::default(); capacity],
             health: vec![Health(0); capacity],
             spawns: Vec::with_capacity(128),
@@ -89,6 +91,7 @@ impl Candidate {
         self.position_edits.clear();
         self.spawns.clear();
         self.direct_positions = 0;
+        self.kernel_chunks = 0;
     }
 }
 
@@ -232,6 +235,9 @@ pub(super) struct Rules {
     pub(super) commands: Vec<Command>,
     pub(super) committed_inputs: Vec<Origin>,
     pub(super) changed_positions: usize,
+    /// Diagnostic, not authority: committed ticks whose mover kernel ran on
+    /// the Rayon pool. Never captured, restored or rewound.
+    pub(super) kernel_dispatches: u64,
     pub(super) input_velocity: InputVelocityPermits,
     pub(super) input_health: InputHealthPermits,
     pub(super) resolve: ResolvePermits,
@@ -325,7 +331,7 @@ impl Rules {
     ) -> Result<(), SimError> {
         let dt = 1.0 / f64::from(self.config.tick_hz.get());
         let motion = candidate.motion;
-        let changed = world.visit_chunked_indexed(
+        let visit = world.visit_chunked_indexed(
             &motion,
             Self::kernel_executor(executor, world.len()),
             &self.commands,
@@ -349,7 +355,8 @@ impl Rules {
                 Ok(false)
             },
         )?;
-        candidate.direct_positions = changed;
+        candidate.direct_positions = visit.changed;
+        candidate.kernel_chunks = visit.dispatched_chunks;
         Ok(())
     }
 
@@ -523,6 +530,7 @@ impl TickGame<Page> for Rules {
     }
 
     fn apply(&mut self, _world: &WorldRead<'_>, _tick: u64, candidate: &Candidate) {
+        self.kernel_dispatches += u64::from(candidate.kernel_chunks > 0);
         self.committed_inputs.clear();
         for peer in &self.peers {
             if let Some(frame) = &peer.pending {

@@ -1818,6 +1818,15 @@ fn parallel_corrected_run(mode: ExecutionMode) -> (u64, u64) {
         );
     }
     assert_eq!((predicted.tick(), predicted.len()), (12, COUNT - 1));
+    // Which kernel path ran: 12 forward ticks plus 8 replayed ones commit.
+    let dispatched = predicted.kernel_dispatches();
+    match mode {
+        ExecutionMode::Serial => assert_eq!(dispatched, 0),
+        // Fails once a crossover is promoted, forcing this row to prove the
+        // requested path instead of fallback routing.
+        ExecutionMode::Rayon => assert_eq!(dispatched, 0, "requested Rayon is a serial fallback"),
+        ExecutionMode::RayonForced => assert_eq!(dispatched, 20, "every committed tick dispatched"),
+    }
     let corrected = whole_world_hash(&predicted, &ids);
     let reference = whole_world_hash(&straight, &ids);
     assert_eq!(
