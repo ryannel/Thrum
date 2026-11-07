@@ -1,0 +1,15 @@
+{
+  "source": "Edward C. Pickering, Revised Harvard Photometry, Annals of Harvard College Observatory 50, Table I, 1908",
+  "source_url": "https://articles.adsabs.harvard.edu/pdf/1908AnHar..50....1P",
+  "retrieved_utc_date": "2026-11-07",
+  "public_domain_basis": "Original Table I values published in the United States in 1908. Margin annotations and later additions are excluded.",
+  "public_domain_reference": "https://www.copyright.gov/circs/circ15a.pdf",
+  "source_sha256": "bc50725fdd0ffd6fad3eb166a58996aeb1a212eda8d9ec83fc204c053b62899c",
+  "asset_sha256": "3a3536c720e4d306364ffb81f145a9c9d5e3def3fc9d51bb83222fdd1985c7b3",
+  "records": 6632,
+  "format": "Four little-endian binary32 values per record in source ID order. XYZ is the unit direction at the printed 1900 equinox. W is perpendicular illuminance in lux, from the historical photometric magnitude using 2.54e-6 × 10^(-0.4 m).",
+  "selection": "Numeric source rows through magnitude 6.5 with checked page hours, positions and photometry. An independent comparison was used to reject uncertain OCR, and source scan review repaired selected bright rows. No comparison values were copied. This is a subset of Table I.",
+  "negative_magnitude_signs": "Original italic Sirius and Canopus digits corroborated by J. Ellard Gore, Astronomical Curiosities (1909), pp. 311–312, https://www.gutenberg.org/files/39263/39263-h/39263-h.htm#CHAPTER_XIX",
+  "audited_source_rows_sha256": "ab12e989e54eeee665be2772ad4b634972897f764b440db44a8e6b23f035ed30",
+  "audited_source_rows": "harvard-1908.tsv"
+}

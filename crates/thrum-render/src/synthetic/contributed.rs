@@ -1,10 +1,14 @@
 //! The scene contribution's place in the prepared scene: its graph passes, the surface it draws
 //! into and the camera facts it is given.
 
+use std::collections::BTreeSet;
+
 use super::{
-    Access, AccessKind, BTreeSet, ContributionFrame, ContributionPasses, DEPTH_FORMAT, FrameGraph,
-    MOTION_FORMAT, Pass, PassScope, PipelineKey, PreparedSynthetic, RenderError,
-    ResourceDescriptor, ResourceScope, SCENE_FORMAT, SceneSurface,
+    ContributionFrame, ContributionPasses, DEPTH_FORMAT, MOTION_FORMAT, PreparedSynthetic,
+    RenderError, SCENE_FORMAT, SceneSurface,
+};
+use crate::graph::{
+    Access, AccessKind, FrameGraph, Pass, PassScope, PipelineKey, ResourceDescriptor, ResourceScope,
 };
 
 /// Timed graph pass that runs the scene contribution's compute work.

@@ -344,7 +344,13 @@ impl FrameHost {
         if !capabilities.matches(device) {
             return Err("capability record does not match the host device".to_owned());
         }
-        let scene = GameScene::scene(config.render_extent, setup.content, setup.camera_culling)?;
+        let mut scene =
+            GameScene::scene(config.render_extent, setup.content, setup.camera_culling)?;
+        let stars = std::env::var("THRUM_STAR_PROBE").as_deref() == Ok("on")
+            || option_env!("THRUM_WEB_STAR_PROBE") == Some("on");
+        if !stars {
+            scene.star_catalogue = None;
+        }
         let world = WorldPort::Inline(Box::new(WorldDriver::new(setup.content)?));
         let inner = Runtime::new(
             capabilities,
