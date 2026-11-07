@@ -64,7 +64,106 @@ fn pipeline(device: &wgpu::Device) -> wgpu::ComputePipeline {
     })
 }
 
-fn observe(device: &wgpu::Device, queue: &wgpu::Queue, slope: f32) -> Vec<f32> {
+fn render_planes(
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    depth: &wgpu::Texture,
+    slope: f32,
+    kind: u8,
+) {
+    let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+        label: Some("analytic test blocker depth"),
+        source: wgpu::ShaderSource::Wgsl(
+            r"
+@group(0) @binding(0) var<uniform> parameters:vec4<f32>;
+@vertex fn vertex(@builtin(vertex_index) i:u32) -> @builtin(position) vec4<f32> {
+    let xy=array(vec2(-1.0,-1.0),vec2(3.0,-1.0),vec2(-1.0,3.0));
+    return vec4(xy[i],0.5,1.0);
+}
+@fragment fn fragment(@builtin(position) p:vec4<f32>) -> @builtin(frag_depth) f32 {
+    if parameters.z==1.0 { return 0.0; }
+    let x=2.0*p.x/256.0-1.0;
+    let covered=select(p.x>=128.0,all(abs(p.xy-vec2(128.0))<=vec2(1.0)),parameters.z==2.0);
+    let gap=select(0.0,parameters.y,covered);
+    return clamp(0.25+parameters.x*x+gap,0.0,1.0);
+}
+"
+            .into(),
+        ),
+    });
+    let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+        label: None,
+        layout: None,
+        vertex: wgpu::VertexState {
+            module: &shader,
+            entry_point: Some("vertex"),
+            compilation_options: wgpu::PipelineCompilationOptions::default(),
+            buffers: &[],
+        },
+        primitive: wgpu::PrimitiveState::default(),
+        depth_stencil: Some(wgpu::DepthStencilState {
+            format: wgpu::TextureFormat::Depth32Float,
+            depth_write_enabled: Some(true),
+            depth_compare: Some(wgpu::CompareFunction::Always),
+            stencil: wgpu::StencilState::default(),
+            bias: wgpu::DepthBiasState::default(),
+        }),
+        multisample: wgpu::MultisampleState::default(),
+        fragment: Some(wgpu::FragmentState {
+            module: &shader,
+            entry_point: Some("fragment"),
+            compilation_options: wgpu::PipelineCompilationOptions::default(),
+            targets: &[],
+        }),
+        multiview_mask: None,
+        cache: None,
+    });
+    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+    for (layer, gap) in [0.05, 0.4].into_iter().enumerate() {
+        let buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: None,
+            contents: [slope, gap, f32::from(kind), 0.0]
+                .map(f32::to_le_bytes)
+                .as_flattened(),
+            usage: wgpu::BufferUsages::UNIFORM,
+        });
+        let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: None,
+            layout: &pipeline.get_bind_group_layout(0),
+            entries: &[wgpu::BindGroupEntry {
+                binding: 0,
+                resource: buffer.as_entire_binding(),
+            }],
+        });
+        let view = depth.create_view(&wgpu::TextureViewDescriptor {
+            dimension: Some(wgpu::TextureViewDimension::D2),
+            base_array_layer: u32::try_from(layer).expect("two layer depth target"),
+            array_layer_count: Some(1),
+            ..Default::default()
+        });
+        let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+            label: None,
+            color_attachments: &[],
+            depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
+                view: &view,
+                depth_ops: Some(wgpu::Operations {
+                    load: wgpu::LoadOp::Clear(0.0),
+                    store: wgpu::StoreOp::Store,
+                }),
+                stencil_ops: None,
+            }),
+            timestamp_writes: None,
+            occlusion_query_set: None,
+            multiview_mask: None,
+        });
+        pass.set_pipeline(&pipeline);
+        pass.set_bind_group(0, &group, &[]);
+        pass.draw(0..3, 0..1);
+    }
+    queue.submit([encoder.finish()]);
+}
+
+fn observe(device: &wgpu::Device, queue: &wgpu::Queue, slope: f32, kind: u8) -> Vec<f32> {
     let pipeline = pipeline(device);
     let mut samples = [0_f32; 44];
     let identity = glam::Mat4::IDENTITY.to_cols_array();
@@ -88,42 +187,10 @@ fn observe(device: &wgpu::Device, queue: &wgpu::Queue, slope: f32) -> Vec<f32> {
         sample_count: 1,
         dimension: wgpu::TextureDimension::D2,
         format: wgpu::TextureFormat::Depth32Float,
-        usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+        usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::RENDER_ATTACHMENT,
         view_formats: &[],
     });
-    for (layer, gap) in [0.05, 0.4].into_iter().enumerate() {
-        let bytes: Vec<_> = (0..SIDE * SIDE)
-            .flat_map(|pixel| {
-                let x = 2.0 * ((pixel % SIDE) as f32 + 0.5) / SIDE as f32 - 1.0;
-                let receiver = 0.25 + slope * x;
-                let depth = receiver + if pixel % SIDE >= SIDE / 2 { gap } else { 0.0 };
-                depth.clamp(0.0, 1.0).to_le_bytes()
-            })
-            .collect();
-        queue.write_texture(
-            wgpu::TexelCopyTextureInfo {
-                texture: &depth,
-                mip_level: 0,
-                origin: wgpu::Origin3d {
-                    x: 0,
-                    y: 0,
-                    z: u32::try_from(layer).expect("two layers"),
-                },
-                aspect: wgpu::TextureAspect::DepthOnly,
-            },
-            &bytes,
-            wgpu::TexelCopyBufferLayout {
-                offset: 0,
-                bytes_per_row: Some(SIDE * 4),
-                rows_per_image: Some(SIDE),
-            },
-            wgpu::Extent3d {
-                width: SIDE,
-                height: SIDE,
-                depth_or_array_layers: 1,
-            },
-        );
-    }
+    render_planes(device, queue, &depth, slope, kind);
     let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
         compare: Some(wgpu::CompareFunction::GreaterEqual),
         ..Default::default()
@@ -228,9 +295,24 @@ fn finite_sun_shadow_width_tracks_blocker_distance_and_tilted_receivers() {
             .request_device(&wgpu::DeviceDescriptor::default())
             .await
             .unwrap();
+        let clear_scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
+        assert!(
+            observe(&device, &queue, 3.0, 1)
+                .iter()
+                .all(|x| (*x - 1.0).abs() < 1e-6),
+            "grazing receiver planes never turn empty depth into a blocker"
+        );
+        assert!(clear_scope.pop().await.is_none());
+        let narrow_scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
+        let narrow = observe(&device, &queue, 0.0, 2);
+        assert!(
+            narrow[SAMPLES + SAMPLES / 2] > 0.8,
+            "a narrow central caster contributes its finite-source penumbra"
+        );
+        assert!(narrow_scope.pop().await.is_none());
         for slope in [0.0, 0.4] {
             let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
-            let observed = observe(&device, &queue, slope);
+            let observed = observe(&device, &queue, slope, 0);
             let error = scope.pop().await;
             assert!(error.is_none(), "{error:?}");
             for (cascade, gap) in [0.05, 0.4].into_iter().enumerate() {

@@ -257,13 +257,14 @@ fn cascade_visibility(index: u32, receiver: ShadowReceiver) -> f32 {
     var gap_sum = 0.0;
     var blockers = 0.0;
     for(var i=0u;i<16u;i++) {
-        let q=uv+SHADOW_DISK[i*2u]*search_radius;
+        let offset=select(SHADOW_DISK[i*2u],vec2(0.0),i==0u);
+        let q=uv+offset*search_radius;
         if any(q<vec2(0.0)) || any(q>vec2(1.0)) { continue; }
         let texel=clamp(vec2<i32>(q*extent),vec2(0),vec2<i32>(extent)-1);
         let tap=(vec2<f32>(texel)+0.5)/extent;
         let depth=textureLoad(shadow_maps,texel,i32(index),0);
         let receiver_depth=reference+dot(depth_gradient,tap-uv);
-        if depth>receiver_depth {
+        if depth>0.0 && depth>receiver_depth {
             gap_sum+=max(0.0,depth-p.z);
             blockers+=1.0;
         }
@@ -296,7 +297,7 @@ fn shadow_filter(index:u32,uv:vec2<f32>,reference:f32,gradient:vec2<f32>,extent:
         let offset = vec2(f32(i & 1u),f32(i >> 1u));
         let tap = (clamp(first+offset,vec2(0.0),extent-1.0)+0.5)/extent;
         let weight = mix(1.0-blend,blend,offset);
-        let tap_depth = reference+dot(gradient,tap-uv);
+        let tap_depth = max(0.0,reference+dot(gradient,tap-uv));
         visible += weight.x*weight.y*textureSampleCompareLevel(shadow_maps,shadow_sampler,tap,i32(index),tap_depth);
     }
     return visible;
