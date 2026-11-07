@@ -1,12 +1,15 @@
 # Thrum V1 handoff
 
-Updated 7 November 2026 for the finite-Sun penumbra landing by Claude, root while Codex is paused. Start from remote `main` and
+Updated 7 November 2026 by Claude at handback to Codex. Start from remote `main` and
 [the build plan](../../BUILD-PLAN.md). The older three-band baseline is `7236b38`. This file
 travels with the candidate, so use its enclosing commit to identify the exact tested source.
 The Codex goal remains active. Its attachment is
 `/Users/ryannel/.codex/attachments/86327eba-9dfd-4eff-965e-5bb0a2134938/goal-objective.md`.
 
-## Claude root session (7–12 November)
+## Claude root session (6–7 November)
+
+**Handback:** see [the Codex handback](CODEX-HANDBACK-2026-11-07.md) for everything landed, what is verified,
+open items in priority order, the G6 boundary state and owner questions. Codex resumes as root.
 
 The Codex agent is paused for quota until 12 November. A Claude session acts as root
 meanwhile and writes a handback for Codex before then. Its oversight log is
@@ -103,6 +106,8 @@ crossing clip](g3s-first-light/solar-crossing.mp4) runs at 24 sampled frames/s.
   item; a per-frame horizon-angle map is the scalable form.
 - Noon sky banding was 8-bit contouring; the display now dithers
   ([evidence](G3S-DISPLAY-DITHER-2026-11-07.md)).
+- Low-Sun in-scatter over terrain hidden from the Sun is now shadowed
+  ([evidence](G3S-SHADOWED-AERIAL-2026-11-07.md)); its cost is unmeasured.
 - The penumbra's +18% pass-sum. Gathered fetches and a lit early-out are untried.
 
 **G7.** Chrome now draws the cooked valley fetched from `thrum-cook watch --serve`
