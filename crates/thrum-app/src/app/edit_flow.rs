@@ -40,6 +40,15 @@ impl<E: Edits> EditFlow<E> {
         true
     }
 
+    /// Add edits to the frame about to be submitted, without asking for another frame.
+    pub(super) fn carry(&mut self, edits: E) {
+        if !edits.is_empty() {
+            self.pending = self.pending.merge(edits);
+            // This request carries them; a reply to an older request cannot revert them.
+            self.edits_queued_at = self.requested;
+        }
+    }
+
     /// A replacement device is ready: queue the whole desired state, which also covers
     /// edits carried by a frame cancelled during device loss.
     pub(super) fn recovered(&mut self, replay: E) {

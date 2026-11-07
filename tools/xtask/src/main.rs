@@ -1,6 +1,12 @@
 //! Small host-only contributor command runner.
 
-use std::{env, error::Error, io::Write, path::Path, process::Command};
+use std::{
+    env,
+    error::Error,
+    io::Write,
+    path::{Path, PathBuf},
+    process::Command,
+};
 
 type TaskResult = Result<(), Box<dyn Error>>;
 
@@ -133,6 +139,66 @@ fn baseline_inventory() -> TaskResult {
     Ok(())
 }
 
+/// Build the starter and the cooker, cook the starter's assets into a store under the build
+/// directory, keep G5's watcher cooking edits while the starter's window is open, and stop
+/// the watcher when the window closes or the starter fails. `THRUM_STARTER_ASSETS` selects
+/// another source folder, such as a copy to experiment on.
+fn starter(root: &Path) -> TaskResult {
+    if !cfg!(target_os = "macos") {
+        return Err("the starter's window runs on macOS only".into());
+    }
+    cargo(&[
+        "build",
+        "--locked",
+        "--offline",
+        "--release",
+        "--package",
+        "thrum-starter",
+        "--package",
+        "thrum-cook",
+        "--bins",
+    ])?;
+    let target = env::var_os("CARGO_TARGET_DIR").map_or_else(|| root.join("target"), PathBuf::from);
+    let release = target.join("release");
+    let cook = release.join("thrum-cook");
+    let source = env::var_os("THRUM_STARTER_ASSETS")
+        .map_or_else(|| root.join("examples/starter/assets"), PathBuf::from);
+    let store = target.join("starter/store");
+    let status = Command::new(&cook)
+        .arg("cook")
+        .arg(&source)
+        .arg(&store)
+        .status()?;
+    if !status.success() {
+        return Err(format!(
+            "cooking {} into {} failed ({status}); fix the asset the cooker names and rerun ./dev starter",
+            source.display(),
+            store.display()
+        )
+        .into());
+    }
+    let mut watcher = Command::new(&cook)
+        .arg("watch")
+        .arg(&source)
+        .arg(&store)
+        .spawn()?;
+    let ran = Command::new(release.join("thrum-starter"))
+        .env("THRUM_ASSET_STORE", &store)
+        .env(
+            "THRUM_PARAMS",
+            root.join("examples/starter/starter.params.json"),
+        )
+        .status();
+    // Stop the watcher however the starter ended.
+    let stopped = watcher.kill().and_then(|()| watcher.wait());
+    let ran = ran?;
+    stopped.map_err(|error| format!("stopping thrum-cook watch: {error}"))?;
+    if !ran.success() {
+        return Err(format!("thrum-starter failed ({ran}); its message is above").into());
+    }
+    Ok(())
+}
+
 #[expect(
     clippy::print_stdout,
     reason = "the contributor CLI's help command intentionally writes to stdout"
@@ -153,12 +219,13 @@ fn main() -> TaskResult {
     }
     match args.first().map_or("help", String::as_str) {
         "help" | "--help" | "-h" => println!(
-            "Thrum contributor commands:\n  check                  Repository guard, guard tests, fmt, Clippy, Rust tests (including Mac Metal), game Wasm Clippy\n  check-docs             Links, metadata, design hashes and crate policy\n  baseline-inventory     Run G0 fixed budget baselines and list absent consumers on the M-series Mac\n  check-web              Lint/compile the V1 game for wasm32-unknown-unknown\n  check-mobile-core      Compile the portable core for ARM64 iOS, iOS simulator and Android\n  fmt                    Apply rustfmt\n  refresh-design-hashes  Refresh current digests after reviewing design changes"
+            "Thrum contributor commands:\n  check                  Repository guard, guard tests, fmt, Clippy, Rust tests (including Mac Metal), game Wasm Clippy\n  check-docs             Links, metadata, design hashes and crate policy\n  baseline-inventory     Run G0 fixed budget baselines and list absent consumers on the M-series Mac\n  check-web              Lint/compile the V1 game for wasm32-unknown-unknown\n  check-mobile-core      Compile the portable core for ARM64 iOS, iOS simulator and Android\n  fmt                    Apply rustfmt\n  starter                Cook and watch the starter's assets and open its window (macOS)\n  refresh-design-hashes  Refresh current digests after reviewing design changes"
         ),
         "check-docs" => python(&["scripts/repo_check.py"])?,
         "baseline-inventory" => baseline_inventory()?,
         "refresh-design-hashes" => python(&["scripts/design_hashes.py", "--write"])?,
         "fmt" => cargo(&["fmt", "--all"])?,
+        "starter" => starter(&root)?,
         "check-web" => check_web()?,
         "check-mobile-core" => {
             for target in [
