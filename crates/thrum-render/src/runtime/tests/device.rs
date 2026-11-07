@@ -1,5 +1,5 @@
 use super::*;
-use crate::{atmosphere::AtmosphereFrame, present::SurfaceProfile};
+use crate::{atmosphere::AtmosphereFrame, present::SurfaceProfile, synthetic::CullMode};
 use std::{
     cell::Cell,
     sync::{Arc, atomic::Ordering},
@@ -80,13 +80,25 @@ pub(super) async fn gpu(
 }
 
 async fn host(capabilities: &DeviceCapabilities, queue: &wgpu::Queue, policy: Policy) -> Host {
+    let shadows = !policy.empty;
+    culled_host(capabilities, queue, policy, CullMode::Direct, shadows).await
+}
+
+async fn culled_host(
+    capabilities: &DeviceCapabilities,
+    queue: &wgpu::Queue,
+    policy: Policy,
+    camera_culling: CullMode,
+    sun_shadows: bool,
+) -> Host {
     let source = SourceTick {
         epoch: 5,
         tick: 0,
         timeline: 3,
     };
     let mut scene = SyntheticScene::grid(1).expect("scene");
-    scene.sun_shadows = !policy.empty;
+    scene.sun_shadows = sun_shadows;
+    scene.camera_culling = camera_culling;
     FrameHost::new(
         capabilities,
         queue,
@@ -176,6 +188,68 @@ fn pending_slots(host: &mut Host) {
             .expect("actual slot submission");
     }
     assert_eq!(host.pending_frames(), IN_FLIGHT);
+}
+
+/// Collect one timed report per in-flight slot and return each frame's pass buckets.
+fn drain_timed(host: &mut Host) -> Vec<[f64; 11]> {
+    let deadline = std::time::Instant::now() + Duration::from_secs(10);
+    let mut frames = Vec::with_capacity(IN_FLIGHT);
+    while frames.len() < IN_FLIGHT {
+        if let Some(sample) = host.poll_completed().expect("poll Metal frame") {
+            assert!(
+                !sample.timing_fault,
+                "Metal frame timestamp collection failed"
+            );
+            frames.push(sample.gpu_pass_ns.expect("real Metal pass timestamps"));
+        }
+        assert!(
+            std::time::Instant::now() < deadline,
+            "Metal frame report timed out"
+        );
+        std::thread::yield_now();
+    }
+    assert_eq!(host.pending_frames(), 0);
+    frames
+}
+
+#[test]
+#[cfg(target_os = "macos")]
+fn metal_frustum_timestamps_drain_populated_then_empty_prefixes() {
+    // Without Sun shadows: this one-cube fixture's shadow passes return invalid
+    // Metal stamps in FrameHost for Direct as well (pre-existing, reported to root).
+    pollster::block_on(async {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let (capabilities, queue) = gpu(&instance, 7).await;
+        let mut host = culled_host(
+            &capabilities,
+            &queue,
+            Policy::default(),
+            CullMode::Frustum,
+            false,
+        )
+        .await;
+        assert_eq!(host.prepared.camera_culling(), CullMode::Frustum);
+        pending_slots(&mut host);
+        assert_eq!(host.prepared.active_instance_count(), 1);
+        let populated = drain_timed(&mut host);
+        for passes in &populated {
+            assert!(passes[3] > 0.0, "forward includes the visibility pass");
+            assert!(passes[4] > 0.0, "the populated prefix publishes history");
+        }
+        // The next submissions on the same slots carry an empty active prefix:
+        // visibility still dispatches its offsets pass and stays timed.
+        host.source_mut().empty = true;
+        pending_slots(&mut host);
+        assert_eq!(host.prepared.active_instance_count(), 0);
+        let empty = drain_timed(&mut host);
+        for passes in &empty {
+            assert!(
+                passes[3] > 0.0,
+                "visibility and the sky-free forward pass are timed"
+            );
+            assert_eq!(passes[4], 0.0, "there is no transform history to publish");
+        }
+    });
 }
 
 #[test]

@@ -15,7 +15,8 @@ const WORKGROUP: u32 = 256;
 /// `DrawIndexedIndirectArgs` bytes.
 pub(crate) const ARGS_BYTES: u64 = 20;
 const MESH_LEN: usize = 48;
-const PARAMS_BYTES: u64 = 16;
+const PARAMS_LEN: usize = 16;
+const PARAMS_BYTES: u64 = PARAMS_LEN as u64;
 const VIEW_BYTES: u64 = 160;
 /// Pipeline role inside the synthetic closure.
 pub(crate) const ROLE: u32 = 0x5649;
@@ -180,8 +181,9 @@ impl VisibilityPrepared {
     }
 
     fn write_params(&self, queue: &wgpu::Queue) {
-        let words = [self.active, self.groups(), 0, 0];
-        let bytes: Vec<u8> = words.iter().flat_map(|word| word.to_le_bytes()).collect();
+        let mut bytes = [0_u8; PARAMS_LEN];
+        bytes[..4].copy_from_slice(&self.active.to_le_bytes());
+        bytes[4..8].copy_from_slice(&self.groups().to_le_bytes());
         queue.write_buffer(&self.params, 0, &bytes);
     }
 
