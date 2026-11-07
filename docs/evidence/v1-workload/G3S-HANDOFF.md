@@ -52,10 +52,21 @@ The Codex goal remains active. Its attachment is
   (1-minute load 21.52–22.26). The discard case passes in the revised
   workspace check, but the fetched/mapped test intermittently differs
   above tolerance at x211/y249. The sampled main image pair matches.
-  Keep the experiment on `codex/g3s-horizon-graph-wip` and isolate the
-  mismatch with both modes in one build. Chrome, camera snaps, and
-  live motion remain open. Reconcile the separate star graph on main
-  without this horizon experiment.
+  The composed prototype over `ce848011` reproduces that exact
+  intermittent 16-code red difference. Its 1× 300-frame Metal pairs
+  reduce the connected spur's peak stripe contrast from 100.36 to
+  75.38 red codes. The independent review still sees a one-frame
+  34-code drop at frames 83→84. The visibility capture shows the
+  far cascade dropping to zero while the horizon still sees part
+  of the disk. The four interleaved 100-frame GPU pass-sum medians
+  were 4.06/4.48/4.49/4.32 ms (taps/cells/cells/taps, load 28.34).
+  A distance-partition diagnostic reduces that drop from 34 to 14
+  codes. It limits the last cascade to 96 m of horizontal blocker
+  distance with 32 m of overlap into the horizon interval. The exact
+  triangle ray at the centre of the affected patch shows 3.94%→2.18%
+  disk visibility across the two frames. The partition still needs
+  near-blocker, solar-transition and cooked parity checks.
+  Keep the prototype separate. Chrome and camera snaps remain open.
   [Maximum Mipmaps](https://pure.mpg.de/pubman/item/item_1325622_5/component/file_3590464/i3d08.pdf).
   Exact builds, raw rows and clips are in `tmp/g3s-sunset-lip/`. The
   diagnostic source and rerun command are on `codex/g3s-horizon-metal-wip`.
