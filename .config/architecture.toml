@@ -17,6 +17,13 @@ manifest = "crates/thrum-controls/Cargo.toml"
 # G6 typed demo controls: one model, AppKit and DOM views; no game schema, no I/O.
 allowed_workspace_dependencies = []
 
+[packages.thrum-app]
+manifest = "crates/thrum-app/Cargo.toml"
+# G6 native macOS shell: window, Metal device recipe, display link, render owner, pause,
+# device recovery, demo-control panel and frames report. Generic over a game's runtime; it
+# names no game types and no content package.
+allowed_workspace_dependencies = ["thrum-controls", "thrum-core", "thrum-render"]
+
 [packages.thrum-asset]
 manifest = "crates/thrum-asset/Cargo.toml"
 # Runtime half of G5: shipping games read cooked products through this package only.
@@ -55,7 +62,7 @@ allowed_workspace_dependencies = []
 manifest = "examples/v1-game/Cargo.toml"
 # thrum-asset-gpu draws cooked products (a mapped store natively, a fetched generation on wasm32); thrum-cook is a dev-dependency
 # only, for the in-game G5 tests and bench.
-allowed_workspace_dependencies = ["thrum-asset", "thrum-asset-gpu", "thrum-content-runtime", "thrum-controls", "thrum-cook", "thrum-core", "thrum-render"]
+allowed_workspace_dependencies = ["thrum-app", "thrum-asset", "thrum-asset-gpu", "thrum-content-runtime", "thrum-controls", "thrum-cook", "thrum-core", "thrum-render"]
 implicit_dependencies = { wasm-bindgen-futures = "async wasm_bindgen export expansion calls wasm_bindgen_futures" }
 
 [packages.v1-game-ios]
@@ -142,19 +149,19 @@ target_cost = "Minimal std/f32 profile with no optional integration dependencies
 [external_dependencies.winit]
 requirement = "=0.30.13"
 license = "Apache-2.0"
-purpose = "Native iOS and Android window, touch and application event integration for the initial mobile game shell, plus the V1 macOS surface diagnostic"
+purpose = "Native iOS and Android window, touch and application event integration for the initial mobile game shell, plus the thrum-app macOS window shell that hosts the V1 surface diagnostic"
 target_cost = "Target-specific platform glue and transitive closure; macOS surface callback and startup measured with the V1 scene, first iOS static-library compile measured separately, Android native build requires NDK and GameActivity packaging"
 
 [external_dependencies.objc2]
 requirement = "=0.6.5"
 license = "MIT OR Apache-2.0"
-purpose = "Narrow macOS AppKit display-link callback and per-view Objective-C bridge in the V1 window; the thrum-controls panel's target/action class"
+purpose = "Narrow macOS AppKit display-link callback and per-view Objective-C bridge in the thrum-app window shell; the thrum-controls panel's target/action class"
 target_cost = "macOS-only; already transitive in the locked Metal closure; callback sends one event without frame work"
 
 [external_dependencies.objc2-foundation]
 requirement = "=0.3.2"
 license = "MIT OR Apache-2.0"
-purpose = "Main-thread NSObject target and run-loop ownership for the macOS view display link; NSString and geometry for the controls panel"
+purpose = "Main-thread NSObject target and run-loop ownership for the thrum-app macOS view display link; NSString and geometry for the controls panel"
 target_cost = "macOS-only framework binding; no engine or iPhone runtime edge"
 
 [external_dependencies.objc2-app-kit]
@@ -166,7 +173,7 @@ target_cost = "macOS-only framework binding with default features off; built onl
 [external_dependencies.objc2-quartz-core]
 requirement = "=0.3.2"
 license = "MIT OR Apache-2.0"
-purpose = "CADisplayLink target timestamps and 120 Hz frame-rate range on the Mac display"
+purpose = "CADisplayLink target timestamps and 120 Hz frame-rate range on the Mac display, owned by thrum-app"
 target_cost = "macOS-only framework binding; Winit proxy traffic and callback allocations remain open G3b frame-thread measurements"
 
 [external_dependencies.wgpu]

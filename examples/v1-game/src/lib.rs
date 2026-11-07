@@ -15,6 +15,8 @@ mod projection;
 mod scene;
 mod showcase;
 pub mod simulation;
+#[cfg(target_os = "macos")]
+mod window;
 
 #[cfg(target_arch = "wasm32")]
 pub use browser::{BrowserGame, CookedValley, create_browser_game, fetch_cooked_valley};
@@ -29,3 +31,5 @@ pub use host::{ThreadedFrameHost, WorldControls};
 pub use projection::{GameProjection, ProjectionGap};
 #[doc(hidden)]
 pub use scene::simulation_with_count;
+#[cfg(target_os = "macos")]
+pub use window::run_window;

@@ -533,8 +533,8 @@
       ]
     },
     "G6_creator_experience": {
-      "implementation": "partial_thrum_controls_typed_model_mac_appkit_panel_and_dom_view_v1_bindings_and_game_layer_parameter_files; open_thrum_app_runner_starter_one_command_shader_reload_gpu_field_overlays_fresh_agent_run",
-      "functional_validation": "thrum_controls_and_v1_binding_unit_tests_in_dev_check; panel_check_drives_real_AppKit_target_action_offscreen; Chrome_controls_params_sky_reflections_valley_valley_recovery_device_recovery_retry_cases_pass; Mac_THRUM_PARAMS_diagnostics_and_paused_apply_hold_world_ticks; independent_main_review_findings_stale_reply_snapback_and_display_scale_nan_being_fixed",
+      "implementation": "partial_thrum_controls_typed_model_mac_appkit_panel_and_dom_view_v1_bindings_and_game_layer_parameter_files_and_macOS_thrum_app_runner; open_starter_one_command_shader_reload_gpu_field_overlays_fresh_agent_run",
+      "functional_validation": "thrum_controls_and_v1_binding_unit_tests_in_dev_check; panel_check_drives_real_AppKit_target_action_offscreen; Chrome_controls_params_sky_reflections_valley_valley_recovery_device_recovery_retry_cases_pass; Mac_THRUM_PARAMS_diagnostics_and_paused_apply_hold_world_ticks; independent_review_findings_fixed_stale_reply_gate_and_edit_replay_across_GPU_replacement_tested; v1_capture_byte_identical_after_runner_move",
       "experienced_quality": "agent_reviewed_offscreen_Mac_panel_and_Chrome_controls_and_parameter_diagnostic; on_screen_Mac_panel_use_open; no_independent_visual_review_yet",
       "platform_performance": {
         "mac": "function_only_window_runs_no_timing_claim",

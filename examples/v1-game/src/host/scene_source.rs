@@ -83,7 +83,7 @@ fn frame_view(
     .map_err(|error| format!("live camera: {error:?}"))
 }
 
-pub(super) struct GameScene {
+pub(crate) struct GameScene {
     pub(super) day_phase_offset: f32,
     pub(super) camera_pitch: f32,
     pub(super) camera_yaw: f32,

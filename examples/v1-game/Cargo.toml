@@ -27,10 +27,7 @@ wgpu = { version = "=30.0.1", default-features = false, features = ["std", "wgsl
 wgpu = { version = "=30.0.1", default-features = false, features = ["metal"] }
 
 [target.'cfg(target_os = "macos")'.dependencies]
-winit = { version = "=0.30.13", default-features = false, features = ["rwh_06"] }
-objc2 = "=0.6.5"
-objc2-foundation = { version = "=0.3.2", default-features = false, features = ["NSObject", "NSRunLoop"] }
-objc2-quartz-core = { version = "=0.3.2", default-features = false, features = ["CABase", "CADisplayLink", "CAFrameRateRange"] }
+thrum-app = { path = "../../crates/thrum-app" }
 
 [target.'cfg(any(target_os = "windows", target_os = "linux", target_os = "android"))'.dependencies]
 wgpu = { version = "=30.0.1", default-features = false, features = ["vulkan"] }

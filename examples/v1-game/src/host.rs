@@ -14,8 +14,9 @@ use thrum_render::{capabilities::DeviceCapabilities, runtime};
 
 mod scene_source;
 mod world;
-use scene_source::GameScene;
-use world::{WorldDriver, WorldPort};
+pub(crate) use scene_source::GameScene;
+use world::WorldDriver;
+pub(crate) use world::WorldPort;
 #[cfg(not(target_arch = "wasm32"))]
 mod world_thread;
 #[cfg(not(target_arch = "wasm32"))]
@@ -23,7 +24,7 @@ use world_thread::WorldClient;
 #[cfg(not(target_arch = "wasm32"))]
 pub use world_thread::WorldControls;
 
-type Runtime = runtime::FrameHost<WorldPort, GameScene>;
+pub(crate) type Runtime = runtime::FrameHost<WorldPort, GameScene>;
 
 /// Prepared V1 game, whose world clock and frame executor belong to the engine.
 pub struct FrameHost {
@@ -241,6 +242,12 @@ impl ThreadedFrameHost {
     pub fn dropped_reports(&self) -> u64 {
         self.inner.dropped_reports()
     }
+
+    /// The engine runtime, for a platform shell that drives it directly.
+    #[cfg(target_os = "macos")]
+    pub(crate) fn into_runtime(self) -> Runtime {
+        self.inner.inner
+    }
 }
 
 impl FrameHost {
@@ -336,47 +343,25 @@ impl FrameHost {
     /// # Errors
     /// Refuses a nonfinite or out-of-range normalized time.
     pub fn set_time_of_day(&mut self, fraction: f32) -> Result<(), String> {
-        let offset = DayCycle::offset_for_time(self.tick(), fraction)
-            .ok_or_else(|| "time of day must be finite and in [0, 1]".to_owned())?;
-        if self.inner.source().day_phase_offset.to_bits() != offset.to_bits() {
-            self.inner.source_mut().day_phase_offset = offset;
-            self.inner.invalidate_history();
-        }
-        Ok(())
+        set_time_of_day(&mut self.inner, fraction)
     }
     /// Current committed solar time: midnight is zero, noon is one half.
     /// This observes the world's clock; display interpolation may lag one tick.
     pub fn time_of_day(&self) -> f32 {
-        DayCycle::time_of_day(self.tick(), self.inner.source().day_phase_offset)
+        time_of_day(&self.inner)
     }
     /// Change the game camera elevation and reset presentation history.
     /// # Errors
     /// Refuses a nonfinite pitch outside the supported scene range.
     pub fn set_camera_pitch(&mut self, radians: f32) -> Result<(), String> {
-        if !radians.is_finite() || !(-0.6..=0.6).contains(&radians) {
-            return Err("camera pitch must be finite and within ±0.6 rad".to_owned());
-        }
-        if self.inner.source().camera_pitch.to_bits() != radians.to_bits() {
-            self.inner.source_mut().camera_pitch = radians;
-            self.inner.invalidate_history();
-        }
-        Ok(())
+        set_camera_pitch(&mut self.inner, radians)
     }
 
     /// Turn the game camera and reset presentation history.
     /// # Errors
     /// Refuses a nonfinite yaw or one outside ±π radians.
     pub fn set_camera_yaw(&mut self, radians: f32) -> Result<(), String> {
-        if !radians.is_finite()
-            || !(-std::f32::consts::PI..=std::f32::consts::PI).contains(&radians)
-        {
-            return Err("camera yaw must be finite and within ±π rad".to_owned());
-        }
-        if self.inner.source().camera_yaw.to_bits() != radians.to_bits() {
-            self.inner.source_mut().camera_yaw = radians;
-            self.inner.invalidate_history();
-        }
-        Ok(())
+        set_camera_yaw(&mut self.inner, radians)
     }
     /// Inspect whether a native scene view can use a free engine slot.
     #[cfg(not(target_arch = "wasm32"))]
@@ -567,6 +552,46 @@ impl FrameHost {
             .capture_pixels()
             .map_err(|error| error.to_string())
     }
+}
+
+/// Change the game-authored day phase and reset presentation history.
+pub(crate) fn set_time_of_day(runtime: &mut Runtime, fraction: f32) -> Result<(), String> {
+    let offset = DayCycle::offset_for_time(runtime.world().tick(), fraction)
+        .ok_or_else(|| "time of day must be finite and in [0, 1]".to_owned())?;
+    if runtime.source().day_phase_offset.to_bits() != offset.to_bits() {
+        runtime.source_mut().day_phase_offset = offset;
+        runtime.invalidate_history();
+    }
+    Ok(())
+}
+
+/// Committed solar time of the runtime's latest world tick.
+pub(crate) fn time_of_day(runtime: &Runtime) -> f32 {
+    DayCycle::time_of_day(runtime.world().tick(), runtime.source().day_phase_offset)
+}
+
+/// Change the game camera elevation and reset presentation history.
+pub(crate) fn set_camera_pitch(runtime: &mut Runtime, radians: f32) -> Result<(), String> {
+    if !radians.is_finite() || !(-0.6..=0.6).contains(&radians) {
+        return Err("camera pitch must be finite and within ±0.6 rad".to_owned());
+    }
+    if runtime.source().camera_pitch.to_bits() != radians.to_bits() {
+        runtime.source_mut().camera_pitch = radians;
+        runtime.invalidate_history();
+    }
+    Ok(())
+}
+
+/// Turn the game camera and reset presentation history.
+pub(crate) fn set_camera_yaw(runtime: &mut Runtime, radians: f32) -> Result<(), String> {
+    if !radians.is_finite() || !(-std::f32::consts::PI..=std::f32::consts::PI).contains(&radians) {
+        return Err("camera yaw must be finite and within ±π rad".to_owned());
+    }
+    if runtime.source().camera_yaw.to_bits() != radians.to_bits() {
+        runtime.source_mut().camera_yaw = radians;
+        runtime.invalidate_history();
+    }
+    Ok(())
 }
 
 #[cfg(test)]

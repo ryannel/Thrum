@@ -17,7 +17,7 @@ use crate::{
 #[cfg(not(target_arch = "wasm32"))]
 use super::world_thread::WorldClient;
 
-pub(super) enum WorldPort {
+pub(crate) enum WorldPort {
     Inline(Box<WorldDriver>),
     #[cfg(not(target_arch = "wasm32"))]
     Threaded(Box<WorldClient>),
@@ -245,7 +245,7 @@ impl thrum_render::runtime::FrameWorld for WorldPort {
 }
 
 /// The game body stays here; scheduling and the fixed clock belong to core.
-pub(super) struct WorldDriver {
+pub(crate) struct WorldDriver {
     pub(super) world: ClockedWorld<GameWorld>,
 }
 
