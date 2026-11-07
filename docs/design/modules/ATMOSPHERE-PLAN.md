@@ -4,8 +4,8 @@ Design: [ATMOSPHERE.md](ATMOSPHERE.md)
 Reviews: Optical design and plan over `a91cdd0e`, final design `f9d0c12a` and plan `c3cc5748` · [optical brief](#optical-review-brief) · initial changes required, final M1 implementation cleared. Frame graph and ownership at the same revisions · [graph brief](#graph-review-brief) · initial changes required, final design cleared. First valley captures, Metal build `dfae5b21` and Chrome Wasm `bc15ea7d` (SHA-256 prefixes) · [capture brief](#capture-review-brief) · held ground view passes, M1 remains open.
 Updated: 2026-11-07
 Milestone: M1 moonless midnight
-Now: the packed profile lights the held Metal and Chrome valley at midnight.
-Next: qualify sampled GPU transport and stored scale, then inspect the upslope view and continuous night transition.
+Now: the held Metal and Chrome valley is legible at midnight. Metal sky, incident meter and finite aerial transport pass the f64 oracle.
+Next: prove storage across real attachments and frame reuse, then capture the upslope view and continuous night transition.
 Blocked: none. G3s stays open.
 
 ## M1 The valley remains legible at moonless midnight: in progress
@@ -22,9 +22,10 @@ Work
 - [x] Reproduced a completely black midnight frame on the actual cooked valley at a91cdd0e. The scalar range check confirms the fixed fp16 scale loses a 10% Lambert surface.
 - [x] The independently stepped scalar direct-plus-scatter probe resolves the positive-elevation peak and both limits of the curved horizon at 0, 1.8 and 15 km. The denser quadrature changes the sampled radiance by at most 0.063%.
 - [x] A second scalar reference includes the finite shell, both components, the engine phase function, ground irradiance and finite paths. Raw source and rows are in `tmp/g3s-showcase/night-design/`.
-- [x] The scratch RG16Float profile matches the dense reference on 59 distinct sky/ground rays, six irradiance rows and three finite paths. Maximum errors are 0.381%, 0.028% and 0.060% respectively. The expanded sweep includes 2 m and 6 m near-tangent rays. These are packed CPU reads. The GPU sampling and scene checks remain open.
+- [x] The scratch RG16Float profile matches the dense reference on 59 distinct sky/ground rays, six irradiance rows and three finite paths. Maximum errors are 0.381%, 0.028% and 0.060% respectively. The expanded sweep includes 2 m and 6 m near-tangent rays. These are packed CPU reads.
 - [x] Wire the night channel into sky, diffuse, reflection and finite aerial transport. Connect the per-view exposure sample to all forward colour writers. The GPU meter test reaches −12 EV100 and preserves a low-light arithmetic control.
-- [ ] Prove alpha decoding, interpolated paths, and scale recovery on reused slots and actual scene attachments. Compare enabled and disabled nightglow through the same sky, diffuse, specular and aerial consumers.
+- [x] Compare the production Metal sky, incident reduction and finite aerial decoder to the f64 reference. Toggle the source through the existing graph and check that its dependent caches refresh. [Observations](../../evidence/v1-workload/G3S-HANDOFF.md#current-checkpoint).
+- [ ] Verify stored-scale recovery on reused slots and actual scene attachments. Compare held nightglow-off and on scenes, including the specular response.
 - [ ] Capture and inspect actual valley sequences. Review the raw data and record results.
 
 ## M2 Stars emerge as the observer turns and time advances: pending

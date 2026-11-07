@@ -1,6 +1,7 @@
 //! A complete matched-medium observation grid. This reports disagreement and
 //! sampling uncertainty; passing it does not qualify physical sky accuracy.
 
+mod night;
 mod query;
 mod readback;
 

@@ -89,6 +89,27 @@ The Codex goal remains active. Its attachment is
   valley reproduced the reviewed midnight PNG byte for byte. The new meter's
   lower EV limit is exercised in the GPU arithmetic test.
   The real 1% Lambert attachment proof and reused-slot test remain open.
+- The production Metal sky sampler agrees with the dense f64 reference to
+  0.413% across five rays and both horizon limits at 0, 1.8 and 15 km.
+  Horizontal night irradiance differs by at most 0.087%. Toggling the
+  source leaves the Sun's RGB sky LUT byte-identical and changes diffuse SH.
+  The shipping aerial texture and composite agree to 0.014% at 1, 10 and
+  30 km, using interpolated depths. The real scene graph rebuilds sky, diffuse,
+  aerial and every reflection mip on source changes, then resumes caching.
+  These are Metal tests of the named approximation. Reflection pixels and
+  the scene-attachment proof remain open. Raw rows and checks are in
+  `tmp/g3s-showcase/night-design/m1-transport/`.
+- Chrome's paused cooked valley was sampled every 0.11 solar hours from
+  18.3 to 22.3 h, with a separate +12° midnight view. The foreground sample
+  falls from mean RGB code 98.56 to 24.91. The upper sky drops to 61.14 at
+  18.86 h, rises to 65.78 at 19.41 h, then settles at 65.21. Compare raw
+  radiance and incident EV before judging that rise. The first run stopped
+  presenting when its tab became hidden. The retry brings the qualification
+  tab forward through CDP and passes. Use
+  `node tmp/g3s-showcase/night-design/m1-transport/chrome-late-twilight-front.mjs --case valley --output <new-directory>`
+  with the built default page. The sampled clip, contact sheet and pixel
+  rows are in `m1-transport/chrome-late-front/`. These are held edits.
+  Record live motion and the corresponding Metal upslope capture next.
 - Raw files in `tmp/g3s-showcase/night-design/`: native `night-first/`, Chrome
   `m1-chrome-valley/` and `m1-integrated-chrome/`, the workspace log
   `m1-integrated-dev-check.log`, scalar reference `mixed-2.csv`, and checked profile
