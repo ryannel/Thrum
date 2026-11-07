@@ -552,6 +552,9 @@ fn equal_depth_ties_follow_the_early_phase_when_a_lower_slot_enters_late() {
             let (reference, culled) = Box::pin(equal_depth_case(entering)).await;
             changed.push(differing(&reference, &culled));
         }
+        eprintln!(
+            "pixels changed against Direct with slot 0, then slot 1, entering late: {changed:?}"
+        );
         assert_eq!(
             changed[1], 0,
             "a higher slot entering late keeps Direct order"
