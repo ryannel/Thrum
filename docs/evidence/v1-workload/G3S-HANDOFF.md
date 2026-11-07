@@ -80,7 +80,10 @@ The Codex goal remains active. Its attachment is
   the finite-shell reference in `tmp/g3s-showcase/night-design/`. Run
   `cc -O3 mixed.c -lm -o mixed && ./mixed 2` in that directory. The program
   gives absolute luminance, ground irradiance and finite-path in-scatter.
-  The next step is to generate and verify the compact profile against it.
+  Rebuild the 24 KiB profile prototype with `cc -O3 profile.c -lm -o profile`,
+  then run `./profile earth-night-rg16f.bin > profile.csv` and
+  `python3 compare-profile.py`. The CPU-packed comparison passes. Next bind
+  it in the atmosphere graph and verify the GPU consumers.
 
 ## Exposure audit decision
 

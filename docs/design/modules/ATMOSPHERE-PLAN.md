@@ -2,8 +2,8 @@
 
 Design [ATMOSPHERE.md](ATMOSPHERE.md) · Updated 2026-11-07
 Milestone: M1 moonless midnight
-Now: the design passed independent review. The finite-shell and finite-path scalar references are ready.
-Next: generate the compact mixed-background profile and qualify the GPU storage path.
+Now: the packed 24 KiB profile passes the scalar reference.
+Next: bind it in the atmosphere graph and qualify storage and scene lighting on GPU.
 Blocked: none. G3s stays open.
 
 ## M1 The valley remains legible at moonless midnight: in progress
@@ -20,7 +20,7 @@ Work
 - [x] Reproduced a completely black midnight frame on the actual cooked valley at a91cdd0e. The scalar range check confirms the fixed fp16 scale loses a 10% Lambert surface.
 - [x] The independently stepped scalar direct-plus-scatter probe resolves the positive-elevation peak and both limits of the curved horizon at 0, 1.8 and 15 km. The denser quadrature changes the sampled radiance by at most 0.063%.
 - [x] A second scalar reference includes the finite shell, both components, the engine phase function, ground irradiance and finite paths. Raw source and rows are in `tmp/g3s-showcase/night-design/`.
-- [ ] Build the compact mixed-background profile against the converged scalar reference.
+- [x] The scratch RG16Float profile matches the dense reference on 29 distinct sky/ground rays, three irradiance rows and three finite paths. Maximum errors are 0.213%, 0.028% and 0.060% respectively. These are packed CPU reads. The GPU sampling and scene checks remain open.
 - [ ] Wire the night channel into sky, diffuse, reflection and finite aerial transport. Prove alpha decoding, including interpolated paths and cooked material blending, on Metal and Chrome. Verify the solar-only outputs are unaffected.
 - [ ] Connect GPU exposure to all forward colour writers and reconcile the policy with the render spec. Prove the lower EV clamp is reachable, daylight behavior stays intact and a recycled slot uses its own scale.
 - [ ] Capture and inspect actual valley sequences. Review the raw data and record results.
