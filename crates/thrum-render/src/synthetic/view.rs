@@ -175,7 +175,9 @@ impl SyntheticView {
 
     /// Darken the incident meter's target below daylight, following the
     /// Krawczyk et al. (2005) key-value curve, so twilight reads dim rather
-    /// than metered back to mid-grey. Daylight above 1,000 lux is unchanged.
+    /// than metered back to mid-grey. A smooth shoulder moderates additional
+    /// gain at deep twilight and keeps the dim HDR storage scale. Daylight
+    /// above 1,000 lux is unchanged.
     /// # Errors
     /// Refuses a view without an incident meter.
     pub fn with_low_light_adaptation(mut self) -> Result<Self, RenderError> {
