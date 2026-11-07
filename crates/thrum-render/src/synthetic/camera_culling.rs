@@ -14,6 +14,10 @@ use crate::graph::{
 };
 pub use crate::visibility::CullMode;
 use crate::visibility::{self, MeshRecord, VisibilityPrepared, VisibilityTarget};
+pub use stats::CullingCounts;
+pub(super) use stats::{CullingStats, STATS_PASS};
+
+mod stats;
 
 /// Stable mesh row 0: the diagnostic cube's index range and local bounds.
 const CUBE_MESH: MeshRecord = MeshRecord {
@@ -75,8 +79,9 @@ pub(super) fn vertex_entry(mode: CullMode) -> &'static str {
 }
 
 impl PreparedSynthetic {
-    /// Frustum only: declare the compute pass and the forward reads of its
-    /// visible list (storage) and arguments (indirect).
+    /// Frustum only: declare the compute pass, the untimed copy of its drawn
+    /// count and the forward reads of its visible list (storage) and
+    /// arguments (indirect).
     pub(super) fn append_camera_visibility(
         &self,
         graph: &mut FrameGraph,
@@ -119,6 +124,7 @@ impl PreparedSynthetic {
         ];
         let outputs = prepared.append_graph(graph, reads)?;
         keys.insert(prepared.key());
+        Self::append_camera_stats(graph, &outputs.args)?;
         accesses.extend([
             Access {
                 resource: outputs.visible,

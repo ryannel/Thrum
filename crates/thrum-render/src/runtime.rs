@@ -19,8 +19,8 @@ use crate::{
     extract::{ExtractReport, RenderExtractor, SourceTick},
     present::{PresentationBinding, SurfacePresenter, SurfaceProfile},
     synthetic::{
-        FrameLighting, OffscreenTarget, PreparedSynthetic, SceneApplyReport, SceneTimingLayout,
-        SyntheticScene, SyntheticView, pass_durations,
+        CullMode, CullingCounts, FrameLighting, OffscreenTarget, PreparedSynthetic,
+        SceneApplyReport, SceneTimingLayout, SyntheticScene, SyntheticView, pass_durations,
     },
     timing::{GpuTimings, TimingError},
 };
@@ -200,6 +200,10 @@ pub struct FrameSample {
     pub surface_presented: bool,
     /// The GPU frame completed but its optional timing batch was unusable.
     pub timing_fault: bool,
+    /// Instances camera culling drew, read back on completion without
+    /// timestamps. `None` for Direct, which lists nothing, and when the
+    /// readback failed.
+    pub camera_culling: Option<CullingCounts>,
     /// Records whose changed ABI bytes were enqueued for upload.
     pub uploaded_rows: u32,
     /// Queue payload bytes for this update.
@@ -702,6 +706,12 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.extractor.invalidate_history();
     }
 
+    /// The camera culling mode the prepared renderer runs; it survives
+    /// surface resize and device replacement.
+    pub fn camera_culling(&self) -> CullMode {
+        self.prepared.camera_culling()
+    }
+
     /// Number of optional views skipped because all GPU packet slots were held.
     pub fn dropped_views(&self) -> u64 {
         self.dropped_views
@@ -1064,6 +1074,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 gpu_contribution_ns: None,
                 surface_presented: false,
                 timing_fault: false,
+                camera_culling: None,
                 uploaded_rows: u32::try_from(uploaded.changed_rows).unwrap_or(u32::MAX),
                 uploaded_bytes: uploaded.bytes,
                 moving: u32::try_from(moving).unwrap_or(u32::MAX),
@@ -1187,6 +1198,10 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         let done = Arc::clone(&slot.render_done);
         self.queue
             .on_submitted_work_done(move || done.store(true, Ordering::Release));
+        slot.target.map_culling_stats(
+            self.prepared.camera_culling(),
+            self.prepared.active_instance_count(),
+        );
         sample.encode_cpu = encode_cpu + finish_start.elapsed();
         sample.wall = wall_start.elapsed();
         sample.render_cpu = if self.world.is_threaded() {
@@ -1389,10 +1404,13 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             match state {
                 SlotState::Free => {}
                 SlotState::Rendering(mut sample) => {
-                    if !slot.render_done.load(Ordering::Acquire) {
+                    if !slot.render_done.load(Ordering::Acquire)
+                        || !slot.target.culling_stats_settled()
+                    {
                         slot.state = SlotState::Rendering(sample);
                         continue;
                     }
+                    sample.camera_culling = slot.target.take_culling_counts();
                     if !slot.timings.is_enabled() {
                         retain_sample(&mut self.completed, &mut self.dropped_reports, sample);
                         continue;

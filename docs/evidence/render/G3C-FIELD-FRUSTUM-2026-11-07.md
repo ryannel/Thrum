@@ -1,7 +1,9 @@
 # G3c M1: frustum culling in the game's dense field
 
-7 November 2026. Apple M3 Max/Metal, Rust 1.99.1, wgpu 30.0.1. Branch `claude/g3c-gpu-culling` on main
-`a346d60f`.
+7 November 2026. Apple M3 Max/Metal, Rust 1.99.1, wgpu 30.0.1. Each section names the commit or Wasm build it
+was gathered at. The first native rows and the first Chrome rows were gathered on branch `claude/g3c-gpu-culling`
+on main `a346d60f`. The closing reruns come from main `b8f230e7` plus the culling counts readback (branch
+`claude/g3c-stats-main`).
 
 **Labelled contended:** other sessions shared the CPU and GPU throughout (load average 19–21), so p95 tails are
 noisy.
@@ -30,13 +32,20 @@ The four local peers control the last four props. A scripted camera flies a 250 
 
 - The test prepares two game hosts with the same field, one Direct and one Frustum. It drives both through the same
   ticks, waits for each frame to complete, and compares `capture_pixels` RGBA at 640×360.
+- **The culled host really culls.** The test asserts each host's prepared mode, read from the renderer
+  (`FrameHost::camera_culling`). Every Frustum frame reports read-back draw counts, and every Direct frame reports
+  none. At its fewest, the Frustum host must draw more than zero and fewer than half of the active instances. A
+  mutant that drops the mode between `GameSetup` and `SyntheticScene` fails the test before the first tick.
 - **Default release run:** 79 sampled ticks to tick 1,930 (every 30th tick, plus each event and its neighbours).
   Byte-equal. Debug builds, as run by `./dev check`, stop at tick 460 after the first snap turn (about 65 s).
-- **Full path, `THRUM_FIELD_FULL_PATH=1`:** every tick from 1 to 1,930, covering six snap-turn starts and ends,
-  the quarter-loop cut and the turn after it. Byte-equal at all 1,930 ticks.
+- **Full path, `THRUM_FIELD_FULL_PATH=1`:** every tick from 1 to 1,930 of the 3,600-tick loop. This covers three
+  snap turns (each start and end) and the first quarter-loop cut at tick 1801. The next turn starts at tick 2101,
+  outside the run. Byte-equal at all 1,930 ticks. In the closing rerun, the Frustum host drew 21,745 of
+  100,513 at its fewest; its log is `tmp/g3c-boundary/m1/full-path-m1close.log`.
 - **Mode survives resize and device replacement:** `cargo test -p thrum-render --lib culled_modes_survive`
-  (f20a1d15) resizes the surface, then publishes a replacement device. Frustum stays selected, every slot's timing
-  report stays valid, and the replacement's capture equals a Direct host on the same device. A mutant that
+  (f20a1d15) resizes the surface, then publishes a replacement device. Frustum stays selected, and every slot's
+  report carries Frustum's read-back draw counts (closing rerun). The replacement's capture equals a Direct host on
+  the same device. A mutant that
   drops the mode in `device_prepare_inputs` fails the test.
 - **Unit tests:** `cargo test -p v1-game --lib field` checks that the layout is deterministic, that the field spans
   far beyond the view, that walls stand halfway between prop lines, and that every turn and cut is flagged.
@@ -48,12 +57,17 @@ The four local peers control the last four props. A scripted camera flies a 250 
 - **Setup:** 1280×720 with Sun shadows. 1,800 ticks follow 60 warm-up ticks.
 - **Pairing:** both hosts step every tick, in alternating order, and each frame completes before the next is driven.
 - **Whole GPU:** all timed passes except tone. Forward includes the camera visibility pass.
-- **Visibility:** on average 22.0% of instance centres are inside the frustum.
+- **Visibility:** on average 22.0% of instance centres are inside the frustum. This is a CPU proxy. The GPU's
+  read-back draw count in Chrome, which tests bounds rather than centres, is about the same: p50 21,951 of 100,513
+  (21.8%).
 
 | Run | Whole GPU ms p50 (p95), Direct → Frustum | Forward ms p50 (p95), D → F | Paired F−D median |
 | --- | --- | --- | ---: |
 | 1 | 3.141 (3.289) → 2.932 (3.071) | 0.963 (1.099) → 0.740 (0.855) | −0.210 ms |
 | 2 | 3.260 (11.072) → 2.935 (10.658) | 0.980 (3.710) → 0.738 (3.492) | −0.282 ms |
+| 3 | 3.579 (8.978) → 3.362 (8.752) | 1.067 (2.185) → 0.846 (2.033) | −0.253 ms |
+Runs 1 and 2 kept no raw output. Run 3 is the closing rerun, under heavier load (load average 37–42), with its
+raw output in `tmp/g3c-boundary/m1/bench-m1close.txt`. All three runs move the same way by about the same amount.
 
 **Decision:** without `THRUM_CULLING`, the field defaults to Frustum. The fully visible grid keeps Direct, as root's
 Q1 asked. The decision is provisional, because these meshes are 12-triangle boxes. M3 repeats the rows on realistic
@@ -72,6 +86,14 @@ meshes.
 | --- | --- | ---: |
 | 1 | 0.786 (0.918) → 0.590 (0.655) | 0.852 both |
 | 2 | 0.786 (0.918) → 0.590 (0.655) | 0.852 both |
+| 3 | 0.918 (3.473) → 0.786 (2.556) | 0.918 both |
+
+- **Run 3** is the closing rerun, one page each, with the counts readback built in (Wasm `c995d441…` for the oracle
+  build). Its raw reports are in `tmp/g3c-boundary/m1/chrome-m1close/`.
+- **What the page reports:** each page names the prepared renderer's mode (`culling=Frustum` or
+  `culling=Direct`). Frustum also reports its read-back draw counts:
+  `culling_drawn_p50=21951 culling_drawn_p95=23033 culling_active=100513`.
+- **Run 3's tails** are longer than runs 1 and 2. They were taken under heavier contention.
 
 **Pixel equality with Chrome Direct:** `node scripts/check_v1_browser.mjs --case field-oracle`, using the
 caller-owned capture token (Q2c, d0f9cce4).
@@ -79,10 +101,15 @@ caller-owned capture token (Q2c, d0f9cce4).
   parameter file. Both set the same explicit camera at 16 views (eight yaws × two pitches).
 - **Comparison:** each capture's committed tick, extent and device generation are asserted before the bytes
   are compared.
-- **Result:** all 16 views byte-equal at `tick=0;extent=1280x720;generation=1`. This held three times:
+- **Mode check:** the oracle requires the Direct page to report `culling=Direct` with no counts, and the Frustum
+  page to report `culling=Frustum` with fewer drawn than active. Otherwise a lost mode could compare Direct with
+  Direct.
+- **Result:** all 16 views byte-equal at `tick=0;extent=1280x720;generation=1`. This held four times:
   - on the Q2c revision, before it landed;
-  - in root's run of the merged checker on main;
-  - on main `f20a1d15` plus the M2 Occlusion branch (Wasm SHA-256 `df972905…`).
+  - in root's run of the merged checker on main (no retained artifact);
+  - on main `f20a1d15` plus the M2 Occlusion branch (Wasm SHA-256 `df972905…`);
+  - on main `b8f230e7` plus the counts readback, with the mode check (Wasm `c995d441…`). The Frustum page reported
+    drawing p50 20,800 of 100,513. The result is in `tmp/g3c-boundary/m1/chrome-m1close/field-oracle.json`.
 - **Device loss:** on the Frustum page, after a real device destroy, `begin_capture` and an outstanding capture
   are both refused. After the restore button, a fresh capture returns the same tick under generation 2.
 
@@ -99,8 +126,9 @@ caller-owned capture token (Q2c, d0f9cce4).
 ## Not covered
 
 - **Live window:** an attempt presented nothing, because macOS reported the window occluded (screen locked). The
-  headless host above uses the same `FrameHost` path.
-- **Visible-count readback:** needs a renderer seam (Q2b, M2).
+  headless host above uses the same `FrameHost` path. So the title's mode and forward ms, and the native end-of-run
+  report's new forward GPU ms and culling counts, are checked only by reading the code. The Chrome frame report
+  is observed showing the mode, forward GPU ms and draw counts.
 - **Uncontended numbers.**
 - **Realistic meshes:** M3.
 - **Occlusion:** M2.

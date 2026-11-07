@@ -553,6 +553,10 @@ impl FrameHost {
     pub fn pending_frames(&self) -> usize {
         self.inner.pending_frames()
     }
+    /// The camera culling mode the prepared renderer runs.
+    pub fn camera_culling(&self) -> CullMode {
+        self.inner.camera_culling()
+    }
     /// Optional scene views shed by the engine.
     pub fn dropped_views(&self) -> u64 {
         self.inner.dropped_views()

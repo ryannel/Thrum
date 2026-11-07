@@ -1258,8 +1258,12 @@ async function captureFieldOracle(cdp, sessionId, poll, timeout, output, mode, o
   if (!last.paused || field(last.report, 'ticks') !== field(first.report, 'ticks')) throw new Error(`${mode}: world advanced during capture`);
   const ticks = new Set(captures.map(capture => /tick=(\d+)/.exec(capture.identity)?.[1]));
   if (ticks.size !== 1) throw new Error(`${mode}: captures span ticks ${[...ticks]}`);
+  // The prepared renderer's mode and its read-back draw counts, so the oracle cannot compare Direct with Direct.
+  const culling = /culling=(\w+)/.exec(last.report)?.[1];
+  const drawn = /culling_drawn_p50=(\d+)/.exec(last.report)?.[1];
+  const active = /culling_active=(\d+)/.exec(last.report)?.[1];
   const loss = mode === 'field-oracle-frustum' ? await fieldOracleLoss(cdp, sessionId, poll, timeout, game, onDestroy) : undefined;
-  return { captures, loss, scope: 'Paused field captured through the page at fixed views; equality is judged against the other culling mode' };
+  return { captures, culling, drawn: drawn && Number(drawn), active: active && Number(active), loss, scope: 'Paused field captured through the page at fixed views; equality is judged against the other culling mode' };
 }
 
 // A capture outstanding across an actual GPUDevice.destroy: frames run first so its readback can
@@ -1294,6 +1298,8 @@ async function compareFieldOracle(output, results) {
   const direct = results.find(result => result.case === 'field-oracle-direct')?.oracle;
   const frustum = results.find(result => result.case === 'field-oracle-frustum')?.oracle;
   if (!direct || !frustum) throw new Error('Field oracle needs both culling modes');
+  if (direct.culling !== 'Direct' || direct.drawn !== undefined) throw new Error(`Direct page reports ${direct.culling} with drawn ${direct.drawn}`);
+  if (frustum.culling !== 'Frustum' || !(frustum.drawn > 0 && frustum.drawn < frustum.active)) throw new Error(`Frustum page reports ${frustum.culling}, drawn ${frustum.drawn} of ${frustum.active}`);
   const views = [];
   for (const [index, reference] of direct.captures.entries()) {
     const culled = frustum.captures[index];
@@ -1306,7 +1312,7 @@ async function compareFieldOracle(output, results) {
     }
     views.push({ yaw: reference.yaw, pitch: reference.pitch, identity: reference.identity, equal: differing === 0, differing });
   }
-  const result = { case: 'field-oracle', views, scope: 'Chrome Frustum against Chrome Direct, byte-equal RGBA8 captures at the same committed tick, view and extent' };
+  const result = { case: 'field-oracle', views, culling: { direct: direct.culling, frustum: frustum.culling, drawn: frustum.drawn, active: frustum.active }, scope: 'Chrome Frustum against Chrome Direct, byte-equal RGBA8 captures at the same committed tick, view and extent' };
   await fs.writeFile(path.join(output, 'field-oracle.json'), JSON.stringify(result, null, 2));
   const failing = views.filter(view => !view.equal);
   if (failing.length) throw new Error(`Field oracle: Frustum differs from Direct at ${JSON.stringify(failing)}`);

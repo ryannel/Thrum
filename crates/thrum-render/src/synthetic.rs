@@ -20,7 +20,7 @@ use crate::graph::{
 use crate::graph_record::{ExecutableGraph, RecordBinding, RecordFamily};
 use crate::timing::{GpuTimings, TimingError};
 use crate::visibility::{VisibilityPrepared, VisibilityTarget};
-pub use camera_culling::CullMode;
+pub use camera_culling::{CullMode, CullingCounts};
 use glam::Vec3;
 use std::collections::BTreeSet;
 use std::sync::Arc;
@@ -2248,6 +2248,13 @@ impl PreparedSynthetic {
                         frame.tone(pass)
                     })
                 }
+                None if pass.kind == Some(PassKind::Copy)
+                    && pass.name == camera_culling::STATS_PASS =>
+                {
+                    RecordBinding::<SceneFamily>::new(id, PassKind::Copy, |frame, _| {
+                        frame.culling_stats()
+                    })
+                }
                 None if pass.kind == Some(PassKind::Copy) && pass.name == CONTRIBUTION_UPLOAD => {
                     RecordBinding::<SceneFamily>::new(id, PassKind::Copy, |frame, _| {
                         frame.contribution_upload();
@@ -2514,6 +2521,7 @@ pub struct OffscreenTarget {
     shadow: Option<ShadowTarget>,
     air_shadow: Option<AirShadowTarget>,
     visibility: Option<VisibilityTarget>,
+    culling_stats: Option<camera_culling::CullingStats>,
     depth: wgpu::TextureView,
     width: u32,
     height: u32,
@@ -2652,6 +2660,7 @@ impl OffscreenTarget {
             shadow,
             air_shadow,
             visibility,
+            culling_stats: camera_culling::CullingStats::new(device, prepared.camera_culling()),
             depth,
             width,
             height,

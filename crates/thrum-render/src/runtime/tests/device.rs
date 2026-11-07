@@ -192,6 +192,14 @@ fn pending_slots(host: &mut Host) {
 
 /// Collect one timed report per in-flight slot and return each frame's pass buckets.
 fn drain_timed(host: &mut Host) -> Vec<[f64; 11]> {
+    drain_samples(host)
+        .into_iter()
+        .map(|sample| sample.gpu_pass_ns.expect("real Metal pass timestamps"))
+        .collect()
+}
+
+/// Collect one timed report per in-flight slot, in submission order.
+fn drain_samples(host: &mut Host) -> Vec<FrameSample> {
     let deadline = std::time::Instant::now() + Duration::from_secs(10);
     let mut frames = Vec::with_capacity(IN_FLIGHT);
     while frames.len() < IN_FLIGHT {
@@ -200,7 +208,7 @@ fn drain_timed(host: &mut Host) -> Vec<[f64; 11]> {
                 !sample.timing_fault,
                 "Metal frame timestamp collection failed"
             );
-            frames.push(sample.gpu_pass_ns.expect("real Metal pass timestamps"));
+            frames.push(sample);
         }
         assert!(
             std::time::Instant::now() < deadline,
@@ -231,8 +239,19 @@ fn metal_frustum_timestamps_drain_populated_then_empty_prefixes() {
         assert_eq!(host.prepared.camera_culling(), CullMode::Frustum);
         pending_slots(&mut host);
         assert_eq!(host.prepared.active_instance_count(), 1);
-        let populated = drain_timed(&mut host);
-        for passes in &populated {
+        let populated = drain_samples(&mut host);
+        for sample in &populated {
+            let counts = sample.camera_culling.expect("frustum counts");
+            assert_eq!(
+                (counts.mode, counts.active, counts.drawn),
+                (CullMode::Frustum, 1, 1)
+            );
+            assert_eq!(counts.rejected(), 0);
+        }
+        for passes in populated
+            .iter()
+            .map(|sample| sample.gpu_pass_ns.expect("timed"))
+        {
             assert!(passes[3] > 0.0, "forward includes the visibility pass");
             assert!(passes[4] > 0.0, "the populated prefix publishes history");
         }
@@ -241,8 +260,19 @@ fn metal_frustum_timestamps_drain_populated_then_empty_prefixes() {
         host.source_mut().empty = true;
         pending_slots(&mut host);
         assert_eq!(host.prepared.active_instance_count(), 0);
-        let empty = drain_timed(&mut host);
-        for passes in &empty {
+        let empty = drain_samples(&mut host);
+        for sample in &empty {
+            let counts = sample.camera_culling.expect("frustum counts");
+            assert_eq!(
+                (counts.active, counts.drawn),
+                (0, 0),
+                "an empty prefix lists nothing"
+            );
+        }
+        for passes in empty
+            .iter()
+            .map(|sample| sample.gpu_pass_ns.expect("timed"))
+        {
             assert!(
                 passes[3] > 0.0,
                 "visibility and the sky-free forward pass are timed"
@@ -284,8 +314,9 @@ fn culled_modes_survive_surface_resize_and_device_replacement() {
                 "{mode:?} after resize"
             );
             pending_slots(&mut host);
-            for passes in drain_timed(&mut host) {
-                assert!(passes[3] > 0.0, "{mode:?}: culling timed after resize");
+            for sample in drain_samples(&mut host) {
+                let counts = sample.camera_culling.expect("culled frames report counts");
+                assert_eq!(counts.mode, mode, "{mode:?}: counts after resize");
             }
             let mut candidate = host
                 .device_prepare_inputs()
@@ -303,8 +334,9 @@ fn culled_modes_survive_surface_resize_and_device_replacement() {
             // The replacement's slots time every pass of the mode's layout,
             // and its capture equals Direct on the same device.
             pending_slots(&mut host);
-            for passes in drain_timed(&mut host) {
-                assert!(passes[3] > 0.0, "{mode:?}: culling timed after replacement");
+            for sample in drain_samples(&mut host) {
+                let counts = sample.camera_culling.expect("culled frames report counts");
+                assert_eq!(counts.mode, mode, "{mode:?}: counts after replacement");
             }
             assert_eq!(capture(&mut host), expected, "{mode:?} replacement image");
         }
@@ -345,6 +377,7 @@ fn metal_frame_timestamps_survive_an_empty_instance_set() {
                 !sample.timing_fault,
                 "Metal frame timestamp collection failed"
             );
+            assert!(sample.camera_culling.is_none(), "Direct lists nothing");
             let passes = sample.gpu_pass_ns.expect("real Metal pass timestamps");
             assert!(passes[3] > 0.0, "the sky still executes the forward pass");
             assert_eq!(passes[4], 0.0, "there is no transform history to publish");

@@ -416,7 +416,9 @@ impl VisibilityPrepared {
         let args = graph.resource(
             ResourceDescriptor::Buffer {
                 bytes: ARGS_BYTES,
-                usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::INDIRECT,
+                usage: wgpu::BufferUsages::STORAGE
+                    | wgpu::BufferUsages::INDIRECT
+                    | wgpu::BufferUsages::COPY_SRC,
             },
             ResourceScope::Imported { initialized: false },
         )?;
