@@ -14,8 +14,8 @@ poses read from artifacts, split M1 boxes, and a baseline that survives a clean 
 - M2 fixes @ fe9e26d5, same reviewer, brief: the fix list in its follow-up (report
   `tmp/g7-showcase/review/M2-REREVIEW-REPORT.md`, local), accept. Three wording nits, all taken.
 Milestone: M3 Screen-independent proofs · Updated: 2026-11-07
-Now: M1 and M2 done (on main at 664a4ff0). M3, commissioned by root, has started from main 961541f0
-Next: the revised checker seam to root after root's hold; the startup rows and the edited-source run from a clean commit
+Now: M1 and M2 done (on main at 664a4ff0). M3 proofs pass on f38166f0 with evidence written; four of five boxes ticked
+Next: the independent M3 review, then landing (root approved the checker seam at 10ea0392)
 Blocked: none. The on-screen Mac walk waits on screen control (one request denied).
 
 ## M1 Local cooked valley on both targets: done
@@ -84,23 +84,27 @@ Commission: root, `tmp/g7-boundary/NOTES.md` "Root commission for the remaining 
 on-screen Mac walk and the renderer findings stay with root.
 
 Done when:
-- [ ] Chrome startup proxy: repeated fresh-process rows from navigation to the first observed cooked draw, with
+- [x] Chrome startup proxy: repeated fresh-process rows from navigation to the first observed cooked draw, with
       the clock, poll granularity, cache state and artifact hashes; cold and warm pages apart; range and median.
       Build, cook and scripted time kept separate. The checker's instrumentation seam is approved by root before
-      it is pushed.
-- [ ] Edited source: the ground texture is retinted in a scratch copy, cooked through the normal route, and every
+      it is pushed. (startup-175135: cold upper 152–175 ms, warm 108–169 ms; root approved 10ea0392 after five
+      rounds; evidence "M3")
+- [x] Edited source: the ground texture is retinted in a scratch copy, cooked through the normal route, and every
       stop runs on both targets. The run shows the new source root, the edited region on both targets, parity, and
-      the canonical baseline refusing the new identity.
-- [ ] A reviewed replacement is saved at a scratch baseline path, and a rerun compares against it.
-- [ ] A canonical check in the same session passes against the checked-in baseline, as the control. Both proofs
-      name the main revision they ran on.
+      the canonical baseline refusing the new identity. (check-174724: root `49041ec0`, parity 0.033/0.175/0.281,
+      `other identity`; sheet `route-edited-source.png`)
+- [x] A reviewed replacement is saved at a scratch baseline path, and a rerun compares against it. (check-174832
+      saved, check-174940 within 0.005)
+- [x] A canonical check in the same session passes against the checked-in baseline, as the control. Both proofs
+      name the main revision they ran on. (check-174420 built f38166f0 on main 6459379d, within 0.005)
 - [ ] An independent milestone review agrees; its brief and verdict are on the Reviews line.
 
 Work:
 - [x] Checker: route-specific startup observation in `qualifyRoute`; exact diff posted to root
       (`tmp/g7-boundary/m3-checker-startup.diff`).
 - [x] Script: `startup` command; `--source` and `--recalibrate` for `check`.
-- [ ] Runs, evidence and review.
+- [x] Runs and evidence.
+- [ ] Independent review.
 
 ## Log
 - 2026-11-07 Plan written with the design.
@@ -177,3 +181,7 @@ Work:
 - 2026-11-07 Root confirmed the correction and asked that only the page's exact pre-loop labels prove no draw, in
   both reads; any other status proves nothing. Taken, rechecked on the normal and late-observer cases, and the final
   runs were repeated on it. Root approved the seam to land after that change.
+- 2026-11-07 Main moved by simulation code (6459379d), so the final proofs ran again on the rebased f38166f0: the
+  canonical control (byte-identical frames to M2), five startup launches, the edited-source runs and both refusals,
+  and the seam cases. Chrome exited with code 2 in the checker's shared cleanup after `route` and `field-oracle` had
+  passed every page; both passed on rerun. `./dev check` passed. Evidence written; review commissioned.
