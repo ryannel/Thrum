@@ -17,6 +17,9 @@ Reviews:
   N6–N8 recommended). All answered in revision 3.
 - Composed-frame re-review @ `c507ad3d`, same brief, report section *Revision 2*: approve with changes (11 of 14
   answered; new N1–N9). Answered in revision 3.
+- Composed frame, exact-revision recheck @ `9938b0d0` (Opus 5.5 medium), brief `tmp/g3t-g4-plans/reviews/composed-frame.md`,
+  report `tmp/g3t-g4-plans/reviews/composed-frame-report.md` ("Revision 4 recheck"): approve with changes (one leftover
+  always-submitted rule, three small gaps). All applied in revision 4a.
 
 Milestone: none started (plan awaiting re-review and seam rulings) · Updated: 2026-11-07
 Now: revision 4 answers Thrum Core's review of revision 3 (since 2026-11-07).
@@ -161,7 +164,9 @@ Done when:
   - a pipelined test with two frames in flight and a held submission shows the history sample advancing at each
     successful submission;
   - the previous matrices are the last submitted frame's;
-  - a forced submission failure resets history.
+  - a forced submission failure resets history;
+  - a frame cancelled on failed acquisition leaves the history sample at the last submitted frame, and an iOS
+    background drop resets history, both counted in the proof log;
   - `HistoryKey` uses the output extent.
 
 Work:
@@ -432,3 +437,5 @@ Revision 1 said 9.5–11.5 days for G4. Reviewers estimated 13–16 days.
     the iOS background refusal are observable (D8.6);
   - archives are an owner ruling, with no V1 exit wording change;
   - the atmosphere checkpoint is `d2a5342`, for interface reads.
+- 2026-11-07 Revision 4a applies the composed-frame recheck of `9938b0d0`: the leftover always-submitted rule is
+  replaced, MetalFX history advances at encode, and D2.4 covers the portable drop and the iOS background drop.
