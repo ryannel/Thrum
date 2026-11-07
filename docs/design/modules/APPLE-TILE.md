@@ -359,87 +359,17 @@ is owed. Whole-frame present intervals on the Mac also depend on G3b's open live
      contract is unchanged.
 4. **Per-slot frame buffers.** For both recipes, with per-slot bind groups in forward, shadow, visibility, history and
    atmosphere (atmosphere and G3c owners to review).
-5. **Pipeline preparation and archives (the V1 "binary archives" item stays as written).** Owned with G4 M9–M10.
-   - *Measure first.* G4 D9.1 records launch-to-ready on this M3 Max, cold (Thrum's own Metal shader cache cleared)
-     against warm, split into its three costs through public wgpu calls on the same modules:
-     - naga's cost: parse and validate once per module, plus one MSL write per pipeline, timed by running the same
-       steps offline with wgpu 30's naga and the runtime's options;
-     - the MSL compile (`newLibraryWithSource`), timed through `as_hal` with the same `MTLCompileOptions` the WGSL
-       path uses (the passthrough `msl` input uses default options, so it would not match);
-     - pipeline state creation, timed as pipeline creation from that library.
-     A cold run clears Thrum's own `$(getconf DARWIN_USER_CACHE_DIR)/com.apple.metal/<binary>` directory, including
-     its front-end cache.
-     Today `load_shader` runs naga and `newLibraryWithSource` at every pipeline creation on every launch. The system
-     Metal cache covers only the final PSO step.
-   - *Order.* Measure; then offline metallibs plus parallel pre-warm; then the Metal `PIPELINE_CACHE` (pinned patch) for
-     the PSO remainder; the upstream contribution comes later and does not gate V1. The split confirms or reorders this. It does not decide whether a layer lands: V1 requires
-     archives.
-   - *Parallel pre-warm.* Closure-time preparation creates every pipeline across worker threads (wgpu's `Device` is
-     `Send + Sync`), joined before readiness. Wall time is recorded with and without it, cold and warm.
-   - *Layer 1: offline metallibs through passthrough.* wgpu 30 has `PASSTHROUGH_SHADERS` on Metal, with a
-     `metallib` input that skips naga and the runtime MSL compile.
-     - naga emits MSL per entry point per pipeline, so the cook works per pipeline, not per module. A build-time cook
-       step in Thrum's own pipeline translates each pipeline's entry points with wgpu 30's naga, using the same inputs
-       wgpu-hal would derive at runtime:
-       - the binding map from the pipeline layout, with stage visibility;
-       - override constants;
-       - the vertex layout (vertex-pulled buffers take slots `MAX_BUFFERS-1-i`);
-       - point topology;
-       - the runtime checks (bounds, workgroup zero-init, loop bounding, integer division);
-       - the MSL version.
-       It then compiles each target with `xcrun metal` using `-fpreserve-invariance` and the matching `-std`, and
-       links with `metallib`.
-     - Each metallib is keyed by WGSL hash, all of those inputs, naga version, SDK and deployment target. The runtime
-       loads it with `create_shader_module_passthrough`, with explicit pipeline layouts, naga's translated entry-point
-       names (wgpu-hal looks names up verbatim) and their workgroup sizes.
-     - A missing or mismatched key, or a load failure, selects the WGSL path at build, and the fallback is counted.
-     - *Match check.* Before any metallib is trusted, a test checks that the cook's MSL for each pipeline equals the
-       MSL wgpu-hal generates at runtime for the same pipeline from its `per_stage_map`. The runtime MSL is captured
-       through a debug hook in the pinned patch. A mismatch fails the cook.
-     - *Constraints.* naga adds a `_buffer_sizes` argument to every entry point that touches a runtime-sized storage
-       array, whatever the bounds policy. Restrict bounds checks read it on every index. That covers synthetic,
-       visibility, shadow, cull, dfg, reflection, cluster and history_gpu, and vertex-pulled asset pipelines too.
-       wgpu-hal gives passthrough shaders no sized bindings and no immutable mask, so it never binds that buffer.
-       The pinned patch therefore lets the `MetalLib` input carry reflection emitted by the cook: the sized bindings
-       in naga's global order, the immutable-buffer mask and the workgroup sizes. wgpu-hal's slot assignment is internal, so the cook is pinned to wgpu 30.0.1 and refuses any
-       other version.
-     - *Proof.* For every pipeline on the route, a passthrough-against-WGSL image check is bit-identical, or within a
-       stated tolerance where the two compilers differ.
-   - *Layer 2: Metal `PIPELINE_CACHE` in a pinned patch.* The change follows the `MTLBinaryArchive` design proposed
-     on gfx-rs/wgpu#8526 on 4 Oct, which a maintainer said "looks about right". In wgpu-hal:
-     - `create_pipeline_cache` loads an archive from the cache data through a temporary file URL;
-     - render and compute pipeline creation sets the descriptor's `binaryArchives` and adds the functions;
-     - `pipeline_cache_get_data` serialises the archive;
-     - `pipeline_cache_validation_key` returns a key built from the GPU name and OS build. It defaults to `None`,
-       and with `None` wgpu-core silently drops the cache data;
-     - a pipeline option for `MTLPipelineOption.FailOnBinaryArchiveMiss`, for the proof mode.
-     In wgpu-core, `adapter_key` gains a Metal arm: it is Vulkan-only today, and `add_cache_header` panics without
-     it. wgpu-types then advertises `PIPELINE_CACHE` on Metal.
-     - Thrum keeps one cache per adapter, driver and recipe, and passes it at every pipeline site. Following Apple's
-       guidance, archives are harvested at development time on the route and shipped as cooked assets. Each archive
-       comes from its own device: a Mac harvest serves only that GPU. iPhone archives need an on-device harvest or
-       offline generation with `metal-tt`. The simulator is excluded unless it is confirmed to support archives.
-       An OS compiler update makes archives miss, so a runtime write-back covers devices and OS versions the shipped
-       archive misses, and every miss is counted.
-     - Thrum carries the change as a `[patch.crates-io]` fork pinned to 30.0.1, rebased at each wgpu upgrade, and
-       drops it once an equivalent upstream change ships.
-   - *Proof an archive hit was used:* a warm-launch test mode with `failOnBinaryArchiveMiss` in which every pipeline
-     still succeeds; cold against warm pipeline-creation time against D9.1's split; and a stale or corrupted archive
-     that compiles at build, with the counter showing zero creations in play.
-   - *Later, not V1-gating: an upstream contribution under gfx-rs/wgpu#8526.* This comes after G4 D9.1 and after
-     the metallib and pre-warm layer lands, and only as a change we can stand behind. wgpu's CONTRIBUTING allows
-     LLM-written code but not fully agentic PRs, so the owner writes every public description and comment. Steps,
-     in order:
-     - coordinate on #8526 first, with an owner-written comment to the contributor who proposed the design;
-     - Metal only, against wgpu trunk rather than the 30.0.1 pin;
-     - tests in wgpu's GPU suite: a cache round-trip, rejection of corrupt or mismatched data, and a warm hit under
-       fail-on-miss;
-     - a full `cargo xtask test` run on this Mac;
-     - an independent review;
-     - an owner walkthrough before submission.
-     Nothing is posted publicly without the owner's OK on each post. The `MetalLib` reflection change could be offered
-     later as a separate change, under the same rules.
-   - The rewording option is withdrawn. These docs change no V1 exit wording.
+5. **Pipeline preparation and archives (V1's "binary archives" item stays as written).** Built when G4 reaches M10,
+   then proved; details are designed when the milestone starts. Today wgpu 30 translates WGSL with naga and compiles
+   MSL at every pipeline creation on every launch, and its Metal `PipelineCache` is a stub. Four distinct pieces:
+   - *Offline metallibs* loaded through wgpu 30's `PASSTHROUGH_SHADERS`, which skip naga and the runtime MSL compile.
+     Passthrough loses wgpu-hal's per-pipeline reflection, so a pinned wgpu patch carries reflection from the cook.
+   - *Parallel pre-warm*: closure-time preparation creates pipelines across worker threads.
+   - *Local archive qualification*: a Metal `PIPELINE_CACHE` over `MTLBinaryArchive` in a pinned wgpu patch, with a
+     shipped archive proved by a strict fail-on-miss witness. This stays within V1.
+   - *Later upstream contribution* under gfx-rs/wgpu#8526, not V1-gating, only if needed and only as a change we can
+     stand behind. wgpu's CONTRIBUTING allows LLM-written code but not fully agentic PRs, so the owner writes every
+     public description and comment, and nothing is posted without the owner's OK on each post.
 6. **Compact instance ABI.** 80 B rows for both recipes: `abi.rs`, `synthetic.wgsl`, `shadow.wgsl`,
    `history_gpu.wgsl`, `visibility.wgsl`, `thrum-app/src/sky.rs` and `tests/contracts.rs`. Reviewed by G3c and the
    G3b interpolation owner.

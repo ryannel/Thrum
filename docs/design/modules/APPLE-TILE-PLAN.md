@@ -463,3 +463,5 @@ That is **15.5 build days**, plus 1–2 days of review and seam turnaround, for 
   `PIPELINE_CACHE` order to seam 5.
 - 2026-11-07 Revision 6 makes seam 5's upstream contribution a later, non-V1-gating item under the owner's rules. The
   pinned patch delivers V1's archives.
+- 2026-11-07 Revision 7 cuts seam 5 to outcome level under the owner's direction; details are designed when G4 M10
+  starts.
