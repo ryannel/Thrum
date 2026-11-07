@@ -322,8 +322,14 @@ fn every_gpu_mip_equals_the_reference() {
 /// The clip magnitude the probe gives box `index`, so the bound's terms are
 /// exercised on both sides.
 #[expect(clippy::cast_precision_loss, reason = "remainders below 5")]
-fn magnitude(index: usize) -> [f32; 2] {
-    [(index % 3) as f32 * 0.05, (index % 5) as f32 * 2.0]
+fn magnitude(index: usize) -> [f32; 4] {
+    let axis = (index % 7) as f32 * 300.0;
+    [
+        axis,
+        axis * 0.5,
+        (index % 3) as f32 * 0.05,
+        (index % 5) as f32 * 2.0,
+    ]
 }
 
 /// Run the shared WGSL test on `boxes` against `target`, box `index` with
@@ -333,13 +339,13 @@ fn gpu_occluded(
     queue: &wgpu::Queue,
     target: &PyramidTarget,
     boxes: &[[[f32; 4]; 8]],
-    magnitudes: &[[f32; 2]],
+    magnitudes: &[[f32; 4]],
 ) -> Vec<bool> {
     let source = format!(
         "@group(0) @binding(0) var pyramid: texture_2d<f32>;
         @group(0) @binding(1) var<storage, read> boxes: array<array<vec4<f32>, 8>>;
         @group(0) @binding(2) var<storage, read_write> results: array<u32>;
-        @group(0) @binding(3) var<storage, read> magnitudes: array<vec2<f32>>;
+        @group(0) @binding(3) var<storage, read> magnitudes: array<vec4<f32>>;
         @compute @workgroup_size(64) fn probe(@builtin(global_invocation_id) id: vec3<u32>) {{
             if id.x >= arrayLength(&results) {{ return; }}
             results[id.x] = u32(occluded_by_pyramid(boxes[id.x], magnitudes[id.x]));
@@ -500,7 +506,12 @@ fn gpu_slack_matches_the_reference_at_its_boundary() {
     let mut boxes = Vec::new();
     let mut magnitudes = Vec::new();
     let mut flips = Vec::new();
-    for magnitude in [[0.0, 0.0], [0.1, 10.0], [2.0, 0.0], [0.0, 400.0]] {
+    for magnitude in [
+        [0.0; 4],
+        [0.0, 0.0, 0.1, 10.0],
+        [0.0, 0.0, 2.0, 0.0],
+        [0.0, 0.0, 0.0, 400.0],
+    ] {
         for w in [1.0_f32, 4.0] {
             let flat = |nearest: f32| -> [[f32; 4]; 8] {
                 std::array::from_fn(|corner| {
@@ -532,5 +543,59 @@ fn gpu_slack_matches_the_reference_at_its_boundary() {
             [false, true],
             "{magnitude:?} at w {w}: two ulps either side of the reference's flip at {flip} ulps"
         );
+    }
+}
+
+/// The x / y footprint widening on the GPU (design, "Footprint"): a wall
+/// covers the left half of the screen, open sky the right. Boxes behind the
+/// wall end `gap` level-0 texels left of the sky. With a large x / y clip
+/// term the widening is about 2.4 texels, so the box one texel from the sky
+/// must read it and stay visible, and the one four texels away stays hidden.
+/// A shader without the widening hides the first; one that doubles it keeps
+/// the second. With no clip term both are hidden.
+#[test]
+fn gpu_footprint_widening_matches_the_reference() {
+    let (device, queue) = device();
+    let extent = [64, 48];
+    let depth: Vec<f32> = (0..64 * 48)
+        .map(|index| if index % 64 < 32 { 0.9 } else { 0.0 })
+        .collect();
+    let view = depth_target(&device, &queue, &depth, extent);
+    let target = build(&device, &queue, &view, extent);
+    let pyramid = reference::build(&depth, extent);
+    let ndc = |texel: f32| texel / 64.0 * 2.0 - 1.0;
+    let behind_wall = |gap: f32| -> [[f32; 4]; 8] {
+        std::array::from_fn(|corner| {
+            let x = if corner & 1 == 0 {
+                ndc(20.0)
+            } else {
+                ndc(32.0 - gap)
+            };
+            let y = if corner & 2 == 0 { -0.5 } else { 0.5 };
+            [x, y, 0.5, 1.0]
+        })
+    };
+    let wide = [40_000.0, 40_000.0, 0.0, 0.0];
+    let cases = [
+        (1.0, wide, false),
+        (4.0, wide, true),
+        (1.0, [0.0; 4], true),
+        (4.0, [0.0; 4], true),
+    ];
+    let widening = reference::footprint_widening(ndc(31.0), 1.0, wide[0], wide[3], 64.0) * 64.0;
+    assert!(
+        (2.0..3.0).contains(&widening),
+        "the case needs about 2.4 texels: {widening}"
+    );
+    let boxes: Vec<_> = cases.iter().map(|&(gap, _, _)| behind_wall(gap)).collect();
+    let magnitudes: Vec<_> = cases.iter().map(|&(_, magnitude, _)| magnitude).collect();
+    let gpu = gpu_occluded(&device, &queue, &target, &boxes, &magnitudes);
+    for (index, &(gap, magnitude, hidden)) in cases.iter().enumerate() {
+        assert_eq!(
+            reference::occluded(&boxes[index], &pyramid, magnitude),
+            hidden,
+            "reference, gap {gap} texels, {magnitude:?}"
+        );
+        assert_eq!(gpu[index], hidden, "GPU, gap {gap} texels, {magnitude:?}");
     }
 }
