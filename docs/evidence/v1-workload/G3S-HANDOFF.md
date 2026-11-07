@@ -293,23 +293,23 @@ Select mid-grey placement with the curve and keep the output path extensible to 
 Use [Polyphony's GT7 reference](https://s3.amazonaws.com/gran-turismo.com/pdi_publications/s2025_PBS_Physically_Based_Tone_Mapping_GT7.pdf)
 as a candidate. The audit's performance figures are estimates.
 
-The first Metal capture comparison retains the current SDR curve. The per-channel
-scalar GT7 probe omits the reference's colour handling and washes out warm sunset
-colour. The shadow-only luminance probe preserves metered grey and the existing
-highlight path. It moves the twilight floor median from 67.30 to 64.22 code units
-and leaves the sampled sunset sky median at 237.47. The foreground still looks
-flat next to the CC0 Kiara dawn, noon, sunset and dusk photographs. These are
-uncalibrated visual comparisons. Try the full colour-aware output transform against
-the unchanged scene, then test terrain and material contrast separately. The
-meters, low-light key and shipping display shader are unchanged.
+**SDR baseline decision.** Keep Neutral Highlights with the current incident
+meter and low-light key. The scalar GT7 probe washed out sunset. The shadow-only
+probe preserved metered grey and highlight colour but moved the twilight floor
+median by only three codes. On a matched Metal valley at `1f4e6932`, the GT7
+ICtCp SDR adaptation used the reference chroma blend, a matched grey point and
+Rec.709 output compression. Pixels with all channels at 254 or above rose from
+0.007% to 7.918% in the clear sunset-Sun view. Midnight ground median fell
+25.35 → 14.35 codes. Independent review of the fixed views and sunset sequence
+found the white plateau erased the disk and warm gradient and made the midnight
+rock harder to see. Keep the existing display pass as G6's overlay baseline.
+The flat floor still differs from the uncalibrated CC0 Kiara photos. Compare
+authored ground contrast with the display transform held fixed.
 
-The three binaries, ten matched stills per binary, `compare.py`, `compare-all.json`,
-`contact-all.png` and input hashes are in `tmp/handback-review/tone-scale/`. Run
-`sh tmp/handback-review/tone-scale/build-pair.sh` from the root to fill missing
-binaries. For a fresh capture set `THRUM_ASSET_STORE` to the absolute path of
-`tmp/g3s-showcase/cooked`, `THRUM_SCENE=valley` and `THRUM_CAPTURE_SCENE` to a new
-output directory, then run `v1-game-neutral`, `v1-game-scalar` or `v1-game-anchored`
-from the study directory on Metal. These captures establish visual output only.
+Raw inputs, hashes, comparison, paired stills and `sunset-pair.mp4` are under
+`tmp/handback-review/tone-scale/colour-aware/`, with the earlier scalar and
+shadow probes one level up. Run its `build.sh`, `capture.sh` and `compare.py`
+from the repository root to reproduce. These are offscreen visual comparisons.
 
 - **Night and EV floor remain open with G3s.** The reviewed
   [night milestones](../../design/modules/ATMOSPHERE-PLAN.md) pair the key and
