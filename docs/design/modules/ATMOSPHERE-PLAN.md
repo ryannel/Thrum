@@ -8,6 +8,11 @@ Now: the held and live-sampled Metal and Chrome valley is legible into the night
 Next: review the corrected foreground nightfall route and complete the M1 closeout. Physical cadence stays with the frame runtime.
 Blocked: none. G3s stays open.
 
+At the next look pass, the cooked ground should read as mineral material at the fixed
+showcase camera, with fine grain at chase distance and continuous detail into the
+middle distance. Judge the lookout lip and texture transition at full size and
+in a slow pan.
+
 ## M1 The valley remains legible at moonless midnight: in progress
 
 Done when
@@ -41,6 +46,8 @@ Work
 
 - [ ] Verify data rights and derive the compact immutable star records.
 - [ ] Add the background draw with conservative footprint and qualify extent, depth and exposure changes.
+  The scratch Metal referee at `tmp/g3s-star-catalog/` conserves flux to 0.053% across
+  36 raster cases and catches both centre and footprint depth leaks.
 - [ ] Run the in-game digest and close with evidence. Lunar illumination and the broader G3s calibration and shadow checks remain separately tracked.
 
 ## Review briefs
