@@ -2158,6 +2158,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "thrum-asset-gpu"
+version = "0.1.0"
+dependencies = [
+ "bytemuck",
+ "glam",
+ "thrum-asset",
+ "thrum-render",
+ "wgpu",
+]
+
+[[package]]
 name = "thrum-content-runtime"
 version = "0.1.0"
 
@@ -2291,11 +2302,15 @@ name = "v1-game"
 version = "0.1.0"
 dependencies = [
  "divan",
+ "glam",
  "objc2 0.6.5",
  "objc2-foundation 0.3.2",
  "objc2-quartz-core 0.3.2",
  "pollster",
+ "thrum-asset",
+ "thrum-asset-gpu",
  "thrum-content-runtime",
+ "thrum-cook",
  "thrum-core",
  "thrum-render",
  "wasm-bindgen",

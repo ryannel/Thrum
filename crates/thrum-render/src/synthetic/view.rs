@@ -195,6 +195,16 @@ impl SyntheticView {
         self.projection
     }
 
+    /// Column-major view-projection (reverse-Z, WebGPU clip space).
+    pub fn view_proj_columns(&self) -> [[f32; 4]; 4] {
+        self.view_proj.to_cols_array_2d()
+    }
+
+    /// World-space camera position.
+    pub fn camera_position(&self) -> [f32; 3] {
+        self.camera.to_array()
+    }
+
     pub(crate) fn pack_view(&self, previous: &Self, exposure: f32) -> [u8; VIEW_BYTES] {
         let mut bytes = [0; VIEW_BYTES];
         for (offset, value) in self.view_proj.to_cols_array().into_iter().enumerate() {

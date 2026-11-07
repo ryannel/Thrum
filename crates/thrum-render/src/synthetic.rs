@@ -9,6 +9,9 @@
 use crate::abi::{self, AbiError, InstanceRecord, MaterialRecord, TextureClasses};
 use crate::atmosphere::{AtmosphereFrame, AtmospherePrepared};
 use crate::capabilities::DeviceCapabilities;
+use crate::contribution::{
+    ContributionFrame, ContributionPasses, SceneContribution, SceneSurface, SurfaceParts,
+};
 use crate::graph::{
     Access, AccessKind, CompiledGraph, CompiledPass, FrameGraph, GraphColorAttachment,
     GraphDepthAttachment, GraphError, GraphTextures, Pass, PassKind, PassScope, PipelineKey,
@@ -26,6 +29,7 @@ use wgpu::util::DeviceExt;
 
 mod cluster;
 mod cluster_gpu;
+mod contributed;
 mod display;
 mod exposure;
 mod frame_stats;
@@ -34,9 +38,12 @@ mod scene_apply;
 mod shadow;
 mod upload;
 mod view;
+
 use cluster::ClusterTable;
 pub use cluster::SyntheticPointLight;
 use cluster_gpu::ClusterCompute;
+pub(crate) use contributed::CONTRIBUTION_COMPUTE;
+use contributed::CONTRIBUTION_UPLOAD;
 pub use display::SdrToneMap;
 use display::{DisplayPrepared, DisplayTarget};
 use exposure::ExposureResolve;
@@ -442,6 +449,8 @@ pub struct PreparedSynthetic {
     background: wgpu::Color,
     shadow: Option<ShadowPrepared>,
     atmosphere: Option<AtmospherePrepared>,
+    surface: SurfaceParts,
+    contribution_passes: ContributionPasses,
 }
 
 struct SceneFamily;
@@ -458,6 +467,8 @@ struct SceneContext<'a> {
     timings: Option<&'a mut GpuTimings>,
     generation: u64,
     readback: Option<&'a mut PixelReadback>,
+    contribution: Option<&'a mut (dyn SceneContribution + 'static)>,
+    contribution_frame: ContributionFrame,
 }
 
 impl SceneContext<'_> {
@@ -506,7 +517,29 @@ impl SceneContext<'_> {
             self.target,
             pass,
             self.timings.as_deref_mut(),
+            self.contribution.as_deref(),
         )
+    }
+
+    fn contribution_upload(&mut self) {
+        if let Some(contribution) = self.contribution.as_deref_mut() {
+            contribution.encode_upload(self.encoder, &self.contribution_frame);
+        }
+    }
+
+    fn contribution_compute(&mut self, compiled: &CompiledPass) -> Result<(), RenderError> {
+        if let Some(contribution) = self.contribution.as_deref_mut()
+            && contribution.computes(&self.contribution_frame)
+        {
+            let mut pass = compiled
+                .begin_compute(self.encoder, self.generation, self.timings.as_deref_mut())?
+                .ok_or(RenderError::GraphPassMismatch)?;
+            contribution.encode_compute(&mut pass, &self.contribution_frame);
+        }
+        if let Some(contribution) = self.contribution.as_deref_mut() {
+            contribution.encode_after_compute(self.encoder);
+        }
+        Ok(())
     }
 
     fn publish_history(&mut self, pass: &CompiledPass) -> Result<(), RenderError> {
@@ -1122,8 +1155,13 @@ impl PreparedSynthetic {
         );
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("prepared synthetic shader ABI2"),
-            source: wgpu::ShaderSource::Wgsl(shader_source.into()),
+            source: wgpu::ShaderSource::Wgsl(shader_source.as_str().into()),
         });
+        let fragment_entry = if shadow.is_some() {
+            "shadowed_fragment"
+        } else {
+            "fragment"
+        };
         let create_pipeline = |cull_mode| {
             device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
                 label: Some("prepared opaque synthetic role"),
@@ -1148,11 +1186,7 @@ impl PreparedSynthetic {
                 multisample: wgpu::MultisampleState::default(),
                 fragment: Some(wgpu::FragmentState {
                     module: &shader,
-                    entry_point: Some(if shadow.is_some() {
-                        "shadowed_fragment"
-                    } else {
-                        "fragment"
-                    }),
+                    entry_point: Some(fragment_entry),
                     compilation_options: wgpu::PipelineCompilationOptions::default(),
                     targets: &[
                         Some(wgpu::ColorTargetState {
@@ -1247,6 +1281,14 @@ impl PreparedSynthetic {
             background,
             shadow,
             atmosphere,
+            surface: SurfaceParts {
+                shader_source,
+                pipeline_layout: layout,
+                light_layout,
+                material_layout,
+                fragment_entry,
+            },
+            contribution_passes: ContributionPasses::default(),
         })
     }
     /// Immutable facts shared by every preparation on this adapter generation.
@@ -1275,6 +1317,7 @@ impl PreparedSynthetic {
     pub fn scene_pass_count(&self) -> u32 {
         4 + u32::from(self.shadow.is_some()) * 2
             + u32::from(self.cluster_compute.is_some())
+            + u32::from(self.contribution_passes.compute)
             + self
                 .atmosphere
                 .as_ref()
@@ -1592,6 +1635,7 @@ impl PreparedSynthetic {
             &mut prepared_keys,
         )?;
         self.append_cluster_reads(&mut graph, &mut accesses, &mut prepared_keys)?;
+        self.append_contribution(&mut graph, &mut accesses, &mut prepared_keys)?;
         let depth = graph.resource(
             ResourceDescriptor::Texture {
                 width,
@@ -2068,6 +2112,17 @@ impl PreparedSynthetic {
                         frame.tone(pass)
                     })
                 }
+                None if pass.kind == Some(PassKind::Copy) && pass.name == CONTRIBUTION_UPLOAD => {
+                    RecordBinding::<SceneFamily>::new(id, PassKind::Copy, |frame, _| {
+                        frame.contribution_upload();
+                        Ok(())
+                    })
+                }
+                Some(key) if key == self.contribution_key() => {
+                    RecordBinding::<SceneFamily>::new(id, PassKind::Compute, |frame, pass| {
+                        frame.contribution_compute(pass)
+                    })
+                }
                 None if pass.kind == Some(PassKind::Copy) => {
                     RecordBinding::<SceneFamily>::new(id, PassKind::Copy, |frame, pass| {
                         frame.copy(pass)
@@ -2091,7 +2146,26 @@ impl PreparedSynthetic {
         target: &OffscreenTarget,
         timings: Option<&mut GpuTimings>,
     ) -> Result<(), RenderError> {
-        self.encode_inner(encoder, generation, target, timings, None)
+        self.encode_inner(encoder, generation, target, timings, None, None)
+    }
+
+    /// Encode the scene with an engine contribution drawn at the end of its forward pass, and
+    /// optionally its dependent readback.
+    /// # Errors
+    /// As [`Self::encode`] and [`Self::encode_with_readback`].
+    pub(crate) fn encode_contributed(
+        &self,
+        encoder: &mut wgpu::CommandEncoder,
+        generation: u64,
+        target: &OffscreenTarget,
+        timings: Option<&mut GpuTimings>,
+        readback: Option<&mut PixelReadback>,
+        contribution: Option<&mut (dyn SceneContribution + 'static)>,
+    ) -> Result<(), RenderError> {
+        if let Some(readback) = readback.as_deref() {
+            readback.check_target(target)?;
+        }
+        self.encode_inner(encoder, generation, target, timings, readback, contribution)
     }
 
     /// Encode the same scene with its dependent Copy pass in one checked graph.
@@ -2107,7 +2181,7 @@ impl PreparedSynthetic {
         readback: &mut PixelReadback,
     ) -> Result<(), RenderError> {
         readback.check_target(target)?;
-        self.encode_inner(encoder, generation, target, timings, Some(readback))
+        self.encode_inner(encoder, generation, target, timings, Some(readback), None)
     }
 
     fn encode_inner<'a>(
@@ -2117,6 +2191,7 @@ impl PreparedSynthetic {
         target: &'a OffscreenTarget,
         mut timings: Option<&'a mut GpuTimings>,
         readback: Option<&'a mut PixelReadback>,
+        contribution: Option<&'a mut (dyn SceneContribution + 'static)>,
     ) -> Result<(), RenderError> {
         self.check_target(target)?;
         if generation != self.key.device_generation {
@@ -2142,6 +2217,8 @@ impl PreparedSynthetic {
             timings,
             generation,
             readback,
+            contribution,
+            contribution_frame: self.contribution_frame(),
         })
     }
 
@@ -2152,6 +2229,7 @@ impl PreparedSynthetic {
         target: &OffscreenTarget,
         compiled: &CompiledPass,
         timings: Option<&mut GpuTimings>,
+        contribution: Option<&dyn SceneContribution>,
     ) -> Result<(), RenderError> {
         let mut pass = compiled
             .begin_render(
@@ -2201,6 +2279,9 @@ impl PreparedSynthetic {
         };
         pass.set_index_buffer(indices.slice(..), wgpu::IndexFormat::Uint16);
         pass.draw_indexed(0..36, 0, 0..self.instance_upload.active_count());
+        if let Some(contribution) = contribution {
+            contribution.draw(&mut pass);
+        }
         Ok(())
     }
 }

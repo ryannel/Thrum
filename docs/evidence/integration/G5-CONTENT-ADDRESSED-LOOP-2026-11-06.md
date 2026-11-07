@@ -19,6 +19,8 @@ budgets.
   - a volume cooker: BC4 slices and R8;
   - atomic publication with recovery on open;
   - an FSEvents watcher, a loopback dev server and a `thrum-cook` CLI.
+- **`thrum-asset-gpu`** is shipping GPU residency for the game: a loader thread, a budgeted staged upload belt, a GPU
+  meshlet cull with indirect draws, and cooked mesh and volume draws inside the scene's forward pass.
 - **`examples/asset-loop`** is a shipping-shaped viewer. A loader thread maps and uploads, and the render thread swaps
   the new set without waiting. It chooses profiles from `DeviceCapabilities`.
 
@@ -153,23 +155,138 @@ Recorded rather than fixed:
 
 These are in the design record's contract questions and open items.
 
+## In the V1 game (revision, 6 November late)
+
+The loop now runs in the V1 game through public engine APIs. `CookedAssets` (crate `thrum-asset-gpu`) is a
+`thrum_render::contribution::SceneContribution`; the window binary attaches it when `THRUM_ASSET_STORE` names a store.
+Its upload and cull run in graph-declared passes before forward, and its meshes use the scene's own fragment shader, so
+they receive the selected G3s lighting. The root render owner reviewed the first seam (`b953511`) and required
+submit-time commit, graph passes with timestamps and submitted motion history; all three are implemented and tested.
+
+### Tests (`examples/v1-game/tests/cooked_assets_gpu.rs`, real Metal device)
+
+| Test | Proves |
+|---|---|
+| `cooked_edits_become_visible_in_the_game_with_its_lighting` | Mesh, texture and volume drawn in the game scene. A 1.9 MiB first set spreads over 3 frames at a 1 MiB budget, never exceeding it. A texture edit uploads only the texture (0.35 MiB, 1 frame) and a volume edit only the volume; both change the captured image. |
+| `off_screen_meshlets_are_culled_and_bc7_is_drawn_where_supported` | A mesh straddling the view edge keeps 192 of 341 meshlets after the GPU cull (read back without waiting). BC7 is drawn when preferred on a BC device. |
+| `discarded_frames_leave_no_trace_on_cooked_uploads` | Two presenting hosts on one device and one clock. After one committed frame of a 3.6 MiB upload, one host encodes and discards 12 frames, then discards once before every submitted frame, so the frame recording the final copies is discarded too; the other skips rendering. Neither swaps on a discarded frame. Both swap after the same submitted frames and bytes and capture byte-identical images. |
+| `contributed_frames_keep_complete_gpu_timings_and_reset_history_for_new_sets` | With timestamps enabled, every contributed presented frame has no timing fault and complete scene and present times, plus the contribution's compute time once a set is drawn (included in forward). A new set's first frame draws with no motion history, the next with history; a capture in between does not advance it; an edit's new set resets it again. |
+| `a_replaced_device_restages_and_draws_the_current_set` | The old device is destroyed and a replacement published; the same generation is staged again and swapped in on the new device with the same bytes. |
+| `captures_never_establish_history_and_cull_counts_follow_their_set` | Captures alone upload and swap in a new set; its first normal frame still has no motion history. A mesh edit to fewer meshlets then swaps while counts are in flight; every reported count stays within its own set's total, and the smaller total is reported. |
+
+### Measurements (`cargo bench -p v1-game --bench cooked_edit`)
+
+Release, M3 Max, Metal, 640×360 offscreen, 8 MiB/frame budget, each frame waited for. Other agents were using the GPU,
+so tails are noisy. "Latency" is drive plus GPU completion; "render CPU" is the engine's render-thread span.
+
+| Scenario | Edit | Uploaded | Frames | Write → swapped |
+|---|---|---|---|---|
+| Realistic (256-grid mesh, 1024² texture, 256³ volume; ASTC texture, BC4 volume) | texture | 1.34 MiB | 1 | 44–66 ms |
+| | volume | 9.33 MiB | 2 | 212–332 ms (cook ≈ 200–320 ms) |
+| Large (512³ R8 volume, portable) | volume | 149 MiB | 19 | 1.7–1.8 s (source write and cook ≈ 1.6 s) |
+
+| Scenario | Frames | n | Latency p50 / p99 / max (ms) | Render CPU p50 / p99 / max (ms) |
+|---|---|---|---|---|
+| Realistic | steady | 210 | 2.47 / 3.08 / 3.12 | 0.58 / 0.80 / 0.86 |
+| | uploading | 16 | 3.48 / 23.7 / 23.7 | 0.91 / 4.93 / 4.93 |
+| Large | steady | 90 | 3.61 / 6.15 / 13.8 | 0.66 / 2.14 / 2.23 |
+| | uploading | 81 | 3.64 / 21.1 / 22.7 | 0.66 / 1.59 / 4.46 |
+
+- **Copies never exceed the budget:** the largest frame recorded 8.00 MiB in both scenarios.
+- **The avoided cost:** a render-thread `write_texture` of the 128 MiB level costs 12.4–14.8 ms of render-thread CPU
+  before that frame (1.4–1.9 ms for 16 MiB).
+- **Where the upload tails come from** (per-frame trace): the worst frame in each scenario is the first frame after
+  attach (cold first use, 4.5–4.9 ms of render CPU), not a copy frame. In the large scenario, frames recording 8 MiB of
+  copies mostly take 4–5 ms; a few take 13–21 ms, and frames with no copies while the loader fills a new 150 MiB staging
+  buffer take 10–14 ms. Render CPU on those frames stays at 0.5–1.6 ms, so the render thread is not blocked; the time is
+  GPU-side or memory-system contention from allocating and writing 150 MiB of shared memory. This is a recorded
+  tripwire, and the design's cost account names the fix (a bounded staging ring).
+- **Re-checked after the review fixes** (7 November, heavier GPU sharing): largest frame copy still 8.00 MiB; a
+  texture edit still uploads 1.34 MiB in one frame; render CPU p99 3.0 ms steady and 5.2 ms uploading (realistic),
+  1.1 and 1.7 ms (large). Latency tails rose with contention (realistic steady p99 14.2 ms).
+- **Startup** (attach to first set drawn) ranged from 28 to 305 ms across runs for the realistic set; the slow runs
+  wait for the scene's first submitted frame.
+
+### Visual review
+
+![cooked](../render/G5-GAME-COOKED-2026-11-06.png) ![texture edit](../render/G5-GAME-TEXTURE-EDIT-2026-11-06.png)
+![volume edit](../render/G5-GAME-VOLUME-EDIT-2026-11-06.png) ![BC7 and cull](../render/G5-GAME-CULL-BC7-2026-11-06.png)
+![sequence 0](../render/G5-GAME-SEQUENCE-0-2026-11-06.png) ![sequence 5](../render/G5-GAME-SEQUENCE-5-2026-11-06.png)
+
+To regenerate, run `THRUM_G5_GAME_CAPTURE_DIR=<dir> cargo test -p v1-game --test cooked_assets_gpu`. It writes the
+stills and a six-frame sequence about 100 ms apart.
+
+Review status: **agent_reviewed**. Two agents reviewed the images: the author, and an independent reviewer who saw
+all twelve captures. The reviewer also used 4× crops and thresholded difference images between edit pairs and
+between consecutive sequence frames.
+
+Results:
+- **The edits are visible and nothing else changed: pass.** The texture edit changes only the mesh's checks. The
+  volume edit changes only the cloud's density shape.
+- **BC7 and the cull edge: pass.** There are no block artefacts or channel swaps, and no holes or cracks where the mesh
+  leaves the view at 4× zoom.
+- **Temporal stability: pass, with edge crawl.** Interiors are identical from frame to frame. Check boundaries, the
+  outline and the horizon move by one pixel because of camera jitter, and the offscreen capture has no anti-aliasing
+  resolve. This is the scene's existing behaviour.
+- **The volume composites cleanly: pass.** It is see-through, with no dark fringe and no z-fighting. A discarded and
+  retried upload shows no corruption.
+- **Lighting consistency: unclear, leaning pass.** The mesh has the scene's sky ambient, and the BC7 capture shows sun
+  specular lobes following its waves. Its light checks read dim next to the cube tops, and they show no clear sky
+  reflection at roughness 0.55.
+
+Defects:
+1. The demo placement lets the wavy mesh pass through the left cube. Depth testing is correct, but the placement
+   should move.
+2. Aliased silhouettes and edge crawl, as described above.
+3. The diagnostic cloud reads flat, with little sense of the sun's direction (single scattering only).
+4. The author also sees a straight vertical edge on the cloud's left side, where the demo density reaches the face of
+   its box. The reviewer did not see a hard cut-off.
+
+None of these blocks the claim that edits are visible without stalls. Items 1 and 3 belong to the next G3s scene
+consumer that root is authoring.
+
+## Independent review of the in-game seam and dispositions
+
+Two independent read-only reviews ran on the seam: a fresh subagent code review, and root's review of `a3d1a7f`
+(recorded in `tmp/g5-boundary/NOTES.md`). Every confirmed finding is fixed and, where a test can show it, tested.
+
+| Finding | Disposition |
+|---|---|
+| High: the `contribution compute` pass broke the renderer's fixed timing sequence, so every contributed frame was a timing fault with no GPU pass times. | Fixed. The collector takes the pass out of the sequence, adds it to forward so totals include it, and reports it alone. The new timestamp test then found a second cause: Metal writes no timestamps for an empty compute pass, so the timed pass is begun only when the contribution dispatches (`SceneContribution::computes`). |
+| A capture marked cooked history continued without advancing scene history. | Fixed (`submitted(history_advanced)`); tested. |
+| The loader channel was unbounded: repeated edits while no frame encoded kept every staged set. | Fixed with a newest-value mailbox; superseded staging drops at once on the loader thread. |
+| Device publication joined the loader thread, which could be inside `prepare` or a poll sleep. | Fixed: drop signals stop and unparks; nothing waits. |
+| A volume slice larger than the 1 MiB copy unit was copied whole (2048² R8: 4 MiB in one copy). | Fixed: such slices split into block-row regions; unit-tested. |
+| The cull readback could pair an old count with a newly swapped set's total. | Fixed: the total travels with the mapping. |
+| A stale recording could be committed after a device-generation mismatch. | Fixed: each recording starts by clearing it. |
+| Pipeline compile errors in `rebuild` went unreported. | Fixed: validated in an error scope; an error detaches the contribution with its reason. |
+| A failed pass declaration left the contribution attached. | Fixed: attach detaches and restores the graph. |
+| The volume's sky term used `E_up/π` though the sky covers only the upper hemisphere. | Fixed to `E_up/(2π)`. The sky term is still not self-shadowed; it is a diagnostic consumer. |
+| A retired loader (device replaced mid-preparation) could overwrite the replacement's `staged` or append old-device errors. | Fixed: retirement sets the stop flag under the stats lock and every loader observation checks it under that lock; unit-tested (`a_retired_loader_publishes_no_observation`). |
+| Loader errors repeated every poll interval. | Deduplicated and bounded at 64. |
+| The discard test was narrower than described and compared within a tolerance. | Strengthened as in the table above; byte-exact. |
+| Seam methods were `pub` though no external caller can declare their passes. | Narrowed to `pub(crate)`; the 4-byte token resources are documented as ordering tokens only. |
+| Policy: `thrum-cook` is used by `v1-game` and `thrum-asset-gpu`. | Dev-dependency only, for tests and benches; shipping graphs exclude it (see "Shipping excludes authoring"). |
+
 ## Open items and contract questions
 
 These are reported plainly, and the design record tracks them:
 
 - **Not built:**
-  - EAC iPhone volume products.
-  - Meshlet draw path; the meshlets are cooked and validated, but drawn through the indexed path.
+  - EAC iPhone volume products (draft parked on `claude/g5-parked-eac-layered` with a recorded selection defect).
   - A Chrome page run of the Wasm dev-server client. The client exists (7 November): native protocol tests and a Node
     run under `wasm-bindgen-test-runner` against `thrum-cook watch --serve` (`sh scripts/check_g5_wasm_dev_client.sh`),
     which loaded generation 1, then long-polled generation 2 and fetched only the edited volume. Node sends no
     `Origin`, so the CORS path is not exercised.
-  - V1-game integration, which must keep the G3s lighting.
-  - CAS garbage collection.
+  - Cooked shadow casting (meshes receive shadows but cast none).
+  - Depth-aware volume (the diagnostic raymarch ignores scene depth inside its box).
+  - A bounded staging ring for very large publications.
+  - CAS garbage collection (draft with reader leases parked on `claude/g5-parked-gc-leases` with two recorded defects).
   - Texture PSNR quality check.
-- **Not measured:** Chrome, physical iPhone, sustained runs, and physical residency during overlap.
+- **Not measured:** Chrome (the browser dev-server client ran end to end only in Node), physical iPhone, sustained runs, and physical residency during overlap.
 - **Contract questions for C05/T1, recorded with recommendations in the design:**
-  - Preview versus admitted publication of a partially written multi-file change set.
-  - Moving GPU residency to `thrum-render`.
-  - Device ownership in the game.
+  - Preview versus admitted publication of a partially written multi-file change set: preview-only default in force,
+    proposal recorded for the owners.
+  - Moving GPU residency to the renderer: resolved as the `SceneContribution` seam.
+  - Device ownership in the game: resolved; the contribution uses the host's device and never submits.
   - Retention leases.

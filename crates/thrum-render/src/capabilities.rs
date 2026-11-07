@@ -18,6 +18,15 @@ impl DeviceCapabilities {
     pub fn requested_timing_features(adapter: &wgpu::Adapter) -> wgpu::Features {
         adapter.features() & wgpu::Features::TIMESTAMP_QUERY
     }
+    /// Compressed-texture families the adapter offers, so cooked content can use its native
+    /// profile (ASTC on Apple GPUs, BC on desktop) instead of the uncompressed portable one.
+    #[must_use]
+    pub fn requested_content_features(adapter: &wgpu::Adapter) -> wgpu::Features {
+        adapter.features()
+            & (wgpu::Features::TEXTURE_COMPRESSION_ASTC
+                | wgpu::Features::TEXTURE_COMPRESSION_BC
+                | wgpu::Features::TEXTURE_COMPRESSION_BC_SLICED_3D)
+    }
     /// Capture the adapter and enabled device at platform creation.
     #[must_use]
     pub fn capture(adapter: &wgpu::Adapter, device: &wgpu::Device, generation: u64) -> Self {

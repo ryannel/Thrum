@@ -13,6 +13,7 @@ use std::{
 #[cfg(target_arch = "wasm32")]
 use web_time::Instant;
 
+use crate::contribution::{ContributionPasses, SceneContribution};
 use crate::{
     capabilities::DeviceCapabilities,
     extract::{ExtractReport, RenderExtractor, SourceTick},
@@ -154,11 +155,14 @@ pub struct FrameSample {
     pub render_cpu: Duration,
     /// Actual GPU pass durations: near/far Sun shadows, local clusters,
     /// forward, history, tone, then atmosphere transmittance, multiple/ground
-    /// irradiance preparation, sky view/specular preparation, diffuse irradiance and aerial perspective. The sky draw is included
-    /// in forward. Disabled or cached compute passes report zero.
+    /// irradiance preparation, sky view/specular preparation, diffuse irradiance and aerial perspective. The sky draw and an attached
+    /// scene contribution's compute pass are included in forward. Disabled or cached compute passes report zero.
     pub gpu_pass_ns: Option<[f64; 11]>,
     /// GPU time for the optional surface blit, when it was submitted and timed.
     pub gpu_present_ns: Option<f64>,
+    /// GPU time for a scene contribution's compute pass alone (already in forward), when one is
+    /// attached and timed.
+    pub gpu_contribution_ns: Option<f64>,
     /// This frame also wrote an acquired platform surface.
     pub surface_presented: bool,
     /// The GPU frame completed but its optional timing batch was unusable.
@@ -302,9 +306,98 @@ pub struct FrameHost<W: FrameWorld, V: SceneSource<W::Page>> {
     visual_lighting: Option<FrameLighting>,
     visual_revision: Option<[u8; 32]>,
     visual_owner: Arc<()>,
+    contribution: Option<Box<dyn SceneContribution>>,
+    contribution_error: Option<String>,
 }
 
 impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
+    /// Attach an engine module that draws into the scene's forward pass with the scene's
+    /// lighting. It is rebuilt on every visual or device republication.
+    ///
+    /// # Errors
+    /// The contribution's own refusal to draw into the current scene; nothing is attached.
+    pub fn set_scene_contribution(
+        &mut self,
+        mut contribution: Box<dyn SceneContribution>,
+    ) -> Result<(), String> {
+        if self
+            .slots
+            .iter()
+            .any(|slot| !matches!(slot.state, SlotState::Free))
+        {
+            return Err("attach a scene contribution with no frames in flight".to_owned());
+        }
+        contribution.rebuild(&self.prepared.scene_surface(&self.queue))?;
+        let passes = contribution.passes();
+        self.contribution = Some(contribution);
+        self.contribution_error = None;
+        if let Err(error) = self.declare_contribution_passes(passes) {
+            // Leave no contribution attached to a graph that does not declare its passes.
+            self.contribution = None;
+            let restored = self.declare_contribution_passes(ContributionPasses::default());
+            return Err(match restored {
+                Ok(()) => format!("contribution passes: {error}"),
+                Err(again) => format!("contribution passes: {error}; restoring: {again}"),
+            });
+        }
+        Ok(())
+    }
+
+    /// Why the last rebuild detached the scene contribution, if it did.
+    pub fn contribution_error(&self) -> Option<&str> {
+        self.contribution_error.as_deref()
+    }
+
+    /// Rebuild the contribution for a just-published scene, whose slots are all free.
+    fn rebuild_contribution(&mut self) -> Result<(), FrameError> {
+        let passes = match self.contribution.as_mut() {
+            Some(contribution) => {
+                match contribution.rebuild(&self.prepared.scene_surface(&self.queue)) {
+                    Ok(()) => contribution.passes(),
+                    Err(error) => {
+                        self.contribution = None;
+                        self.contribution_error = Some(error);
+                        ContributionPasses::default()
+                    }
+                }
+            }
+            None => ContributionPasses::default(),
+        };
+        self.declare_contribution_passes(passes)
+    }
+
+    /// Recreate free slot targets and timings when the declared contribution passes change, so
+    /// every graph includes exactly the passes of the attached contribution.
+    fn declare_contribution_passes(
+        &mut self,
+        passes: ContributionPasses,
+    ) -> Result<(), FrameError> {
+        if self.prepared.contribution_passes() == passes {
+            return Ok(());
+        }
+        self.prepared.set_contribution_passes(passes);
+        let capabilities = self.prepared.capabilities().clone();
+        let pass_count = self.prepared.scene_pass_count() + u32::from(self.presenter.is_some());
+        for slot in &mut self.slots {
+            slot.target = OffscreenTarget::new(
+                &self.device,
+                &self.prepared,
+                self.render_extent[0],
+                self.render_extent[1],
+            )
+            .map_err(|error| FrameError::Gpu(format!("contribution target: {error:?}")))?;
+            slot.timings = GpuTimings::new(&capabilities, &self.queue, pass_count)
+                .map_err(|error| FrameError::Gpu(format!("contribution timings: {error:?}")))?;
+            slot.presentation = self
+                .presenter
+                .as_ref()
+                .map(|presenter| presenter.bind_target(&self.device, &slot.target))
+                .transpose()
+                .map_err(|error| FrameError::Gpu(format!("contribution surface: {error:?}")))?;
+        }
+        self.reset_replacement_history();
+        Ok(())
+    }
     /// Maximum submitted scene frames awaiting GPU completion.
     pub const MAX_IN_FLIGHT: usize = IN_FLIGHT;
 
@@ -435,6 +528,8 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             visual_lighting: None,
             visual_revision: None,
             visual_owner: Arc::new(()),
+            contribution: None,
+            contribution_error: None,
         })
     }
 
@@ -509,6 +604,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.visual_revision = candidate.revision;
         self.reset_replacement_history();
         self.visual_owner = Arc::new(());
+        self.rebuild_contribution()?;
         Ok(true)
     }
 
@@ -923,6 +1019,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 render_cpu: Duration::ZERO,
                 gpu_pass_ns: None,
                 gpu_present_ns: None,
+                gpu_contribution_ns: None,
                 surface_presented: false,
                 timing_fault: false,
                 uploaded_rows: u32::try_from(uploaded.changed_rows).unwrap_or(u32::MAX),
@@ -1023,11 +1120,13 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
         let slot = &mut self.slots[slot_index];
-        if let Err(error) = self.prepared.encode(
+        if let Err(error) = self.prepared.encode_contributed(
             &mut encoder,
             self.generation,
             &slot.target,
             Some(&mut slot.timings),
+            None,
+            self.contribution.as_deref_mut(),
         ) {
             drop(encoder);
             let discarded = slot.timings.discard_unsubmitted(self.generation);
@@ -1060,6 +1159,9 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         }
         slot.render_done.store(false, Ordering::Release);
         self.queue.submit([encoder.finish()]);
+        if let Some(contribution) = self.contribution.as_mut() {
+            contribution.submitted(true);
+        }
         let done = Arc::clone(&slot.render_done);
         self.queue
             .on_submitted_work_done(move || done.store(true, Ordering::Release));
@@ -1174,9 +1276,19 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
         self.prepared
-            .encode_with_readback(&mut encoder, self.generation, &target, None, &mut pixels)
+            .encode_contributed(
+                &mut encoder,
+                self.generation,
+                &target,
+                None,
+                Some(&mut pixels),
+                self.contribution.as_deref_mut(),
+            )
             .map_err(|error| format!("capture render/readback: {error:?}"))?;
         let submitted = self.queue.submit([encoder.finish()]);
+        if let Some(contribution) = self.contribution.as_mut() {
+            contribution.submitted(false);
+        }
         self.wait(submitted, "capture")?;
         pixels
             .try_collect(self.generation)
@@ -1232,11 +1344,12 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 SlotState::Resolving(mut sample) => match slot.timings.try_collect(self.generation)
                 {
                     Ok(Some(passes)) => {
-                        if let Some((scene, present)) =
+                        if let Some((scene, present, contribution)) =
                             pass_durations(passes, sample.surface_presented, &self.prepared)
                         {
                             sample.gpu_pass_ns = Some(scene);
                             sample.gpu_present_ns = present;
+                            sample.gpu_contribution_ns = contribution;
                         } else {
                             sample.timing_fault = true;
                         }

@@ -34,6 +34,7 @@ fn sample(tick: u64) -> FrameSample {
         render_cpu: Duration::ZERO,
         gpu_pass_ns: None,
         gpu_present_ns: None,
+        gpu_contribution_ns: None,
         surface_presented: false,
         timing_fault: false,
         uploaded_rows: 0,
