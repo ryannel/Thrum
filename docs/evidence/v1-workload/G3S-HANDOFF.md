@@ -34,8 +34,8 @@ The Codex goal remains active. Its attachment is
 - Metal reproduced and verified the below-horizontal horizon fix. The analytic plateau
   and near/last blocker-window oracles now pass, with identical valley images on Metal and
   Chrome. [Terrain horizon evidence](G3S-TERRAIN-HORIZON-2026-11-07.md)
-  Next, diagnose the far-ridge silhouette against the authored mesh and fixed camera.
-  Measure browser prepare on edits and replacement before choosing a scheduling change.
+  Next, isolate the near-floor light strip with fixed low-Sun captures. Measure browser
+  prepare on edits and replacement before choosing a scheduling change.
 - G6 may prepare the native runner extraction. The rebased diff and raw checks still need
   root review before push. Native starter is the recommendation. The owner has the Chrome
   starter scope decision. The cooked material shader reload is approved for a separate
@@ -124,9 +124,10 @@ disappearing in frame 39. Sky samples changed by at most 1–2 SDR codes per ste
 crossing clip](g3s-first-light/solar-crossing.mp4) runs at 24 sampled frames/s.
 
 **Next defects.** The 103-code foreground jump is fixed. Open, in order:
-- The final image-only review passed. Its most visible flaw is a staircase far-ridge
-  silhouette, which is terrain geometry rather than shadowing. Score any shadow finding
-  with the ray probe before changing anything.
+- The image review flagged a stair-step far ridge. In the 1280×720 west-facing sunset still,
+  its edge tracks the source mesh within 0.48 px at p95. Doubling mesh density on both axes
+  moves the projected edge by at most 0.74 px. Keep the mesh for this view and evaluate
+  edge reconstruction in G4. Raw projection and measured rows are in `tmp/handback-review/ridge/`.
 - The 100-code foreground step at solar 77→78 was a shadow leak from back-face-culled cooked
   casters with the Sun below horizontal. It is fixed ([evidence](G3S-SUNSET-CASTERS-2026-11-07.md)).
 - Live cadence: `THRUM_CAPTURE_LIVE_TICKS` captures consecutive 60 Hz ticks. It exposed crest speckle at a
