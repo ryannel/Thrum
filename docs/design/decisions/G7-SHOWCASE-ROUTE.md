@@ -199,15 +199,42 @@ is pushed:
 
 The route sequence's source stays in the shared presets.
 
+## Edited-source proof
+
+A whole route run from an edited source shows the check follows content rather than the canonical scene:
+- `check --source DIR` cooks and runs every stop on both targets from `DIR` instead of the checked-in valley. The
+  proof edits one recognisable texture in a scratch copy, the ground's albedo, and leaves the checked-in scene,
+  assets and baseline untouched as its control.
+- A new source root no longer matches the fixed thresholds' calibration root, so the run refuses them, as for any
+  content change. `--recalibrate` is the reviewed recalibration: it applies the design's rule to this run, after both
+  controls pass, and records that it did. It cannot save the canonical baseline, which needs the fixed thresholds and
+  their root updated in the script.
+- The canonical baseline reports a different identity (the source root) and is not used. The run also reports each
+  stop's difference from it as information, which locates the edited region on both targets.
+- A reviewed replacement is saved to a scratch path with `--baseline PATH --save-baseline`, and a rerun compares
+  against it.
+
 ## What is measured, and what is kept apart
 
 - **Cold startup** is recorded as two proxies, labelled as such and never as windowed startup:
   - **Native:** time from the capture process launching to its first capture file being written, offscreen. Capture
     logs nothing when content is first drawn, so this includes one readback.
-  - **Chrome:** time from navigation to `cooked_status().drawn` in the checker's headless run. The checker's timeline
-    carries no timestamps, so this proxy is still owed.
+  - **Chrome:** `python3 scripts/run_v1_showcase.py startup --runs N` launches the checker's `route` case N times.
+    Each launch is a fresh Chrome process with a fresh profile and the HTTP cache disabled, on the already-built page,
+    with the cook server serving generation 1 before navigation.
+    - Inside each route page, the checker polls the page's own clock (`performance.now()`, milliseconds since
+      navigation start) together with `cooked_status()`. It records the last poll that saw no cooked draw and the
+      first that saw one. The cooked draw happened between them, so the first is an upper bound and the poll
+      interval is the granularity.
+    - It also records the page's navigation and resource timing for the Wasm and the cooked products, so a reader
+      can see where the time went.
+    - The first page of each launch is the cold sample; the later pages share a warm browser and GPU process and are
+      reported apart.
+    - Raw rows and their range and median are kept. This is a headless polling proxy for the first observed cooked
+      draw, not physical first-paint latency.
 
-  Build time is recorded separately and never counted. Windowed cold startup on the Mac waits on the owner's screen.
+  Build, cook and scripted capture time are recorded separately and never counted. Windowed cold startup on the Mac
+  waits on the owner's screen.
 - **Visible edit and pacing** is watched on screen in the running game: a live edit reaching the view, and motion
   along the route. It needs a presenting window. While the Mac screen is locked, the Mac items wait on the owner's
   screen grant, and Chrome's are taken through the checker's timeline. That timeline is headless, so it says
