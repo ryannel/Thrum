@@ -18,43 +18,39 @@ sys.exit(result.returncode)
 PY
 }
 
-thrum_device=$(run_simctl list devices available --json | python3 -c '
-import json, sys
-devices = [device for runtime, entries in json.load(sys.stdin)["devices"].items()
-           if runtime.endswith("iOS-27-2")
-           for device in entries if device["name"] == "iPhone 18 Pro"]
-if len(devices) != 1:
-    sys.exit("expected exactly one available iOS 27.2 iPhone 18 Pro simulator")
-print(devices[0]["udid"])
-')
-
-if ! run_simctl list devices booted --json | python3 -c '
-import json, sys
-udid = sys.argv[1]
-sys.exit(0 if any(device["udid"] == udid
-                  for entries in json.load(sys.stdin)["devices"].values()
-                  for device in entries) else 1)
-' "$thrum_device"; then
-    run_simctl boot "$thrum_device"
-fi
-run_simctl bootstatus "$thrum_device" -b
-
 RUSTC_WRAPPER= examples/v1-game-ios/ios/build-simulator.sh
 thrum_target="${CARGO_TARGET_DIR:-$PWD/target}"
-if run_simctl get_app_container "$thrum_device" org.thrum.v1 data >/dev/null 2>&1; then
-    run_simctl terminate "$thrum_device" org.thrum.v1 >/dev/null 2>&1 || true
-    run_simctl uninstall "$thrum_device" org.thrum.v1
-else
-    thrum_lookup_status=$?
-    if [[ "$thrum_lookup_status" -eq 124 ]]; then
-        echo "simulator app container lookup timed out" >&2
-        exit 124
-    fi
+thrum_app="$thrum_target/v1-game-ios-sim/ThrumV1.app"
+if [[ "$(plutil -extract CADisableMinimumFrameDurationOnPhone raw -expect bool "$thrum_app/Info.plist")" != true ]]; then
+    echo "built iPhone app does not enable its display link's full refresh-rate range" >&2
+    exit 1
 fi
-run_simctl install "$thrum_device" "$thrum_target/v1-game-ios-sim/ThrumV1.app"
+
+# A shared booted simulator can have a wedged app-container service or a live
+# installation. Qualify this build on a fresh device owned by this run.
+thrum_device=$(run_simctl create "Thrum V1 function $$" \
+    com.apple.CoreSimulator.SimDeviceType.iPhone-18-Pro \
+    com.apple.CoreSimulator.SimRuntime.iOS-27-2)
+if [[ ! "$thrum_device" =~ ^[[:xdigit:]]{8}(-[[:xdigit:]]{4}){3}-[[:xdigit:]]{12}$ ]]; then
+    echo "simctl create did not return a device UUID: $thrum_device" >&2
+    exit 1
+fi
+cleanup() {
+    local status=$?
+    run_simctl shutdown "$thrum_device" >/dev/null 2>&1 || true
+    if ! run_simctl delete "$thrum_device"; then
+        echo "failed to delete owned simulator $thrum_device" >&2
+        if [[ "$status" -eq 0 ]]; then status=1; fi
+    fi
+    exit "$status"
+}
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+run_simctl bootstatus "$thrum_device" -b
+run_simctl install "$thrum_device" "$thrum_app"
 thrum_container=$(run_simctl get_app_container "$thrum_device" org.thrum.v1 data)
 thrum_report="$thrum_container/tmp/thrum-v1-ios-report.txt"
-rm -f -- "$thrum_report"
 run_simctl launch "$thrum_device" org.thrum.v1
 for ((thrum_attempt = 0; thrum_attempt < 90; thrum_attempt++)); do
     if [[ -f "$thrum_report" ]]; then
@@ -79,6 +75,7 @@ for key in ("display_link_callbacks", "presented", "completed_gpu", "surface_sam
         sys.exit(f"simulator {key} below 600: {raw.strip()}")
 if "Apple iOS simulator GPU" not in raw:
     sys.exit(f"simulator did not select its Metal adapter: {raw.strip()}")
+print(raw.strip())
 print("iPhone 18 Pro simulator function passed: build, link, boot, Metal surface, "
       f"display-link callbacks={values['display_link_callbacks']}, "
       f"presented={values['presented']}, completed={values['completed_gpu']}")

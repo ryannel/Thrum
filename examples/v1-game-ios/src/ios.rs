@@ -278,58 +278,63 @@ impl App {
             host.resize_surface(extent)?;
             self.reconfigure = false;
         }
-        let can_acquire = !extent.contains(&0)
-            && !self.reconfigure
-            && extent == [config.width, config.height]
-            && host.pending_frames() < FrameHost::MAX_IN_FLIGHT;
-        let frame = if can_acquire {
-            match self
-                .surface
-                .as_ref()
-                .ok_or("iOS surface missing")?
-                .get_current_texture()
-            {
-                CurrentSurfaceTexture::Success(frame) => Some(frame),
-                CurrentSurfaceTexture::Suboptimal(frame) => {
-                    self.reconfigure = true;
-                    Some(frame)
-                }
-                CurrentSurfaceTexture::Lost | CurrentSurfaceTexture::Outdated => {
-                    self.reconfigure = true;
-                    self.unavailable += 1;
-                    None
-                }
-                CurrentSurfaceTexture::Timeout | CurrentSurfaceTexture::Occluded => {
-                    self.unavailable += 1;
-                    None
-                }
-                CurrentSurfaceTexture::Validation => {
-                    return Err("iOS surface validation fault".into());
-                }
-            }
-        } else {
-            None
-        };
-        let view = frame
-            .as_ref()
-            .map(|frame| frame.texture.create_view(&TextureViewDescriptor::default()));
-        let output = view.as_ref().map(|view| SurfaceOutput {
-            view,
-            extent: [config.width, config.height],
-        });
         let observed = Instant::now();
         let now = observed.saturating_duration_since(self.origin);
         host.set_presentation_lead(
             target_lead.saturating_sub(observed.saturating_duration_since(target_received)),
         );
-        let report = host.drive(now, output.as_ref())?;
-        if report.surface_presented {
-            self.queue
-                .as_ref()
-                .ok_or("iOS queue missing")?
-                .present(frame.ok_or("surface pass without acquired iOS frame")?);
-            self.presented += 1;
-        }
+        let advanced = host.advance(now).map_err(|error| error.to_string())?;
+        let can_acquire = advanced.can_acquire_serial()
+            && !extent.contains(&0)
+            && !self.reconfigure
+            && extent == [config.width, config.height];
+        let report = if can_acquire {
+            let surface = self.surface.as_ref().ok_or("iOS surface missing")?;
+            let queue = self.queue.as_ref().ok_or("iOS queue missing")?;
+            let encoded = advanced.encode_scene().map_err(|error| error.to_string())?;
+            let frame = if encoded.can_acquire_surface() {
+                match surface.get_current_texture() {
+                    CurrentSurfaceTexture::Success(frame) => Some(frame),
+                    CurrentSurfaceTexture::Suboptimal(frame) => {
+                        self.reconfigure = true;
+                        Some(frame)
+                    }
+                    CurrentSurfaceTexture::Lost | CurrentSurfaceTexture::Outdated => {
+                        self.reconfigure = true;
+                        self.unavailable += 1;
+                        None
+                    }
+                    CurrentSurfaceTexture::Timeout | CurrentSurfaceTexture::Occluded => {
+                        self.unavailable += 1;
+                        None
+                    }
+                    CurrentSurfaceTexture::Validation => {
+                        encoded.skip();
+                        return Err("iOS surface validation fault".into());
+                    }
+                }
+            } else {
+                None
+            };
+            if let Some(frame) = frame {
+                let view = frame.texture.create_view(&TextureViewDescriptor::default());
+                let report = encoded
+                    .submit(Some(&SurfaceOutput {
+                        view: &view,
+                        extent,
+                    }))
+                    .map_err(|error| error.to_string())?;
+                if report.surface_presented {
+                    queue.present(frame);
+                    self.presented += 1;
+                }
+                report
+            } else {
+                encoded.skip()
+            }
+        } else {
+            advanced.submit(None).map_err(|error| error.to_string())?
+        };
         if let Some(refused) = report.overload {
             self.overloads += 1;
             self.refused_ticks = self.refused_ticks.saturating_add(refused);

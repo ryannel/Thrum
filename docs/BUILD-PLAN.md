@@ -58,12 +58,13 @@ The native Metal recorder stays in G3t. The later dedicated performance phase ow
   limits are retired. Do not close on a partial hash or an easier row.
 - [x] **G3a — executing graph and live scene.** Render/Compute/Copy closures execute in dependency order with culling,
   derived attachment ops, live camera/lights/cascades, reversed-Z `Depth32Float`, indexed draws and submitted transforms.
-- [ ] **G3b — functional engine frame runtime.** Display-link targets drive Mac/iOS/browser presentation; world/render
-  work is off Apple's main thread, at most two frames are in flight, interpolation is on GPU and acquisition is late.
+- [ ] **G3b — functional engine frame runtime.** Display-link targets drive Mac/iOS/browser presentation.
+  Mac runs world/render work off its main thread. GPU interpolation, late acquisition and a two-frame limit
+  are shared.
   Core owns clock/lane; thrum-render owns `FrameHost`, slots, tokens, completion and history without game schema.
   Metal pause/replacement, Mac overload drain/resume and ten Chrome function rows pass; browser reconstruction retains
-  authority/input. Actual Chrome tab transitions pass. The iOS simulator builds and draws; input and surface loss
-  remain open, along with live Mac P/loss. Record latency/present intervals;
+  authority/input. Actual Chrome tab transitions pass. The iOS simulator builds and draws; off-main work, input
+  and surface loss remain open, along with live Mac P/loss. Record latency/present intervals;
   investigate visible stutter and hitches. [Frame history](evidence/render/V1-BOUNDED-FRAMES-2026-11-04.md) and wgpu
   allocations are baselines; native recording stays G3t.
 - [ ] **G3s — physical sky, Sun and atmosphere.** Hillaire (2020) transmittance, multiple-scattering, sky-view/aerial
