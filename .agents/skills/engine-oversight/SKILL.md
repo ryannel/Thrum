@@ -22,6 +22,8 @@ reviewer handed the author's conclusions isn't independent. Look for:
 - techniques grounded in shipped practice and current research, each shown to make its cues across the range;
 - milestones that are outcomes in the game, riskiest first, each with done-when checks specific enough to refuse
   completion over, including one that would catch the plausible wrong substitute;
+- the first milestone small enough to reach the game soon, and proof bounded by what the player will see rather
+  than open-ended accuracy;
 - every required cue covered by a milestone or an explicit deferral;
 - work broken down enough that the agent, and you, can tell what's next.
 
