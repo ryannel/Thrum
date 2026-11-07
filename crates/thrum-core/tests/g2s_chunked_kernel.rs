@@ -372,6 +372,19 @@ fn a_runtime_whose_commit_unwound_refuses_reuse() {
         world.runtime.rewind_many(&mut undo)
     }));
     assert!(rewound.is_err(), "a poisoned runtime must refuse to rewind");
+    // A capture or delta would label the half-committed world with the old
+    // tick, and restoring it would launder the poison.
+    let captured =
+        std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| world.runtime.capture()));
+    assert!(
+        captured.is_err(),
+        "a poisoned runtime must refuse to capture"
+    );
+    let mut delta = world.runtime.new_delta();
+    let delta = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        world.runtime.capture_delta_into(&mut delta)
+    }));
+    assert!(delta.is_err(), "a poisoned runtime must refuse a delta");
     // A full restore replaces the half-committed state and recovers the runtime.
     world.runtime.restore(&capture, || Page).expect("restore");
     world
