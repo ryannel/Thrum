@@ -560,3 +560,133 @@ fn equal_depth_ties_keep_direct_order_whichever_slot_enters() {
         );
     });
 }
+
+/// A box of `half` extents at `center`, turned by `yaw` about +y.
+fn place(
+    instance: &mut thrum_render::abi::InstanceRecord,
+    half: [f32; 3],
+    center: [f32; 3],
+    yaw: f32,
+) {
+    let (sin, cos) = yaw.sin_cos();
+    let axes = [[cos, 0.0, -sin], [0.0, 1.0, 0.0], [sin, 0.0, cos]];
+    for (axis, extent) in half.into_iter().enumerate() {
+        for (row, &unit) in axes[axis].iter().enumerate() {
+            instance.current[axis][row] = unit * extent;
+            instance.normal[axis][row] = unit / extent;
+        }
+    }
+    instance.current[3] = [center[0], center[1], center[2], 1.0];
+    instance.previous = instance.current;
+}
+
+/// The full-footprint tie (design, "Depth tolerance"): slot 0, a small box,
+/// enters flush inside slot 1's wall, its front face coplanar with the wall's
+/// in exact arithmetic but built from different vertices, seen face-on and
+/// close up through the field's projection. Turned by `yaw`, the shared plane
+/// is not axis-aligned, so the two faces agree only up to rounding. Only the
+/// wall is in the prepass, so the final cull compares the box's corners
+/// against the wall's rasterized depth. Direct draws the box first, so it
+/// wins whatever ties the rasterizer makes; Occlusion must keep it. Returns
+/// (pixels the box wins in Direct, pixels Occlusion changes).
+async fn flush_tie(origin: [f32; 3], yaw: f32) -> (usize, usize) {
+    let (adapter, device, queue) = device().await;
+    let capabilities = DeviceCapabilities::capture(&adapter, &device, 47);
+    let (sin, cos) = yaw.sin_cos();
+    let at = |offset: [f32; 3]| {
+        let turned = [
+            cos * offset[0] + sin * offset[2],
+            offset[1],
+            -sin * offset[0] + cos * offset[2],
+        ];
+        std::array::from_fn(|axis| origin[axis] + turned[axis])
+    };
+    let camera = SyntheticView::perspective(
+        at([0.0, 0.0, 0.5]),
+        at([0.0, 0.0, 2.0]),
+        [0.0, 1.0, 0.0],
+        46.0_f32.to_radians(),
+        16.0 / 9.0,
+        0.1,
+        30_000.0,
+    )
+    .expect("field projection");
+    let mut base = SyntheticScene::grid(2).expect("grid");
+    base.view = camera;
+    // The wall's front face is 1.5 m ahead of the eye's start along the view.
+    place(
+        &mut base.instances[1],
+        [2.0, 1.5, 0.5],
+        at([0.0, 0.0, 2.0]),
+        yaw,
+    );
+    // The box waits outside the view, then moves flush: front face on the same plane.
+    let half = [0.25, 0.25, 0.25];
+    place(&mut base.instances[0], half, at([60.0, 0.0, 1.75]), yaw);
+    assert_ne!(
+        base.instances[0].ids[1], base.instances[1].ids[1],
+        "materials differ"
+    );
+    let mut flush = base.clone();
+    place(&mut flush.instances[0], half, at([0.1, -0.05, 1.75]), yaw);
+    let mut walled = flush.clone();
+    walled.instances[0].ids[3] = 0;
+    let mut images = Vec::new();
+    for (mode, last) in [
+        (CullMode::Direct, &walled),
+        (CullMode::Direct, &flush),
+        (CullMode::Occlusion, &flush),
+    ] {
+        let mut first = base.clone();
+        first.camera_culling = mode;
+        let mut sequence = Sequence::new(&capabilities, &device, &queue, &first).await;
+        for _ in 0..2 {
+            sequence
+                .frame(&capabilities, (&device, &queue), &first, true)
+                .await;
+        }
+        let mut last = last.clone();
+        last.camera_culling = mode;
+        sequence
+            .prepared
+            .upload_instances(&queue, &last.instances, &[0])
+            .expect("upload");
+        images.push(
+            sequence
+                .frame(&capabilities, (&device, &queue), &last, true)
+                .await
+                .expect("pixels"),
+        );
+    }
+    (
+        differing(&images[0], &images[1]),
+        differing(&images[1], &images[2]),
+    )
+}
+
+/// The tie witness near the origin and at the field's far extent (a
+/// non-dyadic origin, so world positions round), square to the axes and
+/// turned. On cubes the derived tolerance is not what keeps the box: square to
+/// the axes, the corners and the vertex shader form the face from identical
+/// operations, so its nearest depth equals the face's; turned, the world AABB
+/// stands centimetres proud of the face. A zero-tolerance mutant passes here
+/// too. The bound matters where geometry touches its AABB at a rounded pose.
+#[test]
+fn a_box_flush_with_a_prepass_wall_keeps_its_ties_near_and_far() {
+    pollster::block_on(async {
+        let mut results = Vec::new();
+        for origin in [[0.0, 1.0, 0.0], [-400.37, 1.13, 400.71]] {
+            for yaw in [0.0, 0.3] {
+                results.push((origin, yaw, Box::pin(flush_tie(origin, yaw)).await));
+            }
+        }
+        eprintln!("(origin, yaw, (box pixels in Direct, pixels Occlusion changed)): {results:?}");
+        for (origin, yaw, (won, changed)) in results {
+            assert!(won > 0, "{origin:?} {yaw}: the box wins ties in Direct");
+            assert_eq!(
+                changed, 0,
+                "{origin:?} {yaw}: Occlusion keeps the flush box"
+            );
+        }
+    });
+}

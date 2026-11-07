@@ -84,18 +84,25 @@ pub(super) fn build(depth: &[f32], extent: [u32; 2]) -> Vec<Level> {
     levels
 }
 
-/// The absolute-floor tolerance: `1e-6 + 4 ulp(depth)`.
-pub(super) fn epsilon(depth: f32) -> f32 {
-    let ulp = f32::from_bits(depth.abs().to_bits() + 1) - depth.abs();
-    1e-6 + 4.0 * ulp
+/// gamma16 = 16 u / (1 - 16 u), u = 2^-24: one path's clip error per unit
+/// magnitude (design, "Depth tolerance").
+pub(super) const CLIP_GAMMA: f32 = 9.536_752e-7;
+/// Two divides at 2.5 ulp, four for the rasterizer's interpolation, one for
+/// the comparison.
+const DEPTH_ULPS: f32 = 10.0;
+
+fn depth_ulp(depth: f32) -> f32 {
+    f32::from_bits(depth.abs().to_bits() + 1) - depth.abs()
 }
 
 /// Whether a box whose eight clip-space corners are `corners` is hidden by the
 /// pyramid. The caller has already kept it by frustum; a corner at or behind
-/// the near plane keeps it visible.
-pub(super) fn occluded(corners: &[[f32; 4]; 8], pyramid: &[Level]) -> bool {
+/// the near plane keeps it visible. `magnitude` bounds the |clip z| and
+/// |clip w| terms of every position the vertex shader or the corners form.
+pub(super) fn occluded(corners: &[[f32; 4]; 8], pyramid: &[Level], magnitude: [f32; 2]) -> bool {
     let size = pyramid[0].extent;
     let mut nearest = f32::NEG_INFINITY;
+    let mut w_min = f32::INFINITY;
     let mut low = [u32::MAX; 2];
     let mut high = [0u32; 2];
     for &[x, y, z, w] in corners {
@@ -104,6 +111,7 @@ pub(super) fn occluded(corners: &[[f32; 4]; 8], pyramid: &[Level]) -> bool {
             return false;
         }
         nearest = nearest.max(z / w);
+        w_min = w_min.min(w);
         let uv = [0.5 + 0.5 * x / w, 0.5 - 0.5 * y / w];
         for axis in 0..2 {
             #[expect(
@@ -130,12 +138,21 @@ pub(super) fn occluded(corners: &[[f32; 4]; 8], pyramid: &[Level]) -> bool {
             farthest = farthest.min(mip.at(x, y));
         }
     }
-    nearest < farthest - epsilon(farthest)
+    let w_low = w_min - 2.0 * CLIP_GAMMA * magnitude[1];
+    if w_low <= 0.0 {
+        return false;
+    }
+    let slack = 2.0 * CLIP_GAMMA * (magnitude[0] + nearest.abs() * magnitude[1]) / w_low
+        + DEPTH_ULPS * depth_ulp(nearest);
+    nearest + slack < farthest
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Corners given exactly, as these tests construct them: no clip term.
+    const EXACT: [f32; 2] = [0.0, 0.0];
 
     struct Lcg(u64);
     impl Lcg {
@@ -278,7 +295,7 @@ mod tests {
                 }
                 let z = random.unit() * 0.7;
                 let box_corners = corners(x, y, z);
-                if occluded(&box_corners, &pyramid) {
+                if occluded(&box_corners, &pyramid, EXACT) {
                     hidden += 1;
                     assert!(
                         !truly_visible(&depth, extent, x, y, z),
@@ -298,23 +315,43 @@ mod tests {
         let x = [-0.3, 0.2];
         let y = [-0.4, 0.1];
         assert!(
-            !occluded(&corners(x, y, 0.25), &pyramid),
+            !occluded(&corners(x, y, 0.25), &pyramid, EXACT),
             "equal depth is visible"
         );
+        // The spacing just below the power of two, where the nearest depth lies.
+        let ulp = 0.25 - f32::from_bits(0.25_f32.to_bits() - 1);
         assert!(
-            !occluded(&corners(x, y, 0.25 - 5e-7), &pyramid),
-            "within ε is visible"
+            !occluded(&corners(x, y, 0.25 - 9.0 * ulp), &pyramid, EXACT),
+            "within the depth ulps is visible"
         );
-        assert!(occluded(&corners(x, y, 0.2), &pyramid), "farther is hidden");
+        assert!(
+            occluded(&corners(x, y, 0.25 - 11.0 * ulp), &pyramid, EXACT),
+            "past them is hidden"
+        );
+        // Positions of magnitude 10 under a z row of 0.1: the clip bound is
+        // 2 gamma16 (0.1 + 0.25 * 10) / w, about 4.96e-6 at w = 1.
+        let magnitude = [0.1, 10.0];
+        assert!(
+            !occluded(&corners(x, y, 0.25 - 4.5e-6), &pyramid, magnitude),
+            "within the clip bound is visible"
+        );
+        assert!(
+            occluded(&corners(x, y, 0.25 - 6.0e-6), &pyramid, magnitude),
+            "past it is hidden"
+        );
+        assert!(
+            occluded(&corners(x, y, 0.2), &pyramid, EXACT),
+            "farther is hidden"
+        );
         let mut crossing = corners(x, y, 0.2);
         crossing[3] = [0.0, 0.0, 1.0, 1.0];
         assert!(
-            !occluded(&crossing, &pyramid),
+            !occluded(&crossing, &pyramid, EXACT),
             "a corner on the near plane is visible"
         );
         crossing[3] = [0.0, 0.0, 0.5, -0.1];
         assert!(
-            !occluded(&crossing, &pyramid),
+            !occluded(&crossing, &pyramid, EXACT),
             "a corner behind the eye is visible"
         );
     }
@@ -332,7 +369,8 @@ mod tests {
         let y = [-texel(32.5), -texel(30.5)];
         assert!(!occluded(
             &corners([x[0], x[1]], [y[0], y[1]], 0.5),
-            &pyramid
+            &pyramid,
+            EXACT
         ));
     }
 }
