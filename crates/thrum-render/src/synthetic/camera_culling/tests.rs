@@ -5,6 +5,7 @@
 use super::super::{FrameLighting, SyntheticLight, SyntheticScene, SyntheticView};
 use super::*;
 use crate::capabilities::DeviceCapabilities;
+use crate::contribution::SceneContribution;
 
 /// Occlusion only: the prepass list's indirect arguments, for the Metal
 /// host tests.
@@ -531,6 +532,256 @@ fn an_entering_slot_on_a_tie_is_drawn_by_the_final_list_alone() {
                 [(0, 1), (1, 1), (1, 2)],
                 "{name}: (prepass, final) per frame"
             );
+        }
+    });
+}
+
+/// A visible contribution: a half-transparent triangle in front of the
+/// cube, alpha-blended at the end of forward. An opaque draw recorded
+/// after it would overwrite the blend, which a no-op fixture cannot show.
+#[derive(Default)]
+pub(crate) struct Veil {
+    pipeline: Option<wgpu::RenderPipeline>,
+}
+
+const VEIL: &str = "
+    @vertex fn veil_vertex(@builtin(vertex_index) index: u32) -> @builtin(position) vec4f {
+        let corners = array(vec2f(-0.8, -0.8), vec2f(0.8, -0.8), vec2f(0.0, 0.8));
+        return vec4f(corners[index], 0.99, 1.0);
+    }
+    struct Targets { @location(0) colour: vec4f, @location(1) motion: vec4f }
+    @fragment fn veil_fragment() -> Targets {
+        return Targets(vec4f(0.2, 0.6, 1.0, 0.5), vec4f(0.0));
+    }";
+
+impl SceneContribution for Veil {
+    fn passes(&self) -> crate::contribution::ContributionPasses {
+        crate::contribution::ContributionPasses::default()
+    }
+    fn rebuild(&mut self, surface: &crate::contribution::SceneSurface<'_>) -> Result<(), String> {
+        let device = surface.device;
+        let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("veil"),
+            source: wgpu::ShaderSource::Wgsl(VEIL.into()),
+        });
+        let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("veil"),
+            bind_group_layouts: &[],
+            immediate_size: 0,
+        });
+        self.pipeline = Some(
+            device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+                label: Some("veil"),
+                layout: Some(&layout),
+                vertex: wgpu::VertexState {
+                    module: &module,
+                    entry_point: Some("veil_vertex"),
+                    compilation_options: wgpu::PipelineCompilationOptions::default(),
+                    buffers: &[],
+                },
+                primitive: wgpu::PrimitiveState::default(),
+                depth_stencil: Some(wgpu::DepthStencilState {
+                    format: surface.depth_format,
+                    depth_write_enabled: Some(false),
+                    depth_compare: Some(wgpu::CompareFunction::Greater),
+                    stencil: wgpu::StencilState::default(),
+                    bias: wgpu::DepthBiasState::default(),
+                }),
+                multisample: wgpu::MultisampleState::default(),
+                fragment: Some(wgpu::FragmentState {
+                    module: &module,
+                    entry_point: Some("veil_fragment"),
+                    compilation_options: wgpu::PipelineCompilationOptions::default(),
+                    targets: &[
+                        Some(wgpu::ColorTargetState {
+                            format: surface.color_formats[0],
+                            blend: Some(wgpu::BlendState::ALPHA_BLENDING),
+                            write_mask: wgpu::ColorWrites::ALL,
+                        }),
+                        Some(wgpu::ColorTargetState {
+                            format: surface.color_formats[1],
+                            blend: None,
+                            write_mask: wgpu::ColorWrites::empty(),
+                        }),
+                    ],
+                }),
+                multiview_mask: None,
+                cache: None,
+            }),
+        );
+        Ok(())
+    }
+    fn encode_upload(
+        &mut self,
+        _: &mut wgpu::CommandEncoder,
+        _: &crate::contribution::ContributionFrame,
+    ) {
+    }
+    fn computes(&self, _: &crate::contribution::ContributionFrame) -> bool {
+        false
+    }
+    fn encode_compute(
+        &mut self,
+        _: &mut wgpu::ComputePass<'_>,
+        _: &crate::contribution::ContributionFrame,
+    ) {
+    }
+    fn encode_after_compute(&mut self, _: &mut wgpu::CommandEncoder) {}
+    fn draw(&self, pass: &mut wgpu::RenderPass<'_>) {
+        if let Some(pipeline) = &self.pipeline {
+            pass.set_pipeline(pipeline);
+            pass.draw(0..3, 0..1);
+        }
+    }
+    fn submitted(&mut self, _: bool) {}
+}
+
+/// Three frames of `scene` with a final readback each, with the veil drawn at
+/// the end of forward when `veiled`. Returns each frame's pixels and final
+/// list count (`None` for Direct).
+async fn veiled_frames(
+    (capabilities, device, queue): (&DeviceCapabilities, &wgpu::Device, &wgpu::Queue),
+    scene: &SyntheticScene,
+    veiled: bool,
+) -> Vec<(Vec<u8>, Option<u32>)> {
+    let lighting = FrameLighting::Diagnostic(SyntheticLight::default());
+    let mut prepared =
+        PreparedSynthetic::prepare_with_capabilities(capabilities, queue, scene, lighting, 1.0)
+            .await
+            .expect("prepare");
+    let mut veil = Veil::default();
+    veil.rebuild(&prepared.scene_surface(queue)).expect("veil");
+    let mut target = OffscreenTarget::new(device, &prepared, 320, 180).expect("target");
+    if scene.camera_culling == CullMode::Occlusion {
+        // The forward pass, the only place the contribution draws, runs after
+        // every pass that builds or reads the prepass depth.
+        let order: Vec<&str> = target
+            .graph
+            .plan()
+            .pass_bindings()
+            .map(|(_, pass)| pass.name.as_str())
+            .collect();
+        let at = |name: &str| order.iter().position(|&pass| pass == name).expect(name);
+        let forward = at("synthetic forward opaque");
+        for name in [
+            visibility::PREPASS_LIST_PASS,
+            DEPTH_PREPASS_PASS,
+            visibility::PYRAMID_PASS,
+            visibility::FINAL_PASS,
+        ] {
+            assert!(at(name) < forward, "{name} runs before forward: {order:?}");
+        }
+    }
+    let mut frames = Vec::new();
+    for _ in 0..3 {
+        prepared
+            .update_frame(queue, &mut target, scene, lighting, 1.0)
+            .expect("update");
+        let mut readback = target.readback(device);
+        let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+        let contribution: Option<&mut (dyn SceneContribution + 'static)> =
+            if veiled { Some(&mut veil) } else { None };
+        prepared
+            .encode_contributed(
+                &mut encoder,
+                capabilities.generation(),
+                &target,
+                None,
+                Some(&mut readback),
+                contribution,
+            )
+            .expect("encode");
+        queue.submit([encoder.finish()]);
+        prepared.commit_frame();
+        device
+            .poll(wgpu::PollType::wait_indefinitely())
+            .expect("poll");
+        let pixels = readback
+            .try_collect(capabilities.generation())
+            .expect("collect")
+            .expect("mapped pixels");
+        let drawn = target
+            .visibility
+            .as_ref()
+            .map(|list| instances(device, queue, list.args()));
+        frames.push((pixels, drawn));
+    }
+    frames
+}
+
+/// The contribution witness with an occluder: slot 1, a small cube straight
+/// behind slot 0's, is in view and hidden. With the veil attached, Occlusion
+/// drops slot 1 from its final list once settled, and every frame, cold and
+/// settled, is byte-equal to Direct's with the veil. The veil covers cube
+/// pixels, so a contribution drawn before the final list (whose opaque draw
+/// would then cover it) fails here. The contribution cannot reach the prepass
+/// or the pyramid: its draw is recorded only in the forward pass, which the
+/// graph orders after the final cull, and the depth prepass has no colour
+/// target to draw it into.
+#[test]
+fn a_blended_contribution_stays_on_top_while_occlusion_hides_a_slot() {
+    pollster::block_on(async {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let adapter = instance
+            .request_adapter(&wgpu::RequestAdapterOptions::default())
+            .await
+            .expect("real adapter");
+        let (device, queue) = adapter
+            .request_device(&wgpu::DeviceDescriptor::default())
+            .await
+            .expect("device");
+        let capabilities = DeviceCapabilities::capture(&adapter, &device, 41);
+        let gpu = (&capabilities, &device, &queue);
+        let mut scene = SyntheticScene::grid(2).expect("grid");
+        scene.view = SyntheticView::perspective(
+            [0.0, 0.0, -1.5],
+            [0.0, 0.0, 0.5],
+            [0.0, 1.0, 0.0],
+            1.0,
+            16.0 / 9.0,
+            0.01,
+            10.0,
+        )
+        .expect("view");
+        scene.instances[0].current[3] = [0.0, 0.0, 0.5, 1.0];
+        scene.instances[0].previous = scene.instances[0].current;
+        place(&mut scene.instances[1], [0.03; 3], [0.0, 0.0, 1.5], 0.0);
+        let plain = veiled_frames(gpu, &scene, false).await;
+        let mut uncovered = scene.clone();
+        uncovered.instances[0].ids[3] = 0;
+        let behind = veiled_frames(gpu, &uncovered, false).await;
+        let direct = veiled_frames(gpu, &scene, true).await;
+        let mut runs = Vec::new();
+        for mode in [CullMode::Frustum, CullMode::Occlusion] {
+            let mut culled = scene.clone();
+            culled.camera_culling = mode;
+            runs.push(veiled_frames(gpu, &culled, true).await);
+        }
+        // The veil lies over the cube: pixels the cube owns that the veil changes.
+        let overlap = (0..direct[2].0.len() / 4)
+            .filter(|&texel| {
+                let at = |image: &[u8]| image[texel * 4..texel * 4 + 4].to_vec();
+                at(&direct[2].0) != at(&plain[2].0) && at(&plain[2].0) != at(&behind[2].0)
+            })
+            .count();
+        assert!(overlap > 1_000, "the veil covers the cube: {overlap}");
+        let counts: Vec<Vec<Option<u32>>> = runs
+            .iter()
+            .map(|frames| frames.iter().map(|frame| frame.1).collect())
+            .collect();
+        assert_eq!(counts[0], [Some(2); 3], "Frustum draws both");
+        assert_eq!(
+            counts[1],
+            [Some(2), Some(1), Some(1)],
+            "cold Occlusion draws the frustum set, then hides slot 1"
+        );
+        for (mode, frames) in ["Frustum", "Occlusion"].into_iter().zip(&runs) {
+            for (frame, ((culled, _), (reference, _))) in frames.iter().zip(&direct).enumerate() {
+                assert!(
+                    culled == reference,
+                    "{mode} frame {frame} differs from Direct"
+                );
+            }
         }
     });
 }

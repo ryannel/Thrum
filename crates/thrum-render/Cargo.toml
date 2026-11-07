@@ -51,3 +51,7 @@ harness = false
 [[bench]]
 name = "camera_culling_encode"
 harness = false
+
+[[bench]]
+name = "occlusion_passes"
+harness = false
