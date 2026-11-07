@@ -64,7 +64,11 @@ impl ReflectionPrepared {
                 concat!(
                     include_str!("storage.wgsl"),
                     "\n",
-                    include_str!("common.wgsl")
+                    concat!(
+                        include_str!("geometry.wgsl"),
+                        "\n",
+                        include_str!("common.wgsl")
+                    )
                 ),
                 include_str!("brdf.wgsl"),
                 include_str!("reflection.wgsl")

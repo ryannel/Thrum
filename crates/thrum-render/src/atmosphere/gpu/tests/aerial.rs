@@ -62,7 +62,11 @@ impl Output {
             concat!(
                 include_str!("../../storage.wgsl"),
                 "\n",
-                include_str!("../../common.wgsl")
+                concat!(
+                    include_str!("../../geometry.wgsl"),
+                    "\n",
+                    include_str!("../../common.wgsl")
+                )
             )
         );
         let pipeline = pipeline(device, &source, "aerial_main");

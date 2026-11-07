@@ -16,7 +16,11 @@ const LUT_SHADER: &str = concat!(
     concat!(
         include_str!("storage.wgsl"),
         "\n",
-        include_str!("common.wgsl")
+        concat!(
+            include_str!("geometry.wgsl"),
+            "\n",
+            include_str!("common.wgsl")
+        )
     ),
     "\n",
     include_str!("lut.wgsl"),
@@ -38,6 +42,7 @@ pub(crate) struct AtmospherePrepared {
     pub(super) textures: [wgpu::Texture; 4],
     pub(super) aerial_textures: [wgpu::Texture; 2],
     aerial_views: [wgpu::TextureView; 2],
+    transmittance_view: wgpu::TextureView,
     aerial_sampler: wgpu::Sampler,
     uniform: wgpu::Buffer,
     compute: [wgpu::ComputePipeline; 4],
@@ -56,6 +61,10 @@ pub(crate) struct AtmospherePrepared {
 }
 
 impl AtmospherePrepared {
+    pub(crate) fn transmittance_view(&self) -> &wgpu::TextureView {
+        &self.transmittance_view
+    }
+
     pub(crate) fn new(
         device: &wgpu::Device,
         queue: &wgpu::Queue,
@@ -144,6 +153,7 @@ impl AtmospherePrepared {
             textures,
             aerial_textures,
             aerial_views,
+            transmittance_view: views[0].clone(),
             aerial_sampler,
             uniform,
             compute: [first.0, second.0, third.0, ground.0],
@@ -370,7 +380,11 @@ fn prepare_diffuse(
                 concat!(
                     include_str!("storage.wgsl"),
                     "\n",
-                    include_str!("common.wgsl")
+                    concat!(
+                        include_str!("geometry.wgsl"),
+                        "\n",
+                        include_str!("common.wgsl")
+                    )
                 ),
                 "\n",
                 include_str!("irradiance.wgsl"),
@@ -454,7 +468,11 @@ fn prepare_aerial(
                 concat!(
                     include_str!("storage.wgsl"),
                     "\n",
-                    include_str!("common.wgsl")
+                    concat!(
+                        include_str!("geometry.wgsl"),
+                        "\n",
+                        include_str!("common.wgsl")
+                    )
                 ),
                 "\n",
                 include_str!("aerial.wgsl")
@@ -651,7 +669,11 @@ fn prepare_sky(
                 concat!(
                     include_str!("storage.wgsl"),
                     "\n",
-                    include_str!("common.wgsl")
+                    concat!(
+                        include_str!("geometry.wgsl"),
+                        "\n",
+                        include_str!("common.wgsl")
+                    )
                 ),
                 "\n",
                 include_str!("sky.wgsl")

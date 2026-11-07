@@ -4,11 +4,9 @@
 @group(0) @binding(4) var lut_sampler: sampler;
 @group(0) @binding(5) var ground_irradiance: texture_2d<f32>;
 fn sun_transmittance(p: vec3<f32>, sun: vec3<f32>) -> vec3<f32> {
-    let h = altitude(p);
-    let up = normalize(p+vec3(0.0,R,0.0));
-    let mu = dot(up,sun);
-    if blocked(h,mu) { return vec3(0.0); }
-    return textureSampleLevel(transmittance,lut_sampler,trans_uv(h,mu,textureDimensions(transmittance)),0.0).rgb;
+    let h=altitude(p);
+    let mu=dot(normalize(p+vec3(0.0,R,0.0)),sun);
+    return sample_sun_transmittance(h,mu,transmittance,lut_sampler);
 }
 @compute @workgroup_size(8,8)
 fn transmittance_main(@builtin(global_invocation_id) id: vec3<u32>) {

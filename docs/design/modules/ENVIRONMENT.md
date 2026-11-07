@@ -180,12 +180,13 @@ identified ready build remains until a complete replacement is published.
 
 ### Selected mathematical relationships and domains
 
-The fixed Earth profile uses a256×64 transmittance LUT and512×32 multiple-scattering LUT. Below the first
-transmittance row, both lookup coordinates use its dimension-derived altitude (~6.151m at64rows); true-height
-planet blockage precedes lookup. The retained first-row approximation is checked against CPU direct lighting.
-The larger Sun-angle chart costs128KiB (+120KiB) and10,485,760 volume evaluations per profile refresh; each
-transport step keeps one bilinear lookup. The1024-column same-estimator comparison bounds sampled interpolation,
-not closure/spectral error.
+The fixed Earth profile uses 256×64 transmittance (T) and 512×32 multiple-scattering (M) LUTs. The disk,
+transport and opaque receivers share T lookup. Opaque receivers use their position in the view's local tangent
+frame, including shell entry for rays from above the atmosphere. The raw Sun is multiplied by T once; the
+camera-height value remains for metering and the diagnostic volume. True-height planet blockage precedes the
+first-row approximation (~6.151 m), which sets both lookup coordinates. M costs 128 KiB and 10,485,760 volume
+evaluations per profile refresh, with one lookup per transport step. The 1024-column comparison bounds sampled
+interpolation, not closure or spectral error.
 
 G3s sky diffuse uses a full-sphere nine-coefficient irradiance polynomial, including the planet boundary but
 excluding the separate Sun disk. With `M0=∫L`, `M1=∫Lω`, `Q=∫L(ωωᵀ−I/3)`, evaluate
@@ -193,8 +194,8 @@ excluding the separate Sun disk. With `M0=∫L`, `M1=∫Lω`, `Q=∫L(ωωᵀ−
 final reconstructed irradiance. The kernel differs from clamped cosine by at most `3/32`, giving absolute
 channel error ≤`3M0/32` plus quadrature error, not a universal relative tolerance. Compare independently
 against direct cosine integration of the same filtered LUT before promotion; transport/spectral error is separate.
-The existing 256-sample upper horizontal meter stays independent. A private 144-byte tail follows the 64-byte
-light prefix; Lambert `/π`, AO, solar colour/lux and storage scale apply once. One cached diffuse workgroup
+Keep the 256-sample horizontal meter independent so SH truncation does not drive exposure. A private 144-byte
+tail follows the 64-byte light prefix; Lambert `/π`, AO, solar colour/lux and storage scale apply once. One cached diffuse workgroup
 adds 1024 samples: horizon-split GL16 in squared μ-distance ×32 azimuths, ~10 KiB shared storage, no new pass,
 readback or per-pixel atomics. Fixed authored ambient is unchanged. Sixty-four normal probes record negative raw
 RGB risk (count/minimum, not affected pixels); exposure flag16 is informational and never changes gain/history.

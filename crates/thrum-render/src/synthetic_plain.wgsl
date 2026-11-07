@@ -1,3 +1,7 @@
+fn sun_irradiance(world_position: vec3<f32>) -> vec3<f32> {
+    return light.irradiance.rgb;
+}
+
 fn indirect_radiance(base: vec3<f32>, metalness: f32, roughness: f32,
                      n: vec3<f32>, v: vec3<f32>, ao: f32) -> vec3<f32> {
     // Preserve the authored fixed-light arithmetic and resource layout.

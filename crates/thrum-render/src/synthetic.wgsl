@@ -247,7 +247,7 @@ fn shade(input: VertexOutput, sun_factor: f32, front_facing: bool) -> vec4<f32> 
     // backfaces and the authored normal used above for geometric shadow bias.
     if front_facing { n -= 2.0*min(dot(n,v),0.0)*v; }
     let colour = direct_brdf(surface_base,metalness,roughness,n,
-            light.direction_to_light.xyz,v,light.irradiance.rgb*sun_factor,h,fresnel_power)
+            light.direction_to_light.xyz,v,sun_irradiance(input.world_position)*sun_factor,h,fresnel_power)
         + local_radiance(surface_base,metalness,roughness,n,v,input.world_position,input.position)
         + indirect_radiance(surface_base,metalness,roughness,n,v,orm.r)
         + material.emissive_cutoff.rgb*emissive.rgb;

@@ -9,7 +9,11 @@ const SHADER: &str = concat!(
     concat!(
         include_str!("../../storage.wgsl"),
         "\n",
-        include_str!("../../common.wgsl")
+        concat!(
+            include_str!("../../geometry.wgsl"),
+            "\n",
+            include_str!("../../common.wgsl")
+        )
     ),
     r"
 @group(0) @binding(1) var colours: texture_2d<f32>;

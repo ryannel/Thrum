@@ -19,7 +19,11 @@ const MATH: &str = concat!(
     concat!(
         include_str!("../../storage.wgsl"),
         "\n",
-        include_str!("../../common.wgsl")
+        concat!(
+            include_str!("../../geometry.wgsl"),
+            "\n",
+            include_str!("../../common.wgsl")
+        )
     ),
     r"
 @group(0) @binding(6) var<storage,read_write> output: array<vec4<f32>>;

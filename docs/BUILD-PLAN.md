@@ -65,11 +65,10 @@ The native Metal recorder stays in G3t. The later dedicated performance phase ow
   allocations are baselines; native recording stays G3t.
 - [ ] **G3s — physical sky, Sun and atmosphere.** Hillaire (2020) transmittance, multiple-scattering, sky-view/aerial
   LUTs and Sun disk; physical illuminance drives lights and shadows. Time controls span dawn through night.
-  Scaled storage, matched Sun lookup, denser twilight chart, SH9/GGX and metering have scoped Metal referees;
-  Chrome controls show twilight. Native cooked valley now uses an authored metre-scale camera and the SAME Sky.
-  Corrected source normals remove fine terrain ribs. Open: SH/meter approximation, spectral/radiance accuracy,
-  pastel contrast, cooked contact shadows and continuous motion. [Evidence](evidence/v1-workload/G3S-FIRST-LIGHT-2026-11-06.md)
-  is partial. Follow the Broadsides reading map and PD/CC0 rules; no code/assets or GPL-derived values imported.
+  Scaled storage, receiver Sun lookup, twilight interpolation and SH9/GGX have scoped Metal referees. Chrome
+  shows twilight; the native cooked valley uses a metre-scale camera and the same Sky. Source normals remove
+  fine ribs. Open: spectral/radiance accuracy, SH approximation, contrast, cooked shadows and live motion.
+  [Evidence](evidence/v1-workload/G3S-FIRST-LIGHT-2026-11-06.md) is partial. Follow the Broadsides reading map and PD/CC0 rules; no code/assets or GPL-derived values imported.
 - [ ] **G3t — tile dataflow and Metal boundary.** Direct forward output, derived memoryless/transient attachments,
   mapped upload ring, compact instances, GPU light binning, mirrored ranges, shared targets and one scene/present graph.
   One registry-selected boundary supports native archives, MetalFX and EDR with portable fallback. The complete Metal
