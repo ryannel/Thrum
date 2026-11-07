@@ -38,17 +38,6 @@ fn ground_hemisphere_sample(index: u32, mu_samples: u32, azimuth_samples: u32) -
     let radial=sqrt(max(0.0,1.0-mu*mu));
     return vec4(radial*cos(phi),mu,radial*sin(phi),mu*2.0*PI/f32(mu_samples*azimuth_samples));
 }
-struct Medium {
-    rayleigh: vec3<f32>,
-    mie: f32,
-    extinction: vec3<f32>,
-}
-fn medium(h: f32) -> Medium {
-    let rayleigh=vec3(5.802e-6,13.558e-6,33.100e-6)*exp(-h/8000.0);
-    let mie_density=exp(-h/1200.0);
-    let ozone=vec3(0.650e-6,1.881e-6,0.085e-6)*max(0.0,1.0-abs(h-25000.0)/15000.0);
-    return Medium(rayleigh,3.996e-6*mie_density,rayleigh+vec3(4.4e-6*mie_density)+ozone);
-}
 fn scattering_phase(cosine: f32) -> vec2<f32> {
     let rayleigh=3.0*(1.0+cosine*cosine)/(16.0*PI);
     let g=0.8;
@@ -63,27 +52,6 @@ fn ground_distance(h: f32, mu: f32) -> f32 {
     let b = (R+h)*mu;
     let c = h*(2.0*R+h);
     return c/max(0.001,-b+sqrt(max(0.0,b*b-c)));
-}
-struct Segment {
-    radiance: vec3<f32>,
-    transmission: vec3<f32>,
-}
-fn integrate_segment(source: vec3<f32>, extinction: vec3<f32>, dt: f32) -> Segment {
-    let transmission=exp(-extinction*dt);
-    let radiance=source*(vec3(1.0)-transmission)/max(extinction,vec3(1e-12));
-    return Segment(radiance,transmission);
-}
-fn lit_segment(
-    p: vec3<f32>, sun: vec3<f32>, phase: vec2<f32>, dt: f32,
-    transmittance: texture_2d<f32>, multiple_scattering: texture_2d<f32>, linear: sampler,
-) -> Segment {
-    let h=altitude(p);
-    let air=medium(h);
-    let mu=local_sun_mu(p,sun);
-    let direct=sample_sun_transmittance(h,mu,transmittance,linear);
-    let multiple=textureSampleLevel(multiple_scattering,linear,vec2(mu*0.5+0.5,h/H),0.0).rgb/MULTIPLE_LUT_GAIN;
-    let single=(air.rayleigh*phase.x+air.mie*phase.y)*direct;
-    return integrate_segment(single+(air.rayleigh+air.mie)*multiple,air.extinction,dt);
 }
 // Two disjoint 54-row angular-square halves. The two horizon rows store
 // distinct one-sided limits at the same direction, at texel centres 53.5/108

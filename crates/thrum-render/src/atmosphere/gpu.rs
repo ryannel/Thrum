@@ -5,12 +5,13 @@ use crate::graph::{CompiledPass, PipelineKey};
 use crate::synthetic::{DEPTH_FORMAT, RenderError, SyntheticView};
 use crate::timing::GpuTimings;
 
-use super::{AtmosphereFrame, reflection::ReflectionPrepared};
+use super::{AtmosphereFrame, reflection::ReflectionPrepared, spectrum::EARTH};
 
 #[cfg(all(test, not(target_arch = "wasm32")))]
 mod tests;
 
 pub(super) const EXTENTS: [[u32; 2]; 4] = [[256, 64], [512, 32], [192, 108], [128, 1]];
+const LUT_PLANES: [u32; 4] = [3, 2, 1, 2];
 pub(super) const AERIAL_EXTENT: [u32; 3] = [32, 32, 33];
 const LUT_SHADER: &str = concat!(
     concat!(
@@ -22,6 +23,8 @@ const LUT_SHADER: &str = concat!(
             include_str!("common.wgsl")
         )
     ),
+    "\n",
+    include_str!("transport.wgsl"),
     "\n",
     include_str!("lut.wgsl"),
     "\n",
@@ -79,12 +82,13 @@ impl AtmospherePrepared {
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
-        let textures = EXTENTS.map(|[width, height]| {
+        let textures = std::array::from_fn(|index| {
+            let [width, height] = EXTENTS[index];
             device.create_texture(&wgpu::TextureDescriptor {
                 label: Some("atmosphere persistent LUT"),
                 size: wgpu::Extent3d {
                     width,
-                    height,
+                    height: height * LUT_PLANES[index],
                     depth_or_array_layers: 1,
                 },
                 mip_level_count: 1,
@@ -134,7 +138,7 @@ impl AtmospherePrepared {
         });
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("atmosphere LUT integration"),
-            source: wgpu::ShaderSource::Wgsl(LUT_SHADER.into()),
+            source: wgpu::ShaderSource::Wgsl(EARTH.shader(LUT_SHADER).into()),
         });
         let prepared: [(wgpu::ComputePipeline, wgpu::BindGroup); 4] =
             std::array::from_fn(|index| {
@@ -464,20 +468,19 @@ fn prepare_aerial(
     let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
         label: Some("atmosphere aerial integration"),
         source: wgpu::ShaderSource::Wgsl(
-            concat!(
-                concat!(
+            EARTH
+                .shader(concat!(
                     include_str!("storage.wgsl"),
                     "\n",
-                    concat!(
-                        include_str!("geometry.wgsl"),
-                        "\n",
-                        include_str!("common.wgsl")
-                    )
-                ),
-                "\n",
-                include_str!("aerial.wgsl")
-            )
-            .into(),
+                    include_str!("geometry.wgsl"),
+                    "\n",
+                    include_str!("common.wgsl"),
+                    "\n",
+                    include_str!("transport.wgsl"),
+                    "\n",
+                    include_str!("aerial.wgsl")
+                ))
+                .into(),
         ),
     });
     let pipeline = device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
