@@ -201,7 +201,13 @@ and 164948. Build time covers only the six that built.
 
 Root commissioned these two screen-independent proofs. Every run below is on commit f38166f0, which is main
 6459379d plus the M3 commits; a later main commit, 00d34bfb, changed only documentation. The tree was clean in each
-run. The canonical control check built the binaries, and the other runs used them with `--no-build`:
+run. These runs record `origin_main`, the main ref at run time, which reads 00d34bfb in all but the first. Their
+main revision is the merge base, 6459379d; the script now records it as `main_base`.
+
+The commits after f38166f0 change only documentation and three script details. The startup scope wording is fixed.
+`--recalibrate` now refuses the calibrated root, and a refused canonical save no longer leaves a run directory. The
+checker's scope and usage wording is fixed too. These details do not change any number below; smoke runs on the
+final commit are listed at the end. The canonical control check built the binaries, and the other runs used them with `--no-build`:
 - release `v1-game` `5c0b7953…`;
 - `thrum-cook` `e2fbdcfd…`;
 - default-page Wasm `9405ae36…`.
@@ -219,8 +225,12 @@ are in `tmp/g7-showcase/m3/seam-final/`.
 - **Launch:** each launch is a fresh headless Chrome process and profile on hardware WebGPU (Metal). The game is
   already built, and the cook server serves generation 1 before navigation.
 - **Cache:** the HTTP cache is disabled for each page. Every page transferred the full 2,056,659-byte Wasm.
-- **Pages:** each launch opens the six stops in turn. The first page is the cold one; the other five share the
-  browser and GPU process and are warm.
+- **Pages:** each launch opens the six stops in turn. The first page is the cold one: a fresh browser process and
+  profile.
+  - The OS file cache and any GPU shader cache outside the profile stay warm.
+  - The route order makes the cold page always the night stop, so cold and stop are confounded.
+  - The other five pages share the browser and GPU process and are warm.
+  - The observer's polling and its search for the game object add to every bound.
 - **Clock and interval:** each page is timed on its own clock, `performance.now()` from navigation start. The first
   cooked draw lies between the last observation that proves no draw and the first that sees one. A proof of no draw
   is either the page's exact pre-loop label (`Starting WebGPU…`, `Fetching the cooked valley…`) or a present
@@ -248,7 +258,7 @@ Lower–upper bound in ms, raw:
 - Where the time went (medians over the 30 pages):
   - navigation response at 2 ms;
   - Wasm loaded by 21 ms;
-  - `Fetching the cooked valley…` first seen at 66 ms;
+  - `Fetching the cooked valley…` first seen at 66 ms, over the 27 pages where it was observed;
   - the cooked products fetched from 65 to 78 ms;
   - `Running…` first seen at 116 ms.
 
@@ -269,11 +279,14 @@ scene, assets and baseline are the control and were not touched.
 
 ![Per stop, left to right: canonical native, edited native, edited Chrome, canonical Chrome](g7-showcase/route-edited-source.png)
 
+The sheet is built from check-174420 (canonical) and check-174724 (edited) by `tmp/g7-showcase/m3/sheet_edit.py`,
+with rows in route order: sunrise, noon, the 17.4 h clear Sun, 17.9 h sunset, twilight and night upslope.
+
 | Check | Result |
 |---|---|
 | New source identity | `check --source tmp/g7-showcase/m3/edited-source` cooks generation-1 root `49041ec0…`, found in the native store and both checker stores. |
 | Fixed thresholds refused | Without `--recalibrate`, check-175035 fails: the thresholds were calibrated on `59f0484f`, not `49041ec0`. |
-| Recalibrated parity | With `--recalibrate`, check-174724 passes. Chrome differs from native by at most 0.033 (median), 0.175 (95th percentile) and 0.281 (maximum). The rule gives the 1.0 floor again. Both controls pass: the diagnostic scene differs by 7.3–27 (median), 28–71 (95th percentile) and 85–132 (maximum) at the five stops with one, and the positive control's maximum cell reads 34.4. |
+| Recalibrated parity | With `--recalibrate`, check-174724 passes. The binding facts are that the rule lands on the 1.0 floor again (three times the worst valley is below 1), the same values as the fixed thresholds, and that both controls pass. Chrome differs from native by at most 0.033 (median), 0.175 (95th percentile) and 0.281 (maximum). The controls: the diagnostic scene differs by 7.3–27 (median), 28–71 (95th percentile) and 85–132 (maximum) at the five stops with one, and the positive control's maximum cell reads 34.4. |
 | Canonical baseline refused | The checked-in baseline reports `other identity ['source_root']` and is not compared. |
 | Changed region, both targets | As information only, the edited frames differ from the canonical baseline at each stop by up to 4.9–20.7 (median), 23–32 (95th percentile) and 25–35 (maximum). At night the median is 0.004 and the 95th percentile 9.2, because the ground is dark. Native and Chrome agree on these numbers to within 0.12. In the sheet the ground is red on both edited columns, and the sky, sphere and rock match the canonical frames. |
 | Scratch replacement | check-174832 saved `tmp/g7-showcase/m3/edited-baseline.json` after a passing run, with its frames reviewed in the sheet. The rerun, check-174940, compares against it: all 12 frames within 0.005. |

@@ -136,7 +136,9 @@ def build(run, web):
 
 def identities(web, built):
     # Under --no-build the binaries may predate the commit; only a run that builds proves they match it.
-    found = {'commit': git('rev-parse', 'HEAD'), 'origin_main': git('rev-parse', 'origin/main'),
+    # The run's main revision is the commit's merge base with main; origin/main itself may move during a session.
+    found = {'commit': git('rev-parse', 'HEAD'), 'main_base': git('merge-base', 'HEAD', 'origin/main'),
+             'origin_main_at_run': git('rev-parse', 'origin/main'),
              'dirty': bool(git('status', '--porcelain')), 'built_by_this_run': built}
     for name, path in [('thrum_cook', COOK), ('v1_game', GAME)] + ([('wasm', WASM)] if web else []):
         if not path.exists():
@@ -450,11 +452,11 @@ def bounded(command, log, seconds, **options):
 
 def check(args):
     stops = route()
-    run = new_run('check')
     origin = Path(args.source).resolve()
     baseline_path = Path(args.baseline).resolve()
     if args.recalibrate and args.save_baseline and baseline_path == BASELINE:
         raise Failure('--recalibrate cannot save the canonical baseline: update THRESHOLDS and CALIBRATED_ROOT by review')
+    run = new_run('check')
     report = {'command': 'check', 'route': stops, 'comparator': COMPARATOR, 'passed': False, 'failures': [],
               'source': {'path': str(origin), 'canonical': origin == SOURCE}, 'recalibrate': args.recalibrate}
     report['build_seconds'] = None if args.no_build else build(run, web=True)
@@ -470,6 +472,9 @@ def check(args):
                 raise Failure('thrum-cook cook failed')
         timings['cook'] = time.monotonic() - started
         root = report['generation_1_root'] = store_root(run / 'store')
+        # Recalibration is only for another source root; on the calibrated one it could only loosen the check.
+        if args.recalibrate and root == CALIBRATED_ROOT:
+            raise Failure(f'--recalibrate on the calibrated source root {root[:8]}: the fixed thresholds apply')
 
         # Native: THRUM_SCENE=valley makes capture require the store and refuse unless it is drawn.
         native = run / 'native'
@@ -669,9 +674,11 @@ def startup(args):
         report['summary_granularity_ms'] = spread([row['granularity_ms'] for row in rows if row['lower_observed']])
         report['lower_bound_absent'] = sum(not row['lower_observed'] for row in rows)
         report['clock'] = 'page performance.now(), ms since navigation start'
-        report['cache'] = 'fresh Chrome process and profile per launch; HTTP cache disabled for each page'
+        report['cache'] = ('fresh Chrome process and profile per launch; HTTP cache disabled for each page; the OS file '
+                           'cache and any GPU shader cache outside the profile stay warm')
         report['scope'] = ('Headless CDP polling proxy for navigation to the first observed cooked draw on hardware WebGPU; '
-                           'an upper bound within one poll; not physical first-paint latency. Build, cook and checker '
+                           'the bracket between the lower and upper bound is the granularity, or only the navigation-start bound when no lower '
+                           'observation exists; not physical first-paint latency. Build, cook and checker '
                            'time are recorded apart and not counted.')
     except Failure as error:
         report['failures'].append(str(error))
