@@ -375,24 +375,29 @@ impl BrowserGame {
             && !self.needs_reconfigure;
         let report = if can_acquire {
             let encoded = advanced.encode_scene().map_err(js_error)?;
-            let frame = match self.surface.get_current_texture() {
-                wgpu::CurrentSurfaceTexture::Success(frame) => Some(frame),
-                wgpu::CurrentSurfaceTexture::Suboptimal(frame) => {
-                    self.needs_reconfigure = true;
-                    Some(frame)
+            let frame = if encoded.can_acquire_surface() {
+                match self.surface.get_current_texture() {
+                    wgpu::CurrentSurfaceTexture::Success(frame) => Some(frame),
+                    wgpu::CurrentSurfaceTexture::Suboptimal(frame) => {
+                        self.needs_reconfigure = true;
+                        Some(frame)
+                    }
+                    wgpu::CurrentSurfaceTexture::Lost | wgpu::CurrentSurfaceTexture::Outdated => {
+                        self.needs_reconfigure = true;
+                        self.unavailable += 1;
+                        None
+                    }
+                    wgpu::CurrentSurfaceTexture::Timeout
+                    | wgpu::CurrentSurfaceTexture::Occluded => {
+                        self.unavailable += 1;
+                        None
+                    }
+                    wgpu::CurrentSurfaceTexture::Validation => {
+                        return Err(js_error("canvas surface validation fault"));
+                    }
                 }
-                wgpu::CurrentSurfaceTexture::Lost | wgpu::CurrentSurfaceTexture::Outdated => {
-                    self.needs_reconfigure = true;
-                    self.unavailable += 1;
-                    None
-                }
-                wgpu::CurrentSurfaceTexture::Timeout | wgpu::CurrentSurfaceTexture::Occluded => {
-                    self.unavailable += 1;
-                    None
-                }
-                wgpu::CurrentSurfaceTexture::Validation => {
-                    return Err(js_error("canvas surface validation fault"));
-                }
+            } else {
+                None
             };
             if let Some(frame) = frame {
                 let view = frame

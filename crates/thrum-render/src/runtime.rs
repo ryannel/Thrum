@@ -273,6 +273,13 @@ struct PreparedSample {
     source: SourceTick,
 }
 
+struct RecordedScene {
+    slot_index: usize,
+    encoder: wgpu::CommandEncoder,
+    prepared: PreparedSample,
+    encode_cpu: Duration,
+}
+
 /// One fixed-clock simulation and prepared GPU scene. The device and queue
 /// belong to the caller's executor; this host creates no independent GPU owner.
 /// The prepared target ring bounds in-flight work and defers GPU timing readback.
@@ -919,9 +926,8 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         let Some(prepared) = self.prepare_extracted(slot_index, report, frame)? else {
             return Ok(());
         };
-        self.encode_prepared(slot_index, report, surface, prepared.sample, wall_start)?;
-        self.last_view_source = Some(prepared.source);
-        Ok(())
+        let recorded = self.encode_scene_only(slot_index, prepared)?;
+        self.finish_encoded(recorded, report, surface, wall_start)
     }
 
     fn prepare_extracted(
@@ -1062,60 +1068,11 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.last_view_source = None;
     }
 
-    #[expect(
-        clippy::large_types_passed_by_value,
-        reason = "ownership transfers the sample into an in-flight GPU slot; borrowing would require the same copy"
-    )]
-    fn encode_prepared(
-        &mut self,
-        slot_index: usize,
-        report: &mut DriveReport,
-        surface: Option<&SurfaceOutput<'_>>,
-        sample: FrameSample,
-        wall_start: Instant,
-    ) -> Result<(), FrameError> {
-        let (mut encoder, scene_encode_cpu) = self.encode_scene_only(slot_index)?;
-        let present_start = Instant::now();
-        let slot = &mut self.slots[slot_index];
-        let surface_presented = if let (Some(presenter), Some(binding), Some(surface)) =
-            (self.presenter.as_ref(), slot.presentation.as_ref(), surface)
-        {
-            if presenter
-                .encode(
-                    &mut encoder,
-                    binding,
-                    surface.view,
-                    surface.extent,
-                    Some(&mut slot.timings),
-                )
-                .is_ok()
-            {
-                true
-            } else {
-                self.dropped_surface += 1;
-                false
-            }
-        } else {
-            false
-        };
-        self.finish_encoded(
-            slot_index,
-            report,
-            encoder,
-            sample,
-            wall_start,
-            scene_encode_cpu + present_start.elapsed(),
-            surface_presented,
-        )?;
-        self.prepared.commit_frame();
-        self.history_reset_pending = false;
-        Ok(())
-    }
-
     fn encode_scene_only(
         &mut self,
         slot_index: usize,
-    ) -> Result<(wgpu::CommandEncoder, Duration), FrameError> {
+        prepared: PreparedSample,
+    ) -> Result<RecordedScene, FrameError> {
         let start = Instant::now();
         let mut encoder = self
             .device
@@ -1135,21 +1092,50 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             discarded.map_err(|timing| format!("render timing discard: {timing:?}"))?;
             return Err(FrameError::Gpu(format!("render encode: {error:?}")));
         }
-        Ok((encoder, start.elapsed()))
+        Ok(RecordedScene {
+            slot_index,
+            encoder,
+            prepared,
+            encode_cpu: start.elapsed(),
+        })
     }
 
     fn finish_encoded(
         &mut self,
-        slot_index: usize,
+        recorded: RecordedScene,
         report: &mut DriveReport,
-        encoder: wgpu::CommandEncoder,
-        mut sample: FrameSample,
+        surface: Option<&SurfaceOutput<'_>>,
         wall_start: Instant,
-        encode_cpu_so_far: Duration,
-        surface_presented: bool,
     ) -> Result<(), FrameError> {
+        let RecordedScene {
+            slot_index,
+            mut encoder,
+            prepared,
+            encode_cpu,
+        } = recorded;
+        let PreparedSample { mut sample, source } = prepared;
         let finish_start = Instant::now();
         let slot = &mut self.slots[slot_index];
+        let surface_presented = self
+            .presenter
+            .as_ref()
+            .zip(slot.presentation.as_ref())
+            .zip(surface)
+            .is_some_and(|((presenter, binding), surface)| {
+                presenter
+                    .encode(
+                        &mut encoder,
+                        binding,
+                        surface.view,
+                        surface.extent,
+                        Some(&mut slot.timings),
+                    )
+                    .is_ok()
+            });
+        if self.presenter.is_some() && !surface_presented {
+            self.dropped_surface = self.dropped_surface.saturating_add(1);
+            report.dropped_view = true;
+        }
         if let Err(error) = slot.timings.finish_render(self.generation, &encoder) {
             drop(encoder);
             let discarded = slot.timings.discard_unsubmitted(self.generation);
@@ -1166,7 +1152,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         let done = Arc::clone(&slot.render_done);
         self.queue
             .on_submitted_work_done(move || done.store(true, Ordering::Release));
-        sample.encode_cpu = encode_cpu_so_far + finish_start.elapsed();
+        sample.encode_cpu = encode_cpu + finish_start.elapsed();
         sample.wall = wall_start.elapsed();
         sample.render_cpu = if self.world.is_threaded() {
             sample.wall
@@ -1181,6 +1167,9 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         report.submitted = true;
         report.surface_presented = surface_presented;
         report.wall = wall_start.elapsed();
+        self.prepared.commit_frame();
+        self.history_reset_pending = false;
+        self.last_view_source = Some(source);
         Ok(())
     }
 

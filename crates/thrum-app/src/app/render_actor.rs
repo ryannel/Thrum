@@ -273,6 +273,9 @@ impl<G: Game> Actor<G> {
             return advanced.submit(None);
         }
         let encoded = advanced.encode_scene()?;
+        if !encoded.can_acquire_surface() {
+            return Ok(encoded.skip());
+        }
         if self.surface_generation.load(Ordering::Acquire) != request.surface_generation {
             self.needs_reconfigure = true;
             reply.surface_status = SurfaceStatus::NeedsReconfigure;

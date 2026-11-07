@@ -59,6 +59,11 @@ impl<'a> AdvancedFrame<'a> {
 /// One unsubmitted engine scene token, held across late drawable acquisition.
 pub struct EncodedFrame<'a>(runtime::EncodedFrame<'a, WorldPort, GameScene>);
 impl EncodedFrame<'_> {
+    /// Whether the engine recorded a view that can use a drawable.
+    pub fn can_acquire_surface(&self) -> bool {
+        self.0.can_acquire_surface()
+    }
+
     /// Skip a view while retaining its committed world update.
     pub fn skip(self) -> DriveReport {
         self.0.skip()
