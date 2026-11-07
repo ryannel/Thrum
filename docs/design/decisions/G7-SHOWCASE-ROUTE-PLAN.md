@@ -15,10 +15,10 @@ poses read from artifacts, split M1 boxes, and a baseline that survives a clean 
   `tmp/g7-showcase/review/M2-REREVIEW-REPORT.md`, local), accept. Three wording nits, all taken.
 - M3 @ 3672cf62 (proofs on f38166f0), brief `tmp/g7-showcase/review/M3-REVIEW-BRIEF.md` (local), accept with changes,
   no blocker. Four should-fix findings and six nits, all taken (see the log).
-Milestone: M3 Screen-independent proofs · Updated: 2026-11-07
-Now: M1 and M2 done (on main at 664a4ff0). M3 done: every box holds, review taken, root approved the checker seam
-Next: nothing in this plan. The on-screen Mac walk and the renderer findings stay with root
-Blocked: none. The on-screen Mac walk waits on screen control (one request denied).
+Milestone: M4 Continuous valley ground material · Updated: 2026-11-07
+Now: M1–M3 done (M3 on main at 55a17bed). M4 started: author the ground variant in a scratch copy
+Next: cook it on both targets, watch it held and in a slow pan, review, then root's baseline refresh
+Blocked: none. The on-screen Mac walk stays with root (screen control denied once).
 
 ## M1 Local cooked valley on both targets: done
 Done when:
@@ -109,6 +109,32 @@ Work:
 - [x] Runs and evidence.
 - [x] Independent review.
 
+## M4 Continuous valley ground material
+Commission: root, `tmp/g7-boundary/NOTES.md` "Root commission after G7 M3: continuous valley ground material"; the
+look item in the [atmosphere plan](../modules/ATMOSPHERE-PLAN.md). Chrome and offscreen Metal only; the owner-screen
+walk stays separate. Root owns camera, terrain geometry, shadows, exposure, sky, shaders, sampler, the checker and the
+shared scene; the 17.4 h brightness step and the shadow findings are root's and are kept apart from material
+boundaries.
+
+Done when:
+- [ ] One material variant, authored only in the ground albedo and terrain UVs, makes fine ground grain legible at
+      native size at chase distance, with continuous detail into the middle distance, and removes the visible
+      material edge and flat band.
+- [ ] It stays stable as the view pans, with no repeating stamp, moiré, glare or loss of the ridge, watched in a slow
+      pan from the real game.
+- [ ] Positions, normals, indices, winding, placement and silhouette are proven unchanged.
+- [ ] The same route runs in Chrome and offscreen Metal through the normal cook, with paired noon and 17.4/17.9 h
+      views, within the established cross-target tolerance.
+- [ ] An independent review agrees; its brief and verdict are on the Reviews line.
+- [ ] Root approves the exact source and the paired views, and only then is the canonical baseline refreshed.
+      `./dev check` passes; source identities, captures and the review are recorded in the evidence.
+
+Work:
+- [ ] Variant in a scratch copy under `tmp/g7-showcase/m4/`; geometry identity proof.
+- [ ] Route checks and slow pans on both targets; prospective cooked root and comparisons posted to root.
+- [ ] Independent review.
+- [ ] Canonical assets, baseline and evidence after root's approval.
+
 ## Log
 - 2026-11-07 Plan written with the design.
 - 2026-11-07 Root approved both seams in principle and asked for the 17.4 h clear-Sun stop as a distinct cue. Added it
@@ -197,3 +223,4 @@ Work:
   - Nits: the checker's route scope and usage text now name the startup bracket (sent to root as a wording-only
     delta); the Fetching median names its 27 pages; a refused canonical save leaves no run directory; the sheet names
     its runs and rows; the parity row says what binds; the cleanup fault is recorded for both cases.
+- 2026-11-07 M4 added from root's ground-material commission after the overseer audited M3.
