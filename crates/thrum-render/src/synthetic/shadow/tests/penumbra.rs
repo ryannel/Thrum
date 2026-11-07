@@ -83,6 +83,11 @@ fn render_planes(
 @fragment fn fragment(@builtin(position) p:vec4<f32>) -> @builtin(frag_depth) f32 {
     if parameters.z==1.0 { return 0.0; }
     let x=2.0*p.x/256.0-1.0;
+    // A continuous receiver bends toward the light past a concave join at
+    // x=+-0.1. Its relative slope 0.5 stays below the slope any finite-disk ray
+    // climbs, so geometric visibility is one everywhere on the receiver.
+    if parameters.z==4.0 { return clamp(0.25+parameters.x*x+0.5*max(0.0,x-0.1),0.0,1.0); }
+    if parameters.z==5.0 { return clamp(0.25+parameters.x*x+0.5*max(0.0,-0.1-x),0.0,1.0); }
     if parameters.z==3.0 && p.x<128.0 {
         return min(0.24,0.26+parameters.x*x);
     }
@@ -301,6 +306,23 @@ fn finite_sun_shadow_width_tracks_blocker_distance_and_tilted_receivers() {
             "grazing receiver planes never turn empty depth into a blocker"
         );
         assert!(clear_scope.pop().await.is_none());
+        // Observed receivers lie on the plane; lanes 0..=24 sit before the
+        // right join (x<=0.1) and lanes 8..=32 after the left one (x>=-0.1).
+        for (kind, lanes) in [(4, 0..=24), (5, 8..=32)] {
+            let join_scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
+            let join = observe(&device, &queue, 3.0, kind);
+            for cascade in 0..2 {
+                for lane in lanes.clone() {
+                    let visible = join[cascade * SAMPLES + lane];
+                    assert!(
+                        visible > 0.99,
+                        "a concave join on a grazing receiver is not its own blocker: \
+                         kind{kind} cascade{cascade} lane{lane} {visible}"
+                    );
+                }
+            }
+            assert!(join_scope.pop().await.is_none());
+        }
         let narrow_scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
         let narrow = observe(&device, &queue, 0.0, 2);
         assert!(
