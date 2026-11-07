@@ -13,6 +13,11 @@ crate-type = ["rlib", "cdylib"]
 [lints]
 workspace = true
 
+[features]
+# The browser page's material hook reload (`?material=`), a development control that compiles
+# shaders synchronously; only `web/build.sh --dev` enables it.
+dev-material = []
+
 [dependencies]
 pollster = "=1.0.1"
 serde = { version = "=1.0.229", features = ["derive"] }

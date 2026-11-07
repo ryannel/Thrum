@@ -50,19 +50,24 @@ fn python(args: &[&str]) -> TaskResult {
 }
 
 fn check_web() -> TaskResult {
-    cargo(&[
-        "clippy",
-        "--locked",
-        "--offline",
-        "--package",
-        "v1-game",
-        "--lib",
-        "--target",
-        "wasm32-unknown-unknown",
-        "--",
-        "-D",
-        "warnings",
-    ])
+    let lint = |features: &[&str]| {
+        let mut args = vec![
+            "clippy",
+            "--locked",
+            "--offline",
+            "--package",
+            "v1-game",
+            "--lib",
+            "--target",
+            "wasm32-unknown-unknown",
+        ];
+        args.extend_from_slice(features);
+        args.extend_from_slice(&["--", "-D", "warnings"]);
+        cargo(&args)
+    };
+    // The default page, and the development page with the material hook reload.
+    lint(&[])?;
+    lint(&["--features", "dev-material"])
 }
 
 fn baseline_inventory() -> TaskResult {

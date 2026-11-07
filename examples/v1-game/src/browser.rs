@@ -11,9 +11,9 @@ use std::{
 };
 
 use thrum_asset::{BrowserFetch, DevClient};
-use thrum_asset_gpu::{
-    CookedSource, CookedStats, MaterialHook, MaterialOutcome, MaterialReload, RemoteFeed,
-};
+use thrum_asset_gpu::{CookedSource, CookedStats, RemoteFeed};
+#[cfg(feature = "dev-material")]
+use thrum_asset_gpu::{MaterialHook, MaterialOutcome, MaterialReload};
 use thrum_render::present::SurfaceProfile;
 use wasm_bindgen::prelude::*;
 use web_sys::HtmlCanvasElement;
@@ -93,9 +93,11 @@ pub struct BrowserGame {
     queue: wgpu::Queue,
     host: FrameHost,
     cooked: Option<Arc<Mutex<CookedStats>>>,
-    /// Explicit material reloads of the attached cooked valley.
+    /// Explicit material reloads of the attached cooked valley (development builds only).
+    #[cfg(feature = "dev-material")]
     material: Option<MaterialReload>,
     /// The material revision last reported, so an idle page builds no report.
+    #[cfg(feature = "dev-material")]
     material_reported: u64,
     /// Typed demo controls shared with the page and the macOS panel.
     demo: GameControls,
@@ -170,7 +172,9 @@ pub async fn create_browser_game(canvas: HtmlCanvasElement) -> Result<BrowserGam
         queue: gpu.queue,
         host,
         cooked: None,
+        #[cfg(feature = "dev-material")]
         material: None,
+        #[cfg(feature = "dev-material")]
         material_reported: 0,
         demo,
         page_seen: 0,
@@ -189,31 +193,12 @@ pub async fn create_browser_game(canvas: HtmlCanvasElement) -> Result<BrowserGam
     })
 }
 
+/// Material hook reloads, a development control compiled only with the `dev-material` feature
+/// (`examples/v1-game/web/build.sh --dev`), so the default page cannot start material work from
+/// its URL.
+#[cfg(feature = "dev-material")]
 #[wasm_bindgen]
 impl BrowserGame {
-    /// Draw the authored valley from fetched cooked products, with its authored camera.
-    /// The products survive device replacement: a new device stages the newest fetched
-    /// generation again. Publications fetched later by [`CookedValley::next_publication`] swap
-    /// in as they upload.
-    /// # Errors
-    /// Returns an invalid embedded recipe or the scene's refusal of the contribution.
-    pub fn attach_cooked_valley(&mut self, valley: &CookedValley) -> Result<(), JsValue> {
-        let (camera, assets) =
-            crate::showcase::prepare_showcase(CookedSource::Remote(valley.feed.clone()))
-                .map_err(js_error)?;
-        let stats = assets.stats();
-        let material = assets.material();
-        self.host
-            .set_scene_contribution(Box::new(assets))
-            .map_err(js_error)?;
-        self.host.set_scene_camera(camera);
-        self.demo.observe_camera(self.host.camera_orientation());
-        self.cooked = Some(stats);
-        self.material = Some(material);
-        self.material_reported = 0;
-        Ok(())
-    }
-
     /// Replace the cooked valley's material hook with the WGSL `source`, named `name` in its
     /// diagnostics, and return the request's serial. The previous material keeps drawing until
     /// the replacement has compiled and validated; [`Self::material_report`] says what became of
@@ -292,6 +277,36 @@ impl BrowserGame {
             })
             .to_string(),
         )
+    }
+}
+
+#[wasm_bindgen]
+impl BrowserGame {
+    /// Draw the authored valley from fetched cooked products, with its authored camera.
+    /// The products survive device replacement: a new device stages the newest fetched
+    /// generation again. Publications fetched later by [`CookedValley::next_publication`] swap
+    /// in as they upload.
+    /// # Errors
+    /// Returns an invalid embedded recipe or the scene's refusal of the contribution.
+    pub fn attach_cooked_valley(&mut self, valley: &CookedValley) -> Result<(), JsValue> {
+        let (camera, assets) =
+            crate::showcase::prepare_showcase(CookedSource::Remote(valley.feed.clone()))
+                .map_err(js_error)?;
+        let stats = assets.stats();
+        #[cfg(feature = "dev-material")]
+        let material = assets.material();
+        self.host
+            .set_scene_contribution(Box::new(assets))
+            .map_err(js_error)?;
+        self.host.set_scene_camera(camera);
+        self.demo.observe_camera(self.host.camera_orientation());
+        self.cooked = Some(stats);
+        #[cfg(feature = "dev-material")]
+        {
+            self.material = Some(material);
+            self.material_reported = 0;
+        }
+        Ok(())
     }
 
     /// Cooked generation drawn, swaps and loader errors, or `None` without cooked content.
