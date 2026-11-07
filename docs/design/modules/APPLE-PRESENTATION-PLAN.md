@@ -19,9 +19,9 @@ Reviews:
   answered; new N1–N9). Answered in revision 3.
 
 Milestone: none started (plan awaiting re-review and seam rulings) · Updated: 2026-11-07
-Now: revision 2 drafted from the three reviews (since 2026-11-07).
-Next: re-review of revision 2, then Thrum Core's seam rulings.
-Blocked: code commissions wait for the atmosphere graph checkpoint and Thrum Core approval of the exact seams in the
+Now: revision 4 answers Thrum Core's review of revision 3 (since 2026-11-07).
+Next: exact-revision recheck, the owner's archive ruling, then Thrum Core's seam rulings.
+Blocked: code commissions wait for the atmosphere graph checkpoint `d2a5342` on `codex/g3s-stars-main-wip`, for interface reads only, pending the reviewed night baseline and the exact final check on main, and Thrum Core approval of the exact seams in the
 design's *Seams* list. Some milestones have further waits:
 - M4 and M6 wait for G3t M3.
 - M8 waits for G3t M11 and G3t seam 1.
@@ -64,7 +64,7 @@ noise threshold and labels. Additions:
 | Jitter, matrices, motion, subrectangle | G4, with the C07 and RENDER-SPEC owners' review | `synthetic/view.rs`, `synthetic.wgsl`, `synthetic.rs` (`pack_aux`) | G3c visibility (view record), atmosphere |
 | Sky and star motion at infinity | Atmosphere owner, by G4 request (seam 4) | `atmosphere/sky.wgsl`, star pass | Atmosphere plan |
 | Third forward target and mip bias | G4, with the G5, asset and atmosphere owners' review (seam 3) | `synthetic.rs` forward targets, `contribution.rs:56`, `thrum-asset-gpu/src/draw.rs`, `material.rs`, `atmosphere/gpu.rs` | All forward contributors |
-| History protocol | G4, with the C07 owner's review (seam 1) | `history.rs`, `runtime.rs` | G3t M2's submit-without-present |
+| History protocol | G4, with the C07 owner's review (seam 1) | `history.rs`, `runtime.rs` | The existing drop contract; G3t M10–M11 for native frames |
 | Reconstruction | G4 | new `reconstruction/{mod,taau,jitter,exposure,reference}.rs`, `taau.wgsl` | Present input (G3t M3) |
 | Render extent and transitions | G4, with the frame-runtime and G3b owners' review (seam 5) | `runtime.rs:39`, `runtime/preparation.rs`, `render_actor.rs`, `examples/v1-game-ios/src/ios/render.rs:24` | G3t M11 provider rebuild |
 | EDR present | G4 | `present.rs`, `present.wgsl` | G3t M3 present pass |
@@ -115,6 +115,11 @@ milestones, not the boundary ruling.
 
 ## M1 Jitter, matrices and motion: pending
 
+Every M1 witness runs through the current portable output, offscreen, before G3t M3: the jitter-sequence and
+record-layout unit tests (D1.1); motion-texture readback (it has `COPY_SRC`) for the static-scene zero-motion test
+(D1.2) and the sky pan test (D1.3); and a motion mode in the existing `synthetic/display.rs` display pass for the route
+review (D1.5). The first G4 witnesses that need G3t M3 are TAAU (M3) and the extent change (M4).
+
 Done when:
 - [ ] D1.1 The view record carries:
   - the jitter offset from a continuous 32-phase Halton(2,3) sequence;
@@ -129,7 +134,7 @@ Done when:
       matches the expected sky motion within 0.05 px.
 - [ ] D1.4 Objects with invalid history are marked, ready for M2's reactive target, instead of writing a fabricated
       zero vector.
-- [ ] D1.5 A debug view shows motion on the valley route. Agent review of a pan sequence, watched in motion, finds
+- [ ] D1.5 A motion mode in the existing display pass shows motion on the valley route. Agent review of a pan sequence, watched in motion, finds
       object and sky motion in the expected direction.
 
 Work:
@@ -137,7 +142,7 @@ Work:
 - [ ] Unjittered clip motion in `synthetic.wgsl` (→D1.2).
 - [ ] Sky and star motion at infinity, delivered by the atmosphere owner under seam 4 (→D1.3).
 - [ ] Invalid-history flag (→D1.4).
-- [ ] Debug view selector and review sequence (→D1.5).
+- [ ] Motion mode in `synthetic/display.rs` and the review sequence (→D1.5).
 
 ## M2 Temporal inputs and history protocol: pending
 
@@ -286,6 +291,9 @@ Done when:
 - [ ] D8.4 At still checkpoints, ΔE to the reference is recorded next to TAAU's at each scale. Agent review of the M3
       motion set finds no ghosting beyond TAAU's, including a sequence across a governor scale step.
 - [ ] D8.5 A forced provider rejection selects the prepared TAAU twin with no pipeline creation.
+- [ ] D8.6 A failed acquisition on a MetalFX frame shows the admitted outcome (submitted without present, or discarded
+      with a MetalFX reset at the next encode), and an iOS background drop resets history. Both are counted in the
+      proof log next to portable's drop.
 
 Work:
 - [ ] `apple_tile/metalfx.rs`: descriptor, usages, per-frame properties, encode on the segment buffer, and reset
@@ -417,3 +425,10 @@ Revision 1 said 9.5–11.5 days for G4. Reviewers estimated 13–16 days.
   - Its exposure-domain finding is moot: MetalFX no longer takes `preExposure`, and the exposure texture is tone
     exposure divided by p.
   - Its TAAU depth finding is answered by the previous-subrectangle addressing.
+- 2026-11-07 Revision 4 answers Thrum Core's review of revision 3:
+  - M1's witnesses all run through the current portable output before G3t M3, including a motion mode in the
+    existing display pass;
+  - the history protocol keeps the existing drop contract; MetalFX frames follow G3t seam 3, and both outcomes and
+    the iOS background refusal are observable (D8.6);
+  - archives are an owner ruling, with no V1 exit wording change;
+  - the atmosphere checkpoint is `d2a5342`, for interface reads.
