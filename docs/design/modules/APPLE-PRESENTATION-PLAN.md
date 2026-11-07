@@ -13,7 +13,10 @@ Reviews:
 - Composed frame across G3t and G4 @ `86ec3b6b`, brief `tmp/g3t-g4-plans/reviews/composed-frame.md`, report
   `tmp/g3t-g4-plans/reviews/composed-frame-report.md`: changes required (14 required changes). Answered in
   revision 2.
-- Revision 2: re-review pending.
+- G4 pair re-review @ `c507ad3d`, same brief, report section *Revision 2*: approve with changes (N1–N5 required,
+  N6–N8 recommended). All answered in revision 3.
+- Composed-frame re-review @ `c507ad3d`, same brief, report section *Revision 2*: approve with changes (11 of 14
+  answered; new N1–N9). Answered in revision 3.
 
 Milestone: none started (plan awaiting re-review and seam rulings) · Updated: 2026-11-07
 Now: revision 2 drafted from the three reviews (since 2026-11-07).
@@ -88,7 +91,7 @@ Review order:
 |---|---|---|
 | M1 jitter, matrices, motion | G3t M0, atmosphere checkpoint, seams 2 and 4 | G3t M1–M3 |
 | M2 temporal inputs, history protocol | M1, G3t M1 (eligibility report), G3t M2 (shares `runtime.rs`), seams 1 and 3 | G3t M3–M9 |
-| M3 TAAU at native scale | M2 | G3t M4–M9 |
+| M3 TAAU at native scale | M2, **G3t M3** (TAAU output feeds the present pass) | G3t M4–M9 |
 | M4 surface extent and transitions | M3, **G3t M3**, seam 5 | G3t M4–M10 |
 | M5 dynamic scale | M4 | M6 |
 | M6 EDR on macOS | **G3t M3**, seam 6 | M5 |
@@ -164,8 +167,8 @@ Work:
 
 ## M3 TAAU at native scale in game: pending
 
-This is the first in-game reconstruction on portable. It runs at the current 640×360 extent, so it lands before
-G3t M3.
+This is the first in-game reconstruction on portable. It runs at the current 640×360 extent, after G3t M3, so
+TAAU's output feeds G3t's present pass directly and nothing is reworked.
 
 Done when:
 - [ ] D3.1 TAAU runs at scale 1.0 in the V1 game on Mac (forced portable) and in Chrome on the route. The present pass
@@ -196,7 +199,9 @@ Done when:
       G3b route's portrait band and moiré are gone (function only).
 - [ ] D4.2 During a live window drag-resize, frames keep presenting: the old generation is scaled into the new
       drawable.
+  - The surface reconfigures at most once per tick, without waiting for GPU drain.
   - The new generation builds on the preparation thread and switches after the debounce.
+  - A newer extent cancels a running build.
   - Counters show no texture or pipeline creation on the render thread.
   - Render-thread frame time shows no hitch beyond the tripwire.
 - [ ] D4.3 A forced backing-scale change on the display record takes the same transition. History resets exactly at
@@ -205,7 +210,10 @@ Done when:
 Work:
 - [ ] Surface-derived extent on macOS and iOS, removing the 640×360 default and the letterbox tests' fixed extent
       (→D4.1).
-- [ ] Preparation thread, debounce and boundary switch in `runtime/preparation.rs` and `render_actor.rs` (→D4.2).
+- [ ] Split `PreparedSynthetic` into a shared prepared part and per-generation state (→D4.2).
+- [ ] Preparation thread, debounce, cancellation and boundary switch in `runtime/preparation.rs` (→D4.2).
+- [ ] Coalesced reconfigure without drain in `render_actor.rs` and the iOS render owner, with G3b owner review
+      (→D4.2).
 - [ ] Old-generation scaling in the present pass (→D4.2).
 - [ ] Forced backing-scale override and history-reset check (→D4.3).
 
@@ -236,7 +244,8 @@ Done when:
       generation build.
 - [ ] D6.4 A brightness change, or a forced headroom change, reaches H within one display tick, with no hitch.
 - [ ] D6.5 The owner's visual check on the XDR display is requested and recorded, and the agent's review of captures
-      is recorded. The iOS simulator runs the SDR path for function.
+      is recorded. The iOS simulator runs the SDR path for function. A forced headroom value on the iOS display record
+      reaches the render owner, exercising the polling path.
 
 Work:
 - [ ] Platform display record, retained layer reference, main-thread EDR properties and NSScreen reads (→D6.1, D6.4).
@@ -247,8 +256,8 @@ Work:
 ## M7 Quality governor: pending
 
 Done when:
-- [ ] D7.1 The frame host counts missed display ticks. A forced GPU load on the route (debug-load pass) makes the
-      governor drop scale within its panic window, after which missed ticks fall to their unloaded rate. Recovery is
+- [ ] D7.1 The frame host counts display ticks without a present. A forced GPU load on the route (debug-load pass)
+      makes the governor drop scale within its panic window, after which those ticks fall to their unloaded rate. Recovery is
       stepwise, at most one step per minimum period. The trace is recorded.
 - [ ] D7.2 With no forced load at 120 Hz, the route shows at most 2 scale changes.
 - [ ] D7.3 World-state hash and tick count are identical with the governor on and off.
@@ -272,10 +281,10 @@ Done when:
   - No validation errors occur.
 - [ ] D8.2 A translating-object test confirms the motion sign and scale and the jitter Y sign against TAAU. The exposure
       tool shows a constant mid-grey checkerboard.
-- [ ] D8.3 A time-of-day scrub with per-frame `preExposure` shows no brightness lag beyond TAAU's. If it does, the
-      normalised-input fallback is applied and the check rerun.
+- [ ] D8.3 A time-of-day scrub with the GPU-written exposure texture shows no brightness lag beyond TAAU's. If it
+      does, the costed normalising pre-pass is applied, its GPU time recorded, and the check rerun.
 - [ ] D8.4 At still checkpoints, ΔE to the reference is recorded next to TAAU's at each scale. Agent review of the M3
-      motion set finds no ghosting beyond TAAU's.
+      motion set finds no ghosting beyond TAAU's, including a sequence across a governor scale step.
 - [ ] D8.5 A forced provider rejection selects the prepared TAAU twin with no pipeline creation.
 
 Work:
@@ -311,7 +320,8 @@ Done when:
       M9's row, recorded.
 
 Work:
-- [ ] wgpu-hal Metal `PipelineCache` patch, and the upstream contribution (→D10.1).
+- [ ] wgpu-hal Metal `PipelineCache` patch (→D10.1). An upstream contribution is prepared separately and submitted
+      only with the owner's approval.
 - [ ] Rejection row and launch timing (→D10.2).
 
 ## M11 Paired proof run: pending
@@ -343,9 +353,9 @@ Work:
 | Milestone | Days |
 |---|---|
 | M1 | 1.5 |
-| M2 | 1.5 |
+| M2 | 2.5 |
 | M3 | 1.5 |
-| M4 | 1.5 |
+| M4 | 2.5 |
 | M5 | 1 |
 | M6 | 1.5 |
 | M7 | 1.5 |
@@ -354,12 +364,12 @@ Work:
 | M10 (option a only) | 2–3 |
 | M11 | 1.5 |
 
-That is **14 build days**, or **16–17** under archive option (a), plus 1–2 days of review and seam turnaround.
+That is **16 build days**, or **18–19** under archive option (a), plus 1–2 days of review and seam turnaround.
 
-**Combined date (G3t 15.5 + G4 14 build days, with the handoffs above).**
-- *Two agents, one per plan:* about **17–18 working days** from seam approval to both paired records. G4 waits for
+**Combined date (G3t 15.5 + G4 16 build days, with the handoffs above).**
+- *Two agents, one per plan:* about **19–20 working days** from seam approval to both paired records. G4 waits for
   G3t M3 around day 6 and for G3t M11 around day 13.
-- *Four agents on disjoint files, following both parallel tables:* about **12–13 days**.
+- *Four agents on disjoint files, following both parallel tables:* about **13–14 days**.
 - *Add-ons:* archive option (a) adds 2–3 days on G4's path.
 - *Largest date risks:* G3t M2–M3 (frame runtime), seam 1, the third forward target across three owners, and the
   render-extent change. That change raises pixel work 9× at the window and 33× full screen before the governor
@@ -385,3 +395,25 @@ Revision 1 said 9.5–11.5 days for G4. Reviewers estimated 13–16 days.
     labelled.
   - **Archives:** the option-(b) consequence stated, with a conditional M10.
   - **Cross-plan:** dependencies corrected; milestones split; sizing restated.
+- 2026-11-07 Revision 3 answers the G4 re-review:
+  - MetalFX gets a GPU-written exposure texture, with a costed normalising fallback, instead of a CPU `preExposure`;
+  - late GPU execution errors take the device-loss path;
+  - the star motion target is replace, and solar change in the sky is a phase edit;
+  - the TAAU depth test compares previous-view depths;
+  - G4 M3 is sequenced after G3t M3;
+  - ticks without a present are reworded;
+  - M2 and M4 are resized;
+  - effect-tier invalidation is declared;
+  - the iOS polling is checked;
+  - the upstream contribution is owner-gated.
+- 2026-11-07 Revision 3 also answers the composed-frame re-review:
+  - coalesced surface reconfigure without drain;
+  - the `PreparedSynthetic` split, build cancellation and device loss during a build;
+  - the governor freezes during transitions;
+  - ticks without a present are labelled a proxy;
+  - occlusion stops encoding;
+  - an 8-bit session gains EDR through a transition;
+  - a MetalFX scale-step sequence is added.
+  - Its exposure-domain finding is moot: MetalFX no longer takes `preExposure`, and the exposure texture is tone
+    exposure divided by p.
+  - Its TAAU depth finding is answered by the previous-subrectangle addressing.

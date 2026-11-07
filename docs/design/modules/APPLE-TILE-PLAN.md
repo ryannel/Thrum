@@ -13,7 +13,11 @@ Reviews:
 - Composed frame across G3t and G4 @ `86ec3b6b`, brief `tmp/g3t-g4-plans/reviews/composed-frame.md`, report
   `tmp/g3t-g4-plans/reviews/composed-frame-report.md`: changes required (14 required changes). Answered in
   revision 2.
-- Revision 2: re-review pending.
+- G3t pair re-review @ `c507ad3d`, same brief, report section *Revision 2*: approve with changes (N1–N2 required,
+  N3–N7 recommended). All answered in revision 3.
+- G4 pair re-review @ `c507ad3d` (interfaces only here): approve with changes; see the G4 plan.
+- Composed-frame re-review @ `c507ad3d`: approve with changes; its findings fall on G4 M4 and are answered in the G4
+  plan's revision 3.
 
 Milestone: none started (plan awaiting re-review and seam rulings) · Updated: 2026-11-07
 Now: revision 2 drafted from the three reviews (since 2026-11-07).
@@ -187,10 +191,12 @@ Done when:
       runs phase 1 before acquisition and phase 2 after. The compiler refuses a non-surface pass after the surface
       pass (test).
 - [ ] D2.2 A resize at the current fixed render extent rebinds the surface without recompiling the scene. The
-      surface tests pass on macOS and iOS: `surface_pass_letterboxes_and_preserves_sdr_bytes_across_srgb_formats`
-      and `unavailable_surface_drops_only_views_and_resize_reuses_preparation`.
-- [ ] D2.3 A failed acquisition submits phase 1 without phase 2, and the frame-token tests cover it. The valley stays
-      within tolerance on both recipes.
+      surface tests pass on macOS and iOS: `surface_pass_letterboxes_and_preserves_sdr_bytes_across_srgb_formats`,
+      and `unavailable_surface_drops_only_views_and_resize_reuses_preparation` rewritten (with G3b owner review)
+      so that it asserts the frame is submitted without a present and views are still dropped.
+- [ ] D2.3 A failed acquisition submits phase 1 without phase 2, and the frame-token tests cover it. On iOS, a frame
+      found after the app leaves the foreground is dropped with a history reset, not submitted (test). The valley
+      stays within tolerance on both recipes.
 
 Work:
 - [ ] Bind both record families under one compiled graph with phase partitioning (→D2.1).
@@ -203,7 +209,9 @@ Work:
 Done when:
 - [ ] D3.1 The present pass reads scene HDR and writes the drawable with tone and display encode. The `Rgba8Unorm`
       output target is gone from the steady graph, and graph-declared bytes drop by its write and read.
-- [ ] D3.2 The capture variant still produces reference images. The surface tests pass on macOS and iOS.
+- [ ] D3.2 The capture variant still produces reference images.
+      `surface_pass_letterboxes_and_preserves_sdr_bytes_across_srgb_formats` passes on macOS and iOS as the guard
+      for the moved tone and display encode.
 - [ ] D3.3 `FrameSample` carries GPU times keyed by pass name, and the timing tests pass. The valley stays within
       tolerance on both recipes, and Chrome is unchanged.
 
@@ -241,7 +249,10 @@ Done when:
   - The design's open question is answered either way.
 
 Work:
-- [ ] `apple_tile/ring.rs`: shared buffer creation, import, contents-pointer writes after `render_done` (→D5.1).
+- [ ] `apple_tile/ring.rs`: shared buffer creation on the same `MTLDevice`, import, contents-pointer writes after
+      `render_done` (→D5.1). Preconditions: shared storage, and wgpu usages including `COPY_DST` for the
+      `write_buffer` fallback. wgpu treats imported buffers as initialized and does not check usage flags against
+      the raw buffer, so the ring code asserts these itself.
 - [ ] Busy-slot fallback and counter (→D5.1).
 - [ ] Test and route runs (→D5.2, D5.3).
 
@@ -259,12 +270,13 @@ Work:
 ## M7 Compact instances: pending
 
 Done when:
-- [ ] D7.1 `INSTANCE_BYTES` is 112 on both recipes: a current 3×4 affine, a previous-simulation-sample 3×4 affine and
-      ids. Shaders derive the normal matrix. Display-link interpolation by `presentation_alpha` is unchanged.
+- [ ] D7.1 `INSTANCE_BYTES` is 80 on both recipes: a current 3×4 affine, the previous simulation sample's translation,
+      ids and padding. Shaders derive the normal matrix. Display-link interpolation of translation by
+      `presentation_alpha` is unchanged.
 - [ ] D7.2 Upload, culling, mirrored-row and motion-history tests pass, including
       `metal_motion_history_uses_interpolated_display_samples` and
       `metal_motion_history_follows_submitted_frames_and_resets`.
-- [ ] D7.3 The valley stays within tolerance. A 10k-instance row records instance bytes at 0.58 of the 192 B form.
+- [ ] D7.3 The valley stays within tolerance. A 10k-instance row records instance bytes at 0.42 of the 192 B form.
 
 Work:
 - [ ] ABI in `abi.rs`, WGSL in the four shaders, `sky.rs` and contract tests (→D7.1).
@@ -310,7 +322,8 @@ Done when:
       unaliased and never discarded.
 - [ ] D10.2 A **stand-in** provider is a native compute kernel. It blends scene HDR with an internal history texture,
       writes through storage usage into a graph texture that the present pass reads, and resets on command. It runs
-      for the whole route with no validation errors, and matches its wgpu compute twin bit for bit.
+      for the whole route with no validation errors. It matches its wgpu compute twin within 1 ULP of `f16` per
+      channel: the two are compiled by different front ends (MSL source vs naga), so bit equality is not required.
 - [ ] D10.3 A held-submission test shows no native texture is freed or reused before slot completion.
 - [ ] D10.4 Evidence labels the stand-in as composition proof only, not MetalFX or tile proof.
 
@@ -391,7 +404,7 @@ That is **15.5 build days**, plus 1–2 days of review and seam turnaround, for 
 - 2026-11-07 Revision 2 answers the G3t pair review and the composed-frame review:
   - **Proof tooling:** a capture probe and counters moved to M0, with an *unmeasured* label as the fallback, and a
     fixed-step route with a defined reference image.
-  - **Instances:** 112 B rows keep the previous simulation sample used by interpolation; every consumer is listed.
+  - **Instances:** 80 B rows keep the previous translation that interpolation reads; every consumer is listed.
   - **Uploads:** per-slot buffers and bind groups specified; the Apple ring is a raw shared-storage import, with
     `map_async` as the fallback.
   - **Graph:** per-variant memoryless allocations; split execution with an execute-time surface; encoded frames always
@@ -402,3 +415,11 @@ That is **15.5 build days**, plus 1–2 days of review and seam turnaround, for 
   - **Lights and mirrors:** a deterministic GPU binning oracle, cost models, and mirrors through G3c's indirect
     records.
   - **Sizing:** restated.
+- 2026-11-07 Revision 3 answers the G3t re-review:
+  - the surface test is rewritten for submit-without-present, with G3b owner review;
+  - submit-without-present runs on iOS only in the foreground;
+  - the lifetime reason is corrected;
+  - the ring preconditions are stated;
+  - instance rows are 80 B;
+  - the stand-in tolerance is stated;
+  - the tone-encode guard test is named.
