@@ -217,19 +217,25 @@ impl App {
     }
 
     fn reconcile_pause(&mut self) -> Result<(), String> {
-        // Ordinary world notifications do not touch the lifecycle mailbox.
-        if !self.pause.needs_reply() && self.pause.next_request().is_none() {
-            return Ok(());
-        }
         let Some(controls) = &self.world_controls else {
             return Ok(());
         };
+        let was_transitioning = self.pause.needs_reply() || self.pause.next_request().is_some();
         if self.pause.needs_reply()
             && let Some(reply) = controls
                 .poll_lifecycle_reply()
                 .map_err(|error| error.to_string())?
         {
             self.pause.acknowledge(reply.request)?;
+            self.world_tick = reply.id.tick;
+        }
+        // Consume the acknowledgement before checking current health: an old
+        // render report may outlive recovery, or a new overload may already
+        // follow a successful Resume. Only the world's latest state decides.
+        match controls.check_health() {
+            Ok(tick) => self.world_tick = tick,
+            Err(WorldLaneFault::Overload(refused_ticks)) => self.pause.overloaded(refused_ticks),
+            Err(error) => return Err(error.to_string()),
         }
         if let Some(request) = self.pause.next_request() {
             match controls.request_lifecycle(request) {
@@ -238,7 +244,9 @@ impl App {
                 Err(error) => return Err(error.to_string()),
             }
         }
-        self.refresh_title();
+        if was_transitioning || self.pause.needs_reply() || self.pause.next_request().is_some() {
+            self.refresh_title();
+        }
         Ok(())
     }
 
@@ -527,11 +535,8 @@ impl App {
         match reply.outcome {
             RenderOutcome::Frame(report) => {
                 let report = report?;
-                if let Some(refused_ticks) = report.overload {
-                    return Err(format!(
-                        "fixed-clock overload: {} ticks refused, {} still queued",
-                        refused_ticks, report.queued_ticks
-                    ));
+                if report.overload.is_some() {
+                    self.reconcile_pause()?;
                 }
                 if self.last_call.saturating_sub(self.profiler_title_at)
                     >= Duration::from_millis(500)
@@ -707,8 +712,13 @@ impl App {
         )?;
         if presented.is_empty() {
             return Ok(format!(
-                "adapter={}; presented={}; committed_ticks={}; device_losses={}; final_drain_device_lost={final_device_loss}; missing_presented_profiles={missing}; GPU/CPU frame profiles unavailable after device loss",
-                self.adapter_name, self.presented, self.world_tick, self.device_losses
+                "adapter={}; presented={}; committed_ticks={}; device_losses={}; world_overloads={}; overload_refused_ticks={}; final_drain_device_lost={final_device_loss}; missing_presented_profiles={missing}; GPU/CPU frame profiles unavailable after device loss",
+                self.adapter_name,
+                self.presented,
+                self.world_tick,
+                self.device_losses,
+                self.pause.overload_count(),
+                self.pause.refused_ticks()
             ));
         }
         let tick = percentile(&presented, |sample| sample.tick_cpu.as_secs_f64() * 1e6);
@@ -736,7 +746,7 @@ impl App {
             "GPU timestamps unavailable".to_owned()
         };
         Ok(format!(
-            "adapter={}; surface={:?} {}x{}; presented={}; callbacks={}; display_link_callbacks={}; late_target_evaluations={}; invalid_target_evaluations={}; clamped_target_evaluations={}; committed_ticks={}; unavailable={}; occluded={}; surface_faults={}; dropped_surface={}; dropped_views={}; dropped_stale_views={}; dropped_reports={}; callback wall p50/p95={:.3}/{:.3} ms; render-worker wall p50/p95={:.3}/{:.3} ms; drawable-acquire wall p50/p95={:.3}/{:.3} ms; tick CPU p50/p95={:.3}/{:.3} us; live-view CPU p50/p95={:.3}/{:.3} us; upload CPU p50/p95={:.3}/{:.3} us; encode CPU p50/p95={:.3}/{:.3} us; upload+encode CPU p50/p95={:.3}/{:.3} us; {gpu}; device_losses={}; final_drain_device_lost={final_device_loss}; retained_presented_profiles={}; missing_presented_profiles={missing}; profiles describe retained samples",
+            "adapter={}; surface={:?} {}x{}; presented={}; callbacks={}; display_link_callbacks={}; late_target_evaluations={}; invalid_target_evaluations={}; clamped_target_evaluations={}; committed_ticks={}; unavailable={}; occluded={}; surface_faults={}; dropped_surface={}; dropped_views={}; dropped_stale_views={}; dropped_reports={}; callback wall p50/p95={:.3}/{:.3} ms; render-worker wall p50/p95={:.3}/{:.3} ms; drawable-acquire wall p50/p95={:.3}/{:.3} ms; tick CPU p50/p95={:.3}/{:.3} us; live-view CPU p50/p95={:.3}/{:.3} us; upload CPU p50/p95={:.3}/{:.3} us; encode CPU p50/p95={:.3}/{:.3} us; upload+encode CPU p50/p95={:.3}/{:.3} us; {gpu}; device_losses={}; world_overloads={}; overload_refused_ticks={}; final_drain_device_lost={final_device_loss}; retained_presented_profiles={}; missing_presented_profiles={missing}; profiles describe retained samples",
             self.adapter_name,
             self.surface_format.ok_or("surface format missing")?,
             self.surface_extent[0],
@@ -772,6 +782,8 @@ impl App {
             frame_cpu.0,
             frame_cpu.1,
             self.device_losses,
+            self.pause.overload_count(),
+            self.pause.refused_ticks(),
             presented.len(),
         ))
     }
@@ -866,16 +878,6 @@ impl ApplicationHandler<UserEvent> for App {
                 self.request_sequence = self.request_sequence.saturating_add(1);
             }
             UserEvent::WorldAdvanced => {
-                if let Some(controls) = &self.world_controls {
-                    match controls.check_health() {
-                        Ok(tick) => self.world_tick = tick,
-                        Err(error) => {
-                            self.error = Some(error);
-                            event_loop.exit();
-                            return;
-                        }
-                    }
-                }
                 if let Err(error) = self.reconcile_pause() {
                     self.error = Some(error);
                     event_loop.exit();

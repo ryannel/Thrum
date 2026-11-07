@@ -474,7 +474,7 @@
     },
     "V1_bounded_frame_host": {
       "implementation": "partial_engine_runtime_lifecycle_Metal_and_browser_gpu_reconstruction_retry",
-      "functional_validation": "Metal_pause_replacement_and_Chrome_10_rows_loss_reconstruction_configure_retry_pass;_live_mobile_open",
+      "functional_validation": "Metal_pause_replacement_Mac_overload_drain_resume_CPU_and_Chrome_10_rows_reconstruction_pass;_live_mobile_open",
       "experienced_quality": "submitted_offscreen_pause_camera_resume_gpu_replacement_reviewed;_live_motion_grid_aliasing_open",
       "platform_performance": {
         "mac": "owner_quiet_91ad52d_baseline_recorded_lifecycle_open",

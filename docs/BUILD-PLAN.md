@@ -61,7 +61,7 @@ The native Metal recorder stays in G3t. The later dedicated performance phase ow
 - [ ] **G3b — functional engine frame runtime.** Display-link targets drive Mac/iOS/browser presentation; world/render
   work is off Apple's main thread, at most two frames are in flight, interpolation is on GPU and acquisition is late.
   Core owns clock/lane; thrum-render owns `FrameHost`, slots, tokens, completion and history without game schema.
-  Metal pause/replacement and ten Chrome function rows pass. Browser loss/retry reconstructs graphics with authority/input retained; actual tabs, live Mac P/loss and simulator lifecycle remain. Instrument latency/present intervals;
+  Metal pause/replacement, Mac overload drain/resume tests and ten Chrome function rows pass. Browser loss/retry reconstructs graphics with authority/input retained; actual tabs, live Mac P/loss and simulator lifecycle remain. Instrument latency/present intervals;
   visible stutter, dropped frames and hitches trigger investigation. [Quiet frame figures and later comparisons](evidence/render/V1-BOUNDED-FRAMES-2026-11-04.md)
   remain baselines; wgpu frame allocation is not a gate or reason to bring native work forward.
 - [ ] **G3s — physical sky, Sun and atmosphere.** Hillaire (2020) transmittance, multiple-scattering, sky-view and aerial

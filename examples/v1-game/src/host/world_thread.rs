@@ -43,8 +43,8 @@ impl WorldControls {
     /// Observe world failure without scheduling a render callback.
     /// # Errors
     /// Reports a failed owner, fixed-clock overload or synchronization fault.
-    pub fn check_health(&self) -> Result<u64, String> {
-        self.0.check_health().map_err(|error| error.to_string())
+    pub fn check_health(&self) -> Result<u64, WorldLaneFault> {
+        self.0.check_health()
     }
 }
 
