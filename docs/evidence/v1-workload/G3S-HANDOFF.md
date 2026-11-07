@@ -8,6 +8,21 @@ The Codex goal remains active. Its attachment is
 
 ## Current checkpoint
 
+- The 17.4 h sunset stripe follows the lookout's authored depth edge. In
+  the held Metal valley at x=320, adjacent rays hit terrain at 1,826 m
+  and 65 m. The near facet faces the viewer while its interpolated
+  normal points behind it. A scratch west taper halves the local red
+  step (52→26 codes) and moves the edge 15 px. A shader-only face-normal
+  experiment gives 29 codes and adds a second contour. Across 97 held
+  solar stops the largest step remains 144/136/137 codes for baseline,
+  taper and shader. Keep both as diagnostics and isolate direct Sun
+  visibility on the two sides of the edge next. The clip and ray witness
+  are in `tmp/g3s-sunset-lip/`. Ground E can land independently.
+- The M3 Max's Xcode 27.2 Instruments probe completed 200 star-bearing
+  frames but exported only the ray-tracing activity counter. The public
+  Metal query exposed GPU timestamps. Actual attachment bandwidth needs
+  an explicitly configured capture. [Apple's bandwidth workflow](https://developer.apple.com/documentation/xcode/measuring-the-gpus-use-of-memory-bandwidth).
+
 - Candidate production optics (Metal) preserves flux to 0.0571% across 36
   footprints, at centre and edge from 720p to 2160p. Both mask axes are
   checked with paired controls and covered centres emit zero. In the
