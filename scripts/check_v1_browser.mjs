@@ -9,7 +9,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
-const cases = ['normal', 'pause', 'resize', 'overload', 'input', 'controls', 'device-loss', 'late-device-loss', 'device-recovery', 'device-recovery-retry', 'sky-reflections', 'valley'];
+const cases = ['normal', 'pause', 'resize', 'overload', 'input', 'controls', 'device-loss', 'late-device-loss', 'device-recovery', 'device-recovery-retry', 'sky-reflections', 'valley', 'valley-recovery'];
 const configureFailureSentinel = 'THRUM_G3B_CONFIGURE_ONCE';
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -587,14 +587,15 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
   let failed = false;
   const lossCase = mode === 'device-loss' || mode === 'late-device-loss';
   const retryCase = mode === 'device-recovery-retry';
-  const recoveryCase = mode === 'device-recovery' || retryCase;
+  const valleyRecovery = mode === 'valley-recovery';
+  const recoveryCase = mode === 'device-recovery' || retryCase || valleyRecovery;
   const destroyCase = lossCase || recoveryCase;
   const valleyCase = mode === 'valley';
   const skyCase = mode === 'sky-reflections' || valleyCase;
   const faults = [], timeline = [];
   let loss, recovery, sky, intentionalDestroys = 0;
   const onDestroy = () => { intentionalDestroys++; };
-  const url = valleyCase ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}` : mode === 'controls' || destroyCase || skyCase ? `${origin}/` : `${origin}/?qualify${['normal', 'input'].includes(mode) ? '' : `&${mode}-probe`}`;
+  const url = valleyCase || valleyRecovery ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}` : mode === 'controls' || destroyCase || skyCase ? `${origin}/` : `${origin}/?qualify${['normal', 'input'].includes(mode) ? '' : `&${mode}-probe`}`;
   const log = line => { timeline.push(line); console.log(`${mode}: ${line}`); };
   try {
     ({ sessionId } = await cdp.call('Target.attachToTarget', { targetId, flatten: true }));
@@ -610,7 +611,7 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
       if (packet.method === 'Network.responseReceived' && packet.params.response.url === `${origin}/v1_game_bg.wasm`) response = packet.params;
     };
     for (const domain of ['Runtime', 'Page']) await cdp.call(`${domain}.enable`, {}, sessionId);
-    await cdp.call('Network.enable', { maxResourceBufferSize: wasm.bytes.length * 2, maxTotalBufferSize: wasm.bytes.length * 3 + (valleyCase ? 256 << 20 : 0) }, sessionId);
+    await cdp.call('Network.enable', { maxResourceBufferSize: wasm.bytes.length * 2, maxTotalBufferSize: wasm.bytes.length * 3 + (valleyCase || valleyRecovery ? 256 << 20 : 0) }, sessionId);
     await cdp.call('Network.setCacheDisabled', { cacheDisabled: true }, sessionId);
     await cdp.call('Page.addScriptToEvaluateOnNewDocument', { source: observeFaults }, sessionId);
     await cdp.call('Emulation.setDeviceMetricsOverride', { width: 1280, height: 1100, deviceScaleFactor: 1, mobile: false }, sessionId);
@@ -657,11 +658,35 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
       }
     } else if (recoveryCase) {
       recovery = { snapshots: {}, destroyedDeviceCounts: [] };
+      const cookedStatus = async () => JSON.parse(await (await existingGame(cdp, sessionId)).invoke('return game.cooked_status();') ?? 'null');
+      if (valleyRecovery) {
+        recovery.cookedBefore = await waitFor(async () => {
+          if (!/^Running/.test((await poll()).status ?? '')) return undefined;
+          const value = await cookedStatus();
+          if (value?.errors.length) throw new Error(`Cooked valley failed: ${JSON.stringify(value)}`);
+          return value?.drawn >= 1 ? value : undefined;
+        }, timeout, 'cooked valley drawn before device loss');
+      }
       await qualifyDeviceRecovery(cdp, sessionId, poll, timeout, recovery, onDestroy, retryCase, async phase => {
         const name = `${mode}-${phase}`;
         await screenshot(cdp, sessionId, output, name);
         (recovery.captures ??= []).push(`${name}-final.png`);
       });
+      if (valleyRecovery) {
+        // Each replacement device must prepare the newest fetched generation again: one full-set swap
+        // per replacement, the same generation drawn, and frames still submitted on the new device.
+        const before = recovery.cookedBefore;
+        const after = await waitFor(async () => {
+          await poll();
+          const value = await cookedStatus();
+          if (value?.errors.length) throw new Error(`Cooked valley failed after recovery: ${JSON.stringify(value)}`);
+          return value?.swaps >= before.swaps + 2 && value.submittedFrames > before.submittedFrames + 12 ? value : undefined;
+        }, timeout, 'cooked valley restaged on both replacement devices');
+        recovery.cookedAfter = after;
+        if (after.drawn !== before.drawn || after.swaps !== before.swaps + 2 || after.uploadedBytes !== before.uploadedBytes) throw new Error(`Cooked valley restage mismatch: ${JSON.stringify({ before, after })}`);
+        await screenshot(cdp, sessionId, output, `${mode}-restored`);
+        recovery.captures = [`${mode}-restored-final.png`];
+      }
     } else if (lossCase) loss = await qualifyDeviceLoss(cdp, sessionId, poll, timeout, mode === 'late-device-loss', onDestroy);
     else if (mode === 'controls') controls = await qualifyControls(cdp, sessionId, poll, timeout);
     else await waitFor(async () => {
@@ -763,7 +788,7 @@ async function cleanup(child, exited, cdp, server, profile) {
 
 async function main() {
   const args = options(process.argv.slice(2));
-  if (!args) { console.log('node scripts/check_v1_browser.mjs [--case all|normal|pause|resize|overload|input|controls|device-loss|late-device-loss|device-recovery|device-recovery-retry|sky-reflections|valley] [--web-root target/v1-game-web] [--cook target/debug/thrum-cook] [--assets-source examples/v1-game/assets/showcase] [--chrome /path/to/Chrome] [--output tmp/new-run] [--timeout-ms 90000]\nRequires Node 24+, an already-built game, and this Mac\'s Apple M3 Max/Metal Chrome. Controls checks manual pause with ongoing RAF; visibility checks use the explicit hook, not tab hiding. Recovery uses the real restore button; retry injects exactly one standard canvas configure failure. Sky reflections saves seven paused phases and 24 camera/Sun samples; valley repeats them on the cooked valley served by thrum-cook. No timing claim.'); return; }
+  if (!args) { console.log('node scripts/check_v1_browser.mjs [--case all|normal|pause|resize|overload|input|controls|device-loss|late-device-loss|device-recovery|device-recovery-retry|sky-reflections|valley|valley-recovery] [--web-root target/v1-game-web] [--cook target/debug/thrum-cook] [--assets-source examples/v1-game/assets/showcase] [--chrome /path/to/Chrome] [--output tmp/new-run] [--timeout-ms 90000]\nRequires Node 24+, an already-built game, and this Mac\'s Apple M3 Max/Metal Chrome. Controls checks manual pause with ongoing RAF; visibility checks use the explicit hook, not tab hiding. Recovery uses the real restore button; retry injects exactly one standard canvas configure failure. Sky reflections saves seven paused phases and 24 camera/Sun samples; valley repeats them on the cooked valley served by thrum-cook; valley-recovery runs device recovery with that valley attached. No timing claim.'); return; }
   if (Number(process.versions.node.split('.')[0]) < 24 || typeof WebSocket !== 'function') throw new Error('Node 24+ with builtin WebSocket is required');
   const directory = await fs.realpath(path.resolve(repo, args['web-root']));
   const files = await assets(directory);
@@ -804,7 +829,7 @@ async function main() {
     const modes = args.case === 'all' ? cases : [args.case];
     let assetsOrigin;
     let assetsSource;
-    if (modes.includes('valley')) ({ cook, origin: assetsOrigin, source: assetsSource } = await serveCooked(args, output));
+    if (modes.includes('valley') || modes.includes('valley-recovery')) ({ cook, origin: assetsOrigin, source: assetsSource } = await serveCooked(args, output));
     for (const mode of modes) results.push(await qualify(cdp, mode, serving.origin, output, directory, files.get('/v1_game_bg.wasm'), args['timeout-ms'], assetsOrigin, assetsSource));
   } catch (error) { failure = error; }
   finally {

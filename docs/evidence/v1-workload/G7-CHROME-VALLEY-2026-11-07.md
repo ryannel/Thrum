@@ -50,6 +50,18 @@ in the watched source](g3s-first-light/chrome-live-edit.png)
 - **Metal test.** A second publication through the feed swaps in with a smaller upload than the first, the
   dev client reuses the unchanged mesh, and the edit is visible.
 
+## Device recovery
+
+![Chrome after two GPU device replacements with the cooked valley attached](g3s-first-light/chrome-valley-recovered.png)
+
+`check_v1_browser.mjs --case valley-recovery` runs the existing device-recovery procedure with the valley
+attached. It destroys the actual `GPUDevice` twice and restores it with the real button, on the same world.
+Each replacement must prepare the fetched generation again. Result: generation 1 still drawn, swaps 1 → 3, each
+restage a full 1,523,712-byte upload, frames submitted 2 → 107, and no loader errors. `cooked_status` now
+reports submitted frames. With Wasm SHA-256
+`150993227878c5f7cd05d0f2af06a7ea1d2d41639f918ed9cd5f6be8992e5ae4`, the `valley`, `sky-reflections` and `device-recovery`
+cases also passed, as did `./dev check`.
+
 ## Independent review
 
 A fresh-context reviewer saw only Chrome and native stills and a 24-sample Chrome motion tile. It found:
@@ -68,7 +80,5 @@ A fresh-context reviewer saw only Chrome and native stills and a 24-sample Chrom
 
 - **Look items.** Those above, shared with native.
 - **Edit latency.** Chrome edit-to-visible latency is not measured beyond the watcher's publish time.
-- **Device recovery.** Recovery with the valley attached is not yet a browser case. The native restage path
-  it shares is tested.
 - **Shared controls.** The demo panel still waits for G6's typed controls.
 - **Measurements.** No Chrome frame-time or startup measurement.
