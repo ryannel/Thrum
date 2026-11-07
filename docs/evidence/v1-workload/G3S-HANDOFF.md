@@ -25,6 +25,17 @@ The Codex goal remains active. Its attachment is
   retains opaque → stars → tone order. All 132 prior opt-in Metal valley
   frames match byte for byte. The workspace check is green. Production
   daylight eligibility, the shipping catalogue and motion remain open.
+- Tight footprint WIP `500ef37` keeps HDR flux within 0.0571% across 36
+  Metal scratch cases. An above-horizon control twice Sirius's illuminance
+  changes daylight by at most one RGB code and brightens its central footprint
+  at night at 720p, 1080p and 2160p. All non-midnight held Metal and Chrome
+  captures match the wider build. The independent review confirmed tracking
+  in 49 sampled Chrome poses and reported faint-star phase variation for live
+  follow-up. Workspace check passed 513 tests. Benchmark ranges, exact builds
+  and reproduction commands are in `tmp/g3s-star-catalog/NOTES.md`.
+  The local `harvard-1908/layout-pages/scan-table.sh` retains each completed
+  scan and transcription for restart. The production cutoff and catalogue
+  admission remain open.
 - M1 closeout at `b8f230e7` used the same cooked scene hash on Metal and
   Chrome. The Chrome compositor sweep ran from 17.659 to 24.053 h with 75
   samples. All eight overloads were inside screenshot brackets. The same
