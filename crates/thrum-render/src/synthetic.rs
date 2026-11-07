@@ -19,17 +19,15 @@ use crate::graph::{
 };
 use crate::graph_record::{ExecutableGraph, RecordBinding, RecordFamily};
 use crate::timing::{GpuTimings, TimingError};
-pub use crate::visibility::CullMode;
-use crate::visibility::{self, MeshRecord, VisibilityPrepared, VisibilityTarget};
+use crate::visibility::{VisibilityPrepared, VisibilityTarget};
+pub use camera_culling::CullMode;
 use glam::Vec3;
 use std::collections::BTreeSet;
-use std::sync::{
-    Arc,
-    mpsc::{self, Receiver, TryRecvError},
-};
+use std::sync::Arc;
 use wgpu::util::DeviceExt;
 
 mod air_shadow;
+mod camera_culling;
 mod cluster;
 mod cluster_gpu;
 mod contributed;
@@ -37,10 +35,12 @@ mod display;
 mod exposure;
 mod frame_stats;
 mod history_gpu;
+mod readback;
 mod scene_apply;
 mod shadow;
 mod upload;
 mod view;
+pub use readback::PixelReadback;
 
 pub(crate) use air_shadow::AIR_SHADOW_PASS;
 
@@ -83,16 +83,6 @@ const CUBE_INDICES: [u16; 36] = [
     18, 17, 19, 20, 21, 22, 22, 21, 23,
 ];
 const CUBE_INDEX_BYTES: u64 = 72;
-/// Stable mesh row 0: the diagnostic cube's index range and local bounds.
-const CUBE_MESH: MeshRecord = MeshRecord {
-    first_index: 0,
-    index_count: 36,
-    base_vertex: 0,
-    bounds_min: [-1.0; 3],
-    bounds_max: [1.0; 3],
-};
-/// Forward view-group binding of the camera's visible slot list.
-const VISIBLE_BINDING: u32 = 5;
 /// Explicit shader sRGB encoding after exposure, tone and gamut mapping.
 pub const OUTPUT_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba8Unorm;
 
@@ -553,20 +543,6 @@ impl SceneContext<'_> {
         )
     }
 
-    fn visibility(&mut self, pass: &CompiledPass) -> Result<(), RenderError> {
-        let view_offset =
-            self.prepared.view_stride * u32::from(self.target.frame_revision & 1 != 0);
-        let encoded = self.prepared.visibility.encode(
-            self.encoder,
-            &self.target.visibility,
-            view_offset,
-            self.generation,
-            pass,
-            self.timings.as_deref_mut(),
-        )?;
-        encoded.then_some(()).ok_or(RenderError::GraphPassMismatch)
-    }
-
     fn opaque(&mut self, pass: &CompiledPass) -> Result<(), RenderError> {
         self.prepared.encode_opaque(
             self.encoder,
@@ -880,7 +856,11 @@ impl PreparedSynthetic {
                 count: None,
             },
             uniform_layout(1, AUX_BYTES as u64, wgpu::ShaderStages::FRAGMENT),
-            storage_layout(VISIBLE_BINDING, wgpu::ShaderStages::VERTEX, 4),
+            storage_layout(
+                camera_culling::VISIBLE_BINDING,
+                wgpu::ShaderStages::VERTEX,
+                4,
+            ),
         ];
         if shadow_enabled {
             view_entries.extend([
@@ -1106,16 +1086,11 @@ impl PreparedSynthetic {
             &instance_layout,
             instance_count,
         );
-        let visibility = VisibilityPrepared::new(
+        let visibility = camera_culling::prepare(
             device,
             queue,
-            PipelineKey {
-                device_generation: generation,
-                revision: SYNTHETIC_REVISION,
-                role: visibility::ROLE,
-            },
+            generation,
             instance_count,
-            &[CUBE_MESH],
             instance_upload.active_count(),
         );
         let shadow = if shadow_enabled {
@@ -1257,10 +1232,7 @@ impl PreparedSynthetic {
         } else {
             "fragment"
         };
-        let vertex_entry = match scene.camera_culling {
-            CullMode::Direct => "vertex",
-            CullMode::Frustum => "compacted_vertex",
-        };
+        let vertex_entry = camera_culling::vertex_entry(scene.camera_culling);
         let create_pipeline = |cull_mode| {
             device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
                 label: Some("prepared opaque synthetic role"),
@@ -1825,38 +1797,13 @@ impl PreparedSynthetic {
         let scene = Self::view_attachment(attachment, SCENE_FORMAT, AttachmentUse::Scene)?;
         let attachment = (width, height, &mut graph, &mut accesses);
         let motion = Self::view_attachment(attachment, MOTION_FORMAT, AttachmentUse::Motion)?;
-        if self.camera_culling == CullMode::Frustum {
-            let reads = vec![
-                Access {
-                    resource: view,
-                    range: 0..VIEW_BYTES as u64,
-                    kind: AccessKind::UniformRead,
-                    store: true,
-                },
-                Access {
-                    resource: instance.clone(),
-                    range: 0..self.instance_bytes,
-                    kind: AccessKind::StorageRead,
-                    store: true,
-                },
-            ];
-            let outputs = self.visibility.append_graph(&mut graph, reads)?;
-            prepared_keys.insert(self.visibility.key());
-            accesses.extend([
-                Access {
-                    resource: outputs.visible,
-                    range: 0..self.visibility.visible_bytes(),
-                    kind: AccessKind::StorageRead,
-                    store: true,
-                },
-                Access {
-                    resource: outputs.args,
-                    range: 0..visibility::ARGS_BYTES,
-                    kind: AccessKind::IndirectRead,
-                    store: true,
-                },
-            ]);
-        }
+        self.append_camera_visibility(
+            &mut graph,
+            view,
+            &instance,
+            &mut accesses,
+            &mut prepared_keys,
+        )?;
         let forward = graph.pass(Pass {
             name: "synthetic forward opaque".into(),
             scope: PassScope::View(1),
@@ -2440,12 +2387,7 @@ impl PreparedSynthetic {
             &self.cube_indices
         };
         pass.set_index_buffer(indices.slice(..), wgpu::IndexFormat::Uint16);
-        match self.camera_culling {
-            CullMode::Direct => {
-                pass.draw_indexed(0..36, 0, 0..self.instance_upload.active_count());
-            }
-            CullMode::Frustum => pass.draw_indexed_indirect(target.visibility.args(), 0),
-        }
+        self.draw_camera(&mut pass, target);
         if let Some(contribution) = contribution {
             contribution.draw(&mut pass);
         }
@@ -2629,12 +2571,7 @@ impl OffscreenTarget {
             (None, None) => None,
             _ => return Err(RenderError::GraphPassMismatch),
         };
-        let visibility = prepared.visibility.target(
-            device,
-            &prepared.view_buffer,
-            prepared.instance_upload.buffer(),
-            prepared.history.serial_buffer(),
-        );
+        let visibility = prepared.camera_visibility_target(device);
         let mut view_entries = vec![
             wgpu::BindGroupEntry {
                 binding: 0,
@@ -2649,7 +2586,7 @@ impl OffscreenTarget {
                 resource: aux.as_entire_binding(),
             },
             wgpu::BindGroupEntry {
-                binding: VISIBLE_BINDING,
+                binding: camera_culling::VISIBLE_BINDING,
                 // Unread by the direct vertex entry.
                 resource: visibility.visible().as_entire_binding(),
             },
@@ -2728,96 +2665,6 @@ impl OffscreenTarget {
             row_bytes: self.row_bytes,
             pending: None,
         }
-    }
-}
-
-/// One bounded asynchronous sRGB-encoded SDR RGBA8 readback slot, reusable
-/// after collection. Each pixel retains four bytes including opaque alpha.
-pub struct PixelReadback {
-    buffer: wgpu::Buffer,
-    generation: u64,
-    extent: [u32; 2],
-    row_bytes: u32,
-    pending: Option<Receiver<Result<(), wgpu::BufferAsyncError>>>,
-}
-impl PixelReadback {
-    fn check_target(&self, target: &OffscreenTarget) -> Result<(), RenderError> {
-        if self.pending.is_some() {
-            return Err(RenderError::Readback);
-        }
-        if self.generation != target.generation || self.extent != target.extent() {
-            return Err(RenderError::StaleTarget);
-        }
-        Ok(())
-    }
-
-    fn copy_into(
-        &mut self,
-        encoder: &mut wgpu::CommandEncoder,
-        target: &OffscreenTarget,
-    ) -> Result<(), RenderError> {
-        encoder.copy_texture_to_buffer(
-            wgpu::TexelCopyTextureInfo {
-                texture: target
-                    .textures
-                    .texture(&target.ids.output)
-                    .ok_or(RenderError::GraphPassMismatch)?,
-                mip_level: 0,
-                origin: wgpu::Origin3d::ZERO,
-                aspect: wgpu::TextureAspect::All,
-            },
-            wgpu::TexelCopyBufferInfo {
-                buffer: &self.buffer,
-                layout: wgpu::TexelCopyBufferLayout {
-                    offset: 0,
-                    bytes_per_row: Some(self.row_bytes),
-                    rows_per_image: Some(self.extent[1]),
-                },
-            },
-            wgpu::Extent3d {
-                width: self.extent[0],
-                height: self.extent[1],
-                depth_or_array_layers: 1,
-            },
-        );
-        let (send, receive) = mpsc::channel();
-        encoder.map_buffer_on_submit(&self.buffer, wgpu::MapMode::Read, .., move |result| {
-            let _ = send.send(result);
-        });
-        self.pending = Some(receive);
-        Ok(())
-    }
-    /// Nonblocking collection, removing row padding. The caller polls the device.
-    /// # Errors
-    /// Refuses stale generations, failed mapping or a disconnected completion callback.
-    pub fn try_collect(&mut self, generation: u64) -> Result<Option<Vec<u8>>, RenderError> {
-        if self.generation != generation {
-            return Err(RenderError::StaleTarget);
-        }
-        let Some(pending) = &self.pending else {
-            return Ok(None);
-        };
-        match pending.try_recv() {
-            Err(TryRecvError::Empty) => return Ok(None),
-            Err(TryRecvError::Disconnected) | Ok(Err(_)) => {
-                self.pending = None;
-                return Err(RenderError::Readback);
-            }
-            Ok(Ok(())) => {}
-        }
-        self.pending = None;
-        let mapped = self
-            .buffer
-            .slice(..)
-            .get_mapped_range()
-            .map_err(|_| RenderError::Readback)?;
-        let mut pixels = Vec::with_capacity(self.extent[0] as usize * self.extent[1] as usize * 4);
-        for row in mapped.chunks_exact(self.row_bytes as usize) {
-            pixels.extend_from_slice(&row[..self.extent[0] as usize * 4]);
-        }
-        drop(mapped);
-        self.buffer.unmap();
-        Ok(Some(pixels))
     }
 }
 

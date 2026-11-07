@@ -1,5 +1,6 @@
 #[cfg(target_os = "macos")]
 use super::super::*;
+use std::sync::mpsc;
 
 #[cfg(target_os = "macos")]
 fn half_to_f32(bits: u16) -> f32 {
