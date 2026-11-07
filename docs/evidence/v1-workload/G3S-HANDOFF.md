@@ -1,6 +1,6 @@
 # Thrum V1 handoff
 
-Updated 7 November 2026 after Codex resumed as root. Start from remote `main` and
+Updated 8 November 2026. Start from remote `main` and
 [the build plan](../../BUILD-PLAN.md). The older three-band baseline is `7236b38`. This file
 travels with the candidate, so use its enclosing commit to identify the exact tested source.
 The Codex goal remains active. Its attachment is
@@ -49,24 +49,25 @@ The Codex goal remains active. Its attachment is
   `938fbfb` now passes the Metal rasterized 5% ramp and 12.54 km crest
   test and retains the 61.16-code sweep result. The repeat's GPU medians
   at 17.6917 h are 4.92–5.10 ms for taps and 6.03–6.05 ms for cells
-  (1-minute load 21.52–22.26). The discard case passes in the revised
-  workspace check, but the fetched/mapped test intermittently differs
-  above tolerance at x211/y249. The sampled main image pair matches.
-  The composed prototype over `ce848011` reproduces that exact
-  intermittent 16-code red difference. Its 1× 300-frame Metal pairs
-  reduce the connected spur's peak stripe contrast from 100.36 to
-  75.38 red codes. The independent review still sees a one-frame
-  34-code drop at frames 83→84. The visibility capture shows the
-  far cascade dropping to zero while the horizon still sees part
-  of the disk. The four interleaved 100-frame GPU pass-sum medians
-  were 4.06/4.48/4.49/4.32 ms (taps/cells/cells/taps, load 28.34).
-  A distance-partition diagnostic reduces that drop from 34 to 14
-  codes. It limits the last cascade to 96 m of horizontal blocker
-  distance with 32 m of overlap into the horizon interval. The exact
-  triangle ray at the centre of the affected patch shows 3.94%→2.18%
-  disk visibility across the two frames. The partition still needs
-  near-blocker, solar-transition and cooked parity checks.
-  Keep the prototype separate. Chrome and camera snaps remain open.
+  (1-minute load 21.52–22.26).
+  The composed prototype over `ce848011` reduces the 300-frame connected
+  spur's peak stripe contrast from 100.36 to 75.38 red codes. It reproduces
+  an intermittent 16-code fetched/mapped difference in the near receiver
+  plane. Smoothing that plane passes all 13 Metal shadow tests and four
+  fetched/mapped comparisons, but fails strict discarded-frame equality
+  at eight pixels (one code). Repeated captures at the same endpoint match.
+  Keep the strict test. The prototype remains off main.
+
+  The far cascade's 34-code sunset step occurs with a steady 54-texel
+  radius and six blocker-search hits. Doubling wide last-cascade taps
+  reduces the worst one-frame step to 19.75 codes and raises median GPU
+  pass sum from 4.46–4.48 to 5.33–5.35 ms (interleaved 1080p60 Metal,
+  shared load 19.69–20.89). Keep the 16-tap path. A 96 m blocker cutoff
+  gives a smaller step but has no compact-caster coverage guarantee.
+  Next check analytic terrain and compact occluders against their union
+  on the disk. A caster 160 m away blocks part of the upper half of a
+  half-set Sun and leaves 42.39% visible. Taking the minimum of the two
+  independent fractions would report 50%. Chrome and camera snaps remain open.
   [Maximum Mipmaps](https://pure.mpg.de/pubman/item/item_1325622_5/component/file_3590464/i3d08.pdf).
   Exact builds, raw rows and clips are in `tmp/g3s-sunset-lip/`. The
   diagnostic source and rerun command are on `codex/g3s-horizon-metal-wip`.
