@@ -2,10 +2,11 @@
 
 7 November 2026. Apple M3 Max/Metal, Rust 1.99.1, wgpu 30.0.1. Each section names the commit or Wasm build it
 was gathered at. The first native rows and the first Chrome rows were gathered on branch `claude/g3c-gpu-culling`
-on main `a346d60f`. The closing reruns come from main `b8f230e7` plus the culling counts readback (branch
-`claude/g3c-stats-main`). The first of them ran on an uncommitted tree just before `08ff98e0`. The Chrome
-counts check (Wasm `3ed8e87f…`) and the full-path rerun ran on the code of `d92df1ab`, which this file's
-commit amends with this record only.
+on main `a346d60f`. The closing reruns come from the culling counts readback on branch `claude/g3c-stats-main`:
+- the first ones on main `b8f230e7`, before root asked for counts to stop holding the render slot;
+- the final ones at `a2cf00f3` on main `a3a973cc`, after that change. Its code equals the commit that adds this
+  record; only this file differs.
+Each section names which run it reports.
 
 **Labelled contended:** other sessions shared the CPU and GPU throughout (load average 19–21), so p95 tails are
 noisy.
@@ -35,22 +36,28 @@ The four local peers control the last four props. A scripted camera flies a 250 
 - The test prepares two game hosts with the same field, one Direct and one Frustum. It drives both through the same
   ticks, waits for each frame to complete, and compares `capture_pixels` RGBA at 640×360.
 - **The culled host really culls.** The test asserts each host's prepared mode, read from the renderer
-  (`FrameHost::camera_culling`). Every Frustum frame reports read-back draw counts, and every Direct frame reports
-  none. At its fewest, the Frustum host must draw more than zero and fewer than half of the active instances. A
+  (`FrameHost::camera_culling`). Direct frames report no counts. A Frustum frame reports its read-back draw count
+  when the count has settled by the time the frame retires. Counts never hold a frame. In the final full-path run,
+  all 1,930 Frustum frames were counted. At its fewest, the Frustum host must draw more than zero and fewer than half of the active instances. A
   mutant that drops the mode between `GameSetup` and `SyntheticScene` fails the test before the first tick.
 - **Default release run:** 79 sampled ticks to tick 1,930 (every 30th tick, plus each event and its neighbours).
   Byte-equal. Debug builds, as run by `./dev check`, stop at tick 460 after the first snap turn (about 65 s).
 - **Full path, `THRUM_FIELD_FULL_PATH=1`:** every tick from 1 to 1,930 of the 3,600-tick loop. This covers three
   snap turns (each start and end) and the first quarter-loop cut at tick 1801. The next turn starts at tick 2101,
-  outside the run. Byte-equal at all 1,930 ticks. In the closing rerun, the Frustum host drew 21,745 of
-  100,513 at its fewest. The log, `tmp/g3c-boundary/m1/full-path-m1close2.log`, records the commit, the variable and
-  1,930 frames compared. The commit is `d92df1ab`, whose code equals the commit that adds this record; only this
-  file differs.
+  outside the run. Byte-equal at all 1,930 ticks. In the final run (`a2cf00f3`), the Frustum host drew 21,745 of
+  100,513 at its fewest, and no frame retired before its count. The log,
+  `tmp/g3c-boundary/m1/full-path-m1close3.log`, records the commit, the variable and the 1,930 frames compared.
 - **Mode survives resize and device replacement:** `cargo test -p thrum-render --lib culled_modes_survive`
   (f20a1d15) resizes the surface, then publishes a replacement device. Frustum stays selected, and every slot's
   report carries Frustum's read-back draw counts (closing rerun). The replacement's capture equals a Direct host on
   the same device. A mutant that
   drops the mode in `device_prepare_inputs` fails the test.
+- **Counts never hold a frame:** `culling_counts_never_hold_render_slots_or_cross_a_replacement` (Metal).
+  - It stalls both slots' count mappings. Two rounds of frames still retire, with no counts.
+  - Once the stall is released, counts resume.
+  - It then leaves real mappings pending on the old device and publishes a replacement. Only the new device's
+    counts appear: (0, 0) for its empty scene, where an old count would read (1, 1).
+  - The mutant that makes retirement wait on the count times out.
 - **Unit tests:** `cargo test -p v1-game --lib field` checks that the layout is deterministic, that the field spans
   far beyond the view, that walls stand halfway between prop lines, and that every turn and cut is flagged.
 
@@ -92,6 +99,7 @@ meshes.
 | 1 | 0.786 (0.918) → 0.590 (0.655) | 0.852 both |
 | 2 | 0.786 (0.918) → 0.590 (0.655) | 0.852 both |
 | 3 | 0.918 (3.473) → 0.786 (2.556) | 0.918 both |
+| 4 | 1.180 (4.588) → 0.852 (5.636) | 1.180 both |
 
 - **Run 3** is the closing rerun, one page each, with the counts readback built in (Wasm `c995d441…` for the oracle
   build). Its raw reports are in `tmp/g3c-boundary/m1/chrome-m1close/`.
@@ -106,6 +114,15 @@ meshes.
     readback against the same build with it removed, in ABBA order (load 27–31). All four runs had no overload
     and no refused ticks. Shed views were 80 and 86 with counts, and 63 and 89 without. Forward p50 was within one
     timestamp step. The raw reports are in `tmp/g3c-boundary/m1/counts-ab/`.
+- **Run 4** is the final rerun at `a2cf00f3`, after counts stopped holding the render slot (Wasm `39eca5c1…`; load
+  about 25). It is one page each and unpaired.
+  - Both cases pass with no overload events and no refused ticks.
+  - Shed views were 296 for Frustum and 229 for Direct. One unpaired run under load cannot separate culling from
+    contention. The run 3 ABBA check above was the deciding test for whether counts cost frames, and in this code
+    counts no longer hold a slot at all.
+  - The Frustum page counted all 600 samples (`culling_counted=600/600`), with drawn p50 21,986 and p95 23,060 of
+    100,513.
+  - The raw reports are in `tmp/g3c-boundary/m1/chrome-m1close3/`.
 
 **Pixel equality with Chrome Direct:** `node scripts/check_v1_browser.mjs --case field-oracle`, using the
 caller-owned capture token (Q2c, d0f9cce4).
@@ -116,12 +133,14 @@ caller-owned capture token (Q2c, d0f9cce4).
 - **Mode check:** the oracle requires the Direct page to report `culling=Direct` with no counts, and the Frustum
   page to report `culling=Frustum` with fewer drawn than active. Otherwise a lost mode could compare Direct with
   Direct.
-- **Result:** all 16 views byte-equal at `tick=0;extent=1280x720;generation=1`. This held four times:
+- **Result:** all 16 views byte-equal at `tick=0;extent=1280x720;generation=1`. This held five times:
   - on the Q2c revision, before it landed;
   - in root's run of the merged checker on main (no retained artifact);
   - on main `f20a1d15` plus the M2 Occlusion branch (Wasm SHA-256 `df972905…`);
   - on main `b8f230e7` plus the counts readback, with the mode check (Wasm `c995d441…`). The Frustum page reported
     drawing p50 20,800 of 100,513. The result is in `tmp/g3c-boundary/m1/chrome-m1close/field-oracle.json`.
+  - At `a2cf00f3`, after counts stopped holding the render slot (Wasm `39eca5c1…`). The Frustum page reported drawing
+    21,938 of 100,513. The result is in `tmp/g3c-boundary/m1/chrome-m1close3/field-oracle.json`.
 - **Device loss:** on the Frustum page, after a real device destroy, `begin_capture` and an outstanding capture
   are both refused. After the restore button, a fresh capture returns the same tick under generation 2.
 

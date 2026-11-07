@@ -104,7 +104,7 @@
       ]
     },
     "G3c_gpu_culling": {
-      "implementation": "frustum_camera_culling_in_the_game_field_with_launch_time_Direct_or_Frustum_and_read-back_draw_counts;_two-phase_occlusion_held_on_a_branch_for_root_review",
+      "implementation": "frustum_camera_culling_in_the_game_field_with_launch_time_Direct_or_Frustum_and_read-back_draw_counts_that_never_hold_a_frame;_two-phase_occlusion_built_on_a_branch_and_not_shipped_because_equal-depth_ownership_differs_from_Direct",
       "functional_validation": "native_Frustum_byte-equal_to_Direct_over_ticks_1-1930_of_the_100513-instance_field_flythrough_with_mode_and_draw_counts_asserted;_Chrome_Frustum_byte-equal_to_Chrome_Direct_at_16_paused_views;_mode_survives_resize_and_device_replacement;_independent_milestone_review_pass_with_changes",
       "experienced_quality": "agent_and_independent_motion_review_of_567_Frustum_frames_around_turns_and_the_cut_found_no_edge_pops;_live_window_title_not_observed",
       "platform_performance": {
@@ -115,7 +115,7 @@
         "android": "not_run"
       },
       "diagnostic_measurement": "Contended (load about 20): about 22% of instance centres in view; Chrome read-back draw count p50 21,951 of 100,513. Defaults: field Frustum, grid Direct. No speed claim beyond the paired forward rows.",
-      "scope": "M1 of the G3c plan: GPU frustum compaction drawn through one indexed indirect draw, chosen at launch. Occlusion (M2), mixed meshes (M3), live toggle and iOS are open.",
+      "scope": "M1 of the G3c plan: GPU frustum compaction drawn through one indexed indirect draw, chosen at launch. Shipped occlusion (M3, after the M2 branch experiment), mixed meshes (M3), live toggle and iOS are open.",
       "evidence": [
         "../evidence/render/G3C-CAMERA-CULLING-2026-11-07.md",
         "../evidence/render/G3C-FIELD-FRUSTUM-2026-11-07.md"
