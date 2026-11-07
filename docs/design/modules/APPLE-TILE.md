@@ -369,7 +369,13 @@ is owed. Whole-frame present intervals on the Mac also depend on G3b's open live
      - pipeline state creation, timed as pipeline creation from that library.
      A cold run clears Thrum's own `$(getconf DARWIN_USER_CACHE_DIR)/com.apple.metal/<binary>` directory, including
      its front-end cache.
-     The split decides which layer lands first. It does not decide whether either lands: V1 requires archives.
+     Today `load_shader` runs naga and `newLibraryWithSource` at every pipeline creation on every launch. The system
+     Metal cache covers only the final PSO step.
+   - *Order.* Measure; then offline metallibs plus parallel pre-warm; then the upstream Metal `PIPELINE_CACHE` for
+     the PSO remainder. The split confirms or reorders this. It does not decide whether a layer lands: V1 requires
+     archives.
+   - *Parallel pre-warm.* Closure-time preparation creates every pipeline across worker threads (wgpu's `Device` is
+     `Send + Sync`), joined before readiness. Wall time is recorded with and without it, cold and warm.
    - *Layer 1: offline metallibs through passthrough.* wgpu 30 has `PASSTHROUGH_SHADERS` on Metal, with a
      `metallib` input that skips naga and the runtime MSL compile.
      - naga emits MSL per entry point per pipeline, so the cook works per pipeline, not per module. A build-time cook
@@ -387,6 +393,9 @@ is owed. Whole-frame present intervals on the Mac also depend on G3b's open live
        loads it with `create_shader_module_passthrough`, with explicit pipeline layouts, naga's translated entry-point
        names (wgpu-hal looks names up verbatim) and their workgroup sizes.
      - A missing or mismatched key, or a load failure, selects the WGSL path at build, and the fallback is counted.
+     - *Match check.* Before any metallib is trusted, a test checks that the cook's MSL for each pipeline equals the
+       MSL wgpu-hal generates at runtime for the same pipeline from its `per_stage_map`. The runtime MSL is captured
+       through a debug hook in the pinned patch. A mismatch fails the cook.
      - *Constraints.* naga adds a `_buffer_sizes` argument to every entry point that touches a runtime-sized storage
        array, whatever the bounds policy. Restrict bounds checks read it on every index. That covers synthetic,
        visibility, shadow, cull, dfg, reflection, cluster and history_gpu, and vertex-pulled asset pipelines too.
