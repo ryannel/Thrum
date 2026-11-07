@@ -127,6 +127,11 @@ impl PublishedPage {
     pub fn structural_events(&self) -> &[StructuralChange] {
         self.0.structural_events()
     }
+    /// Diagnostic, not page content: columns whose warm capture ran on the
+    /// Rayon pool for this page.
+    pub fn parallel_capture_columns(&self) -> usize {
+        self.0.parallel_capture_columns()
+    }
     /// Visit live visual rows in physical slot order.
     ///
     /// # Panics

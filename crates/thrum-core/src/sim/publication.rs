@@ -74,7 +74,8 @@ pub(super) trait ErasedPublicationColumn: Send + Sync {
         component: usize,
         directory: Option<&DenseDirectory>,
     );
-    fn capture_warm(&mut self, capture: WarmColumnCapture<'_>);
+    /// Capture one warm column; true when it ran on the pool.
+    fn capture_warm(&mut self, capture: WarmColumnCapture<'_>) -> bool;
     fn refresh_words(
         &mut self,
         world: &RegisteredWorld,
@@ -128,10 +129,6 @@ pub(super) struct PublicationColumn<T> {
     snapshot: fn(&T) -> T,
     nested_bytes: fn(&T) -> usize,
     /// Reusable per-chunk candidate lists of a parallel warm capture.
-    #[cfg_attr(
-        target_arch = "wasm32",
-        expect(dead_code, reason = "browser builds capture serially")
-    )]
     chunk_work: Vec<ChunkWork>,
 }
 
@@ -260,7 +257,10 @@ impl<T: PartialEq + Send + Sync + 'static> PublicationColumn<T> {
         let rows = self.current.len();
         let chunks = rows.div_ceil(CAPTURE_CHUNK_ROWS);
         if self.chunk_work.len() < chunks {
-            self.chunk_work.resize_with(chunks, Vec::new);
+            // A chunk holds at most one candidate per page row, so lists
+            // reserved once never grow on later ticks.
+            self.chunk_work
+                .resize_with(chunks, || Vec::with_capacity(CAPTURE_CHUNK_ROWS));
         }
         let Self {
             current,
@@ -432,7 +432,7 @@ impl<T: PartialEq + Send + Sync + 'static> ErasedPublicationColumn for Publicati
         }
     }
 
-    fn capture_warm(&mut self, capture: WarmColumnCapture<'_>) {
+    fn capture_warm(&mut self, capture: WarmColumnCapture<'_>) -> bool {
         let source = capture
             .source
             .as_any()
@@ -457,7 +457,7 @@ impl<T: PartialEq + Send + Sync + 'static> ErasedPublicationColumn for Publicati
             && Self::parallel_worthwhile(&capture, temporal)
         {
             self.capture_warm_parallel(capture, source, world, temporal);
-            return;
+            return true;
         }
         for word in 0..capture.page_words.len() {
             let refresh = capture.page_words[word] | capture.page_structural[word];
@@ -514,6 +514,7 @@ impl<T: PartialEq + Send + Sync + 'static> ErasedPublicationColumn for Publicati
             capture.endpoint[word] = endpoint;
             capture.pair[word] = pair;
         }
+        false
     }
 
     fn refresh_words(
@@ -662,6 +663,12 @@ impl<T: PartialEq + Send + Sync + 'static> ErasedPublicationColumn for Publicati
             + self.previous.as_ref().map_or(0, values_bytes)
             + self.override_words.capacity() * size_of::<u64>()
             + self.prior_slots.capacity() * size_of::<u32>()
+            + self.chunk_work.capacity() * size_of::<ChunkWork>()
+            + self
+                .chunk_work
+                .iter()
+                .map(|list| list.capacity() * size_of::<(u32, u32, u8)>())
+                .sum::<usize>()
     }
 }
 
@@ -950,6 +957,7 @@ pub struct PublicationPage {
     baseline: bool,
     patch_source: Option<(SnapshotId, u64)>,
     source_endpoint: Option<(SnapshotId, u64)>,
+    parallel_columns: usize,
 }
 
 /// Capture inputs are engine-owned dirty unions and final-tick undo data.
@@ -1012,6 +1020,7 @@ impl PublicationPage {
             baseline: false,
             patch_source: None,
             source_endpoint: None,
+            parallel_columns: 0,
         }
     }
 
@@ -1106,6 +1115,12 @@ impl PublicationPage {
     /// Net lifecycle transitions in slot order, Despawn before Spawn on reuse.
     pub fn structural_events(&self) -> &[StructuralChange] {
         &self.events
+    }
+    /// Diagnostic, not page content: how many selected columns this page's
+    /// warm capture ran on the Rayon pool. Zero for cold, serial or browser
+    /// captures.
+    pub fn parallel_capture_columns(&self) -> usize {
+        self.parallel_columns
     }
     /// Visit live identities in physical slot order without an ID lookup.
     ///
@@ -1252,6 +1267,7 @@ impl PublicationPage {
         self.dirty.clear();
         self.events.clear();
         self.identities.fill(0);
+        self.parallel_columns = 0;
         if let Some(source) = source {
             for slot in outbound_dirty.structural_slots() {
                 let before = source.handle(slot).map(|handle| {
@@ -1279,27 +1295,28 @@ impl PublicationPage {
             for (index, column) in self.columns.selected.iter_mut().enumerate() {
                 let baseline = &source.columns.selected[index];
                 assert_eq!(column.key, baseline.key, "publication schema");
-                column.values.capture_warm(WarmColumnCapture {
-                    world,
-                    component: column.component,
-                    source: baseline.values.as_ref(),
-                    directory: self.columns.directory.as_ref(),
-                    source_directory: source.columns.directory.as_ref(),
-                    page_matches_world,
-                    page_matches_source,
-                    page_words: page_dirty.component_words(column.component),
-                    page_structural: page_dirty.structural_words(),
-                    outbound_words: outbound_dirty.component_words(column.component),
-                    outbound_structural: outbound_dirty.structural_words(),
-                    identities: &self.identities,
-                    pair_valid: &self.pair_valid,
-                    final_undo,
-                    scratch: &mut self.scratch_words,
-                    endpoint: &mut self.endpoint.columns[index].1,
-                    pair: &mut self.pair.columns[index].1,
-                    changed: &mut self.dirty.columns[index],
-                    parallel,
-                });
+                self.parallel_columns +=
+                    usize::from(column.values.capture_warm(WarmColumnCapture {
+                        world,
+                        component: column.component,
+                        source: baseline.values.as_ref(),
+                        directory: self.columns.directory.as_ref(),
+                        source_directory: source.columns.directory.as_ref(),
+                        page_matches_world,
+                        page_matches_source,
+                        page_words: page_dirty.component_words(column.component),
+                        page_structural: page_dirty.structural_words(),
+                        outbound_words: outbound_dirty.component_words(column.component),
+                        outbound_structural: outbound_dirty.structural_words(),
+                        identities: &self.identities,
+                        pair_valid: &self.pair_valid,
+                        final_undo,
+                        scratch: &mut self.scratch_words,
+                        endpoint: &mut self.endpoint.columns[index].1,
+                        pair: &mut self.pair.columns[index].1,
+                        changed: &mut self.dirty.columns[index],
+                        parallel,
+                    }));
             }
         } else {
             if !cold {

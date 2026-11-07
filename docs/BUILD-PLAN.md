@@ -40,20 +40,22 @@ unblocked work. Local verified commits are useful; no push without authorization
 
 ## Active work and gates
 
-**Now: finish G3s sky, Sun, sunset and twilight.** Functional G3b and G2S correctness can proceed on disjoint owners.
+**Now: finish G3s sky, Sun, sunset and twilight.** Functional G3b proceeds on its own owners; G2S is closed.
 The native Metal recorder stays in G3t. The later dedicated performance phase owns numeric tuning.
 
 - [x] **G0 — integrity and baselines.** Real Metal regressions fail without a device; no successful skips. One baseline
   command records runnable rows and absent consumers. Dead source/cook/mobile crates are removed and shipping trees
   exclude SQLite/authoring. [Evidence](evidence/v1-workload/G0-INTEGRITY-2026-11-05.md).
-- [ ] **G2S — simulation correctness and multiplayer fitness.** Typed shared/mutable queries, validated admission,
+- [x] **G2S — simulation correctness and multiplayer fitness.** Typed shared/mutable queries, validated admission,
   trusted in-place rules under sparse undo, engine-owned publication with dirty unions across gaps/rewinds/held pages,
   adjacent previous/current endpoints, retained-input amendment and corrected replay. Require complete authority-state
   equality against the straight corrected run and structural churn/refusal recovery. Presence-aware 10k corrected replay
   and engine-owned append-only edit descriptors pass. Resolve stages privately under its own permits; forced Rayon
-  runs the chunked mover kernel concurrently and matches the straight corrected 100k run after churn and kernel/Resolve
-  refusal. Requested Rayon is a serial fallback until a quiet measured crossover, so G2S stays open.
-  [Parallel and Resolve evidence](evidence/v1-workload/G2S-PARALLEL-RESOLVE-2026-11-07.md).
+  runs the chunked mover kernel and warm page capture concurrently. It matches the straight corrected 100k run's complete
+  authority hash and page after churn and kernel/Resolve refusal, and publishes byte-identical pages in every mode. The
+  quiet ABBA found no crossover, so requested Rayon is the measured serial fallback, and RayonForced is the tested parallel
+  path. Root approved the closeout after an independent review on 7 November.
+  [Parallel, Resolve and quiet ABBA evidence](evidence/v1-workload/G2S-PARALLEL-RESOLVE-2026-11-07.md).
   [Recorded quiet S1/S2 figures](evidence/v1-workload/G2R-CONSOLIDATED-2026-11-05.md) are history; old CPU/allocation
   limits are retired. Do not close on a partial hash or an easier row.
 - [x] **G3a — executing graph and live scene.** Render/Compute/Copy closures execute in dependency order with culling,

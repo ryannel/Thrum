@@ -1,6 +1,6 @@
 # G2 design: one registered simulation for the running game
 
-5 November 2026. The original G2 correctness path ran in the game; **speed, rewind and multiplayer fitness are open under G2S**, which supersedes G2R. C01/C02 still require checked identity, one atomic fixed tick and immutable leased endpoints. [Storage selection](G2-STORAGE-SELECTION.md) provisionally chooses owned columns; only integrated game measurements can qualify them.
+5 November 2026. The original G2 correctness path ran in the game; **speed, rewind and multiplayer fitness were closed under G2S** (7 November), which supersedes G2R. C01/C02 still require checked identity, one atomic fixed tick and immutable leased endpoints. [Storage selection](G2-STORAGE-SELECTION.md) provisionally chooses owned columns; only integrated game measurements can qualify them.
 
 ## Ownership and public composition
 
@@ -19,7 +19,7 @@ ordered merge, under its own permits. Independent row kernels use `WorldTxn::vis
 - Word-aligned storage chunks own their values and active words.
 - Each chunk's first-write preimages merge in storage order, and every chunk's preimages are kept on refusal.
 - Serial runs the same chunks on the caller.
-- `RayonForced` dispatches the chunks. Requested Rayon is a serial fallback until a measured crossover.
+- `RayonForced` dispatches the chunks and warm page capture. Requested Rayon is the measured serial fallback: the quiet ABBA found no crossover.
 
 ## Tick, publication and replay
 
