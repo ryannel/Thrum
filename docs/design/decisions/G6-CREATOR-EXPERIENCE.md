@@ -3,7 +3,8 @@
 7 November 2026. This is the governing design for build-plan item G6.
 
 **Status.** The typed controls and parameter files are selected and implemented, and they run in the V1 game on Mac and
-Chrome. The app runner, the starter, shader reload and GPU field overlays are designed below but not built.
+Chrome. The macOS app runner is built and runs the V1 game. The starter, shader reload and GPU field overlays are
+designed below but not built.
 
 **Disclosure.** The controls and parameter slices were built before this record was written. The design was agreed
 in the G6 boundary notes with the root agent first, and an independent review of the landed code prompted this record.
@@ -61,7 +62,7 @@ Both apply through the same edit path as the panel, so a paused apply holds the 
 **Reload is explicit, because files do not ride the G5 watcher yet.** Making parameter files a fourth G5 product kind
 is designed in the boundary notes and is an owner question while G5 extensions are parked.
 
-## App runner and starter (designed; the move awaits root review)
+## App runner (built) and starter (designed)
 
 - **The runner.** The macOS window stack moves out of v1-game into `crates/thrum-app`, unchanged in behaviour. It
   owns:
@@ -70,8 +71,10 @@ is designed in the boundary notes and is an owner question while G5 extensions a
   - the controls panel, parameter loading and the bounded report.
 - **What a game supplies.** It prepares a `thrum_render::runtime::FrameHost` (the scene-source and contribution
   hook), its controls, an edits type the render owner applies, and its keys.
-- **Readback gating.** The app passes a render reply's readback to the game only when the reply is at least as new as
-  the last request that carried edits. Otherwise an in-flight frame would snap the panel back.
+- **Edit flow.** Edits ride the next frame request. The app passes a render reply's readback to the game only when the
+  reply is at least as new as the last request that carried edits; otherwise an in-flight frame would snap the panel
+  back. A frame cancelled by device loss takes its edits with it, so recovery queues the game's whole desired state
+  again. `app/edit_flow.rs` holds this as one pure state machine, tested across a GPU replacement.
 - **The starter** uses a small kit with:
   - a still world;
   - a sky scene with a look-at camera;

@@ -2157,6 +2157,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "thrum-app"
+version = "0.1.0"
+dependencies = [
+ "objc2 0.6.5",
+ "objc2-foundation 0.3.2",
+ "objc2-quartz-core 0.3.2",
+ "pollster",
+ "thrum-controls",
+ "thrum-core",
+ "thrum-render",
+ "wgpu",
+ "winit",
+]
+
+[[package]]
 name = "thrum-asset"
 version = "0.1.0"
 dependencies = [
@@ -2327,12 +2342,10 @@ dependencies = [
  "divan",
  "glam",
  "js-sys",
- "objc2 0.6.5",
- "objc2-foundation 0.3.2",
- "objc2-quartz-core 0.3.2",
  "pollster",
  "serde",
  "serde_json",
+ "thrum-app",
  "thrum-asset",
  "thrum-asset-gpu",
  "thrum-content-runtime",
@@ -2344,7 +2357,6 @@ dependencies = [
  "wasm-bindgen-futures",
  "web-sys",
  "wgpu",
- "winit",
 ]
 
 [[package]]

@@ -1,15 +1,11 @@
-//! The platform owns the surface and event loop; the shared host owns world
+//! The platform owns the surface and event loop; the game's runtime host owns world
 //! ticks, GPU scene packets and the prepared presentation pass.
 
-#[path = "macos/device.rs"]
 mod device;
-#[path = "macos/display_link.rs"]
 mod display_link;
-#[path = "macos/pause.rs"]
+mod edit_flow;
 mod pause;
-#[path = "macos/recovery.rs"]
 mod recovery;
-#[path = "macos/render_actor.rs"]
 mod render_actor;
 
 use std::{
@@ -22,22 +18,16 @@ use std::{
 
 use device::DeviceRecipe;
 use display_link::ViewDisplayLink;
+use edit_flow::EditFlow;
 use pause::PauseIntent;
 use recovery::Recovery;
 use render_actor::{
     FrameCounters, FrameRequest, RecoveryFailure, RenderJob, RenderOutcome, RenderReply,
-    SurfaceStatus,
+    RenderWorker, SurfaceStatus,
 };
 use thrum_controls::macos::MacPanel;
 use thrum_core::sim::WorldLaneFault;
-use thrum_render::{
-    frame::{FrameWorker, TargetLeadStatus},
-    present::SurfaceProfile,
-};
-use v1_game::{
-    FrameConfig, FrameHost, FrameSample, WorldControls,
-    controls::{ControlEdits, GameControls},
-};
+use thrum_render::{frame::TargetLeadStatus, present::SurfaceProfile, runtime::FrameSample};
 use winit::{
     application::ApplicationHandler,
     event::{ElementState, WindowEvent},
@@ -46,16 +36,12 @@ use winit::{
     window::{Window, WindowId},
 };
 
+use crate::{Config, Game, Gpu, KeyResponse};
+
 const DEFAULT_FRAMES: usize = 600;
 const MAX_FRAMES: usize = 100_000;
-const KEY_A: u8 = 1;
-const KEY_D: u8 = 2;
-const KEY_W: u8 = 4;
-const KEY_S: u8 = 8;
-const KEY_LEFT: u8 = 16;
-const KEY_RIGHT: u8 = 32;
-const KEY_UP: u8 = 64;
-const KEY_DOWN: u8 = 128;
+/// The first device's generation; recovery owns later ones.
+const DEVICE_GENERATION: u64 = 1;
 
 #[derive(Clone, Copy, Debug)]
 enum UserEvent {
@@ -66,14 +52,13 @@ enum UserEvent {
     ControlsEdited,
 }
 
-struct App {
+struct App<G: Game> {
+    config: Config,
     wake: EventLoopProxy<UserEvent>,
     display_link: Option<ViewDisplayLink>,
     window: Option<Arc<Window>>,
     display_target: Option<f64>,
     target_sequence: u64,
-    request_sequence: u64,
-    submitted_sequence: u64,
     display_link_callbacks: usize,
     late_target_evaluations: usize,
     invalid_target_evaluations: usize,
@@ -84,8 +69,7 @@ struct App {
     observed_extent: [u32; 2],
     surface_generation: Arc<AtomicU64>,
     render_stopped: Arc<AtomicBool>,
-    render: Option<FrameWorker<RenderJob, RenderReply>>,
-    world_controls: Option<WorldControls>,
+    render: Option<RenderWorker<G>>,
     pause: PauseIntent,
     recovery: Recovery,
     recovery_error: Option<String>,
@@ -93,12 +77,11 @@ struct App {
     world_tick: u64,
     render_in_flight: Option<u64>,
     counters: FrameCounters,
-    held_keys: u8,
-    /// Solar time and camera controls shared by keys and the panel. Edits travel to the
-    /// render owner in the next frame request.
-    demo: GameControls,
+    /// The game's controls are shared by keys and the panel. Edits travel to the render
+    /// owner in the next frame request.
+    game: G,
     panel: Option<MacPanel>,
-    pending_edits: ControlEdits,
+    edits: EditFlow<G::Edits>,
     /// `THRUM_PARAMS`: a parameter file applied once the window is up and again on `L`.
     params_path: Option<std::path::PathBuf>,
     origin: Instant,
@@ -120,22 +103,21 @@ struct App {
     closed_by_user: bool,
 }
 
-impl App {
-    fn new(wake: EventLoopProxy<UserEvent>, target_frames: usize) -> Result<Self, String> {
+impl<G: Game + 'static> App<G> {
+    fn new(config: Config, wake: EventLoopProxy<UserEvent>, target_frames: usize, game: G) -> Self {
         let run_deadline = Duration::from_secs(30).max(
             Duration::from_secs(10)
                 + Duration::from_millis(
                     u64::try_from(target_frames).expect("bounded frame count") * 10,
                 ),
         );
-        Ok(Self {
+        Self {
+            config,
             wake,
             display_link: None,
             window: None,
             display_target: None,
             target_sequence: 0,
-            request_sequence: 0,
-            submitted_sequence: 0,
             display_link_callbacks: 0,
             late_target_evaluations: 0,
             invalid_target_evaluations: 0,
@@ -147,18 +129,16 @@ impl App {
             surface_generation: Arc::new(AtomicU64::new(1)),
             render_stopped: Arc::new(AtomicBool::new(false)),
             render: None,
-            world_controls: None,
             pause: PauseIntent::default(),
-            recovery: Recovery::new(FrameHost::DEVICE_GENERATION),
+            recovery: Recovery::new(DEVICE_GENERATION),
             recovery_error: None,
             device_losses: 0,
             world_tick: 0,
             render_in_flight: None,
             counters: FrameCounters::default(),
-            held_keys: 0,
-            demo: GameControls::new().map_err(|error| error.to_string())?,
+            game,
             panel: None,
-            pending_edits: ControlEdits::default(),
+            edits: EditFlow::default(),
             params_path: std::env::var_os("THRUM_PARAMS").map(std::path::PathBuf::from),
             origin: Instant::now(),
             last_call: Duration::ZERO,
@@ -177,7 +157,7 @@ impl App {
             adapter_name: String::new(),
             error: None,
             closed_by_user: false,
-        })
+        }
     }
 
     fn invalidate_surface(&self) -> Result<(), String> {
@@ -197,37 +177,20 @@ impl App {
         Ok(())
     }
 
-    fn controls(&self) -> [f32; 3] {
-        let horizontal = axis(
-            self.held_keys & (KEY_A | KEY_LEFT) != 0,
-            self.held_keys & (KEY_D | KEY_RIGHT) != 0,
-        );
-        let vertical = axis(
-            self.held_keys & (KEY_S | KEY_DOWN) != 0,
-            self.held_keys & (KEY_W | KEY_UP) != 0,
-        );
-        [horizontal, vertical, 0.0]
-    }
-
     /// Take edits from keys, the panel or a parameter file. Presentation edits ride the next
     /// frame request; the pause toggle takes the same path as the P key.
     fn controls_edited(&mut self) -> Result<(), String> {
-        let edits = self.demo.take_edits();
-        if let Some(paused) = edits.paused
+        let (presentation, paused) = self.game.take_edits();
+        if let Some(paused) = paused
             && self.pause.request(paused)
         {
             self.reconcile_pause()?;
         }
-        let presentation = ControlEdits {
-            paused: None,
-            ..edits
-        };
-        if !presentation.is_empty() {
-            self.pending_edits = merge_edits(self.pending_edits, presentation);
-            self.request_sequence = self.request_sequence.saturating_add(1);
-            if let Some(window) = &self.window {
-                window.request_redraw();
-            }
+        // A frame already in flight reads back the state before these edits.
+        if self.edits.queue(presentation)
+            && let Some(window) = &self.window
+        {
+            window.request_redraw();
         }
         self.sync_panel();
         Ok(())
@@ -246,14 +209,14 @@ impl App {
         let applied = std::fs::read_to_string(&path)
             .map_err(|error| error.to_string())
             .and_then(|text| {
-                self.demo
-                    .model_mut()
+                self.game
+                    .controls_mut()
                     .apply_file(&text)
                     .map_err(|error| error.to_string())
             });
         match applied {
             Ok(report) => {
-                eprintln!("v1-game: {}: {report}", path.display());
+                eprintln!("{}: {}: {report}", self.config.name, path.display());
                 for problem in &report.problems {
                     eprintln!("  {problem}");
                 }
@@ -261,7 +224,8 @@ impl App {
             }
             Err(error) => {
                 eprintln!(
-                    "v1-game: {}: {error}; controls keep their values (fix the file and press L)",
+                    "{}: {}: {error}; controls keep their values (fix the file and press L)",
+                    self.config.name,
                     path.display()
                 );
                 Ok(())
@@ -271,23 +235,20 @@ impl App {
 
     fn sync_panel(&mut self) {
         if let Some(panel) = &mut self.panel {
-            panel.sync(self.demo.model());
+            panel.sync(self.game.controls());
         }
     }
 
-    fn update_controls(&mut self) -> Result<(), String> {
-        if let Some(controls) = &self.world_controls {
-            controls.set_controls(self.controls())?;
-        }
-        self.request_sequence = self.request_sequence.saturating_add(1);
+    /// Continuous game input changed: the next display target renders it.
+    fn input_changed(&mut self) {
+        self.edits.request();
         if let Some(window) = &self.window {
             window.request_redraw();
         }
-        Ok(())
     }
 
     fn reconcile_pause(&mut self) -> Result<(), String> {
-        let Some(controls) = &self.world_controls else {
+        let Some(controls) = self.game.world() else {
             return Ok(());
         };
         let was_transitioning = self.pause.needs_reply() || self.pause.next_request().is_some();
@@ -320,11 +281,35 @@ impl App {
         Ok(())
     }
 
+    /// The pause label, or "Still" for a game with no world link, which has nothing to pause.
+    fn world_status(&self) -> &'static str {
+        if self.game.world().is_some() {
+            self.pause.label()
+        } else {
+            "Still"
+        }
+    }
+
     fn refresh_title(&self) {
         if let Some(window) = &self.window {
+            let world_status = self.world_status();
             let title = self.samples.last().map_or_else(
-                || format!("Thrum V1 | {}{}", self.pause.label(), self.recovery.label()),
-                |sample| profiler_title(sample, self.pause.label(), self.recovery.label()),
+                || {
+                    format!(
+                        "{} | {}{}",
+                        self.config.title,
+                        world_status,
+                        self.recovery.label()
+                    )
+                },
+                |sample| {
+                    profiler_title(
+                        self.config.title,
+                        sample,
+                        world_status,
+                        self.recovery.label(),
+                    )
+                },
             );
             let title = if self.recovery.failed()
                 && let Some(error) = &self.recovery_error
@@ -341,7 +326,7 @@ impl App {
         if self.recovery.lost(generation)? {
             self.device_losses = self.device_losses.saturating_add(1);
             self.invalidate_surface()?;
-            self.request_sequence = self.request_sequence.saturating_add(1);
+            self.edits.request();
         }
         self.refresh_title();
         if let Some(window) = &self.window {
@@ -382,51 +367,19 @@ impl App {
         Ok(())
     }
 
+    /// `L` reloads the parameter file; every other key belongs to the game.
     fn set_key(&mut self, code: KeyCode, pressed: bool) -> Result<(), String> {
-        const FIVE_DEGREES: f32 = 0.087_266_46;
-        if pressed {
-            match code {
-                KeyCode::KeyQ => self.demo.turn(-FIVE_DEGREES),
-                KeyCode::KeyE => self.demo.turn(FIVE_DEGREES),
-                KeyCode::KeyR => self.demo.tilt(FIVE_DEGREES),
-                KeyCode::KeyF => self.demo.tilt(-FIVE_DEGREES),
-                KeyCode::BracketLeft => self.demo.advance_hours(-1.0),
-                KeyCode::BracketRight => self.demo.advance_hours(1.0),
-                KeyCode::KeyL => return self.load_params(),
-                _ => {}
-            }
-            if matches!(
-                code,
-                KeyCode::KeyQ
-                    | KeyCode::KeyE
-                    | KeyCode::KeyR
-                    | KeyCode::KeyF
-                    | KeyCode::BracketLeft
-                    | KeyCode::BracketRight
-            ) {
-                return self.controls_edited();
+        if pressed && code == KeyCode::KeyL {
+            return self.load_params();
+        }
+        match self.game.key(code, pressed)? {
+            KeyResponse::Ignored => Ok(()),
+            KeyResponse::Edited => self.controls_edited(),
+            KeyResponse::Input => {
+                self.input_changed();
+                Ok(())
             }
         }
-        let mask = match code {
-            KeyCode::KeyA => KEY_A,
-            KeyCode::KeyD => KEY_D,
-            KeyCode::KeyW => KEY_W,
-            KeyCode::KeyS => KEY_S,
-            KeyCode::ArrowLeft => KEY_LEFT,
-            KeyCode::ArrowRight => KEY_RIGHT,
-            KeyCode::ArrowUp => KEY_UP,
-            KeyCode::ArrowDown => KEY_DOWN,
-            _ => return Ok(()),
-        };
-        if (self.held_keys & mask != 0) == pressed {
-            return Ok(());
-        }
-        if pressed {
-            self.held_keys |= mask;
-        } else {
-            self.held_keys &= !mask;
-        }
-        self.update_controls()
     }
 
     fn prepare(
@@ -438,8 +391,11 @@ impl App {
             event_loop
                 .create_window(
                     Window::default_attributes()
-                        .with_title("Thrum V1 — 10k world / clustered forward+")
-                        .with_inner_size(winit::dpi::PhysicalSize::new(1920, 1080)),
+                        .with_title(self.config.window_title)
+                        .with_inner_size(winit::dpi::PhysicalSize::new(
+                            self.config.window_size[0],
+                            self.config.window_size[1],
+                        )),
                 )
                 .map_err(|error| format!("window: {error}"))?,
         );
@@ -453,11 +409,8 @@ impl App {
         );
         let size = window.inner_size();
         let recipe = DeviceRecipe { instance, surface };
-        let gpu = pollster::block_on(recipe.create(
-            FrameHost::DEVICE_GENERATION,
-            [size.width, size.height],
-            wake,
-        ))?;
+        let gpu =
+            pollster::block_on(recipe.create(DEVICE_GENERATION, [size.width, size.height], wake))?;
         if gpu.watch.is_lost() {
             return Err("initial device lost before preparation".to_owned());
         }
@@ -465,38 +418,32 @@ impl App {
         if gpu.watch.is_lost() {
             return Err("initial device lost during surface configuration".to_owned());
         }
-        let mut host = pollster::block_on(FrameHost::new_with_capabilities(
-            &gpu.device,
-            &gpu.queue,
-            &gpu.capabilities,
-            FrameConfig {
-                render_extent: [1920, 1080],
-                surface: Some(SurfaceProfile {
+        let world_wake = wake.clone();
+        let prepared = self.game.prepare(
+            Gpu {
+                device: &gpu.device,
+                queue: &gpu.queue,
+                capabilities: &gpu.capabilities,
+                surface: SurfaceProfile {
                     format: gpu.config.format,
                     extent: [gpu.config.width, gpu.config.height],
-                }),
+                },
             },
-        ))?;
-        v1_game::attach_cooked_scene(&mut host)?;
-        self.demo.observe_camera(host.camera_orientation());
+            Box::new(move || {
+                let _ = world_wake.send_event(UserEvent::WorldAdvanced);
+            }),
+        )?;
         if gpu.watch.is_lost() {
             return Err("initial device lost during preparation".to_owned());
         }
-        self.origin = Instant::now();
-        let world_wake = wake.clone();
-        let (host, controls) = host.into_threaded(self.origin, move || {
-            let _ = world_wake.send_event(UserEvent::WorldAdvanced);
-        })?;
-        if gpu.watch.is_lost() {
-            return Err("initial device lost before render owner ready".to_owned());
-        }
-        self.world_controls = Some(controls);
+        self.origin = prepared.origin;
+        let host = prepared.host;
         self.counters = FrameCounters::read(&host);
         self.window = Some(window);
         let panel_wake = wake.clone();
         let panel = MacPanel::new(
-            self.demo.model(),
-            "Thrum demo",
+            self.game.controls(),
+            self.config.panel_title,
             Some(Box::new(move || {
                 let _ = panel_wake.send_event(UserEvent::ControlsEdited);
             })),
@@ -511,7 +458,8 @@ impl App {
         self.surface_format = Some(gpu.config.format);
         self.surface_extent = [gpu.config.width, gpu.config.height];
         self.observed_extent = self.surface_extent;
-        self.render = Some(render_actor::start(
+        self.render = Some(render_actor::start::<G>(
+            self.config.render_thread,
             host,
             gpu,
             recipe,
@@ -523,7 +471,7 @@ impl App {
         self.load_params()
     }
 
-    fn receive_render(&mut self, reply: RenderReply) -> Result<(), String> {
+    fn receive_render(&mut self, reply: RenderReply<G::Readback>) -> Result<(), String> {
         if let RenderOutcome::Recovered { attempted, result } = reply.outcome {
             let success = result.is_ok();
             if !self
@@ -547,9 +495,8 @@ impl App {
                     };
                     // Replay the latest desired presentation policy, including
                     // edits accepted by a frame cancelled during device loss.
-                    self.pending_edits = merge_edits(self.pending_edits, self.demo.replay());
+                    self.edits.recovered(self.game.replay());
                     self.pending_display_target = self.display_target.is_some();
-                    self.request_sequence = self.request_sequence.saturating_add(1);
                 }
                 Err(RecoveryFailure::Unavailable(error)) => self.recovery_error = Some(error),
                 Err(RecoveryFailure::Fatal(error)) => return Err(error),
@@ -560,11 +507,13 @@ impl App {
         if reply.device_generation != self.recovery.active {
             return Ok(());
         }
-        self.render_in_flight = None;
+        let request = self.render_in_flight.take();
         self.counters = reply.counters;
         self.samples.extend(reply.samples.into_iter().flatten());
         self.surface_extent = reply.surface_extent;
-        self.demo.observe_time(reply.time_of_day);
+        if request.is_some_and(|request| self.edits.admits(request)) {
+            self.game.observe(reply.readback);
+        }
         self.sync_panel();
         self.worker_walls.push(reply.worker_wall);
         if let Some(acquire_wall) = reply.acquire_wall {
@@ -602,8 +551,9 @@ impl App {
                     && let (Some(window), Some(sample)) = (&self.window, self.samples.last())
                 {
                     window.set_title(&profiler_title(
+                        self.config.title,
                         sample,
-                        self.pause.label(),
+                        self.world_status(),
                         self.recovery.label(),
                     ));
                     self.profiler_title_at = self.last_call;
@@ -670,7 +620,7 @@ impl App {
 
     fn draw_ready(&mut self) -> Result<(), String> {
         if self.presented >= self.target_frames
-            || self.request_sequence == self.submitted_sequence
+            || !self.edits.wants_frame()
             || !self.pending_display_target
         {
             return Ok(());
@@ -687,9 +637,7 @@ impl App {
             target_media_seconds: self.display_target.ok_or("display target missing")?,
             extent,
             surface_generation: self.surface_generation.load(Ordering::Acquire),
-            time_of_day: self.pending_edits.time_of_day,
-            camera_pitch: self.pending_edits.camera_pitch,
-            camera_yaw: self.pending_edits.camera_yaw,
+            edits: self.edits.pending(),
         });
         match self
             .render
@@ -705,9 +653,7 @@ impl App {
                 return Err("bounded render worker refused an idle request".into());
             }
         }
-        self.pending_edits = ControlEdits::default();
-        self.submitted_sequence = self.request_sequence;
-        self.render_in_flight = Some(self.submitted_sequence);
+        self.render_in_flight = Some(self.edits.submitted());
         if now >= self.run_deadline {
             return Err(self.deadline_error());
         }
@@ -846,7 +792,7 @@ impl App {
     }
 }
 
-impl Drop for App {
+impl<G: Game> Drop for App<G> {
     fn drop(&mut self) {
         self.render_stopped.store(true, Ordering::Release);
         drop(self.display_link.take());
@@ -856,7 +802,12 @@ impl Drop for App {
     }
 }
 
-fn profiler_title(sample: &FrameSample, world_status: &str, gpu_status: &str) -> String {
+fn profiler_title(
+    title: &str,
+    sample: &FrameSample,
+    world_status: &str,
+    gpu_status: &str,
+) -> String {
     let gpu = sample.gpu_pass_ns.map_or_else(
         || "GPU timestamps unavailable".to_owned(),
         |passes| {
@@ -875,7 +826,7 @@ fn profiler_title(sample: &FrameSample, world_status: &str, gpu_status: &str) ->
         },
     );
     format!(
-        "Thrum V1 | {world_status}{gpu_status} | tick {} ({} updates, view age {}) | CPU tick {:.3}, extract {:.3}, upload {:.3}, encode {:.3} ms | {gpu}",
+        "{title} | {world_status}{gpu_status} | tick {} ({} updates, view age {}) | CPU tick {:.3}, extract {:.3}, upload {:.3}, encode {:.3} ms | {gpu}",
         sample.tick,
         sample.completed_ticks,
         sample.visual_age_ticks,
@@ -892,25 +843,7 @@ fn percentile<T>(items: &[T], value: impl Fn(&T) -> f64) -> (f64, f64) {
     (sorted[sorted.len() / 2], sorted[sorted.len() * 95 / 100])
 }
 
-/// Combine edits waiting for the render owner; a newer value replaces an older one.
-fn merge_edits(older: ControlEdits, newer: ControlEdits) -> ControlEdits {
-    ControlEdits {
-        time_of_day: newer.time_of_day.or(older.time_of_day),
-        camera_pitch: newer.camera_pitch.or(older.camera_pitch),
-        camera_yaw: newer.camera_yaw.or(older.camera_yaw),
-        paused: newer.paused.or(older.paused),
-    }
-}
-
-fn axis(negative: bool, positive: bool) -> f32 {
-    match (negative, positive) {
-        (true, false) => -1.0,
-        (false, true) => 1.0,
-        _ => 0.0,
-    }
-}
-
-impl ApplicationHandler<UserEvent> for App {
+impl<G: Game + 'static> ApplicationHandler<UserEvent> for App<G> {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         if self.window.is_some() {
             return;
@@ -942,7 +875,7 @@ impl ApplicationHandler<UserEvent> for App {
                 self.target_sequence = self.target_sequence.saturating_add(1);
                 self.display_link_callbacks += 1;
                 self.pending_display_target = true;
-                self.request_sequence = self.request_sequence.saturating_add(1);
+                self.edits.request();
             }
             UserEvent::WorldAdvanced => {
                 if let Err(error) = self.reconcile_pause() {
@@ -953,7 +886,7 @@ impl ApplicationHandler<UserEvent> for App {
             }
             UserEvent::ControlsEdited => {
                 if let Some(panel) = &mut self.panel {
-                    panel.apply_edits(self.demo.model_mut());
+                    panel.apply_edits(self.game.controls_mut());
                 }
                 if let Err(error) = self.controls_edited() {
                     self.error = Some(error);
@@ -1022,12 +955,12 @@ impl ApplicationHandler<UserEvent> for App {
                         } else {
                             Ok(())
                         }
-                    } else if code == KeyCode::KeyP {
+                    } else if code == KeyCode::KeyP && self.game.world().is_some() {
                         if self
                             .pause
                             .key(event.state == ElementState::Pressed, event.repeat)
                         {
-                            self.demo.observe_paused(self.pause.desired());
+                            self.game.observe_paused(self.pause.desired());
                             self.sync_panel();
                             self.reconcile_pause()
                         } else {
@@ -1040,10 +973,7 @@ impl ApplicationHandler<UserEvent> for App {
                     Ok(())
                 }
             }
-            WindowEvent::Focused(false) => {
-                self.held_keys = 0;
-                self.update_controls()
-            }
+            WindowEvent::Focused(false) => self.game.focus_lost().map(|()| self.input_changed()),
             _ => Ok(()),
         };
         if let Err(error) = result {
@@ -1065,6 +995,12 @@ impl ApplicationHandler<UserEvent> for App {
     }
 }
 
+/// Run `game` in one window until its bounded frame count presents, then print the frames
+/// report. The count comes from `config.frames_variable`. Setup, GPU and world failures are
+/// reported on standard error and exit the process with a nonzero status.
+///
+/// # Panics
+/// If the platform refuses to create the event loop, as on a second call in one process.
 #[expect(
     clippy::print_stdout,
     reason = "the bounded diagnostic reports its measured surface frame"
@@ -1073,21 +1009,24 @@ impl ApplicationHandler<UserEvent> for App {
     clippy::print_stderr,
     reason = "the diagnostic reports setup or GPU faults"
 )]
-pub(super) fn run() {
-    let target_frames = match run_frames(std::env::var("THRUM_V1_FRAMES").ok().as_deref()) {
+pub fn run<G: Game + 'static>(config: Config, game: impl FnOnce() -> Result<G, String>) {
+    let target_frames = match run_frames(
+        config.frames_variable,
+        std::env::var(config.frames_variable).ok().as_deref(),
+    ) {
         Ok(frames) => frames,
         Err(error) => {
-            eprintln!("v1-game: {error}");
+            eprintln!("{}: {error}", config.name);
             std::process::exit(2);
         }
     };
     let event_loop = EventLoop::<UserEvent>::with_user_event()
         .build()
         .expect("macOS event loop");
-    let mut app = match App::new(event_loop.create_proxy(), target_frames) {
-        Ok(app) => app,
+    let mut app = match game() {
+        Ok(game) => App::new(config, event_loop.create_proxy(), target_frames, game),
         Err(error) => {
-            eprintln!("v1-game: {error}");
+            eprintln!("{}: {error}", config.name);
             std::process::exit(2);
         }
     };
@@ -1103,24 +1042,22 @@ pub(super) fn run() {
     match app.error.take().map_or_else(|| app.finish(), Err) {
         Ok(report) => println!("{report}"),
         Err(error) => {
-            eprintln!("v1-game: {error}");
+            eprintln!("{}: {error}", config.name);
             drop(app);
             std::process::exit(1);
         }
     }
 }
 
-fn run_frames(value: Option<&str>) -> Result<usize, String> {
+fn run_frames(variable: &str, value: Option<&str>) -> Result<usize, String> {
     let Some(value) = value else {
         return Ok(DEFAULT_FRAMES);
     };
     let frames = value
         .parse::<usize>()
-        .map_err(|_| "THRUM_V1_FRAMES must be a positive integer".to_owned())?;
+        .map_err(|_| format!("{variable} must be a positive integer"))?;
     if !(1..=MAX_FRAMES).contains(&frames) {
-        return Err(format!(
-            "THRUM_V1_FRAMES must be between 1 and {MAX_FRAMES}"
-        ));
+        return Err(format!("{variable} must be between 1 and {MAX_FRAMES}"));
     }
     Ok(frames)
 }
@@ -1131,10 +1068,17 @@ mod tests {
 
     #[test]
     fn frame_count_for_present_qualification_is_bounded() {
+        let run_frames = |value| run_frames("THRUM_V1_FRAMES", value);
         assert_eq!(run_frames(None).expect("default"), 600);
         assert_eq!(run_frames(Some("75000")).expect("ten minute run"), 75_000);
-        assert!(run_frames(Some("0")).is_err());
+        assert_eq!(
+            run_frames(Some("0")),
+            Err("THRUM_V1_FRAMES must be between 1 and 100000".to_owned())
+        );
         assert!(run_frames(Some("100001")).is_err());
-        assert!(run_frames(Some("nan")).is_err());
+        assert_eq!(
+            run_frames(Some("nan")),
+            Err("THRUM_V1_FRAMES must be a positive integer".to_owned())
+        );
     }
 }

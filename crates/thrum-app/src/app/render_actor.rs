@@ -3,6 +3,7 @@ use super::{
     UserEvent,
     device::{DeviceRecipe, DeviceWatch, PlatformGpu},
 };
+use crate::Game;
 use objc2_quartz_core::CACurrentMediaTime;
 use std::{
     sync::{
@@ -14,24 +15,25 @@ use std::{
 use thrum_render::{
     frame::{FrameWorker, TargetLeadStatus, display_target_lead},
     present::SurfaceProfile,
-    runtime::FrameError,
+    runtime::{
+        DriveReport, FrameError, FrameHost, FrameSample, FrameWorld, SceneSource, SurfaceOutput,
+    },
 };
-use v1_game::{DriveReport, FrameHost, FrameSample, SurfaceOutput, ThreadedFrameHost};
 use wgpu::{CurrentSurfaceTexture, TextureViewDescriptor};
 use winit::event_loop::EventLoopProxy;
 
-pub(super) struct FrameRequest {
+/// Completed GPU samples polled per job; the runtime retains at most this many frames.
+pub(super) const SAMPLE_SLOTS: usize = 2;
+pub(super) struct FrameRequest<E> {
     pub(super) sequence: u64,
     pub(super) device_generation: u64,
     pub(super) target_media_seconds: f64,
     pub(super) extent: [u32; 2],
     pub(super) surface_generation: u64,
-    pub(super) time_of_day: Option<f32>,
-    pub(super) camera_pitch: Option<f32>,
-    pub(super) camera_yaw: Option<f32>,
+    pub(super) edits: E,
 }
-pub(super) enum RenderJob {
-    Frame(FrameRequest),
+pub(super) enum RenderJob<E> {
+    Frame(FrameRequest<E>),
     Recover {
         from_generation: u64,
         generation: u64,
@@ -48,7 +50,7 @@ pub(super) struct FrameCounters {
     pub(super) lost_reports: u64,
 }
 impl FrameCounters {
-    pub(super) fn read(host: &ThreadedFrameHost) -> Self {
+    pub(super) fn read<W: FrameWorld, V: SceneSource<W::Page>>(host: &FrameHost<W, V>) -> Self {
         Self {
             skipped_views: host.dropped_views(),
             expired_views: host.dropped_stale_views(),
@@ -95,22 +97,22 @@ pub(super) struct Finished {
     pub(super) samples: Vec<FrameSample>,
     pub(super) lost_device: bool,
 }
-pub(super) struct RenderReply {
+pub(super) struct RenderReply<R> {
     pub(super) sequence: u64,
     pub(super) device_generation: u64,
     pub(super) outcome: RenderOutcome,
-    pub(super) samples: [Option<FrameSample>; FrameHost::MAX_IN_FLIGHT],
+    pub(super) samples: [Option<FrameSample>; SAMPLE_SLOTS],
     pub(super) counters: FrameCounters,
     pub(super) worker_wall: Duration,
     pub(super) target_status: Option<TargetLeadStatus>,
     pub(super) acquire_wall: Option<Duration>,
     pub(super) surface_status: SurfaceStatus,
     pub(super) surface_extent: [u32; 2],
-    /// Committed solar time after this job, for the demo controls to show.
-    pub(super) time_of_day: f32,
+    /// The game's readback after this job, for its controls to show.
+    pub(super) readback: R,
 }
-struct Actor {
-    host: ThreadedFrameHost,
+struct Actor<G: Game> {
+    host: FrameHost<G::World, G::Scene>,
     gpu: PlatformGpu,
     recipe: DeviceRecipe,
     surface_generation: Arc<AtomicU64>,
@@ -119,17 +121,27 @@ struct Actor {
     origin: Instant,
     wake: EventLoopProxy<UserEvent>,
 }
-pub(super) fn start(
-    host: ThreadedFrameHost,
+pub(super) type RenderWorker<G> =
+    FrameWorker<RenderJob<<G as Game>::Edits>, RenderReply<<G as Game>::Readback>>;
+#[expect(
+    clippy::too_many_arguments,
+    reason = "the render owner takes every platform handle it serializes in one move"
+)]
+pub(super) fn start<G: Game + 'static>(
+    name: &str,
+    host: FrameHost<G::World, G::Scene>,
     gpu: PlatformGpu,
     recipe: DeviceRecipe,
     surface_generation: Arc<AtomicU64>,
     stopped: Arc<AtomicBool>,
     origin: Instant,
     wake: &EventLoopProxy<UserEvent>,
-) -> Result<FrameWorker<RenderJob, RenderReply>, String> {
+) -> Result<RenderWorker<G>, String> {
+    const {
+        assert!(FrameHost::<G::World, G::Scene>::MAX_IN_FLIGHT == SAMPLE_SLOTS);
+    }
     let signal = wake.clone();
-    let mut actor = Actor {
+    let mut actor = Actor::<G> {
         host,
         gpu,
         recipe,
@@ -140,7 +152,7 @@ pub(super) fn start(
         wake: wake.clone(),
     };
     FrameWorker::start(
-        "thrum-v1-render",
+        name,
         move |job| actor.work(job),
         move || {
             let _ = signal.send_event(UserEvent::RenderDone);
@@ -148,21 +160,21 @@ pub(super) fn start(
     )
     .map_err(|error| format!("render worker: {error}"))
 }
-impl Actor {
-    fn work(&mut self, job: RenderJob) -> RenderReply {
+impl<G: Game> Actor<G> {
+    fn work(&mut self, job: RenderJob<G::Edits>) -> RenderReply<G::Readback> {
         let start = Instant::now();
         let mut reply = RenderReply {
             sequence: 0,
             device_generation: self.gpu.watch.generation,
             outcome: RenderOutcome::DeviceLost,
-            samples: [None; FrameHost::MAX_IN_FLIGHT],
+            samples: [None; SAMPLE_SLOTS],
             counters: FrameCounters::read(&self.host),
             worker_wall: Duration::ZERO,
             target_status: None,
             acquire_wall: None,
             surface_status: SurfaceStatus::NotAttempted,
             surface_extent: [self.gpu.config.width, self.gpu.config.height],
-            time_of_day: self.host.time_of_day(),
+            readback: G::readback(&self.host),
         };
         reply.outcome = match job {
             RenderJob::Frame(request) => {
@@ -209,32 +221,20 @@ impl Actor {
         reply.device_generation = self.gpu.watch.generation;
         reply.surface_extent = [self.gpu.config.width, self.gpu.config.height];
         reply.counters = FrameCounters::read(&self.host);
-        reply.time_of_day = self.host.time_of_day();
+        reply.readback = G::readback(&self.host);
         reply.worker_wall = start.elapsed();
         reply
     }
     fn frame(
         &mut self,
-        request: &FrameRequest,
-        reply: &mut RenderReply,
+        request: &FrameRequest<G::Edits>,
+        reply: &mut RenderReply<G::Readback>,
     ) -> Result<DriveReport, FrameError> {
         if request.device_generation != self.gpu.watch.generation {
             return Err(FrameError::InvalidState("stale frame device generation"));
         }
         // CPU policy errors remain fatal even when a loss is concurrent.
-        if let Some(value) = request.time_of_day {
-            self.host
-                .set_time_of_day(value)
-                .map_err(FrameError::Scene)?;
-        }
-        if let Some(value) = request.camera_pitch {
-            self.host
-                .set_camera_pitch(value)
-                .map_err(FrameError::Scene)?;
-        }
-        if let Some(value) = request.camera_yaw {
-            self.host.set_camera_yaw(value).map_err(FrameError::Scene)?;
-        }
+        G::apply(&mut self.host, request.edits).map_err(FrameError::Scene)?;
         ensure_device(&self.gpu.watch)?;
         ensure_running(&self.stopped)?;
         let current = self.surface_generation.load(Ordering::Acquire) == request.surface_generation;
@@ -378,7 +378,7 @@ impl Actor {
         })
     }
     fn finish(&mut self) -> Result<Finished, String> {
-        let mut samples = Vec::with_capacity(FrameHost::MAX_IN_FLIGHT * 2);
+        let mut samples = Vec::with_capacity(SAMPLE_SLOTS * 2);
         loop {
             if self.gpu.watch.is_lost() {
                 return Ok(Finished {

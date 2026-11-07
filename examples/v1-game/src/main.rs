@@ -1,10 +1,6 @@
 //! Bounded macOS V1 scene on a real surface.
 
 #[cfg(target_os = "macos")]
-#[path = "bin/window/macos.rs"]
-mod macos;
-
-#[cfg(target_os = "macos")]
 #[path = "bin/window/capture.rs"]
 mod capture;
 
@@ -16,7 +12,7 @@ fn main() {
         }
         return;
     }
-    macos::run();
+    v1_game::run_window();
 }
 
 #[cfg(target_os = "macos")]

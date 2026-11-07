@@ -48,7 +48,7 @@ impl WorldControls {
     }
 }
 
-pub(super) struct WorldClient(WorldLane<ClockedWorld<GameWorld>>);
+pub(crate) struct WorldClient(WorldLane<ClockedWorld<GameWorld>>);
 
 impl WorldClient {
     pub(super) fn start(
