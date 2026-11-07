@@ -37,7 +37,7 @@ and `docs/ASSET-LIFECYCLE.md` edits out of the commits. Owner digests are asynch
   carries a contact sheet, clip and timings. The sequence is offline and sparse in solar time.
   Chrome still shows the diagnostic scene. Live cadence and calibrated Earth radiance remain open.
 - The foreground reads flat and bright against Kiara dusk. Some low-Sun contact marks and
-  terrain joins remain. The fixed Sun-facing valley captures point into a ridge, and midnight
+  terrain joins remain. The original 17.9 h Sun-facing captures point into a ridge. Added clear views show the disk, and midnight
   is black under the current sole-Sun model. Isotropic multiple scattering and exposure are
   still approximations. Do not tune a colour gain to compensate for incorrect sky irradiance.
 - G3b live ProMotion presentation and recovery are open. G2S still needs game-side Resolve
@@ -46,14 +46,17 @@ and `docs/ASSET-LIFECYCLE.md` edits out of the commits. Owner digests are asynch
 
 ## Pick up here
 
-The current WIP adds clear Sun stills and 97 half-minute solar samples in the existing game capture route.
-Native Metal output is at `tmp/g3s-showcase/capture-18-solar-crossing/`. The clear Sun is visible
-at 17.4 h, then passes behind the valley ridge. Treat the capture addition as unverified until
-its full check exits successfully. The active check is tool session 52173, writing
-`tmp/g3s-showcase/solar-crossing/dev-check.log`. The disk observer is session 22333 with
-`disk.json` and `disk.log` in that directory. Captures have completed and the PNG retention
-pass has its own log there. Follow up with independent visual review of the new sequence. Keep the
-same host Sun/time and the fixed valley camera as the comparison. Separate disk/halo,
+The capture route now adds clear Sun stills and 97 half-minute solar samples. Metal captures are at
+`tmp/g3s-showcase/capture-18-solar-crossing/`. Full `./dev check` passed. Independent review
+saw a stable roughly 9-pixel disk, then progressive ridge occlusion across frames 33–38,
+disappearing in frame 39. Sky samples changed by at most 1–2 SDR codes per step. The [selected
+crossing clip](g3s-first-light/solar-crossing.mp4) runs at 24 sampled frames/s.
+
+**Next defect.** Foreground pixel (640,600) jumps by 103 SDR codes in frame 34→35 while part
+of the disk remains visible. Best diagnosis is the terrain shadow from a point Sun with a
+small PCF footprint. Test a finite solar angular-radius penumbra using blocker separation,
+and check receiver-plane bias, cascade transitions, cost and contact attachment together.
+Keep the same host Sun/time and the fixed valley camera as the comparison. Separate disk/halo,
 Earth-shadow stepping, shadow-map contact and meter/exposure defects before tuning. Inspect
 physical radiance and displayed colour independently. Use the checked CC0 Kiara photos
 under `tmp/g3s-showcase/reference/` for look only. The provenance JSON is beside them.
@@ -84,6 +87,5 @@ artifact run with `--g3b-threaded-batch`, the same CAS and `THRUM_SCENE=valley`.
 `7236b38` and candidate separately, retain each executable before replacing it, then alternate
 A/B/B/A with uptime logged before and after each run. A completed `paired/runs.json` row has the
 binary hash and exit status. Keep completed rows, use a fresh directory for any missing slot,
-and append its observation instead of repeating finished work. The current campaign finishes
-before this checkpoint is pushed. No GPU recording needs to be resumed. The old live Metal
+and append its observation instead of repeating finished work. The campaign completed before this checkpoint was pushed. All current capture, observer and check sessions are terminal. No run needs to be resumed. The old live Metal
 System Trace scratch remains local. Review it before any raw drawable bridge.

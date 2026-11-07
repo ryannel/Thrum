@@ -17,8 +17,8 @@ the same atmosphere and shadow shaders in the diagnostic scene. [Build plan](../
 `thrum-cook`, set `THRUM_ASSET_STORE` and `THRUM_SCENE=valley`, then use `THRUM_CAPTURE_SCENE=<newdir>`.
 
 Review sees blue upper twilight and a warm horizon across sky, haze and reflections, closer to the CC0
-Kiara photographs. The foreground remains flat and bright, and the ridge hides the Sun in the aimed views.
-No new all-black frames in 32 comparisons. The sole-Sun night is black. [Kiara dusk](https://polyhaven.com/a/kiara_9_dusk).
+Kiara photographs. The foreground remains flat and bright, and the clear Sun crosses the ridge in 97 added half-minute samples.
+[The crossing](g3s-first-light/solar-crossing.mp4) exposes a 103-code foreground shadow step. No new all-black frames in 32 comparisons. The sole-Sun night is black. [Kiara dusk](https://polyhaven.com/a/kiara_9_dusk).
 
 Chrome 156 passes seven held phases and 24 samples at Wasm
 `add91ac18cae0ad8a6ba885cfe4e778cea24726e0a854d219028395bc73275f8`. Live motion and showcase quality remain open.
