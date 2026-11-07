@@ -2,27 +2,27 @@
 //! GPU visibility module: graph declarations, the compute records, the opaque
 //! draws and the forward view-group binding of the compacted lists.
 //!
-//! Occlusion adds, after `synthetic forward opaque` (which draws the early
-//! list), the depth pyramid, the late phase and `synthetic forward late`,
-//! which loads the opaque attachments and draws the late list. History
-//! publication and tone read what the late pass wrote, so they follow it even
-//! when its list is empty. While a scene contribution draws, the early phase
-//! takes the Frustum decision and the late phase lists nothing, so the
-//! contribution's blended output is never overdrawn.
+//! Occlusion declares four passes before `synthetic forward opaque`: the
+//! prepass list, `camera depth prepass` (last frame's visible set, depth
+//! only, into a private target), the pyramid of that depth, and the final
+//! cull. The forward pass is unchanged from Frustum's except that it draws
+//! the final list, so atmosphere, the list in slot order into cleared depth,
+//! then any contribution draw exactly as in Direct.
 
 use std::collections::BTreeSet;
 
 use super::{
-    OffscreenTarget, PreparedSynthetic, RenderError, SYNTHETIC_REVISION, SceneContext, VIEW_BYTES,
-    history_gpu, storage_layout,
+    CompiledPass, DEPTH_FORMAT, GraphColorAttachment, GraphDepthAttachment, OffscreenTarget,
+    PreparedSynthetic, RenderError, SYNTHETIC_REVISION, SceneContext, VIEW_BYTES, history_gpu,
+    storage_layout,
 };
 use crate::graph::{
-    Access, AccessKind, CompiledPass, FrameGraph, GraphError, Pass, PassScope, PipelineKey,
-    ResourceDescriptor, ResourceId, ResourceScope,
+    Access, AccessKind, FrameGraph, GraphError, Pass, PassScope, PipelineKey, ResourceDescriptor,
+    ResourceId, ResourceScope,
 };
 pub use crate::visibility::CullMode;
 use crate::visibility::{
-    self, MeshRecord, OcclusionTarget, Phase, VisibilityIds, VisibilityPrepared, VisibilityTarget,
+    self, MeshRecord, OcclusionTarget, VisibilityIds, VisibilityPrepared, VisibilityTarget,
 };
 pub use stats::CullingCounts;
 pub(super) use stats::CullingStats;
@@ -38,21 +38,27 @@ const CUBE_MESH: MeshRecord = MeshRecord {
 };
 /// Forward view-group binding of the camera's visible slot list.
 pub(super) const VISIBLE_BINDING: u32 = 5;
-/// Graph and timing name of the late opaque pass.
-pub(crate) const FORWARD_LATE_PASS: &str = "synthetic forward late";
-/// Pipeline role of the late opaque pass inside the synthetic closure.
-const FORWARD_LATE_ROLE: u32 = 0x464C;
+/// Graph and timing name of Occlusion's depth-only prepass.
+pub(crate) const DEPTH_PREPASS_PASS: &str = "camera depth prepass";
+/// Pipeline role of the depth prepass inside the synthetic closure.
+const DEPTH_PREPASS_ROLE: u32 = 0x4450;
 
-/// One frame slot's late phase and the forward view group that reads its list.
-pub(super) struct LateCulling {
+/// One frame slot's prepass list, its pyramid, the private depth the
+/// prepass draws, and the view group that reads the prepass list.
+pub(super) struct PrepassCulling {
     target: OcclusionTarget,
     view_bind_group: wgpu::BindGroup,
+    depth_id: ResourceId,
+    depth: wgpu::TextureView,
 }
 
-/// The early phase's graph outputs and the reads the late phase repeats.
-pub(super) struct EarlyGraph {
-    ids: VisibilityIds,
-    reads: Vec<Access>,
+/// What the scene graph needs back from camera culling's declarations.
+pub(super) struct CameraGraph {
+    /// Argument buffers whose counts the stats copy reads: the drawn list
+    /// first, then Occlusion's prepass list.
+    pub(super) stats: Vec<ResourceId>,
+    /// Occlusion only: the private prepass depth target.
+    pub(super) prepass_depth: Option<ResourceId>,
 }
 
 /// Visibility pipelines for this scene's slot capacity and the cube mesh row.
@@ -113,49 +119,58 @@ pub(super) fn vertex_entry(mode: CullMode) -> &'static str {
     }
 }
 
-/// Occlusion only: the late forward view group, the same entries with the
-/// late visible list.
-pub(super) fn late_view_group(
+/// Occlusion only: the prepass view group, the forward entries with the
+/// prepass list in place of the final one.
+pub(super) fn prepass_view_group(
     device: &wgpu::Device,
     layout: &wgpu::BindGroupLayout,
     entries: &[wgpu::BindGroupEntry<'_>],
     target: Option<OcclusionTarget>,
-) -> Option<LateCulling> {
-    let target = target?;
+    depth: Option<(ResourceId, wgpu::TextureView)>,
+) -> Option<PrepassCulling> {
+    let (target, (depth_id, depth)) = target.zip(depth)?;
     let entries: Vec<_> = entries
         .iter()
         .map(|entry| match entry.binding {
             VISIBLE_BINDING => wgpu::BindGroupEntry {
                 binding: VISIBLE_BINDING,
-                resource: target.late().visible().as_entire_binding(),
+                resource: target.prepass().visible().as_entire_binding(),
             },
             _ => entry.clone(),
         })
         .collect();
     let view_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-        label: Some("synthetic late view and target aux"),
+        label: Some("synthetic prepass view and target aux"),
         layout,
         entries: &entries,
     });
-    Some(LateCulling {
+    Some(PrepassCulling {
         target,
         view_bind_group,
+        depth_id,
+        depth,
     })
 }
 
 impl PreparedSynthetic {
-    /// Culled modes: declare the frustum or early compute pass and the
-    /// forward reads of its visible list (storage) and arguments (indirect).
+    /// Culled modes: declare the visibility passes and the forward reads of
+    /// the drawn list (storage) and its arguments (indirect). Frustum
+    /// declares one compute pass. Occlusion declares the prepass list, the
+    /// depth prepass into a private `extent` target, the pyramid and the
+    /// final cull, whose list the forward pass reads.
     pub(super) fn append_camera_visibility(
         &self,
         graph: &mut FrameGraph,
-        view: ResourceId,
-        instance: &ResourceId,
+        (view, instance): (ResourceId, &ResourceId),
+        extent: [u32; 2],
         accesses: &mut Vec<Access>,
         keys: &mut BTreeSet<PipelineKey>,
-    ) -> Result<Option<EarlyGraph>, GraphError> {
+    ) -> Result<CameraGraph, GraphError> {
         let Some(prepared) = &self.visibility else {
-            return Ok(None);
+            return Ok(CameraGraph {
+                stats: Vec::new(),
+                prepass_depth: None,
+            });
         };
         // The cull reads the same submitted-history serials as the forward
         // vertex stage (presentation alpha) through its own uniform binding.
@@ -186,113 +201,59 @@ impl PreparedSynthetic {
                 store: true,
             },
         ];
-        let ids = prepared.append_graph(graph, reads.clone())?;
+        let first = prepared.append_graph(graph, reads.clone())?;
         keys.insert(prepared.key());
-        accesses.extend(list_reads(prepared, &ids));
-        Ok(Some(EarlyGraph { ids, reads }))
-    }
-
-    /// After the early forward pass, declare each culled mode's untimed
-    /// count copy and, for Occlusion only, the pyramid, the late phase and
-    /// the late forward pass. The late pass makes the early pass's accesses
-    /// with its attachments loaded and the late list in place of the early
-    /// one. Returns the late pass, which history publication follows.
-    pub(super) fn append_camera_late(
-        &self,
-        graph: &mut FrameGraph,
-        early: Option<EarlyGraph>,
-        (depth, extent): (&ResourceId, [u32; 2]),
-        forward_pass: usize,
-        keys: &mut BTreeSet<PipelineKey>,
-    ) -> Result<Option<usize>, GraphError> {
-        let (Some(prepared), Some(early)) = (&self.visibility, early) else {
-            return Ok(None);
-        };
         if prepared.mode() != CullMode::Occlusion {
-            Self::append_camera_stats(graph, &[early.ids.args])?;
-            return Ok(None);
+            accesses.extend(list_reads(prepared, &first));
+            return Ok(CameraGraph {
+                stats: vec![first.args],
+                prepass_depth: None,
+            });
         }
-        let pyramid_pass = graph.passes().len();
-        let late = prepared.append_late_graph(graph, early.reads, &early.ids, depth, extent)?;
-        // Two passes write the attachments; the pyramid reads the early one.
-        graph.dependency(forward_pass, pyramid_pass)?;
-        keys.extend([
-            prepared.late_key(),
-            prepared.pyramid_key(),
-            self.forward_late_key(),
-        ]);
-        let swapped = list_reads(prepared, &late);
-        // The early forward pass's own declaration, with the attachments
-        // loaded and the late list and arguments in place of the early ones.
-        let accesses = graph
-            .passes()
-            .get(forward_pass)
-            .ok_or(GraphError::InvalidDependency)?
-            .accesses
-            .iter()
-            .map(|access| {
-                let mut access = access.clone();
-                if access.kind == AccessKind::AttachmentClear {
-                    access.kind = AccessKind::AttachmentLoad;
-                }
-                if access.resource == early.ids.visible {
-                    access.resource = swapped[0].resource.clone();
-                } else if access.resource == early.ids.args {
-                    access.resource = swapped[1].resource.clone();
-                }
-                access
-            })
-            .collect();
-        let pass = graph.pass(Pass {
-            name: FORWARD_LATE_PASS.into(),
-            scope: PassScope::View(1),
-            pipeline: Some(self.forward_late_key()),
-            accesses,
-            external_side_effect: true,
+        let depth = graph.resource(
+            ResourceDescriptor::Texture {
+                width: extent[0],
+                height: extent[1],
+                layers: 1,
+                mips: 1,
+                samples: 1,
+                format: DEPTH_FORMAT,
+                usage: wgpu::TextureUsages::RENDER_ATTACHMENT
+                    | wgpu::TextureUsages::TEXTURE_BINDING,
+            },
+            ResourceScope::Transient,
+        )?;
+        let mut prepass = reads.clone();
+        prepass.extend(list_reads(prepared, &first));
+        prepass.push(Access {
+            resource: depth.clone(),
+            range: 0..1,
+            kind: AccessKind::AttachmentClear,
+            store: true,
         });
-        Self::append_camera_stats(graph, &[early.ids.args, swapped[1].resource.clone()])?;
-        Ok(Some(pass))
+        graph.pass(Pass {
+            name: DEPTH_PREPASS_PASS.into(),
+            scope: PassScope::View(1),
+            pipeline: Some(self.depth_prepass_key()),
+            accesses: prepass,
+            external_side_effect: false,
+        });
+        let last = prepared.append_final_graph(graph, reads, &first, &depth, extent)?;
+        keys.extend([
+            prepared.final_key(),
+            prepared.pyramid_key(),
+            self.depth_prepass_key(),
+        ]);
+        accesses.extend(list_reads(prepared, &last));
+        Ok(CameraGraph {
+            stats: vec![last.args, first.args],
+            prepass_depth: Some(depth),
+        })
     }
 
-    /// Occlusion only: every pass after the late forward pass that reads an
-    /// attachment both forward passes write reads the late pass's output.
-    pub(super) fn order_after_camera_late(
-        graph: &mut FrameGraph,
-        late: Option<usize>,
-        attachments: [&ResourceId; 3],
-    ) -> Result<(), GraphError> {
-        let Some(late) = late else {
-            return Ok(());
-        };
-        let readers: Vec<usize> = graph
-            .passes()
-            .iter()
-            .enumerate()
-            .skip(late + 1)
-            .filter(|(_, pass)| {
-                pass.accesses.iter().any(|access| {
-                    attachments.contains(&&access.resource)
-                        && matches!(
-                            access.kind,
-                            AccessKind::SampledRead
-                                | AccessKind::CopyRead
-                                | AccessKind::StorageRead
-                                | AccessKind::StorageReadWrite
-                                | AccessKind::AttachmentLoad
-                        )
-                })
-            })
-            .map(|(index, _)| index)
-            .collect();
-        for reader in readers {
-            graph.dependency(late, reader)?;
-        }
-        Ok(())
-    }
-
-    pub(super) fn forward_late_key(&self) -> PipelineKey {
+    pub(super) fn depth_prepass_key(&self) -> PipelineKey {
         PipelineKey {
-            role: FORWARD_LATE_ROLE,
+            role: DEPTH_PREPASS_ROLE,
             ..self.key
         }
     }
@@ -306,12 +267,13 @@ impl PreparedSynthetic {
         }
     }
 
-    /// The frustum or early target, and Occlusion's late phase over the
-    /// pyramid of `depth`.
+    /// The drawn list's target (frustum, or Occlusion's final cull), and
+    /// Occlusion's prepass list over the pyramid of the private
+    /// `prepass_depth`.
     pub(super) fn camera_visibility_target(
         &self,
         device: &wgpu::Device,
-        depth: &wgpu::TextureView,
+        prepass_depth: Option<&wgpu::TextureView>,
         extent: [u32; 2],
     ) -> (Option<VisibilityTarget>, Option<OcclusionTarget>) {
         let Some(prepared) = &self.visibility else {
@@ -322,8 +284,11 @@ impl PreparedSynthetic {
             self.instance_upload.buffer(),
             self.history.serial_buffer(),
         );
-        match prepared.occlusion_target(device, inputs.0, inputs.1, inputs.2, depth, extent) {
-            Some((early, late)) => (Some(early), Some(late)),
+        let occlusion = prepass_depth.and_then(|depth| {
+            prepared.occlusion_target(device, inputs.0, inputs.1, inputs.2, depth, extent)
+        });
+        match occlusion {
+            Some((last, prepass)) => (Some(last), Some(prepass)),
             None => (
                 Some(prepared.target(device, inputs.0, inputs.1, inputs.2)),
                 None,
@@ -331,10 +296,11 @@ impl PreparedSynthetic {
         }
     }
 
-    /// Occlusion only: the late opaque pass, loading the early pass's
-    /// attachments and drawing the late list with the same pipeline,
-    /// bindings and indices. No atmosphere and no contribution draw here.
-    pub(super) fn encode_opaque_late(
+    /// Occlusion only: the prepass list draws depth only into the private
+    /// target, with the forward vertex entry, primitive state, two-sided
+    /// choice, bindings and indices, so its depth equals what the forward
+    /// pass writes for the same slots.
+    fn encode_depth_prepass(
         &self,
         encoder: &mut wgpu::CommandEncoder,
         target: &OffscreenTarget,
@@ -342,13 +308,33 @@ impl PreparedSynthetic {
         timings: Option<&mut crate::timing::GpuTimings>,
         exposure_side: usize,
     ) -> Result<(), RenderError> {
-        let late = target
+        let prepass = target
             .occlusion
             .as_ref()
             .ok_or(RenderError::GraphPassMismatch)?;
-        let mut pass = self.begin_forward(encoder, target, compiled, timings)?;
-        self.bind_forward(&mut pass, target, &late.view_bind_group, exposure_side);
-        pass.draw_indexed_indirect(late.target.late().args(), 0);
+        let no_color: [Option<GraphColorAttachment<'_>>; 0] = [];
+        let mut pass = compiled
+            .begin_render(
+                encoder,
+                no_color,
+                Some(GraphDepthAttachment {
+                    resource: &prepass.depth_id,
+                    range: 0..1,
+                    view: &prepass.depth,
+                    clear: 0.0,
+                }),
+                self.key.device_generation,
+                timings,
+            )?
+            .ok_or(RenderError::GraphPassMismatch)?;
+        self.bind_forward(
+            &mut pass,
+            target,
+            &prepass.view_bind_group,
+            exposure_side,
+            true,
+        )?;
+        pass.draw_indexed_indirect(prepass.target.prepass().args(), 0);
         Ok(())
     }
 }
@@ -371,43 +357,35 @@ fn list_reads(prepared: &VisibilityPrepared, ids: &VisibilityIds) -> [Access; 2]
 }
 
 impl SceneContext<'_> {
-    /// The frustum or early phase. With a contribution drawing, the early
-    /// phase takes the Frustum decision.
+    /// The frustum list, or Occlusion's prepass list.
     pub(super) fn visibility(&mut self, pass: &CompiledPass) -> Result<(), RenderError> {
         let frame_target = self.target;
+        let target = match &frame_target.occlusion {
+            Some(prepass) => prepass.target.prepass(),
+            None => frame_target
+                .visibility
+                .as_ref()
+                .ok_or(RenderError::GraphPassMismatch)?,
+        };
+        self.record_phase(target, pass)
+    }
+
+    /// Occlusion's final cull, whose list the forward pass draws.
+    pub(super) fn final_visibility(&mut self, pass: &CompiledPass) -> Result<(), RenderError> {
+        let frame_target = self.target;
+        if frame_target.occlusion.is_none() {
+            return Err(RenderError::GraphPassMismatch);
+        }
         let target = frame_target
             .visibility
             .as_ref()
             .ok_or(RenderError::GraphPassMismatch)?;
-        let phase = if self.contribution.is_some() {
-            Phase::Frustum
-        } else {
-            target.phase()
-        };
-        self.record_phase(target, phase, pass)
-    }
-
-    /// Occlusion's late phase; Skip while a contribution draws.
-    pub(super) fn late_visibility(&mut self, pass: &CompiledPass) -> Result<(), RenderError> {
-        let frame_target = self.target;
-        let late = frame_target
-            .occlusion
-            .as_ref()
-            .ok_or(RenderError::GraphPassMismatch)?
-            .target
-            .late();
-        let phase = if self.contribution.is_some() {
-            Phase::Skip
-        } else {
-            Phase::Late
-        };
-        self.record_phase(late, phase, pass)
+        self.record_phase(target, pass)
     }
 
     fn record_phase(
         &mut self,
         target: &VisibilityTarget,
-        phase: Phase,
         pass: &CompiledPass,
     ) -> Result<(), RenderError> {
         let prepared = self
@@ -422,7 +400,7 @@ impl SceneContext<'_> {
             target,
             // The transform history's write side: only a committed display
             // frame flips it, so captures leave the displayed bits alone.
-            (phase, self.exposure_side),
+            self.exposure_side,
             (view_offset, self.generation),
             pass,
             self.timings.as_deref_mut(),
@@ -430,21 +408,15 @@ impl SceneContext<'_> {
         encoded.then_some(()).ok_or(RenderError::GraphPassMismatch)
     }
 
-    /// The pyramid, which only the late classifier reads. While a
-    /// contribution draws, the late phase is Skip and nothing is recorded:
-    /// Metal does not sample a compute pass without a dispatch, so the frame's
-    /// timing layout leaves the pass out too.
+    /// The pyramid of the prepass depth, which only the final cull reads.
     pub(super) fn depth_pyramid(&mut self, pass: &CompiledPass) -> Result<(), RenderError> {
-        let (Some(prepared), Some(late)) = (&self.prepared.visibility, &self.target.occlusion)
+        let (Some(prepared), Some(prepass)) = (&self.prepared.visibility, &self.target.occlusion)
         else {
             return Err(RenderError::GraphPassMismatch);
         };
-        if self.contribution.is_some() {
-            return Ok(());
-        }
         let encoded = prepared.encode_pyramid(
             self.encoder,
-            &late.target,
+            &prepass.target,
             self.generation,
             pass,
             self.timings.as_deref_mut(),
@@ -452,8 +424,8 @@ impl SceneContext<'_> {
         encoded.then_some(()).ok_or(RenderError::GraphPassMismatch)
     }
 
-    pub(super) fn opaque_late(&mut self, pass: &CompiledPass) -> Result<(), RenderError> {
-        self.prepared.encode_opaque_late(
+    pub(super) fn depth_prepass(&mut self, pass: &CompiledPass) -> Result<(), RenderError> {
+        self.prepared.encode_depth_prepass(
             self.encoder,
             self.target,
             pass,
