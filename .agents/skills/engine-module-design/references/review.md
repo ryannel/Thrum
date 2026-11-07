@@ -22,7 +22,8 @@ ranked; don't ask only for blocking issues.
 - **The design and plan, before building on them.** Give the reviewer the brief (the commission: what the module
   is for, its consumers, the required experiences and constraints, without your design) first and have it derive what the
   module must do, then compare with the design and plan: omissions, unsupported additions, mechanisms not shown to
-  make their cues, milestones that wouldn't show the behaviour.
+  make their cues, milestones that wouldn't show the behaviour, a milestone too large to reach the game soon, and proof
+  that pursues accuracy beyond what changes what the player sees.
 - **Each milestone, in the game.** Give the reviewer how the milestone is judged and the raw captures and logs for
   one build, not your summary. It says, per check, pass, fail or can't tell, and whether it watched motion.
 
