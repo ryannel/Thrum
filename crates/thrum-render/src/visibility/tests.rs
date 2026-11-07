@@ -25,6 +25,7 @@ impl Lcg {
     }
 }
 
+#[derive(Clone, Copy)]
 struct Instance {
     current: Mat4,
     previous: Vec3,
@@ -236,8 +237,13 @@ impl Fixture {
         }
     }
 
-    /// Run one compaction and return the visible slots in list order.
+    /// Run one frustum compaction and return the visible slots in list order.
     fn run(&mut self, view_proj: Mat4, instances: &[Instance], alpha: f32) -> Vec<u32> {
+        self.upload(view_proj, instances, alpha);
+        self.compact(&self.target)
+    }
+
+    fn upload(&mut self, view_proj: Mat4, instances: &[Instance], alpha: f32) {
         let bytes: Vec<u8> = instances.iter().flat_map(instance_bytes).collect();
         self.queue.write_buffer(&self.instances, 0, &bytes);
         self.queue
@@ -246,6 +252,11 @@ impl Fixture {
             .write_buffer(&self.serials, 0, &serial_bytes(alpha));
         let active = u32::try_from(instances.len()).expect("test count");
         self.prepared.set_active(&self.queue, active);
+    }
+
+    /// Run one target's compaction on the uploaded frame.
+    fn compact(&self, target: &VisibilityTarget) -> Vec<u32> {
+        let active = self.prepared.active;
         let mut encoder = self
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
@@ -256,18 +267,11 @@ impl Fixture {
             .expect("visibility pass");
         assert!(
             self.prepared
-                .encode(
-                    &mut encoder,
-                    &self.target,
-                    0,
-                    KEY.device_generation,
-                    pass,
-                    None
-                )
+                .encode(&mut encoder, target, 0, KEY.device_generation, pass, None)
                 .expect("encode")
         );
         self.queue.submit([encoder.finish()]);
-        let args = read(&self.device, &self.queue, self.target.args(), ARGS_BYTES);
+        let args = read(&self.device, &self.queue, target.args(), ARGS_BYTES);
         assert_eq!(args[0], 36, "index count");
         assert_eq!(
             [args[2], args[3], args[4]],
@@ -277,7 +281,7 @@ impl Fixture {
         let count = args[1];
         assert!(count <= active);
         let bytes = u64::from(count.max(1)) * 4;
-        let mut visible = read(&self.device, &self.queue, self.target.visible(), bytes);
+        let mut visible = read(&self.device, &self.queue, target.visible(), bytes);
         visible.truncate(count as usize);
         visible
     }
@@ -375,4 +379,186 @@ fn partial_workgroups_and_shrinking_active_prefix() {
         check(camera, &instances, 1.0, &visible);
         assert!(visible.iter().all(|&slot| (slot as usize) < count));
     }
+}
+
+/// Opaque wall depth for the occlusion tests: nearer than most of the cloud
+/// (reverse-Z, so larger is nearer) over the left 60% of the target.
+const WALL: f32 = 0.002;
+const DEPTH_EXTENT: [u32; 2] = [320, 180];
+
+fn wall_depth() -> Vec<f32> {
+    let [width, height] = DEPTH_EXTENT;
+    (0..height)
+        .flat_map(|_| (0..width).map(move |x| if x * 10 < width * 6 { WALL } else { 0.0 }))
+        .collect()
+}
+
+struct Occlusion {
+    fixture: Fixture,
+    early: VisibilityTarget,
+    late: VisibilityTarget,
+    levels: Vec<occlusion_reference::Level>,
+}
+
+impl Occlusion {
+    fn new(capacity: u32, depth: &[f32]) -> Self {
+        let fixture = Fixture::new(capacity);
+        let view =
+            pyramid::tests::depth_target(&fixture.device, &fixture.queue, depth, DEPTH_EXTENT);
+        let pyramid = pyramid::tests::build(&fixture.device, &fixture.queue, &view, DEPTH_EXTENT);
+        let pyramid = pyramid
+            .texture()
+            .create_view(&wgpu::TextureViewDescriptor::default());
+        let [early, late] = fixture.prepared.occlusion_targets(
+            &fixture.device,
+            &fixture.view,
+            &fixture.instances,
+            &fixture.serials,
+            &pyramid,
+        );
+        Self {
+            fixture,
+            early,
+            late,
+            levels: occlusion_reference::build(depth, DEPTH_EXTENT),
+        }
+    }
+
+    fn history(&self) -> std::collections::BTreeSet<u32> {
+        let fixture = &self.fixture;
+        let words = read(
+            &fixture.device,
+            &fixture.queue,
+            &fixture.prepared.history,
+            bits_bytes(fixture.prepared.capacity),
+        );
+        words
+            .iter()
+            .enumerate()
+            .flat_map(|(index, word)| {
+                (0..32)
+                    .filter(move |bit| word >> bit & 1 == 1)
+                    .map(move |bit| u32::try_from(index).expect("word") * 32 + bit)
+            })
+            .collect()
+    }
+
+    /// One frame: frustum oracle, then early and late. Checks every phase
+    /// invariant against the history before and after, and returns the
+    /// number of slots in view that the late phase hid.
+    fn frame(&mut self, view_proj: Mat4, instances: &[Instance], alpha: f32) -> usize {
+        type Set = std::collections::BTreeSet<u32>;
+        // Rows past the active prefix keep stale bits until they return; a
+        // returning row is then at most drawn early, never hidden.
+        let active = u32::try_from(instances.len()).expect("count");
+        let prefix = |set: Set| -> Set { set.into_iter().filter(|&slot| slot < active).collect() };
+        let before = prefix(self.history());
+        self.fixture.upload(view_proj, instances, alpha);
+        let framed = self.fixture.compact(&self.fixture.target);
+        check(view_proj, instances, alpha, &framed);
+        let early = self.fixture.compact(&self.early);
+        assert_eq!(prefix(self.history()), before, "early never writes history");
+        let late = self.fixture.compact(&self.late);
+        let after = prefix(self.history());
+        for list in [&early, &late] {
+            assert!(list.windows(2).all(|pair| pair[0] < pair[1]), "order");
+        }
+        let framed: Set = framed.into_iter().collect();
+        let early: Set = early.into_iter().collect();
+        let late: Set = late.into_iter().collect();
+        let expected_early: Set = framed.intersection(&before).copied().collect();
+        assert_eq!(
+            early, expected_early,
+            "early lists exactly last frame's visible in view"
+        );
+        assert!(after.is_subset(&framed), "history holds only slots in view");
+        let expected_late: Set = after.difference(&before).copied().collect();
+        assert_eq!(late, expected_late, "late lists exactly the newly visible");
+        // Nothing in view is lost: every framed slot is drawn by a phase or
+        // hidden by depth, and the hidden decision matches the reference.
+        let mut marginal = 0;
+        for &slot in &framed {
+            let gpu_hidden = !after.contains(&slot);
+            assert!(early.contains(&slot) || late.contains(&slot) || gpu_hidden);
+            let instance = &instances[slot as usize];
+            let decide = |scale: f32| {
+                let mut scaled = *instance;
+                scaled.current = instance.current * Mat4::from_scale(Vec3::splat(scale));
+                let corners =
+                    aabb_clip_corners(view_proj, &scaled, alpha).map(|corner| corner.to_array());
+                occlusion_reference::occluded(&corners, &self.levels)
+            };
+            if gpu_hidden != decide(1.0) {
+                assert_ne!(
+                    decide(1.001),
+                    decide(0.999),
+                    "slot {slot} differs off the margin"
+                );
+                marginal += 1;
+            }
+            // Soundness against the reference proof: hidden only when an
+            // inflated box is hidden too.
+            if gpu_hidden {
+                assert!(
+                    decide(0.999),
+                    "slot {slot} hidden while its shrunk box is visible"
+                );
+            }
+        }
+        assert!(
+            marginal * 200 <= framed.len().max(1),
+            "{marginal} marginal decisions"
+        );
+        framed.len() - after.len()
+    }
+}
+
+#[test]
+fn occlusion_phases_never_lose_a_slot_in_view() {
+    let depth = wall_depth();
+    let mut occlusion = Occlusion::new(4_000, &depth);
+    let mut random = Lcg(29);
+    let mut instances = scatter(&mut random, 4_000, 40.0);
+    let near = perspective(Vec3::new(0.0, 0.0, 60.0), Vec3::ZERO, 1.0);
+    // First frame: empty history, so early draws nothing and late everything visible.
+    let hidden = occlusion.frame(near, &instances, 0.5);
+    assert!(hidden > 300, "the wall hides part of the cloud: {hidden}");
+    let first = occlusion.history();
+    // Same view: early draws last frame's set, late nothing new.
+    occlusion.frame(near, &instances, 0.5);
+    assert_eq!(
+        occlusion.history(),
+        first,
+        "a still frame keeps its history"
+    );
+    // A cut, from inside the cloud (corners behind the near plane stay visible).
+    let inside = perspective(Vec3::new(2.0, 1.0, 5.0), Vec3::new(-20.0, 0.0, -30.0), 1.2);
+    occlusion.frame(inside, &instances, 1.0);
+    // Recycled slots and hidden rows: history from the previous objects only
+    // moves them between phases.
+    for slot in (0..instances.len()).step_by(7) {
+        instances[slot] = scatter(&mut random, 1, 40.0)[0];
+    }
+    occlusion.frame(near, &instances, 0.0);
+    // A cancelled frame: early runs, late never does; the next frame is whole.
+    occlusion.fixture.upload(near, &instances, 0.0);
+    occlusion.fixture.compact(&occlusion.early);
+    occlusion.frame(near, &instances, 0.25);
+    // A shrinking active prefix never lists rows past the end, and rows that
+    // return with new objects are only drawn early on stale history.
+    let returning = instances.split_off(1_000);
+    occlusion.frame(near, &instances, 0.25);
+    instances.extend(returning.iter().map(|_| scatter(&mut random, 1, 40.0)[0]));
+    occlusion.frame(inside, &instances, 0.25);
+}
+
+#[test]
+fn unready_depth_hides_nothing() {
+    // A cleared reverse-Z target (all far) is the pyramid before any early draw.
+    let depth = vec![0.0; (DEPTH_EXTENT[0] * DEPTH_EXTENT[1]) as usize];
+    let mut occlusion = Occlusion::new(2_000, &depth);
+    let mut random = Lcg(5);
+    let instances = scatter(&mut random, 2_000, 40.0);
+    let camera = perspective(Vec3::new(0.0, 0.0, 60.0), Vec3::ZERO, 1.0);
+    assert_eq!(occlusion.frame(camera, &instances, 0.5), 0);
 }

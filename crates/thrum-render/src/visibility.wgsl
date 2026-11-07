@@ -1,4 +1,10 @@
-// Camera frustum compaction into one indexed indirect draw per bucket.
+// Camera frustum compaction into one indexed indirect draw per bucket, and
+// the two phases of in-frame occlusion. Frustum (phase 0) lists every slot in
+// view. Early (phase 1) lists slots in view that were visible last frame.
+// Late (phase 2) tests every slot in view against this frame's depth pyramid,
+// lists the visible ones the early phase did not draw, and records the new
+// last-visible bits. Every phase applies the same frustum test to the same
+// current transforms, so the bits only choose which phase draws a slot.
 // Three ordered dispatches: per-workgroup counts and slot masks, one-workgroup
 // scan, and a scatter that reads only the masks (instances are tested once).
 // The visible list preserves instance order, so draw order and depth ties
@@ -40,8 +46,12 @@ struct Params {
     active_count: u32,
     groups: u32,
     mesh: u32,
-    padding: u32,
+    phase: u32,
 }
+
+const PHASE_FRUSTUM: u32 = 0u;
+const PHASE_EARLY: u32 = 1u;
+const PHASE_LATE: u32 = 2u;
 
 const WORKGROUP: u32 = 256u;
 const WORDS: u32 = WORKGROUP / 32u;
@@ -55,8 +65,13 @@ const WORDS: u32 = WORKGROUP / 32u;
 @group(0) @binding(6) var<storage, read_write> visible: array<u32>;
 @group(0) @binding(7) var<storage, read_write> args: array<u32>;
 @group(0) @binding(8) var<storage, read_write> masks: array<u32>;
+// One last-visible bit per slot; read by the early phase, rewritten by late.
+@group(0) @binding(9) var<storage, read_write> bits: array<u32>;
+// This frame's min depth pyramid, every mip; read by the late phase only.
+@group(0) @binding(10) var pyramid: texture_2d<f32>;
 
 var<workgroup> scan: array<u32, WORKGROUP>;
+var<workgroup> seen: array<u32, WORKGROUP>;
 
 fn plane_row(row: u32) -> vec4<f32> {
     let m = view.view_proj;
@@ -71,14 +86,14 @@ fn outside(plane: vec4<f32>, center: vec3<f32>, extent: vec3<f32>) -> bool {
     return distance + radius * 1.0001 + 1.0e-5 * abs(plane.w) < 0.0;
 }
 
-fn in_view(slot: u32) -> bool {
-    if slot >= params.active_count {
-        return false;
-    }
-    // Field loads, not a whole-record copy: this pass is bandwidth bound.
-    if instances[slot].ids.w == 0u {
-        return false;
-    }
+struct Bounds {
+    center: vec3<f32>,
+    extent: vec3<f32>,
+}
+
+// Conservative world AABB of the slot's mesh at the interpolated translation
+// the forward vertex shader uses.
+fn world_bounds(slot: u32) -> Bounds {
     let mesh = meshes[params.mesh];
     let local_center = (mesh.bounds_min.xyz + mesh.bounds_max.xyz) * 0.5;
     let local_extent = (mesh.bounds_max.xyz - mesh.bounds_min.xyz) * 0.5;
@@ -89,6 +104,20 @@ fn in_view(slot: u32) -> bool {
     let center = basis * local_center + translation;
     let extent = abs(basis[0]) * local_extent.x + abs(basis[1]) * local_extent.y
         + abs(basis[2]) * local_extent.z;
+    return Bounds(center, extent);
+}
+
+fn in_view(slot: u32) -> bool {
+    if slot >= params.active_count {
+        return false;
+    }
+    // Field loads, not a whole-record copy: this pass is bandwidth bound.
+    if instances[slot].ids.w == 0u {
+        return false;
+    }
+    let bounds = world_bounds(slot);
+    let center = bounds.center;
+    let extent = bounds.extent;
     let r0 = plane_row(0u);
     let r1 = plane_row(1u);
     let r2 = plane_row(2u);
@@ -96,6 +125,23 @@ fn in_view(slot: u32) -> bool {
     return !(outside(r3 + r0, center, extent) || outside(r3 - r0, center, extent)
         || outside(r3 + r1, center, extent) || outside(r3 - r1, center, extent)
         || outside(r3 - r2, center, extent) || outside(r2, center, extent));
+}
+
+// The late classifier: the AABB's eight corners under the same view_proj,
+// tested against the pyramid. Near-plane corners keep the slot visible.
+fn hidden_by_depth(slot: u32) -> bool {
+    let bounds = world_bounds(slot);
+    var corners: array<vec4<f32>, 8>;
+    for (var index = 0u; index < 8u; index++) {
+        let sign = vec3(select(-1.0, 1.0, (index & 1u) != 0u), select(-1.0, 1.0, (index & 2u) != 0u),
+            select(-1.0, 1.0, (index & 4u) != 0u));
+        corners[index] = view.view_proj * vec4(bounds.center + sign * bounds.extent, 1.0);
+    }
+    return occluded_by_pyramid(corners);
+}
+
+fn drawn_last(slot: u32) -> bool {
+    return ((bits[slot / 32u] >> (slot % 32u)) & 1u) == 1u;
 }
 
 // Inclusive Hillis-Steele scan of `scan`; every invocation must call it.
@@ -116,7 +162,20 @@ fn scan_workgroup(local: u32) {
 fn count(@builtin(global_invocation_id) global: vec3<u32>,
          @builtin(local_invocation_id) local: vec3<u32>,
          @builtin(workgroup_id) group: vec3<u32>) {
-    scan[local.x] = select(0u, 1u, in_view(global.x));
+    let slot = global.x;
+    let framed = in_view(slot);
+    var draw = framed;
+    var visible_now = false;
+    if params.phase == PHASE_EARLY {
+        draw = framed && drawn_last(slot);
+    } else if params.phase == PHASE_LATE {
+        visible_now = framed && !hidden_by_depth(slot);
+        draw = visible_now && !drawn_last(slot);
+    }
+    scan[local.x] = select(0u, 1u, draw);
+    seen[local.x] = select(0u, 1u, visible_now);
+    // The barriers in the scan also order every bit read above before the
+    // late phase rewrites this workgroup's own words below.
     scan_workgroup(local.x);
     if local.x == WORKGROUP - 1u {
         group_offsets[group.x] = scan[local.x];
@@ -135,6 +194,13 @@ fn count(@builtin(global_invocation_id) global: vec3<u32>,
             before = at;
         }
         masks[group.x * WORDS + local.x] = word;
+        if params.phase == PHASE_LATE {
+            var visible_word = 0u;
+            for (var bit = 0u; bit < 32u; bit = bit + 1u) {
+                visible_word = visible_word | (seen[base + bit] << bit);
+            }
+            bits[group.x * WORDS + local.x] = visible_word;
+        }
     }
 }
 
