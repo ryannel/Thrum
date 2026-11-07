@@ -372,6 +372,10 @@ mod metal {
             )
             .await;
             let expected = capture(&mut direct);
+            let mut direct_first =
+                culled_host(&first, &queue, Policy::default(), CullMode::Direct, false).await;
+            direct_first.resize_surface([96, 48]).expect("resize");
+            let expected_first = capture(&mut direct_first);
             for mode in [CullMode::Frustum, CullMode::Occlusion] {
                 let mut host = culled_host(&first, &queue, Policy::default(), mode, false).await;
                 pending_slots(&mut host);
@@ -387,6 +391,13 @@ mod metal {
                     let counts = sample.camera_culling.expect("culled frames report counts");
                     assert_eq!(counts.mode, mode, "{mode:?}: counts after resize");
                 }
+                // The render extent is the host's, so a resized presenter
+                // leaves the capture equal to Direct's on the same device.
+                assert_eq!(
+                    capture(&mut host),
+                    expected_first,
+                    "{mode:?} image after resize"
+                );
                 let mut candidate = host
                     .device_prepare_inputs()
                     .expect("inputs")

@@ -581,6 +581,55 @@ impl Occlusion {
     }
 }
 
+/// The final cull's clip magnitude, on the real path: one box at the field's
+/// far extent, in front of a constant depth placed half its derived slack
+/// behind it (kept), then twice its slack (hidden). Here the w term dominates
+/// the slack, so a shader whose magnitude drops the translation, or reads the
+/// z row for w, hides the first box; one that inflates it keeps the second.
+#[test]
+fn the_final_cull_uses_the_full_clip_magnitude() {
+    let origin = Vec3::new(-400.37, 1.13, 400.71);
+    let instance = Instance {
+        current: Mat4::from_scale_rotation_translation(
+            Vec3::splat(0.5),
+            glam::Quat::from_rotation_y(0.3),
+            origin,
+        ),
+        previous: origin,
+        hidden: false,
+    };
+    let view_proj = perspective(origin + Vec3::new(1.0, 0.5, 6.0), origin, 1.0);
+    let corners = aabb_clip_corners(view_proj, &instance, 1.0);
+    let nearest = corners
+        .iter()
+        .map(|c| c.z / c.w)
+        .fold(f32::NEG_INFINITY, f32::max);
+    let w_min = corners.iter().map(|c| c.w).fold(f32::INFINITY, f32::min);
+    let magnitude = clip_magnitude(view_proj, &instance);
+    let slack = |magnitude| occlusion_reference::slack(nearest, w_min, magnitude).expect("w > 0");
+    let full = slack(magnitude);
+    // The test only fails those shaders if their slack leaves the band.
+    let world = instance.current.w_axis.truncate().abs() + instance.previous.abs();
+    let w_row = view_proj.row(3).abs();
+    let without_translation = [magnitude[0], magnitude[1] - w_row.truncate().dot(world)];
+    assert!(slack(without_translation) * 2.0 < full, "{magnitude:?}");
+    assert!(
+        slack([magnitude[0], magnitude[0]]) * 2.0 < full,
+        "{magnitude:?}"
+    );
+    for (scale, kept) in [(0.5, true), (2.0, false)] {
+        let wall = nearest + scale * full;
+        let depth = vec![wall; (DEPTH_EXTENT[0] * DEPTH_EXTENT[1]) as usize];
+        let mut occlusion = Occlusion::new(1, &depth);
+        occlusion.frame(view_proj, &[instance], 1.0);
+        assert_eq!(
+            occlusion.history().contains(&0),
+            kept,
+            "depth {wall} at {scale} slack ({full}) behind nearest {nearest}"
+        );
+    }
+}
+
 #[test]
 fn occlusion_phases_never_lose_a_slot_in_view() {
     let depth = wall_depth();

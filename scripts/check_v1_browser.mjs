@@ -1121,6 +1121,11 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
     const report = material?.final.report ?? sky?.final.report ?? recovery?.snapshots.final.report ?? loss?.snapshots.final.report ?? controls?.snapshots.complete.report ?? state.status;
     if (!destroyCase && !skyCase && !materialCase && !materialDisabled && !oracleCase && !routeCase && !tabCase && mode !== 'params' && (field(report, 'samples') !== 600 || !(field(report, 'presented') >= 600))) throw new Error('Qualification requires 600 GPU-complete samples and at least 600 present calls');
     if (state.hidden) throw new Error('Qualification target finished hidden');
+    // The field pages must run the mode they were asked for, and Occlusion must hide: Frustum draws at least 21.6%
+    // of the field at every tick of the native flythrough, so Occlusion's median stays under a fifth of active.
+    const fieldMode = { field: 'Frustum', 'field-direct': 'Direct', 'field-occlusion': 'Occlusion' }[mode];
+    if (fieldMode && /culling=(\w+)/.exec(report)?.[1] !== fieldMode) throw new Error(`${mode} page reports ${/culling=(\w+)/.exec(report)?.[1]}, not ${fieldMode}`);
+    if (mode === 'field-occlusion' && !(field(report, 'culling_drawn_p50') * 5 < field(report, 'culling_active'))) throw new Error(`Occlusion hid too little: drawn p50 ${field(report, 'culling_drawn_p50')} of ${field(report, 'culling_active')}`);
     if (mode === 'pause' && (!timeline.some(line => /^Paused/.test(line)) || !timeline.some(line => /^Resumed/.test(line)) || field(state.status, 'overload_events') !== 0 || pause?.heldTick !== pause?.startTick || !Number.isFinite(pause?.heldTick) || !(field(state.status, 'ticks') > pause.heldTick))) throw new Error('Explicit two-second pause/resume was not observed without overload');
     if (mode === 'resize' && (state.width !== 960 || state.height !== 540 || !/extent=960x540;/.test(state.status))) throw new Error('Canvas/surface resize to 960x540 not applied');
     if (mode === 'overload' && !(field(state.status, 'overload_events') > 0 && field(state.status, 'refused_ticks') > 0)) throw new Error('Intentional visible delay did not report refused ticks');
@@ -1378,6 +1383,7 @@ async function compareFieldOracle(output, results) {
   if (!direct || !culled.Frustum || !culled.Occlusion) throw new Error('Field oracle needs all three culling modes');
   if (direct.culling !== 'Direct' || direct.drawn !== undefined) throw new Error(`Direct page reports ${direct.culling} with drawn ${direct.drawn}`);
   for (const [mode, page] of Object.entries(culled)) if (page.culling !== mode || !(page.drawn > 0 && page.drawn < page.active)) throw new Error(`${mode} page reports ${page.culling}, drawn ${page.drawn} of ${page.active}`);
+  if (!(culled.Occlusion.drawn < culled.Frustum.drawn)) throw new Error(`Occlusion drew ${culled.Occlusion.drawn}, not fewer than Frustum's ${culled.Frustum.drawn}`);
   const views = [];
   for (const [index, reference] of direct.captures.entries()) {
     const view = { yaw: reference.yaw, pitch: reference.pitch, identity: reference.identity };
