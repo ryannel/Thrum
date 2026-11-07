@@ -245,3 +245,45 @@ The sky gradients are smooth at 1:1: banding seen in scaled-down views is not in
 | Live `./dev scene` probes | A member whose binary is `thrum-cook`, or `Thrum-Cook`, is refused, and `Cargo.lock` is unchanged. |
 | `thrum-app` unit tests | Include the never-drawn hint and the strict capture of a parameter file. |
 | `./dev check` | Builds, formats and lints `examples/starter`, `examples/stones` and `examples/lighthouse` as workspace members, so the creator API they use keeps compiling. |
+
+## Slice 5: ExposureZones display overlay
+
+### What was built
+
+`DisplayOverlay::ExposureZones` is a per-view option on the synthetic renderer's display pass. It reads the exposed
+scene colour before the SDR tone scale and writes one of 13 exact, undithered palette codes for whole stops from −6 to
++6. The reference is an 18% grey Lambertian card lit at the metered illuminance with zero compensation. The overlay
+travels in bits 8–15 of the existing tone-map word in the exposure policy, so no binding or buffer changed. With the
+overlay off, the word equals the tone-map value. Games reach it through the `display.exposure_zones` toggle in the v1
+game (Mac panel, Chrome page and parameter files) and `Sky::exposure_zones` in the creator kit, which the starter
+exposes as a toggle. The clipping overlay is still held.
+
+### Checks
+
+| Check | Result |
+|---|---|
+| Off identity | 132 valley capture PPMs (`THRUM_CAPTURE_SCENE`, cooked valley, every pose and sequence) from the branch are byte-identical to those from the pre-overlay release build. Repeated after rebasing onto the authored ground material (80e519ec, `ground.png` `ff297966…`): main and branch captures of a freshly cooked store are byte-identical. |
+| `overlay_uses_only_its_selector_bits_and_off_keeps_every_policy_byte` | The overlay changes only bits 8–15, and Off packs every policy byte as before. |
+| `gpu_exposure_zones_band_exposed_luminance_for_every_tone_map_and_gain` | Float inputs at each stop from −8 to +8 (±0.3 stop), black and two tints, at three storage gains, give the expected palette code under both SDR tone maps, with byte-identical output. |
+| `destroyed_gpu_replacement_keeps_the_exposure_zones_overlay` | With the overlay set during detached preparation, a destroyed device's successor redraws the paused view with zero code difference, and the frame uses only palette colours. |
+| Chrome, in-app browser pane (WebGPU) | `zones.params.json` applied ("3 changed, 2 unchanged, 0 refused"). The cooked valley drew in zones at noon, and unticking the toggle restored the tone-mapped view live. Observation only; no capture kept. |
+| `./dev check` | Passes. |
+
+### Visual review
+
+![Starter rock with exposure zones, Sun at 25°](../render/G6-STARTER-EXPOSURE-ZONES-2026-11-07.png)
+
+The sunlit ground reads grey (zone 0), as a metered mid-grey surface should. The lit rock reads +1 to +2, its shadow
+side and cast shadow −2 to −3, and the sky +1 to +2. With the Sun at 3°, the incident meter still holds the
+horizontal ground at zone 0, while the rock face turned to the Sun reads +3 to +4 and the sky +3 to +4, as expected when
+horizontal illuminance falls faster than light on a Sun-facing surface.
+
+![Recovery fixture after GPU replacement, exposure zones](../render/G6-RECOVERY-EXPOSURE-ZONES-2026-11-07.png)
+
+The test fixture's grid and lit boxes after device replacement, at 640×360.
+
+### Limits
+
+- The Mac window panel toggle has not been used on screen; the native proofs are offscreen.
+- The bands follow luminance only. A clipped channel inside a band is not shown; that is the held clipping overlay.
+- Cascade index and the other planned field overlays are not designed yet.

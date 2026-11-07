@@ -16,6 +16,7 @@ fn sky(elevation: f32, azimuth: f32) -> Sky {
         sun_elevation_degrees: elevation,
         sun_azimuth_degrees: azimuth,
         camera: CAMERA,
+        exposure_zones: false,
     }
 }
 

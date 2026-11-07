@@ -9,6 +9,7 @@
 use std::f32::consts::{PI, TAU};
 
 use thrum_controls::{ControlError, ControlId, Controls, Display, Kind, Readout, Slider, Toggle};
+use thrum_render::synthetic::DisplayOverlay;
 
 use crate::environment::DayCycle;
 
@@ -27,6 +28,8 @@ pub struct ControlEdits {
     pub camera_yaw: Option<f32>,
     /// The person's pause preference.
     pub paused: Option<bool>,
+    /// Whether exposure zones replace the tone-mapped scene.
+    pub exposure_zones: Option<bool>,
 }
 
 impl ControlEdits {
@@ -34,6 +37,18 @@ impl ControlEdits {
     #[must_use]
     pub fn is_empty(&self) -> bool {
         *self == Self::default()
+    }
+
+    /// The display overlay the exposure-zones edit selects, if it changed.
+    #[must_use]
+    pub fn display_overlay(&self) -> Option<DisplayOverlay> {
+        self.exposure_zones.map(|on| {
+            if on {
+                DisplayOverlay::ExposureZones
+            } else {
+                DisplayOverlay::Off
+            }
+        })
     }
 }
 
@@ -52,10 +67,11 @@ pub struct GameControls {
     yaw: Slider,
     pitch: Slider,
     paused: Toggle,
+    exposure_zones: Toggle,
     sun_elevation: Readout,
     /// Per input control: the model revision last applied to or observed from the game.
     /// A control whose revision is newer holds a pending edit.
-    settled: [u64; 4],
+    settled: [u64; 5],
     /// Solar time the Sun elevation readout was computed for.
     sun_for: f32,
 }
@@ -89,6 +105,7 @@ impl GameControls {
             .display(Display::degrees())
             .add()?;
         let paused = model.toggle("world.paused", "Pause world", false)?;
+        let exposure_zones = model.toggle("display.exposure_zones", "Exposure zones", false)?;
         let sun_elevation =
             model.readout("sky.sun_elevation", "Sun elevation", Display::degrees())?;
         let mut controls = Self {
@@ -97,8 +114,9 @@ impl GameControls {
             yaw,
             pitch,
             paused,
+            exposure_zones,
             sun_elevation,
-            settled: [0; 4],
+            settled: [0; 5],
             sun_for: f32::NAN,
         };
         controls.show_sun(0.5);
@@ -155,6 +173,9 @@ impl GameControls {
         if self.pending(3, self.paused.id()) {
             edits.paused = Some(self.model.is_on(self.paused));
         }
+        if self.pending(4, self.exposure_zones.id()) {
+            edits.exposure_zones = Some(self.model.is_on(self.exposure_zones));
+        }
         self.show_sun(self.model.get(self.solar_time));
         edits
     }
@@ -168,6 +189,7 @@ impl GameControls {
             camera_pitch: Some(self.model.get(self.pitch)),
             camera_yaw: Some(self.model.get(self.yaw)),
             paused: None,
+            exposure_zones: Some(self.model.is_on(self.exposure_zones)),
         }
     }
 
@@ -273,6 +295,7 @@ impl GameControls {
             self.yaw.id(),
             self.pitch.id(),
             self.paused.id(),
+            self.exposure_zones.id(),
         ];
         for (slot, id) in ids.into_iter().enumerate() {
             self.settled[slot] = self.model.revision_of(id);

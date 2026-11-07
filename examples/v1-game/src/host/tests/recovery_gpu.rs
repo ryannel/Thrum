@@ -3,7 +3,9 @@
 use std::time::{Duration, Instant};
 
 use thrum_core::sim::WorldLifecycle;
-use thrum_render::{capabilities::DeviceCapabilities, present::SurfaceProfile};
+use thrum_render::{
+    capabilities::DeviceCapabilities, present::SurfaceProfile, synthetic::DisplayOverlay,
+};
 
 use super::{
     super::{FrameConfig, FrameHost, ThreadedFrameHost},
@@ -79,11 +81,16 @@ fn controlled_x(host: &mut ThreadedFrameHost) -> f64 {
 
 #[test]
 fn destroyed_gpu_replacement_keeps_paused_world_camera_sky_and_held_input() {
-    prove_paused_recovery(0.76, false);
-    prove_paused_recovery(0.0, true);
+    prove_paused_recovery(0.76, false, DisplayOverlay::Off);
+    prove_paused_recovery(0.0, true, DisplayOverlay::Off);
 }
 
-fn prove_paused_recovery(phase: f32, midnight: bool) {
+#[test]
+fn destroyed_gpu_replacement_keeps_the_exposure_zones_overlay() {
+    prove_paused_recovery(0.76, false, DisplayOverlay::ExposureZones);
+}
+
+fn prove_paused_recovery(phase: f32, midnight: bool, overlay: DisplayOverlay) {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
         let old = Gpu::new(&instance, 1).await;
@@ -129,8 +136,22 @@ fn prove_paused_recovery(phase: f32, midnight: bool) {
             .expect("camera during preparation");
         host.set_time_of_day(phase)
             .expect("solar edit during preparation");
+        host.set_display_overlay(overlay);
         let (expected, prior) = draw(&mut host, origin, &old.device, &old.queue, &old.target);
         assert_ne!(before, expected);
+        if overlay == DisplayOverlay::ExposureZones {
+            // Zones are 13 undithered palette codes, so a zoned frame has few colours.
+            let colours = expected
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .collect::<std::collections::BTreeSet<_>>()
+                .len();
+            assert!(
+                (2..=13).contains(&colours),
+                "a zoned frame must use only palette codes, found {colours} colours"
+            );
+        }
         if midnight {
             // The fixture's local lights and grid can fill the left of the
             // image. The upper right looks above the geometry into the sky.
@@ -203,6 +224,12 @@ fn prove_paused_recovery(phase: f32, midnight: bool) {
             peak <= 1,
             "replacement changed fixed-view pixels by {peak} SDR codes"
         );
+        if overlay == DisplayOverlay::ExposureZones {
+            assert_eq!(
+                peak, 0,
+                "the replacement device must redraw the same zone codes"
+            );
+        }
         eprintln!(
             "recovery paused: peak_sdr_codes={peak}, tick={}, uploaded_rows={}, abandoned_reports={}",
             sample.tick,
@@ -243,10 +270,10 @@ fn prove_paused_recovery(phase: f32, midnight: bool) {
             controlled_x(&mut host) > before_x,
             "held input reached the controlled actor after GPU replacement"
         );
-        let label = if midnight {
-            "recovery-midnight"
-        } else {
-            "recovery"
+        let label = match (midnight, overlay) {
+            (_, DisplayOverlay::ExposureZones) => "recovery-zones",
+            (true, DisplayOverlay::Off) => "recovery-midnight",
+            (false, DisplayOverlay::Off) => "recovery",
         };
         retain(&format!("{label}-before"), &expected);
         retain(&format!("{label}-after"), &restored);

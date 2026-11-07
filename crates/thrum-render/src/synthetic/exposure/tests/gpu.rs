@@ -109,7 +109,7 @@ fn assert_night_policy(
             queue,
             exposure,
             light_buffer,
-            night_policy.pack(16_000.0, true, SdrToneMap::Reinhard),
+            night_policy.pack(16_000.0, true, SdrToneMap::Reinhard, DisplayOverlay::Off),
             light(-1.0, [0.0; 3], [lux; 3]),
         );
         assert!((sample.values[2] - expected).abs() < 0.005, "{sample:?}");
@@ -151,7 +151,12 @@ fn gpu_meter_calibration_fixed_bits_bounds_zero_and_invalid_inputs() {
                 &queue,
                 &exposure,
                 &light_buffer,
-                ExposurePolicy::Fixed { inverse }.pack(16_000.0, false, SdrToneMap::Reinhard),
+                ExposurePolicy::Fixed { inverse }.pack(
+                    16_000.0,
+                    false,
+                    SdrToneMap::Reinhard,
+                    DisplayOverlay::Off,
+                ),
                 [0.0; 16],
             );
             assert_eq!(sample.values[1].to_bits(), inverse.to_bits());
@@ -183,7 +188,7 @@ fn gpu_meter_calibration_fixed_bits_bounds_zero_and_invalid_inputs() {
                 &queue,
                 &exposure,
                 &light_buffer,
-                policy.pack(16_000.0, true, SdrToneMap::Reinhard),
+                policy.pack(16_000.0, true, SdrToneMap::Reinhard, DisplayOverlay::Off),
                 values,
             );
             assert!(
@@ -200,7 +205,7 @@ fn gpu_meter_calibration_fixed_bits_bounds_zero_and_invalid_inputs() {
             &queue,
             &exposure,
             &light_buffer,
-            policy.pack(16_000.0, true, SdrToneMap::Reinhard),
+            policy.pack(16_000.0, true, SdrToneMap::Reinhard, DisplayOverlay::Off),
             sky,
         );
         let mut probe_warning = sky;
@@ -210,7 +215,7 @@ fn gpu_meter_calibration_fixed_bits_bounds_zero_and_invalid_inputs() {
             &queue,
             &exposure,
             &light_buffer,
-            policy.pack(16_000.0, true, SdrToneMap::Reinhard),
+            policy.pack(16_000.0, true, SdrToneMap::Reinhard, DisplayOverlay::Off),
             probe_warning,
         );
         assert_eq!(
@@ -227,6 +232,7 @@ fn gpu_meter_calibration_fixed_bits_bounds_zero_and_invalid_inputs() {
                 16_000.0,
                 true,
                 SdrToneMap::Reinhard,
+                DisplayOverlay::Off,
             ),
             sky,
         );
@@ -245,7 +251,7 @@ fn gpu_meter_calibration_fixed_bits_bounds_zero_and_invalid_inputs() {
                 &queue,
                 &exposure,
                 &light_buffer,
-                policy.pack(16_000.0, true, SdrToneMap::Reinhard),
+                policy.pack(16_000.0, true, SdrToneMap::Reinhard, DisplayOverlay::Off),
                 values,
             );
             assert_eq!(sample.flags, 12);
@@ -257,7 +263,7 @@ fn gpu_meter_calibration_fixed_bits_bounds_zero_and_invalid_inputs() {
             &queue,
             &exposure,
             &light_buffer,
-            policy.pack(16_000.0, false, SdrToneMap::Reinhard),
+            policy.pack(16_000.0, false, SdrToneMap::Reinhard, DisplayOverlay::Off),
             sky,
         );
         assert_eq!(
@@ -293,7 +299,7 @@ fn gpu_meter_calibration_fixed_bits_bounds_zero_and_invalid_inputs() {
                     &queue,
                     &exposure,
                     &light_buffer,
-                    selected.pack(16_000.0, true, SdrToneMap::Reinhard),
+                    selected.pack(16_000.0, true, SdrToneMap::Reinhard, DisplayOverlay::Off),
                     values,
                 )
             });

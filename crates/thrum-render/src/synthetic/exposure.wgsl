@@ -5,7 +5,8 @@ struct Policy {
     mode: u32,
     pre_exposure: f32,
     atmosphere: u32,
-    sdr_tone_map: u32,
+    // SDR tone map in bits 0-7, display overlay in bits 8-15.
+    display_selectors: u32,
 }
 struct Serials {
     previous: vec2<u32>,
@@ -15,7 +16,7 @@ struct Serials {
 struct ExposureSample {
     // Storage p, inverse camera gain, resolved camera EV100, actual incident lux.
     values: vec4<f32>,
-    // Flags, current submitted-candidate serial lo/hi, SDR tone-map selector.
+    // Flags, current submitted-candidate serial lo/hi, display selectors.
     metadata: vec4<u32>,
 }
 @group(0) @binding(0) var<uniform> policy: Policy;
@@ -73,5 +74,5 @@ fn resolve() {
     }
     if policy.atmosphere!=0u && directional[3].w>1.0 { flags|=SKY_SH_NEGATIVE_PROBE; }
     result.values = vec4(storage_scale, inverse, ev, lux);
-    result.metadata = vec4(flags, serials.current, policy.sdr_tone_map);
+    result.metadata = vec4(flags, serials.current, policy.display_selectors);
 }

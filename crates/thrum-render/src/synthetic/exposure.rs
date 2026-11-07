@@ -1,7 +1,10 @@
 //! Per-view camera policy and GPU-resolved exposure. Physical light and the
 //! scene storage scale stay separate from display mapping.
 
-use super::{PRE_EXPOSURE, RenderError, SdrToneMap, history_gpu, uniform_layout};
+use super::{
+    DisplayOverlay, PRE_EXPOSURE, RenderError, SdrToneMap, display::display_selectors, history_gpu,
+    uniform_layout,
+};
 use crate::graph::{
     Access, AccessKind, CompiledPass, FrameGraph, GraphError, Pass, PassScope, PipelineKey,
     ResourceDescriptor, ResourceId, ResourceScope,
@@ -54,6 +57,7 @@ impl ExposurePolicy {
         fallback_inverse: f32,
         atmosphere: bool,
         tone_map: SdrToneMap,
+        overlay: DisplayOverlay,
     ) -> [u8; 32] {
         let (inverse, compensation, min, max, mode) = match self {
             Self::Fixed { inverse } => (inverse, 0.0, 0.0, 0.0, 0),
@@ -78,7 +82,7 @@ impl ExposurePolicy {
             mode,
             PRE_EXPOSURE.to_bits(),
             u32::from(atmosphere),
-            tone_map as u32,
+            display_selectors(tone_map, overlay),
         ];
         std::array::from_fn(|byte| words[byte / 4].to_le_bytes()[byte % 4])
     }
