@@ -1,53 +1,35 @@
 # Thrum V1 handoff
 
-Updated 7 November 2026 for the directional Sun penumbra WIP. Start from remote `main` and
+Updated 7 November 2026 for the finite-Sun penumbra landing by Claude, root while Codex is paused. Start from remote `main` and
 [the build plan](../../BUILD-PLAN.md). The older three-band baseline is `7236b38`. This file
 travels with the candidate, so use its enclosing commit to identify the exact tested source.
 The Codex goal remains active. Its attachment is
 `/Users/ryannel/.codex/attachments/86327eba-9dfd-4eff-965e-5bb0a2134938/goal-objective.md`.
 
-## Current WIP
+## Claude root session (7–12 November)
 
-`main` at `91f524b` is the verified baseline. Work is saved on
-`codex/wip-g3s-solar-penumbra`. Keep this branch off main until its final checks, cost
-comparison and visual review pass.
+The Codex agent is paused for quota until 12 November. A Claude session acts as root
+meanwhile and writes a handback for Codex before then. Its oversight log is
+`tmp/code-review-2026-11-05/overnight/WATCH-LOG.md`.
 
-The current model uses the nearest strictly upstream blocker, with 16 search and 32 disk
-samples. It bounds broad receiver-plane extrapolation to half that blocker gap. Grazing
-support and sparse blocker selection conservatively underestimate softness. The private
-192-byte uniform contains the world-height support used by both map padding and search,
-plus numeric surface tolerance. The comparison sampler has been removed.
+The finite-Sun penumbra from `codex/wip-g3s-solar-penumbra` landed on `main` with two
+follow-ups. See [the penumbra evidence](G3S-SOLAR-PENUMBRA-2026-11-07.md).
 
-Capture24 (`tmp/g3s-showcase/capture-24-penumbra-nearest/`) resolves the major defects
-from rejected candidates. Full-plane mean PCSS leaked warm triangles near the horizon;
-local-only correction caused widespread triangle acne; unconstrained global padding made
-noon contacts coarse. Independent review sees a gradual ridge transition and restored noon
-contacts in24, but a stronger narrow stippled seam in solar24–28 still needs attention.
+- **Stipple cause.** A CPU ray probe over the source terrain reproduced Codex's
+  0.893…0 visibility. It showed that the remaining stippled patches were false: a
+  concave join 0.6 m upstream of a planar receiver reads as a blocker at grazing Sun.
+  Depth within 0.9·tan(Sun elevation above the receiver) × the tap offset, capped at
+  slope 0.25, now counts as the receiver's own surface. A new shipping GPU oracle
+  fixture fails without it.
+- **Taps.** Reduced to 8 search and 16 disk taps after truth scoring.
+- **Cost.** Shared-GPU ABBA pass-sum p50 is 1.71 → 1.97 ms.
+- **Review.** Independent image-only review ranks the candidate above main and the
+  draft. A second reviewer caught crease lines left by an interim fixed-slope
+  tolerance. After the elevation bound, ray-truth false samples are zero on the
+  scored solar frames.
 
-A source review then found downstream depth samples could zero the nearest gap. The current
-code requires positive axial separation in search and treats downstream depths as visible
-in filtering. Its shipping GPU oracle passes, including a mixed downstream/upstream fixture.
-It also covers two blocker distances, tilted planes, an empty grazing map and a narrow
-central caster. Depth fixtures must be rendered, as WebGPU forbids writes to Depth32Float.
-
-The off-camera umbra test retains its darkness assertion with a 32 m roof 1.4 km upstream.
-The former 1.6 m roof is smaller than the finite Sun's ~13 m footprint and cannot form that
-umbra. The corrected scoped test passed. CPU upload tests check height and tolerance units.
-
-**Runs to observe.** Full check session37906 writes `conservative-dev-check.log`; it predates
-the final upstream-depth guard, so repeat full verification after it finishes. Capture
-session19038 builds and records the latest source into `capture-25-penumbra-upstream`,
-then retains exact PNGs. Both logs and all raw records live in
-`tmp/g3s-showcase/solar-penumbra/`. Do not restart these handles merely because output is
-quiet. Once terminal, review25 against baseline18 and rejected23 at all131 frames, especially
-sequence02/21, solar24–28 and66–71. Rebuild the release benchmark and Wasm before fresh Chrome
-and ABBA runs. The saved before executable is the exact verified q8 baseline; retain it.
-
-The shadow-off counterfactual reduces pixel(640,600) frame34→35 from103 to one SDR code.
-Source-triangle rays at receiver(-17.5194,239.9546,15.9897) find ridge blockers about13 km
-upstream. With512 rays across the Sun disk, frames33–38 give visibility
-0.893,0.709,0.498,0.279,0.096,0.0. The first PCSS candidate reduced the code step to20.
-Re-measure the final model before carrying that number forward. No owner decision is owed.
+The probe, scores and bench logs are in `tmp/g3s-showcase/solar-penumbra-claude/`. The final
+capture is `tmp/g3s-showcase/capture-26-penumbra-claude/`.
 
 ## Goal and status
 
@@ -95,12 +77,16 @@ saw a stable roughly 9-pixel disk, then progressive ridge occlusion across frame
 disappearing in frame 39. Sky samples changed by at most 1–2 SDR codes per step. The [selected
 crossing clip](g3s-first-light/solar-crossing.mp4) runs at 24 sampled frames/s.
 
-**Next defect.** Foreground pixel (640,600) jumps by 103 SDR codes in frame 34→35 while part
-of the disk remains visible. Best diagnosis is the terrain shadow from a point Sun with a
-small PCF footprint. Test a finite solar angular-radius penumbra using blocker separation,
-and check receiver-plane bias, cascade transitions, cost and contact attachment together.
-Keep the same host Sun/time and the fixed valley camera as the comparison. Separate disk/halo,
-Earth-shadow stepping, shadow-map contact and meter/exposure defects before tuning. Inspect
+**Next defects.** The 103-code foreground jump is fixed. Open, in order:
+- Any finding from the final image-only review (see below). Score it with the ray probe
+  before changing anything.
+- A 100-code foreground step at solar 77→78. It also appears with shadows off, so look at
+  the twilight/illumination path.
+- Distant terrain beyond the 512 m receiver reach has no Sun shadow. A heightfield horizon
+  method is the candidate.
+- The penumbra's +15% pass-sum. Gathered fetches and a lit early-out are untried.
+
+Keep the same host Sun/time and the fixed valley camera as the comparison. Inspect
 physical radiance and displayed colour independently. Use the checked CC0 Kiara photos
 under `tmp/g3s-showcase/reference/` for look only. The provenance JSON is beside them.
 The dense spectral probe is under `tmp/g3s-showcase/spectral-transport/`. It includes a
