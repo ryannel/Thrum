@@ -28,9 +28,27 @@ and noon looking up](g3s-first-light/chrome-valley.png)
 - **Equivalence.** A Metal test fetches a generation from `DevServer` over loopback HTTP. It draws that
   generation at the same world time as the mapped store, and the two images match pixel for pixel.
 - **Chrome.** The `valley` case passed: generation 1 drawn after one swap, 1.52 MB uploaded, no loader errors.
-  Wasm SHA-256 `01a18908ae606dda49773030a2dce708af36cde4f89b43c4dae4abd54047a5d1`. The existing
+  Wasm SHA-256 `81dba38fab05cf39e26f58e94eeb63dde7545d9be05f1c0c720f96a6c720df12`. The existing
   `sky-reflections` case passed with the same Wasm.
 - **Repository.** `./dev check` passed.
+
+## Live edits
+
+![Chrome, paused world at noon. Left: generation 1. Right: after retinting the shared base-colour texture
+in the watched source](g3s-first-light/chrome-live-edit.png)
+
+- **Feed.** `CookedSource::Remote` now takes a `RemoteFeed`. `RemoteFeed::publish` hands in a newer fetched
+  generation, and the contribution prepares it on the render thread at its next upload. It reuses every product
+  the drawn set already holds and swaps in the new set through the same staging. A replacement device prepares
+  the newest generation.
+- **Page.** It long-polls the dev server with `CookedValley::next_publication`. Overlapping polls are refused,
+  and failures are logged and retried after one second.
+- **Chrome check.** The `valley` case now watches a copy of the showcase source. After its captures it retints
+  `white.png` and requires generation 2 to be drawn with no errors, after exactly one more swap, uploading
+  less than the first set. Result: 5,376 bytes uploaded against 1,523,712, with the watcher publishing 43 ms
+  after the edit. The swap happened with the world paused.
+- **Metal test.** A second publication through the feed swaps in with a smaller upload than the first, the
+  dev client reuses the unchanged mesh, and the edit is visible.
 
 ## Independent review
 
@@ -49,7 +67,7 @@ A fresh-context reviewer saw only Chrome and native stills and a 24-sample Chrom
 ## Open
 
 - **Look items.** Those above, shared with native.
-- **Live edits.** Chrome loads one publication. Long-polling for later publications is the next step.
+- **Edit latency.** Chrome edit-to-visible latency is not measured beyond the watcher's publish time.
 - **Device recovery.** Recovery with the valley attached is not yet a browser case. The native restage path
   it shares is tested.
 - **Shared controls.** The demo panel still waits for G6's typed controls.

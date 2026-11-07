@@ -10,9 +10,10 @@
 //! Content identity survives device reconstruction: on a new device generation the loader is
 //! restarted against the same store and products are mapped and staged again.
 //!
-//! A [`CookedSource::Remote`] generation, fetched by `thrum_asset::DevClient` (the browser has
-//! no store to map and no loader thread), is prepared on the calling thread when the
-//! contribution starts, then uploaded through the same staging and swap.
+//! A [`CookedSource::Remote`] feed of generations fetched by `thrum_asset::DevClient` (the
+//! browser has no store to map and no loader thread) is prepared on the render thread: when the
+//! contribution starts, and at the next upload after each [`RemoteFeed::publish`]. Products the
+//! drawn set already holds are reused; the rest go through the same staging and swap.
 
 // WebGPU handles are not Send on wasm32, where these Arcs never cross a thread: the browser
 // prepares on its one thread. The same code shares them with the native loader thread.
@@ -100,8 +101,55 @@ pub struct VolumePlacement {
 pub enum CookedSource {
     /// Store root written by the cooker, followed by a loader thread.
     Store(PathBuf),
-    /// One generation already fetched from a dev server, prepared without a thread.
-    Remote(Arc<RemoteGeneration>),
+    /// Generations already fetched from a dev server, prepared without a thread.
+    Remote(RemoteFeed),
+}
+
+/// Newest fetched generation for a [`CookedSource::Remote`]; clones share it.
+#[derive(Clone, Debug)]
+pub struct RemoteFeed(Arc<Mutex<(u64, Arc<RemoteGeneration>)>>);
+
+impl RemoteFeed {
+    /// A feed starting at `generation`.
+    pub fn new(generation: RemoteGeneration) -> Self {
+        Self(Arc::new(Mutex::new((0, Arc::new(generation)))))
+    }
+
+    /// Replace the newest generation; the contribution stages it at its next upload.
+    pub fn publish(&self, generation: RemoteGeneration) {
+        if let Ok(mut latest) = self.0.lock() {
+            *latest = (latest.0 + 1, Arc::new(generation));
+        }
+    }
+
+    fn latest(&self) -> Option<(u64, Arc<RemoteGeneration>)> {
+        self.0
+            .lock()
+            .ok()
+            .map(|latest| (latest.0, Arc::clone(&latest.1)))
+    }
+}
+
+/// Render-thread preparation state of a remote feed.
+struct Remote {
+    loader: load::Loader,
+    feed: RemoteFeed,
+    /// Feed serial last prepared.
+    seen: u64,
+    /// Products of the drawn set, reused by later generations.
+    confirmed: load::Confirmed,
+}
+
+impl Remote {
+    fn prepare_newest(&mut self, mailbox: &load::Mailbox, stop: &AtomicBool) {
+        if let Some((serial, generation)) = self.feed.latest()
+            && serial != self.seen
+        {
+            self.seen = serial;
+            self.loader
+                .prepare_remote(&generation, &self.confirmed, mailbox, stop);
+        }
+    }
 }
 
 impl From<PathBuf> for CookedSource {
@@ -229,6 +277,8 @@ struct Live {
     /// The loader's shared observations, so retirement can fence its last writes.
     stats: Arc<Mutex<CookedStats>>,
     loader: Option<JoinHandle<()>>,
+    /// Remote feed prepared on the render thread, instead of a loader thread.
+    remote: Option<Remote>,
     /// Newest staged set not yet taken by the render thread.
     mailbox: Arc<load::Mailbox>,
     resident_tx: Sender<Arc<load::ResidentSet>>,
@@ -404,6 +454,7 @@ impl CookedAssets {
             volume_profiles: volume_profiles(surface.features),
             stats: Arc::clone(&self.stats),
         };
+        let mut remote = None;
         let handle = match &self.config.source {
             #[cfg(target_arch = "wasm32")]
             CookedSource::Store(_) => {
@@ -427,8 +478,15 @@ impl CookedAssets {
                 }
                 handle
             }
-            CookedSource::Remote(generation) => {
-                loader.prepare_remote(generation, &posting, &stop);
+            CookedSource::Remote(feed) => {
+                let mut state = Remote {
+                    loader,
+                    feed: feed.clone(),
+                    seen: u64::MAX,
+                    confirmed: load::Confirmed::default(),
+                };
+                state.prepare_newest(&posting, &stop);
+                remote = Some(state);
                 None
             }
         };
@@ -437,6 +495,7 @@ impl CookedAssets {
             stop,
             stats: Arc::clone(&self.stats),
             loader: handle,
+            remote,
             mailbox,
             resident_tx,
             pipelines: draw::Pipelines::new(surface),
@@ -524,6 +583,10 @@ impl SceneContribution for CookedAssets {
         else {
             return;
         };
+        // A newer fetched generation is prepared here, on the render thread, before the take.
+        if let Some(remote) = live.remote.as_mut() {
+            remote.prepare_newest(&live.mailbox, &live.stop);
+        }
         // Newest publication wins; a superseded pending set is dropped with its staging.
         if let Some(set) = live.mailbox.take() {
             live.pending = Some(Pending {
@@ -635,6 +698,9 @@ impl SceneContribution for CookedAssets {
         {
             let set = Arc::new(pending.set.set);
             live.resident_tx.send(Arc::clone(&set)).ok();
+            if let Some(remote) = live.remote.as_mut() {
+                remote.confirmed = load::Loader::confirm(&set);
+            }
             if let Ok(mut stats) = self.stats.lock() {
                 stats.drawn = Some(set.generation);
                 stats.swaps.push(SwapRecord {

@@ -1001,7 +1001,7 @@ fn a_fetched_generation_draws_like_the_mapped_store() {
         let mut client =
             thrum_asset::DevClient::new(LoopbackFetch, &format!("http://{}", server.address()))
                 .expect("client");
-        let generation = Arc::new(
+        let feed = thrum_asset_gpu::RemoteFeed::new(
             client
                 .poll()
                 .await
@@ -1012,7 +1012,7 @@ fn a_fetched_generation_draws_like_the_mapped_store() {
         let mut frames = Vec::new();
         for source in [
             thrum_asset_gpu::CookedSource::Store(cook.store.clone()),
-            thrum_asset_gpu::CookedSource::Remote(Arc::clone(&generation)),
+            thrum_asset_gpu::CookedSource::Remote(feed.clone()),
         ] {
             let mut host = FrameHost::new(&device, &queue, FrameConfig::default())
                 .await
@@ -1035,6 +1035,85 @@ fn a_fetched_generation_draws_like_the_mapped_store() {
         save("remote-store", &frames[0]);
         save("remote-fetched", &frames[1]);
         assert_eq!(changed_pixels(&frames[0], &frames[1]), 0);
+    });
+    drop(server);
+    std::fs::remove_dir_all(&root).ok();
+}
+
+/// A later publication pushed into the remote feed swaps in on the render thread, uploading only
+/// the edited product; the unchanged mesh is reused from the drawn set.
+#[test]
+fn a_fetched_edit_swaps_in_and_reuses_unchanged_products() {
+    let root = std::env::temp_dir().join(format!("thrum-g5-remote-edit-{}", std::process::id()));
+    std::fs::remove_dir_all(&root).ok();
+    let cook = source_tree(&root, 64);
+    let mut cooker = Cooker::open(cook.clone()).expect("cooker");
+    cooker.cook_all().expect("cook");
+    let publications = Arc::new(thrum_cook::Publications::default());
+    let server = thrum_cook::DevServer::start(
+        "127.0.0.1:0",
+        thrum_asset::AssetStore::new(&cook.store),
+        Arc::clone(&publications),
+    )
+    .expect("dev server");
+    pollster::block_on(async {
+        let mut client =
+            thrum_asset::DevClient::new(LoopbackFetch, &format!("http://{}", server.address()))
+                .expect("client");
+        let feed = thrum_asset_gpu::RemoteFeed::new(
+            client.poll().await.expect("fetch").expect("generation 1"),
+        );
+        let (device, queue) = game_device().await;
+        let mut host = FrameHost::new(&device, &queue, FrameConfig::default())
+            .await
+            .expect("prepared game scene");
+        let mut config =
+            v1_game::cooked::cooked_config(thrum_asset_gpu::CookedSource::Remote(feed.clone()));
+        config.upload_budget = BUDGET;
+        config.volume = None;
+        config.texture_preference = Some(vec![Profile::Portable]);
+        let assets = CookedAssets::new(config);
+        let stats = assets.stats();
+        host.set_scene_contribution(Box::new(assets))
+            .expect("attach");
+        let mut clock = Duration::ZERO;
+        wait_for(&mut host, &device, &stats, 1, &mut clock);
+        let first = host.capture_pixels().expect("capture");
+
+        demo::write_checker_png(
+            &cook.source.join("textures/checker.png"),
+            512,
+            [40, 200, 40],
+        )
+        .expect("texture edit");
+        let report = cooker.cook_all().expect("recook");
+        assert!(report.failed.is_empty(), "{:?}", report.failed);
+        publications.announce(2);
+        let fetched = client.poll().await.expect("fetch").expect("generation 2");
+        assert!(
+            client.holds(
+                &fetched
+                    .manifest()
+                    .resolve("meshes/terrain", &[Profile::Portable])
+                    .expect("mesh")
+                    .product
+            )
+        );
+        feed.publish(fetched);
+        wait_for(&mut host, &device, &stats, 2, &mut clock);
+        let second = host.capture_pixels().expect("capture");
+        save("remote-edit", &second);
+        let stats = stats.lock().expect("stats");
+        assert_eq!(stats.swaps.len(), 2);
+        assert!(
+            stats.swaps[1].uploaded_bytes < stats.swaps[0].uploaded_bytes,
+            "only the texture uploads again: {:?}",
+            stats.swaps
+        );
+        assert!(
+            changed_pixels(&first, &second) > 640 * 360 / 50,
+            "the edit is visible"
+        );
     });
     drop(server);
     std::fs::remove_dir_all(&root).ok();

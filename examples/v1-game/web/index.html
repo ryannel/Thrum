@@ -52,7 +52,18 @@
         // ?assets=<thrum-cook watch --serve origin> draws the cooked valley.
         if (probe.has("assets")) {
           status.textContent = "Fetching the cooked valley…";
-          game.attach_cooked_valley(await fetch_cooked_valley(probe.get("assets")));
+          const valley = await fetch_cooked_valley(probe.get("assets"));
+          game.attach_cooked_valley(valley);
+          // Follow later publications: each swaps in as it uploads.
+          (async () => {
+            for (;;) {
+              try { await valley.next_publication(); }
+              catch (error) {
+                console.warn(`Cooked publication poll failed: ${error}`);
+                await new Promise((resolve) => setTimeout(resolve, 1000));
+              }
+            }
+          })();
         }
         status.textContent = "Running the 10,000-entity scene…";
         const pauseProbe = probe.has("pause-probe");
