@@ -87,6 +87,14 @@ def route():
     return stops
 
 
+def web_presets():
+    """The web root must ship each checked-in route preset byte for byte, so a stale build never shows an old stop."""
+    for stop in ROUTE:
+        built = WEB / f'showcase-{stop}.params.json'
+        if not built.is_file() or sha256(built) != sha256(PARAMS / built.name):
+            raise Failure(f'{built} is missing or differs from the checked-in preset; rebuild the web page')
+
+
 def sha256(path):
     digest = hashlib.sha256()
     with open(path, 'rb') as file:
@@ -219,6 +227,7 @@ def chrome(args):
     run = new_run('chrome')
     seconds = None if args.no_build else build(run, web=True)
     record = {'command': 'chrome', 'stop': args.stop, 'build_seconds': seconds, 'builds': identities(web=True, built=not args.no_build)}
+    web_presets()
     watcher = server = None
     try:
         watcher, assets = watch(run, copy_source(run), serve=True)
