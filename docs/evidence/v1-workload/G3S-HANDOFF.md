@@ -12,14 +12,19 @@ The Codex goal remains active. Its attachment is
   Chrome. The Chrome compositor sweep ran from 17.659 to 24.053 h with 75
   samples. All eight overloads were inside screenshot brackets. The same
   Wasm without screenshots ran through midnight with zero overloads and
-  82 shed views. After the Mac was unlocked, the 145-sample Metal run
-  reached deep twilight before losing foreground. A second run lost
-  foreground earlier. Independent review passed the visible shadow
-  crossing and exposure progression at the sampled intervals, and the
-  Chrome midnight landmarks. All nine Chrome held scene images matched
-  the selected ground look byte for byte. The full foreground Metal run
-  remains open. Rerun `sh run-metal.sh <fresh-name>` in the closeout
-  directory with the Mac unlocked and the game frontmost for the route.
+  82 shed views. The completed Metal foreground run captured 465 samples
+  over 92.53 s, past midnight to approximately 01:06 by the window's tick.
+  Independent review passed the shadow crossing, exposure progression and
+  midnight landmarks on both targets. All nine Chrome held scene images
+  matched the selected ground look byte for byte. The [G7 fixed route](G7-CHROME-VALLEY-2026-11-07.md#showcase-launch-and-fixed-review-route)
+  independently covers held daytime on both targets.
+  The whole Mac run presented 12,200 frames with zero world overloads
+  and 827 dropped views at shared load 35–39. Sample 431 shows a
+  67.287 ms encode in the window title. The sampled visual result closes
+  M1. Physical intervals and short hitches remain open for G3b. The full
+  clip, samples and counters are under `metal-foreground-continuation-163219/`
+  in the closeout directory. Repeat with `sh run-metal.sh <fresh-name>`
+  while the unlocked Mac keeps the game frontmost.
 - Paired Metal offscreen runs at 1080p compare `9f13c5f6` and `b8f230e7`
   against the same cooked store under shared load. Median GPU pass-sum
   p95s were 22.66 → 25.15 ms at noon, 10.36 → 9.77 ms at the crossing,
