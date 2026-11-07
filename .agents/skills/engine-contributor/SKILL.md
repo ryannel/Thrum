@@ -23,7 +23,8 @@ runs correctly and looks right on named targets. Judge each change by whether it
   until after V1.
 - Extend running paths before hardening inactive ones. Code with no consumer by the end of a slice does not land.
   Parked tracks stay parked unless the owner reopens them.
-- Research or design only to unblock a named decision. Keep the record to two pages under `docs/design/decisions/`.
+- Outside a module-design commission, research or design only to unblock a named decision, and keep the record to two
+  pages under `docs/design/decisions/`. Module work follows [engine-module-design](../engine-module-design/SKILL.md).
 - Before building a general subsystem, look for a proven crate that meets the targets (Wasm, mobile, determinism where
   needed) and adopt it with a reuse record. Build your own where a specialised path is the point and can show its win.
 - Keep building. Stop and ask only to change purpose, the V1 exit or gate order, to spend money, to push, publish,

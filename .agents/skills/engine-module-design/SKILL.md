@@ -38,6 +38,8 @@ choose the techniques, the research, the experiments and how to break the work d
 - **When a cue won't come after a few honest attempts, question the mechanism, not the tuning.** Take it back to the
   design, record what you learned and what changes, and carry on from there.
 - **Work that serves no milestone** either earns a place in the plan or waits.
+- **The overseer may steer, or correct a milestone or your goal.** When it does, update the plan, log why, have a
+  changed milestone reviewed, and carry on.
 
 ## Review
 
