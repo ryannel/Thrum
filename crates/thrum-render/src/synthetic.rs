@@ -27,6 +27,7 @@ use std::sync::{
 };
 use wgpu::util::DeviceExt;
 
+mod air_shadow;
 mod cluster;
 mod cluster_gpu;
 mod contributed;
@@ -39,6 +40,16 @@ mod shadow;
 mod upload;
 mod view;
 
+pub(crate) use air_shadow::AIR_SHADOW_PASS;
+
+/// Role of a cleared full-view attachment in the forward pass.
+#[derive(Clone, Copy)]
+enum AttachmentUse {
+    Depth,
+    Scene,
+    Motion,
+}
+use air_shadow::{AirShadowPrepared, AirShadowTarget};
 use cluster::ClusterTable;
 pub use cluster::SyntheticPointLight;
 use cluster_gpu::ClusterCompute;
@@ -448,6 +459,8 @@ pub struct PreparedSynthetic {
     presentation_light_clamps: usize,
     background: wgpu::Color,
     shadow: Option<ShadowPrepared>,
+    /// Sun shadow heights for the air, with shadows under atmosphere lighting.
+    air_shadow: Option<AirShadowPrepared>,
     atmosphere: Option<AtmospherePrepared>,
     surface: SurfaceParts,
     contribution_passes: ContributionPasses,
@@ -562,6 +575,23 @@ impl SceneContext<'_> {
             pass,
             self.prepared.instance_upload.active_count(),
             self.timings.as_deref_mut(),
+        )
+    }
+
+    fn air_shadow(&mut self, pass: &CompiledPass) -> Result<(), RenderError> {
+        let (air, target) = (self.prepared.air_shadow.as_ref())
+            .zip(self.target.air_shadow.as_ref())
+            .ok_or(RenderError::GraphPassMismatch)?;
+        let resource =
+            (self.target.ids.air_shadow.as_ref()).ok_or(RenderError::GraphPassMismatch)?;
+        let timings = self.timings.as_deref_mut();
+        air.encode(
+            self.encoder,
+            target,
+            self.generation,
+            pass,
+            resource,
+            timings,
         )
     }
 
@@ -728,7 +758,7 @@ impl PreparedSynthetic {
         let dropped_light_references = clusters.dropped_references;
         let limits = capabilities.limits();
         if matches!(lighting, FrameLighting::Atmosphere(_))
-            && (limits.max_sampled_textures_per_shader_stage < 9 + u32::from(shadow_enabled)
+            && (limits.max_sampled_textures_per_shader_stage < 9 + 2 * u32::from(shadow_enabled)
                 || limits.max_samplers_per_shader_stage < 3 + u32::from(shadow_enabled)
                 || limits.max_bindings_per_bind_group < 12)
         {
@@ -834,6 +864,9 @@ impl PreparedSynthetic {
                     count: None,
                 },
             ]);
+            if matches!(lighting, FrameLighting::Atmosphere(_)) {
+                view_entries.push(air_shadow::VIEW_ENTRY);
+            }
         }
         let view_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("synthetic view and target aux"),
@@ -1054,6 +1087,9 @@ impl PreparedSynthetic {
         } else {
             None
         };
+        let air_shadow = (shadow.is_some() && atmosphere.is_some()).then(|| {
+            AirShadowPrepared::new(device, shadow::SAMPLE_BYTES as u64, LIGHT_BYTES as u64)
+        });
         if let Some(shadow) = shadow.as_ref() {
             instance_upload.seed_shadow_clamps(&scene.instances, |instance| {
                 instance.ids[3] != 0 && !shadow.contains_caster(instance)
@@ -1155,11 +1191,7 @@ impl PreparedSynthetic {
                 "\n",
                 include_str!("synthetic.wgsl")
             ),
-            if atmosphere.is_some() {
-                include_str!("synthetic_aerial.wgsl")
-            } else {
-                include_str!("synthetic_plain.wgsl")
-            },
+            air_shadow::aerial_source(atmosphere.is_some(), air_shadow.is_some()),
             if atmosphere.is_some() {
                 concat!(
                     include_str!("atmosphere/geometry.wgsl"),
@@ -1299,6 +1331,7 @@ impl PreparedSynthetic {
             presentation_light_clamps,
             background,
             shadow,
+            air_shadow,
             atmosphere,
             surface: SurfaceParts {
                 shader_source,
@@ -1335,6 +1368,7 @@ impl PreparedSynthetic {
     /// Number of prepared GPU scene passes for this scene's shadow recipe.
     pub fn scene_pass_count(&self) -> u32 {
         4 + u32::from(self.shadow.is_some()) * shadow::LAYERS
+            + u32::from(self.air_shadow.is_some())
             + u32::from(self.cluster_compute.is_some())
             + u32::from(self.contribution_passes.compute)
             + self
@@ -1525,6 +1559,12 @@ impl PreparedSynthetic {
             ..self.key
         }
     }
+    fn air_shadow_key(&self) -> PipelineKey {
+        PipelineKey {
+            role: 8,
+            ..self.key
+        }
+    }
     fn cluster_key(&self) -> PipelineKey {
         PipelineKey {
             role: 4,
@@ -1566,6 +1606,44 @@ impl PreparedSynthetic {
         } else {
             target.graph.plan().clone()
         })
+    }
+
+    /// Declares one cleared full-view attachment and its forward access.
+    fn view_attachment(
+        (width, height, graph, accesses): (u32, u32, &mut FrameGraph, &mut Vec<Access>),
+        format: wgpu::TextureFormat,
+        role: AttachmentUse,
+    ) -> Result<ResourceId, RenderError> {
+        let usage = match role {
+            AttachmentUse::Depth => wgpu::TextureUsages::RENDER_ATTACHMENT,
+            AttachmentUse::Scene => {
+                wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING
+            }
+            AttachmentUse::Motion => {
+                wgpu::TextureUsages::RENDER_ATTACHMENT
+                    | wgpu::TextureUsages::TEXTURE_BINDING
+                    | wgpu::TextureUsages::COPY_SRC
+            }
+        };
+        let resource = graph.resource(
+            ResourceDescriptor::Texture {
+                width,
+                height,
+                layers: 1,
+                mips: 1,
+                samples: 1,
+                format,
+                usage,
+            },
+            ResourceScope::Transient,
+        )?;
+        accesses.push(Access {
+            resource: resource.clone(),
+            range: 0..1,
+            kind: AccessKind::AttachmentClear,
+            store: !matches!(role, AttachmentUse::Depth),
+        });
+        Ok(resource)
     }
 
     fn compile_graph(
@@ -1657,25 +1735,17 @@ impl PreparedSynthetic {
             &mut prepared_keys,
             &contribution_reads,
         )?;
+        let air_key = self.air_shadow_key();
+        let air_shadow = (shadow.as_ref().filter(|_| self.air_shadow.is_some()))
+            .map(|maps| {
+                prepared_keys.insert(air_key);
+                let reads = [maps.clone(), directional.clone()];
+                air_shadow::append_graph(&mut graph, air_key, reads, &mut accesses)
+            })
+            .transpose()?;
         self.append_cluster_reads(&mut graph, &mut accesses, &mut prepared_keys)?;
-        let depth = graph.resource(
-            ResourceDescriptor::Texture {
-                width,
-                height,
-                layers: 1,
-                mips: 1,
-                samples: 1,
-                format: DEPTH_FORMAT,
-                usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-            },
-            ResourceScope::Transient,
-        )?;
-        accesses.push(Access {
-            resource: depth.clone(),
-            range: 0..1,
-            kind: AccessKind::AttachmentClear,
-            store: false,
-        });
+        let attachment = (width, height, &mut graph, &mut accesses);
+        let depth = Self::view_attachment(attachment, DEPTH_FORMAT, AttachmentUse::Depth)?;
         for class in self.classes.arrays() {
             let texture = graph.resource(
                 ResourceDescriptor::Texture {
@@ -1696,45 +1766,10 @@ impl PreparedSynthetic {
                 store: true,
             });
         }
-        let scene = graph.resource(
-            ResourceDescriptor::Texture {
-                width,
-                height,
-                layers: 1,
-                mips: 1,
-                samples: 1,
-                format: SCENE_FORMAT,
-                usage: wgpu::TextureUsages::RENDER_ATTACHMENT
-                    | wgpu::TextureUsages::TEXTURE_BINDING,
-            },
-            ResourceScope::Transient,
-        )?;
-        accesses.push(Access {
-            resource: scene.clone(),
-            range: 0..1,
-            kind: AccessKind::AttachmentClear,
-            store: true,
-        });
-        let motion = graph.resource(
-            ResourceDescriptor::Texture {
-                width,
-                height,
-                layers: 1,
-                mips: 1,
-                samples: 1,
-                format: MOTION_FORMAT,
-                usage: wgpu::TextureUsages::RENDER_ATTACHMENT
-                    | wgpu::TextureUsages::TEXTURE_BINDING
-                    | wgpu::TextureUsages::COPY_SRC,
-            },
-            ResourceScope::Transient,
-        )?;
-        accesses.push(Access {
-            resource: motion.clone(),
-            range: 0..1,
-            kind: AccessKind::AttachmentClear,
-            store: true,
-        });
+        let attachment = (width, height, &mut graph, &mut accesses);
+        let scene = Self::view_attachment(attachment, SCENE_FORMAT, AttachmentUse::Scene)?;
+        let attachment = (width, height, &mut graph, &mut accesses);
+        let motion = Self::view_attachment(attachment, MOTION_FORMAT, AttachmentUse::Motion)?;
         let forward = graph.pass(Pass {
             name: "synthetic forward opaque".into(),
             scope: PassScope::View(1),
@@ -1772,6 +1807,7 @@ impl PreparedSynthetic {
                 motion,
                 output,
                 shadow,
+                air_shadow,
             },
         ))
     }
@@ -2125,6 +2161,11 @@ impl PreparedSynthetic {
                         frame.cluster(pass)
                     })
                 }
+                Some(key) if key == self.air_shadow_key() => {
+                    RecordBinding::<SceneFamily>::new(id, PassKind::Render, |frame, pass| {
+                        frame.air_shadow(pass)
+                    })
+                }
                 Some(key) if key == self.history_key() => {
                     RecordBinding::<SceneFamily>::new(id, PassKind::Compute, |frame, pass| {
                         frame.publish_history(pass)
@@ -2384,6 +2425,7 @@ struct TargetResources {
     motion: ResourceId,
     output: ResourceId,
     shadow: Option<ResourceId>,
+    air_shadow: Option<ResourceId>,
 }
 
 /// Generation-bound offscreen target. Retain while encoded/submitted work uses
@@ -2402,6 +2444,7 @@ pub struct OffscreenTarget {
     view_bind_group: wgpu::BindGroup,
     aux_buffer: wgpu::Buffer,
     shadow: Option<ShadowTarget>,
+    air_shadow: Option<AirShadowTarget>,
     depth: wgpu::TextureView,
     width: u32,
     height: u32,
@@ -2478,6 +2521,16 @@ impl OffscreenTarget {
             (None, None) => None,
             _ => return Err(RenderError::GraphPassMismatch),
         };
+        let air_shadow = match (&prepared.air_shadow, &ids.air_shadow) {
+            (Some(air), Some(id)) => Some(air.target(
+                device,
+                textures.texture(id).ok_or(RenderError::GraphPassMismatch)?,
+                prepared.shadow.as_ref().zip(shadow.as_ref()),
+                &prepared.directional_buffer,
+            )?),
+            (None, None) => None,
+            _ => return Err(RenderError::GraphPassMismatch),
+        };
         let mut view_entries = vec![
             wgpu::BindGroupEntry {
                 binding: 0,
@@ -2504,6 +2557,7 @@ impl OffscreenTarget {
                 },
             ]);
         }
+        view_entries.extend(air_shadow.as_ref().map(AirShadowTarget::view_entry));
         let view_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("synthetic view and target aux"),
             layout: &prepared.view_layout,
@@ -2525,6 +2579,7 @@ impl OffscreenTarget {
             view_bind_group,
             aux_buffer: aux,
             shadow,
+            air_shadow,
             depth,
             width,
             height,

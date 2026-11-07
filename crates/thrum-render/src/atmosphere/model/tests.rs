@@ -68,7 +68,33 @@ fn shipping_atmosphere_shader_layouts_keep_mapping_and_view_aux_separate() {
             ),
             include_str!("../irradiance.wgsl"),
             include_str!("../../synthetic.wgsl"),
-            include_str!("../../synthetic_aerial.wgsl"),
+            concat!(
+                include_str!("../../synthetic_aerial.wgsl"),
+                "\n",
+                include_str!("../../synthetic_aerial_clear.wgsl")
+            ),
+            concat!(
+                include_str!("../geometry.wgsl"),
+                "\n",
+                include_str!("../../synthetic_sun.wgsl"),
+                "\n",
+                include_str!("../../synthetic_environment.wgsl")
+            )
+        ),
+        format!(
+            "{}\n{}\n{}\n{}\n{}",
+            concat!(
+                include_str!("../storage.wgsl"),
+                "\n",
+                include_str!("../brdf.wgsl")
+            ),
+            include_str!("../irradiance.wgsl"),
+            include_str!("../../synthetic.wgsl"),
+            concat!(
+                include_str!("../../synthetic_aerial.wgsl"),
+                "\n",
+                include_str!("../../synthetic_aerial_shadowed.wgsl")
+            ),
             concat!(
                 include_str!("../geometry.wgsl"),
                 "\n",

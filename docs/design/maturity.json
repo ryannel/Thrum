@@ -84,7 +84,7 @@
     "G3s_first_light": {
       "implementation": "partial_eight_wavelength_LUTs_receiver_Sun_SH9_GGX_native_cooked_cascades_and_terrain_horizon",
       "functional_validation": "Metal_sky_referees_authored_recovery_cooked_shadow_and_packed_spectral_twilight_pass;_Earth_radiance_open",
-      "experienced_quality": "agent_reviewed_native_contact_shadows_blue_twilight_and_gradual_finite_Sun_ridge_crossing_with_low_Sun_contact,_low-light_twilight_key,_dithered_SDR_gradients_and_offscreen_consecutive-tick_sunset;_terrain_silhouette_steps_and_on-screen_live_motion_open",
+      "experienced_quality": "agent_reviewed_native_contact_shadows_blue_twilight_and_gradual_finite_Sun_ridge_crossing_with_low_Sun_contact,_low-light_twilight_key,_dithered_SDR_gradients,_terrain-shadowed_aerial_in-scatter_and_offscreen_consecutive-tick_sunset;_terrain_silhouette_steps_and_on-screen_live_motion_open",
       "platform_performance": {
         "mac": "Metal_oracles_and_spectral_valley_ABBA_recorded;_live_display_unqualified",
         "browser": "Chrome156_M3Max_spectral_sky_route7phases24samples_pass_on_diagnostic_scene_and_cooked_valley",
@@ -98,6 +98,7 @@
         "../evidence/v1-workload/G3S-LIVE-SUNSET-2026-11-07.md",
         "../evidence/v1-workload/G3S-LOW-LIGHT-KEY-2026-11-07.md",
         "../evidence/v1-workload/G3S-DISPLAY-DITHER-2026-11-07.md",
+        "../evidence/v1-workload/G3S-SHADOWED-AERIAL-2026-11-07.md",
         "../evidence/v1-workload/G7-CHROME-VALLEY-2026-11-07.md"
       ]
     },
