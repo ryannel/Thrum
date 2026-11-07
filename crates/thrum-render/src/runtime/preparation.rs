@@ -4,7 +4,9 @@ use super::{FrameError, FrameSlot, IN_FLIGHT, SlotState};
 use crate::{
     capabilities::DeviceCapabilities,
     present::SurfacePresenter,
-    synthetic::{FrameLighting, OffscreenTarget, PreparedSynthetic, SyntheticScene},
+    synthetic::{
+        FrameLighting, OffscreenTarget, PreparedSynthetic, SceneTimingLayout, SyntheticScene,
+    },
     timing::GpuTimings,
 };
 use std::sync::{Arc, atomic::AtomicBool};
@@ -62,6 +64,7 @@ pub(super) async fn prepare_scene(
                 prepared.scene_pass_count() + u32::from(surface),
             )
             .map_err(|error| FrameError::Gpu(format!("scene timings: {error:?}")))?,
+            timing_layout: SceneTimingLayout::from(&prepared),
             render_done: Arc::new(AtomicBool::new(false)),
             state: SlotState::Free,
         });

@@ -58,7 +58,7 @@ use contributed::CONTRIBUTION_UPLOAD;
 pub use display::SdrToneMap;
 use display::{DisplayPrepared, DisplayTarget};
 use exposure::ExposureResolve;
-pub(crate) use frame_stats::pass_durations;
+pub(crate) use frame_stats::{SceneTimingLayout, pass_durations};
 use history_gpu::TransformHistory;
 pub use scene_apply::SceneApplyReport;
 use shadow::{ShadowPrepared, ShadowTarget};
@@ -1890,7 +1890,7 @@ impl PreparedSynthetic {
     ) -> Result<(), RenderError> {
         prepared_keys.insert(self.history_key());
         let publish = graph.pass(Pass {
-            name: "synthetic transform history".into(),
+            name: history_gpu::PASS_NAME.into(),
             scope: PassScope::View(1),
             pipeline: Some(self.history_key()),
             accesses: vec![

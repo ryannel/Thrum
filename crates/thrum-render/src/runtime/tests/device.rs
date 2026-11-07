@@ -9,12 +9,17 @@ use std::{
 struct Policy {
     camera: f32,
     atmosphere: bool,
+    empty: bool,
     last_override: Cell<bool>,
 }
 
 impl SceneSource<SourceTick> for Policy {
     fn extract(&self, into: &mut RenderExtractor, page: &SourceTick) -> ExtractReport {
-        StaticScene::default().extract(into, page)
+        if self.empty {
+            into.extract(*page, [0.0; 3], |_| {})
+        } else {
+            StaticScene::default().extract(into, page)
+        }
     }
 
     fn frame(
@@ -74,14 +79,14 @@ pub(super) async fn gpu(
     )
 }
 
-async fn host(capabilities: &DeviceCapabilities, queue: &wgpu::Queue) -> Host {
+async fn host(capabilities: &DeviceCapabilities, queue: &wgpu::Queue, policy: Policy) -> Host {
     let source = SourceTick {
         epoch: 5,
         tick: 0,
         timeline: 3,
     };
     let mut scene = SyntheticScene::grid(1).expect("scene");
-    scene.sun_shadows = true;
+    scene.sun_shadows = !policy.empty;
     FrameHost::new(
         capabilities,
         queue,
@@ -93,7 +98,7 @@ async fn host(capabilities: &DeviceCapabilities, queue: &wgpu::Queue) -> Host {
             authority: source,
             publication: source,
         },
-        Policy::default(),
+        policy,
         scene,
         0.125,
     )
@@ -122,6 +127,47 @@ fn pending_slots(host: &mut Host) {
             .expect("actual slot submission");
     }
     assert_eq!(host.pending_frames(), IN_FLIGHT);
+}
+
+#[test]
+#[cfg(target_os = "macos")]
+fn metal_frame_timestamps_survive_an_empty_instance_set() {
+    pollster::block_on(async {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let (capabilities, queue) = gpu(&instance, 7).await;
+        let mut host = host(
+            &capabilities,
+            &queue,
+            Policy {
+                empty: true,
+                atmosphere: true,
+                ..Policy::default()
+            },
+        )
+        .await;
+        pending_slots(&mut host);
+        assert_eq!(host.prepared.active_instance_count(), 0);
+        let deadline = std::time::Instant::now() + Duration::from_secs(10);
+        for _ in 0..IN_FLIGHT {
+            let sample = loop {
+                if let Some(sample) = host.poll_completed().expect("poll Metal frame") {
+                    break sample;
+                }
+                assert!(
+                    std::time::Instant::now() < deadline,
+                    "Metal frame report timed out"
+                );
+                std::thread::yield_now();
+            };
+            assert!(
+                !sample.timing_fault,
+                "Metal frame timestamp collection failed"
+            );
+            let passes = sample.gpu_pass_ns.expect("real Metal pass timestamps");
+            assert!(passes[3] > 0.0, "the sky still executes the forward pass");
+            assert_eq!(passes[4], 0.0, "there is no transform history to publish");
+        }
+    });
 }
 
 fn packed_pixels(
@@ -166,7 +212,7 @@ fn gpu_device_replacement_abandons_slots_and_isolates_old_candidates_and_callbac
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
         let (first, queue) = gpu(&instance, 7).await;
-        let mut host = host(&first, &queue).await;
+        let mut host = host(&first, &queue, Policy::default()).await;
         let mut cooked = host
             .visual_prepare_inputs()
             .prepare(
@@ -337,8 +383,8 @@ fn gpu_device_replacement_refuses_wrong_host_mode_and_failed_setup_without_losin
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
         let (first, queue) = gpu(&instance, 11).await;
-        let mut a = host(&first, &queue).await;
-        let mut b = host(&first, &queue).await;
+        let mut a = host(&first, &queue, Policy::default()).await;
+        let mut b = host(&first, &queue, Policy::default()).await;
         let (second, next_queue) = gpu(&instance, 12).await;
         assert!(
             a.device_prepare_inputs()
