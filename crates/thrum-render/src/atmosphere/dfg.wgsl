@@ -1,18 +1,17 @@
 @group(0) @binding(0) var dfg_output: texture_storage_2d<rgba16float,write>;
 @group(0) @binding(1) var<storage,read_write> prefilter_output: array<vec4<f32>>;
 
-// These directions depend only on the BRDF and mip, not the sky or cube
-// texel. Prepare 896 once per device rather than repeat their trig millions
-// of times whenever the Sun changes.
+// Prepare each mip's BRDF-only samples once per device.
 @compute @workgroup_size(64)
 fn prefilter_samples_main(@builtin(global_invocation_id) id: vec3<u32>) {
-    if id.x>=REFLECTION_MIPS*PREFILTER_SAMPLES { return; }
-    let mip=id.x/PREFILTER_SAMPLES;
-    let sample=id.x%PREFILTER_SAMPLES;
+    let mip=id.y;
+    let span=PREFILTER_SPANS[mip];
+    let sample=id.x;
+    if sample>=span.y { return; }
     let roughness=GGX_MIN_ROUGHNESS+(1.0-GGX_MIN_ROUGHNESS)*f32(mip)/f32(REFLECTION_MIPS-1u);
-    let half_vector=ggx_visible_normal(vec3(0.0,0.0,1.0),ggx_alpha(roughness),ggx_sample(sample,PREFILTER_SAMPLES));
+    let half_vector=ggx_visible_normal(vec3(0.0,0.0,1.0),ggx_alpha(roughness),ggx_sample(sample,span.y));
     let light=reflect(vec3(0.0,0.0,-1.0),half_vector);
-    prefilter_output[id.x]=vec4(light,max(0.0,light.z));
+    prefilter_output[span.x+sample]=vec4(light,max(0.0,light.z));
 }
 
 @compute @workgroup_size(8,8)

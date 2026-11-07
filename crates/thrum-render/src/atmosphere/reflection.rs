@@ -6,9 +6,26 @@ use crate::synthetic::RenderError;
 pub(super) const CUBE_SIZE: u32 = 64;
 pub(super) const MIP_COUNT: u32 = 7;
 pub(super) const DFG_SIZE: u32 = 65;
-pub(super) const PREFILTER_SAMPLES: u32 = 128;
+// Mip zero's minimum-roughness lobe is narrower than a cube texel.
+// Allocate the quadrature to the wider kernels that expose discrete taps
+// against the high-contrast twilight horizon.
+const PREFILTER_COUNTS: [u32; MIP_COUNT as usize] = [8, 512, 1024, 512, 512, 512, 512];
+const PREFILTER_CAPACITY: u32 = 1024;
+const CUBE_TEXELS_PER_GROUP: u32 = 16;
 pub(super) const DFG_SAMPLES: u32 = 1024;
-pub(super) const SAMPLE_BYTES: u64 = MIP_COUNT as u64 * PREFILTER_SAMPLES as u64 * 16;
+pub(super) const SAMPLE_BYTES: u64 = prefilter_sample_count() as u64 * 16;
+
+const fn prefilter_sample_count() -> u32 {
+    let mut total = 0;
+    let mut mip = 0;
+    while mip < PREFILTER_COUNTS.len() {
+        let count = PREFILTER_COUNTS[mip];
+        assert!(count > 0 && count <= PREFILTER_CAPACITY);
+        total += count;
+        mip += 1;
+    }
+    total
+}
 
 pub(super) struct ReflectionPrepared {
     pub(super) cube: wgpu::Texture,
@@ -52,9 +69,7 @@ impl ReflectionPrepared {
             lod_max_clamp: (MIP_COUNT - 1) as f32,
             ..Default::default()
         });
-        let constants = format!(
-            "const REFLECTION_SIZE:u32={CUBE_SIZE}u;\nconst REFLECTION_MIPS:u32={MIP_COUNT}u;\nconst PREFILTER_SAMPLES:u32={PREFILTER_SAMPLES}u;\nconst DFG_SAMPLES:u32={DFG_SAMPLES}u;\n"
-        );
+        let constants = shader_constants();
         let cube_pipeline = pipeline(
             device,
             "atmosphere sky specular prefilter",
@@ -179,7 +194,7 @@ impl ReflectionPrepared {
             pass.dispatch_workgroups(DFG_SIZE.div_ceil(8), DFG_SIZE.div_ceil(8), 1);
             pass.set_pipeline(&self.samples_pipeline);
             pass.set_bind_group(0, &self.samples_group, &[]);
-            pass.dispatch_workgroups((MIP_COUNT * PREFILTER_SAMPLES).div_ceil(64), 1, 1);
+            pass.dispatch_workgroups(PREFILTER_CAPACITY.div_ceil(64), MIP_COUNT, 1);
         } else {
             let mip = stage - 1;
             let group = self
@@ -189,10 +204,24 @@ impl ReflectionPrepared {
             pass.set_pipeline(&self.cube_pipeline);
             pass.set_bind_group(0, group, &[]);
             let width = CUBE_SIZE >> mip;
-            pass.dispatch_workgroups(width.div_ceil(8), width.div_ceil(8), 6);
+            pass.dispatch_workgroups(width.div_ceil(CUBE_TEXELS_PER_GROUP), width, 6);
         }
         Ok(())
     }
+}
+
+fn shader_constants() -> String {
+    use std::fmt::Write as _;
+    let mut source = format!(
+        "const REFLECTION_SIZE:u32={CUBE_SIZE}u;\nconst REFLECTION_MIPS:u32={MIP_COUNT}u;\nconst DFG_SAMPLES:u32={DFG_SAMPLES}u;\nconst CUBE_TEXELS_PER_GROUP:u32={CUBE_TEXELS_PER_GROUP}u;\nconst PREFILTER_SPANS=array<vec2<u32>,{MIP_COUNT}>(\n"
+    );
+    let mut offset = 0;
+    for count in PREFILTER_COUNTS {
+        writeln!(source, "vec2<u32>({offset}u,{count}u),").expect("write WGSL constants");
+        offset += count;
+    }
+    source.push_str(");\n");
+    source
 }
 
 fn texture(device: &wgpu::Device, label: &str, size: u32, layers: u32, mips: u32) -> wgpu::Texture {

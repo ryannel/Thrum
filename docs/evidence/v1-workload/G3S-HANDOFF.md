@@ -122,15 +122,34 @@ The Codex goal remains active. Its attachment is
   | 12 | 4.41 → 8.29 | 1.03 → 2.32 |
   | 18.97 | 6.26 → 10.10 | 1.11 → 2.40 |
 
-  Shared load was about 34. Both pairs agree on the direction. The regular
-  128-tap filter remains in use. Same-count angular probes move the streaks;
-  the split-horizon footprint experiment leaves the error essentially
-  unchanged. The next candidate should parallelize the wide-lobe reduction
-  across GPU lanes. The scratch four-lane reduction passes WebGPU and
-  stays within one RGB code of the rejected scalar schedule across the
-  five reflection crops. Next measure it on Metal against the shipping
-  filter. Raw rows, crops, `cooperative-source/`, and the rejected
-  `packed-schedule.patch` are under `m1-reflection-isolation/` in night scratch.
+  Shared load was about 34. Both pairs agree on the direction. Same-count
+  angular probes move the streaks; the split-horizon footprint experiment
+  leaves the error essentially unchanged. The four-lane reduction keeps
+  the denser per-mip samples and reduces the contour with a smaller cost
+  increase. In the final Chrome build, a 55-pixel-radius interior sphere
+  region over frames 05–09 differs from the rejected scalar schedule by
+  at most one RGB code. Its mean error against the dense reference falls
+  from 1.42–1.65 to 0.54–0.68 codes. Faint warm streaks remain. Metal
+  held stills retain the soft reflected horizon and both midnight materials.
+  The diagnostic four-lane ABBA/BAAB at 1080p offscreen under shared
+  load 35–40 measures noon scene GPU p95 4.51 → 5.04 ms and late twilight
+  6.45 → 6.91 ms. Atmosphere p95 is 1.05 → 1.26 ms and 1.13 → 1.34 ms
+  respectively. Late callback p95 increases in the medians (3.52 → 4.73 ms)
+  and varies widely between runs. Exact-source ABBA/BAAB against
+  `4fecd095` at load 44–45 puts late GPU p95 at 6.83 → 7.23 ms
+  and callback p95 at 3.71 → 4.05 ms. Noon is heavily contended
+  (scene GPU p95 13.17 → 13.93 ms, with individual values from 4.85 to
+  24.43 ms). No live cadence inference from these rows. The independent
+  review also reproduced a sharp foreground
+  shadow change at 17.67 → 17.73 h in both Chrome builds while yaw changed.
+  This cue and live cadence remain open. The exact capture builds are Metal
+  `c6e7b102` and Chrome Wasm `4afa8b38` (SHA-256 prefixes). Under
+  `m1-reflection-isolation/`, see `cooperative-final-metal/`,
+  `cooperative-final-chrome/`, `cooperative-final-sweep/`,
+  `cooperative-final-roi.log`, `cooperative-final-perf/summary.log` and
+  `cooperative-perf/paired*/`. The rejected
+  `packed-schedule.patch` and the diagnostic `cooperative-source/` remain
+  there for reproduction.
   The +12° midnight camera cropped the rock. The matched +7° capture keeps
   both materials in frame and is now in the native and Chrome capture routes.
   A separate live Chrome world advanced from 18.26 to 20.22 h across 49
@@ -140,6 +159,15 @@ The Codex goal remains active. Its attachment is
   `current-live-sampled.mp4` and `current-live-chrome/live.ndjson` under the
   same scratch folder. Repeat `chrome-natural-twilight.mjs --case valley`
   with a fresh output directory and without our own tests running.
+- In matched nightglow-off and on builds, the two midnight cameras go
+  from black to mean RGB codes 63.5–66.4 (sky), 25.0–25.4 (ground),
+  47.2–47.9 (metal highlight), and 25.4–25.6 (diffuse rock) across Metal
+  and Chrome. The noon frame changes by at most one code per channel.
+  The scratch switch removes only `.with_nightglow()` from game lighting;
+  the on-control's Chrome frames match production byte for byte. See
+  `nightglow-off.patch`, `nightglow-control.log`, and the on/off capture
+  folders in `m1-reflection-isolation/`. The Metal source-switch referee
+  above checks the solar LUT separately from the displayed scene.
 - The production forward and tone passes store a neutral dim card at
   0.00013661385 in the HDR attachment and display code 21 on Metal and Chrome.
   The card emits the analytically known radiance of a 1% Lambert surface

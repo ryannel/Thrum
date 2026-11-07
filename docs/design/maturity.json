@@ -85,7 +85,7 @@
     "G3s_first_light": {
       "implementation": "partial_eight_wavelength_LUTs_receiver_Sun_SH9_GGX_native_cooked_cascades_terrain_horizon_and_moonless_background",
       "functional_validation": "Metal_sky_horizon_and_cascade_window_referees_authored_recovery_cooked_shadow_and_packed_spectral_twilight_pass;_night_GPU_meter_clamp_and_Metal_sky_incident_aerial_oracles_pass;_dim_card_HDR_and_SDR_match_Metal_and_Chrome;_midnight_recovery_pixels_match",
-      "experienced_quality": "agent_reviewed_native_contact_shadows_blue_twilight_and_gradual_finite_Sun_ridge_crossing_with_low_Sun_contact,_low-light_twilight_key,_dithered_SDR_gradients,_terrain-shadowed_aerial_in-scatter_and_offscreen_consecutive-tick_sunset;_terrain_silhouette_steps_and_on-screen_live_motion_open;_held_ground_camera_midnight_reviewed_on_Metal_and_Chrome",
+      "experienced_quality": "agent_reviewed_native_contact_shadows_blue_twilight_and_gradual_finite_Sun_ridge_crossing_with_low_Sun_contact,_low-light_twilight_key,_dithered_SDR_gradients,_terrain-shadowed_aerial_in-scatter_and_offscreen_consecutive-tick_sunset;_held_Metal_and_Chrome_midnight_and_softened_twilight_reflection_reviewed;_terrain_silhouette_steps_and_on-screen_live_motion_open",
       "platform_performance": {
         "mac": "Metal_oracles_spectral_valley_shadowed_aerial_and_moonless_ABBA_recorded_under_shared_load;_live_display_unqualified",
         "browser": "Chrome156_M3Max_spectral_sky_route_passes_with_held_midnight_on_cooked_valley;_night_motion_unqualified",
@@ -4486,8 +4486,8 @@
       "technique": "GGX split-sum sky reflections with device-prepared VNDF samples",
       "source": "https://jcgt.org/published/0007/04/01/paper.pdf",
       "owner": "thrum-render portable",
-      "status": "partial; independent hemisphere DFG and cube/consumer GPU referees; real noon/sunrise/twilight materials reviewed; shared-load full-frame cost recorded, not a speed win",
-      "evidence": "../evidence/v1-workload/G3S-FIRST-LIGHT-2026-11-06.md"
+      "status": "partial; independent hemisphere DFG and cube/consumer GPU referees; four-lane reduction softens twilight streaks on Metal and Chrome; shared-load frame cost and open live cadence recorded",
+      "evidence": "../evidence/v1-workload/G3S-HANDOFF.md"
     },
     {
       "technique": "Cascaded Sun shadows with finite-disk PCSS and receiver-plane PCF",

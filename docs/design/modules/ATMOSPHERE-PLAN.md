@@ -1,19 +1,19 @@
 # Atmosphere milestones
 
 Design: [ATMOSPHERE.md](ATMOSPHERE.md)
-Reviews: Optical design and plan over `a91cdd0e`, final design `f9d0c12a` and plan `c3cc5748` · [optical brief](#optical-review-brief) · initial changes required, final M1 implementation cleared. Frame graph and ownership at the same revisions · [graph brief](#graph-review-brief) · initial changes required, final design cleared. First valley captures, Metal build `dfae5b21` and Chrome Wasm `bc15ea7d` (SHA-256 prefixes) · [capture brief](#capture-review-brief) · held ground view passes, M1 remains open. Chrome late-twilight Wasm `134e271c` · [sweep brief](#sweep-review-brief) · silhouette and reflection visible, warm contour and live motion open. Packed reflection candidate over `c2ac94d8`, Wasm `132f992f` · [reflection brief](#reflection-review-brief) · visual improvement, rejected on measured Metal cost.
+Reviews: Optical design and plan over `a91cdd0e`, final design `f9d0c12a` and plan `c3cc5748` · [optical brief](#optical-review-brief) · initial changes required, final M1 implementation cleared. Frame graph and ownership at the same revisions · [graph brief](#graph-review-brief) · initial changes required, final design cleared. First valley captures, Metal build `dfae5b21` and Chrome Wasm `bc15ea7d` (SHA-256 prefixes) · [capture brief](#capture-review-brief) · held ground view passes, M1 remains open. Chrome late-twilight Wasm `134e271c` · [sweep brief](#sweep-review-brief) · silhouette and reflection visible, warm contour and live motion open. Packed reflection candidate over `c2ac94d8`, Wasm `132f992f` · [reflection brief](#reflection-review-brief) · visual improvement, rejected on measured Metal cost. Four-lane candidate over `4fecd095`, Metal `c6e7b102` and Chrome `4afa8b38` · [four-lane brief](#four-lane-review-brief) · held visuals pass with faint residual streaks; no code findings; live cadence open.
 Updated: 2026-11-07
 Milestone: M1 moonless midnight
-Now: the held Metal and Chrome valley is legible at midnight. Metal sky, incident meter and finite aerial transport pass the f64 oracle.
-Next: test a cooperative reflection reduction and qualify the live transition.
+Now: the held Metal and Chrome valley is legible at midnight, and the four-lane filter softens the late-twilight reflection contour. Metal sky, incident meter and finite aerial transport pass the f64 oracle.
+Next: qualify the live transition and isolate the sharp foreground shadow change.
 Blocked: none. G3s stays open.
 
 ## M1 The valley remains legible at moonless midnight: in progress
 
 Done when
 
-- [ ] On Metal and Chrome, the actual cooked valley at 0 h has a dark nonzero sky and a legible terrain silhouette, with diffuse rock and metal both responding to the same weak environment. Judge fixed ground and upslope cameras at native scale.
-- [ ] The raw sky zenith and horizontal integral are on the intended dark-site scale. The packed field matches the converged scalar reference within 5% for horizontal irradiance and 10% per sampled zenith, peak, and split-horizon ray at 0, 1.8 and 15 km. Interpolated night in-scatter at 1, 10 and 30 km agrees within 10%. The tolerances qualify the implementation of this optical approximation. Switching off nightglow affects sky, meter, diffuse and reflection together, and restoring it changes no direct sunlight.
+- [x] On Metal and Chrome, the actual cooked valley at 0 h has a dark nonzero sky and a legible terrain silhouette, with diffuse rock and metal both responding to the same weak environment. Independent review passed both fixed cameras at native scale. [Captures](../../evidence/v1-workload/G3S-HANDOFF.md#current-checkpoint).
+- [x] The raw sky zenith and horizontal integral are on the intended dark-site scale. The packed field matches the converged scalar reference within 5% for horizontal irradiance and 10% per sampled zenith, peak, and split-horizon ray at 0, 1.8 and 15 km. Interpolated night in-scatter at 1, 10 and 30 km agrees within 10%. The tolerances qualify the implementation of this optical approximation. Switching off nightglow affects sky, meter, diffuse and reflection together, and restoring it changes no direct sunlight. [Referees and source switch](../../evidence/v1-workload/G3S-HANDOFF.md#current-checkpoint).
 - [ ] A continuous sunset-to-night sweep has no exposure freeze while light still falls, storage-scale step, or broken shadow transition. Alternating bright and dark submissions across captures, drops, slot reuse and device replacement preserve the correct scale and pixels. A 1% Lambert control survives both devices' real HDR attachments and display paths. Dawn, noon and sunset retain their checked images.
 - [ ] Pair whole-frame and pass cost with the old run and investigate tripwires. Workspace check and real window and browser motion runs pass independent visual review. Evidence goes in the existing G3s page.
 
@@ -26,7 +26,7 @@ Work
 - [x] Wire the night channel into sky, diffuse, reflection and finite aerial transport. Connect the per-view exposure sample to all forward colour writers. The GPU meter test reaches −12 EV100 and preserves a low-light arithmetic control.
 - [x] Compare the production Metal sky, incident reduction and finite aerial decoder to the f64 reference. Toggle the source through the existing graph and check that its dependent caches refresh. [Observations](../../evidence/v1-workload/G3S-HANDOFF.md#current-checkpoint).
 - [x] A 1% Lambert-equivalent radiance control survives the actual HDR and SDR attachments on Metal and Chrome. Metal covers dropped encodes, captures and both reused exposure sides. Paused midnight pixels survive real GPU replacement on both targets.
-- [ ] Compare held nightglow-off and on scenes, including the specular response.
+- [x] Compare held nightglow-off and on scenes, including the specular response. Both targets go from black to readable at midnight and noon differs by at most one RGB code.
 - [ ] Capture and inspect actual valley sequences. Review the raw data and record results.
 
 ## M2 Stars emerge as the observer turns and time advances: pending
@@ -105,6 +105,17 @@ reviewer rechecked the finite-shell revision. The GPU and in-game checks are ope
 > the same packed record. Keep cadence and headless samples separate. No writes,
 > GPU runs or delegation. Return verified/suspected findings and per-cue verdicts.
 > The follow-up supplied matched offscreen Metal stills from the same game host.
+
+### Four-lane review brief
+
+> Review the three reflection files over `4fecd095` with review-agent and
+> the module-design review reference. Check packed offsets, lane and edge
+> synchronization, portable assumptions and call sites. Inspect candidate
+> held Chrome and Metal captures and sweep, the matched shipping and dense
+> references, and the raw paired timing runs in the handoff's reflection
+> scratch directory. Judge the warm contour, reflected horizon, readable
+> midnight, daylight and material regressions. Separate cadence from held
+> frames. Give defect-first findings and per-cue verdicts. No GPU runs or edits.
 
 ## Log
 
