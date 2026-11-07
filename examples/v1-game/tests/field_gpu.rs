@@ -88,10 +88,14 @@ fn field_culling_matches_direct_along_the_flythrough() {
         let mut fewest: Option<(u32, u32)> = None;
         // Counts never hold a frame, so one may retire before its count.
         let mut uncounted = 0;
+        // Ticks where both culled hosts were counted, and of those, where
+        // Occlusion drew at most half of Frustum's list.
+        let (mut paired, mut halved) = (0_u32, 0_u32);
         let extent = [640, 360];
         let mut compared = 0;
         for tick in 1..=LAST_TICK {
             let now = Duration::from_nanos(tick * TICK_NS + 1);
+            let (mut frustum_drawn, mut occlusion_drawn) = (None, None);
             for host in &mut hosts {
                 let report = host.drive(now, None).expect("field tick");
                 assert_eq!(report.tick, tick, "one tick per callback");
@@ -116,17 +120,26 @@ fn field_culling_matches_direct_along_the_flythrough() {
                         if fewest.is_none_or(|(drawn, _)| counts.drawn < drawn) {
                             fewest = Some((counts.drawn, counts.active));
                         }
+                        frustum_drawn = Some(counts.drawn);
                     }
                     (CullMode::Occlusion, Some(counts)) => {
                         assert_eq!(counts.mode, CullMode::Occlusion);
-                        assert!(
-                            counts.late <= counts.drawn && counts.drawn <= counts.active,
-                            "tick {tick}: {counts:?}"
-                        );
+                        assert!(counts.drawn <= counts.active, "tick {tick}: {counts:?}");
+                        occlusion_drawn = Some(counts.drawn);
                     }
                     (CullMode::Frustum | CullMode::Occlusion, None) => uncounted += 1,
                     (mode, counts) => panic!("tick {tick}: {mode:?} reported {counts:?}"),
                 }
+            }
+            // The final list is the frustum list minus slots behind real
+            // depth, so it can never exceed it.
+            if let (Some(frustum), Some(occlusion)) = (frustum_drawn, occlusion_drawn) {
+                assert!(
+                    occlusion <= frustum,
+                    "tick {tick}: Occlusion drew {occlusion} > Frustum {frustum}"
+                );
+                paired += 1;
+                halved += u32::from(occlusion * 2 <= frustum);
             }
             if !sampled(tick, full) {
                 continue;
@@ -158,7 +171,13 @@ fn field_culling_matches_direct_along_the_flythrough() {
         let (drawn, active) = fewest.expect("Frustum counts");
         eprintln!(
             "{compared} frames compared; Frustum drew {drawn} of {active} at its fewest; \
-             {uncounted} culled frames retired before their count"
+             {uncounted} culled frames retired before their count; Occlusion drew at most half \
+             of Frustum on {halved} of {paired} paired ticks"
+        );
+        // It hides work: equality cannot pass unculled.
+        assert!(
+            paired > 0 && halved * 10 >= paired * 9,
+            "Occlusion halved Frustum's list on only {halved} of {paired} ticks"
         );
         assert!(
             drawn > 0 && drawn * 2 < active,

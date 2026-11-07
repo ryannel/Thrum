@@ -10,33 +10,16 @@ pub(crate) struct SceneTimingLayout {
     /// Bit `index` of [`CULLING_PASSES`] is set for each camera culling pass
     /// the frame records exactly once. Frustum: one `camera visibility`
     /// compute pass, timed even when the active prefix is empty. Occlusion:
-    /// the early and late phases, the pyramid and the late forward pass.
+    /// the prepass list, the depth prepass, the pyramid and the final cull.
     culling: u8,
 }
 
-/// [`CULLING_PASSES`] bit of the pyramid build.
-const PYRAMID_BIT: u8 = 0b00100;
-
-/// The camera culling passes `mode` records on an uncontributed frame.
+/// The camera culling passes `mode` records.
 const fn culling_passes(mode: CullMode) -> u8 {
     match mode {
         CullMode::Direct => 0,
         CullMode::Frustum => 0b00001,
         CullMode::Occlusion => 0b11110,
-    }
-}
-
-impl SceneTimingLayout {
-    /// The layout of a frame encoded with a scene contribution attached:
-    /// Occlusion records no pyramid build, as only the skipped late
-    /// classifier would read it.
-    pub(crate) fn contributed(self, contributed: bool) -> Self {
-        let culling = if contributed {
-            self.culling & !PYRAMID_BIT
-        } else {
-            self.culling
-        };
-        Self { culling, ..self }
     }
 }
 
@@ -58,10 +41,10 @@ pub(crate) type PassDurations = ([f64; 11], Option<f64>, Option<f64>);
 /// Every camera culling pass name, in any layout.
 const CULLING_PASSES: [&str; 5] = [
     crate::visibility::PASS,
-    crate::visibility::EARLY_PASS,
+    crate::visibility::PREPASS_LIST_PASS,
+    super::camera_culling::DEPTH_PREPASS_PASS,
     crate::visibility::PYRAMID_PASS,
-    crate::visibility::LATE_PASS,
-    super::camera_culling::FORWARD_LATE_PASS,
+    crate::visibility::FINAL_PASS,
 ];
 
 pub(crate) fn pass_durations(

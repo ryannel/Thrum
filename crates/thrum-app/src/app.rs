@@ -922,8 +922,8 @@ fn profiler_title(
         || format!(" | {:?} culling", sample.culling_mode),
         |counts| {
             format!(
-                " | {:?} culling drew {} ({} late) of {}",
-                counts.mode, counts.drawn, counts.late, counts.active
+                " | {:?} culling drew {} (prepass {}) of {}",
+                counts.mode, counts.drawn, counts.prepass, counts.active
             )
         },
     );
