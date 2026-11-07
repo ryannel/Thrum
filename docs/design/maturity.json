@@ -490,14 +490,14 @@
         "mac": "owner_quiet_91ad52d_baseline_recorded_lifecycle_open",
         "windows": "not_run",
         "browser": "Chrome156_M3Max_Metal_real_tabs_with_input_release_and_manual_pause_pass;_physical_cadence_unqualified",
-        "ios": "iPhone18Pro_iOS27.2_simulator_build_link_startup_and_foreground_smoke_only;_input_and_surface_loss_pending;_no_timings",
+        "ios": "iPhone18Pro_iOS27.2_simulator_build_link_late_acquire_startup_and_foreground_smoke;_off-main_input_and_surface_loss_pending;_no_timings",
         "android": "not_run"
       },
       "diagnostic_measurement": "Quiet/newer history: V1-BOUNDED-FRAMES-2026-11-04.md. CPU/allocations/cadence are tripwires, not gates; lifecycle remains open.",
       "evidence": [
         "../evidence/render/V1-BOUNDED-FRAMES-2026-11-04.md"
       ],
-      "scope": "Core owns clock/lane; renderer owns FrameHost. Browser old-device work stops on loss; detached GPU reconstruction/retry preserves authority/input/pause/solar state. Live Mac loss and simulator input/surface loss stay open; native recording stays G3t."
+      "scope": "Core owns clock/lane; renderer owns FrameHost. Browser old-device work stops on loss; detached GPU reconstruction/retry preserves authority/input/pause/solar state. Live Mac loss and simulator off-main work, input and surface loss stay open; native recording stays G3t."
     },
     "V1_cooked_constant_light": {
       "implementation": "partial_native_accepted_source_product_and_offscreen_visual_publication",

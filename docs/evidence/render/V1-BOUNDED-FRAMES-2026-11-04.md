@@ -68,11 +68,18 @@ lifecycle call, latched input and a frame advanced inside the hide event. Raw: `
 (`tabs-closed-*`, `integrated-tabs*`). The merged checker also passed controls and all 16
 Direct/Frustum comparisons. These are function checks on headless Chrome, not display-cadence evidence.
 
-**Simulator startup:** the app at `ccaca038` built, linked and installed on a fresh iPhone 18 Pro / iOS 27.2 simulator.
-It drew 601 frames through the display link. Screenshots show the game before and after switching to Settings,
-with the same game PID.
-Input and surface-loss recovery remain open, as do live Mac pause, loss and cadence. The shared simulator's
-app-container RPC still timed out. Raw: `tmp/g3b-ios-lifecycle/current/`. Simulator function only.
+**Simulator startup and acquisition:** `examples/v1-game-ios/ios/check-simulator.sh` builds and runs on a
+fresh iPhone 18 Pro / iOS 27.2 simulator and cleans up its own device. The iOS shell advances and encodes
+before requesting a drawable, using the same frame tokens as Chrome. A missing drawable discards the
+optional view without undoing committed ticks. On the simulator it drew 601 frames with 600 completed
+surface samples. The previous build at `ccaca038` also drew 601 frames and returned from Settings with the
+same PID. Raw: `tmp/g3b-ios-lifecycle/{late-acquire,current}/`. Simulator function only. Independent review
+confirmed the token order and identified the remaining UIKit main-thread work and missing recovery from
+unrecoverable surface loss. Input and live Mac pause, loss and cadence also remain open.
+The package check requires the [iPhone ProMotion opt-in](https://developer.apple.com/documentation/bundleresources/information-property-list/cadisableminimumframedurationonphone).
+The build takes the Rust, C and Swift deployment minimum from the app's plist. Clean linkage reports
+iOS simulator 18.0 minimum and SDK 27.2. An older Cargo cache retained a BLAKE3 object targeting 27.2.
+Use a fresh `CARGO_TARGET_DIR` to reproduce the clean link.
 Wasm Clippy runs in `./dev check`; no new expectations or policy changes. The earlier black/lost-sky recording
 in `tmp/g3s-directional/` remains rejected motion evidence.
 
