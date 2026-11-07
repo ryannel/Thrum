@@ -6,6 +6,7 @@ import bisect
 import json
 import math
 import platform
+import random
 import struct
 import zlib
 from pathlib import Path
@@ -13,9 +14,13 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 EVIDENCE = Path(__file__).resolve().parents[4] / 'tmp/g3s-showcase/geometry-v2'
 NX, NZ = 161, 185
-GROUND_TEXTURE_X_METRES = 96
-GROUND_TEXTURE_Z_METRES = 128
-GROUND_TEXTURE_NEAR_Z_METRES = 48
+# Ground albedo: one tileable texture repeated in world space around the fixed camera's foot.
+GROUND_TEXTURE_SIZE = 512
+GROUND_SYNTH_SIZE = 1024         # built at twice the shipped size, then box-filtered in linear light
+GROUND_TILE_METRES = 16.          # one repeat near the camera: 1.56 cm per texel
+GROUND_TILE_CENTRE = (0., 16.)    # camera x, z
+GROUND_TILE_GROWTH_RADIUS = 40.   # beyond this the repeat grows as distance**GROUND_TILE_GROWTH
+GROUND_TILE_GROWTH = .5
 
 
 def sub(a, b):
@@ -136,10 +141,15 @@ def terrain():
                 tris.extend([(a,a+1,a+NX),(a+1,a+NX+1,a+NX)])
             else:
                 tris.extend([(a,a+1,a+NX+1),(a,a+NX+1,a+NX)])
-    uv = [(min(1, max(0, x/GROUND_TEXTURE_X_METRES+.5)),
-           min(1, max(0, (GROUND_TEXTURE_NEAR_Z_METRES-z)/GROUND_TEXTURE_Z_METRES)))
-          for z in zs for x in xs]
+    uv = [ground_uv(x, z) for z in zs for x in xs]
     return p, heightfield_normals(p), uv, tris
+
+
+def ground_uv(x, z):
+    """World-space repeat, enlarged smoothly with distance from the camera so far ground keeps detail."""
+    dx, dz = x-GROUND_TILE_CENTRE[0], z-GROUND_TILE_CENTRE[1]
+    scale = (1+(dx*dx+dz*dz)/GROUND_TILE_GROWTH_RADIUS**2)**(-GROUND_TILE_GROWTH/2)/GROUND_TILE_METRES
+    return dx*scale, -dz*scale
 
 
 def surface_height(mesh,x,z):
@@ -315,35 +325,160 @@ def overview(scene):
     sketch_png(surfaces)
 
 
+def fft(values, inverse=False):
+    """Iterative radix-2 complex FFT of a power-of-two list (unscaled)."""
+    n = len(values)
+    a = list(values)
+    j = 0
+    for i in range(1, n):
+        bit = n >> 1
+        while j & bit:
+            j ^= bit
+            bit >>= 1
+        j |= bit
+        if i < j:
+            a[i], a[j] = a[j], a[i]
+    sign = 1 if inverse else -1
+    length = 2
+    while length <= n:
+        step = complex(math.cos(2*math.pi/length), sign*math.sin(2*math.pi/length))
+        half = length//2
+        twiddles = [1+0j]
+        for _ in range(half-1):
+            twiddles.append(twiddles[-1]*step)
+        for start in range(0, n, length):
+            for k in range(half):
+                u = a[start+k]
+                v = a[start+k+half]*twiddles[k]
+                a[start+k] = u+v
+                a[start+k+half] = u-v
+        length <<= 1
+    return a
+
+
+def spectral_noise(size, amplitude, rng):
+    """Unit-variance tileable isotropic noise: random phases under amplitude(k), k in cycles per tile."""
+    half = size//2
+    rows = []
+    for y in range(size):
+        ky = y if y <= half else y-size
+        row = []
+        for x in range(size):
+            kx = x if x <= half else x-size
+            a = amplitude(math.hypot(kx, ky))
+            row.append(a*complex(rng.gauss(0, 1), rng.gauss(0, 1)) if a else 0j)
+        rows.append(fft(row, True) if any(row) else row)
+    columns = [fft([rows[y][x] for y in range(size)], True) for x in range(size)]
+    flat = [columns[x][y].real for y in range(size) for x in range(size)]
+    mean = sum(flat)/len(flat)
+    std = (sum((v-mean)**2 for v in flat)/len(flat))**.5
+    return [(v-mean)/std for v in flat]
+
+
+def band(low, high, slope):
+    """Amplitude k**-slope between low and high cycles per tile, with smooth half-octave shoulders."""
+    def amplitude(k):
+        if k < low/1.5 or k > high*1.5:
+            return 0.
+        a = k**-slope
+        if k < low:
+            t = (k-low/1.5)/(low-low/1.5); a *= t*t*(3-2*t)
+        if k > high:
+            t = (high*1.5-k)/(high*.5); a *= t*t*(3-2*t)
+        return a
+    return amplitude
+
+
+def upsample(field, cells, size):
+    """Periodic cubic B-spline resample of a cells x cells field to size x size."""
+    taps = []
+    for x in range(size):
+        f = (x+.5)*cells/size - .5
+        i = math.floor(f); t = f-i
+        w = ((1-t)**3/6, (3*t**3-6*t*t+4)/6, (-3*t**3+3*t*t+3*t+1)/6, t**3/6)
+        taps.append(([(i+k-1) % cells for k in range(4)], w))
+    lattice = [field[y*cells:(y+1)*cells] for y in range(cells)]
+    rows = [[sum(w[k]*row[c[k]] for k in range(4)) for c, w in taps] for row in lattice]
+    out = []
+    for c, w in taps:
+        r0, r1, r2, r3 = (rows[k] for k in c)
+        out.extend(w[0]*a+w[1]*b+w[2]*d+w[3]*e for a, b, d, e in zip(r0, r1, r2, r3))
+    return out
+
+
 def ground_albedo():
-    """Local mineral reflectance with a neutral border for the far terrain."""
-    size = 256
+    """Tileable mineral ground: isotropic grain from about 2.7 m down to one texel, per-texel grit and gravel
+    clasts with contact shade. Each channel's linear mean equals the old neutral, so the far ground's average
+    colour and the scene's material factor are unchanged."""
+    size = GROUND_SYNTH_SIZE
     neutral_code = 218
     neutral = ((neutral_code/255+.055)/1.055)**2.4
+    rng = random.Random(20261107)
+    n = size*size
+    texel = GROUND_TILE_METRES/size
+    # Isotropic, tileable spectra with nothing coarser than about 2.7 m (k >= 6 per tile), so no patch marks the repeat.
+    texture = spectral_noise(size, band(16, 400, 1.05), rng)
+    hue = upsample(spectral_noise(128, band(12, 40, .3), rng), 128, size)
+    patch = upsample(spectral_noise(128, band(12, 24, 0), rng), 128, size)
+    broad = upsample(spectral_noise(128, band(6, 16, 1.), rng), 128, size)
+    grit = [rng.random()*2-1 for _ in range(n)]
+    lum = [1 + .12*a + .06*b + .06*g for a, b, g in zip(texture, broad, grit)]
+    red = [l*(1+.05*h) for l, h in zip(lum, hue)]
+    green = [l*(1-.01*h) for l, h in zip(lum, hue)]
+    blue = [l*(1-.07*h) for l, h in zip(lum, hue)]
+    # Gravel: clasts 1.5 to 5 cm across, denser where the patch noise is high (pavement), with contact shade.
+    palette = [(.50, .52, .62), (.62, .60, .64), (.82, .62, .55), (1.18, 1.16, 1.12), (1.08, .98, .86)]
+    clasts = int(110*GROUND_TILE_METRES**2)
+    for _ in range(clasts):
+        cx, cy = rng.random()*size, rng.random()*size
+        if rng.random() > .35 + .3*patch[int(cy)*size+int(cx)]:
+            continue
+        radius = (.75 + 1.85*rng.random()**2) * (.0156/texel)
+        tint = palette[rng.randrange(len(palette))]
+        shade = .9 + .2*rng.random()
+        reach = radius + 1.5
+        for y in range(math.floor(cy-reach), math.ceil(cy+reach)+1):
+            for x in range(math.floor(cx-reach), math.ceil(cx+reach)+1):
+                d = math.hypot(x+.5-cx, y+.5-cy)
+                k = (y % size)*size + x % size
+                if d < radius:
+                    cover = min(1., radius-d+.5)
+                    for channel, value in zip((red, green, blue), tint):
+                        channel[k] += cover*(value*shade - channel[k])
+                elif d < reach:
+                    dim = 1 - .12*(reach-d)/1.5
+                    red[k] *= dim; green[k] *= dim; blue[k] *= dim
     rows = bytearray()
+    channels = []
+    for channel in (red, green, blue):
+        for _ in range(4):
+            mean = sum(channel)/n
+            channel = [min(1., max(0., v*neutral/mean)) for v in channel]
+        channels.append(channel)
+    factor = size//GROUND_TEXTURE_SIZE
+    size = GROUND_TEXTURE_SIZE
+    channels = [[sum(channel[(y*factor+j)*size*factor + x*factor+i] for j in range(factor) for i in range(factor))/factor**2
+                 for y in range(size) for x in range(size)] for channel in channels]
     for y in range(size):
         rows.append(0)
         for x in range(size):
-            u, v = (x+.5)/size, (y+.5)/size
-            edge = min(u, v, 1-u, 1-v)
-            fade = min(1, max(0, 8*(edge-2/size)))
-            fade = fade*fade*(3-2*fade)
-            east = (u-.5)*GROUND_TEXTURE_X_METRES
-            north = GROUND_TEXTURE_NEAR_Z_METRES-v*GROUND_TEXTURE_Z_METRES
-            mineral = .17*noise(east+37,north-13,3.1) + .08*noise(east-3,north+43,.92)
-            grit = .05*noise(east+5,north+11,.43)
-            value = neutral + fade*(mineral+grit)
-            assert 0 <= value <= 1
-            code = round(255*(1.055*value**(1/2.4)-.055))
-            rows.extend((code, code, code))
+            k = y*size+x
+            for channel in channels:
+                rows.append(round(255*(1.055*channel[k]**(1/2.4)-.055)))
     return size, rows, neutral
 
 
-def png(width, height, colour_type, rows):
+def png(width, height, colour_type, rows, up=False):
+    """PNG from filter-0 rows; up=True re-filters each row against the one above (smaller for noisy images)."""
     def chunk(kind, data):
         return struct.pack('>I',len(data))+kind+data+struct.pack('>I',zlib.crc32(kind+data))
+    if up:
+        stride = len(rows)//height
+        lines = [rows[y*stride+1:(y+1)*stride] for y in range(height)]
+        rows = b''.join(b'\x02'+bytes((a-b)&255 for a, b in zip(line, previous))
+                        for line, previous in zip(lines, [bytes(stride-1)]+lines[:-1]))
     header = struct.pack('>IIBBBBB',width,height,8,colour_type,0,0,0)
-    return b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',header)+chunk(b'IDAT',zlib.compress(rows))+chunk(b'IEND',b'')
+    return b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',header)+chunk(b'IDAT',zlib.compress(rows,9 if up else -1))+chunk(b'IEND',b'')
 
 
 def main():
@@ -390,7 +525,7 @@ def main():
     (ROOT/'scene.json').write_text(json.dumps(recipe,indent=2)+'\n')
     # One neutral compression block leaves per-placement linear PBR factors unchanged.
     (ROOT/'white.png').write_bytes(png(4,4,6,(b'\0'+b'\xff'*16)*4))
-    (ROOT/'ground.png').write_bytes(png(size,size,2,albedo))
+    (ROOT/'ground.png').write_bytes(png(size,size,2,albedo,up=True))
     overview(scene)
     report['total_triangles']=sum(v['triangles'] for v in report['meshes'].values())
     assert report['total_triangles']<=64000

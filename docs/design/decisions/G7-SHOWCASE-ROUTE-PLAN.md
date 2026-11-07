@@ -16,9 +16,9 @@ poses read from artifacts, split M1 boxes, and a baseline that survives a clean 
 - M3 @ 3672cf62 (proofs on f38166f0), brief `tmp/g7-showcase/review/M3-REVIEW-BRIEF.md` (local), accept with changes,
   no blocker. Four should-fix findings and six nits, all taken (see the log).
 Milestone: M4 Continuous valley ground material · Updated: 2026-11-07
-Now: M1–M3 done (M3 on main at 55a17bed). M4: 512² source E chosen and reviewed; posted to root for approval
-Next: on root's approval, canonical assets, baseline refresh, evidence and `./dev check`
-Blocked: none. The on-screen Mac walk stays with root (screen control denied once).
+Now: M1–M3 done (M3 on main at 55a17bed). M4: root approved source E; E is in the canonical assets, checks pending
+Next: build, route check with `--save-baseline`, `./dev check`, evidence, then land E on its own
+Blocked: none. The Mac screen walk ran under the owner's grant and root accepted its held views (G7 NOTES).
 
 ## M1 Local cooked valley on both targets: done
 Done when:
@@ -129,14 +129,21 @@ Done when:
 - [ ] Root approves the exact source and the paired views, and only then is the canonical baseline refreshed.
       `./dev check` passes; source identities, captures and the review are recorded in the evidence.
 
-Work:
-- [x] Variant in a scratch copy under `tmp/g7-showcase/m4/`; geometry identity proof. (Variant C; A and B rejected)
+Work (each names the done-when item it serves, numbered from the top):
+- [x] A scratch variant under `tmp/g7-showcase/m4/` whose identity proof shows only UVs and albedo changed. (Variant
+      C; A and B rejected. Serves 1 and 3)
 - [x] Route checks and slow pans on both targets; prospective cooked root and comparisons posted to root.
-      (check-184529, root `451cc790`; NOTES "G7 M4 prospective ground material")
-- [x] Independent review of C (accept with changes; findings taken).
+      (check-184529, root `451cc790`; NOTES "G7 M4 prospective ground material". Serves 2 and 4)
+- [x] Independent review of C: accept with changes, findings taken. (Serves 5)
 - [x] 512² comparison at the same 16 m repeat (E, root `70d2baf8`): stops, 1° pans, route check, paired startup.
-- [x] Independent review of the 512² comparison (E, skip 8 m); chosen source diff posted to root.
-- [ ] Canonical assets, baseline and evidence after root's approval.
+      (Serves 1, 2 and 4)
+- [x] Independent review of the 512² comparison: E chosen, 8 m skipped; the exact source diff posted to root.
+      (Serves 5 and 6)
+- [x] Root approves E's three files, root `70d2baf8` and the unchanged `[1, 1, 1]`. (NOTES "Root verdict on ground
+      variant E and its baseline". Serves 6)
+- [ ] E in `examples/v1-game/assets/showcase/` and `CALIBRATED_ROOT` set; a fresh build of current main passes the
+      route with the refreshed baseline and the night exposure main already has. (Serves 4 and 6)
+- [ ] `./dev check` passes, and the evidence records identities, captures, both reviews and cost. (Serves 6)
 
 ## Log
 - 2026-11-07 Plan written with the design.
