@@ -88,7 +88,8 @@ The native Metal recorder stays in G3t. The later dedicated performance phase ow
 - [ ] **G5 — content-addressed loop.** Stat cache, BLAKE3 CAS, aligned mmap products, glTF meshlets, KTX2 ASTC/BC7,
   atomic manifest, watcher and dev server. Keep only runtime validation the game needs; shipping never links authoring.
   Prove visible asset edits without GPU stalls; track scan/edit-to-visible latency and startup/hitch tripwires.
-  Open: the in-game seam awaits the render owner's final scope check; no Chrome page or iPhone run
+  In game through the render owner's approved `SceneContribution` seam (7 November). Open: CAS garbage collection and
+  EAC iPhone volumes (parked drafts), no Chrome page or physical iPhone run
   ([design](design/decisions/G5-CONTENT-ADDRESSED-LOOP.md),
   [evidence](evidence/integration/G5-CONTENT-ADDRESSED-LOOP-2026-11-06.md)).
 - [ ] **G6 — creator experience and demo controls.** Native/browser text, sliders, toggles and field overlays bound to
