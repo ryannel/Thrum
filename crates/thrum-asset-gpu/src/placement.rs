@@ -8,13 +8,13 @@ use crate::CookedMaterial;
 /// by this fraction of the scale, which absorbs `f32` rounding in hand-built matrices.
 const RIGID_TOLERANCE: f64 = 1e-3;
 
-/// Uniform scales a placement may use. Outside this range the model matrix's inverse (uploaded
-/// for normals) and the mesh's world bounds stop being representable in `f32`.
+/// Uniform scales the kit supports: a conservative range in which the model matrix's inverse
+/// (uploaded for normals), the mesh's world bounds and shading keep their `f32` precision. It is
+/// not where `f32` overflows; the explicit inverse check enforces finiteness.
 const SCALE_RANGE: std::ops::RangeInclusive<f32> = 1e-4..=1e4;
 
-/// Furthest a placement's origin may be from the world origin on any axis, in metres. World
-/// positions beyond it have less than a metre of `f32` precision and their inverse transforms
-/// overflow at small scales.
+/// Furthest the kit supports a placement's origin from the world origin on any axis, in metres:
+/// a conservative range, since `f32` world positions lose precision with distance.
 const MAX_DISTANCE: f64 = 1e6;
 
 /// A cooked mesh, its base-colour texture and where it stands in the world.
@@ -256,9 +256,8 @@ impl fmt::Display for PlacementError {
             Fault::ScaleOutOfRange(scale) => {
                 return write!(
                     f,
-                    "scales the mesh by {scale}, outside {}–{}; resize the mesh in its source \
-                     file so that its scale stays in that range, where its transform's inverse \
-                     and world bounds are representable",
+                    "scales the mesh by {scale}, outside the supported {}–{}; resize the mesh \
+                     in its source file so that its scale stays in that range",
                     SCALE_RANGE.start(),
                     SCALE_RANGE.end()
                 );
@@ -267,8 +266,8 @@ impl fmt::Display for PlacementError {
                 return write!(
                     f,
                     "places its origin at ({x}, {y}, {z}), more than {MAX_DISTANCE} m from the \
-                     world origin on an axis; move the scene nearer the origin, where positions \
-                     keep their precision"
+                     world origin on an axis, beyond the supported range; move the scene nearer \
+                     the origin, where positions keep their precision"
                 );
             }
             Fault::NotInvertible => f.write_str("has a transform with no representable inverse"),

@@ -58,6 +58,28 @@ class SceneResolution(unittest.TestCase):
             with self.assertRaisesRegex(SceneError, f"builds {len(binaries)} binaries \\({found}\\)"):
                 resolve(self.root, "examples/sunset", self.metadata(scene))
 
+    def test_a_binary_named_like_another_members_binary_is_refused(self):
+        # xtask builds the scene and thrum-cook into one target/release, so a scene binary named
+        # thrum-cook would replace the cooker it then runs as both programs.
+        cooker = package(self.root, "crates/thrum-cook", "thrum-cook", ["thrum-cook"])
+        game = package(self.root, "examples/v1-game", "v1-game", ["v1-game"])
+        for name in ["thrum-cook", "v1-game"]:
+            scene = package(self.root, "examples/sunset", "thrum-sunset", [name])
+            with self.assertRaisesRegex(SceneError, f"names its binary {name}, which .* also builds"):
+                resolve(self.root, "examples/sunset", self.metadata(scene, cooker, game))
+
+    def test_a_colliding_binary_leaves_the_lockfile_alone(self):
+        cooker = package(self.root, "crates/thrum-cook", "thrum-cook", ["thrum-cook"])
+        scene = package(self.root, "examples/sunset", "thrum-sunset", ["thrum-cook"])
+        with mock.patch.object(scene_package, "workspace_metadata",
+                               return_value=self.metadata(scene, cooker)), \
+                mock.patch.object(scene_package, "lockfile_current") as current, \
+                mock.patch.object(scene_package.subprocess, "run") as run, \
+                mock.patch("sys.stderr"):
+            self.assertEqual(scene_package.main(["--lock", "examples/sunset"], self.root), 1)
+        current.assert_not_called()
+        run.assert_not_called()
+
     def test_a_folder_without_a_manifest_is_refused(self):
         with self.assertRaisesRegex(SceneError, "has no Cargo.toml"):
             resolve(self.root, "examples/missing", self.metadata())
