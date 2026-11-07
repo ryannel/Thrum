@@ -1,7 +1,7 @@
 # Atmosphere milestones
 
 Design: [ATMOSPHERE.md](ATMOSPHERE.md)
-Reviews: Optical design and plan over `a91cdd0e`, final design `f9d0c12a` and plan `c3cc5748` · [optical brief](#optical-review-brief) · initial changes required, final M1 implementation cleared. Frame graph and ownership at the same revisions · [graph brief](#graph-review-brief) · initial changes required, final design cleared. First valley captures, Metal build `dfae5b21` and Chrome Wasm `bc15ea7d` (SHA-256 prefixes) · [capture brief](#capture-review-brief) · held ground view passes, M1 remains open.
+Reviews: Optical design and plan over `a91cdd0e`, final design `f9d0c12a` and plan `c3cc5748` · [optical brief](#optical-review-brief) · initial changes required, final M1 implementation cleared. Frame graph and ownership at the same revisions · [graph brief](#graph-review-brief) · initial changes required, final design cleared. First valley captures, Metal build `dfae5b21` and Chrome Wasm `bc15ea7d` (SHA-256 prefixes) · [capture brief](#capture-review-brief) · held ground view passes, M1 remains open. Chrome late-twilight Wasm `134e271c` · [sweep brief](#sweep-review-brief) · silhouette and reflection visible, warm contour and live motion open.
 Updated: 2026-11-07
 Milestone: M1 moonless midnight
 Now: the held Metal and Chrome valley is legible at midnight. Metal sky, incident meter and finite aerial transport pass the f64 oracle.
@@ -77,6 +77,19 @@ reviewer rechecked the finite-shell revision. The GPU and in-game checks are ope
 > bc15ea7de14271d5332dfff37136e5d699a02ed5a195c86e8911d455552b5631).
 > Include its phase-scene-midnight in the visual inspection if able, and scope
 > evidence correctly.
+
+### Sweep review brief
+
+> Read-only independent visual review for Thrum M1. Repo /Users/ryannel/Workspace/thrum,
+> .agents/skills/engine-module-design/references/review.md. Raw Chrome real cooked-valley
+> samples at tmp/g3s-showcase/night-design/m1-transport/chrome-late-front/ (run.json,
+> valley.json, valley-late-*.png, valley-phase-upslope-midnight.png, contact.png,
+> sampled-late-twilight.mp4). Requirements: dark nonzero sky, legible ridge/ground,
+> reflected sky and visible diffuse rock at midnight, and smooth solar colour and
+> exposure transition from sunset through moonless night. Point out any nonphysical
+> contours, shimmer, plateaus or jumps by image/time and distinguish cadence claims
+> from sampled edits. Inspect at native scale and sequence directly where available.
+> No file edits, GPU runs or delegation. Return defect-first per-cue pass/fail/can't tell.
 
 ## Log
 

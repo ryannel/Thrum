@@ -109,7 +109,13 @@ The Codex goal remains active. Its attachment is
   `node tmp/g3s-showcase/night-design/m1-transport/chrome-late-twilight-front.mjs --case valley --output <new-directory>`
   with the built default page. The sampled clip, contact sheet and pixel
   rows are in `m1-transport/chrome-late-front/`. These are held edits.
-  Record live motion and the corresponding Metal upslope capture next.
+  Independent review found a thin warm S-shaped contour on the metal ball
+  in `late-03`–`late-11`. Reproject the reflected direction into the forward
+  sky and isolate the LUT from cubemap filtering before changing it. The
+  diffuse rock's lower edge is readable, with weak contrast over the ground.
+  At +12° the rock clips the frame. Use a shallower upslope angle with both
+  materials visible, then capture it on Metal and Chrome. Record live
+  motion separately.
 - Raw files in `tmp/g3s-showcase/night-design/`: native `night-first/`, Chrome
   `m1-chrome-valley/` and `m1-integrated-chrome/`, the workspace log
   `m1-integrated-dev-check.log`, scalar reference `mixed-2.csv`, and checked profile
