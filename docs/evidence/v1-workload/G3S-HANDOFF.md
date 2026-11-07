@@ -103,6 +103,12 @@ crossing clip](g3s-first-light/solar-crossing.mp4) runs at 24 sampled frames/s.
   item; a per-frame horizon-angle map is the scalable form.
 - The penumbra's +18% pass-sum. Gathered fetches and a lit early-out are untried.
 
+**G7 dependencies.** The exit scene needs the cooked valley in Chrome, and Chrome renders only the diagnostic
+scene today. The Wasm dev-server client from G5 ran end to end in Node only. Chrome authored-content
+consumption is therefore G7's first slice: fetch the cooked products into the browser host, activate them through
+the same `SceneContribution` seam, and run the browser check on the valley. The shared demo panel waits for G6's
+typed controls (see `tmp/g6-boundary/NOTES.md`). Until they land, keep the existing solar slider.
+
 Keep the same host Sun/time and the fixed valley camera as the comparison. Inspect
 physical radiance and displayed colour independently. Use the checked CC0 Kiara photos
 under `tmp/g3s-showcase/reference/` for look only. The provenance JSON is beside them.

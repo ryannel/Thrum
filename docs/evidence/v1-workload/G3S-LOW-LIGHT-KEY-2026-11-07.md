@@ -24,6 +24,8 @@ G3s twilight item.
 - **Captures.** Native Metal captures have the same floor mean at noon (113) and sunset (112). Dawn falls from
   120 to 70 and twilight from 121 to 70. The 97-sample solar crossing matches main frame for frame until the
   meter drops below 1,000 lux. After that the floor eases from 119 to 110 with no step.
+- **Chrome.** The WebGPU `sky-reflections` case passed with Wasm SHA-256
+  `70f5bfcb3bdfd9d4cdbd989f4d8b7fef04bc4e726418e59e001af3d6b6d727bd`.
 - **Continuity.** The key is a smooth function of the metered illuminance, which already varies continuously
   with the Sun. It adds no temporal state.
 
