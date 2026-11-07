@@ -32,8 +32,8 @@ design's *Seams* list. Some milestones have further waits:
 - M4 and M6 wait for G3t M3.
 - M8 waits for G3t M11 and G3t seam 1.
 - D9.1's launch-to-ready split can be commissioned once G3t M0's counters exist, ahead of the rest of M9.
-- M10's upstream contribution under gfx-rs/wgpu#8526 waits for the owner's approval. The pinned patch and the
-  metallib cook do not.
+- The upstream contribution (U1) does not gate V1. It follows D9.1 and the metallib and pre-warm layer, and each
+  public post waits for the owner's OK.
 
 ## Game outcomes
 
@@ -357,8 +357,26 @@ Work:
 - [ ] wgpu-hal Metal `PipelineCache`, validation key, wgpu-core Metal `adapter_key` and the archive-miss option,
       pinned to 30.0.1; the harvest run on each shipped device (→D10.2).
 - [ ] Rejection row and launch timing (→D10.3, D10.4).
-- [ ] Upstream contribution prepared under gfx-rs/wgpu#8526 with the existing contributor. It is submitted only
-      with the owner's approval.
+
+## U1 Upstream Metal pipeline cache (later, not V1-gating): pending
+
+Starts after D9.1 and after M10's metallib and pre-warm layer. It does not gate V1 or M11. It follows G3t seam 5's
+rules: the owner writes every public description and comment, and nothing is posted without the owner's OK on each
+post.
+
+Done when:
+- [ ] U1.1 The owner has posted a coordination comment on gfx-rs/wgpu#8526 to the contributor who proposed the design,
+      and the split of work is agreed there.
+- [ ] U1.2 A Metal-only change against wgpu trunk has tests in wgpu's GPU suite: a cache round-trip, rejection of
+      corrupt or mismatched data, and a warm hit under fail-on-miss.
+- [ ] U1.3 A full `cargo xtask test` passes on this Mac, an independent review approves, and the owner has walked
+      through the change.
+- [ ] U1.4 The owner submits it with their own description.
+
+Work:
+- [ ] Rebase the pinned patch's cache onto trunk, Metal only (→U1.2).
+- [ ] GPU-suite tests (→U1.2).
+- [ ] Test run, review and walkthrough notes (→U1.3).
 
 ## M11 Paired proof run: pending
 
@@ -406,7 +424,8 @@ That is **22.5 build days**, plus 1–2 days of review and seam turnaround.
 - *Two agents, one per plan:* about **23–24 working days** from seam approval to both paired records. G4 waits for
   G3t M3 around day 6 and for G3t M11 around day 13.
 - *Four agents on disjoint files, following both parallel tables:* about **15–16 days**, with M10 on its own files.
-- *Add-ons:* upstream review of #8526 may take longer than the build; the pinned patch keeps the date independent of it.
+- *Not in the date:* U1, the upstream contribution, is later and does not gate V1; its timing depends on #8526's
+  review.
 - *Largest date risks:* G3t M2–M3 (frame runtime), seam 1, the third forward target across three owners, and the
   render-extent change. That change raises pixel work 9× at the window and 33× full screen before the governor
   lands.
@@ -472,3 +491,6 @@ Revision 1 said 9.5–11.5 days for G4. Reviewers estimated 13–16 days.
   the sizes buffer, the full Metal cache patch scope and per-device archive sources. M10 becomes 5.5 days.
 - 2026-11-07 Revision 5b adds the overseer's 22:30 points: parallel pipeline pre-warm (D9.4), the cook's MSL match
   check against wgpu-hal's runtime MSL, and the order measure → metallibs plus pre-warm → Metal `PIPELINE_CACHE`.
+- 2026-11-07 Revision 6 moves the upstream Metal `PIPELINE_CACHE` contribution out of M10 into U1, a later item that
+  does not gate V1, with the owner's rules (coordination first, Metal only on trunk, GPU-suite tests, `cargo xtask
+  test`, review, owner walkthrough, owner-written posts). M10 keeps the pinned patch for V1's archives.
