@@ -318,22 +318,23 @@
       "scope": "A Wasm-bindgen canvas adapter owns WebGPU surface acquisition, configuration and presentation; the serial FrameHost now encodes its scene before acquiring the drawable and appends present to the same encoder. Missing drawables discard the scene and flush staged uploads without publishing temporal history. Chrome runtime evidence predates this change. Hidden-time pause, queued-tick drain, counted RAF timestamp clamp, explicit visible overload/refused-tick recovery, conditional acquisition and deferred resize preserve authority progress without silently applying refused wall-time ticks. Cooked hot reload, actual background-tab visibility, surface loss/device recreation, full browser callback cost, long-run memory, visual acceptance, non-Chrome browsers, physical iPhone rendering and sustained device budgets remain open."
     },
     "V1_ios_sim_surface": {
-      "implementation": "partial_thin_uikit_scene_bridge_and_serial_shared_v1_frame_host",
-      "functional_validation": "xcode_27_2_iphone_13_ios_27_2_simulator_600_completed_surface_samples_and_visible_scene; ios_target_strict_clippy_and_unsigned_app_link_pass",
+      "implementation": "partial_off_main_world_lane_and_render_owner_with_epoch_lease_touch_stick_and_surface_recovery",
+      "functional_validation": "fresh_iphone_18_pro_ios_27_2_simulator_route_passes_off_main_threads_5s_held_section_without_uikit_wait_denied_vs_missing_replacement_stalled_and_raced_present_recovery_background_foreground_same_pid_world_tick_real_hid_touch_moves_committed_actor_visible_and_stale_old_window_events_0m; ios_target_strict_clippy_and_unsigned_app_link_pass",
       "experienced_quality": "synthetic_lit_grid_and_fixed_aspect_portrait_bars_inspected_not_v1_visual_acceptance",
       "platform_performance": {
         "mac": "host_m3_max_only_not_native_mac_window_qualification",
         "windows": "not_run",
         "browser": "separate_chrome_webgpu_diagnostic_runs",
-        "ios": "iphone_13_simulator_only_not_physical_device_budget",
+        "ios": "simulator_function_only_not_physical_device_budget",
         "android": "not_run"
       },
       "diagnostic_measurement": "Xcode 27.2 iOS 27.2 iPhone 13 simulator on Apple M3 Max, Apple iOS simulator GPU, Bgra8Unorm 1170x2289 surface: 602 callbacks, 601 presented, 600 completed surface samples, 602 committed ticks, zero unavailable/overload/refused/shed/report drops. Host drive wall p50/p95 2.215/3.770 ms, CPU tick 117.1/150.5 us, encode 21.0/51.4 us. GPU timestamp queries unavailable. No physical-device, thermal, power or sustained budget claim.",
       "evidence": [
         "../evidence/render/V1-IOS-SIM-2026-11-04.md",
-        "../evidence/render/V1-IOS-SIM-2026-11-04.png"
+        "../evidence/render/V1-IOS-SIM-2026-11-04.png",
+        "../evidence/render/G3B-IOS-SIM-ROUTE-2026-11-07.md"
       ],
-      "scope": "A separate static-library UIKit shell attaches the Winit window to its active UIWindowScene through a synchronous borrowed UIView bridge, and owns only lifecycle, drawable acquisition and presentation. The shared V1 fixed-step host runs the same 10k/1.5k-moving world, clustered scene and two Sun cascades. Hidden/overload time is explicitly excluded or counted. One visible 600-frame simulator run passes; actual background/resume, surface/device loss, touch input, cooked hot reload, physical iPhone and sustained device/visual budgets remain open."
+      "scope": "A separate static-library UIKit shell attaches the Winit window to its active UIWindowScene through a synchronous borrowed UIView bridge, and owns only lifecycle, drawable acquisition and presentation. The shared V1 fixed-step host runs the same 10k/1.5k-moving world, clustered scene and two Sun cascades. Hidden/overload time is explicitly excluded or counted. G3b (7 Nov) moved world and rendering off UIKit: UIKit forwards targets, touches and lifecycle; the world lane ticks; a render owner acquires late under an epoch lease with an exact one-present race bound. The fresh-simulator route exercises real background/foreground, surface replacement (plain, stalled, raced), denied drawables and real HID touch through production admission. Device loss, resize/rotation, cooked hot reload, physical iPhone and sustained device/visual budgets remain open."
     },
     "V1_local_player_input": {
       "implementation": "partial_one_local_peer_keyboard_axes_through_shared_fixed_tick_input_frame_admission",

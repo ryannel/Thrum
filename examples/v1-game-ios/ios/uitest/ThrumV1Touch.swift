@@ -26,14 +26,6 @@ final class ThrumV1Touch: XCTestCase {
         origin.press(forDuration: 0.1, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: 0.5)
     }
 
-    /// Drag right 200 pt and hold three seconds: the controlled actor drives
-    /// sideways far enough to leave the grid visibly, then stops on release.
-    func testDrive() {
-        let (_, origin, _) = start()
-        let end = origin.withOffset(CGVector(dx: 150, dy: 0))
-        origin.press(forDuration: 0.1, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: 3)
-    }
-
     /// Drag up 200 pt and hold ten seconds while the route backgrounds the app
     /// or replaces its surface, then release.
     func testHold() {
