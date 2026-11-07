@@ -117,7 +117,14 @@ fn field_culling_matches_direct_along_the_flythrough() {
                             fewest = Some((counts.drawn, counts.active));
                         }
                     }
-                    (CullMode::Frustum, None) => uncounted += 1,
+                    (CullMode::Occlusion, Some(counts)) => {
+                        assert_eq!(counts.mode, CullMode::Occlusion);
+                        assert!(
+                            counts.late <= counts.drawn && counts.drawn <= counts.active,
+                            "tick {tick}: {counts:?}"
+                        );
+                    }
+                    (CullMode::Frustum | CullMode::Occlusion, None) => uncounted += 1,
                     (mode, counts) => panic!("tick {tick}: {mode:?} reported {counts:?}"),
                 }
             }
@@ -151,7 +158,7 @@ fn field_culling_matches_direct_along_the_flythrough() {
         let (drawn, active) = fewest.expect("Frustum counts");
         eprintln!(
             "{compared} frames compared; Frustum drew {drawn} of {active} at its fewest; \
-             {uncounted} of {LAST_TICK} Frustum frames retired before their count"
+             {uncounted} culled frames retired before their count"
         );
         assert!(
             drawn > 0 && drawn * 2 < active,
