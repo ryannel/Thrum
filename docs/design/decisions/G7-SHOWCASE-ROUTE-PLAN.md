@@ -10,8 +10,8 @@ poses read from artifacts, split M1 boxes, and a baseline that survives a clean 
 - M1 fixes @ f8c46d49, same reviewer, brief: the fix list in its follow-up (report
   `tmp/g7-showcase/review/M1-REREVIEW-REPORT.md`, local), accept. Five wording and guard points, all taken.
 Milestone: M2 Repeatable route and first baseline · Updated: 2026-11-07
-Now: M1 done. M2's baseline is in; its two seams are next
-Next: native capture route seam and checker route case, each exact diff to root before pushing
+Now: M2 built: both seams, preset-driven frames on both targets, and the replaced baseline. Seam diffs are with root
+Next: root's verdict on the exact seam diffs, then the independent M2 review
 Blocked: none. The on-screen Mac walk waits on screen control (one request denied).
 
 ## M1 Local cooked valley on both targets: done
@@ -49,27 +49,28 @@ Work:
 
 ## M2 Repeatable route and first baseline: in progress
 Done when:
-- [x] Two consecutive clean `check` runs agree per stop on both targets. (Three clean building runs after the
-      rebase; the last differs from the baseline by at most 0.005)
+- [x] Two consecutive clean `check` runs agree per stop on both targets. (M1: three clean building runs after the
+      rebase. M2: check-163503 and check-163650, the second within 0.005 of the baseline over 12 frames)
 - [x] The per-stop 32×18 baseline grids are checked in at a path root approves, so a clean checkout can compare
       against them. (`docs/evidence/v1-workload/g7-showcase-baseline.json`, with identity, build and thresholds)
-- [x] The baseline is saved: raw frames in its run directory (`tmp/g7-showcase/runs/check-20261107-161243/`), and
-      the contact sheet and per-stop numbers in evidence.
+- [x] The baseline is saved: raw frames in its run directory (`tmp/g7-showcase/runs/check-20261107-163503/`, which
+      replaced M1's `check-20261107-161243`), and the contact sheet and per-stop numbers in evidence.
 - [x] `check` reports each stop's difference from the baseline when the identity matches. A deliberate change is
       reported as a difference. (Shown on frames: the checker's retinted noon frame differs by 34.35 in the
       maximum cell, against 0.005 unedited. Not yet shown as a whole run from an edited source, which needs a
-      source option; that comes with the seams.)
-- [ ] Route frames come from the preset files on both targets, including Chrome's 17.4 h clear-Sun stop, through
-      the two seams root approved in principle. A seam not yet landed is recorded as open, and its target uses the matched poses.
+      source option in the script; recorded as still open.)
+- [x] Route frames come from the preset files on both targets, including Chrome's 17.4 h clear-Sun stop, through
+      the two seams root approved in principle. (Native `THRUM_CAPTURE_PARAMS`, checker `--case route`; Chrome's
+      17.4 h stop reads 0.026/0.039/0.092 against native. Pushing waits on root's verdict on the exact diffs.)
 - [ ] An independent milestone review agrees, and what final G7 still needs is recorded.
 
 Work:
 - [x] Post the seams to `tmp/g7-boundary/NOTES.md`. Root approved both in principle.
-- [ ] Native capture seam (after M1). Bring the exact diff to root before pushing.
-- [ ] Checker route case (after root's real-tab checkpoint is on main). Retest G3c's 16-view field oracle alongside it,
-      and bring the exact diff to root before pushing.
+- [x] Native capture seam (after M1). Exact diff with root (`tmp/g7-boundary/m2-capture-seam.diff`).
+- [x] Checker route case (after root's real-tab checkpoint, 20a59f47). G3c's 16-view field oracle retested
+      byte-equal. Exact diff with root (`tmp/g7-boundary/m2-checker-route.diff`).
 - [x] Add the baseline save and compare (`check --save-baseline`, automatic compare).
-- [ ] Switch the stop frames to the preset-driven path. Recalibrate only if the numbers move.
+- [x] Switch the stop frames to the preset-driven path. Recalibrate only if the numbers move. (They did not.)
 
 ## Log
 - 2026-11-07 Plan written with the design.
@@ -101,3 +102,10 @@ Work:
   shift by direction and stop, and says what the positive control does not cover. The script now refuses its
   thresholds on any source root other than the calibrated one. A check at that guard passed against the baseline.
   M1 done.
+- 2026-11-07 M1 closed on main at 43f039f0; the overseer audited and accepted it.
+- 2026-11-07 Built both seams and tested each. Native: refusals, unchanged output without the option over 134 files,
+  and exact poses. The controls snap 17.4 h to the 0.01 h slider stop, so two route frames differ slightly from the
+  matched-pose captures; Chrome snaps the same way. Checker: 6/6 stops, a typo'd preset fails, and the field oracle
+  is byte-equal. Sent the exact diffs to root. Switched `check` to preset-driven frames on both targets, versioned
+  the frame source in the baseline identity, and replaced the baseline from a clean building run. The thresholds
+  stand, and the clear-Sun stop has no negative control because the checker has no diagnostic phase at 17.4 h.
