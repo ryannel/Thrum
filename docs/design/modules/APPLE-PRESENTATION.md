@@ -298,13 +298,9 @@ current display shader is a pre-AA diagnostic. So TAAU at scale 1.0 becomes the 
 **Archives and cold start.**
 - G4's native objects are MetalFX scalers. They take no binary archive, and their cost is synchronous creation in
   generation builds.
-- M9 first measures launch-to-ready, cold against warm, split into naga translation, MSL compile and pipeline state
-  creation (G3t seam 5).
-- M10 then delivers both layers of seam 5:
-  - offline metallibs loaded through `PASSTHROUGH_SHADERS`, with a counted WGSL fallback;
-  - Metal `PIPELINE_CACHE` over `MTLBinaryArchive`, carried as a pinned wgpu patch.
-- M10 proves an archive hit with `failOnBinaryArchiveMiss`, and proves that a stale archive or a mismatched metallib
-  is handled at build, not in play.
+- M9 takes a planning baseline of launch-to-ready. M10 then builds and proves the four pieces of G3t seam 5: offline
+  metallibs, parallel pre-warm and local archive qualification, all within V1. Their details are designed when M10
+  starts.
 - Contributing the cache upstream (gfx-rs/wgpu#8526) is a later item that does not gate V1, under the owner's rules in
   G3t seam 5.
 
