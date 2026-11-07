@@ -16,8 +16,8 @@ poses read from artifacts, split M1 boxes, and a baseline that survives a clean 
 - M3 @ 3672cf62 (proofs on f38166f0), brief `tmp/g7-showcase/review/M3-REVIEW-BRIEF.md` (local), accept with changes,
   no blocker. Four should-fix findings and six nits, all taken (see the log).
 Milestone: M4 Continuous valley ground material · Updated: 2026-11-07
-Now: M1–M3 done (M3 on main at 55a17bed). M4 started: author the ground variant in a scratch copy
-Next: cook it on both targets, watch it held and in a slow pan, review, then root's baseline refresh
+Now: M1–M3 done (M3 on main at 55a17bed). M4: 512² source E chosen and reviewed; posted to root for approval
+Next: on root's approval, canonical assets, baseline refresh, evidence and `./dev check`
 Blocked: none. The on-screen Mac walk stays with root (screen control denied once).
 
 ## M1 Local cooked valley on both targets: done
@@ -130,9 +130,12 @@ Done when:
       `./dev check` passes; source identities, captures and the review are recorded in the evidence.
 
 Work:
-- [ ] Variant in a scratch copy under `tmp/g7-showcase/m4/`; geometry identity proof.
-- [ ] Route checks and slow pans on both targets; prospective cooked root and comparisons posted to root.
-- [ ] Independent review.
+- [x] Variant in a scratch copy under `tmp/g7-showcase/m4/`; geometry identity proof. (Variant C; A and B rejected)
+- [x] Route checks and slow pans on both targets; prospective cooked root and comparisons posted to root.
+      (check-184529, root `451cc790`; NOTES "G7 M4 prospective ground material")
+- [x] Independent review of C (accept with changes; findings taken).
+- [x] 512² comparison at the same 16 m repeat (E, root `70d2baf8`): stops, 1° pans, route check, paired startup.
+- [x] Independent review of the 512² comparison (E, skip 8 m); chosen source diff posted to root.
 - [ ] Canonical assets, baseline and evidence after root's approval.
 
 ## Log
@@ -224,3 +227,11 @@ Work:
     delta); the Fetching median names its 27 pages; a refused canonical save leaves no run directory; the sheet names
     its runs and rows; the parity row says what binds; the cleanup fault is recorded for both cases.
 - 2026-11-07 M4 added from root's ground-material commission after the overseer audited M3.
+- 2026-11-07 M4 variants. A (value-noise octaves, camera-centred tiled UVs) printed a lattice on the far slopes; B
+  (isotropic spectral grain only) left the far ground flat; C adds a weak 1–2.7 m band and passes the route check on
+  both targets (root `451cc790`). The game snaps yaw to 1°, so the real-game pans are 1° steps. Posted to root.
+- 2026-11-07 Review of C: accept with changes. Scoped the band claim, extended the identity proof, added low-Sun
+  canonical pan controls and wrote the PNG with Up filters (same pixels). Root then asked for a 512² tile before any
+  canonical change, as C adds 5.24 MB to the Portable upload. E (C's field box-filtered to 512², same repeat) keeps
+  far and mid detail and loses 27% of near gradient energy; it uploads 2.93 MB against C's 7.12 MB, and its paired cold first draw was about 75 ms sooner on localhost.
+  The review chose E and advised against an 8 m repeat. Posted E to root.
