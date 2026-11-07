@@ -152,13 +152,47 @@ The Codex goal remains active. Its attachment is
   there for reproduction.
   The +12° midnight camera cropped the rock. The matched +7° capture keeps
   both materials in frame and is now in the native and Chrome capture routes.
-  A separate live Chrome world advanced from 18.26 to 20.22 h across 49
-  compositor captures. Its overload counter rose from 0 to 24 during
-  the concurrent workspace check. This proves time advanced without slider
-  steps. Smooth presentation remains open. See `current-live-contact.png`,
-  `current-live-sampled.mp4` and `current-live-chrome/live.ndjson` under the
-  same scratch folder. Repeat `chrome-natural-twilight.mjs --case valley`
-  with a fresh output directory and without our own tests running.
+  On the foreground M3 Max window, 180 compositor samples over 36 s show
+  the natural progression into night. The run reports 4,200 presents,
+  4,429 render callbacks, 117 dropped surfaces and zero world overloads
+  under shared load 45–48. The early shadow handoff loses the cast-shadow
+  tails in one sample and then the warm rock key, while the sky and
+  reflected sky continue smoothly. The camera is fixed. Sample spacing
+  cannot resolve the shadow edge between those pictures. Chrome's 52
+  natural compositor samples cover 18.26–20.26 h. Of 41 world overloads,
+  39 fall inside screenshot brackets. A same-Wasm repeat polling only
+  the game report has zero overloads and eight shed views over the
+  observed interval under load 52–62. Independent review passes the
+  late-twilight colour progression and readable night on both targets.
+  A Metal replay at the live camera samples all 82 consecutive ticks
+  from 17.651 to 17.759 h. Four foreground patches darken across the
+  crossing, with a largest single-tick change of 3.19 RGB codes.
+  The independent finite-disk terrain ray trace falls from full to
+  0.80 at 17.680 h, 0.42 at 17.695 h, 0.08 at 17.710 h, and zero by
+  17.725 h. Chrome's 37 held views follow the same terrain transition.
+  The independent reviewer sampled the object shadow tails separately.
+  One Metal patch at (1100,559) jumps from 97.0 to 108.7 RGB codes at
+  17.6913 → 17.6927 h. The Chrome tail jumps from 96.9 to 108.5 at
+  17.692 → 17.695 h. The reviewer added both object meshes to the CPU
+  trace. Each affected tail stays fully blocked across 2,048 disk rays
+  at both Metal ticks. Debug colour channels show the near-map blocker
+  search jumping from local to distant range while the terrain horizon
+  fades continuously. The closest-to-light depth is masking the local
+  blocker as the ridge enters the map. A scratch 64 m light-depth
+  restriction keeps the sphere tail at 97.0 → 97.1 and the rock tail
+  at 101.2 → 101.1 across the failing tick. Dawn, noon, sunset, late
+  twilight and midnight stills are byte-identical. M1 stays open. The
+  scratch restriction is diagnostic. A general fix must preserve
+  distant blockers and the synthetic caster depth contract.
+  Physical presentation cadence remains open. Raw inputs are under
+  `live-metal-foreground-retry/`, `final-live-chrome/` and
+  `idle-live-chrome/`; see also `shadow-step-{metal,chrome}-pixels.log`
+  `shadow-step-blockers-pixels.log`, and `shadow-step-local-depth-pixels.log`
+  in the same scratch directory.
+  Rerun
+  `run-visible-window.sh <fresh-name>`, or run
+  `chrome-natural-twilight.mjs` and `chrome-natural-unsampled.mjs` with
+  `--case valley --output <fresh-directory>`.
 - In matched nightglow-off and on builds, the two midnight cameras go
   from black to mean RGB codes 63.5–66.4 (sky), 25.0–25.4 (ground),
   47.2–47.9 (metal highlight), and 25.4–25.6 (diffuse rock) across Metal
