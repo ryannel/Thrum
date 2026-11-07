@@ -686,8 +686,14 @@ mod metal {
             .submit(None)
             .expect("no optional view");
         let frame = host.extract_serial(Duration::ZERO, 0, 0).expect("extract");
-        host.submit_extracted(slot, &mut report, None, frame, super::super::Instant::now())
-            .expect("slot submission");
+        host.submit_extracted(
+            slot,
+            &mut report,
+            None,
+            frame,
+            super::super::super::Instant::now(),
+        )
+        .expect("slot submission");
         let deadline = std::time::Instant::now() + Duration::from_secs(10);
         loop {
             if let Some(sample) = host.poll_completed().expect("poll Metal frame") {
@@ -723,8 +729,14 @@ mod metal {
                 .submit(None)
                 .expect("no optional view");
             let frame = host.extract_serial(Duration::ZERO, 0, 0).expect("extract");
-            host.submit_extracted(0, &mut report, None, frame, super::super::Instant::now())
-                .expect("frame A");
+            host.submit_extracted(
+                0,
+                &mut report,
+                None,
+                frame,
+                super::super::super::Instant::now(),
+            )
+            .expect("frame A");
             let real = host.slots[0]
                 .target
                 .defer_culling_mapping()
@@ -759,8 +771,14 @@ mod metal {
                 .submit(None)
                 .expect("no optional view");
             let frame = host.extract_serial(Duration::ZERO, 0, 0).expect("extract");
-            host.submit_extracted(0, &mut report, None, frame, super::super::Instant::now())
-                .expect("frame B");
+            host.submit_extracted(
+                0,
+                &mut report,
+                None,
+                frame,
+                super::super::super::Instant::now(),
+            )
+            .expect("frame B");
             host.slots[0].target.reveal_culling_mapping(&real);
             let deadline = std::time::Instant::now() + Duration::from_secs(10);
             let b = loop {
