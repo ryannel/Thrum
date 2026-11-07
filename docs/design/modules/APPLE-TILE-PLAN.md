@@ -461,3 +461,5 @@ That is **15.5 build days**, plus 1–2 days of review and seam turnaround, for 
   each shipped device.
 - 2026-11-07 Revision 5b adds parallel pre-warm, the cook's MSL match check and the measure → metallib plus pre-warm →
   `PIPELINE_CACHE` order to seam 5.
+- 2026-11-07 Revision 6 makes seam 5's upstream contribution a later, non-V1-gating item under the owner's rules. The
+  pinned patch delivers V1's archives.

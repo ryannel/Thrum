@@ -244,8 +244,8 @@ cluster-bounds buffers are single buffers that both slots share, ordered by `que
 **Archives.** V1 has no tier-3 pipeline that can use an `MTLBinaryArchive`: classic MetalFX scalers take no archive,
 and wgpu 30 cannot build pipelines from native objects or from a Metal cache. Seam 5 closes that gap for
 wgpu pipelines in two layers, measured first. Offline metallibs through wgpu 30's passthrough remove naga and the runtime
-MSL compile, and a Metal `PIPELINE_CACHE` over `MTLBinaryArchive`, contributed upstream under gfx-rs/wgpu#8526, removes
-cold pipeline-state compiles. V1's archive item stays as written.
+MSL compile. A Metal `PIPELINE_CACHE` over `MTLBinaryArchive`, carried as a pinned wgpu patch, removes cold
+pipeline-state compiles. Contributing that cache upstream (gfx-rs/wgpu#8526) is a later item and does not gate V1. V1's archive item stays as written.
 
 **A normal frame (Apple tile, after G3t).** The steps run in order:
 1. Encode stage on the render owner. The slot's shared buffers are written once its previous use has completed.
@@ -371,8 +371,8 @@ is owed. Whole-frame present intervals on the Mac also depend on G3b's open live
      its front-end cache.
      Today `load_shader` runs naga and `newLibraryWithSource` at every pipeline creation on every launch. The system
      Metal cache covers only the final PSO step.
-   - *Order.* Measure; then offline metallibs plus parallel pre-warm; then the upstream Metal `PIPELINE_CACHE` for
-     the PSO remainder. The split confirms or reorders this. It does not decide whether a layer lands: V1 requires
+   - *Order.* Measure; then offline metallibs plus parallel pre-warm; then the Metal `PIPELINE_CACHE` (pinned patch) for
+     the PSO remainder; the upstream contribution comes later and does not gate V1. The split confirms or reorders this. It does not decide whether a layer lands: V1 requires
      archives.
    - *Parallel pre-warm.* Closure-time preparation creates every pipeline across worker threads (wgpu's `Device` is
      `Send + Sync`), joined before readiness. Wall time is recorded with and without it, cold and warm.
@@ -401,14 +401,12 @@ is owed. Whole-frame present intervals on the Mac also depend on G3b's open live
        visibility, shadow, cull, dfg, reflection, cluster and history_gpu, and vertex-pulled asset pipelines too.
        wgpu-hal gives passthrough shaders no sized bindings and no immutable mask, so it never binds that buffer.
        The pinned patch therefore lets the `MetalLib` input carry reflection emitted by the cook: the sized bindings
-       in naga's global order, the immutable-buffer mask and the workgroup sizes. This belongs in the same upstream
-       contribution. wgpu-hal's slot assignment is internal, so the cook is pinned to wgpu 30.0.1 and refuses any
+       in naga's global order, the immutable-buffer mask and the workgroup sizes. wgpu-hal's slot assignment is internal, so the cook is pinned to wgpu 30.0.1 and refuses any
        other version.
      - *Proof.* For every pipeline on the route, a passthrough-against-WGSL image check is bit-identical, or within a
        stated tolerance where the two compilers differ.
-   - *Layer 2: Metal `PIPELINE_CACHE`, contributed upstream under gfx-rs/wgpu#8526.* The change is the
-     `MTLBinaryArchive` design proposed there on 4 Oct, which a maintainer said "looks about right". We coordinate
-     with that contributor rather than fork the work. In wgpu-hal:
+   - *Layer 2: Metal `PIPELINE_CACHE` in a pinned patch.* The change follows the `MTLBinaryArchive` design proposed
+     on gfx-rs/wgpu#8526 on 4 Oct, which a maintainer said "looks about right". In wgpu-hal:
      - `create_pipeline_cache` loads an archive from the cache data through a temporary file URL;
      - render and compute pipeline creation sets the descriptor's `binaryArchives` and adds the functions;
      - `pipeline_cache_get_data` serialises the archive;
@@ -423,11 +421,24 @@ is owed. Whole-frame present intervals on the Mac also depend on G3b's open live
        offline generation with `metal-tt`. The simulator is excluded unless it is confirmed to support archives.
        An OS compiler update makes archives miss, so a runtime write-back covers devices and OS versions the shipped
        archive misses, and every miss is counted.
-     - Until upstream merges, Thrum carries the change as a `[patch.crates-io]` fork pinned to 30.0.1, and drops it
-       on merge. Commenting on #8526 or opening the PR is publishing, so it waits for the owner's approval.
+     - Thrum carries the change as a `[patch.crates-io]` fork pinned to 30.0.1, rebased at each wgpu upgrade, and
+       drops it once an equivalent upstream change ships.
    - *Proof an archive hit was used:* a warm-launch test mode with `failOnBinaryArchiveMiss` in which every pipeline
      still succeeds; cold against warm pipeline-creation time against D9.1's split; and a stale or corrupted archive
      that compiles at build, with the counter showing zero creations in play.
+   - *Later, not V1-gating: an upstream contribution under gfx-rs/wgpu#8526.* This comes after G4 D9.1 and after
+     the metallib and pre-warm layer lands, and only as a change we can stand behind. wgpu's CONTRIBUTING allows
+     LLM-written code but not fully agentic PRs, so the owner writes every public description and comment. Steps,
+     in order:
+     - coordinate on #8526 first, with an owner-written comment to the contributor who proposed the design;
+     - Metal only, against wgpu trunk rather than the 30.0.1 pin;
+     - tests in wgpu's GPU suite: a cache round-trip, rejection of corrupt or mismatched data, and a warm hit under
+       fail-on-miss;
+     - a full `cargo xtask test` run on this Mac;
+     - an independent review;
+     - an owner walkthrough before submission.
+     Nothing is posted publicly without the owner's OK on each post. The `MetalLib` reflection change could be offered
+     later as a separate change, under the same rules.
    - The rewording option is withdrawn. These docs change no V1 exit wording.
 6. **Compact instance ABI.** 80 B rows for both recipes: `abi.rs`, `synthetic.wgsl`, `shadow.wgsl`,
    `history_gpu.wgsl`, `visibility.wgsl`, `thrum-app/src/sky.rs` and `tests/contracts.rs`. Reviewed by G3c and the
