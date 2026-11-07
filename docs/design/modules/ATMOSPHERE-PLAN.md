@@ -1,11 +1,11 @@
 # Atmosphere milestones
 
 Design: [ATMOSPHERE.md](ATMOSPHERE.md)
-Reviews: Optical design and plan over `a91cdd0e`, final design `f9d0c12a` and plan `c3cc5748` · [optical brief](#optical-review-brief) · initial changes required, final M1 implementation cleared. Frame graph and ownership at the same revisions · [graph brief](#graph-review-brief) · initial changes required, final design cleared. First valley captures, Metal build `dfae5b21` and Chrome Wasm `bc15ea7d` (SHA-256 prefixes) · [capture brief](#capture-review-brief) · held ground view passes, M1 remains open. Chrome late-twilight Wasm `134e271c` · [sweep brief](#sweep-review-brief) · silhouette and reflection visible, warm contour and live motion open. Packed reflection candidate over `c2ac94d8`, Wasm `132f992f` · [reflection brief](#reflection-review-brief) · visual improvement, rejected on measured Metal cost. Four-lane candidate over `4fecd095`, Metal `c6e7b102` and Chrome `4afa8b38` · [four-lane brief](#four-lane-review-brief) · held visuals pass with faint residual streaks; no code findings; live cadence open. Live captures over `16dc9da2` · [follow-up brief](#four-lane-review-brief) · late-twilight progression passes; early object shadow pop verified on both targets; physical cadence open. Shadow partition over `9f13c5f6`, Metal `510e62ce` and Chrome `c6500ef7` · [shadow brief](#shadow-review-brief) · fixed three ownership and coverage gaps; matched visual checks pass. SDR comparison over `1f4e6932`, Metal `41d11c1d` and `1baf73d5` · [tone-scale brief](#tone-scale-review-brief) · keep Neutral Highlights. Local ground material over `ec78a0d7`, Chrome `8d832924` · [ground brief](#ground-material-review-brief) · selected, existing lookout lip remains conspicuous. M1 closeout source `b8f230e7`, Chrome `46d3eb04` and Metal `4928bca0` · [closeout brief](#m1-closeout-review-brief) · sampled crossing and exposure pass on both targets, including the completed foreground Metal sweep through midnight. The callback-tail tripwire stays open. M2 look criterion over `590cee61` · [midnight look brief](#midnight-look-review-brief) · added an unlabelled shipping-frame witness and a same-build star toggle.
+Reviews: Optical design and plan over `a91cdd0e`, final design `f9d0c12a` and plan `c3cc5748` · [optical brief](#optical-review-brief) · initial changes required, final M1 implementation cleared. Frame graph and ownership at the same revisions · [graph brief](#graph-review-brief) · initial changes required, final design cleared. First valley captures, Metal build `dfae5b21` and Chrome Wasm `bc15ea7d` (SHA-256 prefixes) · [capture brief](#capture-review-brief) · held ground view passes, M1 remains open. Chrome late-twilight Wasm `134e271c` · [sweep brief](#sweep-review-brief) · silhouette and reflection visible, warm contour and live motion open. Packed reflection candidate over `c2ac94d8`, Wasm `132f992f` · [reflection brief](#reflection-review-brief) · visual improvement, rejected on measured Metal cost. Four-lane candidate over `4fecd095`, Metal `c6e7b102` and Chrome `4afa8b38` · [four-lane brief](#four-lane-review-brief) · held visuals pass with faint residual streaks; no code findings; live cadence open. Live captures over `16dc9da2` · [follow-up brief](#four-lane-review-brief) · late-twilight progression passes; early object shadow pop verified on both targets; physical cadence open. Shadow partition over `9f13c5f6`, Metal `510e62ce` and Chrome `c6500ef7` · [shadow brief](#shadow-review-brief) · fixed three ownership and coverage gaps; matched visual checks pass. SDR comparison over `1f4e6932`, Metal `41d11c1d` and `1baf73d5` · [tone-scale brief](#tone-scale-review-brief) · keep Neutral Highlights. Local ground material over `ec78a0d7`, Chrome `8d832924` · [ground brief](#ground-material-review-brief) · selected, existing lookout lip remains conspicuous. M1 closeout source `b8f230e7`, Chrome `46d3eb04` and Metal `4928bca0` · [closeout brief](#m1-closeout-review-brief) · sampled crossing and exposure pass on both targets, including the completed foreground Metal sweep through midnight. The callback-tail tripwire stays open. M2 look criterion over `590cee61` · [midnight look brief](#midnight-look-review-brief) · added an unlabelled shipping-frame witness and a same-build star toggle. M2 integration over `6fa34365`, corrected WIP `1fa3228` · [star integration brief](#star-integration-review-brief) · camera, opt-in and altitude findings fixed on recheck.
 Updated: 2026-11-07
 Milestone: M2 stars
-Now: M1 closed with independent Metal foreground and Chrome motion review. The owner found that the current grey sky at midnight still reads as dusk or fog.
-Next: verify star catalogue provenance and integrate the flux and depth referee. Judge the result at the fixed showcase camera before changing the shared night exposure or sky.
+Now: the opt-in star prototype renders in the real Metal and Chrome valley. Independent review preferred the tighter provisional full field at 720p. The checked prototype is at `1fa3228`.
+Next: validate the public-domain catalogue transcription, qualify the tighter footprint in motion and prepare the day graph without stars.
 Blocked: none. Physical cadence and the callback-tail tripwire remain with frame-runtime qualification.
 
 At the next look pass, the cooked ground should read as mineral material at the fixed
@@ -47,8 +47,10 @@ Work
 
 - [ ] Verify data rights and derive the compact immutable star records.
 - [ ] Add the background draw with conservative footprint and qualify extent, depth and exposure changes.
-  The scratch Metal referee at `tmp/g3s-star-catalog/` conserves flux to 0.053% across
-  36 raster cases and catches both centre and footprint depth leaks.
+  The scratch Metal referee conserves flux to 0.053% across 36 raster cases. The
+  actual valley WIP adds three visible controls at midnight, with a fourth hidden
+  by the ridge. Removing centre rejection leaks into 58 sky pixels.
+  [Prototype evidence](../../evidence/v1-workload/G3S-HANDOFF.md#current-checkpoint).
 - [ ] Run the in-game digest and close with evidence. Lunar illumination and the broader G3s calibration and shadow checks remain separately tracked.
 
 ## Review briefs
@@ -176,6 +178,15 @@ reviewer rechecked the finite-shell revision. The GPU and in-game checks are ope
 > Use the M1 midnight still and the current star design. Identify a decisive
 > visual witness at the shipped camera and separate that verdict from flux
 > and placement correctness.
+
+### Star integration review brief
+
+> Review the exact WIP over `6fa34365` against the atmosphere design. Trace
+> colour producer order, the catalogue and camera ABI, opaque occlusion,
+> atmosphere and exposure ownership through slot reuse and replacement.
+> Inspect the raw native on/off pairs and Chrome captures, then the wide and
+> tight provisional fields at full size. Separate stills from motion and
+> the optical controls from the shipping catalogue. Read only.
 
 ## Log
 

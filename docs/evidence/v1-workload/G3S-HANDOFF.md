@@ -8,6 +8,16 @@ The Codex goal remains active. Its attachment is
 
 ## Current checkpoint
 
+- The opt-in star pass is verified on Metal and Chrome at local WIP
+  `1fa3228`. It shares the atmosphere's checked altitude and the frame's
+  exposure. Metal on/off changes 332 sky pixels at midnight, with the held
+  dawn, noon, sunset and twilight frames byte-identical. The centre-depth
+  mutant leaks into 58 sky pixels. `./dev check` passed 511 tests.
+  Independent review favours the tighter provisional full-field still.
+  Exact captures, preliminary paired costs, input hashes and rerun commands
+  are in `tmp/g3s-star-catalog/NOTES.md`. Two historical catalogue
+  pages yield 72 strict OCR rows out of 100, with 12 recognized spot checks
+  exact. The validated shipping catalogue and motion remain open.
 - M1 closeout at `b8f230e7` used the same cooked scene hash on Metal and
   Chrome. The Chrome compositor sweep ran from 17.659 to 24.053 h with 75
   samples. All eight overloads were inside screenshot brackets. The same
