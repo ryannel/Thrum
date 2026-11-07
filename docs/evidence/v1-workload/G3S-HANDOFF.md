@@ -8,6 +8,32 @@ The Codex goal remains active. Its attachment is
 
 ## Current checkpoint
 
+- M1 closeout at `b8f230e7` used the same cooked scene hash on Metal and
+  Chrome. The Chrome compositor sweep ran from 17.659 to 24.053 h with 75
+  samples. All eight overloads were inside screenshot brackets. The same
+  Wasm without screenshots ran through midnight with zero overloads and
+  82 shed views. After the Mac was unlocked, the 145-sample Metal run
+  reached deep twilight before losing foreground. A second run lost
+  foreground earlier. Independent review passed the visible shadow
+  crossing and exposure progression at the sampled intervals, and the
+  Chrome midnight landmarks. All nine Chrome held scene images matched
+  the selected ground look byte for byte. The full foreground Metal run
+  remains open. Rerun `sh run-metal.sh <fresh-name>` in the closeout
+  directory with the Mac unlocked and the game frontmost for the route.
+- Paired Metal offscreen runs at 1080p compare `9f13c5f6` and `b8f230e7`
+  against the same cooked store under shared load. Median GPU pass-sum
+  p95s were 22.66 → 25.15 ms at noon, 10.36 → 9.77 ms at the crossing,
+  8.33 → 8.33 ms at 18.97 h, and 8.00 → 8.54 ms at midnight with the
+  additional paired repeat. Midnight callback p95 was 4.03 → 4.99 ms
+  and p99 6.60 → 10.27 ms. The tail increase survives both orders and
+  also appears in the measured render stages. Encode p95 is unchanged in
+  the medians, while upload p95 rises from 1.26 to 1.46 ms. Adjacent
+  `80e519ec` → `b8f230e7` pairs with the overlay off give a callback
+  p99 rise in the first order and overlapping values in reverse under
+  shared load 30–35. That does not isolate the overlay as the cause.
+  Raw data, executable hashes and
+  reproducible commands are in `tmp/g3s-showcase/night-design/m1-closeout-b8f230e7/`.
+  These observations do not establish display cadence.
 - The browser still fetches Portable. The GPU loader resolves only among products present
   in the fetched generation, in device preference order. A Metal test with BC enabled
   exercises a manifest that advertises compressed variants without fetching them.
