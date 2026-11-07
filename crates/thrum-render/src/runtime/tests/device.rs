@@ -398,6 +398,113 @@ fn culling_counts_never_hold_render_slots_or_cross_a_replacement() {
     });
 }
 
+/// Submit one frame on `slot` and wait for its report.
+#[cfg(target_os = "macos")]
+fn one_frame(host: &mut Host, slot: usize) -> FrameSample {
+    let mut report = host
+        .advance(Duration::ZERO)
+        .expect("world observation")
+        .submit(None)
+        .expect("no optional view");
+    let frame = host.extract_serial(Duration::ZERO, 0, 0).expect("extract");
+    host.submit_extracted(slot, &mut report, None, frame, super::super::Instant::now())
+        .expect("slot submission");
+    let deadline = std::time::Instant::now() + Duration::from_secs(10);
+    loop {
+        if let Some(sample) = host.poll_completed().expect("poll Metal frame") {
+            return sample;
+        }
+        assert!(
+            std::time::Instant::now() < deadline,
+            "Metal frame report timed out"
+        );
+        std::thread::yield_now();
+    }
+}
+
+#[test]
+#[cfg(target_os = "macos")]
+fn a_late_mapping_is_never_attributed_to_the_next_frame_on_its_slot() {
+    pollster::block_on(async {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let (capabilities, queue) = gpu(&instance, 7).await;
+        let mut host = culled_host(
+            &capabilities,
+            &queue,
+            Policy::default(),
+            CullMode::Frustum,
+            false,
+        )
+        .await;
+        // Frame A (one active slot) retires while its mapping still looks
+        // pending, so it reports no count.
+        let mut report = host
+            .advance(Duration::ZERO)
+            .expect("world observation")
+            .submit(None)
+            .expect("no optional view");
+        let frame = host.extract_serial(Duration::ZERO, 0, 0).expect("extract");
+        host.submit_extracted(0, &mut report, None, frame, super::super::Instant::now())
+            .expect("frame A");
+        let real = host.slots[0]
+            .target
+            .defer_culling_mapping()
+            .expect("Frustum counts");
+        let deadline = std::time::Instant::now() + Duration::from_secs(10);
+        let a = loop {
+            if let Some(sample) = host.poll_completed().expect("poll A") {
+                break sample;
+            }
+            assert!(std::time::Instant::now() < deadline, "frame A timed out");
+            std::thread::yield_now();
+        };
+        assert!(a.camera_culling.is_none(), "A retired before its count");
+        while crate::synthetic::OffscreenTarget::culling_mapping_pending(&real) {
+            host.device
+                .poll(wgpu::PollType::Wait {
+                    submission_index: None,
+                    timeout: Some(Duration::from_secs(10)),
+                })
+                .expect("A's mapping");
+            assert!(
+                std::time::Instant::now() < deadline,
+                "A's mapping timed out"
+            );
+        }
+        // Frame B (empty prefix) reuses the slot unarmed; A's settled
+        // mapping becomes visible while B runs, and must not become B's.
+        host.source_mut().empty = true;
+        let mut report = host
+            .advance(Duration::ZERO)
+            .expect("world observation")
+            .submit(None)
+            .expect("no optional view");
+        let frame = host.extract_serial(Duration::ZERO, 0, 0).expect("extract");
+        host.submit_extracted(0, &mut report, None, frame, super::super::Instant::now())
+            .expect("frame B");
+        host.slots[0].target.reveal_culling_mapping(&real);
+        let deadline = std::time::Instant::now() + Duration::from_secs(10);
+        let b = loop {
+            if let Some(sample) = host.poll_completed().expect("poll B") {
+                break sample;
+            }
+            assert!(std::time::Instant::now() < deadline, "frame B timed out");
+            std::thread::yield_now();
+        };
+        assert_eq!(
+            b.camera_culling, None,
+            "B was unarmed: A's count is not B's"
+        );
+        // The next frame on the slot is armed and reports its own count.
+        let c = one_frame(&mut host, 0);
+        let counts = c.camera_culling.expect("C counts");
+        assert_eq!(
+            (counts.mode, counts.active, counts.drawn),
+            (CullMode::Frustum, 0, 0)
+        );
+    });
+}
+
 #[test]
 #[cfg(target_os = "macos")]
 fn metal_frame_timestamps_survive_an_empty_instance_set() {
