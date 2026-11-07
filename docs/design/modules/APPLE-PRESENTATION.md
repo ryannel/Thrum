@@ -144,9 +144,10 @@ upscalers.
   - on one queue, frame N+1's reconstruction executes after frame N's, so the history N writes is the history N+1
     reads, whether or not the CPU has observed N's completion;
   - a frame's history sample is accepted when its submission succeeds;
-  - G3t guarantees that every encoded frame is submitted, even when acquisition fails;
+  - on portable, a dropped presentation may cancel the frame, and history stays at the last submitted sample (the
+    existing drop contract); a frame carrying a MetalFX segment follows G3t seam 3;
   - a failed submission or device loss resets history and tells the MetalFX provider to reset on its next encode;
-  - MetalFX's internal history advances only on submitted encodes under this rule.
+  - MetalFX's internal history advances at encode, so a discarded or failed frame resets it at the next encode.
 - The previous matrices in the view record are the last *submitted* frame's.
 
 **History keys and scale.**
