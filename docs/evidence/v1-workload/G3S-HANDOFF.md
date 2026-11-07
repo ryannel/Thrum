@@ -8,6 +8,19 @@ The Codex goal remains active. Its attachment is
 
 ## Current checkpoint
 
+- A connected west spur removes the large lookout depth break at the
+  held Sun camera and preserves the far ridge within one pixel across
+  a ±20° pan. The six-stop Metal/Chrome route and both controls pass at
+  the existing tolerance on scratch root `32ed89be`. The remaining
+  17.69 h stripe isolates a direct-Sun leak. At x640 y434 the terrain
+  horizon reports 49/255 visibility, the cascade zero and the exact
+  triangle reference zero. The 96-tap mirror reproduces the leak.
+  Roughly 830 m between taps skips the 12.54 km crest, and the cascade
+  fade exposes the wrong horizon. The candidate remains a diagnostic.
+  The next proof compares gap-free terrain traversal against these rays
+  and the full route. [Maximum Mipmaps](https://pure.mpg.de/pubman/item/item_1325622_5/component/file_3590464/i3d08.pdf).
+  Exact builds, raw rows and clips are in `tmp/g3s-sunset-lip/`.
+
 - The 17.4 h sunset stripe follows the lookout's authored depth edge. In
   the held Metal valley at x=320, adjacent rays hit terrain at 1,826 m
   and 65 m. The near facet faces the viewer while its interpolated
