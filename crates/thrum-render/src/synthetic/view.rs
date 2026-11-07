@@ -1,7 +1,7 @@
 //! Checked view input for the synthetic scene. The game/V2 side creates this
 //! packet; V1 only packs and consumes it. Matrices stay column-major.
 
-use glam::{Mat4, Vec3, Vec4};
+use glam::{Mat3, Mat4, Vec3, Vec4};
 
 use super::{
     DisplayOverlay, RenderError, SdrToneMap, checked_display_gain, exposure::ExposurePolicy,
@@ -33,6 +33,7 @@ pub struct SyntheticView {
     sdr_tone_map: SdrToneMap,
     display_overlay: DisplayOverlay,
     history_reset: bool,
+    celestial: Option<Mat3>,
 }
 
 impl Default for SyntheticView {
@@ -54,6 +55,7 @@ impl Default for SyntheticView {
             sdr_tone_map: SdrToneMap::default(),
             display_overlay: DisplayOverlay::Off,
             history_reset: false,
+            celestial: None,
         }
     }
 }
@@ -136,6 +138,7 @@ impl SyntheticView {
             sdr_tone_map: SdrToneMap::default(),
             display_overlay: DisplayOverlay::Off,
             history_reset: false,
+            celestial: None,
         })
     }
 
@@ -218,6 +221,25 @@ impl SyntheticView {
     pub fn with_history_reset(mut self, reset: bool) -> Self {
         self.history_reset = reset;
         self
+    }
+
+    /// Supply the authored orthonormal map from equatorial directions to world directions.
+    /// # Errors
+    /// Refuses nonfinite or nonorthonormal axes and nonperspective views.
+    pub fn with_celestial_basis(mut self, columns: [[f32; 3]; 3]) -> Result<Self, RenderError> {
+        let basis = Mat3::from_cols_array_2d(&columns);
+        let orthogonal = basis.transpose() * basis;
+        if !matches!(self.projection, Projection::Perspective { .. })
+            || !orthogonal.abs_diff_eq(Mat3::IDENTITY, 1e-4)
+        {
+            return Err(RenderError::InvalidView);
+        }
+        self.celestial = Some(basis);
+        Ok(self)
+    }
+
+    pub(super) fn celestial_basis(&self) -> Option<Mat3> {
+        self.celestial
     }
 
     pub(super) fn history_reset(&self) -> bool {

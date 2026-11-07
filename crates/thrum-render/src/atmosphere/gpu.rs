@@ -73,6 +73,10 @@ pub(crate) struct AtmospherePrepared {
 }
 
 impl AtmospherePrepared {
+    pub(crate) fn observer_uniform(&self) -> &wgpu::Buffer {
+        &self.uniform
+    }
+
     pub(crate) fn transmittance_view(&self) -> &wgpu::TextureView {
         &self.transmittance_view
     }
