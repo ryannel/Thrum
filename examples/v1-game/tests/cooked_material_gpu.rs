@@ -540,6 +540,10 @@ fn a_replaced_device_draws_the_last_accepted_hook_and_retires_the_outstanding_re
         old_device.destroy();
         host.publish_device(&mut candidate)
             .expect("publish replacement");
+        assert!(
+            material.restoring(),
+            "the replacement draws the built-in material until the hook validates"
+        );
         let swaps = stats.lock().expect("stats").swaps.len();
         let (outcome, _) = until_outcome(&material, outstanding, || {
             drop(capture(&mut host, "_"));
@@ -555,9 +559,17 @@ fn a_replaced_device_draws_the_last_accepted_hook_and_retires_the_outstanding_re
             drop(capture(&mut host, "_"));
         }
         assert_eq!(material.accepted().as_deref(), Some("hooks/bands.wgsl"));
-        // Natively the accepted hook validates at once, so the first frame on the new device
-        // restores it.
-        assert!(!material.restoring(), "the accepted hook draws again");
+        // The accepted hook compiles again for the new device through the one compile owner,
+        // after the outstanding old-device compile, and draws once valid and submitted.
+        let deadline = Instant::now() + Duration::from_secs(30);
+        while material.restoring() {
+            assert!(
+                Instant::now() < deadline,
+                "the accepted hook was never restored"
+            );
+            drop(capture(&mut host, "_"));
+            std::thread::sleep(Duration::from_millis(2));
+        }
         let after = capture(&mut host, "device-after");
         assert_eq!(
             changed_pixels(&before, &after),

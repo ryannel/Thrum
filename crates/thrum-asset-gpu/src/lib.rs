@@ -569,8 +569,8 @@ impl CookedAssets {
         if let Some(held) = self.live.as_mut().and_then(|live| live.material.take()) {
             self.material.release(&held);
         }
-        self.material.retarget(&target);
         let pipelines = draw::Pipelines::new(surface, &target);
+        self.material.retarget(&target);
         match self.live.as_mut() {
             // Same device: the scene shader or layouts may have changed; resources stay, history
             // restarts with the new bindings.

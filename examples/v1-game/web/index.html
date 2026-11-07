@@ -128,8 +128,10 @@
         }
         // Material reloads report through the frame loop: the current material draws until the
         // replacement compiles, and a refused hook is explained here with its file and line.
+        // Only the development page (build.sh --dev) has the reload; the default page ignores
+        // ?material and never fetches it.
         let pollMaterial = () => {};
-        if (probe.has("material")) {
+        if (probe.has("material") && typeof game.reload_material === "function") {
           const source = new URL(probe.get("material"), location.href);
           const materialStatus = document.querySelector("#material-status");
           const name = source.pathname.split("/").pop();

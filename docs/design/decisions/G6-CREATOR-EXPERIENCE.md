@@ -118,8 +118,12 @@ WGSL material hook in the cooked mesh pipeline. `thrum-asset-gpu` owns it.
     one supersedes it before it compiles.
   - **In the browser,** which has no threads, the caller's task creates the module and pipeline. It uses WebGPU's
     synchronous methods, because pinned wgpu 30.0.1 does not expose `createRenderPipelineAsync`.
-  - **Dev-only.** The reload is a development control. It stays out of ordinary play and production showcase
-    builds.
+  - **Dev-only.** In the browser the reload is compiled only into the development page, behind v1-game's
+    `dev-material` Cargo feature (`web/build.sh --dev`). The default page exports no material methods, so a
+    `?material=` URL there starts no material work.
+  - **A compile that cannot start** (the thread fails to spawn) is rejected with that error, and so is every job
+    queued behind it. A queued restore that is rejected this way drops the accepted hook, and the built-in
+    material draws.
 - **Eligibility.** A candidate becomes eligible only after its compilation messages and its validation error scope
   have both resolved.
 - **Installing.** The next frame boundary draws an eligible candidate. The submission carrying that frame promotes
@@ -130,16 +134,18 @@ WGSL material hook in the cooked mesh pipeline. `thrum-asset-gpu` owns it.
 - **Identity.** Each candidate carries its serial, device generation and surface epoch:
   - a newer request supersedes an older one;
   - a candidate prepared for a replaced device or surface is retired;
-  - a rebuilt device or surface draws the built-in material until the last accepted hook has compiled and validated
-    for it, then draws the hook. Natively this happens on the next frame. A hook that no longer validates is dropped
-    with its diagnostics.
+  - a rebuilt device or surface first builds the built-in pipelines and draws them. The last accepted hook is then
+    queued as a restore job on the same single compile owner, behind any compile still running for the old device.
+    That compile is retired when it finishes. The restore draws only once it has compiled and validated for the new
+    target, and it is promoted by the submission that carries it. A hook that no longer validates is dropped with
+    its diagnostics.
 
 **Front ends.** Both reload explicitly:
 - **Mac scenes:** the sky kit's `SkyGame::with_meshes` reads `THRUM_MATERIAL=<file>`. It reloads the file when
   the window opens and on `L`, after the parameter file. `./dev scene <folder>` points it at the folder's
   `material.wgsl` when there is one, and the starter ships one.
-- **Chrome:** v1-game's page has `?material=<url>` (with `?assets`) and a **Reload material** button. The shipped
-  example is `examples/v1-game/materials/moss.material.wgsl`.
+- **Chrome:** v1-game's development page has `?material=<url>` (with `?assets`) and a **Reload material** button.
+  The shipped example is `examples/v1-game/materials/moss.material.wgsl`.
 
 **Measured cost.** This is a contended shared machine, so the figures are observations, not budgets.
 - **Compile cost.** A distinct hook compiles the whole scene fragment shader again: about 0.7–1 s on Mac (up to
@@ -149,7 +155,7 @@ WGSL material hook in the cooked mesh pipeline. `thrum-asset-gpu` owns it.
   spread, but 3 frames reached 75–118 ms; this is not yet explained.
 - **Chrome stalls.** The page's animation frames stop for 300–750 ms during a cold compile. wgpu 30.0.1 calls the
   synchronous `createRenderPipeline`, and an async wrapper cannot move that work. `createRenderPipelineAsync`
-  might, but wgpu 30 does not expose it. This stays open under G6 and is acceptable only for this dev-only control.
+  might, but wgpu 30 does not expose it. This stays open under G6 and is acceptable only because the control exists only on the development page.
 - **Compiler cache.** A hook compiled earlier on the machine comes back in tens of milliseconds without a stall,
   because the system's compiler cache serves it.
 
