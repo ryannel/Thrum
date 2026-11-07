@@ -139,7 +139,7 @@ impl DisplayPrepared {
         exposure: &ResourceId,
         width: u32,
         height: u32,
-    ) -> Result<ResourceId, RenderError> {
+    ) -> Result<(ResourceId, usize), RenderError> {
         let output = graph.resource(
             ResourceDescriptor::Texture {
                 width,
@@ -154,7 +154,7 @@ impl DisplayPrepared {
             },
             ResourceScope::Transient,
         )?;
-        graph.pass(Pass {
+        let pass = graph.pass(Pass {
             name: "synthetic tone encode".into(),
             scope: PassScope::View(1),
             pipeline: Some(key),
@@ -180,7 +180,7 @@ impl DisplayPrepared {
             ],
             external_side_effect: true,
         });
-        Ok(output)
+        Ok((output, pass))
     }
 
     pub(super) fn encode(

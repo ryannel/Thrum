@@ -89,21 +89,42 @@ The Codex goal remains active. Its attachment is
   slider stop. [Review brief](../../design/modules/ATMOSPHERE-PLAN.md#production-star-optics-review-brief).
   Raw logs and rerun commands are in `tmp/g3s-star-catalog/NOTES.md`.
 
-- Normal-valley candidate `197d152` enables the catalogue on both cooked
-  launch paths, with a same-build off control. Diagnostic and field
-  preparation stay star-free. The old canonical G7 route flags only
-  the intentional midnight baseline drift, about 19.2 median RGB codes
-  on both targets. The stars-off witness attributes the broad change
-  to exposure. The separate composed run with 512² ground E passes all
-  six stops and both controls at the existing 1-code tolerance, with
-  worst Metal–Chrome cell difference 0.148. The final native binary
-  reproduces all 138 composed captures exactly. The workspace passes
-  518 tests with two test threads after a contended Mac recovery test
-  refused a clock step in the concurrent run. The focused Metal mixed
-  Frustum slot proof also passes. E lands first. Recheck the intentional
-  night delta against its canonical baseline. Native live motion remains
-  open. Captures, hashes, paired costs and restart commands are in
-  `tmp/g3s-star-catalog/NOTES.md`.
+- Star graph reconciliation `d2a5342` preserves main's Occlusion
+  prepass, pyramid, draw and count copy. A Metal test captures night and
+  day under Frustum and Occlusion with valid timestamps and actual list
+  counts. Chrome's 100,513-instance oracle matches Direct byte for byte
+  at all 16 views. On the canonical cooked root `59f0484f`, all six
+  Metal/Chrome views and both controls pass the 1-code tolerance. The
+  largest cross-target cell difference is 0.16044. Only the old midnight
+  baseline drifts (19.2 median RGB codes). Same-build stars-off controls
+  attribute the broad change to exposure. Stars add local sky contrast
+  while preserving fully covered terrain. The held review clears a
+  midnight baseline refresh at unchanged tolerance. The six-stop recheck
+  with only midnight grids refreshed in scratch passed with at most
+  0.006 codes of baseline drift. G7 made 512² ground E canonical at
+  `8f1dcf76` while this check ran. Retain its new baseline and recheck
+  the star build against ground E before admission.
+
+- The offscreen Metal recorder uses the normal frame submission and SDR
+  blit with a texture in place of the drawable. It records one real
+  world tick per encoded frame and its GPU pass timestamps before the
+  pixel copy. The cooked valley emergence clip has 1,440 consecutive
+  ticks at 1920×1080, encoded losslessly at 60 Hz for 24 seconds
+  (18.4→20.32 committed solar hours, with rendered time one tick behind).
+  GPU pass-sum p50/p95/p99 was 5.08/23.40/31.39 ms
+  during shared solver load (1-minute load 29.37–35.82). Those rows cover
+  the changing scene and blit. Independent decoded-frame review
+  tracks eight bright stars without loss over the last six seconds and
+  finds a gradual three-code sky lift. Continuous playback, slow-pan
+  review, paired midnight cost and attachment traffic remain open.
+  To repeat, set `THRUM_CAPTURE_SCENE` to a fresh output directory,
+  `THRUM_CAPTURE_MOTION_FRAMES=1440`, and the normal scene/store inputs.
+  Use `THRUM_PARAMS` with running-world solar time 18.4 h, yaw 0°, pitch 7°.
+  Pipe the game binary's stdout to `ffmpeg -f rawvideo -pixel_format bgra
+  -video_size 1920x1080 -framerate 60 -i pipe:0 -c:v libx264rgb -crf 0 motion.mkv`.
+  The JSONL log stays beside the capture. Exact inputs, logs and command
+  are in `tmp/g3s-star-catalog/current-main/offscreen-emergence/` and
+  its parent `run-offscreen-motion.sh`.
 
 - Star integration `00c2645` is on `codex/g3s-stars-integration`. Both
   graphs preserve Frustum count copies and nonblocking slot retirement.

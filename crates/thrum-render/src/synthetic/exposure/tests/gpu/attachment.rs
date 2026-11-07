@@ -5,7 +5,9 @@ use std::io::Write as _;
 use super::{Sample, device, read_sample};
 use crate::atmosphere::AtmosphereFrame;
 use crate::capabilities::DeviceCapabilities;
-use crate::synthetic::{FrameLighting, OffscreenTarget, PreparedSynthetic, SyntheticScene};
+use crate::synthetic::{
+    FrameLighting, OffscreenTarget, PreparedSynthetic, SdrToneMap, SyntheticScene, SyntheticView,
+};
 
 const GENERATION: u64 = 41;
 const SIDE: u32 = 16;
@@ -227,5 +229,79 @@ fn dim_lambert_equivalent_survives_hdr_display_and_exposure_side_reuse() {
             }
         }
         assert!(scope.pop().await.is_none());
+    });
+}
+
+#[test]
+fn falling_twilight_radiance_does_not_brighten_the_metered_sky() {
+    pollster::block_on(async {
+        let (device, queue) = device().await;
+        let capabilities = DeviceCapabilities::capture_device(&device, GENERATION);
+        let mut scene = SyntheticScene::grid(1).unwrap();
+        // Approximate the fixed valley upper-sky witness at sea-level-relative
+        // altitude 245 m, looking 21.5 degrees above the horizon.
+        let altitude = 245.0;
+        let ray_angle = 21.5_f32.to_radians();
+        let (sin, cos) = ray_angle.sin_cos();
+        scene.view = SyntheticView::perspective(
+            [0.0, altitude, 16.0],
+            [0.0, altitude + 100.0 * sin, 16.0 - 100.0 * cos],
+            [0.0, 1.0, 0.0],
+            0.001,
+            1.0,
+            0.1,
+            30_000.0,
+        )
+        .unwrap()
+        .with_sdr_tone_map(SdrToneMap::NeutralHighlights)
+        .with_incident_exposure(0.0, -12.0, 18.0)
+        .unwrap()
+        .with_low_light_adaptation()
+        .unwrap();
+        let lighting = |hours: f32| {
+            let (sin, cos) = ((hours / 24.0 - 0.5) * std::f32::consts::TAU).sin_cos();
+            let vertical = cos * std::f32::consts::FRAC_1_SQRT_2;
+            FrameLighting::Atmosphere(
+                AtmosphereFrame::new(
+                    [-sin, vertical, -vertical],
+                    127_000.0,
+                    [1.0; 3],
+                    altitude,
+                    1,
+                )
+                .unwrap()
+                .with_nightglow(),
+            )
+        };
+        let mut prepared = PreparedSynthetic::prepare_with_lighting(
+            &capabilities,
+            &queue,
+            &scene,
+            lighting(18.85),
+            1.0,
+        )
+        .await
+        .unwrap();
+        let mut target = OffscreenTarget::new(&device, &prepared, SIDE, SIDE).unwrap();
+        let probe = Probe::new(&device, &target);
+        let [twilight, night] = [18.85, 19.65].map(|hours| {
+            prepared
+                .update_frame(&queue, &mut target, &scene, lighting(hours), 1.0)
+                .unwrap();
+            let (sample, hdr, _) = probe.capture(&device, &queue, &prepared, &target);
+            prepared.commit_frame();
+            let stored = hdr[..3]
+                .iter()
+                .zip([0.2126, 0.7152, 0.0722])
+                .map(|(channel, weight)| channel * weight)
+                .sum::<f32>();
+            let physical = stored / sample.values[0];
+            (physical, physical / sample.values[1])
+        });
+        assert!(night.0 > 0.0 && night.0 < twilight.0 * 0.01);
+        assert!(
+            night.1 < twilight.1 * 0.90,
+            "displayed linear luma rebounded: {twilight:?} to {night:?}"
+        );
     });
 }
