@@ -12,8 +12,13 @@
 // at most gamma16 times `magnitude` (the caller's sums of |row| * |position|),
 // which moves z / w by at most gamma16 * (Z + |d| W) / w per path. Ten ulps of
 // the depth cover the two divides (2.5 ulp each in WGSL), the rasterizer's
-// interpolation (four, assumed; checked by the full-footprint tie witness)
-// and this comparison.
+// interpolation (four, assumed; not witnessed on cubes, see M3c) and this
+// comparison. The footprint's x and y carry no explicit term: a pixel is
+// covered only when its centre is inside, and the texels holding the corners
+// reach at least half a pixel past them, so x / y rounding below half a pixel
+// stays inside the read rectangle. The worst-case bound exceeds that only
+// for w below a few metres at the field's far extent (M3c widens or proves
+// it with mesh faces).
 
 // gamma16 = 16 u / (1 - 16 u), u = 2^-24.
 const CLIP_GAMMA: f32 = 9.5367522e-7;
