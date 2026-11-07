@@ -1,49 +1,47 @@
-# G3s — physical sky and native scene, open
+# G3s first light — native valley and portable Sky
 
-7 November 2026. M3 Max Metal / Chrome 156. Function and scoped image checks pass; physical colour and showcase quality remain open.
+**Partial.** The native game uses real cooked meshes, a metre-scale camera and the same Sky as Chrome's diagnostic
+scene. G3s still needs physical colour and showcase review. See [the build plan](../../BUILD-PLAN.md).
 
 | Check | Result and limit |
 | --- | --- |
-| LUT storage / SDR | Scaled half RGB; actual aerial producer vs fp32 and consumer units; πL, shoulder and history checks pass |
-| Sun lookup | Production fp16 vs CPU; 20 near-ground cases: RGB error≤0.6/0.9/1.6%; first-row approximation retained |
-| Twilight M chart |512 vs1024 columns; 102 Sun/height cases including chart phases: worst RGB E 0.296%, zenith 0.723%, antisolar 0.874%, local M 2.851%; same-model only |
-| Diffuse / reflections | SH9 direct-LUT referee exposes truncation (5.225% M0,331% on faint directions); GGX cube/DFG independent hemisphere, seams and energy checks pass |
-| Native authored scene | Same FrameHost/Sky/CAS; metre camera feeds actual altitude. Canonical G5 seam matches all 32 earlier frames byte-exactly |
-| Terrain normals | Unequal-grid derivatives remove parity ribs; positions/UV/indices/placements unchanged, runtime mesh size unchanged. All 32 fixed upper-Sky ROIs remain byte-exact |
-| Lifecycle | Cache/cancel/profile/altitude checks, front-facing normal regression, nonzero authored-camera GPU replacement and full `./dev check` pass |
+| Direct Sun | Metal matches the CPU receiver oracle within `0.05T + 0.005`: 47 cases repeated after translation. A 1,500 m receiver stays lit after the 245 m camera horizon; rays above the shell enter it, miss it or hit the planet. Separate near-ground RGB bounds remain 0.6/0.9/1.6%. |
+| Twilight M chart | 512 vs 1024 columns, 102 Sun/height cases: worst RGB E 0.296%, zenith 0.723%, antisolar 0.874%, local M 2.851%; same estimator only. |
+| Storage / indirect | Scaled aerial half RGB against fp32; independent SH9, GGX/DFG, cube seams and energy probes. SH truncation can reach 331% relative on faint directions; exposure retains its direct horizontal meter. |
+| Native lifecycle | Cache, cancellation, front-facing normal, camera recovery and cooked upload/history checks pass. |
 
 ![Native held phases: dawn, sunrise, noon; sunset, twilight, night](g3s-first-light/solar-contact.png)
 
-[24 sampled frames, 5 fps](g3s-first-light/solar-sweep.mp4): exact canonical-seam game,1280×720 offscreen, frozen authority,
-245 m camera; 61,312 cooked triangles. Eight held views plus 24 route samples; clip is a slideshow, **not live cadence**.
-The sole-Sun model's night is black. Own generated glTF/texture sources and generator live under
-`examples/v1-game/assets/showcase/`; cook them through `thrum-cook`, select `THRUM_SCENE=valley` with
-`THRUM_ASSET_STORE`, and capture via the same game binary's `THRUM_CAPTURE_SCENE=<newdir>`.
+[24 sampled views at 5 fps](g3s-first-light/solar-sweep.mp4): same FrameHost, Sky and cooked valley, 1280×720 offscreen
+before clip encoding, frozen authority, 245 m camera, 61,312 cooked triangles. Cook `examples/v1-game/assets/showcase`
+with `thrum-cook`, set `THRUM_ASSET_STORE` and `THRUM_SCENE=valley`, then run the game with
+`THRUM_CAPTURE_SCENE=<newdir>`. The clip samples the route; live cadence is unqualified.
 
-Root and independent reviews retain the corrections. Fine vertical ribs disappear in actual GPU sunset/sequence
-views; fixed ROI encoded-luma curvature0.2169→0.1654 is descriptive, not a quality tolerance. Broader slope facets,
-foreground seam, flat foreground, weak grounding/contact shadows and uniformly pastel twilight remain. Four CC0
-photographs were inspected as unmatched qualitative references. **Showcase readiness is rejected.**
+Root and independent reviews retain the source normals and receiver lighting. Compared with `a5f29b7`, all 32
+sky strips (top 32 rows) and held dawn/twilight/night match byte for byte; sunrise/sunset differ by up to 10 codes.
+Upper slopes brighten subtly. No new visible ribs or seams; broad facets, foreground seam, weak contact grounding
+and magenta twilight remain. Sole-Sun night is black. Four CC0 photos informed qualitative review; they are not a
+matched oracle. **Showcase readiness is rejected.**
 
-Chrome's same-Sky route passes seven phases/24 samples at Wasm
-`7476f65a9e3b7331a396dcbaea348b15d32885f7e5d24102a2af5aebbc1400ff`; prior 11 function cases remain historical.
-Chrome still draws the diagnostic grid, not this native authored scene. No physical-display, continuous flicker,
-iPhone or Earth-spectrum qualification follows.
+Chrome 156 on the M3 Max passes seven Sky phases and 24 samples at Wasm
+`cc458c034faadd5ab7d5ce9e4079519219243be8d7e4daf5fba5af7612927f08`. It still draws the diagnostic scene.
+No physical display, continuous flicker, iPhone or Earth-spectrum qualification follows.
 
-**Frame history, no speed win.** ABBA, 10k simulation entities,1080p / 200 threaded callbacks; ranges are two runs.
+**Frame history.** Same 10k simulation, cooked valley, 1080p / 200 threaded callbacks, offscreen Metal. Repeat ABBA
+on the shared M3 Max (load 9.0–9.3), all four runs submit 200/200. Ranges are two runs per variant.
 
-| Change / shared load | Callback incl. GPU poll p95 before→after | Scene GPU pass-sum p50 before→after |
-| --- | --- | --- |
-| Sun/M lookups, load 20–21 |2.814–5.892→2.467–4.268ms |1.584–1.586→1.588ms |
-| Normals only, one canonical binary, load 6–7 |0.780–1.001→0.814–1.060ms |1.582–1.590→1.578ms |
+| Row | Before | Receiver Sun |
+| --- | ---: | ---: |
+| Render thread p95 | 1.312–1.395 ms | 1.231–1.306 ms |
+| Forward + Sky GPU p50 | 0.356–0.358 ms | 0.378–0.379 ms |
+| Scene GPU pass sum p50 / p95 | 1.586–1.588 / 2.774–2.800 ms | 1.627–1.631 / 2.799–2.823 ms |
 
-No other owned GPU work overlapped these blocks; shared work varies. Lookup atmosphere-compute p95
-0.830–0.834→0.834–0.835ms. M grows 8→128 KiB and costs10,485,760 volume evaluations per profile refresh;
-steady transport retains one M fetch/step. GGX costs~4.19 M fetches/changed Sky plus ~0.30 MiB products; its earlier
-shared-load cost/tripwire remains in Git. Normals are O(V) offline; no extra runtime operation/buffer or allocation claim.
+One candidate in the first ABBA (load 9.3–9.7) reached 7.205 ms scene GPU p95 and submitted 189/200; unchanged
+shadow, cluster and atmosphere passes spiked too. The repeat did not reproduce it; cause unattributed. Receiver
+lighting adds one T lookup per sunlit fragment with the resident LUT/sampler, no new pass or image. No CPU speed
+or allocation claim. Earlier chart, aerial and GGX costs remain in Git.
 
 [Design](../../design/modules/ENVIRONMENT.md#selected-mathematical-relationships-and-domains): one Sun, shared
-storage gain, SH9/GGX and separate exposure. Open physical work: spectral/band interpretation, local/isotropic
-multiple scattering, SH/meter approximation and declared radiance tolerance. No empirical RGB or exposure gain
-was added to hide these. Raw source identities, GPU oracles, images and paired logs: `tmp/g3s-showcase/`;
-earlier reflection/transport work stays in `tmp/g3s-environment-reflections/` and Git. No GPL inputs imported.
+storage gain, SH9/GGX and separate exposure. Spectral interpretation, local/isotropic scattering closure and
+absolute radiance accuracy remain open. No empirical RGB gains or restricted reference data added. Exact input
+hashes, paired runs, pixel comparisons and referees: `tmp/g3s-showcase/receiver-sun/`.

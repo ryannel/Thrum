@@ -7,9 +7,6 @@ struct Atmosphere {
     sky_mapping: vec4<f32>, // Horizon mu/elevation, sky/ground angular spans.
 }
 @group(0) @binding(0) var<uniform> atmosphere: Atmosphere;
-const PI: f32 = 3.14159265359;
-const R: f32 = 6371000.0;
-const H: f32 = 100000.0;
 // LUT RGB is encoded only at storage boundaries; transport stays per unit Sun.
 // For this unchanged M<0.05 closure, upward L<=3.582+0.05, so GroundE<=pi*3.632
 // and rho=0.1 gives terminal L<=0.1/pi+0.1*3.632. Thus encoded GroundE<11685
@@ -41,10 +38,6 @@ fn ground_hemisphere_sample(index: u32, mu_samples: u32, azimuth_samples: u32) -
     let radial=sqrt(max(0.0,1.0-mu*mu));
     return vec4(radial*cos(phi),mu,radial*sin(phi),mu*2.0*PI/f32(mu_samples*azimuth_samples));
 }
-fn altitude(p: vec3<f32>) -> f32 {
-    let n = dot(p,p)+2.0*R*p.y;
-    return max(0.0,n/(sqrt(max(0.0,R*R+n))+R));
-}
 fn extinction(h: f32) -> vec3<f32> {
     return vec3(5.802e-6,13.558e-6,33.100e-6)*exp(-h/8000.0)
         +vec3(4.4e-6)*exp(-h/1200.0)
@@ -54,42 +47,11 @@ fn scattering(h: f32) -> vec3<f32> {
     return vec3(5.802e-6,13.558e-6,33.100e-6)*exp(-h/8000.0)
         +vec3(3.996e-6)*exp(-h/1200.0);
 }
-fn blocked(h: f32, mu: f32) -> bool {
-    return mu < -sqrt(max(0.0,h*(2.0*R+h)))/(R+h);
-}
-fn top_distance(h: f32, mu: f32) -> f32 {
-    let b = (R+h)*mu;
-    let c = (H-h)*(2.0*R+H+h);
-    let q = sqrt(max(0.0,b*b+c));
-    if mu>=0.0 { return c/max(0.001,q+b); }
-    return q-b;
-}
 fn ground_distance(h: f32, mu: f32) -> f32 {
     if !blocked(h,mu) { return -1.0; }
     let b = (R+h)*mu;
     let c = h*(2.0*R+h);
     return c/max(0.001,-b+sqrt(max(0.0,b*b-c)));
-}
-fn trans_uv(height: f32, mu: f32, size: vec2<u32>) -> vec2<f32> {
-    let cap = sqrt(H*(2.0*R+H));
-    // Below the first physical producer row, both coordinates must describe
-    // that same row. Clamping only v previously kept true-height u, sampling
-    // a different ray. The near-ground GPU/CPU regression bounds the remaining
-    // first-row altitude approximation without changing the producer grid.
-    let first_rho=cap*0.5/f32(size.y);
-    let first_h=first_rho*first_rho/(sqrt(R*R+first_rho*first_rho)+R);
-    let h=max(height,first_h);
-    let rho = sqrt(max(0.0,h*(2.0*R+h)));
-    let d = top_distance(h,mu);
-    return clamp(vec2((d-(H-h))/max(0.001,rho+cap-(H-h)),rho/cap),vec2(0.0),vec2(1.0));
-}
-fn trans_params(uv: vec2<f32>) -> vec2<f32> {
-    let cap = sqrt(H*(2.0*R+H));
-    let rho = cap*uv.y;
-    let h = rho*rho/(sqrt(R*R+rho*rho)+R);
-    let d = (H-h)+uv.x*(rho+cap-(H-h));
-    let mu = ((H-h)*(2.0*R+H+h)-d*d)/max(0.001,2.0*(R+h)*d);
-    return vec2(h,clamp(mu,-1.0,1.0));
 }
 fn safe_segment(source: vec3<f32>, ext: vec3<f32>, dt: f32) -> vec3<f32> {
     return source*(vec3(1.0)-exp(-ext*dt))/max(ext,vec3(1e-12));

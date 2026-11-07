@@ -715,9 +715,9 @@ impl PreparedSynthetic {
         let dropped_light_references = clusters.dropped_references;
         let limits = capabilities.limits();
         if matches!(lighting, FrameLighting::Atmosphere(_))
-            && (limits.max_sampled_textures_per_shader_stage < 8 + u32::from(shadow_enabled)
+            && (limits.max_sampled_textures_per_shader_stage < 9 + u32::from(shadow_enabled)
                 || limits.max_samplers_per_shader_stage < 3 + u32::from(shadow_enabled)
-                || limits.max_bindings_per_bind_group < 11)
+                || limits.max_bindings_per_bind_group < 12)
         {
             return Err(AbiError::DeviceLimits.into());
         }
@@ -853,6 +853,7 @@ impl PreparedSynthetic {
                 (5, wgpu::TextureViewDimension::D2Array),
                 (8, wgpu::TextureViewDimension::Cube),
                 (9, wgpu::TextureViewDimension::D2),
+                (11, wgpu::TextureViewDimension::D2),
             ] {
                 light_entries.push(wgpu::BindGroupLayoutEntry {
                     binding,
@@ -979,6 +980,10 @@ impl PreparedSynthetic {
                 wgpu::BindGroupEntry {
                     binding: 10,
                     resource: wgpu::BindingResource::Sampler(reflection_sampler),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 11,
+                    resource: wgpu::BindingResource::TextureView(atmosphere.transmittance_view()),
                 },
             ]);
         }
@@ -1148,7 +1153,13 @@ impl PreparedSynthetic {
                 include_str!("synthetic_plain.wgsl")
             },
             if atmosphere.is_some() {
-                include_str!("synthetic_environment.wgsl")
+                concat!(
+                    include_str!("atmosphere/geometry.wgsl"),
+                    "\n",
+                    include_str!("synthetic_sun.wgsl"),
+                    "\n",
+                    include_str!("synthetic_environment.wgsl")
+                )
             } else {
                 ""
             }
