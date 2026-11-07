@@ -1,8 +1,10 @@
-//! The dense flythrough field: Frustum camera culling must match the Direct
-//! oracle byte for byte along the scripted path, through snap turns, cuts,
-//! near-plane crossings and drifting props. Set `THRUM_FIELD_FULL_PATH=1` to
-//! compare every tick through the first cut, and `THRUM_FIELD_SEQUENCE=<dir>`
-//! to write the Frustum frames within 40 ticks of each event for motion review.
+//! The dense flythrough field: Frustum and Occlusion camera culling must each
+//! match the Direct oracle byte for byte along the scripted path, through snap
+//! turns, cuts, near-plane crossings and drifting props. Set
+//! `THRUM_FIELD_FULL_PATH=1` to compare every tick through the first cut, and
+//! `THRUM_FIELD_SEQUENCE=<dir>` to write each culled mode's frames within 40
+//! ticks of each event, under `<dir>/frustum/` and `<dir>/occlusion/`, for
+//! motion review.
 //! Run it with `--release` to reach the cut; debug builds cover the first turn.
 #![cfg(not(target_arch = "wasm32"))]
 
@@ -36,11 +38,13 @@ fn write_ppm(path: &std::path::Path, rgba: &[u8], extent: [u32; 2]) {
 }
 
 #[test]
-fn field_frustum_matches_direct_along_the_flythrough() {
+fn field_culling_matches_direct_along_the_flythrough() {
     let full = std::env::var_os("THRUM_FIELD_FULL_PATH").is_some();
     let sequence = std::env::var_os("THRUM_FIELD_SEQUENCE").map(std::path::PathBuf::from);
     if let Some(directory) = &sequence {
-        std::fs::create_dir_all(directory).expect("sequence directory");
+        for mode in ["frustum", "occlusion"] {
+            std::fs::create_dir_all(directory.join(mode)).expect("sequence directory");
+        }
     }
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
@@ -58,7 +62,7 @@ fn field_frustum_matches_direct_along_the_flythrough() {
         let capabilities =
             DeviceCapabilities::capture(&adapter, &device, FrameHost::DEVICE_GENERATION);
         let mut hosts = Vec::new();
-        for camera_culling in [CullMode::Direct, CullMode::Frustum] {
+        for camera_culling in [CullMode::Direct, CullMode::Frustum, CullMode::Occlusion] {
             hosts.push(
                 FrameHost::new_with_setup(
                     &device,
@@ -121,21 +125,24 @@ fn field_frustum_matches_direct_along_the_flythrough() {
                 continue;
             }
             let direct = hosts[0].capture_pixels().expect("Direct capture");
-            let frustum = hosts[1].capture_pixels().expect("Frustum capture");
             assert_eq!(direct.len(), (extent[0] * extent[1] * 4) as usize);
-            if direct != frustum {
-                let differing = direct
-                    .as_chunks::<4>()
-                    .0
-                    .iter()
-                    .zip(frustum.as_chunks::<4>().0)
-                    .filter(|(a, b)| a != b)
-                    .count();
-                panic!("Frustum differs from Direct at tick {tick}: {differing} pixels");
-            }
             let near_event = EVENTS.iter().any(|event| tick.abs_diff(*event) <= 40);
-            if let Some(directory) = sequence.as_ref().filter(|_| near_event) {
-                write_ppm(&directory.join(format!("{tick:05}.ppm")), &frustum, extent);
+            for (host, mode) in hosts[1..].iter_mut().zip(["frustum", "occlusion"]) {
+                let culled = host.capture_pixels().expect("culled capture");
+                if direct != culled {
+                    let differing = direct
+                        .as_chunks::<4>()
+                        .0
+                        .iter()
+                        .zip(culled.as_chunks::<4>().0)
+                        .filter(|(a, b)| a != b)
+                        .count();
+                    panic!("{mode} differs from Direct at tick {tick}: {differing} pixels");
+                }
+                if let Some(directory) = sequence.as_ref().filter(|_| near_event) {
+                    let path = directory.join(mode).join(format!("{tick:05}.ppm"));
+                    write_ppm(&path, &culled, extent);
+                }
             }
             compared += 1;
         }
