@@ -91,26 +91,47 @@ pub(super) const CLIP_GAMMA: f32 = 9.536_752e-7;
 /// the comparison.
 const DEPTH_ULPS: f32 = 10.0;
 
+/// The rasterizer's vertex snap, in pixels: 8 sub-pixel bits, rounded.
+const SNAP_PIXELS: f32 = 1.0 / 512.0;
+
 fn depth_ulp(depth: f32) -> f32 {
     f32::from_bits(depth.abs().to_bits() + 1) - depth.abs()
+}
+
+/// How far a corner's uv on one axis may sit from where either path puts it,
+/// beyond the quarter level-0 texel that the coverage rule already grants
+/// (design, "Footprint"): `ndc` is its projected coordinate, `axis_magnitude`
+/// that axis's clip term, `w_low` the corner's least possible w and `size` the
+/// level-0 extent on that axis.
+pub(super) fn footprint_widening(
+    ndc: f32,
+    w_low: f32,
+    axis_magnitude: f32,
+    w_magnitude: f32,
+    size: f32,
+) -> f32 {
+    let clip = CLIP_GAMMA * (axis_magnitude + ndc.abs() * w_magnitude) / w_low;
+    let rounding = 2.0 * depth_ulp(ndc) + 4.0 * depth_ulp(1.0);
+    (clip + rounding + SNAP_PIXELS / size - 0.25 / size).max(0.0)
 }
 
 /// The derived depth slack for a box whose nearest corner depth is `nearest`
 /// and least corner w is `w_min`, or `None` when the clip bound reaches w = 0
 /// and the box stays visible (design, "Depth tolerance").
-pub(super) fn slack(nearest: f32, w_min: f32, magnitude: [f32; 2]) -> Option<f32> {
-    let w_low = w_min - 2.0 * CLIP_GAMMA * magnitude[1];
+pub(super) fn slack(nearest: f32, w_min: f32, magnitude: [f32; 4]) -> Option<f32> {
+    let w_low = w_min - 2.0 * CLIP_GAMMA * magnitude[3];
     (w_low > 0.0).then(|| {
-        2.0 * CLIP_GAMMA * (magnitude[0] + nearest.abs() * magnitude[1]) / w_low
+        2.0 * CLIP_GAMMA * (magnitude[2] + nearest.abs() * magnitude[3]) / w_low
             + DEPTH_ULPS * depth_ulp(nearest)
     })
 }
 
 /// Whether a box whose eight clip-space corners are `corners` is hidden by the
 /// pyramid. The caller has already kept it by frustum; a corner at or behind
-/// the near plane keeps it visible. `magnitude` bounds the |clip z| and
-/// |clip w| terms of every position the vertex shader or the corners form.
-pub(super) fn occluded(corners: &[[f32; 4]; 8], pyramid: &[Level], magnitude: [f32; 2]) -> bool {
+/// the near plane keeps it visible. `magnitude` bounds the |clip x|, |clip y|,
+/// |clip z| and |clip w| terms of every position the vertex shader or the
+/// corners form.
+pub(super) fn occluded(corners: &[[f32; 4]; 8], pyramid: &[Level], magnitude: [f32; 4]) -> bool {
     let size = pyramid[0].extent;
     let mut nearest = f32::NEG_INFINITY;
     let mut w_min = f32::INFINITY;
@@ -121,21 +142,30 @@ pub(super) fn occluded(corners: &[[f32; 4]; 8], pyramid: &[Level], magnitude: [f
         if w <= 0.0 || z >= w {
             return false;
         }
+        let corner_low = w - 2.0 * CLIP_GAMMA * magnitude[3];
+        if corner_low <= 0.0 {
+            return false;
+        }
         nearest = nearest.max(z / w);
         w_min = w_min.min(w);
-        let uv = [0.5 + 0.5 * x / w, 0.5 - 0.5 * y / w];
+        let ndc = [x / w, y / w];
+        let uv = [0.5 + 0.5 * ndc[0], 0.5 - 0.5 * ndc[1]];
         for axis in 0..2 {
+            #[expect(
+                clippy::cast_precision_loss,
+                reason = "texture extents are far below 2^24"
+            )]
+            let extent = size[axis] as f32;
+            let widening =
+                footprint_widening(ndc[axis], corner_low, magnitude[axis], magnitude[3], extent);
             #[expect(
                 clippy::cast_possible_truncation,
                 clippy::cast_sign_loss,
-                clippy::cast_precision_loss,
                 reason = "clamped texel coordinate within a u32 extent"
             )]
-            let texel = (uv[axis] * size[axis] as f32)
-                .floor()
-                .clamp(0.0, (size[axis] - 1) as f32) as u32;
-            low[axis] = low[axis].min(texel);
-            high[axis] = high[axis].max(texel);
+            let texel = |uv: f32| (uv * extent).floor().clamp(0.0, extent - 1.0) as u32;
+            low[axis] = low[axis].min(texel(uv[axis] - widening));
+            high[axis] = high[axis].max(texel(uv[axis] + widening));
         }
     }
     let level = (0..pyramid.len())
@@ -157,7 +187,7 @@ mod tests {
     use super::*;
 
     /// Corners given exactly, as these tests construct them: no clip term.
-    const EXACT: [f32; 2] = [0.0, 0.0];
+    const EXACT: [f32; 4] = [0.0; 4];
 
     struct Lcg(u64);
     impl Lcg {
@@ -335,7 +365,7 @@ mod tests {
         );
         // Positions of magnitude 10 under a z row of 0.1: the clip bound is
         // 2 gamma16 (0.1 + 0.25 * 10) / w, about 4.96e-6 at w = 1.
-        let magnitude = [0.1, 10.0];
+        let magnitude = [0.0, 0.0, 0.1, 10.0];
         assert!(
             !occluded(&corners(x, y, 0.25 - 4.5e-6), &pyramid, magnitude),
             "within the clip bound is visible"

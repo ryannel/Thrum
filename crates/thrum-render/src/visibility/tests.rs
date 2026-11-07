@@ -87,12 +87,12 @@ fn aabb_clip_corners(view_proj: Mat4, instance: &Instance, alpha: f32) -> [Vec4;
 
 /// The final cull's clip magnitude for a unit-cube instance: |row| times the
 /// largest |position| the vertex shader or the corners can form.
-fn clip_magnitude(view_proj: Mat4, instance: &Instance) -> [f32; 2] {
+fn clip_magnitude(view_proj: Mat4, instance: &Instance) -> [f32; 4] {
     let spread = instance.current.x_axis.truncate().abs()
         + instance.current.y_axis.truncate().abs()
         + instance.current.z_axis.truncate().abs();
     let world = spread + instance.previous.abs() + instance.current.w_axis.truncate().abs();
-    [2, 3].map(|row| {
+    [0, 1, 2, 3].map(|row| {
         let row = view_proj.row(row).abs();
         row.truncate().dot(world) + row.w
     })
@@ -611,10 +611,11 @@ fn the_final_cull_uses_the_full_clip_magnitude() {
     // The test only fails those shaders if their slack leaves the band.
     let world = instance.current.w_axis.truncate().abs() + instance.previous.abs();
     let w_row = view_proj.row(3).abs();
-    let without_translation = [magnitude[0], magnitude[1] - w_row.truncate().dot(world)];
+    let mut without_translation = magnitude;
+    without_translation[3] -= w_row.truncate().dot(world);
     assert!(slack(without_translation) * 2.0 < full, "{magnitude:?}");
     assert!(
-        slack([magnitude[0], magnitude[0]]) * 2.0 < full,
+        slack([magnitude[0], magnitude[1], magnitude[2], magnitude[2]]) * 2.0 < full,
         "{magnitude:?}"
     );
     for (scale, kept) in [(0.5, true), (2.0, false)] {
@@ -626,6 +627,99 @@ fn the_final_cull_uses_the_full_clip_magnitude() {
             occlusion.history().contains(&0),
             kept,
             "depth {wall} at {scale} slack ({full}) behind nearest {nearest}"
+        );
+    }
+}
+
+/// The footprint widening on the real path (design, "Footprint"): a small
+/// box close to the camera at the field's far extent, where the x / y clip
+/// terms widen its read rectangle by several level-0 texels. A wall covers
+/// it; open sky starts just past the block its unwidened rectangle reads (kept),
+/// then just past the block the widened rectangle reads (hidden). A shader
+/// whose magnitude drops the x / y rows hides the first; one that inflates
+/// the widening keeps the second.
+#[test]
+fn the_final_cull_widens_the_footprint_by_the_clip_bound() {
+    let origin = Vec3::new(-400.37, 1.13, 400.71);
+    let instance = Instance {
+        current: Mat4::from_scale_rotation_translation(
+            Vec3::splat(0.003),
+            glam::Quat::from_rotation_y(0.3),
+            origin,
+        ),
+        previous: origin,
+        hidden: false,
+    };
+    let view_proj = perspective(
+        origin + Vec3::new(0.004, 0.002, 0.12),
+        origin - Vec3::new(0.0025, 0.0, 0.0),
+        1.0,
+    );
+    let corners = aabb_clip_corners(view_proj, &instance, 1.0);
+    let magnitude = clip_magnitude(view_proj, &instance);
+    let size = DEPTH_EXTENT.map(occlusion_reference::previous_pow2);
+    // The read rectangle in level-0 texels, with and without the widening,
+    // and the largest widening on x, as the reference forms them.
+    #[expect(
+        clippy::cast_possible_truncation,
+        clippy::cast_sign_loss,
+        clippy::cast_precision_loss,
+        reason = "texels of small extents"
+    )]
+    let rectangle = |widen: bool| {
+        let mut low = [u32::MAX; 2];
+        let mut high = [0; 2];
+        let mut most = 0.0_f32;
+        for c in &corners {
+            let ndc = [c.x / c.w, c.y / c.w];
+            let uv = [0.5 + 0.5 * ndc[0], 0.5 - 0.5 * ndc[1]];
+            let w_low = c.w - 2.0 * occlusion_reference::CLIP_GAMMA * magnitude[3];
+            for axis in 0..2 {
+                let extent = size[axis] as f32;
+                let widening = occlusion_reference::footprint_widening(
+                    ndc[axis],
+                    w_low,
+                    magnitude[axis],
+                    magnitude[3],
+                    extent,
+                );
+                if axis == 0 {
+                    most = most.max(widening * extent);
+                }
+                let widening = if widen { widening } else { 0.0 };
+                let texel = |uv: f32| (uv * extent).floor().clamp(0.0, extent - 1.0) as u32;
+                low[axis] = low[axis].min(texel(uv[axis] - widening));
+                high[axis] = high[axis].max(texel(uv[axis] + widening));
+            }
+        }
+        // The first level-0 texel past the block the test reads on x.
+        let level = (0..16)
+            .find(|&level| (0..2).all(|axis| (high[axis] >> level) - (low[axis] >> level) <= 1))
+            .expect("a level fits");
+        (((high[0] >> level) + 1) << level, high[0], most)
+    };
+    let (unwidened_end, unwidened_high, widening) = rectangle(false);
+    let (widened_end, _, _) = rectangle(true);
+    // Sky at the end of the unwidened read is seen only through the widening.
+    assert!(
+        f64::from(unwidened_end) <= f64::from(unwidened_high) + f64::from(widening),
+        "the widening must reach past the unwidened read: ends {unwidened_end}, \
+         high {unwidened_high}, widening {widening}"
+    );
+    let [width, height] = DEPTH_EXTENT;
+    for (sky, kept) in [(unwidened_end, true), (widened_end, false)] {
+        // Pixels from the first one texel `sky` covers alone are open.
+        let open = (sky * width).div_ceil(size[0]);
+        assert!(open < width, "the sky starts on screen");
+        let depth: Vec<f32> = (0..height)
+            .flat_map(|_| (0..width).map(move |x| if x < open { 1.0 } else { 0.0 }))
+            .collect();
+        let mut occlusion = Occlusion::new(1, &depth);
+        occlusion.frame(view_proj, &[instance], 1.0);
+        assert_eq!(
+            occlusion.history().contains(&0),
+            kept,
+            "sky from texel {sky}, unwidened high {unwidened_high}, widening {widening}"
         );
     }
 }

@@ -191,9 +191,18 @@ fn capture(
 
 /// The grazing grid view: the wall hides most of the grid behind it.
 fn grazing() -> SyntheticView {
+    grazing_at([0.0; 3])
+}
+
+/// The field's far extent, at a non-dyadic origin.
+const FAR_ORIGIN: [f32; 3] = [-400.37, 1.13, 400.71];
+
+/// The grazing view with the whole scene moved to `origin`.
+fn grazing_at(origin: [f32; 3]) -> SyntheticView {
+    let [x, y, z] = origin;
     SyntheticView::perspective(
-        [-0.2, 0.05, 0.6],
-        [1.0, 0.0, 0.45],
+        [x - 0.2, y + 0.05, z + 0.6],
+        [x + 1.0, y, z + 0.45],
         [0.0, 1.0, 0.0],
         1.0,
         16.0 / 9.0,
@@ -314,7 +323,8 @@ fn list_depth(
 /// Prepass parity (design, *Prepass parity*): the depth-only pipeline writes
 /// byte for byte the depth the colour forward pipeline writes for the same
 /// list, view group, index buffer and extent, for the one-sided and the
-/// two-sided split.
+/// two-sided split, near the origin and at the field's far extent (a
+/// non-dyadic origin, so world positions and clip terms round).
 #[test]
 fn the_depth_prepass_writes_the_forward_depth_of_the_same_list() {
     pollster::block_on(async {
@@ -328,11 +338,20 @@ fn the_depth_prepass_writes_the_forward_depth_of_the_same_list() {
             .await
             .expect("device");
         let capabilities = DeviceCapabilities::capture(&adapter, &device, 41);
-        for two_sided in [false, true] {
+        for (origin, two_sided) in [[0.0; 3], FAR_ORIGIN]
+            .into_iter()
+            .flat_map(|origin| [(origin, false), (origin, true)])
+        {
             let mut scene = SyntheticScene::grid(10_000).expect("grid");
-            scene.view = grazing();
+            scene.view = grazing_at(origin);
             scene.camera_culling = CullMode::Occlusion;
             wall(&mut scene);
+            for instance in &mut scene.instances {
+                for (axis, offset) in origin.into_iter().enumerate() {
+                    instance.current[3][axis] += offset;
+                    instance.previous[3][axis] += offset;
+                }
+            }
             if two_sided {
                 // One mirrored slot puts the whole list on the two-sided pipelines.
                 let mirrored = &mut scene.instances[1];
@@ -374,10 +393,13 @@ fn the_depth_prepass_writes_the_forward_depth_of_the_same_list() {
             let covered = prepass.iter().filter(|&&texel| texel != [0; 4]).count();
             assert!(
                 covered * 4 > prepass.len(),
-                "the list covers over a quarter of the view: {covered}"
+                "{origin:?}: the list covers over a quarter of the view: {covered}"
             );
             let differing = prepass.iter().zip(forward).filter(|(a, b)| a != b).count();
-            assert_eq!(differing, 0, "two-sided {two_sided}: texels differ");
+            assert_eq!(
+                differing, 0,
+                "{origin:?} two-sided {two_sided}: texels differ"
+            );
         }
     });
 }
