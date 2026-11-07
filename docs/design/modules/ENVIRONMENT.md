@@ -204,7 +204,7 @@ With `s(x)=sqrt(alpha²+(1-alpha²)x²)`, VNDF weight is `NoL*(NoV+s(NoV))/(NoL*
 `NoL>0`; rejected samples count as zero. `A=<W*(1-Fc)>`, `B=<W*Fc>`, `Fc=(1-VoH)^5`; thus `A+B≤1`.
 Atmosphere indirect uses `Es=F0*A+B`, specular `prefiltered*Es` and diffuse `(1-metalness)*base*(1-Es)*E/π`.
 This hemispherical energy allocation and single-scatter GGX loss are approximations; Fixed lighting stays exact.
-Cube storage retains gain1024; forward applies unattenuated solar RGB once, then existing aerial/pre-exposure once.
+Cube and aerial RGB storage retain gain1024; forward decodes before solar RGB, then applies pre-exposure once.
 All changed-sky mips complete in one submitted frame; cancelled work never becomes valid. Cube dependencies match
 Sky; DFG/sample preparation depends only on device/BRDF. ~0.30MiB resident and ~4.19M fetches per changed Sky are cost accounts,
 not timing claims. Validate analytic DFG/energy, cube axes/seams/horizon, source scaling, cache/cancel/replacement

@@ -15,6 +15,7 @@ const H: f32 = 100000.0;
 // and rho=0.1 gives terminal L<=0.1/pi+0.1*3.632. Thus encoded GroundE<11685
 // and full Sky<4125 fit fp16. These fixed-profile envelopes do not certify the
 // isotropic multiple-scattering/ground-feedback approximation; recheck on change.
+// Aerial RGB uses the same Sky gain: L<3.632 encodes below 3720. T stays unscaled.
 const MULTIPLE_LUT_GAIN: f32 = 65536.0;
 const SKY_LUT_GAIN: f32 = 1024.0;
 const GROUND_IRRADIANCE_GAIN: f32 = 1024.0;
