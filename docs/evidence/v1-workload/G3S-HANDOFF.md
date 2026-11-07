@@ -17,8 +17,15 @@ The Codex goal remains active. Its attachment is
   triangle reference zero. The 96-tap mirror reproduces the leak.
   Roughly 830 m between taps skips the 12.54 km crest, and the cascade
   fade exposes the wrong horizon. The candidate remains a diagnostic.
-  The next proof compares gap-free terrain traversal against these rays
-  and the full route. [Maximum Mipmaps](https://pure.mpg.de/pubman/item/item_1325622_5/component/file_3590464/i3d08.pdf).
+  CPU max-hierarchy prototypes restore zero disk at that pixel on
+  exact triangles and on the 32 m raster. Across 2,496 sampled rays,
+  the log march's largest visibility error is 44.2 percentage points.
+  Flat raster cells reduce it to 6.4 with 0.2 points of worst light
+  leak. Bilinear leaves reduce absolute error to 2.6 but can extend a
+  discontinuous caster across cells. First GPU proof uses flat cells
+  on the existing depth producer. Measure the max reduction, traversal,
+  mixed casters and whole route before changing the default.
+  [Maximum Mipmaps](https://pure.mpg.de/pubman/item/item_1325622_5/component/file_3590464/i3d08.pdf).
   Exact builds, raw rows and clips are in `tmp/g3s-sunset-lip/`.
 
 - The 17.4 h sunset stripe follows the lookout's authored depth edge. In
