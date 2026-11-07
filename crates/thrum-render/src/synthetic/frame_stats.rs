@@ -7,9 +7,37 @@ pub(crate) struct SceneTimingLayout {
     shadows: bool,
     clusters: bool,
     transforms: bool,
-    /// Frustum camera culling: one `camera visibility` compute pass per frame,
-    /// timed even when the active prefix is empty.
-    camera: CullMode,
+    /// Bit `index` of [`CULLING_PASSES`] is set for each camera culling pass
+    /// the frame records exactly once. Frustum: one `camera visibility`
+    /// compute pass, timed even when the active prefix is empty. Occlusion:
+    /// the early and late phases, the pyramid and the late forward pass.
+    culling: u8,
+}
+
+/// [`CULLING_PASSES`] bit of the pyramid build.
+const PYRAMID_BIT: u8 = 0b00100;
+
+/// The camera culling passes `mode` records on an uncontributed frame.
+const fn culling_passes(mode: CullMode) -> u8 {
+    match mode {
+        CullMode::Direct => 0,
+        CullMode::Frustum => 0b00001,
+        CullMode::Occlusion => 0b11110,
+    }
+}
+
+impl SceneTimingLayout {
+    /// The layout of a frame encoded with a scene contribution attached:
+    /// Occlusion records no pyramid build, as only the skipped late
+    /// classifier would read it.
+    pub(crate) fn contributed(self, contributed: bool) -> Self {
+        let culling = if contributed {
+            self.culling & !PYRAMID_BIT
+        } else {
+            self.culling
+        };
+        Self { culling, ..self }
+    }
 }
 
 impl From<&PreparedSynthetic> for SceneTimingLayout {
@@ -18,7 +46,7 @@ impl From<&PreparedSynthetic> for SceneTimingLayout {
             shadows: prepared.shadowed(),
             clusters: prepared.gpu_clustered(),
             transforms: prepared.active_instance_count() != 0,
-            camera: prepared.camera_culling(),
+            culling: culling_passes(prepared.camera_culling()),
         }
     }
 }
@@ -26,6 +54,15 @@ impl From<&PreparedSynthetic> for SceneTimingLayout {
 /// Scene pass buckets (forward includes a contribution's compute pass), the optional surface blit
 /// and the contribution's compute pass alone.
 pub(crate) type PassDurations = ([f64; 11], Option<f64>, Option<f64>);
+
+/// Every camera culling pass name, in any layout.
+const CULLING_PASSES: [&str; 5] = [
+    crate::visibility::PASS,
+    crate::visibility::EARLY_PASS,
+    crate::visibility::PYRAMID_PASS,
+    crate::visibility::LATE_PASS,
+    super::camera_culling::FORWARD_LATE_PASS,
+];
 
 pub(crate) fn pass_durations(
     passes: &[crate::timing::PassTiming],
@@ -55,11 +92,13 @@ pub(crate) fn pass_durations(
     // forward; it is reported on its own and the fixed scene sequence is matched without it.
     // The Sun air shadow heights pass, present with shadows under atmosphere lighting, is likewise
     // matched by name and shares the far shadow bucket with the horizon height map.
-    // Frustum camera visibility is opaque-phase compute that feeds forward's indirect draw; it is
-    // matched by name, required exactly when the slot layout culls, and counted in forward.
+    // Camera culling passes are opaque-phase work around forward's indirect draws: matched by
+    // name, each required exactly once when the slot layout uses them, and counted in forward.
+    let culling = layout.culling;
     let mut contribution = None;
     let mut air_shadow = None;
     let mut visibility = None;
+    let mut culled = 0_u8;
     let mut scene_passes = Vec::with_capacity(passes.len());
     for pass in passes {
         if pass.name.as_ref() == super::AIR_SHADOW_PASS {
@@ -67,11 +106,16 @@ pub(crate) fn pass_durations(
                 return None;
             }
             air_shadow = Some(pass.nanoseconds);
-        } else if pass.name.as_ref() == crate::visibility::PASS {
-            if visibility.is_some() || layout.camera != CullMode::Frustum {
+        } else if let Some(index) = CULLING_PASSES
+            .iter()
+            .position(|&name| name == pass.name.as_ref())
+        {
+            let bit = 1 << index;
+            if culling & bit == 0 || culled & bit != 0 {
                 return None;
             }
-            visibility = Some(pass.nanoseconds);
+            culled |= bit;
+            visibility = Some(visibility.unwrap_or(0.0) + pass.nanoseconds);
         } else if pass.name.as_ref() == super::CONTRIBUTION_COMPUTE {
             if contribution.is_some() {
                 return None;
@@ -81,7 +125,7 @@ pub(crate) fn pass_durations(
             scene_passes.push(pass);
         }
     }
-    if layout.camera == CullMode::Frustum && visibility.is_none() {
+    if culled != culling {
         return None;
     }
     let passes = scene_passes.as_slice();

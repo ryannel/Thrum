@@ -213,7 +213,15 @@ impl Fixture {
             "test instances",
             u64::from(capacity) * crate::abi::INSTANCE_BYTES as u64,
         );
-        let prepared = VisibilityPrepared::new(&device, &queue, KEY, capacity, &[CUBE], capacity);
+        let prepared = VisibilityPrepared::new(
+            &device,
+            &queue,
+            KEY,
+            capacity,
+            &[CUBE],
+            capacity,
+            CullMode::Occlusion,
+        );
         let target = prepared.target(&device, &view, &instances, &serials);
         let mut graph = FrameGraph::default();
         prepared
@@ -256,6 +264,11 @@ impl Fixture {
 
     /// Run one target's compaction on the uploaded frame.
     fn compact(&self, target: &VisibilityTarget) -> Vec<u32> {
+        self.compact_as(target, target.phase(), 0)
+    }
+
+    /// Compact with `phase`'s record, writing history side `write`.
+    fn compact_as(&self, target: &VisibilityTarget, phase: Phase, write: usize) -> Vec<u32> {
         let active = self.prepared.active;
         let mut encoder = self
             .device
@@ -267,7 +280,14 @@ impl Fixture {
             .expect("visibility pass");
         assert!(
             self.prepared
-                .encode(&mut encoder, target, 0, KEY.device_generation, pass, None)
+                .encode_phase(
+                    &mut encoder,
+                    target,
+                    (phase, write),
+                    (0, KEY.device_generation),
+                    pass,
+                    None,
+                )
                 .expect("encode")
         );
         self.queue.submit([encoder.finish()]);
@@ -398,6 +418,9 @@ struct Occlusion {
     early: VisibilityTarget,
     late: VisibilityTarget,
     levels: Vec<occlusion_reference::Level>,
+    /// The history side this frame writes; `commit` flips it, as a display
+    /// host's committed frame flips the transform history.
+    write: usize,
 }
 
 impl Occlusion {
@@ -421,15 +444,21 @@ impl Occlusion {
             early,
             late,
             levels: occlusion_reference::build(depth, DEPTH_EXTENT),
+            write: 0,
         }
     }
 
+    /// The committed history, which the next frame reads.
     fn history(&self) -> std::collections::BTreeSet<u32> {
+        self.side(1 - self.write)
+    }
+
+    fn side(&self, side: usize) -> std::collections::BTreeSet<u32> {
         let fixture = &self.fixture;
         let words = read(
             &fixture.device,
             &fixture.queue,
-            &fixture.prepared.history,
+            &fixture.prepared.history[side],
             bits_bytes(fixture.prepared.capacity),
         );
         words
@@ -448,17 +477,23 @@ impl Occlusion {
     /// number of slots in view that the late phase hid.
     fn frame(&mut self, view_proj: Mat4, instances: &[Instance], alpha: f32) -> usize {
         type Set = std::collections::BTreeSet<u32>;
-        // Rows past the active prefix keep stale bits until they return; a
-        // returning row is then at most drawn early, never hidden.
+        // The side this frame reads may hold rows past a shrunk prefix from
+        // an older, larger frame; they are not read until they return.
         let active = u32::try_from(instances.len()).expect("count");
         let prefix = |set: Set| -> Set { set.into_iter().filter(|&slot| slot < active).collect() };
         let before = prefix(self.history());
         self.fixture.upload(view_proj, instances, alpha);
         let framed = self.fixture.compact(&self.fixture.target);
         check(view_proj, instances, alpha, &framed);
-        let early = self.fixture.compact(&self.early);
+        let early = self.early();
         assert_eq!(prefix(self.history()), before, "early never writes history");
-        let late = self.fixture.compact(&self.late);
+        let late = self.late();
+        assert_eq!(prefix(self.history()), before, "late writes the other side");
+        self.commit();
+        assert!(
+            self.history().iter().all(|&slot| slot < active),
+            "no history word past the prefix survives publication"
+        );
         let after = prefix(self.history());
         for list in [&early, &late] {
             assert!(list.windows(2).all(|pair| pair[0] < pair[1]), "order");
@@ -511,6 +546,19 @@ impl Occlusion {
         );
         framed.len() - after.len()
     }
+
+    fn early(&self) -> Vec<u32> {
+        self.fixture
+            .compact_as(&self.early, Phase::Early, self.write)
+    }
+
+    fn late(&self) -> Vec<u32> {
+        self.fixture.compact_as(&self.late, Phase::Late, self.write)
+    }
+
+    fn commit(&mut self) {
+        self.write = 1 - self.write;
+    }
 }
 
 #[test]
@@ -542,7 +590,7 @@ fn occlusion_phases_never_lose_a_slot_in_view() {
     occlusion.frame(near, &instances, 0.0);
     // A cancelled frame: early runs, late never does; the next frame is whole.
     occlusion.fixture.upload(near, &instances, 0.0);
-    occlusion.fixture.compact(&occlusion.early);
+    occlusion.early();
     occlusion.frame(near, &instances, 0.25);
     // A shrinking active prefix never lists rows past the end, and rows that
     // return with new objects are only drawn early on stale history.
@@ -550,6 +598,143 @@ fn occlusion_phases_never_lose_a_slot_in_view() {
     occlusion.frame(near, &instances, 0.25);
     instances.extend(returning.iter().map(|_| scatter(&mut random, 1, 40.0)[0]));
     occlusion.frame(inside, &instances, 0.25);
+}
+
+#[test]
+fn a_contribution_frame_draws_the_frustum_set_once_and_clears_history() {
+    let depth = wall_depth();
+    let mut occlusion = Occlusion::new(2_000, &depth);
+    let mut random = Lcg(11);
+    let instances = scatter(&mut random, 2_000, 40.0);
+    let camera = perspective(Vec3::new(0.0, 0.0, 60.0), Vec3::ZERO, 1.0);
+    occlusion.frame(camera, &instances, 0.5);
+    assert!(!occlusion.history().is_empty(), "history to clear");
+    // With a contribution attached the early target takes the Frustum
+    // decision and the late target Skip: the frustum set, drawn once.
+    occlusion.fixture.upload(camera, &instances, 0.5);
+    let framed = occlusion.fixture.compact(&occlusion.fixture.target);
+    let write = occlusion.write;
+    let early = occlusion
+        .fixture
+        .compact_as(&occlusion.early, Phase::Frustum, write);
+    assert_eq!(early, framed, "early draws the frustum set");
+    let late = occlusion
+        .fixture
+        .compact_as(&occlusion.late, Phase::Skip, write);
+    assert!(late.is_empty(), "skip lists nothing: {} slots", late.len());
+    occlusion.commit();
+    assert!(occlusion.history().is_empty(), "skip clears the history");
+    // The next occlusion frame starts cold and still loses nothing in view.
+    occlusion.frame(camera, &instances, 0.5);
+}
+
+#[test]
+fn a_capture_between_displays_keeps_the_displayed_history() {
+    let depth = wall_depth();
+    let mut occlusion = Occlusion::new(3_000, &depth);
+    let mut random = Lcg(23);
+    let instances = scatter(&mut random, 3_000, 40.0);
+    let display = perspective(Vec3::new(0.0, 0.0, 60.0), Vec3::ZERO, 1.0);
+    occlusion.frame(display, &instances, 0.5);
+    occlusion.frame(display, &instances, 0.5);
+    let displayed = occlusion.history();
+    // A capture from another camera runs both phases on the uncommitted side
+    // and never commits; the late phase recomputes the same frustum test, so
+    // it still draws each slot in view at most once.
+    let capture = perspective(Vec3::new(30.0, 10.0, 45.0), Vec3::new(-5.0, 0.0, 0.0), 0.9);
+    occlusion.fixture.upload(capture, &instances, 1.0);
+    let framed = occlusion.fixture.compact(&occlusion.fixture.target);
+    let early = occlusion.early();
+    let late = occlusion.late();
+    assert!(late.iter().all(|slot| !early.contains(slot)), "drawn once");
+    assert!(
+        early.iter().chain(&late).all(|slot| framed.contains(slot)),
+        "only slots in view"
+    );
+    assert_ne!(
+        occlusion.side(occlusion.write),
+        displayed,
+        "the capture wrote its own visibility"
+    );
+    assert_eq!(occlusion.history(), displayed, "displayed history kept");
+    // The next display frame reads the displayed history: a still view, so
+    // the early phase replays it and the late phase adds nothing.
+    occlusion.fixture.upload(display, &instances, 0.5);
+    let early = occlusion.early();
+    assert_eq!(
+        early
+            .iter()
+            .copied()
+            .collect::<std::collections::BTreeSet<_>>(),
+        displayed,
+        "early replays the displayed set"
+    );
+    occlusion.frame(display, &instances, 0.5);
+    assert_eq!(occlusion.history(), displayed);
+}
+
+/// Slots at or past `bound` in the committed history.
+fn past(occlusion: &Occlusion, bound: u32) -> Vec<u32> {
+    occlusion
+        .history()
+        .into_iter()
+        .filter(|&slot| slot >= bound)
+        .collect()
+}
+
+#[test]
+fn history_words_never_outlive_a_shrink_capture_or_contribution() {
+    let depth = wall_depth();
+    let mut occlusion = Occlusion::new(600, &depth);
+    let mut random = Lcg(41);
+    let instances = scatter(&mut random, 600, 40.0);
+    let short = &instances[..200];
+    let display = perspective(Vec3::new(0.0, 0.0, 60.0), Vec3::ZERO, 1.0);
+    let capture = perspective(Vec3::new(30.0, 10.0, 45.0), Vec3::new(-5.0, 0.0, 0.0), 0.9);
+    // Two full displays leave visible words above slot 255 on both sides.
+    occlusion.frame(display, &instances, 0.5);
+    occlusion.frame(display, &instances, 0.5);
+    assert!(!past(&occlusion, 256).is_empty(), "high words to outlive");
+    // A full capture writes high words on the unpublished side; a short
+    // display (one workgroup) then writes and publishes that same side.
+    occlusion.fixture.upload(capture, &instances, 1.0);
+    occlusion.early();
+    occlusion.late();
+    occlusion.frame(display, short, 0.5);
+    assert_eq!(past(&occlusion, 200), [], "capture words outlived a shrink");
+    // A regular short frame publishes the other side, last written full.
+    occlusion.frame(display, short, 0.5);
+    assert_eq!(past(&occlusion, 200), [], "display words outlived a shrink");
+    // Regrowth reads only what the short frames published: the returning
+    // rows are drawn late, never replayed early from stale words.
+    occlusion.fixture.upload(display, &instances, 0.5);
+    assert!(occlusion.early().iter().all(|&slot| slot < 200));
+    occlusion.frame(display, &instances, 0.5);
+    occlusion.frame(display, &instances, 0.5);
+    assert!(!past(&occlusion, 256).is_empty(), "high words again");
+    // A short contribution frame (Frustum early, Skip late) clears every
+    // word of the side it publishes, including those past its prefix.
+    occlusion.fixture.upload(display, short, 0.5);
+    let write = occlusion.write;
+    occlusion
+        .fixture
+        .compact_as(&occlusion.early, Phase::Frustum, write);
+    occlusion
+        .fixture
+        .compact_as(&occlusion.late, Phase::Skip, write);
+    occlusion.commit();
+    assert!(
+        occlusion.history().is_empty(),
+        "skip left {:?}",
+        past(&occlusion, 0)
+    );
+    occlusion.fixture.upload(display, &instances, 0.5);
+    assert_eq!(
+        occlusion.early(),
+        [],
+        "regrowth after a contribution starts cold"
+    );
+    occlusion.frame(display, &instances, 0.5);
 }
 
 #[test]
