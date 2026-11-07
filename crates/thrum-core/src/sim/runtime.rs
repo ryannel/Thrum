@@ -547,6 +547,10 @@ pub struct GameRuntime<P, G: TickGame<P>> {
     /// apart from the transaction scratch so a refused step cannot empty it.
     deferred_undo: WorldUndo,
     structural_journal: Vec<StructuralChange>,
+    /// Set while a tick commits. A game `apply` or capture that unwinds leaves
+    /// it set: the world then holds the next tick under the old tick number,
+    /// so only a full `restore` makes the runtime usable again.
+    poisoned: bool,
 }
 
 impl<P, G: TickGame<P>> GameRuntime<P, G> {
@@ -686,7 +690,16 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
         );
         self.publication_state = PublicationState::Current;
         self.rewind_patch_target = None;
+        self.poisoned = false;
         Ok(())
+    }
+
+    /// Reject reuse after a commit unwound partway.
+    fn assert_usable(&self) {
+        assert!(
+            !self.poisoned,
+            "a tick commit unwound; restore a capture before reusing this runtime"
+        );
     }
 
     /// Reverse contiguous committed ticks without copying unaffected rows or
@@ -701,6 +714,7 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
     ///
     /// Only if an engine-produced undo contradicts its committed free order.
     pub fn rewind_many(&mut self, steps: &mut [RuntimeUndo]) -> Result<(), RuntimeError> {
+        self.assert_usable();
         if steps.is_empty() {
             return Ok(());
         }
@@ -789,6 +803,7 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
         source_tick: impl Fn(&P) -> Option<u64>,
         patch: impl FnOnce(&WorldRead<'_>, &mut P, u64, u64, u64, &[RuntimeUndo]),
     ) -> bool {
+        self.assert_usable();
         // Engine pages always diff from the last published endpoint. A spare
         // old-branch page may be older than that source, so wait until a page
         // is actually requested or the replay's final tick publishes it.
@@ -902,6 +917,7 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
             abort_undo,
             deferred_undo,
             structural_journal: Vec::with_capacity(128),
+            poisoned: false,
         })
     }
 
@@ -1173,6 +1189,7 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
         game: &mut G,
         candidate: &mut G::Candidate,
     ) -> bool {
+        self.assert_usable();
         if self.publication_state == PublicationState::Current {
             return self.pages.has_latest();
         }
@@ -1237,6 +1254,7 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
     /// Panics only if an unpublished ring has lost all four private pages or
     /// the game capture callback panics.
     pub fn publish_initial(&mut self, game: &mut G, candidate: &mut G::Candidate) {
+        self.assert_usable();
         if !self.initial_published {
             let world = WorldRead {
                 world: &self.world,
@@ -1289,7 +1307,9 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
     /// # Panics
     ///
     /// Panics only if the reserved page becomes unavailable inside the
-    /// exclusive tick, or a game apply/capture callback panics.
+    /// exclusive tick, or a game apply/capture callback panics. A panic from
+    /// apply or capture leaves the runtime poisoned: every later step, rewind
+    /// or publish panics until `restore` replaces the whole state.
     pub fn step(
         &mut self,
         game: &mut G,
@@ -1405,6 +1425,7 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
     where
         G: Sync,
     {
+        self.assert_usable();
         let next = self.tick.checked_add(1).ok_or(TickError::TickExhausted)?;
         let following_revision = self
             .next_revision
@@ -1549,6 +1570,8 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
                 resume_unwind(payload);
             }
         }
+        // Commit is infallible; an unwind from here on poisons the runtime.
+        self.poisoned = true;
         let edits = &self.edits;
         if let Some(events) = undo_events.as_deref_mut() {
             events.reserve(edits.len());
@@ -1592,6 +1615,7 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
         self.next_revision = following_revision;
         self.delta_ready = true;
         self.capture_committed(game, candidate, undo.as_deref(), publication);
+        self.poisoned = false;
         Ok(next)
     }
 }
