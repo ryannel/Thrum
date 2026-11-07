@@ -67,7 +67,8 @@ pub(crate) fn prepare_showcase(
         .into_iter()
         .map(Placement::checked)
         .collect::<Result<_, _>>()?;
-    Ok((camera, CookedAssets::new(config)))
+    let assets = CookedAssets::new(config).map_err(|error| format!("showcase: {error}"))?;
+    Ok((camera, assets))
 }
 
 impl Placement {
@@ -110,6 +111,7 @@ impl Placement {
                 roughness: material.roughness,
                 metalness: material.metalness,
             },
+            rest_on_ground: false,
         })
     }
 }

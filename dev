@@ -4,4 +4,14 @@ cd -- "$(dirname -- "$0")"
 # Use rustup explicitly: some machines put a standalone Cargo ahead of its shims.
 thrum_rustc="$(rustup which --toolchain 1.99.1 rustc)"
 export PATH="$(dirname -- "$thrum_rustc"):$PATH"
+# A creator's new scene package is not in the committed lockfile yet. Before running a scene,
+# add workspace packages to Cargo.lock offline (no registry changes) and say so.
+case "${1:-}" in
+  scene|starter)
+    if ! rustup run 1.99.1 cargo metadata --locked --offline --format-version 1 >/dev/null 2>&1; then
+      echo "Adding new workspace packages to Cargo.lock (offline); commit the change with them." >&2
+      rustup run 1.99.1 cargo update --offline --workspace --quiet
+    fi
+    ;;
+esac
 exec rustup run 1.99.1 cargo run --locked --offline --quiet --package xtask -- "$@"

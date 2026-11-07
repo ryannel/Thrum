@@ -431,7 +431,7 @@ impl Pipelines {
                         },
                     ],
                 });
-                let model = glam::Mat4::from_cols_array_2d(&placement.transform);
+                let model = crate::placement::placed_model(placement, &mesh.rest_points);
                 let instance = self.buffer(
                     "cooked instance",
                     INSTANCE_BYTES,

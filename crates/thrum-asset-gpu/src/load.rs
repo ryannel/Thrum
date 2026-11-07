@@ -68,7 +68,15 @@ pub(crate) struct GpuMesh {
     pub(crate) meshlet_count: u32,
     pub(crate) index_count: u32,
     pub(crate) caster_box: Option<(glam::Vec3, glam::Vec3)>,
+    /// Points whose lowest one, once placed, is the mesh's lowest point: every vertex of a
+    /// mesh of at most [`REST_VERTEX_LIMIT`] vertices, else the corners of `caster_box`.
+    pub(crate) rest_points: Arc<[glam::Vec3]>,
 }
+
+/// Meshes up to this many vertices keep a CPU copy of their positions (at most 768 KiB) so a
+/// resting placement touches the ground exactly; larger ones rest on their bounding box, which
+/// can leave a turned mesh slightly above the ground.
+pub(crate) const REST_VERTEX_LIMIT: usize = 65_536;
 
 /// A sampled 2D texture or 3D volume.
 pub(crate) struct GpuTexture {
@@ -451,6 +459,7 @@ impl Loader {
             meshlet_count: u32::try_from(mesh.meshlets().len()).unwrap_or(u32::MAX),
             index_count: u32::try_from(tables.indices.len()).unwrap_or(0),
             caster_box: caster_box(mesh.positions()),
+            rest_points: rest_points(mesh.positions()),
         };
         plan.buffer(positions, gpu.positions.clone());
         plan.buffer(attributes, gpu.attributes.clone());
@@ -483,6 +492,32 @@ impl Loader {
         plan.texture(product, texture.clone());
         GpuTexture { texture }
     }
+}
+
+fn rest_points(positions: &[[f32; 3]]) -> Arc<[glam::Vec3]> {
+    if positions.len() <= REST_VERTEX_LIMIT {
+        let points: Arc<[glam::Vec3]> = positions
+            .iter()
+            .map(|&p| glam::Vec3::from_array(p))
+            .collect();
+        if points.iter().all(|point| point.is_finite()) {
+            return points;
+        }
+    }
+    caster_box(positions).map_or_else(
+        || Arc::from([]),
+        |(min, max)| {
+            (0..8)
+                .map(|corner| {
+                    glam::Vec3::new(
+                        if corner & 1 == 0 { min.x } else { max.x },
+                        if corner & 2 == 0 { min.y } else { max.y },
+                        if corner & 4 == 0 { min.z } else { max.z },
+                    )
+                })
+                .collect()
+        },
+    )
 }
 
 fn caster_box(positions: &[[f32; 3]]) -> Option<(glam::Vec3, glam::Vec3)> {

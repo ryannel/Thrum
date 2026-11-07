@@ -8,6 +8,7 @@ description = "Native macOS window, display link and render owner shared by Thru
 
 [target.'cfg(target_os = "macos")'.dependencies]
 pollster = "=1.0.1"
+thrum-asset-gpu = { path = "../thrum-asset-gpu" }
 thrum-controls = { path = "../thrum-controls" }
 thrum-core = { path = "../thrum-core" }
 thrum-render = { path = "../thrum-render" }

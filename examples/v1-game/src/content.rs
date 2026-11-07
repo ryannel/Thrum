@@ -29,7 +29,8 @@ pub fn attach_cooked_scene(
             None,
             thrum_asset_gpu::CookedAssets::new(crate::cooked::cooked_config(
                 std::path::PathBuf::from(store),
-            )),
+            ))
+            .map_err(|error| error.to_string())?,
         ),
         _ => return Err("THRUM_SCENE must be valley or diagnostic".to_owned()),
     };

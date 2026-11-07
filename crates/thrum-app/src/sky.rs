@@ -1,54 +1,51 @@
 //! A still scene under a physically based sky: the kit behind the starter.
 //!
 //! [`SkyGame`] is a complete [`Game`]: the world never ticks, the renderer draws Earth's
-//! atmosphere and Sun with a camera meter for exposure, and an optional engine contribution
-//! (for example `thrum_asset_gpu::CookedAssets`) draws into the same lit scene. Each frame
-//! the game's update maps its [`Controls`] onto a [`Sky`]: the Sun's elevation and azimuth
-//! and a look-at [`Camera`]. [`run`] opens the window, or renders one PNG offscreen when
-//! `THRUM_CAPTURE_PNG` names a file.
+//! atmosphere and Sun with a camera meter for exposure, a lit ground that receives the Sun's
+//! shadows, and cooked meshes ([`SkyGame::with_meshes`]) or another engine contribution in the
+//! same lit scene. Each frame the game's update maps its [`Controls`] onto a [`Sky`]: the Sun's
+//! elevation and azimuth and a look-at [`Camera`]. [`run`] opens the window, or renders one PNG
+//! offscreen when `THRUM_CAPTURE_PNG` names a file.
 //!
-//! World units are metres with +Y up and sea level at Y = 0; north is -Z and east is +X.
+//! World units are metres with +Y up and the ground at Y = 0; north is -Z and east is +X.
 //!
 //! ```no_run
-//! use thrum_app::{Config, sky::{self, Camera, SkyGame}};
-//! use thrum_controls::{Controls, Display};
+//! use thrum_app::{Config, sky::{self, Camera, Controls, Display, MeshPlacement, SkyGame}};
 //!
-//! sky::run(
-//!     Config {
-//!         name: "my-scene",
-//!         frames_variable: "MY_SCENE_FRAMES",
-//!         window_title: "My scene",
-//!         title: "My scene",
-//!         render_thread: "my-scene-render",
-//!         panel_title: "My scene",
-//!         window_size: [1280, 720],
-//!     },
-//!     || {
-//!         let mut controls = Controls::new();
-//!         let sun = controls
-//!             .slider("sun.elevation", "Sun elevation", -10.0..=90.0)
-//!             .default(20.0)
-//!             .display(Display::plain(1, "°"))
-//!             .add()
-//!             .map_err(|error| error.to_string())?;
-//!         let camera = Camera::look_at([0.0, 1.7, 6.0], [0.0, 1.0, 0.0], 40.0);
-//!         Ok(SkyGame::new(controls, camera, move |controls, sky| {
-//!             sky.sun_elevation_degrees = controls.get(sun);
-//!         }))
-//!     },
-//! );
+//! sky::run(Config::new("my-scene", "My scene"), || {
+//!     let mut controls = Controls::new();
+//!     let sun = controls
+//!         .slider("sun.elevation", "Sun elevation", -10.0..=90.0)
+//!         .default(20.0)
+//!         .display(Display::plain(1, "°"))
+//!         .add()?;
+//!     let camera = Camera::look_at([0.0, 1.7, 6.0], [0.0, 1.0, 0.0], 40.0);
+//!     let rock = MeshPlacement::new("meshes/rock", "textures/white").on_ground();
+//!     let game = SkyGame::new(controls, camera, move |controls, sky| {
+//!         sky.sun_elevation_degrees = controls.get(sun);
+//!     });
+//!     Ok(game.with_meshes(vec![rock])?)
+//! });
 //! ```
 
 mod capture;
 
-use std::time::{Duration, Instant};
+use std::{
+    error::Error,
+    path::PathBuf,
+    sync::Mutex,
+    time::{Duration, Instant},
+};
 
-use thrum_controls::Controls;
+use thrum_asset_gpu::{CookedAssets, CookedConfig, CookedStats};
+pub use thrum_asset_gpu::{CookedMaterial, MeshPlacement};
+pub use thrum_controls::{Controls, Display};
 use thrum_core::{
     WorldEpoch,
     sim::{SnapshotId, WorldAdvance, WorldPublication},
 };
 use thrum_render::{
+    abi::{InstanceRecord, MaterialRecord},
     atmosphere::AtmosphereFrame,
     capabilities::DeviceCapabilities,
     contribution::SceneContribution,
@@ -62,6 +59,18 @@ use crate::{Config, Edits, Game, Gpu, KeyResponse, Prepared};
 
 /// Environment variable naming a PNG file: [`run`] renders one frame there without a window.
 pub const CAPTURE_VARIABLE: &str = "THRUM_CAPTURE_PNG";
+/// Environment variable naming the cooked asset store that [`SkyGame::with_meshes`] draws
+/// from; `./dev scene <folder>` cooks the folder's `assets/` and sets it.
+pub const STORE_VARIABLE: &str = "THRUM_ASSET_STORE";
+
+/// Linear base colour of the default ground: dry, grassy earth.
+pub const DEFAULT_GROUND: [f32; 3] = [0.16, 0.15, 0.11];
+/// Half the width of the ground square, in metres: it reaches within a pixel of the horizon
+/// from standing height, where the sky's own planet surface takes over.
+const GROUND_HALF_WIDTH_M: f32 = 4_000.0;
+/// Half the ground slab's thickness; its top face is the ground at Y = 0.
+const GROUND_HALF_DEPTH_M: f32 = 0.5;
+const GROUND_ROUGHNESS: f32 = 0.95;
 
 /// Near and far clip planes of every kit camera, in metres.
 const NEAR_M: f32 = 0.1;
@@ -239,12 +248,19 @@ impl FrameWorld for StillWorld {
 #[derive(Debug)]
 pub struct SkyScene {
     sky: Sky,
+    ground: bool,
 }
 
 impl SceneSource<SourceTick> for SkyScene {
     fn extract(&self, into: &mut RenderExtractor, page: &SourceTick) -> ExtractReport {
-        // The still world has no instances; content comes from the contribution.
-        into.extract(*page, [0.0; 3], |_| {})
+        // The still world's only instance is the ground slab in slot 0; other content comes
+        // from the contribution.
+        into.extract(*page, [0.0; 3], |sink| {
+            if self.ground {
+                let centre = [0.0, -f64::from(GROUND_HALF_DEPTH_M), 0.0];
+                sink.push(0, 1, 1, centre, 0);
+            }
+        })
     }
 
     fn frame(
@@ -297,15 +313,17 @@ pub struct SkyGame {
     sent: Option<Sky>,
     refused: Option<String>,
     update: Update,
+    ground: Option<[f32; 3]>,
     contribution: Option<Box<dyn SceneContribution>>,
     status: Option<StatusProbe>,
     shown_status: Option<ContentStatus>,
 }
 
 impl SkyGame {
-    /// A scene with `controls` in the panel and `camera`, the Sun 30° high in the south-east.
-    /// `update` runs before every frame (and after every control edit) to map the controls
-    /// onto the [`Sky`]; a value the renderer cannot draw is reported and the previous sky kept.
+    /// A scene with `controls` in the panel, `camera`, the Sun 30° high in the south-east and
+    /// the default ground. `update` runs before every frame (and after every control edit) to
+    /// map the controls onto the [`Sky`]; a value the renderer cannot draw is reported and the
+    /// previous sky kept.
     pub fn new(
         controls: Controls,
         camera: Camera,
@@ -322,14 +340,41 @@ impl SkyGame {
             sent: None,
             refused: None,
             update: Box::new(update),
+            ground: Some(DEFAULT_GROUND),
             contribution: None,
             status: None,
             shown_status: None,
         }
     }
 
-    /// Draw an engine contribution (such as cooked meshes) lit by the sky. `status` reports
-    /// its progress: the window logs each change, and a capture waits until it is drawn.
+    /// The ground: a flat, rough surface at Y = 0, about 8 km across, lit by the Sun and sky
+    /// and receiving the Sun's shadows. `colour` is its linear base colour (each channel 0–1;
+    /// [`DEFAULT_GROUND`] unless set), and `None` removes it, leaving the sky's distant planet
+    /// surface below the horizon.
+    #[must_use]
+    pub fn with_ground(mut self, colour: Option<[f32; 3]>) -> Self {
+        self.ground = colour;
+        self
+    }
+
+    /// Draw cooked meshes from the store named by `THRUM_ASSET_STORE` ([`STORE_VARIABLE`]),
+    /// which `./dev scene <folder>` cooks from the folder's `assets/` and keeps cooking as
+    /// they change. The window logs each newly drawn generation; a capture waits for the first.
+    ///
+    /// # Errors
+    /// The variable is unset or names a store nothing was cooked into, or a placement's
+    /// transform is not rigid with one uniform scale; each message says what to do.
+    pub fn with_meshes(self, meshes: Vec<MeshPlacement>) -> Result<Self, String> {
+        let store = cooked_store(std::env::var_os(STORE_VARIABLE))?;
+        let assets = CookedAssets::new(CookedConfig::new(store, meshes))
+            .map_err(|error| error.to_string())?;
+        let stats = assets.stats();
+        Ok(self.with_contribution(Box::new(assets), move || cooked_status(&stats)))
+    }
+
+    /// Draw an engine contribution lit by the sky. `status` reports its progress: the window
+    /// logs each change, and a capture waits until it is drawn. [`Self::with_meshes`] does this
+    /// for cooked meshes.
     #[must_use]
     pub fn with_contribution(
         mut self,
@@ -399,17 +444,16 @@ impl SkyGame {
     ) -> Result<FrameHost<StillWorld, SkyScene>, String> {
         let _ = self.update();
         self.sky.check()?;
-        // The renderer needs one instance row; an inactive row (generation zero) draws nothing.
-        let mut scene = SyntheticScene::grid(1).map_err(|error| format!("sky scene: {error:?}"))?;
-        scene.instances[0].ids[3] = 0;
-        scene.sun_shadows = true;
         let mut host = pollster::block_on(FrameHost::new(
             capabilities,
             queue,
             config,
             StillWorld,
-            SkyScene { sky: self.sky },
-            scene,
+            SkyScene {
+                sky: self.sky,
+                ground: self.ground.is_some(),
+            },
+            ground_scene(self.ground)?,
             FALLBACK_EXPOSURE,
         ))
         .map_err(|error| error.to_string())?;
@@ -485,13 +529,81 @@ impl Game for SkyGame {
     }
 }
 
-/// Open `game` in a window until it is closed (`config.frames_variable` bounds a scripted
-/// run), or, when `THRUM_CAPTURE_PNG` names a file, render one frame there offscreen after
-/// applying `THRUM_PARAMS` and waiting for the contribution to draw. Failures are explained
-/// on standard error with a nonzero exit.
-pub fn run(config: Config, game: impl FnOnce() -> Result<SkyGame, String>) {
+/// The scene's one instance row: the ground slab, or an inactive row (generation zero) that
+/// draws nothing, since the renderer needs at least one.
+fn ground_scene(ground: Option<[f32; 3]>) -> Result<SyntheticScene, String> {
+    let mut scene = SyntheticScene::grid(1).map_err(|error| format!("sky scene: {error:?}"))?;
+    scene.sun_shadows = true;
+    let Some(colour) = ground else {
+        scene.instances[0].ids[3] = 0;
+        return Ok(scene);
+    };
+    if !colour.iter().all(|channel| (0.0..=1.0).contains(channel)) {
+        return Err(format!(
+            "ground colour {colour:?} must be linear RGB with each channel within 0–1"
+        ));
+    }
+    let [r, g, b] = colour;
+    scene.materials = vec![MaterialRecord {
+        base_rgba: [r, g, b, 1.0],
+        surface: [1.0, GROUND_ROUGHNESS, 0.0, 1.0],
+        ..MaterialRecord::default()
+    }];
+    // The synthetic cube spans -1..1 on each axis: scale it to a wide, thin slab.
+    let half = [
+        GROUND_HALF_WIDTH_M,
+        GROUND_HALF_DEPTH_M,
+        GROUND_HALF_WIDTH_M,
+    ];
+    let mut slab = InstanceRecord::identity(0, 0);
+    for (axis, extent) in half.into_iter().enumerate() {
+        slab.current[axis][axis] = extent;
+        slab.normal[axis][axis] = extent.recip();
+    }
+    slab.current[3][1] = -GROUND_HALF_DEPTH_M;
+    slab.previous = slab.current;
+    scene.instances[0] = slab;
+    Ok(scene)
+}
+
+/// The cooked store `THRUM_ASSET_STORE` names, refused with the next step when it is unset or
+/// nothing was cooked there.
+fn cooked_store(variable: Option<std::ffi::OsString>) -> Result<PathBuf, String> {
+    let store = variable.map(PathBuf::from).ok_or(
+        "THRUM_ASSET_STORE is not set, so there are no cooked meshes to draw; run the scene \
+         with ./dev scene <its folder>, which cooks its assets/ and sets it",
+    )?;
+    if !store.join("HEAD").is_file() {
+        return Err(format!(
+            "asset store {} has no HEAD: nothing has been cooked there; run ./dev scene <the \
+             scene's folder>, or cargo run --release -p thrum-cook -- cook <its assets folder> {}",
+            store.display(),
+            store.display()
+        ));
+    }
+    Ok(store)
+}
+
+/// What cooked assets show: the drawn generation, or why nothing is drawn yet.
+fn cooked_status(stats: &Mutex<CookedStats>) -> ContentStatus {
+    let Ok(stats) = stats.lock() else {
+        return ContentStatus::Failed("cooked asset observations were poisoned".into());
+    };
+    match (stats.drawn, stats.errors.last()) {
+        (Some(generation), _) => ContentStatus::Drawn(generation),
+        (None, Some(error)) => ContentStatus::Failed(error.clone()),
+        (None, None) => ContentStatus::Loading,
+    }
+}
+
+/// Open the scene `game` builds in a window until it is closed (`config.frames_variable`
+/// bounds a scripted run; `THRUM_REPORT=1` prints the frames report at the end), or, when
+/// `THRUM_CAPTURE_PNG` names a file, render one frame there offscreen after applying
+/// `THRUM_PARAMS` and waiting for cooked meshes to draw. Failures, including an error `game`
+/// returns, are explained on standard error with a nonzero exit.
+pub fn run(config: Config, game: impl FnOnce() -> Result<SkyGame, Box<dyn Error>>) {
     let named = move || {
-        game().map(|mut game| {
+        game().map_err(|error| error.to_string()).map(|mut game| {
             game.name = config.name;
             game
         })

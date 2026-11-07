@@ -10,6 +10,11 @@ multiplayer play share the same authoritative rules.
 iPhone simulator shell. An optional native cooked valley shares the physical sky and frame host; Chrome still uses
 the diagnostic scene. The showcase and creator experience remain unfinished. See [the build plan](docs/BUILD-PLAN.md).
 
+**Make your first scene.** On a Mac, after the setup below, `./dev starter` opens a cooked rock on lit ground
+under a physically based sky, with Sun sliders and asset hot reload, in about 40 lines of game code. The
+[starter README](examples/starter/README.md) shows how to copy it into your own scene and run that with
+`./dev scene <folder>`.
+
 To run the native authored scene on this Mac after setup:
 
 ```sh

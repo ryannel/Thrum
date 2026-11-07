@@ -1066,10 +1066,11 @@ pub fn run<G: Game + 'static>(config: Config, game: impl FnOnce() -> Result<G, S
     run_with(config, false, game);
 }
 
-/// Run `game` in one window until the person closes it, then print the frames report over a
-/// bounded window of recent samples. Closing the window is success. Setting
-/// `config.frames_variable` bounds the run exactly as [`run`] does, for scripted checks.
-/// Failures are reported on standard error and exit the process with a nonzero status.
+/// Run `game` in one window until the person closes it. Closing the window is success. Setting
+/// `config.frames_variable` bounds the run exactly as [`run`] does, for scripted checks, and
+/// setting [`REPORT_VARIABLE`] to `1` prints the frames report over a bounded window of
+/// recent samples at the end. Failures are reported on standard error and exit the process
+/// with a nonzero status.
 ///
 /// # Panics
 /// If the platform refuses to create the event loop, as on a second call in one process.
@@ -1079,6 +1080,10 @@ pub fn run_until_closed<G: Game + 'static>(
 ) {
     run_with(config, true, game);
 }
+
+/// Environment variable that asks [`run_until_closed`] for the frames report: set it to `1`.
+/// [`run`] always prints the report.
+pub const REPORT_VARIABLE: &str = "THRUM_REPORT";
 
 #[expect(
     clippy::print_stdout,
@@ -1124,13 +1129,23 @@ fn run_with<G: Game + 'static>(
         ));
     }
     match app.error.take().map_or_else(|| app.finish(), Err) {
-        Ok(report) => println!("{report}"),
+        Ok(report) => {
+            if prints_report(until_closed, std::env::var(REPORT_VARIABLE).ok().as_deref()) {
+                println!("{report}");
+            }
+        }
         Err(error) => {
             eprintln!("{}: {error}", config.name);
             drop(app);
             std::process::exit(1);
         }
     }
+}
+
+/// Whether a finished run prints its frames report: always for a bounded [`run`], and for
+/// [`run_until_closed`] only when [`REPORT_VARIABLE`] is `1`.
+fn prints_report(until_closed: bool, requested: Option<&str>) -> bool {
+    !until_closed || requested == Some("1")
 }
 
 /// The run's presented-frame bound, or `None` to run until the window closes.
@@ -1160,7 +1175,7 @@ fn run_frames(variable: &str, value: Option<&str>) -> Result<usize, String> {
 
 #[cfg(test)]
 mod tests {
-    use super::{frame_limit, run_frames};
+    use super::{frame_limit, prints_report, run_frames};
 
     #[test]
     fn frame_count_for_present_qualification_is_bounded() {
@@ -1180,6 +1195,13 @@ mod tests {
 
     #[test]
     fn a_run_until_closed_is_bounded_only_when_its_variable_is_set() {
+        assert!(prints_report(false, None), "a bounded run always reports");
+        assert!(
+            !prints_report(true, None),
+            "a closed window reports only on request"
+        );
+        assert!(!prints_report(true, Some("0")));
+        assert!(prints_report(true, Some("1")));
         assert_eq!(frame_limit("THRUM_STARTER_FRAMES", None, true), Ok(None));
         assert_eq!(
             frame_limit("THRUM_STARTER_FRAMES", Some("90"), true),
