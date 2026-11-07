@@ -26,8 +26,7 @@
 //! receives exactly the scene's Sun, sky, local lights, shadows, reflections and aerial perspective.
 //! The source and layouts are an internal, versioned module seam, not a stable WGSL ABI.
 //!
-//! Cooked contributions do not yet cast shadows: they receive the scene's shadow maps but have no
-//! draw in its shadow passes. A shadow draw belongs in the same graph seam, not a parallel owner.
+//! Opaque casters can contribute bounds and draws to the scene’s existing Sun cascades.
 
 /// Read-only description of a prepared scene's forward pass.
 pub struct SceneSurface<'a> {
@@ -57,6 +56,54 @@ pub struct SceneSurface<'a> {
     pub color_formats: [wgpu::TextureFormat; 2],
     /// Reverse-Z depth attachment (compare `Greater`, cleared to zero).
     pub depth_format: wgpu::TextureFormat,
+    /// The existing Sun depth pass, when shadows are enabled for the scene.
+    pub shadow: Option<SceneShadowSurface<'a>>,
+}
+
+/// Pipeline inputs for the scene's depth-only Sun cascades.
+pub struct SceneShadowSurface<'a> {
+    /// Group 0 contains the cascade's column-major world-to-clip matrix at binding 0.
+    pub view_layout: &'a wgpu::BindGroupLayout,
+    /// Reverse-Z depth format with the `Greater` comparison.
+    pub depth_format: wgpu::TextureFormat,
+}
+
+/// Finite world-space bounds for the contribution's selected opaque casters.
+#[derive(Clone, Copy)]
+pub struct ShadowBounds {
+    min: [f32; 3],
+    max: [f32; 3],
+}
+
+impl ShadowBounds {
+    /// Check a world-space axis-aligned box. Flat bounds are valid.
+    #[must_use]
+    pub fn new(min: [f32; 3], max: [f32; 3]) -> Option<Self> {
+        (0..3)
+            .all(|axis| min[axis].is_finite() && max[axis].is_finite() && min[axis] <= max[axis])
+            .then_some(Self { min, max })
+    }
+
+    /// Smallest box containing both inputs.
+    #[must_use]
+    pub fn union(self, other: Self) -> Self {
+        Self {
+            min: std::array::from_fn(|axis| self.min[axis].min(other.min[axis])),
+            max: std::array::from_fn(|axis| self.max[axis].max(other.max[axis])),
+        }
+    }
+
+    pub(crate) fn depth_interval(self, axis: [f32; 3]) -> (f32, f32) {
+        let mut min = 0.0;
+        let mut max = 0.0;
+        for (i, weight) in axis.into_iter().enumerate() {
+            let a = weight * self.min[i];
+            let b = weight * self.max[i];
+            min += a.min(b);
+            max += a.max(b);
+        }
+        (min, max)
+    }
 }
 
 /// Per-frame camera facts a contribution may need on the CPU (for example to cull).
@@ -111,6 +158,15 @@ pub trait SceneContribution: wgpu::WasmNotSend {
 
     /// Draw at the end of the forward pass. Groups 0, 1 and 3 are the scene's.
     fn draw(&self, pass: &mut wgpu::RenderPass<'_>);
+
+    /// Bounds of the opaque casters selected by this frame's upload recording.
+    /// The selection must stay fixed through both cascade draws and forward.
+    fn shadow_bounds(&self) -> Option<ShadowBounds> {
+        None
+    }
+
+    /// Append the selected casters to a cascade pass with its view bound at group 0.
+    fn draw_shadow(&self, _pass: &mut wgpu::RenderPass<'_>) {}
 
     /// The encoder holding this frame's recording was submitted: commit it. `history_advanced`
     /// is false for a capture, which renders without making itself the scene's previous frame.

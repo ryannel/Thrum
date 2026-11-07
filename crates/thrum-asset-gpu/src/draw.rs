@@ -1,6 +1,8 @@
 //! Generation-bound pipelines and per-set bind groups for drawing cooked products in the scene.
 
-use thrum_render::contribution::{ContributionFrame, SceneSurface};
+use thrum_render::contribution::{
+    ContributionFrame, SceneShadowSurface, SceneSurface, ShadowBounds,
+};
 
 use std::cell::Cell;
 
@@ -16,6 +18,7 @@ pub(crate) struct Pipelines {
     device: wgpu::Device,
     queue: wgpu::Queue,
     mesh: wgpu::RenderPipeline,
+    shadow: Option<wgpu::RenderPipeline>,
     volume: wgpu::RenderPipeline,
     volume_layout: wgpu::BindGroupLayout,
     material_layout: wgpu::BindGroupLayout,
@@ -29,6 +32,7 @@ pub(crate) struct Pipelines {
 /// Per-set GPU bindings, rebuilt whenever the set or the surface changes.
 pub(crate) struct Bound {
     meshes: Vec<BoundMesh>,
+    pub(crate) shadow_bounds: Option<ShadowBounds>,
     volume: Option<(wgpu::BindGroup, wgpu::Buffer)>,
     /// Meshlets the last cull kept (one `u32`), copied out for [`crate::CookedStats`] and
     /// cleared after each frame's cull.
@@ -62,6 +66,7 @@ struct BoundMesh {
     meshlets: u32,
     vertex: [wgpu::Buffer; 2],
     indices: wgpu::Buffer,
+    shadow_indices: u32,
 }
 
 fn texture_entry(
@@ -343,6 +348,10 @@ impl Pipelines {
             device: device.clone(),
             queue: surface.queue.clone(),
             mesh,
+            shadow: surface
+                .shadow
+                .as_ref()
+                .map(|shadow| shadow_pipeline(device, shadow)),
             volume,
             volume_layout,
             material_layout: surface.material_layout.clone(),
@@ -375,6 +384,7 @@ impl Pipelines {
             4,
             wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
         );
+        let mut shadow_bounds: Option<ShadowBounds> = None;
         let meshes = set
             .meshes
             .iter()
@@ -467,6 +477,16 @@ impl Pipelines {
                     ],
                 });
                 let (scale, _, _) = model.to_scale_rotation_translation();
+                let shadow_indices = if self.shadow.is_some()
+                    && mesh.index_count != 0
+                    && let Some((min, max)) = mesh.caster_box
+                    && let Some(bounds) = world_caster_bounds(model, min, max)
+                {
+                    shadow_bounds = Some(shadow_bounds.map_or(bounds, |all| all.union(bounds)));
+                    mesh.index_count
+                } else {
+                    0
+                };
                 BoundMesh {
                     material,
                     cull,
@@ -479,6 +499,7 @@ impl Pipelines {
                     meshlets: mesh.meshlet_count,
                     vertex: [mesh.positions.clone(), mesh.attributes.clone()],
                     indices: mesh.indices.clone(),
+                    shadow_indices,
                 }
             })
             .collect();
@@ -524,6 +545,7 @@ impl Pipelines {
         });
         Bound {
             meshes,
+            shadow_bounds,
             volume,
             visible,
             continued: Cell::new(false),
@@ -569,6 +591,21 @@ impl Pipelines {
         continued
     }
 
+    pub(crate) fn draw_shadow(&self, bound: &Bound, pass: &mut wgpu::RenderPass<'_>) {
+        let Some(pipeline) = &self.shadow else { return };
+        pass.set_pipeline(pipeline);
+        for mesh in &bound.meshes {
+            if mesh.shadow_indices == 0 {
+                continue;
+            }
+            pass.set_vertex_buffer(0, mesh.vertex[0].slice(..));
+            pass.set_vertex_buffer(1, mesh.instance.slice(..));
+            pass.set_index_buffer(mesh.indices.slice(..), wgpu::IndexFormat::Uint32);
+            // Camera meshlet culling cannot determine visibility from the Sun.
+            pass.draw_indexed(0..mesh.shadow_indices, 0, 0..1);
+        }
+    }
+
     /// Draw meshes with the scene's fragment, then the volume. Scene groups 0, 1 and 3 are bound.
     pub(crate) fn draw(&self, bound: &Bound, pass: &mut wgpu::RenderPass<'_>) {
         if !bound.meshes.is_empty() {
@@ -588,4 +625,75 @@ impl Pipelines {
             pass.draw(0..36, 0..1);
         }
     }
+}
+
+fn world_caster_bounds(
+    model: glam::Mat4,
+    min: glam::Vec3,
+    max: glam::Vec3,
+) -> Option<ShadowBounds> {
+    let mut low = glam::Vec3::splat(f32::INFINITY);
+    let mut high = glam::Vec3::splat(f32::NEG_INFINITY);
+    for corner in 0..8 {
+        let local = glam::Vec3::new(
+            if corner & 1 == 0 { min.x } else { max.x },
+            if corner & 2 == 0 { min.y } else { max.y },
+            if corner & 4 == 0 { min.z } else { max.z },
+        );
+        let world = model.transform_point3(local);
+        if !world.is_finite() {
+            return None;
+        }
+        low = low.min(world);
+        high = high.max(world);
+    }
+    ShadowBounds::new(low.to_array(), high.to_array())
+}
+
+fn shadow_pipeline(
+    device: &wgpu::Device,
+    surface: &SceneShadowSurface<'_>,
+) -> wgpu::RenderPipeline {
+    let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+        label: Some("cooked Sun casters"),
+        bind_group_layouts: &[Some(surface.view_layout)],
+        immediate_size: 0,
+    });
+    let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+        label: Some("cooked Sun casters"),
+        source: wgpu::ShaderSource::Wgsl(include_str!("shadow.wgsl").into()),
+    });
+    device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+        label: Some("cooked Sun casters"),
+        layout: Some(&layout),
+        vertex: wgpu::VertexState {
+            module: &module,
+            entry_point: Some("vertex"),
+            compilation_options: wgpu::PipelineCompilationOptions::default(),
+            buffers: &[
+                Some(wgpu::VertexBufferLayout {
+                    array_stride: 12,
+                    step_mode: wgpu::VertexStepMode::Vertex,
+                    attributes: &wgpu::vertex_attr_array![0 => Float32x3],
+                }),
+                Some(wgpu::VertexBufferLayout {
+                    array_stride: INSTANCE_BYTES,
+                    step_mode: wgpu::VertexStepMode::Instance,
+                    attributes: &wgpu::vertex_attr_array![3 => Float32x4, 4 => Float32x4, 5 => Float32x4, 6 => Float32x4],
+                }),
+            ],
+        },
+        primitive: wgpu::PrimitiveState { cull_mode: Some(wgpu::Face::Back), ..Default::default() },
+        depth_stencil: Some(wgpu::DepthStencilState {
+            format: surface.depth_format,
+            depth_write_enabled: Some(true),
+            depth_compare: Some(wgpu::CompareFunction::Greater),
+            stencil: wgpu::StencilState::default(),
+            bias: wgpu::DepthBiasState::default(),
+        }),
+        multisample: wgpu::MultisampleState::default(),
+        fragment: None,
+        multiview_mask: None,
+        cache: None,
+    })
 }

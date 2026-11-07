@@ -133,6 +133,10 @@ impl PreparedSynthetic {
             fragment_entry: self.surface.fragment_entry,
             color_formats: [SCENE_FORMAT, MOTION_FORMAT],
             depth_format: DEPTH_FORMAT,
+            shadow: self
+                .shadow
+                .as_ref()
+                .map(super::shadow::ShadowPrepared::surface),
         }
     }
 

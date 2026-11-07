@@ -23,7 +23,7 @@ use std::time::{Duration, Instant};
 
 use thrum_asset::{Ktx2Format, Profile};
 use thrum_render::contribution::{
-    ContributionFrame, ContributionPasses, SceneContribution, SceneSurface,
+    ContributionFrame, ContributionPasses, SceneContribution, SceneSurface, ShadowBounds,
 };
 
 pub use staging::COPY_UNIT;
@@ -539,6 +539,18 @@ impl SceneContribution for CookedAssets {
             && let Some(bound) = live.drawn()
         {
             live.pipelines.draw(bound, pass);
+        }
+    }
+
+    fn shadow_bounds(&self) -> Option<ShadowBounds> {
+        self.live.as_ref()?.drawn()?.shadow_bounds
+    }
+
+    fn draw_shadow(&self, pass: &mut wgpu::RenderPass<'_>) {
+        if let Some(live) = &self.live
+            && let Some(bound) = live.drawn()
+        {
+            live.pipelines.draw_shadow(bound, pass);
         }
     }
 
