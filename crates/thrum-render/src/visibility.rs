@@ -25,14 +25,25 @@ const MESH_LEN: usize = 48;
 const PARAMS_LEN: usize = 16;
 /// One parameter record per phase, at the portable uniform offset alignment.
 const PARAMS_STRIDE: u32 = 256;
-const PHASES: u32 = 3;
+const PHASES: u32 = 4;
 /// Last-visible bits per workgroup of slots.
 const WORDS: u32 = WORKGROUP / 32;
+/// Graph owner of the last-visible history pair.
+const HISTORY_OWNER: u64 = 0x5649_4849;
 const VIEW_BYTES: u64 = 160;
 /// Pipeline role inside the synthetic closure.
 pub(crate) const ROLE: u32 = 0x5649;
-/// Graph pass name.
+/// Pipeline role of the late occlusion phase.
+pub(crate) const ROLE_LATE: u32 = 0x564A;
+/// Pipeline role of the depth pyramid build.
+pub(crate) const ROLE_PYRAMID: u32 = 0x5650;
+/// Graph pass name of the frustum compaction.
 pub(crate) const PASS: &str = "camera visibility";
+/// Graph pass name of the early occlusion phase.
+pub(crate) const EARLY_PASS: &str = "camera visibility early";
+/// Graph pass name of the late occlusion phase.
+pub(crate) const LATE_PASS: &str = "camera visibility late";
+pub(crate) use pyramid::PASS as PYRAMID_PASS;
 
 /// Stable mesh row: index range and local bounds. Rows never move once
 /// assigned, so a bucket's first index and base vertex stay fixed.
@@ -67,6 +78,11 @@ pub enum CullMode {
     Direct,
     /// GPU frustum compaction and an indexed indirect draw.
     Frustum,
+    /// Two-phase occlusion: last frame's visible set first, then the rest
+    /// of the view against this frame's depth pyramid, in a second forward
+    /// pass. For the opaque field path; while a scene contribution draws,
+    /// each frame takes the Frustum decision instead.
+    Occlusion,
 }
 
 /// Which slots one target's compaction lists; selects its parameter record.
@@ -78,6 +94,9 @@ pub(crate) enum Phase {
     Early = 1,
     /// Slots in view, not hidden by this frame's pyramid, not drawn early.
     Late = 2,
+    /// Nothing: zero instances, and the history cleared. The late phase's
+    /// record while a frame takes the Frustum decision.
+    Skip = 3,
 }
 
 /// Device-local pipelines and the mesh table.
@@ -88,13 +107,19 @@ pub(crate) struct VisibilityPrepared {
     scatter: wgpu::ComputePipeline,
     meshes: wgpu::Buffer,
     params: wgpu::Buffer,
-    /// The camera's one last-visible history: one bit per slot, written only
-    /// by the late phase and read by the next frame's early phase in queue
-    /// order. Zero after creation, so a new device or capacity starts with
-    /// every visible slot in the late phase.
-    history: wgpu::Buffer,
-    /// Bound by frustum targets, which never read history or depth.
+    /// The camera's last-visible history, two sides of one bit per slot,
+    /// paired with the transform history's sides: a frame reads the committed
+    /// side and its late phase writes the other, so only a committed display
+    /// frame advances it and a capture or cancelled frame cannot. Zero after
+    /// creation, so a new device or capacity starts with every visible slot
+    /// in the late phase.
+    history: [wgpu::Buffer; 2],
+    /// Bound wherever no pyramid is read: frustum and early targets, and a
+    /// late target's Skip phase. Binding a real pyramid would register its
+    /// mips for initialization even on frames that never build it.
     idle_pyramid: wgpu::TextureView,
+    /// Occlusion only: the depth pyramid build.
+    pyramid: Option<pyramid::PyramidPrepared>,
     capacity: u32,
     active: u32,
     key: PipelineKey,
@@ -104,7 +129,10 @@ pub(crate) struct VisibilityPrepared {
 pub(crate) struct VisibilityTarget {
     visible: wgpu::Buffer,
     args: wgpu::Buffer,
-    group: wgpu::BindGroup,
+    /// Indexed by the history side the frame writes.
+    groups: [wgpu::BindGroup; 2],
+    /// Late targets only: the same groups with the idle pyramid, for Skip.
+    skip_groups: Option<[wgpu::BindGroup; 2]>,
     phase: Phase,
 }
 
@@ -115,6 +143,22 @@ pub(crate) struct VisibilityIds {
     pub(crate) visible: ResourceId,
     /// Indirect arguments, read by the forward draw.
     pub(crate) args: ResourceId,
+    /// Occlusion only: the camera's last-visible history pair, the committed
+    /// side read by both phases and the next side written by the late phase.
+    history: Option<HistoryIds>,
+}
+
+/// The graph's two sides of the last-visible history.
+#[derive(Clone, Debug)]
+pub(crate) struct HistoryIds {
+    committed: ResourceId,
+    next: ResourceId,
+}
+
+/// One frame slot's occlusion state: the late phase and the pyramid it reads.
+pub(crate) struct OcclusionTarget {
+    late: VisibilityTarget,
+    pyramid: pyramid::PyramidTarget,
 }
 
 impl VisibilityPrepared {
@@ -126,6 +170,7 @@ impl VisibilityPrepared {
         capacity: u32,
         meshes: &[MeshRecord],
         active: u32,
+        mode: CullMode,
     ) -> Self {
         let entry = |binding, ty, dynamic| wgpu::BindGroupLayoutEntry {
             binding,
@@ -152,7 +197,8 @@ impl VisibilityPrepared {
                 entry(6, write, false),
                 entry(7, write, false),
                 entry(8, write, false),
-                entry(9, write, false),
+                entry(9, read, false),
+                entry(11, write, false),
                 wgpu::BindGroupLayoutEntry {
                     binding: 10,
                     visibility: wgpu::ShaderStages::COMPUTE,
@@ -197,11 +243,13 @@ impl VisibilityPrepared {
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
-        let history = storage(
-            device,
-            "visibility last-visible history",
-            bits_bytes(capacity),
-        );
+        let history = std::array::from_fn(|_| {
+            storage(
+                device,
+                "visibility last-visible history",
+                bits_bytes(capacity),
+            )
+        });
         let idle_pyramid = device
             .create_texture(&wgpu::TextureDescriptor {
                 label: Some("visibility idle pyramid"),
@@ -218,6 +266,7 @@ impl VisibilityPrepared {
                 view_formats: &[],
             })
             .create_view(&wgpu::TextureViewDescriptor::default());
+        let pyramid = (mode == CullMode::Occlusion).then(|| pyramid::PyramidPrepared::new(device));
         let prepared = Self {
             count: pipeline("count"),
             offsets: pipeline("offsets"),
@@ -227,6 +276,7 @@ impl VisibilityPrepared {
             params,
             history,
             idle_pyramid,
+            pyramid,
             capacity,
             active,
             key,
@@ -237,6 +287,31 @@ impl VisibilityPrepared {
 
     pub(crate) fn key(&self) -> PipelineKey {
         self.key
+    }
+
+    /// Frustum, or Occlusion when the pyramid is prepared.
+    pub(crate) fn mode(&self) -> CullMode {
+        if self.pyramid.is_some() {
+            CullMode::Occlusion
+        } else {
+            CullMode::Frustum
+        }
+    }
+
+    /// Occlusion only: the late phase's pipeline key.
+    pub(crate) fn late_key(&self) -> PipelineKey {
+        PipelineKey {
+            role: ROLE_LATE,
+            ..self.key
+        }
+    }
+
+    /// Occlusion only: the pyramid build's pipeline key.
+    pub(crate) fn pyramid_key(&self) -> PipelineKey {
+        PipelineKey {
+            role: ROLE_PYRAMID,
+            ..self.key
+        }
     }
 
     /// Bytes of one target's visible slot list.
@@ -292,13 +367,28 @@ impl VisibilityPrepared {
         )
     }
 
+    /// Occlusion only: one frame slot's early target and its late phase with
+    /// the pyramid of `depth` (extent `extent`).
+    pub(crate) fn occlusion_target(
+        &self,
+        device: &wgpu::Device,
+        view: &wgpu::Buffer,
+        instances: &wgpu::Buffer,
+        serials: &wgpu::Buffer,
+        depth: &wgpu::TextureView,
+        extent: [u32; 2],
+    ) -> Option<(VisibilityTarget, OcclusionTarget)> {
+        let pyramid = self.pyramid.as_ref()?.target(device, depth, extent);
+        let mips = pyramid
+            .texture()
+            .create_view(&wgpu::TextureViewDescriptor::default());
+        let [early, late] = self.occlusion_targets(device, view, instances, serials, &mips);
+        Some((early, OcclusionTarget { late, pyramid }))
+    }
+
     /// Allocate one frame slot's early and late targets. They share scratch,
     /// which their ordered passes use in turn, and the camera's history; the
     /// late target reads `pyramid`, every mip of this slot's depth pyramid.
-    #[cfg_attr(
-        not(test),
-        expect(dead_code, reason = "bound by the M2 synthetic seam")
-    )]
     pub(crate) fn occlusion_targets(
         &self,
         device: &wgpu::Device,
@@ -314,7 +404,14 @@ impl VisibilityPrepared {
             serials,
             pyramid,
         };
-        [Phase::Early, Phase::Late].map(|phase| self.phase_target(device, inputs, &scratch, phase))
+        let early = Inputs {
+            pyramid: &self.idle_pyramid,
+            ..inputs
+        };
+        [
+            self.phase_target(device, early, &scratch, Phase::Early),
+            self.phase_target(device, inputs, &scratch, Phase::Late),
+        ]
     }
 
     fn scratch(&self, device: &wgpu::Device) -> [wgpu::Buffer; 2] {
@@ -356,55 +453,198 @@ impl VisibilityPrepared {
                 | wgpu::BufferUsages::COPY_SRC,
             mapped_at_creation: false,
         });
-        let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("camera visibility"),
-            layout: &self.layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
-                        buffer: view,
-                        offset: 0,
-                        size: wgpu::BufferSize::new(VIEW_BYTES),
-                    }),
-                },
-                binding(1, instances),
-                binding(2, serials),
-                binding(3, &self.meshes),
-                wgpu::BindGroupEntry {
-                    binding: 4,
-                    resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
-                        buffer: &self.params,
-                        offset: 0,
-                        size: wgpu::BufferSize::new(PARAMS_LEN as u64),
-                    }),
-                },
-                binding(5, group_offsets),
-                binding(6, &visible),
-                binding(7, &args),
-                binding(8, masks),
-                binding(9, &self.history),
-                wgpu::BindGroupEntry {
-                    binding: 10,
-                    resource: wgpu::BindingResource::TextureView(pyramid),
-                },
-            ],
-        });
+        let bind = |pyramid: &wgpu::TextureView| -> [wgpu::BindGroup; 2] {
+            std::array::from_fn(|write| {
+                device.create_bind_group(&wgpu::BindGroupDescriptor {
+                    label: Some("camera visibility"),
+                    layout: &self.layout,
+                    entries: &[
+                        wgpu::BindGroupEntry {
+                            binding: 0,
+                            resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
+                                buffer: view,
+                                offset: 0,
+                                size: wgpu::BufferSize::new(VIEW_BYTES),
+                            }),
+                        },
+                        binding(1, instances),
+                        binding(2, serials),
+                        binding(3, &self.meshes),
+                        wgpu::BindGroupEntry {
+                            binding: 4,
+                            resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
+                                buffer: &self.params,
+                                offset: 0,
+                                size: wgpu::BufferSize::new(PARAMS_LEN as u64),
+                            }),
+                        },
+                        binding(5, group_offsets),
+                        binding(6, &visible),
+                        binding(7, &args),
+                        binding(8, masks),
+                        binding(9, &self.history[1 - write]),
+                        wgpu::BindGroupEntry {
+                            binding: 10,
+                            resource: wgpu::BindingResource::TextureView(pyramid),
+                        },
+                        binding(11, &self.history[write]),
+                    ],
+                })
+            })
+        };
         VisibilityTarget {
+            groups: bind(pyramid),
+            skip_groups: (phase == Phase::Late).then(|| bind(&self.idle_pyramid)),
             visible,
             args,
-            group,
             phase,
         }
     }
 
-    /// Declare the compute pass and its outputs. `reads` carries the view,
-    /// instance and serial accesses from the forward pass's own resources.
+    /// Declare the frustum or early compute pass and its outputs. `reads`
+    /// carries the view, instance and serial accesses from the forward
+    /// pass's own resources.
     pub(crate) fn append_graph(
         &self,
         graph: &mut FrameGraph,
         mut reads: Vec<Access>,
     ) -> Result<VisibilityIds, GraphError> {
+        let history = self
+            .pyramid
+            .is_some()
+            .then(|| self.history_ids(graph))
+            .transpose()?;
+        reads.extend(history.iter().map(|history| Access {
+            resource: history.committed.clone(),
+            range: 0..bits_bytes(self.capacity),
+            kind: AccessKind::StorageRead,
+            store: true,
+        }));
+        let name = if history.is_some() { EARLY_PASS } else { PASS };
+        let (visible, args) = self.outputs(graph, &mut reads)?;
+        graph.pass(Pass {
+            name: name.into(),
+            scope: PassScope::View(1),
+            pipeline: Some(self.key),
+            accesses: reads,
+            external_side_effect: false,
+        });
+        Ok(VisibilityIds {
+            visible,
+            args,
+            history,
+        })
+    }
+
+    /// Both sides of the last-visible history, as a graph history pair like
+    /// the transform history: the executor binds the committed side for
+    /// reads and the alternate side for the late phase's publication.
+    fn history_ids(&self, graph: &mut FrameGraph) -> Result<HistoryIds, GraphError> {
+        let descriptor = ResourceDescriptor::Buffer {
+            bytes: bits_bytes(self.capacity),
+            usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
+        };
+        let scope = ResourceScope::History {
+            owner: HISTORY_OWNER,
+            epoch: self.key.device_generation,
+            initialized: true,
+        };
+        Ok(HistoryIds {
+            committed: graph.resource(descriptor.clone(), scope)?,
+            next: graph.resource(descriptor, scope)?,
+        })
+    }
+
+    /// Occlusion only: declare the pyramid build from `depth` (sampled, so
+    /// the early forward stores it) and the late phase. `reads` are the same
+    /// view, instance and serial accesses the early phase was given.
+    pub(crate) fn append_late_graph(
+        &self,
+        graph: &mut FrameGraph,
+        mut reads: Vec<Access>,
+        early: &VisibilityIds,
+        depth: &ResourceId,
+        extent: [u32; 2],
+    ) -> Result<VisibilityIds, GraphError> {
+        let history = early.history.clone().ok_or(GraphError::InvalidDependency)?;
+        let size = [
+            pyramid::previous_pow2(extent[0]),
+            pyramid::previous_pow2(extent[1]),
+        ];
+        let mips = size[0].max(size[1]).ilog2() + 1;
+        let texture = graph.resource(
+            ResourceDescriptor::Texture {
+                width: size[0],
+                height: size[1],
+                layers: 1,
+                mips,
+                samples: 1,
+                format: pyramid::PYRAMID_FORMAT,
+                usage: wgpu::TextureUsages::STORAGE_BINDING | wgpu::TextureUsages::TEXTURE_BINDING,
+            },
+            ResourceScope::Imported { initialized: false },
+        )?;
+        graph.pass(Pass {
+            name: PYRAMID_PASS.into(),
+            scope: PassScope::View(1),
+            pipeline: Some(self.pyramid_key()),
+            accesses: vec![
+                Access {
+                    resource: depth.clone(),
+                    range: 0..1,
+                    kind: AccessKind::SampledRead,
+                    store: true,
+                },
+                Access {
+                    resource: texture.clone(),
+                    range: 0..u64::from(mips),
+                    kind: AccessKind::StorageWrite,
+                    store: true,
+                },
+            ],
+            external_side_effect: false,
+        });
+        reads.extend([
+            Access {
+                resource: texture,
+                range: 0..u64::from(mips),
+                kind: AccessKind::SampledRead,
+                store: true,
+            },
+            Access {
+                resource: history.committed.clone(),
+                range: 0..bits_bytes(self.capacity),
+                kind: AccessKind::StorageRead,
+                store: true,
+            },
+            // The dispatched words and the cleared tail define every word.
+            Access {
+                resource: history.next.clone(),
+                range: 0..bits_bytes(self.capacity),
+                kind: AccessKind::StorageWrite,
+                store: true,
+            },
+        ]);
+        let (visible, args) = self.outputs(graph, &mut reads)?;
+        graph.pass(Pass {
+            name: LATE_PASS.into(),
+            scope: PassScope::View(1),
+            pipeline: Some(self.late_key()),
+            accesses: reads,
+            external_side_effect: false,
+        });
+        Ok(VisibilityIds {
+            visible,
+            args,
+            history: Some(history),
+        })
+    }
+
+    fn outputs(
+        &self,
+        graph: &mut FrameGraph,
+        reads: &mut Vec<Access>,
+    ) -> Result<(ResourceId, ResourceId), GraphError> {
         let visible_bytes = self.visible_bytes();
         let visible = graph.resource(
             ResourceDescriptor::Buffer {
@@ -436,32 +676,41 @@ impl VisibilityPrepared {
                 store: true,
             },
         ]);
-        graph.pass(Pass {
-            name: PASS.into(),
-            scope: PassScope::View(1),
-            pipeline: Some(self.key),
-            accesses: reads,
-            external_side_effect: false,
-        });
-        Ok(VisibilityIds { visible, args })
+        Ok((visible, args))
     }
 
-    /// Encode the three ordered dispatches into the graph's compute pass.
-    pub(crate) fn encode(
+    /// Encode the three ordered dispatches into the graph's compute pass,
+    /// with `phase`'s record: normally the target's own, or the Frustum
+    /// decision for an early target and Skip for a late one. The frame reads
+    /// history side `1 - write_side` and its late phase writes `write_side`.
+    pub(crate) fn encode_phase(
         &self,
         encoder: &mut wgpu::CommandEncoder,
         target: &VisibilityTarget,
-        view_offset: u32,
-        generation: u64,
+        (phase, write_side): (Phase, usize),
+        (view_offset, generation): (u32, u64),
         compiled: &CompiledPass,
         timings: Option<&mut GpuTimings>,
     ) -> Result<bool, TimingError> {
+        let groups = self.groups();
+        // The phases that publish history write only the dispatched words;
+        // zero the rest of that side, so no word an older or larger frame
+        // left there survives a shrink, a capture or a side flip.
+        if matches!(phase, Phase::Late | Phase::Skip) {
+            let written = u64::from(groups) * u64::from(WORDS) * 4;
+            if written < bits_bytes(self.capacity) {
+                encoder.clear_buffer(&self.history[write_side & 1], written, None);
+            }
+        }
         let Some(mut pass) = compiled.begin_compute(encoder, generation, timings)? else {
             return Ok(false);
         };
-        let groups = self.groups();
-        let params_offset = target.phase as u32 * PARAMS_STRIDE;
-        pass.set_bind_group(0, &target.group, &[view_offset, params_offset]);
+        let params_offset = phase as u32 * PARAMS_STRIDE;
+        let bound = match (phase, &target.skip_groups) {
+            (Phase::Skip, Some(skip)) => skip,
+            _ => &target.groups,
+        };
+        pass.set_bind_group(0, &bound[write_side & 1], &[view_offset, params_offset]);
         pass.set_pipeline(&self.count);
         pass.dispatch_workgroups(groups, 1, 1);
         pass.set_pipeline(&self.offsets);
@@ -472,7 +721,39 @@ impl VisibilityPrepared {
     }
 }
 
+impl OcclusionTarget {
+    pub(crate) fn late(&self) -> &VisibilityTarget {
+        &self.late
+    }
+}
+
+impl VisibilityPrepared {
+    /// Occlusion only: build the slot's pyramid in the graph's compute pass.
+    pub(crate) fn encode_pyramid(
+        &self,
+        encoder: &mut wgpu::CommandEncoder,
+        target: &OcclusionTarget,
+        generation: u64,
+        compiled: &CompiledPass,
+        timings: Option<&mut GpuTimings>,
+    ) -> Result<bool, TimingError> {
+        let Some(prepared) = &self.pyramid else {
+            return Ok(false);
+        };
+        let Some(mut pass) = compiled.begin_compute(encoder, generation, timings)? else {
+            return Ok(false);
+        };
+        prepared.encode(&mut pass, &target.pyramid);
+        Ok(true)
+    }
+}
+
 impl VisibilityTarget {
+    /// The phase this target was allocated for.
+    pub(crate) fn phase(&self) -> Phase {
+        self.phase
+    }
+
     pub(crate) fn visible(&self) -> &wgpu::Buffer {
         &self.visible
     }

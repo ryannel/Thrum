@@ -27,12 +27,13 @@ use std::sync::Arc;
 use wgpu::util::DeviceExt;
 
 mod air_shadow;
-mod camera_culling;
+pub(crate) mod camera_culling;
 mod cluster;
 mod cluster_gpu;
 mod contributed;
 mod display;
 mod exposure;
+mod forward;
 mod frame_stats;
 mod history_gpu;
 mod readback;
@@ -48,6 +49,8 @@ pub(crate) use air_shadow::AIR_SHADOW_PASS;
 #[derive(Clone, Copy)]
 enum AttachmentUse {
     Depth,
+    /// Occlusion: depth the pyramid samples after the early forward pass.
+    SampledDepth,
     Scene,
     Motion,
 }
@@ -1403,7 +1406,7 @@ impl PreparedSynthetic {
     /// Number of prepared GPU scene passes for this scene's shadow recipe.
     pub fn scene_pass_count(&self) -> u32 {
         4 + u32::from(self.shadow.is_some()) * shadow::LAYERS
-            + u32::from(self.visibility.is_some())
+            + camera_culling::pass_count(self.camera_culling())
             + u32::from(self.air_shadow.is_some())
             + u32::from(self.cluster_compute.is_some())
             + u32::from(self.contribution_passes.compute)
@@ -1412,13 +1415,12 @@ impl PreparedSynthetic {
                 .as_ref()
                 .map_or(0, AtmospherePrepared::pass_count)
     }
-    /// Camera opaque draw mode; Frustum adds one timed compute pass.
+    /// Camera opaque draw mode; Frustum adds one timed compute pass and
+    /// Occlusion four timed passes.
     pub fn camera_culling(&self) -> CullMode {
-        if self.visibility.is_some() {
-            CullMode::Frustum
-        } else {
-            CullMode::Direct
-        }
+        self.visibility
+            .as_ref()
+            .map_or(CullMode::Direct, VisibilityPrepared::mode)
     }
     /// Whether this prepared scene builds selective local-light lists on GPU.
     pub fn gpu_clustered(&self) -> bool {
@@ -1665,7 +1667,7 @@ impl PreparedSynthetic {
     ) -> Result<ResourceId, RenderError> {
         let usage = match role {
             AttachmentUse::Depth => wgpu::TextureUsages::RENDER_ATTACHMENT,
-            AttachmentUse::Scene => {
+            AttachmentUse::SampledDepth | AttachmentUse::Scene => {
                 wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING
             }
             AttachmentUse::Motion => {
@@ -1690,7 +1692,7 @@ impl PreparedSynthetic {
             resource: resource.clone(),
             range: 0..1,
             kind: AccessKind::AttachmentClear,
-            store: !matches!(role, AttachmentUse::Depth),
+            store: !matches!(role, AttachmentUse::Depth | AttachmentUse::SampledDepth),
         });
         Ok(resource)
     }
@@ -1794,7 +1796,12 @@ impl PreparedSynthetic {
             .transpose()?;
         self.append_cluster_reads(&mut graph, &mut accesses, &mut prepared_keys)?;
         let attachment = (width, height, &mut graph, &mut accesses);
-        let depth = Self::view_attachment(attachment, DEPTH_FORMAT, AttachmentUse::Depth)?;
+        let depth_use = if self.camera_culling() == CullMode::Occlusion {
+            AttachmentUse::SampledDepth
+        } else {
+            AttachmentUse::Depth
+        };
+        let depth = Self::view_attachment(attachment, DEPTH_FORMAT, depth_use)?;
         for class in self.classes.arrays() {
             let texture = graph.resource(
                 ResourceDescriptor::Texture {
@@ -1819,7 +1826,7 @@ impl PreparedSynthetic {
         let scene = Self::view_attachment(attachment, SCENE_FORMAT, AttachmentUse::Scene)?;
         let attachment = (width, height, &mut graph, &mut accesses);
         let motion = Self::view_attachment(attachment, MOTION_FORMAT, AttachmentUse::Motion)?;
-        self.append_camera_visibility(
+        let early = self.append_camera_visibility(
             &mut graph,
             view,
             &instance,
@@ -1841,6 +1848,16 @@ impl PreparedSynthetic {
             accesses,
             external_side_effect: true,
         });
+        // Occlusion's late opaque pass loads and overwrites what the early
+        // pass wrote, so history publication and tone follow it.
+        let late = self.append_camera_late(
+            &mut graph,
+            early,
+            (&depth, [width, height]),
+            forward,
+            &mut prepared_keys,
+        )?;
+        let forward = late.unwrap_or(forward);
         self.append_history_publish(
             &mut graph,
             &mut prepared_keys,
@@ -1857,6 +1874,7 @@ impl PreparedSynthetic {
             width,
             height,
         )?;
+        Self::order_after_camera_late(&mut graph, late, [&depth, &scene, &motion])?;
         let scene_graph = graph.compile(self.key.device_generation, &prepared_keys)?;
         Self::append_readback_pass(&mut graph, &output, height, row_bytes)?;
         let readback_graph = graph.compile(self.key.device_generation, &prepared_keys)?;
@@ -2218,6 +2236,29 @@ impl PreparedSynthetic {
                         frame.visibility(pass)
                     })
                 }
+                Some(key)
+                    if Some(key) == self.visibility.as_ref().map(VisibilityPrepared::late_key) =>
+                {
+                    RecordBinding::<SceneFamily>::new(id, PassKind::Compute, |frame, pass| {
+                        frame.late_visibility(pass)
+                    })
+                }
+                Some(key)
+                    if Some(key)
+                        == self
+                            .visibility
+                            .as_ref()
+                            .map(VisibilityPrepared::pyramid_key) =>
+                {
+                    RecordBinding::<SceneFamily>::new(id, PassKind::Compute, |frame, pass| {
+                        frame.depth_pyramid(pass)
+                    })
+                }
+                Some(key) if key == self.forward_late_key() => {
+                    RecordBinding::<SceneFamily>::new(id, PassKind::Render, |frame, pass| {
+                        frame.opaque_late(pass)
+                    })
+                }
                 Some(key) if key == self.key => {
                     RecordBinding::<SceneFamily>::new(id, PassKind::Render, |frame, pass| {
                         frame.opaque(pass)
@@ -2366,69 +2407,6 @@ impl PreparedSynthetic {
             exposure_side: self.history.write_side(),
         })
     }
-
-    fn encode_opaque(
-        &self,
-        encoder: &mut wgpu::CommandEncoder,
-        target: &OffscreenTarget,
-        compiled: &CompiledPass,
-        timings: Option<&mut GpuTimings>,
-        contribution: Option<&dyn SceneContribution>,
-        exposure_side: usize,
-    ) -> Result<(), RenderError> {
-        let mut pass = compiled
-            .begin_render(
-                encoder,
-                [
-                    Some(GraphColorAttachment {
-                        resource: &target.ids.scene,
-                        range: 0..1,
-                        view: &target.scene_view,
-                        clear: self.background,
-                    }),
-                    Some(GraphColorAttachment {
-                        resource: &target.ids.motion,
-                        range: 0..1,
-                        view: &target.motion_view,
-                        clear: wgpu::Color::TRANSPARENT,
-                    }),
-                ],
-                Some(GraphDepthAttachment {
-                    resource: &target.ids.depth,
-                    range: 0..1,
-                    view: &target.depth,
-                    clear: 0.0,
-                }),
-                self.key.device_generation,
-                timings,
-            )?
-            .ok_or(RenderError::GraphPassMismatch)?;
-        if let Some(atmosphere) = self.atmosphere.as_ref() {
-            atmosphere.draw(&mut pass, exposure_side);
-        }
-        pass.set_pipeline(if self.instance_upload.two_sided_count() == 0 {
-            &self.pipeline
-        } else {
-            &self.pipeline_two_sided
-        });
-        let view_offset = self.view_stride * u32::from(target.frame_revision & 1 != 0);
-        pass.set_bind_group(0, &target.view_bind_group, &[view_offset]);
-        pass.set_bind_group(1, &self.light[exposure_side], &[]);
-        pass.set_bind_group(2, &self.materials, &[]);
-        pass.set_bind_group(3, self.history.read_group(), &[]);
-        let view = self.pending_view.as_ref().unwrap_or(&self.view_sample);
-        let indices = if matches!(view.projection(), Projection::OrthographicFixture) {
-            &self.cube_reversed_indices
-        } else {
-            &self.cube_indices
-        };
-        pass.set_index_buffer(indices.slice(..), wgpu::IndexFormat::Uint16);
-        self.draw_camera(&mut pass, target);
-        if let Some(contribution) = contribution {
-            contribution.draw(&mut pass);
-        }
-        Ok(())
-    }
 }
 fn checked_display_gain(exposure: f32) -> Result<f32, RenderError> {
     let inverse = 1.0 / exposure;
@@ -2521,6 +2499,7 @@ pub struct OffscreenTarget {
     shadow: Option<ShadowTarget>,
     air_shadow: Option<AirShadowTarget>,
     visibility: Option<VisibilityTarget>,
+    occlusion: Option<camera_culling::LateCulling>,
     culling_stats: Option<camera_culling::CullingStats>,
     depth: wgpu::TextureView,
     width: u32,
@@ -2608,7 +2587,8 @@ impl OffscreenTarget {
             (None, None) => None,
             _ => return Err(RenderError::GraphPassMismatch),
         };
-        let visibility = prepared.camera_visibility_target(device);
+        let (visibility, occlusion) =
+            prepared.camera_visibility_target(device, &depth, [width, height]);
         let mut view_entries = vec![
             wgpu::BindGroupEntry {
                 binding: 0,
@@ -2642,6 +2622,12 @@ impl OffscreenTarget {
             layout: &prepared.view_layout,
             entries: &view_entries,
         });
+        let occlusion = camera_culling::late_view_group(
+            device,
+            &prepared.view_layout,
+            &view_entries,
+            occlusion,
+        );
         let graph = prepared.bind_scene_graph(graph)?;
         let readback_graph = prepared.bind_scene_graph(readback_graph)?;
         Ok(Self {
@@ -2660,6 +2646,7 @@ impl OffscreenTarget {
             shadow,
             air_shadow,
             visibility,
+            occlusion,
             culling_stats: camera_culling::CullingStats::new(device, prepared.camera_culling()),
             depth,
             width,

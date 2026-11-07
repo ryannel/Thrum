@@ -1,14 +1,10 @@
 //! The reverse-Z min depth pyramid for two-phase occlusion: pipelines shared
 //! across targets, and a per-target texture with one storage view per mip.
-//! The frame-graph pass (`camera depth pyramid`) is declared with the M2 seam.
+//! The frame-graph pass (`camera depth pyramid`) is declared by visibility.
 
 /// Format of every pyramid mip: one portable, storage-writable float.
 pub(crate) const PYRAMID_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::R32Float;
-/// Pass name registered for timing once the M2 graph lands.
-#[cfg_attr(
-    not(test),
-    expect(dead_code, reason = "registered with the M2 graph seam")
-)]
+/// Graph and timing pass name.
 pub(crate) const PASS: &str = "camera depth pyramid";
 const GROUP: u32 = 8;
 
@@ -16,10 +12,6 @@ const GROUP: u32 = 8;
 pub(crate) const OCCLUSION_WGSL: &str = include_str!("occlusion.wgsl");
 
 /// Compute pipelines and layouts; independent of target size.
-#[cfg_attr(
-    not(test),
-    expect(dead_code, reason = "prepared with the M2 graph seam")
-)]
 pub(crate) struct PyramidPrepared {
     first: wgpu::ComputePipeline,
     down: wgpu::ComputePipeline,
@@ -28,28 +20,16 @@ pub(crate) struct PyramidPrepared {
 }
 
 /// One target's pyramid and the bind group for each mip's dispatch.
-#[cfg_attr(
-    not(test),
-    expect(dead_code, reason = "prepared with the M2 graph seam")
-)]
 pub(crate) struct PyramidTarget {
     texture: wgpu::Texture,
     dispatches: Vec<(wgpu::BindGroup, [u32; 2])>,
 }
 
 /// The largest power of two not above `n` (`n >= 1`).
-#[cfg_attr(
-    not(test),
-    expect(dead_code, reason = "prepared with the M2 graph seam")
-)]
 pub(crate) fn previous_pow2(n: u32) -> u32 {
     1 << n.ilog2()
 }
 
-#[cfg_attr(
-    not(test),
-    expect(dead_code, reason = "prepared with the M2 graph seam")
-)]
 impl PyramidPrepared {
     pub(crate) fn new(device: &wgpu::Device) -> Self {
         let storage = wgpu::BindGroupLayoutEntry {
@@ -183,10 +163,6 @@ impl PyramidPrepared {
     }
 }
 
-#[cfg_attr(
-    not(test),
-    expect(dead_code, reason = "prepared with the M2 graph seam")
-)]
 impl PyramidTarget {
     /// The whole pyramid, every mip, for the late cull's sampled binding.
     pub(crate) fn texture(&self) -> &wgpu::Texture {
