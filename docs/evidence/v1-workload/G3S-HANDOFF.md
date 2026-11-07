@@ -8,6 +8,23 @@ The Codex goal remains active. Its attachment is
 
 ## Current checkpoint
 
+- Daylight selector WIP `3407173` fades the audited star field out at
+  68.1–71.5 klux for the valley's default camera. Fixed exposure, an
+  unsupported projection or the diagnostic overlay keeps the full field.
+  The bright graph drops the star draw and discards opaque depth. All 132
+  Metal captures and 42 Chrome daylight poses match the always-draw build
+  byte for byte. Both Chrome midnight views also match. `./dev check`
+  passed 515 tests. Independent review verified the fixed Earth and
+  display bounds. The 120 Hz offscreen row could not retire half its
+  baseline callbacks under shared load. The separate same-binary inline
+  run omits the pass in all 400 selected frames. Full GPU span p95 was
+  4.33–6.31 ms with the pass and 4.39–4.41 ms without it, at shared load
+  173–176. The pass sum grows because the measured intervals overlap.
+  There is no demonstrated whole-frame speed gain. Reconcile the culling
+  count graph on main and qualify live motion before admission. Exact
+  hashes, measurements and restartable commands are in
+  `tmp/g3s-star-catalog/NOTES.md`.
+
 - Twilight shoulder WIP `6a2dbf6` preserves physical sky radiance and HDR
   storage scale while softening incident exposure recovery in deep twilight.
   Across the Metal referee's 18.85–19.65 h pair, exposed linear luminance
@@ -17,8 +34,9 @@ The Codex goal remains active. Its attachment is
   on the right and legible stars and terrain at midnight. The rock's lit
   face remains faint. The checked daylight and early twilight captures
   match the baseline. `./dev check` passed 514 tests. The change stays in
-  the existing GPU meter dispatch. Paired timing, the daylight selector
-  and live motion are open. Raw pairs and rerun commands are in
+  the existing GPU meter dispatch. The 1080p inline GPU pass-sum p95 at
+  19.65 h overlaps the baseline (5.18–5.23 versus 5.13–5.17 ms, shared
+  load 31–32.5). Live motion remains open. Raw pairs and rerun commands are in
   `tmp/g3s-star-catalog/NOTES.md`.
 
 - The opt-in star pass is verified on Metal and Chrome at local WIP
