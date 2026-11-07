@@ -173,43 +173,39 @@ fn crossover_case(count: usize, mode: ExecutionMode) {
     );
 }
 
-/// Interleaved Serial/RayonForced crossover: both worlds stay warm and run in
-/// A-B-B-A blocks, so drift in host load hits both modes alike. Per-round
-/// p50s give the run-to-run spread a win must exceed. Prints the host load
-/// first; rows under load qualify nothing.
+/// Warm one benchmark world and return its per-tick command.
+fn warmed(count: usize, mode: ExecutionMode) -> (Simulation, [Command; 1]) {
+    let mut sim = fixture(count, false, mode);
+    let command = [Command::SetHealth(
+        sim.handle(StableId(0)).expect("first mover"),
+        100,
+    )];
+    for _ in 0..80 {
+        sim.step(&command).expect("warm candidate tick");
+    }
+    (sim, command)
+}
+
+/// Run two warm worlds in eight interleaved A-B-B-A rounds, so drift in host
+/// load hits both alike. Per-round p50s give the run-to-run spread a
+/// difference must exceed. Rows under load qualify nothing.
 #[expect(
     clippy::print_stdout,
     reason = "the explicit benchmark emits its reproducible evidence table"
 )]
-fn crossover_abba_case(count: usize) {
+fn abba(worlds: &mut [(Simulation, [Command; 1]); 2], labels: &[String; 2]) {
     const ROUNDS: usize = 8;
     const BLOCK: usize = SAMPLES / (ROUNDS * 2);
-    let modes = [ExecutionMode::Serial, ExecutionMode::RayonForced];
-    let mut worlds = modes.map(|mode| fixture(count, false, mode));
-    let commands = worlds.each_ref().map(|sim| {
-        [Command::SetHealth(
-            sim.handle(StableId(0)).expect("first mover"),
-            100,
-        )]
-    });
-    for (sim, command) in worlds.iter_mut().zip(&commands) {
-        for _ in 0..80 {
-            sim.step(command).expect("warm candidate tick");
-        }
-    }
     let mut samples = [Vec::with_capacity(SAMPLES), Vec::with_capacity(SAMPLES)];
     let mut allocations = [0, 0];
     let mut round_p50 = [Vec::with_capacity(ROUNDS), Vec::with_capacity(ROUNDS)];
     for _ in 0..ROUNDS {
         let mut round = [Vec::with_capacity(BLOCK * 2), Vec::with_capacity(BLOCK * 2)];
         for index in [0, 1, 1, 0] {
+            let (sim, command) = &mut worlds[index];
             for _ in 0..BLOCK / 2 {
                 let (ns, allocs) = measured(|| {
-                    black_box(
-                        worlds[index]
-                            .step(&commands[index])
-                            .expect("candidate tick"),
-                    );
+                    black_box(sim.step(command).expect("candidate tick"));
                 });
                 round[index].push(ns);
                 allocations[index] += allocs;
@@ -221,19 +217,57 @@ fn crossover_abba_case(count: usize) {
             samples[index].extend_from_slice(&round);
         }
     }
-    for (index, mode) in modes.iter().enumerate() {
-        report(
-            &format!("crossover-abba,{count},{mode:?}"),
-            &mut samples[index],
-            allocations[index],
-        );
+    for (index, label) in labels.iter().enumerate() {
+        report(label, &mut samples[index], allocations[index]);
         let spread = &round_p50[index];
         println!(
-            "\"crossover-abba-round-p50,{count},{mode:?}\",{},{}",
+            "\"{label},round-p50\",{},{}",
             spread.iter().min().expect("rounds"),
             spread.iter().max().expect("rounds"),
         );
     }
+}
+
+/// Serial against RayonForced tick+page cost; the requested-Rayon crossover.
+fn crossover_abba_case(count: usize) {
+    let modes = [ExecutionMode::Serial, ExecutionMode::RayonForced];
+    let mut worlds = modes.map(|mode| warmed(count, mode));
+    abba(
+        &mut worlds,
+        &modes.map(|mode| format!("crossover-abba,{count},{mode:?}")),
+    );
+}
+
+/// Serial tick+page against the same tick with every page held, which skips
+/// capture: the difference is engine page capture's share of the tick.
+/// Change marking for publication still runs in both.
+fn capture_share_case(count: usize) {
+    let mut worlds = [
+        warmed(count, ExecutionMode::Serial),
+        warmed(count, ExecutionMode::Serial),
+    ];
+    let held: Vec<_> = (0..4)
+        .map(|index| {
+            let (sim, command) = &mut worlds[1];
+            if index != 0 {
+                sim.step(command).expect("published tick");
+            }
+            sim.published_page().expect("held page")
+        })
+        .collect();
+    // Deferred ticks swap two undo buffers; the first two grow them once.
+    let (sim, command) = &mut worlds[1];
+    for _ in 0..2 {
+        sim.step(command).expect("warm deferred tick");
+    }
+    abba(
+        &mut worlds,
+        &[
+            format!("capture-share,{count},captured"),
+            format!("capture-share,{count},pages-held"),
+        ],
+    );
+    drop(held);
 }
 
 #[expect(
@@ -982,6 +1016,14 @@ fn main() {
         print_host_load();
         for count in [10_000, 100_000, 200_000, 500_000] {
             crossover_abba_case(count);
+        }
+        print_host_load();
+        return;
+    }
+    if std::env::args().any(|argument| argument == "--capture-share") {
+        print_host_load();
+        for count in [10_000, 100_000] {
+            capture_share_case(count);
         }
         print_host_load();
         return;
