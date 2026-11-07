@@ -1,0 +1,15 @@
+Rows are p50/p95/p99/max.
+legacy taps: reads 79.0/85.0/85.0/85.0
+  flat CPU: abs error pp 1e-06/6.38653/15.134549/44.644516, max leak pp 44.644516
+  exact triangles CPU: abs error pp 1e-06/5.415058/13.841899/44.139484, max leak pp 44.139484
+max hierarchy: reads 40.0/96.0/103.0/143.0
+  flat CPU: abs error pp 1e-06/9.5e-05/0.000155/0.000542, max leak pp 0.000542
+  exact triangles CPU: abs error pp 1e-06/1.193082/1.374686/6.462395, max leak pp 0.183098
+hierarchy node tests 71.0/195.0/211.0/281.0
+witness 320/434: exact 0.000000, flat 0.000000, Metal 0.138419 -> 0.000000
+witness 640/434: exact 0.000000, flat 0.000000, Metal 0.193503 -> 0.000000
+witness 960/434: exact 0.000000, flat 0.000000, Metal 0.233965 -> 0.000000
+mips pass µs 105.0/491.125/491.125/491.125
+legacy pass µs 86.5/533.166/533.166/533.166
+hierarchy pass µs 295.792/688.042/688.042/688.042
+hierarchy plus reduction µs 438.374/1065.375/1065.375/1065.375
