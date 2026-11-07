@@ -15,9 +15,12 @@ The Codex goal remains active. Its attachment is
   step (52→26 codes) and moves the edge 15 px. A shader-only face-normal
   experiment gives 29 codes and adds a second contour. Across 97 held
   solar stops the largest step remains 144/136/137 codes for baseline,
-  taper and shader. Keep both as diagnostics and isolate direct Sun
-  visibility on the two sides of the edge next. The clip and ray witness
-  are in `tmp/g3s-sunset-lip/`. Ground E can land independently.
+  taper and shader. Independent terrain rays put the far receiver in
+  full shadow by 17.60 h while the near receiver sees the whole disk at
+  17.64 h. This explains the stronger stripe later in the sweep. Keep
+  both experiments as diagnostics. The next look pass should change
+  the authored lookout and check the full sweep. The clip and ray
+  witness are in `tmp/g3s-sunset-lip/`. Ground E can land independently.
 - The M3 Max's Xcode 27.2 Instruments probe completed 200 star-bearing
   frames but exported only the ray-tracing activity counter. The public
   Metal query exposed GPU timestamps. Actual attachment bandwidth needs
