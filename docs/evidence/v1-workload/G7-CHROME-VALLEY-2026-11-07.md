@@ -112,10 +112,18 @@ Chrome through the checker's `route` case, one fresh page per preset.
 
 **Build and input.** Each check run cited below built its own binaries from a clean tree (`built_by_this_run`,
 `dirty: false` in each `run.json`). All are in `tmp/g7-showcase/runs/`.
-- **M2, preset-driven frames:** check-163503 at c2e1ff45 saved the current baseline. check-163650 at 4101c3a5, the
-  baseline commit, compared against it. The commits after them change only evidence and the plan.
-  - Binaries: release `v1-game` `d8986d4f…` (with the capture seam), `thrum-cook` `e2fbdcfd…` and default-page Wasm
-    `46d3eb04…`.
+- **M2, preset-driven frames:**
+  - check-163503 at c2e1ff45 saved the current baseline.
+  - check-163650 at 4101c3a5, the baseline commit, compared against it.
+  - check-164639 rebuilt after the rebase on 6fa34365 and the review fixes, at dbcde616, and compared against it.
+  - These local commits were later rebased, and the commits after them change only the checker's preset
+    expectation, the script's baseline handling and documentation, not game, cook or web code.
+  - Binaries: release `v1-game` `d8986d4f…` (with the capture seam) in all three, `thrum-cook` `e2fbdcfd…` and
+    default-page Wasm `46d3eb04…`.
+  - The drift demonstration (check-164805, -164859 and -164948) ran with `--no-build` on those binaries from the
+    clean dbcde616 tree.
+  - Not cited: check-163312 ran on a dirty tree before the seams were committed, with an earlier game binary
+    (`ff8fa6f0…`).
 - **M1, matched poses:** check-161058, check-161243 (the first baseline), check-161350 (against it), mac-161439 and
   chrome-161454.
   - These used `v1-game` `6855e94d…` and the same cook and Wasm.
@@ -133,13 +141,14 @@ twilight and night looking upslope](g7-showcase/route-mac-vs-chrome.png)
 
 | Check | Result |
 |---|---|
-| Chrome against native | At all six stops, the Chrome frames differ from native by at most 0.027 (median), 0.061 (95th percentile) and 0.160 (maximum cell). These are mean absolute 8-bit RGB values over a 32×18 grid. The thresholds are 1.0 each, unchanged: the comparator and source root are the same, and the numbers did not move. The 17.4 h clear-Sun stop, Mac-only in M1, reads 0.026, 0.039 and 0.092, and shows the Sun disc above the ridge on both targets. |
+| Chrome against native | At all six stops, the Chrome frames differ from native by at most 0.027 (median), 0.061 (95th percentile) and 0.160 (maximum cell). These are mean absolute 8-bit RGB values over a 32×18 grid. The thresholds are 1.0 each, unchanged: the comparator and source root are the same, and the numbers did not move. The 17.4 h clear-Sun stop, Mac-only in M1, reads 0.026, 0.039 and 0.092. At full size it shows a crisp Sun disc, about 10 pixels across, above the ridge on both targets; the disc is too small to see in the contact sheet. |
 | Same input | The native store's generation-1 root is in both checker stores. Every page's loaded Wasm equals this run's build. Each Chrome stop's preset hash equals the repository's. The page reported nothing refused, and the native capture accounted for every preset key. Every pose equals its preset on both targets, and every Chrome stop held one paused tick through its capture. |
 | Negative control | The diagnostic scene differs from native by 9.2–39 (median), 30–70 (95th percentile) and 92–117 (maximum) at the five stops with a diagnostic phase: more than ten times a threshold at each. The checker has no diagnostic phase at 17.4 h, so that stop has no negative control. |
 | Positive control | The checker's frames before and after its texture retint, cropped to the canvas, differ by 34.4 in the maximum cell. The retint now reaches only the sphere and rock, because the ground has its own texture, so the median and 95th percentile stay at 0. The maximum cell is the statistic that catches a missing or wrong object. A wrong ground texture is caught by the Chrome-to-native comparison, not by this control. |
-| Repeatability and baseline | The M2 baseline run and the run against it both pass. The second differs from the baseline by at most 0.005, the stored rounding, over all 12 frames. M1's three clean runs, on the matched poses, agreed in the same way. |
-| Native capture seam | Without `THRUM_CAPTURE_PARAMS`, all 134 output files are byte-identical to the pre-seam binary's capture of the same store. With the six presets, four route frames byte-equal the matched-pose captures. The 17.4 h and 18.48 h frames differ by at most 28 levels on about 1,000–2,600 pixels near the Sun. That comes from the controls snapping solar time to the 0.01 h slider stop (17.4 h becomes 17.400002 h), which Chrome applies too. Each of these fails the capture with its reason: a missing file, a file that is not JSON, a refused key (the message names it and suggests the right one), a preset that does not pause the world, two presets with one output name, and an empty list (`tmp/g7-showcase/seam/`). |
-| Checker route case | Each of the six presets launches a fresh page with `?assets` and `?params`, and the six pass in 9–19 s per run. A shipped preset with a typo fails its stop. G3c's 16-view field oracle, rerun alongside, is byte-equal across Direct and Frustum. |
+| Repeatability and baseline | The three clean M2 runs pass with byte-identical stop frames on both targets. Each differs from the baseline by at most 0.005, the stored rounding, over all 12 frames. M1's three clean runs, on the matched poses, agreed in the same way. |
+| Drift is reported | Against a scratch baseline with one 8-cell patch of Chrome noon raised by 6 levels, `check --baseline` fails and names `chrome/noon` (maximum 6.002). `--save-baseline` then replaces that scratch baseline, recording the drift it replaced, and the next run passes within 0.005. The checked-in baseline was not touched. |
+| Native capture seam | Tested on the committed, rebased binary `d8986d4f…` (`tmp/g7-showcase/seam/rebased/`). Without `THRUM_CAPTURE_PARAMS`, all 134 output files are byte-identical to the pre-seam binary's capture of the same store. With it, the other 133 files are unchanged too, and `captures.json` differs only by its `route` key. With the six presets, four route frames byte-equal the matched-pose captures. The 17.4 h and 18.48 h frames differ by at most 28 levels on about 1,000–2,600 pixels near the Sun. That comes from the controls snapping solar time to the 0.01 h slider stop (17.4 h becomes 17.400002 h), which Chrome applies too. Each of these fails the capture with its reason: a missing file, a file that is not JSON, a refused key (the message names it and suggests the right one), a preset that does not pause the world, two presets with one output name, and an empty list. |
+| Checker route case | Each of the six checked-in presets launches a fresh page with `?assets` and `?params`, and the six pass in 9–19 s per run. The web build must ship each preset byte for byte and no others: a missing, a stale and an extra built preset each fail before any page loads, and a checked-in preset with a typo fails its stop. G3c's 16-view field oracle, rerun after both changes, is byte-equal across Direct and Frustum. |
 | `mac --stop sunset-clear-sun --frames 240` | Exit 0. The preset applied (4 changed, 0 refused) and the window presented 240 frames with no surface faults. The window was briefly occluded (5 occluded, 5 dropped surface frames). `run.json` records the store and scene. The window was not watched on screen. |
 | `chrome --stop twilight --no-open` | The printed URL, opened in the desktop app's browser pane, showed the paused twilight valley with the authored ground (`pane-observation.jpg` and `.json` in the run). The preset applied (3 changed, 1 unchanged, 0 refused). The server's `requests.log` shows the page fetching the preset, the scripts and the Wasm, and the Wasm the page served equals the build. Stopping the launcher stopped both servers. |
 
@@ -156,7 +165,7 @@ content change brings a reviewed recalibration rather than silently absorbing a 
 
 **Baseline.** `g7-showcase-baseline.json` (52 KB) holds the per-stop grids for both targets. Each grid is stored as
 uint16 hundredths of an 8-bit level. The file also records:
-- the identity: comparator version, source root and preset hashes;
+- the identity: comparator version, frame-source version, source root and preset hashes;
 - the build;
 - the thresholds;
 - how to reproduce and replace it.
@@ -178,9 +187,9 @@ post-rebase runs and M2's two:
 - Native capture launch to its first capture file: 0.34–2.73 s, offscreen, including one readback.
 - Chrome navigation to cooked content drawn: not measured. The checker logs no timestamps, so this proxy is still
   owed.
-- Build time (warm): 1.2–1.8 s.
+- Build time (warm, incremental): 1.2–8.1 s.
 - Scripted capture cost: the native capture run took 1.7–4.2 s. The route case took 9–19 s for six fresh pages. The
-  other checker cases took 16–28 s each. This is harness time, not frame time.
+  other checker cases took 15–28 s each. This is harness time, not frame time.
 
 **Still open for G7.**
 - The on-screen walk of the route on the Mac waits on screen control.
