@@ -93,7 +93,8 @@ struct Serials {
 @group(3) @binding(1) var<storage, read> history: array<HistoryRecord>;
 @group(3) @binding(2) var<uniform> serials: Serials;
 struct VertexOutput {
-    @builtin(position) position: vec4<f32>,
+    // Invariant, so the depth prepass rasterizes the depth the forward pass writes.
+    @builtin(position) @invariant position: vec4<f32>,
     @location(0) uv: vec2<f32>,
     @location(1) @interpolate(flat) material: u32,
     @location(2) normal: vec3<f32>,
