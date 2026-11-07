@@ -1,0 +1,12 @@
+2499 rays; p50/p95/p99/max
+DFS flat CPU absolute error (percentage points): 0.000/0.000/0.000/0.001
+DFS texture loads: 40.000/96.000/103.000/143.000; tested nodes: 71.000/195.000/211.000/281.000
+DDA flat CPU absolute error (percentage points): 0.000/0.000/0.000/0.001
+DDA texture loads: 40.000/96.000/103.000/143.000; tested nodes: 40.000/96.000/103.000/143.000
+DFS/DDA worst difference (percentage points): 0.000000
+mips pass (µs): 41.041/1288.666/1288.666/1288.666
+legacy pass (µs): 41.750/387.125/387.125/387.125
+DFS pass (µs): 217.291/461.083/461.083/461.083
+DDA pass (µs): 81.500/214.458/214.458/214.458
+DDA + mips (µs): 121.125/1372.291/1372.291/1372.291
+DDA - DFS paired (µs): -133.666/-32.125/-32.125/-32.125

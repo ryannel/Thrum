@@ -1,0 +1,30 @@
+0: cardinal east edge -0.001
+1: cardinal west edge -0.001
+2: cardinal negative slope -0.001
+3: near diagonal sliver -0.001
+4: far diagonal sliver -0.001
+5: counter diagonal -0.001
+6: map exit -0.001
+7: axis at map upper boundary -0.001
+8: cardinal east edge 0
+9: cardinal west edge 0
+10: cardinal negative slope 0
+11: near diagonal sliver 0
+12: far diagonal sliver 0
+13: counter diagonal 0
+14: map exit 0
+15: axis at map upper boundary 0
+16: cardinal east edge 0.001
+17: cardinal west edge 0.001
+18: cardinal negative slope 0.001
+19: near diagonal sliver 0.001
+20: far diagonal sliver 0.001
+21: counter diagonal 0.001
+22: map exit 0.001
+23: axis at map upper boundary 0.001
+24: empty interior
+25: empty outside
+26: first two cells excluded
+27: far receiver over higher blocker
+28: far receiver over lower blocker
+29: exact corner leaves zero overlap

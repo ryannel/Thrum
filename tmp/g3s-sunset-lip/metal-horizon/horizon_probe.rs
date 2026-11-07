@@ -64,6 +64,9 @@ fn staging(device: &wgpu::Device, size: u64) -> wgpu::Buffer {
 fn metal_flat_horizon() {
     let dir = std::env::var("THRUM_METAL_HORIZON").expect("probe directory");
     let dir = Path::new(&dir);
+    let output = std::env::var("THRUM_HORIZON_OUTPUT").expect("output directory");
+    let output = Path::new(&output);
+
     let (device, queue) = pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
         let adapter = instance.request_adapter(&wgpu::RequestAdapterOptions::default())
@@ -75,7 +78,9 @@ fn metal_flat_horizon() {
             required_features: wgpu::Features::TIMESTAMP_QUERY, ..Default::default()
         }).await.expect("Metal timestamp device")
     });
-    let raster = fs::read(dir.join("raster.bin")).expect("spur raster");
+    let input = std::env::var("THRUM_HORIZON_INPUT").unwrap_or_else(|_| dir.display().to_string());
+    let input = Path::new(&input);
+    let raster = fs::read(input.join("raster.bin")).expect("spur raster");
     let raster: Vec<f32> = raster.as_chunks::<4>().0.iter()
         .map(|word| f32::from_le_bytes(*word)).collect();
     assert_eq!(raster.len(), 1024 * 1024);
@@ -110,7 +115,7 @@ fn metal_flat_horizon() {
         &device, &later_layout, [(1,tex(&pair[0])),(2,tex(&pair[1]))],
     )).collect();
 
-    let ray_bytes = fs::read(dir.join("rays.bin")).expect("rays");
+    let ray_bytes = fs::read(input.join("rays.bin")).expect("rays");
     let count = u32::try_from(ray_bytes.len() / 48).expect("ray count");
     let rays = buffer_with(&device,&queue,&ray_bytes,wgpu::BufferUsages::STORAGE);
     let result_size = u64::from(count)*16;
@@ -125,9 +130,9 @@ fn metal_flat_horizon() {
     };
     let common = [(0,depth),(2,storage(true)),(3,storage(false))];
     let (legacy, legacy_layout) = pipeline(&device, &trace, "legacy", &common);
-    let (tree, tree_layout) = pipeline(&device, &trace, "tree", &[
-        (0,depth),(1,float),(2,storage(true)),(3,storage(false)),
-    ]);
+    let hierarchy_bindings = [(0,depth),(1,float),(2,storage(true)),(3,storage(false))];
+    let (tree, tree_layout) = pipeline(&device, &trace, "tree", &hierarchy_bindings);
+    let (dda, dda_layout) = pipeline(&device, &trace, "dda", &hierarchy_bindings);
     let legacy_group = group(&device, &legacy_layout, [
         (0,tex(&base)),(2,rays.as_entire_binding()),(3,result.as_entire_binding()),
     ]);
@@ -135,9 +140,13 @@ fn metal_flat_horizon() {
         (0,tex(&base)),(1,tex(&mip_chain)),(2,rays.as_entire_binding()),(3,result.as_entire_binding()),
     ]);
 
-    let outputs = [staging(&device,result_size), staging(&device,result_size)];
-    let samples = 16;
-    let query_count = samples * 6;
+    let dda_group = group(&device, &dda_layout, [
+        (0,tex(&base)),(1,tex(&mip_chain)),(2,rays.as_entire_binding()),(3,result.as_entire_binding()),
+    ]);
+    let traversals = [(&legacy,&legacy_group),(&tree,&tree_group),(&dda,&dda_group)];
+    let outputs = std::array::from_fn::<_, 3, _>(|_| staging(&device,result_size));
+    let samples = 12;
+    let query_count = samples * 8;
     let query = device.create_query_set(&wgpu::QuerySetDescriptor {
         label: None, ty: wgpu::QueryType::Timestamp, count: query_count,
     });
@@ -156,7 +165,7 @@ fn metal_flat_horizon() {
     for sample in 0..samples {
         {
             let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
-                label: Some("horizon parent mips"), timestamp_writes: Some(stamps(sample*6)),
+                label: Some("horizon parent mips"), timestamp_writes: Some(stamps(sample*8)),
             });
             pass.set_pipeline(&first);
             pass.set_bind_group(0,&first_group,&[]);
@@ -168,17 +177,16 @@ fn metal_flat_horizon() {
                 pass.dispatch_workgroups(width,width,1);
             }
         }
-        let order = [sample%2, 1-sample%2];
+        let order = match sample % 6 {
+            0 => [0,1,2], 1 => [0,2,1], 2 => [1,0,2],
+            3 => [1,2,0], 4 => [2,0,1], _ => [2,1,0],
+        };
         for row in order {
-            let (pipeline, group) = if row == 0 {
-                (&legacy,&legacy_group)
-            } else {
-                (&tree,&tree_group)
-            };
+            let (pipeline, group) = traversals[row as usize];
             {
                 let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
                     label: Some("horizon rays"),
-                    timestamp_writes: Some(stamps(sample*6+2+2*row)),
+                    timestamp_writes: Some(stamps(sample*8+2+2*row)),
                 });
                 pass.set_pipeline(pipeline);
                 pass.set_bind_group(0,group,&[]);
@@ -189,12 +197,18 @@ fn metal_flat_horizon() {
             }
         }
     }
+    {
+        let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor::default());
+        pass.set_pipeline(&legacy);
+        pass.set_bind_group(0,&legacy_group,&[]);
+        pass.dispatch_workgroups(1,1,1);
+    }
     encoder.resolve_query_set(&query,0..query_count,&resolve,0);
     encoder.copy_buffer_to_buffer(&resolve,0,&times,0,Some(query_bytes));
     queue.submit([encoder.finish()]);
-    for (file, buffer) in ["legacy.bin","tree.bin"].into_iter().zip(&outputs) {
-        read(&device,buffer,&dir.join(file));
+    for (file, buffer) in ["legacy.bin","tree.bin","dda.bin"].into_iter().zip(&outputs) {
+        read(&device,buffer,&output.join(file));
     }
-    read(&device,&times,&dir.join("timestamps.bin"));
+    read(&device,&times,&output.join("timestamps.bin"));
     eprintln!("timestamp period {} ns; {count} terrain rays", queue.get_timestamp_period());
 }
