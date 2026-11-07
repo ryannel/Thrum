@@ -122,3 +122,83 @@ fn tree(@builtin(global_invocation_id) id: vec3<u32>) {
 fn legacy(@builtin(global_invocation_id) id: vec3<u32>) {
     if id.x < arrayLength(&rays) { output[id.x] = tap(rays[id.x]); }
 }
+
+// Traverse in increasing grid indices while evaluating plane times in
+// original coordinates. Reflecting the float origin itself can move a
+// grazing ray onto another side of a plane near the map's outer edge.
+fn plane_time(plane: vec2<f32>, origin: vec2<f32>, inv: vec2<f32>) -> vec2<f32> {
+    return (select(plane,vec2(1024.0)-plane,inv<vec2(0.0))-origin)*inv;
+}
+
+fn cell_at(origin: vec2<f32>, velocity: vec2<f32>, inv: vec2<f32>, t: f32) -> vec2<i32> {
+    let base = floor(fma(velocity,vec2(t),origin));
+    let cell = select(base,vec2(1023.0)-base,velocity<vec2(0.0));
+    let lo = plane_time(cell,origin,inv);
+    let hi = plane_time(cell+vec2(1.0),origin,inv);
+    let moving = velocity!=vec2(0.0);
+    return vec2<i32>(cell)-vec2<i32>(moving & (lo>vec2(t)))+
+        vec2<i32>(moving & (hi<=vec2(t)));
+}
+
+fn traverse(ray: Ray) -> vec4<f32> {
+    let velocity = ray.origin_dir.zw;
+    let flip = velocity<vec2(0.0);
+    let origin = ray.origin_dir.xy;
+    let inv = 1.0/select(velocity,vec2(1.0),velocity==vec2(0.0));
+    let x = axis(origin.x,velocity.x,inv.x,0.0,1024.0);
+    let y = axis(origin.y,velocity.y,inv.y,0.0,1024.0);
+    var start = max(START,max(x.x,y.x));
+    let end = min(REACH,min(x.y,y.y));
+    var best = ray.limbs_ceiling.x;
+    let upper = ray.limbs_ceiling.y;
+    if start >= end { return vec4(fraction(ray,best),0.0,0.0,0.0); }
+    var cell = clamp(cell_at(origin,velocity,inv,start),vec2(0),vec2(1023));
+    var level = ROOT;
+    var reads = 0u;
+    var leaves = 0u;
+    loop {
+        let coordinate = cell >> vec2(level);
+        let high = (coordinate+vec2(1))<<vec2(level);
+        let exits = select(plane_time(vec2<f32>(high),origin,inv),vec2(REACH),velocity==vec2(0.0));
+        let exit = min(end,min(exits.x,exits.y));
+        let reflected = vec2(i32((1024u >> level)-1u))-coordinate;
+        let index = select(coordinate,reflected,flip);
+        var depth: f32;
+        if level == 0u {
+            depth = textureLoad(base,index,0);
+        } else {
+            depth = textureLoad(parents,index,i32(level)-1).x;
+        }
+        reads += 1u;
+        if depth > 0.0 && exit > start {
+            let rise = depth*ray.height_sun_scale_bias.z+
+                ray.height_sun_scale_bias.w-ray.height_sun_scale_bias.x;
+            let bound = rise/select(exit,start,rise>=0.0);
+            if bound > best {
+                if level > 0u {
+                    level -= 1u;
+                    continue;
+                }
+                leaves += 1u;
+                best = bound;
+                if best >= upper { break; }
+            }
+        }
+        if exit >= end { break; }
+        // The plane that ended this tile owns the cell transition. Use its
+        // integer boundary directly and reproject only the other axis.
+        let next = select(clamp(cell_at(origin,velocity,inv,exit),cell,high-vec2(1)),
+                          high,exits<=vec2(exit));
+        if any(next >= vec2(1024)) { break; }
+        let change = (next.x ^ cell.x) | (next.y ^ cell.y);
+        level = firstLeadingBit(u32(change));
+        cell = next;
+        start = max(start,exit);
+    }
+    return vec4(fraction(ray,best),f32(reads),f32(reads),f32(leaves));
+}
+
+@compute @workgroup_size(64)
+fn dda(@builtin(global_invocation_id) id: vec3<u32>) {
+    if id.x < arrayLength(&rays) { output[id.x] = traverse(rays[id.x]); }
+}

@@ -1,0 +1,10 @@
+   Compiling thrum-render v0.1.0 (/Users/ryannel/Workspace/thrum/tmp/g3s-horizon-metal-wip/crates/thrum-render)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 10.51s
+     Running unittests src/lib.rs (/Users/ryannel/Workspace/thrum/target/g3s-stars-valley/debug/deps/thrum_render-2cad04caa0788d46)
+
+running 1 test
+Metal adapter Apple M3 Max
+timestamp period 1 ns; 2499 terrain rays
+test visibility::pyramid::tests::horizon_probe::metal_flat_horizon ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 148 filtered out; finished in 1.55s
