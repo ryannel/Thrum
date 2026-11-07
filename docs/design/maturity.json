@@ -82,12 +82,12 @@
       ]
     },
     "G3s_first_light": {
-      "implementation": "partial_LUTs_receiver_Sun_SH9_GGX_one_Sky_native_cooked_scene",
-      "functional_validation": "Metal_GGX_DFG_SH9_scaled_aerial_Sun_receiver_shell_entry_twilight_chart_and_authored_recovery_pass;_closure_and_spectral_accuracy_open",
-      "experienced_quality": "agent_reviewed_native_valley_normals_and_receiver_Sun;_contact_contrast_colour_and_live_motion_open",
+      "implementation": "partial_LUTs_receiver_Sun_SH9_GGX_native_cooked_cascades",
+      "functional_validation": "Metal_sky_referees_authored_recovery_and_off_camera_cooked_shadow_pass;_spectral_and_closure_accuracy_open",
+      "experienced_quality": "agent_reviewed_native_contact_shadows;_low_Sun_polish_colour_and_live_motion_open",
       "platform_performance": {
-        "mac": "Metal_oracles_and_receiver_Sun_ABBA_recorded;_live_display_unqualified",
-        "browser": "Chrome156_M3Max_receiver_Sun_sky_route7phases24samples_pass;_diagnostic_scene_only",
+        "mac": "Metal_oracles_and_cooked_shadow_ABBA_recorded;_live_display_unqualified",
+        "browser": "Chrome156_M3Max_shadow_shader_sky_route7phases24samples_pass;_diagnostic_scene_only",
         "ios": "not_run"
       },
       "evidence": [
@@ -4453,6 +4453,13 @@
       "source": "https://jcgt.org/published/0007/04/01/paper.pdf",
       "owner": "thrum-render portable",
       "status": "partial; independent hemisphere DFG and cube/consumer GPU referees; real noon/sunrise/twilight materials reviewed; shared-load full-frame cost recorded, not a speed win",
+      "evidence": "../evidence/v1-workload/G3S-FIRST-LIGHT-2026-11-06.md"
+    },
+    {
+      "technique": "Cascaded Sun shadows with receiver-plane PCF",
+      "source": "https://learn.microsoft.com/en-us/windows/win32/dxtecharts/cascaded-shadow-maps",
+      "owner": "thrum-render portable",
+      "status": "Metal off-camera cast and native contact reviewed. Local low-Sun artifacts remain. Frame cost recorded.",
       "evidence": "../evidence/v1-workload/G3S-FIRST-LIGHT-2026-11-06.md"
     }
   ]

@@ -24,6 +24,8 @@ pub(crate) struct GpuMesh {
     /// Per meshlet culling bounds.
     pub(crate) bounds: wgpu::Buffer,
     pub(crate) meshlet_count: u32,
+    pub(crate) index_count: u32,
+    pub(crate) caster_box: Option<(glam::Vec3, glam::Vec3)>,
 }
 
 /// A sampled 2D texture or 3D volume.
@@ -372,6 +374,8 @@ impl Loader {
                 wgpu::BufferUsages::STORAGE,
             ),
             meshlet_count: u32::try_from(mesh.meshlets().len()).unwrap_or(u32::MAX),
+            index_count: u32::try_from(tables.indices.len()).unwrap_or(0),
+            caster_box: caster_box(mesh.positions()),
         };
         plan.buffer(positions, gpu.positions.clone());
         plan.buffer(attributes, gpu.attributes.clone());
@@ -404,6 +408,20 @@ impl Loader {
         plan.texture(product, texture.clone());
         GpuTexture { texture }
     }
+}
+
+fn caster_box(positions: &[[f32; 3]]) -> Option<(glam::Vec3, glam::Vec3)> {
+    let mut min = glam::Vec3::from_array(*positions.first()?);
+    let mut max = min;
+    for &position in positions {
+        let position = glam::Vec3::from_array(position);
+        if !position.is_finite() {
+            return None;
+        }
+        min = min.min(position);
+        max = max.max(position);
+    }
+    Some((min, max))
 }
 
 /// Meshlets as indexed draws: global indices per meshlet, and each meshlet's index range.

@@ -852,3 +852,82 @@ fn captures_never_establish_history_and_cull_counts_follow_their_set() {
     });
     std::fs::remove_dir_all(&root).ok();
 }
+
+#[test]
+fn cooked_mesh_outside_camera_casts_onto_visible_terrain() {
+    let root = std::env::temp_dir().join(format!("thrum-g5-off-camera-sun-{}", std::process::id()));
+    std::fs::remove_dir_all(&root).ok();
+    let cook = source_tree(&root, 16);
+    // Flat white reference planes isolate shadow visibility from surface normals and texture.
+    demo::write_grid_gltf(&cook.source.join("meshes"), "terrain", 8, 0.0).expect("flat plane");
+    demo::write_checker_png(&cook.source.join("textures/checker.png"), 64, [235; 3])
+        .expect("white texture");
+    Cooker::open(cook.clone())
+        .expect("cooker")
+        .cook_all()
+        .expect("cook");
+
+    pollster::block_on(async {
+        let (device, queue) = game_device().await;
+        let mut host = FrameHost::new(&device, &queue, FrameConfig::default())
+            .await
+            .expect("game");
+        host.set_scene_camera(
+            v1_game::SceneCamera::perspective(
+                [0.0, 202.0, 4.0],
+                [0.0, 200.0, 0.0],
+                0.65,
+                0.1,
+                30_000.0,
+            )
+            .expect("terrain camera"),
+        );
+        host.pause().expect("freeze authority");
+        host.set_time_of_day(0.5).expect("noon");
+
+        let mut config = placements(cook.store.clone());
+        config.volume = None;
+        config.meshes[0].transform = transform(2.0, glam::Quat::IDENTITY, [0.0, 200.0, 0.0]);
+        let mut roof = config.meshes[0].clone();
+        // Noon is toward +Y and -Z at 45°. The roof is above the entire camera
+        // frustum and beyond the receiver reach. It casts toward the receiver centre.
+        roof.transform = transform(0.8, glam::Quat::IDENTITY, [0.0, 1_200.0, -1_000.0]);
+
+        let mut capture = |config| {
+            let assets = CookedAssets::new(config);
+            let stats = assets.stats();
+            host.set_scene_contribution(Box::new(assets))
+                .expect("attach");
+            wait_staged(&stats, 1);
+            let deadline = Instant::now() + Duration::from_secs(30);
+            loop {
+                let pixels = host.capture_pixels().expect("terrain capture");
+                if stats.lock().expect("stats").drawn == Some(1) {
+                    break pixels;
+                }
+                assert!(Instant::now() < deadline, "generation 1 never drawn");
+            }
+        };
+        let lit = capture(config.clone());
+        config.meshes.push(roof);
+        let shadowed = capture(config);
+        save("off-camera-sun-lit", &lit);
+        save("off-camera-sun-shadowed", &shadowed);
+
+        let [width, height] = EXTENT.map(|side| side as usize);
+        let mut darkened = 0;
+        for y in height / 2 - 8..height / 2 + 8 {
+            for x in width / 2 - 8..width / 2 + 8 {
+                let pixel = (y * width + x) * 4;
+                if lit[pixel].saturating_sub(shadowed[pixel]) > 20 {
+                    darkened += 1;
+                }
+            }
+        }
+        assert!(
+            darkened >= 200,
+            "off-camera caster darkened only {darkened} of 256 receiver pixels"
+        );
+    });
+    std::fs::remove_dir_all(&root).expect("remove test store");
+}

@@ -7,13 +7,16 @@ use wgpu::util::DeviceExt;
 
 use super::view::{Projection, SyntheticView};
 use super::{InstanceRecord, RenderError};
+use crate::contribution::{SceneContribution, SceneShadowSurface, ShadowBounds};
 use crate::graph::{CompiledPass, GraphDepthAttachment, ResourceId};
 
 pub(super) const SIZE: u32 = 1024;
 pub(super) const FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
 pub(super) const SAMPLE_BYTES: usize = 160;
 const MAPS: usize = 2;
-const BIAS_BASE_WORLD: f32 = 0.006;
+const RECEIVER_REACH: f32 = 512.0;
+const BIAS_MIN_WORLD: f32 = 0.006;
+const BIAS_MAX_WORLD: f32 = 0.15;
 const BIAS_SLOPE_WORLD: f32 = 0.06;
 
 fn split_depth(near: f32, far: f32) -> f32 {
@@ -21,9 +24,6 @@ fn split_depth(near: f32, far: f32) -> f32 {
 }
 
 struct Cascade {
-    matrix: Mat4,
-    depth_row: [f32; 4],
-    depth_span: f32,
     buffer: wgpu::Buffer,
     view_group: wgpu::BindGroup,
 }
@@ -33,28 +33,38 @@ struct FittedShadow {
     samples: [u8; SAMPLE_BYTES],
 }
 
-impl Cascade {
+impl FittedShadow {
     fn contains_caster(&self, instance: &InstanceRecord) -> bool {
-        let [x, y, z, offset] = self.depth_row;
-        let extent = (0..3)
-            .map(|axis| {
-                let column = instance.current[axis];
-                (x * column[0] + y * column[1] + z * column[2]).abs()
-            })
-            .sum::<f32>();
-        [instance.previous[3], instance.current[3]]
+        self.matrices
             .iter()
-            .all(|center| {
-                let depth = x * center[0] + y * center[1] + z * center[2] + offset;
-                depth - extent >= -1e-4 && depth + extent <= 1.0 + 1e-4
-            })
+            .all(|(matrix, _)| matrix_contains_caster(*matrix, instance))
     }
+}
+
+fn matrix_contains_caster(matrix: Mat4, instance: &InstanceRecord) -> bool {
+    let [x, y, z, offset] = matrix.row(2).to_array();
+    let extent = (0..3)
+        .map(|axis| {
+            let column = instance.current[axis];
+            (x * column[0] + y * column[1] + z * column[2]).abs()
+        })
+        .sum::<f32>();
+    [instance.previous[3], instance.current[3]]
+        .iter()
+        .all(|center| {
+            let depth = x * center[0] + y * center[1] + z * center[2] + offset;
+            depth - extent >= -1e-4 && depth + extent <= 1.0 + 1e-4
+        })
 }
 
 pub(super) struct ShadowPrepared {
     pipeline: wgpu::RenderPipeline,
     pipeline_two_sided: wgpu::RenderPipeline,
     cascades: [Cascade; MAPS],
+    queue: wgpu::Queue,
+    view_layout: wgpu::BindGroupLayout,
+    inputs: FitInputs,
+    fitted: FittedShadow,
     pub(super) sample_buffer: wgpu::Buffer,
     pub(super) sampler: wgpu::Sampler,
 }
@@ -66,19 +76,19 @@ pub(super) struct ShadowTarget {
 
 impl ShadowPrepared {
     pub(super) fn contains_caster(&self, instance: &InstanceRecord) -> bool {
-        self.cascades
-            .iter()
-            .all(|cascade| cascade.contains_caster(instance))
+        self.fitted.contains_caster(instance)
     }
 
     pub(super) fn new(
         device: &wgpu::Device,
+        queue: &wgpu::Queue,
         view: &SyntheticView,
         instances: &[InstanceRecord],
         light_direction: Vec3,
         instance_layout: &wgpu::BindGroupLayout,
     ) -> Result<Self, RenderError> {
-        let fitted = fit_shadow(view, instances, light_direction)?;
+        let inputs = FitInputs::new(view, instances, light_direction);
+        let fitted = inputs.fit(None)?;
         let view_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("synthetic Sun cascade view"),
             entries: &[wgpu::BindGroupLayoutEntry {
@@ -92,7 +102,7 @@ impl ShadowPrepared {
                 count: None,
             }],
         });
-        let cascades = fitted.matrices.map(|(matrix, depth_span)| {
+        let cascades = fitted.matrices.map(|(matrix, _)| {
             let buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
                 label: Some("synthetic Sun cascade matrix"),
                 contents: &matrix_bytes(matrix),
@@ -106,18 +116,7 @@ impl ShadowPrepared {
                     resource: buffer.as_entire_binding(),
                 }],
             });
-            Cascade {
-                matrix,
-                depth_row: [
-                    matrix.x_axis.z,
-                    matrix.y_axis.z,
-                    matrix.z_axis.z,
-                    matrix.w_axis.z,
-                ],
-                depth_span,
-                buffer,
-                view_group,
-            }
+            Cascade { buffer, view_group }
         });
         let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("synthetic Sun shadow"),
@@ -171,32 +170,46 @@ impl ShadowPrepared {
             pipeline,
             pipeline_two_sided,
             cascades,
+            queue: queue.clone(),
+            view_layout,
+            inputs,
+            fitted,
             sample_buffer,
             sampler,
         })
     }
 
+    pub(super) fn surface(&self) -> SceneShadowSurface<'_> {
+        SceneShadowSurface {
+            view_layout: &self.view_layout,
+            depth_format: FORMAT,
+        }
+    }
+
     pub(super) fn update(
         &mut self,
-        queue: &wgpu::Queue,
         view: &SyntheticView,
         instances: &[InstanceRecord],
         light_direction: Vec3,
     ) -> Result<(), RenderError> {
-        let fitted = fit_shadow(view, instances, light_direction)?;
-        for (cascade, (matrix, span)) in self.cascades.iter_mut().zip(fitted.matrices) {
-            queue.write_buffer(&cascade.buffer, 0, &matrix_bytes(matrix));
-            cascade.matrix = matrix;
-            cascade.depth_row = [
-                matrix.x_axis.z,
-                matrix.y_axis.z,
-                matrix.z_axis.z,
-                matrix.w_axis.z,
-            ];
-            cascade.depth_span = span;
-        }
-        queue.write_buffer(&self.sample_buffer, 0, &fitted.samples);
+        let inputs = FitInputs::new(view, instances, light_direction);
+        self.fitted = inputs.fit(None)?;
+        self.inputs = inputs;
         Ok(())
+    }
+
+    /// Upload the fit for this recording, including retries after discarded encoders.
+    /// Extreme contributed bounds can overflow the fit. Keep the base shadows in that case.
+    pub(super) fn write_recording(&self, bounds: Option<ShadowBounds>) -> bool {
+        let cooked = bounds.and_then(|bounds| self.inputs.fit(Some(bounds)).ok());
+        let fitted = cooked.as_ref().unwrap_or(&self.fitted);
+        for (cascade, (matrix, _)) in self.cascades.iter().zip(fitted.matrices) {
+            self.queue
+                .write_buffer(&cascade.buffer, 0, &matrix_bytes(matrix));
+        }
+        self.queue
+            .write_buffer(&self.sample_buffer, 0, &fitted.samples);
+        cooked.is_some()
     }
 
     pub(super) fn encode_cascade(
@@ -212,6 +225,7 @@ impl ShadowPrepared {
         compiled: &CompiledPass,
         resource: &ResourceId,
         timings: Option<&mut crate::timing::GpuTimings>,
+        contribution: Option<&dyn SceneContribution>,
     ) -> Result<(), RenderError> {
         let (cascade, view) = self
             .cascades
@@ -242,6 +256,9 @@ impl ShadowPrepared {
         pass.set_bind_group(1, instances, &[]);
         pass.set_index_buffer(cube_indices.slice(..), wgpu::IndexFormat::Uint16);
         pass.draw_indexed(0..36, 0, 0..count);
+        if let Some(contribution) = contribution {
+            contribution.draw_shadow(&mut pass);
+        }
         Ok(())
     }
 }
@@ -274,57 +291,98 @@ fn matrix_bytes(matrix: Mat4) -> [u8; 64] {
     bytes
 }
 
-fn fit_shadow(
-    view: &SyntheticView,
-    instances: &[InstanceRecord],
-    light_direction: Vec3,
-) -> Result<FittedShadow, RenderError> {
-    let Projection::Perspective {
-        view: camera_view,
-        fx,
-        fy,
-        near,
-        far,
-    } = view.projection()
-    else {
-        return Err(RenderError::InvalidView);
-    };
-    let split = split_depth(near, far);
-    let overlap = (split * 0.05).max(0.05);
-    let rotation = light_rotation(light_direction);
-    let caster_depth = caster_depth_bounds(rotation, instances);
-    let matrices = [
-        cascade_matrix(
-            camera_view,
+struct FitInputs {
+    projection: Projection,
+    rotation: Mat4,
+    caster_depth: Option<(f32, f32)>,
+}
+
+impl FitInputs {
+    fn new(view: &SyntheticView, instances: &[InstanceRecord], light_direction: Vec3) -> Self {
+        let rotation = light_rotation(light_direction);
+        Self {
+            projection: view.projection(),
+            rotation,
+            caster_depth: caster_depth_bounds(rotation, instances),
+        }
+    }
+
+    fn fit(&self, bounds: Option<ShadowBounds>) -> Result<FittedShadow, RenderError> {
+        let Projection::Perspective {
+            view: camera_view,
             fx,
             fy,
             near,
-            split + overlap,
-            rotation,
-            caster_depth,
-        )?,
-        cascade_matrix(
-            camera_view,
-            fx,
-            fy,
-            split - overlap,
             far,
-            rotation,
-            caster_depth,
-        )?,
-    ];
-    let mut samples = [0_u8; SAMPLE_BYTES];
-    for (index, (matrix, span)) in matrices.iter().enumerate() {
-        samples[index * 64..(index + 1) * 64].copy_from_slice(&matrix_bytes(*matrix));
-        let scale = 1.0 / span;
-        samples[144 + index * 4..148 + index * 4]
-            .copy_from_slice(&(BIAS_BASE_WORLD * scale).to_le_bytes());
-        samples[152 + index * 4..156 + index * 4]
-            .copy_from_slice(&(BIAS_SLOPE_WORLD * scale).to_le_bytes());
+        } = self.projection
+        else {
+            return Err(RenderError::InvalidView);
+        };
+        let limit = near + RECEIVER_REACH;
+        let receiver_far = if limit > near { far.min(limit) } else { far };
+        let split = if receiver_far < far {
+            // A long view spends most of its first map on close receivers.
+            let logarithmic = (near * receiver_far).sqrt();
+            logarithmic.mul_add(0.875, near.midpoint(receiver_far) * 0.125)
+        } else {
+            split_depth(near, receiver_far)
+        };
+        let overlap = (split * 0.05)
+            .max(0.05)
+            .min((split - near).min(receiver_far - split) * 0.5);
+        let rotation = self.rotation;
+        let caster_depth = match (self.caster_depth, bounds) {
+            (depth, None) => depth,
+            (depth, Some(bounds)) => {
+                let (lo, hi) = bounds.depth_interval(depth_axis(rotation).to_array());
+                if !lo.is_finite() || !hi.is_finite() {
+                    return Err(RenderError::InvalidView);
+                }
+                Some(depth.map_or((lo, hi), |(a, b)| (a.min(lo), b.max(hi))))
+            }
+        };
+        let matrices = [
+            cascade_matrix(
+                camera_view,
+                fx,
+                fy,
+                near,
+                split + overlap,
+                rotation,
+                caster_depth,
+            )?,
+            cascade_matrix(
+                camera_view,
+                fx,
+                fy,
+                split - overlap,
+                receiver_far,
+                rotation,
+                caster_depth,
+            )?,
+        ];
+        let mut samples = [0_u8; SAMPLE_BYTES];
+        for (index, (matrix, span)) in matrices.iter().enumerate() {
+            samples[index * 64..(index + 1) * 64].copy_from_slice(&matrix_bytes(*matrix));
+            let scale = 1.0 / span;
+            // The plane correction is exact only within one triangle. Allow half a
+            // texel in metres where filtering spans neighboring receiver triangles.
+            let half_texel = (matrix.row(0).truncate().length() * SIZE as f32).recip();
+            let base = half_texel.clamp(BIAS_MIN_WORLD, BIAS_MAX_WORLD);
+            samples[144 + index * 4..148 + index * 4]
+                .copy_from_slice(&(base * scale).to_le_bytes());
+            samples[152 + index * 4..156 + index * 4]
+                .copy_from_slice(&(BIAS_SLOPE_WORLD * scale).to_le_bytes());
+        }
+        samples[128..132].copy_from_slice(&split.to_le_bytes());
+        samples[132..136].copy_from_slice(&overlap.to_le_bytes());
+        if receiver_far < far {
+            let fade_start = receiver_far - (receiver_far - near) * 0.1;
+            samples[136..140].copy_from_slice(&receiver_far.to_le_bytes());
+            samples[140..144].copy_from_slice(&fade_start.to_le_bytes());
+        }
+        Ok(FittedShadow { matrices, samples })
     }
-    samples[128..132].copy_from_slice(&split.to_le_bytes());
-    samples[132..136].copy_from_slice(&overlap.to_le_bytes());
-    Ok(FittedShadow { matrices, samples })
 }
 
 fn cascade_matrix(
@@ -396,13 +454,17 @@ fn light_rotation(direction: Vec3) -> Mat4 {
     glam::camera::rh::view::look_at_mat4(Vec3::ZERO, -direction, up)
 }
 
+fn depth_axis(rotation: Mat4) -> Vec3 {
+    -rotation.row(2).truncate()
+}
+
 /// Exact affine-box extent along light depth, shared by both cascades.
 /// XY texel snapping does not change this depth axis.
 fn caster_depth_bounds(rotation: Mat4, instances: &[InstanceRecord]) -> Option<(f32, f32)> {
     if instances.is_empty() {
         return None;
     }
-    let depth_axis = Vec3::new(-rotation.x_axis.z, -rotation.y_axis.z, -rotation.z_axis.z);
+    let depth_axis = depth_axis(rotation);
     let offset = -rotation.w_axis.z;
     let mut minimum = f32::INFINITY;
     let mut maximum = f32::NEG_INFINITY;

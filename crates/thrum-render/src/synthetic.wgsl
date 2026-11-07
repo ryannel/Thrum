@@ -180,36 +180,73 @@ fn local_radiance(base: vec3<f32>, metalness: f32, roughness: f32,
     }
     return sum;
 }
-fn cascade_visibility(index: u32, world_position: vec3<f32>, n: vec3<f32>) -> f32 {
-    let clip = shadows.light_view_proj[index] * vec4(world_position,1.0);
+struct ShadowReceiver {
+    position: vec3<f32>,
+    dx: vec3<f32>,
+    dy: vec3<f32>,
+    normal: vec3<f32>,
+}
+
+fn cascade_visibility(index: u32, receiver: ShadowReceiver) -> f32 {
+    let matrix = shadows.light_view_proj[index];
+    let clip = matrix*vec4(receiver.position,1.0);
     let p = clip.xyz/clip.w;
     let uv = vec2(p.x*0.5+0.5,0.5-p.y*0.5);
     if any(uv < vec2(0.0)) || any(uv > vec2(1.0)) || p.z < 0.0 || p.z > 1.0 {
         return 1.0;
     }
-    let normal_bias = 1.0-clamp(dot(n,light.direction_to_light.xyz),0.0,1.0);
+    let normal_bias = 1.0-clamp(dot(receiver.normal,light.direction_to_light.xyz),0.0,1.0);
     let base = select(shadows.bias.y,shadows.bias.x,index == 0u);
     let slope = select(shadows.bias.w,shadows.bias.z,index == 0u);
-    let reference = p.z + base + slope*normal_bias;
-    let texel = 1.0/vec2<f32>(textureDimensions(shadow_maps));
+
+    // The orthographic cascade maps a receiver triangle to a plane in light clip space.
+    // Evaluate its depth at each texel centre so the four comparisons follow the surface.
+    let dx = (matrix*vec4(receiver.dx,0.0)).xyz;
+    let dy = (matrix*vec4(receiver.dy,0.0)).xyz;
+    let plane = cross(dx,dy);
+    let plane_extent = max(abs(plane.x),abs(plane.y));
+    var depth_gradient = vec2(0.0);
+    if abs(plane.z) > max(1e-20,plane_extent*1e-6) {
+        depth_gradient = -plane.xy/plane.z*vec2(2.0,-2.0);
+    }
+    let extent = vec2<f32>(textureDimensions(shadow_maps));
+    // A light texel spans more receiver depth at grazing incidence. Bound the
+    // extra tolerance so a nearly edge-on triangle cannot erase its own shadow.
+    let texel_depth = abs(depth_gradient)/extent;
+    let footprint = 0.5*max(texel_depth.x,texel_depth.y);
+    let reference = p.z + clamp(footprint,base,8.0*base) + slope*normal_bias;
+    let pixel = uv*extent-0.5;
+    let first = floor(pixel);
+    let blend = fract(pixel);
     var visible = 0.0;
     for (var i = 0u; i < 4u; i++) {
-        let offset = vec2(f32(i & 1u)-0.5,f32(i >> 1u)-0.5)*texel;
-        visible += textureSampleCompareLevel(shadow_maps,shadow_sampler,uv+offset,i32(index),reference);
+        let offset = vec2(f32(i & 1u),f32(i >> 1u));
+        let tap = (clamp(first+offset,vec2(0.0),extent-1.0)+0.5)/extent;
+        let weight = mix(1.0-blend,blend,offset);
+        let tap_depth = reference+dot(depth_gradient,tap-uv);
+        visible += weight.x*weight.y*textureSampleCompareLevel(shadow_maps,shadow_sampler,tap,i32(index),tap_depth);
     }
-    return visible*0.25;
+    return visible;
 }
 
-fn sun_visibility(input: VertexOutput, n: vec3<f32>) -> f32 {
+fn sun_visibility(input: VertexOutput, receiver: ShadowReceiver) -> f32 {
     let near = view_aux.near_far.x;
     let far = view_aux.near_far.y;
     let depth = near*far/(near+input.position.z*(far-near));
     let split = shadows.split_overlap.x;
     let overlap = shadows.split_overlap.y;
-    if depth < split-overlap { return cascade_visibility(0u,input.world_position,n); }
-    if depth > split+overlap { return cascade_visibility(1u,input.world_position,n); }
-    let first = cascade_visibility(0u,input.world_position,n);
-    let second = cascade_visibility(1u,input.world_position,n);
+    if depth < split-overlap { return cascade_visibility(0u,receiver); }
+    if depth > split+overlap {
+        let reach = shadows.split_overlap.z;
+        if reach > 0.0 {
+            if depth >= reach { return 1.0; }
+            let visibility = cascade_visibility(1u,receiver);
+            return mix(visibility,1.0,smoothstep(shadows.split_overlap.w,reach,depth));
+        }
+        return cascade_visibility(1u,receiver);
+    }
+    let first = cascade_visibility(0u,receiver);
+    let second = cascade_visibility(1u,receiver);
     return mix(first,second,clamp((depth-split+overlap)/(2.0*overlap),0.0,1.0));
 }
 
@@ -277,5 +314,7 @@ fn motion_vector(input: VertexOutput) -> vec2<f32> {
     return FragmentOutput(shade(input,1.0,front_facing), motion_vector(input));
 }
 @fragment fn shadowed_fragment(input:VertexOutput, @builtin(front_facing) front_facing: bool)->FragmentOutput {
-    return FragmentOutput(shade(input,sun_visibility(input,normalize(input.normal)),front_facing), motion_vector(input));
+    let receiver = ShadowReceiver(input.world_position,dpdx(input.world_position),
+        dpdy(input.world_position),normalize(input.normal));
+    return FragmentOutput(shade(input,sun_visibility(input,receiver),front_facing), motion_vector(input));
 }

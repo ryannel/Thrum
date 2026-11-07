@@ -469,6 +469,7 @@ struct SceneContext<'a> {
     readback: Option<&'a mut PixelReadback>,
     contribution: Option<&'a mut (dyn SceneContribution + 'static)>,
     contribution_frame: ContributionFrame,
+    cooked_shadow_fit: Option<bool>,
 }
 
 impl SceneContext<'_> {
@@ -491,6 +492,13 @@ impl SceneContext<'_> {
             .shadow
             .as_ref()
             .ok_or(RenderError::GraphPassMismatch)?;
+        let draw_contribution = *self.cooked_shadow_fit.get_or_insert_with(|| {
+            let bounds = self
+                .contribution
+                .as_deref()
+                .and_then(SceneContribution::shadow_bounds);
+            shadow.write_recording(bounds)
+        });
         shadow.encode_cascade(
             self.encoder,
             shadow_target,
@@ -507,6 +515,11 @@ impl SceneContext<'_> {
                 .as_ref()
                 .ok_or(RenderError::GraphPassMismatch)?,
             self.timings.as_deref_mut(),
+            if draw_contribution {
+                self.contribution.as_deref()
+            } else {
+                None
+            },
         )
     }
 
@@ -1038,6 +1051,7 @@ impl PreparedSynthetic {
             let direction = packed_light_direction(&light_data);
             Some(ShadowPrepared::new(
                 device,
+                queue,
                 &scene.view,
                 &scene.instances,
                 direction,
@@ -1394,7 +1408,6 @@ impl PreparedSynthetic {
         light_data[12..16].copy_from_slice(&has_local_lights.to_le_bytes());
         if let Some(shadow) = self.shadow.as_mut() {
             shadow.update(
-                queue,
                 &scene.view,
                 &scene.instances,
                 packed_light_direction(&light_data),
@@ -1638,15 +1651,18 @@ impl PreparedSynthetic {
                 directional.clone(),
             )?;
         }
+        let contribution_start = accesses.len();
+        self.append_contribution(&mut graph, &mut accesses, &mut prepared_keys)?;
+        let contribution_reads = accesses[contribution_start..].to_vec();
         let shadow = self.append_shadow_passes(
             &mut graph,
             &instance,
             &cube_indices,
             &mut accesses,
             &mut prepared_keys,
+            &contribution_reads,
         )?;
         self.append_cluster_reads(&mut graph, &mut accesses, &mut prepared_keys)?;
-        self.append_contribution(&mut graph, &mut accesses, &mut prepared_keys)?;
         let depth = graph.resource(
             ResourceDescriptor::Texture {
                 width,
@@ -1909,6 +1925,7 @@ impl PreparedSynthetic {
         cube_indices: &ResourceId,
         accesses: &mut Vec<Access>,
         prepared_keys: &mut BTreeSet<PipelineKey>,
+        contribution_reads: &[Access],
     ) -> Result<Option<ResourceId>, RenderError> {
         if self.shadow.is_none() {
             return Ok(None);
@@ -1946,7 +1963,7 @@ impl PreparedSynthetic {
                 .into(),
                 scope: PassScope::View(1),
                 pipeline: Some(key),
-                accesses: vec![
+                accesses: [
                     Access {
                         resource: instance.clone(),
                         range: 0..self.instance_bytes,
@@ -1971,7 +1988,10 @@ impl PreparedSynthetic {
                         kind: AccessKind::AttachmentClear,
                         store: true,
                     },
-                ],
+                ]
+                .into_iter()
+                .chain(contribution_reads.iter().cloned())
+                .collect(),
                 external_side_effect: false,
             });
         }
@@ -2230,6 +2250,7 @@ impl PreparedSynthetic {
             readback,
             contribution,
             contribution_frame: self.contribution_frame(),
+            cooked_shadow_fit: None,
         })
     }
 
