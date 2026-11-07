@@ -85,6 +85,19 @@ fn aabb_clip_corners(view_proj: Mat4, instance: &Instance, alpha: f32) -> [Vec4;
     })
 }
 
+/// The final cull's clip magnitude for a unit-cube instance: |row| times the
+/// largest |position| the vertex shader or the corners can form.
+fn clip_magnitude(view_proj: Mat4, instance: &Instance) -> [f32; 2] {
+    let spread = instance.current.x_axis.truncate().abs()
+        + instance.current.y_axis.truncate().abs()
+        + instance.current.z_axis.truncate().abs();
+    let world = spread + instance.previous.abs() + instance.current.w_axis.truncate().abs();
+    [2, 3].map(|row| {
+        let row = view_proj.row(row).abs();
+        row.truncate().dot(world) + row.w
+    })
+}
+
 /// True when any corner lies strictly inside the reverse-Z clip volume by a
 /// margin: rasterization can cover a pixel, so culling it would be wrong.
 fn surely_visible(corners: &[Vec4; 8]) -> bool {
@@ -528,7 +541,8 @@ impl Occlusion {
                 scaled.current = instance.current * Mat4::from_scale(Vec3::splat(scale));
                 let corners =
                     aabb_clip_corners(view_proj, &scaled, alpha).map(|corner| corner.to_array());
-                occlusion_reference::occluded(&corners, &self.levels)
+                let magnitude = clip_magnitude(view_proj, &scaled);
+                occlusion_reference::occluded(&corners, &self.levels, magnitude)
             };
             if gpu_hidden != decide(1.0) {
                 assert_ne!(
