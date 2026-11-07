@@ -39,6 +39,7 @@ struct ShadowCascades {
     split_overlap: vec4<f32>,
     bias: vec4<f32>,
     penumbra: vec4<f32>,
+    height_support: vec4<f32>,
 }
 @group(0) @binding(2) var<uniform> shadows: ShadowCascades;
 @group(0) @binding(3) var shadow_maps: texture_depth_2d_array;
@@ -252,7 +253,13 @@ fn cascade_visibility(index: u32, receiver: ShadowReceiver) -> f32 {
     let footprint = 0.5*max(texel_depth.x,texel_depth.y);
     let reference = p.z + clamp(footprint,base,8.0*base) + slope*normal_bias;
     let scale = select(shadows.penumbra.y,shadows.penumbra.x,index==0u);
-    let search_radius = max(0.0,1.0-p.z)*scale;
+    var search_gap = max(0.0,1.0-p.z);
+    if shadows.height_support.y>1e-6 {
+        let world_gap=max(0.0,shadows.height_support.x-receiver.position.y)/shadows.height_support.y;
+        let inverse_span=select(shadows.height_support.w,shadows.height_support.z,index==0u);
+        search_gap=min(search_gap,world_gap*inverse_span);
+    }
+    let search_radius = search_gap*scale;
     var gap_sum = 0.0;
     var blockers = 0.0;
     for(var i=0u;i<16u;i++) {

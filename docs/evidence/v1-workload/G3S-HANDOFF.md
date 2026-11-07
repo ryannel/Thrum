@@ -28,7 +28,14 @@ forbids queue writes to Depth32Float. The off-camera roof fixture now uses a 32 
 1.4 km upstream, because the finite Sun's footprint there is about 13 m wide. Its prior
 1.6 m roof could not produce the asserted strong umbra. The original darkness assertion
 is retained and the updated scoped test passes. Full validation and visual review of this
-correction remain to run. No check is currently running.
+correction remain open. The current full check is session 65044, writing
+`tmp/g3s-showcase/solar-penumbra/revised-dev-check.log`. Build session 8175 refreshes
+the game, benchmark and Wasm artifacts in sequence. Poll those existing handles.
+A later independent source review found that the intended tolerance bytes were unwritten
+and that the blocker search still used the global cone. Both are corrected in the current
+192-byte uniform. It now carries height support for the same search bound used by the fit.
+The CPU upload regression checks those units. Recapture in a new directory after build8175
+and verify against capture22, which predates this final upload/support correction.
 
 The shadow-off counterfactual reduced the pixel (640,600) 34→35 jump from 103 to one SDR
 code. A separate raycast through source triangles at receiver (-17.5194,239.9546,15.9897)
