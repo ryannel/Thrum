@@ -396,13 +396,13 @@ Work:
 | M6 | 1.5 |
 | M7 | 1.5 |
 | M8 | 1.5 |
-| M9 | 1.5 |
+| M9 | 2 |
 | M10 | 5.5 |
 | M11 | 1.5 |
 
-That is **22 build days**, plus 1–2 days of review and seam turnaround.
+That is **22.5 build days**, plus 1–2 days of review and seam turnaround.
 
-**Combined date (G3t 15.5 + G4 22 build days, with the handoffs above).**
+**Combined date (G3t 15.5 + G4 22.5 build days, with the handoffs above).**
 - *Two agents, one per plan:* about **23–24 working days** from seam approval to both paired records. G4 waits for
   G3t M3 around day 6 and for G3t M11 around day 13.
 - *Four agents on disjoint files, following both parallel tables:* about **15–16 days**, with M10 on its own files.
