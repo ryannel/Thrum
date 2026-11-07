@@ -44,7 +44,7 @@ Commissioned:
 - the governor;
 - generation transitions;
 - cold start;
-- archives under the owner's ruling;
+- offline metallibs and binary archives (G3t seam 5);
 - prepared handling of cuts, resizes, dropped frames, display changes, surface replacement and provider or archive
   rejection;
 - paired proof.
@@ -298,11 +298,15 @@ current display shader is a pre-AA diagnostic. So TAAU at scale 1.0 becomes the 
 **Archives and cold start.**
 - G4's native objects are MetalFX scalers. They take no binary archive, and their cost is synchronous creation in
   generation builds.
-- wgpu pipelines cannot use archives in wgpu 30. Under either option of G3t seam 5, G4 records cold and warm
-  launch-to-ready times and the zero post-readiness compile count. Under (b) archive rejection is not exercisable,
-  and (b) cannot count as the V1 archive deliverable; the choice is the owner's.
-- Under option (a), M10 proves an archive hit with `failOnBinaryArchiveMiss`, and proves that a stale archive compiles
-  at build, not in play.
+- M9 first measures launch-to-ready, cold against warm, split into naga translation, MSL compile and pipeline state
+  creation (G3t seam 5).
+- M10 then delivers both layers of seam 5:
+  - offline metallibs loaded through `PASSTHROUGH_SHADERS`, with a counted WGSL fallback;
+  - Metal `PIPELINE_CACHE` over `MTLBinaryArchive`, contributed upstream under gfx-rs/wgpu#8526 and carried as a
+    pinned patch until it merges.
+- M10 proves an archive hit with `failOnBinaryArchiveMiss`, and proves that a stale archive or a mismatched metallib
+  is handled at build, not in play.
+- The upstream contribution waits for the owner's approval.
 
 **What would change these choices:**
 - A MetalFX neural upscaler (M5 Pro/Max) would be a new provider behind the same contract.
@@ -367,7 +371,7 @@ current display shader is a pre-AA diagnostic. So TAAU at scale 1.0 becomes the 
 - *Surface replacement:* G3b and frame-runtime recovery, then a transition if the extent changed.
 - *Device loss:* recovery and a build.
 - *Provider rejection:* the prepared TAAU twin.
-- *Archive rejection:* a build-time compile under option (a); not applicable under (b).
+- *Archive or metallib rejection:* a build-time compile or WGSL fallback, counted; never in play.
 
 **Cost account.** Output is 1920×1080 (the V1 window), unless stated.
 
@@ -442,8 +446,8 @@ Mac rows standing in for iPhone are labelled proxy. iPhone EDR and timing are ow
 7. **Governor.** Location, inputs (missed ticks from the frame host, thermal state from the platform) and value
    commits inside a profile generation (C04).
 8. **Native provider.** MetalFX through G3t's native segment (depends on G3t seam 1).
-9. **Archives.** Shared with G3t seam 5, an owner ruling between (a) and (b). No V1 exit wording changes with these
-   docs.
+9. **Pipeline preparation and archives.** Shared with G3t seam 5: the measured split, offline metallibs through
+   passthrough, and the upstream Metal `PIPELINE_CACHE`. V1's archive item stays as written.
 
 ## Open questions
 
