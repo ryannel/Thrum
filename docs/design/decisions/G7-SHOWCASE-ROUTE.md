@@ -68,6 +68,7 @@ The two sunset stops are distinct cues. The route catches a lost Sun disk at 17.
 control path the panel, the browser page and parameter files use:
 - **Native.** Capture takes `THRUM_CAPTURE_PARAMS=<preset files>`. Each preset is applied to fresh control defaults
   and replayed onto the host's checked setters, then saved as `route/showcase-<stop>.ppm` with the host's readback.
+  The checker sets `THRUM_CAPTURE_ROUTE_ONLY=1` and measures startup through the first route still.
 - **Chrome.** The checker's `route` case opens one fresh page per preset the web build ships, with
   `?assets=<cook>&params=showcase-<stop>.params.json`, and saves the paused canvas as `route-<stop>.png`.
 

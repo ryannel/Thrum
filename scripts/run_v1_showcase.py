@@ -482,7 +482,7 @@ def check(args):
         native = run / 'native'
         presets = [PARAMS / f'showcase-{stop}.params.json' for stop in ROUTE]
         env = dict(os.environ, THRUM_CAPTURE_SCENE=str(native), THRUM_ASSET_STORE=str(run / 'store'), THRUM_SCENE='valley',
-                   THRUM_CAPTURE_PARAMS=os.pathsep.join(str(path) for path in presets))
+                   THRUM_CAPTURE_ROUTE_ONLY='1', THRUM_CAPTURE_PARAMS=os.pathsep.join(str(path) for path in presets))
         launched = time.time()
         started = time.monotonic()
         with open(run / 'native.log', 'w') as log:
@@ -491,9 +491,9 @@ def check(args):
         if code:
             raise Failure(f'native capture refused or failed (exit {code}; see {run / "native.log"})')
         manifest = json.loads((native / 'captures.json').read_text())
-        first = min((native / record['file']).stat().st_mtime for record in manifest['captures'] if 'file' in record)
+        poses = {record['file']: record for record in manifest['route']}
+        first = min((native / 'route' / file).stat().st_mtime for file in poses)
         timings['native_cold_start_proxy'] = first - launched
-        poses = {record['file']: record for record in manifest.get('route', [])}
         for stop, values in stops.items():
             pose = poses.get(f'showcase-{stop}.ppm')
             # The controls snap solar time to the 0.01 h slider stop, as on every target.
