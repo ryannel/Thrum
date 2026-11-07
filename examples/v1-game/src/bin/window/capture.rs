@@ -115,6 +115,7 @@ pub(super) async fn run(output: PathBuf) -> Result<(), String> {
         )
         .map_err(|error| error.to_string())?;
     }
+    let live_records = live_sequence(&mut host, &output)?;
     let manifest = serde_json::json!({
         "scope":"Same V1 FrameHost, frozen authority, real GPU offscreen readback. No live presentation, timing or physical-device qualification.",
         "adapter": capabilities.adapter().name,
@@ -123,6 +124,7 @@ pub(super) async fn run(output: PathBuf) -> Result<(), String> {
         "scene":std::env::var("THRUM_SCENE").unwrap_or_else(|_| "diagnostic".to_owned()),
         "captures":records,
         "solar_sequence":solar_records,
+        "live_sequence":live_records,
     });
     std::fs::write(
         output.join("captures.json"),
@@ -130,6 +132,42 @@ pub(super) async fn run(output: PathBuf) -> Result<(), String> {
     )
     .map_err(|error| error.to_string())?;
     Ok(())
+}
+
+/// Optional consecutive-tick sunset, `THRUM_CAPTURE_LIVE_TICKS` frames from 17.7 h.
+/// The time is set once, then the world advances one fixed tick per frame, so
+/// temporal history carries over as it would live. Readback paces the frames;
+/// this makes no cadence or presentation claim.
+fn live_sequence(host: &mut FrameHost, output: &Path) -> Result<Vec<serde_json::Value>, String> {
+    let Some(ticks) = std::env::var("THRUM_CAPTURE_LIVE_TICKS")
+        .ok()
+        .map(|value| value.parse::<u16>().map_err(|error| error.to_string()))
+        .transpose()?
+    else {
+        return Ok(Vec::new());
+    };
+    let live = output.join("live-sequence");
+    std::fs::create_dir(&live).map_err(|error| error.to_string())?;
+    host.set_camera_pitch(0.0)?;
+    host.set_camera_yaw(-std::f32::consts::FRAC_PI_2)?;
+    host.set_time_of_day(17.7 / 24.0)?;
+    let mut now = Duration::from_secs(1);
+    host.resume(now)?;
+    let mut records = Vec::new();
+    for index in 0..ticks {
+        let start = host.tick();
+        while host.tick() == start {
+            now += Duration::from_micros(16_667);
+            host.advance_without_rendering(now)?;
+        }
+        let file = format!("{index:04}.ppm");
+        save(host, &live.join(&file))?;
+        records.push(serde_json::json!({
+            "file":file, "tick":host.tick(), "hours":host.time_of_day() * 24.0,
+        }));
+    }
+    host.pause()?;
+    Ok(records)
 }
 
 fn save(host: &mut FrameHost, path: &Path) -> Result<(), String> {

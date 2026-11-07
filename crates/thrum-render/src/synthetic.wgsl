@@ -441,20 +441,30 @@ fn sun_visibility(input: VertexOutput, receiver: ShadowReceiver) -> f32 {
     let depth = near*far/(near+input.position.z*(far-near));
     let split = shadows.split_overlap.x;
     let overlap = shadows.split_overlap.y;
-    if depth < split-overlap { return near_visibility(receiver); }
+    if depth < split-overlap { return low_sun_terrain(near_visibility(receiver),receiver); }
     if depth > split+overlap {
         let reach = shadows.split_overlap.z;
         if reach > 0.0 {
             if depth >= reach { return horizon_visibility(receiver); }
-            let visibility = cascade_visibility(1u,receiver);
+            let visibility = low_sun_terrain(cascade_visibility(1u,receiver),receiver);
             if depth <= shadows.split_overlap.w { return visibility; }
             return mix(visibility,horizon_visibility(receiver),smoothstep(shadows.split_overlap.w,reach,depth));
         }
-        return cascade_visibility(1u,receiver);
+        return low_sun_terrain(cascade_visibility(1u,receiver),receiver);
     }
     let first = near_visibility(receiver);
     let second = cascade_visibility(1u,receiver);
-    return mix(first,second,clamp((depth-split+overlap)/(2.0*overlap),0.0,1.0));
+    return low_sun_terrain(mix(first,second,clamp((depth-split+overlap)/(2.0*overlap),0.0,1.0)),receiver);
+}
+
+// Within a few degrees of the horizon, rays that clip a distant crest cross a
+// wedge of terrain whose faces are nearly edge-on to the light; a depth map
+// cannot hold that wedge. The height-map horizon can, so it bounds terrain
+// occlusion there. It only darkens.
+const LOW_SUN_SINE: f32 = 0.1;
+fn low_sun_terrain(visibility: f32, receiver: ShadowReceiver) -> f32 {
+    if visibility <= 0.0 || light.direction_to_light.y >= LOW_SUN_SINE { return visibility; }
+    return min(visibility,horizon_visibility(receiver));
 }
 
 fn ambient_irradiance(n: vec3<f32>) -> vec3<f32> {

@@ -92,6 +92,9 @@ crossing clip](g3s-first-light/solar-crossing.mp4) runs at 24 sampled frames/s.
   with the ray probe before changing anything.
 - The 100-code foreground step at solar 77→78 was a shadow leak from back-face-culled cooked
   casters with the Sun below horizontal. It is fixed ([evidence](G3S-SUNSET-CASTERS-2026-11-07.md)).
+- Live cadence: `THRUM_CAPTURE_LIVE_TICKS` captures consecutive 60 Hz ticks. It exposed crest speckle at a
+  0.6° Sun, now bounded by the height-map horizon below a 0.1 elevation sine
+  ([evidence](G3S-LIVE-SUNSET-2026-11-07.md)). This is offscreen; on-screen ProMotion presentation is still G3b.
 - Distant terrain shadows now come from a caster height-map horizon
   ([evidence](G3S-TERRAIN-HORIZON-2026-11-07.md)). Its +24% pass-sum is the next cost
   item; a per-frame horizon-angle map is the scalable form.

@@ -373,6 +373,14 @@ fn measure(
     ))
     .expect("the prepared V1 workload must fit the adapter");
     prepare_content(&mut host);
+    // Optional fixed time of day, for paths that only run near sunset.
+    if let Ok(hours) = std::env::var("THRUM_BENCH_HOURS") {
+        let hours: f32 = hours
+            .parse()
+            .expect("THRUM_BENCH_HOURS is a number of hours");
+        host.set_time_of_day(hours / 24.0)
+            .expect("the bench time of day is valid");
+    }
     let origin = Instant::now();
     let (mut host, mut threaded_host) = if mode == FrameMode::Threaded {
         let (threaded_host, controls) = host
