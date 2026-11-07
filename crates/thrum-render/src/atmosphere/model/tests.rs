@@ -71,7 +71,11 @@ fn shipping_atmosphere_shader_layouts_keep_mapping_and_view_aux_separate() {
                 include_str!("../brdf.wgsl")
             ),
             include_str!("../irradiance.wgsl"),
-            include_str!("../../synthetic.wgsl"),
+            concat!(
+                include_str!("../../synthetic.wgsl"),
+                "\n",
+                include_str!("../../synthetic/horizon_taps.wgsl")
+            ),
             concat!(
                 include_str!("../../synthetic_aerial.wgsl"),
                 "\n",
@@ -93,7 +97,11 @@ fn shipping_atmosphere_shader_layouts_keep_mapping_and_view_aux_separate() {
                 include_str!("../brdf.wgsl")
             ),
             include_str!("../irradiance.wgsl"),
-            include_str!("../../synthetic.wgsl"),
+            concat!(
+                include_str!("../../synthetic.wgsl"),
+                "\n",
+                include_str!("../../synthetic/horizon_taps.wgsl")
+            ),
             concat!(
                 include_str!("../../synthetic_aerial.wgsl"),
                 "\n",

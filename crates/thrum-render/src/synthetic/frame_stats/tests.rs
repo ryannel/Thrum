@@ -3,7 +3,7 @@ use crate::timing::PassTiming;
 
 const TRANSFORMS: SceneTimingLayout = SceneTimingLayout {
     transforms: true,
-    shadows: false,
+    shadows: ShadowTiming::None,
     clusters: false,
     culling: culling_passes(CullMode::Direct),
 };
@@ -103,7 +103,7 @@ fn the_horizon_height_pass_reports_in_the_far_shadow_bucket() {
         &passes,
         false,
         SceneTimingLayout {
-            shadows: true,
+            shadows: ShadowTiming::Taps,
             ..TRANSFORMS
         },
     )
@@ -115,7 +115,7 @@ fn the_horizon_height_pass_reports_in_the_far_shadow_bucket() {
             &missing,
             false,
             SceneTimingLayout {
-                shadows: true,
+                shadows: ShadowTiming::Taps,
                 ..TRANSFORMS
             }
         )
@@ -179,4 +179,32 @@ fn occlusion_passes_are_required_once_each_and_counted_in_forward() {
     let mut repeated = passes.clone();
     repeated.push(passes[2].clone());
     assert!(pass_durations(&repeated, false, OCCLUDED).is_none());
+}
+
+#[test]
+fn horizon_maxima_is_required_once_and_counted_in_far_shadows() {
+    let mut passes = timings(&[
+        "synthetic Sun shadow near",
+        "synthetic Sun shadow far",
+        "synthetic Sun horizon heights",
+    ]);
+    let cells = SceneTimingLayout {
+        shadows: ShadowTiming::Cells,
+        ..TRANSFORMS
+    };
+    let taps = SceneTimingLayout {
+        shadows: ShadowTiming::Taps,
+        ..TRANSFORMS
+    };
+    assert!(pass_durations(&passes, false, cells).is_none());
+    let reduction = PassTiming {
+        name: super::super::horizon::PASS.into(),
+        nanoseconds: 3.0,
+    };
+    passes.insert(3, reduction.clone());
+    assert!(pass_durations(&passes, false, taps).is_none());
+    let (values, _, _) = pass_durations(&passes, false, cells).unwrap();
+    assert_eq!(values[1], 5.0);
+    passes.push(reduction);
+    assert!(pass_durations(&passes, false, cells).is_none());
 }

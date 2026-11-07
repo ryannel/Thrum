@@ -36,6 +36,7 @@ mod exposure;
 mod forward;
 mod frame_stats;
 mod history_gpu;
+mod horizon;
 mod readback;
 mod scene_apply;
 mod shadow;
@@ -470,6 +471,7 @@ pub struct PreparedSynthetic {
     shadow: Option<ShadowPrepared>,
     /// Sun shadow heights for the air, with shadows under atmosphere lighting.
     air_shadow: Option<AirShadowPrepared>,
+    horizon: Option<crate::visibility::pyramid::PyramidPrepared>,
     atmosphere: Option<AtmospherePrepared>,
     surface: SurfaceParts,
     contribution_passes: ContributionPasses,
@@ -758,6 +760,9 @@ impl PreparedSynthetic {
         // Prepare the declared shadow recipe even while the Sun is dark, so a
         // later live light change can use the same pipelines and target maps.
         let shadow_enabled = scene.sun_shadows;
+        let horizon_enabled = shadow_enabled
+            && matches!(lighting, FrameLighting::Atmosphere(_))
+            && capabilities.limits().max_sampled_textures_per_shader_stage >= 12;
         let gpu_clusters = (1..=cluster::GPU_MAX_SOURCES).contains(&scene.local_lights.len());
         let clusters = if gpu_clusters {
             ClusterTable::build_gpu(&scene.local_lights, &scene.view)?
@@ -880,6 +885,9 @@ impl PreparedSynthetic {
             if matches!(lighting, FrameLighting::Atmosphere(_)) {
                 view_entries.push(air_shadow::VIEW_ENTRY);
             }
+        }
+        if horizon_enabled {
+            view_entries.push(horizon::VIEW_ENTRY);
         }
         let view_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("synthetic view and target aux"),
@@ -1212,8 +1220,9 @@ impl PreparedSynthetic {
             bind_group_layouts: &bind_group_layouts,
             immediate_size: 0,
         });
+        let horizon = horizon_enabled.then(|| horizon::prepare(device));
         let shader_source = format!(
-            "{}\n{}\n{}",
+            "{}\n{}\n{}\n{}",
             concat!(
                 include_str!("atmosphere/storage.wgsl"),
                 "\n",
@@ -1223,6 +1232,11 @@ impl PreparedSynthetic {
                 "\n",
                 include_str!("synthetic.wgsl")
             ),
+            if horizon_enabled {
+                include_str!("synthetic/horizon_cells.wgsl")
+            } else {
+                include_str!("synthetic/horizon_taps.wgsl")
+            },
             air_shadow::aerial_source(atmosphere.is_some(), air_shadow.is_some()),
             if atmosphere.is_some() {
                 concat!(
@@ -1380,6 +1394,7 @@ impl PreparedSynthetic {
             background,
             shadow,
             air_shadow,
+            horizon,
             atmosphere,
             surface: SurfaceParts {
                 shader_source,
@@ -1418,6 +1433,7 @@ impl PreparedSynthetic {
         4 + u32::from(self.shadow.is_some()) * shadow::LAYERS
             + camera_culling::pass_count(self.camera_culling())
             + u32::from(self.air_shadow.is_some())
+            + u32::from(self.horizon.is_some())
             + u32::from(self.cluster_compute.is_some())
             + u32::from(self.contribution_passes.compute)
             + self
@@ -1620,6 +1636,13 @@ impl PreparedSynthetic {
             ..self.key
         }
     }
+    fn horizon_key(&self) -> PipelineKey {
+        PipelineKey {
+            role: 9,
+            ..self.key
+        }
+    }
+
     fn air_shadow_key(&self) -> PipelineKey {
         PipelineKey {
             role: 8,
@@ -1796,6 +1819,15 @@ impl PreparedSynthetic {
             &mut prepared_keys,
             &contribution_reads,
         )?;
+        let horizon = shadow
+            .as_ref()
+            .filter(|_| self.horizon.is_some())
+            .map(|maps| {
+                let key = self.horizon_key();
+                prepared_keys.insert(key);
+                horizon::append_graph(&mut graph, key, maps, &mut accesses)
+            })
+            .transpose()?;
         let air_key = self.air_shadow_key();
         let air_shadow = (shadow.as_ref().filter(|_| self.air_shadow.is_some()))
             .map(|maps| {
@@ -1883,6 +1915,7 @@ impl PreparedSynthetic {
                 output,
                 shadow,
                 air_shadow,
+                horizon,
                 prepass_depth: camera.prepass_depth,
             },
         ))
@@ -2025,104 +2058,6 @@ impl PreparedSynthetic {
         });
         Ok(())
     }
-    fn append_shadow_passes(
-        &self,
-        graph: &mut FrameGraph,
-        instance: &ResourceId,
-        cube_indices: &ResourceId,
-        accesses: &mut Vec<Access>,
-        prepared_keys: &mut BTreeSet<PipelineKey>,
-        contribution_reads: &[Access],
-    ) -> Result<Option<ResourceId>, RenderError> {
-        if self.shadow.is_none() {
-            return Ok(None);
-        }
-
-        let maps = graph.resource(
-            ResourceDescriptor::Texture {
-                width: shadow::SIZE,
-                height: shadow::SIZE,
-                layers: shadow::LAYERS,
-                mips: 1,
-                samples: 1,
-                format: shadow::FORMAT,
-                usage: wgpu::TextureUsages::RENDER_ATTACHMENT
-                    | wgpu::TextureUsages::TEXTURE_BINDING,
-            },
-            ResourceScope::Transient,
-        )?;
-        for index in 0..shadow::LAYERS {
-            let matrix = graph.resource(
-                ResourceDescriptor::Buffer {
-                    bytes: 64,
-                    usage: wgpu::BufferUsages::UNIFORM,
-                },
-                ResourceScope::Imported { initialized: true },
-            )?;
-            let key = self.shadow_key(index);
-            prepared_keys.insert(key);
-            graph.pass(Pass {
-                name: match index {
-                    0 => "synthetic Sun shadow near",
-                    1 => "synthetic Sun shadow far",
-                    _ => "synthetic Sun horizon heights",
-                }
-                .into(),
-                scope: PassScope::View(1),
-                pipeline: Some(key),
-                accesses: [
-                    Access {
-                        resource: instance.clone(),
-                        range: 0..self.instance_bytes,
-                        kind: AccessKind::StorageRead,
-                        store: true,
-                    },
-                    Access {
-                        resource: cube_indices.clone(),
-                        range: 0..CUBE_INDEX_BYTES,
-                        kind: AccessKind::IndexRead,
-                        store: true,
-                    },
-                    Access {
-                        resource: matrix,
-                        range: 0..64,
-                        kind: AccessKind::UniformRead,
-                        store: true,
-                    },
-                    Access {
-                        resource: maps.clone(),
-                        range: u64::from(index)..u64::from(index + 1),
-                        kind: AccessKind::AttachmentClear,
-                        store: true,
-                    },
-                ]
-                .into_iter()
-                .chain(contribution_reads.iter().cloned())
-                .collect(),
-                external_side_effect: false,
-            });
-        }
-        let sample = graph.resource(
-            ResourceDescriptor::Buffer {
-                bytes: shadow::SAMPLE_BYTES as u64,
-                usage: wgpu::BufferUsages::UNIFORM,
-            },
-            ResourceScope::Imported { initialized: true },
-        )?;
-        accesses.push(Access {
-            resource: sample,
-            range: 0..shadow::SAMPLE_BYTES as u64,
-            kind: AccessKind::UniformRead,
-            store: true,
-        });
-        accesses.push(Access {
-            resource: maps.clone(),
-            range: 0..u64::from(shadow::LAYERS),
-            kind: AccessKind::SampledRead,
-            store: true,
-        });
-        Ok(Some(maps))
-    }
     fn append_cluster_reads(
         &self,
         graph: &mut FrameGraph,
@@ -2263,6 +2198,11 @@ impl PreparedSynthetic {
                 Some(key) if key == self.cluster_key() => {
                     RecordBinding::<SceneFamily>::new(id, PassKind::Compute, |frame, pass| {
                         frame.cluster(pass)
+                    })
+                }
+                Some(key) if key == self.horizon_key() => {
+                    RecordBinding::<SceneFamily>::new(id, PassKind::Compute, |frame, pass| {
+                        frame.horizon(pass)
                     })
                 }
                 Some(key) if key == self.air_shadow_key() => {
@@ -2475,6 +2415,7 @@ struct TargetResources {
     output: ResourceId,
     shadow: Option<ResourceId>,
     air_shadow: Option<ResourceId>,
+    horizon: Option<ResourceId>,
     /// Occlusion only: the private depth the prepass draws.
     prepass_depth: Option<ResourceId>,
 }
@@ -2496,6 +2437,7 @@ pub struct OffscreenTarget {
     aux_buffer: wgpu::Buffer,
     shadow: Option<ShadowTarget>,
     air_shadow: Option<AirShadowTarget>,
+    horizon: Option<horizon::HorizonTarget>,
     visibility: Option<VisibilityTarget>,
     occlusion: Option<camera_culling::PrepassCulling>,
     culling_stats: Option<camera_culling::CullingStats>,
@@ -2575,6 +2517,16 @@ impl OffscreenTarget {
             (None, None) => None,
             _ => return Err(RenderError::GraphPassMismatch),
         };
+        let horizon = match (&prepared.horizon, &ids.horizon, &shadow) {
+            (Some(prepared), Some(id), Some(shadow)) => Some(horizon::HorizonTarget::new(
+                device,
+                prepared,
+                shadow.height_view(),
+                textures.texture(id).ok_or(RenderError::GraphPassMismatch)?,
+            )),
+            (None, None, _) => None,
+            _ => return Err(RenderError::GraphPassMismatch),
+        };
         let air_shadow = match (&prepared.air_shadow, &ids.air_shadow) {
             (Some(air), Some(id)) => Some(air.target(
                 device,
@@ -2633,6 +2585,7 @@ impl OffscreenTarget {
             ]);
         }
         view_entries.extend(air_shadow.as_ref().map(AirShadowTarget::view_entry));
+        view_entries.extend(horizon.as_ref().map(horizon::HorizonTarget::view_entry));
         let view_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("synthetic view and target aux"),
             layout: &prepared.view_layout,
@@ -2662,6 +2615,7 @@ impl OffscreenTarget {
             aux_buffer: aux,
             shadow,
             air_shadow,
+            horizon,
             visibility,
             occlusion,
             culling_stats: camera_culling::CullingStats::new(device, prepared.camera_culling()),

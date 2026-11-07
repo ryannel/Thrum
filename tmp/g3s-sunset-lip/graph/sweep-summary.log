@@ -1,0 +1,22 @@
+legacy taps worst frame p95 122.42 codes at 17.6917h, frame median 59.89 codes, max 126.78 codes
+legacy taps 17.4000 h median 4.67 p95 7.78 max 9.00
+legacy taps 17.5000 h median 4.56 p95 7.64 max 9.33
+legacy taps 17.6000 h median 4.22 p95 13.62 max 14.11
+legacy taps 17.6417 h median 17.56 p95 71.33 max 77.78
+legacy taps 17.7000 h median 37.78 p95 75.60 max 81.00
+legacy taps 17.8000 h median 7.00 p95 9.64 max 10.78
+legacy taps 17.9000 h median 7.67 p95 10.53 max 11.67
+legacy taps 18.0000 h median 8.22 p95 11.22 max 12.78
+legacy taps 18.1000 h median 8.11 p95 11.20 max 12.22
+legacy taps 18.2000 h median 7.78 p95 10.56 max 12.11
+horizon cells worst frame p95 61.16 codes at 17.7083h, frame median 27.33 codes, max 64.22 codes
+horizon cells 17.4000 h median 4.67 p95 7.78 max 9.00
+horizon cells 17.5000 h median 4.56 p95 7.64 max 9.33
+horizon cells 17.6000 h median 4.56 p95 11.44 max 11.78
+horizon cells 17.6417 h median 17.89 p95 36.07 max 43.00
+horizon cells 17.7000 h median 34.67 p95 53.73 max 57.00
+horizon cells 17.8000 h median 7.00 p95 9.64 max 10.78
+horizon cells 17.9000 h median 7.67 p95 10.53 max 11.67
+horizon cells 18.0000 h median 8.22 p95 11.22 max 12.78
+horizon cells 18.1000 h median 8.11 p95 11.20 max 12.22
+horizon cells 18.2000 h median 7.78 p95 10.56 max 12.11
