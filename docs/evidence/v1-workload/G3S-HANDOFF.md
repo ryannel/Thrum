@@ -70,7 +70,7 @@ and `docs/ASSET-LIFECYCLE.md` edits out of the commits. Owner digests are asynch
   Final 32 captures are byte-identical to the independently reviewed set. The [evidence page](G3S-FIRST-LIGHT-2026-11-06.md)
   carries a contact sheet, clip and timings. The sequence is offline and sparse in solar time.
   Chrome still shows the diagnostic scene. Live cadence and calibrated Earth radiance remain open.
-- The foreground reads flat and bright against Kiara dusk. Some low-Sun contact marks and
+- The foreground read flat and bright against Kiara dusk until the low-light key below. Some low-Sun contact marks and
   terrain joins remain. The original 17.9 h Sun-facing captures point into a ridge. Added clear views show the disk, and midnight
   is black under the current sole-Sun model. Isotropic multiple scattering and exposure are
   still approximations. Do not tune a colour gain to compensate for incorrect sky irradiance.
@@ -95,6 +95,9 @@ crossing clip](g3s-first-light/solar-crossing.mp4) runs at 24 sampled frames/s.
 - Live cadence: `THRUM_CAPTURE_LIVE_TICKS` captures consecutive 60 Hz ticks. It exposed crest speckle at a
   0.6° Sun, now bounded by the height-map horizon below a 0.1 elevation sine
   ([evidence](G3S-LIVE-SUNSET-2026-11-07.md)). This is offscreen; on-screen ProMotion presentation is still G3b.
+- Flat, bright twilight foreground: the incident meter now darkens below 1,000 lux on a
+  Krawczyk key curve (about 2 stops at 10 lux, daylight unchanged)
+  ([evidence](G3S-LOW-LIGHT-KEY-2026-11-07.md)). Earth radiance is still uncalibrated.
 - Distant terrain shadows now come from a caster height-map horizon
   ([evidence](G3S-TERRAIN-HORIZON-2026-11-07.md)). Its +24% pass-sum is the next cost
   item; a per-frame horizon-angle map is the scalable form.

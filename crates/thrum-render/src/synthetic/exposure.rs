@@ -20,6 +20,8 @@ pub(super) enum ExposurePolicy {
         compensation_ev: f32,
         min_ev100: f32,
         max_ev100: f32,
+        /// Render dim scenes below mid-grey, as an incompletely adapted eye sees them.
+        low_light_key: bool,
     },
 }
 
@@ -43,6 +45,7 @@ impl ExposurePolicy {
             compensation_ev,
             min_ev100,
             max_ev100,
+            low_light_key: false,
         })
     }
 
@@ -58,7 +61,14 @@ impl ExposurePolicy {
                 compensation_ev,
                 min_ev100,
                 max_ev100,
-            } => (fallback_inverse, compensation_ev, min_ev100, max_ev100, 1),
+                low_light_key,
+            } => (
+                fallback_inverse,
+                compensation_ev,
+                min_ev100,
+                max_ev100,
+                1 + u32::from(low_light_key),
+            ),
         };
         let words = [
             inverse.to_bits(),
