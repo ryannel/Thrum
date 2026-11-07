@@ -1,5 +1,7 @@
 //! V1 fixture, camera and lighting policy for the engine frame runtime.
 
+mod star_catalogue;
+
 use crate::{
     camera::SceneCamera,
     environment::DayCycle,
@@ -243,16 +245,7 @@ impl GameScene {
         reflection.previous[3][..3].copy_from_slice(&scene::REFLECTION_SUBJECT_POSITION);
         scene.view = frame_view(0, 0.0, extent, 0.0, 0.0, None)?;
         scene.sun_shadows = true;
-        // Synthetic optical controls for the scratch valley integration.
-        // These are chosen equatorial directions, not catalogue data.
-        scene.star_catalogue = Some(&[
-            [-0.838_670_55, 0.0, -0.544_639_05, 9.6e-6],
-            [-0.796_726_2, -0.140_484_33, -0.587_785_24, 1.602_631_7e-7],
-            [-0.793_353_3, 0.0, -0.608_761_4, 1.011_192_2e-8],
-            // Centre at x640, y304.5 in the 1280x720 midnight capture.
-            // The ridge starts at y303, leaving a visible footprint above it.
-            [-0.751_771_8, 0.0, -0.659_423_35, 9.6e-6],
-        ]);
+        scene.star_catalogue = Some(&star_catalogue::HARVARD);
         scene.local_lights = [
             ([-0.9, -0.9, 1.0], [5.0, 0.8, 0.4]),
             ([0.9, -0.9, 1.0], [0.4, 4.0, 0.8]),
