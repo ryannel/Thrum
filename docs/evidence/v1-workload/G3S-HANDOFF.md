@@ -70,8 +70,17 @@ The Codex goal remains active. Its attachment is
   `tmp/ultrareview-2026-11-07/atmosphere/`.
 - The ultra-review frame and clock fixes are in the
   [bounded-frame evidence](../render/V1-BOUNDED-FRAMES-2026-11-04.md).
-  Continue the morning sky-band probe with the fixed valley and stored-radiance
-  comparison above. The all-clear Metal timing issue remains separate.
+  The all-clear Metal timing issue remains separate.
+- The cooked valley probe retained the existing sky filter. Vertical cubic
+  reconstruction changed morning curvature p99 from 0.157% to 0.079%, but
+  changed the sampled SDR sky by at most one code. Baseline midnight was
+  entirely black. Capture and scoring scripts, matched frames and source hash
+  are in `tmp/g3s-showcase/sky-contours/`.
+- Continue [night milestone M1](../../design/modules/ATMOSPHERE-PLAN.md) with
+  the finite-shell reference in `tmp/g3s-showcase/night-design/`. Run
+  `cc -O3 mixed.c -lm -o mixed && ./mixed 2` in that directory. The program
+  gives absolute luminance, ground irradiance and finite-path in-scatter.
+  The next step is to generate and verify the compact profile against it.
 
 ## Exposure audit decision
 
@@ -100,10 +109,10 @@ binaries. For a fresh capture set `THRUM_ASSET_STORE` to the absolute path of
 output directory, then run `v1-game-neutral`, `v1-game-scalar` or `v1-game-anchored`
 from the study directory on Metal. These captures establish visual output only.
 
-- **Night and EV floor remain open with G3s.** Fix the floor and key interaction with the
-  first dim-light scene that can qualify it. Moon, stars and mesopic response need a
-  legible night reference and sufficient scene storage. Keep the current Sun-only output
-  explicit in the interim.
+- **Night and EV floor remain open with G3s.** The reviewed
+  [night milestones](../../design/modules/ATMOSPHERE-PLAN.md) pair the key and
+  storage correction with moonless light and then stars. The current renderer
+  remains Sun-only. Lunar illumination and mesopic colour remain open.
 - **G3t/G4 own HDR.** G3t owns storage and the native boundary. G4 owns the shared display
   mapping and SDR/EDR comparison, including history scale and dynamic headroom.
 - **G4 camera work owns occlusion-aware and local exposure.** Keep the open-sky incident
