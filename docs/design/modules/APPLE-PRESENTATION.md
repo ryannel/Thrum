@@ -302,11 +302,11 @@ current display shader is a pre-AA diagnostic. So TAAU at scale 1.0 becomes the 
   creation (G3t seam 5).
 - M10 then delivers both layers of seam 5:
   - offline metallibs loaded through `PASSTHROUGH_SHADERS`, with a counted WGSL fallback;
-  - Metal `PIPELINE_CACHE` over `MTLBinaryArchive`, contributed upstream under gfx-rs/wgpu#8526 and carried as a
-    pinned patch until it merges.
+  - Metal `PIPELINE_CACHE` over `MTLBinaryArchive`, carried as a pinned wgpu patch.
 - M10 proves an archive hit with `failOnBinaryArchiveMiss`, and proves that a stale archive or a mismatched metallib
   is handled at build, not in play.
-- The upstream contribution waits for the owner's approval.
+- Contributing the cache upstream (gfx-rs/wgpu#8526) is a later item that does not gate V1, under the owner's rules in
+  G3t seam 5.
 
 **What would change these choices:**
 - A MetalFX neural upscaler (M5 Pro/Max) would be a new provider behind the same contract.
@@ -447,7 +447,7 @@ Mac rows standing in for iPhone are labelled proxy. iPhone EDR and timing are ow
    commits inside a profile generation (C04).
 8. **Native provider.** MetalFX through G3t's native segment (depends on G3t seam 1).
 9. **Pipeline preparation and archives.** Shared with G3t seam 5: the measured split, offline metallibs through
-   passthrough, and the upstream Metal `PIPELINE_CACHE`. V1's archive item stays as written.
+   passthrough, and the Metal `PIPELINE_CACHE` in a pinned patch; upstream later. V1's archive item stays as written.
 
 ## Open questions
 
