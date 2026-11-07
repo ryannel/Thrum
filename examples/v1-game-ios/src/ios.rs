@@ -265,7 +265,10 @@ impl Shell {
     }
 
     /// Revoke the lease and release the surface without waiting. A section in
-    /// progress defers the release to its reply; its drawable cannot present.
+    /// progress defers the release, and the detach, to its reply. It drops its
+    /// drawable at a later epoch check, or, if the revocation landed after its
+    /// final check, presents that one drawable onto the still-attached old
+    /// layer (`raced_presents`). No later section is admitted on this surface.
     fn release_surface(&mut self) {
         self.lease.invalidate();
         let window = self.window.take();
