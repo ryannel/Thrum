@@ -93,6 +93,25 @@ so far is below, taken at load averages of 17–24 with agents active; it qualif
 Under this contention Forced is slower at every row, and its rounds vary far more than Serial's. That is consistent
 with preempted pool workers. The quiet run uses the same command with agents paused.
 
+## Contended capture share
+
+`cargo bench -p v1-game --bench g2r -- --capture-share` runs two warm Serial worlds through the same ABBA rounds. In
+one world all four pages are held, so the engine skips page capture. Change marking for publication still runs in
+both. The difference is page capture's share of the tick. The raw log is `tmp/g2s-parallel/capture-share-3.log`
+(local), taken at load 20–22, so it qualifies nothing.
+
+| Rows | Captured p50 µs (round range) | Pages held p50 µs (round range) | Capture share |
+|---|---:|---:|---:|
+| 10k | 51 (48–52) | 26 (25–28) | about half |
+| 100k | 518 (494–537) | 262 (249–282) | about half |
+
+Page capture is about half the Serial tick at both sizes, and the mover kernel is only part of the remainder. Parallel
+capture, by column and by word range within the position column, is therefore the larger parallel candidate.
+
+The first two deferred ticks after the pages fill allocate once each, as the two swapped undo buffers grow. That cost
+comes from keeping deferred-publication undo apart from transaction scratch (ultra #1). Later deferred ticks do not
+allocate: the held rows above show zero.
+
 ## Open, for root and the performance phase
 
 1. **Quiet crossover.** Promote requested Rayon only on an owner-quiet ABBA win: the same command at 100k–500k,
