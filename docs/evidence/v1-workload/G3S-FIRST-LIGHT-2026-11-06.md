@@ -1,57 +1,53 @@
 # G3s first light — open
 
-6 November, M3 Max Metal / Chrome 156. Partial visual/function checkpoint; no imported spectra or speed claim.
+Updated 7 November, M3 Max Metal / Chrome156. Partial function/visual checkpoints; no spectra or speed claim.
 
 | Check | Result | Scope |
 | --- | --- | --- |
-| Storage/camera/SDR | LUTs, πL, meter/history, shoulder f64 within 1 byte | Pass |
-| SH9 diffuse | Projection 0.0645% M0; reference refinement ≤0.0483% M0 | Sampling pass |
-| SH approximation | Direct error 5.225% M0; up to 331% on faint directions | Accuracy open |
-| GGX cube/DFG | Actual Metal constants, axes/edges/corners, rotated Sun, independent f64 hemisphere integral | Pass |
-| Material/energy | 120 GPU cases: metal/roughness/view, solar 0/1/2, furnace/back hemisphere; front-raster normal repair | Pass |
+| Storage/camera/SDR | Scaled LUTs, πL, meter/history, shoulder f64 within1byte | Pass |
+| SH9 diffuse | Projection0.0645% M0; refinement≤0.0483% M0; approximation5.225% M0 and331% on faint directions | Accuracy open |
+| GGX cube/DFG | Metal constants, seams, rotated Sun, independent f64 hemisphere integral;120 energy/hemisphere cases | Pass |
+| Normal repair | GPU regression fails before/passes after; front raster corrected, real backfaces retained | Pass |
+| Aerial storage | Actual producer vs fp32 storage, Sun+2° through−9°; real consumer S/T units | Pass, same-model oracle |
 | Cache/lifecycle | Cold/warm cancellation, Sun/profile/altitude changes, amplitude/view reuse; browser replacement | Pass |
-| Look | Noon/sunrise/twilight subjects; 24 camera/Sun samples independently reviewed | Partial |
+| Look | Held phases and sampled camera/Sun routes independently reviewed | Partial |
 
-![Six selected Chrome views](g3s-first-light/solar-contact.png) · [sampled camera/Sun clip](g3s-first-light/solar-sweep.mp4) · [earlier native Sun](g3s-first-light/sun-facing-1080p.png)
+![Initial reflection checkpoint: six Chrome views](g3s-first-light/solar-contact.png) · [sampled clip](g3s-first-light/solar-sweep.mp4)
 
-Served Wasm `5d5988bcbe8a2b0e5f2b886eee030c09982e57565c3feabfce19fff9acfa3940`, Chrome 156.0.8078.81,
-ANGLE Metal M3 Max, 1252×704. `node scripts/check_v1_browser.mjs --case sky-reflections` captures seven held phases
-and 24 UI-driven camera/Sun samples in one healthy generation; world paused (final run tick2). Contact selects six;
-clip is 24 samples at 5 fps, **not live cadence**. Source PNGs and all decoded frames were inspected independently.
-Metallic foreground uses the ONE disk-free Sky; nearby 18% rough neutral stays outside local-light spheres.
-Sunrise coverage was added after review; first occluded fixture was rejected. Twilight colours read on both materials.
-7 November: actual Metal regression fails before the smooth-normal repair and passes after, including unrepaired
-raster backfaces. Independent code review has no findings. Private cooked-terrain captures lose their black seams;
-landscape composition, low-Sun terraces and grounding remain unqualified. Chrome all11 and 24 sampled views pass
-at Wasm `11308dde593463a392cde4bddc86228fdd1ca3aef0a580cf88527320ee511d3a`; independent visual review retains
-the scoped repair. Private valley ABBA (61,312 triangles +10k entities,1080p, shared M3 Max load3–11): callback p95
-0.741–0.772→0.734–0.738ms; scene GPU p50 1.561–1.566→1.570–1.571ms. No speed/isolated-GPU claim; first before
-may overlap owned capture startup. Raw builds, images and runs: `tmp/g3s-showcase/`. No geometric-horizon claim.
-No broad clipping/banding, blackouts or cube seams observed; grid moiré, regular shadow stipples/stairs and pastel
-contrast remain. Motion PNGs have zero black/clipped pixels; H.264 damages the dense grid, so source PNGs govern.
-Three sky-only 280-row comparisons against prior SH9 captures peak at 1 SDR byte. Transport/spectral accuracy,
-physical display motion and actual tab/mobile lifecycle remain open; the scoped reflection slice is retainable.
+That retained digest is Wasm `5d5988bcbe8a2b0e5f2b886eee030c09982e57565c3feabfce19fff9acfa3940`,
+Chrome156.0.8078.81/ANGLE Metal M3 Max,1252×704. Seven held phases and24 UI-driven samples, paused authority,
+one healthy generation; clip5fps is **not live cadence**. Metal foreground receives the ONE disk-free Sky.
+Independent reviews find coherent reflections/gradients but grid moiré, shadow stairs/stipples and pastel contrast.
+Transport/spectral accuracy, physical display motion and tab/mobile lifecycle remain open.
 
-**Recorded cost, not a win:** 10k/1080p threaded Metal, 200 callbacks/run, same harness; baseline `614156e` and current
-fixture. ABBA ran after owned Chrome exited, other sessions active (load ~12–14). Each range is two run p95s:
+7 November normal repair: full `./dev check` and all11 actual Chrome cases pass at Wasm
+`11308dde593463a392cde4bddc86228fdd1ca3aef0a580cf88527320ee511d3a`. Private cooked-valley images lose their
+black contour seams (noon near-black terrain pixels3958→0). Independent code/visual review retains the repair;
+landscape bands, grounding/contact shadows, flat foreground and twilight contrast remain unqualified.
 
-| Hot path | Before | With reflections |
-| --- | ---: | ---: |
-| Render callback incl. GPU poll | 0.732–0.863 ms | 0.921–1.120 ms |
-| Scene GPU pass sum | 1.763–1.914 ms | 3.278–3.310 ms |
-| Atmosphere compute incl. aerial | 0.343–0.344 ms | 0.958–0.978 ms |
+Aerial RGB now stores ×1024 and decodes before Sun; T/alpha and transport stay unchanged. At Sun−9°, raw half
+loses35852/93184 sampled faint RGB values to zero; the cited2.78e−9 sample changes100%→1.45% relative storage
+error. This is quantization, not a physical-model tolerance. Actual consumer checks preserve S·Sun+T·surface.
+Five fixed valley views change by at most1SDR byte; **the visible terraces remain**. An entirely black night
+has no before match. Independent review retains the scoped correction. Full check and actual Chrome sky route
+pass at Wasm `b30ad323c506866ea91bbb58d6a1a592e572829cdad89039283fbb8ce7c62cd4` (seven phases+24 samples).
 
-New work increases cost: ~4.19M sky fetches/changed sky, ~0.30MiB products, device-prepared 896 GGX directions.
-Forward and unchanged tone buckets also rise; fixture/load confound isolation. No whole-frame attribution solely to
-prefiltering. Earlier overlapping-Chrome block had 14–17ms GPU tails and remains raw; no clean-device timing claim.
-Retain this feature baseline for the later whole-frame profile; no numeric admission target or allocation claim.
+**Cost history; no measured speed win.** Each range is two runs,10k entities/1080p/threaded Metal/200callbacks:
+
+| Slice and recipe | Callback incl. GPU poll, p95 before→after | Scene GPU before→after |
+| --- | --- | --- |
+| GGX reflections, diagnostic fixture, shared load12–14 |0.732–0.863→0.921–1.120ms | p95 1.763–1.914→3.278–3.310ms |
+| Normal repair, private61312-triangle valley, shared load3–11 |0.741–0.772→0.734–0.738ms | p50 1.561–1.566→1.570–1.571ms |
+| Aerial encoding, same private valley, shared Mac |0.851–0.931→0.793–0.880ms | p50 1.588–1.595→1.585–1.593ms |
+
+ABBA order; no allocation or isolated-GPU claim. The normal block's first before may overlap owned capture startup;
+aerial block has no owned GPU overlap. Other sessions/load vary. Reflections add~4.19M fetches/changed Sky and~0.30MiB
+products; prepared896 GGX directions remove repeated trigonometry. Earlier reflection block with overlapping owned
+Chrome has14–17ms GPU tails and is retained raw. No whole-frame attribution solely to prefiltering.
 
 [Design](../../design/modules/ENVIRONMENT.md#selected-mathematical-relationships-and-domains): GGX split-sum,
-64²×6/seven mips, 65² endpoint DFG, 128/1024 samples, correlated Smith; Sun/aerial/pre-exposure apply once.
-SH9 retains independent horizontal metering; dark-direction and transport errors are separate. Selected transport
-stays `e061671`, gains65536/1024; phase seed rejected (Sun−3° median14.34→17.24%), scalar/moment prototypes mixed.
-Continuous closure refinement passes four cells but exposes inherited vacuum self-feedback; no whole-sky pass.
-Raw refs/prototypes remain `tmp/g3s-{source-quality,spatial-prototype,rayleigh-moment}/`; no GPL-derived inputs.
-Final captures/oracles, both timing blocks and rejected fixture metadata: `tmp/g3s-environment-reflections/`.
-`./dev check`, actual Metal referees and all11 Chrome cases pass; no iPhone result. C250 has no readback;
-NeutralHighlights preserves calibration but is not standard PBR Neutral. G3s remains open.
+64²×6/seven mips,65² endpoint DFG,128/1024 samples. Sun/aerial/pre-exposure apply once. Selected transport stays
+`e061671`; phase seed rejected, scalar/moment prototypes mixed. **Open daily review:** twilight M interpolation,
+near-ground Sun lookup, meter/SH disagreement and spectral error. No whole-sky accuracy pass or iPhone result.
+Raw inputs, images, GPU oracles and timings: `tmp/g3s-environment-reflections/`, `tmp/g3s-showcase/`;
+scientific rejected variants remain in `tmp/g3s-{source-quality,spatial-prototype,rayleigh-moment}/`. No GPL inputs.

@@ -1,3 +1,4 @@
+mod aerial;
 mod diffuse;
 mod ground;
 mod mapping;

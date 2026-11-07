@@ -32,7 +32,7 @@ fn aerial_main(@builtin(global_invocation_id) id: vec3<u32>) {
     if ground >= 0.0 { limit = min(limit, ground); }
     var radiance = vec3(0.0);
     var throughput = vec3(1.0);
-    textureStore(scatter_out, vec2<i32>(id.xy), 0, vec4(radiance, 1.0));
+    textureStore(scatter_out, vec2<i32>(id.xy), 0, vec4(radiance * SKY_LUT_GAIN, 1.0));
     textureStore(trans_out, vec2<i32>(id.xy), 0, vec4(throughput, 1.0));
     for (var layer = 1u; layer <= 32u; layer++) {
         let start = 32000.0 * pow(f32(layer - 1u) / 32.0, 2.0);
@@ -53,7 +53,7 @@ fn aerial_main(@builtin(global_invocation_id) id: vec3<u32>) {
                 throughput *= exp(-ext * dt);
             }
         }
-        textureStore(scatter_out, vec2<i32>(id.xy), i32(layer), vec4(radiance, 1.0));
+        textureStore(scatter_out, vec2<i32>(id.xy), i32(layer), vec4(radiance * SKY_LUT_GAIN, 1.0));
         textureStore(trans_out, vec2<i32>(id.xy), i32(layer), vec4(throughput, 1.0));
     }
 }
