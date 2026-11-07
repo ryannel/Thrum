@@ -773,27 +773,29 @@ impl BrowserGame {
         } else {
             "GPU timestamps unavailable or incomplete".to_owned()
         };
-        // Camera culling's read-back draw counts; Direct reports none.
-        let counted = self
+        // Camera culling's read-back draw counts, over the frames whose
+        // count had settled when they retired; Direct reports none.
+        let mut drawn: Vec<u32> = self
             .samples
             .iter()
-            .filter(|sample| sample.camera_culling.is_some())
-            .count();
-        let culling = if counted == self.samples.len() && counted > 0 {
-            let drawn = percentile(&self.samples, |sample| {
-                f64::from(sample.camera_culling.map_or(0, |counts| counts.drawn))
-            });
-            format!(
-                "; culling_drawn_p50={:.0} culling_drawn_p95={:.0} culling_active={}",
-                drawn.0,
-                drawn.1,
-                self.samples
-                    .last()
-                    .and_then(|sample| sample.camera_culling)
-                    .map_or(0, |counts| counts.active)
-            )
-        } else {
-            String::new()
+            .filter_map(|sample| sample.camera_culling.map(|counts| counts.drawn))
+            .collect();
+        drawn.sort_unstable();
+        let culling = match self
+            .samples
+            .iter()
+            .rev()
+            .find_map(|sample| sample.camera_culling)
+        {
+            Some(last) => format!(
+                "; culling_counted={}/{} culling_drawn_p50={} culling_drawn_p95={} culling_active={}",
+                drawn.len(),
+                self.samples.len(),
+                drawn[drawn.len() / 2],
+                drawn[drawn.len() * 95 / 100],
+                last.active
+            ),
+            None => String::new(),
         };
         format!(
             "adapter={} format={:?} extent={}x{}; callbacks={} presented={} samples={} ticks={} elapsed={:.3}s unavailable={} overload_events={} refused_ticks={} timestamp_clamps={} shed_views={} report_drops={} generation={} recovery_attempts={} recovered={} GPU_timed={} latest_visual_age={}; tick CPU p50/p95={:.1}/{:.1} us; encode CPU p50/p95={:.1}/{:.1} us; {gpu}; culling={:?}{culling}",
