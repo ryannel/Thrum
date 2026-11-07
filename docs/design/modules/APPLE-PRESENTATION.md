@@ -238,7 +238,7 @@ current display shader is a pre-AA diagnostic. So TAAU at scale 1.0 becomes the 
   the recovery path.
 - *Governor during transitions.* The governor freezes from build start to the first frame after the switch, and
   discards timing samples that span the switch.
-- *Occlusion.* A fully occluded window stops the display link and so stops encoding. Submit-without-present covers only
+- *Occlusion.* A fully occluded window stops the display link and so stops encoding. Presentation drop covers only
   transient acquisition failures, so no GPU time goes to frames nobody sees.
 
 **EDR.**
@@ -297,9 +297,9 @@ current display shader is a pre-AA diagnostic. So TAAU at scale 1.0 becomes the 
 **Archives and cold start.**
 - G4's native objects are MetalFX scalers. They take no binary archive, and their cost is synchronous creation in
   generation builds.
-- wgpu pipelines cannot use archives in wgpu 30. Under option (b) of G3t seam 5, G4 records cold and warm
-  launch-to-ready times and the zero post-readiness compile count. Archive rejection is then not exercisable, and
-  BUILD-PLAN's "binary archives" item covers nothing.
+- wgpu pipelines cannot use archives in wgpu 30. Under either option of G3t seam 5, G4 records cold and warm
+  launch-to-ready times and the zero post-readiness compile count. Under (b) archive rejection is not exercisable,
+  and (b) cannot count as the V1 archive deliverable; the choice is the owner's.
 - Under option (a), M10 proves an archive hit with `failOnBinaryArchiveMiss`, and proves that a stale archive compiles
   at build, not in play.
 
@@ -355,7 +355,11 @@ current display shader is a pre-AA diagnostic. So TAAU at scale 1.0 becomes the 
 **Edge cases.**
 - *Cut:* reset to the reconstructor and a new correspondence epoch.
 - *Scale change:* values only, no reset.
-- *Dropped presentation:* the frame is still submitted (G3t), so history stays consistent.
+- *Dropped presentation:* on portable the existing drop contract holds. The frame may be cancelled, and TAAU history
+  stays at the last submitted sample because it commits at successful submission. A frame carrying a MetalFX segment
+  is submitted without present if Thrum Core admits G3t seam 3's runtime change; otherwise it is discarded and MetalFX
+  resets at the next encode. On iOS in the background the frame is dropped and history resets. Each outcome is
+  counted in the proof.
 - *Resize or backing-scale change:* a generation transition.
 - *Refresh change:* governor budget only.
 - *Headroom change or a move to an SDR display:* H only.
@@ -409,8 +413,9 @@ Mac rows standing in for iPhone are labelled proxy. iPhone EDR and timing are ow
 
 ## Seams for Thrum Core (proposals)
 
-1. **Temporal acceptance (RENDER-SPEC:403-409, `history.rs`, C07).** Submission-order acceptance on one queue. Encoded
-   frames are always submitted (G3t seam 3). Provider reset on failure or generation change. `HistoryKey.extent` is
+1. **Temporal acceptance (RENDER-SPEC:403-409, `history.rs`, C07).** Submission-order acceptance on one queue. The
+   presentation-drop contract is unchanged until the runtime seam is reviewed: TAAU history commits at successful
+   submission of an accepted sample, and native frames follow G3t seam 3. Provider reset on failure or generation change. `HistoryKey.extent` is
    the output extent. Governor value commits do not bump the profile epoch.
    - A GPU execution error surfaces only at completion, after up to `IN_FLIGHT = 2` later frames may have read the
      affected history. Such an error takes the device-loss path, which rebuilds the generation and resets every
@@ -436,7 +441,8 @@ Mac rows standing in for iPhone are labelled proxy. iPhone EDR and timing are ow
 7. **Governor.** Location, inputs (missed ticks from the frame host, thermal state from the platform) and value
    commits inside a profile generation (C04).
 8. **Native provider.** MetalFX through G3t's native segment (depends on G3t seam 1).
-9. **Archives.** Shared with G3t seam 5. Under (b), the V1 exit wording changes.
+9. **Archives.** Shared with G3t seam 5, an owner ruling between (a) and (b). No V1 exit wording changes with these
+   docs.
 
 ## Open questions
 
