@@ -273,7 +273,7 @@ fn cascade_visibility(index: u32, receiver: ShadowReceiver) -> f32 {
         let plane_depth=p.z+dot(depth_gradient,tap-uv);
         let epsilon=select(shadows.penumbra.w,shadows.penumbra.z,index==0u)+4e-7;
         let same_plane=abs(depth-plane_depth)<=epsilon;
-        if depth>0.0 && depth>receiver_depth && !same_plane {
+        if depth>p.z+epsilon && depth>receiver_depth && !same_plane {
             nearest_gap=min(nearest_gap,max(0.0,depth-p.z));
             blockers+=1.0;
         }
@@ -281,8 +281,8 @@ fn cascade_visibility(index: u32, receiver: ShadowReceiver) -> f32 {
     if blockers==0.0 {
         return shadow_filter(index,uv,p.z,reference,depth_gradient,extent,uv);
     }
-    // The nearest blocker preserves contact when depths overlap. At grazing
-    // incidence bound plane extrapolation before it can pass that blocker.
+    // Prefer the nearest upstream blocker when depths overlap. Bound the
+    // broad plane offset to half its gap; local texel bias remains separate.
     let physical_radius=nearest_gap*scale;
     let plane_radius=0.5*nearest_gap/max(length(depth_gradient),1e-12);
     let radius=min(physical_radius,plane_radius);
@@ -316,7 +316,7 @@ fn shadow_filter(index:u32,uv:vec2<f32>,receiver_depth:f32,reference:f32,
         let plane_depth=receiver_depth+dot(gradient,tap-origin);
         let epsilon=select(shadows.penumbra.w,shadows.penumbra.z,index==0u)+4e-7;
         let same_plane=abs(depth-plane_depth)<=epsilon;
-        visible += weight.x*weight.y*select(0.0,1.0,tap_depth>=depth || same_plane);
+        visible += weight.x*weight.y*select(0.0,1.0,tap_depth>=depth || same_plane || depth<=receiver_depth+epsilon);
     }
     return visible;
 }

@@ -83,6 +83,9 @@ fn render_planes(
 @fragment fn fragment(@builtin(position) p:vec4<f32>) -> @builtin(frag_depth) f32 {
     if parameters.z==1.0 { return 0.0; }
     let x=2.0*p.x/256.0-1.0;
+    if parameters.z==3.0 && p.x<128.0 {
+        return min(0.24,0.26+parameters.x*x);
+    }
     let covered=select(p.x>=128.0,all(abs(p.xy-vec2(128.0))<=vec2(1.0)),parameters.z==2.0);
     let gap=select(0.0,parameters.y,covered);
     return clamp(0.25+parameters.x*x+gap,0.0,1.0);
@@ -305,6 +308,16 @@ fn finite_sun_shadow_width_tracks_blocker_distance_and_tilted_receivers() {
             "a narrow central caster contributes its finite-source penumbra"
         );
         assert!(narrow_scope.pop().await.is_none());
+        let behind_scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
+        let reference = observe(&device, &queue, 0.4, 0);
+        let behind = observe(&device, &queue, 0.4, 3);
+        for lane in 15..18 {
+            assert!(
+                (reference[SAMPLES + lane] - behind[SAMPLES + lane]).abs() < 0.1,
+                "downstream depths cannot collapse an upstream penumbra"
+            );
+        }
+        assert!(behind_scope.pop().await.is_none());
         for slope in [0.0, 0.4] {
             let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
             let observed = observe(&device, &queue, slope, 0);

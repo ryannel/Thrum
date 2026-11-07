@@ -8,49 +8,46 @@ The Codex goal remains active. Its attachment is
 
 ## Current WIP
 
-`main` at `91f524b` is the verified baseline. Branch `codex/wip-g3s-solar-penumbra`
-adds directional PCSS to the same two maps, with cone padding and 16 blocker / 32 disk
-samples. It is unverified. The full checks of the first candidate failed the old small-roof
-off-camera assertion, and independent visual review rejected coarse contact contours and
-warm triangular light leaks in solar frames 66–71. Keep the WIP off main until corrected
-checks and visuals pass.
+`main` at `91f524b` is the verified baseline. Work is saved on
+`codex/wip-g3s-solar-penumbra`. Keep this branch off main until its final checks, cost
+comparison and visual review pass.
 
-The current candidate is `capture-24-penumbra-nearest` under `tmp/g3s-showcase/`.
-It restores broad receiver-plane correction but uses the nearest accepted blocker and bounds
-the radius so plane extrapolation cannot exceed half that blocker separation. This is a
-conservative approximation at grazing angles. It deliberately underestimates the physical
-penumbra there. Initial native inspection resolves the previous acne/leaks; independent
-review is pending.
+The current model uses the nearest strictly upstream blocker, with 16 search and 32 disk
+samples. It bounds broad receiver-plane extrapolation to half that blocker gap. Grazing
+support and sparse blocker selection conservatively underestimate softness. The private
+192-byte uniform contains the world-height support used by both map padding and search,
+plus numeric surface tolerance. The comparison sampler has been removed.
 
-The private 192-byte uniform carries world-height support and the 6 mm/span numerical
-tolerance. The map fit and blocker search use the same conservative height bound when
-every Sun-disk direction rises. Both scoped geometry tests and a full check of the prior
-local-plane candidate passed. That candidate was nevertheless rejected visually for severe
-low-Sun acne in captures 22/23. Do not use a green check as its visual qualification.
+Capture24 (`tmp/g3s-showcase/capture-24-penumbra-nearest/`) resolves the major defects
+from rejected candidates. Full-plane mean PCSS leaked warm triangles near the horizon;
+local-only correction caused widespread triangle acne; unconstrained global padding made
+noon contacts coarse. Independent review sees a gradual ridge transition and restored noon
+contacts in24, but a stronger narrow stippled seam in solar24–28 still needs attention.
 
-The off-camera roof fixture uses a 32 m roof 1.4 km upstream, because the finite Sun's
-footprint there is about 13 m wide. Its prior 1.6 m roof could not produce the asserted
-strong umbra. The original darkness assertion is retained. Rendering depth is required
-for GPU fixtures, as WebGPU forbids queue writes to Depth32Float.
+A source review then found downstream depth samples could zero the nearest gap. The current
+code requires positive axial separation in search and treats downstream depths as visible
+in filtering. Its shipping GPU oracle passes, including a mixed downstream/upstream fixture.
+It also covers two blocker distances, tilted planes, an empty grazing map and a narrow
+central caster. Depth fixtures must be rendered, as WebGPU forbids writes to Depth32Float.
 
-The current full check is session 37906, writing
-`tmp/g3s-showcase/solar-penumbra/conservative-dev-check.log`.
-Build session 20328 refreshes the release benchmark and Wasm artifacts. Poll those handles.
-The latest game capture completed. Refresh Chrome and run ABBA after the full check stops
-using the GPU. The actual code and records are pushed to the WIP branch at each checkpoint.
+The off-camera umbra test retains its darkness assertion with a 32 m roof 1.4 km upstream.
+The former 1.6 m roof is smaller than the finite Sun's ~13 m footprint and cannot form that
+umbra. The corrected scoped test passed. CPU upload tests check height and tolerance units.
 
-The shadow-off counterfactual reduced the pixel (640,600) 34→35 jump from 103 to one SDR
-code. A separate raycast through source triangles at receiver (-17.5194,239.9546,15.9897)
-found ridge blockers about 13 km upstream. At frames 33–38, 512 Sun disk rays give visibility
-0.893, 0.709, 0.498, 0.279, 0.096, 0.0. The first PCSS candidate reduced the code jump to 20.
-Check the current correction over the entire sequence before carrying that number forward.
+**Runs to observe.** Full check session37906 writes `conservative-dev-check.log`; it predates
+the final upstream-depth guard, so repeat full verification after it finishes. Capture
+session19038 builds and records the latest source into `capture-25-penumbra-upstream`,
+then retains exact PNGs. Both logs and all raw records live in
+`tmp/g3s-showcase/solar-penumbra/`. Do not restart these handles merely because output is
+quiet. Once terminal, review25 against baseline18 and rejected23 at all131 frames, especially
+sequence02/21, solar24–28 and66–71. Rebuild the release benchmark and Wasm before fresh Chrome
+and ABBA runs. The saved before executable is the exact verified q8 baseline; retain it.
 
-Scripts, complete/partial rows and logs are in `tmp/g3s-showcase/solar-penumbra/`.
-`corrected-gpu-oracle.log` and `corrected-off-camera.log` are the current scoped results.
-`dev-check.log` and `final-dev-check.log` document rejected earlier candidates, not current
-success. Rebuild benchmark and Wasm artifacts before reuse. The previous Chrome pass and
-ABBA inputs predate the receiver-plane correction. The saved ABBA runner has not run for
-the corrected candidate. Do not overwrite its before executable when rebuilding.
+The shadow-off counterfactual reduces pixel(640,600) frame34→35 from103 to one SDR code.
+Source-triangle rays at receiver(-17.5194,239.9546,15.9897) find ridge blockers about13 km
+upstream. With512 rays across the Sun disk, frames33–38 give visibility
+0.893,0.709,0.498,0.279,0.096,0.0. The first PCSS candidate reduced the code step to20.
+Re-measure the final model before carrying that number forward. No owner decision is owed.
 
 ## Goal and status
 
