@@ -1227,7 +1227,7 @@ async function qualifyRoute(cdp, sessionId, poll, timeout, output, mode, file, f
 // navigation started). The page fetches and attaches the cooked valley before it reports Running and starts its frame
 // loop, so a status before Running is an observed pre-loop state with nothing cooked drawn. From the moment the page
 // starts fetching the valley, the clock, status and cooked_status() are read in one call. The first draw lies between
-// the last observation that establishes no draw (a pre-loop status, or cooked_status() with zero draws) and the first
+// the last observation that establishes no draw (a pre-loop status, or an explicit zero from cooked_status()) and the first
 // with one: the latter is an upper bound, and the gap is the observation granularity. A status-only read that already
 // says Running establishes nothing. If no observation establishes the lower bound, it is recorded as absent and
 // navigation start (0) is the conservative bound, with no granularity. THRUM_ROUTE_OBSERVE_DELAY_MS, for testing that
@@ -1267,8 +1267,10 @@ async function observeRouteStartup(cdp, sessionId, poll, deadline, mode, file) {
     if (cooked?.errors.length) throw new Error(`${mode}: cooked valley failed during startup: ${JSON.stringify(cooked)}`);
     const phase = /^Running/.test(value.status ?? '') ? 'running' : 'fetching';
     phases[phase] ??= value.now;
-    rows.push({ now: value.now, phase, drawn: cooked?.drawn ?? 0 });
-    if (cooked?.drawn >= 1) { firstWith = value.now; final = cooked; } else { lastWithout = value.now; await sleep(5); }
+    // Before Running the pre-loop status proves zero draws; after it only an explicit count is known.
+    const drawn = typeof cooked?.drawn === 'number' ? cooked.drawn : phase === 'running' ? null : 0;
+    rows.push({ now: value.now, phase, drawn });
+    if (drawn >= 1) { firstWith = value.now; final = cooked; } else { if (drawn === 0) lastWithout = value.now; await sleep(5); }
   }
   // Where the time went: the navigation, the Wasm and the cooked products, from the page's own timing entries.
   const timing = await game.invoke(`const nav=performance.getEntriesByType('navigation')[0];
@@ -1289,7 +1291,7 @@ async function observeRouteStartup(cdp, sessionId, poll, deadline, mode, file) {
       medianPollMs: gaps.sort((a, b) => a - b)[Math.floor(gaps.length / 2)] ?? null, polls: rows.length,
       phases, timing, uploadedBytes: final.uploadedBytes, rows,
       cache: 'HTTP cache disabled for the page (Network.setCacheDisabled); one fresh Chrome profile per checker run',
-      scope: 'Headless CDP polling proxy for the first observed cooked draw; the upper bound includes up to one poll interval. Not physical first-paint latency.',
+      scope: 'Headless CDP polling proxy for navigation to the first observed cooked draw, which lies between lowerMs and upperMs: the gap is the granularity when a lower observation exists; otherwise only the navigation-start bound holds. Not physical first-paint latency.',
     },
   };
 }

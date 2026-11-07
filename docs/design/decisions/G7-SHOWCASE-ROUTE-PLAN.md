@@ -167,3 +167,6 @@ Work:
   read that already says Running may follow a draw, so it cannot set the lower bound. Now only a pre-loop status or
   a zero-draw `cooked_status()` reading does; otherwise the lower bound is recorded as absent (navigation start) with
   no granularity. A test-only delay of the first observation exercises that case.
+- 2026-11-07 Root approved the revised seam (dd2ff503) with two precision changes, both taken: after Running, only an
+  explicit zero from `cooked_status()` advances the lower bound (an absent report is an unknown count), and the scope
+  no longer claims "up to one poll interval". Rebased on main f3743809 (documentation only).
