@@ -16,12 +16,21 @@ frames 30 s of solar time apart, played at 5 fps. It is a sampled sequence, not 
 - **Height map.** A third layer of the shadow depth array holds a top-down reverse-Z map of the highest caster
   surface. It covers 32 km around the camera at 1024² (32 m texels) and snaps to whole texels. The existing
   caster pipeline draws it, including cooked contributions, as the graph pass "synthetic Sun horizon heights".
-- **Horizon.** Receivers beyond the cascade fade start march toward the Sun's azimuth. There are 96 geometric
-  steps from two texels to the map edge, and the march keeps the steepest elevation. Visibility is the exact
+- **Horizon.** Receivers beyond the cascade fade start march toward the Sun's azimuth. Up to 96 geometric
+  steps span the nominal map width and stop at the footprint boundary. The march keeps the steepest elevation. Visibility is the
   circular-segment fraction of the 0.267° disk above that horizon. Inside the fade band it blends with the last
   cascade.
-- **Early exits.** The march stops once the tallest caster can no longer clear the Sun's lower limb, or the
-  horizon already covers the upper limb. Captures are identical with and without them.
+- **Early exits.** The tallest-caster bound can stop the march when the slope threshold is nonnegative.
+  For a negative threshold its height falls with distance, so lower terrain can still cover part of the Sun.
+  The upper-limb exit still stops once the disk is covered.
+
+The Metal plateau oracle at a solar elevation of −0.1° failed on the old shader (visibility 1.0 against
+0.3383) and passes with a 0.015 tolerance. It also checks fully lit and fully blocked receivers. A separate
+Metal oracle exercises near/last blocker-window composition with different cascade depth spans.
+The cooked valley preserved all 191 native frames and 34 Chrome images. At 1080p from 17.98 h, the reversed
+pair under shared load 14.8–15.9 gave scene GPU p50/p95 7.71/9.42 and 8.43/10.68 ms before,
+7.60/9.15 and 7.68/9.06 ms after. A concurrent first pair was highly variable. No speed claim.
+Raw tests, runs and hashes are in `tmp/handback-review/horizon-bound*/`.
 - **Why not a third cascade.** The terrain spans 36 × 36 km. A view-fitted cascade over that range would have
   about 30 m texels and would still need padding for kilometre blockers. The height map gives a physical
   finite-disk penumbra for terrain-on-terrain at any distance and reuses the caster pass.

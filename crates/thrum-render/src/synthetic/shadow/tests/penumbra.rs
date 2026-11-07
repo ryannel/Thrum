@@ -1,5 +1,5 @@
 //! The shipping PCSS consumer against independent finite-disk/plane geometry.
-use std::{sync::mpsc, time::Duration};
+use super::observer::{constant_depth_maps, device, pipeline, read_visibility};
 use wgpu::util::DeviceExt;
 
 const SIDE: u32 = 256;
@@ -21,6 +21,17 @@ fn observe(@builtin(global_invocation_id) id:vec3<u32>) {
 }
 ";
 
+const CASCADE_HANDOFF: &str = r"
+@group(2) @binding(6) var<storage,read_write> result: array<f32>;
+@compute @workgroup_size(64)
+fn observe(@builtin(global_invocation_id) id:vec3<u32>) {
+    if id.x!=0u { return; }
+    let receiver=ShadowReceiver(vec3(-0.96,0.0,0.25),
+        vec3(1.0,0.0,0.0),vec3(0.0,1.0,0.0),vec3(0.0,0.0,1.0));
+    result[0]=near_visibility(receiver);
+}
+";
+
 fn oracle(u: f64, slope: f64, gap: f64) -> f64 {
     let mut visible = 0;
     for radius in 0..64 {
@@ -32,36 +43,6 @@ fn oracle(u: f64, slope: f64, gap: f64) -> f64 {
         }
     }
     visible as f64 / 8192.0
-}
-
-fn pipeline(device: &wgpu::Device) -> wgpu::ComputePipeline {
-    let source = format!(
-        "{}\n{}",
-        concat!(
-            include_str!("../../../atmosphere/storage.wgsl"),
-            "\n",
-            include_str!("../../../atmosphere/brdf.wgsl"),
-            "\n",
-            include_str!("../../../atmosphere/irradiance.wgsl"),
-            "\n",
-            include_str!("../../../synthetic.wgsl"),
-            "\n",
-            include_str!("../../../synthetic_plain.wgsl")
-        ),
-        OBSERVER
-    );
-    let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-        label: Some("shipping finite Sun shadow observer"),
-        source: wgpu::ShaderSource::Wgsl(source.into()),
-    });
-    device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
-        label: None,
-        layout: None,
-        module: &shader,
-        entry_point: Some("observe"),
-        compilation_options: wgpu::PipelineCompilationOptions::default(),
-        cache: None,
-    })
 }
 
 fn render_planes(
@@ -172,18 +153,12 @@ fn render_planes(
 }
 
 fn observe(device: &wgpu::Device, queue: &wgpu::Queue, slope: f32, kind: u8) -> Vec<f32> {
-    let pipeline = pipeline(device);
     let mut samples = [0_f32; 68];
     let identity = glam::Mat4::IDENTITY.to_cols_array();
     samples[..16].copy_from_slice(&identity);
     samples[16..32].copy_from_slice(&identity);
     samples[36..38].fill(0.000_03);
     samples[40..44].copy_from_slice(&[SCALE, SCALE, 0.000_001, 0.000_001]);
-    let uniform = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-        label: None,
-        contents: samples.map(f32::to_le_bytes).as_flattened(),
-        usage: wgpu::BufferUsages::UNIFORM,
-    });
     let depth = device.create_texture(&wgpu::TextureDescriptor {
         label: Some("two finite-disk test blocker distances"),
         size: wgpu::Extent3d {
@@ -200,104 +175,21 @@ fn observe(device: &wgpu::Device, queue: &wgpu::Queue, slope: f32, kind: u8) -> 
     });
     render_planes(device, queue, &depth, slope, kind);
     let view = depth.create_view(&wgpu::TextureViewDescriptor::default());
-    let shadow = device.create_bind_group(&wgpu::BindGroupDescriptor {
-        label: None,
-        layout: &pipeline.get_bind_group_layout(0),
-        entries: &[
-            wgpu::BindGroupEntry {
-                binding: 2,
-                resource: uniform.as_entire_binding(),
-            },
-            wgpu::BindGroupEntry {
-                binding: 3,
-                resource: wgpu::BindingResource::TextureView(&view),
-            },
-        ],
-    });
-    let mut light_bytes = vec![0; super::super::super::LIGHT_BYTES];
-    light_bytes[8..12].copy_from_slice(&1.0_f32.to_le_bytes());
-    light_bytes[12..16].copy_from_slice(&slope.to_le_bytes());
-    let light = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-        label: None,
-        contents: &light_bytes,
-        usage: wgpu::BufferUsages::UNIFORM,
-    });
-    let light_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-        label: None,
-        layout: &pipeline.get_bind_group_layout(1),
-        entries: &[wgpu::BindGroupEntry {
-            binding: 0,
-            resource: light.as_entire_binding(),
-        }],
-    });
-    let size = (SAMPLES * 2 * 4) as u64;
-    let output = device.create_buffer(&wgpu::BufferDescriptor {
-        label: None,
-        size,
-        usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
-        mapped_at_creation: false,
-    });
-    let readback = device.create_buffer(&wgpu::BufferDescriptor {
-        label: None,
-        size,
-        usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
-        mapped_at_creation: false,
-    });
-    let observation = device.create_bind_group(&wgpu::BindGroupDescriptor {
-        label: None,
-        layout: &pipeline.get_bind_group_layout(2),
-        entries: &[wgpu::BindGroupEntry {
-            binding: 6,
-            resource: output.as_entire_binding(),
-        }],
-    });
-    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-    {
-        let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor::default());
-        pass.set_pipeline(&pipeline);
-        pass.set_bind_group(0, &shadow, &[]);
-        pass.set_bind_group(1, &light_group, &[]);
-        pass.set_bind_group(2, &observation, &[]);
-        pass.dispatch_workgroups(2, 1, 1);
-    }
-    encoder.copy_buffer_to_buffer(&output, 0, &readback, 0, size);
-    let (send, receive) = mpsc::channel();
-    encoder.map_buffer_on_submit(&readback, wgpu::MapMode::Read, .., move |result| {
-        send.send(result).expect("shadow observation receiver");
-    });
-    let submitted = queue.submit([encoder.finish()]);
-    device
-        .poll(wgpu::PollType::Wait {
-            submission_index: Some(submitted),
-            timeout: Some(Duration::from_secs(20)),
-        })
-        .expect("shadow observation completes");
-    receive.recv().unwrap().unwrap();
-    readback
-        .slice(..)
-        .get_mapped_range()
-        .unwrap()
-        .as_chunks::<4>()
-        .0
-        .iter()
-        .map(|bytes| f32::from_le_bytes(*bytes))
-        .collect()
+    read_visibility(
+        device,
+        queue,
+        &pipeline(device, OBSERVER),
+        &samples,
+        &view,
+        [0.0, 0.0, 1.0, slope],
+        u32::try_from(SAMPLES * 2).expect("two small sample rows"),
+    )
 }
 
 #[test]
 fn finite_sun_shadow_width_tracks_blocker_distance_and_tilted_receivers() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("real adapter required for shadow penumbra test");
-        #[cfg(target_os = "macos")]
-        assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .unwrap();
+        let (device, queue) = device().await;
         let clear_scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
         assert!(
             observe(&device, &queue, 3.0, 1)
@@ -357,6 +249,46 @@ fn finite_sun_shadow_width_tracks_blocker_distance_and_tilted_receivers() {
                 }
                 assert!(row.windows(2).all(|v| v[0] >= v[1] - 0.02));
             }
+        }
+    });
+}
+
+#[test]
+fn near_and_last_cascades_cover_complementary_blocker_distances() {
+    pollster::block_on(async {
+        let (device, queue) = device().await;
+        let pipeline = pipeline(&device, CASCADE_HANDOFF);
+        let mut samples = [0_f32; 68];
+        samples[..16].copy_from_slice(&glam::Mat4::IDENTITY.to_cols_array());
+        let far = glam::Mat4::from_scale(glam::Vec3::splat(0.5));
+        samples[16..32].copy_from_slice(&far.to_cols_array());
+        samples[36..38].fill(0.000_03);
+        samples[40..44].copy_from_slice(&[SCALE, SCALE, 0.000_001, 0.000_001]);
+        samples[46..48].copy_from_slice(&[1.0, 0.5]);
+        // The receiver sits at u=0.02 in the near map. After the two-texel guard,
+        // its near blocker-gap limit is about 0.122. The last cascade doubles
+        // the depth span, so its complementary window starts at about 0.061.
+        for (depths, expected) in [
+            ([0.30, 0.0], 0.0),
+            ([0.0, 0.225], 0.0),
+            ([0.45, 0.0], 1.0),
+            ([0.0, 0.165], 1.0),
+        ] {
+            let maps = constant_depth_maps(&device, &queue, SIDE, &depths);
+            let result = read_visibility(
+                &device,
+                &queue,
+                &pipeline,
+                &samples,
+                &maps.create_view(&wgpu::TextureViewDescriptor::default()),
+                [0.0, 0.0, 1.0, 0.0],
+                1,
+            );
+            assert!(
+                (result[0] - expected).abs() <= 1e-6,
+                "near and last depths {depths:?}: GPU {}, expected {expected}",
+                result[0]
+            );
         }
     });
 }

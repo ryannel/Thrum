@@ -31,12 +31,11 @@ The Codex goal remains active. Its attachment is
   for Git archives, touch the archived Rust files before building and verify the executable
   hashes differ. Cargo accepted the archived timestamps on the first attempt and reused the
   baseline binary for both commits.
-- Next, add GPU coverage for horizon and near/last cascade composition. Check the early
-  exit above the caster ceiling with the Sun just below horizontal. A receiver 5 m above
-  a ridge 2 km away at −0.1° solar elevation can see about 60% of the disk, but the current
-  64 m lower-limb shortcut returns 100% in the planar calculation. Verify it in the shipping
-  shader before changing the march spacing. Measure browser prepare on edits and replacement
-  before choosing a scheduling change.
+- Metal reproduced and verified the below-horizontal horizon fix. The analytic plateau
+  and near/last blocker-window oracles now pass, with identical valley images on Metal and
+  Chrome. [Terrain horizon evidence](G3S-TERRAIN-HORIZON-2026-11-07.md)
+  Next, diagnose the far-ridge silhouette against the authored mesh and fixed camera.
+  Measure browser prepare on edits and replacement before choosing a scheduling change.
 - G6 may prepare the native runner extraction. The rebased diff and raw checks still need
   root review before push. Native starter is the recommendation. The owner has the Chrome
   starter scope decision. The cooked material shader reload is approved for a separate
