@@ -4,6 +4,8 @@
 //! the prepared pipelines and light matrices belong to its device generation and
 //! checked camera sample.
 
+mod graph;
+
 use glam::{Mat4, Vec3, Vec4};
 use wgpu::util::DeviceExt;
 
@@ -286,6 +288,10 @@ impl ShadowPrepared {
 }
 
 impl ShadowTarget {
+    pub(super) fn height_view(&self) -> &wgpu::TextureView {
+        &self.views[MAPS - 1]
+    }
+
     pub(super) fn new(texture: &wgpu::Texture) -> Self {
         let views = std::array::from_fn(|index| {
             texture.create_view(&wgpu::TextureViewDescriptor {

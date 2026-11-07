@@ -793,6 +793,6 @@ fn binding(index: u32, buffer: &wgpu::Buffer) -> wgpu::BindGroupEntry<'_> {
 
 #[cfg(test)]
 mod occlusion_reference;
-mod pyramid;
+pub(crate) mod pyramid;
 #[cfg(test)]
 mod tests;

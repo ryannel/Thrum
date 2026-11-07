@@ -32,6 +32,20 @@ pub(crate) fn previous_pow2(n: u32) -> u32 {
 
 impl PyramidPrepared {
     pub(crate) fn new(device: &wgpu::Device) -> Self {
+        Self::with_shader(
+            device,
+            PASS,
+            include_str!("pyramid.wgsl"),
+            ["pyramid_mip0", "pyramid_down"],
+        )
+    }
+
+    pub(crate) fn with_shader(
+        device: &wgpu::Device,
+        label: &str,
+        source: &str,
+        entries: [&str; 2],
+    ) -> Self {
         let storage = wgpu::BindGroupLayoutEntry {
             binding: 1,
             visibility: wgpu::ShaderStages::COMPUTE,
@@ -42,7 +56,7 @@ impl PyramidPrepared {
             },
             count: None,
         };
-        let source = |sample_type| wgpu::BindGroupLayoutEntry {
+        let sampled = |sample_type| wgpu::BindGroupLayoutEntry {
             binding: 0,
             visibility: wgpu::ShaderStages::COMPUTE,
             ty: wgpu::BindingType::Texture {
@@ -55,7 +69,7 @@ impl PyramidPrepared {
         let layout = |label, sample_type| {
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
                 label: Some(label),
-                entries: &[source(sample_type), storage],
+                entries: &[sampled(sample_type), storage],
             })
         };
         let first_layout = layout("depth pyramid mip 0", wgpu::TextureSampleType::Depth);
@@ -64,17 +78,17 @@ impl PyramidPrepared {
             wgpu::TextureSampleType::Float { filterable: false },
         );
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some(PASS),
-            source: wgpu::ShaderSource::Wgsl(include_str!("pyramid.wgsl").into()),
+            label: Some(label),
+            source: wgpu::ShaderSource::Wgsl(source.into()),
         });
         let pipeline = |layout: &wgpu::BindGroupLayout, entry: &str| {
             let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-                label: Some(PASS),
+                label: Some(label),
                 bind_group_layouts: &[Some(layout)],
                 immediate_size: 0,
             });
             device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
-                label: Some(PASS),
+                label: Some(label),
                 layout: Some(&pipeline_layout),
                 module: &shader,
                 entry_point: Some(entry),
@@ -83,8 +97,8 @@ impl PyramidPrepared {
             })
         };
         Self {
-            first: pipeline(&first_layout, "pyramid_mip0"),
-            down: pipeline(&down_layout, "pyramid_down"),
+            first: pipeline(&first_layout, entries[0]),
+            down: pipeline(&down_layout, entries[1]),
             first_layout,
             down_layout,
         }
@@ -116,9 +130,21 @@ impl PyramidPrepared {
                 | wgpu::TextureUsages::COPY_SRC,
             view_formats: &[],
         });
+        self.target_from_texture(device, depth, texture)
+    }
+
+    /// Prepare one dispatch per mip of a graph-owned destination.
+    pub(crate) fn target_from_texture(
+        &self,
+        device: &wgpu::Device,
+        depth: &wgpu::TextureView,
+        texture: wgpu::Texture,
+    ) -> PyramidTarget {
+        let levels = texture.mip_level_count();
+        let size = [texture.width(), texture.height()];
         let mip = |level| {
             texture.create_view(&wgpu::TextureViewDescriptor {
-                label: Some(PASS),
+                label: None,
                 base_mip_level: level,
                 mip_level_count: Some(1),
                 ..Default::default()
@@ -126,7 +152,7 @@ impl PyramidPrepared {
         };
         let group = |layout, source: &wgpu::TextureView, level| {
             device.create_bind_group(&wgpu::BindGroupDescriptor {
-                label: Some(PASS),
+                label: None,
                 layout,
                 entries: &[
                     wgpu::BindGroupEntry {

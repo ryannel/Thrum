@@ -74,6 +74,8 @@ pub(super) fn pipeline(device: &wgpu::Device, observer: &str) -> wgpu::ComputePi
             "\n",
             include_str!("../../../synthetic.wgsl"),
             "\n",
+            include_str!("../../../synthetic/horizon_taps.wgsl"),
+            "\n",
             include_str!("../../../synthetic_plain.wgsl")
         ),
         observer

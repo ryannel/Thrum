@@ -4,7 +4,7 @@ use super::{CullMode, PreparedSynthetic, history_gpu};
 
 #[derive(Clone, Copy)]
 pub(crate) struct SceneTimingLayout {
-    shadows: bool,
+    shadows: ShadowTiming,
     clusters: bool,
     transforms: bool,
     /// Bit `index` of [`CULLING_PASSES`] is set for each camera culling pass
@@ -12,6 +12,13 @@ pub(crate) struct SceneTimingLayout {
     /// compute pass, timed even when the active prefix is empty. Occlusion:
     /// the prepass list, the depth prepass, the pyramid and the final cull.
     culling: u8,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum ShadowTiming {
+    None,
+    Taps,
+    Cells,
 }
 
 /// The camera culling passes `mode` records.
@@ -26,7 +33,13 @@ const fn culling_passes(mode: CullMode) -> u8 {
 impl From<&PreparedSynthetic> for SceneTimingLayout {
     fn from(prepared: &PreparedSynthetic) -> Self {
         Self {
-            shadows: prepared.shadowed(),
+            shadows: if prepared.horizon.is_some() {
+                ShadowTiming::Cells
+            } else if prepared.shadowed() {
+                ShadowTiming::Taps
+            } else {
+                ShadowTiming::None
+            },
             clusters: prepared.gpu_clustered(),
             transforms: prepared.active_instance_count() != 0,
             culling: culling_passes(prepared.camera_culling()),
@@ -65,7 +78,7 @@ pub(crate) fn pass_durations(
     let names = ALL.into_iter().filter(|&name| match name {
         "synthetic Sun shadow near"
         | "synthetic Sun shadow far"
-        | "synthetic Sun horizon heights" => layout.shadows,
+        | "synthetic Sun horizon heights" => layout.shadows != ShadowTiming::None,
         "synthetic cluster build" => layout.clusters,
         history_gpu::PASS_NAME => layout.transforms,
         _ => true,
@@ -80,15 +93,21 @@ pub(crate) fn pass_durations(
     let culling = layout.culling;
     let mut contribution = None;
     let mut air_shadow = None;
+    let mut horizon = None;
     let mut visibility = None;
     let mut culled = 0_u8;
     let mut scene_passes = Vec::with_capacity(passes.len());
     for pass in passes {
         if pass.name.as_ref() == super::AIR_SHADOW_PASS {
-            if air_shadow.is_some() || !layout.shadows {
+            if air_shadow.is_some() || layout.shadows == ShadowTiming::None {
                 return None;
             }
             air_shadow = Some(pass.nanoseconds);
+        } else if pass.name.as_ref() == super::horizon::PASS {
+            if horizon.is_some() || layout.shadows != ShadowTiming::Cells {
+                return None;
+            }
+            horizon = Some(pass.nanoseconds);
         } else if let Some(index) = CULLING_PASSES
             .iter()
             .position(|&name| name == pass.name.as_ref())
@@ -108,7 +127,7 @@ pub(crate) fn pass_durations(
             scene_passes.push(pass);
         }
     }
-    if culled != culling {
+    if culled != culling || horizon.is_some() != (layout.shadows == ShadowTiming::Cells) {
         return None;
     }
     let passes = scene_passes.as_slice();
@@ -149,7 +168,7 @@ pub(crate) fn pass_durations(
             // The contribution's compute pass is opaque-phase work that feeds forward: counted
             // in the forward bucket so totals include it, and also returned on its own.
             scene[3] += contribution.unwrap_or(0.0) + visibility.unwrap_or(0.0);
-            scene[1] += air_shadow.unwrap_or(0.0);
+            scene[1] += air_shadow.unwrap_or(0.0) + horizon.unwrap_or(0.0);
             (
                 scene,
                 presented.then(|| passes[offset + count].nanoseconds),
