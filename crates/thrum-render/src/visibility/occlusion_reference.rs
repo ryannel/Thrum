@@ -95,6 +95,17 @@ fn depth_ulp(depth: f32) -> f32 {
     f32::from_bits(depth.abs().to_bits() + 1) - depth.abs()
 }
 
+/// The derived depth slack for a box whose nearest corner depth is `nearest`
+/// and least corner w is `w_min`, or `None` when the clip bound reaches w = 0
+/// and the box stays visible (design, "Depth tolerance").
+pub(super) fn slack(nearest: f32, w_min: f32, magnitude: [f32; 2]) -> Option<f32> {
+    let w_low = w_min - 2.0 * CLIP_GAMMA * magnitude[1];
+    (w_low > 0.0).then(|| {
+        2.0 * CLIP_GAMMA * (magnitude[0] + nearest.abs() * magnitude[1]) / w_low
+            + DEPTH_ULPS * depth_ulp(nearest)
+    })
+}
+
 /// Whether a box whose eight clip-space corners are `corners` is hidden by the
 /// pyramid. The caller has already kept it by frustum; a corner at or behind
 /// the near plane keeps it visible. `magnitude` bounds the |clip z| and
@@ -138,13 +149,7 @@ pub(super) fn occluded(corners: &[[f32; 4]; 8], pyramid: &[Level], magnitude: [f
             farthest = farthest.min(mip.at(x, y));
         }
     }
-    let w_low = w_min - 2.0 * CLIP_GAMMA * magnitude[1];
-    if w_low <= 0.0 {
-        return false;
-    }
-    let slack = 2.0 * CLIP_GAMMA * (magnitude[0] + nearest.abs() * magnitude[1]) / w_low
-        + DEPTH_ULPS * depth_ulp(nearest);
-    nearest + slack < farthest
+    slack(nearest, w_min, magnitude).is_some_and(|slack| nearest + slack < farthest)
 }
 
 #[cfg(test)]

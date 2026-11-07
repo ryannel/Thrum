@@ -326,21 +326,23 @@ fn magnitude(index: usize) -> [f32; 2] {
     [(index % 3) as f32 * 0.05, (index % 5) as f32 * 2.0]
 }
 
-/// Run the shared WGSL test on `boxes` against `target`, with `magnitude(index)`.
+/// Run the shared WGSL test on `boxes` against `target`, box `index` with
+/// clip magnitude `magnitudes[index]`.
 fn gpu_occluded(
     device: &wgpu::Device,
     queue: &wgpu::Queue,
     target: &PyramidTarget,
     boxes: &[[[f32; 4]; 8]],
+    magnitudes: &[[f32; 2]],
 ) -> Vec<bool> {
     let source = format!(
         "@group(0) @binding(0) var pyramid: texture_2d<f32>;
         @group(0) @binding(1) var<storage, read> boxes: array<array<vec4<f32>, 8>>;
         @group(0) @binding(2) var<storage, read_write> results: array<u32>;
+        @group(0) @binding(3) var<storage, read> magnitudes: array<vec2<f32>>;
         @compute @workgroup_size(64) fn probe(@builtin(global_invocation_id) id: vec3<u32>) {{
             if id.x >= arrayLength(&results) {{ return; }}
-            let magnitude = vec2(f32(id.x % 3u) * 0.05, f32(id.x % 5u) * 2.0);
-            results[id.x] = u32(occluded_by_pyramid(boxes[id.x], magnitude));
+            results[id.x] = u32(occluded_by_pyramid(boxes[id.x], magnitudes[id.x]));
         }}
         {OCCLUSION_WGSL}"
     );
@@ -358,6 +360,8 @@ fn gpu_occluded(
     });
     let flat: Vec<f32> = boxes.iter().flatten().flatten().copied().collect();
     let input = buffer_with(device, queue, &bytes(&flat), wgpu::BufferUsages::STORAGE);
+    let flat: Vec<f32> = magnitudes.iter().flatten().copied().collect();
+    let magnitudes = buffer_with(device, queue, &bytes(&flat), wgpu::BufferUsages::STORAGE);
     let result_bytes = (boxes.len() * 4) as u64;
     let results = device.create_buffer(&wgpu::BufferDescriptor {
         label: Some("occlusion probe"),
@@ -383,6 +387,10 @@ fn gpu_occluded(
             wgpu::BindGroupEntry {
                 binding: 2,
                 resource: results.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 3,
+                resource: magnitudes.as_entire_binding(),
             },
         ],
     });
@@ -451,7 +459,8 @@ fn gpu_test_decisions_equal_the_reference() {
             }
             boxes.push(corners);
         }
-        let gpu = gpu_occluded(&device, &queue, &target, &boxes);
+        let magnitudes: Vec<_> = (0..boxes.len()).map(magnitude).collect();
+        let gpu = gpu_occluded(&device, &queue, &target, &boxes, &magnitudes);
         let mut hidden = 0;
         let mut differing = Vec::new();
         for (index, corners) in boxes.iter().enumerate() {
@@ -468,6 +477,60 @@ fn gpu_test_decisions_equal_the_reference() {
         assert!(
             hidden > 400,
             "{extent:?}: the test must also hide work: {hidden}"
+        );
+    }
+}
+
+/// The derived ε on the GPU, at its boundary: flat screen-aligned boxes in
+/// front of a constant depth, stepped one depth ulp at a time across the
+/// reference's decision, with no clip term and with clip terms that dominate
+/// it, at w = 1 and w = 4. The random test above almost never lands within ε,
+/// so this is what fails a shader whose `DEPTH_ULPS`, `CLIP_GAMMA` or slack
+/// formula differs from the reference. Two ulps either side of the flip are
+/// required to agree; the flip itself may differ by the divides' rounding.
+#[test]
+fn gpu_slack_matches_the_reference_at_its_boundary() {
+    let (device, queue) = device();
+    let extent = [64, 48];
+    let farthest = 0.25_f32;
+    let depth = vec![farthest; 64 * 48];
+    let view = depth_target(&device, &queue, &depth, extent);
+    let target = build(&device, &queue, &view, extent);
+    let pyramid = reference::build(&depth, extent);
+    let mut boxes = Vec::new();
+    let mut magnitudes = Vec::new();
+    let mut flips = Vec::new();
+    for magnitude in [[0.0, 0.0], [0.1, 10.0], [2.0, 0.0], [0.0, 400.0]] {
+        for w in [1.0_f32, 4.0] {
+            let flat = |nearest: f32| -> [[f32; 4]; 8] {
+                std::array::from_fn(|corner| {
+                    let x = if corner & 1 == 0 { -0.3 } else { 0.3 };
+                    let y = if corner & 2 == 0 { -0.2 } else { 0.4 };
+                    [x * w, y * w, nearest * w, w]
+                })
+            };
+            // Step the nearest depth down from the wall until the reference
+            // hides the box: that step is the flip.
+            let below = |steps: u32| f32::from_bits(farthest.to_bits() - steps);
+            let flip = (0..1_000_000)
+                .find(|&steps| reference::occluded(&flat(below(steps)), &pyramid, magnitude))
+                .expect("a nearer box is hidden");
+            assert!(flip > 2, "{magnitude:?} w {w}: the slack spans ulps");
+            for steps in [flip - 2, flip + 2] {
+                // The corners' z / w must give the stepped depth exactly.
+                assert_eq!(flat(below(steps))[0][2] / w, below(steps));
+                boxes.push(flat(below(steps)));
+                magnitudes.push(magnitude);
+            }
+            flips.push((magnitude, w, flip));
+        }
+    }
+    let gpu = gpu_occluded(&device, &queue, &target, &boxes, &magnitudes);
+    for (case, &(magnitude, w, flip)) in flips.iter().enumerate() {
+        assert_eq!(
+            [gpu[case * 2], gpu[case * 2 + 1]],
+            [false, true],
+            "{magnitude:?} at w {w}: two ulps either side of the reference's flip at {flip} ulps"
         );
     }
 }
