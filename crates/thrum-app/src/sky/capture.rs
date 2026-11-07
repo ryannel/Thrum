@@ -77,6 +77,13 @@ fn capture(
     let pixels = host.capture_pixels().map_err(|error| error.to_string())?;
     drop(device);
     let png = encode_png(extent, &pixels)?;
+    if let Some(folder) = path
+        .parent()
+        .filter(|folder| !folder.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(folder)
+            .map_err(|error| format!("create {}: {error}", folder.display()))?;
+    }
     std::fs::write(path, png).map_err(|error| format!("write: {error}"))?;
     Ok(extent)
 }

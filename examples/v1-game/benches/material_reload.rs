@@ -161,7 +161,10 @@ async fn run(root: &std::path::Path) -> String {
                 during.push(latency);
             }
             let outcomes = material.take_outcomes();
-            if let Some(outcome) = outcomes.iter().find(|outcome| outcome.serial() == serial) {
+            if let Some(outcome) = outcomes
+                .iter()
+                .find(|outcome| outcome.serial() == Some(serial))
+            {
                 match outcome {
                     MaterialOutcome::Promoted { timing, .. } => break *timing,
                     other => panic!("bench hook did not draw: {other}"),

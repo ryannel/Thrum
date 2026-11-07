@@ -128,6 +128,18 @@ class SceneResolution(unittest.TestCase):
             self.assertEqual(scene_package.main(["--lock", "examples/sunset"], self.root), 0)
         self.assertEqual(run.call_args.args[0][1:], ["update", "--offline", "--workspace", "--quiet"])
 
+    def test_a_failed_offline_lock_update_names_the_next_step(self):
+        scene = package(self.root, "examples/sunset", "thrum-sunset", ["thrum-sunset"])
+        failure = scene_package.subprocess.CalledProcessError(101, ["cargo", "update"])
+        with mock.patch.object(scene_package, "workspace_metadata", return_value=self.metadata(scene)), \
+                mock.patch.object(scene_package, "lockfile_current", return_value=False), \
+                mock.patch.object(scene_package.subprocess, "run", side_effect=failure), \
+                mock.patch("sys.stderr") as stderr, mock.patch("sys.stdout") as stdout:
+            self.assertEqual(scene_package.main(["--lock", "examples/sunset"], self.root), 1)
+        written = "".join(call.args[0] for call in stderr.write.call_args_list)
+        self.assertIn("cargo fetch --locked", written)
+        stdout.write.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -4,8 +4,9 @@
 
 **Status.** The typed controls and parameter files are selected and implemented, and they run in the V1 game on Mac and
 Chrome. The macOS app runner is built and runs the V1 game. The shader seam (a game-authored WGSL material hook in
-the cooked mesh pipeline, reloaded explicitly) is built and runs on Mac and in Chrome. GPU field overlays are designed
-below but not built.
+the cooked mesh pipeline, reloaded explicitly) is built and runs on Mac and in Chrome. The starter (`./dev starter`,
+`./dev scene <folder>` and the sky kit) is built and runs on the Mac. GPU field overlays are designed below but not
+built.
 
 **Disclosure.** The controls and parameter slices were built before this record was written. The design was agreed
 in the G6 boundary notes with the root agent first, and an independent review of the landed code prompted this record.
@@ -30,7 +31,8 @@ There is one model per game: `Controls`, a list of sliders, toggles, text fields
 **Edits come from three sources and follow two rules:**
 - **People** (a panel, the page or keys) snap to the step, clamp into range and are counted. A person's edit always
   advances the revision, even when it repeats the shown value, because the game's clock may have moved on.
-- **Code** (`set`) and **parameter files** are refused when invalid. Files get a half-step tolerance at the range ends.
+- **Code** (`set`) and **parameter files** are refused when invalid. Files get a half-step tolerance at the range ends,
+  and a file value between steps snaps to the nearest step, as the slider would.
   The error names the control, the cause and the next step, and a mistyped key gets the nearest declared key by edit
   distance.
 
@@ -63,7 +65,7 @@ Both apply through the same edit path as the panel, so a paused apply holds the 
 **Reload is explicit, because files do not ride the G5 watcher yet.** Making parameter files a fourth G5 product kind
 is designed in the boundary notes and is an owner question while G5 extensions are parked.
 
-## App runner (built) and starter (designed)
+## App runner and starter (built)
 
 - **The runner.** The macOS window stack moves out of v1-game into `crates/thrum-app`, unchanged in behaviour. It
   owns:
@@ -94,7 +96,9 @@ WGSL material hook in the cooked mesh pipeline. `thrum-asset-gpu` owns it.
 `fn cooked_surface(surface: CookedSurface, at: CookedSurfacePoint) -> CookedSurface`.
 - **Inputs:** `surface` holds the base colour, roughness, metalness and emission that the placement set. `at` holds
   the fragment's `uv`, `world` position and `normal`.
-- **Glue:** clamps the result to valid factors and keeps the flags, texture layers and alpha cutoff.
+- **Glue:** clamps the result to valid factors and keeps the flags, texture layers and alpha cutoff. A factor the
+  hook made infinite or NaN falls back to the placement's value, and emission is capped at the largest half-float,
+  the scene target's format.
 - **Where it applies:** only in the cooked mesh pipeline's copy of the scene shader, where the one read of the
   material record (`materials[input.material]`) goes through the glue. The scene's fragment shading then reads the
   returned factors, so lighting keeps one authority.
@@ -106,7 +110,8 @@ WGSL material hook in the cooked mesh pipeline. `thrum-asset-gpu` owns it.
 **API.** `CookedAssets::material()` returns a `MaterialReload` handle.
 - `request(MaterialHook { name, source })` returns a serial.
 - `take_outcomes()` reports each serial's outcome: `Promoted` with its timing, `Rejected` with diagnostics,
-  `Superseded`, or `Retired`.
+  `Superseded`, or `Retired`. Each request gets exactly one. `Dropped` answers no request (its `serial()` is `None`):
+  the accepted hook could not be restored on a replaced device or surface, so the built-in material draws.
 - `accepted()` names the accepted hook. `restoring()` says whether that hook is being validated again for a
   replaced device or surface, while the built-in material draws.
 - `revision()` counts changes to what those report, so an idle caller can skip building a report.
@@ -123,8 +128,8 @@ WGSL material hook in the cooked mesh pipeline. `thrum-asset-gpu` owns it.
     concurrent default build cannot swap Wasm with it. The default page exports no material methods, so a
     `?material=` URL there starts no material work.
   - **A compile that cannot start** (the thread fails to spawn) is rejected with that error, and so is every job
-    queued behind it. A queued restore that is rejected this way drops the accepted hook, and the built-in
-    material draws.
+    queued behind it. A queued restore that fails this way is reported `Dropped`, and the built-in material
+    draws.
 - **Eligibility.** A candidate becomes eligible only after its compilation messages and its validation error scope
   have both resolved.
 - **Installing.** The next frame boundary draws an eligible candidate. The submission carrying that frame promotes
@@ -175,7 +180,8 @@ WGSL material hook in the cooked mesh pipeline. `thrum-asset-gpu` owns it.
 clock.
 
 **Phase 2 is a GPU false-colour field,** such as EV or the shadow cascade index. Its constraints:
-- it needs a frame-graph slot after tone mapping, proposed to root first;
+- it waits on the shared display shader's tone-scale seam (G3s), which gives it a frame-graph slot after tone
+  mapping;
 - it composites in encoded display space, undithered or with the same ±1-LSB dither as the display encode.
 
 ## Performance

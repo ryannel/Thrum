@@ -88,10 +88,20 @@ impl MeshPlacement {
 
     /// Turn the mesh about a world `axis` through its origin by `degrees`, counterclockwise
     /// looking down the axis toward the origin (the right-hand rule). Turns apply in call order.
+    ///
+    /// # Panics
+    /// On an axis that is zero or not finite, or an angle that is not finite, naming the call.
     #[must_use]
+    #[track_caller]
     pub fn rotate_degrees(mut self, axis: [f32; 3], degrees: f32) -> Self {
+        let direction = glam::Vec3::from(axis).try_normalize();
+        assert!(
+            direction.is_some() && degrees.is_finite(),
+            "rotate_degrees({axis:?}, {degrees}) on {:?} needs a nonzero, finite axis and a finite angle",
+            self.mesh
+        );
         let turn =
-            glam::Mat4::from_axis_angle(glam::Vec3::from(axis).normalize(), degrees.to_radians());
+            glam::Mat4::from_axis_angle(direction.unwrap_or(glam::Vec3::Y), degrees.to_radians());
         let position = self.transform[3];
         let linear = turn * glam::Mat4::from_cols_array_2d(&self.transform);
         self.transform = linear.to_cols_array_2d();

@@ -10,8 +10,10 @@
 //   // each frame: view.refresh();
 //
 // Element ids default to the key with dots and underscores as dashes (`sky.solar_time` ->
-// `sky-solar-time`); `ids` overrides them, for pages whose ids predate the model. Slider
-// values have an <output> with id `<id>-value`.
+// `sky-solar-time`); `ids` overrides them, for pages whose ids predate the model. Two keys
+// that would share an id (`sky.a_b` and `sky_a.b`) are refused through `onError`; give one
+// of them an `ids` entry. Slider values have an <output> with id `<id>-value`. A slider
+// whose step is 0 is continuous (`step="any"`), as on the Mac.
 
 const STYLE_ID = "thrum-controls-style";
 const STYLE = `
@@ -49,7 +51,15 @@ export function mountControls(container, described, { edit, changes, ids = {}, o
   const panel = document.createElement("div");
   panel.className = "tc-panel";
   const groups = new Map();
+  const owners = new Map();
   for (const control of controls) {
+    const id = ids[control.key] ?? defaultId(control.key);
+    const owner = owners.get(id);
+    if (owner !== undefined) {
+      onError(new Error(`controls ${owner} and ${control.key} would share the element id "${id}"; give one of them an ids entry`));
+      continue;
+    }
+    owners.set(id, control.key);
     let group = groups.get(control.group);
     if (!group) {
       group = document.createElement("fieldset");
@@ -62,7 +72,6 @@ export function mountControls(container, described, { edit, changes, ids = {}, o
       groups.set(control.group, group);
       panel.append(group);
     }
-    const id = ids[control.key] ?? defaultId(control.key);
     const row = document.createElement(control.kind === "readout" ? "div" : "label");
     row.className = `tc-row tc-${control.kind}`;
     row.dataset.control = control.key;
@@ -72,7 +81,7 @@ export function mountControls(container, described, { edit, changes, ids = {}, o
     const widget = { control, input: null, output: null };
     if (control.kind === "slider") {
       const input = document.createElement("input");
-      Object.assign(input, { type: "range", id, min: control.min, max: control.max, step: control.step, value: control.value });
+      Object.assign(input, { type: "range", id, min: control.min, max: control.max, step: control.step > 0 ? control.step : "any", value: control.value });
       const output = document.createElement("output");
       Object.assign(output, { id: `${id}-value`, htmlFor: id, textContent: control.text });
       input.addEventListener("input", () => send(control.key, input.valueAsNumber));

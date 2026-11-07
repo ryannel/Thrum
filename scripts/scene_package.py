@@ -100,7 +100,13 @@ def main(argv, root=None):
     if lock and not lockfile_current(root):
         print("Adding new workspace packages to Cargo.lock (offline); commit the change with them.",
               file=sys.stderr)
-        subprocess.run([cargo(), "update", "--offline", "--workspace", "--quiet"], cwd=root, check=True)
+        try:
+            subprocess.run([cargo(), "update", "--offline", "--workspace", "--quiet"], cwd=root, check=True)
+        except (OSError, subprocess.CalledProcessError) as error:
+            print(f"Adding {package} to Cargo.lock offline failed ({error}). If Cargo named a crate that is "
+                  "not downloaded, run `cargo fetch --locked` once with a network connection, then rerun.",
+                  file=sys.stderr)
+            return 1
     print(f"{package}\t{binary}")
     return 0
 

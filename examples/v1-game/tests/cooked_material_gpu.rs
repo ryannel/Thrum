@@ -53,6 +53,19 @@ const MISSPELT: &str =
 }
 ";
 
+/// Every factor infinite or NaN, computed at run time so no compiler folds it away.
+const NON_FINITE: &str =
+    "fn cooked_surface(surface: CookedSurface, at: CookedSurfacePoint) -> CookedSurface {
+    var out = surface;
+    let zero = at.uv.x * 0.0;
+    out.base_colour = vec4(zero / zero);
+    out.roughness = 1.0 / zero;
+    out.metalness = zero / zero;
+    out.emissive = vec3(1.0 / zero);
+    return out;
+}
+";
+
 fn hook(name: &str, source: &str) -> MaterialHook {
     MaterialHook {
         name: name.to_owned(),
@@ -159,7 +172,7 @@ fn until_outcome(
             record(&outcome);
             seen.push(outcome);
         }
-        if let Some(outcome) = seen.iter().find(|outcome| outcome.serial() == serial) {
+        if let Some(outcome) = seen.iter().find(|outcome| outcome.serial() == Some(serial)) {
             return (outcome.clone(), seen);
         }
         assert!(
@@ -314,7 +327,7 @@ fn material_hooks_reload_visibly_and_invalid_hooks_keep_the_last_pixels() {
         );
         for serial in [missing, superseded] {
             assert!(
-                seen.iter().any(|outcome| outcome.serial() == serial
+                seen.iter().any(|outcome| outcome.serial() == Some(serial)
                     && matches!(outcome, MaterialOutcome::Superseded { .. })),
                 "{serial} was not superseded: {seen:?}"
             );
@@ -382,6 +395,50 @@ fn the_identity_hook_draws_the_built_in_material() {
             .filter(|(a, b)| a != b)
             .count();
         assert_eq!(differing, 0, "identity hook changed {differing} bytes");
+    });
+    std::fs::remove_dir_all(&root).ok();
+}
+
+#[test]
+fn a_hook_that_writes_non_finite_factors_draws_the_placement_material() {
+    let (root, cook) = cooked("non-finite");
+    pollster::block_on(async {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let (device, queue, capabilities) = gpu(&instance, FrameHost::DEVICE_GENERATION).await;
+        let mut host = FrameHost::new_with_capabilities(
+            &device,
+            &queue,
+            &capabilities,
+            FrameConfig {
+                render_extent: EXTENT,
+                surface: None,
+            },
+        )
+        .await
+        .expect("prepared game scene");
+        let assets = CookedAssets::new(v1_game::cooked::cooked_config(cook.store.clone()))
+            .expect("rigid placements");
+        let stats = assets.stats();
+        let material = assets.material();
+        host.set_scene_contribution(Box::new(assets))
+            .expect("attach");
+        let mut clock = Duration::ZERO;
+        drive_until_drawn(&mut host, &device, &stats, &mut clock);
+        host.pause().expect("pause");
+        let default = capture(&mut host, "default");
+        let serial = material.request(hook("non-finite.wgsl", NON_FINITE));
+        let (outcome, _) = until_outcome(&material, serial, || drop(capture(&mut host, "_")));
+        assert!(
+            matches!(outcome, MaterialOutcome::Promoted { .. }),
+            "{outcome}"
+        );
+        let sanitized = capture(&mut host, "non-finite-hook");
+        let differing = default
+            .iter()
+            .zip(&sanitized)
+            .filter(|(a, b)| a != b)
+            .count();
+        assert_eq!(differing, 0, "non-finite factors changed {differing} bytes");
     });
     std::fs::remove_dir_all(&root).ok();
 }

@@ -63,15 +63,7 @@ fn non_rigid_transforms_are_refused_by_name_and_cause() {
         rock().at([f32::NAN, 0.0, 0.0]).check(0).unwrap_err().fault,
         Fault::NotFinite
     );
-    // A zero axis cannot name a turn.
-    assert_eq!(
-        rock()
-            .rotate_degrees([0.0; 3], 10.0)
-            .check(0)
-            .unwrap_err()
-            .fault,
-        Fault::NotFinite
-    );
+    // A zero axis cannot name a turn; the builder refuses it where it is written (below).
 }
 
 #[test]
@@ -163,4 +155,10 @@ fn resting_placements_put_the_lowest_vertex_at_their_height() {
         0.5
     );
     assert_eq!(placed_model(&lying, &[]).w_axis.y, 0.5);
+}
+
+#[test]
+#[should_panic(expected = "needs a nonzero, finite axis and a finite angle")]
+fn a_turn_about_a_zero_axis_is_refused_where_it_is_written() {
+    drop(MeshPlacement::new("meshes/rock", "textures/white").rotate_degrees([0.0; 3], 90.0));
 }

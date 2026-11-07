@@ -40,6 +40,9 @@ fn main() -> Result<(), String> {
         .readout("sky.sun_elevation", "Sun elevation", Display::degrees())
         .map_err(error)?;
     controls.show(sun, 45.0_f32.to_radians());
+    let caption = controls
+        .text("scene.caption", "Caption", "Dusk")
+        .map_err(error)?;
     let mut panel = MacPanel::new(&controls, "Thrum demo", None)?;
     std::fs::write(output.join("panel-initial.png"), panel.render_png()?)
         .map_err(|error| error.to_string())?;
@@ -65,6 +68,21 @@ fn main() -> Result<(), String> {
     std::fs::write(output.join("panel-check.json"), &report).map_err(|error| error.to_string())?;
     if applied != 3 || controls.formatted(time.id()) != "18:29" || !controls.is_on(paused) {
         return Err(format!("panel edits did not reach the model: {report}"));
+    }
+    // A caption with a line break is refused: the field goes back to the model's value and
+    // the refusal is reported rather than dropped.
+    panel.simulate_text(caption.id(), "two\nlines");
+    let applied = panel.apply_edits(&mut controls);
+    let refused = panel.take_refused();
+    let shown = panel.shown_text(caption.id());
+    if applied != 0
+        || refused.len() != 1
+        || shown.as_deref() != Some("Dusk")
+        || controls.text_of(caption) != "Dusk"
+    {
+        return Err(format!(
+            "a refused caption was not reset and reported: applied {applied}, refused {refused:?}, shown {shown:?}"
+        ));
     }
     Ok(())
 }

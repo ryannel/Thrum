@@ -216,7 +216,7 @@ async function qualifyControls(cdp, sessionId, poll, timeout) {
   const deadline = Date.now() + timeout;
   const until = (check, description) => waitFor(check, Math.max(0, deadline - Date.now()), description);
   const evaluate = async expression => {
-    const result = await cdp.call('Runtime.evaluate', { expression, returnByValue: true }, sessionId);
+    const result = await cdp.call('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true }, sessionId);
     if (result.exceptionDetails) throw new Error(JSON.stringify(result.exceptionDetails));
     return result.result.value;
   };
@@ -279,7 +279,22 @@ async function qualifyControls(cdp, sessionId, poll, timeout) {
     return value.complete && field(value.report, 'samples') === 600 && field(value.report, 'presented') >= 650 ? value : undefined;
   }, 'continuous presentation beyond 600 GPU samples');
   if (field(complete.report, 'overload_events') !== 0) throw new Error('Manual pause/visibility composition caused overload');
-  return { snapshots, rangeKeyboard: { before, after } };
+  // The browser view on its own: a step-0 slider is continuous, and two keys that would share
+  // an element id are refused rather than drawn twice under one id.
+  const view = await evaluate(`(async () => {
+    const { mountControls } = await import("/thrum-controls.js");
+    const slider = (key) => ({ key, kind: "slider", group: "", label: key, min: 0, max: 1, step: 0, value: 0.5, text: "0.50" });
+    const errors = [];
+    const box = document.createElement("div");
+    const view = mountControls(box, JSON.stringify({ controls: [slider("sky.a_b"), slider("sky_a.b")] }),
+      { edit() {}, changes() {}, onError: (error) => errors.push(String(error.message)) });
+    const input = view.element("sky.a_b");
+    input.value = 0.37;
+    return { step: input.step, value: input.valueAsNumber, rows: box.querySelectorAll(".tc-row").length, errors };
+  })()`);
+  if (view.step !== 'any' || Math.abs(view.value - 0.37) > 1e-9) throw new Error(`A step-0 slider is not continuous: ${JSON.stringify(view)}`);
+  if (view.rows !== 1 || view.errors.length !== 1 || !view.errors[0].includes('share the element id "sky-a-b"')) throw new Error(`Colliding control ids were not refused: ${JSON.stringify(view)}`);
+  return { snapshots, rangeKeyboard: { before, after }, view };
 }
 
 // A parameter file applies through the page: valid entries move the controls and the game,
