@@ -1,98 +1,70 @@
 ---
 name: engine-module-design
-description: Use when designing or substantially redesigning a Thrum engine module (choosing its technique and representations, then proving them) or reconciling an existing or ported module with its target. Not for ordinary fixes inside an existing design.
+description: Use when designing, substantially redesigning, building or proving a Thrum engine module (choosing its techniques, planning the work and proving it in the game), or reconciling an existing or ported module with its target. Not for ordinary fixes inside an existing design.
 ---
 
 # Engine module design
 
-**Outcome:** a module whose chosen mechanisms produce every required behaviour across the range it must serve, at a
-cost that fits the shipped configuration. It is proven in the running engine and described by one governing design.
+**Outcome:** a module whose mechanisms produce every required behaviour across the range it must serve, at a cost
+that fits the shipped configuration, proven in the game and described by one current design.
 
-You choose the techniques. Research current practice, decide, build, check the result and change course when the
-evidence says so. For whatever was commissioned (design only, or design through build), continue through running,
-inspecting and correcting without adding approval stops. Research alone doesn't commission a build. Only the actions
-[AGENTS.md](../../../AGENTS.md) reserves for the owner need the owner.
+Thrum is built from established, published techniques, chosen as the best modern option and guided by the
+engine's design principles. Most of what a module needs has been solved in shipped engines and research. The bet is
+that agents can go further than usual on performance, writing specialised, highly optimised code from scratch where
+it pays. So research before you build, design the whole module, plan it as milestones, then work through them. You
+choose the techniques, the research, the experiments and how to break the work down.
 
-## What good looks like
+## Design, then plan, then build
 
-- **Each defining behaviour is shown to work before it's built on.** Analysis, a published result or a small numerical
-  reproduction shows the mechanism produces it across the operating range, not only at the demo point. An experiment
-  tests a stated prediction; it doesn't stand in for a missing design.
-- **It's judged as it ships.** It is judged at the shipped configuration, budget, camera and frame rate. Offline,
-  high-sample or close-inspection results are references and diagnostics.
-- **It's driven by real causes.** Simulated responses come from physical inputs, not hand-set gains or constants
-  tied to a grid size. Authored exaggeration is legitimate when its role is stated and kept separate from the physical
-  quantity.
-- **It can grow.** Representations can extend to the module's far end (puddles to oceans, near clouds to the
-  horizon) without a rewrite. Fixed domains, constant depths and wrapping edges won't do. Build only the commissioned
-  scope; neighbours get explicit contracts, not unsolicited implementation.
-- **It has one owner per kind of state.** It uses the engine's existing owners: the one sky, the frame contract, the
-  capability registry and cooked products. Shared [C4 contracts](../../../docs/design/CONTRACTS.md) are agreed with
-  their producers and consumers.
-- **It has been checked by eye.** Visible output was watched in motion against references and judged by an independent
-  reviewer ([visual review](../../../docs/design/AI-DEVELOPMENT.md#visual-review-and-human-steering)). Owner feedback
-  steers; it is never a gate.
-- **It's performant by design.** Best-practice foundations, tripwires, tuning later ([performance](references/performance.md)).
-- **Its status is honest.** Research, implementation, correctness, visual quality and device measurements are recorded
-  separately in the [maturity ledger](../../../docs/design/maturity.json). Unrun or unavailable paths stay
-  unqualified; a failure stays open.
+- **Research and design first** ([research and design](references/blue-sky.md)). Start from what the player must
+  see, with operating ranges. Find how shipped engines and current research solve it, and check that the chosen
+  mechanism can make each cue across the range before you build on it. Earlier work in this repository and in
+  Broadsides is evidence and a look bar, not a technique to copy.
+- **Keep one design** ([what it covers](references/design.md)). Revise it in place so it always reads as current;
+  don't append amendments.
+- **Plan it as milestones** ([plan](references/plan.md)). Each milestone is an outcome you can see in the game, with
+  how you'll know it's done; the riskiest behaviour comes first. Break each milestone into work however suits you,
+  tick it off as you go, and keep a short status at the top of the plan. The plan is how you, reviewers and the
+  overseer see where the work is, so commit it with the work.
+- **Build and prove** ([implementation](references/implementation.md)). A milestone is done when it works in the game
+  through the module's public interface, at the shipped configuration and frame rate, watched in motion, and an
+  independent reviewer agrees. A lab harness or close-up still is a diagnostic.
 
-## Failure patterns this engine has already paid for
+## Staying on course
 
-- **Tuning a mechanism that can't make the cue.** Hours of gain, resolution, foam and shading work went into a wake
-  whose wave model could not form a Kelvin wedge at varying speed. A short CPU reproduction showed it. When a cue stays
-  wrong after tuning, question the model.
-- **Correct but invisible.** Physically calibrated wakes and foam came out true to scale and unreadable at the game
-  camera. A cue must read where the player sees it.
-- **Judged in the lab.** A cloud look judged at seconds per frame shipped as a 288 ms fog. Critics gated on close
-  views and offline-paced clips while the real run stuttered.
-- **Trials that hold the suspect fixed.** Six rounds of horizon-shelf fixes all kept base height, profile and lighting
-  constant.
-- **Swinging between cost-only and look-only work.** Chasing invented budgets before the look existed, then ignoring
-  cost, produced designs that were heavy by design.
-- **Copying the better-looking prototype.** An earlier implementation looked better but was too heavy; it was a look
-  bar, not a technique.
-- **Attractive frames without the behaviour.** Moving texture passed for growth and breakup. A fade or age label is
-  not structural change.
-- **Paperwork displacing the defect.** Notes and qualification grew while the visible defect stayed. Contracts and the
-  ledger still matter; they just don't count as progress on the cue.
-- **Verdicts from descriptions.** Techniques were endorsed from their write-ups and critics' passes were relayed as
-  fact, then proved wrong. Trust reproductions, measurements and your own look.
-- **Idling at self-imposed stops.** Take the reversible option, record the question and continue.
+- **Experiments answer a question the design has, and have a stopping point.** If an experiment doesn't trace to the
+  design or plan, ask whether it's needed now.
+- **When a cue won't come after a few honest attempts, question the mechanism, not the tuning.** Take it back to the
+  design, record what you learned and what changes, and carry on from there.
+- **Work that serves no milestone** either earns a place in the plan or waits.
+
+## Review
+
+Use independent review where it changes decisions ([review](references/review.md)). At minimum: the design (and its
+plan) before you build on it, and each milestone in the game before you call it done. Commission reviews yourself and
+carry on with other work while they run. A failed review sends you back to the design, not to a stop.
 
 ## Routes
 
-Load only the reference you need:
-- **Researching or designing a module:** [research and design](references/blue-sky.md).
-- **Comparing with existing code, or porting in:** [reconciliation](references/reconciliation.md).
-- **Building and proving:** [implementation](references/implementation.md).
-- **A weak behaviour, artifact or integration fault:** [system diagnosis](references/system-diagnosis.md).
-- **Cost, budgets, quality tiers or optimization:** [performance](references/performance.md).
-- **Getting or giving an independent review:** [review](references/review.md).
+Load only what you need: [research and design](references/blue-sky.md) · [design](references/design.md) ·
+[plan](references/plan.md) · [reconciliation](references/reconciliation.md) for existing or ported code ·
+[implementation](references/implementation.md) · [system diagnosis](references/system-diagnosis.md) for a weak
+behaviour or integration fault · [performance](references/performance.md) · [review](references/review.md).
 
-Elsewhere:
-- **Boundary and whole-engine questions** go to [engine-architecture](../engine-architecture/SKILL.md). Return
-  contract changes and unresolved dependencies to that owner.
-- **A coordinated programme** follows the [design programme](../../../docs/design/DESIGN-PROGRAMME.md). Report the
-  evidence level you actually reached, and don't claim another module's result as this module's proof.
-- **Code changes** follow [engine-contributor](../engine-contributor/SKILL.md).
+Boundary and whole-engine questions go to [engine-architecture](../engine-architecture/SKILL.md); code changes follow
+[engine-contributor](../engine-contributor/SKILL.md); a coordinated programme follows the
+[design programme](../../../docs/design/DESIGN-PROGRAMME.md). Oversight uses
+[engine-oversight](../engine-oversight/SKILL.md). Capability status stays in the
+[maturity ledger](../../../docs/design/maturity.json).
 
-## Working permissions
+## Reporting and permissions
 
-Without asking, you may:
-- research;
-- delegate research or review within AGENTS.md's delegation terms;
-- write throwaway reproductions in `tmp/<task>/`;
-- run local tests, GPU correctness fixtures and captures;
-- change your module's design and code;
-- replace a mechanism the evidence rejects;
-- commit verified checkpoints.
+Ground progress claims in results from this session, and say plainly what is unverified, approximate or failed.
 
-Push, publish and start a port only as AGENTS.md and the owner allow. Port timing for water and clouds belongs to the
-owner ([port decision](../../../docs/design/decisions/SEA-AND-CLOUD-PORT.md)).
-
-Keep bulk output under the [storage rules](../../../docs/ASSET-LIFECYCLE.md). Record licences and provenance. The
-owner's current policy:
-- Restrictive-licence code may inform ideas only; copy nothing.
-- No GPL or share-alike code.
-- Anything else goes to the owner.
+Without asking, you may research, delegate research or review within AGENTS.md's terms, write throwaway
+reproductions in `tmp/<task>/`, run tests, fixtures and captures, change your module's design, plan and code, replace
+a mechanism the evidence rejects, and commit verified checkpoints. Push, publish and start a port only as
+[AGENTS.md](../../../AGENTS.md) and the owner allow; port timing for water and clouds is the owner's
+([port decision](../../../docs/design/decisions/SEA-AND-CLOUD-PORT.md)). Keep bulk output under the
+[storage rules](../../../docs/ASSET-LIFECYCLE.md) and record licences and provenance. Restrictive-licence code may
+inform ideas only; copy nothing. No GPL or share-alike code. Anything else goes to the owner.

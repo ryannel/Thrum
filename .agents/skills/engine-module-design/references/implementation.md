@@ -4,6 +4,11 @@ The outcome is the commissioned behaviour running in the engine on the shipped p
 cues, with measured cost and honest limits. Continue through building, running, looking and correcting without adding
 approval stops.
 
+## Work from the plan
+
+Work through the [plan](plan.md): keep its status current, tick work off as it's done, and revise it as you learn.
+When a cue won't come after a few honest attempts, take the question back to the design rather than trying again.
+
 ## Let the design choose the next slice
 
 - **Choose by risk and dependency.** Pick the next slice by architectural risk and dependency, not by what extends
@@ -17,6 +22,10 @@ approval stops.
   real replacement stays on the critical path.
 
 ## Make the first visual checkpoint real
+
+A milestone is proven by the game using the module as a game will: the test game's scene, the module's public
+interface only, shipped content and configuration, whichever of its neighbours exist (sky, clouds, water, shadows) running alongside,
+the game's own controls, and real-time capture watched in motion. Anything less is a diagnostic.
 
 - **Render the interaction itself.** The first promised visual checkpoint is a rendered interaction with the required
   cue visible. A solver or geometry inspector is a diagnostic.
@@ -49,7 +58,8 @@ approval stops.
   real frame rate, side by side with the reference; close inspection views and offline-paced clips are diagnostics.
   Tests and source review don't replace looking.
 - **Vary the suspects.** When a defect persists, vary the variables that could plausibly cause it; don't hold them
-  fixed across trials. Time-box spikes with a kill criterion, and give each a fair push before calling it.
+  fixed across trials. Give each experiment a question, a prediction and a stopping point, and
+  a fair push before calling it.
 - **Get independent visual review.** Have a reviewer judge the images and sequences, and record the result as
   `agent_reviewed`. Say plainly when output is poor. Owner feedback steers later slices; it is never a pause.
 - **Tie evidence to the build.** Tie captures and timings to the actual loaded build, inputs and quality state.

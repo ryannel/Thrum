@@ -1,0 +1,4 @@
+interface:
+  display_name: 'Engine Oversight'
+  short_description: 'Check module plans and steer agents by milestone'
+  default_prompt: 'Use $engine-oversight to check each agent’s design and plan, follow its milestone progress from the artifacts and git, and steer any that has drifted.'
