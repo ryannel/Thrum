@@ -151,10 +151,10 @@ fn occlusion_passes_are_required_once_each_and_counted_in_forward() {
     };
     let mut passes = timings(&["atmosphere sky view"]);
     let culling = [
-        crate::visibility::EARLY_PASS,
+        crate::visibility::PREPASS_LIST_PASS,
+        crate::synthetic::camera_culling::DEPTH_PREPASS_PASS,
         crate::visibility::PYRAMID_PASS,
-        crate::visibility::LATE_PASS,
-        crate::synthetic::camera_culling::FORWARD_LATE_PASS,
+        crate::visibility::FINAL_PASS,
     ];
     for (offset, name) in culling.into_iter().enumerate() {
         passes.insert(
@@ -172,19 +172,10 @@ fn occlusion_passes_are_required_once_each_and_counted_in_forward() {
     assert!(pass_durations(&passes, false, TRANSFORMS).is_none());
     let mut missing = passes.clone();
     assert_eq!(
-        missing.remove(3).name.as_ref(),
+        missing.remove(4).name.as_ref(),
         crate::visibility::PYRAMID_PASS
     );
     assert!(pass_durations(&missing, false, OCCLUDED).is_none());
-    assert_eq!(
-        CULLING_PASSES[PYRAMID_BIT.trailing_zeros() as usize],
-        crate::visibility::PYRAMID_PASS
-    );
-    // A contributed frame records no pyramid build, and only then.
-    let contributed = OCCLUDED.contributed(true);
-    let (values, _, _) = pass_durations(&missing, false, contributed).unwrap();
-    assert_eq!(values[3], 7.0, "forward includes the three recorded passes");
-    assert!(pass_durations(&passes, false, contributed).is_none());
     let mut repeated = passes.clone();
     repeated.push(passes[2].clone());
     assert!(pass_durations(&repeated, false, OCCLUDED).is_none());

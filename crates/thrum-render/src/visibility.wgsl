@@ -1,11 +1,11 @@
 // Camera frustum compaction into one indexed indirect draw per bucket, and
-// the two phases of in-frame occlusion. Frustum (phase 0) lists every slot in
-// view. Early (phase 1) lists slots in view that were visible last frame.
-// Late (phase 2) tests every slot in view against this frame's depth pyramid,
-// lists the visible ones the early phase did not draw, and records the new
-// last-visible bits on the other history side. Skip (phase 3) lists nothing and clears the bits. Every
-// phase applies the same frustum test to the same current transforms, so the
-// bits only choose which phase draws a slot.
+// the two lists of occlusion. Frustum (phase 0) lists every slot in view.
+// Prepass (phase 1) lists slots in view that were visible last frame; they
+// draw depth only, and the pyramid is built from that depth. Final (phase 2)
+// tests every slot in view against the pyramid, lists the ones it does not
+// hide for the one ordered colour draw, and records them as the next
+// last-visible bits on the other history side. The bits only choose
+// occluders; the final list depends on them only through real depth.
 // Three ordered dispatches: per-workgroup counts and slot masks, one-workgroup
 // scan, and a scatter that reads only the masks (instances are tested once).
 // The visible list preserves instance order, so draw order and depth ties
@@ -51,9 +51,8 @@ struct Params {
 }
 
 const PHASE_FRUSTUM: u32 = 0u;
-const PHASE_EARLY: u32 = 1u;
-const PHASE_LATE: u32 = 2u;
-const PHASE_SKIP: u32 = 3u;
+const PHASE_PREPASS: u32 = 1u;
+const PHASE_FINAL: u32 = 2u;
 
 const WORKGROUP: u32 = 256u;
 const WORDS: u32 = WORKGROUP / 32u;
@@ -67,15 +66,14 @@ const WORDS: u32 = WORKGROUP / 32u;
 @group(0) @binding(6) var<storage, read_write> visible: array<u32>;
 @group(0) @binding(7) var<storage, read_write> args: array<u32>;
 @group(0) @binding(8) var<storage, read_write> masks: array<u32>;
-// One last-visible bit per slot: the committed side, read by early and late.
+// One last-visible bit per slot: the committed side, read by the prepass list.
 @group(0) @binding(9) var<storage, read> bits: array<u32>;
-// This frame's min depth pyramid, every mip; read by the late phase only.
+// This frame's min depth pyramid, every mip; read by the final cull only.
 @group(0) @binding(10) var pyramid: texture_2d<f32>;
-// The other side, written by late (and cleared by Skip) for the next frame.
+// The other side, written by the final cull for the next frame.
 @group(0) @binding(11) var<storage, read_write> next_bits: array<u32>;
 
 var<workgroup> scan: array<u32, WORKGROUP>;
-var<workgroup> seen: array<u32, WORKGROUP>;
 
 fn plane_row(row: u32) -> vec4<f32> {
     let m = view.view_proj;
@@ -131,7 +129,7 @@ fn in_view(slot: u32) -> bool {
         || outside(r3 - r2, center, extent) || outside(r2, center, extent));
 }
 
-// The late classifier: the AABB's eight corners under the same view_proj,
+// The final classifier: the AABB's eight corners under the same view_proj,
 // tested against the pyramid. Near-plane corners keep the slot visible.
 fn hidden_by_depth(slot: u32) -> bool {
     let bounds = world_bounds(slot);
@@ -169,17 +167,12 @@ fn count(@builtin(global_invocation_id) global: vec3<u32>,
     let slot = global.x;
     let framed = in_view(slot);
     var draw = framed;
-    var visible_now = false;
-    if params.phase == PHASE_EARLY {
+    if params.phase == PHASE_PREPASS {
         draw = framed && drawn_last(slot);
-    } else if params.phase == PHASE_LATE {
-        visible_now = framed && !hidden_by_depth(slot);
-        draw = visible_now && !drawn_last(slot);
-    } else if params.phase == PHASE_SKIP {
-        draw = false;
+    } else if params.phase == PHASE_FINAL {
+        draw = framed && !hidden_by_depth(slot);
     }
     scan[local.x] = select(0u, 1u, draw);
-    seen[local.x] = select(0u, 1u, visible_now);
     scan_workgroup(local.x);
     if local.x == WORKGROUP - 1u {
         group_offsets[group.x] = scan[local.x];
@@ -198,13 +191,9 @@ fn count(@builtin(global_invocation_id) global: vec3<u32>,
             before = at;
         }
         masks[group.x * WORDS + local.x] = word;
-        // Skip clears the history: `seen` is all zero.
-        if params.phase == PHASE_LATE || params.phase == PHASE_SKIP {
-            var visible_word = 0u;
-            for (var bit = 0u; bit < 32u; bit = bit + 1u) {
-                visible_word = visible_word | (seen[base + bit] << bit);
-            }
-            next_bits[group.x * WORDS + local.x] = visible_word;
+        // The final list is exactly the next last-visible set.
+        if params.phase == PHASE_FINAL {
+            next_bits[group.x * WORDS + local.x] = word;
         }
     }
 }

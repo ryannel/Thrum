@@ -287,8 +287,8 @@ mod metal {
         });
     }
 
-    /// Draws nothing and computes nothing: attached, it puts Occlusion on its
-    /// contribution fallback (Frustum early, Skip late, no pyramid build).
+    /// Draws nothing and computes nothing: an attached contribution that
+    /// leaves the image unchanged.
     struct Attached;
 
     impl crate::contribution::SceneContribution for Attached {
@@ -421,15 +421,15 @@ mod metal {
         fn submitted(&mut self, _: bool) {}
     }
 
-    /// Each slot's late instance count, read after its frame completed.
-    fn late_counts(host: &Host) -> Vec<u32> {
+    /// Each slot's prepass instance count, read after its frame completed.
+    fn prepass_counts(host: &Host) -> Vec<u32> {
         host.slots
             .iter()
             .map(|slot| {
-                let args = crate::synthetic::camera_culling::tests::late_args(&slot.target)
+                let args = crate::synthetic::camera_culling::tests::prepass_args(&slot.target)
                     .expect("occlusion slot");
                 let staging = host.device.create_buffer(&wgpu::BufferDescriptor {
-                    label: Some("late args readback"),
+                    label: Some("prepass args readback"),
                     size: 20,
                     usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
                     mapped_at_creation: false,
@@ -516,7 +516,7 @@ mod metal {
     }
 
     #[test]
-    fn metal_occlusion_timestamps_drain_empty_late_lists_and_the_contribution_fallback() {
+    fn metal_occlusion_timestamps_count_the_prepass_with_and_without_a_contribution() {
         pollster::block_on(async {
             let instance =
                 wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
@@ -540,12 +540,12 @@ mod metal {
             .await;
             assert_eq!(host.prepared.camera_culling(), CullMode::Occlusion);
             // Each frame's counts arrive on its own report, without waiting, and
-            // match the late arguments its slot's GPU work wrote.
+            // match the prepass arguments its slot's GPU work wrote.
             let timed = |host: &mut Host, label: &str| {
                 pending_slots(host);
                 let samples = drain_samples(host);
-                let late = late_counts(host);
-                for (sample, &late) in samples.iter().zip(&late) {
+                let prepass = prepass_counts(host);
+                for (sample, &prepass) in samples.iter().zip(&prepass) {
                     let passes = sample.gpu_pass_ns.expect("timed");
                     assert!(passes[3] > 0.0, "{label}: forward and culling are timed");
                     let counts = sample.camera_culling.expect("occlusion counts");
@@ -554,31 +554,25 @@ mod metal {
                         (CullMode::Occlusion, 1, 1),
                         "{label}: the cube is drawn once"
                     );
-                    assert_eq!(counts.late, late, "{label}: late count");
+                    assert_eq!(counts.prepass, prepass, "{label}: prepass count");
                 }
-                late
+                prepass
             };
-            // A cold frame lists the cube late; the next one replays it early.
-            assert_eq!(timed(&mut host, "cold"), [1, 0]);
-            // A still view: both slots time an empty late list and its empty
-            // late forward pass.
-            assert_eq!(timed(&mut host, "still"), [0, 0]);
+            // A cold frame has an empty prepass; the next one replays the cube.
+            assert_eq!(timed(&mut host, "cold"), [0, 1]);
+            assert_eq!(timed(&mut host, "still"), [1, 1]);
             assert_eq!(capture(&mut host), expected, "still capture equals Direct");
-            // The contribution fallback: Frustum early, Skip late, no pyramid;
-            // the layout leaves the pyramid out and the samples stay valid.
+            // A contribution changes nothing: no fallback, the same lists.
             host.set_scene_contribution(Box::new(Attached))
                 .expect("attach");
-            assert_eq!(timed(&mut host, "contributed"), [0, 0]);
+            assert_eq!(timed(&mut host, "contributed"), [1, 1]);
             assert_eq!(
                 capture(&mut host),
                 expected,
-                "fallback capture equals Direct"
+                "contributed capture equals Direct"
             );
-            // Back to opaque only: Skip cleared the history, so the first frame
-            // is cold again, then the still view settles.
             host.contribution = None;
-            assert_eq!(timed(&mut host, "returned"), [1, 0]);
-            assert_eq!(timed(&mut host, "settled"), [0, 0]);
+            assert_eq!(timed(&mut host, "returned"), [1, 1]);
             assert_eq!(
                 capture(&mut host),
                 expected,
@@ -588,7 +582,7 @@ mod metal {
     }
 
     #[test]
-    fn occlusion_fallback_keeps_a_blended_contribution_on_top() {
+    fn occlusion_keeps_a_blended_contribution_on_top() {
         pollster::block_on(async {
             let instance =
                 wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
@@ -612,8 +606,8 @@ mod metal {
                 .filter(|(a, b)| a != b)
                 .count();
             assert!(covered > 0, "the veil is visible");
-            // Cold history: an Occlusion frame without the fallback would
-            // list the cube late and draw it over the blend.
+            // Cold history: the contribution draws after the final list, as in
+            // Direct, so the blend stays on top.
             assert_eq!(capture(&mut hosts[1]), veiled, "cold capture");
             for _ in 0..2 {
                 pending_slots(&mut hosts[1]);

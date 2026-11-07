@@ -786,12 +786,12 @@ impl BrowserGame {
             .filter_map(|sample| sample.camera_culling.map(|counts| counts.drawn))
             .collect();
         drawn.sort_unstable();
-        let mut late: Vec<u32> = self
+        let mut prepass: Vec<u32> = self
             .samples
             .iter()
-            .filter_map(|sample| sample.camera_culling.map(|counts| counts.late))
+            .filter_map(|sample| sample.camera_culling.map(|counts| counts.prepass))
             .collect();
-        late.sort_unstable();
+        prepass.sort_unstable();
         let culling = match self
             .samples
             .iter()
@@ -799,12 +799,12 @@ impl BrowserGame {
             .find_map(|sample| sample.camera_culling)
         {
             Some(last) => format!(
-                "; culling_counted={}/{} culling_drawn_p50={} culling_drawn_p95={} culling_late_p50={} culling_active={}",
+                "; culling_counted={}/{} culling_drawn_p50={} culling_drawn_p95={} culling_prepass_p50={} culling_active={}",
                 drawn.len(),
                 self.samples.len(),
                 drawn[drawn.len() / 2],
                 drawn[drawn.len() * 95 / 100],
-                late[late.len() / 2],
+                prepass[prepass.len() / 2],
                 last.active
             ),
             None => String::new(),
