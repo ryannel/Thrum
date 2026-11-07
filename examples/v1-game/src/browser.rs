@@ -252,9 +252,10 @@ impl BrowserGame {
 
     /// Material reload outcomes since the last call, the accepted hook and whether it is being
     /// restored for a replaced device (`restoring`), as JSON; `None` without a cooked valley or
-    /// when nothing changed since the last report. Each outcome has `serial`, `kind`
-    /// (`promoted`, `rejected`, `superseded` or `retired`) and `text`; a promotion adds
-    /// `timingMs`, a rejection `diagnostics` (`file`, `line`, `column`, `message`).
+    /// when nothing changed since the last report. Each outcome has `serial` (null for
+    /// `dropped`, which answers no request), `kind` (`promoted`, `rejected`, `superseded`,
+    /// `retired` or `dropped`) and `text`; a promotion adds `timingMs`, and a rejection or a
+    /// dropped restore `diagnostics` (`file`, `line`, `column`, `message`).
     pub fn material_report(&mut self) -> Option<String> {
         let material = self.material.as_ref()?;
         let revision = material.revision();
@@ -281,8 +282,14 @@ impl BrowserGame {
                             "drawn": timing.drawn.as_secs_f64() * 1e3,
                         });
                     }
-                    MaterialOutcome::Rejected { diagnostics, .. } => {
-                        value["kind"] = "rejected".into();
+                    MaterialOutcome::Rejected { diagnostics, .. }
+                    | MaterialOutcome::Dropped { diagnostics, .. } => {
+                        value["kind"] = if matches!(outcome, MaterialOutcome::Dropped { .. }) {
+                            "dropped"
+                        } else {
+                            "rejected"
+                        }
+                        .into();
                         value["diagnostics"] = diagnostics
                             .iter()
                             .map(|diagnostic| {

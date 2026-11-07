@@ -117,7 +117,8 @@ pub struct ReloadTiming {
     pub drawn: Duration,
 }
 
-/// What became of one request, read with [`MaterialReload::take_outcomes`].
+/// What became of one request, read with [`MaterialReload::take_outcomes`]. Each request gets
+/// exactly one of `Promoted`, `Rejected`, `Superseded` or `Retired`; `Dropped` answers no request.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum MaterialOutcome {
     /// The hook draws from the reported submission on.
@@ -147,17 +148,27 @@ pub enum MaterialOutcome {
         /// Request serial.
         serial: u64,
     },
+    /// The accepted hook could not be restored on a replaced device or surface (it no longer
+    /// validates there, or its compile could not start), so the built-in material draws until
+    /// a new request is promoted. Restores are not requests and use no serial.
+    Dropped {
+        /// The hook's name.
+        name: String,
+        /// Why it could not be restored, located in the hook where possible.
+        diagnostics: Vec<MaterialDiagnostic>,
+    },
 }
 
 impl MaterialOutcome {
-    /// The request this outcome answers.
+    /// The request this outcome answers; `None` for [`Self::Dropped`], which answers none.
     #[must_use]
-    pub fn serial(&self) -> u64 {
+    pub fn serial(&self) -> Option<u64> {
         match self {
             Self::Promoted { serial, .. }
             | Self::Rejected { serial, .. }
             | Self::Superseded { serial }
-            | Self::Retired { serial } => *serial,
+            | Self::Retired { serial } => Some(*serial),
+            Self::Dropped { .. } => None,
         }
     }
 }
@@ -197,6 +208,16 @@ impl fmt::Display for MaterialOutcome {
                 f,
                 "material {serial} was prepared for a replaced device; the last accepted material draws again once it validates there (reload again)"
             ),
+            Self::Dropped { name, diagnostics } => {
+                write!(
+                    f,
+                    "material {name} could not be restored on the replaced device; the built-in material draws until a reload succeeds"
+                )?;
+                for diagnostic in diagnostics {
+                    write!(f, "\n  {diagnostic}")?;
+                }
+                Ok(())
+            }
         }
     }
 }
@@ -687,22 +708,25 @@ impl State {
             .map(|job| (job.hook.name, job.serial, job.restore))
             .collect();
         for (file, serial, restore) in std::iter::once(failed).chain(queued) {
-            if restore {
-                if self.accepted.as_ref().map(|(_, accepted)| *accepted) != Some(serial) {
-                    continue;
-                }
+            let diagnostics = vec![MaterialDiagnostic {
+                file: file.clone(),
+                line: 0,
+                column: 0,
+                message: format!("material compile thread failed to start: {error}"),
+            }];
+            if !restore {
+                self.report(MaterialOutcome::Rejected {
+                    serial,
+                    diagnostics,
+                });
+            } else if self.accepted.as_ref().map(|(_, accepted)| *accepted) == Some(serial) {
                 self.accepted = None;
                 self.drawing = false;
+                self.report(MaterialOutcome::Dropped {
+                    name: file,
+                    diagnostics,
+                });
             }
-            self.report(MaterialOutcome::Rejected {
-                serial,
-                diagnostics: vec![MaterialDiagnostic {
-                    file,
-                    line: 0,
-                    column: 0,
-                    message: format!("material compile thread failed to start: {error}"),
-                }],
-            });
         }
     }
 
@@ -763,10 +787,13 @@ impl State {
             }
             _ => {
                 // The built-in material keeps drawing.
-                self.accepted = None;
+                let name = self
+                    .accepted
+                    .take()
+                    .map_or_else(String::new, |(hook, _)| hook.name);
                 self.drawing = false;
-                self.report(MaterialOutcome::Rejected {
-                    serial: restoring.serial,
+                self.report(MaterialOutcome::Dropped {
+                    name,
                     diagnostics: errors,
                 });
             }
@@ -1125,14 +1152,17 @@ mod tests {
             ..State::default()
         };
         state.spawn_failed(("hooks/moss.wgsl".into(), 4, false), "out of threads");
-        let settled: Vec<u64> = state.outcomes.iter().map(MaterialOutcome::serial).collect();
+        let settled: Vec<_> = state.outcomes.iter().map(MaterialOutcome::serial).collect();
         assert_eq!(
             settled,
-            [4, 3, 5],
-            "the failed job, the restore and the request"
+            [Some(4), None, Some(5)],
+            "the failed job, the restore (no request of its own) and the request"
+        );
+        assert!(
+            matches!(&state.outcomes[1], MaterialOutcome::Dropped { name, .. } if name == "hooks/moss.wgsl")
         );
         assert!(state.outcomes.iter().all(|outcome| matches!(outcome,
-            MaterialOutcome::Rejected { diagnostics, .. }
+            MaterialOutcome::Rejected { diagnostics, .. } | MaterialOutcome::Dropped { diagnostics, .. }
                 if diagnostics[0].message.contains("failed to start: out of threads"))));
         assert!(!state.queue.running && state.queue.start().is_none());
         assert!(state.accepted.is_none(), "the built-in material draws");
@@ -1172,8 +1202,8 @@ mod tests {
         assert!(!material.restoring());
         let outcomes = material.take_outcomes();
         assert!(
-            matches!(&outcomes[..], [MaterialOutcome::Rejected { serial: 3, diagnostics }]
-                if diagnostics[0].message == "no longer compiles"),
+            matches!(&outcomes[..], [MaterialOutcome::Dropped { name, diagnostics }]
+                if name == "hooks/moss.wgsl" && diagnostics[0].message == "no longer compiles"),
             "{outcomes:?}"
         );
     }

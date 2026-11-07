@@ -100,6 +100,7 @@ pub struct MacPanel {
     target: Retained<PanelTarget>,
     widgets: Vec<Widget>,
     seen: u64,
+    refused: Vec<String>,
 }
 
 impl MacPanel {
@@ -191,6 +192,7 @@ impl MacPanel {
             target,
             widgets,
             seen: controls.revision(),
+            refused: Vec::new(),
         })
     }
 
@@ -215,19 +217,37 @@ impl MacPanel {
     }
 
     /// Apply queued widget edits to `controls` (snapped, clamped and counted by the model),
-    /// then refresh the widgets. Returns how many edits changed a value.
+    /// then refresh the widgets. Returns how many edits changed a value. A refused edit, such
+    /// as text over the length limit or with a line break, puts its widget back to the model's
+    /// value and its message in [`MacPanel::take_refused`].
     pub fn apply_edits(&mut self, controls: &mut Controls) -> usize {
         let edits = std::mem::take(&mut *self.target.ivars().edits.borrow_mut());
-        let changed = edits
-            .into_iter()
-            .filter(|edit| match edit {
-                // Each widget was built from its control's kind, so its edits always fit.
-                Edit::Number(id, shown) => controls.edit_display(*id, *shown) == Ok(true),
-                Edit::Value(id, value) => controls.edit_value(*id, value.clone()) == Ok(true),
-            })
-            .count();
+        let mut changed = 0;
+        let mut reset = Vec::new();
+        for edit in edits {
+            let (id, result) = match edit {
+                Edit::Number(id, shown) => (id, controls.edit_display(id, shown)),
+                Edit::Value(id, value) => (id, controls.edit_value(id, value)),
+            };
+            match result {
+                Ok(true) => changed += 1,
+                Ok(false) => {}
+                Err(error) => {
+                    self.refused.push(error.to_string());
+                    reset.push(id);
+                }
+            }
+        }
         self.sync(controls);
+        for id in reset {
+            self.show_value(controls, id);
+        }
         changed
+    }
+
+    /// Messages for widget edits the model refused since the last call, oldest first.
+    pub fn take_refused(&mut self) -> Vec<String> {
+        std::mem::take(&mut self.refused)
     }
 
     /// Move one widget as a person would and send its `AppKit` action, so tests and agents
@@ -255,6 +275,33 @@ impl MacPanel {
             control.sendAction_to(control.action(), Some(&self.target));
         }
         true
+    }
+
+    /// Type `text` into a text field and send its action, as [`MacPanel::simulate`] does for
+    /// sliders and toggles. Returns `false` for any other widget or an unknown id.
+    pub fn simulate_text(&self, id: ControlId, text: &str) -> bool {
+        let Some(Widget::Text(field)) = self.widgets.get(id.index()) else {
+            return false;
+        };
+        field.setStringValue(&NSString::from_str(text));
+        #[expect(
+            unsafe_code,
+            reason = "sendAction:to: is the narrow AppKit action dispatch the panel uses"
+        )]
+        // SAFETY: as in `simulate`: the field's own `controlChanged:` action, sent to this
+        // panel's PanelTarget.
+        unsafe {
+            field.sendAction_to(field.action(), Some(&self.target));
+        }
+        true
+    }
+
+    /// The text a text field or readout currently shows, or `None` for another widget.
+    pub fn shown_text(&self, id: ControlId) -> Option<String> {
+        match self.widgets.get(id.index())? {
+            Widget::Text(field) | Widget::Readout(field) => Some(field.stringValue().to_string()),
+            _ => None,
+        }
     }
 
     /// Draw the panel offscreen, title bar and HUD background included, as PNG bytes. This
@@ -302,27 +349,32 @@ impl MacPanel {
     /// person, a parameter file or the game changed them.
     pub fn sync(&mut self, controls: &Controls) {
         for id in controls.changed_since(self.seen) {
-            let text = NSString::from_str(&controls.formatted(id));
-            match (&self.widgets[id.index()], controls.value(id)) {
-                (
-                    Widget::Slider {
-                        slider,
-                        value,
-                        scale,
-                    },
-                    Value::Number(number),
-                ) => {
-                    slider.setDoubleValue(f64::from(*number) * scale);
-                    value.setStringValue(&text);
-                }
-                (Widget::Toggle(button), Value::Flag(on)) => button.setState(isize::from(*on)),
-                (Widget::Text(field), Value::Text(_)) | (Widget::Readout(field), _) => {
-                    field.setStringValue(&text);
-                }
-                _ => {}
-            }
+            self.show_value(controls, id);
         }
         self.seen = controls.revision();
+    }
+
+    /// Show the model's current value in one widget.
+    fn show_value(&self, controls: &Controls, id: ControlId) {
+        let text = NSString::from_str(&controls.formatted(id));
+        match (&self.widgets[id.index()], controls.value(id)) {
+            (
+                Widget::Slider {
+                    slider,
+                    value,
+                    scale,
+                },
+                Value::Number(number),
+            ) => {
+                slider.setDoubleValue(f64::from(*number) * scale);
+                value.setStringValue(&text);
+            }
+            (Widget::Toggle(button), Value::Flag(on)) => button.setState(isize::from(*on)),
+            (Widget::Text(field), Value::Text(_)) | (Widget::Readout(field), _) => {
+                field.setStringValue(&text);
+            }
+            _ => {}
+        }
     }
 }
 

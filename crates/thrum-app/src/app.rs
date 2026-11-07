@@ -951,6 +951,15 @@ impl<G: Game + 'static> ApplicationHandler<UserEvent> for App<G> {
             UserEvent::ControlsEdited => {
                 if let Some(panel) = &mut self.panel {
                     panel.apply_edits(self.game.controls_mut());
+                    for refused in panel.take_refused() {
+                        #[expect(
+                            clippy::print_stderr,
+                            reason = "a refused panel edit is for the person typing in the panel"
+                        )]
+                        {
+                            eprintln!("{}: control edit refused: {refused}", self.config.name);
+                        }
+                    }
                 }
                 if let Err(error) = self.controls_edited() {
                     self.error = Some(error);

@@ -52,7 +52,7 @@ budgets above:
   - The material hook changes surface factors only and runs on every placement. It cannot yet read controls or
     know which placement it shades.
 - **Controls.** Typed sliders, toggles, text and readouts drive an AppKit panel and the browser page from one
-  model. Readouts of engine fields work in both. Overlays drawn into the frame, starting with exposure zones, wait
+  model. Game-computed readouts (v1-game's Sun elevation) work in both. Overlays drawn into the frame, starting with exposure zones, wait
   on the shared display shader's tone-scale seam.
 - **A fresh agent.** Three runs, each by an agent that read only the creator docs:
   - a stone circle in 114 lines;
