@@ -207,8 +207,8 @@ A whole route run from an edited source shows the check follows content rather t
   assets and baseline untouched as its control.
 - A new source root no longer matches the fixed thresholds' calibration root, so the run refuses them, as for any
   content change. `--recalibrate` is the reviewed recalibration: it applies the design's rule to this run, after both
-  controls pass, and records that it did. It cannot save the canonical baseline, which needs the fixed thresholds and
-  their root updated in the script.
+  controls pass, and records that it did. It refuses the calibrated root, where it could only loosen the check, and
+  it cannot save the canonical baseline, which needs the fixed thresholds and their root updated in the script.
 - The canonical baseline reports a different identity (the source root) and is not used. The run also reports each
   stop's difference from it as information, which locates the edited region on both targets.
 - A reviewed replacement is saved to a scratch path with `--baseline PATH --save-baseline`, and a rerun compares
@@ -232,8 +232,10 @@ A whole route run from an edited source shows the check follows content rather t
       granularity.
     - It also records the page's navigation and resource timing for the Wasm and the cooked products, so a reader
       can see where the time went.
-    - The first page of each launch is the cold sample; the later pages share a warm browser and GPU process and are
-      reported apart.
+    - The first page of each launch is the cold sample: a fresh browser process and profile. The OS file cache and
+      any GPU shader cache outside the profile stay warm, and the route order makes the cold page always the night
+      stop. The later pages share a warm browser and GPU process and are reported apart. The observer's polling and
+      its search for the game object add to the bound.
     - Raw rows and their range and median are kept. This is a headless polling proxy for the first observed cooked
       draw, not physical first-paint latency.
 
