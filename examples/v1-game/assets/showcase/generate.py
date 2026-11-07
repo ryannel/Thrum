@@ -13,6 +13,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 EVIDENCE = Path(__file__).resolve().parents[4] / 'tmp/g3s-showcase/geometry-v2'
 NX, NZ = 161, 185
+GROUND_TEXTURE_X_METRES = 96
+GROUND_TEXTURE_Z_METRES = 128
+GROUND_TEXTURE_NEAR_Z_METRES = 48
 
 
 def sub(a, b):
@@ -133,7 +136,10 @@ def terrain():
                 tris.extend([(a,a+1,a+NX),(a+1,a+NX+1,a+NX)])
             else:
                 tris.extend([(a,a+1,a+NX+1),(a,a+NX+1,a+NX)])
-    return p, heightfield_normals(p), [(x/18000, -z/18000) for z in zs for x in xs], tris
+    uv = [(min(1, max(0, x/GROUND_TEXTURE_X_METRES+.5)),
+           min(1, max(0, (GROUND_TEXTURE_NEAR_Z_METRES-z)/GROUND_TEXTURE_Z_METRES)))
+          for z in zs for x in xs]
+    return p, heightfield_normals(p), uv, tris
 
 
 def surface_height(mesh,x,z):
@@ -309,6 +315,37 @@ def overview(scene):
     sketch_png(surfaces)
 
 
+def ground_albedo():
+    """Local mineral reflectance with a neutral border for the far terrain."""
+    size = 256
+    neutral_code = 218
+    neutral = ((neutral_code/255+.055)/1.055)**2.4
+    rows = bytearray()
+    for y in range(size):
+        rows.append(0)
+        for x in range(size):
+            u, v = (x+.5)/size, (y+.5)/size
+            edge = min(u, v, 1-u, 1-v)
+            fade = min(1, max(0, 8*(edge-2/size)))
+            fade = fade*fade*(3-2*fade)
+            east = (u-.5)*GROUND_TEXTURE_X_METRES
+            north = GROUND_TEXTURE_NEAR_Z_METRES-v*GROUND_TEXTURE_Z_METRES
+            mineral = .17*noise(east+37,north-13,3.1) + .08*noise(east-3,north+43,.92)
+            grit = .05*noise(east+5,north+11,.43)
+            value = neutral + fade*(mineral+grit)
+            assert 0 <= value <= 1
+            code = round(255*(1.055*value**(1/2.4)-.055))
+            rows.extend((code, code, code))
+    return size, rows, neutral
+
+
+def png(width, height, colour_type, rows):
+    def chunk(kind, data):
+        return struct.pack('>I',len(data))+kind+data+struct.pack('>I',zlib.crc32(kind+data))
+    header = struct.pack('>IIBBBBB',width,height,8,colour_type,0,0,0)
+    return b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',header)+chunk(b'IDAT',zlib.compress(rows))+chunk(b'IEND',b'')
+
+
 def main():
     global ROOT, EVIDENCE
     parser=argparse.ArgumentParser(description=__doc__)
@@ -329,7 +366,10 @@ def main():
     source_terrain=(terrain_positions,*meshes['terrain'][1:])
     sphere_x,sphere_z=-3.4,-5.
     rock_x,rock_z=3.8,-7.
-    placements=[{"mesh":"terrain.gltf","translation_m":[0,0,0],"scale":[1,1,1],"material":materials['terrain']},
+    size, albedo, neutral = ground_albedo()
+    ground_material = {**materials['terrain'],
+                       "baseColorFactor":[*(value/neutral for value in materials['terrain']['baseColorFactor'][:3]),1]}
+    placements=[{"mesh":"terrain.gltf","texture":"ground","translation_m":[0,0,0],"scale":[1,1,1],"material":ground_material},
                 {"mesh":"sphere.gltf","translation_m":[sphere_x,surface_height(source_terrain,sphere_x,sphere_z)+1.5-.025,sphere_z],"scale":[1.5,1.5,1.5],"material":materials['sphere']},
                 {"mesh":"rock.gltf","translation_m":[rock_x,surface_height(source_terrain,rock_x,rock_z)-min(v[1] for v in meshes['rock'][0])-.12,rock_z],"scale":[1,1,1],"material":materials['rock']}]
     report['minimum_subject_vertex_clearance_m']={}
@@ -349,11 +389,8 @@ def main():
             "placements":placements}
     (ROOT/'scene.json').write_text(json.dumps(recipe,indent=2)+'\n')
     # One neutral compression block leaves per-placement linear PBR factors unchanged.
-    def chunk(kind, data):
-        return struct.pack('>I',len(data))+kind+data+struct.pack('>I',zlib.crc32(kind+data))
-    white=b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',struct.pack('>IIBBBBB',4,4,8,6,0,0,0))
-    white+=chunk(b'IDAT',zlib.compress((b'\0'+b'\xff'*16)*4))+chunk(b'IEND',b'')
-    (ROOT/'white.png').write_bytes(white)
+    (ROOT/'white.png').write_bytes(png(4,4,6,(b'\0'+b'\xff'*16)*4))
+    (ROOT/'ground.png').write_bytes(png(size,size,2,albedo))
     overview(scene)
     report['total_triangles']=sum(v['triangles'] for v in report['meshes'].values())
     assert report['total_triangles']<=64000

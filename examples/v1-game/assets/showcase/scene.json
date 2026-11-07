@@ -17,6 +17,7 @@
   "placements": [
     {
       "mesh": "terrain.gltf",
+      "texture": "ground",
       "translation_m": [
         0,
         0,
@@ -29,9 +30,9 @@
       ],
       "material": {
         "baseColorFactor": [
-          0.28,
-          0.23,
-          0.17,
+          0.39937133706489647,
+          0.32805502687473637,
+          0.24247545464654427,
           1
         ],
         "metallicFactor": 0,

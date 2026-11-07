@@ -26,6 +26,7 @@ struct Camera {
 #[serde(deny_unknown_fields)]
 struct Placement {
     mesh: String,
+    texture: Option<String>,
     translation_m: [f32; 3],
     scale: [f32; 3],
     material: Material,
@@ -92,7 +93,7 @@ impl Placement {
             .mesh
             .strip_suffix(".gltf")
             .ok_or("showcase mesh must name a glTF source")?;
-        let mut placement = MeshPlacement::new(mesh, "white");
+        let mut placement = MeshPlacement::new(mesh, self.texture.as_deref().unwrap_or("white"));
         placement.transform = [
             [self.scale[0], 0.0, 0.0, 0.0],
             [0.0, self.scale[1], 0.0, 0.0],
