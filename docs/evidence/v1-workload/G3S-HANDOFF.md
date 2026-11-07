@@ -13,9 +13,12 @@ adds a directional PCSS candidate to the same two maps, with cone padding and 16
 32 disk samples. It is unverified. Its first native capture at
 `tmp/g3s-showcase/capture-20-penumbra/` reduces the pixel (640,600) 34→35 jump from 103
 to 20 SDR codes. Frames 33–38 now fade through the ridge shadow. Contact appearance,
-GPU cost and Chrome still need checks. The new GPU finite-disk/plane test currently reports
-a mismatch at the exact short-distance edge. Its validation scope is being checked before
-trusting that mismatch. Run with `cargo test -p thrum-render --lib finite_sun_shadow_width`.
+GPU cost and Chrome still need checks. Final full check is session 68807, with logs in
+`tmp/g3s-showcase/solar-penumbra/final-dev-check.log`. An earlier pre-fix full check
+is session 83506. Observe these sessions instead of starting another check. The GPU finite-disk/plane test passes after rendering its depth inputs. It covers two blocker
+distances, tilted receivers, empty grazing maps and a narrow central caster. Independent review
+found two production faults, both fixed. Empty depth stays empty when a plane reference goes
+negative, and the blocker search reserves a centre sample. Run with `cargo test -p thrum-render --lib finite_sun_shadow_width`.
 
 A separate source-triangle raycast at the real receiver (-17.5194,239.9546,15.9897) found
 central ridge blockers about 13 km upstream. At frames 33–38, 512 disk directions give
@@ -24,7 +27,10 @@ code at 34→35. Those results establish the finite-source shadow defect. Raw sc
 partial rows and logs are under `tmp/g3s-showcase/solar-penumbra/`. Keep existing local
 receiver-plane bias independent of the broad penumbra radius. The full receiver-plane
 extension is an approximate parallel-surface model, and grazing receivers need the oracle.
-The test uses the shipping shader body and independent ray/plane disk geometry.
+The test uses the shipping shader body and independent ray/plane disk geometry. Its depth
+fixtures must be rendered, as WebGPU forbids queue writes to Depth32Float. Updated game,
+release benchmark and Wasm builds have completed. Capture final images in a new directory
+and run the saved ABBA script only after both full check sessions finish using the GPU.
 
 ## Goal and status
 
