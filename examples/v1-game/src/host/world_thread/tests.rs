@@ -32,18 +32,17 @@ fn transition(controls: &WorldControls, request: WorldLifecycle) -> WorldLifecyc
 
 #[test]
 fn world_advances_and_accepts_controls_while_render_is_idle() {
-    let origin = Instant::now();
+    let driver = WorldDriver::new(scene::GameContent::Grid).expect("fixture world");
     let render_thread = thread::current().id();
     let (sender, worker_wake) = mpsc::sync_channel(1);
-    let (mut client, controls) = WorldClient::start(
-        WorldDriver::new(scene::GameContent::Grid).expect("fixture world"),
-        origin,
-        move || {
-            let _ = sender.try_send(thread::current().id());
-        },
-    )
+    // The window host starts its clock once the world and assets are prepared.
+    let origin = Instant::now();
+    let (mut client, controls) = WorldClient::start(driver, origin, move || {
+        let _ = sender.try_send(thread::current().id());
+    })
     .expect("resident world");
     let initial = client.published_page().expect("initial page");
+    let initial_tick = initial.id().tick;
     let slot = u32::try_from(scene::ENTITY_COUNT - 1).expect("fixture slot");
     let handle = initial.handle(slot).expect("controlled handle");
     let initial_x = initial.position(handle).expect("initial position").0[0];
@@ -55,18 +54,25 @@ fn world_advances_and_accepts_controls_while_render_is_idle() {
     // to commit several updates on its own deadline.
     thread::sleep(Duration::from_millis(85));
     let deadline = Instant::now() + Duration::from_secs(1);
+    let mut observed_tick = initial_tick;
     let advanced = loop {
         let advanced = client.poll(origin.elapsed()).expect("world status");
-        if advanced.tick >= 3 {
+        assert_eq!(
+            u64::from(advanced.completed_ticks),
+            advanced.tick - observed_tick,
+            "each world tick is reported once"
+        );
+        observed_tick = advanced.tick;
+        if observed_tick - initial_tick >= 3 {
             break advanced;
         }
         assert!(
             Instant::now() < deadline,
-            "world failed to advance without render"
+            "world failed to advance without render: {:?}",
+            controls.check_health()
         );
         thread::sleep(Duration::from_millis(5));
     };
-    assert!(advanced.completed_ticks >= 3);
     assert!(
         controls
             .check_health()
