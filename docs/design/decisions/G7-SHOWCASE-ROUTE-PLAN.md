@@ -9,9 +9,12 @@ poses read from artifacts, split M1 boxes, and a baseline that survives a clean 
   findings, all taken (see the log).
 - M1 fixes @ f8c46d49, same reviewer, brief: the fix list in its follow-up (report
   `tmp/g7-showcase/review/M1-REREVIEW-REPORT.md`, local), accept. Five wording and guard points, all taken.
+- M2 @ 46f8112d, brief `tmp/g7-showcase/review/M2-REVIEW-BRIEF.md` (local), accept with changes, no blocker. Seven
+  findings, all taken (see the log).
 Milestone: M2 Repeatable route and first baseline · Updated: 2026-11-07
-Now: M2 built: both seams, preset-driven frames on both targets, and the replaced baseline. Seam diffs are with root
-Next: root's verdict on the exact seam diffs, then the independent M2 review
+Now: M2 built and reviewed (accept with changes, all taken). Root approved the native seam and held the checker
+seam for one coverage fix, now made
+Next: root's verdict on the revised checker diff and a re-review of the M2 fixes, then push
 Blocked: none. The on-screen Mac walk waits on screen control (one request denied).
 
 ## M1 Local cooked valley on both targets: done
@@ -55,10 +58,12 @@ Done when:
       against them. (`docs/evidence/v1-workload/g7-showcase-baseline.json`, with identity, build and thresholds)
 - [x] The baseline is saved: raw frames in its run directory (`tmp/g7-showcase/runs/check-20261107-163503/`, which
       replaced M1's `check-20261107-161243`), and the contact sheet and per-stop numbers in evidence.
-- [x] `check` reports each stop's difference from the baseline when the identity matches. A deliberate change is
-      reported as a difference. (Shown on frames: the checker's retinted noon frame differs by 34.35 in the
-      maximum cell, against 0.005 unedited. Not yet shown as a whole run from an edited source, which needs a
-      source option in the script; recorded as still open.)
+- [x] `check` reports each stop's difference from the baseline when the identity matches. (Every run since the
+      baseline reports all 12 frames, at most 0.005 apart.)
+- [x] A difference beyond the thresholds fails `check` and names the stop, and a reviewed replacement can be saved
+      through it. (A scratch baseline with one 8-cell patch of Chrome noon raised by 6 levels: check-164805 fails
+      naming `chrome/noon` at 6.002; check-164859 saves it with `--save-baseline`, recording the replaced drift;
+      check-164948 then passes within 0.005. A whole run from a deliberately edited source is still not shown.)
 - [x] Route frames come from the preset files on both targets, including Chrome's 17.4 h clear-Sun stop, through
       the two seams root approved in principle. (Native `THRUM_CAPTURE_PARAMS`, checker `--case route`; Chrome's
       17.4 h stop reads 0.026/0.039/0.092 against native. Pushing waits on root's verdict on the exact diffs.)
@@ -109,3 +114,19 @@ Work:
   is byte-equal. Sent the exact diffs to root. Switched `check` to preset-driven frames on both targets, versioned
   the frame source in the baseline identity, and replaced the baseline from a clean building run. The thresholds
   stand, and the clear-Sun stop has no negative control because the checker has no diagnostic phase at 17.4 h.
+- 2026-11-07 Independent M2 review: accept with changes, seven findings, no blocker. Taken:
+  - `check --save-baseline` can now replace a baseline that drifted under the same identity. Before, drift blocked
+    the save it exists for. `--baseline PATH` checks or saves a scratch copy.
+  - The deliberate-change box was split. It had cited the positive control; drift reporting is now shown on a whole
+    run against a perturbed scratch baseline, with the replacement path.
+  - Design status, the baseline's location and identity, and the seam approval wording now match what happened.
+  - The checker's change to `--case all` is stated in the design.
+  - Seam tests were rerun on the committed, rebased binary, with its hash. The dirty run check-163312 is named as
+    uncited, and the build-time range now covers M2's runs.
+  - The 17.4 h Sun disc is too small for the contact sheet; the evidence says it is judged at full size. The warm-lit
+    17.9 h ridge joins the renderer findings.
+- 2026-11-07 Root approved the native seam and held the checker seam: its expected stops came from the same build it
+  checked. The case now takes the checked-in presets as its expectation and requires the build to ship each byte for
+  byte. A missing, a stale and an extra built preset each fail. Fixed the same class in the script's Chrome
+  launcher, which now refuses a web root whose presets differ from the checked-in ones. Rebased on 6fa34365; the
+  game binary is unchanged (`d8986d4f…`) and `./dev check` passed.

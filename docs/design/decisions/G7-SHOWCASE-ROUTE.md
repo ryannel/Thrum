@@ -3,9 +3,10 @@
 7 November 2026. This is the governing design for a bounded slice of build-plan item G7. It covers local launch
 and one review route for the cooked valley on Mac and in Chrome. Plan: [G7-SHOWCASE-ROUTE-PLAN](G7-SHOWCASE-ROUTE-PLAN.md).
 
-**Status.** Designed; not built. The cooked valley already runs natively and in Chrome
-([G7 Chrome valley](../../evidence/v1-workload/G7-CHROME-VALLEY-2026-11-07.md)), but launching it takes several
-hand-assembled commands. No check fails if Chrome quietly draws the diagnostic scene instead.
+**Status.** M1 built and on main. M2 built; root has approved the native seam and is reviewing the revised checker
+seam. Before this slice, the cooked valley already ran natively and in Chrome
+([G7 Chrome valley](../../evidence/v1-workload/G7-CHROME-VALLEY-2026-11-07.md)), but launching it took several
+hand-assembled commands, and no check failed if Chrome quietly drew the diagnostic scene instead.
 
 ## Commission
 
@@ -173,19 +174,28 @@ Pixel parity is a regression tripwire. It is not visual review. Each milestone r
 
 The route is repeatable when two consecutive `check` runs from clean scratch produce stop frames that agree with
 each other under the same metric, on both targets.
-- **Baseline.** The first accepted run's stop frames are kept as raw files under `tmp/g7-showcase/baseline/` and as one
-  compact contact sheet in the evidence page. `tmp/` is not checked in, so a clean checkout repeats the route only if the
-  per-stop 32×18 grids (a few KB of JSON) are checked in too. That file is a new path, and its location is asked of
-  root in M2.
-- **Diffs.** Later runs report their per-stop difference from the baseline.
-- **Updates.** Changing a baseline is an explicit act with a reason in the evidence. It never happens automatically.
+- **Baseline.** The accepted run's stop frames stay as raw files in its run directory under `tmp/g7-showcase/runs/`,
+  and as one compact contact sheet in the evidence page. `tmp/` is not checked in, so the per-stop 32×18 grids are
+  checked in at `docs/evidence/v1-workload/g7-showcase-baseline.json`, the path root approved. Its identity is the
+  comparator version, the frame-source version, the source root and the preset hashes. A run compares against it
+  only when every part matches.
+- **Diffs.** Later runs report their per-stop difference from the baseline, and a stop beyond the thresholds fails
+  the check.
+- **Updates.** Changing a baseline is an explicit act, `check --save-baseline`, with a reason in the evidence. It
+  never happens automatically. Drift from the old baseline does not block the replacement, because replacing it is
+  the deliberate answer to that drift. Any other failure does, and the run records the drift it replaced.
+  `--baseline PATH` checks or saves a scratch copy instead.
 
-**Shared seams.** The preset-driven frames rest on one seam in each of two shared files, approved by root in
-principle (`tmp/g7-boundary/NOTES.md`, "Root verdict on G7 route seams") and as exact diffs before they were pushed:
+**Shared seams.** The preset-driven frames rest on one seam in each of two shared files. Root approved both in
+principle (`tmp/g7-boundary/NOTES.md`, "Root verdict on G7 route seams"), and each exact diff goes to root before it
+is pushed:
 - **Native,** `examples/v1-game/src/bin/window/capture.rs`. A missing, unreadable or refused preset, or one that does
   not pause the world, fails the capture. Without the option, capture output is unchanged.
-- **Chrome,** `scripts/check_v1_browser.mjs`. The `route` case reuses the server, page-state and capture helpers and
-  leaves the other cases' dispatch and assertions unchanged. G3c's 16-view field oracle was retested with it.
+- **Chrome,** `scripts/check_v1_browser.mjs`. The `route` case reuses the server, page-state and capture helpers.
+  The checked-in presets in `examples/v1-game/params` are its expectation: the web build must ship each one byte for
+  byte and no others, so a missing, stale or extra built preset fails before any page loads. The other cases'
+  assertions are unchanged. `--case all` now includes `route`, so it also needs the presets that `build.sh` ships.
+  G3c's 16-view field oracle was retested with it.
 
 The route sequence's source stays in the shared presets.
 
@@ -229,6 +239,6 @@ This slice ticks none of these:
 - The owner-screen Mac walk of the route.
 - Agent visual review of the full exit scene.
 - Device runs beyond this M3 Max.
-- Renderer findings from the M1 review, for the render owner: a hard horizontal brightness step across the ground
-  (strongest at 17.4 h), a flat-looking near ridge with a hard bright rim at 17.4 h, a flat starless night sky, and
-  no visible object shadows at sunrise.
+- Renderer findings from the M1 and M2 reviews, for the render owner: a hard horizontal brightness step across the
+  ground (strongest at 17.4 h), a flat-looking near ridge with a hard bright rim at 17.4 h, a near ridge that reads
+  warm-lit rather than silhouetted at 17.9 h, a flat starless night sky, and no visible object shadows at sunrise.
