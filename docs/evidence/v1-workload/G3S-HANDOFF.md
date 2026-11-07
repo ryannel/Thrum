@@ -303,8 +303,20 @@ Rec.709 output compression. Pixels with all channels at 254 or above rose from
 25.35 → 14.35 codes. Independent review of the fixed views and sunset sequence
 found the white plateau erased the disk and warm gradient and made the midnight
 rock harder to see. Keep the existing display pass as G6's overlay baseline.
-The flat floor still differs from the uncalibrated CC0 Kiara photos. Compare
-authored ground contrast with the display transform held fixed.
+The flat floor still differs from the uncalibrated CC0 Kiara photos.
+
+**Ground material.** A generated 256×256 local mineral-albedo map adds near
+contrast through the existing cooked texture path. Geometry, camera and display
+transform stay fixed. Metal noon foreground p90−p10 rose from 1.29 to 10.14
+codes, and midnight median stayed 25.35. The sky crop matched across all 97
+sunset samples. Independent review confirmed the existing lookout lip reads
+more strongly, with no repeat or mip jump in sampled Metal and Chrome motion.
+A repeating tile caused moiré and a full-valley warped atlas caused streaks.
+Chrome initial upload grew 1,523,712 → 1,882,112 B and the live edit still
+uploaded only the retinted product. In a 1080p Metal ABBA at shared load 37–39,
+scene GPU p95 ranged 6.06–6.11 → 5.47–5.67 ms and submitted render CPU p95
+3.67–5.83 → 4.27–4.45 ms. No speedup claim. Captures, benchmark and comparison
+scripts are under `tmp/g3s-terrain-contrast/`. Live cadence remains open.
 
 Raw inputs, hashes, comparison, paired stills and `sunset-pair.mp4` are under
 `tmp/handback-review/tone-scale/colour-aware/`, with the earlier scalar and
