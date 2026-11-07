@@ -50,7 +50,7 @@ fn vertex(@builtin(vertex_index) index: u32, @builtin(instance_index) star: u32)
     let pixel_step = 2.0 * tan_half_fov / extent;
     let slope_squared = 1.0 + dot(slopes, slopes);
     let omega = pixel_step.x * pixel_step.y / (slope_squared * sqrt(slope_squared));
-    let sigma = max(0.7, radians(0.10) / sqrt(omega));
+    let sigma = max(0.7, radians(0.045) / sqrt(omega));
     let radius = 4.0 * sigma + 0.5;
     if any(centre + radius < vec2(0.0)) || any(centre - radius >= extent) { return rejected(); }
     if all(centre >= vec2(0.0)) && all(centre < extent) {
