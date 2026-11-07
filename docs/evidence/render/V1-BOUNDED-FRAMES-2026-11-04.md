@@ -58,9 +58,21 @@ Raw four UI phases, source identity and logs: `tmp/g3b-browser-recovery/final-qu
 Normal 600-frame shared-load encode CPU / forward GPU p50/p95: earlier 0.0/0.2 ms / 0.131/ 0.197 ms;
 final 0.1/0.3 / 0.524/2.163; identical-build repeat 0.1/0.2 / 0.197/ 0.197. The broad GPU tripwire is retained;
 repeat returned near the quantized baseline without a source change. Cause unattributed, not a controlled speed result.
-No full-frame CPU/allocation, physical display or speed claim. Actual tabs, live Mac P/loss and iOS lifecycle remain.
-At `618b5f7`, iOS simulator build/link pass; the already-booted iPhone18Pro/iOS27.2 app-container RPC times out
-at90s and a bounded15s retry. Function remains unqualified; shared services were left running. Raw: `tmp/g3b-ios-lifecycle/`.
+**Actual tabs:** `--case tabs` switches between real Chrome targets using the normal page. Three runs on
+`1f4e6932` and one on `d0f9cce4` held ticks, callbacks, presents, solar time and refused ticks steady while hidden.
+In the integrated run, 5 ticks and 5 presents held for 911 ms, then reached 18 and 15 with held movement released.
+After manual pause, 18 ticks and 29 presents held for 912 ms, then presents reached 36 with ticks steady.
+Review found a possible undrained tick queue and a blind spot at the visibility event. The test now waits for
+eight callbacks before sampling pause and reads both event edges. Scratch mutations caught a missing
+lifecycle call, latched input and a frame advanced inside the hide event. Raw: `tmp/g3b-real-tabs/`
+(`tabs-closed-*`, `integrated-tabs*`). The merged checker also passed controls and all 16
+Direct/Frustum comparisons. These are function checks on headless Chrome, not display-cadence evidence.
+
+**Simulator startup:** the app at `ccaca038` built, linked and installed on a fresh iPhone 18 Pro / iOS 27.2 simulator.
+It drew 601 frames through the display link. Screenshots show the game before and after switching to Settings,
+with the same game PID.
+Input and surface-loss recovery remain open, as do live Mac pause, loss and cadence. The shared simulator's
+app-container RPC still timed out. Raw: `tmp/g3b-ios-lifecycle/current/`. Simulator function only.
 Wasm Clippy runs in `./dev check`; no new expectations or policy changes. The earlier black/lost-sky recording
 in `tmp/g3s-directional/` remains rejected motion evidence.
 

@@ -484,20 +484,20 @@
     },
     "V1_bounded_frame_host": {
       "implementation": "partial_engine_runtime_lifecycle_Metal_and_browser_gpu_reconstruction_retry",
-      "functional_validation": "Metal_pause_replacement_Mac_overload_drain_resume_CPU_and_Chrome_10_rows_reconstruction_pass;_live_mobile_open",
+      "functional_validation": "Metal_pause_replacement_Mac_overload_drain_resume_CPU_and_Chrome_reconstruction_and_real_tab_switches_pass;_simulator_startup_and_app_switch_smoke_pass",
       "experienced_quality": "submitted_offscreen_pause_camera_resume_gpu_replacement_reviewed;_live_motion_grid_aliasing_open",
       "platform_performance": {
         "mac": "owner_quiet_91ad52d_baseline_recorded_lifecycle_open",
         "windows": "not_run",
-        "browser": "Chrome156_M3Max_Metal_headless_10_rows_pass;_actual_tab_open",
-        "ios": "618b5f7_simulator_build_link_pass;_app_container_RPC_timeout90s_and15s;_function_and_lifecycle_unqualified_no_timings",
+        "browser": "Chrome156_M3Max_Metal_real_tabs_with_input_release_and_manual_pause_pass;_physical_cadence_unqualified",
+        "ios": "iPhone18Pro_iOS27.2_simulator_build_link_startup_and_foreground_smoke_only;_input_and_surface_loss_pending;_no_timings",
         "android": "not_run"
       },
       "diagnostic_measurement": "Quiet/newer history: V1-BOUNDED-FRAMES-2026-11-04.md. CPU/allocations/cadence are tripwires, not gates; lifecycle remains open.",
       "evidence": [
         "../evidence/render/V1-BOUNDED-FRAMES-2026-11-04.md"
       ],
-      "scope": "Core owns clock/lane; renderer owns FrameHost. Browser old-device work stops on loss; detached GPU reconstruction/retry preserves authority/input/pause/solar state. Actual tabs, live Mac loss and iOS lifecycle stay open; native recording stays G3t."
+      "scope": "Core owns clock/lane; renderer owns FrameHost. Browser old-device work stops on loss; detached GPU reconstruction/retry preserves authority/input/pause/solar state. Live Mac loss and simulator input/surface loss stay open; native recording stays G3t."
     },
     "V1_cooked_constant_light": {
       "implementation": "partial_native_accepted_source_product_and_offscreen_visual_publication",

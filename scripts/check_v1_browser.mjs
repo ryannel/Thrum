@@ -9,7 +9,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
-const cases = ['normal', 'pause', 'resize', 'overload', 'input', 'controls', 'params', 'device-loss', 'late-device-loss', 'device-recovery', 'device-recovery-retry', 'sky-reflections', 'valley', 'valley-recovery', 'material', 'material-disabled', 'field', 'field-direct', 'field-oracle'];
+const cases = ['normal', 'pause', 'resize', 'overload', 'input', 'controls', 'tabs', 'params', 'device-loss', 'late-device-loss', 'device-recovery', 'device-recovery-retry', 'sky-reflections', 'valley', 'valley-recovery', 'material', 'material-disabled', 'field', 'field-direct', 'field-oracle'];
 const configureFailureSentinel = 'THRUM_G3B_CONFIGURE_ONCE';
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -313,6 +313,125 @@ async function qualifyControls(cdp, sessionId, poll, timeout) {
   refused('valueSecond', 1, 'control sky.a cannot be drawn: its element id "sky-a-value" is already control sky.a_value');
   refused('page', 0, '"params-status" is already an element');
   return { snapshots, rangeKeyboard: { before, after }, view };
+}
+
+// Activate another real tab. No visibility overrides or direct lifecycle calls.
+async function qualifyTabs(cdp, sessionId, targetId, poll, timeout, snapshots) {
+  const deadline = Date.now() + timeout;
+  const until = (check, description) => waitFor(check, Math.max(0, deadline - Date.now()), description);
+  await until(async () => /^Running/.test((await poll()).status ?? ''), 'tab lifecycle startup');
+  const game = await existingGame(cdp, sessionId);
+  const observation = `{...${gameState},hidden:document.hidden,now:performance.now()}`;
+  await game.invoke(`
+    document.addEventListener('visibilitychange', () => {
+      globalThis.__thrumTabBoundary = ${observation};
+    }, {capture: true});
+  `);
+  const observe = async expression => {
+    const state = await poll();
+    if (!/^Running/.test(state.status ?? '')) throw new Error(`Tab lifecycle stopped: ${state.status}`);
+    return game.invoke(`return ${expression};`);
+  };
+  const read = () => observe(observation);
+  const counter = (state, key) => {
+    const value = field(state.report, key);
+    if (!Number.isFinite(value)) throw new Error(`Missing ${key} in tab lifecycle report`);
+    return value;
+  };
+  const same = (left, right, keys) => keys.every(key => counter(left, key) === counter(right, key));
+  const keyD = type => cdp.call('Input.dispatchKeyEvent', { type, key: 'd', code: 'KeyD', windowsVirtualKeyCode: 68 }, sessionId);
+  const visible = async () => {
+    const value = await read();
+    return !value.hidden ? value : undefined;
+  };
+  const { targetId: other } = await cdp.call('Target.createTarget', { url: 'about:blank', background: true });
+  try {
+    await cdp.call('Target.activateTarget', { targetId });
+    snapshots.initial = await until(visible, 'game tab initially visible');
+    await keyD('keyDown');
+    snapshots.moving = await until(async () => {
+      const value = await visible();
+      return value && playerX(value) > playerX(snapshots.initial) + 0.01 ? value : undefined;
+    }, 'held movement before switching tabs');
+    const switchTab = async (target, hidden, description) => {
+      const before = await read();
+      await cdp.call('Target.activateTarget', { targetId: target });
+      return until(async () => {
+        const { value, edge } = await observe(`{value:${observation},edge:globalThis.__thrumTabBoundary}`);
+        return value.hidden === hidden && edge?.hidden === hidden && edge.now >= before.now ?
+          { value, edge } : undefined;
+      }, description);
+    };
+    const hiddenCounters = ['ticks', 'callbacks', 'presented', 'refused_ticks'];
+    const unchangedWhileHidden = (left, right) => left.paused === right.paused &&
+      left.time === right.time && same(left, right, hiddenCounters);
+    const hide = async name => {
+      const { value: start, edge } = await switchTab(other, true, `${name} document becomes hidden`);
+      snapshots[`${name}Start`] = start;
+      snapshots[`${name}Boundary`] = edge;
+      if (!unchangedWhileHidden(edge, start)) {
+        throw new Error(`Game advanced during its hidden visibility event: ${name}`);
+      }
+      await sleep(900);
+      const end = await read();
+      snapshots[`${name}End`] = end;
+      if (!end.hidden || !unchangedWhileHidden(start, end)) {
+        throw new Error(`Game advanced while its tab was hidden: ${name}`);
+      }
+      return end;
+    };
+    const show = async (hidden, name) => {
+      const { value, edge } = await switchTab(targetId, false, 'game tab becomes visible again');
+      snapshots[name] = value;
+      snapshots[`${name}Boundary`] = edge;
+      if (!unchangedWhileHidden(hidden, edge)) throw new Error(`Game advanced before its visible return event: ${name}`);
+      return edge;
+    };
+    const hidden = await hide('runningHidden');
+    if (hidden.paused) throw new Error('Hiding the tab changed manual pause preference');
+    const shownEdge = await show(hidden, 'shown');
+    const resumed = snapshots.resumed = await until(async () => {
+      const value = await visible();
+      return value && counter(value, 'ticks') > counter(hidden, 'ticks') + 8 &&
+        counter(value, 'presented') >= counter(hidden, 'presented') + 3 ? value : undefined;
+    }, 'simulation and presentation resume');
+    const admitted = counter(resumed, 'ticks') - counter(hidden, 'ticks');
+    const refused = counter(resumed, 'refused_ticks') - counter(hidden, 'refused_ticks');
+    // Allow the eight ticks already accepted before the tab was hidden.
+    const visibleTickBound = Math.ceil((resumed.now - shownEdge.now) * 60 / 1000) + 8;
+    if (admitted + refused > visibleTickBound) throw new Error('Tab return replayed hidden time');
+    if (!(Math.abs(playerX(resumed) - playerX(hidden)) <= 0.001)) throw new Error('Tab return left held movement latched');
+    if (resumed.paused) throw new Error('Tab return changed manual pause preference');
+    await game.invoke('document.querySelector("#pause-world").click();');
+    const requested = await read();
+    snapshots.paused = await until(async () => {
+      const value = await visible();
+      // Each callback can drain only one accepted tick under the work slice.
+      // Drain the full eight-tick queue before measuring the paused endpoint.
+      return value?.paused && counter(value, 'callbacks') >= counter(requested, 'callbacks') + 8 &&
+        counter(value, 'presented') >= counter(requested, 'presented') + 3 ? value : undefined;
+    }, 'manual pause settles before another tab switch');
+    const pausedHidden = await hide('pausedHidden');
+    if (!pausedHidden.paused || !same(snapshots.paused, pausedHidden, ['ticks'])) {
+      throw new Error('Hiding a manually paused tab changed authority or pause preference');
+    }
+    await show(pausedHidden, 'pausedShown');
+    snapshots.pausedReturn = await until(async () => {
+      const value = await visible();
+      return value && counter(value, 'presented') >= counter(pausedHidden, 'presented') + 3 ? value : undefined;
+    }, 'paused tab presents after return');
+    if (!snapshots.pausedReturn.paused || snapshots.pausedReturn.time !== pausedHidden.time ||
+        !same(pausedHidden, snapshots.pausedReturn, ['ticks', 'refused_ticks'])) {
+      throw new Error('Returning to a manually paused tab advanced authority');
+    }
+  } finally {
+    try {
+      await cdp.call('Target.activateTarget', { targetId });
+      await keyD('keyUp');
+    } finally {
+      await cdp.call('Target.closeTarget', { targetId: other });
+    }
+  }
 }
 
 // A parameter file applies through the page: valid entries move the controls and the game,
@@ -839,7 +958,7 @@ async function qualifySkyReflections(cdp, sessionId, poll, timeout, output, evid
 
 async function qualify(cdp, mode, origin, output, directory, wasm, timeout, assetsOrigin, assetsSource, files) {
   const { targetId } = await cdp.call('Target.createTarget', { url: 'about:blank' });
-  let sessionId, state, response, input, game, pausedAt, pause, controls, params;
+  let sessionId, state, response, input, game, pausedAt, pause, controls, params, tabs;
   let failed = false;
   const lossCase = mode === 'device-loss' || mode === 'late-device-loss';
   const retryCase = mode === 'device-recovery-retry';
@@ -849,12 +968,13 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
   const valleyCase = mode === 'valley';
   const materialCase = mode === 'material';
   const materialDisabled = mode === 'material-disabled';
+  const tabCase = mode === 'tabs';
   const oracleCase = mode.startsWith('field-oracle-');
   const skyCase = mode === 'sky-reflections' || valleyCase;
   const faults = [], timeline = [];
   let loss, recovery, sky, material, oracle, intentionalDestroys = 0;
   const onDestroy = () => { intentionalDestroys++; };
-  const url = materialCase || materialDisabled ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&material=case.material.wgsl` : valleyCase || valleyRecovery ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}` : mode === 'params' ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&params=case.params.json` : mode === 'controls' || destroyCase || skyCase ? `${origin}/` : mode === 'field' ? `${origin}/?qualify&field` : mode === 'field-direct' ? `${origin}/?qualify&field&culling=direct` : oracleCase ? `${origin}/?field&culling=${mode.slice('field-oracle-'.length)}&params=field-oracle.params.json` : `${origin}/?qualify${['normal', 'input'].includes(mode) ? '' : `&${mode}-probe`}`;
+  const url = materialCase || materialDisabled ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&material=case.material.wgsl` : valleyCase || valleyRecovery ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}` : mode === 'params' ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&params=case.params.json` : mode === 'controls' || tabCase || destroyCase || skyCase ? `${origin}/` : mode === 'field' ? `${origin}/?qualify&field` : mode === 'field-direct' ? `${origin}/?qualify&field&culling=direct` : oracleCase ? `${origin}/?field&culling=${mode.slice('field-oracle-'.length)}&params=field-oracle.params.json` : `${origin}/?qualify${['normal', 'input'].includes(mode) ? '' : `&${mode}-probe`}`;
   const log = line => { timeline.push(line); console.log(`${mode}: ${line}`); };
   try {
     ({ sessionId } = await cdp.call('Target.attachToTarget', { targetId, flatten: true }));
@@ -953,6 +1073,10 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
     }
     else if (materialDisabled) material = await qualifyMaterialDisabled(cdp, sessionId, poll, timeout, files);
     else if (mode === 'controls') controls = await qualifyControls(cdp, sessionId, poll, timeout);
+    else if (tabCase) {
+      tabs = {};
+      await qualifyTabs(cdp, sessionId, targetId, poll, timeout, tabs);
+    }
     else if (oracleCase) oracle = await captureFieldOracle(cdp, sessionId, poll, timeout, output, mode, onDestroy);
     else if (mode === 'params') {
       params = await qualifyParams(cdp, sessionId, poll, timeout, files, output);
@@ -989,7 +1113,7 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
       return /^adapter=/.test(state.status ?? '');
     }, timeout, `${mode} 600 completed GPU samples`);
     const report = material?.final.report ?? sky?.final.report ?? recovery?.snapshots.final.report ?? loss?.snapshots.final.report ?? controls?.snapshots.complete.report ?? state.status;
-    if (!destroyCase && !skyCase && !materialCase && !materialDisabled && !oracleCase && mode !== 'params' && (field(report, 'samples') !== 600 || !(field(report, 'presented') >= 600))) throw new Error('Qualification requires 600 GPU-complete samples and at least 600 present calls');
+    if (!destroyCase && !skyCase && !materialCase && !materialDisabled && !oracleCase && !tabCase && mode !== 'params' && (field(report, 'samples') !== 600 || !(field(report, 'presented') >= 600))) throw new Error('Qualification requires 600 GPU-complete samples and at least 600 present calls');
     if (state.hidden) throw new Error('Qualification target finished hidden');
     if (mode === 'pause' && (!timeline.some(line => /^Paused/.test(line)) || !timeline.some(line => /^Resumed/.test(line)) || field(state.status, 'overload_events') !== 0 || pause?.heldTick !== pause?.startTick || !Number.isFinite(pause?.heldTick) || !(field(state.status, 'ticks') > pause.heldTick))) throw new Error('Explicit two-second pause/resume was not observed without overload');
     if (mode === 'resize' && (state.width !== 960 || state.height !== 540 || !/extent=960x540;/.test(state.status))) throw new Error('Canvas/surface resize to 960x540 not applied');
@@ -1006,15 +1130,15 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
     if (!lossCase && (await game.read()).fault) throw new Error('Graphics device fault invalidated qualification');
     await screenshot(cdp, sessionId, output, mode);
     if (faults.length) throw new Error(`Runtime faults: ${JSON.stringify(faults)}`);
-    const scope = material?.scope ?? sky?.scope ?? recovery?.scope ?? (lossCase ? loss.scope : mode === 'params' ? 'Parameter file applied and reloaded through the page; no timing claim' : mode === 'controls' ? 'Manual pause with ongoing RAF and explicit visibility-hook composition; not actual tab visibility' : mode === 'pause' ? 'Explicit set_visible(false/true) hook; not actual tab visibility' : 'Headless WebGPU function; not display/cadence qualification');
-    const result = { case: mode, url, state, actualWasmSha256, responseStatus: 200, input, pause, controls, params, loss, recovery, sky, material, oracle, timeline, scope: oracle?.scope ?? scope };
+    const scope = material?.scope ?? sky?.scope ?? recovery?.scope ?? (lossCase ? loss.scope : tabCase ? 'Actual Chrome tab activation, document visibility, input release and manual pause; no display cadence claim' : mode === 'params' ? 'Parameter file applied and reloaded through the page; no timing claim' : mode === 'controls' ? 'Manual pause with ongoing RAF and explicit visibility-hook composition; not actual tab visibility' : mode === 'pause' ? 'Explicit set_visible(false/true) hook; not actual tab visibility' : 'Headless WebGPU function; not display/cadence qualification');
+    const result = { case: mode, url, state, actualWasmSha256, responseStatus: 200, input, pause, controls, tabs, params, loss, recovery, sky, material, oracle, timeline, scope: oracle?.scope ?? scope };
     await fs.writeFile(path.join(output, `${mode}.json`), JSON.stringify(result, null, 2));
     log(`PASS actualWasmSha256=${actualWasmSha256}`);
     return result;
   } catch (error) {
     failed = true;
     log(`FAIL ${error.message}`);
-    await fs.writeFile(path.join(output, `${mode}-failed.json`), JSON.stringify({ url, state, error: String(error), faults, timeline, recovery, sky, material, wasmResponse: response?.response }, null, 2));
+    await fs.writeFile(path.join(output, `${mode}-failed.json`), JSON.stringify({ url, state, error: String(error), faults, timeline, tabs, recovery, sky, material, wasmResponse: response?.response }, null, 2));
     throw error;
   } finally {
     if (sessionId && failed) {
@@ -1148,7 +1272,7 @@ async function cleanup(child, exited, cdp, server, profile) {
 
 async function main() {
   const args = options(process.argv.slice(2));
-  if (!args) { console.log('node scripts/check_v1_browser.mjs [--case all|normal|pause|resize|overload|input|controls|params|device-loss|late-device-loss|device-recovery|device-recovery-retry|sky-reflections|valley|valley-recovery|material|material-disabled|field|field-direct|field-oracle] [--web-root target/v1-game-web] [--cook target/debug/thrum-cook] [--assets-source examples/v1-game/assets/showcase] [--chrome /path/to/Chrome] [--output tmp/new-run] [--timeout-ms 90000]\nRequires Node 24+, an already-built game, and this Mac\'s Apple M3 Max/Metal Chrome. Controls checks manual pause with ongoing RAF; params applies, explains and reloads a parameter file; visibility checks use the explicit hook, not tab hiding. Recovery uses the real restore button; retry injects exactly one standard canvas configure failure. Sky reflections saves nine paused phases and 24 camera/Sun samples; valley repeats them on the cooked valley served by thrum-cook; valley-recovery runs device recovery with that valley attached; material reloads a WGSL hook on that valley (valid, refused, and outstanding across a destroyed device) and records contended frame intervals around the valid reload; it needs the development page (web/build.sh --dev), so all leaves it out. material-disabled loads the default page with ?material and proves it starts no material work. Field qualifies the 100,513-instance flythrough with Frustum camera culling; field-direct qualifies it with Direct for a paired comparison; field-oracle pauses two fresh pages and compares Frustum captures with Direct byte for byte. The other cases make no timing claim.'); return; }
+  if (!args) { console.log('node scripts/check_v1_browser.mjs [--case all|normal|pause|resize|overload|input|controls|tabs|params|device-loss|late-device-loss|device-recovery|device-recovery-retry|sky-reflections|valley|valley-recovery|material|material-disabled|field|field-direct|field-oracle] [--web-root target/v1-game-web] [--cook target/debug/thrum-cook] [--assets-source examples/v1-game/assets/showcase] [--chrome /path/to/Chrome] [--output tmp/new-run] [--timeout-ms 90000]\nRequires Node 24+, an already-built game, and this Mac\'s Apple M3 Max/Metal Chrome. Controls checks manual pause with ongoing RAF; tabs switches real Chrome tabs and checks authority, input release and manual pause; params applies, explains and reloads a parameter file; visibility checks use the explicit hook, not tab hiding. Recovery uses the real restore button; retry injects exactly one standard canvas configure failure. Sky reflections saves nine paused phases and 24 camera/Sun samples; valley repeats them on the cooked valley served by thrum-cook; valley-recovery runs device recovery with that valley attached; material reloads a WGSL hook on that valley (valid, refused, and outstanding across a destroyed device) and records contended frame intervals around the valid reload; it needs the development page (web/build.sh --dev), so all leaves it out. material-disabled loads the default page with ?material and proves it starts no material work. Field qualifies the 100,513-instance flythrough with Frustum camera culling; field-direct qualifies it with Direct for a paired comparison; field-oracle pauses two fresh pages and compares Frustum captures with Direct byte for byte. The other cases make no timing claim.'); return; }
   if (Number(process.versions.node.split('.')[0]) < 24 || typeof WebSocket !== 'function') throw new Error('Node 24+ with builtin WebSocket is required');
   const directory = await fs.realpath(path.resolve(repo, args['web-root']));
   const files = await assets(directory);
