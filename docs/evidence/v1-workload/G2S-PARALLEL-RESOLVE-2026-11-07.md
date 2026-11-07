@@ -18,8 +18,9 @@ refusal. These are correctness results. All timings below are from a heavily sha
   - Serial runs the same chunk code on the caller. Browser builds always run serially.
 - **V1 Simulate** integrates movers through this kernel, and the change count comes from the engine.
 - **Resolve staging.**
-  - Resolve is now a `RegisteredSystem::parallel` callback. From committed state and this tick's commands, it fills
-    a private `ResolveStage`: overrides, base values, velocity insert/replace/remove decisions and despawn skips.
+  - Resolve is now a `RegisteredSystem::parallel` callback. It reads the tentative world after Input and Simulate,
+    and this tick's commands. From those it fills a private `ResolveStage`: overrides, base values, velocity
+    insert/replace/remove decisions and despawn skips.
   - Simulate no longer writes Resolve's values; it previously staged SetPosition values and despawn marks.
   - The ordered `merge_parallel` moves the stage into the shared payloads that descriptors read at final preflight.
     It appends descriptors with Resolve's permits only, in the old canonical order.
@@ -37,6 +38,7 @@ refusal. These are correctness results. All timings below are from a heavily sha
 | Proof | Result |
 |---|---|
 | `g2s_chunked_kernel::forced_rayon_runs_independent_chunks_at_the_same_time` | Forced Rayon overlaps two or more chunk callbacks: the peak concurrency probe reads at least 2. Serial reads exactly 1. Heights are identical across modes. |
+| `g2s_chunked_kernel::earlier_writers_and_unchanged_rows_restore_exactly_in_every_mode` | An earlier Input system writes rows in three chunks before the kernel visits them, and every fifth row returns unchanged. Refusal and rewind restore the exact pre-tick values, not the earlier writer's. Unchanged rows are neither counted nor given preimages. All three modes are equal, in release builds too. |
 | `g2s_chunked_kernel::serial_rayon_and_forced_chunks_commit_refuse_and_rewind_identically` | 8,192 rows interleave movers and statics under a dense activity partition, with one excluded slot. The visit set is exact. A refusal from the last mover restores every chunk. A recorded tick rewinds to the exact prior state and replays identically. All three modes are equal. |
 | `simulation::parallel_movers_match_the_straight_corrected_run_after_churn_and_refusal` | 100k fixture, four peers and 12 ticks. A kernel refusal comes from an overflowing mover in a high chunk (25 chunks that tick). A Resolve NaN refusal comes after all four chunks wrote. Each refusal leaves the complete-world hash unchanged. Despawn and spawn churn run every tick. The run rewinds eight ticks, amends peer 2's tick-5 input and replays. In Serial, Rayon and RayonForced alike, the complete authoritative hash (identity, presence, every component value and authority metadata) and the published page equal the straight corrected run. |
 | Existing 39 `simulation` tests | They pass unchanged: 1,000-tick randomized churn replay, 10k corrected replay, four-peer Serial/RayonForced equality, held pages, and zero warmed caller-thread allocations. |
