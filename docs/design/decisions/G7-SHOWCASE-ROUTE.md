@@ -225,10 +225,11 @@ A whole route run from an edited source shows the check follows content rather t
     - Inside each route page, the checker polls the page's own clock (`performance.now()`, milliseconds since
       navigation start) together with `cooked_status()`. It records the last observation that establishes no cooked
       draw and the first that sees one. The cooked draw happened between them, so the first is an upper bound and
-      the gap is the granularity. Only a status before Running (the frame loop has not started) or a
-      present `cooked_status()` with no generation drawn (`drawn` is the drawn generation, null until the first)
-      establishes no draw; after Running, an absent report is unknown. If neither came before the first draw, the lower
-      bound is recorded as absent, navigation start is the conservative bound, and there is no granularity.
+      the gap is the granularity. Only the page's two pre-loop labels (`Starting WebGPU…`, `Fetching the cooked
+      valley…`) or a present `cooked_status()` with no generation drawn (`drawn` is the drawn generation, null until
+      the first) establishes no draw; any other status, or an absent report, is unknown. If neither came before the
+      first draw, the lower bound is recorded as absent, navigation start is the conservative bound, and there is no
+      granularity.
     - It also records the page's navigation and resource timing for the Wasm and the cooked products, so a reader
       can see where the time went.
     - The first page of each launch is the cold sample; the later pages share a warm browser and GPU process and are

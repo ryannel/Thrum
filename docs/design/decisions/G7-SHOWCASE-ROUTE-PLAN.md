@@ -174,3 +174,6 @@ Work:
   the first draw, never an explicit zero. So "only an explicit zero" would never advance the lower bound after Running.
   A present report with no generation drawn now establishes no draw; an absent report after Running stays unknown.
   Posted to root as a fourth revision; the final runs were repeated on it.
+- 2026-11-07 Root confirmed the correction and asked that only the page's exact pre-loop labels prove no draw, in
+  both reads; any other status proves nothing. Taken, rechecked on the normal and late-observer cases, and the final
+  runs were repeated on it. Root approved the seam to land after that change.
