@@ -7,7 +7,6 @@
   "execution_plan": {
     "milestone": "V1: one beautiful single-player 10k scene on this Mac at 120 Hz with physical sky, cooked assets, shadows, MetalFX and EDR; Chrome portable at showcase quality; demo controls; headless multiplayer fitness; labelled iPhone proxies, physical iPhone pending",
     "active": [
-      "G2S real-game simulation",
       "G3b engine frame runtime",
       "G3s physical atmosphere"
     ],
@@ -65,18 +64,18 @@
       ]
     },
     "G2_generic_simulation": {
-      "implementation": "engine_undo_publication_append_only_edits_chunked_parallel_mover_kernel_and_private_Resolve_stage",
-      "functional_validation": "full_dev_check;_forced_Rayon_chunk_overlap_probe;_100k_Serial_Rayon_RayonForced_complete_state_equal_to_straight_corrected_run_after_churn_kernel_and_Resolve_refusal;_1000_tick_randomized_replay;_held_page_and_zero_warmed_caller_allocations;_independent_review",
+      "implementation": "engine_undo_publication_append_only_edits_chunked_parallel_mover_kernel_parallel_warm_page_capture_and_private_Resolve_stage;_G2S_closed_7_Nov",
+      "functional_validation": "full_dev_check;_forced_Rayon_chunk_overlap_probe;_100k_Serial_Rayon_RayonForced_complete_state_equal_to_straight_corrected_run_after_churn_kernel_and_Resolve_refusal;_1000_tick_randomized_replay;_held_page_and_zero_warmed_caller_allocations;_40k_Serial_Rayon_RayonForced_byte_identical_pages_with_asserted_capture_dispatch;_independent_closeout_review",
       "experienced_quality": "synthetic_game_path_runs_no_v1_visual_acceptance",
       "platform_performance": {
-        "mac": "contended_7_Nov_crossover_rows_recorded_no_quiet_crossover;_owner_quiet_91ad52d_recorded_baseline_not_admission",
+        "mac": "owner_quiet_7_Nov_ABBA_pair_load_2:_RayonForced_slower_at_100k-500k,_no_crossover;_requested_Rayon_is_the_measured_serial_fallback",
         "windows": "not_run",
         "browser": "not_run",
         "ios": "not_run",
         "android": "not_run"
       },
-      "diagnostic_measurement": "Quiet 91ad52d and shared-Mac edit-queue ABBA: G2R-CONSOLIDATED-2026-11-05.md. Shared-Mac 7 Nov crossover (load 21-40): forced Rayon slower at 100k-500k and ~16 all-thread injector allocations per run; no speed claim.",
-      "scope": "Presence-aware corrected replay, engine-owned descriptors, per-system permits and a private Resolve stage merged in order. The mover kernel runs in word-aligned chunks; forced Rayon dispatches it and matches every mode. Requested Rayon is a serial fallback until a quiet measured crossover, so G2S stays open; publication capture is serial. No iPhone claim.",
+      "diagnostic_measurement": "Quiet 91ad52d and shared-Mac edit-queue ABBA: G2R-CONSOLIDATED-2026-11-05.md. Quiet 7 Nov ABBA (two runs, 1-minute load 2.0-2.2): Serial/RayonForced p50 100k 463/652 and 460/660 us, 200k 926/1137 and 907/1116 us, 500k 2285/2364 and 2297/2406 us; 16 all-thread injector allocations per run. No crossover.",
+      "scope": "Presence-aware corrected replay, engine-owned descriptors, per-system permits and a private Resolve stage merged in order. The mover kernel runs in word-aligned chunks; forced Rayon dispatches it and matches every mode. Warm page capture runs in page-row chunks under RayonForced. The quiet ABBA found no crossover, so requested Rayon is the measured serial fallback and RayonForced is the tested parallel correctness path; G2S closed 7 Nov. No iPhone claim.",
       "evidence": [
         "../evidence/v1-workload/G2R-CONSOLIDATED-2026-11-05.md",
         "../evidence/v1-workload/G2S-PARALLEL-RESOLVE-2026-11-07.md"

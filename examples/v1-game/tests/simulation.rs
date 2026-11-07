@@ -1966,13 +1966,15 @@ fn parallel_page_capture_publishes_identical_pages_in_every_mode() {
         commands
     };
     let compare = |worlds: &mut [(Simulation, SimulationHistory, Vec<PublishedPage>); 3],
-                   what: &str| {
-        let expected = page_signature(
-            &worlds[0].0.published_page().expect("serial page"),
-            capacity,
-        );
+                   what: &str,
+                   dispatched: &mut [usize; 3]| {
+        let serial = worlds[0].0.published_page().expect("serial page");
+        dispatched[0] += serial.parallel_capture_columns();
+        let expected = page_signature(&serial, capacity);
         for (index, (sim, _, _)) in worlds.iter_mut().enumerate().skip(1) {
-            let actual = page_signature(&sim.published_page().expect("page"), capacity);
+            let page = sim.published_page().expect("page");
+            dispatched[index] += page.parallel_capture_columns();
+            let actual = page_signature(&page, capacity);
             assert!(
                 actual == expected,
                 "{what}: {:?} page differs from Serial",
@@ -1980,7 +1982,8 @@ fn parallel_page_capture_publishes_identical_pages_in_every_mode() {
             );
         }
     };
-    compare(&mut worlds, "tick zero");
+    let mut dispatched = [0; 3];
+    compare(&mut worlds, "tick zero", &mut dispatched);
     for tick in 1..=12 {
         for (sim, history, held) in &mut worlds {
             let commands = commands(sim, tick, 1.5);
@@ -1992,17 +1995,35 @@ fn parallel_page_capture_publishes_identical_pages_in_every_mode() {
                 held.clear();
             }
         }
-        compare(&mut worlds, &format!("forward tick {tick}"));
+        compare(
+            &mut worlds,
+            &format!("forward tick {tick}"),
+            &mut dispatched,
+        );
     }
     for (sim, history, _) in &mut worlds {
         history.rewind(sim, 5).expect("retained rewind");
     }
-    compare(&mut worlds, "rewind patch");
+    compare(&mut worlds, "rewind patch", &mut dispatched);
+    let forward = dispatched;
     for tick in 8..=12 {
         for (sim, history, _) in &mut worlds {
             let commands = commands(sim, tick, -2.0);
             history.step(sim, &commands).expect("amended replay");
         }
-        compare(&mut worlds, &format!("amended tick {tick}"));
+        compare(
+            &mut worlds,
+            &format!("amended tick {tick}"),
+            &mut dispatched,
+        );
     }
+    // The comparison above proves nothing unless the parallel path ran:
+    // Serial and requested Rayon (serial fallback) never dispatch capture,
+    // RayonForced dispatches on warm forward ticks and on the amended replay.
+    assert_eq!((dispatched[0], dispatched[1]), (0, 0));
+    assert!(forward[2] >= 8, "forward capture dispatches {}", forward[2]);
+    assert!(
+        dispatched[2] > forward[2],
+        "amended replay never captured in parallel"
+    );
 }

@@ -1,9 +1,14 @@
 # G2S: chunked parallel movers and Resolve staging — 7 November 2026
 
-This page records the remaining G2S work. It does not close G2S: requested `Rayon` is still a serial fallback (see
-the Rayon policy below). The items are game-side Resolve staging, per-system permits, and real parallel work behind
-`ExecutionMode`. It also covers complete authoritative-state equality after correction, structural churn and
-refusal. These are correctness results. All timings below are from a heavily shared Mac, so they qualify nothing.
+This page records the work that closes G2S. It covers game-side Resolve staging, per-system permits, and real
+parallel work behind `ExecutionMode`. It also covers complete authoritative-state equality after correction, structural
+churn and refusal. Root approved closing on these terms (7 November):
+- the correctness evidence here;
+- requested `Rayon` as the measured **serial fallback**;
+- `RayonForced` as the tested parallel correctness path.
+
+The quiet ABBA rows below found no crossover, so neither crossover constant is set. Every other timing on this page
+comes from a shared Mac and qualifies nothing.
 
 ## What changed
 
@@ -31,8 +36,7 @@ refusal. These are correctness results. All timings below are from a heavily sha
 - **Rayon policy.**
   - `RayonForced` always dispatches the kernel.
   - Requested `Rayon` is a **serial fallback** today. It would dispatch at or above `PARALLEL_MOVER_CROSSOVER`, but that is
-    `None` until a quiet measured
-    win promotes it (see the rows below).
+    `None`: the quiet rows below show no win.
   - `Simulation::set_execution_mode` no longer rewrites Rayon to Serial.
 
 ## Correctness evidence
@@ -45,7 +49,7 @@ refusal. These are correctness results. All timings below are from a heavily sha
 | `simulation::parallel_movers_match_the_straight_corrected_run_after_churn_and_refusal` | 100k fixture, four peers and 12 ticks. A kernel refusal comes from an overflowing mover in a high chunk (25 chunks that tick). A Resolve NaN refusal comes after all four chunks wrote. Each refusal leaves the complete-world hash unchanged. Despawn and spawn churn run every tick. The run rewinds eight ticks, amends peer 2's tick-5 input and replays. Midway through the replay, a Resolve refusal on a deferred-publication tick leaves the hash and the remaining retained ticks intact. In Serial, requested Rayon and RayonForced, the complete authoritative hash equals the straight corrected run, and so does the published page. That hash covers identity, presence, every component value, authority metadata, and the game's peer and input resources. The requested-Rayon row checks fallback routing only; it runs the Serial path. RayonForced is the row that runs the parallel path. |
 | `history::tests::a_misrouted_permit_refuses_the_whole_tick` | Resolve's health edit, appended with Input health's permit, refuses the whole tick as `InvalidEdit`, and authority is unchanged. With its own permit the same command commits. |
 | `g2s_chunked_kernel::a_kernel_panic_restores_every_chunk_in_every_mode` | A panic in the last chunk's callback still merges every chunk's preimages. The preparation abort restores all rows, and the next tick matches a straight run in Serial and RayonForced. |
-| Existing 39 `simulation` tests | They pass unchanged: 1,000-tick randomized churn replay, 10k corrected replay, four-peer Serial/RayonForced equality, held pages, and zero warmed caller-thread allocations. |
+| The other `simulation` tests (42 in the file, including the two above and the page-capture row below) | They pass unchanged: 1,000-tick randomized churn replay, 10k corrected replay, four-peer Serial/RayonForced equality, held pages, and zero warmed caller-thread allocations. |
 
 The kernel now reports how many chunks it dispatched (`ChunkedVisit::dispatched_chunks`). V1 counts committed
 ticks whose kernel ran on the pool (`Simulation::kernel_dispatches`, a diagnostic that is never captured). The 100k
@@ -60,7 +64,7 @@ requested path. Overlap of two chunk callbacks is asserted only in the 8,192-row
 
 These come from `cargo bench -p v1-game --bench g2r -- --crossover` on an M3 Max. Each row times one full tick plus
 publication. Other agents and Codex threads were active, with load averages of 21–40. There were two runs each
-before and after bounding the chunks; raw logs are in `tmp/g2s-parallel/crossover-{1,2}.log` (local).
+before and after bounding the chunks; raw logs are in `tmp/g2s-parallel/crossover-{1,2}.log` (local, main checkout).
 
 | Rows | Serial p50 µs | Rayon p50 µs | RayonForced p50 µs | Forced all-thread allocations per run |
 |---|---:|---:|---:|---:|
@@ -81,7 +85,7 @@ is faster": with 20–40 runnable threads, pool workers are preempted. Two thing
 them in eight A-B-B-A rounds of interleaved blocks, so a drift in host load hits both modes alike. It prints the host
 load before and after, plus each mode's lowest and highest per-round p50. A win must clear that spread. The one run
 so far is below, taken at load averages of 17–24 with agents active; it qualifies nothing. The raw log is
-`tmp/g2s-parallel/abba-contended-2.log` (local).
+`tmp/g2s-parallel/abba-contended-2.log` (local, main checkout).
 
 | Rows | Serial p50 µs | Serial round p50 range | Forced p50 µs | Forced round p50 range | Forced allocations |
 |---|---:|---:|---:|---:|---:|
@@ -98,7 +102,7 @@ with preempted pool workers. The quiet run uses the same command with agents pau
 `cargo bench -p v1-game --bench g2r -- --capture-share` runs two warm Serial worlds through the same ABBA rounds. In
 one world all four pages are held, so the engine skips page capture. Change marking for publication still runs in
 both. The difference is page capture's share of the tick. The raw log is `tmp/g2s-parallel/capture-share-3.log`
-(local), taken at load 20–22, so it qualifies nothing.
+(local, main checkout), taken at load 20–22, so it qualifies nothing.
 
 | Rows | Captured p50 µs (round range) | Pages held p50 µs (round range) | Capture share |
 |---|---:|---:|---:|
@@ -141,22 +145,41 @@ After every step it compares the complete reader view of the published page:
 The new `DirtySlots::position_pair` exposes the engine's temporal pair list for this test. Two deliberate breaks in the
 parallel path were each caught at the first warm tick: dropping pair-changed flags, and skipping one row's refresh.
 
+**Proof the parallel path ran.** `PublicationPage::parallel_capture_columns` is a diagnostic, not page content. The test
+asserts:
+- Serial and requested Rayon dispatched no capture.
+- RayonForced dispatched on warm forward ticks and again during the amended replay.
+
+In this fixture only the temporal Position column dispatches, always under the activity-partition directory.
+
+`page_tests::parallel_warm_capture_matches_serial_for_endpoint_and_temporal_columns_without_a_directory` covers the
+branches the V1 fixture never reaches in parallel:
+- an endpoint-only column;
+- no directory;
+- page, source and world on the same layout.
+
+It runs 9,000 rows in three chunks, the last one partial. Movement then stopping changes pairs without changing
+endpoints. Each step compares every row, every previous value, all dirty lists and the events with a serial ring, and
+both columns dispatch. A deliberate break of the endpoint-only branch fails it.
+
+Each chunk's candidate list is reserved once, at capacity, on its first parallel capture, so later ticks do not grow it.
+The lists count in the page's reserved bytes.
+
 The contended ABBA below compares Serial with RayonForced, which now runs both the parallel kernel and parallel capture.
-It ran at load 17–21. The raw log is `tmp/g2s-parallel/abba-capture-2.log` (local).
+It ran at a 1-minute load average of 17. The raw log is `tmp/g2s-parallel/abba-capture-2.log` (local).
 
-| Rows | Serial p50 µs (round range) | Forced p50 µs (round range) | Forced, 1-thread pool, p50 µs |
-|---|---:|---:|---:|
-| 10k (below the candidate floor, no capture dispatch) | 49 (48–49) | 49 (49–49) | — |
-| 100k | 488 (486–491) | 1,207 (1,058–1,482) | 842 |
-| 200k | 978 (972–1,078) | 1,703 (1,459–2,790) | — |
-| 500k | 2,507 (2,465–2,576) | 3,024 (2,946–3,157) | 3,179 |
+| Rows | Serial p50 µs (round range) | Forced p50 µs (round range) |
+|---|---:|---:|
+| 10k (below the candidate floor, no capture dispatch) | 49 (48–49) | 49 (49–49) |
+| 100k | 488 (486–491) | 1,207 (1,058–1,482) |
+| 200k | 978 (972–1,078) | 1,703 (1,459–2,790) |
+| 500k | 2,507 (2,465–2,576) | 3,024 (2,946–3,157) |
 
-Under this load, Forced is slower than Serial at every dispatched row. A 1-thread pool at 100k was faster than the full
-pool, so wake-up and preemption cost dominates. The fixed overhead of bucketing plus pool trips is about 350 µs at
-100k, even with one worker. The quiet run decides whether the parallel work earns it back.
+Under this load, Forced is slower than Serial at every dispatched row. A 1-thread-pool spot check pointed the same way,
+but its output was not kept, so this page draws no conclusion from it.
 
 An earlier version visited every page row in each chunk, rather than only the bucketed candidates. It cost 2.7 ms at
-100k on the full pool and 1.9 ms on one thread (`abba-capture-1.log`), so it was replaced.
+100k at a 1-minute load of about 30 (`abba-capture-1.log`), so it was replaced.
 
 ## Quiet ABBA rows
 
@@ -172,18 +195,23 @@ kernel and parallel capture. The raw logs are `tmp/g2s-parallel/abba-quiet-{1,2}
 | 200k | 926 / 907 (906–947) | 1,137 / 1,116 (1,101–1,153) | 16 |
 | 500k | 2,285 / 2,297 (2,282–2,358) | 2,364 / 2,406 (2,344–2,578) | 16 |
 
-**There is no crossover.** Forced is slower than Serial at every dispatched row, in both runs, by more than the round
-spread at 100k and 200k. The gap narrows with size: 190–200 µs at 100k, about 210 µs at 200k, and 80–110 µs at 500k,
-where it is no longer outside the spread. So the parallel work does gain, but not enough to cover its fixed cost per tick at these densities.
+**There is no crossover.** Forced is slower than Serial at every dispatched row, in both runs. At 100k and 200k the gap
+is wider than the round spread. The gap is 190–200 µs at 100k and about 210 µs at 200k. At 500k it is 80–110 µs: in run 1
+Forced's rounds sit entirely above Serial's, and in run 2 they overlap by about 1 µs. The parallel work does gain at
+500k, but it never pays back its fixed cost per tick at these densities.
+
+The 5- and 15-minute load averages, about 14 and 24, show the window had only just gone quiet. A noisier window would
+favour neither mode, because the ABBA interleaves them.
 `PARALLEL_MOVER_CROSSOVER` and `PARALLEL_CAPTURE_CROSSOVER` stay `None`, and requested `Rayon` remains the documented
 serial fallback.
 
 ## Open, for root and the performance phase
 
-1. **Quiet crossover.** Measured above: no win at 100k–500k. Requested Rayon stays serial. Any later promotion
-   needs a new quiet win, for example after a one-install-per-tick experiment that root allows only if profiling
-   isolates injection or pool wakes.
-2. **Injector allocations.** Running the world tick inside the Rayon pool would remove these. That is the world-thread
-   adapter, so it is a root seam.
-3. **Parallel publication capture.** Implemented and proven identical (above). Promotion needs the same quiet ABBA:
-   `PARALLEL_CAPTURE_CROSSOVER` stays `None` until then.
+These do not block G2S, which is closed on the terms above.
+
+1. **Crossover promotion.** No win at 100k–500k. Promoting either crossover later needs a new quiet win.
+2. **One install per tick.** This is a performance-phase candidate. Under root's verdict, it should be tried only if a
+   profile of a representative tick shows injection or pool wakes as the limiting cost. The resident world lane keeps
+   ownership of the tick and the lifecycle.
+3. **Caller-thread allocations under forced capture.** The first parallel capture of each column reserves its chunk
+   lists once. Requested Rayon never takes this path.

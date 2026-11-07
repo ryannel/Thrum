@@ -42,6 +42,17 @@ fn publish(
     undo: Option<&WorldUndo>,
     events: &[StructuralChange],
 ) {
+    publish_in(pages, world, (tick, timeline), undo, events, false);
+}
+
+fn publish_in(
+    pages: &mut SnapshotRing<PublicationPage>,
+    world: &RegisteredWorld,
+    (tick, timeline): (u64, u64),
+    undo: Option<&WorldUndo>,
+    events: &[StructuralChange],
+    parallel: bool,
+) {
     pages
         .capture(|page, cold, page_dirty, outbound_dirty, source| {
             page.capture(
@@ -55,7 +66,7 @@ fn publish(
                     timeline,
                     final_undo: undo,
                     final_events: events,
-                    parallel: false,
+                    parallel,
                 },
             );
         })
@@ -584,4 +595,88 @@ fn partitioned_warm_two_hundred_spawns_keep_reservations_and_existing_neighbors(
         }
     }
     assert_eq!(pages.reserved_bytes(PublicationPage::reserved_bytes), bytes);
+}
+
+/// Every observable part of a page, for serial/parallel differential checks.
+fn page_view(page: &PublicationPage) -> impl PartialEq + std::fmt::Debug {
+    let rows = (0..u32::try_from(page.slot_capacity()).expect("small capacity"))
+        .map(|slot| {
+            page.handle(slot).map(|handle| {
+                (
+                    handle,
+                    page.component::<u32>(handle).copied(),
+                    page.previous_component::<u32>(handle).copied(),
+                    page.component::<u64>(handle).copied(),
+                    page.previous_component::<u64>(handle).copied(),
+                )
+            })
+        })
+        .collect::<Vec<_>>();
+    let dirty = page.dirty();
+    (
+        page.id(),
+        page.previous_id(),
+        page.is_baseline(),
+        rows,
+        [
+            dirty.component::<u32>().to_vec(),
+            dirty.temporal::<u32>().to_vec(),
+            dirty.component::<u64>().to_vec(),
+            dirty.temporal::<u64>().to_vec(),
+            dirty.structural().to_vec(),
+        ],
+        page.structural_events().to_vec(),
+    )
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+#[test]
+fn parallel_warm_capture_matches_serial_for_endpoint_and_temporal_columns_without_a_directory() {
+    // Three 4,096-row chunks, the last partial; no activity partition, so
+    // page, source and world share the identity layout.
+    const CAPACITY: usize = 9_000;
+    let (mut world, mut serial) = fixture(CAPACITY);
+    let (_, mut parallel) = fixture(CAPACITY);
+    for id in 2..CAPACITY as u128 {
+        world
+            .spawn(StableId(id), |entity| {
+                entity.add(1_u32)?.add(10_u64)?;
+                Ok(())
+            })
+            .expect("full fixture");
+    }
+    publish_in(&mut serial, &world, (0, 0), None, &[], false);
+    publish_in(&mut parallel, &world, (0, 0), None, &[], true);
+    let slots = u32::try_from(CAPACITY).expect("small capacity");
+    let mut dispatched = 0;
+    for tick in 1..=6_u64 {
+        let mut undo = world.empty_undo();
+        // Ticks 1-4 move every row except each seventh; ticks 5-6 stop them,
+        // so pairs change without endpoints.
+        if tick <= 4 {
+            for slot in (0..slots).filter(|slot| slot % 7 != 0) {
+                let value = u32::try_from(tick).expect("small tick") * 10 + slot % 5;
+                let before = world.replace_prevalidated(0, slot, value);
+                undo.record_component(0, slot, tick - 1, Some(before));
+                let health = world.replace_prevalidated(1, slot, u64::from(value));
+                undo.record_component(1, slot, tick - 1, Some(health));
+                for pages in [&mut serial, &mut parallel] {
+                    pages.mark_component(0, slot);
+                    pages.mark_component(1, slot);
+                }
+            }
+        }
+        publish_in(&mut serial, &world, (tick, 0), Some(&undo), &[], false);
+        publish_in(&mut parallel, &world, (tick, 0), Some(&undo), &[], true);
+        let (expected, actual) = (
+            serial.latest().expect("serial page"),
+            parallel.latest().expect("parallel page"),
+        );
+        assert_eq!(expected.parallel_capture_columns(), 0);
+        dispatched += actual.parallel_capture_columns();
+        assert_eq!(page_view(&actual), page_view(&expected), "tick {tick}");
+    }
+    // Both the temporal u32 and the endpoint-only u64 column ran on the pool
+    // on warm moving ticks.
+    assert!(dispatched >= 4, "parallel capture dispatches {dispatched}");
 }
