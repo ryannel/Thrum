@@ -56,6 +56,13 @@ Metal test running and even unchanged GPU passes taking longer in the candidate 
 comparison trips investigation. The shadow bucket includes the map build and cannot isolate it.
 Raw logs and executable hashes are in `tmp/handback-review/aerial-cost/`.
 
+The far fade band now reuses one receiver horizon result for the low-Sun bound and the blend.
+All 191 Metal valley frames, including 60 consecutive ticks, and 34 Chrome images were
+byte-identical. With the same 1080p sunset benchmark and shared load 52.9–56.7, scene GPU
+p50/p95 (ms) was 6.20/8.18 and 6.21/7.64 before, 6.07/7.18 and 6.29/7.61 after. This removes
+one possible march per affected fragment. The whole-frame samples show no clear speedup.
+Raw logs and capture hashes are in `tmp/handback-review/horizon-fade/`.
+
 ## Independent review
 
 A fresh-context reviewer saw only unlabelled pairs: toward the Sun at sunset and sunrise, the authored sunset, and
@@ -75,7 +82,7 @@ Unchanged items it noted:
 - **Sky pixels.** These are not shadowed. Light shafts in the visible sky need the same visibility applied to
   the sky-view path.
 - **Cost.** The new pass runs every frame, with up to 96 height-map loads per texel, and adds 8 intervals per
-  shaded pixel. First remove the repeated receiver march in the fade band. Using the air map for surface
+  shaded pixel. Using the air map for surface
   visibility needs a geometric oracle because its stored caster maximises occlusion at the disk centre.
 - **Interval count.** 8 intervals in √distance can under-resolve thin shadow bands over long rays.
 - **Compute ordering.** If confirmed, it affects any compute pass that samples a just-rendered depth target.

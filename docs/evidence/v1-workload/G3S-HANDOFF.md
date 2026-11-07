@@ -20,7 +20,9 @@ The Codex goal remains active. Its attachment is
   the blue twilight gradient and warm horizon. The stepped ridge and featureless ground
   still read as diagnostic terrain.
 - The [sunset comparison](G3S-SHADOWED-AERIAL-2026-11-07.md#mac-cost-shared-load) measured a 29%
-  higher scene GPU median under very heavy shared load. Next, remove the repeated fade-band march.
+  higher scene GPU median under very heavy shared load. Reusing one horizon march in the fade
+  band preserved all 191 native frames and 34 Chrome images. Its separate ABBA shows no clear
+  whole-frame speedup. Rerun and hashes are in `tmp/handback-review/horizon-fade/`.
   The resumable comparison is under `tmp/handback-review/aerial-cost/`. From the repository
   root, run `sh tmp/handback-review/aerial-cost/build-pair.sh` and then
   `python3 tmp/handback-review/aerial-cost/run-pair.py` with access to Metal. The script uses
@@ -29,9 +31,12 @@ The Codex goal remains active. Its attachment is
   for Git archives, touch the archived Rust files before building and verify the executable
   hashes differ. Cargo accepted the archived timestamps on the first attempt and reused the
   baseline binary for both commits.
-- Open review items include the repeated horizon march, horizon and cascade combination
-  GPU coverage, and synchronous browser prepare on edits or device replacement. Measure
-  the preparation interval and resulting frame hitch before choosing a scheduling change.
+- Next, add GPU coverage for horizon and near/last cascade composition. Check the early
+  exit above the caster ceiling with the Sun just below horizontal. A receiver 5 m above
+  a ridge 2 km away at −0.1° solar elevation can see about 60% of the disk, but the current
+  64 m lower-limb shortcut returns 100% in the planar calculation. Verify it in the shipping
+  shader before changing the march spacing. Measure browser prepare on edits and replacement
+  before choosing a scheduling change.
 - G6 may prepare the native runner extraction. The rebased diff and raw checks still need
   root review before push. Native starter is the recommendation. The owner has the Chrome
   starter scope decision. The cooked material shader reload is approved for a separate
@@ -143,8 +148,8 @@ crossing clip](g3s-first-light/solar-crossing.mp4) runs at 24 sampled frames/s.
 **G7.** Chrome now draws the cooked valley fetched from `thrum-cook watch --serve`
 ([evidence](G7-CHROME-VALLEY-2026-11-07.md); `check_v1_browser.mjs --case valley`). Its long poll swaps in edited
 publications live, uploading only changed products. Device recovery with the valley attached
-is a browser case (`--case valley-recovery`). Next: the shared demo panel once G6's typed controls land
-(see `tmp/g6-boundary/NOTES.md`; keep the existing solar slider until then).
+is a browser case (`--case valley-recovery`). The typed controls and parameter files are live.
+G7 still owes the shared demo route and its startup, pacing and edit-hitch measurements.
 
 Keep the same host Sun/time and the fixed valley camera as the comparison. Inspect
 physical radiance and displayed colour independently. Use the checked CC0 Kiara photos
