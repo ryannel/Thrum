@@ -933,3 +933,109 @@ fn cooked_mesh_outside_camera_casts_onto_visible_terrain() {
     });
     std::fs::remove_dir_all(&root).expect("remove test store");
 }
+
+/// Blocking HTTP/1.1 GET over loopback, standing in for the browser's `fetch`.
+struct LoopbackFetch;
+
+impl thrum_asset::Fetch for LoopbackFetch {
+    fn get(
+        &self,
+        url: &str,
+    ) -> impl Future<Output = Result<thrum_asset::FetchReply, thrum_asset::AssetError>> + use<>
+    {
+        use std::io::{Read, Write};
+        let transport =
+            |error: std::io::Error| thrum_asset::AssetError::Transport(error.to_string());
+        let reply = (|| {
+            let rest = url.strip_prefix("http://").expect("http origin");
+            let (authority, path) = rest.split_at(rest.find('/').unwrap_or(rest.len()));
+            let mut stream = std::net::TcpStream::connect(authority).map_err(transport)?;
+            write!(
+                stream,
+                "GET {path} HTTP/1.1\r\nHost: {authority}\r\nConnection: close\r\n\r\n"
+            )
+            .map_err(transport)?;
+            let mut response = Vec::new();
+            stream.read_to_end(&mut response).map_err(transport)?;
+            let split = response
+                .windows(4)
+                .position(|window| window == b"\r\n\r\n")
+                .ok_or(thrum_asset::AssetError::Malformed("HTTP header"))?;
+            let status = std::str::from_utf8(&response[9..12])
+                .ok()
+                .and_then(|status| status.parse().ok())
+                .ok_or(thrum_asset::AssetError::Malformed("HTTP status"))?;
+            Ok(thrum_asset::FetchReply {
+                status,
+                body: thrum_asset::ProductBytes::copy_from(&response[split + 4..]),
+            })
+        })();
+        std::future::ready(reply)
+    }
+}
+
+/// The browser's path: one generation fetched from the dev server, prepared without a loader
+/// thread, draws exactly what the mapped store draws, and restages on a replacement device.
+#[test]
+fn a_fetched_generation_draws_like_the_mapped_store() {
+    let root = std::env::temp_dir().join(format!("thrum-g5-remote-{}", std::process::id()));
+    std::fs::remove_dir_all(&root).ok();
+    let cook = source_tree(&root, 64);
+    let mut cooker = Cooker::open(cook.clone()).expect("cooker");
+    cooker.cook_all().expect("cook");
+    let server = thrum_cook::DevServer::start(
+        "127.0.0.1:0",
+        thrum_asset::AssetStore::new(&cook.store),
+        Arc::new(thrum_cook::Publications::default()),
+    )
+    .expect("dev server");
+    // Both paths resolve the portable products the client prefers by default; no volume.
+    let portable = |source: thrum_asset_gpu::CookedSource| {
+        let mut config = v1_game::cooked::cooked_config(source);
+        config.upload_budget = BUDGET;
+        config.volume = None;
+        config.texture_preference = Some(vec![Profile::Portable]);
+        config
+    };
+    pollster::block_on(async {
+        let mut client =
+            thrum_asset::DevClient::new(LoopbackFetch, &format!("http://{}", server.address()))
+                .expect("client");
+        let generation = Arc::new(
+            client
+                .poll()
+                .await
+                .expect("fetch")
+                .expect("a published generation"),
+        );
+        let (device, queue) = game_device().await;
+        let mut frames = Vec::new();
+        for source in [
+            thrum_asset_gpu::CookedSource::Store(cook.store.clone()),
+            thrum_asset_gpu::CookedSource::Remote(Arc::clone(&generation)),
+        ] {
+            let mut host = FrameHost::new(&device, &queue, FrameConfig::default())
+                .await
+                .expect("prepared game scene");
+            let assets = CookedAssets::new(portable(source));
+            let stats = assets.stats();
+            host.set_scene_contribution(Box::new(assets))
+                .expect("attach");
+            let mut clock = Duration::ZERO;
+            wait_for(&mut host, &device, &stats, 1, &mut clock);
+            // Same world time for both, so only the product path can differ.
+            while clock < Duration::from_millis(16 * 120) {
+                clock += Duration::from_millis(16);
+                host.drive(clock, None).expect("frame");
+                settle(&mut host, &device);
+            }
+            frames.push(host.capture_pixels().expect("capture"));
+            assert_eq!(stats.lock().expect("stats").errors, Vec::<String>::new());
+        }
+        save("remote-store", &frames[0]);
+        save("remote-fetched", &frames[1]);
+        assert_eq!(changed_pixels(&frames[0], &frames[1]), 0);
+    });
+    drop(server);
+    std::fs::remove_dir_all(&root).ok();
+}

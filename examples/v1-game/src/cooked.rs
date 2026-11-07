@@ -5,10 +5,9 @@
 //! volume in front of the instance wall, lit by the game's selected sky, and follows every new
 //! publication. Without the variable the game is unchanged.
 
-use std::path::PathBuf;
 use std::time::Duration;
 
-use thrum_asset_gpu::{CookedConfig, CookedMaterial, MeshPlacement, VolumePlacement};
+use thrum_asset_gpu::{CookedConfig, CookedMaterial, CookedSource, MeshPlacement, VolumePlacement};
 
 /// Column-major uniform-scale transform, rotated about +X by `tilt` radians.
 fn placement(scale: f32, tilt: f32, at: [f32; 3]) -> [[f32; 4]; 4] {
@@ -25,11 +24,11 @@ fn placement(scale: f32, tilt: f32, at: [f32; 3]) -> [[f32; 4]; 4] {
 /// copies take a small fraction of a frame on current GPUs.
 pub const UPLOAD_BUDGET: u64 = 8 << 20;
 
-/// The game's placement of the demo products in `store`.
+/// The game's placement of the demo products from `source` (a store path converts).
 #[must_use]
-pub fn cooked_config(store: PathBuf) -> CookedConfig {
+pub fn cooked_config(source: impl Into<CookedSource>) -> CookedConfig {
     CookedConfig {
-        store,
+        source: source.into(),
         meshes: vec![MeshPlacement {
             mesh: "meshes/terrain".into(),
             texture: "textures/checker".into(),

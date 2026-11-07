@@ -87,7 +87,7 @@
       "experienced_quality": "agent_reviewed_native_contact_shadows_blue_twilight_and_gradual_finite_Sun_ridge_crossing_with_low_Sun_contact,_low-light_twilight_key_and_offscreen_consecutive-tick_sunset;_terrain_silhouette_steps_and_on-screen_live_motion_open",
       "platform_performance": {
         "mac": "Metal_oracles_and_spectral_valley_ABBA_recorded;_live_display_unqualified",
-        "browser": "Chrome156_M3Max_spectral_sky_route7phases24samples_pass;_diagnostic_scene_only",
+        "browser": "Chrome156_M3Max_spectral_sky_route7phases24samples_pass_on_diagnostic_scene_and_cooked_valley",
         "ios": "not_run"
       },
       "evidence": [
@@ -96,7 +96,8 @@
         "../evidence/v1-workload/G3S-TERRAIN-HORIZON-2026-11-07.md",
         "../evidence/v1-workload/G3S-SUNSET-CASTERS-2026-11-07.md",
         "../evidence/v1-workload/G3S-LIVE-SUNSET-2026-11-07.md",
-        "../evidence/v1-workload/G3S-LOW-LIGHT-KEY-2026-11-07.md"
+        "../evidence/v1-workload/G3S-LOW-LIGHT-KEY-2026-11-07.md",
+        "../evidence/v1-workload/G7-CHROME-VALLEY-2026-11-07.md"
       ]
     },
     "A1_simulation": {
@@ -513,12 +514,12 @@
     },
     "G5_content_addressed_loop": {
       "implementation": "complete_native_loop_thrum_asset_runtime_thrum_cook_authoring_thrum_asset_gpu_in_game_scene_contribution_wasm_dev_client; partial_no_EAC_volumes_no_CAS_gc_both_parked_with_recorded_defects_no_mesh_shader_meshlet_path_no_cooked_shadow_casting_no_staging_ring",
-      "functional_validation": "G5_tests_in_dev_check_cook_loop_watcher_dev_server_wasm_client_protocol_hostile_products_and_real_Metal_in_game_tests_edits_cull_bc7_discard_retry_byte_exact_timings_history_capture_device_replacement_retired_loader; wasm_client_end_to_end_in_node_only; independent_code_review_and_root_owner_reviews_findings_fixed_with_regression_tests; shipping_link_graph_and_symbol_scan_with_positive_control",
+      "functional_validation": "G5_tests_in_dev_check_cook_loop_watcher_dev_server_wasm_client_protocol_hostile_products_and_real_Metal_in_game_tests_edits_cull_bc7_discard_retry_byte_exact_timings_history_capture_device_replacement_retired_loader; wasm_client_end_to_end_in_node_and_Chrome_valley_case;_fetched_generation_pixel_identical_to_mapped_store_on_Metal; independent_code_review_and_root_owner_reviews_findings_fixed_with_regression_tests; shipping_link_graph_and_symbol_scan_with_positive_control",
       "experienced_quality": "agent_reviewed_in_game_stills_and_6_frame_sequence_edits_cull_bc7_composite_pass_lighting_leaning_pass; defects_recorded_mesh_intersects_cube_edge_aliasing_flat_diagnostic_volume_box_edge",
       "platform_performance": {
         "mac": "tripwires_recorded_shared_machine_not_budget_qualified",
         "windows": "not_run",
-        "browser": "not_run_wasm_client_built_node_only",
+        "browser": "Chrome156_M3Max_cooked_valley_fetched_from_dev_server_drawn_function_only",
         "ios": "not_run",
         "android": "not_run"
       },

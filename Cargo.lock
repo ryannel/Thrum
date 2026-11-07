@@ -2165,6 +2165,7 @@ dependencies = [
  "glam",
  "thrum-asset",
  "thrum-render",
+ "web-time",
  "wgpu",
 ]
 

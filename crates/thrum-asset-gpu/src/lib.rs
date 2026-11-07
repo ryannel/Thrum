@@ -9,6 +9,20 @@
 //!
 //! Content identity survives device reconstruction: on a new device generation the loader is
 //! restarted against the same store and products are mapped and staged again.
+//!
+//! A [`CookedSource::Remote`] generation, fetched by `thrum_asset::DevClient` (the browser has
+//! no store to map and no loader thread), is prepared on the calling thread when the
+//! contribution starts, then uploaded through the same staging and swap.
+
+// WebGPU handles are not Send on wasm32, where these Arcs never cross a thread: the browser
+// prepares on its one thread. The same code shares them with the native loader thread.
+#![cfg_attr(
+    target_arch = "wasm32",
+    allow(
+        clippy::arc_with_non_send_sync,
+        reason = "WebGPU handles are not Send; the browser prepares on one thread"
+    )
+)]
 
 mod draw;
 mod load;
@@ -19,9 +33,13 @@ use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
 use std::sync::mpsc::{Sender, channel};
 use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
-use std::time::{Duration, Instant};
+use std::time::Duration;
+#[cfg(not(target_arch = "wasm32"))]
+use std::time::Instant;
+#[cfg(target_arch = "wasm32")]
+use web_time::Instant;
 
-use thrum_asset::{Ktx2Format, Profile};
+use thrum_asset::{Ktx2Format, Profile, RemoteGeneration};
 use thrum_render::contribution::{
     ContributionFrame, ContributionPasses, SceneContribution, SceneSurface, ShadowBounds,
 };
@@ -77,11 +95,26 @@ pub struct VolumePlacement {
     pub light_steps: u32,
 }
 
+/// Where cooked products come from.
+#[derive(Clone, Debug)]
+pub enum CookedSource {
+    /// Store root written by the cooker, followed by a loader thread.
+    Store(PathBuf),
+    /// One generation already fetched from a dev server, prepared without a thread.
+    Remote(Arc<RemoteGeneration>),
+}
+
+impl From<PathBuf> for CookedSource {
+    fn from(store: PathBuf) -> Self {
+        Self::Store(store)
+    }
+}
+
 /// What to load and how fast to upload it.
 #[derive(Clone, Debug)]
 pub struct CookedConfig {
-    /// Store root written by the cooker.
-    pub store: PathBuf,
+    /// Products to load.
+    pub source: CookedSource,
     /// Meshes to draw.
     pub meshes: Vec<MeshPlacement>,
     /// Optional volume to draw.
@@ -371,18 +404,34 @@ impl CookedAssets {
             volume_profiles: volume_profiles(surface.features),
             stats: Arc::clone(&self.stats),
         };
-        let stopping = Arc::clone(&stop);
-        let handle = std::thread::Builder::new()
-            .name("thrum-cooked-loader".into())
-            .spawn(move || loader.run(&posting, &resident_rx, &stopping))
-            .ok();
-        if handle.is_none()
-            && let Ok(mut stats) = self.stats.lock()
-        {
-            stats
-                .errors
-                .push("cooked loader thread failed to start".into());
-        }
+        let handle = match &self.config.source {
+            #[cfg(target_arch = "wasm32")]
+            CookedSource::Store(_) => {
+                drop((posting, resident_rx));
+                loader.fail(&stop, "the browser has no store loader thread");
+                None
+            }
+            #[cfg(not(target_arch = "wasm32"))]
+            CookedSource::Store(_) => {
+                let stopping = Arc::clone(&stop);
+                let handle = std::thread::Builder::new()
+                    .name("thrum-cooked-loader".into())
+                    .spawn(move || loader.run(&posting, &resident_rx, &stopping))
+                    .ok();
+                if handle.is_none()
+                    && let Ok(mut stats) = self.stats.lock()
+                {
+                    stats
+                        .errors
+                        .push("cooked loader thread failed to start".into());
+                }
+                handle
+            }
+            CookedSource::Remote(generation) => {
+                loader.prepare_remote(generation, &posting, &stop);
+                None
+            }
+        };
         Live {
             generation: surface.generation,
             stop,

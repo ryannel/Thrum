@@ -15,6 +15,9 @@ workspace = true
 
 [dependencies]
 pollster = "=1.0.1"
+serde = { version = "=1.0.229", features = ["derive"] }
+serde_json = "=1.0.154"
+thrum-asset-gpu = { path = "../../crates/thrum-asset-gpu" }
 thrum-core = { path = "../../crates/thrum-core" }
 thrum-render = { path = "../../crates/thrum-render" }
 wgpu = { version = "=30.0.1", default-features = false, features = ["std", "wgsl"] }
@@ -32,15 +35,13 @@ objc2-quartz-core = { version = "=0.3.2", default-features = false, features = [
 wgpu = { version = "=30.0.1", default-features = false, features = ["vulkan"] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
+thrum-asset = { path = "../../crates/thrum-asset" }
 wgpu = { version = "=30.0.1", default-features = false, features = ["webgpu"] }
 wasm-bindgen = "=0.2.129"
 wasm-bindgen-futures = "=0.4.79"
 web-sys = { version = "=0.3.106", features = ["HtmlCanvasElement", "console"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-serde = { version = "=1.0.229", features = ["derive"] }
-serde_json = "=1.0.154"
-thrum-asset-gpu = { path = "../../crates/thrum-asset-gpu" }
 thrum-content-runtime = { path = "../../crates/thrum-content-runtime" }
 
 [dev-dependencies]

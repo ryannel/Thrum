@@ -16,5 +16,8 @@ thrum-asset = { path = "../thrum-asset" }
 thrum-render = { path = "../thrum-render" }
 wgpu = { version = "=30.0.1", default-features = false, features = ["std", "wgsl"] }
 
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+web-time = "=1.1.0"
+
 [target.'cfg(any(target_os = "macos", target_os = "ios"))'.dev-dependencies]
 wgpu = { version = "=30.0.1", default-features = false, features = ["metal"] }

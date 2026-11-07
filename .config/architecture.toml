@@ -48,7 +48,7 @@ allowed_workspace_dependencies = []
 
 [packages.v1-game]
 manifest = "examples/v1-game/Cargo.toml"
-# thrum-asset-gpu draws cooked products natively (not on wasm32); thrum-cook is a dev-dependency
+# thrum-asset-gpu draws cooked products (a mapped store natively, a fetched generation on wasm32); thrum-cook is a dev-dependency
 # only, for the in-game G5 tests and bench.
 allowed_workspace_dependencies = ["thrum-asset", "thrum-asset-gpu", "thrum-content-runtime", "thrum-cook", "thrum-core", "thrum-render"]
 implicit_dependencies = { wasm-bindgen-futures = "async wasm_bindgen export expansion calls wasm_bindgen_futures" }
