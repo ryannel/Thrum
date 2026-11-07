@@ -119,7 +119,8 @@ WGSL material hook in the cooked mesh pipeline. `thrum-asset-gpu` owns it.
   - **In the browser,** which has no threads, the caller's task creates the module and pipeline. It uses WebGPU's
     synchronous methods, because pinned wgpu 30.0.1 does not expose `createRenderPipelineAsync`.
   - **Dev-only.** In the browser the reload is compiled only into the development page, behind v1-game's
-    `dev-material` Cargo feature (`web/build.sh --dev`). The default page exports no material methods, so a
+    `dev-material` Cargo feature (`web/build.sh --dev`), which compiles into its own Cargo target folder so a
+    concurrent default build cannot swap Wasm with it. The default page exports no material methods, so a
     `?material=` URL there starts no material work.
   - **A compile that cannot start** (the thread fails to spawn) is rejected with that error, and so is every job
     queued behind it. A queued restore that is rejected this way drops the accepted hook, and the built-in
