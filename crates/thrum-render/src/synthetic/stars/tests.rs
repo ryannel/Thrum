@@ -1,3 +1,5 @@
+mod optics;
+
 use super::*;
 use crate::atmosphere::AtmosphereFrame;
 use crate::capabilities::DeviceCapabilities;
