@@ -55,18 +55,38 @@ The four local peers control the last four props. A scripted camera flies a 250 
 Q1 asked. The decision is provisional, because these meshes are 12-triangle boxes. M3 repeats the rows on realistic
 meshes.
 
+## Chrome
+
+`examples/v1-game/web/build.sh`, then `node scripts/check_v1_browser.mjs --case field` (Frustum) and
+`--case field-direct`. Chrome on this Mac, WebGPU, 1280×720, 600 qualified samples each.
+
+- Both cases pass: 600 GPU-timed samples, no overload, refused ticks or clamps, at the display rate.
+- Runs alternated Direct, Frustum, Direct, Frustum. Chrome quantises timestamps to about 0.066 ms, so only p50 and
+  p95 steps are meaningful.
+
+| Run | Forward ms p50 (p95), Direct → Frustum | Far (Sun shadows) ms p50 |
+| --- | --- | ---: |
+| 1 | 0.786 (0.918) → 0.590 (0.655) | 0.852 both |
+| 2 | 0.786 (0.918) → 0.590 (0.655) | 0.852 both |
+
+Chrome pixel equality with Chrome Direct is not yet checked: the browser capture is synchronous today, and the
+proposed `begin_capture` / `try_finish_capture` split is with root (NOTES, seam 2, Q2c).
+
 ## Watched motion
 
 - 567 Frustum frames: the 40 ticks either side of each event, encoded at 30 fps.
 - The author reviewed contact sheets around the tick-301 snap turn and the tick-1801 cut. Walls hide most of the view
   just before the turn, and the field reappears whole after the turn and the cut. No pops at the view edges.
-- An independent review of the sequence is pending.
+- **Independent review: pass** (`tmp/g3c-boundary/m1/review/R-M1-motion.md`). The reviewer screened all 560
+  non-event frame pairs with a block-matched difference and inspected every flagged edge. Each abrupt change was a
+  snap, a cut, the camera passing through geometry, or an object leaving at its prior speed. Its one borderline case,
+  a box leaving the right edge at tick 1031, cannot be a culling pop: Frustum is byte-equal to Direct at that tick.
 
 ## Not covered
 
 - **Live window:** an attempt presented nothing, because macOS reported the window occluded (screen locked). The
   headless host above uses the same `FrameHost` path.
-- **Chrome.**
+- **Chrome pixel equality:** see Chrome above.
 - **Visible-count readback:** needs a renderer seam.
 - **Uncontended numbers.**
 - **Realistic meshes:** M3.
