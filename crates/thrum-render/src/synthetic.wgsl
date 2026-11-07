@@ -224,6 +224,21 @@ const SHADOW_DISK = array<vec2<f32>,32>(
     vec2<f32>(0.536595808,-0.834529771)
 );
 
+const SUN_TAN_RADIUS: f32 = 0.004654244;
+// Relative surface slope accepted as the receiver's own continuous surface.
+const SURFACE_SLOPE_TOLERANCE: f32 = 0.05;
+const SURFACE_MAX_GRADIENT: f32 = 30.0;
+
+// A planar receiver predicts each neighboring texel's depth. Continuous terrain
+// bends away from that plane; at grazing light a height deviation h appears as
+// h/(n.l) along the ray. Accept bounded bending that grows with the tap's world
+// offset, so a concave join near the receiver is not its own blocker.
+fn surface_tolerance(index:u32,gradient:vec2<f32>,delta:vec2<f32>) -> f32 {
+    let uv_metres_span=select(shadows.penumbra.y,shadows.penumbra.x,index==0u)/SUN_TAN_RADIUS;
+    let slope=min(length(gradient)*uv_metres_span,SURFACE_MAX_GRADIENT);
+    return SURFACE_SLOPE_TOLERANCE*length(delta)*(1.0+slope*slope)/max(uv_metres_span,1e-20);
+}
+
 fn cascade_visibility(index: u32, receiver: ShadowReceiver) -> f32 {
     let matrix = shadows.light_view_proj[index];
     let clip = matrix*vec4(receiver.position,1.0);
@@ -272,7 +287,7 @@ fn cascade_visibility(index: u32, receiver: ShadowReceiver) -> f32 {
         let receiver_depth=reference+dot(depth_gradient,tap-uv);
         let plane_depth=p.z+dot(depth_gradient,tap-uv);
         let epsilon=select(shadows.penumbra.w,shadows.penumbra.z,index==0u)+4e-7;
-        let same_plane=abs(depth-plane_depth)<=epsilon;
+        let same_plane=depth-plane_depth<=epsilon+surface_tolerance(index,depth_gradient,tap-uv);
         if depth>p.z+epsilon && depth>receiver_depth && !same_plane {
             nearest_gap=min(nearest_gap,max(0.0,depth-p.z));
             blockers+=1.0;
@@ -315,7 +330,7 @@ fn shadow_filter(index:u32,uv:vec2<f32>,receiver_depth:f32,reference:f32,
         let depth=textureLoad(shadow_maps,texel,i32(index),0);
         let plane_depth=receiver_depth+dot(gradient,tap-origin);
         let epsilon=select(shadows.penumbra.w,shadows.penumbra.z,index==0u)+4e-7;
-        let same_plane=abs(depth-plane_depth)<=epsilon;
+        let same_plane=depth-plane_depth<=epsilon+surface_tolerance(index,gradient,tap-origin);
         visible += weight.x*weight.y*select(0.0,1.0,tap_depth>=depth || same_plane || depth<=receiver_depth+epsilon);
     }
     return visible;
