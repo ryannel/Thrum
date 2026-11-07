@@ -50,11 +50,17 @@ The Codex goal remains active. Its attachment is
   All-clear diagnostic render passes can still lack Metal counters. Rerun
   `python3 tmp/handback-review/empty-timing/run-pair.py <fresh-prefix>` on Metal.
   Raw logs, input hashes and the G6 fixture are in the same directory.
-- The stone streaks disappear with cascade visibility bypassed. A scratch Chiang
-  geometric terminator probe makes coarse facets more visible. Keep both probes out
-  of the renderer. `streak-contact.png` in the timing directory shows baseline,
-  bypass and attenuation. The next check is a mesh ray against the rendered streaks
-  to separate real geometric occlusion from false map samples before changing bias.
+- CPU rays through the G6 stone scene classify 130 of 140 strong streak samples
+  fully blocked, three partially blocked and seven clear. The Metal map leaks more
+  than 0.25 visibility at 115 of those pixels. The global bias stays. Smoother
+  authored geometry reduces the marks in a held view and changes the stone bounds.
+  The exact capture, 64-ray comparison and asset variants are in
+  `tmp/handback-review/empty-timing/ray-truth/`. G6 owns its starter art.
+- The same morning capture has coherent arcs in the stored fp16 sky, before SDR
+  quantization. Manual bilinear and double LUT height move the arcs. The green
+  radiance p99 change is 0.027% and 0.098% respectively over the sampled sky.
+  Neither probe is selected. Scripts and curvature images are in
+  `tmp/handback-review/empty-timing/sky-bands/`. Resume after the ultra-review fixes.
 
 ## Exposure audit decision
 
