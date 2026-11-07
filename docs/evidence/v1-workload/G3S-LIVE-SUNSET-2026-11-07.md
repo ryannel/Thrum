@@ -38,6 +38,8 @@ fixed](g3s-first-light/live-sunset-speckle.png)
 - **Cost.** A new `THRUM_BENCH_HOURS` option sets the frame bench's time of day. On a contended GPU (load
   average 8.5), the paired run gave forward+sky p50 of 1.79 → 1.86 ms and pass-sum 4.59 → 4.74 ms (+3.4%) at
   17.9 h. At noon there was no change: 2.50–2.52 ms either way.
+- `./dev check` passed. Chrome's `sky-reflections` case passed with Wasm SHA-256
+  `dd039cbd0af555d098a57cbee9da6d2866dde4a351f0804c4e641cb01b3ac34f`.
 
 ## Independent review
 
