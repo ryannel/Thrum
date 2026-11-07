@@ -84,8 +84,10 @@ Each pose must equal its preset, so if either side drifts, the check stops befor
   and the web page through `examples/v1-game/web/build.sh`.
 - **Source.** Each command cooks or watches a copy of `examples/v1-game/assets/showcase`, so an edit made during a
   session never touches the checked-in source.
-- **Recording.** Each command records the commit, the build identities (binary and Wasm SHA-256) and the run
-  arguments in `run.json`.
+- **Recording.** Each command records the commit, the build identities (binary and Wasm SHA-256), whether this run
+  built them, and the run arguments in `run.json`. Under `--no-build` the binaries may predate the commit, so
+  evidence names a build only from a run that built it. The `chrome` command also logs every request its static
+  server answers, so a launch shows which Wasm and preset the page fetched.
 
 **`mac [--stop <name>] [--frames <n>]`**
 - Starts `thrum-cook watch <copy> <store>`.
@@ -125,8 +127,11 @@ The check compares pictures, not status. It runs in four steps:
    - The script requires the checker's `actualWasmSha256` to equal the Wasm it just built, so a stale web root fails.
    - Then it runs `--case sky-reflections`, the same procedure without `?assets`, as the negative control.
 4. **Compare.** For each Chrome-matched stop, compare the Chrome valley frame with the native frame:
-   - Box-average both frames to a 32×18 grid in 8-bit sRGB, which absorbs the 1252×704 versus 1280×720 extents and
-     sub-pixel differences.
+   - Box-average both frames to a 32×18 grid in 8-bit sRGB. Each pixel adds to the cells it overlaps by its exact
+     area share, so both extents (1252×704 and 1280×720) average over the same regions of the view. Assigning whole
+     pixels to cells moved cell edges by up to a pixel between the extents; that alone produced most of the measured
+     difference, and made a one-pixel shift nearly fail. The comparator has a version number, recorded with every
+     run and with the baseline.
    - Take the per-cell mean absolute RGB difference.
    - A stop passes when the median, 95th-percentile and maximum cells all fall under their thresholds. The maximum
      cell catches a missing rock or sphere, which the median and 95th percentile would not see.
@@ -141,12 +146,14 @@ The check fails in any of these cases:
   every stop.
 - **Positive control:** the checker's own `valley-before-edit` and `valley-edited` frames, which differ only by the
   retinted texture, do not exceed the thresholds. This proves the metric sees a wrong texture, not just a wrong
-  scene.
+  scene. These are full-page shots, so both are cropped to the canvas rectangle the checker recorded for its noon
+  frame before comparing.
 
 **Calibration rule, fixed before the first run.**
 - Each statistic's threshold is max(1.0, 3 × the worst valley-to-native value across the stops).
-- The rule is applied once, to the first run that passes both controls. Its thresholds are then written into the
-  script as constants, so later runs are judged against fixed numbers, not against themselves.
+- The rule is applied once per comparator version and valley source root, to the first run that passes both
+  controls. Its thresholds are then written into the script as constants, so later runs are judged against fixed
+  numbers, not against themselves.
 - Both sets of numbers are recorded.
 - If either control fails under that rule, the metric is wrong, and the check goes back to design rather than being
   tuned to pass.
@@ -228,3 +235,6 @@ This slice ticks none of these:
 - The owner-screen Mac walk of the route.
 - Agent visual review of the full exit scene.
 - Device runs beyond this M3 Max.
+- Renderer findings from the M1 review, for the render owner: a hard horizontal brightness step across the ground
+  (strongest at 17.4 h), a flat-looking near ridge with a hard bright rim at 17.4 h, a flat starless night sky, and
+  no visible object shadows at sunrise.

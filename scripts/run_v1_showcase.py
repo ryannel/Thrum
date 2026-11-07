@@ -11,6 +11,7 @@ in run.json there. The route's values live only in examples/v1-game/params/showc
 """
 
 import argparse
+import base64
 import hashlib
 import http.server
 import json
@@ -22,6 +23,8 @@ import subprocess
 import sys
 import threading
 import time
+import traceback
+import urllib.parse
 import webbrowser
 import zlib
 from pathlib import Path
@@ -35,6 +38,7 @@ GAME = REPO / 'target/release/v1-game'
 WEB = REPO / 'target/v1-game-web'
 WASM = WEB / 'v1_game_bg.wasm'
 CHECKER = REPO / 'scripts/check_v1_browser.mjs'
+BASELINE = REPO / 'docs/evidence/v1-workload/g7-showcase-baseline.json'
 TOOLCHAIN = '1.99.1'
 
 # Route order and each stop's matching capture on either target. Values come from the presets.
@@ -50,10 +54,17 @@ CHROME_PHASE = {
 }
 KEYS = {'world.paused', 'sky.solar_time', 'camera.yaw', 'camera.pitch'}
 
-# Thresholds per statistic (median, p95, max of 32x18 cell mean absolute 8-bit RGB difference),
-# fixed by the calibration rule max(1, 3 x worst valley-to-native), rounded up, on the first run that
-# passed both controls (7 Nov 2026, worst 0.069, 0.482, 2.153). Changing them is a recorded decision.
-THRESHOLDS = [1.0, 1.447, 6.461]
+# Comparator version: 2 maps both extents onto the grid by exact area coverage (version 1 used integer cells,
+# which misaligned cell edges between 1252 and 1280 pixel frames by up to a pixel).
+COMPARATOR = 2
+# Thresholds per statistic (median, p95, max of 32x18 cell mean absolute 8-bit RGB difference), fixed by the
+# calibration rule max(1, 3 x worst valley-to-native), rounded up, on the first run of this comparator and source
+# root that passes both controls. None means that calibration run. Changing them is a recorded decision.
+# Comparator 2, source root 59f0484f (authored ground, 80e519ec): worst valley 0.027, 0.062, 0.161 -> the 1.0 floor.
+THRESHOLDS = [1.0, 1.0, 1.0]
+# The source root the thresholds were calibrated on. Another root needs a reviewed recalibration, so a parity
+# regression that arrives with a content change is not absorbed.
+CALIBRATED_ROOT = '59f0484f6f05e5c1a0cf33f62755f1083a3802a7b32631191d6d88afff08c367'
 CONTROL_RATIO = 10.0
 
 
@@ -112,8 +123,9 @@ def build(run, web):
     return time.monotonic() - started
 
 
-def identities(web):
-    found = {'commit': git('rev-parse', 'HEAD'), 'dirty': bool(git('status', '--porcelain'))}
+def identities(web, built):
+    # Under --no-build the binaries may predate the commit; only a run that builds proves they match it.
+    found = {'commit': git('rev-parse', 'HEAD'), 'dirty': bool(git('status', '--porcelain')), 'built_by_this_run': built}
     for name, path in [('thrum_cook', COOK), ('v1_game', GAME)] + ([('wasm', WASM)] if web else []):
         if not path.exists():
             raise Failure(f'{path} is not built; run without --no-build')
@@ -134,17 +146,20 @@ def watch(run, source, serve):
     command = [str(COOK), 'watch', str(source), str(run / 'store')] + (['--serve', '127.0.0.1:0'] if serve else [])
     process = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT)
     log.close()
-    deadline = time.monotonic() + 120
-    while time.monotonic() < deadline:
-        if process.poll() is not None:
-            raise Failure(f'thrum-cook exited early (see {log_path})')
-        text = log_path.read_text()
-        origin = next((line.split()[1] for line in text.splitlines() if line.startswith('serving ')), None)
-        if 'generation 1' in text and (origin or not serve):
-            return process, origin
-        time.sleep(0.1)
-    process.terminate()
-    raise Failure('thrum-cook did not publish generation 1 within 120 s')
+    try:
+        deadline = time.monotonic() + 120
+        while time.monotonic() < deadline:
+            if process.poll() is not None:
+                raise Failure(f'thrum-cook exited early (see {log_path})')
+            text = log_path.read_text()
+            origin = next((line.split()[1] for line in text.splitlines() if line.startswith('serving ')), None)
+            if 'generation 1' in text and (origin or not serve):
+                return process, origin
+            time.sleep(0.1)
+        raise Failure('thrum-cook did not publish generation 1 within 120 s')
+    except BaseException:
+        stop_process(process)
+        raise
 
 
 def stop_process(process):
@@ -161,7 +176,8 @@ def mac(args):
     run = new_run('mac')
     seconds = None if args.no_build else build(run, web=False)
     record = {'command': 'mac', 'stop': args.stop, 'frames': args.frames, 'build_seconds': seconds,
-              'builds': identities(web=False), 'preset': stops[args.stop]}
+              'builds': identities(web=False, built=not args.no_build), 'preset': stops[args.stop],
+              'store': str(run / 'store'), 'scene': 'valley'}
     write_json(run / 'run.json', record)
     watcher, _ = watch(run, copy_source(run), serve=False)
     env = dict(os.environ, THRUM_ASSET_STORE=str(run / 'store'), THRUM_SCENE='valley',
@@ -169,10 +185,15 @@ def mac(args):
     if args.frames:
         env['THRUM_V1_FRAMES'] = str(args.frames)
     print(f'mac: {args.stop}; edits to {run / "source"} cook live; L re-applies the preset. Run: {run}', flush=True)
+    game = None
     try:
         with open(run / 'game.log', 'w') as log:
-            code = subprocess.run([str(GAME)], env=env, stdout=log, stderr=subprocess.STDOUT).returncode
+            game = subprocess.Popen([str(GAME)], env=env, stdout=log, stderr=subprocess.STDOUT)
+            code = game.wait()
+    except KeyboardInterrupt:
+        code = 'interrupted'
     finally:
+        stop_process(game)
         stop_process(watcher)
     record['exit_code'] = code
     write_json(run / 'run.json', record)
@@ -180,36 +201,45 @@ def mac(args):
         raise Failure(f'v1-game exited {code} (see {run / "game.log"})')
 
 
-class Quiet(http.server.SimpleHTTPRequestHandler):
+class Logged(http.server.SimpleHTTPRequestHandler):
+    """Static handler that appends each request line and status to the run's requests.log."""
+    log_path = None
+
     def log_message(self, *_):
         pass
+
+    def log_request(self, code='-', size='-'):
+        with open(self.log_path, 'a') as log:
+            log.write(f'{time.time():.3f} {code} {self.requestline}\n')
 
 
 def chrome(args):
     route()
     run = new_run('chrome')
     seconds = None if args.no_build else build(run, web=True)
-    record = {'command': 'chrome', 'stop': args.stop, 'build_seconds': seconds, 'builds': identities(web=True)}
-    watcher, assets = watch(run, copy_source(run), serve=True)
-    # build.sh copies the presets into the web root, so the page fetches them beside index.html.
-    server = http.server.ThreadingHTTPServer(('127.0.0.1', 0), lambda *a: Quiet(*a, directory=str(WEB)))
-    threading.Thread(target=server.serve_forever, daemon=True).start()
-    url = (f'http://127.0.0.1:{server.server_address[1]}/index.html?assets={assets.replace(":", "%3A").replace("/", "%2F")}'
-           f'&params=showcase-{args.stop}.params.json')
-    record['url'] = url
-    write_json(run / 'run.json', record)
-    print(f'chrome: {url}\nRun: {run}; Ctrl-C stops both servers.', flush=True)
-    if not args.no_open:
-        webbrowser.get('open -a "Google Chrome" %s').open(url)
-    signal.signal(signal.SIGTERM, lambda *_: (_ for _ in ()).throw(KeyboardInterrupt))
+    record = {'command': 'chrome', 'stop': args.stop, 'build_seconds': seconds, 'builds': identities(web=True, built=not args.no_build)}
+    watcher = server = None
     try:
+        watcher, assets = watch(run, copy_source(run), serve=True)
+        # build.sh copies the presets into the web root, so the page fetches them beside index.html.
+        handler = type('Handler', (Logged,), {'log_path': run / 'requests.log'})
+        server = http.server.ThreadingHTTPServer(('127.0.0.1', 0), lambda *a: handler(*a, directory=str(WEB)))
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        query = urllib.parse.urlencode({'assets': assets, 'params': f'showcase-{args.stop}.params.json'})
+        url = f'http://127.0.0.1:{server.server_address[1]}/index.html?{query}'
+        record['url'] = url
+        write_json(run / 'run.json', record)
+        print(f'chrome: {url}\nRun: {run}; Ctrl-C stops both servers.', flush=True)
+        if not args.no_open:
+            webbrowser.get('open -a "Google Chrome" %s').open(url)
         while watcher.poll() is None:
             time.sleep(0.5)
         raise Failure('thrum-cook watch exited')
     except KeyboardInterrupt:
         pass
     finally:
-        server.shutdown()
+        if server:
+            server.shutdown()
         stop_process(watcher)
 
 
@@ -257,6 +287,8 @@ def read_png(path):
                 p = a + b - c
                 pa, pb, pc = abs(p - a), abs(p - b), abs(p - c)
                 line[x] = (line[x] + (a if pa <= pb and pa <= pc else b if pb <= pc else c)) & 255
+        elif kind != 0:
+            raise Failure(f'{path}: unknown PNG filter {kind} on row {y}')
         out[y * stride:(y + 1) * stride] = line
         previous = line
     return width, height, bpp, bytes(out)
@@ -268,30 +300,65 @@ def read_ppm(path):
     while len(fields) < 4:
         while data[pos:pos + 1].isspace():
             pos += 1
+        if data[pos:pos + 1] == b'#':
+            pos = data.index(b'\n', pos)
+            continue
         end = pos
         while not data[end:end + 1].isspace():
             end += 1
         fields.append(data[pos:end])
         pos = end
-    if fields[0] != b'P6' or fields[3] != b'255':
-        raise Failure(f'{path}: not an 8-bit binary PPM')
-    return int(fields[1]), int(fields[2]), 3, data[pos + 1:]
+    width, height = int(fields[1]), int(fields[2])
+    pixels = data[pos + 1:]
+    if fields[0] != b'P6' or fields[3] != b'255' or len(pixels) != width * height * 3:
+        raise Failure(f'{path}: not a complete 8-bit binary PPM')
+    return width, height, 3, pixels
 
 
-def grid(path, columns=32, rows=18):
+def coverage(length, cells):
+    """Each pixel's (cell, weight) parts when `length` pixels are mapped onto `cells` equal cells.
+
+    Weights are exact area fractions, so frames of different extents average over the same regions
+    of the view. Integer cell assignment would move cell edges by up to a pixel between extents.
+    """
+    parts = []
+    for p in range(length):
+        start, end = p * cells / length, (p + 1) * cells / length
+        first = int(start)
+        if first + 1 < end and first + 1 < cells:
+            parts.append(((first, first + 1 - start), (first + 1, end - first - 1)))
+        else:
+            parts.append(((min(first, cells - 1), end - start),))
+    return parts
+
+
+def grid(path, columns=32, rows=18, crop=None):
     width, height, bpp, pixels = read_ppm(path) if str(path).endswith('.ppm') else read_png(path)
-    sums = [[0, 0, 0, 0] for _ in range(columns * rows)]
-    cell_x = [x * columns // width for x in range(width)]
-    for y in range(height):
-        row = (y * rows // height) * columns
-        base = y * width * bpp
-        for x in range(width):
-            cell = sums[row + cell_x[x]]
-            o = base + x * bpp
-            cell[0] += pixels[o]
-            cell[1] += pixels[o + 1]
-            cell[2] += pixels[o + 2]
-            cell[3] += 1
+    x0, y0, x1, y1 = crop or (0, 0, width, height)
+    if not (0 <= x0 < x1 <= width and 0 <= y0 < y1 <= height):
+        raise Failure(f'{path}: crop {crop} outside {width}x{height}')
+    across, down = coverage(x1 - x0, columns), coverage(y1 - y0, rows)
+    sums = [[0.0, 0.0, 0.0, 0.0] for _ in range(columns * rows)]
+    for y in range(y1 - y0):
+        # Sum each source row into per-column totals first, then spread those over the rows it covers.
+        line = [[0.0, 0.0, 0.0, 0.0] for _ in range(columns)]
+        base = (y + y0) * width * bpp
+        for x in range(x1 - x0):
+            o = base + (x + x0) * bpp
+            r, g, b = pixels[o], pixels[o + 1], pixels[o + 2]
+            for cell, weight in across[x]:
+                total = line[cell]
+                total[0] += r * weight
+                total[1] += g * weight
+                total[2] += b * weight
+                total[3] += weight
+        for row, weight in down[y]:
+            for column, total in enumerate(line):
+                cell = sums[row * columns + column]
+                cell[0] += total[0] * weight
+                cell[1] += total[1] * weight
+                cell[2] += total[2] * weight
+                cell[3] += total[3] * weight
     return [[s[0] / s[3], s[1] / s[3], s[2] / s[3]] for s in sums]
 
 
@@ -304,12 +371,62 @@ def close(a, b, tolerance):
     return abs(float(a) - float(b)) <= tolerance
 
 
+def pack(cells):
+    """A grid as base64 little-endian uint16 hundredths of an 8-bit level (0.005 rounding)."""
+    return base64.b64encode(b''.join(struct.pack('<H', round(v * 100)) for cell in cells for v in cell)).decode()
+
+
+def unpack(text):
+    raw = base64.b64decode(text)
+    values = [v / 100 for (v,) in struct.iter_unpack('<H', raw)]
+    return [values[i:i + 3] for i in range(0, len(values), 3)]
+
+
+def compare_baseline(grids, identity, thresholds):
+    """Each stop's difference from the checked-in baseline, when the baseline is for this identity."""
+    if not BASELINE.exists():
+        return {'status': 'absent'}
+    saved = json.loads(BASELINE.read_text())
+    differs = sorted(key for key in identity if saved['identity'].get(key) != identity[key])
+    if differs:
+        return {'status': 'other identity', 'differs': differs, 'baseline_identity': saved['identity']}
+    result = {'status': 'compared', 'stops': {}, 'over': []}
+    for target, stops in grids.items():
+        for stop, cells in stops.items():
+            values = difference(cells, unpack(saved['grids'][target][stop]))
+            result['stops'][f'{target}/{stop}'] = values
+            if any(value > limit for value, limit in zip(values, thresholds)):
+                result['over'].append(f'{target}/{stop}')
+    return result
+
+
+def save_baseline(grids, identity, report, run):
+    BASELINE.write_text(json.dumps({
+        'about': 'G7 showcase route baseline: per-stop 32x18 grids consumed by scripts/run_v1_showcase.py check. '
+                 'Reproduce with `check`; replace only with `check --save-baseline` after reviewing the frames, and '
+                 'record why in docs/evidence/v1-workload/G7-CHROME-VALLEY-2026-11-07.md.',
+        'identity': identity,
+        'builds': report['builds'],
+        'thresholds': report['thresholds'],
+        'run': run.name,
+        'grids': {target: {stop: pack(cells) for stop, cells in stops.items()} for target, stops in grids.items()},
+    }, indent=1) + '\n')
+
+
+def bounded(command, log, seconds, **options):
+    """Run one check step with a deadline, so a hung step fails the check instead of holding it."""
+    try:
+        return subprocess.run(command, stdout=log, stderr=subprocess.STDOUT, timeout=seconds, **options).returncode
+    except subprocess.TimeoutExpired:
+        raise Failure(f'{Path(command[0]).name} exceeded {seconds} s') from None
+
+
 def check(args):
     stops = route()
     run = new_run('check')
-    report = {'command': 'check', 'route': stops, 'passed': False, 'failures': []}
+    report = {'command': 'check', 'route': stops, 'comparator': COMPARATOR, 'passed': False, 'failures': []}
     report['build_seconds'] = None if args.no_build else build(run, web=True)
-    report['builds'] = identities(web=True)
+    report['builds'] = identities(web=True, built=not args.no_build)
     write_json(run / 'run.json', report)
     failures = report['failures']
     timings = report['timings_seconds'] = {}
@@ -317,7 +434,7 @@ def check(args):
         source = copy_source(run)
         started = time.monotonic()
         with open(run / 'cook.log', 'w') as log:
-            if subprocess.run([str(COOK), 'cook', str(source), str(run / 'store')], stdout=log, stderr=subprocess.STDOUT).returncode:
+            if bounded([str(COOK), 'cook', str(source), str(run / 'store')], log, 120):
                 raise Failure('thrum-cook cook failed')
         timings['cook'] = time.monotonic() - started
         head = (run / 'store/HEAD').read_bytes()
@@ -332,7 +449,7 @@ def check(args):
         launched = time.time()
         started = time.monotonic()
         with open(run / 'native.log', 'w') as log:
-            code = subprocess.run([str(GAME)], env=env, stdout=log, stderr=subprocess.STDOUT).returncode
+            code = bounded([str(GAME)], log, 300, env=env)
         timings['native_capture_run'] = time.monotonic() - started
         if code:
             raise Failure(f'native capture refused or failed (exit {code}; see {run / "native.log"})')
@@ -351,9 +468,9 @@ def check(args):
         for case, name in [('valley', 'chrome-valley'), ('sky-reflections', 'chrome-diagnostic')]:
             started = time.monotonic()
             with open(run / f'{name}.log', 'w') as log:
-                code = subprocess.run(['node', str(CHECKER), '--case', case, '--cook', str(COOK), '--web-root', str(WEB),
+                code = bounded(['node', str(CHECKER), '--case', case, '--cook', str(COOK), '--web-root', str(WEB),
                                        '--assets-source', str(source), '--output', str(run / name)],
-                                      cwd=REPO, stdout=log, stderr=subprocess.STDOUT).returncode
+                               log, 900, cwd=REPO)
             timings[f'{name}_checker_run'] = time.monotonic() - started
             if code:
                 raise Failure(f'checker --case {case} failed (see {run / f"{name}.log"})')
@@ -369,7 +486,8 @@ def check(args):
                 phase = phases.get(phase_name)
                 want = {'hours': values['sky.solar_time'], 'yaw': values['camera.yaw'], 'pitch': values['camera.pitch']}
                 got = phase and phase['edited']['controls']
-                if (not phase or any(not close(phase['requested'][k], want[k], 1e-9) for k in want)
+                # world.paused: the checker asserts the paused tick around every capture; check it was recorded.
+                if (not phase or phase['settled'].get('paused') is not True or any(not close(phase['requested'][k], want[k], 1e-9) for k in want)
                         or not (close(got['hours'], want['hours'], 0.0051) and close(got['yaw'], want['yaw'], 0.5001)
                                 and close(got['pitch'], want['pitch'], 0.5001))):
                     failures.append(f'Chrome {case} pose drift at {stop}: {phase and phase["requested"]} / {got} vs {want}')
@@ -377,18 +495,27 @@ def check(args):
             raise Failure('pose drift')
 
         # Compare matched stops.
-        native_grids = {stop: grid(native / NATIVE_FILE[stop]) for stop in CHROME_PHASE}
+        grids = {'native': {stop: grid(native / NATIVE_FILE[stop]) for stop in ROUTE},
+                 'chrome': {stop: grid(run / 'chrome-valley' / f'valley-{phase}.png') for stop, phase in CHROME_PHASE.items()}}
         statistics = report['statistics'] = {}
         for stop, phase_name in CHROME_PHASE.items():
             statistics[stop] = {
-                'valley': difference(grid(run / 'chrome-valley' / f'valley-{phase_name}.png'), native_grids[stop]),
-                'diagnostic': difference(grid(run / 'chrome-diagnostic' / f'sky-reflections-{phase_name}.png'), native_grids[stop]),
+                'valley': difference(grids['chrome'][stop], grids['native'][stop]),
+                'diagnostic': difference(grid(run / 'chrome-diagnostic' / f'sky-reflections-{phase_name}.png'), grids['native'][stop]),
             }
-        edit = difference(grid(run / 'chrome-valley/valley-before-edit-final.png'), grid(run / 'chrome-valley/valley-edited-final.png'))
+        # The edit frames are full-page shots; compare only the canvas, located by the checker's own clip.
+        clip = chrome_runs['valley'][CHROME_PHASE['noon']]['images'][0]['clip']
+        canvas = (round(clip['x']), round(clip['y']), round(clip['x'] + clip['width']), round(clip['y'] + clip['height']))
+        report['positive_control_crop'] = canvas
+        edit = difference(grid(run / 'chrome-valley/valley-before-edit-final.png', crop=canvas),
+                          grid(run / 'chrome-valley/valley-edited-final.png', crop=canvas))
         report['positive_control'] = edit
         worst = [max(values['valley'][i] for values in statistics.values()) for i in range(3)]
         rule = [max(1.0, 3 * value) for value in worst]
         report['calibration'] = {'worst_valley': worst, 'rule_thresholds': rule, 'fixed_thresholds': THRESHOLDS}
+        if THRESHOLDS and root != CALIBRATED_ROOT:
+            raise Failure(f'thresholds were calibrated on source root {CALIBRATED_ROOT[:8]}, not {root[:8]}: '
+                          'recalibrate by the design rule and record it')
         thresholds = THRESHOLDS or rule
         report['thresholds'] = thresholds
         names = ['median', 'p95', 'max']
@@ -400,8 +527,20 @@ def check(args):
                 failures.append(f'negative control: the diagnostic scene at {stop} is within {CONTROL_RATIO}x of the thresholds')
         if not any(edit[i] > thresholds[i] for i in range(3)):
             failures.append('positive control: the retinted texture did not exceed any threshold')
+        identity = {'comparator': COMPARATOR, 'source_root': root,
+                    'route': {stop: sha256(PARAMS / f'showcase-{stop}.params.json') for stop in ROUTE}}
+        baseline = report['baseline'] = compare_baseline(grids, identity, thresholds)
+        if baseline['status'] == 'compared' and baseline['over']:
+            failures.append(f'baseline drift beyond the thresholds at {", ".join(baseline["over"])}')
+        if args.save_baseline and not failures:
+            save_baseline(grids, identity, report, run)
+            baseline['saved'] = str(BASELINE.relative_to(REPO))
     except Failure as error:
         failures.append(str(error))
+    except Exception:  # Record any other fault in run.json before failing.
+        failures.append(traceback.format_exc())
+    except KeyboardInterrupt:
+        failures.append('interrupted')
     report['passed'] = not failures
     write_json(run / 'run.json', report)
     for stop, values in report.get('statistics', {}).items():
@@ -409,6 +548,14 @@ def check(args):
               f'diagnostic {" ".join(f"{v:7.2f}" for v in values["diagnostic"])}')
     if 'thresholds' in report:
         print(f'thresholds {report["thresholds"]}  positive control {report["positive_control"]}')
+    baseline = report.get('baseline', {})
+    if baseline.get('status') == 'compared':
+        worst = [max(values[i] for values in baseline['stops'].values()) for i in range(3)]
+        print(f'baseline: worst difference {" ".join(f"{v:.3f}" for v in worst)} over {len(baseline["stops"])} frames')
+    elif baseline:
+        print(f'baseline: {baseline["status"]} {baseline.get("differs", "")}')
+    if baseline.get('saved'):
+        print(f'baseline saved: {baseline["saved"]}')
     print(f'{"PASS" if report["passed"] else "FAIL"}: {run / "run.json"}')
     for failure in failures:
         print(f'  {failure}')
@@ -425,8 +572,12 @@ def main():
         if name != 'check':
             command.add_argument('--stop', choices=ROUTE, default=ROUTE[0])
     commands.choices['mac'].add_argument('--frames', type=int, help='bound the run (THRUM_V1_FRAMES)')
+    commands.choices['check'].add_argument('--save-baseline', action='store_true',
+                                           help='write the baseline after a passing run (a reviewed, recorded act)')
     commands.choices['chrome'].add_argument('--no-open', action='store_true', help='print the URL instead of opening Chrome')
     args = parser.parse_args()
+    # A terminated launcher stops its watcher, servers and game the same way Ctrl-C does.
+    signal.signal(signal.SIGTERM, lambda *_: (_ for _ in ()).throw(KeyboardInterrupt))
     try:
         {'mac': mac, 'chrome': chrome, 'check': check}[args.command](args)
     except Failure as error:
