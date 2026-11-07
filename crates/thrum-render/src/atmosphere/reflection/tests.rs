@@ -30,6 +30,8 @@ fn sample_cube(@builtin(global_invocation_id) id: vec3<u32>) {
 ";
 
 const CONSUMER: &str = concat!(
+    include_str!("../storage.wgsl"),
+    "\n",
     include_str!("../brdf.wgsl"),
     r"
 struct AerialFrame {

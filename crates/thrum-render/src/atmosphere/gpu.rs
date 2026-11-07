@@ -10,10 +10,14 @@ use super::{AtmosphereFrame, reflection::ReflectionPrepared};
 #[cfg(all(test, not(target_arch = "wasm32")))]
 mod tests;
 
-pub(super) const EXTENTS: [[u32; 2]; 4] = [[256, 64], [32, 32], [192, 108], [128, 1]];
+pub(super) const EXTENTS: [[u32; 2]; 4] = [[256, 64], [512, 32], [192, 108], [128, 1]];
 pub(super) const AERIAL_EXTENT: [u32; 3] = [32, 32, 33];
 const LUT_SHADER: &str = concat!(
-    include_str!("common.wgsl"),
+    concat!(
+        include_str!("storage.wgsl"),
+        "\n",
+        include_str!("common.wgsl")
+    ),
     "\n",
     include_str!("lut.wgsl"),
     "\n",
@@ -363,7 +367,11 @@ fn prepare_diffuse(
         label: Some("atmosphere diffuse hemisphere integration"),
         source: wgpu::ShaderSource::Wgsl(
             concat!(
-                include_str!("common.wgsl"),
+                concat!(
+                    include_str!("storage.wgsl"),
+                    "\n",
+                    include_str!("common.wgsl")
+                ),
                 "\n",
                 include_str!("irradiance.wgsl"),
                 "\n",
@@ -443,7 +451,11 @@ fn prepare_aerial(
         label: Some("atmosphere aerial integration"),
         source: wgpu::ShaderSource::Wgsl(
             concat!(
-                include_str!("common.wgsl"),
+                concat!(
+                    include_str!("storage.wgsl"),
+                    "\n",
+                    include_str!("common.wgsl")
+                ),
                 "\n",
                 include_str!("aerial.wgsl")
             )
@@ -635,7 +647,16 @@ fn prepare_sky(
     let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
         label: Some("atmosphere sky"),
         source: wgpu::ShaderSource::Wgsl(
-            concat!(include_str!("common.wgsl"), "\n", include_str!("sky.wgsl")).into(),
+            concat!(
+                concat!(
+                    include_str!("storage.wgsl"),
+                    "\n",
+                    include_str!("common.wgsl")
+                ),
+                "\n",
+                include_str!("sky.wgsl")
+            )
+            .into(),
         ),
     });
     let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {

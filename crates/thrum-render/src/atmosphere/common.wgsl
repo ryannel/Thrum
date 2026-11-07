@@ -17,7 +17,6 @@ const H: f32 = 100000.0;
 // isotropic multiple-scattering/ground-feedback approximation; recheck on change.
 // Aerial RGB uses the same Sky gain: L<3.632 encodes below 3720. T stays unscaled.
 const MULTIPLE_LUT_GAIN: f32 = 65536.0;
-const SKY_LUT_GAIN: f32 = 1024.0;
 const GROUND_IRRADIANCE_GAIN: f32 = 1024.0;
 const GROUND_SUN_ENTRIES: u32 = 128u;
 const GROUND_MU_SAMPLES: u32 = 16u;
@@ -71,8 +70,15 @@ fn ground_distance(h: f32, mu: f32) -> f32 {
     let c = h*(2.0*R+h);
     return c/max(0.001,-b+sqrt(max(0.0,b*b-c)));
 }
-fn trans_uv(h: f32, mu: f32) -> vec2<f32> {
+fn trans_uv(height: f32, mu: f32, size: vec2<u32>) -> vec2<f32> {
     let cap = sqrt(H*(2.0*R+H));
+    // Below the first physical producer row, both coordinates must describe
+    // that same row. Clamping only v previously kept true-height u, sampling
+    // a different ray. The near-ground GPU/CPU regression bounds the remaining
+    // first-row altitude approximation without changing the producer grid.
+    let first_rho=cap*0.5/f32(size.y);
+    let first_h=first_rho*first_rho/(sqrt(R*R+first_rho*first_rho)+R);
+    let h=max(height,first_h);
     let rho = sqrt(max(0.0,h*(2.0*R+h)));
     let d = top_distance(h,mu);
     return clamp(vec2((d-(H-h))/max(0.001,rho+cap-(H-h)),rho/cap),vec2(0.0),vec2(1.0));

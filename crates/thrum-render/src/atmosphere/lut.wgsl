@@ -8,7 +8,7 @@ fn sun_transmittance(p: vec3<f32>, sun: vec3<f32>) -> vec3<f32> {
     let up = normalize(p+vec3(0.0,R,0.0));
     let mu = dot(up,sun);
     if blocked(h,mu) { return vec3(0.0); }
-    return textureSampleLevel(transmittance,lut_sampler,trans_uv(h,mu),0.0).rgb;
+    return textureSampleLevel(transmittance,lut_sampler,trans_uv(h,mu,textureDimensions(transmittance)),0.0).rgb;
 }
 @compute @workgroup_size(8,8)
 fn transmittance_main(@builtin(global_invocation_id) id: vec3<u32>) {

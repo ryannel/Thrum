@@ -28,5 +28,5 @@ fn aerial_colour(colour: vec3<f32>, world_position: vec3<f32>, screen_position: 
         textureSampleLevel(aerial_transmittance, aerial_sampler, uv, i32(high), 0.0).rgb,
         blend);
     // Decode the same 1024 RGB storage gain as the Sky before applying Sun once.
-    return transmission * colour + scatter * (aerial_frame.sun_lux.w / 1024.0) * aerial_frame.colour_pre_exposure.rgb;
+    return transmission * colour + scatter * (aerial_frame.sun_lux.w / SKY_LUT_GAIN) * aerial_frame.colour_pre_exposure.rgb;
 }

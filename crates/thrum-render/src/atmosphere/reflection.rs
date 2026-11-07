@@ -61,7 +61,11 @@ impl ReflectionPrepared {
             "reflection_main",
             format!(
                 "{constants}\n{}\n{}\n{}",
-                include_str!("common.wgsl"),
+                concat!(
+                    include_str!("storage.wgsl"),
+                    "\n",
+                    include_str!("common.wgsl")
+                ),
                 include_str!("brdf.wgsl"),
                 include_str!("reflection.wgsl")
             ),

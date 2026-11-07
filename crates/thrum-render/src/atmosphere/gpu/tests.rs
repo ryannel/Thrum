@@ -2,7 +2,9 @@ mod aerial;
 mod diffuse;
 mod ground;
 mod mapping;
+mod multiple_interpolation;
 mod reference;
+mod transmittance;
 
 #[test]
 fn encoded_constant_sky_integrates_in_physical_illuminance_units() {

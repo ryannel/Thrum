@@ -23,7 +23,7 @@ struct SkyOutput { @location(0) colour: vec4<f32>, @location(1) motion: vec2<f32
     let disk=smoothstep(cos(angular_radius+pixel_radius),cos(max(0.0,angular_radius-pixel_radius)),cosine);
     let h=atmosphere.camera_altitude.w;
     if !blocked(h,direction.y) {
-        let trans=textureSampleLevel(transmittance,lut_sampler,trans_uv(h,direction.y),0.0).rgb;
+        let trans=textureSampleLevel(transmittance,lut_sampler,trans_uv(h,direction.y,textureDimensions(transmittance)),0.0).rgb;
         radiance+=disk*trans/(PI*sin(angular_radius)*sin(angular_radius));
     }
     let stored=radiance*atmosphere.sun_lux.w*atmosphere.colour_pre_exposure.rgb*atmosphere.colour_pre_exposure.w;
