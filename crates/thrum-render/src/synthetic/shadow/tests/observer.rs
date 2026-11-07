@@ -62,9 +62,13 @@ pub(super) fn constant_depth_maps(
     maps
 }
 
-pub(super) fn pipeline(device: &wgpu::Device, observer: &str) -> wgpu::ComputePipeline {
+pub(super) fn pipeline(
+    device: &wgpu::Device,
+    observer: &str,
+    cells: bool,
+) -> wgpu::ComputePipeline {
     let source = format!(
-        "{}\n{}",
+        "{}\n{}\n{}",
         concat!(
             include_str!("../../../atmosphere/storage.wgsl"),
             "\n",
@@ -74,10 +78,13 @@ pub(super) fn pipeline(device: &wgpu::Device, observer: &str) -> wgpu::ComputePi
             "\n",
             include_str!("../../../synthetic.wgsl"),
             "\n",
-            include_str!("../../../synthetic/horizon_taps.wgsl"),
-            "\n",
             include_str!("../../../synthetic_plain.wgsl")
         ),
+        if cells {
+            include_str!("../../../synthetic/horizon_cells.wgsl")
+        } else {
+            include_str!("../../../synthetic/horizon_taps.wgsl")
+        },
         observer
     );
     let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
@@ -99,7 +106,7 @@ pub(super) fn read_visibility(
     queue: &wgpu::Queue,
     pipeline: &wgpu::ComputePipeline,
     samples: &[f32; SAMPLE_FLOATS],
-    maps: &wgpu::TextureView,
+    maps: (&wgpu::TextureView, Option<&wgpu::TextureView>),
     direction: [f32; 4],
     count: u32,
 ) -> Vec<f32> {
@@ -108,19 +115,26 @@ pub(super) fn read_visibility(
         contents: samples.map(f32::to_le_bytes).as_flattened(),
         usage: wgpu::BufferUsages::UNIFORM,
     });
+    let mut entries = vec![
+        wgpu::BindGroupEntry {
+            binding: 2,
+            resource: uniform.as_entire_binding(),
+        },
+        wgpu::BindGroupEntry {
+            binding: 3,
+            resource: wgpu::BindingResource::TextureView(maps.0),
+        },
+    ];
+    if let Some(parents) = maps.1 {
+        entries.push(wgpu::BindGroupEntry {
+            binding: 6,
+            resource: wgpu::BindingResource::TextureView(parents),
+        });
+    }
     let shadow = device.create_bind_group(&wgpu::BindGroupDescriptor {
         label: None,
         layout: &pipeline.get_bind_group_layout(0),
-        entries: &[
-            wgpu::BindGroupEntry {
-                binding: 2,
-                resource: uniform.as_entire_binding(),
-            },
-            wgpu::BindGroupEntry {
-                binding: 3,
-                resource: wgpu::BindingResource::TextureView(maps),
-            },
-        ],
+        entries: &entries,
     });
     let mut light_bytes = vec![0; super::super::super::LIGHT_BYTES];
     light_bytes[..16].copy_from_slice(direction.map(f32::to_le_bytes).as_flattened());

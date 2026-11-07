@@ -45,3 +45,31 @@ Keep conservative parent bounds, separate the leaf estimate and prove
 the corrected shape in the real raster. Also bound near-cardinal
 reciprocals. Restrict the experiment to an explicit route before
 promotion and prove Chrome, camera snaps and moving casters there.
+
+## Receiver-plane revision
+
+The Metal raster regression draws a 5% uphill plane and a one-cell-wide
+crest 12.54 km away. The original shader reported essentially zero disk
+on both rays. The correction keeps conservative parent bounds and uses
+the geometric receiver plane only where the cell centre's height agrees.
+The plane then sees the whole disk and the crest still hides it. All 13
+Sun shadow tests pass. Near-stationary grid directions also avoid an
+overflowing reciprocal and use a defined cell at a boundary.
+
+The 97-frame Metal sweep retains the same 61.16-code worst contrast
+and the original leak stays at the no-direct-light control. The earliest
+views retain some dark marks on the right slope. In the paired cooked
+route at 17.6917 h (1-minute load 21.52–22.26), GPU pass-sum medians
+are 4.92–5.10 ms for taps and 6.03–6.05 ms for cells. Each frame has
+an observed cooked submission and a complete GPU timestamp batch.
+
+The corrected full check passes the discard case but fails fetched
+versus mapped image parity. Two of three isolated workspace-binary
+candidate reruns differ at the same eight pixels, with one above the
+test's tolerance: x211/y249 changes from RGB (57,17,22) to (41,10,18).
+The sampled baseline rerun is byte-identical. The exact captures and
+logs are in the main checkout's `tmp/g3s-sunset-lip/graph/fetch-*`.
+Do not relax the parity check. Compare taps and cells in one instrumented
+binary, and capture visibility and frame inputs at the mismatch before
+assigning the cause. Keep the horizon experiment separate from the
+star graph integration.
