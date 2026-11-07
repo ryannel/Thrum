@@ -79,6 +79,11 @@ fn controlled_x(host: &mut ThreadedFrameHost) -> f64 {
 
 #[test]
 fn destroyed_gpu_replacement_keeps_paused_world_camera_sky_and_held_input() {
+    prove_paused_recovery(0.76, false);
+    prove_paused_recovery(0.0, true);
+}
+
+fn prove_paused_recovery(phase: f32, midnight: bool) {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
         let old = Gpu::new(&instance, 1).await;
@@ -122,10 +127,25 @@ fn destroyed_gpu_replacement_keeps_paused_world_camera_sky_and_held_input() {
         // Detached preparation must not freeze the old presentation policy.
         host.set_camera_yaw(0.13)
             .expect("camera during preparation");
-        host.set_time_of_day(0.76)
-            .expect("twilight during preparation");
+        host.set_time_of_day(phase)
+            .expect("solar edit during preparation");
         let (expected, prior) = draw(&mut host, origin, &old.device, &old.queue, &old.target);
         assert_ne!(before, expected);
+        if midnight {
+            // The fixture's local lights and grid can fill the left of the
+            // image. The upper right looks above the geometry into the sky.
+            let mut sky = expected
+                .as_chunks::<{ 640 * 4 }>()
+                .0
+                .iter()
+                .take(32)
+                .flat_map(|row| row[560 * 4..].as_chunks::<4>().0)
+                .flat_map(|pixel| &pixel[..3]);
+            assert!(
+                sky.all(|channel| (40..90).contains(channel)),
+                "the upper-right patch must be dim, nonblack midnight sky"
+            );
+        }
         let before_x = controlled_x(&mut host);
         let view = old
             .target
@@ -223,9 +243,14 @@ fn destroyed_gpu_replacement_keeps_paused_world_camera_sky_and_held_input() {
             controlled_x(&mut host) > before_x,
             "held input reached the controlled actor after GPU replacement"
         );
-        retain("recovery-before", &expected);
-        retain("recovery-after", &restored);
-        retain("recovery-resumed", &moved);
+        let label = if midnight {
+            "recovery-midnight"
+        } else {
+            "recovery"
+        };
+        retain(&format!("{label}-before"), &expected);
+        retain(&format!("{label}-after"), &restored);
+        retain(&format!("{label}-resumed"), &moved);
     });
 }
 
