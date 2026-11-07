@@ -1216,7 +1216,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         sample.surface_presented = surface_presented;
         sample.submission_order = self.next_submission_order;
         self.next_submission_order = self.next_submission_order.wrapping_add(1);
-        slot.timing_layout = SceneTimingLayout::from(&self.prepared);
+        slot.timing_layout = SceneTimingLayout::from((&self.prepared, &slot.target));
         slot.state = SlotState::Rendering(sample);
         report.submitted = true;
         report.surface_presented = surface_presented;

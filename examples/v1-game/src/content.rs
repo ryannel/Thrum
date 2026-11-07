@@ -5,13 +5,16 @@ use std::sync::{Arc, Mutex};
 use crate::FrameHost;
 use thrum_asset_gpu::CookedStats;
 
-/// The host setup selected by `THRUM_SCENE=field` and `THRUM_CULLING=direct|frustum|occlusion`.
+/// Select the host for `THRUM_SCENE=valley|diagnostic|field` and
+/// `THRUM_CULLING=direct|frustum|occlusion`. The valley prepares its star field
+/// unless `THRUM_STARS=off`.
 /// Without `THRUM_CULLING`, the field uses Frustum (a measured win along its
 /// flythrough) and the fully visible grid keeps Direct.
 /// # Errors
 /// Refuses an unknown culling mode.
 pub fn selected_setup() -> Result<crate::GameSetup, String> {
-    let content = if std::env::var("THRUM_SCENE").as_deref() == Ok("field") {
+    let scene = std::env::var("THRUM_SCENE");
+    let content = if scene.as_deref() == Ok("field") {
         crate::GameContent::Field
     } else {
         crate::GameContent::Grid
@@ -30,6 +33,8 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
     Ok(crate::GameSetup {
         content,
         camera_culling,
+        valley_stars: scene.as_deref() == Ok("valley")
+            && std::env::var("THRUM_STARS").as_deref() != Ok("off"),
     })
 }
 

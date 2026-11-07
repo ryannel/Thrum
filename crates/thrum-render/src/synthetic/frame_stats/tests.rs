@@ -3,6 +3,7 @@ use crate::timing::PassTiming;
 
 const TRANSFORMS: SceneTimingLayout = SceneTimingLayout {
     transforms: true,
+    star_pass: None,
     shadows: false,
     clusters: false,
     culling: culling_passes(CullMode::Direct),
@@ -170,6 +171,20 @@ fn occlusion_passes_are_required_once_each_and_counted_in_forward() {
     // Exact to the layout: refused under Frustum or Direct, with one missing, or with a repeat.
     assert!(pass_durations(&passes, false, CULLED).is_none());
     assert!(pass_durations(&passes, false, TRANSFORMS).is_none());
+    let mut night = passes.clone();
+    night.push(PassTiming {
+        name: super::super::stars::PASS_NAME.into(),
+        nanoseconds: 3.0,
+    });
+    let night_layout = SceneTimingLayout {
+        star_pass: Some(super::super::stars::PASS_NAME),
+        ..OCCLUDED
+    };
+    assert!(pass_durations(&night, false, OCCLUDED).is_none());
+    assert!(pass_durations(&passes, false, night_layout).is_none());
+    let (values, _, _) = pass_durations(&night, false, night_layout).unwrap();
+    assert_eq!(values[3], 12.0, "forward includes culling and stars");
+
     let mut missing = passes.clone();
     assert_eq!(
         missing.remove(4).name.as_ref(),

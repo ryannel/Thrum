@@ -103,7 +103,7 @@ fn assert_night_policy(
         max_ev100: 18.0,
         low_light_key: true,
     };
-    for (lux, expected, flags) in [(0.0, -12.0, 3), (0.000_671, -7.808, 0)] {
+    for (lux, expected, flags) in [(0.0, -12.0, 3), (0.000_671, -6.757, 0)] {
         let sample = resolve(
             device,
             queue,

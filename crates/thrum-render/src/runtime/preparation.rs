@@ -57,9 +57,11 @@ pub(super) async fn prepare_scene(
     prepared.set_contribution_passes(contribution_passes);
     let mut slots = Vec::with_capacity(IN_FLIGHT);
     for _ in 0..IN_FLIGHT {
+        let target = OffscreenTarget::new(capabilities.device(), &prepared, extent[0], extent[1])
+            .map_err(|error| FrameError::Gpu(format!("scene target: {error:?}")))?;
+        let timing_layout = SceneTimingLayout::from((&prepared, &target));
         slots.push(FrameSlot {
-            target: OffscreenTarget::new(capabilities.device(), &prepared, extent[0], extent[1])
-                .map_err(|error| FrameError::Gpu(format!("scene target: {error:?}")))?,
+            target,
             presentation: None,
             timings: GpuTimings::new(
                 capabilities,
@@ -67,7 +69,7 @@ pub(super) async fn prepare_scene(
                 prepared.scene_pass_count() + u32::from(surface),
             )
             .map_err(|error| FrameError::Gpu(format!("scene timings: {error:?}")))?,
-            timing_layout: SceneTimingLayout::from(&prepared),
+            timing_layout,
             render_done: Arc::new(AtomicBool::new(false)),
             state: SlotState::Free,
         });
