@@ -100,7 +100,21 @@ fn apply_params(name: &str, game: &mut SkyGame) -> Result<(), String> {
     for problem in &report.problems {
         eprintln!("  {problem}");
     }
-    Ok(())
+    every_value_applied(&path, &report)
+}
+
+/// A capture shows the file's values or none: a refused entry would silently leave its default
+/// in the picture, so it refuses the capture as a broken material does.
+fn every_value_applied(path: &Path, report: &thrum_controls::FileReport) -> Result<(), String> {
+    match report.problems.len() {
+        0 => Ok(()),
+        refused => Err(format!(
+            "parameter file {} has {refused} refused {}, so the capture would not show the file; fix {} and capture again",
+            path.display(),
+            if refused == 1 { "entry" } else { "entries" },
+            if refused == 1 { "it" } else { "them" },
+        )),
+    }
 }
 
 /// Run the game's reload once and render until it reports; a problem refuses the capture.
@@ -231,4 +245,35 @@ fn adler32(bytes: &[u8]) -> u32 {
         b %= 65_521;
     }
     (b << 16) | a
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::Path;
+
+    use thrum_controls::Controls;
+
+    use super::every_value_applied;
+
+    #[test]
+    fn a_capture_refuses_a_parameter_file_with_a_refused_entry() {
+        let mut controls = Controls::new();
+        controls
+            .slider("sun.elevation", "Sun elevation", -8.0..=60.0)
+            .add()
+            .expect("slider");
+        let path = Path::new("scene.params.json");
+        let applied = controls
+            .apply_file(r#"{"sun.elevation": 30}"#)
+            .expect("json");
+        assert_eq!(every_value_applied(path, &applied), Ok(()));
+        let refused = controls
+            .apply_file(r#"{"sun.elevation": 75}"#)
+            .expect("json");
+        let error = every_value_applied(path, &refused).expect_err("out of range");
+        assert!(
+            error.contains("scene.params.json has 1 refused entry"),
+            "{error}"
+        );
+    }
 }

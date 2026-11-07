@@ -1,7 +1,8 @@
 # Building a game with this engine
 
-Creator guide, updated 5 November 2026. [G6](../BUILD-PLAN.md#active-gate-order-and-budgets) builds and tests its
-first slice; nothing here is a working SDK, measured usability result or settled syntax until G6 lands. The
+Creator guide, updated 7 November 2026. [G6](../BUILD-PLAN.md#active-gate-order-and-budgets) built and tested its
+first slice; [What G6 built](#what-g6-built) says what runs today. Everything else here is design intent, not a
+working SDK or settled syntax. The
 [scenario](SCENARIO-WALKTHROUGHS.md), [first-use](FIRST-USE-WALKTHROUGHS.md) and [from-scratch](FROM-SCRATCH-WALKTHROUGHS.md)
 walkthroughs are the paper traces behind it; [architecture decisions](ARCHITECTURE-DECISIONS.md) select the core and
 library boundaries.
@@ -26,6 +27,41 @@ G6's budgets in the build plan are the first bar:
   fixed or recorded.
 
 Every extra concept or step on this path needs a scenario that benefits from it.
+
+## What G6 built
+
+The [evidence](../evidence/integration/G6-CREATOR-EXPERIENCE-2026-11-07.md) records the checks. Against the
+budgets above:
+
+- **One command.** `./dev starter`, or `./dev scene <folder>` for a copy, cooks the scene's assets, watches them and
+  opens a lit scene. It has the physically based sky, a cooked mesh on lit ground, a camera and sliders. The
+  [starter](../../examples/starter/README.md) is 42 game lines on the sky kit (`thrum_app::sky`), with no engine
+  game types. This runs on the Mac only; the browser runs the V1 game's page, not the starter.
+- **Diagnostics.** Each of these names the object, the cause and a next step:
+  - control declarations and parameter files, with nearest-key suggestions;
+  - mesh placements;
+  - scene folders, before the lockfile changes;
+  - material compiles, at the hook's file, line and column;
+  - a missing asset store;
+  - a window the display never drew.
+- **Hot reload.**
+  - Asset edits are re-cooked and drawn live.
+  - Parameter files and the material hook reload explicitly: `L` on the Mac; on the page, a button and `?params`.
+    The material is on the development page only.
+  - Code changes rebuild and restart.
+  - The material hook changes surface factors only and runs on every placement. It cannot yet read controls or
+    know which placement it shades.
+- **Controls.** Typed sliders, toggles, text and readouts drive an AppKit panel and the browser page from one
+  model. Readouts of engine fields work in both. Overlays drawn into the frame, starting with exposure zones, wait
+  on the shared display shader's tone-scale seam.
+- **A fresh agent.** Three runs, each by an agent that read only the creator docs:
+  - a stone circle in 114 lines;
+  - a sunset in 76;
+  - a lighthouse with its own generated mesh and material in 74.
+
+  The last two used only the sky kit and `Config`. Their friction was fixed or recorded; the evidence lists which.
+  Live reload still needs a key press in a visible window, so an agent on a locked screen reviews through the
+  offscreen capture.
 
 ## Four things to understand
 
@@ -138,7 +174,8 @@ Make the current state clear: editing, preparing an update, running the last adm
 play session never appears to contain newly rejected code. Human and agent diagnostics share structured causes and
 source references while the human message stays short. Prerequisite, source, content, compatibility, build and device
 failures need different remedies; a generic “validation failed” is insufficient. G6 measures this with the fresh-agent
-friction log.
+friction log; the [evidence](../evidence/integration/G6-CREATOR-EXPERIENCE-2026-11-07.md#slice-4-one-command-starter-and-fresh-agent-scenes)
+records three runs.
 
 ## Source and play semantics
 
@@ -172,5 +209,5 @@ The [AI development design](AI-DEVELOPMENT.md) applies the same loop to agents m
 code. Game authors use the public SDK without inheriting the engine's internal design workflow. Preserve the hard
 invariants (state authority, source identity, readiness, resource lifetime and explicit approximations) inside the
 engine and its tools. A simple front end must not conceal an unimplemented mechanism or pretend incompatible models
-are interchangeable. G6's fresh-agent run, and later people using the engine, decide whether it is actually pleasant
-and fast.
+are interchangeable. G6's fresh-agent runs are a first measure; people using the engine decide whether it is
+actually pleasant and fast.
