@@ -541,7 +541,11 @@ pub struct GameRuntime<P, G: TickGame<P>> {
     edits: Vec<Edit<G::Candidate>>,
     direct_dirty: DirectDirty,
     query_exclusions: QueryExclusions,
+    /// Transaction scratch for unrecorded ticks; every step clears it.
     abort_undo: WorldUndo,
+    /// Final-tick preimages a deferred engine publication still needs. Kept
+    /// apart from the transaction scratch so a refused step cannot empty it.
+    deferred_undo: WorldUndo,
     structural_journal: Vec<StructuralChange>,
 }
 
@@ -871,6 +875,7 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
             })
             .map_err(|_| RuntimeError::RuntimeExhausted)?;
         let abort_undo = world.empty_undo();
+        let deferred_undo = world.empty_undo();
         Ok(Self {
             world,
             schedule,
@@ -895,6 +900,7 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
             direct_dirty: DirectDirty::new(component_count, capacity),
             query_exclusions: QueryExclusions::new(capacity),
             abort_undo,
+            deferred_undo,
             structural_journal: Vec::with_capacity(128),
         })
     }
@@ -1192,7 +1198,7 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
                         self.tick,
                         self.timeline,
                         (self.publication_state == PublicationState::SkippedWithUndo)
-                            .then_some(&self.abort_undo),
+                            .then_some(&self.deferred_undo),
                         &self.structural_journal,
                     );
                 } else {
@@ -1339,8 +1345,11 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
         if publication == PublicationMode::Defer || !self.pages.can_capture() {
             self.publication_state = PublicationState::Skipped;
             if self.engine_capture.is_some() {
-                if let Some(record) = undo {
-                    self.abort_undo.copy_from(&record.world);
+                match undo {
+                    Some(record) => self.deferred_undo.copy_from(&record.world),
+                    // The unrecorded tick's preimages move out of the
+                    // transaction scratch, which the next step clears.
+                    None => std::mem::swap(&mut self.abort_undo, &mut self.deferred_undo),
                 }
                 self.publication_state = PublicationState::SkippedWithUndo;
             }
