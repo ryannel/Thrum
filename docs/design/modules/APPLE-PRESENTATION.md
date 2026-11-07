@@ -8,8 +8,9 @@
 [C12](../CONTRACTS.md#c12-budgets-evidence-and-acceptance--t2-with-all-owners) ·
 [Render spec](../RENDER-SPEC.md) · [Apple tile (G3t)](APPLE-TILE.md) · [Milestones](APPLE-PRESENTATION-PLAN.md)
 
-Revision 2 for Thrum Core review, 7 November 2026. It answers the three independent reviews of revision 1
-(`86ec3b6b`) recorded in the plan. Interface and path names below are proposals.
+Revision 3 for Thrum Core review, 7 November 2026. It answers the three independent reviews of revision 1
+(`86ec3b6b`) and the re-reviews of revision 2 (`c507ad3d`) recorded in the plan. Interface and path names below are
+proposals.
 
 ## Purpose and scope
 
@@ -108,19 +109,31 @@ upscalers.
 **Motion everywhere, including the sky.**
 - Objects already write motion from current and previous interpolated transforms. Motion moves from
   `@builtin(position)` (which becomes jittered) to an unjittered current clip position.
-- The sky, Sun disk and stars currently write zero motion (`atmosphere/sky.wgsl:32`). They gain *motion at infinity*:
-  the view direction projected with the previous unjittered view-projection, plus the retained celestial or solar
-  phase delta. That follows ATMOSPHERE's rule: "reproject with retained view and celestial phase or mark star history
-  reactive on cuts and phase edits".
+- The sky, Sun disk and stars currently write zero motion (`atmosphere/sky.wgsl:32`). They gain *motion at infinity*,
+  following ATMOSPHERE's rule: "reproject with retained view and celestial phase or mark star history reactive on cuts
+  and phase edits".
+  - *Sky gradient:* camera-only motion. The view direction is projected with the previous unjittered view-projection.
+    Its change with solar phase is not rigid motion, so a phase edit, such as a time-of-day scrub step, marks it
+    reactive, and steady solar motion is left to history clipping.
+  - *Sun disk:* camera motion plus the retained solar phase delta, which is rigid for the disk.
+  - *Stars:* camera motion plus the retained sidereal phase delta. The star pipeline blends additively on colour only.
+    Its motion target uses blending disabled (replace), so star pixels carry their own motion, not the sum with the
+    sky's (seam 4).
 - Stars and the Sun are reactive only on cuts and phase edits, never permanently.
 
 **Disocclusion.**
 - *Invalid history.* Where an object's history is invalid (spawned, teleported, identity changed;
   `synthetic.wgsl:556-558`), forward writes reactive 1 instead of relying on a fabricated zero vector, as C07
   requires.
-- *TAAU.* It also rejects history by depth. It keeps the previous frame's linear depth as a render-scale `R32Float`
-  history and compares the reprojected depth with the current depth under a relative threshold. FSR2 uses the same
-  depth test.
+- *TAAU.* It also rejects history by depth, comparing like with like:
+  - it keeps the previous frame's linear view depth as a render-scale `R32Float` history, together with the previous
+    render subrectangle;
+  - it transforms each current pixel's world position into the *previous* view and compares that previous-view depth
+    with the stored depth sampled at the reprojected location (addressed through the previous subrectangle), under a
+    relative threshold.
+
+  A moving camera therefore does not cause false rejection on near geometry. FSR2 reaches the same result by
+  reconstructing previous depth into the current grid.
 - *MetalFX.* It does its own disocclusion from depth and motion, and receives the same reactive mask.
 
 **Temporal acceptance with two frames in flight.**
@@ -148,10 +161,13 @@ upscalers.
 - Scene HDR is stored multiplied by a per-frame storage scale p (`exposure.wgsl:52-76`), which moves with time of day.
 - *TAAU* works in the storage domain. It retains p with each history sample, as C07 requires, and rescales history by
   p_current/p_previous on read.
-- *MetalFX* receives `preExposure` = p each frame, so its history is held in a p-independent domain. The 1×1
-  `exposureTexture` carries the tone exposure the frame's tone mapping uses.
-- The SDK header describes `preExposure` for a fixed pre-multiplier, so M8 checks per-frame use with a time-scrub
-  sequence. If it lags, a per-frame normalising multiply moves into the reconstruction input instead.
+- *MetalFX:* p is resolved on the GPU in the same frame, and the CPU learns it only 1–2 frames later, with no readback
+  allowed by C07. So per-frame `preExposure` cannot be set from the CPU, and stays 1.
+  - Instead, the GPU exposure resolve writes the 1×1 `exposureTexture` as the tone exposure divided by p. Colour times
+    exposure is then the tone-mapper input on every frame, which is the luminance domain MetalFX weights with.
+  - D8.3's time-scrub sequence checks whether MetalFX's internal history tracks this.
+  - If it lags, a costed fallback runs: a normalising pre-pass divides colour by p into the reconstruction input. It
+    reads 8 B and writes 8 B per render pixel, about 15 MB at s = 0.67 and an estimated 0.05–0.1 ms on M3 Max.
 
 **Portable TAAU.** A compute pass following Karis 2014 and the FSR2 inputs:
 - front-most 3×3 velocity dilation;
@@ -177,7 +193,7 @@ current display shader is a pre-AA diagnostic. So TAAU at scale 1.0 becomes the 
 - Graph allocation uses the provider's declared texture usages: shader-read inputs; an output with storage, render
   attachment and sampling.
 - Per frame it sets `inputContentWidth/Height`, the jitter offset (pixel centre minus sample, ±0.5; the Y sign is
-  verified on device), `motionVectorScale` 1, `preExposure`, and `reset`.
+  verified on device), `motionVectorScale` 1, and `reset`. The exposure texture is GPU-written each frame.
 - `isJitteredMotionVectorsEnabled` stays off, because Thrum's motion is unjittered.
 - The scaler is created per output extent in a generation build.
 
@@ -207,6 +223,23 @@ current display shader is a pre-AA diagnostic. So TAAU at scale 1.0 becomes the 
 - "During play" in checks means the render thread's steady frames. Transition-phase creations are counted separately
   by thread.
 - Device loss uses the existing recovery, then the same build.
+- *Surface reconfigure during a drag.* Today `render_actor.rs:244-257` reconfigures only after every in-flight frame
+  completes, so it skips frames on each resize step. G4 changes the rule, with G3b owner review:
+  - reconfigure when no `SurfaceTexture` is held, not when GPU work is pending;
+  - coalesce to at most one reconfigure per display tick.
+
+  In-flight GPU work that targets an already-presented drawable is unaffected on Metal.
+- *Off-thread build.* This needs `PreparedSynthetic` split in two:
+  - an immutable prepared part (pipelines, layouts, samplers), shared behind an `Arc`, which the builder reads;
+  - per-generation state (targets, per-slot frame buffers, bind groups, providers), which the builder creates.
+
+  The new generation's frame buffers start empty and take one full upload on the first frame after the switch.
+  A newer extent cancels a running build, whose result is dropped. Device loss during a build drops the build and takes
+  the recovery path.
+- *Governor during transitions.* The governor freezes from build start to the first frame after the switch, and
+  discards timing samples that span the switch.
+- *Occlusion.* A fully occluded window stops the display link and so stops encoding. Submit-without-present covers only
+  transient acquisition failures, so no GPU time goes to frames nobody sees.
 
 **EDR.**
 - *Surface.* `Rgba16Float` with `SurfaceColorSpace::ExtendedSrgbLinear`, which keeps RENDER-SPEC's Rec.709/D65 working
@@ -221,7 +254,8 @@ current display shader is a pre-AA diagnostic. So TAAU at scale 1.0 becomes the 
   stays configured on every display. On an SDR display H is 1 and the image equals the SDR path. A display move is
   therefore an H change and needs no reconfigure. The 8-bit SDR surface is chosen only at a generation build where EDR
   is unavailable: the iOS simulator, a forced setting, or no EDR display. That costs a 2× drawable on SDR displays,
-  which M11 measures.
+  which M11 measures. A session that started on the 8-bit surface switches to the EDR surface through a generation
+  transition when the window reaches a display with potential headroom above 1.
 - *Tone.* The present pass maps exposed scene-linear colour to [0, H], where 1.0 is SDR reference white.
   - Below a shoulder it equals the SDR `NeutralHighlights` curve in linear terms.
   - Highlights compress toward H.
@@ -240,8 +274,9 @@ current display shader is a pre-AA diagnostic. So TAAU at scale 1.0 becomes the 
 - *Budget.* The display interval times a target headroom of 0.85.
 - *Inputs:*
   - resolved GPU time, from pass timestamps plus segment times;
-  - missed display ticks: the frame host counts each display-link tick at which no new frame reached presentation.
-    wgpu hides the drawable's presented time;
+  - display ticks without a present: the frame host counts each display-link tick on which no `present()` call was
+    made. That catches render-side stalls and slot backpressure. It does not catch compositor-side drops, because
+    wgpu hides the drawable's presented time; that gap is recorded;
   - display-link present intervals;
   - render-owner CPU time;
   - thermal state from `ProcessInfo.thermalState` notifications, read by the platform.
@@ -250,8 +285,14 @@ current display shader is a pre-AA diagnostic. So TAAU at scale 1.0 becomes the 
 - *Panic.* A drop after 3 consecutive over-budget frames, with stepwise recovery.
 - *Outputs.* A scale from prepared steps {1.0, 0.85, 0.75, 0.67, 0.5}, an effect tier within the recipe, and effect
   cadence, such as aerial LUT updates every N frames.
+- *Invalidation per output:*
+  - scale changes invalidate nothing (output-extent history keys);
+  - a cadence change keeps effect histories but marks their age;
+  - a tier change resets the history of each effect whose algorithm the tier changes, as C07 requires, and no
+    others.
 - Every output is prepared, and none touches simulation state or rate. Timing samples arrive about 2 frames late, and
-  the governor's window absorbs that.
+  the governor's window absorbs that. The tick count is a render-side proxy for missed presentation, and evidence labels
+  it so.
 
 **Archives and cold start.**
 - G4's native objects are MetalFX scalers. They take no binary archive, and their cost is synchronous creation in
@@ -344,7 +385,8 @@ pixels of the window, which is why the governor exists before the paired proof.
   translating-object test against TAAU and the reference; the exposure-tool checkerboard; a jitter-sign check.
 - **Sky motion at infinity is wrong.** Early sign: stars smear or shimmer under pans. Guard: a held-camera star
   sequence and a pan sequence.
-- **Per-frame `preExposure` is not honoured.** Early sign: lag under a time scrub. Fallback: input normalisation.
+- **MetalFX history does not track the GPU-written exposure.** Early sign: lag under a time scrub. Fallback: the
+  costed normalising pre-pass.
 - **Transitions stall the render thread.** Early sign: render-thread frame time spikes during a resize. Guard:
   counters by thread; a resize sequence.
 - **The governor oscillates or hides regressions.** Guard: hysteresis plus a minimum period. Tripwires compare at a
@@ -370,6 +412,10 @@ Mac rows standing in for iPhone are labelled proxy. iPhone EDR and timing are ow
 1. **Temporal acceptance (RENDER-SPEC:403-409, `history.rs`, C07).** Submission-order acceptance on one queue. Encoded
    frames are always submitted (G3t seam 3). Provider reset on failure or generation change. `HistoryKey.extent` is
    the output extent. Governor value commits do not bump the profile epoch.
+   - A GPU execution error surfaces only at completion, after up to `IN_FLIGHT = 2` later frames may have read the
+     affected history. Such an error takes the device-loss path, which rebuilds the generation and resets every
+     history.
+   - The contamination is bounded to those frames and accepted explicitly.
 2. **RENDER-SPEC.**
    - An admitted temporal AA profile, with TAAU at 1.0 as its AA.
    - The EDR headroom transform and its H = 1 identity. EDR nits policy is currently unspecified.
@@ -398,4 +444,4 @@ Mac rows standing in for iPhone are labelled proxy. iPhone EDR and timing are ow
 - Does tile traffic follow the drawn subrectangle at reduced scale? Settled by G3t M12's two-scale rows, where M0
   proved a capture method.
 - Is the TAAU 1080p estimate right? Settled by M3.
-- Is per-frame `preExposure` honoured by MetalFX? Settled by M8.
+- Does MetalFX's history track a GPU-written exposure texture under a changing storage scale? Settled by M8.

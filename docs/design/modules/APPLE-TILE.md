@@ -9,8 +9,9 @@
 [C12](../CONTRACTS.md#c12-budgets-evidence-and-acceptance--t2-with-all-owners) ·
 [Milestones](APPLE-TILE-PLAN.md) · [Presentation (G4)](APPLE-PRESENTATION.md)
 
-Revision 2 for Thrum Core review, 7 November 2026. It answers the three independent reviews of revision 1
-(`86ec3b6b`) recorded in the plan. Interface and path names below are proposals.
+Revision 3 for Thrum Core review, 7 November 2026. It answers the three independent reviews of revision 1
+(`86ec3b6b`) and the re-reviews of revision 2 (`c507ad3d`) recorded in the plan. Interface and path names below are
+proposals.
 
 ## Purpose and scope
 
@@ -45,7 +46,7 @@ Deferred:
 - tile shaders, imageblocks and programmable blending, which wgpu cannot express;
 - Metal 4 command objects;
 - Android tile;
-- quantised instance rows below 112 B (only if M12 shows instance bandwidth matters);
+- quantised instance rows below 80 B (only if M12 shows instance bandwidth matters);
 - the cooked-placement 80 B instance layout in `thrum-asset-gpu`, which keeps its own path.
 
 ## Cues
@@ -134,7 +135,7 @@ visible in the report until G4 gives motion a reader.
 | Direct output | One graph per generation with the surface imported late. Execution is split into a pre-acquire phase and a post-acquire phase. Tone and display encode move into the present pass, so the `Rgba8Unorm` output disappears. | 1 | Graph-declared bytes fall by the output write and read; same image |
 | Shared targets | One transient set per generation instead of per slot. One queue with tracked hazards orders slot N+1 after slot N. | 1 | Transient footprint halves; held-submission test |
 | Mapped per-slot upload rings | Per-slot frame buffers and bind groups on both recipes. On Apple they are backed by persistently mapped shared buffers. | 1 + 2 | Zero `write_buffer` for the per-frame classes on Apple tile; upload CPU recorded |
-| Compact instances | 192 B → 112 B: current 3×4 affine, previous-sim-sample 3×4 affine, ids. The normal matrix is derived in the shader. Both recipes. | 1 | Same image; instance bytes ×0.58 |
+| Compact instances | 192 B → 80 B: current 3×4 affine (48 B), previous-simulation-sample translation (12 B), ids (16 B), padding (4 B). Today's shaders interpolate only the previous translation by `presentation_alpha` (`synthetic.wgsl:124` and three others), so nothing read is lost. The normal matrix is derived in the shader. Both recipes. | 1 | Same image; instance bytes ×0.42 |
 | GPU light binning | Deterministic GPU build of the full 32-per-cluster CSR: one invocation per cluster scans lights in index order, keeps the lowest-index 32 and counts overflow | 1 | Per-cluster equality with the CPU oracle |
 | Mirrored ranges | G3c's visibility compute writes two indirect argument records, normal and mirrored, drawn with opposite cull faces | 1 | Same image; +1 indirect draw |
 | Prepared native features | `NativeFeatures` record and native-segment handoff (below) | 3 | Stateful stand-in inside the one submit |
@@ -171,7 +172,9 @@ visible in the report until G4 gives motion a reader.
 - *Executor and runtime (`thrum-render::runtime`).* The one owner of queue, submission, completion and retirement.
   - A frame is an ordered encoder list (wgpu and native), submitted once.
   - Frames encoded before acquisition are never discarded: if acquisition fails, the frame is submitted without its
-    present phase, so every history-producing pass that was encoded also executes.
+    present phase, so every history-producing pass that was encoded also executes. On iOS this applies only while the
+    app is in the foreground. Background GPU submission is forbidden there, so an encoded frame found after
+    suspension is dropped and history is reset instead, which is not treated as device loss.
   - `FrameSample` timing becomes a list keyed by graph pass names instead of the fixed 11-slot array.
 - *`apple_tile` backend (`thrum-render/src/apple_tile/`, `cfg(target_vendor = "apple")`).* Owns:
   - the shared-storage rings;
@@ -190,14 +193,15 @@ cluster-bounds buffers are single buffers that both slots share, ordered by `que
 - Portable fills the slot buffers with `write_buffer`.
 - Apple tile writes the same bytes straight into the shared buffer once the slot's `render_done` is set. A slot still
   busy at encode time takes `write_buffer` for that frame, and the fallback is counted.
-- Memory cost is one extra copy per buffer: at 10k instances × 112 B, about 1.1 MB.
+- Memory cost is one extra copy per buffer: at 10k instances × 80 B, about 0.8 MB.
 
 **Prepared native-feature handoff (consumed by G4 M8).**
 - *Generation.* Providers are created at the generation build for one device generation and recipe generation, with
   declared input and output formats, required texture usages, extents and scale range. The build runs before
   readiness, or during a transition off the render thread (G4 owns transitions).
 - *Lifetime.* A provider object and every native-touched texture live until their generation retires after GPU
-  completion. Command buffers are unretained in wgpu-hal, so retirement after completion is what keeps them valid.
+  completion. wgpu-core does not track textures touched only by raw encoding, so the generation, not the command
+  buffer, is what keeps them alive until retirement.
 - *Encode.* `encode(raw_cmd_buf, inputs, outputs, params)`, only inside a native segment, from graph textures to graph
   textures, never the drawable.
 - *State and reset.* A provider may keep internal history. It must reset when told, and the executor tells it after
@@ -252,10 +256,10 @@ Memoryless day depth saves an 8.3 MB store. Shared transients save about 33 MB o
 
 *Instances.*
 
-| Rows | 192 B rows | 112 B rows |
+| Rows | 192 B rows | 80 B rows |
 |---|---|---|
-| 10k | 1.92 MB | 1.12 MB |
-| Valley (1,500/frame) | 288 KB | 168 KB |
+| 10k | 1.92 MB | 0.80 MB |
+| Valley (1,500/frame) | 288 KB | 120 KB |
 
 *Lights.*
 - The GPU build tests 9,216 clusters × L lights, so cost is linear in L: about 0.6 M tests at L = 64. It is expected
@@ -333,7 +337,7 @@ is owed. Whole-frame present intervals on the Mac also depend on G3b's open live
      BUILD-PLAN's V1 "binary archives" item, which otherwise covers nothing.
 
    The plans assume (b) until the owner rules.
-6. **Compact instance ABI.** 112 B rows for both recipes: `abi.rs`, `synthetic.wgsl`, `shadow.wgsl`,
+6. **Compact instance ABI.** 80 B rows for both recipes: `abi.rs`, `synthetic.wgsl`, `shadow.wgsl`,
    `history_gpu.wgsl`, `visibility.wgsl`, `thrum-app/src/sky.rs` and `tests/contracts.rs`. Reviewed by G3c and the
    G3b interpolation owner.
 7. **Mirrored indirect records.** G3c's visibility compute emits normal and mirrored indirect argument records.
