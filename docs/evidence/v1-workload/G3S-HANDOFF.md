@@ -17,7 +17,14 @@ The Codex goal remains active. Its attachment is
   Exact captures, preliminary paired costs, input hashes and rerun commands
   are in `tmp/g3s-star-catalog/NOTES.md`. Two historical catalogue
   pages yield 72 strict OCR rows out of 100, with 12 recognized spot checks
-  exact. The validated shipping catalogue and motion remain open.
+  exact. At the first right-ascension hour rollover, four manual spots match.
+  Another page has a format-valid 48.3 → 18.3 OCR error, so raw rows stay local.
+- WIP `a61bb80` verifies both graph variants on the same Metal target.
+  Without a celestial basis, the graph removes one pass and discards opaque
+  depth. With a basis it derives the depth store from the star pass and
+  retains opaque → stars → tone order. All 132 prior opt-in Metal valley
+  frames match byte for byte. The workspace check is green. Production
+  daylight eligibility, the shipping catalogue and motion remain open.
 - M1 closeout at `b8f230e7` used the same cooked scene hash on Metal and
   Chrome. The Chrome compositor sweep ran from 17.659 to 24.053 h with 75
   samples. All eight overloads were inside screenshot brackets. The same
