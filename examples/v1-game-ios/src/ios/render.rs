@@ -35,6 +35,19 @@ pub(super) enum Job {
         world_advanced: Box<dyn Fn() + Send>,
     },
     Frame(FrameRequest),
+    /// Route witness only: read the controlled actor's committed position
+    /// from the world lane's latest published page.
+    SampleActor,
+}
+
+/// Where a qualification stall holds the lease section.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) enum StallPoint {
+    /// After acquiring, before the epoch checks: revocation drops the drawable.
+    AfterAcquire,
+    /// After the last epoch check, before `present`: the admitted present
+    /// completes after a revocation that lands here.
+    BeforePresent,
 }
 
 /// Jobs cross to the render owner's thread.
@@ -50,7 +63,7 @@ pub(super) struct FrameRequest {
     /// The shell permits drawable acquisition (its view is shown).
     pub(super) present: bool,
     /// Qualification only: hold an acquired drawable inside the lease section.
-    pub(super) stall: Option<Duration>,
+    pub(super) stall: Option<(StallPoint, Duration)>,
 }
 
 pub(super) struct Prepared {
@@ -103,6 +116,7 @@ pub(super) struct FrameReply {
 pub(super) enum Reply {
     Prepared(Result<Prepared, String>),
     Frame(Result<FrameReply, String>),
+    Actor(Option<[f64; 3]>),
 }
 
 pub(super) struct Reported {
@@ -164,6 +178,11 @@ impl Owner {
                 Reply::Prepared(self.prepare(&instance, epoch, extent, world_advanced))
             }
             Job::Frame(request) => Reply::Frame(self.frame(&request).map_err(|e| e.to_string())),
+            Job::SampleActor => Reply::Actor(
+                self.gpu
+                    .as_ref()
+                    .and_then(|gpu| gpu.host.controlled_position()),
+            ),
         }
     }
 
@@ -320,7 +339,9 @@ impl Gpu {
             .formats
             .contains(&self.format)
         {
-            return Err(FrameError::InvalidState("replacement iOS surface changed format"));
+            return Err(FrameError::InvalidState(
+                "replacement iOS surface changed format",
+            ));
         }
         config.format = self.format;
         config.desired_maximum_frame_latency = 2;
@@ -349,7 +370,9 @@ impl Gpu {
         let queue = &self.queue;
         let mut pending = Some(encoded);
         let result = lease.section(request.epoch, |leased| {
-            let encoded = pending.take().expect("encoded frame enters the section once");
+            let encoded = pending
+                .take()
+                .expect("encoded frame enters the section once");
             let acquiring = Instant::now();
             let texture = leased.surface.get_current_texture();
             reply.acquire = acquiring.elapsed();
@@ -374,11 +397,16 @@ impl Gpu {
                 }
             };
             reply.acquired = true;
-            if let Some(stall) = request.stall {
-                reply.stalled = true;
-                stalling();
-                thread::sleep(stall);
-            }
+            let hold = |point: StallPoint, reply: &mut FrameReply| {
+                if let Some((at, stall)) = request.stall
+                    && at == point
+                {
+                    reply.stalled = true;
+                    stalling();
+                    thread::sleep(stall);
+                }
+            };
+            hold(StallPoint::AfterAcquire, reply);
             if !lease.is_current(request.epoch) {
                 reply.status = SurfaceStatus::StaleDropped;
                 drop(frame);
@@ -393,6 +421,7 @@ impl Gpu {
                 reply.status = SurfaceStatus::StaleDropped;
                 drop(frame);
             } else if report.surface_presented {
+                hold(StallPoint::BeforePresent, reply);
                 queue.present(frame);
                 reply.status = SurfaceStatus::Presented;
                 reply.raced_present = !lease.is_current(request.epoch);

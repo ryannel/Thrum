@@ -182,7 +182,13 @@ impl WorldPort {
     }
 
     pub(super) fn controlled_position(&self) -> Option<[f64; 3]> {
-        self.inline().controlled_position()
+        match self {
+            Self::Inline(driver) => driver.controlled_position(),
+            #[cfg(not(target_arch = "wasm32"))]
+            Self::Threaded(client) => client.controlled_position(),
+            #[cfg(not(target_arch = "wasm32"))]
+            Self::Starting => None,
+        }
     }
 
     pub(super) fn enable_projection(&mut self) -> Result<(), String> {
@@ -261,6 +267,11 @@ pub(super) struct GameWorld {
 }
 
 impl WorldDriver {
+    #[cfg(not(target_arch = "wasm32"))]
+    pub(super) fn controlled_id(&self) -> thrum_core::StableId {
+        self.world.game().content.controlled_id()
+    }
+
     pub(super) fn new(content: GameContent) -> Result<Self, String> {
         let game = GameWorld {
             content,

@@ -85,7 +85,11 @@ impl<S> SurfaceLease<S> {
 
     /// Owner only: run one section on the installed surface if `epoch` is
     /// still current. `None` means no lease or an old epoch.
-    pub(crate) fn section<R>(&self, epoch: u64, run: impl FnOnce(&mut Leased<S>) -> R) -> Option<R> {
+    pub(crate) fn section<R>(
+        &self,
+        epoch: u64,
+        run: impl FnOnce(&mut Leased<S>) -> R,
+    ) -> Option<R> {
         let mut slot = self.slot.lock().unwrap_or_else(PoisonError::into_inner);
         if self.epoch() != epoch {
             return None;
@@ -112,7 +116,10 @@ mod tests {
             panic!("empty slot");
         };
         assert_eq!(lease.epoch(), first);
-        assert!(matches!(lease.try_install("b"), Err("b")), "one lease at a time");
+        assert!(
+            matches!(lease.try_install("b"), Err("b")),
+            "one lease at a time"
+        );
         let revoked = lease.invalidate();
         assert!(revoked > first);
         assert!(matches!(lease.try_take(), Take::Taken("a")));
@@ -137,7 +144,10 @@ mod tests {
         );
         lease.invalidate();
         assert_eq!(lease.section(epoch, |leased| leased.surface), None);
-        assert_eq!(lease.section(lease.epoch(), |leased| leased.surface), Some(7));
+        assert_eq!(
+            lease.section(lease.epoch(), |leased| leased.surface),
+            Some(7)
+        );
     }
 
     #[test]
@@ -163,7 +173,14 @@ mod tests {
         lease.invalidate();
         assert!(matches!(lease.try_take(), Take::Busy), "busy, not blocked");
         revoked_tx.send(()).expect("owner waits");
-        assert_eq!(owner.join().expect("owner"), Some(false), "old epoch cannot present");
-        assert!(matches!(lease.try_take(), Take::Taken(1)), "deferred release");
+        assert_eq!(
+            owner.join().expect("owner"),
+            Some(false),
+            "old epoch cannot present"
+        );
+        assert!(
+            matches!(lease.try_take(), Take::Taken(1)),
+            "deferred release"
+        );
     }
 }

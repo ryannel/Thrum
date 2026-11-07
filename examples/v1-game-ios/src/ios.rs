@@ -26,7 +26,7 @@ use crate::{
 mod render;
 mod witness;
 
-use render::{FrameRequest, Job, Lease, RenderWorker, Reply, Reported};
+use render::{FrameRequest, Job, Lease, RenderWorker, Reply, Reported, StallPoint};
 use witness::Witness;
 
 static SHELL: OnceLock<EventLoopProxy<ShellEvent>> = OnceLock::new();
@@ -56,6 +56,8 @@ enum Command {
     HideView,
     ShowView,
     StallRender,
+    StallPresent,
+    SampleActor,
 }
 
 #[expect(
@@ -80,6 +82,8 @@ extern "C" fn thrum_v1_shell_command(code: i32) {
         2 => Command::HideView,
         3 => Command::ShowView,
         4 => Command::StallRender,
+        5 => Command::StallPresent,
+        6 => Command::SampleActor,
         _ => return,
     };
     if let Some(shell) = SHELL.get() {
@@ -193,7 +197,9 @@ struct Shell {
     pending_target: Option<f64>,
     observed_extent: [u32; 2],
     hidden: bool,
-    stall_next: bool,
+    stall_next: Option<StallPoint>,
+    /// The route asked for one committed actor position.
+    sample_actor: bool,
     /// The render owner reported that it holds a stalled section.
     stalling: bool,
     controls: Option<v1_game::WorldControls>,
@@ -223,7 +229,8 @@ impl Shell {
             pending_target: None,
             observed_extent: [0; 2],
             hidden: false,
-            stall_next: false,
+            stall_next: None,
+            sample_actor: false,
             stalling: false,
             controls: None,
             policy: WorldPolicy::default(),
@@ -422,7 +429,10 @@ impl Shell {
             TouchPhase::Ended => Phase::Ended,
             TouchPhase::Cancelled => Phase::Cancelled,
         };
-        let scale = self.window.as_ref().map_or(1.0, |window| window.scale_factor());
+        let scale = self
+            .window
+            .as_ref()
+            .map_or(1.0, |window| window.scale_factor());
         let sent = self.gesture.touch(id, phase, location, scale);
         if let Some(axes) = sent {
             self.send_axes(axes)?;
@@ -454,7 +464,9 @@ impl Shell {
                     window.set_visible(true);
                 }
             }
-            Command::StallRender => self.stall_next = true,
+            Command::StallRender => self.stall_next = Some(StallPoint::AfterAcquire),
+            Command::StallPresent => self.stall_next = Some(StallPoint::BeforePresent),
+            Command::SampleActor => self.sample_actor = true,
         }
         self.witness.last_command = format!("{command:?}");
         self.write();
@@ -480,6 +492,15 @@ impl Shell {
         if self.in_flight || self.controls.is_none() || self.state != State::Active {
             return Ok(());
         }
+        if std::mem::take(&mut self.sample_actor) {
+            // An explicit route witness; display callbacks never read the page.
+            let render = self.render.as_ref().ok_or("iOS render owner missing")?;
+            if render.try_send(Job::SampleActor).is_err() {
+                return Err("bounded iOS render owner refused an actor sample".into());
+            }
+            self.in_flight = true;
+            return Ok(());
+        }
         let Some(target) = self.pending_target.take() else {
             return Ok(());
         };
@@ -493,7 +514,7 @@ impl Shell {
             }
         }
         // A stall request stays until a frame reaches the section and holds it.
-        let stall = self.stall_next.then_some(STALL);
+        let stall = self.stall_next.map(|point| (point, STALL));
         let request = FrameRequest {
             epoch: self.lease.epoch(),
             target_media_seconds: target,
@@ -539,13 +560,18 @@ impl Shell {
                 }
                 self.reconcile_world()?;
             }
+            Reply::Actor(position) => {
+                self.witness.actor_samples += 1;
+                self.witness.actor_position = position;
+                self.write();
+            }
             Reply::Frame(frame) => {
                 let frame = frame?;
                 self.witness.frame_thread = thread.unwrap_or_default();
                 self.stall_in_flight = false;
                 let stall_ended = frame.stalled;
                 if stall_ended {
-                    self.stall_next = false;
+                    self.stall_next = None;
                     self.stalling = false;
                     self.witness.stalls += 1;
                     self.witness.stall_status = format!("{:?}", frame.status);
@@ -581,7 +607,8 @@ impl Shell {
                 .map_err(|error| error.to_string())?
         {
             self.policy.acknowledge(reply.request)?;
-            self.witness.world_reply(reply.request, reply.id.epoch.0, reply.id.tick);
+            self.witness
+                .world_reply(reply.request, reply.id.epoch.0, reply.id.tick);
             self.write();
         }
         match controls.check_health() {
@@ -713,11 +740,9 @@ impl ApplicationHandler<ShellEvent> for Shell {
                 event_loop.exit();
                 Ok(())
             }
-            WindowEvent::Touch(touch) => shell.touch(
-                touch.id,
-                touch.phase,
-                [touch.location.x, touch.location.y],
-            ),
+            WindowEvent::Touch(touch) => {
+                shell.touch(touch.id, touch.phase, [touch.location.x, touch.location.y])
+            }
             _ => Ok(()),
         });
     }

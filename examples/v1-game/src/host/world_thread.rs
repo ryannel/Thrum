@@ -2,8 +2,12 @@
 
 use std::time::{Duration, Instant};
 
-use thrum_core::sim::{
-    ClockedWorld, WorldLane, WorldLaneControls, WorldLaneFault, WorldLifecycle, WorldLifecycleReply,
+use thrum_core::{
+    StableId,
+    sim::{
+        ClockedWorld, WorldLane, WorldLaneControls, WorldLaneFault, WorldLifecycle,
+        WorldLifecycleReply,
+    },
 };
 
 use crate::simulation::{PublishedPage, SimError};
@@ -48,7 +52,8 @@ impl WorldControls {
     }
 }
 
-pub(crate) struct WorldClient(WorldLane<ClockedWorld<GameWorld>>);
+/// The world lane and the controlled actor its published pages are read for.
+pub(crate) struct WorldClient(WorldLane<ClockedWorld<GameWorld>>, StableId);
 
 impl WorldClient {
     pub(super) fn start(
@@ -57,9 +62,10 @@ impl WorldClient {
         wake: impl Fn() + Send + 'static,
     ) -> Result<(Self, WorldControls), String> {
         let initial_controls = driver.held_controls();
+        let controlled = driver.controlled_id();
         let (lane, controls) = WorldLane::start(driver.world, initial_controls, origin, wake)
             .map_err(|error| error.to_string())?;
-        Ok((Self(lane), WorldControls(controls)))
+        Ok((Self(lane, controlled), WorldControls(controls)))
     }
 
     pub(super) fn poll(&mut self, now: Duration) -> Result<WorldAdvance, String> {
@@ -92,6 +98,18 @@ impl WorldClient {
 
     pub(super) fn set_controls(&self, axes: [f32; 3]) -> Result<(), String> {
         self.0.set_controls(axes).map_err(|error| error.to_string())
+    }
+
+    /// The controlled actor's committed position in the latest published page.
+    pub(super) fn controlled_position(&self) -> Option<[f64; 3]> {
+        let page = self.0.current_page()?;
+        let slot = (0..page.slot_capacity())
+            .rev()
+            .filter_map(|slot| u32::try_from(slot).ok())
+            .find(|&slot| page.stable_id(slot) == Some(self.1))?;
+        page.handle(slot)
+            .and_then(|handle| page.position(handle))
+            .map(|position| position.0)
     }
 }
 
