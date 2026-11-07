@@ -314,3 +314,128 @@ with a clean tree and `main_base` 935ddd14:
   passed (`tmp/g7-showcase/m3/integrated/`).
 - Smoke runs on 002865b7 showed the new refusals: `--recalibrate` on the calibrated root fails after the cook,
   and a refused canonical save leaves no run directory.
+
+### M4: continuous valley ground material
+
+Root commissioned this after M3 (G7 NOTES "Root commission after G7 M3: continuous valley ground material"). The
+canonical valley ground was a soft, low-frequency albedo with a visible material edge and a flat band on the far
+hills. M4 replaces only the ground albedo and the terrain UVs. Root approved the exact source and the recalibrated
+root (NOTES "Root verdict on ground variant E and its baseline"). This change lands on its own, with main's night
+exposure as it was. Root's star and exposure candidate refreshes the night baseline later, as a separate change.
+
+**What changed.** `examples/v1-game/assets/showcase/generate.py` now:
+- gives the terrain world-space UVs that repeat every 16 m around the camera's foot at (0, 16), growing gently
+  (factor 0.5) beyond 40 m, so far slopes do not alias;
+- builds a tileable albedo from isotropic spectral noise (k ≥ 6 per tile), per-texel grit and gravel clasts at
+  1024², fits each channel's linear mean to the old neutral (0.701), and box-filters it 2×2 in linear light to the
+  shipped 512² tile (3.1 cm per texel).
+
+| File | Before | After |
+|---|---|---|
+| `generate.py` | | `0161e0b7…` |
+| `ground.png` | 53,744 B | 484,682 B, `4dd5c486…` |
+| `terrain.bin` | 1,306,400 B | 1,306,400 B, `204713d6…`; only the TEXCOORD_0 view differs |
+| `terrain.gltf`, `scene.json`, other assets | | byte-identical |
+| Cooked source root | `59f0484f…` | `70d2baf8…` |
+
+`tmp/g7-showcase/m4/geometry_identity.py` proves positions, normals, indices, winding, placement and silhouette
+unchanged: only the UV block, `ground.png` and `generate.py` differ, no file is added or removed, and the compared
+blocks cover the whole buffer. The first reviewer re-ran it on C and regenerated all nine files byte for byte; the
+second confirmed that E's `terrain.bin`, `terrain.gltf` and `scene.json` equal C's.
+
+**Variants.** A (value-noise octaves) printed a lattice on the far slopes. B (spectral grain only) left the far
+ground flat. C, a 1024² tile at 1.56 cm per texel, passed review with changes. Root then asked for a 512² tile at the
+same repeat before any canonical change. E is C's linear field box-filtered to 512², so it is C's mip 1 and isolates
+resolution. A second review chose E and advised against an 8 m repeat, which would add stamp risk inside the 40 m
+radius.
+
+**Look.** In offscreen Metal at native size, against C:
+- far (rows 400–445) and mid (445–560) detail is equal within 5%, as C samples its mip 1 there;
+- near (rows 560–720) horizontal gradient energy drops 27% (noon 2.13 → 1.56; 17.4 h 1.58 → 1.17; 17.9 h
+  2.17 → 1.57), about 50% in the bottom 80 rows.
+
+E loses the per-texel grit, the crisp edges of the smallest clasts and the hard contact shade in the nearest
+ground. At 1:1 it still reads as mineral gravel with discrete clasts at noon and 17.9 h, and into the Sun at 17.4 h.
+Root accepted this loss of near crispness.
+
+**Scope of "edge and flat band removed".** It covers noon, 17.9 h, and 17.4 h below the lip. At 17.4 h the bright
+lip stripe on the near ridge stays flat: it is root's renderer item (NOTES "Root sunset lip diagnosis"), not the
+material. The noon crease near row 435 sits at the same rows before and after; it is a floor-to-slope depth boundary
+in the geometry.
+
+**Motion.** Slow pans from the real game (release `v1-game`, offscreen Metal, scratch store), in 1° steps because the
+game snaps yaw to its slider step: noon −30…30°, and 17.4 h and 17.9 h −110…−70°. Consecutive PNG frames track the
+same clasts. Neither reviewer saw sparkle, moiré, stamp or band. `shimmer.py`'s shift-compensated near residual is
+lower for E than for C (×1e5: 10.2/3.6/8.0 against 12.8/4.7/10.6), with far and mid identical. The stacked mp4s
+understate E's grain, so the review judged from the PNG frames.
+
+**Cost.** Chrome Portable is uncompressed RGBA8 with mips. Native picks ASTC 4×4 or BC7.
+
+| | Canonical | E | C |
+|---|---|---|---|
+| Portable ground product | 349,912 B | 1,398,536 B | 5,592,840 B |
+| gzip −9 of that product | | 0.76 MB | 3.00 MB |
+| Chrome bytes uploaded, route page | 1,882,112 | 2,930,688 | 7,124,992 |
+
+Paired cold startups, ABBA (C, E, E, C), three fresh Chrome launches each, with the M3 startup proxy and its scope:
+- cold upper bound: C 177–270 ms (median 240), E 152–176 ms (median 165);
+- cooked fetch end: C 129–200 ms, E 103–118 ms.
+- Runs: startup-20261107-191052 (C), -191125 (E), -191200 (E), -191223 (C).
+
+This was localhost with a shared GPU, n = 6 per source: indicative, not a claim. A real network would add C's extra
+2.24 MB gzipped, which nothing here measured. **Upgrade path:** once the cook emits compressed textures for Chrome,
+C's 1024² tile costs about what E's RGBA8 does now. Its source stays at `tmp/g7-showcase/m4/vd/source` until then.
+
+**Route on both targets.** These runs are on commit 959e57ff, which is main 85a7c281 plus the M4 commits, with a
+clean tree. check-20261107-224619 built the binaries:
+- release `v1-game` `c6d8c193…`;
+- `thrum-cook` `e2fbdcfd…`;
+- default-page Wasm `eaaf3aac…`.
+
+It cooked root `70d2baf8…` through the normal cook and passed under the fixed thresholds:
+- **Cross-target parity:** the worst valley difference was 0.027 (median), 0.052 (95th percentile) and 0.148
+  (maximum).
+- **Controls:** both passed, and the positive control's maximum cell read 34.4.
+- **Baseline:** it saved the new canonical baseline. Its difference from the old baseline is information, not a
+  failure: up to 6.9 (95th percentile) and 14.7 (maximum) at sunrise and noon, and 1.3 and 3.0 at night. That is the
+  new grain, at the same scale on both targets.
+
+check-20261107-224747 then reran `check --no-build` against the saved baseline and passed, with all 12 frames within
+0.005. Against E's pre-landing check-20261107-191252, built from older main, every stop frame on both targets is
+within one 8-bit code, and fewer than 1 in 100,000 channel values differ. `./dev check` passed on the same tree.
+
+The sheet's canonical columns come from M3's integration check-20261107-180843, at root `59f0484f…`.
+
+![Per stop, left to right: canonical native, E native, E Chrome, canonical Chrome](g7-showcase/route-ground-e.png)
+
+**Calibration.** E's first route check (check-20261107-191252, `--recalibrate`) put the worst valley at 0.027
+(median), 0.052 (95th percentile) and 0.148 (maximum). The rule lands on the 1.0 floor again, so the thresholds stay
+`[1, 1, 1]`. Root approved `CALIBRATED_ROOT = 70d2baf8…`. Root's composed scratch route with its star candidate on E
+(check-20261107-193208) also passed at that root, with no baseline written.
+
+**Reviews.**
+- C at 6015e4e5, brief `tmp/g7-showcase/review/M4-REVIEW-BRIEF.md` (local): accept with changes. Taken: the band
+  claim is scoped, the identity proof extended, low-Sun canonical pan controls added, and the PNG written with Up
+  filters (same pixels).
+- C against E, brief `tmp/g7-showcase/review/M4-512-REVIEW-BRIEF.md` (local): E becomes canonical, skip 8 m. Taken:
+  the accepted near loss, the mp4 caveat, the cost and the upgrade path above.
+
+### G7 Mac screen walk and G6 M1 panel check
+
+The owner granted screen control at 19:40 for a renamed copy of the release build, "Thrum Review Window"
+(`com.thrum.v1.review-window`). The old bundle id held a stored deny. This ran before E landed, on the canonical
+source `59f0484f…`, with the release `v1-game` `e5ae52df…` (the bundle copy is `f183ad5d…` after its ad-hoc
+re-sign; with signatures removed, they differ in one Mach-O header byte). Runs: `tmp/g7-showcase/runs/mac-20261107-194009` and
+`-194151` through `-194342`.
+
+- **G6 M1 panel:** the solar time slider, exposure zones, both camera sliders and pause each changed the running
+  window as expected.
+- **Held views:** all six route stops were seen in the live window, re-applied with `L` or a fresh launch.
+- **Transitions:** time ran from 17.4 h to 18.7 h, and yaw swept from −90° to 146° on the panel. The frames seen
+  showed no hitch, loss of view or panel mismatch. Bursts left gaps of about 15 s unseen, so this claims no
+  continuity, cadence or latency.
+- **Defects:** the 17.4 h lip stripe (root's), and the panel window covering the game window's right 36 px.
+- **Not observed:** the surface recipe. The window title truncates before it, and the game log does not record it.
+
+Root accepted the six held views and the observed control transitions (NOTES "Root verdict on the G7 live screen
+walk"). Captures: `tmp/g7-showcase/screen/walk-20261107/` (local).

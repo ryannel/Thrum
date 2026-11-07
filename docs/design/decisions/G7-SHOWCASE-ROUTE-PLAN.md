@@ -15,9 +15,13 @@ poses read from artifacts, split M1 boxes, and a baseline that survives a clean 
   `tmp/g7-showcase/review/M2-REREVIEW-REPORT.md`, local), accept. Three wording nits, all taken.
 - M3 @ 3672cf62 (proofs on f38166f0), brief `tmp/g7-showcase/review/M3-REVIEW-BRIEF.md` (local), accept with changes,
   no blocker. Four should-fix findings and six nits, all taken (see the log).
+- M4 C @ 6015e4e5, brief `tmp/g7-showcase/review/M4-REVIEW-BRIEF.md` (local), accept with changes, no blocker.
+  Findings taken (see the log).
+- M4 C against E, brief `tmp/g7-showcase/review/M4-512-REVIEW-BRIEF.md` (local): E canonical, skip the 8 m trial. Root
+  approved E's exact source and root `70d2baf8` (G7 NOTES).
 Milestone: M4 Continuous valley ground material · Updated: 2026-11-07
-Now: M1–M3 done (M3 on main at 55a17bed). M4: root approved source E; E is in the canonical assets, checks pending
-Next: build, route check with `--save-baseline`, `./dev check`, evidence, then land E on its own
+Now: M1–M4 done. M4 landed E as its own change (route evidence "M4: continuous valley ground material")
+Next: root's night baseline refresh on E; presentation cadence and latency wait for an owner-present screen window
 Blocked: none. The Mac screen walk ran under the owner's grant and root accepted its held views (G7 NOTES).
 
 ## M1 Local cooked valley on both targets: done
@@ -109,7 +113,7 @@ Work:
 - [x] Runs and evidence.
 - [x] Independent review.
 
-## M4 Continuous valley ground material
+## M4 Continuous valley ground material: done
 Commission: root, `tmp/g7-boundary/NOTES.md` "Root commission after G7 M3: continuous valley ground material"; the
 look item in the [atmosphere plan](../modules/ATMOSPHERE-PLAN.md). Chrome and offscreen Metal only; the owner-screen
 walk stays separate. Root owns camera, terrain geometry, shadows, exposure, sky, shaders, sampler, the checker and the
@@ -117,16 +121,16 @@ shared scene; the 17.4 h brightness step and the shadow findings are root's and 
 boundaries.
 
 Done when:
-- [ ] One material variant, authored only in the ground albedo and terrain UVs, makes fine ground grain legible at
+- [x] One material variant, authored only in the ground albedo and terrain UVs, makes fine ground grain legible at
       native size at chase distance, with continuous detail into the middle distance, and removes the visible
       material edge and flat band.
-- [ ] It stays stable as the view pans, with no repeating stamp, moiré, glare or loss of the ridge, watched in a slow
+- [x] It stays stable as the view pans, with no repeating stamp, moiré, glare or loss of the ridge, watched in a slow
       pan from the real game.
-- [ ] Positions, normals, indices, winding, placement and silhouette are proven unchanged.
-- [ ] The same route runs in Chrome and offscreen Metal through the normal cook, with paired noon and 17.4/17.9 h
+- [x] Positions, normals, indices, winding, placement and silhouette are proven unchanged.
+- [x] The same route runs in Chrome and offscreen Metal through the normal cook, with paired noon and 17.4/17.9 h
       views, within the established cross-target tolerance.
-- [ ] An independent review agrees; its brief and verdict are on the Reviews line.
-- [ ] Root approves the exact source and the paired views, and only then is the canonical baseline refreshed.
+- [x] An independent review agrees; its brief and verdict are on the Reviews line.
+- [x] Root approves the exact source and the paired views, and only then is the canonical baseline refreshed.
       `./dev check` passes; source identities, captures and the review are recorded in the evidence.
 
 Work (each names the done-when item it serves, numbered from the top):
@@ -141,9 +145,10 @@ Work (each names the done-when item it serves, numbered from the top):
       (Serves 5 and 6)
 - [x] Root approves E's three files, root `70d2baf8` and the unchanged `[1, 1, 1]`. (NOTES "Root verdict on ground
       variant E and its baseline". Serves 6)
-- [ ] E in `examples/v1-game/assets/showcase/` and `CALIBRATED_ROOT` set; a fresh build of current main passes the
-      route with the refreshed baseline and the night exposure main already has. (Serves 4 and 6)
-- [ ] `./dev check` passes, and the evidence records identities, captures, both reviews and cost. (Serves 6)
+- [x] E in `examples/v1-game/assets/showcase/` and `CALIBRATED_ROOT` set; a fresh build of current main passes the
+      route with the refreshed baseline and the night exposure main already has. (Serves 4 and 6; check-224619 saved,
+      check-224747 rechecked)
+- [x] `./dev check` passes, and the evidence records identities, captures, both reviews and cost. (Serves 6)
 
 ## Log
 - 2026-11-07 Plan written with the design.
@@ -242,3 +247,6 @@ Work (each names the done-when item it serves, numbered from the top):
   canonical change, as C adds 5.24 MB to the Portable upload. E (C's field box-filtered to 512², same repeat) keeps
   far and mid detail and loses 27% of near gradient energy; it uploads 2.93 MB against C's 7.12 MB, and its paired cold first draw was about 75 ms sooner on localhost.
   The review chose E and advised against an 8 m repeat. Posted E to root.
+- 2026-11-07 Root approved E and root `70d2baf8` with `[1, 1, 1]`. Landed on main 85a7c281: check-224619 built, passed
+  and saved the baseline; check-224747 reran against it; `./dev check` passed. The Mac screen walk ran under the
+  owner's grant and root accepted its held views; presentation cadence and latency stay for an owner-present window.
