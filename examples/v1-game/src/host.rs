@@ -3,6 +3,7 @@
 use crate::{
     environment::DayCycle,
     projection::{GameProjection, ProjectionGap},
+    scene::GameContent,
 };
 pub use runtime::{DriveReport, FrameConfig, FrameSample, SurfaceOutput};
 use std::time::Duration;
@@ -10,11 +11,12 @@ use std::time::Duration;
 use std::time::Instant;
 #[cfg(not(target_arch = "wasm32"))]
 use thrum_content_runtime::EnvironmentProduct;
-use thrum_render::{capabilities::DeviceCapabilities, runtime};
+use thrum_render::{capabilities::DeviceCapabilities, runtime, synthetic::CullMode};
 
 mod scene_source;
 mod world;
 pub(crate) use scene_source::GameScene;
+pub use scene_source::field_in_view_share;
 use world::WorldDriver;
 pub(crate) use world::WorldPort;
 #[cfg(not(target_arch = "wasm32"))]
@@ -25,6 +27,24 @@ use world_thread::WorldClient;
 pub use world_thread::WorldControls;
 
 pub(crate) type Runtime = runtime::FrameHost<WorldPort, GameScene>;
+
+/// Content and camera culling chosen when the host is prepared.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct GameSetup {
+    /// The grid or the dense flythrough field.
+    pub content: GameContent,
+    /// How the camera's opaque draw is culled; Direct draws every instance.
+    pub camera_culling: CullMode,
+}
+
+impl Default for GameSetup {
+    fn default() -> Self {
+        Self {
+            content: GameContent::Grid,
+            camera_culling: CullMode::Direct,
+        }
+    }
+}
 
 /// Prepared V1 game, whose world clock and frame executor belong to the engine.
 pub struct FrameHost {
@@ -300,17 +320,29 @@ impl FrameHost {
         capabilities: &DeviceCapabilities,
         config: FrameConfig,
     ) -> Result<Self, String> {
+        Self::new_with_setup(device, queue, capabilities, config, GameSetup::default()).await
+    }
+    /// Prepare the selected content and camera culling mode.
+    /// # Errors
+    /// Refuses a mismatched device or game/engine preparation failure.
+    pub async fn new_with_setup(
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        capabilities: &DeviceCapabilities,
+        config: FrameConfig,
+        setup: GameSetup,
+    ) -> Result<Self, String> {
         if !capabilities.matches(device) {
             return Err("capability record does not match the host device".to_owned());
         }
-        let scene = GameScene::scene(config.render_extent)?;
-        let world = WorldPort::Inline(Box::new(WorldDriver::new()?));
+        let scene = GameScene::scene(config.render_extent, setup.content, setup.camera_culling)?;
+        let world = WorldPort::Inline(Box::new(WorldDriver::new(setup.content)?));
         let inner = Runtime::new(
             capabilities,
             queue,
             config,
             world,
-            GameScene::new(),
+            GameScene::new(setup.content),
             scene,
             1.0 / 16_000.0,
         )

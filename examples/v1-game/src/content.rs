@@ -5,7 +5,35 @@ use std::sync::{Arc, Mutex};
 use crate::FrameHost;
 use thrum_asset_gpu::CookedStats;
 
+/// The host setup selected by `THRUM_SCENE=field` and `THRUM_CULLING=direct|frustum`.
+/// Without `THRUM_CULLING`, the field uses Frustum (a measured win along its
+/// flythrough) and the fully visible grid keeps Direct.
+/// # Errors
+/// Refuses an unknown culling mode.
+pub fn selected_setup() -> Result<crate::GameSetup, String> {
+    let content = if std::env::var("THRUM_SCENE").as_deref() == Ok("field") {
+        crate::GameContent::Field
+    } else {
+        crate::GameContent::Grid
+    };
+    let camera_culling = match std::env::var("THRUM_CULLING").as_deref() {
+        Err(std::env::VarError::NotPresent) if content == crate::GameContent::Field => {
+            thrum_render::synthetic::CullMode::Frustum
+        }
+        Err(std::env::VarError::NotPresent) | Ok("direct") => {
+            thrum_render::synthetic::CullMode::Direct
+        }
+        Ok("frustum") => thrum_render::synthetic::CullMode::Frustum,
+        _ => return Err("THRUM_CULLING must be direct or frustum".to_owned()),
+    };
+    Ok(crate::GameSetup {
+        content,
+        camera_culling,
+    })
+}
+
 /// Activate the selected game content from `THRUM_ASSET_STORE` and `THRUM_SCENE`.
+/// `field` is prepared with the host (see [`selected_setup`]) and attaches nothing here.
 /// `valley` uses the embedded metre-scale scene; `diagnostic` retains G5's test placements.
 /// Unset variables retain the original simulation and camera.
 /// # Errors
@@ -13,6 +41,9 @@ use thrum_asset_gpu::CookedStats;
 pub fn attach_cooked_scene(
     host: &mut FrameHost,
 ) -> Result<Option<Arc<Mutex<CookedStats>>>, String> {
+    if std::env::var("THRUM_SCENE").as_deref() == Ok("field") {
+        return Ok(None);
+    }
     let Some(store) = std::env::var_os("THRUM_ASSET_STORE") else {
         if std::env::var_os("THRUM_SCENE").is_some() {
             return Err("THRUM_SCENE requires THRUM_ASSET_STORE".to_owned());
@@ -32,7 +63,7 @@ pub fn attach_cooked_scene(
             ))
             .map_err(|error| error.to_string())?,
         ),
-        _ => return Err("THRUM_SCENE must be valley or diagnostic".to_owned()),
+        _ => return Err("THRUM_SCENE must be valley, diagnostic or field".to_owned()),
     };
     let stats = assets.stats();
     host.set_scene_contribution(Box::new(assets))?;

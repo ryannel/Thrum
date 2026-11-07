@@ -36,7 +36,7 @@ fn world_advances_and_accepts_controls_while_render_is_idle() {
     let render_thread = thread::current().id();
     let (sender, worker_wake) = mpsc::sync_channel(1);
     let (mut client, controls) = WorldClient::start(
-        WorldDriver::new().expect("fixture world"),
+        WorldDriver::new(scene::GameContent::Grid).expect("fixture world"),
         origin,
         move || {
             let _ = sender.try_send(thread::current().id());
@@ -99,7 +99,7 @@ fn world_advances_and_accepts_controls_while_render_is_idle() {
 
 #[test]
 fn conversion_preserves_held_controls_until_a_new_valid_input() {
-    let mut driver = WorldDriver::new().expect("fixture world");
+    let mut driver = WorldDriver::new(scene::GameContent::Grid).expect("fixture world");
     driver
         .set_controls([1.0, 0.0, 0.0])
         .expect("held control before handoff");
@@ -164,9 +164,12 @@ fn first_overload_refusal_remains_visible_after_stopped_clock_polls() {
     let origin = Instant::now()
         .checked_sub(Duration::from_millis(200))
         .expect("monotonic clock has more than 200 ms of history");
-    let (mut client, controls) =
-        WorldClient::start(WorldDriver::new().expect("fixture world"), origin, || {})
-            .expect("resident world");
+    let (mut client, controls) = WorldClient::start(
+        WorldDriver::new(scene::GameContent::Grid).expect("fixture world"),
+        origin,
+        || {},
+    )
+    .expect("resident world");
     let deadline = Instant::now() + Duration::from_secs(1);
     let refused = loop {
         if let Some(refused) = client
@@ -198,7 +201,7 @@ fn first_overload_refusal_remains_visible_after_stopped_clock_polls() {
 
 #[test]
 fn native_pause_retains_authority_and_controls_without_render_callbacks() {
-    let mut driver = WorldDriver::new().expect("10k fixture");
+    let mut driver = WorldDriver::new(scene::GameContent::Grid).expect("10k fixture");
     driver.set_controls([1.0, 0.0, 0.0]).unwrap();
     let origin = Instant::now();
     let (mut client, controls) = WorldClient::start(driver, origin, || {}).unwrap();
@@ -272,8 +275,12 @@ fn inline_lifecycle_facade_explicitly_refuses_a_threaded_world() {
     use crate::host::world::WorldPort;
 
     let origin = Instant::now();
-    let (client, controls) =
-        WorldClient::start(WorldDriver::new().unwrap(), origin, || {}).unwrap();
+    let (client, controls) = WorldClient::start(
+        WorldDriver::new(scene::GameContent::Grid).unwrap(),
+        origin,
+        || {},
+    )
+    .unwrap();
     let mut port = WorldPort::Threaded(Box::new(client));
     assert!(port.pause().unwrap_err().contains("inline world lifecycle"));
     assert!(

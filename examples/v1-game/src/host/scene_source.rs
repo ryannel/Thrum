@@ -1,6 +1,12 @@
 //! V1 fixture, camera and lighting policy for the engine frame runtime.
 
-use crate::{camera::SceneCamera, environment::DayCycle, scene, simulation::PublishedPage};
+use crate::{
+    camera::SceneCamera,
+    environment::DayCycle,
+    field,
+    scene::{self, GameContent},
+    simulation::PublishedPage,
+};
 #[cfg(not(target_arch = "wasm32"))]
 use thrum_content_runtime::EnvironmentProduct;
 #[cfg(not(target_arch = "wasm32"))]
@@ -10,7 +16,9 @@ use thrum_render::{
     atmosphere::AtmosphereFrame,
     extract::{ExtractReport, RenderExtractor, SourceTick},
     runtime::{SceneFrame, SceneSource},
-    synthetic::{FrameLighting, SdrToneMap, SyntheticPointLight, SyntheticScene, SyntheticView},
+    synthetic::{
+        CullMode, FrameLighting, SdrToneMap, SyntheticPointLight, SyntheticScene, SyntheticView,
+    },
 };
 
 fn atmosphere_lighting(
@@ -84,22 +92,121 @@ fn frame_view(
     .map_err(|error| format!("live camera: {error:?}"))
 }
 
+/// The flythrough camera with the player's pitch and yaw added to its heading.
+fn field_view(
+    tick: u64,
+    alpha: f32,
+    extent: [u32; 2],
+    camera_pitch: f32,
+    camera_yaw: f32,
+) -> Result<SyntheticView, String> {
+    let sample = field::camera(tick, alpha);
+    let heading = sample.heading + camera_yaw;
+    let (pitch_sin, pitch_cos) = camera_pitch.sin_cos();
+    let forward = [
+        heading.cos() * pitch_cos,
+        pitch_sin,
+        heading.sin() * pitch_cos,
+    ];
+    let target = std::array::from_fn(|axis| sample.eye[axis] + forward[axis] * 10.0);
+    SyntheticView::perspective(
+        sample.eye,
+        target,
+        [0.0, 1.0, 0.0],
+        65.0_f32.to_radians(),
+        extent[0] as f32 / extent[1] as f32,
+        0.1,
+        1200.0,
+    )
+    .map(|view| {
+        view.with_sdr_tone_map(SdrToneMap::NeutralHighlights)
+            .with_history_reset(sample.cut)
+    })
+    .map_err(|error| format!("field camera: {error:?}"))
+}
+
+/// Share of field instance centres strictly inside the flythrough frustum at
+/// `tick` (no player orientation), for labelling measured rows.
+/// # Errors
+/// Returns an invalid camera.
+#[doc(hidden)]
+pub fn field_in_view_share(tick: u64, extent: [u32; 2]) -> Result<f64, String> {
+    let m = field_view(tick, 1.0, extent, 0.0, 0.0)?.view_proj_columns();
+    let inside = (0..field::ENTITY_COUNT)
+        .filter(|index| {
+            #[expect(
+                clippy::cast_possible_truncation,
+                reason = "field coordinates round once into the f32 GPU domain"
+            )]
+            let p = field::entity(*index).position.map(|value| value as f32);
+            let c: [f32; 4] = std::array::from_fn(|row| {
+                m[0][row] * p[0] + m[1][row] * p[1] + m[2][row] * p[2] + m[3][row]
+            });
+            c[0].abs() < c[3] && c[1].abs() < c[3] && c[2] > 0.0 && c[2] < c[3]
+        })
+        .count();
+    #[expect(clippy::cast_precision_loss, reason = "counts below 2^24")]
+    Ok(inside as f64 / field::ENTITY_COUNT as f64)
+}
+
+/// The field's prepared boxes, materials and Sun shadows; no local lights.
+fn field_scene(extent: [u32; 2]) -> Result<SyntheticScene, String> {
+    let count = u32::try_from(field::ENTITY_COUNT).map_err(|_| "field exceeds u32 slots")?;
+    let mut scene =
+        SyntheticScene::grid(count).map_err(|error| format!("field scene: {error:?}"))?;
+    scene.materials = field::materials();
+    for (index, instance) in scene.instances.iter_mut().enumerate() {
+        let entity = field::entity(index);
+        let (basis, normal) = field::basis(&entity);
+        for axis in 0..3 {
+            instance.current[axis][..3].copy_from_slice(&basis[axis]);
+            instance.normal[axis][..3].copy_from_slice(&normal[axis]);
+        }
+        #[expect(
+            clippy::cast_possible_truncation,
+            reason = "field coordinates are within ±420 m and round once into the f32 GPU domain"
+        )]
+        let position = entity.position.map(|value| value as f32);
+        instance.current[3][..3].copy_from_slice(&position);
+        instance.ids[1] = u32::try_from(entity.material).map_err(|_| "field material row")?;
+        instance.previous = instance.current;
+    }
+    scene.view = field_view(0, 0.0, extent, 0.0, 0.0)?;
+    scene.sun_shadows = true;
+    Ok(scene)
+}
+
 pub(crate) struct GameScene {
+    content: GameContent,
     pub(super) day_phase_offset: f32,
     pub(super) camera_pitch: f32,
     pub(super) camera_yaw: f32,
     camera: Option<SceneCamera>,
 }
 impl GameScene {
-    pub(super) fn new() -> Self {
+    pub(super) fn new(content: GameContent) -> Self {
         Self {
+            content,
             day_phase_offset: 0.0,
             camera_pitch: 0.0,
             camera_yaw: 0.0,
             camera: None,
         }
     }
-    pub(super) fn scene(extent: [u32; 2]) -> Result<SyntheticScene, String> {
+    pub(super) fn scene(
+        extent: [u32; 2],
+        content: GameContent,
+        camera_culling: CullMode,
+    ) -> Result<SyntheticScene, String> {
+        let mut scene = match content {
+            GameContent::Grid => Self::grid_scene(extent)?,
+            GameContent::Field => field_scene(extent)?,
+        };
+        scene.camera_culling = camera_culling;
+        Ok(scene)
+    }
+
+    fn grid_scene(extent: [u32; 2]) -> Result<SyntheticScene, String> {
         let count = u32::try_from(scene::ENTITY_COUNT).map_err(|_| "fixture exceeds u32 slots")?;
         let mut scene =
             SyntheticScene::grid(count).map_err(|error| format!("synthetic scene: {error:?}"))?;
@@ -180,18 +287,33 @@ impl SceneSource<PublishedPage> for GameScene {
         extent: [u32; 2],
         lighting: Option<FrameLighting>,
     ) -> Result<SceneFrame, String> {
-        let view = frame_view(
-            source.tick,
-            alpha,
-            extent,
-            self.camera_pitch,
-            self.camera_yaw,
-            self.camera,
-        )?;
+        let field = self.content == GameContent::Field && self.camera.is_none();
+        let view = if field {
+            field_view(
+                source.tick,
+                alpha,
+                extent,
+                self.camera_pitch,
+                self.camera_yaw,
+            )?
+        } else {
+            frame_view(
+                source.tick,
+                alpha,
+                extent,
+                self.camera_pitch,
+                self.camera_yaw,
+                self.camera,
+            )?
+        };
         // The diagnostic fixture's local Y zero is a two-metre reference datum.
-        // Authored scene coordinates already measure altitude above sea level.
-        let camera_altitude_m =
-            view.camera_position()[1] + if self.camera.is_some() { 0.0 } else { 2.0 };
+        // Authored scene and field coordinates already measure altitude above sea level.
+        let camera_altitude_m = view.camera_position()[1]
+            + if self.camera.is_some() || field {
+                0.0
+            } else {
+                2.0
+            };
         let lighting = lighting.unwrap_or_else(|| {
             atmosphere_lighting(source.tick, alpha, self.day_phase_offset, camera_altitude_m)
         });
@@ -250,6 +372,7 @@ mod tests {
         .unwrap();
         let [camera_pitch, camera_yaw] = camera.orientation();
         let policy = GameScene {
+            content: scene::GameContent::Grid,
             day_phase_offset: 0.1,
             camera_pitch,
             camera_yaw,
@@ -305,14 +428,19 @@ mod tests {
 
     #[test]
     fn reflection_subject_keeps_authoritative_material_and_static_history() {
-        let mut world = scene::simulation().expect("actual 10k fixture");
-        let mut render = GameScene::scene([640, 360]).expect("authored lighting subjects");
+        let mut world = scene::simulation(scene::GameContent::Grid).expect("actual 10k fixture");
+        let mut render = GameScene::scene(
+            [640, 360],
+            scene::GameContent::Grid,
+            thrum_render::synthetic::CullMode::Direct,
+        )
+        .expect("authored lighting subjects");
         let mut extractor = RenderExtractor::new(scene::ENTITY_COUNT, scene::ENTITY_COUNT);
         let handle = world
             .handle(StableId(scene::REFLECTION_SUBJECT_SLOT as u128))
             .expect("authored subject exists");
         let slot = usize::try_from(handle.slot).expect("bounded physical slot");
-        let policy = GameScene::new();
+        let policy = GameScene::new(scene::GameContent::Grid);
         let mut changed = Vec::new();
         for _ in 0..2 {
             let page = world.published_page().expect("committed game page");
