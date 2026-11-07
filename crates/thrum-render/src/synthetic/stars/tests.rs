@@ -61,6 +61,84 @@ fn opaque_depth_store_and_star_pass_follow_the_current_target_view() {
     });
 }
 
+#[test]
+fn bright_incident_view_drops_the_star_pass_until_exposure_or_light_changes() {
+    pollster::block_on(async {
+        let (device, queue, capabilities) = metal().await;
+        let atmosphere = |direction, lux| {
+            FrameLighting::Atmosphere(
+                AtmosphereFrame::new(direction, lux, [1.0; 3], 245.0, 1).expect("Earth atmosphere"),
+            )
+        };
+        let bright = atmosphere([0.0, 1.0, 0.0], 127_000.0);
+        let dark = atmosphere([0.0, -1.0, 0.0], 127_000.0);
+        let mut scene = SyntheticScene::grid(1).expect("scene");
+        scene.star_catalogue = Some(&[[0.0, 0.1, -0.994_987_4, 1.1e-5]]);
+        let view = SyntheticView::perspective(
+            [0.0, 0.0, 3.0],
+            [0.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0],
+            46.0_f32.to_radians(),
+            16.0 / 9.0,
+            0.1,
+            20.0,
+        )
+        .expect("perspective view")
+        .with_celestial_basis(glam::Mat3::IDENTITY.to_cols_array_2d())
+        .expect("celestial basis")
+        .with_sdr_tone_map(crate::synthetic::SdrToneMap::NeutralHighlights);
+        let metered = view
+            .with_incident_exposure(0.0, -12.0, 18.0)
+            .expect("incident meter");
+        scene.view = metered;
+        let mut prepared = PreparedSynthetic::prepare_with_capabilities(
+            &capabilities,
+            &queue,
+            &scene,
+            bright,
+            1.0 / 16_000.0,
+        )
+        .await
+        .expect("star scene preparation");
+        let mut target = OffscreenTarget::new(&device, &prepared, 640, 360).expect("target");
+        assert_variant(&target, false);
+        let too_bright = view
+            .with_incident_exposure(1.0, -12.0, 18.0)
+            .expect("compensated meter");
+        let clamped = view
+            .with_incident_exposure(0.0, -12.0, 14.0)
+            .expect("meter with a low EV ceiling");
+        for (view, light, stars) in [
+            (metered, dark, true),
+            (metered, bright, false),
+            (too_bright, bright, true),
+            (clamped, bright, true),
+            (metered, bright, false),
+        ] {
+            scene.view = view;
+            prepared
+                .update_frame(&queue, &mut target, &scene, light, 1.0)
+                .expect("update target");
+            assert_variant(&target, stars);
+            let mut encoder =
+                device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+            prepared
+                .encode(&mut encoder, 41, &target, None)
+                .expect("execute selected graph");
+            let submission = queue.submit([encoder.finish()]);
+            device
+                .poll(wgpu::PollType::Wait {
+                    submission_index: Some(submission),
+                    timeout: Some(std::time::Duration::from_secs(10)),
+                })
+                .expect("submitted variant completes");
+            prepared.commit_frame();
+        }
+        let tiny = OffscreenTarget::new(&device, &prepared, 128, 72).expect("small target");
+        assert_variant(&tiny, true);
+    });
+}
+
 async fn metal() -> (wgpu::Device, wgpu::Queue, DeviceCapabilities) {
     let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
         backends: wgpu::Backends::METAL,

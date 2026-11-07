@@ -11,8 +11,11 @@ use crate::graph::{
 };
 
 use super::{
-    PreparedSynthetic, Projection, RenderError, SCENE_FORMAT, SceneContext, SyntheticView, exposure,
+    LIGHT_BYTES, PreparedSynthetic, Projection, RenderError, SCENE_FORMAT, SceneContext,
+    SyntheticView, exposure,
 };
+
+mod daylight;
 
 pub(super) const PASS_NAME: &str = "atmosphere stars";
 const UNIFORM_LEN: usize = 96;
@@ -29,6 +32,7 @@ pub(super) struct StarPrepared {
     layout: wgpu::BindGroupLayout,
     pipeline: wgpu::RenderPipeline,
     count: u32,
+    daylight: daylight::DaylightBound,
 }
 
 pub(super) struct StarTarget {
@@ -41,6 +45,7 @@ impl StarPrepared {
         device: &wgpu::Device,
         records: &[[f32; 4]],
         max_storage_bytes: u64,
+        light: &[u8; LIGHT_BYTES],
     ) -> Result<Self, RenderError> {
         let count = u32::try_from(records.len()).map_err(|_| RenderError::SceneCapacity)?;
         let bytes = u64::from(count) * 16;
@@ -60,9 +65,20 @@ impl StarPrepared {
             contents: &packed,
             usage: wgpu::BufferUsages::STORAGE,
         });
+        // The same footprint constants drive rasterization and the daylight bound.
+        let shader = format!(
+            "const ANGULAR_SIGMA_DEGREES: f32 = {:.12};\nconst PIXEL_SIGMA: f32 = {:.12};\n\
+             const MAX_CENTRE_NDC: f32 = {:.1};\nconst RADIUS_SIGMAS: f32 = {:.1};\n\
+             const PIXEL_HALF_WIDTH: f32 = {:.1};\n{SHADER}",
+            daylight::ANGULAR_SIGMA_DEGREES,
+            daylight::PIXEL_SIGMA,
+            daylight::MAX_CENTRE_NDC,
+            daylight::RADIUS_SIGMAS,
+            daylight::PIXEL_HALF_WIDTH,
+        );
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some(PASS_NAME),
-            source: wgpu::ShaderSource::Wgsl(SHADER.into()),
+            source: wgpu::ShaderSource::Wgsl(shader.into()),
         });
         let blend = wgpu::BlendComponent {
             src_factor: wgpu::BlendFactor::One,
@@ -110,6 +126,7 @@ impl StarPrepared {
             layout,
             pipeline,
             count,
+            daylight: daylight::DaylightBound::new(records, light),
         })
     }
 
@@ -120,10 +137,11 @@ impl StarPrepared {
         atmosphere: &AtmospherePrepared,
         exposure_samples: &[wgpu::Buffer; 2],
         (view, extent): (&SyntheticView, [u32; 2]),
-    ) -> StarTarget {
+    ) -> (StarTarget, bool) {
+        let view_bytes = self.view_bytes(view, extent);
         let uniform = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("star view"),
-            contents: &StarTarget::view_bytes(view, extent).unwrap_or([0; UNIFORM_LEN]),
+            contents: &view_bytes.unwrap_or([0; UNIFORM_LEN]),
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
         let groups = std::array::from_fn(|side| {
@@ -164,29 +182,34 @@ impl StarPrepared {
                 ],
             })
         });
-        StarTarget { uniform, groups }
+        (StarTarget { uniform, groups }, view_bytes.is_some())
     }
-}
 
-impl StarTarget {
-    pub(super) fn update(
-        &self,
+    pub(super) fn update_target(
+        &mut self,
         queue: &wgpu::Queue,
+        target: &StarTarget,
         view: &SyntheticView,
         extent: [u32; 2],
+        light: &[u8; LIGHT_BYTES],
     ) -> bool {
-        let Some(bytes) = Self::view_bytes(view, extent) else {
+        self.daylight.update(light);
+        let Some(bytes) = self.view_bytes(view, extent) else {
             return false;
         };
-        queue.write_buffer(&self.uniform, 0, &bytes);
+        queue.write_buffer(&target.uniform, 0, &bytes);
         true
     }
 
-    fn view_bytes(view: &SyntheticView, extent: [u32; 2]) -> Option<[u8; UNIFORM_LEN]> {
+    fn view_bytes(&self, view: &SyntheticView, extent: [u32; 2]) -> Option<[u8; UNIFORM_LEN]> {
         let Projection::Perspective { fx, fy, .. } = view.projection() else {
             return None;
         };
         let rotation = view.celestial_basis()?;
+        let strength = self.daylight.strength(view, extent);
+        if strength <= 0.0 {
+            return None;
+        }
         let transform =
             Mat4::from_cols_array_2d(&view.view_proj_columns()) * Mat4::from_mat3(rotation);
         let up = rotation.row(1);
@@ -196,7 +219,7 @@ impl StarTarget {
                 .to_cols_array()
                 .into_iter()
                 .chain([extent[0] as f32, extent[1] as f32, fx.recip(), fy.recip()])
-                .chain([up.x, up.y, up.z, 0.0]),
+                .chain([up.x, up.y, up.z, strength]),
         ) {
             destination.copy_from_slice(&value.to_le_bytes());
         }

@@ -1321,7 +1321,12 @@ impl PreparedSynthetic {
             scene
                 .star_catalogue
                 .map(|records| {
-                    StarPrepared::new(device, records, limits.max_storage_buffer_binding_size)
+                    StarPrepared::new(
+                        device,
+                        records,
+                        limits.max_storage_buffer_binding_size,
+                        &light_data,
+                    )
                 })
                 .transpose()?
         } else {
@@ -1515,10 +1520,13 @@ impl PreparedSynthetic {
             0,
             &scene.view.pack_aux(target.width, target.height),
         );
-        target.draw_stars = target
-            .stars
-            .as_ref()
-            .is_some_and(|stars| stars.update(queue, &scene.view, target.extent()));
+        target.draw_stars =
+            self.stars
+                .as_mut()
+                .zip(target.stars.as_ref())
+                .is_some_and(|(stars, binding)| {
+                    stars.update_target(queue, binding, &scene.view, target.extent(), &light_data)
+                });
         // Atmosphere owns the ambient tail on GPU; preserve its cached value.
         let cpu_light_bytes = if self.atmosphere.is_some() {
             48
@@ -1976,20 +1984,20 @@ impl OffscreenTarget {
             .pending_view
             .as_ref()
             .unwrap_or(&prepared.view_sample);
-        let stars = prepared
+        let (stars, draw_stars) = prepared
             .stars
             .as_ref()
             .zip(prepared.atmosphere.as_ref())
-            .map(|(stars, atmosphere)| {
-                stars.target(
+            .map_or((None, false), |(stars, atmosphere)| {
+                let (binding, draw) = stars.target(
                     device,
                     &depth,
                     atmosphere,
                     &prepared.exposure.samples,
                     (initial_view, [width, height]),
-                )
+                );
+                (Some(binding), draw)
             });
-        let draw_stars = stars.is_some() && initial_view.celestial_basis().is_some();
         let display = prepared
             .display
             .target(device, &scene_view, &prepared.exposure.samples);
