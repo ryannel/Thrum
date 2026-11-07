@@ -42,9 +42,10 @@ At each check, for each agent:
 
 ## When a milestone is claimed
 
-Check that the evidence is from the game at the shipped configuration and watched in motion, then commission an
-independent review with the raw captures and how the milestone is judged, not the agent's summary, unless the
-agent's own review already did that and holds up. Watch the captures yourself too. Count it done when the verdict is
+Check that the evidence is from the game at the shipped configuration and watched in motion, and that the agent's
+own independent review is recorded on the plan's `Reviews:` line. Read its brief as well as its verdict: it should
+have had the raw captures and how the milestone is judged, not the agent's summary. Commission your own review only
+when that one is missing or doubtful. Watch the captures yourself too. Count it done when a sound verdict is
 recorded. When the last milestone closes, check that every required cue was delivered or explicitly deferred.
 
 ## Steering is a symptom
@@ -54,7 +55,9 @@ whichever of these it needs. A steer names the problem, the evidence and the mil
 design, and leaves the technical fix to the agent. When you correct a milestone, send the correction and its evidence; the agent edits the plan, logs why and
 has the change reviewed, so the plan keeps one writer. Needing to step in at all means something in the method or the
 plan is wrong (the design, the plan, the agent's goal, this process or the skill), so also find that cause and fix
-it, so the same intervention isn't needed again. A skill or
+it, so the same intervention isn't needed again. Ask what would have prevented it: a cue the design didn't cover, a
+done-when too vague to refuse over, a goal too open, a missing signal, or a skill gap. A fix to a skill goes to main
+through engine-contributor like any change. Log interventions and their causes where the overseer keeps its record. A skill or
 process fix goes to whoever owns that skill. A count of steers per agent is a health signal; report it.
 
 An agent's goal is to work through its plan's milestones to the plan's end, judged by their done-when checks. If an
