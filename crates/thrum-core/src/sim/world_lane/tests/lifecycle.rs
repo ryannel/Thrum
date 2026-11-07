@@ -341,22 +341,39 @@ fn paused_recovery_publishes_and_wakes_without_another_tick() {
     let mut fixture = fixture(None, true, Backlog::Active);
     let accepted = drain_paused(&fixture);
     assert_eq!(reply(&fixture.controls).id.tick, accepted);
-    fixture
-        .lane
-        .poll(fixture.origin.elapsed())
-        .expect("busy publication");
+    wait_until(|| {
+        fixture
+            .lane
+            .poll(fixture.origin.elapsed())
+            .expect("busy publication")
+            .tick
+            == accepted
+    });
     assert!(fixture.lane.current_page().is_none());
     fixture.publication_busy.store(false, Ordering::Release);
     fixture
         .wakes
         .recv_timeout(Duration::from_secs(2))
         .expect("zero-tick publication wake");
-    let recovered = fixture
+    // Reproduce the allowed stale poll when the shared state is locked
+    // after the wake, as when the worker re-enters its condition wait.
+    let shared = Arc::clone(&fixture.lane.shared);
+    let lock = shared.state.lock().expect("publication state");
+    let stale = fixture
         .lane
         .poll(fixture.origin.elapsed())
-        .expect("recovered publication");
-    assert_eq!((recovered.tick, recovered.completed_ticks), (accepted, 0));
-    assert!(recovered.recovered_publication);
+        .expect("nonblocking poll");
+    assert!(!stale.recovered_publication);
+    assert!(fixture.lane.current_page().is_none());
+    drop(lock);
+    wait_until(|| {
+        let observed = fixture
+            .lane
+            .poll(fixture.origin.elapsed())
+            .expect("recovered publication");
+        assert_eq!((observed.tick, observed.completed_ticks), (accepted, 0));
+        observed.recovered_publication
+    });
     assert_eq!(fixture.lane.current_page(), Some(accepted));
     assert_eq!(
         u64::from(fixture.observed.lock().expect("observer").attempts),
