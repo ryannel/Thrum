@@ -74,7 +74,8 @@ The author then does one of these:
 - rejects the finding with reasons;
 - records a genuine open decision with a discriminating experiment.
 
-Narrowing a claim removes an overclaim; it doesn't deliver the excluded experience. A review report alone doesn't
+Fix the class a finding belongs to, not only the instance the reviewer named: search the change for the same kind of
+fault before bringing it back. Narrowing a claim removes an overclaim; it doesn't deliver the excluded experience. A review report alone doesn't
 close the gap it found.
 
 Verify consequential fixes against the revised assembly. Old reviews apply only to the revision they inspected. Agreement
