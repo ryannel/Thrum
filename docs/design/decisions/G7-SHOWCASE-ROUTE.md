@@ -97,8 +97,9 @@ Each pose must equal its preset, so if either side drifts, the check stops befor
 
 **`chrome [--stop <name>] [--no-open]`**
 - Starts `thrum-cook watch <copy> <store> --serve 127.0.0.1:0`.
-- Starts a loopback static server for the built web root and the presets directory.
-- Opens Chrome at `index.html?assets=<origin>&params=params/showcase-<stop>.params.json`.
+- Starts a loopback static server for the built web root. `web/build.sh` already copies the presets beside
+  `index.html`, so the page fetches the same files.
+- Opens Chrome at `index.html?assets=<origin>&params=showcase-<stop>.params.json`.
 - `--no-open` prints the URL instead.
 - Both servers stop on Ctrl-C.
 
@@ -144,6 +145,8 @@ The check fails in any of these cases:
 
 **Calibration rule, fixed before the first run.**
 - Each statistic's threshold is max(1.0, 3 × the worst valley-to-native value across the stops).
+- The rule is applied once, to the first run that passes both controls. Its thresholds are then written into the
+  script as constants, so later runs are judged against fixed numbers, not against themselves.
 - Both sets of numbers are recorded.
 - If either control fails under that rule, the metric is wrong, and the check goes back to design rather than being
   tuned to pass.
@@ -188,8 +191,10 @@ drift assertion.
 ## What is measured, and what is kept apart
 
 - **Cold startup** is recorded as two proxies, labelled as such and never as windowed startup:
-  - **Native:** time from the capture process launching to the content being drawn, offscreen.
-  - **Chrome:** time from navigation to `cooked_status().drawn` in the checker's headless run.
+  - **Native:** time from the capture process launching to its first capture file being written, offscreen. Capture
+    logs nothing when content is first drawn, so this includes one readback.
+  - **Chrome:** time from navigation to `cooked_status().drawn` in the checker's headless run. The checker's timeline
+    carries no timestamps, so this proxy waits for the checker route seam.
 
   Build time is recorded separately and never counted. Windowed cold startup on the Mac waits on the owner's screen.
 - **Visible edit and pacing** is watched on screen in the running game: a live edit reaching the view, and motion
