@@ -11,10 +11,12 @@ poses read from artifacts, split M1 boxes, and a baseline that survives a clean 
   `tmp/g7-showcase/review/M1-REREVIEW-REPORT.md`, local), accept. Five wording and guard points, all taken.
 - M2 @ 46f8112d, brief `tmp/g7-showcase/review/M2-REVIEW-BRIEF.md` (local), accept with changes, no blocker. Seven
   findings, all taken (see the log).
+- M2 fixes @ fe9e26d5, same reviewer, brief: the fix list in its follow-up (report
+  `tmp/g7-showcase/review/M2-REREVIEW-REPORT.md`, local), accept. Three wording nits, all taken.
 Milestone: M2 Repeatable route and first baseline · Updated: 2026-11-07
-Now: M2 built and reviewed (accept with changes, all taken). Root approved the native seam and held the checker
-seam for one coverage fix, now made
-Next: root's verdict on the revised checker diff and a re-review of the M2 fixes, then push
+Now: M2 built, reviewed and re-reviewed (accept). Root approved the native seam; the checker seam's coverage fix is
+resubmitted
+Next: root's verdict on the revised checker diff, then push M2
 Blocked: none. The on-screen Mac walk waits on screen control (one request denied).
 
 ## M1 Local cooked valley on both targets: done
@@ -67,7 +69,8 @@ Done when:
 - [x] Route frames come from the preset files on both targets, including Chrome's 17.4 h clear-Sun stop, through
       the two seams root approved in principle. (Native `THRUM_CAPTURE_PARAMS`, checker `--case route`; Chrome's
       17.4 h stop reads 0.026/0.039/0.092 against native. Pushing waits on root's verdict on the exact diffs.)
-- [ ] An independent milestone review agrees, and what final G7 still needs is recorded.
+- [x] An independent milestone review agrees, and what final G7 still needs is recorded. (Accept with changes, then
+      accept on re-review. What is owed is in the design's "Still owed for final G7" and the evidence's "Still open")
 
 Work:
 - [x] Post the seams to `tmp/g7-boundary/NOTES.md`. Root approved both in principle.
@@ -130,3 +133,6 @@ Work:
   byte. A missing, a stale and an extra built preset each fail. Fixed the same class in the script's Chrome
   launcher, which now refuses a web root whose presets differ from the checked-in ones. Rebased on 6fa34365; the
   game binary is unchanged (`d8986d4f…`) and `./dev check` passed.
+- 2026-11-07 Re-review of the M2 fixes and root's checker hold: accept. Took its three nits: the timing ranges now
+  name the runs they cover, the checked-in-typo claim says what is and isn't shown on the current code, and the
+  `--baseline` help says it is relative to the current directory.
