@@ -10,6 +10,7 @@ mod content;
 pub mod controls;
 pub mod cooked;
 mod environment;
+mod field;
 mod host;
 mod projection;
 mod scene;
@@ -19,16 +20,22 @@ pub mod simulation;
 mod window;
 
 #[cfg(target_arch = "wasm32")]
-pub use browser::{BrowserGame, CookedValley, create_browser_game, fetch_cooked_valley};
+pub use browser::{
+    BrowserGame, CookedValley, create_browser_game, create_field_game, fetch_cooked_valley,
+};
 pub use camera::SceneCamera;
 #[cfg(not(target_arch = "wasm32"))]
-pub use content::attach_cooked_scene;
+pub use content::{attach_cooked_scene, selected_setup};
+#[doc(hidden)]
+pub use host::field_in_view_share;
 pub use host::{
-    AdvancedFrame, DriveReport, EncodedFrame, FrameConfig, FrameHost, FrameSample, SurfaceOutput,
+    AdvancedFrame, DriveReport, EncodedFrame, FrameConfig, FrameHost, FrameSample, GameSetup,
+    SurfaceOutput,
 };
 #[cfg(not(target_arch = "wasm32"))]
 pub use host::{ThreadedFrameHost, WorldControls};
 pub use projection::{GameProjection, ProjectionGap};
+pub use scene::GameContent;
 #[doc(hidden)]
 pub use scene::simulation_with_count;
 #[cfg(target_os = "macos")]

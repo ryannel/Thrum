@@ -123,6 +123,37 @@ pub struct BrowserGame {
 /// Returns a JavaScript error when no compatible adapter, surface format or GPU resource exists.
 #[wasm_bindgen]
 pub async fn create_browser_game(canvas: HtmlCanvasElement) -> Result<BrowserGame, JsValue> {
+    create_game(canvas, crate::GameSetup::default()).await
+}
+
+/// Prepare the dense flythrough field with `culling` (`"direct"` or `"frustum"`).
+///
+/// # Errors
+/// Returns an unknown culling mode, or the same failures as [`create_browser_game`].
+#[wasm_bindgen]
+pub async fn create_field_game(
+    canvas: HtmlCanvasElement,
+    culling: String,
+) -> Result<BrowserGame, JsValue> {
+    let camera_culling = match culling.as_str() {
+        "direct" => thrum_render::synthetic::CullMode::Direct,
+        "frustum" => thrum_render::synthetic::CullMode::Frustum,
+        _ => return Err(JsValue::from_str("culling must be direct or frustum")),
+    };
+    create_game(
+        canvas,
+        crate::GameSetup {
+            content: crate::GameContent::Field,
+            camera_culling,
+        },
+    )
+    .await
+}
+
+async fn create_game(
+    canvas: HtmlCanvasElement,
+    setup: crate::GameSetup,
+) -> Result<BrowserGame, JsValue> {
     std::panic::set_hook(Box::new(|info| {
         web_sys::console::error_1(&JsValue::from_str(&info.to_string()));
     }));
@@ -143,7 +174,7 @@ pub async fn create_browser_game(canvas: HtmlCanvasElement) -> Result<BrowserGam
     .await
     .map_err(js_error)?;
     surface.configure(&gpu.device, &gpu.config);
-    let host = FrameHost::new_with_capabilities(
+    let host = FrameHost::new_with_setup(
         &gpu.device,
         &gpu.queue,
         &gpu.capabilities,
@@ -154,6 +185,7 @@ pub async fn create_browser_game(canvas: HtmlCanvasElement) -> Result<BrowserGam
                 extent: [gpu.config.width, gpu.config.height],
             }),
         },
+        setup,
     )
     .await
     .map_err(js_error)?;

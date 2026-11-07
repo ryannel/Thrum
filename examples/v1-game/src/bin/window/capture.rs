@@ -31,7 +31,7 @@ pub(super) async fn run(output: PathBuf) -> Result<(), String> {
         .await
         .map_err(|error| format!("capture device: {error}"))?;
     let capabilities = DeviceCapabilities::capture(&adapter, &device, FrameHost::DEVICE_GENERATION);
-    let mut host = FrameHost::new_with_capabilities(
+    let mut host = FrameHost::new_with_setup(
         &device,
         &queue,
         &capabilities,
@@ -39,6 +39,7 @@ pub(super) async fn run(output: PathBuf) -> Result<(), String> {
             render_extent: EXTENT,
             surface: None,
         },
+        v1_game::selected_setup()?,
     )
     .await?;
     let content = v1_game::attach_cooked_scene(&mut host)?;

@@ -14,7 +14,6 @@ pub(crate) const NEUTRAL_SUBJECT_SLOT: usize = 5050;
 pub(crate) const REFLECTION_SUBJECT_SLOT: usize = 5052;
 pub(crate) const REFLECTION_SUBJECT_POSITION: [f32; 3] = [-0.5, 0.009, 0.78];
 pub(crate) const REFLECTION_SUBJECT_MATERIAL: u64 = 2;
-pub(crate) const CONTROLLED_ID: StableId = StableId((ENTITY_COUNT - 1) as u128);
 pub(crate) const LOCAL_PEER: PeerId = PeerId(1);
 pub(crate) const PEER_COUNT: usize = 4;
 
@@ -45,8 +44,94 @@ pub(crate) fn control_frame(
     )
 }
 
-pub(crate) fn simulation() -> Result<Simulation, String> {
-    simulation_with_count(ENTITY_COUNT)
+/// The content a game host is prepared with.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum GameContent {
+    /// The original 10k diagnostic grid with its subjects and local lights.
+    #[default]
+    Grid,
+    /// The dense flythrough field (about 100k instances, walls and a ground).
+    Field,
+}
+
+impl GameContent {
+    /// Physical entity slots the content seeds and the renderer prepares.
+    #[must_use]
+    pub fn entity_count(self) -> usize {
+        match self {
+            Self::Grid => ENTITY_COUNT,
+            Self::Field => crate::field::ENTITY_COUNT,
+        }
+    }
+
+    /// The local peer's controlled entity: the content's last slot.
+    pub(crate) fn controlled_id(self) -> StableId {
+        StableId((self.entity_count() - 1) as u128)
+    }
+}
+
+pub(crate) fn simulation(content: GameContent) -> Result<Simulation, String> {
+    match content {
+        GameContent::Grid => simulation_with_count(ENTITY_COUNT),
+        GameContent::Field => field_simulation(),
+    }
+}
+
+fn new_simulation(entity_count: usize) -> Result<Simulation, String> {
+    Simulation::new(
+        WorldEpoch(1),
+        SimConfig {
+            tick_hz: NonZeroU32::new(60).ok_or("invalid fixture tick rate")?,
+            entity_capacity: entity_count,
+            peer_capacity: PEER_COUNT,
+            actions_per_frame: 8,
+            movement_speed: 6.0,
+        },
+    )
+    .map_err(|error| format!("simulation setup: {error:?}"))
+}
+
+/// The last `PEER_COUNT` slots are owned by, and registered to, the peers.
+fn peer_ownership(entity_count: usize, index: usize) -> Result<Option<Ownership>, String> {
+    let peer_number = entity_count - index;
+    if peer_number > PEER_COUNT {
+        return Ok(None);
+    }
+    Ok(Some(binding(PeerId(
+        u64::try_from(peer_number).map_err(|error| error.to_string())?,
+    ))))
+}
+
+fn register_peers(sim: &mut Simulation, entity_count: usize) -> Result<(), String> {
+    for peer_number in 1..=PEER_COUNT {
+        let peer = PeerId(u64::try_from(peer_number).map_err(|error| error.to_string())?);
+        let id = StableId(
+            u128::try_from(entity_count - peer_number).map_err(|error| error.to_string())?,
+        );
+        let controlled = sim.handle(id).ok_or("seeded control identity missing")?;
+        sim.register_peer(binding(peer), controlled)
+            .map_err(|error| format!("register control peer {peer_number}: {error:?}"))?;
+    }
+    Ok(())
+}
+
+fn field_simulation() -> Result<Simulation, String> {
+    let entity_count = crate::field::ENTITY_COUNT;
+    let mut sim = new_simulation(entity_count)?;
+    for index in 0..entity_count {
+        let entity = crate::field::entity(index);
+        sim.seed(ComponentEntity {
+            id: StableId(index as u128),
+            position: Position(entity.position),
+            velocity: Velocity(entity.velocity),
+            health: 100,
+            ownership: peer_ownership(entity_count, index)?,
+            visual: Some(entity.material),
+        })
+        .map_err(|error| format!("seed field entity {index}: {error:?}"))?;
+    }
+    register_peers(&mut sim, entity_count)?;
+    Ok(sim)
 }
 
 /// Build a parameterized V1 workload for the game-tick benchmark.
@@ -58,31 +143,14 @@ pub fn simulation_with_count(entity_count: usize) -> Result<Simulation, String> 
     if entity_count < PEER_COUNT || entity_count > u32::MAX as usize {
         return Err("fixture entity count is outside the physical slot range".into());
     }
-    let mut sim = Simulation::new(
-        WorldEpoch(1),
-        SimConfig {
-            tick_hz: NonZeroU32::new(60).ok_or("invalid fixture tick rate")?,
-            entity_capacity: entity_count,
-            peer_capacity: PEER_COUNT,
-            actions_per_frame: 8,
-            movement_speed: 6.0,
-        },
-    )
-    .map_err(|error| format!("simulation setup: {error:?}"))?;
+    let mut sim = new_simulation(entity_count)?;
     let moving_count = entity_count / ENTITY_COUNT * MOVING_COUNT
         + entity_count % ENTITY_COUNT * MOVING_COUNT / ENTITY_COUNT;
     for index in 0..entity_count {
         let x = -0.9 + (index % 100) as f64 * 0.018 + 0.009;
         let y = -0.9 + (index / 100) as f64 * 0.018 + 0.009;
-        let peer_number = entity_count - index;
         let reflection_subject = entity_count == ENTITY_COUNT && index == REFLECTION_SUBJECT_SLOT;
-        let ownership = if peer_number <= PEER_COUNT {
-            Some(binding(PeerId(
-                u64::try_from(peer_number).map_err(|error| error.to_string())?,
-            )))
-        } else {
-            None
-        };
+        let ownership = peer_ownership(entity_count, index)?;
         sim.seed(ComponentEntity {
             id: StableId(index as u128),
             position: Position(if reflection_subject {
@@ -101,15 +169,7 @@ pub fn simulation_with_count(entity_count: usize) -> Result<Simulation, String> 
         })
         .map_err(|error| format!("seed entity {index}: {error:?}"))?;
     }
-    for peer_number in 1..=PEER_COUNT {
-        let peer = PeerId(u64::try_from(peer_number).map_err(|error| error.to_string())?);
-        let id = StableId(
-            u128::try_from(entity_count - peer_number).map_err(|error| error.to_string())?,
-        );
-        let controlled = sim.handle(id).ok_or("seeded control identity missing")?;
-        sim.register_peer(binding(peer), controlled)
-            .map_err(|error| format!("register control peer {peer_number}: {error:?}"))?;
-    }
+    register_peers(&mut sim, entity_count)?;
     Ok(sim)
 }
 
@@ -437,7 +497,7 @@ mod tests {
 
     #[test]
     fn four_peers_share_one_tick_authority_and_keep_independent_held_controls() {
-        let mut sim = simulation().expect("10k fixture");
+        let mut sim = simulation(super::GameContent::Grid).expect("10k fixture");
         let axes = [
             [1.0, 0.0, 0.0],
             [0.0, 1.0, 0.0],

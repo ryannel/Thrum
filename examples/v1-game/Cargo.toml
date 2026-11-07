@@ -69,3 +69,7 @@ harness = false
 [[bench]]
 name = "material_reload"
 harness = false
+
+[[bench]]
+name = "field_culling"
+harness = false

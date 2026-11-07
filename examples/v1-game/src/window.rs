@@ -2,6 +2,7 @@
 //! controls, movement keys and solar-time readback.
 
 use std::time::Instant;
+use thrum_render::synthetic::CullMode;
 
 use thrum_app::{Config, Edits, Game, Gpu, KeyCode, KeyResponse, Prepared, WorldLink};
 use thrum_controls::Controls;
@@ -26,12 +27,32 @@ const KEY_DOWN: u8 = 128;
 /// `THRUM_V1_FRAMES` bounds the run; `THRUM_PARAMS` names a parameter file applied at
 /// start and on `L`. Failures are reported on standard error with a nonzero exit.
 pub fn run_window() {
+    // The profiler title names the content and camera culling mode; invalid
+    // selections are reported when the host is prepared.
+    let (window_title, title) = match crate::selected_setup() {
+        Ok(crate::GameSetup {
+            content: crate::GameContent::Field,
+            camera_culling: CullMode::Frustum,
+        }) => (
+            "Thrum V1 — field / Frustum culling",
+            "Thrum V1 field Frustum",
+        ),
+        Ok(crate::GameSetup {
+            content: crate::GameContent::Field,
+            ..
+        }) => ("Thrum V1 — field / Direct", "Thrum V1 field Direct"),
+        Ok(crate::GameSetup {
+            camera_culling: CullMode::Frustum,
+            ..
+        }) => ("Thrum V1 — 10k world / Frustum culling", "Thrum V1 Frustum"),
+        _ => ("Thrum V1 — 10k world / clustered forward+", "Thrum V1"),
+    };
     thrum_app::run(
         Config {
             name: "v1-game",
             frames_variable: "THRUM_V1_FRAMES",
-            window_title: "Thrum V1 — 10k world / clustered forward+",
-            title: "Thrum V1",
+            window_title,
+            title,
             render_thread: "thrum-v1-render",
             panel_title: "Thrum demo",
             window_size: [1920, 1080],
@@ -86,7 +107,7 @@ impl Game for WindowGame {
         gpu: Gpu<'_>,
         world_advanced: Box<dyn Fn() + Send>,
     ) -> Result<Prepared<WorldPort, GameScene>, String> {
-        let mut host = pollster::block_on(FrameHost::new_with_capabilities(
+        let mut host = pollster::block_on(FrameHost::new_with_setup(
             gpu.device,
             gpu.queue,
             gpu.capabilities,
@@ -94,6 +115,7 @@ impl Game for WindowGame {
                 render_extent: [1920, 1080],
                 surface: Some(gpu.surface),
             },
+            crate::selected_setup()?,
         ))?;
         crate::attach_cooked_scene(&mut host)?;
         self.demo.observe_camera(host.camera_orientation());

@@ -47,7 +47,7 @@
       <output id="status">Starting WebGPU…</output>
     </main>
     <script type="module">
-      import init, { create_browser_game, fetch_cooked_valley } from "./v1_game.js";
+      import init, { create_browser_game, create_field_game, fetch_cooked_valley } from "./v1_game.js";
       import { mountControls } from "./thrum-controls.js";
 
       const canvas = document.querySelector("#scene");
@@ -55,8 +55,11 @@
       const player = document.querySelector("#player");
       try {
         await init();
-        const game = await create_browser_game(canvas);
         const probe = new URL(location.href).searchParams;
+        // ?field draws the dense flythrough field; ?culling=direct|frustum picks camera culling.
+        const game = probe.has("field")
+          ? await create_field_game(canvas, probe.get("culling") ?? "frustum")
+          : await create_browser_game(canvas);
         // ?assets=<thrum-cook watch --serve origin> draws the cooked valley.
         if (probe.has("assets")) {
           status.textContent = "Fetching the cooked valley…";
@@ -73,7 +76,8 @@
             }
           })();
         }
-        status.textContent = "Running the 10,000-entity scene…";
+        const running = probe.has("field") ? "Running the 100,513-instance field…" : "Running the 10,000-entity scene…";
+        status.textContent = running;
         const pauseProbe = probe.has("pause-probe");
         const resizeProbe = probe.has("resize-probe");
         const overloadProbe = probe.has("overload-probe");
@@ -223,7 +227,7 @@
             if (status.textContent !== message) status.textContent = message;
           } else if (wasUnavailable) {
             restoreError = null;
-            status.textContent = "Running the 10,000-entity scene…";
+            status.textContent = running;
           }
           return graphicsUnavailable;
         };
@@ -300,7 +304,7 @@
                   game.set_visible(!document.hidden && !simulatedHidden, performance.now());
                   status.textContent = document.hidden
                     ? "Lifecycle probe complete; waiting for visibility…"
-                    : "Resumed the 10,000-entity scene…";
+                    : running.replace("Running", "Resumed");
                   schedule();
                 } catch (error) {
                   status.textContent = `Lifecycle fault: ${error}`;

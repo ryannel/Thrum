@@ -10,7 +10,7 @@ use thrum_core::{
 
 use crate::{
     projection::{GameProjection, ProjectionGap, ProjectionOutbox},
-    scene::{self, ENTITY_COUNT},
+    scene::{self, GameContent},
     simulation::{PublishedPage, SimError, Simulation},
 };
 
@@ -252,6 +252,7 @@ pub(crate) struct WorldDriver {
 }
 
 pub(super) struct GameWorld {
+    content: GameContent,
     pub(super) sim: Simulation,
     projections: Option<ProjectionOutbox>,
     desired_axes: [f32; 3],
@@ -260,9 +261,10 @@ pub(super) struct GameWorld {
 }
 
 impl WorldDriver {
-    pub(super) fn new() -> Result<Self, String> {
+    pub(super) fn new(content: GameContent) -> Result<Self, String> {
         let game = GameWorld {
-            sim: scene::simulation()?,
+            content,
+            sim: scene::simulation(content)?,
             projections: None,
             desired_axes: [0.0; 3],
             admitted_axes: [0.0; 3],
@@ -349,8 +351,9 @@ impl WorldDriver {
     }
 
     pub(super) fn controlled_position(&self) -> Option<[f64; 3]> {
-        let sim = &self.world.game().sim;
-        sim.handle(scene::CONTROLLED_ID)
+        let game = self.world.game();
+        let sim = &game.sim;
+        sim.handle(game.content.controlled_id())
             .and_then(|handle| sim.get(handle).ok())
             .map(|entity| entity.position.0)
     }
@@ -362,7 +365,7 @@ impl WorldDriver {
                 .sim
                 .published_page()
                 .map_err(|error| format!("world page: {error:?}"))?;
-            let mut outbox = ProjectionOutbox::new(ENTITY_COUNT);
+            let mut outbox = ProjectionOutbox::new(game.content.entity_count());
             outbox.reset_full(&page);
             game.projections = Some(outbox);
         }
