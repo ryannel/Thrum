@@ -38,8 +38,8 @@ The Codex goal remains active. Its attachment is
   the measured swaps. Retain the current loader for the valley and carry the tripwire
   forward for heavier authored edits. [Chrome measurements](G7-CHROME-VALLEY-2026-11-07.md)
 - G6's re-split controls and macOS runner commits are approved. The native starter and
-  cooked material shader reload are separate reviews. ExposureZones follows the first
-  G3s tone-scale checkpoint. See `tmp/g6-boundary/NOTES.md`.
+  cooked material shader reload are separate reviews. ExposureZones can use the
+  existing pre-tone exposed luminance seam. See `tmp/g6-boundary/NOTES.md`.
 
 ## Exposure audit decision
 
@@ -49,6 +49,24 @@ toe and shoulder against the current valley and the dawn, noon and dusk referenc
 Select mid-grey placement with the curve and keep the output path extensible to EDR.
 Use [Polyphony's GT7 reference](https://s3.amazonaws.com/gran-turismo.com/pdi_publications/s2025_PBS_Physically_Based_Tone_Mapping_GT7.pdf)
 as a candidate. The audit's performance figures are estimates.
+
+The first Metal capture comparison retains the current SDR curve. The per-channel
+scalar GT7 probe omits the reference's colour handling and washes out warm sunset
+colour. The shadow-only luminance probe preserves metered grey and the existing
+highlight path. It moves the twilight floor median from 67.30 to 64.22 code units
+and leaves the sampled sunset sky median at 237.47. The foreground still looks
+flat next to the CC0 Kiara dawn, noon, sunset and dusk photographs. These are
+uncalibrated visual comparisons. Try the full colour-aware output transform against
+the unchanged scene, then test terrain and material contrast separately. The
+meters, low-light key and shipping display shader are unchanged.
+
+The three binaries, ten matched stills per binary, `compare.py`, `compare-all.json`,
+`contact-all.png` and input hashes are in `tmp/handback-review/tone-scale/`. Run
+`sh tmp/handback-review/tone-scale/build-pair.sh` from the root to fill missing
+binaries. For a fresh capture set `THRUM_ASSET_STORE` to the absolute path of
+`tmp/g3s-showcase/cooked`, `THRUM_SCENE=valley` and `THRUM_CAPTURE_SCENE` to a new
+output directory, then run `v1-game-neutral`, `v1-game-scalar` or `v1-game-anchored`
+from the study directory on Metal. These captures establish visual output only.
 
 - **Night and EV floor remain open with G3s.** Fix the floor and key interaction with the
   first dim-light scene that can qualify it. Moon, stars and mesopic response need a
