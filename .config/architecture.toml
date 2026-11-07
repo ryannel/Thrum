@@ -74,6 +74,11 @@ manifest = "examples/starter/Cargo.toml"
 # separate process, so it never depends on the authoring cooker.
 allowed_workspace_dependencies = ["thrum-app"]
 
+[packages.thrum-lighthouse]
+manifest = "examples/lighthouse/Cargo.toml"
+# G6 creator trial: the third fresh-agent scene (a lighthouse), kept compiling against the kit.
+allowed_workspace_dependencies = ["thrum-app"]
+
 [packages.thrum-stones]
 manifest = "examples/stones/Cargo.toml"
 # G6 creator trial: the first fresh-agent scene (a stone circle at dawn), ported to the kit.

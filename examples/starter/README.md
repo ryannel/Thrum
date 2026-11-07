@@ -38,10 +38,13 @@ platform tag, and macOS is the right assumption.
   `THRUM_SCENE_ASSETS=/path/to/copy` before `./dev starter`.
 - **Parameters.** Edit [starter.params.json](starter.params.json) (display values, in degrees) and
   press `L` in the window. Unknown keys and out-of-range values are refused by name.
-- **Material.** Edit [material.wgsl](material.wgsl), the rock's material hook, and press `L`. Its
+- **Material.** Edit [material.wgsl](material.wgsl), the scene's material hook, and press `L`. Its
   `cooked_surface` function returns the base colour, roughness, metalness and emission to shade
   with, and can use the fragment's `uv`, world position and normal; the file's comments list the
-  fields and a moss example. The new material draws once it compiles, which takes about a second,
+  fields and a moss example. One hook runs on every mesh placement, and it is not told which placement it is
+  shading, so give different meshes different looks by world position. `emissive` is added radiance on the same
+  scale as the sky's light, and exposure follows the sky: a lantern in a fresh scene needed about 60 to read as lit
+  at dusk, and more in daylight. There is no bloom, so a very bright value clips to flat white. The new material draws once it compiles, which takes about a second,
   while the old one keeps drawing. A mistake is printed with its line and column, such as
   `material.wgsl:17:21: no definition in scope for identifier`, and the previous material keeps
   drawing.
@@ -49,6 +52,10 @@ platform tag, and macOS is the right assumption.
 
 Assets reload by themselves. Parameters and the material reload only when you press `L` with the window focused, so
 a half-saved file never reaches the scene.
+
+The window needs an awake, unlocked screen. On a locked or sleeping screen the display never asks for a frame, so
+the window draws nothing and a `THRUM_FRAMES` run ends with `presented=0` and a note saying so. Review frames with
+the [offscreen capture](#review-a-frame-without-a-window) instead.
 
 ## Make your own scene
 
@@ -70,7 +77,8 @@ a half-saved file never reaches the scene.
    downloaded) and says so; commit that change with the scene. Every later run cooks, watches and hot-reloads your
    `assets/` exactly as the starter does, and reuses the starter's build.
 
-To rebuild, format and lint without opening a window:
+After that first run, rebuild, format and lint without opening a window (before it, `--locked` refuses, because the
+package is not in `Cargo.lock` yet):
 
 ```sh
 rustup run 1.99.1 cargo build --locked --release -p thrum-<name>
@@ -97,7 +105,7 @@ only on the Mac, and one `cfg` on the module is cheaper than one on every item.
   read them yet: the material changes when you edit its file, and the ground's colour is set when the scene is built.
 - `Camera::look_at(position, target, vertical_fov_degrees)`.
 - An update closure, run before every frame, that maps controls onto the `Sky`: `sun_elevation_degrees`,
-  `sun_azimuth_degrees` and `camera`. A value the renderer cannot draw (for example a camera below the ground) is
+  `sun_azimuth_degrees` and `camera`, a `Camera` (`sky.camera = Camera::look_at(...)`). A value the renderer cannot draw (for example a camera below the ground) is
   explained on standard error and the previous sky is kept.
 - `.with_meshes(placements)?`: cooked meshes from your `assets/`, drawn and hot-reloaded from the store
   `./dev scene` sets.
@@ -129,8 +137,9 @@ MeshPlacement::new("meshes/rock", "textures/white")
 ```
 
 Turns apply in call order; `scale` and `at` can come anywhere. `on_ground` uses the cooked mesh's own vertices, so
-you need not know its bounds, and it follows edits to the asset. The default material is the texture's own colour, roughness
-0.55 and metalness 0. `base_colour` is linear RGB and alpha, each 0–1.
+you need not know its bounds, and it follows edits to the asset. The glTF file's own material factors are not used:
+the default material is the texture's own colour, roughness 0.55 and metalness 0, and `.material(...)` or the hook
+replaces it. `base_colour` is linear RGB and alpha, each 0–1.
 
 **Placements are rigid with one uniform scale.** Normals and culling and shadow bounds are transformed by the
 placement, so a stretched, sheared or mirrored transform would draw wrongly. The builder cannot make one. If you
@@ -142,6 +151,19 @@ finite inverse is refused as well.
 
 The starter's rock spans X −1.54 to 1.36 m, Y −0.83 to 1.00 m and Z −1.06 to 0.94 m around its origin, so it is
 widest along X. `on_ground` rests it whichever way you turn it.
+
+## Bring your own mesh
+
+Put a `.gltf` file (with its `.bin`) under `assets/meshes/` and place it by its path. The cooker reads:
+- triangle primitives, from every node, with each node's transform applied (other primitive modes are skipped);
+- `POSITION`, which is required, in metres with +Y up;
+- `NORMAL`, which is optional: without it, smooth normals are computed;
+- `TEXCOORD_0`, which is optional;
+- indices, which are optional, in any glTF index type.
+
+Triangles wind counter-clockwise seen from outside, as glTF specifies; back faces are not drawn. Materials, textures
+named in the file, skins and animations are ignored. The starter's rock was written by a standard-library Python
+recipe, [generate.py](../v1-game/assets/showcase/generate.py), which is a usable template for generating your own.
 
 ## The ground
 
@@ -162,7 +184,9 @@ THRUM_ASSET_STORE=target/scenes/thrum-starter/store THRUM_PARAMS=examples/starte
 ```
 
 Run `./dev starter` (or `./dev scene` for your scene) once first, so the binary and the store exist. The PNG is
-written uncompressed, so every capture at one size has the same file size; compare contents, not sizes. The window
+written uncompressed, so every capture at one size has the same file size; compare contents, not sizes. Judge sky
+gradients in a 1:1 crop: a scaled-down view can show banding that is not in the pixels. A parameter file with a
+refused entry refuses the capture, so a picture never silently shows a default in place of your value. The window
 has no capture key, so review frames with this offscreen capture. It draws the same scene from the same inputs.
 
 ## When something is missing

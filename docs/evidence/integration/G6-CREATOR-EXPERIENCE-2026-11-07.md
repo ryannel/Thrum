@@ -163,3 +163,83 @@ The figures come from a shared machine, and nothing here is a budget.
 - **Temporal history.** Only the meshes' motion history restarts on promotion.
 - **Inputs.** The hook gets no time input.
 - **Starter size.** The kit wires the reload for any scene with cooked meshes, so it adds no game lines.
+
+## Slice 4: one-command starter and fresh-agent scenes
+
+### What was built
+
+- **`./dev starter`** builds the [starter](../../../examples/starter/README.md) and the cooker. It cooks the
+  starter's `assets/`, keeps G5's watcher cooking edits, and opens the window with the parameter file and material
+  hook set.
+- **`./dev scene <folder>`** does the same for any workspace member with exactly one binary. The member and its
+  binary are resolved from `cargo metadata`, not by scanning text. A folder that is not a member, does not build
+  exactly one binary, or names a binary that another member builds is refused before the lockfile changes. Names
+  are compared as macOS does, ignoring case and Unicode normalization.
+- **The starter** is one rock on lit ground under the physically based sky, with a camera, two Sun sliders and a
+  reloadable material, in 42 game lines that name no engine game types. The sky kit (`thrum_app::sky`) supplies:
+  - the typed controls;
+  - placed cooked meshes (`MeshPlacement`: rigid, uniformly scaled, refused by name when out of range);
+  - the lit ground;
+  - the material hook;
+  - the window;
+  - an offscreen capture.
+
+### Fresh-agent runs
+
+Each run was a fresh agent given only the task and the repository's creator docs, and told not to read engine
+source or design documents. Every run kept a friction log, and each later run started from a tree with the earlier fixes in place. Run 3 started from main at 55da12a9.
+
+| Run | Scene | Game lines | Engine items | Friction | What changed |
+|---|---|---|---|---|---|
+| 1 (11:27) | Stone circle at dawn, now [examples/stones](../../../examples/stones) | 114 | `thrum_app`, `thrum_controls`, `thrum_asset_gpu` | 14 items, about 13 min | The starter reached main and the README; `./dev scene` and the copy steps; `MeshPlacement` with `on_ground` and refusals; the kit's status mapping; the lit ground; `Config::new`. |
+| 2 (12:15) | Sunset over rocks, three sliders | 76 | `thrum_app::sky`, `thrum_app::Config` only | 11 items, all minor | README answers: toggles, what controls can drive, `toward_sun`, `L`-only reload, rename steps, the build, format and lint lines, and the uncompressed PNG. |
+| 3 | Lighthouse with its own generated mesh and material, four sliders, now [examples/lighthouse](../../../examples/lighthouse) | 74 | `thrum_app::sky` and `thrum_app::Config` only | 14 items, about 25 min; 2 were praise | Run 3 changes below. |
+
+Run 3 worked with the Mac screen locked throughout. The window never presented a frame, so the agent reviewed every
+change through offscreen captures:
+- a parameter file per slider setting;
+- a material file per hook edit;
+- a capture after the watcher had re-cooked its edited mesh.
+
+![Fresh-agent lighthouse, default parameters](../render/G6-LIGHTHOUSE-FRESH-RUN3-2026-11-07.png)
+
+**Run 3 changes.**
+- **Fixed in code.**
+  - A window that the display never drives now says why, naming a locked or sleeping screen, and points to the
+    offscreen capture. Before, the run ended with only zeroed counters.
+  - A capture refuses a parameter file with a refused entry and exits 1, as a broken material already did. Before,
+    it wrote the default value into the picture and exited 0.
+  - Both are unit-tested. The refusal was checked against the lighthouse's real binary.
+- **Answered in the [starter README](../../../examples/starter/README.md):**
+  - one material hook runs on every placement and is not told which one it shades;
+  - the observed emission scale, and that there is no bloom;
+  - the screen must be unlocked, and what happens when it is locked;
+  - `--locked` builds only after the first `./dev scene`;
+  - the type of `sky.camera`;
+  - glTF material factors are ignored;
+  - a new "Bring your own mesh" section on the glTF subset the cooker reads;
+  - judging sky gradients at 1:1.
+- **Recorded, not built** (each changes an API or seam and needs its own review):
+  - a reload trigger that is not a key press, such as on save or by a signal, and periodic or region captures;
+  - the placement's identity inside the hook;
+  - control values in the hook;
+  - an orbit-camera helper.
+
+**Renderer observations, passed to the render owner.** These are from run 3's captures and confirmed in my own
+review of them.
+- Noon shadow edges are jagged and scratchy, like an unfiltered low-resolution shadow map.
+- There is no anti-aliasing on silhouettes.
+- Lit rock faces at a 6° Sun show dark speckles that look like shadow acne.
+- The flat ground meets the sky at a hard horizon without haze.
+- Emission has no bloom.
+
+The sky gradients are smooth at 1:1: banding seen in scaled-down views is not in the pixels.
+
+### Checks
+
+| Check | Result |
+|---|---|
+| `scripts/test_scene_package.py` (11) | Resolution from metadata, refusals before the lockfile, and bin names compared exactly, ignoring case, and ignoring Unicode normalization. The tests failed before each fix. |
+| Live `./dev scene` probes | A member whose binary is `thrum-cook`, or `Thrum-Cook`, is refused, and `Cargo.lock` is unchanged. |
+| `thrum-app` unit tests | Include the never-drawn hint and the strict capture of a parameter file. |
+| `./dev check` | Builds, formats and lints `examples/starter`, `examples/stones` and `examples/lighthouse` as workspace members, so the creator API they use keeps compiling. |

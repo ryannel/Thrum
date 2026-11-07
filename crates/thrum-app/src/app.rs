@@ -633,7 +633,7 @@ impl<G: Game + 'static> App<G> {
 
     fn deadline_error(&self) -> String {
         format!(
-            "{} presented frames unavailable: presented={}, tick={}, display_link_callbacks={}, render_callbacks={}, unavailable={}, occluded={}, surface_faults={}, dropped_views={}, dropped_stale_views={}, dropped_surface={}",
+            "{} presented frames unavailable: presented={}, tick={}, display_link_callbacks={}, render_callbacks={}, unavailable={}, occluded={}, surface_faults={}, dropped_views={}, dropped_stale_views={}, dropped_surface={}{}",
             self.target_frames,
             self.presented,
             self.world_tick,
@@ -644,7 +644,8 @@ impl<G: Game + 'static> App<G> {
             self.surface_faults,
             self.counters.skipped_views,
             self.counters.expired_views,
-            self.counters.missed_surfaces
+            self.counters.missed_surfaces,
+            never_drawn_hint(self.presented, self.display_link_callbacks)
         )
     }
 
@@ -1181,9 +1182,28 @@ fn run_frames(variable: &str, value: Option<&str>) -> Result<usize, String> {
     Ok(frames)
 }
 
+/// The likely cause when the display never asked for a frame, which the counters alone do not say.
+fn never_drawn_hint(presented: usize, display_link_callbacks: usize) -> &'static str {
+    if presented == 0 && display_link_callbacks == 0 {
+        "; the display never asked for a frame, so the window drew nothing. A locked or sleeping screen, or a \
+         window on no display, does this; review frames offscreen with THRUM_CAPTURE_PNG instead"
+    } else {
+        ""
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{frame_limit, prints_report, run_frames};
+    use super::{frame_limit, never_drawn_hint, prints_report, run_frames};
+
+    #[test]
+    fn a_window_the_display_never_drove_says_why_it_drew_nothing() {
+        assert!(never_drawn_hint(0, 0).contains("locked or sleeping screen"));
+        assert!(never_drawn_hint(0, 0).contains("THRUM_CAPTURE_PNG"));
+        // Once the display drives the window, the counters explain the shortfall.
+        assert_eq!(never_drawn_hint(0, 3), "");
+        assert_eq!(never_drawn_hint(5, 0), "");
+    }
 
     #[test]
     fn frame_count_for_present_qualification_is_bounded() {
