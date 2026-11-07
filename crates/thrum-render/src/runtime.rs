@@ -200,6 +200,8 @@ pub struct FrameSample {
     pub surface_presented: bool,
     /// The GPU frame completed but its optional timing batch was unusable.
     pub timing_fault: bool,
+    /// The camera culling mode the prepared renderer ran this frame with.
+    pub culling_mode: CullMode,
     /// Instances camera culling drew, read back on completion without
     /// timestamps. `None` for Direct, which lists nothing, and when the
     /// readback failed.
@@ -1074,6 +1076,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 gpu_contribution_ns: None,
                 surface_presented: false,
                 timing_fault: false,
+                culling_mode: self.prepared.camera_culling(),
                 camera_culling: None,
                 uploaded_rows: u32::try_from(uploaded.changed_rows).unwrap_or(u32::MAX),
                 uploaded_bytes: uploaded.bytes,
@@ -1410,7 +1413,11 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                         slot.state = SlotState::Rendering(sample);
                         continue;
                     }
-                    sample.camera_culling = slot.target.take_culling_counts();
+                    // A slot may pass here again while its timestamps resolve;
+                    // keep the counts the first pass took.
+                    sample.camera_culling = sample
+                        .camera_culling
+                        .or_else(|| slot.target.take_culling_counts());
                     if !slot.timings.is_enabled() {
                         retain_sample(&mut self.completed, &mut self.dropped_reports, sample);
                         continue;
