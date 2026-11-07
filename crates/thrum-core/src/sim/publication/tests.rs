@@ -470,6 +470,7 @@ fn fused_capture_matches_separate_refresh_and_exact_pair_oracle() {
                 endpoint: &mut endpoint,
                 pair: &mut pair,
                 changed: &mut changed,
+                parallel: false,
             });
         assert_eq!(endpoint, expected_endpoint);
         assert_eq!(pair, expected_pair);
@@ -539,6 +540,7 @@ fn source_endpoint_tracks_same_timeline_and_retired_publications() {
                         timeline,
                         final_undo: None,
                         final_events: &[],
+                        parallel: false,
                     },
                 );
             })

@@ -20,6 +20,11 @@ impl<'a> DirtySlots<'a> {
     pub fn position(self) -> &'a [u32] {
         self.0.component::<Position>()
     }
+    /// Position interpolation pairs (previous or current) changed since the
+    /// preceding publication, including a body that stopped.
+    pub fn position_pair(self) -> &'a [u32] {
+        self.0.temporal::<Position>()
+    }
     /// Velocity endpoints changed since the preceding publication.
     pub fn velocity(self) -> &'a [u32] {
         self.0.component::<Velocity>()

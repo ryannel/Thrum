@@ -112,11 +112,57 @@ The first two deferred ticks after the pages fill allocate once each, as the two
 comes from keeping deferred-publication undo apart from transaction scratch (ultra #1). Later deferred ticks do not
 allocate: the held rows above show zero.
 
+## Parallel page capture
+
+Warm page capture of a selected column can now run on the pool. The engine owns this inside its publication internals,
+and the page contract is unchanged.
+- A serial pass buckets each candidate slot by the 4,096-row page chunk that owns its row. It records refresh, pair and
+  identity flags with each slot.
+- Each chunk exclusively owns its rows of current, previous and override storage, and visits only its candidates.
+- The merge rebuilds the endpoint and pair words, and the slot-ordered dirty lists, exactly as the serial loop does.
+- The engine dispatches a column only when it has at least one chunk's worth of candidates. At the fixture's 15% mover
+  density, that is Position from about 30k rows.
+
+`RayonForced` always takes this path. Requested `Rayon` captures serially until `PARALLEL_CAPTURE_CROSSOVER` is set by a
+quiet win. Browser builds stay serial.
+
+`simulation::parallel_page_capture_publishes_identical_pages_in_every_mode` runs a 40k fixture in Serial, Rayon and
+RayonForced in lockstep:
+- despawn, spawn and position-command churn every tick;
+- held pages that force reuse and catch-up;
+- a five-tick rewind patch, then an amended replay.
+
+After every step it compares the complete reader view of the published page:
+- id, timeline and baseline flag;
+- every slot's handle, stable id, position, previous position, velocity and health;
+- the position, position-pair, velocity, health and structural dirty lists;
+- the structural events.
+
+The new `DirtySlots::position_pair` exposes the engine's temporal pair list for this test. Two deliberate breaks in the
+parallel path were each caught at the first warm tick: dropping pair-changed flags, and skipping one row's refresh.
+
+The contended ABBA below compares Serial with RayonForced, which now runs both the parallel kernel and parallel capture.
+It ran at load 17–21. The raw log is `tmp/g2s-parallel/abba-capture-2.log` (local).
+
+| Rows | Serial p50 µs (round range) | Forced p50 µs (round range) | Forced, 1-thread pool, p50 µs |
+|---|---:|---:|---:|
+| 10k (below the candidate floor, no capture dispatch) | 49 (48–49) | 49 (49–49) | — |
+| 100k | 488 (486–491) | 1,207 (1,058–1,482) | 842 |
+| 200k | 978 (972–1,078) | 1,703 (1,459–2,790) | — |
+| 500k | 2,507 (2,465–2,576) | 3,024 (2,946–3,157) | 3,179 |
+
+Under this load, Forced is slower than Serial at every dispatched row. A 1-thread pool at 100k was faster than the full
+pool, so wake-up and preemption cost dominates. The fixed overhead of bucketing plus pool trips is about 350 µs at
+100k, even with one worker. The quiet run decides whether the parallel work earns it back.
+
+An earlier version visited every page row in each chunk, rather than only the bucketed candidates. It cost 2.7 ms at
+100k on the full pool and 1.9 ms on one thread (`abba-capture-1.log`), so it was replaced.
+
 ## Open, for root and the performance phase
 
 1. **Quiet crossover.** Promote requested Rayon only on an owner-quiet ABBA win: the same command at 100k–500k,
    agents paused.
 2. **Injector allocations.** Running the world tick inside the Rayon pool would remove these. That is the world-thread
    adapter, so it is a root seam.
-3. **Parallel publication capture.** This is the larger independent work at 100k and later the better parallel
-   candidate. It is not attempted here.
+3. **Parallel publication capture.** Implemented and proven identical (above). Promotion needs the same quiet ABBA:
+   `PARALLEL_CAPTURE_CROSSOVER` stays `None` until then.

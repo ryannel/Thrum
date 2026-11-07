@@ -55,6 +55,7 @@ fn publish(
                     timeline,
                     final_undo: undo,
                     final_events: events,
+                    parallel: false,
                 },
             );
         })
