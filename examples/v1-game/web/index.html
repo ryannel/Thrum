@@ -56,7 +56,7 @@
       try {
         await init();
         const probe = new URL(location.href).searchParams;
-        // ?field draws the dense flythrough field; ?culling=direct|frustum picks camera culling.
+        // ?field draws the dense flythrough field; ?culling=direct|frustum|occlusion picks camera culling.
         const game = probe.has("field")
           ? await create_field_game(canvas, probe.get("culling") ?? "frustum")
           : await create_browser_game(canvas);
