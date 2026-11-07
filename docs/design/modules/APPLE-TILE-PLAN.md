@@ -21,6 +21,9 @@ Reviews:
 - Composed frame, exact-revision recheck @ `9938b0d0` (Opus 5.5 medium), brief `tmp/g3t-g4-plans/reviews/composed-frame.md`,
   report `tmp/g3t-g4-plans/reviews/composed-frame-report.md` ("Revision 4 recheck"): approve with changes (one leftover
   always-submitted rule, three small gaps). All applied in revision 4a.
+- Archive review of revision 5 @ `16c5d8f7` (Opus 5.5 medium), report `tmp/g3t-g4-plans/reviews/composed-frame-report.md`
+  ("Revision 5 archive review"): changes required (sizes buffer for all runtime-sized arrays, per-pipeline cook keys,
+  cache patch scope, per-device archives, sizing). All applied in revision 5a.
 
 Milestone: none started (plan awaiting re-review and seam rulings) · Updated: 2026-11-07
 Now: revision 5 rewrites seam 5 to the owner's archive direction (since 2026-11-07).
@@ -453,3 +456,6 @@ That is **15.5 build days**, plus 1–2 days of review and seam turnaround, for 
   ownership, not wgpu-hal's retained-references default, and N's completed handler raises device loss.
 - 2026-11-07 Revision 5 rewrites seam 5 to the owner's direction: measure first, then offline metallibs through
   passthrough and an upstream Metal `PIPELINE_CACHE` (gfx-rs/wgpu#8526). The rewording option is withdrawn.
+- 2026-11-07 Revision 5a applies the archive review of `16c5d8f7` to seam 5: the cook is per pipeline, the patch carries
+  `MetalLib` reflection, the validation key, a Metal `adapter_key` and the archive-miss option, and archives come from
+  each shipped device.
