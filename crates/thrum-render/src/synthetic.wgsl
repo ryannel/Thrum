@@ -446,9 +446,12 @@ fn sun_visibility(input: VertexOutput, receiver: ShadowReceiver) -> f32 {
         let reach = shadows.split_overlap.z;
         if reach > 0.0 {
             if depth >= reach { return horizon_visibility(receiver); }
-            let visibility = low_sun_terrain(cascade_visibility(1u,receiver),receiver);
-            if depth <= shadows.split_overlap.w { return visibility; }
-            return mix(visibility,horizon_visibility(receiver),smoothstep(shadows.split_overlap.w,reach,depth));
+            let cascade = cascade_visibility(1u,receiver);
+            let fade_start = shadows.split_overlap.w;
+            if depth <= fade_start { return low_sun_terrain(cascade,receiver); }
+            let horizon = horizon_visibility(receiver);
+            let visibility = select(cascade,min(cascade,horizon),light.direction_to_light.y<LOW_SUN_SINE);
+            return mix(visibility,horizon,smoothstep(fade_start,reach,depth));
         }
         return low_sun_terrain(cascade_visibility(1u,receiver),receiver);
     }
