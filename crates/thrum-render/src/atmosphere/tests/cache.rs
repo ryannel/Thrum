@@ -202,5 +202,36 @@ fn metal_reflection_cache_tracks_sky_but_not_amplitude_view_or_unsubmitted_work(
         let altitude_names = submitted_names(&mut prepared, &target, &capabilities, &queue);
         assert_eq!(cube_passes(&altitude_names), 7);
         assert!(!has_dfg(&altitude_names));
+        for frame in [altitude.with_nightglow(), altitude] {
+            prepared
+                .update_frame(
+                    &queue,
+                    &mut target,
+                    &scene,
+                    FrameLighting::Atmosphere(frame),
+                    1.0,
+                )
+                .unwrap();
+            let toggled = submitted_names(&mut prepared, &target, &capabilities, &queue);
+            assert_eq!(
+                cube_passes(&toggled),
+                7,
+                "night source changes all reflection mips"
+            );
+            for name in &super::super::STAGE_NAMES[2..5] {
+                assert!(toggled.iter().any(|actual| actual == name), "{name}");
+            }
+            for name in super::super::STAGE_NAMES[..2]
+                .iter()
+                .chain(&super::super::STAGE_NAMES[5..7])
+            {
+                assert!(!toggled.iter().any(|actual| actual == name), "{name}");
+            }
+            let cached = submitted_names(&mut prepared, &target, &capabilities, &queue);
+            assert!(
+                cached.iter().all(|name| !name.starts_with("atmosphere ")),
+                "a committed night profile leaves no repeated LUT work"
+            );
+        }
     });
 }

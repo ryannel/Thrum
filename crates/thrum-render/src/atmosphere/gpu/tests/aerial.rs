@@ -2,7 +2,9 @@
 //! production integrator over the same half-precision transmittance/M inputs.
 use super::super::{AtmospherePrepared, EARTH, EXTENTS};
 use crate::{atmosphere::AtmosphereFrame, synthetic::SyntheticView};
+use std::io::Write as _;
 use std::{fmt::Write, sync::mpsc, time::Duration};
+
 use wgpu::BindingResource::{Sampler, TextureView};
 use wgpu::TextureFormat::{Rgba16Float, Rgba32Float};
 
@@ -393,6 +395,38 @@ fn consumer_units(device: &wgpu::Device, queue: &wgpu::Queue, uniform: &wgpu::Bu
             texture.size(),
         );
     }
+    let views = [&scatter, &transmission].map(|texture| {
+        texture.create_view(&wgpu::TextureViewDescriptor {
+            dimension: Some(wgpu::TextureViewDimension::D2Array),
+            ..Default::default()
+        })
+    });
+    let sampler = device.create_sampler(&wgpu::SamplerDescriptor::default());
+    let encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+    let values = observe_consumer(
+        device,
+        queue,
+        encoder,
+        ([&views[0], &views[1]], &sampler, uniform),
+        "consumer",
+    );
+    for (channel, surface) in [0.2_f32, 0.3, 0.4].into_iter().enumerate() {
+        let actual = values[channel];
+        let expected = 0.5 * surface + 127_000.0 / 65_536.0;
+        assert!(
+            (actual - expected).abs() < expected * 1e-5,
+            "consumer channel{channel}: {actual} vs {expected}"
+        );
+    }
+}
+
+fn observe_consumer(
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    mut encoder: wgpu::CommandEncoder,
+    (views, sampler, uniform): ([&wgpu::TextureView; 2], &wgpu::Sampler, &wgpu::Buffer),
+    entry_point: &str,
+) -> [f32; 4] {
     let source = format!(
         "{}\n{}\n{}",
         r"
@@ -412,9 +446,20 @@ const view_aux=ViewAux(vec4(32.0,32.0,1.0/32.0,1.0/32.0));
 fn consumer() {
     result[0]=vec4(aerial_colour(vec3(0.2,0.3,0.4),vec3(1000.0,245.0,0.0),vec4(16.0,16.0,0.0,1.0)),1.0);
 }
+@compute @workgroup_size(1)
+fn finite_night() {
+    let uv = vec2(0.5);
+    let near = aerial_sample(1000.0, uv);
+    let middle = aerial_sample(10000.0, uv);
+    let far = aerial_sample(30000.0, uv);
+    let a = composite_aerial(near, vec3(0.0), near.scatter.rgb);
+    let b = composite_aerial(middle, vec3(0.0), middle.scatter.rgb);
+    let c = composite_aerial(far, vec3(0.0), far.scatter.rgb);
+    result[0] = vec4(a.x, b.x, c.x, 0.0);
+}
 "
     );
-    let pipeline = pipeline(device, &source, "consumer");
+    let pipeline = pipeline(device, &source, entry_point);
     let output = device.create_buffer(&wgpu::BufferDescriptor {
         label: None,
         size: 16,
@@ -432,24 +477,16 @@ fn consumer() {
         layout: &pipeline.get_bind_group_layout(0),
         entries: &[entry(0, output.as_entire_binding())],
     });
-    let views = [&scatter, &transmission].map(|texture| {
-        texture.create_view(&wgpu::TextureViewDescriptor {
-            dimension: Some(wgpu::TextureViewDimension::D2Array),
-            ..Default::default()
-        })
-    });
-    let sampler = device.create_sampler(&wgpu::SamplerDescriptor::default());
     let second = device.create_bind_group(&wgpu::BindGroupDescriptor {
         label: None,
         layout: &pipeline.get_bind_group_layout(1),
         entries: &[
-            entry(4, TextureView(&views[0])),
-            entry(5, TextureView(&views[1])),
-            entry(6, Sampler(&sampler)),
+            entry(4, TextureView(views[0])),
+            entry(5, TextureView(views[1])),
+            entry(6, Sampler(sampler)),
             entry(7, uniform.as_entire_binding()),
         ],
     });
-    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
     {
         let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor::default());
         pass.set_pipeline(&pipeline);
@@ -463,12 +500,91 @@ fn consumer() {
         .slice(..)
         .get_mapped_range()
         .expect("consumer units mapped");
-    for (channel, surface) in [0.2_f32, 0.3, 0.4].into_iter().enumerate() {
-        let actual = f32::from_le_bytes(mapped.as_chunks::<4>().0[channel]);
-        let expected = 0.5 * surface + 127_000.0 / 65_536.0;
-        assert!(
-            (actual - expected).abs() < expected * 1e-5,
-            "consumer channel{channel}: {actual} vs {expected}"
+    std::array::from_fn(|index| f32::from_le_bytes(mapped.as_chunks::<4>().0[index]))
+}
+
+#[test]
+fn finite_night_radiance_survives_the_aerial_composite() {
+    pollster::block_on(async {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let adapter = instance
+            .request_adapter(&wgpu::RequestAdapterOptions::default())
+            .await
+            .expect("real GPU required for finite night transport");
+        #[cfg(target_os = "macos")]
+        assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
+        let (device, queue) = adapter
+            .request_device(&wgpu::DeviceDescriptor::default())
+            .await
+            .expect("finite night device");
+        let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
+        let directional = device.create_buffer(&wgpu::BufferDescriptor {
+            label: None,
+            size: crate::synthetic::LIGHT_BYTES as u64,
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::STORAGE,
+            mapped_at_creation: false,
+        });
+        let height = 1800.0;
+        let view = SyntheticView::perspective(
+            [0.0, height, 0.0],
+            [1000.0, height, 0.0],
+            [0.0, 1.0, 0.0],
+            0.25,
+            1.0,
+            0.1,
+            32_000.0,
+        )
+        .expect("horizontal observer view");
+        let frame = AtmosphereFrame::new([0.0, -1.0, 0.0], 0.0, [1.0; 3], height, 1)
+            .expect("moonless atmosphere frame");
+        let mut atmosphere = AtmospherePrepared::new(
+            &device,
+            &queue,
+            1,
+            frame,
+            &view,
+            &directional,
+            &super::sky_samples(&device),
         );
-    }
+        let [off, on] = [frame, frame.with_nightglow()].map(|frame| {
+            atmosphere.update(&queue, frame, &view, [1, 1]);
+            let mut encoder =
+                device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+            {
+                // Only the night source is under test. The zero-initialized
+                // solar inputs and zero Sun lux isolate its composite.
+                let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor::default());
+                pass.set_pipeline(&atmosphere.aerial_pipeline);
+                pass.set_bind_group(0, &atmosphere.aerial_group, &[]);
+                pass.dispatch_workgroups(SIDE / 8, SIDE / 8, 1);
+            }
+            observe_consumer(
+                &device,
+                &queue,
+                encoder,
+                atmosphere.aerial_sampled(),
+                "finite_night",
+            )
+        });
+        assert_eq!(off.map(f32::to_bits), [0; 4]);
+        // Sum of the dense shell and diffuse f64 reference paths, mixed-2.csv.
+        let expected = [1.241_665_2e-6, 1.178_059_1e-5, 3.150_029e-5];
+        for ((distance, actual), expected) in [1, 10, 30].into_iter().zip(on).zip(expected) {
+            let relative = (actual - expected).abs() / expected;
+            assert!(
+                relative <= 0.10,
+                "{distance} km: {actual:e} vs {expected:e}"
+            );
+            writeln!(
+                std::io::stdout().lock(),
+                "{distance} km: {actual:e} vs {expected:e} ({:.3}%)",
+                relative * 100.0
+            )
+            .expect("write finite night comparison");
+        }
+        assert!(
+            scope.pop().await.is_none(),
+            "finite night pipelines validate"
+        );
+    });
 }

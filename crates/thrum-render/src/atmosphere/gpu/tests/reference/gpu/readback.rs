@@ -47,6 +47,7 @@ pub(super) struct Sky {
 
 pub(super) struct Probe {
     atmosphere: AtmospherePrepared,
+    directional: wgpu::Buffer,
     reader: wgpu::ComputePipeline,
     single_group: wgpu::BindGroup,
     transport_ready: bool,
@@ -63,7 +64,9 @@ impl Probe {
         let directional = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("reference directional output"),
             size: crate::synthetic::LIGHT_BYTES as u64,
-            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::STORAGE,
+            usage: wgpu::BufferUsages::UNIFORM
+                | wgpu::BufferUsages::STORAGE
+                | wgpu::BufferUsages::COPY_SRC,
             mapped_at_creation: false,
         });
         let mut atmosphere = AtmospherePrepared::new(
@@ -171,6 +174,7 @@ impl Probe {
         });
         Self {
             atmosphere,
+            directional,
             reader,
             single_group,
             transport_ready: false,
@@ -216,28 +220,12 @@ impl Probe {
             &self.atmosphere.uniform,
             &self.atmosphere.textures[2],
         );
-        let receivers =
-            [&full.readback, &single.readback, &rays_full, &rays_single].map(|buffer| {
-                let (send, receive) = mpsc::channel();
-                encoder.map_buffer_on_submit(buffer, wgpu::MapMode::Read, .., move |result| {
-                    send.send(result)
-                        .expect("reference readback receiver remains alive");
-                });
-                receive
-            });
-        let submission = queue.submit([encoder.finish()]);
-        device
-            .poll(wgpu::PollType::Wait {
-                submission_index: Some(submission),
-                timeout: Some(Duration::from_secs(10)),
-            })
-            .expect("reference GPU work completes");
-        for receiver in receivers {
-            receiver
-                .recv()
-                .expect("reference map callback runs")
-                .expect("reference GPU buffer maps");
-        }
+        submit(
+            device,
+            queue,
+            encoder,
+            [&full.readback, &single.readback, &rays_full, &rays_single],
+        );
         self.transport_ready = true;
         Sky {
             full: full.collect(1024.0),
@@ -255,22 +243,59 @@ impl Probe {
         let snapshot = Snapshot::new(device, &self.reader, &self.atmosphere.textures[1]);
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
         snapshot.encode(&mut encoder, &self.reader);
-        let (send, receive) = mpsc::channel();
-        encoder.map_buffer_on_submit(&snapshot.readback, wgpu::MapMode::Read, .., move |result| {
-            send.send(result).expect("M observation receiver alive");
-        });
-        let submitted = queue.submit([encoder.finish()]);
-        device
-            .poll(wgpu::PollType::Wait {
-                submission_index: Some(submitted),
-                timeout: Some(Duration::from_secs(10)),
-            })
-            .expect("M observation completes");
-        receive
-            .recv()
-            .expect("M mapping callback")
-            .expect("M mapped");
+        submit(device, queue, encoder, [&snapshot.readback]);
         snapshot.collect(1.0)
+    }
+
+    pub(super) fn night(
+        &mut self,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        height: f32,
+        enabled: bool,
+    ) -> NightSky {
+        let day = frame(45.0, height);
+        let frame = if enabled { day.with_nightglow() } else { day };
+        self.atmosphere
+            .update(queue, frame, &SyntheticView::default(), [1, 1]);
+        let texture = &self.atmosphere.textures[2];
+        let snapshot = Snapshot::new(device, &self.reader, texture);
+        let directional = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("night meter and diffuse readback"),
+            size: self.directional.size(),
+            usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+        let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+        if !self.transport_ready {
+            for index in [0, 1, 3] {
+                self.dispatch(&mut encoder, index, &self.atmosphere.groups[index]);
+            }
+        }
+        self.dispatch(&mut encoder, 2, &self.atmosphere.groups[2]);
+        {
+            let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor::default());
+            pass.set_pipeline(&self.atmosphere.diffuse_pipeline);
+            pass.set_bind_group(0, &self.atmosphere.diffuse_group, &[]);
+            pass.dispatch_workgroups(1, 1, 1);
+        }
+        snapshot.encode(&mut encoder, &self.reader);
+        let rays = self
+            .rays
+            .observe(device, &mut encoder, &self.atmosphere.uniform, texture);
+        encoder.copy_buffer_to_buffer(&self.directional, 0, &directional, 0, directional.size());
+        submit(
+            device,
+            queue,
+            encoder,
+            [&snapshot.readback, &rays, &directional],
+        );
+        self.transport_ready = true;
+        NightSky {
+            grid: snapshot.collect(1.0),
+            rays: decode(&rays, 1.0),
+            irradiance: directional_values(&directional),
+        }
     }
 
     fn dispatch(&self, encoder: &mut wgpu::CommandEncoder, index: usize, group: &wgpu::BindGroup) {
@@ -284,6 +309,55 @@ impl Probe {
         } else {
             pass.dispatch_workgroups(width.div_ceil(8), height.div_ceil(8), 1);
         }
+    }
+}
+
+pub(super) struct NightSky {
+    pub grid: Vec<[f64; 4]>,
+    pub rays: Vec<[f64; 4]>,
+    pub irradiance: Vec<[f32; 4]>,
+}
+
+fn directional_values(buffer: &wgpu::Buffer) -> Vec<[f32; 4]> {
+    buffer
+        .slice(..)
+        .get_mapped_range()
+        .expect("mapped directional buffer")
+        .as_chunks::<16>()
+        .0
+        .iter()
+        .map(|pixel| {
+            std::array::from_fn(|channel| f32::from_le_bytes(pixel.as_chunks::<4>().0[channel]))
+        })
+        .collect()
+}
+
+fn submit<const N: usize>(
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    encoder: wgpu::CommandEncoder,
+    buffers: [&wgpu::Buffer; N],
+) {
+    let receivers = buffers.map(|buffer| {
+        let (send, receive) = mpsc::channel();
+        encoder.map_buffer_on_submit(buffer, wgpu::MapMode::Read, .., move |result| {
+            send.send(result)
+                .expect("reference readback receiver remains alive");
+        });
+        receive
+    });
+    let submission = queue.submit([encoder.finish()]);
+    device
+        .poll(wgpu::PollType::Wait {
+            submission_index: Some(submission),
+            timeout: Some(Duration::from_secs(10)),
+        })
+        .expect("reference GPU work completes");
+    for receiver in receivers {
+        receiver
+            .recv()
+            .expect("reference map callback runs")
+            .expect("reference GPU buffer maps");
     }
 }
 
