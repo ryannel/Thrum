@@ -23,12 +23,9 @@ use thrum_render::{
 };
 
 fn atmosphere_lighting(
-    tick: u64,
-    alpha: f32,
-    phase_offset: f32,
+    sun: crate::environment::SunSample,
     camera_altitude_m: f32,
 ) -> FrameLighting {
-    let sun = DayCycle::sample(tick, alpha, phase_offset);
     let frame = AtmosphereFrame::new(
         sun.toward_sun,
         sun.top_illuminance_lux,
@@ -246,6 +243,16 @@ impl GameScene {
         reflection.previous[3][..3].copy_from_slice(&scene::REFLECTION_SUBJECT_POSITION);
         scene.view = frame_view(0, 0.0, extent, 0.0, 0.0, None)?;
         scene.sun_shadows = true;
+        // Synthetic optical controls for the scratch valley integration.
+        // These are chosen equatorial directions, not catalogue data.
+        scene.star_catalogue = Some(&[
+            [-0.838_670_55, 0.0, -0.544_639_05, 9.6e-6],
+            [-0.796_726_2, -0.140_484_33, -0.587_785_24, 1.602_631_7e-7],
+            [-0.793_353_3, 0.0, -0.608_761_4, 1.011_192_2e-8],
+            // Centre at x640, y304.5 in the 1280x720 midnight capture.
+            // The ridge starts at y303, leaving a visible footprint above it.
+            [-0.751_771_8, 0.0, -0.659_423_35, 9.6e-6],
+        ]);
         scene.local_lights = [
             ([-0.9, -0.9, 1.0], [5.0, 0.8, 0.4]),
             ([0.9, -0.9, 1.0], [0.4, 4.0, 0.8]),
@@ -318,9 +325,14 @@ impl SceneSource<PublishedPage> for GameScene {
             } else {
                 2.0
             };
-        let lighting = lighting.unwrap_or_else(|| {
-            atmosphere_lighting(source.tick, alpha, self.day_phase_offset, camera_altitude_m)
-        });
+        let sun = DayCycle::sample(source.tick, alpha, self.day_phase_offset);
+        let lighting = lighting.unwrap_or_else(|| atmosphere_lighting(sun, camera_altitude_m));
+        let view = if self.camera.is_some() && matches!(lighting, FrameLighting::Atmosphere(_)) {
+            view.with_celestial_basis(sun.equatorial_to_world)
+                .map_err(|error| format!("celestial view: {error:?}"))?
+        } else {
+            view
+        };
         let view = match lighting {
             FrameLighting::Atmosphere(_) => view
                 .with_incident_exposure(0.0, -12.0, 18.0)
@@ -421,7 +433,10 @@ mod tests {
                     .all(|(a, b)| (a - b).abs() < 1e-6)
             );
             if extent == [640, 360] {
-                assert_eq!(first.view, frame.view);
+                assert_eq!(
+                    first.view.view_proj_columns(),
+                    frame.view.view_proj_columns()
+                );
             } else {
                 assert_ne!(
                     first.view.view_proj_columns(),

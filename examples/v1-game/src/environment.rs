@@ -10,6 +10,7 @@ pub(crate) struct DayCycle;
 #[derive(Clone, Copy)]
 pub(crate) struct SunSample {
     pub toward_sun: [f32; 3],
+    pub equatorial_to_world: [[f32; 3]; 3],
     pub top_illuminance_lux: f32,
     pub colour: [f32; 3],
     pub profile_epoch: u64,
@@ -65,6 +66,11 @@ impl DayCycle {
         let (sin_latitude, cos_latitude) = FRAC_PI_4.sin_cos();
         SunSample {
             toward_sun: [-sin_hour, cos_latitude * cos_hour, -sin_latitude * cos_hour],
+            equatorial_to_world: [
+                [-sin_hour, cos_latitude * cos_hour, -sin_latitude * cos_hour],
+                [cos_hour, cos_latitude * sin_hour, -sin_latitude * sin_hour],
+                [0.0, sin_latitude, cos_latitude],
+            ],
             // At the top of the atmosphere; the renderer computes attenuation
             // and apparent disk radiance from this one emitter.
             top_illuminance_lux: 127_000.0,
@@ -127,5 +133,27 @@ mod tests {
             let length_squared = sample.toward_sun.into_iter().map(|v| v * v).sum::<f32>();
             assert!((length_squared - 1.0).abs() < 1e-5);
         }
+    }
+
+    #[test]
+    fn equatorial_basis_follows_sun_and_preserves_the_pole_across_wrap() {
+        let day = DayCycle::TICKS_PER_DAY;
+        let noon = DayCycle::sample(0, 0.0, 0.0);
+        let sunset = DayCycle::sample(day / 4, 1.0, 0.0);
+        assert_eq!(noon.equatorial_to_world[0], noon.toward_sun);
+        assert_eq!(sunset.equatorial_to_world[0], sunset.toward_sun);
+        assert_eq!(noon.equatorial_to_world[1], [1.0, 0.0, 0.0]);
+        assert!(sunset.equatorial_to_world[0][0] < -0.99);
+        assert_eq!(noon.equatorial_to_world[2], sunset.equatorial_to_world[2]);
+        assert_eq!(
+            DayCycle::sample(day, 1.0, 0.0).equatorial_to_world,
+            DayCycle::sample(day + 1, 0.0, 0.0).equatorial_to_world,
+        );
+        let start = DayCycle::offset_for_time(0, 0.0).expect("midnight");
+        let end = DayCycle::offset_for_time(0, 1.0).expect("midnight at slider wrap");
+        assert_eq!(
+            DayCycle::sample(0, 0.0, start).equatorial_to_world,
+            DayCycle::sample(0, 0.0, end).equatorial_to_world,
+        );
     }
 }
