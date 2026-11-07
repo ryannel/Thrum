@@ -12,7 +12,7 @@ use crate::graph::{CompiledPass, GraphDepthAttachment, ResourceId};
 
 pub(super) const SIZE: u32 = 1024;
 pub(super) const FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
-pub(super) const SAMPLE_BYTES: usize = 176;
+pub(super) const SAMPLE_BYTES: usize = 192;
 const MAPS: usize = 2;
 const RECEIVER_REACH: f32 = 512.0;
 const BIAS_MIN_WORLD: f32 = 0.006;
@@ -367,6 +367,13 @@ impl FitInputs {
             )?,
         ];
         let mut samples = [0_u8; SAMPLE_BYTES];
+        if let Some((_, max_y)) = caster_height {
+            let sun_y = rotation.row(2).y;
+            let minimum_sun_y = sun_y * SUN_ANGULAR_RADIUS.cos()
+                - (1.0 - sun_y * sun_y).max(0.0).sqrt() * SUN_ANGULAR_RADIUS.sin();
+            samples[176..180].copy_from_slice(&max_y.to_le_bytes());
+            samples[180..184].copy_from_slice(&minimum_sun_y.to_le_bytes());
+        }
         for (index, (matrix, span)) in matrices.iter().enumerate() {
             samples[index * 64..(index + 1) * 64].copy_from_slice(&matrix_bytes(*matrix));
             let scale = 1.0 / span;
@@ -377,6 +384,9 @@ impl FitInputs {
             let uv_per_metre = matrix.row(0).truncate().length() * 0.5;
             let penumbra = SUN_ANGULAR_RADIUS.tan() * span * uv_per_metre;
             samples[160 + index * 4..164 + index * 4].copy_from_slice(&penumbra.to_le_bytes());
+            samples[168 + index * 4..172 + index * 4]
+                .copy_from_slice(&(BIAS_MIN_WORLD * scale).to_le_bytes());
+            samples[184 + index * 4..188 + index * 4].copy_from_slice(&scale.to_le_bytes());
             samples[144 + index * 4..148 + index * 4]
                 .copy_from_slice(&(base * scale).to_le_bytes());
             samples[152 + index * 4..156 + index * 4]
@@ -522,6 +532,41 @@ mod tests {
     mod penumbra;
 
     use super::*;
+
+    #[test]
+    fn fitted_sun_support_and_surface_tolerance_keep_world_units() {
+        let direction = Vec3::new(1.0, 1.0, 1.0).normalize();
+        let view = SyntheticView::perspective(
+            [0.0, 2.0, 3.0],
+            [0.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0],
+            1.0,
+            1.0,
+            0.1,
+            100.0,
+        )
+        .expect("perspective receiver");
+        let inputs = FitInputs::new(&view, &[], direction);
+        let bounds = ShadowBounds::new([-100.0; 3], [100.0, 2000.0, 100.0]).expect("finite caster");
+        let fitted = inputs.fit(Some(bounds)).expect("finite fit");
+        let value =
+            |offset| f32::from_le_bytes(fitted.samples[offset..offset + 4].try_into().unwrap());
+        assert!((value(176) - 2000.0).abs() < 1e-5);
+        let minimum_y = value(180);
+        assert!(minimum_y < direction.y && minimum_y > 0.0);
+        let tangent = direction.cross(Vec3::Y).normalize();
+        let bitangent = direction.cross(tangent);
+        for index in 0..32 {
+            let phase = index as f32 * std::f32::consts::TAU / 32.0;
+            let sample = direction * SUN_ANGULAR_RADIUS.cos()
+                + (tangent * phase.cos() + bitangent * phase.sin()) * SUN_ANGULAR_RADIUS.sin();
+            assert!(sample.y >= minimum_y - 1e-7);
+        }
+        for (index, (_, span)) in fitted.matrices.iter().enumerate() {
+            assert!((value(168 + index * 4) * span - BIAS_MIN_WORLD).abs() < 1e-6);
+            assert!((value(184 + index * 4) * span - 1.0).abs() < 1e-6);
+        }
+    }
 
     #[test]
     fn both_cascades_use_32_bit_float_depth() {
