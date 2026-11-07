@@ -45,12 +45,17 @@ The Codex goal remains active. Its attachment is
   GPU pass-sum medians were 4.99–5.00 ms for taps and 5.69–5.79 ms for
   cells (1-minute load 34.53–34.93). Each of the 320 frames submitted
   the cooked contribution and returned a valid timestamp batch. This
-  is offscreen, with no presentation claim. Review found a lit 5%
-  plane that the flat leaf falsely shadows. The full workspace check
-  also failed the cooked discard image-equality case, which passes in
-  both package-only builds. Keep the graph on `codex/g3s-horizon-graph-wip`
-  and prove a receiver-aware leaf in the live caster and forward passes
-  before Chrome, motion and camera-snap qualification.
+  is offscreen, with no presentation claim. The receiver-aware leaf at
+  `938fbfb` now passes the Metal rasterized 5% ramp and 12.54 km crest
+  test and retains the 61.16-code sweep result. The repeat's GPU medians
+  at 17.6917 h are 4.92–5.10 ms for taps and 6.03–6.05 ms for cells
+  (1-minute load 21.52–22.26). The discard case passes in the revised
+  workspace check, but the fetched/mapped test intermittently differs
+  above tolerance at x211/y249. The sampled main image pair matches.
+  Keep the experiment on `codex/g3s-horizon-graph-wip` and isolate the
+  mismatch with both modes in one build. Chrome, camera snaps, and
+  live motion remain open. Reconcile the separate star graph on main
+  without this horizon experiment.
   [Maximum Mipmaps](https://pure.mpg.de/pubman/item/item_1325622_5/component/file_3590464/i3d08.pdf).
   Exact builds, raw rows and clips are in `tmp/g3s-sunset-lip/`. The
   diagnostic source and rerun command are on `codex/g3s-horizon-metal-wip`.
