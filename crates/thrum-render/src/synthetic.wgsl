@@ -225,8 +225,11 @@ const SHADOW_DISK = array<vec2<f32>,32>(
 );
 
 const SUN_TAN_RADIUS: f32 = 0.004654244;
-// Relative surface slope accepted as the receiver's own continuous surface.
-const SURFACE_SLOPE_TOLERANCE: f32 = 0.05;
+// A continuous surface inside the filter footprint occludes only if it rises
+// relative to the receiver plane faster than the Sun's elevation above it,
+// tan(e)=1/g for receiver depth slope g. Accept 90% of that, capped.
+const SURFACE_ELEVATION_FRACTION: f32 = 0.9;
+const SURFACE_MAX_SLOPE: f32 = 0.25;
 const SURFACE_MAX_GRADIENT: f32 = 30.0;
 
 // A planar receiver predicts each neighboring texel's depth. Continuous terrain
@@ -236,7 +239,8 @@ const SURFACE_MAX_GRADIENT: f32 = 30.0;
 fn surface_tolerance(index:u32,gradient:vec2<f32>,delta:vec2<f32>) -> f32 {
     let uv_metres_span=select(shadows.penumbra.y,shadows.penumbra.x,index==0u)/SUN_TAN_RADIUS;
     let slope=min(length(gradient)*uv_metres_span,SURFACE_MAX_GRADIENT);
-    return SURFACE_SLOPE_TOLERANCE*length(delta)*(1.0+slope*slope)/max(uv_metres_span,1e-20);
+    let bend=min(SURFACE_ELEVATION_FRACTION/max(slope,1e-3),SURFACE_MAX_SLOPE);
+    return bend*length(delta)*(1.0+slope*slope)/max(uv_metres_span,1e-20);
 }
 
 fn cascade_visibility(index: u32, receiver: ShadowReceiver) -> f32 {
