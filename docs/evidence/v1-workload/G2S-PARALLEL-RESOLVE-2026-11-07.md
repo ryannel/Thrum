@@ -1,6 +1,7 @@
 # G2S: chunked parallel movers and Resolve staging — 7 November 2026
 
-This page closes the remaining G2S items: game-side Resolve staging, per-system permits, and real parallel work behind
+This page records the remaining G2S work. It does not close G2S: requested `Rayon` is still a serial fallback (see
+the Rayon policy below). The items are game-side Resolve staging, per-system permits, and real parallel work behind
 `ExecutionMode`. It also covers complete authoritative-state equality after correction, structural churn and
 refusal. These are correctness results. All timings below are from a heavily shared Mac, so they qualify nothing.
 
@@ -29,7 +30,8 @@ refusal. These are correctness results. All timings below are from a heavily sha
   (`g2_edit_ownership.rs`).
 - **Rayon policy.**
   - `RayonForced` always dispatches the kernel.
-  - Requested `Rayon` dispatches only at or above `PARALLEL_MOVER_CROSSOVER`. That is `None` until a quiet measured
+  - Requested `Rayon` is a **serial fallback** today. It would dispatch at or above `PARALLEL_MOVER_CROSSOVER`, but that is
+    `None` until a quiet measured
     win promotes it (see the rows below).
   - `Simulation::set_execution_mode` no longer rewrites Rayon to Serial.
 
@@ -40,11 +42,14 @@ refusal. These are correctness results. All timings below are from a heavily sha
 | `g2s_chunked_kernel::forced_rayon_runs_independent_chunks_at_the_same_time` | Forced Rayon overlaps two or more chunk callbacks: the peak concurrency probe reads at least 2. Serial reads exactly 1. Heights are identical across modes. |
 | `g2s_chunked_kernel::earlier_writers_and_unchanged_rows_restore_exactly_in_every_mode` | An earlier Input system writes rows in three chunks before the kernel visits them, and every fifth row returns unchanged. Refusal and rewind restore the exact pre-tick values, not the earlier writer's. Unchanged rows are neither counted nor given preimages. All three modes are equal, in release builds too. |
 | `g2s_chunked_kernel::serial_rayon_and_forced_chunks_commit_refuse_and_rewind_identically` | 8,192 rows interleave movers and statics under a dense activity partition, with one excluded slot. The visit set is exact. A refusal from the last mover restores every chunk. A recorded tick rewinds to the exact prior state and replays identically. All three modes are equal. |
-| `simulation::parallel_movers_match_the_straight_corrected_run_after_churn_and_refusal` | 100k fixture, four peers and 12 ticks. A kernel refusal comes from an overflowing mover in a high chunk (25 chunks that tick). A Resolve NaN refusal comes after all four chunks wrote. Each refusal leaves the complete-world hash unchanged. Despawn and spawn churn run every tick. The run rewinds eight ticks, amends peer 2's tick-5 input and replays. In Serial, Rayon and RayonForced alike, the complete authoritative hash (identity, presence, every component value and authority metadata) and the published page equal the straight corrected run. |
+| `simulation::parallel_movers_match_the_straight_corrected_run_after_churn_and_refusal` | 100k fixture, four peers and 12 ticks. A kernel refusal comes from an overflowing mover in a high chunk (25 chunks that tick). A Resolve NaN refusal comes after all four chunks wrote. Each refusal leaves the complete-world hash unchanged. Despawn and spawn churn run every tick. The run rewinds eight ticks, amends peer 2's tick-5 input and replays. Midway through the replay, a Resolve refusal on a deferred-publication tick leaves the hash and the remaining retained ticks intact. In Serial, requested Rayon and RayonForced, the complete authoritative hash equals the straight corrected run, and so does the published page. That hash covers identity, presence, every component value, authority metadata, and the game's peer and input resources. The requested-Rayon row checks fallback routing only; it runs the Serial path. RayonForced is the row that runs the parallel path. |
+| `history::tests::a_misrouted_permit_refuses_the_whole_tick` | Resolve's health edit, appended with Input health's permit, refuses the whole tick as `InvalidEdit`, and authority is unchanged. With its own permit the same command commits. |
+| `g2s_chunked_kernel::a_kernel_panic_restores_every_chunk_in_every_mode` | A panic in the last chunk's callback still merges every chunk's preimages. The preparation abort restores all rows, and the next tick matches a straight run in Serial and RayonForced. |
 | Existing 39 `simulation` tests | They pass unchanged: 1,000-tick randomized churn replay, 10k corrected replay, four-peer Serial/RayonForced equality, held pages, and zero warmed caller-thread allocations. |
 
 A temporary chunk-count trace showed the 100k `RayonForced` run dispatching 21 kernel runs: 20 over four chunks and
-one over 25. Requested Rayon dispatched none. The trace was removed.
+one over 25. Requested Rayon dispatched none. The trace was removed, so the game-level dispatch claim rests on that
+recorded trace. Overlap is asserted only in the 8,192-row core fixture.
 
 ## Contended crossover rows
 

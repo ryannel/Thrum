@@ -151,7 +151,6 @@ fn setup(
             .write_read2_indexed::<Position, Velocity>(SIMULATE)
             .map_err(map_runtime)?,
     );
-    let permits = |error| map_runtime(error);
     let rules = Rules {
         config,
         resource_revision: 0,
@@ -160,24 +159,24 @@ fn setup(
         committed_inputs: Vec::with_capacity(config.peer_capacity),
         changed_positions: 0,
         input_velocity: InputVelocityPermits {
-            velocity_write: runtime.write_permit(INPUT).map_err(permits)?,
+            velocity_write: runtime.write_permit(INPUT).map_err(map_runtime)?,
         },
         input_health: InputHealthPermits {
-            health_read: runtime.read_permit(INPUT_HEALTH).map_err(permits)?,
-            health_write: runtime.write_permit(INPUT_HEALTH).map_err(permits)?,
+            health_read: runtime.read_permit(INPUT_HEALTH).map_err(map_runtime)?,
+            health_write: runtime.write_permit(INPUT_HEALTH).map_err(map_runtime)?,
         },
         resolve: ResolvePermits {
-            position_read: runtime.read_permit(RESOLVE).map_err(permits)?,
-            position_write: runtime.write_permit(RESOLVE).map_err(permits)?,
-            velocity_read: runtime.read_permit(RESOLVE).map_err(permits)?,
-            velocity_write: runtime.write_permit(RESOLVE).map_err(permits)?,
-            health_read: runtime.read_permit(RESOLVE).map_err(permits)?,
-            health_write: runtime.write_permit(RESOLVE).map_err(permits)?,
-            ownership_read: runtime.read_permit(RESOLVE).map_err(permits)?,
-            visual_read: runtime.read_permit(RESOLVE).map_err(permits)?,
+            position_read: runtime.read_permit(RESOLVE).map_err(map_runtime)?,
+            position_write: runtime.write_permit(RESOLVE).map_err(map_runtime)?,
+            velocity_read: runtime.read_permit(RESOLVE).map_err(map_runtime)?,
+            velocity_write: runtime.write_permit(RESOLVE).map_err(map_runtime)?,
+            health_read: runtime.read_permit(RESOLVE).map_err(map_runtime)?,
+            health_write: runtime.write_permit(RESOLVE).map_err(map_runtime)?,
+            ownership_read: runtime.read_permit(RESOLVE).map_err(map_runtime)?,
+            visual_read: runtime.read_permit(RESOLVE).map_err(map_runtime)?,
             structure: runtime
                 .structural_permit(RESOLVE, STRUCTURE)
-                .map_err(permits)?,
+                .map_err(map_runtime)?,
         },
     };
     Ok((runtime, rules, candidate))
