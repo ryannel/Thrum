@@ -5,11 +5,11 @@ const TRANSFORMS: SceneTimingLayout = SceneTimingLayout {
     transforms: true,
     shadows: false,
     clusters: false,
-    camera: CullMode::Direct,
+    culling: culling_passes(CullMode::Direct),
 };
 
 const CULLED: SceneTimingLayout = SceneTimingLayout {
-    camera: CullMode::Frustum,
+    culling: culling_passes(CullMode::Frustum),
     ..TRANSFORMS
 };
 
@@ -141,4 +141,51 @@ fn camera_visibility_is_required_by_the_culled_layout_and_counted_in_forward() {
     assert!(pass_durations(&passes, false, TRANSFORMS).is_none());
     passes.push(passes[1].clone());
     assert!(pass_durations(&passes, false, CULLED).is_none());
+}
+
+#[test]
+fn occlusion_passes_are_required_once_each_and_counted_in_forward() {
+    const OCCLUDED: SceneTimingLayout = SceneTimingLayout {
+        culling: culling_passes(CullMode::Occlusion),
+        ..TRANSFORMS
+    };
+    let mut passes = timings(&["atmosphere sky view"]);
+    let culling = [
+        crate::visibility::EARLY_PASS,
+        crate::visibility::PYRAMID_PASS,
+        crate::visibility::LATE_PASS,
+        crate::synthetic::camera_culling::FORWARD_LATE_PASS,
+    ];
+    for (offset, name) in culling.into_iter().enumerate() {
+        passes.insert(
+            2 + offset,
+            PassTiming {
+                name: name.into(),
+                nanoseconds: 2.0,
+            },
+        );
+    }
+    let (values, _, _) = pass_durations(&passes, false, OCCLUDED).unwrap();
+    assert_eq!(values[3], 9.0, "forward includes all four culling passes");
+    // Exact to the layout: refused under Frustum or Direct, with one missing, or with a repeat.
+    assert!(pass_durations(&passes, false, CULLED).is_none());
+    assert!(pass_durations(&passes, false, TRANSFORMS).is_none());
+    let mut missing = passes.clone();
+    assert_eq!(
+        missing.remove(3).name.as_ref(),
+        crate::visibility::PYRAMID_PASS
+    );
+    assert!(pass_durations(&missing, false, OCCLUDED).is_none());
+    assert_eq!(
+        CULLING_PASSES[PYRAMID_BIT.trailing_zeros() as usize],
+        crate::visibility::PYRAMID_PASS
+    );
+    // A contributed frame records no pyramid build, and only then.
+    let contributed = OCCLUDED.contributed(true);
+    let (values, _, _) = pass_durations(&missing, false, contributed).unwrap();
+    assert_eq!(values[3], 7.0, "forward includes the three recorded passes");
+    assert!(pass_durations(&passes, false, contributed).is_none());
+    let mut repeated = passes.clone();
+    repeated.push(passes[2].clone());
+    assert!(pass_durations(&repeated, false, OCCLUDED).is_none());
 }
