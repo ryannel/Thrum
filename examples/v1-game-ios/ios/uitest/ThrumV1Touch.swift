@@ -17,6 +17,15 @@ final class ThrumV1Touch: XCTestCase {
         origin.press(forDuration: 0.1, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: 1)
     }
 
+    /// Drag right 10 pt (one eighth deflection) and hold half a second: the
+    /// controlled actor, the grid's top-right square, steps just past the
+    /// grid's right edge, where it stands alone against the sky.
+    func testNudge() {
+        let (_, origin, _) = start()
+        let end = origin.withOffset(CGVector(dx: 10, dy: 0))
+        origin.press(forDuration: 0.1, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: 0.5)
+    }
+
     /// Drag right 200 pt and hold three seconds: the controlled actor drives
     /// sideways far enough to leave the grid visibly, then stops on release.
     func testDrive() {

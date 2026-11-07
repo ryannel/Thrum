@@ -556,6 +556,10 @@ impl Shell {
                 self.controls = Some(prepared.controls);
                 if self.state == State::Starting {
                     self.state = State::Active;
+                }
+                // A resume during preparation found no controls and left the
+                // link stopped; the link starts here for any active state.
+                if self.state == State::Active {
                     start_display_link()?;
                 }
                 self.reconcile_world()?;
