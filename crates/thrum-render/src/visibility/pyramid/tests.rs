@@ -319,7 +319,14 @@ fn every_gpu_mip_equals_the_reference() {
     }
 }
 
-/// Run the shared WGSL test on `boxes` against `target`.
+/// The clip magnitude the probe gives box `index`, so the bound's terms are
+/// exercised on both sides.
+#[expect(clippy::cast_precision_loss, reason = "remainders below 5")]
+fn magnitude(index: usize) -> [f32; 2] {
+    [(index % 3) as f32 * 0.05, (index % 5) as f32 * 2.0]
+}
+
+/// Run the shared WGSL test on `boxes` against `target`, with `magnitude(index)`.
 fn gpu_occluded(
     device: &wgpu::Device,
     queue: &wgpu::Queue,
@@ -332,7 +339,8 @@ fn gpu_occluded(
         @group(0) @binding(2) var<storage, read_write> results: array<u32>;
         @compute @workgroup_size(64) fn probe(@builtin(global_invocation_id) id: vec3<u32>) {{
             if id.x >= arrayLength(&results) {{ return; }}
-            results[id.x] = u32(occluded_by_pyramid(boxes[id.x]));
+            let magnitude = vec2(f32(id.x % 3u) * 0.05, f32(id.x % 5u) * 2.0);
+            results[id.x] = u32(occluded_by_pyramid(boxes[id.x], magnitude));
         }}
         {OCCLUSION_WGSL}"
     );
@@ -447,7 +455,7 @@ fn gpu_test_decisions_equal_the_reference() {
         let mut hidden = 0;
         let mut differing = Vec::new();
         for (index, corners) in boxes.iter().enumerate() {
-            let cpu = reference::occluded(corners, &pyramid);
+            let cpu = reference::occluded(corners, &pyramid, magnitude(index));
             hidden += usize::from(cpu);
             if cpu != gpu[index] {
                 differing.push(index);
