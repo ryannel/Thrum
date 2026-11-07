@@ -99,8 +99,9 @@ fn depth_ulp(depth: f32) -> f32 {
 }
 
 /// How far a corner's uv on one axis may sit from where either path puts it,
-/// beyond the quarter level-0 texel that the coverage rule already grants
-/// (design, "Footprint"): `ndc` is its projected coordinate, `axis_magnitude`
+/// beyond the quarter level-0 texel (at most half a source pixel, since level
+/// 0 is at least half the source extent) that the coverage rule already
+/// grants (design, "Footprint"): `ndc` is its projected coordinate, `axis_magnitude`
 /// that axis's clip term, `w_low` the corner's least possible w and `size` the
 /// level-0 extent on that axis.
 pub(super) fn footprint_widening(

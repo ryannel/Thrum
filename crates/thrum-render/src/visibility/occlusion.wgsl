@@ -19,9 +19,10 @@
 // at most gamma16 * (X + |x / w| W) / w, and likewise y; the divide, the
 // viewport transform and the rasterizer's sub-pixel snap (at least 8 bits)
 // add a few ulps and 1/512 pixel. A pixel is covered only when its centre is
-// inside, and the texels holding the corners reach at least half a screen
-// pixel past them (a quarter of a level-0 texel, since the level is at most
-// twice the screen), so only error beyond that quarter texel widens the read
+// inside, and the texels holding the corners reach at least half a source
+// pixel past them. Level 0's previous-power-of-two extent is at least half
+// and at most the source extent, so a quarter level-0 texel is at most half a
+// source pixel, and only error beyond that quarter texel widens the read
 // rectangle. Typical boxes are not widened; near ones at the field's far
 // extent are.
 
