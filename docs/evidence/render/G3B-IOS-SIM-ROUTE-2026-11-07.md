@@ -39,3 +39,20 @@ resume. Both are reported, not gated.
 ![After the nudge: the controlled actor alone past the grid edge](G3B-IOS-NUDGE-AFTER-2026-11-07.png)
 
 `./dev check` and `./dev check-web` passed on the same code.
+
+## Observed defects (outside the function claim)
+
+Overseer and agent review of these captures found four visual defects. None changes a function row, and none is a
+V1 visual acceptance.
+
+1. **Portrait band.** The game fills about 26% of the portrait screen's height, and the rest is black. The iOS shell
+   renders a fixed 640×360 (16:9) source, unchanged from before G3b, and `thrum-render`'s presenter letterboxes it into
+   the 1206×2622 surface. Fix direction: size the render extent, or the camera aspect, to the surface.
+2. **Screen-door pattern on the entity grid.** The presenter copies the 640×360 source with `textureLoad` (unfiltered)
+   into about 1206 px, a non-integer scale of about 1.9×. The 100×100 grid puts an entity about every 3.3 source
+   pixels, so nearest sampling aliases it into a strong moiré at native size.
+3. **The actor is a speck.** The controlled actor is one 10k-grid entity, a few pixels across at this source size.
+   The +0.412 m committed witness carries the touch claim; a player would barely see the nudge.
+4. **Dark frames with coloured discs.** The world's day cycle advances with ticks, so captures minutes apart change
+   from day to night. The nudge pair is at night. The discs are the grid fixture's four coloured local point lights at
+   its corners (red, green, blue and yellow, radius 0.6 m), and they dominate once the Sun is down.
