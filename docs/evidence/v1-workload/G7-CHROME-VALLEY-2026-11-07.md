@@ -71,8 +71,8 @@ A fresh-context reviewer saw only Chrome and native stills and a 24-sample Chrom
   solar time apart. Native half-minute captures show the ridge shadow crossing the floor between 17.67 h and
   17.70 h, so this is sparse sampling of a real crossing, not a Chrome defect.
 - **Saturated orange glow and a hard step at the near-floor silhouette (Sun-facing presets).** Native
-  `sunset-sun` at the same time and direction shows both identically. They are shared look items: in-scatter
-  over shadowed distant terrain, against a near floor in shadow.
+  `sunset-sun` at the same time and direction shows both identically. They were shared look items: in-scatter
+  over shadowed distant terrain. Fixed by [shadowed aerial in-scatter](G3S-SHADOWED-AERIAL-2026-11-07.md).
 - **Noon preset.** It pitches up to the sky. The reviewer read it as dull and noted faint column banding and
   ridge fringes. The banding was 8-bit contouring, now dithered
   ([evidence](G3S-DISPLAY-DITHER-2026-11-07.md)). The fringes are a smooth crest fall-off, not a defect.

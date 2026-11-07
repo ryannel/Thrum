@@ -46,7 +46,7 @@ impl Output {
         let aerial = if matches!(storage, Storage::Production) {
             production.to_owned()
         } else {
-            production.replace("vec4(radiance * SKY_LUT_GAIN, 1.0)", "vec4(radiance, 1.0)")
+            production.replace(" * SKY_LUT_GAIN", "")
         }
         .replacen(
             "scatter_out: texture_storage_2d_array<rgba16float, write>",
@@ -395,7 +395,9 @@ const view_aux=ViewAux(vec4(32.0,32.0,1.0/32.0,1.0/32.0));
         concat!(
             include_str!("../../storage.wgsl"),
             "\n",
-            include_str!("../../../synthetic_aerial.wgsl")
+            include_str!("../../../synthetic_aerial.wgsl"),
+            "\n",
+            include_str!("../../../synthetic_aerial_clear.wgsl")
         ),
         r"
 @compute @workgroup_size(1)

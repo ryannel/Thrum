@@ -45,10 +45,18 @@ fn collect_pass_durations(
     };
     // A scene contribution adds one timed compute pass that the graph may order anywhere before
     // forward; it is reported on its own and the fixed scene sequence is matched without it.
+    // The Sun air shadow heights pass, present with shadows under atmosphere lighting, is likewise
+    // matched by name and shares the far shadow bucket with the horizon height map.
     let mut contribution = None;
+    let mut air_shadow = None;
     let mut scene_passes = Vec::with_capacity(passes.len());
     for pass in passes {
-        if pass.name.as_ref() == super::CONTRIBUTION_COMPUTE {
+        if pass.name.as_ref() == super::AIR_SHADOW_PASS {
+            if air_shadow.is_some() || !shadows {
+                return None;
+            }
+            air_shadow = Some(pass.nanoseconds);
+        } else if pass.name.as_ref() == super::CONTRIBUTION_COMPUTE {
             if contribution.is_some() {
                 return None;
             }
@@ -95,6 +103,7 @@ fn collect_pass_durations(
             // The contribution's compute pass is opaque-phase work that feeds forward: counted
             // in the forward bucket so totals include it, and also returned on its own.
             scene[3] += contribution.unwrap_or(0.0);
+            scene[1] += air_shadow.unwrap_or(0.0);
             (
                 scene,
                 presented.then(|| passes[offset + names.len()].nanoseconds),
