@@ -22,6 +22,11 @@ frames at 1280×720, 30 s of solar time apart, played at 5 fps. It is a sampled 
   occludes only if it rises faster than the Sun's elevation above the receiver, tan(e) = 1/g, where g is the
   receiver depth slope. Depth within 0.9·tan(e) (capped at 0.25) × the tap's world offset of the plane now counts
   as the receiver's own surface. A fixed 0.05 slope fixed the patches but left dashed lines along steeper creases.
+- **Near map unpadded.** The draft padded both maps by the Sun cone over the largest caster gap. At low Sun
+  that gap reaches kilometres, which grew the near map from 40 m to about 130 m half-extent and faded the sphere's
+  contact shadow over 20–25 pixels. The near map is now fitted to its receivers. Each receiver finds the largest
+  blocker gap whose search and filter disk fit inside it. Nearer blockers use the near map, farther ones the
+  padded last cascade, and the result is the minimum of the two.
 - **Taps.** 8 search taps and 16 disk taps. They score the same as 16/32 against ray truth, with no visible banding.
 
 ## Ground truth
@@ -54,9 +59,13 @@ darker.
 
 Across solar frames 0–32, full-frame pixels darker than shadow-off by more than 3 codes fall from 1,305 (16/32
 taps, fixed slope) to 49, with at most 8 in any one frame. On the yaw-0 views (sequence 02/03/20/21 and noon) the
-false counts do not change. They are dominated by the sphere and rock, which the terrain-only probe omits.
+false counts do not rise. They are dominated by the sphere and rock, which the terrain-only probe omits.
 Shadows beyond the 512 m receiver reach are absent in every build; at 1.7–6.4 km they cover about 20% of the
 frame.
+
+The probe also ray-traces the sphere for contact. Over sequence 21's contact region (pixels 380–616 × 500–538),
+mean error against truth mapped to lit/shadow levels is 1.04 codes on main, 2.6 with the padded near map and 0.93
+now. The ridge-crossing pixel values and solar scores above are identical with and without the padding change.
 
 ## Review and checks
 
@@ -65,14 +74,18 @@ frame.
     candidate first: main fails the gradual crossing, and the draft shows visible streaks and stipple.
   - A second reviewer failed the fixed-slope build on a diagonal dotted line and a flickering dashed line. Those
     are the crease artifacts fixed above.
-  - The final build's review is recorded in the handoff.
+  - A third reviewer failed an interim build on the sphere's low-Sun contact fade, fixed by the unpadded near map.
+  - A fourth reviewer passed the final build on all five requirements: gradual darkening over frames 33–38 with
+    a largest step of 13.5 foreground codes, no false shadowing, attached contact, no leaks and smooth penumbrae.
+    It noted that the ground reaches full shadow at frame 38 while a thin sliver of disk remains. That matches
+    ray truth, where the last few percent of the disk contribute little.
 - **Tests.** The shipping GPU oracle (`synthetic/shadow/tests/penumbra.rs`) adds a concave grazing-join fixture
   that fails without receiver bending. Full `./dev check` passed on Metal. Chrome `sky-reflections` passed with
-  Wasm SHA-256 `69e64cd8f511d29615d883c88c13600d7a6a03e5538c1e386403143c99ffa152`. That run uses the diagnostic
+  Wasm SHA-256 `bfcae7209bf56c63b70f13d92a6b822cea24c0aac54caa1a7a6e7695ff336e35`. That run uses the diagnostic
   scene only.
 - **Cost.** Shared-GPU ABBA at 1080p, valley scene, load average 10–11, `--g3b-threaded-batch`. Scene pass-sum
-  p50: baseline 1.71 ms, 16/32 taps 2.18 ms, 8/16 taps 1.97 ms (measured before the elevation bound, which adds
-  only per-tap arithmetic). Forward+sky p50 rises from 0.39 to 0.51 ms. Raw
+  p50: baseline 1.71 ms, 16/32 taps 2.18 ms, 8/16 taps 1.97 ms. A later pair with the final build (unpadded near
+  map, load average 7.5–7.9) measured 1.71 → 2.02 ms, with forward+sky 0.39 → 0.54 ms. Raw
   logs are in `tmp/g3s-showcase/solar-penumbra-claude/bench/`.
 
 ## Open
@@ -81,7 +94,12 @@ frame.
   horizon method.
 - **Solar 77→78 step.** A 100-code foreground step appears even with shadows off, so it comes from the
   twilight/illumination path.
-- **Sphere shadow edge.** It is serrated at noon at the 1024² near-cascade resolution.
+- **Sphere shadow edge.** It is serrated at noon at the 1024² near-cascade resolution, as on main. A 1.5-texel
+  minimum filter radius smoothed it but doubled the contact error, so it was not kept.
+- **Two-map composition.** The near/last split has a fit test and capture truth scores, but no shipping GPU
+  oracle fixture yet.
 - **Rock top.** A few dark texels remain at noon. These may be real crevice shadow.
-- **Cost.** The +15% pass-sum is recorded as a baseline. Gathered fetches and a lit early-out are untried.
+- **Cost.** The +18% pass-sum is recorded as a baseline. Gathered fetches and a lit early-out are untried.
+- **Not shadowing.** The review's most visible flaw is a staircase far-ridge silhouette (about 5 px steps) and
+  faceted terrain normals under contrast boost. Both are terrain geometry or level of detail.
 - **Still open as before:** the Chrome showcase scene, live motion, and iPhone.

@@ -22,14 +22,17 @@ follow-ups. See [the penumbra evidence](G3S-SOLAR-PENUMBRA-2026-11-07.md).
   slope 0.25, now counts as the receiver's own surface. A new shipping GPU oracle
   fixture fails without it.
 - **Taps.** Reduced to 8 search and 16 disk taps after truth scoring.
-- **Cost.** Shared-GPU ABBA pass-sum p50 is 1.71 → 1.97 ms.
+- **Near map unpadded.** The draft's finite-Sun cone guard grew the near map about
+  threefold at low Sun and faded sphere contact. Only the last cascade is padded now.
+  Blockers whose support leaves the near map are evaluated there, combined by minimum.
+- **Cost.** Shared-GPU ABBA pass-sum p50 is 1.71 → 2.02 ms.
 - **Review.** Independent image-only review ranks the candidate above main and the
   draft. A second reviewer caught crease lines left by an interim fixed-slope
   tolerance. After the elevation bound, ray-truth false samples are zero on the
   scored solar frames.
 
 The probe, scores and bench logs are in `tmp/g3s-showcase/solar-penumbra-claude/`. The final
-capture is `tmp/g3s-showcase/capture-26-penumbra-claude/`.
+capture is `tmp/g3s-showcase/capture-27-penumbra-near-unpadded/`.
 
 ## Goal and status
 
@@ -78,13 +81,14 @@ disappearing in frame 39. Sky samples changed by at most 1–2 SDR codes per ste
 crossing clip](g3s-first-light/solar-crossing.mp4) runs at 24 sampled frames/s.
 
 **Next defects.** The 103-code foreground jump is fixed. Open, in order:
-- Any finding from the final image-only review (see below). Score it with the ray probe
-  before changing anything.
+- The final image-only review passed. Its most visible flaw is a staircase far-ridge
+  silhouette, which is terrain geometry rather than shadowing. Score any shadow finding
+  with the ray probe before changing anything.
 - A 100-code foreground step at solar 77→78. It also appears with shadows off, so look at
   the twilight/illumination path.
 - Distant terrain beyond the 512 m receiver reach has no Sun shadow. A heightfield horizon
   method is the candidate.
-- The penumbra's +15% pass-sum. Gathered fetches and a lit early-out are untried.
+- The penumbra's +18% pass-sum. Gathered fetches and a lit early-out are untried.
 
 Keep the same host Sun/time and the fixed valley camera as the comparison. Inspect
 physical radiance and displayed colour independently. Use the checked CC0 Kiara photos
