@@ -5,7 +5,7 @@
 @group(0) @binding(5) var ground_irradiance: texture_2d<f32>;
 fn sun_transmittance(p: vec3<f32>, sun: vec3<f32>) -> vec3<f32> {
     let h=altitude(p);
-    let mu=dot(normalize(p+vec3(0.0,R,0.0)),sun);
+    let mu=local_sun_mu(p,sun);
     return sample_sun_transmittance(h,mu,transmittance,lut_sampler);
 }
 @compute @workgroup_size(8,8)
@@ -19,7 +19,7 @@ fn transmittance_main(@builtin(global_invocation_id) id: vec3<u32>) {
     let step = top_distance(h,mu)/64.0;
     var depth = vec3(0.0);
     for(var i=0u;i<64u;i++) {
-        depth += extinction(altitude(vec3(0.0,h,0.0)+direction*(f32(i)+0.5)*step))*step;
+        depth += medium(altitude(vec3(0.0,h,0.0)+direction*(f32(i)+0.5)*step)).extinction*step;
     }
     textureStore(output_lut,vec2<i32>(id.xy),vec4(exp(-depth),1.0));
 }
@@ -45,12 +45,11 @@ fn multiple_main(@builtin(global_invocation_id) id: vec3<u32>) {
         var throughput = vec3(1.0);
         for(var step=0u;step<20u;step++) {
             let p=vec3(0.0,h,0.0)+direction*(f32(step)+0.5)*dt;
-            let ah=altitude(p);
-            let ext=extinction(ah);
-            let integral=safe_segment(scattering(ah),ext,dt);
-            luminance+=throughput*integral*sun_transmittance(p,sun)/(4.0*PI*32.0);
-            feedback+=throughput*integral/32.0;
-            throughput*=exp(-ext*dt);
+            let air=medium(altitude(p));
+            let segment=integrate_segment(air.rayleigh+air.mie,air.extinction,dt);
+            luminance+=throughput*segment.radiance*sun_transmittance(p,sun)/(4.0*PI*32.0);
+            feedback+=throughput*segment.radiance/32.0;
+            throughput*=segment.transmission;
         }
         if ground>=0.0 {
             let p=vec3(0.0,h,0.0)+direction*distance;
@@ -62,14 +61,10 @@ fn multiple_main(@builtin(global_invocation_id) id: vec3<u32>) {
     let multiple=luminance/max(vec3(0.001),vec3(1.0)-feedback);
     textureStore(output_lut,vec2<i32>(id.xy),vec4(multiple*MULTIPLE_LUT_GAIN,1.0));
 }
-struct SkyTransport { radiance: vec3<f32>, transmission: vec3<f32> }
 // Shared unit-Sun volume transport. No terminal ground, disk or unscattered beam;
 // GroundE integrates this same body upward from h=0 without depending on Sky.
-fn sky_transport(h: f32, direction: vec3<f32>, sun: vec3<f32>, distance: f32) -> SkyTransport {
-    let cosine=dot(direction,sun);
-    let rayleigh_phase=3.0*(1.0+cosine*cosine)/(16.0*PI);
-    let g=0.8;
-    let mie_phase=(1.0-g*g)/(4.0*PI*pow(max(0.001,1.0+g*g-2.0*g*cosine),1.5));
+fn sky_transport(h: f32, direction: vec3<f32>, sun: vec3<f32>, distance: f32) -> Segment {
+    let phase=scattering_phase(dot(direction,sun));
     var throughput=vec3(1.0);
     var luminance=vec3(0.0);
     for(var step=0u;step<48u;step++) {
@@ -78,16 +73,11 @@ fn sky_transport(h: f32, direction: vec3<f32>, sun: vec3<f32>, distance: f32) ->
         let dt=(b*b-a*a)*distance;
         let t=0.5*(a*a+b*b)*distance;
         let p=vec3(0.0,h,0.0)+direction*t;
-        let ah=altitude(p);
-        let ext=extinction(ah);
-        let single=(vec3(5.802e-6,13.558e-6,33.100e-6)*exp(-ah/8000.0)*rayleigh_phase
-            +vec3(3.996e-6)*exp(-ah/1200.0)*mie_phase)*sun_transmittance(p,sun);
-        let mu=dot(normalize(p+vec3(0.0,R,0.0)),sun);
-        let multiple=textureSampleLevel(multiple_scattering,lut_sampler,vec2(mu*0.5+0.5,ah/H),0.0).rgb/MULTIPLE_LUT_GAIN;
-        luminance+=throughput*safe_segment(single+scattering(ah)*multiple,ext,dt);
-        throughput*=exp(-ext*dt);
+        let segment=lit_segment(p,sun,phase,dt,transmittance,multiple_scattering,lut_sampler);
+        luminance+=throughput*segment.radiance;
+        throughput*=segment.transmission;
     }
-    return SkyTransport(luminance,throughput);
+    return Segment(luminance,throughput);
 }
 @compute @workgroup_size(8,8)
 fn sky_main(@builtin(global_invocation_id) id: vec3<u32>) {

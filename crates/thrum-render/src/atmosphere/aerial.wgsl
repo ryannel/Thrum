@@ -4,14 +4,6 @@
 @group(0) @binding(4) var trans_out: texture_storage_2d_array<rgba16float, write>;
 @group(0) @binding(5) var lut_sampler: sampler;
 
-fn solar_transmittance(p: vec3<f32>, sun: vec3<f32>) -> vec3<f32> {
-    let h = altitude(p);
-    let up = normalize(p + vec3(0.0, R, 0.0));
-    let mu = dot(up, sun);
-    if blocked(h, mu) { return vec3(0.0); }
-    return textureSampleLevel(transmittance, lut_sampler, trans_uv(h, mu, textureDimensions(transmittance)), 0.0).rgb;
-}
-
 @compute @workgroup_size(8, 8)
 fn aerial_main(@builtin(global_invocation_id) id: vec3<u32>) {
     let size = textureDimensions(scatter_out);
@@ -23,10 +15,7 @@ fn aerial_main(@builtin(global_invocation_id) id: vec3<u32>) {
     let h = atmosphere.camera_altitude.w;
     let origin = vec3(0.0, h, 0.0);
     let sun = atmosphere.sun_lux.xyz;
-    let cosine = dot(direction, sun);
-    let rayleigh_phase = 3.0 * (1.0 + cosine * cosine) / (16.0 * PI);
-    let g = 0.8;
-    let mie_phase = (1.0 - g * g) / (4.0 * PI * pow(max(0.001, 1.0 + g * g - 2.0 * g * cosine), 1.5));
+    let phase = scattering_phase(dot(direction, sun));
     var limit = min(32000.0, top_distance(h, direction.y));
     let ground = ground_distance(h, direction.y);
     if ground >= 0.0 { limit = min(limit, ground); }
@@ -43,14 +32,9 @@ fn aerial_main(@builtin(global_invocation_id) id: vec3<u32>) {
             let dt = (segment_end - segment_start) * 0.25;
             for (var step = 0u; step < 4u; step++) {
                 let p = origin + direction * (segment_start + (f32(step) + 0.5) * dt);
-                let ah = altitude(p);
-                let ext = extinction(ah);
-                let single = (vec3(5.802e-6, 13.558e-6, 33.100e-6) * exp(-ah / 8000.0) * rayleigh_phase
-                    + vec3(3.996e-6) * exp(-ah / 1200.0) * mie_phase) * solar_transmittance(p, sun);
-                let sun_mu = dot(normalize(p + vec3(0.0, R, 0.0)), sun);
-                let multiple = textureSampleLevel(multiple_scattering, lut_sampler, vec2(sun_mu * 0.5 + 0.5, ah / H), 0.0).rgb / MULTIPLE_LUT_GAIN;
-                radiance += throughput * safe_segment(single + scattering(ah) * multiple, ext, dt);
-                throughput *= exp(-ext * dt);
+                let segment = lit_segment(p, sun, phase, dt, transmittance, multiple_scattering, lut_sampler);
+                radiance += throughput * segment.radiance;
+                throughput *= segment.transmission;
             }
         }
         textureStore(scatter_out, vec2<i32>(id.xy), i32(layer), vec4(radiance * SKY_LUT_GAIN, 1.0));
