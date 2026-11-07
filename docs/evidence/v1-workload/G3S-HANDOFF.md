@@ -8,6 +8,19 @@ The Codex goal remains active. Its attachment is
 
 ## Current checkpoint
 
+- Twilight shoulder WIP `6a2dbf6` preserves physical sky radiance and HDR
+  storage scale while softening incident exposure recovery in deep twilight.
+  Across the Metal referee's 18.85–19.65 h pair, exposed linear luminance
+  changes from a baseline 0.03294 → 0.04980 to 0.03163 → 0.02408. The
+  matched Chrome patch darkens from median RGB 33/47/76 to 42/42/42
+  over that interval. Independent review found a small residual late rise
+  on the right and legible stars and terrain at midnight. The rock's lit
+  face remains faint. The checked daylight and early twilight captures
+  match the baseline. `./dev check` passed 514 tests. The change stays in
+  the existing GPU meter dispatch. Paired timing, the daylight selector
+  and live motion are open. Raw pairs and rerun commands are in
+  `tmp/g3s-star-catalog/NOTES.md`.
+
 - The opt-in star pass is verified on Metal and Chrome at local WIP
   `1fa3228`. It shares the atmosphere's checked altitude and the frame's
   exposure. Metal on/off changes 332 sky pixels at midnight, with the held
@@ -44,9 +57,8 @@ The Codex goal remains active. Its attachment is
   noon frames are byte-identical and all 4,820 fixed-midnight changed pixels
   lie above the ridge. Chrome shows gradual emergence in 33 settled poses
   and coherent motion in 49 sampled pan poses. The same upper-sky rebound
-  after 18:51 occurs with stars disabled. Diagnose background exposure,
-  qualify the daylight cut and collect live motion. Exact hashes, raw pairs and rerun commands
-  are in `tmp/g3s-star-catalog/NOTES.md`.
+  after 18:51 occurs with stars disabled. The exposure follow-up is above.
+  Exact hashes, raw pairs and rerun commands are in `tmp/g3s-star-catalog/NOTES.md`.
 - M1 closeout at `b8f230e7` used the same cooked scene hash on Metal and
   Chrome. The Chrome compositor sweep ran from 17.659 to 24.053 h with 75
   samples. All eight overloads were inside screenshot brackets. The same
