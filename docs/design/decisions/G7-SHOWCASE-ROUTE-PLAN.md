@@ -14,9 +14,8 @@ poses read from artifacts, split M1 boxes, and a baseline that survives a clean 
 - M2 fixes @ fe9e26d5, same reviewer, brief: the fix list in its follow-up (report
   `tmp/g7-showcase/review/M2-REREVIEW-REPORT.md`, local), accept. Three wording nits, all taken.
 Milestone: M2 Repeatable route and first baseline · Updated: 2026-11-07
-Now: M2 built, reviewed and re-reviewed (accept). Root approved the native seam; the checker seam's coverage fix is
-resubmitted
-Next: root's verdict on the revised checker diff, then push M2
+Now: M1 and M2 done; this slice's plan is complete (M2 on main at 664a4ff0)
+Next: the items owed for final G7 belong to later work, listed in the design's "Still owed for final G7"
 Blocked: none. The on-screen Mac walk waits on screen control (one request denied).
 
 ## M1 Local cooked valley on both targets: done
@@ -52,7 +51,7 @@ Work:
 - [x] Add a stdlib PNG and PPM reader and the 32×18 block parity metric, with thresholds from the fixed rule.
 - [x] Extend the evidence page with the build, the numbers and a contact sheet. The review brief follows the review.
 
-## M2 Repeatable route and first baseline: in progress
+## M2 Repeatable route and first baseline: done
 Done when:
 - [x] Two consecutive clean `check` runs agree per stop on both targets. (M1: three clean building runs after the
       rebase. M2: check-163503 and check-163650, the second within 0.005 of the baseline over 12 frames)
@@ -68,7 +67,7 @@ Done when:
       check-164948 then passes within 0.005. A whole run from a deliberately edited source is still not shown.)
 - [x] Route frames come from the preset files on both targets, including Chrome's 17.4 h clear-Sun stop, through
       the two seams root approved in principle. (Native `THRUM_CAPTURE_PARAMS`, checker `--case route`; Chrome's
-      17.4 h stop reads 0.026/0.039/0.092 against native. Pushing waits on root's verdict on the exact diffs.)
+      17.4 h stop reads 0.026/0.039/0.092 against native. Root approved both exact diffs.)
 - [x] An independent milestone review agrees, and what final G7 still needs is recorded. (Accept with changes, then
       accept on re-review. What is owed is in the design's "Still owed for final G7" and the evidence's "Still open")
 
@@ -136,3 +135,5 @@ Work:
 - 2026-11-07 Re-review of the M2 fixes and root's checker hold: accept. Took its three nits: the timing ranges now
   name the runs they cover, the checked-in-typo claim says what is and isn't shown on the current code, and the
   `--baseline` help says it is relative to the current directory.
+- 2026-11-07 Root approved the revised checker diff (03f1476c) and kept the native approval. After a clean building
+  check, field-oracle, params and controls passed on the main tip, M2 landed as a fast-forward at 664a4ff0. M2 done.
