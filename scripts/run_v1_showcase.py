@@ -41,17 +41,18 @@ CHECKER = REPO / 'scripts/check_v1_browser.mjs'
 BASELINE = REPO / 'docs/evidence/v1-workload/g7-showcase-baseline.json'
 TOOLCHAIN = '1.99.1'
 
-# Route order and each stop's matching capture on either target. Values come from the presets.
+# Route order. Each stop's frame on both targets comes from applying its preset: native capture with
+# THRUM_CAPTURE_PARAMS, Chrome through the checker's route case. Values live only in the presets.
 ROUTE = ['sunrise', 'noon', 'sunset-clear-sun', 'sunset-sun', 'twilight', 'night-upslope']
-NATIVE_FILE = {
-    'sunrise': 'sunrise.ppm', 'noon': 'noon.ppm', 'sunset-clear-sun': 'sunset-sun-clear.ppm',
-    'sunset-sun': 'sunset-sun.ppm', 'twilight': 'twilight.ppm', 'night-upslope': 'night-upslope.ppm',
-}
-# The 17.4 h clear-Sun stop has no Chrome counterpart until the checker route seam lands.
-CHROME_PHASE = {
+# The negative control draws the diagnostic scene at the matching sky phase. The checker has no diagnostic phase
+# at 17.4 h, so the clear-Sun stop has no negative control; the other five cover the comparator.
+DIAGNOSTIC_PHASE = {
     'sunrise': 'phase-scene-sunrise', 'noon': 'phase-paused-scene-noon', 'sunset-sun': 'phase-sunset',
     'twilight': 'phase-scene-twilight', 'night-upslope': 'phase-upslope-midnight',
 }
+# Frame source version, part of the baseline identity: 1 took stops from the fixed captures and the checker's sky
+# phases; 2 applies each preset on both targets.
+FRAMES = 2
 KEYS = {'world.paused', 'sky.solar_time', 'camera.yaw', 'camera.pitch'}
 
 # Comparator version: 2 maps both extents onto the grid by exact area coverage (version 1 used integer cells,
@@ -445,7 +446,9 @@ def check(args):
 
         # Native: THRUM_SCENE=valley makes capture require the store and refuse unless it is drawn.
         native = run / 'native'
-        env = dict(os.environ, THRUM_CAPTURE_SCENE=str(native), THRUM_ASSET_STORE=str(run / 'store'), THRUM_SCENE='valley')
+        presets = [PARAMS / f'showcase-{stop}.params.json' for stop in ROUTE]
+        env = dict(os.environ, THRUM_CAPTURE_SCENE=str(native), THRUM_ASSET_STORE=str(run / 'store'), THRUM_SCENE='valley',
+                   THRUM_CAPTURE_PARAMS=os.pathsep.join(str(path) for path in presets))
         launched = time.time()
         started = time.monotonic()
         with open(run / 'native.log', 'w') as log:
@@ -456,16 +459,19 @@ def check(args):
         manifest = json.loads((native / 'captures.json').read_text())
         first = min((native / record['file']).stat().st_mtime for record in manifest['captures'] if 'file' in record)
         timings['native_cold_start_proxy'] = first - launched
-        poses = {record['file']: record for record in manifest['captures'] if 'file' in record}
+        poses = {record['file']: record for record in manifest.get('route', [])}
         for stop, values in stops.items():
-            pose = poses.get(NATIVE_FILE[stop])
-            if not pose or not (close(pose['hours'], values['sky.solar_time'], 1e-4) and close(pose['yaw_degrees'], values['camera.yaw'], 1e-3)
-                                and close(pose['pitch_degrees'], values['camera.pitch'], 1e-3)):
+            pose = poses.get(f'showcase-{stop}.ppm')
+            # The controls snap solar time to the 0.01 h slider stop, as on every target.
+            if not pose or pose['unchanged'] + pose['changed'] != len(KEYS) or not (
+                    close(pose['hours'], values['sky.solar_time'], 0.0051) and close(pose['yaw_degrees'], values['camera.yaw'], 1e-3)
+                    and close(pose['pitch_degrees'], values['camera.pitch'], 1e-3)):
                 failures.append(f'native pose drift at {stop}: {pose} vs {values}')
 
-        # Chrome: the cooked valley, then the same procedure without ?assets as the negative control.
+        # Chrome: the route presets on the cooked valley; the valley case for its live texture edit (the positive
+        # control); and the sky phases without ?assets as the negative control.
         chrome_runs = {}
-        for case, name in [('valley', 'chrome-valley'), ('sky-reflections', 'chrome-diagnostic')]:
+        for case, name in [('route', 'chrome-route'), ('valley', 'chrome-valley'), ('sky-reflections', 'chrome-diagnostic')]:
             started = time.monotonic()
             with open(run / f'{name}.log', 'w') as log:
                 code = bounded(['node', str(CHECKER), '--case', case, '--cook', str(COOK), '--web-root', str(WEB),
@@ -474,37 +480,42 @@ def check(args):
             timings[f'{name}_checker_run'] = time.monotonic() - started
             if code:
                 raise Failure(f'checker --case {case} failed (see {run / f"{name}.log"})')
-            result = json.loads((run / name / 'run.json').read_text())['results'][0]
-            if result['actualWasmSha256'] != report['builds']['wasm_sha256']:
-                raise Failure(f'{case}: Chrome loaded Wasm {result["actualWasmSha256"]}, not the build')
-            chrome_runs[case] = {phase['name']: phase for phase in result['sky']['phases']}
-        if not (run / 'chrome-valley/store/cas' / root[:2] / root).is_file():
-            failures.append(f'same cooked input: generation-1 root {root} is absent from the checker store')
-        for stop, phase_name in CHROME_PHASE.items():
-            values = stops[stop]
-            for case, phases in chrome_runs.items():
-                phase = phases.get(phase_name)
-                want = {'hours': values['sky.solar_time'], 'yaw': values['camera.yaw'], 'pitch': values['camera.pitch']}
-                got = phase and phase['edited']['controls']
-                # world.paused: the checker asserts the paused tick around every capture; check it was recorded.
-                if (not phase or phase['settled'].get('paused') is not True or any(not close(phase['requested'][k], want[k], 1e-9) for k in want)
-                        or not (close(got['hours'], want['hours'], 0.0051) and close(got['yaw'], want['yaw'], 0.5001)
-                                and close(got['pitch'], want['pitch'], 0.5001))):
-                    failures.append(f'Chrome {case} pose drift at {stop}: {phase and phase["requested"]} / {got} vs {want}')
+            results = json.loads((run / name / 'run.json').read_text())['results']
+            for result in results:
+                if result['actualWasmSha256'] != report['builds']['wasm_sha256']:
+                    raise Failure(f'{result["case"]}: Chrome loaded Wasm {result["actualWasmSha256"]}, not the build')
+            if case == 'route':
+                chrome_runs[case] = {result['case'].removeprefix('route-'): result['route'] for result in results}
+            else:
+                chrome_runs[case] = {phase['name']: phase for phase in results[0]['sky']['phases']}
+        for name in ['chrome-route', 'chrome-valley']:
+            if not (run / name / 'store/cas' / root[:2] / root).is_file():
+                failures.append(f'same cooked input: generation-1 root {root} is absent from the {name} store')
+        if sorted(chrome_runs['route']) != sorted(ROUTE):
+            raise Failure(f'Chrome route stops {sorted(chrome_runs["route"])} differ from the route {sorted(ROUTE)}')
+        for stop, values in stops.items():
+            stage = chrome_runs['route'][stop]
+            want = {'hours': values['sky.solar_time'], 'yaw': values['camera.yaw'], 'pitch': values['camera.pitch']}
+            got = stage['applied']
+            # The checker refuses any report with a refused entry, and holds one paused tick through the capture.
+            if (stage['sha256'] != sha256(PARAMS / f'showcase-{stop}.params.json') or stage['settled'].get('paused') is not True
+                    or not (close(got['hours'], want['hours'], 0.0051) and close(got['yaw'], want['yaw'], 0.5001)
+                            and close(got['pitch'], want['pitch'], 0.5001))):
+                failures.append(f'Chrome route pose drift at {stop}: {got} vs {want}, preset {stage["sha256"][:8]}')
         if failures:
             raise Failure('pose drift')
 
         # Compare matched stops.
-        grids = {'native': {stop: grid(native / NATIVE_FILE[stop]) for stop in ROUTE},
-                 'chrome': {stop: grid(run / 'chrome-valley' / f'valley-{phase}.png') for stop, phase in CHROME_PHASE.items()}}
+        grids = {'native': {stop: grid(native / 'route' / f'showcase-{stop}.ppm') for stop in ROUTE},
+                 'chrome': {stop: grid(run / 'chrome-route' / f'route-{stop}.png') for stop in ROUTE}}
         statistics = report['statistics'] = {}
-        for stop, phase_name in CHROME_PHASE.items():
-            statistics[stop] = {
-                'valley': difference(grids['chrome'][stop], grids['native'][stop]),
-                'diagnostic': difference(grid(run / 'chrome-diagnostic' / f'sky-reflections-{phase_name}.png'), grids['native'][stop]),
-            }
+        for stop in ROUTE:
+            statistics[stop] = {'valley': difference(grids['chrome'][stop], grids['native'][stop])}
+            if stop in DIAGNOSTIC_PHASE:
+                diagnostic = grid(run / 'chrome-diagnostic' / f'sky-reflections-{DIAGNOSTIC_PHASE[stop]}.png')
+                statistics[stop]['diagnostic'] = difference(diagnostic, grids['native'][stop])
         # The edit frames are full-page shots; compare only the canvas, located by the checker's own clip.
-        clip = chrome_runs['valley'][CHROME_PHASE['noon']]['images'][0]['clip']
+        clip = chrome_runs['valley'][DIAGNOSTIC_PHASE['noon']]['images'][0]['clip']
         canvas = (round(clip['x']), round(clip['y']), round(clip['x'] + clip['width']), round(clip['y'] + clip['height']))
         report['positive_control_crop'] = canvas
         edit = difference(grid(run / 'chrome-valley/valley-before-edit-final.png', crop=canvas),
@@ -523,11 +534,11 @@ def check(args):
             over = [f'{names[i]} {values["valley"][i]:.3f} > {thresholds[i]:.3f}' for i in range(3) if values['valley'][i] > thresholds[i]]
             if over:
                 failures.append(f'Chrome fallback or divergence at {stop}: {", ".join(over)}')
-            if not any(values['diagnostic'][i] >= CONTROL_RATIO * thresholds[i] for i in range(3)):
+            if 'diagnostic' in values and not any(values['diagnostic'][i] >= CONTROL_RATIO * thresholds[i] for i in range(3)):
                 failures.append(f'negative control: the diagnostic scene at {stop} is within {CONTROL_RATIO}x of the thresholds')
         if not any(edit[i] > thresholds[i] for i in range(3)):
             failures.append('positive control: the retinted texture did not exceed any threshold')
-        identity = {'comparator': COMPARATOR, 'source_root': root,
+        identity = {'comparator': COMPARATOR, 'frames': FRAMES, 'source_root': root,
                     'route': {stop: sha256(PARAMS / f'showcase-{stop}.params.json') for stop in ROUTE}}
         baseline = report['baseline'] = compare_baseline(grids, identity, thresholds)
         if baseline['status'] == 'compared' and baseline['over']:
@@ -544,8 +555,8 @@ def check(args):
     report['passed'] = not failures
     write_json(run / 'run.json', report)
     for stop, values in report.get('statistics', {}).items():
-        print(f'{stop:>14}  valley {" ".join(f"{v:7.3f}" for v in values["valley"])}  '
-              f'diagnostic {" ".join(f"{v:7.2f}" for v in values["diagnostic"])}')
+        diagnostic = " ".join(f"{v:7.2f}" for v in values["diagnostic"]) if 'diagnostic' in values else '(no diagnostic phase)'
+        print(f'{stop:>16}  valley {" ".join(f"{v:7.3f}" for v in values["valley"])}  diagnostic {diagnostic}')
     if 'thresholds' in report:
         print(f'thresholds {report["thresholds"]}  positive control {report["positive_control"]}')
     baseline = report.get('baseline', {})

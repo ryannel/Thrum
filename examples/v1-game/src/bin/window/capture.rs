@@ -5,8 +5,8 @@ use std::{
     time::{Duration, Instant},
 };
 
-use thrum_render::capabilities::DeviceCapabilities;
-use v1_game::{FrameConfig, FrameHost};
+use thrum_render::{capabilities::DeviceCapabilities, synthetic::DisplayOverlay};
+use v1_game::{FrameConfig, FrameHost, controls::GameControls};
 
 const EXTENT: [u32; 2] = [1280, 720];
 
@@ -121,7 +121,8 @@ pub(super) async fn run(output: PathBuf) -> Result<(), String> {
         .map_err(|error| error.to_string())?;
     }
     let live_records = live_sequence(&mut host, &output)?;
-    let manifest = serde_json::json!({
+    let route_records = route(&mut host, &output)?;
+    let mut manifest = serde_json::json!({
         "scope":"Same V1 FrameHost, frozen authority, real GPU offscreen readback. No live presentation, timing or physical-device qualification.",
         "adapter": capabilities.adapter().name,
         "extent":EXTENT,
@@ -131,6 +132,9 @@ pub(super) async fn run(output: PathBuf) -> Result<(), String> {
         "solar_sequence":solar_records,
         "live_sequence":live_records,
     });
+    if let Some(records) = route_records {
+        manifest["route"] = serde_json::Value::Array(records);
+    }
     std::fs::write(
         output.join("captures.json"),
         serde_json::to_vec_pretty(&manifest).map_err(|error| error.to_string())?,
@@ -173,6 +177,76 @@ fn live_sequence(host: &mut FrameHost, output: &Path) -> Result<Vec<serde_json::
     }
     host.pause()?;
     Ok(records)
+}
+
+/// Optional review route: `THRUM_CAPTURE_PARAMS`, a path list of parameter files.
+/// Each file applies through the game's typed controls, the path the panel and the
+/// browser page use, on top of the controls' defaults, so every stop is independent of
+/// the one before. Each must pause the world, because capture never runs it. An
+/// unreadable file, a refused entry or a running-world request fails the capture.
+fn route(host: &mut FrameHost, output: &Path) -> Result<Option<Vec<serde_json::Value>>, String> {
+    let Some(list) = std::env::var_os("THRUM_CAPTURE_PARAMS") else {
+        return Ok(None);
+    };
+    let files: Vec<PathBuf> = std::env::split_paths(&list).collect();
+    if files.iter().any(|file| file.as_os_str().is_empty()) {
+        return Err("THRUM_CAPTURE_PARAMS needs one or more parameter file paths".to_owned());
+    }
+    let route = output.join("route");
+    std::fs::create_dir(&route).map_err(|error| error.to_string())?;
+    let mut records = Vec::new();
+    for path in files {
+        let refused = |reason: String| format!("capture parameters {}: {reason}", path.display());
+        let text = std::fs::read_to_string(&path).map_err(|error| refused(error.to_string()))?;
+        let mut controls = GameControls::new().map_err(|error| refused(error.to_string()))?;
+        let report = controls
+            .model_mut()
+            .apply_file(&text)
+            .map_err(|error| refused(error.to_string()))?;
+        if !report.problems.is_empty() {
+            let problems: Vec<String> = report.problems.iter().map(ToString::to_string).collect();
+            return Err(refused(format!("{report}: {}", problems.join("; "))));
+        }
+        if controls.take_edits().paused != Some(true) {
+            return Err(refused(
+                "set world.paused to true; capture never runs the world".to_owned(),
+            ));
+        }
+        let state = controls.replay();
+        let (Some(time), Some(pitch), Some(yaw)) =
+            (state.time_of_day, state.camera_pitch, state.camera_yaw)
+        else {
+            return Err(refused("controls replay omitted a value".to_owned()));
+        };
+        host.set_time_of_day(time)?;
+        host.set_camera_pitch(pitch)?;
+        host.set_camera_yaw(yaw)?;
+        let overlay = state.display_overlay().unwrap_or(DisplayOverlay::Off);
+        host.set_display_overlay(overlay);
+        let name = path
+            .file_name()
+            .and_then(|name| name.to_str())
+            .ok_or_else(|| refused("needs a UTF-8 file name".to_owned()))?;
+        let stem = name.strip_suffix(".params.json").unwrap_or(name);
+        let file = format!("{stem}.ppm");
+        if route.join(&file).exists() {
+            return Err(refused(format!("a second file would also write {file}")));
+        }
+        save(host, &route.join(&file))?;
+        let [pitch, yaw] = host.camera_orientation();
+        records.push(serde_json::json!({
+            "file":file,
+            "parameters":path.display().to_string(),
+            "changed":report.changed,
+            "unchanged":report.unchanged,
+            "hours":host.time_of_day() * 24.0,
+            "yaw_degrees":yaw.to_degrees(),
+            "pitch_degrees":pitch.to_degrees(),
+            "exposure_zones":overlay == DisplayOverlay::ExposureZones,
+        }));
+    }
+    host.set_display_overlay(DisplayOverlay::Off);
+    Ok(Some(records))
 }
 
 fn save(host: &mut FrameHost, path: &Path) -> Result<(), String> {
