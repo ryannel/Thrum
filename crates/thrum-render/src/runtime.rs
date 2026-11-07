@@ -19,8 +19,8 @@ use crate::{
     extract::{ExtractReport, RenderExtractor, SourceTick},
     present::{PresentationBinding, SurfacePresenter, SurfaceProfile},
     synthetic::{
-        FrameLighting, OffscreenTarget, PreparedSynthetic, SceneApplyReport, SyntheticScene,
-        SyntheticView, pass_durations,
+        FrameLighting, OffscreenTarget, PreparedSynthetic, SceneApplyReport, SceneTimingLayout,
+        SyntheticScene, SyntheticView, pass_durations,
     },
     timing::GpuTimings,
 };
@@ -251,6 +251,7 @@ struct FrameSlot {
     target: OffscreenTarget,
     presentation: Option<PresentationBinding>,
     timings: GpuTimings,
+    timing_layout: SceneTimingLayout,
     render_done: Arc<AtomicBool>,
     state: SlotState,
 }
@@ -1175,6 +1176,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         sample.surface_presented = surface_presented;
         sample.submission_order = self.next_submission_order;
         self.next_submission_order = self.next_submission_order.wrapping_add(1);
+        slot.timing_layout = SceneTimingLayout::from(&self.prepared);
         slot.state = SlotState::Rendering(sample);
         report.submitted = true;
         report.surface_presented = surface_presented;
@@ -1345,7 +1347,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 {
                     Ok(Some(passes)) => {
                         if let Some((scene, present, contribution)) =
-                            pass_durations(passes, sample.surface_presented, &self.prepared)
+                            pass_durations(passes, sample.surface_presented, slot.timing_layout)
                         {
                             sample.gpu_pass_ns = Some(scene);
                             sample.gpu_present_ns = present;

@@ -1,29 +1,32 @@
 //! Renderer-owned interpretation of the bounded scene timestamp layout.
 
-use super::PreparedSynthetic;
+use super::{PreparedSynthetic, history_gpu};
 
-pub(crate) fn pass_durations(
-    passes: &[crate::timing::PassTiming],
-    presented: bool,
-    prepared: &PreparedSynthetic,
-) -> Option<PassDurations> {
-    collect_pass_durations(
-        passes,
-        presented,
-        prepared.shadowed(),
-        prepared.gpu_clustered(),
-    )
+#[derive(Clone, Copy)]
+pub(crate) struct SceneTimingLayout {
+    shadows: bool,
+    clusters: bool,
+    transforms: bool,
+}
+
+impl From<&PreparedSynthetic> for SceneTimingLayout {
+    fn from(prepared: &PreparedSynthetic) -> Self {
+        Self {
+            shadows: prepared.shadowed(),
+            clusters: prepared.gpu_clustered(),
+            transforms: prepared.active_instance_count() != 0,
+        }
+    }
 }
 
 /// Scene pass buckets (forward includes a contribution's compute pass), the optional surface blit
 /// and the contribution's compute pass alone.
 pub(crate) type PassDurations = ([f64; 11], Option<f64>, Option<f64>);
 
-fn collect_pass_durations(
+pub(crate) fn pass_durations(
     passes: &[crate::timing::PassTiming],
     presented: bool,
-    shadows: bool,
-    clusters: bool,
+    layout: SceneTimingLayout,
 ) -> Option<PassDurations> {
     const ALL: [&str; 8] = [
         "synthetic Sun shadow near",
@@ -31,18 +34,19 @@ fn collect_pass_durations(
         "synthetic Sun horizon heights",
         "synthetic cluster build",
         "synthetic forward opaque",
-        "synthetic transform history",
+        history_gpu::PASS_NAME,
         "synthetic exposure resolve",
         "synthetic tone encode",
     ];
-    const SHADOW_ONLY: [&str; 7] = [ALL[0], ALL[1], ALL[2], ALL[4], ALL[5], ALL[6], ALL[7]];
-    const CLUSTER_ONLY: [&str; 5] = [ALL[3], ALL[4], ALL[5], ALL[6], ALL[7]];
-    let names: &[&str] = match (shadows, clusters) {
-        (true, true) => &ALL,
-        (true, false) => &SHADOW_ONLY,
-        (false, true) => &CLUSTER_ONLY,
-        (false, false) => &ALL[4..],
-    };
+    let names = ALL.into_iter().filter(|&name| match name {
+        "synthetic Sun shadow near"
+        | "synthetic Sun shadow far"
+        | "synthetic Sun horizon heights" => layout.shadows,
+        "synthetic cluster build" => layout.clusters,
+        history_gpu::PASS_NAME => layout.transforms,
+        _ => true,
+    });
+    let count = names.clone().count();
     // A scene contribution adds one timed compute pass that the graph may order anywhere before
     // forward; it is reported on its own and the fixed scene sequence is matched without it.
     // The Sun air shadow heights pass, present with shadows under atmosphere lighting, is likewise
@@ -52,7 +56,7 @@ fn collect_pass_durations(
     let mut scene_passes = Vec::with_capacity(passes.len());
     for pass in passes {
         if pass.name.as_ref() == super::AIR_SHADOW_PASS {
-            if air_shadow.is_some() || !shadows {
+            if air_shadow.is_some() || !layout.shadows {
                 return None;
             }
             air_shadow = Some(pass.nanoseconds);
@@ -78,23 +82,23 @@ fn collect_pass_durations(
             offset += 1;
         }
     }
-    (passes.len() == offset + names.len() + usize::from(presented)
+    (passes.len() == offset + count + usize::from(presented)
         && passes[offset..]
             .iter()
             .zip(names)
-            .all(|(pass, name)| pass.name.as_ref() == *name)
-        && (!presented || passes[offset + names.len()].name.as_ref() == crate::present::PASS_NAME))
+            .all(|(pass, name)| pass.name.as_ref() == name)
+        && (!presented || passes[offset + count].name.as_ref() == crate::present::PASS_NAME))
         .then(|| {
             let mut scene = [0.0; 11];
             scene[6..].copy_from_slice(&atmosphere);
-            for pass in passes[offset..].iter().take(names.len()) {
+            for pass in passes[offset..].iter().take(count) {
                 let slot = match pass.name.as_ref() {
                     "synthetic Sun shadow near" => 0,
                     // The horizon height map shares the far shadow bucket.
                     "synthetic Sun shadow far" | "synthetic Sun horizon heights" => 1,
                     "synthetic cluster build" => 2,
                     "synthetic forward opaque" => 3,
-                    "synthetic transform history" => 4,
+                    history_gpu::PASS_NAME => 4,
                     _ => 5,
                 };
                 // Preserve the existing display bucket, including its scalar resolve.
@@ -106,7 +110,7 @@ fn collect_pass_durations(
             scene[1] += air_shadow.unwrap_or(0.0);
             (
                 scene,
-                presented.then(|| passes[offset + names.len()].nanoseconds),
+                presented.then(|| passes[offset + count].nanoseconds),
                 contribution,
             )
         })

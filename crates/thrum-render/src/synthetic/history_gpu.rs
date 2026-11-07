@@ -8,6 +8,7 @@ use super::{RenderError, abi, storage_layout, uniform_layout};
 
 pub(super) const ENTRY_BYTES: u64 = 80;
 pub(super) const SERIAL_BYTES: u64 = 32;
+pub(super) const PASS_NAME: &str = "synthetic transform history";
 const WORKGROUP: u32 = 64;
 
 pub(super) struct TransformHistory {
@@ -191,6 +192,10 @@ impl TransformHistory {
         active_count: u32,
         timings: Option<&mut GpuTimings>,
     ) -> Result<(), RenderError> {
+        if active_count == 0 {
+            // Metal does not sample a compute pass without a dispatch.
+            return Ok(());
+        }
         let mut pass = compiled
             .begin_compute(encoder, generation, timings)?
             .ok_or(RenderError::GraphPassMismatch)?;

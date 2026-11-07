@@ -40,6 +40,21 @@ The Codex goal remains active. Its attachment is
 - G6's re-split controls and macOS runner commits are approved. The native starter and
   cooked material shader reload are separate reviews. ExposureZones can use the
   existing pre-tone exposed luminance seam. See `tmp/g6-boundary/NOTES.md`.
+- The G6 stone circle now reports Metal timestamps with zero synthetic instances.
+  Skip the empty transform-history pass and match timestamps against each submitted
+  slot's layout. In two interleaved sets of four 120-frame live runs, all baseline
+  windows report GPU timing unavailable and all candidate windows report it. The
+  1600×900 Metal captures are byte-identical. In the repeat after the workspace
+  check, shared load was 25–27.2 and render-worker p50/p95 was 1.40–1.52/3.84–4.94 ms
+  before and 1.44–1.49/4.99–7.02 ms after. The tails are unresolved under this load.
+  All-clear diagnostic render passes can still lack Metal counters. Rerun
+  `python3 tmp/handback-review/empty-timing/run-pair.py <fresh-prefix>` on Metal.
+  Raw logs, input hashes and the G6 fixture are in the same directory.
+- The stone streaks disappear with cascade visibility bypassed. A scratch Chiang
+  geometric terminator probe makes coarse facets more visible. Keep both probes out
+  of the renderer. `streak-contact.png` in the timing directory shows baseline,
+  bypass and attenuation. The next check is a mesh ray against the rendered streaks
+  to separate real geometric occlusion from false map samples before changing bias.
 
 ## Exposure audit decision
 
