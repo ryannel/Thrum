@@ -13,7 +13,7 @@ fn observe(@builtin(global_invocation_id) id:vec3<u32>) {
     if id.x>=66u { return; }
     let cascade=id.x/33u;
     let u=0.4+0.2*f32(id.x%33u)/32.0;
-    let slope=shadows.penumbra.z;
+    let slope=light.direction_to_light.w;
     let x=2.0*u-1.0;
     let receiver=ShadowReceiver(vec3(x,0.0,0.25+slope*x),
         vec3(1.0,0.0,slope),vec3(0.0,1.0,0.0),normalize(vec3(-slope,0.0,1.0)));
@@ -170,7 +170,7 @@ fn observe(device: &wgpu::Device, queue: &wgpu::Queue, slope: f32, kind: u8) -> 
     samples[..16].copy_from_slice(&identity);
     samples[16..32].copy_from_slice(&identity);
     samples[36..38].fill(0.000_03);
-    samples[40..44].copy_from_slice(&[SCALE, SCALE, slope, 0.0]);
+    samples[40..44].copy_from_slice(&[SCALE, SCALE, 0.000_001, 0.000_001]);
     let uniform = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
         label: None,
         contents: samples.map(f32::to_le_bytes).as_flattened(),
@@ -191,10 +191,6 @@ fn observe(device: &wgpu::Device, queue: &wgpu::Queue, slope: f32, kind: u8) -> 
         view_formats: &[],
     });
     render_planes(device, queue, &depth, slope, kind);
-    let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
-        compare: Some(wgpu::CompareFunction::GreaterEqual),
-        ..Default::default()
-    });
     let view = depth.create_view(&wgpu::TextureViewDescriptor::default());
     let shadow = device.create_bind_group(&wgpu::BindGroupDescriptor {
         label: None,
@@ -208,15 +204,14 @@ fn observe(device: &wgpu::Device, queue: &wgpu::Queue, slope: f32, kind: u8) -> 
                 binding: 3,
                 resource: wgpu::BindingResource::TextureView(&view),
             },
-            wgpu::BindGroupEntry {
-                binding: 4,
-                resource: wgpu::BindingResource::Sampler(&sampler),
-            },
         ],
     });
+    let mut light_bytes = vec![0; super::super::super::LIGHT_BYTES];
+    light_bytes[8..12].copy_from_slice(&1.0_f32.to_le_bytes());
+    light_bytes[12..16].copy_from_slice(&slope.to_le_bytes());
     let light = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
         label: None,
-        contents: &vec![0; super::super::super::LIGHT_BYTES],
+        contents: &light_bytes,
         usage: wgpu::BufferUsages::UNIFORM,
     });
     let light_group = device.create_bind_group(&wgpu::BindGroupDescriptor {

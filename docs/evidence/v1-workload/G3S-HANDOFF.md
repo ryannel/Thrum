@@ -9,28 +9,39 @@ The Codex goal remains active. Its attachment is
 ## Current WIP
 
 `main` at `91f524b` is the verified baseline. Branch `codex/wip-g3s-solar-penumbra`
-adds a directional PCSS candidate to the same two maps, with cone padding and 16 blocker /
-32 disk samples. It is unverified. Its first native capture at
-`tmp/g3s-showcase/capture-20-penumbra/` reduces the pixel (640,600) 34→35 jump from 103
-to 20 SDR codes. Frames 33–38 now fade through the ridge shadow. Contact appearance,
-GPU cost and Chrome still need checks. Final full check is session 68807, with logs in
-`tmp/g3s-showcase/solar-penumbra/final-dev-check.log`. An earlier pre-fix full check
-is session 83506. Observe these sessions instead of starting another check. The GPU finite-disk/plane test passes after rendering its depth inputs. It covers two blocker
-distances, tilted receivers, empty grazing maps and a narrow central caster. Independent review
-found two production faults, both fixed. Empty depth stays empty when a plane reference goes
-negative, and the blocker search reserves a centre sample. Run with `cargo test -p thrum-render --lib finite_sun_shadow_width`.
+adds directional PCSS to the same two maps, with cone padding and 16 blocker / 32 disk
+samples. It is unverified. The full checks of the first candidate failed the old small-roof
+off-camera assertion, and independent visual review rejected coarse contact contours and
+warm triangular light leaks in solar frames 66–71. Keep the WIP off main until corrected
+checks and visuals pass.
 
-A separate source-triangle raycast at the real receiver (-17.5194,239.9546,15.9897) found
-central ridge blockers about 13 km upstream. At frames 33–38, 512 disk directions give
-visibility 0.893, 0.709, 0.498, 0.279, 0.096, 0.0. Shader shadow-off renders change by one
-code at 34→35. Those results establish the finite-source shadow defect. Raw scripts, saved
-partial rows and logs are under `tmp/g3s-showcase/solar-penumbra/`. Keep existing local
-receiver-plane bias independent of the broad penumbra radius. The full receiver-plane
-extension is an approximate parallel-surface model, and grazing receivers need the oracle.
-The test uses the shipping shader body and independent ray/plane disk geometry. Its depth
-fixtures must be rendered, as WebGPU forbids queue writes to Depth32Float. Updated game,
-release benchmark and Wasm builds have completed. Capture final images in a new directory
-and run the saved ABBA script only after both full check sessions finish using the GPU.
+The current correction is captured at `tmp/g3s-showcase/capture-22-penumbra-local/`.
+It corrects depth only within local texel reconstruction. Across the Sun disk, a numeric
+match to the receiver's own plane is exempted, while true upstream depth blocks. The old
+comparison sampler is removed from private layouts. The cone guard is bounded by the
+maximum caster world height when every Sun direction rises, preserving noon near-map
+resolution. At the near horizon the conservative axial guard remains.
+
+The shipping finite-disk GPU oracle passes on two blocker distances and tilted receivers,
+plus an empty grazing map and a narrow central caster. The fixture renders depth, as WebGPU
+forbids queue writes to Depth32Float. The off-camera roof fixture now uses a 32 m roof
+1.4 km upstream, because the finite Sun's footprint there is about 13 m wide. Its prior
+1.6 m roof could not produce the asserted strong umbra. The original darkness assertion
+is retained and the updated scoped test passes. Full validation and visual review of this
+correction remain to run. No check is currently running.
+
+The shadow-off counterfactual reduced the pixel (640,600) 34→35 jump from 103 to one SDR
+code. A separate raycast through source triangles at receiver (-17.5194,239.9546,15.9897)
+found ridge blockers about 13 km upstream. At frames 33–38, 512 Sun disk rays give visibility
+0.893, 0.709, 0.498, 0.279, 0.096, 0.0. The first PCSS candidate reduced the code jump to 20.
+Check the current correction over the entire sequence before carrying that number forward.
+
+Scripts, complete/partial rows and logs are in `tmp/g3s-showcase/solar-penumbra/`.
+`corrected-gpu-oracle.log` and `corrected-off-camera.log` are the current scoped results.
+`dev-check.log` and `final-dev-check.log` document rejected earlier candidates, not current
+success. Rebuild benchmark and Wasm artifacts before reuse. The previous Chrome pass and
+ABBA inputs predate the receiver-plane correction. The saved ABBA runner has not run for
+the corrected candidate. Do not overwrite its before executable when rebuilding.
 
 ## Goal and status
 

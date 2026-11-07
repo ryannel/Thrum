@@ -42,7 +42,6 @@ struct ShadowCascades {
 }
 @group(0) @binding(2) var<uniform> shadows: ShadowCascades;
 @group(0) @binding(3) var shadow_maps: texture_depth_2d_array;
-@group(0) @binding(4) var shadow_sampler: sampler_comparison;
 struct MaterialRecord {
     base: vec4<f32>,
     emissive_cutoff: vec4<f32>,
@@ -263,31 +262,34 @@ fn cascade_visibility(index: u32, receiver: ShadowReceiver) -> f32 {
         let texel=clamp(vec2<i32>(q*extent),vec2(0),vec2<i32>(extent)-1);
         let tap=(vec2<f32>(texel)+0.5)/extent;
         let depth=textureLoad(shadow_maps,texel,i32(index),0);
-        let receiver_depth=reference+dot(depth_gradient,tap-uv);
-        if depth>0.0 && depth>receiver_depth {
+        let receiver_depth=reference+dot(depth_gradient,tap-q);
+        let plane_depth=p.z+dot(depth_gradient,tap-uv);
+        let epsilon=select(shadows.penumbra.w,shadows.penumbra.z,index==0u)+4e-7;
+        let same_plane=abs(depth-plane_depth)<=epsilon;
+        if depth>0.0 && depth>receiver_depth && !same_plane {
             gap_sum+=max(0.0,depth-p.z);
             blockers+=1.0;
         }
     }
     if blockers==0.0 {
-        return shadow_filter(index,uv,reference,depth_gradient,extent);
+        return shadow_filter(index,uv,p.z,reference,depth_gradient,extent,uv);
     }
     let radius=gap_sum/blockers*scale;
     if radius*extent.x<=0.5 {
-        return shadow_filter(index,uv,reference,depth_gradient,extent);
+        return shadow_filter(index,uv,p.z,reference,depth_gradient,extent,uv);
     }
     var visible=0.0;
     for(var i=0u;i<32u;i++) {
         let q=uv+SHADOW_DISK[i]*radius;
-        let depth=reference+dot(depth_gradient,q-uv);
-        visible+=shadow_filter(index,q,depth,depth_gradient,extent);
+        visible+=shadow_filter(index,q,p.z,reference,depth_gradient,extent,uv);
     }
     return visible/32.0;
 }
 
-// Receiver-plane PCF reconstructs each disk sample locally. Its broad-plane
-// extension is the parallel-surface approximation used by directional PCSS.
-fn shadow_filter(index:u32,uv:vec2<f32>,reference:f32,gradient:vec2<f32>,extent:vec2<f32>) -> f32 {
+// Correct the four texel centres locally. Across the physical disk, only
+// matching the receiver plane is exempted; real upstream occluders remain.
+fn shadow_filter(index:u32,uv:vec2<f32>,receiver_depth:f32,reference:f32,
+    gradient:vec2<f32>,extent:vec2<f32>,origin:vec2<f32>) -> f32 {
     if any(uv<vec2(0.0)) || any(uv>vec2(1.0)) { return 1.0; }
     let pixel = uv*extent-0.5;
     let first = floor(pixel);
@@ -298,7 +300,12 @@ fn shadow_filter(index:u32,uv:vec2<f32>,reference:f32,gradient:vec2<f32>,extent:
         let tap = (clamp(first+offset,vec2(0.0),extent-1.0)+0.5)/extent;
         let weight = mix(1.0-blend,blend,offset);
         let tap_depth = max(0.0,reference+dot(gradient,tap-uv));
-        visible += weight.x*weight.y*textureSampleCompareLevel(shadow_maps,shadow_sampler,tap,i32(index),tap_depth);
+        let texel=vec2<i32>(clamp(first+offset,vec2(0.0),extent-1.0));
+        let depth=textureLoad(shadow_maps,texel,i32(index),0);
+        let plane_depth=receiver_depth+dot(gradient,tap-origin);
+        let epsilon=select(shadows.penumbra.w,shadows.penumbra.z,index==0u)+4e-7;
+        let same_plane=abs(depth-plane_depth)<=epsilon;
+        visible += weight.x*weight.y*select(0.0,1.0,tap_depth>=depth || same_plane);
     }
     return visible;
 }
