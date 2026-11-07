@@ -71,8 +71,11 @@ mod native {
             atomic::{AtomicBool, Ordering},
         },
         thread::{self, JoinHandle},
-        time::Duration,
+        time::{Duration, Instant},
     };
+
+    const SHUTDOWN_WAIT: Duration = Duration::from_millis(100);
+    const SHUTDOWN_POLL: Duration = Duration::from_millis(1);
 
     struct Slot<T> {
         value: Mutex<Option<T>>,
@@ -297,18 +300,25 @@ mod native {
             reply
         }
 
-        /// Close both slots. A worker stuck in a platform call is detached so
-        /// OS teardown cannot block forever; its owned resources live until it
-        /// returns.
+        /// Close both slots and join the worker if it exits within 100 ms.
+        /// A worker stuck in a platform call retains its resources until it
+        /// returns. Shutdown never waits indefinitely for that call.
         pub fn shutdown(mut self) {
             self.close();
-            if let Some(join) = self.join.take() {
-                if join.is_finished() {
-                    drop(join.join());
-                } else {
-                    drop(join);
+            let Some(join) = self.join.take() else {
+                return;
+            };
+            let deadline = Instant::now() + SHUTDOWN_WAIT;
+            // The join handle also covers resource and thread-local teardown.
+            // Only explicit shutdown polls it, leaving the frame path unchanged.
+            while !join.is_finished() {
+                let remaining = deadline.saturating_duration_since(Instant::now());
+                if remaining.is_zero() {
+                    return;
                 }
+                thread::sleep(remaining.min(SHUTDOWN_POLL));
             }
+            drop(join.join());
         }
     }
 
@@ -390,12 +400,39 @@ mod native {
                 )
                 .expect("worker starts");
                 worker.shutdown();
-                let deadline = Instant::now() + Duration::from_secs(1);
-                while !exited.load(Ordering::Acquire) && Instant::now() < deadline {
-                    thread::yield_now();
-                }
-                assert!(exited.load(Ordering::Acquire), "closed worker must exit");
+                assert!(
+                    exited.load(Ordering::Acquire),
+                    "shutdown must wait for idle worker resources to drop"
+                );
             }
+        }
+
+        #[test]
+        fn shutdown_does_not_wait_forever_for_an_in_flight_job() {
+            let (started, entering) = mpsc::channel();
+            let (release, blocked) = mpsc::channel();
+            let worker = FrameWorker::start(
+                "frame-stuck-test",
+                move |()| {
+                    started.send(()).expect("job starts");
+                    blocked.recv().expect("test releases job");
+                },
+                || {},
+            )
+            .expect("worker starts");
+            worker.try_send(()).unwrap_or_else(|_| panic!("job queued"));
+            entering
+                .recv_timeout(Duration::from_secs(1))
+                .expect("worker entered");
+            let (returned, done) = mpsc::channel();
+            let caller = thread::spawn(move || {
+                worker.shutdown();
+                returned.send(()).expect("test receives shutdown result");
+            });
+            let detached = done.recv_timeout(Duration::from_secs(1));
+            release.send(()).expect("release test job");
+            caller.join().expect("shutdown caller exits");
+            detached.expect("shutdown returns before the job releases");
         }
 
         #[test]
