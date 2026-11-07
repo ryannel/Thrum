@@ -223,9 +223,11 @@ A whole route run from an edited source shows the check follows content rather t
     Each launch is a fresh Chrome process with a fresh profile and the HTTP cache disabled, on the already-built page,
     with the cook server serving generation 1 before navigation.
     - Inside each route page, the checker polls the page's own clock (`performance.now()`, milliseconds since
-      navigation start) together with `cooked_status()`. It records the last poll that saw no cooked draw and the
-      first that saw one. The cooked draw happened between them, so the first is an upper bound and the poll
-      interval is the granularity.
+      navigation start) together with `cooked_status()`. It records the last observation that establishes no cooked
+      draw and the first that sees one. The cooked draw happened between them, so the first is an upper bound and
+      the gap is the granularity. Only a status before Running (the frame loop has not started) or a
+      `cooked_status()` reading of zero draws establishes no draw. If neither came before the first draw, the lower
+      bound is recorded as absent, navigation start is the conservative bound, and there is no granularity.
     - It also records the page's navigation and resource timing for the Wasm and the cooked products, so a reader
       can see where the time went.
     - The first page of each launch is the cold sample; the later pages share a warm browser and GPU process and are
