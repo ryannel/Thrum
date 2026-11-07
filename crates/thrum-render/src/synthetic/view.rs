@@ -165,6 +165,21 @@ impl SyntheticView {
         Ok(self)
     }
 
+    /// Darken the incident meter's target below daylight, following the
+    /// Krawczyk et al. (2005) key-value curve, so twilight reads dim rather
+    /// than metered back to mid-grey. Daylight above 1,000 lux is unchanged.
+    /// # Errors
+    /// Refuses a view without an incident meter.
+    pub fn with_low_light_adaptation(mut self) -> Result<Self, RenderError> {
+        match &mut self.exposure {
+            Some(ExposurePolicy::IncidentHorizontal { low_light_key, .. }) => {
+                *low_light_key = true;
+                Ok(self)
+            }
+            _ => Err(RenderError::InvalidExposure),
+        }
+    }
+
     pub(super) fn exposure_policy(&self, fallback: f32, atmosphere: bool) -> [u8; 32] {
         self.exposure
             .unwrap_or(ExposurePolicy::Fixed {

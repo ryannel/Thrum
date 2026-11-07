@@ -195,7 +195,9 @@ impl SceneSource<PublishedPage> for GameScene {
             atmosphere_lighting(source.tick, alpha, self.day_phase_offset, camera_altitude_m)
         });
         let view = match lighting {
-            FrameLighting::Atmosphere(_) => view.with_incident_exposure(0.0, 0.0, 18.0),
+            FrameLighting::Atmosphere(_) => view
+                .with_incident_exposure(0.0, 0.0, 18.0)
+                .and_then(SyntheticView::with_low_light_adaptation),
             FrameLighting::Diagnostic(_) | FrameLighting::Photometric(_) => {
                 view.with_exposure(1.0 / 16_000.0)
             }

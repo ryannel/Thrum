@@ -228,6 +228,45 @@ fn gpu_meter_calibration_fixed_bits_bounds_zero_and_invalid_inputs() {
             unphysical.flags, 12,
             "diagnostic/photometric data must not be metered as atmosphere"
         );
+        // Low-light key: daylight unchanged, 10 lux about two stops darker.
+        let ExposurePolicy::IncidentHorizontal {
+            compensation_ev,
+            min_ev100,
+            max_ev100,
+            ..
+        } = policy
+        else {
+            unreachable!()
+        };
+        let adapted = ExposurePolicy::IncidentHorizontal {
+            compensation_ev,
+            min_ev100,
+            max_ev100,
+            low_light_key: true,
+        };
+        for (direct, stops) in [
+            (100_000.0, 0.0),
+            (1_000.0, 0.0),
+            (100.0, 0.628),
+            (10.0, 2.061),
+        ] {
+            let values = light(1.0, [direct; 3], [0.0; 3]);
+            let [plain, dim] = [policy, adapted].map(|selected| {
+                resolve(
+                    &device,
+                    &queue,
+                    &exposure,
+                    &light_buffer,
+                    selected.pack(16_000.0, true, SdrToneMap::Reinhard),
+                    values,
+                )
+            });
+            assert!(
+                (dim.values[2] - plain.values[2] - stops).abs() < 5e-3,
+                "{direct} lux: {plain:?} {dim:?}"
+            );
+            assert_eq!(dim.flags, plain.flags);
+        }
         assert!(scope.pop().await.is_none());
     });
 }

@@ -28,6 +28,13 @@ const NOT_METERED: u32 = 4u;
 const INVALID: u32 = 8u;
 // Informational SH risk on fixed normal probes; not a pixel-clamp count.
 const SKY_SH_NEGATIVE_PROBE: u32 = 16u;
+// Krawczyk, Myszkowski and Seidel (2005) key value, applied to the mid-grey
+// luminance of the metered illuminance. Dimming starts below 1,000 lux.
+fn key_value(lux: f32) -> f32 {
+    let luminance = 0.18 * lux / 3.14159265;
+    return 1.03 - 2.0 / (2.0 + log2(luminance + 1.0) * 0.30103);
+}
+const ADAPTED_LUX: f32 = 1000.0;
 fn finite(value: f32) -> bool {
     return (bitcast<u32>(value) & 0x7f800000u) != 0x7f800000u;
 }
@@ -41,7 +48,7 @@ fn resolve() {
     var ev = log2(inverse / 1.2);
     var lux = 0.0;
     var flags = NOT_METERED;
-    if policy.mode == 1u {
+    if policy.mode == 1u || policy.mode == 2u {
         flags = INVALID | NOT_METERED;
         if policy.atmosphere != 0u && finite(directional[0].y)
             && valid_rgb(directional[1].rgb) && valid_rgb(directional[3].rgb) {
@@ -52,7 +59,11 @@ fn resolve() {
                 // The compensation-dependent floor reaches exactly the selected
                 // minimum camera EV, without inventing physical incident light.
                 let floor_lux = 2.5 * exp2(parameters.z + parameters.y);
-                let raw_ev = log2(max(measured, floor_lux) * 0.4) - parameters.y;
+                var raw_ev = log2(max(measured, floor_lux) * 0.4) - parameters.y;
+                if policy.mode == 2u {
+                    let metered = max(measured, floor_lux);
+                    raw_ev -= min(0.0, log2(key_value(metered) / key_value(ADAPTED_LUX)));
+                }
                 ev = clamp(raw_ev, parameters.z, parameters.w);
                 inverse = 1.2 * exp2(ev);
                 flags = 0u;
