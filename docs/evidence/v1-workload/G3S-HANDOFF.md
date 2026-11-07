@@ -126,6 +126,32 @@ The Codex goal remains active. Its attachment is
   are in `tmp/g3s-star-catalog/current-main/offscreen-emergence/` and
   its parent `run-offscreen-motion.sh`.
 
+- Ground E `70d2baf8` passed the six-stop Metal and Chrome comparison and
+  both controls with the same one-code tolerance. Only the two midnight
+  grids changed. In the matched 10-second native pans, yaw moves −8° to
+  +8° through the game's control, with stars on and off in the same
+  build. Each clip has 600 consecutive ticks and GPU samples. The yaw
+  edit resets retained instance-transform history as in the window.
+  The independent decode found no RGB changes under the terrain mask.
+  Two faint tracks persisted through all 600 frames, with peak changes
+  of at most two codes per frame. Sampled frames and decoded motion
+  were reviewed. Continuous playback is still open. Repeat with
+  `THRUM_CAPTURE_PAN_TO_DEGREES=8` and start yaw −8°, pitch +7° and
+  midnight. Capture and route records are in
+  `tmp/g3s-star-catalog/current-main/`.
+
+  | Midnight 1080p run, 200 submitted frames each | GPU pass-sum p50 / p95 (ms) |
+  | --- | ---: |
+  | Stars off 1 | 6.94 / 24.05 |
+  | Stars on 1 | 8.53 / 28.54 |
+  | Stars on 2 | 9.79 / 26.28 |
+  | Stars off 2 | 16.97 / 42.66 |
+
+  Solver load confounds the cost. The two control rows vary more than
+  the apparent effect. A separate HDR load and store accounts for
+  33.2 MB of logical RGBA16Float attachment area at 1080p. Physical
+  traffic and display cadence remain unmeasured.
+
 - Star integration `00c2645` is on `codex/g3s-stars-integration`. Both
   graphs preserve Frustum count copies and nonblocking slot retirement.
   Each native Metal mode matches the previous 132 held images byte for
