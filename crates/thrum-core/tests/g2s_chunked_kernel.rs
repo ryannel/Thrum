@@ -75,6 +75,10 @@ struct Rules {
 }
 
 impl Rules {
+    #[expect(
+        clippy::unnecessary_wraps,
+        reason = "registered direct systems share one fallible callback signature"
+    )]
     fn nudge(
         &self,
         world: &mut WorldTxn<'_>,
