@@ -3,7 +3,8 @@
 use super::{
     AUX_BYTES, CONTRIBUTION_UPLOAD, CUBE_INDEX_BYTES, DEPTH_FORMAT, DisplayPrepared,
     ExposureResolve, LIGHT_BYTES, MOTION_FORMAT, PreparedSynthetic, RenderError, SCENE_FORMAT,
-    SceneFamily, TargetResources, VIEW_BYTES, air_shadow, exposure, history_gpu, shadow,
+    SceneFamily, SceneGraphs, TargetResources, VIEW_BYTES, air_shadow, exposure, history_gpu,
+    shadow,
 };
 use crate::graph::{
     Access, AccessKind, CompiledGraph, FrameGraph, GraphError, Pass, PassKind, PassScope,
@@ -12,6 +13,36 @@ use crate::graph::{
 use crate::graph_record::{ExecutableGraph, RecordBinding};
 use crate::visibility::VisibilityPrepared;
 use std::collections::BTreeSet;
+
+pub(super) struct CompiledScene {
+    pub(super) day: SceneGraphs<CompiledGraph>,
+    pub(super) night: Option<SceneGraphs<CompiledGraph>>,
+    pub(super) ids: TargetResources,
+}
+
+impl SceneGraphs<CompiledGraph> {
+    fn compile(
+        graph: &mut FrameGraph,
+        readback: Pass,
+        generation: u64,
+        keys: &BTreeSet<PipelineKey>,
+    ) -> Result<Self, GraphError> {
+        Ok(Self {
+            scene: graph.compile(generation, keys)?,
+            readback: graph.compile_with_terminal_pass(readback, generation, keys)?,
+        })
+    }
+
+    pub(super) fn bind(
+        self,
+        prepared: &PreparedSynthetic,
+    ) -> Result<SceneGraphs<ExecutableGraph<SceneFamily>>, RenderError> {
+        Ok(SceneGraphs {
+            scene: prepared.bind_scene_graph(self.scene)?,
+            readback: prepared.bind_scene_graph(self.readback)?,
+        })
+    }
+}
 
 /// Role of a cleared full-view attachment in the forward pass.
 #[derive(Clone, Copy)]
@@ -63,7 +94,7 @@ impl PreparedSynthetic {
             resource: resource.clone(),
             range: 0..1,
             kind: AccessKind::AttachmentClear,
-            store: sampled_depth || !matches!(role, AttachmentUse::Depth),
+            store: !matches!(role, AttachmentUse::Depth),
         });
         Ok(resource)
     }
@@ -73,7 +104,7 @@ impl PreparedSynthetic {
         width: u32,
         height: u32,
         row_bytes: u32,
-    ) -> Result<(CompiledGraph, CompiledGraph, TargetResources), RenderError> {
+    ) -> Result<CompiledScene, RenderError> {
         let mut graph = FrameGraph::default();
         let material = graph.resource(
             ResourceDescriptor::Buffer {
@@ -177,26 +208,7 @@ impl PreparedSynthetic {
             AttachmentUse::Depth,
             self.stars.is_some(),
         )?;
-        for class in self.classes.arrays() {
-            let texture = graph.resource(
-                ResourceDescriptor::Texture {
-                    width: 1,
-                    height: 1,
-                    layers: 1,
-                    mips: 1,
-                    samples: 1,
-                    format: class.class.format(),
-                    usage: wgpu::TextureUsages::TEXTURE_BINDING,
-                },
-                ResourceScope::Imported { initialized: true },
-            )?;
-            accesses.push(Access {
-                resource: texture,
-                range: 0..1,
-                kind: AccessKind::SampledRead,
-                store: true,
-            });
-        }
+        self.append_material_textures(&mut graph, &mut accesses)?;
         let attachment = (width, height, &mut graph, &mut accesses);
         let scene = Self::view_attachment(attachment, SCENE_FORMAT, AttachmentUse::Scene, false)?;
         let attachment = (width, height, &mut graph, &mut accesses);
@@ -232,6 +244,17 @@ impl PreparedSynthetic {
             history_write,
             history_bytes,
         )?;
+        let (output, display_pass) = DisplayPrepared::append_graph(
+            &mut graph,
+            self.display_key(),
+            &scene,
+            &exposure_sample,
+            width,
+            height,
+        )?;
+        let readback = Self::readback_pass(&mut graph, &output, height, row_bytes)?;
+        let generation = self.key.device_generation;
+        let day = SceneGraphs::compile(&mut graph, readback.clone(), generation, &prepared_keys)?;
         let stars = if let Some((transmittance, observer)) = &atmosphere_inputs {
             self.append_stars(
                 &mut graph,
@@ -242,22 +265,22 @@ impl PreparedSynthetic {
         } else {
             None
         };
-        let (output, display_pass) = DisplayPrepared::append_graph(
-            &mut graph,
-            self.display_key(),
-            &scene,
-            &exposure_sample,
-            width,
-            height,
-        )?;
-        graph.dependency(stars.unwrap_or(forward), display_pass)?;
-        let scene_graph = graph.compile(self.key.device_generation, &prepared_keys)?;
-        Self::append_readback_pass(&mut graph, &output, height, row_bytes)?;
-        let readback_graph = graph.compile(self.key.device_generation, &prepared_keys)?;
-        Ok((
-            scene_graph,
-            readback_graph,
-            TargetResources {
+        let night = if let Some(stars) = stars {
+            // Display reads the composite, even though its declaration precedes it.
+            graph.dependency(stars, display_pass)?;
+            Some(SceneGraphs::compile(
+                &mut graph,
+                readback,
+                generation,
+                &prepared_keys,
+            )?)
+        } else {
+            None
+        };
+        Ok(CompiledScene {
+            day,
+            night,
+            ids: TargetResources {
                 depth,
                 scene,
                 motion,
@@ -265,7 +288,7 @@ impl PreparedSynthetic {
                 shadow,
                 air_shadow,
             },
-        ))
+        })
     }
 
     fn append_frame_uniform_reads(
@@ -369,12 +392,12 @@ impl PreparedSynthetic {
         Ok(())
     }
 
-    fn append_readback_pass(
+    fn readback_pass(
         graph: &mut FrameGraph,
         output: &ResourceId,
         height: u32,
         row_bytes: u32,
-    ) -> Result<(), RenderError> {
+    ) -> Result<Pass, RenderError> {
         let bytes = u64::from(row_bytes) * u64::from(height);
         let destination = graph.resource(
             ResourceDescriptor::Buffer {
@@ -383,7 +406,7 @@ impl PreparedSynthetic {
             },
             ResourceScope::Imported { initialized: false },
         )?;
-        graph.pass(Pass {
+        Ok(Pass {
             name: "output readback".into(),
             scope: PassScope::View(1),
             pipeline: None,
@@ -402,9 +425,37 @@ impl PreparedSynthetic {
                 },
             ],
             external_side_effect: true,
-        });
+        })
+    }
+
+    fn append_material_textures(
+        &self,
+        graph: &mut FrameGraph,
+        accesses: &mut Vec<Access>,
+    ) -> Result<(), GraphError> {
+        for class in self.classes.arrays() {
+            let texture = graph.resource(
+                ResourceDescriptor::Texture {
+                    width: 1,
+                    height: 1,
+                    layers: 1,
+                    mips: 1,
+                    samples: 1,
+                    format: class.class.format(),
+                    usage: wgpu::TextureUsages::TEXTURE_BINDING,
+                },
+                ResourceScope::Imported { initialized: true },
+            )?;
+            accesses.push(Access {
+                resource: texture,
+                range: 0..1,
+                kind: AccessKind::SampledRead,
+                store: true,
+            });
+        }
         Ok(())
     }
+
     fn append_shadow_passes(
         &self,
         graph: &mut FrameGraph,

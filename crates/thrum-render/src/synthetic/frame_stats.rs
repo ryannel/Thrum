@@ -1,6 +1,6 @@
 //! Renderer-owned interpretation of the bounded scene timestamp layout.
 
-use super::{CullMode, PreparedSynthetic, history_gpu};
+use super::{CullMode, OffscreenTarget, PreparedSynthetic, history_gpu};
 
 #[derive(Clone, Copy)]
 pub(crate) struct SceneTimingLayout {
@@ -13,13 +13,13 @@ pub(crate) struct SceneTimingLayout {
     camera: CullMode,
 }
 
-impl From<&PreparedSynthetic> for SceneTimingLayout {
-    fn from(prepared: &PreparedSynthetic) -> Self {
+impl From<(&PreparedSynthetic, &OffscreenTarget)> for SceneTimingLayout {
+    fn from((prepared, target): (&PreparedSynthetic, &OffscreenTarget)) -> Self {
         Self {
             shadows: prepared.shadowed(),
             clusters: prepared.gpu_clustered(),
             transforms: prepared.active_instance_count() != 0,
-            star_pass: prepared.has_stars().then_some(super::stars::PASS_NAME),
+            star_pass: target.draw_stars.then_some(super::stars::PASS_NAME),
             camera: prepared.camera_culling(),
         }
     }

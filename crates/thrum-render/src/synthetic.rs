@@ -1422,10 +1422,6 @@ impl PreparedSynthetic {
                 .as_ref()
                 .map_or(0, AtmospherePrepared::pass_count)
     }
-    pub(super) fn has_stars(&self) -> bool {
-        self.stars.is_some()
-    }
-
     /// Camera opaque draw mode; Frustum adds one timed compute pass.
     pub fn camera_culling(&self) -> CullMode {
         if self.visibility.is_some() {
@@ -1519,9 +1515,10 @@ impl PreparedSynthetic {
             0,
             &scene.view.pack_aux(target.width, target.height),
         );
-        if let Some(stars) = &target.stars {
-            stars.update(queue, &scene.view, target.extent());
-        }
+        target.draw_stars = target
+            .stars
+            .as_ref()
+            .is_some_and(|stars| stars.update(queue, &scene.view, target.extent()));
         // Atmosphere owns the ambient tail on GPU; preserve its cached value.
         let cpu_light_bytes = if self.atmosphere.is_some() {
             48
@@ -1667,11 +1664,7 @@ impl PreparedSynthetic {
         readback: bool,
     ) -> Result<CompiledGraph, RenderError> {
         self.check_target(target)?;
-        Ok(if readback {
-            target.readback_graph.plan().clone()
-        } else {
-            target.graph.plan().clone()
-        })
+        Ok(target.graph(readback).plan().clone())
     }
 
     /// Encode an already prepared draw. The caller owns submission and device
@@ -1736,11 +1729,7 @@ impl PreparedSynthetic {
         if generation != self.key.device_generation {
             return Err(RenderError::StaleTarget);
         }
-        let graph = if readback.is_some() {
-            &target.readback_graph
-        } else {
-            &target.graph
-        };
+        let graph = target.graph(readback.is_some());
         if graph.plan().device_generation != generation {
             return Err(RenderError::StaleTarget);
         }
@@ -1899,13 +1888,19 @@ struct TargetResources {
     air_shadow: Option<ResourceId>,
 }
 
+struct SceneGraphs<G> {
+    scene: G,
+    readback: G,
+}
+
 /// Generation-bound offscreen target. Retain while encoded/submitted work uses
 /// it; actual old/new allocation retirement belongs to the executor's fences.
 pub struct OffscreenTarget {
     device: wgpu::Device,
     prepared_owner: Arc<()>,
-    graph: ExecutableGraph<SceneFamily>,
-    readback_graph: ExecutableGraph<SceneFamily>,
+    day_graphs: SceneGraphs<ExecutableGraph<SceneFamily>>,
+    night_graphs: Option<SceneGraphs<ExecutableGraph<SceneFamily>>>,
+    draw_stars: bool,
     textures: GraphTextures,
     ids: TargetResources,
     view: wgpu::TextureView,
@@ -1957,9 +1952,10 @@ impl OffscreenTarget {
         if u64::from(row_bytes) * u64::from(height) > limits.max_buffer_size {
             return Err(RenderError::TargetExtent);
         }
-        let (graph, readback_graph, ids) = prepared.compile_graph(width, height, row_bytes)?;
-        // The Copy variant retains output longer and safely supplies both plans.
-        let textures = GraphTextures::new(device, &readback_graph);
+        let scene_graph::CompiledScene { day, night, ids } =
+            prepared.compile_graph(width, height, row_bytes)?;
+        // The night capture adds buffer inputs and extends depth, scene and output lifetimes.
+        let textures = GraphTextures::new(device, &night.as_ref().unwrap_or(&day).readback);
         let view = textures
             .texture(&ids.output)
             .ok_or(RenderError::GraphPassMismatch)?
@@ -1976,23 +1972,24 @@ impl OffscreenTarget {
             .texture(&ids.motion)
             .ok_or(RenderError::GraphPassMismatch)?
             .create_view(&wgpu::TextureViewDescriptor::default());
+        let initial_view = prepared
+            .pending_view
+            .as_ref()
+            .unwrap_or(&prepared.view_sample);
         let stars = prepared
             .stars
             .as_ref()
             .zip(prepared.atmosphere.as_ref())
             .map(|(stars, atmosphere)| {
-                let view = prepared
-                    .pending_view
-                    .as_ref()
-                    .unwrap_or(&prepared.view_sample);
                 stars.target(
                     device,
                     &depth,
                     atmosphere,
                     &prepared.exposure.samples,
-                    (view, [width, height]),
+                    (initial_view, [width, height]),
                 )
             });
+        let draw_stars = stars.is_some() && initial_view.celestial_basis().is_some();
         let display = prepared
             .display
             .target(device, &scene_view, &prepared.exposure.samples);
@@ -2055,13 +2052,14 @@ impl OffscreenTarget {
             layout: &prepared.view_layout,
             entries: &view_entries,
         });
-        let graph = prepared.bind_scene_graph(graph)?;
-        let readback_graph = prepared.bind_scene_graph(readback_graph)?;
+        let day_graphs = day.bind(prepared)?;
+        let night_graphs = night.map(|graphs| graphs.bind(prepared)).transpose()?;
         Ok(Self {
             device: device.clone(),
             prepared_owner: Arc::clone(&prepared.owner),
-            graph,
-            readback_graph,
+            day_graphs,
+            night_graphs,
+            draw_stars,
             textures,
             ids,
             view,
@@ -2082,6 +2080,19 @@ impl OffscreenTarget {
             frame_revision: prepared.frame_revision,
         })
     }
+    fn graph(&self, readback: bool) -> &ExecutableGraph<SceneFamily> {
+        let graphs = self
+            .night_graphs
+            .as_ref()
+            .filter(|_| self.draw_stars)
+            .unwrap_or(&self.day_graphs);
+        if readback {
+            &graphs.readback
+        } else {
+            &graphs.scene
+        }
+    }
+
     /// Target extent in pixels.
     pub fn extent(&self) -> [u32; 2] {
         [self.width, self.height]
