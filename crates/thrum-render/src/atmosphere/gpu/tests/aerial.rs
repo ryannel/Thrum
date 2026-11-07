@@ -57,7 +57,14 @@ impl Output {
             },
             1,
         );
-        let source = format!("{}\n{aerial}", include_str!("../../common.wgsl"));
+        let source = format!(
+            "{}\n{aerial}",
+            concat!(
+                include_str!("../../storage.wgsl"),
+                "\n",
+                include_str!("../../common.wgsl")
+            )
+        );
         let pipeline = pipeline(device, &source, "aerial_main");
         let views = [
             atmosphere.textures[0].create_view(&wgpu::TextureViewDescriptor::default()),
@@ -379,7 +386,11 @@ struct ViewAux { viewport_inv_viewport: vec4<f32> }
 const view_aux=ViewAux(vec4(32.0,32.0,1.0/32.0,1.0/32.0));
 @group(0) @binding(0) var<storage,read_write> result: array<vec4<f32>>;
 ",
-        include_str!("../../../synthetic_aerial.wgsl"),
+        concat!(
+            include_str!("../../storage.wgsl"),
+            "\n",
+            include_str!("../../../synthetic_aerial.wgsl")
+        ),
         r"
 @compute @workgroup_size(1)
 fn consumer() {

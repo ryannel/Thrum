@@ -204,7 +204,8 @@ fn gpu_transport_reference_reports_every_prescribed_row() {
         }
         assert_eq!(count, 198);
         let multiple = probe.multiple(&device, &queue);
-        assert_eq!(multiple.len(), 32 * 32);
+        let [width, height] = super::super::super::EXTENTS[1].map(|v| v as usize);
+        assert_eq!(multiple.len(), width * height);
         assert!(
             multiple
                 .iter()
@@ -219,8 +220,8 @@ fn gpu_transport_reference_reports_every_prescribed_row() {
                     writeln!(
                         table,
                         "{}\t{}\t{band}\t{value:.17e}",
-                        index % 32,
-                        index / 32
+                        index % width,
+                        index / width
                     )
                     .expect("write M field into String");
                 }

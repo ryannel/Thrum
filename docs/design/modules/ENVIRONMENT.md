@@ -180,6 +180,13 @@ identified ready build remains until a complete replacement is published.
 
 ### Selected mathematical relationships and domains
 
+The fixed Earth profile uses a256×64 transmittance LUT and512×32 multiple-scattering LUT. Below the first
+transmittance row, both lookup coordinates use its dimension-derived altitude (~6.151m at64rows); true-height
+planet blockage precedes lookup. The retained first-row approximation is checked against CPU direct lighting.
+The larger Sun-angle chart costs128KiB (+120KiB) and10,485,760 volume evaluations per profile refresh; each
+transport step keeps one bilinear lookup. The1024-column same-estimator comparison bounds sampled interpolation,
+not closure/spectral error.
+
 G3s sky diffuse uses a full-sphere nine-coefficient irradiance polynomial, including the planet boundary but
 excluding the separate Sun disk. With `M0=∫L`, `M1=∫Lω`, `Q=∫L(ωωᵀ−I/3)`, evaluate
 `E(n)=M0/4+n·M1/2+15 nᵀQn/32` on the final world shading normal. Keep signed coefficients; clamp only the
@@ -204,7 +211,7 @@ With `s(x)=sqrt(alpha²+(1-alpha²)x²)`, VNDF weight is `NoL*(NoV+s(NoV))/(NoL*
 `NoL>0`; rejected samples count as zero. `A=<W*(1-Fc)>`, `B=<W*Fc>`, `Fc=(1-VoH)^5`; thus `A+B≤1`.
 Atmosphere indirect uses `Es=F0*A+B`, specular `prefiltered*Es` and diffuse `(1-metalness)*base*(1-Es)*E/π`.
 This hemispherical energy allocation and single-scatter GGX loss are approximations; Fixed lighting stays exact.
-Cube and aerial RGB storage retain gain1024; forward decodes before solar RGB, then applies pre-exposure once.
+Cube and aerial RGB storage share one WGSL gain1024 declaration; forward decodes before solar RGB, then applies pre-exposure once.
 All changed-sky mips complete in one submitted frame; cancelled work never becomes valid. Cube dependencies match
 Sky; DFG/sample preparation depends only on device/BRDF. ~0.30MiB resident and ~4.19M fetches per changed Sky are cost accounts,
 not timing claims. Validate analytic DFG/energy, cube axes/seams/horizon, source scaling, cache/cancel/replacement

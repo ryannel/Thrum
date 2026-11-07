@@ -16,7 +16,11 @@ fn read(@builtin(global_invocation_id) id: vec3<u32>) {
 ";
 
 const MATH: &str = concat!(
-    include_str!("../../common.wgsl"),
+    concat!(
+        include_str!("../../storage.wgsl"),
+        "\n",
+        include_str!("../../common.wgsl")
+    ),
     r"
 @group(0) @binding(6) var<storage,read_write> output: array<vec4<f32>>;
 var<workgroup> sums: array<vec3<f32>,64>;

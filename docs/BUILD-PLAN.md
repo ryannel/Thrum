@@ -66,9 +66,9 @@ The native Metal recorder stays in G3t. The later dedicated performance phase ow
   remain baselines; wgpu frame allocation is not a gate or reason to bring native work forward.
 - [ ] **G3s — physical sky, Sun and atmosphere.** Hillaire (2020) transmittance, multiple-scattering, sky-view and aerial
   LUTs; Sun disk; physical illuminance drives lights and shadows. Time controls run dawn through sunset to night.
-  Scaled half storage including aerial RGB, metering and smooth SDR highlights pass Metal checks; Chrome time/camera controls show twilight.
+  Scaled half storage, matched Sun lookup, denser twilight chart and metering pass Metal checks; Chrome time/camera controls show twilight.
   SH9 diffuse and GGX sky reflections now light real materials; direct referees bound their approximations. Remaining:
-  twilight M interpolation, near-ground Sun lookup, meter/SH agreement, spectral error and motion/contrast. Review cameras/sweep for
+  meter/SH approximation, spectral error, declared radiance tolerance and motion/contrast. Review cameras/sweep for
   colour, banding and flicker. [First-light evidence](evidence/v1-workload/G3S-FIRST-LIGHT-2026-11-06.md) is partial;
   record complete atmosphere cost when available, without a numeric admission target. Follow the Broadsides reading
   map and public-domain/CC0 provenance rules; no code/assets or GPL-derived values are imported.

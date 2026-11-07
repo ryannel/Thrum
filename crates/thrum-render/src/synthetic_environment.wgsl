@@ -19,7 +19,7 @@ fn indirect_radiance(base: vec3<f32>, metalness: f32, roughness: f32,
     // Cube storage is per-unit, disk-free Sky radiance. Use the unattenuated
     // source here, not the directly transmitted directional-light irradiance.
     let environment=textureSampleLevel(sky_reflection,sky_reflection_sampler,
-        reflect(-v,n),f32(textureNumLevels(sky_reflection)-1u)*roughness_unit).rgb/1024.0
+        reflect(-v,n),f32(textureNumLevels(sky_reflection)-1u)*roughness_unit).rgb/SKY_LUT_GAIN
         *aerial_frame.sun_lux.w*aerial_frame.colour_pre_exposure.rgb;
     let diffuse=ao*(1.0-metalness)*base*(vec3(1.0)-ess)*ambient_irradiance(n)/3.14159265359;
     // Single-scatter GGX energy loss is retained; aerial and pre-exposure are

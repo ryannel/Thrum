@@ -1101,6 +1101,8 @@ impl PreparedSynthetic {
         let shader_source = format!(
             "{}\n{}\n{}",
             concat!(
+                include_str!("atmosphere/storage.wgsl"),
+                "\n",
                 include_str!("atmosphere/brdf.wgsl"),
                 "\n",
                 include_str!("atmosphere/irradiance.wgsl"),

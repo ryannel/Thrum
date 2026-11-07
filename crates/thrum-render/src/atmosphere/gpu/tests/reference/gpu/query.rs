@@ -3,7 +3,11 @@
 use wgpu::util::DeviceExt;
 
 const SHADER: &str = concat!(
-    include_str!("../../../../common.wgsl"),
+    concat!(
+        include_str!("../../../../storage.wgsl"),
+        "\n",
+        include_str!("../../../../common.wgsl")
+    ),
     r"
 @group(0) @binding(1) var source: texture_2d<f32>;
 @group(0) @binding(2) var lookup: sampler;
