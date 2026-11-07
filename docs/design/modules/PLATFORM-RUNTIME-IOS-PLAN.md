@@ -25,7 +25,7 @@ game rule. It moves the work UIKit currently runs inline onto the two owners the
 
 | Owner (thread) | Holds | Does |
 | --- | --- | --- |
-| UIKit main (winit event loop) | `UIWindow`/`UIView`/`CAMetalLayer` via `Arc<Window>`, Swift `CADisplayLink`, `WorldControls`, surface epoch, lease slot (install/remove only), gesture state, shell state | Forwards display targets and touches, runs lifecycle, creates and detaches surfaces. Never polls the GPU or waits; its locks are `try_lock` only |
+| UIKit main (winit event loop) | `UIWindow`/`UIView`/`CAMetalLayer` via `Arc<Window>`, Swift `CADisplayLink`, `WorldControls`, surface epoch, lease slot (install/remove only), gesture state, shell state | Forwards display targets and touches, runs lifecycle, creates and detaches surfaces. Never polls the GPU or waits on a section: the lease slot is `try_lock` only; the `FrameWorker` and `WorldLane` slot mutexes it takes are held by the other side only for a move, never across work |
 | World lane (`WorldLane`, thrum-core) | `ClockedWorld<GameWorld>`, rules, held axes | The only world clock; admits changed axes as `InputFrame`s through `Simulation::admit_frame`; publishes pages; wakes UIKit |
 | Render owner (`thrum_render::frame::FrameWorker`, thread `thrum-v1-ios-render`) | wgpu adapter/device/queue, `ThreadedFrameHost`, surface configuration | Prepares the device and host, advances/encodes/submits, acquires late, presents, polls completion |
 
@@ -73,7 +73,8 @@ surface stays revoked (no present can happen) and the checker fails on missing r
 - *Foreground start.* `resumed` creates the window and attaches it to the active scene (existing Swift bridge),
   creates the surface on the main thread (raw-window-metal requires it), installs it, and sends one `Prepare` job.
   The owner requests the adapter and device, briefly locks the slot to pick a format, builds `FrameHost`, moves its world
-  onto the lane (`into_threaded`) and replies with `WorldControls`. Between `into_threaded` and that reply the world
+  onto the lane (`into_threaded`) and replies with `WorldControls`. The display link starts on that reply whenever the
+  shell is active, including after a resume that arrived during preparation. Between `into_threaded` and that reply the world
   lane already runs and UIKit cannot yet pause it; if the app resigned active meanwhile, the shell has recorded the
   background intent and requests the pause as soon as the controls arrive. UIKit then starts the display link if
   active. Startup compilation runs off UIKit.
@@ -206,28 +207,34 @@ Thrum Core approved seam 2(a) and 2(b) with conditions. Each, in turn:
    there are no manual steps, and logs each `simctl`, Darwin notification and XCUITest command with its time.
 6. *Stale input on the actual old window id, with before/after positions.* The held finger's later events arrive under
    the detached window's id (`old_window_touches`); the committed position sampled after the replacement cleared input
-   and again after those events must match within 1 mm.
+   and again after those events must match within 1 mm, and no moving axes may be sent after the clear. UIKit delivers
+   one or two such events, sometimes before the first sample; they always follow the clear, and the log says which.
 7. *Exact lifecycle guarantee and a race exercised without a GPU/fence wait.* See *Linearization point* above and the
    raced-present row.
 
-## M1 Off-main frames: in progress
+## M1 Off-main frames: done
 Done when:
-- [ ] The packaged game launches on a fresh simulator and presents through `CADisplayLink`; the checker still fails on
+- [x] The packaged game launches on a fresh simulator and presents through `CADisplayLink`; the checker still fails on
   boot, launch, link, ProMotion plist or a missing proof.
-- [ ] Thread witnesses show display targets and touches on UIKit main, frames on the render owner and ticks on the
+- [x] Thread witnesses show display targets and touches on UIKit main, frames on the render owner and ticks on the
   world lane. Pending frames never exceed two, and acquisitions never exceed presentable encodes.
-- [ ] A 5 s stall inside the render owner's lease section does not stall UIKit: display callbacks keep arriving,
+- [x] A 5 s stall inside the render owner's lease section does not stall UIKit: display callbacks keep arriving,
   UIKit handlers during it stay under 1 s, and world ticks advance during the stall.
-- [ ] Visual check: the scene renders as before (screenshot compared with the fresh baseline).
+- [x] Visual check: the scene renders as before (screenshot compared with the fresh baseline).
+Close review (2026-11-07, fresh subagent, read-only, `route-fresh-7`): PASS. No UIKit path waits on the owner or GPU;
+the plan's "`try_lock` only" overstated it (reworded). In-game review: startup matches the pre-change baseline
+(letterboxed sky and ground, the two cubes, the entity grid); hidden is black; the scene returns after replacement
+and both resumes.
 Work:
-- [ ] Render owner, lease slot and request/reply types; prepare on the owner.
-- [ ] Absolute display target and owner-side lead.
-- [ ] State file and checker v2 (startup and stall rows); iOS Clippy in the checker.
+- [x] Render owner, lease slot and request/reply types; prepare on the owner.
+- [x] Absolute display target and owner-side lead.
+- [x] State file and checker v2 (startup and stall rows); iOS Clippy in the checker.
 
 ## M2 Touch input: pending
 Done when:
 - [ ] One real simulator swipe moves the controlled actor's committed position and visibly moves the player
-  (before/after captures).
+  (before/after captures). The actor is the grid's top-right square, unidentifiable among 10,000; a one-eighth nudge
+  steps it just past the grid edge, where the cropped before/after captures show it alone against the sky.
 - [ ] A cancelled touch clears the axes, and the actor stops.
 Work:
 - [ ] Gesture state machine with unit tests (hold, cancel, epoch, stale release, second finger).
@@ -268,3 +275,9 @@ Done when:
   straight after the stall request and proves it landed inside by the deferred release. Dev run 9
   (`tmp/g3b-ios-lifecycle/dev-run9/`) passed every row: exactly one raced present, swipes moved the committed actor
   9.7 m each, and the held finger's two old-window events moved it 0.000 m.
+- 2026-11-07 M1–M3 close review (fresh subagent): M1 PASS. M2 blocked on visible movement (fixed: nudge row with
+  cropped captures; `dev-run10` shows the lone square past the grid edge). M3 blocked: a resume during preparation
+  left the display link stopped because only `Starting` started it on the prepared reply (fixed). Non-blocking notes
+  taken: lock wording, stale-row bracketing logged. Others recorded for follow-up: in-section epoch check as a
+  read-modify-write for a formal happens-before on configure; touches on a Busy-released window before
+  `finish_release` go uncounted; stale detection keys on touch id; a real UIKit `Cancelled` phase is unit-tested only.

@@ -319,7 +319,37 @@ def distance(a: list[float], b: list[float]) -> float:
     return math.dist(a, b)
 
 
+def crop(name: str) -> None:
+    """Zoom on the band right of the grid's top-right corner (iPhone 18 Pro pixels)."""
+    source, target = OUT / f"{name}.png", OUT / f"{name}-corner.png"
+    subprocess.run(["sips", "-c", "160", "420", "--cropOffset", "880", "780", str(source), "--out", str(target)],
+                   check=True, stdout=subprocess.DEVNULL)
+    subprocess.run(["sips", "-z", "480", "1260", str(target)], check=True, stdout=subprocess.DEVNULL)
+
+
+def nudge(base: dict[str, str]) -> dict[str, str]:
+    """Step the controlled actor just past the grid edge, where it is visible alone."""
+    p0, n0 = sample("before nudge")
+    snapshot("08a-before-nudge", n0)
+    crop("08a-before-nudge")
+    s, driver = touch_window("nudge", "testNudge",
+                             lambda s: num(s, "touch_releases") > num(n0, "touch_releases")
+                             and num(s, "axes_moving") > num(n0, "axes_moving") and at_rest(s),
+                             "a nudge that moves and releases")
+    finish(driver)
+    time.sleep(0.5)
+    p1, s = sample("after nudge")
+    check(0.1 <= p1[0] - p0[0] <= 1.5 and abs(p1[1] - p0[1]) <= STILL_TOLERANCE,
+          "the nudge did not step the committed actor sideways", s)
+    snapshot("08a-after-nudge", s)
+    crop("08a-after-nudge")
+    log(f"nudge: committed actor moved {p1[0] - p0[0]:.3f} m right, past the grid edge "
+        f"(compare 08a-before-nudge-corner.png with 08a-after-nudge-corner.png)")
+    return s
+
+
 def touches(base: dict[str, str]) -> dict[str, str]:
+    base = nudge(base)
     p0, t0 = sample("before swipe")
     snapshot("08-before-swipe", t0)
     s, driver = touch_window("swipe", "testSwipe",
@@ -357,12 +387,16 @@ def touches(base: dict[str, str]) -> dict[str, str]:
     r = wait(lambda s: num(s, "replacements") > num(t2, "replacements") and at_rest(s), 20,
              "replacement clearing held input")
     time.sleep(0.5)
-    p_clear, r = sample("after replacement cleared held input")
+    p_clear, sampled = sample("after replacement cleared held input")
     # Hiding the detached window cancels its touch; that and any later event
     # for the old touch arrive under the old window id and count stale.
+    # UIKit may deliver the old touch's events (one or two) before or after
+    # the first sample. Either way they arrive after the clear: the row needs
+    # no moving send since the clear and an unchanged committed position.
     s = wait(lambda s: num(s, "touch_stale") > num(t2, "touch_stale")
              and num(s, "old_window_touches") > num(t2, "old_window_touches"), TOUCH_WINDOW,
              "the old touch's late events counted stale")
+    bracketed = num(s, "old_window_touches") > num(sampled, "old_window_touches")
     finish(driver)
     time.sleep(1)
     s = read()
@@ -373,7 +407,7 @@ def touches(base: dict[str, str]) -> dict[str, str]:
     snapshot("09-stale-release", s)
     log(f"replacement while held: clears={s['touch_clears']} stale={s['touch_stale']} "
         f"old-window events={s['old_window_touches']}, axes stayed at rest; committed actor moved "
-        f"{distance(p_clear, p_stale):.6f} m across the old window's events")
+        f"{distance(p_clear, p_stale):.6f} m between samples ({'events between samples' if bracketed else 'events before the first sample'})")
 
     t3 = s
     s, driver = touch_window("swipe-after", "testSwipe",
