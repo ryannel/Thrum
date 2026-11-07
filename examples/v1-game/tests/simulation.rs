@@ -1667,3 +1667,149 @@ fn restore_after_swap_remove_preserves_canonical_dirty_order() {
     );
     assert_eq!(replayed.as_slice(), &[0, 1, 2, 3, 4, 5]);
 }
+
+/// One G2S qualification run over the 100k fixture: its 15k movers fill four
+/// 4,096-row kernel chunks, which `RayonForced` dispatches in parallel. It
+/// includes a kernel refusal from one chunk, a Resolve refusal after every
+/// chunk wrote, structural churn and an amended retained input.
+fn parallel_corrected_run(mode: ExecutionMode) -> (u64, u64) {
+    const COUNT: usize = 100_000;
+    const OVERFLOW: u128 = 900_000;
+    let mut predicted = simulation_with_count(COUNT).expect("predicted 100k game");
+    let mut straight = simulation_with_count(COUNT).expect("straight corrected 100k game");
+    predicted.set_execution_mode(mode);
+    let mut ids = (0..COUNT as u128).map(StableId).collect::<Vec<_>>();
+    let mut history = predicted
+        .begin_history(NonZeroUsize::new(16).expect("retained window"))
+        .expect("history");
+    let mut overflow_ticks = 0;
+    for tick in 1..=12_u64 {
+        for peer in 1..=4 {
+            predicted
+                .admit_frame(correction_frame(peer, tick, false))
+                .expect("predicted peer input");
+            straight
+                .admit_frame(correction_frame(peer, tick, true))
+                .expect("straight corrected peer input");
+        }
+        let churned = 50_000 + usize::try_from(tick).expect("small tick");
+        let replacement = 100_000 + u128::from(tick);
+        let commands = |sim: &Simulation, overflow: bool| {
+            let mut commands = vec![
+                Command::Despawn(sim.handle(ids[churned]).expect("churned static")),
+                Command::Spawn(entity(replacement, 0.05)),
+                Command::SetHealth(
+                    sim.handle(StableId(7)).expect("health row"),
+                    80 + u16::try_from(tick).expect("tick"),
+                ),
+            ];
+            if overflow {
+                // Free one more slot so the world stays within capacity.
+                commands.push(Command::Despawn(
+                    sim.handle(StableId(60_000)).expect("static row"),
+                ));
+                let mut body = entity(OVERFLOW, f64::MAX);
+                body.position = Position([f64::MAX, 0.0, 0.0]);
+                commands.push(Command::Spawn(body));
+            }
+            if let Some(handle) = sim.handle(StableId(OVERFLOW)) {
+                commands.push(Command::Despawn(handle));
+            }
+            commands
+        };
+        if tick == 4 {
+            // The overflowing mover spawned at tick 3 refuses inside its kernel
+            // chunk; every other chunk has written by then.
+            let mut live = ids.clone();
+            live.push(StableId(OVERFLOW));
+            let before = whole_world_hash(&predicted, &live);
+            assert_eq!(history.step(&mut predicted, &[]), Err(SimError::NonFinite));
+            assert_eq!(
+                whole_world_hash(&predicted, &live),
+                before,
+                "kernel refusal restores every chunk"
+            );
+            assert_eq!(straight.step(&[]), Err(SimError::NonFinite));
+            overflow_ticks += 1;
+        }
+        if tick == 7 {
+            // Resolve refuses after the whole mover kernel wrote tentatively.
+            let nan = [Command::SetVelocity(
+                predicted.handle(StableId(9)).expect("row"),
+                Velocity([f64::NAN, 0.0, 0.0]),
+            )];
+            let before = whole_world_hash(&predicted, &ids);
+            assert_eq!(history.step(&mut predicted, &nan), Err(SimError::NonFinite));
+            assert_eq!(
+                whole_world_hash(&predicted, &ids),
+                before,
+                "Resolve refusal restores every chunk"
+            );
+            let nan = [Command::SetVelocity(
+                straight.handle(StableId(9)).expect("row"),
+                Velocity([f64::NAN, 0.0, 0.0]),
+            )];
+            assert_eq!(straight.step(&nan), Err(SimError::NonFinite));
+            assert_eq!(predicted.tick(), 6);
+        }
+        let predicted_commands = commands(&predicted, tick == 3);
+        let straight_commands = commands(&straight, tick == 3);
+        history
+            .step(&mut predicted, &predicted_commands)
+            .expect("retained complete tick");
+        straight
+            .step(&straight_commands)
+            .expect("straight complete tick");
+        ids[churned] = StableId(replacement);
+        if tick == 3 {
+            ids.retain(|id| *id != StableId(60_000));
+        }
+    }
+    assert_eq!(overflow_ticks, 1);
+    assert_eq!(predicted.handle(StableId(OVERFLOW)), None);
+    assert_ne!(
+        whole_world_hash(&predicted, &ids),
+        whole_world_hash(&straight, &ids),
+        "correction must change the endpoint in {mode:?}"
+    );
+    history
+        .rewind(&mut predicted, 8)
+        .expect("rewind eight ticks");
+    history
+        .amend_input(&predicted, correction_frame(2, 5, true))
+        .expect("amend one retained peer input");
+    for _ in 0..8 {
+        assert!(
+            history
+                .replay_next(&mut predicted)
+                .expect("corrected replay")
+        );
+    }
+    assert_eq!((predicted.tick(), predicted.len()), (12, COUNT - 1));
+    let corrected = whole_world_hash(&predicted, &ids);
+    let reference = whole_world_hash(&straight, &ids);
+    assert_eq!(
+        corrected, reference,
+        "{mode:?} corrected replay differs from the straight corrected run"
+    );
+    let corrected_page = predicted.published_page().expect("corrected page");
+    let straight_page = straight.published_page().expect("straight page");
+    assert_eq!(corrected_page.id(), straight_page.id());
+    corrected_page.visit(|handle, id, position, visual| {
+        assert_eq!(straight_page.stable_id(handle.slot), Some(id));
+        assert_eq!(straight_page.position(handle), Some(position));
+        assert_eq!(
+            straight_page.velocity(handle),
+            corrected_page.velocity(handle)
+        );
+        assert_eq!(straight_page.visual(handle), visual);
+    });
+    (corrected, reference)
+}
+
+#[test]
+fn parallel_movers_match_the_straight_corrected_run_after_churn_and_refusal() {
+    let serial = parallel_corrected_run(ExecutionMode::Serial);
+    assert_eq!(parallel_corrected_run(ExecutionMode::Rayon), serial);
+    assert_eq!(parallel_corrected_run(ExecutionMode::RayonForced), serial);
+}

@@ -793,7 +793,11 @@ fn main() {
             for extra in [S1Extra::Command, S1Extra::Damage] {
                 paired_s1_sensitivity_case(count, extra);
             }
-            for mode in [ExecutionMode::Serial, ExecutionMode::RayonForced] {
+            for mode in [
+                ExecutionMode::Serial,
+                ExecutionMode::Rayon,
+                ExecutionMode::RayonForced,
+            ] {
                 crossover_case(count, mode);
             }
         }
@@ -901,7 +905,11 @@ fn main() {
     }
     if std::env::args().any(|argument| argument == "--crossover") {
         for count in [10_000, 100_000, 200_000, 500_000] {
-            for mode in [ExecutionMode::Serial, ExecutionMode::RayonForced] {
+            for mode in [
+                ExecutionMode::Serial,
+                ExecutionMode::Rayon,
+                ExecutionMode::RayonForced,
+            ] {
                 crossover_case(count, mode);
             }
         }

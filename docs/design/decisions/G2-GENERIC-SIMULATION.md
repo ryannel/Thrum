@@ -14,6 +14,13 @@ or remove earlier operations. Candidate payloads and batch handles remain shared
 evaluated at final preflight; this is capability routing, not per-system payload isolation. Trusted direct kernels
 retain in-place sparse undo, without additional per-row validation.
 
+V1's Resolve stages its values in a private parallel output and moves them into the shared payloads only in its
+ordered merge, under its own permits. Independent row kernels use `WorldTxn::visit_chunked_indexed`:
+- Word-aligned storage chunks own their values and active words.
+- Each chunk's first-write preimages merge in storage order, and every chunk's preimages are kept on refusal.
+- Serial runs the same chunks on the caller.
+- `RayonForced` dispatches the chunks. Requested Rayon waits for a measured crossover.
+
 ## Tick, publication and replay
 
 The input gate validates generic `InputFrame<GameAction>` identity, sequence, count and axes; the game validates actions. Frames remain pending until commit. Callbacks read committed state and write reusable typed candidate buffers; dependencies see staged values only through the candidate view. The engine validates outputs, checked identity, game-declared finite values and structural conflicts before applying. It never commits a partial candidate: apply in stable order, mark changes, consume inputs and advance the clock once. Refusal retains due tick and admitted frames. A busy page drops only a view; the next free page gets a baseline. Games declare read-model components; render and replication consume `SnapshotId`, dirty slots and journal, not another authority.

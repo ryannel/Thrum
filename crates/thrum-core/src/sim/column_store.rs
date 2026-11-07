@@ -22,6 +22,16 @@ pub(super) struct TypedStore<T> {
     active: Option<ActiveIndex<T>>,
 }
 
+/// Disjoint borrows of one store for a chunked in-place kernel.
+pub(super) struct StoreParts<'a, T> {
+    pub(super) values: &'a mut [Option<T>],
+    pub(super) presence: &'a [u64],
+    pub(super) active: Option<ActiveParts<'a, T>>,
+}
+
+/// Mutable active-index words and the predicate that refreshes them.
+pub(super) type ActiveParts<'a, T> = (&'a mut [u64], fn(&T) -> bool);
+
 struct ActiveIndex<T> {
     predicate: fn(&T) -> bool,
     words: Vec<u64>,
@@ -104,6 +114,19 @@ impl<T> TypedStore<T> {
             active.words[slot / 64] &= !(1_u64 << (slot % 64));
         }
         prior
+    }
+
+    /// Split values, presence and any active index for word-aligned chunked
+    /// kernels. Callers must refresh the active words of every visited row.
+    pub(super) fn split_for_chunks(&mut self) -> StoreParts<'_, T> {
+        StoreParts {
+            values: &mut self.values,
+            presence: &self.presence,
+            active: self
+                .active
+                .as_mut()
+                .map(|active| (active.words.as_mut_slice(), active.predicate)),
+        }
     }
 
     pub(super) fn values(&self) -> &[Option<T>] {

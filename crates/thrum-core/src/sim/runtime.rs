@@ -137,6 +137,13 @@ pub struct Executor {
 }
 
 impl Executor {
+    /// Caller-only dispatch, for game work below its measured crossover.
+    pub fn serial() -> Self {
+        Self {
+            mode: ExecutionMode::Serial,
+        }
+    }
+
     /// Active dispatch mode.
     pub fn mode(self) -> ExecutionMode {
         self.mode
@@ -472,6 +479,10 @@ impl QueryExclusions {
 }
 
 impl TentativeDirty for DirectDirty {
+    fn is_marked(&self, component: usize, slot: u32) -> bool {
+        self.words[component][slot as usize / 64] & (1_u64 << (slot % 64)) != 0
+    }
+
     fn mark_first(&mut self, component: usize, slot: u32) -> bool {
         let word = &mut self.words[component][slot as usize / 64];
         let bit = 1_u64 << (slot % 64);
@@ -1835,6 +1846,70 @@ impl WorldTxn<'_> {
             query.second,
             true,
             Some(&self.query_exclusions.words),
+            self.undo,
+            self.dirty,
+            context,
+            select,
+            visit,
+        );
+        self.query_exclusions.clear();
+        result
+    }
+
+    /// Live entities in the committed world this transaction edits.
+    pub fn len(&self) -> usize {
+        self.world.len()
+    }
+
+    /// Whether the committed world has no live entity.
+    pub fn is_empty(&self) -> bool {
+        self.world.len() == 0
+    }
+
+    /// Visit indexed rows except for selected logical slots in word-aligned
+    /// storage chunks. Chunks are independent: under a non-serial executor
+    /// they run on the Rayon pool, and serial runs execute the same chunk code
+    /// on the caller in storage order. Callbacks share the context immutably
+    /// and must not depend on row order. A refusal from any chunk restores all
+    /// tentative writes when the tick aborts; the earliest chunk's error is
+    /// returned. Returns the number of rows whose visit reported a change.
+    ///
+    /// # Errors
+    ///
+    /// The game callback refuses one selected row.
+    ///
+    /// # Panics
+    ///
+    /// The query is foreign, not indexed, or an excluded slot is out of range.
+    pub fn visit_chunked_indexed<
+        T: Clone + Send + Sync + 'static,
+        U: Send + Sync + 'static,
+        C: Sync,
+        E: Send,
+    >(
+        &mut self,
+        query: &WriteRead2<T, U>,
+        executor: Executor,
+        context: &C,
+        exclude: impl FnOnce(&C, &mut dyn FnMut(usize)),
+        select: impl Fn(&C, Handle, StableId, &T, &U) -> bool + Sync,
+        visit: impl Fn(&C, Handle, StableId, &mut T, &U) -> Result<bool, E> + Sync,
+    ) -> Result<usize, E> {
+        assert_eq!(query.nonce, self.nonce, "query belongs to another runtime");
+        assert_eq!(query.system, self.system, "query belongs to another system");
+        assert!(query.indexed, "query has no active index");
+        self.query_exclusions.clear();
+        exclude(context, &mut |slot| {
+            let row = self
+                .world
+                .row_of_slot(u32::try_from(slot).expect("validated slot"));
+            self.query_exclusions.mark(row);
+        });
+        let result = self.world.visit_mut2_chunked(
+            query.first,
+            query.second,
+            &self.query_exclusions.words,
+            executor.mode != ExecutionMode::Serial,
             self.undo,
             self.dirty,
             context,

@@ -20,7 +20,9 @@ use thrum_core::{
 pub use history::SimulationHistory;
 use page::Page;
 pub use page::{DirtySlots, PublishedPage};
-use rules::{Candidate, PeerControl, Rules, finite};
+use rules::{
+    Candidate, InputHealthPermits, InputVelocityPermits, PeerControl, ResolvePermits, Rules, finite,
+};
 pub use types::{
     Command, ComponentEntity, ComponentView, Ownership, Position, SimAction, SimConfig, SimError,
     TickOutcome, Velocity,
@@ -139,7 +141,7 @@ fn setup(
         RegisteredSystem::direct(input, Rules::input_velocity),
         RegisteredSystem::direct(input_health, Rules::input_health),
         RegisteredSystem::direct(simulate, Rules::simulate),
-        RegisteredSystem::new(resolve, Rules::resolve),
+        RegisteredSystem::parallel(resolve, Rules::resolve),
     ];
     let runtime = GameRuntime::new_published(epoch, config.entity_capacity, registry, systems)
         .map_err(map_runtime)?;
@@ -149,6 +151,7 @@ fn setup(
             .write_read2_indexed::<Position, Velocity>(SIMULATE)
             .map_err(map_runtime)?,
     );
+    let permits = |error| map_runtime(error);
     let rules = Rules {
         config,
         resource_revision: 0,
@@ -156,42 +159,26 @@ fn setup(
         commands: Vec::with_capacity(128),
         committed_inputs: Vec::with_capacity(config.peer_capacity),
         changed_positions: 0,
-        position_write: runtime
-            .write_permit::<Position>(RESOLVE)
-            .map_err(map_runtime)?,
-        input_velocity_write: runtime
-            .write_permit::<Velocity>(INPUT)
-            .map_err(map_runtime)?,
-        input_health_write: runtime
-            .write_permit::<Health>(INPUT_HEALTH)
-            .map_err(map_runtime)?,
-        resolve_position_read: runtime
-            .read_permit::<Position>(RESOLVE)
-            .map_err(map_runtime)?,
-        velocity_write: runtime
-            .write_permit::<Velocity>(RESOLVE)
-            .map_err(map_runtime)?,
-        health_write: runtime
-            .write_permit::<Health>(RESOLVE)
-            .map_err(map_runtime)?,
-        structure: runtime
-            .structural_permit(RESOLVE, STRUCTURE)
-            .map_err(map_runtime)?,
-        input_health_read: runtime
-            .read_permit::<Health>(INPUT_HEALTH)
-            .map_err(map_runtime)?,
-        resolve_health_read: runtime
-            .read_permit::<Health>(RESOLVE)
-            .map_err(map_runtime)?,
-        resolve_velocity_read: runtime
-            .read_permit::<Velocity>(RESOLVE)
-            .map_err(map_runtime)?,
-        resolve_ownership_read: runtime
-            .read_permit::<Ownership>(RESOLVE)
-            .map_err(map_runtime)?,
-        visual_read: runtime
-            .read_permit::<Visual>(RESOLVE)
-            .map_err(map_runtime)?,
+        input_velocity: InputVelocityPermits {
+            velocity_write: runtime.write_permit(INPUT).map_err(permits)?,
+        },
+        input_health: InputHealthPermits {
+            health_read: runtime.read_permit(INPUT_HEALTH).map_err(permits)?,
+            health_write: runtime.write_permit(INPUT_HEALTH).map_err(permits)?,
+        },
+        resolve: ResolvePermits {
+            position_read: runtime.read_permit(RESOLVE).map_err(permits)?,
+            position_write: runtime.write_permit(RESOLVE).map_err(permits)?,
+            velocity_read: runtime.read_permit(RESOLVE).map_err(permits)?,
+            velocity_write: runtime.write_permit(RESOLVE).map_err(permits)?,
+            health_read: runtime.read_permit(RESOLVE).map_err(permits)?,
+            health_write: runtime.write_permit(RESOLVE).map_err(permits)?,
+            ownership_read: runtime.read_permit(RESOLVE).map_err(permits)?,
+            visual_read: runtime.read_permit(RESOLVE).map_err(permits)?,
+            structure: runtime
+                .structural_permit(RESOLVE, STRUCTURE)
+                .map_err(permits)?,
+        },
     };
     Ok((runtime, rules, candidate))
 }
@@ -348,15 +335,11 @@ impl Simulation {
     pub fn timeline(&self) -> u64 {
         self.runtime.timeline()
     }
-    /// Select the requested executor. This game declares Direct/Serial systems,
-    /// so even RayonForced does not dispatch parallel work for these callbacks.
+    /// Select the requested executor. `RayonForced` integrates movers in
+    /// parallel chunks; requested Rayon does so only at or above a measured
+    /// crossover (none promoted yet); serial runs the same chunks in order.
     pub fn set_execution_mode(&mut self, mode: ExecutionMode) {
-        let selected = if mode == ExecutionMode::Rayon {
-            ExecutionMode::Serial
-        } else {
-            mode
-        };
-        self.runtime.set_execution_mode(selected);
+        self.runtime.set_execution_mode(mode);
     }
     /// Checked world generation.
     pub fn epoch(&self) -> WorldEpoch {
@@ -431,10 +414,10 @@ impl Simulation {
             .stable_id(handle)
             .map_err(|_| SimError::InvalidHandle)?;
         let position = world
-            .with(&self.rules.resolve_position_read, handle, |value| *value)
+            .with(&self.rules.resolve.position_read, handle, |value| *value)
             .map_err(|_| SimError::InvalidHandle)?;
         let health = world
-            .with(&self.rules.resolve_health_read, handle, |value| value.0)
+            .with(&self.rules.resolve.health_read, handle, |value| value.0)
             .map_err(|_| SimError::InvalidHandle)?;
         Ok(ComponentView {
             handle,
@@ -442,13 +425,13 @@ impl Simulation {
             position,
             health,
             velocity: world
-                .with(&self.rules.resolve_velocity_read, handle, |value| *value)
+                .with(&self.rules.resolve.velocity_read, handle, |value| *value)
                 .unwrap_or_default(),
             ownership: world
-                .with(&self.rules.resolve_ownership_read, handle, |value| *value)
+                .with(&self.rules.resolve.ownership_read, handle, |value| *value)
                 .ok(),
             visual: world
-                .with(&self.rules.visual_read, handle, |value| value.0)
+                .with(&self.rules.resolve.visual_read, handle, |value| value.0)
                 .ok(),
         })
     }
@@ -487,7 +470,7 @@ impl Simulation {
         let owned = self
             .runtime
             .read()
-            .with(&self.rules.resolve_ownership_read, handle, |value| *value)
+            .with(&self.rules.resolve.ownership_read, handle, |value| *value)
             .map_err(|_| SimError::InvalidHandle)?;
         if owned != binding
             || self
@@ -658,7 +641,7 @@ fn validate_frame(
     }
     if runtime
         .read()
-        .with(&rules.resolve_ownership_read, peer.handle, |value| *value)
+        .with(&rules.resolve.ownership_read, peer.handle, |value| *value)
         .ok()
         != Some(peer.binding)
     {
