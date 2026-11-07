@@ -10,10 +10,12 @@
 //   // each frame: view.refresh();
 //
 // Element ids default to the key with dots and underscores as dashes (`sky.solar_time` ->
-// `sky-solar-time`); `ids` overrides them, for pages whose ids predate the model. Two keys
-// that would share an id (`sky.a_b` and `sky_a.b`) are refused through `onError`; give one
-// of them an `ids` entry. Slider values have an <output> with id `<id>-value`. A slider
-// whose step is 0 is continuous (`step="any"`), as on the Mac.
+// `sky-solar-time`); `ids` overrides them, for pages whose ids predate the model. Slider
+// values have an <output> with id `<id>-value`. Every id a control would emit is reserved:
+// a control whose id or value id is empty, is already used by another control (`sky.a_b` and
+// `sky_a.b`, or the slider `sky.a`'s `sky-a-value` and `sky.a_value`) or by an element
+// already on the page is refused through `onError` and not drawn; give it an `ids` entry.
+// A slider whose step is 0 is continuous (`step="any"`), as on the Mac.
 
 const STYLE_ID = "thrum-controls-style";
 const STYLE = `
@@ -54,12 +56,20 @@ export function mountControls(container, described, { edit, changes, ids = {}, o
   const owners = new Map();
   for (const control of controls) {
     const id = ids[control.key] ?? defaultId(control.key);
-    const owner = owners.get(id);
-    if (owner !== undefined) {
-      onError(new Error(`controls ${owner} and ${control.key} would share the element id "${id}"; give one of them an ids entry`));
+    const emitted = control.kind === "slider" ? [id, `${id}-value`] : [id];
+    const clash = emitted
+      .map((each) => {
+        if (!each) return "is empty";
+        const owner = owners.get(each);
+        if (owner !== undefined) return `"${each}" is already control ${owner}'s`;
+        return document.getElementById(each) ? `"${each}" is already an element's on the page` : undefined;
+      })
+      .find(Boolean);
+    if (clash) {
+      onError(new Error(`control ${control.key} cannot be drawn: its element id ${clash}; give it an ids entry`));
       continue;
     }
-    owners.set(id, control.key);
+    for (const each of emitted) owners.set(each, control.key);
     let group = groups.get(control.group);
     if (!group) {
       group = document.createElement("fieldset");

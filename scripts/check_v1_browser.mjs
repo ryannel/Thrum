@@ -279,21 +279,39 @@ async function qualifyControls(cdp, sessionId, poll, timeout) {
     return value.complete && field(value.report, 'samples') === 600 && field(value.report, 'presented') >= 650 ? value : undefined;
   }, 'continuous presentation beyond 600 GPU samples');
   if (field(complete.report, 'overload_events') !== 0) throw new Error('Manual pause/visibility composition caused overload');
-  // The browser view on its own: a step-0 slider is continuous, and two keys that would share
-  // an element id are refused rather than drawn twice under one id.
+  // The browser view on its own: a step-0 slider is continuous, and every element id a control
+  // would emit (its own and a slider's value id) is reserved against other controls, in either
+  // order, and against the page's elements; a clash is refused once and not drawn.
   const view = await evaluate(`(async () => {
     const { mountControls } = await import("/thrum-controls.js");
-    const slider = (key) => ({ key, kind: "slider", group: "", label: key, min: 0, max: 1, step: 0, value: 0.5, text: "0.50" });
-    const errors = [];
-    const box = document.createElement("div");
-    const view = mountControls(box, JSON.stringify({ controls: [slider("sky.a_b"), slider("sky_a.b")] }),
-      { edit() {}, changes() {}, onError: (error) => errors.push(String(error.message)) });
-    const input = view.element("sky.a_b");
+    const control = (key, kind = "slider") => ({ key, kind, group: "", label: key, min: 0, max: 1, step: 0, value: kind === "text" ? "" : 0.5, text: "0.50" });
+    const mount = (...list) => {
+      const errors = [];
+      const box = document.createElement("div");
+      const view = mountControls(box, JSON.stringify({ controls: list }),
+        { edit() {}, changes() {}, onError: (error) => errors.push(String(error.message)) });
+      return { view, errors, rows: box.querySelectorAll(".tc-row").length, ids: [...box.querySelectorAll("[id]")].map((node) => node.id) };
+    };
+    const continuous = mount(control("sky.a"));
+    const input = continuous.view.element("sky.a");
     input.value = 0.37;
-    return { step: input.step, value: input.valueAsNumber, rows: box.querySelectorAll(".tc-row").length, errors };
+    const pairs = {
+      underscore: mount(control("sky.a_b"), control("sky_a.b")),
+      valueFirst: mount(control("sky.a"), control("sky.a_value", "text")),
+      valueSecond: mount(control("sky.a_value", "text"), control("sky.a")),
+      page: mount(control("params.status", "text")),
+    };
+    return { step: input.step, value: input.valueAsNumber, pairs: Object.fromEntries(Object.entries(pairs).map(([name, { errors, rows, ids }]) => [name, { errors, rows, ids }])) };
   })()`);
   if (view.step !== 'any' || Math.abs(view.value - 0.37) > 1e-9) throw new Error(`A step-0 slider is not continuous: ${JSON.stringify(view)}`);
-  if (view.rows !== 1 || view.errors.length !== 1 || !view.errors[0].includes('share the element id "sky-a-b"')) throw new Error(`Colliding control ids were not refused: ${JSON.stringify(view)}`);
+  const refused = (name, rows, fragment) => {
+    const pair = view.pairs[name];
+    if (pair.rows !== rows || pair.errors.length !== 1 || !pair.errors[0].includes(fragment) || new Set(pair.ids).size !== pair.ids.length) throw new Error(`Control ids (${name}) were not reserved: ${JSON.stringify(pair)}`);
+  };
+  refused('underscore', 1, '"sky-a-b" is already control sky.a_b');
+  refused('valueFirst', 1, 'control sky.a_value cannot be drawn: its element id "sky-a-value" is already control sky.a');
+  refused('valueSecond', 1, 'control sky.a cannot be drawn: its element id "sky-a-value" is already control sky.a_value');
+  refused('page', 0, '"params-status" is already an element');
   return { snapshots, rangeKeyboard: { before, after }, view };
 }
 

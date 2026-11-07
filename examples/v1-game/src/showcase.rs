@@ -92,26 +92,23 @@ impl Placement {
             .mesh
             .strip_suffix(".gltf")
             .ok_or("showcase mesh must name a glTF source")?;
-        Ok(MeshPlacement {
-            mesh: mesh.to_owned(),
-            texture: "white".to_owned(),
-            transform: [
-                [self.scale[0], 0.0, 0.0, 0.0],
-                [0.0, self.scale[1], 0.0, 0.0],
-                [0.0, 0.0, self.scale[2], 0.0],
-                [
-                    self.translation_m[0],
-                    self.translation_m[1],
-                    self.translation_m[2],
-                    1.0,
-                ],
+        let mut placement = MeshPlacement::new(mesh, "white");
+        placement.transform = [
+            [self.scale[0], 0.0, 0.0, 0.0],
+            [0.0, self.scale[1], 0.0, 0.0],
+            [0.0, 0.0, self.scale[2], 0.0],
+            [
+                self.translation_m[0],
+                self.translation_m[1],
+                self.translation_m[2],
+                1.0,
             ],
-            material: CookedMaterial {
-                base_colour: material.base_colour,
-                roughness: material.roughness,
-                metalness: material.metalness,
-            },
-            rest_on_ground: false,
-        })
+        ];
+        placement.material = CookedMaterial {
+            base_colour: material.base_colour,
+            roughness: material.roughness,
+            metalness: material.metalness,
+        };
+        Ok(placement)
     }
 }

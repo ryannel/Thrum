@@ -158,7 +158,44 @@ fn resting_placements_put_the_lowest_vertex_at_their_height() {
 }
 
 #[test]
-#[should_panic(expected = "needs a nonzero, finite axis and a finite angle")]
-fn a_turn_about_a_zero_axis_is_refused_where_it_is_written() {
-    drop(MeshPlacement::new("meshes/rock", "textures/white").rotate_degrees([0.0; 3], 90.0));
+fn a_turn_that_names_no_rotation_is_refused_by_name() {
+    for (axis, degrees) in [
+        ([0.0; 3], 90.0),
+        ([f32::NAN, 1.0, 0.0], 90.0),
+        ([0.0, f32::INFINITY, 0.0], 90.0),
+        ([0.0, 1.0, 0.0], f32::NAN),
+    ] {
+        let placement = rock()
+            .at([1.0, 2.0, 3.0])
+            .rotate_degrees(axis, degrees)
+            .scale(2.0);
+        let error = placement.check(4).unwrap_err();
+        assert!(matches!(error.fault, Fault::NoTurn(..)), "{error}");
+        let message = error.to_string();
+        assert!(
+            message.starts_with("mesh placement 4 (\"meshes/rock\") turns"),
+            "{message}"
+        );
+        assert!(message.contains("nonzero, finite axis"), "{message}");
+    }
+    // A bad yaw from a game's input is refused the same way, not unwound.
+    let yawed = rock().yaw_degrees(f32::INFINITY);
+    assert!(matches!(
+        yawed.check(0).unwrap_err().fault,
+        Fault::NoTurn(..)
+    ));
+}
+
+#[test]
+fn finite_axes_turn_however_long_or_short() {
+    let turned = rock().rotate_degrees([0.0, 0.0, 1.0], 90.0).transform;
+    for axis in [
+        [0.0, 0.0, 1e-30],
+        [0.0, 0.0, 3e38],
+        [0.0, 0.0, f32::from_bits(1)],
+    ] {
+        let placement = rock().rotate_degrees(axis, 90.0);
+        assert!(placement.check(0).is_ok(), "{axis:?}");
+        assert_eq!(placement.transform, turned, "{axis:?}");
+    }
 }
