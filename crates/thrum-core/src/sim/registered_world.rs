@@ -1691,14 +1691,17 @@ impl RegisteredWorld {
                         self.change_ticks[tick_index(first, logical, capacity)],
                     );
                 }
-                let changed = visit(
+                let result = visit(
                     context,
                     handle,
                     id,
                     value,
                     read.get(index).expect("presence bit has value"),
-                )?;
+                );
+                // A refusing callback may already have changed its row; its
+                // preimage stays for the tick abort, and its index stays exact.
                 write.refresh_active(index);
+                let changed = result?;
                 if first_write && !changed {
                     undo_column.pop_tentative(key);
                     dirty.unmark_last(first, key);
@@ -2366,6 +2369,61 @@ mod tests {
         assert_eq!(
             world.with::<Height, _>(handles[1], |value| value.0),
             Ok(1.0)
+        );
+    }
+
+    #[test]
+    fn refusing_visit_refreshes_the_written_rows_active_bit() {
+        // Ultra review #2: a refusing callback may already have changed its
+        // row, so the written component's active index must still match it.
+        let mut registry = ComponentRegistry::default();
+        registry
+            .register_indexed::<Height>(ComponentSchemaId(1), |height| height.0 != 0.0)
+            .expect("indexed height registers");
+        registry
+            .register::<Drift>(ComponentSchemaId(2))
+            .expect("drift registers");
+        let mut world = RegisteredWorld::new(WorldEpoch(8), 2, registry).expect("capacity fits");
+        world
+            .spawn(StableId(1), |entity| {
+                entity.add(Height(1.0))?;
+                entity.add(Drift(1.0))?;
+                Ok(())
+            })
+            .expect("entity");
+        let height = world
+            .component_index(super::ComponentKey::of::<Height>())
+            .expect("height");
+        let drift = world
+            .component_index(super::ComponentKey::of::<Drift>())
+            .expect("drift");
+        let mut undo = world.empty_undo();
+        let mut marks = TestDirty([false; 4]);
+        let refused = world.visit_mut2_if::<Height, Drift, (), ()>(
+            height,
+            drift,
+            false,
+            None,
+            &mut undo,
+            &mut marks,
+            &mut (),
+            |(), _, _, _, _| true,
+            |(), _, _, value, _| {
+                value.0 = 0.0;
+                Err(())
+            },
+        );
+        assert_eq!(refused, Err(()));
+        assert_eq!(
+            world.column::<Height>().active_presence().expect("index")[0],
+            0,
+            "the refused row's zero height is inactive"
+        );
+        undo.abort_tentative(&mut world);
+        assert_eq!(
+            world.column::<Height>().active_presence().expect("index")[0],
+            1,
+            "abort restores the value and its active bit"
         );
     }
 }
