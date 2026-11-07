@@ -469,8 +469,8 @@ pub struct PreparedSynthetic {
     atmosphere: Option<AtmospherePrepared>,
     surface: SurfaceParts,
     contribution_passes: ContributionPasses,
-    visibility: VisibilityPrepared,
-    camera_culling: CullMode,
+    /// Camera culling pipelines; `None` is the Direct oracle with no extra resources.
+    visibility: Option<VisibilityPrepared>,
 }
 
 struct SceneFamily;
@@ -856,12 +856,8 @@ impl PreparedSynthetic {
                 count: None,
             },
             uniform_layout(1, AUX_BYTES as u64, wgpu::ShaderStages::FRAGMENT),
-            storage_layout(
-                camera_culling::VISIBLE_BINDING,
-                wgpu::ShaderStages::VERTEX,
-                4,
-            ),
         ];
+        view_entries.extend(camera_culling::view_layout_entry(scene.camera_culling));
         if shadow_enabled {
             view_entries.extend([
                 uniform_layout(2, shadow::SAMPLE_BYTES as u64, wgpu::ShaderStages::FRAGMENT),
@@ -1090,6 +1086,7 @@ impl PreparedSynthetic {
             device,
             queue,
             generation,
+            scene.camera_culling,
             instance_count,
             instance_upload.active_count(),
         );
@@ -1338,7 +1335,6 @@ impl PreparedSynthetic {
             materials,
             history,
             visibility,
-            camera_culling: scene.camera_culling,
             exposure: exposure_resolve,
             history_source: None,
             instance_upload,
@@ -1390,7 +1386,7 @@ impl PreparedSynthetic {
     /// Number of prepared GPU scene passes for this scene's shadow recipe.
     pub fn scene_pass_count(&self) -> u32 {
         4 + u32::from(self.shadow.is_some()) * shadow::LAYERS
-            + u32::from(self.camera_culling == CullMode::Frustum)
+            + u32::from(self.visibility.is_some())
             + u32::from(self.air_shadow.is_some())
             + u32::from(self.cluster_compute.is_some())
             + u32::from(self.contribution_passes.compute)
@@ -1398,6 +1394,14 @@ impl PreparedSynthetic {
                 .atmosphere
                 .as_ref()
                 .map_or(0, AtmospherePrepared::pass_count)
+    }
+    /// Camera opaque draw mode; Frustum adds one timed compute pass.
+    pub fn camera_culling(&self) -> CullMode {
+        if self.visibility.is_some() {
+            CullMode::Frustum
+        } else {
+            CullMode::Direct
+        }
     }
     /// Whether this prepared scene builds selective local-light lists on GPU.
     pub fn gpu_clustered(&self) -> bool {
@@ -1558,8 +1562,9 @@ impl PreparedSynthetic {
                 instance.ids[3] != 0
                     && shadow.is_some_and(|shadow| !shadow.contains_caster(instance))
             })?;
-        self.visibility
-            .set_active(queue, self.instance_upload.active_count());
+        if let Some(visibility) = &mut self.visibility {
+            visibility.set_active(queue, self.instance_upload.active_count());
+        }
         Ok(report)
     }
     /// Prepared generation-local finite draw tuple.
@@ -2185,7 +2190,7 @@ impl PreparedSynthetic {
                         frame.shadow(index, pass)
                     })
                 }
-                Some(key) if key == self.visibility.key() => {
+                Some(key) if Some(key) == self.visibility.as_ref().map(VisibilityPrepared::key) => {
                     RecordBinding::<SceneFamily>::new(id, PassKind::Compute, |frame, pass| {
                         frame.visibility(pass)
                     })
@@ -2484,7 +2489,7 @@ pub struct OffscreenTarget {
     aux_buffer: wgpu::Buffer,
     shadow: Option<ShadowTarget>,
     air_shadow: Option<AirShadowTarget>,
-    visibility: VisibilityTarget,
+    visibility: Option<VisibilityTarget>,
     depth: wgpu::TextureView,
     width: u32,
     height: u32,
@@ -2585,12 +2590,8 @@ impl OffscreenTarget {
                 binding: 1,
                 resource: aux.as_entire_binding(),
             },
-            wgpu::BindGroupEntry {
-                binding: camera_culling::VISIBLE_BINDING,
-                // Unread by the direct vertex entry.
-                resource: visibility.visible().as_entire_binding(),
-            },
         ];
+        view_entries.extend(camera_culling::visible_entry(visibility.as_ref()));
         if let (Some(prepared_shadow), Some(target_shadow)) = (&prepared.shadow, &shadow) {
             view_entries.extend([
                 wgpu::BindGroupEntry {

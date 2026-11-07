@@ -59,7 +59,7 @@ submitting.
 | Direct | 14.08 µs | 13.75 µs | 36 | 3.84 KB |
 | Frustum | 14.35 µs | 14.34 µs | 40 | 4.08 KB |
 
-Allocations don't depend on instance count. The four extra allocations are wgpu's recording of
+Direct now prepares no culling pipelines, buffers, params uploads or view binding, so its frame is main's. Allocations don't depend on instance count. The four extra allocations are wgpu's recording of
 the compute pass. There is no steady `write_buffer`: params are written only when the active
 count changes.
 

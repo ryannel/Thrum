@@ -5,6 +5,12 @@ const TRANSFORMS: SceneTimingLayout = SceneTimingLayout {
     transforms: true,
     shadows: false,
     clusters: false,
+    camera: CullMode::Direct,
+};
+
+const CULLED: SceneTimingLayout = SceneTimingLayout {
+    camera: CullMode::Frustum,
+    ..TRANSFORMS
 };
 
 fn timings(atmosphere: &[&str]) -> Vec<PassTiming> {
@@ -115,4 +121,24 @@ fn the_horizon_height_pass_reports_in_the_far_shadow_bucket() {
         )
         .is_none()
     );
+}
+
+#[test]
+fn camera_visibility_is_required_by_the_culled_layout_and_counted_in_forward() {
+    let mut passes = timings(&["atmosphere sky view"]);
+    passes.insert(
+        1,
+        PassTiming {
+            name: crate::visibility::PASS.into(),
+            nanoseconds: 2.0,
+        },
+    );
+    let (values, _, contribution) = pass_durations(&passes, false, CULLED).unwrap();
+    assert_eq!(values[3], 3.0, "forward includes camera visibility");
+    assert!(contribution.is_none());
+    // The pass is exact to the slot layout: absent when culled, present when direct, or twice.
+    assert!(pass_durations(&timings(&["atmosphere sky view"]), false, CULLED).is_none());
+    assert!(pass_durations(&passes, false, TRANSFORMS).is_none());
+    passes.push(passes[1].clone());
+    assert!(pass_durations(&passes, false, CULLED).is_none());
 }

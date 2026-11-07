@@ -6,9 +6,11 @@ use std::collections::BTreeSet;
 
 use super::{
     OffscreenTarget, PreparedSynthetic, RenderError, SYNTHETIC_REVISION, SceneContext, VIEW_BYTES,
+    history_gpu, storage_layout,
 };
 use crate::graph::{
-    Access, AccessKind, CompiledPass, FrameGraph, GraphError, PipelineKey, ResourceId,
+    Access, AccessKind, CompiledPass, FrameGraph, GraphError, PipelineKey, ResourceDescriptor,
+    ResourceId, ResourceScope,
 };
 pub use crate::visibility::CullMode;
 use crate::visibility::{self, MeshRecord, VisibilityPrepared, VisibilityTarget};
@@ -29,15 +31,39 @@ pub(super) fn prepare(
     device: &wgpu::Device,
     queue: &wgpu::Queue,
     generation: u64,
+    mode: CullMode,
     capacity: u32,
     active: u32,
-) -> VisibilityPrepared {
+) -> Option<VisibilityPrepared> {
+    if mode == CullMode::Direct {
+        return None;
+    }
     let key = PipelineKey {
         device_generation: generation,
         revision: SYNTHETIC_REVISION,
         role: visibility::ROLE,
     };
-    VisibilityPrepared::new(device, queue, key, capacity, &[CUBE_MESH], active)
+    Some(VisibilityPrepared::new(
+        device,
+        queue,
+        key,
+        capacity,
+        &[CUBE_MESH],
+        active,
+    ))
+}
+
+/// Frustum only: the forward view-group entry for the compacted slot list.
+pub(super) fn view_layout_entry(mode: CullMode) -> Option<wgpu::BindGroupLayoutEntry> {
+    (mode == CullMode::Frustum)
+        .then(|| storage_layout(VISIBLE_BINDING, wgpu::ShaderStages::VERTEX, 4))
+}
+
+pub(super) fn visible_entry(target: Option<&VisibilityTarget>) -> Option<wgpu::BindGroupEntry<'_>> {
+    target.map(|target| wgpu::BindGroupEntry {
+        binding: VISIBLE_BINDING,
+        resource: target.visible().as_entire_binding(),
+    })
 }
 
 /// Forward vertex entry: Direct reads the physical slot with no list fetch.
@@ -59,9 +85,18 @@ impl PreparedSynthetic {
         accesses: &mut Vec<Access>,
         keys: &mut BTreeSet<PipelineKey>,
     ) -> Result<(), GraphError> {
-        if self.camera_culling != CullMode::Frustum {
+        let Some(prepared) = &self.visibility else {
             return Ok(());
-        }
+        };
+        // The cull reads the same submitted-history serials as the forward
+        // vertex stage (presentation alpha) through its own uniform binding.
+        let serials = graph.resource(
+            ResourceDescriptor::Buffer {
+                bytes: history_gpu::SERIAL_BYTES,
+                usage: wgpu::BufferUsages::UNIFORM,
+            },
+            ResourceScope::Imported { initialized: true },
+        )?;
         let reads = vec![
             Access {
                 resource: view,
@@ -75,13 +110,19 @@ impl PreparedSynthetic {
                 kind: AccessKind::StorageRead,
                 store: true,
             },
+            Access {
+                resource: serials,
+                range: 0..history_gpu::SERIAL_BYTES,
+                kind: AccessKind::UniformRead,
+                store: true,
+            },
         ];
-        let outputs = self.visibility.append_graph(graph, reads)?;
-        keys.insert(self.visibility.key());
+        let outputs = prepared.append_graph(graph, reads)?;
+        keys.insert(prepared.key());
         accesses.extend([
             Access {
                 resource: outputs.visible,
-                range: 0..self.visibility.visible_bytes(),
+                range: 0..prepared.visible_bytes(),
                 kind: AccessKind::StorageRead,
                 store: true,
             },
@@ -96,21 +137,26 @@ impl PreparedSynthetic {
     }
 
     pub(super) fn draw_camera(&self, pass: &mut wgpu::RenderPass<'_>, target: &OffscreenTarget) {
-        match self.camera_culling {
-            CullMode::Direct => {
-                pass.draw_indexed(0..36, 0, 0..self.instance_upload.active_count());
+        match &target.visibility {
+            Some(culled) if self.visibility.is_some() => {
+                pass.draw_indexed_indirect(culled.args(), 0);
             }
-            CullMode::Frustum => pass.draw_indexed_indirect(target.visibility.args(), 0),
+            _ => pass.draw_indexed(0..36, 0, 0..self.instance_upload.active_count()),
         }
     }
 
-    pub(super) fn camera_visibility_target(&self, device: &wgpu::Device) -> VisibilityTarget {
-        self.visibility.target(
-            device,
-            &self.view_buffer,
-            self.instance_upload.buffer(),
-            self.history.serial_buffer(),
-        )
+    pub(super) fn camera_visibility_target(
+        &self,
+        device: &wgpu::Device,
+    ) -> Option<VisibilityTarget> {
+        self.visibility.as_ref().map(|prepared| {
+            prepared.target(
+                device,
+                &self.view_buffer,
+                self.instance_upload.buffer(),
+                self.history.serial_buffer(),
+            )
+        })
     }
 }
 
@@ -118,9 +164,13 @@ impl SceneContext<'_> {
     pub(super) fn visibility(&mut self, pass: &CompiledPass) -> Result<(), RenderError> {
         let view_offset =
             self.prepared.view_stride * u32::from(self.target.frame_revision & 1 != 0);
-        let encoded = self.prepared.visibility.encode(
+        let (Some(prepared), Some(target)) = (&self.prepared.visibility, &self.target.visibility)
+        else {
+            return Err(RenderError::GraphPassMismatch);
+        };
+        let encoded = prepared.encode(
             self.encoder,
-            &self.target.visibility,
+            target,
             view_offset,
             self.generation,
             pass,
