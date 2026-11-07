@@ -65,8 +65,10 @@ The native Metal recorder stays in G3t. The later dedicated performance phase ow
   are shared.
   Core owns clock/lane; thrum-render owns `FrameHost`, slots, tokens, completion and history without game schema.
   Metal pause/replacement, Mac overload drain/resume and ten Chrome function rows pass; browser reconstruction retains
-  authority/input. Actual Chrome tab transitions pass. The iOS simulator builds and draws; off-main work, input
-  and surface loss remain open, along with live Mac P/loss. Record latency/present intervals;
+  authority/input. Actual Chrome tab transitions pass. The iOS simulator runs world and rendering off UIKit.
+  Real touch moves the committed player. Background/foreground and surface replacement recover under the
+  epoch-checked lease, including a raced present. [Simulator evidence](evidence/render/G3B-IOS-SIM-ROUTE-2026-11-07.md).
+  iOS resize/rotation and device loss, and live Mac P/loss remain open. Record latency/present intervals;
   investigate visible stutter and hitches. [Frame history](evidence/render/V1-BOUNDED-FRAMES-2026-11-04.md) and wgpu
   allocations are baselines; native recording stays G3t.
 - [ ] **G3s — physical sky, Sun and atmosphere.** Hillaire (2020) transmittance, multiple-scattering, sky-view/aerial

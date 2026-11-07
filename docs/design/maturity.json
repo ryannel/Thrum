@@ -4519,8 +4519,15 @@
       "technique": "Caster height-map horizon shadows for distant terrain",
       "source": "Heightfield horizon visibility with an exact circular-segment solar disk; native implementation",
       "owner": "thrum-render portable",
-      "status": "Metal visibility beyond the 512 m cascade reach matches CPU ray truth within 0.06 mean error on sampled sunset frames. +24% scene pass-sum recorded on a shared GPU; a horizon-angle map is the untried scalable form. No GPU oracle fixture for the march yet.",
-      "evidence": "../evidence/v1-workload/G3S-TERRAIN-HORIZON-2026-11-07.md"
+      "status": "Metal sunset mean error within 0.06 on the original sample. The composed valley exposes a 19.2 percentage point false-light witness from logarithmic tap gaps. GPU visibility pixels and exact triangle rays reproduce it. Runtime replacement remains open.",
+      "evidence": "../evidence/v1-workload/G3S-HANDOFF.md"
+    },
+    {
+      "technique": "Maximum-height hierarchy with continuous ray intervals",
+      "source": "https://pure.mpg.de/pubman/item/item_1325622_5/component/file_3590464/i3d08.pdf",
+      "owner": "thrum-render portable candidate",
+      "status": "CPU prototype only. Exact leaves agree with the triangle oracle. Unbiased flat 32 m cells reduce worst sampled light leak from 44.2 to 0.2 percentage points. Actual GPU cost, caster edges and motion remain open.",
+      "evidence": "../evidence/v1-workload/G3S-HANDOFF.md"
     }
   ]
 }
