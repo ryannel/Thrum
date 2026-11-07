@@ -1169,7 +1169,7 @@ fn four_tick_page_catch_up_keeps_old_lease_and_current_dirty_flags() {
         Some(sim.get(replacement).expect("live").position)
     );
     assert_eq!(current.dirty().position(), &[old.slot]);
-    assert_eq!(current.dirty().structural(), []);
+    assert_eq!(current.dirty().structural(), [0_u32; 0]);
     assert_eq!(held.stable_id(old.slot), Some(StableId(1)));
     assert_eq!(held.position(old), Some(held_position));
 }
@@ -1280,7 +1280,7 @@ fn unchanged_mutable_query_row_does_not_publish_a_position_change() {
     sim.published_page().expect("initial page");
     assert_eq!(sim.step(&[]).expect("no-op tick").changed_positions, 0);
     let page = sim.published_page().expect("committed page");
-    assert_eq!(page.dirty().position(), []);
+    assert_eq!(page.dirty().position(), [0_u32; 0]);
     assert_eq!(page.position(handle), Some(Position::default()));
 }
 
@@ -1309,7 +1309,10 @@ fn position_command_overrides_motion_without_a_false_change_or_double_count() {
         sim.get(handle).expect("live mover").position,
         Position::default()
     );
-    assert_eq!(sim.published_page().expect("page").dirty().position(), []);
+    assert_eq!(
+        sim.published_page().expect("page").dirty().position(),
+        [0_u32; 0]
+    );
     history.rewind(&mut sim, 1).expect("rewind no-op position");
     assert_eq!(
         sim.get(handle).expect("restored mover").position,

@@ -1,0 +1,88 @@
+{
+  "camera": {
+    "position_m": [
+      0,
+      244.9226672381398,
+      16
+    ],
+    "target_m": [
+      0,
+      240.9226672381398,
+      -60
+    ],
+    "vertical_fov_degrees": 46.0,
+    "near_m": 0.1,
+    "far_m": 30000.0
+  },
+  "placements": [
+    {
+      "mesh": "terrain.gltf",
+      "translation_m": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": {
+        "baseColorFactor": [
+          0.28,
+          0.23,
+          0.17,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.92
+      }
+    },
+    {
+      "mesh": "sphere.gltf",
+      "translation_m": [
+        -3.4,
+        241.37373546480492,
+        -5.0
+      ],
+      "scale": [
+        1.5,
+        1.5,
+        1.5
+      ],
+      "material": {
+        "baseColorFactor": [
+          0.72,
+          0.74,
+          0.76,
+          1
+        ],
+        "metallicFactor": 1,
+        "roughnessFactor": 0.2
+      }
+    },
+    {
+      "mesh": "rock.gltf",
+      "translation_m": [
+        3.8,
+        240.64597776275875,
+        -7.0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "material": {
+        "baseColorFactor": [
+          0.34,
+          0.29,
+          0.23,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.85
+      }
+    }
+  ]
+}

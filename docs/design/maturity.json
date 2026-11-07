@@ -82,9 +82,9 @@
       ]
     },
     "G3s_first_light": {
-      "implementation": "partial_physical_LUTs_SH9_GGX_cube_DFG_shared_sky_and_real_materials",
-      "functional_validation": "Metal_independent_GGX_DFG_cube_seams_solar_energy_cache_cancel_altitude_front_raster_normal_scaled_aerial_units_near_ground_Sun_and_twilight_chart102cases_pass;_closure_and_spectral_accuracy_open",
-      "experienced_quality": "agent_reviewed_Chrome_and_private_native_valley_lookup_phases_and_sampled_routes;_grid_aliasing_shadows_contrast_and_accuracy_open",
+      "implementation": "partial_physical_LUTs_SH9_GGX_oneSky_native_authored_cooked_scene",
+      "functional_validation": "Metal_independent_GGX_DFG_cube_seams_solar_energy_cache_cancel_altitude_front_raster_normal_scaled_aerial_units_near_ground_Sun_and_twilight_chart102cases_authored_camera_recovery_and_CAS_normals_pass;_closure_and_spectral_accuracy_open",
+      "experienced_quality": "agent_reviewed_Chrome_lookup_and_native_cooked_valley_normals_phases_routes;_contact_contrast_colour_and_live_motion_open",
       "platform_performance": {
         "mac": "actual_Metal_oracles_and_threaded_frame_ABBA_recorded;_new_reflection_cost_retained_for_later_profiling;_live_display_unqualified",
         "browser": "Chrome156_M3Max_Metal_prior11_cases_pass;_lookup_checkpoint_sky_route7phases24samples_pass;_no_display_timing_claim",

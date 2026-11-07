@@ -432,7 +432,7 @@ mod tests {
         );
         scene.apply_render_columns(extractor.frame(), &mut changed);
         assert_eq!(scene.instances[0].current[3][0], 1.0);
-        assert_eq!(changed, []);
+        assert_eq!(changed, [0_u32; 0]);
     }
 
     #[test]

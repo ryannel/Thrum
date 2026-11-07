@@ -2307,6 +2307,8 @@ dependencies = [
  "objc2-foundation 0.3.2",
  "objc2-quartz-core 0.3.2",
  "pollster",
+ "serde",
+ "serde_json",
  "thrum-asset",
  "thrum-asset-gpu",
  "thrum-content-runtime",

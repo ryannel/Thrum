@@ -6,11 +6,18 @@ demos on the owner's website with public source, and later, games. Native platfo
 provides. Browsers run a portable WebGPU tier at showcase quality. Single-player fidelity leads; local and
 multiplayer play share the same authoritative rules.
 
-**Status:** a provisional 10,000-entity simulation feeds a synthetic lit scene in the
-`examples/v1-game` test consumer on macOS and Chrome WebGPU; a thin iPhone simulator shell
-also exists. There is no finished scene, demo, real transport or shipping runtime yet. V1 ends in a
-single-player showcase scene. The [V1 build plan](docs/BUILD-PLAN.md)
-is the active work queue.
+**Status:** the V1 game runs a provisional 10,000-entity simulation on macOS and Chrome WebGPU, plus a thin
+iPhone simulator shell. An optional native cooked valley shares the physical sky and frame host; Chrome still uses
+the diagnostic scene. The showcase and creator experience remain unfinished. See [the build plan](docs/BUILD-PLAN.md).
+
+To run the native authored scene on this Mac after setup:
+
+```sh
+cargo run --locked -p thrum-cook -- cook examples/v1-game/assets/showcase tmp/v1-valley
+THRUM_ASSET_STORE=tmp/v1-valley THRUM_SCENE=valley cargo run --locked -p v1-game
+```
+
+These are the real cooker and game binary. The scene is still a visual work in progress; transport remains after V1.
 
 Install Rust 1.99.1 through rustup (with rustfmt and Clippy) and Python 3.11 or newer:
 

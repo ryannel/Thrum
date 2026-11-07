@@ -418,7 +418,7 @@ impl App {
         if gpu.watch.is_lost() {
             return Err("initial device lost during surface configuration".to_owned());
         }
-        let host = pollster::block_on(FrameHost::new_with_capabilities(
+        let mut host = pollster::block_on(FrameHost::new_with_capabilities(
             &gpu.device,
             &gpu.queue,
             &gpu.capabilities,
@@ -430,17 +430,16 @@ impl App {
                 }),
             },
         ))?;
+        v1_game::attach_cooked_scene(&mut host)?;
+        [self.camera_pitch, self.camera_yaw] = host.camera_orientation();
         if gpu.watch.is_lost() {
             return Err("initial device lost during preparation".to_owned());
         }
         self.origin = Instant::now();
         let world_wake = wake.clone();
-        let (mut host, controls) = host.into_threaded(self.origin, move || {
+        let (host, controls) = host.into_threaded(self.origin, move || {
             let _ = world_wake.send_event(UserEvent::WorldAdvanced);
         })?;
-        if let Some(assets) = v1_game::cooked::cooked_assets_from_env() {
-            host.set_scene_contribution(Box::new(assets))?;
-        }
         if gpu.watch.is_lost() {
             return Err("initial device lost before render owner ready".to_owned());
         }

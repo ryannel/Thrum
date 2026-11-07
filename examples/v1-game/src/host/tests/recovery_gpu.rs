@@ -82,7 +82,7 @@ fn destroyed_gpu_replacement_keeps_paused_world_camera_sky_and_held_input() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
         let old = Gpu::new(&instance, 1).await;
-        let host = FrameHost::new_with_capabilities(
+        let mut host = FrameHost::new_with_capabilities(
             &old.device,
             &old.queue,
             &old.capabilities,
@@ -93,6 +93,18 @@ fn destroyed_gpu_replacement_keeps_paused_world_camera_sky_and_held_input() {
         )
         .await
         .expect("10k game scene");
+        let camera = crate::SceneCamera::perspective(
+            [0.0, 0.2, 2.0],
+            [0.0, 0.1, 0.0],
+            46.0_f32.to_radians(),
+            0.1,
+            30_000.0,
+        )
+        .expect("authored camera");
+        host.set_scene_camera(camera);
+        let orientation = host.camera_orientation();
+        assert!((orientation[0] - (-0.1_f32).atan2(2.0)).abs() < 1e-6);
+        assert_eq!(orientation[1], 0.0);
         let origin = Instant::now();
         let (mut host, controls) = host.into_threaded(origin, || {}).expect("resident world");
         let paused = transition(&mut host, &controls, &old.device, WorldLifecycle::Pause);
@@ -139,6 +151,7 @@ fn destroyed_gpu_replacement_keeps_paused_world_camera_sky_and_held_input() {
         // No call into the destroyed device is required to install its successor.
         host.publish_device(&mut candidate)
             .expect("replace only GPU resources");
+        assert_eq!(host.inner.camera_orientation(), [orientation[0], 0.13]);
         assert_eq!(host.pending_frames(), 0);
         assert!(host.dropped_reports() >= dropped + u64::try_from(pending).expect("bounded slots"));
         assert_eq!(

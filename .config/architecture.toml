@@ -62,6 +62,18 @@ allowed_workspace_dependencies = ["v1-game", "thrum-render"]
 # The check validates declarations; license/provenance review remains human work.
 [external_dependencies]
 
+[external_dependencies.serde]
+requirement = "=1.0.229"
+license = "MIT OR Apache-2.0"
+purpose = "Typed game-authored showcase scene description, decoded once before activation"
+target_cost = "Native game scene data only; derive-generated schema validation, no serialization in the tick or frame path"
+
+[external_dependencies.serde_json]
+requirement = "=1.0.154"
+license = "MIT OR Apache-2.0"
+purpose = "Decode the embedded authored scene recipe into checked camera and material placements"
+target_cost = "One cold parse at scene activation; already in the authoring dependency graph, no per-frame parsing"
+
 [external_dependencies.rayon]
 requirement = "=1.12.0"
 license = "MIT OR Apache-2.0"
