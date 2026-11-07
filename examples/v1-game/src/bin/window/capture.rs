@@ -8,12 +8,16 @@ use std::{
 use thrum_render::{capabilities::DeviceCapabilities, synthetic::DisplayOverlay};
 use v1_game::{FrameConfig, FrameHost, controls::GameControls};
 
+#[path = "motion.rs"]
+mod motion;
+
 const EXTENT: [u32; 2] = [1280, 720];
 
 pub(super) async fn run(output: PathBuf) -> Result<(), String> {
     if output.exists() {
         return Err("capture output must be a new directory".to_owned());
     }
+    let motion_frames = motion::requested_frames()?;
     let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
     let adapter = instance
         .request_adapter(&wgpu::RequestAdapterOptions {
@@ -36,8 +40,8 @@ pub(super) async fn run(output: PathBuf) -> Result<(), String> {
         &queue,
         &capabilities,
         FrameConfig {
-            render_extent: EXTENT,
-            surface: None,
+            render_extent: motion_frames.map_or(EXTENT, |_| motion::PROFILE.extent),
+            surface: motion_frames.map(|_| motion::PROFILE),
         },
         v1_game::selected_setup()?,
     )
@@ -45,7 +49,7 @@ pub(super) async fn run(output: PathBuf) -> Result<(), String> {
     let content = v1_game::attach_cooked_scene(&mut host)?;
     host.pause()?;
     let deadline = Instant::now() + Duration::from_secs(30);
-    if let Some(stats) = &content {
+    let cooked_generation = if let Some(stats) = &content {
         loop {
             {
                 let stats = stats
@@ -54,8 +58,8 @@ pub(super) async fn run(output: PathBuf) -> Result<(), String> {
                 if !stats.errors.is_empty() {
                     return Err(format!("capture content errors: {:?}", stats.errors));
                 }
-                if stats.drawn.is_some() {
-                    break;
+                if let Some(generation) = stats.drawn {
+                    break Some(generation);
                 }
             }
             if Instant::now() >= deadline {
@@ -65,8 +69,20 @@ pub(super) async fn run(output: PathBuf) -> Result<(), String> {
             drop(host.capture_pixels()?);
             std::thread::sleep(Duration::from_millis(2));
         }
-    }
+    } else {
+        None
+    };
     std::fs::create_dir_all(&output).map_err(|error| error.to_string())?;
+    if let Some(frames) = motion_frames {
+        return motion::record(
+            &device,
+            &queue,
+            &mut host,
+            &output,
+            frames,
+            cooked_generation,
+        );
+    }
     let mut records = Vec::new();
     for (name, hours, yaw, pitch) in [
         ("dawn", 5.52, 0.0_f32, 0.0_f32),
