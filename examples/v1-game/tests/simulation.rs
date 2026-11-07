@@ -86,10 +86,13 @@ fn whole_world_hash(sim: &Simulation, ids: &[StableId]) -> u64 {
         "hash identities must be unique"
     );
     let mut hash = std::collections::hash_map::DefaultHasher::new();
-    // Capture metadata includes exact presence for every registered column;
-    // get() below contributes all five declared V1 component values. The
-    // comparison uses the same fixed game recipe, excluding derived pages and
-    // intentionally distinct runtime/replay-branch identities.
+    // The game capture hashes engine metadata (identity, generations, free
+    // order, change ticks, exact presence for every registered column) and
+    // every game resource: resource revision, peer bindings, handles,
+    // sequences, axes and pending frames. get() below contributes all five
+    // declared V1 component values. Excluded: derived pages, per-tick report
+    // scratch rebuilt every tick, and intentionally distinct runtime and
+    // replay-branch identities.
     sim.capture().hash_authority_metadata(&mut hash);
     sim.len().hash(&mut hash);
     sim.tick().hash(&mut hash);
@@ -1668,6 +1671,17 @@ fn restore_after_swap_remove_preserves_canonical_dirty_order() {
     assert_eq!(replayed.as_slice(), &[0, 1, 2, 3, 4, 5]);
 }
 
+/// Live identities of the 100k corrected run at a replayed tick after tick 3:
+/// churn from later ticks has not happened yet.
+fn replay_ids(ids: &[StableId], tick: u64) -> Vec<StableId> {
+    let mut live = ids.to_vec();
+    for later in tick + 1..=12 {
+        let churned = 50_000 + usize::try_from(later).expect("small tick");
+        live[churned] = StableId(churned as u128);
+    }
+    live
+}
+
 /// One G2S qualification run over the 100k fixture: its 15k movers fill four
 /// 4,096-row kernel chunks, which `RayonForced` dispatches in parallel. It
 /// includes a kernel refusal from one chunk, a Resolve refusal after every
@@ -1778,7 +1792,25 @@ fn parallel_corrected_run(mode: ExecutionMode) -> (u64, u64) {
     history
         .amend_input(&predicted, correction_frame(2, 5, true))
         .expect("amend one retained peer input");
-    for _ in 0..8 {
+    for replayed in 0..8 {
+        if replayed == 4 {
+            // A refusal inside the corrected-replay window, on a deferred
+            // publication branch: authority, the deferred page's preimages
+            // and the remaining retained ticks all survive it.
+            let nan = [Command::SetVelocity(
+                predicted.handle(StableId(9)).expect("row"),
+                Velocity([f64::NAN, 0.0, 0.0]),
+            )];
+            let tick = predicted.tick();
+            let before = whole_world_hash(&predicted, &replay_ids(&ids, tick));
+            assert_eq!(history.step(&mut predicted, &nan), Err(SimError::NonFinite));
+            assert_eq!(predicted.tick(), tick);
+            assert_eq!(
+                whole_world_hash(&predicted, &replay_ids(&ids, tick)),
+                before,
+                "refusal inside corrected replay restores every chunk"
+            );
+        }
         assert!(
             history
                 .replay_next(&mut predicted)
@@ -1810,6 +1842,8 @@ fn parallel_corrected_run(mode: ExecutionMode) -> (u64, u64) {
 #[test]
 fn parallel_movers_match_the_straight_corrected_run_after_churn_and_refusal() {
     let serial = parallel_corrected_run(ExecutionMode::Serial);
+    // Requested Rayon is a serial fallback while its crossover is None: this
+    // row checks routing only. RayonForced runs the parallel path.
     assert_eq!(parallel_corrected_run(ExecutionMode::Rayon), serial);
     assert_eq!(parallel_corrected_run(ExecutionMode::RayonForced), serial);
 }

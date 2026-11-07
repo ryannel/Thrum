@@ -52,7 +52,7 @@ The native Metal recorder stays in G3t. The later dedicated performance phase ow
   equality against the straight corrected run and structural churn/refusal recovery. Presence-aware 10k corrected replay
   and engine-owned append-only edit descriptors pass. Resolve stages privately under its own permits; forced Rayon
   runs the chunked mover kernel concurrently and matches the straight corrected 100k run after churn and kernel/Resolve
-  refusal in every mode. Requested Rayon awaits a quiet measured crossover.
+  refusal. Requested Rayon is a serial fallback until a quiet measured crossover, so G2S stays open.
   [Parallel and Resolve evidence](evidence/v1-workload/G2S-PARALLEL-RESOLVE-2026-11-07.md).
   [Recorded quiet S1/S2 figures](evidence/v1-workload/G2R-CONSOLIDATED-2026-11-05.md) are history; old CPU/allocation
   limits are retired. Do not close on a partial hash or an easier row.

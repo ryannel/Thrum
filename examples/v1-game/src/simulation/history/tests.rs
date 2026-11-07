@@ -52,3 +52,64 @@ fn capture_metadata_distinguishes_absent_velocity_from_present_zero() {
         "presence must survive the read model's zero default"
     );
 }
+
+#[test]
+fn a_misrouted_permit_refuses_the_whole_tick() {
+    use crate::simulation::{Command, SimError};
+    use std::hash::Hash;
+
+    let config = SimConfig {
+        tick_hz: NonZeroU32::new(60).expect("nonzero rate"),
+        entity_capacity: 4,
+        peer_capacity: 4,
+        actions_per_frame: 8,
+        movement_speed: 6.0,
+    };
+    let mut sim = Simulation::new(WorldEpoch(302), config).expect("world");
+    let handles = [1_u128, 2].map(|id| {
+        sim.seed(ComponentEntity {
+            id: StableId(id),
+            position: Position::default(),
+            velocity: Velocity([1.0, 0.0, 0.0]),
+            health: 100,
+            ownership: None,
+            visual: Some(2),
+        })
+        .expect("mover")
+    });
+    sim.published_page().expect("baseline");
+    sim.step(&[]).expect("ordinary tick");
+    let state = |sim: &Simulation| {
+        let mut hash = DefaultHasher::new();
+        sim.capture().hash_authority_metadata(&mut hash);
+        for handle in handles {
+            let row = sim.get(handle).expect("row");
+            row.position.0.map(f64::to_bits).hash(&mut hash);
+            row.health.hash(&mut hash);
+        }
+        hash.finish()
+    };
+    let before = state(&sim);
+    // Resolve appends its health edit with Input health's permit.
+    std::mem::swap(
+        &mut sim.rules.resolve.health_write,
+        &mut sim.rules.input_health.health_write,
+    );
+    assert_eq!(
+        sim.step(&[Command::SetHealth(handles[0], 50)]).err(),
+        Some(SimError::InvalidEdit)
+    );
+    assert_eq!(sim.tick(), 1);
+    assert_eq!(
+        state(&sim),
+        before,
+        "a foreign permit leaves authority unchanged"
+    );
+    std::mem::swap(
+        &mut sim.rules.resolve.health_write,
+        &mut sim.rules.input_health.health_write,
+    );
+    sim.step(&[Command::SetHealth(handles[0], 50)])
+        .expect("own permit commits");
+    assert_eq!(sim.get(handles[0]).expect("row").health, 50);
+}
