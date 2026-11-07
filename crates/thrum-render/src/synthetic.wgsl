@@ -38,6 +38,7 @@ struct ShadowCascades {
     light_view_proj: array<mat4x4<f32>, 2>,
     split_overlap: vec4<f32>,
     bias: vec4<f32>,
+    penumbra: vec4<f32>,
 }
 @group(0) @binding(2) var<uniform> shadows: ShadowCascades;
 @group(0) @binding(3) var shadow_maps: texture_depth_2d_array;
@@ -187,6 +188,42 @@ struct ShadowReceiver {
     normal: vec3<f32>,
 }
 
+// Fixed equal-area disk samples. No per-frame stochastic rotation.
+const SHADOW_DISK = array<vec2<f32>,32>(
+    vec2<f32>(0.125000000,0.000000000),
+    vec2<f32>(-0.159645045,0.146247939),
+    vec2<f32>(0.024436233,-0.278438271),
+    vec2<f32>(0.201222239,0.262458779),
+    vec2<f32>(-0.369267557,-0.065318231),
+    vec2<f32>(0.349802466,-0.222515696),
+    vec2<f32>(-0.117002079,0.435241902),
+    vec2<f32>(-0.223135654,-0.429634123),
+    vec2<f32>(0.484115115,0.176798064),
+    vec2<f32>(-0.503641109,0.207895728),
+    vec2<f32>(0.242788294,-0.518824483),
+    vec2<f32>(0.179414374,0.572001296),
+    vec2<f32>(-0.540757006,-0.313379738),
+    vec2<f32>(0.634369523,-0.139464360),
+    vec2<f32>(-0.387145845,0.550675126),
+    vec2<f32>(-0.089439655,-0.690199644),
+    vec2<f32>(0.549071757,0.462758258),
+    vec2<f32>(-0.738878471,0.030554945),
+    vec2<f32>(0.538955125,-0.536332334),
+    vec2<f32>(-0.036058186,0.779791515),
+    vec2<f32>(-0.512817532,-0.614526793),
+    vec2<f32>(0.812359593,0.109301834),
+    vec2<f32>(-0.688310641,0.478908616),
+    vec2<f32>(0.188086057,-0.836061382),
+    vec2<f32>(0.435033266,0.759191055),
+    vec2<f32>(-0.850448410,-0.271316239),
+    vec2<f32>(0.826102401,-0.381680263),
+    vec2<f32>(-0.357888202,0.855155562),
+    vec2<f32>(-0.319407334,-0.888033758),
+    vec2<f32>(0.849908635,0.446688159),
+    vec2<f32>(-0.944034646,0.248844503),
+    vec2<f32>(0.536595808,-0.834529771)
+);
+
 fn cascade_visibility(index: u32, receiver: ShadowReceiver) -> f32 {
     let matrix = shadows.light_view_proj[index];
     let clip = matrix*vec4(receiver.position,1.0);
@@ -215,6 +252,42 @@ fn cascade_visibility(index: u32, receiver: ShadowReceiver) -> f32 {
     let texel_depth = abs(depth_gradient)/extent;
     let footprint = 0.5*max(texel_depth.x,texel_depth.y);
     let reference = p.z + clamp(footprint,base,8.0*base) + slope*normal_bias;
+    let scale = select(shadows.penumbra.y,shadows.penumbra.x,index==0u);
+    let search_radius = max(0.0,1.0-p.z)*scale;
+    var gap_sum = 0.0;
+    var blockers = 0.0;
+    for(var i=0u;i<16u;i++) {
+        let q=uv+SHADOW_DISK[i*2u]*search_radius;
+        if any(q<vec2(0.0)) || any(q>vec2(1.0)) { continue; }
+        let texel=clamp(vec2<i32>(q*extent),vec2(0),vec2<i32>(extent)-1);
+        let tap=(vec2<f32>(texel)+0.5)/extent;
+        let depth=textureLoad(shadow_maps,texel,i32(index),0);
+        let receiver_depth=reference+dot(depth_gradient,tap-uv);
+        if depth>receiver_depth {
+            gap_sum+=max(0.0,depth-p.z);
+            blockers+=1.0;
+        }
+    }
+    if blockers==0.0 {
+        return shadow_filter(index,uv,reference,depth_gradient,extent);
+    }
+    let radius=gap_sum/blockers*scale;
+    if radius*extent.x<=0.5 {
+        return shadow_filter(index,uv,reference,depth_gradient,extent);
+    }
+    var visible=0.0;
+    for(var i=0u;i<32u;i++) {
+        let q=uv+SHADOW_DISK[i]*radius;
+        let depth=reference+dot(depth_gradient,q-uv);
+        visible+=shadow_filter(index,q,depth,depth_gradient,extent);
+    }
+    return visible/32.0;
+}
+
+// Receiver-plane PCF reconstructs each disk sample locally. Its broad-plane
+// extension is the parallel-surface approximation used by directional PCSS.
+fn shadow_filter(index:u32,uv:vec2<f32>,reference:f32,gradient:vec2<f32>,extent:vec2<f32>) -> f32 {
+    if any(uv<vec2(0.0)) || any(uv>vec2(1.0)) { return 1.0; }
     let pixel = uv*extent-0.5;
     let first = floor(pixel);
     let blend = fract(pixel);
@@ -223,7 +296,7 @@ fn cascade_visibility(index: u32, receiver: ShadowReceiver) -> f32 {
         let offset = vec2(f32(i & 1u),f32(i >> 1u));
         let tap = (clamp(first+offset,vec2(0.0),extent-1.0)+0.5)/extent;
         let weight = mix(1.0-blend,blend,offset);
-        let tap_depth = reference+dot(depth_gradient,tap-uv);
+        let tap_depth = reference+dot(gradient,tap-uv);
         visible += weight.x*weight.y*textureSampleCompareLevel(shadow_maps,shadow_sampler,tap,i32(index),tap_depth);
     }
     return visible;
