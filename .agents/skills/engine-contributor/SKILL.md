@@ -8,7 +8,9 @@ description: Implement, refactor or review Thrum engine code toward the active b
 Thrum is a showcase of AI-driven engineering: butter-smooth, high-end visuals and performance beyond what a human
 team would build and maintain, first shown in teaching demos on the owner's website. Engine code succeeds when it
 runs correctly and looks right on named targets. Judge each change by whether it moves the active gate in
-[the build plan](../../../docs/BUILD-PLAN.md) forward, not by how much it proves.
+[the build plan](../../../docs/BUILD-PLAN.md) forward, not by how much it proves. Inside a module-design commission,
+the module's plan ([engine-module-design](../engine-module-design/SKILL.md)) chooses the next work, and its
+milestones roll up into the build-plan gate.
 
 ## Pick the work
 
@@ -96,7 +98,7 @@ For per-tick, per-frame and per-message code:
      evidence page and notify the owner: contact sheet, short clip, numbers and open look questions,
      each with your recommended answer. Then carry on with that recommendation. Owner feedback
      steers the current or next slice; owner `accepted` is recorded but never a gate condition.
-- Evidence is at most one page per gate, including its visual digest: stills, one timing table and
+- Evidence is at most one page per gate (module milestones link their own evidence from the module plan), including its visual digest: stills, one timing table and
   an oracle diff when relevant. Bulk output follows [the storage rules](../../../docs/ASSET-LIFECYCLE.md).
 - Run `./dev check` before each commit.
 
