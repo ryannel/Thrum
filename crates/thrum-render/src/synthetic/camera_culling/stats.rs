@@ -1,8 +1,11 @@
-//! Per-slot culling counts on the completion path. An untimed graph copy
+//! Per-slot culling counts beside the completion path. An untimed graph copy
 //! moves the culled list's GPU-written instance count into the slot's own
-//! map buffer; the host maps it when it submits the slot and reads it when
-//! the slot's work is done, so nothing waits on the frame path and no count
-//! depends on timestamps. Direct lists nothing and declares no copy.
+//! map buffer; the host maps it when it submits the slot and takes it if the
+//! mapping has settled by the time the slot retires. Slot retirement never
+//! waits on the mapping: a frame whose count is not ready reports none, and a
+//! slot whose buffer is still mapping skips the copy and the map on its next
+//! frame. No count depends on timestamps. Direct lists nothing and declares
+//! no copy.
 
 use std::sync::{
     Arc,
@@ -52,6 +55,8 @@ pub(in crate::synthetic) struct CullingStats {
     buffer: wgpu::Buffer,
     mapping: Arc<AtomicU8>,
     frame: Option<(CullMode, u32)>,
+    /// This frame copies and maps: the buffer was free when it was encoded.
+    armed: bool,
 }
 
 impl CullingStats {
@@ -68,6 +73,7 @@ impl CullingStats {
             }),
             mapping: Arc::new(AtomicU8::new(IDLE)),
             frame: None,
+            armed: false,
         })
     }
 }
@@ -117,6 +123,10 @@ impl SceneContext<'_> {
         let (Some(stats), Some(list)) = (&target.culling_stats, &target.visibility) else {
             return Err(RenderError::GraphPassMismatch);
         };
+        if !stats.armed {
+            // Still mapping an earlier frame, or a capture: no count.
+            return Ok(());
+        }
         self.encoder.copy_buffer_to_buffer(
             list.args(),
             COUNT_OFFSET,
@@ -129,12 +139,35 @@ impl SceneContext<'_> {
 }
 
 impl OffscreenTarget {
-    /// After the host submits this slot: map its counts, recording the
-    /// frame's mode and active prefix. Nothing waits on the mapping.
+    /// Before the host encodes this slot: arm the count copy unless the
+    /// buffer is still mapping. A count the last frame left untaken is
+    /// discarded and unmapped.
+    pub(crate) fn arm_culling_stats(&mut self) {
+        let Some(stats) = self.culling_stats.as_mut() else {
+            return;
+        };
+        stats.armed = match stats.mapping.load(Ordering::Acquire) {
+            PENDING => false,
+            state => {
+                if state == READY {
+                    stats.buffer.unmap();
+                }
+                stats.frame = None;
+                stats.mapping.store(IDLE, Ordering::Release);
+                true
+            }
+        };
+    }
+
+    /// After the host submits this slot: map an armed frame's count,
+    /// recording its mode and active prefix. Nothing waits on the mapping.
     pub(crate) fn map_culling_stats(&mut self, mode: CullMode, active: u32) {
         let Some(stats) = self.culling_stats.as_mut() else {
             return;
         };
+        if !std::mem::take(&mut stats.armed) {
+            return;
+        }
         stats.frame = Some((mode, active));
         stats.mapping.store(PENDING, Ordering::Release);
         let mapping = Arc::clone(&stats.mapping);
@@ -147,18 +180,14 @@ impl OffscreenTarget {
             });
     }
 
-    /// Whether this slot's counts no longer wait on the GPU: absent, never
-    /// mapped, read, or mapped (or failed) after completion.
-    pub(crate) fn culling_stats_settled(&self) -> bool {
-        self.culling_stats
-            .as_ref()
-            .is_none_or(|stats| stats.mapping.load(Ordering::Acquire) != PENDING)
-    }
-
-    /// The submitted frame's counts once mapped; unmaps for the slot's next
-    /// submission. `None` for Direct and for a failed mapping.
+    /// The submitted frame's counts if its mapping has settled, unmapping
+    /// the buffer. `None` for Direct, an unarmed frame, a failed mapping and
+    /// a mapping still pending, which stays pending for the next arm.
     pub(crate) fn take_culling_counts(&mut self) -> Option<CullingCounts> {
         let stats = self.culling_stats.as_mut()?;
+        if stats.mapping.load(Ordering::Acquire) == PENDING {
+            return None;
+        }
         let state = stats.mapping.swap(IDLE, Ordering::AcqRel);
         let frame = stats.frame.take();
         if state != READY {
@@ -179,5 +208,21 @@ impl OffscreenTarget {
             });
         stats.buffer.unmap();
         counts
+    }
+}
+
+/// Test hooks for a mapping callback that has not arrived.
+#[cfg(test)]
+mod hooks {
+    use super::{IDLE, OffscreenTarget, Ordering, PENDING};
+
+    impl OffscreenTarget {
+        /// Hold this slot's count buffer as if its mapping were pending.
+        pub(crate) fn stall_culling_stats(&mut self, stalled: bool) {
+            if let Some(stats) = self.culling_stats.as_mut() {
+                let state = if stalled { PENDING } else { IDLE };
+                stats.mapping.store(state, Ordering::Release);
+            }
+        }
     }
 }

@@ -1127,6 +1127,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
         let slot = &mut self.slots[slot_index];
+        slot.target.arm_culling_stats();
         if let Err(error) = self.prepared.encode_contributed(
             &mut encoder,
             self.generation,
@@ -1407,14 +1408,12 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             match state {
                 SlotState::Free => {}
                 SlotState::Rendering(mut sample) => {
-                    if !slot.render_done.load(Ordering::Acquire)
-                        || !slot.target.culling_stats_settled()
-                    {
+                    if !slot.render_done.load(Ordering::Acquire) {
                         slot.state = SlotState::Rendering(sample);
                         continue;
                     }
-                    // A slot may pass here again while its timestamps resolve;
-                    // keep the counts the first pass took.
+                    // Counts never hold the slot: take them if their mapping
+                    // has settled, keeping any an earlier pass took.
                     sample.camera_culling = sample
                         .camera_culling
                         .or_else(|| slot.target.take_culling_counts());
@@ -1439,32 +1438,39 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                         }
                     }
                 }
-                SlotState::Resolving(mut sample) => match slot.timings.try_collect(self.generation)
-                {
-                    Ok(Some(passes)) => {
-                        if let Some((scene, present, contribution)) =
-                            pass_durations(passes, sample.surface_presented, slot.timing_layout)
-                        {
-                            sample.gpu_pass_ns = Some(scene);
-                            sample.gpu_present_ns = present;
-                            sample.gpu_contribution_ns = contribution;
-                        } else {
+                SlotState::Resolving(mut sample) => {
+                    sample.camera_culling = sample
+                        .camera_culling
+                        .or_else(|| slot.target.take_culling_counts());
+                    match slot.timings.try_collect(self.generation) {
+                        Ok(Some(passes)) => {
+                            if let Some((scene, present, contribution)) =
+                                pass_durations(passes, sample.surface_presented, slot.timing_layout)
+                            {
+                                sample.gpu_pass_ns = Some(scene);
+                                sample.gpu_present_ns = present;
+                                sample.gpu_contribution_ns = contribution;
+                            } else {
+                                sample.timing_fault = true;
+                            }
+                            retain_sample(&mut self.completed, &mut self.dropped_reports, sample);
+                        }
+                        Ok(None) => slot.state = SlotState::Resolving(sample),
+                        Err(error) => {
                             sample.timing_fault = true;
+                            // Collection unmaps and resets this batch even when its counter values
+                            // are unusable. Keep the resources for the next submission.
+                            if !matches!(error, TimingError::InvalidTimestamp { .. }) {
+                                slot.timings = new_timings(
+                                    self.prepared.capabilities(),
+                                    &self.queue,
+                                    max_passes,
+                                )?;
+                            }
+                            retain_sample(&mut self.completed, &mut self.dropped_reports, sample);
                         }
-                        retain_sample(&mut self.completed, &mut self.dropped_reports, sample);
                     }
-                    Ok(None) => slot.state = SlotState::Resolving(sample),
-                    Err(error) => {
-                        sample.timing_fault = true;
-                        // Collection unmaps and resets this batch even when its counter values
-                        // are unusable. Keep the resources for the next submission.
-                        if !matches!(error, TimingError::InvalidTimestamp { .. }) {
-                            slot.timings =
-                                new_timings(self.prepared.capabilities(), &self.queue, max_passes)?;
-                        }
-                        retain_sample(&mut self.completed, &mut self.dropped_reports, sample);
-                    }
-                },
+                }
             }
         }
         Ok(())

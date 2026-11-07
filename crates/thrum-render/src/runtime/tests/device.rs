@@ -345,6 +345,61 @@ fn culled_modes_survive_surface_resize_and_device_replacement() {
 
 #[test]
 #[cfg(target_os = "macos")]
+fn culling_counts_never_hold_render_slots_or_cross_a_replacement() {
+    pollster::block_on(async {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let (first, queue) = gpu(&instance, 7).await;
+        let (second, new_queue) = gpu(&instance, 8).await;
+        let mut host =
+            culled_host(&first, &queue, Policy::default(), CullMode::Frustum, false).await;
+        // A mapping callback that never arrives leaves frames retiring
+        // without counts, and copies nothing into the busy buffer.
+        for slot in &mut host.slots {
+            slot.target.stall_culling_stats(true);
+        }
+        for _ in 0..2 {
+            pending_slots(&mut host);
+            for sample in drain_samples(&mut host) {
+                assert!(
+                    sample.camera_culling.is_none(),
+                    "a busy buffer counts nothing"
+                );
+            }
+        }
+        for slot in &mut host.slots {
+            slot.target.stall_culling_stats(false);
+        }
+        pending_slots(&mut host);
+        for sample in drain_samples(&mut host) {
+            let counts = sample.camera_culling.expect("counts resume");
+            assert_eq!((counts.active, counts.drawn), (1, 1));
+        }
+        // Real mappings left pending on the old device: the new device's
+        // empty prefix must be all that publishes.
+        pending_slots(&mut host);
+        let mut candidate = host
+            .device_prepare_inputs()
+            .expect("inputs")
+            .prepare(&second, &new_queue, Some(surface()))
+            .await
+            .expect("replacement");
+        host.publish_device(&mut candidate).expect("publish");
+        assert_eq!(host.pending_frames(), 0, "the old slots are abandoned");
+        host.source_mut().empty = true;
+        pending_slots(&mut host);
+        for sample in drain_samples(&mut host) {
+            let counts = sample.camera_culling.expect("replacement counts");
+            assert_eq!(
+                (counts.mode, counts.active, counts.drawn),
+                (CullMode::Frustum, 0, 0),
+                "only the new device's frames publish counts"
+            );
+        }
+    });
+}
+
+#[test]
+#[cfg(target_os = "macos")]
 fn metal_frame_timestamps_survive_an_empty_instance_set() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());

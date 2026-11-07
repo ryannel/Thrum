@@ -815,25 +815,22 @@ impl<G: Game + 'static> App<G> {
         } else {
             "GPU timestamps unavailable".to_owned()
         };
-        // The renderer's culling mode and read-back counts; Direct has none.
+        // The renderer's culling mode and read-back counts, over the frames
+        // whose count had settled when they retired; Direct has none.
         let mode = presented.last().map(|sample| sample.culling_mode);
         let counted: Vec<_> = presented
             .iter()
             .filter_map(|sample| sample.camera_culling)
             .collect();
+        let mut drawn: Vec<u32> = counted.iter().map(|counts| counts.drawn).collect();
+        drawn.sort_unstable();
         let culling = match counted.last() {
-            Some(last) if counted.len() == presented.len() => {
-                let drawn = percentile(&presented, |sample| {
-                    f64::from(sample.camera_culling.map_or(0, |counts| counts.drawn))
-                });
-                format!(
-                    "culling={:?} drawn p50/p95={:.0}/{:.0} of {}",
-                    last.mode, drawn.0, drawn.1, last.active
-                )
-            }
             Some(last) => format!(
-                "culling={:?} counted {} of {} samples",
+                "culling={:?} drawn p50/p95={}/{} of {} (counted {} of {} samples)",
                 last.mode,
+                drawn[drawn.len() / 2],
+                drawn[drawn.len() * 95 / 100],
+                last.active,
                 counted.len(),
                 presented.len()
             ),

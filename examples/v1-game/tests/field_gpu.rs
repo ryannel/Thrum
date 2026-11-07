@@ -82,6 +82,8 @@ fn field_frustum_matches_direct_along_the_flythrough() {
         // The Frustum host's read-back draw counts: the fewest drawn and the
         // active slots then, so the comparison cannot pass unculled.
         let mut fewest: Option<(u32, u32)> = None;
+        // Counts never hold a frame, so one may retire before its count.
+        let mut uncounted = 0;
         let extent = [640, 360];
         let mut compared = 0;
         for tick in 1..=LAST_TICK {
@@ -111,6 +113,7 @@ fn field_frustum_matches_direct_along_the_flythrough() {
                             fewest = Some((counts.drawn, counts.active));
                         }
                     }
+                    (CullMode::Frustum, None) => uncounted += 1,
                     (mode, counts) => panic!("tick {tick}: {mode:?} reported {counts:?}"),
                 }
             }
@@ -139,7 +142,10 @@ fn field_frustum_matches_direct_along_the_flythrough() {
         let expected = if cfg!(debug_assertions) { 20 } else { 75 };
         assert!(compared >= expected, "{compared} frames compared");
         let (drawn, active) = fewest.expect("Frustum counts");
-        eprintln!("{compared} frames compared; Frustum drew {drawn} of {active} at its fewest");
+        eprintln!(
+            "{compared} frames compared; Frustum drew {drawn} of {active} at its fewest; \
+             {uncounted} of {LAST_TICK} Frustum frames retired before their count"
+        );
         assert!(
             drawn > 0 && drawn * 2 < active,
             "Frustum drew {drawn} of {active} at its fewest"
