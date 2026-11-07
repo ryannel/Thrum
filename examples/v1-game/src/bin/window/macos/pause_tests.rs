@@ -55,3 +55,87 @@ fn rapid_toggles_and_invalid_ack_leave_the_accepted_request_intact() {
     assert!(intent.acknowledge(WorldLifecycle::Pause).is_err());
     assert_eq!(intent.label(), "Paused (P)");
 }
+
+#[test]
+fn overload_drains_before_resuming_and_busy_retains_the_request() {
+    let mut intent = PauseIntent::default();
+    intent.overloaded(12);
+    assert_eq!(intent.label(), "Overloaded: draining (P)");
+    // Busy leaves the request due; repeated observations do not count twice.
+    for _ in 0..3 {
+        assert_eq!(intent.next_request(), Some(WorldLifecycle::Pause));
+        intent.overloaded(12);
+    }
+    assert_eq!((intent.overload_count(), intent.refused_ticks()), (1, 12));
+    intent.accepted(WorldLifecycle::Pause);
+    assert_eq!(intent.next_request(), None);
+    intent.acknowledge(WorldLifecycle::Pause).unwrap();
+    intent.overloaded(12);
+    assert_eq!(intent.next_request(), Some(WorldLifecycle::Resume));
+    assert_eq!(intent.label(), "Overloaded: resuming (P)");
+    intent.accepted(WorldLifecycle::Resume);
+    intent.acknowledge(WorldLifecycle::Resume).unwrap();
+    assert_eq!(intent.next_request(), None);
+    assert_eq!(intent.label(), "Running (P)");
+    intent.overloaded(9);
+    assert_eq!((intent.overload_count(), intent.refused_ticks()), (2, 21));
+    assert_eq!(intent.next_request(), Some(WorldLifecycle::Pause));
+}
+
+#[test]
+fn manual_pause_during_overload_remains_paused_until_manual_resume() {
+    let mut intent = PauseIntent::default();
+    intent.overloaded(10);
+    intent.accepted(WorldLifecycle::Pause);
+    intent.key(true, false);
+    intent.acknowledge(WorldLifecycle::Pause).unwrap();
+    assert_eq!(intent.next_request(), None);
+    assert_eq!(intent.label(), "Overloaded: paused (P)");
+    intent.key(true, false);
+    assert_eq!(intent.next_request(), Some(WorldLifecycle::Resume));
+    intent.accepted(WorldLifecycle::Resume);
+    // A later P press must survive the already accepted recovery Resume.
+    intent.key(true, false);
+    intent.acknowledge(WorldLifecycle::Resume).unwrap();
+    assert_eq!(intent.next_request(), Some(WorldLifecycle::Pause));
+    intent.accepted(WorldLifecycle::Pause);
+    intent.acknowledge(WorldLifecycle::Pause).unwrap();
+    assert_eq!(intent.label(), "Paused (P)");
+}
+
+#[test]
+fn overload_reuses_pending_manual_pause_and_preserves_later_resume() {
+    let mut intent = PauseIntent::default();
+    intent.key(true, false);
+    intent.accepted(WorldLifecycle::Pause);
+    intent.overloaded(14);
+    intent.key(true, false);
+    assert_eq!(intent.next_request(), None);
+    intent.acknowledge(WorldLifecycle::Pause).unwrap();
+    assert_eq!(intent.next_request(), Some(WorldLifecycle::Resume));
+    intent.accepted(WorldLifecycle::Resume);
+    intent.acknowledge(WorldLifecycle::Resume).unwrap();
+    assert_eq!(intent.label(), "Running (P)");
+    assert_eq!((intent.overload_count(), intent.refused_ticks()), (1, 14));
+}
+
+#[test]
+fn health_during_pending_resume_is_classified_after_its_acknowledgement() {
+    let mut intent = PauseIntent::default();
+    intent.key(true, false);
+    intent.accepted(WorldLifecycle::Pause);
+    intent.acknowledge(WorldLifecycle::Pause).unwrap();
+    intent.key(true, false);
+    intent.accepted(WorldLifecycle::Resume);
+    // Reply polling and health sampling have separate locks. Resume may be
+    // applied (and a new overload published) between those two observations.
+    intent.overloaded(11);
+    assert_eq!(intent.overload_count(), 0);
+    assert_eq!(intent.next_request(), None);
+    intent.acknowledge(WorldLifecycle::Resume).unwrap();
+    // Reconciliation samples latest health after consuming the reply. Only
+    // that observation starts the new episode, so its count is not doubled.
+    intent.overloaded(11);
+    assert_eq!(intent.next_request(), Some(WorldLifecycle::Pause));
+    assert_eq!((intent.overload_count(), intent.refused_ticks()), (1, 11));
+}

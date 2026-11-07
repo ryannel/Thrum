@@ -109,7 +109,14 @@ struct Fixture {
     origin: Instant,
 }
 
-fn fixture(fail_tick: Option<u64>, publication_busy: bool, paused_backlog: bool) -> Fixture {
+#[derive(Clone, Copy)]
+enum Backlog {
+    Active,
+    Paused,
+    Overloaded,
+}
+
+fn fixture(fail_tick: Option<u64>, publication_busy: bool, backlog: Backlog) -> Fixture {
     let observed = Arc::new(Mutex::new(Observed::default()));
     let busy = Arc::new(AtomicBool::new(publication_busy));
     let (entered, attempts) = mpsc::channel();
@@ -131,18 +138,32 @@ fn fixture(fail_tick: Option<u64>, publication_busy: bool, paused_backlog: bool)
         max_queued_ticks: NonZeroU32::new(8).expect("queue"),
     };
     let mut world = ClockedWorld::new(game, config, Duration::ZERO).expect("clock");
-    if paused_backlog {
+    let mut origin_offset = Duration::from_millis(350);
+    if !matches!(backlog, Backlog::Active) {
         world.game_mut().gated_ticks = 0;
-        let initial = world
-            .advance(Duration::from_millis(350))
-            .expect("accepted backlog");
-        assert_eq!((initial.tick, initial.queued_ticks), (1, 2));
+        match backlog {
+            Backlog::Paused => {
+                let initial = world
+                    .advance(Duration::from_millis(350))
+                    .expect("accepted backlog");
+                assert_eq!((initial.tick, initial.queued_ticks), (1, 2));
+                world.pause();
+            }
+            Backlog::Overloaded => {
+                let initial = world
+                    .advance(Duration::from_millis(650))
+                    .expect("six admitted ticks");
+                assert_eq!((initial.tick, initial.queued_ticks), (1, 5));
+                origin_offset = Duration::from_millis(1650);
+                let overloaded = world.advance(origin_offset).expect("recoverable overload");
+                assert_eq!(overloaded.overload, Some(10));
+                assert_eq!((overloaded.tick, overloaded.queued_ticks), (2, 4));
+            }
+            Backlog::Active => unreachable!("active fixture needs no prepared backlog"),
+        }
         world.game_mut().gated_ticks = 3;
-        world.pause();
     }
-    let origin = Instant::now()
-        .checked_sub(Duration::from_millis(350))
-        .expect("origin");
+    let origin = Instant::now().checked_sub(origin_offset).expect("origin");
     let (lane, controls) = WorldLane::start(world, 0, origin, move || {
         let _ = notify.send(());
     })
@@ -244,7 +265,7 @@ fn drain_paused(fixture: &Fixture) -> u64 {
 
 #[test]
 fn ordered_pause_drains_real_clock_backlog_and_resume_excludes_paused_time() {
-    let mut fixture = fixture(None, false, false);
+    let mut fixture = fixture(None, false, Backlog::Active);
     let accepted = drain_paused(&fixture);
     let accepted_count = usize::try_from(accepted).expect("bounded queue");
     let paused = reply(&fixture.controls);
@@ -317,7 +338,7 @@ fn ordered_pause_drains_real_clock_backlog_and_resume_excludes_paused_time() {
 
 #[test]
 fn paused_recovery_publishes_and_wakes_without_another_tick() {
-    let mut fixture = fixture(None, true, false);
+    let mut fixture = fixture(None, true, Backlog::Active);
     let accepted = drain_paused(&fixture);
     assert_eq!(reply(&fixture.controls).id.tick, accepted);
     fixture
@@ -355,7 +376,7 @@ fn paused_recovery_publishes_and_wakes_without_another_tick() {
 
 #[test]
 fn failed_drain_never_acknowledges_success_and_releases_pending_poll_to_fault() {
-    let mut fixture = fixture(Some(2), false, false);
+    let mut fixture = fixture(Some(2), false, Backlog::Active);
     fixture
         .entered
         .recv_timeout(Duration::from_secs(2))
@@ -412,8 +433,123 @@ fn failed_drain_never_acknowledges_success_and_releases_pending_poll_to_fault() 
 }
 
 #[test]
+fn overloaded_owner_drains_exact_admissions_then_resumes_without_restart() {
+    let mut fixture = fixture(None, false, Backlog::Overloaded);
+    assert_eq!(
+        fixture
+            .entered
+            .recv_timeout(Duration::from_secs(2))
+            .expect("draining third tick"),
+        3
+    );
+    let initial = fixture
+        .lane
+        .poll(fixture.origin.elapsed())
+        .expect("overloaded snapshot");
+    let admitted = initial.tick + u64::from(initial.queued_ticks);
+    assert_eq!((initial.tick, initial.queued_ticks, admitted), (2, 4, 6));
+    assert!(matches!(
+        fixture.controls.check_health(),
+        Err(WorldLaneFault::Overload(10))
+    ));
+    fixture
+        .controls
+        .request_lifecycle(WorldLifecycle::Pause)
+        .expect("recovery drain barrier");
+    assert!(matches!(
+        fixture.controls.request_lifecycle(WorldLifecycle::Resume),
+        Err(WorldLaneFault::Busy)
+    ));
+    fixture
+        .release
+        .send(())
+        .expect("commit third admitted tick");
+    wait_until(|| {
+        matches!(
+            fixture.lane.shared.state.lock().expect("mailbox").lifecycle,
+            super::super::LifecycleSlot::Ready(_)
+        )
+    });
+    assert!(
+        matches!(
+            fixture.controls.request_lifecycle(WorldLifecycle::Resume),
+            Err(WorldLaneFault::Busy)
+        ),
+        "unconsumed drain acknowledgement owns slot"
+    );
+    let paused = reply(&fixture.controls);
+    assert_eq!(
+        (paused.request, paused.id.tick, paused.timeline),
+        (WorldLifecycle::Pause, admitted, 7)
+    );
+    assert_eq!(paused.id.epoch, WorldEpoch(19));
+    assert!(
+        matches!(
+            fixture.controls.check_health(),
+            Err(WorldLaneFault::Overload(10))
+        ),
+        "overload remains observable until successful Resume"
+    );
+    let drained = fixture
+        .lane
+        .poll(fixture.origin.elapsed())
+        .expect("drained snapshot");
+    assert_eq!(
+        (drained.tick, drained.queued_ticks, drained.completed_ticks),
+        (admitted, 0, 4)
+    );
+    assert_eq!(
+        fixture
+            .lane
+            .poll(fixture.origin.elapsed())
+            .expect("repeat observation")
+            .completed_ticks,
+        0
+    );
+    assert_eq!(fixture.observed.lock().expect("observer").attempts, 6);
+    assert_eq!(
+        fixture
+            .observed
+            .lock()
+            .expect("observer")
+            .committed_controls,
+        vec![0; 6]
+    );
+    fixture.controls.set(1).expect("post-drain controls");
+    fixture
+        .controls
+        .request_lifecycle(WorldLifecycle::Resume)
+        .expect("resume after drain");
+    let resumed = reply(&fixture.controls);
+    assert_eq!(
+        (resumed.request, resumed.id, resumed.timeline),
+        (WorldLifecycle::Resume, paused.id, paused.timeline)
+    );
+    assert_eq!(resumed.clock.alpha_at(fixture.origin.elapsed()), 1.0);
+    assert!(
+        fixture.controls.check_health().is_ok(),
+        "same owner clears sticky overload"
+    );
+    wait_until(|| {
+        fixture
+            .observed
+            .lock()
+            .expect("observer")
+            .committed_controls
+            .len()
+            > 6
+    });
+    let observed = fixture.observed.lock().expect("observer");
+    assert_eq!(observed.committed_controls[6], 1);
+    assert_eq!(
+        observed.attempts as usize,
+        observed.committed_controls.len()
+    );
+}
+
+#[test]
 fn refused_resume_is_consumed_without_faulting_authority_or_leaving_busy() {
-    let fixture = fixture(None, false, true);
+    let fixture = fixture(None, false, Backlog::Paused);
     assert_eq!(
         fixture
             .entered

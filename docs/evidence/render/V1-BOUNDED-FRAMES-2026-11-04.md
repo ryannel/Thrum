@@ -13,7 +13,11 @@ Owner-run 10:50–10:52 CET, clean worktree, agents paused, builds drained; raw:
 Upload/encode p50 279.5/239.0 µs dominate. Later noisy ABBA history: `tmp/g3b-runtime/`; no controlled speed win.
 
 **Native lifecycle:** ordered pause/resume drains accepted ticks; stopped wall time is excluded. Mac P retains intent;
-surface loss never pauses authority. Metal checks and iOS-simulator compilation pass.
+surface loss never pauses authority. Mac overload now drains admitted ticks through Pause, then resumes at the
+acknowledged tick without changing epoch/timeline; manual pause wins. Refused time is counted, not replayed.
+Deterministic core and Mac intent tests cover drain/Busy/repeated health/recovery; independent review corrected stale
+paused-tick telemetry. Full `./dev check` passes; no live Mac stall or GPU-loss claim. Raw: `tmp/g3s-showcase/mac-overload-check-main.log`.
+Metal checks and iOS-simulator compilation pass.
 [Pause contact](V1-PAUSE-PHASES.png) / [held samples](V1-PAUSE-PHASES.mp4) are scripted, not live cadence.
 
 **GPU replacement:** detached engine resources preserve world/controls, current camera/shadows/exposure and exact

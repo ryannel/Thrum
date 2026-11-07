@@ -180,12 +180,12 @@ fn first_overload_refusal_remains_visible_after_stopped_clock_polls() {
         thread::sleep(Duration::from_millis(5));
     };
     assert!(refused > 0);
-    assert!(
+    assert!(matches!(
         controls
             .check_health()
-            .expect_err("world event exposes overload without a drawable")
-            .contains("fixed-clock overload")
-    );
+            .expect_err("world event exposes overload without a drawable"),
+        WorldLaneFault::Overload(count) if count == refused
+    ));
     thread::sleep(Duration::from_millis(150));
     assert_eq!(
         client
