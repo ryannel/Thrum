@@ -1,5 +1,5 @@
 //! The shipping PCSS consumer against independent finite-disk/plane geometry.
-use super::observer::{constant_depth_maps, device, pipeline, read_visibility};
+use super::observer::{SAMPLE_FLOATS, constant_depth_maps, device, pipeline, read_visibility};
 use wgpu::util::DeviceExt;
 
 const SIDE: u32 = 256;
@@ -26,8 +26,9 @@ const CASCADE_HANDOFF: &str = r"
 @compute @workgroup_size(64)
 fn observe(@builtin(global_invocation_id) id:vec3<u32>) {
     if id.x!=0u { return; }
-    let receiver=ShadowReceiver(vec3(-0.96,0.0,0.25),
-        vec3(1.0,0.0,0.0),vec3(0.0,1.0,0.0),vec3(0.0,0.0,1.0));
+    let slope=light.direction_to_light.x;
+    let receiver=ShadowReceiver(vec3(light.direction_to_light.w,0.0,0.25),
+        vec3(1.0,0.0,slope),vec3(0.0,1.0,0.0),normalize(vec3(-slope,0.0,1.0)));
     result[0]=near_visibility(receiver);
 }
 ";
@@ -153,7 +154,7 @@ fn render_planes(
 }
 
 fn observe(device: &wgpu::Device, queue: &wgpu::Queue, slope: f32, kind: u8) -> Vec<f32> {
-    let mut samples = [0_f32; 68];
+    let mut samples = [0_f32; SAMPLE_FLOATS];
     let identity = glam::Mat4::IDENTITY.to_cols_array();
     samples[..16].copy_from_slice(&identity);
     samples[16..32].copy_from_slice(&identity);
@@ -258,7 +259,7 @@ fn near_and_last_cascades_cover_complementary_blocker_distances() {
     pollster::block_on(async {
         let (device, queue) = device().await;
         let pipeline = pipeline(&device, CASCADE_HANDOFF);
-        let mut samples = [0_f32; 68];
+        let mut samples = [0_f32; SAMPLE_FLOATS];
         samples[..16].copy_from_slice(&glam::Mat4::IDENTITY.to_cols_array());
         let far = glam::Mat4::from_scale(glam::Vec3::splat(0.5));
         samples[16..32].copy_from_slice(&far.to_cols_array());
@@ -281,7 +282,57 @@ fn near_and_last_cascades_cover_complementary_blocker_distances() {
                 &pipeline,
                 &samples,
                 &maps.create_view(&wgpu::TextureViewDescriptor::default()),
-                [0.0, 0.0, 1.0, 0.0],
+                [0.0, 0.0, 1.0, -0.96],
+                1,
+            );
+            assert!(
+                (result[0] - expected).abs() <= 1e-6,
+                "near and last depths {depths:?}: GPU {}, expected {expected}",
+                result[0]
+            );
+        }
+    });
+}
+
+#[test]
+fn near_clip_plane_hands_excluded_blockers_to_the_last_cascade() {
+    pollster::block_on(async {
+        let (device, queue) = device().await;
+        let pipeline = pipeline(&device, CASCADE_HANDOFF);
+        let mut samples = [0_f32; SAMPLE_FLOATS];
+        samples[..16].copy_from_slice(&glam::Mat4::IDENTITY.to_cols_array());
+        let far = glam::Mat4::from_scale(glam::Vec3::splat(0.5));
+        samples[16..32].copy_from_slice(&far.to_cols_array());
+        samples[36..38].fill(0.000_03);
+        samples[40..44].copy_from_slice(&[SCALE, SCALE, 0.000_001, 0.000_001]);
+        samples[46..48].copy_from_slice(&[1.0, 0.5]);
+        samples[68] = 1.0;
+        samples[69] = 0.5;
+        // The receiver is at the centre, so the spatial support fits. In
+        // light depth, the near map owns gaps up to 0.75, or 0.375 in the
+        // last map's units. A far depth of 0.65 is upstream of that boundary.
+        for (depths, slope, height, expected) in [
+            ([0.3, 0.65], 0.0, 0.0, 0.0),
+            ([0.0, 0.65], 0.0, 0.0, 0.0),
+            ([0.0, 0.4], 0.0, 0.0, 1.0),
+            ([0.0, 0.0], 0.0, 0.0, 1.0),
+            ([0.0, 0.500_01], 0.75, 0.0, 0.0),
+            ([0.0, 0.500_01], -0.75, 0.0, 0.0),
+            ([0.0, 0.499_99], 0.75, 0.0, 1.0),
+            ([0.0, 0.499_99], -0.75, 0.0, 1.0),
+            // Standalone upload can move a caster beyond the prepared height.
+            ([0.0, 0.65], 0.0, 0.1, 0.0),
+        ] {
+            samples[44] = height;
+            samples[45] = if height > 0.0 { 0.5 } else { 0.0 };
+            let maps = constant_depth_maps(&device, &queue, SIDE, &depths);
+            let result = read_visibility(
+                &device,
+                &queue,
+                &pipeline,
+                &samples,
+                &maps.create_view(&wgpu::TextureViewDescriptor::default()),
+                [slope, 0.0, 1.0, 0.0],
                 1,
             );
             assert!(

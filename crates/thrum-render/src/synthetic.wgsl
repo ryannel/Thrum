@@ -47,6 +47,8 @@ struct ShadowCascades {
     height_view_proj: mat4x4<f32>,
     // Depth = x*height + y; uv per metre; texel metres. Zero x disables it.
     horizon: vec4<f32>,
+    // Excluded upstream range in near units; the near clip plane in far depth.
+    near_partition: vec4<f32>,
 }
 @group(0) @binding(2) var<uniform> shadows: ShadowCascades;
 @group(0) @binding(3) var shadow_maps: texture_depth_2d_array;
@@ -261,39 +263,50 @@ fn surface_tolerance(index:u32,gradient:vec2<f32>,delta:vec2<f32>) -> f32 {
 }
 
 fn cascade_visibility(index: u32, receiver: ShadowReceiver) -> f32 {
-    return cascade_window(index,receiver,vec2(0.0,2.0));
+    return cascade_window(index,receiver,vec3(0.0,2.0,2.0));
 }
 
 // The near map is fitted to its receivers only. A blocker whose finite-Sun
 // support leaves that map is evaluated in the padded last cascade instead.
-// Returns the largest blocker gap, in near-cascade depth units, whose search
-// and filter disk stay inside the near map at this receiver.
-fn near_gap_limit(receiver: ShadowReceiver) -> f32 {
+// Returns the spatial gap limit in near-map units and the absolute clip
+// plane in last-map units. Two means that boundary needs no fallback.
+fn near_gap_limit(receiver: ShadowReceiver) -> vec2<f32> {
     let clip = shadows.light_view_proj[0]*vec4(receiver.position,1.0);
     let p = clip.xyz/clip.w;
     let uv = vec2(p.x*0.5+0.5,0.5-p.y*0.5);
     let edge = min(min(uv.x,uv.y),min(1.0-uv.x,1.0-uv.y))-2.0/f32(textureDimensions(shadow_maps).x);
-    var search_gap = max(0.0,1.0-p.z);
+    let clip_gap = max(0.0,1.0-p.z);
+    let excluded = shadows.near_partition.x;
+    var search_gap = clip_gap+excluded;
     if shadows.height_support.y>1e-6 {
         let world_gap=max(0.0,shadows.height_support.x-receiver.position.y)/shadows.height_support.y;
         search_gap=min(search_gap,world_gap*shadows.height_support.z);
     }
-    if search_gap*shadows.penumbra.x<=edge { return 2.0; }
-    return max(edge,0.0)/max(shadows.penumbra.x,1e-20);
+    let support = edge/max(shadows.penumbra.x,1e-20);
+    let spatial_limit = select(max(support,0.0),2.0,search_gap<=support);
+    // The height estimate can be stale after a standalone instance upload.
+    // It sizes the search but cannot revoke the last map's clip ownership.
+    let far_clip = select(2.0,shadows.near_partition.y,excluded>0.0);
+    return vec2(spatial_limit,far_clip);
 }
 
 fn near_visibility(receiver: ShadowReceiver) -> f32 {
-    let limit = near_gap_limit(receiver);
-    let near = cascade_window(0u,receiver,vec2(0.0,limit));
-    if limit>=2.0 { return near; }
+    let limits = near_gap_limit(receiver);
+    let near = cascade_window(0u,receiver,vec3(0.0,limits.x,2.0));
+    if (limits.x>=2.0 && limits.y>=2.0) || near<=0.0 { return near; }
     // Depth units scale inversely with each cascade's depth span.
-    let far_floor = limit*shadows.height_support.w/max(shadows.height_support.z,1e-20);
-    return min(near,cascade_window(1u,receiver,vec2(far_floor,2.0)));
+    let far_floor = select(limits.x*shadows.height_support.w/max(shadows.height_support.z,1e-20),
+        2.0,limits.x>=2.0);
+    return min(near,cascade_window(1u,receiver,vec3(far_floor,2.0,limits.y)));
 }
 
-// Only blockers whose depth gap above the receiver plane lies inside window
-// (lo, hi] occlude in this cascade.
-fn cascade_window(index: u32, receiver: ShadowReceiver, window: vec2<f32>) -> f32 {
+// XY support bounds the tap's receiver-relative gap. The depth partition
+// instead compares to the rasterizer's absolute clip plane.
+fn blocker_in_window(depth: f32, gap: f32, window: vec3<f32>) -> bool {
+    return gap<=window.y && (gap>window.x || depth>window.z);
+}
+
+fn cascade_window(index: u32, receiver: ShadowReceiver, window: vec3<f32>) -> f32 {
     let matrix = shadows.light_view_proj[index];
     let clip = matrix*vec4(receiver.position,1.0);
     let p = clip.xyz/clip.w;
@@ -343,7 +356,7 @@ fn cascade_window(index: u32, receiver: ShadowReceiver, window: vec2<f32>) -> f3
         let epsilon=select(shadows.penumbra.w,shadows.penumbra.z,index==0u)+4e-7;
         let same_plane=depth-plane_depth<=epsilon+surface_tolerance(index,depth_gradient,tap-uv);
         let gap=depth-plane_depth;
-        if depth>p.z+epsilon && depth>receiver_depth && !same_plane && gap>window.x && gap<=window.y {
+        if depth>p.z+epsilon && depth>receiver_depth && !same_plane && blocker_in_window(depth,gap,window) {
             nearest_gap=min(nearest_gap,max(0.0,depth-p.z));
             blockers+=1.0;
         }
@@ -372,7 +385,7 @@ fn cascade_window(index: u32, receiver: ShadowReceiver, window: vec2<f32>) -> f3
 // Receiver-plane reconstruction follows each physical disk sample. The
 // cascade bounds its extrapolation by the nearest blocker separation.
 fn shadow_filter(index:u32,uv:vec2<f32>,receiver_depth:f32,reference:f32,
-    gradient:vec2<f32>,extent:vec2<f32>,origin:vec2<f32>,window:vec2<f32>) -> f32 {
+    gradient:vec2<f32>,extent:vec2<f32>,origin:vec2<f32>,window:vec3<f32>) -> f32 {
     if any(uv<vec2(0.0)) || any(uv>vec2(1.0)) { return 1.0; }
     let pixel = uv*extent-0.5;
     let first = floor(pixel);
@@ -388,7 +401,7 @@ fn shadow_filter(index:u32,uv:vec2<f32>,receiver_depth:f32,reference:f32,
         let plane_depth=receiver_depth+dot(gradient,tap-origin);
         let epsilon=select(shadows.penumbra.w,shadows.penumbra.z,index==0u)+4e-7;
         let same_plane=depth-plane_depth<=epsilon+surface_tolerance(index,gradient,tap-origin);
-        let outside=depth-plane_depth<=window.x || depth-plane_depth>window.y;
+        let outside=!blocker_in_window(depth,depth-plane_depth,window);
         visible += weight.x*weight.y*select(0.0,1.0,tap_depth>=depth || same_plane || outside || depth<=receiver_depth+epsilon);
     }
     return visible;

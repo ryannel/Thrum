@@ -2,6 +2,8 @@
 use std::{sync::mpsc, time::Duration};
 use wgpu::util::DeviceExt;
 
+pub(super) const SAMPLE_FLOATS: usize = super::super::SAMPLE_BYTES / 4;
+
 pub(super) async fn device() -> (wgpu::Device, wgpu::Queue) {
     let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
     let adapter = instance
@@ -94,7 +96,7 @@ pub(super) fn read_visibility(
     device: &wgpu::Device,
     queue: &wgpu::Queue,
     pipeline: &wgpu::ComputePipeline,
-    samples: &[f32; 68],
+    samples: &[f32; SAMPLE_FLOATS],
     maps: &wgpu::TextureView,
     direction: [f32; 4],
     count: u32,

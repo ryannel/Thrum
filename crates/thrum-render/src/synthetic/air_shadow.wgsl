@@ -11,6 +11,7 @@ struct ShadowCascades {
     height_support: vec4<f32>,
     height_view_proj: mat4x4<f32>,
     horizon: vec4<f32>,
+    near_partition: vec4<f32>,
 }
 struct DirectionalSource {
     direction_to_light: vec4<f32>,
