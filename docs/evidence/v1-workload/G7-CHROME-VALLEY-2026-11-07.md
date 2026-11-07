@@ -186,8 +186,7 @@ check runs: M1's 161058, 161243, 161350 and 161940; M2's 163503, 163650 and 1646
 and 164948. Build time covers only the six that built.
 - Cook: 0.06–0.60 s with warm binaries.
 - Native capture launch to its first capture file: 0.11–2.73 s, offscreen, including one readback.
-- Chrome navigation to cooked content drawn: not measured. The checker logs no timestamps, so this proxy is still
-  owed.
+- Chrome navigation to the first observed cooked draw: see M3 below.
 - Build time (warm, incremental): 1.2–8.1 s.
 - Scripted capture cost: the native capture run took 1.5–6.1 s. The route case took 7.1–11.8 s for six fresh pages,
   over the six M2 runs. The valley and diagnostic checker cases took 15–31 s each. This is harness time, not frame
@@ -195,6 +194,96 @@ and 164948. Build time covers only the six that built.
 
 **Still open for G7.**
 - The on-screen walk of the route on the Mac waits on screen control.
-- The Chrome cold-start proxy needs timestamps in the checker's timeline.
-- A whole check run from a deliberately edited source has not been shown; only the retinted frame has.
 - Renderer findings from the review are listed in the design's "Still owed for final G7".
+- Both stay with root. The Chrome startup proxy and the edited-source run are M3, below.
+
+### M3: Chrome startup proxy and a route run from edited source
+
+Root commissioned these two screen-independent proofs. Every run below is on commit f38166f0, which is main
+6459379d plus the M3 commits; a later main commit, 00d34bfb, changed only documentation. The tree was clean in each
+run. The canonical control check built the binaries, and the other runs used them with `--no-build`:
+- release `v1-game` `5c0b7953…`;
+- `thrum-cook` `e2fbdcfd…`;
+- default-page Wasm `9405ae36…`.
+
+The game binary and Wasm differ from M2's because main changed simulation code. The M3 Max GPU was shared with other
+agents throughout, so the timings are contended. All runs are in `tmp/g7-showcase/runs/`, and the checker seam tests
+are in `tmp/g7-showcase/m3/seam-final/`.
+
+**Canonical control.** check-174420 passes on the checked-in valley and baseline:
+- root `59f0484f…` and the fixed thresholds;
+- all 12 frames within 0.005 of the baseline;
+- every stop frame on both targets byte-identical to M2's check-165459.
+
+**Chrome startup proxy.** `startup --runs 5` (startup-175135) ran the checker's route case five times.
+- **Launch:** each launch is a fresh headless Chrome process and profile on hardware WebGPU (Metal). The game is
+  already built, and the cook server serves generation 1 before navigation.
+- **Cache:** the HTTP cache is disabled for each page. Every page transferred the full 2,056,659-byte Wasm.
+- **Pages:** each launch opens the six stops in turn. The first page is the cold one; the other five share the
+  browser and GPU process and are warm.
+- **Clock and interval:** each page is timed on its own clock, `performance.now()` from navigation start. The first
+  cooked draw lies between the last observation that proves no draw and the first that sees one. A proof of no draw
+  is either the page's exact pre-loop label (`Starting WebGPU…`, `Fetching the cooked valley…`) or a present
+  `cooked_status()` with no generation drawn. An observation that proves neither leaves the lower bound absent, and
+  navigation start is then the only bound.
+
+Lower–upper bound in ms, raw:
+
+| Page (order) | Launch 1 | Launch 2 | Launch 3 | Launch 4 | Launch 5 |
+|---|---|---|---|---|---|
+| 1 night-upslope (cold) | 157–169 | 117–162 | 112–152 | 137–173 | 127–175 |
+| 2 noon | 116–124 | 106–122 | 113–128 | 63–123 | 104–114 |
+| 3 sunrise | 63–130 | 70–169 | 36–164 | 112–122 | 78–131 |
+| 4 sunset-clear-sun | 116–129 | 112–138 | 114–130 | 63–118 | 114–125 |
+| 5 sunset-sun | 108–120 | 126–134 | 76–124 | 84–124 | 65–122 |
+| 6 twilight | 107–120 | 62–108 | 126–140 | 100–116 | 55–113 |
+
+- Cold upper bound: 152–175 ms, median 169 (n 5). Warm: 108–169 ms, median 124 (n 25).
+- Granularity (upper minus lower): 8–128 ms, median 31. Every page had an observed lower bound.
+  - The gap is widest at the third page (sunrise) and wherever the page's main thread was busy attaching the valley.
+    Each observation goes through CDP and waits for that thread.
+  - The checker's seam tests show both bound shapes. A normal run's six pages had gaps of 15–61 ms. A test run with
+    the first observation delayed by 3 s recorded all six lower bounds as absent, with no granularity.
+  - Earlier during review, one undelayed page was first seen already at Running and was recorded as absent.
+- Where the time went (medians over the 30 pages):
+  - navigation response at 2 ms;
+  - Wasm loaded by 21 ms;
+  - `Fetching the cooked valley…` first seen at 66 ms;
+  - the cooked products fetched from 65 to 78 ms;
+  - `Running…` first seen at 116 ms.
+
+  The cooked server is cross-origin and sends no Timing-Allow-Origin, so its transfer sizes are hidden. The page
+  reports 1,882,112 bytes uploaded.
+- **Same artifacts:** every page loaded this build's Wasm and the repository's preset bytes, and all five launches
+  cooked root `59f0484f…`.
+- **Kept apart, not counted:**
+  - build: 22.3 s, in check-174420, after main's simulation change;
+  - cook: 0.4 s in that check;
+  - each launch's checker run, with its own cook and six pages: 6.7–7.6 s.
+- **Scope:** a headless CDP polling proxy for navigation to the first observed cooked draw, from one contended
+  session. It is not physical first-paint latency.
+
+**Edited source.** `tmp/g7-showcase/m3/retint.py` copies the valley and scales the ground albedo `ground.png` by
+(1.0, 0.55, 0.45), turning the ground red-brown (`ff297966…` to `e732b3ff…`). Nothing else changes. The checked-in
+scene, assets and baseline are the control and were not touched.
+
+![Per stop, left to right: canonical native, edited native, edited Chrome, canonical Chrome](g7-showcase/route-edited-source.png)
+
+| Check | Result |
+|---|---|
+| New source identity | `check --source tmp/g7-showcase/m3/edited-source` cooks generation-1 root `49041ec0…`, found in the native store and both checker stores. |
+| Fixed thresholds refused | Without `--recalibrate`, check-175035 fails: the thresholds were calibrated on `59f0484f`, not `49041ec0`. |
+| Recalibrated parity | With `--recalibrate`, check-174724 passes. Chrome differs from native by at most 0.033 (median), 0.175 (95th percentile) and 0.281 (maximum). The rule gives the 1.0 floor again. Both controls pass: the diagnostic scene differs by 7.3–27 (median), 28–71 (95th percentile) and 85–132 (maximum) at the five stops with one, and the positive control's maximum cell reads 34.4. |
+| Canonical baseline refused | The checked-in baseline reports `other identity ['source_root']` and is not compared. |
+| Changed region, both targets | As information only, the edited frames differ from the canonical baseline at each stop by up to 4.9–20.7 (median), 23–32 (95th percentile) and 25–35 (maximum). At night the median is 0.004 and the 95th percentile 9.2, because the ground is dark. Native and Chrome agree on these numbers to within 0.12. In the sheet the ground is red on both edited columns, and the sky, sphere and rock match the canonical frames. |
+| Scratch replacement | check-174832 saved `tmp/g7-showcase/m3/edited-baseline.json` after a passing run, with its frames reviewed in the sheet. The rerun, check-174940, compares against it: all 12 frames within 0.005. |
+| Canonical save refused | `--recalibrate --save-baseline` aimed at the checked-in baseline refuses before any work. |
+
+**Checker seam.** Root reviewed the route-specific startup observation in five rounds and approved 10ea0392
+(`tmp/g7-boundary/m3-checker-startup-v5.diff`); the rebase did not change it. On f38166f0:
+- the `route`, `params`, `controls` and delayed-observer runs passed;
+- G3c's `field-oracle` was 16/16 byte-equal.
+
+`route` and `field-oracle` first failed after every page and view had passed: Chrome exited with code 2 during the
+checker's shared cleanup, with display-link errors in its log. Both passed on rerun. The failed runs are kept beside
+the passing ones.
