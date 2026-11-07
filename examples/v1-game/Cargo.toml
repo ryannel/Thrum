@@ -38,6 +38,8 @@ wasm-bindgen-futures = "=0.4.79"
 web-sys = { version = "=0.3.106", features = ["HtmlCanvasElement", "console"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+serde = { version = "=1.0.229", features = ["derive"] }
+serde_json = "=1.0.154"
 thrum-asset-gpu = { path = "../../crates/thrum-asset-gpu" }
 thrum-content-runtime = { path = "../../crates/thrum-content-runtime" }
 

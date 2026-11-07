@@ -54,7 +54,7 @@ fn game_atmosphere_capture_has_visible_finite_pixels() {
         let pixels = host.capture_pixels().expect("game atmosphere pixels");
         assert_eq!(pixels.len(), 640 * 360 * 4);
         let (rgba, remainder) = pixels.as_chunks::<4>();
-        assert_eq!(remainder, []);
+        assert_eq!(remainder, [0_u8; 0]);
         assert!(rgba.iter().all(|pixel| pixel[3] == 255));
         assert!(rgba.iter().any(|pixel| pixel[..3] != [0; 3]));
         if let Some(path) = std::env::var_os("THRUM_V1_CAPTURE_PPM") {

@@ -4,16 +4,24 @@
 
 #[cfg(target_arch = "wasm32")]
 mod browser;
+mod camera;
+#[cfg(not(target_arch = "wasm32"))]
+mod content;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod cooked;
 mod environment;
 mod host;
 mod projection;
 mod scene;
+#[cfg(not(target_arch = "wasm32"))]
+mod showcase;
 pub mod simulation;
 
 #[cfg(target_arch = "wasm32")]
 pub use browser::{BrowserGame, create_browser_game};
+pub use camera::SceneCamera;
+#[cfg(not(target_arch = "wasm32"))]
+pub use content::attach_cooked_scene;
 pub use host::{
     AdvancedFrame, DriveReport, EncodedFrame, FrameConfig, FrameHost, FrameSample, SurfaceOutput,
 };

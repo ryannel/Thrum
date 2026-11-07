@@ -1,6 +1,6 @@
 //! V1 fixture, camera and lighting policy for the engine frame runtime.
 
-use crate::{environment::DayCycle, scene, simulation::PublishedPage};
+use crate::{camera::SceneCamera, environment::DayCycle, scene, simulation::PublishedPage};
 #[cfg(not(target_arch = "wasm32"))]
 use thrum_content_runtime::EnvironmentProduct;
 #[cfg(not(target_arch = "wasm32"))]
@@ -13,16 +13,21 @@ use thrum_render::{
     synthetic::{FrameLighting, SdrToneMap, SyntheticPointLight, SyntheticScene, SyntheticView},
 };
 
-fn atmosphere_lighting(tick: u64, alpha: f32, phase_offset: f32) -> FrameLighting {
+fn atmosphere_lighting(
+    tick: u64,
+    alpha: f32,
+    phase_offset: f32,
+    camera_altitude_m: f32,
+) -> FrameLighting {
     let sun = DayCycle::sample(tick, alpha, phase_offset);
     let frame = AtmosphereFrame::new(
         sun.toward_sun,
         sun.top_illuminance_lux,
         sun.colour,
-        sun.camera_altitude_m,
+        camera_altitude_m,
         sun.profile_epoch,
     )
-    .expect("fixed game day cycle produces a valid atmosphere frame");
+    .expect("checked game camera and day cycle produce a valid atmosphere frame");
     FrameLighting::Atmosphere(frame)
 }
 
@@ -52,7 +57,13 @@ fn frame_view(
     extent: [u32; 2],
     camera_pitch: f32,
     camera_yaw: f32,
+    camera: Option<SceneCamera>,
 ) -> Result<SyntheticView, String> {
+    if let Some(camera) = camera {
+        return camera
+            .view(extent, camera_pitch, camera_yaw)
+            .map(|view| view.with_sdr_tone_map(SdrToneMap::NeutralHighlights));
+    }
     let phase = frame_phase(tick, alpha);
     SyntheticView::perspective(
         [phase.sin() * 0.08, (phase.cos() - 1.0) * 0.04, 2.0],
@@ -76,6 +87,7 @@ pub(super) struct GameScene {
     pub(super) day_phase_offset: f32,
     pub(super) camera_pitch: f32,
     pub(super) camera_yaw: f32,
+    camera: Option<SceneCamera>,
 }
 impl GameScene {
     pub(super) fn new() -> Self {
@@ -83,6 +95,7 @@ impl GameScene {
             day_phase_offset: 0.0,
             camera_pitch: 0.0,
             camera_yaw: 0.0,
+            camera: None,
         }
     }
     pub(super) fn scene(extent: [u32; 2]) -> Result<SyntheticScene, String> {
@@ -120,7 +133,7 @@ impl GameScene {
         let reflection = &mut scene.instances[scene::REFLECTION_SUBJECT_SLOT];
         reflection.current[3][..3].copy_from_slice(&scene::REFLECTION_SUBJECT_POSITION);
         reflection.previous[3][..3].copy_from_slice(&scene::REFLECTION_SUBJECT_POSITION);
-        scene.view = frame_view(0, 0.0, extent, 0.0, 0.0)?;
+        scene.view = frame_view(0, 0.0, extent, 0.0, 0.0, None)?;
         scene.sun_shadows = true;
         scene.local_lights = [
             ([-0.9, -0.9, 1.0], [5.0, 0.8, 0.4]),
@@ -138,6 +151,23 @@ impl GameScene {
     }
 }
 
+impl super::FrameHost {
+    /// Current presentation camera pitch and yaw, in radians.
+    #[must_use]
+    pub fn camera_orientation(&self) -> [f32; 2] {
+        let source = self.inner.source();
+        [source.camera_pitch, source.camera_yaw]
+    }
+
+    /// Select a checked authored camera and reset presentation history.
+    pub fn set_scene_camera(&mut self, camera: SceneCamera) {
+        let source = self.inner.source_mut();
+        [source.camera_pitch, source.camera_yaw] = camera.orientation();
+        source.camera = Some(camera);
+        self.inner.invalidate_history();
+    }
+}
+
 impl SceneSource<PublishedPage> for GameScene {
     fn extract(&self, into: &mut RenderExtractor, page: &PublishedPage) -> ExtractReport {
         scene::extract(into, page)
@@ -149,15 +179,21 @@ impl SceneSource<PublishedPage> for GameScene {
         extent: [u32; 2],
         lighting: Option<FrameLighting>,
     ) -> Result<SceneFrame, String> {
-        let lighting = lighting
-            .unwrap_or_else(|| atmosphere_lighting(source.tick, alpha, self.day_phase_offset));
         let view = frame_view(
             source.tick,
             alpha,
             extent,
             self.camera_pitch,
             self.camera_yaw,
+            self.camera,
         )?;
+        // The diagnostic fixture's local Y zero is a two-metre reference datum.
+        // Authored scene coordinates already measure altitude above sea level.
+        let camera_altitude_m =
+            view.camera_position()[1] + if self.camera.is_some() { 0.0 } else { 2.0 };
+        let lighting = lighting.unwrap_or_else(|| {
+            atmosphere_lighting(source.tick, alpha, self.day_phase_offset, camera_altitude_m)
+        });
         let view = match lighting {
             FrameLighting::Atmosphere(_) => view.with_incident_exposure(0.0, 0.0, 18.0),
             FrameLighting::Diagnostic(_) | FrameLighting::Photometric(_) => {
@@ -171,8 +207,98 @@ impl SceneSource<PublishedPage> for GameScene {
 
 #[cfg(test)]
 mod tests {
-    use super::{GameScene, RenderExtractor, SceneSource, scene};
+    use super::{GameScene, RenderExtractor, SceneSource, SourceTick, frame_view, scene};
+    use crate::{camera::SceneCamera, environment::DayCycle};
     use thrum_core::StableId;
+    use thrum_render::synthetic::{FrameLighting, SdrToneMap, SyntheticView};
+
+    #[test]
+    fn diagnostic_camera_keeps_its_original_pose_and_bob() {
+        let extent = [640, 360];
+        let actual = frame_view(0, 0.0, extent, 0.0, 0.0, None).unwrap();
+        let expected = SyntheticView::perspective(
+            [0.0, 0.0, 2.0],
+            [0.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0],
+            65.0_f32.to_radians(),
+            640.0 / 360.0,
+            0.1,
+            20.0,
+        )
+        .unwrap()
+        .with_sdr_tone_map(SdrToneMap::NeutralHighlights);
+        assert_eq!(actual, expected);
+        let bobbed = frame_view(91, 1.0, extent, 0.0, 0.0, None).unwrap();
+        assert_ne!(actual.camera_position(), bobbed.camera_position());
+        assert!((1.92..=2.0).contains(&(2.0 + bobbed.camera_position()[1])));
+    }
+
+    #[test]
+    fn authored_camera_is_fixed_across_ticks_and_preserves_the_world_sun() {
+        // The supported atmosphere ceiling exercises the same view's altitude:
+        // applying the legacy two-metre datum would exceed the profile bounds.
+        let camera = SceneCamera::perspective(
+            [0.0, 100_000.0, 16.0],
+            [0.0, 100_000.0, -60.0],
+            46.0_f32.to_radians(),
+            0.1,
+            30_000.0,
+        )
+        .unwrap();
+        let [camera_pitch, camera_yaw] = camera.orientation();
+        let policy = GameScene {
+            day_phase_offset: 0.1,
+            camera_pitch,
+            camera_yaw,
+            camera: Some(camera),
+        };
+        let first = policy
+            .frame(
+                SourceTick {
+                    epoch: 1,
+                    tick: 1,
+                    timeline: 0,
+                },
+                0.5,
+                [640, 360],
+                None,
+            )
+            .unwrap();
+        for (tick, extent) in [(91, [640, 360]), (181, [360, 640])] {
+            let frame = policy
+                .frame(
+                    SourceTick {
+                        epoch: 1,
+                        tick,
+                        timeline: 0,
+                    },
+                    0.5,
+                    extent,
+                    None,
+                )
+                .unwrap();
+            assert_eq!(first.view.camera_position(), frame.view.camera_position());
+            let FrameLighting::Atmosphere(atmosphere) = frame.lighting else {
+                panic!("authored camera retains atmosphere lighting");
+            };
+            let expected = DayCycle::sample(tick, 0.5, 0.1).toward_sun;
+            assert!(
+                atmosphere
+                    .toward_sun()
+                    .into_iter()
+                    .zip(expected)
+                    .all(|(a, b)| (a - b).abs() < 1e-6)
+            );
+            if extent == [640, 360] {
+                assert_eq!(first.view, frame.view);
+            } else {
+                assert_ne!(
+                    first.view.view_proj_columns(),
+                    frame.view.view_proj_columns()
+                );
+            }
+        }
+    }
 
     #[test]
     fn reflection_subject_keeps_authoritative_material_and_static_history() {

@@ -330,11 +330,11 @@ fn measure(
     assert_eq!(adapter_info.backend, wgpu::Backend::Metal);
     report_metal_adapter(&adapter_info);
     let (device, queue) = pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor {
-        required_features: if gpu_timestamps {
+        required_features: (if gpu_timestamps {
             DeviceCapabilities::requested_timing_features(&adapter)
         } else {
             wgpu::Features::empty()
-        },
+        }) | DeviceCapabilities::requested_content_features(&adapter),
         ..Default::default()
     }))
     .expect("device request succeeds");
@@ -362,7 +362,7 @@ fn measure(
         format: wgpu::TextureFormat::Bgra8Unorm,
         extent,
     });
-    let host = pollster::block_on(FrameHost::new_with_capabilities(
+    let mut host = pollster::block_on(FrameHost::new_with_capabilities(
         &device,
         &queue,
         &capabilities,
@@ -372,6 +372,7 @@ fn measure(
         },
     ))
     .expect("the prepared V1 workload must fit the adapter");
+    prepare_content(&mut host);
     let origin = Instant::now();
     let (mut host, mut threaded_host) = if mode == FrameMode::Threaded {
         let (threaded_host, controls) = host
@@ -514,6 +515,32 @@ fn measure(
         "baseline needs frames from at least half its callbacks: {} of {callbacks}",
         samples.len()
     );
+}
+
+fn prepare_content(host: &mut FrameHost) {
+    let Some(stats) = v1_game::attach_cooked_scene(host).expect("selected game content") else {
+        return;
+    };
+    let deadline = Instant::now() + Duration::from_secs(30);
+    loop {
+        {
+            let stats = stats.lock().expect("content observations");
+            assert!(
+                stats.errors.is_empty(),
+                "content errors: {:?}",
+                stats.errors
+            );
+            if stats.drawn.is_some() {
+                break;
+            }
+        }
+        assert!(
+            Instant::now() < deadline,
+            "benchmark content did not become resident"
+        );
+        drop(host.capture_pixels().expect("cold content upload"));
+        std::thread::sleep(Duration::from_millis(2));
+    }
 }
 
 #[expect(

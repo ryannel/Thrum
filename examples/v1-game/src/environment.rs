@@ -12,7 +12,6 @@ pub(crate) struct SunSample {
     pub toward_sun: [f32; 3],
     pub top_illuminance_lux: f32,
     pub colour: [f32; 3],
-    pub camera_altitude_m: f32,
     pub profile_epoch: u64,
 }
 
@@ -70,7 +69,6 @@ impl DayCycle {
             // and apparent disk radiance from this one emitter.
             top_illuminance_lux: 127_000.0,
             colour: [1.0; 3],
-            camera_altitude_m: 2.0,
             profile_epoch: 1,
         }
     }

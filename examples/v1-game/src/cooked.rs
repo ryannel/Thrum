@@ -8,7 +8,7 @@
 use std::path::PathBuf;
 use std::time::Duration;
 
-use thrum_asset_gpu::{CookedAssets, CookedConfig, CookedMaterial, MeshPlacement, VolumePlacement};
+use thrum_asset_gpu::{CookedConfig, CookedMaterial, MeshPlacement, VolumePlacement};
 
 /// Column-major uniform-scale transform, rotated about +X by `tilt` radians.
 fn placement(scale: f32, tilt: f32, at: [f32; 3]) -> [[f32; 4]; 4] {
@@ -48,11 +48,4 @@ pub fn cooked_config(store: PathBuf) -> CookedConfig {
         poll_interval: Duration::from_millis(2),
         texture_preference: None,
     }
-}
-
-/// Cooked products from `THRUM_ASSET_STORE`, when it is set.
-#[must_use]
-pub fn cooked_assets_from_env() -> Option<CookedAssets> {
-    std::env::var_os("THRUM_ASSET_STORE")
-        .map(|store| CookedAssets::new(cooked_config(store.into())))
 }
