@@ -605,7 +605,8 @@ def main():
                                            help='write the baseline after a passing run (a reviewed, recorded act); '
                                                 'drift from the old baseline alone does not block it')
     commands.choices['check'].add_argument('--baseline', default=str(BASELINE),
-                                           help='baseline file to compare with or save (default: the checked-in one)')
+                                           help='baseline file to compare with or save, relative to the current directory '
+                                                '(default: the checked-in one)')
     commands.choices['chrome'].add_argument('--no-open', action='store_true', help='print the URL instead of opening Chrome')
     args = parser.parse_args()
     # A terminated launcher stops its watcher, servers and game the same way Ctrl-C does.
