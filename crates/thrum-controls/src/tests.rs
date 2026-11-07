@@ -44,6 +44,15 @@ fn declarations_refuse_bad_keys_labels_ranges_and_duplicates() {
         controls.slider("a.c", "A", 0.0..=1.0).default(2.0).add(),
         Err(ControlError::InvalidRange(_))
     ));
+    for scale in [0.0, -1.0, f64::NAN] {
+        assert!(matches!(
+            controls
+                .slider("a.d", "A", 0.0..=1.0)
+                .display(Display::scaled(scale, 1, ""))
+                .add(),
+            Err(ControlError::InvalidRange(_))
+        ));
+    }
     assert_eq!(
         controls.specs().len(),
         4,
@@ -69,14 +78,55 @@ fn code_edits_refuse_invalid_values_without_changing_state() {
 #[test]
 fn people_edits_snap_clamp_and_count() {
     let (mut controls, time, ..) = demo();
-    assert!(controls.edit_display(time.id(), 18.5));
+    assert!(controls.edit_display(time.id(), 18.5).unwrap());
     assert!((controls.get(time) - 18.5 / 24.0).abs() < 1e-5);
     assert_eq!(controls.clamped_edits(), 0);
-    controls.edit_display(time.id(), 30.0);
+    controls.edit_display(time.id(), 30.0).unwrap();
     assert!((controls.get(time) - 1.0).abs() < 1e-6);
-    controls.edit_display(time.id(), f64::NAN);
+    controls.edit_display(time.id(), f64::NAN).unwrap();
     assert_eq!(controls.get(time), 0.0);
     assert_eq!(controls.clamped_edits(), 2);
+}
+
+#[test]
+fn people_edits_of_the_wrong_kind_are_explained() {
+    let (mut controls, time, paused, title, sun) = demo();
+    let before = controls.revision();
+    let message = |result: Result<bool, ControlError>| result.unwrap_err().to_string();
+    assert!(message(controls.edit_value(time.id(), Value::Flag(true))).contains("is a slider"));
+    assert!(message(controls.edit_display(paused.id(), 1.0)).contains("is a toggle"));
+    assert!(message(controls.edit_value(sun.id(), Value::Text("x".into()))).contains("readout"));
+    assert!(
+        message(controls.edit_value(title.id(), Value::Text("a\nb".into()))).contains("one line")
+    );
+    assert_eq!(controls.revision(), before, "refused edits change nothing");
+}
+
+#[test]
+fn people_edits_with_another_models_id_are_refused() {
+    let (mut small, ..) = demo();
+    let mut larger = Controls::new();
+    let mut last = None;
+    for index in 0..6 {
+        last = Some(
+            larger
+                .toggle(&format!("extra.flag{index}"), "Flag", false)
+                .unwrap(),
+        );
+    }
+    let foreign = last.unwrap().id();
+    let before = small.revision();
+    for result in [
+        small.edit_display(foreign, 1.0),
+        small.edit_value(foreign, Value::Flag(true)),
+    ] {
+        let message = result.unwrap_err().to_string();
+        assert!(
+            message.contains("control ID 5 is not declared"),
+            "{message}"
+        );
+    }
+    assert_eq!(small.revision(), before, "refused edits change nothing");
 }
 
 #[test]
@@ -91,7 +141,7 @@ fn consumers_see_only_controls_changed_since_their_revision() {
     );
     let seen = controls.revision();
     controls.set_text(title, "Dusk").unwrap();
-    controls.edit_display(time.id(), 6.0);
+    controls.edit_display(time.id(), 6.0).unwrap();
     assert_eq!(
         controls.changed_since(seen).collect::<Vec<_>>(),
         [time.id(), title.id()]
@@ -198,7 +248,10 @@ fn views_group_controls_by_first_declared_prefix() {
 fn a_repeated_person_edit_is_still_reported() {
     let (mut controls, time, ..) = demo();
     let seen = controls.revision();
-    assert!(!controls.edit_display(time.id(), 12.0), "already 12:00");
+    assert!(
+        !controls.edit_display(time.id(), 12.0).unwrap(),
+        "already 12:00"
+    );
     assert_eq!(
         controls.changed_since(seen).collect::<Vec<_>>(),
         [time.id()]

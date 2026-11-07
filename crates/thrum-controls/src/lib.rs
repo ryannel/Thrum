@@ -180,6 +180,8 @@ pub enum ControlError {
     },
     /// A parameter file is not a JSON object of keys to values.
     InvalidFile(String),
+    /// An edit named a control ID this model never declared (for example one from another model).
+    UnknownId(usize),
 }
 
 impl fmt::Display for ControlError {
@@ -202,7 +204,7 @@ impl fmt::Display for ControlError {
             ),
             Self::InvalidRange(key) => write!(
                 f,
-                "slider {key:?} needs finite min < max, a non-negative step and a default inside the range"
+                "slider {key:?} needs finite min < max, a non-negative step, a default inside the range and a positive display scale"
             ),
             Self::TooMany => {
                 f.write_str("too many controls; group related values or remove unused ones")
@@ -219,6 +221,10 @@ impl fmt::Display for ControlError {
                 f,
                 "parameter file {cause}; write one JSON object of control keys to display values, \
                  such as {{\"sky.solar_time\": 18.5}}"
+            ),
+            Self::UnknownId(index) => write!(
+                f,
+                "control ID {index} is not declared in this model; look the control up by key on the model it belongs to"
             ),
         }
     }
@@ -269,13 +275,17 @@ impl SliderBuilder<'_> {
     }
     /// Declare the slider.
     /// # Errors
-    /// Refuses an invalid key or label, a duplicate key, or a non-finite or unordered range.
+    /// Refuses an invalid key or label, a duplicate key, a non-finite or unordered range, or a
+    /// display scale that is not finite and positive.
     pub fn add(self) -> Result<Slider, ControlError> {
         let (min, max) = (*self.range.start(), *self.range.end());
         let default = self.default.unwrap_or(min);
         let ordered = min.is_finite() && max.is_finite() && min < max;
         let step_ok = self.step.is_finite() && self.step >= 0.0;
-        if !ordered || !step_ok || !(min..=max).contains(&default) {
+        // Edits divide by the scale, so zero, negative or non-finite would admit NaN or
+        // reverse the range a person drags.
+        let scale_ok = self.display.scale().is_finite() && self.display.scale() > 0.0;
+        if !ordered || !step_ok || !scale_ok || !(min..=max).contains(&default) {
             return Err(ControlError::InvalidRange(self.key));
         }
         let kind = Kind::Slider {
@@ -506,7 +516,7 @@ impl Controls {
             min, max, display, ..
         } = self.specs[slider.0.index()].kind
         else {
-            return Err(self.wrong_kind(slider.0));
+            return Err(wrong_kind(&self.specs[slider.0.index()], "a number"));
         };
         if !value.is_finite() || !(min..=max).contains(&value) {
             let key = self.specs[slider.0.index()].key.clone();
@@ -547,16 +557,23 @@ impl Controls {
     }
 
     /// Apply a person's slider edit in display units: snap to the step, clamp into range,
-    /// count any repair and return whether the value changed. Other kinds ignore the edit.
-    pub fn edit_display(&mut self, id: ControlId, display_value: f64) -> bool {
-        let Some(Kind::Slider {
+    /// count any repair and return whether the value changed.
+    /// # Errors
+    /// Refuses a control that is not a slider, naming what it takes instead.
+    pub fn edit_display(
+        &mut self,
+        id: ControlId,
+        display_value: f64,
+    ) -> Result<bool, ControlError> {
+        let spec = self.spec(id)?;
+        let Kind::Slider {
             min,
             max,
             step,
             display,
-        }) = self.specs.get(id.index()).map(|spec| spec.kind.clone())
+        } = spec.kind.clone()
         else {
-            return false;
+            return Err(wrong_kind(spec, "a number"));
         };
         let wanted = if display_value.is_finite() {
             display.to_engine(display_value)
@@ -570,22 +587,30 @@ impl Controls {
         if !display_value.is_finite() || (value - wanted).abs() > step.max(f32::EPSILON) {
             self.clamped_edits = self.clamped_edits.saturating_add(1);
         }
-        self.store_edit(id, Value::Number(value))
+        Ok(self.store_edit(id, Value::Number(value)))
     }
 
-    /// Apply a person's toggle or text edit; other kinds and over-long text are ignored and counted.
-    pub fn edit_value(&mut self, id: ControlId, value: Value) -> bool {
-        let fits = match (&self.specs[id.index()].kind, &value) {
-            (Kind::Toggle, Value::Flag(_)) => true,
-            (Kind::Text, Value::Text(text)) => check_text("", text).is_ok(),
-            _ => false,
-        };
-        if fits {
-            self.store_edit(id, value)
-        } else {
-            self.clamped_edits = self.clamped_edits.saturating_add(1);
-            false
+    /// Apply a person's toggle or text edit and return whether the value changed.
+    /// # Errors
+    /// Refuses a value of the wrong kind, naming what the control takes, and text that is
+    /// over-long or has a line break.
+    pub fn edit_value(&mut self, id: ControlId, value: Value) -> Result<bool, ControlError> {
+        let spec = self.spec(id)?;
+        match (&spec.kind, &value) {
+            (Kind::Toggle, Value::Flag(_)) => {}
+            (Kind::Text, Value::Text(text)) => check_text(&spec.key, text)?,
+            (_, Value::Flag(_)) => return Err(wrong_kind(spec, "true or false")),
+            (_, Value::Text(_)) => return Err(wrong_kind(spec, "text")),
+            (_, Value::Number(_)) => return Err(wrong_kind(spec, "a number")),
         }
+        Ok(self.store_edit(id, value))
+    }
+
+    /// The declaration of `id`, refusing an ID this model never issued.
+    fn spec(&self, id: ControlId) -> Result<&Spec, ControlError> {
+        self.specs
+            .get(id.index())
+            .ok_or(ControlError::UnknownId(id.index()))
     }
 
     /// Store a person's or file's edit. Unlike a code edit, it always advances the control's
@@ -613,13 +638,6 @@ impl Controls {
         self.revision = self.revision.wrapping_add(1);
         self.revisions[id.index()] = self.revision;
         true
-    }
-
-    fn wrong_kind(&self, id: ControlId) -> ControlError {
-        ControlError::InvalidValue {
-            key: self.specs[id.index()].key.clone(),
-            cause: "this control is not a slider".to_owned(),
-        }
     }
 
     /// Text a person reads for a control's current value.
@@ -654,6 +672,20 @@ fn valid_key(key: &str) -> bool {
         && key.bytes().all(|byte| {
             byte.is_ascii_lowercase() || byte.is_ascii_digit() || byte == b'_' || byte == b'.'
         })
+}
+
+/// The refusal for an edit whose value does not suit the control's kind.
+fn wrong_kind(spec: &Spec, given: &str) -> ControlError {
+    let takes = match spec.kind {
+        Kind::Slider { .. } => "is a slider; give a number in display units",
+        Kind::Toggle => "is a toggle; give true or false",
+        Kind::Text => "is a text field; give one line of text",
+        Kind::Readout { .. } => "is a readout and cannot be edited",
+    };
+    ControlError::InvalidValue {
+        key: spec.key.clone(),
+        cause: format!("got {given}, but it {takes}"),
+    }
 }
 
 fn check_text(key: &str, value: &str) -> Result<(), ControlError> {

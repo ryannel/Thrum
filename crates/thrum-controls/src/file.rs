@@ -78,11 +78,9 @@ impl Controls {
                         crate::json::tidy(display.to_display(max))
                     )));
                 }
-                Ok(self.edit_display(id, shown))
+                self.edit_display(id, shown)
             }
-            (Kind::Toggle, serde_json::Value::Bool(on)) => {
-                Ok(self.edit_value(id, Value::Flag(*on)))
-            }
+            (Kind::Toggle, serde_json::Value::Bool(on)) => self.edit_value(id, Value::Flag(*on)),
             (Kind::Text, serde_json::Value::String(text)) => {
                 if text.len() > crate::MAX_TEXT_BYTES || text.contains(['\n', '\r']) {
                     return Err(invalid(format!(
@@ -90,7 +88,7 @@ impl Controls {
                         crate::MAX_TEXT_BYTES
                     )));
                 }
-                Ok(self.edit_value(id, Value::Text(text.clone())))
+                self.edit_value(id, Value::Text(text.clone()))
             }
             (Kind::Readout { .. }, _) => Err(invalid(
                 "is a readout the game publishes; remove it from the file".to_owned(),

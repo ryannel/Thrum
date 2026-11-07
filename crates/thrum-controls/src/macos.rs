@@ -221,8 +221,9 @@ impl MacPanel {
         let changed = edits
             .into_iter()
             .filter(|edit| match edit {
-                Edit::Number(id, shown) => controls.edit_display(*id, *shown),
-                Edit::Value(id, value) => controls.edit_value(*id, value.clone()),
+                // Each widget was built from its control's kind, so its edits always fit.
+                Edit::Number(id, shown) => controls.edit_display(*id, *shown) == Ok(true),
+                Edit::Value(id, value) => controls.edit_value(*id, value.clone()) == Ok(true),
             })
             .count();
         self.sync(controls);

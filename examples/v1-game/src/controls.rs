@@ -195,8 +195,11 @@ impl GameControls {
             return;
         };
         let engine = engine.clamp(stops.min, stops.max);
-        self.model
-            .edit_display(slider.id(), stops.display.to_display(engine));
+        // `stops` only exists for a slider, so the edit always fits.
+        drop(
+            self.model
+                .edit_display(slider.id(), stops.display.to_display(engine)),
+        );
     }
 
     fn stops(&self, slider: Slider) -> Option<Stops> {
@@ -289,7 +292,7 @@ mod tests {
         controls.observe_paused(false);
         assert!(controls.take_edits().is_empty(), "the clock is not an edit");
         let id = controls.model().find("sky.solar_time").expect("declared");
-        controls.model_mut().edit_display(id, 18.48);
+        controls.model_mut().edit_display(id, 18.48).unwrap();
         let edits = controls.take_edits();
         assert!((edits.time_of_day.expect("edited") - 18.48 / 24.0).abs() < 1e-6);
         assert!(controls.take_edits().is_empty());
@@ -338,7 +341,7 @@ mod tests {
         controls.observe_time(0.25);
         assert_eq!(controls.model().formatted(id), "0°", "sunrise");
         let time = controls.model().find("sky.solar_time").expect("declared");
-        controls.model_mut().edit_display(time, 12.0);
+        controls.model_mut().edit_display(time, 12.0).unwrap();
         let edits = controls.take_edits();
         assert_eq!(
             controls.model().formatted(id),
@@ -346,7 +349,7 @@ mod tests {
             "an edit updates it at once"
         );
         assert!(edits.time_of_day.is_some());
-        controls.model_mut().edit_display(time, 12.0);
+        controls.model_mut().edit_display(time, 12.0).unwrap();
         controls.observe_time(0.25);
         assert_eq!(
             controls.model().formatted(id),
