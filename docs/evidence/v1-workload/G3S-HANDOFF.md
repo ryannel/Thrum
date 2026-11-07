@@ -8,6 +8,17 @@ The Codex goal remains active. Its attachment is
 
 ## Current checkpoint
 
+- Candidate production optics (Metal) preserves flux to 0.0571% across 36
+  footprints, at centre and edge from 720p to 2160p. Both mask axes are
+  checked with paired controls and covered centres emit zero. In the
+  central SDR fixture the fourth-brightest magnitude 3/6 excess was
+  207/58, 211/74 and 212/86 green codes at matched exposure. Chrome's
+  normal valley build `b870c1ee` rendered 00:00 and 24:00 byte-identically,
+  with 3,073 pixels at least eight codes above the stars-off control.
+  Around midnight 100 star patches moved a median 2.22 px per adjacent
+  slider stop. [Review brief](../../design/modules/ATMOSPHERE-PLAN.md#production-star-optics-review-brief).
+  Raw logs and rerun commands are in `tmp/g3s-star-catalog/NOTES.md`.
+
 - Normal-valley candidate `197d152` enables the catalogue on both cooked
   launch paths, with a same-build off control. Diagnostic and field
   preparation stay star-free. The old canonical G7 route flags only
