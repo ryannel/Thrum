@@ -1,6 +1,8 @@
 # Atmosphere milestones
 
-Design [ATMOSPHERE.md](ATMOSPHERE.md) · Updated 2026-11-07
+Design: [ATMOSPHERE.md](ATMOSPHERE.md)
+Reviews: Optical design and plan over `a91cdd0e`, final design `f9d0c12a` and plan `c3cc5748` · [optical brief](#optical-review-brief) · initial changes required, final M1 implementation cleared. Frame graph and ownership at the same revisions · [graph brief](#graph-review-brief) · initial changes required, final design cleared.
+Updated: 2026-11-07
 Milestone: M1 moonless midnight
 Now: the packed 24 KiB profile passes the scalar reference.
 Next: bind it in the atmosphere graph and qualify storage and scene lighting on GPU.
@@ -20,7 +22,7 @@ Work
 - [x] Reproduced a completely black midnight frame on the actual cooked valley at a91cdd0e. The scalar range check confirms the fixed fp16 scale loses a 10% Lambert surface.
 - [x] The independently stepped scalar direct-plus-scatter probe resolves the positive-elevation peak and both limits of the curved horizon at 0, 1.8 and 15 km. The denser quadrature changes the sampled radiance by at most 0.063%.
 - [x] A second scalar reference includes the finite shell, both components, the engine phase function, ground irradiance and finite paths. Raw source and rows are in `tmp/g3s-showcase/night-design/`.
-- [x] The scratch RG16Float profile matches the dense reference on 29 distinct sky/ground rays, three irradiance rows and three finite paths. Maximum errors are 0.213%, 0.028% and 0.060% respectively. These are packed CPU reads. The GPU sampling and scene checks remain open.
+- [x] The scratch RG16Float profile matches the dense reference on 59 distinct sky/ground rays, six irradiance rows and three finite paths. Maximum errors are 0.381%, 0.028% and 0.060% respectively. The expanded sweep includes 2 m and 6 m near-tangent rays. These are packed CPU reads. The GPU sampling and scene checks remain open.
 - [ ] Wire the night channel into sky, diffuse, reflection and finite aerial transport. Prove alpha decoding, including interpolated paths and cooked material blending, on Metal and Chrome. Verify the solar-only outputs are unaffected.
 - [ ] Connect GPU exposure to all forward colour writers and reconcile the policy with the render spec. Prove the lower EV clamp is reachable, daylight behavior stays intact and a recycled slot uses its own scale.
 - [ ] Capture and inspect actual valley sequences. Review the raw data and record results.
@@ -39,14 +41,19 @@ Work
 - [ ] Add the background draw with conservative footprint and qualify extent, depth and exposure changes.
 - [ ] Run the in-game digest and close with evidence. Lunar illumination and the broader G3s calibration and shadow checks remain separately tracked.
 
-## Review
+## Review briefs
 
-Independent optical and graph reviews of the draft over `a91cdd0e` found
-the EV floor, fp16 precision, shared scale selection, graph timing order,
-finite aerial in-scatter and star occlusion/flux gaps. The revised design
-specifies those mechanisms and the checks that still need a game run. Both
-reviewers rechecked the finite-shell design (reviewed design blob `f9d0c12a`,
-plan `c3cc5748`) and found no implementation blocker.
+The initial reviews found the EV floor, fp16 precision, shared scale selection,
+graph timing order, finite aerial in-scatter and star occlusion/flux gaps. Each
+reviewer rechecked the finite-shell revision. The GPU and in-game checks are open.
+
+### Optical review brief
+
+> Read-only, bounded independent design/plan review for Thrum (cwd /Users/ryannel/Workspace/thrum). First read AGENTS.md and derive requirements independently from docs/BUILD-PLAN.md G3s and docs/design/RENDER-SPEC.md §5: a clear Earth sky in the cooked V1 valley on Mac Metal and Chrome from daylight/twilight through readable moonless night, one atmosphere provider, physical incident meter with retained low-light key, source rights PD/CC0 only, performance tripwires not gates. Then examine draft docs/design/modules/ATMOSPHERE.md and ATMOSPHERE-PLAN.md, raw analytical range tmp/g3s-showcase/night-design/range.py and range.log, and primary sources if needed. Assess the night lighting/optical and celestial design, mechanisms vs promised cues, and independent done-when checks. Use engine-module-design references/review.md and review-agent defect-first discipline. Give verified findings with exact references or label suspected, plus remaining gaps. Do not modify files, run GPU tests, or delegate. Reply once findings are ready.
+
+### Graph review brief
+
+> Read-only independent Thrum design/plan review focused on frame graph, storage and cross-module ownership. Cwd /Users/ryannel/Workspace/thrum. Read AGENTS.md then independently derive requirements from docs/BUILD-PLAN.md G3s and docs/design/CONTRACTS.md C07/C08 (same scene Metal/Chrome, continuous time, one provider, same exposure per rendered slot, no authoritative impact or needless full frame work). Then read proposed docs/design/modules/ATMOSPHERE.md and ATMOSPHERE-PLAN.md, inspect code consumers sky/diffuse/reflection, synthetic forward/display and cooked pipeline and runtime lifecycle as needed. Use .agents/skills/engine-module-design/references/review.md and defect-first review-agent guidance. Identify any incomplete API, graph hazard or qualification gap, with exact references, verified/suspected. Do not edit, run GPU workloads or delegate. Reply once findings ready.
 
 ## Log
 
