@@ -31,9 +31,15 @@ The Codex goal remains active. Its attachment is
   error. In 14 paired timestamp rows under shared load (1-minute load
   15.88 to 22.67), p50/p95 was 87/533 µs for taps, 296/688 µs for the
   hierarchy and 438/1,065 µs for reduction plus traversal. This compute
-  witness includes neither the caster draw nor forward shading. Preserve
-  it as the reference and reduce traversal work before a paired game run
-  with moving casters, camera snaps and the whole Sun sweep.
+  witness includes neither the caster draw nor forward shading. Stepping
+  directly across integer tile boundaries cut p95 node tests from 195 to
+  96 and produced identical visibility on all 2,499 terrain rays and 30
+  sparse boundary cases. Across six ordered pairs under shared load
+  (1-minute load 18.54 to 22.04), the new traversal's median was 82 µs
+  versus 217 µs for the previous hierarchy. Reduction plus traversal was
+  121 µs versus 42 µs for legacy taps. Take the boundary-stepped variant
+  to the game graph for moving casters, camera snaps, the Sun sweep and
+  paired whole-frame measurements.
   [Maximum Mipmaps](https://pure.mpg.de/pubman/item/item_1325622_5/component/file_3590464/i3d08.pdf).
   Exact builds, raw rows and clips are in `tmp/g3s-sunset-lip/`. The
   diagnostic source and rerun command are on `codex/g3s-horizon-metal-wip`.
