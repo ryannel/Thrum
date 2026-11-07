@@ -17,7 +17,8 @@ activity, commits and convincing summaries are not.
 
 Read them against [engine-module-design](../engine-module-design/SKILL.md). The agent commissions its own
 independent review ([review](../engine-module-design/references/review.md)); read the verdict, and commission your
-own only when it is missing or you doubt it. Look for:
+own only when it is missing or you doubt it. Read the brief the reviewer was given as well as its verdict: a
+reviewer handed the author's conclusions isn't independent. Look for:
 - techniques grounded in shipped practice and current research, each shown to make its cues across the range;
 - milestones that are outcomes in the game, riskiest first, each with done-when checks specific enough to refuse
   completion over, including one that would catch the plausible wrong substitute;
@@ -33,8 +34,8 @@ At each check, for each agent:
 - Is the plan's status current, and does what the agent is doing trace to it?
 - Has a done-when box been ticked, with evidence, since the last check? Commits with none over a couple of checks is
   a stall. Has a milestone's meaning changed in the log without a review?
-- Has the `Now:` line sat on one cue for hours, with attempt after attempt in git? That's a design question, not more
-  tuning.
+- Has the `Now:` line sat on one cue for hours, with attempt after attempt in git? As a rough guide, about 2 hours or
+  3 attempts without a done-when box moving is worth a look. That's a design question, not more tuning.
 - Is the design or plan growing without the work moving?
 - Does one claim from the latest report hold up against its artifact?
 - Look at the visual output yourself, in motion, against what the active milestone needs.
@@ -50,7 +51,8 @@ recorded. When the last milestone closes, check that every required cue was deli
 
 When the work goes off course, fix the immediate problem: a steer, a corrected milestone, an updated goal, or
 whichever of these it needs. A steer names the problem, the evidence and the milestone it puts at risk, points to the
-design, and leaves the technical fix to the agent. Needing to step in at all means something in the method or the
+design, and leaves the technical fix to the agent. When you correct a milestone, send the correction and its evidence; the agent edits the plan, logs why and
+has the change reviewed, so the plan keeps one writer. Needing to step in at all means something in the method or the
 plan is wrong (the design, the plan, the agent's goal, this process or the skill), so also find that cause and fix
 it, so the same intervention isn't needed again. A skill or
 process fix goes to whoever owns that skill. A count of steers per agent is a health signal; report it.

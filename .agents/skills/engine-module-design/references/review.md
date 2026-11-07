@@ -26,7 +26,9 @@ ranked; don't ask only for blocking issues.
 - **Each milestone, in the game.** Give the reviewer how the milestone is judged and the raw captures and logs for
   one build, not your summary. It says, per check, pass, fail or can't tell, and whether it watched motion.
 
-The reviewer's verdict goes in the design or plan with the revision or build it saw; it applies only to that one.
+The reviewer's verdict goes in the design or plan with the revision or build it saw, together with the brief it was
+given; it applies only to that revision. A consequential technique chosen after the design review gets the same kind
+of review before it's built on.
 
 ## What to challenge
 
