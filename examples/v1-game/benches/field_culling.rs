@@ -1,6 +1,10 @@
-//! Paired Direct-versus-Frustum GPU cost of the game's dense field along its
-//! scripted flythrough. Both hosts step the same ticks; the order alternates
-//! per tick (ABBA), and each frame completes before the next is driven.
+//! Paired Direct, Frustum and Occlusion GPU cost of the game's dense field
+//! along its scripted flythrough. All hosts step the same ticks; the order
+//! rotates per tick, and each frame completes before the next is driven.
+//! Occlusion is also paired against Frustum, split by cover: ticks where its
+//! final list is at most half of Frustum's are behind cover, the rest open.
+//! Its whole frame includes the prepass list, depth prepass, pyramid and
+//! final cull, which fold into the forward bucket.
 #![cfg(not(target_arch = "wasm32"))]
 
 use std::time::Duration;
@@ -86,6 +90,8 @@ fn main() {
         // [mode][metric]: whole, forward. Deltas: Frustum − Direct, Occlusion − Direct.
         let mut rows: [[Vec<f64>; 2]; 3] = Default::default();
         let mut deltas: [Vec<f64>; 2] = Default::default();
+        // Occlusion − Frustum whole-frame ms: [behind cover, open].
+        let mut against_frustum: [Vec<f64>; 2] = Default::default();
         let mut share = 0.0;
         for tick in 1..=WARMUP_TICKS + TICKS {
             let now = Duration::from_nanos(tick * TICK_NS + 1);
@@ -93,6 +99,7 @@ fn main() {
             let first = usize::try_from(tick % 3).expect("small");
             let order = [first, (first + 1) % 3, (first + 2) % 3];
             let mut whole = [0.0; 3];
+            let mut drawn = [0_u32; 3];
             for index in order {
                 let report = hosts[index].drive(now, None).expect("field tick");
                 assert!(
@@ -101,6 +108,7 @@ fn main() {
                 );
                 let sample = complete(&mut hosts[index], &device);
                 let passes = sample.gpu_pass_ns.expect("timed passes");
+                drawn[index] = sample.camera_culling.map_or(0, |counts| counts.drawn);
                 whole[index] = passes
                     .iter()
                     .enumerate()
@@ -115,6 +123,11 @@ fn main() {
             if tick > WARMUP_TICKS {
                 deltas[0].push(whole[1] - whole[0]);
                 deltas[1].push(whole[2] - whole[0]);
+                // A count can retire after its frame; such ticks are left out.
+                if drawn[1] > 0 && drawn[2] > 0 {
+                    let open = usize::from(drawn[2] * 2 > drawn[1]);
+                    against_frustum[open].push(whole[2] - whole[1]);
+                }
                 if tick % 30 == 0 {
                     share += field_in_view_share(tick, EXTENT).expect("view");
                 }
@@ -158,6 +171,21 @@ fn main() {
                 quantile(&mut mode[1], 0.5),
                 quantile(&mut mode[1], 0.95),
                 quantile(delta, 0.5),
+            );
+        }
+        for (label, values) in ["behind cover", "open"]
+            .into_iter()
+            .zip(&mut against_frustum)
+        {
+            if values.is_empty() {
+                println!("paired O−F {label}: no counted ticks");
+                continue;
+            }
+            println!(
+                "paired O−F {label}: {} ticks, median {:+.3} ms, p95 {:+.3} ms",
+                values.len(),
+                quantile(values, 0.5),
+                quantile(values, 0.95),
             );
         }
     });

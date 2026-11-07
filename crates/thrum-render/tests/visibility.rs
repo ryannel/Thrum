@@ -690,3 +690,102 @@ fn a_box_flush_with_a_prepass_wall_keeps_its_ties_near_and_far() {
         }
     });
 }
+
+/// History that no longer matches the slots, image against Direct each
+/// frame. Slot 1 is a wall and slot 0 a box hidden behind it, so after two
+/// frames only the wall's bit is set. Then:
+/// - a swap: the two slots exchange objects, so the prepass draws the box
+///   (on the wall's stale bit) and the wall has no bit;
+/// - the swap held for a frame, so the bits catch up;
+/// - the box, still without a bit (it was hidden), moves in front of the
+///   wall;
+/// - a cut to a view from the other side.
+#[test]
+fn stale_bits_after_a_swap_or_a_reveal_keep_direct_images() {
+    pollster::block_on(async {
+        let (adapter, device, queue) = device().await;
+        let capabilities = DeviceCapabilities::capture(&adapter, &device, 53);
+        let camera = view([0.0, 0.0, -1.5], [0.0, 0.0, 0.5]);
+        let mut hidden = SyntheticScene::grid(2).expect("grid");
+        hidden.view = camera;
+        place(
+            &mut hidden.instances[1],
+            [0.6, 0.4, 0.05],
+            [0.0, 0.0, 0.5],
+            0.0,
+        );
+        place(
+            &mut hidden.instances[0],
+            [0.1, 0.1, 0.1],
+            [0.05, 0.0, 1.2],
+            0.0,
+        );
+        let mut swapped = hidden.clone();
+        let (box_pose, wall_pose) = (hidden.instances[0].current, hidden.instances[1].current);
+        let (box_normal, wall_normal) = (hidden.instances[0].normal, hidden.instances[1].normal);
+        swapped.instances[0].current = wall_pose;
+        swapped.instances[0].normal = wall_normal;
+        swapped.instances[1].current = box_pose;
+        swapped.instances[1].normal = box_normal;
+        for instance in &mut swapped.instances {
+            instance.previous = instance.current;
+        }
+        let mut revealed = hidden.clone();
+        place(
+            &mut revealed.instances[0],
+            [0.1, 0.1, 0.1],
+            [0.05, 0.0, 0.2],
+            0.0,
+        );
+        let mut cut = revealed.clone();
+        cut.view = view([0.3, 0.2, 2.5], [0.0, 0.0, 0.5]);
+        let frames = [
+            ("hidden", &hidden, None),
+            ("hidden", &hidden, None),
+            ("swap", &swapped, Some(&[0_u32, 1][..])),
+            ("swap held", &swapped, None),
+            ("back", &hidden, Some(&[0, 1][..])),
+            ("back held", &hidden, None),
+            ("reveal", &revealed, Some(&[0][..])),
+            ("cut", &cut, None),
+        ];
+        let mut direct = Sequence::new(&capabilities, &device, &queue, &hidden).await;
+        let mut culled_scene = hidden.clone();
+        culled_scene.camera_culling = CullMode::Occlusion;
+        let mut occluded = Sequence::new(&capabilities, &device, &queue, &culled_scene).await;
+        let mut images = Vec::new();
+        for (name, scene, upload) in frames {
+            let mut results = Vec::new();
+            for (sequence, mode) in [
+                (&mut direct, CullMode::Direct),
+                (&mut occluded, CullMode::Occlusion),
+            ] {
+                let mut scene = scene.clone();
+                scene.camera_culling = mode;
+                if let Some(slots) = upload {
+                    sequence
+                        .prepared
+                        .upload_instances(&queue, &scene.instances, slots)
+                        .expect("upload");
+                }
+                results.push(
+                    sequence
+                        .frame(&capabilities, (&device, &queue), &scene, true)
+                        .await
+                        .expect("pixels"),
+                );
+            }
+            let changed = differing(&results[0], &results[1]);
+            assert_eq!(changed, 0, "{name}: occlusion changes {changed} pixels");
+            images.push(results.swap_remove(0));
+        }
+        assert!(
+            differing(&images[1], &images[2]) > 100,
+            "the swap changes the image"
+        );
+        assert!(
+            differing(&images[5], &images[6]) > 100,
+            "the reveal changes the image"
+        );
+    });
+}
