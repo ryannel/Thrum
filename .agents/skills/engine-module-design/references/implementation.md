@@ -28,7 +28,8 @@ interface only, shipped content and configuration, whichever of its neighbours e
 the game's own controls, and capture of the running game watched in motion. Anything less is a diagnostic.
 
 - **Capture without the screen.** Render the running game's frames through the shipped renderer offscreen, at the
-  shipped simulation rate and settings. Encode them at 1×, record each frame's GPU time, and review the clip. This needs
+  shipped simulation rate and settings. Encode them at 1×, record each frame's GPU time, and review the clip. Keep the
+  clip, the timings and a few cited stills; delete the raw frame images once encoded (a 1440p minute is tens of GB). This needs
   no display, window or unlocked session, so it is how motion is watched. Measure presentation (cadence and latency
   on the real display) separately, in batched owner-present windows. It gates only done-when items about pacing.
 
