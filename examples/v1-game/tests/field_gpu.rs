@@ -139,7 +139,7 @@ fn field_frustum_matches_direct_along_the_flythrough() {
         let expected = if cfg!(debug_assertions) { 20 } else { 75 };
         assert!(compared >= expected, "{compared} frames compared");
         let (drawn, active) = fewest.expect("Frustum counts");
-        eprintln!("Frustum drew {drawn} of {active} at its fewest");
+        eprintln!("{compared} frames compared; Frustum drew {drawn} of {active} at its fewest");
         assert!(
             drawn > 0 && drawn * 2 < active,
             "Frustum drew {drawn} of {active} at its fewest"

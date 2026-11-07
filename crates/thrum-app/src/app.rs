@@ -815,8 +815,8 @@ impl<G: Game + 'static> App<G> {
         } else {
             "GPU timestamps unavailable".to_owned()
         };
-        // Camera culling's read-back counts, which name the prepared mode;
-        // none for Direct or a failed readback.
+        // The renderer's culling mode and read-back counts; Direct has none.
+        let mode = presented.last().map(|sample| sample.culling_mode);
         let counted: Vec<_> = presented
             .iter()
             .filter_map(|sample| sample.camera_culling)
@@ -837,7 +837,10 @@ impl<G: Game + 'static> App<G> {
                 counted.len(),
                 presented.len()
             ),
-            None => "culling counts absent".to_owned(),
+            None => format!(
+                "culling={} with no counts",
+                mode.map_or_else(String::new, |mode| format!("{mode:?}"))
+            ),
         };
         Ok(format!(
             "adapter={}; surface={:?} {}x{}; presented={}; callbacks={}; display_link_callbacks={}; late_target_evaluations={}; invalid_target_evaluations={}; clamped_target_evaluations={}; committed_ticks={}; unavailable={}; occluded={}; surface_faults={}; dropped_surface={}; dropped_views={}; dropped_stale_views={}; dropped_reports={}; callback wall p50/p95={:.3}/{:.3} ms; render-worker wall p50/p95={:.3}/{:.3} ms; drawable-acquire wall p50/p95={:.3}/{:.3} ms; tick CPU p50/p95={:.3}/{:.3} us; live-view CPU p50/p95={:.3}/{:.3} us; upload CPU p50/p95={:.3}/{:.3} us; encode CPU p50/p95={:.3}/{:.3} us; upload+encode CPU p50/p95={:.3}/{:.3} us; {gpu}; {culling}; device_losses={}; world_overloads={}; overload_refused_ticks={}; final_drain_device_lost={final_device_loss}; retained_presented_profiles={}; missing_presented_profiles={missing}; profiles describe retained samples",
@@ -916,13 +919,17 @@ fn profiler_title(
             )
         },
     );
-    // Camera culling's read-back draw counts; absent for Direct.
-    let culling = sample.camera_culling.map_or_else(String::new, |counts| {
-        format!(
-            " | {:?} drew {} of {}",
-            counts.mode, counts.drawn, counts.active
-        )
-    });
+    // The renderer's culling mode and its read-back draw counts, which
+    // Direct does not have.
+    let culling = sample.camera_culling.map_or_else(
+        || format!(" | {:?} culling", sample.culling_mode),
+        |counts| {
+            format!(
+                " | {:?} culling drew {} of {}",
+                counts.mode, counts.drawn, counts.active
+            )
+        },
+    );
     format!(
         "{title} | {world_status}{gpu_status} | tick {} ({} updates, view age {}) | CPU tick {:.3}, extract {:.3}, upload {:.3}, encode {:.3} ms | {gpu}{culling}",
         sample.tick,

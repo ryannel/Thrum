@@ -27,24 +27,22 @@ const KEY_DOWN: u8 = 128;
 /// `THRUM_V1_FRAMES` bounds the run; `THRUM_PARAMS` names a parameter file applied at
 /// start and on `L`. Failures are reported on standard error with a nonzero exit.
 pub fn run_window() {
-    // The profiler title names the content and camera culling mode; invalid
-    // selections are reported when the host is prepared.
+    // The window title names the content and the requested culling mode;
+    // the profiler title adds the mode the renderer runs. Invalid selections
+    // are reported when the host is prepared.
     let (window_title, title) = match crate::selected_setup() {
         Ok(crate::GameSetup {
             content: crate::GameContent::Field,
             camera_culling: CullMode::Frustum,
-        }) => (
-            "Thrum V1 — field / Frustum culling",
-            "Thrum V1 field Frustum",
-        ),
+        }) => ("Thrum V1 — field / Frustum culling", "Thrum V1 field"),
         Ok(crate::GameSetup {
             content: crate::GameContent::Field,
             ..
-        }) => ("Thrum V1 — field / Direct", "Thrum V1 field Direct"),
+        }) => ("Thrum V1 — field / Direct", "Thrum V1 field"),
         Ok(crate::GameSetup {
             camera_culling: CullMode::Frustum,
             ..
-        }) => ("Thrum V1 — 10k world / Frustum culling", "Thrum V1 Frustum"),
+        }) => ("Thrum V1 — 10k world / Frustum culling", "Thrum V1"),
         _ => ("Thrum V1 — 10k world / clustered forward+", "Thrum V1"),
     };
     thrum_app::run(

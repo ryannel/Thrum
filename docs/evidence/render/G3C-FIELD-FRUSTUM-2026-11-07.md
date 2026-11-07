@@ -3,7 +3,9 @@
 7 November 2026. Apple M3 Max/Metal, Rust 1.99.1, wgpu 30.0.1. Each section names the commit or Wasm build it
 was gathered at. The first native rows and the first Chrome rows were gathered on branch `claude/g3c-gpu-culling`
 on main `a346d60f`. The closing reruns come from main `b8f230e7` plus the culling counts readback (branch
-`claude/g3c-stats-main`).
+`claude/g3c-stats-main`). The first of them ran on an uncommitted tree just before `08ff98e0`. The Chrome
+counts check (Wasm `3ed8e87f…`) and the full-path rerun ran on the code of `d92df1ab`, which this file's
+commit amends with this record only.
 
 **Labelled contended:** other sessions shared the CPU and GPU throughout (load average 19–21), so p95 tails are
 noisy.
@@ -41,7 +43,9 @@ The four local peers control the last four props. A scripted camera flies a 250 
 - **Full path, `THRUM_FIELD_FULL_PATH=1`:** every tick from 1 to 1,930 of the 3,600-tick loop. This covers three
   snap turns (each start and end) and the first quarter-loop cut at tick 1801. The next turn starts at tick 2101,
   outside the run. Byte-equal at all 1,930 ticks. In the closing rerun, the Frustum host drew 21,745 of
-  100,513 at its fewest; its log is `tmp/g3c-boundary/m1/full-path-m1close.log`.
+  100,513 at its fewest. The log, `tmp/g3c-boundary/m1/full-path-m1close2.log`, records the commit, the variable and
+  1,930 frames compared. The commit is `d92df1ab`, whose code equals the commit that adds this record; only this
+  file differs.
 - **Mode survives resize and device replacement:** `cargo test -p thrum-render --lib culled_modes_survive`
   (f20a1d15) resizes the surface, then publishes a replacement device. Frustum stays selected, and every slot's
   report carries Frustum's read-back draw counts (closing rerun). The replacement's capture equals a Direct host on
@@ -78,7 +82,8 @@ meshes.
 `examples/v1-game/web/build.sh`, then `node scripts/check_v1_browser.mjs --case field` (Frustum) and
 `--case field-direct`. Chrome on this Mac, WebGPU, 1280×720, 600 qualified samples each.
 
-- Both cases pass: 600 GPU-timed samples, no overload, refused ticks or clamps, at the display rate.
+- **Runs 1 and 2:** both cases pass with 600 GPU-timed samples, at the display rate, with no overload, refused
+  ticks or clamps.
 - Runs alternated Direct, Frustum, Direct, Frustum. Chrome quantises timestamps to about 0.066 ms, so only p50 and
   p95 steps are meaningful.
 
@@ -93,14 +98,21 @@ meshes.
 - **What the page reports:** each page names the prepared renderer's mode (`culling=Frustum` or
   `culling=Direct`). Frustum also reports its read-back draw counts:
   `culling_drawn_p50=21951 culling_drawn_p95=23033 culling_active=100513`.
-- **Run 3's tails** are longer than runs 1 and 2. They were taken under heavier contention.
+- **Run 3** was taken under heavier contention (load about 57), and its tails are longer.
+  - Both cases still pass.
+  - The Frustum page recorded 7 overload events, 200 refused ticks and 229 shed views. The Direct page recorded
+    0, 0 and 113.
+  - One unpaired run cannot separate this from load. A paired check followed: the Frustum page with the counts
+    readback against the same build with it removed, in ABBA order (load 27–31). All four runs had no overload
+    and no refused ticks. Shed views were 80 and 86 with counts, and 63 and 89 without. Forward p50 was within one
+    timestamp step. The raw reports are in `tmp/g3c-boundary/m1/counts-ab/`.
 
 **Pixel equality with Chrome Direct:** `node scripts/check_v1_browser.mjs --case field-oracle`, using the
 caller-owned capture token (Q2c, d0f9cce4).
 - **Setup:** two fresh pages, one Direct and one Frustum, are paused before their first frame by the same
   parameter file. Both set the same explicit camera at 16 views (eight yaws × two pitches).
-- **Comparison:** each capture's committed tick, extent and device generation are asserted before the bytes
-  are compared.
+- **Comparison:** each capture's committed tick, view and extent must match the other page's before the bytes
+  are compared. The device generation is recorded but not compared, since each page has its own.
 - **Mode check:** the oracle requires the Direct page to report `culling=Direct` with no counts, and the Frustum
   page to report `culling=Frustum` with fewer drawn than active. Otherwise a lost mode could compare Direct with
   Direct.
@@ -125,7 +137,8 @@ caller-owned capture token (Q2c, d0f9cce4).
 
 ## Not covered
 
-- **Live window:** an attempt presented nothing, because macOS reported the window occluded (screen locked). The
+- **Live window:** attempts presented nothing while the screen was locked. A rerun at the close had no
+  display-link callbacks (`m1/window-frustum.log`). The
   headless host above uses the same `FrameHost` path. So the title's mode and forward ms, and the native end-of-run
   report's new forward GPU ms and culling counts, are checked only by reading the code. The Chrome frame report
   is observed showing the mode, forward GPU ms and draw counts.
