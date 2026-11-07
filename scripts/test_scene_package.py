@@ -68,6 +68,32 @@ class SceneResolution(unittest.TestCase):
             with self.assertRaisesRegex(SceneError, f"names its binary {name}, which .* also builds"):
                 resolve(self.root, "examples/sunset", self.metadata(scene, cooker, game))
 
+    def test_a_binary_named_like_another_members_binary_in_another_case_is_refused(self):
+        # This Mac's filesystem ignores case, so Thrum-Cook and thrum-cook are one file in
+        # target/release (root's probe: both names resolve to the same inode).
+        cooker = package(self.root, "crates/thrum-cook", "thrum-cook", ["thrum-cook"])
+        game = package(self.root, "examples/v1-game", "v1-game", ["v1-game"])
+        # APFS also treats composed and decomposed Unicode spellings as one name.
+        cafe = package(self.root, "examples/cafe", "caf\u00e9", ["caf\u00e9"])
+        for name, other in [("Thrum-Cook", "thrum-cook"), ("V1-GAME", "v1-game"),
+                            ("CAFE\u0301", "caf\u00e9")]:
+            scene = package(self.root, "examples/sunset", "thrum-sunset", [name])
+            with self.assertRaisesRegex(
+                    SceneError, f"names its binary {name}, which {other} also builds .* ignoring case"):
+                resolve(self.root, "examples/sunset", self.metadata(scene, cooker, game, cafe))
+
+    def test_a_case_alias_of_another_binary_leaves_the_lockfile_alone(self):
+        cooker = package(self.root, "crates/thrum-cook", "thrum-cook", ["thrum-cook"])
+        scene = package(self.root, "examples/sunset", "thrum-sunset", ["Thrum-Cook"])
+        with mock.patch.object(scene_package, "workspace_metadata",
+                               return_value=self.metadata(scene, cooker)), \
+                mock.patch.object(scene_package, "lockfile_current") as current, \
+                mock.patch.object(scene_package.subprocess, "run") as run, \
+                mock.patch("sys.stderr"):
+            self.assertEqual(scene_package.main(["--lock", "examples/sunset"], self.root), 1)
+        current.assert_not_called()
+        run.assert_not_called()
+
     def test_a_colliding_binary_leaves_the_lockfile_alone(self):
         cooker = package(self.root, "crates/thrum-cook", "thrum-cook", ["thrum-cook"])
         scene = package(self.root, "examples/sunset", "thrum-sunset", ["thrum-cook"])
