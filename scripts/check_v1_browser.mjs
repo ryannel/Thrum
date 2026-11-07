@@ -9,7 +9,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
-const cases = ['normal', 'pause', 'resize', 'overload', 'input', 'controls', 'params', 'device-loss', 'late-device-loss', 'device-recovery', 'device-recovery-retry', 'sky-reflections', 'valley', 'valley-recovery'];
+const cases = ['normal', 'pause', 'resize', 'overload', 'input', 'controls', 'params', 'device-loss', 'late-device-loss', 'device-recovery', 'device-recovery-retry', 'sky-reflections', 'valley', 'valley-recovery', 'material'];
 const configureFailureSentinel = 'THRUM_G3B_CONFIGURE_ONCE';
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -153,6 +153,7 @@ async function existingGame(cdp, sessionId) {
     return result.result.value;
   };
   return {
+    objectId: objects.objectId,
     read: () => invoke(`return ${gameState};`),
     setVisible: visible => invoke('game.set_visible(args[0],performance.now());return true;', [visible]),
     invoke,
@@ -379,6 +380,159 @@ async function qualifyDeviceLoss(cdp, sessionId, poll, timeout, late, onDestroy)
   const finalState = await read('final'); assertStoppedGpu(finalState);
   if (late && !snapshots.beforeLoss.complete) throw new Error('Late loss did not follow profile completion');
   return { snapshots, scope: 'Actual GPUDevice.destroy; authority/input/pause/hooks/overload stay live; no graphics reconstruction' };
+}
+
+// Decode an 8-bit, non-interlaced RGB or RGBA PNG (Chrome's screenshots) to RGBA rows.
+function decodePng(bytes) {
+  let offset = 8, width, height, channels;
+  const data = [];
+  while (offset < bytes.length) {
+    const length = bytes.readUInt32BE(offset), type = bytes.toString('latin1', offset + 4, offset + 8);
+    const body = bytes.subarray(offset + 8, offset + 8 + length);
+    if (type === 'IHDR') {
+      width = body.readUInt32BE(0); height = body.readUInt32BE(4);
+      if (body[8] !== 8 || ![2, 6].includes(body[9]) || body[12] !== 0) throw new Error('Unsupported screenshot PNG');
+      channels = body[9] === 6 ? 4 : 3;
+    } else if (type === 'IDAT') data.push(body);
+    offset += length + 12;
+  }
+  const raw = zlib.inflateSync(Buffer.concat(data)), stride = width * channels, rgba = Buffer.alloc(width * height * 4);
+  let previous = Buffer.alloc(stride);
+  for (let y = 0; y < height; y++) {
+    const filter = raw[y * (stride + 1)], line = Buffer.from(raw.subarray(y * (stride + 1) + 1, (y + 1) * (stride + 1)));
+    for (let i = 0; i < stride; i++) {
+      const a = i >= channels ? line[i - channels] : 0, b = previous[i], c = i >= channels ? previous[i - channels] : 0;
+      const p = a + b - c, pa = Math.abs(p - a), pb = Math.abs(p - b), pc = Math.abs(p - c);
+      line[i] = (line[i] + [0, a, b, (a + b) >> 1, pa <= pb && pa <= pc ? a : pb <= pc ? b : c][filter]) & 255;
+    }
+    for (let x = 0; x < width; x++) {
+      for (let k = 0; k < 3; k++) rgba[(y * width + x) * 4 + k] = line[x * channels + k];
+      rgba[(y * width + x) * 4 + 3] = channels === 4 ? line[x * channels + 3] : 255;
+    }
+    previous = line;
+  }
+  return { width, height, rgba };
+}
+
+// Fraction of pixels whose channels differ by more than 12 between two same-size images.
+function changedFraction(first, second) {
+  if (first.width !== second.width || first.height !== second.height) throw new Error('Compared captures differ in size');
+  let changed = 0;
+  for (let i = 0; i < first.rgba.length; i += 4) {
+    if (Math.max(...[0, 1, 2].map(k => Math.abs(first.rgba[i + k] - second.rgba[i + k]))) > 12) changed++;
+  }
+  return changed / (first.width * first.height);
+}
+
+const materialHooks = {
+  identity: 'fn cooked_surface(surface: CookedSurface, at: CookedSurfacePoint) -> CookedSurface {\n    return surface;\n}\n',
+  // A misspelt identifier on line 3, column 21.
+  misspelt: 'fn cooked_surface(surface: CookedSurface, at: CookedSurfacePoint) -> CookedSurface {\n    var out = surface;\n    out.roughness = roughnes * 0.5;\n    return out;\n}\n',
+  green: 'fn cooked_surface(surface: CookedSurface, at: CookedSurfacePoint) -> CookedSurface {\n    var out = surface;\n    out.base_colour = vec4(0.2, 1.0, 0.3, 1.0);\n    out.roughness = 0.3;\n    return out;\n}\n',
+};
+
+// Explicit material reloads on the cooked valley: a visible valid reload, a refused hook that
+// leaves the last pixels with its file and line, and a device replaced while a reload is
+// outstanding. Animation-frame intervals around the valid reload are recorded; headless Chrome
+// on a shared GPU, so they are contended observations, not a performance claim.
+async function qualifyMaterial(cdp, sessionId, poll, timeout, files, output, evidence, onDestroy) {
+  const deadline = Date.now() + timeout;
+  const until = (check, description) => waitFor(check, Math.max(0, deadline - Date.now()), description);
+  const evaluate = async expression => {
+    const result = await cdp.call('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true }, sessionId);
+    if (result.exceptionDetails) throw new Error(JSON.stringify(result.exceptionDetails));
+    return result.result.value;
+  };
+  const materialStatus = () => evaluate('document.querySelector("#material-status").textContent');
+  const serve = source => { const bytes = Buffer.from(source); files.set('/case.material.wgsl', { bytes, type: 'text/plain; charset=utf-8', sha256: sha(bytes) }); };
+  const awaitStatus = (pattern, description) => until(async () => { await poll(); const text = await materialStatus(); return pattern.test(text) ? text : undefined; }, description);
+  await until(async () => /^Running/.test((await poll()).status ?? ''), 'material demo startup');
+  const game = await existingGame(cdp, sessionId);
+  evidence.statuses = {};
+  evidence.statuses.initial = await awaitStatus(/material 1 \(case\.material\.wgsl\) drawn/, 'initial identity hook drawn');
+  const cooked = JSON.parse(await game.invoke('return game.cooked_status();') ?? 'null');
+  if (!cooked || !(cooked.drawn >= 1) || cooked.errors.length) throw new Error(`Cooked valley not drawn: ${JSON.stringify(cooked)}`);
+  await game.invoke('document.querySelector("[data-sky=noon]").click();document.querySelector("#scene-view").click();if(!game.paused())document.querySelector("#pause-world").click();return true;');
+  await until(async () => (await game.read()).paused, 'paused world');
+  const clip = await evaluate('(()=>{const r=document.querySelector("canvas").getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height,scale:1};})()');
+  const settle = async () => {
+    const start = field((await game.read()).report, 'presented');
+    await until(async () => { await poll(); return field((await game.read()).report, 'presented') >= start + 8; }, 'eight presents');
+  };
+  const capture = async name => {
+    await settle();
+    const shot = await screenshot(cdp, sessionId, output, name, { clip, file: `material-${name}.png` });
+    (evidence.captures ??= []).push(shot);
+    return decodePng(await fs.readFile(path.join(output, shot.file)));
+  };
+  const identity = await capture('identity');
+
+  // A visible valid reload through the real button, with the page's animation-frame intervals.
+  await evaluate(`(()=>{const log=window.__materialFrames={intervals:[],marks:{}};let last;const tick=t=>{if(last!==undefined)log.intervals.push(t-last);last=t;if(!log.stop)requestAnimationFrame(tick);};requestAnimationFrame(tick);return true;})()`);
+  await until(async () => { await poll(); return (await evaluate('window.__materialFrames.intervals.length')) >= 90; }, 'frames before the reload');
+  // The shipped moss hook, made unique per run (a sub-visible change to the moss colour) so the
+  // browser's and the system's shader caches cannot serve a compile from an earlier run.
+  const nonce = 1 + Math.floor(Math.random() * 9000);
+  const mossSource = (await fs.readFile(path.join(repo, 'examples/v1-game/materials/moss.material.wgsl'), 'utf8')).replace('vec3(0.10, 0.22, 0.05)', `vec3(0.10, 0.22, ${(0.05 + nonce * 1e-6).toFixed(6)})`);
+  if (!mossSource.includes(`${(0.05 + nonce * 1e-6).toFixed(6)}`)) throw new Error('Moss hook no longer has the colour the case varies');
+  serve(mossSource);
+  await evaluate('window.__materialFrames.marks.request=window.__materialFrames.intervals.length;document.querySelector("#reload-material").click();true');
+  evidence.statuses.moss = await awaitStatus(/material 2 \(case\.material\.wgsl\) drawn/, 'moss hook drawn');
+  await evaluate('window.__materialFrames.marks.promoted=window.__materialFrames.intervals.length;true');
+  await until(async () => { await poll(); return (await evaluate('window.__materialFrames.intervals.length-window.__materialFrames.marks.promoted')) >= 90; }, 'frames after the reload');
+  const frames = await evaluate('(()=>{window.__materialFrames.stop=true;return window.__materialFrames;})()');
+  const span = (from, to) => { const values = frames.intervals.slice(from, to); const sorted = [...values].sort((a, b) => a - b); return { frames: values.length, medianMs: sorted[sorted.length >> 1], worstMs: sorted[sorted.length - 1] }; };
+  const timing = /call ([\d.]+) ms, prepare ([\d.]+) ms, eligible ([\d.]+) ms, drawn ([\d.]+) ms/.exec(evidence.statuses.moss);
+  evidence.reload = {
+    engineMs: timing && { call: Number(timing[1]), prepare: Number(timing[2]), eligible: Number(timing[3]), drawn: Number(timing[4]) },
+    before: span(0, frames.marks.request), during: span(frames.marks.request, frames.marks.promoted + 1), after: span(frames.marks.promoted + 1),
+    scope: 'Headless Chrome, shared contended GPU, one run; requestAnimationFrame intervals of the page, including the fetch of the hook',
+  };
+  const moss = await capture('moss');
+  evidence.mossChanged = changedFraction(identity, moss);
+  if (!(evidence.mossChanged > 0.02)) throw new Error(`Valid reload was not visible: ${evidence.mossChanged}`);
+
+  // A refused hook: the diagnostic names the hook's file and line, and the last pixels stay.
+  serve(materialHooks.misspelt);
+  await evaluate('document.querySelector("#reload-material").click();true');
+  evidence.statuses.refused = await awaitStatus(/material 3 refused/, 'misspelt hook refused');
+  if (!evidence.statuses.refused.includes('case.material.wgsl:3:21:')) throw new Error(`Refusal did not name the hook's file, line and column: ${evidence.statuses.refused}`);
+  const refused = await capture('refused');
+  evidence.refusedChanged = changedFraction(moss, refused);
+  if (evidence.refusedChanged > 0.002) throw new Error(`Refused hook changed the pixels: ${evidence.refusedChanged}`);
+
+  // A device replaced while a reload is outstanding: the request and the destruction run in one
+  // task, so the candidate cannot publish; the replacement draws the last accepted hook.
+  const prototype = await cdp.call('Runtime.evaluate', { expression: 'GPUDevice.prototype' }, sessionId);
+  const { objects } = await cdp.call('Runtime.queryObjects', { prototypeObjectId: prototype.result.objectId }, sessionId);
+  await cdp.call('Runtime.releaseObject', { objectId: prototype.result.objectId }, sessionId);
+  const selected = await cdp.call('Runtime.callFunctionOn', { objectId: objects.objectId,
+    functionDeclaration: 'function(){if(this.length!==1)throw new Error(`Expected one actual GPUDevice, found ${this.length}`);return this[0];}' }, sessionId);
+  if (selected.exceptionDetails || !selected.result.objectId) throw new Error('Unique current GPUDevice unavailable');
+  onDestroy();
+  const outstanding = await cdp.call('Runtime.callFunctionOn', { objectId: selected.result.objectId, returnByValue: true,
+    functionDeclaration: 'function(games,source){const serial=games[0].reload_material("case.material.wgsl",source);this.destroy();return serial;}',
+    arguments: [{ objectId: game.objectId }, { value: materialHooks.green }] }, sessionId);
+  if (outstanding.exceptionDetails || outstanding.result.value !== 4) throw new Error(`Outstanding reload not requested: ${JSON.stringify(outstanding)}`);
+  await until(async () => (await game.read()).fault?.startsWith('Destroyed:') && await game.invoke('const button=document.querySelector("#restore-graphics");return !button.hidden&&!button.disabled;'), 'device destroyed with a reload outstanding');
+  await game.invoke('document.querySelector("#restore-graphics").click();return true;');
+  evidence.statuses.retired = await awaitStatus(/material 4 was prepared for a replaced device/, 'outstanding reload retired');
+  await until(async () => { const value = await game.read(); return !value.fault && !value.recovering && /^Running/.test((await poll()).status ?? ''); }, 'replacement device drawing');
+  const restored = await capture('restored');
+  evidence.restoredChanged = changedFraction(moss, restored);
+  if (evidence.restoredChanged > 0.002) throw new Error(`Replacement device did not draw the accepted hook: ${evidence.restoredChanged}`);
+  await destroyRetainedDevice(cdp, sessionId, selected.result.objectId);
+  await cdp.call('Runtime.releaseObject', { objectId: objects.objectId }, sessionId);
+
+  // The replacement device takes new reloads.
+  serve(materialHooks.green);
+  await evaluate('document.querySelector("#reload-material").click();true');
+  evidence.statuses.green = await awaitStatus(/material 5 \(case\.material\.wgsl\) drawn/, 'green hook drawn on the replacement device');
+  const green = await capture('green');
+  evidence.greenChanged = changedFraction(moss, green);
+  if (!(evidence.greenChanged > 0.02)) throw new Error(`Reload on the replacement device was not visible: ${evidence.greenChanged}`);
+  evidence.final = await game.read();
+  evidence.scope = 'Explicit material reloads on the cooked valley through the page; one actual GPUDevice.destroy with a reload outstanding; frame intervals are contended headless observations';
 }
 
 async function qualifyDeviceRecovery(cdp, sessionId, poll, timeout, evidence, onDestroy, failFirst, capturePhase) {
@@ -628,11 +782,12 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
   const recoveryCase = mode === 'device-recovery' || retryCase || valleyRecovery;
   const destroyCase = lossCase || recoveryCase;
   const valleyCase = mode === 'valley';
+  const materialCase = mode === 'material';
   const skyCase = mode === 'sky-reflections' || valleyCase;
   const faults = [], timeline = [];
-  let loss, recovery, sky, intentionalDestroys = 0;
+  let loss, recovery, sky, material, intentionalDestroys = 0;
   const onDestroy = () => { intentionalDestroys++; };
-  const url = valleyCase || valleyRecovery ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}` : mode === 'params' ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&params=case.params.json` : mode === 'controls' || destroyCase || skyCase ? `${origin}/` : `${origin}/?qualify${['normal', 'input'].includes(mode) ? '' : `&${mode}-probe`}`;
+  const url = materialCase ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&material=case.material.wgsl` : valleyCase || valleyRecovery ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}` : mode === 'params' ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&params=case.params.json` : mode === 'controls' || destroyCase || skyCase ? `${origin}/` : `${origin}/?qualify${['normal', 'input'].includes(mode) ? '' : `&${mode}-probe`}`;
   const log = line => { timeline.push(line); console.log(`${mode}: ${line}`); };
   try {
     ({ sessionId } = await cdp.call('Target.attachToTarget', { targetId, flatten: true }));
@@ -641,14 +796,14 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
       if (packet.method === 'Runtime.exceptionThrown') faults.push(packet.params.exceptionDetails);
       if (packet.method === 'Runtime.consoleAPICalled' && packet.params.type === 'error') {
         const messages = packet.params.args.map(arg => arg.value ?? arg.description);
-        const expectedDestroyed = destroyCase && intentionalDestroys > 0 && messages.length === 1 && /^Graphics fault: Destroyed:/.test(messages[0] ?? '');
+        const expectedDestroyed = (destroyCase || materialCase) && intentionalDestroys > 0 && messages.length === 1 && /^Graphics fault: Destroyed:/.test(messages[0] ?? '');
         const expectedConfigure = retryCase && intentionalDestroys > 0 && messages.length === 1 && /^Surface configuration failed:/.test(messages[0] ?? '') && messages[0].includes(configureFailureSentinel) && messages[0].includes('The surface will report as lost until it is successfully reconfigured.');
         if (!expectedDestroyed && !expectedConfigure) faults.push(messages);
       }
       if (packet.method === 'Network.responseReceived' && packet.params.response.url === `${origin}/v1_game_bg.wasm`) response = packet.params;
     };
     for (const domain of ['Runtime', 'Page']) await cdp.call(`${domain}.enable`, {}, sessionId);
-    await cdp.call('Network.enable', { maxResourceBufferSize: wasm.bytes.length * 2, maxTotalBufferSize: wasm.bytes.length * 3 + (valleyCase || valleyRecovery || mode === 'params' ? 256 << 20 : 0) }, sessionId);
+    await cdp.call('Network.enable', { maxResourceBufferSize: wasm.bytes.length * 2, maxTotalBufferSize: wasm.bytes.length * 3 + (valleyCase || valleyRecovery || materialCase || mode === 'params' ? 256 << 20 : 0) }, sessionId);
     await cdp.call('Network.setCacheDisabled', { cacheDisabled: true }, sessionId);
     await cdp.call('Page.addScriptToEvaluateOnNewDocument', { source: observeFaults }, sessionId);
     await cdp.call('Emulation.setDeviceMetricsOverride', { width: 1280, height: 1100, deviceScaleFactor: 1, mobile: false }, sessionId);
@@ -661,7 +816,7 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
       if (evaluated.exceptionDetails) throw new Error(JSON.stringify(evaluated.exceptionDetails));
       state = JSON.parse(evaluated.result.value ?? '{}');
       if (state.status !== last) { log(state.status ?? ''); last = state.status; }
-      if (faults.length || (/fault:/i.test(state.status ?? '') && !(destroyCase && intentionalDestroys > 0 && /^Graphics fault: Destroyed:/.test(state.status ?? '')))) throw new Error(`Browser fault: ${JSON.stringify(faults)} ${state.status}`);
+      if (faults.length || (/fault:/i.test(state.status ?? '') && !((destroyCase || materialCase) && intentionalDestroys > 0 && /^Graphics fault: Destroyed:/.test(state.status ?? '')))) throw new Error(`Browser fault: ${JSON.stringify(faults)} ${state.status}`);
       return state;
     };
     if (skyCase) {
@@ -725,6 +880,10 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
         recovery.captures = [`${mode}-restored-final.png`];
       }
     } else if (lossCase) loss = await qualifyDeviceLoss(cdp, sessionId, poll, timeout, mode === 'late-device-loss', onDestroy);
+    else if (materialCase) {
+      material = {};
+      await qualifyMaterial(cdp, sessionId, poll, timeout, files, output, material, onDestroy);
+    }
     else if (mode === 'controls') controls = await qualifyControls(cdp, sessionId, poll, timeout);
     else if (mode === 'params') {
       params = await qualifyParams(cdp, sessionId, poll, timeout, files, output);
@@ -760,8 +919,8 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
       }
       return /^adapter=/.test(state.status ?? '');
     }, timeout, `${mode} 600 completed GPU samples`);
-    const report = sky?.final.report ?? recovery?.snapshots.final.report ?? loss?.snapshots.final.report ?? controls?.snapshots.complete.report ?? state.status;
-    if (!destroyCase && !skyCase && mode !== 'params' && (field(report, 'samples') !== 600 || !(field(report, 'presented') >= 600))) throw new Error('Qualification requires 600 GPU-complete samples and at least 600 present calls');
+    const report = material?.final.report ?? sky?.final.report ?? recovery?.snapshots.final.report ?? loss?.snapshots.final.report ?? controls?.snapshots.complete.report ?? state.status;
+    if (!destroyCase && !skyCase && !materialCase && mode !== 'params' && (field(report, 'samples') !== 600 || !(field(report, 'presented') >= 600))) throw new Error('Qualification requires 600 GPU-complete samples and at least 600 present calls');
     if (state.hidden) throw new Error('Qualification target finished hidden');
     if (mode === 'pause' && (!timeline.some(line => /^Paused/.test(line)) || !timeline.some(line => /^Resumed/.test(line)) || field(state.status, 'overload_events') !== 0 || pause?.heldTick !== pause?.startTick || !Number.isFinite(pause?.heldTick) || !(field(state.status, 'ticks') > pause.heldTick))) throw new Error('Explicit two-second pause/resume was not observed without overload');
     if (mode === 'resize' && (state.width !== 960 || state.height !== 540 || !/extent=960x540;/.test(state.status))) throw new Error('Canvas/surface resize to 960x540 not applied');
@@ -778,15 +937,15 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
     if (!lossCase && (await game.read()).fault) throw new Error('Graphics device fault invalidated qualification');
     await screenshot(cdp, sessionId, output, mode);
     if (faults.length) throw new Error(`Runtime faults: ${JSON.stringify(faults)}`);
-    const scope = sky?.scope ?? recovery?.scope ?? (lossCase ? loss.scope : mode === 'params' ? 'Parameter file applied and reloaded through the page; no timing claim' : mode === 'controls' ? 'Manual pause with ongoing RAF and explicit visibility-hook composition; not actual tab visibility' : mode === 'pause' ? 'Explicit set_visible(false/true) hook; not actual tab visibility' : 'Headless WebGPU function; not display/cadence qualification');
-    const result = { case: mode, url, state, actualWasmSha256, responseStatus: 200, input, pause, controls, params, loss, recovery, sky, timeline, scope };
+    const scope = material?.scope ?? sky?.scope ?? recovery?.scope ?? (lossCase ? loss.scope : mode === 'params' ? 'Parameter file applied and reloaded through the page; no timing claim' : mode === 'controls' ? 'Manual pause with ongoing RAF and explicit visibility-hook composition; not actual tab visibility' : mode === 'pause' ? 'Explicit set_visible(false/true) hook; not actual tab visibility' : 'Headless WebGPU function; not display/cadence qualification');
+    const result = { case: mode, url, state, actualWasmSha256, responseStatus: 200, input, pause, controls, params, loss, recovery, sky, material, timeline, scope };
     await fs.writeFile(path.join(output, `${mode}.json`), JSON.stringify(result, null, 2));
     log(`PASS actualWasmSha256=${actualWasmSha256}`);
     return result;
   } catch (error) {
     failed = true;
     log(`FAIL ${error.message}`);
-    await fs.writeFile(path.join(output, `${mode}-failed.json`), JSON.stringify({ url, state, error: String(error), faults, timeline, recovery, sky, wasmResponse: response?.response }, null, 2));
+    await fs.writeFile(path.join(output, `${mode}-failed.json`), JSON.stringify({ url, state, error: String(error), faults, timeline, recovery, sky, material, wasmResponse: response?.response }, null, 2));
     throw error;
   } finally {
     if (sessionId && failed) {
@@ -830,13 +989,16 @@ async function cleanup(child, exited, cdp, server, profile) {
 
 async function main() {
   const args = options(process.argv.slice(2));
-  if (!args) { console.log('node scripts/check_v1_browser.mjs [--case all|normal|pause|resize|overload|input|controls|params|device-loss|late-device-loss|device-recovery|device-recovery-retry|sky-reflections|valley|valley-recovery] [--web-root target/v1-game-web] [--cook target/debug/thrum-cook] [--assets-source examples/v1-game/assets/showcase] [--chrome /path/to/Chrome] [--output tmp/new-run] [--timeout-ms 90000]\nRequires Node 24+, an already-built game, and this Mac\'s Apple M3 Max/Metal Chrome. Controls checks manual pause with ongoing RAF; params applies, explains and reloads a parameter file; visibility checks use the explicit hook, not tab hiding. Recovery uses the real restore button; retry injects exactly one standard canvas configure failure. Sky reflections saves eight paused phases and 24 camera/Sun samples; valley repeats them on the cooked valley served by thrum-cook; valley-recovery runs device recovery with that valley attached. No timing claim.'); return; }
+  if (!args) { console.log('node scripts/check_v1_browser.mjs [--case all|normal|pause|resize|overload|input|controls|params|device-loss|late-device-loss|device-recovery|device-recovery-retry|sky-reflections|valley|valley-recovery|material] [--web-root target/v1-game-web] [--cook target/debug/thrum-cook] [--assets-source examples/v1-game/assets/showcase] [--chrome /path/to/Chrome] [--output tmp/new-run] [--timeout-ms 90000]\nRequires Node 24+, an already-built game, and this Mac\'s Apple M3 Max/Metal Chrome. Controls checks manual pause with ongoing RAF; params applies, explains and reloads a parameter file; visibility checks use the explicit hook, not tab hiding. Recovery uses the real restore button; retry injects exactly one standard canvas configure failure. Sky reflections saves eight paused phases and 24 camera/Sun samples; valley repeats them on the cooked valley served by thrum-cook; valley-recovery runs device recovery with that valley attached; material reloads a WGSL hook on that valley (valid, refused, and outstanding across a destroyed device) and records contended frame intervals around the valid reload. The other cases make no timing claim.'); return; }
   if (Number(process.versions.node.split('.')[0]) < 24 || typeof WebSocket !== 'function') throw new Error('Node 24+ with builtin WebSocket is required');
   const directory = await fs.realpath(path.resolve(repo, args['web-root']));
   const files = await assets(directory);
   // The params case's file: two valid entries and one typo; the case rewrites it to test reload.
   const caseParams = Buffer.from('{"world.paused": true, "sky.solar_time": 17.9, "camera.yw": 10}');
   files.set('/case.params.json', { bytes: caseParams, type: 'application/json', sha256: sha(caseParams) });
+  // The material case starts from the identity hook and rewrites the file for each reload.
+  const caseMaterial = Buffer.from(materialHooks.identity);
+  files.set('/case.material.wgsl', { bytes: caseMaterial, type: 'text/plain; charset=utf-8', sha256: sha(caseMaterial) });
   const output = path.resolve(repo, args.output ?? `tmp/v1-browser-${Date.now()}`);
   const temp = await fs.realpath(path.join(repo, 'tmp'));
   if (!output.startsWith(temp + path.sep)) throw new Error('--output must name a new directory under repository tmp/');
@@ -874,7 +1036,7 @@ async function main() {
     const modes = args.case === 'all' ? cases : [args.case];
     let assetsOrigin;
     let assetsSource;
-    if (modes.includes('valley') || modes.includes('valley-recovery') || modes.includes('params')) ({ cook, origin: assetsOrigin, source: assetsSource } = await serveCooked(args, output));
+    if (modes.some(mode => ['valley', 'valley-recovery', 'params', 'material'].includes(mode))) ({ cook, origin: assetsOrigin, source: assetsSource } = await serveCooked(args, output));
     for (const mode of modes) results.push(await qualify(cdp, mode, serving.origin, output, directory, files.get('/v1_game_bg.wasm'), args['timeout-ms'], assetsOrigin, assetsSource, files));
   } catch (error) { failure = error; }
   finally {

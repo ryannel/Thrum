@@ -162,8 +162,9 @@ fn scene_package(folder: &str) -> Result<(String, String), Box<dyn Error>> {
 /// Build a scene package and the cooker, cook the scene's `assets/` into a store under the
 /// build directory, keep G5's watcher cooking edits while the scene's window is open, and stop
 /// the watcher when the window closes or the scene fails. The scene gets `THRUM_ASSET_STORE`
-/// and, unless `THRUM_PARAMS` is already set, `<folder>/<folder name>.params.json` when it
-/// exists. `THRUM_SCENE_ASSETS` cooks another source folder, such as a copy to experiment on.
+/// and, unless already set, `THRUM_PARAMS` for `<folder>/<folder name>.params.json` and
+/// `THRUM_MATERIAL` for `<folder>/material.wgsl` when they exist; the window reloads both on
+/// `L`. `THRUM_SCENE_ASSETS` cooks another source folder, such as a copy to experiment on.
 fn scene(root: &Path, folder: &str) -> TaskResult {
     if !cfg!(target_os = "macos") {
         return Err("scene windows run on macOS only".into());
@@ -217,6 +218,10 @@ fn scene(root: &Path, folder: &str) -> TaskResult {
     let params = directory.join(format!("{}.params.json", name.to_string_lossy()));
     if env::var_os("THRUM_PARAMS").is_none() && params.is_file() {
         run.env("THRUM_PARAMS", params);
+    }
+    let material = directory.join("material.wgsl");
+    if env::var_os("THRUM_MATERIAL").is_none() && material.is_file() {
+        run.env("THRUM_MATERIAL", material);
     }
     let mut watcher = Command::new(&cook)
         .arg("watch")

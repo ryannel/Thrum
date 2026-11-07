@@ -1,8 +1,9 @@
 # Thrum starter
 
-One cooked rock on lit ground under a physically based sky, a camera, and two Sun sliders, in 42 lines of game
-code ([src/main.rs](src/main.rs), counting non-blank, non-comment lines). The game names no engine game types: it
-uses the sky kit in `thrum_app::sky`, which brings the typed controls, cooked meshes, the ground and the window.
+One cooked rock on lit ground under a physically based sky, a camera, two Sun sliders and a reloadable material
+hook, in 42 lines of game code ([src/main.rs](src/main.rs), counting non-blank, non-comment lines). The game names no
+engine game types: it uses the sky kit in `thrum_app::sky`, which brings the typed controls, cooked meshes, the
+ground, the material hook and the window.
 
 ## Run it
 
@@ -18,8 +19,8 @@ If this is a fresh checkout, first run `rustup run 1.99.1 cargo fetch --locked` 
 1. builds `thrum-starter` and the `thrum-cook` cooker in release mode;
 2. cooks [assets/](assets) into a store at `target/scenes/thrum-starter/store`;
 3. starts `thrum-cook watch` on the same folders, so saved asset edits are cooked again;
-4. opens the window with `THRUM_ASSET_STORE` set to that store and `THRUM_PARAMS` set to
-   [starter.params.json](starter.params.json);
+4. opens the window with `THRUM_ASSET_STORE` set to that store, `THRUM_PARAMS` set to
+   [starter.params.json](starter.params.json) and `THRUM_MATERIAL` set to [material.wgsl](material.wgsl);
 5. stops the watcher when you close the window, or if the scene fails.
 
 The panel beside the window holds the Sun's elevation and azimuth. Set `THRUM_REPORT=1` to print a frames report
@@ -37,6 +38,13 @@ platform tag, and macOS is the right assumption.
   `THRUM_SCENE_ASSETS=/path/to/copy` before `./dev starter`.
 - **Parameters.** Edit [starter.params.json](starter.params.json) (display values, in degrees) and
   press `L` in the window. Unknown keys and out-of-range values are refused by name.
+- **Material.** Edit [material.wgsl](material.wgsl), the rock's material hook, and press `L`. Its
+  `cooked_surface` function returns the base colour, roughness, metalness and emission to shade
+  with, and can use the fragment's `uv`, world position and normal; the file's comments list the
+  fields and a moss example. The new material draws once it compiles, which takes about a second,
+  while the old one keeps drawing. A mistake is printed with its line and column, such as
+  `material.wgsl:17:21: no definition in scope for identifier`, and the previous material keeps
+  drawing.
 - **Code.** Edit `src/main.rs`, close the window and run `./dev starter` again.
 
 ## Make your own scene
@@ -124,7 +132,8 @@ distant planet surface below the horizon, which takes no shadows.
 ## Review a frame without a window
 
 `THRUM_CAPTURE_PNG=<file>` renders one frame offscreen at the window size and writes it as a PNG,
-after applying `THRUM_PARAMS` and waiting for the cooked meshes to draw:
+after applying `THRUM_PARAMS`, waiting for the cooked meshes to draw and drawing `THRUM_MATERIAL` if it is set
+(a hook that does not compile refuses the capture):
 
 ```sh
 THRUM_ASSET_STORE=target/scenes/thrum-starter/store THRUM_PARAMS=examples/starter/starter.params.json \

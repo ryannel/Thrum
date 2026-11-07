@@ -390,10 +390,16 @@ impl<G: Game + 'static> App<G> {
         Ok(())
     }
 
-    /// `L` reloads the parameter file; every other key belongs to the game.
+    /// `L` reloads the parameter file and the game's own files; every other key belongs to the
+    /// game.
     fn set_key(&mut self, code: KeyCode, pressed: bool) -> Result<(), String> {
         if pressed && code == KeyCode::KeyL {
-            return self.load_params();
+            self.load_params()?;
+            self.game.reload();
+            if let Some(window) = &self.window {
+                window.request_redraw();
+            }
+            return Ok(());
         }
         match self.game.key(code, pressed)? {
             KeyResponse::Ignored => Ok(()),
@@ -491,7 +497,9 @@ impl<G: Game + 'static> App<G> {
             self.origin,
             wake,
         )?);
-        self.load_params()
+        self.load_params()?;
+        self.game.reload();
+        Ok(())
     }
 
     /// Drop the oldest half of any profile history over a run until closed's bound.

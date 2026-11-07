@@ -10,6 +10,9 @@
 //! Content identity survives device reconstruction: on a new device generation the loader is
 //! restarted against the same store and products are mapped and staged again.
 //!
+//! A game may replace the meshes' material factors with one WGSL hook, reloaded explicitly through
+//! [`CookedAssets::material`]; see [`MaterialReload`]. Without a hook nothing changes.
+//!
 //! A [`CookedSource::Remote`] feed of generations fetched by `thrum_asset::DevClient` (the
 //! browser has no store to map and no loader thread) is prepared on the render thread: when the
 //! contribution starts, and at the next upload after each [`RemoteFeed::publish`]. Products the
@@ -27,6 +30,7 @@
 
 mod draw;
 mod load;
+mod material;
 mod placement;
 mod staging;
 
@@ -46,6 +50,9 @@ use thrum_render::contribution::{
     ContributionFrame, ContributionPasses, SceneContribution, SceneSurface, ShadowBounds,
 };
 
+pub use material::{
+    MaterialDiagnostic, MaterialHook, MaterialOutcome, MaterialReload, ReloadTiming,
+};
 pub use placement::{MeshPlacement, PlacementError};
 pub use staging::COPY_UNIT;
 
@@ -302,6 +309,9 @@ struct Live {
     readback: Readback,
     /// What this frame's encoder recorded, committed only by `submitted`.
     tentative: Option<Tentative>,
+    /// A validated material replacement, drawn from the next frame and promoted by its
+    /// submission.
+    material: Option<material::Eligible>,
 }
 
 /// A publication being uploaded. Its committed copy progress lives in `set.upload`.
@@ -323,6 +333,8 @@ struct Tentative {
     counted: Option<u32>,
     /// The meshes' history flag this frame.
     history: Option<bool>,
+    /// This frame draws the held material replacement.
+    material: bool,
 }
 
 /// Non-blocking copy-out of the cull's visible count: copy in a submitted frame, map after that
@@ -418,6 +430,14 @@ impl Live {
             self.current.as_ref().map(|(_, bound)| bound)
         }
     }
+
+    /// The material replacement this frame draws instead of the accepted mesh pipeline.
+    fn mesh_override(&self) -> Option<&wgpu::RenderPipeline> {
+        self.tentative
+            .filter(|tentative| tentative.material)
+            .and(self.material.as_ref())
+            .map(|eligible| &eligible.pipeline)
+    }
 }
 
 /// Cooked products drawn in the scene. Attach with
@@ -426,6 +446,10 @@ pub struct CookedAssets {
     config: CookedConfig,
     stats: Arc<Mutex<CookedStats>>,
     live: Option<Live>,
+    /// The accepted material hook and every reload request.
+    material: MaterialReload,
+    /// Scene surfaces rebuilt for; a material candidate is bound to one.
+    epoch: u64,
 }
 
 impl CookedAssets {
@@ -442,7 +466,15 @@ impl CookedAssets {
             config,
             stats: Arc::new(Mutex::new(CookedStats::default())),
             live: None,
+            material: MaterialReload::new(),
+            epoch: 0,
         })
+    }
+
+    /// Explicit reloads of the meshes' material hook. Without a request the meshes draw the
+    /// built-in material, exactly as they would without this handle.
+    pub fn material(&self) -> MaterialReload {
+        self.material.clone()
     }
 
     /// Shared observations.
@@ -450,7 +482,7 @@ impl CookedAssets {
         Arc::clone(&self.stats)
     }
 
-    fn start(&self, surface: &SceneSurface<'_>) -> Live {
+    fn start(&self, surface: &SceneSurface<'_>, pipelines: draw::Pipelines) -> Live {
         // One newest staged set waits for the render thread; a newer one replaces it and the
         // superseded staging retires at once, even while no frame encodes.
         let mailbox = Arc::new(load::Mailbox::default());
@@ -519,21 +551,34 @@ impl CookedAssets {
             remote,
             mailbox,
             resident_tx,
-            pipelines: draw::Pipelines::new(surface),
+            pipelines,
             pending: None,
             current: None,
             readback: Readback::new(surface.device),
             tentative: None,
+            material: None,
         }
     }
 
     /// Rebuild pipelines and bindings for `surface`, or restart on a new device generation.
     fn rebuild_inner(&mut self, surface: &SceneSurface<'_>) {
+        // A material candidate for the previous surface cannot publish; the accepted hook is
+        // rebuilt for this one.
+        self.epoch += 1;
+        let target = material::Target::new(surface, self.epoch);
+        let accepted = self.material.retarget(target.clone());
+        if let Some(held) = self.live.as_mut().and_then(|live| live.material.take()) {
+            self.material.retire(held.serial);
+        }
+        let (pipelines, refused) = draw::Pipelines::new(surface, &target, accepted.as_ref());
+        if let Some(diagnostics) = refused {
+            self.material.drop_accepted(diagnostics);
+        }
         match self.live.as_mut() {
             // Same device: the scene shader or layouts may have changed; resources stay, history
             // restarts with the new bindings.
             Some(live) if live.generation == surface.generation => {
-                live.pipelines = draw::Pipelines::new(surface);
+                live.pipelines = pipelines;
                 live.tentative = None;
                 if let Some((set, bound)) = live.current.as_mut() {
                     *bound =
@@ -547,7 +592,7 @@ impl CookedAssets {
             // New device generation: products are mapped and staged again for it.
             _ => {
                 self.live = None;
-                self.live = Some(self.start(surface));
+                self.live = Some(self.start(surface, pipelines));
             }
         }
     }
@@ -608,6 +653,9 @@ impl SceneContribution for CookedAssets {
         if let Some(remote) = live.remote.as_mut() {
             remote.prepare_newest(&live.mailbox, &live.stop);
         }
+        // A frame boundary: the newest validated material replacement is drawn from this frame.
+        self.material
+            .frame_boundary(&mut live.material, (live.generation, self.epoch));
         // Newest publication wins; a superseded pending set is dropped with its staging.
         if let Some(set) = live.mailbox.take() {
             live.pending = Some(Pending {
@@ -617,7 +665,10 @@ impl SceneContribution for CookedAssets {
                 bound: None,
             });
         }
-        let mut tentative = Tentative::default();
+        let mut tentative = Tentative {
+            material: live.material.is_some(),
+            ..Tentative::default()
+        };
         if let Some(pending) = live.pending.as_mut() {
             let recorded = pending.set.upload.encode(encoder, budget);
             tentative.swap = pending.set.upload.completes(recorded);
@@ -644,7 +695,13 @@ impl SceneContribution for CookedAssets {
         if let Some(live) = self.live_for(frame)
             && let Some(bound) = live.drawn()
         {
-            let history = live.pipelines.cull(bound, pass, frame);
+            // A new material restarts the meshes' motion history once, like a new set.
+            let promoting = live.tentative.is_some_and(|tentative| tentative.material);
+            let frame = ContributionFrame {
+                history_reset: frame.history_reset || promoting,
+                ..*frame
+            };
+            let history = live.pipelines.cull(bound, pass, &frame);
             if let Some(tentative) = live.tentative.as_mut() {
                 tentative.history = Some(history);
             }
@@ -671,7 +728,7 @@ impl SceneContribution for CookedAssets {
         if let Some(live) = &self.live
             && let Some(bound) = live.drawn()
         {
-            live.pipelines.draw(bound, pass);
+            live.pipelines.draw(bound, pass, live.mesh_override());
         }
     }
 
@@ -742,6 +799,16 @@ impl SceneContribution for CookedAssets {
         // capture, which leaves view history where it was.
         if history_advanced && let Some((_, bound)) = &live.current {
             bound.continued.set(true);
+        }
+        if tentative.material
+            && let Some(eligible) = live.material.take()
+        {
+            live.pipelines.install_mesh(eligible.pipeline.clone());
+            self.material.promote(eligible);
+            // A capture does not become the previous frame: the next frame restarts history.
+            if !history_advanced && let Some((_, bound)) = &live.current {
+                bound.continued.set(false);
+            }
         }
     }
 }
