@@ -24,8 +24,10 @@ pub(crate) enum Take<S> {
     Taken(S),
     /// No surface was installed.
     Empty,
-    /// The owner is inside a configure or acquire/present section. The epoch
-    /// already rejects that section's drawable; retry after its reply.
+    /// The owner is inside a configure or acquire/present section admitted
+    /// under the old epoch. Its remaining epoch checks drop the drawable, but
+    /// a revocation after its final check lets it present that one acquired
+    /// drawable onto the still-attached old layer. Retry after its reply.
     Busy,
 }
 

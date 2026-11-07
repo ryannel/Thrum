@@ -281,3 +281,10 @@ Done when:
   taken: lock wording, stale-row bracketing logged. Others recorded for follow-up: in-section epoch check as a
   read-modify-write for a formal happens-before on configure; touches on a Busy-released window before
   `finish_release` go uncounted; stale detection keys on touch id; a real UIKit `Cancelled` phase is unit-tested only.
+- 2026-11-07 Thrum Core accepted the race witness (exactly one admitted present, detach after release) and the XCUITest
+  driver as the real simulator input witness. The `release_surface` and `Take::Busy` comments now describe the
+  final-check race. Overloads on fresh runs (`route-fresh-7`: 1 overload, 893 refused ticks; `route-fresh-8`: 3, 799)
+  come from host load on the shared Mac starving the simulated world lane. The fixed clock refuses the backlog and
+  drains it before resume. The disposition is logged with each run, and these runs make no physical-device timing claim.
+  One display-target callback took 1.6 s in `route-fresh-8` outside any stall, also host descheduling; it is reported
+  and not gated.
