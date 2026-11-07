@@ -9,7 +9,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
-const cases = ['normal', 'pause', 'resize', 'overload', 'input', 'controls', 'tabs', 'params', 'device-loss', 'late-device-loss', 'device-recovery', 'device-recovery-retry', 'sky-reflections', 'valley', 'valley-recovery', 'material', 'material-disabled', 'field', 'field-direct', 'field-oracle', 'route'];
+const cases = ['normal', 'pause', 'resize', 'overload', 'input', 'controls', 'tabs', 'params', 'device-loss', 'late-device-loss', 'device-recovery', 'device-recovery-retry', 'sky-reflections', 'valley', 'valley-recovery', 'material', 'material-disabled', 'field', 'field-direct', 'field-occlusion', 'field-oracle', 'route'];
 const configureFailureSentinel = 'THRUM_G3B_CONFIGURE_ONCE';
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -976,7 +976,7 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
   const faults = [], timeline = [];
   let loss, recovery, sky, material, oracle, route, intentionalDestroys = 0;
   const onDestroy = () => { intentionalDestroys++; };
-  const url = routeCase ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&params=${routeFile}` : materialCase || materialDisabled ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&material=case.material.wgsl` : valleyCase || valleyRecovery ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}` : mode === 'params' ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&params=case.params.json` : mode === 'controls' || tabCase || destroyCase || skyCase ? `${origin}/` : mode === 'field' ? `${origin}/?qualify&field` : mode === 'field-direct' ? `${origin}/?qualify&field&culling=direct` : oracleCase ? `${origin}/?field&culling=${mode.slice('field-oracle-'.length)}&params=field-oracle.params.json` : `${origin}/?qualify${['normal', 'input'].includes(mode) ? '' : `&${mode}-probe`}`;
+  const url = routeCase ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&params=${routeFile}` : materialCase || materialDisabled ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&material=case.material.wgsl` : valleyCase || valleyRecovery ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}` : mode === 'params' ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&params=case.params.json` : mode === 'controls' || tabCase || destroyCase || skyCase ? `${origin}/` : mode === 'field' ? `${origin}/?qualify&field` : mode === 'field-direct' ? `${origin}/?qualify&field&culling=direct` : mode === 'field-occlusion' ? `${origin}/?qualify&field&culling=occlusion` : oracleCase ? `${origin}/?field&culling=${mode.slice('field-oracle-'.length)}&params=field-oracle.params.json` : `${origin}/?qualify${['normal', 'input'].includes(mode) ? '' : `&${mode}-probe`}`;
   const log = line => { timeline.push(line); console.log(`${mode}: ${line}`); };
   try {
     ({ sessionId } = await cdp.call('Target.attachToTarget', { targetId, flatten: true }));
@@ -1374,27 +1374,32 @@ async function fieldOracleLoss(cdp, sessionId, poll, timeout, game, onDestroy) {
 
 async function compareFieldOracle(output, results) {
   const direct = results.find(result => result.case === 'field-oracle-direct')?.oracle;
-  const frustum = results.find(result => result.case === 'field-oracle-frustum')?.oracle;
-  if (!direct || !frustum) throw new Error('Field oracle needs both culling modes');
+  const culled = { Frustum: results.find(result => result.case === 'field-oracle-frustum')?.oracle, Occlusion: results.find(result => result.case === 'field-oracle-occlusion')?.oracle };
+  if (!direct || !culled.Frustum || !culled.Occlusion) throw new Error('Field oracle needs all three culling modes');
   if (direct.culling !== 'Direct' || direct.drawn !== undefined) throw new Error(`Direct page reports ${direct.culling} with drawn ${direct.drawn}`);
-  if (frustum.culling !== 'Frustum' || !(frustum.drawn > 0 && frustum.drawn < frustum.active)) throw new Error(`Frustum page reports ${frustum.culling}, drawn ${frustum.drawn} of ${frustum.active}`);
+  for (const [mode, page] of Object.entries(culled)) if (page.culling !== mode || !(page.drawn > 0 && page.drawn < page.active)) throw new Error(`${mode} page reports ${page.culling}, drawn ${page.drawn} of ${page.active}`);
   const views = [];
   for (const [index, reference] of direct.captures.entries()) {
-    const culled = frustum.captures[index];
-    const strip = identity => identity.replace(/;generation=\d+/, '');
-    if (strip(reference.identity) !== strip(culled.identity) || reference.yaw !== culled.yaw || reference.pitch !== culled.pitch) throw new Error(`Field oracle views differ: ${JSON.stringify({ reference, culled })}`);
-    let differing = 0;
-    if (reference.sha256 !== culled.sha256) {
-      const [a, b] = await Promise.all([reference.file, culled.file].map(file => fs.readFile(path.join(output, file))));
-      for (let offset = 0; offset < Math.max(a.length, b.length); offset += 4) if (a.readUInt32LE(offset) !== b.readUInt32LE(offset)) differing++;
+    const view = { yaw: reference.yaw, pitch: reference.pitch, identity: reference.identity };
+    for (const [mode, page] of Object.entries(culled)) {
+      const capture = page.captures[index];
+      const strip = identity => identity.replace(/;generation=\d+/, '');
+      if (strip(reference.identity) !== strip(capture.identity) || reference.yaw !== capture.yaw || reference.pitch !== capture.pitch) throw new Error(`Field oracle views differ: ${JSON.stringify({ reference, capture })}`);
+      let differing = 0;
+      if (reference.sha256 !== capture.sha256) {
+        const [a, b] = await Promise.all([reference.file, capture.file].map(file => fs.readFile(path.join(output, file))));
+        for (let offset = 0; offset < Math.max(a.length, b.length); offset += 4) if (a.readUInt32LE(offset) !== b.readUInt32LE(offset)) differing++;
+      }
+      view[mode] = { equal: differing === 0, differing };
     }
-    views.push({ yaw: reference.yaw, pitch: reference.pitch, identity: reference.identity, equal: differing === 0, differing });
+    views.push(view);
   }
-  const result = { case: 'field-oracle', views, culling: { direct: direct.culling, frustum: frustum.culling, drawn: frustum.drawn, active: frustum.active }, scope: 'Chrome Frustum against Chrome Direct, byte-equal RGBA8 captures at the same committed tick, view and extent' };
+  const counts = mode => ({ drawn: culled[mode].drawn, active: culled[mode].active });
+  const result = { case: 'field-oracle', views, culling: { direct: direct.culling, frustum: counts('Frustum'), occlusion: counts('Occlusion') }, scope: 'Chrome Frustum and Occlusion each against Chrome Direct, byte-equal RGBA8 captures at the same committed tick, view and extent; each view change leaves Occlusion one frame of stale history' };
   await fs.writeFile(path.join(output, 'field-oracle.json'), JSON.stringify(result, null, 2));
-  const failing = views.filter(view => !view.equal);
-  if (failing.length) throw new Error(`Field oracle: Frustum differs from Direct at ${JSON.stringify(failing)}`);
-  console.log(`field-oracle: PASS ${views.length} views byte-equal at ${views[0].identity}`);
+  const failing = views.filter(view => !view.Frustum.equal || !view.Occlusion.equal);
+  if (failing.length) throw new Error(`Field oracle: a culled mode differs from Direct at ${JSON.stringify(failing)}`);
+  console.log(`field-oracle: PASS ${views.length} views byte-equal for Frustum and Occlusion at ${views[0].identity}`);
   return result;
 }
 
@@ -1428,7 +1433,7 @@ async function cleanup(child, exited, cdp, server, profile) {
 
 async function main() {
   const args = options(process.argv.slice(2));
-  if (!args) { console.log('node scripts/check_v1_browser.mjs [--case all|normal|pause|resize|overload|input|controls|tabs|params|device-loss|late-device-loss|device-recovery|device-recovery-retry|sky-reflections|valley|valley-recovery|material|material-disabled|field|field-direct|field-oracle|route] [--web-root target/v1-game-web] [--cook target/debug/thrum-cook] [--assets-source examples/v1-game/assets/showcase] [--chrome /path/to/Chrome] [--output tmp/new-run] [--timeout-ms 90000]\nRequires Node 24+, an already-built game, and this Mac\'s Apple M3 Max/Metal Chrome. Controls checks manual pause with ongoing RAF; tabs switches real Chrome tabs and checks authority, input release and manual pause; params applies, explains and reloads a parameter file; visibility checks use the explicit hook, not tab hiding. Recovery uses the real restore button; retry injects exactly one standard canvas configure failure. Sky reflections saves nine paused phases and 24 camera/Sun samples; valley repeats them on the cooked valley served by thrum-cook; valley-recovery runs device recovery with that valley attached; material reloads a WGSL hook on that valley (valid, refused, and outstanding across a destroyed device) and records contended frame intervals around the valid reload; it needs the development page (web/build.sh --dev), so all leaves it out. material-disabled loads the default page with ?material and proves it starts no material work. Field qualifies the 100,513-instance flythrough with Frustum camera culling; field-direct qualifies it with Direct for a paired comparison; field-oracle pauses two fresh pages and compares Frustum captures with Direct byte for byte. Route launches one fresh page per checked-in examples/v1-game/params/showcase-*.params.json preset with the cooked valley, after requiring the web root to ship each byte for byte and no others; it proves the preset applied and the valley drew, brackets navigation to the first observed cooked draw on the page clock, and captures the paused canvas. The other cases make no timing claim.'); return; }
+  if (!args) { console.log('node scripts/check_v1_browser.mjs [--case all|normal|pause|resize|overload|input|controls|tabs|params|device-loss|late-device-loss|device-recovery|device-recovery-retry|sky-reflections|valley|valley-recovery|material|material-disabled|field|field-direct|field-occlusion|field-oracle|route] [--web-root target/v1-game-web] [--cook target/debug/thrum-cook] [--assets-source examples/v1-game/assets/showcase] [--chrome /path/to/Chrome] [--output tmp/new-run] [--timeout-ms 90000]\nRequires Node 24+, an already-built game, and this Mac\'s Apple M3 Max/Metal Chrome. Controls checks manual pause with ongoing RAF; tabs switches real Chrome tabs and checks authority, input release and manual pause; params applies, explains and reloads a parameter file; visibility checks use the explicit hook, not tab hiding. Recovery uses the real restore button; retry injects exactly one standard canvas configure failure. Sky reflections saves nine paused phases and 24 camera/Sun samples; valley repeats them on the cooked valley served by thrum-cook; valley-recovery runs device recovery with that valley attached; material reloads a WGSL hook on that valley (valid, refused, and outstanding across a destroyed device) and records contended frame intervals around the valid reload; it needs the development page (web/build.sh --dev), so all leaves it out. material-disabled loads the default page with ?material and proves it starts no material work. Field qualifies the 100,513-instance flythrough with Frustum camera culling; field-direct and field-occlusion qualify it with Direct and Occlusion for a paired comparison; field-oracle pauses three fresh pages and compares Frustum and Occlusion captures with Direct byte for byte. Route launches one fresh page per checked-in examples/v1-game/params/showcase-*.params.json preset with the cooked valley, after requiring the web root to ship each byte for byte and no others; it proves the preset applied and the valley drew, brackets navigation to the first observed cooked draw on the page clock, and captures the paused canvas. The other cases make no timing claim.'); return; }
   if (Number(process.versions.node.split('.')[0]) < 24 || typeof WebSocket !== 'function') throw new Error('Node 24+ with builtin WebSocket is required');
   const directory = await fs.realpath(path.resolve(repo, args['web-root']));
   const files = await assets(directory);
@@ -1478,7 +1483,7 @@ async function main() {
     // `all` checks the default page; `material` needs the development page, so it runs on its own.
     const modes = [];
     for (const mode of args.case === 'all' ? cases.filter(mode => mode !== 'material') : [args.case]) {
-      modes.push(...(mode === 'field-oracle' ? ['field-oracle-direct', 'field-oracle-frustum'] : mode === 'route' ? await routeStops(files, directory) : [mode]));
+      modes.push(...(mode === 'field-oracle' ? ['field-oracle-direct', 'field-oracle-frustum', 'field-oracle-occlusion'] : mode === 'route' ? await routeStops(files, directory) : [mode]));
     }
     let assetsOrigin;
     let assetsSource;
