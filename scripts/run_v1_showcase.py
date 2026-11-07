@@ -650,7 +650,11 @@ def startup(args):
                     raise Failure(f'launch {launch} {stop}: Chrome loaded Wasm {result["actualWasmSha256"]}, not the build')
                 if stage['sha256'] != sha256(PARAMS / f'showcase-{stop}.params.json'):
                     raise Failure(f'launch {launch} {stop}: served preset differs from the repository')
+                if observed['observeDelayMs']:
+                    raise Failure(f'launch {launch} {stop}: the first observation was delayed for testing')
                 rows.append({'launch': launch, 'page': order + 1, 'cold': order == 0, 'stop': stop,
+                             # Without an observation that establishes no draw, the lower bound is navigation start.
+                             'lower_observed': observed['lowerObserved'],
                              'lower_ms': observed['lowerMs'], 'upper_ms': observed['upperMs'],
                              'granularity_ms': observed['granularityMs'], 'median_poll_ms': observed['medianPollMs'],
                              'phases_ms': observed['phases'], 'wasm': observed['timing']['wasm'],
@@ -662,7 +666,8 @@ def startup(args):
         report['generation_1_root'] = roots.pop()
         report['summary_upper_ms'] = {'cold': spread([row['upper_ms'] for row in rows if row['cold']]),
                                       'warm': spread([row['upper_ms'] for row in rows if not row['cold']])}
-        report['summary_granularity_ms'] = spread([row['granularity_ms'] for row in rows])
+        report['summary_granularity_ms'] = spread([row['granularity_ms'] for row in rows if row['lower_observed']])
+        report['lower_bound_absent'] = sum(not row['lower_observed'] for row in rows)
         report['clock'] = 'page performance.now(), ms since navigation start'
         report['cache'] = 'fresh Chrome process and profile per launch; HTTP cache disabled for each page'
         report['scope'] = ('Headless CDP polling proxy for navigation to the first observed cooked draw on hardware WebGPU; '
@@ -678,11 +683,14 @@ def startup(args):
     write_json(run / 'run.json', report)
     print(f'{"launch":>6} {"page":>4} {"stop":>16} {"cold":>4} {"lower":>7} {"upper":>7} {"gran":>6}')
     for row in rows:
+        lower, gap = (f'{row["lower_ms"]:.1f}', f'{row["granularity_ms"]:.1f}') if row['lower_observed'] else ('(0)', '-')
         print(f'{row["launch"]:>6} {row["page"]:>4} {row["stop"]:>16} {"yes" if row["cold"] else "":>4} '
-              f'{row["lower_ms"]:7.1f} {row["upper_ms"]:7.1f} {row["granularity_ms"]:6.1f}')
+              f'{lower:>7} {row["upper_ms"]:7.1f} {gap:>6}')
     for kind, values in report.get('summary_upper_ms', {}).items():
         if values:
             print(f'{kind} upper bound ms: n {values["count"]} min {values["min"]:.1f} median {values["median"]:.1f} max {values["max"]:.1f}')
+    if report.get('lower_bound_absent'):
+        print(f'{report["lower_bound_absent"]} page(s) had no observation before the draw: lower bound is navigation start')
     print(f'{"PASS" if report["passed"] else "FAIL"}: {run / "run.json"}')
     for failure in report['failures']:
         print(f'  {failure}')

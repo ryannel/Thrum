@@ -1225,14 +1225,20 @@ async function qualifyRoute(cdp, sessionId, poll, timeout, output, mode, file, f
 
 // Startup proxy for one route page, observed on the page's own clock (performance.now(), milliseconds since its
 // navigation started). The page fetches and attaches the cooked valley before it reports Running and starts its frame
-// loop, so nothing cooked is drawn before Running. Until the page starts fetching the valley only the clock and status
-// line are read; from then on the clock, status and cooked_status() are read in one call. The first draw lies between the last observation without one and
-// the first with one: the latter is an upper bound, and the gap between them is the observation granularity. This is
-// a CDP polling proxy, not physical first-paint latency.
+// loop, so a status before Running is an observed pre-loop state with nothing cooked drawn. From the moment the page
+// starts fetching the valley, the clock, status and cooked_status() are read in one call. The first draw lies between
+// the last observation that establishes no draw (a pre-loop status, or cooked_status() with zero draws) and the first
+// with one: the latter is an upper bound, and the gap is the observation granularity. A status-only read that already
+// says Running establishes nothing. If no observation establishes the lower bound, it is recorded as absent and
+// navigation start (0) is the conservative bound, with no granularity. THRUM_ROUTE_OBSERVE_DELAY_MS, for testing that
+// case only, delays the first observation of the route page and is recorded. This is a CDP polling proxy, not
+// physical first-paint latency.
 async function observeRouteStartup(cdp, sessionId, poll, deadline, mode, file) {
   const observe = `JSON.stringify({now:performance.now(),origin:performance.timeOrigin,href:location.href,status:document.querySelector('#status')?.textContent ?? null})`;
+  const delayMs = Number(process.env.THRUM_ROUTE_OBSERVE_DELAY_MS ?? 0);
+  if (!Number.isSafeInteger(delayMs) || delayMs < 0 || delayMs > 10000) throw new Error('THRUM_ROUTE_OBSERVE_DELAY_MS must be 0..10000');
   const rows = [];
-  let game, origin, lastWithout, firstWith, final, phases = {};
+  let game, origin, lastWithout, firstWith, final, delayed = delayMs === 0, phases = {};
   while (!firstWith) {
     if (Date.now() > deadline) throw new Error(`Timed out: ${mode} first cooked draw`);
     await poll();
@@ -1242,16 +1248,20 @@ async function observeRouteStartup(cdp, sessionId, poll, deadline, mode, file) {
       const value = JSON.parse(evaluated.result.value);
       // Until the route page commits, the old document answers; its clock is not this page's.
       if (!value.href.includes(`params=${file}`)) { await sleep(5); continue; }
+      if (!delayed) { delayed = true; await sleep(delayMs); continue; }
       if (origin === undefined) origin = value.origin;
       if (value.origin !== origin) throw new Error(`${mode}: page clock origin changed during startup`);
       const phase = /^Running/.test(value.status ?? '') ? 'running' : /^Fetching/.test(value.status ?? '') ? 'fetching' : 'loading';
       phases[phase] ??= value.now;
-      lastWithout = value.now; rows.push({ now: value.now, phase, drawn: 0 });
+      // Only a pre-loop status establishes that nothing is drawn; a Running status may already have drawn.
+      if (phase !== 'running') lastWithout = value.now;
+      rows.push({ now: value.now, phase, drawn: phase === 'running' ? null : 0 });
       // The game exists once the page starts fetching the valley; find it then, well before the first draw.
       if (phase === 'loading') { await sleep(5); continue; }
       game = await existingGame(cdp, sessionId);
     }
     const value = await game.invoke(`return {now:performance.now(),origin:performance.timeOrigin,status:document.querySelector('#status')?.textContent ?? null,cooked:game.cooked_status()};`);
+    if (origin === undefined) origin = value.origin;
     if (value.origin !== origin) throw new Error(`${mode}: page clock origin changed during startup`);
     const cooked = JSON.parse(value.cooked ?? 'null');
     if (cooked?.errors.length) throw new Error(`${mode}: cooked valley failed during startup: ${JSON.stringify(cooked)}`);
@@ -1274,7 +1284,8 @@ async function observeRouteStartup(cdp, sessionId, poll, deadline, mode, file) {
     game,
     startup: {
       clock: 'page performance.now(), ms since navigation start; timeOrigin recorded', timeOrigin: origin,
-      lowerMs: lastWithout ?? 0, upperMs: firstWith, granularityMs: firstWith - (lastWithout ?? 0),
+      lowerObserved: lastWithout !== undefined, lowerMs: lastWithout ?? 0, upperMs: firstWith,
+      granularityMs: lastWithout === undefined ? null : firstWith - lastWithout, observeDelayMs: delayMs,
       medianPollMs: gaps.sort((a, b) => a - b)[Math.floor(gaps.length / 2)] ?? null, polls: rows.length,
       phases, timing, uploadedBytes: final.uploadedBytes, rows,
       cache: 'HTTP cache disabled for the page (Network.setCacheDisabled); one fresh Chrome profile per checker run',

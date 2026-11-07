@@ -15,7 +15,7 @@ poses read from artifacts, split M1 boxes, and a baseline that survives a clean 
   `tmp/g7-showcase/review/M2-REREVIEW-REPORT.md`, local), accept. Three wording nits, all taken.
 Milestone: M3 Screen-independent proofs · Updated: 2026-11-07
 Now: M1 and M2 done (on main at 664a4ff0). M3, commissioned by root, has started from main 961541f0
-Next: root's verdict on the checker seam (posted); the startup rows and the edited-source run from a clean commit
+Next: the revised checker seam to root after root's hold; the startup rows and the edited-source run from a clean commit
 Blocked: none. The on-screen Mac walk waits on screen control (one request denied).
 
 ## M1 Local cooked valley on both targets: done
@@ -162,3 +162,8 @@ Work:
   check, field-oracle, params and controls passed on the main tip, M2 landed as a fast-forward at 664a4ff0. M2 done.
 - 2026-11-07 Root commissioned M3: the Chrome startup proxy and a whole route run from an edited source. Started on
   a fresh branch from main 961541f0.
+- 2026-11-07 Posted the checker's startup observation (24a0253e) to root. Trial runs passed: the retinted ground drew
+  red on both targets at parity, and the startup proxy kept raw rows. Root held one measurement edge: a status-only
+  read that already says Running may follow a draw, so it cannot set the lower bound. Now only a pre-loop status or
+  a zero-draw `cooked_status()` reading does; otherwise the lower bound is recorded as absent (navigation start) with
+  no granularity. A test-only delay of the first observation exercises that case.
