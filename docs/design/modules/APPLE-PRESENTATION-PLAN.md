@@ -22,13 +22,15 @@ Reviews:
   always-submitted rule, three small gaps). All applied in revision 4a.
 
 Milestone: none started (plan awaiting re-review and seam rulings) · Updated: 2026-11-07
-Now: revision 4 answers Thrum Core's review of revision 3 (since 2026-11-07).
-Next: exact-revision recheck, the owner's archive ruling, then Thrum Core's seam rulings.
+Now: revision 5 replaces the archive options with the owner's direction (since 2026-11-07).
+Next: review of revision 5, Thrum Core's reading, then landing and seam rulings.
 Blocked: code commissions wait for the atmosphere graph checkpoint `d2a5342` on `codex/g3s-stars-main-wip`, for interface reads only, pending the reviewed night baseline and the exact final check on main, and Thrum Core approval of the exact seams in the
 design's *Seams* list. Some milestones have further waits:
 - M4 and M6 wait for G3t M3.
 - M8 waits for G3t M11 and G3t seam 1.
-- M10 runs only if the owner chooses archive option (a).
+- D9.1's launch-to-ready split can be commissioned once G3t M0's counters exist, ahead of the rest of M9.
+- M10's upstream contribution under gfx-rs/wgpu#8526 waits for the owner's approval. The pinned patch and the
+  metallib cook do not.
 
 ## Game outcomes
 
@@ -74,7 +76,7 @@ noise threshold and labels. Additions:
 | Platform display record, EDR layer, thermal | G4, with the platform owner's review (seam 6) | `thrum-app/src/app/device.rs`, `app.rs`, `display_link.rs`; iOS `ios.rs`, `ios/render.rs` | G3b lease (untouched) |
 | Governor and missed ticks | G4 (seam 7) | new `governor.rs`; `runtime.rs` (missed-tick count, value commit) | C04 |
 | MetalFX provider | G4 | new `apple_tile/metalfx.rs` | G3t `apple_tile/segment.rs` |
-| Archives (option a only) | G4 | wgpu-hal Metal `PipelineCache` patch | G3t seam 5 |
+| Pipeline preparation and archives | G4, with the asset-pipeline owner's review for the cook | metallib cook step, passthrough loader, wgpu-hal Metal `PipelineCache` patch | G3t seam 5; every pipeline site |
 
 Review order:
 1. History protocol.
@@ -86,7 +88,7 @@ Review order:
 7. EDR and display record.
 8. Governor.
 9. MetalFX.
-10. Archives.
+10. Offline metallibs and archives.
 
 ## Parallel work and dependencies on G3t
 
@@ -100,9 +102,9 @@ Review order:
 | M6 EDR on macOS | **G3t M3**, seam 6 | M5 |
 | M7 governor | M5, seam 7 | M6 |
 | M8 MetalFX temporal | **G3t M11**, seam 8, M5 | M9 |
-| M9 prepared paths and cold start | M4–M8 | G3t M12 |
-| M10 archives | Owner chose option (a) | M9 |
-| M11 paired proof | M1–M9 (M10 if run), G3t M12 | none |
+| M9 launch-to-ready split, prepared paths | D9.1 after G3t M0; the rest after M4–M8 | G3t M12 |
+| M10 offline metallibs and pipeline cache | D9.1 | M2–M9 (own files) |
+| M11 paired proof | M1–M10, G3t M12 | none |
 
 **Handoffs from G3t**, with their contracts in [G3t's plan](APPLE-TILE-PLAN.md#parallel-work-and-handoffs-with-g4):
 - *G3t M0 → all checks.*
@@ -308,34 +310,47 @@ Work:
 - [ ] Comparison rows and sequences (→D8.4).
 - [ ] Rejection to the twin (→D8.5).
 
-## M9 Prepared paths and cold start: pending
+## M9 Launch-to-ready split and prepared paths: pending
 
 Done when:
-- [ ] D9.1 Rows each show the specified behaviour with zero render-thread creations in play:
+- [ ] D9.1 Launch-to-ready on this M3 Max is recorded cold (Thrum's own Metal shader cache cleared) against warm,
+      split per pipeline and in total into naga translation, MSL compile and pipeline state creation, using the method
+      in G3t seam 5. The note says which cost dominates and so which M10 layer lands first. It can run as soon as
+      G3t M0's counters exist.
+- [ ] D9.2 Rows each show the specified behaviour with zero render-thread creations in play:
   - surface replacement;
   - device-generation change;
   - forced refresh change, which changes only the governor budget;
   - forced display move, which changes only H;
   - resize during MetalFX.
-- [ ] D9.2 Cold and warm launch-to-ready times are recorded, including synchronous MetalFX creation and wgpu pipeline
+- [ ] D9.3 Cold and warm launch-to-ready times are recorded, including synchronous MetalFX creation and wgpu pipeline
       preparation, with the post-readiness compile counter at zero.
 
 Work:
-- [ ] Scenario switches in the route runner (→D9.1).
-- [ ] Launch timing with cleared and warm OS caches (→D9.2).
+- [ ] Split timing harness: offline naga timing, passthrough-MSL module timing, pipeline timing (→D9.1).
+- [ ] Scenario switches in the route runner (→D9.2).
+- [ ] Launch timing with cleared and warm OS caches (→D9.3).
 
-## M10 Archives (option a only): pending
+## M10 Offline metallibs and the Metal pipeline cache: pending
 
 Done when:
-- [ ] D10.1 wgpu pipelines on Metal are created through a `PipelineCache` backed by `MTLBinaryArchive`.
-      `failOnBinaryArchiveMiss` proves hits on a warm launch.
-- [ ] D10.2 A stale or rejected archive compiles at build, not in play (counter). Warm launch-to-ready improves against
-      M9's row, recorded.
+- [ ] D10.1 A cook step produces metallibs for macOS, the iOS device and the iOS simulator, keyed as in G3t seam 5. The
+      runtime loads them through `PASSTHROUGH_SHADERS`, and a mismatched or missing key falls back to WGSL at build,
+      counted. Every route pipeline's passthrough image matches its WGSL image (bit-identical or within the stated
+      tolerance). `history_gpu.wgsl` and `cluster.wgsl` take explicit counts or stay on WGSL, recorded.
+- [ ] D10.2 wgpu pipelines on Metal are created through a `PipelineCache` backed by `MTLBinaryArchive`, from the
+      pinned patch. A harvested archive ships for this M3 Max, and `failOnBinaryArchiveMiss` proves hits on a warm
+      launch.
+- [ ] D10.3 A stale or corrupted archive compiles at build, not in play (counter).
+- [ ] D10.4 Cold and warm launch-to-ready improve against D9.1's split, recorded per layer.
 
 Work:
-- [ ] wgpu-hal Metal `PipelineCache` patch (→D10.1). An upstream contribution is prepared separately and submitted
-      only with the owner's approval.
-- [ ] Rejection row and launch timing (→D10.2).
+- [ ] Metallib cook and key, and the passthrough loader with its fallback (→D10.1).
+- [ ] Explicit counts for the two `arrayLength` shaders, with owner review (→D10.1).
+- [ ] wgpu-hal Metal `PipelineCache` patch pinned to 30.0.1, the harvest run and per-family shipping (→D10.2).
+- [ ] Rejection row and launch timing (→D10.3, D10.4).
+- [ ] Upstream contribution prepared under gfx-rs/wgpu#8526 with the existing contributor. It is submitted only
+      with the owner's approval.
 
 ## M11 Paired proof run: pending
 
@@ -373,17 +388,17 @@ Work:
 | M6 | 1.5 |
 | M7 | 1.5 |
 | M8 | 1.5 |
-| M9 | 1 |
-| M10 (option a only) | 2–3 |
+| M9 | 1.5 |
+| M10 | 4 |
 | M11 | 1.5 |
 
-That is **16 build days**, or **18–19** under archive option (a), plus 1–2 days of review and seam turnaround.
+That is **20.5 build days**, plus 1–2 days of review and seam turnaround.
 
-**Combined date (G3t 15.5 + G4 16 build days, with the handoffs above).**
-- *Two agents, one per plan:* about **19–20 working days** from seam approval to both paired records. G4 waits for
+**Combined date (G3t 15.5 + G4 20.5 build days, with the handoffs above).**
+- *Two agents, one per plan:* about **22–23 working days** from seam approval to both paired records. G4 waits for
   G3t M3 around day 6 and for G3t M11 around day 13.
-- *Four agents on disjoint files, following both parallel tables:* about **13–14 days**.
-- *Add-ons:* archive option (a) adds 2–3 days on G4's path.
+- *Four agents on disjoint files, following both parallel tables:* about **14–15 days**, with M10 on its own files.
+- *Add-ons:* upstream review of #8526 may take longer than the build; the pinned patch keeps the date independent of it.
 - *Largest date risks:* G3t M2–M3 (frame runtime), seam 1, the third forward target across three owners, and the
   render-extent change. That change raises pixel work 9× at the window and 33× full screen before the governor
   lands.
@@ -439,3 +454,9 @@ Revision 1 said 9.5–11.5 days for G4. Reviewers estimated 13–16 days.
   - the atmosphere checkpoint is `d2a5342`, for interface reads.
 - 2026-11-07 Revision 4a applies the composed-frame recheck of `9938b0d0`: the leftover always-submitted rule is
   replaced, MetalFX history advances at encode, and D2.4 covers the portable drop and the iOS background drop.
+- 2026-11-07 Revision 5 follows the owner's archive direction (overseer, 22:20):
+  - the (b) rewording option is withdrawn, and V1's archive item stays as written;
+  - M9 starts with a measured cold/warm split of launch-to-ready into naga, MSL compile and pipeline state creation;
+  - M10 delivers offline metallibs through `PASSTHROUGH_SHADERS` and a Metal `PIPELINE_CACHE` carried as a pinned patch
+    and contributed upstream under gfx-rs/wgpu#8526, with the contribution itself waiting for the owner's approval;
+  - sizing is restated.
