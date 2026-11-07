@@ -5,7 +5,7 @@ use std::sync::{Arc, Mutex};
 use crate::FrameHost;
 use thrum_asset_gpu::CookedStats;
 
-/// The host setup selected by `THRUM_SCENE=field` and `THRUM_CULLING=direct|frustum`.
+/// The host setup selected by `THRUM_SCENE=field` and `THRUM_CULLING=direct|frustum|occlusion`.
 /// Without `THRUM_CULLING`, the field uses Frustum (a measured win along its
 /// flythrough) and the fully visible grid keeps Direct.
 /// # Errors
@@ -24,7 +24,8 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
             thrum_render::synthetic::CullMode::Direct
         }
         Ok("frustum") => thrum_render::synthetic::CullMode::Frustum,
-        _ => return Err("THRUM_CULLING must be direct or frustum".to_owned()),
+        Ok("occlusion") => thrum_render::synthetic::CullMode::Occlusion,
+        _ => return Err("THRUM_CULLING must be direct, frustum or occlusion".to_owned()),
     };
     Ok(crate::GameSetup {
         content,
