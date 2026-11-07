@@ -90,8 +90,8 @@ crossing clip](g3s-first-light/solar-crossing.mp4) runs at 24 sampled frames/s.
 - The final image-only review passed. Its most visible flaw is a staircase far-ridge
   silhouette, which is terrain geometry rather than shadowing. Score any shadow finding
   with the ray probe before changing anything.
-- A 100-code foreground step at solar 77→78. It also appears with shadows off, so look at
-  the twilight/illumination path.
+- The 100-code foreground step at solar 77→78 was a shadow leak from back-face-culled cooked
+  casters with the Sun below horizontal. It is fixed ([evidence](G3S-SUNSET-CASTERS-2026-11-07.md)).
 - Distant terrain shadows now come from a caster height-map horizon
   ([evidence](G3S-TERRAIN-HORIZON-2026-11-07.md)). Its +24% pass-sum is the next cost
   item; a per-frame horizon-angle map is the scalable form.
