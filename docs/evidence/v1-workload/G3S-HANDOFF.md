@@ -26,13 +26,16 @@ follow-ups. See [the penumbra evidence](G3S-SOLAR-PENUMBRA-2026-11-07.md).
   threefold at low Sun and faded sphere contact. Only the last cascade is padded now.
   Blockers whose support leaves the near map are evaluated there, combined by minimum.
 - **Cost.** Shared-GPU ABBA pass-sum p50 is 1.71 → 2.02 ms.
+- **Floor-edge seam.** A Sun-facing slope at the floor's far edge rendered grey-blue
+  because the back-facing normal repair reflected it across V's plane. It now lifts
+  the normal just onto V's visible side.
 - **Review.** Independent image-only review ranks the candidate above main and the
   draft. A second reviewer caught crease lines left by an interim fixed-slope
   tolerance. After the elevation bound, ray-truth false samples are zero on the
   scored solar frames.
 
 The probe, scores and bench logs are in `tmp/g3s-showcase/solar-penumbra-claude/`. The final
-capture is `tmp/g3s-showcase/capture-27-penumbra-near-unpadded/`.
+capture is `tmp/g3s-showcase/capture-28-floor-edge-lift/`.
 
 ## Goal and status
 
@@ -86,8 +89,9 @@ crossing clip](g3s-first-light/solar-crossing.mp4) runs at 24 sampled frames/s.
   with the ray probe before changing anything.
 - A 100-code foreground step at solar 77→78. It also appears with shadows off, so look at
   the twilight/illumination path.
-- Distant terrain beyond the 512 m receiver reach has no Sun shadow. A heightfield horizon
-  method is the candidate.
+- Distant terrain beyond the 512 m receiver reach has no Sun shadow. It is now the most
+  visible sunset defect: the 1.7 km band stays orange after ray truth shadows it. A
+  heightfield horizon method is the candidate.
 - The penumbra's +18% pass-sum. Gathered fetches and a lit early-out are untried.
 
 Keep the same host Sun/time and the fixed valley camera as the comparison. Inspect

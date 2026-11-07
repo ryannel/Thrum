@@ -67,6 +67,28 @@ The probe also ray-traces the sphere for contact. Over sequence 21's contact reg
 mean error against truth mapped to lit/shadow levels is 1.04 codes on main, 2.6 with the padded near map and 0.93
 now. The ridge-crossing pixel values and solar scores above are identical with and without the padding change.
 
+### Whole-floor transition
+
+An oversight review of the clip measured the far floor (about 35–55 m) shadowing after the near floor, with a
+45-code drop at frames 37→38. A debug build that writes Sun visibility directly shows visibility is uniform
+across the floor and tracks ray truth:
+
+| Solar frame | 34 | 35 | 36 | 37 | 38 |
+| --- | --- | --- | --- | --- | --- |
+| Rendered visibility, every floor row | 0.83 | 0.51 | 0.29 | 0.15–0.22 | 0 |
+| Ray truth | 0.69–0.70 | 0.48 | 0.25–0.28 | 0.09–0.11 | 0 |
+
+The lit far floor sits at 247–252 SDR, on the tone curve's shoulder, so its display codes understate the early
+darkening and show the final step as larger. The render lags truth by roughly 15 s of solar time. Shadow maps
+measure the blocker on the ridge's Sun-facing side, so the blocker estimate is slightly late. That residual is
+recorded rather than tuned.
+
+The same review found a grey-blue, stair-stepped band along the floor's far edge in every frame. It was a
+shading fault: a Sun-facing slope (n·l 0.128 in the source geometry) whose interpolated normal pointed behind
+the view vector. The repair reflected that normal across V's tangent plane, which flips n·l negative for a
+camera looking into the Sun. The normal is now lifted 0.01 onto V's visible side. Exact projection left n·v at
+zero and produced black BRDF noise. The grazing GPU oracle was updated to the lifted normal.
+
 ## Review and checks
 
 - **Independent review.** Fresh-context reviewers saw only images and requirements.
@@ -79,6 +101,10 @@ now. The ridge-crossing pixel values and solar scores above are identical with a
     a largest step of 13.5 foreground codes, no false shadowing, attached contact, no leaks and smooth penumbrae.
     It noted that the ground reaches full shadow at frame 38 while a thin sliver of disk remains. That matches
     ray truth, where the last few percent of the disk contribute little.
+  - A fifth reviewer checked the floor-edge seam fix. It found no seam and no new noise. It failed the
+    set on the 37→38 step (far-edge band 175 → 149 → 110 codes over frames 36–38), which is the measured
+    visibility lag above. It also noted dark marks on the rock top at noon and isolated dark pixels along the
+    far floor edge in the yaw-0 views. Both are present unchanged in the previous build.
 - **Tests.** The shipping GPU oracle (`synthetic/shadow/tests/penumbra.rs`) adds a concave grazing-join fixture
   that fails without receiver bending. Full `./dev check` passed on Metal. Chrome `sky-reflections` passed with
   Wasm SHA-256 `bfcae7209bf56c63b70f13d92a6b822cea24c0aac54caa1a7a6e7695ff336e35`. That run uses the diagnostic
@@ -91,14 +117,22 @@ now. The ridge-crossing pixel values and solar scores above are identical with a
 ## Open
 
 - **Distant terrain.** Terrain beyond 512 m casts and receives no Sun shadow. The candidate is a heightfield
-  horizon method.
+  horizon method. It is now the most visible sunset defect: the band 1.7–1.8 km away (y ≈ 380–445) stays
+  sunlit-orange while ray truth has it in shadow from frame 34.
+- **Sky brightening at sunset.** Mean sky luminance rises from 219 to 229 as the Sun sets. This is unexplained;
+  check it with exposure and the illumination path.
 - **Solar 77→78 step.** A 100-code foreground step appears even with shadows off, so it comes from the
   twilight/illumination path.
 - **Sphere shadow edge.** It is serrated at noon at the 1024² near-cascade resolution, as on main. A 1.5-texel
   minimum filter radius smoothed it but doubled the contact error, so it was not kept.
 - **Two-map composition.** The near/last split has a fit test and capture truth scores, but no shipping GPU
   oracle fixture yet.
-- **Rock top.** A few dark texels remain at noon. These may be real crevice shadow.
+- **Rock top.** Dark marks on the Sun-facing top at noon. They may be acne or bad normals, not crevice
+  shadow; score them with a probe that includes the rock.
+- **Final-sliver lag.** Rendered visibility 0.15–0.22 at frame 37 against truth 0.10 makes the last step
+  the largest. Check whether the cooked ridge silhouette differs from the source mesh before tuning the blocker
+  estimate.
+- **Far-edge specks.** Isolated pixels 20–35 codes dark along the far floor edge in the yaw-0 views.
 - **Cost.** The +18% pass-sum is recorded as a baseline. Gathered fetches and a lit early-out are untried.
 - **Not shadowing.** The review's most visible flaw is a staircase far-ridge silhouette (about 5 px steps) and
   faceted terrain normals under contrast boost. Both are terrain geometry or level of detail.
