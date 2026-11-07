@@ -13,7 +13,8 @@ def row(values):
     order = sorted(values)
     return '/'.join(f'{order[math.ceil(p*len(order))-1]:.3f}' for p in (.5,.95,.99,1))
 
-oracle = unpack(run/'expected.bin', '<6f')
+expected = root/'expected.bin' if run.name == 'dda-run' else run/'expected.bin'
+oracle = unpack(expected, '<6f')
 dfs = unpack(run/'tree.bin', '<4f')
 dda = unpack(run/'dda.bin', '<4f')
 assert len(oracle) == len(dfs) == len(dda) and oracle
