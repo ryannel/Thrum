@@ -3,8 +3,8 @@
 7 November 2026. This is the governing design for a bounded slice of build-plan item G7. It covers local launch
 and one review route for the cooked valley on Mac and in Chrome. Plan: [G7-SHOWCASE-ROUTE-PLAN](G7-SHOWCASE-ROUTE-PLAN.md).
 
-**Status.** M1 built and on main. M2 built; root has approved the native seam and is reviewing the revised checker
-seam. Before this slice, the cooked valley already ran natively and in Chrome
+**Status.** M1 and M2 built and on main, with both shared seams approved by root. Before this slice, the cooked
+valley already ran natively and in Chrome
 ([G7 Chrome valley](../../evidence/v1-workload/G7-CHROME-VALLEY-2026-11-07.md)), but launching it took several
 hand-assembled commands, and no check failed if Chrome quietly drew the diagnostic scene instead.
 
