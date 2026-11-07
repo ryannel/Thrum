@@ -170,3 +170,7 @@ Work:
 - 2026-11-07 Root approved the revised seam (dd2ff503) with two precision changes, both taken: after Running, only an
   explicit zero from `cooked_status()` advances the lower bound (an absent report is an unknown count), and the scope
   no longer claims "up to one poll interval". Rebased on main f3743809 (documentation only).
+- 2026-11-07 The final runs showed `cooked_status().drawn` is the drawn generation, null in a present report until
+  the first draw, never an explicit zero. So "only an explicit zero" would never advance the lower bound after Running.
+  A present report with no generation drawn now establishes no draw; an absent report after Running stays unknown.
+  Posted to root as a fourth revision; the final runs were repeated on it.
