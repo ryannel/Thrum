@@ -459,3 +459,5 @@ That is **15.5 build days**, plus 1–2 days of review and seam turnaround, for 
 - 2026-11-07 Revision 5a applies the archive review of `16c5d8f7` to seam 5: the cook is per pipeline, the patch carries
   `MetalLib` reflection, the validation key, a Metal `adapter_key` and the archive-miss option, and archives come from
   each shipped device.
+- 2026-11-07 Revision 5b adds parallel pre-warm, the cook's MSL match check and the measure → metallib plus pre-warm →
+  `PIPELINE_CACHE` order to seam 5.
