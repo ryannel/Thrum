@@ -58,6 +58,13 @@ The four local peers control the last four props. A scripted camera flies a 250 
   - It then leaves real mappings pending on the old device and publishes a replacement. Only the new device's
     counts appear: (0, 0) for its empty scene, where an old count would read (1, 1).
   - The mutant that makes retirement wait on the count times out.
+- **A late count never goes to the next frame on its slot:**
+  `a_late_mapping_is_never_attributed_to_the_next_frame_on_its_slot` (Metal, at `aaf30165`).
+  - Frame A (one active slot) retires before its count is read.
+  - Frame B (empty prefix) reuses the slot without counting. A's count arrives while B runs, and B still reports
+    none.
+  - The next frame on the slot reports its own (0, 0).
+  - The mutant that keeps A's metadata makes B report A's (1, 1).
 - **Unit tests:** `cargo test -p v1-game --lib field` checks that the layout is deterministic, that the field spans
   far beyond the view, that walls stand halfway between prop lines, and that every turn and cut is flagged.
 
