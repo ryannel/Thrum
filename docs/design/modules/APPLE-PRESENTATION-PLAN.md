@@ -20,6 +20,9 @@ Reviews:
 - Composed frame, exact-revision recheck @ `9938b0d0` (Opus 5.5 medium), brief `tmp/g3t-g4-plans/reviews/composed-frame.md`,
   report `tmp/g3t-g4-plans/reviews/composed-frame-report.md` ("Revision 4 recheck"): approve with changes (one leftover
   always-submitted rule, three small gaps). All applied in revision 4a.
+- Archive review of revision 5 @ `16c5d8f7` (Opus 5.5 medium), report `tmp/g3t-g4-plans/reviews/composed-frame-report.md`
+  ("Revision 5 archive review"): changes required (sizes buffer for all runtime-sized arrays, per-pipeline cook keys,
+  cache patch scope, per-device archives, sizing). All applied in revision 5a.
 
 Milestone: none started (plan awaiting re-review and seam rulings) · Updated: 2026-11-07
 Now: revision 5 replaces the archive options with the owner's direction (since 2026-11-07).
@@ -337,7 +340,8 @@ Done when:
 - [ ] D10.1 A cook step produces metallibs for macOS, the iOS device and the iOS simulator, keyed as in G3t seam 5. The
       runtime loads them through `PASSTHROUGH_SHADERS`, and a mismatched or missing key falls back to WGSL at build,
       counted. Every route pipeline's passthrough image matches its WGSL image (bit-identical or within the stated
-      tolerance). `history_gpu.wgsl` and `cluster.wgsl` take explicit counts or stay on WGSL, recorded.
+      tolerance). Passthrough pipelines with runtime-sized
+      arrays get their sizes buffer from the cook's reflection (test reading an array length).
 - [ ] D10.2 wgpu pipelines on Metal are created through a `PipelineCache` backed by `MTLBinaryArchive`, from the
       pinned patch. A harvested archive ships for this M3 Max, and `failOnBinaryArchiveMiss` proves hits on a warm
       launch.
@@ -346,8 +350,9 @@ Done when:
 
 Work:
 - [ ] Metallib cook and key, and the passthrough loader with its fallback (→D10.1).
-- [ ] Explicit counts for the two `arrayLength` shaders, with owner review (→D10.1).
-- [ ] wgpu-hal Metal `PipelineCache` patch pinned to 30.0.1, the harvest run and per-family shipping (→D10.2).
+- [ ] `MetalLib` reflection (sized bindings, immutable mask, workgroup sizes) in the pinned patch (→D10.1).
+- [ ] wgpu-hal Metal `PipelineCache`, validation key, wgpu-core Metal `adapter_key` and the archive-miss option,
+      pinned to 30.0.1; the harvest run on each shipped device (→D10.2).
 - [ ] Rejection row and launch timing (→D10.3, D10.4).
 - [ ] Upstream contribution prepared under gfx-rs/wgpu#8526 with the existing contributor. It is submitted only
       with the owner's approval.
@@ -389,15 +394,15 @@ Work:
 | M7 | 1.5 |
 | M8 | 1.5 |
 | M9 | 1.5 |
-| M10 | 4 |
+| M10 | 5.5 |
 | M11 | 1.5 |
 
-That is **20.5 build days**, plus 1–2 days of review and seam turnaround.
+That is **22 build days**, plus 1–2 days of review and seam turnaround.
 
-**Combined date (G3t 15.5 + G4 20.5 build days, with the handoffs above).**
-- *Two agents, one per plan:* about **22–23 working days** from seam approval to both paired records. G4 waits for
+**Combined date (G3t 15.5 + G4 22 build days, with the handoffs above).**
+- *Two agents, one per plan:* about **23–24 working days** from seam approval to both paired records. G4 waits for
   G3t M3 around day 6 and for G3t M11 around day 13.
-- *Four agents on disjoint files, following both parallel tables:* about **14–15 days**, with M10 on its own files.
+- *Four agents on disjoint files, following both parallel tables:* about **15–16 days**, with M10 on its own files.
 - *Add-ons:* upstream review of #8526 may take longer than the build; the pinned patch keeps the date independent of it.
 - *Largest date risks:* G3t M2–M3 (frame runtime), seam 1, the third forward target across three owners, and the
   render-extent change. That change raises pixel work 9× at the window and 33× full screen before the governor
@@ -460,3 +465,5 @@ Revision 1 said 9.5–11.5 days for G4. Reviewers estimated 13–16 days.
   - M10 delivers offline metallibs through `PASSTHROUGH_SHADERS` and a Metal `PIPELINE_CACHE` carried as a pinned patch
     and contributed upstream under gfx-rs/wgpu#8526, with the contribution itself waiting for the owner's approval;
   - sizing is restated.
+- 2026-11-07 Revision 5a applies the archive review of `16c5d8f7`: per-pipeline cook keys, `MetalLib` reflection for
+  the sizes buffer, the full Metal cache patch scope and per-device archive sources. M10 becomes 5.5 days.
