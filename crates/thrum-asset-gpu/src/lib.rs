@@ -562,18 +562,15 @@ impl CookedAssets {
 
     /// Rebuild pipelines and bindings for `surface`, or restart on a new device generation.
     fn rebuild_inner(&mut self, surface: &SceneSurface<'_>) {
-        // A material candidate for the previous surface cannot publish; the accepted hook is
-        // rebuilt for this one.
+        // A material candidate for the previous surface cannot publish. The new pipelines draw
+        // the built-in material until the accepted hook validates against this surface.
         self.epoch += 1;
         let target = material::Target::new(surface, self.epoch);
-        let accepted = self.material.retarget(target.clone());
         if let Some(held) = self.live.as_mut().and_then(|live| live.material.take()) {
-            self.material.retire(held.serial);
+            self.material.release(&held);
         }
-        let (pipelines, refused) = draw::Pipelines::new(surface, &target, accepted.as_ref());
-        if let Some(diagnostics) = refused {
-            self.material.drop_accepted(diagnostics);
-        }
+        self.material.retarget(&target);
+        let pipelines = draw::Pipelines::new(surface, &target);
         match self.live.as_mut() {
             // Same device: the scene shader or layouts may have changed; resources stay, history
             // restarts with the new bindings.

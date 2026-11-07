@@ -1,7 +1,8 @@
 //! G6 material hook in the game: a game-authored WGSL hook reloads explicitly into the running
 //! scene's cooked meshes, an invalid hook leaves the last pixels drawing with a diagnostic in the
-//! hook's own file and line, and a device replaced while a reload is outstanding draws the last
-//! accepted hook. `THRUM_G6_MATERIAL_CAPTURE_DIR` keeps the captures as PPM files.
+//! hook's own file and line, a burst of requests compiles only the outstanding and the newest one,
+//! and a device replaced while a reload is outstanding draws the last accepted hook once it
+//! validates on the new device. `THRUM_G6_MATERIAL_CAPTURE_DIR` keeps the captures as PPM files.
 #![cfg(not(target_arch = "wasm32"))]
 
 use std::path::{Path, PathBuf};
@@ -431,6 +432,70 @@ fn requests_before_the_first_frame_wait_for_the_scene_and_the_newest_draws() {
 }
 
 #[test]
+fn a_burst_during_a_compile_compiles_only_the_outstanding_and_the_newest_request() {
+    let (root, cook) = cooked("material-burst");
+    pollster::block_on(async {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let (device, queue, capabilities) = gpu(&instance, FrameHost::DEVICE_GENERATION).await;
+        let mut host = FrameHost::new_with_capabilities(
+            &device,
+            &queue,
+            &capabilities,
+            FrameConfig {
+                render_extent: EXTENT,
+                surface: None,
+            },
+        )
+        .await
+        .expect("prepared game scene");
+        let assets = CookedAssets::new(v1_game::cooked::cooked_config(cook.store.clone()))
+            .expect("rigid placements");
+        let stats = assets.stats();
+        let material = assets.material();
+        host.set_scene_contribution(Box::new(assets))
+            .expect("attach");
+        let mut clock = Duration::ZERO;
+        drive_until_drawn(&mut host, &device, &stats, &mut clock);
+        host.pause().expect("pause");
+        // The first request starts the one compile; each later one replaces the waiting request,
+        // which is superseded at once, before it compiles.
+        let outstanding = material.request(hook("burst/bands.wgsl", BANDS));
+        let waiting: Vec<u64> = [
+            "burst/identity.wgsl",
+            "burst/missing.wgsl",
+            "burst/again.wgsl",
+        ]
+        .into_iter()
+        .map(|name| material.request(hook(name, IDENTITY)))
+        .collect();
+        let newest = material.request(hook("burst/green.wgsl", GREEN));
+        assert_eq!(
+            material.take_outcomes(),
+            waiting
+                .iter()
+                .map(|&serial| MaterialOutcome::Superseded { serial })
+                .collect::<Vec<_>>(),
+            "waiting requests are superseded without compiling"
+        );
+        let (outcome, seen) = until_outcome(&material, newest, || drop(capture(&mut host, "_")));
+        assert!(
+            matches!(outcome, MaterialOutcome::Promoted { .. }),
+            "{outcome}"
+        );
+        assert!(
+            seen.contains(&MaterialOutcome::Superseded {
+                serial: outstanding
+            }),
+            "the outstanding compile cannot publish: {seen:?}"
+        );
+        assert_eq!(seen.len(), 2, "one outcome each: {seen:?}");
+        assert_eq!(material.accepted().as_deref(), Some("burst/green.wgsl"));
+        settle(&mut host, &device);
+    });
+    std::fs::remove_dir_all(&root).ok();
+}
+
+#[test]
 fn a_replaced_device_draws_the_last_accepted_hook_and_retires_the_outstanding_reload() {
     let (root, cook) = cooked("material-device");
     pollster::block_on(async {
@@ -490,6 +555,9 @@ fn a_replaced_device_draws_the_last_accepted_hook_and_retires_the_outstanding_re
             drop(capture(&mut host, "_"));
         }
         assert_eq!(material.accepted().as_deref(), Some("hooks/bands.wgsl"));
+        // Natively the accepted hook validates at once, so the first frame on the new device
+        // restores it.
+        assert!(!material.restoring(), "the accepted hook draws again");
         let after = capture(&mut host, "device-after");
         assert_eq!(
             changed_pixels(&before, &after),

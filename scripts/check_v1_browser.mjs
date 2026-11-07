@@ -518,6 +518,8 @@ async function qualifyMaterial(cdp, sessionId, poll, timeout, files, output, evi
   await game.invoke('document.querySelector("#restore-graphics").click();return true;');
   evidence.statuses.retired = await awaitStatus(/material 4 was prepared for a replaced device/, 'outstanding reload retired');
   await until(async () => { const value = await game.read(); return !value.fault && !value.recovering && /^Running/.test((await poll()).status ?? ''); }, 'replacement device drawing');
+  // The accepted hook draws again only once it has validated on the new device.
+  evidence.statuses.restored = await awaitStatus(/case\.material\.wgsl: the accepted material draws again/, 'accepted hook restored after validation');
   const restored = await capture('restored');
   evidence.restoredChanged = changedFraction(moss, restored);
   if (evidence.restoredChanged > 0.002) throw new Error(`Replacement device did not draw the accepted hook: ${evidence.restoredChanged}`);

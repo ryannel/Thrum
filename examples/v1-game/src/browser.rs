@@ -95,6 +95,8 @@ pub struct BrowserGame {
     cooked: Option<Arc<Mutex<CookedStats>>>,
     /// Explicit material reloads of the attached cooked valley.
     material: Option<MaterialReload>,
+    /// The material revision last reported, so an idle page builds no report.
+    material_reported: u64,
     /// Typed demo controls shared with the page and the macOS panel.
     demo: GameControls,
     /// Model revision the page last synced to.
@@ -169,6 +171,7 @@ pub async fn create_browser_game(canvas: HtmlCanvasElement) -> Result<BrowserGam
         host,
         cooked: None,
         material: None,
+        material_reported: 0,
         demo,
         page_seen: 0,
         first_frame_ms: None,
@@ -207,14 +210,16 @@ impl BrowserGame {
         self.demo.observe_camera(self.host.camera_orientation());
         self.cooked = Some(stats);
         self.material = Some(material);
+        self.material_reported = 0;
         Ok(())
     }
 
     /// Replace the cooked valley's material hook with the WGSL `source`, named `name` in its
     /// diagnostics, and return the request's serial. The previous material keeps drawing until
     /// the replacement has compiled and validated; [`Self::material_report`] says what became of
-    /// it. The shader module and pipeline are created in this call; the browser compiles them in
-    /// its GPU process, so this call does not wait for the compile.
+    /// it. The shader module and pipeline are created in this call through WebGPU's synchronous
+    /// methods (wgpu 30.0.1 has no `createRenderPipelineAsync`), so a cold compile stalls the
+    /// page for hundreds of milliseconds. This is a development control, not part of play.
     /// # Errors
     /// Returns an error when no cooked valley is attached.
     pub fn reload_material(&mut self, name: String, source: String) -> Result<f64, JsValue> {
@@ -228,12 +233,18 @@ impl BrowserGame {
         Ok(material.request(MaterialHook { name, source }) as f64)
     }
 
-    /// Material reload outcomes since the last call and the accepted hook, as JSON, or `None`
-    /// without a cooked valley. Each outcome has `serial`, `kind` (`promoted`, `rejected`,
-    /// `superseded` or `retired`) and `text`; a promotion adds `timingMs`, a rejection
-    /// `diagnostics` (`file`, `line`, `column`, `message`).
-    pub fn material_report(&self) -> Option<String> {
+    /// Material reload outcomes since the last call, the accepted hook and whether it is being
+    /// restored for a replaced device (`restoring`), as JSON; `None` without a cooked valley or
+    /// when nothing changed since the last report. Each outcome has `serial`, `kind`
+    /// (`promoted`, `rejected`, `superseded` or `retired`) and `text`; a promotion adds
+    /// `timingMs`, a rejection `diagnostics` (`file`, `line`, `column`, `message`).
+    pub fn material_report(&mut self) -> Option<String> {
         let material = self.material.as_ref()?;
+        let revision = material.revision();
+        if revision == self.material_reported {
+            return None;
+        }
+        self.material_reported = revision;
         let outcomes: Vec<_> = material
             .take_outcomes()
             .iter()
@@ -274,8 +285,12 @@ impl BrowserGame {
             })
             .collect();
         Some(
-            serde_json::json!({ "accepted": material.accepted(), "outcomes": outcomes })
-                .to_string(),
+            serde_json::json!({
+                "accepted": material.accepted(),
+                "restoring": material.restoring(),
+                "outcomes": outcomes,
+            })
+            .to_string(),
         )
     }
 
