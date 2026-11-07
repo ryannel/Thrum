@@ -131,7 +131,18 @@ fn in_view(slot: u32) -> bool {
 
 // The final classifier: the AABB's eight corners under the same view_proj,
 // tested against the pyramid. Near-plane corners keep the slot visible.
+// `magnitude` bounds |clip z| and |clip w| terms for every position either
+// path forms for this slot: the vertex shader's model * local, at the same
+// interpolated translation, and these corners.
 fn hidden_by_depth(slot: u32) -> bool {
+    let mesh = meshes[params.mesh];
+    let reach = max(abs(mesh.bounds_min.xyz), abs(mesh.bounds_max.xyz));
+    let current = instances[slot].current;
+    let spread = mat3x3(abs(current[0].xyz), abs(current[1].xyz), abs(current[2].xyz));
+    let world = spread * reach + abs(instances[slot].previous[3].xyz) + abs(current[3].xyz);
+    let z_row = abs(plane_row(2u));
+    let w_row = abs(plane_row(3u));
+    let magnitude = vec2(dot(z_row.xyz, world) + z_row.w, dot(w_row.xyz, world) + w_row.w);
     let bounds = world_bounds(slot);
     var corners: array<vec4<f32>, 8>;
     for (var index = 0u; index < 8u; index++) {
@@ -139,7 +150,7 @@ fn hidden_by_depth(slot: u32) -> bool {
             select(-1.0, 1.0, (index & 4u) != 0u));
         corners[index] = view.view_proj * vec4(bounds.center + sign * bounds.extent, 1.0);
     }
-    return occluded_by_pyramid(corners);
+    return occluded_by_pyramid(corners, magnitude);
 }
 
 fn drawn_last(slot: u32) -> bool {
