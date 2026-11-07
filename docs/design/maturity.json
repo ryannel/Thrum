@@ -535,17 +535,17 @@
       ]
     },
     "G6_creator_experience": {
-      "implementation": "partial_thrum_controls_typed_model_mac_appkit_panel_and_dom_view_v1_bindings_and_game_layer_parameter_files_and_macOS_thrum_app_runner_and_cooked_material_hook_explicit_reload_mac_starter_and_chrome_page; open_gpu_field_overlays_fresh_agent_run",
+      "implementation": "partial_thrum_controls_typed_model_mac_appkit_panel_and_dom_view_v1_bindings_and_game_layer_parameter_files_and_macOS_thrum_app_runner_and_cooked_material_hook_explicit_reload_mac_starter_and_chrome_dev_page_only; open_gpu_field_overlays_fresh_agent_run",
       "functional_validation": "thrum_controls_and_v1_binding_unit_tests_in_dev_check; panel_check_drives_real_AppKit_target_action_offscreen; Chrome_controls_params_sky_reflections_valley_valley_recovery_device_recovery_retry_cases_pass; Mac_THRUM_PARAMS_diagnostics_and_paused_apply_hold_world_ticks; independent_review_findings_fixed_stale_reply_gate_and_edit_replay_across_GPU_replacement_tested; v1_capture_byte_identical_after_runner_move; material_hook_mac_gpu_tests_valid_refused_superseded_identity_and_device_replaced_with_reload_outstanding; Chrome_material_case_valid_refused_and_destroyed_device_with_reload_outstanding_passes; no_hook_v1_scene_captures_and_starter_capture_byte_identical_to_ed64db0",
       "experienced_quality": "agent_reviewed_offscreen_Mac_panel_and_Chrome_controls_and_parameter_diagnostic_and_material_hook_captures_Mac_starter_and_Chrome_valley; on_screen_Mac_panel_use_open; no_independent_visual_review_yet",
       "platform_performance": {
         "mac": "material_reload_bench_contended_observation_compile_thread_0.7_to_2.2s_frames_continue_3_of_18_reloads_had_a_75_to_118ms_frame_unexplained",
         "windows": "not_run",
-        "browser": "Chrome156_M3Max_headless_function; material_reload_cold_compile_stalls_page_frames_300_to_750ms_contended_observation",
+        "browser": "Chrome156_M3Max_headless_function; material_reload_dev_page_only_cold_compile_stalls_page_frames_300_to_750ms_contended_observation",
         "ios": "not_run",
         "android": "not_run"
       },
-      "scope": "Typed sliders, toggles, text and readouts with stable keys, display mappings and revisions; explained refusals with nearest-key suggestions; AppKit panel and DOM view of one model; v1 solar time, camera and pause through the existing checked setters and user-pause path; parameter files on THRUM_PARAMS/L and ?params with explicit reload. Parameter files as a G5 product kind and the Chrome starter are owner questions; the cooked material hook (root-approved shader seam) changes surface factors only and reloads explicitly on Mac (THRUM_MATERIAL, L) and in Chrome (?material, Reload material). Its open problems are the coupling to the scene shader's material read, a browser stall during cold compiles, mesh-only history reset and no time input.",
+      "scope": "Typed sliders, toggles, text and readouts with stable keys, display mappings and revisions; explained refusals with nearest-key suggestions; AppKit panel and DOM view of one model; v1 solar time, camera and pause through the existing checked setters and user-pause path; parameter files on THRUM_PARAMS/L and ?params with explicit reload. Parameter files as a G5 product kind and the Chrome starter are owner questions; the cooked material hook (root-approved shader seam) changes surface factors only and reloads explicitly on Mac (THRUM_MATERIAL, L) and only on the Chrome development page (?material and Reload material, compiled in by v1-game's dev-material feature through web/build.sh --dev; the default page exports no material methods and ignores ?material). Its open problems are the coupling to the scene shader's material read, a browser stall during cold compiles, mesh-only history reset and no time input.",
       "evidence": [
         "../evidence/integration/G6-CREATOR-EXPERIENCE-2026-11-07.md",
         "decisions/G6-CREATOR-EXPERIENCE.md"
