@@ -38,7 +38,19 @@ fn trans_params(uv: vec2<f32>) -> vec2<f32> {
     return vec2(h,clamp(mu,-1.0,1.0));
 }
 
+// Vertical LUT planes share one binding. Clamp within each plane before
+// offsetting so filtering never mixes two wavelength groups.
+const TRANS_PLANES: u32 = 3u;
+const SPECTRAL_PLANES: u32 = 2u;
+fn plane_size(size: vec2<u32>, planes: u32) -> vec2<u32> {
+    return vec2(size.x,size.y/planes);
+}
+fn plane_uv(uv: vec2<f32>, height: u32, plane: u32, planes: u32) -> vec2<f32> {
+    let edge=0.5/f32(height);
+    return vec2(uv.x,(clamp(uv.y,edge,1.0-edge)+f32(plane))/f32(planes));
+}
 fn sample_sun_transmittance(h: f32, mu: f32, lookup: texture_2d<f32>, linear: sampler) -> vec3<f32> {
     if blocked(h,mu) { return vec3(0.0); }
-    return textureSampleLevel(lookup,linear,trans_uv(h,mu,textureDimensions(lookup)),0.0).rgb;
+    let size=plane_size(textureDimensions(lookup),TRANS_PLANES);
+    return textureSampleLevel(lookup,linear,plane_uv(trans_uv(h,mu,size),size.y,0u,TRANS_PLANES),0.0).rgb;
 }

@@ -1,6 +1,6 @@
 //! Isolate aerial storage error from transport error: all variants execute the
 //! production integrator over the same half-precision transmittance/M inputs.
-use super::super::{AtmospherePrepared, EXTENTS};
+use super::super::{AtmospherePrepared, EARTH, EXTENTS};
 use crate::{atmosphere::AtmosphereFrame, synthetic::SyntheticView};
 use std::{fmt::Write, sync::mpsc, time::Duration};
 use wgpu::BindingResource::{Sampler, TextureView};
@@ -65,11 +65,13 @@ impl Output {
                 concat!(
                     include_str!("../../geometry.wgsl"),
                     "\n",
-                    include_str!("../../common.wgsl")
+                    include_str!("../../common.wgsl"),
+                    "\n",
+                    include_str!("../../transport.wgsl")
                 )
             )
         );
-        let pipeline = pipeline(device, &source, "aerial_main");
+        let pipeline = pipeline(device, &EARTH.shader(&source), "aerial_main");
         let views = [
             atmosphere.textures[0].create_view(&wgpu::TextureViewDescriptor::default()),
             atmosphere.textures[1].create_view(&wgpu::TextureViewDescriptor::default()),

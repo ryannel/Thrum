@@ -146,7 +146,7 @@ fn gpu_transport_reference_reports_every_prescribed_row() {
             let (sa, ca) = azimuth.to_radians().sin_cos();
             [(cv * ca) as f32, sv as f32, (cv * sa) as f32, 0.0]
         });
-        let mut probe = readback::Probe::new(&device, &queue, &directions);
+        let mut probe = readback::Probe::new(&device, &queue, &directions, true);
         let mut report = String::from(
             "# Matched declared coefficient bands, unit source; L/E0 in sr^-1. No CIE/lux/Earth accuracy claim.\n# Batch SE and quadrature estimates are not rigorous bounds. Zero/sparse batches do not prove darkness.\n",
         );
@@ -169,7 +169,7 @@ fn gpu_transport_reference_reports_every_prescribed_row() {
         let mut unresolved = 0;
         let mut count = 0;
         for (sun_id, sun) in SUN_DEGREES.into_iter().enumerate() {
-            let observed = probe.sky(&device, &queue, sun);
+            let observed = probe.sky(&device, &queue, f32::from(sun), 2.0);
             let (full, single) = (&observed.full, &observed.single);
             assert_eq!(full.len(), single.len());
             for (full, single) in full.iter().zip(single) {
@@ -205,7 +205,7 @@ fn gpu_transport_reference_reports_every_prescribed_row() {
         assert_eq!(count, 198);
         let multiple = probe.multiple(&device, &queue);
         let [width, height] = super::super::super::EXTENTS[1].map(|v| v as usize);
-        assert_eq!(multiple.len(), width * height);
+        assert_eq!(multiple.len(), width * height * 2);
         assert!(
             multiple
                 .iter()
@@ -215,8 +215,8 @@ fn gpu_transport_reference_reports_every_prescribed_row() {
         );
         if let Some(path) = std::env::var_os("THRUM_G3S_MULTIPLE_OUTPUT") {
             let mut table = String::from("x\ty\tband\tencoded_radiance\n");
-            for (index, channels) in multiple.iter().enumerate() {
-                for (band, value) in channels.iter().enumerate() {
+            for (index, channels) in multiple.iter().take(width * height).enumerate() {
+                for (band, value) in channels.iter().take(3).enumerate() {
                     writeln!(
                         table,
                         "{}\t{}\t{band}\t{value:.17e}",
@@ -231,10 +231,38 @@ fn gpu_transport_reference_reports_every_prescribed_row() {
         if let Some(path) = std::env::var_os("THRUM_G3S_REFERENCE_OUTPUT") {
             std::fs::write(path, report).expect("write explicit reference observations");
         }
+        shipping_spectral_twilight(&device, &queue, width * height);
         assert!(scope.pop().await.is_none());
         assert_eq!(
             unresolved, 0,
             "reference evaluation incomplete; inspect every retained row"
         );
     });
+}
+
+// Same physical observation as the eight-node comparison in the G3s evidence.
+// Exercise both spectral atlas planes and the actual Sky lookup in one row.
+fn shipping_spectral_twilight(device: &wgpu::Device, queue: &wgpu::Queue, plane_pixels: usize) {
+    let (sv, cv) = 20.0_f32.to_radians().sin_cos();
+    let (sa, ca) = 95.104_59_f32.to_radians().sin_cos();
+    let mut probe = readback::Probe::new(device, queue, &[[cv * ca, sv, cv * sa, 0.0]], false);
+    let sky = probe.sky(device, queue, -5.084_449, 244.922_67);
+    let actual = sky.rays_full[0];
+    for (channel, expected) in [2.982_646e-5, 4.289_131e-5, 8.114_284e-5]
+        .into_iter()
+        .enumerate()
+    {
+        assert!(
+            (actual[channel] - expected).abs() <= 0.025 * expected,
+            "upper twilight spectral radiance: actual {actual:?}, channel {channel} expected {expected}"
+        );
+    }
+    let multiple = probe.multiple(device, queue);
+    assert_eq!(multiple.len(), plane_pixels * 2);
+    for bank in multiple.chunks_exact(plane_pixels) {
+        assert!(bank.iter().flatten().all(|v| (0.0..=65_504.0).contains(v)));
+        for lane in 0..4 {
+            assert!(bank.iter().any(|v| v[lane] > 0.0), "empty wavelength plane");
+        }
+    }
 }

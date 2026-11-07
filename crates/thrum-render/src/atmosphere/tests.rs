@@ -20,7 +20,11 @@ fn sample_admission_and_direct_transport_have_physical_limits() {
     assert!(noon[0] > noon[2]);
     assert!(sunset[0] / sunset[2] > noon[0] / noon[2]);
     assert_eq!(model::sun_transmittance(2.0, -1.0), [0.0; 3]);
-    assert_eq!(model::sun_transmittance(100_000.0, 1.0), [1.0; 3]);
+    assert!(
+        model::sun_transmittance(100_000.0, 1.0)
+            .iter()
+            .all(|x| (*x - 1.0).abs() < 2e-7)
+    );
 }
 
 #[test]

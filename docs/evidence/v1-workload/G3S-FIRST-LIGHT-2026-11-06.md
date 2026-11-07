@@ -1,12 +1,12 @@
 # G3s first light — native valley and portable Sky
 
-**Partial.** The native valley has physical Sky, Sun and contact shadows. Chrome uses the same Sky and
-shadow shader in the diagnostic scene. [Build plan](../../BUILD-PLAN.md).
+**Partial.** The native valley uses eight-wavelength transport for Sky, Sun and aerial in-scatter. Chrome uses
+the same atmosphere and shadow shaders in the diagnostic scene. [Build plan](../../BUILD-PLAN.md).
 
 | Check | Result and limit |
 | --- | --- |
-| Direct Sun | Metal matches CPU within `0.05T + 0.005` at 47 receiver cases repeated after translation. The 1,500 m receiver stays lit after the 245 m camera horizon. Above-shell entry, miss and planet hit pass. Near-ground RGB bounds are 0.6/0.9/1.6%. |
-| Twilight M chart | 512 vs 1024 columns at 102 Sun/height cases. Worst RGB E 0.296%, zenith 0.723%, antisolar 0.874%, local M 2.851% with the same estimator. |
+| Direct Sun | Metal matches CPU within `0.05T + 0.005` at 47 receiver cases repeated after translation. The 1,500 m receiver stays lit after the 245 m camera horizon. Above-shell entry, miss and planet hit pass. Near-ground RGB bounds are 0.6/0.9/1.6% with a 0.001 denominator floor. |
+| Twilight M chart | 512 vs 1024 columns at 102 Sun/height cases. Both spectral banks run through the same estimator and RGB projection. |
 | Storage / indirect | Scaled aerial half RGB against fp32 plus independent SH9, GGX/DFG, cube seams and energy probes. SH can err by 331% relative on faint directions. Exposure uses the direct horizontal meter. |
 | Cooked shadows | Metal shows a caster 1.4 km from its receiver outside the camera frustum. Both cascades use the selected asset set after upload. Discard, capture, swap and recovery remain covered by cooked integration tests. |
 
@@ -16,29 +16,29 @@ shadow shader in the diagnostic scene. [Build plan](../../BUILD-PLAN.md).
 245 m camera, frozen authority and 61,312 cooked triangles. Cook `examples/v1-game/assets/showcase` with
 `thrum-cook`, set `THRUM_ASSET_STORE` and `THRUM_SCENE=valley`, then use `THRUM_CAPTURE_SCENE=<newdir>`.
 
-Review sees attached contact shadows and the expected direction changes. Receiver-plane PCF recovered three
-false-shadow samples to their baseline RGB. Local seam marks and hard edges remain. All 32 sky strips and held
-dawn, twilight and night match the previous build. The sole-Sun night is black. [PCF reference](https://learn.microsoft.com/en-us/windows/win32/dxtecharts/cascaded-shadow-maps).
+Review sees blue upper twilight and a warm horizon across sky, haze and reflections, closer to the CC0
+Kiara photographs. The foreground remains flat and bright, and the ridge hides the Sun in the aimed views.
+No new all-black frames in 32 comparisons. The sole-Sun night is black. [Kiara dusk](https://polyhaven.com/a/kiara_9_dusk).
 
 Chrome 156 passes seven held phases and 24 samples at Wasm
-`f0cbc995662d726f11cdc66da96e5650c76bdeeff6f17c057eea752285e5b6bb`. Live motion and showcase quality remain open.
+`add91ac18cae0ad8a6ba885cfe4e778cea24726e0a854d219028395bc73275f8`. Live motion and showcase quality remain open.
 
-**Frame history.** 10k simulation with cooked valley at 1080p and 200 threaded callbacks, offscreen Metal. Two runs
-per variant in ABBA on the shared M3 Max (load 10.4–13.7). Baseline submits 198–199 frames and candidate 199–200.
+**Frame history.** 10k entities, cooked valley at 1080p, 200 callbacks per offscreen Metal run.
+ABBA on the shared M3 Max, load 10.98–11.46. Values in ms.
 
-| Row | 8fb8e98 | Cooked casters |
+| Row | Three bands | Eight wavelengths |
 | --- | ---: | ---: |
-| Render thread p95 | 1.216–4.782 ms | 1.216–2.696 ms |
-| Both shadows GPU p50 | 0.077 ms | 0.096 ms |
-| Forward + Sky GPU p50 | 0.379–0.380 ms | 0.383–0.384 ms |
-| Scene GPU pass sum p50 / p95 | 1.631–1.634 / 2.590–2.801 ms | 1.663–1.665 / 2.662–2.828 ms |
+| Threaded callback p95 including poll | 1.062–1.113 | 1.018–1.111 |
+| Atmosphere compute GPU p50 | 0.821–0.823 | 0.865–0.866 |
+| Aerial GPU p50 | 0.048 | 0.069 |
+| Scene GPU pass sum p50 / p95 | 1.657–1.659 / 2.708–2.804 | 1.712–1.714 / 2.885–2.933 |
 
-About 123k extra depth-only triangles reuse the two maps. Receiver reach is 512 m for long views. Caster depth
-includes upstream meshes. CPU attribution is inconclusive. Raw inputs, captures and logs: `tmp/g3s-showcase/cooked-shadows/`.
+Aerial trips the 25% watch line with two banks of T/M samples. Median scene cost rises ~3.3%.
+Cold profile refresh and live cadence remain open. Raw logs: `tmp/g3s-showcase/q8-production/`.
 
-**Spectral candidate.** Metal transported 4, 8 and 12 actual wavelengths through the same closure, with an
+**Spectrum.** Metal compared 4, 8 and 12 actual wavelengths through the same closure, with an
 analytic ozone band through the existing anchors. Across 49 full-Sky samples, eight nodes differ from
 5 nm integration of the same profile by at most 1.81% luminance and Δu′v′ 0.00636. Upper twilight R/G drops
-from 1.82 to 0.82 before exposure. Integration, scattering closure and Earth colour qualification remain open.
-Restricted reference data and reproducible probe inputs stay under `tmp/g3s-showcase/spectral-transport/`.
+from 1.82 to 0.82 before source-white normalization and exposure. Shipping Metal matches the upper-twilight
+RGB oracle within 2.5% per channel and checks all eight M lanes. Earth radiance and continuous motion remain open.
 [Environment design](../../design/modules/ENVIRONMENT.md#selected-mathematical-relationships-and-domains).

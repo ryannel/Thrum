@@ -9,6 +9,7 @@ mod gpu;
 mod graph;
 mod model;
 mod reflection;
+mod spectrum;
 
 pub(crate) use gpu::AtmospherePrepared;
 
@@ -74,7 +75,7 @@ impl AtmosphereFrame {
     ) -> Result<Self, RenderError> {
         let direction = Vec3::from_array(toward_sun);
         let scale = direction.abs().max_element();
-        let y = Vec3::from_array(solar_colour).dot(Vec3::new(0.2126, 0.7152, 0.0722));
+        let y = Vec3::from_array(solar_colour).dot(spectrum::LUMA);
         if !direction.is_finite()
             || scale <= 0.0
             || !solar_illuminance_lux.is_finite()

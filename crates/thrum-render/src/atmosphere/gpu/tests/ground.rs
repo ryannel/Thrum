@@ -1,4 +1,6 @@
-use super::super::{AtmospherePrepared, EXTENTS, GROUND_VALID, LUT_SHADER, prepare_compute};
+use super::super::{
+    AtmospherePrepared, EARTH, EXTENTS, GROUND_VALID, LUT_PLANES, LUT_SHADER, prepare_compute,
+};
 use crate::atmosphere::AtmosphereFrame;
 use crate::synthetic::SyntheticView;
 use std::{f64::consts::PI, sync::mpsc, time::Duration};
@@ -169,7 +171,7 @@ impl Fixture {
                 label: Some("controlled transport inputs"),
                 size: wgpu::Extent3d {
                     width,
-                    height,
+                    height: height * LUT_PLANES[index],
                     depth_or_array_layers: 1,
                 },
                 mip_level_count: 1,
@@ -192,7 +194,7 @@ impl Fixture {
         });
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: None,
-            source: wgpu::ShaderSource::Wgsl(LUT_SHADER.into()),
+            source: wgpu::ShaderSource::Wgsl(EARTH.shader(LUT_SHADER).into()),
         });
         let producers = [2, 3]
             .map(|index| prepare_compute(&device, index, &uniform, &views, &sampler, &shader));
@@ -323,15 +325,16 @@ fn gpu_ground_quadrature_boundary_zero_units_and_profile_cache() {
         fixture.constant(0, [0; 4]);
         fixture.constant(1, [0; 4]);
         let zero = fixture.run(3);
-        assert!(zero.iter().all(|value| value[..3] == [0.0; 3]));
+        assert!(zero.iter().flatten().all(|value| value.to_bits() == 0));
         fixture.constant(0, [0x3c00; 4]);
         let unit = fixture.run(3);
-        assert_eq!(
-            &unit[0][..3],
-            &[0.0; 3],
-            "unit Sun below the planet has no first-order source"
-        );
-        assert!(unit[127][..3].iter().all(|value| *value > 0.0));
+        for plane in unit.as_chunks::<128>().0 {
+            assert_eq!(
+                plane[0], [0.0; 4],
+                "Sun below the planet has no first-order source"
+            );
+            assert!(plane[127].iter().all(|value| *value > 0.0));
+        }
         assert!(
             unit.iter()
                 .flatten()
@@ -353,12 +356,12 @@ fn gpu_ground_quadrature_boundary_zero_units_and_profile_cache() {
         );
 
         fixture.constant(0, [0; 4]);
-        fixture.constant(1, [0x5c00, 0x5c00, 0x5c00, 0x3c00]); // encoded M=1/256.
+        fixture.constant(1, [0x5c00; 4]); // encoded M=1/256.
         let a = fixture.run(3);
-        fixture.constant(1, [0x6000, 0x6000, 0x6000, 0x3c00]); // encoded M=1/128.
+        fixture.constant(1, [0x6000; 4]); // encoded M=1/128.
         let b = fixture.run(3);
         for (a, b) in a.iter().zip(&b) {
-            for channel in 0..3 {
+            for channel in 0..4 {
                 assert_eq!(b[channel], 2.0 * a[channel], "linear unit multiple source");
             }
         }
@@ -366,7 +369,7 @@ fn gpu_ground_quadrature_boundary_zero_units_and_profile_cache() {
         // Zero volume source plus controlled Esky=1: only the ground half's
         // terminal boundary should emit rho/pi, including the h=0 tangent row.
         fixture.constant(1, [0; 4]);
-        fixture.constant(3, [0x6400, 0, 0, 0x3c00]); // 1024 gain.
+        fixture.constant(3, [0x6400; 4]); // 1024 gain.
         let mut frame = [0.0_f32; 32];
         frame[21] = 1.0;
         frame[28..32].copy_from_slice(&super::super::super::model::sky_mapping(0.0));
@@ -382,12 +385,12 @@ fn gpu_ground_quadrature_boundary_zero_units_and_profile_cache() {
             } else {
                 0.0
             };
-            assert!(
-                (f64::from(value[0]) - expected).abs() < 0.02,
-                "terminal boundary pixel{pixel}: {value:?}"
-            );
-            assert_eq!(value[1], 0.0);
-            assert_eq!(value[2], 0.0);
+            for channel in &value[..3] {
+                assert!(
+                    (f64::from(*channel) - expected).abs() < 0.02,
+                    "terminal boundary pixel{pixel}: {value:?}"
+                );
+            }
         }
         terminal_ground_uses_local_sun(&fixture);
         cache_lifecycle(&fixture);
@@ -398,7 +401,7 @@ fn gpu_ground_quadrature_boundary_zero_units_and_profile_cache() {
 fn terminal_ground_uses_local_sun(fixture: &Fixture) {
     fixture.constant(0, [0; 4]);
     fixture.constant(1, [0; 4]);
-    fixture.constant(3, [0x6400, 0, 0, 0x3c00]);
+    fixture.constant(3, [0x6400; 4]);
     let elevation = -3.0_f32.to_radians();
     let mut frame = [0.0_f32; 32];
     frame[19] = 100_000.0;
@@ -412,13 +415,9 @@ fn terminal_ground_uses_local_sun(fixture: &Fixture) {
     );
     let baseline = fixture.run(2);
     let step: Vec<_> = (0..128)
-        .flat_map(|entry| {
-            if entry < 64 {
-                [0_u16, 0, 0, 0x3c00]
-            } else {
-                [0x6400, 0, 0, 0x3c00]
-            }
-        })
+        .cycle()
+        .take(256)
+        .flat_map(|entry| if entry < 64 { [0_u16; 4] } else { [0x6400; 4] })
         .flat_map(u16::to_le_bytes)
         .collect();
     let texture = &fixture.textures[3];
@@ -428,7 +427,7 @@ fn terminal_ground_uses_local_sun(fixture: &Fixture) {
         wgpu::TexelCopyBufferLayout {
             offset: 0,
             bytes_per_row: Some(128 * 8),
-            rows_per_image: Some(1),
+            rows_per_image: Some(texture.height()),
         },
         texture.size(),
     );
@@ -459,7 +458,7 @@ fn terminal_ground_uses_local_sun(fixture: &Fixture) {
         if lit {
             assert_eq!(
                 sampled[pixel], baseline[pixel],
-                "terminal local Sun selects the red plateau"
+                "terminal local Sun selects the lit plateau"
             );
         } else {
             assert_eq!(

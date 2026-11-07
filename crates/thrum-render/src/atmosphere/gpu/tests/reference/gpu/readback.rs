@@ -5,8 +5,25 @@ use std::sync::mpsc;
 use std::time::Duration;
 
 use crate::atmosphere::AtmosphereFrame;
-use crate::atmosphere::gpu::{AtmospherePrepared, EXTENTS};
+use crate::atmosphere::gpu::{AtmospherePrepared, EXTENTS, LUT_SHADER, prepare_compute};
+use crate::atmosphere::spectrum::Profile;
 use crate::synthetic::SyntheticView;
+
+// The independent CPU reference integrates these original representative bands.
+// Run that comparison through the same GPU kernels with an identity projection.
+const MATCHED_MEDIUM: Profile = Profile {
+    rayleigh: [
+        5.802e-6, 13.558e-6, 33.100e-6, 5.802e-6, 5.802e-6, 5.802e-6, 5.802e-6, 5.802e-6,
+    ],
+    ozone: [
+        0.650e-6, 1.881e-6, 0.085e-6, 0.650e-6, 0.650e-6, 0.650e-6, 0.650e-6, 0.650e-6,
+    ],
+    rgb: [
+        [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+        [0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+        [0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    ],
+};
 
 const READ_SHADER: &str = r"
 @group(0) @binding(0) var source: texture_2d<f32>;
@@ -35,18 +52,23 @@ pub(super) struct Probe {
 }
 
 impl Probe {
-    pub(super) fn new(device: &wgpu::Device, queue: &wgpu::Queue, directions: &[[f32; 4]]) -> Self {
+    pub(super) fn new(
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        directions: &[[f32; 4]],
+        matched_medium: bool,
+    ) -> Self {
         let directional = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("reference directional output"),
             size: crate::synthetic::LIGHT_BYTES as u64,
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::STORAGE,
             mapped_at_creation: false,
         });
-        let atmosphere = AtmospherePrepared::new(
+        let mut atmosphere = AtmospherePrepared::new(
             device,
             queue,
             1,
-            frame(45),
+            frame(45.0, 2.0),
             &SyntheticView::default(),
             &directional,
         );
@@ -54,7 +76,7 @@ impl Probe {
             label: Some("zero higher-order input for first-order comparison"),
             size: wgpu::Extent3d {
                 width: 1,
-                height: 1,
+                height: 2,
                 depth_or_array_layers: 1,
             },
             mip_level_count: 1,
@@ -74,6 +96,26 @@ impl Probe {
             min_filter: wgpu::FilterMode::Linear,
             ..Default::default()
         });
+        if matched_medium {
+            let matched = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+                label: Some("same transport kernels in the reference medium"),
+                source: wgpu::ShaderSource::Wgsl(MATCHED_MEDIUM.shader(LUT_SHADER).into()),
+            });
+            let production_views = atmosphere
+                .textures
+                .each_ref()
+                .map(|texture| texture.create_view(&wgpu::TextureViewDescriptor::default()));
+            for index in 0..4 {
+                (atmosphere.compute[index], atmosphere.groups[index]) = prepare_compute(
+                    device,
+                    index,
+                    &atmosphere.uniform,
+                    &production_views,
+                    &sampler,
+                    &matched,
+                );
+            }
+        }
         let single_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("production single-scatter resource substitution"),
             layout: &atmosphere.compute[2].get_bind_group_layout(0),
@@ -131,10 +173,15 @@ impl Probe {
         &mut self,
         device: &wgpu::Device,
         queue: &wgpu::Queue,
-        sun_degrees: i16,
+        sun_degrees: f32,
+        height: f32,
     ) -> Sky {
-        self.atmosphere
-            .update(queue, frame(sun_degrees), &SyntheticView::default(), [1, 1]);
+        self.atmosphere.update(
+            queue,
+            frame(sun_degrees, height),
+            &SyntheticView::default(),
+            [1, 1],
+        );
         let full = Snapshot::new(device, &self.reader, &self.atmosphere.textures[2]);
         let single = Snapshot::new(device, &self.reader, &self.atmosphere.textures[2]);
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
@@ -191,7 +238,7 @@ impl Probe {
         }
     }
 
-    pub(super) fn multiple(&self, device: &wgpu::Device, queue: &wgpu::Queue) -> Vec<[f64; 3]> {
+    pub(super) fn multiple(&self, device: &wgpu::Device, queue: &wgpu::Queue) -> Vec<[f64; 4]> {
         assert!(
             self.transport_ready,
             "profile has executed before observation"
@@ -231,9 +278,9 @@ impl Probe {
     }
 }
 
-fn frame(degrees: i16) -> AtmosphereFrame {
-    let (sin, cos) = f32::from(degrees).to_radians().sin_cos();
-    AtmosphereFrame::new([cos, sin, 0.0], 1.0, [1.0; 3], 2.0, 1)
+fn frame(degrees: f32, height: f32) -> AtmosphereFrame {
+    let (sin, cos) = degrees.to_radians().sin_cos();
+    AtmosphereFrame::new([cos, sin, 0.0], 1.0, [1.0; 3], height, 1)
         .expect("fixed reference frame is valid")
 }
 
@@ -300,12 +347,12 @@ impl Snapshot {
         encoder.copy_buffer_to_buffer(&self.output, 0, &self.readback, 0, self.output.size());
     }
 
-    fn collect(&self, gain: f64) -> Vec<[f64; 3]> {
+    fn collect<const N: usize>(&self, gain: f64) -> Vec<[f64; N]> {
         decode(&self.readback, gain)
     }
 }
 
-fn decode(readback: &wgpu::Buffer, gain: f64) -> Vec<[f64; 3]> {
+fn decode<const N: usize>(readback: &wgpu::Buffer, gain: f64) -> Vec<[f64; N]> {
     let mapped = readback
         .slice(..)
         .get_mapped_range()

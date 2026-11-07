@@ -7,7 +7,7 @@ use crate::graph::{
 
 use super::{
     STAGE_NAMES,
-    gpu::{AERIAL_EXTENT, AtmospherePrepared, EXTENTS},
+    gpu::{AERIAL_EXTENT, AtmospherePrepared},
     reflection::{CUBE_SIZE, DFG_SIZE, MIP_COUNT, SAMPLE_BYTES},
 };
 
@@ -31,19 +31,20 @@ impl AtmospherePrepared {
             },
             ResourceScope::Imported { initialized: true },
         )?;
-        let resources = EXTENTS
-            .into_iter()
+        let resources = self
+            .textures
+            .iter()
             .enumerate()
-            .map(|(index, [width, height])| {
+            .map(|(index, texture)| {
                 graph.resource(
                     ResourceDescriptor::Texture {
-                        width,
-                        height,
+                        width: texture.width(),
+                        height: texture.height(),
                         layers: 1,
                         mips: 1,
                         samples: 1,
-                        format: self.textures[index].format(),
-                        usage: self.textures[index].usage(),
+                        format: texture.format(),
+                        usage: texture.usage(),
                     },
                     ResourceScope::Persistent {
                         owner: LUT_OWNER_BASE + index as u64,

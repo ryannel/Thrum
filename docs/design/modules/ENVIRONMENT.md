@@ -180,13 +180,13 @@ identified ready build remains until a complete replacement is published.
 
 ### Selected mathematical relationships and domains
 
-The fixed Earth profile uses 256×64 transmittance (T) and 512×32 multiple-scattering (M) LUTs. The disk,
-transport and opaque receivers share T lookup. Opaque receivers use their position in the view's local tangent
-frame, including shell entry for rays from above the atmosphere. The raw Sun is multiplied by T once; the
-camera-height value remains for metering and the diagnostic volume. True-height planet blockage precedes the
-first-row approximation (~6.151 m), which sets both lookup coordinates. M costs 128 KiB and 10,485,760 volume
-evaluations per profile refresh, with one lookup per transport step. The 1024-column comparison bounds sampled
-interpolation, not closure or spectral error.
+The fixed Earth profile uses logical 256×64 transmittance (T) and 512×32 multiple-scattering (M) charts.
+Two RGBA16F planes carry eight wavelengths through T, M and ground irradiance. A separate T plane projects the unit
+Sun to Rec.709 for the disk and receiver-local lookup, including shell entry. The CPU meter uses the same spectrum.
+True-height planet blockage precedes the ~6.151 m first-row remap. Packed planes add 385 KiB. Lit steps sample two
+T and two M planes. M's two banks integrate 20,971,520 volume samples per profile refresh. Final sky and aerial
+in-scatter project after transport with luminance-preserving gamut compression. Aerial surface attenuation uses
+three bounded representative bands for arbitrary RGB. The M chart test isolates interpolation from closure error.
 
 G3s sky diffuse uses a full-sphere nine-coefficient irradiance polynomial, including the planet boundary but
 excluding the separate Sun disk. With `M0=∫L`, `M1=∫Lω`, `Q=∫L(ωωᵀ−I/3)`, evaluate

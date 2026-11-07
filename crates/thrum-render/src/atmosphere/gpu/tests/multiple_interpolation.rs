@@ -1,6 +1,6 @@
 //! Same-model GPU diagnostic: change only M's Sun-mu column count. This does
 //! not qualify the isotropic closure, transport quadrature or spectral model.
-use super::super::{AtmospherePrepared, EXTENTS, LUT_SHADER, prepare_compute};
+use super::super::{AtmospherePrepared, EARTH, EXTENTS, LUT_PLANES, LUT_SHADER, prepare_compute};
 use crate::{atmosphere::AtmosphereFrame, synthetic::SyntheticView};
 use std::{fmt::Write, sync::mpsc, time::Duration};
 use wgpu::BindingResource::{Sampler, TextureView};
@@ -13,33 +13,44 @@ const BYTES_PER_VARIANT: u64 = 64;
 
 const OBSERVER: &str = r"
 @group(0) @binding(6) var<storage,read_write> observations: array<vec4<f32>>;
-var<workgroup> irradiance_sums: array<vec3<f32>,64>;
+var<workgroup> irradiance_lo: array<vec4<f32>,64>;
+var<workgroup> irradiance_hi: array<vec4<f32>,64>;
 @compute @workgroup_size(64)
 fn observe_multiple(@builtin(local_invocation_index) lane: u32) {
     let h=atmosphere.camera_altitude.w;
     let sun=atmosphere.sun_lux.xyz;
-    var sum=vec3(0.0);
+    var lo=vec4(0.0);
+    var hi=vec4(0.0);
     // Same upward-horizontal quadrature as shipping GroundE, but no GroundE
     // solar-table interpolation, Sky resampling, terminal ground or Sun disk.
     for(var index=lane;index<256u;index+=64u) {
         let sample=ground_hemisphere_sample(index,16u,16u);
         let transport=sky_transport(h,sample.xyz,sun,top_distance(h,sample.y));
-        sum+=transport.radiance*sample.w;
+        lo+=transport.lo.radiance*sample.w;
+        hi+=transport.hi.radiance*sample.w;
     }
-    irradiance_sums[lane]=sum;
+    irradiance_lo[lane]=lo;
+    irradiance_hi[lane]=hi;
     workgroupBarrier();
     for(var stride=32u;stride>0u;stride/=2u) {
-        if lane<stride { irradiance_sums[lane]+=irradiance_sums[lane+stride]; }
+        if lane<stride {
+            irradiance_lo[lane]+=irradiance_lo[lane+stride];
+            irradiance_hi[lane]+=irradiance_hi[lane+stride];
+        }
         workgroupBarrier();
     }
     if lane==0u {
-        observations[0]=vec4(irradiance_sums[0],1.0);
+        observations[0]=vec4(project_spectrum(irradiance_lo[0],irradiance_hi[0]),1.0);
         let zenith=vec3(0.0,1.0,0.0);
         let away=normalize(vec3(-0.995,0.0998,0.0));
-        observations[1]=vec4(sky_transport(h,zenith,sun,top_distance(h,zenith.y)).radiance,1.0);
-        observations[2]=vec4(sky_transport(h,away,sun,top_distance(h,away.y)).radiance,1.0);
-        observations[3]=vec4(textureSampleLevel(multiple_scattering,lut_sampler,
-            vec2(sun.y*0.5+0.5,h/H),0.0).rgb/MULTIPLE_LUT_GAIN,1.0);
+        let z=sky_transport(h,zenith,sun,top_distance(h,zenith.y));
+        let a=sky_transport(h,away,sun,top_distance(h,away.y));
+        let uv=vec2(sun.y*0.5+0.5,h/H);
+        let lo=spectral_lut(uv,0u,multiple_scattering,lut_sampler);
+        let hi=spectral_lut(uv,1u,multiple_scattering,lut_sampler);
+        observations[1]=vec4(project_spectrum(z.lo.radiance,z.hi.radiance),1.0);
+        observations[2]=vec4(project_spectrum(a.lo.radiance,a.hi.radiance),1.0);
+        observations[3]=vec4(project_spectrum(lo,hi)/MULTIPLE_LUT_GAIN,1.0);
     }
 }
 ";
@@ -90,7 +101,7 @@ impl Variant {
                 label: Some("same-model M Sun resolution"),
                 size: wgpu::Extent3d {
                     width: columns,
-                    height: ALTITUDE_ROWS,
+                    height: ALTITUDE_ROWS * LUT_PLANES[1],
                     depth_or_array_layers: 1,
                 },
                 mip_level_count: 1,
@@ -108,7 +119,7 @@ impl Variant {
         views[1] = texture.create_view(&wgpu::TextureViewDescriptor::default());
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("unchanged production M estimator and encoding"),
-            source: wgpu::ShaderSource::Wgsl(LUT_SHADER.into()),
+            source: wgpu::ShaderSource::Wgsl(EARTH.shader(LUT_SHADER).into()),
         });
         let (producer, producer_group) = if columns == EXTENTS[1][0] {
             (atmosphere.compute[1].clone(), atmosphere.groups[1].clone())
@@ -146,7 +157,7 @@ impl Variant {
 fn observer_pipeline(device: &wgpu::Device) -> wgpu::ComputePipeline {
     let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
         label: Some("shipping sky_transport with test-only physical queries"),
-        source: wgpu::ShaderSource::Wgsl(format!("{LUT_SHADER}\n{OBSERVER}").into()),
+        source: wgpu::ShaderSource::Wgsl(EARTH.shader(&format!("{LUT_SHADER}\n{OBSERVER}")).into()),
     });
     device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
         label: Some("M interpolation consumer diagnostic"),

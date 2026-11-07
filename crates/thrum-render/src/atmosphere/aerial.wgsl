@@ -19,7 +19,8 @@ fn aerial_main(@builtin(global_invocation_id) id: vec3<u32>) {
     var limit = min(32000.0, top_distance(h, direction.y));
     let ground = ground_distance(h, direction.y);
     if ground >= 0.0 { limit = min(limit, ground); }
-    var radiance = vec3(0.0);
+    var ray = empty_ray();
+    let radiance = vec3(0.0);
     var throughput = vec3(1.0);
     textureStore(scatter_out, vec2<i32>(id.xy), 0, vec4(radiance * SKY_LUT_GAIN, 1.0));
     textureStore(trans_out, vec2<i32>(id.xy), 0, vec4(throughput, 1.0));
@@ -32,11 +33,14 @@ fn aerial_main(@builtin(global_invocation_id) id: vec3<u32>) {
             let dt = (segment_end - segment_start) * 0.25;
             for (var step = 0u; step < 4u; step++) {
                 let p = origin + direction * (segment_start + (f32(step) + 0.5) * dt);
-                let segment = lit_segment(p, sun, phase, dt, transmittance, multiple_scattering, lut_sampler);
-                radiance += throughput * segment.radiance;
-                throughput *= segment.transmission;
+                let ah = altitude(p);
+                let densities = medium_densities(ah);
+                ray = lit_step(ray, densities, ah, local_sun_mu(p,sun), phase, dt,
+                    transmittance, multiple_scattering, lut_sampler);
+                throughput *= exp(-surface_extinction(densities)*dt);
             }
         }
+        let radiance = project_spectrum(ray.lo.radiance,ray.hi.radiance);
         textureStore(scatter_out, vec2<i32>(id.xy), i32(layer), vec4(radiance * SKY_LUT_GAIN, 1.0));
         textureStore(trans_out, vec2<i32>(id.xy), i32(layer), vec4(throughput, 1.0));
     }

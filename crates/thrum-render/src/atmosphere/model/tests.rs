@@ -42,19 +42,23 @@ fn shipping_atmosphere_shader_layouts_keep_mapping_and_view_aux_separate() {
             include_str!("../common.wgsl")
         )
     );
+    let spectral = include_str!("../transport.wgsl");
     for source in [
-        format!(
-            "{common}\n{}\n{}",
+        EARTH.shader(&format!(
+            "{common}\n{spectral}\n{}\n{}",
             include_str!("../lut.wgsl"),
             include_str!("../ground.wgsl")
-        ),
+        )),
         format!("{common}\n{}", include_str!("../sky.wgsl")),
         format!(
             "{common}\n{}\n{}",
             include_str!("../irradiance.wgsl"),
             include_str!("../diffuse.wgsl")
         ),
-        format!("{common}\n{}", include_str!("../aerial.wgsl")),
+        EARTH.shader(&format!(
+            "{common}\n{spectral}\n{}",
+            include_str!("../aerial.wgsl")
+        )),
         format!(
             "{}\n{}\n{}\n{}\n{}",
             concat!(
