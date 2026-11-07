@@ -40,6 +40,36 @@ const DEFAULT_RENDER_EXTENT: [u32; 2] = [640, 360];
 const GPU_WAIT: Duration = Duration::from_secs(10);
 const IN_FLIGHT: usize = 2;
 
+/// A submitted capture of one committed endpoint, owned by the caller until
+/// [`FrameHost::try_finish_capture`] returns its pixels. It retains its own
+/// readback, so no other capture's completion can satisfy it.
+#[must_use = "a pending capture is read with try_finish_capture"]
+pub struct PendingCapture {
+    pixels: crate::synthetic::PixelReadback,
+    submitted: wgpu::SubmissionIndex,
+    generation: u64,
+    tick: u64,
+    extent: [u32; 2],
+}
+
+impl PendingCapture {
+    /// Device generation that recorded the capture.
+    #[must_use]
+    pub fn generation(&self) -> u64 {
+        self.generation
+    }
+    /// Committed world tick the capture shows.
+    #[must_use]
+    pub fn tick(&self) -> u64 {
+        self.tick
+    }
+    /// Pixel extent of the capture, `[width, height]`.
+    #[must_use]
+    pub fn extent(&self) -> [u32; 2] {
+        self.extent
+    }
+}
+
 /// A world observer backed by one authoritative clock or its resident lane.
 pub trait FrameWorld {
     /// Immutable committed page lease.
@@ -1176,10 +1206,24 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     }
 
     /// Render and read back the current committed scene once for visual evidence.
-    /// This capture is outside the timed frame path.
+    /// This capture is outside the timed frame path. Native waits here; a
+    /// browser uses [`Self::begin_capture`] and [`Self::try_finish_capture`].
     /// # Errors
     /// Returns a GPU encode, completion or readback error.
     pub fn capture_pixels(&mut self) -> Result<Vec<u8>, FrameError> {
+        let mut pending = self.begin_capture()?;
+        self.wait(pending.submitted.clone(), "capture")?;
+        self.try_finish_capture(&mut pending)?
+            .ok_or(FrameError::InvalidState("capture readback incomplete"))
+    }
+
+    /// Record and submit a capture of the current committed endpoint without
+    /// waiting. The caller owns the returned token and finishes it with
+    /// [`Self::try_finish_capture`]. Capture never advances authority or
+    /// commits display history.
+    /// # Errors
+    /// Returns a GPU encode or submission error.
+    pub fn begin_capture(&mut self) -> Result<PendingCapture, FrameError> {
         let needs_extract = self.extractor.frame().source().is_none_or(|source| {
             source.epoch != self.world.source().epoch
                 || source.timeline != self.world.source().timeline
@@ -1282,11 +1326,36 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         if let Some(contribution) = self.contribution.as_mut() {
             contribution.submitted(false);
         }
-        self.wait(submitted, "capture")?;
-        pixels
+        Ok(PendingCapture {
+            pixels,
+            submitted,
+            generation: self.generation,
+            tick: self.world.source().tick,
+            extent: self.render_extent,
+        })
+    }
+
+    /// Nonblocking check of a pending capture: `Ok(None)` until its readback
+    /// completes. A capture from a lost or retired device generation fails
+    /// instead, and is never satisfied by a later capture's completion.
+    /// # Errors
+    /// Returns a retired generation, GPU poll or readback failure.
+    pub fn try_finish_capture(
+        &mut self,
+        pending: &mut PendingCapture,
+    ) -> Result<Option<Vec<u8>>, FrameError> {
+        if pending.generation != self.generation {
+            return Err(FrameError::InvalidState(
+                "capture belongs to a retired device generation",
+            ));
+        }
+        self.device
+            .poll(wgpu::PollType::Poll)
+            .map_err(|error| format!("capture poll: {error:?}"))?;
+        Ok(pending
+            .pixels
             .try_collect(self.generation)
-            .map_err(|error| format!("capture collect: {error:?}"))?
-            .ok_or(FrameError::InvalidState("capture readback incomplete"))
+            .map_err(|error| format!("capture collect: {error:?}"))?)
     }
 
     fn wait(&self, submitted: wgpu::SubmissionIndex, operation: &str) -> Result<(), FrameError> {
