@@ -56,8 +56,9 @@ fn resolve() {
             let measured = dot(incident, vec3(0.2126,0.7152,0.0722));
             if finite(measured) && measured >= 0.0 {
                 lux = measured;
-                // The compensation-dependent floor reaches exactly the selected
-                // minimum camera EV, without inventing physical incident light.
+                // The lux floor bounds the meter input without changing reported
+                // incident light. It maps to the minimum EV with the flat key.
+                // The low-light key can raise the effective floor.
                 let floor_lux = 2.5 * exp2(parameters.z + parameters.y);
                 var raw_ev = log2(max(measured, floor_lux) * 0.4) - parameters.y;
                 if policy.mode == 2u {

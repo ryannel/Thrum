@@ -71,6 +71,15 @@ impl Manifest {
 
     /// The product for `name` in the first profile of `preference` that has one.
     pub fn resolve(&self, name: &str, preference: &[Profile]) -> Option<ManifestEntry<'_>> {
+        self.resolve_available(name, preference, |_| true)
+    }
+
+    pub(crate) fn resolve_available(
+        &self,
+        name: &str,
+        preference: &[Profile],
+        available: impl Fn(&ContentHash) -> bool,
+    ) -> Option<ManifestEntry<'_>> {
         let key = ContentHash::of(name.as_bytes()).prefix_u64();
         let (records, strings) = self.sections();
         let start = records.partition_point(|record| record.name_key < key);
@@ -81,7 +90,9 @@ impl Manifest {
             candidates
                 .clone()
                 .filter_map(|record| decode(record, strings).ok())
-                .find(|entry| entry.profile == *wanted && entry.name == name)
+                .find(|entry| {
+                    entry.profile == *wanted && entry.name == name && available(&entry.product)
+                })
         })
     }
 

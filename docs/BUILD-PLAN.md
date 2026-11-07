@@ -84,7 +84,7 @@ The native Metal recorder stays in G3t. The later dedicated performance phase ow
 - [ ] **G5 — content-addressed loop.** Stat cache, BLAKE3 CAS, aligned mmap products, glTF meshlets, KTX2 ASTC/BC7,
   atomic manifest, watcher and dev server. Keep only runtime validation the game needs; shipping never links authoring.
   Prove visible asset edits without GPU stalls; track scan/edit-to-visible latency and startup/hitch tripwires.
-  Native game uses the reviewed `SceneContribution` seam. Chrome client and physical-device runs remain;
+  Native and Chrome draw and update cooked assets through the reviewed `SceneContribution` seam. Physical-device runs remain;
   GC/leases and layered EAC stay parked.
   ([design](design/decisions/G5-CONTENT-ADDRESSED-LOOP.md),
   [evidence](evidence/integration/G5-CONTENT-ADDRESSED-LOOP-2026-11-06.md)).

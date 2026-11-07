@@ -11,7 +11,9 @@
 use std::collections::HashMap;
 use std::future::Future;
 
-use crate::{AssetError, ContentHash, Head, Manifest, ProductBytes, ProductKind, Profile};
+use crate::{
+    AssetError, ContentHash, Head, Manifest, ManifestEntry, ProductBytes, ProductKind, Profile,
+};
 
 #[cfg(target_arch = "wasm32")]
 mod browser;
@@ -53,9 +55,15 @@ impl RemoteGeneration {
         self.head
     }
 
-    /// Validated manifest; resolve names with [`Manifest::resolve`] as on native.
+    /// Validated manifest, including variants the client did not fetch.
     pub fn manifest(&self) -> &Manifest {
         &self.manifest
+    }
+
+    /// The first preferred product for this name whose verified bytes were fetched.
+    pub fn resolve(&self, name: &str, preference: &[Profile]) -> Option<ManifestEntry<'_>> {
+        self.manifest
+            .resolve_available(name, preference, |hash| self.products.contains_key(hash))
     }
 
     /// Verified bytes of a product, shared rather than copied. Only products the client's

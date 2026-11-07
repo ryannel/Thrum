@@ -3,7 +3,7 @@
 Chrome now draws the authored cooked valley, not only the diagnostic scene. This is the first slice of
 [the build plan](../../BUILD-PLAN.md)'s G7 item: native and web share the scene. The page fetches one
 publication from the G5 dev server and draws it with the same placements, camera, sky, shadows and exposure as
-native.
+native. Chrome fetches Portable products. The native store can select compressed variants.
 
 ![Chrome 156 WebGPU on the M3 Max. Sunrise at the authored framing, sunset, twilight at the authored framing,
 and noon looking up](g3s-first-light/chrome-valley.png)
@@ -26,7 +26,13 @@ and noon looking up](g3s-first-light/chrome-valley.png)
 ## Checks
 
 - **Equivalence.** A Metal test fetches a generation from `DevServer` over loopback HTTP. It draws that
-  generation at the same world time as the mapped store, and the two images match pixel for pixel.
+  generation at the same world time as the mapped store with Portable selected. No pixel differs by more than
+  12 codes in any RGB channel. The fetched path uses the device's default preferences with BC compression enabled.
+- **Handback recheck.** The Metal fetched-generation and edit cases passed. Chrome's `valley` and
+  `valley-recovery` passed with Wasm SHA-256
+  `172060dec8af3d7c432e5597ff81bb75e39e35f84f47905374b8adb5e81f3427`. The edit uploaded 5,376 bytes
+  after the initial 1,523,712-byte upload. Two real device replacements each restaged the valley.
+  The first valley run passed its scene assertions and timed out during Chrome shutdown. The repeat exited cleanly.
 - **Chrome.** The `valley` case passed: generation 1 drawn after one swap, 1.52 MB uploaded, no loader errors.
   Wasm SHA-256 `81dba38fab05cf39e26f58e94eeb63dde7545d9be05f1c0c720f96a6c720df12`. The existing
   `sky-reflections` case passed with the same Wasm.
@@ -81,5 +87,4 @@ A fresh-context reviewer saw only Chrome and native stills and a 24-sample Chrom
 
 - **Look items.** Those above, shared with native.
 - **Edit latency.** Chrome edit-to-visible latency is not measured beyond the watcher's publish time.
-- **Shared controls.** The demo panel still waits for G6's typed controls.
 - **Measurements.** No Chrome frame-time or startup measurement.
