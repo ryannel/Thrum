@@ -12,6 +12,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+import unicodedata
 
 GUIDE = 'see examples/starter/README.md, "Make your own scene"'
 
@@ -52,17 +53,28 @@ def resolve(root, folder, metadata):
                              "a scene package builds exactly one, its window")
         binary = binaries[0]
         # Every workspace binary lands in one target/release, so a shared name would replace the
-        # other program; xtask would then run the scene where it means to run thrum-cook.
+        # other program; xtask would then run the scene where it means to run thrum-cook. Names
+        # are compared as the filesystem may: macOS and Windows usually ignore case, and APFS
+        # also ignores Unicode normalization, so Thrum-Cook and thrum-cook are one file there.
         for other in metadata["packages"]:
-            if other["id"] in members and other["id"] != package["id"] and any(
-                    target["name"] == binary and "bin" in target["kind"] for target in other["targets"]):
-                raise SceneError(f"{folder} ({package['name']}) names its binary {binary}, which "
-                                 f"{other['name']} also builds into the same target folder; name the "
-                                 "scene's binary after the scene, such as its package name")
+            if other["id"] not in members or other["id"] == package["id"]:
+                continue
+            for target in other["targets"]:
+                if "bin" in target["kind"] and file_key(target["name"]) == file_key(binary):
+                    raise SceneError(f"{folder} ({package['name']}) names its binary {binary}, which "
+                                     f"{other['name']} also builds into the same target folder as "
+                                     f"{target['name']}, comparing names ignoring case and Unicode "
+                                     "normalization as macOS does; name the scene's binary after the "
+                                     "scene, such as its package name")
         return package["name"], binary
     raise SceneError(f'{folder} is not a workspace member; add "{folder}" to [workspace] members in '
                      "Cargo.toml and a [packages.<name>] entry to .config/architecture.toml "
                      f"({GUIDE})")
+
+
+def file_key(name):
+    """A binary's file name as a case- and normalization-insensitive filesystem compares it."""
+    return unicodedata.normalize("NFC", unicodedata.normalize("NFC", name).casefold())
 
 
 def lockfile_current(root):
