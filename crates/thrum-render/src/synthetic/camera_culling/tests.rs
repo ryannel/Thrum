@@ -380,3 +380,157 @@ fn the_depth_prepass_writes_the_forward_depth_of_the_same_list() {
         }
     });
 }
+
+/// A box of `half` extents at `center`, turned by `yaw` about +y.
+fn place(instance: &mut crate::abi::InstanceRecord, half: [f32; 3], center: [f32; 3], yaw: f32) {
+    let (sin, cos) = yaw.sin_cos();
+    let axes = [[cos, 0.0, -sin], [0.0, 1.0, 0.0], [sin, 0.0, cos]];
+    for (axis, extent) in half.into_iter().enumerate() {
+        for (row, &unit) in axes[axis].iter().enumerate() {
+            instance.current[axis][row] = unit * extent;
+            instance.normal[axis][row] = unit / extent;
+        }
+    }
+    instance.current[3] = [center[0], center[1], center[2], 1.0];
+    instance.previous = instance.current;
+}
+
+/// Membership in the tie witnesses of `tests/visibility.rs`, read from the
+/// two lists. In both, one slot is in view for two frames and then a second
+/// slot enters onto a tie with it: the equal-depth pair (either slot
+/// entering) and the box flush inside a wall (near and far, square and
+/// turned). With two slots the counts fix membership: the prepass holds only
+/// the slot that stayed, and the final list holds both, so the entering slot
+/// is drawn and not hidden by the tie.
+#[test]
+fn an_entering_slot_on_a_tie_is_drawn_by_the_final_list_alone() {
+    pollster::block_on(async {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let adapter = instance
+            .request_adapter(&wgpu::RequestAdapterOptions::default())
+            .await
+            .expect("real adapter");
+        let (device, queue) = adapter
+            .request_device(&wgpu::DeviceDescriptor::default())
+            .await
+            .expect("device");
+        let capabilities = DeviceCapabilities::capture(&adapter, &device, 41);
+        let lighting = FrameLighting::Diagnostic(SyntheticLight::default());
+        let mut cases = Vec::new();
+        for entering in [0_usize, 1] {
+            let mut base = SyntheticScene::grid(2).expect("grid");
+            base.view = SyntheticView::perspective(
+                [0.0, 0.0, -1.5],
+                [0.0, 0.0, 0.5],
+                [0.0, 1.0, 0.0],
+                1.0,
+                16.0 / 9.0,
+                0.01,
+                10.0,
+            )
+            .expect("view");
+            let staying = 1 - entering;
+            base.instances[staying].current[3] = [0.0, 0.0, 0.5, 1.0];
+            base.instances[staying].previous = base.instances[staying].current;
+            base.instances[entering].current[3] = [40.0, 0.0, 0.5, 1.0];
+            base.instances[entering].previous = base.instances[entering].current;
+            let mut tie = base.clone();
+            let mut moved = tie.instances[staying].clone();
+            moved.ids = tie.instances[entering].ids;
+            tie.instances[entering] = moved;
+            cases.push((
+                format!("equal depth, slot {entering} entering"),
+                base,
+                tie,
+                entering,
+            ));
+        }
+        for origin in [[0.0, 1.0, 0.0], [-400.37, 1.13, 400.71]] {
+            for yaw in [0.0_f32, 0.3] {
+                let (sin, cos) = yaw.sin_cos();
+                let at = |offset: [f32; 3]| -> [f32; 3] {
+                    let turned = [
+                        cos * offset[0] + sin * offset[2],
+                        offset[1],
+                        -sin * offset[0] + cos * offset[2],
+                    ];
+                    std::array::from_fn(|axis| origin[axis] + turned[axis])
+                };
+                let mut base = SyntheticScene::grid(2).expect("grid");
+                base.view = SyntheticView::perspective(
+                    at([0.0, 0.0, 0.5]),
+                    at([0.0, 0.0, 2.0]),
+                    [0.0, 1.0, 0.0],
+                    46.0_f32.to_radians(),
+                    16.0 / 9.0,
+                    0.1,
+                    30_000.0,
+                )
+                .expect("field projection");
+                place(
+                    &mut base.instances[1],
+                    [2.0, 1.5, 0.5],
+                    at([0.0, 0.0, 2.0]),
+                    yaw,
+                );
+                let half = [0.25; 3];
+                place(&mut base.instances[0], half, at([60.0, 0.0, 1.75]), yaw);
+                let mut tie = base.clone();
+                place(&mut tie.instances[0], half, at([0.1, -0.05, 1.75]), yaw);
+                cases.push((format!("flush at {origin:?}, yaw {yaw}"), base, tie, 0));
+            }
+        }
+        for (name, mut base, mut tie, entering) in cases {
+            base.camera_culling = CullMode::Occlusion;
+            tie.camera_culling = CullMode::Occlusion;
+            let mut prepared = PreparedSynthetic::prepare_with_capabilities(
+                &capabilities,
+                &queue,
+                &base,
+                lighting,
+                1.0,
+            )
+            .await
+            .expect("prepare");
+            let mut target = OffscreenTarget::new(&device, &prepared, 320, 180).expect("target");
+            let mut counts = Vec::new();
+            for frame in 0..3 {
+                let scene = if frame == 2 {
+                    let slot = u32::try_from(entering).expect("slot");
+                    prepared
+                        .upload_instances(&queue, &tie.instances, &[slot])
+                        .expect("upload");
+                    &tie
+                } else {
+                    &base
+                };
+                prepared
+                    .update_frame(&queue, &mut target, scene, lighting, 1.0)
+                    .expect("update");
+                let mut encoder =
+                    device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+                prepared
+                    .encode(&mut encoder, 41, &target, None)
+                    .expect("encode");
+                queue.submit([encoder.finish()]);
+                prepared.commit_frame();
+                let drawn = target.visibility.as_ref().expect("culled");
+                let prepass = target
+                    .occlusion
+                    .as_ref()
+                    .expect("occlusion")
+                    .target
+                    .prepass();
+                counts.push((
+                    instances(&device, &queue, prepass.args()),
+                    instances(&device, &queue, drawn.args()),
+                ));
+            }
+            assert_eq!(
+                counts,
+                [(0, 1), (1, 1), (1, 2)],
+                "{name}: (prepass, final) per frame"
+            );
+        }
+    });
+}
