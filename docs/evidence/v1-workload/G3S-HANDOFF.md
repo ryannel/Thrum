@@ -1,10 +1,30 @@
 # Thrum V1 handoff
 
-Updated 7 November 2026 for the solar-crossing capture extension. Start from remote `main` and
+Updated 7 November 2026 for the directional Sun penumbra WIP. Start from remote `main` and
 [the build plan](../../BUILD-PLAN.md). The older three-band baseline is `7236b38`. This file
 travels with the candidate, so use its enclosing commit to identify the exact tested source.
 The Codex goal remains active. Its attachment is
 `/Users/ryannel/.codex/attachments/86327eba-9dfd-4eff-965e-5bb0a2134938/goal-objective.md`.
+
+## Current WIP
+
+`main` at `91f524b` is the verified baseline. Branch `codex/wip-g3s-solar-penumbra`
+adds a directional PCSS candidate to the same two maps, with cone padding and 16 blocker /
+32 disk samples. It is unverified. Its first native capture at
+`tmp/g3s-showcase/capture-20-penumbra/` reduces the pixel (640,600) 34→35 jump from 103
+to 20 SDR codes. Frames 33–38 now fade through the ridge shadow. Contact appearance,
+GPU cost and Chrome still need checks. The new GPU finite-disk/plane test currently reports
+a mismatch at the exact short-distance edge. Its validation scope is being checked before
+trusting that mismatch. Run with `cargo test -p thrum-render --lib finite_sun_shadow_width`.
+
+A separate source-triangle raycast at the real receiver (-17.5194,239.9546,15.9897) found
+central ridge blockers about 13 km upstream. At frames 33–38, 512 disk directions give
+visibility 0.893, 0.709, 0.498, 0.279, 0.096, 0.0. Shader shadow-off renders change by one
+code at 34→35. Those results establish the finite-source shadow defect. Raw scripts, saved
+partial rows and logs are under `tmp/g3s-showcase/solar-penumbra/`. Keep existing local
+receiver-plane bias independent of the broad penumbra radius. The full receiver-plane
+extension is an approximate parallel-surface model, and grazing receivers need the oracle.
+The test uses the shipping shader body and independent ray/plane disk geometry.
 
 ## Goal and status
 

@@ -12,12 +12,13 @@ use crate::graph::{CompiledPass, GraphDepthAttachment, ResourceId};
 
 pub(super) const SIZE: u32 = 1024;
 pub(super) const FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
-pub(super) const SAMPLE_BYTES: usize = 160;
+pub(super) const SAMPLE_BYTES: usize = 176;
 const MAPS: usize = 2;
 const RECEIVER_REACH: f32 = 512.0;
 const BIAS_MIN_WORLD: f32 = 0.006;
 const BIAS_MAX_WORLD: f32 = 0.15;
 const BIAS_SLOPE_WORLD: f32 = 0.06;
+const SUN_ANGULAR_RADIUS: f32 = 0.004_654_21;
 
 fn split_depth(near: f32, far: f32) -> f32 {
     near.midpoint(far).midpoint((near * far).sqrt())
@@ -369,6 +370,9 @@ impl FitInputs {
             // texel in metres where filtering spans neighboring receiver triangles.
             let half_texel = (matrix.row(0).truncate().length() * SIZE as f32).recip();
             let base = half_texel.clamp(BIAS_MIN_WORLD, BIAS_MAX_WORLD);
+            let uv_per_metre = matrix.row(0).truncate().length() * 0.5;
+            let penumbra = SUN_ANGULAR_RADIUS.tan() * span * uv_per_metre;
+            samples[160 + index * 4..164 + index * 4].copy_from_slice(&penumbra.to_le_bytes());
             samples[144 + index * 4..148 + index * 4]
                 .copy_from_slice(&(base * scale).to_le_bytes());
             samples[152 + index * 4..156 + index * 4]
@@ -402,11 +406,20 @@ fn cascade_matrix(
         camera_world.transform_point3(Vec3::new(x * depth / fx, y * depth / fy, -depth))
     });
     let center = corners.into_iter().sum::<Vec3>() / 8.0;
-    let radius = corners
+    let receiver_radius = corners
         .into_iter()
         .map(|corner| corner.distance(center))
         .fold(0.0, f32::max);
-    let radius = (radius * 16.0).ceil() / 16.0;
+    // A finite Sun's cone reaches outside the central-ray receiver footprint.
+    // Include the maximum axial gap before snapping or allocating map texels.
+    let receiver_max_depth = corners
+        .into_iter()
+        .map(|corner| -rotation.transform_point3(corner).z)
+        .fold(f32::NEG_INFINITY, f32::max);
+    let blocker_min_depth = caster_depth.map_or(receiver_max_depth, |(lo, _)| lo);
+    let cone_guard = (receiver_max_depth - blocker_min_depth).max(0.0) * SUN_ANGULAR_RADIUS.tan();
+    let padded_radius = (receiver_radius + cone_guard) / (1.0 - 4.0 / SIZE as f32);
+    let radius = (padded_radius * 16.0).ceil() / 16.0;
     let center_light = rotation.transform_point3(center);
     let texel = 2.0 * radius / SIZE as f32;
     let snapped_x = (center_light.x / texel).round() * texel;
@@ -488,6 +501,8 @@ fn caster_depth_bounds(rotation: Mat4, instances: &[InstanceRecord]) -> Option<(
 
 #[cfg(test)]
 mod tests {
+    mod penumbra;
+
     use super::*;
 
     #[test]
