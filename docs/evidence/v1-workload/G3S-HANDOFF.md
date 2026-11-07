@@ -37,9 +37,20 @@ The Codex goal remains active. Its attachment is
   sparse boundary cases. Across six ordered pairs under shared load
   (1-minute load 18.54 to 22.04), the new traversal's median was 82 µs
   versus 217 µs for the previous hierarchy. Reduction plus traversal was
-  121 µs versus 42 µs for legacy taps. Take the boundary-stepped variant
-  to the game graph for moving casters, camera snaps, the Sun sweep and
-  paired whole-frame measurements.
+  121 µs versus 42 µs for legacy taps. The actual V1 Metal graph at
+  `596746f` cut the 97-frame spur sweep's worst stripe contrast from
+  122.42 to 61.16 red codes. The original witness fell from 228 to 111,
+  matching the no-direct-light control. Dawn, noon and midnight held
+  images were byte-identical. On the cooked route at 17.6917 h, paired
+  GPU pass-sum medians were 4.99–5.00 ms for taps and 5.69–5.79 ms for
+  cells (1-minute load 34.53–34.93). Each of the 320 frames submitted
+  the cooked contribution and returned a valid timestamp batch. This
+  is offscreen, with no presentation claim. Review found a lit 5%
+  plane that the flat leaf falsely shadows. The full workspace check
+  also failed the cooked discard image-equality case, which passes in
+  both package-only builds. Keep the graph on `codex/g3s-horizon-graph-wip`
+  and prove a receiver-aware leaf in the live caster and forward passes
+  before Chrome, motion and camera-snap qualification.
   [Maximum Mipmaps](https://pure.mpg.de/pubman/item/item_1325622_5/component/file_3590464/i3d08.pdf).
   Exact builds, raw rows and clips are in `tmp/g3s-sunset-lip/`. The
   diagnostic source and rerun command are on `codex/g3s-horizon-metal-wip`.
