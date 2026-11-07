@@ -7,6 +7,7 @@ use std::{
     hash::{BuildHasher, Hash, Hasher},
     marker::PhantomData,
     mem::size_of,
+    panic::{AssertUnwindSafe, catch_unwind, resume_unwind},
 };
 
 use crate::{Handle, StableId, WorldEpoch};
@@ -1856,7 +1857,10 @@ impl RegisteredWorld {
         let rows = KERNEL_CHUNK_WORDS * 64;
         let used = &mut outputs[..chunks];
         let values = &mut parts.values[..(chunks * rows).min(capacity)];
-        match parts.active {
+        // A panicking callback must not strand other chunks' writes: catch it,
+        // merge every chunk's preimages so the tick abort restores them, then
+        // resume. Each chunk records a preimage before visiting its row.
+        let dispatched = catch_unwind(AssertUnwindSafe(|| match parts.active {
             Some((active, _)) => {
                 let active = &mut active[..(chunks * KERNEL_CHUNK_WORDS).min(words)];
                 #[cfg(not(target_arch = "wasm32"))]
@@ -1893,7 +1897,7 @@ impl RegisteredWorld {
                 #[cfg(target_arch = "wasm32")]
                 run_serial_chunks(values, None, used, rows, &run);
             }
-        }
+        }));
         #[cfg(target_arch = "wasm32")]
         let _ = parallel;
         let undo_column = undo.columns[first]
@@ -1910,6 +1914,9 @@ impl RegisteredWorld {
             }
         }
         self.chunk_scratch[first] = Some(scratch);
+        if let Err(payload) = dispatched {
+            resume_unwind(payload);
+        }
         match refusal.into_inner().expect("refusal lock") {
             Some((_, error)) => Err(error),
             None => Ok(changed),

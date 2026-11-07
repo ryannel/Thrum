@@ -69,6 +69,8 @@ struct Rules {
     panic_apply: bool,
     /// Rows the kernel leaves unchanged (`Ok(false)`): every fifth slot.
     skip_fifths: bool,
+    /// The kernel callback panics after writing this row.
+    panic_slot: Option<u32>,
     /// An earlier Input system writes these rows before the kernel visits.
     nudge: Option<(WritePermit<Height>, Vec<Handle>)>,
     probe: Probe,
@@ -108,6 +110,7 @@ impl Rules {
         let motion = candidate.motion;
         let probe = self.probe.enabled.load(Ordering::SeqCst);
         let skip_fifths = self.skip_fifths;
+        let panic_slot = self.panic_slot;
         candidate.changed = world.visit_chunked_indexed(
             &motion,
             executor,
@@ -122,6 +125,7 @@ impl Rules {
                     return Ok(false);
                 }
                 height.0 += drift.0;
+                assert_ne!(panic_slot, Some(handle.slot), "kernel callback panicked");
                 if *refuse == Some(handle.slot) {
                     return Err(Refused);
                 }
@@ -453,4 +457,34 @@ fn earlier_writers_and_unchanged_rows_restore_exactly_in_every_mode() {
         earlier_writer_and_unchanged_rows(ExecutionMode::RayonForced),
         serial
     );
+}
+
+/// A panic inside one chunk still merges every chunk's preimages, so the
+/// preparation abort restores all rows and the runtime keeps ticking.
+fn kernel_panic(mode: ExecutionMode) -> Vec<u64> {
+    let mut world = fixture(mode);
+    world.step().expect("first tick");
+    let committed = world.heights();
+    let last = (0..u32::try_from(CAPACITY).expect("capacity"))
+        .rev()
+        .find(|index| is_mover(*index))
+        .expect("last mover");
+    world.rules.panic_slot = Some(world.handles[last as usize].slot);
+    let unwound = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| world.step()));
+    assert!(unwound.is_err(), "kernel panic propagates");
+    assert_eq!(world.runtime.tick(), 1);
+    assert_eq!(world.heights(), committed, "abort restores every chunk");
+    world.rules.panic_slot = None;
+    assert_eq!(world.step(), Ok(2));
+    world.heights()
+}
+
+#[test]
+fn a_kernel_panic_restores_every_chunk_in_every_mode() {
+    let mut straight = fixture(ExecutionMode::Serial);
+    straight.step().expect("tick one");
+    straight.step().expect("tick two");
+    let expected = straight.heights();
+    assert_eq!(kernel_panic(ExecutionMode::Serial), expected);
+    assert_eq!(kernel_panic(ExecutionMode::RayonForced), expected);
 }
