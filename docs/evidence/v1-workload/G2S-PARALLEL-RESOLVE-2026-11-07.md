@@ -75,6 +75,24 @@ is faster": with 20–40 runnable threads, pool workers are preempted. Two thing
 - Forced dispatch from the world-tick thread allocates about once per Rayon injection block. The caller thread stays
   allocation-free.
 
+## Contended ABBA rows
+
+`cargo bench -p v1-game --bench g2r -- --crossover-abba` keeps a Serial world and a RayonForced world warm and runs
+them in eight A-B-B-A rounds of interleaved blocks, so a drift in host load hits both modes alike. It prints the host
+load before and after, plus each mode's lowest and highest per-round p50. A win must clear that spread. The one run
+so far is below, taken at load averages of 17–24 with agents active; it qualifies nothing. The raw log is
+`tmp/g2s-parallel/abba-contended-2.log` (local).
+
+| Rows | Serial p50 µs | Serial round p50 range | Forced p50 µs | Forced round p50 range | Forced allocations |
+|---|---:|---:|---:|---:|---:|
+| 10k | 52 | 48–113 | 52 | 48–115 | 0 |
+| 100k | 526 | 493–544 | 976 | 704–1,781 | 8 |
+| 200k | 1,091 | 1,044–1,141 | 1,500 | 1,385–1,794 | 8 |
+| 500k | 2,780 | 2,672–2,992 | 3,179 | 3,001–3,598 | 8 |
+
+Under this contention Forced is slower at every row, and its rounds vary far more than Serial's. That is consistent
+with preempted pool workers. The quiet run uses the same command with agents paused.
+
 ## Open, for root and the performance phase
 
 1. **Quiet crossover.** Promote requested Rayon only on an owner-quiet ABBA win: the same command at 100k–500k,
