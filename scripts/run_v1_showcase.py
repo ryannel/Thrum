@@ -7,7 +7,8 @@ in run.json there. The route's values live only in examples/v1-game/params/showc
 
   mac [--stop NAME] [--frames N]   windowed game on a watched copy of the valley source
   chrome [--stop NAME] [--no-open] Chrome page on a watched, served copy; Ctrl-C stops it
-  check                            visible check: the cooked valley on both targets, not a fallback
+  check [--save-baseline] [--baseline PATH]
+                                   visible check: the cooked valley on both targets, not a fallback
 """
 
 import argparse
@@ -392,11 +393,11 @@ def unpack(text):
     return [values[i:i + 3] for i in range(0, len(values), 3)]
 
 
-def compare_baseline(grids, identity, thresholds):
+def compare_baseline(baseline_path, grids, identity, thresholds):
     """Each stop's difference from the checked-in baseline, when the baseline is for this identity."""
-    if not BASELINE.exists():
+    if not baseline_path.exists():
         return {'status': 'absent'}
-    saved = json.loads(BASELINE.read_text())
+    saved = json.loads(baseline_path.read_text())
     differs = sorted(key for key in identity if saved['identity'].get(key) != identity[key])
     if differs:
         return {'status': 'other identity', 'differs': differs, 'baseline_identity': saved['identity']}
@@ -410,8 +411,8 @@ def compare_baseline(grids, identity, thresholds):
     return result
 
 
-def save_baseline(grids, identity, report, run):
-    BASELINE.write_text(json.dumps({
+def save_baseline(baseline_path, grids, identity, report, run):
+    baseline_path.write_text(json.dumps({
         'about': 'G7 showcase route baseline: per-stop 32x18 grids consumed by scripts/run_v1_showcase.py check. '
                  'Reproduce with `check`; replace only with `check --save-baseline` after reviewing the frames, and '
                  'record why in docs/evidence/v1-workload/G7-CHROME-VALLEY-2026-11-07.md.',
@@ -549,12 +550,19 @@ def check(args):
             failures.append('positive control: the retinted texture did not exceed any threshold')
         identity = {'comparator': COMPARATOR, 'frames': FRAMES, 'source_root': root,
                     'route': {stop: sha256(PARAMS / f'showcase-{stop}.params.json') for stop in ROUTE}}
-        baseline = report['baseline'] = compare_baseline(grids, identity, thresholds)
-        if baseline['status'] == 'compared' and baseline['over']:
+        baseline_path = Path(args.baseline).resolve()
+        baseline = report['baseline'] = compare_baseline(baseline_path, grids, identity, thresholds)
+        baseline['path'] = str(baseline_path.relative_to(REPO)) if baseline_path.is_relative_to(REPO) else str(baseline_path)
+        drifted = baseline['status'] == 'compared' and baseline['over']
+        # Replacing the baseline is the deliberate answer to drift, so drift alone does not block --save-baseline;
+        # every other failure does. The replaced drift stays in run.json.
+        if drifted and not args.save_baseline:
             failures.append(f'baseline drift beyond the thresholds at {", ".join(baseline["over"])}')
         if args.save_baseline and not failures:
-            save_baseline(grids, identity, report, run)
-            baseline['saved'] = str(BASELINE.relative_to(REPO))
+            save_baseline(baseline_path, grids, identity, report, run)
+            baseline['saved'] = baseline['path']
+            if drifted:
+                baseline['replaced_drift'] = baseline['over']
     except Failure as error:
         failures.append(str(error))
     except Exception:  # Record any other fault in run.json before failing.
@@ -575,7 +583,8 @@ def check(args):
     elif baseline:
         print(f'baseline: {baseline["status"]} {baseline.get("differs", "")}')
     if baseline.get('saved'):
-        print(f'baseline saved: {baseline["saved"]}')
+        replaced = f' (replacing drift at {", ".join(baseline["replaced_drift"])})' if baseline.get('replaced_drift') else ''
+        print(f'baseline saved: {baseline["saved"]}{replaced}')
     print(f'{"PASS" if report["passed"] else "FAIL"}: {run / "run.json"}')
     for failure in failures:
         print(f'  {failure}')
@@ -593,7 +602,10 @@ def main():
             command.add_argument('--stop', choices=ROUTE, default=ROUTE[0])
     commands.choices['mac'].add_argument('--frames', type=int, help='bound the run (THRUM_V1_FRAMES)')
     commands.choices['check'].add_argument('--save-baseline', action='store_true',
-                                           help='write the baseline after a passing run (a reviewed, recorded act)')
+                                           help='write the baseline after a passing run (a reviewed, recorded act); '
+                                                'drift from the old baseline alone does not block it')
+    commands.choices['check'].add_argument('--baseline', default=str(BASELINE),
+                                           help='baseline file to compare with or save (default: the checked-in one)')
     commands.choices['chrome'].add_argument('--no-open', action='store_true', help='print the URL instead of opening Chrome')
     args = parser.parse_args()
     # A terminated launcher stops its watcher, servers and game the same way Ctrl-C does.
