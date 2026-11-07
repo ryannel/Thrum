@@ -51,3 +51,54 @@ fn exhausted_sequence_refuses_before_admitting_input_and_keeps_the_tick_queued()
     );
     assert_eq!(driver.controlled_position(), Some(initial));
 }
+
+#[test]
+fn inline_overload_reports_once_and_drains_over_display_drives() {
+    let mut driver = WorldDriver::new().expect("fixture world");
+    driver.world = driver.world.with_tick_work_slice(Duration::ZERO);
+    let first = driver
+        .advance(Duration::from_millis(100))
+        .expect("catch up");
+    assert_eq!(
+        (first.tick, first.completed_ticks, first.queued_ticks),
+        (1, 1, 5)
+    );
+
+    let now = Duration::from_millis(500);
+    let overloaded = driver.advance(now).expect("overload");
+    assert_eq!(overloaded.overload, Some(24));
+    assert_eq!((overloaded.tick, overloaded.queued_ticks), (2, 4));
+    driver.pause();
+    driver.resume_after_drain(now).expect("request resume");
+    assert_eq!(driver.tick(), 2);
+
+    for tick in 3..=6 {
+        let later = Duration::from_secs(tick);
+        let drained = driver.advance(later).expect("drain");
+        assert_eq!(drained.tick, tick);
+        assert_eq!(drained.completed_ticks, 1);
+        assert_eq!(drained.overload, None);
+    }
+    let resumed = driver
+        .advance(Duration::from_millis(6017))
+        .expect("resumed");
+    assert_eq!((resumed.tick, resumed.queued_ticks), (7, 0));
+}
+
+#[test]
+fn a_new_inline_pause_cancels_deferred_resume() {
+    let mut driver = WorldDriver::new().expect("fixture world");
+    driver.world = driver.world.with_tick_work_slice(Duration::ZERO);
+    let now = Duration::from_millis(50);
+    driver.advance(now).expect("first of three ticks");
+    driver.pause();
+    driver.resume_after_drain(now).expect("request resume");
+    driver.pause();
+
+    for tick in 2..=3 {
+        let drained = driver.advance(Duration::from_secs(tick)).expect("drain");
+        assert_eq!(drained.tick, tick);
+    }
+    let held = driver.advance(Duration::from_secs(4)).expect("held");
+    assert_eq!((held.tick, held.queued_ticks), (3, 0));
+}

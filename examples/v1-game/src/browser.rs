@@ -632,7 +632,7 @@ impl BrowserGame {
         let was_running = self.visible && !self.user_paused;
         let will_run = visible && !user_paused;
         if will_run && !was_running {
-            self.host.drain_and_resume(now).map_err(js_error)?;
+            self.host.resume_after_drain(now).map_err(js_error)?;
         } else if !will_run && was_running {
             self.host.pause().map_err(js_error)?;
         }
@@ -646,7 +646,7 @@ impl BrowserGame {
         self.overload_events += 1;
         self.refused_ticks = self.refused_ticks.saturating_add(refused_ticks);
         self.host.pause().map_err(js_error)?;
-        self.host.drain_and_resume(now).map_err(js_error)
+        self.host.resume_after_drain(now).map_err(js_error)
     }
 
     fn time_from_browser(&mut self, timestamp_ms: f64) -> Result<Duration, JsValue> {

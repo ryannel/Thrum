@@ -55,7 +55,7 @@ pub struct WorldUpdate<P> {
 pub struct WorldAdvance {
     /// Latest authority tick, even when publication is unavailable.
     pub tick: u64,
-    /// Sticky first refused tick count after overload.
+    /// First refused tick count after overload. The clock retains it until resume.
     pub overload: Option<u64>,
     /// Ticks committed during this drive or since the preceding poll.
     pub completed_ticks: u32,
@@ -161,6 +161,7 @@ pub struct ClockedWorld<G: WorldGame> {
     clock: TickClock,
     game: G,
     overload: Option<u64>,
+    tick_work_slice: Option<Duration>,
 }
 
 impl<G: WorldGame> ClockedWorld<G> {
@@ -176,7 +177,17 @@ impl<G: WorldGame> ClockedWorld<G> {
             clock: TickClock::new(config, origin).map_err(ClockedWorldError::Clock)?,
             game,
             overload: None,
+            tick_work_slice: None,
         })
+    }
+
+    /// Yield after committed tick work reaches this elapsed limit for one drive.
+    /// A tick already in flight runs to completion. Zero allows one tick per drive.
+    /// With no slice configured, only the clock's tick cap limits a drive.
+    #[must_use]
+    pub fn with_tick_work_slice(mut self, limit: Duration) -> Self {
+        self.tick_work_slice = Some(limit);
+        self
     }
 
     /// Inspect the owned game without transferring clock authority.
@@ -228,7 +239,8 @@ impl<G: WorldGame> ClockedWorld<G> {
             .map_err(ClockedWorldError::Game)
     }
 
-    /// Admit observed monotonic time and commit only the configured tick cap.
+    /// Admit observed monotonic time and commit within the configured tick cap
+    /// and optional elapsed work slice.
     /// Optional publication pressure never consumes a tick without committing
     /// it. Recovery can publish a page even when no new tick is due.
     /// # Errors
@@ -238,10 +250,11 @@ impl<G: WorldGame> ClockedWorld<G> {
         let mut tick_cpu = Duration::ZERO;
         let mut projected_changes = 0_usize;
         let mut skipped_publications = 0_u64;
+        let tick_work_slice = self.tick_work_slice;
         let game = &mut self.game;
         let report = self
             .clock
-            .advance(now, u32::MAX, || {
+            .advance_controlled(now, u32::MAX, || {
                 let start = Instant::now();
                 let step = game.step();
                 tick_cpu += start.elapsed();
@@ -249,7 +262,7 @@ impl<G: WorldGame> ClockedWorld<G> {
                 projected_changes = projected_changes.saturating_add(step.projected_changes);
                 skipped_publications =
                     skipped_publications.saturating_add(u64::from(step.skipped_publication));
-                Ok(())
+                Ok(tick_work_slice.is_none_or(|limit| tick_cpu < limit))
             })
             .map_err(ClockedWorldError::Clock)?;
         if report.state == ClockState::Overloaded && self.overload.is_none() {

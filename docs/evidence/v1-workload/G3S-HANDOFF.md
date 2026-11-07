@@ -68,6 +68,10 @@ The Codex goal remains active. Its attachment is
   The second candidate sample had elevated tone, forward and aerial tails.
   No throughput claim. Raw logs and hashes are in
   `tmp/ultrareview-2026-11-07/atmosphere/`.
+- The ultra-review frame and clock fixes are in the
+  [bounded-frame evidence](../render/V1-BOUNDED-FRAMES-2026-11-04.md).
+  Continue the morning sky-band probe with the fixed valley and stored-radiance
+  comparison above. The all-clear Metal timing issue remains separate.
 
 ## Exposure audit decision
 

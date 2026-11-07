@@ -26,6 +26,12 @@ paused-tick telemetry. Full `./dev check` passes; no live Mac stall or GPU-loss 
 Metal checks and iOS-simulator compilation pass.
 [Pause contact](V1-PAUSE-PHASES.png) / [held samples](V1-PAUSE-PHASES.mp4) are scripted, not live cadence.
 
+**Inline lifecycle:** Chrome and iOS yield after 2 ms of committed tick work, checked between ticks.
+The first tick can run to completion. Accepted ticks drain on subsequent display callbacks, and a later
+pause cancels a pending resume. With four due ticks and a synthetic 15 ms delay per tick, one drive fell
+from 69–74 ms to 16–19 ms and left three ticks queued. Raw: `tmp/ultrareview-2026-11-07/inline-clock/`.
+Chrome overload, pause and actual device-loss cases passed. The iOS simulator app built and linked.
+
 **GPU replacement:** detached engine resources preserve world/controls, current camera/shadows/exposure and exact
 paused twilight pixels (peak delta 0). Metal tests cover stale candidates/callbacks, resize refusal and retry without
 old-device polls or fence waits. Raw `tmp/g3b-device-recovery/`; no live drawable/loss/timing claim.
