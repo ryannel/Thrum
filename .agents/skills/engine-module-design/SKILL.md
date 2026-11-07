@@ -28,7 +28,7 @@ choose the techniques, the research, the experiments and how to break the work d
   milestones to the plan's end on your own; when one closes, carry straight on to the next. The plan is how you, reviewers and the
   overseer see where the work is, so commit it with the work.
 - **Build and prove** ([implementation](references/implementation.md)). A milestone is done when it works in the game
-  through the module's public interface, at the shipped configuration and frame rate, watched in motion, and an
+  through the module's public interface, at the shipped configuration and running in real time, watched in motion, and an
   independent reviewer agrees. A lab harness or close-up still is a diagnostic.
 
 ## Staying on course
@@ -45,7 +45,8 @@ choose the techniques, the research, the experiments and how to break the work d
 
 Use independent review where it changes decisions ([review](references/review.md)). At minimum: the design (and its
 plan) before you build on it, and each milestone in the game before you call it done. Commission reviews yourself and
-carry on with other work while they run. A failed review sends you back to the design, not to a stop.
+carry on with other work while they run. Record each one on the plan's `Reviews:` line: what was reviewed (revision
+or build), a link to the brief the reviewer was given, and the verdict. A failed review sends you back to the design, not to a stop.
 
 ## Routes
 

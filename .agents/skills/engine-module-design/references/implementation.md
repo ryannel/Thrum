@@ -31,6 +31,10 @@ the game's own controls, and real-time capture watched in motion. Anything less 
   cue visible. A solver or geometry inspector is a diagnostic.
 - **Exercise the shipped path.** Use the selected runtime path, configuration and budget. An offline or high-sample
   look shows what's possible; it doesn't show the product.
+- **Make the game able to host the milestone.** If the test game can't yet show the scene a milestone needs (no sea
+  for a shadow over water, say), adding that scene through public interfaces is work in your plan. Use simple stand-ins
+  for neighbours that don't exist yet, label them, and take anything that would change another module's design to
+  [engine-architecture](../../engine-architecture/SKILL.md).
 - **Supply what the judgement needs.** Provide the content, references and surroundings needed to judge at the
   intended distances and speeds, and reject inadequate content before expensive preparation.
 - **Rebuild before reusing evidence.** When a source or recipe changes, rebuild the affected products and recheck the
