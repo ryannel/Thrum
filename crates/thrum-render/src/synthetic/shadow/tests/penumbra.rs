@@ -173,7 +173,7 @@ fn render_planes(
 
 fn observe(device: &wgpu::Device, queue: &wgpu::Queue, slope: f32, kind: u8) -> Vec<f32> {
     let pipeline = pipeline(device);
-    let mut samples = [0_f32; 48];
+    let mut samples = [0_f32; 68];
     let identity = glam::Mat4::IDENTITY.to_cols_array();
     samples[..16].copy_from_slice(&identity);
     samples[16..32].copy_from_slice(&identity);

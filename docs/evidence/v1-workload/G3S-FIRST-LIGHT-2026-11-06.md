@@ -18,7 +18,7 @@ the same atmosphere and shadow shaders in the diagnostic scene. [Build plan](../
 
 Review sees blue upper twilight and a warm horizon across sky, haze and reflections, closer to the CC0
 Kiara photographs. The foreground remains flat and bright, and the clear Sun crosses the ridge in 97 added half-minute samples.
-[The crossing](g3s-first-light/solar-crossing.mp4) exposed a 103-code foreground shadow step; the [finite-Sun penumbra](G3S-SOLAR-PENUMBRA-2026-11-07.md) replaces it with a gradual crossing. No new all-black frames in 32 comparisons. The sole-Sun night is black. [Kiara dusk](https://polyhaven.com/a/kiara_9_dusk).
+[The crossing](g3s-first-light/solar-crossing.mp4) exposed a 103-code foreground shadow step; the [finite-Sun penumbra](G3S-SOLAR-PENUMBRA-2026-11-07.md) replaces it with a gradual crossing, and [terrain horizon shadows](G3S-TERRAIN-HORIZON-2026-11-07.md) shade the distant valley at sunset. No new all-black frames in 32 comparisons. The sole-Sun night is black. [Kiara dusk](https://polyhaven.com/a/kiara_9_dusk).
 
 Chrome 156 passes seven held phases and 24 samples at Wasm
 `add91ac18cae0ad8a6ba885cfe4e778cea24726e0a854d219028395bc73275f8`. Live motion and showcase quality remain open.

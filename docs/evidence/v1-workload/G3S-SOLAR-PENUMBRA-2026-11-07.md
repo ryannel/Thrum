@@ -116,9 +116,7 @@ zero and produced black BRDF noise. The grazing GPU oracle was updated to the li
 
 ## Open
 
-- **Distant terrain.** Terrain beyond 512 m casts and receives no Sun shadow. The candidate is a heightfield
-  horizon method. It is now the most visible sunset defect: the band 1.7–1.8 km away (y ≈ 380–445) stays
-  sunlit-orange while ray truth has it in shadow from frame 34.
+- **Distant terrain.** Resolved by [terrain horizon shadows](G3S-TERRAIN-HORIZON-2026-11-07.md).
 - **Sky brightening at sunset.** Mean sky luminance rises from 219 to 229 as the Sun sets. This is unexplained;
   check it with exposure and the illumination path.
 - **Solar 77→78 step.** A 100-code foreground step appears even with shadows off, so it comes from the

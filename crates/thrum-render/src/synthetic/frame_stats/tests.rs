@@ -79,3 +79,16 @@ fn a_contribution_compute_pass_is_reported_apart_from_the_scene_sequence() {
     passes.push(passes[1].clone());
     assert!(collect_pass_durations(&passes, false, false, false).is_none());
 }
+
+#[test]
+fn the_horizon_height_pass_reports_in_the_far_shadow_bucket() {
+    let passes = timings(&[
+        "synthetic Sun shadow near",
+        "synthetic Sun shadow far",
+        "synthetic Sun horizon heights",
+    ]);
+    let (values, _, _) = collect_pass_durations(&passes, false, true, false).unwrap();
+    assert_eq!(&values[..2], &[1.0, 2.0]);
+    let missing = timings(&["synthetic Sun shadow near", "synthetic Sun shadow far"]);
+    assert!(collect_pass_durations(&missing, false, true, false).is_none());
+}

@@ -153,7 +153,7 @@ pub struct FrameSample {
     /// CPU wall attributable to the render owner. Inline hosts exclude their
     /// tick callback; threaded hosts keep the full render callback wall.
     pub render_cpu: Duration,
-    /// Actual GPU pass durations: near/far Sun shadows, local clusters,
+    /// Actual GPU pass durations: near Sun shadow, far Sun shadow plus the horizon height map, local clusters,
     /// forward, history, tone, then atmosphere transmittance, multiple/ground
     /// irradiance preparation, sky view/specular preparation, diffuse irradiance and aerial perspective. The sky draw and an attached
     /// scene contribution's compute pass are included in forward. Disabled or cached compute passes report zero.
