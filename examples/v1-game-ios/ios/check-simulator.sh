@@ -3,6 +3,15 @@ set -euo pipefail
 cd -- "$(dirname -- "$0")/../../.."
 
 # Function check only. Simulator CPU and GPU timings are never gate evidence.
+#
+# The route builds the app, boots a fresh iPhone 18 Pro simulator owned by this
+# run, launches the game with qualification commands enabled and walks the G3b
+# rows: startup, a render-owner stall, a hidden view, surface replacement (plain
+# and during a stall), a real background/foreground round trip (plain and during
+# a stall) and touch. Touch is a real HID gesture from a self-hosted XCUITest
+# runner (simctl has none) attached to the running process.
+# THRUM_V1_TOUCH=skip runs the other rows and exits 2 (partial).
+# THRUM_V1_ROUTE_OUT names a directory for raw state snapshots and screenshots.
 run_simctl() {
     python3 - "$@" <<'PY'
 import subprocess
@@ -18,7 +27,13 @@ sys.exit(result.returncode)
 PY
 }
 
+thrum_rustc="$(rustup which --toolchain 1.99.1 rustc)"
+PATH="$(dirname -- "$thrum_rustc"):$PATH" RUSTC="$thrum_rustc" RUSTC_WRAPPER= \
+IPHONEOS_DEPLOYMENT_TARGET="$(plutil -extract MinimumOSVersion raw -expect string examples/v1-game-ios/ios/Info.plist)" \
+    rustup run 1.99.1 cargo clippy --locked --offline --package v1-game-ios \
+    --target aarch64-apple-ios-sim --all-targets -- -D warnings
 RUSTC_WRAPPER= examples/v1-game-ios/ios/build-simulator.sh
+examples/v1-game-ios/ios/build-uitest.sh >/dev/null
 thrum_target="${CARGO_TARGET_DIR:-$PWD/target}"
 thrum_app="$thrum_target/v1-game-ios-sim/ThrumV1.app"
 if [[ "$(plutil -extract CADisableMinimumFrameDurationOnPhone raw -expect bool "$thrum_app/Info.plist")" != true ]]; then
@@ -50,33 +65,5 @@ trap 'exit 143' TERM
 run_simctl bootstatus "$thrum_device" -b
 run_simctl install "$thrum_device" "$thrum_app"
 thrum_container=$(run_simctl get_app_container "$thrum_device" org.thrum.v1 data)
-thrum_report="$thrum_container/tmp/thrum-v1-ios-report.txt"
-run_simctl launch "$thrum_device" org.thrum.v1
-for ((thrum_attempt = 0; thrum_attempt < 90; thrum_attempt++)); do
-    if [[ -f "$thrum_report" ]]; then
-        break
-    fi
-    sleep 1
-done
-python3 - "$thrum_report" <<'PY'
-from pathlib import Path
-import sys
-
-report = Path(sys.argv[1])
-if not report.exists():
-    sys.exit("simulator app did not write a report within 90 seconds")
-raw = report.read_text()
-if raw.startswith("fault:"):
-    sys.exit(raw.strip())
-values = dict(item.split("=", 1) for item in raw.split(";", 1)[1].strip().split()
-              if "=" in item)
-for key in ("display_link_callbacks", "presented", "completed_gpu", "surface_samples"):
-    if int(values.get(key, "0")) < 600:
-        sys.exit(f"simulator {key} below 600: {raw.strip()}")
-if "Apple iOS simulator GPU" not in raw:
-    sys.exit(f"simulator did not select its Metal adapter: {raw.strip()}")
-print(raw.strip())
-print("iPhone 18 Pro simulator function passed: build, link, boot, Metal surface, "
-      f"display-link callbacks={values['display_link_callbacks']}, "
-      f"presented={values['presented']}, completed={values['completed_gpu']}")
-PY
+SIMCTL_CHILD_THRUM_V1_ROUTE=1 run_simctl launch "$thrum_device" org.thrum.v1
+python3 examples/v1-game-ios/ios/route.py "$thrum_device" "$thrum_container/tmp/thrum-v1-ios-state.txt"

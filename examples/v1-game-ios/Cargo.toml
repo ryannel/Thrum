@@ -13,6 +13,7 @@ crate-type = ["staticlib"]
 workspace = true
 
 [dependencies]
+thrum-core = { path = "../../crates/thrum-core" }
 v1-game = { path = "../v1-game" }
 
 [target.'cfg(target_os = "ios")'.dependencies]
