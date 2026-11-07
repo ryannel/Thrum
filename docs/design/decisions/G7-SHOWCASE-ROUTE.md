@@ -63,17 +63,18 @@ own copy of the values.
 The two sunset stops are distinct cues. The route catches a lost Sun disk at 17.4 h and a lost horizon gradient at
 17.9 h, where the Sun on the current valley is occluded by the ridge.
 
-**Matched poses.**
-- **Native.** Capture (`THRUM_CAPTURE_SCENE`) already saves every stop at the same values: `sunrise`, `noon`,
-  `sunset-sun-clear`, `sunset-sun`, `twilight` and `night-upslope`.
-- **Chrome.** The checker's `valley` case saves five of the stops through the page's own preset buttons and sliders:
-  `phase-scene-sunrise`, `phase-paused-scene-noon`, `phase-sunset`, `phase-scene-twilight` and
-  `phase-upslope-midnight`. The 17.4 h clear-Sun view has no Chrome counterpart until the checker route seam lands,
-  so M1 compares five stops across targets and shows the sixth on the Mac only.
+**Preset-driven frames.** Each stop's frame on both targets comes from applying its preset, through the same checked
+control path the panel, the browser page and parameter files use:
+- **Native.** Capture takes `THRUM_CAPTURE_PARAMS=<preset files>`. Each preset is applied to fresh control defaults
+  and replayed onto the host's checked setters, then saved as `route/showcase-<stop>.ppm` with the host's readback.
+- **Chrome.** The checker's `route` case opens one fresh page per preset the web build ships, with
+  `?assets=<cook>&params=showcase-<stop>.params.json`, and saves the paused canvas as `route-<stop>.png`.
 
-M1 therefore needs no seam. The drift check takes the poses each target actually used from its own artifacts:
-- **Native:** the records in `captures.json`.
-- **Chrome:** each phase's `requested` and `edited.controls` values in the checker's `run.json`.
+The controls snap solar time to the slider's 0.01 h stop on every target, so 17.4 h is applied as 17.400002 h in
+f32. The drift check takes the poses each target actually used from its own artifacts:
+- **Native:** the `route` records in `captures.json`, which must account for every preset key.
+- **Chrome:** each stop's applied control values in the checker's `run.json`, its preset's SHA-256 (which must equal
+  the repository preset) and its paused state.
 
 Each pose must equal its preset, so if either side drifts, the check stops before it compares anything.
 
@@ -116,17 +117,21 @@ Both targets can silently draw something other than the valley.
 The check compares pictures, not status. It runs in four steps:
 
 1. **Cook.** Cook one store from a source copy with `thrum-cook cook`.
-2. **Capture native.** Run native capture against that store with `THRUM_SCENE=valley`.
+2. **Capture native.** Run native capture against that store with `THRUM_SCENE=valley` and the six presets.
    - That setting makes `attach_cooked_scene` require the store.
    - Capture then refuses, exiting non-zero, unless the cooked content is drawn within 30 s with no loader errors.
    - This is the native fallback guard. The `scene` field in `captures.json` only echoes the environment, so it proves
      nothing.
-3. **Capture Chrome.** Run `check_v1_browser.mjs --case valley`, read-only, with explicit `--cook`, `--web-root`,
+3. **Capture Chrome.** Run `check_v1_browser.mjs --case route`, read-only, with explicit `--cook`, `--web-root`,
    `--assets-source` (the same source copy) and a new `--output`. The checker cooks its own copy, serves it, and
-   asserts that generation 1 was drawn.
-   - The script requires the checker's `actualWasmSha256` to equal the Wasm it just built, so a stale web root fails.
-   - Then it runs `--case sky-reflections`, the same procedure without `?assets`, as the negative control.
-4. **Compare.** For each Chrome-matched stop, compare the Chrome valley frame with the native frame:
+   asserts per stop that the preset applied with nothing refused, the world held one paused tick and the cooked
+   valley drew.
+   - The script requires every checker result's `actualWasmSha256` to equal the Wasm it just built, so a stale web
+     root fails.
+   - It runs `--case valley` for its live texture edit, the positive control.
+   - Then it runs `--case sky-reflections`, the sky phases without `?assets`, as the negative control. The checker has
+     no diagnostic phase at 17.4 h, so the clear-Sun stop has none; the other five cover the comparator.
+4. **Compare.** For each stop, compare the Chrome valley frame with the native frame:
    - Box-average both frames to a 32×18 grid in 8-bit sRGB. Each pixel adds to the cells it overlaps by its exact
      area share, so both extents (1252×704 and 1280×720) average over the same regions of the view. Assigning whole
      pixels to cells moved cell edges by up to a pixel between the extents; that alone produced most of the measured
@@ -175,25 +180,14 @@ each other under the same metric, on both targets.
 - **Diffs.** Later runs report their per-stop difference from the baseline.
 - **Updates.** Changing a baseline is an explicit act with a reason in the evidence. It never happens automatically.
 
-**Preset-driven route frames.** Today both targets reach the stops through pose lists that only match the presets.
-Making the presets themselves drive the captured frames needs a seam in each of two shared files:
-- **Native.** Capture mode honours route presets as an optional input, for example
-  `THRUM_CAPTURE_ROUTE=<preset files>`, applied through the existing checked parameter path. A missing or refused
-  preset fails the route. Without the option, capture output is unchanged. The file is
-  `examples/v1-game/src/bin/window/capture.rs`.
-- **Chrome.** The checker loads `?params=<preset>` per stop and saves that frame, for example `--case route` with
-  preset files. It reuses the existing server and capture helpers, proves that the preset was applied and that the
-  cooked generation drew, and leaves the existing case dispatch and assertions unchanged. The file is
-  `scripts/check_v1_browser.mjs`.
+**Shared seams.** The preset-driven frames rest on one seam in each of two shared files, approved by root in
+principle (`tmp/g7-boundary/NOTES.md`, "Root verdict on G7 route seams") and as exact diffs before they were pushed:
+- **Native,** `examples/v1-game/src/bin/window/capture.rs`. A missing, unreadable or refused preset, or one that does
+  not pause the world, fails the capture. Without the option, capture output is unchanged.
+- **Chrome,** `scripts/check_v1_browser.mjs`. The `route` case reuses the server, page-state and capture helpers and
+  leaves the other cases' dispatch and assertions unchanged. G3c's 16-view field oracle was retested with it.
 
-The route sequence's source stays in the shared presets. Root approved both seams in principle
-(`tmp/g7-boundary/NOTES.md`, "Root verdict on G7 route seams").
-- **Native seam.** It starts after M1.
-- **Checker seam.** It starts after root's real-tab checkpoint is on main. G3c's 16-view field oracle is retested
-  alongside it.
-
-Each exact shared diff goes to root before it is pushed. Until a seam lands, its target uses the matched poses with the
-drift assertion.
+The route sequence's source stays in the shared presets.
 
 ## What is measured, and what is kept apart
 
@@ -201,7 +195,7 @@ drift assertion.
   - **Native:** time from the capture process launching to its first capture file being written, offscreen. Capture
     logs nothing when content is first drawn, so this includes one readback.
   - **Chrome:** time from navigation to `cooked_status().drawn` in the checker's headless run. The checker's timeline
-    carries no timestamps, so this proxy waits for the checker route seam.
+    carries no timestamps, so this proxy is still owed.
 
   Build time is recorded separately and never counted. Windowed cold startup on the Mac waits on the owner's screen.
 - **Visible edit and pacing** is watched on screen in the running game: a live edit reaching the view, and motion
