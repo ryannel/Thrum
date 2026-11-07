@@ -17,6 +17,11 @@ manifest = "crates/thrum-asset/Cargo.toml"
 # Runtime half of G5: shipping games read cooked products through this package only.
 allowed_workspace_dependencies = []
 
+[packages.thrum-asset-gpu]
+manifest = "crates/thrum-asset-gpu/Cargo.toml"
+# Shipping GPU residency for cooked products, drawn through thrum-render's scene-contribution seam.
+allowed_workspace_dependencies = ["thrum-asset", "thrum-render"]
+
 [packages.thrum-cook]
 manifest = "crates/thrum-cook/Cargo.toml"
 # Authoring-only G5 cooker; no shipping package may depend on it.
@@ -43,7 +48,9 @@ allowed_workspace_dependencies = []
 
 [packages.v1-game]
 manifest = "examples/v1-game/Cargo.toml"
-allowed_workspace_dependencies = ["thrum-content-runtime", "thrum-core", "thrum-render"]
+# thrum-asset-gpu draws cooked products natively (not on wasm32); thrum-cook is a dev-dependency
+# only, for the in-game G5 tests and bench.
+allowed_workspace_dependencies = ["thrum-asset", "thrum-asset-gpu", "thrum-content-runtime", "thrum-cook", "thrum-core", "thrum-render"]
 implicit_dependencies = { wasm-bindgen-futures = "async wasm_bindgen export expansion calls wasm_bindgen_futures" }
 
 [packages.v1-game-ios]

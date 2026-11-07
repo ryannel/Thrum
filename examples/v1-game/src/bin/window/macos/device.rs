@@ -69,7 +69,8 @@ impl DeviceRecipe {
             .map_err(|error| format!("adapter: {error:?}"))?;
         let (device, queue) = adapter
             .request_device(&wgpu::DeviceDescriptor {
-                required_features: DeviceCapabilities::requested_timing_features(&adapter),
+                required_features: DeviceCapabilities::requested_timing_features(&adapter)
+                    | DeviceCapabilities::requested_content_features(&adapter),
                 ..Default::default()
             })
             .await

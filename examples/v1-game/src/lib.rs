@@ -4,6 +4,8 @@
 
 #[cfg(target_arch = "wasm32")]
 mod browser;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod cooked;
 mod environment;
 mod host;
 mod projection;

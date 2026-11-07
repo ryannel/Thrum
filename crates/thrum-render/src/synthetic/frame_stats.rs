@@ -6,7 +6,7 @@ pub(crate) fn pass_durations(
     passes: &[crate::timing::PassTiming],
     presented: bool,
     prepared: &PreparedSynthetic,
-) -> Option<([f64; 11], Option<f64>)> {
+) -> Option<PassDurations> {
     collect_pass_durations(
         passes,
         presented,
@@ -15,12 +15,16 @@ pub(crate) fn pass_durations(
     )
 }
 
+/// Scene pass buckets (forward includes a contribution's compute pass), the optional surface blit
+/// and the contribution's compute pass alone.
+pub(crate) type PassDurations = ([f64; 11], Option<f64>, Option<f64>);
+
 fn collect_pass_durations(
     passes: &[crate::timing::PassTiming],
     presented: bool,
     shadows: bool,
     clusters: bool,
-) -> Option<([f64; 11], Option<f64>)> {
+) -> Option<PassDurations> {
     const ALL: [&str; 7] = [
         "synthetic Sun shadow near",
         "synthetic Sun shadow far",
@@ -38,6 +42,21 @@ fn collect_pass_durations(
         (false, true) => &CLUSTER_ONLY,
         (false, false) => &ALL[3..],
     };
+    // A scene contribution adds one timed compute pass that the graph may order anywhere before
+    // forward; it is reported on its own and the fixed scene sequence is matched without it.
+    let mut contribution = None;
+    let mut scene_passes = Vec::with_capacity(passes.len());
+    for pass in passes {
+        if pass.name.as_ref() == super::CONTRIBUTION_COMPUTE {
+            if contribution.is_some() {
+                return None;
+            }
+            contribution = Some(pass.nanoseconds);
+        } else {
+            scene_passes.push(pass);
+        }
+    }
+    let passes = scene_passes.as_slice();
     let mut atmosphere = [0.0; 5];
     let mut offset = 0;
     for (stage, index) in crate::atmosphere::TIMING_ORDER {
@@ -71,9 +90,13 @@ fn collect_pass_durations(
                 // Preserve the existing display bucket, including its scalar resolve.
                 scene[slot] += pass.nanoseconds;
             }
+            // The contribution's compute pass is opaque-phase work that feeds forward: counted
+            // in the forward bucket so totals include it, and also returned on its own.
+            scene[3] += contribution.unwrap_or(0.0);
             (
                 scene,
                 presented.then(|| passes[offset + names.len()].nanoseconds),
+                contribution,
             )
         })
 }

@@ -11,6 +11,7 @@
 pub mod abi;
 pub mod atmosphere;
 pub mod capabilities;
+pub mod contribution;
 pub mod extract;
 pub mod frame;
 pub mod graph;

@@ -170,6 +170,16 @@ impl ThreadedFrameHost {
         self.inner.inner.drive(now, surface)
     }
 
+    /// As [`FrameHost::set_scene_contribution`].
+    /// # Errors
+    /// The contribution's refusal to draw into the current scene.
+    pub fn set_scene_contribution(
+        &mut self,
+        contribution: Box<dyn thrum_render::contribution::SceneContribution>,
+    ) -> Result<(), String> {
+        self.inner.set_scene_contribution(contribution)
+    }
+
     /// Admit the world observation before scene encoding and late drawable
     /// acquisition on the render owner.
     /// # Errors
@@ -466,6 +476,17 @@ impl FrameHost {
     /// Returns a disabled-output or publication failure.
     pub fn reset_projection_baseline(&mut self) -> Result<(), String> {
         self.inner.world_mut().reset_projection_baseline()
+    }
+    /// Draw an engine contribution (for example cooked G5 products) inside the scene's forward
+    /// pass with the scene's selected lighting. It is rebuilt across visual and device
+    /// republication.
+    /// # Errors
+    /// The contribution's refusal to draw into the current scene.
+    pub fn set_scene_contribution(
+        &mut self,
+        contribution: Box<dyn thrum_render::contribution::SceneContribution>,
+    ) -> Result<(), String> {
+        self.inner.set_scene_contribution(contribution)
     }
     /// Drive authority and optional presentation through the engine.
     /// # Errors

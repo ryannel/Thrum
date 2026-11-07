@@ -435,9 +435,12 @@ impl App {
         }
         self.origin = Instant::now();
         let world_wake = wake.clone();
-        let (host, controls) = host.into_threaded(self.origin, move || {
+        let (mut host, controls) = host.into_threaded(self.origin, move || {
             let _ = world_wake.send_event(UserEvent::WorldAdvanced);
         })?;
+        if let Some(assets) = v1_game::cooked::cooked_assets_from_env() {
+            host.set_scene_contribution(Box::new(assets))?;
+        }
         if gpu.watch.is_lost() {
             return Err("initial device lost before render owner ready".to_owned());
         }
