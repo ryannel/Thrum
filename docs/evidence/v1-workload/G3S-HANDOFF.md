@@ -8,6 +8,22 @@ The Codex goal remains active. Its attachment is
 
 ## Current checkpoint
 
+- Normal-valley candidate `197d152` enables the catalogue on both cooked
+  launch paths, with a same-build off control. Diagnostic and field
+  preparation stay star-free. The old canonical G7 route flags only
+  the intentional midnight baseline drift, about 19.2 median RGB codes
+  on both targets. The stars-off witness attributes the broad change
+  to exposure. The separate composed run with 512² ground E passes all
+  six stops and both controls at the existing 1-code tolerance, with
+  worst Metal–Chrome cell difference 0.148. The final native binary
+  reproduces all 138 composed captures exactly. The workspace passes
+  518 tests with two test threads after a contended Mac recovery test
+  refused a clock step in the concurrent run. The focused Metal mixed
+  Frustum slot proof also passes. E lands first. Recheck the intentional
+  night delta against its canonical baseline. Native live motion remains
+  open. Captures, hashes, paired costs and restart commands are in
+  `tmp/g3s-star-catalog/NOTES.md`.
+
 - Star integration `00c2645` is on `codex/g3s-stars-integration`. Both
   graphs preserve Frustum count copies and nonblocking slot retirement.
   Each native Metal mode matches the previous 132 held images byte for
