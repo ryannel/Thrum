@@ -12,8 +12,7 @@ pub(crate) const PYRAMID_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::R32F
 pub(crate) const PASS: &str = "camera depth pyramid";
 const GROUP: u32 = 8;
 
-/// The occlusion test function, for inclusion by the late cull shader.
-#[cfg_attr(not(test), expect(dead_code, reason = "included by the M2 late cull"))]
+/// The occlusion test function, included by the late cull shader.
 pub(crate) const OCCLUSION_WGSL: &str = include_str!("occlusion.wgsl");
 
 /// Compute pipelines and layouts; independent of target size.
@@ -196,4 +195,4 @@ impl PyramidTarget {
 }
 
 #[cfg(test)]
-mod tests;
+pub(super) mod tests;

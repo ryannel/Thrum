@@ -72,7 +72,7 @@ fn buffer_with(
 
 /// A depth target holding exactly `depth`, written through `frag_depth`
 /// because depth formats cannot be copy destinations on WebGPU.
-fn depth_target(
+pub(in crate::visibility) fn depth_target(
     device: &wgpu::Device,
     queue: &wgpu::Queue,
     depth: &[f32],
@@ -190,7 +190,7 @@ fn depth_target(
     view
 }
 
-fn build(
+pub(in crate::visibility) fn build(
     device: &wgpu::Device,
     queue: &wgpu::Queue,
     depth: &wgpu::TextureView,
