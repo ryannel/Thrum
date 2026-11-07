@@ -6,6 +6,7 @@ use super::{
 };
 use crate::{
     capabilities::DeviceCapabilities,
+    contribution::ContributionPasses,
     synthetic::{FrameLighting, SyntheticScene},
 };
 use std::sync::Arc;
@@ -17,6 +18,7 @@ pub struct VisualPrepareInputs {
     pub(super) capabilities: DeviceCapabilities,
     pub(super) scene: SyntheticScene,
     pub(super) surface: bool,
+    pub(super) contribution_passes: ContributionPasses,
     pub(super) render_extent: [u32; 2],
     pub(super) owner: Arc<()>,
 }
@@ -48,6 +50,7 @@ impl VisualPrepareInputs {
             exposure,
             self.render_extent,
             self.surface,
+            self.contribution_passes,
         )
         .await?;
         Ok(PreparedVisual {

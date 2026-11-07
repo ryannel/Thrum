@@ -22,7 +22,7 @@ use crate::{
         FrameLighting, OffscreenTarget, PreparedSynthetic, SceneApplyReport, SceneTimingLayout,
         SyntheticScene, SyntheticView, pass_durations,
     },
-    timing::GpuTimings,
+    timing::{GpuTimings, TimingError},
 };
 use thrum_core::sim::{WorldAdvance, WorldPublication};
 
@@ -496,6 +496,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             exposure,
             config.render_extent,
             config.surface.is_some(),
+            ContributionPasses::default(),
         )
         .await?;
         let presenter = match config.surface {
@@ -550,6 +551,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             capabilities: self.prepared.capabilities().clone(),
             scene: self.scene.clone(),
             surface: self.presenter.is_some(),
+            contribution_passes: self.prepared.contribution_passes(),
             render_extent: self.render_extent,
             owner: Arc::clone(&self.visual_owner),
         }
@@ -1347,10 +1349,14 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                         retain_sample(&mut self.completed, &mut self.dropped_reports, sample);
                     }
                     Ok(None) => slot.state = SlotState::Resolving(sample),
-                    Err(_) => {
+                    Err(error) => {
                         sample.timing_fault = true;
-                        slot.timings =
-                            new_timings(self.prepared.capabilities(), &self.queue, max_passes)?;
+                        // Collection unmaps and resets this batch even when its counter values
+                        // are unusable. Keep the resources for the next submission.
+                        if !matches!(error, TimingError::InvalidTimestamp { .. }) {
+                            slot.timings =
+                                new_timings(self.prepared.capabilities(), &self.queue, max_passes)?;
+                        }
                         retain_sample(&mut self.completed, &mut self.dropped_reports, sample);
                     }
                 },

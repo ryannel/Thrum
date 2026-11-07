@@ -29,6 +29,9 @@ Metal checks and iOS-simulator compilation pass.
 **GPU replacement:** detached engine resources preserve world/controls, current camera/shadows/exposure and exact
 paused twilight pixels (peak delta 0). Metal tests cover stale candidates/callbacks, resize refusal and retry without
 old-device polls or fence waits. Raw `tmp/g3b-device-recovery/`; no live drawable/loss/timing claim.
+In the cooked replacement test, the replacement generation builds two offscreen targets instead of four. The
+timing collector also reuses reset query resources after invalid counter values while reporting a timing fault.
+Scratch-only Metal allocation counts and the applied patch are in `tmp/ultrareview-2026-11-07/replacement-resources/`.
 
 **Chrome function:** build `sh examples/v1-game/web/build.sh`; Node 24
 `scripts/check_v1_browser.mjs --case all --output tmp/new-browser-run`. Ten rows on Chrome 156 / ANGLE Metal M3 Max;
