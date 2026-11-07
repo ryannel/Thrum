@@ -34,6 +34,10 @@ The four local peers control the last four props. A scripted camera flies a 250 
   Byte-equal. Debug builds, as run by `./dev check`, stop at tick 460 after the first snap turn (about 65 s).
 - **Full path, `THRUM_FIELD_FULL_PATH=1`:** every tick from 1 to 1,930, covering six snap-turn starts and ends,
   the quarter-loop cut and the turn after it. Byte-equal at all 1,930 ticks.
+- **Mode survives resize and device replacement:** `cargo test -p thrum-render --lib culled_modes_survive`
+  (f20a1d15) resizes the surface, then publishes a replacement device. Frustum stays selected, every slot's timing
+  report stays valid, and the replacement's capture equals a Direct host on the same device. A mutant that
+  drops the mode in `device_prepare_inputs` fails the test.
 - **Unit tests:** `cargo test -p v1-game --lib field` checks that the layout is deterministic, that the field spans
   far beyond the view, that walls stand halfway between prop lines, and that every turn and cut is flagged.
 
@@ -69,8 +73,18 @@ meshes.
 | 1 | 0.786 (0.918) → 0.590 (0.655) | 0.852 both |
 | 2 | 0.786 (0.918) → 0.590 (0.655) | 0.852 both |
 
-Chrome pixel equality with Chrome Direct is not yet checked: the browser capture is synchronous today, and the
-proposed `begin_capture` / `try_finish_capture` split is with root (NOTES, seam 2, Q2c).
+**Pixel equality with Chrome Direct:** `node scripts/check_v1_browser.mjs --case field-oracle`, using the
+caller-owned capture token (Q2c, d0f9cce4).
+- **Setup:** two fresh pages, one Direct and one Frustum, are paused before their first frame by the same
+  parameter file. Both set the same explicit camera at 16 views (eight yaws × two pitches).
+- **Comparison:** each capture's committed tick, extent and device generation are asserted before the bytes
+  are compared.
+- **Result:** all 16 views byte-equal at `tick=0;extent=1280x720;generation=1`. This held three times:
+  - on the Q2c revision, before it landed;
+  - in root's run of the merged checker on main;
+  - on main `f20a1d15` plus the M2 Occlusion branch (Wasm SHA-256 `df972905…`).
+- **Device loss:** on the Frustum page, after a real device destroy, `begin_capture` and an outstanding capture
+  are both refused. After the restore button, a fresh capture returns the same tick under generation 2.
 
 ## Watched motion
 
@@ -86,8 +100,7 @@ proposed `begin_capture` / `try_finish_capture` split is with root (NOTES, seam 
 
 - **Live window:** an attempt presented nothing, because macOS reported the window occluded (screen locked). The
   headless host above uses the same `FrameHost` path.
-- **Chrome pixel equality:** see Chrome above.
-- **Visible-count readback:** needs a renderer seam.
+- **Visible-count readback:** needs a renderer seam (Q2b, M2).
 - **Uncontended numbers.**
 - **Realistic meshes:** M3.
 - **Occlusion:** M2.
