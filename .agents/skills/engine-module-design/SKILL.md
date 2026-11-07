@@ -24,7 +24,8 @@ choose the techniques, the research, the experiments and how to break the work d
   don't append amendments.
 - **Plan it as milestones** ([plan](references/plan.md)). Each milestone is an outcome you can see in the game, with
   how you'll know it's done; the riskiest behaviour comes first. Break each milestone into work however suits you,
-  tick it off as you go, and keep a short status at the top of the plan. The plan is how you, reviewers and the
+  tick it off as you go, and keep a short status at the top of the plan. Your goal is to work through these
+  milestones to the plan's end on your own; when one closes, carry straight on to the next. The plan is how you, reviewers and the
   overseer see where the work is, so commit it with the work.
 - **Build and prove** ([implementation](references/implementation.md)). A milestone is done when it works in the game
   through the module's public interface, at the shipped configuration and frame rate, watched in motion, and an

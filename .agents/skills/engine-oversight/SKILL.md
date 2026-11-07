@@ -6,8 +6,9 @@ description: Use when overseeing, tracking or steering agents that design or bui
 # Engine oversight
 
 **Outcome:** the module agents converge on planned work and finished milestones instead of drifting into rabbit
-holes, and the owner can see true progress at any time. You are a second pair of eyes on how the work goes; the
-agents own the solutions. Steer as little as keeps them on course.
+holes, and the owner can see true progress at any time. The agents own their milestones: they write them, set their
+own goals from them and move through them on their own. You are a second pair of eyes making sure that's happening.
+You don't set, reorder or edit milestones.
 
 Read the design, the plan and git, not the turn narrative. Progress is a milestone moving towards done with evidence;
 activity, commits and convincing summaries are not.
@@ -45,15 +46,17 @@ independent review with the raw captures and how the milestone is judged, not th
 agent's own review already did that and holds up. Watch the captures yourself too. Count it done when the verdict is
 recorded. When the last milestone closes, check that every required cue was delivered or explicitly deferred.
 
-## Steering
+## Steering is a symptom
 
-Name the problem, the evidence and the milestone it puts at risk, and point to the design. Leave the fix to the agent.
-When an agent has left the process (building on an unreviewed design, working outside the plan, tuning a cue that
-won't come), send it back to the design with the evidence.
+Every steer means something upstream didn't work: the design, the plan, the agent's goal or this process. When you
+do steer, name the problem, the evidence and the milestone it puts at risk, point to the design, and leave the fix to
+the agent. Then record what failed upstream and fix it there, so the same steer isn't needed again. A skill or
+process fix goes to whoever owns that skill. A count of steers per agent is a health signal; report it.
 
-Goals and briefs give the outcome, constraints, how done is judged, and pointers. Leave out technique recipes,
-"keep going" language and open-ended bars such as "until feature complete". Ask agents to report unverified results
-as such.
+An agent's goal is to work through its plan's milestones to the plan's end, judged by their done-when checks. If an
+agent needs a new goal from you, the plan didn't carry it far enough. Briefs for new work give the outcome,
+constraints, how done is judged, and pointers. Leave out technique recipes, "keep going" language and open-ended bars
+such as "until feature complete".
 
 ## Reporting to the owner
 
