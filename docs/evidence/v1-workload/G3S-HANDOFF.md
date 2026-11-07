@@ -1,6 +1,6 @@
 # Thrum V1 handoff
 
-Updated 7 November 2026 for the eight-wavelength checkpoint. Start from remote `main` and
+Updated 7 November 2026 for the solar-crossing capture extension. Start from remote `main` and
 [the build plan](../../BUILD-PLAN.md). The older three-band baseline is `7236b38`. This file
 travels with the candidate, so use its enclosing commit to identify the exact tested source.
 The Codex goal remains active. Its attachment is
@@ -46,7 +46,13 @@ and `docs/ASSET-LIFECYCLE.md` edits out of the commits. Owner digests are asynch
 
 ## Pick up here
 
-First capture a horizon-clear Sun view and a dense sweep around horizon crossing. Keep the
+The current WIP adds clear Sun stills and 97 half-minute solar samples in the existing game capture route.
+Native Metal output is at `tmp/g3s-showcase/capture-18-solar-crossing/`. The clear Sun is visible
+at 17.4 h, then passes behind the valley ridge. Treat the capture addition as unverified until
+its full check exits successfully. The active check is tool session 52173, writing
+`tmp/g3s-showcase/solar-crossing/dev-check.log`. The disk observer is session 22333 with
+`disk.json` and `disk.log` in that directory. Captures have completed and the PNG retention
+pass has its own log there. Follow up with independent visual review of the new sequence. Keep the
 same host Sun/time and the fixed valley camera as the comparison. Separate disk/halo,
 Earth-shadow stepping, shadow-map contact and meter/exposure defects before tuning. Inspect
 physical radiance and displayed colour independently. Use the checked CC0 Kiara photos

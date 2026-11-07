@@ -74,6 +74,8 @@ pub(super) async fn run(output: PathBuf) -> Result<(), String> {
         ("sunset", 17.9, 0.0),
         ("twilight", 18.48, 0.0),
         ("night", 0.0, 0.0),
+        ("sunrise-sun-clear", 6.6, 90.0),
+        ("sunset-sun-clear", 17.4, -90.0),
         ("sunrise-sun", 6.1, 90.0),
         ("sunset-sun", 17.9, -90.0),
     ] {
@@ -93,6 +95,26 @@ pub(super) async fn run(output: PathBuf) -> Result<(), String> {
         save(&mut host, &sequence.join(format!("{index:02}.ppm")))?;
         records.push(serde_json::json!({"sequence_index":index,"hours":hours,"yaw_radians":yaw}));
     }
+    let solar_sequence = output.join("solar-sequence");
+    std::fs::create_dir(&solar_sequence).map_err(|error| error.to_string())?;
+    host.set_camera_pitch(0.0)?;
+    host.set_camera_yaw(-std::f32::consts::FRAC_PI_2)?;
+    let mut solar_records = Vec::new();
+    for index in 0_u16..97 {
+        let hours = 17.4 + 0.8 * f32::from(index) / 96.0;
+        host.set_time_of_day(hours / 24.0)?;
+        let file = format!("{index:02}.ppm");
+        save(&mut host, &solar_sequence.join(&file))?;
+        solar_records.push(serde_json::json!({
+            "file":file, "hours":hours, "yaw_degrees":-90.0, "pitch_degrees":0.0,
+        }));
+        // Keep a completed-frame record even if a later capture fails.
+        std::fs::write(
+            solar_sequence.join("captures.json"),
+            serde_json::to_vec_pretty(&solar_records).map_err(|error| error.to_string())?,
+        )
+        .map_err(|error| error.to_string())?;
+    }
     let manifest = serde_json::json!({
         "scope":"Same V1 FrameHost, frozen authority, real GPU offscreen readback. No live presentation, timing or physical-device qualification.",
         "adapter": capabilities.adapter().name,
@@ -100,6 +122,7 @@ pub(super) async fn run(output: PathBuf) -> Result<(), String> {
         "world_tick":host.tick(),
         "scene":std::env::var("THRUM_SCENE").unwrap_or_else(|_| "diagnostic".to_owned()),
         "captures":records,
+        "solar_sequence":solar_records,
     });
     std::fs::write(
         output.join("captures.json"),
