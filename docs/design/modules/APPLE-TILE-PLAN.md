@@ -20,13 +20,14 @@ Reviews:
   plan's revision 3.
 
 Milestone: none started (plan awaiting re-review and seam rulings) · Updated: 2026-11-07
-Now: revision 2 drafted from the three reviews (since 2026-11-07).
-Next: re-review of revision 2, then Thrum Core's seam rulings.
+Now: revision 4 answers Thrum Core's review of revision 3 (since 2026-11-07).
+Next: exact-revision recheck, the owner's archive ruling, then Thrum Core's seam rulings.
 Blocked: code commissions wait for:
-- the atmosphere graph checkpoint (G3S-HANDOFF "Reconcile the culling count graph on main");
+- the atmosphere graph checkpoint `d2a5342` on `codex/g3s-stars-main-wip`, for interface reads only, pending the reviewed night baseline and the exact final check on main;
 - Thrum Core approval of the exact seams in the design's *Seams* list.
 
-M10–M11 also wait for seam 1.
+M10–M11 also wait for seam 1, which Thrum Core reviews as an exact seam before any experiment. M0's counters and
+capture probe can be commissioned separately from the shared graph; its route waits for seam 8, reviewed with G7.
 
 ## Game outcomes
 
@@ -98,7 +99,7 @@ G4 work that touches the same files lands after the matching G3t step (see below
 
 | G3t milestone | Can start when | Runs in parallel with |
 |---|---|---|
-| M0 route, counters, probe | Seam 8 ruled for the route; counters and probe need nothing | G4 M1 |
+| M0 route, counters, probe | Counters and probe: nothing, commissioned separately. Route: seam 8, reviewed with G7 | G4 M1 |
 | M1 registry and memoryless | M0, atmosphere checkpoint, seams 2 and 3 | G4 M1 |
 | M2 split-execution merged graph | M1 | G4 M1 |
 | M3 direct output and timing schema | M2 | G4 M2, which rebases its `runtime.rs` wiring onto M2 |
@@ -135,6 +136,9 @@ G4 work that touches the same files lands after the matching G3t step (see below
 steps give M12 its two-scale traffic rows.
 
 ## M0 Proof route, counters and capture probe: pending
+
+M0 has two independent parts. The counters and capture probe (D0.3, D0.4) can be commissioned on their own, with no
+dependency on the shared graph or the route. The route (D0.1, D0.2) waits for seam 8, a G7-reviewed seam.
 
 Done when:
 - [ ] D0.1 One command runs the V1 game through a fixed valley route in fixed-step mode: a pan across the Sun side, a
@@ -192,16 +196,17 @@ Done when:
       pass (test).
 - [ ] D2.2 A resize at the current fixed render extent rebinds the surface without recompiling the scene. The
       surface tests pass on macOS and iOS: `surface_pass_letterboxes_and_preserves_sdr_bytes_across_srgb_formats`,
-      and `unavailable_surface_drops_only_views_and_resize_reuses_preparation` rewritten (with G3b owner review)
-      so that it asserts the frame is submitted without a present and views are still dropped.
-- [ ] D2.3 A failed acquisition submits phase 1 without phase 2, and the frame-token tests cover it. On iOS, a frame
-      found after the app leaves the foreground is dropped with a history reset, not submitted (test). The valley
+      and `unavailable_surface_drops_only_views_and_resize_reuses_preparation`, unchanged: the presentation-drop
+      contract is preserved.
+- [ ] D2.3 A failed acquisition follows the existing drop contract under the merged graph: views drop, pre-acquire
+      work may be cancelled, and history stays at the last submitted sample (frame-token tests). On iOS, a frame
+      found after the app leaves the foreground is dropped with a history reset (test). The valley
       stays within tolerance on both recipes.
 
 Work:
 - [ ] Bind both record families under one compiled graph with phase partitioning (→D2.1).
 - [ ] Execute-time surface binding and the resize path (→D2.2).
-- [ ] Submit-without-present on acquisition failure in the macOS render actor and the iOS render owner (→D2.3).
+- [ ] The existing drop contract under split execution in the macOS render actor and the iOS render owner (→D2.3).
 - [ ] Test runs and route rows (→D2.2, D2.3).
 
 ## M3 Direct output and timing schema: pending
@@ -313,7 +318,8 @@ Work:
 
 ## M10 Native segment with a stateful stand-in: pending
 
-This is proven with a labelled stand-in, not MetalFX. It needs seam 1.
+This is proven with a labelled stand-in, not MetalFX. It needs seam 1, and Thrum Core reviews the exact seam (the
+design's tier-3 transitions and this stand-in) before the milestone starts.
 
 Done when:
 - [ ] D10.1 The graph accepts a `NativeSegment` pass with declared reads and writes. The executor closes the wgpu
@@ -326,12 +332,20 @@ Done when:
       channel: the two are compiled by different front ends (MSL source vs naga), so bit equality is not required.
 - [ ] D10.3 A held-submission test shows no native texture is freed or reused before slot completion.
 - [ ] D10.4 Evidence labels the stand-in as composition proof only, not MetalFX or tile proof.
+- [ ] D10.5 The stand-in covers, each with a test and a counter in the proof log:
+  - same-submit visible output;
+  - history across frames;
+  - provider replacement;
+  - a discarded encoded frame, which resets the provider on its next encode, or, if Thrum Core admits seam 3's runtime
+    change, a native frame submitted without present;
+  - the iOS background race: a frame encoded before suspension is dropped and history resets.
 
 Work:
 - [ ] `PassBackend::NativeSegment`, the encoder list, and the native texture rules in graph and executor (→D10.1).
 - [ ] `apple_tile/segment.rs`: `NativeProvider` trait, trampoline, one-time wgpu initialization (→D10.1, D10.2).
 - [ ] Stand-in provider and its wgpu twin (→D10.2).
 - [ ] Held-submission test and evidence note (→D10.3, D10.4).
+- [ ] Discard, reset and background-race tests with outcome counters (→D10.5).
 
 ## M11 Native recovery, rejection and timing: pending
 
@@ -423,3 +437,12 @@ That is **15.5 build days**, plus 1–2 days of review and seam turnaround, for 
   - instance rows are 80 B;
   - the stand-in tolerance is stated;
   - the tone-encode guard test is named.
+- 2026-11-07 Revision 4 answers Thrum Core's review of revision 3:
+  - M0's counters and capture probe are commissionable separately; the route stays a G7-reviewed seam;
+  - the native segment is marked a proposed amendment, with producer and consumer transitions, Metal's tracking
+    guarantees and what wgpu-core cannot observe;
+  - the stand-in also covers a discarded encoded frame and the iOS background race (D10.5);
+  - the portable presentation-drop contract is restored in M2; submit-without-present is limited to frames carrying a
+    stateful native segment, behind seam 3;
+  - archives are put to the owner as (a) against (b), with no V1 exit wording change;
+  - the atmosphere checkpoint is `d2a5342`, for interface reads.
