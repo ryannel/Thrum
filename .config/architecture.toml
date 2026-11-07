@@ -12,6 +12,11 @@ allowed_workspace_dependencies = []
 manifest = "crates/thrum-content-runtime/Cargo.toml"
 allowed_workspace_dependencies = []
 
+[packages.thrum-controls]
+manifest = "crates/thrum-controls/Cargo.toml"
+# G6 typed demo controls: one model, AppKit and DOM views; no game schema, no I/O.
+allowed_workspace_dependencies = []
+
 [packages.thrum-asset]
 manifest = "crates/thrum-asset/Cargo.toml"
 # Runtime half of G5: shipping games read cooked products through this package only.
@@ -50,7 +55,7 @@ allowed_workspace_dependencies = []
 manifest = "examples/v1-game/Cargo.toml"
 # thrum-asset-gpu draws cooked products (a mapped store natively, a fetched generation on wasm32); thrum-cook is a dev-dependency
 # only, for the in-game G5 tests and bench.
-allowed_workspace_dependencies = ["thrum-asset", "thrum-asset-gpu", "thrum-content-runtime", "thrum-cook", "thrum-core", "thrum-render"]
+allowed_workspace_dependencies = ["thrum-asset", "thrum-asset-gpu", "thrum-content-runtime", "thrum-controls", "thrum-cook", "thrum-core", "thrum-render"]
 implicit_dependencies = { wasm-bindgen-futures = "async wasm_bindgen export expansion calls wasm_bindgen_futures" }
 
 [packages.v1-game-ios]
@@ -143,14 +148,20 @@ target_cost = "Target-specific platform glue and transitive closure; macOS surfa
 [external_dependencies.objc2]
 requirement = "=0.6.5"
 license = "MIT OR Apache-2.0"
-purpose = "Narrow macOS AppKit display-link callback and per-view Objective-C bridge in the V1 window"
+purpose = "Narrow macOS AppKit display-link callback and per-view Objective-C bridge in the V1 window; the thrum-controls panel's target/action class"
 target_cost = "macOS-only; already transitive in the locked Metal closure; callback sends one event without frame work"
 
 [external_dependencies.objc2-foundation]
 requirement = "=0.3.2"
 license = "MIT OR Apache-2.0"
-purpose = "Main-thread NSObject target and run-loop ownership for the macOS view display link"
+purpose = "Main-thread NSObject target and run-loop ownership for the macOS view display link; NSString and geometry for the controls panel"
 target_cost = "macOS-only framework binding; no engine or iPhone runtime edge"
+
+[external_dependencies.objc2-app-kit]
+requirement = "=0.3.2"
+license = "Zlib OR Apache-2.0 OR MIT"
+purpose = "Native AppKit demo-control panel (NSPanel, NSStackView, NSSlider, NSButton, NSTextField) in thrum-controls"
+target_cost = "macOS-only framework binding with default features off; built only on demand for the panel, no frame work, no iPhone or browser edge"
 
 [external_dependencies.objc2-quartz-core]
 requirement = "=0.3.2"

@@ -7,6 +7,7 @@ mod browser;
 mod camera;
 #[cfg(not(target_arch = "wasm32"))]
 mod content;
+pub mod controls;
 pub mod cooked;
 mod environment;
 mod host;

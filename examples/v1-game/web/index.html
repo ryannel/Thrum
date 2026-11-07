@@ -9,9 +9,7 @@
       main { max-width: 1280px; margin: auto; padding: 1rem; }
       canvas { display: block; width: 100%; aspect-ratio: 16 / 9; background: #101824; }
       output { display: block; margin-top: 1rem; white-space: pre-wrap; overflow-wrap: anywhere; }
-      .sky-controls, .sky-presets { display: flex; flex-wrap: wrap; gap: .75rem 1.5rem; margin-top: 1rem; }
-      .sky-controls label { display: grid; grid-template-columns: 6rem 10rem 4rem; align-items: center; gap: .5rem; }
-      .sky-controls output { display: inline; margin: 0; }
+      .sky-presets { display: flex; flex-wrap: wrap; gap: .75rem 1.5rem; margin-top: 1rem; }
       button { border: 1px solid #6f86a3; border-radius: .3rem; background: #1a2b40; color: inherit; padding: .4rem .8rem; cursor: pointer; }
       button:disabled { opacity: .65; cursor: progress; }
       button:focus-visible, input:focus-visible { outline: 2px solid #a2cfff; outline-offset: 3px; }
@@ -20,19 +18,15 @@
   <body>
     <main>
       <canvas id="scene" width="1280" height="720" aria-label="Thrum V1 scene"></canvas>
-      <section aria-label="Sky and camera controls">
-        <div class="sky-controls">
-          <label>Solar time <input id="solar-time" type="range" min="0" max="24" step="0.01" value="12"><output id="solar-time-value" for="solar-time">12:00</output></label>
-          <label>Look around <input id="camera-yaw" type="range" min="-180" max="180" step="1" value="0"><output id="camera-yaw-value" for="camera-yaw">0°</output></label>
-          <label>Look up/down <input id="camera-pitch" type="range" min="-34" max="34" step="1" value="0"><output id="camera-pitch-value" for="camera-pitch">0°</output></label>
-        </div>
+      <section aria-label="Sky, camera and world controls">
+        <!-- Built from the game's typed controls (thrum-controls), the same model as the macOS panel. -->
+        <div id="demo-controls"></div>
         <div class="sky-presets">
           <button type="button" data-sky="sunrise">Sunrise</button>
           <button type="button" data-sky="noon">Noon</button>
           <button type="button" data-sky="sunset">Sunset</button>
           <button type="button" data-sky="twilight">Twilight</button>
           <button type="button" id="scene-view">Look at the scene</button>
-          <button type="button" id="pause-world" aria-pressed="false">Pause</button>
           <button type="button" id="restore-graphics" hidden>Restore graphics</button>
         </div>
       </section>
@@ -41,6 +35,7 @@
     </main>
     <script type="module">
       import init, { create_browser_game, fetch_cooked_valley } from "./v1_game.js";
+      import { mountControls } from "./thrum-controls.js";
 
       const canvas = document.querySelector("#scene");
       const status = document.querySelector("#status");
@@ -74,47 +69,26 @@
         let rafId = 0;
         let stopped = false;
         const pressed = new Set();
-        const solarTime = document.querySelector("#solar-time");
-        const cameraYaw = document.querySelector("#camera-yaw");
-        const cameraPitch = document.querySelector("#camera-pitch");
-        const showTime = (hours) => {
-          const minutes = Math.round(hours * 60) % 1440;
-          document.querySelector("#solar-time-value").textContent = `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
+        // Sliders, the pause toggle and the Sun readout come from the game's typed controls.
+        // Edits go through the game's checked setters at once; pause takes the same path as
+        // set_paused. These ids predate the model and the browser check drives them.
+        const controls = mountControls(document.querySelector("#demo-controls"), game.controls_json(), {
+          edit: (key, value) => { if (!stopped) game.edit_control(key, value, performance.now()); },
+          changes: () => game.control_changes(),
+          ids: { "sky.solar_time": "solar-time", "camera.yaw": "camera-yaw", "camera.pitch": "camera-pitch", "world.paused": "pause-world" },
+          onError: (error) => { status.textContent = `Control fault: ${error}`; },
+        });
+        const look = (yaw, pitch) => {
+          controls.set("camera.yaw", yaw);
+          controls.set("camera.pitch", pitch);
         };
-        const editSky = (edit) => {
-          if (stopped) return;
-          try { edit(); }
-          catch (error) { status.textContent = `Control fault: ${error}`; }
-        };
-        const setCamera = (yaw, pitch) => {
-          game.set_camera_yaw(yaw * Math.PI / 180);
-          game.set_camera_pitch(pitch * Math.PI / 180);
-          cameraYaw.value = yaw;
-          cameraPitch.value = pitch;
-          document.querySelector("#camera-yaw-value").textContent = `${yaw}°`;
-          document.querySelector("#camera-pitch-value").textContent = `${pitch}°`;
-        };
-        solarTime.addEventListener("input", () => editSky(() => {
-          game.set_time_of_day(solarTime.valueAsNumber / 24);
-          showTime(solarTime.valueAsNumber);
-        }));
-        cameraYaw.addEventListener("input", () => editSky(() => setCamera(cameraYaw.valueAsNumber, cameraPitch.valueAsNumber)));
-        cameraPitch.addEventListener("input", () => editSky(() => setCamera(cameraYaw.valueAsNumber, cameraPitch.valueAsNumber)));
         const skies = { sunrise: [6.1, 90, 0], noon: [12, 0, 20], sunset: [17.9, -90, 0], twilight: [18.48, -90, 0] };
-        document.querySelectorAll("[data-sky]").forEach((button) => button.addEventListener("click", () => editSky(() => {
+        document.querySelectorAll("[data-sky]").forEach((button) => button.addEventListener("click", () => {
           const [hours, yaw, pitch] = skies[button.dataset.sky];
-          game.set_time_of_day(hours / 24);
-          solarTime.value = hours;
-          showTime(hours);
-          setCamera(yaw, pitch);
-        })));
-        document.querySelector("#scene-view").addEventListener("click", () => editSky(() => setCamera(0, 0)));
-        document.querySelector("#pause-world").addEventListener("click", () => editSky(() => {
-          const paused = !game.paused();
-          game.set_paused(paused, performance.now());
-          document.querySelector("#pause-world").textContent = paused ? "Resume" : "Pause";
-          document.querySelector("#pause-world").setAttribute("aria-pressed", String(paused));
+          controls.set("sky.solar_time", hours);
+          look(yaw, pitch);
         }));
+        document.querySelector("#scene-view").addEventListener("click", () => look(0, 0));
         const movementKeys = new Set(["KeyW", "KeyA", "KeyS", "KeyD", "ArrowUp", "ArrowLeft", "ArrowDown", "ArrowRight"]);
         const updateControls = () => {
           const x = Number(pressed.has("KeyD") || pressed.has("ArrowRight"))
@@ -196,11 +170,9 @@
           if (document.hidden || simulatedHidden || stopped) return;
           try {
             game.frame(time);
+            controls.refresh();
             if (time - lastPlayerUpdate >= 500) {
               player.textContent = game.controlled_position();
-              const hours = game.time_of_day() * 24;
-              solarTime.value = hours;
-              showTime(hours);
               lastPlayerUpdate = time;
             }
             if (updateGraphicsState()) {

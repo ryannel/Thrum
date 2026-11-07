@@ -48,6 +48,17 @@ impl PauseIntent {
         true
     }
 
+    /// The control panel's pause toggle: the same preference the P key flips.
+    pub(super) fn request(&mut self, paused: bool) -> bool {
+        let changed = self.desired_paused != paused;
+        self.desired_paused = paused;
+        changed
+    }
+
+    pub(super) fn desired(&self) -> bool {
+        self.desired_paused
+    }
+
     pub(super) fn needs_reply(&self) -> bool {
         self.pending.is_some()
     }

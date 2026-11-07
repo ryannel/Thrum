@@ -73,7 +73,7 @@ class Cdp {
 
 async function assets(directory) {
   const result = new Map();
-  for (const [name, type] of [['index.html', 'text/html'], ['v1_game.js', 'text/javascript'], ['v1_game_bg.wasm', 'application/wasm']]) {
+  for (const [name, type] of [['index.html', 'text/html'], ['v1_game.js', 'text/javascript'], ['v1_game_bg.wasm', 'application/wasm'], ['thrum-controls.js', 'text/javascript']]) {
     const bytes = await fs.readFile(path.join(directory, name));
     result.set(`/${name}`, { bytes, type, sha256: sha(bytes) });
   }

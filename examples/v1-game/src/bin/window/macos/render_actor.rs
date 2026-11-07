@@ -106,6 +106,8 @@ pub(super) struct RenderReply {
     pub(super) acquire_wall: Option<Duration>,
     pub(super) surface_status: SurfaceStatus,
     pub(super) surface_extent: [u32; 2],
+    /// Committed solar time after this job, for the demo controls to show.
+    pub(super) time_of_day: f32,
 }
 struct Actor {
     host: ThreadedFrameHost,
@@ -160,6 +162,7 @@ impl Actor {
             acquire_wall: None,
             surface_status: SurfaceStatus::NotAttempted,
             surface_extent: [self.gpu.config.width, self.gpu.config.height],
+            time_of_day: self.host.time_of_day(),
         };
         reply.outcome = match job {
             RenderJob::Frame(request) => {
@@ -206,6 +209,7 @@ impl Actor {
         reply.device_generation = self.gpu.watch.generation;
         reply.surface_extent = [self.gpu.config.width, self.gpu.config.height];
         reply.counters = FrameCounters::read(&self.host);
+        reply.time_of_day = self.host.time_of_day();
         reply.worker_wall = start.elapsed();
         reply
     }

@@ -18,6 +18,7 @@ pollster = "=1.0.1"
 serde = { version = "=1.0.229", features = ["derive"] }
 serde_json = "=1.0.154"
 thrum-asset-gpu = { path = "../../crates/thrum-asset-gpu" }
+thrum-controls = { path = "../../crates/thrum-controls" }
 thrum-core = { path = "../../crates/thrum-core" }
 thrum-render = { path = "../../crates/thrum-render" }
 wgpu = { version = "=30.0.1", default-features = false, features = ["std", "wgsl"] }
