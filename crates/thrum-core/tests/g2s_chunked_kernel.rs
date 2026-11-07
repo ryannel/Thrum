@@ -13,7 +13,7 @@ use thrum_core::{
     sim::{
         Access, AccessKey, AccessMode, ComponentRegistry, ComponentSchemaId, EditWriter,
         ExecutionMode, Executor, GameRuntime, PublicationMode, ReadPermit, RegisteredSystem, Stage,
-        SystemId, SystemSpec, TickError, TickGame, WorldRead, WorldTxn, WriteRead2,
+        SystemId, SystemSpec, TickError, TickGame, WorldRead, WorldTxn, WritePermit, WriteRead2,
     },
 };
 
@@ -25,6 +25,7 @@ struct Drift(f64);
 
 const CAPACITY: usize = 8_192;
 const MOVE: SystemId = SystemId(1);
+const NUDGE: SystemId = SystemId(2);
 const EXCLUDED: u32 = 4;
 
 struct Page;
@@ -66,10 +67,32 @@ impl Probe {
 struct Rules {
     refuse_slot: Option<u32>,
     panic_apply: bool,
+    /// Rows the kernel leaves unchanged (`Ok(false)`): every fifth slot.
+    skip_fifths: bool,
+    /// An earlier Input system writes these rows before the kernel visits.
+    nudge: Option<(WritePermit<Height>, Vec<Handle>)>,
     probe: Probe,
 }
 
 impl Rules {
+    fn nudge(
+        &self,
+        world: &mut WorldTxn<'_>,
+        _executor: Executor,
+        _tick: u64,
+        _candidate: &mut Candidate,
+        _edits: &mut EditWriter<'_, Candidate>,
+    ) -> Result<(), Refused> {
+        if let Some((permit, rows)) = &self.nudge {
+            for (offset, handle) in rows.iter().enumerate() {
+                world
+                    .put(permit, *handle, Height(1_000.0 + offset as f64))
+                    .expect("nudge row");
+            }
+        }
+        Ok(())
+    }
+
     fn simulate(
         &self,
         world: &mut WorldTxn<'_>,
@@ -80,6 +103,7 @@ impl Rules {
     ) -> Result<(), Refused> {
         let motion = candidate.motion;
         let probe = self.probe.enabled.load(Ordering::SeqCst);
+        let skip_fifths = self.skip_fifths;
         candidate.changed = world.visit_chunked_indexed(
             &motion,
             executor,
@@ -89,6 +113,9 @@ impl Rules {
             |refuse, handle, _, height, drift| {
                 if probe && handle.slot % 1_024 < 8 {
                     self.probe.enter();
+                }
+                if skip_fifths && handle.slot.is_multiple_of(5) {
+                    return Ok(false);
                 }
                 height.0 += drift.0;
                 if *refuse == Some(handle.slot) {
@@ -150,24 +177,38 @@ fn fixture(mode: ExecutionMode) -> Fixture {
     registry
         .select_activity_partition::<Drift>()
         .expect("dense movers");
-    let systems = vec![RegisteredSystem::direct(
-        SystemSpec {
-            id: MOVE,
-            stage: Stage::Simulate,
-            accesses: vec![
-                Access {
+    let systems = vec![
+        RegisteredSystem::direct(
+            SystemSpec {
+                id: NUDGE,
+                stage: Stage::Input,
+                accesses: vec![Access {
                     key: AccessKey::Component(height),
                     mode: AccessMode::Write,
-                },
-                Access {
-                    key: AccessKey::Component(drift),
-                    mode: AccessMode::Read,
-                },
-            ],
-            after: vec![],
-        },
-        Rules::simulate,
-    )];
+                }],
+                after: vec![],
+            },
+            Rules::nudge,
+        ),
+        RegisteredSystem::direct(
+            SystemSpec {
+                id: MOVE,
+                stage: Stage::Simulate,
+                accesses: vec![
+                    Access {
+                        key: AccessKey::Component(height),
+                        mode: AccessMode::Write,
+                    },
+                    Access {
+                        key: AccessKey::Component(drift),
+                        mode: AccessMode::Read,
+                    },
+                ],
+                after: vec![],
+            },
+            Rules::simulate,
+        ),
+    ];
     let mut runtime =
         GameRuntime::new(WorldEpoch(31), CAPACITY, registry, systems, || Page).expect("setup");
     runtime.set_execution_mode(mode);
@@ -330,4 +371,82 @@ fn a_runtime_whose_commit_unwound_refuses_reuse() {
         .publish_initial(&mut world.rules, &mut world.candidate);
     assert_eq!(world.heights(), committed);
     assert_eq!(world.step(), Ok(2));
+}
+
+/// Rows an earlier system wrote keep that system's preimage, and rows the
+/// kernel leaves unchanged keep none: refusal and rewind both restore the
+/// exact pre-tick world in every mode.
+fn earlier_writer_and_unchanged_rows(mode: ExecutionMode) -> (Vec<u64>, usize) {
+    let mut world = fixture(mode);
+    let before = world.heights();
+    // Movers in three different chunks.
+    let rows: Vec<Handle> = [1_u32, 4_097, 8_191]
+        .iter()
+        .map(|index| world.handles[*index as usize])
+        .collect();
+    assert!(rows.iter().all(|handle| is_mover(handle.slot)));
+    let permit = world.runtime.write_permit(NUDGE).expect("nudge write");
+    world.rules.nudge = Some((permit, rows.clone()));
+    world.rules.skip_fifths = true;
+
+    let last = (0..u32::try_from(CAPACITY).expect("capacity"))
+        .rev()
+        .find(|index| is_mover(*index) && !index.is_multiple_of(5))
+        .expect("last changed mover");
+    world.rules.refuse_slot = Some(world.handles[last as usize].slot);
+    assert_eq!(world.step(), Err(TickError::Game(Refused)));
+    assert_eq!(world.heights(), before, "refusal restores nudged rows too");
+
+    world.rules.refuse_slot = None;
+    let mut undo = [world.runtime.new_undo()];
+    world
+        .runtime
+        .step_recording(
+            &mut world.rules,
+            &mut world.candidate,
+            &mut undo[0],
+            PublicationMode::Defer,
+        )
+        .expect("recorded tick");
+    let recorded = world.heights();
+    let changed = world.candidate.changed;
+    for (index, (now, was)) in recorded.iter().zip(&before).enumerate() {
+        let index = u32::try_from(index).expect("small");
+        let nudged = rows.iter().position(|handle| handle.slot == index);
+        let moved = is_mover(index) && index != EXCLUDED && !index.is_multiple_of(5);
+        let drift = if moved {
+            0.25 + f64::from(index % 7)
+        } else {
+            0.0
+        };
+        let expected = match nudged {
+            Some(offset) => (1_000.0 + offset as f64 + drift).to_bits(),
+            None => (f64::from_bits(*was) + drift).to_bits(),
+        };
+        assert_eq!(*now, expected, "row {index}");
+    }
+    world.runtime.rewind_many(&mut undo).expect("rewind");
+    assert_eq!(
+        world.heights(),
+        before,
+        "rewind restores the pre-nudge values"
+    );
+    (recorded, changed)
+}
+
+#[test]
+fn earlier_writers_and_unchanged_rows_restore_exactly_in_every_mode() {
+    let serial = earlier_writer_and_unchanged_rows(ExecutionMode::Serial);
+    let expected = (0..u32::try_from(CAPACITY).expect("capacity"))
+        .filter(|index| is_mover(*index) && *index != EXCLUDED && !index.is_multiple_of(5))
+        .count();
+    assert_eq!(serial.1, expected, "unchanged rows are not counted");
+    assert_eq!(
+        earlier_writer_and_unchanged_rows(ExecutionMode::Rayon),
+        serial
+    );
+    assert_eq!(
+        earlier_writer_and_unchanged_rows(ExecutionMode::RayonForced),
+        serial
+    );
 }

@@ -105,9 +105,9 @@ enum StagedEdit {
     Health(Handle, Health),
 }
 
-/// Resolve's private stage. The Resolve callback alone fills it from
-/// committed state and this tick's commands; the ordered merge moves it into
-/// shared payloads under Resolve's own permits.
+/// Resolve's private stage. The Resolve callback alone fills it from the
+/// tentative world after Input and Simulate and this tick's commands; the
+/// ordered merge moves it into shared payloads under Resolve's own permits.
 #[derive(Default)]
 pub(super) struct ResolveStage {
     positions: Vec<Position>,
@@ -353,7 +353,7 @@ impl Rules {
         Ok(())
     }
 
-    /// Stage command overrides and structure privately from committed state.
+    /// Stage command overrides and structure privately from the tentative world.
     pub(super) fn resolve(
         &self,
         world: &WorldRead<'_>,
