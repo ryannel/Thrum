@@ -2,7 +2,8 @@
 
 Governing guide: [creator experience](../../design/ENGINE-EXPERIENCE.md). Build-plan item: G6 in the
 [build plan](../../BUILD-PLAN.md). Work runs on an Apple M3 Max (macOS 26.6, Metal) and headless Chrome 156 WebGPU on the
-same machine, which other agents were also using. No timing claims are made here.
+same machine, which other agents were also using. Slices 1 and 2 make no timing claims; slice 3's reload timings are
+contended observations, not budgets.
 
 ## Slice 1: typed demo controls (native panel and browser page)
 
@@ -92,3 +93,68 @@ Sun-elevation readout of 1° at 17:54 matches the day cycle at 45° latitude.
 ### Limits
 
 - Parameter edits reload on request, not on save.
+
+## Slice 3: cooked material hook (shader reload)
+
+### What was built
+
+A game-authored WGSL hook, `cooked_surface`, changes the cooked meshes' surface factors and reloads explicitly into
+the running scene. The [G6 decision](../../design/decisions/G6-CREATOR-EXPERIENCE.md#shader-edits-the-cooked-material-hook-built)
+records the API and the lifecycle.
+- **Mac scenes:** the sky kit reads `THRUM_MATERIAL` when the window opens and again on `L`.
+- **Chrome:** v1-game's page takes `?material=<url>` and has a **Reload material** button.
+
+The page fix below also makes slice 2's claim true: the parameter row is now hidden without `?params`. Before, the
+`.params` display rule overrode the `hidden` attribute.
+
+### Checks
+
+| Check | Result |
+|---|---|
+| No-hook pixels, v1-game `THRUM_CAPTURE_SCENE` | Plain, diagnostic-store and valley captures (13 files each) are byte-identical to captures from `ed64db0`. |
+| No-hook and identity-hook pixels, starter `THRUM_CAPTURE_PNG` | The default capture and an identity-hook capture are byte-identical to the `ed64db0` starter. |
+| Mac GPU tests, `examples/v1-game/tests/cooked_material_gpu.rs` (4) | **Valid reload:** the banded hook visibly changes only the cooked terrain. Motion history restarts on the promoting frame and continues on the next. **Refused hook:** a misspelt identifier is rejected at `hooks/misspelt.wgsl:3:21`, and the pixels do not change. **Superseded:** of three back-to-back requests, the first two are superseded and the last is drawn. **Empty hook:** refused with line 0. **Identity hook:** draws the built-in material with zero differing bytes. **Device replaced during a reload:** the outstanding request is retired, and the replacement device draws the accepted hook's pixels again. A new request then draws. **Requests before the first frame:** the newer one is prepared once the assets build their pipelines, and it draws. |
+| Mac starter capture with a typo | Exits 1 with `hooks/typo.wgsl:17:21: no definition in scope for identifier: \`roughnes\``. |
+| Chrome `material` case (new) | **Valid reload:** the page loads the valley with an identity hook. The **Reload material** button then draws the shipped moss hook, made unique per run, and changes 56% of the canvas pixels. **Refused hook:** the misspelt hook is refused as `case.material.wgsl:3:21: unresolved value 'roughnes'`, and the screenshot is byte-identical to the moss one. **Device destroyed with a request outstanding:** a request and `GPUDevice.destroy()` run in one JavaScript task. The request is retired, and the restored device's screenshot is byte-identical to the moss one. **Reload on the replacement device:** it draws. Passed 5 runs. A sixth failed on a check race (the restore button had not yet appeared), since fixed. |
+| Chrome `controls`, `params`, `sky-reflections`, `valley`, `valley-recovery`, `device-recovery`, `device-recovery-retry` | Pass on the same build. |
+
+![Chrome valley, built-in material](../render/G6-CHROME-MATERIAL-BUILT-IN-2026-11-07.png)
+![Chrome valley, moss hook](../render/G6-CHROME-MATERIAL-MOSS-2026-11-07.png)
+![Starter rock, moss hook](../render/G6-STARTER-MATERIAL-MOSS-2026-11-07.png)
+
+**Review notes:**
+- **Chrome moss hook.** The dunes turn green. The chrome sphere and the rock gain green tops where they face the sky.
+  The sky, the shadows and the sphere's reflection band are unchanged.
+- **Starter moss hook.** The rock's upper faces are green and its sides keep the sandstone texture. It sits on the
+  kit's lit ground and casts its shadow there. This capture was retaken after the kit gained the ground.
+
+### Reload timing (contended, observations only)
+
+The figures come from a shared machine, and nothing here is a budget.
+- **Mac.** `cargo bench -p v1-game --bench material_reload`: 1280×720, each frame waited for, six distinct hooks per
+  run, three runs.
+  - The compile thread took 0.66–2.2 s per hook, usually 0.7–1 s.
+  - The request call took 0.02–0.35 ms.
+  - The hook was drawn within 2 ms of becoming eligible.
+  - Frames kept running during each reload, 37–127 per reload.
+  - Quiet frames before the reloads had worst-case latencies of 22–39 ms across runs.
+  - The worst frame during a reload was usually within that spread, but 3 of the 18 reloads had a 75–118 ms
+    frame. This is not explained; it may be contention or interference from the compile.
+- **Chrome.** The page's call took 0.3 ms. With a hook that had not been compiled on the machine before:
+  - the moss hook became eligible after 577–880 ms;
+  - one animation-frame interval during the compile was 300–750 ms (5 runs);
+  - frames before and after stayed at a 16.8 ms worst.
+  - **This is a stall.** Chrome creates the pipeline in its GPU process, and an asynchronous wrapper cannot move that
+    work. Moving it would need `createRenderPipelineAsync`, which wgpu 30 does not expose.
+- **Cached compiles.** A hook already compiled on the machine came back in 3–60 ms without a stall, on both
+  platforms.
+
+### Limits
+
+- **Reload trigger.** Reload is explicit, not on save.
+- **Compile cost.** Each hook recompiles the whole scene fragment shader.
+- **Coupling.** The seam depends on one line of `thrum-render`'s scene shader. It is guarded by a count check that
+  refuses with a diagnostic.
+- **Temporal history.** Only the meshes' motion history restarts on promotion.
+- **Inputs.** The hook gets no time input.
+- **Starter size.** The kit wires the reload for any scene with cooked meshes, so it adds no game lines.

@@ -2,8 +2,8 @@
 //! sliders.
 //!
 //! Run it with `./dev starter`, which cooks `assets/`, watches them for edits and opens the
-//! window. Edit a slider in the panel, `starter.params.json` (press L to reload it) or any
-//! file under `assets/` while it runs. See README.md.
+//! window. Edit a slider in the panel, `starter.params.json` or `material.wgsl` (press L to
+//! reload them) or any file under `assets/` while it runs. See README.md.
 
 #[cfg(target_os = "macos")]
 fn main() {

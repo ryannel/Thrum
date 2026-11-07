@@ -110,7 +110,7 @@ pub enum KeyResponse {
 /// recovery and panel; the game owns its runtime, controls model and game keys.
 ///
 /// The shell handles `R` while the GPU is unavailable, `P` when [`Game::world`] is present,
-/// and `L` (reload `THRUM_PARAMS`); every other key reaches [`Game::key`].
+/// and `L` (reload `THRUM_PARAMS`, then [`Game::reload`]); every other key reaches [`Game::key`].
 pub trait Game {
     /// The runtime's world adapter.
     type World: FrameWorld + Send + 'static;
@@ -159,6 +159,10 @@ pub trait Game {
     /// Observe a readback on the main thread. Replies to frames requested before the latest
     /// edits are not observed, so they cannot revert those edits.
     fn observe(&mut self, readback: Self::Readback);
+    /// Reload the game's own authored files, such as a material hook, when the window opens and
+    /// on `L` after the parameter file. The game reports what became of them; the default reloads
+    /// nothing.
+    fn reload(&mut self) {}
     /// Observe the pause state the `P` key now asks for.
     fn observe_paused(&mut self, paused: bool) {
         let _ = paused;

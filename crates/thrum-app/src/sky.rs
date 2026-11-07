@@ -4,7 +4,8 @@
 //! atmosphere and Sun with a camera meter for exposure, a lit ground that receives the Sun's
 //! shadows, and cooked meshes ([`SkyGame::with_meshes`]) or another engine contribution in the
 //! same lit scene. Each frame the game's update maps its [`Controls`] onto a [`Sky`]: the Sun's
-//! elevation and azimuth and a look-at [`Camera`]. [`run`] opens the window, or renders one PNG
+//! elevation and azimuth and a look-at [`Camera`]. The meshes' WGSL material hook, named by
+//! `THRUM_MATERIAL`, reloads on `L` beside the parameter file. [`run`] opens the window, or renders one PNG
 //! offscreen when `THRUM_CAPTURE_PNG` names a file.
 //!
 //! World units are metres with +Y up and the ground at Y = 0; north is -Z and east is +X.
@@ -37,7 +38,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use thrum_asset_gpu::{CookedAssets, CookedConfig, CookedStats};
+use thrum_asset_gpu::{CookedAssets, CookedConfig, CookedStats, MaterialHook, MaterialOutcome};
 pub use thrum_asset_gpu::{CookedMaterial, MeshPlacement};
 pub use thrum_controls::{Controls, Display};
 use thrum_core::{
@@ -62,6 +63,9 @@ pub const CAPTURE_VARIABLE: &str = "THRUM_CAPTURE_PNG";
 /// Environment variable naming the cooked asset store that [`SkyGame::with_meshes`] draws
 /// from; `./dev scene <folder>` cooks the folder's `assets/` and sets it.
 pub const STORE_VARIABLE: &str = "THRUM_ASSET_STORE";
+/// Names the cooked meshes' WGSL material hook, which `./dev scene` sets to the folder's
+/// `material.wgsl` when there is one.
+pub const MATERIAL_VARIABLE: &str = "THRUM_MATERIAL";
 
 /// Linear base colour of the default ground: dry, grassy earth.
 pub const DEFAULT_GROUND: [f32; 3] = [0.16, 0.15, 0.11];
@@ -304,6 +308,8 @@ impl Edits for SkyEdits {
 
 type Update = Box<dyn FnMut(&Controls, &mut Sky)>;
 type StatusProbe = Box<dyn FnMut() -> ContentStatus>;
+type Reload = Box<dyn FnMut() -> Result<(), String>>;
+type ReloadReport = Box<dyn FnMut() -> Vec<Result<String, String>>>;
 
 /// A still scene under the sky, hosted by the app shell. See the [module](self) example.
 pub struct SkyGame {
@@ -317,6 +323,7 @@ pub struct SkyGame {
     contribution: Option<Box<dyn SceneContribution>>,
     status: Option<StatusProbe>,
     shown_status: Option<ContentStatus>,
+    reload: Option<(Reload, ReloadReport)>,
 }
 
 impl SkyGame {
@@ -344,6 +351,7 @@ impl SkyGame {
             contribution: None,
             status: None,
             shown_status: None,
+            reload: None,
         }
     }
 
@@ -360,6 +368,9 @@ impl SkyGame {
     /// Draw cooked meshes from the store named by `THRUM_ASSET_STORE` ([`STORE_VARIABLE`]),
     /// which `./dev scene <folder>` cooks from the folder's `assets/` and keeps cooking as
     /// they change. The window logs each newly drawn generation; a capture waits for the first.
+    /// When `THRUM_MATERIAL` ([`MATERIAL_VARIABLE`]) names a WGSL material hook, it is loaded
+    /// with the window and reloaded on `L`; a hook that fails to compile is explained by file and
+    /// line while the previous material keeps drawing.
     ///
     /// # Errors
     /// The variable is unset or names a store nothing was cooked into, or a placement's
@@ -369,7 +380,26 @@ impl SkyGame {
         let assets = CookedAssets::new(CookedConfig::new(store, meshes))
             .map_err(|error| error.to_string())?;
         let stats = assets.stats();
-        Ok(self.with_contribution(Box::new(assets), move || cooked_status(&stats)))
+        let material = assets.material();
+        let game = self.with_contribution(Box::new(assets), move || cooked_status(&stats));
+        let Some(path) = std::env::var_os(MATERIAL_VARIABLE).map(PathBuf::from) else {
+            return Ok(game);
+        };
+        let reload = material.clone();
+        let report = move || {
+            material
+                .take_outcomes()
+                .iter()
+                .map(material_drawn)
+                .collect()
+        };
+        Ok(game.with_reload(
+            move || {
+                reload.request(MaterialHook::read(&path)?);
+                Ok(())
+            },
+            report,
+        ))
     }
 
     /// Draw an engine contribution lit by the sky. `status` reports its progress: the window
@@ -384,6 +414,35 @@ impl SkyGame {
         self.contribution = Some(contribution);
         self.status = Some(Box::new(status));
         self
+    }
+
+    /// Reload a game file when the window opens and on `L`, after the parameter file: `reload`
+    /// starts it (an error is shown and nothing changes), and `report`, polled every frame,
+    /// returns what became of earlier reloads, problems as errors. A capture reloads once and
+    /// waits for the first report, refusing a problem.
+    #[must_use]
+    pub fn with_reload(
+        mut self,
+        reload: impl FnMut() -> Result<(), String> + 'static,
+        report: impl FnMut() -> Vec<Result<String, String>> + 'static,
+    ) -> Self {
+        self.reload = Some((Box::new(reload), Box::new(report)));
+        self
+    }
+
+    /// Show what became of earlier reloads.
+    #[expect(
+        clippy::print_stderr,
+        reason = "reload outcomes are reported to the person editing the file"
+    )]
+    fn poll_reload(&mut self) {
+        if let Some((_, report)) = self.reload.as_mut() {
+            for line in report() {
+                match line {
+                    Ok(line) | Err(line) => eprintln!("{}: {line}", self.name),
+                }
+            }
+        }
     }
 
     /// Run the update and return the sky if it changed since it was last sent.
@@ -503,7 +562,23 @@ impl Game for SkyGame {
 
     fn frame_edits(&mut self) -> SkyEdits {
         drop(self.poll_status());
+        self.poll_reload();
         self.update()
+    }
+
+    #[expect(
+        clippy::print_stderr,
+        reason = "a file that cannot be reloaded is explained to the person editing it"
+    )]
+    fn reload(&mut self) {
+        if let Some((reload, _)) = self.reload.as_mut()
+            && let Err(error) = reload()
+        {
+            eprintln!(
+                "{}: {error}; nothing changed (fix it and press L)",
+                self.name
+            );
+        }
     }
 
     fn replay(&self) -> SkyEdits {
@@ -585,6 +660,14 @@ fn cooked_store(variable: Option<std::ffi::OsString>) -> Result<PathBuf, String>
 }
 
 /// What cooked assets show: the drawn generation, or why nothing is drawn yet.
+/// A drawn material hook, or why the previous material still draws.
+fn material_drawn(outcome: &MaterialOutcome) -> Result<String, String> {
+    match outcome {
+        MaterialOutcome::Promoted { .. } => Ok(outcome.to_string()),
+        _ => Err(outcome.to_string()),
+    }
+}
+
 fn cooked_status(stats: &Mutex<CookedStats>) -> ContentStatus {
     let Ok(stats) = stats.lock() else {
         return ContentStatus::Failed("cooked asset observations were poisoned".into());

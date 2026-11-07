@@ -10,7 +10,8 @@
       canvas { display: block; width: 100%; aspect-ratio: 16 / 9; background: #101824; }
       output { display: block; margin-top: 1rem; white-space: pre-wrap; overflow-wrap: anywhere; }
       .params { display: flex; gap: 1rem; align-items: start; margin-top: 1rem; }
-      #params-status { white-space: pre-line; }
+      .params[hidden] { display: none; }
+      #params-status, #material-status { white-space: pre-line; }
       .sky-presets { display: flex; flex-wrap: wrap; gap: .75rem 1.5rem; margin-top: 1rem; }
       button { border: 1px solid #6f86a3; border-radius: .3rem; background: #1a2b40; color: inherit; padding: .4rem .8rem; cursor: pointer; }
       button:disabled { opacity: .65; cursor: progress; }
@@ -35,6 +36,11 @@
         <div class="params" id="params" hidden>
           <button type="button" id="reload-params">Reload parameters</button>
           <output id="params-status"></output>
+        </div>
+        <!-- ?material=<url> with ?assets: a WGSL material hook for the cooked valley (see materials/). -->
+        <div class="params" id="material" hidden>
+          <button type="button" id="reload-material">Reload material</button>
+          <output id="material-status"></output>
         </div>
       </section>
       <p>Move the local player with WASD or arrow keys. <span id="player"></span></p>
@@ -120,6 +126,36 @@
           document.querySelector("#reload-params").addEventListener("click", loadParams);
           await loadParams();
         }
+        // Material reloads report through the frame loop: the current material draws until the
+        // replacement compiles, and a refused hook is explained here with its file and line.
+        let pollMaterial = () => {};
+        if (probe.has("material")) {
+          const source = new URL(probe.get("material"), location.href);
+          const materialStatus = document.querySelector("#material-status");
+          const name = source.pathname.split("/").pop();
+          const loadMaterial = async () => {
+            try {
+              const response = await fetch(source, { cache: "no-store" });
+              if (!response.ok) throw new Error(`HTTP ${response.status}`);
+              const text = await response.text();
+              const start = performance.now();
+              const serial = game.reload_material(name, text);
+              const call = (performance.now() - start).toFixed(2);
+              materialStatus.textContent = `${name}: material ${serial} requested (page call ${call} ms); the current material draws until it compiles`;
+            } catch (error) {
+              materialStatus.textContent = `${name}: ${error}; the current material keeps drawing`;
+            }
+          };
+          pollMaterial = () => {
+            const report = game.material_report();
+            if (!report) return;
+            const { outcomes } = JSON.parse(report);
+            if (outcomes.length) materialStatus.textContent = outcomes.map((outcome) => outcome.text).join("\n");
+          };
+          document.querySelector("#material").hidden = false;
+          document.querySelector("#reload-material").addEventListener("click", loadMaterial);
+          await loadMaterial();
+        }
         const movementKeys = new Set(["KeyW", "KeyA", "KeyS", "KeyD", "ArrowUp", "ArrowLeft", "ArrowDown", "ArrowRight"]);
         const updateControls = () => {
           const x = Number(pressed.has("KeyD") || pressed.has("ArrowRight"))
@@ -202,6 +238,7 @@
           try {
             game.frame(time);
             controls.refresh();
+            pollMaterial();
             if (time - lastPlayerUpdate >= 500) {
               player.textContent = game.controlled_position();
               lastPlayerUpdate = time;

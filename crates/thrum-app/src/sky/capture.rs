@@ -1,5 +1,6 @@
 //! Offscreen review capture of a sky scene: the same host and contribution as the window,
-//! rendered once to a PNG without a surface. It makes no presentation or timing claim.
+//! rendered once to a PNG without a surface, after the game's reload has reported. It makes no
+//! presentation or timing claim.
 
 use std::{
     path::{Path, PathBuf},
@@ -72,6 +73,7 @@ fn capture(
         drop(host.capture_pixels().map_err(|error| error.to_string())?);
         std::thread::sleep(Duration::from_millis(2));
     }
+    reload(config.name, &mut game, &mut host, deadline)?;
     let pixels = host.capture_pixels().map_err(|error| error.to_string())?;
     drop(device);
     let png = encode_png(extent, &pixels)?;
@@ -99,6 +101,36 @@ fn apply_params(name: &str, game: &mut SkyGame) -> Result<(), String> {
         eprintln!("  {problem}");
     }
     Ok(())
+}
+
+/// Run the game's reload once and render until it reports; a problem refuses the capture.
+#[expect(
+    clippy::print_stderr,
+    reason = "the reload's outcome is reported to the person who asked for the capture"
+)]
+fn reload(
+    name: &str,
+    game: &mut SkyGame,
+    host: &mut thrum_render::runtime::FrameHost<super::StillWorld, super::SkyScene>,
+    deadline: Instant,
+) -> Result<(), String> {
+    let Some((reload, report)) = game.reload.as_mut() else {
+        return Ok(());
+    };
+    reload()?;
+    loop {
+        // Each explicit render is a frame boundary at which a prepared reload can draw.
+        drop(host.capture_pixels().map_err(|error| error.to_string())?);
+        if let Some(first) = report().into_iter().next() {
+            let line = first?;
+            eprintln!("{name}: {line}");
+            return Ok(());
+        }
+        if Instant::now() >= deadline {
+            return Err("the game's reload did not report within 30 s".to_owned());
+        }
+        std::thread::sleep(Duration::from_millis(2));
+    }
 }
 
 async fn headless_device() -> Result<(wgpu::Device, wgpu::Queue, DeviceCapabilities), String> {

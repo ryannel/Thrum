@@ -7,6 +7,7 @@ use thrum_render::contribution::{
 use std::cell::Cell;
 
 use crate::load::ResidentSet;
+use crate::material::{self, MaterialDiagnostic, MaterialHook, Target};
 use crate::{CookedMaterial, MeshPlacement, VolumePlacement};
 
 const CULL_BYTES: usize = 160;
@@ -148,7 +149,7 @@ fn default_texel(device: &wgpu::Device, queue: &wgpu::Queue, texel: [u8; 4]) -> 
 }
 
 /// Model matrix and history flag of one placement.
-const INSTANCE_BYTES: u64 = 80;
+pub(crate) const INSTANCE_BYTES: u64 = 80;
 
 /// The ABI revision 2 material record (80 bytes) of one placement: its base factor times the
 /// cooked base-colour texture, its roughness and metalness, no emission, full occlusion.
@@ -174,7 +175,14 @@ fn material_record(material: &CookedMaterial) -> [u8; thrum_render::abi::MATERIA
 }
 
 impl Pipelines {
-    pub(crate) fn new(surface: &SceneSurface<'_>) -> Self {
+    /// Pipelines for `surface`, whose mesh pipeline draws `hook` when one is accepted. A hook
+    /// that no longer compiles against the surface is returned with its diagnostics, and the
+    /// built-in material draws instead.
+    pub(crate) fn new(
+        surface: &SceneSurface<'_>,
+        target: &Target,
+        hook: Option<&MaterialHook>,
+    ) -> (Self, Option<Vec<MaterialDiagnostic>>) {
         let device = surface.device;
         let source = format!("{}\n{}", surface.shader_source, include_str!("cooked.wgsl"));
         let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
@@ -190,53 +198,15 @@ impl Pipelines {
                 bias: wgpu::DepthBiasState::default(),
             })
         };
-        let model_attributes = wgpu::vertex_attr_array![3 => Float32x4, 4 => Float32x4, 5 => Float32x4, 6 => Float32x4, 7 => Uint32];
-        let mesh = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("cooked mesh"),
-            layout: Some(surface.pipeline_layout),
-            vertex: wgpu::VertexState {
-                module: &module,
-                entry_point: Some("cooked_vertex"),
-                compilation_options: wgpu::PipelineCompilationOptions::default(),
-                buffers: &[
-                    Some(wgpu::VertexBufferLayout {
-                        array_stride: 12,
-                        step_mode: wgpu::VertexStepMode::Vertex,
-                        attributes: &wgpu::vertex_attr_array![0 => Float32x3],
-                    }),
-                    Some(wgpu::VertexBufferLayout {
-                        array_stride: 12,
-                        step_mode: wgpu::VertexStepMode::Vertex,
-                        attributes: &wgpu::vertex_attr_array![1 => Snorm16x2, 2 => Float32x2],
-                    }),
-                    Some(wgpu::VertexBufferLayout {
-                        array_stride: INSTANCE_BYTES,
-                        step_mode: wgpu::VertexStepMode::Instance,
-                        attributes: &model_attributes,
-                    }),
-                ],
-            },
-            primitive: wgpu::PrimitiveState {
-                cull_mode: Some(wgpu::Face::Back),
-                ..Default::default()
-            },
-            depth_stencil: depth(true),
-            multisample: wgpu::MultisampleState::default(),
-            fragment: Some(wgpu::FragmentState {
-                module: &module,
-                entry_point: Some(surface.fragment_entry),
-                compilation_options: wgpu::PipelineCompilationOptions::default(),
-                targets: &surface.color_formats.map(|format| {
-                    Some(wgpu::ColorTargetState {
-                        format,
-                        blend: None,
-                        write_mask: wgpu::ColorWrites::ALL,
-                    })
-                }),
-            }),
-            multiview_mask: None,
-            cache: None,
-        });
+        let mut refused = None;
+        let mesh = match hook.map(|hook| material::rebuild_accepted(target, hook)) {
+            Some(Ok(pipeline)) => pipeline,
+            None => material::mesh_pipeline(target, &module),
+            Some(Err(diagnostics)) => {
+                refused = Some(diagnostics);
+                material::mesh_pipeline(target, &module)
+            }
+        };
         let volume_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("cooked volume"),
             entries: &[
@@ -344,7 +314,7 @@ impl Pipelines {
             min_filter: wgpu::FilterMode::Linear,
             ..Default::default()
         });
-        Self {
+        let pipelines = Self {
             device: device.clone(),
             queue: surface.queue.clone(),
             mesh,
@@ -360,7 +330,13 @@ impl Pipelines {
             defaults,
             sampler,
             volume_sampler,
-        }
+        };
+        (pipelines, refused)
+    }
+
+    /// Draw cooked meshes with a promoted replacement from now on.
+    pub(crate) fn install_mesh(&mut self, mesh: wgpu::RenderPipeline) {
+        self.mesh = mesh;
     }
 
     fn buffer(&self, label: &str, size: u64, usage: wgpu::BufferUsages) -> wgpu::Buffer {
@@ -606,10 +582,16 @@ impl Pipelines {
         }
     }
 
-    /// Draw meshes with the scene's fragment, then the volume. Scene groups 0, 1 and 3 are bound.
-    pub(crate) fn draw(&self, bound: &Bound, pass: &mut wgpu::RenderPass<'_>) {
+    /// Draw meshes with the scene's fragment (through `mesh` when a replacement is drawn this
+    /// frame), then the volume. Scene groups 0, 1 and 3 are bound.
+    pub(crate) fn draw(
+        &self,
+        bound: &Bound,
+        pass: &mut wgpu::RenderPass<'_>,
+        mesh: Option<&wgpu::RenderPipeline>,
+    ) {
         if !bound.meshes.is_empty() {
-            pass.set_pipeline(&self.mesh);
+            pass.set_pipeline(mesh.unwrap_or(&self.mesh));
         }
         for mesh in &bound.meshes {
             pass.set_bind_group(2, &mesh.material, &[]);

@@ -11,7 +11,9 @@ use std::{
 };
 
 use thrum_asset::{BrowserFetch, DevClient};
-use thrum_asset_gpu::{CookedSource, CookedStats, RemoteFeed};
+use thrum_asset_gpu::{
+    CookedSource, CookedStats, MaterialHook, MaterialOutcome, MaterialReload, RemoteFeed,
+};
 use thrum_render::present::SurfaceProfile;
 use wasm_bindgen::prelude::*;
 use web_sys::HtmlCanvasElement;
@@ -91,6 +93,8 @@ pub struct BrowserGame {
     queue: wgpu::Queue,
     host: FrameHost,
     cooked: Option<Arc<Mutex<CookedStats>>>,
+    /// Explicit material reloads of the attached cooked valley.
+    material: Option<MaterialReload>,
     /// Typed demo controls shared with the page and the macOS panel.
     demo: GameControls,
     /// Model revision the page last synced to.
@@ -164,6 +168,7 @@ pub async fn create_browser_game(canvas: HtmlCanvasElement) -> Result<BrowserGam
         queue: gpu.queue,
         host,
         cooked: None,
+        material: None,
         demo,
         page_seen: 0,
         first_frame_ms: None,
@@ -194,13 +199,84 @@ impl BrowserGame {
             crate::showcase::prepare_showcase(CookedSource::Remote(valley.feed.clone()))
                 .map_err(js_error)?;
         let stats = assets.stats();
+        let material = assets.material();
         self.host
             .set_scene_contribution(Box::new(assets))
             .map_err(js_error)?;
         self.host.set_scene_camera(camera);
         self.demo.observe_camera(self.host.camera_orientation());
         self.cooked = Some(stats);
+        self.material = Some(material);
         Ok(())
+    }
+
+    /// Replace the cooked valley's material hook with the WGSL `source`, named `name` in its
+    /// diagnostics, and return the request's serial. The previous material keeps drawing until
+    /// the replacement has compiled and validated; [`Self::material_report`] says what became of
+    /// it. The shader module and pipeline are created in this call; the browser compiles them in
+    /// its GPU process, so this call does not wait for the compile.
+    /// # Errors
+    /// Returns an error when no cooked valley is attached.
+    pub fn reload_material(&mut self, name: String, source: String) -> Result<f64, JsValue> {
+        let material = self.material.as_ref().ok_or_else(|| {
+            JsValue::from_str("material reload needs the cooked valley (?assets)")
+        })?;
+        #[expect(
+            clippy::cast_precision_loss,
+            reason = "request serials stay far below 2^53"
+        )]
+        Ok(material.request(MaterialHook { name, source }) as f64)
+    }
+
+    /// Material reload outcomes since the last call and the accepted hook, as JSON, or `None`
+    /// without a cooked valley. Each outcome has `serial`, `kind` (`promoted`, `rejected`,
+    /// `superseded` or `retired`) and `text`; a promotion adds `timingMs`, a rejection
+    /// `diagnostics` (`file`, `line`, `column`, `message`).
+    pub fn material_report(&self) -> Option<String> {
+        let material = self.material.as_ref()?;
+        let outcomes: Vec<_> = material
+            .take_outcomes()
+            .iter()
+            .map(|outcome| {
+                let mut value = serde_json::json!({
+                    "serial": outcome.serial(),
+                    "text": outcome.to_string(),
+                });
+                match outcome {
+                    MaterialOutcome::Promoted { name, timing, .. } => {
+                        value["kind"] = "promoted".into();
+                        value["name"] = name.as_str().into();
+                        value["timingMs"] = serde_json::json!({
+                            "call": timing.call.as_secs_f64() * 1e3,
+                            "prepare": timing.prepare.as_secs_f64() * 1e3,
+                            "eligible": timing.eligible.as_secs_f64() * 1e3,
+                            "drawn": timing.drawn.as_secs_f64() * 1e3,
+                        });
+                    }
+                    MaterialOutcome::Rejected { diagnostics, .. } => {
+                        value["kind"] = "rejected".into();
+                        value["diagnostics"] = diagnostics
+                            .iter()
+                            .map(|diagnostic| {
+                                serde_json::json!({
+                                    "file": diagnostic.file,
+                                    "line": diagnostic.line,
+                                    "column": diagnostic.column,
+                                    "message": diagnostic.message,
+                                })
+                            })
+                            .collect();
+                    }
+                    MaterialOutcome::Superseded { .. } => value["kind"] = "superseded".into(),
+                    MaterialOutcome::Retired { .. } => value["kind"] = "retired".into(),
+                }
+                value
+            })
+            .collect();
+        Some(
+            serde_json::json!({ "accepted": material.accepted(), "outcomes": outcomes })
+                .to_string(),
+        )
     }
 
     /// Cooked generation drawn, swaps and loader errors, or `None` without cooked content.

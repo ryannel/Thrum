@@ -3,8 +3,9 @@
 7 November 2026. This is the governing design for build-plan item G6.
 
 **Status.** The typed controls and parameter files are selected and implemented, and they run in the V1 game on Mac and
-Chrome. The macOS app runner is built and runs the V1 game. The starter, shader reload and GPU field overlays are
-designed below but not built.
+Chrome. The macOS app runner is built and runs the V1 game. The shader seam (a game-authored WGSL material hook in
+the cooked mesh pipeline, reloaded explicitly) is built and runs on Mac and in Chrome. GPU field overlays are designed
+below but not built.
 
 **Disclosure.** The controls and parameter slices were built before this record was written. The design was agreed
 in the G6 boundary notes with the root agent first, and an independent review of the landed code prompted this record.
@@ -84,15 +85,73 @@ is designed in the boundary notes and is an owner question while G5 extensions a
 - **Native only.** The starter runs on the Mac. Its Chrome form is an owner question; the recommendation is to defer
   it to G7's shared demo page.
 
-## Shader edits (proposed; needs a seam)
+## Shader edits: the cooked material hook (built)
 
-Every shader is compiled in. The smallest seam is an optional WGSL material snippet in the cooked mesh pipeline:
-- the reload is explicit;
-- the snippet is compiled under a validation scope before the swap;
-- on failure the old pipeline keeps drawing, and the error names the file and line.
+Every engine shader stays compiled in. Root approved one seam in the G6 boundary notes: an optional game-authored
+WGSL material hook in the cooked mesh pipeline. `thrum-asset-gpu` owns it.
 
-Shader reload is one of G6's own done criteria, and the parked G5 work covers only garbage collection, leases and
-layered EAC. So this seam needs root's boundary review, not an owner decision.
+**The hook changes surface factors only.** A game writes one function:
+`fn cooked_surface(surface: CookedSurface, at: CookedSurfacePoint) -> CookedSurface`.
+- **Inputs:** `surface` holds the base colour, roughness, metalness and emission that the placement set. `at` holds
+  the fragment's `uv`, `world` position and `normal`.
+- **Glue:** clamps the result to valid factors and keeps the flags, texture layers and alpha cutoff.
+- **Where it applies:** only in the cooked mesh pipeline's copy of the scene shader, where the one read of the
+  material record (`materials[input.material]`) goes through the glue. The scene's fragment shading then reads the
+  returned factors, so lighting keeps one authority.
+- **What does not change:** the material ABI, the bindings, the cull and shadow pipelines, the frame graph and asset
+  publication.
+- **Without a hook** the pipeline compiles exactly the source it always has. v1-game's `THRUM_CAPTURE_SCENE`
+  captures before and after the change are byte-identical.
+
+**API.** `CookedAssets::material()` returns a `MaterialReload` handle.
+- `request(MaterialHook { name, source })` returns a serial.
+- `take_outcomes()` reports each serial's outcome: `Promoted` with its timing, `Rejected` with diagnostics,
+  `Superseded`, or `Retired`.
+- `accepted()` names the hook drawn now.
+- A request made before the assets first draw is prepared when they first build their pipelines.
+
+**Lifecycle:**
+- **Preparing.** The replacement is prepared outside frame recording. Natively it runs on a short-lived thread. In
+  the browser it runs in the caller's task, because there are no threads.
+- **Eligibility.** A candidate becomes eligible only after its compilation messages and its validation error scope
+  have both resolved.
+- **Installing.** The next frame boundary draws an eligible candidate. The submission carrying that frame promotes
+  it. Recording is tentative, so a cancelled frame does not promote.
+- **On promotion,** motion history restarts once, and residency and bindings are kept.
+- **On failure,** the previous pipeline keeps drawing. Diagnostics are translated to the hook's own file, line and
+  character column; a message outside the hook has line 0.
+- **Identity.** Each candidate carries its serial, device generation and surface epoch:
+  - a newer request supersedes an older one;
+  - a candidate prepared for a replaced device or surface is retired;
+  - a rebuilt device draws the last accepted hook.
+
+**Front ends.** Both reload explicitly:
+- **Mac scenes:** the sky kit's `SkyGame::with_meshes` reads `THRUM_MATERIAL=<file>`. It reloads the file when
+  the window opens and on `L`, after the parameter file. `./dev scene <folder>` points it at the folder's
+  `material.wgsl` when there is one, and the starter ships one.
+- **Chrome:** v1-game's page has `?material=<url>` (with `?assets`) and a **Reload material** button. The shipped
+  example is `examples/v1-game/materials/moss.material.wgsl`.
+
+**Measured cost.** This is a contended shared machine, so the figures are observations, not budgets.
+- **Compile cost.** A distinct hook compiles the whole scene fragment shader again: about 0.7–1 s on Mac (up to
+  2.2 s under contention). The caller's call takes under 0.4 ms on both platforms.
+- **Mac:** frames keep running during the compile. In 18 reloads the worst frame was usually within the quiet
+  spread, but 3 frames reached 75–118 ms; this is not yet explained.
+- **Chrome stalls.** The page's animation frames stop for 300–750 ms during a cold compile. Chrome compiles the
+  pipeline in its GPU process, and an async wrapper cannot move that work. `createRenderPipelineAsync` might, but
+  wgpu 30 does not expose it.
+- **Compiler cache.** A hook compiled earlier on the machine comes back in tens of milliseconds without a stall,
+  because the system's compiler cache serves it.
+
+**Open:**
+- **Coupling to the scene shader.** The anchor is a line of `thrum-render`'s scene shader. A count check refuses a
+  scene with zero or several reads, with a diagnostic. A named material-fetch function owned by `thrum-render`
+  would remove the coupling.
+- **Temporal history.** History restarts only for the contribution's meshes. Contributions cannot reset the
+  scene's own temporal history.
+- **Browser device replacement.** On a replaced device, the browser rebuilds the accepted hook optimistically,
+  because its validation resolves only later.
+- **Inputs.** The hook gets no time input.
 
 ## Field overlays
 
@@ -110,4 +169,4 @@ Controls are only a few dozen values.
   calls it every frame.
 - **Native:** the panel syncs only on edits and render replies.
 - **Never in the frame path:** parameter files and the panel do not allocate there.
-- **Shader rebuilds** happen at frame boundaries.
+- **Shader reloads** compile outside frame recording and install at frame boundaries; see the measured cost above.
