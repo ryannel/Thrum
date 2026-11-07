@@ -1,5 +1,5 @@
 //! Per-slot culling counts beside the completion path. An untimed graph copy
-//! moves the culled list's GPU-written instance count into the slot's own
+//! moves each culling list's GPU-written instance count into the slot's own
 //! map buffer; the host maps it when it submits the slot and takes it if the
 //! mapping has settled by the time the slot retires. Slot retirement never
 //! waits on the mapping: a frame whose count is not ready reports none, and a
@@ -19,7 +19,7 @@ use crate::graph::{
     ResourceScope,
 };
 
-/// Graph name of the untimed copy of the culled list's instance count.
+/// Graph name of the untimed copy of each culling list's instance count.
 pub(crate) const STATS_PASS: &str = "camera culling stats";
 /// Byte offset of `instance_count` in indexed indirect arguments.
 const COUNT_OFFSET: u64 = 4;
@@ -38,12 +38,17 @@ pub struct CullingCounts {
     pub mode: CullMode,
     /// Active instance slots the frame tested.
     pub active: u32,
-    /// Instances the indirect draw drew.
+    /// Instances the indirect draws drew: the frustum list, or both
+    /// Occlusion phases.
     pub drawn: u32,
+    /// Of those, drawn by Occlusion's late phase. Zero for Frustum, and while
+    /// a scene contribution draws (the late phase then lists nothing).
+    pub late: u32,
 }
 
 impl CullingCounts {
-    /// Active slots the cull rejected.
+    /// Active slots the cull rejected: outside the view or, under Occlusion,
+    /// hidden by this frame's depth.
     #[must_use]
     pub fn rejected(&self) -> u32 {
         self.active.saturating_sub(self.drawn)
@@ -53,6 +58,7 @@ impl CullingCounts {
 /// One frame slot's count buffer and its mapping state.
 pub(in crate::synthetic) struct CullingStats {
     buffer: wgpu::Buffer,
+    lists: u64,
     mapping: Arc<AtomicU8>,
     frame: Option<(CullMode, u32)>,
     /// This frame copies and maps: the buffer was free when it was encoded.
@@ -61,16 +67,19 @@ pub(in crate::synthetic) struct CullingStats {
 
 impl CullingStats {
     pub(in crate::synthetic) fn new(device: &wgpu::Device, mode: CullMode) -> Option<Self> {
-        if mode == CullMode::Direct {
-            return None;
-        }
+        let lists = match mode {
+            CullMode::Direct => return None,
+            CullMode::Frustum => 1,
+            CullMode::Occlusion => 2,
+        };
         Some(Self {
             buffer: device.create_buffer(&wgpu::BufferDescriptor {
                 label: Some("camera culling counts"),
-                size: COUNT_BYTES,
+                size: lists * COUNT_BYTES,
                 usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
                 mapped_at_creation: false,
             }),
+            lists,
             mapping: Arc::new(AtomicU8::new(IDLE)),
             frame: None,
             armed: false,
@@ -79,37 +88,43 @@ impl CullingStats {
 }
 
 impl PreparedSynthetic {
-    /// Declare the untimed count copy from the culled list's arguments,
-    /// after the pass that writes them. Only a culled mode calls this.
+    /// Declare the untimed count copy from each culling list's arguments,
+    /// after the passes that write them. Direct declares nothing.
     pub(in crate::synthetic) fn append_camera_stats(
         graph: &mut FrameGraph,
-        args: &ResourceId,
+        lists: &[ResourceId],
     ) -> Result<(), GraphError> {
+        if lists.is_empty() {
+            return Ok(());
+        }
+        let bytes = u64::try_from(lists.len()).unwrap_or(u64::MAX) * COUNT_BYTES;
         let destination = graph.resource(
             ResourceDescriptor::Buffer {
-                bytes: COUNT_BYTES,
+                bytes,
                 usage: wgpu::BufferUsages::COPY_DST,
             },
             ResourceScope::Imported { initialized: false },
         )?;
+        let mut accesses: Vec<Access> = lists
+            .iter()
+            .map(|args| Access {
+                resource: args.clone(),
+                range: COUNT_OFFSET..COUNT_OFFSET + COUNT_BYTES,
+                kind: AccessKind::CopyRead,
+                store: true,
+            })
+            .collect();
+        accesses.push(Access {
+            resource: destination,
+            range: 0..bytes,
+            kind: AccessKind::CopyWrite,
+            store: true,
+        });
         graph.pass(Pass {
             name: STATS_PASS.into(),
             scope: PassScope::View(1),
             pipeline: None,
-            accesses: vec![
-                Access {
-                    resource: args.clone(),
-                    range: COUNT_OFFSET..COUNT_OFFSET + COUNT_BYTES,
-                    kind: AccessKind::CopyRead,
-                    store: true,
-                },
-                Access {
-                    resource: destination,
-                    range: 0..COUNT_BYTES,
-                    kind: AccessKind::CopyWrite,
-                    store: true,
-                },
-            ],
+            accesses,
             external_side_effect: true,
         });
         Ok(())
@@ -117,23 +132,27 @@ impl PreparedSynthetic {
 }
 
 impl SceneContext<'_> {
-    /// Copy the culled list's instance count into the slot's count buffer.
+    /// Copy each list's instance count into the slot's count buffer.
     pub(in crate::synthetic) fn culling_stats(&mut self) -> Result<(), RenderError> {
         let target = self.target;
-        let (Some(stats), Some(list)) = (&target.culling_stats, &target.visibility) else {
+        let (Some(stats), Some(early)) = (&target.culling_stats, &target.visibility) else {
             return Err(RenderError::GraphPassMismatch);
         };
         if !stats.armed {
             // Still mapping an earlier frame, or a capture: no count.
             return Ok(());
         }
-        self.encoder.copy_buffer_to_buffer(
-            list.args(),
-            COUNT_OFFSET,
-            &stats.buffer,
-            0,
-            COUNT_BYTES,
-        );
+        let late = target.occlusion.as_ref().map(|late| late.target.late());
+        let lists = std::iter::once(early).chain(late);
+        for (index, list) in (0..stats.lists).zip(lists) {
+            self.encoder.copy_buffer_to_buffer(
+                list.args(),
+                COUNT_OFFSET,
+                &stats.buffer,
+                index * COUNT_BYTES,
+                COUNT_BYTES,
+            );
+        }
         Ok(())
     }
 }
@@ -205,11 +224,17 @@ impl OffscreenTarget {
             .get_mapped_range()
             .ok()
             .and_then(|bytes| {
-                let drawn = u32::from_le_bytes(bytes.get(..4)?.try_into().ok()?);
+                let count = |index: usize| {
+                    bytes
+                        .get(index * 4..index * 4 + 4)
+                        .and_then(|word| word.try_into().ok())
+                        .map_or(0, u32::from_le_bytes)
+                };
                 frame.map(|(mode, active)| CullingCounts {
                     mode,
                     active,
-                    drawn,
+                    drawn: count(0).saturating_add(count(1)),
+                    late: count(1),
                 })
             });
         stats.buffer.unmap();

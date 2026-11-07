@@ -64,7 +64,7 @@ fn main() {
         let capabilities =
             DeviceCapabilities::capture(&adapter, &device, FrameHost::DEVICE_GENERATION);
         let mut hosts = Vec::new();
-        for camera_culling in [CullMode::Direct, CullMode::Frustum] {
+        for camera_culling in [CullMode::Direct, CullMode::Frustum, CullMode::Occlusion] {
             hosts.push(
                 FrameHost::new_with_setup(
                     &device,
@@ -83,14 +83,16 @@ fn main() {
                 .expect("prepared field"),
             );
         }
-        // [mode][metric]: whole, forward.
-        let mut rows: [[Vec<f64>; 2]; 2] = Default::default();
-        let mut deltas = Vec::new();
+        // [mode][metric]: whole, forward. Deltas: Frustum − Direct, Occlusion − Direct.
+        let mut rows: [[Vec<f64>; 2]; 3] = Default::default();
+        let mut deltas: [Vec<f64>; 2] = Default::default();
         let mut share = 0.0;
         for tick in 1..=WARMUP_TICKS + TICKS {
             let now = Duration::from_nanos(tick * TICK_NS + 1);
-            let order = if tick % 2 == 0 { [0, 1] } else { [1, 0] };
-            let mut whole = [0.0; 2];
+            // Rotate the order each tick, so no mode always runs first.
+            let first = usize::try_from(tick % 3).expect("small");
+            let order = [first, (first + 1) % 3, (first + 2) % 3];
+            let mut whole = [0.0; 3];
             for index in order {
                 let report = hosts[index].drive(now, None).expect("field tick");
                 assert!(
@@ -111,7 +113,8 @@ fn main() {
                 }
             }
             if tick > WARMUP_TICKS {
-                deltas.push(whole[1] - whole[0]);
+                deltas[0].push(whole[1] - whole[0]);
+                deltas[1].push(whole[2] - whole[0]);
                 if tick % 30 == 0 {
                     share += field_in_view_share(tick, EXTENT).expect("view");
                 }
@@ -121,25 +124,41 @@ fn main() {
         let share = share / (TICKS / 30) as f64;
         println!(
             "adapter={}; field {} instances; {}x{}; shadows on; {TICKS} ticks after {WARMUP_TICKS} warm-up; \
-             alternating order; mean in-view centres {:.1}%",
+             rotating order; mean in-view centres {:.1}%",
             adapter.get_info().name,
             GameContent::Field.entity_count(),
             EXTENT[0],
             EXTENT[1],
             share * 100.0
         );
-        let [direct, frustum] = &mut rows;
-        println!(
-            "whole GPU ms p50 (p95) D→F: {:.3} ({:.3}) → {:.3} ({:.3}); forward p50 (p95) D→F: {:.3} ({:.3}) → {:.3} ({:.3}); paired F−D median {:+.3} ms",
-            quantile(&mut direct[0], 0.5),
-            quantile(&mut direct[0], 0.95),
-            quantile(&mut frustum[0], 0.5),
-            quantile(&mut frustum[0], 0.95),
-            quantile(&mut direct[1], 0.5),
-            quantile(&mut direct[1], 0.95),
-            quantile(&mut frustum[1], 0.5),
-            quantile(&mut frustum[1], 0.95),
-            quantile(&mut deltas, 0.5),
-        );
+        let [direct, culled @ ..] = &mut rows;
+        let direct = [
+            (
+                quantile(&mut direct[0], 0.5),
+                quantile(&mut direct[0], 0.95),
+            ),
+            (
+                quantile(&mut direct[1], 0.5),
+                quantile(&mut direct[1], 0.95),
+            ),
+        ];
+        for ((label, mode), delta) in ["F", "O"]
+            .into_iter()
+            .zip(culled.iter_mut())
+            .zip(&mut deltas)
+        {
+            println!(
+                "whole GPU ms p50 (p95) D→{label}: {:.3} ({:.3}) → {:.3} ({:.3}); forward p50 (p95) D→{label}: {:.3} ({:.3}) → {:.3} ({:.3}); paired {label}−D median {:+.3} ms",
+                direct[0].0,
+                direct[0].1,
+                quantile(&mut mode[0], 0.5),
+                quantile(&mut mode[0], 0.95),
+                direct[1].0,
+                direct[1].1,
+                quantile(&mut mode[1], 0.5),
+                quantile(&mut mode[1], 0.95),
+                quantile(delta, 0.5),
+            );
+        }
     });
 }

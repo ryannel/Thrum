@@ -190,134 +190,334 @@ fn pending_slots(host: &mut Host) {
     assert_eq!(host.pending_frames(), IN_FLIGHT);
 }
 
-/// Collect one timed report per in-flight slot and return each frame's pass buckets.
-fn drain_timed(host: &mut Host) -> Vec<[f64; 11]> {
-    drain_samples(host)
-        .into_iter()
-        .map(|sample| sample.gpu_pass_ns.expect("real Metal pass timestamps"))
-        .collect()
-}
+/// Metal-only device tests and the fixtures only they use.
+#[cfg(target_os = "macos")]
+mod metal {
+    use super::*;
 
-/// Collect one timed report per in-flight slot, in submission order.
-fn drain_samples(host: &mut Host) -> Vec<FrameSample> {
-    let deadline = std::time::Instant::now() + Duration::from_secs(10);
-    let mut frames = Vec::with_capacity(IN_FLIGHT);
-    while frames.len() < IN_FLIGHT {
-        if let Some(sample) = host.poll_completed().expect("poll Metal frame") {
-            assert!(
-                !sample.timing_fault,
-                "Metal frame timestamp collection failed"
-            );
-            frames.push(sample);
-        }
-        assert!(
-            std::time::Instant::now() < deadline,
-            "Metal frame report timed out"
-        );
-        std::thread::yield_now();
+    /// Collect one timed report per in-flight slot and return each frame's pass buckets.
+    fn drain_timed(host: &mut Host) -> Vec<[f64; 11]> {
+        drain_samples(host)
+            .into_iter()
+            .map(|sample| sample.gpu_pass_ns.expect("real Metal pass timestamps"))
+            .collect()
     }
-    assert_eq!(host.pending_frames(), 0);
-    frames
-}
 
-#[test]
-#[cfg(target_os = "macos")]
-fn metal_frustum_timestamps_drain_populated_then_empty_prefixes() {
-    // Without Sun shadows: this one-cube fixture's shadow passes return invalid
-    // Metal stamps in FrameHost for Direct as well (pre-existing, reported to root).
-    pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let (capabilities, queue) = gpu(&instance, 7).await;
-        let mut host = culled_host(
-            &capabilities,
-            &queue,
-            Policy::default(),
-            CullMode::Frustum,
-            false,
-        )
-        .await;
-        assert_eq!(host.prepared.camera_culling(), CullMode::Frustum);
-        pending_slots(&mut host);
-        assert_eq!(host.prepared.active_instance_count(), 1);
-        let populated = drain_samples(&mut host);
-        for sample in &populated {
-            let counts = sample.camera_culling.expect("frustum counts");
-            assert_eq!(
-                (counts.mode, counts.active, counts.drawn),
-                (CullMode::Frustum, 1, 1)
-            );
-            assert_eq!(counts.rejected(), 0);
-        }
-        for passes in populated
-            .iter()
-            .map(|sample| sample.gpu_pass_ns.expect("timed"))
-        {
-            assert!(passes[3] > 0.0, "forward includes the visibility pass");
-            assert!(passes[4] > 0.0, "the populated prefix publishes history");
-        }
-        // The next submissions on the same slots carry an empty active prefix:
-        // visibility still dispatches its offsets pass and stays timed.
-        host.source_mut().empty = true;
-        pending_slots(&mut host);
-        assert_eq!(host.prepared.active_instance_count(), 0);
-        let empty = drain_samples(&mut host);
-        for sample in &empty {
-            let counts = sample.camera_culling.expect("frustum counts");
-            assert_eq!(
-                (counts.active, counts.drawn),
-                (0, 0),
-                "an empty prefix lists nothing"
-            );
-        }
-        for passes in empty
-            .iter()
-            .map(|sample| sample.gpu_pass_ns.expect("timed"))
-        {
+    /// Collect one timed report per in-flight slot, in submission order.
+    fn drain_samples(host: &mut Host) -> Vec<FrameSample> {
+        let deadline = std::time::Instant::now() + Duration::from_secs(10);
+        let mut frames = Vec::with_capacity(IN_FLIGHT);
+        while frames.len() < IN_FLIGHT {
+            if let Some(sample) = host.poll_completed().expect("poll Metal frame") {
+                assert!(
+                    !sample.timing_fault,
+                    "Metal frame timestamp collection failed"
+                );
+                frames.push(sample);
+            }
             assert!(
-                passes[3] > 0.0,
-                "visibility and the sky-free forward pass are timed"
+                std::time::Instant::now() < deadline,
+                "Metal frame report timed out"
             );
-            assert_eq!(passes[4], 0.0, "there is no transform history to publish");
+            std::thread::yield_now();
         }
-    });
-}
+        assert_eq!(host.pending_frames(), 0);
+        frames
+    }
 
-fn capture(host: &mut Host) -> Vec<u8> {
-    let mut pending = host.begin_capture().expect("capture");
-    finish_capture(host, &mut pending)
-}
-
-#[test]
-#[cfg(target_os = "macos")]
-fn culled_modes_survive_surface_resize_and_device_replacement() {
-    pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let (first, queue) = gpu(&instance, 7).await;
-        let (second, new_queue) = gpu(&instance, 8).await;
-        let mut direct = culled_host(
-            &second,
-            &new_queue,
-            Policy::default(),
-            CullMode::Direct,
-            false,
-        )
-        .await;
-        let expected = capture(&mut direct);
-        for mode in [CullMode::Frustum] {
-            let mut host = culled_host(&first, &queue, Policy::default(), mode, false).await;
+    #[test]
+    fn metal_frustum_timestamps_drain_populated_then_empty_prefixes() {
+        // Without Sun shadows: this one-cube fixture's shadow passes return invalid
+        // Metal stamps in FrameHost for Direct as well (pre-existing, reported to root).
+        pollster::block_on(async {
+            let instance =
+                wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+            let (capabilities, queue) = gpu(&instance, 7).await;
+            let mut host = culled_host(
+                &capabilities,
+                &queue,
+                Policy::default(),
+                CullMode::Frustum,
+                false,
+            )
+            .await;
+            assert_eq!(host.prepared.camera_culling(), CullMode::Frustum);
             pending_slots(&mut host);
-            drain_timed(&mut host);
-            host.resize_surface([96, 48]).expect("resize");
+            assert_eq!(host.prepared.active_instance_count(), 1);
+            let populated = drain_samples(&mut host);
+            for sample in &populated {
+                let counts = sample.camera_culling.expect("frustum counts");
+                assert_eq!(
+                    (counts.mode, counts.active, counts.drawn),
+                    (CullMode::Frustum, 1, 1)
+                );
+                assert_eq!(counts.rejected(), 0);
+            }
+            for passes in populated
+                .iter()
+                .map(|sample| sample.gpu_pass_ns.expect("timed"))
+            {
+                assert!(passes[3] > 0.0, "forward includes the visibility pass");
+                assert!(passes[4] > 0.0, "the populated prefix publishes history");
+            }
+            // The next submissions on the same slots carry an empty active prefix:
+            // visibility still dispatches its offsets pass and stays timed.
+            host.source_mut().empty = true;
+            pending_slots(&mut host);
+            assert_eq!(host.prepared.active_instance_count(), 0);
+            let empty = drain_samples(&mut host);
+            for sample in &empty {
+                let counts = sample.camera_culling.expect("frustum counts");
+                assert_eq!(
+                    (counts.active, counts.drawn),
+                    (0, 0),
+                    "an empty prefix lists nothing"
+                );
+            }
+            for passes in empty
+                .iter()
+                .map(|sample| sample.gpu_pass_ns.expect("timed"))
+            {
+                assert!(
+                    passes[3] > 0.0,
+                    "visibility and the sky-free forward pass are timed"
+                );
+                assert_eq!(passes[4], 0.0, "there is no transform history to publish");
+            }
+        });
+    }
+
+    /// Draws nothing and computes nothing: attached, it puts Occlusion on its
+    /// contribution fallback (Frustum early, Skip late, no pyramid build).
+    struct Attached;
+
+    impl crate::contribution::SceneContribution for Attached {
+        fn passes(&self) -> crate::contribution::ContributionPasses {
+            crate::contribution::ContributionPasses::default()
+        }
+        fn rebuild(&mut self, _: &crate::contribution::SceneSurface<'_>) -> Result<(), String> {
+            Ok(())
+        }
+        fn encode_upload(
+            &mut self,
+            _: &mut wgpu::CommandEncoder,
+            _: &crate::contribution::ContributionFrame,
+        ) {
+        }
+        fn computes(&self, _: &crate::contribution::ContributionFrame) -> bool {
+            false
+        }
+        fn encode_compute(
+            &mut self,
+            _: &mut wgpu::ComputePass<'_>,
+            _: &crate::contribution::ContributionFrame,
+        ) {
+        }
+        fn encode_after_compute(&mut self, _: &mut wgpu::CommandEncoder) {}
+        fn draw(&self, _: &mut wgpu::RenderPass<'_>) {}
+        fn submitted(&mut self, _: bool) {}
+    }
+
+    /// Each slot's late instance count, read after its frame completed.
+    fn late_counts(host: &Host) -> Vec<u32> {
+        host.slots
+            .iter()
+            .map(|slot| {
+                let args = crate::synthetic::camera_culling::tests::late_args(&slot.target)
+                    .expect("occlusion slot");
+                let staging = host.device.create_buffer(&wgpu::BufferDescriptor {
+                    label: Some("late args readback"),
+                    size: 20,
+                    usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
+                    mapped_at_creation: false,
+                });
+                let mut encoder = host
+                    .device
+                    .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+                encoder.copy_buffer_to_buffer(args, 0, &staging, 0, 20);
+                host.queue.submit([encoder.finish()]);
+                staging
+                    .slice(..)
+                    .map_async(wgpu::MapMode::Read, |result| result.expect("map"));
+                host.device
+                    .poll(wgpu::PollType::Wait {
+                        submission_index: None,
+                        timeout: Some(Duration::from_secs(10)),
+                    })
+                    .expect("poll");
+                let bytes = staging.slice(..).get_mapped_range().expect("mapped");
+                u32::from_le_bytes(bytes[4..8].try_into().expect("instance count"))
+            })
+            .collect()
+    }
+
+    fn capture(host: &mut Host) -> Vec<u8> {
+        let mut pending = host.begin_capture().expect("capture");
+        finish_capture(host, &mut pending)
+    }
+
+    #[test]
+    fn culled_modes_survive_surface_resize_and_device_replacement() {
+        pollster::block_on(async {
+            let instance =
+                wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+            let (first, queue) = gpu(&instance, 7).await;
+            let (second, new_queue) = gpu(&instance, 8).await;
+            let mut direct = culled_host(
+                &second,
+                &new_queue,
+                Policy::default(),
+                CullMode::Direct,
+                false,
+            )
+            .await;
+            let expected = capture(&mut direct);
+            for mode in [CullMode::Frustum, CullMode::Occlusion] {
+                let mut host = culled_host(&first, &queue, Policy::default(), mode, false).await;
+                pending_slots(&mut host);
+                drain_timed(&mut host);
+                host.resize_surface([96, 48]).expect("resize");
+                assert_eq!(
+                    host.prepared.camera_culling(),
+                    mode,
+                    "{mode:?} after resize"
+                );
+                pending_slots(&mut host);
+                for sample in drain_samples(&mut host) {
+                    let counts = sample.camera_culling.expect("culled frames report counts");
+                    assert_eq!(counts.mode, mode, "{mode:?}: counts after resize");
+                }
+                let mut candidate = host
+                    .device_prepare_inputs()
+                    .expect("inputs")
+                    .prepare(&second, &new_queue, Some(surface()))
+                    .await
+                    .expect("replacement");
+                host.publish_device(&mut candidate).expect("publish");
+                assert_eq!(host.generation, 8);
+                assert_eq!(
+                    host.prepared.camera_culling(),
+                    mode,
+                    "{mode:?} after replacement"
+                );
+                // The replacement's slots time every pass of the mode's layout,
+                // and its capture equals Direct on the same device.
+                pending_slots(&mut host);
+                for sample in drain_samples(&mut host) {
+                    let counts = sample.camera_culling.expect("culled frames report counts");
+                    assert_eq!(counts.mode, mode, "{mode:?}: counts after replacement");
+                }
+                assert_eq!(capture(&mut host), expected, "{mode:?} replacement image");
+            }
+        });
+    }
+
+    #[test]
+    fn metal_occlusion_timestamps_drain_empty_late_lists_and_the_contribution_fallback() {
+        pollster::block_on(async {
+            let instance =
+                wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+            let (capabilities, queue) = gpu(&instance, 7).await;
+            let mut direct = culled_host(
+                &capabilities,
+                &queue,
+                Policy::default(),
+                CullMode::Direct,
+                false,
+            )
+            .await;
+            let expected = capture(&mut direct);
+            let mut host = culled_host(
+                &capabilities,
+                &queue,
+                Policy::default(),
+                CullMode::Occlusion,
+                false,
+            )
+            .await;
+            assert_eq!(host.prepared.camera_culling(), CullMode::Occlusion);
+            // Each frame's counts arrive on its own report, without waiting, and
+            // match the late arguments its slot's GPU work wrote.
+            let timed = |host: &mut Host, label: &str| {
+                pending_slots(host);
+                let samples = drain_samples(host);
+                let late = late_counts(host);
+                for (sample, &late) in samples.iter().zip(&late) {
+                    let passes = sample.gpu_pass_ns.expect("timed");
+                    assert!(passes[3] > 0.0, "{label}: forward and culling are timed");
+                    let counts = sample.camera_culling.expect("occlusion counts");
+                    assert_eq!(
+                        (counts.mode, counts.active, counts.drawn),
+                        (CullMode::Occlusion, 1, 1),
+                        "{label}: the cube is drawn once"
+                    );
+                    assert_eq!(counts.late, late, "{label}: late count");
+                }
+                late
+            };
+            // A cold frame lists the cube late; the next one replays it early.
+            assert_eq!(timed(&mut host, "cold"), [1, 0]);
+            // A still view: both slots time an empty late list and its empty
+            // late forward pass.
+            assert_eq!(timed(&mut host, "still"), [0, 0]);
+            assert_eq!(capture(&mut host), expected, "still capture equals Direct");
+            // The contribution fallback: Frustum early, Skip late, no pyramid;
+            // the layout leaves the pyramid out and the samples stay valid.
+            host.set_scene_contribution(Box::new(Attached))
+                .expect("attach");
+            assert_eq!(timed(&mut host, "contributed"), [0, 0]);
             assert_eq!(
-                host.prepared.camera_culling(),
-                mode,
-                "{mode:?} after resize"
+                capture(&mut host),
+                expected,
+                "fallback capture equals Direct"
             );
+            // Back to opaque only: Skip cleared the history, so the first frame
+            // is cold again, then the still view settles.
+            host.contribution = None;
+            assert_eq!(timed(&mut host, "returned"), [1, 0]);
+            assert_eq!(timed(&mut host, "settled"), [0, 0]);
+            assert_eq!(
+                capture(&mut host),
+                expected,
+                "returned capture equals Direct"
+            );
+        });
+    }
+
+    #[test]
+    fn culling_counts_never_hold_render_slots_or_cross_a_replacement() {
+        pollster::block_on(async {
+            let instance =
+                wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+            let (first, queue) = gpu(&instance, 7).await;
+            let (second, new_queue) = gpu(&instance, 8).await;
+            let mut host =
+                culled_host(&first, &queue, Policy::default(), CullMode::Frustum, false).await;
+            // A mapping callback that never arrives leaves frames retiring
+            // without counts, and copies nothing into the busy buffer.
+            for slot in &mut host.slots {
+                slot.target.stall_culling_stats(true);
+            }
+            for _ in 0..2 {
+                pending_slots(&mut host);
+                for sample in drain_samples(&mut host) {
+                    assert!(
+                        sample.camera_culling.is_none(),
+                        "a busy buffer counts nothing"
+                    );
+                }
+            }
+            for slot in &mut host.slots {
+                slot.target.stall_culling_stats(false);
+            }
             pending_slots(&mut host);
             for sample in drain_samples(&mut host) {
-                let counts = sample.camera_culling.expect("culled frames report counts");
-                assert_eq!(counts.mode, mode, "{mode:?}: counts after resize");
+                let counts = sample.camera_culling.expect("counts resume");
+                assert_eq!((counts.active, counts.drawn), (1, 1));
             }
+            // Real mappings left pending on the old device: the new device's
+            // empty prefix must be all that publishes.
+            pending_slots(&mut host);
             let mut candidate = host
                 .device_prepare_inputs()
                 .expect("inputs")
@@ -325,226 +525,167 @@ fn culled_modes_survive_surface_resize_and_device_replacement() {
                 .await
                 .expect("replacement");
             host.publish_device(&mut candidate).expect("publish");
-            assert_eq!(host.generation, 8);
-            assert_eq!(
-                host.prepared.camera_culling(),
-                mode,
-                "{mode:?} after replacement"
-            );
-            // The replacement's slots time every pass of the mode's layout,
-            // and its capture equals Direct on the same device.
+            assert_eq!(host.pending_frames(), 0, "the old slots are abandoned");
+            host.source_mut().empty = true;
             pending_slots(&mut host);
             for sample in drain_samples(&mut host) {
-                let counts = sample.camera_culling.expect("culled frames report counts");
-                assert_eq!(counts.mode, mode, "{mode:?}: counts after replacement");
-            }
-            assert_eq!(capture(&mut host), expected, "{mode:?} replacement image");
-        }
-    });
-}
-
-#[test]
-#[cfg(target_os = "macos")]
-fn culling_counts_never_hold_render_slots_or_cross_a_replacement() {
-    pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let (first, queue) = gpu(&instance, 7).await;
-        let (second, new_queue) = gpu(&instance, 8).await;
-        let mut host =
-            culled_host(&first, &queue, Policy::default(), CullMode::Frustum, false).await;
-        // A mapping callback that never arrives leaves frames retiring
-        // without counts, and copies nothing into the busy buffer.
-        for slot in &mut host.slots {
-            slot.target.stall_culling_stats(true);
-        }
-        for _ in 0..2 {
-            pending_slots(&mut host);
-            for sample in drain_samples(&mut host) {
-                assert!(
-                    sample.camera_culling.is_none(),
-                    "a busy buffer counts nothing"
+                let counts = sample.camera_culling.expect("replacement counts");
+                assert_eq!(
+                    (counts.mode, counts.active, counts.drawn),
+                    (CullMode::Frustum, 0, 0),
+                    "only the new device's frames publish counts"
                 );
             }
-        }
-        for slot in &mut host.slots {
-            slot.target.stall_culling_stats(false);
-        }
-        pending_slots(&mut host);
-        for sample in drain_samples(&mut host) {
-            let counts = sample.camera_culling.expect("counts resume");
-            assert_eq!((counts.active, counts.drawn), (1, 1));
-        }
-        // Real mappings left pending on the old device: the new device's
-        // empty prefix must be all that publishes.
-        pending_slots(&mut host);
-        let mut candidate = host
-            .device_prepare_inputs()
-            .expect("inputs")
-            .prepare(&second, &new_queue, Some(surface()))
-            .await
-            .expect("replacement");
-        host.publish_device(&mut candidate).expect("publish");
-        assert_eq!(host.pending_frames(), 0, "the old slots are abandoned");
-        host.source_mut().empty = true;
-        pending_slots(&mut host);
-        for sample in drain_samples(&mut host) {
-            let counts = sample.camera_culling.expect("replacement counts");
-            assert_eq!(
-                (counts.mode, counts.active, counts.drawn),
-                (CullMode::Frustum, 0, 0),
-                "only the new device's frames publish counts"
-            );
-        }
-    });
-}
-
-/// Submit one frame on `slot` and wait for its report.
-#[cfg(target_os = "macos")]
-fn one_frame(host: &mut Host, slot: usize) -> FrameSample {
-    let mut report = host
-        .advance(Duration::ZERO)
-        .expect("world observation")
-        .submit(None)
-        .expect("no optional view");
-    let frame = host.extract_serial(Duration::ZERO, 0, 0).expect("extract");
-    host.submit_extracted(slot, &mut report, None, frame, super::super::Instant::now())
-        .expect("slot submission");
-    let deadline = std::time::Instant::now() + Duration::from_secs(10);
-    loop {
-        if let Some(sample) = host.poll_completed().expect("poll Metal frame") {
-            return sample;
-        }
-        assert!(
-            std::time::Instant::now() < deadline,
-            "Metal frame report timed out"
-        );
-        std::thread::yield_now();
+        });
     }
-}
 
-#[test]
-#[cfg(target_os = "macos")]
-fn a_late_mapping_is_never_attributed_to_the_next_frame_on_its_slot() {
-    pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let (capabilities, queue) = gpu(&instance, 7).await;
-        let mut host = culled_host(
-            &capabilities,
-            &queue,
-            Policy::default(),
-            CullMode::Frustum,
-            false,
-        )
-        .await;
-        // Frame A (one active slot) retires while its mapping still looks
-        // pending, so it reports no count.
+    /// Submit one frame on `slot` and wait for its report.
+    fn one_frame(host: &mut Host, slot: usize) -> FrameSample {
         let mut report = host
             .advance(Duration::ZERO)
             .expect("world observation")
             .submit(None)
             .expect("no optional view");
         let frame = host.extract_serial(Duration::ZERO, 0, 0).expect("extract");
-        host.submit_extracted(0, &mut report, None, frame, super::super::Instant::now())
-            .expect("frame A");
-        let real = host.slots[0]
-            .target
-            .defer_culling_mapping()
-            .expect("Frustum counts");
+        host.submit_extracted(slot, &mut report, None, frame, super::super::Instant::now())
+            .expect("slot submission");
         let deadline = std::time::Instant::now() + Duration::from_secs(10);
-        let a = loop {
-            if let Some(sample) = host.poll_completed().expect("poll A") {
-                break sample;
+        loop {
+            if let Some(sample) = host.poll_completed().expect("poll Metal frame") {
+                return sample;
             }
-            assert!(std::time::Instant::now() < deadline, "frame A timed out");
-            std::thread::yield_now();
-        };
-        assert!(a.camera_culling.is_none(), "A retired before its count");
-        while crate::synthetic::OffscreenTarget::culling_mapping_pending(&real) {
-            host.device
-                .poll(wgpu::PollType::Wait {
-                    submission_index: None,
-                    timeout: Some(Duration::from_secs(10)),
-                })
-                .expect("A's mapping");
             assert!(
                 std::time::Instant::now() < deadline,
-                "A's mapping timed out"
+                "Metal frame report timed out"
             );
-        }
-        // Frame B (empty prefix) reuses the slot unarmed; A's settled
-        // mapping becomes visible while B runs, and must not become B's.
-        host.source_mut().empty = true;
-        let mut report = host
-            .advance(Duration::ZERO)
-            .expect("world observation")
-            .submit(None)
-            .expect("no optional view");
-        let frame = host.extract_serial(Duration::ZERO, 0, 0).expect("extract");
-        host.submit_extracted(0, &mut report, None, frame, super::super::Instant::now())
-            .expect("frame B");
-        host.slots[0].target.reveal_culling_mapping(&real);
-        let deadline = std::time::Instant::now() + Duration::from_secs(10);
-        let b = loop {
-            if let Some(sample) = host.poll_completed().expect("poll B") {
-                break sample;
-            }
-            assert!(std::time::Instant::now() < deadline, "frame B timed out");
             std::thread::yield_now();
-        };
-        assert_eq!(
-            b.camera_culling, None,
-            "B was unarmed: A's count is not B's"
-        );
-        // The next frame on the slot is armed and reports its own count.
-        let c = one_frame(&mut host, 0);
-        let counts = c.camera_culling.expect("C counts");
-        assert_eq!(
-            (counts.mode, counts.active, counts.drawn),
-            (CullMode::Frustum, 0, 0)
-        );
-    });
-}
+        }
+    }
 
-#[test]
-#[cfg(target_os = "macos")]
-fn metal_frame_timestamps_survive_an_empty_instance_set() {
-    pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let (capabilities, queue) = gpu(&instance, 7).await;
-        let mut host = host(
-            &capabilities,
-            &queue,
-            Policy {
-                empty: true,
-                atmosphere: true,
-                ..Policy::default()
-            },
-        )
-        .await;
-        pending_slots(&mut host);
-        assert_eq!(host.prepared.active_instance_count(), 0);
-        let deadline = std::time::Instant::now() + Duration::from_secs(10);
-        for _ in 0..IN_FLIGHT {
-            let sample = loop {
-                if let Some(sample) = host.poll_completed().expect("poll Metal frame") {
+    #[test]
+    fn a_late_mapping_is_never_attributed_to_the_next_frame_on_its_slot() {
+        pollster::block_on(async {
+            let instance =
+                wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+            let (capabilities, queue) = gpu(&instance, 7).await;
+            let mut host = culled_host(
+                &capabilities,
+                &queue,
+                Policy::default(),
+                CullMode::Frustum,
+                false,
+            )
+            .await;
+            // Frame A (one active slot) retires while its mapping still looks
+            // pending, so it reports no count.
+            let mut report = host
+                .advance(Duration::ZERO)
+                .expect("world observation")
+                .submit(None)
+                .expect("no optional view");
+            let frame = host.extract_serial(Duration::ZERO, 0, 0).expect("extract");
+            host.submit_extracted(0, &mut report, None, frame, super::super::Instant::now())
+                .expect("frame A");
+            let real = host.slots[0]
+                .target
+                .defer_culling_mapping()
+                .expect("Frustum counts");
+            let deadline = std::time::Instant::now() + Duration::from_secs(10);
+            let a = loop {
+                if let Some(sample) = host.poll_completed().expect("poll A") {
                     break sample;
                 }
-                assert!(
-                    std::time::Instant::now() < deadline,
-                    "Metal frame report timed out"
-                );
+                assert!(std::time::Instant::now() < deadline, "frame A timed out");
                 std::thread::yield_now();
             };
-            assert!(
-                !sample.timing_fault,
-                "Metal frame timestamp collection failed"
+            assert!(a.camera_culling.is_none(), "A retired before its count");
+            while crate::synthetic::OffscreenTarget::culling_mapping_pending(&real) {
+                host.device
+                    .poll(wgpu::PollType::Wait {
+                        submission_index: None,
+                        timeout: Some(Duration::from_secs(10)),
+                    })
+                    .expect("A's mapping");
+                assert!(
+                    std::time::Instant::now() < deadline,
+                    "A's mapping timed out"
+                );
+            }
+            // Frame B (empty prefix) reuses the slot unarmed; A's settled
+            // mapping becomes visible while B runs, and must not become B's.
+            host.source_mut().empty = true;
+            let mut report = host
+                .advance(Duration::ZERO)
+                .expect("world observation")
+                .submit(None)
+                .expect("no optional view");
+            let frame = host.extract_serial(Duration::ZERO, 0, 0).expect("extract");
+            host.submit_extracted(0, &mut report, None, frame, super::super::Instant::now())
+                .expect("frame B");
+            host.slots[0].target.reveal_culling_mapping(&real);
+            let deadline = std::time::Instant::now() + Duration::from_secs(10);
+            let b = loop {
+                if let Some(sample) = host.poll_completed().expect("poll B") {
+                    break sample;
+                }
+                assert!(std::time::Instant::now() < deadline, "frame B timed out");
+                std::thread::yield_now();
+            };
+            assert_eq!(
+                b.camera_culling, None,
+                "B was unarmed: A's count is not B's"
             );
-            assert!(sample.camera_culling.is_none(), "Direct lists nothing");
-            let passes = sample.gpu_pass_ns.expect("real Metal pass timestamps");
-            assert!(passes[3] > 0.0, "the sky still executes the forward pass");
-            assert_eq!(passes[4], 0.0, "there is no transform history to publish");
-        }
-    });
+            // The next frame on the slot is armed and reports its own count.
+            let c = one_frame(&mut host, 0);
+            let counts = c.camera_culling.expect("C counts");
+            assert_eq!(
+                (counts.mode, counts.active, counts.drawn),
+                (CullMode::Frustum, 0, 0)
+            );
+        });
+    }
+
+    #[test]
+    fn metal_frame_timestamps_survive_an_empty_instance_set() {
+        pollster::block_on(async {
+            let instance =
+                wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+            let (capabilities, queue) = gpu(&instance, 7).await;
+            let mut host = host(
+                &capabilities,
+                &queue,
+                Policy {
+                    empty: true,
+                    atmosphere: true,
+                    ..Policy::default()
+                },
+            )
+            .await;
+            pending_slots(&mut host);
+            assert_eq!(host.prepared.active_instance_count(), 0);
+            let deadline = std::time::Instant::now() + Duration::from_secs(10);
+            for _ in 0..IN_FLIGHT {
+                let sample = loop {
+                    if let Some(sample) = host.poll_completed().expect("poll Metal frame") {
+                        break sample;
+                    }
+                    assert!(
+                        std::time::Instant::now() < deadline,
+                        "Metal frame report timed out"
+                    );
+                    std::thread::yield_now();
+                };
+                assert!(
+                    !sample.timing_fault,
+                    "Metal frame timestamp collection failed"
+                );
+                assert!(sample.camera_culling.is_none(), "Direct lists nothing");
+                let passes = sample.gpu_pass_ns.expect("real Metal pass timestamps");
+                assert!(passes[3] > 0.0, "the sky still executes the forward pass");
+                assert_eq!(passes[4], 0.0, "there is no transform history to publish");
+            }
+        });
+    }
 }
 
 fn packed_pixels(
