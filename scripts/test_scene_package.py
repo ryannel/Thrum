@@ -106,6 +106,19 @@ class SceneResolution(unittest.TestCase):
         current.assert_not_called()
         run.assert_not_called()
 
+    def test_a_package_named_like_another_member_in_another_case_is_refused(self):
+        # Each scene cooks into target/scenes/<package>, one folder on this Mac for both names.
+        other = package(self.root, "examples/sunrise", "Thrum-Sunset", ["thrum-sunrise"])
+        scene = package(self.root, "examples/sunset", "thrum-sunset", ["thrum-sunset"])
+        with self.assertRaisesRegex(SceneError, "same target/scenes folder as Thrum-Sunset"):
+            resolve(self.root, "examples/sunset", self.metadata(scene, other))
+
+    def test_a_binary_named_like_a_cargo_folder_is_refused(self):
+        for name in ["deps", "Build", "examples", "incremental", ".fingerprint"]:
+            scene = package(self.root, "examples/sunset", "thrum-sunset", [name])
+            with self.assertRaisesRegex(SceneError, f"names its binary {name}, which is a folder Cargo keeps"):
+                resolve(self.root, "examples/sunset", self.metadata(scene))
+
     def test_a_folder_without_a_manifest_is_refused(self):
         with self.assertRaisesRegex(SceneError, "has no Cargo.toml"):
             resolve(self.root, "examples/missing", self.metadata())

@@ -7,7 +7,7 @@
 
 use std::time::Duration;
 
-use thrum_asset_gpu::{CookedConfig, CookedMaterial, CookedSource, MeshPlacement, VolumePlacement};
+use thrum_asset_gpu::{CookedConfig, CookedSource, MeshPlacement, VolumePlacement};
 
 /// Column-major uniform-scale transform, rotated about +X by `tilt` radians.
 fn placement(scale: f32, tilt: f32, at: [f32; 3]) -> [[f32; 4]; 4] {
@@ -29,13 +29,12 @@ pub const UPLOAD_BUDGET: u64 = 8 << 20;
 pub fn cooked_config(source: impl Into<CookedSource>) -> CookedConfig {
     CookedConfig {
         source: source.into(),
-        meshes: vec![MeshPlacement {
-            mesh: "meshes/terrain".into(),
-            texture: "textures/checker".into(),
+        meshes: vec![{
+            let mut terrain = MeshPlacement::new("meshes/terrain", "textures/checker");
             // The grid's +Y tilts toward the camera, which looks down -Z from z = 2.
-            transform: placement(0.32, std::f32::consts::FRAC_PI_2 * 0.8, [-0.5, -0.2, 0.9]),
-            material: CookedMaterial::default(),
-            rest_on_ground: false,
+            terrain.transform =
+                placement(0.32, std::f32::consts::FRAC_PI_2 * 0.8, [-0.5, -0.2, 0.9]);
+            terrain
         }],
         volume: Some(VolumePlacement {
             name: "cloud".into(),

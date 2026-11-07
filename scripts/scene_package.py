@@ -16,6 +16,9 @@ import unicodedata
 
 GUIDE = 'see examples/starter/README.md, "Make your own scene"'
 
+# Entries Cargo itself keeps beside the binaries in target/release.
+CARGO_ENTRIES = ("build", "deps", "examples", "incremental", ".fingerprint")
+
 
 class SceneError(Exception):
     pass
@@ -52,6 +55,10 @@ def resolve(root, folder, metadata):
             raise SceneError(f"{folder} ({package['name']}) builds {len(binaries)} binaries ({found}); "
                              "a scene package builds exactly one, its window")
         binary = binaries[0]
+        if file_key(binary) in {file_key(entry) for entry in CARGO_ENTRIES}:
+            raise SceneError(f"{folder} ({package['name']}) names its binary {binary}, which is a folder "
+                             "Cargo keeps in target/release; name the scene's binary after the scene, "
+                             "such as its package name")
         # Every workspace binary lands in one target/release, so a shared name would replace the
         # other program; xtask would then run the scene where it means to run thrum-cook. Names
         # are compared as the filesystem may: macOS and Windows usually ignore case, and APFS
@@ -59,6 +66,12 @@ def resolve(root, folder, metadata):
         for other in metadata["packages"]:
             if other["id"] not in members or other["id"] == package["id"]:
                 continue
+            # ./dev scene cooks each scene into target/scenes/<package>, so a package name that
+            # differs only in case or normalization would share another scene's store.
+            if file_key(other["name"]) == file_key(package["name"]):
+                raise SceneError(f"{folder} ({package['name']}) would cook into the same "
+                                 f"target/scenes folder as {other['name']}, comparing names ignoring "
+                                 "case and Unicode normalization as macOS does; rename the package")
             for target in other["targets"]:
                 if "bin" in target["kind"] and file_key(target["name"]) == file_key(binary):
                     raise SceneError(f"{folder} ({package['name']}) names its binary {binary}, which "

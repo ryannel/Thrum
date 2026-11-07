@@ -19,8 +19,9 @@ const MAX_DISTANCE: f64 = 1e6;
 
 /// A cooked mesh, its base-colour texture and where it stands in the world.
 ///
-/// Build one with [`MeshPlacement::new`] and the placement methods, which always produce a
-/// valid transform:
+/// Build one with [`MeshPlacement::new`] and the placement methods, which only turn, scale
+/// uniformly and move. Finite inputs still have to pass the bounds and rigidity checks below, and
+/// a turn that names no rotation is refused by name:
 ///
 /// ```
 /// use thrum_asset_gpu::{CookedMaterial, MeshPlacement};
@@ -57,6 +58,9 @@ pub struct MeshPlacement {
     /// cooked mesh's vertices, so it follows edits to the asset; a mesh of more than 65,536
     /// vertices uses its bounding box instead, which can leave a turned mesh slightly raised.
     pub rest_on_ground: bool,
+    /// The first turn that named no rotation, kept for [`crate::CookedAssets::new`] to refuse by
+    /// name; the transform is left as it was before that turn.
+    refused_turn: Option<([f32; 3], f32)>,
 }
 
 impl MeshPlacement {
@@ -69,6 +73,7 @@ impl MeshPlacement {
             transform: glam::Mat4::IDENTITY.to_cols_array_2d(),
             material: CookedMaterial::default(),
             rest_on_ground: false,
+            refused_turn: None,
         }
     }
 
@@ -89,23 +94,35 @@ impl MeshPlacement {
     /// Turn the mesh about a world `axis` through its origin by `degrees`, counterclockwise
     /// looking down the axis toward the origin (the right-hand rule). Turns apply in call order.
     ///
-    /// # Panics
-    /// On an axis that is zero or not finite, or an angle that is not finite, naming the call.
+    /// Any finite, nonzero axis names its turn, however long or short; the turned transform is
+    /// then checked like any other. A zero or non-finite axis, or a
+    /// non-finite angle (for example one computed from a bad input), names no turn: the
+    /// placement keeps its transform and [`crate::CookedAssets::new`] refuses it with a
+    /// [`PlacementError`] naming the turn.
     #[must_use]
-    #[track_caller]
     pub fn rotate_degrees(mut self, axis: [f32; 3], degrees: f32) -> Self {
-        let direction = glam::Vec3::from(axis).try_normalize();
-        assert!(
-            direction.is_some() && degrees.is_finite(),
-            "rotate_degrees({axis:?}, {degrees}) on {:?} needs a nonzero, finite axis and a finite angle",
-            self.mesh
-        );
-        let turn =
-            glam::Mat4::from_axis_angle(direction.unwrap_or(glam::Vec3::Y), degrees.to_radians());
-        let position = self.transform[3];
-        let linear = turn * glam::Mat4::from_cols_array_2d(&self.transform);
-        self.transform = linear.to_cols_array_2d();
-        self.transform[3] = position;
+        if self.refused_turn.is_some() {
+            return self;
+        }
+        // In f64, where the squared length of any finite f32 axis neither overflows nor
+        // underflows to zero, so any finite nonzero axis names its direction.
+        let wide_axis = axis.map(f64::from);
+        let length = dot(wide_axis, wide_axis).sqrt();
+        if !(above(length, 0.0) && length.is_finite() && degrees.is_finite()) {
+            self.refused_turn = Some((axis, degrees));
+            return self;
+        }
+        let unit = wide_axis.map(|value| value / length);
+        let (sin, cos) = f64::from(degrees).to_radians().sin_cos();
+        // Rodrigues' rotation of each linear column: v cos + (u × v) sin + u (u · v)(1 - cos).
+        for column in &mut self.transform[..3] {
+            let v = [column[0], column[1], column[2]].map(f64::from);
+            let across = cross(unit, v);
+            let along = dot(unit, v) * (1.0 - cos);
+            for row in 0..3 {
+                column[row] = narrow(v[row] * cos + across[row] * sin + unit[row] * along);
+            }
+        }
         self
     }
 
@@ -144,6 +161,9 @@ impl MeshPlacement {
                 fault,
             })
         };
+        if let Some((axis, degrees)) = self.refused_turn {
+            return refuse(Fault::NoTurn(axis, degrees));
+        }
         let matrix = glam::Mat4::from_cols_array_2d(&self.transform);
         if !matrix.is_finite() {
             return refuse(Fault::NotFinite);
@@ -202,6 +222,7 @@ pub struct PlacementError {
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 enum Fault {
+    NoTurn([f32; 3], f32),
     NotFinite,
     Projective,
     Flattened([f32; 3]),
@@ -241,6 +262,16 @@ fn cross(a: [f64; 3], b: [f64; 3]) -> [f64; 3] {
     ]
 }
 
+/// A transform value computed in f64, stored at the transform's own precision.
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "the cast stores at the transform's f32 precision; a component turned beyond f32's \
+              range becomes infinite, and the checked placement refuses it as not finite"
+)]
+fn narrow(value: f64) -> f32 {
+    value as f32
+}
+
 /// A length for a message, at the precision the transform was written in.
 #[expect(
     clippy::cast_possible_truncation,
@@ -255,6 +286,14 @@ impl fmt::Display for PlacementError {
         let Self { index, mesh, fault } = self;
         write!(f, "mesh placement {index} ({mesh:?}) ")?;
         match fault {
+            Fault::NoTurn(axis, degrees) => {
+                return write!(
+                    f,
+                    "turns {degrees}° about the axis {axis:?}, which names no rotation; give \
+                     rotate_degrees a nonzero, finite axis and a finite angle (yaw_degrees a \
+                     finite angle)"
+                );
+            }
             Fault::NotFinite => f.write_str("has a NaN or infinite transform value"),
             Fault::Projective => f.write_str("has a bottom transform row other than 0, 0, 0, 1"),
             Fault::Flattened([x, y, z]) => write!(f, "scales its axes to zero ({x}, {y}, {z})"),

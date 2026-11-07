@@ -48,7 +48,9 @@ positive.
 - **Mac:** `macos::MacPanel`, an AppKit HUD panel built with `objc2-app-kit`. It uses one narrow target/action class
   under `#[expect(unsafe_code)]`, and `render_png` renders it offscreen for agent review.
 - **Browser:** `web/thrum-controls.js`, a DOM builder. It is driven by `describe_json` and `changes_json`, and groups
-  are shown in first-declared order.
+  are shown in first-declared order. Every element id a control emits (its own, and a slider's `<id>-value`) is
+  reserved against the other controls and the page; a clash is refused through `onError` and that control is not
+  drawn.
 
 The crate has no game types, no I/O and no dependencies beyond `serde_json` and the macOS view.
 

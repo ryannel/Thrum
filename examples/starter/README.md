@@ -142,9 +142,12 @@ the default material is the texture's own colour, roughness 0.55 and metalness 0
 replaces it. `base_colour` is linear RGB and alpha, each 0–1.
 
 **Placements are rigid with one uniform scale.** Normals and culling and shadow bounds are transformed by the
-placement, so a stretched, sheared or mirrored transform would draw wrongly. The builder cannot make one. If you
-write `transform` by hand, a bad one is refused when the scene starts, naming the placement, the cause and the fix,
-for example `mesh placement 2 ("meshes/rock") scales its axes unevenly (X 1, Y 3, Z 1); ...`. To stretch a mesh,
+placement, so a stretched, sheared or mirrored transform would draw wrongly. The builder only turns, scales
+uniformly and moves, so it cannot stretch or shear, but its result is still checked when the scene starts: a zero or
+negative scale, a scale or origin out of the range below, and a turn that names no rotation (a zero or non-finite
+axis, or a non-finite angle, say one computed from a bad input) are refused by name, as `mesh placement 0
+("meshes/rock") turns NaN° about the axis [0.0, 1.0, 0.0], which names no rotation; ...`. A `transform` written by
+hand is refused the same way, naming the placement, the cause and the fix, for example `mesh placement 2 ("meshes/rock") scales its axes unevenly (X 1, Y 3, Z 1); ...`. To stretch a mesh,
 reshape it in its source file. The scale must lie within 0.0001–10000 and the origin within 1,000 km of the world
 origin on each axis. That is the kit's conservative supported range, not where `f32` overflows; a transform without a
 finite inverse is refused as well.
