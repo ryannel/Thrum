@@ -683,7 +683,11 @@ fn shadow_pipeline(
                 }),
             ],
         },
-        primitive: wgpu::PrimitiveState { cull_mode: Some(wgpu::Face::Back), ..Default::default() },
+        // Cooked terrain is an open heightfield. Near or below the horizon its
+        // Sun-facing faces are grazing slivers that rasterize with holes, while
+        // the faces a ray enters through face away from the Sun. Both bound the
+        // solid, so draw both.
+        primitive: wgpu::PrimitiveState { cull_mode: None, ..Default::default() },
         depth_stencil: Some(wgpu::DepthStencilState {
             format: surface.depth_format,
             depth_write_enabled: Some(true),
