@@ -107,12 +107,19 @@ WGSL material hook in the cooked mesh pipeline. `thrum-asset-gpu` owns it.
 - `request(MaterialHook { name, source })` returns a serial.
 - `take_outcomes()` reports each serial's outcome: `Promoted` with its timing, `Rejected` with diagnostics,
   `Superseded`, or `Retired`.
-- `accepted()` names the hook drawn now.
+- `accepted()` names the accepted hook. `restoring()` says whether that hook is being validated again for a
+  replaced device or surface, while the built-in material draws.
+- `revision()` counts changes to what those report, so an idle caller can skip building a report.
 - A request made before the assets first draw is prepared when they first build their pipelines.
 
 **Lifecycle:**
-- **Preparing.** The replacement is prepared outside frame recording. Natively it runs on a short-lived thread. In
-  the browser it runs in the caller's task, because there are no threads.
+- **Preparing.** The replacement is prepared outside frame recording.
+  - **Natively,** one compile thread runs at a time per handle. A request made during a compile waits, and a newer
+    one supersedes it before it compiles.
+  - **In the browser,** which has no threads, the caller's task creates the module and pipeline. It uses WebGPU's
+    synchronous methods, because pinned wgpu 30.0.1 does not expose `createRenderPipelineAsync`.
+  - **Dev-only.** The reload is a development control. It stays out of ordinary play and production showcase
+    builds.
 - **Eligibility.** A candidate becomes eligible only after its compilation messages and its validation error scope
   have both resolved.
 - **Installing.** The next frame boundary draws an eligible candidate. The submission carrying that frame promotes
@@ -123,7 +130,9 @@ WGSL material hook in the cooked mesh pipeline. `thrum-asset-gpu` owns it.
 - **Identity.** Each candidate carries its serial, device generation and surface epoch:
   - a newer request supersedes an older one;
   - a candidate prepared for a replaced device or surface is retired;
-  - a rebuilt device draws the last accepted hook.
+  - a rebuilt device or surface draws the built-in material until the last accepted hook has compiled and validated
+    for it, then draws the hook. Natively this happens on the next frame. A hook that no longer validates is dropped
+    with its diagnostics.
 
 **Front ends.** Both reload explicitly:
 - **Mac scenes:** the sky kit's `SkyGame::with_meshes` reads `THRUM_MATERIAL=<file>`. It reloads the file when
@@ -134,12 +143,13 @@ WGSL material hook in the cooked mesh pipeline. `thrum-asset-gpu` owns it.
 
 **Measured cost.** This is a contended shared machine, so the figures are observations, not budgets.
 - **Compile cost.** A distinct hook compiles the whole scene fragment shader again: about 0.7–1 s on Mac (up to
-  2.2 s under contention). The caller's call takes under 0.4 ms on both platforms.
+  2.2 s under contention). The caller's call measured under 0.4 ms on both platforms. In the browser, though, the
+  work it starts is synchronous WebGPU (see the stall below).
 - **Mac:** frames keep running during the compile. In 18 reloads the worst frame was usually within the quiet
   spread, but 3 frames reached 75–118 ms; this is not yet explained.
-- **Chrome stalls.** The page's animation frames stop for 300–750 ms during a cold compile. Chrome compiles the
-  pipeline in its GPU process, and an async wrapper cannot move that work. `createRenderPipelineAsync` might, but
-  wgpu 30 does not expose it.
+- **Chrome stalls.** The page's animation frames stop for 300–750 ms during a cold compile. wgpu 30.0.1 calls the
+  synchronous `createRenderPipeline`, and an async wrapper cannot move that work. `createRenderPipelineAsync`
+  might, but wgpu 30 does not expose it. This stays open under G6 and is acceptable only for this dev-only control.
 - **Compiler cache.** A hook compiled earlier on the machine comes back in tens of milliseconds without a stall,
   because the system's compiler cache serves it.
 
@@ -149,8 +159,7 @@ WGSL material hook in the cooked mesh pipeline. `thrum-asset-gpu` owns it.
   would remove the coupling.
 - **Temporal history.** History restarts only for the contribution's meshes. Contributions cannot reset the
   scene's own temporal history.
-- **Browser device replacement.** On a replaced device, the browser rebuilds the accepted hook optimistically,
-  because its validation resolves only later.
+- **Browser cold-compile stall.** This is open; see the measured cost above.
 - **Inputs.** The hook gets no time input.
 
 ## Field overlays

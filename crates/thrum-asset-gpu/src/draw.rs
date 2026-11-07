@@ -7,7 +7,7 @@ use thrum_render::contribution::{
 use std::cell::Cell;
 
 use crate::load::ResidentSet;
-use crate::material::{self, MaterialDiagnostic, MaterialHook, Target};
+use crate::material::{self, Target};
 use crate::{CookedMaterial, MeshPlacement, VolumePlacement};
 
 const CULL_BYTES: usize = 160;
@@ -175,14 +175,9 @@ fn material_record(material: &CookedMaterial) -> [u8; thrum_render::abi::MATERIA
 }
 
 impl Pipelines {
-    /// Pipelines for `surface`, whose mesh pipeline draws `hook` when one is accepted. A hook
-    /// that no longer compiles against the surface is returned with its diagnostics, and the
-    /// built-in material draws instead.
-    pub(crate) fn new(
-        surface: &SceneSurface<'_>,
-        target: &Target,
-        hook: Option<&MaterialHook>,
-    ) -> (Self, Option<Vec<MaterialDiagnostic>>) {
+    /// Pipelines for `surface`, drawing the built-in material. An accepted material hook is
+    /// restored by [`crate::MaterialReload`] once it validates against the surface.
+    pub(crate) fn new(surface: &SceneSurface<'_>, target: &Target) -> Self {
         let device = surface.device;
         let source = format!("{}\n{}", surface.shader_source, include_str!("cooked.wgsl"));
         let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
@@ -198,15 +193,7 @@ impl Pipelines {
                 bias: wgpu::DepthBiasState::default(),
             })
         };
-        let mut refused = None;
-        let mesh = match hook.map(|hook| material::rebuild_accepted(target, hook)) {
-            Some(Ok(pipeline)) => pipeline,
-            None => material::mesh_pipeline(target, &module),
-            Some(Err(diagnostics)) => {
-                refused = Some(diagnostics);
-                material::mesh_pipeline(target, &module)
-            }
-        };
+        let mesh = material::mesh_pipeline(target, &module);
         let volume_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("cooked volume"),
             entries: &[
@@ -314,7 +301,7 @@ impl Pipelines {
             min_filter: wgpu::FilterMode::Linear,
             ..Default::default()
         });
-        let pipelines = Self {
+        Self {
             device: device.clone(),
             queue: surface.queue.clone(),
             mesh,
@@ -330,8 +317,7 @@ impl Pipelines {
             defaults,
             sampler,
             volume_sampler,
-        };
-        (pipelines, refused)
+        }
     }
 
     /// Draw cooked meshes with a promoted replacement from now on.

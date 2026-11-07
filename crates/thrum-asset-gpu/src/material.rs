@@ -16,17 +16,21 @@
 //! else of the material record, the bindings or the cull and shadow pipelines changes. Without a
 //! hook the cooked mesh pipeline compiles exactly the source it always has.
 //!
-//! [`MaterialReload::request`] prepares a replacement mesh pipeline outside frame recording: on a
-//! short-lived thread natively, and inside the caller's task in the browser, which has no threads.
-//! WebGPU compiles in the browser's GPU process, so the page's call does not wait for the compile;
-//! a GPU process busy compiling can still delay frames. The candidate becomes eligible only once
+//! [`MaterialReload::request`] prepares a replacement mesh pipeline outside frame recording. Natively
+//! one compile thread runs at a time per handle, and only the newest request waits behind it. In
+//! the browser, which has no threads, the request creates the module and pipeline in the caller's
+//! task through WebGPU's synchronous methods: wgpu 30.0.1 does not expose
+//! `createRenderPipelineAsync`, so a cold compile stalls the page for hundreds of milliseconds.
+//! The reload is a development tool and stays out of ordinary play. The candidate becomes eligible only once
 //! its compilation messages and its validation error scope have both resolved. The next frame
 //! boundary draws it, and the submission carrying that frame promotes it: it becomes the accepted
 //! hook, the meshes restart motion history once, and resident products and bindings are kept.
 //! A rejected candidate leaves the previous pipeline drawing, with diagnostics translated to the
 //! hook's own file, line and column. A newer request supersedes an older one, and a candidate
-//! prepared for a retired device or scene surface is dropped; a rebuilt device draws the last
-//! accepted hook.
+//! prepared for a retired device or scene surface is dropped. A rebuilt device or surface draws
+//! the built-in material until the last accepted hook has compiled and validated for it again
+//! (natively, the next frame), then draws the hook; a hook that no longer validates is dropped
+//! with its diagnostics.
 
 use std::fmt;
 use std::future::Future;
@@ -101,8 +105,9 @@ impl fmt::Display for MaterialDiagnostic {
 /// Where the time of one reload went, measured from its request.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct ReloadTiming {
-    /// Time spent inside [`MaterialReload::request`] on the caller's thread: a thread spawn
-    /// natively; in the browser the shader module and pipeline creation calls themselves.
+    /// Time spent inside [`MaterialReload::request`] on the caller's thread: queueing, and a
+    /// thread spawn when no compile was running, natively; in the browser the synchronous
+    /// WebGPU shader module and pipeline creation calls themselves.
     pub call: Duration,
     /// Creating the shader module and pipeline (on the compile thread natively).
     pub prepare: Duration,
@@ -190,7 +195,7 @@ impl fmt::Display for MaterialOutcome {
             }
             Self::Retired { serial } => write!(
                 f,
-                "material {serial} was prepared for a replaced device; the last accepted material is drawn (reload again)"
+                "material {serial} was prepared for a replaced device; the last accepted material draws again once it validates there (reload again)"
             ),
         }
     }
@@ -367,7 +372,8 @@ struct Candidate {
 }
 
 impl Candidate {
-    /// Compile `hook` for `target` under a validation scope; nothing waits here.
+    /// Create the module and pipeline for `hook` under a validation scope. The compilation
+    /// messages and the scope resolve later and are polled at frame boundaries.
     fn prepare(target: &Target, hook: MaterialHook, serial: u64, requested: Instant) -> Self {
         let start = Instant::now();
         let mut candidate = Self {
@@ -409,6 +415,19 @@ impl Candidate {
         }
         candidate.prepare = start.elapsed();
         candidate
+    }
+
+    /// The validated candidate, ready to draw.
+    fn eligible(self, pipeline: wgpu::RenderPipeline, restore: bool) -> Eligible {
+        Eligible {
+            serial: self.serial,
+            pipeline,
+            validated: self.requested.elapsed(),
+            hook: self.hook,
+            requested: self.requested,
+            prepare: self.prepare,
+            restore,
+        }
     }
 
     /// Whether the compilation messages and the validation scope have both resolved.
@@ -505,42 +524,192 @@ fn summary(message: &str) -> String {
 
 /// A validated candidate waiting for the frame boundary that draws it.
 pub(crate) struct Eligible {
-    pub(crate) serial: u64,
+    serial: u64,
     pub(crate) pipeline: wgpu::RenderPipeline,
     hook: MaterialHook,
     requested: Instant,
     prepare: Duration,
     validated: Duration,
+    /// The accepted hook restored on a rebuilt surface, rather than a request.
+    restore: bool,
+}
+
+/// One request: the hook, its serial and when it was made.
+struct Job {
+    hook: MaterialHook,
+    serial: u64,
+    requested: Instant,
+}
+
+/// At most one compile at a time, with only the newest request waiting behind it.
+struct Queue<J> {
+    running: bool,
+    waiting: Option<J>,
+}
+
+impl<J> Default for Queue<J> {
+    fn default() -> Self {
+        Self {
+            running: false,
+            waiting: None,
+        }
+    }
+}
+
+impl<J> Queue<J> {
+    /// Make `job` the waiting one; returns the waiting job it replaces, which never compiles.
+    fn push(&mut self, job: J) -> Option<J> {
+        self.waiting.replace(job)
+    }
+
+    /// The waiting job, to compile now, unless a compile is running.
+    fn start(&mut self) -> Option<J> {
+        if self.running {
+            return None;
+        }
+        let job = self.waiting.take()?;
+        self.running = true;
+        Some(job)
+    }
+
+    /// The running compile ended.
+    fn finished(&mut self) {
+        self.running = false;
+    }
 }
 
 /// The accepted hook and every request's progress, shared by the contribution and its handles.
 #[derive(Default)]
 struct State {
     target: Option<Target>,
+    /// Identity of the current scene surface; candidates for any other cannot publish.
+    surface: Option<(u64, u64)>,
     /// Newest request serial.
     latest: u64,
     /// Caller time of the newest request.
     latest_call: Duration,
+    queue: Queue<Job>,
     candidate: Option<Candidate>,
-    /// The newest request made before the assets had a scene surface to prepare it for.
-    waiting: Option<(MaterialHook, u64, Instant)>,
-    accepted: Option<MaterialHook>,
+    /// The accepted hook prepared for a rebuilt surface, drawn once it validates there.
+    restoring: Option<Candidate>,
+    /// The accepted hook and the serial of the request that brought it.
+    accepted: Option<(MaterialHook, u64)>,
+    /// Whether the mesh pipeline draws the accepted hook; false while it is being restored.
+    drawing: bool,
     outcomes: Vec<MaterialOutcome>,
+    /// Counts changes a report shows: outcomes, and whether the accepted hook draws.
+    revision: u64,
 }
 
 impl State {
+    fn report(&mut self, outcome: MaterialOutcome) {
+        self.outcomes.push(outcome);
+        self.revision += 1;
+    }
+
+    /// The waiting request and the surface to compile it for, if no compile is running.
+    fn start(&mut self) -> Option<(Target, Job)> {
+        let target = self.target.clone()?;
+        self.queue.start().map(|job| (target, job))
+    }
+
     /// Keep the newest candidate for the current surface; anything else cannot publish.
     fn post(&mut self, candidate: Candidate) {
         if candidate.serial != self.latest {
-            self.outcomes.push(MaterialOutcome::Superseded {
+            self.report(MaterialOutcome::Superseded {
                 serial: candidate.serial,
             });
-        } else if self.target.as_ref().map(Target::identity) != Some(candidate.target) {
-            self.outcomes.push(MaterialOutcome::Retired {
+        } else if self.surface != Some(candidate.target) {
+            self.report(MaterialOutcome::Retired {
                 serial: candidate.serial,
             });
-        } else {
+        } else if let Some(older) = self.candidate.replace(candidate) {
+            self.report(MaterialOutcome::Superseded {
+                serial: older.serial,
+            });
+        }
+    }
+
+    /// The scene surface is now `surface`: candidates and a restore for the old one cannot
+    /// publish, and the accepted hook stops drawing until it is restored.
+    fn rebuilt(&mut self, surface: (u64, u64)) {
+        if let Some(candidate) = self.candidate.take() {
+            self.report(MaterialOutcome::Retired {
+                serial: candidate.serial,
+            });
+        }
+        self.restoring = None;
+        self.surface = Some(surface);
+        if self.accepted.is_some() && self.drawing {
+            self.drawing = false;
+            self.revision += 1;
+        }
+    }
+
+    /// At a frame boundary on `surface`: consider the newest request's candidate.
+    fn consider_candidate(&mut self, held: &mut Option<Eligible>, surface: (u64, u64)) {
+        let Some(mut candidate) = self.candidate.take() else {
+            return;
+        };
+        if candidate.serial != self.latest {
+            self.report(MaterialOutcome::Superseded {
+                serial: candidate.serial,
+            });
+            return;
+        }
+        if candidate.target != surface {
+            self.report(MaterialOutcome::Retired {
+                serial: candidate.serial,
+            });
+            return;
+        }
+        if !candidate.resolved() {
             self.candidate = Some(candidate);
+            return;
+        }
+        let errors = candidate.errors();
+        match candidate.pipeline.take() {
+            Some(pipeline) if errors.is_empty() => {
+                if let Some(previous) = held.replace(candidate.eligible(pipeline, false)) {
+                    self.report(MaterialOutcome::Superseded {
+                        serial: previous.serial,
+                    });
+                }
+            }
+            _ => self.report(MaterialOutcome::Rejected {
+                serial: candidate.serial,
+                diagnostics: errors,
+            }),
+        }
+    }
+
+    /// At a frame boundary on `surface` with nothing newer to draw: hold the accepted hook for
+    /// a rebuilt surface once it has validated there, or drop it if it no longer does.
+    fn consider_restore(&mut self, held: &mut Option<Eligible>, surface: (u64, u64)) {
+        let Some(mut restoring) = self.restoring.take() else {
+            return;
+        };
+        if restoring.target != surface {
+            return;
+        }
+        if !restoring.resolved() {
+            self.restoring = Some(restoring);
+            return;
+        }
+        let errors = restoring.errors();
+        match restoring.pipeline.take() {
+            Some(pipeline) if errors.is_empty() => {
+                *held = Some(restoring.eligible(pipeline, true));
+            }
+            _ => {
+                // The built-in material keeps drawing.
+                self.accepted = None;
+                self.drawing = false;
+                self.report(MaterialOutcome::Rejected {
+                    serial: restoring.serial,
+                    diagnostics: errors,
+                });
+            }
         }
     }
 }
@@ -571,26 +740,35 @@ impl MaterialReload {
 
     /// Prepare `hook` to replace the cooked meshes' material, superseding any earlier request,
     /// and return its serial; its [`MaterialOutcome`] arrives through [`Self::take_outcomes`].
-    /// Call it outside frame recording, for example from a key or button handler. A request made
-    /// before the assets have drawn their first frame is prepared when they first build their
-    /// pipelines; its timing then includes that wait.
+    /// Call it outside frame recording, for example from a key or button handler.
+    ///
+    /// One compile runs at a time. A request made while one runs waits, and a newer request
+    /// supersedes it before it compiles. A request made before the assets have drawn their
+    /// first frame is prepared when they first build their pipelines; its timing then includes
+    /// that wait. Natively the compile runs on a thread and this call only queues it. In the
+    /// browser this call creates the shader module and pipeline through WebGPU's synchronous
+    /// methods (wgpu 30 has no asynchronous pipeline creation), so a cold compile can stall
+    /// the page for hundreds of milliseconds: use it as a development tool, not in play.
     pub fn request(&self, hook: MaterialHook) -> u64 {
         let requested = Instant::now();
-        let (serial, target) = {
+        let (serial, start) = {
             let mut state = self.state();
             state.latest += 1;
             let serial = state.latest;
-            let Some(target) = state.target.clone() else {
-                if let Some((_, earlier, _)) = state.waiting.replace((hook, serial, requested)) {
-                    state
-                        .outcomes
-                        .push(MaterialOutcome::Superseded { serial: earlier });
-                }
-                return serial;
-            };
-            (serial, target)
+            if let Some(earlier) = state.queue.push(Job {
+                hook,
+                serial,
+                requested,
+            }) {
+                state.report(MaterialOutcome::Superseded {
+                    serial: earlier.serial,
+                });
+            }
+            (serial, state.start())
         };
-        self.prepare(target, hook, serial, requested);
+        if let Some((target, job)) = start {
+            self.compile(target, job);
+        }
         let call = requested.elapsed();
         let mut state = self.state();
         if state.latest == serial {
@@ -599,19 +777,32 @@ impl MaterialReload {
         serial
     }
 
-    /// Native: compile on a short-lived thread, which posts the candidate.
+    /// Compile `job`, then each request that waited meanwhile, until none waits.
+    fn compile_queue(&self, mut target: Target, mut job: Job) {
+        loop {
+            let candidate = Candidate::prepare(&target, job.hook, job.serial, job.requested);
+            let mut state = self.state();
+            state.post(candidate);
+            state.queue.finished();
+            let Some(next) = state.start() else {
+                return;
+            };
+            (target, job) = next;
+        }
+    }
+
+    /// Native: compile on one thread per burst of requests, which posts each candidate.
     #[cfg(not(target_arch = "wasm32"))]
-    fn prepare(&self, target: Target, hook: MaterialHook, serial: u64, requested: Instant) {
+    fn compile(&self, target: Target, job: Job) {
         let shared = self.clone();
-        let name = hook.name.clone();
+        let (name, serial) = (job.hook.name.clone(), job.serial);
         let spawned = std::thread::Builder::new()
             .name("thrum-cooked-material".into())
-            .spawn(move || {
-                let candidate = Candidate::prepare(&target, hook, serial, requested);
-                shared.state().post(candidate);
-            });
+            .spawn(move || shared.compile_queue(target, job));
         if let Err(error) = spawned {
-            self.state().outcomes.push(MaterialOutcome::Rejected {
+            let mut state = self.state();
+            state.queue.finished();
+            state.report(MaterialOutcome::Rejected {
                 serial,
                 diagnostics: vec![MaterialDiagnostic {
                     file: name,
@@ -625,13 +816,8 @@ impl MaterialReload {
 
     /// Browser: create the module and pipeline in the caller's task; results resolve later.
     #[cfg(target_arch = "wasm32")]
-    #[expect(
-        clippy::needless_pass_by_value,
-        reason = "one signature with the native variant, which moves the target to its thread"
-    )]
-    fn prepare(&self, target: Target, hook: MaterialHook, serial: u64, requested: Instant) {
-        let candidate = Candidate::prepare(&target, hook, serial, requested);
-        self.state().post(candidate);
+    fn compile(&self, target: Target, job: Job) {
+        self.compile_queue(target, job);
     }
 
     /// Outcomes since the last call, oldest first.
@@ -639,146 +825,263 @@ impl MaterialReload {
         std::mem::take(&mut self.state().outcomes)
     }
 
-    /// Name of the hook drawn now, or `None` for the built-in material.
+    /// Name of the accepted hook, or `None` for the built-in material. After a device or scene
+    /// surface is replaced the accepted hook stays accepted while it is restored; see
+    /// [`Self::restoring`].
     #[must_use]
     pub fn accepted(&self) -> Option<String> {
-        self.state().accepted.as_ref().map(|hook| hook.name.clone())
-    }
-
-    /// The scene surface changed: candidates for the old one cannot publish, and a request
-    /// waiting for the first surface is prepared now. Returns the accepted hook, which the
-    /// rebuilt pipelines draw.
-    pub(crate) fn retarget(&self, target: Target) -> Option<MaterialHook> {
-        let (accepted, waiting) = {
-            let mut state = self.state();
-            if let Some(candidate) = state.candidate.take() {
-                state.outcomes.push(MaterialOutcome::Retired {
-                    serial: candidate.serial,
-                });
-            }
-            state.target = Some(target.clone());
-            (state.accepted.clone(), state.waiting.take())
-        };
-        if let Some((hook, serial, requested)) = waiting {
-            self.prepare(target, hook, serial, requested);
-        }
-        accepted
-    }
-
-    /// A held candidate can no longer publish (its surface was rebuilt).
-    pub(crate) fn retire(&self, serial: u64) {
         self.state()
-            .outcomes
-            .push(MaterialOutcome::Retired { serial });
+            .accepted
+            .as_ref()
+            .map(|(hook, _)| hook.name.clone())
     }
 
-    /// The accepted hook no longer compiles against a rebuilt surface: the built-in material
-    /// draws instead.
-    pub(crate) fn drop_accepted(&self, diagnostics: Vec<MaterialDiagnostic>) {
-        let mut state = self.state();
-        state.accepted = None;
-        let serial = state.latest;
-        state.outcomes.push(MaterialOutcome::Rejected {
-            serial,
-            diagnostics,
-        });
+    /// Whether the accepted hook is being compiled and validated again for a replaced device or
+    /// scene surface, while the built-in material draws.
+    #[must_use]
+    pub fn restoring(&self) -> bool {
+        let state = self.state();
+        state.accepted.is_some() && !state.drawing
     }
 
-    /// At a frame boundary on the surface `target`: drop a held candidate that a newer request
-    /// superseded, and hold the newest candidate once it has resolved valid.
+    /// Counts changes to what [`Self::take_outcomes`] and [`Self::restoring`] report, so an idle
+    /// caller can skip building a report.
+    #[must_use]
+    pub fn revision(&self) -> u64 {
+        self.state().revision
+    }
+
+    /// The scene surface changed to `target`. Candidates for the old one cannot publish, a
+    /// waiting request is compiled for this one, and the accepted hook is prepared for it now
+    /// (on the caller's thread, as the surface's own pipelines are). It draws once it has
+    /// validated, which natively is the next frame; the built-in material draws until then.
+    pub(crate) fn retarget(&self, target: &Target) {
+        let (accepted, start) = {
+            let mut state = self.state();
+            state.rebuilt(target.identity());
+            state.target = Some(target.clone());
+            (state.accepted.clone(), state.start())
+        };
+        if let Some((hook, serial)) = accepted {
+            let candidate = Candidate::prepare(target, hook, serial, Instant::now());
+            let mut state = self.state();
+            // A newer surface or a newer accepted hook may have arrived meanwhile.
+            if state.surface == Some(candidate.target)
+                && state.accepted.as_ref().map(|(_, accepted)| *accepted) == Some(serial)
+            {
+                state.restoring = Some(candidate);
+            }
+        }
+        if let Some((target, job)) = start {
+            self.compile(target, job);
+        }
+    }
+
+    /// A held replacement can no longer draw (its surface was rebuilt).
+    pub(crate) fn release(&self, held: &Eligible) {
+        if !held.restore {
+            self.state().report(MaterialOutcome::Retired {
+                serial: held.serial,
+            });
+        }
+    }
+
+    /// At a frame boundary on the surface `target`: drop a held request that a newer one
+    /// superseded, hold the newest candidate once it has resolved valid, and otherwise hold the
+    /// accepted hook for a rebuilt surface once it has validated there.
     pub(crate) fn frame_boundary(&self, held: &mut Option<Eligible>, target: (u64, u64)) {
         let mut state = self.state();
         if held
             .as_ref()
-            .is_some_and(|eligible| eligible.serial != state.latest)
+            .is_some_and(|eligible| !eligible.restore && eligible.serial != state.latest)
             && let Some(eligible) = held.take()
         {
-            state.outcomes.push(MaterialOutcome::Superseded {
+            state.report(MaterialOutcome::Superseded {
                 serial: eligible.serial,
             });
         }
-        let Some(mut candidate) = state.candidate.take() else {
-            return;
-        };
-        if candidate.serial != state.latest {
-            state.outcomes.push(MaterialOutcome::Superseded {
-                serial: candidate.serial,
-            });
+        // A held restore draws first; a newer request is considered once it is promoted.
+        if held.as_ref().is_some_and(|eligible| eligible.restore) {
             return;
         }
-        if candidate.target != target {
-            state.outcomes.push(MaterialOutcome::Retired {
-                serial: candidate.serial,
-            });
-            return;
-        }
-        if !candidate.resolved() {
-            state.candidate = Some(candidate);
-            return;
-        }
-        let errors = candidate.errors();
-        match candidate.pipeline.take() {
-            Some(pipeline) if errors.is_empty() => {
-                if let Some(previous) = held.replace(Eligible {
-                    serial: candidate.serial,
-                    pipeline,
-                    hook: candidate.hook,
-                    requested: candidate.requested,
-                    prepare: candidate.prepare,
-                    validated: candidate.requested.elapsed(),
-                }) {
-                    state.outcomes.push(MaterialOutcome::Superseded {
-                        serial: previous.serial,
-                    });
-                }
-            }
-            _ => state.outcomes.push(MaterialOutcome::Rejected {
-                serial: candidate.serial,
-                diagnostics: errors,
-            }),
+        state.consider_candidate(held, target);
+        if held.is_none() {
+            state.consider_restore(held, target);
         }
     }
 
     /// The submission carrying the first frame that drew `eligible` completed recording.
     pub(crate) fn promote(&self, eligible: Eligible) {
         let mut state = self.state();
+        state.drawing = true;
+        if eligible.restore {
+            state.revision += 1;
+            return;
+        }
         let timing = ReloadTiming {
             call: state.latest_call,
             prepare: eligible.prepare,
             eligible: eligible.validated,
             drawn: eligible.requested.elapsed(),
         };
-        state.outcomes.push(MaterialOutcome::Promoted {
+        state.report(MaterialOutcome::Promoted {
             serial: eligible.serial,
             name: eligible.hook.name.clone(),
             timing,
         });
-        state.accepted = Some(eligible.hook);
-    }
-}
-
-/// Build the accepted hook's pipeline for a rebuilt surface, now. Natively the validation is
-/// synchronous, so a hook that no longer compiles is reported; in the browser the results are
-/// still pending here, and a hook accepted against the same scene shader is trusted.
-pub(crate) fn rebuild_accepted(
-    target: &Target,
-    hook: &MaterialHook,
-) -> Result<wgpu::RenderPipeline, Vec<MaterialDiagnostic>> {
-    let mut candidate = Candidate::prepare(target, hook.clone(), 0, Instant::now());
-    let errors = if candidate.resolved() {
-        candidate.errors()
-    } else {
-        candidate.refused.clone()
-    };
-    match candidate.pipeline.take() {
-        Some(pipeline) if errors.is_empty() => Ok(pipeline),
-        _ => Err(errors),
+        state.accepted = Some((eligible.hook, eligible.serial));
+        // A restore of the previous hook is no longer wanted.
+        state.restoring = None;
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{ANCHOR, combine, locate, summary};
+    use std::sync::{Arc, Mutex};
+    use std::time::{Duration, Instant};
+
+    use super::{
+        ANCHOR, Candidate, MaterialDiagnostic, MaterialHook, MaterialOutcome, MaterialReload,
+        Queue, Resolving, State, combine, locate, summary,
+    };
+
+    fn hook() -> MaterialHook {
+        MaterialHook {
+            name: "hooks/moss.wgsl".into(),
+            source: String::new(),
+        }
+    }
+
+    /// A candidate without a device: still compiling, or resolved and refused.
+    fn candidate(serial: u64, target: (u64, u64), resolved: bool) -> Candidate {
+        Candidate {
+            serial,
+            target,
+            hook: hook(),
+            hook_offset: 0,
+            pipeline: None,
+            requested: Instant::now(),
+            prepare: Duration::ZERO,
+            scope: if resolved {
+                Resolving::Ready(None)
+            } else {
+                Resolving::Pending(Box::pin(std::future::pending()))
+            },
+            info: Resolving::Ready(wgpu::CompilationInfo {
+                messages: Vec::new(),
+            }),
+            refused: vec![MaterialDiagnostic {
+                file: "hooks/moss.wgsl".into(),
+                line: 0,
+                column: 0,
+                message: "no longer compiles".into(),
+            }],
+        }
+    }
+
+    fn reload(state: State) -> MaterialReload {
+        MaterialReload(Arc::new(Mutex::new(state)))
+    }
+
+    #[test]
+    fn one_compile_runs_and_only_the_newest_request_waits() {
+        let mut queue = Queue::default();
+        assert_eq!(queue.push(1), None);
+        assert_eq!(queue.start(), Some(1));
+        assert_eq!(queue.push(2), None);
+        assert_eq!(queue.start(), None, "one compile at a time");
+        assert_eq!(queue.push(3), Some(2), "2 never compiles");
+        assert_eq!(queue.push(4), Some(3));
+        queue.finished();
+        assert_eq!(queue.start(), Some(4));
+        queue.finished();
+        assert_eq!(queue.start(), None);
+    }
+
+    #[test]
+    fn a_burst_during_a_compile_supersedes_waiting_requests_before_they_compile() {
+        let mut state = State::default();
+        state.queue.running = true;
+        let material = reload(state);
+        let serials: Vec<u64> = (0..4).map(|_| material.request(hook())).collect();
+        assert_eq!(serials, [1, 2, 3, 4]);
+        assert_eq!(
+            material.take_outcomes(),
+            [1, 2, 3].map(|serial| MaterialOutcome::Superseded { serial })
+        );
+        let state = material.state();
+        assert_eq!(state.queue.waiting.as_ref().map(|job| job.serial), Some(4));
+        assert!(state.queue.running, "no second compile started");
+    }
+
+    #[test]
+    fn an_unconsumed_candidate_replaced_by_a_newer_one_is_superseded() {
+        let mut state = State {
+            surface: Some((1, 1)),
+            latest: 4,
+            ..State::default()
+        };
+        state.post(candidate(4, (1, 1), false));
+        state.latest = 5;
+        state.post(candidate(5, (1, 1), false));
+        assert_eq!(state.outcomes, [MaterialOutcome::Superseded { serial: 4 }]);
+        assert_eq!(
+            state.candidate.as_ref().map(|candidate| candidate.serial),
+            Some(5)
+        );
+    }
+
+    #[test]
+    fn an_accepted_hook_that_fails_on_a_rebuilt_surface_leaves_the_built_in_material() {
+        let material = reload(State {
+            surface: Some((2, 1)),
+            latest: 3,
+            accepted: Some((hook(), 3)),
+            restoring: Some(candidate(3, (2, 1), true)),
+            ..State::default()
+        });
+        assert!(material.restoring());
+        let mut held = None;
+        material.frame_boundary(&mut held, (2, 1));
+        assert!(held.is_none(), "nothing replaces the built-in pipeline");
+        assert_eq!(material.accepted(), None);
+        assert!(!material.restoring());
+        let outcomes = material.take_outcomes();
+        assert!(
+            matches!(&outcomes[..], [MaterialOutcome::Rejected { serial: 3, diagnostics }]
+                if diagnostics[0].message == "no longer compiles"),
+            "{outcomes:?}"
+        );
+    }
+
+    #[test]
+    fn an_unvalidated_restore_keeps_the_accepted_intent_across_another_rebuild() {
+        let material = reload(State {
+            surface: Some((2, 1)),
+            latest: 3,
+            accepted: Some((hook(), 3)),
+            drawing: true,
+            ..State::default()
+        });
+        let revision = material.revision();
+        material.state().rebuilt((2, 2));
+        assert!(material.restoring());
+        assert!(material.revision() > revision, "a report shows the restore");
+        material.state().restoring = Some(candidate(3, (2, 2), false));
+        let mut held = None;
+        for _ in 0..3 {
+            material.frame_boundary(&mut held, (2, 2));
+            assert!(held.is_none(), "an unresolved restore never draws");
+        }
+        assert_eq!(material.accepted().as_deref(), Some("hooks/moss.wgsl"));
+        // Replaced again before it resolved: the restore for the old surface is dropped, and
+        // the hook stays accepted for the next one.
+        material.state().rebuilt((3, 3));
+        assert!(material.state().restoring.is_none());
+        assert_eq!(material.accepted().as_deref(), Some("hooks/moss.wgsl"));
+        assert!(material.restoring());
+        assert_eq!(material.take_outcomes(), Vec::<MaterialOutcome>::new());
+    }
 
     #[test]
     fn the_hook_wraps_the_single_material_read_and_follows_the_glue() {

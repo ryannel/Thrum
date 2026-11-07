@@ -146,11 +146,21 @@
               materialStatus.textContent = `${name}: ${error}; the current material keeps drawing`;
             }
           };
+          // A report arrives only when something changed. After a device is replaced the built-in
+          // material draws until the accepted hook validates on the new device.
+          let restoring = false;
           pollMaterial = () => {
             const report = game.material_report();
             if (!report) return;
-            const { outcomes } = JSON.parse(report);
-            if (outcomes.length) materialStatus.textContent = outcomes.map((outcome) => outcome.text).join("\n");
+            const next = JSON.parse(report);
+            let line;
+            if (next.restoring) line = `${next.accepted}: restoring the accepted material on the new device; the built-in material draws until it validates`;
+            else if (restoring && next.accepted) line = `${next.accepted}: the accepted material draws again`;
+            restoring = next.restoring;
+            const lines = next.outcomes.map((outcome) => outcome.text);
+            if (line) lines.push(line);
+            if (next.outcomes.length) materialStatus.textContent = lines.join("\n");
+            else if (line) materialStatus.textContent += `\n${line}`;
           };
           document.querySelector("#material").hidden = false;
           document.querySelector("#reload-material").addEventListener("click", loadMaterial);
