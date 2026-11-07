@@ -99,6 +99,8 @@ struct App {
     demo: GameControls,
     panel: Option<MacPanel>,
     pending_edits: ControlEdits,
+    /// `THRUM_PARAMS`: a parameter file applied once the window is up and again on `L`.
+    params_path: Option<std::path::PathBuf>,
     origin: Instant,
     last_call: Duration,
     presented: usize,
@@ -157,6 +159,7 @@ impl App {
             demo: GameControls::new().map_err(|error| error.to_string())?,
             panel: None,
             pending_edits: ControlEdits::default(),
+            params_path: std::env::var_os("THRUM_PARAMS").map(std::path::PathBuf::from),
             origin: Instant::now(),
             last_call: Duration::ZERO,
             presented: 0,
@@ -228,6 +231,42 @@ impl App {
         }
         self.sync_panel();
         Ok(())
+    }
+
+    /// Apply the `THRUM_PARAMS` file through the same edit path as the panel. A missing or
+    /// malformed file, or a refused entry, is reported and leaves those controls as they were.
+    #[expect(
+        clippy::print_stderr,
+        reason = "parameter diagnostics are for the person editing the file"
+    )]
+    fn load_params(&mut self) -> Result<(), String> {
+        let Some(path) = self.params_path.clone() else {
+            return Ok(());
+        };
+        let applied = std::fs::read_to_string(&path)
+            .map_err(|error| error.to_string())
+            .and_then(|text| {
+                self.demo
+                    .model_mut()
+                    .apply_file(&text)
+                    .map_err(|error| error.to_string())
+            });
+        match applied {
+            Ok(report) => {
+                eprintln!("v1-game: {}: {report}", path.display());
+                for problem in &report.problems {
+                    eprintln!("  {problem}");
+                }
+                self.controls_edited()
+            }
+            Err(error) => {
+                eprintln!(
+                    "v1-game: {}: {error}; controls keep their values (fix the file and press L)",
+                    path.display()
+                );
+                Ok(())
+            }
+        }
     }
 
     fn sync_panel(&mut self) {
@@ -353,6 +392,7 @@ impl App {
                 KeyCode::KeyF => self.demo.tilt(-FIVE_DEGREES),
                 KeyCode::BracketLeft => self.demo.advance_hours(-1.0),
                 KeyCode::BracketRight => self.demo.advance_hours(1.0),
+                KeyCode::KeyL => return self.load_params(),
                 _ => {}
             }
             if matches!(
@@ -480,7 +520,7 @@ impl App {
             self.origin,
             wake,
         )?);
-        Ok(())
+        self.load_params()
     }
 
     fn receive_render(&mut self, reply: RenderReply) -> Result<(), String> {

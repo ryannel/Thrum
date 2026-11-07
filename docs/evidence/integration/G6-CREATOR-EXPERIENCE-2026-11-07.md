@@ -56,3 +56,39 @@ offscreen; on screen it is translucent dark.
   The panel was verified offscreen only; **on-screen use of the Mac panel remains open** (a person dragging it in the
   running window, with the scene responding).
 - Field overlays are readouts only in this slice; a GPU overlay slot will be proposed before touching the graph.
+
+## Slice 2: parameter files (game layer)
+
+### What was built
+
+A parameter file is one JSON object of control keys and display values, such as
+`examples/v1-game/params/sunset.params.json`. It is applied through the same checked edits as the panel and the page:
+- valid entries apply;
+- each refused entry is explained with its key, its cause, the nearest key and a next step;
+- a file that cannot be read or parsed leaves every control unchanged.
+
+Reload is explicit, because G5's watcher does not carry parameter files yet. Whether it should is recorded for the
+owner in the G6 boundary notes.
+- **Mac:** `THRUM_PARAMS=<path>` is applied once rendering starts and again when you press `L`. A one-line summary
+  (`1 changed, 0 unchanged, 2 refused`) and each problem print to the terminal.
+- **Chrome:** `?params=<url>` is fetched after the controls mount. The summary and problems appear under the
+  controls, with a **Reload parameters** button. Without `?params` these stay hidden.
+
+### Checks
+
+| Check | Result |
+|---|---|
+| `thrum-controls` and `v1-game` unit tests | The example file applies cleanly. A typo names the nearest key. An out-of-range pitch reports `-34–34` rather than f32 noise. |
+| Mac window, `THRUM_PARAMS` with a typo and an out-of-range pitch | The window presented. The terminal showed `1 changed, 0 unchanged, 2 refused` with both explanations, and the run completed normally. |
+| Mac window, paused apply | Applying `{"world.paused": true, "sky.solar_time": 17.9}` committed 2 world ticks over 240 presented frames. The example file without a pause committed 739 ticks over 240 frames. A paused apply holds the world clock. |
+| Chrome `params` case (new) | The page loads with `?assets=…&params=case.params.json`, so the cooked valley is drawn as well. The served file moved solar time to 17:54 and paused the world, and the page explained the `camera.yw` typo. After the served bytes were rewritten, **Reload parameters** set 06:30, and the game clock matched within 1e-6. `#status` never showed a parameter problem. |
+| Chrome `controls`, `sky-reflections`, `valley`, `valley-recovery`, `device-recovery`, `device-recovery-retry` | Pass on the same build. |
+
+![Chrome parameter diagnostic](../render/G6-CHROME-PARAMS-DIAGNOSTIC-2026-11-07.png)
+
+**Review notes.** The page shows the summary and the explanation as two lines under the reload button. The
+Sun-elevation readout of 1° at 17:54 matches the day cycle at 45° latitude.
+
+### Limits
+
+- Parameter edits reload on request, not on save.

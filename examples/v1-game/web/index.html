@@ -9,6 +9,8 @@
       main { max-width: 1280px; margin: auto; padding: 1rem; }
       canvas { display: block; width: 100%; aspect-ratio: 16 / 9; background: #101824; }
       output { display: block; margin-top: 1rem; white-space: pre-wrap; overflow-wrap: anywhere; }
+      .params { display: flex; gap: 1rem; align-items: start; margin-top: 1rem; }
+      #params-status { white-space: pre-line; }
       .sky-presets { display: flex; flex-wrap: wrap; gap: .75rem 1.5rem; margin-top: 1rem; }
       button { border: 1px solid #6f86a3; border-radius: .3rem; background: #1a2b40; color: inherit; padding: .4rem .8rem; cursor: pointer; }
       button:disabled { opacity: .65; cursor: progress; }
@@ -28,6 +30,11 @@
           <button type="button" data-sky="twilight">Twilight</button>
           <button type="button" id="scene-view">Look at the scene</button>
           <button type="button" id="restore-graphics" hidden>Restore graphics</button>
+        </div>
+        <!-- ?params=<url>: a parameter file of control keys to display values (see params/). -->
+        <div class="params" id="params" hidden>
+          <button type="button" id="reload-params">Reload parameters</button>
+          <output id="params-status"></output>
         </div>
       </section>
       <p>Move the local player with WASD or arrow keys. <span id="player"></span></p>
@@ -89,6 +96,30 @@
           look(yaw, pitch);
         }));
         document.querySelector("#scene-view").addEventListener("click", () => look(0, 0));
+        if (probe.has("params")) {
+          // Applied through the same checked edits as the sliders; a bad file or entry is
+          // explained here and never stops the frame loop.
+          const source = new URL(probe.get("params"), location.href);
+          const paramsStatus = document.querySelector("#params-status");
+          const name = source.pathname.split("/").pop();
+          const loadParams = async () => {
+            try {
+              const response = await fetch(source, { cache: "no-store" });
+              if (!response.ok) throw new Error(`HTTP ${response.status}`);
+              const report = JSON.parse(game.apply_parameters(await response.text(), performance.now()));
+              controls.refresh();
+              paramsStatus.textContent = [
+                `${name}: ${report.changed} changed, ${report.unchanged} unchanged, ${report.problems.length} refused`,
+                ...report.problems,
+              ].join("\n");
+            } catch (error) {
+              paramsStatus.textContent = `${name}: ${error}; controls keep their values (fix the file and reload)`;
+            }
+          };
+          document.querySelector("#params").hidden = false;
+          document.querySelector("#reload-params").addEventListener("click", loadParams);
+          await loadParams();
+        }
         const movementKeys = new Set(["KeyW", "KeyA", "KeyS", "KeyD", "ArrowUp", "ArrowLeft", "ArrowDown", "ArrowRight"]);
         const updateControls = () => {
           const x = Number(pressed.has("KeyD") || pressed.has("ArrowRight"))

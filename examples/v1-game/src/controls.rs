@@ -354,4 +354,28 @@ mod tests {
             "a person's pending edit is what the readout describes"
         );
     }
+
+    #[test]
+    fn the_example_parameter_file_applies_cleanly_and_typos_are_explained() {
+        let mut controls = GameControls::new().expect("fixed declarations");
+        let example = include_str!("../params/sunset.params.json");
+        let report = controls
+            .model_mut()
+            .apply_file(example)
+            .expect("a JSON object");
+        assert!(report.problems.is_empty(), "{:?}", report.problems);
+        let edits = controls.take_edits();
+        assert!(edits.time_of_day.is_some() && edits.camera_yaw.is_some());
+        let report = controls
+            .model_mut()
+            .apply_file(r#"{"camera.yw": 10, "camera.pitch": 80}"#)
+            .expect("a JSON object");
+        let messages: Vec<String> = report.problems.iter().map(ToString::to_string).collect();
+        assert!(messages[0].contains("outside -34–34"), "{}", messages[0]);
+        assert!(
+            messages[1].contains("did you mean \"camera.yaw\""),
+            "{}",
+            messages[1]
+        );
+    }
 }

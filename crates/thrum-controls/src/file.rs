@@ -10,8 +10,21 @@ pub struct FileReport {
     pub changed: usize,
     /// Entries that already held the file's value.
     pub unchanged: usize,
-    /// Entries refused, in file order.
+    /// Entries refused, sorted by key.
     pub problems: Vec<ControlError>,
+}
+
+impl std::fmt::Display for FileReport {
+    /// One line for a status bar or log, such as `2 changed, 1 unchanged, 1 refused`.
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{} changed, {} unchanged, {} refused",
+            self.changed,
+            self.unchanged,
+            self.problems.len()
+        )
+    }
 }
 
 impl Controls {
@@ -61,8 +74,8 @@ impl Controls {
                 if !engine.is_finite() || engine < min - tolerance || engine > max + tolerance {
                     return Err(invalid(format!(
                         "{shown} is outside {}–{} (display units); choose a value in that range",
-                        display.to_display(min),
-                        display.to_display(max)
+                        crate::json::tidy(display.to_display(min)),
+                        crate::json::tidy(display.to_display(max))
                     )));
                 }
                 Ok(self.edit_display(id, shown))

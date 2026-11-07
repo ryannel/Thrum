@@ -109,6 +109,7 @@ fn parameter_files_apply_valid_entries_and_explain_the_rest() {
         )
         .unwrap();
     assert_eq!(report.changed, 3);
+    assert_eq!(report.to_string(), "3 changed, 0 unchanged, 3 refused");
     assert!((controls.get(time) - 18.5 / 24.0).abs() < 1e-5);
     assert!(controls.is_on(paused));
     assert_eq!(controls.text_of(title), "Dusk");
