@@ -127,5 +127,5 @@ would have had to invent something.
 Keep deferrals explicit: a bounded first slice can't establish the whole commissioned set, and a deferral doesn't
 quietly shrink the deliverable.
 
-Save the recommendation, evidence account and dependency-ordered proof plan, then continue into
-[implementation](implementation.md) if the build was commissioned.
+Save the design ([what it covers](design.md)) and plan the work as milestones ([plan](plan.md)). Have both reviewed
+independently, then continue into [implementation](implementation.md) if the build was commissioned.
