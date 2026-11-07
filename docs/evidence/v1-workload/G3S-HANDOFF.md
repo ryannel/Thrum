@@ -73,9 +73,13 @@ The Codex goal remains active. Its attachment is
   loses the narrow caster before filtering. A tighter 82 m scratch fit
   gives 0.16 m texels and restores the caster to the last map. The sparse
   search still misses it one tick later despite six matching depths.
-  Supplying its known gap changes that frame's visible disk from 31.37%
-  to 22.75%. Keep the split in scratch. A bounded search, close terrain
-  coverage, discarded-frame equality, Chrome and camera snaps remain open.
+  A bounded texel search over three caster positions cuts mean absolute
+  disk error from 5.43 to 2.25 percentage points against the cooked
+  quad/terrain reference. It removes the full-light fallback but leaves
+  one-tick rebounds. An offline average of four quarter-texel raster
+  phases makes the centre ten-frame witness monotone. Keep the split
+  in scratch. Local fractional coverage, close terrain, discarded-frame
+  equality and Chrome remain open.
   [Maximum Mipmaps](https://pure.mpg.de/pubman/item/item_1325622_5/component/file_3590464/i3d08.pdf).
   Exact builds, raw rows and clips are in `tmp/g3s-sunset-lip/`. The
   diagnostic source and rerun command are on `codex/g3s-horizon-metal-wip`.
