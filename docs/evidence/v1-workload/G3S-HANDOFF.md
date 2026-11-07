@@ -64,10 +64,15 @@ The Codex goal remains active. Its attachment is
   pass sum from 4.46–4.48 to 5.33–5.35 ms (interleaved 1080p60 Metal,
   shared load 19.69–20.89). Keep the 16-tap path. A 96 m blocker cutoff
   gives a smaller step but has no compact-caster coverage guarantee.
-  Next check analytic terrain and compact occluders against their union
-  on the disk. A caster 160 m away blocks part of the upper half of a
-  half-set Sun and leaves 42.39% visible. Taking the minimum of the two
-  independent fractions would report 50%. Chrome and camera snaps remain open.
+  Routing terrain to the horizon and sampling compact shadows over the
+  open disk cap reduces the worst drop from 34.0 to 14.6 codes on Metal.
+  The remaining drop comes from the terrain disk crossing. In a cooked
+  upper-cap witness 160 m from the receiver, a 24 cm caster misses both
+  depth maps. The same-centre 2.4 m control writes two last-map texels
+  and drops visible disk from 34.51% to 3.92%. The 1.18 m last-map texel
+  loses the narrow caster before filtering. Keep the split in scratch.
+  A local receiver fit, the first 64 m of terrain coverage, discarded-frame
+  equality, Chrome and camera snaps remain open.
   [Maximum Mipmaps](https://pure.mpg.de/pubman/item/item_1325622_5/component/file_3590464/i3d08.pdf).
   Exact builds, raw rows and clips are in `tmp/g3s-sunset-lip/`. The
   diagnostic source and rerun command are on `codex/g3s-horizon-metal-wip`.
