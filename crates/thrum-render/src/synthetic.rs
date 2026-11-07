@@ -1418,6 +1418,7 @@ impl PreparedSynthetic {
     /// Number of prepared GPU scene passes for this scene's shadow recipe.
     pub fn scene_pass_count(&self) -> u32 {
         4 + u32::from(self.shadow.is_some()) * shadow::LAYERS
+            + u32::from(self.camera_culling == CullMode::Frustum)
             + u32::from(self.air_shadow.is_some())
             + u32::from(self.cluster_compute.is_some())
             + u32::from(self.contribution_passes.compute)

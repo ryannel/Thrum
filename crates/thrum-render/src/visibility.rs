@@ -120,6 +120,7 @@ impl VisibilityPrepared {
                 entry(5, write, false),
                 entry(6, write, false),
                 entry(7, write, false),
+                entry(8, write, false),
             ],
         });
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
@@ -208,6 +209,13 @@ impl VisibilityPrepared {
             "visibility group offsets",
             u64::from(max_groups) * 4,
         );
+        // One bit per slot, written by `count` and read by `scatter`, so the
+        // instance records are read and tested once.
+        let masks = storage(
+            device,
+            "visibility slot masks",
+            u64::from(max_groups) * u64::from(WORKGROUP / 32) * 4,
+        );
         let visible = storage(
             device,
             "visibility visible slots",
@@ -240,6 +248,7 @@ impl VisibilityPrepared {
                 binding(5, &group_offsets),
                 binding(6, &visible),
                 binding(7, &args),
+                binding(8, &masks),
             ],
         });
         VisibilityTarget {

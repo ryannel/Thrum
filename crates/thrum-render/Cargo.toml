@@ -43,3 +43,11 @@ harness = false
 [[bench]]
 name = "frame_target"
 harness = false
+
+[[bench]]
+name = "camera_culling"
+harness = false
+
+[[bench]]
+name = "camera_culling_encode"
+harness = false

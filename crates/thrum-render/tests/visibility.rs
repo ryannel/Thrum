@@ -6,6 +6,7 @@ use thrum_render::synthetic::{
     CullMode, FrameLighting, OffscreenTarget, PreparedSynthetic, SyntheticLight, SyntheticScene,
     SyntheticView,
 };
+use thrum_render::timing::GpuTimings;
 
 const EXTENT: [u32; 2] = [320, 180];
 
@@ -224,4 +225,78 @@ fn near_plane_crossings_match_direct_draw() {
 fn offscreen_sun_casters_still_shadow_visible_receivers() {
     let covered = equivalent(view([0.4, 0.1, 0.9], [0.7, 0.0, 0.5]), true);
     assert!(covered > 1_000, "scene draws: {covered} pixels");
+}
+
+#[test]
+fn frustum_pass_is_timed_within_the_scene_pass_budget() {
+    pollster::block_on(async {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let adapter = instance
+            .request_adapter(&wgpu::RequestAdapterOptions::default())
+            .await
+            .expect("real adapter");
+        let (device, queue) = adapter
+            .request_device(&wgpu::DeviceDescriptor {
+                required_features: DeviceCapabilities::requested_timing_features(&adapter),
+                ..Default::default()
+            })
+            .await
+            .expect("timestamp device");
+        let capabilities = DeviceCapabilities::capture(&adapter, &device, 41);
+        let view = view([0.4, 0.1, 0.9], [0.7, 0.0, 0.5]);
+        let mut counts = Vec::new();
+        for culling in [CullMode::Direct, CullMode::Frustum] {
+            let prepared = PreparedSynthetic::prepare_with_capabilities(
+                &capabilities,
+                &queue,
+                &scene(view, culling, true, 37),
+                FrameLighting::Diagnostic(SyntheticLight::default()),
+                1.0,
+            )
+            .await
+            .expect("prepare");
+            let target = OffscreenTarget::new(&device, &prepared, 64, 36).expect("target");
+            let mut timings = GpuTimings::new(&capabilities, &queue, prepared.scene_pass_count())
+                .expect("timestamp batch");
+            #[cfg(target_os = "macos")]
+            assert!(timings.is_enabled(), "Metal timestamps required");
+            if !timings.is_enabled() {
+                return;
+            }
+            let mut encoder =
+                device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+            prepared
+                .encode(&mut encoder, 41, &target, Some(&mut timings))
+                .expect("every pass fits the advertised budget");
+            timings.finish_render(41, &encoder).expect("close batch");
+            let submitted = queue.submit([encoder.finish()]);
+            device
+                .poll(wgpu::PollType::Wait {
+                    submission_index: Some(submitted),
+                    timeout: Some(std::time::Duration::from_secs(10)),
+                })
+                .expect("poll");
+            let mut resolve =
+                device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+            assert!(timings.resolve_if_ready(41, &mut resolve).expect("resolve"));
+            let submitted = queue.submit([resolve.finish()]);
+            device
+                .poll(wgpu::PollType::Wait {
+                    submission_index: Some(submitted),
+                    timeout: Some(std::time::Duration::from_secs(10)),
+                })
+                .expect("poll");
+            let passes = timings
+                .try_collect(41)
+                .expect("valid timestamps")
+                .expect("complete timestamps");
+            let named = passes
+                .iter()
+                .any(|pass| pass.name.as_ref() == "camera visibility");
+            assert_eq!(named, culling == CullMode::Frustum, "{culling:?}");
+            counts.push((prepared.scene_pass_count(), passes.len()));
+        }
+        assert_eq!(counts[1].0, counts[0].0 + 1, "{counts:?}");
+        assert_eq!(counts[1].1, counts[0].1 + 1, "{counts:?}");
+    });
 }
