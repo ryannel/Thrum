@@ -180,6 +180,11 @@ impl ThreadedFrameHost {
         self.inner.time_of_day()
     }
 
+    /// The controlled actor's committed position in the world lane's latest published page.
+    pub fn controlled_position(&self) -> Option<[f64; 3]> {
+        self.inner.controlled_position()
+    }
+
     /// Change the game camera elevation and reset GPU history on the next draw.
     /// # Errors
     /// Refuses an unsupported or nonfinite pitch.

@@ -102,7 +102,10 @@ mod tests {
         let request = policy.next_request()?;
         assert!(!policy.needs_reply());
         policy.accepted(request);
-        assert!(policy.needs_reply(), "the caller polls only while a reply is due");
+        assert!(
+            policy.needs_reply(),
+            "the caller polls only while a reply is due"
+        );
         policy.acknowledge(request).expect("matching reply");
         assert!(!policy.needs_reply());
         Some(request)

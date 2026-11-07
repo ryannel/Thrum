@@ -169,13 +169,20 @@ mod tests {
     #[test]
     fn a_drag_deflects_and_a_release_returns_to_rest() {
         let mut gesture = Gesture::new();
-        assert_eq!(gesture.touch(1, Phase::Started, [300.0, 900.0], SCALE), None);
+        assert_eq!(
+            gesture.touch(1, Phase::Started, [300.0, 900.0], SCALE),
+            None
+        );
         // 40 points right and 80 points up: half right, full forward.
         assert_eq!(
             gesture.touch(1, Phase::Moved, [420.0, 660.0], SCALE),
             Some([0.5, 1.0, 0.0])
         );
-        assert_eq!(gesture.touch(1, Phase::Moved, [421.0, 661.0], SCALE), None, "jitter");
+        assert_eq!(
+            gesture.touch(1, Phase::Moved, [421.0, 661.0], SCALE),
+            None,
+            "jitter"
+        );
         assert_eq!(
             gesture.touch(1, Phase::Moved, [9_000.0, 900.0], SCALE),
             Some([1.0, 0.0, 0.0]),

@@ -50,6 +50,8 @@ private let shellCommands: [String: Int32] = [
     "hide-view": 2,
     "show-view": 3,
     "stall-render": 4,
+    "stall-present": 5,
+    "sample-actor": 6,
 ]
 
 private func observeShellCommands() {

@@ -87,6 +87,8 @@ pub(super) struct Witness {
     pub(super) detached_windows: u64,
     pub(super) old_window_touches: u64,
     pub(super) last_axes: [f32; 3],
+    pub(super) actor_samples: u64,
+    pub(super) actor_position: Option<[f64; 3]>,
     pub(super) gesture: GestureCounters,
     pub(super) input_epoch: u64,
 }
@@ -182,7 +184,10 @@ impl Witness {
             ("prepare_thread", self.prepare_thread.clone()),
             ("frame_thread", self.frame_thread.clone()),
             ("world_thread", self.world_thread.clone()),
-            ("display_link_callbacks", self.display_link_callbacks.to_string()),
+            (
+                "display_link_callbacks",
+                self.display_link_callbacks.to_string(),
+            ),
             ("targets_ignored", self.targets_ignored.to_string()),
             ("targets_coalesced", self.targets_coalesced.to_string()),
             ("requests", self.requests.to_string()),
@@ -247,17 +252,31 @@ impl Witness {
             let _ = writeln!(out, "{key}={value}");
         }
         let [x, y, z] = self.last_axes;
-        let tail: [(&str, String); 12] = [
+        let actor = self
+            .actor_position
+            .map_or_else(|| "none".to_owned(), |[x, y, z]| format!("{x},{y},{z}"));
+        let tail: [(&str, String); 14] = [
+            ("actor_samples", self.actor_samples.to_string()),
+            ("actor_position", actor),
             ("stall_active", self.stall_active.to_string()),
             ("main_max_kind", self.main_max_kind.to_owned()),
-            ("lifecycle_main_max_kind", self.lifecycle_main_max_kind.to_owned()),
+            (
+                "lifecycle_main_max_kind",
+                self.lifecycle_main_max_kind.to_owned(),
+            ),
             ("last_axes", format!("{x},{y},{z}")),
-            ("lifecycle_main_max_us", self.lifecycle_main_max_us.to_string()),
+            (
+                "lifecycle_main_max_us",
+                self.lifecycle_main_max_us.to_string(),
+            ),
             ("touch_sends", g.sends.to_string()),
             ("input_epoch", self.input_epoch.to_string()),
             ("max_acquire_us", self.max_acquire_us.to_string()),
             ("raced_presents", self.raced_presents.to_string()),
-            ("live_detached_windows", self.live_detached_windows.to_string()),
+            (
+                "live_detached_windows",
+                self.live_detached_windows.to_string(),
+            ),
             ("detached_windows", self.detached_windows.to_string()),
             ("old_window_touches", self.old_window_touches.to_string()),
         ];

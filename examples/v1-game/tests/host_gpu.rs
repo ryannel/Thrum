@@ -274,6 +274,7 @@ fn autonomous_world_page_drives_the_existing_gpu_scene() {
         let host = FrameHost::new(&device, &queue, FrameConfig::default())
             .await
             .expect("prepared scene");
+        let initial = host.controlled_position().expect("seeded player");
         let origin = Instant::now();
         let (mut render, controls) = host
             .into_threaded(origin, || {})
@@ -297,6 +298,13 @@ fn autonomous_world_page_drives_the_existing_gpu_scene() {
             std::thread::sleep(Duration::from_millis(5));
         };
         assert!(report.tick >= 1, "world advanced while GPU host was idle");
+        let moved = render
+            .controlled_position()
+            .expect("published controlled actor");
+        assert!(
+            moved[0] > initial[0],
+            "the admitted axis moved the committed actor"
+        );
         let deadline = Instant::now() + Duration::from_secs(10);
         let sample = loop {
             if let Some(sample) = render.poll_completed().expect("GPU progress") {

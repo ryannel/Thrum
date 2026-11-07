@@ -6,11 +6,12 @@ Design: [PLATFORM-RUNTIME.md](PLATFORM-RUNTIME.md#i1-phone-shell-lifecycle-slice
 and [C11](../CONTRACTS.md#c11-input-audio-and-ui-lifecycle--p1a1u1-with-f1).
 Commission: Thrum Core's G3b iOS boundary (`tmp/g3b-ios-boundary/NOTES.md`).
 Reviews: 2026-11-07 independent design/plan review (fresh subagent given the commission, this plan, the contracts and
-the work-in-progress tree): changes required, two blocking. Answered below; see *Review answers*.
+the work-in-progress tree): changes required, two blocking. Answered below; see *Review answers*. Thrum Core's
+rulings on seam 2 (approved with conditions) are answered in *Root conditions*.
 Milestone: M1 off-main frames · Updated: 2026-11-07
-Now: all route rows pass on the session's dev simulator (local checkpoint `0e37cd26`); fresh-device checker run next.
-Next: Root's verdict on seam 2, then the committed-position touch witness and M1–M3 closes.
-Blocked: pushing waits for Root's verdict on the `thrum-core` permission (`./dev check` refuses it until then).
+Now: seam 2 approved and applied; committed-position witness and the raced-present row added to the route.
+Next: fresh-device checker, `./dev check` with Wasm, M1–M3 closes, push.
+Blocked: none.
 
 Scope: the iPhone 18 Pro / iOS 27.2 simulator as a function target. Simulator timing, a physical iPhone, device
 loss and G3b's Mac live rows are out of scope. Pre-change reference: `tmp/g3b-ios-lifecycle/late-acquire/` (serial
@@ -39,6 +40,26 @@ format query during prepare, and the acquire → submit → present section; no 
 advancing. A shared `AtomicU64` surface epoch changes on every invalidation (suspend, replacement, extent change).
 Each request carries the epoch it was made under. The owner checks it on entering a section, after acquiring and again
 before presenting. A mismatch drops the drawable unpresented (`skip`) and counts a stale rejection.
+
+*Linearization point.* The slot mutex is the single point that orders revocation against a section. Revocation is
+"bump the epoch, then `try_lock` the slot"; a section is "lock the slot, check the epoch under the lock, acquire,
+check, submit, check, present, unlock". An epoch load alone does not stop a revocation landing between it and a
+native call, so the guarantee is stated per case:
+- *Slot free when UIKit's `try_lock` runs.* UIKit takes the surface out before `suspended` returns. Any later section
+  finds the slot empty (`NoLease`). Revocation and release are both complete when the callback returns.
+- *Slot held (`Busy`).* That section was admitted under the old epoch before the revocation. It is the only section
+  that can touch the old surface afterwards, and it can do at most this: a revocation before its post-acquire check
+  drops the drawable unsubmitted; one before its pre-present check drops the rendered drawable unpresented; one after
+  the pre-present check lets it present that one already-acquired drawable onto the old layer. The layer is still
+  attached then, because the detach runs only after the section releases the lease (on its reply, before UIKit sends
+  another job). The witness `raced_presents` counts this case; it is at most one per revocation.
+- *After `suspended` returns* no new section is admitted on the old surface: the next section's check under the lock
+  sees the new epoch, and UIKit has taken the surface on the reply before any further job.
+
+The route exercises the third sub-case without any GPU or fence wait on UIKit: `stall-present` holds the section after
+its last epoch check and before `present` for 5 s, a replacement lands inside that window, and the checker requires
+exactly one raced present, a deferred release, the old window's detach after the release, and every UIKit handler
+during the hold under 1 s. `stall-render` holds after acquire and requires the drawable to be dropped stale instead.
 
 *Why the section is bounded.* wgpu's Metal backend sets `allowsNextDrawableTimeout = false`, so `nextDrawable` can
 block while every drawable is held. The owner presents or drops each drawable before leaving the section, keeps
@@ -109,7 +130,10 @@ simulator control tool was tried first and needs a per-device grant from a perso
 **Test triggers** sit at the shell/owner boundary. They are accepted only when the app is launched with
 `THRUM_V1_ROUTE=1`. They arrive as Darwin notifications on the main run loop (`notifyutil -p
 org.thrum.v1.<command>` inside the simulator): `replace-surface`, `hide-view`, `show-view` and `stall-render` (the owner
-sleeps inside its lease section, after acquiring, for 5 s, long enough for a revocation posted from the host to land inside it). Opened URLs were tried first and rejected: iOS asks the
+sleeps inside its lease section, after acquiring, for 5 s, long enough for a revocation posted from the host to land
+inside it), `stall-present` (the same hold after the last epoch check, just before `present`) and `sample-actor` (one
+read of the controlled actor's committed position from the world lane's published page; display callbacks and render
+reports never read the page). Opened URLs were tried first and rejected: iOS asks the
 user to confirm each one. Background is real: the checker launches Settings and returns with `simctl launch`, which
 foregrounds the running process.
 
@@ -163,6 +187,29 @@ comparisons. No per-frame allocation is added. Window/surface recreation is a li
 9. *Milestone shape.* Touch moves earlier (M2) so the driver risk lands before lifecycle; baseline screenshot added;
    resize labelled unproven; `Send` kept as a compile-time assertion.
 
+## Root conditions
+
+Thrum Core approved seam 2(a) and 2(b) with conditions. Each, in turn:
+1. *Sample only when the route needs a position.* The owner reads the page only for a `sample-actor` route command;
+   display callbacks and render reports never do. The route samples before and after each touch row.
+2. *Workspace and Wasm checks together; keep the committed-movement test.* `./dev check` (which includes the game's
+   Wasm Clippy) and `./dev check-web` run on the same tip; `tests/host_gpu.rs` asserts the admitted axis moved the
+   committed actor.
+3. *Real simulator HID driver, XCUITest separate.* The touch rows use real simulator HID input synthesised by a
+   self-hosted XCUITest runner that attaches to the running app; it is not an app-side test and adds no code to the
+   app. The simulator control tool needs a person's per-device grant and was refused while unattended; when granted,
+   the same rows can be repeated with it, and the checker's witnesses are driver-independent.
+4. *Fail on boot failure, a missed interaction or a missing committed-state witness.* Boot, launch, link and plist
+   failures stop `check-simulator.sh`; each touch row has a bounded window and fails when the app sees no gesture; each
+   position sample fails on a timeout or an absent actor.
+5. *Manual steps and simulator identity.* The route log records device name, UDID, device type and runtime, states that
+   there are no manual steps, and logs each `simctl`, Darwin notification and XCUITest command with its time.
+6. *Stale input on the actual old window id, with before/after positions.* The held finger's later events arrive under
+   the detached window's id (`old_window_touches`); the committed position sampled after the replacement cleared input
+   and again after those events must match within 1 mm.
+7. *Exact lifecycle guarantee and a race exercised without a GPU/fence wait.* See *Linearization point* above and the
+   raced-present row.
+
 ## M1 Off-main frames: in progress
 Done when:
 - [ ] The packaged game launches on a fresh simulator and presents through `CADisplayLink`; the checker still fails on
@@ -215,3 +262,9 @@ Done when:
   passed on the dev device (`tmp/g3b-ios-lifecycle/dev-run7/`). Screens: startup matches the baseline, hidden view
   black, scene back after replacement and resume. The swipe's on-screen movement is not identifiable among 10,000
   grid entities under a fast day cycle; the committed-position witness (seam 2b) carries that row.
+- 2026-11-07 Thrum Core approved seam 2 with conditions (answered in *Root conditions*). Added the `sample-actor`
+  witness and the `stall-present` raced-present row. Each `simctl spawn` takes about 1.3 s, so waiting to observe a stall
+  before posting the revocation spent most of the 5 s window (dev run 8 missed it); the route now posts the revocation
+  straight after the stall request and proves it landed inside by the deferred release. Dev run 9
+  (`tmp/g3b-ios-lifecycle/dev-run9/`) passed every row: exactly one raced present, swipes moved the committed actor
+  9.7 m each, and the held finger's two old-window events moved it 0.000 m.

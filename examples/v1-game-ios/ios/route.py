@@ -8,6 +8,8 @@ callback that waited on the render owner from one that did not.
 
 from __future__ import annotations
 
+import json
+import math
 import os
 import subprocess
 import sys
@@ -24,6 +26,10 @@ TOUCH_WINDOW = 180.0
 # The gate is structural: while the render owner holds its lease section for
 # 5 s, a UIKit callback that waited on it would take at least that long.
 STALL_UIKIT_MAX_US = 1_000_000
+# A one-second swipe at full deflection moves the actor about 6 m; a stale
+# event must not move it measurably.
+MIN_SWIPE_TRAVEL = 1.0
+STILL_TOLERANCE = 1e-3
 RENDER_THREAD = "thrum-v1-ios-render"
 WORLD_THREAD = "thrum-world"
 
@@ -79,8 +85,14 @@ def check(condition: bool, reason: str, state: dict[str, str]) -> None:
         fail(reason, state)
 
 
+def step(text: str) -> None:
+    log(f"step {time.strftime('%H:%M:%S')}: {text}")
+
+
 def simctl(*args: str, background: bool = False):
     command = ["xcrun", "simctl", *args]
+    if args[0] != "io":
+        step(" ".join(command))
     if background:
         return subprocess.Popen(command, stdout=subprocess.DEVNULL)
     subprocess.run(command, check=True, timeout=90, stdout=subprocess.DEVNULL)
@@ -95,6 +107,22 @@ def post(command: str, background: bool = False):
 def foreground() -> None:
     """Bring the running app back to the foreground (launch does not relaunch it)."""
     simctl("launch", DEVICE, "org.thrum.v1")
+
+
+def sample(label: str) -> tuple[list[float], dict[str, str]]:
+    """Read the committed controlled-actor position from the world lane's page.
+
+    An explicit route witness: the shell scans the page only on this command,
+    never on display callbacks or render reports.
+    """
+    before = num(read(), "actor_samples")
+    post("sample-actor")
+    s = wait(lambda s: num(s, "actor_samples") > before, 15, f"a committed actor sample ({label})")
+    if s.get("actor_position", "none") == "none":
+        fail(f"no committed controlled actor in the published page ({label})", s)
+    position = [float(value) for value in s["actor_position"].split(",")]
+    log(f"actor {label}: {', '.join(f'{v:.4f}' for v in position)}")
+    return position, s
 
 
 def snapshot(name: str, state: dict[str, str], screenshot: bool = True) -> None:
@@ -131,10 +159,15 @@ def startup() -> dict[str, str]:
     return s
 
 
-def start_stall(base: dict[str, str]) -> dict[str, str]:
-    """Start a render-owner stall and return once its frame is in flight."""
-    post("stall-render")
-    return wait(lambda s: s.get("stall_active") == "true", 15, "the render owner holding a stalled section")
+def start_stall(command: str = "stall-render") -> None:
+    """Request a 5 s render-owner stall; the next command lands inside it.
+
+    Each `simctl spawn` takes over a second, so the revocation that follows
+    reaches the app about a second into the held section. Waiting to observe
+    the stall first would spend most of the window; each row instead proves
+    the revocation landed inside the section by its deferred release.
+    """
+    post(command)
 
 
 def stall(base: dict[str, str]) -> dict[str, str]:
@@ -185,7 +218,7 @@ def replace(base: dict[str, str]) -> dict[str, str]:
 
 
 def stalled_replace(base: dict[str, str]) -> dict[str, str]:
-    start_stall(base)
+    start_stall()
     post("replace-surface")
     s = wait(lambda s: num(s, "replacements") > num(base, "replacements")
              and num(s, "release_completed") > num(base, "release_completed")
@@ -201,9 +234,35 @@ def stalled_replace(base: dict[str, str]) -> dict[str, str]:
     return s
 
 
+def raced_present(base: dict[str, str]) -> dict[str, str]:
+    """Revoke while an admitted section holds an acquired drawable before present.
+
+    The section passed its last epoch check, so it may present once onto the
+    old layer, which stays attached until the section releases the lease. The
+    detach, and the next present, wait for that release; UIKit never waits.
+    """
+    start_stall("stall-present")
+    post("replace-surface")
+    s = wait(lambda s: num(s, "replacements") > num(base, "replacements")
+             and num(s, "release_completed") > num(base, "release_completed")
+             and num(s, "presented_epoch") > num(base, "epoch") and presents_after(base)(s) and settled(s),
+             30, "deferred release and recovery after a revocation inside the present window")
+    check(num(s, "release_deferred") > num(base, "release_deferred"), "the held section did not defer release", s)
+    check(num(s, "raced_presents") == num(base, "raced_presents") + 1,
+          "the admitted section did not finish its one present after revocation", s)
+    check(s.get("stall_status") == "Presented", "the admitted section did not present", s)
+    check(num(s, "stall_main_max_us") < STALL_UIKIT_MAX_US, "UIKit waited on the held present", s)
+    check(num(s, "detached_windows") == num(base, "detached_windows") + 1, "the old window was not detached", s)
+    snapshot("05b-raced-present", s, screenshot=False)
+    log(f"raced present: one admitted present after revocation (raced_presents={s['raced_presents']}), "
+        f"deferred={s['release_deferred']}, old window detached after release; presents resumed on epoch "
+        f"{s['presented_epoch']}")
+    return s
+
+
 def background(base: dict[str, str], name: str, during_stall: bool = False) -> dict[str, str]:
     if during_stall:
-        start_stall(base)
+        start_stall()
     simctl("launch", DEVICE, "com.apple.Preferences")
     b = wait(lambda s: s.get("state") == "Suspended" and num(s, "pause_replies") > num(base, "pause_replies"),
              20, "suspend and a confirmed world pause")
@@ -232,6 +291,7 @@ def background(base: dict[str, str], name: str, during_stall: bool = False) -> d
 
 def gesture(test: str) -> subprocess.Popen:
     """Start one real HID gesture from the XCUITest runner on the running app."""
+    step(f"xcodebuild test-without-building -only-testing:ThrumV1UITests/ThrumV1Touch/{test} (HID gesture)")
     output = (OUT / f"xcuitest-{test}.log").open("a")
     return subprocess.Popen(
         ["xcodebuild", "test-without-building", "-xctestrun", str(XCTESTRUN),
@@ -255,8 +315,12 @@ def at_rest(state: dict[str, str]) -> bool:
     return all(value == 0.0 for value in axes(state))
 
 
+def distance(a: list[float], b: list[float]) -> float:
+    return math.dist(a, b)
+
+
 def touches(base: dict[str, str]) -> dict[str, str]:
-    t0 = base
+    p0, t0 = sample("before swipe")
     snapshot("08-before-swipe", t0)
     s, driver = touch_window("swipe", "testSwipe",
                      lambda s: num(s, "touch_releases") > num(t0, "touch_releases")
@@ -264,8 +328,12 @@ def touches(base: dict[str, str]) -> dict[str, str]:
                      "a swipe that moves and releases")
     finish(driver)
     check(s.get("touch_thread") == "main", "touches were not forwarded on UIKit main", s)
+    time.sleep(0.5)
+    p1, s = sample("after swipe")
+    check(distance(p0, p1) >= MIN_SWIPE_TRAVEL, "the swipe did not move the committed actor", s)
     snapshot("08-touch-swipe", s)
-    log(f"touch: starts={s['touch_starts']} moving sends={s['axes_moving']} released to rest")
+    log(f"touch: starts={s['touch_starts']} moving sends={s['axes_moving']} released to rest; "
+        f"committed actor moved {distance(p0, p1):.3f} m")
 
     t1 = s
     s, driver = touch_window("hold-background", "testHold",
@@ -288,6 +356,8 @@ def touches(base: dict[str, str]) -> dict[str, str]:
     post("replace-surface")
     r = wait(lambda s: num(s, "replacements") > num(t2, "replacements") and at_rest(s), 20,
              "replacement clearing held input")
+    time.sleep(0.5)
+    p_clear, r = sample("after replacement cleared held input")
     # Hiding the detached window cancels its touch; that and any later event
     # for the old touch arrive under the old window id and count stale.
     s = wait(lambda s: num(s, "touch_stale") > num(t2, "touch_stale")
@@ -298,9 +368,12 @@ def touches(base: dict[str, str]) -> dict[str, str]:
     s = read()
     check(at_rest(s), "a stale release changed held input", s)
     check(num(s, "axes_moving") == num(r, "axes_moving"), "a stale event sent moving axes", s)
+    p_stale, s = sample("after the old window's late events")
+    check(distance(p_clear, p_stale) <= STILL_TOLERANCE, "a stale old-window event moved the committed actor", s)
     snapshot("09-stale-release", s)
     log(f"replacement while held: clears={s['touch_clears']} stale={s['touch_stale']} "
-        f"old-window events={s['old_window_touches']}, axes stayed at rest")
+        f"old-window events={s['old_window_touches']}, axes stayed at rest; committed actor moved "
+        f"{distance(p_clear, p_stale):.6f} m across the old window's events")
 
     t3 = s
     s, driver = touch_window("swipe-after", "testSwipe",
@@ -308,18 +381,37 @@ def touches(base: dict[str, str]) -> dict[str, str]:
                      and num(s, "axes_moving") > num(t3, "axes_moving") and at_rest(s),
                      "a swipe after recovery")
     finish(driver)
+    time.sleep(0.5)
+    p4, s = sample("after the recovered swipe")
+    check(distance(p_stale, p4) >= MIN_SWIPE_TRAVEL, "the recovered swipe did not move the committed actor", s)
     snapshot("10-touch-after-recovery", s)
-    log(f"touch after recovery: moving sends={s['axes_moving']}")
+    log(f"touch after recovery: moving sends={s['axes_moving']}; committed actor moved {distance(p_stale, p4):.3f} m")
     return s
+
+
+def identity() -> None:
+    listing = json.loads(subprocess.run(["xcrun", "simctl", "list", "devices", "-j"], check=True,
+                                        capture_output=True, text=True).stdout)
+    for runtime, devices in listing["devices"].items():
+        for device in devices:
+            if device["udid"] == DEVICE:
+                log(f"simulator: {device['name']} {DEVICE} type={device.get('deviceTypeIdentifier')} "
+                    f"runtime={runtime} state={device['state']}")
+                return
+    fail(f"simulator {DEVICE} is not listed")
 
 
 def main() -> None:
     log(f"G3b iOS route on {DEVICE} (function evidence only)")
+    identity()
+    log("manual steps: none; every interaction below is a logged simctl command, Darwin notification "
+        "or XCUITest HID gesture")
     s = startup()
     s = stall(s)
     s = hide(s)
     s = replace(s)
     s = stalled_replace(s)
+    s = raced_present(s)
     s = background(s, "06")
     s = background(s, "07-stall", during_stall=True)
     if TOUCH == "skip":
