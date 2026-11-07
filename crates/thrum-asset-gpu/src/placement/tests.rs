@@ -85,7 +85,9 @@ fn finite_transforms_too_large_to_derive_from_are_refused() {
         "{message}"
     );
     assert!(
-        message.contains("scales the mesh by 100000000000000000000, outside 0.0001–10000"),
+        message.contains(
+            "scales the mesh by 100000000000000000000, outside the supported 0.0001–10000"
+        ),
         "{message}"
     );
     assert!(

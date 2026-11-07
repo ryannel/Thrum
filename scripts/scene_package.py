@@ -50,7 +50,16 @@ def resolve(root, folder, metadata):
             found = ", ".join(binaries) or "none"
             raise SceneError(f"{folder} ({package['name']}) builds {len(binaries)} binaries ({found}); "
                              "a scene package builds exactly one, its window")
-        return package["name"], binaries[0]
+        binary = binaries[0]
+        # Every workspace binary lands in one target/release, so a shared name would replace the
+        # other program; xtask would then run the scene where it means to run thrum-cook.
+        for other in metadata["packages"]:
+            if other["id"] in members and other["id"] != package["id"] and any(
+                    target["name"] == binary and "bin" in target["kind"] for target in other["targets"]):
+                raise SceneError(f"{folder} ({package['name']}) names its binary {binary}, which "
+                                 f"{other['name']} also builds into the same target folder; name the "
+                                 "scene's binary after the scene, such as its package name")
+        return package["name"], binary
     raise SceneError(f'{folder} is not a workspace member; add "{folder}" to [workspace] members in '
                      "Cargo.toml and a [packages.<name>] entry to .config/architecture.toml "
                      f"({GUIDE})")
