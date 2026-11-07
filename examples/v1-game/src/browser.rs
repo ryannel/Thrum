@@ -115,6 +115,8 @@ pub struct BrowserGame {
     timestamp_clamps: u64,
     needs_reconfigure: bool,
     samples: Vec<FrameSample>,
+    /// The page's outstanding capture, finished from a later animation frame.
+    capture: Option<thrum_render::runtime::PendingCapture>,
 }
 
 /// Prepare the existing V1 simulation and renderer for a WebGPU canvas.
@@ -222,6 +224,7 @@ async fn create_game(
         timestamp_clamps: 0,
         needs_reconfigure: false,
         samples: Vec::with_capacity(FRAMES),
+        capture: None,
     })
 }
 
@@ -647,6 +650,49 @@ impl BrowserGame {
     /// Last failed reconstruction attempt; a fresh explicit request clears it.
     pub fn graphics_recovery_error(&self) -> Option<String> {
         self.recovery.error.clone()
+    }
+
+    /// Submit a capture of the committed endpoint for the page's oracle and
+    /// return `tick=<n>;extent=<w>x<h>;generation=<g>`. One capture at a time.
+    /// # Errors
+    /// Refuses a second outstanding capture, or returns a recording failure.
+    pub fn begin_capture(&mut self) -> Result<String, JsValue> {
+        if self.capture.is_some() {
+            return Err(JsValue::from_str("a capture is already outstanding"));
+        }
+        let pending = self
+            .host
+            .begin_capture()
+            .map_err(|error| JsValue::from_str(&error))?;
+        let [width, height] = pending.extent();
+        let identity = format!(
+            "tick={};extent={width}x{height};generation={}",
+            pending.tick(),
+            pending.generation()
+        );
+        self.capture = Some(pending);
+        Ok(identity)
+    }
+
+    /// The outstanding capture's sRGB RGBA8 pixels once ready, else nothing.
+    /// A failed or retired capture is dropped and reported.
+    /// # Errors
+    /// Returns a retired device generation or readback failure.
+    pub fn try_finish_capture(&mut self) -> Result<Option<Vec<u8>>, JsValue> {
+        let Some(pending) = self.capture.as_mut() else {
+            return Ok(None);
+        };
+        match self.host.try_finish_capture(pending) {
+            Ok(None) => Ok(None),
+            Ok(Some(pixels)) => {
+                self.capture = None;
+                Ok(Some(pixels))
+            }
+            Err(error) => {
+                self.capture = None;
+                Err(JsValue::from_str(&error))
+            }
+        }
     }
 
     /// Number of surface presentation calls, not physical displayed frames.

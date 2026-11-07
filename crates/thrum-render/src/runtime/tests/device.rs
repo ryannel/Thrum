@@ -615,3 +615,61 @@ fn gpu_device_replacement_refuses_wrong_host_mode_and_failed_setup_without_losin
         assert_eq!(a.prepared.fallback_exposure().to_bits(), 0.25_f32.to_bits());
     });
 }
+
+fn finish_capture<W: FrameWorld, V: SceneSource<W::Page>>(
+    host: &mut FrameHost<W, V>,
+    pending: &mut crate::runtime::PendingCapture,
+) -> Vec<u8> {
+    for _ in 0..1_000 {
+        if let Some(pixels) = host.try_finish_capture(pending).expect("capture progress") {
+            return pixels;
+        }
+        match host.device.poll(wgpu::PollType::Wait {
+            submission_index: None,
+            timeout: Some(Duration::from_millis(10)),
+        }) {
+            Ok(_) | Err(wgpu::PollError::Timeout) => {}
+            Err(error) => panic!("capture wait: {error:?}"),
+        }
+    }
+    panic!("capture never completed");
+}
+
+#[test]
+fn gpu_pending_capture_is_caller_owned_and_retired_with_its_generation() {
+    pollster::block_on(async {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let (first, queue) = gpu(&instance, 7).await;
+        let mut host = host(&first, &queue, Policy::default()).await;
+        let mut early = host.begin_capture().expect("first capture");
+        let mut late = host.begin_capture().expect("second capture");
+        assert_eq!(
+            (early.tick(), early.extent(), early.generation()),
+            (late.tick(), late.extent(), late.generation()),
+            "both describe the same committed endpoint"
+        );
+        // Each token owns its readback: finishing out of order works.
+        let second = finish_capture(&mut host, &mut late);
+        let first_image = finish_capture(&mut host, &mut early);
+        assert_eq!(first_image, second);
+        assert_eq!(
+            host.capture_pixels().expect("waiting capture"),
+            first_image,
+            "native capture is the same operation with a wait"
+        );
+        let mut stale = host.begin_capture().expect("old generation capture");
+        let inputs = host.device_prepare_inputs().expect("detached inputs");
+        first.device().destroy();
+        let (replacement, new_queue) = gpu(&instance, 8).await;
+        let mut candidate = inputs
+            .prepare(&replacement, &new_queue, Some(surface()))
+            .await
+            .expect("replacement resources");
+        host.publish_device(&mut candidate)
+            .expect("publish replacement");
+        assert!(
+            host.try_finish_capture(&mut stale).is_err(),
+            "a retired generation terminates its capture"
+        );
+    });
+}

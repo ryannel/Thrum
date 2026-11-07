@@ -583,6 +583,26 @@ impl FrameHost {
             .capture_pixels()
             .map_err(|error| error.to_string())
     }
+    /// Submit a capture of the latest committed endpoint without waiting; the
+    /// browser finishes it from a later animation frame.
+    /// # Errors
+    /// Returns an engine recording or submission failure.
+    pub fn begin_capture(&mut self) -> Result<runtime::PendingCapture, String> {
+        self.inner
+            .begin_capture()
+            .map_err(|error| error.to_string())
+    }
+    /// Nonblocking: the capture's RGBA pixels once its readback completes.
+    /// # Errors
+    /// Returns a retired device generation or readback failure.
+    pub fn try_finish_capture(
+        &mut self,
+        pending: &mut runtime::PendingCapture,
+    ) -> Result<Option<Vec<u8>>, String> {
+        self.inner
+            .try_finish_capture(pending)
+            .map_err(|error| error.to_string())
+    }
 }
 
 /// Change the game-authored day phase and reset presentation history.
