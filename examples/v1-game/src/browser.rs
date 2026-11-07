@@ -9,6 +9,8 @@ use std::{
     },
 };
 
+use thrum_asset::{BrowserFetch, DevClient};
+use thrum_asset_gpu::{CookedSource, CookedStats};
 use thrum_render::present::SurfaceProfile;
 use wasm_bindgen::prelude::*;
 use web_sys::HtmlCanvasElement;
@@ -18,6 +20,30 @@ use crate::{FrameConfig, FrameHost, FrameSample, SurfaceOutput};
 mod recovery;
 
 const FRAMES: usize = 600;
+
+/// One cooked publication fetched from a `thrum-cook watch --serve` origin, ready to attach.
+#[wasm_bindgen]
+pub struct CookedValley {
+    generation: Arc<thrum_asset::RemoteGeneration>,
+}
+
+/// Fetch the current cooked publication from a dev server origin such as
+/// `http://127.0.0.1:7878`. Every product is verified against its content address.
+///
+/// # Errors
+/// Returns a malformed origin, a transport failure, an empty store or a product mismatch.
+#[wasm_bindgen]
+pub async fn fetch_cooked_valley(origin: String) -> Result<CookedValley, JsValue> {
+    let mut client = DevClient::new(BrowserFetch, &origin).map_err(js_error)?;
+    let generation = client
+        .poll()
+        .await
+        .map_err(js_error)?
+        .ok_or_else(|| JsValue::from_str("the dev server has no publication yet"))?;
+    Ok(CookedValley {
+        generation: Arc::new(generation),
+    })
+}
 
 /// One browser canvas, WebGPU surface and serial V1 game host.
 #[wasm_bindgen]
@@ -31,6 +57,7 @@ pub struct BrowserGame {
     graphics: Arc<GraphicsFault>,
     queue: wgpu::Queue,
     host: FrameHost,
+    cooked: Option<Arc<Mutex<CookedStats>>>,
     first_frame_ms: Option<f64>,
     last_frame: Duration,
     visible: bool,
@@ -96,6 +123,7 @@ pub async fn create_browser_game(canvas: HtmlCanvasElement) -> Result<BrowserGam
         graphics: gpu.fault,
         queue: gpu.queue,
         host,
+        cooked: None,
         first_frame_ms: None,
         last_frame: Duration::ZERO,
         visible: true,
@@ -113,6 +141,37 @@ pub async fn create_browser_game(canvas: HtmlCanvasElement) -> Result<BrowserGam
 
 #[wasm_bindgen]
 impl BrowserGame {
+    /// Draw the authored valley from fetched cooked products, with its authored camera.
+    /// The products survive device replacement: a new device stages them again.
+    /// # Errors
+    /// Returns an invalid embedded recipe or the scene's refusal of the contribution.
+    pub fn attach_cooked_valley(&mut self, valley: &CookedValley) -> Result<(), JsValue> {
+        let (camera, assets) =
+            crate::showcase::prepare_showcase(CookedSource::Remote(Arc::clone(&valley.generation)))
+                .map_err(js_error)?;
+        let stats = assets.stats();
+        self.host
+            .set_scene_contribution(Box::new(assets))
+            .map_err(js_error)?;
+        self.host.set_scene_camera(camera);
+        self.cooked = Some(stats);
+        Ok(())
+    }
+
+    /// Cooked generation drawn, swaps and loader errors, or `None` without cooked content.
+    pub fn cooked_status(&self) -> Option<String> {
+        let stats = self.cooked.as_ref()?.lock().ok()?;
+        Some(format!(
+            "{{\"drawn\":{},\"swaps\":{},\"uploadedBytes\":{},\"errors\":{:?}}}",
+            stats
+                .drawn
+                .map_or("null".to_owned(), |generation| generation.to_string()),
+            stats.swaps.len(),
+            stats.swaps.last().map_or(0, |swap| swap.uploaded_bytes),
+            stats.errors,
+        ))
+    }
+
     /// Select the solar time without changing the authoritative world clock.
     /// Zero/one is midnight, one quarter sunrise and three quarters sunset.
     /// # Errors

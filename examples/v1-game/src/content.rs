@@ -21,12 +21,15 @@ pub fn attach_cooked_scene(
     };
     let (camera, assets) = match std::env::var("THRUM_SCENE").as_deref() {
         Ok("valley") => {
-            let (camera, assets) = crate::showcase::prepare_showcase(store.into())?;
+            let (camera, assets) =
+                crate::showcase::prepare_showcase(std::path::PathBuf::from(store).into())?;
             (Some(camera), assets)
         }
         Err(std::env::VarError::NotPresent) | Ok("diagnostic") => (
             None,
-            thrum_asset_gpu::CookedAssets::new(crate::cooked::cooked_config(store.into())),
+            thrum_asset_gpu::CookedAssets::new(crate::cooked::cooked_config(
+                std::path::PathBuf::from(store),
+            )),
         ),
         _ => return Err("THRUM_SCENE must be valley or diagnostic".to_owned()),
     };

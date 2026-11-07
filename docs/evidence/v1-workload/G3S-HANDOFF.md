@@ -69,7 +69,7 @@ and `docs/ASSET-LIFECYCLE.md` edits out of the commits. Owner digests are asynch
 - Native review saw blue upper twilight, warm horizon, and matching haze and reflections.
   Final 32 captures are byte-identical to the independently reviewed set. The [evidence page](G3S-FIRST-LIGHT-2026-11-06.md)
   carries a contact sheet, clip and timings. The sequence is offline and sparse in solar time.
-  Chrome still shows the diagnostic scene. Live cadence and calibrated Earth radiance remain open.
+  Chrome now also draws the cooked valley (G7). Live cadence and calibrated Earth radiance remain open.
 - The foreground read flat and bright against Kiara dusk until the low-light key below. Some low-Sun contact marks and
   terrain joins remain. The original 17.9 h Sun-facing captures point into a ridge. Added clear views show the disk, and midnight
   is black under the current sole-Sun model. Isotropic multiple scattering and exposure are
@@ -103,11 +103,10 @@ crossing clip](g3s-first-light/solar-crossing.mp4) runs at 24 sampled frames/s.
   item; a per-frame horizon-angle map is the scalable form.
 - The penumbra's +18% pass-sum. Gathered fetches and a lit early-out are untried.
 
-**G7 dependencies.** The exit scene needs the cooked valley in Chrome, and Chrome renders only the diagnostic
-scene today. The Wasm dev-server client from G5 ran end to end in Node only. Chrome authored-content
-consumption is therefore G7's first slice: fetch the cooked products into the browser host, activate them through
-the same `SceneContribution` seam, and run the browser check on the valley. The shared demo panel waits for G6's
-typed controls (see `tmp/g6-boundary/NOTES.md`). Until they land, keep the existing solar slider.
+**G7.** Chrome now draws the cooked valley fetched from `thrum-cook watch --serve`
+([evidence](G7-CHROME-VALLEY-2026-11-07.md); `check_v1_browser.mjs --case valley`). Next: long-poll later
+publications in the page, a valley device-recovery case, then the shared demo panel once G6's typed controls land
+(see `tmp/g6-boundary/NOTES.md`; keep the existing solar slider until then).
 
 Keep the same host Sun/time and the fixed valley camera as the comparison. Inspect
 physical radiance and displayed colour independently. Use the checked CC0 Kiara photos

@@ -2,16 +2,50 @@
 
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
+#[cfg(not(target_arch = "wasm32"))]
 use std::sync::mpsc::Receiver;
 use std::sync::{Arc, Mutex};
+#[cfg(not(target_arch = "wasm32"))]
 use std::time::Instant;
+#[cfg(target_arch = "wasm32")]
+use web_time::Instant;
 
 use thrum_asset::{
-    AssetError, AssetStore, ContentHash, Head, HeadWatcher, Ktx2, MeshProduct, Profile,
+    AssetError, ContentHash, Head, Ktx2, Manifest, MeshProduct, ProductBytes, Profile,
+    RemoteGeneration,
 };
+#[cfg(not(target_arch = "wasm32"))]
+use thrum_asset::{AssetStore, HeadWatcher};
 
+#[cfg(not(target_arch = "wasm32"))]
+use crate::CookedSource;
 use crate::staging::{StagedUpload, StagingPlan};
 use crate::{CookedConfig, CookedStats, wgpu_format};
+
+/// Product bytes from a mapped store or a fetched generation.
+#[derive(Clone, Copy)]
+enum Source<'a> {
+    #[cfg(not(target_arch = "wasm32"))]
+    Store(&'a AssetStore),
+    Remote(&'a RemoteGeneration),
+}
+
+impl Source<'_> {
+    fn map(self, hash: &ContentHash) -> Result<ProductBytes, AssetError> {
+        match self {
+            #[cfg(not(target_arch = "wasm32"))]
+            Self::Store(store) => store.map(hash),
+            Self::Remote(generation) => generation
+                .product(hash)
+                .ok_or(AssetError::Malformed("product not fetched")),
+        }
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn store_manifest(store: &AssetStore, head: &Head) -> Result<Manifest, String> {
+    store.load_manifest(head).map_err(|error| error.to_string())
+}
 
 /// A mesh resident on the GPU, with one indexed draw per meshlet.
 pub(crate) struct GpuMesh {
@@ -112,13 +146,17 @@ pub(crate) fn retire(stats: &Mutex<CookedStats>, stop: &AtomicBool) {
 }
 
 impl Loader {
+    #[cfg(not(target_arch = "wasm32"))]
     pub(crate) fn run(
         self,
         mailbox: &Mailbox,
         resident: &Receiver<Arc<ResidentSet>>,
         stop: &AtomicBool,
     ) {
-        let mut watcher = HeadWatcher::new(AssetStore::new(&self.config.store));
+        let CookedSource::Store(store) = &self.config.source else {
+            return;
+        };
+        let mut watcher = HeadWatcher::new(AssetStore::new(store));
         let mut confirmed = Confirmed::default();
         while !stop.load(Ordering::Relaxed) {
             while let Ok(set) = resident.try_recv() {
@@ -127,7 +165,11 @@ impl Loader {
             match watcher.poll() {
                 Ok(Some(head)) => {
                     let seen = Instant::now();
-                    match self.prepare(watcher.store(), &head, &confirmed) {
+                    let store = watcher.store();
+                    let prepared = store_manifest(store, &head).and_then(|manifest| {
+                        self.prepare(Source::Store(store), &manifest, &head, &confirmed)
+                    });
+                    match prepared {
                         Ok((set, upload)) => {
                             report(&self.stats, stop, |stats| {
                                 stats.staged = Some(head.generation);
@@ -154,9 +196,39 @@ impl Loader {
         }
     }
 
+    /// Prepare a fetched generation on this thread and post it, as the loader thread would.
+    pub(crate) fn prepare_remote(
+        &self,
+        generation: &RemoteGeneration,
+        mailbox: &Mailbox,
+        stop: &AtomicBool,
+    ) {
+        let head = generation.head();
+        let seen = Instant::now();
+        match self.prepare(
+            Source::Remote(generation),
+            generation.manifest(),
+            &head,
+            &Confirmed::default(),
+        ) {
+            Ok((set, upload)) => {
+                report(&self.stats, stop, |stats| {
+                    stats.staged = Some(head.generation);
+                });
+                mailbox.post(PendingSet {
+                    set,
+                    upload,
+                    head_seen: seen,
+                    staged: Instant::now(),
+                });
+            }
+            Err(error) => self.fail(stop, &format!("generation {}: {error}", head.generation)),
+        }
+    }
+
     /// Record a failure once: a repeating error (an unreadable HEAD polled every interval) is
     /// kept as one entry, and the list stays bounded.
-    fn fail(&self, stop: &AtomicBool, reason: &str) {
+    pub(crate) fn fail(&self, stop: &AtomicBool, reason: &str) {
         const MAX_ERRORS: usize = 64;
         report(&self.stats, stop, |stats| {
             if stats.errors.last().is_some_and(|last| last == reason) {
@@ -171,6 +243,7 @@ impl Loader {
 
     /// Keep exactly the resources the newest resident set uses; older ones retire when the
     /// render thread drops its last reference after their final submission.
+    #[cfg(not(target_arch = "wasm32"))]
     fn confirm(set: &ResidentSet) -> Confirmed {
         let mut next = Confirmed::default();
         let mut products = set.products.iter();
@@ -188,11 +261,11 @@ impl Loader {
 
     fn open_texture(
         &self,
-        store: &AssetStore,
+        source: Source<'_>,
         hash: &ContentHash,
         volume: bool,
     ) -> Result<Ktx2, AssetError> {
-        let product = Ktx2::open(store.map(hash)?)?;
+        let product = Ktx2::open(source.map(hash)?)?;
         if product.is_3d() != volume {
             return Err(AssetError::Malformed(
                 "texture dimension does not match its use",
@@ -224,11 +297,10 @@ impl Loader {
 
     fn open(
         &self,
-        store: &AssetStore,
-        head: &Head,
+        source: Source<'_>,
+        manifest: &Manifest,
         confirmed: &Confirmed,
     ) -> Result<(Opened, Option<Profile>, Option<Profile>), AssetError> {
-        let manifest = store.load_manifest(head)?;
         let missing = || AssetError::Malformed("asset missing from manifest");
         let mut opened = Opened {
             meshes: Vec::new(),
@@ -247,14 +319,14 @@ impl Loader {
             let mesh_product = if confirmed.meshes.contains_key(&mesh) {
                 None
             } else {
-                let product = MeshProduct::open(store.map(&mesh)?)?;
+                let product = MeshProduct::open(source.map(&mesh)?)?;
                 product.validate_references()?;
                 Some(product)
             };
             let texture_product = if confirmed.textures.contains_key(&texture.product) {
                 None
             } else {
-                Some(self.open_texture(store, &texture.product, false)?)
+                Some(self.open_texture(source, &texture.product, false)?)
             };
             opened
                 .meshes
@@ -269,7 +341,7 @@ impl Loader {
             let product = if confirmed.textures.contains_key(&entry.product) {
                 None
             } else {
-                Some(self.open_texture(store, &entry.product, true)?)
+                Some(self.open_texture(source, &entry.product, true)?)
             };
             opened.volume = Some((entry.product, product));
         }
@@ -278,12 +350,13 @@ impl Loader {
 
     fn prepare(
         &self,
-        store: &AssetStore,
+        source: Source<'_>,
+        manifest: &Manifest,
         head: &Head,
         confirmed: &Confirmed,
     ) -> Result<(ResidentSet, StagedUpload), String> {
         let (opened, texture_profile, volume_profile) = self
-            .open(store, head, confirmed)
+            .open(source, manifest, confirmed)
             .map_err(|error| error.to_string())?;
         // Expanded meshlet indices must outlive the plan that borrows them.
         let expanded: Vec<Option<MeshletTables>> = opened

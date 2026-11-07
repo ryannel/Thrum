@@ -1,9 +1,7 @@
 //! Authored scene data consumed once by the native game, through G5's existing residency path.
 
-use std::path::PathBuf;
-
 use serde::Deserialize;
-use thrum_asset_gpu::{CookedAssets, CookedMaterial, MeshPlacement};
+use thrum_asset_gpu::{CookedAssets, CookedMaterial, CookedSource, MeshPlacement};
 
 use crate::SceneCamera;
 
@@ -44,13 +42,15 @@ struct Material {
     roughness: f32,
 }
 
-/// Load the embedded dry-valley placement recipe against a cooked store.
+/// Load the embedded dry-valley placement recipe against cooked products.
 /// Camera and atmosphere share world metres, with sea level at Y = zero.
 /// This prepares game policy; the renderer retains its device, sky and submitter.
 ///
 /// # Errors
 /// Returns an invalid embedded recipe or camera description.
-pub(crate) fn prepare_showcase(store: PathBuf) -> Result<(SceneCamera, CookedAssets), String> {
+pub(crate) fn prepare_showcase(
+    source: CookedSource,
+) -> Result<(SceneCamera, CookedAssets), String> {
     let recipe: Recipe = serde_json::from_str(include_str!("../assets/showcase/scene.json"))
         .map_err(|error| format!("showcase recipe: {error}"))?;
     let camera = SceneCamera::perspective(
@@ -60,7 +60,7 @@ pub(crate) fn prepare_showcase(store: PathBuf) -> Result<(SceneCamera, CookedAss
         recipe.camera.near_m,
         recipe.camera.far_m,
     )?;
-    let mut config = crate::cooked::cooked_config(store);
+    let mut config = crate::cooked::cooked_config(source);
     config.volume = None;
     config.meshes = recipe
         .placements

@@ -8,7 +8,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
-const cases = ['normal', 'pause', 'resize', 'overload', 'input', 'controls', 'device-loss', 'late-device-loss', 'device-recovery', 'device-recovery-retry', 'sky-reflections'];
+const cases = ['normal', 'pause', 'resize', 'overload', 'input', 'controls', 'device-loss', 'late-device-loss', 'device-recovery', 'device-recovery-retry', 'sky-reflections', 'valley'];
 const configureFailureSentinel = 'THRUM_G3B_CONFIGURE_ONCE';
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -16,11 +16,11 @@ let interrupted;
 for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => { interrupted = new Error(signal); });
 
 function options(args) {
-  const result = { case: 'all', 'web-root': 'target/v1-game-web', chrome: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', 'timeout-ms': 90000 };
+  const result = { case: 'all', 'web-root': 'target/v1-game-web', cook: 'target/debug/thrum-cook', 'assets-source': 'examples/v1-game/assets/showcase', chrome: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', 'timeout-ms': 90000 };
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '--help') return null;
     const key = args[i].slice(2);
-    if (!args[i].startsWith('--') || !['case', 'web-root', 'chrome', 'output', 'timeout-ms'].includes(key) || !args[i + 1]) throw new Error(`Unknown or incomplete argument: ${args[i]}`);
+    if (!args[i].startsWith('--') || !['case', 'web-root', 'chrome', 'output', 'timeout-ms', 'cook', 'assets-source'].includes(key) || !args[i + 1]) throw new Error(`Unknown or incomplete argument: ${args[i]}`);
     result[key] = args[++i];
   }
   if (result.case !== 'all' && !cases.includes(result.case)) throw new Error(`Unknown case: ${result.case}`);
@@ -110,6 +110,22 @@ const readState = `JSON.stringify({status:document.querySelector('#status')?.tex
 const playerX = state => { const match = /player x=([-\d.]+)/.exec(state.player ?? ''); return match ? Number(match[1]) : undefined; };
 const field = (status, key) => Number(new RegExp(`(?:^|[ ;])${key}=(\\d+)(?:[ ;]|$)`).exec(status)?.[1]);
 const gameState = '({report:game.report(),complete:game.complete(),paused:game.paused(),time:game.time_of_day(),fault:game.graphics_fault(),recovering:game.recovering(),recoveryError:game.graphics_recovery_error(),player:game.controlled_position()})';
+
+// Cook the valley into a fresh store under the run directory and serve it with the G5 dev server.
+async function serveCooked(args, output) {
+  const log = await fs.open(path.join(output, 'cook.log'), 'a');
+  const cook = spawn(path.resolve(repo, args.cook), ['watch', path.resolve(repo, args['assets-source']), path.join(output, 'store'), '--serve', '127.0.0.1:0'], { stdio: ['ignore', log.fd, log.fd] });
+  await log.close();
+  let exited = false;
+  cook.once('exit', () => { exited = true; });
+  const origin = await waitFor(async () => {
+    if (exited) throw new Error('thrum-cook exited before serving');
+    const text = await fs.readFile(path.join(output, 'cook.log'), 'utf8');
+    const served = /^serving (http:\/\/\S+)$/m.exec(text);
+    return served && /generation 1\b/.test(text) ? served[1] : undefined;
+  }, 120000, 'cooked valley dev server');
+  return { cook, origin };
+}
 
 async function existingGame(cdp, sessionId) {
   const prototype = await cdp.call('Runtime.evaluate', { expression: "import('/v1_game.js').then(m => m.BrowserGame.prototype)", awaitPromise: true }, sessionId);
@@ -522,8 +538,8 @@ async function qualifySkyReflections(cdp, sessionId, poll, timeout, output, evid
     const record = { name, requested: expected, edited, settled, images: [] };
     // Retain partial metadata before I/O too, so a failed case is reviewable.
     (fullUi ? evidence.phases : evidence.motion).push(record);
-    record.images.push(await capture(name, `sky-reflections-${name}.png`, clip));
-    if (fullUi) record.images.push(await capture(name, `sky-reflections-${name}-ui.png`));
+    record.images.push(await capture(name, `${evidence.prefix}-${name}.png`, clip));
+    if (fullUi) record.images.push(await capture(name, `${evidence.prefix}-${name}-ui.png`));
   };
   for (const [name, preset, sceneView, hours, yaw, pitch] of [
     ['phase-paused-scene-noon', 'noon', true, 12, 0, 0],
@@ -552,7 +568,7 @@ async function qualifySkyReflections(cdp, sessionId, poll, timeout, output, evid
   evidence.scope = 'One continuous built BrowserGame: seven paused held sky/scene phases and 24 range-driven camera/Sun samples, three present calls after every edit; healthy generation 1 and fixed authoritative tick. Canvas PNGs are compositor captures, not physical display cadence, GPU timing or transport-accuracy qualification.';
 }
 
-async function qualify(cdp, mode, origin, output, directory, wasm, timeout) {
+async function qualify(cdp, mode, origin, output, directory, wasm, timeout, assetsOrigin) {
   const { targetId } = await cdp.call('Target.createTarget', { url: 'about:blank' });
   let sessionId, state, response, input, game, pausedAt, pause, controls;
   let failed = false;
@@ -560,11 +576,12 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout) {
   const retryCase = mode === 'device-recovery-retry';
   const recoveryCase = mode === 'device-recovery' || retryCase;
   const destroyCase = lossCase || recoveryCase;
-  const skyCase = mode === 'sky-reflections';
+  const valleyCase = mode === 'valley';
+  const skyCase = mode === 'sky-reflections' || valleyCase;
   const faults = [], timeline = [];
   let loss, recovery, sky, intentionalDestroys = 0;
   const onDestroy = () => { intentionalDestroys++; };
-  const url = mode === 'controls' || destroyCase || skyCase ? `${origin}/` : `${origin}/?qualify${['normal', 'input'].includes(mode) ? '' : `&${mode}-probe`}`;
+  const url = valleyCase ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}` : mode === 'controls' || destroyCase || skyCase ? `${origin}/` : `${origin}/?qualify${['normal', 'input'].includes(mode) ? '' : `&${mode}-probe`}`;
   const log = line => { timeline.push(line); console.log(`${mode}: ${line}`); };
   try {
     ({ sessionId } = await cdp.call('Target.attachToTarget', { targetId, flatten: true }));
@@ -580,7 +597,7 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout) {
       if (packet.method === 'Network.responseReceived' && packet.params.response.url === `${origin}/v1_game_bg.wasm`) response = packet.params;
     };
     for (const domain of ['Runtime', 'Page']) await cdp.call(`${domain}.enable`, {}, sessionId);
-    await cdp.call('Network.enable', { maxResourceBufferSize: wasm.bytes.length * 2, maxTotalBufferSize: wasm.bytes.length * 3 }, sessionId);
+    await cdp.call('Network.enable', { maxResourceBufferSize: wasm.bytes.length * 2, maxTotalBufferSize: wasm.bytes.length * 3 + (valleyCase ? 256 << 20 : 0) }, sessionId);
     await cdp.call('Network.setCacheDisabled', { cacheDisabled: true }, sessionId);
     await cdp.call('Page.addScriptToEvaluateOnNewDocument', { source: observeFaults }, sessionId);
     await cdp.call('Emulation.setDeviceMetricsOverride', { width: 1280, height: 1100, deviceScaleFactor: 1, mobile: false }, sessionId);
@@ -597,8 +614,13 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout) {
       return state;
     };
     if (skyCase) {
-      sky = { phases: [], motion: [], captureBytes: 0 };
+      sky = { prefix: mode, phases: [], motion: [], captureBytes: 0 };
       await qualifySkyReflections(cdp, sessionId, poll, timeout, output, sky);
+      if (valleyCase) {
+        const cooked = JSON.parse(await (await existingGame(cdp, sessionId)).invoke('return game.cooked_status();') ?? 'null');
+        sky.cooked = cooked;
+        if (!cooked || !(cooked.drawn >= 1) || cooked.swaps < 1 || cooked.errors.length) throw new Error(`Cooked valley not drawn: ${JSON.stringify(cooked)}`);
+      }
     } else if (recoveryCase) {
       recovery = { snapshots: {}, destroyedDeviceCounts: [] };
       await qualifyDeviceRecovery(cdp, sessionId, poll, timeout, recovery, onDestroy, retryCase, async phase => {
@@ -707,7 +729,7 @@ async function cleanup(child, exited, cdp, server, profile) {
 
 async function main() {
   const args = options(process.argv.slice(2));
-  if (!args) { console.log('node scripts/check_v1_browser.mjs [--case all|normal|pause|resize|overload|input|controls|device-loss|late-device-loss|device-recovery|device-recovery-retry|sky-reflections] [--web-root target/v1-game-web] [--chrome /path/to/Chrome] [--output tmp/new-run] [--timeout-ms 90000]\nRequires Node 24+, an already-built game, and this Mac\'s Apple M3 Max/Metal Chrome. Controls checks manual pause with ongoing RAF; visibility checks use the explicit hook, not tab hiding. Recovery uses the real restore button; retry injects exactly one standard canvas configure failure. Sky reflections saves seven paused phases and 24 camera/Sun samples. No timing claim.'); return; }
+  if (!args) { console.log('node scripts/check_v1_browser.mjs [--case all|normal|pause|resize|overload|input|controls|device-loss|late-device-loss|device-recovery|device-recovery-retry|sky-reflections|valley] [--web-root target/v1-game-web] [--cook target/debug/thrum-cook] [--assets-source examples/v1-game/assets/showcase] [--chrome /path/to/Chrome] [--output tmp/new-run] [--timeout-ms 90000]\nRequires Node 24+, an already-built game, and this Mac\'s Apple M3 Max/Metal Chrome. Controls checks manual pause with ongoing RAF; visibility checks use the explicit hook, not tab hiding. Recovery uses the real restore button; retry injects exactly one standard canvas configure failure. Sky reflections saves seven paused phases and 24 camera/Sun samples; valley repeats them on the cooked valley served by thrum-cook. No timing claim.'); return; }
   if (Number(process.versions.node.split('.')[0]) < 24 || typeof WebSocket !== 'function') throw new Error('Node 24+ with builtin WebSocket is required');
   const directory = await fs.realpath(path.resolve(repo, args['web-root']));
   const files = await assets(directory);
@@ -718,7 +740,7 @@ async function main() {
   if (parent !== temp && !parent.startsWith(temp + path.sep)) throw new Error('Output parent escapes repository tmp/');
   await fs.mkdir(output);
   const profile = await fs.mkdtemp(path.join(output, 'chrome-profile-'));
-  let server, child, cdp, ended = false, failure;
+  let server, child, cdp, cook, ended = false, failure;
   const results = [];
   try {
     const serving = await serve(files); server = serving.server;
@@ -745,9 +767,13 @@ async function main() {
     const gpu = await cdp.call('SystemInfo.getInfo');
     await fs.writeFile(path.join(output, 'browser-gpu.json'), JSON.stringify({ version, gpu }, null, 2));
     hardware(gpu);
-    for (const mode of args.case === 'all' ? cases : [args.case]) results.push(await qualify(cdp, mode, serving.origin, output, directory, files.get('/v1_game_bg.wasm'), args['timeout-ms']));
+    const modes = args.case === 'all' ? cases : [args.case];
+    let assetsOrigin;
+    if (modes.includes('valley')) ({ cook, origin: assetsOrigin } = await serveCooked(args, output));
+    for (const mode of modes) results.push(await qualify(cdp, mode, serving.origin, output, directory, files.get('/v1_game_bg.wasm'), args['timeout-ms'], assetsOrigin));
   } catch (error) { failure = error; }
   finally {
+    cook?.kill();
     try { await cleanup(child, () => ended, cdp, server, profile); }
     catch (error) { failure = failure ? new AggregateError([failure, error], 'Qualification and cleanup failed') : error; }
     await fs.writeFile(path.join(output, 'run.json'), JSON.stringify({ passed: !failure, results, artifacts: Object.fromEntries([...files].map(([name, value]) => [name, value.sha256])), error: failure ? String(failure) : undefined, scope: 'Actual built game; headless Apple M3 Max/Metal WebGPU function only; no timing/cadence claim' }, null, 2));
