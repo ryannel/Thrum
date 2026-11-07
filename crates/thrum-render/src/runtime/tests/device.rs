@@ -318,109 +318,6 @@ mod metal {
         fn submitted(&mut self, _: bool) {}
     }
 
-    /// A visible contribution: a half-transparent triangle in front of the
-    /// cube, alpha-blended at the end of forward. An opaque draw recorded
-    /// after it would overwrite the blend, which a no-op fixture cannot show.
-    #[derive(Default)]
-    struct Veil {
-        pipeline: Option<wgpu::RenderPipeline>,
-    }
-
-    const VEIL: &str = "
-        @vertex fn veil_vertex(@builtin(vertex_index) index: u32) -> @builtin(position) vec4f {
-            let corners = array(vec2f(-0.8, -0.8), vec2f(0.8, -0.8), vec2f(0.0, 0.8));
-            return vec4f(corners[index], 0.99, 1.0);
-        }
-        struct Targets { @location(0) colour: vec4f, @location(1) motion: vec4f }
-        @fragment fn veil_fragment() -> Targets {
-            return Targets(vec4f(0.2, 0.6, 1.0, 0.5), vec4f(0.0));
-        }";
-
-    impl crate::contribution::SceneContribution for Veil {
-        fn passes(&self) -> crate::contribution::ContributionPasses {
-            crate::contribution::ContributionPasses::default()
-        }
-        fn rebuild(
-            &mut self,
-            surface: &crate::contribution::SceneSurface<'_>,
-        ) -> Result<(), String> {
-            let device = surface.device;
-            let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-                label: Some("veil"),
-                source: wgpu::ShaderSource::Wgsl(VEIL.into()),
-            });
-            let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-                label: Some("veil"),
-                bind_group_layouts: &[],
-                immediate_size: 0,
-            });
-            self.pipeline = Some(
-                device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-                    label: Some("veil"),
-                    layout: Some(&layout),
-                    vertex: wgpu::VertexState {
-                        module: &module,
-                        entry_point: Some("veil_vertex"),
-                        compilation_options: wgpu::PipelineCompilationOptions::default(),
-                        buffers: &[],
-                    },
-                    primitive: wgpu::PrimitiveState::default(),
-                    depth_stencil: Some(wgpu::DepthStencilState {
-                        format: surface.depth_format,
-                        depth_write_enabled: Some(false),
-                        depth_compare: Some(wgpu::CompareFunction::Greater),
-                        stencil: wgpu::StencilState::default(),
-                        bias: wgpu::DepthBiasState::default(),
-                    }),
-                    multisample: wgpu::MultisampleState::default(),
-                    fragment: Some(wgpu::FragmentState {
-                        module: &module,
-                        entry_point: Some("veil_fragment"),
-                        compilation_options: wgpu::PipelineCompilationOptions::default(),
-                        targets: &[
-                            Some(wgpu::ColorTargetState {
-                                format: surface.color_formats[0],
-                                blend: Some(wgpu::BlendState::ALPHA_BLENDING),
-                                write_mask: wgpu::ColorWrites::ALL,
-                            }),
-                            Some(wgpu::ColorTargetState {
-                                format: surface.color_formats[1],
-                                blend: None,
-                                write_mask: wgpu::ColorWrites::empty(),
-                            }),
-                        ],
-                    }),
-                    multiview_mask: None,
-                    cache: None,
-                }),
-            );
-            Ok(())
-        }
-        fn encode_upload(
-            &mut self,
-            _: &mut wgpu::CommandEncoder,
-            _: &crate::contribution::ContributionFrame,
-        ) {
-        }
-        fn computes(&self, _: &crate::contribution::ContributionFrame) -> bool {
-            false
-        }
-        fn encode_compute(
-            &mut self,
-            _: &mut wgpu::ComputePass<'_>,
-            _: &crate::contribution::ContributionFrame,
-        ) {
-        }
-        fn encode_after_compute(&mut self, _: &mut wgpu::CommandEncoder) {}
-        fn draw(&self, pass: &mut wgpu::RenderPass<'_>) {
-            if let Some(pipeline) = &self.pipeline {
-                pass.set_pipeline(pipeline);
-                pass.draw(0..3, 0..1);
-            }
-        }
-        fn submitted(&mut self, _: bool) {}
-    }
-
     /// Each slot's prepass instance count, read after its frame completed.
     fn prepass_counts(host: &Host) -> Vec<u32> {
         host.slots
@@ -594,8 +491,10 @@ mod metal {
             }
             let plain = capture(&mut hosts[0]);
             for host in &mut hosts {
-                host.set_scene_contribution(Box::new(Veil::default()))
-                    .expect("veil");
+                host.set_scene_contribution(Box::new(
+                    crate::synthetic::camera_culling::tests::Veil::default(),
+                ))
+                .expect("veil");
             }
             let veiled = capture(&mut hosts[0]);
             let covered = veiled
