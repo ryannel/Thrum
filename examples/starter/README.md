@@ -47,11 +47,16 @@ platform tag, and macOS is the right assumption.
   drawing.
 - **Code.** Edit `src/main.rs`, close the window and run `./dev starter` again.
 
+Assets reload by themselves. Parameters and the material reload only when you press `L` with the window focused, so
+a half-saved file never reaches the scene.
+
 ## Make your own scene
 
 1. **Copy** this folder: `cp -R examples/starter examples/<name>`.
 2. **Name** the package in `examples/<name>/Cargo.toml`: `name = "thrum-<name>"` (the binary has the same name).
    Rename `starter.params.json` to `<name>.params.json`; `./dev scene` passes the file named after the folder.
+   Rewrite the copied `README.md`, the `description` in `Cargo.toml` and the doc comment at the top of
+   `src/main.rs` for your scene.
 3. **Join the workspace:** add `"examples/<name>"` to `members` in the root `Cargo.toml`.
 4. **Register it** in `.config/architecture.toml`, next to `[packages.thrum-starter]`:
 
@@ -65,6 +70,16 @@ platform tag, and macOS is the right assumption.
    downloaded) and says so; commit that change with the scene. Every later run cooks, watches and hot-reloads your
    `assets/` exactly as the starter does, and reuses the starter's build.
 
+To rebuild, format and lint without opening a window:
+
+```sh
+rustup run 1.99.1 cargo build --locked --release -p thrum-<name>
+rustup run 1.99.1 cargo fmt -p thrum-<name>
+rustup run 1.99.1 cargo clippy --locked -p thrum-<name> --all-targets -- -D warnings
+```
+
+Count your lines after formatting, since rustfmt can add some.
+
 Keep the shape of [src/main.rs](src/main.rs): one `main` behind `#[cfg(target_os = "macos")]`, an empty `main`
 for other targets, and everything else in one module behind one `#[cfg(target_os = "macos")]`. The window runs
 only on the Mac, and one `cfg` on the module is cheaper than one on every item.
@@ -76,7 +91,10 @@ only on the Mac, and one `cfg` on the module is cheaper than one on every item.
 `SkyGame` is built from:
 
 - `Controls`: the sliders and toggles shown in the panel and set by parameter files. `.slider(key, label, range)`
-  takes `.default`, `.step` and `.display(Display::plain(decimals, unit))`, then `.add()?`.
+  takes `.default`, `.step` and `.display(Display::plain(decimals, unit))`, then `.add()?`; read it with
+  `controls.get(slider)`. `.toggle(key, label, default)?` adds a checkbox; read it with `controls.is_on(toggle)`.
+  Controls drive the sky, the Sun and the camera through the update closure. The material hook and the ground do not
+  read them yet: the material changes when you edit its file, and the ground's colour is set when the scene is built.
 - `Camera::look_at(position, target, vertical_fov_degrees)`.
 - An update closure, run before every frame, that maps controls onto the `Sky`: `sun_elevation_degrees`,
   `sun_azimuth_degrees` and `camera`. A value the renderer cannot draw (for example a camera below the ground) is
@@ -86,7 +104,10 @@ only on the Mac, and one `cfg` on the module is cheaper than one on every item.
 - `.with_ground(Some(colour))` or `.with_ground(None)`; see [The ground](#the-ground).
 
 World units are metres with +Y up and the ground at Y = 0. North is -Z and east is +X; the Sun's azimuth runs
-clockwise from north. Exposure follows a camera meter, so twilight reads dim rather than grey.
+clockwise from north. Exposure follows a camera meter, so twilight reads dim rather than grey. `sky.toward_sun()` is
+the unit vector from the scene toward the Sun, `[cos(e)·sin(a), sin(e), −cos(e)·cos(a)]` for elevation `e` and
+azimuth `a`. To face the Sun at the horizon, let `t = sky.toward_sun()` and aim the camera at
+`[position[0] + t[0], position[1], position[2] + t[2]]`.
 
 `Config::new(name, title)` gives a 1600×900 window titled `title`, diagnostics prefixed with `name`, and
 `THRUM_FRAMES=<n>` to close the window after `n` frames in scripted runs. Its fields are public: for example
@@ -140,7 +161,9 @@ THRUM_ASSET_STORE=target/scenes/thrum-starter/store THRUM_PARAMS=examples/starte
   THRUM_CAPTURE_PNG=tmp/starter.png target/release/thrum-starter
 ```
 
-Run `./dev starter` (or `./dev scene` for your scene) once first, so the binary and the store exist.
+Run `./dev starter` (or `./dev scene` for your scene) once first, so the binary and the store exist. The PNG is
+written uncompressed, so every capture at one size has the same file size; compare contents, not sizes. The window
+has no capture key, so review frames with this offscreen capture. It draws the same scene from the same inputs.
 
 ## When something is missing
 
