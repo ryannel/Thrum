@@ -488,3 +488,77 @@ fn occlusion_matches_direct_draw_through_cuts_recycled_rows_and_a_dropped_frame(
         );
     });
 }
+
+/// Root's equal-depth witness: two slots at exactly the same pose with
+/// different materials. Direct draws in slot order with a strict reverse-Z
+/// test, so the lower slot wins every tie. `entering` is the slot that starts
+/// outside the view and moves onto the other's pose, so Occlusion draws it in
+/// the late phase while the other replays early.
+async fn equal_depth_case(entering: usize) -> (Vec<u8>, Vec<u8>) {
+    let (adapter, device, queue) = device().await;
+    let capabilities = DeviceCapabilities::capture(&adapter, &device, 43);
+    let camera = view([0.0, 0.0, -1.5], [0.0, 0.0, 0.5]);
+    let mut base = SyntheticScene::grid(2).expect("grid");
+    base.view = camera;
+    let staying = 1 - entering;
+    base.instances[staying].current[3] = [0.0, 0.0, 0.5, 1.0];
+    base.instances[staying].previous = base.instances[staying].current;
+    base.instances[entering].current[3] = [40.0, 0.0, 0.5, 1.0];
+    base.instances[entering].previous = base.instances[entering].current;
+    let mut direct = Sequence::new(&capabilities, &device, &queue, &base).await;
+    let mut culled_scene = base.clone();
+    culled_scene.camera_culling = CullMode::Occlusion;
+    let mut occluded = Sequence::new(&capabilities, &device, &queue, &culled_scene).await;
+    // Two frames with only the staying slot in view: it is visible history.
+    for _ in 0..2 {
+        for sequence in [&mut direct, &mut occluded] {
+            sequence
+                .frame(&capabilities, (&device, &queue), &base, true)
+                .await;
+        }
+    }
+    // The entering slot takes the staying slot's exact pose.
+    let mut frame = base.clone();
+    let mut moved = frame.instances[staying].clone();
+    moved.ids = frame.instances[entering].ids;
+    frame.instances[entering] = moved;
+    let slot = u32::try_from(entering).expect("slot");
+    for sequence in [&mut direct, &mut occluded] {
+        sequence
+            .prepared
+            .upload_instances(&queue, &frame.instances, &[slot])
+            .expect("upload");
+    }
+    let reference = direct
+        .frame(&capabilities, (&device, &queue), &frame, true)
+        .await
+        .expect("direct pixels");
+    let culled = occluded
+        .frame(&capabilities, (&device, &queue), &frame, true)
+        .await
+        .expect("occlusion pixels");
+    (reference, culled)
+}
+
+/// Witness for the known hazard that keeps Occlusion off the shipped path:
+/// a lower slot entering late loses an equal-depth tie to an early higher
+/// slot. Direct order needs the slot order across both phases. When the M3
+/// design restores it, this becomes `[0, 0]`.
+#[test]
+fn equal_depth_ties_follow_the_early_phase_when_a_lower_slot_enters_late() {
+    pollster::block_on(async {
+        let mut changed = Vec::new();
+        for entering in [0, 1] {
+            let (reference, culled) = Box::pin(equal_depth_case(entering)).await;
+            changed.push(differing(&reference, &culled));
+        }
+        assert_eq!(
+            changed[1], 0,
+            "a higher slot entering late keeps Direct order"
+        );
+        assert!(
+            changed[0] > 0,
+            "the lower-slot hazard is gone: make this test require [0, 0]"
+        );
+    });
+}
