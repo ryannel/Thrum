@@ -70,9 +70,12 @@ The Codex goal remains active. Its attachment is
   upper-cap witness 160 m from the receiver, a 24 cm caster misses both
   depth maps. The same-centre 2.4 m control writes two last-map texels
   and drops visible disk from 34.51% to 3.92%. The 1.18 m last-map texel
-  loses the narrow caster before filtering. Keep the split in scratch.
-  A local receiver fit, the first 64 m of terrain coverage, discarded-frame
-  equality, Chrome and camera snaps remain open.
+  loses the narrow caster before filtering. A tighter 82 m scratch fit
+  gives 0.16 m texels and restores the caster to the last map. The sparse
+  search still misses it one tick later despite six matching depths.
+  Supplying its known gap changes that frame's visible disk from 31.37%
+  to 22.75%. Keep the split in scratch. A bounded search, close terrain
+  coverage, discarded-frame equality, Chrome and camera snaps remain open.
   [Maximum Mipmaps](https://pure.mpg.de/pubman/item/item_1325622_5/component/file_3590464/i3d08.pdf).
   Exact builds, raw rows and clips are in `tmp/g3s-sunset-lip/`. The
   diagnostic source and rerun command are on `codex/g3s-horizon-metal-wip`.
@@ -95,16 +98,15 @@ The Codex goal remains active. Its attachment is
   Metal query exposed GPU timestamps. Actual attachment bandwidth needs
   an explicitly configured capture. [Apple's bandwidth workflow](https://developer.apple.com/documentation/xcode/measuring-the-gpus-use-of-memory-bandwidth).
 
-- Candidate production optics (Metal) preserves flux to 0.0571% across 36
-  footprints, at centre and edge from 720p to 2160p. Both mask axes are
-  checked with paired controls and covered centres emit zero. In the
-  central SDR fixture the fourth-brightest magnitude 3/6 excess was
-  207/58, 211/74 and 212/86 green codes at matched exposure. Chrome's
-  normal valley build `b870c1ee` rendered 00:00 and 24:00 byte-identically,
-  with 3,073 pixels at least eight codes above the stars-off control.
-  Around midnight 100 star patches moved a median 2.22 px per adjacent
-  slider stop. [Review brief](../../design/modules/ATMOSPHERE-PLAN.md#production-star-optics-review-brief).
-  Raw logs and rerun commands are in `tmp/g3s-star-catalog/NOTES.md`.
+- The production optics and observer-wrap referees pass on `67c69313`.
+  Metal preserves flux to 0.0571% across 36 footprints, at centre and edge
+  from 720p to 2160p, and covered centres emit zero across both mask axes.
+  The central magnitude 3/6 SDR control yields 207/58, 211/74 and 212/86
+  green codes at matched exposure. The game basis keeps known equatorial
+  directions and matches the slider wrap. Chrome's cooked valley build
+  `b870c1ee` rendered 00:00 and 24:00 byte-identically. [Review brief](../../design/modules/ATMOSPHERE-PLAN.md#production-star-optics-review-brief).
+  Raw tests and rerun commands are in `tmp/g3s-star-catalog/current-main/`
+  and `tmp/g3s-star-catalog/NOTES.md`.
 
 - Star graph reconciliation `d2a5342` preserves main's Occlusion
   prepass, pyramid, draw and count copy. A Metal test captures night and

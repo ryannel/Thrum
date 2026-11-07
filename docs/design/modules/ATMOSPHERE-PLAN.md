@@ -5,7 +5,7 @@ Reviews: Optical design and plan over `a91cdd0e`, final design `f9d0c12a` and pl
 Updated: 2026-11-08
 Milestone: M2 stars
 Now: the star graph and timed 1× recorder are on main at `ce848011`. Metal and Chrome pass the ground E route.
-Next: finish the offscreen playback review. Resolve the narrow-caster raster miss and close-terrain coverage before a split-horizon candidate. The strict discarded-frame capture difference remains open.
+Next: finish the offscreen playback review. Prove bounded compact blocker search after the tighter fit and keep close terrain covered before a split-horizon candidate. The strict discarded-frame capture difference remains open.
 Blocked: none for motion. Attachment traffic remains unmeasured. Physical pacing and latency belong to the next G3b display session.
 
 At the next look pass, the cooked ground should read as mineral material at the fixed
@@ -40,7 +40,7 @@ Done when
 
 - [ ] **D1.** From the same valley views, star appearance follows the dimming sky; star positions match the chosen observer rotation, stay stable under slow pans and are occluded by terrain. Hold bright day, late twilight and moonless night; watch motion on Mac and Chrome.
 - [ ] **D2.** At the fixed showcase camera, midnight reads unmistakably as a clear night while the terrain silhouette stays legible. Judge the unlabelled shipping field at native size before seeing the late twilight and M1 controls. Compare stars on and off at the same pose, exposure and display settings to see what the stars contribute. Review a slow pan across the skyline on Mac and Chrome.
-- [ ] **D3.** Integrated test-star flux stays within 5% across subpixel position and 720p/1080p/2160p. At matched night exposure, magnitude 6 is dimmer than magnitude 3 by a visible margin in the resolved footprints. Verify the rotation with known directions, including the time-slider wrap. A star centred behind the skyline leaves no sprite leak. Validate at image centre and edge.
+- [x] **D3.** Integrated test-star flux stays within 5% across subpixel position and 720p/1080p/2160p. At matched night exposure, magnitude 6 is dimmer than magnitude 3 by a visible margin in the resolved footprints. Verify the rotation with known directions, including the time-slider wrap. A star centred behind the skyline leaves no sprite leak. Validate at image centre and edge. [Metal and wrap recheck](../../evidence/v1-workload/G3S-HANDOFF.md#current-checkpoint).
 - [ ] **D4.** The catalogue provenance is complete, paired runs record frame cost and attachment traffic, and the workspace and independent in-game review pass.
 
 Work
