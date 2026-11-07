@@ -1,12 +1,13 @@
 //! Renderer-owned interpretation of the bounded scene timestamp layout.
 
-use super::{CullMode, PreparedSynthetic, history_gpu};
+use super::{CullMode, OffscreenTarget, PreparedSynthetic, history_gpu};
 
 #[derive(Clone, Copy)]
 pub(crate) struct SceneTimingLayout {
     shadows: bool,
     clusters: bool,
     transforms: bool,
+    star_pass: Option<&'static str>,
     /// Bit `index` of [`CULLING_PASSES`] is set for each camera culling pass
     /// the frame records exactly once. Frustum: one `camera visibility`
     /// compute pass, timed even when the active prefix is empty. Occlusion:
@@ -23,12 +24,13 @@ const fn culling_passes(mode: CullMode) -> u8 {
     }
 }
 
-impl From<&PreparedSynthetic> for SceneTimingLayout {
-    fn from(prepared: &PreparedSynthetic) -> Self {
+impl From<(&PreparedSynthetic, &OffscreenTarget)> for SceneTimingLayout {
+    fn from((prepared, target): (&PreparedSynthetic, &OffscreenTarget)) -> Self {
         Self {
             shadows: prepared.shadowed(),
             clusters: prepared.gpu_clustered(),
             transforms: prepared.active_instance_count() != 0,
+            star_pass: target.draw_stars.then_some(super::stars::PASS_NAME),
             culling: culling_passes(prepared.camera_culling()),
         }
     }
@@ -82,6 +84,7 @@ pub(crate) fn pass_durations(
     let mut air_shadow = None;
     let mut visibility = None;
     let mut culled = 0_u8;
+    let mut stars = None;
     let mut scene_passes = Vec::with_capacity(passes.len());
     for pass in passes {
         if pass.name.as_ref() == super::AIR_SHADOW_PASS {
@@ -89,6 +92,11 @@ pub(crate) fn pass_durations(
                 return None;
             }
             air_shadow = Some(pass.nanoseconds);
+        } else if pass.name.as_ref() == super::stars::PASS_NAME {
+            if stars.is_some() || layout.star_pass != Some(pass.name.as_ref()) {
+                return None;
+            }
+            stars = Some(pass.nanoseconds);
         } else if let Some(index) = CULLING_PASSES
             .iter()
             .position(|&name| name == pass.name.as_ref())
@@ -108,7 +116,7 @@ pub(crate) fn pass_durations(
             scene_passes.push(pass);
         }
     }
-    if culled != culling {
+    if culled != culling || (layout.star_pass.is_some() && stars.is_none()) {
         return None;
     }
     let passes = scene_passes.as_slice();
@@ -148,7 +156,8 @@ pub(crate) fn pass_durations(
             }
             // The contribution's compute pass is opaque-phase work that feeds forward: counted
             // in the forward bucket so totals include it, and also returned on its own.
-            scene[3] += contribution.unwrap_or(0.0) + visibility.unwrap_or(0.0);
+            scene[3] +=
+                contribution.unwrap_or(0.0) + visibility.unwrap_or(0.0) + stars.unwrap_or(0.0);
             scene[1] += air_shadow.unwrap_or(0.0);
             (
                 scene,

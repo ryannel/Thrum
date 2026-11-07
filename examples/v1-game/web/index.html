@@ -57,11 +57,12 @@
         await init();
         const probe = new URL(location.href).searchParams;
         // ?field draws the dense flythrough field; ?culling=direct|frustum|occlusion picks camera culling.
+        const cooked = probe.has("assets");
         const game = probe.has("field")
           ? await create_field_game(canvas, probe.get("culling") ?? "frustum")
-          : await create_browser_game(canvas);
-        // ?assets=<thrum-cook watch --serve origin> draws the cooked valley.
-        if (probe.has("assets")) {
+          : await create_browser_game(canvas, cooked && probe.get("stars") !== "off");
+        // ?assets=<thrum-cook watch --serve origin> draws the cooked valley; ?stars=off is a visual control.
+        if (cooked) {
           status.textContent = "Fetching the cooked valley…";
           const valley = await fetch_cooked_valley(probe.get("assets"));
           game.attach_cooked_valley(valley);

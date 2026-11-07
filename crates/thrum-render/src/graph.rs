@@ -1031,6 +1031,19 @@ impl FrameGraph {
             edges: edges.into_iter().collect(),
         })
     }
+    /// Compile a variant with one terminal pass while preserving shared declaration IDs.
+    pub(crate) fn compile_with_terminal_pass(
+        &mut self,
+        pass: Pass,
+        generation: u64,
+        prepared: &BTreeSet<PipelineKey>,
+    ) -> Result<CompiledGraph, GraphError> {
+        self.pass(pass);
+        let compiled = self.compile(generation, prepared);
+        drop(self.passes.pop());
+        compiled
+    }
+
     /// Validate closure and initialization, derive hazards and reuse. This is
     /// preparation work (quadratic in declared accesses), never per-instance work.
     ///

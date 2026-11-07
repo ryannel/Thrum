@@ -656,7 +656,7 @@ async fn veiled_frames(
         // The forward pass, the only place the contribution draws, runs after
         // every pass that builds or reads the prepass depth.
         let order: Vec<&str> = target
-            .graph
+            .graph(false)
             .plan()
             .pass_bindings()
             .map(|(_, pass)| pass.name.as_str())
