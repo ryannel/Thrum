@@ -1334,7 +1334,7 @@ impl PreparedSynthetic {
     }
     /// Number of prepared GPU scene passes for this scene's shadow recipe.
     pub fn scene_pass_count(&self) -> u32 {
-        4 + u32::from(self.shadow.is_some()) * 2
+        4 + u32::from(self.shadow.is_some()) * shadow::LAYERS
             + u32::from(self.cluster_compute.is_some())
             + u32::from(self.contribution_passes.compute)
             + self
@@ -1354,7 +1354,7 @@ impl PreparedSynthetic {
     pub fn two_sided_instance_count(&self) -> usize {
         self.instance_upload.two_sided_count()
     }
-    /// Whether the prepared frame records two Sun cascade passes.
+    /// Whether the prepared frame records two Sun cascade passes and a height pass.
     pub fn shadowed(&self) -> bool {
         self.shadow.is_some()
     }
@@ -1518,9 +1518,10 @@ impl PreparedSynthetic {
             ..self.key
         }
     }
+    /// Roles 2 and 3 are the Sun cascades; the height map takes role 7.
     fn shadow_key(&self, index: u32) -> PipelineKey {
         PipelineKey {
-            role: index + 2,
+            role: if index < 2 { index + 2 } else { 7 },
             ..self.key
         }
     }
@@ -1929,7 +1930,7 @@ impl PreparedSynthetic {
             ResourceDescriptor::Texture {
                 width: shadow::SIZE,
                 height: shadow::SIZE,
-                layers: 2,
+                layers: shadow::LAYERS,
                 mips: 1,
                 samples: 1,
                 format: shadow::FORMAT,
@@ -1938,7 +1939,7 @@ impl PreparedSynthetic {
             },
             ResourceScope::Transient,
         )?;
-        for index in 0..2_u32 {
+        for index in 0..shadow::LAYERS {
             let matrix = graph.resource(
                 ResourceDescriptor::Buffer {
                     bytes: 64,
@@ -1949,10 +1950,10 @@ impl PreparedSynthetic {
             let key = self.shadow_key(index);
             prepared_keys.insert(key);
             graph.pass(Pass {
-                name: if index == 0 {
-                    "synthetic Sun shadow near"
-                } else {
-                    "synthetic Sun shadow far"
+                name: match index {
+                    0 => "synthetic Sun shadow near",
+                    1 => "synthetic Sun shadow far",
+                    _ => "synthetic Sun horizon heights",
                 }
                 .into(),
                 scope: PassScope::View(1),
@@ -2004,7 +2005,7 @@ impl PreparedSynthetic {
         });
         accesses.push(Access {
             resource: maps.clone(),
-            range: 0..2,
+            range: 0..u64::from(shadow::LAYERS),
             kind: AccessKind::SampledRead,
             store: true,
         });
@@ -2105,9 +2106,11 @@ impl PreparedSynthetic {
                         frame.atmosphere(index, pass)
                     })
                 }
-                Some(key) if key == self.shadow_key(0) || key == self.shadow_key(1) => {
-                    let index = usize::try_from(key.role - 2)
-                        .map_err(|_| RenderError::GraphPassMismatch)?;
+                Some(key) if (0..shadow::LAYERS).any(|index| key == self.shadow_key(index)) => {
+                    let index = (0..shadow::LAYERS)
+                        .find(|&index| key == self.shadow_key(index))
+                        .and_then(|index| usize::try_from(index).ok())
+                        .ok_or(RenderError::GraphPassMismatch)?;
                     RecordBinding::<SceneFamily>::new(id, PassKind::Render, move |frame, pass| {
                         frame.shadow(index, pass)
                     })

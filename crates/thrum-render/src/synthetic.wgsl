@@ -40,6 +40,10 @@ struct ShadowCascades {
     bias: vec4<f32>,
     penumbra: vec4<f32>,
     height_support: vec4<f32>,
+    // Top-down reverse-Z caster heights in shadow layer 2.
+    height_view_proj: mat4x4<f32>,
+    // Depth = x*height + y; uv per metre; texel metres. Zero x disables it.
+    horizon: vec4<f32>,
 }
 @group(0) @binding(2) var<uniform> shadows: ShadowCascades;
 @group(0) @binding(3) var shadow_maps: texture_depth_2d_array;
@@ -377,6 +381,60 @@ fn shadow_filter(index:u32,uv:vec2<f32>,receiver_depth:f32,reference:f32,
     return visible;
 }
 
+const HORIZON_STEPS: u32 = 96u;
+
+// Fraction of the solar disk above a straight horizon whose elevation is
+// offset from the disk centre by t solar radii (t>0: centre above horizon).
+fn disk_above(t: f32) -> f32 {
+    let c = clamp(t,-1.0,1.0);
+    return 0.5+(c*sqrt(max(0.0,1.0-c*c))+asin(c))/3.14159265;
+}
+
+// Terrain-scale Sun visibility beyond the cascades: march the highest caster
+// surface toward the Sun's azimuth and compare the steepest horizon with the
+// solar disk. Steps grow geometrically from two texels to the map edge.
+fn horizon_visibility(receiver: ShadowReceiver) -> f32 {
+    let horizon = shadows.horizon;
+    let l = light.direction_to_light.xyz;
+    let flat = length(l.xz);
+    if horizon.x <= 0.0 || flat < 1e-4 { return 1.0; }
+    let azimuth = l.xz/flat;
+    let sun_elevation = atan2(l.y,flat);
+    let solar_radius = atan(SUN_TAN_RADIUS);
+    // Horizons below the lower limb leave the disk whole; above the upper limb
+    // they hide it. Both bounds end the march early without changing the result.
+    let lower_limb = tan(sun_elevation-solar_radius);
+    let upper_limb = tan(min(sun_elevation+solar_radius,1.5));
+    let rise = shadows.height_support.x-receiver.position.y;
+    let texel = horizon.w;
+    let start = 2.0*texel;
+    if rise <= lower_limb*start { return 1.0; }
+    let reach = 1.0/max(horizon.z,1e-20);
+    let ratio = pow(reach/start,1.0/f32(HORIZON_STEPS-1u));
+    // Nearest-texel heights can stand half a texel's rise above the true
+    // surface on a slope; allow that much before a sample counts as horizon.
+    let extent = vec2<f32>(textureDimensions(shadow_maps));
+    var steepest = -1e9;
+    var distance = start;
+    for (var i = 0u; i < HORIZON_STEPS; i++) {
+        // Nothing farther can rise above both the lower limb and the current horizon.
+        if rise <= max(lower_limb,steepest)*distance || steepest >= upper_limb { break; }
+        let q = receiver.position.xz+azimuth*distance;
+        let clip = shadows.height_view_proj*vec4(q.x,0.0,q.y,1.0);
+        let uv = vec2(clip.x*0.5+0.5,0.5-clip.y*0.5);
+        if any(uv<vec2(0.0)) || any(uv>vec2(1.0)) { break; }
+        let texel_index = clamp(vec2<i32>(uv*extent),vec2(0),vec2<i32>(extent)-1);
+        let depth = textureLoad(shadow_maps,texel_index,2,0);
+        if depth > 0.0 {
+            let height = (depth-horizon.y)/horizon.x;
+            steepest = max(steepest,(height-receiver.position.y-0.5*texel*0.25)/distance);
+        }
+        distance *= ratio;
+    }
+    if steepest <= -1e8 { return 1.0; }
+    return disk_above((sun_elevation-atan(steepest))/solar_radius);
+}
+
 fn sun_visibility(input: VertexOutput, receiver: ShadowReceiver) -> f32 {
     let near = view_aux.near_far.x;
     let far = view_aux.near_far.y;
@@ -387,9 +445,10 @@ fn sun_visibility(input: VertexOutput, receiver: ShadowReceiver) -> f32 {
     if depth > split+overlap {
         let reach = shadows.split_overlap.z;
         if reach > 0.0 {
-            if depth >= reach { return 1.0; }
+            if depth >= reach { return horizon_visibility(receiver); }
             let visibility = cascade_visibility(1u,receiver);
-            return mix(visibility,1.0,smoothstep(shadows.split_overlap.w,reach,depth));
+            if depth <= shadows.split_overlap.w { return visibility; }
+            return mix(visibility,horizon_visibility(receiver),smoothstep(shadows.split_overlap.w,reach,depth));
         }
         return cascade_visibility(1u,receiver);
     }

@@ -1,6 +1,8 @@
-//! Two prepared finite reverse-Z Sun cascades for the synthetic perspective view.
-//! One depth array belongs to each target; the prepared pipelines and light
-//! matrices belong to its device generation and checked camera sample.
+//! Two prepared finite reverse-Z Sun cascades and one top-down caster height
+//! map for the synthetic perspective view. Receivers beyond the cascades' reach
+//! march the height map toward the Sun. One depth array belongs to each target;
+//! the prepared pipelines and light matrices belong to its device generation and
+//! checked camera sample.
 
 use glam::{Mat4, Vec3, Vec4};
 use wgpu::util::DeviceExt;
@@ -12,8 +14,15 @@ use crate::graph::{CompiledPass, GraphDepthAttachment, ResourceId};
 
 pub(super) const SIZE: u32 = 1024;
 pub(super) const FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
-pub(super) const SAMPLE_BYTES: usize = 192;
-const MAPS: usize = 2;
+pub(super) const SAMPLE_BYTES: usize = 272;
+/// Two Sun cascades, then the top-down caster height map.
+pub(super) const MAPS: usize = 3;
+/// The same layer count for graph ranges and pipeline roles.
+pub(super) const LAYERS: u32 = 3;
+const _: () = assert!(LAYERS as usize == MAPS);
+/// Half-extent of the height map around the camera. At 1024 texels this keeps
+/// 32 m terrain texels while covering peaks more than 12 km upstream.
+const HORIZON_RADIUS: f32 = 16384.0;
 const RECEIVER_REACH: f32 = 512.0;
 const BIAS_MIN_WORLD: f32 = 0.006;
 const BIAS_MAX_WORLD: f32 = 0.15;
@@ -232,8 +241,8 @@ impl ShadowPrepared {
                 [],
                 Some(GraphDepthAttachment {
                     resource,
-                    range: u64::try_from(index).expect("two cascades")
-                        ..u64::try_from(index + 1).expect("two cascades"),
+                    range: u64::try_from(index).expect("three maps")
+                        ..u64::try_from(index + 1).expect("three maps"),
                     view,
                     clear: 0.0,
                 }),
@@ -263,7 +272,7 @@ impl ShadowTarget {
             texture.create_view(&wgpu::TextureViewDescriptor {
                 label: Some("synthetic Sun cascade layer"),
                 dimension: Some(wgpu::TextureViewDimension::D2),
-                base_array_layer: u32::try_from(index).expect("two cascade layers"),
+                base_array_layer: u32::try_from(index).expect("three map layers"),
                 array_layer_count: Some(1),
                 ..Default::default()
             })
@@ -344,6 +353,9 @@ impl FitInputs {
                     .map_or(height, |(lo, hi)| (lo.min(height.0), hi.max(height.1))),
             )
         });
+        let eye = camera_view.inverse().w_axis.truncate();
+        let (heights, height_span) = height_matrix(eye, caster_height)?;
+        debug_assert!((heights.row(2).y * height_span - 1.0).abs() < 1e-3);
         let matrices = [
             cascade_matrix(
                 camera_view,
@@ -367,6 +379,7 @@ impl FitInputs {
                 caster_height,
                 true,
             )?,
+            (heights, height_span),
         ];
         let mut samples = [0_u8; SAMPLE_BYTES];
         if let Some((_, max_y)) = caster_height {
@@ -376,7 +389,18 @@ impl FitInputs {
             samples[176..180].copy_from_slice(&max_y.to_le_bytes());
             samples[180..184].copy_from_slice(&minimum_sun_y.to_le_bytes());
         }
-        for (index, (matrix, span)) in matrices.iter().enumerate() {
+        samples[192..256].copy_from_slice(&matrix_bytes(heights));
+        if caster_height.is_some() {
+            // Reverse-Z top-down depth is affine in world height: d = a*y + b.
+            let a = heights.row(2).y;
+            let b = heights.row(2).w;
+            let uv_per_metre = heights.row(0).truncate().length() * 0.5;
+            let texel = 2.0 * HORIZON_RADIUS / SIZE as f32;
+            for (offset, value) in [a, b, uv_per_metre, texel].into_iter().enumerate() {
+                samples[256 + offset * 4..260 + offset * 4].copy_from_slice(&value.to_le_bytes());
+            }
+        }
+        for (index, (matrix, span)) in matrices[..2].iter().enumerate() {
             samples[index * 64..(index + 1) * 64].copy_from_slice(&matrix_bytes(*matrix));
             let scale = 1.0 / span;
             // The plane correction is exact only within one triangle. Allow half a
@@ -495,6 +519,43 @@ fn cascade_matrix(
     Ok((matrix, span))
 }
 
+/// Top-down reverse-Z orthographic map of the highest caster surface around the
+/// camera, snapped to whole texels so a moving camera keeps stable heights.
+fn height_matrix(eye: Vec3, caster_height: Option<(f32, f32)>) -> Result<(Mat4, f32), RenderError> {
+    let rotation = light_rotation(Vec3::Y);
+    let (low, high) = caster_height.unwrap_or((0.0, 1.0));
+    let texel = 2.0 * HORIZON_RADIUS / SIZE as f32;
+    let center = rotation.transform_point3(eye);
+    let snapped_x = (center.x / texel).round() * texel;
+    let snapped_y = (center.y / texel).round() * texel;
+    let light_view = Mat4::from_translation(Vec3::new(-snapped_x, -snapped_y, 0.0)) * rotation;
+    let min_depth = -high - 1.0;
+    let max_depth = -low + 1.0;
+    let span = max_depth - min_depth;
+    if !span.is_finite() || span <= 0.0 {
+        return Err(RenderError::InvalidView);
+    }
+    let standard = glam::camera::rh::proj::directx::orthographic(
+        -HORIZON_RADIUS,
+        HORIZON_RADIUS,
+        -HORIZON_RADIUS,
+        HORIZON_RADIUS,
+        min_depth,
+        max_depth,
+    );
+    let reverse = Mat4::from_cols(
+        Vec4::X,
+        Vec4::Y,
+        Vec4::new(0.0, 0.0, -1.0, 0.0),
+        Vec4::new(0.0, 0.0, 1.0, 1.0),
+    );
+    let matrix = reverse * standard * light_view;
+    if !matrix.to_cols_array().iter().all(|value| value.is_finite()) {
+        return Err(RenderError::InvalidView);
+    }
+    Ok((matrix, span))
+}
+
 fn light_rotation(direction: Vec3) -> Mat4 {
     let up = if direction.cross(Vec3::Y).length_squared() < 0.01 {
         Vec3::Z
@@ -599,7 +660,7 @@ mod tests {
                 + (tangent * phase.cos() + bitangent * phase.sin()) * SUN_ANGULAR_RADIUS.sin();
             assert!(sample.y >= minimum_y - 1e-7);
         }
-        for (index, (_, span)) in fitted.matrices.iter().enumerate() {
+        for (index, (_, span)) in fitted.matrices[..2].iter().enumerate() {
             assert!((value(168 + index * 4) * span - BIAS_MIN_WORLD).abs() < 1e-6);
             assert!((value(184 + index * 4) * span - 1.0).abs() < 1e-6);
         }

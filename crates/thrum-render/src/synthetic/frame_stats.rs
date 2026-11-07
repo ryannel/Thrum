@@ -25,22 +25,23 @@ fn collect_pass_durations(
     shadows: bool,
     clusters: bool,
 ) -> Option<PassDurations> {
-    const ALL: [&str; 7] = [
+    const ALL: [&str; 8] = [
         "synthetic Sun shadow near",
         "synthetic Sun shadow far",
+        "synthetic Sun horizon heights",
         "synthetic cluster build",
         "synthetic forward opaque",
         "synthetic transform history",
         "synthetic exposure resolve",
         "synthetic tone encode",
     ];
-    const SHADOW_ONLY: [&str; 6] = [ALL[0], ALL[1], ALL[3], ALL[4], ALL[5], ALL[6]];
-    const CLUSTER_ONLY: [&str; 5] = [ALL[2], ALL[3], ALL[4], ALL[5], ALL[6]];
+    const SHADOW_ONLY: [&str; 7] = [ALL[0], ALL[1], ALL[2], ALL[4], ALL[5], ALL[6], ALL[7]];
+    const CLUSTER_ONLY: [&str; 5] = [ALL[3], ALL[4], ALL[5], ALL[6], ALL[7]];
     let names: &[&str] = match (shadows, clusters) {
         (true, true) => &ALL,
         (true, false) => &SHADOW_ONLY,
         (false, true) => &CLUSTER_ONLY,
-        (false, false) => &ALL[3..],
+        (false, false) => &ALL[4..],
     };
     // A scene contribution adds one timed compute pass that the graph may order anywhere before
     // forward; it is reported on its own and the fixed scene sequence is matched without it.
@@ -81,7 +82,8 @@ fn collect_pass_durations(
             for pass in passes[offset..].iter().take(names.len()) {
                 let slot = match pass.name.as_ref() {
                     "synthetic Sun shadow near" => 0,
-                    "synthetic Sun shadow far" => 1,
+                    // The horizon height map shares the far shadow bucket.
+                    "synthetic Sun shadow far" | "synthetic Sun horizon heights" => 1,
                     "synthetic cluster build" => 2,
                     "synthetic forward opaque" => 3,
                     "synthetic transform history" => 4,

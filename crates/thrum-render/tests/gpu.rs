@@ -1078,10 +1078,12 @@ fn two_sun_cascades_shadow_near_and_far_receivers_from_off_camera_casters() {
             let target = OffscreenTarget::new(&device, &shadowed, 129, 129).expect("shadow target");
             let graph = shadowed
                 .graph(&target, true)
-                .expect("four passes plus readback");
-            assert!(graph.dependencies.contains(&(0, 2)));
-            assert!(graph.dependencies.contains(&(1, 2)));
+                .expect("five passes plus readback");
+            // Near, far and horizon height maps all feed forward (pass 3).
+            assert!(graph.dependencies.contains(&(0, 3)));
+            assert!(graph.dependencies.contains(&(1, 3)));
             assert!(graph.dependencies.contains(&(2, 3)));
+            assert!(graph.dependencies.contains(&(3, 4)));
             let shaded = render_pixels(&device, &queue, &shadowed, &target);
             if let Some(dir) = std::env::var_os("THRUM_SHADOW_CAPTURE_DIR") {
                 let name = if sample_x == 84 { "near" } else { "far" };
@@ -1179,8 +1181,8 @@ fn two_sun_cascades_shadow_near_and_far_receivers_from_off_camera_casters() {
                 .graph(&off_target, false)
                 .expect("off-state graph")
                 .dependencies,
-            [(0, 2), (1, 2), (2, 3), (2, 5), (4, 5)],
-            "configured shadow maps remain ready for a live Sun activation"
+            [(0, 3), (1, 3), (2, 3), (3, 4), (3, 6), (5, 6)],
+            "configured shadow and horizon maps remain ready for a live Sun activation"
         );
     });
 }
