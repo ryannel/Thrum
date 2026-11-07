@@ -140,14 +140,19 @@ impl SceneContext<'_> {
 
 impl OffscreenTarget {
     /// Before the host encodes this slot: arm the count copy unless the
-    /// buffer is still mapping. A count the last frame left untaken is
+    /// buffer is still mapping. Either way the earlier frame's metadata is
+    /// forgotten, so a mapping that settles later is reaped without being
+    /// attributed to this frame. A count the last frame left untaken is
     /// discarded and unmapped.
     pub(crate) fn arm_culling_stats(&mut self) {
         let Some(stats) = self.culling_stats.as_mut() else {
             return;
         };
         stats.armed = match stats.mapping.load(Ordering::Acquire) {
-            PENDING => false,
+            PENDING => {
+                stats.frame = None;
+                false
+            }
             state => {
                 if state == READY {
                     stats.buffer.unmap();
@@ -181,8 +186,9 @@ impl OffscreenTarget {
     }
 
     /// The submitted frame's counts if its mapping has settled, unmapping
-    /// the buffer. `None` for Direct, an unarmed frame, a failed mapping and
-    /// a mapping still pending, which stays pending for the next arm.
+    /// the buffer. `None` for Direct, a failed mapping, a mapping still
+    /// pending (left for the next arm), and an unarmed frame, which reaps
+    /// an earlier frame's settled mapping without reporting it.
     pub(crate) fn take_culling_counts(&mut self) -> Option<CullingCounts> {
         let stats = self.culling_stats.as_mut()?;
         if stats.mapping.load(Ordering::Acquire) == PENDING {
@@ -214,9 +220,34 @@ impl OffscreenTarget {
 /// Test hooks for a mapping callback that has not arrived.
 #[cfg(test)]
 mod hooks {
-    use super::{IDLE, OffscreenTarget, Ordering, PENDING};
+    use super::{AtomicU8, IDLE, OffscreenTarget, Ordering, PENDING};
+    use std::sync::Arc;
 
     impl OffscreenTarget {
+        /// Hide this slot's real mapping state behind a pending one, and
+        /// return the state the real callback writes.
+        pub(crate) fn defer_culling_mapping(&mut self) -> Option<Arc<AtomicU8>> {
+            let stats = self.culling_stats.as_mut()?;
+            Some(std::mem::replace(
+                &mut stats.mapping,
+                Arc::new(AtomicU8::new(PENDING)),
+            ))
+        }
+
+        /// Make a deferred mapping's real state visible to the host.
+        pub(crate) fn reveal_culling_mapping(&mut self, real: &AtomicU8) {
+            if let Some(stats) = self.culling_stats.as_mut() {
+                stats
+                    .mapping
+                    .store(real.load(Ordering::Acquire), Ordering::Release);
+            }
+        }
+
+        /// Whether a deferred mapping's real callback has not arrived yet.
+        pub(crate) fn culling_mapping_pending(real: &AtomicU8) -> bool {
+            real.load(Ordering::Acquire) == PENDING
+        }
+
         /// Hold this slot's count buffer as if its mapping were pending.
         pub(crate) fn stall_culling_stats(&mut self, stalled: bool) {
             if let Some(stats) = self.culling_stats.as_mut() {
