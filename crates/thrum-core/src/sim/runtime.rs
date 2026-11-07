@@ -613,6 +613,7 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
     ///
     /// No tick has committed, or the delta belongs to another runtime.
     pub fn capture_delta_into(&self, delta: &mut RuntimeDelta) -> Result<(), RuntimeError> {
+        self.assert_usable();
         if delta.nonce != self.nonce {
             return Err(RuntimeError::WrongCapture);
         }
@@ -660,6 +661,7 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
     /// Capture registered components, identities, slot generations and free
     /// order after a complete committed tick. This is a cold replay path.
     pub fn capture(&self) -> RuntimeCapture {
+        self.assert_usable();
         RuntimeCapture {
             world: self.world.capture(),
             tick: self.tick,
@@ -1008,6 +1010,7 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
         id: StableId,
         fill: impl FnOnce(&mut EntityWriter<'_>) -> Result<(), RegisteredWorldError>,
     ) -> Result<Handle, RuntimeError> {
+        self.assert_usable();
         if self.tick != 0 || self.initial_published {
             return Err(RuntimeError::AlreadyStarted);
         }
@@ -1256,8 +1259,9 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
     ///
     /// Panics only if the reserved page becomes unavailable inside the
     /// exclusive tick, or a game apply/capture callback panics. A panic from
-    /// apply or capture leaves the runtime poisoned: every later step, rewind
-    /// or publish panics until `restore` replaces the whole state.
+    /// apply or capture leaves the runtime poisoned: every later step, rewind,
+    /// publish, capture, delta or seed panics until `restore` replaces the
+    /// whole state.
     pub fn step(
         &mut self,
         game: &mut G,
