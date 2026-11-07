@@ -673,3 +673,32 @@ fn gpu_pending_capture_is_caller_owned_and_retired_with_its_generation() {
         );
     });
 }
+
+#[test]
+fn gpu_pending_capture_is_refused_by_another_device_with_the_same_generation() {
+    pollster::block_on(async {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let (first, first_queue) = gpu(&instance, 7).await;
+        let (second, second_queue) = gpu(&instance, 7).await;
+        let mut recorder = host(&first, &first_queue, Policy::default()).await;
+        let mut other = host(&second, &second_queue, Policy::default()).await;
+        let mut pending = recorder.begin_capture().expect("capture");
+        assert_eq!(pending.generation(), 7);
+        // Let the recorder's readback complete, so a wrong host would find
+        // pixels ready if it collected without checking the device.
+        recorder
+            .wait(pending.submitted.clone(), "capture")
+            .expect("recorder wait");
+        assert!(
+            other.try_finish_capture(&mut pending).is_err(),
+            "another device with the same generation refuses the capture"
+        );
+        assert!(
+            recorder
+                .try_finish_capture(&mut pending)
+                .expect("recorder finish")
+                .is_some(),
+            "the refusal leaves the capture intact for its own host"
+        );
+    });
+}
