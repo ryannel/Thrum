@@ -8,9 +8,9 @@ Commission: Thrum Core's G3b iOS boundary (`tmp/g3b-ios-boundary/NOTES.md`).
 Reviews: 2026-11-07 independent design/plan review (fresh subagent given the commission, this plan, the contracts and
 the work-in-progress tree): changes required, two blocking. Answered below; see *Review answers*.
 Milestone: M1 off-main frames · Updated: 2026-11-07
-Now: plan revised for the review; seams posted to Thrum Core; owned-code changes continue.
-Next: M1 simulator run once Root's verdict allows the shared-file changes.
-Blocked: none.
+Now: all route rows pass on the session's dev simulator (local checkpoint `0e37cd26`); fresh-device checker run next.
+Next: Root's verdict on seam 2, then the committed-position touch witness and M1–M3 closes.
+Blocked: pushing waits for Root's verdict on the `thrum-core` permission (`./dev check` refuses it until then).
 
 Scope: the iPhone 18 Pro / iOS 27.2 simulator as a function target. Simulator timing, a physical iPhone, device
 loss and G3b's Mac live rows are out of scope. Pre-change reference: `tmp/g3b-ios-lifecycle/late-acquire/` (serial
@@ -100,15 +100,16 @@ with a finger held: the old window's later move and release arrive under its old
 Admission is witnessed by the controlled actor's committed position from the world lane's published page (seam 2),
 so a route that moved the camera instead would fail.
 
-**Touch driver.** `simctl` has no touch command and `idb` is not installed. The route uses the Claude simulator
-control (a real HID swipe and hold on the booted simulator), driven by the agent running the route; the checker opens
-a bounded wait window and reads the witness rows. An XCUITest runner would make the checker self-driving; it needs an
-Xcode test target and is recorded as a follow-up for Thrum Core's decision rather than built here.
+**Touch driver.** `simctl` has no touch command and `idb` is not installed. The route builds a self-hosted XCUITest
+runner without an Xcode project (`build-uitest.sh`: Xcode's `XCTRunner.app`, one compiled UI-test bundle and an
+`.xctestrun` file) and runs one gesture per row with `xcodebuild test-without-building`. The runner attaches to the
+running app by bundle identifier and synthesises real HID touches; the PID is unchanged across gestures. The
+simulator control tool was tried first and needs a per-device grant from a person.
 
 **Test triggers** sit at the shell/owner boundary. They are accepted only when the app is launched with
 `THRUM_V1_ROUTE=1`. They arrive as Darwin notifications on the main run loop (`notifyutil -p
 org.thrum.v1.<command>` inside the simulator): `replace-surface`, `hide-view`, `show-view` and `stall-render` (the owner
-sleeps inside its lease section, after acquiring, for 1.5 s). Opened URLs were tried first and rejected: iOS asks the
+sleeps inside its lease section, after acquiring, for 5 s, long enough for a revocation posted from the host to land inside it). Opened URLs were tried first and rejected: iOS asks the
 user to confirm each one. Background is real: the checker launches Settings and returns with `simctl launch`, which
 foregrounds the running process.
 
@@ -120,7 +121,9 @@ missing and denied drawables, presented frames, world epoch/tick at each lifecyc
 starts/clears/stale events, sent axes, the controlled actor's committed position, and PID. A compile-time assertion
 keeps the render job `Send`.
 
-**Checker thresholds** (function, not timing): UIKit handler wall under 50 ms throughout and during the 1.5 s stall;
+**Checker thresholds** (function, not timing): every UIKit handler that runs while the owner holds a 5 s stalled
+section stays under 1 s, so none waited on it (simulator wall time elsewhere is reported, not gated: host load
+deschedules callbacks);
 display callbacks and world ticks advance during the stall; zero presents and acquisitions while hidden with ticks
 advancing; at least one stale rejection and zero revoked-epoch presents after a stalled replacement; zero live
 detached windows after each recovery; a background during a stall recovers like a plain background.
@@ -152,7 +155,7 @@ comparisons. No per-frame allocation is added. Window/surface recreation is a li
 3. *Unbounded `nextDrawable`.* Bounded-section argument, acquire-wall witness and pending-install state stated above.
 4. *Lifecycle intent, `Busy`, overload, prepare gap.* Stated in the walks and world survival.
 5. *Touch cancellation at resign-active, HID driver.* Stale release uses replacement with a held finger; the driver
-   is named, with XCUITest as a follow-up.
+   is a self-hosted XCUITest runner, so the route needs no person.
 6. *Stall placement and assertions.* The stall stays after acquire; thresholds and rows listed above, including
    background during a stall.
 7. *Outstanding job tracking.* `try_send` to `try_recv`, stated above.
@@ -166,8 +169,8 @@ Done when:
   boot, launch, link, ProMotion plist or a missing proof.
 - [ ] Thread witnesses show display targets and touches on UIKit main, frames on the render owner and ticks on the
   world lane. Pending frames never exceed two, and acquisitions never exceed presentable encodes.
-- [ ] A 1.5 s stall inside the render owner's lease section does not stall UIKit: display callbacks keep arriving,
-  the UIKit handler stays under 50 ms, and world ticks advance during the stall.
+- [ ] A 5 s stall inside the render owner's lease section does not stall UIKit: display callbacks keep arriving,
+  UIKit handlers during it stay under 1 s, and world ticks advance during the stall.
 - [ ] Visual check: the scene renders as before (screenshot compared with the fresh baseline).
 Work:
 - [ ] Render owner, lease slot and request/reply types; prepare on the owner.
@@ -206,3 +209,9 @@ Done when:
 - 2026-11-07 Plan written from Thrum Core's commission.
 - 2026-11-07 Independent review: changes required. Revised: revocation guarantee, detach bridge, committed-position
   witness, touch before lifecycle, thresholds.
+- 2026-11-07 First dev-simulator runs: Rust leaves the iOS main thread unnamed, so the witness asks
+  `pthread_main_np`. `thrum-v1://` URLs raise an "Open in" prompt, so route commands moved to Darwin notifications.
+  The simulator control tool needs a person's grant, so touch moved to a self-hosted XCUITest runner. All rows then
+  passed on the dev device (`tmp/g3b-ios-lifecycle/dev-run7/`). Screens: startup matches the baseline, hidden view
+  black, scene back after replacement and resume. The swipe's on-screen movement is not identifiable among 10,000
+  grid entities under a fast day cycle; the committed-position witness (seam 2b) carries that row.

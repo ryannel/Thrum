@@ -124,13 +124,20 @@ struct Owner {
     lease: Arc<Lease>,
     gpu: Option<Gpu>,
     origin: Instant,
+    /// Qualification only: tells the shell the owner now holds the section.
+    stalling: Box<dyn Fn() + Send>,
 }
 
-pub(super) fn start(lease: Arc<Lease>, wake: impl FnMut() + Send + 'static) -> Result<RenderWorker, String> {
+pub(super) fn start(
+    lease: Arc<Lease>,
+    wake: impl FnMut() + Send + 'static,
+    stalling: impl Fn() + Send + 'static,
+) -> Result<RenderWorker, String> {
     let mut owner = Owner {
         lease,
         gpu: None,
         origin: Instant::now(),
+        stalling: Box::new(stalling),
     };
     FrameWorker::start(
         THREAD,
@@ -269,7 +276,7 @@ impl Owner {
             }
         };
         reply.report = Some(if ready {
-            gpu.present(now, &lease, request, &mut reply)?
+            gpu.present(now, &lease, request, &mut reply, &*self.stalling)?
         } else {
             gpu.host.drive(now, None)?
         });
@@ -328,6 +335,7 @@ impl Gpu {
         lease: &Lease,
         request: &FrameRequest,
         reply: &mut FrameReply,
+        stalling: &dyn Fn(),
     ) -> Result<DriveReport, FrameError> {
         let advanced = self.host.advance(now)?;
         if !advanced.can_acquire_serial() {
@@ -368,6 +376,7 @@ impl Gpu {
             reply.acquired = true;
             if let Some(stall) = request.stall {
                 reply.stalled = true;
+                stalling();
                 thread::sleep(stall);
             }
             if !lease.is_current(request.epoch) {
