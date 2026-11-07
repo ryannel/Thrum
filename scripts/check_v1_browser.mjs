@@ -780,11 +780,14 @@ async function qualifySkyReflections(cdp, sessionId, poll, timeout, output, evid
   ]) {
     await held(name, `document.querySelector('[data-sky=${preset}]').click();${sceneView ? 'document.querySelector("#scene-view").click();' : ''}`, { hours, yaw, pitch }, true);
   }
-  await held('phase-scene-midnight', `
-    document.querySelector('#scene-view').click();
-    const solar=document.querySelector('#solar-time');
-    solar.value='0';solar.dispatchEvent(new Event('input',{bubbles:true}));
-  `, { hours: 0, yaw: 0, pitch: 0 }, true);
+  for (const [name, pitch] of [['phase-scene-midnight', 0], ['phase-upslope-midnight', 7]]) {
+    await held(name, `
+      document.querySelector('#scene-view').click();
+      for (const [selector, value] of [['#solar-time', 0], ['#camera-pitch', ${pitch}]]) {
+        const control=document.querySelector(selector);
+        control.value=String(value);control.dispatchEvent(new Event('input',{bubbles:true}));
+      }`, { hours: 0, yaw: 0, pitch }, true);
+  }
   // This is a sampled sequence, not a real-time playback or cadence recording.
   // Range step=1 quantizes camera yaw; record the actual accepted UI values.
   for (let index = 0; index < 24; index++) {
@@ -798,7 +801,7 @@ async function qualifySkyReflections(cdp, sessionId, poll, timeout, output, evid
       }`, { hours, yaw, pitch: 0 }, false);
   }
   evidence.final = await read(); assertPaused(evidence.final);
-  evidence.scope = 'One continuous built BrowserGame: eight paused held sky/scene phases and 24 range-driven camera/Sun samples, three present calls after every edit; healthy generation 1 and fixed authoritative tick. Canvas PNGs are compositor captures, not physical display cadence, GPU timing or transport-accuracy qualification.';
+  evidence.scope = 'One continuous built BrowserGame: nine paused held sky/scene phases and 24 range-driven camera/Sun samples, three present calls after every edit; healthy generation 1 and fixed authoritative tick. Canvas PNGs are compositor captures, not physical display cadence, GPU timing or transport-accuracy qualification.';
 }
 
 async function qualify(cdp, mode, origin, output, directory, wasm, timeout, assetsOrigin, assetsSource, files) {
@@ -1020,7 +1023,7 @@ async function cleanup(child, exited, cdp, server, profile) {
 
 async function main() {
   const args = options(process.argv.slice(2));
-  if (!args) { console.log('node scripts/check_v1_browser.mjs [--case all|normal|pause|resize|overload|input|controls|params|device-loss|late-device-loss|device-recovery|device-recovery-retry|sky-reflections|valley|valley-recovery|material|material-disabled|field|field-direct] [--web-root target/v1-game-web] [--cook target/debug/thrum-cook] [--assets-source examples/v1-game/assets/showcase] [--chrome /path/to/Chrome] [--output tmp/new-run] [--timeout-ms 90000]\nRequires Node 24+, an already-built game, and this Mac\'s Apple M3 Max/Metal Chrome. Controls checks manual pause with ongoing RAF; params applies, explains and reloads a parameter file; visibility checks use the explicit hook, not tab hiding. Recovery uses the real restore button; retry injects exactly one standard canvas configure failure. Sky reflections saves eight paused phases and 24 camera/Sun samples; valley repeats them on the cooked valley served by thrum-cook; valley-recovery runs device recovery with that valley attached; material reloads a WGSL hook on that valley (valid, refused, and outstanding across a destroyed device) and records contended frame intervals around the valid reload; it needs the development page (web/build.sh --dev), so all leaves it out. material-disabled loads the default page with ?material and proves it starts no material work. Field qualifies the 100,513-instance flythrough with Frustum camera culling; field-direct qualifies it with Direct for a paired comparison. The other cases make no timing claim.'); return; }
+  if (!args) { console.log('node scripts/check_v1_browser.mjs [--case all|normal|pause|resize|overload|input|controls|params|device-loss|late-device-loss|device-recovery|device-recovery-retry|sky-reflections|valley|valley-recovery|material|material-disabled|field|field-direct] [--web-root target/v1-game-web] [--cook target/debug/thrum-cook] [--assets-source examples/v1-game/assets/showcase] [--chrome /path/to/Chrome] [--output tmp/new-run] [--timeout-ms 90000]\nRequires Node 24+, an already-built game, and this Mac\'s Apple M3 Max/Metal Chrome. Controls checks manual pause with ongoing RAF; params applies, explains and reloads a parameter file; visibility checks use the explicit hook, not tab hiding. Recovery uses the real restore button; retry injects exactly one standard canvas configure failure. Sky reflections saves nine paused phases and 24 camera/Sun samples; valley repeats them on the cooked valley served by thrum-cook; valley-recovery runs device recovery with that valley attached; material reloads a WGSL hook on that valley (valid, refused, and outstanding across a destroyed device) and records contended frame intervals around the valid reload; it needs the development page (web/build.sh --dev), so all leaves it out. material-disabled loads the default page with ?material and proves it starts no material work. Field qualifies the 100,513-instance flythrough with Frustum camera culling; field-direct qualifies it with Direct for a paired comparison. The other cases make no timing claim.'); return; }
   if (Number(process.versions.node.split('.')[0]) < 24 || typeof WebSocket !== 'function') throw new Error('Node 24+ with builtin WebSocket is required');
   const directory = await fs.realpath(path.resolve(repo, args['web-root']));
   const files = await assets(directory);

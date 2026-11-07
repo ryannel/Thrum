@@ -108,18 +108,38 @@ The Codex goal remains active. Its attachment is
   `node tmp/g3s-showcase/night-design/m1-transport/chrome-late-twilight-front.mjs --case valley --output <new-directory>`
   with the built default page. The sampled clip, contact sheet and pixel
   rows are in `m1-transport/chrome-late-front/`. These are held edits.
-  Independent review found a thin warm S-shaped contour on the metal ball
-  in `late-03`–`late-11`. In the diagnostic WebGPU build, removing just
-  the GGX convolution removes the S contour while retaining the cube and
-  physical horizon. A separate 1,024-sample convolution largely suppresses
-  the contour while keeping the soft horizon. The 128-sample shipping path
-  stays in use. Compare a lower-cost sampling pattern against the dense
-  result. Both crops, Wasm hashes and the diagnostic shader are under
-  `m1-reflection-isolation/` in night scratch. The
-  diffuse rock's lower edge is readable, with weak contrast over the ground.
-  At +12° the rock clips the frame. Use a shallower upslope angle with both
-  materials visible, then capture it on Metal and Chrome. Record live
-  motion separately.
+  Independent review found a warm S contour on the metal ball. The
+  diagnostic cube without convolution loses the contour and soft horizon.
+  At 1,024 taps per mip the contour largely disappears and the horizon
+  stays soft. Redistributing taps to the rougher mips lowers Chrome's
+  sphere-region error against dense from 0.87–1.10 to 0.33–0.39 RGB codes
+  over frames 05–09. The independent review saw the same improvement on
+  Metal, with faint residual streaks. Two interleaved Metal 1080p offscreen
+  pairs per order reject this schedule on cost. Median run p95s:
+
+  | Solar hour | Scene GPU ms, before → after | Atmosphere GPU ms, before → after |
+  | --- | --- | --- |
+  | 12 | 4.41 → 8.29 | 1.03 → 2.32 |
+  | 18.97 | 6.26 → 10.10 | 1.11 → 2.40 |
+
+  Shared load was about 34. Both pairs agree on the direction. The regular
+  128-tap filter remains in use. Same-count angular probes move the streaks;
+  the split-horizon footprint experiment leaves the error essentially
+  unchanged. The next candidate should parallelize the wide-lobe reduction
+  across GPU lanes. The scratch four-lane reduction passes WebGPU and
+  stays within one RGB code of the rejected scalar schedule across the
+  five reflection crops. Next measure it on Metal against the shipping
+  filter. Raw rows, crops, `cooperative-source/`, and the rejected
+  `packed-schedule.patch` are under `m1-reflection-isolation/` in night scratch.
+  The +12° midnight camera cropped the rock. The matched +7° capture keeps
+  both materials in frame and is now in the native and Chrome capture routes.
+  A separate live Chrome world advanced from 18.26 to 20.22 h across 49
+  compositor captures. Its overload counter rose from 0 to 24 during
+  the concurrent workspace check. This proves time advanced without slider
+  steps. Smooth presentation remains open. See `current-live-contact.png`,
+  `current-live-sampled.mp4` and `current-live-chrome/live.ndjson` under the
+  same scratch folder. Repeat `chrome-natural-twilight.mjs --case valley`
+  with a fresh output directory and without our own tests running.
 - The production forward and tone passes store a neutral dim card at
   0.00013661385 in the HDR attachment and display code 21 on Metal and Chrome.
   The card emits the analytically known radiance of a 1% Lambert surface

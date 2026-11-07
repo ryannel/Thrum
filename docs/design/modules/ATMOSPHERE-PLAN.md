@@ -1,11 +1,11 @@
 # Atmosphere milestones
 
 Design: [ATMOSPHERE.md](ATMOSPHERE.md)
-Reviews: Optical design and plan over `a91cdd0e`, final design `f9d0c12a` and plan `c3cc5748` · [optical brief](#optical-review-brief) · initial changes required, final M1 implementation cleared. Frame graph and ownership at the same revisions · [graph brief](#graph-review-brief) · initial changes required, final design cleared. First valley captures, Metal build `dfae5b21` and Chrome Wasm `bc15ea7d` (SHA-256 prefixes) · [capture brief](#capture-review-brief) · held ground view passes, M1 remains open. Chrome late-twilight Wasm `134e271c` · [sweep brief](#sweep-review-brief) · silhouette and reflection visible, warm contour and live motion open.
+Reviews: Optical design and plan over `a91cdd0e`, final design `f9d0c12a` and plan `c3cc5748` · [optical brief](#optical-review-brief) · initial changes required, final M1 implementation cleared. Frame graph and ownership at the same revisions · [graph brief](#graph-review-brief) · initial changes required, final design cleared. First valley captures, Metal build `dfae5b21` and Chrome Wasm `bc15ea7d` (SHA-256 prefixes) · [capture brief](#capture-review-brief) · held ground view passes, M1 remains open. Chrome late-twilight Wasm `134e271c` · [sweep brief](#sweep-review-brief) · silhouette and reflection visible, warm contour and live motion open. Packed reflection candidate over `c2ac94d8`, Wasm `132f992f` · [reflection brief](#reflection-review-brief) · visual improvement, rejected on measured Metal cost.
 Updated: 2026-11-07
 Milestone: M1 moonless midnight
 Now: the held Metal and Chrome valley is legible at midnight. Metal sky, incident meter and finite aerial transport pass the f64 oracle.
-Next: isolate the warm reflection contour, then capture a shallower upslope view and live night transition.
+Next: test a cooperative reflection reduction and qualify the live transition.
 Blocked: none. G3s stays open.
 
 ## M1 The valley remains legible at moonless midnight: in progress
@@ -91,6 +91,20 @@ reviewer rechecked the finite-shell revision. The GPU and in-game checks are ope
 > contours, shimmer, plateaus or jumps by image/time and distinguish cadence claims
 > from sampled edits. Inspect at native scale and sequence directly where available.
 > No file edits, GPU runs or delegation. Return defect-first per-cue pass/fail/can't tell.
+
+### Reflection review brief
+
+> Independent read-only Thrum reflection checkpoint review. Use the module-design
+> review reference. Remove objectionable warm contours during the cooked valley’s
+> late twilight while preserving a physical soft reflected horizon, readable
+> midnight, daylight appearance and frame cost tripwires. Inspect the three
+> atmosphere reflection files over c2ac94d8, the raw candidate Chrome capture
+> and clip, its raw ROI rows, the matched baseline and dense captures under
+> tmp/g3s-showcase/night-design/. Judge artifacts at native size, state whether
+> you watch sequence, flag regressions and whether the two workgroups index
+> the same packed record. Keep cadence and headless samples separate. No writes,
+> GPU runs or delegation. Return verified/suspected findings and per-cue verdicts.
+> The follow-up supplied matched offscreen Metal stills from the same game host.
 
 ## Log
 

@@ -68,23 +68,27 @@ pub(super) async fn run(output: PathBuf) -> Result<(), String> {
     }
     std::fs::create_dir_all(&output).map_err(|error| error.to_string())?;
     let mut records = Vec::new();
-    for (name, hours, yaw) in [
-        ("dawn", 5.52, 0.0_f32),
-        ("sunrise", 6.1, 0.0),
-        ("noon", 12.0, 0.0),
-        ("sunset", 17.9, 0.0),
-        ("twilight", 18.48, 0.0),
-        ("night", 0.0, 0.0),
-        ("sunrise-sun-clear", 6.6, 90.0),
-        ("sunset-sun-clear", 17.4, -90.0),
-        ("sunrise-sun", 6.1, 90.0),
-        ("sunset-sun", 17.9, -90.0),
+    for (name, hours, yaw, pitch) in [
+        ("dawn", 5.52, 0.0_f32, 0.0_f32),
+        ("sunrise", 6.1, 0.0, 0.0),
+        ("noon", 12.0, 0.0, 0.0),
+        ("sunset", 17.9, 0.0, 0.0),
+        ("twilight", 18.48, 0.0, 0.0),
+        ("night", 0.0, 0.0, 0.0),
+        ("night-upslope", 0.0, 0.0, 7.0),
+        ("sunrise-sun-clear", 6.6, 90.0, 0.0),
+        ("sunset-sun-clear", 17.4, -90.0, 0.0),
+        ("sunrise-sun", 6.1, 90.0, 0.0),
+        ("sunset-sun", 17.9, -90.0, 0.0),
     ] {
         host.set_camera_yaw(yaw.to_radians())?;
+        host.set_camera_pitch(pitch.to_radians())?;
         host.set_time_of_day(hours / 24.0)?;
         let file = format!("{name}.ppm");
         save(&mut host, &output.join(&file))?;
-        records.push(serde_json::json!({"file":file,"hours":hours,"yaw_degrees":yaw}));
+        records.push(
+            serde_json::json!({"file":file,"hours":hours,"yaw_degrees":yaw,"pitch_degrees":pitch}),
+        );
     }
     let sequence = output.join("sequence");
     std::fs::create_dir(&sequence).map_err(|error| error.to_string())?;
