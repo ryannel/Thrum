@@ -287,11 +287,11 @@ impl BrowserGame {
         let id = self.demo.model().lookup(key).map_err(js_error)?;
         let model = self.demo.model_mut();
         let changed = if let Some(on) = value.as_bool() {
-            model.edit_value(id, Value::Flag(on))
+            model.edit_value(id, Value::Flag(on)).map_err(js_error)?
         } else if let Some(number) = value.as_f64() {
-            model.edit_display(id, number)
+            model.edit_display(id, number).map_err(js_error)?
         } else if let Some(text) = value.as_string() {
-            model.edit_value(id, Value::Text(text))
+            model.edit_value(id, Value::Text(text)).map_err(js_error)?
         } else {
             return Err(js_error(format!(
                 "control \"{key}\" needs a number, boolean or string"
