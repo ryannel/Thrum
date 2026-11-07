@@ -38,12 +38,12 @@ pub struct CullingCounts {
     pub mode: CullMode,
     /// Active instance slots the frame tested.
     pub active: u32,
-    /// Instances the indirect draws drew: the frustum list, or both
-    /// Occlusion phases.
+    /// Instances the colour draw drew: the frustum list, or Occlusion's
+    /// final list.
     pub drawn: u32,
-    /// Of those, drawn by Occlusion's late phase. Zero for Frustum, and while
-    /// a scene contribution draws (the late phase then lists nothing).
-    pub late: u32,
+    /// Occlusion's depth prepass list (last frame's visible set in view).
+    /// Zero for Frustum.
+    pub prepass: u32,
 }
 
 impl CullingCounts {
@@ -135,15 +135,18 @@ impl SceneContext<'_> {
     /// Copy each list's instance count into the slot's count buffer.
     pub(in crate::synthetic) fn culling_stats(&mut self) -> Result<(), RenderError> {
         let target = self.target;
-        let (Some(stats), Some(early)) = (&target.culling_stats, &target.visibility) else {
+        let (Some(stats), Some(drawn)) = (&target.culling_stats, &target.visibility) else {
             return Err(RenderError::GraphPassMismatch);
         };
         if !stats.armed {
             // Still mapping an earlier frame, or a capture: no count.
             return Ok(());
         }
-        let late = target.occlusion.as_ref().map(|late| late.target.late());
-        let lists = std::iter::once(early).chain(late);
+        let prepass = target
+            .occlusion
+            .as_ref()
+            .map(|prepass| prepass.target.prepass());
+        let lists = std::iter::once(drawn).chain(prepass);
         for (index, list) in (0..stats.lists).zip(lists) {
             self.encoder.copy_buffer_to_buffer(
                 list.args(),
@@ -233,8 +236,8 @@ impl OffscreenTarget {
                 frame.map(|(mode, active)| CullingCounts {
                     mode,
                     active,
-                    drawn: count(0).saturating_add(count(1)),
-                    late: count(1),
+                    drawn: count(0),
+                    prepass: count(1),
                 })
             });
         stats.buffer.unmap();

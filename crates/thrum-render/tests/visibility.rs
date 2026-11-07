@@ -492,8 +492,8 @@ fn occlusion_matches_direct_draw_through_cuts_recycled_rows_and_a_dropped_frame(
 /// Root's equal-depth witness: two slots at exactly the same pose with
 /// different materials. Direct draws in slot order with a strict reverse-Z
 /// test, so the lower slot wins every tie. `entering` is the slot that starts
-/// outside the view and moves onto the other's pose, so Occlusion draws it in
-/// the late phase while the other replays early.
+/// outside the view and moves onto the other's pose, so only the staying slot
+/// is in Occlusion's prepass.
 async fn equal_depth_case(entering: usize) -> (Vec<u8>, Vec<u8>) {
     let (adapter, device, queue) = device().await;
     let capabilities = DeviceCapabilities::capture(&adapter, &device, 43);
@@ -540,28 +540,23 @@ async fn equal_depth_case(entering: usize) -> (Vec<u8>, Vec<u8>) {
     (reference, culled)
 }
 
-/// Witness for the known hazard that keeps Occlusion off the shipped path:
-/// a lower slot entering late loses an equal-depth tie to an early higher
-/// slot. Direct order needs the slot order across both phases. When the M3
-/// design restores it, this becomes `[0, 0]`.
+/// Root's equal-depth witness. M2's split forward pass drew the staying slot
+/// early and the entering one late, so a lower slot entering lost the tie
+/// (`[3216, 0]`). Occlusion now draws one list in slot order after the
+/// prepass, so both orders keep Direct's winner.
 #[test]
-fn equal_depth_ties_follow_the_early_phase_when_a_lower_slot_enters_late() {
+fn equal_depth_ties_keep_direct_order_whichever_slot_enters() {
     pollster::block_on(async {
         let mut changed = Vec::new();
         for entering in [0, 1] {
             let (reference, culled) = Box::pin(equal_depth_case(entering)).await;
             changed.push(differing(&reference, &culled));
         }
-        eprintln!(
-            "pixels changed against Direct with slot 0, then slot 1, entering late: {changed:?}"
-        );
+        eprintln!("pixels changed against Direct with slot 0, then slot 1, entering: {changed:?}");
         assert_eq!(
-            changed[1], 0,
-            "a higher slot entering late keeps Direct order"
-        );
-        assert!(
-            changed[0] > 0,
-            "the lower-slot hazard is gone: make this test require [0, 0]"
+            changed,
+            [0, 0],
+            "both orders keep Direct's equal-depth winner"
         );
     });
 }

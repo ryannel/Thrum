@@ -4,12 +4,13 @@
 //! mesh/pipeline bucket. Outputs belong to a frame slot's target. Sun casters
 //! never read this list. The direct draw, which never reads it, is the oracle.
 //!
-//! Occlusion runs the same kernels twice per frame. The early phase lists
-//! slots in view that were visible last frame; the late phase, after the
-//! early draw's depth pyramid, lists the remaining slots in view that the
-//! pyramid does not hide and rewrites the one last-visible history. Both
-//! phases make the same frustum decision, so history only moves a slot
-//! between phases and can never hide one.
+//! Occlusion runs the same kernels twice per frame. The prepass list holds
+//! slots in view that were visible last frame; they draw depth only into a
+//! private target, and the depth pyramid is built from it. The final cull
+//! then lists, in slot order, every slot in view that the pyramid does not
+//! hide, and records that list as the next last-visible history. The colour
+//! pass draws only the final list, so its draw sequence is Direct's minus
+//! slots strictly behind depth drawn this frame, which win no pixel.
 
 use crate::graph::{
     Access, AccessKind, CompiledPass, FrameGraph, GraphError, Pass, PassScope, PipelineKey,
@@ -25,7 +26,7 @@ const MESH_LEN: usize = 48;
 const PARAMS_LEN: usize = 16;
 /// One parameter record per phase, at the portable uniform offset alignment.
 const PARAMS_STRIDE: u32 = 256;
-const PHASES: u32 = 4;
+const PHASES: u32 = 3;
 /// Last-visible bits per workgroup of slots.
 const WORDS: u32 = WORKGROUP / 32;
 /// Graph owner of the last-visible history pair.
@@ -33,16 +34,16 @@ const HISTORY_OWNER: u64 = 0x5649_4849;
 const VIEW_BYTES: u64 = 160;
 /// Pipeline role inside the synthetic closure.
 pub(crate) const ROLE: u32 = 0x5649;
-/// Pipeline role of the late occlusion phase.
-pub(crate) const ROLE_LATE: u32 = 0x564A;
+/// Pipeline role of the final occlusion cull.
+pub(crate) const ROLE_FINAL: u32 = 0x564A;
 /// Pipeline role of the depth pyramid build.
 pub(crate) const ROLE_PYRAMID: u32 = 0x5650;
 /// Graph pass name of the frustum compaction.
 pub(crate) const PASS: &str = "camera visibility";
-/// Graph pass name of the early occlusion phase.
-pub(crate) const EARLY_PASS: &str = "camera visibility early";
-/// Graph pass name of the late occlusion phase.
-pub(crate) const LATE_PASS: &str = "camera visibility late";
+/// Graph pass name of the occlusion prepass list.
+pub(crate) const PREPASS_LIST_PASS: &str = "camera prepass list";
+/// Graph pass name of the final occlusion cull.
+pub(crate) const FINAL_PASS: &str = "camera final cull";
 pub(crate) use pyramid::PASS as PYRAMID_PASS;
 
 /// Stable mesh row: index range and local bounds. Rows never move once
@@ -78,10 +79,9 @@ pub enum CullMode {
     Direct,
     /// GPU frustum compaction and an indexed indirect draw.
     Frustum,
-    /// Two-phase occlusion: last frame's visible set first, then the rest
-    /// of the view against this frame's depth pyramid, in a second forward
-    /// pass. For the opaque field path; while a scene contribution draws,
-    /// each frame takes the Frustum decision instead.
+    /// Occlusion: last frame's visible set draws depth only, and every slot
+    /// in view is then tested against that depth's pyramid. The colour pass
+    /// draws the survivors in slot order, so the image equals Direct's.
     Occlusion,
 }
 
@@ -90,13 +90,10 @@ pub enum CullMode {
 pub(crate) enum Phase {
     /// Every slot in view.
     Frustum = 0,
-    /// Slots in view that were visible last frame.
-    Early = 1,
-    /// Slots in view, not hidden by this frame's pyramid, not drawn early.
-    Late = 2,
-    /// Nothing: zero instances, and the history cleared. The late phase's
-    /// record while a frame takes the Frustum decision.
-    Skip = 3,
+    /// Slots in view that were visible last frame: the depth prepass.
+    Prepass = 1,
+    /// Slots in view that this frame's pyramid does not hide.
+    Final = 2,
 }
 
 /// Device-local pipelines and the mesh table.
@@ -109,14 +106,11 @@ pub(crate) struct VisibilityPrepared {
     params: wgpu::Buffer,
     /// The camera's last-visible history, two sides of one bit per slot,
     /// paired with the transform history's sides: a frame reads the committed
-    /// side and its late phase writes the other, so only a committed display
+    /// side and its final cull writes the other, so only a committed display
     /// frame advances it and a capture or cancelled frame cannot. Zero after
-    /// creation, so a new device or capacity starts with every visible slot
-    /// in the late phase.
+    /// creation, so a new device or capacity starts with an empty prepass.
     history: [wgpu::Buffer; 2],
-    /// Bound wherever no pyramid is read: frustum and early targets, and a
-    /// late target's Skip phase. Binding a real pyramid would register its
-    /// mips for initialization even on frames that never build it.
+    /// Bound wherever no pyramid is read: frustum and prepass targets.
     idle_pyramid: wgpu::TextureView,
     /// Occlusion only: the depth pyramid build.
     pyramid: Option<pyramid::PyramidPrepared>,
@@ -131,8 +125,6 @@ pub(crate) struct VisibilityTarget {
     args: wgpu::Buffer,
     /// Indexed by the history side the frame writes.
     groups: [wgpu::BindGroup; 2],
-    /// Late targets only: the same groups with the idle pyramid, for Skip.
-    skip_groups: Option<[wgpu::BindGroup; 2]>,
     phase: Phase,
 }
 
@@ -144,7 +136,8 @@ pub(crate) struct VisibilityIds {
     /// Indirect arguments, read by the forward draw.
     pub(crate) args: ResourceId,
     /// Occlusion only: the camera's last-visible history pair, the committed
-    /// side read by both phases and the next side written by the late phase.
+    /// side read by the prepass list and the next side written by the final
+    /// cull.
     history: Option<HistoryIds>,
 }
 
@@ -155,9 +148,10 @@ pub(crate) struct HistoryIds {
     next: ResourceId,
 }
 
-/// One frame slot's occlusion state: the late phase and the pyramid it reads.
+/// One frame slot's occlusion state: the prepass list and the pyramid built
+/// from the depth it draws.
 pub(crate) struct OcclusionTarget {
-    late: VisibilityTarget,
+    prepass: VisibilityTarget,
     pyramid: pyramid::PyramidTarget,
 }
 
@@ -298,10 +292,10 @@ impl VisibilityPrepared {
         }
     }
 
-    /// Occlusion only: the late phase's pipeline key.
-    pub(crate) fn late_key(&self) -> PipelineKey {
+    /// Occlusion only: the final cull's pipeline key.
+    pub(crate) fn final_key(&self) -> PipelineKey {
         PipelineKey {
-            role: ROLE_LATE,
+            role: ROLE_FINAL,
             ..self.key
         }
     }
@@ -367,8 +361,8 @@ impl VisibilityPrepared {
         )
     }
 
-    /// Occlusion only: one frame slot's early target and its late phase with
-    /// the pyramid of `depth` (extent `extent`).
+    /// Occlusion only: one frame slot's final target, and its prepass list
+    /// with the pyramid of the prepass `depth` (extent `extent`).
     pub(crate) fn occlusion_target(
         &self,
         device: &wgpu::Device,
@@ -382,13 +376,14 @@ impl VisibilityPrepared {
         let mips = pyramid
             .texture()
             .create_view(&wgpu::TextureViewDescriptor::default());
-        let [early, late] = self.occlusion_targets(device, view, instances, serials, &mips);
-        Some((early, OcclusionTarget { late, pyramid }))
+        let [prepass, last] = self.occlusion_targets(device, view, instances, serials, &mips);
+        Some((last, OcclusionTarget { prepass, pyramid }))
     }
 
-    /// Allocate one frame slot's early and late targets. They share scratch,
-    /// which their ordered passes use in turn, and the camera's history; the
-    /// late target reads `pyramid`, every mip of this slot's depth pyramid.
+    /// Allocate one frame slot's prepass and final targets. They share
+    /// scratch, which their ordered passes use in turn, and the camera's
+    /// history; the final target reads `pyramid`, every mip of this slot's
+    /// depth pyramid.
     pub(crate) fn occlusion_targets(
         &self,
         device: &wgpu::Device,
@@ -404,13 +399,13 @@ impl VisibilityPrepared {
             serials,
             pyramid,
         };
-        let early = Inputs {
+        let prepass = Inputs {
             pyramid: &self.idle_pyramid,
             ..inputs
         };
         [
-            self.phase_target(device, early, &scratch, Phase::Early),
-            self.phase_target(device, inputs, &scratch, Phase::Late),
+            self.phase_target(device, prepass, &scratch, Phase::Prepass),
+            self.phase_target(device, inputs, &scratch, Phase::Final),
         ]
     }
 
@@ -494,14 +489,13 @@ impl VisibilityPrepared {
         };
         VisibilityTarget {
             groups: bind(pyramid),
-            skip_groups: (phase == Phase::Late).then(|| bind(&self.idle_pyramid)),
             visible,
             args,
             phase,
         }
     }
 
-    /// Declare the frustum or early compute pass and its outputs. `reads`
+    /// Declare the frustum or prepass-list compute pass and its outputs. `reads`
     /// carries the view, instance and serial accesses from the forward
     /// pass's own resources.
     pub(crate) fn append_graph(
@@ -520,7 +514,11 @@ impl VisibilityPrepared {
             kind: AccessKind::StorageRead,
             store: true,
         }));
-        let name = if history.is_some() { EARLY_PASS } else { PASS };
+        let name = if history.is_some() {
+            PREPASS_LIST_PASS
+        } else {
+            PASS
+        };
         let (visible, args) = self.outputs(graph, &mut reads)?;
         graph.pass(Pass {
             name: name.into(),
@@ -538,7 +536,7 @@ impl VisibilityPrepared {
 
     /// Both sides of the last-visible history, as a graph history pair like
     /// the transform history: the executor binds the committed side for
-    /// reads and the alternate side for the late phase's publication.
+    /// reads and the alternate side for the final cull's publication.
     fn history_ids(&self, graph: &mut FrameGraph) -> Result<HistoryIds, GraphError> {
         let descriptor = ResourceDescriptor::Buffer {
             bytes: bits_bytes(self.capacity),
@@ -555,18 +553,21 @@ impl VisibilityPrepared {
         })
     }
 
-    /// Occlusion only: declare the pyramid build from `depth` (sampled, so
-    /// the early forward stores it) and the late phase. `reads` are the same
-    /// view, instance and serial accesses the early phase was given.
-    pub(crate) fn append_late_graph(
+    /// Occlusion only: declare the pyramid build from the prepass `depth`
+    /// and the final cull. `reads` are the same view, instance and serial
+    /// accesses the prepass list was given.
+    pub(crate) fn append_final_graph(
         &self,
         graph: &mut FrameGraph,
         mut reads: Vec<Access>,
-        early: &VisibilityIds,
+        prepass: &VisibilityIds,
         depth: &ResourceId,
         extent: [u32; 2],
     ) -> Result<VisibilityIds, GraphError> {
-        let history = early.history.clone().ok_or(GraphError::InvalidDependency)?;
+        let history = prepass
+            .history
+            .clone()
+            .ok_or(GraphError::InvalidDependency)?;
         let size = [
             pyramid::previous_pow2(extent[0]),
             pyramid::previous_pow2(extent[1]),
@@ -627,9 +628,9 @@ impl VisibilityPrepared {
         ]);
         let (visible, args) = self.outputs(graph, &mut reads)?;
         graph.pass(Pass {
-            name: LATE_PASS.into(),
+            name: FINAL_PASS.into(),
             scope: PassScope::View(1),
-            pipeline: Some(self.late_key()),
+            pipeline: Some(self.final_key()),
             accesses: reads,
             external_side_effect: false,
         });
@@ -680,23 +681,23 @@ impl VisibilityPrepared {
     }
 
     /// Encode the three ordered dispatches into the graph's compute pass,
-    /// with `phase`'s record: normally the target's own, or the Frustum
-    /// decision for an early target and Skip for a late one. The frame reads
-    /// history side `1 - write_side` and its late phase writes `write_side`.
+    /// with the target's phase record. The frame reads history side
+    /// `1 - write_side` and its final cull writes `write_side`.
     pub(crate) fn encode_phase(
         &self,
         encoder: &mut wgpu::CommandEncoder,
         target: &VisibilityTarget,
-        (phase, write_side): (Phase, usize),
+        write_side: usize,
         (view_offset, generation): (u32, u64),
         compiled: &CompiledPass,
         timings: Option<&mut GpuTimings>,
     ) -> Result<bool, TimingError> {
         let groups = self.groups();
-        // The phases that publish history write only the dispatched words;
-        // zero the rest of that side, so no word an older or larger frame
-        // left there survives a shrink, a capture or a side flip.
-        if matches!(phase, Phase::Late | Phase::Skip) {
+        let phase = target.phase;
+        // The final cull writes only the dispatched words of the next side;
+        // zero the rest, so no word an older or larger frame left there
+        // survives a shrink, a capture or a side flip.
+        if phase == Phase::Final {
             let written = u64::from(groups) * u64::from(WORDS) * 4;
             if written < bits_bytes(self.capacity) {
                 encoder.clear_buffer(&self.history[write_side & 1], written, None);
@@ -706,11 +707,11 @@ impl VisibilityPrepared {
             return Ok(false);
         };
         let params_offset = phase as u32 * PARAMS_STRIDE;
-        let bound = match (phase, &target.skip_groups) {
-            (Phase::Skip, Some(skip)) => skip,
-            _ => &target.groups,
-        };
-        pass.set_bind_group(0, &bound[write_side & 1], &[view_offset, params_offset]);
+        pass.set_bind_group(
+            0,
+            &target.groups[write_side & 1],
+            &[view_offset, params_offset],
+        );
         pass.set_pipeline(&self.count);
         pass.dispatch_workgroups(groups, 1, 1);
         pass.set_pipeline(&self.offsets);
@@ -722,8 +723,8 @@ impl VisibilityPrepared {
 }
 
 impl OcclusionTarget {
-    pub(crate) fn late(&self) -> &VisibilityTarget {
-        &self.late
+    pub(crate) fn prepass(&self) -> &VisibilityTarget {
+        &self.prepass
     }
 }
 
@@ -749,11 +750,6 @@ impl VisibilityPrepared {
 }
 
 impl VisibilityTarget {
-    /// The phase this target was allocated for.
-    pub(crate) fn phase(&self) -> Phase {
-        self.phase
-    }
-
     pub(crate) fn visible(&self) -> &wgpu::Buffer {
         &self.visible
     }

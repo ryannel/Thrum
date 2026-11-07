@@ -49,8 +49,6 @@ pub(crate) use air_shadow::AIR_SHADOW_PASS;
 #[derive(Clone, Copy)]
 enum AttachmentUse {
     Depth,
-    /// Occlusion: depth the pyramid samples after the early forward pass.
-    SampledDepth,
     Scene,
     Motion,
 }
@@ -435,6 +433,9 @@ pub struct PreparedSynthetic {
     key: PipelineKey,
     pipeline: wgpu::RenderPipeline,
     pipeline_two_sided: wgpu::RenderPipeline,
+    /// Occlusion only: the depth-only twins of `pipeline` and
+    /// `pipeline_two_sided`, for the depth prepass.
+    depth_prepass: Option<[wgpu::RenderPipeline; 2]>,
     cube_indices: wgpu::Buffer,
     cube_reversed_indices: wgpu::Buffer,
     display: DisplayPrepared,
@@ -1245,7 +1246,7 @@ impl PreparedSynthetic {
             "fragment"
         };
         let vertex_entry = camera_culling::vertex_entry(scene.camera_culling);
-        let create_pipeline = |cull_mode| {
+        let create_pipeline = |cull_mode, depth_only: bool| {
             device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
                 label: Some("prepared opaque synthetic role"),
                 layout: Some(&layout),
@@ -1267,7 +1268,9 @@ impl PreparedSynthetic {
                     bias: wgpu::DepthBiasState::default(),
                 }),
                 multisample: wgpu::MultisampleState::default(),
-                fragment: Some(wgpu::FragmentState {
+                // The depth prepass shares the module, vertex entry, primitive
+                // and depth state, so it rasterizes the same depth.
+                fragment: (!depth_only).then_some(wgpu::FragmentState {
                     module: &shader,
                     entry_point: Some(fragment_entry),
                     compilation_options: wgpu::PipelineCompilationOptions::default(),
@@ -1288,8 +1291,14 @@ impl PreparedSynthetic {
                 cache: None,
             })
         };
-        let pipeline = create_pipeline(Some(wgpu::Face::Back));
-        let pipeline_two_sided = create_pipeline(None);
+        let pipeline = create_pipeline(Some(wgpu::Face::Back), false);
+        let pipeline_two_sided = create_pipeline(None, false);
+        let depth_prepass = (scene.camera_culling == CullMode::Occlusion).then(|| {
+            [
+                create_pipeline(Some(wgpu::Face::Back), true),
+                create_pipeline(None, true),
+            ]
+        });
         let index_bytes: [u8; 72] =
             std::array::from_fn(|byte| CUBE_INDICES[byte / 2].to_le_bytes()[byte % 2]);
         let cube_indices = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -1336,6 +1345,7 @@ impl PreparedSynthetic {
             },
             pipeline,
             pipeline_two_sided,
+            depth_prepass,
             cube_indices,
             cube_reversed_indices,
             display,
@@ -1667,7 +1677,7 @@ impl PreparedSynthetic {
     ) -> Result<ResourceId, RenderError> {
         let usage = match role {
             AttachmentUse::Depth => wgpu::TextureUsages::RENDER_ATTACHMENT,
-            AttachmentUse::SampledDepth | AttachmentUse::Scene => {
+            AttachmentUse::Scene => {
                 wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING
             }
             AttachmentUse::Motion => {
@@ -1692,7 +1702,7 @@ impl PreparedSynthetic {
             resource: resource.clone(),
             range: 0..1,
             kind: AccessKind::AttachmentClear,
-            store: !matches!(role, AttachmentUse::Depth | AttachmentUse::SampledDepth),
+            store: !matches!(role, AttachmentUse::Depth),
         });
         Ok(resource)
     }
@@ -1796,12 +1806,7 @@ impl PreparedSynthetic {
             .transpose()?;
         self.append_cluster_reads(&mut graph, &mut accesses, &mut prepared_keys)?;
         let attachment = (width, height, &mut graph, &mut accesses);
-        let depth_use = if self.camera_culling() == CullMode::Occlusion {
-            AttachmentUse::SampledDepth
-        } else {
-            AttachmentUse::Depth
-        };
-        let depth = Self::view_attachment(attachment, DEPTH_FORMAT, depth_use)?;
+        let depth = Self::view_attachment(attachment, DEPTH_FORMAT, AttachmentUse::Depth)?;
         for class in self.classes.arrays() {
             let texture = graph.resource(
                 ResourceDescriptor::Texture {
@@ -1826,10 +1831,10 @@ impl PreparedSynthetic {
         let scene = Self::view_attachment(attachment, SCENE_FORMAT, AttachmentUse::Scene)?;
         let attachment = (width, height, &mut graph, &mut accesses);
         let motion = Self::view_attachment(attachment, MOTION_FORMAT, AttachmentUse::Motion)?;
-        let early = self.append_camera_visibility(
+        let camera = self.append_camera_visibility(
             &mut graph,
-            view,
-            &instance,
+            (view, &instance),
+            [width, height],
             &mut accesses,
             &mut prepared_keys,
         )?;
@@ -1848,16 +1853,7 @@ impl PreparedSynthetic {
             accesses,
             external_side_effect: true,
         });
-        // Occlusion's late opaque pass loads and overwrites what the early
-        // pass wrote, so history publication and tone follow it.
-        let late = self.append_camera_late(
-            &mut graph,
-            early,
-            (&depth, [width, height]),
-            forward,
-            &mut prepared_keys,
-        )?;
-        let forward = late.unwrap_or(forward);
+        Self::append_camera_stats(&mut graph, &camera.stats)?;
         self.append_history_publish(
             &mut graph,
             &mut prepared_keys,
@@ -1874,7 +1870,6 @@ impl PreparedSynthetic {
             width,
             height,
         )?;
-        Self::order_after_camera_late(&mut graph, late, [&depth, &scene, &motion])?;
         let scene_graph = graph.compile(self.key.device_generation, &prepared_keys)?;
         Self::append_readback_pass(&mut graph, &output, height, row_bytes)?;
         let readback_graph = graph.compile(self.key.device_generation, &prepared_keys)?;
@@ -1888,6 +1883,7 @@ impl PreparedSynthetic {
                 output,
                 shadow,
                 air_shadow,
+                prepass_depth: camera.prepass_depth,
             },
         ))
     }
@@ -2237,10 +2233,10 @@ impl PreparedSynthetic {
                     })
                 }
                 Some(key)
-                    if Some(key) == self.visibility.as_ref().map(VisibilityPrepared::late_key) =>
+                    if Some(key) == self.visibility.as_ref().map(VisibilityPrepared::final_key) =>
                 {
                     RecordBinding::<SceneFamily>::new(id, PassKind::Compute, |frame, pass| {
-                        frame.late_visibility(pass)
+                        frame.final_visibility(pass)
                     })
                 }
                 Some(key)
@@ -2254,9 +2250,9 @@ impl PreparedSynthetic {
                         frame.depth_pyramid(pass)
                     })
                 }
-                Some(key) if key == self.forward_late_key() => {
+                Some(key) if key == self.depth_prepass_key() => {
                     RecordBinding::<SceneFamily>::new(id, PassKind::Render, |frame, pass| {
-                        frame.opaque_late(pass)
+                        frame.depth_prepass(pass)
                     })
                 }
                 Some(key) if key == self.key => {
@@ -2479,6 +2475,8 @@ struct TargetResources {
     output: ResourceId,
     shadow: Option<ResourceId>,
     air_shadow: Option<ResourceId>,
+    /// Occlusion only: the private depth the prepass draws.
+    prepass_depth: Option<ResourceId>,
 }
 
 /// Generation-bound offscreen target. Retain while encoded/submitted work uses
@@ -2499,7 +2497,7 @@ pub struct OffscreenTarget {
     shadow: Option<ShadowTarget>,
     air_shadow: Option<AirShadowTarget>,
     visibility: Option<VisibilityTarget>,
-    occlusion: Option<camera_culling::LateCulling>,
+    occlusion: Option<camera_culling::PrepassCulling>,
     culling_stats: Option<camera_culling::CullingStats>,
     depth: wgpu::TextureView,
     width: u32,
@@ -2587,8 +2585,26 @@ impl OffscreenTarget {
             (None, None) => None,
             _ => return Err(RenderError::GraphPassMismatch),
         };
-        let (visibility, occlusion) =
-            prepared.camera_visibility_target(device, &depth, [width, height]);
+        let prepass_depth = ids
+            .prepass_depth
+            .as_ref()
+            .map(|id| {
+                textures
+                    .texture(id)
+                    .map(|texture| {
+                        (
+                            id.clone(),
+                            texture.create_view(&wgpu::TextureViewDescriptor::default()),
+                        )
+                    })
+                    .ok_or(RenderError::GraphPassMismatch)
+            })
+            .transpose()?;
+        let (visibility, occlusion) = prepared.camera_visibility_target(
+            device,
+            prepass_depth.as_ref().map(|(_, view)| view),
+            [width, height],
+        );
         let mut view_entries = vec![
             wgpu::BindGroupEntry {
                 binding: 0,
@@ -2622,11 +2638,12 @@ impl OffscreenTarget {
             layout: &prepared.view_layout,
             entries: &view_entries,
         });
-        let occlusion = camera_culling::late_view_group(
+        let occlusion = camera_culling::prepass_view_group(
             device,
             &prepared.view_layout,
             &view_entries,
             occlusion,
+            prepass_depth,
         );
         let graph = prepared.bind_scene_graph(graph)?;
         let readback_graph = prepared.bind_scene_graph(readback_graph)?;
