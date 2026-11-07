@@ -6,9 +6,9 @@ description: Use when overseeing, tracking or steering agents that design or bui
 # Engine oversight
 
 **Outcome:** the module agents converge on planned work and finished milestones instead of drifting into rabbit
-holes, and the owner can see true progress at any time. The agents own their milestones: they write them, set their
-own goals from them and move through them on their own. You are a second pair of eyes making sure that's happening.
-You don't set, reorder or edit milestones.
+holes, and the owner can see true progress at any time. The agents write their milestones, set their own goals from them and
+move through them on their own. You are a second pair of eyes making sure that's happening, and you step in when it
+isn't.
 
 Read the design, the plan and git, not the turn narrative. Progress is a milestone moving towards done with evidence;
 activity, commits and convincing summaries are not.
@@ -48,9 +48,11 @@ recorded. When the last milestone closes, check that every required cue was deli
 
 ## Steering is a symptom
 
-Every steer means something upstream didn't work: the design, the plan, the agent's goal or this process. When you
-do steer, name the problem, the evidence and the milestone it puts at risk, point to the design, and leave the fix to
-the agent. Then record what failed upstream and fix it there, so the same steer isn't needed again. A skill or
+When the work goes off course, fix the immediate problem: a steer, a corrected milestone, an updated goal, or
+whichever of these it needs. A steer names the problem, the evidence and the milestone it puts at risk, points to the
+design, and leaves the technical fix to the agent. Needing to step in at all means something in the method or the
+plan is wrong (the design, the plan, the agent's goal, this process or the skill), so also find that cause and fix
+it, so the same intervention isn't needed again. A skill or
 process fix goes to whoever owns that skill. A count of steers per agent is a health signal; report it.
 
 An agent's goal is to work through its plan's milestones to the plan's end, judged by their done-when checks. If an
