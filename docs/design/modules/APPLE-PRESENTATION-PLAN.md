@@ -328,11 +328,14 @@ Done when:
   - resize during MetalFX.
 - [ ] D9.3 Cold and warm launch-to-ready times are recorded, including synchronous MetalFX creation and wgpu pipeline
       preparation, with the post-readiness compile counter at zero.
+- [ ] D9.4 Closure-time preparation creates pipelines in parallel across worker threads. Launch-to-ready wall time is
+      recorded with and without it, cold and warm.
 
 Work:
 - [ ] Split timing harness: offline naga timing, passthrough-MSL module timing, pipeline timing (→D9.1).
 - [ ] Scenario switches in the route runner (→D9.2).
 - [ ] Launch timing with cleared and warm OS caches (→D9.3).
+- [ ] Parallel pipeline pre-warm across worker threads in closure-time preparation (→D9.4).
 
 ## M10 Offline metallibs and the Metal pipeline cache: pending
 
@@ -467,3 +470,5 @@ Revision 1 said 9.5–11.5 days for G4. Reviewers estimated 13–16 days.
   - sizing is restated.
 - 2026-11-07 Revision 5a applies the archive review of `16c5d8f7`: per-pipeline cook keys, `MetalLib` reflection for
   the sizes buffer, the full Metal cache patch scope and per-device archive sources. M10 becomes 5.5 days.
+- 2026-11-07 Revision 5b adds the overseer's 22:30 points: parallel pipeline pre-warm (D9.4), the cook's MSL match
+  check against wgpu-hal's runtime MSL, and the order measure → metallibs plus pre-warm → Metal `PIPELINE_CACHE`.
