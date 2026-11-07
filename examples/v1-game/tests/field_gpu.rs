@@ -68,6 +68,7 @@ fn field_frustum_matches_direct_along_the_flythrough() {
                     GameSetup {
                         content: GameContent::Field,
                         camera_culling,
+                        valley_stars: false,
                     },
                 )
                 .await

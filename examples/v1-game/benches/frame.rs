@@ -362,7 +362,7 @@ fn measure(
         format: wgpu::TextureFormat::Bgra8Unorm,
         extent,
     });
-    let mut host = pollster::block_on(FrameHost::new_with_capabilities(
+    let mut host = pollster::block_on(FrameHost::new_with_setup(
         &device,
         &queue,
         &capabilities,
@@ -370,6 +370,7 @@ fn measure(
             render_extent,
             surface: profile,
         },
+        fixed_setup(),
     ))
     .expect("the prepared V1 workload must fit the adapter");
     prepare_content(&mut host);
@@ -523,6 +524,16 @@ fn measure(
         "baseline needs frames from at least half its callbacks: {} of {callbacks}",
         samples.len()
     );
+}
+
+fn fixed_setup() -> v1_game::GameSetup {
+    let setup = v1_game::selected_setup().expect("valid game setup for the measured scene");
+    let fixed = v1_game::GameSetup::default();
+    assert!(
+        setup.content == fixed.content && setup.camera_culling == fixed.camera_culling,
+        "the integrated frame rows require the 10k Direct scene; use the field culling bench for other modes"
+    );
+    setup
 }
 
 fn prepare_content(host: &mut FrameHost) {
