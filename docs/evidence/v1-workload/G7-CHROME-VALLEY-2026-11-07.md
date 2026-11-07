@@ -206,8 +206,8 @@ main revision is the merge base, 6459379d; the script now records it as `main_ba
 
 The commits after f38166f0 change only documentation and three script details. The startup scope wording is fixed.
 `--recalibrate` now refuses the calibrated root, and a refused canonical save no longer leaves a run directory. The
-checker's scope and usage wording is fixed too. These details do not change any number below; smoke runs on the
-final commit are listed at the end. The canonical control check built the binaries, and the other runs used them with `--no-build`:
+checker's scope and usage wording is fixed too. These details do not change any number below, and the integration
+runs at the end reproduce the proofs on current main. The canonical control check built the binaries, and the other runs used them with `--no-build`:
 - release `v1-game` `5c0b7953…`;
 - `thrum-cook` `e2fbdcfd…`;
 - default-page Wasm `9405ae36…`.
@@ -300,3 +300,17 @@ with rows in route order: sunrise, noon, the 17.4 h clear Sun, 17.9 h sunset, tw
 `route` and `field-oracle` first failed after every page and view had passed: Chrome exited with code 2 during the
 checker's shared cleanup, with display-link errors in its log. Both passed on rerun. The failed runs are kept beside
 the passing ones.
+
+**Integration on main 935ddd14.** Main then gained G3c's culling-count changes, which touched the browser and
+window hosts and the shared checker. The M3 commits were rebased onto them, and the checker seam's own lines are
+unchanged. Root approved the rebased patch (`m3-checker-startup-v6-on-935ddd14.diff`). On the rebased commit 01cb799d,
+with a clean tree and `main_base` 935ddd14:
+- check-180843 built the binaries (`v1-game` `e5ae52df…`, Wasm `cd2bdb81…`) and passed against the canonical
+  baseline. Its 12 stop frames are byte-identical to check-174420's.
+- check-181018 ran the edited source with `--recalibrate` and passed. Its 12 frames are byte-identical to
+  check-174724's.
+- startup-181110 (one launch) passed: cold upper bound 159 ms, warm 103–121 ms.
+- The checker's `route`, delayed-observer, `field-oracle`, `params` and `controls` cases passed, and `./dev check`
+  passed (`tmp/g7-showcase/m3/integrated/`).
+- Smoke runs on 002865b7 showed the new refusals: `--recalibrate` on the calibrated root fails after the cook,
+  and a refused canonical save leaves no run directory.
