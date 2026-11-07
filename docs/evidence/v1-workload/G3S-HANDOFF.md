@@ -22,11 +22,21 @@ The Codex goal remains active. Its attachment is
   the log march's largest visibility error is 44.2 percentage points.
   Flat raster cells reduce it to 6.4 with 0.2 points of worst light
   leak. Bilinear leaves reduce absolute error to 2.6 but can extend a
-  discontinuous caster across cells. First GPU proof uses flat cells
-  on the existing depth producer. Measure the max reduction, traversal,
-  mixed casters and whole route before changing the default.
+  discontinuous caster across cells. A Metal diagnostic replayed 2,499
+  rays against Depth32Float depths reconstructed from the spur mesh.
+  The three witness pixels went from 13.8%, 19.4% and 23.4% disk
+  visibility to zero. The flat-cell CPU and GPU agreed within 0.00055
+  percentage points. Against the original triangles, the GPU hierarchy
+  had 0.183 points of maximum leak and 6.462 points of maximum absolute
+  error. In 14 paired timestamp rows under shared load (1-minute load
+  15.88 to 22.67), p50/p95 was 87/533 µs for taps, 296/688 µs for the
+  hierarchy and 438/1,065 µs for reduction plus traversal. This compute
+  witness includes neither the caster draw nor forward shading. Preserve
+  it as the reference and reduce traversal work before a paired game run
+  with moving casters, camera snaps and the whole Sun sweep.
   [Maximum Mipmaps](https://pure.mpg.de/pubman/item/item_1325622_5/component/file_3590464/i3d08.pdf).
-  Exact builds, raw rows and clips are in `tmp/g3s-sunset-lip/`.
+  Exact builds, raw rows and clips are in `tmp/g3s-sunset-lip/`. The
+  diagnostic source and rerun command are on `codex/g3s-horizon-metal-wip`.
 
 - The 17.4 h sunset stripe follows the lookout's authored depth edge. In
   the held Metal valley at x=320, adjacent rays hit terrain at 1,826 m
