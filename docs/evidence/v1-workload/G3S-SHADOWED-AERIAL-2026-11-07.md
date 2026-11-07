@@ -40,6 +40,22 @@ terrain's shadow. Native and Chrome showed the same glow.
   `39d29bc919a098144affba8d50f893515a869931b7f5bce0df865128c41d82a1`.
 - **Repository.** `./dev check` passed.
 
+### Mac cost, shared load
+
+1080p offscreen cooked valley, starting at 17.8 h, 200 threaded callbacks per run. The interleaved
+comparison uses the parent `9b4bea6` and `2db5039`. Values below are the two run results per variant.
+
+| Metal GPU time | Before p50 / p95 (ms) | After p50 / p95 (ms) |
+|---|---|---|
+| Scene pass-sum | 4.99 / 8.56, 5.32 / 8.09 | 6.66 / 9.49, 6.66 / 9.76 |
+| Shadow bucket | 0.161 / 0.649, 0.161 / 0.539 | 0.524 / 1.061, 0.544 / 1.017 |
+| Forward and sky | 1.91 / 3.44, 2.00 / 3.36 | 2.42 / 3.75, 2.44 / 4.04 |
+
+Scene median rose about 29%. One-minute system load ranged from 69.6 to 100.0, with another
+Metal test running and even unchanged GPU passes taking longer in the candidate runs. The
+comparison trips investigation. The shadow bucket includes the map build and cannot isolate it.
+Raw logs and executable hashes are in `tmp/handback-review/aerial-cost/`.
+
 ## Independent review
 
 A fresh-context reviewer saw only unlabelled pairs: toward the Sun at sunset and sunrise, the authored sunset, and
@@ -58,8 +74,8 @@ Unchanged items it noted:
 
 - **Sky pixels.** These are not shadowed. Light shafts in the visible sky need the same visibility applied to
   the sky-view path.
-- **Cost.** Not measured. The new pass runs every frame, with up to 96 height-map loads per texel, and adds 8
-  intervals per shaded pixel. Its time counts in the far-shadow bucket. Measure before tuning. The same map could
-  replace the receivers' per-pixel horizon march, which is the +24% item.
+- **Cost.** The new pass runs every frame, with up to 96 height-map loads per texel, and adds 8 intervals per
+  shaded pixel. First remove the repeated receiver march in the fade band. Using the air map for surface
+  visibility needs a geometric oracle because its stored caster maximises occlusion at the disk centre.
 - **Interval count.** 8 intervals in √distance can under-resolve thin shadow bands over long rays.
 - **Compute ordering.** If confirmed, it affects any compute pass that samples a just-rendered depth target.

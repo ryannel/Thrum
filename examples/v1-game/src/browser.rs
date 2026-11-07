@@ -206,16 +206,16 @@ impl BrowserGame {
     /// Cooked generation drawn, swaps and loader errors, or `None` without cooked content.
     pub fn cooked_status(&self) -> Option<String> {
         let stats = self.cooked.as_ref()?.lock().ok()?;
-        Some(format!(
-            "{{\"drawn\":{},\"swaps\":{},\"uploadedBytes\":{},\"submittedFrames\":{},\"errors\":{:?}}}",
-            stats
-                .drawn
-                .map_or("null".to_owned(), |generation| generation.to_string()),
-            stats.swaps.len(),
-            stats.swaps.last().map_or(0, |swap| swap.uploaded_bytes),
-            stats.submitted_frames,
-            stats.errors,
-        ))
+        Some(
+            serde_json::json!({
+                "drawn": stats.drawn,
+                "swaps": stats.swaps.len(),
+                "uploadedBytes": stats.swaps.last().map_or(0, |swap| swap.uploaded_bytes),
+                "submittedFrames": stats.submitted_frames,
+                "errors": stats.errors,
+            })
+            .to_string(),
+        )
     }
 
     /// Select the solar time without changing the authoritative world clock.

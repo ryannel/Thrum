@@ -11,11 +11,11 @@ use std::time::Instant;
 use web_time::Instant;
 
 use thrum_asset::{
-    AssetError, ContentHash, Head, Ktx2, Manifest, MeshProduct, ProductBytes, Profile,
+    AssetError, ContentHash, Head, Ktx2, ManifestEntry, MeshProduct, ProductBytes, Profile,
     RemoteGeneration,
 };
 #[cfg(not(target_arch = "wasm32"))]
-use thrum_asset::{AssetStore, HeadWatcher};
+use thrum_asset::{AssetStore, HeadWatcher, Manifest};
 
 #[cfg(not(target_arch = "wasm32"))]
 use crate::CookedSource;
@@ -26,15 +26,23 @@ use crate::{CookedConfig, CookedStats, wgpu_format};
 #[derive(Clone, Copy)]
 enum Source<'a> {
     #[cfg(not(target_arch = "wasm32"))]
-    Store(&'a AssetStore),
+    Store(&'a AssetStore, &'a Manifest),
     Remote(&'a RemoteGeneration),
 }
 
-impl Source<'_> {
+impl<'a> Source<'a> {
+    fn resolve(self, name: &str, preferences: &[Profile]) -> Option<ManifestEntry<'a>> {
+        match self {
+            #[cfg(not(target_arch = "wasm32"))]
+            Self::Store(_, manifest) => manifest.resolve(name, preferences),
+            Self::Remote(generation) => generation.resolve(name, preferences),
+        }
+    }
+
     fn map(self, hash: &ContentHash) -> Result<ProductBytes, AssetError> {
         match self {
             #[cfg(not(target_arch = "wasm32"))]
-            Self::Store(store) => store.map(hash),
+            Self::Store(store, _) => store.map(hash),
             Self::Remote(generation) => generation
                 .product(hash)
                 .ok_or(AssetError::Malformed("product not fetched")),
@@ -167,7 +175,7 @@ impl Loader {
                     let seen = Instant::now();
                     let store = watcher.store();
                     let prepared = store_manifest(store, &head).and_then(|manifest| {
-                        self.prepare(Source::Store(store), &manifest, &head, &confirmed)
+                        self.prepare(Source::Store(store, &manifest), &head, &confirmed)
                     });
                     match prepared {
                         Ok((set, upload)) => {
@@ -207,12 +215,7 @@ impl Loader {
     ) {
         let head = generation.head();
         let seen = Instant::now();
-        match self.prepare(
-            Source::Remote(generation),
-            generation.manifest(),
-            &head,
-            confirmed,
-        ) {
+        match self.prepare(Source::Remote(generation), &head, confirmed) {
             Ok((set, upload)) => {
                 report(&self.stats, stop, |stats| {
                     stats.staged = Some(head.generation);
@@ -299,21 +302,20 @@ impl Loader {
     fn open(
         &self,
         source: Source<'_>,
-        manifest: &Manifest,
         confirmed: &Confirmed,
     ) -> Result<(Opened, Option<Profile>, Option<Profile>), AssetError> {
-        let missing = || AssetError::Malformed("asset missing from manifest");
+        let missing = || AssetError::Malformed("asset unavailable in the requested profiles");
         let mut opened = Opened {
             meshes: Vec::new(),
             volume: None,
         };
         let mut texture_profile = None;
         for placement in &self.config.meshes {
-            let mesh = manifest
+            let mesh = source
                 .resolve(&placement.mesh, &[Profile::Portable])
                 .ok_or_else(missing)?
                 .product;
-            let texture = manifest
+            let texture = source
                 .resolve(&placement.texture, &self.texture_profiles)
                 .ok_or_else(missing)?;
             texture_profile = Some(texture.profile);
@@ -335,7 +337,7 @@ impl Loader {
         }
         let mut volume_profile = None;
         if let Some(placement) = &self.config.volume {
-            let entry = manifest
+            let entry = source
                 .resolve(&placement.name, &self.volume_profiles)
                 .ok_or_else(missing)?;
             volume_profile = Some(entry.profile);
@@ -352,12 +354,11 @@ impl Loader {
     fn prepare(
         &self,
         source: Source<'_>,
-        manifest: &Manifest,
         head: &Head,
         confirmed: &Confirmed,
     ) -> Result<(ResidentSet, StagedUpload), String> {
         let (opened, texture_profile, volume_profile) = self
-            .open(source, manifest, confirmed)
+            .open(source, confirmed)
             .map_err(|error| error.to_string())?;
         // Expanded meshlet indices must outlive the plan that borrows them.
         let expanded: Vec<Option<MeshletTables>> = opened

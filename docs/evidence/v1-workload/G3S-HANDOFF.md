@@ -1,18 +1,48 @@
 # Thrum V1 handoff
 
-Updated 7 November 2026 by Claude at handback to Codex. Start from remote `main` and
+Updated 7 November 2026 after Codex resumed as root. Start from remote `main` and
 [the build plan](../../BUILD-PLAN.md). The older three-band baseline is `7236b38`. This file
 travels with the candidate, so use its enclosing commit to identify the exact tested source.
 The Codex goal remains active. Its attachment is
 `/Users/ryannel/.codex/attachments/86327eba-9dfd-4eff-965e-5bb0a2134938/goal-objective.md`.
+
+## Current checkpoint
+
+- The browser still fetches Portable. The GPU loader resolves only among products present
+  in the fetched generation, in device preference order. A Metal test with BC enabled
+  exercises a manifest that advertises compressed variants without fetching them.
+  [Chrome valley evidence](G7-CHROME-VALLEY-2026-11-07.md)
+- Inspection of the [aerial comparison](G3S-SHADOWED-AERIAL-2026-11-07.md) supports keeping
+  the terrain-shadowed aerial path. The reduced orange glow follows the ridge occlusion.
+  The air map picks the strongest caster for the Sun's centre. The strongest caster can
+  change across the disk, so replacing the surface march needs a separate geometry check.
+  The Metal compute ordering diagnosis remains unconfirmed. Fresh Chrome stills retain
+  the blue twilight gradient and warm horizon. The stepped ridge and featureless ground
+  still read as diagnostic terrain.
+- The [sunset comparison](G3S-SHADOWED-AERIAL-2026-11-07.md#mac-cost-shared-load) measured a 29%
+  higher scene GPU median under very heavy shared load. Next, remove the repeated fade-band march.
+  The resumable comparison is under `tmp/handback-review/aerial-cost/`. From the repository
+  root, run `sh tmp/handback-review/aerial-cost/build-pair.sh` and then
+  `python3 tmp/handback-review/aerial-cost/run-pair.py` with access to Metal. The script uses
+  exact commits `9b4bea6` and `2db5039`, the cooked valley store and a 17.8 h solar start.
+  It retains partial attempts and skips completed slots on restart. When reusing a Cargo target
+  for Git archives, touch the archived Rust files before building and verify the executable
+  hashes differ. Cargo accepted the archived timestamps on the first attempt and reused the
+  baseline binary for both commits.
+- Open review items include the repeated horizon march, horizon and cascade combination
+  GPU coverage, and synchronous browser prepare on edits or device replacement. Measure
+  the preparation interval and resulting frame hitch before choosing a scheduling change.
+- G6 may prepare the native runner extraction. The rebased diff and raw checks still need
+  root review before push. Native starter is the recommendation. The owner has the Chrome
+  starter scope decision. The cooked material shader reload is approved for a separate
+  G6 checkpoint, with candidate validation and recovery requirements in the boundary notes.
 
 ## Claude root session (6–7 November)
 
 **Handback:** see [the Codex handback](CODEX-HANDBACK-2026-11-07.md) for everything landed, what is verified,
 open items in priority order, the G6 boundary state and owner questions. Codex resumes as root.
 
-The Codex agent is paused for quota until 12 November. A Claude session acts as root
-meanwhile and writes a handback for Codex before then. Its oversight log is
+The Claude session covered the Codex quota pause. Its oversight log is
 `tmp/code-review-2026-11-05/overnight/WATCH-LOG.md`.
 
 The finite-Sun penumbra from `codex/wip-g3s-solar-penumbra` landed on `main` with two
@@ -107,7 +137,7 @@ crossing clip](g3s-first-light/solar-crossing.mp4) runs at 24 sampled frames/s.
 - Noon sky banding was 8-bit contouring; the display now dithers
   ([evidence](G3S-DISPLAY-DITHER-2026-11-07.md)).
 - Low-Sun in-scatter over terrain hidden from the Sun is now shadowed
-  ([evidence](G3S-SHADOWED-AERIAL-2026-11-07.md)); its cost is unmeasured.
+  ([evidence and shared-load measurements](G3S-SHADOWED-AERIAL-2026-11-07.md)).
 - The penumbra's +18% pass-sum. Gathered fetches and a lit early-out are untried.
 
 **G7.** Chrome now draws the cooked valley fetched from `thrum-cook watch --serve`

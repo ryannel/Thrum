@@ -974,8 +974,8 @@ impl thrum_asset::Fetch for LoopbackFetch {
     }
 }
 
-/// The browser's path: one generation fetched from the dev server, prepared without a loader
-/// thread, draws exactly what the mapped store draws, and restages on a replacement device.
+/// A portable-only fetch draws like the mapped portable store even on a device that can
+/// sample compressed variants listed in the manifest.
 #[test]
 fn a_fetched_generation_draws_like_the_mapped_store() {
     let root = std::env::temp_dir().join(format!("thrum-g5-remote-{}", std::process::id()));
@@ -989,26 +989,34 @@ fn a_fetched_generation_draws_like_the_mapped_store() {
         Arc::new(thrum_cook::Publications::default()),
     )
     .expect("dev server");
-    // Both paths resolve the portable products the client prefers by default; no volume.
-    let portable = |source: thrum_asset_gpu::CookedSource| {
+    let config = |source: thrum_asset_gpu::CookedSource| {
+        let mapped = matches!(&source, thrum_asset_gpu::CookedSource::Store(_));
         let mut config = v1_game::cooked::cooked_config(source);
         config.upload_budget = BUDGET;
         config.volume = None;
-        config.texture_preference = Some(vec![Profile::Portable]);
+        if mapped {
+            config.texture_preference = Some(vec![Profile::Portable]);
+        }
         config
     };
     pollster::block_on(async {
         let mut client =
             thrum_asset::DevClient::new(LoopbackFetch, &format!("http://{}", server.address()))
                 .expect("client");
-        let feed = thrum_asset_gpu::RemoteFeed::new(
-            client
-                .poll()
-                .await
-                .expect("fetch")
-                .expect("a published generation"),
-        );
+        let fetched = client.poll().await.expect("fetch").expect("a publication");
         let (device, queue) = game_device().await;
+        let compressed = fetched
+            .manifest()
+            .resolve("textures/checker", &[Profile::DesktopBc])
+            .expect("compressed variant advertised");
+        assert!(fetched.product(&compressed.product).is_none());
+        #[cfg(target_os = "macos")]
+        assert!(
+            device
+                .features()
+                .contains(wgpu::Features::TEXTURE_COMPRESSION_BC)
+        );
+        let feed = thrum_asset_gpu::RemoteFeed::new(fetched);
         let mut frames = Vec::new();
         for source in [
             thrum_asset_gpu::CookedSource::Store(cook.store.clone()),
@@ -1017,7 +1025,7 @@ fn a_fetched_generation_draws_like_the_mapped_store() {
             let mut host = FrameHost::new(&device, &queue, FrameConfig::default())
                 .await
                 .expect("prepared game scene");
-            let assets = CookedAssets::new(portable(source));
+            let assets = CookedAssets::new(config(source));
             let stats = assets.stats();
             host.set_scene_contribution(Box::new(assets))
                 .expect("attach");
@@ -1030,7 +1038,9 @@ fn a_fetched_generation_draws_like_the_mapped_store() {
                 settle(&mut host, &device);
             }
             frames.push(host.capture_pixels().expect("capture"));
-            assert_eq!(stats.lock().expect("stats").errors, Vec::<String>::new());
+            let stats = stats.lock().expect("stats");
+            assert!(stats.errors.is_empty(), "{:?}", stats.errors);
+            assert_eq!(stats.swaps[0].texture_profile, Some(Profile::Portable));
         }
         save("remote-store", &frames[0]);
         save("remote-fetched", &frames[1]);
@@ -1071,7 +1081,6 @@ fn a_fetched_edit_swaps_in_and_reuses_unchanged_products() {
             v1_game::cooked::cooked_config(thrum_asset_gpu::CookedSource::Remote(feed.clone()));
         config.upload_budget = BUDGET;
         config.volume = None;
-        config.texture_preference = Some(vec![Profile::Portable]);
         let assets = CookedAssets::new(config);
         let stats = assets.stats();
         host.set_scene_contribution(Box::new(assets))
