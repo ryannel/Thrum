@@ -34,6 +34,7 @@ pub fn run_window() {
         Ok(crate::GameSetup {
             content: crate::GameContent::Field,
             camera_culling: CullMode::Frustum,
+            ..
         }) => ("Thrum V1 — field / Frustum culling", "Thrum V1 field"),
         Ok(crate::GameSetup {
             content: crate::GameContent::Field,

@@ -120,12 +120,23 @@ pub struct BrowserGame {
 }
 
 /// Prepare the existing V1 simulation and renderer for a WebGPU canvas.
+/// `valley_stars` selects the star catalogue before attaching the cooked valley.
 ///
 /// # Errors
 /// Returns a JavaScript error when no compatible adapter, surface format or GPU resource exists.
 #[wasm_bindgen]
-pub async fn create_browser_game(canvas: HtmlCanvasElement) -> Result<BrowserGame, JsValue> {
-    create_game(canvas, crate::GameSetup::default()).await
+pub async fn create_browser_game(
+    canvas: HtmlCanvasElement,
+    valley_stars: Option<bool>,
+) -> Result<BrowserGame, JsValue> {
+    create_game(
+        canvas,
+        crate::GameSetup {
+            valley_stars: valley_stars.unwrap_or(false),
+            ..crate::GameSetup::default()
+        },
+    )
+    .await
 }
 
 /// Prepare the dense flythrough field with `culling` (`"direct"` or `"frustum"`).
@@ -147,6 +158,7 @@ pub async fn create_field_game(
         crate::GameSetup {
             content: crate::GameContent::Field,
             camera_culling,
+            valley_stars: false,
         },
     )
     .await

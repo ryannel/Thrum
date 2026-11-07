@@ -77,6 +77,7 @@ fn main() {
                     GameSetup {
                         content: GameContent::Field,
                         camera_culling,
+                        valley_stars: false,
                     },
                 )
                 .await
