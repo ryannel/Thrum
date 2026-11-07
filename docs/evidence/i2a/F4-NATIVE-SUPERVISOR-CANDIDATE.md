@@ -1,0 +1,161 @@
+# Native build supervisor candidate
+
+3 November 2026. **Local macOS ARM64 test adapter; `buildReady:false`.** This
+qualifies a bounded development-build control path in the [prepared native
+environment](../../design/T2-PREPARED-NATIVE-ENVIRONMENT.md). It does not close
+the compiler's selected reads or publish a target `BuildRevision`.
+
+The earlier [Rust collector experiment](F4-BOUNDED-NATIVE-BUILD.md) was
+withdrawn after review found unsafe interruption, unbounded cleanup joins and
+inherited stdin. The candidate reuses the Python Cargo-metadata collector. It
+closes child stdin, checks a fixed launching-owner PID at most every 100 ms,
+bounds escaped-descendant pipe cleanup waits, and uses macOS
+[`kqueue` process-exit events](https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man2/kevent.2.html)
+or Linux `waitid` to observe child exit without reaping. It sends SIGKILL to the owned
+process group before releasing the leader PID. It refuses an inherited-pipe
+descendant and stops a same-group descendant with closed pipes before success.
+The local macOS kernel returns `EPERM` when only the unreaped exited leader
+remains; this candidate tolerates it under an assumption that the selected
+Cargo/Rustc/Clang family does not change privilege. That assumption and
+same-group containment are not release-qualified.
+
+For the sandboxed A/B fixture, Rust serializes its selected `sandbox-exec`
+command, working directory, clean child environment, output root and owner
+PID into an exclusive request in the fresh output tree. Python checks the
+request and parent before launch and runs Cargo without a shell. It retains
+at most 4 MiB stdout and 1 MiB stderr for a 120-second deadline, then writes
+exclusive diagnostic files and a small hash/length/status report. Rust caps
+and hashes those files independently, including the 4 KiB report, and accepts
+only Cargo exit 0 or the first-profile compile failure 101 as completed. A
+SIGTERM handler routes ordinary termination through collector cleanup.
+An unexpected exit now retains the same bounded, hashed stdout/stderr files
+with a `refusedStatus`, `buildReady:false` report and still returns failure.
+Previously it discarded those bytes, hiding the native sandbox's first
+LibreSSL configuration denial. The Rust fixture prints at most 4 KiB of that
+retained stderr on refusal. Focused status cases check the retained bytes and
+hashes; this improves fault diagnosis without treating the refused build as a
+compiler product.
+
+A branch-wide review found a launch gap: SIGTERM or SIGINT could raise after
+`Popen` created Cargo but before the collector entered its cleanup guard. The
+collector now installs temporary handlers that record these signals through
+launch, supervision and cleanup, then restores the prior handlers. It checks
+the recorded signal inside the guarded lifetime and kills/reaps the process
+group before reporting interruption. An ignored prior disposition remains
+ignored, and no signal mask is inherited by Cargo. A subprocess fixture sends
+SIGTERM from inside the `Popen` return path; the launched child is gone before
+the wrapper exits. Separate child fixtures confirm self-SIGTERM still exits by
+signal and an intentionally ignored SIGINT remains ignored after exec. The
+older SIGINT test now publishes its PID marker atomically, avoiding a partial
+marker read. This closes the ordinary early-signal window in this candidate;
+host SIGKILL and escaped-session containment remain open.
+
+The first fault-report extension catches that resulting `KeyboardInterrupt`
+after collector cleanup and writes a bounded `interrupted` report instead of
+leaving no supervisor record. A timeout or other collector error writes
+`supervisorError`. Either report has `buildReady:false` and a diagnostic
+`receiptInventory`: a sorted, domain-separated digest binds the observed
+receipt names, lengths, byte hashes and parse states. The inventory streams at
+most 64 entries and reads at most 1 MiB per receipt, one at a time. It counts
+completed zero/nonzero, well-formed pending and unparsed files; an aliased or
+otherwise unreadable set is reported as unavailable. It does not assert that
+the directory contains every invocation, or publish the raw fault receipts.
+Successful and invalid-code B verification keep their strict completed-receipt
+rules.
+
+Nineteen focused metadata-collector tests cover Ctrl-C cleanup, early-launch
+interruption, child signal inheritance, closed stdin,
+parent disappearance, output limit, retained pipes, an escaped-session child
+and a same-group child with closed pipes, plus a fast-exit observation race.
+The escaped-session case returns in
+a bounded interval but leaves that escaped process for fixture cleanup; it
+does **not** prove containment. Seven routine supervisor protocol tests cover output
+binding, wrong-parent/aliased-request refusal, unexpected Cargo status, caught
+interruption and timeout inventories, aliased and 65th-entry refusal, and an
+actual SIGTERM delivered to a supervisor process with a mocked collector. An
+eighth opt-in macOS sandbox process test runs the actual Rust receipt wrapper
+against a sleeping selected Python child. It exercises both SIGTERM and a
+two-second test-only timeout through the real collector, observes same-group
+child exit and verifies the wrapper's pending receipt in each case. The command-line
+supervisor retains its 120-second deadline.
+
+A second opt-in test launches real pinned Cargo with the actual Rust receipt
+wrapper and a controlled compiler shim. The shim forwards Cargo's probes to
+the pinned Rustc, then records its PID and sleeps when Cargo starts the crate
+compile. After that marker, SIGTERM reaches the real supervisor. On this host,
+the fault report recorded a pending compile receipt and `buildReady:false`,
+and the same-group compiler child was gone. The run took 0.54 seconds. This
+tests Cargo/wrapper/supervisor interruption as one path; the controlled shim
+does not prove an interrupted production compiler's complete invocation or
+read closure, or detached-child containment.
+
+Run the opt-in process fixture from the repository root after building the
+wrapper with the pinned toolchain:
+
+```sh
+RUSTC_WRAPPER= rustup run 1.99.1 cargo build --locked --offline -p xtask --bin rustc_receipt
+THRUM_TEST_NATIVE_SUPERVISOR_PROCESS=1 \
+  THRUM_TEST_RUSTC_RECEIPT_WRAPPER="$PWD/target/debug/rustc_receipt" \
+  python3.11 -m unittest discover -s scripts -p 'test_run_bounded_native_build.py'
+```
+
+The actual wrapper test took 2.24 seconds locally, including its deliberately
+two-second timeout. This is fault-path test latency, not compile overhead or
+an edit-to-ready tail.
+The real sandboxed admitted A/B build passed: five compile receipts and three
+probes reconciled, invalid B failed and A remained executable. A's fresh
+Cargo step took 3,671 and 3,470 ms in two uncontrolled runs. Neither is an
+overhead or tail-performance comparison.
+
+An escaped session can still outlive the group; a complete release adapter
+needs a retained job identity or equivalent containment. Python and its
+script are not yet bound to reviewed release inputs. Host SIGKILL, complete
+interrupted rustc invocation/child audit, compiler/system reads and retained
+target publication remain unqualified. Compiler-job RSS has no hard process
+memory ceiling.
+
+## Real Cargo timeout companion
+
+At exact local source commit `6b7dd3fe524be7d91bc31b977b78572c92aaa568`, the same opt-in supervisor suite
+passed all ten macOS fixtures in 9.64 seconds. The real pinned Cargo test now
+executes the controlled sleeping compiler shim twice: one run sends SIGTERM
+after the compile PID marker; the other lets a six-second test-only supervisor
+deadline expire. Both runs use the actual Rust receipt wrapper, return status
+125, retain an unready report and a well-formed pending compile receipt, and
+observe the same-group shim gone before the test finishes. The timeout branch
+requires `supervisorError` with the exact `Cargo build timed out` detail, so
+an unrelated supervisor error cannot count as a timeout pass. The normal
+`RUSTC_WRAPPER= ./dev check` passed at the code change; its opt-in cases are
+skipped unless the environment above enables them.
+
+This extends the tested **Cargo/wrapper/supervisor fault path**. The sleeping
+shim is controlled test code, not a reviewed Rustc/Xcode helper, and the
+fault inventory counts only observed receipts. No complete interrupted
+invocation closure, detached-child containment, release family review,
+representative timeout tail or ready build follows from this test.
+
+## Real Cargo completion companion
+
+At exact local source commit `485fde7a82480a737bb51da3d50820c3a8ecc2c0`,
+the opt-in macOS suite passed all eleven tests in 9.43 seconds. Its new
+no-dependency package ran pinned Cargo twice through the real Rustc receipt
+wrapper and bounded supervisor: valid source returned Cargo 0 and produced an
+executable; invalid code returned Cargo 101, Rustc 1 and no executable. Both
+jobs used locked offline Cargo under a network-denying sandbox. Each produced
+five successful probe receipts and one completed compile receipt, with no
+pending receipt. The fixture checked the selected Rustc path, canonical
+working directory, stripped wrapper control variables, compiler source
+argument, status pairing and retained stdout/stderr byte lengths and SHA-256
+hashes against the supervisor report. The report remained `buildReady:false`.
+The routine `RUSTC_WRAPPER= ./dev check` also passed at that source commit;
+the macOS process cases are opt-in.
+
+Independent review found two fixture cleanup hazards and both were corrected:
+the outer runner now owns its supervisor process and lets the supervisor's
+shorter internal deadline or graceful SIGTERM clean the Cargo group; it keeps
+temporary inputs when shutdown is uncertain. Signal-terminated or unreported
+supervisors cannot trigger scratch deletion. The final review had no findings.
+This proof covers complete **observed** receipts for a real single-package
+compile and its ordinary compile error. It does not establish that Cargo
+cannot bypass the wrapper, inventory Xcode linker helpers, verify release
+family no-detach behavior, close compiler reads, or publish a ready build.

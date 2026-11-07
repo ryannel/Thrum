@@ -1,0 +1,4 @@
+interface:
+  display_name: "Thrum Repository"
+  short_description: "Place files and retain selected assets and evidence"
+  default_prompt: "Use $repo-structure to place this work in Thrum and close out owned disposable outputs."

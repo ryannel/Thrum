@@ -1,0 +1,144 @@
+# Selected rustc invocation receipts for the first headless build
+
+3 November 2026. **Local macOS ARM64 candidate, `buildReady:false`.** This
+extends the [admitted A/B compile](F4-ADMITTED-HEADLESS-COMPILE.md),
+[first-profile build design](../../design/F4-FIRST-HEADLESS-BUILD.md) and
+[native release trust policy](../../design/T2-NATIVE-RELEASE-TRUST.md). It does
+not qualify a general native compiler adapter or a target-ready `BuildRevision`.
+
+## Mechanism and cost placement
+
+Cargo's [stable `RUSTC_WRAPPER` hook](https://doc.rust-lang.org/cargo/reference/config.html#rustc_wrapper)
+passes the selected rustc path and arguments to an executable. The local Rust
+wrapper writes one exclusive, bounded binary receipt per invocation before
+launching rustc, then appends its completion status. The receipt retains raw
+ordered Unix argument bytes, working-directory bytes, the sorted child
+environment after the two wrapper control variables are removed, and the
+selected rustc path. It limits each field to 128 KiB, the receipt to 1 MiB,
+arguments to 1,024, environment pairs to 512 and the set to 64. An incomplete,
+malformed or aliased receipt refuses verification. Successful-build mode also
+refuses failed receipts; failed-build mode requires one ordinary nonzero compile
+exit and a failed Cargo finish. Rustc response-file
+arguments refuse because their file bytes are not captured. The wrapper gives
+the child only its recorded environment and inherits stdio; it uses no unsafe
+code or additional dependency.
+
+The verifier now streams directory names with `os.scandir` and stops on the
+65th entry before sorting or parsing. This puts the 64-receipt limit on name
+allocation as well as accepted receipts; an oversized-set fixture refuses.
+
+The Python verifier runs after Cargo exits. It requires the selected compiler,
+source/cache/output roots, known fixed environment values, successful probes
+and compiles, one of the two observed dep-info/metadata/link emission sets,
+one source file under a selected root per compile, output and `--extern` paths
+under the fresh output root, dependency
+library search under its `debug/deps`, and no executable Cargo hooks. It
+compares each receipt's crate and source to Cargo's structured target and
+requires each `--extern` path to be an artifact Cargo reported from the named
+dependency unit. It also matches the child `CARGO_CRATE_NAME`,
+`CARGO_MANIFEST_DIR` and `CARGO_MANIFEST_PATH` to Cargo's reported unit,
+requiring the source to live beneath that package manifest. Cargo's macOS
+`DYLD_FALLBACK_LIBRARY_PATH` is retained exactly
+and checked against the selected output, Rust toolchain and fixed fallback
+locations; empty/duplicate/outside entries and other `DYLD_` overrides refuse.
+An information-only probe may omit the variable. The first profile also
+requires its three Cargo probes to use the admitted source root as working
+directory and one of the two exact argument forms observed with Cargo 1.99.1;
+an unknown query refuses. The observed debug profile also requires its recorded
+SDK and linker to share the expected Xcode developer layout and a bounded `-C`
+set and matches rustc crate types to Cargo's reported target; an extra linker
+argument, alternate codegen spelling or alternate linker refuses. This checks
+explicit options and layout consistency, not an
+independently authenticated Xcode selection or all compiler/linker reads.
+Library resolution remains an open read boundary.
+The report includes per-unit receipt hashes, a receipt-set digest,
+artifact paths and `buildReady:false`.
+
+The wrapper allocates and writes once per rustc invocation, including probes;
+it does no source-tree walk or per-frame work. The existing private-cache
+integrity check remains the major warm per-edit scan (67.8 MB in the measured
+fixture). In a separate warm, unsandboxed direct-checkout cost probe, three
+alternating fresh-output pairs took 1,162/1,231/1,110 ms without the wrapper
+and 1,196/1,154/1,151 ms with it, with eight receipts per wrapped build.
+Medians were 1,162 and 1,154 ms, respectively. The variation exceeds the
+observed median difference, so this probe detects no wrapper penalty at its
+resolution; it is not a cross-host or full-adapter latency guarantee.
+
+## Qualification
+
+Build the wrapper first with the repository's selected Rust toolchain and run
+the ignored opt-in fixture. On macOS, the fixture requires permission to apply
+its native sandbox and a populated local Cargo registry for private-cache
+preparation:
+
+```sh
+RUSTC_WRAPPER= CARGO_TARGET_DIR=/Users/ryannel/Workspace/thrum/target \
+  rustup run 1.99.1 cargo build --locked --offline -p xtask --bin rustc_receipt
+THRUM_PYTHON=python3.11 THRUM_TEST_NATIVE_SANDBOX=1 \
+  THRUM_TEST_PREPARE_CARGO_HOME=1 \
+  THRUM_TEST_RUSTC_RECEIPT_WRAPPER=/Users/ryannel/Workspace/thrum/target/debug/rustc_receipt \
+  RUSTC_WRAPPER= CARGO_TARGET_DIR=/Users/ryannel/Workspace/thrum/target \
+  rustup run 1.99.1 cargo test --locked --offline -p thrum-cook \
+  admitted_workspace_builds_headless_game_and_failed_edit_keeps_prior_binary \
+  -- --ignored --nocapture
+```
+
+One local fresh-output A build admitted 54 files (1,257,073 bytes), took 1,297
+ms for Cargo build, and yielded five successful compile receipts plus three
+probes. The verifier matched all five compiles to distinct Cargo targets and
+their selected source paths. It reported receipt-set digest
+`508c4f6f0ec5d849ba24740a37e3e67efc5e1f26e56deaf08ffe463fd13191d0`.
+The A binary was 2,345,736 bytes and ran successfully. The separately
+admitted invalid-code B build failed; A's hash and execution still matched.
+The source and private cache inventories were unchanged after both builds.
+The receipt digest contains temporary absolute paths and is an observation,
+not a portable BuildRevision input. After the crate/manifest environment check
+was added, two more opt-in A/B qualifications passed with 1,598 and 4,293 ms
+A compiles. A later run with the codegen check took 1,460 ms. These uncontrolled
+runs do not isolate a performance change or
+establish a build-latency tail.
+After the review found rustc's alternate codegen spellings, the verifier
+refused those forms in the fixture and the sandboxed A/B run passed again;
+A's fresh-output compile took 1,300 ms in that run.
+The exact emission/crate-type check passed a later sandboxed A/B run with a
+1,389 ms A compile.
+
+Fourteen Python fixtures cover valid one- and two-unit receipts plus refusal of
+incomplete or malformed receipts, mismatched source/manifest/extern identity,
+unsupported hooks, escaped paths, changed child environment, unrecognized
+probes, extra codegen/linker options and mismatched emit/crate-type records.
+Six Rust wrapper tests cover byte
+preservation, limits, probe classification,
+exclusive receipt creation, process outcomes and exact child environment.
+`./dev check` passes; its normal test suite omits the expensive A/B fixture.
+
+The failed-B mode now audits every observed receipt under the same selected
+compiler/root/environment/codegen checks. It requires successful probes,
+exactly one failed compile with a nonzero ordinary exit, all other compiles
+matched to Cargo artifact events, no artifact for the failed crate, and exactly
+one `build-finished` event reporting failure. A structured compiler error, when
+present, must name the failed crate. Cargo 1.99.1 emitted no structured error
+message for this local B case; the bounded supervisor stderr contained the
+`game.rs` error and the Rust fixture checks it separately. The local B run had
+three successful compiles, failed `i1_mobile_game`, and three probes. Signal,
+missing completion, mismatched artifact and success transcript shapes refuse
+in the focused verifier fixture. The failure report remains `buildReady:false`;
+it is diagnostic evidence, not a B candidate.
+
+The supervisor's fault report may now parse a receipt that ends exactly at
+the wrapper's `PEND` marker. This optional parser mode is used only to count
+observed pending receipts after interruption; successful and failed Cargo
+verification still requires completed receipts and artifact reconciliation.
+
+## Remaining release boundary
+
+The wrapper and Cargo transcript describe invocations and reported outputs,
+not a complete allowlist for every rustc option and not every file rustc or
+the linker opened. The sandbox still allows named
+system roots and broader metadata reads; loaded libraries, Xcode support
+bytes, path ancestors and Cargo's `DYLD_FALLBACK_LIBRARY_PATH` resolution need
+closure. The failed B build's receipts are now audited; interrupted or timed-out
+builds still lack complete receipt/child-closure proof. The wrapper executable itself is not part of a reviewed release
+selection. The candidate has no reviewed release manifest, retained output
+manifest, durable ready publication or game-run handoff. These gates remain in
+the unchecked native compiler-adapter item of the [build plan](../../BUILD-PLAN.md).

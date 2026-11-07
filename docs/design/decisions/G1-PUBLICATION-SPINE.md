@@ -1,0 +1,23 @@
+# G1 decision: one committed world page
+
+4 November 2026. **Implemented in the V1 game; qualification in progress.** C01/C02 separate stable IDs from checked physical slots and keep committed consumer state immutable. G0 left a visual-only page pool, an independent full-record snapshot copy, and a render ID map. G1 replaces these with one simulation-owned page ring. The subsequent [G2 storage decision](G2-STORAGE-SELECTION.md) selects hecs for generic integration from 10k/100k storage-order comparison; G1 alone did not settle that choice.
+
+## Ownership and publication
+
+`Simulation` remains the sole mutable authority. Its dense live rows map to physical slots with epoch and generation checks. A `SnapshotId(epoch,tick)` names a complete, immutable, slot-indexed SoA page: liveness/ID, generation, position, velocity, health, ownership and visual selection. Per-component dirty-slot vectors contain the current tick's changes. An ordered structural journal records despawns before spawns, including reuse of the same slot. Stable-ID values are never indexes.
+
+Four preallocated pages form the G1 pool. The latest and immediately previous page remain leased internally; external `Arc` leases can retain older endpoints. A page is reused only when unleased. Its columns refresh from the authoritative change ticks since that page's previous source tick; a dead-slot scan clears stale membership. Fresh pages initialize from the whole world. This avoids copying every static component on every tick, while each published page remains a complete endpoint. The ring's reserved payload/owner count is reported for memory diagnosis; it is not a hard memory cap. G2 qualifies a longer, configurable history for prediction and restore.
+
+Seeding is sealed as a tick-zero baseline before the first mutation. A first `step` seals it if the caller has not requested it. After command validation, a tick reserves its next page before changing committed components. If every page is held, `PublicationBusy` refuses the tick; the fixed clock retains the due update. The game host checks availability before admitting its local input sequence. Failed simulation leaves the committed endpoint intact. No consumer can mutate a sealed page.
+
+## Consumers
+
+Render extraction visits page slots directly. It matches history on epoch, slot, generation and visual revision, with separate physical-slot and visual-row capacities. The synthetic scene uses the physical slot for its GPU instance. It retires absent instances against the **last applied scene**, so discarding a stale worker extraction cannot leave a ghost. The old visual pool, full-record snapshot API, extraction hash maps and ID-to-GPU-slot lookup are removed.
+
+The game owns its schema projection. When a session enables it, a bounded four-slot outbox copies each tick's dirty values and structural events from the same page and releases the lease. It starts with a full membership baseline. A consumer polls complete projections in source-tick order. Overflow reports lost ticks and blocks delta delivery until the host emits a new full baseline. There is no transport or wire codec here; G6 attaches the native QUIC session and quantization. The ordinary local game does not allocate or fill an unused outbox.
+
+## Cost and acceptance
+
+On Apple M3 Max release at 10k entities/1.5k movers, the first full-copy implementation measured 119.5 µs median for tick plus publication. Incremental page refresh measured 76.16 µs median. The older G0 same-process tick (44.41 µs) plus visual-only capture (32.52 µs) totals 76.93 µs; separate benchmark runs do not justify a speedup claim. Isolated 10k slot extraction measured 71.58 µs versus the earlier ID-map diagnostic's 99.70 µs, also in separate runs. Four page owners reserve 10,001,488 bytes on this 64-bit build. The optional four-slot outbox reserved 4,073,984 bytes after the 10k baseline and three moving ticks in the real Metal host test; allocator bookkeeping and all other engine memory are excluded. Zero allocations were observed after warmup in 10k tick/churn publication and admitted action-frame tests. The Metal host test confirms tick-zero and three ordered projections alongside committed GPU frames. P95, sustained whole-frame cost, physical iPhone and generic G2 storage remain open.
+
+G1 correctness requires exact retained endpoints, checked reuse, retry without a skipped/doubled tick, same-page render and projection, in-order bounded output or explicit resync, zero steady-tick allocations after high-water warmup, and `./dev check`. G2 owns generic game components, long history, restore/replay and the 100k backend decision. No standalone fixture binary is a proof path.

@@ -1,0 +1,15 @@
+# Thrum is pre-release: API-shape lints also apply to public items.
+avoid-breaking-exported-api = false
+
+# Tests may unwrap and print diagnostics; production code returns errors or states the
+# invariant with `expect`, and reports through its owner rather than stdout.
+allow-unwrap-in-tests = true
+allow-print-in-tests = true
+allow-dbg-in-tests = false
+
+# Values above this size should be borrowed, not copied, across calls.
+pass-by-value-size-limit = 256
+
+# A backstop against unbounded functions, not a target. Long match tables or state machines
+# that read best whole take `#[expect(clippy::too_many_lines, reason = "...")]`.
+too-many-lines-threshold = 200

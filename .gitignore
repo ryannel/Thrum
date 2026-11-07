@@ -1,0 +1,44 @@
+# Rust build products. Keep Cargo.lock for reproducible engine builds.
+**/target/
+*.profraw
+*.profdata
+
+# Owned scratch experiments and bulk generated output. Compact selected evidence
+# may live in docs/evidence; new bulk archives and media need a durable store.
+/tmp/
+docs/evidence/**/*.tar.gz
+docs/evidence/**/*.zip
+docs/evidence/**/*.webm
+
+# Local Python tooling and environments.
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Editor, IDE and operating-system state.
+.DS_Store
+Thumbs.db
+Desktop.ini
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Platform build caches and machine-specific configuration, not project source.
+DerivedData/
+xcuserdata/
+*.xcuserstate
+.gradle/
+examples/i1-mobile-game/android/app/build/
+examples/i1-mobile-game/android/build/
+local.properties
+
+# Local secrets and environment overrides. Commit sample files explicitly.
+.env
+.env.*
+!.env.example

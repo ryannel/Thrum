@@ -1,0 +1,21 @@
+file,line_at_698b82d,lint,item_reason
+crates/thrum-core/benches/v1_workload.rs,2,dead_code,shared workload fixture has consumers across test and benchmark targets
+crates/thrum-core/src/authority.rs,655,clippy::used_underscore_binding,the reassigned charge retains its allocation reservation through Drop
+crates/thrum-core/src/authority.rs,1835,clippy::too_many_lines,admission validates and reserves one transaction before consuming its sequence; keeping the order visible protects rollback semantics
+crates/thrum-core/src/authority.rs,2458,clippy::too_many_lines,the tick transaction applies due inputs in order and publishes exactly once; splitting the commit path would obscure fault and replay boundaries
+crates/thrum-core/src/publication_pool.rs,287,clippy::struct_field_names,public limit fields use max to distinguish admissible ceilings from current usage
+crates/thrum-core/src/sim/world.rs,456,clippy::float_cmp,"change ticks track exact component value changes, not geometric proximity"
+crates/thrum-core/src/world.rs,514,clippy::used_underscore_binding,the free-list charge is reassigned to retain the reservation through Drop
+crates/thrum-core/src/world.rs,617,clippy::used_underscore_binding,the free-list charge is reassigned to retain the reservation through Drop
+crates/thrum-core/tests/i1_game.rs,1449,clippy::too_many_lines,the fixture verifies both initial and prepared owner provenance in one transactional scenario
+crates/thrum-core/tests/n1_cadence_oracle.rs,175,clippy::too_many_lines,the oracle checks one ordered multi-partition release sequence as a single scenario
+crates/thrum-mobile-shell/src/lib.rs,86,clippy::struct_excessive_bools,"surface, focus, foreground and host pause are independent platform signals"
+crates/thrum-network/src/r4.rs,140,clippy::struct_field_names,event_id distinguishes the event's identity from its origin input sequence
+crates/thrum-network/src/r4.rs,378,clippy::needless_pass_by_value,the small borrowed command value is the stable hot-path encoder input
+crates/thrum-source/src/budget.rs,21,clippy::struct_field_names,every planning target is in bytes and the field names must carry that unit
+crates/thrum-source/src/registry_stage.rs,692,clippy::too_many_lines,one ordered pass validates declared records and accumulates their reference closure without duplicate parsing
+crates/thrum-source/src/sqlite_store.rs,329,clippy::struct_field_names,all thresholds are positions in the same WAL byte stream
+crates/thrum-source/src/sqlite_store.rs,660,clippy::struct_field_names,all public observation fields include byte units to prevent unit confusion
+tools/xtask/src/bin/rustc_receipt.rs,8,clippy::print_stderr,a refused compiler invocation must report its error to the CLI caller
+tools/xtask/src/bin/rustc_receipt.rs,23,clippy::print_stderr,unsupported-platform CLI use must report its error
+tools/xtask/src/main.rs,26,clippy::print_stdout,the contributor CLI's help command intentionally writes to stdout

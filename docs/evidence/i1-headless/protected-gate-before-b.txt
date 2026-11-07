@@ -1,0 +1,11 @@
+    Finished `release` profile [optimized] target(s) in 0.05s
+     Running `/Users/ryannel/Workspace/thrum/tmp/protected-gate-study/before-target/release/examples/i1_charged_replica_cost`
+I1 changed replica fixture host=macos/aarch64 profile=release
+changed_tick/64: submit_step_replica_ack_ns[p50/p95/p99/max] prototype=(791, 834, 875, 4000) charged=(708, 791, 833, 2917) charged_index_bytes=8456
+changed_stages/64: step_ns[p50/p95/p99/max] prototype=(458, 500, 542, 667) charged=(541, 584, 625, 750) replica_ack_ns[p50/p95/p99/max] prototype=(250, 292, 292, 3500) charged=(125, 125, 166, 2333)
+host_changed_tick/64: submit_callback_ack_ns[p50/p95/p99/max] prototype=(792, 834, 875, 1084) charged=(750, 833, 875, 13333) protected=(667, 709, 791, 9250)
+host_many_changes/64: sixteen_submit_callback_ack_ns[p50/p95/p99/max] ordinary=(2542, 3084, 3334, 14584) protected=(2292, 2500, 3000, 14709)
+changed_tick/4096: submit_step_replica_ack_ns[p50/p95/p99/max] prototype=(917, 1042, 1208, 8708) charged=(917, 1083, 1209, 8792) charged_index_bytes=540680
+changed_stages/4096: step_ns[p50/p95/p99/max] prototype=(667, 750, 875, 8458) charged=(750, 875, 1000, 8667) replica_ack_ns[p50/p95/p99/max] prototype=(208, 250, 250, 417) charged=(84, 125, 125, 292)
+host_changed_tick/4096: submit_callback_ack_ns[p50/p95/p99/max] prototype=(1000, 1125, 1333, 10125) charged=(1000, 1125, 1333, 9375) protected=(959, 1083, 1292, 7834)
+host_many_changes/4096: sixteen_submit_callback_ack_ns[p50/p95/p99/max] ordinary=(2958, 3084, 3875, 9250) protected=(2833, 3041, 3708, 11250)

@@ -1,0 +1,5 @@
+# A3 native extraction handoff — superseded
+
+The 4 November 2026 A3 experiment sent immutable world pages and a reusable CPU extractor to a separate Rayon lane. Its tests and offscreen measurements remain in Git history and the [A3 evidence](../../evidence/render/A3-NATIVE-EXTRACTION-2026-11-04.md). It never became a V1 game or fixed frame-benchmark consumer. On 6 November, G3b removed the optional lane and its worker-only tests rather than maintain a third scheduling owner.
+
+The active macOS window has one render actor and one authoritative world thread. The render actor reads a committed page, extracts the scene, updates views, encodes and submits; the platform owns the display link and surface. The browser uses the same serial extraction contract. [The bounded frame host](V1-BOUNDED-FRAME-HOST.md) is the current G3b design. Its real 120 Hz presentation, present timestamp, latency and CPU budgets remain open. A future job graph must prove an integrated benefit against this running path before adding another execution lane.

@@ -1,0 +1,45 @@
+[package]
+name = "thrum-render"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+description = "Thrum's typed GPU graph and prepared synthetic renderer foundation"
+
+[lints]
+workspace = true
+
+[dependencies]
+thrum-core = { path = "../thrum-core" }
+glam = { version = "=0.33.12", default-features = false, features = ["std"] }
+wgpu = { version = "=30.0.1", default-features = false, features = ["std", "wgsl"] }
+
+[target.'cfg(any(target_os = "macos", target_os = "ios"))'.dependencies]
+wgpu = { version = "=30.0.1", default-features = false, features = ["metal"] }
+
+[target.'cfg(any(target_os = "windows", target_os = "linux", target_os = "android"))'.dependencies]
+wgpu = { version = "=30.0.1", default-features = false, features = ["vulkan"] }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+web-time = "=1.1.0"
+wgpu = { version = "=30.0.1", default-features = false, features = ["webgpu"] }
+
+[dev-dependencies]
+divan = "=0.1.21"
+pollster = "=1.0.1"
+
+[[bench]]
+name = "extract"
+harness = false
+
+[[bench]]
+name = "clustered"
+harness = false
+
+[[bench]]
+name = "visibility"
+harness = false
+
+[[bench]]
+name = "frame_target"
+harness = false

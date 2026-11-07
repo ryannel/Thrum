@@ -1,0 +1,5 @@
+clock/30Hz-display: callbacks=100000 ticks=219999 ns/callback p50=6 p95=11 p99=11 max=11
+clock/60Hz-display: callbacks=100000 ticks=109999 ns/callback p50=11 p95=11 p99=11 max=11
+clock/120Hz-display: callbacks=100000 ticks=54999 ns/callback p50=11 p95=11 p99=11 max=11
+clock/240Hz-display: callbacks=100000 ticks=27499 ns/callback p50=11 p95=11 p99=12 max=13
+clock+idle-authority/120Hz-display: callbacks=100000 ticks=54999 ns/callback p50=46 p95=46 p99=49 max=49

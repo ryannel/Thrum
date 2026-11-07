@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Thrum V1 WebGPU scene</title>
+    <style>
+      html, body { margin: 0; background: #101824; color: #e8eef8; font: 14px system-ui, sans-serif; }
+      main { max-width: 1280px; margin: auto; padding: 1rem; }
+      canvas { display: block; width: 100%; aspect-ratio: 16 / 9; background: #101824; }
+      output { display: block; margin-top: 1rem; white-space: pre-wrap; overflow-wrap: anywhere; }
+      .params { display: flex; gap: 1rem; align-items: start; margin-top: 1rem; }
+      #params-status { white-space: pre-line; }
+      .sky-presets { display: flex; flex-wrap: wrap; gap: .75rem 1.5rem; margin-top: 1rem; }
+      button { border: 1px solid #6f86a3; border-radius: .3rem; background: #1a2b40; color: inherit; padding: .4rem .8rem; cursor: pointer; }
+      button:disabled { opacity: .65; cursor: progress; }
+      button:focus-visible, input:focus-visible { outline: 2px solid #a2cfff; outline-offset: 3px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <canvas id="scene" width="1280" height="720" aria-label="Thrum V1 scene"></canvas>
+      <section aria-label="Sky, camera and world controls">
+        <!-- Built from the game's typed controls (thrum-controls), the same model as the macOS panel. -->
+        <div id="demo-controls"></div>
+        <div class="sky-presets">
+          <button type="button" data-sky="sunrise">Sunrise</button>
+          <button type="button" data-sky="noon">Noon</button>
+          <button type="button" data-sky="sunset">Sunset</button>
+          <button type="button" data-sky="twilight">Twilight</button>
+          <button type="button" id="scene-view">Look at the scene</button>
+          <button type="button" id="restore-graphics" hidden>Restore graphics</button>
+        </div>
+        <!-- ?params=<url>: a parameter file of control keys to display values (see params/). -->
+        <div class="params" id="params" hidden>
+          <button type="button" id="reload-params">Reload parameters</button>
+          <output id="params-status"></output>
+        </div>
+      </section>
+      <p>Move the local player with WASD or arrow keys. <span id="player"></span></p>
+      <output id="status">Starting WebGPU…</output>
+    </main>
+    <script type="module">
+      import init, { create_browser_game, fetch_cooked_valley } from "./v1_game.js";
+      import { mountControls } from "./thrum-controls.js";
+
+      const canvas = document.querySelector("#scene");
+      const status = document.querySelector("#status");
+      const player = document.querySelector("#player");
+      try {
+        await init();
+        const game = await create_browser_game(canvas);
+        const probe = new URL(location.href).searchParams;
+        // ?assets=<thrum-cook watch --serve origin> draws the cooked valley.
+        if (probe.has("assets")) {
+          status.textContent = "Fetching the cooked valley…";
+          const valley = await fetch_cooked_valley(probe.get("assets"));
+          game.attach_cooked_valley(valley);
+          // Follow later publications: each swaps in as it uploads.
+          (async () => {
+            for (;;) {
+              try { await valley.next_publication(); }
+              catch (error) {
+                console.warn(`Cooked publication poll failed: ${error}`);
+                await new Promise((resolve) => setTimeout(resolve, 1000));
+              }
+            }
+          })();
+        }
+        status.textContent = "Running the 10,000-entity scene…";
+        const pauseProbe = probe.has("pause-probe");
+        const resizeProbe = probe.has("resize-probe");
+        const overloadProbe = probe.has("overload-probe");
+        const qualify = probe.has("qualify") || pauseProbe || resizeProbe || overloadProbe;
+        let simulatedHidden = false;
+        let rafId = 0;
+        let stopped = false;
+        const pressed = new Set();
+        // Sliders, the pause toggle and the Sun readout come from the game's typed controls.
+        // Edits go through the game's checked setters at once; pause takes the same path as
+        // set_paused. These ids predate the model and the browser check drives them.
+        const controls = mountControls(document.querySelector("#demo-controls"), game.controls_json(), {
+          edit: (key, value) => { if (!stopped) game.edit_control(key, value, performance.now()); },
+          changes: () => game.control_changes(),
+          ids: { "sky.solar_time": "solar-time", "camera.yaw": "camera-yaw", "camera.pitch": "camera-pitch", "world.paused": "pause-world" },
+          onError: (error) => { status.textContent = `Control fault: ${error}`; },
+        });
+        const look = (yaw, pitch) => {
+          controls.set("camera.yaw", yaw);
+          controls.set("camera.pitch", pitch);
+        };
+        const skies = { sunrise: [6.1, 90, 0], noon: [12, 0, 20], sunset: [17.9, -90, 0], twilight: [18.48, -90, 0] };
+        document.querySelectorAll("[data-sky]").forEach((button) => button.addEventListener("click", () => {
+          const [hours, yaw, pitch] = skies[button.dataset.sky];
+          controls.set("sky.solar_time", hours);
+          look(yaw, pitch);
+        }));
+        document.querySelector("#scene-view").addEventListener("click", () => look(0, 0));
+        if (probe.has("params")) {
+          // Applied through the same checked edits as the sliders; a bad file or entry is
+          // explained here and never stops the frame loop.
+          const source = new URL(probe.get("params"), location.href);
+          const paramsStatus = document.querySelector("#params-status");
+          const name = source.pathname.split("/").pop();
+          const loadParams = async () => {
+            try {
+              const response = await fetch(source, { cache: "no-store" });
+              if (!response.ok) throw new Error(`HTTP ${response.status}`);
+              const report = JSON.parse(game.apply_parameters(await response.text(), performance.now()));
+              controls.refresh();
+              paramsStatus.textContent = [
+                `${name}: ${report.changed} changed, ${report.unchanged} unchanged, ${report.problems.length} refused`,
+                ...report.problems,
+              ].join("\n");
+            } catch (error) {
+              paramsStatus.textContent = `${name}: ${error}; controls keep their values (fix the file and reload)`;
+            }
+          };
+          document.querySelector("#params").hidden = false;
+          document.querySelector("#reload-params").addEventListener("click", loadParams);
+          await loadParams();
+        }
+        const movementKeys = new Set(["KeyW", "KeyA", "KeyS", "KeyD", "ArrowUp", "ArrowLeft", "ArrowDown", "ArrowRight"]);
+        const updateControls = () => {
+          const x = Number(pressed.has("KeyD") || pressed.has("ArrowRight"))
+            - Number(pressed.has("KeyA") || pressed.has("ArrowLeft"));
+          const y = Number(pressed.has("KeyW") || pressed.has("ArrowUp"))
+            - Number(pressed.has("KeyS") || pressed.has("ArrowDown"));
+          game.set_controls(x, y);
+        };
+        const clearControls = () => {
+          pressed.clear();
+          updateControls();
+        };
+        window.addEventListener("keydown", (event) => {
+          if (!movementKeys.has(event.code) || stopped) return;
+          if (event.target instanceof Element && event.target.closest("input, button")) return;
+          event.preventDefault();
+          if (pressed.has(event.code)) return;
+          pressed.add(event.code);
+          updateControls();
+        });
+        window.addEventListener("keyup", (event) => {
+          if (!movementKeys.has(event.code) || stopped) return;
+          event.preventDefault();
+          if (!pressed.has(event.code)) return;
+          pressed.delete(event.code);
+          updateControls();
+        });
+        window.addEventListener("blur", clearControls);
+        document.addEventListener("focusin", (event) => {
+          if (event.target instanceof Element && event.target.closest("input, button")) clearControls();
+        });
+        let lastPlayerUpdate = 0;
+        const restoreGraphics = document.querySelector("#restore-graphics");
+        let graphicsUnavailable = false;
+        let restoreError = null;
+        const updateGraphicsState = () => {
+          const fault = game.graphics_fault();
+          const recovering = game.recovering();
+          const error = game.graphics_recovery_error() ?? restoreError;
+          const hidden = !fault && !recovering;
+          const buttonText = recovering ? "Restoring graphics…" : "Restore graphics";
+          if (restoreGraphics.hidden !== hidden) restoreGraphics.hidden = hidden;
+          if (restoreGraphics.disabled !== recovering) restoreGraphics.disabled = recovering;
+          if (restoreGraphics.textContent !== buttonText) restoreGraphics.textContent = buttonText;
+          const wasUnavailable = graphicsUnavailable;
+          graphicsUnavailable = Boolean(fault || recovering);
+          if (graphicsUnavailable) {
+            const progress = recovering ? "Restoring graphics… Simulation and controls remain available."
+              : error ? `Restore failed: ${error}\nSimulation continues. You can retry Restore graphics.`
+                : "Simulation continues. Choose Restore graphics to try again.";
+            const message = fault ? `Graphics fault: ${fault}\n${progress}`
+              : "Restoring graphics… Waiting for the first frame.\nSimulation and controls remain available.";
+            if (status.textContent !== message) status.textContent = message;
+          } else if (wasUnavailable) {
+            restoreError = null;
+            status.textContent = "Running the 10,000-entity scene…";
+          }
+          return graphicsUnavailable;
+        };
+        const schedule = () => {
+          if (!rafId && !stopped && !document.hidden && !simulatedHidden) {
+            rafId = requestAnimationFrame(draw);
+          }
+        };
+        const cancelPending = () => {
+          if (rafId) cancelAnimationFrame(rafId);
+          rafId = 0;
+        };
+        restoreGraphics.addEventListener("click", () => {
+          if (stopped) return;
+          restoreError = null;
+          try { game.request_graphics_recovery(); }
+          catch (error) { restoreError = String(error); }
+          updateGraphicsState();
+          schedule();
+        });
+        const draw = (time) => {
+          rafId = 0;
+          if (document.hidden || simulatedHidden || stopped) return;
+          try {
+            game.frame(time);
+            controls.refresh();
+            if (time - lastPlayerUpdate >= 500) {
+              player.textContent = game.controlled_position();
+              lastPlayerUpdate = time;
+            }
+            if (updateGraphicsState()) {
+              schedule();
+            } else if (qualify && game.complete()) {
+              status.textContent = game.report();
+              stopped = true;
+            } else {
+              schedule();
+            }
+          } catch (error) {
+            status.textContent = `Frame fault: ${error}; ${game.report()}`;
+            stopped = true;
+          }
+        };
+        document.addEventListener("visibilitychange", () => {
+          if (stopped) return;
+          try {
+            if (document.hidden) {
+              cancelPending();
+              clearControls();
+            }
+            game.set_visible(!document.hidden && !simulatedHidden, performance.now());
+            schedule();
+          } catch (error) {
+            status.textContent = `Lifecycle fault: ${error}`;
+            stopped = true;
+          }
+        });
+        game.set_visible(!document.hidden && !simulatedHidden, performance.now());
+        schedule();
+        if (pauseProbe) {
+          setTimeout(() => {
+            if (stopped) return;
+            try {
+              simulatedHidden = true;
+              cancelPending();
+              clearControls();
+              game.set_visible(false, performance.now());
+              status.textContent = "Paused for the two-second lifecycle probe…";
+              setTimeout(() => {
+                if (stopped) return;
+                try {
+                  simulatedHidden = false;
+                  game.set_visible(!document.hidden && !simulatedHidden, performance.now());
+                  status.textContent = document.hidden
+                    ? "Lifecycle probe complete; waiting for visibility…"
+                    : "Resumed the 10,000-entity scene…";
+                  schedule();
+                } catch (error) {
+                  status.textContent = `Lifecycle fault: ${error}`;
+                  stopped = true;
+                }
+              }, 2000);
+            } catch (error) {
+              status.textContent = `Lifecycle fault: ${error}`;
+              stopped = true;
+            }
+          }, 1000);
+        }
+        if (resizeProbe) {
+          setTimeout(() => {
+            if (stopped) return;
+            canvas.width = 960;
+            canvas.height = 540;
+            status.textContent = "Reconfiguring the WebGPU canvas to 960 × 540…";
+          }, 1000);
+        }
+        if (overloadProbe) {
+          setTimeout(() => {
+            if (stopped) return;
+            cancelPending();
+            status.textContent = "Delaying one visible animation callback by 250 ms…";
+            setTimeout(() => {
+              if (!stopped) schedule();
+            }, 250);
+          }, 1000);
+        }
+      } catch (error) {
+        status.textContent = `Startup fault: ${error}`;
+      }
+    </script>
+  </body>
+</html>

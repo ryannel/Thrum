@@ -1,0 +1,4 @@
+interface:
+  display_name: 'Engine Module Design'
+  short_description: 'Design, prove and build a Thrum engine module'
+  default_prompt: 'Use $engine-module-design to design the module against its required behaviours and engine contracts, check that the chosen mechanisms produce them across the full range, then build and prove the commissioned scope.'

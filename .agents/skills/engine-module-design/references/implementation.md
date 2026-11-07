@@ -1,0 +1,70 @@
+# Build and prove
+
+The outcome is the commissioned behaviour running in the engine on the shipped path, judged in motion against its
+cues, with measured cost and honest limits. Continue through building, running, looking and correcting without adding
+approval stops.
+
+## Let the design choose the next slice
+
+- **Choose by risk and dependency.** Pick the next slice by architectural risk and dependency, not by what extends
+  the latest demo most easily. Name the requirement or decision it tests, the affected consumers and what would reject
+  it.
+- **Update the design after each proof.** Do this before treating the code as a foundation. If evidence overturns a
+  structural assumption, revise the design and affected contracts before building dependent features. Small local
+  fixes stay local.
+- **Build the core behaviour and its consumers together.** Build the defining behaviour together with its important
+  consumers before widening regimes or generalizing infrastructure. A diagnostic stub may exercise plumbing, but its
+  real replacement stays on the critical path.
+
+## Make the first visual checkpoint real
+
+- **Render the interaction itself.** The first promised visual checkpoint is a rendered interaction with the required
+  cue visible. A solver or geometry inspector is a diagnostic.
+- **Exercise the shipped path.** Use the selected runtime path, configuration and budget. An offline or high-sample
+  look shows what's possible; it doesn't show the product.
+- **Supply what the judgement needs.** Provide the content, references and surroundings needed to judge at the
+  intended distances and speeds, and reject inadequate content before expensive preparation.
+- **Rebuild before reusing evidence.** When a source or recipe changes, rebuild the affected products and recheck the
+  loaded artifact before carrying evidence forward.
+
+## Make the model produce the behaviour
+
+- **Drive simulated behaviour with its real drivers.** Use established relationships and real inputs. A correct
+  solver with invented inputs, or amplitudes set by hand-tuned gains, still gives the wrong experience. Authored
+  effects are legitimate when their role and limits are stated.
+- **Ask whether the model can produce a cue before tuning it.** When a cue stays missing or weak, check the model
+  ([system diagnosis](system-diagnosis.md)). If it can't produce the cue, replace the mechanism and keep the
+  independently qualified parts. Raise resolution, sample counts or preparation cost only when they address the
+  identified failure.
+- **Test the joins.** Test transitions and overlaps between representations, bands and levels of detail, not only
+  each part's resolution. Use [system diagnosis](system-diagnosis.md) to separate an implementation error from a
+  missing or incompatible model.
+- **Keep the code where it belongs.** Keep pure calculation, GPU work and orchestration with their owners. Share
+  invariant data and contracts rather than duplicating formulas or keeping competing producers alive.
+
+## Look, measure, review
+
+- **Look at the output yourself.** Watch stills and motion against the cues and references, including normal motion,
+  starts and stops, turns, camera and scale changes, and quality transitions. Judge at the player's camera, distance and
+  real frame rate, side by side with the reference; close inspection views and offline-paced clips are diagnostics.
+  Tests and source review don't replace looking.
+- **Vary the suspects.** When a defect persists, vary the variables that could plausibly cause it; don't hold them
+  fixed across trials. Time-box spikes with a kill criterion, and give each a fair push before calling it.
+- **Get independent visual review.** Have a reviewer judge the images and sequences, and record the result as
+  `agent_reviewed`. Say plainly when output is poor. Owner feedback steers later slices; it is never a pause.
+- **Tie evidence to the build.** Tie captures and timings to the actual loaded build, inputs and quality state.
+- **Measure cost on the assembled path.** For performance-sensitive work, follow [performance](performance.md),
+  ending with an assembled measurement. Label timings taken on a shared, contended GPU as such.
+- **Review, fix, recheck.** Use [review](review.md) for design, code, output and performance claims. Resolve
+  actionable findings, then check whether a fix weakened another cue.
+
+Deliver:
+- the result;
+- what was verified, with evidence;
+- the measured cost;
+- what remains unqualified or failed.
+
+Keep a bounded prototype distinct from full-range delivery, and keep unrun qualification distinct from a known failure.
+Unavailable paths (a fallback, a device, a resource-loss case) stay unqualified; they don't silently pass. For
+evolving structure, check local development and disappearance, not only persistent identity. Commit and push verified checkpoints according to the
+repository's rules, and preserve others' work. Using this skill grants no extra permission for external actions.
