@@ -3,8 +3,9 @@
 // view. Early (phase 1) lists slots in view that were visible last frame.
 // Late (phase 2) tests every slot in view against this frame's depth pyramid,
 // lists the visible ones the early phase did not draw, and records the new
-// last-visible bits. Every phase applies the same frustum test to the same
-// current transforms, so the bits only choose which phase draws a slot.
+// last-visible bits on the other history side. Skip (phase 3) lists nothing and clears the bits. Every
+// phase applies the same frustum test to the same current transforms, so the
+// bits only choose which phase draws a slot.
 // Three ordered dispatches: per-workgroup counts and slot masks, one-workgroup
 // scan, and a scatter that reads only the masks (instances are tested once).
 // The visible list preserves instance order, so draw order and depth ties
@@ -52,6 +53,7 @@ struct Params {
 const PHASE_FRUSTUM: u32 = 0u;
 const PHASE_EARLY: u32 = 1u;
 const PHASE_LATE: u32 = 2u;
+const PHASE_SKIP: u32 = 3u;
 
 const WORKGROUP: u32 = 256u;
 const WORDS: u32 = WORKGROUP / 32u;
@@ -65,10 +67,12 @@ const WORDS: u32 = WORKGROUP / 32u;
 @group(0) @binding(6) var<storage, read_write> visible: array<u32>;
 @group(0) @binding(7) var<storage, read_write> args: array<u32>;
 @group(0) @binding(8) var<storage, read_write> masks: array<u32>;
-// One last-visible bit per slot; read by the early phase, rewritten by late.
-@group(0) @binding(9) var<storage, read_write> bits: array<u32>;
+// One last-visible bit per slot: the committed side, read by early and late.
+@group(0) @binding(9) var<storage, read> bits: array<u32>;
 // This frame's min depth pyramid, every mip; read by the late phase only.
 @group(0) @binding(10) var pyramid: texture_2d<f32>;
+// The other side, written by late (and cleared by Skip) for the next frame.
+@group(0) @binding(11) var<storage, read_write> next_bits: array<u32>;
 
 var<workgroup> scan: array<u32, WORKGROUP>;
 var<workgroup> seen: array<u32, WORKGROUP>;
@@ -171,11 +175,11 @@ fn count(@builtin(global_invocation_id) global: vec3<u32>,
     } else if params.phase == PHASE_LATE {
         visible_now = framed && !hidden_by_depth(slot);
         draw = visible_now && !drawn_last(slot);
+    } else if params.phase == PHASE_SKIP {
+        draw = false;
     }
     scan[local.x] = select(0u, 1u, draw);
     seen[local.x] = select(0u, 1u, visible_now);
-    // The barriers in the scan also order every bit read above before the
-    // late phase rewrites this workgroup's own words below.
     scan_workgroup(local.x);
     if local.x == WORKGROUP - 1u {
         group_offsets[group.x] = scan[local.x];
@@ -194,12 +198,13 @@ fn count(@builtin(global_invocation_id) global: vec3<u32>,
             before = at;
         }
         masks[group.x * WORDS + local.x] = word;
-        if params.phase == PHASE_LATE {
+        // Skip clears the history: `seen` is all zero.
+        if params.phase == PHASE_LATE || params.phase == PHASE_SKIP {
             var visible_word = 0u;
             for (var bit = 0u; bit < 32u; bit = bit + 1u) {
                 visible_word = visible_word | (seen[base + bit] << bit);
             }
-            bits[group.x * WORDS + local.x] = visible_word;
+            next_bits[group.x * WORDS + local.x] = visible_word;
         }
     }
 }
