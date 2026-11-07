@@ -27,7 +27,7 @@ fn reflection_main(@builtin(global_invocation_id) id: vec3<u32>) {
     // Output views select one power-of-two mip. Derive its parameter from
     // actual view dimensions rather than mutable per-pass uniform uploads.
     let mip=countLeadingZeros(size.x)-countLeadingZeros(REFLECTION_SIZE);
-    var radiance=vec3(0.0);
+    var radiance=vec4(0.0);
     var weight=0.0;
     for(var sample=0u;sample<PREFILTER_SAMPLES;sample++) {
         let prepared=prefilter_samples[mip*PREFILTER_SAMPLES+sample];
@@ -37,8 +37,8 @@ fn reflection_main(@builtin(global_invocation_id) id: vec3<u32>) {
         let uv=sky_uv(direction,atmosphere.sun_lux.xyz);
         // Sky has disjoint curved-horizon halves and excludes the Sun disk.
         // Preserve its gain-scaled unit-Sun radiance through this linear filter.
-        radiance+=prepared.w*textureSampleLevel(reflection_sky,reflection_sampler,uv,0.0).rgb;
+        radiance+=prepared.w*textureSampleLevel(reflection_sky,reflection_sampler,uv,0.0);
         weight+=prepared.w;
     }
-    textureStore(reflection_output,vec2<i32>(id.xy),i32(id.z),vec4(radiance/weight,1.0));
+    textureStore(reflection_output,vec2<i32>(id.xy),i32(id.z),radiance/weight);
 }

@@ -67,7 +67,9 @@ impl Output {
                     "\n",
                     include_str!("../../common.wgsl"),
                     "\n",
-                    include_str!("../../transport.wgsl")
+                    include_str!("../../transport.wgsl"),
+                    "\n",
+                    include_str!("../../night.wgsl")
                 )
             )
         );
@@ -83,17 +85,22 @@ impl Output {
             min_filter: wgpu::FilterMode::Linear,
             ..Default::default()
         });
+        let entries = [
+            entry(0, atmosphere.uniform.as_entire_binding()),
+            entry(1, TextureView(&views[0])),
+            entry(2, TextureView(&views[1])),
+            entry(3, TextureView(&views[2])),
+            entry(4, TextureView(&views[3])),
+            entry(5, Sampler(&sampler)),
+        ];
+        let entries = entries
+            .into_iter()
+            .chain(atmosphere.night.bindings())
+            .collect::<Vec<_>>();
         let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("identical aerial transport inputs"),
             layout: &pipeline.get_bind_group_layout(0),
-            entries: &[
-                entry(0, atmosphere.uniform.as_entire_binding()),
-                entry(1, TextureView(&views[0])),
-                entry(2, TextureView(&views[1])),
-                entry(3, TextureView(&views[2])),
-                entry(4, TextureView(&views[3])),
-                entry(5, Sampler(&sampler)),
-            ],
+            entries: &entries,
         });
         Self {
             scatter,
@@ -321,6 +328,7 @@ fn aerial_storage_matches_float32_transport_and_consumer_units() {
             frame,
             &SyntheticView::default(),
             &directional,
+            &super::sky_samples(&device),
         );
         let outputs = [
             Output::new(&device, &atmosphere, Storage::ReferenceFloat),
@@ -371,7 +379,7 @@ fn consumer_units(device: &wgpu::Device, queue: &wgpu::Queue, uniform: &wgpu::Bu
     // consumer must recover the same physical result, not a1024x lighting gain.
     for (texture, value) in [(&scatter, 0x2400_u16), (&transmission, 0x3800_u16)] {
         let bytes: Vec<_> = (0..LAYERS)
-            .flat_map(|_| [value, value, value, 0x3c00])
+            .flat_map(|_| [value, value, value, 0])
             .flat_map(u16::to_le_bytes)
             .collect();
         queue.write_texture(

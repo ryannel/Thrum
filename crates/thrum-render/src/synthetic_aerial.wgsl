@@ -16,6 +16,7 @@ struct AerialFrame {
 struct AerialSample {
     scatter: vec4<f32>,
     transmission: vec3<f32>,
+    night: f32,
 }
 fn aerial_sample(distance_metres: f32, uv: vec2<f32>) -> AerialSample {
     let distance = min(32000.0, distance_metres);
@@ -30,10 +31,10 @@ fn aerial_sample(distance_metres: f32, uv: vec2<f32>) -> AerialSample {
         textureSampleLevel(aerial_scatter, aerial_sampler, uv, i32(high), 0.0),
         blend);
     let transmission = mix(
-        textureSampleLevel(aerial_transmittance, aerial_sampler, uv, i32(low), 0.0).rgb,
-        textureSampleLevel(aerial_transmittance, aerial_sampler, uv, i32(high), 0.0).rgb,
+        textureSampleLevel(aerial_transmittance, aerial_sampler, uv, i32(low), 0.0),
+        textureSampleLevel(aerial_transmittance, aerial_sampler, uv, i32(high), 0.0),
         blend);
-    return AerialSample(scatter, transmission);
+    return AerialSample(scatter, transmission.rgb, transmission.a / NIGHT_LUT_GAIN);
 }
 fn aerial_uv(screen_position: vec4<f32>) -> vec2<f32> {
     return clamp(screen_position.xy * view_aux.viewport_inv_viewport.zw, vec2(0.0), vec2(1.0));
@@ -41,4 +42,8 @@ fn aerial_uv(screen_position: vec4<f32>) -> vec2<f32> {
 // Decode the same 1024 RGB storage gain as the Sky before applying Sun once.
 fn aerial_radiance(scatter: vec3<f32>) -> vec3<f32> {
     return scatter * (aerial_frame.sun_lux.w / SKY_LUT_GAIN) * aerial_frame.colour_pre_exposure.rgb;
+}
+
+fn composite_aerial(sample: AerialSample, surface: vec3<f32>, solar_scatter: vec3<f32>) -> vec3<f32> {
+    return sample.transmission * surface + aerial_radiance(solar_scatter) + vec3(sample.night);
 }

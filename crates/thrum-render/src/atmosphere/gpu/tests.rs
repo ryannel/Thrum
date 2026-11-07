@@ -6,6 +6,16 @@ mod multiple_interpolation;
 mod reference;
 mod transmittance;
 
+fn sky_samples(device: &wgpu::Device) -> [wgpu::Buffer; 2] {
+    let sample = device.create_buffer(&wgpu::BufferDescriptor {
+        label: Some("transport-only fixture exposure"),
+        size: 32,
+        usage: wgpu::BufferUsages::UNIFORM,
+        mapped_at_creation: false,
+    });
+    [sample.clone(), sample]
+}
+
 #[test]
 fn encoded_constant_sky_integrates_in_physical_illuminance_units() {
     pollster::block_on(async {
@@ -51,7 +61,7 @@ fn encoded_constant_sky_integrates_in_physical_illuminance_units() {
         });
         // Known per-unit radiances [2^-16, 2^-15, 2^-14], stored with the
         // fixed 1024 gain as exactly representable halfs [2^-6, 2^-5, 2^-4].
-        let encoded = [0x2400_u16, 0x2800, 0x2c00, 0x3c00].map(u16::to_le_bytes);
+        let encoded = [0x2400_u16, 0x2800, 0x2c00, 0].map(u16::to_le_bytes);
         queue.write_texture(
             sky.as_image_copy(),
             encoded.as_flattened(),

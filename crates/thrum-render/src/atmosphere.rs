@@ -8,6 +8,7 @@ use crate::synthetic::RenderError;
 mod gpu;
 mod graph;
 mod model;
+mod night;
 mod reflection;
 mod spectrum;
 
@@ -57,6 +58,7 @@ pub struct AtmosphereFrame {
     solar_colour: [f32; 3],
     camera_altitude_m: f32,
     profile_epoch: u64,
+    nightglow: bool,
 }
 
 impl AtmosphereFrame {
@@ -93,7 +95,22 @@ impl AtmosphereFrame {
             solar_colour,
             camera_altitude_m,
             profile_epoch,
+            nightglow: false,
         })
+    }
+
+    /// Include the clear Earth moonless background and its scattered light.
+    /// The profile is supported up to 15 km observer altitude.
+    #[must_use]
+    pub fn with_nightglow(mut self) -> Self {
+        self.nightglow = true;
+        self
+    }
+
+    /// Whether the night profile can contribute for this view.
+    #[must_use]
+    pub fn nightglow_active(self) -> bool {
+        self.nightglow && self.camera_altitude_m <= 15_000.0
     }
 
     /// Unit world-space receiver-to-Sun direction.

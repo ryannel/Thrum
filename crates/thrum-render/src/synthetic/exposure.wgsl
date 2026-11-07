@@ -48,6 +48,7 @@ fn resolve() {
     var ev = log2(inverse / 1.2);
     var lux = 0.0;
     var flags = NOT_METERED;
+    var storage_scale = policy.pre_exposure;
     if policy.mode == 1u || policy.mode == 2u {
         flags = INVALID | NOT_METERED;
         if policy.atmosphere != 0u && finite(directional[0].y)
@@ -56,24 +57,21 @@ fn resolve() {
             let measured = dot(incident, vec3(0.2126,0.7152,0.0722));
             if finite(measured) && measured >= 0.0 {
                 lux = measured;
-                // The lux floor bounds the meter input without changing reported
-                // incident light. It maps to the minimum EV with the flat key.
-                // The low-light key can raise the effective floor.
-                let floor_lux = 2.5 * exp2(parameters.z + parameters.y);
-                var raw_ev = log2(max(measured, floor_lux) * 0.4) - parameters.y;
+                // Key the real illuminance. The positive guard only protects log2.
+                var raw_ev = log2(max(measured * 0.4, 1e-20)) - parameters.y;
                 if policy.mode == 2u {
-                    let metered = max(measured, floor_lux);
-                    raw_ev -= min(0.0, log2(key_value(metered) / key_value(ADAPTED_LUX)));
+                    raw_ev -= min(0.0, log2(key_value(measured) / key_value(ADAPTED_LUX)));
                 }
                 ev = clamp(raw_ev, parameters.z, parameters.w);
                 inverse = 1.2 * exp2(ev);
+                storage_scale = clamp(0.25 / inverse, policy.pre_exposure, 64.0);
                 flags = 0u;
-                if measured < floor_lux { flags |= FLOOR | CLAMP; }
+                if raw_ev < parameters.z { flags |= FLOOR | CLAMP; }
                 if raw_ev > parameters.w { flags |= CLAMP; }
             }
         }
     }
     if policy.atmosphere!=0u && directional[3].w>1.0 { flags|=SKY_SH_NEGATIVE_PROBE; }
-    result.values = vec4(policy.pre_exposure, inverse, ev, lux);
+    result.values = vec4(storage_scale, inverse, ev, lux);
     result.metadata = vec4(flags, serials.current, policy.sdr_tone_map);
 }

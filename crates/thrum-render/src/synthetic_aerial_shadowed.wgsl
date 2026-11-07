@@ -51,5 +51,5 @@ fn aerial_colour(colour: vec3<f32>, world_position: vec3<f32>, screen_position: 
         previous = current;
         previous_distance = interval_end;
     }
-    return end.transmission * colour + aerial_radiance(scatter);
+    return composite_aerial(end, colour, scatter);
 }

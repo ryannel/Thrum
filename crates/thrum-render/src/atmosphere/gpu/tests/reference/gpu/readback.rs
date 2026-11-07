@@ -73,6 +73,7 @@ impl Probe {
             frame(45.0, 2.0),
             &SyntheticView::default(),
             &directional,
+            &super::super::super::sky_samples(device),
         );
         let zero = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("zero higher-order input for first-order comparison"),
@@ -115,40 +116,46 @@ impl Probe {
                     &production_views,
                     &sampler,
                     &matched,
+                    &atmosphere.night,
                 );
             }
         }
+        let single_entries = [
+            wgpu::BindGroupEntry {
+                binding: 0,
+                resource: atmosphere.uniform.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 1,
+                resource: wgpu::BindingResource::TextureView(&views[0]),
+            },
+            wgpu::BindGroupEntry {
+                binding: 2,
+                resource: wgpu::BindingResource::TextureView(&views[1]),
+            },
+            wgpu::BindGroupEntry {
+                binding: 3,
+                resource: wgpu::BindingResource::TextureView(&views[2]),
+            },
+            wgpu::BindGroupEntry {
+                binding: 4,
+                resource: wgpu::BindingResource::Sampler(&sampler),
+            },
+            wgpu::BindGroupEntry {
+                binding: 5,
+                // Indirect ground paths are excluded from the first-order
+                // observation, alongside the zero multiple-scattering input.
+                resource: wgpu::BindingResource::TextureView(&views[1]),
+            },
+        ];
+        let single_entries = single_entries
+            .into_iter()
+            .chain(atmosphere.night.bindings())
+            .collect::<Vec<_>>();
         let single_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("production single-scatter resource substitution"),
             layout: &atmosphere.compute[2].get_bind_group_layout(0),
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: atmosphere.uniform.as_entire_binding(),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 1,
-                    resource: wgpu::BindingResource::TextureView(&views[0]),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 2,
-                    resource: wgpu::BindingResource::TextureView(&views[1]),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 3,
-                    resource: wgpu::BindingResource::TextureView(&views[2]),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 4,
-                    resource: wgpu::BindingResource::Sampler(&sampler),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 5,
-                    // Indirect ground paths are excluded from the first-order
-                    // observation, alongside the zero multiple-scattering input.
-                    resource: wgpu::BindingResource::TextureView(&views[1]),
-                },
-            ],
+            entries: &single_entries,
         });
         let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("reference texture readback"),

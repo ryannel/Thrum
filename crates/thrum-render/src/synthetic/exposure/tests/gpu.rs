@@ -87,6 +87,33 @@ fn light(sun_y: f32, direct: [f32; 3], sky: [f32; 3]) -> [f32; 16] {
     values
 }
 
+fn assert_night_policy(
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    exposure: &ExposureResolve,
+    light_buffer: &wgpu::Buffer,
+) {
+    let night_policy = ExposurePolicy::IncidentHorizontal {
+        min_ev100: -12.0,
+        compensation_ev: 0.0,
+        max_ev100: 18.0,
+        low_light_key: true,
+    };
+    for (lux, expected, flags) in [(0.0, -12.0, 3), (0.000_671, -7.808, 0)] {
+        let sample = resolve(
+            device,
+            queue,
+            exposure,
+            light_buffer,
+            night_policy.pack(16_000.0, true, SdrToneMap::Reinhard),
+            light(-1.0, [0.0; 3], [lux; 3]),
+        );
+        assert!((sample.values[2] - expected).abs() < 0.005, "{sample:?}");
+        assert_eq!(sample.flags, flags);
+        assert!((1.7e-6 * sample.values[0]) >= 2.0_f32.powi(-14));
+    }
+}
+
 #[test]
 fn gpu_meter_calibration_fixed_bits_bounds_zero_and_invalid_inputs() {
     pollster::block_on(async {
@@ -107,7 +134,12 @@ fn gpu_meter_calibration_fixed_bits_bounds_zero_and_invalid_inputs() {
         let mut serial_bytes = [0; 32];
         serial_bytes[8..12].copy_from_slice(&17_u32.to_le_bytes());
         queue.write_buffer(&serials, 0, &serial_bytes);
-        let exposure = ExposureResolve::new(&device, &light_buffer, &serials);
+        let exposure = ExposureResolve::new(
+            &device,
+            &light_buffer,
+            &serials,
+            ExposureResolve::allocate_samples(&device),
+        );
         for gain in [1.0 / 16_000.0, 0.25, 1.234_567, 10.0] {
             let inverse: f32 = 1.0 / gain;
             let sample = resolve(
@@ -267,6 +299,7 @@ fn gpu_meter_calibration_fixed_bits_bounds_zero_and_invalid_inputs() {
             );
             assert_eq!(dim.flags, plain.flags);
         }
+        assert_night_policy(&device, &queue, &exposure, &light_buffer);
         assert!(scope.pop().await.is_none());
     });
 }

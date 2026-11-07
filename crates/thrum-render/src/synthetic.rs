@@ -447,7 +447,7 @@ pub struct PreparedSynthetic {
     cluster_index_buffer: wgpu::Buffer,
     clusters: ClusterTable,
     cluster_compute: Option<ClusterCompute>,
-    light: wgpu::BindGroup,
+    light: [wgpu::BindGroup; 2],
     materials: wgpu::BindGroup,
     history: TransformHistory,
     exposure: ExposureResolve,
@@ -490,6 +490,7 @@ struct SceneContext<'a> {
     contribution: Option<&'a mut (dyn SceneContribution + 'static)>,
     contribution_frame: ContributionFrame,
     cooked_shadow_fit: Option<bool>,
+    exposure_side: usize,
 }
 
 impl SceneContext<'_> {
@@ -546,11 +547,11 @@ impl SceneContext<'_> {
     fn opaque(&mut self, pass: &CompiledPass) -> Result<(), RenderError> {
         self.prepared.encode_opaque(
             self.encoder,
-            self.generation,
             self.target,
             pass,
             self.timings.as_deref_mut(),
             self.contribution.as_deref(),
+            self.exposure_side,
         )
     }
 
@@ -620,7 +621,7 @@ impl SceneContext<'_> {
             self.encoder,
             self.generation,
             pass,
-            self.prepared.history.write_side(),
+            self.exposure_side,
             self.timings.as_deref_mut(),
         )
     }
@@ -631,7 +632,7 @@ impl SceneContext<'_> {
             self.generation,
             self.target,
             pass,
-            self.prepared.history.write_side(),
+            self.exposure_side,
             self.timings.as_deref_mut(),
         )
     }
@@ -924,6 +925,7 @@ impl PreparedSynthetic {
             }
             light_entries.push(uniform_layout(7, 128, wgpu::ShaderStages::FRAGMENT));
         }
+        light_entries.push(uniform_layout(12, 16, wgpu::ShaderStages::FRAGMENT));
         let light_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("synthetic directional and clustered sources"),
             entries: &light_entries,
@@ -937,6 +939,7 @@ impl PreparedSynthetic {
             mapped_at_creation: false,
         });
         queue.write_buffer(&directional, 0, &light_data);
+        let exposure_samples = ExposureResolve::allocate_samples(device);
         let atmosphere = match lighting {
             FrameLighting::Atmosphere(frame) => Some(AtmospherePrepared::new(
                 device,
@@ -945,6 +948,7 @@ impl PreparedSynthetic {
                 frame,
                 &scene.view,
                 &directional,
+                &exposure_samples,
             )),
             _ => None,
         };
@@ -1035,10 +1039,18 @@ impl PreparedSynthetic {
                 },
             ]);
         }
-        let light = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("synthetic clustered light lists"),
-            layout: &light_layout,
-            entries: &light_bindings,
+        let light = std::array::from_fn(|side| {
+            light_bindings.push(wgpu::BindGroupEntry {
+                binding: 12,
+                resource: exposure_samples[side].as_entire_binding(),
+            });
+            let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+                label: Some("synthetic clustered light lists"),
+                layout: &light_layout,
+                entries: &light_bindings,
+            });
+            light_bindings.pop();
+            group
         });
         let mut entries = vec![storage_layout(
             0,
@@ -1296,7 +1308,12 @@ impl PreparedSynthetic {
             contents: &reversed_bytes,
             usage: wgpu::BufferUsages::INDEX,
         });
-        let exposure_resolve = ExposureResolve::new(device, &directional, history.serial_buffer());
+        let exposure_resolve = ExposureResolve::new(
+            device,
+            &directional,
+            history.serial_buffer(),
+            exposure_samples,
+        );
         exposure_resolve.update(
             queue,
             scene.view.exposure_policy(exposure, atmosphere.is_some()),
@@ -1809,6 +1826,14 @@ impl PreparedSynthetic {
             &mut accesses,
             &mut prepared_keys,
         )?;
+        let exposure_sample =
+            ExposureResolve::append_graph(&mut graph, self.exposure_key(), directional)?;
+        accesses.push(Access {
+            resource: exposure_sample.clone(),
+            range: 0..exposure::SAMPLE_BYTES,
+            kind: AccessKind::UniformRead,
+            store: true,
+        });
         let forward = graph.pass(Pass {
             name: "synthetic forward opaque".into(),
             scope: PassScope::View(1),
@@ -1824,8 +1849,6 @@ impl PreparedSynthetic {
             history_write,
             history_bytes,
         )?;
-        let exposure_sample =
-            ExposureResolve::append_graph(&mut graph, self.exposure_key(), directional)?;
         let output = DisplayPrepared::append_graph(
             &mut graph,
             self.display_key(),
@@ -2333,17 +2356,18 @@ impl PreparedSynthetic {
             contribution,
             contribution_frame: self.contribution_frame(),
             cooked_shadow_fit: None,
+            exposure_side: self.history.write_side(),
         })
     }
 
     fn encode_opaque(
         &self,
         encoder: &mut wgpu::CommandEncoder,
-        generation: u64,
         target: &OffscreenTarget,
         compiled: &CompiledPass,
         timings: Option<&mut GpuTimings>,
         contribution: Option<&dyn SceneContribution>,
+        exposure_side: usize,
     ) -> Result<(), RenderError> {
         let mut pass = compiled
             .begin_render(
@@ -2368,12 +2392,12 @@ impl PreparedSynthetic {
                     view: &target.depth,
                     clear: 0.0,
                 }),
-                generation,
+                self.key.device_generation,
                 timings,
             )?
             .ok_or(RenderError::GraphPassMismatch)?;
         if let Some(atmosphere) = self.atmosphere.as_ref() {
-            atmosphere.draw(&mut pass);
+            atmosphere.draw(&mut pass, exposure_side);
         }
         pass.set_pipeline(if self.instance_upload.two_sided_count() == 0 {
             &self.pipeline
@@ -2382,7 +2406,7 @@ impl PreparedSynthetic {
         });
         let view_offset = self.view_stride * u32::from(target.frame_revision & 1 != 0);
         pass.set_bind_group(0, &target.view_bind_group, &[view_offset]);
-        pass.set_bind_group(1, &self.light, &[]);
+        pass.set_bind_group(1, &self.light[exposure_side], &[]);
         pass.set_bind_group(2, &self.materials, &[]);
         pass.set_bind_group(3, self.history.read_group(), &[]);
         let view = self.pending_view.as_ref().unwrap_or(&self.view_sample);
