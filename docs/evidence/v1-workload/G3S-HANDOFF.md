@@ -76,10 +76,15 @@ The Codex goal remains active. Its attachment is
   A bounded texel search over three caster positions cuts mean absolute
   disk error from 5.43 to 2.25 percentage points against the cooked
   quad/terrain reference. It removes the full-light fallback but leaves
-  one-tick rebounds. An offline average of four quarter-texel raster
-  phases makes the centre ten-frame witness monotone. Keep the split
-  in scratch. Local fractional coverage, close terrain, discarded-frame
-  equality and Chrome remain open.
+  one-tick rebounds. A 2048² local last-map witness removes the rebound
+  at all three caster positions, with mixed mean error. Normal-shaded
+  1080p Metal ABBA GPU p95 rises from 7.29–7.31 to 13.28–13.35 ms
+  (shared load 14.10–14.81), concentrated in the forward bucket.
+  Keep the doubled search off main. A 0.25 m local terrain witness
+  restores a missing 31 m crest and leaves the original receiver
+  byte-identical across 110 ticks. The fixed-step query proves coverage
+  at the witness. It still needs a bounded production lookup, seam and
+  aerial checks, discarded-frame equality and Chrome qualification.
   [Maximum Mipmaps](https://pure.mpg.de/pubman/item/item_1325622_5/component/file_3590464/i3d08.pdf).
   Exact builds, raw rows and clips are in `tmp/g3s-sunset-lip/`. The
   diagnostic source and rerun command are on `codex/g3s-horizon-metal-wip`.
