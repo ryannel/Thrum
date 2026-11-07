@@ -91,7 +91,7 @@ impl Controls {
 /// Round a display number to six significant digits. Engine values are `f32`, so `1°` in
 /// radians shows as `0.99999994` without this; a view would then build a slider whose step
 /// or range drifts from the authored one.
-fn tidy(value: f64) -> f64 {
+pub(crate) fn tidy(value: f64) -> f64 {
     if value == 0.0 || !value.is_finite() {
         return value;
     }

@@ -15,4 +15,5 @@ fi
 "$bindgen_bin" --target web --out-dir "$build_root/v1-game-web" "$build_root/wasm32-unknown-unknown/release/v1_game.wasm"
 cp examples/v1-game/web/index.html "$build_root/v1-game-web/index.html"
 cp crates/thrum-controls/web/thrum-controls.js "$build_root/v1-game-web/thrum-controls.js"
+cp examples/v1-game/params/*.params.json "$build_root/v1-game-web/"
 printf 'Run: python3 -m http.server 8765 --bind 127.0.0.1 --directory "%s/v1-game-web"\n' "$build_root"
