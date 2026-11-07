@@ -87,7 +87,7 @@ pub(crate) struct PendingSet {
 
 /// Resources by product hash, only for sets the render thread has confirmed resident.
 #[derive(Default)]
-struct Confirmed {
+pub(crate) struct Confirmed {
     meshes: HashMap<ContentHash, Arc<GpuMesh>>,
     textures: HashMap<ContentHash, Arc<GpuTexture>>,
 }
@@ -197,9 +197,11 @@ impl Loader {
     }
 
     /// Prepare a fetched generation on this thread and post it, as the loader thread would.
+    /// Products of `confirmed` (the drawn set) are reused rather than staged again.
     pub(crate) fn prepare_remote(
         &self,
         generation: &RemoteGeneration,
+        confirmed: &Confirmed,
         mailbox: &Mailbox,
         stop: &AtomicBool,
     ) {
@@ -209,7 +211,7 @@ impl Loader {
             Source::Remote(generation),
             generation.manifest(),
             &head,
-            &Confirmed::default(),
+            confirmed,
         ) {
             Ok((set, upload)) => {
                 report(&self.stats, stop, |stats| {
@@ -243,8 +245,7 @@ impl Loader {
 
     /// Keep exactly the resources the newest resident set uses; older ones retire when the
     /// render thread drops its last reference after their final submission.
-    #[cfg(not(target_arch = "wasm32"))]
-    fn confirm(set: &ResidentSet) -> Confirmed {
+    pub(crate) fn confirm(set: &ResidentSet) -> Confirmed {
         let mut next = Confirmed::default();
         let mut products = set.products.iter();
         for (mesh, texture) in &set.meshes {

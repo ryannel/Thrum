@@ -2,6 +2,7 @@
 
 use std::time::Duration;
 use std::{
+    cell::RefCell,
     rc::Rc,
     sync::{
         Arc, Mutex,
@@ -10,7 +11,7 @@ use std::{
 };
 
 use thrum_asset::{BrowserFetch, DevClient};
-use thrum_asset_gpu::{CookedSource, CookedStats};
+use thrum_asset_gpu::{CookedSource, CookedStats, RemoteFeed};
 use thrum_render::present::SurfaceProfile;
 use wasm_bindgen::prelude::*;
 use web_sys::HtmlCanvasElement;
@@ -21,10 +22,12 @@ mod recovery;
 
 const FRAMES: usize = 600;
 
-/// One cooked publication fetched from a `thrum-cook watch --serve` origin, ready to attach.
+/// The cooked valley's dev-server client and the feed of generations it has fetched.
 #[wasm_bindgen]
 pub struct CookedValley {
-    generation: Arc<thrum_asset::RemoteGeneration>,
+    /// Taken out while a poll runs, so overlapping polls are refused.
+    client: Rc<RefCell<Option<DevClient<BrowserFetch>>>>,
+    feed: RemoteFeed,
 }
 
 /// Fetch the current cooked publication from a dev server origin such as
@@ -41,8 +44,34 @@ pub async fn fetch_cooked_valley(origin: String) -> Result<CookedValley, JsValue
         .map_err(js_error)?
         .ok_or_else(|| JsValue::from_str("the dev server has no publication yet"))?;
     Ok(CookedValley {
-        generation: Arc::new(generation),
+        client: Rc::new(RefCell::new(Some(client))),
+        feed: RemoteFeed::new(generation),
     })
+}
+
+#[wasm_bindgen]
+impl CookedValley {
+    /// Long-poll the dev server once. Resolves `true` when a newer publication was fetched
+    /// (the attached valley stages it at its next frame) and `false` when the poll timed out.
+    /// Call again after it settles; overlapping calls are refused.
+    pub fn next_publication(&self) -> js_sys::Promise {
+        let client = Rc::clone(&self.client);
+        let feed = self.feed.clone();
+        wasm_bindgen_futures::future_to_promise(async move {
+            let mut polling = client
+                .borrow_mut()
+                .take()
+                .ok_or_else(|| JsValue::from_str("a cooked publication poll is already running"))?;
+            let fetched = polling.poll().await;
+            *client.borrow_mut() = Some(polling);
+            let fetched = fetched.map_err(js_error)?;
+            let changed = fetched.is_some();
+            if let Some(generation) = fetched {
+                feed.publish(generation);
+            }
+            Ok(JsValue::from_bool(changed))
+        })
+    }
 }
 
 /// One browser canvas, WebGPU surface and serial V1 game host.
@@ -142,12 +171,14 @@ pub async fn create_browser_game(canvas: HtmlCanvasElement) -> Result<BrowserGam
 #[wasm_bindgen]
 impl BrowserGame {
     /// Draw the authored valley from fetched cooked products, with its authored camera.
-    /// The products survive device replacement: a new device stages them again.
+    /// The products survive device replacement: a new device stages the newest fetched
+    /// generation again. Publications fetched later by [`CookedValley::next_publication`] swap
+    /// in as they upload.
     /// # Errors
     /// Returns an invalid embedded recipe or the scene's refusal of the contribution.
     pub fn attach_cooked_valley(&mut self, valley: &CookedValley) -> Result<(), JsValue> {
         let (camera, assets) =
-            crate::showcase::prepare_showcase(CookedSource::Remote(Arc::clone(&valley.generation)))
+            crate::showcase::prepare_showcase(CookedSource::Remote(valley.feed.clone()))
                 .map_err(js_error)?;
         let stats = assets.stats();
         self.host

@@ -4,6 +4,7 @@ import fs from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
+import zlib from 'node:zlib';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -111,10 +112,22 @@ const playerX = state => { const match = /player x=([-\d.]+)/.exec(state.player 
 const field = (status, key) => Number(new RegExp(`(?:^|[ ;])${key}=(\\d+)(?:[ ;]|$)`).exec(status)?.[1]);
 const gameState = '({report:game.report(),complete:game.complete(),paused:game.paused(),time:game.time_of_day(),fault:game.graphics_fault(),recovering:game.recovering(),recoveryError:game.graphics_recovery_error(),player:game.controlled_position()})';
 
+// A 4x4 opaque RGB PNG of one colour.
+function solidPng(rgb) {
+  const crc = buffer => { let c = ~0; for (const byte of buffer) { c ^= byte; for (let k = 0; k < 8; k++) c = c & 1 ? (c >>> 1) ^ 0xedb88320 : c >>> 1; } return ~c >>> 0; };
+  const chunk = (type, data) => { const body = Buffer.concat([Buffer.from(type), data]); const out = Buffer.alloc(body.length + 8); out.writeUInt32BE(data.length, 0); body.copy(out, 4); out.writeUInt32BE(crc(body), body.length + 4); return out; };
+  const header = Buffer.alloc(13); header.writeUInt32BE(4, 0); header.writeUInt32BE(4, 4); header[8] = 8; header[9] = 2;
+  const rows = Buffer.concat(Array.from({ length: 4 }, () => Buffer.from([0, ...rgb, ...rgb, ...rgb, ...rgb])));
+  return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk('IHDR', header), chunk('IDAT', zlib.deflateSync(rows)), chunk('IEND', Buffer.alloc(0))]);
+}
+
 // Cook the valley into a fresh store under the run directory and serve it with the G5 dev server.
 async function serveCooked(args, output) {
   const log = await fs.open(path.join(output, 'cook.log'), 'a');
-  const cook = spawn(path.resolve(repo, args.cook), ['watch', path.resolve(repo, args['assets-source']), path.join(output, 'store'), '--serve', '127.0.0.1:0'], { stdio: ['ignore', log.fd, log.fd] });
+  // Watch a copy, so the live-edit step never touches repository sources.
+  const source = path.join(output, 'source');
+  await fs.cp(path.resolve(repo, args['assets-source']), source, { recursive: true });
+  const cook = spawn(path.resolve(repo, args.cook), ['watch', source, path.join(output, 'store'), '--serve', '127.0.0.1:0'], { stdio: ['ignore', log.fd, log.fd] });
   await log.close();
   let exited = false;
   cook.once('exit', () => { exited = true; });
@@ -124,7 +137,7 @@ async function serveCooked(args, output) {
     const served = /^serving (http:\/\/\S+)$/m.exec(text);
     return served && /generation 1\b/.test(text) ? served[1] : undefined;
   }, 120000, 'cooked valley dev server');
-  return { cook, origin };
+  return { cook, origin, source };
 }
 
 async function existingGame(cdp, sessionId) {
@@ -568,7 +581,7 @@ async function qualifySkyReflections(cdp, sessionId, poll, timeout, output, evid
   evidence.scope = 'One continuous built BrowserGame: seven paused held sky/scene phases and 24 range-driven camera/Sun samples, three present calls after every edit; healthy generation 1 and fixed authoritative tick. Canvas PNGs are compositor captures, not physical display cadence, GPU timing or transport-accuracy qualification.';
 }
 
-async function qualify(cdp, mode, origin, output, directory, wasm, timeout, assetsOrigin) {
+async function qualify(cdp, mode, origin, output, directory, wasm, timeout, assetsOrigin, assetsSource) {
   const { targetId } = await cdp.call('Target.createTarget', { url: 'about:blank' });
   let sessionId, state, response, input, game, pausedAt, pause, controls;
   let failed = false;
@@ -620,6 +633,27 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
         const cooked = JSON.parse(await (await existingGame(cdp, sessionId)).invoke('return game.cooked_status();') ?? 'null');
         sky.cooked = cooked;
         if (!cooked || !(cooked.drawn >= 1) || cooked.swaps < 1 || cooked.errors.length) throw new Error(`Cooked valley not drawn: ${JSON.stringify(cooked)}`);
+        // Live edit: retint the shared base-colour texture in the watched copy; the page's
+        // long poll must fetch and swap in the next generation with only that product uploaded.
+        const valleyGame = await existingGame(cdp, sessionId);
+        const settle = async () => {
+          const start = field((await valleyGame.read()).report, 'presented');
+          await waitFor(async () => field((await valleyGame.read()).report, 'presented') >= start + 3 || undefined, timeout, 'three presents');
+        };
+        await valleyGame.invoke('document.querySelector("[data-sky=noon]").click();document.querySelector("#scene-view").click();return true;');
+        await settle();
+        await screenshot(cdp, sessionId, output, `${mode}-before-edit`);
+        await fs.writeFile(path.join(assetsSource, 'white.png'), solidPng([214, 150, 96]));
+        const edited = await waitFor(async () => {
+          await poll();
+          const value = JSON.parse(await (await existingGame(cdp, sessionId)).invoke('return game.cooked_status();') ?? 'null');
+          if (value?.errors.length) throw new Error(`Cooked edit failed: ${JSON.stringify(value)}`);
+          return value?.drawn > cooked.drawn ? value : undefined;
+        }, timeout, 'edited cooked publication drawn in Chrome');
+        sky.cookedEdit = edited;
+        if (edited.swaps !== cooked.swaps + 1 || !(edited.uploadedBytes > 0 && edited.uploadedBytes < cooked.uploadedBytes)) throw new Error(`Cooked edit uploaded more than the texture: ${JSON.stringify(edited)}`);
+        await settle();
+        await screenshot(cdp, sessionId, output, `${mode}-edited`);
       }
     } else if (recoveryCase) {
       recovery = { snapshots: {}, destroyedDeviceCounts: [] };
@@ -769,8 +803,9 @@ async function main() {
     hardware(gpu);
     const modes = args.case === 'all' ? cases : [args.case];
     let assetsOrigin;
-    if (modes.includes('valley')) ({ cook, origin: assetsOrigin } = await serveCooked(args, output));
-    for (const mode of modes) results.push(await qualify(cdp, mode, serving.origin, output, directory, files.get('/v1_game_bg.wasm'), args['timeout-ms'], assetsOrigin));
+    let assetsSource;
+    if (modes.includes('valley')) ({ cook, origin: assetsOrigin, source: assetsSource } = await serveCooked(args, output));
+    for (const mode of modes) results.push(await qualify(cdp, mode, serving.origin, output, directory, files.get('/v1_game_bg.wasm'), args['timeout-ms'], assetsOrigin, assetsSource));
   } catch (error) { failure = error; }
   finally {
     cook?.kill();

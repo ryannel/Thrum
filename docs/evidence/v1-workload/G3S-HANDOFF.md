@@ -104,8 +104,8 @@ crossing clip](g3s-first-light/solar-crossing.mp4) runs at 24 sampled frames/s.
 - The penumbra's +18% pass-sum. Gathered fetches and a lit early-out are untried.
 
 **G7.** Chrome now draws the cooked valley fetched from `thrum-cook watch --serve`
-([evidence](G7-CHROME-VALLEY-2026-11-07.md); `check_v1_browser.mjs --case valley`). Next: long-poll later
-publications in the page, a valley device-recovery case, then the shared demo panel once G6's typed controls land
+([evidence](G7-CHROME-VALLEY-2026-11-07.md); `check_v1_browser.mjs --case valley`). Its long poll swaps in edited
+publications live, uploading only changed products. Next: a valley device-recovery case, then the shared demo panel once G6's typed controls land
 (see `tmp/g6-boundary/NOTES.md`; keep the existing solar slider until then).
 
 Keep the same host Sun/time and the fixed valley camera as the comparison. Inspect
