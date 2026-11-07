@@ -252,6 +252,65 @@ fn metal_frustum_timestamps_drain_populated_then_empty_prefixes() {
     });
 }
 
+fn capture(host: &mut Host) -> Vec<u8> {
+    let mut pending = host.begin_capture().expect("capture");
+    finish_capture(host, &mut pending)
+}
+
+#[test]
+#[cfg(target_os = "macos")]
+fn culled_modes_survive_surface_resize_and_device_replacement() {
+    pollster::block_on(async {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let (first, queue) = gpu(&instance, 7).await;
+        let (second, new_queue) = gpu(&instance, 8).await;
+        let mut direct = culled_host(
+            &second,
+            &new_queue,
+            Policy::default(),
+            CullMode::Direct,
+            false,
+        )
+        .await;
+        let expected = capture(&mut direct);
+        for mode in [CullMode::Frustum] {
+            let mut host = culled_host(&first, &queue, Policy::default(), mode, false).await;
+            pending_slots(&mut host);
+            drain_timed(&mut host);
+            host.resize_surface([96, 48]).expect("resize");
+            assert_eq!(
+                host.prepared.camera_culling(),
+                mode,
+                "{mode:?} after resize"
+            );
+            pending_slots(&mut host);
+            for passes in drain_timed(&mut host) {
+                assert!(passes[3] > 0.0, "{mode:?}: culling timed after resize");
+            }
+            let mut candidate = host
+                .device_prepare_inputs()
+                .expect("inputs")
+                .prepare(&second, &new_queue, Some(surface()))
+                .await
+                .expect("replacement");
+            host.publish_device(&mut candidate).expect("publish");
+            assert_eq!(host.generation, 8);
+            assert_eq!(
+                host.prepared.camera_culling(),
+                mode,
+                "{mode:?} after replacement"
+            );
+            // The replacement's slots time every pass of the mode's layout,
+            // and its capture equals Direct on the same device.
+            pending_slots(&mut host);
+            for passes in drain_timed(&mut host) {
+                assert!(passes[3] > 0.0, "{mode:?}: culling timed after replacement");
+            }
+            assert_eq!(capture(&mut host), expected, "{mode:?} replacement image");
+        }
+    });
+}
+
 #[test]
 #[cfg(target_os = "macos")]
 fn metal_frame_timestamps_survive_an_empty_instance_set() {
