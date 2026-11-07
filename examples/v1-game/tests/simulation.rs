@@ -13,8 +13,8 @@ use thrum_core::{
     sim::{ExecutionMode, FrameError, InputFrame},
 };
 use v1_game::simulation::{
-    Command, ComponentEntity, Ownership, Position, SimAction, SimConfig, SimError, Simulation,
-    Velocity,
+    Command, ComponentEntity, Ownership, Position, PublishedPage, SimAction, SimConfig, SimError,
+    Simulation, SimulationHistory, Velocity,
 };
 use v1_game::simulation_with_count;
 
@@ -1884,4 +1884,125 @@ fn refused_tick_keeps_the_deferred_publication_previous_transform() {
     assert_eq!(recovered.id().tick, 4);
     assert_ne!(recovered.position(handle), Some(previous));
     assert_eq!(recovered.previous_position(handle), Some(previous));
+}
+
+/// Everything a reader can observe on one published page: identity, endpoint
+/// source, every live row's current and previous values, the dirty lists and
+/// the structural events.
+type PageSignature = (
+    (u64, u64, bool),
+    Vec<(
+        u32,
+        Option<thrum_core::Handle>,
+        Option<StableId>,
+        Option<Position>,
+        Option<Position>,
+        Option<Velocity>,
+        Option<u16>,
+    )>,
+    [Vec<u32>; 5],
+    usize,
+);
+
+fn page_signature(page: &PublishedPage, capacity: u32) -> PageSignature {
+    let rows = (0..capacity)
+        .map(|slot| {
+            let handle = page.handle(slot);
+            (
+                slot,
+                handle,
+                page.stable_id(slot),
+                handle.and_then(|handle| page.position(handle)),
+                handle.and_then(|handle| page.previous_position(handle)),
+                handle.and_then(|handle| page.velocity(handle)),
+                handle.and_then(|handle| page.health(handle)),
+            )
+        })
+        .collect();
+    let dirty = page.dirty();
+    (
+        (page.id().tick, page.timeline(), page.is_baseline()),
+        rows,
+        [
+            dirty.position().to_vec(),
+            dirty.position_pair().to_vec(),
+            dirty.velocity().to_vec(),
+            dirty.health().to_vec(),
+            dirty.structural().to_vec(),
+        ],
+        page.structural_events().len(),
+    )
+}
+
+#[test]
+fn parallel_page_capture_publishes_identical_pages_in_every_mode() {
+    // 40k page rows: ten 4,096-row capture chunks, the last one partial, and
+    // about 6,000 movers, past the forced-dispatch candidate floor.
+    const COUNT: usize = 40_000;
+    let capacity = u32::try_from(COUNT).expect("slot range");
+    let modes = [
+        ExecutionMode::Serial,
+        ExecutionMode::Rayon,
+        ExecutionMode::RayonForced,
+    ];
+    let mut worlds = modes.map(|mode| {
+        let mut sim = simulation_with_count(COUNT).expect("fixture");
+        sim.set_execution_mode(mode);
+        let history = sim
+            .begin_history(NonZeroUsize::new(8).expect("window"))
+            .expect("committed endpoint");
+        (sim, history, Vec::new())
+    });
+    let commands = |sim: &Simulation, tick: u64, speed: f64| {
+        let victim = StableId(u128::from(tick * 3_917 % 39_000));
+        let moved = sim.handle(StableId(u128::from(tick * 1_231 % 39_000 + 1)));
+        let mut commands = vec![Command::Spawn(entity(u128::from(1_000_000 + tick), speed))];
+        if let Some(victim) = sim.handle(victim) {
+            commands.insert(0, Command::Despawn(victim));
+        }
+        if let Some(moved) = moved {
+            commands.push(Command::SetPosition(moved, Position([0.25, 0.5, 0.0])));
+        }
+        commands
+    };
+    let compare = |worlds: &mut [(Simulation, SimulationHistory, Vec<PublishedPage>); 3],
+                   what: &str| {
+        let expected = page_signature(
+            &worlds[0].0.published_page().expect("serial page"),
+            capacity,
+        );
+        for (index, (sim, _, _)) in worlds.iter_mut().enumerate().skip(1) {
+            let actual = page_signature(&sim.published_page().expect("page"), capacity);
+            assert!(
+                actual == expected,
+                "{what}: {:?} page differs from Serial",
+                modes[index]
+            );
+        }
+    };
+    compare(&mut worlds, "tick zero");
+    for tick in 1..=12 {
+        for (sim, history, held) in &mut worlds {
+            let commands = commands(sim, tick, 1.5);
+            history.step(sim, &commands).expect("churn tick");
+            if tick % 4 == 1 {
+                held.push(sim.published_page().expect("held page"));
+            }
+            if tick == 7 {
+                held.clear();
+            }
+        }
+        compare(&mut worlds, &format!("forward tick {tick}"));
+    }
+    for (sim, history, _) in &mut worlds {
+        history.rewind(sim, 5).expect("retained rewind");
+    }
+    compare(&mut worlds, "rewind patch");
+    for tick in 8..=12 {
+        for (sim, history, _) in &mut worlds {
+            let commands = commands(sim, tick, -2.0);
+            history.step(sim, &commands).expect("amended replay");
+        }
+        compare(&mut worlds, &format!("amended tick {tick}"));
+    }
 }

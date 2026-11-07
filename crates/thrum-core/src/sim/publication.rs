@@ -38,7 +38,33 @@ pub(super) struct WarmColumnCapture<'a> {
     endpoint: &'a mut [u64],
     pair: &'a mut [u64],
     changed: &'a mut ChangedColumn,
+    /// Split the warm row loop into page-row chunks on the Rayon pool.
+    #[cfg_attr(
+        target_arch = "wasm32",
+        expect(dead_code, reason = "browser builds capture serially")
+    )]
+    parallel: bool,
 }
+
+/// Page rows per parallel warm-capture chunk: 64 override words, so each
+/// chunk owns whole words of the temporal override mask.
+#[cfg(not(target_arch = "wasm32"))]
+const CAPTURE_CHUNK_ROWS: usize = 4_096;
+
+/// One chunk's candidates: (logical slot, page row, flags).
+type ChunkWork = Vec<(u32, u32, u8)>;
+/// Candidate flags: refresh from the world, drop an invalid pair, identity
+/// changed; the chunk then records which outputs changed.
+#[cfg(not(target_arch = "wasm32"))]
+const REFRESH: u8 = 1;
+#[cfg(not(target_arch = "wasm32"))]
+const UNPAIR: u8 = 2;
+#[cfg(not(target_arch = "wasm32"))]
+const IDENTITY: u8 = 4;
+#[cfg(not(target_arch = "wasm32"))]
+const ENDPOINT_CHANGED: u8 = 8;
+#[cfg(not(target_arch = "wasm32"))]
+const PAIR_CHANGED: u8 = 16;
 
 pub(super) trait ErasedPublicationColumn: Send + Sync {
     fn as_any(&self) -> &dyn Any;
@@ -101,6 +127,12 @@ pub(super) struct PublicationColumn<T> {
     prior_slots: Vec<u32>,
     snapshot: fn(&T) -> T,
     nested_bytes: fn(&T) -> usize,
+    /// Reusable per-chunk candidate lists of a parallel warm capture.
+    #[cfg_attr(
+        target_arch = "wasm32",
+        expect(dead_code, reason = "browser builds capture serially")
+    )]
+    chunk_work: Vec<ChunkWork>,
 }
 
 impl<T> PublicationColumn<T> {
@@ -121,6 +153,7 @@ impl<T> PublicationColumn<T> {
             prior_slots: Vec::with_capacity(if temporal { capacity } else { 0 }),
             snapshot,
             nested_bytes,
+            chunk_work: Vec::new(),
         }
     }
 
@@ -188,6 +221,196 @@ impl<T> PublicationColumn<T> {
     }
 }
 
+impl<T: PartialEq + Send + Sync + 'static> PublicationColumn<T> {
+    /// Whether a forced-parallel warm capture has enough candidates to
+    /// dispatch: below one chunk's worth, the serial word loop is cheaper
+    /// than a pool trip.
+    #[cfg(not(target_arch = "wasm32"))]
+    fn parallel_worthwhile(capture: &WarmColumnCapture<'_>, temporal: bool) -> bool {
+        let mut candidates = 0;
+        for word in 0..capture.page_words.len() {
+            let mut bits = capture.page_words[word]
+                | capture.page_structural[word]
+                | capture.outbound_words[word]
+                | capture.outbound_structural[word];
+            if temporal {
+                bits |= capture.scratch[word];
+            }
+            candidates += bits.count_ones() as usize;
+        }
+        candidates >= CAPTURE_CHUNK_ROWS
+    }
+
+    /// The warm capture over page-row chunks. A serial pass buckets each
+    /// candidate slot by the chunk that owns its page row, with its refresh,
+    /// pair and identity flags. Each chunk then exclusively owns its rows of
+    /// current, previous and override storage and visits only its candidates.
+    /// The merge rebuilds endpoint and pair words and the slot-ordered change
+    /// lists exactly as the serial loop does.
+    #[cfg(not(target_arch = "wasm32"))]
+    fn capture_warm_parallel(
+        &mut self,
+        capture: WarmColumnCapture<'_>,
+        source: &Self,
+        world: &[Option<T>],
+        temporal: bool,
+    ) {
+        use rayon::prelude::*;
+
+        let rows = self.current.len();
+        let chunks = rows.div_ceil(CAPTURE_CHUNK_ROWS);
+        if self.chunk_work.len() < chunks {
+            self.chunk_work.resize_with(chunks, Vec::new);
+        }
+        let Self {
+            current,
+            previous,
+            override_words,
+            snapshot,
+            chunk_work,
+            ..
+        } = self;
+        let work = &mut chunk_work[..chunks];
+        for list in work.iter_mut() {
+            list.clear();
+        }
+        for word in 0..capture.page_words.len() {
+            let refresh = capture.page_words[word] | capture.page_structural[word];
+            let mut candidates =
+                refresh | capture.outbound_words[word] | capture.outbound_structural[word];
+            if temporal {
+                candidates |= capture.scratch[word];
+            }
+            while candidates != 0 {
+                let bit = candidates.trailing_zeros() as usize;
+                let mask = 1_u64 << bit;
+                candidates &= candidates - 1;
+                let index = word * 64 + bit;
+                if index >= rows {
+                    continue;
+                }
+                let page_row = row_of(capture.directory, index);
+                let mut flags = 0;
+                if refresh & mask != 0 {
+                    flags |= REFRESH;
+                }
+                if temporal && capture.pair_valid[word] & mask == 0 {
+                    flags |= UNPAIR;
+                }
+                if capture.identities[word] & mask != 0 {
+                    flags |= IDENTITY;
+                }
+                work[page_row / CAPTURE_CHUNK_ROWS].push((
+                    u32::try_from(index).expect("validated slot address"),
+                    u32::try_from(page_row).expect("validated page row"),
+                    flags,
+                ));
+            }
+        }
+        let snapshot = *snapshot;
+        let registered = capture.world;
+        let source_directory = capture.source_directory;
+        let (page_matches_world, page_matches_source) =
+            (capture.page_matches_world, capture.page_matches_source);
+        let run = |chunk: usize,
+                   current: &mut [Option<T>],
+                   previous: &mut [Option<T>],
+                   overrides: &mut [u64],
+                   list: &mut ChunkWork| {
+            let base = chunk * CAPTURE_CHUNK_ROWS;
+            for (slot, page_row, flags) in list.iter_mut() {
+                let page_row = *page_row as usize;
+                let local = page_row - base;
+                if *flags & REFRESH != 0 {
+                    let row = if page_matches_world {
+                        page_row
+                    } else {
+                        registered.row_of_slot(*slot)
+                    };
+                    if current[local] != world[row] {
+                        current[local] = world[row].as_ref().map(snapshot);
+                    }
+                }
+                if *flags & UNPAIR != 0 {
+                    overrides[local / 64] &= !(1 << (local % 64));
+                    previous[local] = None;
+                }
+                let source_row = if page_matches_source {
+                    page_row
+                } else {
+                    row_of(source_directory, *slot as usize)
+                };
+                let current_changed = current[local] != source.current[source_row]
+                    || (current[local].is_some() && *flags & IDENTITY != 0);
+                if current_changed {
+                    *flags |= ENDPOINT_CHANGED;
+                }
+                if temporal
+                    && (current_changed
+                        || previous_in(current, previous, overrides, local)
+                            != source.previous_at(source_row))
+                {
+                    *flags |= PAIR_CHANGED;
+                }
+            }
+        };
+        match previous {
+            Some(previous) => current
+                .par_chunks_mut(CAPTURE_CHUNK_ROWS)
+                .zip(previous.par_chunks_mut(CAPTURE_CHUNK_ROWS))
+                .zip(override_words.par_chunks_mut(CAPTURE_CHUNK_ROWS / 64))
+                .zip(work.par_iter_mut())
+                .enumerate()
+                .for_each(|(chunk, (((current, previous), overrides), list))| {
+                    run(chunk, current, previous, overrides, list);
+                }),
+            None => current
+                .par_chunks_mut(CAPTURE_CHUNK_ROWS)
+                .zip(work.par_iter_mut())
+                .enumerate()
+                .for_each(|(chunk, (current, list))| {
+                    run(chunk, current, &mut [], &mut [], list);
+                }),
+        }
+        let WarmColumnCapture {
+            endpoint,
+            pair,
+            changed,
+            ..
+        } = capture;
+        endpoint.fill(0);
+        pair.fill(0);
+        for list in &*work {
+            for &(slot, _, flags) in list {
+                let (word, mask) = (slot as usize / 64, 1_u64 << (slot % 64));
+                if flags & ENDPOINT_CHANGED != 0 {
+                    endpoint[word] |= mask;
+                }
+                if flags & PAIR_CHANGED != 0 {
+                    pair[word] |= mask;
+                }
+            }
+        }
+        changed.slots.extend(dirty_slots(endpoint, endpoint, rows));
+        changed.temporal.extend(dirty_slots(pair, pair, rows));
+    }
+}
+
+/// `previous_at` over one chunk's row-local slices of a temporal column.
+#[cfg(not(target_arch = "wasm32"))]
+fn previous_in<'a, T>(
+    current: &'a [Option<T>],
+    previous: &'a [Option<T>],
+    overrides: &[u64],
+    row: usize,
+) -> Option<&'a T> {
+    if overrides[row / 64] & (1 << (row % 64)) == 0 {
+        current[row].as_ref()
+    } else {
+        previous[row].as_ref()
+    }
+}
+
 impl<T: PartialEq + Send + Sync + 'static> ErasedPublicationColumn for PublicationColumn<T> {
     fn as_any(&self) -> &dyn Any {
         self
@@ -227,6 +450,14 @@ impl<T: PartialEq + Send + Sync + 'static> ErasedPublicationColumn for Publicati
             for &slot in self.prior_slots.iter().chain(&source.prior_slots) {
                 capture.scratch[slot as usize / 64] |= 1 << (slot % 64);
             }
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        if capture.parallel
+            && self.current.len() > CAPTURE_CHUNK_ROWS
+            && Self::parallel_worthwhile(&capture, temporal)
+        {
+            self.capture_warm_parallel(capture, source, world, temporal);
+            return;
         }
         for word in 0..capture.page_words.len() {
             let refresh = capture.page_words[word] | capture.page_structural[word];
@@ -733,6 +964,8 @@ pub(super) struct PublicationCapture<'a> {
     pub(super) timeline: u64,
     pub(super) final_undo: Option<&'a WorldUndo>,
     pub(super) final_events: &'a [StructuralChange],
+    /// Split the warm row loop across the Rayon pool.
+    pub(super) parallel: bool,
 }
 
 impl PublicationPage {
@@ -969,6 +1202,7 @@ impl PublicationPage {
             timeline,
             final_undo,
             final_events,
+            parallel,
         } = capture;
         if cold {
             self.columns.capture(world);
@@ -1064,6 +1298,7 @@ impl PublicationPage {
                     endpoint: &mut self.endpoint.columns[index].1,
                     pair: &mut self.pair.columns[index].1,
                     changed: &mut self.dirty.columns[index],
+                    parallel,
                 });
             }
         } else {

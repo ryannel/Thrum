@@ -498,6 +498,11 @@ impl TentativeDirty for DirectDirty {
     }
 }
 
+/// World capacity at or above which requested `Rayon` splits warm page
+/// capture across the pool. `None` until a quiet measured win promotes it, so
+/// requested Rayon captures serially; `RayonForced` always splits.
+const PARALLEL_CAPTURE_CROSSOVER: Option<usize> = None;
+
 type EnginePageCapture<P> = fn(
     &mut P,
     &RegisteredWorld,
@@ -509,6 +514,7 @@ type EnginePageCapture<P> = fn(
     u64,
     Option<&WorldUndo>,
     &[StructuralChange],
+    bool,
 );
 
 /// Which final-tick preimages an engine page capture receives.
@@ -1354,8 +1360,16 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
             abort_undo,
             deferred_undo,
             structural_journal,
+            executor,
             ..
         } = self;
+        let parallel = match executor.mode {
+            ExecutionMode::Serial => false,
+            ExecutionMode::Rayon => {
+                PARALLEL_CAPTURE_CROSSOVER.is_some_and(|rows| world.capacity() >= rows)
+            }
+            ExecutionMode::RayonForced => true,
+        };
         let final_undo = match final_undo {
             FinalUndo::None => None,
             FinalUndo::Abort => Some(&*abort_undo),
@@ -1377,6 +1391,7 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
                     timeline,
                     final_undo,
                     events,
+                    parallel,
                 );
             } else {
                 game.capture(
@@ -1615,6 +1630,7 @@ fn capture_publication_page(
     timeline: u64,
     final_undo: Option<&WorldUndo>,
     final_events: &[StructuralChange],
+    parallel: bool,
 ) {
     page.capture(
         world,
@@ -1627,6 +1643,7 @@ fn capture_publication_page(
             timeline,
             final_undo,
             final_events,
+            parallel,
         },
     );
 }
