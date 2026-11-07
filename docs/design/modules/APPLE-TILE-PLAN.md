@@ -6,253 +6,399 @@ contracts [C04](../CONTRACTS.md#c04-feature-composition-and-quality--f2),
 and [C12](../CONTRACTS.md#c12-budgets-evidence-and-acceptance--t2-with-all-owners). Paired plan:
 [APPLE-PRESENTATION-PLAN.md](APPLE-PRESENTATION-PLAN.md).
 Commission: Thrum Core's G3t/G4 design and milestone plans (`tmp/g3t-metal-boundary/NOTES.md`).
-Reviews: pending.
-Milestone: none started (plan awaiting review) · Updated: 2026-11-07
-Now: design and plan drafted for review (since 2026-11-07).
-Next: independent pair review and composed-frame review; then Thrum Core's seam rulings.
-Blocked: code commissions wait for the atmosphere graph checkpoint (G3S-HANDOFF "Reconcile the culling count graph on
-main") and Thrum Core approval of the exact seams in the design's *Seams* list.
+Reviews:
+- G3t pair @ `86ec3b6b`, brief `tmp/g3t-g4-plans/reviews/g3t-pair.md` (with `common.md`), report
+  `tmp/g3t-g4-plans/reviews/g3t-pair-report.md`: changes required (9 required changes). Answered in revision 2;
+  see the Log.
+- Composed frame across G3t and G4 @ `86ec3b6b`, brief `tmp/g3t-g4-plans/reviews/composed-frame.md`, report
+  `tmp/g3t-g4-plans/reviews/composed-frame-report.md`: changes required (14 required changes). Answered in
+  revision 2.
+- Revision 2: re-review pending.
+
+Milestone: none started (plan awaiting re-review and seam rulings) · Updated: 2026-11-07
+Now: revision 2 drafted from the three reviews (since 2026-11-07).
+Next: re-review of revision 2, then Thrum Core's seam rulings.
+Blocked: code commissions wait for:
+- the atmosphere graph checkpoint (G3S-HANDOFF "Reconcile the culling count graph on main");
+- Thrum Core approval of the exact seams in the design's *Seams* list.
+
+M10–M11 also wait for seam 1.
 
 ## Game outcomes
 
-On this M3 Max, the V1 game runs the valley route on the Apple tile recipe. The image matches portable within the
-declared tolerance, with no validation errors and no compile during play. Chrome and a forced-portable Mac run stay
-correct. Each tile mechanism is either measured against portable in paired rows, or recorded as having no effect at
-the shipped configuration. The iOS shell selects the same recipe in the simulator, for function only. G4 can call a
-prepared native provider inside the one submission.
+On this M3 Max, the V1 game runs the valley route on the Apple tile recipe:
+- the reference image matches portable within tolerance;
+- no validation errors, and no pipeline compiled during play;
+- Chrome and a forced-portable Mac run stay correct;
+- each tile mechanism is measured against portable in paired rows, or recorded as having no effect at the shipped
+  configuration;
+- the iOS shell selects the same recipe in the simulator, for function only;
+- G4 can call a prepared, stateful native provider inside the one submission.
 
 ## Evidence conventions
 
-- **Route.** The fixed valley route from M0, unless a check names a showcase stop. Rows are Apple tile vs portable on
-  the same M3 Max, same build, same window size.
-- **Image tolerance.** Per-pixel ΔE (CIEDE2000) on the presented SDR image at the route's checkpoint frames: p99 ≤ 2
-  and max ≤ 6 against the portable capture. M0 records a portable-vs-portable rerun, which must be identical. The
-  threshold is provisional until that rerun shows the noise floor.
-- **Timing.** GPU pass timestamps, the existing pass sum, whole-frame present intervals and upload CPU time, as p50 and
-  p95 over the route.
-- **Traffic.** Graph-declared bytes per attachment come from the compiled graph. Measured bandwidth comes from an
-  Instruments *Metal Application* capture with the GPU counter set explicitly configured (Performance Limiters), or
-  from an Xcode frame capture's memory counters. The two are recorded separately.
+Shared with G4.
+- **Route.** The fixed valley route from M0, run in fixed-step mode: a fixed simulation dt per frame and a fixed
+  presentation alpha. That makes reruns comparable frame for frame.
+- **Reference image.** The scene-linear image that feeds the present pass: scene HDR, or reconstruction output once G4
+  lands.
+  - The prepared capture variant reads it back at route checkpoints.
+  - It is converted with the fixed SDR tone transform at headroom H = 1, then compared by per-pixel ΔE (CIEDE2000)
+    against the portable run.
+  - The drawable itself is not read back. It stays `framebufferOnly`, so capture never perturbs the presented path.
+- **Image tolerance.** Provisional p99 ≤ 2 and max ≤ 6. M0's rerun sets the noise floor, and the threshold is
+  restated from it.
+- **Timing.** GPU pass and native-segment times, the pass sum, display-link present intervals and upload CPU time.
+  Each is reported as p50 and p95.
+- **Traffic.** Graph-declared bytes per attachment come from the compiled graph. Measured bytes use only a capture
+  method M0 proved. Otherwise the row says *unmeasured*.
+- **Counters.** Pipeline, texture and native-object creations, by thread and phase (build, transition, play), from
+  M0.
+- **"No measurable effect".** A difference within twice the p50 spread of M0's portable reruns.
 - **Labels.** Mac rows that stand in for iPhone are labelled **proxy**. Simulator rows are function only. Physical
   iPhone timing is owed.
-- **Tripwires** (not gates): a visible hitch; a comparable regression of about 25%; scaling that departs from the
-  cost account.
+- **Tripwires** (not gates): a visible hitch; a comparable regression of about 25%; departure from the design's cost
+  models.
 
 ## Ownership, call sites and review order
 
-| Area | Owner after approval | Files (current → proposed) | Shared call sites |
+| Area | Owner after approval | Files | Shared call sites |
 |---|---|---|---|
-| Registry fields | G3t | `thrum-render/src/capabilities.rs` | `thrum-app/src/app/device.rs:82` (capture), `examples/v1-game-ios/src/ios/render.rs:204` (iOS capture), evidence rows |
-| Graph eligibility, native pass kind, merged plan | G3t, with the graph owner's review | `thrum-render/src/graph.rs`, `graph_record.rs` | Atmosphere `atmosphere/graph.rs`, `synthetic.rs` scene build, `present.rs` |
-| One scene/present graph, shared transients | G3t, with the frame-runtime owner's review | `thrum-render/src/runtime.rs`, `runtime/tokens.rs`, `present.rs`, `synthetic/display.rs` | iOS and macOS surface paths (G3b), capture readback |
-| Upload rings | G3t | new `thrum-render/src/apple_tile/upload_ring.rs`; `synthetic/upload.rs`, `synthetic.rs:1446-1520` | `thrum-asset-gpu/src/staging.rs` (unchanged; counted) |
-| Compact instance ABI | G3t, with G3c's review | `thrum-render/src/abi.rs`, `synthetic.wgsl`, `synthetic/upload.rs`, `history_gpu`, `camera_culling.rs`, `shadow.rs` | G3c culling, `thrum-asset-gpu/src/placement.rs` |
-| GPU light binning | G3t | `synthetic/cluster_gpu.rs`, `synthetic/cluster.rs` (oracle) | `synthetic.rs:757`, `:976` selection |
-| Mirrored ranges | G3t | `synthetic/upload.rs:280`, `synthetic.rs:2409`, `shadow.rs:273` | G3c visibility prefix |
-| Native segment and providers | G3t (mechanism); G4 (providers) | new `thrum-render/src/apple_tile/{mod,segment}.rs` | G4 `reconstruction/` |
-| Proof route and paired runner | Seam (G7 route owner) | `scripts/run_v1_showcase.py`, `examples/v1-game/params/` | G4 and G7 evidence |
+| Proof counters, capture probe | G3t | `thrum-render/src/runtime.rs` (counters); `tmp/g3t-traffic/` (probe) | All G3t and G4 checks |
+| Route and fixed-step mode | Seam 8 (G7 route owner) | `scripts/run_v1_showcase.py`, `examples/v1-game/params/`, the V1 game clock | G4, G7 |
+| Registry fields | G3t | `thrum-render/src/capabilities.rs` | `thrum-app/src/app/device.rs:82`, `examples/v1-game-ios/src/ios/render.rs:204` |
+| Graph eligibility, variants, native pass kind, split execution | G3t, with the graph owner's review | `thrum-render/src/graph.rs`, `graph_record.rs` | `atmosphere/graph.rs`, `synthetic.rs` scene build, `present.rs` |
+| Merged graph, direct output, timing schema | G3t, with the frame-runtime and G3b owners' review | `runtime.rs`, `runtime/tokens.rs`, `present.rs`, `synthetic/display.rs`, `timing.rs` | macOS `render_actor.rs`, iOS `ios/render.rs`, capture readback |
+| Per-slot frame buffers | G3t, with the atmosphere and G3c owners' review | `synthetic.rs:1446-1520`, `synthetic/upload.rs`, bind-group builders in forward, shadow, `visibility.rs`, `history_gpu.rs`, `atmosphere/gpu.rs` | `thrum-asset-gpu/src/staging.rs` (unchanged, counted) |
+| Apple ring | G3t | new `apple_tile/{mod,ring}.rs` | Per-slot frame buffers |
+| Shared transients | G3t | `runtime/preparation.rs`, `synthetic.rs` `OffscreenTarget` | Frame slots |
+| Compact instances | G3t, with G3c and G3b interpolation review | `abi.rs`, `synthetic.wgsl`, `synthetic/shadow.wgsl`, `history_gpu.wgsl`, `visibility.wgsl`, `synthetic/upload.rs`, `thrum-app/src/sky.rs`, `tests/contracts.rs` | G3c |
+| GPU light binning | G3t | `synthetic/cluster_gpu.rs`, `synthetic/cluster.rs` (oracle) | `synthetic.rs:757`, `:976` |
+| Mirrored ranges | G3t, with G3c | `visibility.rs`, `visibility.wgsl`, `synthetic/camera_culling.rs`, `shadow.rs` | G3c indirect draws |
+| Native segment, providers | G3t (mechanism), G4 (MetalFX provider) | new `apple_tile/segment.rs` | G4 `apple_tile/metalfx.rs` |
 
-Review order follows the dependencies:
-1. Registry.
-2. Graph eligibility and native pass kind.
-3. Merged graph and shared transients.
-4. ABI.
-5. Uploads.
-6. Binning and mirrors.
-7. Native segment.
+Review order:
+1. Counters.
+2. Registry.
+3. Graph eligibility and variants.
+4. Split execution and merged graph.
+5. Per-slot buffers.
+6. Ring.
+7. ABI.
+8. Binning and mirrors.
+9. Native segment.
 
-G4's frame contract and presentation work slot in after step 3, as its plan states.
+G4 work that touches the same files lands after the matching G3t step (see below).
 
-## Parallel work and seams
+## Parallel work and handoffs with G4
 
-| Work | Can start when | Runs in parallel with |
+| G3t milestone | Can start when | Runs in parallel with |
 |---|---|---|
-| M0 route | Route seam ruled | G4 M1 design-to-code prep |
-| M1 registry and transients | Atmosphere graph checkpoint plus seams 2 and 3 approved | G4 M1 (portable frame contract) |
-| M2 merged graph and direct output | M1 | G4 M1, which must rebase its reconstruction pass onto the merged graph |
-| M3 rings and shared transients | M2 | M4, M5, G4 M2 |
-| M4 compact instances | M1 and seam 4 approved; serialised with G3c edits to the same files | M3, M5 |
-| M5 binning and mirrors | M1 | M3, M4 |
-| M6 native segment | M2 and seam 1 approved | G4 M2–M4 |
-| M7 paired record | M1–M6, and G4 M1 for the eligibility rerun | G4 M5 |
+| M0 route, counters, probe | Seam 8 ruled for the route; counters and probe need nothing | G4 M1 |
+| M1 registry and memoryless | M0, atmosphere checkpoint, seams 2 and 3 | G4 M1 |
+| M2 split-execution merged graph | M1 | G4 M1 |
+| M3 direct output and timing schema | M2 | G4 M2, which rebases its `runtime.rs` wiring onto M2 |
+| M4 per-slot frame buffers | M1, seam 4 | M6–M9, G4 M2–M3 |
+| M5 Apple ring | M4, seam 9 | M6–M9 |
+| M6 shared transients | M3 | M4–M5, M7–M9 |
+| M7 compact instances | M1, seam 6; after G3c's edits to the same shaders | M4–M6, M8 |
+| M8 GPU light binning | M1 | M4–M7 |
+| M9 mirrored ranges | M7 (same rows), seam 7 | M8 |
+| M10 native segment, stand-in | M3, seam 1 | G4 M4–M7 |
+| M11 native recovery, rejection, timing | M10 and G4 M4 (real extent transitions) | G4 M5–M7 |
+| M12 paired record | M1–M11, G4 M2 (readers in place) and G4 M5 (scale) | G4 M8 |
 
-**Handoff to G4.** G4 M5 (MetalFX temporal) is the first G4 milestone that needs G3t, and it needs M6.
-- *Producer:* the native segment executor and the `NativeProvider` trait.
-- *Consumer:* the G4 MetalFX provider.
-- *Contract:* the provider is created at closure for a device and recipe generation, with declared formats, extents
-  and scale range. It encodes only into the segment's raw command buffer, from graph textures to a graph texture.
-  It completes with the slot's submission. It names a prepared portable twin.
-- *Unlocking proof:* M6's stand-in provider passes its done-when checks on this M3 Max.
+**Handoffs from G3t to G4.**
+- *M0 → every G4 check.* Route, fixed-step mode, counters and the traffic capture method (or the *unmeasured*
+  label).
+- *M1 → G4 M2.* The per-variant eligibility report, which shows depth and motion becoming stored once G4's readers
+  exist.
+- *M3 → G4 M4 and M6.* Present owns tone and display encode, and the surface is bound at execute time.
+  - Contract: the present pass reads one scene-linear input (scene HDR, or G4's reconstruction output) plus the
+    frame's exposure and headroom H. It writes the drawable in the surface format chosen at the generation build.
+  - Unlocking proof: D3.1–D3.3.
+  - G4 M4 (render extent from the surface) waits for M3, so G3t M2–M3 keep 640×360 and its letterbox tests until
+    then.
+- *M11 → G4 M8 (MetalFX), the first G4 milestone needing the native handoff.*
+  - Producer: the native segment executor and the `NativeProvider` trait.
+  - Consumer: G4's MetalFX provider.
+  - Contract: created at the generation build with declared formats, texture usages, extents and scale range; encodes
+    only graph textures into graph textures inside the segment's raw command buffer; may keep internal history and
+    resets when told; completes with the slot's submission; reports segment timing; names a prepared portable twin.
+  - Unlocking proof: D10.1–D10.4 and D11.1–D11.3 on this M3 Max.
 
-## M0 Valley proof route: pending
+**Handoffs from G4 to G3t.** G4 M2 adds the depth and motion readers that M12 reruns eligibility with. G4 M5's scale
+steps give M12 its two-scale traffic rows.
 
-Shared with G4 and G7. The owner follows Thrum Core's ruling on seam 6; the plan sizes it at half a day.
+## M0 Proof route, counters and capture probe: pending
 
 Done when:
-- [ ] D0.1 One command runs the V1 game through a fixed, timed valley camera route with motion: a pan across the Sun
-      side, a walk past local lights and mirrored props, and one cut. It records presented checkpoint frames on
-      macOS (Metal) and in Chrome.
-- [ ] D0.2 Two portable runs on the same M3 Max give identical checkpoint frames, and the run log names the recipe,
-      registry digest, window size and display refresh.
-- [ ] D0.3 The paired runner writes a row file with the fields listed under *Evidence conventions*. A forced-recipe
-      setting selects portable or Apple tile on Mac.
+- [ ] D0.1 One command runs the V1 game through a fixed valley route in fixed-step mode: a pan across the Sun side, a
+      walk past local lights and mirrored props, a dusk crossing into the star variant, and one cut. It writes
+      reference-image checkpoints on macOS (Metal) and in Chrome.
+- [ ] D0.2 Two portable runs on this M3 Max give identical checkpoint images. The log names the recipe, window size and
+      display refresh. The noise floor of timing is recorded.
+- [ ] D0.3 Pipeline, texture and native-object creation counters report counts by thread and phase. A test fails if a
+      pipeline is created after readiness.
+- [ ] D0.4 A capture probe on the offscreen valley either produces a per-encoder byte counter for one attachment (an
+      Xcode GPU frame capture through `MTLCaptureManager`, or another explicitly selected counter set) or records that
+      none is available. The plans' traffic rows then use that method or the *unmeasured* label.
 
 Work:
-- [ ] Route definition as params keyed by time: camera pose keyframes plus a cut marker, using existing showcase
-      params (→D0.1).
-- [ ] Checkpoint capture through the existing capture readback at fixed route times (→D0.1, D0.2).
-- [ ] Determinism rerun and noise floor recorded in `docs/evidence/render/` (→D0.2).
-- [ ] Row writer and forced-recipe environment setting (→D0.3).
+- [ ] Route keyframes with a cut marker, built from the existing showcase params (→D0.1).
+- [ ] Fixed-step route clock with fixed presentation alpha, under seam 8 (→D0.1, D0.2).
+- [ ] Capture-variant readback at route checkpoints, and a determinism rerun (→D0.1, D0.2).
+- [ ] Creation counters in the runtime, wrapping Thrum's creation sites, and the after-readiness test (→D0.3).
+- [ ] Capture probe saved under `tmp/g3t-traffic/`, with the result in `docs/evidence/render/G3T-TRAFFIC-PROBE-*.md`
+      (→D0.4).
 
-## M1 Recipe selection and graph-derived transients: pending
+## M1 Recipe selection and graph-derived memoryless: pending
 
 This is the initial functional milestone. It needs no tuning.
 
 Done when:
-- [ ] D1.1 `DeviceCapabilities` carries `Recipe`, `NativeFeatures` (Apple) and a digest. On this M3 Max the registry
-      selects Apple tile, the iOS simulator selects Apple tile, and Chrome selects portable. A forced setting selects
-      portable on Mac. Unit tests cover selection from adapter facts.
-- [ ] D1.2 The compiled graph reports memoryless eligibility per transient attachment. Graph tests cover:
-  - depth that nothing reads after forward is eligible;
-  - the star variant's depth read makes depth stored and ineligible;
-  - Sun shadow cascades sampled by forward are ineligible;
-  - adding a later motion or depth reader (the G4 M1 frame contract shape) flips the attachment to stored;
-  - a `History` or `Persistent` resource is never eligible.
-- [ ] D1.3 Under Apple tile, eligible attachments are allocated with `RENDER_ATTACHMENT | TRANSIENT_ATTACHMENT`. An
-      Xcode frame capture of the valley shows memoryless storage on each one. Portable allocates them unchanged.
-- [ ] D1.4 The valley route runs on both recipes within image tolerance, with no validation errors, and Chrome is
-      unchanged.
+- [ ] D1.1 `DeviceCapabilities` carries `Recipe`, `NativeFeatures` (Apple) and a digest.
+  - Selection: Apple tile on this M3 Max and in the iOS simulator, portable in Chrome.
+  - A forced setting selects portable on Mac.
+  - Unit tests cover selection from adapter facts.
+- [ ] D1.2 The compiled graph reports memoryless eligibility per prepared variant. Graph tests cover:
+  - day depth is eligible;
+  - star-variant depth is stored;
+  - Sun cascades are stored;
+  - an explicit `store` (today's motion) is ineligible;
+  - an added later reader flips an attachment to stored;
+  - `History` and `Persistent` resources are never eligible;
+  - the capture variant does not change eligibility in the normal variant.
+- [ ] D1.3 Under Apple tile, a scripted log reads each eligible attachment's storage mode through `Texture::as_hal` and
+      shows `Memoryless`. Stored attachments show `Private`. Portable is unchanged. A dusk crossing on the route
+      creates no textures (counter).
+- [ ] D1.4 The valley route runs on both recipes within tolerance with no validation errors. Chrome is unchanged.
 
 Work:
-- [ ] `Recipe`, `NativeFeatures` and digest in `capabilities.rs`; capture on macOS and iOS; forced override (→D1.1).
-- [ ] Eligibility pass in `FrameGraph::compile`: every access within one render pass, load Clear or DontCare, store
-      Discard, single mip and layer, 2D (→D1.2).
-- [ ] Graph tests for the five eligibility cases (→D1.2).
-- [ ] `GraphTextures` adds the transient usage when the recipe enables it and the attachment is eligible (→D1.3).
-- [ ] Capture record plus route rows in `docs/evidence/render/G3T-M1-*.md` (→D1.3, D1.4).
+- [ ] `Recipe`, `NativeFeatures`, digest and unified-memory query; capture on macOS and iOS; forced override (→D1.1).
+- [ ] Per-variant eligibility in `FrameGraph::compile` and the graph tests (→D1.2).
+- [ ] Separate memoryless allocations per variant, created at the generation build (→D1.3).
+- [ ] Storage-mode log and route rows in `docs/evidence/render/G3T-M1-*.md` (→D1.3, D1.4).
 
-## M2 One scene/present graph and direct output: pending
+## M2 One graph with split execution: pending
 
 Done when:
-- [ ] D2.1 Scene and present compile as one graph per frame with the surface imported late. The present pass reads
-      scene HDR and writes the drawable with the tone and display encode. The `Rgba8Unorm` output target no longer
-      exists in the steady path, and graph-declared bytes drop by its write and read.
-- [ ] D2.2 Capture readback still works as a graph branch, and the existing surface tests pass on macOS and iOS:
-      letterbox, sRGB formats, unavailable surface, resize reuse.
-- [ ] D2.3 Late acquisition is unchanged: the drawable is acquired after the scene encode, as the frame tokens
-      require.
-- [ ] D2.4 The valley route stays within tolerance on both recipes, and Chrome is unchanged.
+- [ ] D2.1 Scene and present compile once per generation as one graph with an execute-time surface binding. Execution
+      runs phase 1 before acquisition and phase 2 after. The compiler refuses a non-surface pass after the surface
+      pass (test).
+- [ ] D2.2 A resize at the current fixed render extent rebinds the surface without recompiling the scene. The
+      surface tests pass on macOS and iOS: `surface_pass_letterboxes_and_preserves_sdr_bytes_across_srgb_formats`
+      and `unavailable_surface_drops_only_views_and_resize_reuses_preparation`.
+- [ ] D2.3 A failed acquisition submits phase 1 without phase 2, and the frame-token tests cover it. The valley stays
+      within tolerance on both recipes.
 
 Work:
-- [ ] Merge `PresentContext` into the scene record family, or bind both families under one compiled graph, in
-      `graph_record.rs` and `runtime.rs` (→D2.1, D2.3).
-- [ ] Move tone and display encode from `synthetic/display.rs` into the present pass, keeping the 640×360 render
-      extent and letterbox (→D2.1).
-- [ ] Keep capture readback as an optional graph branch (→D2.2).
-- [ ] Surface and frame-token test runs, then route rows (→D2.2, D2.3, D2.4).
+- [ ] Bind both record families under one compiled graph with phase partitioning (→D2.1).
+- [ ] Execute-time surface binding and the resize path (→D2.2).
+- [ ] Submit-without-present on acquisition failure in the macOS render actor and the iOS render owner (→D2.3).
+- [ ] Test runs and route rows (→D2.2, D2.3).
 
-## M3 Mapped upload rings and shared transients: pending
+## M3 Direct output and timing schema: pending
 
 Done when:
-- [ ] D3.1 Under Apple tile, steady frames on the route make zero `queue.write_buffer` calls for instance, view, light
-      and cluster data, counted in the row. Portable keeps `write_buffer`. A busy slot falls back to `write_buffer`
-      for that frame and counts it.
-- [ ] D3.2 One transient set serves both frame slots. The rows record the graph-declared transient bytes halving.
-      A held-submission test (slot N's GPU work delayed) shows no corruption in slot N+1.
-- [ ] D3.3 Upload CPU p50 and p95 are recorded for both recipes. The valley stays within tolerance.
+- [ ] D3.1 The present pass reads scene HDR and writes the drawable with tone and display encode. The `Rgba8Unorm`
+      output target is gone from the steady graph, and graph-declared bytes drop by its write and read.
+- [ ] D3.2 The capture variant still produces reference images. The surface tests pass on macOS and iOS.
+- [ ] D3.3 `FrameSample` carries GPU times keyed by pass name, and the timing tests pass. The valley stays within
+      tolerance on both recipes, and Chrome is unchanged.
 
 Work:
-- [ ] Per-slot `MAP_WRITE` ring in `apple_tile/upload_ring.rs`, mapped after the slot's `render_done` (→D3.1).
-- [ ] Route the `update_frame` writes through a ring or a `write_buffer` sink chosen by the recipe (→D3.1).
-- [ ] Move `GraphTextures` ownership from `OffscreenTarget` per slot to one set per recipe generation (→D3.2).
-- [ ] Held-submission test and route rows (→D3.2, D3.3).
+- [ ] Move tone and display encode from `synthetic/display.rs` into the present pass (→D3.1).
+- [ ] A capture branch reading the scene-linear input (→D3.2).
+- [ ] Timing schema in `timing.rs` and `runtime.rs`, with consumers updated (→D3.3).
+- [ ] Route rows (→D3.1, D3.3).
 
-## M4 Compact instances: pending
+## M4 Per-slot frame buffers: pending
 
 Done when:
-- [ ] D4.1 `INSTANCE_BYTES` is 64 on both recipes: a 3×4 affine plus ids. The previous transform comes from the GPU
-      history buffer, and the normal matrix is derived in the shader.
-- [ ] D4.2 The existing upload, culling, mirrored-row and motion-history tests pass, including
+- [ ] D4.1 On both recipes, the instance, directional, local-light, cluster and cluster-bounds buffers exist per slot,
+      with per-slot bind groups built at the generation build. No bind group is created during play (counter).
+- [ ] D4.2 Instance dirty rows reach each slot's copy. `active_prefix_matches_fresh_scene_through_churn_and_slot_reuse`
+      and `changed_slot_updates_pixels_and_invalid_row_keeps_prior_draw` pass. A new churn test alternates slots with
+      different dirty sets.
+- [ ] D4.3 The valley stays within tolerance on both recipes. Upload CPU p50 and p95 are recorded against M0's.
+
+Work:
+- [ ] Per-slot buffer sets and bind groups in forward, shadow, visibility, history and atmosphere (→D4.1).
+- [ ] Dirty-union propagation in `synthetic/upload.rs` and the churn test (→D4.2).
+- [ ] Route rows (→D4.3).
+
+## M5 Apple shared-storage ring: pending
+
+Done when:
+- [ ] D5.1 On Apple tile, the per-slot buffers are persistently mapped shared `MTLBuffer`s, imported with
+      `create_buffer_from_hal`. Steady route frames make zero `write_buffer` calls for the M4 classes, and the counted
+      busy-slot fallback is reported. Portable still uses `write_buffer`.
+- [ ] D5.2 The M4 tests pass on Apple tile, and the valley is within tolerance.
+- [ ] D5.3 Upload CPU p50 and p95 are recorded on both recipes.
+  - If the raw import fails validation or loses to `write_buffer`, the `map_async` fallback's result is recorded
+    instead.
+  - The design's open question is answered either way.
+
+Work:
+- [ ] `apple_tile/ring.rs`: shared buffer creation, import, contents-pointer writes after `render_done` (→D5.1).
+- [ ] Busy-slot fallback and counter (→D5.1).
+- [ ] Test and route runs (→D5.2, D5.3).
+
+## M6 Shared transients: pending
+
+Done when:
+- [ ] D6.1 One transient set per generation serves both slots. Graph-declared transient footprint halves in the rows.
+- [ ] D6.2 A held-submission test (slot N's GPU work delayed) shows no corruption in slot N+1. The valley stays within
+      tolerance.
+
+Work:
+- [ ] Move `GraphTextures` ownership from `OffscreenTarget` per slot to the generation (→D6.1).
+- [ ] Held-submission test and route rows (→D6.2).
+
+## M7 Compact instances: pending
+
+Done when:
+- [ ] D7.1 `INSTANCE_BYTES` is 112 on both recipes: a current 3×4 affine, a previous-simulation-sample 3×4 affine and
+      ids. Shaders derive the normal matrix. Display-link interpolation by `presentation_alpha` is unchanged.
+- [ ] D7.2 Upload, culling, mirrored-row and motion-history tests pass, including
+      `metal_motion_history_uses_interpolated_display_samples` and
       `metal_motion_history_follows_submitted_frames_and_resets`.
-- [ ] D4.3 The valley stays within tolerance. A 10k-instance row records instance bytes at one third of the 192 B form.
+- [ ] D7.3 The valley stays within tolerance. A 10k-instance row records instance bytes at 0.58 of the 192 B form.
 
 Work:
-- [ ] ABI change in `abi.rs` and WGSL; shader-side normal derivation (→D4.1).
-- [ ] Update `history_gpu`, `camera_culling`, `shadow` and the upload paths (→D4.1, D4.2).
-- [ ] Test runs and the 10k row (→D4.2, D4.3).
+- [ ] ABI in `abi.rs`, WGSL in the four shaders, `sky.rs` and contract tests (→D7.1).
+- [ ] Update the upload, history, culling and shadow paths (→D7.1, D7.2).
+- [ ] Test runs and the 10k row (→D7.2, D7.3).
 
-## M5 GPU light binning and mirrored ranges: pending
+## M8 GPU light binning: pending
 
 Done when:
-- [ ] D5.1 The GPU cluster build fills the full 32-per-cluster CSR for any light count, and counts overflow. A test
-      matches its table to the CPU oracle at 4, 16, 32 and 64 lights.
-- [ ] D5.2 Mirrored rows are drawn as their own range with the opposite cull face. All other rows keep back-face
-      culling. The mirrored-row test passes, and the draw count rises by one instead of switching everything to
-      cull-none.
-- [ ] D5.3 A scaling row from 4 to 64 local lights, and with 0 and 1/11 mirrored rows, records GPU and CPU frame time
-      on both recipes, compared against the design's cost account.
+- [ ] D8.1 The GPU cluster build fills the 32-per-cluster CSR for any light count, keeping the lowest-index lights on
+      overflow and counting the overflow. A test checks per-cluster set equality with the CPU oracle, under the same
+      rule, at 4, 16, 32 and 64 lights.
+- [ ] D8.2 A 4→64-light route row on both recipes records GPU binning time, forward time and CPU frame time against
+      the design's light model. CPU frame time stays within noise from 4 to 64 lights on the GPU build.
 
 Work:
-- [ ] Extend `cluster_gpu` and remove the 4-light gate for Apple tile and portable desktop (→D5.1).
-- [ ] Partition the active prefix by determinant sign; two draws with set cull modes in forward and shadow (→D5.2).
-- [ ] Scaling scene params and rows (→D5.3).
+- [ ] One invocation per cluster in index order in `cluster_gpu`; remove the 4-light gate; oracle rule in
+      `cluster.rs` (→D8.1).
+- [ ] Light-scaling params and rows (→D8.2).
 
-## M6 Native segment handoff: pending
-
-This is proven with a labelled stand-in, not MetalFX. It needs Thrum Core's ruling on seam 1.
+## M9 Mirrored ranges: pending
 
 Done when:
-- [ ] D6.1 The graph accepts a `NativeSegment` pass with declared reads and writes. The executor closes the wgpu
-      encoder, records the segment in a dedicated encoder through `as_hal_mut`, and resumes. All encoders go to one
-      `queue.submit`. Graph tests cover hazards, lifetime and store across the segment, and refuse a segment that
-      imports the surface.
-- [ ] D6.2 A **stand-in** provider performs a native `MTLBlitCommandEncoder` copy of scene HDR into a graph texture,
-      which the present pass then reads. It runs for the whole route with no validation errors. Output matches the
-      wgpu-copy twin bit for bit, and the provider retires only after slot completion.
-- [ ] D6.3 Resize, surface replacement and a forced provider rejection each switch to the prepared portable twin with
-      no pipeline creation after readiness. The pipeline-creation counter reads zero during play.
-- [ ] D6.4 Evidence labels the stand-in as composition proof only, not MetalFX or tile proof.
+- [ ] D9.1 Visibility compute writes normal and mirrored indirect records. Forward and shadow draw them with opposite
+      cull faces, and no draw switches to cull-none.
+- [ ] D9.2 `mirrored_row_uses_two_sided_fallback_and_keeps_near_surface` is replaced by a test with the same visual
+      assertion on the mirrored range. The valley with mirrored props stays within tolerance.
+- [ ] D9.3 A row with 0 and 1/11 mirrored instances records +1 indirect draw and GPU time against the model.
 
 Work:
-- [ ] `PassBackend::NativeSegment` and the executor's encoder list (→D6.1).
-- [ ] `apple_tile/segment.rs`: `NativeProvider` trait, trampoline, one-time wgpu initialization of native-written
-      textures (→D6.1, D6.2).
-- [ ] Stand-in blit provider and its wgpu twin (→D6.2).
-- [ ] Pipeline-creation counter in the runtime; recovery and rejection rows (→D6.3).
-- [ ] Evidence note (→D6.4).
+- [ ] Two indirect records in `visibility.wgsl` and `visibility.rs`; draws in `camera_culling.rs` and `shadow.rs`
+      (→D9.1).
+- [ ] Test replacement and route rows (→D9.2, D9.3).
 
-## M7 Paired traffic and timing record: pending
+## M10 Native segment with a stateful stand-in: pending
+
+This is proven with a labelled stand-in, not MetalFX. It needs seam 1.
+
+Done when:
+- [ ] D10.1 The graph accepts a `NativeSegment` pass with declared reads and writes. The executor closes the wgpu
+      encoder, records the segment in a dedicated `as_hal_mut` encoder and resumes, with all encoders in one submit.
+      Graph tests cover hazards across the segment, refusal of a surface import, and native-written textures being
+      unaliased and never discarded.
+- [ ] D10.2 A **stand-in** provider is a native compute kernel. It blends scene HDR with an internal history texture,
+      writes through storage usage into a graph texture that the present pass reads, and resets on command. It runs
+      for the whole route with no validation errors, and matches its wgpu compute twin bit for bit.
+- [ ] D10.3 A held-submission test shows no native texture is freed or reused before slot completion.
+- [ ] D10.4 Evidence labels the stand-in as composition proof only, not MetalFX or tile proof.
+
+Work:
+- [ ] `PassBackend::NativeSegment`, the encoder list, and the native texture rules in graph and executor (→D10.1).
+- [ ] `apple_tile/segment.rs`: `NativeProvider` trait, trampoline, one-time wgpu initialization (→D10.1, D10.2).
+- [ ] Stand-in provider and its wgpu twin (→D10.2).
+- [ ] Held-submission test and evidence note (→D10.3, D10.4).
+
+## M11 Native recovery, rejection and timing: pending
+
+Done when:
+- [ ] D11.1 With G4 M4's real extent transitions in place, a resize builds a new provider in the transition off the
+      render thread. The pipeline counter reads zero in play, and native-object creations appear only in build or
+      transition phases.
+- [ ] D11.2 A forced provider rejection and a surface replacement select the prepared wgpu twin without pipeline
+      creation. A submission failure resets provider history on the next frame (test).
+- [ ] D11.3 Segment GPU start and end times appear in `FrameSample` under the segment's pass name, and pass a sanity
+      check: inside the frame's GPU span, and non-zero.
+
+Work:
+- [ ] Provider rebuild in G4's transition path (→D11.1).
+- [ ] Rejection, replacement and failure-reset wiring (→D11.2).
+- [ ] Segment timing from the raw command buffer's GPU times (→D11.3).
+
+## M12 Paired traffic and timing record: pending
 
 This milestone is tuning, separate from the functional work above.
 
 Done when:
-- [ ] D7.1 Paired route rows (Apple tile vs portable, same M3 Max) record GPU pass times, present intervals, upload CPU,
-      graph-declared bytes per attachment and measured bandwidth from a configured Instruments capture. Every row
-      names the recipe and registry digest.
-- [ ] D7.2 The eligibility report is rerun with G4 M1's frame contract (depth and motion readers) in place. It states
-      which attachments remain memoryless at the shipped configuration.
-- [ ] D7.3 Each mechanism from M1–M5 is recorded as a measured difference or as no measurable effect. No tripwire is
-      open, or each open one has an assigned fix.
+- [ ] D12.1 Paired route rows (Apple tile vs portable, this M3 Max) record:
+  - GPU pass and segment times;
+  - present intervals;
+  - upload CPU;
+  - graph-declared bytes;
+  - measured bytes by the M0 method, or *unmeasured*;
+  - the recipe and registry digest.
+
+  The rows cover two render scales (1.0 and 0.67, from G4 M5).
+- [ ] D12.2 The eligibility report is rerun with G4 M2's readers in place, per variant.
+- [ ] D12.3 For each mechanism from M1 and M3–M9, a one-off ablation row shows a measured difference or *no measurable
+      effect* (the M0 threshold). Every open tripwire has an assigned fix.
 
 Work:
-- [ ] Instruments template with the Performance Limiters counter set, saved under `tmp/g3t-traffic/` (→D7.1).
-- [ ] Route runs, a one-mechanism-off ablation per mechanism, and rows (→D7.1, D7.3).
-- [ ] Eligibility rerun (→D7.2).
-- [ ] Evidence record `docs/evidence/render/G3T-PAIRED-*.md`; maturity rows go to the ledger owner (→D7.1–D7.3).
+- [ ] Route runs at two scales with the M0 capture method (→D12.1).
+- [ ] Eligibility rerun (→D12.2).
+- [ ] Ablation switches and rows (→D12.3).
+- [ ] Evidence record `docs/evidence/render/G3T-PAIRED-*.md`; maturity rows go to the ledger owner (→D12.1–D12.3).
 
 ## Sizing
 
 | Milestone | Days |
 |---|---|
-| M0 | 0.5 |
-| M1–M6 | about 1 each |
-| M7 | 1 |
-| Reviews and Thrum Core seam turnaround | 1–2 |
+| M0 | 1 |
+| M1 | 1.5 |
+| M2 | 1.5 |
+| M3 | 1 |
+| M4 | 1 |
+| M5 | 1 |
+| M6 | 1 |
+| M7 | 1.5 |
+| M8 | 1 |
+| M9 | 1 |
+| M10 | 1.5 |
+| M11 | 1 |
+| M12 | 1.5 |
 
-That is about 8.5 working days of build plus 1–2 of review, so **8–10 days** for G3t. M3, M4 and M5 can overlap if
-separate agents own disjoint files (see the parallel table), which brings the elapsed time to about 6–7 days. The
-largest uncertainty is M2: it touches the frame runtime and both shells' surface paths.
+That is **15.5 build days**, plus 1–2 days of review and seam turnaround, for G3t alone.
+- With two agents splitting M4–M9 by the parallel table, the elapsed time is about **11–12 days**.
+- M2 and M3 carry the most uncertainty: the frame runtime, both shells and active G3b code.
+- The total revises revision 1's 8.5 days. Reviewers judged that figure optimistic and estimated 11–13 build days.
+  This plan adds the proof tooling, the per-slot buffer redesign and the native recovery work that reviewers found
+  missing.
 
 ## Log
 
-- 2026-11-07 Plan drafted for Thrum Core's G3t/G4 commission.
+- 2026-11-07 Revision 1 drafted for Thrum Core's G3t/G4 commission.
+- 2026-11-07 Revision 2 answers the G3t pair review and the composed-frame review:
+  - **Proof tooling:** a capture probe and counters moved to M0, with an *unmeasured* label as the fallback, and a
+    fixed-step route with a defined reference image.
+  - **Instances:** 112 B rows keep the previous simulation sample used by interpolation; every consumer is listed.
+  - **Uploads:** per-slot buffers and bind groups specified; the Apple ring is a raw shared-storage import, with
+    `map_async` as the fallback.
+  - **Graph:** per-variant memoryless allocations; split execution with an execute-time surface; encoded frames always
+    submitted.
+  - **Native segment:** texture rules, a stateful storage-writing stand-in and segment timing added; the consequence of
+    refusing seam 1 is stated.
+  - **Cross-plan:** numbering corrected; the M3 → G4 handoff added; the extent change is sequenced after M3.
+  - **Lights and mirrors:** a deterministic GPU binning oracle, cost models, and mirrors through G3c's indirect
+    records.
+  - **Sizing:** restated.
