@@ -74,7 +74,8 @@ A fresh-context reviewer saw only Chrome and native stills and a 24-sample Chrom
   `sunset-sun` at the same time and direction shows both identically. They are shared look items: in-scatter
   over shadowed distant terrain, against a near floor in shadow.
 - **Noon preset.** It pitches up to the sky. The reviewer read it as dull and noted faint column banding and
-  ridge fringes. Recorded, not yet scored.
+  ridge fringes. The banding was 8-bit contouring, now dithered
+  ([evidence](G3S-DISPLAY-DITHER-2026-11-07.md)). The fringes are a smooth crest fall-off, not a defect.
 
 ## Open
 

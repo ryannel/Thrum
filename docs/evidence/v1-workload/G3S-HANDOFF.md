@@ -101,6 +101,8 @@ crossing clip](g3s-first-light/solar-crossing.mp4) runs at 24 sampled frames/s.
 - Distant terrain shadows now come from a caster height-map horizon
   ([evidence](G3S-TERRAIN-HORIZON-2026-11-07.md)). Its +24% pass-sum is the next cost
   item; a per-frame horizon-angle map is the scalable form.
+- Noon sky banding was 8-bit contouring; the display now dithers
+  ([evidence](G3S-DISPLAY-DITHER-2026-11-07.md)).
 - The penumbra's +18% pass-sum. Gathered fetches and a lit early-out are untried.
 
 **G7.** Chrome now draws the cooked valley fetched from `thrum-cook watch --serve`

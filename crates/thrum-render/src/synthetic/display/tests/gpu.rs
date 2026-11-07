@@ -198,10 +198,21 @@ fn gpu_sdr_ramps_match_f64_and_legacy_pixels_across_checked_gain_range() {
             let group = prepare_group(&device, &display.layout, &view, &sample);
             let expected_legacy = render(&device, &queue, &original, &group, width);
             let actual_legacy = render(&device, &queue, &display.pipeline, &group, width);
-            assert_eq!(
-                actual_legacy, expected_legacy,
-                "exact legacy pixels at gain {gain}"
-            );
+            // The display adds a fixed one-step triangular dither; the legacy reference has none.
+            for (index, (actual, expected)) in
+                actual_legacy.iter().zip(&expected_legacy).enumerate()
+            {
+                assert!(
+                    actual.abs_diff(*expected) <= 1,
+                    "legacy pixels within the dither step at gain {gain}, byte {index}: {actual} vs {expected}"
+                );
+                if matches!(*expected, 0 | 255) {
+                    assert_eq!(
+                        actual, expected,
+                        "dither leaves black and white exact at gain {gain}"
+                    );
+                }
+            }
             words[7] = SdrToneMap::NeutralHighlights as u32;
             queue.write_buffer(&sample, 0, words.map(u32::to_le_bytes).as_flattened());
             let actual = render(&device, &queue, &display.pipeline, &group, width);
