@@ -63,9 +63,17 @@ fn resolve() {
                 if policy.mode == 2u {
                     raw_ev -= min(0.0, log2(key_value(measured) / key_value(ADAPTED_LUX)));
                 }
+                let storage_ev = clamp(raw_ev, parameters.z, parameters.w);
+                let storage_inverse = 1.2 * exp2(storage_ev);
+                storage_scale = clamp(0.25 / storage_inverse, policy.pre_exposure, 64.0);
+                if policy.mode == 2u {
+                    // Compress the camera's gain at very low scene keys while
+                    // preserving the pre-grade scale for dim HDR storage.
+                    let depth = max(0.0, 1.5 - (raw_ev + parameters.y));
+                    raw_ev += 0.125 * depth * (depth / (1.0 + depth));
+                }
                 ev = clamp(raw_ev, parameters.z, parameters.w);
                 inverse = 1.2 * exp2(ev);
-                storage_scale = clamp(0.25 / inverse, policy.pre_exposure, 64.0);
                 flags = 0u;
                 if raw_ev < parameters.z { flags |= FLOOR | CLAMP; }
                 if raw_ev > parameters.w { flags |= CLAMP; }

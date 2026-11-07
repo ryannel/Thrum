@@ -3,6 +3,7 @@ use crate::timing::PassTiming;
 
 const TRANSFORMS: SceneTimingLayout = SceneTimingLayout {
     transforms: true,
+    star_pass: None,
     shadows: false,
     clusters: false,
     camera: CullMode::Direct,
