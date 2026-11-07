@@ -8,6 +8,21 @@ The Codex goal remains active. Its attachment is
 
 ## Current checkpoint
 
+- Star integration `00c2645` is on `codex/g3s-stars-integration`. Both
+  graphs preserve Frustum count copies and nonblocking slot retirement.
+  Each native Metal mode matches the previous 132 held images byte for
+  byte. Chrome records a continuous eight-second midnight pan and 30-second
+  twilight sweep with zero world overloads. Independent review tracked
+  141 isolated stars through every pan sample. Aperture brightness varied
+  9–12% at the median, and a high-sky patch retains a 1.55-code late rise.
+  Chrome's paused midnight replacement rejects the old capture and
+  reproduces the full frame.
+  `./dev check` passed 518 tests. The Mac helper found no foreground
+  window. Keep production admission open. This branch's twilight shoulder
+  changes default output even with stars off. Qualify it with the normal
+  valley launch before refreshing G7's canonical baseline. The exact
+  builds, clips and commands are in `tmp/g3s-star-catalog/NOTES.md`.
+
 - Daylight selector WIP `3407173` fades the audited star field out at
   68.1–71.5 klux for the valley's default camera. Fixed exposure, an
   unsupported projection or the diagnostic overlay keeps the full field.
