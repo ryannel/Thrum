@@ -15,7 +15,8 @@ the module; what matters is below.
   inside a milestone shows. If what a milestone means has to change, edit it in the plan, say why in the log,
   update the design if the change alters what the module must do, and have the change reviewed.
 - **Break the work down your way.** List the work under each milestone at whatever grain helps you, each item
-  saying in one line what exists or passes when it's done, tick it off as you finish it, and revise the list as you learn. Experiments belong here too, each with the question it answers and
+  saying in one line what exists or passes when it's done and serving one of that milestone's done-when items (work
+  that serves none belongs to another milestone), tick it off as you finish it, and revise the list as you learn. Experiments belong here too, each with the question it answers and
   when you'll stop.
 - **Keep the status current.** A few lines at the top: the milestone in progress, what you're doing now and since
   when, what's next
