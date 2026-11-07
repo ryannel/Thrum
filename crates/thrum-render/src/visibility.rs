@@ -360,4 +360,6 @@ fn binding(index: u32, buffer: &wgpu::Buffer) -> wgpu::BindGroupEntry<'_> {
 }
 
 #[cfg(test)]
+mod occlusion_reference;
+#[cfg(test)]
 mod tests;
