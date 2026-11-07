@@ -863,7 +863,7 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
       if (packet.method === 'Runtime.exceptionThrown') faults.push(packet.params.exceptionDetails);
       if (packet.method === 'Runtime.consoleAPICalled' && packet.params.type === 'error') {
         const messages = packet.params.args.map(arg => arg.value ?? arg.description);
-        const expectedDestroyed = (destroyCase || materialCase) && intentionalDestroys > 0 && messages.length === 1 && /^Graphics fault: Destroyed:/.test(messages[0] ?? '');
+        const expectedDestroyed = (destroyCase || materialCase || oracleCase) && intentionalDestroys > 0 && messages.length === 1 && /^Graphics fault: Destroyed:/.test(messages[0] ?? '');
         const expectedConfigure = retryCase && intentionalDestroys > 0 && messages.length === 1 && /^Surface configuration failed:/.test(messages[0] ?? '') && messages[0].includes(configureFailureSentinel) && messages[0].includes('The surface will report as lost until it is successfully reconfigured.');
         if (!expectedDestroyed && !expectedConfigure) faults.push(messages);
       }
@@ -883,7 +883,7 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
       if (evaluated.exceptionDetails) throw new Error(JSON.stringify(evaluated.exceptionDetails));
       state = JSON.parse(evaluated.result.value ?? '{}');
       if (state.status !== last) { log(state.status ?? ''); last = state.status; }
-      if (faults.length || (/fault:/i.test(state.status ?? '') && !((destroyCase || materialCase) && intentionalDestroys > 0 && /^Graphics fault: Destroyed:/.test(state.status ?? '')))) throw new Error(`Browser fault: ${JSON.stringify(faults)} ${state.status}`);
+      if (faults.length || (/fault:/i.test(state.status ?? '') && !((destroyCase || materialCase || oracleCase) && intentionalDestroys > 0 && /^Graphics fault: Destroyed:/.test(state.status ?? '')))) throw new Error(`Browser fault: ${JSON.stringify(faults)} ${state.status}`);
       return state;
     };
     if (skyCase) {
@@ -953,7 +953,7 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
     }
     else if (materialDisabled) material = await qualifyMaterialDisabled(cdp, sessionId, poll, timeout, files);
     else if (mode === 'controls') controls = await qualifyControls(cdp, sessionId, poll, timeout);
-    else if (oracleCase) oracle = await captureFieldOracle(cdp, sessionId, poll, timeout, output, mode);
+    else if (oracleCase) oracle = await captureFieldOracle(cdp, sessionId, poll, timeout, output, mode, onDestroy);
     else if (mode === 'params') {
       params = await qualifyParams(cdp, sessionId, poll, timeout, files, output);
       // Parameter problems belong under the controls, never in the game status line.
@@ -1031,7 +1031,7 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
 // Field oracle views: headings all round, level and tilted down, at the paused tick.
 const oracleViews = [-180, -135, -90, -45, 0, 45, 90, 135].flatMap(yaw => [[yaw, 0], [yaw, -25]]);
 
-async function captureFieldOracle(cdp, sessionId, poll, timeout, output, mode) {
+async function captureFieldOracle(cdp, sessionId, poll, timeout, output, mode, onDestroy) {
   await waitFor(async () => /^Running/.test((await poll()).status ?? '') || undefined, timeout, `${mode} startup`);
   const game = await existingGame(cdp, sessionId);
   const first = await game.read();
@@ -1062,7 +1062,36 @@ async function captureFieldOracle(cdp, sessionId, poll, timeout, output, mode) {
   if (!last.paused || field(last.report, 'ticks') !== field(first.report, 'ticks')) throw new Error(`${mode}: world advanced during capture`);
   const ticks = new Set(captures.map(capture => /tick=(\d+)/.exec(capture.identity)?.[1]));
   if (ticks.size !== 1) throw new Error(`${mode}: captures span ticks ${[...ticks]}`);
-  return { captures, scope: 'Paused field captured through the page at fixed views; equality is judged against the other culling mode' };
+  const loss = mode === 'field-oracle-frustum' ? await fieldOracleLoss(cdp, sessionId, poll, timeout, game, onDestroy) : undefined;
+  return { captures, loss, scope: 'Paused field captured through the page at fixed views; equality is judged against the other culling mode' };
+}
+
+// A capture outstanding across an actual GPUDevice.destroy: frames run first so its readback can
+// complete, then the loss signal refuses both finish and begin before replacement, and the
+// replacement device captures afresh under a new generation.
+async function fieldOracleLoss(cdp, sessionId, poll, timeout, game, onDestroy) {
+  const thrown = async source => game.invoke(`try{${source};return null;}catch(error){return String(error?.message??error);}`);
+  const before = await game.invoke('return game.begin_capture();');
+  // Animation frames keep polling the healthy device meanwhile, so the readback can complete.
+  const presented = field((await game.read()).report, 'presented');
+  await waitFor(async () => field((await game.read()).report, 'presented') >= presented + 4 || undefined, timeout, 'frames before oracle loss');
+  const devices = await destroyActualDevice(cdp, sessionId, undefined, onDestroy);
+  await waitFor(async () => (await game.read()).fault?.startsWith('Destroyed:') || undefined, timeout, 'oracle device destroyed');
+  const finish = await thrown('game.try_finish_capture()');
+  if (!/lost before the capture finished/.test(finish ?? '')) throw new Error(`Capture finished after loss: ${finish}`);
+  const begin = await thrown('game.begin_capture()');
+  if (!/device is lost/.test(begin ?? '')) throw new Error(`Capture began after loss: ${begin}`);
+  const empty = await game.invoke('return game.try_finish_capture()===undefined;');
+  if (!empty) throw new Error('A refused capture stayed outstanding');
+  await game.invoke('document.querySelector("#restore-graphics").click();return true;');
+  await waitFor(async () => { const value = await game.read(); return (!value.fault && !value.recovering && /^Running/.test((await poll()).status ?? '')) || undefined; }, timeout, 'oracle replacement device');
+  const after = await game.invoke('return game.begin_capture();');
+  const length = await waitFor(async () => { await poll(); return await game.invoke('const pixels=game.try_finish_capture();return pixels?pixels.length:undefined;') ?? undefined; }, timeout, 'replacement capture');
+  const generation = identity => /generation=(\d+)/.exec(identity)?.[1];
+  const tick = identity => /tick=(\d+)/.exec(identity)?.[1];
+  if (generation(after) === generation(before) || tick(after) !== tick(before)) throw new Error(`Replacement capture identity: ${before} -> ${after}`);
+  for (const objectId of [devices.device, devices.allDevices]) await cdp.call('Runtime.releaseObject', { objectId }, sessionId);
+  return { before, finish, begin, after, bytes: length };
 }
 
 async function compareFieldOracle(output, results) {

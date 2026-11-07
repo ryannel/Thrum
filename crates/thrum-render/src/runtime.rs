@@ -42,11 +42,14 @@ const IN_FLIGHT: usize = 2;
 
 /// A submitted capture of one committed endpoint, owned by the caller until
 /// [`FrameHost::try_finish_capture`] returns its pixels. It retains its own
-/// readback, so no other capture's completion can satisfy it.
+/// readback, so no other capture's completion can satisfy it, and the device
+/// that recorded it, so only that device is ever polled for it.
 #[must_use = "a pending capture is read with try_finish_capture"]
 pub struct PendingCapture {
     pixels: crate::synthetic::PixelReadback,
     submitted: wgpu::SubmissionIndex,
+    /// Identity only: compared, never polled unless it is the host's device.
+    device: wgpu::Device,
     generation: u64,
     tick: u64,
     extent: [u32; 2],
@@ -1329,6 +1332,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         Ok(PendingCapture {
             pixels,
             submitted,
+            device: self.device.clone(),
             generation: self.generation,
             tick: self.world.source().tick,
             extent: self.render_extent,
@@ -1336,14 +1340,21 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     }
 
     /// Nonblocking check of a pending capture: `Ok(None)` until its readback
-    /// completes. A capture from a lost or retired device generation fails
-    /// instead, and is never satisfied by a later capture's completion.
+    /// completes. A capture recorded by another device, or by a retired device
+    /// generation, fails instead and is never satisfied by a later capture's
+    /// completion. A platform with its own device-loss signal checks it before
+    /// calling; the browser game does.
     /// # Errors
-    /// Returns a retired generation, GPU poll or readback failure.
+    /// Returns a foreign device, retired generation, GPU poll or readback failure.
     pub fn try_finish_capture(
         &mut self,
         pending: &mut PendingCapture,
     ) -> Result<Option<Vec<u8>>, FrameError> {
+        if pending.device != self.device {
+            return Err(FrameError::InvalidState(
+                "capture was recorded by another device",
+            ));
+        }
         if pending.generation != self.generation {
             return Err(FrameError::InvalidState(
                 "capture belongs to a retired device generation",

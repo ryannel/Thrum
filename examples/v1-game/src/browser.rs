@@ -654,9 +654,14 @@ impl BrowserGame {
 
     /// Submit a capture of the committed endpoint for the page's oracle and
     /// return `tick=<n>;extent=<w>x<h>;generation=<g>`. One capture at a time.
+    /// Like [`Self::frame`], it does no GPU work once the device is lost.
     /// # Errors
-    /// Refuses a second outstanding capture, or returns a recording failure.
+    /// Refuses a lost device or a second outstanding capture, or returns a
+    /// recording failure.
     pub fn begin_capture(&mut self) -> Result<String, JsValue> {
+        if self.graphics.is_lost() {
+            return Err(js_error("graphics device is lost"));
+        }
         if self.capture.is_some() {
             return Err(JsValue::from_str("a capture is already outstanding"));
         }
@@ -675,10 +680,17 @@ impl BrowserGame {
     }
 
     /// The outstanding capture's sRGB RGBA8 pixels once ready, else nothing.
-    /// A failed or retired capture is dropped and reported.
+    /// A failed, lost or retired capture is dropped and reported. The loss
+    /// signal is checked before any poll, so a readback that completed before
+    /// loss is never returned after it.
     /// # Errors
-    /// Returns a retired device generation or readback failure.
+    /// Returns a lost device, retired device generation or readback failure.
     pub fn try_finish_capture(&mut self) -> Result<Option<Vec<u8>>, JsValue> {
+        if self.graphics.is_lost() && self.capture.take().is_some() {
+            return Err(js_error(
+                "graphics device was lost before the capture finished",
+            ));
+        }
         let Some(pending) = self.capture.as_mut() else {
             return Ok(None);
         };
