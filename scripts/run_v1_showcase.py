@@ -64,10 +64,12 @@ COMPARATOR = 2
 # calibration rule max(1, 3 x worst valley-to-native), rounded up, on the first run of this comparator and source
 # root that passes both controls. None means that calibration run. Changing them is a recorded decision.
 # Comparator 2, source root 59f0484f (authored ground, 80e519ec): worst valley 0.027, 0.062, 0.161 -> the 1.0 floor.
+# Recalibrated for source root 70d2baf8 (G7 M4 continuous ground, 512² tile): worst valley 0.027, 0.052, 0.148 ->
+# the same 1.0 floor, thresholds unchanged (approved by Thrum Core, G7 NOTES "Root verdict on ground variant E").
 THRESHOLDS = [1.0, 1.0, 1.0]
 # The source root the thresholds were calibrated on. Another root needs a reviewed recalibration, so a parity
 # regression that arrives with a content change is not absorbed.
-CALIBRATED_ROOT = '59f0484f6f05e5c1a0cf33f62755f1083a3802a7b32631191d6d88afff08c367'
+CALIBRATED_ROOT = '70d2baf823d09d85574f7cdfce7102648754544dd7d68659e9bd92dd5f30e21d'
 CONTROL_RATIO = 10.0
 
 
