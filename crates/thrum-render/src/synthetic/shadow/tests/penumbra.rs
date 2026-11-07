@@ -179,9 +179,9 @@ fn observe(device: &wgpu::Device, queue: &wgpu::Queue, slope: f32, kind: u8) -> 
     read_visibility(
         device,
         queue,
-        &pipeline(device, OBSERVER),
+        &pipeline(device, OBSERVER, false),
         &samples,
-        &view,
+        (&view, None),
         [0.0, 0.0, 1.0, slope],
         u32::try_from(SAMPLES * 2).expect("two small sample rows"),
     )
@@ -258,7 +258,7 @@ fn finite_sun_shadow_width_tracks_blocker_distance_and_tilted_receivers() {
 fn near_and_last_cascades_cover_complementary_blocker_distances() {
     pollster::block_on(async {
         let (device, queue) = device().await;
-        let pipeline = pipeline(&device, CASCADE_HANDOFF);
+        let pipeline = pipeline(&device, CASCADE_HANDOFF, false);
         let mut samples = [0_f32; SAMPLE_FLOATS];
         samples[..16].copy_from_slice(&glam::Mat4::IDENTITY.to_cols_array());
         let far = glam::Mat4::from_scale(glam::Vec3::splat(0.5));
@@ -281,7 +281,10 @@ fn near_and_last_cascades_cover_complementary_blocker_distances() {
                 &queue,
                 &pipeline,
                 &samples,
-                &maps.create_view(&wgpu::TextureViewDescriptor::default()),
+                (
+                    &maps.create_view(&wgpu::TextureViewDescriptor::default()),
+                    None,
+                ),
                 [0.0, 0.0, 1.0, -0.96],
                 1,
             );
@@ -298,7 +301,7 @@ fn near_and_last_cascades_cover_complementary_blocker_distances() {
 fn near_clip_plane_hands_excluded_blockers_to_the_last_cascade() {
     pollster::block_on(async {
         let (device, queue) = device().await;
-        let pipeline = pipeline(&device, CASCADE_HANDOFF);
+        let pipeline = pipeline(&device, CASCADE_HANDOFF, false);
         let mut samples = [0_f32; SAMPLE_FLOATS];
         samples[..16].copy_from_slice(&glam::Mat4::IDENTITY.to_cols_array());
         let far = glam::Mat4::from_scale(glam::Vec3::splat(0.5));
@@ -331,7 +334,10 @@ fn near_clip_plane_hands_excluded_blockers_to_the_last_cascade() {
                 &queue,
                 &pipeline,
                 &samples,
-                &maps.create_view(&wgpu::TextureViewDescriptor::default()),
+                (
+                    &maps.create_view(&wgpu::TextureViewDescriptor::default()),
+                    None,
+                ),
                 [slope, 0.0, 1.0, 0.0],
                 1,
             );

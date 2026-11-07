@@ -1,0 +1,24 @@
+taps1 cooked submission counter
+taps1 80 of 80 valid timestamp rows
+  6.35000 h GPU total 2.851/4.945/4.945 ms far 0.398/0.488/0.488 forward 1.132/1.526/1.526; render CPU 1.102/2.195/2.195 ms
+  12.00000 h GPU total 1.758/3.618/3.618 ms far 0.280/0.362/0.362 forward 0.658/1.061/1.061; render CPU 1.005/1.326/1.326 ms
+  17.55000 h GPU total 2.999/4.944/4.944 ms far 0.377/0.527/0.527 forward 1.181/1.572/1.572; render CPU 1.029/2.358/2.358 ms
+  17.69167 h GPU total 5.096/5.892/5.892 ms far 0.408/0.525/0.525 forward 1.710/2.045/2.045; render CPU 0.994/2.811/2.811 ms
+cells1 cooked submission counter
+cells1 80 of 80 valid timestamp rows
+  6.35000 h GPU total 2.997/4.990/4.990 ms far 0.643/0.693/0.693 forward 1.064/1.576/1.576; render CPU 1.124/2.468/2.468 ms
+  12.00000 h GPU total 1.847/3.824/3.824 ms far 0.430/0.462/0.462 forward 0.629/1.117/1.117; render CPU 1.035/1.161/1.161 ms
+  17.55000 h GPU total 2.975/4.949/4.949 ms far 0.640/0.771/0.771 forward 1.077/1.470/1.470; render CPU 1.112/2.237/2.237 ms
+  17.69167 h GPU total 6.033/7.504/7.504 ms far 0.662/0.821/0.821 forward 2.132/2.687/2.687; render CPU 1.220/1.983/1.983 ms
+cells2 cooked submission counter
+cells2 80 of 80 valid timestamp rows
+  6.35000 h GPU total 3.012/5.055/5.055 ms far 0.679/0.751/0.751 forward 1.061/1.534/1.534; render CPU 1.234/2.322/2.322 ms
+  12.00000 h GPU total 1.827/2.960/2.960 ms far 0.439/0.486/0.486 forward 0.628/0.654/0.654; render CPU 1.001/3.408/3.408 ms
+  17.55000 h GPU total 3.114/5.128/5.128 ms far 0.644/0.801/0.801 forward 1.070/1.594/1.594; render CPU 1.172/2.211/2.211 ms
+  17.69167 h GPU total 6.053/6.949/6.949 ms far 0.651/0.783/0.783 forward 2.082/2.538/2.538; render CPU 1.115/2.089/2.089 ms
+taps2 cooked submission counter
+taps2 80 of 80 valid timestamp rows
+  6.35000 h GPU total 2.865/5.270/5.270 ms far 0.398/0.542/0.542 forward 1.103/1.755/1.755; render CPU 1.042/1.686/1.686 ms
+  12.00000 h GPU total 1.743/3.571/3.571 ms far 0.274/0.325/0.325 forward 0.660/1.035/1.035; render CPU 1.021/1.301/1.301 ms
+  17.55000 h GPU total 3.063/5.400/5.400 ms far 0.392/0.586/0.586 forward 1.183/1.825/1.825; render CPU 1.139/4.826/4.826 ms
+  17.69167 h GPU total 4.923/6.235/6.235 ms far 0.395/0.547/0.547 forward 1.667/2.171/2.171; render CPU 1.107/2.795/2.795 ms

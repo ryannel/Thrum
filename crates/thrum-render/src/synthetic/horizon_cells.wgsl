@@ -6,6 +6,9 @@
 
 const HORIZON_GRID: i32 = 1024;
 const HORIZON_ROOT: u32 = 10u;
+// Below this speed, even the full map reach moves less than 4e-14 cells.
+const HORIZON_STATIONARY_SPEED: f32 = 1e-18;
+const HORIZON_PLANE_TOLERANCE_M: f32 = 0.02;
 
 fn horizon_axis(p: f32, velocity: f32, inverse: f32, reach: f32) -> vec2<f32> {
     if velocity == 0.0 {
@@ -49,8 +52,15 @@ fn horizon_visibility(receiver: ShadowReceiver) -> f32 {
     let clip = m*vec4(receiver.position.x,0.0,receiver.position.z,1.0);
     let azimuth = l.xz/flat;
     let clip_delta = m*vec4(azimuth.x,0.0,azimuth.y,0.0);
-    let origin = vec2(clip.x+1.0,1.0-clip.y)*(0.5*f32(HORIZON_GRID));
-    let velocity = vec2(clip_delta.x,-clip_delta.y)*(0.5*f32(HORIZON_GRID));
+    let receiver_cell = vec2(clip.x+1.0,1.0-clip.y)*(0.5*f32(HORIZON_GRID));
+    let grid_velocity = vec2(clip_delta.x,-clip_delta.y)*(0.5*f32(HORIZON_GRID));
+    let stationary = abs(grid_velocity)<vec2(HORIZON_STATIONARY_SPEED);
+    let velocity = select(grid_velocity,vec2(0.0),stationary);
+    // A negative, almost-cardinal direction entering exactly on a plane
+    // belongs to the lower cell. An exactly stationary axis stays half-open.
+    let lower_cell = stationary & (grid_velocity<vec2(0.0)) &
+        (receiver_cell==floor(receiver_cell));
+    let origin = select(receiver_cell,receiver_cell-vec2(0.5),lower_cell);
     let flip = velocity<vec2(0.0);
     let inverse = 1.0/select(velocity,vec2(1.0),velocity==vec2(0.0));
     let x = horizon_axis(origin.x,velocity.x,inverse.x,reach);
@@ -61,6 +71,15 @@ fn horizon_visibility(receiver: ShadowReceiver) -> f32 {
 
     let scale = 1.0/horizon.x;
     let receiver_depth = fma(horizon.x,receiver.position.y,horizon.y);
+    let normal = cross(receiver.dx,receiver.dy);
+    let has_plane = abs(normal.y)>max(length(normal)*1e-4,1e-20);
+    let gradient = -normal.xz/select(1.0,normal.y,has_plane);
+    let projected_gradient = m*vec4(gradient.x,0.0,gradient.y,0.0);
+    // The snapped map is orthonormal up to scale, so A inverse-transpose
+    // equals A times texel-metres squared for the world-to-cell transform A.
+    let gradient_cells = vec2(projected_gradient.x,-projected_gradient.y)*
+        (0.5*f32(HORIZON_GRID)*horizon.w*horizon.w);
+    let plane_slope = dot(gradient,azimuth);
     var best = lower;
     var cell = clamp(horizon_cell_at(origin,velocity,inverse,start),vec2(0),vec2(HORIZON_GRID-1));
     var level = HORIZON_ROOT;
@@ -87,7 +106,18 @@ fn horizon_visibility(receiver: ShadowReceiver) -> f32 {
                     level -= 1u;
                     continue;
                 }
-                best = bound;
+                var leaf = bound;
+                if has_plane && plane_slope < bound {
+                    let offset = vec2<f32>(index)+vec2(0.5)-receiver_cell;
+                    let residual = abs(rise-dot(gradient_cells,offset));
+                    // A matching sample represents the receiver plane, whose
+                    // slope does not depend on the clipped cell's endpoints.
+                    // A separate caster retains its full conservative height.
+                    let keep_flat = smoothstep(HORIZON_PLANE_TOLERANCE_M,
+                        2.0*HORIZON_PLANE_TOLERANCE_M,residual);
+                    leaf = mix(plane_slope,bound,keep_flat);
+                }
+                best = max(best,leaf);
                 if best >= upper { break; }
             }
         }
