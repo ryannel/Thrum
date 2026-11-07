@@ -118,7 +118,8 @@
       "scope": "M1 of the G3c plan: GPU frustum compaction drawn through one indexed indirect draw, chosen at launch. Shipped occlusion (M3, after the M2 branch experiment), mixed meshes (M3), live toggle and iOS are open.",
       "evidence": [
         "../evidence/render/G3C-CAMERA-CULLING-2026-11-07.md",
-        "../evidence/render/G3C-FIELD-FRUSTUM-2026-11-07.md"
+        "../evidence/render/G3C-FIELD-FRUSTUM-2026-11-07.md",
+        "../evidence/render/G3C-OCCLUSION-EXPERIMENT-2026-11-07.md"
       ]
     },
     "A1_simulation": {
