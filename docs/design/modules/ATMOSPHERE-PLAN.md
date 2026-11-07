@@ -5,7 +5,7 @@ Reviews: Optical design and plan over `a91cdd0e`, final design `f9d0c12a` and pl
 Updated: 2026-11-07
 Milestone: M1 moonless midnight
 Now: the held Metal and Chrome valley is legible at midnight. Metal sky, incident meter and finite aerial transport pass the f64 oracle.
-Next: prove storage across real attachments and frame reuse, then capture the upslope view and continuous night transition.
+Next: isolate the warm reflection contour, then capture a shallower upslope view and live night transition.
 Blocked: none. G3s stays open.
 
 ## M1 The valley remains legible at moonless midnight: in progress
@@ -25,7 +25,8 @@ Work
 - [x] The scratch RG16Float profile matches the dense reference on 59 distinct sky/ground rays, six irradiance rows and three finite paths. Maximum errors are 0.381%, 0.028% and 0.060% respectively. The expanded sweep includes 2 m and 6 m near-tangent rays. These are packed CPU reads.
 - [x] Wire the night channel into sky, diffuse, reflection and finite aerial transport. Connect the per-view exposure sample to all forward colour writers. The GPU meter test reaches −12 EV100 and preserves a low-light arithmetic control.
 - [x] Compare the production Metal sky, incident reduction and finite aerial decoder to the f64 reference. Toggle the source through the existing graph and check that its dependent caches refresh. [Observations](../../evidence/v1-workload/G3S-HANDOFF.md#current-checkpoint).
-- [ ] Verify stored-scale recovery on reused slots and actual scene attachments. Compare held nightglow-off and on scenes, including the specular response.
+- [x] A 1% Lambert-equivalent radiance control survives the actual HDR and SDR attachments on Metal and Chrome. Metal covers dropped encodes, captures and both reused exposure sides. Paused midnight pixels survive real GPU replacement on both targets.
+- [ ] Compare held nightglow-off and on scenes, including the specular response.
 - [ ] Capture and inspect actual valley sequences. Review the raw data and record results.
 
 ## M2 Stars emerge as the observer turns and time advances: pending

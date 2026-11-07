@@ -1,3 +1,5 @@
+mod attachment;
+
 use super::super::*;
 use crate::synthetic::*;
 use std::{sync::mpsc, time::Duration};
@@ -53,6 +55,8 @@ async fn device() -> (wgpu::Device, wgpu::Queue) {
         .request_adapter(&wgpu::RequestAdapterOptions::default())
         .await
         .expect("real adapter for exposure correctness");
+    #[cfg(target_os = "macos")]
+    assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
     adapter
         .request_device(&wgpu::DeviceDescriptor::default())
         .await

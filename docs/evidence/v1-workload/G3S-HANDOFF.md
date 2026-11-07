@@ -88,7 +88,6 @@ The Codex goal remains active. Its attachment is
   open. The integrated workspace check passed 465 tests and the rebuilt Chrome
   valley reproduced the reviewed midnight PNG byte for byte. The new meter's
   lower EV limit is exercised in the GPU arithmetic test.
-  The real 1% Lambert attachment proof and reused-slot test remain open.
 - The production Metal sky sampler agrees with the dense f64 reference to
   0.413% across five rays and both horizon limits at 0, 1.8 and 15 km.
   Horizontal night irradiance differs by at most 0.087%. Toggling the
@@ -96,8 +95,8 @@ The Codex goal remains active. Its attachment is
   The shipping aerial texture and composite agree to 0.014% at 1, 10 and
   30 km, using interpolated depths. The real scene graph rebuilds sky, diffuse,
   aerial and every reflection mip on source changes, then resumes caching.
-  These are Metal tests of the named approximation. Reflection pixels and
-  the scene-attachment proof remain open. Raw rows and checks are in
+  These are Metal tests of the named approximation. Reflection pixel
+  agreement remains open. Raw rows and checks are in
   `tmp/g3s-showcase/night-design/m1-transport/`.
 - Chrome's paused cooked valley was sampled every 0.11 solar hours from
   18.3 to 22.3 h, with a separate +12° midnight view. The foreground sample
@@ -110,12 +109,30 @@ The Codex goal remains active. Its attachment is
   with the built default page. The sampled clip, contact sheet and pixel
   rows are in `m1-transport/chrome-late-front/`. These are held edits.
   Independent review found a thin warm S-shaped contour on the metal ball
-  in `late-03`–`late-11`. Reproject the reflected direction into the forward
-  sky and isolate the LUT from cubemap filtering before changing it. The
+  in `late-03`–`late-11`. In the diagnostic WebGPU build, removing just
+  the GGX convolution removes the S contour while retaining the cube and
+  physical horizon. A separate 1,024-sample convolution largely suppresses
+  the contour while keeping the soft horizon. The 128-sample shipping path
+  stays in use. Compare a lower-cost sampling pattern against the dense
+  result. Both crops, Wasm hashes and the diagnostic shader are under
+  `m1-reflection-isolation/` in night scratch. The
   diffuse rock's lower edge is readable, with weak contrast over the ground.
   At +12° the rock clips the frame. Use a shallower upslope angle with both
   materials visible, then capture it on Metal and Chrome. Record live
   motion separately.
+- The production forward and tone passes store a neutral dim card at
+  0.00013661385 in the HDR attachment and display code 21 on Metal and Chrome.
+  The card emits the analytically known radiance of a 1% Lambert surface
+  under 0.000671 lux. This isolates storage from BRDF and SH approximation.
+  Both exposure sides transition between fixed black and metered output.
+  Metal repeats after dropped encodes and captures. Native diagnostic
+  midnight pixels are byte-identical after GPU replacement. Chrome's cooked
+  valley canvas is byte-identical at midnight after two actual WebGPU device
+  replacements. Repeat via the attachment and V1 recovery Rust tests and
+  `m1-attachment/chrome-night-recovery.mjs` under the night scratch directory.
+  The Chrome attachment oracle uses a scratch Wasm with the production
+  shaders, `browser-control.patch`, and `chrome-dim-control.mjs`.
+  Results and actual Wasm hashes are in `m1-attachment/`.
 - Raw files in `tmp/g3s-showcase/night-design/`: native `night-first/`, Chrome
   `m1-chrome-valley/` and `m1-integrated-chrome/`, the workspace log
   `m1-integrated-dev-check.log`, scalar reference `mixed-2.csv`, and checked profile
