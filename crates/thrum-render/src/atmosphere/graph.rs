@@ -23,7 +23,7 @@ impl AtmospherePrepared {
         keys: &mut BTreeSet<PipelineKey>,
         forward_accesses: &mut Vec<Access>,
         directional: crate::graph::ResourceId,
-    ) -> Result<(), GraphError> {
+    ) -> Result<(crate::graph::ResourceId, crate::graph::ResourceId), GraphError> {
         let uniform = graph.resource(
             ResourceDescriptor::Buffer {
                 bytes: UNIFORM_BYTES,
@@ -198,7 +198,7 @@ impl AtmospherePrepared {
         });
         self.append_reflection(graph, keys, &uniform, &resources[2], forward_accesses)?;
         forward_accesses.push(Access {
-            resource: uniform,
+            resource: uniform.clone(),
             range: 0..UNIFORM_BYTES,
             kind: AccessKind::UniformRead,
             store: true,
@@ -219,7 +219,7 @@ impl AtmospherePrepared {
                 store: true,
             });
         }
-        Ok(())
+        Ok((resources[0].clone(), uniform))
     }
 
     fn append_reflection(

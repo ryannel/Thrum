@@ -39,6 +39,8 @@ pub struct GameSetup {
     pub content: GameContent,
     /// How the camera's opaque draw is culled; Direct draws every instance.
     pub camera_culling: CullMode,
+    /// Prepare the authored valley's star field. Ignored for the flythrough field.
+    pub valley_stars: bool,
 }
 
 impl Default for GameSetup {
@@ -46,6 +48,7 @@ impl Default for GameSetup {
         Self {
             content: GameContent::Grid,
             camera_culling: CullMode::Direct,
+            valley_stars: false,
         }
     }
 }
@@ -349,14 +352,14 @@ impl FrameHost {
         if !capabilities.matches(device) {
             return Err("capability record does not match the host device".to_owned());
         }
-        let scene = GameScene::scene(config.render_extent, setup.content, setup.camera_culling)?;
+        let scene = GameScene::scene(config.render_extent, setup)?;
         let world = WorldPort::Inline(Box::new(WorldDriver::new(setup.content)?));
         let inner = Runtime::new(
             capabilities,
             queue,
             config,
             world,
-            GameScene::new(setup.content),
+            GameScene::new(setup),
             scene,
             1.0 / 16_000.0,
         )

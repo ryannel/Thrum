@@ -1,9 +1,12 @@
 //! V1 fixture, camera and lighting policy for the engine frame runtime.
 
+mod star_catalogue;
+
 use crate::{
     camera::SceneCamera,
     environment::DayCycle,
     field,
+    host::GameSetup,
     scene::{self, GameContent},
     simulation::PublishedPage,
 };
@@ -17,18 +20,15 @@ use thrum_render::{
     extract::{ExtractReport, RenderExtractor, SourceTick},
     runtime::{SceneFrame, SceneSource},
     synthetic::{
-        CullMode, DisplayOverlay, FrameLighting, SdrToneMap, SyntheticPointLight, SyntheticScene,
+        DisplayOverlay, FrameLighting, SdrToneMap, SyntheticPointLight, SyntheticScene,
         SyntheticView,
     },
 };
 
 fn atmosphere_lighting(
-    tick: u64,
-    alpha: f32,
-    phase_offset: f32,
+    sun: crate::environment::SunSample,
     camera_altitude_m: f32,
 ) -> FrameLighting {
-    let sun = DayCycle::sample(tick, alpha, phase_offset);
     let frame = AtmosphereFrame::new(
         sun.toward_sun,
         sun.top_illuminance_lux,
@@ -179,6 +179,7 @@ fn field_scene(extent: [u32; 2]) -> Result<SyntheticScene, String> {
 
 pub(crate) struct GameScene {
     content: GameContent,
+    valley_stars: bool,
     pub(super) day_phase_offset: f32,
     pub(super) camera_pitch: f32,
     pub(super) camera_yaw: f32,
@@ -186,9 +187,10 @@ pub(crate) struct GameScene {
     camera: Option<SceneCamera>,
 }
 impl GameScene {
-    pub(super) fn new(content: GameContent) -> Self {
+    pub(super) fn new(setup: GameSetup) -> Self {
         Self {
-            content,
+            content: setup.content,
+            valley_stars: setup.content == GameContent::Grid && setup.valley_stars,
             day_phase_offset: 0.0,
             camera_pitch: 0.0,
             camera_yaw: 0.0,
@@ -196,16 +198,18 @@ impl GameScene {
             camera: None,
         }
     }
-    pub(super) fn scene(
-        extent: [u32; 2],
-        content: GameContent,
-        camera_culling: CullMode,
-    ) -> Result<SyntheticScene, String> {
-        let mut scene = match content {
-            GameContent::Grid => Self::grid_scene(extent)?,
+    pub(super) fn scene(extent: [u32; 2], setup: GameSetup) -> Result<SyntheticScene, String> {
+        let mut scene = match setup.content {
+            GameContent::Grid => {
+                let mut scene = Self::grid_scene(extent)?;
+                if setup.valley_stars {
+                    scene.star_catalogue = Some(&star_catalogue::HARVARD);
+                }
+                scene
+            }
             GameContent::Field => field_scene(extent)?,
         };
-        scene.camera_culling = camera_culling;
+        scene.camera_culling = setup.camera_culling;
         Ok(scene)
     }
 
@@ -318,9 +322,17 @@ impl SceneSource<PublishedPage> for GameScene {
             } else {
                 2.0
             };
-        let lighting = lighting.unwrap_or_else(|| {
-            atmosphere_lighting(source.tick, alpha, self.day_phase_offset, camera_altitude_m)
-        });
+        let sun = DayCycle::sample(source.tick, alpha, self.day_phase_offset);
+        let lighting = lighting.unwrap_or_else(|| atmosphere_lighting(sun, camera_altitude_m));
+        let view = if self.valley_stars
+            && self.camera.is_some()
+            && matches!(lighting, FrameLighting::Atmosphere(_))
+        {
+            view.with_celestial_basis(sun.equatorial_to_world)
+                .map_err(|error| format!("celestial view: {error:?}"))?
+        } else {
+            view
+        };
         let view = match lighting {
             FrameLighting::Atmosphere(_) => view
                 .with_incident_exposure(0.0, -12.0, 18.0)
@@ -377,6 +389,7 @@ mod tests {
         let [camera_pitch, camera_yaw] = camera.orientation();
         let policy = GameScene {
             content: scene::GameContent::Grid,
+            valley_stars: true,
             day_phase_offset: 0.1,
             camera_pitch,
             camera_yaw,
@@ -421,7 +434,10 @@ mod tests {
                     .all(|(a, b)| (a - b).abs() < 1e-6)
             );
             if extent == [640, 360] {
-                assert_eq!(first.view, frame.view);
+                assert_eq!(
+                    first.view.view_proj_columns(),
+                    frame.view.view_proj_columns()
+                );
             } else {
                 assert_ne!(
                     first.view.view_proj_columns(),
@@ -434,18 +450,14 @@ mod tests {
     #[test]
     fn reflection_subject_keeps_authoritative_material_and_static_history() {
         let mut world = scene::simulation(scene::GameContent::Grid).expect("actual 10k fixture");
-        let mut render = GameScene::scene(
-            [640, 360],
-            scene::GameContent::Grid,
-            thrum_render::synthetic::CullMode::Direct,
-        )
-        .expect("authored lighting subjects");
+        let mut render = GameScene::scene([640, 360], crate::GameSetup::default())
+            .expect("authored lighting subjects");
         let mut extractor = RenderExtractor::new(scene::ENTITY_COUNT, scene::ENTITY_COUNT);
         let handle = world
             .handle(StableId(scene::REFLECTION_SUBJECT_SLOT as u128))
             .expect("authored subject exists");
         let slot = usize::try_from(handle.slot).expect("bounded physical slot");
-        let policy = GameScene::new(scene::GameContent::Grid);
+        let policy = GameScene::new(crate::GameSetup::default());
         let mut changed = Vec::new();
         for _ in 0..2 {
             let page = world.published_page().expect("committed game page");
