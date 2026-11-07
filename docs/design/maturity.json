@@ -4527,7 +4527,7 @@
       "technique": "Maximum-height hierarchy with continuous ray intervals",
       "source": "https://pure.mpg.de/pubman/item/item_1325622_5/component/file_3590464/i3d08.pdf",
       "owner": "thrum-render portable candidate",
-      "status": "CPU and isolated Metal prototypes. Exact CPU leaves agree with the triangle oracle. Unbiased flat 32 m cells reduce worst sampled Metal light leak from 44.14 to 0.183 percentage points. The compute hierarchy and reduction cost more than taps in the isolated probe. Game graph, caster edges, motion and whole-frame cost remain open.",
+      "status": "CPU, isolated Metal and game-graph prototypes. Exact CPU leaves agree with the triangle oracle. Flat cells reduce worst sampled Metal light leak from 44.14 to 0.183 percentage points and halve the worst cooked spur stripe on Metal. The worst paired sunset row costs more than taps. Review found false self-shadow on a tilted plane; the workspace cooked discard image check failed. No runtime promotion.",
       "evidence": "../evidence/v1-workload/G3S-HANDOFF.md"
     }
   ]
