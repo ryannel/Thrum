@@ -15,27 +15,29 @@ off-camera assertion, and independent visual review rejected coarse contact cont
 warm triangular light leaks in solar frames 66–71. Keep the WIP off main until corrected
 checks and visuals pass.
 
-The current correction is captured at `tmp/g3s-showcase/capture-22-penumbra-local/`.
-It corrects depth only within local texel reconstruction. Across the Sun disk, a numeric
-match to the receiver's own plane is exempted, while true upstream depth blocks. The old
-comparison sampler is removed from private layouts. The cone guard is bounded by the
-maximum caster world height when every Sun direction rises, preserving noon near-map
-resolution. At the near horizon the conservative axial guard remains.
+The current candidate is `capture-24-penumbra-nearest` under `tmp/g3s-showcase/`.
+It restores broad receiver-plane correction but uses the nearest accepted blocker and bounds
+the radius so plane extrapolation cannot exceed half that blocker separation. This is a
+conservative approximation at grazing angles. It deliberately underestimates the physical
+penumbra there. Initial native inspection resolves the previous acne/leaks; independent
+review is pending.
 
-The shipping finite-disk GPU oracle passes on two blocker distances and tilted receivers,
-plus an empty grazing map and a narrow central caster. The fixture renders depth, as WebGPU
-forbids queue writes to Depth32Float. The off-camera roof fixture now uses a 32 m roof
-1.4 km upstream, because the finite Sun's footprint there is about 13 m wide. Its prior
-1.6 m roof could not produce the asserted strong umbra. The original darkness assertion
-is retained and the updated scoped test passes. Full validation and visual review of this
-correction remain open. The current full check is session 65044, writing
-`tmp/g3s-showcase/solar-penumbra/revised-dev-check.log`. Build session 8175 refreshes
-the game, benchmark and Wasm artifacts in sequence. Poll those existing handles.
-A later independent source review found that the intended tolerance bytes were unwritten
-and that the blocker search still used the global cone. Both are corrected in the current
-192-byte uniform. It now carries height support for the same search bound used by the fit.
-The CPU upload regression checks those units. Recapture in a new directory after build8175
-and verify against capture22, which predates this final upload/support correction.
+The private 192-byte uniform carries world-height support and the 6 mm/span numerical
+tolerance. The map fit and blocker search use the same conservative height bound when
+every Sun-disk direction rises. Both scoped geometry tests and a full check of the prior
+local-plane candidate passed. That candidate was nevertheless rejected visually for severe
+low-Sun acne in captures 22/23. Do not use a green check as its visual qualification.
+
+The off-camera roof fixture uses a 32 m roof 1.4 km upstream, because the finite Sun's
+footprint there is about 13 m wide. Its prior 1.6 m roof could not produce the asserted
+strong umbra. The original darkness assertion is retained. Rendering depth is required
+for GPU fixtures, as WebGPU forbids queue writes to Depth32Float.
+
+The current full check is session 37906, writing
+`tmp/g3s-showcase/solar-penumbra/conservative-dev-check.log`.
+Build session 20328 refreshes the release benchmark and Wasm artifacts. Poll those handles.
+The latest game capture completed. Refresh Chrome and run ABBA after the full check stops
+using the GPU. The actual code and records are pushed to the WIP branch at each checkpoint.
 
 The shadow-off counterfactual reduced the pixel (640,600) 34→35 jump from 103 to one SDR
 code. A separate raycast through source triangles at receiver (-17.5194,239.9546,15.9897)
