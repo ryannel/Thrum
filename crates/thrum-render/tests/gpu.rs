@@ -405,7 +405,9 @@ fn prepared_scene_pixels_timestamps_and_disabled_path() {
                 65,
                 32,
                 16,
-                reference_pixel(&grazing.materials[0], [1.0, 0.0, -1e-24], light),
+                // The shader lifts a normal within 0.01 of V's tangent plane
+                // onto V's visible side before lighting.
+                reference_pixel(&grazing.materials[0], [1.0, 0.0, -0.01], light),
             );
         }
         // Submit near geometry FIRST; a later far draw must not overwrite it.

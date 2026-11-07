@@ -427,10 +427,15 @@ fn shade(input: VertexOutput, sun_factor: f32, front_facing: bool) -> vec4<f32> 
         fresnel_power = pow(clamp(1.0-dot(v,h),0.0,1.0),5.0);
     }
     // Smooth interpolation can put a shading normal behind V on a geometrically
-    // front-facing triangle. Reflect it across V's tangent plane once, so direct,
-    // local and environment lighting share a valid normal. Preserve real raster
-    // backfaces and the authored normal used above for geometric shadow bias.
-    if front_facing { n -= 2.0*min(dot(n,v),0.0)*v; }
+    // front-facing triangle. Lift it just onto V's visible side, so direct,
+    // local and environment lighting share a valid normal. Reflecting it instead
+    // flips grazing slopes that face the Sun away from a camera looking into it.
+    // Preserve real raster backfaces and the authored normal used above for
+    // geometric shadow bias.
+    if front_facing {
+        let behind = dot(n,v)-0.01;
+        if behind < 0.0 { n = normalize(n-behind*v); }
+    }
     let colour = direct_brdf(surface_base,metalness,roughness,n,
             light.direction_to_light.xyz,v,sun_irradiance(input.world_position)*sun_factor,h,fresnel_power)
         + local_radiance(surface_base,metalness,roughness,n,v,input.world_position,input.position)
