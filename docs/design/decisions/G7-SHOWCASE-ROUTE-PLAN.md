@@ -13,9 +13,11 @@ poses read from artifacts, split M1 boxes, and a baseline that survives a clean 
   findings, all taken (see the log).
 - M2 fixes @ fe9e26d5, same reviewer, brief: the fix list in its follow-up (report
   `tmp/g7-showcase/review/M2-REREVIEW-REPORT.md`, local), accept. Three wording nits, all taken.
+- M3 @ 3672cf62 (proofs on f38166f0), brief `tmp/g7-showcase/review/M3-REVIEW-BRIEF.md` (local), accept with changes,
+  no blocker. Four should-fix findings and six nits, all taken (see the log).
 Milestone: M3 Screen-independent proofs · Updated: 2026-11-07
-Now: M1 and M2 done (on main at 664a4ff0). M3 proofs pass on f38166f0 with evidence written; four of five boxes ticked
-Next: the independent M3 review, then landing (root approved the checker seam at 10ea0392)
+Now: M1 and M2 done (on main at 664a4ff0). M3 done: every box holds, review taken, root approved the checker seam
+Next: nothing in this plan. The on-screen Mac walk and the renderer findings stay with root
 Blocked: none. The on-screen Mac walk waits on screen control (one request denied).
 
 ## M1 Local cooked valley on both targets: done
@@ -79,7 +81,7 @@ Work:
 - [x] Add the baseline save and compare (`check --save-baseline`, automatic compare).
 - [x] Switch the stop frames to the preset-driven path. Recalibrate only if the numbers move. (They did not.)
 
-## M3 Screen-independent proofs: in progress
+## M3 Screen-independent proofs: done
 Commission: root, `tmp/g7-boundary/NOTES.md` "Root commission for the remaining screen-independent G7 proofs". The
 on-screen Mac walk and the renderer findings stay with root.
 
@@ -97,14 +99,15 @@ Done when:
       saved, check-174940 within 0.005)
 - [x] A canonical check in the same session passes against the checked-in baseline, as the control. Both proofs
       name the main revision they ran on. (check-174420 built f38166f0 on main 6459379d, within 0.005)
-- [ ] An independent milestone review agrees; its brief and verdict are on the Reviews line.
+- [x] An independent milestone review agrees; its brief and verdict are on the Reviews line. (accept with changes,
+      all findings taken)
 
 Work:
 - [x] Checker: route-specific startup observation in `qualifyRoute`; exact diff posted to root
       (`tmp/g7-boundary/m3-checker-startup.diff`).
 - [x] Script: `startup` command; `--source` and `--recalibrate` for `check`.
 - [x] Runs and evidence.
-- [ ] Independent review.
+- [x] Independent review.
 
 ## Log
 - 2026-11-07 Plan written with the design.
@@ -185,3 +188,12 @@ Work:
   canonical control (byte-identical frames to M2), five startup launches, the edited-source runs and both refusals,
   and the seam cases. Chrome exited with code 2 in the checker's shared cleanup after `route` and `field-oracle` had
   passed every page; both passed on rerun. `./dev check` passed. Evidence written; review commissioned.
+- 2026-11-07 Independent M3 review: accept with changes, no blocker; every cited number recomputed. Taken:
+  - Runs recorded `origin/main` at run time, which had moved; they now record the merge base as `main_base`, and the
+    evidence names 6459379d.
+  - `--recalibrate` refuses the calibrated root, where it could only loosen the check.
+  - The startup scope no longer claims a bound within one poll. The cold page's warm OS and shader caches, its fixed
+    stop and the observer's overhead are stated.
+  - Nits: the checker's route scope and usage text now name the startup bracket (sent to root as a wording-only
+    delta); the Fetching median names its 27 pages; a refused canonical save leaves no run directory; the sheet names
+    its runs and rows; the parity row says what binds; the cleanup fault is recorded for both cases.
