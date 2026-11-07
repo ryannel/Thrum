@@ -25,7 +25,12 @@ When a cue won't come after a few honest attempts, take the question back to the
 
 A milestone is proven by the game using the module as a game will: the test game's scene, the module's public
 interface only, shipped content and configuration, whichever of its neighbours exist (sky, clouds, water, shadows) running alongside,
-the game's own controls, and real-time capture watched in motion. Anything less is a diagnostic.
+the game's own controls, and capture of the running game watched in motion. Anything less is a diagnostic.
+
+- **Capture without the screen.** Render the running game's frames through the shipped renderer offscreen, at the
+  shipped simulation rate and settings. Encode them at 1×, record each frame's GPU time, and review the clip. This needs
+  no display, window or unlocked session, so it is how motion is watched. Measure presentation (cadence and latency
+  on the real display) separately, in batched owner-present windows. It gates only done-when items about pacing.
 
 - **Render the interaction itself.** The first promised visual checkpoint is a rendered interaction with the required
   cue visible. A solver or geometry inspector is a diagnostic.
