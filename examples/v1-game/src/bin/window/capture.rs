@@ -18,6 +18,13 @@ pub(super) async fn run(output: PathBuf) -> Result<(), String> {
         return Err("capture output must be a new directory".to_owned());
     }
     let motion_frames = motion::requested_frames()?;
+    let route_only = std::env::var_os("THRUM_CAPTURE_ROUTE_ONLY").is_some();
+    let params = std::env::var_os("THRUM_CAPTURE_PARAMS");
+    if route_only && (params.is_none() || motion_frames.is_some()) {
+        return Err(
+            "route-only capture needs THRUM_CAPTURE_PARAMS and no motion capture".to_owned(),
+        );
+    }
     let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
     let adapter = instance
         .request_adapter(&wgpu::RequestAdapterOptions {
@@ -83,6 +90,31 @@ pub(super) async fn run(output: PathBuf) -> Result<(), String> {
             cooked_generation,
         );
     }
+    let mut manifest = serde_json::json!({
+        "scope":"Same V1 FrameHost, frozen authority, real GPU offscreen readback. No live presentation, timing or physical-device qualification.",
+        "adapter": capabilities.adapter().name,
+        "extent":EXTENT,
+        "scene":std::env::var("THRUM_SCENE").unwrap_or_else(|_| "diagnostic".to_owned()),
+    });
+    if !route_only {
+        capture_diagnostics(&mut host, &output, &mut manifest)?;
+    }
+    if let Some(params) = params {
+        manifest["route"] = serde_json::Value::Array(route(&mut host, &output, &params)?);
+    }
+    manifest["world_tick"] = serde_json::json!(host.tick());
+    std::fs::write(
+        output.join("captures.json"),
+        serde_json::to_vec_pretty(&manifest).map_err(|error| error.to_string())?,
+    )
+    .map_err(|error| error.to_string())
+}
+
+fn capture_diagnostics(
+    host: &mut FrameHost,
+    output: &Path,
+    manifest: &mut serde_json::Value,
+) -> Result<(), String> {
     let mut records = Vec::new();
     for (name, hours, yaw, pitch) in [
         ("dawn", 5.52, 0.0_f32, 0.0_f32),
@@ -101,7 +133,7 @@ pub(super) async fn run(output: PathBuf) -> Result<(), String> {
         host.set_camera_pitch(pitch.to_radians())?;
         host.set_time_of_day(hours / 24.0)?;
         let file = format!("{name}.ppm");
-        save(&mut host, &output.join(&file))?;
+        save(host, &output.join(&file))?;
         records.push(
             serde_json::json!({"file":file,"hours":hours,"yaw_degrees":yaw,"pitch_degrees":pitch}),
         );
@@ -113,7 +145,7 @@ pub(super) async fn run(output: PathBuf) -> Result<(), String> {
         let yaw = (f32::from(index) / 23.0 - 0.5) * 0.2;
         host.set_time_of_day(hours / 24.0)?;
         host.set_camera_yaw(yaw)?;
-        save(&mut host, &sequence.join(format!("{index:02}.ppm")))?;
+        save(host, &sequence.join(format!("{index:02}.ppm")))?;
         records.push(serde_json::json!({"sequence_index":index,"hours":hours,"yaw_radians":yaw}));
     }
     let solar_sequence = output.join("solar-sequence");
@@ -125,7 +157,7 @@ pub(super) async fn run(output: PathBuf) -> Result<(), String> {
         let hours = 17.4 + 0.8 * f32::from(index) / 96.0;
         host.set_time_of_day(hours / 24.0)?;
         let file = format!("{index:02}.ppm");
-        save(&mut host, &solar_sequence.join(&file))?;
+        save(host, &solar_sequence.join(&file))?;
         solar_records.push(serde_json::json!({
             "file":file, "hours":hours, "yaw_degrees":-90.0, "pitch_degrees":0.0,
         }));
@@ -136,26 +168,9 @@ pub(super) async fn run(output: PathBuf) -> Result<(), String> {
         )
         .map_err(|error| error.to_string())?;
     }
-    let live_records = live_sequence(&mut host, &output)?;
-    let route_records = route(&mut host, &output)?;
-    let mut manifest = serde_json::json!({
-        "scope":"Same V1 FrameHost, frozen authority, real GPU offscreen readback. No live presentation, timing or physical-device qualification.",
-        "adapter": capabilities.adapter().name,
-        "extent":EXTENT,
-        "world_tick":host.tick(),
-        "scene":std::env::var("THRUM_SCENE").unwrap_or_else(|_| "diagnostic".to_owned()),
-        "captures":records,
-        "solar_sequence":solar_records,
-        "live_sequence":live_records,
-    });
-    if let Some(records) = route_records {
-        manifest["route"] = serde_json::Value::Array(records);
-    }
-    std::fs::write(
-        output.join("captures.json"),
-        serde_json::to_vec_pretty(&manifest).map_err(|error| error.to_string())?,
-    )
-    .map_err(|error| error.to_string())?;
+    manifest["captures"] = serde_json::Value::Array(records);
+    manifest["solar_sequence"] = serde_json::Value::Array(solar_records);
+    manifest["live_sequence"] = serde_json::Value::Array(live_sequence(host, output)?);
     Ok(())
 }
 
@@ -200,11 +215,12 @@ fn live_sequence(host: &mut FrameHost, output: &Path) -> Result<Vec<serde_json::
 /// browser page use, on top of the controls' defaults, so every stop is independent of
 /// the one before. Each must pause the world, because capture never runs it. An
 /// unreadable file, a refused entry or a running-world request fails the capture.
-fn route(host: &mut FrameHost, output: &Path) -> Result<Option<Vec<serde_json::Value>>, String> {
-    let Some(list) = std::env::var_os("THRUM_CAPTURE_PARAMS") else {
-        return Ok(None);
-    };
-    let files: Vec<PathBuf> = std::env::split_paths(&list).collect();
+fn route(
+    host: &mut FrameHost,
+    output: &Path,
+    params: &std::ffi::OsStr,
+) -> Result<Vec<serde_json::Value>, String> {
+    let files: Vec<PathBuf> = std::env::split_paths(params).collect();
     if files.iter().any(|file| file.as_os_str().is_empty()) {
         return Err("THRUM_CAPTURE_PARAMS needs one or more parameter file paths".to_owned());
     }
@@ -262,7 +278,7 @@ fn route(host: &mut FrameHost, output: &Path) -> Result<Option<Vec<serde_json::V
         }));
     }
     host.set_display_overlay(DisplayOverlay::Off);
-    Ok(Some(records))
+    Ok(records)
 }
 
 fn save(host: &mut FrameHost, path: &Path) -> Result<(), String> {
