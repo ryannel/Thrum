@@ -30,7 +30,8 @@ const LUT_SHADER: &str = concat!(
     "\n",
     include_str!("ground.wgsl")
 );
-const UNIFORM_BYTES: u64 = 128;
+const UNIFORM_LEN: usize = 128;
+pub(super) const UNIFORM_BYTES: u64 = UNIFORM_LEN as u64;
 const TRANSPORT_VALID: u8 = 1;
 const SKY_VALID: u8 = 2;
 const DIFFUSE_VALID: u8 = 4;
@@ -209,7 +210,7 @@ impl AtmospherePrepared {
             self.validity &= !DIFFUSE_VALID;
             self.diffuse_dependencies = diffuse_dependencies;
         }
-        let mut bytes = [0_u8; 128];
+        let mut bytes = [0_u8; UNIFORM_LEN];
         let aux = view.pack_aux(extent[0], extent[1]);
         bytes[..64].copy_from_slice(&aux[..64]);
         let packed_view = view.pack_view(view, 1.0);

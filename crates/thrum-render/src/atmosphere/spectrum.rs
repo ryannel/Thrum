@@ -8,15 +8,17 @@ use std::fmt::Write;
 use glam::Vec3;
 
 pub(super) const LUMA: Vec3 = Vec3::new(0.2126, 0.7152, 0.0722);
-pub(super) const MIE_EXTINCTION: f32 = 4.4e-6;
-
 pub(super) struct Profile {
     pub(super) rayleigh: [f32; 8],
     pub(super) ozone: [f32; 8],
     pub(super) rgb: [[f32; 8]; 3],
+    pub(super) mie_extinction: f32,
+    pub(super) mie_scattering: f32,
 }
 
 pub(super) const EARTH: Profile = Profile {
+    mie_extinction: 4.4e-6,
+    mie_scattering: 3.996e-6,
     // 428.84, 450.21, 471.18, 514.23, 550.21, 574.75, 597.70, 630.96 nm.
     rayleigh: [
         3.668_017e-5,
@@ -105,7 +107,7 @@ impl Profile {
                 .expect("formatting into String cannot fail");
         }
         let [r, g, b] = LUMA.to_array();
-        writeln!(source, "const SPECTRUM_LUMA = vec3<f32>({r},{g},{b});\nconst MIE_EXTINCTION = {MIE_EXTINCTION:e};")
+        writeln!(source, "const SPECTRUM_LUMA = vec3<f32>({r},{g},{b});\nconst MIE_EXTINCTION = {:e};\nconst MIE_SCATTERING = {:e};", self.mie_extinction, self.mie_scattering)
             .expect("formatting into String cannot fail");
         source.push_str(body);
         source

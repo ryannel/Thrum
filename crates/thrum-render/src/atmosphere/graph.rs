@@ -7,7 +7,7 @@ use crate::graph::{
 
 use super::{
     STAGE_NAMES,
-    gpu::{AERIAL_EXTENT, AtmospherePrepared},
+    gpu::{AERIAL_EXTENT, AtmospherePrepared, UNIFORM_BYTES},
     reflection::{CUBE_SIZE, DFG_SIZE, MIP_COUNT, SAMPLE_BYTES},
 };
 
@@ -26,7 +26,7 @@ impl AtmospherePrepared {
     ) -> Result<(), GraphError> {
         let uniform = graph.resource(
             ResourceDescriptor::Buffer {
-                bytes: 128,
+                bytes: UNIFORM_BYTES,
                 usage: wgpu::BufferUsages::UNIFORM,
             },
             ResourceScope::Imported { initialized: true },
@@ -59,7 +59,7 @@ impl AtmospherePrepared {
         for index in [0_usize, 1, 3, 2] {
             let mut accesses = vec![Access {
                 resource: uniform.clone(),
-                range: 0..128,
+                range: 0..UNIFORM_BYTES,
                 kind: AccessKind::UniformRead,
                 store: true,
             }];
@@ -107,7 +107,7 @@ impl AtmospherePrepared {
             accesses: vec![
                 Access {
                     resource: uniform.clone(),
-                    range: 0..128,
+                    range: 0..UNIFORM_BYTES,
                     kind: AccessKind::UniformRead,
                     store: true,
                 },
@@ -158,7 +158,7 @@ impl AtmospherePrepared {
             accesses: [
                 Access {
                     resource: uniform.clone(),
-                    range: 0..128,
+                    range: 0..UNIFORM_BYTES,
                     kind: AccessKind::UniformRead,
                     store: true,
                 },
@@ -193,7 +193,7 @@ impl AtmospherePrepared {
         self.append_reflection(graph, keys, &uniform, &resources[2], forward_accesses)?;
         forward_accesses.push(Access {
             resource: uniform,
-            range: 0..128,
+            range: 0..UNIFORM_BYTES,
             kind: AccessKind::UniformRead,
             store: true,
         });
@@ -300,7 +300,7 @@ impl AtmospherePrepared {
                     },
                     Access {
                         resource: uniform.clone(),
-                        range: 0..128,
+                        range: 0..UNIFORM_BYTES,
                         kind: AccessKind::UniformRead,
                         store: true,
                     },
