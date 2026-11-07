@@ -1,5 +1,6 @@
 // Camera frustum compaction into one indexed indirect draw per bucket.
-// Three ordered dispatches: per-workgroup counts, one-workgroup scan, scatter.
+// Three ordered dispatches: per-workgroup counts and slot masks, one-workgroup
+// scan, and a scatter that reads only the masks (instances are tested once).
 // The visible list preserves instance order, so draw order and depth ties
 // match the direct draw. The test uses the same jittered view_proj and the
 // same interpolated translation as the forward vertex shader.
@@ -43,6 +44,7 @@ struct Params {
 }
 
 const WORKGROUP: u32 = 256u;
+const WORDS: u32 = WORKGROUP / 32u;
 
 @group(0) @binding(0) var<uniform> view: ViewRecord;
 @group(0) @binding(1) var<storage, read> instances: array<InstanceRecord>;
@@ -52,6 +54,7 @@ const WORKGROUP: u32 = 256u;
 @group(0) @binding(5) var<storage, read_write> group_offsets: array<u32>;
 @group(0) @binding(6) var<storage, read_write> visible: array<u32>;
 @group(0) @binding(7) var<storage, read_write> args: array<u32>;
+@group(0) @binding(8) var<storage, read_write> masks: array<u32>;
 
 var<workgroup> scan: array<u32, WORKGROUP>;
 
@@ -72,15 +75,16 @@ fn in_view(slot: u32) -> bool {
     if slot >= params.active_count {
         return false;
     }
-    let instance = instances[slot];
-    if instance.ids.w == 0u {
+    // Field loads, not a whole-record copy: this pass is bandwidth bound.
+    if instances[slot].ids.w == 0u {
         return false;
     }
     let mesh = meshes[params.mesh];
     let local_center = (mesh.bounds_min.xyz + mesh.bounds_max.xyz) * 0.5;
     let local_extent = (mesh.bounds_max.xyz - mesh.bounds_min.xyz) * 0.5;
-    let basis = mat3x3(instance.current[0].xyz, instance.current[1].xyz, instance.current[2].xyz);
-    let translation = mix(instance.previous[3].xyz, instance.current[3].xyz,
+    let basis = mat3x3(instances[slot].current[0].xyz, instances[slot].current[1].xyz,
+        instances[slot].current[2].xyz);
+    let translation = mix(instances[slot].previous[3].xyz, instances[slot].current[3].xyz,
         serials.presentation_alpha);
     let center = basis * local_center + translation;
     let extent = abs(basis[0]) * local_extent.x + abs(basis[1]) * local_extent.y
@@ -117,6 +121,21 @@ fn count(@builtin(global_invocation_id) global: vec3<u32>,
     if local.x == WORKGROUP - 1u {
         group_offsets[group.x] = scan[local.x];
     }
+    // Recover each slot's flag from the inclusive scan and pack 32 per word.
+    if local.x < WORDS {
+        let base = local.x * 32u;
+        var before = 0u;
+        if base > 0u {
+            before = scan[base - 1u];
+        }
+        var word = 0u;
+        for (var bit = 0u; bit < 32u; bit = bit + 1u) {
+            let at = scan[base + bit];
+            word = word | ((at - before) << bit);
+            before = at;
+        }
+        masks[group.x * WORDS + local.x] = word;
+    }
 }
 
 // One workgroup turns per-group counts into exclusive offsets and writes the
@@ -152,10 +171,16 @@ fn offsets(@builtin(local_invocation_id) local: vec3<u32>) {
 fn scatter(@builtin(global_invocation_id) global: vec3<u32>,
            @builtin(local_invocation_id) local: vec3<u32>,
            @builtin(workgroup_id) group: vec3<u32>) {
-    let keep = in_view(global.x);
-    scan[local.x] = select(0u, 1u, keep);
-    scan_workgroup(local.x);
-    if keep {
-        visible[group_offsets[group.x] + scan[local.x] - 1u] = global.x;
+    let first = group.x * WORDS;
+    let word_index = local.x / 32u;
+    let lane = local.x % 32u;
+    let word = masks[first + word_index];
+    if ((word >> lane) & 1u) == 0u {
+        return;
     }
+    var position = group_offsets[group.x] + countOneBits(word & ((1u << lane) - 1u));
+    for (var index = 0u; index < word_index; index = index + 1u) {
+        position = position + countOneBits(masks[first + index]);
+    }
+    visible[position] = global.x;
 }

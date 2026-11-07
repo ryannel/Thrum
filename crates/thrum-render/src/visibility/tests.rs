@@ -368,7 +368,8 @@ fn partial_workgroups_and_shrinking_active_prefix() {
     let mut fixture = Fixture::new(1_000);
     let mut random = Lcg(3);
     let camera = perspective(Vec3::new(0.0, 0.0, 60.0), Vec3::ZERO, 1.0);
-    for count in [1, 255, 256, 257, 999, 1_000, 3] {
+    // Zero active rows still runs the offsets dispatch and writes zero instances.
+    for count in [1, 255, 256, 257, 999, 1_000, 0, 3] {
         let instances = scatter(&mut random, count, 40.0);
         let visible = fixture.run(camera, &instances, 1.0);
         check(camera, &instances, 1.0, &visible);
