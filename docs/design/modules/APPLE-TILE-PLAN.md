@@ -18,6 +18,9 @@ Reviews:
 - G4 pair re-review @ `c507ad3d` (interfaces only here): approve with changes; see the G4 plan.
 - Composed-frame re-review @ `c507ad3d`: approve with changes; its findings fall on G4 M4 and are answered in the G4
   plan's revision 3.
+- Composed frame, exact-revision recheck @ `9938b0d0` (Opus 5.5 medium), brief `tmp/g3t-g4-plans/reviews/composed-frame.md`,
+  report `tmp/g3t-g4-plans/reviews/composed-frame-report.md` ("Revision 4 recheck"): approve with changes (one leftover
+  always-submitted rule, three small gaps). All applied in revision 4a.
 
 Milestone: none started (plan awaiting re-review and seam rulings) · Updated: 2026-11-07
 Now: revision 4 answers Thrum Core's review of revision 3 (since 2026-11-07).
@@ -446,3 +449,5 @@ That is **15.5 build days**, plus 1–2 days of review and seam turnaround, for 
     stateful native segment, behind seam 3;
   - archives are put to the owner as (a) against (b), with no V1 exit wording change;
   - the atmosphere checkpoint is `d2a5342`, for interface reads.
+- 2026-11-07 Revision 4a applies the composed-frame recheck of `9938b0d0`: the lifetime guarantee is generation
+  ownership, not wgpu-hal's retained-references default, and N's completed handler raises device loss.
