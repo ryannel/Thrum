@@ -451,6 +451,11 @@ physical RGB lux, with Rec.709 luminance weights. Sky irradiance already include
 One GPU resolve after diffuse lighting computes `EV100=clamp(log2(max(E_lux,E_floor)*100/250)-compensation,minEV,maxEV)`
 and `e=2^(-EV100)/1.2`; the game initially authors compensation 0 and EV bounds 0–18.
 `E_floor=2.5*2^(minEV+compensation)` reaches the lower EV bound without adding illumination; recorded lux stays unfloored.
+The current solar-only renderer uses the fixed scale and initial EV range above.
+The reviewed [night design](modules/ATMOSPHERE.md) selects the outdoor scene's
+−12 to +18 EV100 interval, the low-light key on actual lux before final EV
+clamp, and a shared resolved scale read by the forward and display passes.
+M1 changes the producer, all writers and evidence together.
 This flat-receptor calibration follows [Filament's camera model](https://google.github.io/filament/main/filament.html#imagingpipeline/physicallybasedcamera)
 and [illuminance conversion](https://github.com/google/filament/blob/main/filament/src/Exposure.cpp); no implementation is copied.
 The separate GPU sample carries `p`, inverse gain, actual unfloored lux, EV, flags and submitted identity. Fixed mode

@@ -785,7 +785,7 @@
       "initial_specifications": {
         "BASELINE-SPEC.md": "8710e74f47e18788951fd1118883fbdf28d32510f336fb0b9cf3a279d4e5509b",
         "FOUNDATION-SPEC.md": "9293b1eb3beb690d96f88d5fcb8260fc42a1d21c2688fbe515a05e8f3027c1e0",
-        "RENDER-SPEC.md": "6a5e2fe9c68acf533eb9a3daa8877b6ca469e71d7cd2a25df42352fc149b1317"
+        "RENDER-SPEC.md": "ad9b27bc03cd6937d85e8021f3871c61c09086bc8305bba05752e472ae7d2086"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Exact explicit-setup/type registration and requirement validation, finite target/tier shader closure, keyed model bindings, supported presentation transitions and cost model; no general provider search by default."
@@ -1377,7 +1377,7 @@
       },
       "initial_specifications": {
         "FOUNDATION-SPEC.md": "9293b1eb3beb690d96f88d5fcb8260fc42a1d21c2688fbe515a05e8f3027c1e0",
-        "RENDER-SPEC.md": "6a5e2fe9c68acf533eb9a3daa8877b6ca469e71d7cd2a25df42352fc149b1317"
+        "RENDER-SPEC.md": "ad9b27bc03cd6937d85e8021f3871c61c09086bc8305bba05752e472ae7d2086"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Cook formats, target products, crash-recovery and quota adapter details.",
@@ -2099,7 +2099,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "RENDER-SPEC.md": "6a5e2fe9c68acf533eb9a3daa8877b6ca469e71d7cd2a25df42352fc149b1317"
+        "RENDER-SPEC.md": "ad9b27bc03cd6937d85e8021f3871c61c09086bc8305bba05752e472ae7d2086"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Pass/resource graph allocation, shader build and backend feature mapping."
@@ -2142,7 +2142,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "RENDER-SPEC.md": "6a5e2fe9c68acf533eb9a3daa8877b6ca469e71d7cd2a25df42352fc149b1317"
+        "RENDER-SPEC.md": "ad9b27bc03cd6937d85e8021f3871c61c09086bc8305bba05752e472ae7d2086"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Draw/instance layouts, projected bounds/LOD error and CPU/GPU culling details."
@@ -2195,7 +2195,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "RENDER-SPEC.md": "6a5e2fe9c68acf533eb9a3daa8877b6ca469e71d7cd2a25df42352fc149b1317"
+        "RENDER-SPEC.md": "ad9b27bc03cd6937d85e8021f3871c61c09086bc8305bba05752e472ae7d2086"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Material closure/layering, clustered bins, shadow/probe update and transparency transport."
@@ -2238,7 +2238,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "RENDER-SPEC.md": "6a5e2fe9c68acf533eb9a3daa8877b6ca469e71d7cd2a25df42352fc149b1317"
+        "RENDER-SPEC.md": "ad9b27bc03cd6937d85e8021f3871c61c09086bc8305bba05752e472ae7d2086"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Spatial AA/display transform baseline; temporal input/validity and provider-specific filters."
@@ -2331,7 +2331,7 @@
       },
       "initial_specifications": {
         "PLAY-ENVIRONMENT-SPEC.md": "e2dce8e340fd1825a6ecf4c063cb26791abb7d121fa33b22cf45aac6de28bf94",
-        "RENDER-SPEC.md": "6a5e2fe9c68acf533eb9a3daa8877b6ca469e71d7cd2a25df42352fc149b1317"
+        "RENDER-SPEC.md": "ad9b27bc03cd6937d85e8021f3871c61c09086bc8305bba05752e472ae7d2086"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Provider schemas and shared field/force/transport couplings before dependent implementation.",
@@ -2409,7 +2409,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "RENDER-SPEC.md": "6a5e2fe9c68acf533eb9a3daa8877b6ca469e71d7cd2a25df42352fc149b1317"
+        "RENDER-SPEC.md": "ad9b27bc03cd6937d85e8021f3871c61c09086bc8305bba05752e472ae7d2086"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Scattering closure/LUT parameterization, source lighting and bounded ray segments."
@@ -2452,7 +2452,7 @@
         "current_review": "SIMPLIFICATION-REVIEW.md"
       },
       "initial_specifications": {
-        "RENDER-SPEC.md": "6a5e2fe9c68acf533eb9a3daa8877b6ca469e71d7cd2a25df42352fc149b1317"
+        "RENDER-SPEC.md": "ad9b27bc03cd6937d85e8021f3871c61c09086bc8305bba05752e472ae7d2086"
       },
       "initial_specification_stage": "specified_for_admitted_scope",
       "prior_remaining_detailed_design": "Source representation, optical depth projections, lighting/visibility coherence and scaling.",
@@ -3757,7 +3757,7 @@
     "specifications": {
       "BASELINE-SPEC.md": "8710e74f47e18788951fd1118883fbdf28d32510f336fb0b9cf3a279d4e5509b",
       "FOUNDATION-SPEC.md": "9293b1eb3beb690d96f88d5fcb8260fc42a1d21c2688fbe515a05e8f3027c1e0",
-      "RENDER-SPEC.md": "6a5e2fe9c68acf533eb9a3daa8877b6ca469e71d7cd2a25df42352fc149b1317",
+      "RENDER-SPEC.md": "ad9b27bc03cd6937d85e8021f3871c61c09086bc8305bba05752e472ae7d2086",
       "PLAY-ENVIRONMENT-SPEC.md": "e2dce8e340fd1825a6ecf4c063cb26791abb7d121fa33b22cf45aac6de28bf94",
       "NETWORK-SPEC.md": "3f550e1799e13448fe18dc6df917d7fee2b29ccf2f7feab6bef8d7cb23e3935f"
     },
@@ -4150,7 +4150,7 @@
       "PLAN-REVIEW.md": "b5db8c9779185cda35b0f27349a14676bc0dc3c8b0a8a1fe4a3252b25728ddce",
       "PLAY-ENVIRONMENT-SPEC.md": "e2dce8e340fd1825a6ecf4c063cb26791abb7d121fa33b22cf45aac6de28bf94",
       "README.md": "fdb4dd47fc04da0fe7bbcdae4e76c173131d4624a301f0a85dbcf6cfd85d52b1",
-      "RENDER-SPEC.md": "6a5e2fe9c68acf533eb9a3daa8877b6ca469e71d7cd2a25df42352fc149b1317",
+      "RENDER-SPEC.md": "ad9b27bc03cd6937d85e8021f3871c61c09086bc8305bba05752e472ae7d2086",
       "SCENARIO-WALKTHROUGHS.md": "50ff7acd4100a8742ea6682f3f08e64e2ad9862ce3e2fbff78bf69e37046daff",
       "SIMPLIFICATION-REVIEW.md": "4077358422c06ab2426742834168c0bd419809ad59268d0da765c5ba0ed29c3e",
       "SKILL-FORWARD-REVIEW.md": "63b02385a26c07a826cbbd050fc11480f512b18d692b6f395fd82d39219a76ce",
