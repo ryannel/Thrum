@@ -11,7 +11,11 @@ use std::time::Duration;
 use std::time::Instant;
 #[cfg(not(target_arch = "wasm32"))]
 use thrum_content_runtime::EnvironmentProduct;
-use thrum_render::{capabilities::DeviceCapabilities, runtime, synthetic::CullMode};
+use thrum_render::{
+    capabilities::DeviceCapabilities,
+    runtime,
+    synthetic::{CullMode, DisplayOverlay},
+};
 
 mod scene_source;
 mod world;
@@ -188,6 +192,11 @@ impl ThreadedFrameHost {
     /// Refuses a nonfinite yaw or one outside ±π radians.
     pub fn set_camera_yaw(&mut self, radians: f32) -> Result<(), String> {
         self.inner.set_camera_yaw(radians)
+    }
+
+    /// Draw a display diagnostic, such as exposure zones, in place of the tone-mapped scene.
+    pub fn set_display_overlay(&mut self, overlay: DisplayOverlay) {
+        self.inner.set_display_overlay(overlay);
     }
 
     /// Render the latest immutable world publication.
@@ -399,6 +408,11 @@ impl FrameHost {
     /// Refuses a nonfinite yaw or one outside ±π radians.
     pub fn set_camera_yaw(&mut self, radians: f32) -> Result<(), String> {
         set_camera_yaw(&mut self.inner, radians)
+    }
+
+    /// Draw a display diagnostic, such as exposure zones, in place of the tone-mapped scene.
+    pub fn set_display_overlay(&mut self, overlay: DisplayOverlay) {
+        set_display_overlay(&mut self.inner, overlay);
     }
     /// Inspect whether a native scene view can use a free engine slot.
     #[cfg(not(target_arch = "wasm32"))]
@@ -643,6 +657,11 @@ pub(crate) fn set_camera_yaw(runtime: &mut Runtime, radians: f32) -> Result<(), 
         runtime.invalidate_history();
     }
     Ok(())
+}
+
+/// Select the display diagnostic. It replaces only the display encode, so history stays valid.
+pub(crate) fn set_display_overlay(runtime: &mut Runtime, overlay: DisplayOverlay) {
+    runtime.source_mut().display_overlay = overlay;
 }
 
 #[cfg(test)]

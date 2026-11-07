@@ -43,10 +43,37 @@ fn reinhard(stored: vec3<f32>) -> vec3<f32> {
     // A black scene has zero denominator only when a subnormal reciprocal flushes.
     return scaled/max(denominator,1e-30);
 }
+// Exposed luminance of an 18% Lambertian card lit at the metered illuminance with zero
+// compensation: 0.18 / (pi * 1.2 * 0.4), from the incident meter's C=250 and e=1/(1.2*2^EV100).
+const ZONE_REFERENCE: f32 = 0.119366207;
+// One-stop false-colour bands from -6 (and darker) to +6 (and brighter), as exact display
+// codes: purple and blue below, grey at the reference, yellow, red and pink above, white at +6.
+fn exposure_zone(stored: vec3<f32>, storage_inverse_gain: f32) -> vec3<f32> {
+    var palette = array<vec3<f32>, 13>(
+        vec3(20.0, 0.0, 40.0), vec3(90.0, 20.0, 140.0), vec3(40.0, 60.0, 200.0),
+        vec3(20.0, 140.0, 230.0), vec3(20.0, 190.0, 180.0), vec3(90.0, 170.0, 90.0),
+        vec3(128.0, 128.0, 128.0),
+        vec3(190.0, 220.0, 70.0), vec3(250.0, 220.0, 40.0), vec3(250.0, 140.0, 20.0),
+        vec3(230.0, 40.0, 30.0), vec3(250.0, 110.0, 200.0), vec3(255.0, 255.0, 255.0),
+    );
+    let luminance = dot(stored, vec3(0.2126, 0.7152, 0.0722));
+    var zone = 0;
+    if luminance > 0.0 {
+        // Two divisions keep a tiny gain from underflowing a product; overflow saturates.
+        let stops = log2(luminance / storage_inverse_gain / ZONE_REFERENCE);
+        zone = i32(clamp(round(stops), -6.0, 6.0)) + 6;
+    }
+    return palette[zone] / 255.0;
+}
 @fragment fn fragment(@builtin(position) position: vec4<f32>) -> @location(0) vec4<f32> {
     let stored = textureLoad(scene,vec2<i32>(position.xy),0).rgb;
+    let selectors = exposure.metadata.w;
+    // The overlay reads the exposed scene before any tone scale and is written undithered.
+    if (selectors >> 8u) == 1u {
+        return vec4(exposure_zone(stored, exposure.values.x * exposure.values.y), 1.0);
+    }
     var mapped: vec3<f32>;
-    if exposure.metadata.w == 1u {
+    if (selectors & 0xffu) == 1u {
         mapped = neutral_highlights(stored, exposure.values.x * exposure.values.y);
     } else {
         mapped = reinhard(stored);

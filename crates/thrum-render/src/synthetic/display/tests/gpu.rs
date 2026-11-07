@@ -234,3 +234,130 @@ fn gpu_sdr_ramps_match_f64_and_legacy_pixels_across_checked_gain_range() {
         assert!(scope.pop().await.is_none());
     });
 }
+
+/// The display codes the shader writes for bands -6 to +6.
+const ZONE_CODES: [[u8; 3]; 13] = [
+    [20, 0, 40],
+    [90, 20, 140],
+    [40, 60, 200],
+    [20, 140, 230],
+    [20, 190, 180],
+    [90, 170, 90],
+    [128, 128, 128],
+    [190, 220, 70],
+    [250, 220, 40],
+    [250, 140, 20],
+    [230, 40, 30],
+    [250, 110, 200],
+    [255, 255, 255],
+];
+
+#[test]
+fn gpu_exposure_zones_band_exposed_luminance_for_every_tone_map_and_gain() {
+    pollster::block_on(async {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let adapter = instance
+            .request_adapter(&wgpu::RequestAdapterOptions::default())
+            .await
+            .unwrap();
+        let (device, queue) = adapter
+            .request_device(&wgpu::DeviceDescriptor::default())
+            .await
+            .unwrap();
+        let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
+        let reference = 0.18 / (std::f64::consts::PI * 1.2 * 0.4);
+        // Exposed luminance in stops from the reference, each 0.3 stop inside a band, plus
+        // black and values beyond both ends. Colour must not matter, only luminance.
+        let mut stops = vec![None];
+        for band in -8_i32..=8 {
+            for offset in [-0.3, 0.0, 0.3] {
+                stops.push(Some(f64::from(band) + offset));
+            }
+        }
+        let tints = [[1.0, 1.0, 1.0], [2.0, 0.5, 0.25]];
+        let display = DisplayPrepared::new(&device);
+        for inverse in [1.0_f32 / 16_000.0, 1.0, 2_500.0] {
+            let gain = f64::from(PRE_EXPOSURE) * f64::from(inverse);
+            let mut texels = Vec::new();
+            let mut expected = Vec::new();
+            for stop in &stops {
+                for tint in tints {
+                    let luminance = stop.map_or(0.0, |stop| reference * 2.0_f64.powf(stop) * gain);
+                    let weight = 0.2126 * tint[0] + 0.7152 * tint[1] + 0.0722 * tint[2];
+                    #[expect(
+                        clippy::cast_possible_truncation,
+                        reason = "test texels are stored at the f32 precision the shader loads"
+                    )]
+                    texels.push(tint.map(|channel| (channel * luminance / weight) as f32));
+                    #[expect(
+                        clippy::cast_possible_truncation,
+                        clippy::cast_sign_loss,
+                        reason = "the rounded band is clamped into the 13-entry palette"
+                    )]
+                    let band =
+                        stop.map_or(0, |stop| (stop.round().clamp(-6.0, 6.0) + 6.0) as usize);
+                    expected.push(ZONE_CODES[band]);
+                }
+            }
+            let width = u32::try_from(texels.len()).unwrap();
+            let texture = device.create_texture(&wgpu::TextureDescriptor {
+                label: Some("exposed luminance bands"),
+                size: wgpu::Extent3d {
+                    width,
+                    height: 1,
+                    depth_or_array_layers: 1,
+                },
+                mip_level_count: 1,
+                sample_count: 1,
+                dimension: wgpu::TextureDimension::D2,
+                format: wgpu::TextureFormat::Rgba32Float,
+                usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+                view_formats: &[],
+            });
+            let bytes: Vec<u8> = texels
+                .iter()
+                .flat_map(|rgb| rgb.iter().copied().chain([1.0]))
+                .flat_map(f32::to_le_bytes)
+                .collect();
+            queue.write_texture(
+                texture.as_image_copy(),
+                &bytes,
+                wgpu::TexelCopyBufferLayout {
+                    offset: 0,
+                    bytes_per_row: Some(width * 16),
+                    rows_per_image: Some(1),
+                },
+                texture.size(),
+            );
+            let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+            let mut words = [0_u32; 8];
+            words[0] = PRE_EXPOSURE.to_bits();
+            words[1] = inverse.to_bits();
+            let sample = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: None,
+                contents: words.map(u32::to_le_bytes).as_flattened(),
+                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            });
+            let group = prepare_group(&device, &display.layout, &view, &sample);
+            let mut outputs = Vec::new();
+            for tone_map in [SdrToneMap::Reinhard, SdrToneMap::NeutralHighlights] {
+                words[7] = display_selectors(tone_map, DisplayOverlay::ExposureZones);
+                queue.write_buffer(&sample, 0, words.map(u32::to_le_bytes).as_flattened());
+                let actual = render(&device, &queue, &display.pipeline, &group, width);
+                for (index, (pixel, expected)) in
+                    actual.as_chunks::<4>().0.iter().zip(&expected).enumerate()
+                {
+                    assert_eq!(
+                        pixel,
+                        &[expected[0], expected[1], expected[2], 255],
+                        "inverse={inverse}, {tone_map:?}, texel {index}: {:?} stops",
+                        stops[index / tints.len()]
+                    );
+                }
+                outputs.push(actual);
+            }
+            assert_eq!(outputs[0], outputs[1], "the overlay ignores the tone map");
+        }
+        assert!(scope.pop().await.is_none());
+    });
+}

@@ -57,6 +57,34 @@ fn tone_choice_changes_only_reserved_policy_word_for_fixed_and_incident_views() 
 }
 
 #[test]
+fn overlay_uses_only_its_selector_bits_and_off_keeps_every_policy_byte() {
+    for view in [
+        SyntheticView::default().with_exposure(0.123_456).unwrap(),
+        SyntheticView::default()
+            .with_incident_exposure(0.0, 0.0, 18.0)
+            .unwrap(),
+    ] {
+        for tone_map in [SdrToneMap::Reinhard, SdrToneMap::NeutralHighlights] {
+            let toned = view.with_sdr_tone_map(tone_map);
+            let off = toned.with_display_overlay(DisplayOverlay::Off);
+            let zones = toned.with_display_overlay(DisplayOverlay::ExposureZones);
+            assert_eq!(
+                off.exposure_policy(1.0, true),
+                toned.exposure_policy(1.0, true)
+            );
+            let policy = zones.exposure_policy(1.0, true);
+            assert_eq!(&policy[..28], &toned.exposure_policy(1.0, true)[..28]);
+            assert_eq!(
+                &policy[28..32],
+                &(tone_map as u32 | 1 << 8).to_le_bytes(),
+                "tone map in bits 0-7, overlay in bits 8-15"
+            );
+            assert_eq!(zones.pack_view(&view, 1.0), toned.pack_view(&view, 1.0));
+        }
+    }
+}
+
+#[test]
 fn tone_reference_has_identity_shadows_continuous_knee_and_bounded_highlights() {
     let inverse = 1.0 / PRE_EXPOSURE;
     assert_eq!(reference([0.0; 3], inverse), [0.0; 3]);

@@ -165,6 +165,9 @@ impl Game for WindowGame {
         if let Some(value) = edits.camera_yaw {
             host::set_camera_yaw(host, value)?;
         }
+        if let Some(overlay) = edits.display_overlay() {
+            host::set_display_overlay(host, overlay);
+        }
         Ok(())
     }
 
@@ -240,6 +243,7 @@ impl Edits for ControlEdits {
             camera_pitch: newer.camera_pitch.or(self.camera_pitch),
             camera_yaw: newer.camera_yaw.or(self.camera_yaw),
             paused: newer.paused.or(self.paused),
+            exposure_zones: newer.exposure_zones.or(self.exposure_zones),
         }
     }
 

@@ -52,7 +52,7 @@ use thrum_render::{
     contribution::SceneContribution,
     extract::{ExtractReport, RenderExtractor, SourceTick},
     runtime::{FrameConfig, FrameHost, FrameWorld, SceneFrame, SceneSource},
-    synthetic::{FrameLighting, SdrToneMap, SyntheticScene, SyntheticView},
+    synthetic::{DisplayOverlay, FrameLighting, SdrToneMap, SyntheticScene, SyntheticView},
 };
 use winit::keyboard::KeyCode;
 
@@ -151,6 +151,9 @@ pub struct Sky {
     pub sun_azimuth_degrees: f32,
     /// The look-at camera.
     pub camera: Camera,
+    /// Show exposure zones in place of the picture: exposed luminance in one-stop
+    /// false-colour bands, grey at a metered mid-grey card, blues below, yellow to pink above.
+    pub exposure_zones: bool,
 }
 
 impl Sky {
@@ -288,7 +291,12 @@ impl SceneSource<SourceTick> for SkyScene {
                 view.with_exposure(FALLBACK_EXPOSURE)
             }
         }
-        .map_err(|error| format!("view exposure: {error:?}"))?;
+        .map_err(|error| format!("view exposure: {error:?}"))?
+        .with_display_overlay(if self.sky.exposure_zones {
+            DisplayOverlay::ExposureZones
+        } else {
+            DisplayOverlay::Off
+        });
         Ok(SceneFrame { view, lighting })
     }
 }
@@ -343,6 +351,7 @@ impl SkyGame {
                 sun_elevation_degrees: 30.0,
                 sun_azimuth_degrees: 135.0,
                 camera,
+                exposure_zones: false,
             },
             sent: None,
             refused: None,

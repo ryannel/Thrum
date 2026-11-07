@@ -5,8 +5,8 @@
 **Status.** The typed controls and parameter files are selected and implemented, and they run in the V1 game on Mac and
 Chrome. The macOS app runner is built and runs the V1 game. The shader seam (a game-authored WGSL material hook in
 the cooked mesh pipeline, reloaded explicitly) is built and runs on Mac and in Chrome. The starter (`./dev starter`,
-`./dev scene <folder>` and the sky kit) is built and runs on the Mac. GPU field overlays are designed below but not
-built.
+`./dev scene <folder>` and the sky kit) is built and runs on the Mac. The first GPU field overlay, exposure zones,
+is built in the shared display pass. The clipping field is held, and the shadow cascade index is not designed.
 
 **Disclosure.** The controls and parameter slices were built before this record was written. The design was agreed
 in the G6 boundary notes with the root agent first, and an independent review of the landed code prompted this record.
@@ -181,10 +181,26 @@ WGSL material hook in the cooked mesh pipeline. `thrum-asset-gpu` owns it.
 **Phase 1 is readouts** of engine fields in the panels, for example the Sun's elevation computed from the shown
 clock.
 
-**Phase 2 is a GPU false-colour field,** such as EV or the shadow cascade index. Its constraints:
-- it waits on the shared display shader's tone-scale seam (G3s), which gives it a frame-graph slot after tone
-  mapping;
-- it composites in encoded display space, undithered or with the same ±1-LSB dither as the display encode.
+**Phase 2 is GPU false-colour fields.** The first is **exposure zones**, agreed with root in the G6 boundary notes.
+- **Where it is drawn.** The existing SDR display pass draws it, so it needs no new pass, binding or graph resource.
+  It sits beside the tone map in the per-view presentation policy:
+  - `SyntheticView::with_display_overlay(DisplayOverlay)` selects it;
+  - it is packed in bits 8–15 of the policy word whose bits 0–7 hold the `SdrToneMap`.
+  - Because games build the view every frame from their own state, a replacement device draws the same overlay.
+- **What it shows.** The pass reads the exposed scene colour at the pre-tone seam the tone maps already use
+  (stored ÷ (storage scale × inverse camera gain)) and takes its Rec. 709 luminance. It writes one of 13 one-stop
+  bands as exact undithered display codes:
+  - −6 or darker, through to +6 or brighter;
+  - grey at zero, which is the exposed luminance of an 18% Lambertian card lit at the metered illuminance with zero
+    compensation, 0.18 ÷ (π × 1.2 × 0.4).
+  The overlay is independent of the selected tone map and output transform.
+- **Off.** With the overlay off, the policy word and every pixel are unchanged for every tone map.
+- **How games reach it.** v1-game has a `display.exposure_zones` toggle on the Mac panel, in Chrome and in parameter
+  files. The device-recovery replay carries it. The sky kit has `Sky::exposure_zones`, which the starter binds to the
+  same toggle.
+- **Held.** A post-tone clipping field cannot show where input or storage clipped, because the SDR operators bound
+  their output to display white. It needs a signal from the stage that clamps.
+- **Not designed.** The shadow cascade index needs forward-pass output.
 
 ## Performance
 

@@ -20,6 +20,26 @@ pub enum SdrToneMap {
     NeutralHighlights = 1,
 }
 
+/// Per-view diagnostic drawn by the display pass in place of the tone-mapped scene.
+/// It reads exposed scene luminance before the tone scale, so it is identical for every
+/// [`SdrToneMap`], and it writes exact palette codes without dither.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+#[repr(u32)]
+pub enum DisplayOverlay {
+    /// The tone-mapped scene. Its pixels are byte-identical to a view with no overlay.
+    #[default]
+    Off = 0,
+    /// Exposed luminance in one-stop false-colour bands, from -6 to +6 stops relative to
+    /// an 18% grey Lambertian card lit at the metered illuminance with zero compensation.
+    ExposureZones = 1,
+}
+
+/// Word 7 of the exposure policy and sample: the tone map in bits 0–7 and the
+/// overlay in bits 8–15. With the overlay off the word equals the tone-map value.
+pub(super) fn display_selectors(tone_map: SdrToneMap, overlay: DisplayOverlay) -> u32 {
+    tone_map as u32 | (overlay as u32) << 8
+}
+
 pub(super) const SHADER: &str = concat!(
     include_str!("display/neutral_highlights.wgsl"),
     "\n",

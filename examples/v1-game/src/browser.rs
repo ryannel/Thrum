@@ -820,6 +820,9 @@ impl BrowserGame {
         if let Some(yaw) = edits.camera_yaw {
             self.host.set_camera_yaw(yaw).map_err(js_error)?;
         }
+        if let Some(overlay) = edits.display_overlay() {
+            self.host.set_display_overlay(overlay);
+        }
         if let Some(paused) = edits.paused {
             self.set_paused(paused, timestamp_ms)?;
         }

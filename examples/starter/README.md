@@ -1,7 +1,7 @@
 # Thrum starter
 
-One cooked rock on lit ground under a physically based sky, a camera, two Sun sliders and a reloadable material
-hook, in 42 lines of game code ([src/main.rs](src/main.rs), counting non-blank, non-comment lines). The game names no
+One cooked rock on lit ground under a physically based sky, a camera, two Sun sliders, an exposure-zones toggle
+and a reloadable material hook, in 44 lines of game code ([src/main.rs](src/main.rs), counting non-blank, non-comment lines). The game names no
 engine game types: it uses the sky kit in `thrum_app::sky`, which brings the typed controls, cooked meshes, the
 ground, the material hook and the window.
 
@@ -107,6 +107,10 @@ only on the Mac, and one `cfg` on the module is cheaper than one on every item.
 - An update closure, run before every frame, that maps controls onto the `Sky`: `sun_elevation_degrees`,
   `sun_azimuth_degrees` and `camera`, a `Camera` (`sky.camera = Camera::look_at(...)`). A value the renderer cannot draw (for example a camera below the ground) is
   explained on standard error and the previous sky is kept.
+- `sky.exposure_zones`: when true, the frame shows exposure in one-stop false-colour bands instead of the picture.
+  Grey is a mid-grey card lit at the metered light, the blues and purples are 1–6 stops under, and lime, yellow,
+  orange, red and pink are 1–5 stops over. White is 6 or more stops over. Use it to see whether a dim lantern or a
+  bright sky is the problem before reaching for a light's intensity.
 - `.with_meshes(placements)?`: cooked meshes from your `assets/`, drawn and hot-reloaded from the store
   `./dev scene` sets.
 - `.with_ground(Some(colour))` or `.with_ground(None)`; see [The ground](#the-ground).

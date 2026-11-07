@@ -57,7 +57,7 @@ pub use cluster::SyntheticPointLight;
 use cluster_gpu::ClusterCompute;
 pub(crate) use contributed::CONTRIBUTION_COMPUTE;
 use contributed::CONTRIBUTION_UPLOAD;
-pub use display::SdrToneMap;
+pub use display::{DisplayOverlay, SdrToneMap};
 use display::{DisplayPrepared, DisplayTarget};
 use exposure::ExposureResolve;
 pub(crate) use frame_stats::{SceneTimingLayout, pass_durations};

@@ -17,7 +17,8 @@ use thrum_render::{
     extract::{ExtractReport, RenderExtractor, SourceTick},
     runtime::{SceneFrame, SceneSource},
     synthetic::{
-        CullMode, FrameLighting, SdrToneMap, SyntheticPointLight, SyntheticScene, SyntheticView,
+        CullMode, DisplayOverlay, FrameLighting, SdrToneMap, SyntheticPointLight, SyntheticScene,
+        SyntheticView,
     },
 };
 
@@ -181,6 +182,7 @@ pub(crate) struct GameScene {
     pub(super) day_phase_offset: f32,
     pub(super) camera_pitch: f32,
     pub(super) camera_yaw: f32,
+    pub(super) display_overlay: DisplayOverlay,
     camera: Option<SceneCamera>,
 }
 impl GameScene {
@@ -190,6 +192,7 @@ impl GameScene {
             day_phase_offset: 0.0,
             camera_pitch: 0.0,
             camera_yaw: 0.0,
+            display_overlay: DisplayOverlay::Off,
             camera: None,
         }
     }
@@ -305,7 +308,8 @@ impl SceneSource<PublishedPage> for GameScene {
                 self.camera_yaw,
                 self.camera,
             )?
-        };
+        }
+        .with_display_overlay(self.display_overlay);
         // The diagnostic fixture's local Y zero is a two-metre reference datum.
         // Authored scene and field coordinates already measure altitude above sea level.
         let camera_altitude_m = view.camera_position()[1]
@@ -335,7 +339,7 @@ mod tests {
     use super::{GameScene, RenderExtractor, SceneSource, SourceTick, frame_view, scene};
     use crate::{camera::SceneCamera, environment::DayCycle};
     use thrum_core::StableId;
-    use thrum_render::synthetic::{FrameLighting, SdrToneMap, SyntheticView};
+    use thrum_render::synthetic::{DisplayOverlay, FrameLighting, SdrToneMap, SyntheticView};
 
     #[test]
     fn diagnostic_camera_keeps_its_original_pose_and_bob() {
@@ -376,6 +380,7 @@ mod tests {
             day_phase_offset: 0.1,
             camera_pitch,
             camera_yaw,
+            display_overlay: DisplayOverlay::Off,
             camera: Some(camera),
         };
         let first = policy

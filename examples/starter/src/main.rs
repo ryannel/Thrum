@@ -37,6 +37,8 @@ mod scene {
             .step(1.0)
             .display(Display::plain(0, "°"))
             .add()?;
+        // False colour by exposure, one band per stop: grey is a metered mid-grey card.
+        let zones = controls.toggle("display.exposure_zones", "Exposure zones", false)?;
 
         // One rock at the origin, its lowest point resting on the ground (Y = 0), in metres.
         let rock = MeshPlacement::new("meshes/rock", "textures/white")
@@ -51,6 +53,7 @@ mod scene {
         let game = SkyGame::new(controls, camera, move |controls, sky| {
             sky.sun_elevation_degrees = controls.get(elevation);
             sky.sun_azimuth_degrees = controls.get(azimuth);
+            sky.exposure_zones = controls.is_on(zones);
         });
         Ok(game.with_meshes(vec![rock])?)
     }

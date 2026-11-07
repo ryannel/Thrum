@@ -3,7 +3,9 @@
 
 use glam::{Mat4, Vec3, Vec4};
 
-use super::{RenderError, SdrToneMap, checked_display_gain, exposure::ExposurePolicy};
+use super::{
+    DisplayOverlay, RenderError, SdrToneMap, checked_display_gain, exposure::ExposurePolicy,
+};
 
 const VIEW_BYTES: usize = 160;
 pub(super) const AUX_BYTES: usize = 128;
@@ -29,6 +31,7 @@ pub struct SyntheticView {
     camera: Vec3,
     exposure: Option<ExposurePolicy>,
     sdr_tone_map: SdrToneMap,
+    display_overlay: DisplayOverlay,
     history_reset: bool,
 }
 
@@ -49,6 +52,7 @@ impl Default for SyntheticView {
             camera: Vec3::new(0.0, 0.0, -3.0),
             exposure: None,
             sdr_tone_map: SdrToneMap::default(),
+            display_overlay: DisplayOverlay::Off,
             history_reset: false,
         }
     }
@@ -130,6 +134,7 @@ impl SyntheticView {
             camera: eye,
             exposure: None,
             sdr_tone_map: SdrToneMap::default(),
+            display_overlay: DisplayOverlay::Off,
             history_reset: false,
         })
     }
@@ -185,13 +190,26 @@ impl SyntheticView {
             .unwrap_or(ExposurePolicy::Fixed {
                 inverse: 1.0 / fallback,
             })
-            .pack(1.0 / fallback, atmosphere, self.sdr_tone_map)
+            .pack(
+                1.0 / fallback,
+                atmosphere,
+                self.sdr_tone_map,
+                self.display_overlay,
+            )
     }
 
     /// Select the SDR display transform independently of the camera exposure.
     #[must_use]
     pub fn with_sdr_tone_map(mut self, tone_map: SdrToneMap) -> Self {
         self.sdr_tone_map = tone_map;
+        self
+    }
+
+    /// Draw a display diagnostic in place of the tone-mapped scene. The overlay reads
+    /// exposed luminance before the tone scale, so it does not depend on the tone map.
+    #[must_use]
+    pub fn with_display_overlay(mut self, overlay: DisplayOverlay) -> Self {
+        self.display_overlay = overlay;
         self
     }
 
