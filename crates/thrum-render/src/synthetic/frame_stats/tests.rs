@@ -18,9 +18,9 @@ fn timings(atmosphere: &[&str]) -> Vec<PassTiming> {
         .iter()
         .copied()
         .chain([
+            "synthetic exposure resolve",
             "synthetic forward opaque",
             "synthetic transform history",
-            "synthetic exposure resolve",
             "synthetic tone encode",
         ])
         .map(|name| PassTiming {

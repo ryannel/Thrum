@@ -124,7 +124,15 @@ impl Variant {
         let (producer, producer_group) = if columns == EXTENTS[1][0] {
             (atmosphere.compute[1].clone(), atmosphere.groups[1].clone())
         } else {
-            prepare_compute(device, 1, &atmosphere.uniform, &views, sampler, &shader)
+            prepare_compute(
+                device,
+                1,
+                &atmosphere.uniform,
+                &views,
+                sampler,
+                &shader,
+                &atmosphere.night,
+            )
         };
         let observer_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("same T uniform and sampler for every M width"),
@@ -288,8 +296,15 @@ fn multiple_sun_columns_report_same_model_transport_and_irradiance_error() {
                 .expect("fixed M diagnostic frame")
         };
         let view = SyntheticView::default();
-        let mut atmosphere =
-            AtmospherePrepared::new(&device, &queue, 1, frame(0.0, 0.0), &view, &directional);
+        let mut atmosphere = AtmospherePrepared::new(
+            &device,
+            &queue,
+            1,
+            frame(0.0, 0.0),
+            &view,
+            &directional,
+            &super::sky_samples(&device),
+        );
         let output = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("four physical M consumer observations"),
             size: BYTES_PER_VARIANT,

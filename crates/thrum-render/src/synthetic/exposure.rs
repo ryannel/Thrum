@@ -1,5 +1,5 @@
 //! Per-view camera policy and GPU-resolved exposure. Physical light and the
-//! fixed scene storage scale remain independent of the camera.
+//! scene storage scale stay separate from display mapping.
 
 use super::{PRE_EXPOSURE, RenderError, SdrToneMap, history_gpu, uniform_layout};
 use crate::graph::{
@@ -92,20 +92,10 @@ pub(super) struct ExposureResolve {
 }
 
 impl ExposureResolve {
-    pub(super) fn new(
-        device: &wgpu::Device,
-        directional: &wgpu::Buffer,
-        serials: &wgpu::Buffer,
-    ) -> Self {
-        let policy = device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("camera exposure policy"),
-            size: POLICY_BYTES,
-            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-            mapped_at_creation: false,
-        });
+    pub(super) fn allocate_samples(device: &wgpu::Device) -> [wgpu::Buffer; 2] {
         // Each separately bound record starts at offset zero, satisfying both
         // storage and uniform alignment without a packed dynamic-offset ABI.
-        let samples = std::array::from_fn(|_| {
+        std::array::from_fn(|_| {
             device.create_buffer(&wgpu::BufferDescriptor {
                 label: Some("submitted camera exposure sample"),
                 size: SAMPLE_BYTES,
@@ -114,6 +104,20 @@ impl ExposureResolve {
                     | wgpu::BufferUsages::COPY_SRC,
                 mapped_at_creation: false,
             })
+        })
+    }
+
+    pub(super) fn new(
+        device: &wgpu::Device,
+        directional: &wgpu::Buffer,
+        serials: &wgpu::Buffer,
+        samples: [wgpu::Buffer; 2],
+    ) -> Self {
+        let policy = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("camera exposure policy"),
+            size: POLICY_BYTES,
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
         });
         let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("camera exposure resolve"),

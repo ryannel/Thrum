@@ -1,11 +1,11 @@
 # Atmosphere milestones
 
 Design: [ATMOSPHERE.md](ATMOSPHERE.md)
-Reviews: Optical design and plan over `a91cdd0e`, final design `f9d0c12a` and plan `c3cc5748` · [optical brief](#optical-review-brief) · initial changes required, final M1 implementation cleared. Frame graph and ownership at the same revisions · [graph brief](#graph-review-brief) · initial changes required, final design cleared.
+Reviews: Optical design and plan over `a91cdd0e`, final design `f9d0c12a` and plan `c3cc5748` · [optical brief](#optical-review-brief) · initial changes required, final M1 implementation cleared. Frame graph and ownership at the same revisions · [graph brief](#graph-review-brief) · initial changes required, final design cleared. First valley captures, Metal build `dfae5b21` and Chrome Wasm `bc15ea7d` (SHA-256 prefixes) · [capture brief](#capture-review-brief) · held ground view passes, M1 remains open.
 Updated: 2026-11-07
 Milestone: M1 moonless midnight
-Now: the packed 24 KiB profile passes the scalar reference.
-Next: bind it in the atmosphere graph and qualify storage and scene lighting on GPU.
+Now: the packed profile lights the held Metal and Chrome valley at midnight.
+Next: qualify sampled GPU transport and stored scale, then inspect the upslope view and continuous night transition.
 Blocked: none. G3s stays open.
 
 ## M1 The valley remains legible at moonless midnight: in progress
@@ -23,8 +23,8 @@ Work
 - [x] The independently stepped scalar direct-plus-scatter probe resolves the positive-elevation peak and both limits of the curved horizon at 0, 1.8 and 15 km. The denser quadrature changes the sampled radiance by at most 0.063%.
 - [x] A second scalar reference includes the finite shell, both components, the engine phase function, ground irradiance and finite paths. Raw source and rows are in `tmp/g3s-showcase/night-design/`.
 - [x] The scratch RG16Float profile matches the dense reference on 59 distinct sky/ground rays, six irradiance rows and three finite paths. Maximum errors are 0.381%, 0.028% and 0.060% respectively. The expanded sweep includes 2 m and 6 m near-tangent rays. These are packed CPU reads. The GPU sampling and scene checks remain open.
-- [ ] Wire the night channel into sky, diffuse, reflection and finite aerial transport. Prove alpha decoding, including interpolated paths and cooked material blending, on Metal and Chrome. Verify the solar-only outputs are unaffected.
-- [ ] Connect GPU exposure to all forward colour writers and reconcile the policy with the render spec. Prove the lower EV clamp is reachable, daylight behavior stays intact and a recycled slot uses its own scale.
+- [x] Wire the night channel into sky, diffuse, reflection and finite aerial transport. Connect the per-view exposure sample to all forward colour writers. The GPU meter test reaches −12 EV100 and preserves a low-light arithmetic control.
+- [ ] Prove alpha decoding, interpolated paths, and scale recovery on reused slots and actual scene attachments. Compare enabled and disabled nightglow through the same sky, diffuse, specular and aerial consumers.
 - [ ] Capture and inspect actual valley sequences. Review the raw data and record results.
 
 ## M2 Stars emerge as the observer turns and time advances: pending
@@ -54,6 +54,28 @@ reviewer rechecked the finite-shell revision. The GPU and in-game checks are ope
 ### Graph review brief
 
 > Read-only independent Thrum design/plan review focused on frame graph, storage and cross-module ownership. Cwd /Users/ryannel/Workspace/thrum. Read AGENTS.md then independently derive requirements from docs/BUILD-PLAN.md G3s and docs/design/CONTRACTS.md C07/C08 (same scene Metal/Chrome, continuous time, one provider, same exposure per rendered slot, no authoritative impact or needless full frame work). Then read proposed docs/design/modules/ATMOSPHERE.md and ATMOSPHERE-PLAN.md, inspect code consumers sky/diffuse/reflection, synthetic forward/display and cooked pipeline and runtime lifecycle as needed. Use .agents/skills/engine-module-design/references/review.md and defect-first review-agent guidance. Identify any incomplete API, graph hazard or qualification gap, with exact references, verified/suspected. Do not edit, run GPU workloads or delegate. Reply once findings ready.
+
+### Capture review brief
+
+> Independent, read-only review of Thrum’s first M1 in-game night checkpoint. Repo
+> /Users/ryannel/Workspace/thrum. Use .agents/skills/engine-module-design/references/review.md.
+> Original criteria: same cooked valley on Metal/Chrome, dark nonzero midnight sky,
+> terrain silhouette legible, both diffuse rock and metal respond to shared weak
+> environment; continuous sunset to night, dawn/noon/sunset imagery retained,
+> distinguish evidence gaps from failures. Inspect raw native Metal captures and
+> sequence in tmp/g3s-showcase/night-design/night-first/ plus reference captures
+> tmp/g3s-showcase/sky-contours/normal/. Do not take over GPU, alter repo, or
+> delegate. Candidate build is identified by captures.json and night-first-midnight.png
+> in parent folder. Inspect images directly and state per cue pass/fail/can’t tell,
+> still versus motion and scale. Also read-only inspect night shader/exposure
+> wiring as needed for consequential problems; exact evidence or label suspicion.
+> Browser and live qualification may not exist yet. Give brief defect-first result.
+>
+> Chrome actual cooked valley raw artifacts just completed in
+> tmp/g3s-showcase/night-design/m1-chrome-valley/ (Wasm SHA
+> bc15ea7de14271d5332dfff37136e5d699a02ed5a195c86e8911d455552b5631).
+> Include its phase-scene-midnight in the visual inspection if able, and scope
+> evidence correctly.
 
 ## Log
 

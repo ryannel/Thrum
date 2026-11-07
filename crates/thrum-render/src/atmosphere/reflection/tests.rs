@@ -429,7 +429,7 @@ fn analytic_sky(sun_azimuth: f64) -> Vec<u8> {
             for component in direction {
                 bytes.extend(fixture_half((1.5 + 0.5 * component) * 1024.0));
             }
-            bytes.extend(0x3c00_u16.to_le_bytes());
+            bytes.extend(0_u16.to_le_bytes());
         }
     }
     bytes
@@ -713,7 +713,7 @@ fn gpu_reflection_constant_all_faces_mips_and_independent_dfg() {
             view_formats: &[],
         });
         let bytes: Vec<_> = (0..192 * 108)
-            .flat_map(|_| [0x6400_u16, 0x6000, 0x5c00, 0x3c00])
+            .flat_map(|_| [0x6400_u16, 0x6000, 0x5c00, 0])
             .flat_map(u16::to_le_bytes)
             .collect();
         queue.write_texture(

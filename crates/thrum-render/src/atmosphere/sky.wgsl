@@ -1,6 +1,7 @@
 @group(0) @binding(1) var transmittance: texture_2d<f32>;
 @group(0) @binding(2) var sky: texture_2d<f32>;
 @group(0) @binding(3) var lut_sampler: sampler;
+@group(0) @binding(4) var<uniform> sky_exposure: vec4<f32>;
 struct VertexOutput { @builtin(position) position: vec4<f32>, @location(0) ndc: vec2<f32> }
 @vertex fn vertex(@builtin(vertex_index) index: u32) -> VertexOutput {
     let positions=array<vec2<f32>,3>(vec2(-1.0,-1.0),vec2(3.0,-1.0),vec2(-1.0,3.0));
@@ -13,7 +14,7 @@ struct SkyOutput { @location(0) colour: vec4<f32>, @location(1) motion: vec2<f32
     let sun=atmosphere.sun_lux.xyz;
     let uv=sky_uv(direction,sun);
     let size=vec2<f32>(textureDimensions(sky));
-    var radiance=textureSampleLevel(sky,lut_sampler,clamp(uv,0.5/size,1.0-0.5/size),0.0).rgb/SKY_LUT_GAIN;
+    let encoded=textureSampleLevel(sky,lut_sampler,clamp(uv,0.5/size,1.0-0.5/size),0.0);
     let angular_radius=0.00465421;
     let cosine=dot(direction,sun);
     // Approximate coverage in angular space. A cosine derivative expands the
@@ -23,7 +24,9 @@ struct SkyOutput { @location(0) colour: vec4<f32>, @location(1) motion: vec2<f32
     let disk=smoothstep(cos(angular_radius+pixel_radius),cos(max(0.0,angular_radius-pixel_radius)),cosine);
     let h=atmosphere.camera_altitude.w;
     let trans=sample_sun_transmittance(h,direction.y,transmittance,lut_sampler);
-    radiance+=disk*trans/(PI*sin(angular_radius)*sin(angular_radius));
-    let stored=radiance*atmosphere.sun_lux.w*atmosphere.colour_pre_exposure.rgb*atmosphere.colour_pre_exposure.w;
+    let beam=disk*trans/(PI*sin(angular_radius)*sin(angular_radius));
+    let solar=atmosphere.sun_lux.w*atmosphere.colour_pre_exposure.rgb;
+    let radiance=(encoded.rgb/SKY_LUT_GAIN+beam)*solar+vec3(encoded.a/NIGHT_LUT_GAIN);
+    let stored=radiance*sky_exposure.x;
     return SkyOutput(vec4(clamp(stored,vec3(0.0),vec3(65504.0)),1.0),vec2(0.0));
 }

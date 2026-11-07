@@ -196,8 +196,10 @@ impl Fixture {
             label: None,
             source: wgpu::ShaderSource::Wgsl(EARTH.shader(LUT_SHADER).into()),
         });
-        let producers = [2, 3]
-            .map(|index| prepare_compute(&device, index, &uniform, &views, &sampler, &shader));
+        let night = super::super::NightProfile::new(&device, &queue, false);
+        let producers = [2, 3].map(|index| {
+            prepare_compute(&device, index, &uniform, &views, &sampler, &shader, &night)
+        });
         let reader = pipeline(&device, READ, "read");
         Self {
             device,
@@ -488,6 +490,7 @@ fn cache_lifecycle(fixture: &Fixture) {
         first,
         &SyntheticView::default(),
         &directional,
+        &super::sky_samples(&fixture.device),
     );
     assert_eq!(
         prepared.validity & GROUND_VALID,

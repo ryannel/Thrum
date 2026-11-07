@@ -377,7 +377,7 @@ fn image(gpu: &Gpu, kind: u8) -> (wgpu::Texture, Vec<[f64; 3]>) {
             assert!(l >= 0.0);
             let encoded = SCALE.map(|scale| half(l * scale * 1024.0));
             pixels.push(encoded.map(|v| half_value(v) / 1024.0));
-            for value in encoded.into_iter().chain([0x3c00]) {
+            for value in encoded.into_iter().chain([0]) {
                 bytes.extend(value.to_le_bytes());
             }
         }
@@ -646,6 +646,7 @@ fn shipping_sky_projection_separates_sampling_from_sh_truncation() {
             frame(45, 0),
             &SyntheticView::default(),
             &light,
+            &super::sky_samples(&gpu.device),
         );
         for (degrees, azimuth) in [
             (90, 0),

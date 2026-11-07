@@ -114,5 +114,6 @@ fn sky_main(@builtin(global_invocation_id) id: vec3<u32>) {
         lo+=transport.lo.transmission*ground_radiance(receiver_h,mu,0u);
         hi+=transport.hi.transmission*ground_radiance(receiver_h,mu,1u);
     }
-    textureStore(output_lut,vec2<i32>(id.xy),vec4(project_spectrum(lo,hi)*SKY_LUT_GAIN,1.0));
+    let night = night_terminal(h, direction.y, atmosphere.sky_mapping.x, ray.terminal_ground != 0u, lut_sampler);
+    textureStore(output_lut,vec2<i32>(id.xy),vec4(project_spectrum(lo,hi)*SKY_LUT_GAIN,night));
 }

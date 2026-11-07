@@ -27,7 +27,8 @@ fn atmosphere_lighting(
         camera_altitude_m,
         sun.profile_epoch,
     )
-    .expect("checked game camera and day cycle produce a valid atmosphere frame");
+    .expect("checked game camera and day cycle produce a valid atmosphere frame")
+    .with_nightglow();
     FrameLighting::Atmosphere(frame)
 }
 
@@ -196,7 +197,7 @@ impl SceneSource<PublishedPage> for GameScene {
         });
         let view = match lighting {
             FrameLighting::Atmosphere(_) => view
-                .with_incident_exposure(0.0, 0.0, 18.0)
+                .with_incident_exposure(0.0, -12.0, 18.0)
                 .and_then(SyntheticView::with_low_light_adaptation),
             FrameLighting::Diagnostic(_) | FrameLighting::Photometric(_) => {
                 view.with_exposure(1.0 / 16_000.0)

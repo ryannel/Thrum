@@ -1,3 +1,6 @@
+@group(1) @binding(12) var<uniform> scene_exposure: vec4<f32>;
+fn scene_storage_scale() -> f32 { return scene_exposure.x; }
+
 // ABI2 opaque clustered forward diagnostic: Lambert + GGX/Smith/Schlick.
 // Checked finite reverse-Z camera; prepared lighting selects indirect resources.
 struct ViewRecord {
@@ -530,7 +533,7 @@ fn shade(input: VertexOutput, sun_factor: f32, front_facing: bool) -> vec4<f32> 
     let finite = select(vec3(0.0), colour, colour >= vec3(0.0));
     let bounded = min(finite, vec3(3.402823e38));
     let aerial = aerial_colour(bounded, input.world_position, input.position);
-    return vec4(clamp(aerial*view.pre_exposure_inv_exposure_jitter.x,vec3(0.0),vec3(65504.0)),1.0);
+    return vec4(clamp(aerial*scene_storage_scale(),vec3(0.0),vec3(65504.0)),1.0);
 }
 struct FragmentOutput {
     @location(0) colour: vec4<f32>,

@@ -5,7 +5,12 @@ use crate::graph::{CompiledPass, PipelineKey};
 use crate::synthetic::{DEPTH_FORMAT, RenderError, SyntheticView};
 use crate::timing::GpuTimings;
 
-use super::{AtmosphereFrame, reflection::ReflectionPrepared, spectrum::EARTH};
+use super::{
+    AtmosphereFrame,
+    night::{self, NightProfile},
+    reflection::ReflectionPrepared,
+    spectrum::EARTH,
+};
 
 #[cfg(all(test, not(target_arch = "wasm32")))]
 mod tests;
@@ -26,6 +31,8 @@ const LUT_SHADER: &str = concat!(
     "\n",
     include_str!("transport.wgsl"),
     "\n",
+    include_str!("night.wgsl"),
+    "\n",
     include_str!("lut.wgsl"),
     "\n",
     include_str!("ground.wgsl")
@@ -44,6 +51,7 @@ pub(crate) struct AtmospherePrepared {
     pub(super) generation: u64,
     pub(super) epoch: u64,
     pub(super) textures: [wgpu::Texture; 4],
+    pub(super) night: NightProfile,
     pub(super) aerial_textures: [wgpu::Texture; 2],
     aerial_views: [wgpu::TextureView; 2],
     transmittance_view: wgpu::TextureView,
@@ -52,7 +60,7 @@ pub(crate) struct AtmospherePrepared {
     compute: [wgpu::ComputePipeline; 4],
     groups: [wgpu::BindGroup; 4],
     sky_pipeline: wgpu::RenderPipeline,
-    sky_group: wgpu::BindGroup,
+    sky_groups: [wgpu::BindGroup; 2],
     diffuse_pipeline: wgpu::ComputePipeline,
     diffuse_group: wgpu::BindGroup,
     aerial_pipeline: wgpu::ComputePipeline,
@@ -76,6 +84,7 @@ impl AtmospherePrepared {
         frame: AtmosphereFrame,
         view: &SyntheticView,
         directional: &wgpu::Buffer,
+        exposure_samples: &[wgpu::Buffer; 2],
     ) -> Self {
         let uniform = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("atmosphere frame"),
@@ -137,25 +146,28 @@ impl AtmospherePrepared {
             min_filter: wgpu::FilterMode::Linear,
             ..Default::default()
         });
+        let night = NightProfile::new(device, queue, frame.nightglow_active());
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("atmosphere LUT integration"),
             source: wgpu::ShaderSource::Wgsl(EARTH.shader(LUT_SHADER).into()),
         });
         let prepared: [(wgpu::ComputePipeline, wgpu::BindGroup); 4] =
             std::array::from_fn(|index| {
-                prepare_compute(device, index, &uniform, &views, &sampler, &shader)
+                prepare_compute(device, index, &uniform, &views, &sampler, &shader, &night)
             });
         let [first, second, third, ground] = prepared;
-        let (sky_pipeline, sky_group) = prepare_sky(device, &uniform, &views, &sampler);
+        let (sky_pipeline, sky_groups) =
+            prepare_sky(device, &uniform, &views, &sampler, exposure_samples);
         let (diffuse_pipeline, diffuse_group) =
             prepare_diffuse(device, &uniform, &views[2], &sampler, directional);
         let (aerial_pipeline, aerial_group) =
-            prepare_aerial(device, &uniform, &views, &aerial_views, &sampler);
+            prepare_aerial(device, &uniform, &views, &aerial_views, &sampler, &night);
         let reflection = ReflectionPrepared::new(device, &uniform, &views[2], &sampler);
         let mut result = Self {
             generation,
             epoch: frame.profile_epoch,
             textures,
+            night,
             aerial_textures,
             aerial_views,
             transmittance_view: views[0].clone(),
@@ -164,7 +176,7 @@ impl AtmospherePrepared {
             compute: [first.0, second.0, third.0, ground.0],
             groups: [first.1, second.1, third.1, ground.1],
             sky_pipeline,
-            sky_group,
+            sky_groups,
             diffuse_pipeline,
             diffuse_group,
             aerial_pipeline,
@@ -196,7 +208,8 @@ impl AtmospherePrepared {
             frame.toward_sun[2].to_bits(),
             frame.camera_altitude_m.to_bits(),
         ];
-        if dependencies != self.sky_dependencies {
+        let night_changed = self.night.select(queue, frame.nightglow_active());
+        if dependencies != self.sky_dependencies || night_changed {
             self.validity &= !(SKY_VALID | REFLECTION_VALID);
             self.sky_dependencies = dependencies;
         }
@@ -340,9 +353,9 @@ impl AtmospherePrepared {
         Ok(())
     }
 
-    pub(crate) fn draw<'a>(&'a self, pass: &mut wgpu::RenderPass<'a>) {
+    pub(crate) fn draw<'a>(&'a self, pass: &mut wgpu::RenderPass<'a>, exposure_side: usize) {
         pass.set_pipeline(&self.sky_pipeline);
-        pass.set_bind_group(0, &self.sky_group, &[]);
+        pass.set_bind_group(0, &self.sky_groups[exposure_side], &[]);
         pass.draw(0..3, 0..1);
     }
 }
@@ -438,6 +451,7 @@ fn prepare_aerial(
     views: &[wgpu::TextureView; 4],
     aerial: &[wgpu::TextureView; 2],
     sampler: &wgpu::Sampler,
+    night: &NightProfile,
 ) -> (wgpu::ComputePipeline, wgpu::BindGroup) {
     let visibility = wgpu::ShaderStages::COMPUTE;
     let output = |binding| wgpu::BindGroupLayoutEntry {
@@ -450,16 +464,21 @@ fn prepare_aerial(
         },
         count: None,
     };
+    let entries = [
+        uniform_entry(visibility),
+        sampled_entry(1, visibility),
+        sampled_entry(2, visibility),
+        output(3),
+        output(4),
+        sampler_entry(5, visibility),
+    ];
+    let entries = entries
+        .into_iter()
+        .chain(night::layout_entries())
+        .collect::<Vec<_>>();
     let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
         label: Some("atmosphere aerial integration"),
-        entries: &[
-            uniform_entry(visibility),
-            sampled_entry(1, visibility),
-            sampled_entry(2, visibility),
-            output(3),
-            output(4),
-            sampler_entry(5, visibility),
-        ],
+        entries: &entries,
     });
     let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
         label: Some("atmosphere aerial"),
@@ -479,6 +498,8 @@ fn prepare_aerial(
                     "\n",
                     include_str!("transport.wgsl"),
                     "\n",
+                    include_str!("night.wgsl"),
+                    "\n",
                     include_str!("aerial.wgsl")
                 ))
                 .into(),
@@ -492,35 +513,40 @@ fn prepare_aerial(
         compilation_options: wgpu::PipelineCompilationOptions::default(),
         cache: None,
     });
+    let bindings = [
+        wgpu::BindGroupEntry {
+            binding: 0,
+            resource: uniform.as_entire_binding(),
+        },
+        wgpu::BindGroupEntry {
+            binding: 1,
+            resource: wgpu::BindingResource::TextureView(&views[0]),
+        },
+        wgpu::BindGroupEntry {
+            binding: 2,
+            resource: wgpu::BindingResource::TextureView(&views[1]),
+        },
+        wgpu::BindGroupEntry {
+            binding: 3,
+            resource: wgpu::BindingResource::TextureView(&aerial[0]),
+        },
+        wgpu::BindGroupEntry {
+            binding: 4,
+            resource: wgpu::BindingResource::TextureView(&aerial[1]),
+        },
+        wgpu::BindGroupEntry {
+            binding: 5,
+            resource: wgpu::BindingResource::Sampler(sampler),
+        },
+    ];
+    let bindings = bindings
+        .into_iter()
+        .chain(night.bindings())
+        .collect::<Vec<_>>();
     let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
         label: Some("atmosphere aerial resources"),
         layout: &layout,
-        entries: &[
-            wgpu::BindGroupEntry {
-                binding: 0,
-                resource: uniform.as_entire_binding(),
-            },
-            wgpu::BindGroupEntry {
-                binding: 1,
-                resource: wgpu::BindingResource::TextureView(&views[0]),
-            },
-            wgpu::BindGroupEntry {
-                binding: 2,
-                resource: wgpu::BindingResource::TextureView(&views[1]),
-            },
-            wgpu::BindGroupEntry {
-                binding: 3,
-                resource: wgpu::BindingResource::TextureView(&aerial[0]),
-            },
-            wgpu::BindGroupEntry {
-                binding: 4,
-                resource: wgpu::BindingResource::TextureView(&aerial[1]),
-            },
-            wgpu::BindGroupEntry {
-                binding: 5,
-                resource: wgpu::BindingResource::Sampler(sampler),
-            },
-        ],
+        entries: &bindings,
     });
     (pipeline, group)
 }
@@ -538,7 +564,10 @@ fn uniform_entry(visibility: wgpu::ShaderStages) -> wgpu::BindGroupLayoutEntry {
     }
 }
 
-fn sampled_entry(binding: u32, visibility: wgpu::ShaderStages) -> wgpu::BindGroupLayoutEntry {
+pub(super) fn sampled_entry(
+    binding: u32,
+    visibility: wgpu::ShaderStages,
+) -> wgpu::BindGroupLayoutEntry {
     wgpu::BindGroupLayoutEntry {
         binding,
         visibility,
@@ -567,6 +596,7 @@ fn prepare_compute(
     views: &[wgpu::TextureView; 4],
     sampler: &wgpu::Sampler,
     shader: &wgpu::ShaderModule,
+    night: &NightProfile,
 ) -> (wgpu::ComputePipeline, wgpu::BindGroup) {
     let visibility = wgpu::ShaderStages::COMPUTE;
     let mut entries = vec![uniform_entry(visibility)];
@@ -613,6 +643,10 @@ fn prepare_compute(
             resource: wgpu::BindingResource::Sampler(sampler),
         });
     }
+    if index == 2 {
+        entries.extend(night::layout_entries());
+        bindings.extend(night.bindings());
+    }
     let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
         label: Some("atmosphere LUT closure"),
         entries: &entries,
@@ -650,7 +684,8 @@ fn prepare_sky(
     uniform: &wgpu::Buffer,
     views: &[wgpu::TextureView; 4],
     sampler: &wgpu::Sampler,
-) -> (wgpu::RenderPipeline, wgpu::BindGroup) {
+    exposure_samples: &[wgpu::Buffer; 2],
+) -> (wgpu::RenderPipeline, [wgpu::BindGroup; 2]) {
     let visibility = wgpu::ShaderStages::FRAGMENT;
     let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
         label: Some("atmosphere sky resources"),
@@ -659,6 +694,16 @@ fn prepare_sky(
             sampled_entry(1, visibility),
             sampled_entry(2, visibility),
             sampler_entry(3, visibility),
+            wgpu::BindGroupLayoutEntry {
+                binding: 4,
+                visibility,
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Uniform,
+                    has_dynamic_offset: false,
+                    min_binding_size: wgpu::BufferSize::new(16),
+                },
+                count: None,
+            },
         ],
     });
     let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
@@ -723,27 +768,33 @@ fn prepare_sky(
         multiview_mask: None,
         cache: None,
     });
-    let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-        label: Some("atmosphere sky inputs"),
-        layout: &layout,
-        entries: &[
-            wgpu::BindGroupEntry {
-                binding: 0,
-                resource: uniform.as_entire_binding(),
-            },
-            wgpu::BindGroupEntry {
-                binding: 1,
-                resource: wgpu::BindingResource::TextureView(&views[0]),
-            },
-            wgpu::BindGroupEntry {
-                binding: 2,
-                resource: wgpu::BindingResource::TextureView(&views[2]),
-            },
-            wgpu::BindGroupEntry {
-                binding: 3,
-                resource: wgpu::BindingResource::Sampler(sampler),
-            },
-        ],
+    let groups = exposure_samples.each_ref().map(|sample| {
+        device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("atmosphere sky inputs"),
+            layout: &layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: uniform.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::TextureView(&views[0]),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: wgpu::BindingResource::TextureView(&views[2]),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 3,
+                    resource: wgpu::BindingResource::Sampler(sampler),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 4,
+                    resource: sample.as_entire_binding(),
+                },
+            ],
+        })
     });
-    (pipeline, group)
+    (pipeline, groups)
 }

@@ -76,14 +76,49 @@ The Codex goal remains active. Its attachment is
   changed the sampled SDR sky by at most one code. Baseline midnight was
   entirely black. Capture and scoring scripts, matched frames and source hash
   are in `tmp/g3s-showcase/sky-contours/`.
-- Continue [night milestone M1](../../design/modules/ATMOSPHERE-PLAN.md) with
-  the finite-shell reference in `tmp/g3s-showcase/night-design/`. Run
-  `cc -O3 mixed.c -lm -o mixed && ./mixed 2` in that directory. The program
-  gives absolute luminance, ground irradiance and finite-path in-scatter.
-  Rebuild the 24 KiB profile prototype with `cc -O3 profile.c -lm -o profile`,
-  then run `./profile earth-night-rg16f.bin > profile.csv` and
-  `python3 compare-profile.py`. The CPU-packed comparison passes. Next bind
-  it in the atmosphere graph and verify the GPU consumers.
+- The first [M1 night checkpoint](../../design/modules/ATMOSPHERE-PLAN.md)
+  lights the cooked valley at midnight in Metal and Chrome. On Metal, the prior
+  black frame becomes a sky of RGB code 63–68 in the top 130 rows. The sampled
+  foreground rectangle reads 20–29. Dawn, noon, sunset, twilight and the held Sun
+  frames change by at most one RGB code per channel. The independent capture
+  review passed the held ground camera on both paths. A sharp foreground shadow
+  transition around 17.71 h also occurs in the earlier terrain-horizon capture.
+  The sunset sequences stop before full night. An upslope midnight camera, a
+  matched nightglow-off control, continuous late twilight, and live motion remain
+  open. The integrated workspace check passed 465 tests and the rebuilt Chrome
+  valley reproduced the reviewed midnight PNG byte for byte. The new meter's
+  lower EV limit is exercised in the GPU arithmetic test.
+  The real 1% Lambert attachment proof and reused-slot test remain open.
+- Raw files in `tmp/g3s-showcase/night-design/`: native `night-first/`, Chrome
+  `m1-chrome-valley/` and `m1-integrated-chrome/`, the workspace log
+  `m1-integrated-dev-check.log`, scalar reference `mixed-2.csv`, and checked profile
+  `regenerated.rg16f`. To repeat on the current tree, rebuild the game and run
+  the cooked-valley capture command below. Build the default Web artifact and
+  run `node scripts/check_v1_browser.mjs --case valley --output <new-directory>`.
+  Regenerate the embedded profile using the commands in
+  `scripts/generate_earth_night.c` and compare the resulting bytes. The profile
+  is generated from Thrum's model, with no imported sky data.
+- Metal 1080p threaded offscreen valley, two interleaved pairs in each
+  order with one-minute load about 16–21. Medians of four runs per variant
+  against `143c9c82`, in ms:
+
+  | Solar hour | Callback p50/p95/p99, before → after | Scene GPU pass-sum p50/p95/p99, before → after |
+  | --- | --- | --- |
+  | 12 | 1.25/2.61/4.39 → 1.28/2.77/4.67 | 3.85/4.89/6.40 → 4.23/5.38/6.31 |
+  | 19.6 | 1.30/2.16/3.69 → 1.29/2.23/2.93 | 5.52/6.31/7.26 → 5.98/7.59/8.35 |
+
+  The late-twilight scene GPU p95 rises 20%, with overlapping run ranges.
+  Its aerial p50 stays within 0.081–0.109 ms across the pair. Isolated noon
+  tails exceed the tripwire under shared load. Check live pacing before
+  closing M1. Build, raw rows, binaries and hashes live under
+  `tmp/g3s-showcase/night-design/perf/`. Run `sh build-pair.sh` from the
+  repository root using that script's path, then `python3 run-pair.py` with
+  Metal access, adding `--repeat` for the reverse order. Each writes its
+  completed rows atomically and resumes by input hash. The first attempt
+  refused identical executable hashes from a reused Cargo target. The
+  build script now invalidates the render unit before building the candidate.
+- G6's starter case-alias fix landed. The material reload is held separately
+  on default/dev Web build isolation. See `tmp/g6-boundary/NOTES.md`.
 
 ## Exposure audit decision
 

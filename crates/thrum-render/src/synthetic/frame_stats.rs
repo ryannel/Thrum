@@ -37,9 +37,9 @@ pub(crate) fn pass_durations(
         "synthetic Sun shadow far",
         "synthetic Sun horizon heights",
         "synthetic cluster build",
+        "synthetic exposure resolve",
         "synthetic forward opaque",
         history_gpu::PASS_NAME,
-        "synthetic exposure resolve",
         "synthetic tone encode",
     ];
     let names = ALL.into_iter().filter(|&name| match name {

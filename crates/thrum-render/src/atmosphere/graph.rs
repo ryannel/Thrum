@@ -31,6 +31,7 @@ impl AtmospherePrepared {
             },
             ResourceScope::Imported { initialized: true },
         )?;
+        let night_reads = self.night.graph_reads(graph)?;
         let resources = self
             .textures
             .iter()
@@ -76,6 +77,9 @@ impl AtmospherePrepared {
                     kind: AccessKind::SampledRead,
                     store: true,
                 });
+            }
+            if index == 2 {
+                accesses.extend(night_reads.iter().cloned());
             }
             accesses.push(Access {
                 resource: resources[index].clone(),
@@ -187,7 +191,9 @@ impl AtmospherePrepared {
                     store: true,
                 },
             ]
-            .to_vec(),
+            .into_iter()
+            .chain(night_reads)
+            .collect(),
             external_side_effect: false,
         });
         self.append_reflection(graph, keys, &uniform, &resources[2], forward_accesses)?;
