@@ -833,12 +833,6 @@ impl PreparedSynthetic {
                     },
                     count: None,
                 },
-                wgpu::BindGroupLayoutEntry {
-                    binding: 4,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Comparison),
-                    count: None,
-                },
             ]);
         }
         let view_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -2504,10 +2498,6 @@ impl OffscreenTarget {
                 wgpu::BindGroupEntry {
                     binding: 3,
                     resource: wgpu::BindingResource::TextureView(&target_shadow.array_view),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 4,
-                    resource: wgpu::BindingResource::Sampler(&prepared_shadow.sampler),
                 },
             ]);
         }

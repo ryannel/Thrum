@@ -67,7 +67,6 @@ pub(super) struct ShadowPrepared {
     inputs: FitInputs,
     fitted: FittedShadow,
     pub(super) sample_buffer: wgpu::Buffer,
-    pub(super) sampler: wgpu::Sampler,
 }
 
 pub(super) struct ShadowTarget {
@@ -162,11 +161,6 @@ impl ShadowPrepared {
             contents: &fitted.samples,
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
-        let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
-            label: Some("synthetic Sun comparison"),
-            compare: Some(wgpu::CompareFunction::GreaterEqual),
-            ..Default::default()
-        });
         Ok(Self {
             pipeline,
             pipeline_two_sided,
@@ -176,7 +170,6 @@ impl ShadowPrepared {
             inputs,
             fitted,
             sample_buffer,
-            sampler,
         })
     }
 
@@ -296,6 +289,7 @@ struct FitInputs {
     projection: Projection,
     rotation: Mat4,
     caster_depth: Option<(f32, f32)>,
+    caster_height: Option<(f32, f32)>,
 }
 
 impl FitInputs {
@@ -305,6 +299,7 @@ impl FitInputs {
             projection: view.projection(),
             rotation,
             caster_depth: caster_depth_bounds(rotation, instances),
+            caster_height: caster_depth_bounds(light_rotation(Vec3::NEG_Y), instances),
         }
     }
 
@@ -342,6 +337,13 @@ impl FitInputs {
                 Some(depth.map_or((lo, hi), |(a, b)| (a.min(lo), b.max(hi))))
             }
         };
+        let caster_height = bounds.map_or(self.caster_height, |bounds| {
+            let height = bounds.depth_interval(Vec3::Y.to_array());
+            Some(
+                self.caster_height
+                    .map_or(height, |(lo, hi)| (lo.min(height.0), hi.max(height.1))),
+            )
+        });
         let matrices = [
             cascade_matrix(
                 camera_view,
@@ -351,6 +353,7 @@ impl FitInputs {
                 split + overlap,
                 rotation,
                 caster_depth,
+                caster_height,
             )?,
             cascade_matrix(
                 camera_view,
@@ -360,6 +363,7 @@ impl FitInputs {
                 receiver_far,
                 rotation,
                 caster_depth,
+                caster_height,
             )?,
         ];
         let mut samples = [0_u8; SAMPLE_BYTES];
@@ -397,6 +401,7 @@ fn cascade_matrix(
     far: f32,
     rotation: Mat4,
     caster_depth: Option<(f32, f32)>,
+    caster_height: Option<(f32, f32)>,
 ) -> Result<(Mat4, f32), RenderError> {
     let camera_world = camera_view.inverse();
     let corners: [Vec3; 8] = std::array::from_fn(|index| {
@@ -417,7 +422,20 @@ fn cascade_matrix(
         .map(|corner| -rotation.transform_point3(corner).z)
         .fold(f32::NEG_INFINITY, f32::max);
     let blocker_min_depth = caster_depth.map_or(receiver_max_depth, |(lo, _)| lo);
-    let cone_guard = (receiver_max_depth - blocker_min_depth).max(0.0) * SUN_ANGULAR_RADIUS.tan();
+    let mut maximum_gap = (receiver_max_depth - blocker_min_depth).max(0.0);
+    if let Some((_, maximum_y)) = caster_height {
+        let sun_y = rotation.row(2).y;
+        let low = sun_y * SUN_ANGULAR_RADIUS.cos()
+            - (1.0 - sun_y * sun_y).max(0.0).sqrt() * SUN_ANGULAR_RADIUS.sin();
+        if low > 1e-6 {
+            let receiver_min_y = corners
+                .into_iter()
+                .map(|p| p.y)
+                .fold(f32::INFINITY, f32::min);
+            maximum_gap = maximum_gap.min((maximum_y - receiver_min_y).max(0.0) / low);
+        }
+    }
+    let cone_guard = maximum_gap * SUN_ANGULAR_RADIUS.tan();
     let padded_radius = (receiver_radius + cone_guard) / (1.0 - 4.0 / SIZE as f32);
     let radius = (padded_radius * 16.0).ceil() / 16.0;
     let center_light = rotation.transform_point3(center);
@@ -519,9 +537,17 @@ mod tests {
         let camera =
             glam::camera::rh::view::look_at_mat4(Vec3::new(0.0, 0.0, 3.0), Vec3::ZERO, Vec3::Y);
         let light = Vec3::new(1.0, 0.0, 1.0).normalize();
-        let (matrix, _) =
-            cascade_matrix(camera, 1.0, 1.0, near, split, light_rotation(light), None)
-                .expect("finite cascade");
+        let (matrix, _) = cascade_matrix(
+            camera,
+            1.0,
+            1.0,
+            near,
+            split,
+            light_rotation(light),
+            None,
+            None,
+        )
+        .expect("finite cascade");
         let receiver = matrix.project_point3(Vec3::ZERO);
         let caster = matrix.project_point3(Vec3::new(1.0, 0.0, 1.0));
         assert!((receiver.x - caster.x).abs() < 1e-5);
@@ -543,10 +569,10 @@ mod tests {
             Vec3::Y,
         );
         let rotation = light_rotation(light);
-        let (a, _) =
-            cascade_matrix(first, 1.0, 1.0, 0.1, 5.732, rotation, None).expect("first cascade");
-        let (b, _) =
-            cascade_matrix(shifted, 1.0, 1.0, 0.1, 5.732, rotation, None).expect("shifted cascade");
+        let (a, _) = cascade_matrix(first, 1.0, 1.0, 0.1, 5.732, rotation, None, None)
+            .expect("first cascade");
+        let (b, _) = cascade_matrix(shifted, 1.0, 1.0, 0.1, 5.732, rotation, None, None)
+            .expect("shifted cascade");
         let point = Vec3::new(0.2, -0.1, 0.0);
         let before = a.project_point3(point);
         let after = b.project_point3(point);
