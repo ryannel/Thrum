@@ -26,8 +26,8 @@ use super::{
     column_store::TypedStore,
     publication::{PublicationCapture, PublicationPage},
     registered_world::{
-        EntityWriter, PreparedRead2, RegisteredWorld, RegisteredWorldError, TentativeDirty,
-        WorldCapture, WorldDelta, WorldUndo,
+        ChunkedVisit, EntityWriter, PreparedRead2, RegisteredWorld, RegisteredWorldError,
+        TentativeDirty, WorldCapture, WorldDelta, WorldUndo,
     },
     snapshot_ring::{PAGE_COUNT, PublicationBusy},
     transaction::{Edit, EditError, EditScratch, EditWriter},
@@ -1894,7 +1894,7 @@ impl WorldTxn<'_> {
     /// and must not depend on row order. Other chunks may keep writing after
     /// one refuses; returning the earliest chunk's error refuses the tick, and
     /// the abort restores every tentative write. A system must not swallow it.
-    /// Returns the number of rows whose visit reported a change.
+    /// Returns the changed row count and how many chunks ran on the pool.
     ///
     /// # Errors
     ///
@@ -1917,7 +1917,7 @@ impl WorldTxn<'_> {
         exclude: impl FnOnce(&C, &mut dyn FnMut(usize)),
         select: impl Fn(&C, Handle, StableId, &T, &U) -> bool + Sync,
         visit: impl Fn(&C, Handle, StableId, &mut T, &U) -> Result<bool, E> + Sync,
-    ) -> Result<usize, E> {
+    ) -> Result<ChunkedVisit, E> {
         assert_eq!(query.nonce, self.nonce, "query belongs to another runtime");
         assert_eq!(query.system, self.system, "query belongs to another system");
         assert!(query.indexed, "query has no active index");

@@ -158,6 +158,7 @@ fn setup(
         commands: Vec::with_capacity(128),
         committed_inputs: Vec::with_capacity(config.peer_capacity),
         changed_positions: 0,
+        kernel_dispatches: 0,
         input_velocity: InputVelocityPermits {
             velocity_write: runtime.write_permit(INPUT).map_err(map_runtime)?,
         },
@@ -329,6 +330,11 @@ impl Simulation {
     /// Last complete world tick.
     pub fn tick(&self) -> u64 {
         self.runtime.tick()
+    }
+    /// Diagnostic count of committed ticks whose mover kernel ran on the
+    /// Rayon pool, replayed ticks included. Not authority: never captured.
+    pub fn kernel_dispatches(&self) -> u64 {
+        self.rules.kernel_dispatches
     }
     /// Presentation branch generation of the latest committed endpoint.
     pub fn timeline(&self) -> u64 {

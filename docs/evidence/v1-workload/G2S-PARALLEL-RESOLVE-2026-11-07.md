@@ -47,9 +47,14 @@ refusal. These are correctness results. All timings below are from a heavily sha
 | `g2s_chunked_kernel::a_kernel_panic_restores_every_chunk_in_every_mode` | A panic in the last chunk's callback still merges every chunk's preimages. The preparation abort restores all rows, and the next tick matches a straight run in Serial and RayonForced. |
 | Existing 39 `simulation` tests | They pass unchanged: 1,000-tick randomized churn replay, 10k corrected replay, four-peer Serial/RayonForced equality, held pages, and zero warmed caller-thread allocations. |
 
-A temporary chunk-count trace showed the 100k `RayonForced` run dispatching 21 kernel runs: 20 over four chunks and
-one over 25. Requested Rayon dispatched none. The trace was removed, so the game-level dispatch claim rests on that
-recorded trace. Overlap is asserted only in the 8,192-row core fixture.
+The kernel now reports how many chunks it dispatched (`ChunkedVisit::dispatched_chunks`). V1 counts committed
+ticks whose kernel ran on the pool (`Simulation::kernel_dispatches`, a diagnostic that is never captured). The 100k
+run asserts which path each mode took:
+- `RayonForced` dispatched on all 20 committed ticks: 12 forward and 8 replayed.
+- Serial and requested `Rayon` dispatched on none.
+
+The requested-Rayon assertion is written to fail once a crossover is promoted, so that row must then prove the
+requested path. Overlap of two chunk callbacks is asserted only in the 8,192-row core fixture.
 
 ## Contended crossover rows
 

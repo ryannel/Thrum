@@ -33,6 +33,7 @@ struct Page;
 struct Candidate {
     motion: WriteRead2<Height, Drift>,
     changed: usize,
+    dispatched: usize,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -111,7 +112,7 @@ impl Rules {
         let probe = self.probe.enabled.load(Ordering::SeqCst);
         let skip_fifths = self.skip_fifths;
         let panic_slot = self.panic_slot;
-        candidate.changed = world.visit_chunked_indexed(
+        let visit = world.visit_chunked_indexed(
             &motion,
             executor,
             &self.refuse_slot,
@@ -132,6 +133,8 @@ impl Rules {
                 Ok(true)
             },
         )?;
+        candidate.changed = visit.changed;
+        candidate.dispatched = visit.dispatched_chunks;
         Ok(())
     }
 }
@@ -242,6 +245,7 @@ fn fixture(mode: ExecutionMode) -> Fixture {
             .write_read2_indexed::<Height, Drift>(MOVE)
             .expect("indexed motion"),
         changed: 0,
+        dispatched: 0,
     };
     let height = runtime.read_permit(MOVE).expect("height read");
     let mut rules = Rules::default();
@@ -286,6 +290,11 @@ fn forced_rayon_runs_independent_chunks_at_the_same_time() {
     serial.rules.probe.enabled.store(true, Ordering::SeqCst);
     serial.step().expect("serial tick");
     assert_eq!(serial.rules.probe.peak.load(Ordering::SeqCst), 1);
+    assert!(
+        forced.candidate.dispatched >= 2,
+        "forced Rayon dispatched its chunks"
+    );
+    assert_eq!(serial.candidate.dispatched, 0, "serial dispatches nothing");
     assert_eq!(forced.heights(), serial.heights());
 }
 

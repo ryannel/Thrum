@@ -612,6 +612,15 @@ pub(super) struct RegisteredWorld {
 /// sized so one Rayon task outweighs its dispatch on small row kernels.
 pub(super) const KERNEL_CHUNK_WORDS: usize = 64;
 
+/// Outcome of one chunked in-place visit.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct ChunkedVisit {
+    /// Rows whose visit reported a change.
+    pub changed: usize,
+    /// Chunks dispatched to the Rayon pool; zero when the visit ran serially.
+    pub dispatched_chunks: usize,
+}
+
 /// One chunk's private kernel output, merged on the caller in chunk order.
 struct ChunkOutput<T> {
     /// First-write preimages: logical slot, prior value and prior change tick.
@@ -1736,7 +1745,7 @@ impl RegisteredWorld {
         context: &C,
         select: impl Fn(&C, Handle, StableId, &T, &U) -> bool + Sync,
         visit: impl Fn(&C, Handle, StableId, &mut T, &U) -> Result<bool, E> + Sync,
-    ) -> Result<usize, E> {
+    ) -> Result<ChunkedVisit, E> {
         assert_ne!(first, second, "mutable query components must be distinct");
         let mut scratch = self.chunk_scratch[first]
             .take()
@@ -1753,6 +1762,12 @@ impl RegisteredWorld {
             .expect("indexed shared component");
         let last = active_words.iter().rposition(|word| *word != 0);
         let chunks = last.map_or(0, |last| (last + 1).div_ceil(KERNEL_CHUNK_WORDS));
+        // Chunks run on the pool only under a parallel executor with more than one.
+        let dispatched_chunks = if parallel && chunks > 1 && cfg!(not(target_arch = "wasm32")) {
+            chunks
+        } else {
+            0
+        };
         if outputs.len() < chunks {
             outputs.resize_with(chunks, ChunkOutput::default);
         }
@@ -1919,7 +1934,10 @@ impl RegisteredWorld {
         }
         match refusal.into_inner().expect("refusal lock") {
             Some((_, error)) => Err(error),
-            None => Ok(changed),
+            None => Ok(ChunkedVisit {
+                changed,
+                dispatched_chunks,
+            }),
         }
     }
 
