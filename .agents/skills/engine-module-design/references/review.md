@@ -52,7 +52,7 @@ of review before it's built on.
   allocation, unnecessary readbacks and redundant transforms.
 - **Visual output.** Reviewers inspect captured images and sequences directly. They state whether they watched motion
   or sampled stills, at native size or downscaled, and which build they saw. Judge each indispensable cue separately;
-  good lighting or performance doesn't compensate for failed dynamics. Reviews diagnose the responsible layer
+  good lighting or performance doesn't compensate for failed dynamics. Motion review covers the transitions as well as the steady state: the start from rest, stops, speed changes, turns and camera cuts. Onset faults hide in steady-speed footage. Reviews diagnose the responsible layer
   ([system diagnosis](system-diagnosis.md)) rather than prescribing cosmetic fixes.
 - **Performance claims.** Challenge benchmark identity and fairness, tails, equivalence claims, actual saved work,
   memory accounting and contention on a shared GPU ([performance](performance.md)).
