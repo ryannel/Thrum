@@ -59,12 +59,15 @@ pub(super) struct Witness {
     pub(super) last_command: String,
     pub(super) main_max_us: u128,
     pub(super) lifecycle_main_max_us: u128,
+    pub(super) main_max_kind: &'static str,
+    pub(super) lifecycle_main_max_kind: &'static str,
     pub(super) stall_main_max_us: u128,
     pub(super) stalls: u64,
     pub(super) stall_targets: u64,
     pub(super) stall_tick_start: u64,
     pub(super) stall_tick_end: u64,
     pub(super) stall_status: String,
+    pub(super) stall_active: bool,
     pub(super) world_tick: u64,
     pub(super) world_paused: bool,
     pub(super) pause_requests: u64,
@@ -93,12 +96,22 @@ impl Witness {
         Self::default()
     }
 
-    pub(super) fn main_callback(&mut self, wall: Duration, stalled: bool, lifecycle: bool) {
+    pub(super) fn main_callback(
+        &mut self,
+        wall: Duration,
+        stalled: bool,
+        lifecycle: bool,
+        kind: &'static str,
+    ) {
         let micros = wall.as_micros();
         if lifecycle {
-            self.lifecycle_main_max_us = self.lifecycle_main_max_us.max(micros);
-        } else {
-            self.main_max_us = self.main_max_us.max(micros);
+            if micros > self.lifecycle_main_max_us {
+                self.lifecycle_main_max_us = micros;
+                self.lifecycle_main_max_kind = kind;
+            }
+        } else if micros > self.main_max_us {
+            self.main_max_us = micros;
+            self.main_max_kind = kind;
         }
         if stalled {
             self.stall_main_max_us = self.stall_main_max_us.max(micros);
@@ -234,7 +247,10 @@ impl Witness {
             let _ = writeln!(out, "{key}={value}");
         }
         let [x, y, z] = self.last_axes;
-        let tail: [(&str, String); 9] = [
+        let tail: [(&str, String); 12] = [
+            ("stall_active", self.stall_active.to_string()),
+            ("main_max_kind", self.main_max_kind.to_owned()),
+            ("lifecycle_main_max_kind", self.lifecycle_main_max_kind.to_owned()),
             ("last_axes", format!("{x},{y},{z}")),
             ("lifecycle_main_max_us", self.lifecycle_main_max_us.to_string()),
             ("touch_sends", g.sends.to_string()),

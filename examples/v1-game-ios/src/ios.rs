@@ -32,7 +32,7 @@ use witness::Witness;
 static SHELL: OnceLock<EventLoopProxy<ShellEvent>> = OnceLock::new();
 static WORLD_THREAD: OnceLock<String> = OnceLock::new();
 /// Qualification hold inside the render owner's lease section.
-const STALL: Duration = Duration::from_millis(1500);
+const STALL: Duration = Duration::from_secs(5);
 /// Frame replies between routine witness writes.
 const WITNESS_EVERY: u64 = 120;
 /// Recently detached windows whose late touches are still recognised.
@@ -43,6 +43,8 @@ enum ShellEvent {
     Target(f64),
     RenderDone,
     WorldAdvanced,
+    /// Qualification only: the render owner is holding a stalled section.
+    Stalling,
     Command(Command),
 }
 
@@ -192,6 +194,8 @@ struct Shell {
     observed_extent: [u32; 2],
     hidden: bool,
     stall_next: bool,
+    /// The render owner reported that it holds a stalled section.
+    stalling: bool,
     controls: Option<v1_game::WorldControls>,
     policy: WorldPolicy,
     gesture: Gesture,
@@ -220,6 +224,7 @@ impl Shell {
             observed_extent: [0; 2],
             hidden: false,
             stall_next: false,
+            stalling: false,
             controls: None,
             policy: WorldPolicy::default(),
             gesture: Gesture::new(),
@@ -312,9 +317,16 @@ impl Shell {
     fn start(&mut self, event_loop: &ActiveEventLoop) -> Result<(), String> {
         let epoch = self.attach_surface(event_loop)?;
         let wake = SHELL.get().ok_or("iOS shell proxy missing")?.clone();
-        let render = render::start(Arc::clone(&self.lease), move || {
-            let _ = wake.send_event(ShellEvent::RenderDone);
-        })?;
+        let stalling = wake.clone();
+        let render = render::start(
+            Arc::clone(&self.lease),
+            move || {
+                let _ = wake.send_event(ShellEvent::RenderDone);
+            },
+            move || {
+                let _ = stalling.send_event(ShellEvent::Stalling);
+            },
+        )?;
         let world = SHELL.get().ok_or("iOS shell proxy missing")?.clone();
         self.origin = Instant::now();
         let job = Job::Prepare {
@@ -480,7 +492,8 @@ impl Shell {
                 self.witness.resizes += 1;
             }
         }
-        let stall = std::mem::take(&mut self.stall_next).then_some(STALL);
+        // A stall request stays until a frame reaches the section and holds it.
+        let stall = self.stall_next.then_some(STALL);
         let request = FrameRequest {
             epoch: self.lease.epoch(),
             target_media_seconds: target,
@@ -500,10 +513,7 @@ impl Shell {
         }
         self.in_flight = true;
         self.witness.requests += 1;
-        if stall.is_some() {
-            self.stall_in_flight = true;
-            self.witness.stall_tick_start = self.witness.world_tick;
-        }
+        self.stall_in_flight = stall.is_some();
         Ok(())
     }
 
@@ -532,9 +542,11 @@ impl Shell {
             Reply::Frame(frame) => {
                 let frame = frame?;
                 self.witness.frame_thread = thread.unwrap_or_default();
-                let stall_ended = frame.stalled || self.stall_in_flight;
+                self.stall_in_flight = false;
+                let stall_ended = frame.stalled;
                 if stall_ended {
-                    self.stall_in_flight = false;
+                    self.stall_next = false;
+                    self.stalling = false;
                     self.witness.stalls += 1;
                     self.witness.stall_status = format!("{:?}", frame.status);
                 }
@@ -600,6 +612,7 @@ impl Shell {
         self.witness.refused_ticks = self.policy.refused_ticks();
         self.witness.gesture = self.gesture.counters();
         self.witness.input_epoch = self.gesture.epoch();
+        self.witness.stall_active = self.stalling;
         self.witness.world_thread = WORLD_THREAD.get().cloned().unwrap_or_default();
         self.witness.live_detached_windows = live_detached_windows();
         self.witness.write();
@@ -612,19 +625,27 @@ impl Shell {
     }
 
     /// Time one UIKit callback; a long one would show UIKit waiting.
-    /// Lifecycle callbacks create or detach windows and are timed apart from
+    /// Callbacks that create or detach windows (lifecycle, commands, or a
+    /// frame reply completing a deferred replacement) are timed apart from
     /// per-frame and input callbacks.
     fn timed(
         &mut self,
         event_loop: &ActiveEventLoop,
-        lifecycle: bool,
+        kind: &'static str,
         run: impl FnOnce(&mut Self, &ActiveEventLoop) -> Result<(), String>,
     ) {
         let start = Instant::now();
         let stalled = self.stall_in_flight;
+        let windows = (self.witness.installs, self.witness.detached_windows);
         let result = run(self, event_loop);
-        self.witness
-            .main_callback(start.elapsed(), stalled || self.stall_in_flight, lifecycle);
+        let lifecycle = matches!(kind, "resumed" | "suspended" | "command")
+            || windows != (self.witness.installs, self.witness.detached_windows);
+        self.witness.main_callback(
+            start.elapsed(),
+            stalled || self.stall_in_flight,
+            lifecycle,
+            kind,
+        );
         if let Err(error) = result {
             self.fail(event_loop, error);
         }
@@ -633,7 +654,7 @@ impl Shell {
 
 impl ApplicationHandler<ShellEvent> for Shell {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
-        self.timed(event_loop, true, |shell, event_loop| {
+        self.timed(event_loop, "resumed", |shell, event_loop| {
             if shell.render.is_none() {
                 shell.start(event_loop)
             } else {
@@ -643,18 +664,31 @@ impl ApplicationHandler<ShellEvent> for Shell {
     }
 
     fn suspended(&mut self, event_loop: &ActiveEventLoop) {
-        self.timed(event_loop, true, |shell, _| shell.suspend());
+        self.timed(event_loop, "suspended", |shell, _| shell.suspend());
     }
 
     fn user_event(&mut self, event_loop: &ActiveEventLoop, event: ShellEvent) {
-        let lifecycle = matches!(event, ShellEvent::Command(_));
-        self.timed(event_loop, lifecycle, |shell, event_loop| match event {
+        let kind = match event {
+            ShellEvent::Target(_) => "target",
+            ShellEvent::RenderDone => "render",
+            ShellEvent::WorldAdvanced => "world",
+            ShellEvent::Stalling => "stalling",
+            ShellEvent::Command(_) => "command",
+        };
+        self.timed(event_loop, kind, |shell, event_loop| match event {
             ShellEvent::Target(target) => {
                 shell.target(target);
                 shell.dispatch()
             }
             ShellEvent::RenderDone => shell.render_done(event_loop),
             ShellEvent::WorldAdvanced => shell.reconcile_world(),
+            ShellEvent::Stalling => {
+                shell.stalling = true;
+                shell.witness.stall_tick_start = shell.witness.world_tick;
+                // The route waits for this before revoking the stalled surface.
+                shell.write();
+                Ok(())
+            }
             ShellEvent::Command(command) => shell.command(event_loop, command),
         });
     }
@@ -668,13 +702,13 @@ impl ApplicationHandler<ShellEvent> for Shell {
                 && self.retired.contains(&id)
             {
                 self.witness.old_window_touches += 1;
-                self.timed(event_loop, false, |shell, _| {
+                self.timed(event_loop, "touch", |shell, _| {
                     shell.touch(touch.id, touch.phase, [touch.location.x, touch.location.y])
                 });
             }
             return;
         }
-        self.timed(event_loop, false, |shell, event_loop| match event {
+        self.timed(event_loop, "window", |shell, event_loop| match event {
             WindowEvent::CloseRequested => {
                 event_loop.exit();
                 Ok(())

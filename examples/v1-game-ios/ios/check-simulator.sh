@@ -65,5 +65,11 @@ trap 'exit 143' TERM
 run_simctl bootstatus "$thrum_device" -b
 run_simctl install "$thrum_device" "$thrum_app"
 thrum_container=$(run_simctl get_app_container "$thrum_device" org.thrum.v1 data)
-SIMCTL_CHILD_THRUM_V1_ROUTE=1 run_simctl launch "$thrum_device" org.thrum.v1
+# A just-booted device can stall its first launch while it finishes setting up.
+# A second launch of a running app only foregrounds the same process, so one
+# retry cannot start a second game.
+if ! SIMCTL_CHILD_THRUM_V1_ROUTE=1 run_simctl launch "$thrum_device" org.thrum.v1; then
+    echo "first launch did not complete; retrying once" >&2
+    SIMCTL_CHILD_THRUM_V1_ROUTE=1 run_simctl launch "$thrum_device" org.thrum.v1
+fi
 python3 examples/v1-game-ios/ios/route.py "$thrum_device" "$thrum_container/tmp/thrum-v1-ios-state.txt"
