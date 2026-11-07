@@ -23,8 +23,8 @@ Reviews:
   always-submitted rule, three small gaps). All applied in revision 4a.
 
 Milestone: none started (plan awaiting re-review and seam rulings) · Updated: 2026-11-07
-Now: revision 4 answers Thrum Core's review of revision 3 (since 2026-11-07).
-Next: exact-revision recheck, the owner's archive ruling, then Thrum Core's seam rulings.
+Now: revision 5 rewrites seam 5 to the owner's archive direction (since 2026-11-07).
+Next: review of revision 5, Thrum Core's reading, then landing and seam rulings.
 Blocked: code commissions wait for:
 - the atmosphere graph checkpoint `d2a5342` on `codex/g3s-stars-main-wip`, for interface reads only, pending the reviewed night baseline and the exact final check on main;
 - Thrum Core approval of the exact seams in the design's *Seams* list.
@@ -451,3 +451,5 @@ That is **15.5 build days**, plus 1–2 days of review and seam turnaround, for 
   - the atmosphere checkpoint is `d2a5342`, for interface reads.
 - 2026-11-07 Revision 4a applies the composed-frame recheck of `9938b0d0`: the lifetime guarantee is generation
   ownership, not wgpu-hal's retained-references default, and N's completed handler raises device loss.
+- 2026-11-07 Revision 5 rewrites seam 5 to the owner's direction: measure first, then offline metallibs through
+  passthrough and an upstream Metal `PIPELINE_CACHE` (gfx-rs/wgpu#8526). The rewording option is withdrawn.
