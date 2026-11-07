@@ -26,8 +26,8 @@ G3s twilight item.
   meter drops below 1,000 lux. After that the floor eases from 119 to 110 with no step.
 - **Chrome.** The WebGPU `sky-reflections` case passed with Wasm SHA-256
   `70f5bfcb3bdfd9d4cdbd989f4d8b7fef04bc4e726418e59e001af3d6b6d727bd`.
-- **Continuity.** The key is a smooth function of the metered illuminance, which already varies continuously
-  with the Sun. It adds no temporal state.
+- **Continuity.** The key is continuous in the metered illuminance and has a slope change at 1,000 lux.
+  It adds no temporal state.
 
 ## Independent review
 
@@ -45,7 +45,17 @@ The reviewer also raised three points:
   for the sky.
 - **Horizon band.** The warm horizon band is narrower than the photographs' pink-to-violet gradient.
 
-## Open
+## Exposure scope
+
+The valley uses a horizontal incident meter so panning the camera leaves the reference exposure stable.
+Its flat-meter calibration and physical camera gain follow Filament. The low-light key sets the brightness
+target for this scene. General view-adaptive exposure uses reflected scene luminance, a weighted or
+percentile meter and independent adaptation rates for dark and bright transitions. Unreal and Unity also
+offer authored compensation. The valley's fixed FP16 storage scale is a separate choice and still clips
+the solar disk at high illuminance. Coordinated HDR storage and output remain G3t/G4 work.
+[Filament camera](https://google.github.io/filament/main/filament.html),
+[Unreal auto exposure](https://dev.epicgames.com/documentation/en-us/unreal-engine/auto-exposure-in-unreal-engine),
+[Unity HDRP exposure](https://docs.unity.cn/Packages/com.unity.render-pipelines.high-definition@17.0/manual/reference-override-exposure.html).
 
 - The sky-to-ground balance is still a camera choice. A sky-weighted meter, or a stronger key, would move
   further toward the photographs. Neither is tuned here.
