@@ -260,7 +260,7 @@ fn cascade_visibility(index: u32, receiver: ShadowReceiver) -> f32 {
         search_gap=min(search_gap,world_gap*inverse_span);
     }
     let search_radius = search_gap*scale;
-    var gap_sum = 0.0;
+    var nearest_gap = 1.0;
     var blockers = 0.0;
     for(var i=0u;i<16u;i++) {
         let offset=select(SHADOW_DISK[i*2u],vec2(0.0),i==0u);
@@ -269,19 +269,23 @@ fn cascade_visibility(index: u32, receiver: ShadowReceiver) -> f32 {
         let texel=clamp(vec2<i32>(q*extent),vec2(0),vec2<i32>(extent)-1);
         let tap=(vec2<f32>(texel)+0.5)/extent;
         let depth=textureLoad(shadow_maps,texel,i32(index),0);
-        let receiver_depth=reference+dot(depth_gradient,tap-q);
+        let receiver_depth=reference+dot(depth_gradient,tap-uv);
         let plane_depth=p.z+dot(depth_gradient,tap-uv);
         let epsilon=select(shadows.penumbra.w,shadows.penumbra.z,index==0u)+4e-7;
         let same_plane=abs(depth-plane_depth)<=epsilon;
         if depth>0.0 && depth>receiver_depth && !same_plane {
-            gap_sum+=max(0.0,depth-p.z);
+            nearest_gap=min(nearest_gap,max(0.0,depth-p.z));
             blockers+=1.0;
         }
     }
     if blockers==0.0 {
         return shadow_filter(index,uv,p.z,reference,depth_gradient,extent,uv);
     }
-    let radius=gap_sum/blockers*scale;
+    // The nearest blocker preserves contact when depths overlap. At grazing
+    // incidence bound plane extrapolation before it can pass that blocker.
+    let physical_radius=nearest_gap*scale;
+    let plane_radius=0.5*nearest_gap/max(length(depth_gradient),1e-12);
+    let radius=min(physical_radius,plane_radius);
     if radius*extent.x<=0.5 {
         return shadow_filter(index,uv,p.z,reference,depth_gradient,extent,uv);
     }
@@ -293,8 +297,8 @@ fn cascade_visibility(index: u32, receiver: ShadowReceiver) -> f32 {
     return visible/32.0;
 }
 
-// Correct the four texel centres locally. Across the physical disk, only
-// matching the receiver plane is exempted; real upstream occluders remain.
+// Receiver-plane reconstruction follows each physical disk sample. The
+// cascade bounds its extrapolation by the nearest blocker separation.
 fn shadow_filter(index:u32,uv:vec2<f32>,receiver_depth:f32,reference:f32,
     gradient:vec2<f32>,extent:vec2<f32>,origin:vec2<f32>) -> f32 {
     if any(uv<vec2(0.0)) || any(uv>vec2(1.0)) { return 1.0; }
@@ -306,7 +310,7 @@ fn shadow_filter(index:u32,uv:vec2<f32>,receiver_depth:f32,reference:f32,
         let offset = vec2(f32(i & 1u),f32(i >> 1u));
         let tap = (clamp(first+offset,vec2(0.0),extent-1.0)+0.5)/extent;
         let weight = mix(1.0-blend,blend,offset);
-        let tap_depth = max(0.0,reference+dot(gradient,tap-uv));
+        let tap_depth = max(0.0,reference+dot(gradient,tap-origin));
         let texel=vec2<i32>(clamp(first+offset,vec2(0.0),extent-1.0));
         let depth=textureLoad(shadow_maps,texel,i32(index),0);
         let plane_depth=receiver_depth+dot(gradient,tap-origin);
