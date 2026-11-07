@@ -65,6 +65,13 @@ manifest = "examples/v1-game/Cargo.toml"
 allowed_workspace_dependencies = ["thrum-app", "thrum-asset", "thrum-asset-gpu", "thrum-content-runtime", "thrum-controls", "thrum-cook", "thrum-core", "thrum-render"]
 implicit_dependencies = { wasm-bindgen-futures = "async wasm_bindgen export expansion calls wasm_bindgen_futures" }
 
+[packages.thrum-starter]
+manifest = "examples/starter/Cargo.toml"
+# G6 starter: the sky kit in thrum-app, one cooked mesh through thrum-asset-gpu and typed
+# controls; no engine game types. `./dev starter` cooks and watches its assets with thrum-cook
+# as a separate process, so it never depends on the authoring cooker.
+allowed_workspace_dependencies = ["thrum-app", "thrum-asset-gpu", "thrum-controls"]
+
 [packages.v1-game-ios]
 manifest = "examples/v1-game-ios/Cargo.toml"
 allowed_workspace_dependencies = ["v1-game", "thrum-render"]

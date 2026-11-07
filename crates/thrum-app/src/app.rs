@@ -40,6 +40,9 @@ use crate::{Config, Game, Gpu, KeyResponse};
 
 const DEFAULT_FRAMES: usize = 600;
 const MAX_FRAMES: usize = 100_000;
+/// Entries each profile history keeps in a run until closed; the oldest half is dropped
+/// when one exceeds it, so a long session holds a bounded recent window.
+const RETAINED_PROFILES: usize = 36_000;
 /// The first device's generation; recovery owns later ones.
 const DEVICE_GENERATION: u64 = 1;
 
@@ -88,7 +91,14 @@ struct App<G: Game> {
     last_call: Duration,
     presented: usize,
     target_frames: usize,
-    run_deadline: Duration,
+    /// Wall deadline of a bounded run; a run until closed has none.
+    run_deadline: Option<Duration>,
+    /// Profile history bound of a run until closed; a bounded run retains every sample.
+    retain_limit: Option<usize>,
+    /// Presented samples dropped from a bounded history.
+    trimmed_presented: usize,
+    /// A run until closed ended because its window closed, which is success.
+    window_closed: bool,
     callbacks: usize,
     unavailable: usize,
     occluded: usize,
@@ -104,13 +114,23 @@ struct App<G: Game> {
 }
 
 impl<G: Game + 'static> App<G> {
-    fn new(config: Config, wake: EventLoopProxy<UserEvent>, target_frames: usize, game: G) -> Self {
-        let run_deadline = Duration::from_secs(30).max(
-            Duration::from_secs(10)
-                + Duration::from_millis(
-                    u64::try_from(target_frames).expect("bounded frame count") * 10,
-                ),
-        );
+    /// `target_frames` of `None` runs until the window closes.
+    fn new(
+        config: Config,
+        wake: EventLoopProxy<UserEvent>,
+        target_frames: Option<usize>,
+        game: G,
+    ) -> Self {
+        let run_deadline = target_frames.map(|frames| {
+            Duration::from_secs(30).max(
+                Duration::from_secs(10)
+                    + Duration::from_millis(
+                        u64::try_from(frames).expect("bounded frame count") * 10,
+                    ),
+            )
+        });
+        let retain_limit = target_frames.is_none().then_some(RETAINED_PROFILES);
+        let reserved = target_frames.unwrap_or(RETAINED_PROFILES / 8);
         Self {
             config,
             wake,
@@ -143,16 +163,19 @@ impl<G: Game + 'static> App<G> {
             origin: Instant::now(),
             last_call: Duration::ZERO,
             presented: 0,
-            target_frames,
+            target_frames: target_frames.unwrap_or(usize::MAX),
             run_deadline,
+            retain_limit,
+            trimmed_presented: 0,
+            window_closed: false,
             callbacks: 0,
             unavailable: 0,
             occluded: 0,
             surface_faults: 0,
-            callback_walls: Vec::with_capacity(target_frames * 8),
-            worker_walls: Vec::with_capacity(target_frames * 4),
-            acquire_walls: Vec::with_capacity(target_frames * 4),
-            samples: Vec::with_capacity(target_frames * 2),
+            callback_walls: Vec::with_capacity(reserved * 8),
+            worker_walls: Vec::with_capacity(reserved * 4),
+            acquire_walls: Vec::with_capacity(reserved * 4),
+            samples: Vec::with_capacity(reserved * 2),
             profiler_title_at: Duration::ZERO,
             adapter_name: String::new(),
             error: None,
@@ -471,7 +494,32 @@ impl<G: Game + 'static> App<G> {
         self.load_params()
     }
 
+    /// Drop the oldest half of any profile history over a run until closed's bound.
+    fn trim_history(&mut self) {
+        let Some(limit) = self.retain_limit else {
+            return;
+        };
+        for walls in [
+            &mut self.callback_walls,
+            &mut self.worker_walls,
+            &mut self.acquire_walls,
+        ] {
+            if walls.len() > limit {
+                walls.drain(..walls.len() - limit / 2);
+            }
+        }
+        if self.samples.len() > limit {
+            let excess = self.samples.len() - limit / 2;
+            self.trimmed_presented += self
+                .samples
+                .drain(..excess)
+                .filter(|sample| sample.surface_presented)
+                .count();
+        }
+    }
+
     fn receive_render(&mut self, reply: RenderReply<G::Readback>) -> Result<(), String> {
+        self.trim_history();
         if let RenderOutcome::Recovered { attempted, result } = reply.outcome {
             let success = result.is_ok();
             if !self
@@ -631,6 +679,7 @@ impl<G: Game + 'static> App<G> {
         let size = self.window.as_ref().ok_or("window missing")?.inner_size();
         let extent = [size.width, size.height];
         self.observe_extent(extent)?;
+        self.edits.carry(self.game.frame_edits());
         let job = RenderJob::Frame(FrameRequest {
             sequence: self.target_sequence,
             device_generation: self.recovery.active,
@@ -654,7 +703,7 @@ impl<G: Game + 'static> App<G> {
             }
         }
         self.render_in_flight = Some(self.edits.submitted());
-        if now >= self.run_deadline {
+        if self.run_deadline.is_some_and(|deadline| now >= deadline) {
             return Err(self.deadline_error());
         }
         Ok(())
@@ -666,7 +715,13 @@ impl<G: Game + 'static> App<G> {
             let reply = worker
                 .recv_timeout(Duration::from_secs(10))
                 .ok_or("render worker did not finish its last frame")?;
-            self.receive_render(reply)?;
+            // Closing the window stops the render owner, which may refuse the frame in flight;
+            // that refusal ends a run until closed normally.
+            if self.window_closed && matches!(reply.outcome, RenderOutcome::Frame(Err(_))) {
+                self.render_in_flight = None;
+            } else {
+                self.receive_render(reply)?;
+            }
         }
         self.render
             .as_ref()
@@ -710,7 +765,7 @@ impl<G: Game + 'static> App<G> {
         }
         let missing = recovery::missing_profiles(
             self.presented,
-            presented.len(),
+            presented.len() + self.trimmed_presented,
             self.device_losses != 0 || final_device_loss,
         )?;
         if presented.is_empty() {
@@ -924,7 +979,11 @@ impl<G: Game + 'static> ApplicationHandler<UserEvent> for App<G> {
         let result = match event {
             WindowEvent::CloseRequested | WindowEvent::Destroyed => {
                 self.render_stopped.store(true, Ordering::Release);
-                self.closed_by_user |= self.presented < self.target_frames;
+                if self.run_deadline.is_none() {
+                    self.window_closed = true;
+                } else {
+                    self.closed_by_user |= self.presented < self.target_frames;
+                }
                 let result = self.invalidate_surface();
                 event_loop.exit();
                 result
@@ -983,24 +1042,44 @@ impl<G: Game + 'static> ApplicationHandler<UserEvent> for App<G> {
     }
 
     fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
-        if self.window.is_some() && self.render.is_some() {
-            if self.origin.elapsed() >= self.run_deadline {
+        if self.window.is_some()
+            && self.render.is_some()
+            && let Some(deadline) = self.run_deadline
+        {
+            if self.origin.elapsed() >= deadline {
                 self.error = Some(self.deadline_error());
                 event_loop.exit();
             } else {
-                event_loop
-                    .set_control_flow(ControlFlow::WaitUntil(self.origin + self.run_deadline));
+                event_loop.set_control_flow(ControlFlow::WaitUntil(self.origin + deadline));
             }
         }
     }
 }
 
 /// Run `game` in one window until its bounded frame count presents, then print the frames
-/// report. The count comes from `config.frames_variable`. Setup, GPU and world failures are
-/// reported on standard error and exit the process with a nonzero status.
+/// report. The count comes from `config.frames_variable` (default 600). Setup, GPU and world
+/// failures are reported on standard error and exit the process with a nonzero status.
 ///
 /// # Panics
 /// If the platform refuses to create the event loop, as on a second call in one process.
+pub fn run<G: Game + 'static>(config: Config, game: impl FnOnce() -> Result<G, String>) {
+    run_with(config, false, game);
+}
+
+/// Run `game` in one window until the person closes it, then print the frames report over a
+/// bounded window of recent samples. Closing the window is success. Setting
+/// `config.frames_variable` bounds the run exactly as [`run`] does, for scripted checks.
+/// Failures are reported on standard error and exit the process with a nonzero status.
+///
+/// # Panics
+/// If the platform refuses to create the event loop, as on a second call in one process.
+pub fn run_until_closed<G: Game + 'static>(
+    config: Config,
+    game: impl FnOnce() -> Result<G, String>,
+) {
+    run_with(config, true, game);
+}
+
 #[expect(
     clippy::print_stdout,
     reason = "the bounded diagnostic reports its measured surface frame"
@@ -1009,10 +1088,15 @@ impl<G: Game + 'static> ApplicationHandler<UserEvent> for App<G> {
     clippy::print_stderr,
     reason = "the diagnostic reports setup or GPU faults"
 )]
-pub fn run<G: Game + 'static>(config: Config, game: impl FnOnce() -> Result<G, String>) {
-    let target_frames = match run_frames(
+fn run_with<G: Game + 'static>(
+    config: Config,
+    until_closed: bool,
+    game: impl FnOnce() -> Result<G, String>,
+) {
+    let target_frames = match frame_limit(
         config.frames_variable,
         std::env::var(config.frames_variable).ok().as_deref(),
+        until_closed,
     ) {
         Ok(frames) => frames,
         Err(error) => {
@@ -1049,6 +1133,18 @@ pub fn run<G: Game + 'static>(config: Config, game: impl FnOnce() -> Result<G, S
     }
 }
 
+/// The run's presented-frame bound, or `None` to run until the window closes.
+fn frame_limit(
+    variable: &str,
+    value: Option<&str>,
+    until_closed: bool,
+) -> Result<Option<usize>, String> {
+    if until_closed && value.is_none() {
+        return Ok(None);
+    }
+    run_frames(variable, value).map(Some)
+}
+
 fn run_frames(variable: &str, value: Option<&str>) -> Result<usize, String> {
     let Some(value) = value else {
         return Ok(DEFAULT_FRAMES);
@@ -1064,7 +1160,7 @@ fn run_frames(variable: &str, value: Option<&str>) -> Result<usize, String> {
 
 #[cfg(test)]
 mod tests {
-    use super::run_frames;
+    use super::{frame_limit, run_frames};
 
     #[test]
     fn frame_count_for_present_qualification_is_bounded() {
@@ -1080,5 +1176,16 @@ mod tests {
             run_frames(Some("nan")),
             Err("THRUM_V1_FRAMES must be a positive integer".to_owned())
         );
+    }
+
+    #[test]
+    fn a_run_until_closed_is_bounded_only_when_its_variable_is_set() {
+        assert_eq!(frame_limit("THRUM_STARTER_FRAMES", None, true), Ok(None));
+        assert_eq!(
+            frame_limit("THRUM_STARTER_FRAMES", Some("90"), true),
+            Ok(Some(90))
+        );
+        assert!(frame_limit("THRUM_STARTER_FRAMES", Some("0"), true).is_err());
+        assert_eq!(frame_limit("THRUM_V1_FRAMES", None, false), Ok(Some(600)));
     }
 }

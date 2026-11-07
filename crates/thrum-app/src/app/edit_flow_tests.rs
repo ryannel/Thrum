@@ -79,6 +79,12 @@ fn a_frame_in_flight_during_an_edit_cannot_revert_it() {
     flow.request();
     let later = flow.submitted();
     assert!(flow.admits(later));
+    // Edits made just before a submission ride it without asking for another frame.
+    flow.request();
+    flow.carry(Sun(Some(0.6)));
+    let carrying = flow.submitted();
+    assert!(flow.admits(carrying));
+    assert!(!flow.wants_frame());
     // Empty edits queue nothing.
     assert!(!flow.queue(Sun::default()));
     assert!(!flow.wants_frame());

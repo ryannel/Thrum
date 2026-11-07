@@ -12,6 +12,7 @@ Cargo comes first on PATH. PowerShell users can use `./dev.ps1` with the same co
 | `./dev check-web` | Lint/compile the V1 game for `wasm32-unknown-unknown` |
 | `./dev check-mobile-core` | Compile the portable core for ARM64 iOS device, iOS simulator and Android |
 | `./dev fmt` | Apply rustfmt |
+| `./dev starter` | Cook and watch the [starter](examples/starter/README.md)'s assets and open its window (macOS) |
 | `./dev refresh-design-hashes` | Explicitly refresh current design digests after reviewing a design edit |
 
 Before the web compile check, install `rustup target add --toolchain 1.99.1 wasm32-unknown-unknown`.

@@ -2257,6 +2257,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "thrum-starter"
+version = "0.1.0"
+dependencies = [
+ "thrum-app",
+ "thrum-asset-gpu",
+ "thrum-controls",
+]
+
+[[package]]
 name = "tokio"
 version = "1.54.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

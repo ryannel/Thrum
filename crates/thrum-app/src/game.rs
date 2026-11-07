@@ -16,7 +16,9 @@ use winit::keyboard::KeyCode;
 pub struct Config {
     /// Prefix of every standard-error diagnostic, for example the binary name.
     pub name: &'static str,
-    /// Environment variable bounding the run's presented frames (default 600, at most 100 000).
+    /// Environment variable bounding the run's presented frames (at most 100 000). When it is
+    /// unset, [`crate::run`] presents 600 frames and [`crate::run_until_closed`] runs until the
+    /// window closes.
     pub frames_variable: &'static str,
     /// Window title until the first frame profile replaces it.
     pub window_title: &'static str,
@@ -120,6 +122,11 @@ pub trait Game {
     fn controls_mut(&mut self) -> &mut Controls;
     /// Take presentation edits made since the last call, and a requested pause state.
     fn take_edits(&mut self) -> (Self::Edits, Option<bool>);
+    /// Presentation edits computed on the main thread just before each frame request, for
+    /// continuous animation or polling. The default edits nothing.
+    fn frame_edits(&mut self) -> Self::Edits {
+        Self::Edits::default()
+    }
     /// The whole desired presentation state, sent again after GPU recovery.
     fn replay(&self) -> Self::Edits;
     /// Apply edits to the runtime on the render owner thread.
