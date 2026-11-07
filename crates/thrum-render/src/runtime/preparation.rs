@@ -3,6 +3,7 @@
 use super::{FrameError, FrameSlot, IN_FLIGHT, SlotState};
 use crate::{
     capabilities::DeviceCapabilities,
+    contribution::ContributionPasses,
     present::SurfacePresenter,
     synthetic::{
         FrameLighting, OffscreenTarget, PreparedSynthetic, SceneTimingLayout, SyntheticScene,
@@ -42,8 +43,9 @@ pub(super) async fn prepare_scene(
     exposure: f32,
     extent: [u32; 2],
     surface: bool,
+    contribution_passes: ContributionPasses,
 ) -> Result<PreparedScene, FrameError> {
-    let prepared = PreparedSynthetic::prepare_with_capabilities(
+    let mut prepared = PreparedSynthetic::prepare_with_capabilities(
         capabilities,
         queue,
         scene,
@@ -52,6 +54,7 @@ pub(super) async fn prepare_scene(
     )
     .await
     .map_err(|error| FrameError::Gpu(format!("scene prepare: {error:?}")))?;
+    prepared.set_contribution_passes(contribution_passes);
     let mut slots = Vec::with_capacity(IN_FLIGHT);
     for _ in 0..IN_FLIGHT {
         slots.push(FrameSlot {
