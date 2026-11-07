@@ -28,8 +28,26 @@ pub struct Config {
     pub render_thread: &'static str,
     /// Title of the demo-control panel.
     pub panel_title: &'static str,
-    /// Initial window inner size in physical pixels.
+    /// Initial window inner size in physical pixels; a capture renders at this size too.
     pub window_size: [u32; 2],
+}
+
+impl Config {
+    /// Text for a game called `name` (the diagnostic prefix, usually the binary name) whose
+    /// window and panel are titled `title`: a 1600×900 window, `THRUM_FRAMES` to bound a
+    /// scripted run and a render thread named `thrum-render`. Change any field afterwards.
+    #[must_use]
+    pub const fn new(name: &'static str, title: &'static str) -> Self {
+        Self {
+            name,
+            frames_variable: "THRUM_FRAMES",
+            window_title: title,
+            title,
+            render_thread: "thrum-render",
+            panel_title: title,
+            window_size: [1600, 900],
+        }
+    }
 }
 
 /// The platform's first device, queue and configured surface, lent to [`Game::prepare`].

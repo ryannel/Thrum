@@ -35,6 +35,7 @@ pub fn cooked_config(source: impl Into<CookedSource>) -> CookedConfig {
             // The grid's +Y tilts toward the camera, which looks down -Z from z = 2.
             transform: placement(0.32, std::f32::consts::FRAC_PI_2 * 0.8, [-0.5, -0.2, 0.9]),
             material: CookedMaterial::default(),
+            rest_on_ground: false,
         }],
         volume: Some(VolumePlacement {
             name: "cloud".into(),

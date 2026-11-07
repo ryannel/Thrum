@@ -2164,6 +2164,7 @@ dependencies = [
  "objc2-foundation 0.3.2",
  "objc2-quartz-core 0.3.2",
  "pollster",
+ "thrum-asset-gpu",
  "thrum-controls",
  "thrum-core",
  "thrum-render",
@@ -2261,8 +2262,13 @@ name = "thrum-starter"
 version = "0.1.0"
 dependencies = [
  "thrum-app",
- "thrum-asset-gpu",
- "thrum-controls",
+]
+
+[[package]]
+name = "thrum-stones"
+version = "0.1.0"
+dependencies = [
+ "thrum-app",
 ]
 
 [[package]]

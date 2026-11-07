@@ -4,12 +4,10 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 publish.workspace = true
-description = "Starter scene: a physically based sky, one cooked mesh, a camera and a Sun slider"
+description = "Starter scene: a physically based sky, lit ground, one cooked mesh, a camera and Sun sliders"
 
 [lints]
 workspace = true
 
 [target.'cfg(target_os = "macos")'.dependencies]
 thrum-app = { path = "../../crates/thrum-app" }
-thrum-asset-gpu = { path = "../../crates/thrum-asset-gpu" }
-thrum-controls = { path = "../../crates/thrum-controls" }

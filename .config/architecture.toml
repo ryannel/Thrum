@@ -21,8 +21,10 @@ allowed_workspace_dependencies = []
 manifest = "crates/thrum-app/Cargo.toml"
 # G6 native macOS shell: window, Metal device recipe, display link, render owner, pause,
 # device recovery, demo-control panel and frames report. Generic over a game's runtime; it
-# names no game types and no content package.
-allowed_workspace_dependencies = ["thrum-controls", "thrum-core", "thrum-render"]
+# names no game types and no content package. Its sky kit draws cooked meshes through
+# thrum-asset-gpu (the engine's shipping residency path), so a creator's scene needs no
+# status or store plumbing of its own.
+allowed_workspace_dependencies = ["thrum-asset-gpu", "thrum-controls", "thrum-core", "thrum-render"]
 
 [packages.thrum-asset]
 manifest = "crates/thrum-asset/Cargo.toml"
@@ -67,10 +69,15 @@ implicit_dependencies = { wasm-bindgen-futures = "async wasm_bindgen export expa
 
 [packages.thrum-starter]
 manifest = "examples/starter/Cargo.toml"
-# G6 starter: the sky kit in thrum-app, one cooked mesh through thrum-asset-gpu and typed
-# controls; no engine game types. `./dev starter` cooks and watches its assets with thrum-cook
-# as a separate process, so it never depends on the authoring cooker.
-allowed_workspace_dependencies = ["thrum-app", "thrum-asset-gpu", "thrum-controls"]
+# G6 starter: the sky kit in thrum-app (which re-exports its controls and cooked-mesh types);
+# no engine game types. `./dev starter` cooks and watches its assets with thrum-cook as a
+# separate process, so it never depends on the authoring cooker.
+allowed_workspace_dependencies = ["thrum-app"]
+
+[packages.thrum-stones]
+manifest = "examples/stones/Cargo.toml"
+# G6 creator trial: the first fresh-agent scene (a stone circle at dawn), ported to the kit.
+allowed_workspace_dependencies = ["thrum-app"]
 
 [packages.v1-game-ios]
 manifest = "examples/v1-game-ios/Cargo.toml"

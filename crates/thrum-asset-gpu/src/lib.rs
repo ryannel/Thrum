@@ -27,6 +27,7 @@
 
 mod draw;
 mod load;
+mod placement;
 mod staging;
 
 use std::path::PathBuf;
@@ -45,29 +46,18 @@ use thrum_render::contribution::{
     ContributionFrame, ContributionPasses, SceneContribution, SceneSurface, ShadowBounds,
 };
 
+pub use placement::{MeshPlacement, PlacementError};
 pub use staging::COPY_UNIT;
 
-/// A cooked mesh, its base-colour texture and where it stands in the world.
-#[derive(Clone, Debug)]
-pub struct MeshPlacement {
-    /// Manifest name of the mesh product.
-    pub mesh: String,
-    /// Manifest name of its base-colour texture.
-    pub texture: String,
-    /// Column-major object-to-world transform (rigid with uniform scale).
-    pub transform: [[f32; 4]; 4],
-    /// Material factors applied with the cooked texture.
-    pub material: CookedMaterial,
-}
-
-/// ABI revision 2 metallic-roughness factors of one mesh placement.
+/// ABI revision 2 metallic-roughness factors of one mesh placement. The default is a matte
+/// white dielectric: the cooked texture's own colour, roughness 0.55, metalness 0.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct CookedMaterial {
-    /// Linear base-colour factor (multiplies the cooked texture) and alpha.
+    /// Linear base-colour factor (multiplies the cooked texture) and alpha, each 0–1.
     pub base_colour: [f32; 4],
-    /// Perceptual roughness.
+    /// Perceptual roughness, 0 (mirror) to 1 (chalk).
     pub roughness: f32,
-    /// Metalness.
+    /// Metalness, 0 (stone, wood, paint) to 1 (bare metal).
     pub metalness: f32,
 }
 
@@ -158,21 +148,45 @@ impl From<PathBuf> for CookedSource {
     }
 }
 
-/// What to load and how fast to upload it.
+/// What to load and how fast to upload it. [`CookedConfig::new`] fills in the defaults.
 #[derive(Clone, Debug)]
 pub struct CookedConfig {
-    /// Products to load.
+    /// Where the cooked products come from: a store folder written by `thrum-cook` (a
+    /// `PathBuf` converts), or a fetched remote feed.
     pub source: CookedSource,
-    /// Meshes to draw.
+    /// Meshes to draw, each with its texture, transform and material.
     pub meshes: Vec<MeshPlacement>,
-    /// Optional volume to draw.
+    /// A density volume to draw, if any. Default: none.
     pub volume: Option<VolumePlacement>,
-    /// Bytes of staged copies recorded per frame (at least one copy unit always progresses).
+    /// Bytes of staged copies recorded per frame, which spreads a large publication over
+    /// several frames (at least one copy unit always progresses). Default:
+    /// [`DEFAULT_UPLOAD_BUDGET`].
     pub upload_budget: u64,
-    /// Loader `HEAD` poll interval.
+    /// How often the loader thread checks the store's `HEAD` for a newly cooked generation.
+    /// Default: 20 ms.
     pub poll_interval: Duration,
-    /// Texture profile preference; `None` picks the device's best ([`texture_profiles`]).
+    /// Texture profiles to prefer, best first; formats the device cannot sample are skipped.
+    /// Default: `None`, the device's best ([`texture_profiles`]).
     pub texture_preference: Option<Vec<Profile>>,
+}
+
+/// Default [`CookedConfig::upload_budget`]: 8 MiB of copies per frame, a small fraction of a
+/// frame on current GPUs.
+pub const DEFAULT_UPLOAD_BUDGET: u64 = 8 << 20;
+
+impl CookedConfig {
+    /// Draw `meshes` from `source`, with no volume and the default upload budget, poll
+    /// interval and texture profiles.
+    pub fn new(source: impl Into<CookedSource>, meshes: Vec<MeshPlacement>) -> Self {
+        Self {
+            source: source.into(),
+            meshes,
+            volume: None,
+            upload_budget: DEFAULT_UPLOAD_BUDGET,
+            poll_interval: Duration::from_millis(20),
+            texture_preference: None,
+        }
+    }
 }
 
 /// One publication that became visible.
@@ -416,12 +430,19 @@ pub struct CookedAssets {
 
 impl CookedAssets {
     /// Prepare; nothing runs until the frame host first rebuilds it for a scene.
-    pub fn new(config: CookedConfig) -> Self {
-        Self {
+    ///
+    /// # Errors
+    /// Refuses a mesh placement whose transform is not rigid with one uniform positive scale,
+    /// naming the placement, the cause and the fix.
+    pub fn new(config: CookedConfig) -> Result<Self, PlacementError> {
+        for (index, placement) in config.meshes.iter().enumerate() {
+            placement.check(index)?;
+        }
+        Ok(Self {
             config,
             stats: Arc::new(Mutex::new(CookedStats::default())),
             live: None,
-        }
+        })
     }
 
     /// Shared observations.

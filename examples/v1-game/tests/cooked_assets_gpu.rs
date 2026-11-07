@@ -139,7 +139,7 @@ fn cooked_edits_become_visible_in_the_game_with_its_lighting() {
         let before = host.capture_pixels().expect("game before cooked assets");
         save("before", &before);
 
-        let assets = CookedAssets::new(placements(cook.store.clone()));
+        let assets = CookedAssets::new(placements(cook.store.clone())).expect("rigid placements");
         let stats: Arc<Mutex<CookedStats>> = assets.stats();
         host.set_scene_contribution(Box::new(assets))
             .expect("cooked assets attach to the game scene");
@@ -275,7 +275,7 @@ fn off_screen_meshlets_are_culled_and_bc7_is_drawn_where_supported() {
             [-1.25, -0.1, 0.9],
         );
         config.texture_preference = Some(vec![Profile::DesktopBc]);
-        let assets = CookedAssets::new(config);
+        let assets = CookedAssets::new(config).expect("rigid placements");
         let stats = assets.stats();
         host.set_scene_contribution(Box::new(assets))
             .expect("attach");
@@ -411,7 +411,8 @@ fn discarded_frames_leave_no_trace_on_cooked_uploads() {
             let mut host = FrameHost::new(&device, &queue, config)
                 .await
                 .expect("prepared game scene");
-            let assets = CookedAssets::new(placements(cook.store.clone()));
+            let assets =
+                CookedAssets::new(placements(cook.store.clone())).expect("rigid placements");
             let stats = assets.stats();
             host.set_scene_contribution(Box::new(assets))
                 .expect("attach");
@@ -656,7 +657,7 @@ fn contributed_frames_keep_complete_gpu_timings_and_reset_history_for_new_sets()
         let mut host = FrameHost::new(&device, &queue, presenting())
             .await
             .expect("prepared game scene");
-        let assets = CookedAssets::new(placements(cook.store.clone()));
+        let assets = CookedAssets::new(placements(cook.store.clone())).expect("rigid placements");
         let stats = assets.stats();
         host.set_scene_contribution(Box::new(assets))
             .expect("attach");
@@ -734,7 +735,7 @@ fn a_replaced_device_restages_and_draws_the_current_set() {
         )
         .await
         .expect("prepared game scene");
-        let assets = CookedAssets::new(placements(cook.store.clone()));
+        let assets = CookedAssets::new(placements(cook.store.clone())).expect("rigid placements");
         let stats = assets.stats();
         host.set_scene_contribution(Box::new(assets))
             .expect("attach");
@@ -783,7 +784,7 @@ fn captures_never_establish_history_and_cull_counts_follow_their_set() {
         let mut host = FrameHost::new(&device, &queue, presenting())
             .await
             .expect("prepared game scene");
-        let assets = CookedAssets::new(placements(cook.store.clone()));
+        let assets = CookedAssets::new(placements(cook.store.clone())).expect("rigid placements");
         let stats = assets.stats();
         host.set_scene_contribution(Box::new(assets))
             .expect("attach");
@@ -896,7 +897,7 @@ fn cooked_mesh_outside_camera_casts_onto_visible_terrain() {
         roof.transform = transform(16.0, glam::Quat::IDENTITY, [0.0, 1_200.0, -1_000.0]);
 
         let mut capture = |config| {
-            let assets = CookedAssets::new(config);
+            let assets = CookedAssets::new(config).expect("rigid placements");
             let stats = assets.stats();
             host.set_scene_contribution(Box::new(assets))
                 .expect("attach");
@@ -1025,7 +1026,7 @@ fn a_fetched_generation_draws_like_the_mapped_store() {
             let mut host = FrameHost::new(&device, &queue, FrameConfig::default())
                 .await
                 .expect("prepared game scene");
-            let assets = CookedAssets::new(config(source));
+            let assets = CookedAssets::new(config(source)).expect("rigid placements");
             let stats = assets.stats();
             host.set_scene_contribution(Box::new(assets))
                 .expect("attach");
@@ -1081,7 +1082,7 @@ fn a_fetched_edit_swaps_in_and_reuses_unchanged_products() {
             v1_game::cooked::cooked_config(thrum_asset_gpu::CookedSource::Remote(feed.clone()));
         config.upload_budget = BUDGET;
         config.volume = None;
-        let assets = CookedAssets::new(config);
+        let assets = CookedAssets::new(config).expect("rigid placements");
         let stats = assets.stats();
         host.set_scene_contribution(Box::new(assets))
             .expect("attach");

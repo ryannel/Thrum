@@ -139,21 +139,60 @@ fn baseline_inventory() -> TaskResult {
     Ok(())
 }
 
-/// Build the starter and the cooker, cook the starter's assets into a store under the build
-/// directory, keep G5's watcher cooking edits while the starter's window is open, and stop
-/// the watcher when the window closes or the starter fails. `THRUM_STARTER_ASSETS` selects
-/// another source folder, such as a copy to experiment on.
-fn starter(root: &Path) -> TaskResult {
-    if !cfg!(target_os = "macos") {
-        return Err("the starter's window runs on macOS only".into());
+/// The package name declared in a scene folder's `Cargo.toml`.
+fn package_name(manifest: &Path) -> Result<String, Box<dyn Error>> {
+    let text = std::fs::read_to_string(manifest)
+        .map_err(|error| format!("{}: {error}", manifest.display()))?;
+    let mut in_package = false;
+    for line in text.lines().map(str::trim) {
+        if line.starts_with('[') {
+            in_package = line == "[package]";
+        } else if in_package
+            && let Some(value) = line.strip_prefix("name")
+            && let Some(value) = value.trim_start().strip_prefix('=')
+        {
+            return Ok(value.trim().trim_matches('"').to_owned());
+        }
     }
+    Err(format!("{} declares no [package] name", manifest.display()).into())
+}
+
+/// Build a scene package and the cooker, cook the scene's `assets/` into a store under the
+/// build directory, keep G5's watcher cooking edits while the scene's window is open, and stop
+/// the watcher when the window closes or the scene fails. The scene gets `THRUM_ASSET_STORE`
+/// and, unless `THRUM_PARAMS` is already set, `<folder>/<folder name>.params.json` when it
+/// exists. `THRUM_SCENE_ASSETS` cooks another source folder, such as a copy to experiment on.
+fn scene(root: &Path, folder: &str) -> TaskResult {
+    if !cfg!(target_os = "macos") {
+        return Err("scene windows run on macOS only".into());
+    }
+    let folder = folder.trim_end_matches('/');
+    let directory = root.join(folder);
+    let manifest = directory.join("Cargo.toml");
+    if !manifest.is_file() {
+        return Err(format!(
+            "{folder} has no Cargo.toml; a scene is a package folder such as examples/starter \
+             (see examples/starter/README.md, \"Make your own scene\")"
+        )
+        .into());
+    }
+    let package = package_name(&manifest)?;
+    let workspace = std::fs::read_to_string(root.join("Cargo.toml"))?;
+    if !workspace.contains(&format!("\"{folder}\"")) {
+        return Err(format!(
+            "{folder} is not a workspace member; add \"{folder}\" to [workspace] members in \
+             Cargo.toml and a [packages.{package}] entry to .config/architecture.toml"
+        )
+        .into());
+    }
+    // `./dev` has already added a new scene package to Cargo.lock.
     cargo(&[
         "build",
         "--locked",
         "--offline",
         "--release",
         "--package",
-        "thrum-starter",
+        &package,
         "--package",
         "thrum-cook",
         "--bins",
@@ -161,9 +200,16 @@ fn starter(root: &Path) -> TaskResult {
     let target = env::var_os("CARGO_TARGET_DIR").map_or_else(|| root.join("target"), PathBuf::from);
     let release = target.join("release");
     let cook = release.join("thrum-cook");
-    let source = env::var_os("THRUM_STARTER_ASSETS")
-        .map_or_else(|| root.join("examples/starter/assets"), PathBuf::from);
-    let store = target.join("starter/store");
+    let source =
+        env::var_os("THRUM_SCENE_ASSETS").map_or_else(|| directory.join("assets"), PathBuf::from);
+    if !source.is_dir() {
+        return Err(format!(
+            "{} does not exist; put the scene's glTF meshes and PNG textures there",
+            source.display()
+        )
+        .into());
+    }
+    let store = target.join("scenes").join(&package).join("store");
     let status = Command::new(&cook)
         .arg("cook")
         .arg(&source)
@@ -171,30 +217,31 @@ fn starter(root: &Path) -> TaskResult {
         .status()?;
     if !status.success() {
         return Err(format!(
-            "cooking {} into {} failed ({status}); fix the asset the cooker names and rerun ./dev starter",
+            "cooking {} into {} failed ({status}); fix the asset the cooker names and rerun ./dev scene {folder}",
             source.display(),
             store.display()
         )
         .into());
+    }
+    let mut run = Command::new(release.join(&package));
+    run.env("THRUM_ASSET_STORE", &store);
+    let name = Path::new(folder).file_name().unwrap_or_default();
+    let params = directory.join(format!("{}.params.json", name.to_string_lossy()));
+    if env::var_os("THRUM_PARAMS").is_none() && params.is_file() {
+        run.env("THRUM_PARAMS", params);
     }
     let mut watcher = Command::new(&cook)
         .arg("watch")
         .arg(&source)
         .arg(&store)
         .spawn()?;
-    let ran = Command::new(release.join("thrum-starter"))
-        .env("THRUM_ASSET_STORE", &store)
-        .env(
-            "THRUM_PARAMS",
-            root.join("examples/starter/starter.params.json"),
-        )
-        .status();
-    // Stop the watcher however the starter ended.
+    let ran = run.status();
+    // Stop the watcher however the scene ended.
     let stopped = watcher.kill().and_then(|()| watcher.wait());
     let ran = ran?;
     stopped.map_err(|error| format!("stopping thrum-cook watch: {error}"))?;
     if !ran.success() {
-        return Err(format!("thrum-starter failed ({ran}); its message is above").into());
+        return Err(format!("{package} failed ({ran}); its message is above").into());
     }
     Ok(())
 }
@@ -214,18 +261,26 @@ fn main() -> TaskResult {
         .into());
     }
     let args: Vec<String> = env::args().skip(1).collect();
-    if args.len() > 1 {
+    if (args.len() > 1 && args[0] != "scene") || args.len() > 2 {
         return Err("expected one command; see ./dev help".into());
     }
     match args.first().map_or("help", String::as_str) {
         "help" | "--help" | "-h" => println!(
-            "Thrum contributor commands:\n  check                  Repository guard, guard tests, fmt, Clippy, Rust tests (including Mac Metal), game Wasm Clippy\n  check-docs             Links, metadata, design hashes and crate policy\n  baseline-inventory     Run G0 fixed budget baselines and list absent consumers on the M-series Mac\n  check-web              Lint/compile the V1 game for wasm32-unknown-unknown\n  check-mobile-core      Compile the portable core for ARM64 iOS, iOS simulator and Android\n  fmt                    Apply rustfmt\n  starter                Cook and watch the starter's assets and open its window (macOS)\n  refresh-design-hashes  Refresh current digests after reviewing design changes"
+            "Thrum contributor commands:\n  check                  Repository guard, guard tests, fmt, Clippy, Rust tests (including Mac Metal), game Wasm Clippy\n  check-docs             Links, metadata, design hashes and crate policy\n  baseline-inventory     Run G0 fixed budget baselines and list absent consumers on the M-series Mac\n  check-web              Lint/compile the V1 game for wasm32-unknown-unknown\n  check-mobile-core      Compile the portable core for ARM64 iOS, iOS simulator and Android\n  fmt                    Apply rustfmt\n  scene <folder>         Build a scene package, cook and watch its assets/ and open its window (macOS)\n  starter                The same for examples/starter\n  refresh-design-hashes  Refresh current digests after reviewing design changes"
         ),
         "check-docs" => python(&["scripts/repo_check.py"])?,
         "baseline-inventory" => baseline_inventory()?,
         "refresh-design-hashes" => python(&["scripts/design_hashes.py", "--write"])?,
         "fmt" => cargo(&["fmt", "--all"])?,
-        "starter" => starter(&root)?,
+        "starter" => scene(&root, "examples/starter")?,
+        "scene" => match args.get(1) {
+            Some(folder) => scene(&root, folder)?,
+            None => {
+                return Err(
+                    "usage: ./dev scene <folder>, such as ./dev scene examples/starter".into(),
+                );
+            }
+        },
         "check-web" => check_web()?,
         "check-mobile-core" => {
             for target in [

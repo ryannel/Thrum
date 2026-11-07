@@ -168,7 +168,7 @@ fn run(scenario: &Scenario, report: &mut String) {
         let mut config = v1_game::cooked::cooked_config(root.join("store"));
         config.upload_budget = BUDGET;
         config.poll_interval = Duration::from_millis(1);
-        let assets = CookedAssets::new(config);
+        let assets = CookedAssets::new(config).expect("rigid placements");
         let stats: Arc<Mutex<CookedStats>> = assets.stats();
         let attach = Instant::now();
         host.set_scene_contribution(Box::new(assets))

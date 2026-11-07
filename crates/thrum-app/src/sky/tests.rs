@@ -4,8 +4,9 @@ use thrum_controls::Controls;
 use thrum_render::{capabilities::DeviceCapabilities, runtime::FrameConfig};
 
 use super::{
-    Camera, Edits, Sky, SkyEdits, SkyGame,
+    Camera, DEFAULT_GROUND, Edits, Sky, SkyEdits, SkyGame,
     capture::{crc32, encode_png},
+    cooked_store, ground_scene,
 };
 
 const CAMERA: Camera = Camera::look_at([0.0, 1.7, 6.0], [0.0, 1.0, 0.0], 40.0);
@@ -122,11 +123,46 @@ fn png_is_a_valid_stored_rgb_image() {
     assert!(encode_png([0, 2], &[]).is_err());
 }
 
-/// The kit's scene has one inactive instance row, so every pass runs with zero active rows:
-/// Sun shadow cascades, light clusters, forward, history and display. A wgpu validation
-/// error would be captured here; the capture must also show a lit sky.
 #[test]
-fn zero_active_rows_render_through_every_pass() {
+fn missing_or_uncooked_stores_name_the_next_step() {
+    let unset = cooked_store(None).unwrap_err();
+    assert!(unset.contains("THRUM_ASSET_STORE is not set"), "{unset}");
+    assert!(unset.contains("./dev scene"), "{unset}");
+    let root = std::env::temp_dir().join(format!("thrum-sky-store-{}", std::process::id()));
+    std::fs::create_dir_all(&root).unwrap();
+    let empty = cooked_store(Some(root.clone().into_os_string())).unwrap_err();
+    assert!(empty.contains("has no HEAD"), "{empty}");
+    std::fs::write(root.join("HEAD"), b"1").unwrap();
+    assert_eq!(
+        cooked_store(Some(root.clone().into_os_string())),
+        Ok(root.clone())
+    );
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn the_ground_is_one_wide_slab_with_its_top_at_zero() {
+    let scene = ground_scene(Some(DEFAULT_GROUND)).unwrap();
+    let slab = &scene.instances[0];
+    assert_ne!(slab.ids[3], 0, "the ground row is active");
+    let top = slab.current[3][1] + slab.current[1][1];
+    assert!(top.abs() < 1e-6, "top face at {top}");
+    assert!(
+        slab.current[0][0] >= 1_000.0,
+        "the ground reaches toward the horizon"
+    );
+    assert!(
+        (slab.current[2][2] - slab.current[0][0]).abs() < 1e-3,
+        "and is square"
+    );
+    assert_eq!(scene.materials[0].base_rgba[..3], DEFAULT_GROUND);
+    assert_eq!(ground_scene(None).unwrap().instances[0].ids[3], 0);
+    let message = ground_scene(Some([0.2, 1.5, 0.1])).unwrap_err();
+    assert!(message.contains("within 0–1"), "{message}");
+}
+
+/// Render `game` offscreen at 160×90 for three frames; fail on any wgpu validation error.
+fn render(mut game: SkyGame) -> Vec<u8> {
     pollster::block_on(async {
         let mut descriptor = wgpu::InstanceDescriptor::new_without_display_handle();
         descriptor.backends = wgpu::Backends::METAL;
@@ -148,10 +184,6 @@ fn zero_active_rows_render_through_every_pass() {
             sink.lock().unwrap().push(error.to_string());
         }));
         let capabilities = DeviceCapabilities::capture(&adapter, &device, 1);
-        let mut game = SkyGame::new(Controls::new(), CAMERA, |_, sky| {
-            sky.sun_elevation_degrees = 25.0;
-            sky.sun_azimuth_degrees = 150.0;
-        });
         let extent = [160, 90];
         let mut host = game
             .build_host(
@@ -169,15 +201,51 @@ fn zero_active_rows_render_through_every_pass() {
         }
         assert_eq!(pixels.len(), 160 * 90 * 4);
         assert!(errors.lock().unwrap().is_empty(), "{:?}", errors.lock());
-        // The upper rows are daylit sky: bright and bluer than red.
-        let top: Vec<_> = pixels[..160 * 10 * 4].as_chunks::<4>().0.to_vec();
-        let mean = |channel: usize| {
-            top.iter()
-                .map(|pixel| f64::from(pixel[channel]))
-                .sum::<f64>()
-                / top.len() as f64
-        };
-        assert!(mean(2) > 60.0, "sky is lit: blue mean {}", mean(2));
-        assert!(mean(2) > mean(0), "daylit sky is bluer than red");
-    });
+        pixels
+    })
+}
+
+/// Mean of one channel over rows `rows` of a 160-pixel-wide RGBA image.
+fn mean(pixels: &[u8], rows: std::ops::Range<usize>, channel: usize) -> f64 {
+    let band = &pixels[rows.start * 160 * 4..rows.end * 160 * 4];
+    let pixels = band.as_chunks::<4>().0;
+    pixels
+        .iter()
+        .map(|pixel| f64::from(pixel[channel]))
+        .sum::<f64>()
+        / pixels.len() as f64
+}
+
+/// The sky above and the ground below the horizon: with no ground the scene has one inactive
+/// instance row, so every pass (Sun shadow cascades, light clusters, forward, history and
+/// display) also runs with zero active rows.
+#[test]
+fn the_sky_and_ground_render_through_every_pass() {
+    let sun = |_: &Controls, sky: &mut Sky| {
+        sky.sun_elevation_degrees = 25.0;
+        sky.sun_azimuth_degrees = 150.0;
+    };
+    let bare = render(SkyGame::new(Controls::new(), CAMERA, sun).with_ground(None));
+    // The upper rows are daylit sky: bright and bluer than red.
+    assert!(mean(&bare, 0..10, 2) > 60.0, "sky is lit");
+    assert!(
+        mean(&bare, 0..10, 2) > mean(&bare, 0..10, 0),
+        "daylit sky is bluer than red"
+    );
+    let grounded = render(SkyGame::new(Controls::new(), CAMERA, sun));
+    assert!(
+        mean(&grounded, 0..10, 2) > 60.0,
+        "the sky stays lit above the ground"
+    );
+    // The lowest rows look down at the ground, lit and warmer than the blue sky.
+    let (red, blue) = (mean(&grounded, 80..90, 0), mean(&grounded, 80..90, 2));
+    assert!(red > 30.0, "the ground is lit: red mean {red}");
+    assert!(
+        red > blue,
+        "the default ground is earth-coloured: {red} vs {blue}"
+    );
+    assert!(
+        (red - mean(&bare, 80..90, 0)).abs() > 5.0,
+        "the ground replaces the sky's planet surface"
+    );
 }
