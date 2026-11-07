@@ -163,19 +163,9 @@ impl TickClock {
     /// Interpolation fraction at a future display target without admitting
     /// simulation time. A target beyond the next update uses the latest
     /// committed endpoint; delayed work still reports an exact endpoint.
-    #[expect(
-        clippy::cast_precision_loss,
-        reason = "the clamped numerator is below one billion and f32 resolution is sufficient for presentation"
-    )]
     pub fn presentation_alpha_at(&self, lead: Duration) -> f32 {
-        if self.state != ClockState::Active || self.queued != 0 || self.presentation_hold {
-            return 1.0;
-        }
-        let target_fraction = self.fractional_tick.saturating_add(
-            lead.as_nanos()
-                .saturating_mul(u128::from(self.config.tick_hz.get())),
-        );
-        target_fraction.min(NANOS_PER_SECOND) as f32 / NANOS_PER_SECOND as f32
+        self.presentation_sample()
+            .alpha_at(self.last_time.saturating_add(lead))
     }
 
     /// Transfer the current phase to a renderer without transferring tick
