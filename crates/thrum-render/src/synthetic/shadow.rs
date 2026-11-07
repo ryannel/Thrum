@@ -354,6 +354,7 @@ impl FitInputs {
                 rotation,
                 caster_depth,
                 caster_height,
+                false,
             )?,
             cascade_matrix(
                 camera_view,
@@ -364,6 +365,7 @@ impl FitInputs {
                 rotation,
                 caster_depth,
                 caster_height,
+                true,
             )?,
         ];
         let mut samples = [0_u8; SAMPLE_BYTES];
@@ -412,6 +414,7 @@ fn cascade_matrix(
     rotation: Mat4,
     caster_depth: Option<(f32, f32)>,
     caster_height: Option<(f32, f32)>,
+    sun_cone: bool,
 ) -> Result<(Mat4, f32), RenderError> {
     let camera_world = camera_view.inverse();
     let corners: [Vec3; 8] = std::array::from_fn(|index| {
@@ -426,7 +429,9 @@ fn cascade_matrix(
         .map(|corner| corner.distance(center))
         .fold(0.0, f32::max);
     // A finite Sun's cone reaches outside the central-ray receiver footprint.
-    // Include the maximum axial gap before snapping or allocating map texels.
+    // The last cascade includes the maximum axial gap before snapping. At low Sun
+    // that gap reaches kilometres, so the near map stays unpadded for contact
+    // resolution and leaves blockers beyond its own support to the last cascade.
     let receiver_max_depth = corners
         .into_iter()
         .map(|corner| -rotation.transform_point3(corner).z)
@@ -445,7 +450,11 @@ fn cascade_matrix(
             maximum_gap = maximum_gap.min((maximum_y - receiver_min_y).max(0.0) / low);
         }
     }
-    let cone_guard = maximum_gap * SUN_ANGULAR_RADIUS.tan();
+    let cone_guard = if sun_cone {
+        maximum_gap * SUN_ANGULAR_RADIUS.tan()
+    } else {
+        0.0
+    };
     let padded_radius = (receiver_radius + cone_guard) / (1.0 - 4.0 / SIZE as f32);
     let radius = (padded_radius * 16.0).ceil() / 16.0;
     let center_light = rotation.transform_point3(center);
@@ -534,6 +543,34 @@ mod tests {
     use super::*;
 
     #[test]
+    fn only_the_last_cascade_pads_for_distant_finite_sun_blockers() {
+        // A Sun 2° up behind kilometres of caster: the cone guard is metres to
+        // tens of metres. The near map must keep its receiver-fitted texels.
+        let direction = Vec3::new(0.0, 2f32.to_radians().sin(), 2f32.to_radians().cos());
+        let view = SyntheticView::perspective(
+            [0.0, 2.0, 0.0],
+            [0.0, 1.0, -10.0],
+            [0.0, 1.0, 0.0],
+            0.8,
+            16.0 / 9.0,
+            0.1,
+            2000.0,
+        )
+        .expect("perspective receiver");
+        let inputs = FitInputs::new(&view, &[], direction);
+        let low = ShadowBounds::new([-50.0, -1.0, -50.0], [50.0, 1.0, 50.0]).expect("low caster");
+        let tall = ShadowBounds::new([-50.0, -1.0, -3000.0], [50.0, 400.0, 3000.0])
+            .expect("tall distant caster");
+        let half_extent = |fitted: &FittedShadow, index: usize| {
+            fitted.matrices[index].0.row(0).truncate().length().recip()
+        };
+        let low = inputs.fit(Some(low)).expect("low fit");
+        let tall = inputs.fit(Some(tall)).expect("tall fit");
+        assert!((half_extent(&low, 0) - half_extent(&tall, 0)).abs() <= 1e-3);
+        assert!(half_extent(&tall, 1) > half_extent(&low, 1) + 10.0);
+    }
+
+    #[test]
     fn fitted_sun_support_and_surface_tolerance_keep_world_units() {
         let direction = Vec3::new(1.0, 1.0, 1.0).normalize();
         let view = SyntheticView::perspective(
@@ -591,6 +628,7 @@ mod tests {
             light_rotation(light),
             None,
             None,
+            true,
         )
         .expect("finite cascade");
         let receiver = matrix.project_point3(Vec3::ZERO);
@@ -614,9 +652,9 @@ mod tests {
             Vec3::Y,
         );
         let rotation = light_rotation(light);
-        let (a, _) = cascade_matrix(first, 1.0, 1.0, 0.1, 5.732, rotation, None, None)
+        let (a, _) = cascade_matrix(first, 1.0, 1.0, 0.1, 5.732, rotation, None, None, true)
             .expect("first cascade");
-        let (b, _) = cascade_matrix(shifted, 1.0, 1.0, 0.1, 5.732, rotation, None, None)
+        let (b, _) = cascade_matrix(shifted, 1.0, 1.0, 0.1, 5.732, rotation, None, None, true)
             .expect("shifted cascade");
         let point = Vec3::new(0.2, -0.1, 0.0);
         let before = a.project_point3(point);
