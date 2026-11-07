@@ -211,7 +211,7 @@ impl App {
         surface.configure(device, &config);
         if let Some(host) = self.host.as_mut() {
             host.resize_surface([config.width, config.height])?;
-            host.drain_and_resume(self.origin.elapsed())?;
+            host.resume_after_drain(self.origin.elapsed())?;
         } else {
             self.host = Some(pollster::block_on(FrameHost::new(
                 device,
@@ -242,7 +242,7 @@ impl App {
         let now = self.origin.elapsed();
         let host = self.host.as_mut().ok_or("iOS host missing")?;
         if visible {
-            host.drain_and_resume(now)?;
+            host.resume_after_drain(now)?;
             start_display_link()?;
         } else {
             stop_display_link();
@@ -334,7 +334,7 @@ impl App {
             self.overloads += 1;
             self.refused_ticks = self.refused_ticks.saturating_add(refused);
             host.pause()?;
-            host.drain_and_resume(now)?;
+            host.resume_after_drain(now)?;
         }
         while let Some(sample) = host.poll_completed()? {
             if self.samples.len() < FRAMES {

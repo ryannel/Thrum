@@ -4,8 +4,8 @@ use std::time::Duration;
 
 pub(super) use thrum_core::sim::WorldAdvance;
 use thrum_core::{
-    ClockConfig,
-    sim::{ClockedWorld, SnapshotId, WorldGame, WorldPublication, WorldStep},
+    ClockConfig, ClockError,
+    sim::{ClockedWorld, ClockedWorldError, SnapshotId, WorldGame, WorldPublication, WorldStep},
 };
 
 use crate::{
@@ -247,6 +247,8 @@ impl thrum_render::runtime::FrameWorld for WorldPort {
 /// The game body stays here; scheduling and the fixed clock belong to core.
 pub(crate) struct WorldDriver {
     pub(super) world: ClockedWorld<GameWorld>,
+    resume_pending: bool,
+    overload_reported: bool,
 }
 
 pub(super) struct GameWorld {
@@ -266,9 +268,15 @@ impl WorldDriver {
             admitted_axes: [0.0; 3],
             input_sequence: 1,
         };
+        let world = ClockedWorld::new(game, ClockConfig::default(), Duration::ZERO)
+            .map_err(|error| error.to_string())?;
+        // Give slow ticks one chance to finish, then preserve the rest of the display callback.
+        #[cfg(any(target_arch = "wasm32", target_os = "ios"))]
+        let world = world.with_tick_work_slice(Duration::from_millis(2));
         Ok(Self {
-            world: ClockedWorld::new(game, ClockConfig::default(), Duration::ZERO)
-                .map_err(|error| error.to_string())?,
+            world,
+            resume_pending: false,
+            overload_reported: false,
         })
     }
 
@@ -311,11 +319,27 @@ impl WorldDriver {
     }
 
     pub(super) fn pause(&mut self) {
+        self.resume_pending = false;
         self.world.pause();
     }
 
     pub(super) fn resume(&mut self, now: Duration) -> Result<(), String> {
-        self.world.resume(now).map_err(|error| error.to_string())
+        self.world.resume(now).map_err(|error| error.to_string())?;
+        self.resume_pending = false;
+        self.overload_reported = false;
+        Ok(())
+    }
+
+    pub(super) fn resume_after_drain(&mut self, now: Duration) -> Result<(), String> {
+        match self.world.resume(now) {
+            Ok(()) => {
+                self.resume_pending = false;
+                self.overload_reported = false;
+            }
+            Err(ClockedWorldError::Clock(ClockError::PendingTicks)) => self.resume_pending = true,
+            Err(error) => return Err(error.to_string()),
+        }
+        Ok(())
     }
 
     pub(super) fn set_controls(&mut self, axes: [f32; 3]) -> Result<(), String> {
@@ -380,7 +404,16 @@ impl WorldDriver {
     }
 
     pub(super) fn advance(&mut self, now: Duration) -> Result<WorldAdvance, String> {
-        self.world.advance(now).map_err(|error| error.to_string())
+        let mut progress = self.world.advance(now).map_err(|error| error.to_string())?;
+        // The clock keeps its sticky overload state until resume. Inline hosts
+        // consume it as one event while the accepted work drains over callbacks.
+        if progress.overload.is_some() && std::mem::replace(&mut self.overload_reported, true) {
+            progress.overload = None;
+        }
+        if self.resume_pending && progress.queued_ticks == 0 {
+            self.resume(now)?;
+        }
+        Ok(progress)
     }
 }
 

@@ -252,8 +252,7 @@ impl TickClock {
         self.advance_controlled(now, cpu_tick_budget, || step().map(|()| true))
     }
 
-    /// `Ok(false)` means the tick committed but the host must stop this call,
-    /// for example after a terminal post-commit consumer fault.
+    /// `Ok(false)` commits the tick and yields with any remaining work queued.
     pub(crate) fn advance_controlled<E>(
         &mut self,
         now: Duration,
