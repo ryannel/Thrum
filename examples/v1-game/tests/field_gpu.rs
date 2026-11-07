@@ -12,7 +12,8 @@ use thrum_render::{capabilities::DeviceCapabilities, synthetic::CullMode};
 use v1_game::{FrameConfig, FrameHost, GameContent, GameSetup};
 
 const TICK_NS: u64 = 16_666_667;
-/// Through the first quarter-loop cut (tick 1801) and the turn after it.
+/// Ticks 1 to 1,930 of the 3,600-tick loop: three snap turns and the first
+/// quarter-loop cut (tick 1801). The next turn starts at tick 2101.
 /// Unoptimised builds (`./dev check`) stop after the first snap turn, since
 /// they drive both hosts about seven times slower.
 const LAST_TICK: u64 = if cfg!(debug_assertions) { 460 } else { 1_930 };
@@ -72,7 +73,15 @@ fn field_frustum_matches_direct_along_the_flythrough() {
                 .await
                 .expect("prepared field"),
             );
+            // The renderer itself, not the setup, must run the asked mode.
+            assert_eq!(
+                hosts.last().map(FrameHost::camera_culling),
+                Some(camera_culling)
+            );
         }
+        // The Frustum host's read-back draw counts: the fewest drawn and the
+        // active slots then, so the comparison cannot pass unculled.
+        let mut fewest: Option<(u32, u32)> = None;
         let extent = [640, 360];
         let mut compared = 0;
         for tick in 1..=LAST_TICK {
@@ -82,13 +91,27 @@ fn field_frustum_matches_direct_along_the_flythrough() {
                 assert_eq!(report.tick, tick, "one tick per callback");
                 assert!(report.submitted, "every tick submits, so history matches");
                 // Wait for each frame, so both hosts submit the same sequence.
-                while host.poll_completed().expect("GPU progress").is_none() {
+                let sample = loop {
+                    if let Some(sample) = host.poll_completed().expect("GPU progress") {
+                        break sample;
+                    }
                     device
                         .poll(wgpu::PollType::Wait {
                             submission_index: None,
                             timeout: Some(Duration::from_secs(10)),
                         })
                         .expect("GPU wait");
+                };
+                match (host.camera_culling(), sample.camera_culling) {
+                    (CullMode::Direct, None) => {}
+                    (CullMode::Frustum, Some(counts)) => {
+                        assert_eq!(counts.mode, CullMode::Frustum);
+                        assert!(counts.drawn <= counts.active, "tick {tick}: {counts:?}");
+                        if fewest.is_none_or(|(drawn, _)| counts.drawn < drawn) {
+                            fewest = Some((counts.drawn, counts.active));
+                        }
+                    }
+                    (mode, counts) => panic!("tick {tick}: {mode:?} reported {counts:?}"),
                 }
             }
             if !sampled(tick, full) {
@@ -115,5 +138,11 @@ fn field_frustum_matches_direct_along_the_flythrough() {
         }
         let expected = if cfg!(debug_assertions) { 20 } else { 75 };
         assert!(compared >= expected, "{compared} frames compared");
+        let (drawn, active) = fewest.expect("Frustum counts");
+        eprintln!("Frustum drew {drawn} of {active} at its fewest");
+        assert!(
+            drawn > 0 && drawn * 2 < active,
+            "Frustum drew {drawn} of {active} at its fewest"
+        );
     });
 }
