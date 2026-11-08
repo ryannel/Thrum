@@ -31,10 +31,10 @@ and never record them as iPhone results. At V1 exit report outstanding physical-
 
 ## Steering and visual review
 
-Keep building; owner reports/digests are asynchronous. Visible changes need fixed cameras, a sequence, image checks
-and independent agent review. Fix or record open look questions with a recommendation; acceptance never blocks.
-Ask only for purpose/exit/order changes, spending, publishing/deployment/licensing or irreversible actions; continue
-unblocked work. Local verified commits are useful; no push without authorization.
+Owner reports are asynchronous and owner review is one batched window a day. Visual milestones open from an
+owner-approved reference and close on a side-by-side watched in motion with independent agent review; acceptance never
+blocks. Ask only for purpose/exit/order changes, spending, publishing/deployment/licensing or irreversible actions;
+continue unblocked work. Verified checkpoints are pushed to main (owner, 6 Nov proof of concept).
 
 <a id="active-gate-order-and-budgets"></a>
 

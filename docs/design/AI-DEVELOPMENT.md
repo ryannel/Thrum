@@ -154,13 +154,14 @@ without becoming a checkpoint. Agents build continuously, and a report never pau
 
 | Layer | Who and when | Blocking? |
 | --- | --- | --- |
-| Automated image checks | Every change with visible output: fixed cameras and a short sequence on the named target. Bound the difference from the portable recipe or a ground-truth oracle with a perceptual metric such as FLIP. Flag NaN, black, clipped, banded and flickering output. | Yes, for that change |
+| Automated image checks | Every change with visible output: fixed cameras and a short sequence on the named target. Flag NaN, black, clipped, banded and flickering output. Where a portable recipe or ground-truth oracle exists, bound the difference with a perceptual metric such as FLIP. These catch broken output; they don't judge the look. | Yes, for that change |
 | Agent visual review | The implementing agent inspects stills, a contact sheet and the sequence against the gate's look target and its paper or reference images, then records findings. An independent reviewer agent tries to find artifacts and motion faults. | Yes, before the gate closes |
+| Owner reference | Before a visual milestone opens, the owner approves its reference (capture, photo or earlier build, with camera, time and settings), batched into the daily review window. Propose references ahead of need with a recommendation. | Only that milestone's close; other work continues |
 | Owner steer | When a gate closes or something first becomes visible, add a visual digest to the gate's one-page evidence and notify the owner: contact sheet, short clip, numbers and open look questions, each with a recommended answer. Proceed on those recommendations. | Never |
 
-Owner feedback arrives as steering on the current or next slice. It is folded in like any other requirement and is not
-a sign-off the agent waits for. Owner acceptance is recorded in the maturity ledger as experienced quality. Agent
-review, recorded as `agent_reviewed`, is the evidence a gate needs.
+Owner feedback arrives as steering on the current or next slice, folded in like any other requirement. Owner time is
+one batched review window a day. A milestone closes on a side-by-side with its approved reference, watched in motion,
+and `agent_reviewed`; owner acceptance is recorded as experienced quality but is not a close condition.
 
 Stop and ask the owner only to change purpose, the V1 exit or gate order; to spend money, such as renting cloud
 machines or devices; to push, publish, choose a license or deploy; or for destructive or irreversible actions. While one

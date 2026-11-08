@@ -9,7 +9,7 @@ A design for a substantial module usually covers:
 
 - **Purpose and scope:** what it's for, its consumers, what's commissioned now and what's deferred.
 - **Cues:** what the player must see or feel, each with its operating range and where it must read (camera, distance,
-  speed), and the reference it's judged against.
+  speed), and the owner-approved reference it's judged against (or that it still needs one).
 - **Techniques and evidence:** the chosen mechanisms, the alternatives considered, what shipped engines and research
   show, and the check that each mechanism makes its cues across the range. Say what would change each decision.
 - **The system as it runs:** state and owners, representations, update order, CPU or GPU placement, handoffs and

@@ -29,9 +29,9 @@ milestones roll up into the build-plan gate.
   pages under `docs/design/decisions/`. Module work follows [engine-module-design](../engine-module-design/SKILL.md).
 - Before building a general subsystem, look for a proven crate that meets the targets (Wasm, mobile, determinism where
   needed) and adopt it with a reuse record. Build your own where a specialised path is the point and can show its win.
-- Keep building. Stop and ask only to change purpose, the V1 exit or gate order, to spend money, to push, publish,
-  license or deploy, or before an irreversible action, and continue unblocked work meanwhile. Never wait for a reply to
-  a progress report. See [steering](../../../docs/design/AI-DEVELOPMENT.md#visual-review-and-human-steering).
+- Owner review is batched and never blocks ([steering](../../../docs/design/AI-DEVELOPMENT.md#visual-review-and-human-steering)).
+  Ask only to change purpose, the V1 exit or gate order, to spend money, to push, publish, license or deploy, or
+  before an irreversible action, and continue unblocked work meanwhile.
 
 ## Match rigour to the state
 
@@ -84,20 +84,11 @@ For per-tick, per-frame and per-message code:
 - Keep benchmarks as history and investigate visible hitches, about 25% regression from a comparable baseline, or
   unexpected scaling. Foundation choices use best-practice review; numeric tuning waits for the dedicated phase.
 - A recipe keeps portable fallback and checked image/result tolerance. Claim performance wins only with measurements.
-- Visible output passes agent visual review before the change lands; agents can and do inspect images:
-  1. Capture fixed cameras and a short sequence from the exact build on the named target.
-  2. Run automated image checks: a perceptual difference such as FLIP against the portable recipe
-     or ground-truth oracle within the declared tolerance, and no NaN, black, clipped, banded or
-     flickering output.
-  3. Inspect the stills, a contact sheet and the sequence yourself against the gate's look target
-     and its paper or reference images. Record findings.
-  4. Give an independent reviewer agent the captures and look target, not your verdict, to hunt
-     for artifacts and motion faults. Fix its findings or record them as open.
-  5. Record `agent_reviewed` for experienced quality in the maturity ledger.
-  6. When a gate closes or something first becomes visible, add a visual digest to the gate's
-     evidence page and notify the owner: contact sheet, short clip, numbers and open look questions,
-     each with your recommended answer. Then carry on with that recommendation. Owner feedback
-     steers the current or next slice; owner `accepted` is recorded but never a gate condition.
+- Visible output gets agent visual review ([the layers](../../../docs/design/AI-DEVELOPMENT.md#visual-review-and-human-steering));
+  agents can and do inspect images. Each change captures fixed cameras and a short sequence from the exact build on
+  the named target, passes the automated checks for broken output, and gets your own look against the look target.
+  Before a gate or milestone closes, an independent reviewer gets the captures and look target, not your verdict;
+  fix its findings or record them as open, and record `agent_reviewed` in the maturity ledger.
 - Evidence is at most one page per gate (module milestones link their own evidence from the module plan), including its visual digest: stills, one timing table and
   an oracle diff when relevant. Bulk output follows [the storage rules](../../../docs/ASSET-LIFECYCLE.md).
 - Run `./dev check` before each commit.
@@ -117,6 +108,6 @@ For per-tick, per-frame and per-message code:
 Each worktree's `target` is disposable. The shared sccache store rebuilds it mostly from cache.
 - When your work stops, run `cargo clean` in your worktree: a finished slice, a session going idle, or a long wait. A
   daily sweep also deletes any `target` left untouched for about 24 hours.
-- Once your item has landed on main, remove its worktree. It has landed only when `git merge-base --is-ancestor
-  <commit> origin/main` passes after a fetch; record "landed" after that, not before the push.
+- Once your item has landed, remove its worktree. It has landed when `git merge-base --is-ancestor <commit>
+  origin/main` passes after a fetch, not when you push.
 - Point build output at the worktree's own `target`, not at another tree or a shared directory.

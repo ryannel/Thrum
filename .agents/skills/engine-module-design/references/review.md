@@ -24,8 +24,9 @@ ranked; don't ask only for blocking issues.
   module must do, then compare with the design and plan: omissions, unsupported additions, mechanisms not shown to
   make their cues, milestones that wouldn't show the behaviour, a milestone too large to reach the game soon, and proof
   that pursues accuracy beyond what changes what the player sees.
-- **Each milestone, in the game.** Give the reviewer how the milestone is judged and the raw captures and logs for
-  one build, not your summary. It says, per check, pass, fail or can't tell, and whether it watched motion.
+- **Each milestone, in the game.** Give the reviewer the approved reference, how the milestone is judged and the raw
+  captures and logs for one build, not your summary; a reviewer that can't play video gets a frame strip at 10 fps or
+  more over the window in question. It says, per check, pass, fail or can't tell, and whether it watched motion.
 
 The reviewer's verdict goes in the design or plan with the revision or build it saw, together with the brief it was
 given; it applies only to that revision. A consequential technique chosen after the design review gets the same kind
@@ -51,8 +52,9 @@ of review before it's built on.
   duplicate producers, mismatched clocks or encodings, dead alternative paths, unbounded catch-up loops, hot-path
   allocation, unnecessary readbacks and redundant transforms.
 - **Visual output.** Reviewers inspect captured images and sequences directly. They state whether they watched motion
-  or sampled stills, at native size or downscaled, and which build they saw. Judge each indispensable cue separately;
-  good lighting or performance doesn't compensate for failed dynamics. Motion review covers the transitions as well as the steady state: the start from rest, stops, speed changes, turns and camera cuts. Onset faults hide in steady-speed footage. Reviews diagnose the responsible layer
+  or sampled stills, at native size or downscaled, and which build they saw. Judge each indispensable cue separately,
+  side by side with the reference; good lighting or performance doesn't compensate for failed dynamics. Cover the
+  transitions (start from rest, stops, turns, camera cuts), where onset faults hide. Reviews diagnose the responsible layer
   ([system diagnosis](system-diagnosis.md)) rather than prescribing cosmetic fixes.
 - **Performance claims.** Challenge benchmark identity and fairness, tails, equivalence claims, actual saved work,
   memory accounting and contention on a shared GPU ([performance](performance.md)).
@@ -75,8 +77,9 @@ The author then does one of these:
 - records a genuine open decision with a discriminating experiment.
 
 Fix the class a finding belongs to, not only the instance the reviewer named: search the change for the same kind of
-fault before bringing it back. When you resubmit a held change, answer each point of the latest hold in turn: how it's now met, or why it doesn't apply. A revision that skips a held point comes back held. Narrowing a claim removes an overclaim; it doesn't deliver the excluded experience. A review report alone doesn't
-close the gap it found.
+fault before bringing it back. A resubmission answers each point of the latest hold: how it's now met, or why it
+doesn't apply. Narrowing a claim removes an overclaim; it doesn't deliver the excluded experience. A review report
+alone doesn't close the gap it found.
 
 Verify consequential fixes against the revised assembly. Old reviews apply only to the revision they inspected. Agreement
 on a design is not evidence of running behaviour, visual quality or cost.
@@ -90,12 +93,10 @@ Reviewers look for these first; each one passed an author's own checks.
 - **Correct but invisible.** Physically calibrated wakes and foam were true to scale and unreadable at the game camera.
 - **Judged in the lab.** A cloud look judged at seconds per frame shipped as a 288 ms fog. Critics gated on close
   views and offline-paced clips while the real run stuttered.
-- **Trials that hold the suspect fixed.** Six rounds of horizon-shelf fixes all kept base height, profile and
-  lighting constant.
 - **A plan that only grows.** A cloud plan grew to 399 lines of amendments, and a water plan was a list of effects in
   build order with the speed range never designed. Neither had a criterion that moved.
-- **Method families without a governing question.** Nine or more cloud method families were trialled, none with
-  a question it answered or a point at which to stop.
+- **Trials without a governing question.** Nine or more cloud method families were trialled with no question or
+  stopping point, and six rounds of horizon-shelf fixes all held base height, profile and lighting fixed.
 - **Swinging between cost-only and look-only work.** Chasing invented budgets before the look existed, then ignoring
   cost, produced designs that were heavy by design.
 - **Copying the better-looking prototype.** An earlier implementation looked better but was too heavy; it was a look
