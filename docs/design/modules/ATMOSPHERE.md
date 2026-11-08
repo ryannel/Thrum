@@ -157,9 +157,15 @@ even with a tightened corner bound. The verified cooked faces over six fixed
 sectors need 41.53 MiB after list interning, with 170 references at p95 and 581
 at maximum per face-sector pair. Sampled clipped horizons agree with the
 triangle reference. Materialized per-face lists at this subdivision are too
-costly for one aperture. A shared directional structure must reduce both storage
-and evaluation work. Price compact caster spans separately and verify the narrow
-crest, sector seam, grazing ray and local caster before scaling to the admitted domain.
+costly for one aperture. A directional sweep shares exact upstream terrain
+sections along a fixed line. The sampled suffix hulls have 13 vertices at p95,
+but reusing their support off-axis can miss the full disk. A global sweep
+arrangement encounters 2.34 million projected vertex-order changes in six sectors.
+Test shared hull bridges within fixed source blocks, with a bounded upstream join
+and exact complement. Within a constant positive crossing set, endpoint tangents
+bound the angular envelope. Price compact caster spans separately and verify the
+narrow crest, sector seam and grazing rays before scaling to the admitted domain.
+[Directional hull sweep, §§4–5](https://doi.org/10.1111/j.1467-8659.2009.01642.x).
 Before implementation, choose the portable representation and admit it against
 actual requested WebGPU limits, including staging and replacement overlap. Prove
 the geometry prefix, the angular error after decoding and shader rounding, and

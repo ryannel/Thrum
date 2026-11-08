@@ -25,10 +25,13 @@ The Codex goal remains active. Its attachment is
   across four bins. On the true faces and six fixed world sectors, list
   interning still leaves 41.53 MiB and 170/581 p95/max references per
   face-sector pair. The 24,678 sampled clipped horizons match the CPU
-  triangle oracle within 2.92e-16 slope. Keep runtime on hold and find
-  shared directional structure. The origin envelope is illustrative
-  and detached casters remain open. See `tmp/g3s-sunset-lip/M3-RESEARCH.md`
-  for commands and logs. Ground E remains the route.
+  triangle oracle within 2.92e-16 slope. A fixed-line sweep yields hull
+  lengths of 6/13/30 p50/p95/max and matches 17,793 clipped oracle
+  queries. Reusing support off-axis misses up to the full disk height.
+  Six sectors have 2.34 million vertex-order events globally and
+  16,618 within 8-interval source blocks. Measure shared bridge changes
+  and join work next. Renderer integration and detached casters remain
+  open. Rerun from `tmp/g3s-sunset-lip/M3-RESEARCH.md`.
 
 - M2 now owns the star closeout only. The Mac's lossless 1080p60 masters
   and playback copies are under `current-main/ground-e-night-pan/` and
