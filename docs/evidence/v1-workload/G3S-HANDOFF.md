@@ -65,6 +65,15 @@ The Codex goal remains active. Its attachment is
   See `tmp/g3s-sunset-lip/graph/early-depth/`. These are last-map
   diagnostics. The shaded game and shader admission remain open.
 
+- The separate extinction trajectory replays all 21 diagnostic frames
+  byte for byte. It admits 5,013 of 5,880 tracked rows. At frame 77,
+  243 of 280 receivers switch to contour, with one 8.924-point step.
+  A fixed dense control misses by 4.692 pp and the worst control
+  step residual is 3.128 pp. Park the whole-receiver fallback after
+  the third failed screen. The selected fractional area itself
+  recovers the old late limb. The shader remains unchanged.
+  Rerun and raw rows are in the early-depth directory above.
+
 - M3 research is in `tmp/g3s-sunset-lip/M3-RESEARCH.md`. Decoding the
   existing off-axis crest diagnostic finds 33,965 partial receivers at
   frame 3 and 812,485 at frame 72 out of 1,118,754 eligible in both.
