@@ -36,8 +36,10 @@ At each check, for each agent:
 - Is the plan's status current, and does what the agent is doing trace to it?
 - Has a done-when box been ticked, with evidence, since the last check? Commits with none over a couple of checks is
   a stall. Has a milestone's meaning changed in the log without a review?
-- Has the `Now:` line sat on one cue for hours, with attempt after attempt in git? As a rough guide, about 2 hours or
-  3 attempts without a done-when box moving is worth a look. That's a design question, not more tuning.
+- Is the agent experimenting? Estimates are no signal, so watch the work. Treat every trial, screen, candidate or reject
+  commit as a red flag to read, question and help with. After about 3 failed attempts at one cue, act that check:
+  decide whether it's foundational (push through with research and design) or not (park it as a later spike and move
+  the agent on), and tell the owner which call and why. Letting red flags pile up is the failure.
 - Is the design or plan growing without the work moving?
 - Does one claim from the latest report hold up against its artifact?
 - Look at the visual output yourself, in motion, against what the active milestone needs.

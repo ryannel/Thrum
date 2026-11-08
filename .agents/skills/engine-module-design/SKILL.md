@@ -33,11 +33,18 @@ choose the techniques, the research, the experiments and how to break the work d
 
 ## Staying on course
 
-- **Experiments answer a question the design has, and have a stopping point.** If an experiment doesn't trace to the
-  design or plan, ask whether it's needed now.
-- **When a cue won't come after a few honest attempts, question the mechanism, not the tuning.** First find how shipped
-  games and the physics make that cue read (delegate the research and keep working), then take it back to the design,
-  record what you learned and what changes, and carry on from there.
+- **This is not new ground, so an experiment is a red flag.** Shipped games and published work have solved almost
+  everything a module needs. Needing to try things usually means the research or the design is missing. Before a
+  trial, find how it is done; an experiment answers a question the design has, has a stopping point, and is logged.
+- **After about three failed attempts at one cue, stop and decide.** Don't run a fourth trial. Find how shipped games
+  and the physics make that cue read (delegate the research and keep working), take it back to the design, and record
+  what changes. Then make the call and log it in the plan:
+  - *Foundational* (it could change the module's design, or blocks the milestone's game outcome): push through with
+    research and design work.
+  - *Not foundational*: park it as a named later spike with what you learned, and move on to the milestone's other
+    work.
+  Tell the overseer which call you made.
+- **Re-read this skill at each milestone start and whenever an experiment fails.** Your goal should cite it.
 - **Work that serves no milestone** either earns a place in the plan or waits.
 - **Long jobs run in the background.** Solvers, bakes, builds and benchmarks shouldn't hold your turn. Start them,
   work other plan items, and check them between items.
