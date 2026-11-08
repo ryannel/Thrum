@@ -8,6 +8,20 @@ The Codex goal remains active. Its attachment is
 
 ## Current checkpoint
 
+- Stock six-stop route on clean `d7aeca8c` passes the native
+  Metal and hardware Chrome captures, both controls and the
+  checked-in one-code comparison. The worst cross-target
+  component is 0.148 codes. Worst drift against the checked-in
+  baseline is 0.005 codes over 12 held frames. Cooked root
+  `70d2baf8`; Metal executable `67261878`; Chrome Wasm
+  `68de957c` (SHA-256 prefixes). Raw run and exact identities
+  are in `tmp/g7-showcase/runs/check-20261108-162905/run.json`
+  in the isolated `g3s-stars-main-wip` checkout. This is a held
+  route baseline. The independent scope review confirms that
+  the shipped Ground E terrain lip and the authored spur's
+  in-cascade flash remain separate open motion findings.
+  [Scope review](../../design/modules/ATMOSPHERE-PLAN.md#m3-scope-review-brief).
+
 - Stock control baseline over `66d6a9dd`. Hardware Chrome at
   16:45 swaps to the doubled-height rock in one publication.
   The live edit changes 10,741 pixels in the 1252×704 canvas,
