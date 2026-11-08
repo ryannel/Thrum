@@ -201,7 +201,7 @@ impl VisibilityPrepared {
     /// argument record. Frustum only until Occlusion's history follows
     /// slot identity.
     pub(crate) fn new_members(
-        device: &wgpu::Device,
+        device: &crate::runtime::DeviceSite,
         queue: &wgpu::Queue,
         key: PipelineKey,
         (capacity, active): (u32, u32),
@@ -220,7 +220,7 @@ impl VisibilityPrepared {
     }
 
     fn build(
-        device: &wgpu::Device,
+        device: &crate::runtime::DeviceSite,
         queue: &wgpu::Queue,
         key: PipelineKey,
         (capacity, active): (u32, u32),
