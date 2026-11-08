@@ -399,6 +399,12 @@ These are reported plainly, and the design record tracks them:
   - Depth-aware volume (the diagnostic raymarch ignores scene depth inside its box).
   - CAS garbage collection (draft with reader leases parked on `claude/g5-parked-gc-leases` with two recorded defects).
 - **Not measured:** Chrome performance (the dev-server client's Chrome run is functional only), physical iPhone, sustained runs, and physical residency during overlap.
+- **Tripwires and staging, open after 8 November:**
+  - No quiet-machine timing history: the shared machine seeded only the `busy` and `saturated` classes, so a quiet run
+    checks staging peaks and only records its timings.
+  - The limits catch a doubling or a stall, not a 20% drift; tighter limits need a quieter machine or more runs.
+  - The staging fill-failure path (a chunk whose map fails frees its slot, records the error, and the render thread
+    drops the set) has no test, because wgpu offers no way to make a mapped chunk's range fail on demand.
 - **Contract questions for C05/T1, recorded with recommendations in the design:**
   - Preview versus admitted publication of a partially written multi-file change set: preview-only default in force,
     proposal recorded for the owners.
