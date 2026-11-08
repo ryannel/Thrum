@@ -104,33 +104,27 @@ flash. Keep the projection and handoffs fixed for this slice.
 [Godot split controls](https://docs.godotengine.org/en/stable/classes/class_directionallight3d.html) ·
 [Unreal directional transitions](https://dev.epicgames.com/documentation/en-us/unreal-engine/directional-lights-in-unreal-engine).
 
-The stored field has a 2.49–3.65% limb after the stock filter drops
-to zero. Both archived crossings hold blocker count and radius
-across their abrupt step. Doubling fixed taps moved the earlier
-step and raised GPU pass-sum median about 19% under shared load.
-Use Unity HDRP's production precedent of rotating directional PCSS
-per render pixel. Use the existing 32 equal-area disk positions
-with a pixel-local interleaved gradient noise phase fixed across
-submissions. HDRP varies phase over TAA frames and also rotates
-blocker probes. Thrum holds both fixed in this adaptation. Keep the
-eight blocker probes, physical Sun radius,
-receiver-plane correction, supported windows and small-radius exits.
-Apply only at the explicitly unrestricted last-cascade call.
-A near-owned complement can pass the same numeric window.
-No new coverage field, history, device path or graph pass.
+The stored field retains a 2.49–3.65% limb after stock reaches zero.
+The archived receivers hold blocker count and filter radius across
+the abrupt step. The matched 32-tap screen keeps the eight blocker
+probes, physical Sun radius, receiver-plane comparison and small
+radius exits. Rotation applies only to the unrestricted last call.
+It substantially reduces the coherent flash, but produces visible
+penumbra crosshatching on Metal and Chrome. Keep the stock shader.
 [Unity directional PCSS](https://raw.githubusercontent.com/Unity-Technologies/Graphics/master/Packages/com.unity.render-pipelines.core/ShaderLibrary/Shadow/PCSS.hlsl) ·
-[Godot filter quality guidance](https://docs.godotengine.org/en/stable/tutorials/3d/lights_and_shadows.html) ·
-[Shipping PCSS in The Division](https://www.nvidia.com/en-us/geforce/news/tom-clancys-the-division-graphics-and-performance-guide/).
+[Matched screen evidence](../../evidence/v1-workload/G3S-HANDOFF.md#current-checkpoint).
 
-The wide call costs at most 136 depth reads versus 72. The
-near/restricted-last/unrestricted-last overlap is at most 280
-before horizon reads. Positive visibility can enable the 96-step
-horizon march, so include it in measured composed work.
-Spatial decorrelation can turn a coherent step into noise.
-Fixed phase keeps paused views stable, while pan shimmer is an
-open visual risk. Use a prepared candidate and qualify native-size
-motion on both targets before promotion. The G4 history path
-does not enter this slice.
+The next design under review filters the scalar Sun visibility in
+the current frame before opaque lighting. The production precedents
+are URP's screen-space shadow mask and FidelityFX's spatial,
+receiver-guided denoising. Keep the raw receiver arithmetic and
+test a small spatial footprint against the original penumbra and
+geometry boundaries. The existing Occlusion prepass omits cooked
+geometry and cannot supply the receiver winners. G4 history stays
+downstream. Surface motion does not describe the moving cast edge.
+New graph work needs a costed proof and a review with G3t and G5.
+[Unity URP screen shadows](https://docs.unity.com/en-us/engine/7000.0/manual/lighting-overview/lighting/shadows-in-urp/renderer-feature-screen-space-shadows) ·
+[FidelityFX shadow denoiser](https://gpuopen.com/manuals/fidelityfx_sdk/techniques/denoiser/).
 
 Park 16-ray SMRT and contour-area fallback. The first is too
 coarsely quantized for the saved limb, and the second switches
