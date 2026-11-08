@@ -93,36 +93,46 @@ airglow variations and calibrated night colour are outside this profile.
 
 ### M3 surface Sun visibility
 
-M3 takes **shadow-map ray tracing (SMRT)** as its production
-precedent for wide low-Sun penumbrae. Epic uses it with virtual shadow
-maps. The portable candidate would trace directions drawn from the
-existing Sun disk against the first depth layer of the existing
-cascades. The near and small-footprint PCSS path, cascade windows and
-terrain horizon remain the comparison. [Epic SMRT](https://dev.epicgames.com/documentation/en-us/unreal-engine/virtual-shadow-maps-in-unreal-engine#softshadowswithshadowmapraytracing).
+M3 retains production **percentage-closer soft shadows (PCSS)**
+as its blocker and penumbra model. The fractional contour-area filter
+is a Thrum adaptation for the fully supported last cascade. It keeps
+the existing receiver-plane comparisons and reads only that frame's
+first depth layer. Unity ships a directional PCSS cone. Epic's
+shadow-map ray tracing is a separate production precedent. Its first
+layer can hide blockers, and the 16-ray adaptation gives a 6.25-point
+minimum positive result. The saved limb is only 2.49–5.53%. We held
+that design before implementation. [Unity HDRP PCSS](https://github.com/Unity-Technologies/Graphics/blob/master/Packages/com.unity.render-pipelines.core/ShaderLibrary/Shadow/PCSS.hlsl),
+[Epic SMRT](https://dev.epicgames.com/documentation/en-us/unreal-engine/virtual-shadow-maps-in-unreal-engine#softshadowswithshadowmapraytracing).
 
-The fixed row-665 step is inside the last map in both frames. Eight
-search taps give the same blocker count and a stable radius of about
-53 texels. Stock disk samples jump from 4.79–12.50% to zero while the
-dense PCSS comparison field still sees 2.49–3.65%. The first SMRT
-adaptation proposed 16 fixed binary directions with six depth samples
-each. Review stopped it before a run. Its smallest positive result is
-6.25%, above the entire 2.49–5.53% dense-PCSS interval. More angular
-support alone can replace the old flash with a different staircase.
-The previous limb-weighted filter likewise flattened this witness.
-[Evidence](../../evidence/v1-workload/G3S-HANDOFF.md#current-checkpoint).
+The saved row-665 receivers are inside the last map in both frames.
+Stock visibility drops from 4.79–12.50% to zero while dense PCSS
+retains 2.49–3.65%. Adjacent opposite-label texels differ by about
+0.44 in normalized depth, versus 0.00014 on the same side. One fitted
+plane across that silhouette would blend two surfaces. Keep separate
+depth intervals on either side of a compact tile contour. Where all
+represented depth values give the same receiver comparison, integrate
+the area of those clear regions clipped by the existing Sun footprint.
+This supplies fractional support without blending depths or requiring
+a probe to land in the narrow limb. [Saved field evidence](../../evidence/v1-workload/G3S-HANDOFF.md#current-checkpoint).
+[Treyarch depth compression](https://www.activision.com/cdn/research/SparseShadowTree.pdf)
+and [Guennebaud et al.'s contour integration](https://cgl.ethz.ch/Downloads/Publications/Papers/2007/Gue07b/Gue07b.pdf)
+inform the representation.
 
-A reviewed replacement needs a fractional penumbra resolve, a defined
-first-layer depth crossing and discontinuity rule, and a full depth-read
-cost account. The near complement and unrestricted overlap can invoke the last map twice. Positive visibility can also enable the 96-step horizon march that zero visibility skips. Count those paths and every neighbour and fallback fetch. Treat dense traversal
-of that representation, dense PCSS and original-triangle rays as
-separate measurements. Out-of-map samples are unsupported. The stock
-PCSS path currently treats them as lit, so using it as fallback does
-not certify an unsupported ray. The compact caster can be absent from
-both stored layers. Establish bounded coverage or preserve the stock
-visual result at the affected transition and record the residual.
-Keep surface composition separate from aerial intervals. Use no
-extra camera or shadow ownership and prove that a discarded frame
-cannot change a later submitted image.
+The bounded saved-field design uses 48-byte records per 32² depth tile
+and a 63-texel radius limit. Its query cap is 25 records, four contour expansions, 53 depth
+interval tests and 37 area rectangles. Test each merged tile interval
+first and expand only unresolved contours. All work counts toward the
+same caps. The eight saved rows then need at most 28 interval tests. Unresolved comparisons,
+out-of-map footprints and geometry absent from the first layer do
+not certify visibility. Near, restricted-last and horizon evaluation
+retain their existing owners. Select the candidate only from the
+unrestricted last-map call site. A near-owned fallback can have the
+same numeric window. The two last-map calls can both run,
+and recovering positive visibility can enable the 96-step horizon
+march. Count those and the full fallback. Runtime still needs a
+reviewed support transition and same-frame graph storage. This
+candidate has no temporal state and introduces no independent Sun,
+camera or asset authority.
 
 M4 retains the independent finite-disk reference. Clip terrain and
 detached spans to the same solar chord and union them before integrating

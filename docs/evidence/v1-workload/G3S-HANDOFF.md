@@ -42,6 +42,18 @@ The Codex goal remains active. Its attachment is
   below that in the dense PCSS control. The shipped shader is unchanged.
   See the [current milestone plan](../../design/modules/ATMOSPHERE-PLAN.md#m3-the-west-lookouts-shadow-crosses-the-ground-without-a-flash-in-progress).
 
+- Contour-area PCSS recovers the row-665 limb on all eight saved D32
+  receivers. The literal query refused all eight at 16 intersecting
+  contours against a cap of four. Merged-interval preflight limits
+  expansions to 2–4 and all classification attempts to 20–28. Frame
+  227 retains 2.482–3.646% visibility, below its paired frame 226
+  values. It matches dense per-texel-box integration and stays within
+  0.0041 percentage points of dense bilinear PCSS. The triangle
+  reference differs by 0.974–1.131 points across the eight rows.
+  The independent offline review cleared only this fixed check.
+  Inputs, both runs and logs are under
+  `tmp/g3s-sunset-lip/graph/row665-probe/`. Runtime remains open.
+
 - M3 research is in `tmp/g3s-sunset-lip/M3-RESEARCH.md`. Decoding the
   existing off-axis crest diagnostic finds 33,965 partial receivers at
   frame 3 and 812,485 at frame 72 out of 1,118,754 eligible in both.
