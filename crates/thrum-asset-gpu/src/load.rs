@@ -19,7 +19,7 @@ use thrum_asset::{AssetStore, HeadWatcher, Manifest};
 
 #[cfg(not(target_arch = "wasm32"))]
 use crate::CookedSource;
-use crate::staging::{Bytes, Filler, StagedUpload, StagingPlan, StagingRing};
+use crate::staging::{Bytes, Filler, Progress, StagedUpload, StagingPlan, StagingRing};
 use crate::{CookedConfig, CookedStats, wgpu_format};
 
 /// Product bytes from a mapped store or a fetched generation.
@@ -176,6 +176,9 @@ impl Loader {
         };
         let mut watcher = HeadWatcher::new(AssetStore::new(store));
         let mut confirmed = Confirmed::default();
+        // The newest posted upload still being filled. HEAD is polled between bounded fill
+        // slices, so a newer publication supersedes it instead of waiting for it to finish.
+        let mut filling: Option<Filler> = None;
         while !stop.load(Ordering::Relaxed) {
             while let Ok(set) = resident.try_recv() {
                 confirmed = Self::confirm(&set);
@@ -188,7 +191,7 @@ impl Loader {
                         self.prepare(Source::Store(store, &manifest), &head, &confirmed)
                     });
                     match prepared {
-                        Ok((set, upload, mut filler)) => {
+                        Ok((set, upload, filler)) => {
                             report(&self.stats, stop, |stats| {
                                 stats.staged = Some(head.generation);
                             });
@@ -199,20 +202,29 @@ impl Loader {
                                 staged: Instant::now(),
                             };
                             mailbox.post(pending);
-                            // Fill the bounded staging as the render thread frees it. A newer
-                            // HEAD waits until this upload is filled or dropped.
-                            filler.fill_all(stop);
+                            filling = Some(filler);
                         }
                         Err(error) => {
                             self.fail(stop, &format!("generation {}: {error}", head.generation));
                         }
                     }
                 }
-                Ok(None) => std::thread::park_timeout(self.config.poll_interval),
-                Err(error) => {
-                    self.fail(stop, &error.to_string());
-                    std::thread::park_timeout(self.config.poll_interval);
+                Ok(None) => {}
+                Err(error) => self.fail(stop, &error.to_string()),
+            }
+            // Fill the bounded staging as the render thread frees it, for at most one poll
+            // interval before looking at HEAD again.
+            let Some(filler) = filling.as_mut() else {
+                std::thread::park_timeout(self.config.poll_interval);
+                continue;
+            };
+            match filler.fill_until(stop, Instant::now() + self.config.poll_interval) {
+                Progress::Waiting => {}
+                Progress::Failed(reason) => {
+                    self.fail(stop, &reason);
+                    filling = None;
                 }
+                Progress::Done | Progress::Stopped => filling = None,
             }
         }
     }

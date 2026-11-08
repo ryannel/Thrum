@@ -150,10 +150,14 @@ impl Remote {
                 .prepare_remote(&generation, &self.confirmed, mailbox, stop);
         }
         // No thread here: fill whatever staging is free now, never waiting for more.
-        if let Some(filler) = self.filler.as_mut()
-            && filler.fill_available() != staging::Progress::Waiting
-        {
-            self.filler = None;
+        let progress = self.filler.as_mut().map(staging::Filler::fill_available);
+        match progress {
+            None | Some(staging::Progress::Waiting) => {}
+            Some(staging::Progress::Failed(reason)) => {
+                self.loader.fail(stop, &reason);
+                self.filler = None;
+            }
+            Some(staging::Progress::Done | staging::Progress::Stopped) => self.filler = None,
         }
     }
 }
@@ -681,6 +685,14 @@ impl SceneContribution for CookedAssets {
                 frames: 0,
                 bound: None,
             });
+        }
+        // A set whose staging could not be filled never completes; the loader reported why.
+        if live
+            .pending
+            .as_ref()
+            .is_some_and(|pending| pending.set.upload.failed())
+        {
+            live.pending = None;
         }
         let mut tentative = Tentative {
             material: live.material.is_some(),

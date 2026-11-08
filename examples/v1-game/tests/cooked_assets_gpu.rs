@@ -1263,3 +1263,55 @@ fn a_publication_larger_than_staging_streams_through_the_bounded_ring() {
     });
     std::fs::remove_dir_all(&root).expect("remove test store");
 }
+
+/// Wait, without rendering, until the loader has posted `generation`.
+fn wait_posted(stats: &Mutex<CookedStats>, generation: u64) {
+    let deadline = Instant::now() + Duration::from_secs(30);
+    while stats.lock().expect("stats").staged != Some(generation) {
+        assert!(
+            Instant::now() < deadline,
+            "generation {generation} never posted while an older upload was still filling"
+        );
+        std::thread::sleep(Duration::from_millis(5));
+    }
+}
+
+/// A newer publication supersedes an upload whose staging is still being filled: with no frames
+/// rendered the ring never frees, so generation 2 cannot finish filling, yet generation 3 is posted
+/// and drawn and generation 2 never is.
+#[test]
+fn a_newer_publication_supersedes_an_upload_still_being_filled() {
+    let root = std::env::temp_dir().join(format!("thrum-g5-supersede-{}", std::process::id()));
+    std::fs::remove_dir_all(&root).ok();
+    let cook = source_tree(&root, 256);
+    let mut cooker = Cooker::open(cook.clone()).expect("cooker");
+    assert!(cooker.cook_all().expect("cook").failed.is_empty());
+    pollster::block_on(async {
+        let (device, queue) = game_device().await;
+        let mut host = FrameHost::new(&device, &queue, FrameConfig::default())
+            .await
+            .expect("prepared game scene");
+        let assets = CookedAssets::new(placements(cook.store.clone())).expect("rigid placements");
+        let stats = assets.stats();
+        host.set_scene_contribution(Box::new(assets))
+            .expect("attach");
+        let mut clock = Duration::ZERO;
+        wait_for(&mut host, &device, &stats, 1, &mut clock);
+        for (generation, seed) in [(2, 2), (3, 3)] {
+            demo::write_cloud_volume(&cook.source.join("cloud.tvol"), 256, seed).expect("edit");
+            assert!(cooker.cook_all().expect("recook").failed.is_empty());
+            wait_posted(&stats, generation);
+        }
+        wait_for(&mut host, &device, &stats, 3, &mut clock);
+        let stats = stats.lock().expect("stats");
+        assert!(stats.errors.is_empty(), "{:?}", stats.errors);
+        let swapped: Vec<u64> = stats.swaps.iter().map(|swap| swap.generation).collect();
+        assert_eq!(
+            swapped,
+            [1, 3],
+            "generation 2 was superseded before it was drawn"
+        );
+        assert_staging_bounded(&stats);
+    });
+    std::fs::remove_dir_all(&root).expect("remove test store");
+}

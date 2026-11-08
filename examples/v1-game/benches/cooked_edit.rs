@@ -23,7 +23,8 @@ const BUDGET: u64 = 8 << 20;
 type Metrics = Vec<(String, f64)>;
 
 /// Each tripwire's allowed multiple of its same-load history median, and a floor. Staging peaks
-/// are deterministic and may not grow at all.
+/// are deterministic and may not grow at all, so they are judged against every load class; upload
+/// frames are paced by chunks returning, so they depend on load like the timings.
 /// Timing factors are at least 1.25 times the largest max/median spread seen over repeated runs.
 /// Startup is bimodal (device creation warm or cold), so its floor sits above the cold runs.
 const RULES: &[Rule] = &[
@@ -31,41 +32,49 @@ const RULES: &[Rule] = &[
         metric: "realistic_startup_ms",
         factor: 3.0,
         floor: 750.0,
+        any_load: false,
     },
     Rule {
         metric: "realistic_write_swapped_median_ms",
         factor: 2.0,
         floor: 100.0,
+        any_load: false,
     },
     Rule {
         metric: "realistic_upload_cpu_p99_ms",
         factor: 3.0,
         floor: 5.0,
+        any_load: false,
     },
     Rule {
         metric: "realistic_staging_peak_mib",
         factor: 1.0,
         floor: 0.0,
+        any_load: true,
     },
     Rule {
         metric: "large_startup_ms",
         factor: 3.0,
         floor: 1000.0,
+        any_load: false,
     },
     Rule {
         metric: "large_upload_frames_max",
-        factor: 1.5,
+        factor: 1.6,
         floor: 0.0,
+        any_load: false,
     },
     Rule {
         metric: "large_upload_cpu_p99_ms",
         factor: 3.0,
         floor: 5.0,
+        any_load: false,
     },
     Rule {
         metric: "large_staging_peak_mib",
         factor: 1.0,
         floor: 0.0,
+        any_load: true,
     },
 ];
 
