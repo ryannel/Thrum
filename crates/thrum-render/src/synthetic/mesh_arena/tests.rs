@@ -357,7 +357,7 @@ fn culling_churn_keeps_each_physical_row_on_its_slots_mesh() {
             instance.current[3][0] += 1.0;
         }
         upload
-            .replace(&queue, &instances, &changed, |_| false)
+            .replace(&queue, &instances, &changed, |_, _| false)
             .expect("replace");
         check(&upload, &instances);
     }

@@ -1,10 +1,9 @@
 //! Compiles and binds the prepared scene and capture graph.
 
 use super::{
-    AUX_BYTES, CONTRIBUTION_UPLOAD, CUBE_INDEX_BYTES, DEPTH_FORMAT, DisplayPrepared,
-    ExposureResolve, LIGHT_BYTES, MOTION_FORMAT, PreparedSynthetic, RenderError, SCENE_FORMAT,
-    SceneFamily, SceneGraphs, TargetResources, VIEW_BYTES, air_shadow, camera_culling, exposure,
-    history_gpu, shadow,
+    AUX_BYTES, CONTRIBUTION_UPLOAD, DEPTH_FORMAT, DisplayPrepared, ExposureResolve, LIGHT_BYTES,
+    MOTION_FORMAT, PreparedSynthetic, RenderError, SCENE_FORMAT, SceneFamily, SceneGraphs,
+    TargetResources, VIEW_BYTES, air_shadow, camera_culling, exposure, history_gpu, shadow,
 };
 use crate::graph::{
     Access, AccessKind, CompiledGraph, FrameGraph, GraphError, Pass, PassKind, PassScope,
@@ -191,13 +190,6 @@ impl PreparedSynthetic {
             ResourceScope::Imported { initialized: true },
         )?;
         let (history_read, history_write, history_bytes) = self.history_resources(&mut graph)?;
-        let cube_indices = graph.resource(
-            ResourceDescriptor::Buffer {
-                bytes: CUBE_INDEX_BYTES,
-                usage: wgpu::BufferUsages::INDEX,
-            },
-            ResourceScope::Imported { initialized: true },
-        )?;
         let mesh = self.mesh_arena_reads(&mut graph)?;
         let route = self.bucket_route_reads(&mut graph)?;
         let mut accesses = vec![
@@ -217,12 +209,6 @@ impl PreparedSynthetic {
                 resource: history_read,
                 range: 0..history_bytes,
                 kind: AccessKind::StorageRead,
-                store: true,
-            },
-            Access {
-                resource: cube_indices.clone(),
-                range: 0..CUBE_INDEX_BYTES,
-                kind: AccessKind::IndexRead,
                 store: true,
             },
         ];
@@ -252,7 +238,11 @@ impl PreparedSynthetic {
         let shadow = self.append_shadow_passes(
             &mut graph,
             &instance,
-            &cube_indices,
+            &mesh
+                .iter()
+                .chain(route.first())
+                .cloned()
+                .collect::<Vec<_>>(),
             &mut accesses,
             &mut prepared_keys,
             &contribution_reads,
@@ -531,7 +521,7 @@ impl PreparedSynthetic {
         &self,
         graph: &mut FrameGraph,
         instance: &ResourceId,
-        cube_indices: &ResourceId,
+        caster_reads: &[Access],
         accesses: &mut Vec<Access>,
         prepared_keys: &mut BTreeSet<PipelineKey>,
         contribution_reads: &[Access],
@@ -580,12 +570,6 @@ impl PreparedSynthetic {
                         store: true,
                     },
                     Access {
-                        resource: cube_indices.clone(),
-                        range: 0..CUBE_INDEX_BYTES,
-                        kind: AccessKind::IndexRead,
-                        store: true,
-                    },
-                    Access {
                         resource: matrix,
                         range: 0..64,
                         kind: AccessKind::UniformRead,
@@ -599,6 +583,7 @@ impl PreparedSynthetic {
                     },
                 ]
                 .into_iter()
+                .chain(caster_reads.iter().cloned())
                 .chain(contribution_reads.iter().cloned())
                 .collect(),
                 external_side_effect: false,
