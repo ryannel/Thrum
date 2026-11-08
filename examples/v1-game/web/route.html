@@ -22,6 +22,9 @@
       no frame slot is free yet, the page waits in short timer steps (requested at 1 ms; Chrome
       clamps nested timers to about 4 ms), for at most 500 ms, for GPU completions
       instead of dropping that step's view.
+      Cooked admission on this page is by generation only: install_route refuses unless the drawn
+      cooked generation is the route's. The served store's root is checked by the moving-route
+      checker before the page runs; opened outside the checker, nothing here checks the root.
       window.thrumRoute is the checker's record; at each checkpoint the page holds until the
       checker calls window.thrumRoute.resume() after its canvas screenshot.
     -->
@@ -91,6 +94,7 @@
           target: "chrome", image_label: "Chrome presented canvas", render_extent: [canvas.width, canvas.height],
           device_pixel_ratio: dpr, phase: query.has("phi") ? [phi, 1] : route.phase, origin_tick: origin, overlay: route.overlay,
           user_agent: navigator.userAgent,
+          cooked_admission: "generation only; the served root is checked outside the page, by the checker",
         };
         let before = JSON.parse(game.route_report(Number.MAX_SAFE_INTEGER));
         if (before.timestamp_clamps !== 0) fail("the clock clamped before the route");
