@@ -158,6 +158,24 @@ ABBA; the plan amends the two-run rule for M3a and owes a second run before M3c'
 The field report folds the culling passes into the forward bucket, so its forward column for Occlusion includes
 them.
 
+**Field route at 1920×1080, 8 Nov** (the second field run owed before M3c's default decision; shared machine).
+- Setup:
+  - `field_culling` at the game's window extent, with all three modes stepped each tick in rotating order.
+  - Each 300-tick segment reports its paired medians beside the load at its end.
+  - The bench asserts Occlusion hid at least half of Frustum's list on some counted tick.
+  - Two runs (`m3c/fieldcost1080-{1,2}.log`, tree `fd5cfb0c`); mean in-view centres 22.0%.
+
+| Run | Load | Whole GPU p50 D → F → O | Paired F−D | Paired O−F behind cover (ticks) | Paired O−F open (ticks) | O−F segment medians |
+| ---: | --- | --- | ---: | --- | --- | --- |
+| 1 | 264–495 | 3.899 → 3.703 → 4.028 | −0.193 | +0.319, p95 +0.738 (1,787) | +0.490 (13) | +0.297 to +0.331 |
+| 2 | 230–240 | 3.956 → 3.763 → 4.092 | −0.199 | +0.318, p95 +1.803 (1,787) | +0.400 (13) | +0.295 to +0.350 |
+
+- **Steady across load:** every segment's paired medians hold within about 0.05 ms from load 230 to 495. Frustum
+  saves about 0.2 ms over Direct. Occlusion adds about 0.3 ms over Frustum behind cover on cubes.
+- **Agrees with 720p:** this matches the 720p field run (+0.257 ms) and the grid rows. Occlusion is a loss on
+  12-triangle boxes at the shipped resolution.
+- **Not a quiet-GPU figure:** these are shared-machine timings until a quiet re-run exists.
+
 **Memory**, extra over Frustum. Each render target owns:
 - the prepass depth, 3.69 MB at 1280×720 (8.29 MB at 1080p);
 - the pyramid, 2.80 MB (5.59 MB at 1080p, on the 1024×1024 power-of-two floor);
