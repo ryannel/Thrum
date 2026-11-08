@@ -238,11 +238,7 @@ impl PreparedSynthetic {
         let shadow = self.append_shadow_passes(
             &mut graph,
             &instance,
-            &mesh
-                .iter()
-                .chain(route.first())
-                .cloned()
-                .collect::<Vec<_>>(),
+            (&mesh, &route),
             &mut accesses,
             &mut prepared_keys,
             &contribution_reads,
@@ -521,7 +517,7 @@ impl PreparedSynthetic {
         &self,
         graph: &mut FrameGraph,
         instance: &ResourceId,
-        caster_reads: &[Access],
+        (mesh, route): (&[Access], &[Access]),
         accesses: &mut Vec<Access>,
         prepared_keys: &mut BTreeSet<PipelineKey>,
         contribution_reads: &[Access],
@@ -552,15 +548,73 @@ impl PreparedSynthetic {
             },
             ResourceScope::Imported { initialized: true },
         )?;
-        for index in 0..shadow::LAYERS {
-            // The caster view: light matrix and upstream clip flag.
-            let matrix = graph.resource(
-                ResourceDescriptor::Buffer {
-                    bytes: shadow::CASTER_VIEW_RANGE,
-                    usage: wgpu::BufferUsages::UNIFORM,
-                },
-                ResourceScope::Imported { initialized: true },
-            )?;
+        // Each pass's caster view: light matrix and upstream clip flag.
+        let matrices = (0..shadow::LAYERS)
+            .map(|_| {
+                graph.resource(
+                    ResourceDescriptor::Buffer {
+                        bytes: shadow::CASTER_VIEW_RANGE,
+                        usage: wgpu::BufferUsages::UNIFORM,
+                    },
+                    ResourceScope::Imported { initialized: true },
+                )
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        let uniform = |resource: &ResourceId, bytes| Access {
+            resource: resource.clone(),
+            range: 0..bytes,
+            kind: AccessKind::UniformRead,
+            store: true,
+        };
+        // Culled camera modes on the bucket route: one compaction lists each
+        // pass's casters against that pass's own view, which it reads.
+        let lists = match &self.caster_culling {
+            Some((culling, _)) => {
+                let mut cull = vec![
+                    Access {
+                        resource: instance.clone(),
+                        range: 0..self.instance_bytes,
+                        kind: AccessKind::StorageRead,
+                        store: true,
+                    },
+                    uniform(&serials, history_gpu::SERIAL_BYTES),
+                ];
+                cull.extend(
+                    matrices
+                        .iter()
+                        .map(|matrix| uniform(matrix, shadow::CASTER_VIEW_RANGE)),
+                );
+                cull.extend_from_slice(route);
+                let ids = culling.append_outputs(graph, &mut cull)?;
+                let key = self.caster_cull_key();
+                prepared_keys.insert(key);
+                graph.pass(Pass {
+                    name: crate::visibility::casters::PASS.into(),
+                    scope: PassScope::View(1),
+                    pipeline: Some(key),
+                    accesses: cull,
+                    external_side_effect: false,
+                });
+                Some(
+                    ids.lists
+                        .iter()
+                        .map(|list| culling.list_reads(list))
+                        .collect::<Vec<_>>(),
+                )
+            }
+            None => None,
+        };
+        for (index, matrix) in (0..shadow::LAYERS).zip(matrices) {
+            // Unculled casters read the route's member list; culled ones
+            // read their own pass's list and records.
+            let caster_reads: Vec<Access> = match &lists {
+                Some(lists) => mesh
+                    .iter()
+                    .cloned()
+                    .chain(lists[index as usize].iter().cloned())
+                    .collect(),
+                None => mesh.iter().chain(route.first()).cloned().collect(),
+            };
             let key = self.shadow_key(index);
             prepared_keys.insert(key);
             graph.pass(Pass {
@@ -599,7 +653,7 @@ impl PreparedSynthetic {
                     },
                 ]
                 .into_iter()
-                .chain(caster_reads.iter().cloned())
+                .chain(caster_reads)
                 .chain(contribution_reads.iter().cloned())
                 .collect(),
                 external_side_effect: false,
@@ -728,6 +782,11 @@ impl PreparedSynthetic {
                         .ok_or(RenderError::GraphPassMismatch)?;
                     RecordBinding::<SceneFamily>::new(id, PassKind::Render, move |frame, pass| {
                         frame.shadow(index, pass)
+                    })
+                }
+                Some(key) if self.caster_culling.is_some() && key == self.caster_cull_key() => {
+                    RecordBinding::<SceneFamily>::new(id, PassKind::Compute, |frame, pass| {
+                        frame.caster_cull(pass)
                     })
                 }
                 Some(key) if Some(key) == self.visibility.as_ref().map(VisibilityPrepared::key) => {

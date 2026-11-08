@@ -232,9 +232,12 @@ impl BucketRoute {
 
     fn lay_out_casters(&mut self) {
         self.caster_draws.clear();
-        for (segment, (indices, base_vertex)) in self.buckets.segments().iter().zip(&self.ranges) {
+        for (bucket, (segment, (indices, base_vertex))) in
+            (0..).zip(self.buckets.segments().iter().zip(&self.ranges))
+        {
             if segment.len != 0 {
                 self.caster_draws.push(CasterDraw {
+                    bucket,
                     member_offset: segment.start * 4,
                     indices: indices.clone(),
                     base_vertex: *base_vertex,

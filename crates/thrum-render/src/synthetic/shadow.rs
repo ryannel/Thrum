@@ -97,10 +97,15 @@ pub(super) struct CasterDraws<'a> {
     pub(super) two_sided: bool,
     /// The bucket route's member list, bound per draw at its segment offset.
     pub(super) members: Option<&'a wgpu::BindGroup>,
+    /// Sun caster culling: this pass's culled list, bound like the member
+    /// list, and its per-bucket indirect records.
+    pub(super) culled: Option<(&'a wgpu::BindGroup, &'a wgpu::Buffer)>,
     pub(super) draws: &'a [CasterDraw],
 }
 
 pub(super) struct CasterDraw {
+    /// The bucket's index, which selects its culled indirect record.
+    pub(super) bucket: u32,
     pub(super) member_offset: u32,
     pub(super) indices: std::ops::Range<u32>,
     pub(super) base_vertex: i32,
@@ -310,6 +315,15 @@ impl ShadowPrepared {
         self.members.as_ref().map(|(layout, _)| layout)
     }
 
+    /// Each pass's caster view (light matrix and upstream clip flag), the
+    /// bytes its draw reads, for the caster cull to test against.
+    pub(super) fn caster_views(&self) -> Vec<&wgpu::Buffer> {
+        self.cascades
+            .iter()
+            .map(|cascade| &cascade.buffer)
+            .collect()
+    }
+
     pub(super) fn update(
         &mut self,
         view: &SyntheticView,
@@ -386,6 +400,14 @@ impl ShadowPrepared {
         pass.set_bind_group(1, instances, &[]);
         pass.set_index_buffer(casters.indices.slice(..), wgpu::IndexFormat::Uint32);
         for draw in casters.draws {
+            if let Some((list, args)) = casters.culled {
+                pass.set_bind_group(2, list, &[draw.member_offset]);
+                pass.draw_indexed_indirect(
+                    args,
+                    u64::from(draw.bucket) * crate::visibility::ARGS_BYTES,
+                );
+                continue;
+            }
             if let Some(members) = casters.members {
                 pass.set_bind_group(2, members, &[draw.member_offset]);
             }

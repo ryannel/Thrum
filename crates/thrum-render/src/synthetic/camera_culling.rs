@@ -93,7 +93,22 @@ pub(super) fn prepare(
             mode,
         )));
     };
-    let meshes = arena
+    let meshes = mesh_records(arena)?;
+    let mut prepared = VisibilityPrepared::new_members(
+        device,
+        queue,
+        key,
+        (capacity, active),
+        &meshes,
+        route.shape()?,
+    );
+    prepared.set_member_groups(route.groups());
+    Ok(Some(prepared))
+}
+
+/// The arena's rows as the compaction's mesh table: index range and bounds.
+pub(super) fn mesh_records(arena: &MeshArena) -> Result<Vec<MeshRecord>, RenderError> {
+    arena
         .rows()
         .iter()
         .map(|row| {
@@ -107,17 +122,7 @@ pub(super) fn prepare(
                 bounds_max: row.bounds[1],
             })
         })
-        .collect::<Result<Vec<_>, RenderError>>()?;
-    let mut prepared = VisibilityPrepared::new_members(
-        device,
-        queue,
-        key,
-        (capacity, active),
-        &meshes,
-        route.shape()?,
-    );
-    prepared.set_member_groups(route.groups());
-    Ok(Some(prepared))
+        .collect()
 }
 
 /// Culled modes: the forward view-group entry for the compacted slot list.
