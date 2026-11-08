@@ -8,6 +8,28 @@ The Codex goal remains active. Its attachment is
 
 ## Current checkpoint
 
+- The one-ULP guard at `77e84128` passes `./dev check` and Chrome
+  recovery after two deliberate device destructions. It is on
+  `origin/codex/wip-g3s-live-receiver`.
+- Live Direct winner tags and stored D32 agree across both passes
+  on Metal and Chrome in all five arms. The two solo faces have
+  2,916 exact positive ties. Reverse order flips every winner.
+  The later nearer cooked face wins each by 48,868 ULP. The
+  original predicted crop missed the face. The final scorer checks
+  every positive solo tie. That scene's tied guide flags are zero.
+  A second fixture under the qualified 160 m caster records
+  235 positive Metal ties that use the mask in both draw orders.
+  The corresponding Chrome capture is pending.
+- The shaded ±2 ULP controls match stock inside the frozen crop
+  and unforced resolve outside, byte for byte. The unforced
+  control changes 21,386–23,501 crop pixels on Metal submissions
+  225–227 and 21,402 at the held 17.702667 h on Chrome. Both
+  targets repeat exactly in their stock or within-arm control.
+  This does not establish whole-view material-hook fallback or
+  motion quality. The fixture scripts, compressed stills and raw
+  depth planes are in the M3 opaque-winner scratch folder.
+  [Independent review](../../design/modules/ATMOSPHERE-PLAN.md#m3-live-tie-and-fallback-review-brief).
+
 - Integrated Metal depth on `d7738029`: the receiver and forward
   stored D32 planes are byte-identical at submissions 0 and 225–227.
   Exact comparison with fragment Z rejects 1,989 pixels per frame,
