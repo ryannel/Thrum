@@ -1,0 +1,4 @@
+interface:
+  display_name: "Build a milestone"
+  short_description: "Milestone level: build and verify the next milestone, push to main"
+  default_prompt: "Use $build-milestone to build and verify the next open milestone of this module."

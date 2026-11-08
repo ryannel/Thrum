@@ -5,7 +5,7 @@ of each device's hardware; see the [hardware-native decision](decisions/HARDWARE
 gate order live in [the build plan](../BUILD-PLAN.md#purpose); where an older design here disagrees, the build plan wins. Existing implementations are candidates for later reconciliation, not the target.
 
 - **Start here: [building a game](ENGINE-EXPERIENCE.md)** — project, world, target and run.
-- [Visual review and human steering](AI-DEVELOPMENT.md#visual-review-and-human-steering): agents review images; the owner steers asynchronously.
+- [Visual review and human steering](AI-DEVELOPMENT.md#visual-review-and-human-steering): inspection lists, the evaluator and asynchronous owner steering.
 - [Brief and conversation coverage](ARCHITECTURE-BRIEF.md): E01–E21 requirements, scope and retained ambitions.
 - [Integrated design](SYSTEM-DESIGN.md), [composition](COMPOSITION.md) and [selected decisions](ARCHITECTURE-DECISIONS.md): core and 30 owners.
 - [C4 contracts](CONTRACTS.md): shared invariants; modules link consequences rather than duplicate protocols.
@@ -16,7 +16,7 @@ gate order live in [the build plan](../BUILD-PLAN.md#purpose); where an older de
 - [Maturity](MATURITY.md) and [ledger](maturity.json): current design versus implementation, quality and platform evidence.
 - [Simplification findings and resolutions](SIMPLIFICATION-REVIEW.md): coordinated closure; [earlier review](PLAN-REVIEW.md).
 - Creator acceptance: [scenarios](SCENARIO-WALKTHROUGHS.md), [first use](FIRST-USE-WALKTHROUGHS.md), [from scratch](FROM-SCRATCH-WALKTHROUGHS.md).
-- [AI development](AI-DEVELOPMENT.md), [skill rationale](SKILL-WORKFLOW.md) and [programme](DESIGN-PROGRAMME.md): focused skills, checks and coordination.
+- [AI development](AI-DEVELOPMENT.md#how-work-runs): how work runs, the level-named skills and checks. Historical: [skill rationale](SKILL-WORKFLOW.md) and [programme](DESIGN-PROGRAMME.md).
 - [Performance investment map](AI-PERFORMANCE.md#capability-investment-map), [design/process policy](AI-PERFORMANCE.md#performance-investment-from-the-first-design) and [campaign walkthroughs](PERFORMANCE-WALKTHROUGHS.md): deep optimization throughout construction, with trusted whole-engine evaluation.
 - [Storage lifecycle](STORAGE-LIFECYCLE.md) and [journeys](LIFECYCLE-WALKTHROUGHS.md): assets, promotion, recovery and cleanup.
 - Research: [modern engines](ENGINE-STRUCTURE-RESEARCH.md), [capability survey](CAPABILITY-SURVEY.md), [decision audit](ARCHITECTURE-AUDIT.md).

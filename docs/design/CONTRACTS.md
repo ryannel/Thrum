@@ -3,7 +3,7 @@
 Revision C4, 1 November 2026. Reconciled source, iteration and multiplayer baseline; not implementation-qualified.
 [Decision record](ARCHITECTURE-DECISIONS.md) resolves A01–A05/J01–J04 and integrates the whole-plan review.
 All domain authors read this contract set and the [brief](ARCHITECTURE-BRIEF.md). Propose changes with affected owners;
-do not create a private alternative. The coordinator reconciles both producer and consumers before accepting a change.
+do not create a private alternative. The coordinating owner ([plan-engine](../../.agents/skills/plan-engine/SKILL.md)) reconciles both producer and consumers before accepting a change.
 [The build plan](../BUILD-PLAN.md) sets functional gates and recorded baselines; [the baseline specification](BASELINE-SPEC.md) fixes the initial admitted implementations and post-V1 envelopes.
 This document owns cross-module invariants; the five baseline specifications own selected algorithms and adapter
 policies; module designs own responsibility and consumer consequences. These are responsibilities, not
@@ -644,4 +644,4 @@ The coordinator traces each scenario with owners before declaring the high-level
 | Mobile suspend during upload | F1 lifecycle -> V1 submission stop -> F4 job/lease handling -> A1/P7 policy -> restore epoch | GPU work after surface invalidation, unbounded catch-up, corrupted save, repeated audio events |
 
 Domain authors must identify contradictions, duplicate owners and missing inputs in these paths, including outside
-their own files. Report a proposed resolution to the coordinator and affected peers; do not silently patch around it.
+their own files. Report a proposed resolution to plan-engine and affected peers; do not silently patch around it.

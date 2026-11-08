@@ -1,8 +1,12 @@
 # Engine skill rationale and forward tests
 
+> **Superseded for process (8 November 2026).** How work runs is now in
+> [AI development: how work runs](AI-DEVELOPMENT.md#how-work-runs) and the level-named skills. This document is kept as
+> the record of the 1–2 November skill rationale and forward tests; its process instructions (model and effort, delegation, coordination) no longer apply.
+
 The [design programme](DESIGN-PROGRAMME.md) owns this commission's orchestration, evidence standard and completion
-gate. The [architecture skill](../../.agents/skills/engine-architecture/SKILL.md) governs whole-engine work; the
-[module skill](../../.agents/skills/engine-module-design/SKILL.md) governs a bounded module. This note records why
+gate. The architecture skill (now [plan-engine](../../.agents/skills/plan-engine/SKILL.md)) governs whole-engine work; the
+module skill (now [plan-module](../../.agents/skills/plan-module/SKILL.md)) governs a bounded module. This note records why
 their workflow boundary was adjusted and how to test it independently.
 
 ## Source rationale

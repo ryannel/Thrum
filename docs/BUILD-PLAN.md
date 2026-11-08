@@ -31,9 +31,10 @@ and never record them as iPhone results. At V1 exit report outstanding physical-
 
 ## Steering and visual review
 
-Owner reports are asynchronous and owner review is one batched window a day. Visual milestones open from an
-owner-approved reference and close on a side-by-side watched in motion with independent agent review; acceptance never
-blocks. Ask only for purpose/exit/order changes, spending, publishing/deployment/licensing or irreversible actions;
+Owner reports are asynchronous and owner review is one batched window a day. Work runs as described in
+[how work runs](design/AI-DEVELOPMENT.md#how-work-runs). Visual milestones are judged in the running game against an
+inspection list whose bar is set by shipped high-end games, and close on a clean-context evaluator's pass; acceptance
+never blocks. Ask only for purpose/exit/order changes, spending, publishing/deployment/licensing or irreversible actions;
 continue unblocked work. Verified checkpoints are pushed to main (owner, 6 Nov proof of concept).
 
 <a id="active-gate-order-and-budgets"></a>
@@ -115,7 +116,7 @@ The native Metal recorder stays in G3t. The later dedicated performance phase ow
 
 Choose layouts, ownership, scheduling and hardware seams by best practice; reuse hot storage and one publication
 spine/job graph, with scalar references. Preserve admission validation, checked IDs, pipeline closure and history.
-Use [engine-contributor](../.agents/skills/engine-contributor/SKILL.md) and `./dev check`. Measure wins; keep
+Use [build-milestone](../.agents/skills/build-milestone/SKILL.md) and `./dev check`. Measure wins; keep
 function/visual/device evidence separate, one compact page per gate. Shrink plan/ledger/evidence.
 
 ## After V1 and parked work

@@ -1,4 +1,0 @@
-interface:
-  display_name: 'Engine Module Design'
-  short_description: 'Design, plan, build and prove a Thrum engine module'
-  default_prompt: 'Use $engine-module-design to design the module, plan it as milestones, and build and prove the commissioned scope in the game.'

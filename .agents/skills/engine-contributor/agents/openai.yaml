@@ -1,4 +1,0 @@
-interface:
-  display_name: "Thrum Engine Contributor"
-  short_description: "Build, refactor and verify Thrum engine code"
-  default_prompt: "Use $engine-contributor to implement the next build-plan slice and verify it."

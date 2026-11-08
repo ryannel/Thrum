@@ -58,22 +58,34 @@ For the new implementation, use scoped instructions and task-relevant references
 queue and TS rules with its current code. Repo-local engine skills already take precedence over same-named personal
 copies in that repository; SDK distribution needs equally unambiguous version/provenance. This design changes no active policy.
 
-## A small skill set
+## How work runs
 
-Keep `engine-architecture` for whole-engine choices and `engine-module-design` for new/substantially redesigned modules.
-Add the following only when their actual APIs and commands exist; names below are proposals, not installed skills.
+Work follows one proven pattern: a planner writes a high-level design and milestones, a generator builds them, an
+automated oracle answers most questions, and a clean-context evaluator judges what the oracle can't. The skills are
+named by level, so the command says what it changes:
 
-| Proposed route | Use it for | Keep out |
-| --- | --- | --- |
-| `engine-contribute` | Implement/fix an existing engine design, identify affected consumers, run appropriate checks and hand off evidence | Mandatory whole-engine research for a small local repair |
-| `game-authoring` | Create/change a game through the SDK, including empty, direct and headless paths | Engine-private imports or a new plugin framework for an ordinary rule |
-| `runtime-diagnosis` | Trace an observed behavior, image or performance fault using state, replay and provenance | A duplicate troubleshooting manual or compulsory route for every edit |
+| Level | Skill | Produces | Model and effort |
+| --- | --- | --- | --- |
+| Engine | [`plan-engine`](../../.agents/skills/plan-engine/SKILL.md) | Module map, gate order, [contracts](CONTRACTS.md), module briefs | Claude Opus 5.5, high |
+| Module | [`plan-module`](../../.agents/skills/plan-module/SKILL.md) | Design, plan and a JSON done-when file per module | Claude Opus 5.5, high |
+| Milestone | [`build-milestone`](../../.agents/skills/build-milestone/SKILL.md) | The next milestone, verified and pushed | Codex `gpt-6.1-sol` or Claude Opus 5.5, medium |
+| Milestone | [`review-milestone`](../../.agents/skills/review-milestone/SKILL.md) | A verdict from a clean context | Claude Opus 5.5, medium |
+| Fan-out | [`build-parallel`](../../.agents/skills/build-parallel/SKILL.md) | Several module streams under one Claude lead | Lead at medium |
 
-The engine repository carries its contributor/design routes. A standalone SDK game project gets the relevant game and
-diagnosis routes, links to version-matched APIs and its own project conventions. A game nested in a larger repository
-also inherits that repository's applicable instructions; verify scope before claiming this separation. Engine integration invariants remain
-fixed; a game's genre, art style, balance policy and local code organization remain game-owned within those boundaries.
-Do not overwrite game-owned instructions or source on an SDK update.
+There are two speeds:
+- **One chat.** The owner drives a single chat in Claude or Codex with `build-milestone`, and can move a stream
+  between them at a milestone boundary. The plan, the done-when file and the plan's log are the whole handover.
+- **Fan-out.** One Claude lead runs `build-parallel`. Codex generators run through `scripts/agent_loop.py`, which pins
+  the model and effort on every turn, and evaluators and planners run as the agents in `.claude/agents/`. Escalation
+  after a failed review is by count: the same session, then a fresh session, then a re-plan, then park.
+
+Every launch names its model and reasoning effort, so no default ever chooses one. Changing a role's model or effort
+is the owner's decision. [`repo-structure`](../../.agents/skills/repo-structure/SKILL.md) covers file placement.
+Proposed future routes (`game-authoring` for SDK games, `runtime-diagnosis`) wait until their APIs and commands exist.
+
+The engine repository carries its own routes. A standalone SDK game project gets the relevant game and diagnosis
+routes and its own project conventions; engine integration invariants stay fixed, and game-owned instructions aren't
+overwritten on an SDK update.
 
 Keep purpose, important decisions and routing in `SKILL.md`; put larger task recipes in references and repeated
 mechanical work in tested scripts. Link to the real checker instead of duplicating its entire rule list. Describe
@@ -149,24 +161,19 @@ image quality, and no visual review substitutes for device measurement.
 
 ## Visual review and human steering
 
-Agents can read images, so visual review is part of agent work. The owner steers direction and taste
-without becoming a checkpoint. Agents build continuously, and a report never pauses building.
+Agents can read images, so visual review is part of agent work. The owner steers direction and taste without becoming
+a checkpoint, and a report never pauses building.
 
 | Layer | Who and when | Blocking? |
 | --- | --- | --- |
-| Automated image checks | Every change with visible output: fixed cameras and a short sequence on the named target. Flag NaN, black, clipped, banded and flickering output. Where a portable recipe or ground-truth oracle exists, bound the difference with a perceptual metric such as FLIP. These catch broken output; they don't judge the look. | Yes, for that change |
-| Agent visual review | The implementing agent inspects stills, a contact sheet and the sequence against the gate's look target and its paper or reference images, then records findings. An independent reviewer agent tries to find artifacts and motion faults. | Yes, before the gate closes |
-| Owner reference | Before a visual milestone opens, the owner approves its reference (capture, photo or earlier build, with camera, time and settings), batched into the daily review window. Propose references ahead of need with a recommendation. | Only that milestone's close; other work continues |
-| Owner steer | When a gate closes or something first becomes visible, add a visual digest to the gate's one-page evidence and notify the owner: contact sheet, short clip, numbers and open look questions, each with a recommended answer. Proceed on those recommendations. | Never |
-
-Owner feedback arrives as steering on the current or next slice, folded in like any other requirement. Owner time is
-one batched review window a day. A milestone closes on a side-by-side with its approved reference, watched in motion,
-and `agent_reviewed`; owner acceptance is recorded as experienced quality but is not a close condition.
+| Automated image checks | Every change with visible output: fixed cameras and a short sequence on the named target. Flag NaN, black, clipped, banded and flickering output. Where a portable recipe or ground-truth oracle exists, bound the difference with a perceptual metric such as FLIP; that is a correctness oracle. Golden captures are regression tripwires. These catch broken output; they don't judge the look. | Yes, for that change |
+| Inspection list | The planner writes each visual milestone's inspection list in its done-when file: observable qualities checked in the running game, with the bar set in words by shipped high-end games of the same kind. There are no target images to match. The generator checks its own captures against the list. | Shapes the milestone |
+| Evaluator | A clean-context [`review-milestone`](../../.agents/skills/review-milestone/SKILL.md) agent inspects frame sequences and contact sheets captured offscreen from the exact build on the named target, judges each item against the list and bar, and records `agent_reviewed`. | Yes, the milestone closes on its pass |
+| Owner steer | The daily report carries new inspection lists, verdicts and contact sheets. The owner adjusts a bar or overturns a verdict; an overturned verdict becomes a graded example for the evaluator. | Never |
 
 Stop and ask the owner only to change purpose, the V1 exit or gate order; to spend money, such as renting cloud
-machines or devices; to push, publish, choose a license or deploy; or for destructive or irreversible actions. While one
-of these waits, continue with other unblocked work. Look questions with credible alternatives proceed on the agent's
-recommendation; the digest names the alternative so the owner can redirect cheaply. Visual quality
+machines or devices; to publish, choose a licence or deploy; or for destructive or irreversible actions. Verified
+checkpoints are pushed to main without force. While a question waits, continue other unblocked work. Visual quality
 claims come only from the named target or a labelled proxy, never from a description of the intended result.
 
 ## Ambitious performance improvement
@@ -201,7 +208,7 @@ and inspect motion from the same camera. Do not fix a physical fault by moving o
 
 **Engine contribution.** For a provider or schema change, identify its public contract and affected body, render,
 content, save and target consumers before editing. Implement within the agreed boundary, compile/lint, validate the
-effective setup and run a consumer fixture. A boundary change returns to the coordinator and affected owners. Report
+effective setup and run a consumer fixture. A boundary change returns to `plan-engine` and the affected owners. Report
 which integration and target checks actually ran; a provider compiling alone is not a completed game integration.
 
 These loops use analytical designs and tests of known obligations. They do not authorize discovering the architecture
@@ -219,10 +226,11 @@ Architecture rationale and game intent remain authored documents; generation can
 maturity ledger for evidence/status and derive build/dependency views from actual metadata, without introducing a
 second competing module registry. Do not assume every responsibility maps to one crate.
 
-For parallel changes, assign bounded ownership and use isolated worktrees/checkouts where appropriate. Shared contract
-changes have one coordinating owner and a producer/consumer impact note before dependent implementation diverges.
-Worker/build outputs are task-isolated; shared caches require content keys and concurrency-safe publication. Integrate
-reviewed slices sequentially and validate the combined revision. Isolated branches do not themselves prove integration.
+For parallel changes, the fan-out lead assigns milestones to streams, each in its own worktree; code is shared, and each
+stream rebases on main and passes `./dev check` before pushing. Shared contract changes have one coordinating owner,
+`plan-engine`, and a producer/consumer impact note before dependent implementation diverges. Worker/build outputs are
+task-isolated; shared caches require content keys and concurrency-safe publication. Isolated branches do not
+themselves prove integration.
 
 A compact handoff records intent, owned paths, base and tested revision including dirty state, changed contracts,
 affected consumers, checks and their exact inputs/results, evidence links/hashes and remaining gaps. The tool emits

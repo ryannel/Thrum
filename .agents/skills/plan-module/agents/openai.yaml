@@ -1,0 +1,4 @@
+interface:
+  display_name: "Plan a module"
+  short_description: "Module level: design, milestones and done-when file"
+  default_prompt: "Use $plan-module to design this module and plan it as milestones with a done-when file."

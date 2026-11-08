@@ -1,5 +1,9 @@
 # Coordinated engine design programme
 
+> **Superseded for process (8 November 2026).** How work runs is now in
+> [AI development: how work runs](AI-DEVELOPMENT.md#how-work-runs) and the level-named skills. This document is kept as
+> the record of the 31 October design commission; its process instructions (model and effort, delegation, coordination) no longer apply.
+
 Commissioned 31 October 2026. Owner: coordinating architect. Research workers use Sol, high reasoning, as requested.
 The [brief](ARCHITECTURE-BRIEF.md) defines the product; [DESIGN](../provenance/CONTEXT.md#source-779e25e8668e) records user decisions.
 
