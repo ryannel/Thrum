@@ -8,6 +8,16 @@ The Codex goal remains active. Its attachment is
 
 ## Current checkpoint
 
+- M2 now owns the star closeout only. The Mac's lossless 1080p60 masters
+  and playback copies are under `current-main/ground-e-night-pan/` and
+  `current-main/offscreen-emergence/`. Both clips played through at 1×
+  in the hidden local playback tab (600 and 1,440 reported video frames).
+  Images sampled during playback retain coherent pan and emergence;
+  all-frame stability and ridge masking come from the independent decode.
+  This is offscreen motion evidence. The current Chrome game stream
+  recorded 115 pan and 364 emergence samples on Wasm `e64183ed`.
+  Independent milestone review is in progress.
+
 - The authored west spur passes all six Metal and Chrome stops and both
   controls at the unchanged one-code threshold on `ba45ff60`. Its
   17.4 h depth-edge contrast drops from 47.42 to 7.31 red codes.
@@ -120,6 +130,13 @@ The Codex goal remains active. Its attachment is
   [Maximum Mipmaps](https://pure.mpg.de/pubman/item/item_1325622_5.component/file_3590464/i3d08.pdf).
   [Fourier-Compressed Horizon Maps](https://doi.org/10.2312/hpg.20251171)
   is a candidate reference for a compact far-field product.
+  A 512 m far-only vertex bake removes the row-665 band and sampled
+  flecks in a 300-frame Metal comparison. It bypasses local shadows
+  and is held. A narrow 1 km crest still causes up to 52.56 percentage
+  points of baked visibility error at 0.5° bins. Independent review
+  requires shared disk coverage with local casters, explicit cooked
+  receiver identity and sector-wrap continuity. The trials are parked
+  under M3 until its shadow design is reviewed.
   Exact builds, raw rows and clips are in `tmp/g3s-sunset-lip/`. The
   diagnostic source and rerun command are on `codex/g3s-horizon-metal-wip`.
 
@@ -177,8 +194,8 @@ The Codex goal remains active. Its attachment is
   during shared solver load (1-minute load 29.37–35.82). Those rows cover
   the changing scene and blit. Independent decoded-frame review
   tracks eight bright stars without loss over the last six seconds and
-  finds a gradual three-code sky lift. Continuous playback, slow-pan
-  review, paired midnight cost and attachment traffic remain open.
+  finds a gradual three-code sky lift. Current playback and paired
+  measurements are recorded above and below.
   To repeat, set `THRUM_CAPTURE_SCENE` to a fresh output directory,
   `THRUM_CAPTURE_MOTION_FRAMES=1440`, and the normal scene/store inputs.
   Use `THRUM_PARAMS` with running-world solar time 18.4 h, yaw 0°, pitch 7°.
@@ -206,17 +223,20 @@ The Codex goal remains active. Its attachment is
   midnight. Capture and route records are in
   `tmp/g3s-star-catalog/current-main/`.
 
-  | Midnight 1080p run, 200 submitted frames each | GPU pass-sum p50 / p95 (ms) |
+  | Midnight 1080p Metal, 200 submitted frames each | GPU pass-sum p50 / p95 (ms) |
   | --- | ---: |
-  | Stars off 1 | 6.94 / 24.05 |
-  | Stars on 1 | 8.53 / 28.54 |
-  | Stars on 2 | 9.79 / 26.28 |
-  | Stars off 2 | 16.97 / 42.66 |
+  | Stars off, four runs | 5.76–5.89 / 6.81–10.59 |
+  | Stars on, four runs | 3.94–4.39 / 4.52–9.17 |
 
-  Solver load confounds the cost. The two control rows vary more than
-  the apparent effect. A separate HDR load and store accounts for
-  33.2 MB of logical RGBA16Float attachment area at 1080p. Physical
-  traffic and display cadence remain unmeasured.
+  Two ABBA sets on `59e76f3d`, shared load 27.67–29.37. The control
+  differs mostly in the display bucket (about 1.9–2.0 ms off vs
+  0.06 ms on). The aggregate cannot be attributed to star shader
+  cost. Render-thread p50/p95 was 1.34–1.94/2.55–4.93 ms off and
+  1.37–1.52/2.75–3.34 ms on. Both graphs upload the same rows.
+  The stars graph adds one RGBA16Float attachment load and store,
+  16,588,800 bytes each at 1080p, plus sampled depth. This is logical
+  attachment area. Physical reads and writes are unmeasured. Raw
+  paired rows and provenance are in `current-main/m2-closeout-59e76f3/`.
 
 - Star integration `00c2645` is on `codex/g3s-stars-integration`. Both
   graphs preserve Frustum count copies and nonblocking slot retirement.
