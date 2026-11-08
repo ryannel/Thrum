@@ -26,11 +26,24 @@ final class ThrumV1Touch: XCTestCase {
         origin.press(forDuration: 0.1, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: 0.5)
     }
 
-    /// Drag up 200 pt and hold ten seconds while the route backgrounds the app
-    /// or replaces its surface, then release.
+    /// Drag up 200 pt and hold thirty seconds while the route backgrounds the
+    /// app or replaces its surface, then release. Posting a route command can
+    /// take many seconds on a loaded host; the hold must outlast it.
     func testHold() {
         continueAfterFailure = true
         let (_, origin, end) = start()
-        origin.press(forDuration: 0.1, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: 10)
+        origin.press(forDuration: 0.1, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: 30)
+    }
+
+    /// Rotate the device to landscape (home indicator on the right).
+    func testLandscape() {
+        XCUIDevice.shared.orientation = .landscapeLeft
+        sleep(2)
+    }
+
+    /// Rotate the device back to portrait.
+    func testPortrait() {
+        XCUIDevice.shared.orientation = .portrait
+        sleep(2)
     }
 }

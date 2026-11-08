@@ -3,7 +3,7 @@
 //! render owner prepares, encodes, acquires late and presents.
 
 use std::{
-    sync::{Arc, OnceLock},
+    sync::{Arc, OnceLock, atomic::Ordering},
     thread,
     time::{Duration, Instant},
 };
@@ -26,17 +26,22 @@ use crate::{
 mod render;
 mod witness;
 
-use render::{FrameRequest, Job, Lease, RenderWorker, Reply, Reported, StallPoint};
+use render::{
+    FrameRequest, Job, Lease, RecoverFault, Recovered, RenderWorker, Reply, Reported, Signals,
+    StallPoint, Wakes,
+};
 use witness::Witness;
 
 static SHELL: OnceLock<EventLoopProxy<ShellEvent>> = OnceLock::new();
 static WORLD_THREAD: OnceLock<String> = OnceLock::new();
 /// Qualification hold inside the render owner's lease section.
-const STALL: Duration = Duration::from_secs(5);
+const STALL: Duration = Duration::from_secs(8);
 /// Frame replies between routine witness writes.
 const WITNESS_EVERY: u64 = 120;
 /// Recently detached windows whose late touches are still recognised.
 const RETIRED_WINDOWS: usize = 4;
+/// Failed recovery attempts (not deferrals) before the shell gives up.
+const RECOVER_ATTEMPTS: u32 = 3;
 
 #[derive(Clone, Copy, Debug)]
 enum ShellEvent {
@@ -45,6 +50,10 @@ enum ShellEvent {
     WorldAdvanced,
     /// Qualification only: the render owner is holding a stalled section.
     Stalling,
+    /// wgpu reported this device generation lost.
+    DeviceLost(u64),
+    /// Qualification only: the render owner is holding a recovery.
+    RecoverHeld,
     Command(Command),
 }
 
@@ -58,6 +67,10 @@ enum Command {
     StallRender,
     StallPresent,
     SampleActor,
+    LoseDevice,
+    HoldRecover,
+    ReleaseRecover,
+    StaleWake,
 }
 
 #[expect(
@@ -84,6 +97,10 @@ extern "C" fn thrum_v1_shell_command(code: i32) {
         4 => Command::StallRender,
         5 => Command::StallPresent,
         6 => Command::SampleActor,
+        7 => Command::LoseDevice,
+        8 => Command::HoldRecover,
+        9 => Command::ReleaseRecover,
+        10 => Command::StaleWake,
         _ => return,
     };
     if let Some(shell) = SHELL.get() {
@@ -98,6 +115,7 @@ extern "C" fn thrum_v1_shell_command(code: i32) {
 unsafe extern "C" {
     fn thrum_v1_attach_view(view: *mut std::ffi::c_void);
     fn thrum_v1_detach_view(view: *mut std::ffi::c_void);
+    fn thrum_v1_fit_layer(view: *mut std::ffi::c_void) -> i32;
     fn thrum_v1_live_detached_windows() -> i32;
     fn thrum_v1_start_display_link() -> i32;
     fn thrum_v1_stop_display_link();
@@ -138,6 +156,25 @@ fn attach_to_scene(window: &Window) -> Result<(), String> {
     // on UIKit's main thread; Swift does not retain the pointer.
     unsafe { thrum_v1_attach_view(view.ui_view.as_ptr()) };
     Ok(())
+}
+
+/// Keep the drawable's aspect while UIKit animates the layer's bounds through a
+/// rotation; at rest the drawable matches the bounds and this changes nothing.
+/// Returns how many Metal layers were set.
+#[expect(
+    unsafe_code,
+    reason = "the live main-thread Winit window owns this UIView for the call"
+)]
+fn fit_layer(window: &Window) -> Result<i32, String> {
+    let handle = window
+        .window_handle()
+        .map_err(|error| format!("iOS window handle: {error}"))?;
+    let RawWindowHandle::UiKit(view) = handle.as_raw() else {
+        return Err("iOS window has no UIKit view".into());
+    };
+    // SAFETY: Winit owns `window` and its UIView across this synchronous call
+    // on UIKit's main thread; Swift does not retain the pointer.
+    Ok(unsafe { thrum_v1_fit_layer(view.ui_view.as_ptr()) })
 }
 
 /// Close a window whose surface is gone: hide it, take it out of the scene
@@ -182,8 +219,20 @@ struct Shell {
     route: bool,
     instance: wgpu::Instance,
     lease: Arc<Lease>,
+    signals: Arc<Signals>,
     origin: Instant,
     state: State,
+    /// The device generation frames are requested under.
+    device_generation: u64,
+    /// The generation wgpu reported lost; frames wait for its recovery.
+    lost_generation: Option<u64>,
+    /// A `Recover` job is outstanding. At most one exists.
+    recovering: bool,
+    stale_request: bool,
+    recover_failures: u32,
+    /// A new window and surface whose install met the owner inside a section;
+    /// retried on the next reply, attached to the scene only once installed.
+    pending_install: Option<(Arc<Window>, wgpu::Surface<'static>)>,
     window: Option<Arc<Window>>,
     /// The surface's window is retained until its deferred release completes.
     releasing: Option<Arc<Window>>,
@@ -217,8 +266,15 @@ impl Shell {
             route: std::env::var("THRUM_V1_ROUTE").is_ok_and(|value| value == "1"),
             instance: wgpu::Instance::new(descriptor),
             lease: Arc::new(Lease::new()),
+            signals: Arc::new(Signals::default()),
             origin: Instant::now(),
             state: State::Starting,
+            device_generation: 1,
+            lost_generation: None,
+            recovering: false,
+            stale_request: false,
+            recover_failures: 0,
+            pending_install: None,
             window: None,
             releasing: None,
             restore: false,
@@ -241,27 +297,46 @@ impl Shell {
     }
 
     /// Create a fresh window and surface and install it under a new epoch.
-    fn attach_surface(&mut self, event_loop: &ActiveEventLoop) -> Result<u64, String> {
-        let window = Arc::new(
-            event_loop
-                .create_window(Window::default_attributes().with_title("Thrum V1 scene"))
-                .map_err(|error| format!("iOS window: {error}"))?,
-        );
+    /// `None` means the owner held the slot for a moment (a section admitted
+    /// under the old epoch): the pair waits and is retried on the next reply.
+    /// The window joins the scene only once its surface is installed.
+    fn attach_surface(&mut self, event_loop: &ActiveEventLoop) -> Result<Option<u64>, String> {
+        let (window, surface) = if let Some(pending) = self.pending_install.take() {
+            pending
+        } else {
+            let window = Arc::new(
+                event_loop
+                    .create_window(Window::default_attributes().with_title("Thrum V1 scene"))
+                    .map_err(|error| format!("iOS window: {error}"))?,
+            );
+            let surface = self
+                .instance
+                .create_surface(Arc::clone(&window))
+                .map_err(|error| format!("iOS surface: {error}"))?;
+            if fit_layer(&window)? != 1 {
+                return Err("iOS surface did not add one Metal layer".into());
+            }
+            (window, surface)
+        };
+        let epoch = match self.lease.try_install(surface) {
+            Ok(epoch) => epoch,
+            Err(surface) => {
+                self.pending_install = Some((window, surface));
+                self.witness.install_retries += 1;
+                return Ok(None);
+            }
+        };
         attach_to_scene(&window)?;
-        let surface = self
-            .instance
-            .create_surface(Arc::clone(&window))
-            .map_err(|error| format!("iOS surface: {error}"))?;
-        let epoch = self
-            .lease
-            .try_install(surface)
-            .map_err(|_| "iOS surface slot is still leased".to_owned())?;
-        let size = window.inner_size();
+        if self.hidden {
+            window.set_visible(false);
+        }
+        let size = layer_extent(&window);
         self.observed_extent = [size.width, size.height];
+        self.lease.observe_extent(self.observed_extent);
         self.window = Some(window);
         self.restore = false;
         self.witness.installs += 1;
-        Ok(epoch)
+        Ok(Some(epoch))
     }
 
     /// Revoke the lease and release the surface without waiting. A section in
@@ -325,16 +400,30 @@ impl Shell {
     }
 
     fn start(&mut self, event_loop: &ActiveEventLoop) -> Result<(), String> {
-        let epoch = self.attach_surface(event_loop)?;
+        // No render owner exists yet, so nothing can hold the slot.
+        let epoch = self
+            .attach_surface(event_loop)?
+            .ok_or("iOS surface slot is held before the render owner started")?;
         let wake = SHELL.get().ok_or("iOS shell proxy missing")?.clone();
         let stalling = wake.clone();
+        let lost = wake.clone();
+        let held = wake.clone();
         let render = render::start(
             Arc::clone(&self.lease),
-            move || {
-                let _ = wake.send_event(ShellEvent::RenderDone);
-            },
-            move || {
-                let _ = stalling.send_event(ShellEvent::Stalling);
+            Arc::clone(&self.signals),
+            Wakes {
+                reply: Box::new(move || {
+                    let _ = wake.send_event(ShellEvent::RenderDone);
+                }),
+                stalling: Box::new(move || {
+                    let _ = stalling.send_event(ShellEvent::Stalling);
+                }),
+                lost: Arc::new(move |generation| {
+                    let _ = lost.send_event(ShellEvent::DeviceLost(generation));
+                }),
+                recover_held: Box::new(move || {
+                    let _ = held.send_event(ShellEvent::RecoverHeld);
+                }),
             },
         )?;
         let world = SHELL.get().ok_or("iOS shell proxy missing")?.clone();
@@ -363,6 +452,7 @@ impl Shell {
             return Ok(());
         }
         stop_display_link();
+        self.signals.background.store(true, Ordering::Release);
         self.pending_target = None;
         self.release_surface();
         self.clear_input()?;
@@ -379,6 +469,7 @@ impl Shell {
         if self.state != State::Suspended {
             return Ok(());
         }
+        self.signals.background.store(false, Ordering::Release);
         self.restore = true;
         self.finish_release(event_loop)?;
         self.policy.set_background(false);
@@ -425,7 +516,10 @@ impl Shell {
     }
 
     fn touch(&mut self, id: u64, phase: TouchPhase, location: [f64; 2]) -> Result<(), String> {
-        self.witness.touch_thread = thread_name();
+        if self.route && self.witness.touch_thread.is_empty() {
+            // Thread roles are recorded once, and only for the route.
+            self.witness.touch_thread = thread_name();
+        }
         let phase = match phase {
             TouchPhase::Started => Phase::Started,
             TouchPhase::Moved => Phase::Moved,
@@ -470,6 +564,15 @@ impl Shell {
             Command::StallRender => self.stall_next = Some(StallPoint::AfterAcquire),
             Command::StallPresent => self.stall_next = Some(StallPoint::BeforePresent),
             Command::SampleActor => self.sample_actor = true,
+            Command::LoseDevice => self.signals.lose_now.store(true, Ordering::Release),
+            Command::HoldRecover => self.signals.hold_recover.store(true, Ordering::Release),
+            Command::ReleaseRecover => self.signals.hold_recover.store(false, Ordering::Release),
+            Command::StaleWake => {
+                // An old-generation wake from the owner, and one request that
+                // still carries the old generation: both must be refused.
+                self.signals.stale_wake.store(true, Ordering::Release);
+                self.stale_request = true;
+            }
         }
         self.witness.last_command = format!("{command:?}");
         self.write();
@@ -478,7 +581,10 @@ impl Shell {
 
     fn target(&mut self, target: f64) {
         self.witness.display_link_callbacks += 1;
-        self.witness.display_thread = thread_name();
+        if self.route && self.witness.display_thread.is_empty() {
+            // Thread roles are recorded once, and only for the route.
+            self.witness.display_thread = thread_name();
+        }
         if self.stall_in_flight {
             self.witness.stall_targets += 1;
         }
@@ -489,6 +595,20 @@ impl Shell {
         if self.pending_target.replace(target).is_some() {
             self.witness.targets_coalesced += 1;
         }
+    }
+
+    /// An extent change revokes the current epoch at once: an in-flight section
+    /// drops its old-extent drawable at its next check, and the next request
+    /// configures the same surface at the new extent.
+    fn resized(&mut self, extent: [u32; 2]) -> bool {
+        if extent == self.observed_extent {
+            return false;
+        }
+        self.lease.observe_extent(extent);
+        self.lease.invalidate();
+        self.observed_extent = extent;
+        self.witness.resized(self.lease.epoch());
+        true
     }
 
     fn dispatch(&mut self) -> Result<(), String> {
@@ -504,22 +624,38 @@ impl Shell {
             self.in_flight = true;
             return Ok(());
         }
+        if let Some(from) = self.lost_generation {
+            // Frames wait while the device is lost; one recovery at a time.
+            self.pending_target = None;
+            if !self.recovering {
+                let render = self.render.as_ref().ok_or("iOS render owner missing")?;
+                if render.try_send(Job::Recover { from }).is_err() {
+                    return Err("bounded iOS render owner refused a recovery".into());
+                }
+                self.in_flight = true;
+                self.recovering = true;
+                self.witness.recover_requests += 1;
+                self.write();
+            }
+            return Ok(());
+        }
         let Some(target) = self.pending_target.take() else {
             return Ok(());
         };
+        // Backstop for a resize whose event has not been delivered yet.
         if let Some(window) = &self.window {
-            let size = window.inner_size();
-            let extent = [size.width, size.height];
-            if extent != self.observed_extent {
-                self.lease.invalidate();
-                self.observed_extent = extent;
-                self.witness.resizes += 1;
-            }
+            let size = layer_extent(window);
+            self.resized([size.width, size.height]);
         }
         // A stall request stays until a frame reaches the section and holds it.
         let stall = self.stall_next.map(|point| (point, STALL));
         let request = FrameRequest {
             epoch: self.lease.epoch(),
+            generation: if std::mem::take(&mut self.stale_request) {
+                self.device_generation.saturating_sub(1)
+            } else {
+                self.device_generation
+            },
             target_media_seconds: target,
             extent: self.observed_extent,
             present: !self.hidden && self.window.is_some(),
@@ -557,6 +693,7 @@ impl Shell {
                 self.witness.adapter = prepared.adapter;
                 self.witness.format = format!("{:?}", prepared.format);
                 self.controls = Some(prepared.controls);
+                self.witness.device_generation = self.device_generation;
                 if self.state == State::Starting {
                     self.state = State::Active;
                 }
@@ -567,6 +704,10 @@ impl Shell {
                 }
                 self.reconcile_world()?;
             }
+            Reply::Recovered(result) => {
+                self.recovering = false;
+                self.recovered(result)?;
+            }
             Reply::Actor(position) => {
                 self.witness.actor_samples += 1;
                 self.witness.actor_position = position;
@@ -574,7 +715,9 @@ impl Shell {
             }
             Reply::Frame(frame) => {
                 let frame = frame?;
-                self.witness.frame_thread = thread.unwrap_or_default();
+                if let Some(thread) = thread {
+                    self.witness.frame_thread = thread;
+                }
                 self.stall_in_flight = false;
                 let stall_ended = frame.stalled;
                 if stall_ended {
@@ -588,7 +731,18 @@ impl Shell {
                 {
                     self.policy.overloaded(refused);
                 }
-                self.witness.frame(&frame, self.lease.epoch());
+                self.witness.frame(&frame);
+                if frame.status == render::SurfaceStatus::DeviceLost
+                    && frame.acquired
+                    && self.state == State::Active
+                {
+                    // wgpu cannot discard a drawable of a destroyed device, so
+                    // the surface stays "acquired" for any device: replace it
+                    // (revoke, detach, and a fresh window and surface below).
+                    self.release_surface();
+                    self.restore = true;
+                    self.witness.loss_replacements += 1;
+                }
                 self.reconcile_world()?;
                 if stall_ended {
                     // World wakes kept updating the tick on UIKit during the stall.
@@ -601,6 +755,55 @@ impl Shell {
         }
         self.finish_release(event_loop)?;
         self.dispatch()
+    }
+
+    /// wgpu reported a device generation lost. Revoke the lease (bump the
+    /// epoch) so no section admitted before the loss presents, keep the world
+    /// lane running, and let `dispatch` send the one recovery.
+    fn device_lost(&mut self, generation: u64) -> Result<(), String> {
+        if generation != self.device_generation || self.lost_generation.is_some() {
+            self.witness.stale_loss_wakes += 1;
+            self.write();
+            return Ok(());
+        }
+        self.lease.invalidate();
+        self.lost_generation = Some(generation);
+        self.witness.losses += 1;
+        self.witness.lost_generation = generation;
+        self.write();
+        self.dispatch()
+    }
+
+    fn recovered(&mut self, result: Result<Recovered, RecoverFault>) -> Result<(), String> {
+        match result {
+            Ok(recovered) if self.lost_generation == Some(recovered.from) => {
+                self.device_generation = recovered.generation;
+                self.lost_generation = None;
+                self.recover_failures = 0;
+                // The surface is configured afresh for the new device.
+                self.lease.invalidate();
+                self.witness.recovered(&recovered);
+            }
+            Ok(_) | Err(RecoverFault::Stale) => self.witness.recover_stale += 1,
+            Err(RecoverFault::Deferred) => self.witness.recover_deferred += 1,
+            Err(RecoverFault::CandidateLost) => {
+                self.witness.recover_candidate_lost += 1;
+                self.recover_failures += 1;
+            }
+            Err(RecoverFault::Failed(error)) => {
+                self.witness.recover_failed += 1;
+                self.witness.recover_error = error.replace([' ', '\n'], "_");
+                self.recover_failures += 1;
+            }
+        }
+        self.write();
+        if self.recover_failures >= RECOVER_ATTEMPTS {
+            return Err(format!(
+                "iOS device recovery failed {} times; the world lane is still running",
+                self.recover_failures
+            ));
+        }
+        Ok(())
     }
 
     /// Consume one lifecycle reply, observe health, and send the next request.
@@ -638,7 +841,12 @@ impl Shell {
         Ok(())
     }
 
+    /// Rewrite the witness file. Route runs only: an ordinary launch does no
+    /// witness I/O on UIKit.
     fn write(&mut self) {
+        if !self.route {
+            return;
+        }
         self.witness.state = format!("{:?}", self.state);
         self.witness.epoch = self.lease.epoch();
         self.witness.world_paused = self.policy.confirmed_paused();
@@ -669,14 +877,16 @@ impl Shell {
         run: impl FnOnce(&mut Self, &ActiveEventLoop) -> Result<(), String>,
     ) {
         let start = Instant::now();
-        let stalled = self.stall_in_flight;
+        // A held section or an outstanding recovery: a UIKit callback that
+        // waited on the owner would show here.
+        let stalled = self.stall_in_flight || self.recovering;
         let windows = (self.witness.installs, self.witness.detached_windows);
         let result = run(self, event_loop);
         let lifecycle = matches!(kind, "resumed" | "suspended" | "command")
             || windows != (self.witness.installs, self.witness.detached_windows);
         self.witness.main_callback(
             start.elapsed(),
-            stalled || self.stall_in_flight,
+            stalled || self.stall_in_flight || self.recovering,
             lifecycle,
             kind,
         );
@@ -707,6 +917,8 @@ impl ApplicationHandler<ShellEvent> for Shell {
             ShellEvent::RenderDone => "render",
             ShellEvent::WorldAdvanced => "world",
             ShellEvent::Stalling => "stalling",
+            ShellEvent::DeviceLost(_) => "device-lost",
+            ShellEvent::RecoverHeld => "recover-held",
             ShellEvent::Command(_) => "command",
         };
         self.timed(event_loop, kind, |shell, event_loop| match event {
@@ -720,6 +932,12 @@ impl ApplicationHandler<ShellEvent> for Shell {
                 shell.stalling = true;
                 shell.witness.stall_tick_start = shell.witness.world_tick;
                 // The route waits for this before revoking the stalled surface.
+                shell.write();
+                Ok(())
+            }
+            ShellEvent::DeviceLost(generation) => shell.device_lost(generation),
+            ShellEvent::RecoverHeld => {
+                shell.witness.recover_held += 1;
                 shell.write();
                 Ok(())
             }
@@ -750,6 +968,18 @@ impl ApplicationHandler<ShellEvent> for Shell {
             WindowEvent::Touch(touch) => {
                 shell.touch(touch.id, touch.phase, [touch.location.x, touch.location.y])
             }
+            WindowEvent::Resized(_) => {
+                // winit also queues `Resized` at window creation and layout
+                // with sizes that can lag the layer; read the one source.
+                let Some(size) = shell.window.as_ref().map(|window| layer_extent(window)) else {
+                    return Ok(());
+                };
+                if shell.resized([size.width, size.height]) {
+                    shell.witness.resize_events += 1;
+                    shell.write();
+                }
+                Ok(())
+            }
             _ => Ok(()),
         });
     }
@@ -757,6 +987,13 @@ impl ApplicationHandler<ShellEvent> for Shell {
     fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
         event_loop.set_control_flow(ControlFlow::Wait);
     }
+}
+
+/// The surface's extent: the view's full bounds in pixels, which the Metal
+/// layer tracks and `Resized` reports. winit's iOS `inner_size` is the safe
+/// area, which would configure a smaller drawable stretched over the layer.
+fn layer_extent(window: &Window) -> winit::dpi::PhysicalSize<u32> {
+    window.outer_size()
 }
 
 /// The calling thread's role: `main` when the OS reports UIKit's main thread

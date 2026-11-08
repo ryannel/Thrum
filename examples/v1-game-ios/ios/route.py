@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 import math
 import os
+import signal
 import subprocess
 import sys
 import time
@@ -24,11 +25,15 @@ XCTESTRUN = Path(os.environ.get("THRUM_V1_XCTESTRUN", "target/v1-game-ios-sim/ui
 TOUCH_WINDOW = 180.0
 # Simulator wall time is not evidence: host load can deschedule any callback.
 # The gate is structural: while the render owner holds its lease section for
-# 5 s, a UIKit callback that waited on it would take at least that long.
+# 8 s, a UIKit callback that waited on it would take at least that long.
 STALL_UIKIT_MAX_US = 1_000_000
 # A one-second swipe at full deflection moves the actor about 6 m; a stale
 # event must not move it measurably.
 MIN_SWIPE_TRAVEL = 1.0
+# After a resize, the owner waits for at most two pending frames before it
+# reconfigures; six replies leaves room for the retiring frames.
+MAX_RESIZE_GAP_REPLIES = 6
+STRIP_FPS = 20
 STILL_TOLERANCE = 1e-3
 RENDER_THREAD = "thrum-v1-ios-render"
 WORLD_THREAD = "thrum-world"
@@ -85,6 +90,12 @@ def check(condition: bool, reason: str, state: dict[str, str]) -> None:
         fail(reason, state)
 
 
+def load() -> str:
+    """Host load, logged beside rows: the simulator shares this Mac."""
+    out = subprocess.run(["uptime"], capture_output=True, text=True).stdout
+    return out.split("load averages:")[-1].strip()
+
+
 def step(text: str) -> None:
     log(f"step {time.strftime('%H:%M:%S')}: {text}")
 
@@ -99,9 +110,24 @@ def simctl(*args: str, background: bool = False):
     return None
 
 
-def post(command: str, background: bool = False):
-    """Post a qualification command to the app as a Darwin notification."""
-    return simctl("spawn", DEVICE, "notifyutil", "-p", f"org.thrum.v1.{command}", background=background)
+COMMANDS = STATE.parent / "thrum-v1-commands"
+command_sequence = 0
+
+
+def post(command: str) -> None:
+    """Send a qualification command by dropping a file into the app's container.
+
+    The app watches the directory with a dispatch source on its main queue.
+    `simctl spawn notifyutil` (the Darwin-notification path, still supported)
+    can take over a minute on a loaded host; a file write cannot.
+    """
+    global command_sequence
+    command_sequence += 1
+    step(f"command {command} (file drop #{command_sequence})")
+    COMMANDS.mkdir(parents=True, exist_ok=True)
+    partial = STATE.parent / f".thrum-v1-command-{command_sequence}"
+    partial.write_text(command)
+    partial.rename(COMMANDS / f"{command_sequence:06d}-{command}")
 
 
 def foreground() -> None:
@@ -160,14 +186,16 @@ def startup() -> dict[str, str]:
 
 
 def start_stall(command: str = "stall-render") -> None:
-    """Request a 5 s render-owner stall; the next command lands inside it.
+    """Request an 8 s render-owner stall and return once the owner holds it.
 
-    Each `simctl spawn` takes over a second, so the revocation that follows
-    reaches the app about a second into the held section. Waiting to observe
-    the stall first would spend most of the window; each row instead proves
-    the revocation landed inside the section by its deferred release.
+    The revocation that follows takes a `simctl spawn` (over a second, longer
+    on a loaded host) to arrive, well inside the held section. Each row still
+    proves it landed inside by its deferred release.
     """
+    stalls = num(read(), "stalls")
     post(command)
+    wait(lambda s: s.get("stall_active") == "true" or num(s, "stalls") > stalls, 15, f"the {command} section to hold")
+    check(read().get("stall_active") == "true", f"the {command} section ended before the revocation was sent", read())
 
 
 def stall(base: dict[str, str]) -> dict[str, str]:
@@ -180,7 +208,7 @@ def stall(base: dict[str, str]) -> dict[str, str]:
     check(ticks >= 30, "world ticks did not advance during the stall", s)
     s = wait(presents_after(s), 15, "presentation after the stall")
     snapshot("02-stall", s, screenshot=False)
-    log(f"stall: 5 s inside the lease section; callbacks during stall={num(s, 'stall_targets') - num(base, 'stall_targets')}, "
+    log(f"stall: 8 s inside the lease section; callbacks during stall={num(s, 'stall_targets') - num(base, 'stall_targets')}, "
         f"world ticks during stall={ticks}, UIKit max during stall={s['stall_main_max_us']} us")
     return s
 
@@ -386,6 +414,8 @@ def touches(base: dict[str, str]) -> dict[str, str]:
     post("replace-surface")
     r = wait(lambda s: num(s, "replacements") > num(t2, "replacements") and at_rest(s), 20,
              "replacement clearing held input")
+    check(num(r, "touch_releases") == num(t2, "touch_releases"),
+          "the held finger released before the replacement landed (route command too slow)", r)
     time.sleep(0.5)
     p_clear, sampled = sample("after replacement cleared held input")
     # Hiding the detached window cancels its touch; that and any later event
@@ -423,6 +453,221 @@ def touches(base: dict[str, str]) -> dict[str, str]:
     return s
 
 
+def extent(state: dict[str, str]) -> tuple[int, int]:
+    width, height = state.get("presented_extent", "0x0").split("x")
+    return int(width), int(height)
+
+
+def record(name: str) -> tuple[subprocess.Popen, float]:
+    """Record the simulator's framebuffer (an offscreen capture of the running game)."""
+    path = OUT / f"{name}.mp4"
+    step(f"xcrun simctl io {DEVICE} recordVideo {path.name}")
+    process = subprocess.Popen(["xcrun", "simctl", "io", DEVICE, "recordVideo", "--codec=h264", "--force", str(path)],
+                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    time.sleep(1.5)
+    return process, time.monotonic()
+
+
+def strip(name: str, recording: subprocess.Popen, started: float, resized_at: float) -> None:
+    """Stop the recording and tile STRIP_FPS frames from 1 s before to 2 s after the resize."""
+    recording.send_signal(signal.SIGINT)
+    recording.wait(timeout=30)
+    video, frames = OUT / f"{name}.mp4", OUT / f"{name}-frames"
+    frames.mkdir(exist_ok=True)
+    begin = max(0.0, resized_at - started - 1.0)
+    # The capture keeps the device's native canvas; its display-matrix rotation
+    # would change tile sizes mid-strip (and leave an EXIF orientation in the
+    # PNGs), so frames stay unrotated.
+    source = ["-display_rotation", "0", "-ss", f"{begin:.2f}", "-t", "3", "-i", str(video)]
+    subprocess.run(["ffmpeg", "-loglevel", "error", "-y", *source,
+                    "-vf", f"fps={STRIP_FPS},scale=-2:240", str(frames / "%03d.png")], check=True)
+    count = len(list(frames.glob("*.png")))
+    check(count >= 3 * STRIP_FPS - 2, f"the {name} strip has {count} frames, under {STRIP_FPS} fps", read())
+    subprocess.run(["ffmpeg", "-loglevel", "error", "-y", *source,
+                    "-vf", f"fps={STRIP_FPS},scale=-2:360,tile=15x4", "-frames:v", "1", str(OUT / f"{name}-strip.png")],
+                   check=True)
+    log(f"{name}: {count} frames at {STRIP_FPS} fps from {begin:.2f} s ({name}-strip.png, {name}-frames/)")
+
+
+def rotate(name: str, test: str, base: dict[str, str], landscape: bool) -> dict[str, str]:
+    """One real orientation change: a resize on the same window, lease and world."""
+    p0, b = sample(f"before {name}")
+    # Only orientation changes resize: installs (startup, replacement, resume)
+    # configure once at the layer's extent and raise no `Resized` change.
+    check(num(b, "resize_events") == (0 if landscape else num(base, "resize_events")),
+          "a window install or lifecycle row changed the extent", b)
+    recording, started = record(name)
+    driver = gesture(test)
+    s = wait(lambda s: num(s, "resize_events") > num(b, "resize_events"), TOUCH_WINDOW, f"the {name} resize event")
+    resized_at = time.monotonic()
+    want = (lambda w, h: w > h) if landscape else (lambda w, h: h > w)
+    s = wait(lambda s: want(*extent(s)) and presents_after(b, 120)(s), 20, f"presentation at the {name} extent")
+    finish(driver)
+    time.sleep(1.0)
+    strip(name, recording, started, resized_at)
+    p1, s = sample(f"after {name}")
+    snapshot(name, s)
+    check(want(*extent(s)), f"{name} did not present at the rotated extent", s)
+    check(num(s, "epoch") > num(b, "epoch"), f"{name} did not bump the surface epoch", s)
+    check(num(s, "installs") == num(b, "installs") and num(s, "replacements") == num(b, "replacements")
+          and s.get("pid") == b.get("pid"), f"{name} replaced the window or process", s)
+    # The designed race bound (as for revocation): one section admitted before
+    # `Resized` may present once after it; UIKit never waits to prevent it.
+    raced = num(s, "resize_raced_presents") - num(b, "resize_raced_presents")
+    old_extent = num(s, "old_extent_presents") - num(b, "old_extent_presents")
+    check(raced <= 1, f"{name} presented more than once on a resize-revoked epoch", s)
+    check(old_extent <= raced,
+          f"{name} presented an old-extent drawable outside the one raced section", s)
+    check(num(s, "max_resize_gap_replies") <= MAX_RESIZE_GAP_REPLIES,
+          f"{name} took more than {MAX_RESIZE_GAP_REPLIES} replies to present at the new extent", s)
+    check(num(s, "world_tick") > num(b, "world_tick"), f"world ticks stopped across {name}", s)
+    check(distance(p0, p1) <= STILL_TOLERANCE, f"{name} moved the committed actor", s)
+    log(f"{name}: host load {load()}")
+    log(f"{name}: extent {b.get('presented_extent')} -> {s['presented_extent']}, epoch {b['epoch']} -> {s['epoch']}, "
+        f"gap {s['max_resize_gap_replies']} replies (max so far), reconfigure waits "
+        f"{num(s, 'reconfigure_waits') - num(b, 'reconfigure_waits')}, stale drops "
+        f"{num(s, 'stale_dropped') - num(b, 'stale_dropped')} (extent {num(s, 'extent_drops') - num(b, 'extent_drops')}), "
+        f"raced {raced}, old-extent presents {old_extent}; ticks {b['world_tick']} -> {s['world_tick']}; "
+        f"committed actor moved {distance(p0, p1):.6f} m")
+    return s
+
+
+def rotation(base: dict[str, str]) -> dict[str, str]:
+    s = rotate("12-landscape", "testLandscape", base, landscape=True)
+    p0, t0 = sample("before landscape swipe")
+    s, driver = touch_window("landscape-swipe", "testSwipe",
+                             lambda s: num(s, "touch_releases") > num(t0, "touch_releases")
+                             and num(s, "axes_moving") > num(t0, "axes_moving") and at_rest(s),
+                             "a landscape swipe that moves and releases")
+    finish(driver)
+    time.sleep(0.5)
+    p1, s = sample("after landscape swipe")
+    check(distance(p0, p1) >= MIN_SWIPE_TRAVEL, "the landscape swipe did not move the committed actor", s)
+    log(f"landscape swipe: committed actor moved {distance(p0, p1):.3f} m")
+    return rotate("13-portrait", "testPortrait", s, landscape=False)
+
+
+
+def recovered_after(base: dict[str, str], recoveries: int = 1):
+    """One more publication, then presents on the new device generation."""
+    return lambda s: (num(s, "recoveries") >= num(base, "recoveries") + recoveries
+                      and num(s, "presented_generation") == num(s, "device_generation")
+                      and num(s, "device_generation") > num(base, "device_generation")
+                      and presents_after(base, 60)(s))
+
+
+def check_recovery(name: str, base: dict[str, str], s: dict[str, str], p0: list[float], p1: list[float]) -> None:
+    check(num(s, "losses") > num(base, "losses"), f"{name}: wgpu's lost callback was not observed", s)
+    check(num(s, "recoveries") == num(base, "recoveries") + 1, f"{name}: not exactly one publication", s)
+    check(num(s, "recover_failed") == num(base, "recover_failed"), f"{name}: a recovery attempt failed", s)
+    check(num(s, "epoch") > num(base, "epoch"), f"{name}: the loss did not revoke the surface lease", s)
+    # A held drawable's loss replaces the surface (walk step 6); a background
+    # round trip releases and reinstalls it by design (M3).
+    replaced = sum(num(s, key) - num(base, key) for key in ("loss_replacements", "resumes"))
+    check(s.get("pid") == base.get("pid") and num(s, "installs") == num(base, "installs") + replaced,
+          f"{name}: recovery replaced the window or process", s)
+    check(num(s, "world_tick") > num(base, "world_tick"), f"{name}: world ticks stopped across recovery", s)
+    check(distance(p0, p1) <= STILL_TOLERANCE, f"{name}: recovery moved the committed actor", s)
+    check(num(s, "stall_main_max_us") < STALL_UIKIT_MAX_US, f"{name}: UIKit waited on the recovering owner", s)
+
+
+def device_loss(base: dict[str, str]) -> dict[str, str]:
+    """M6: a destroyed device recovers on the same window, lease and world."""
+    p0, b = sample("before device loss")
+    post("lose-device")
+    s = wait(recovered_after(b), 120, "device loss, recovery and presents on the new generation")
+    p1, s = sample("after device recovery")
+    check_recovery("device loss", b, s, p0, p1)
+    check(num(s, "loss_replacements") == num(b, "loss_replacements"),
+          "a loss with no drawable held replaced the surface", s)
+    snapshot("14-device-loss", s)
+    log(f"device loss: generation {b['device_generation']} -> {s['device_generation']} "
+        f"(lost {s['lost_generation']}), lost frames {num(s, 'lost_frames') - num(b, 'lost_frames')}, "
+        f"stale-generation refusals {num(s, 'stale_generation_refusals') - num(b, 'stale_generation_refusals')}, "
+        f"recovery {s['recover_wall_us']} us on the owner, epoch {b['epoch']} -> {s['epoch']}, presents on "
+        f"generation {s['presented_generation']} at {s['presented_extent']}; ticks {b['world_tick']} -> "
+        f"{s['world_tick']}; committed actor moved {distance(p0, p1):.6f} m")
+
+    b = read()
+    post("stale-wake")
+    s = wait(lambda s: num(s, "stale_loss_wakes") > num(b, "stale_loss_wakes")
+             and num(s, "stale_generation_refusals") > num(b, "stale_generation_refusals")
+             and presents_after(b, 30)(s), 30, "a stale wake and a stale-generation request refused")
+    check(num(s, "losses") == num(b, "losses") and s["device_generation"] == b["device_generation"]
+          and s["presented_generation"] == b["device_generation"],
+          "an old-generation wake or request reached the live device", s)
+    log(f"stale generation: wake for generation {num(b, 'device_generation') - 1} ignored, a request carrying it "
+        f"refused unrun; generation {s['device_generation']} keeps presenting")
+
+    p0, b = sample("before held-frame loss")
+    start_stall("stall-render")
+    post("lose-device")
+    s = wait(lambda s: num(s, "stalls") > num(b, "stalls") and recovered_after(b)(s), 120,
+             "a loss inside a held section, then recovery")
+    p1, s = sample("after held-frame recovery")
+    check_recovery("held-frame loss", b, s, p0, p1)
+    check(s.get("stall_status") == "DeviceLost", "the held drawable was not dropped as lost", s)
+    check(num(s, "lost_held_drops") > num(b, "lost_held_drops"), "no held drawable was dropped on the lost device", s)
+    check(num(s, "raced_presents") == num(b, "raced_presents"), "a present raced the loss", s)
+    check(num(s, "loss_replacements") == num(b, "loss_replacements") + 1 and settled(s),
+          "the surface that held the lost drawable was not replaced", s)
+    snapshot("15-held-loss", s)
+    log(f"held-frame loss: the drawable held across the loss dropped as DeviceLost and its surface was replaced "
+        f"(wgpu cannot discard a destroyed device's drawable); generation "
+        f"{b['device_generation']} -> {s['device_generation']}, stale loss wakes {s['stale_loss_wakes']}, "
+        f"stale-generation refusals {s['stale_generation_refusals']}")
+
+    p0, b = sample("before loss during rotation")
+    post("hold-recover")
+    post("lose-device")
+    wait(lambda s: num(s, "recover_held") > num(b, "recover_held"), 60, "the recovery held after the loss")
+    driver = gesture("testLandscape")
+    h = wait(lambda s: num(s, "resize_events") > num(b, "resize_events"), TOUCH_WINDOW, "a rotation during recovery")
+    check(num(h, "recoveries") == num(b, "recoveries"), "the recovery hold expired before the rotation landed", h)
+    post("release-recover")
+    s = wait(lambda s: recovered_after(b)(s) and extent(s)[0] > extent(s)[1], 120,
+             "one recovery fitted to the rotated extent")
+    finish(driver)
+    p1, s = sample("after loss during rotation")
+    check_recovery("loss during rotation", b, s, p0, p1)
+    check(num(s, "recover_refitted") > num(b, "recover_refitted"), "the candidate was not fitted to the new extent", s)
+    snapshot("16-loss-rotation", s)
+    log(f"loss during rotation: one publication refitted to {s['recovered_extent']}, presents at {s['presented_extent']}")
+    r = read()
+    driver = gesture("testPortrait")
+    s = wait(lambda s: extent(s)[1] > extent(s)[0] and presents_after(r, 60)(s), TOUCH_WINDOW, "portrait again")
+    finish(driver)
+
+    p0, b = sample("before loss across background")
+    post("hold-recover")
+    post("lose-device")
+    wait(lambda s: num(s, "recover_held") > num(b, "recover_held"), 60, "the recovery held after the loss")
+    simctl("launch", DEVICE, "com.apple.Preferences")
+    wait(lambda s: s.get("state") == "Suspended", 30, "suspend during recovery")
+    post("release-recover")
+    d = wait(lambda s: num(s, "recover_deferred") > num(b, "recover_deferred"), 60, "the recovery deferred in background")
+    check(num(d, "recoveries") == num(b, "recoveries"), "a recovery published in the background", d)
+    foreground()
+    s = wait(recovered_after(b), 120, "recovery after foreground")
+    p1, s = sample("after loss across background")
+    check_recovery("loss across background", b, s, p0, p1)
+    snapshot("17-loss-background", s)
+    log(f"loss across background: deferred {num(s, 'recover_deferred') - num(b, 'recover_deferred')} while "
+        f"suspended, one publication after resume; generation {s['device_generation']}")
+
+    p0, t0 = sample("before swipe after device recovery")
+    s, driver = touch_window("swipe-after-device", "testSwipe",
+                             lambda s: num(s, "touch_releases") > num(t0, "touch_releases")
+                             and num(s, "axes_moving") > num(t0, "axes_moving") and at_rest(s),
+                             "a swipe after device recovery")
+    finish(driver)
+    time.sleep(0.5)
+    p1, s = sample("after swipe on the recovered device")
+    check(distance(p0, p1) >= MIN_SWIPE_TRAVEL, "the swipe after recovery did not move the committed actor", s)
+    log(f"swipe after device recovery: committed actor moved {distance(p0, p1):.3f} m")
+    return s
+
+
 def identity() -> None:
     listing = json.loads(subprocess.run(["xcrun", "simctl", "list", "devices", "-j"], check=True,
                                         capture_output=True, text=True).stdout)
@@ -436,11 +681,17 @@ def identity() -> None:
 
 
 def main() -> None:
-    log(f"G3b iOS route on {DEVICE} (function evidence only)")
+    log(f"G3b iOS route on {DEVICE} (function evidence only); host load {load()}")
     identity()
     log("manual steps: none; every interaction below is a logged simctl command, Darwin notification "
         "or XCUITest HID gesture")
     s = startup()
+    rows = os.environ.get("THRUM_V1_ROWS")
+    if rows in ("rotation", "device"):
+        # Development only: the named route runs every row.
+        rotation(s) if rows == "rotation" else device_loss(s)
+        log(f"PARTIAL: {rows} rows only (THRUM_V1_ROWS={rows})")
+        sys.exit(2)
     s = stall(s)
     s = hide(s)
     s = replace(s)
@@ -452,13 +703,15 @@ def main() -> None:
         log("PARTIAL: touch rows skipped (THRUM_V1_TOUCH=skip)")
         sys.exit(2)
     s = touches(s)
+    s = rotation(s)
+    s = device_loss(s)
     check(num(s, "max_pending_frames") <= 2, "more than two submitted frames", s)
     log(f"UIKit handler maxima: frame/input {s['main_max_us']} us ({s.get('main_max_kind')}), "
         f"lifecycle {s['lifecycle_main_max_us']} us ({s.get('lifecycle_main_max_kind')}), "
         f"during stalls {s['stall_main_max_us']} us; world overloads {s['overloads']} ({s['refused_ticks']} refused ticks)")
     check(num(s, "stall_main_max_us") < STALL_UIKIT_MAX_US, "UIKit waited on a stalled render owner", s)
     snapshot("11-final", s, screenshot=False)
-    log("iPhone 18 Pro simulator G3b function route passed")
+    log(f"iPhone 18 Pro simulator G3b function route passed; host load {load()}")
 
 
 if __name__ == "__main__":

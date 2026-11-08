@@ -6,7 +6,7 @@ use std::{fmt::Write as _, fs, time::Duration};
 use thrum_core::sim::WorldLifecycle;
 use thrum_render::frame::TargetLeadStatus;
 
-use super::render::{FrameReply, SurfaceStatus};
+use super::render::{FrameReply, Recovered, SurfaceStatus};
 use crate::gesture::GestureCounters;
 
 const NAME: &str = "thrum-v1-ios-state.txt";
@@ -51,6 +51,42 @@ pub(super) struct Witness {
     pub(super) release_deferred: u64,
     pub(super) release_completed: u64,
     pub(super) resizes: u64,
+    /// `Resized` events on the current window that changed the extent.
+    pub(super) resize_events: u64,
+    /// The surface epoch the latest resize created.
+    pub(super) resize_epoch: u64,
+    /// Waiting for the first present at the latest resize's extent.
+    resize_open: bool,
+    /// Frame replies since the latest resize, until a new-extent present.
+    resize_replies: u64,
+    /// Most frame replies any resize waited for a new-extent present.
+    pub(super) max_resize_gap_replies: u64,
+    /// Presents admitted on an epoch a resize had already revoked.
+    pub(super) resize_raced_presents: u64,
+    pub(super) extent_drops: u64,
+    pub(super) old_extent_presents: u64,
+    pub(super) presented_extent: [u32; 2],
+    pub(super) install_retries: u64,
+    pub(super) loss_replacements: u64,
+    pub(super) device_generation: u64,
+    pub(super) presented_generation: u64,
+    pub(super) lost_generation: u64,
+    pub(super) losses: u64,
+    pub(super) stale_loss_wakes: u64,
+    pub(super) lost_frames: u64,
+    pub(super) lost_held_drops: u64,
+    pub(super) stale_generation_refusals: u64,
+    pub(super) recover_requests: u64,
+    pub(super) recoveries: u64,
+    pub(super) recover_deferred: u64,
+    pub(super) recover_candidate_lost: u64,
+    pub(super) recover_failed: u64,
+    pub(super) recover_stale: u64,
+    pub(super) recover_held: u64,
+    pub(super) recover_refitted: u64,
+    pub(super) recover_wall_us: u128,
+    pub(super) recovered_extent: [u32; 2],
+    pub(super) recover_error: String,
     pub(super) suspends: u64,
     pub(super) resumes: u64,
     pub(super) replacements: u64,
@@ -120,8 +156,33 @@ impl Witness {
         }
     }
 
-    pub(super) fn frame(&mut self, frame: &FrameReply, current_epoch: u64) {
+    /// A resize created surface epoch `epoch`; a present at it closes the gap.
+    pub(super) fn resized(&mut self, epoch: u64) {
+        self.resizes += 1;
+        self.resize_epoch = epoch;
+        self.resize_open = true;
+        self.resize_replies = 0;
+    }
+
+    pub(super) fn recovered(&mut self, recovered: &Recovered) {
+        self.recoveries += 1;
+        self.device_generation = recovered.generation;
+        self.recover_refitted += u64::from(recovered.refitted);
+        self.recover_wall_us = recovered.wall.as_micros();
+        self.recovered_extent = recovered.extent;
+    }
+
+    pub(super) fn frame(&mut self, frame: &FrameReply) {
         self.replies += 1;
+        if self.resize_open {
+            self.resize_replies += 1;
+            self.max_resize_gap_replies = self.max_resize_gap_replies.max(self.resize_replies);
+        }
+        self.extent_drops += u64::from(frame.extent_dropped);
+        self.old_extent_presents += u64::from(frame.old_extent_present);
+        if frame.raced_present && frame.epoch < self.resize_epoch {
+            self.resize_raced_presents += 1;
+        }
         self.completed_gpu += u64::from(frame.completed);
         self.surface_samples += u64::from(frame.surface_samples);
         self.presentable_encodes += u64::from(frame.presentable_encode);
@@ -143,7 +204,11 @@ impl Witness {
             SurfaceStatus::Presented => {
                 self.presented += 1;
                 self.presented_epoch = frame.epoch;
-                debug_assert!(frame.epoch <= current_epoch);
+                self.presented_extent = frame.extent;
+                self.presented_generation = frame.generation;
+                if frame.epoch >= self.resize_epoch {
+                    self.resize_open = false;
+                }
             }
             SurfaceStatus::NoView => self.no_view += 1,
             SurfaceStatus::Denied => self.denied += 1,
@@ -151,6 +216,11 @@ impl Witness {
             SurfaceStatus::Missing => self.missing += 1,
             SurfaceStatus::Reconfigure => self.reconfigure_waits += 1,
             SurfaceStatus::StaleDropped => self.stale_dropped += 1,
+            SurfaceStatus::DeviceLost => {
+                self.lost_frames += 1;
+                self.lost_held_drops += u64::from(frame.acquired);
+            }
+            SurfaceStatus::StaleGeneration => self.stale_generation_refusals += 1,
         }
     }
 
@@ -255,7 +325,7 @@ impl Witness {
         let actor = self
             .actor_position
             .map_or_else(|| "none".to_owned(), |[x, y, z]| format!("{x},{y},{z}"));
-        let tail: [(&str, String); 14] = [
+        let tail: [(&str, String); 42] = [
             ("actor_samples", self.actor_samples.to_string()),
             ("actor_position", actor),
             ("stall_active", self.stall_active.to_string()),
@@ -279,6 +349,55 @@ impl Witness {
             ),
             ("detached_windows", self.detached_windows.to_string()),
             ("old_window_touches", self.old_window_touches.to_string()),
+            ("resize_events", self.resize_events.to_string()),
+            ("resize_epoch", self.resize_epoch.to_string()),
+            (
+                "max_resize_gap_replies",
+                self.max_resize_gap_replies.to_string(),
+            ),
+            (
+                "resize_raced_presents",
+                self.resize_raced_presents.to_string(),
+            ),
+            ("extent_drops", self.extent_drops.to_string()),
+            ("install_retries", self.install_retries.to_string()),
+            ("loss_replacements", self.loss_replacements.to_string()),
+            ("device_generation", self.device_generation.to_string()),
+            (
+                "presented_generation",
+                self.presented_generation.to_string(),
+            ),
+            ("lost_generation", self.lost_generation.to_string()),
+            ("losses", self.losses.to_string()),
+            ("stale_loss_wakes", self.stale_loss_wakes.to_string()),
+            ("lost_frames", self.lost_frames.to_string()),
+            ("lost_held_drops", self.lost_held_drops.to_string()),
+            (
+                "stale_generation_refusals",
+                self.stale_generation_refusals.to_string(),
+            ),
+            ("recover_requests", self.recover_requests.to_string()),
+            ("recoveries", self.recoveries.to_string()),
+            ("recover_deferred", self.recover_deferred.to_string()),
+            (
+                "recover_candidate_lost",
+                self.recover_candidate_lost.to_string(),
+            ),
+            ("recover_failed", self.recover_failed.to_string()),
+            ("recover_stale", self.recover_stale.to_string()),
+            ("recover_held", self.recover_held.to_string()),
+            ("recover_refitted", self.recover_refitted.to_string()),
+            ("recover_wall_us", self.recover_wall_us.to_string()),
+            (
+                "recovered_extent",
+                format!("{}x{}", self.recovered_extent[0], self.recovered_extent[1]),
+            ),
+            ("recover_error", self.recover_error.clone()),
+            ("old_extent_presents", self.old_extent_presents.to_string()),
+            (
+                "presented_extent",
+                format!("{}x{}", self.presented_extent[0], self.presented_extent[1]),
+            ),
         ];
         for (key, value) in tail {
             let _ = writeln!(out, "{key}={value}");

@@ -5,18 +5,31 @@ Design: [PLATFORM-RUNTIME.md](PLATFORM-RUNTIME.md#i1-phone-shell-lifecycle-slice
 [C06](../CONTRACTS.md#c06-gpu-execution-and-lifetime--v1), [C07](../CONTRACTS.md#c07-render-scene-views-and-temporal-data--v2-with-p4v3v4)
 and [C11](../CONTRACTS.md#c11-input-audio-and-ui-lifecycle--p1a1u1-with-f1).
 Commission: Thrum Core's G3b iOS boundary (`tmp/g3b-ios-boundary/NOTES.md`).
-Reviews: 2026-11-07 independent design/plan review (fresh subagent given the commission, this plan, the contracts and
+Reviews: 2026-11-08 M5/M6 close review of `route-full6` and the uncommitted tree on `d063f2e8` (fresh subagent, brief
+`tmp/g3b-ios-rotation/close-review-brief.md`). M6 passed. M5 needed changes, with one blocking finding: winit's
+creation and layout `Resized` events reconfigured each new window at a transient extent, so `Resized` now reads the
+layer extent. The non-blocking findings were also taken: publish inside the background-checked section, recheck the
+candidate after a refit, and treat an error after the loss as a held drawable. The same reviewer rechecked
+`route-full7` and passed both M5 and M6.
+2026-11-08 independent review of the M5/M6 revision (fresh subagent, brief in the session; verdict: changes
+required, three blocking: one extent source, stale-extent claim, `destroy` needs a poll; all taken into M5/M6 above).
+2026-11-07 independent design/plan review (fresh subagent given the commission, this plan, the contracts and
 the work-in-progress tree): changes required, two blocking. Answered below; see *Review answers*. Thrum Core's
 rulings on seam 2 (approved with conditions) are answered in *Root conditions*.
-Milestone: M4 closeout · Updated: 2026-11-07
-Now: M1–M3 closed and pushed (`ccce4402`); evidence and iOS maturity updated.
-Next: Thrum Core's G3b checkbox wording.
+Milestone: M5 and M6 closed · Updated: 2026-11-08
+Now: M1–M6 closed on the simulator. Close review passed on `route-full7`. Evidence:
+`docs/evidence/render/G3B-IOS-SIM-ROTATION-LOSS-2026-11-08.md`.
+Next: Thrum Core's call on the BUILD-PLAN G3b wording; a quieter timing rerun of the UIKit handler rows; the
+physical-iPhone rows (loss detection, timing) remain open.
 Blocked: none.
 
-Scope: the iPhone 18 Pro / iOS 27.2 simulator as a function target. Simulator timing, a physical iPhone, device
-loss and G3b's Mac live rows are out of scope. Pre-change reference: `tmp/g3b-ios-lifecycle/late-acquire/` (serial
-UIKit callback, 601 presented, 600 completed) and `tmp/g3b-ios-lifecycle/current/*.png`; M1 captures a fresh
-baseline screenshot from the pre-change build before the first post-change run.
+Scope: the iPhone 18 Pro / iOS 27.2 simulator as a function target. M1–M4 covered off-main frames, touch, lifecycle and
+surface replacement; M5 adds rotation and M6 device loss. Simulator timing, a physical iPhone and G3b's Mac live rows
+are out of scope. Portrait sizing and non-integer presenter scaling belong to G4 (Thrum Core's disposition of the
+simulator visual findings): rotation proves the lifecycle, not the framing. Pre-change reference:
+`tmp/g3b-ios-lifecycle/late-acquire/` (serial UIKit callback, 601 presented, 600 completed) and
+`tmp/g3b-ios-lifecycle/current/*.png`; M1 captures a fresh baseline screenshot from the pre-change build before the
+first post-change run.
 
 ## Shell design
 
@@ -57,7 +70,7 @@ native call, so the guarantee is stated per case:
   sees the new epoch, and UIKit has taken the surface on the reply before any further job.
 
 The route exercises the third sub-case without any GPU or fence wait on UIKit: `stall-present` holds the section after
-its last epoch check and before `present` for 5 s, a replacement lands inside that window, and the checker requires
+its last epoch check and before `present` for 8 s, a replacement lands inside that window, and the checker requires
 exactly one raced present, a deferred release, the old window's detach after the release, and every UIKit handler
 during the hold under 1 s. `stall-render` holds after acquire and requires the drawable to be dropped stale instead.
 
@@ -85,9 +98,22 @@ surface stays revoked (no present can happen) and the checker fails on missing r
 - *Missing or denied drawable.* `Timeout`/`Occluded`/`Outdated` from wgpu is *missing*. The encoded view is skipped and
   committed ticks stand. While the shell hides its view, requests carry `present: false`, and the owner advances
   without acquiring. That is *denied*. Both are counted separately.
-- *Resize* (designed, not exercised: the simulator route has no rotation step). An observed extent change bumps the
-  epoch. The owner reconfigures and resizes the host's surface bindings only when no frame is pending, as the Mac actor
-  does.
+- *Resize and rotation* (M5). The surface extent is the view's full bounds in pixels (winit `outer_size`, the size
+  `Resized` reports and the Metal layer tracks). winit's iOS `inner_size` is the safe area; using it configured a
+  drawable smaller than the layer, which the layer stretched. Attach, `Resized` and the dispatch backstop use the one
+  source. The current window's `Resized` is handled on UIKit as it arrives: an extent change bumps the surface epoch
+  at once; an in-flight section then drops its old-extent drawable at its next check, exactly like a revocation. The
+  next request carries the new epoch and extent. The owner reconfigures only when no frame is pending (`Reconfigure`
+  replies meanwhile), resizes the host's presenter bindings with `resize_surface`, then configures the surface. The
+  window, surface, lease and world stay the same: rotation is not a replacement.
+  *What the epoch cannot stop.* UIKit animates the layer's bounds through a rotation, and an acquire just before
+  `Resized` can still return an old-size drawable under a current epoch (Metal reports no `Suboptimal`). With
+  raw-window-metal's default `kCAGravityResize`, the first dev run showed the new landscape drawable squeezed into the
+  still-portrait animating bounds (`tmp/g3b-ios-rotation/dev-run1`). The Swift bridge now sets the Metal sublayer's
+  gravity to `resizeAspect` when the surface is created: during the animation the compositor scales the drawable
+  without distortion, and at rest the drawable matches the bounds, so nothing changes there. Before each present the
+  owner also compares the drawable's size with the extent the shell last observed (a witness value beside the epoch)
+  and drops a mismatch; a present found mismatched afterwards is counted as an old-extent present.
 - *Suspend* (`willResignActive`, winit `suspended`). UIKit, synchronously and without waiting: stops the display link,
   bumps the epoch, clears the gesture and sends zero axes, records the background intent and requests
   `WorldLifecycle::Pause`, then `try_lock`s the slot to take the surface. **The synchronous guarantee is revocation**:
@@ -131,7 +157,7 @@ simulator control tool was tried first and needs a per-device grant from a perso
 **Test triggers** sit at the shell/owner boundary. They are accepted only when the app is launched with
 `THRUM_V1_ROUTE=1`. They arrive as Darwin notifications on the main run loop (`notifyutil -p
 org.thrum.v1.<command>` inside the simulator): `replace-surface`, `hide-view`, `show-view` and `stall-render` (the owner
-sleeps inside its lease section, after acquiring, for 5 s, long enough for a revocation posted from the host to land
+sleeps inside its lease section, after acquiring, for 8 s (5 s until 8 Nov), long enough for a revocation posted from the host to land
 inside it), `stall-present` (the same hold after the last epoch check, just before `present`) and `sample-actor` (one
 read of the controlled actor's committed position from the world lane's published page; display callbacks and render
 reports never read the page). Opened URLs were tried first and rejected: iOS asks the
@@ -141,12 +167,13 @@ foregrounds the running process.
 **Witnesses.** The app rewrites one key=value state file at each transition and every 120 presented frames. It records
 thread names per role (display forward, touch, lifecycle, prepare, frame, world wake), the maximum UIKit handler wall
 (overall and during a stall), the maximum acquire wall, targets coalesced, maximum pending frames, epochs, immediate
-and deferred releases, live detached windows, stale rejections, presents under a revoked epoch (must stay zero),
+and deferred releases, live detached windows, stale rejections, presents under a revoked epoch (zero, except the one admitted final-check race that the `stall-present` row
+requires),
 missing and denied drawables, presented frames, world epoch/tick at each lifecycle reply, gesture
 starts/clears/stale events, sent axes, the controlled actor's committed position, and PID. A compile-time assertion
 keeps the render job `Send`.
 
-**Checker thresholds** (function, not timing): every UIKit handler that runs while the owner holds a 5 s stalled
+**Checker thresholds** (function, not timing): every UIKit handler that runs while the owner holds an 8 s stalled
 section stays under 1 s, so none waited on it (simulator wall time elsewhere is reported, not gated: host load
 deschedules callbacks);
 display callbacks and world ticks advance during the stall; zero presents and acquisitions while hidden with ticks
@@ -154,8 +181,11 @@ advancing; at least one stale rejection and zero revoked-epoch presents after a 
 detached windows after each recovery; a background during a stall recovers like a plain background.
 
 **Cost.** Per frame UIKit does one atomic load, one `try_send`, one small request move and handles about three
-proxy events (target, render reply, world wake). The owner does at most two slot locks. Per touch move, three float
-comparisons. No per-frame allocation is added. Window/surface recreation is a lifecycle cost, not a frame cost.
+proxy events (target, render reply, world wake). The owner does at most two slot locks and one atomic load for the
+extent witness. Per touch move, three float comparisons. No per-frame allocation is added: witness file writes and
+thread naming run only under `THRUM_V1_ROUTE=1`, thread roles are recorded once, and the owner names its thread on
+preparation and the first frame only (daily main review M2, 8 Nov). Window/surface recreation is a lifecycle cost,
+not a frame cost.
 
 ## Seams for Thrum Core
 
@@ -262,12 +292,148 @@ resume-during-preparation branch is proven by review only; no route row exercise
 Work:
 - [x] Shell state machine, Swift detach bridge, world lifecycle requests/replies; Darwin-notification route commands.
 
-## M4 Closeout: pending
+## M4 Closeout: done
 Done when:
-- [ ] `./dev check` green, the named simulator route passes, evidence paragraphs and iOS maturity updated, Thrum Core
-  confirms the G3b wording, and an independent in-game review passes.
+- [x] `./dev check` green, the named simulator route passes, evidence paragraphs and iOS maturity updated, Thrum Core
+  confirms the G3b wording, and an independent in-game review passes. Thrum Core accepted the closeout and recorded
+  the G3b wording in BUILD-PLAN itself (`tmp/g3b-ios-boundary/NOTES.md`, "Root acceptance of the simulator closeout").
+
+## M5 Rotation: done
+Done when:
+- [x] Mid-route, after the touch rows, the simulator rotates portrait → landscape → portrait through real device
+  orientation changes (XCUITest `XCUIDevice.orientation`, no person). Each rotation bumps the surface epoch through
+  `Resized`, reconfigures once at the full-bounds extent, and presents again on the same lease slot and PID (the same window unless a drawable was held, walk step 6).
+- [x] Old-extent presents are counted, not inferred: the owner compares each drawable's size with the extent the shell
+  last observed before presenting, and the route reports every old-extent present after a resize (target zero, with
+  any residual race named). At most one present on a resize-revoked epoch: the revocation race bound. A section
+  that passed its last epoch and extent check before `Resized` landed may present once after it (seen once, at host
+  load ~455, `route-full5`). Preventing it would need UIKit to wait on the section. Every old-extent present must be
+  that raced present, and `resizeAspect` shows it undistorted.
+- [x] A frame strip at 20 fps from `simctl io recordVideo` (an offscreen capture of the running game) covers each
+  rotation; I review it myself and record what shows between the bounds change and the first new-extent present.
+  No distorted frame may persist after that present.
+- [x] Presentation is continuous: the first new-extent present comes within six frame replies of the resize (dev runs
+  measured two and three: one reconfigure wait for the at most two pending frames), and no frame error occurs.
+- [x] The world survives: ticks advance through both rotations, and the controlled actor's committed position sampled
+  before and after each rotation (no input; the idle actor has no drift) agrees within 1 mm.
+- [x] Input still maps: a swipe in landscape moves the committed actor (screen-up is forward in either orientation).
+- [x] `./dev check` passes on the tip; the evidence record, BUILD-PLAN line proposal and maturity entry are updated;
+  an independent close review of the route and the strip passes.
+Work:
+- [x] Measure first: dev run 1 showed the squeeze above and a two-reply gap; dev run 2 (full-bounds extent,
+  `resizeAspect`) showed one epoch bump per rotation, a three-reply gap, zero old-extent presents and no distorted
+  frame in either strip.
+- [x] One extent source (`outer_size`) for attach, `Resized` and backstop.
+- [x] `Resized` handling and resize witnesses (resize events, epoch per resize, gap replies, presented extents,
+  old-extent presents).
+- [x] XCUITest orientation tests; route rows; video capture and strip.
+
+## M6 Device loss: done (Thrum Core approved the seam with conditions)
+Seam: owned iOS code only, reusing the reconstruction API the Mac render actor uses. Thrum Core's verdict
+(`tmp/g3b-ios-boundary/NOTES.md`, "Root verdict on M6 simulator device recovery") approved it within the existing iOS
+ownership and accepted `Device::destroy` as a function-only simulator witness. Any shared API change returns for
+review.
+Walk:
+1. *Generations.* Preparation captures `DeviceCapabilities` at platform generation 1 and builds the host with
+   `FrameHost::new_with_capabilities`, so host and platform generations match; every replacement is strictly newer.
+   The loss callback is registered before the host is built and records its own generation.
+2. *Detection.* `destroy` only marks the device invalid; wgpu fires the lost callback from maintenance once the queue
+   empties. After the route's `lose-device`, the owner calls `destroy`, then non-blocking `poll(Poll)` once per job
+   until the flag is set (never `Wait`). From the flag onward it makes no call on the lost device.
+3. *Revocation.* On loss the shell (UIKit, no wait) revokes the surface lease by bumping the epoch and records the
+   lost generation; the display link and world lane keep running; requests carry no acquisition until recovery.
+4. *One recovery in flight.* UIKit sends one `Recover { from }` job and accepts its reply only if `from` is still the
+   current generation. A lost candidate, a stale reply, a rotation or a background arriving during recovery leaves
+   exactly one recovery in flight: rotation updates the extent the candidate is fitted to
+   (`PreparedDevice::resize_surface` before publication); background defers publication to resume; a lost
+   candidate is retried from the same base generation, and the shell fails after three failed attempts.
+5. *Publication.* The owner snapshots inputs, requests a fresh adapter and device (callback first), prepares at the
+   current format and extent, checks candidate loss and the lease generation, publishes, swaps its `Gpu`, and
+   configures only under the current lease and epoch. The background check and the publication happen inside one lease
+   section. Suspend sets `background` before it revokes, and it cannot take the surface while the section holds it, so
+   no publication lands in the background. Candidate loss is checked again after a refit.
+6. *A drawable held across the loss replaces the surface.* wgpu-core's `Surface::discard` checks device validity
+   before clearing the acquired texture, so a drawable dropped after `destroy` leaves the surface "acquired"
+   (`AlreadyAcquired` on the next acquire; the first configure fails with `PreviousOutputExists` after clearing it).
+   Replacement does not depend on that quirk. A frame error after the loss is treated as having held a drawable. When a lost frame had acquired a
+   drawable, UIKit runs the replacement path (revoke, detach, fresh window and wgpu surface) alongside the recovery;
+   the new device configures the new surface. A loss with no drawable held keeps its window. Found in M6 dev run 1.
+7. *Route witnesses.* `lose-device` sets a flag the owner consumes at its next job (or inside a held section) and
+   calls `destroy`. `hold-recover` parks the recovery after preparation and before the refit check, so a rotation or
+   background lands between preparation and publication; it is capped at 300 s (the XCUITest rotation took 109 s at
+   host load ~190). `stale-wake` makes the owner send the previous generation's loss through the lost-callback wake
+   and the shell send one request still carrying it; both must be refused. A candidate discarded by a background
+   consumes its generation number, so generations stay strictly increasing but may skip.
+Done when:
+- [x] The route observes the real wgpu destroyed-device callback, a fresh device generation and surface epoch, and a
+  newly submitted and presented frame on the replacement, on the same lease slot and PID (the same window unless a drawable was held, walk step 6).
+- [x] No old-generation present: a frame held across the loss (`stall-render` with `lose-device` landing inside it)
+  and a stale old-generation wake are both refused, counted, and cannot present on the replacement.
+- [x] The world and controls keep authority through the handoff: ticks advance during recovery, the committed actor
+  agrees within 1 mm before and after, and a swipe after recovery moves it.
+- [x] Overlap: a loss during a rotation and a loss across a background each end in one coherent recovery (one
+  publication, no second in flight).
+- [x] UIKit never waits: handlers during recovery stay under 1 s; preparation runs on the render owner.
+- [x] The evidence states the simulator limit: `destroy` exercises recovery, not detection. wgpu-hal's Metal backend
+  maps no command-buffer error to a loss, so a physical iPhone row must first show that a real GPU fault or watchdog
+  loss is detected at all, then the same recovery. That row stays open.
+- [x] Install contention is not fatal (daily main review M1, 8 Nov, same lifecycle path): a `try_install` that meets
+  the owner inside `section()` keeps `restore` set and retries from the next reply or target, and attaches the new
+  window to the scene only after the install succeeds, so no window is left in the scene.
+- [x] `./dev check` passes; evidence and maturity updated; independent close review passes.
+
+## Follow-ups (outside M5/M6)
+- M5/M6 close-review carry-overs (not blocking):
+  - the old-extent witness mostly repeats the epoch check; only the strip covers the moment before `Resized`;
+  - the route checks that the landscape swipe moves the actor, not its direction;
+  - "ticks advance during recovery" is checked across the row;
+  - install contention (`install_retries`) is proven by review, not exercised.
+- UIKit handler timing: `route-full7` at load ~210 measured 0.88 s outside stalls and 38 ms during stalls and
+  recovery; judge against a quieter host.
+- Physical iPhone: a real GPU fault or watchdog loss must first be shown to be detected (wgpu-hal Metal maps none),
+  then the same recovery.
+From the 7 Nov close review and the 8 Nov daily main review (`chunk-E.md`), triaged; none affects the function claim:
+- Formal happens-before for revocation during configure (a read-modify-write epoch check).
+- Touches on a Busy-deferred window before `finish_release` are dropped, not counted stale (L1; no state effect,
+  `clear()` already revoked the id).
+- Route only: a replacement while hidden creates a visible window (L2); Darwin observers are re-registered on each
+  scene connect, so a reconnect would double each command (L3).
+- An acquired drawable that `submit` does not present reports `NoView`; give it its own status (L4).
+- `debug_assert!(frame.epoch <= current_epoch)` checks nothing (L5); removed with the M6 witness changes.
+- `CAMetalLayer` properties set by configure on the render thread land in an implicit transaction; check compositing
+  properties apply promptly on a physical device (L6).
+- Can a pre-Resume overload report start a second episode in `WorldPolicy`? Trace `report.overload` and add a unit
+  test (L7).
+- L8 (no-op example binaries off macOS) is outside this shell; passed to the overseer.
 
 ## Log
+- 2026-11-08 Overseer brief: M5 rotation and M6 device loss added; M4 marked done on Thrum Core's acceptance.
+- 2026-11-08 Plan review: changes required. winit's iOS `inner_size` is the safe area while `Resized` is the full
+  bounds (fixed: one source, `outer_size`); the epoch cannot stop the compositor scaling the last drawable between
+  the bounds change and `Resized` (claim restated, old-extent presents counted, gap measured first); `destroy` fires
+  the callback only from a poll. Thrum Core approved M6 with conditions (generations, revocation, one recovery,
+  stale-generation witness), folded into M6.
+- 2026-11-08 Daily main review (`chunk-E.md`): M2 fixed (witness I/O and thread naming only under the route); M1
+  folded into M6; lows triaged into *Follow-ups*. Two full-route runs failed on host-load timing in existing rows,
+  not on rotation: a 10 s held touch released before a slow `replace-surface` notification arrived (`route-full1`),
+  and a revocation posted straight after `stall-render` landed before the stall held (`route-full2`). The held touch
+  is now 30 s and the route checks the finger was still down at the replacement; the stall is 8 s and the route waits
+  for the owner to report the held section before posting the revocation.
+- 2026-11-08 M6 development runs (`tmp/g3b-ios-rotation/m6-dev1..6`). In dev run 1 the held-frame loss faulted
+  the surface: wgpu-core's `discard` checks device validity before clearing the acquired texture, so the surface
+  stays acquired for any device. A loss that held a drawable now replaces the surface (walk step 6). Three route
+  defects followed:
+  - the recovery hold sat before preparation, so the rotation never forced a refit;
+  - the 90 s hold expired before a 109 s XCUITest rotation at load ~190;
+  - the background row counted the designed resume reinstall as a replacement.
+  The hold now sits after preparation with a 300 s cap. The route also gained the `stale-wake` row. Dev run 6 passed
+  every device row: generations 1→2→3, stale wake and request refused, refit to 2622x1206, one publication after
+  resume, and a swipe after recovery moved the actor 9.6 m.
+- 2026-11-08 Full route `route-full5` (load 455 at start) failed M5's "zero presents on a resize-revoked epoch":
+  one section that passed its checks before `Resized` presented once after it, at the old extent. That is the
+  revocation race bound, which UIKit cannot close without waiting. The strip shows a rigid, aspect-preserved
+  rotation and no squeezed frame. The done-when now names the bound: at most one, and it must be the only
+  old-extent present. That change goes to the M5 close review.
 - 2026-11-07 Plan written from Thrum Core's commission.
 - 2026-11-07 Independent review: changes required. Revised: revocation guarantee, detach bridge, committed-position
   witness, touch before lifecycle, thresholds.
