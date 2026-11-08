@@ -84,9 +84,12 @@ The Codex goal remains active. Its attachment is
   On the row-665 Metal witness, the stock taps fall to zero in frame
   227 while dense integration of the same depth field retains
   2.49–3.65% visibility. The blocker count stays six and the radius
-  changes by about 0.06 texels. Design a bounded filter with explicit
-  limb support before changing the shader. The disk oracle remains
-  separate from the cascade approximation. Runtime awaits validation.
+  changes by about 0.06 texels. An equal-cost limb-weighted layout reads
+  4.80% in every archived sample, flattening the crossing. Its p95
+  absolute visibility error in percentage points rises from 6.67 to
+  9.04 for horizontal crests, 8.34 to 10.97 for rotated crests and
+  5.16 to 9.52 for compact casters. Park fixed layouts. Design bounded
+  coverage reconstruction and keep the disk oracle as referee.
   Rerun from `tmp/g3s-sunset-lip/M3-RESEARCH.md`.
 
 - Historical M2 star captures predate the orientation correction. The Mac's lossless 1080p60 masters
