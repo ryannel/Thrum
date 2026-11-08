@@ -176,9 +176,9 @@ visible in the report until G4 gives motion a reader.
   - a digest that evidence rows quote.
 - *Proof counters (`thrum-render::runtime`).* Pipeline, texture and native-object creations, each tagged with its
   thread and phase (build, transition or play). G3t M0 builds these; G3t and G4 checks both read them.
-  - **Status: an opt-in diagnostic, drafted for review.** It lives behind the `creation-counters` renderer feature,
+  - **Status: an opt-in diagnostic, landed for D0.3.** It lives behind the `creation-counters` renderer feature,
     which is off by default. In default builds the seam is a direct wgpu call, with no ledger, report or
-    submit-path lock. D0.3 is not closed until Thrum Core approves the exact seam diff.
+    submit-path lock.
   - **Pipeline events (the guard).**
     - Each device generation has one creation authority, a `DeviceSite`. `DeviceCapabilities::capture` mints it once,
       with its own ledger, at the selected platform generation. Cloning the capabilities or rebuilding visuals shares
