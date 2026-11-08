@@ -16,6 +16,32 @@ pub fn write_grid_gltf(
     n: u32,
     amplitude: f32,
 ) -> std::io::Result<()> {
+    write_grid(directory, name, n, amplitude, false)
+}
+
+/// Write the same grid as [`write_grid_gltf`] as its mirror image stored under a node scaled by
+/// −1 along X, so it describes identical world geometry and texture mapping through a mirroring
+/// transform. It carries authored smooth normals, so an importer must transform both its winding
+/// and its normals correctly to light it like the plain grid.
+///
+/// # Errors
+/// I/O failure.
+pub fn write_mirrored_grid_gltf(
+    directory: &Path,
+    name: &str,
+    n: u32,
+    amplitude: f32,
+) -> std::io::Result<()> {
+    write_grid(directory, name, n, amplitude, true)
+}
+
+fn write_grid(
+    directory: &Path,
+    name: &str,
+    n: u32,
+    amplitude: f32,
+    mirrored: bool,
+) -> std::io::Result<()> {
     let side = n + 1;
     let mut positions = Vec::with_capacity((side * side) as usize);
     let mut uvs = Vec::with_capacity(positions.capacity());
@@ -25,7 +51,7 @@ pub fn write_grid_gltf(
             let (x, z) = (u * 2.0 - 1.0, v * 2.0 - 1.0);
             let height =
                 amplitude * (-(x * x + z * z) * 2.0).exp() * (6.0 * x).cos() * (6.0 * z).cos();
-            positions.push([x, height, z]);
+            positions.push([if mirrored { -x } else { x }, height, z]);
             uvs.push([u, v]);
         }
     }
@@ -33,7 +59,12 @@ pub fn write_grid_gltf(
     for row in 0..n {
         for column in 0..n {
             let a = row * side + column;
-            indices.extend_from_slice(&[a, a + side, a + 1, a + 1, a + side, a + side + 1]);
+            if mirrored {
+                // Authored mirrored, so its faces still wind counter-clockwise from +Y.
+                indices.extend_from_slice(&[a, a + 1, a + side, a + 1, a + side + 1, a + side]);
+            } else {
+                indices.extend_from_slice(&[a, a + side, a + 1, a + 1, a + side, a + side + 1]);
+            }
         }
     }
     let mut bin = Vec::new();
@@ -42,6 +73,10 @@ pub fn write_grid_gltf(
     bin.extend_from_slice(bytemuck::cast_slice(&uvs));
     let index_offset = bin.len();
     bin.extend_from_slice(bytemuck::cast_slice(&indices));
+    let normal_offset = bin.len();
+    if mirrored {
+        bin.extend_from_slice(bytemuck::cast_slice(&smooth_normals(&positions, &indices)));
+    }
     let (mut min, mut max) = ([f32::MAX; 3], [f32::MIN; 3]);
     for p in &positions {
         for axis in 0..3 {
@@ -49,16 +84,32 @@ pub fn write_grid_gltf(
             max[axis] = max[axis].max(p[axis]);
         }
     }
+    let (node, normal_attribute, normal_view, normal_accessor) = if mirrored {
+        (
+            r#"{"mesh":0,"scale":[-1,1,1]}"#,
+            r#","NORMAL":3"#.to_owned(),
+            format!(
+                r#",{{"buffer":0,"byteOffset":{normal_offset},"byteLength":{}}}"#,
+                bin.len() - normal_offset
+            ),
+            format!(
+                r#",{{"bufferView":3,"componentType":5126,"count":{},"type":"VEC3"}}"#,
+                positions.len()
+            ),
+        )
+    } else {
+        (r#"{"mesh":0}"#, String::new(), String::new(), String::new())
+    };
     let json = format!(
-        r#"{{"asset":{{"version":"2.0"}},"scene":0,"scenes":[{{"nodes":[0]}}],"nodes":[{{"mesh":0}}],
-"meshes":[{{"primitives":[{{"attributes":{{"POSITION":0,"TEXCOORD_0":1}},"indices":2}}]}}],
+        r#"{{"asset":{{"version":"2.0"}},"scene":0,"scenes":[{{"nodes":[0]}}],"nodes":[{node}],
+"meshes":[{{"primitives":[{{"attributes":{{"POSITION":0,"TEXCOORD_0":1{normal_attribute}}},"indices":2}}]}}],
 "buffers":[{{"uri":"{name}.bin","byteLength":{len}}}],
-"bufferViews":[{{"buffer":0,"byteOffset":0,"byteLength":{uv_offset}}},{{"buffer":0,"byteOffset":{uv_offset},"byteLength":{uv_len}}},{{"buffer":0,"byteOffset":{index_offset},"byteLength":{index_len}}}],
+"bufferViews":[{{"buffer":0,"byteOffset":0,"byteLength":{uv_offset}}},{{"buffer":0,"byteOffset":{uv_offset},"byteLength":{uv_len}}},{{"buffer":0,"byteOffset":{index_offset},"byteLength":{index_len}}}{normal_view}],
 "accessors":[{{"bufferView":0,"componentType":5126,"count":{count},"type":"VEC3","min":[{min0},{min1},{min2}],"max":[{max0},{max1},{max2}]}},
-{{"bufferView":1,"componentType":5126,"count":{count},"type":"VEC2"}},{{"bufferView":2,"componentType":5125,"count":{index_count},"type":"SCALAR"}}]}}"#,
+{{"bufferView":1,"componentType":5126,"count":{count},"type":"VEC2"}},{{"bufferView":2,"componentType":5125,"count":{index_count},"type":"SCALAR"}}{normal_accessor}]}}"#,
         len = bin.len(),
         uv_len = index_offset - uv_offset,
-        index_len = bin.len() - index_offset,
+        index_len = normal_offset - index_offset,
         count = positions.len(),
         index_count = indices.len(),
         min0 = min[0],
@@ -70,6 +121,37 @@ pub fn write_grid_gltf(
     );
     std::fs::write(directory.join(format!("{name}.bin")), bin)?;
     std::fs::write(directory.join(format!("{name}.gltf")), json)
+}
+
+/// Area-weighted vertex normals of counter-clockwise triangles.
+fn smooth_normals(positions: &[[f32; 3]], indices: &[u32]) -> Vec<[f32; 3]> {
+    let mut normals = vec![[0.0_f32; 3]; positions.len()];
+    for triangle in indices.as_chunks::<3>().0 {
+        let [a, b, c] = triangle.map(|index| positions[index as usize]);
+        let e1 = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+        let e2 = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
+        let face = [
+            e1[1] * e2[2] - e1[2] * e2[1],
+            e1[2] * e2[0] - e1[0] * e2[2],
+            e1[0] * e2[1] - e1[1] * e2[0],
+        ];
+        for &index in triangle {
+            for axis in 0..3 {
+                normals[index as usize][axis] += face[axis];
+            }
+        }
+    }
+    normals
+        .into_iter()
+        .map(|n| {
+            let length = (n[0] * n[0] + n[1] * n[1] + n[2] * n[2]).sqrt();
+            if length > 0.0 {
+                n.map(|x| x / length)
+            } else {
+                [0.0, 1.0, 0.0]
+            }
+        })
+        .collect()
 }
 
 /// Write a `size`×`size` sRGB checker PNG alternating `colour` with white.
