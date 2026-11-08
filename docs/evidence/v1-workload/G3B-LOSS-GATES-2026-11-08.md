@@ -48,10 +48,11 @@ These ran on this Mac's Apple M3 Max with Metal, in headless Chrome. The GPU was
 | Retained view: device-recovery (2 rounds), retry (1), valley-recovery (2) | Every round passes for both the oracle and the presented screenshots. The edited yaws were 40° and 80°. Every round had zero lost-device calls |
 | `valley-late-attach` | 1 request held. Zero calls while lost and zero until publication. Then `drawn: 2`, 1 swap and 2,930,688 bytes uploaded |
 | After rebasing onto main 06a08028: `device-recovery`, `device-recovery-retry`, `valley-recovery`, `valley-late-attach`, `device-loss`, and `material` on the development page | All pass. The default Wasm is `2dedaf30…` and the development Wasm `6c87c049…`. `./dev check` passes |
+| Retained-view correction (Thrum Core's hold), rebased on main 65d0c011 at d991e9fc: A and A′ observed with no view edit on the replacement device; B1, B2 and C edit explicitly | `device-recovery`, `device-recovery-retry`, `valley-recovery`, `valley-late-attach`, `device-loss` and `material` (development page) pass, and `./dev check` passes. In all five rounds the oracle and the presented screenshots both pass (`presented: pass`; none unqualified). Default Wasm `9f7aef86…`, development `9e63bec1…`. These replace the retained-view rows above, which took A after re-sending the edited values |
 | **Control:** today's facade (gates reverted), `valley-late-attach` | **Fails as intended**: 78 calls reached the lost device. Among them were 25 `createBuffer`, 18 `createTexture`, 14 `createBindGroup`, 3 `createShaderModule`, 3 `createRenderPipeline` and 3 `writeTexture` |
 | **Control:** today's facade, `material` | **Fails as intended**: the reload after loss was accepted |
 
-Valley-recovery round 1 states, downscaled. A is the retained view: the edited yaw at 18.48 h. B1 has the pre-loss yaw
+Valley-recovery round 1 states from the corrected witness, downscaled. A is the retained view: the edited yaw at 18.48 h. B1 has the pre-loss yaw
 and B2 the pre-loss time:
 
 ![A](g3b-loss-gates/valley-recovery-view1-A.png) ![B1](g3b-loss-gates/valley-recovery-view1-B1.png)

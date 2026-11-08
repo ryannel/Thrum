@@ -786,7 +786,9 @@ async function qualifyDeviceRecovery(cdp, sessionId, poll, timeout, evidence, on
     }, `${name} accepted-work drain`);
   };
   // The recovered device both renders (capture oracle) and presents (canvas screenshot) the camera
-  // and time changed during loss: A repeats, C returns to A, and B1/B2 each undo one of the edits.
+  // and time changed during loss. A and A2 are observed with no view edit on the replacement device,
+  // so only what reconstruction kept can appear in them; then B1/B2 each undo one edit, and C
+  // restores both and must return to A. The control-model read below cannot prove the render side.
   const retainedView = async (round, generation, preLoss, editedYaw) => {
     const view = await gameView(game);
     if (Math.abs(view.yaw - editedYaw) > 0.01 || Math.abs(view.hours - 18.48) > 0.01) throw new Error(`Recovered game lost the edited view: ${JSON.stringify(view)}`);
@@ -796,8 +798,9 @@ async function qualifyDeviceRecovery(cdp, sessionId, poll, timeout, evidence, on
       const start = field((await read(`view${round}`)).report, 'presented');
       await until(async () => field((await read(`view${round}`)).report, 'presented') >= start + count, `view${round} presents`);
     };
-    const state = async (name, yaw, hours) => {
-      await game.invoke('for(const [selector,value] of [["#camera-yaw",args[0]],["#solar-time",args[1]]]){const input=document.querySelector(selector);input.value=value;input.dispatchEvent(new Event("input",{bubbles:true}));}return true;', [yaw, hours]);
+    // `edit` is [yaw, hours] sent through the page's controls, or null to observe without an edit.
+    const state = async (name, edit) => {
+      if (edit) await game.invoke('for(const [selector,value] of [["#camera-yaw",args[0]],["#solar-time",args[1]]]){const input=document.querySelector(selector);input.value=value;input.dispatchEvent(new Event("input",{bubbles:true}));}return true;', edit);
       let previous, image, presented = 0;
       for (;;) {
         await presents(2); presented += 2;
@@ -822,9 +825,9 @@ async function qualifyDeviceRecovery(cdp, sessionId, poll, timeout, evidence, on
       if (!after.paused || after.fault) throw new Error(`view${round} ${name}: world resumed or device faulted`);
       return { identity, oracle, screenshot: sha(image), presented, ...(['A', 'B1', 'B2'].includes(name) ? { file } : {}) };
     };
-    const A = await state('A', editedYaw, 18.48), A2 = await state('A2', editedYaw, 18.48);
-    const B1 = await state('B1', Math.round(preLoss.yaw), 18.48), B2 = await state('B2', editedYaw, 12);
-    const C = await state('C', editedYaw, 18.48), C2 = await state('C2', editedYaw, 18.48);
+    const A = await state('A', null), A2 = await state('A2', null);
+    const B1 = await state('B1', [Math.round(preLoss.yaw), 18.48]), B2 = await state('B2', [editedYaw, 12]);
+    const C = await state('C', [editedYaw, 18.48]), C2 = await state('C2', null);
     const result = { preLoss, editedYaw, states: { A, A2, B1, B2, C, C2 } };
     (evidence.retainedViewAttempts ??= []).push(result);
     const judge = kind => {
@@ -835,10 +838,16 @@ async function qualifyDeviceRecovery(cdp, sessionId, poll, timeout, evidence, on
     result.screenshot = judge('screenshot');
     const passes = verdict => verdict.repeats && verdict.returns && verdict.cameraRetained && verdict.timeRetained;
     if (!passes(result.oracle)) throw new Error(`view${round}: capture oracle does not show the retained view: ${JSON.stringify(result.oracle)}`);
+    // A converged screenshot can be a compositor repeat of an old frame, so a presented claim needs
+    // the full screenshot verdict; anything less is recorded as unqualified, never as a pass.
     if (result.screenshot.repeats) {
       if (!passes(result.screenshot)) throw new Error(`view${round}: presented frames do not show the retained view: ${JSON.stringify(result.screenshot)}`);
+      result.presented = 'pass';
       result.presentedClaim = 'presented frames show the retained camera and time';
-    } else result.presentedClaim = 'not claimed: presented screenshots did not repeat';
+    } else {
+      result.presented = 'unqualified';
+      result.presentedClaim = 'not claimed: presented screenshots did not repeat (possible compositor repeat)';
+    }
     return result;
   };
   await until(async () => field((await read('initial')).report, 'presented') >= 12, 'healthy views before recovery');
