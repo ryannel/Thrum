@@ -268,22 +268,53 @@ Two independent read-only reviews ran on the seam: a fresh subagent code review,
 | Seam methods were `pub` though no external caller can declare their passes. | Narrowed to `pub(crate)`; the 4-byte token resources are documented as ordering tokens only. |
 | Policy: `thrum-cook` is used by `v1-game` and `thrum-asset-gpu`. | Dev-dependency only, for tests and benches; shipping graphs exclude it (see "Shipping excludes authoring"). |
 
+## Open items closed (8 November)
+
+Apple M3 Max, shared GPU. Each check fails when its fix is removed (mutation runs recorded below).
+
+- **Mirrored glTF nodes.** A node whose world transform has a negative determinant now has its triangle corners swapped
+  so front faces stay counter-clockwise, and its normals use the cofactor matrix times the determinant's sign so they
+  stay outward. `mirrored_nodes_keep_front_faces_counter_clockwise_and_normals_outward` covers plain, mirrored,
+  mirrored-parent and doubly mirrored nodes with and without authored normals. In game,
+  `a_mirrored_node_draws_with_the_facing_and_lighting_of_its_plain_twin` draws a mirrored, smooth-normalled grid and its
+  plain twin with at most 0.1% of pixels changed. Removing the winding swap or the normal sign fails both tests.
+- **Partial-block refusal.** A block-compressed profile refuses a texture (or a BC4 volume) whose base size is not a
+  multiple of 4 with a named reason, `CookError::Refused`, reported in `CookReport::refused` and by `thrum-cook` as
+  `refused`. The asset publishes without that profile, which withdraws a stale compressed product, so the runtime
+  falls back to the portable product. The ASTC volume profile is R8 and is unaffected. Test:
+  `a_partial_block_source_is_refused_by_compressed_profiles_and_served_portable`.
+- **Texture quality.** `cooked_texture_quality` decodes every level of each compressed product on the GPU (BC4 on the
+  CPU) and compares it with the same level of the portable product. The floor is 30 dB for levels of at least 16
+  texels a side; smaller levels are recorded only.
+
+  | Product | Base level | Levels of 16+ texels |
+  |---|---:|---:|
+  | Fast BC7 | ~48 dB | ≥ 34.3 dB |
+  | Fast ASTC 4×4 | ~49 dB | ≥ 34.1 dB |
+  | Final BC7 / ASTC 4×4 | 49–53 dB | — |
+  | BC4 volume | 44.4 dB | — |
+
+  Levels of 4×4 texels measure 21–29 dB. The test also checks that substitutes fail: a red/blue swap scores
+  15.6–16.8 dB and the other colour-space label 11.8–13.2 dB. Mutating the cooker to swap the BC7 colour-space label
+  fails at 11.8 dB; swapping red and blue before encoding fails at 15.6 dB.
+- **Chrome page run.** `sh scripts/check_g5_browser_dev_client.sh` serves the Node check's body as a browser test
+  (`crates/thrum-asset/tests/dev_server_browser.rs`) at `http://127.0.0.1:8000` against `thrum-cook watch --serve`.
+  In Chrome the page logged `E2E_READY generation 1 opened 3`, the driver edited one volume, and the page logged
+  `E2E_DONE generation 2 shared 2 replaced 1`; the test passed in 12.9 s. The cross-origin requests succeeded because
+  the server echoed `Access-Control-Allow-Origin: http://127.0.0.1:8000` with `Vary: Origin`; a foreign `Origin` got
+  403. The run is manual (it needs a browser) and is not in `./dev check`.
+
 ## Open items and contract questions
 
 These are reported plainly, and the design record tracks them:
 
 - **Not built:**
   - EAC iPhone volume products (draft parked on `claude/g5-parked-eac-layered` with a recorded selection defect).
-  - A Chrome page run of the Wasm dev-server client. The client exists (7 November): native protocol tests and a Node
-    run under `wasm-bindgen-test-runner` against `thrum-cook watch --serve` (`sh scripts/check_g5_wasm_dev_client.sh`),
-    which loaded generation 1, then long-polled generation 2 and fetched only the edited volume. Node sends no
-    `Origin`, so the CORS path is not exercised.
   - Cooked shadow casting (meshes receive shadows but cast none).
   - Depth-aware volume (the diagnostic raymarch ignores scene depth inside its box).
   - A bounded staging ring for very large publications.
   - CAS garbage collection (draft with reader leases parked on `claude/g5-parked-gc-leases` with two recorded defects).
-  - Texture PSNR quality check.
-- **Not measured:** Chrome (the browser dev-server client ran end to end only in Node), physical iPhone, sustained runs, and physical residency during overlap.
+- **Not measured:** Chrome performance (the dev-server client's Chrome run is functional only), physical iPhone, sustained runs, and physical residency during overlap.
 - **Contract questions for C05/T1, recorded with recommendations in the design:**
   - Preview versus admitted publication of a partially written multi-file change set: preview-only default in force,
     proposal recorded for the owners.

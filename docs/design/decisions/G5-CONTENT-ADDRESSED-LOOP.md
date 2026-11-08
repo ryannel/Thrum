@@ -197,22 +197,23 @@ Alternatives were rejected for these reasons:
 
 ## Open items
 
+Closed 8 November (evidence in the record's "Open items closed" section): mirrored-transform winding and normal sign,
+refusal of partial-block compressed products, per-format texture quality floors and a Chrome page run of the Wasm
+dev-server client.
+
+
 - EAC R11 iPhone volume products. A layered (2D-array) draft is parked on branch `claude/g5-parked-eac-layered`;
   review found that ETC2 alone selects it and a volume deeper than `max_texture_array_layers` is then refused instead
   of falling back to the R8 3D product. Portable R8 already serves the native consumer.
-- Mirrored-transform winding and normal sign in glTF import.
-- Rejection of compressed textures whose base size is not a multiple of 4.
-- A Chrome page run of the Wasm dev-server client (the CORS path); it is tested natively and in Node only.
 - Cooked meshes do not cast shadows: they receive the scene's shadow maps but have no shadow-pass draw. The graph
   seam can add one without a parallel geometry owner; root plans the terrain/subject consumer that needs it.
 - The volume is not occluded by scene depth inside its box and is a diagnostic consumer only.
 - Mesh-shader meshlet path (tied to G3c); the indirect path needs `multi_draw_indirect` support (Metal has it).
 - Graph Copy passes are untimed engine-wide, so the upload's GPU cost is measured by the bench, not pass timestamps.
 - Staging is one buffer per publication; a bounded ring would cap the 512³ peak (see the cost account).
-- Texture quality comparison (PSNR against the source).
 - Physical iPhone, Chrome and sustained measurements.
 - Tripwires are recorded, not asserted; no regression history yet.
 - The dev server opens one thread per connection (at most 32). Only loopback origins may read it; a page served from
   another device needs an explicit origin allow-list before wider use.
-- An asset whose compressed profile fails permanently (for example a partial-block size) keeps serving its last good
-  compressed product while its portable product updates.
+- Texture levels below 16 texels a side are measured (21–36 dB) but not floored; only the portable product is a
+  reference, so the quality check measures encoding loss, not source fidelity.
