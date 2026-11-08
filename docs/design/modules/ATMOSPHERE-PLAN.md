@@ -5,8 +5,8 @@ Reviews: Optical design and plan over `a91cdd0e`, final design `f9d0c12a` and pl
 Updated: 2026-11-08
 Milestone: M3 sunset shadows
 Now: the optional current-frame resolve reduces the frozen flash but introduces visible shadow-edge ribbing on Metal and Chrome. Keep the stock graph and park the resolve at `77e84128`.
-Next: review the mechanism against the saved accepted-mask and stored-field witnesses before proposing another screen. Keep the fixed showcase views and 160 m control.
-Blocked: M3 D1–D3 remain open. No material-hook or tile qualification is needed for the parked graph.
+Next: prepare the D2 and D3 control evidence independently of the parked D1 cue. Queue the fixed-camera D1 reference and foundational ruling for the next owner review.
+Blocked: further D1 trials await the foundational ruling. The proposed reference and D2/D3 preparation can proceed.
 
 ## M1 The valley remains legible at moonless midnight: done
 
@@ -53,9 +53,18 @@ Apple tile M0.4 replayed the matched offscreen star traces in Xcode on the M3 Ma
 
 ## M3 The west lookout’s shadow crosses the ground without a flash: in progress
 
+Owner review: [Half Dome sunset from Glacier Point, fixed-camera clip by G. Edward Johnson](https://commons.wikimedia.org/wiki/File:Sunset_on_Halfdome_timelapse_Yosemite_CA_2023-07-15_20-11-06_1.webm) (proposed, pending).
+
+Use the moving shadow edge on the rock as the reference for continuity and
+texture through the transition. The camera, terrain scale, palette and
+time-lapse speed differ. Compare the clip side by side with the fixed
+17.40–17.80 h west-lookout run at 1× game playback. Inspect the separate
+±20° game pan at native size for camera-dependent ribbing. The clip is
+an external CC BY 4.0 reference. Only its link is tracked.
+
 Done when
 
-- [ ] **D1.** At the west lookout on the cooked valley, the near ground and middle distance read as continuous terrain during the 17.40–17.80 h crossing and a slow ±20° pan on Metal and Chrome. The timed 1× replay shows no newly introduced flecks or detached bright bands. The fixed 1080p spur witness removes the known row-665 cascade step at frames 226–227, and the six-stop route and both controls pass.
+- [ ] **D1.** At the west lookout on the cooked valley, the near ground and middle distance read as continuous terrain during the 17.40–17.80 h crossing and a slow ±20° pan on Metal and Chrome. Independent side-by-side motion review matches the reference’s continuous moving edge. The timed 1× replay shows no newly introduced flecks, ribbing or detached bright bands. The fixed 1080p spur witness removes the known row-665 cascade step at frames 226–227, and the six-stop route and both controls pass.
 - [ ] **D2.** Compare against current main at the same receiver, source and Sun. The open Sun and full occlusion controls retain their expected result. The broad edge, close terrain, distant crest, represented compact-caster control and overlap exhibit no new visible false light or shadow across near/last/far range, camera and azimuth sweeps, or a cooked asset swap. Review full-resolution visibility and shaded images, with signed difference masks registered by receiver and time. Report new lit/umbra regions separately from the existing errors and compare asset replacement with a fresh run of the replacement. Record signed disk-reference error on the fixed witnesses as a measured open item. The original sub-texel caster stays in M4.
 - [ ] **D3.** The regular graph preserves aerial and surface ownership, recovery and strict discarded-frame image equality. Record paired whole-frame and shadow costs, and pass workspace and independent code and visual reviews on the integrated result.
 
@@ -666,6 +675,8 @@ reviewer rechecked the finite-shell revision. The GPU and in-game checks are ope
 - 8 November, 14:38 CET. The wide caster covers two last-map centres but both already hold closer depths. All three fitted layers are byte-identical with and without the caster. This explains the silent witness without a new candidate screen. The no-attachment quad estimate leaves substantially more regular grain than the 3×3 resolve and stays parked. D1 and D2 stay open.
 
 - 8 November, 14:38 CET steer. Measure the exact compact fixture against the cascade that can receive it. It spans 0.20 × 0.47 far texels and is clipped by the near map. Keep it in M4. The reviewed stock-only 160 m replacement control shows a positive wide-filter penumbra. It adds a preservation check and leaves every D1 game view and the earlier overlap witness in place.
+
+- 8 November, reference-first steer. Propose treating the continuous D1 penumbra as foundational and keep the cue parked pending the overseer or owner ruling. Contour fallback, rotated taps and the current-frame resolve all failed on the same visible transition. In the independent saved-field check, freezing each receiver’s radius across 226–227 still gives stock zero at 227 while dense D32 integration finds 2.47–3.63% light. Review the estimator choice and its cost before any new runtime change. Keep the original D1 views, the 160 m control and the distinct M4 reference question. The research note is in `tmp/g3s-sunset-lip/M3-RESEARCH.md`.
 
 - 8 November. The live 3×3 resolve reduces the fixed red-code step but creates regular ribbing and leaves a warm band later in the extinction. Park this graph. All 28,840 pixels in the audited Metal crop accept the mask on each adjacent witness, so intermittent forward guard acceptance cannot explain the ribbing there. The showcase crossing is foundational for D1. Revisit the underlying visibility mechanism before another screen.
 
