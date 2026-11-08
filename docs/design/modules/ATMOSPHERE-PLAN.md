@@ -5,7 +5,7 @@ Reviews: Optical design and plan over `a91cdd0e`, final design `f9d0c12a` and pl
 Updated: 2026-11-08
 Milestone: M2 stars
 Now: the star graph and timed 1× recorder are on main at `ce848011`. Metal and Chrome pass the ground E route.
-Next: finish the offscreen playback review. Choose a bounded shared terrain query using the off-axis disk witness, then verify near clearance and extend compact receiver coverage. The strict discarded-frame capture difference remains open.
+Next: finish the offscreen playback review. Test workgroup-local candidate sharing with per-receiver visibility, then verify near clearance and extend compact receiver coverage. The strict discarded-frame capture difference remains open.
 Blocked: none for motion. Attachment traffic remains unmeasured. Physical pacing and latency belong to the next G3b display session.
 
 At the next look pass, the cooked ground should read as mineral material at the fixed
