@@ -53,7 +53,9 @@ pub trait WebWorld: FrameWorld {
     fn resume_after_drain(&mut self, now: Duration) -> Result<(), String>;
 }
 
-/// The first device, handed to the game to prepare its runtime.
+/// The first device, handed to the game to prepare its runtime. The prepared runtime must not
+/// keep these handles: on loss the shell replaces the device through recovery, and a retained
+/// clone would outlive it.
 pub struct WebGpu {
     /// The first device; replacements reach the runtime through recovery.
     pub device: wgpu::Device,
@@ -67,6 +69,7 @@ pub struct WebGpu {
 
 /// Typed counters and state behind a game's report.
 #[derive(Clone, Debug)]
+#[non_exhaustive]
 pub struct WebStatus {
     /// The current device's adapter.
     pub adapter_name: String,
@@ -467,11 +470,14 @@ impl<W: WebWorld, V: SceneSource<W::Page>> WebShell<W, V> {
     }
 
     fn set_play(&mut self, visible: bool, user_paused: bool, now: Duration) -> Result<(), String> {
-        match self.clock.set_play(visible, user_paused, now) {
-            Transition::Resume => self.host.world_mut().resume_after_drain(now),
-            Transition::Pause => self.host.world_mut().pause(),
-            Transition::None => Ok(()),
+        // Record the play state only once the world has applied it, so a refusal is retried.
+        match self.clock.transition(visible, user_paused) {
+            Transition::Resume => self.host.world_mut().resume_after_drain(now)?,
+            Transition::Pause => self.host.world_mut().pause()?,
+            Transition::None => {}
         }
+        self.clock.set_play(visible, user_paused, now);
+        Ok(())
     }
 
     fn recover_overload(&mut self, refused_ticks: u64, now: Duration) -> Result<(), String> {

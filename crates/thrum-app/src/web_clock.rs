@@ -59,23 +59,23 @@ impl PageClock {
         self.last = now;
     }
 
-    /// Compose visibility with the person's pause and say what the world must do.
-    pub(crate) fn set_play(
-        &mut self,
-        visible: bool,
-        user_paused: bool,
-        now: Duration,
-    ) -> Transition {
+    /// Compose visibility with the person's pause and say what the world must do, without
+    /// recording it. Record it with [`Self::set_play`] once the world has done it.
+    pub(crate) fn transition(&self, visible: bool, user_paused: bool) -> Transition {
         let was_running = self.visible && !self.user_paused;
         let will_run = visible && !user_paused;
-        self.visible = visible;
-        self.user_paused = user_paused;
-        self.last = now;
         match (was_running, will_run) {
             (false, true) => Transition::Resume,
             (true, false) => Transition::Pause,
             _ => Transition::None,
         }
+    }
+
+    /// Record a play state the world has applied.
+    pub(crate) fn set_play(&mut self, visible: bool, user_paused: bool, now: Duration) {
+        self.visible = visible;
+        self.user_paused = user_paused;
+        self.last = now;
     }
 
     pub(crate) fn visible(&self) -> bool {
@@ -131,15 +131,30 @@ mod tests {
     fn visibility_and_pause_compose() {
         let mut clock = PageClock::new();
         let t = Duration::from_millis(10);
-        assert_eq!(clock.set_play(false, false, t), Transition::Pause);
+        let mut step = |visible, paused| {
+            let transition = clock.transition(visible, paused);
+            clock.set_play(visible, paused, t);
+            transition
+        };
+        assert_eq!(step(false, false), Transition::Pause);
         // Pausing while hidden changes nothing the world sees.
-        assert_eq!(clock.set_play(false, true, t), Transition::None);
+        assert_eq!(step(false, true), Transition::None);
         // Becoming visible cannot override the person's pause.
-        assert_eq!(clock.set_play(true, true, t), Transition::None);
-        assert_eq!(clock.set_play(true, false, t), Transition::Resume);
-        assert_eq!(clock.set_play(true, false, t), Transition::None);
-        assert_eq!(clock.set_play(true, true, t), Transition::Pause);
+        assert_eq!(step(true, true), Transition::None);
+        assert_eq!(step(true, false), Transition::Resume);
+        assert_eq!(step(true, false), Transition::None);
+        assert_eq!(step(true, true), Transition::Pause);
         assert!(clock.visible() && clock.user_paused());
+    }
+
+    #[test]
+    fn an_unapplied_transition_is_not_recorded() {
+        let mut clock = PageClock::new();
+        clock.set_play(false, false, Duration::ZERO);
+        // The world refused to resume: nothing recorded, so a retry asks again.
+        assert_eq!(clock.transition(true, false), Transition::Resume);
+        assert_eq!(clock.transition(true, false), Transition::Resume);
+        assert!(!clock.visible());
     }
 
     #[test]

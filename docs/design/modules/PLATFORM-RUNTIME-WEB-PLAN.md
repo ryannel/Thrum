@@ -10,10 +10,11 @@ for the 8 November daily review"). Design and plan go to Thrum Core before any c
 Reviews: design and plan at 12d4c81d, REVISE: pause/resume are game-owned, so the shell cannot be generic over the
 runtime alone; material reload does GPU work while lost. Brief `tmp/g3b-web-shell/review-brief-design.md`, report
 `tmp/g3b-web-shell/review-design.md` (Opus 5.5, 8 November). Recheck at 14fb0b8a: APPROVE WITH CHANGES (R1–R7, same
-report), all taken in this revision.
+report), all taken in this revision. Extraction code at 987a3ac3: APPROVE WITH CHANGES (brief
+`tmp/g3b-web-shell/review-brief-extraction.md`, report `tmp/g3b-web-shell/review-extraction.md`, Opus 5.5), all taken.
 Milestone: M1 Engine web shell carries the V1 page unchanged · Updated: 2026-11-08
-Now: loss gates posted to Thrum Core as a seam diff ([evidence](../../evidence/v1-workload/G3B-LOSS-GATES-2026-11-08.md)); the extraction is written and lints on wasm
-Next: pre-change reference runs on the witness commit, then the post-change checker, route and size runs, and review
+Now: loss gates posted to Thrum Core as a seam diff ([evidence](../../evidence/v1-workload/G3B-LOSS-GATES-2026-11-08.md)); the extraction is written, reviewed and lints on wasm
+Next: pre-change reference runs on the witness commit, then the post-change checker, route and size runs
 Blocked: none
 
 ## Problem
@@ -145,11 +146,13 @@ is bounded by `FRAMES` (600) and exposes that bound for `complete()`.
 frame. The Wasm size change is recorded in M1, and should be near zero.
 
 **Placement.** A `web` module in `thrum-app`, compiled only for `wasm32` (Thrum Core's ruling, 8 November). A game
-author then finds both shells in one crate, they share `percentile` and the counter vocabulary, and the architecture
+author then finds both shells in one crate, they share the counter vocabulary, and the architecture
 entry already permits the needed workspace crates (`thrum-render`, `thrum-core`). The clock policy is a pure submodule,
-`web::clock`: a state machine over visibility, user pause, timestamps and overload reports that returns pause or resume
+`web_clock` (crate-private, tested natively): a state machine over visibility, user pause and timestamps that returns pause or resume
 actions, with no `web-sys`, `wgpu`, `WebWorld` or `FrameWorld` types. It is compiled for `any(target_arch = "wasm32", test)`, so its unit
-tests run natively under `cargo test -p thrum-app` and need no wasm test runner.
+tests run natively under `cargo test -p thrum-app` and need no wasm test runner. The shell records a play state only after the world
+applies it, so a refused resume is asked again. Overload recovery is the shell calling `pause` then
+`resume_after_drain` on `WebWorld`; it holds no clock state.
 
 **Report ownership.** The shell exposes typed fields and samples. The game facade keeps the report text (ruling).
 
@@ -160,7 +163,7 @@ Thrum Core reviews these as an exact diff before they land:
 | File | Owner | Change |
 |---|---|---|
 | `crates/thrum-app/Cargo.toml` | Thrum Core (shared crate) | A `cfg(target_arch = "wasm32")` dependency table: `thrum-render`, `thrum-core`, `wgpu` (`webgpu`), `web-sys` (`HtmlCanvasElement`, `console`), `wasm-bindgen`, `wasm-bindgen-futures`. The panic hook moves as today's hand-written `set_hook`, with no new crate. The versions are the ones `v1-game` already pins. The `description` stops saying "Native macOS window" only |
-| `crates/thrum-app/src/lib.rs` | Thrum Core | `#[cfg(target_arch = "wasm32")] pub mod web;`, `web::clock` also under `test`, and the crate doc's "empty on other targets" line rewritten |
+| `crates/thrum-app/src/lib.rs` | Thrum Core | `#[cfg(target_arch = "wasm32")] pub mod web;`, `web_clock` under `any(wasm32, test)`, and the crate doc's "empty on other targets" line rewritten |
 | `.config/architecture.toml` | Thrum Core | The `thrum-app` comment names the web shell. The purpose and cost text for `web-sys` ("Browser V1 scene only") and `wasm-bindgen-futures` ("V1 startup only") covers the engine shell. `allowed_workspace_dependencies` is unchanged |
 | `tools/xtask/src/main.rs` | Thrum Core | `check_web` also runs wasm32 Clippy on `--package thrum-app` |
 | `scripts/check_v1_browser.mjs` | Thrum Core (shared checker) | The loss-policy witnesses (below). They land before the extraction, proven against today's facade |
@@ -300,3 +303,8 @@ uses `thrum-app`. It gets its own commission.
   the cooked requests held before navigation. A deferred attach refused on the replacement device is reported in
   `cooked_status` errors, the page's existing home for cooked failures, rather than `recovery_error`, which would offer
   a retry for a healthy device.
+- 2026-11-08 Extraction built (987a3ac3). Independent code review (brief `tmp/g3b-web-shell/review-brief-extraction.md`,
+  report `tmp/g3b-web-shell/review-extraction.md`, Opus 5.5): APPROVE WITH CHANGES, all taken. The play state is now
+  recorded only after the world applies it; plan text says `web_clock` and puts overload in the shell (the R7 entry
+  above predates the rename); doc nits. The seam-table row for the game host changed: `host/web.rs` is new and the
+  native wrapper is not cfg-gated. Thrum Core sees it in the extraction seam diff.

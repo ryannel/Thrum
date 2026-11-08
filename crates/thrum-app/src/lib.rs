@@ -1,4 +1,4 @@
-//! Native macOS application shell shared by Thrum games: one window and its Metal device
+//! Application shells shared by Thrum games. The native macOS shell: one window and its Metal device
 //! recipe, the per-view display link, a render owner thread, world pause and GPU device
 //! recovery, the typed demo-control panel with `THRUM_PARAMS` files, and a bounded frames
 //! report. A game supplies its prepared frame runtime, controls and keys through [`Game`].
