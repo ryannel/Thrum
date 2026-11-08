@@ -76,7 +76,7 @@ The native Metal recorder stays in G3t. The later dedicated performance phase ow
   Scaled storage, receiver Sun lookup, twilight interpolation and SH9/GGX have scoped Metal referees. Chrome
   shows twilight. The native cooked valley uses the same Sky, metre-scale camera and cooked Sun casters.
   Eight-wavelength transport yields blue twilight in the valley. Radiance accuracy, shadow polish and live motion remain.
-  [Night milestones](design/modules/ATMOSPHERE-PLAN.md) cover a readable moonless valley and stars.
+  [Night milestones](design/modules/ATMOSPHERE-PLAN.md) qualified the moonless valley and stars on Metal and Chrome.
   [Partial evidence](evidence/v1-workload/G3S-FIRST-LIGHT-2026-11-06.md). Follow the Broadsides reading map and PD/CC0 rules.
 - [ ] **G3t — tile dataflow and Metal boundary.** Direct forward output, derived memoryless/transient attachments,
   mapped upload ring, compact instances, GPU light binning, mirrored ranges, shared targets and one scene/present graph.

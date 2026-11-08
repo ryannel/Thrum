@@ -231,25 +231,60 @@ The Codex goal remains active. Its attachment is
   midnight. Capture and route records are in
   `tmp/g3s-star-catalog/current-main/`.
 
-  | Midnight 1080p Metal, 200 submitted frames each | GPU pass-sum p50 / p95 (ms) |
+  | Midnight 1080p Metal, 200 submitted frames each | Scene GPU pass-sum p50 / p95 (ms) |
   | --- | ---: |
   | Stars off, four runs | 5.76–5.89 / 6.81–10.59 |
   | Stars on, four runs | 3.94–4.39 / 4.52–9.17 |
 
-  Two ABBA sets on `59e76f3d`, shared load 27.67–29.37. The control
-  differs mostly in the display bucket (about 1.9–2.0 ms off vs
-  0.06 ms on). The aggregate cannot be attributed to star shader
-  cost. Render-thread p50/p95 was 1.34–1.94/2.55–4.93 ms off and
+  Two ABBA sets on `59e76f3d`, shared load 27.67–29.37. The benchmark
+  excludes the blit and substitutes zero for missing timing batches
+  without reporting their count. The difference is concentrated in
+  the display bucket (about 1.9–2.0 ms off vs 0.06 ms on). These are
+  historical scene-only observations. Render-thread p50/p95 was
+  1.34–1.94/2.55–4.93 ms off and
   1.37–1.52/2.75–3.34 ms on. Both graphs upload the same rows.
+  The two 600-frame Metal pans on `313d423c` also have independently
+  matched timestamps, including the offscreen blit. GPU pass-sum
+  p50/p95/p99 was 8.830/12.325/14.025 ms with stars on and
+  5.656/5.970/14.041 ms with them off. The on arm ran first, as
+  one-minute load fell 135.3→119.2, then the off arm ran at 119.2→105.2.
+  That change in shared load prevents causal attribution of the
+  p95 rise. The reverse signs in the lower-load ABBA do not settle it.
   At 1080p the Direct stars graph adds a 16,588,800-byte HDR load,
   a 16,588,800-byte HDR store, and an 8,294,400-byte opaque depth
   store that the later star sampling keeps live. This totals
-  41,472,000 bytes of logical attachment area, plus sparse depth
-  sampling. The Metal Performance Overview offscreen probe exports
+  41,472,000 bytes of logical attachment area (18,432,000 at 720p),
+  plus sparse depth sampling. The Metal Performance Overview offscreen probe exports
   no per-frame or extended-system rows, and its only GPU counter is
-  RT Unit Active. Physical tile traffic and paired Chrome frame
-  costs remain open. Raw captures, provenance, paired rows and
-  counter exports are in `current-main/m2-closeout-59e76f3/`.
+  RT Unit Active. The Xcode capture API saved both matched 1080p
+  frames at tick 9, solar hour 0.010666, on the same Ground E root.
+  Replay is queued for an owner-present slot. The overseer deferred
+  that screen step from M2 on 8 November. Physical traffic remains
+  unmeasured. Raw data and rerun steps are in
+  `current-main/m2-closeout-59e76f3/`.
+
+  | Chrome 156, M3 Max Metal WebGPU, 1280×720 | 1-minute load | Render CPU p50 / p95 (ms) | GPU pass-sum p50 / p95 (ms) |
+  | --- | ---: | ---: | ---: |
+  | Midnight off 1 | 42.8–48.5 | 0.50 / 0.70 | 2.490 / 7.799 |
+  | Midnight on 1 | 48.5–46.6 | 0.40 / 0.70 | 3.801 / 7.733 |
+  | Midnight on 2 | 46.6–44.9 | 0.40 / 0.70 | 1.180 / 1.376 |
+  | Midnight off 2 | 44.9–42.5 | 0.40 / 0.60 | 2.228 / 3.146 |
+  | Twilight off 1 | 42.5–41.5 | 0.40 / 0.60 | 2.163 / 2.359 |
+  | Twilight on 1 | 41.5–38.5 | 0.40 / 0.60 | 1.180 / 1.376 |
+  | Twilight on 2 | 38.5–35.8 | 0.40 / 0.70 | 1.180 / 1.376 |
+  | Twilight off 2 | 35.8–33.5 | 0.40 / 0.70 | 2.163 / 2.490 |
+
+  All eight paused Ground E rows used the same Wasm (`429ade00`,
+  `172ce6fe` plus report-only timing patch), 600 complete GPU samples
+  each, and zero overloads, shed views or report drops. “On” enables
+  the production visibility selector. It does not assert a star draw
+  on every sample. Each GPU sum
+  includes the surface blit. The first midnight on-arm median rose
+  53%, with broad tails and rises in near and far shadow buckets. The
+  second fell 47%. The lower on-arm twilight sums coincide with much
+  lower display and blit buckets. These loaded rows establish the
+  observed workload range. Isolated star-pass cost is unresolved.
+  Raw arm reports are in `tmp/g3s-stars-main-wip/tmp/m2-chrome-cost-20261108T064050Z/`.
 
 - Star integration `00c2645` is on `codex/g3s-stars-integration`. Both
   graphs preserve Frustum count copies and nonblocking slot retirement.
