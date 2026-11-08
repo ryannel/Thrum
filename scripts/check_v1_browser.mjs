@@ -9,7 +9,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
-const cases = ['normal', 'pause', 'resize', 'overload', 'input', 'controls', 'tabs', 'params', 'device-loss', 'late-device-loss', 'device-recovery', 'device-recovery-retry', 'sky-reflections', 'valley', 'valley-recovery', 'valley-late-attach', 'material', 'material-disabled', 'field', 'field-direct', 'field-occlusion', 'field-oracle', 'route'];
+const cases = ['normal', 'pause', 'resize', 'overload', 'input', 'controls', 'tabs', 'params', 'device-loss', 'late-device-loss', 'device-recovery', 'device-recovery-retry', 'sky-reflections', 'valley', 'valley-recovery', 'valley-late-attach', 'material', 'material-disabled', 'field', 'field-direct', 'field-occlusion', 'field-oracle', 'route', 'moving-route', 'moving-route-controls'];
 const configureFailureSentinel = 'THRUM_G3B_CONFIGURE_ONCE';
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -24,7 +24,7 @@ function options(args) {
     if (!args[i].startsWith('--') || !['case', 'web-root', 'chrome', 'output', 'timeout-ms', 'cook', 'assets-source'].includes(key) || !args[i + 1]) throw new Error(`Unknown or incomplete argument: ${args[i]}`);
     result[key] = args[++i];
   }
-  if (result.case !== 'all' && !cases.includes(result.case)) throw new Error(`Unknown case: ${result.case}`);
+  if (result.case !== 'all' && !cases.includes(result.case) && !Object.hasOwn(movingControls, result.case.replace(/^moving-route-/, ''))) throw new Error(`Unknown case: ${result.case}`);
   result['timeout-ms'] = Number(result['timeout-ms']);
   if (!Number.isSafeInteger(result['timeout-ms']) || result['timeout-ms'] < 10000 || result['timeout-ms'] > 600000) throw new Error('--timeout-ms must be 10000..600000 per case');
   return result;
@@ -1146,7 +1146,7 @@ async function qualifySkyReflections(cdp, sessionId, poll, timeout, output, evid
 
 async function qualify(cdp, mode, origin, output, directory, wasm, timeout, assetsOrigin, assetsSource, files) {
   const { targetId } = await cdp.call('Target.createTarget', { url: 'about:blank' });
-  let sessionId, state, response, input, game, pausedAt, pause, controls, params, tabs;
+  let sessionId, state, response, input, game, pausedAt, pause, controls, params, tabs, otherTarget;
   // Requests the page makes to the dev server, in order, for the mesh edit's asset identity.
   const assetRequests = [];
   let failed = false;
@@ -1164,12 +1164,14 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
   const tabCase = mode === 'tabs';
   const oracleCase = mode.startsWith('field-oracle-');
   const routeCase = mode.startsWith('route-');
+  const movingCase = mode === 'moving-route' || mode.startsWith('moving-route-');
+  const movingControl = movingCase && mode !== 'moving-route' ? mode.slice('moving-route-'.length) : undefined;
   const routeFile = routeCase ? `showcase-${mode.slice('route-'.length)}.params.json` : undefined;
   const skyCase = mode === 'sky-reflections' || valleyCase;
   const faults = [], timeline = [];
   let loss, recovery, sky, material, oracle, route, intentionalDestroys = 0;
   const onDestroy = () => { intentionalDestroys++; };
-  const url = routeCase ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&params=${routeFile}` : materialCase || materialDisabled ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&material=case.material.wgsl` : valleyCase || valleyRecovery || lateAttach ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}` : mode === 'params' ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&params=case.params.json` : mode === 'controls' || tabCase || destroyCase || skyCase ? `${origin}/` : mode === 'field' ? `${origin}/?qualify&field` : mode === 'field-direct' ? `${origin}/?qualify&field&culling=direct` : mode === 'field-occlusion' ? `${origin}/?qualify&field&culling=occlusion` : oracleCase ? `${origin}/?field&culling=${mode.slice('field-oracle-'.length)}&params=field-oracle.params.json` : `${origin}/?qualify${['normal', 'input'].includes(mode) ? '' : `&${mode}-probe`}`;
+  const url = movingCase ? `${origin}/route.html?route=${movingRouteFile}&assets=${encodeURIComponent(assetsOrigin)}${movingControl === 'phi' ? '&phi=0.1' : ''}` : routeCase ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&params=${routeFile}` : materialCase || materialDisabled ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&material=case.material.wgsl` : valleyCase || valleyRecovery || lateAttach ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}` : mode === 'params' ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&params=case.params.json` : mode === 'controls' || tabCase || destroyCase || skyCase ? `${origin}/` : mode === 'field' ? `${origin}/?qualify&field` : mode === 'field-direct' ? `${origin}/?qualify&field&culling=direct` : mode === 'field-occlusion' ? `${origin}/?qualify&field&culling=occlusion` : oracleCase ? `${origin}/?field&culling=${mode.slice('field-oracle-'.length)}&params=field-oracle.params.json` : `${origin}/?qualify${['normal', 'input'].includes(mode) ? '' : `&${mode}-probe`}`;
   const log = line => { timeline.push(line); console.log(`${mode}: ${line}`); };
   try {
     ({ sessionId } = await cdp.call('Target.attachToTarget', { targetId, flatten: true }));
@@ -1190,11 +1192,17 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
       }
     };
     for (const domain of ['Runtime', 'Page']) await cdp.call(`${domain}.enable`, {}, sessionId);
-    await cdp.call('Network.enable', { maxResourceBufferSize: wasm.bytes.length * 2, maxTotalBufferSize: wasm.bytes.length * 3 + (valleyCase || valleyRecovery || lateAttach || materialCase || materialDisabled || routeCase || mode === 'params' ? 256 << 20 : 0) }, sessionId);
+    await cdp.call('Network.enable', { maxResourceBufferSize: wasm.bytes.length * 2, maxTotalBufferSize: wasm.bytes.length * 3 + (valleyCase || valleyRecovery || lateAttach || materialCase || materialDisabled || routeCase || movingCase || mode === 'params' ? 256 << 20 : 0) }, sessionId);
     await cdp.call('Network.setCacheDisabled', { cacheDisabled: true }, sessionId);
     await cdp.call('Page.addScriptToEvaluateOnNewDocument', { source: observeFaults }, sessionId);
     await cdp.call('Emulation.setDeviceMetricsOverride', { width: 1280, height: 1100, deviceScaleFactor: 1, mobile: false }, sessionId);
     await cdp.call('Target.activateTarget', { targetId });
+    // The hidden-start control loads the route page behind another active tab.
+    if (movingControl === 'hidden-start') {
+      ({ targetId: otherTarget } = await cdp.call('Target.createTarget', { url: 'about:blank' }));
+      await cdp.call('Target.activateTarget', { targetId: otherTarget });
+    }
+    if (movingControl === 'generation') await publishSecondGeneration(assetsSource, output, timeout);
     if (lateAttach) await cdp.call('Fetch.enable', { patterns: [{ urlPattern: `${assetsOrigin}/*` }] }, sessionId);
     await cdp.call('Page.navigate', { url }, sessionId);
     let last = '', pressedAt, releasedAt;
@@ -1311,6 +1319,8 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
       await qualifyTabs(cdp, sessionId, targetId, poll, timeout, tabs);
     }
     else if (oracleCase) oracle = await captureFieldOracle(cdp, sessionId, poll, timeout, output, mode, onDestroy);
+    else if (movingControl) route = await qualifyMovingControl(cdp, sessionId, targetId, poll, timeout, output, files, movingControl, otherTarget);
+    else if (movingCase) route = await qualifyMovingRoute(cdp, sessionId, poll, timeout, output, files);
     else if (routeCase) {
       route = await qualifyRoute(cdp, sessionId, poll, timeout, output, mode, routeFile, files);
       if (timeline.some(line => /params|refused/.test(line))) throw new Error(`Parameter problem reached #status: ${JSON.stringify(timeline)}`);
@@ -1350,7 +1360,7 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
       return /^adapter=/.test(state.status ?? '');
     }, timeout, `${mode} 600 completed GPU samples`);
     const report = material?.final.report ?? sky?.final.report ?? recovery?.snapshots.final.report ?? loss?.snapshots.final.report ?? controls?.snapshots.complete.report ?? state.status;
-    if (!destroyCase && !skyCase && !materialCase && !materialDisabled && !oracleCase && !routeCase && !tabCase && mode !== 'params' && (field(report, 'samples') !== 600 || !(field(report, 'presented') >= 600))) throw new Error('Qualification requires 600 GPU-complete samples and at least 600 present calls');
+    if (!destroyCase && !skyCase && !materialCase && !materialDisabled && !oracleCase && !routeCase && !movingCase && !tabCase && mode !== 'params' && (field(report, 'samples') !== 600 || !(field(report, 'presented') >= 600))) throw new Error('Qualification requires 600 GPU-complete samples and at least 600 present calls');
     if (state.hidden) throw new Error('Qualification target finished hidden');
     // The field pages must run the mode they were asked for, and Occlusion must hide: Frustum draws at least 21.6%
     // of the field at every tick of the native flythrough, so Occlusion's median stays under a fifth of active.
@@ -1361,15 +1371,20 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
     if (mode === 'resize' && (state.width !== 960 || state.height !== 540 || !/extent=960x540;/.test(state.status))) throw new Error('Canvas/surface resize to 960x540 not applied');
     if (mode === 'overload' && !(field(state.status, 'overload_events') > 0 && field(state.status, 'refused_ticks') > 0)) throw new Error('Intentional visible delay did not report refused ticks');
     if (mode === 'input' && !(input?.stoppedX > input?.initialX + 0.01 && Math.abs(playerX(state) - input.stoppedX) <= 0.001)) throw new Error(`Held/released KeyD failed: ${JSON.stringify(input)}, final=${playerX(state)}`);
-    if (!response || response.response.status !== 200) throw new Error('Actual Wasm response missing or not HTTP 200');
-    const body = await cdp.call('Network.getResponseBody', { requestId: response.requestId }, sessionId);
-    const actualWasmSha256 = sha(Buffer.from(body.body, body.base64Encoded ? 'base64' : 'utf8'));
-    const disk = sha(await fs.readFile(path.join(directory, 'v1_game_bg.wasm')));
-    if (actualWasmSha256 !== disk || disk !== wasm.sha256) throw new Error('Loaded Wasm differs from the built artifact on disk');
+    // A route page hidden at start refuses before it loads the game, so it has no Wasm to identify.
+    let actualWasmSha256 = null;
+    if (movingControl !== 'hidden-start') {
+      if (!response || response.response.status !== 200) throw new Error('Actual Wasm response missing or not HTTP 200');
+      const body = await cdp.call('Network.getResponseBody', { requestId: response.requestId }, sessionId);
+      actualWasmSha256 = sha(Buffer.from(body.body, body.base64Encoded ? 'base64' : 'utf8'));
+      const disk = sha(await fs.readFile(path.join(directory, 'v1_game_bg.wasm')));
+      if (actualWasmSha256 !== disk || disk !== wasm.sha256) throw new Error('Loaded Wasm differs from the built artifact on disk');
+    } else if (response) throw new Error('The route page loaded the game while hidden at start');
     if (sky) sky.actualWasmSha256 = actualWasmSha256;
     if (faults.length) throw new Error(`Runtime faults: ${JSON.stringify(faults)}`);
-    game ??= await existingGame(cdp, sessionId);
-    if (!lossCase && (await game.read()).fault) throw new Error('Graphics device fault invalidated qualification');
+    // The moving route page releases its game when done and records its own graphics fault check.
+    if (!movingCase) game ??= await existingGame(cdp, sessionId);
+    if (!movingCase && !lossCase && (await game.read()).fault) throw new Error('Graphics device fault invalidated qualification');
     await screenshot(cdp, sessionId, output, mode);
     if (faults.length) throw new Error(`Runtime faults: ${JSON.stringify(faults)}`);
     const scope = route?.scope ?? material?.scope ?? sky?.scope ?? recovery?.scope ?? (lossCase ? loss.scope : tabCase ? 'Actual Chrome tab activation, document visibility, input release and manual pause; no display cadence claim' : mode === 'params' ? 'Parameter file applied and reloaded through the page; no timing claim' : mode === 'controls' ? 'Manual pause with ongoing RAF and explicit visibility-hook composition; not actual tab visibility' : mode === 'pause' ? 'Explicit set_visible(false/true) hook; not actual tab visibility' : 'Headless WebGPU function; not display/cadence qualification');
@@ -1392,6 +1407,154 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
     catch (error) { if (!failed) throw error; }
     cdp.event = () => {};
   }
+}
+
+// The moving proof route: route.html drives the actual authored camera one tick per step at the
+// route's fixed in-tick phase, with no requestAnimationFrame. The web build must ship the checked-in
+// route file byte for byte, and the served cooked store must be the generation and root it names.
+const movingRouteFile = 'moving-v1.json';
+const movingRouteSource = path.join(repo, 'examples/v1-game/routes', movingRouteFile);
+async function movingRouteFiles(files, directory) {
+  const expected = await fs.readFile(movingRouteSource);
+  const bytes = await fs.readFile(path.join(directory, movingRouteFile));
+  if (sha(bytes) !== sha(expected)) throw new Error(`Web build ships a stale ${movingRouteFile}: ${sha(bytes)}, checked in ${sha(expected)}`);
+  files.set(`/${movingRouteFile}`, { bytes, type: 'application/json', sha256: sha(bytes) });
+  const page = await fs.readFile(path.join(directory, 'route.html'));
+  files.set('/route.html', { bytes: page, type: 'text/html', sha256: sha(page) });
+  files.movingRoute = expected;
+  files.movingRouteExtent = JSON.parse(expected.toString('utf8')).render_extent;
+}
+
+// THRMHEAD: magic, version, epoch, then the published generation (u64 LE) and its 32-byte root.
+async function cookedHead(output) {
+  const head = await fs.readFile(path.join(output, 'store', 'HEAD'));
+  if (head.subarray(0, 8).toString('latin1') !== 'THRMHEAD' || head.length < 56) throw new Error('Cooked store HEAD unreadable');
+  return { generation: Number(head.readBigUInt64LE(16)), root: head.subarray(24, 56).toString('hex') };
+}
+
+async function qualifyMovingRoute(cdp, sessionId, poll, timeout, output, files) {
+  const deadline = Date.now() + timeout;
+  const route = JSON.parse(files.movingRoute.toString('utf8'));
+  const cooked = await cookedHead(output);
+  if (cooked.generation !== route.cooked_generation || cooked.root !== route.cooked_root) throw new Error(`moving-route: served cooked store ${JSON.stringify(cooked)} is not the route's generation ${route.cooked_generation} root ${route.cooked_root}`);
+  const evaluate = async expression => {
+    const result = await cdp.call('Runtime.evaluate', { expression, returnByValue: true }, sessionId);
+    if (result.exceptionDetails) throw new Error(JSON.stringify(result.exceptionDetails));
+    return result.result.value;
+  };
+  const folder = 'moving-route-checkpoints';
+  await fs.mkdir(path.join(output, folder));
+  const captures = [];
+  for (;;) {
+    if (Date.now() > deadline) throw new Error('Timed out: moving route');
+    await poll();
+    const state = await evaluate('(() => { const r = window.thrumRoute; return r ? { done: r.done, error: r.error, waiting: r.waiting } : null; })()');
+    if (state?.error) throw new Error(`moving-route refused: ${state.error}`);
+    if (state?.done) break;
+    if (!state?.waiting) { await sleep(10); continue; }
+    if (captures.some(capture => capture.name === state.waiting)) throw new Error(`moving-route held checkpoint ${state.waiting} twice`);
+    const clip = await evaluate(`(() => { const r = document.querySelector('canvas').getBoundingClientRect(); return { x: r.x + scrollX, y: r.y + scrollY, width: r.width, height: r.height, scale: 1 }; })()`);
+    const image = await screenshot(cdp, sessionId, output, 'moving-route', { file: `${folder}/${state.waiting}.png`, clip });
+    if (image.width !== route.render_extent[0] || image.height !== route.render_extent[1]) throw new Error(`moving-route: checkpoint ${state.waiting} captured ${image.width}x${image.height}, not the route extent`);
+    captures.push({ name: state.waiting, label: 'Chrome presented canvas', ...image });
+    await evaluate('window.thrumRoute.resume(), true');
+  }
+  const record = JSON.parse(await evaluate('JSON.stringify(window.thrumRoute)'));
+  const names = route.checkpoints.map(checkpoint => checkpoint.name);
+  if (JSON.stringify(captures.map(capture => capture.name)) !== JSON.stringify(names) || JSON.stringify(record.checkpoints.map(checkpoint => checkpoint.name)) !== JSON.stringify(names)) throw new Error(`moving-route checkpoints ${JSON.stringify(captures.map(capture => capture.name))} are not ${JSON.stringify(names)}`);
+  const origin = route.origin_tick, last = origin + route.keys.at(-1).tick;
+  for (let tick = origin; tick <= last; tick += 1) if (!record.samples[tick]) throw new Error(`moving-route: no sample for routed tick ${tick}`);
+  await fs.writeFile(path.join(output, 'moving-route.record.json'), JSON.stringify(record, null, 2));
+  return { file: movingRouteFile, sha256: sha(files.movingRoute), cooked, header: record.header, steps: record.steps.length, captures,
+    scope: 'Fresh route.html page with no requestAnimationFrame: the actual authored camera driven one fresh tick per step at the route phase from page clock origin 0, paced by one route-owned timer; checkpoint images are Chrome presented canvas compositor captures, not the submitted pre-display image; no timing or cadence claim' };
+}
+
+// Publish generation 2 of the watched valley copy, so the route page meets a store the route did not declare.
+async function publishSecondGeneration(source, output, timeout) {
+  await stretchRock(source);
+  await waitFor(async () => (await cookedHead(output)).generation === 2, timeout, 'cooked generation 2 published');
+}
+
+// Negative controls for the moving route. Each must end in the page's own refusal with the named reason; phi runs
+// to completion with the wrong phase in its header, for the comparator to reject.
+const movingControls = {
+  'hidden-start': { refusal: /the page started hidden/ },
+  hidden: { refusal: /the page was hidden during the route/ },
+  clamp: { refusal: /clamped, overloaded or dropped/ },
+  // A performance-stamped frame either moves authority off the route or leaves the next step behind the clock.
+  edit: { refusal: /the committed tick moved from \d+ to \d+ outside the route's steps|clamped, overloaded or dropped/ },
+  skip: { refusal: /clamped, overloaded or dropped|not the route extent/ },
+  phi: { refusal: null },
+  // Last: the checker's one cooked server stays at generation 2 afterwards.
+  generation: { refusal: /generation/ },
+};
+
+async function qualifyMovingControl(cdp, sessionId, targetId, poll, timeout, output, files, control, otherTarget) {
+  const deadline = Date.now() + timeout;
+  const expected = movingControls[control];
+  const evaluate = async expression => {
+    const result = await cdp.call('Runtime.evaluate', { expression, returnByValue: true }, sessionId);
+    if (result.exceptionDetails) throw new Error(JSON.stringify(result.exceptionDetails));
+    return result.result.value;
+  };
+  const evidence = { control };
+  let injected = false;
+  for (;;) {
+    if (Date.now() > deadline) throw new Error(`Timed out: moving-route ${control} control`);
+    await poll();
+    const state = await evaluate('(() => { const r = window.thrumRoute; return r ? { done: r.done, error: r.error, waiting: r.waiting } : null; })()');
+    if (state?.done) { evidence.error = state.error; break; }
+    if (!state?.waiting) { await sleep(10); continue; }
+    if (control === 'phi') {
+      // Checkpoint images at the wrong phase, for the image side of the comparator.
+      const folder = 'moving-route-phi-checkpoints';
+      await fs.mkdir(path.join(output, folder), { recursive: true });
+      const clip = await evaluate(`(() => { const r = document.querySelector('canvas').getBoundingClientRect(); return { x: r.x + scrollX, y: r.y + scrollY, width: r.width, height: r.height, scale: 1 }; })()`);
+      (evidence.captures ??= []).push({ name: state.waiting, label: 'Chrome presented canvas', ...await screenshot(cdp, sessionId, output, 'moving-route-phi', { file: `${folder}/${state.waiting}.png`, clip }) });
+    }
+    if (!injected && ['hidden', 'clamp', 'edit', 'skip'].includes(control)) {
+      injected = true;
+      evidence.at = state.waiting;
+      if (control === 'hidden') {
+        ({ targetId: evidence.otherTarget } = await cdp.call('Target.createTarget', { url: 'about:blank' }));
+        await cdp.call('Target.activateTarget', { targetId: evidence.otherTarget });
+        evidence.hidden = await waitFor(async () => await evaluate('document.hidden') || undefined, 10000, 'route page hidden by another active tab');
+      } else if (control === 'skip') {
+        evidence.resized = await evaluate(`(() => { const c = document.querySelector('canvas'); c.width = ${files.movingRouteExtent[0] - 64}; return c.width; })()`);
+      } else {
+        const game = await existingGame(cdp, sessionId);
+        if (control === 'clamp') evidence.frame = await game.invoke('game.frame(0); return true;');
+        else {
+          // Every route-owned edit must be refused, then a performance-stamped frame moves authority off the route.
+          evidence.edits = {};
+          for (const [name, call] of [['yaw', 'game.set_camera_yaw(0.3)'], ['pitch', 'game.set_camera_pitch(-0.1)'], ['time', 'game.set_time_of_day(0.5)'], ['controls', 'game.set_controls(1, 0)']]) {
+            evidence.edits[name] = await game.invoke(`try { ${call}; return 'accepted'; } catch (error) { return String(error); }`);
+            if (!/a moving route is installed/.test(evidence.edits[name])) throw new Error(`moving-route edit control: ${name} was not refused: ${evidence.edits[name]}`);
+          }
+          evidence.frame = await game.invoke('const now = performance.now(), next = game.route_step_ms(0.5); game.frame(now); return { now, next };');
+        }
+      }
+    }
+    await evaluate('window.thrumRoute.resume(), true');
+  }
+  if (otherTarget || evidence.otherTarget) {
+    // Bring the route page back to the front, so the case ends on a visible page.
+    await cdp.call('Target.closeTarget', { targetId: evidence.otherTarget ?? otherTarget });
+    await cdp.call('Target.activateTarget', { targetId });
+    await waitFor(async () => !(await evaluate('document.hidden')) || undefined, 10000, 'route page visible again');
+    await poll();
+  }
+  delete evidence.otherTarget;
+  if (expected.refusal) {
+    if (!expected.refusal.test(evidence.error ?? '')) throw new Error(`moving-route ${control} control ended with ${JSON.stringify(evidence.error)}, not ${expected.refusal}: ${JSON.stringify(evidence)}`);
+  } else {
+    if (evidence.error) throw new Error(`moving-route ${control} control refused: ${evidence.error}`);
+    const record = JSON.parse(await evaluate('JSON.stringify(window.thrumRoute)'));
+    await fs.writeFile(path.join(output, `moving-route-${control}.record.json`), JSON.stringify(record, null, 2));
+    evidence.header = record.header;
+  }
+  evidence.scope = `Negative control: ${control === 'phi' ? 'the route at phase 0.1 on Chrome only, for the comparator to reject' : `the route page must refuse (${expected.refusal})`}`;
+  return evidence;
 }
 
 // One fresh page per checked-in showcase preset, as a person launches each stop. The checked-in
@@ -1670,7 +1833,7 @@ async function cleanup(child, exited, cdp, server, profile) {
 
 async function main() {
   const args = options(process.argv.slice(2));
-  if (!args) { console.log('node scripts/check_v1_browser.mjs [--case all|normal|pause|resize|overload|input|controls|tabs|params|device-loss|late-device-loss|device-recovery|device-recovery-retry|sky-reflections|valley|valley-recovery|valley-late-attach|material|material-disabled|field|field-direct|field-occlusion|field-oracle|route] [--web-root target/v1-game-web] [--cook target/debug/thrum-cook] [--assets-source examples/v1-game/assets/showcase] [--chrome /path/to/Chrome] [--output tmp/new-run] [--timeout-ms 90000]\nRequires Node 24+, an already-built game, and this Mac\'s Apple M3 Max/Metal Chrome. Controls checks manual pause with ongoing RAF; tabs switches real Chrome tabs and checks authority, input release and manual pause; params applies, explains and reloads a parameter file; visibility checks use the explicit hook, not tab hiding. Recovery uses the real restore button; retry injects exactly one standard canvas configure failure. Sky reflections saves nine paused phases and 24 camera/Sun samples; valley repeats them on the cooked valley served by thrum-cook; valley-recovery runs device recovery with that valley attached; valley-late-attach holds the valley requests until the device is lost, then proves the attach made no GPU call on the lost device and the valley draws on the replacement; material reloads a WGSL hook on that valley (valid, refused, and outstanding across a destroyed device) and records contended frame intervals around the valid reload; it needs the development page (web/build.sh --dev), so all leaves it out. material-disabled loads the default page with ?material and proves it starts no material work. Field qualifies the 100,513-instance flythrough with Frustum camera culling; field-direct and field-occlusion qualify it with Direct and Occlusion for a paired comparison; field-oracle pauses three fresh pages and compares Frustum and Occlusion captures with Direct byte for byte. Route launches one fresh page per checked-in examples/v1-game/params/showcase-*.params.json preset with the cooked valley, after requiring the web root to ship each byte for byte and no others; it proves the preset applied and the valley drew, brackets navigation to the first observed cooked draw on the page clock, and captures the paused canvas. The other cases make no timing claim.'); return; }
+  if (!args) { console.log('node scripts/check_v1_browser.mjs [--case all|normal|pause|resize|overload|input|controls|tabs|params|device-loss|late-device-loss|device-recovery|device-recovery-retry|sky-reflections|valley|valley-recovery|valley-late-attach|material|material-disabled|field|field-direct|field-occlusion|field-oracle|route|moving-route|moving-route-controls] [--web-root target/v1-game-web] [--cook target/debug/thrum-cook] [--assets-source examples/v1-game/assets/showcase] [--chrome /path/to/Chrome] [--output tmp/new-run] [--timeout-ms 90000]\nRequires Node 24+, an already-built game, and this Mac\'s Apple M3 Max/Metal Chrome. Controls checks manual pause with ongoing RAF; tabs switches real Chrome tabs and checks authority, input release and manual pause; params applies, explains and reloads a parameter file; visibility checks use the explicit hook, not tab hiding. Recovery uses the real restore button; retry injects exactly one standard canvas configure failure. Sky reflections saves nine paused phases and 24 camera/Sun samples; valley repeats them on the cooked valley served by thrum-cook; valley-recovery runs device recovery with that valley attached; valley-late-attach holds the valley requests until the device is lost, then proves the attach made no GPU call on the lost device and the valley draws on the replacement; material reloads a WGSL hook on that valley (valid, refused, and outstanding across a destroyed device) and records contended frame intervals around the valid reload; it needs the development page (web/build.sh --dev), so all leaves it out. material-disabled loads the default page with ?material and proves it starts no material work. Field qualifies the 100,513-instance flythrough with Frustum camera culling; field-direct and field-occlusion qualify it with Direct and Occlusion for a paired comparison; field-oracle pauses three fresh pages and compares Frustum and Occlusion captures with Direct byte for byte. Route launches one fresh page per checked-in examples/v1-game/params/showcase-*.params.json preset with the cooked valley, after requiring the web root to ship each byte for byte and no others; it proves the preset applied and the valley drew, brackets navigation to the first observed cooked draw on the page clock, and captures the paused canvas. Moving-route (not in all) loads route.html with the checked-in examples/v1-game/routes/moving-v1.json against the served cooked store it names, captures the presented canvas at each checkpoint hold and saves the page\'s per-tick record; moving-route-controls runs its negative controls, one fresh page each: hidden at start, hidden mid-route, a clamped timestamp, refused edits plus a performance-stamped frame, a canvas resize, an undeclared second cooked generation (each must end in its named refusal), and phase 0.1 for the comparator. The other cases make no timing claim.'); return; }
   if (Number(process.versions.node.split('.')[0]) < 24 || typeof WebSocket !== 'function') throw new Error('Node 24+ with builtin WebSocket is required');
   const directory = await fs.realpath(path.resolve(repo, args['web-root']));
   const files = await assets(directory);
@@ -1719,12 +1882,14 @@ async function main() {
     hardware(gpu);
     // `all` checks the default page; `material` needs the development page, so it runs on its own.
     const modes = [];
-    for (const mode of args.case === 'all' ? cases.filter(mode => mode !== 'material') : [args.case]) {
-      modes.push(...(mode === 'field-oracle' ? ['field-oracle-direct', 'field-oracle-frustum', 'field-oracle-occlusion'] : mode === 'route' ? await routeStops(files, directory) : [mode]));
+    // The moving route is its own run: it needs route.html and makes a separate evidence record.
+    for (const mode of args.case === 'all' ? cases.filter(mode => mode !== 'material' && !mode.startsWith('moving-route')) : [args.case]) {
+      modes.push(...(mode === 'moving-route-controls' ? Object.keys(movingControls).map(control => `moving-route-${control}`) : mode === 'field-oracle' ? ['field-oracle-direct', 'field-oracle-frustum', 'field-oracle-occlusion'] : mode === 'route' ? await routeStops(files, directory) : [mode]));
     }
+    if (modes.some(mode => mode.startsWith('moving-route'))) await movingRouteFiles(files, directory);
     let assetsOrigin;
     let assetsSource;
-    if (modes.some(mode => ['valley', 'valley-recovery', 'valley-late-attach', 'params', 'material', 'material-disabled'].includes(mode) || mode.startsWith('route-'))) ({ cook, origin: assetsOrigin, source: assetsSource } = await serveCooked(args, output));
+    if (modes.some(mode => ['valley', 'valley-recovery', 'valley-late-attach', 'params', 'material', 'material-disabled'].includes(mode) || mode.startsWith('route-') || mode.startsWith('moving-route'))) ({ cook, origin: assetsOrigin, source: assetsSource } = await serveCooked(args, output));
     for (const mode of modes) results.push(await qualify(cdp, mode, serving.origin, output, directory, files.get('/v1_game_bg.wasm'), args['timeout-ms'], assetsOrigin, assetsSource, files));
     if (modes.includes('field-oracle-direct')) results.push(await compareFieldOracle(output, results));
   } catch (error) { failure = error; }

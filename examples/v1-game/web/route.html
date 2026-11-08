@@ -17,17 +17,23 @@
       The moving proof route: ?route=<route file url>&assets=<thrum-cook watch --serve origin>.
       This page never schedules requestAnimationFrame, attaches no input, button or timer
       handlers to the game, and does not follow later cooked publications. The clock origin
-      is page time 0; each step's target comes from the game (tick + 1 + 1/2)·P. Wall time
-      only paces steps, with one route-owned timer per step, and never reaches the game.
+      is page time 0; each step's target comes from the game (tick + 1 + φ)·P. Wall time
+      only paces steps, with one route-owned timer per step, and never reaches the game. Where
+      no frame slot is free yet, the page waits in 1 ms timer steps, for at most 500 ms, for GPU completions
+      instead of dropping that step's view.
       window.thrumRoute is the checker's record; at each checkpoint the page holds until the
       checker calls window.thrumRoute.resume() after its canvas screenshot.
     -->
     <script type="module">
       import init, { create_route_game, fetch_cooked_valley } from "./v1_game.js";
 
-      const PHI = 0.5;
+      // Phase tolerance on each logged presentation alpha, as on the native driver.
+      const ALPHA_TOLERANCE = 1e-4;
       const PERIOD_MS = 1000 / 60;
       const DRAIN_STEPS = 4;
+      // Bound on waiting for GPU completions to free a frame slot before a step. Waiting never changes a step's
+      // world time, so the bound only refuses a stalled GPU; a shared, contended GPU can stall for some periods.
+      const SLOT_WAIT_MS = 500;
       const FRAME_CAP = 560;
       const status = document.querySelector("#status");
       const record = { done: false, error: null, header: null, steps: [], samples: {}, checkpoints: [], waiting: null };
@@ -35,20 +41,24 @@
       let hidden = document.hidden;
       document.addEventListener("visibilitychange", () => { hidden = hidden || document.hidden; });
 
-      const yieldTask = () => new Promise((resolve) => {
-        const channel = new MessageChannel();
-        channel.port1.onmessage = () => resolve();
-        channel.port2.postMessage(0);
-      });
-      // One route-owned timer to the next earliest real-time step, rechecked on wake,
-      // then a bounded macrotask yield so WebGPU completion callbacks run.
-      const pace = async (deadline) => {
+      const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+      // One route-owned timer to the next earliest real-time step, rechecked on wake.
+      // Then, only where needed, bounded one-millisecond timer waits so WebGPU completion
+      // callbacks run and free a frame slot. Returns the number of those waits and their duration.
+      const pace = async (game, deadline) => {
         for (;;) {
           const remaining = deadline - performance.now();
           if (remaining <= 0) break;
-          await new Promise((resolve) => setTimeout(resolve, remaining));
+          await wait(remaining);
         }
-        for (let i = 0; i < 2; i += 1) await yieldTask();
+        let waits = 0;
+        const started = performance.now();
+        while (!game.route_slot_ready()) {
+          if (performance.now() - started > SLOT_WAIT_MS) fail(`no frame slot freed within ${SLOT_WAIT_MS} ms (${waits} waits) before the step after tick ${game.committed_tick()}`);
+          waits += 1;
+          await wait(1);
+        }
+        return { waits, ms: waits ? performance.now() - started : 0 };
       };
       const fail = (message) => { throw new Error(message); };
 
@@ -67,23 +77,31 @@
         const valley = await fetch_cooked_valley(query.get("assets"));
         game.attach_cooked_valley(valley);
         game.set_visible(true, 0);
+        // The route's phase; ?phi replaces it only for the negative control, and the header logs the one used.
+        const phi = query.has("phi") ? Number(query.get("phi")) : route.phase[0] / route.phase[1];
+        if (!(phi > 0 && phi < 1)) fail(`phase ${phi} is not inside a tick`);
         const origin = route.origin_tick;
         const last = origin + route.keys[route.keys.length - 1].tick;
         const checkpoints = new Map(route.checkpoints.map((c) => [origin + c.tick, c.name]));
         record.header = {
           target: "chrome", image_label: "Chrome presented canvas", render_extent: [canvas.width, canvas.height],
-          device_pixel_ratio: dpr, phase: route.phase, origin_tick: origin, overlay: route.overlay,
+          device_pixel_ratio: dpr, phase: query.has("phi") ? [phi, 1] : route.phase, origin_tick: origin, overlay: route.overlay,
           user_agent: navigator.userAgent,
         };
         let before = JSON.parse(game.route_report(Number.MAX_SAFE_INTEGER));
         if (before.timestamp_clamps !== 0) fail("the clock clamped before the route");
         let nextSample = 0;
         let frames = 0;
+        record.slot_waits = 0;
+        record.slot_wait_max_ms = 0;
         let deadline = performance.now();
+        // Only the route's own steps may move authority: any other frame call is refused.
+        let expectedTick = game.committed_tick();
         status.textContent = "Running the moving route…";
         for (let drain = 0; ; ) {
           if (hidden || document.hidden) fail("the page was hidden during the route");
           const tick = game.committed_tick();
+          if (tick !== expectedTick) fail(`the committed tick moved from ${expectedTick} to ${tick} outside the route's steps`);
           if (tick === origin - 1) game.install_route(text);
           const routed = tick >= last;
           if (routed) {
@@ -94,26 +112,34 @@
             drain += 1;
           }
           if (++frames > FRAME_CAP) fail(`the route exceeded ${FRAME_CAP} frames`);
-          await pace(deadline);
+          const slot = await pace(game, deadline);
+          record.slot_waits += slot.waits;
+          record.slot_wait_max_ms = Math.max(record.slot_wait_max_ms, slot.ms);
           deadline = performance.now() + PERIOD_MS;
-          game.frame(game.route_step_ms(PHI));
+          game.frame(game.route_step_ms(phi));
           const report = JSON.parse(game.route_report(nextSample));
           const step = {
             tick: report.tick, callbacks: report.callbacks - before.callbacks, presented: report.presented - before.presented,
-            timestamp_clamps: report.timestamp_clamps, dropped_reports: report.dropped_reports,
+            timestamp_clamps: report.timestamp_clamps, overload_events: report.overload_events, dropped_reports: report.dropped_reports,
             dropped_views: report.dropped_views, generation: report.generation, extent: report.extent,
             committed_solar_hours: report.committed_solar_hours, committed_solar_bits: report.committed_solar_bits,
+            slot_waits: slot.waits, slot_wait_ms: slot.ms,
           };
+          if (step.timestamp_clamps !== 0 || step.overload_events !== 0 || step.dropped_reports !== 0 || step.dropped_views !== 0) {
+            fail(`step at tick ${step.tick} clamped, overloaded or dropped: ${JSON.stringify(step)}`);
+          }
           if (step.tick !== tick + 1 || step.callbacks !== 1 || step.presented !== 1) {
             fail(`step after tick ${tick} did not present exactly one fresh tick: ${JSON.stringify(step)}`);
           }
-          if (step.timestamp_clamps !== 0 || step.dropped_reports !== 0 || step.dropped_views !== 0) {
-            fail(`step at tick ${step.tick} clamped or dropped: ${JSON.stringify(step)}`);
+          if (step.extent[0] !== route.render_extent[0] || step.extent[1] !== route.render_extent[1]) {
+            fail(`step at tick ${step.tick} rendered ${step.extent.join("x")}, not the route extent`);
           }
           for (const sample of report.samples) {
+            if (Math.abs(sample.alpha - phi) > ALPHA_TOLERANCE) fail(`tick ${sample.tick} drifted to alpha ${sample.alpha}`);
             record.samples[sample.tick] = sample;
             nextSample = Math.max(nextSample, sample.tick + 1);
           }
+          expectedTick = step.tick;
           if (step.tick >= origin) record.steps.push(step);
           before = report;
           const name = checkpoints.get(step.tick);
@@ -125,6 +151,8 @@
             deadline = performance.now() + PERIOD_MS;
           }
         }
+        const fault = game.graphics_fault();
+        if (fault) fail(`graphics fault: ${fault}`);
         record.done = true;
         status.textContent = "Moving route complete.";
       } catch (error) {

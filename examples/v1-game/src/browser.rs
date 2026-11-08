@@ -315,6 +315,14 @@ impl BrowserGame {
         game::install_route(&mut self.shell, route, drawn).map_err(js_error)
     }
 
+    /// Collect GPU completions without admitting time and report whether a frame
+    /// slot is free, so the route page drains callbacks before a step only where needed.
+    /// # Errors
+    /// Returns a device polling fault.
+    pub fn route_slot_ready(&mut self) -> Result<bool, JsValue> {
+        game::route_slot_ready(&mut self.shell).map_err(js_error)
+    }
+
     /// Latest committed authority tick.
     #[must_use]
     pub fn committed_tick(&self) -> f64 {

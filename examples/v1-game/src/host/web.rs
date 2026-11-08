@@ -158,6 +158,11 @@ pub(crate) fn route_step_ms(shell: &Shell, phi: f64) -> f64 {
     super::scene_source::route_step_ms(shell.host().world().tick(), phi)
 }
 
+/// Collect GPU completions without admitting time; whether a frame slot is free.
+pub(crate) fn route_slot_ready(shell: &mut Shell) -> Result<bool, String> {
+    shell.poll_completed()
+}
+
 /// Latest committed authority tick.
 pub(crate) fn committed_tick(shell: &Shell) -> u64 {
     shell.host().world().tick()

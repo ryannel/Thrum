@@ -10,6 +10,7 @@ in run.json there. The route's values live only in examples/v1-game/params/showc
   check [--save-baseline] [--baseline PATH] [--source DIR [--recalibrate]]
                                    visible check: the cooked valley on both targets, not a fallback
   startup [--runs N]               Chrome startup proxy: N fresh browsers, navigation to first observed cooked draw
+  moving                           moving proof route (seam 8): native and Chrome twice each, compared per tick
 """
 
 import argparse
@@ -71,6 +72,11 @@ THRESHOLDS = [1.0, 1.0, 1.0]
 # regression that arrives with a content change is not absorbed.
 CALIBRATED_ROOT = '70d2baf823d09d85574f7cdfce7102648754544dd7d68659e9bd92dd5f30e21d'
 CONTROL_RATIO = 10.0
+
+# The moving proof route (seam 8). The route file is the only source of its keys, phase and checkpoints.
+MOVING_ROUTE = REPO / 'examples/v1-game/routes/moving-v1.json'
+# Per-tick identity both targets must log bit for bit at every routed tick.
+MOVING_IDENTITY = ['alpha_bits', 'rendered_solar_bits', 'committed_solar_bits', 'eye', 'yaw', 'pitch', 'epoch', 'submission']
 
 
 class Failure(Exception):
@@ -707,10 +713,193 @@ def startup(args):
         raise SystemExit(1)
 
 
+def moving_native(run, name, store, route_path=MOVING_ROUTE, refusal=None):
+    env = dict(os.environ, THRUM_CAPTURE_SCENE=str(run / name), THRUM_ASSET_STORE=str(store), THRUM_SCENE='valley',
+               THRUM_CAPTURE_ROUTE=str(route_path), THRUM_ROUTE_OVERLAY='proof')
+    with open(run / f'{name}.log', 'w') as log:
+        code = bounded([str(GAME)], log, 300, env=env)
+    if refusal is not None:
+        # A negative control: the native driver must refuse, for the named reason.
+        text = (run / f'{name}.log').read_text()
+        if not code or refusal not in text:
+            raise Failure(f'native control {name} was not refused for "{refusal}" (exit {code}; see {run / f"{name}.log"})')
+        return next(line for line in text.splitlines() if refusal in line)
+    if code:
+        raise Failure(f'native moving route refused or failed (exit {code}; see {run / f"{name}.log"})')
+    lines = [json.loads(line) for line in (run / name / 'route.jsonl').read_text().splitlines()]
+    samples = {}
+    for line in lines[1:]:
+        # The native log carries the committed solar hour on each sample; Chrome reports it per step.
+        samples[line['tick']] = line
+    return lines[0], samples
+
+
+def record_waits(directory):
+    record = json.loads((directory / 'moving-route.record.json').read_text())
+    return {'waits': record['slot_waits'], 'max_ms': record['slot_wait_max_ms']}
+
+
+def moving_chrome(run, name, source, wasm, last):
+    with open(run / f'{name}.log', 'w') as log:
+        code = bounded(['node', str(CHECKER), '--case', 'moving-route', '--cook', str(COOK), '--web-root', str(WEB),
+                        '--assets-source', str(source), '--output', str(run / name)], log, 600, cwd=REPO)
+    if code:
+        raise Failure(f'checker --case moving-route failed (see {run / f"{name}.log"})')
+    result = json.loads((run / name / 'run.json').read_text())['results'][0]
+    if result['actualWasmSha256'] != wasm:
+        raise Failure(f'{name}: Chrome loaded Wasm {result["actualWasmSha256"]}, not the build')
+    record = json.loads((run / name / 'moving-route.record.json').read_text())
+    steps = {step['tick']: step for step in record['steps']}
+    samples = {}
+    for tick, sample in record['samples'].items():
+        tick = int(tick)
+        # Ticks after the route's last key are drain steps that collected its last samples.
+        if tick in steps and tick <= last:
+            samples[tick] = dict(sample, committed_solar_bits=steps[tick]['committed_solar_bits'])
+    return record['header'], samples, steps
+
+
+def moving_controls(run, source, route_file, wasm, native, origin, last):
+    """Negative controls: Chrome page refusals, a Chrome-only phase the comparator must reject, and bad route files."""
+    controls = {}
+    with open(run / 'chrome-controls.log', 'w') as log:
+        code = bounded(['node', str(CHECKER), '--case', 'moving-route-controls', '--cook', str(COOK), '--web-root', str(WEB),
+                        '--assets-source', str(source), '--output', str(run / 'chrome-controls')], log, 900, cwd=REPO)
+    if code:
+        raise Failure(f'checker --case moving-route-controls failed (see {run / "chrome-controls.log"})')
+    for result in json.loads((run / 'chrome-controls' / 'run.json').read_text())['results']:
+        if result['actualWasmSha256'] not in (wasm, None):
+            raise Failure(f'{result["case"]}: Chrome loaded Wasm {result["actualWasmSha256"]}, not the build')
+        controls[result['case']] = result['route'].get('error') or 'completed'
+    # Phase 0.1 on Chrome only: the comparator must reject every routed tick's alpha.
+    record = json.loads((run / 'chrome-controls' / 'moving-route-phi.record.json').read_text())
+    rejected = sum(1 for tick in range(origin, last + 1)
+                   if record['samples'].get(str(tick), {}).get('alpha_bits') != native[tick]['alpha_bits'])
+    if record['header']['phase'] == route_file['phase'] or rejected != last - origin + 1:
+        raise Failure(f'phase 0.1 control: header {record["header"]["phase"]}, {rejected} of {last - origin + 1} ticks rejected')
+    controls['moving-route-phi'] = f'header phase {record["header"]["phase"]}; alpha rejected at {rejected} of {last - origin + 1} ticks'
+    # The image side, reported per checkpoint: a 0.4-tick camera offset may sit below the cell metric where the
+    # camera moves slowly, so only the alpha comparison is required to reject it.
+    controls['moving-route-phi-images'] = {
+        checkpoint['name']: difference(grid(run / 'chrome-controls/moving-route-phi-checkpoints' / f'{checkpoint["name"]}.png'),
+                                       grid(run / 'native-1/checkpoints' / f'{checkpoint["name"]}.ppm'))
+        for checkpoint in route_file['checkpoints']}
+    # Bad route files on the native driver.
+    for name, change, refusal in [
+            ('native-generation', lambda r: r.update(cooked_generation=2), 'is not the route\'s 2'),
+            ('native-frame-cap', lambda r: r['keys'][-1].update(tick=600), 'frame cap'),
+            ('native-yaw-step', lambda r: r['keys'][1].update(yaw_degrees=200.0), 'yaw step over'),
+    ]:
+        bad = json.loads(MOVING_ROUTE.read_text())
+        change(bad)
+        path = run / f'{name}.json'
+        write_json(path, bad)
+        controls[name] = moving_native(run, name, run / 'store', path, refusal)
+    return controls
+
+
+def moving(args):
+    route_file = json.loads(MOVING_ROUTE.read_text())
+    origin, last = route_file['origin_tick'], route_file['origin_tick'] + route_file['keys'][-1]['tick']
+    names = [checkpoint['name'] for checkpoint in route_file['checkpoints']]
+    run = new_run('moving')
+    report = {'command': 'moving', 'route': str(MOVING_ROUTE.relative_to(REPO)), 'route_sha256': sha256(MOVING_ROUTE),
+              'comparator': COMPARATOR, 'passed': False, 'failures': [],
+              'labels': {'native': 'native submitted SDR output', 'chrome': 'Chrome presented canvas'}}
+    report['build_seconds'] = None if args.no_build else build(run, web=True)
+    report['builds'] = identities(web=True, built=not args.no_build)
+    write_json(run / 'run.json', report)
+    failures = report['failures']
+    try:
+        source = copy_source(run)
+        with open(run / 'cook.log', 'w') as log:
+            if bounded([str(COOK), 'cook', str(source), str(run / 'store')], log, 120):
+                raise Failure('thrum-cook cook failed')
+        root = report['generation_1_root'] = store_root(run / 'store')
+        if root != route_file['cooked_root']:
+            raise Failure(f'the cooked root {root} is not the route\'s {route_file["cooked_root"]}')
+        targets = {}
+        for name in ['native-1', 'native-2']:
+            header, samples = moving_native(run, name, run / 'store')
+            targets[name] = {'header': header, 'samples': samples,
+                             'images': {n: run / name / 'checkpoints' / f'{n}.ppm' for n in names}}
+        for name in ['chrome-1', 'chrome-2']:
+            header, samples, steps = moving_chrome(run, name, source, report['builds']['wasm_sha256'], last)
+            targets[name] = {'header': header, 'samples': samples,
+                             'images': {n: run / name / 'moving-route-checkpoints' / f'{n}.png' for n in names},
+                             'slot_waits': record_waits(run / name)}
+            if not (run / name / 'store/cas' / root[:2] / root).is_file():
+                failures.append(f'same cooked input: generation-1 root {root} is absent from the {name} store')
+        report['chrome_slot_waits'] = {name: targets[name]['slot_waits'] for name in ['chrome-1', 'chrome-2']}
+        report['controls'] = moving_controls(run, source, route_file, report['builds']['wasm_sha256'], targets['native-1']['samples'],
+                                             origin, last)
+
+        # Extent and phase identity.
+        for name, target in targets.items():
+            header = target['header']
+            if header['render_extent'] != route_file['render_extent'] or header['phase'] != route_file['phase'] \
+                    or header['origin_tick'] != origin:
+                failures.append(f'{name} header differs from the route: {header}')
+            ticks = sorted(target['samples'])
+            if ticks != list(range(origin, last + 1)):
+                failures.append(f'{name} routed ticks are not {origin}..{last}: {len(ticks)} logged')
+
+        # Per-tick identity: every target against native-1, every field bit for bit.
+        reference = targets['native-1']['samples']
+        mismatches = report['identity_mismatches'] = {}
+        for name, target in targets.items():
+            for tick in range(origin, last + 1):
+                got, want = target['samples'].get(tick), reference.get(tick)
+                if got is None or want is None:
+                    continue
+                for key in MOVING_IDENTITY:
+                    if got.get(key) != want.get(key):
+                        mismatches.setdefault(name, []).append({'tick': tick, 'field': key, 'got': got.get(key), 'want': want.get(key)})
+        for name, found in mismatches.items():
+            failures.append(f'{name}: {len(found)} per-tick identity mismatches against native-1, first {found[0]}')
+        report['identity'] = {'fields': MOVING_IDENTITY, 'ticks': last - origin + 1, 'targets': sorted(targets)}
+
+        # Images: repeat runs per target, then Chrome against native under the 32x18 cell metric, labelled.
+        images = report['checkpoints'] = {}
+        for checkpoint in names:
+            entry = images[checkpoint] = {}
+            for name, target in targets.items():
+                path = target['images'][checkpoint]
+                entry[name] = {'file': str(path.relative_to(run)), 'sha256': sha256(path)}
+            for kind in ['native', 'chrome']:
+                entry[f'{kind}_repeat_identical'] = entry[f'{kind}-1']['sha256'] == entry[f'{kind}-2']['sha256']
+                if not entry[f'{kind}_repeat_identical']:
+                    entry[f'{kind}_repeat'] = difference(grid(targets[f'{kind}-1']['images'][checkpoint]),
+                                                         grid(targets[f'{kind}-2']['images'][checkpoint]))
+            entry['chrome_vs_native'] = difference(grid(targets['chrome-1']['images'][checkpoint]),
+                                                   grid(targets['native-1']['images'][checkpoint]))
+            if any(value > limit for value, limit in zip(entry['chrome_vs_native'], THRESHOLDS)):
+                failures.append(f'checkpoint {checkpoint}: Chrome presented canvas vs native submitted SDR output '
+                                f'{entry["chrome_vs_native"]} exceeds {THRESHOLDS}')
+            for kind in ['native', 'chrome']:
+                repeat = entry.get(f'{kind}_repeat')
+                if repeat and any(value > limit for value, limit in zip(repeat, THRESHOLDS)):
+                    failures.append(f'checkpoint {checkpoint}: {kind} repeat runs differ by {repeat}')
+        report['scope'] = ('Moving proof route on the cooked valley: per-tick identity of the actual authored camera, phase and '
+                           'solar hour on both targets, and checkpoint images under their actual labels. Chrome images are '
+                           'compositor captures of the presented canvas, not the submitted pre-display image. No timing, '
+                           'cadence or display claim.')
+        report['passed'] = not failures
+    except Failure as error:
+        failures.append(str(error))
+    finally:
+        write_json(run / 'run.json', report)
+    print(f'{"PASS" if report["passed"] else "FAIL"}: {run / "run.json"}')
+    for failure in failures:
+        print(f'  {failure}')
+    if failures:
+        raise SystemExit(1)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     commands = parser.add_subparsers(dest='command', required=True)
-    for name in ('mac', 'chrome', 'check', 'startup'):
+    for name in ('mac', 'chrome', 'check', 'startup', 'moving'):
         command = commands.add_parser(name)
         command.add_argument('--no-build', action='store_true', help='use the existing release and web builds')
         if name in ('mac', 'chrome'):
@@ -733,7 +922,7 @@ def main():
     # A terminated launcher stops its watcher, servers and game the same way Ctrl-C does.
     signal.signal(signal.SIGTERM, lambda *_: (_ for _ in ()).throw(KeyboardInterrupt))
     try:
-        {'mac': mac, 'chrome': chrome, 'check': check, 'startup': startup}[args.command](args)
+        {'mac': mac, 'chrome': chrome, 'check': check, 'startup': startup, 'moving': moving}[args.command](args)
     except Failure as error:
         print(f'FAIL: {error}', file=sys.stderr)
         raise SystemExit(1)
