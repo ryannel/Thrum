@@ -84,7 +84,7 @@ def main():
         raise RuntimeError("invalid cooked store HEAD")
     identity = {
         "row": args.row,
-        "base": "3d48f44e",
+        "base": "0d53d3aa",
         "cooked_root": head[24:56].hex(),
         "cooked_generation": int.from_bytes(head[16:24], "little"),
     }
@@ -100,6 +100,7 @@ def main():
         "THRUM_M2_DIR": str(output),
         "THRUM_V1_FRAMES": "10000",
     }
+    launcher_env = {key: value for key, value in os.environ.items() if not key.startswith("THRUM_")}
     recorder = None
     deadline = time.monotonic() + 38
     with (output / "recorder.log").open("wb") as recorder_log, (output / "launcher.log").open("wb") as launch_log:
@@ -114,12 +115,12 @@ def main():
             for key, value in settings.items():
                 command += ["--env", f"{key}={value}"]
             command += ["--launch", "--", str(BINARY)]
-            game = subprocess.Popen(command, env=os.environ | {"TMPDIR": str(trace_scratch)},
+            game = subprocess.Popen(command, env=launcher_env | {"TMPDIR": str(trace_scratch)},
                                     start_new_session=True,
                                     stdout=launch_log, stderr=subprocess.STDOUT)
         else:
             with game_log.open("wb") as game_output:
-                game = subprocess.Popen([str(BINARY)], env=os.environ | settings,
+                game = subprocess.Popen([str(BINARY)], env=launcher_env | settings,
                                         start_new_session=True, stdout=game_output, stderr=subprocess.STDOUT)
         try:
             def game_ready():

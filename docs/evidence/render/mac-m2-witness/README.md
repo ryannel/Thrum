@@ -70,7 +70,7 @@ with Rust 1.99.1, Xcode and the locked Cargo cache, run:
 
 ```sh
 mkdir "$out/source"
-git archive 3d48f44e | tar -x -C "$out/source"
+git archive 0d53d3aa | tar -x -C "$out/source"
 xcrun clang -Wall -Wextra -Werror -c "$out/pan_signpost.c" -o "$out/pan_signpost.o"
 xcrun ar rcs "$out/libthrum_m2_pan.a" "$out/pan_signpost.o"
 python3 "$out/prepare_pan.py" "$out/source"
@@ -95,3 +95,10 @@ the estimated uncertainty at both ends and reports its bound.
 Synthetic matching and drifting anchors were tested against the
 time-info schema exported from the saved 6 November Metal trace.
 A fresh M2 trace remains necessary for an attributable result.
+
+The diagnostic was rebuilt from main `0d53d3aa` after the G7 integration.
+The hidden AppKit proof still passes all 240 actions. The native offscreen
+noon frame matches the previous reference byte for byte (SHA-256
+`d7d3d2fca5e15a1cc4294be7963503d49e934dfd0b5904ea71000fa142a2021e`).
+Both live arms discard ambient `THRUM_` variables before applying the
+matched launch recipe. The approved run still needs an unlocked display.
