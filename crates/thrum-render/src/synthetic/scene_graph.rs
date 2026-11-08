@@ -99,6 +99,41 @@ impl PreparedSynthetic {
         Ok(resource)
     }
 
+    /// The arena's vertex (storage) and index reads, shared by every camera
+    /// pass that draws meshes.
+    fn mesh_arena_reads(&self, graph: &mut FrameGraph) -> Result<[Access; 2], RenderError> {
+        let buffers = self
+            .mesh_arena
+            .buffers()
+            .ok_or(RenderError::GraphPassMismatch)?;
+        let mut read = |buffer: &wgpu::Buffer, usage, kind| {
+            let bytes = buffer.size();
+            graph
+                .resource(
+                    ResourceDescriptor::Buffer { bytes, usage },
+                    ResourceScope::Imported { initialized: true },
+                )
+                .map(|resource| Access {
+                    resource,
+                    range: 0..bytes,
+                    kind,
+                    store: true,
+                })
+        };
+        Ok([
+            read(
+                &buffers.vertices,
+                wgpu::BufferUsages::STORAGE,
+                AccessKind::StorageRead,
+            )?,
+            read(
+                &buffers.indices,
+                wgpu::BufferUsages::INDEX,
+                AccessKind::IndexRead,
+            )?,
+        ])
+    }
+
     pub(super) fn compile_graph(
         &self,
         width: u32,
@@ -128,13 +163,7 @@ impl PreparedSynthetic {
             },
             ResourceScope::Imported { initialized: true },
         )?;
-        let cube_reversed_indices = graph.resource(
-            ResourceDescriptor::Buffer {
-                bytes: CUBE_INDEX_BYTES,
-                usage: wgpu::BufferUsages::INDEX,
-            },
-            ResourceScope::Imported { initialized: true },
-        )?;
+        let mesh = self.mesh_arena_reads(&mut graph)?;
         let mut accesses = vec![
             Access {
                 resource: material,
@@ -160,13 +189,8 @@ impl PreparedSynthetic {
                 kind: AccessKind::IndexRead,
                 store: true,
             },
-            Access {
-                resource: cube_reversed_indices,
-                range: 0..CUBE_INDEX_BYTES,
-                kind: AccessKind::IndexRead,
-                store: true,
-            },
         ];
+        accesses.extend_from_slice(&mesh);
         let mut prepared_keys = BTreeSet::from([self.key, self.display_key(), self.exposure_key()]);
         let (directional, view) = Self::append_frame_uniform_reads(&mut graph, &mut accesses)?;
         let atmosphere_inputs = self
@@ -216,7 +240,7 @@ impl PreparedSynthetic {
             Self::view_attachment(attachment, MOTION_FORMAT, AttachmentUse::Motion, false)?;
         let camera = self.append_camera_visibility(
             &mut graph,
-            (view, &instance),
+            (view, &instance, &mesh),
             [width, height],
             &mut accesses,
             &mut prepared_keys,
