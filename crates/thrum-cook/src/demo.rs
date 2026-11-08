@@ -169,6 +169,54 @@ pub fn write_checker_png(path: &Path, size: u32, colour: [u8; 3]) -> std::io::Re
     image.save(path).map_err(std::io::Error::other)
 }
 
+/// Write a `size`×`size` photo-like test card for texture quality measurement: smooth hue and
+/// lightness gradients, soft shading, hard-edged rings, fine value-noise detail and a neutral
+/// grey ramp, with an alpha ramp when `alpha` is set (otherwise opaque). Deterministic.
+///
+/// # Errors
+/// I/O or encoding failure.
+pub fn write_test_card_png(path: &Path, size: u32, alpha: bool) -> std::io::Result<()> {
+    let scale = size as f32;
+    let image = image::RgbaImage::from_fn(size, size, |x, y| {
+        let (u, v) = (x as f32 / scale, y as f32 / scale);
+        let (dx, dy) = (u - 0.5, v - 0.5);
+        let radius = (dx * dx + dy * dy).sqrt();
+        let hue = dy.atan2(dx) / std::f32::consts::TAU + 0.5;
+        let lightness = 0.25 + 0.55 * (1.0 - v) + 0.15 * (u * 9.0).sin() * (v * 7.0).cos();
+        let ring = if (radius * 14.0).fract() < 0.18 {
+            0.55
+        } else {
+            1.0
+        };
+        let detail = value_noise(u * 48.0, v * 48.0, 0.5, 7) - 0.5;
+        let mut rgb = [0.0, 1.0 / 3.0, 2.0 / 3.0].map(|offset: f32| {
+            let channel = ((hue + offset) * std::f32::consts::TAU).cos() * 0.5 + 0.5;
+            (lightness * (0.35 + 0.65 * channel) * ring + 0.12 * detail).clamp(0.0, 1.0)
+        });
+        if u > 0.75 && v > 0.75 {
+            // A neutral grey ramp exposes colour-space errors in the mid-tones.
+            rgb = [u * 4.0 - 3.0; 3];
+        }
+        let a = if alpha { 0.15 + 0.85 * u } else { 1.0 };
+        image::Rgba([
+            unit_byte(rgb[0]),
+            unit_byte(rgb[1]),
+            unit_byte(rgb[2]),
+            unit_byte(a),
+        ])
+    });
+    image.save(path).map_err(std::io::Error::other)
+}
+
+#[expect(
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    reason = "the value is clamped to [0, 255] first"
+)]
+fn unit_byte(value: f32) -> u8 {
+    (value * 255.0).round().clamp(0.0, 255.0) as u8
+}
+
 /// Write a `size`³ cloud-like density volume: a soft-edged ellipsoid modulated by value noise.
 ///
 /// # Errors
