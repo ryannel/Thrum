@@ -161,7 +161,7 @@ impl PreparedSynthetic {
     pub(super) fn append_camera_visibility(
         &self,
         graph: &mut FrameGraph,
-        (view, instance): (ResourceId, &ResourceId),
+        (view, instance, mesh): (ResourceId, &ResourceId, &[Access]),
         extent: [u32; 2],
         accesses: &mut Vec<Access>,
         keys: &mut BTreeSet<PipelineKey>,
@@ -225,6 +225,7 @@ impl PreparedSynthetic {
         )?;
         let mut prepass = reads.clone();
         prepass.extend(list_reads(prepared, &first));
+        prepass.extend_from_slice(mesh);
         prepass.push(Access {
             resource: depth.clone(),
             range: 0..1,

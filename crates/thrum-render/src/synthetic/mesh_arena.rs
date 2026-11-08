@@ -70,7 +70,8 @@ impl MeshId {
     /// The outward-wound cube, always row 0.
     pub(super) const CUBE: Self = Self(0);
     /// The cube with each triangle's winding reversed, for the orthographic
-    /// diagnostic.
+    /// diagnostic. It shares the cube's vertices (base vertex 0), so a draw
+    /// selects it by index-buffer offset alone, as the fixture always has.
     pub(super) const CUBE_REVERSED: Self = Self(1);
 
     pub(super) fn row(self) -> u32 {
@@ -102,6 +103,18 @@ impl MeshRow {
     fn indices(&self) -> Range<usize> {
         self.first_index as usize..(self.first_index + self.index_count) as usize
     }
+
+    /// The draw's base vertex. Rows are admitted within `i32`, so this only
+    /// fails on an arena built with limits past it.
+    pub(super) fn draw_base_vertex(&self) -> Result<i32, ArenaError> {
+        i32::try_from(self.base_vertex).map_err(|_| ArenaError::Capacity)
+    }
+
+    /// This row's byte range in the index buffer.
+    pub(super) fn index_bytes(&self) -> Range<u64> {
+        let range = self.indices();
+        range.start as u64 * INDEX_BYTES..range.end as u64 * INDEX_BYTES
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -116,6 +129,8 @@ pub(super) enum ArenaError {
     Capacity,
     /// A `MeshId` this arena never allocated.
     UnknownMesh,
+    /// The cube rows are fixed: the reversed row shares the cube's vertices.
+    Fixed,
 }
 
 /// Vertex and index limits, in elements.
@@ -127,10 +142,11 @@ pub(super) struct ArenaLimits {
 
 impl ArenaLimits {
     /// The largest arrays one storage binding of `max_binding` bytes holds.
+    /// Vertices also stay within a draw's `i32` base vertex.
     pub(super) fn for_binding(max_binding: u64) -> Self {
         let clamp = |bytes: u64| u32::try_from(max_binding / bytes).unwrap_or(u32::MAX);
         Self {
-            vertices: clamp(VERTEX_BYTES),
+            vertices: clamp(VERTEX_BYTES).min(i32::MAX.unsigned_abs()),
             indices: clamp(INDEX_BYTES),
         }
     }
@@ -184,7 +200,7 @@ impl MeshArena {
             .iter()
             .flat_map(|&[a, b, c]| [a, c, b])
             .collect();
-        let reversed = arena.insert(&vertices, &reversed)?;
+        let reversed = arena.insert_winding(cube, &reversed)?;
         debug_assert_eq!((cube, reversed), (MeshId::CUBE, MeshId::CUBE_REVERSED));
         Ok(arena)
     }
@@ -215,6 +231,31 @@ impl MeshArena {
         Ok(id)
     }
 
+    /// Add an index range over an existing mesh's vertices.
+    fn insert_winding(&mut self, of: MeshId, indices: &[u32]) -> Result<MeshId, ArenaError> {
+        let base = *self.row(of).ok_or(ArenaError::UnknownMesh)?;
+        let vertices = &self.vertices[base.vertices()];
+        let bounds = check(vertices, indices)?;
+        let id = MeshId(u32::try_from(self.rows.len()).map_err(|_| ArenaError::Capacity)?);
+        let (_, index_count) = counts(vertices, indices)?;
+        let first_index = u32::try_from(self.indices.len()).map_err(|_| ArenaError::Capacity)?;
+        if first_index
+            .checked_add(index_count)
+            .is_none_or(|end| end > self.limits.indices)
+        {
+            return Err(ArenaError::Capacity);
+        }
+        let row = MeshRow {
+            first_index,
+            index_count,
+            ..base
+        };
+        self.indices.extend_from_slice(indices);
+        self.dirty_indices.push(row.indices());
+        self.rows.push(MeshRow { bounds, ..row });
+        Ok(id)
+    }
+
     /// Replace a mesh's contents, keeping its `MeshId`.
     pub(super) fn replace(
         &mut self,
@@ -223,6 +264,9 @@ impl MeshArena {
         indices: &[u32],
     ) -> Result<(), ArenaError> {
         let old = *self.row(mesh).ok_or(ArenaError::UnknownMesh)?;
+        if mesh <= MeshId::CUBE_REVERSED {
+            return Err(ArenaError::Fixed);
+        }
         let bounds = check(vertices, indices)?;
         let (vertex_count, index_count) = counts(vertices, indices)?;
         let row = if vertex_count <= old.vertex_count && index_count <= old.index_count {
