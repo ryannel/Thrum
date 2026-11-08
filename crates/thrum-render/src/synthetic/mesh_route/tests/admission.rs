@@ -9,6 +9,7 @@ use crate::synthetic::{
     SyntheticMeshChoice, SyntheticMeshes, SyntheticScene, SyntheticVertex,
 };
 use crate::visibility::CullMode;
+use SyntheticMeshChoice::{Cube, Mesh};
 
 fn triangle() -> SyntheticMesh {
     let vertex = |position| SyntheticVertex {
@@ -46,7 +47,6 @@ fn invalid_selections_are_refused_and_a_valid_one_prepares() {
         scene.meshes = Some(Arc::new(SyntheticMeshes { meshes, slots }));
         scene
     };
-    use SyntheticMeshChoice::{Cube, Mesh};
     let mut out_of_range = triangle();
     out_of_range.indices[2] = 3;
     let mut not_triangles = triangle();
