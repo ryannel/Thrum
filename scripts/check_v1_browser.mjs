@@ -9,7 +9,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
-const cases = ['normal', 'pause', 'resize', 'overload', 'input', 'controls', 'tabs', 'params', 'device-loss', 'late-device-loss', 'device-recovery', 'device-recovery-retry', 'sky-reflections', 'valley', 'valley-recovery', 'material', 'material-disabled', 'field', 'field-direct', 'field-occlusion', 'field-oracle', 'route'];
+const cases = ['normal', 'pause', 'resize', 'overload', 'input', 'controls', 'tabs', 'params', 'device-loss', 'late-device-loss', 'device-recovery', 'device-recovery-retry', 'sky-reflections', 'valley', 'valley-recovery', 'valley-late-attach', 'material', 'material-disabled', 'field', 'field-direct', 'field-occlusion', 'field-oracle', 'route'];
 const configureFailureSentinel = 'THRUM_G3B_CONFIGURE_ONCE';
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -183,6 +183,45 @@ async function destroyRetainedDevice(cdp, sessionId, objectId) {
   const result = await cdp.call('Runtime.callFunctionOn', { objectId,
     functionDeclaration: 'function(){this.destroy();return true;}', returnByValue: true }, sessionId);
   if (result.exceptionDetails || result.result.value !== true) throw new Error('Actual WebGPU device destruction failed');
+}
+
+// Count WebGPU calls on one actual device and its queue once armed. The page reaches WebGPU through
+// wasm-bindgen's instance method calls, so own-property wrappers see every call on this device.
+// Armed after a loss is observed, the count proves no GPU work reaches the lost device.
+async function watchDeviceCalls(cdp, sessionId, objectId) {
+  const result = await cdp.call('Runtime.callFunctionOn', { objectId, returnByValue: true,
+    functionDeclaration: `function(){
+      if(this.__thrumCalls)return true;
+      const state={armed:false,calls:{}};
+      const wrap=(target,prototype,names)=>{for(const name of names){const original=prototype[name];if(typeof original!=='function')continue;
+        Object.defineProperty(target,name,{configurable:true,writable:true,value:function(...args){if(state.armed)state.calls[name]=(state.calls[name]??0)+1;return Reflect.apply(original,this,args);}});}};
+      wrap(this,GPUDevice.prototype,Object.getOwnPropertyNames(GPUDevice.prototype).filter(name=>/^(create|import|pushErrorScope|popErrorScope)/.test(name)));
+      wrap(this.queue,GPUQueue.prototype,['submit','writeBuffer','writeTexture','copyExternalImageToTexture','onSubmittedWorkDone']);
+      this.__thrumCalls=state;return true;}` }, sessionId);
+  if (result.exceptionDetails || result.result.value !== true) throw new Error(`Device call watch unavailable: ${JSON.stringify(result.exceptionDetails)}`);
+}
+
+async function armDeviceCalls(cdp, sessionId, objectId) {
+  const result = await cdp.call('Runtime.callFunctionOn', { objectId, returnByValue: true,
+    functionDeclaration: 'function(){this.__thrumCalls.armed=true;return true;}' }, sessionId);
+  if (result.exceptionDetails || result.result.value !== true) throw new Error('Device call watch could not be armed');
+}
+
+async function lostDeviceCalls(cdp, sessionId, objectId) {
+  const result = await cdp.call('Runtime.callFunctionOn', { objectId, returnByValue: true,
+    functionDeclaration: 'function(){return this.__thrumCalls.calls;}' }, sessionId);
+  if (result.exceptionDetails) throw new Error(JSON.stringify(result.exceptionDetails));
+  const calls = result.result.value;
+  if (Object.keys(calls).length) throw new Error(`GPU calls reached the lost device: ${JSON.stringify(calls)}`);
+  return calls;
+}
+
+// The game's camera yaw (display degrees, from its control model) and solar time (hours, from the
+// committed world), read from the game rather than the page's sliders.
+async function gameView(game) {
+  return game.invoke(`const model=JSON.parse(game.controls_json());const entries=Array.isArray(model)?model:model.controls;
+    const yaw=entries.find(entry=>entry.key==='camera.yaw');if(!yaw||typeof yaw.value!=='number')throw new Error('camera.yaw control has no value');
+    return {yaw:yaw.value,hours:game.time_of_day()*24};`);
 }
 
 async function injectConfigureFailure(cdp, sessionId) {
@@ -694,11 +733,18 @@ async function qualifyMaterial(cdp, sessionId, poll, timeout, files, output, evi
     arguments: [{ objectId: game.objectId }, { value: materialHooks.green }] }, sessionId);
   if (outstanding.exceptionDetails || outstanding.result.value !== 4) throw new Error(`Outstanding reload not requested: ${JSON.stringify(outstanding)}`);
   await until(async () => (await game.read()).fault?.startsWith('Destroyed:') && await game.invoke('const button=document.querySelector("#restore-graphics");return !button.hidden&&!button.disabled;'), 'device destroyed with a reload outstanding');
+  // A reload requested after the loss is observed is refused and calls nothing on the lost device;
+  // the next reload on the replacement then takes serial 5.
+  await watchDeviceCalls(cdp, sessionId, selected.result.objectId);
+  await armDeviceCalls(cdp, sessionId, selected.result.objectId);
+  evidence.afterLossRefusal = await game.invoke('try{game.reload_material("case.material.wgsl",args[0]);return null;}catch(error){return String(error?.message??error);}', [materialHooks.green]);
+  if (evidence.afterLossRefusal !== 'graphics device is lost') throw new Error(`Reload after loss was not refused: ${evidence.afterLossRefusal}`);
   await game.invoke('document.querySelector("#restore-graphics").click();return true;');
   evidence.statuses.retired = await awaitStatus(/material 4 was prepared for a replaced device/, 'outstanding reload retired');
   await until(async () => { const value = await game.read(); return !value.fault && !value.recovering && /^Running/.test((await poll()).status ?? ''); }, 'replacement device drawing');
   // The accepted hook draws again only once it has validated on the new device.
   evidence.statuses.restored = await awaitStatus(/case\.material\.wgsl: the accepted material draws again/, 'accepted hook restored after validation');
+  evidence.lostDeviceCalls = await lostDeviceCalls(cdp, sessionId, selected.result.objectId);
   const restored = await capture('restored');
   evidence.restoredChanged = changedFraction(moss, restored);
   if (evidence.restoredChanged > 0.002) throw new Error(`Replacement device did not draw the accepted hook: ${evidence.restoredChanged}`);
@@ -713,7 +759,7 @@ async function qualifyMaterial(cdp, sessionId, poll, timeout, files, output, evi
   evidence.greenChanged = changedFraction(moss, green);
   if (!(evidence.greenChanged > 0.02)) throw new Error(`Reload on the replacement device was not visible: ${evidence.greenChanged}`);
   evidence.final = await game.read();
-  evidence.scope = 'Explicit material reloads on the cooked valley through the page; one actual GPUDevice.destroy with a reload outstanding; frame intervals are contended headless observations';
+  evidence.scope = 'Explicit material reloads on the cooked valley through the page; one actual GPUDevice.destroy with a reload outstanding, then a reload after the observed loss refused with no call on the lost device; frame intervals are contended headless observations';
 }
 
 async function qualifyDeviceRecovery(cdp, sessionId, poll, timeout, evidence, onDestroy, failFirst, capturePhase) {
@@ -739,12 +785,72 @@ async function qualifyDeviceRecovery(cdp, sessionId, poll, timeout, evidence, on
       return value.paused && field(value.report, 'callbacks') >= field(requested.report, 'callbacks') + 3 ? value : undefined;
     }, `${name} accepted-work drain`);
   };
+  // The recovered device both renders (capture oracle) and presents (canvas screenshot) the camera
+  // and time changed during loss: A repeats, C returns to A, and B1/B2 each undo one of the edits.
+  const retainedView = async (round, generation, preLoss, editedYaw) => {
+    const view = await gameView(game);
+    if (Math.abs(view.yaw - editedYaw) > 0.01 || Math.abs(view.hours - 18.48) > 0.01) throw new Error(`Recovered game lost the edited view: ${JSON.stringify(view)}`);
+    const clip = await game.invoke('const r=document.querySelector("canvas").getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height,scale:1};');
+    const shot = async () => Buffer.from((await cdp.call('Page.captureScreenshot', { format: 'png', clip, captureBeyondViewport: true }, sessionId)).data, 'base64');
+    const presents = async count => {
+      const start = field((await read(`view${round}`)).report, 'presented');
+      await until(async () => field((await read(`view${round}`)).report, 'presented') >= start + count, `view${round} presents`);
+    };
+    const state = async (name, yaw, hours) => {
+      await game.invoke('for(const [selector,value] of [["#camera-yaw",args[0]],["#solar-time",args[1]]]){const input=document.querySelector(selector);input.value=value;input.dispatchEvent(new Event("input",{bubbles:true}));}return true;', [yaw, hours]);
+      let previous, image, presented = 0;
+      for (;;) {
+        await presents(2); presented += 2;
+        image = await shot();
+        if (previous && previous.equals(image)) break;
+        if (presented >= 30) throw new Error(`view${round} ${name}: presented frames did not converge in 30 presents`);
+        previous = image;
+      }
+      const identity = await game.invoke('return game.begin_capture();');
+      if (Number(/generation=(\d+)/.exec(identity)?.[1]) !== generation) throw new Error(`view${round} ${name}: capture from generation ${identity}, expected ${generation}`);
+      const bytes = await until(async () => {
+        await poll();
+        return await game.invoke('const pixels=game.try_finish_capture();if(!pixels)return undefined;globalThis.__viewPixels=pixels;return pixels.length;') ?? undefined;
+      }, `view${round} ${name} capture`);
+      const digest = await cdp.call('Runtime.evaluate', { awaitPromise: true, returnByValue: true,
+        expression: 'crypto.subtle.digest("SHA-256",globalThis.__viewPixels).then(d=>{delete globalThis.__viewPixels;return [...new Uint8Array(d)].map(b=>b.toString(16).padStart(2,"0")).join("");})' }, sessionId);
+      if (digest.exceptionDetails || typeof digest.result.value !== 'string' || !bytes) throw new Error(`view${round} ${name}: capture digest unavailable`);
+      const oracle = digest.result.value;
+      const file = `${evidence.prefix}-view${round}-${name}.png`;
+      if (['A', 'B1', 'B2'].includes(name)) await fs.writeFile(path.join(evidence.output, file), image);
+      const after = await read(`view${round}${name}`);
+      if (!after.paused || after.fault) throw new Error(`view${round} ${name}: world resumed or device faulted`);
+      return { identity, oracle, screenshot: sha(image), presented, ...(['A', 'B1', 'B2'].includes(name) ? { file } : {}) };
+    };
+    const A = await state('A', editedYaw, 18.48), A2 = await state('A2', editedYaw, 18.48);
+    const B1 = await state('B1', Math.round(preLoss.yaw), 18.48), B2 = await state('B2', editedYaw, 12);
+    const C = await state('C', editedYaw, 18.48), C2 = await state('C2', editedYaw, 18.48);
+    const result = { preLoss, editedYaw, states: { A, A2, B1, B2, C, C2 } };
+    (evidence.retainedViewAttempts ??= []).push(result);
+    const judge = kind => {
+      const repeats = A[kind] === A2[kind] && C[kind] === C2[kind];
+      return { repeats, returns: A[kind] === C[kind], cameraRetained: A[kind] !== B1[kind], timeRetained: A[kind] !== B2[kind] };
+    };
+    result.oracle = judge('oracle');
+    result.screenshot = judge('screenshot');
+    const passes = verdict => verdict.repeats && verdict.returns && verdict.cameraRetained && verdict.timeRetained;
+    if (!passes(result.oracle)) throw new Error(`view${round}: capture oracle does not show the retained view: ${JSON.stringify(result.oracle)}`);
+    if (result.screenshot.repeats) {
+      if (!passes(result.screenshot)) throw new Error(`view${round}: presented frames do not show the retained view: ${JSON.stringify(result.screenshot)}`);
+      result.presentedClaim = 'presented frames show the retained camera and time';
+    } else result.presentedClaim = 'not claimed: presented screenshots did not repeat';
+    return result;
+  };
   await until(async () => field((await read('initial')).report, 'presented') >= 12, 'healthy views before recovery');
   for (let round = 1; round <= (failFirst ? 1 : 2); round++) {
     const before = await read(`beforeLoss${round}`);
     const extent = await poll();
     if (!(extent.width > 0 && extent.height > 0)) throw new Error('Healthy canvas has no extent');
     if (before.fault || before.recovering || field(before.report, 'generation') !== round || field(before.report, 'recovered') !== round - 1) throw new Error('Unexpected graphics generation before loss');
+    // A pre-loss solar time distinct from the 18.48 edited during loss, set while healthy.
+    await game.invoke('const solar=document.querySelector("#solar-time");solar.value=12;solar.dispatchEvent(new Event("input",{bubbles:true}));return true;');
+    const preLoss = await gameView(game);
+    if (Math.abs(preLoss.hours - 12) > 0.01) throw new Error(`Pre-loss solar time not applied: ${JSON.stringify(preLoss)}`);
     devices = await destroyActualDevice(cdp, sessionId, devices?.allDevices, onDestroy);
     evidence.destroyedDeviceCounts.push(devices.count);
     const lost = await until(async () => {
@@ -752,6 +858,13 @@ async function qualifyDeviceRecovery(cdp, sessionId, poll, timeout, evidence, on
       return value.fault?.startsWith('Destroyed:') && /^Graphics fault: Destroyed:/.test((await poll()).status ?? '') ? value : undefined;
     }, `generation${round} actual device loss`);
     if (failFirst) await capturePhase('lost');
+    await watchDeviceCalls(cdp, sessionId, devices.device);
+    await armDeviceCalls(cdp, sessionId, devices.device);
+    // Turn the camera through the real control while the device is lost.
+    const editedYaw = ((Math.round(preLoss.yaw) + 40 + 180) % 360) - 180;
+    await game.invoke('const yaw=document.querySelector("#camera-yaw");yaw.value=args[0];yaw.dispatchEvent(new Event("input",{bubbles:true}));return true;', [editedYaw]);
+    const lostView = await gameView(game);
+    if (Math.abs(lostView.yaw - editedYaw) > 0.01) throw new Error(`Camera edit refused while lost: ${JSON.stringify(lostView)}`);
     const assertUnavailable = value => {
       if (value.fault !== lost.fault || field(value.report, 'generation') !== round || field(value.report, 'presented') !== field(lost.report, 'presented') || field(value.report, 'samples') !== field(lost.report, 'samples')) throw new Error('Unavailable generation performed GPU work or changed identity');
     };
@@ -841,6 +954,8 @@ async function qualifyDeviceRecovery(cdp, sessionId, poll, timeout, evidence, on
     }, `new generation${targetGeneration} presents and collects fresh samples`);
     if (!await game.invoke('const button=document.querySelector("#restore-graphics");return button.hidden&&!button.disabled;')) throw new Error('Restore button did not return to healthy state');
     if (failFirst) await capturePhase('restored');
+    (evidence.lostDeviceCalls ??= []).push(await lostDeviceCalls(cdp, sessionId, devices.device));
+    (evidence.retainedView ??= []).push(await retainedView(round, targetGeneration, preLoss, editedYaw));
     await destroyRetainedDevice(cdp, sessionId, devices.device);
     await until(async () => {
       const value = await read(`oldDeviceRecheck${round}`);
@@ -863,6 +978,52 @@ async function qualifyDeviceRecovery(cdp, sessionId, poll, timeout, evidence, on
   evidence.scope = failFirst
     ? 'Actual GPUDevice.destroy; one caught main-canvas configure failure, failed attempt2 then real-button retry publishes generation3; same world/input/pause/time and fresh GPU samples. No timing/display claim.'
     : 'Two actual GPUDevice.destroy/button replacements on the same BrowserGame; generations1→2→3, CPU controls/lifecycle during pending zero extent, fresh GPU samples. Old-device re-destroy is not callback replay or display/cadence qualification.';
+}
+
+// The cooked valley arrives after the device is lost: its requests are held until the loss is
+// observed, the attach must call nothing on the lost device, and the valley draws on the replacement.
+async function qualifyLateAttach(cdp, sessionId, poll, timeout, output, onDestroy, held) {
+  const deadline = Date.now() + timeout;
+  const until = (check, description) => waitFor(check, Math.max(0, deadline - Date.now()), description);
+  const evidence = {};
+  const cookedStatus = game => game.invoke('return game.cooked_status();').then(value => JSON.parse(value ?? 'null'));
+  const game = await until(async () => {
+    await poll();
+    if (!held.ids.length) return undefined;
+    const candidate = await existingGame(cdp, sessionId);
+    try { await candidate.invoke('return true;'); return candidate; } catch { return undefined; }
+  }, 'game created with the cooked valley requests held');
+  if (await cookedStatus(game) !== null) throw new Error('Valley attached before its requests were released');
+  const devices = await destroyActualDevice(cdp, sessionId, null, onDestroy);
+  await until(async () => (await game.invoke('return game.graphics_fault();'))?.startsWith('Destroyed:') || undefined, 'loss observed while the valley is held');
+  await watchDeviceCalls(cdp, sessionId, devices.device);
+  await armDeviceCalls(cdp, sessionId, devices.device);
+  evidence.heldRequests = held.ids.length;
+  held.released = true;
+  for (const requestId of held.ids.splice(0)) await cdp.call('Fetch.continueRequest', { requestId }, sessionId);
+  evidence.whileLost = await until(async () => {
+    await poll();
+    const status = await cookedStatus(game);
+    const offered = await game.invoke('const button=document.querySelector("#restore-graphics");return !!button&&!button.hidden&&!button.disabled;');
+    return status && offered ? status : undefined;
+  }, 'valley attached while the device is lost');
+  if (evidence.whileLost.drawn !== null || evidence.whileLost.errors.length) throw new Error(`Valley drew or failed on the lost device: ${JSON.stringify(evidence.whileLost)}`);
+  evidence.callsWhileLost = await lostDeviceCalls(cdp, sessionId, devices.device);
+  await game.invoke('document.querySelector("#restore-graphics").click();return true;');
+  await until(async () => { const value = await game.read(); return !value.fault && !value.recovering && /^Running/.test((await poll()).status ?? '') ? value : undefined; }, 'replacement device running');
+  evidence.lostDeviceCalls = await lostDeviceCalls(cdp, sessionId, devices.device);
+  evidence.restored = await until(async () => {
+    await poll();
+    const status = await cookedStatus(game);
+    if (status?.errors.length) throw new Error(`Valley failed on the replacement device: ${JSON.stringify(status)}`);
+    return status?.drawn >= 1 && status.submittedFrames > 0 ? status : undefined;
+  }, 'valley drawn on the replacement device');
+  if (evidence.restored.swaps !== 1) throw new Error(`Late attach staged the valley ${evidence.restored.swaps} times on the replacement device`);
+  await cdp.call('Fetch.disable', {}, sessionId);
+  await destroyRetainedDevice(cdp, sessionId, devices.device);
+  evidence.snapshots = { final: await game.read() };
+  evidence.scope = 'Cooked valley requests held with CDP Fetch until an actual GPUDevice.destroy was observed; attach while lost with no call on the lost device; one real-button replacement drawing the valley. No timing claim.';
+  return evidence;
 }
 
 async function screenshot(cdp, sessionId, output, mode, options = {}) {
@@ -963,8 +1124,11 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
   const lossCase = mode === 'device-loss' || mode === 'late-device-loss';
   const retryCase = mode === 'device-recovery-retry';
   const valleyRecovery = mode === 'valley-recovery';
+  const lateAttach = mode === 'valley-late-attach';
   const recoveryCase = mode === 'device-recovery' || retryCase || valleyRecovery;
-  const destroyCase = lossCase || recoveryCase;
+  const destroyCase = lossCase || recoveryCase || lateAttach;
+  // valley-late-attach holds the cooked valley's requests until the device is lost.
+  const held = { ids: [], released: false };
   const valleyCase = mode === 'valley';
   const materialCase = mode === 'material';
   const materialDisabled = mode === 'material-disabled';
@@ -976,7 +1140,7 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
   const faults = [], timeline = [];
   let loss, recovery, sky, material, oracle, route, intentionalDestroys = 0;
   const onDestroy = () => { intentionalDestroys++; };
-  const url = routeCase ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&params=${routeFile}` : materialCase || materialDisabled ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&material=case.material.wgsl` : valleyCase || valleyRecovery ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}` : mode === 'params' ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&params=case.params.json` : mode === 'controls' || tabCase || destroyCase || skyCase ? `${origin}/` : mode === 'field' ? `${origin}/?qualify&field` : mode === 'field-direct' ? `${origin}/?qualify&field&culling=direct` : mode === 'field-occlusion' ? `${origin}/?qualify&field&culling=occlusion` : oracleCase ? `${origin}/?field&culling=${mode.slice('field-oracle-'.length)}&params=field-oracle.params.json` : `${origin}/?qualify${['normal', 'input'].includes(mode) ? '' : `&${mode}-probe`}`;
+  const url = routeCase ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&params=${routeFile}` : materialCase || materialDisabled ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&material=case.material.wgsl` : valleyCase || valleyRecovery || lateAttach ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}` : mode === 'params' ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&params=case.params.json` : mode === 'controls' || tabCase || destroyCase || skyCase ? `${origin}/` : mode === 'field' ? `${origin}/?qualify&field` : mode === 'field-direct' ? `${origin}/?qualify&field&culling=direct` : mode === 'field-occlusion' ? `${origin}/?qualify&field&culling=occlusion` : oracleCase ? `${origin}/?field&culling=${mode.slice('field-oracle-'.length)}&params=field-oracle.params.json` : `${origin}/?qualify${['normal', 'input'].includes(mode) ? '' : `&${mode}-probe`}`;
   const log = line => { timeline.push(line); console.log(`${mode}: ${line}`); };
   try {
     ({ sessionId } = await cdp.call('Target.attachToTarget', { targetId, flatten: true }));
@@ -990,13 +1154,18 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
         if (!expectedDestroyed && !expectedConfigure) faults.push(messages);
       }
       if (packet.method === 'Network.responseReceived' && packet.params.response.url === `${origin}/v1_game_bg.wasm`) response = packet.params;
+      if (packet.method === 'Fetch.requestPaused') {
+        if (held.released) cdp.call('Fetch.continueRequest', { requestId: packet.params.requestId }, sessionId).catch(error => faults.push(String(error)));
+        else held.ids.push(packet.params.requestId);
+      }
     };
     for (const domain of ['Runtime', 'Page']) await cdp.call(`${domain}.enable`, {}, sessionId);
-    await cdp.call('Network.enable', { maxResourceBufferSize: wasm.bytes.length * 2, maxTotalBufferSize: wasm.bytes.length * 3 + (valleyCase || valleyRecovery || materialCase || materialDisabled || routeCase || mode === 'params' ? 256 << 20 : 0) }, sessionId);
+    await cdp.call('Network.enable', { maxResourceBufferSize: wasm.bytes.length * 2, maxTotalBufferSize: wasm.bytes.length * 3 + (valleyCase || valleyRecovery || lateAttach || materialCase || materialDisabled || routeCase || mode === 'params' ? 256 << 20 : 0) }, sessionId);
     await cdp.call('Network.setCacheDisabled', { cacheDisabled: true }, sessionId);
     await cdp.call('Page.addScriptToEvaluateOnNewDocument', { source: observeFaults }, sessionId);
     await cdp.call('Emulation.setDeviceMetricsOverride', { width: 1280, height: 1100, deviceScaleFactor: 1, mobile: false }, sessionId);
     await cdp.call('Target.activateTarget', { targetId });
+    if (lateAttach) await cdp.call('Fetch.enable', { patterns: [{ urlPattern: `${assetsOrigin}/*` }] }, sessionId);
     await cdp.call('Page.navigate', { url }, sessionId);
     let last = '', pressedAt, releasedAt;
     const poll = async () => {
@@ -1037,8 +1206,12 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
         await settle();
         await screenshot(cdp, sessionId, output, `${mode}-edited`);
       }
+    } else if (lateAttach) {
+      recovery = await qualifyLateAttach(cdp, sessionId, poll, timeout, output, onDestroy, held);
     } else if (recoveryCase) {
       recovery = { snapshots: {}, destroyedDeviceCounts: [] };
+      Object.defineProperty(recovery, 'output', { value: output });
+      Object.defineProperty(recovery, 'prefix', { value: mode });
       const cookedStatus = async () => JSON.parse(await (await existingGame(cdp, sessionId)).invoke('return game.cooked_status();') ?? 'null');
       if (valleyRecovery) {
         recovery.cookedBefore = await waitFor(async () => {
@@ -1439,7 +1612,7 @@ async function cleanup(child, exited, cdp, server, profile) {
 
 async function main() {
   const args = options(process.argv.slice(2));
-  if (!args) { console.log('node scripts/check_v1_browser.mjs [--case all|normal|pause|resize|overload|input|controls|tabs|params|device-loss|late-device-loss|device-recovery|device-recovery-retry|sky-reflections|valley|valley-recovery|material|material-disabled|field|field-direct|field-occlusion|field-oracle|route] [--web-root target/v1-game-web] [--cook target/debug/thrum-cook] [--assets-source examples/v1-game/assets/showcase] [--chrome /path/to/Chrome] [--output tmp/new-run] [--timeout-ms 90000]\nRequires Node 24+, an already-built game, and this Mac\'s Apple M3 Max/Metal Chrome. Controls checks manual pause with ongoing RAF; tabs switches real Chrome tabs and checks authority, input release and manual pause; params applies, explains and reloads a parameter file; visibility checks use the explicit hook, not tab hiding. Recovery uses the real restore button; retry injects exactly one standard canvas configure failure. Sky reflections saves nine paused phases and 24 camera/Sun samples; valley repeats them on the cooked valley served by thrum-cook; valley-recovery runs device recovery with that valley attached; material reloads a WGSL hook on that valley (valid, refused, and outstanding across a destroyed device) and records contended frame intervals around the valid reload; it needs the development page (web/build.sh --dev), so all leaves it out. material-disabled loads the default page with ?material and proves it starts no material work. Field qualifies the 100,513-instance flythrough with Frustum camera culling; field-direct and field-occlusion qualify it with Direct and Occlusion for a paired comparison; field-oracle pauses three fresh pages and compares Frustum and Occlusion captures with Direct byte for byte. Route launches one fresh page per checked-in examples/v1-game/params/showcase-*.params.json preset with the cooked valley, after requiring the web root to ship each byte for byte and no others; it proves the preset applied and the valley drew, brackets navigation to the first observed cooked draw on the page clock, and captures the paused canvas. The other cases make no timing claim.'); return; }
+  if (!args) { console.log('node scripts/check_v1_browser.mjs [--case all|normal|pause|resize|overload|input|controls|tabs|params|device-loss|late-device-loss|device-recovery|device-recovery-retry|sky-reflections|valley|valley-recovery|valley-late-attach|material|material-disabled|field|field-direct|field-occlusion|field-oracle|route] [--web-root target/v1-game-web] [--cook target/debug/thrum-cook] [--assets-source examples/v1-game/assets/showcase] [--chrome /path/to/Chrome] [--output tmp/new-run] [--timeout-ms 90000]\nRequires Node 24+, an already-built game, and this Mac\'s Apple M3 Max/Metal Chrome. Controls checks manual pause with ongoing RAF; tabs switches real Chrome tabs and checks authority, input release and manual pause; params applies, explains and reloads a parameter file; visibility checks use the explicit hook, not tab hiding. Recovery uses the real restore button; retry injects exactly one standard canvas configure failure. Sky reflections saves nine paused phases and 24 camera/Sun samples; valley repeats them on the cooked valley served by thrum-cook; valley-recovery runs device recovery with that valley attached; valley-late-attach holds the valley requests until the device is lost, then proves the attach made no GPU call on the lost device and the valley draws on the replacement; material reloads a WGSL hook on that valley (valid, refused, and outstanding across a destroyed device) and records contended frame intervals around the valid reload; it needs the development page (web/build.sh --dev), so all leaves it out. material-disabled loads the default page with ?material and proves it starts no material work. Field qualifies the 100,513-instance flythrough with Frustum camera culling; field-direct and field-occlusion qualify it with Direct and Occlusion for a paired comparison; field-oracle pauses three fresh pages and compares Frustum and Occlusion captures with Direct byte for byte. Route launches one fresh page per checked-in examples/v1-game/params/showcase-*.params.json preset with the cooked valley, after requiring the web root to ship each byte for byte and no others; it proves the preset applied and the valley drew, brackets navigation to the first observed cooked draw on the page clock, and captures the paused canvas. The other cases make no timing claim.'); return; }
   if (Number(process.versions.node.split('.')[0]) < 24 || typeof WebSocket !== 'function') throw new Error('Node 24+ with builtin WebSocket is required');
   const directory = await fs.realpath(path.resolve(repo, args['web-root']));
   const files = await assets(directory);
@@ -1493,7 +1666,7 @@ async function main() {
     }
     let assetsOrigin;
     let assetsSource;
-    if (modes.some(mode => ['valley', 'valley-recovery', 'params', 'material', 'material-disabled'].includes(mode) || mode.startsWith('route-'))) ({ cook, origin: assetsOrigin, source: assetsSource } = await serveCooked(args, output));
+    if (modes.some(mode => ['valley', 'valley-recovery', 'valley-late-attach', 'params', 'material', 'material-disabled'].includes(mode) || mode.startsWith('route-'))) ({ cook, origin: assetsOrigin, source: assetsSource } = await serveCooked(args, output));
     for (const mode of modes) results.push(await qualify(cdp, mode, serving.origin, output, directory, files.get('/v1_game_bg.wasm'), args['timeout-ms'], assetsOrigin, assetsSource, files));
     if (modes.includes('field-oracle-direct')) results.push(await compareFieldOracle(output, results));
   } catch (error) { failure = error; }
