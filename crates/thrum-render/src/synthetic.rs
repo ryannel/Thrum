@@ -25,6 +25,7 @@ use std::sync::Arc;
 use wgpu::util::DeviceExt;
 
 mod air_shadow;
+mod buckets;
 pub(crate) mod camera_culling;
 mod cluster;
 mod cluster_gpu;
