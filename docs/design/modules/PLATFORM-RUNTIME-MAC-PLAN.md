@@ -3,10 +3,10 @@
 Design: [Platform runtime](PLATFORM-RUNTIME.md#g3b-world-and-presentation-lifecycle--selected-partial-implementation)
 and [bounded frame host](../decisions/V1-BOUNDED-FRAME-HOST.md). Siblings:
 [iOS](PLATFORM-RUNTIME-IOS-PLAN.md) and [web](PLATFORM-RUNTIME-WEB-PLAN.md).
-Reviews: Design and plan over `3049433d`, approved plan SHA-256 prefix `0f467bcb` · [brief](#design-and-plan-review-brief) · initial hold resolved. First M1 abandon seam over `f79e3434` · [brief](#lost-frame-review-brief) · approved for observed post-encode loss. M1 injected input over `43e1d488` · [brief](#injected-input-review-brief) · approved after separating capture cutoff from finalization. M1 live slot `slot-04.0qL58y`, diagnostic `0c9a32dc` · [brief](../../evidence/render/mac-m1-recovery/README.md#independent-review-brief) · both done-when items pass.
+Reviews: Design and plan over `3049433d`, approved plan SHA-256 prefix `0f467bcb` · [brief](#design-and-plan-review-brief) · initial hold resolved. First M1 abandon seam over `f79e3434` · [brief](#lost-frame-review-brief) · approved for observed post-encode loss. M1 injected input over `43e1d488` · [brief](#injected-input-review-brief) · approved after separating capture cutoff from finalization. M1 live slot `slot-04.0qL58y`, diagnostic `0c9a32dc` · [brief](../../evidence/render/mac-m1-recovery/README.md#independent-review-brief) · both done-when items pass. M2 pan plan over `aeb43fbc`, reviewed SHA-256 prefix `10e7730e` · [brief](#m2-pan-plan-review-brief) · approved after refining slider steps, recording brackets and trace attribution.
 Milestone: M2 The cooked valley presents smoothly on built-in ProMotion
-Now: M1 closes with [live Metal recovery evidence](../../evidence/render/mac-m1-recovery/README.md).
-Next: prepare the M2 traced and untraced pan and independently attribute the displayed frame intervals.
+Now: M1 is closed. M2 is preparing a matched injected pan and checking trace attribution.
+Next: qualify the diagnostic pan and trace markers offscreen, then request a bounded live slot.
 Blocked: none for M2 preparation. Reserve real-display observation for the batched screen window.
 
 ## M0 Reviewed Mac qualification plan: done
@@ -38,19 +38,20 @@ Use the same noon view and a slow input-driven pan. A no-trace run provides the 
 
 Work:
 
-- [ ] Run `python3 scripts/run_v1_showcase.py mac --stop noon --frames 600` as the untraced control. Use the same preset, extent and fixed cooked root for both runs. Drag the existing yaw slider continuously between marked stops at the same speed after the cooked view is ready. In the owner window observe the real panel and capture the pan at normal speed. Mark pan start and end in the run record, and require a complete settled sweep in both the recording and the attributed trace. Retain the capture rate and limits. A screen recording can support motion review without proving panel intervals or photon timing.
+- [ ] Use the same release diagnostic build, noon preset, extent and fixed cooked root for both arms. Qualify the shipped yaw slider with a step fine enough for a slow pan. At about 18°/s, a 1° step holds the view for about 56 ms even with perfectly regular presentation. Use a 0.05° slider step and preserve the 5° keyboard action. Verify the finer normal control path before building the live witness.
+- [ ] Identify the unique game window on the built-in panel. Once the cooked view is ready and the recorder has a complete frame, hold the start view, inject the same elapsed-time yaw sweep at display-link opportunities through the existing AppKit slider target/action and normal app edit handler, then hold the final view before capture cutoff and finalization. Log requested, accepted and submitted yaw separately. Independently review the original recordings side by side at 1× against the proposed noon reference. Require the full sweep in both recordings and the attributed trace. Keep recording rate separate from physical display intervals and photon timing.
 - [ ] Use Game Performance for the app-labelled Display rows. The prior 5 November export (`tmp/g3b-present-short-displayed.xml`) contains 210 labelled compositor swaps on the built-in display. The raw surface IDs rotate, and the trace says they were composited. This is a short historical trace, not direct scanout or qualification of this build. In the traced row use a fixed cooked store rather than a changing watcher:
   ```sh
-  xcrun xctrace record --template 'Game Performance' --time-limit 12s \
+  xcrun xctrace record --no-prompt --template 'Game Performance' --time-limit 16s \
     --output "$trace" --target-stdout "$game_log" \
     --env THRUM_SCENE=valley --env "THRUM_ASSET_STORE=$store" \
-    --env "THRUM_PARAMS=$preset" --env THRUM_V1_FRAMES=600 \
+    --env "THRUM_PARAMS=$preset" --env THRUM_V1_FRAMES=10000 \
     --launch -- "$release_game"
   xcrun xctrace export --input "$trace" --toc
   xcrun xctrace export --input "$trace" \
     --xpath '/trace-toc/run/data/table[@schema="displayed-surfaces-interval"]'
   ```
-  Keep the display export, named process/PID and surface evidence in scratch. Reuse the row parser in `scripts/qualify_macos_display.py` without its retired fixed-duration and numeric acceptance rules. Require the intended built-in display, PID and one unambiguous game layer and frame sequence. Do not require a constant raw compositor surface ID. Use a short Metal System Trace with the same launch inputs for acquire/GPU diagnosis if needed.
+  Keep the display export, named process/PID and surface evidence in scratch. Resolve XML references and use numeric Swap Time and one unambiguous app-labelled stream on the built-in display. Frame labels can skip and surface IDs rotate. Use same-process Points of Interest pan markers on the trace timeline. Accept a calibrated monotonic-clock join only with a correlated anchor and stated error. Leave cadence open if the layer or pan alignment is ambiguous.
 - [ ] Keep callback targets, actor acquisition and submit, GPU timestamps and app-attributed display swaps separate. Align the observation to the same run and pan interval using recorded process and time markers. Report unmatched samples explicitly. Display VSync alone shows display opportunity. HUD intervals can supplement the trace. Input-to-photon remains unmeasured without a correlated input and physical displayed response. No raw drawable bridge.
 - [ ] Record view resolution, display mode, source/build, recipe, run order/load and CPU/GPU frame rows. Headless 1× captures diagnose scene motion. M2’s live motion and physical cadence witnesses use the real panel. Physical iPhone timing and loss detection remain open.
 
@@ -81,6 +82,17 @@ Keep encode-time failure and live-window recovery outside this proof.
 - 8 November. The owner superseded same-turn goal chaining after the successor record was lost. At M0 close, mark the goal complete and end the turn. The owner starts M1 separately.
 - 8 November. The overseer removed human key presses from M1. The diagnostic sends P/E to the app's shared key handler so the same lifecycle and camera commands run without requiring a person at the keyboard. The live composited observation and independent motion review remain required.
 - 8 November. Used the arm-disabled run of the exact diagnostic binary as the uninterrupted window control. This keeps the same build, render path and fixed endpoint for the pixel comparison.
+- 8 November. The overseer directed M2 to inject its pan through the normal AppKit and app handlers and use independent review of the game-window recording at 1×. The screen slot supplies the real display and compositor. Neither input nor motion review requires the owner at the keyboard.
+
+- 8 November. Initial M2 review identified authored holds from the one-degree yaw slider, incomplete recording brackets and a possible ambiguous trace join. Qualify a finer shipped yaw step, bracket the sweep in both recordings and use pan markers and actual compositor Swap Time. Keep the input schedule separate from the display result.
+
+## M2 pan plan review brief
+
+Verify the normal AppKit input route, separation of authored steps and
+frame pacing, matched recording brackets, and whether Game Performance
+can attribute one swap stream to the game's PID on the built-in panel.
+Require trace-domain pan markers or a calibrated join and keep cadence
+open if the trace cannot establish attribution.
 
 ## Injected input review brief
 

@@ -94,7 +94,7 @@ impl GameControls {
         let yaw = model
             .slider("camera.yaw", "Look around", -PI..=PI)
             .default(0.0)
-            .step(one_degree)
+            .step(0.05_f32.to_radians())
             .display(Display::degrees())
             .add()?;
         let pitch_limit = PITCH_LIMIT_DEGREES.to_radians();
@@ -319,6 +319,22 @@ mod tests {
         let edits = controls.take_edits();
         assert!((edits.time_of_day.expect("edited") - 18.48 / 24.0).abs() < 1e-6);
         assert!(controls.take_edits().is_empty());
+    }
+
+    #[test]
+    fn yaw_slider_carries_subdegree_edits_and_keys_keep_their_turn() {
+        let mut controls = GameControls::new().expect("fixed declarations");
+        let id = controls.model().find("camera.yaw").expect("declared");
+        controls
+            .model_mut()
+            .edit_display(id, 0.15)
+            .expect("yaw slider edit");
+        let yaw = controls.take_edits().camera_yaw.expect("slider edit");
+        assert!((yaw.to_degrees() - 0.15).abs() < 0.001, "yaw={yaw}");
+
+        controls.turn(5.0_f32.to_radians());
+        let yaw = controls.take_edits().camera_yaw.expect("key edit");
+        assert!((yaw.to_degrees() - 5.15).abs() < 0.001, "yaw={yaw}");
     }
 
     #[test]
