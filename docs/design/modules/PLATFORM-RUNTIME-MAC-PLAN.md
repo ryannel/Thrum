@@ -5,9 +5,9 @@ and [bounded frame host](../decisions/V1-BOUNDED-FRAME-HOST.md). Siblings:
 [iOS](PLATFORM-RUNTIME-IOS-PLAN.md) and [web](PLATFORM-RUNTIME-WEB-PLAN.md).
 Reviews: Design and plan over `3049433d`, approved plan SHA-256 prefix `0f467bcb` · [brief](#design-and-plan-review-brief) · initial hold resolved. First M1 abandon seam over `f79e3434` · [brief](#lost-frame-review-brief) · approved for observed post-encode loss. M1 injected input over `43e1d488` · [brief](#injected-input-review-brief) · approved after separating capture cutoff from finalization. M1 live slot `slot-04.0qL58y`, diagnostic `0c9a32dc` · [brief](../../evidence/render/mac-m1-recovery/README.md#independent-review-brief) · both done-when items pass. M2 pan plan over `aeb43fbc`, reviewed SHA-256 prefix `10e7730e` · [brief](#m2-pan-plan-review-brief) · approved after refining slider steps, recording brackets and trace attribution.
 Milestone: M2 The cooked valley presents smoothly on built-in ProMotion
-Now: The hidden AppKit panel delivered all 240 yaw actions. The matched runner, input proof and historical swap parser check are retained at `dd3c9c3e` on `codex/wip-g3b-mac-m2-witness`.
-Next: run the untraced and Game Performance sweeps in the queued eight-minute Mac slot, then independently review the 1× recordings and trace attribution.
-Blocked: the live slot is pending. The headless trace probes produced no exportable pan markers, so fresh cadence attribution remains open.
+Now: The hidden AppKit panel delivered all 240 yaw actions. The matched runner and checked clock fallback are retained at `22bb7404` on `codex/wip-g3b-mac-m2-witness`. The fallback passed schema and anchor preflights against a saved trace and synthetic joins.
+Next: run the untraced and Game Performance sweeps in an eight-minute slot when the console reports unlocked, then independently review the 1× recordings and trace attribution.
+Blocked: the 18:26 CET preflight reported a locked console. The live rows need an unlocked owner window. Headless trace probes produced no exportable pan markers, so fresh cadence attribution remains open.
 
 ## M0 Reviewed Mac qualification plan: done
 
@@ -85,6 +85,7 @@ Keep encode-time failure and live-window recovery outside this proof.
 - 8 November. The overseer directed M2 to inject its pan through the normal AppKit and app handlers and use independent review of the game-window recording at 1×. The screen slot supplies the real display and compositor. Neither input nor motion review requires the owner at the keyboard.
 
 - 8 November. Initial M2 review identified authored holds from the one-degree yaw slider, incomplete recording brackets and a possible ambiguous trace join. Qualify a finer shipped yaw step, bracket the sweep in both recordings and use pan markers and actual compositor Swap Time. Keep the input schedule separate from the display result.
+- 8 November, 18:26 CET. The granted slot's fresh preflight (`slot.tAxImE`) reported a locked console. Neither live row launched. The overseer's standing grant applies once the console is unlocked. M2 remains active for work that needs no screen.
 
 ## M2 pan plan review brief
 
