@@ -91,107 +91,51 @@ airglow variations and calibrated night colour are outside this profile.
 
 ### M3 surface Sun visibility
 
-Proposed for the low-Sun terrain path, pending independent design review. Use one
-solid-angle integral over the rendered Sun. At each world azimuth in its aperture,
-clip terrain and other occluder spans to the same elevation chord, union the spans,
-then integrate their `sin(elevation)` differences over azimuth. Duplicated coverage
-is idempotent. Blend only equivalent estimates of the same occluder set. Geometry
-partition, map reach and camera depth cannot omit an occluder. The point-ray
-triangle oracle remains independent of the runtime integration.
+Use one solid-angle integral over the rendered Sun. At each azimuth, clip
+terrain and detached spans to the same elevation chord, union the spans,
+then integrate their `sin(elevation)` differences. Duplicated coverage
+is idempotent. The independent reference casts rays through original triangles.
 
-The prepared terrain field keeps potentially dominant original edges over each
-registered receiver chart patch and azimuth interval. The cooked terrain geometry
-and placement identify the chart. An edge can be omitted only if its upper slope
-bound cannot exceed a retained lower witness anywhere in the cell. A variable-range
-edge witness must intersect every ray in the cell at positive range. Evaluate the
-retained edges at the actual receiver and azimuth. Partition whole triangles so a
-range clip cannot invent an edge inside a triangle. Subdivide loose cells, round
-bounds outward and preserve wrap. The lower blocked interval requires a certified
-solid terrain prefix from the common origin to every potential winner. The source
-grid certificate, cooked triangle correspondence and opacity establish the surface.
-Certify that the evaluated XZ origin stays in that footprint. A vertical lift uses
-positional error and the adjacent faces' maximum height gradient to clear the full
-local surface. Keep whole-triangle spans for boundary bands, disconnected receivers
-or numerically unresolved geometry. The terrain field has no fixed receiver-relative
-range partition.
+The terrain hierarchy candidate brackets each source patch with lower and upper
+affine height roofs. Bound the residual at every original vertex of a node containing
+whole source cells. Round both bounds outward on decode. For positive ray
+ranges the roof slopes have endpoint extrema. With an opaque continuous
+terrain prefix from a common origin, the lower roof certifies blocked
+directions and the upper roof bounds all terrain coverage. Only the angular
+difference needs original terrain refinement. Descend to original triangles
+around the origin/error footprint or where the upper roof could contain the
+origin. Use whole-triangle spans for disconnected or unqualified receivers.
+Keep the narrow crest and close terrain regardless of caster distance.
 
-Prune with a pairwise slope comparison on the true receiver triangle in a fixed
-world meridian for each sector. With positive denominators, cross-multiply the edge
-ratios. At each angular endpoint the resulting quadratic has six triangular Bernstein
-coefficients. Their upper bounds certify dominance across the face, with vertex
-intervals enclosing transform, fragment interpolation and origin lift. Every
-omission needs a retained, fully supported witness. Split unresolved cells, keep
-ties and competitors without a proof, and share identical sparse support lists.
+Use the actual packed Sun and one continuous, error-bounded receiver lift.
+The portable evaluator uses `q = tan(azimuth offset)` and `v = sin(elevation)`
+with bounded Jacobian `dv*dq/(1+q²)`. Enclose inner and outer span unions over
+angular bins, including silhouette events and endpoint crossings. Refine
+until the area enclosure plus rounding meets tolerance. Neither node
+bound nor a camera-relative range cut defines the final occluder set.
+A detached caster on the same aperture contributes only its union coverage
+outside terrain. Keep the separate aerial interval owner.
 
-Use original nearby terrain and compact caster triangles with conservative beam or
-tile candidate culling. Bound the inner and outer clipped span unions over each
-angular bin. Include silhouette endpoints as bin edges and refine until the summed
-area enclosure meets the tolerance. The envelope handles crossings of endpoints
-inside a bin. On portable, use a Sun-centred rational meridian coordinate
-`q = tan(azimuth offset)` and `v = sin(elevation)`, evaluated by vector ratios and
-square roots with a bounded Jacobian `dv*dq/(1+q²)`. Use the actual packed Sun
-direction and charge coordinate and rounding error to the visibility tolerance.
-Share candidate retrieval across receivers while retaining each receiver's coverage.
+Bind footprint, original cooked geometry, roof bounds and evaluator version
+as one source generation. The submitted frame pins it with current
+transforms and Sun. Admit supported receiver, Sun and caster domains and
+their worst traversal, refinement and replacement residency before activating
+the recipe. Select a complete prepared fallback before submission when a
+generation cannot be admitted. A full queue cannot omit an unresolved
+span. A discarded frame cannot publish a different generation.
 
-Key the prepared field by its receiver chart and transform, every covered terrain
-and boundary dependency, and the caster partition and evaluator versions. Publish
-the complete recipe before view extraction and keep it pinned by submitted frames
-and captures. A replacement may use the existing recipe as a whole until the
-enhanced recipe is ready. A missing or uncertain entry within an admitted field
-requires matching geometry coverage. Certify bounds over supported receiver patches,
-Sun directions and caster transforms, including offscreen contributors. Select the ordinary recipe before
-submission if the generation or transform leaves that envelope. The route is a
-performance witness, not an admission domain. Uncertainty cannot become clear sky
-or switch methods across camera depth. Preserve the old aerial interval owner and
-the graph's submitted-frame ownership. Unsubmitted frames never alter the admitted chart.
-
-The old all-receiver geometry beam is too costly as a default. In the retained
-crest diagnostic, partial receivers grow from 33,965 to 812,485 at 1080p. A
-clear/full classifier alone cannot make refinement rare. The archived far-terrain
-CPU witness narrows 951 potential edge entries to 34 over four bins at the difficult
-4 m receiver patch. The 1,024 m crest source raises that to 84 retained entries.
-Both match the triangle-section reference at the sampled rays. They do not
-establish a scene-wide bound. A single-aperture Ground E census leaves 3.95 million
-far edge entries and 2.75 million near triangles under the flat box-indexed layout
-even with a tightened corner bound. The verified cooked faces over six fixed
-sectors need 41.53 MiB after list interning, with 170 references at p95 and 581
-at maximum per face-sector pair. Sampled clipped horizons agree with the
-triangle reference. Materialized per-face lists at this subdivision are too
-costly for one aperture. A directional sweep shares exact upstream terrain
-sections along a fixed line. The sampled suffix hulls have 13 vertices at p95,
-but reusing their support off-axis can miss the full disk. A global sweep
-arrangement encounters 2.34 million projected vertex-order changes in six sectors.
-Within a constant positive crossing set, endpoint tangents bound the angular
-envelope. The direct source-block join still takes 68–69 slope evaluations at
-p95 with height rejection for a single azimuth, before strip lookups. Keep it
-offline. In the harder archive frame, only 897 of 1,118,754 receiver cones can
-meet the compact caster. Investigate bounded, preintegrated terrain coverage
-using a certified terrain-only visibility estimate. Where the aperture can meet
-detached geometry, integrate the union of its spans outside the terrain interval
-and subtract that additional coverage from the same estimate. This preserves
-the terrain error bound and removes the branch step as caster coverage vanishes.
-The candidate still owes spatial and temporal error, complete caster admission
-and the shared narrow-crest oracle before runtime. Fit continuous coverage over
-cooked receiver faces and the authoritative solar trajectory. Share lift values
-across incident faces so the same continuous origin feeds terrain, cone bounds
-and residual. Certify the decoded field using finer geometric bounds,
-independently of its stored knot spacing.
-Twelve adaptive time knots reduce sampled broad-edge error below 0.55 percentage
-points. The conforming raised-crest chart has continuous decoded seams but still
-misses by 3.10 points on fresh holdout rows. Park pure chart refinement and
-design a bounded original-geometry complement before scaling to the source.
-The compact caster sweep has zero correction at both padded cone boundaries.
-Independent rays through terrain and caster agree with the meridian union
-within 0.010 percentage points across seven poses.
-[Directional hull sweep, §§4–5](https://doi.org/10.1111/j.1467-8659.2009.01642.x) ·
-[Solar-trajectory bake and limitations, §§3 and 5](https://www.cs.cit.tum.de/fileadmin/w00cfj/cg/Research/Publications/2015/TerrainShadows/EG2015TerrainShadows.pdf).
-Before implementation, choose the portable representation and admit it against
-actual requested WebGPU limits, including staging and replacement overlap. Prove
-the geometry prefix, the angular error after decoding and shader rounding, and
-visibility continuity across chart and recipe boundaries. A candidate path with
-no depth producer on Direct or unresolved overflow after submission is ineligible.
-[Bounded horizon context](https://www.cg.cs.tu-bs.de/upload/publications/fritsch2025fchorizonmaps/fritsch2025fchorizonmaps.pdf) ·
-[Occluder fusion](https://www-sop.inria.fr/reves/CrossmodPublic/Documents/EGSR_bmss.pdf).
+The full-view beam, materialized face lists and block joins are too costly
+as defaults. The raised conforming chart misses by 3.10 percentage points
+despite matching seams. Park chart fitting. Independent 3D rays agree with
+the exact terrain/caster union within 0.010 percentage points at seven poses.
+Paired fixed-direction rows cut the raised crest's p95 visits from 95 to 85,
+with 16 added roof tests. Both partial witnesses still use exact triangles
+at every sampled receiver. Park per-column roof traversal. Advance only a
+design that shares source work across the aperture and bounds exact
+geometry work before runtime integration. Project each original edge once into
+the aperture plane and price a finite-segment upper envelope across azimuth.
+This candidate replaces repeated triangle sections with support and crossing events.
+[Extended-source occluder fusion, §7.2](https://www.cs.princeton.edu/courses/archive/spr01/cs598b/papers/schaufler00.pdf).
 
 ## Frame and cost
 

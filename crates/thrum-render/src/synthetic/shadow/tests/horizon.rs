@@ -1,4 +1,5 @@
 //! The shipping height-map march against a flat plateau at a known height and extent.
+use super::disk;
 use super::observer::{SAMPLE_FLOATS, constant_depth_maps, device, pipeline, read_visibility};
 use super::{HORIZON_RADIUS, SIZE, SUN_ANGULAR_RADIUS, Vec3, height_matrix};
 
@@ -36,19 +37,22 @@ fn a_below_horizontal_sun_is_partially_hidden_by_distant_lower_terrain() {
             [cos, sin, 0.0, 0.0],
             3,
         );
-        // For a receiver above a flat plateau the far edge sets the highest angle.
-        // Account for the shader's conservative height allowance and allow 0.015
-        // visibility error for the last geometric sample falling short of the edge.
-        let edge = ((-5.0 - 0.125 * texel) / HORIZON_RADIUS).atan();
-        let limit = (edge - elevation) / SUN_ANGULAR_RADIUS;
-        let reference = (0..4096)
-            .map(|i| 2.0 * (f64::from(i) + 0.5) / 4096.0 - 1.0)
-            .map(|y| ((1.0 - y * y).sqrt(), y > f64::from(limit)))
-            .fold((0.0, 0.0), |(visible, total), (weight, lit)| {
-                (visible + if lit { weight } else { 0.0 }, total + weight)
-            });
+        // The reference uses an actual flat mesh, with the same height allowance
+        // as the sampled map. The GPU still allows 0.015 for the march's last
+        // sample falling short of the geometric edge.
+        let extent = f64::from(HORIZON_RADIUS);
+        let height = -0.125 * f64::from(texel);
+        let a = [-extent, height, -extent];
+        let b = [extent, height, -extent];
+        let c = [extent, height, extent];
+        let d = [-extent, height, extent];
+        let expected = disk::visibility(
+            [0.0, 5.0, 0.0],
+            [f64::from(cos), f64::from(sin), 0.0],
+            f64::from(SUN_ANGULAR_RADIUS),
+            &[[a, b, c], [a, c, d]],
+        );
         assert!(observed[0] <= 1e-6, "receiver below plateau: {observed:?}");
-        let expected = reference.0 / reference.1;
         assert!(
             (f64::from(observed[1]) - expected).abs() < 0.015,
             "grazing Sun: GPU {}, plateau reference {expected}",

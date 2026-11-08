@@ -37,8 +37,10 @@ The Codex goal remains active. Its attachment is
   time fit's broad-edge maximum is 0.549 pp. The conforming raised
   patch plus strip shares its seams and still misses by 3.103 pp.
   Independent terrain and caster rays agree with the meridian union
-  within 0.010 pp over seven poses. Stop pure fit trials and review
-  a bounded original-geometry complement. Runtime remains held.
+  within 0.010 pp over seven poses. Per-column terrain roofs keep
+  all partial receivers on exact work, so park that evaluator.
+  The independent finite-Sun ray helper now serves the Metal horizon
+  test. Runtime integration remains held.
   Rerun from `tmp/g3s-sunset-lip/M3-RESEARCH.md`.
 
 - M2 now owns the star closeout only. The Mac's lossless 1080p60 masters
