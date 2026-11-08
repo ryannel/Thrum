@@ -110,13 +110,24 @@ origin. Use whole-triangle spans for disconnected or unqualified receivers.
 Keep the narrow crest and close terrain regardless of caster distance.
 
 Use the actual packed Sun and one continuous, error-bounded receiver lift.
-The portable evaluator uses `q = tan(azimuth offset)` and `v = sin(elevation)`
-with bounded Jacobian `dv*dq/(1+q²)`. Enclose inner and outer span unions over
-angular bins, including silhouette events and endpoint crossings. Refine
-until the area enclosure plus rounding meets tolerance. Neither node
-bound nor a camera-relative range cut defines the final occluder set.
-A detached caster on the same aperture contributes only its union coverage
-outside terrain. Keep the separate aerial interval owner.
+The CPU reference candidate projects original edges to a finite horizontal
+gnomonic window over the Sun aperture. Preserve above-roof edge support
+when filling terrain below the envelope. Clip detached triangles and
+unqualified terrain homogeneously before dividing. Admit a separated
+receiver or define positive-ray contact semantics at the apex. Form
+disjoint visible polygons from terrain and caster span unions, then
+map to the Sun-centred gnomonic plane. Intersect with the exact circle
+of radius `tan(r)` and integrate signed chords and arcs. For uniform
+visibility, normalizing planar area differs from normalized solid angle
+by at most `sec(r)^3 − 1`, below 0.0033 percentage points here. Geometry
+and rounding have separate bounds. Retain independent 3D ray integration
+as the referee. [Analytic silhouette clipping](https://diglib7.eg.org/items/b4d101ec-840e-4269-b549-ef16ea70d8f9).
+
+The portable runtime representation remains open. Bound candidate
+retrieval, event growth, scratch and total receiver work in the admitted
+domain. Bind the complete terrain and detached union, with an
+error-bounded transition to the fallback. Keep the separate aerial
+interval owner.
 
 Bind footprint, original cooked geometry, roof bounds and evaluator version
 as one source generation. The submitted frame pins it with current
@@ -134,10 +145,10 @@ Paired fixed-direction rows cut the raised crest's p95 visits from 95 to 85,
 with 16 added roof tests. Both partial witnesses still use exact triangles
 at every sampled receiver. Park per-column roof traversal. Advance only a
 design that shares source work across the aperture and bounds exact
-geometry work before runtime integration. Project each original edge once into
-the aperture plane and price a finite-segment upper envelope across azimuth.
-This candidate replaces repeated triangle sections with support and crossing events.
-[Extended-source occluder fusion, §7.2](https://www.cs.princeton.edu/courses/archive/spr01/cs598b/papers/schaufler00.pdf).
+geometry work before runtime integration. Projected edges match the
+raised-patch reference. Fixed meridians still miss the thin crest
+at low sample counts. Keep the envelope for CPU reference and
+candidate preparation. [Extended-source occluder fusion, §7.2](https://www.cs.princeton.edu/courses/archive/spr01/cs598b/papers/schaufler00.pdf).
 
 ## Frame and cost
 
