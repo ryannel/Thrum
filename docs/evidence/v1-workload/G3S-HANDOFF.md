@@ -8,6 +8,32 @@ The Codex goal remains active. Its attachment is
 
 ## Current checkpoint
 
+- M3 caster trace on `bded4d69` captured the same frame 72 with
+  the valley and its authored 2.4 m × 1.8 m positive caster. The
+  fitted uniforms, three 1024² D32 layers and opaque receiver
+  guides are byte-identical. The caster projects to reverse-Z
+  1.001815 in the near cascade, outside clip. At the two far
+  texel centres it projects to 0.504830, behind stored depths
+  0.854663 and 0.854667. Independent projection of terrain
+  triangle 37139 matches those depths within 2.5e-8. The
+  top-down footprint contains no texel centre. The historical positive came from the split-map
+  diagnostic, which excluded terrain from the directional map.
+  The captured field would hide a correctly emitted caster.
+  Its draw execution and exact finite-disk visibility were outside
+  this check. Keep the frozen caster as an M4 referee.
+  M3 needs a compact shadow already visible in the stock field.
+- The offline quad challenger on the same frame 227 reduces
+  horizontal visibility second-difference RMS from 4.74 to 1.87
+  percentage points over the fixed crop, versus 0.80 for the 3×3.
+  Regular structure remains visible in the quad mask. The offline
+  estimate uses visible peers and does not exercise GPU helper
+  lanes. Keep the challenger parked. No game screen or integration
+  ran. The evidence is in
+  `tmp/g3s-sunset-lip/graph/production-pcss/receiver-diagnostic/`.
+  `caster-maps.sh` records the raw depth and fit, and
+  `trace_caster.py` projects the exact authored triangles.
+  [Resolve review](../../design/modules/ATMOSPHERE-PLAN.md#m3-current-frame-visibility-review-brief).
+
 - M3 raw receiver diagnostic on `5984ca51` replayed the exact 230
   crossing and 95 extinction submission identities on Metal. It
   saved D32, inverse camera and packed visibility/geometry guides
