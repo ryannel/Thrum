@@ -29,9 +29,9 @@ Reviews:
   cache patch scope, per-device archives, sizing). All applied in revision 5a.
 
 Milestone: M0 counters and capture probe in progress (Claude G3t M0 session) · Updated: 2026-11-08
-Now: D0.3 landed (`be252c0d`). Seam 2 (registry, D1.1) exact diff approved in shape and held at `76464f23` (local branch `claude/g3t-seam2-registry`); D1.2's per-variant eligibility report is priced and its crate-private boundary agreed in `tmp/g3t-metal-boundary/NOTES.md`.
-Next: D0.4 replay in a booked 15-minute owner-present slot, or *unmeasured*; then D0.1–D0.2 on seam 8; then seam 2 and D1.2 land together with the `THRUM_RECIPE` override, rechecked on both recipes.
-Blocked: D0.4 waits for an owner-present screen slot. D0.1–D0.2 wait for seam 8, G7's M5 route, paused behind main health. M1 code (seam 2, D1.2) waits for M0 to close, as Thrum Core ruled. Any of these unblocks the next step.
+Now: D0.3 landed (`be252c0d`). D0.4 done: Xcode replay gives per-encoder device-memory bytes on the M3 Max ([probe](../../evidence/render/G3T-TRAFFIC-PROBE-2026-11-08.md)). Seam 2 (registry, D1.1) is approved in shape and held at `76464f23` (local branch `claude/g3t-seam2-registry`); D1.2's per-variant eligibility report is priced, with a crate-private boundary.
+Next: D0.1–D0.2 on seam 8; then seam 2 and D1.2 land together with the `THRUM_RECIPE` override, rechecked on both recipes. Traffic rows report physical per-encoder bytes beside the logical model.
+Blocked: D0.1–D0.2 wait for seam 8, G7's M5 route, paused behind main health. M1 code (seam 2, D1.2) waits for M0 to close, as Thrum Core ruled.
 The saved offscreen trace opens directly in Xcode. Replay stayed disabled during local device discovery, so physical traffic
 remains unmeasured. Any interactive retry needs an assigned slot.
 
@@ -157,7 +157,7 @@ Done when:
       display refresh. The noise floor of timing is recorded.
 - [x] D0.3 Pipeline, texture and native-object creation counters report counts by thread and phase. A test fails if a
       pipeline is created after readiness.
-- [ ] D0.4 A capture probe on the offscreen valley either produces a per-encoder byte counter for one attachment (an
+- [x] D0.4 A capture probe on the offscreen valley either produces a per-encoder byte counter for one attachment (an
       Xcode GPU frame capture through `MTLCaptureManager`, or another explicitly selected counter set) or records that
       none is available. The plans' traffic rows then use that method or the *unmeasured* label.
 
@@ -167,8 +167,9 @@ Work:
 - [ ] Capture-variant readback at route checkpoints, and a determinism rerun (→D0.1, D0.2).
 - [x] Creation counters in the runtime (opt-in; the generation-owned pipeline seam), and the
       after-readiness test (→D0.3).
-- [ ] Capture probe saved under `tmp/g3t-traffic/`, with the result in `docs/evidence/render/G3T-TRAFFIC-PROBE-*.md`
-      (→D0.4).
+- [x] Capture probe saved under `tmp/g3t-traffic/`, with the result in `docs/evidence/render/G3T-TRAFFIC-PROBE-*.md`
+      (→D0.4). Result: Xcode's per-encoder device-memory bytes, in
+      [G3T-TRAFFIC-PROBE-2026-11-08](../../evidence/render/G3T-TRAFFIC-PROBE-2026-11-08.md).
 
 ## M1 Recipe selection and graph-derived memoryless: pending
 
