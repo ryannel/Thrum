@@ -65,6 +65,7 @@ pub(super) async fn gpu(
     instance: &wgpu::Instance,
     generation: u64,
 ) -> (DeviceCapabilities, wgpu::Queue) {
+    crate::timestamp_permit::hold();
     let adapter = instance
         .request_adapter(&wgpu::RequestAdapterOptions::default())
         .await
