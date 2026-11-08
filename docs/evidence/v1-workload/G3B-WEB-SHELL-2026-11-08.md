@@ -18,6 +18,12 @@ in a separate worktree. Both sides ran on this M3 Max, Chrome through `scripts/c
 | `report()` field names and order | — | identical to the reference |
 | `./dev check` | — | pass (third run; see flakes) |
 
+**Rerun with the corrected retained-view witness, on main 65d0c011.** After Thrum Core's checker correction (A and A′
+observed before any edit), the branch tip ran again: `--case all` 30/30 twice, every retained-view round `presented:
+pass` in both runs, `--case material` on the development page passes, `./dev check` passes. The route stops are
+byte-identical to the reference and the route check fails on the same baseline drift. Default-page Wasm at this base:
+2,228,890 B with the gates only (`9f7aef86…`), 2,239,811 B with the extraction (`225b3348…`), +10,921 B (+0.49%).
+
 **Route check.** The night-upslope drift beyond the stored baseline is present on the reference with the same worst
 differences, so it predates this change (main's renderer has moved since the baseline was saved). The extraction adds
 no difference at the route check's grid. One post-change route run stopped when its owned Chrome failed to exit
