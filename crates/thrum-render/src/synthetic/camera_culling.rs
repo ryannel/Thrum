@@ -259,13 +259,30 @@ impl PreparedSynthetic {
         }
     }
 
-    pub(super) fn draw_camera(&self, pass: &mut wgpu::RenderPass<'_>, target: &OffscreenTarget) {
+    pub(super) fn draw_camera(
+        &self,
+        pass: &mut wgpu::RenderPass<'_>,
+        target: &OffscreenTarget,
+    ) -> Result<(), RenderError> {
+        if let Some(route) = &self.bucket_route {
+            let view_offset = self.view_stride * u32::from(target.frame_revision & 1 != 0);
+            let view = self.pending_view.as_ref().unwrap_or(&self.view_sample);
+            let orthographic = matches!(view.projection(), super::Projection::OrthographicFixture);
+            return route.draw(
+                pass,
+                (&target.view_bind_group, view_offset),
+                &self.mesh_arena,
+                orthographic,
+                None,
+            );
+        }
         match &target.visibility {
             Some(culled) if self.visibility.is_some() => {
                 pass.draw_indexed_indirect(culled.args(), 0);
             }
             _ => pass.draw_indexed(0..36, 0, 0..self.instance_upload.active_count()),
         }
+        Ok(())
     }
 
     /// The drawn list's target (frustum, or Occlusion's final cull), and
