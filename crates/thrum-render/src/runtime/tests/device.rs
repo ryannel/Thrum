@@ -11,6 +11,7 @@ struct Policy {
     atmosphere: bool,
     empty: bool,
     last_override: Cell<bool>,
+    camera_cut_tick: Option<u64>,
 }
 
 impl SceneSource<SourceTick> for Policy {
@@ -24,7 +25,7 @@ impl SceneSource<SourceTick> for Policy {
 
     fn frame(
         &self,
-        _source: SourceTick,
+        source: SourceTick,
         _alpha: f32,
         extent: [u32; 2],
         lighting: Option<FrameLighting>,
@@ -50,6 +51,8 @@ impl SceneSource<SourceTick> for Policy {
                 FrameLighting::Diagnostic(SyntheticLight::default())
             }
         });
+        let history_epoch = u64::from(self.camera_cut_tick.is_some_and(|cut| source.tick >= cut));
+        let view = view.with_history_epoch(history_epoch);
         Ok(SceneFrame { view, lighting })
     }
 }
@@ -1158,3 +1161,5 @@ fn gpu_pending_capture_is_refused_by_another_device_with_the_same_generation() {
         );
     });
 }
+
+mod view_history;

@@ -33,6 +33,7 @@ pub struct SyntheticView {
     sdr_tone_map: SdrToneMap,
     display_overlay: DisplayOverlay,
     history_reset: bool,
+    history_epoch: u64,
     celestial: Option<Mat3>,
 }
 
@@ -55,6 +56,7 @@ impl Default for SyntheticView {
             sdr_tone_map: SdrToneMap::default(),
             display_overlay: DisplayOverlay::Off,
             history_reset: false,
+            history_epoch: 0,
             celestial: None,
         }
     }
@@ -138,6 +140,7 @@ impl SyntheticView {
             sdr_tone_map: SdrToneMap::default(),
             display_overlay: DisplayOverlay::Off,
             history_reset: false,
+            history_epoch: 0,
             celestial: None,
         })
     }
@@ -247,6 +250,19 @@ impl SyntheticView {
         self
     }
 
+    /// Set the camera continuity identity. Keep it stable through continuous
+    /// motion and change it at each discontinuity. The frame host compares it
+    /// with the last submitted scene even if samples were skipped or discarded.
+    #[must_use]
+    pub fn with_history_epoch(mut self, epoch: u64) -> Self {
+        self.history_epoch = epoch;
+        self
+    }
+
+    pub(crate) fn history_epoch(&self) -> u64 {
+        self.history_epoch
+    }
+
     /// Supply the authored proper rotation from equatorial directions to world directions.
     /// # Errors
     /// Refuses reflections, nonfinite or nonorthonormal axes and nonperspective views.
@@ -267,7 +283,7 @@ impl SyntheticView {
         self.celestial
     }
 
-    pub(super) fn history_reset(&self) -> bool {
+    pub(crate) fn history_reset(&self) -> bool {
         self.history_reset
     }
 

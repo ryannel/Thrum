@@ -37,10 +37,9 @@ fn flythrough_turns_and_cuts_are_flagged() {
         let sample = camera(tick, 0.0);
         let turned = (sample.heading - previous.heading).abs() > 3.0;
         let jumped = (0..3).any(|axis| (sample.eye[axis] - previous.eye[axis]).abs() > 5.0);
-        if turned || jumped {
-            assert!(sample.cut, "unflagged discontinuity at tick {tick}");
-        }
-        cuts += usize::from(sample.cut);
+        let cut = sample.history_epoch != previous.history_epoch;
+        assert_eq!(cut, turned || jumped, "continuity at tick {tick}");
+        cuts += usize::from(cut);
         assert!(
             sample.eye[1] >= 0.9,
             "camera below the ground at tick {tick}"
@@ -48,5 +47,13 @@ fn flythrough_turns_and_cuts_are_flagged() {
         previous = sample;
     }
     // Two snaps per 600-tick block, plus the quarter-loop cut.
-    assert!(cuts >= 12, "{cuts}");
+    assert_eq!(cuts, 13);
+    assert_ne!(
+        camera(300, 1.0).history_epoch,
+        camera(302, 1.0).history_epoch
+    );
+    assert_eq!(
+        camera(301, 0.0).history_epoch,
+        camera(302, 1.0).history_epoch
+    );
 }

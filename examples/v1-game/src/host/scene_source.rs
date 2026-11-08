@@ -121,7 +121,7 @@ fn field_view(
     )
     .map(|view| {
         view.with_sdr_tone_map(SdrToneMap::NeutralHighlights)
-            .with_history_reset(sample.cut)
+            .with_history_epoch(sample.history_epoch)
     })
     .map_err(|error| format!("field camera: {error:?}"))
 }

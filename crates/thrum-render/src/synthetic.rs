@@ -1513,11 +1513,8 @@ impl PreparedSynthetic {
             )?;
         }
         self.history.set_extent(queue, target.extent());
-        if scene.view.history_reset() {
-            self.history.reset(queue);
-        }
         self.history
-            .set_presentation_alpha(queue, presentation_alpha);
+            .prepare_sample(queue, presentation_alpha, scene.view.history_reset());
         let next_revision = self.frame_revision.wrapping_add(1);
         let view_offset = self.view_stride * u32::from(next_revision & 1 != 0);
         queue.write_buffer(

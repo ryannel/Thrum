@@ -198,6 +198,7 @@ fn metal_motion_history_follows_submitted_frames_and_resets() {
             "history-pixel minus current-pixel: {moved}"
         );
         scene.instances[0].current[3][0] = 0.4;
+        scene.view = scene.view.with_history_reset(true);
         prepared
             .update_frame(
                 &queue,
@@ -217,6 +218,7 @@ fn metal_motion_history_follows_submitted_frames_and_resets() {
             .expect("abandoned encode");
         drop(abandoned);
         queue.submit([]);
+        scene.view = scene.view.with_history_reset(false);
         scene.instances[0].current[3][0] = 0.6;
         let after_drop = submitted_motion_x(
             &device,
@@ -229,7 +231,7 @@ fn metal_motion_history_follows_submitted_frames_and_resets() {
         );
         assert!(
             (after_drop + 12.8).abs() < 0.5,
-            "dropped frame must not advance history: {after_drop}"
+            "a dropped cut must preserve submitted history: {after_drop}"
         );
         scene.instances[0].ids[3] = 2;
         let reused = submitted_motion_x(

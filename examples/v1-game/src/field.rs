@@ -174,8 +174,9 @@ pub(crate) struct FieldCamera {
     pub(crate) eye: [f32; 3],
     /// Heading in the XZ plane, forward = (cos, 0, sin), before the player's yaw.
     pub(crate) heading: f32,
-    /// The sample follows a cut or snap turn, so presentation history resets.
-    pub(crate) cut: bool,
+    /// Camera continuity changes on a cut or snap turn and remains visible
+    /// to the renderer even when the first sample in a segment is dropped.
+    pub(crate) history_epoch: u64,
 }
 
 /// The scripted flythrough at `tick` and presentation `alpha`.
@@ -197,11 +198,14 @@ pub(crate) fn camera(tick: u64, alpha: f32) -> FieldCamera {
     if (TURN_START..TURN_START + TURN_TICKS).contains(&in_block) {
         heading += PI;
     }
-    let cut = tick > 1
-        && (in_block == TURN_START
-            || in_block == TURN_START + TURN_TICKS
-            || step.is_multiple_of(CUT_BLOCK));
-    FieldCamera { eye, heading, cut }
+    let turns = 2 * (step / TURN_BLOCK)
+        + u64::from(in_block >= TURN_START)
+        + u64::from(in_block >= TURN_START + TURN_TICKS);
+    FieldCamera {
+        eye,
+        heading,
+        history_epoch: cuts + turns,
+    }
 }
 
 #[cfg(test)]

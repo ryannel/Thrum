@@ -18,6 +18,12 @@ and a missing binding. On the 1080p cooked valley ABBA (shared load 13.9–14.3)
 1.93–1.94 → 1.49–1.90 ms and scene GPU pass-sum p95 was 7.65–8.29 → 6.32–8.46 ms.
 Raw rows and binary hashes: `tmp/ultrareview-2026-11-07/frame-submit/`.
 
+The field camera's continuity epoch stays visible across skipped ticks. The host
+compares it with the last submitted scene. An unsubmitted cut and a pixel capture
+mask previous transforms for their own sample and leave the committed transform
+serial intact. Offscreen Metal tests cover the skipped cut, capture, discarded
+cut and the following submitted motion. Raw: `tmp/g3b-camera-cut/`.
+
 **Native lifecycle:** ordered pause/resume drains accepted ticks; stopped wall time is excluded. Mac P retains intent;
 surface loss never pauses authority. Mac overload now drains admitted ticks through Pause, then resumes at the
 acknowledged tick without changing epoch/timeline; manual pause wins. Refused time is counted, not replayed.
