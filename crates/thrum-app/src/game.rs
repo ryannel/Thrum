@@ -159,10 +159,15 @@ pub trait Game {
     /// Observe a readback on the main thread. Replies to frames requested before the latest
     /// edits are not observed, so they cannot revert those edits.
     fn observe(&mut self, readback: Self::Readback);
-    /// Reload the game's own authored files, such as a material hook, when the window opens and
-    /// on `L` after the parameter file. The game reports what became of them; the default reloads
-    /// nothing.
+    /// Reload the game's own authored files, such as a material hook, when the window opens, on
+    /// `L` after the parameter file, and when one of [`Game::reload_files`] is saved. The game
+    /// reports what became of them; the default reloads nothing.
     fn reload(&mut self) {}
+    /// The files [`Game::reload`] reads. The window watches them and reloads when a save
+    /// settles, as `L` would; the default watches none.
+    fn reload_files(&self) -> Vec<std::path::PathBuf> {
+        Vec::new()
+    }
     /// Observe the pause state the `P` key now asks for.
     fn observe_paused(&mut self, paused: bool) {
         let _ = paused;
@@ -177,4 +182,21 @@ pub trait Game {
     fn focus_lost(&mut self) -> Result<(), String> {
         Ok(())
     }
+}
+
+/// Read a parameter file and apply it to `controls`: the report names any refused entry, which
+/// keeps its value while the others apply. The window and a live capture share it.
+/// # Errors
+/// The file cannot be read or is not a parameter file; every control keeps its value.
+pub(crate) fn apply_params_file(
+    path: &std::path::Path,
+    controls: &mut Controls,
+) -> Result<thrum_controls::FileReport, String> {
+    std::fs::read_to_string(path)
+        .map_err(|error| error.to_string())
+        .and_then(|text| {
+            controls
+                .apply_file(&text)
+                .map_err(|error| error.to_string())
+        })
 }

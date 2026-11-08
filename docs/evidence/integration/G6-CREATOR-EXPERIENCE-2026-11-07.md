@@ -287,3 +287,45 @@ The test fixture's grid and lit boxes after device replacement, at 640×360.
 - The Mac window panel toggle has not been used on screen; the native proofs are offscreen.
 - The bands follow luminance only. A clipped channel inside a band is not shown; that is the held clipping overlay.
 - Cascade index and the other planned field overlays are not designed yet.
+
+## Saved files reload without a key press (8 November)
+
+The design is in the G6 decision under "Saved files reload". Apple M3 Max, shared GPU, release starter.
+
+### Checks
+
+| Check | Result |
+|---|---|
+| `thrum-app` unit tests (`./dev check`) | 11 new: the watch (in-place save, rename-save, five-write burst, touch and identical rewrites, delete-then-create, a lasting absence, a file created late, two kinds coalescing, stop without waiting for a tick, nothing to watch) and the delivery body (parameter-only skips the game, game-only leaves the parameter file unread, `L` does both in order, a save during shutdown is dropped). Repeated five times without a failure. |
+| `python3 scripts/check_starter_live_reload.py <out>` | Pass, 8 saves on the real starter (`./dev starter` in live capture mode on copies of its files). |
+
+Starter run, each save and its outcome. Pixels changed are counted against the previous capture.
+
+| Save | Report | Pixels changed | Save to report |
+|---|---|---:|---:|
+| Valid parameter edit | 1 changed, 1 unchanged, 0 refused | 40.8% | 380 ms |
+| Malformed JSON | kept, with the parse error | 0 | 297 ms |
+| Refused key beside a valid one | 1 changed, 1 unchanged, 1 refused | 12.9% | 378 ms |
+| Five writes 4 ms apart | one report: 2 changed, 0 refused | 43.8% | 433 ms |
+| Touch and identical rewrites | no reload within 1.5 s | — | — |
+| Valid material (moss) | material drawn; prepare 674 ms | 4.0% | 1,156 ms |
+| Material with a compile error | refused; the previous material keeps drawing | 0 | 446 ms |
+| Parameter rename-save | 2 changed, 0 refused | 46.4% | 285 ms |
+
+Save-to-report times include the watch's settle tick and writing a 1600×900 PNG. They come from one run on a shared
+machine and are not a budget.
+
+### Visual review
+
+Agent, pass. After the moss save, the rock's upward faces turn green and the sides keep their sand colour. The capture
+after the broken material is unchanged from the moss capture, as is the capture after the malformed parameter file
+from its predecessor.
+
+### Limits
+
+- The witness runs the shared reload body offscreen. The window's event path (the `FilesSaved` wake and its guard) is
+  covered by code review and the unit-tested body, not on glass.
+- Pause ordering through `controls_edited` is the path `L` already uses. It has no new test, because `App` needs a
+  main-thread event loop; the sky kit never requests a pause.
+- The manual Chrome page still reloads parameters and the material by button.
+

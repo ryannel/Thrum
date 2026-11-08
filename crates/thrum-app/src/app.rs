@@ -36,7 +36,11 @@ use winit::{
     window::{Window, WindowId},
 };
 
-use crate::{Config, Game, Gpu, KeyResponse};
+use crate::{
+    Config, Game, Gpu, KeyResponse,
+    file_watch::{self, FileWatch, Kinds, Reload},
+    game::apply_params_file,
+};
 
 const DEFAULT_FRAMES: usize = 600;
 const MAX_FRAMES: usize = 100_000;
@@ -53,6 +57,8 @@ enum UserEvent {
     RenderDone,
     DeviceLost(u64),
     ControlsEdited,
+    /// A watched parameter or game file settled on new bytes; [`FileWatch::take`] says which.
+    FilesSaved,
 }
 
 struct App<G: Game> {
@@ -85,8 +91,11 @@ struct App<G: Game> {
     game: G,
     panel: Option<MacPanel>,
     edits: EditFlow<G::Edits>,
-    /// `THRUM_PARAMS`: a parameter file applied once the window is up and again on `L`.
+    /// `THRUM_PARAMS`: a parameter file applied once the window is up and again on `L` or a save.
     params_path: Option<std::path::PathBuf>,
+    /// Watches the parameter file and [`Game::reload_files`] from before the first load; stopped
+    /// before the renderer shuts down.
+    watch: Option<FileWatch>,
     origin: Instant,
     last_call: Duration,
     presented: usize,
@@ -161,6 +170,7 @@ impl<G: Game + 'static> App<G> {
             panel: None,
             edits: EditFlow::default(),
             params_path: std::env::var_os("THRUM_PARAMS").map(std::path::PathBuf::from),
+            watch: None,
             origin: Instant::now(),
             last_call: Duration::ZERO,
             presented: 0,
@@ -227,21 +237,14 @@ impl<G: Game + 'static> App<G> {
         clippy::print_stderr,
         reason = "parameter diagnostics are for the person editing the file"
     )]
-    fn load_params(&mut self) -> Result<(), String> {
+    fn load_params(&mut self, saved: bool) -> Result<(), String> {
         let Some(path) = self.params_path.clone() else {
             return Ok(());
         };
-        let applied = std::fs::read_to_string(&path)
-            .map_err(|error| error.to_string())
-            .and_then(|text| {
-                self.game
-                    .controls_mut()
-                    .apply_file(&text)
-                    .map_err(|error| error.to_string())
-            });
-        match applied {
+        let tag = if saved { " (saved)" } else { "" };
+        match apply_params_file(&path, self.game.controls_mut()) {
             Ok(report) => {
-                eprintln!("{}: {}: {report}", self.config.name, path.display());
+                eprintln!("{}: {}{tag}: {report}", self.config.name, path.display());
                 for problem in &report.problems {
                     eprintln!("  {problem}");
                 }
@@ -249,7 +252,7 @@ impl<G: Game + 'static> App<G> {
             }
             Err(error) => {
                 eprintln!(
-                    "{}: {}: {error}; controls keep their values (fix the file and press L)",
+                    "{}: {}{tag}: {error}; controls keep their values (fix the file and save, or press L)",
                     self.config.name,
                     path.display()
                 );
@@ -403,12 +406,7 @@ impl<G: Game + 'static> App<G> {
     /// game.
     fn set_key(&mut self, code: KeyCode, pressed: bool) -> Result<(), String> {
         if pressed && code == KeyCode::KeyL {
-            self.load_params()?;
-            self.game.reload();
-            if let Some(window) = &self.window {
-                window.request_redraw();
-            }
-            return Ok(());
+            return file_watch::deliver(self, Kinds::ALL, false);
         }
         match self.game.key(code, pressed)? {
             KeyResponse::Ignored => Ok(()),
@@ -506,7 +504,9 @@ impl<G: Game + 'static> App<G> {
             self.origin,
             wake,
         )?);
-        self.load_params()?;
+        // Baseline the watched files before the first load, so no later save is missed.
+        self.watch = self.start_watch(wake);
+        self.load_params(false)?;
         self.game.reload();
         Ok(())
     }
@@ -900,8 +900,67 @@ impl<G: Game + 'static> App<G> {
     }
 }
 
+impl<G: Game + 'static> App<G> {
+    /// Watch the parameter file and the game's files. A watch that cannot start is reported and
+    /// leaves `L`.
+    #[expect(
+        clippy::print_stderr,
+        reason = "the person editing files is told that saves will not reload"
+    )]
+    fn start_watch(&self, wake: &EventLoopProxy<UserEvent>) -> Option<FileWatch> {
+        let files = self
+            .params_path
+            .iter()
+            .map(|path| (path.clone(), Kinds::PARAMS))
+            .chain(
+                self.game
+                    .reload_files()
+                    .into_iter()
+                    .map(|path| (path, Kinds::GAME)),
+            )
+            .collect();
+        let wake = wake.clone();
+        FileWatch::start(
+            files,
+            file_watch::TICK,
+            Box::new(move || {
+                let _ = wake.send_event(UserEvent::FilesSaved);
+            }),
+        )
+        .unwrap_or_else(|error| {
+            eprintln!(
+                "{}: cannot watch files ({error}); press L to reload them",
+                self.config.name
+            );
+            None
+        })
+    }
+}
+
+impl<G: Game + 'static> Reload for App<G> {
+    fn stopped(&self) -> bool {
+        self.render.is_none() || self.render_stopped.load(Ordering::Acquire)
+    }
+
+    fn reload_params(&mut self, saved: bool) -> Result<(), String> {
+        self.load_params(saved)
+    }
+
+    fn reload_game(&mut self) {
+        self.game.reload();
+    }
+
+    fn redraw(&self) {
+        if let Some(window) = &self.window {
+            window.request_redraw();
+        }
+    }
+}
+
 impl<G: Game> Drop for App<G> {
     fn drop(&mut self) {
+        // No save may reach a renderer that is shutting down.
+        drop(self.watch.take());
         self.render_stopped.store(true, Ordering::Release);
         drop(self.display_link.take());
         if let Some(render) = self.render.take() {
@@ -1042,6 +1101,14 @@ impl<G: Game + 'static> ApplicationHandler<UserEvent> for App<G> {
                     }
                 }
                 if let Err(error) = self.controls_edited() {
+                    self.error = Some(error);
+                    event_loop.exit();
+                }
+                return;
+            }
+            UserEvent::FilesSaved => {
+                let kinds = self.watch.as_ref().map(FileWatch::take).unwrap_or_default();
+                if let Err(error) = file_watch::deliver(self, kinds, true) {
                     self.error = Some(error);
                     event_loop.exit();
                 }

@@ -15,6 +15,8 @@
 #[cfg(target_os = "macos")]
 mod app;
 #[cfg(target_os = "macos")]
+mod file_watch;
+#[cfg(target_os = "macos")]
 mod game;
 #[cfg(target_os = "macos")]
 pub mod sky;
