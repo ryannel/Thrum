@@ -9,6 +9,7 @@ use crate::capabilities::DeviceCapabilities;
 use crate::synthetic::mesh_arena::MeshId;
 
 mod admission;
+mod caster_cull;
 mod casters;
 mod grazing;
 

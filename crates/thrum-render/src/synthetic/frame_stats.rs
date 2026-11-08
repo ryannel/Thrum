@@ -4,7 +4,7 @@ use super::{CullMode, OffscreenTarget, PreparedSynthetic, history_gpu};
 
 #[derive(Clone, Copy)]
 pub(crate) struct SceneTimingLayout {
-    shadows: bool,
+    shadows: Shadows,
     clusters: bool,
     transforms: bool,
     star_pass: Option<&'static str>,
@@ -13,6 +13,17 @@ pub(crate) struct SceneTimingLayout {
     /// compute pass, timed even when the active prefix is empty. Occlusion:
     /// the prepass list, the depth prepass, the pyramid and the final cull.
     culling: u8,
+}
+
+/// Which Sun shadow passes a frame records.
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Shadows {
+    Off,
+    /// Every admitted caster in every Sun pass.
+    Unculled,
+    /// The Sun caster cull runs first: timed once and counted in the near
+    /// shadow bucket.
+    Culled,
 }
 
 /// The camera culling passes `mode` records.
@@ -27,7 +38,11 @@ const fn culling_passes(mode: CullMode) -> u8 {
 impl From<(&PreparedSynthetic, &OffscreenTarget)> for SceneTimingLayout {
     fn from((prepared, target): (&PreparedSynthetic, &OffscreenTarget)) -> Self {
         Self {
-            shadows: prepared.shadowed(),
+            shadows: match (prepared.shadowed(), prepared.caster_culling.is_some()) {
+                (false, _) => Shadows::Off,
+                (true, false) => Shadows::Unculled,
+                (true, true) => Shadows::Culled,
+            },
             clusters: prepared.gpu_clustered(),
             transforms: prepared.active_instance_count() != 0,
             star_pass: target.draw_stars.then_some(super::stars::PASS_NAME),
@@ -67,7 +82,7 @@ pub(crate) fn pass_durations(
     let names = ALL.into_iter().filter(|&name| match name {
         "synthetic Sun shadow near"
         | "synthetic Sun shadow far"
-        | "synthetic Sun horizon heights" => layout.shadows,
+        | "synthetic Sun horizon heights" => layout.shadows != Shadows::Off,
         "synthetic cluster build" => layout.clusters,
         history_gpu::PASS_NAME => layout.transforms,
         _ => true,
@@ -85,10 +100,11 @@ pub(crate) fn pass_durations(
     let mut visibility = None;
     let mut culled = 0_u8;
     let mut stars = None;
+    let mut caster_cull = None;
     let mut scene_passes = Vec::with_capacity(passes.len());
     for pass in passes {
         if pass.name.as_ref() == super::AIR_SHADOW_PASS {
-            if air_shadow.is_some() || !layout.shadows {
+            if air_shadow.is_some() || layout.shadows == Shadows::Off {
                 return None;
             }
             air_shadow = Some(pass.nanoseconds);
@@ -107,6 +123,11 @@ pub(crate) fn pass_durations(
             }
             culled |= bit;
             visibility = Some(visibility.unwrap_or(0.0) + pass.nanoseconds);
+        } else if pass.name.as_ref() == crate::visibility::casters::PASS {
+            if caster_cull.is_some() || layout.shadows != Shadows::Culled {
+                return None;
+            }
+            caster_cull = Some(pass.nanoseconds);
         } else if pass.name.as_ref() == super::CONTRIBUTION_COMPUTE {
             if contribution.is_some() {
                 return None;
@@ -116,7 +137,10 @@ pub(crate) fn pass_durations(
             scene_passes.push(pass);
         }
     }
-    if culled != culling || (layout.star_pass.is_some() && stars.is_none()) {
+    if culled != culling
+        || (layout.star_pass.is_some() && stars.is_none())
+        || (layout.shadows == Shadows::Culled) != caster_cull.is_some()
+    {
         return None;
     }
     let passes = scene_passes.as_slice();
@@ -159,6 +183,9 @@ pub(crate) fn pass_durations(
             scene[3] +=
                 contribution.unwrap_or(0.0) + visibility.unwrap_or(0.0) + stars.unwrap_or(0.0);
             scene[1] += air_shadow.unwrap_or(0.0);
+            // The caster cull lists every Sun pass's casters: shadow work,
+            // counted with the near map it runs ahead of.
+            scene[0] += caster_cull.unwrap_or(0.0);
             (
                 scene,
                 presented.then(|| passes[offset + count].nanoseconds),

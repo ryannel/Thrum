@@ -4,7 +4,7 @@ use crate::timing::PassTiming;
 const TRANSFORMS: SceneTimingLayout = SceneTimingLayout {
     transforms: true,
     star_pass: None,
-    shadows: false,
+    shadows: Shadows::Off,
     clusters: false,
     culling: culling_passes(CullMode::Direct),
 };
@@ -104,7 +104,7 @@ fn the_horizon_height_pass_reports_in_the_far_shadow_bucket() {
         &passes,
         false,
         SceneTimingLayout {
-            shadows: true,
+            shadows: Shadows::Unculled,
             ..TRANSFORMS
         },
     )
@@ -116,7 +116,7 @@ fn the_horizon_height_pass_reports_in_the_far_shadow_bucket() {
             &missing,
             false,
             SceneTimingLayout {
-                shadows: true,
+                shadows: Shadows::Unculled,
                 ..TRANSFORMS
             }
         )
@@ -194,4 +194,47 @@ fn occlusion_passes_are_required_once_each_and_counted_in_forward() {
     let mut repeated = passes.clone();
     repeated.push(passes[2].clone());
     assert!(pass_durations(&repeated, false, OCCLUDED).is_none());
+}
+
+#[test]
+fn the_caster_cull_is_required_once_and_counted_in_the_near_shadow_bucket() {
+    let layout = SceneTimingLayout {
+        shadows: Shadows::Culled,
+        ..CULLED
+    };
+    let named = |names: &[&str]| -> Vec<PassTiming> {
+        names
+            .iter()
+            .map(|&name| PassTiming {
+                name: name.into(),
+                nanoseconds: 1.0,
+            })
+            .collect()
+    };
+    let scene = [
+        "synthetic Sun shadow near",
+        "synthetic Sun shadow far",
+        "synthetic Sun horizon heights",
+        "synthetic exposure resolve",
+        "synthetic forward opaque",
+        "synthetic transform history",
+        "synthetic tone encode",
+    ];
+    let mut passes = vec![crate::visibility::casters::PASS, crate::visibility::PASS];
+    passes.extend(scene);
+    let (values, _, _) = pass_durations(&named(&passes), false, layout).unwrap();
+    assert_eq!(values[0], 2.0, "the cull joins the near map");
+    assert_eq!(values[1], 2.0);
+    assert_eq!(values[3], 2.0, "camera visibility stays in forward");
+    let mut missing = vec![crate::visibility::PASS];
+    missing.extend(scene);
+    assert!(pass_durations(&named(&missing), false, layout).is_none());
+    let mut twice = passes.clone();
+    twice.insert(0, crate::visibility::casters::PASS);
+    assert!(pass_durations(&named(&twice), false, layout).is_none());
+    let unexpected = SceneTimingLayout {
+        shadows: Shadows::Unculled,
+        ..layout
+    };
+    assert!(pass_durations(&named(&passes), false, unexpected).is_none());
 }
