@@ -106,16 +106,13 @@ terrain and detached spans to the same elevation chord, union the spans,
 then integrate their `sin(elevation)` differences. Duplicated coverage
 is idempotent. The independent reference casts rays through original triangles.
 
-The candidate shared field stores original far-edge IDs for a continuous
-receiver and Sun support. Project the finite edges at the actual query
-and bound the omitted area after clipping to the true disk. Filling
-below a retained edge requires a continuous terrain prefix. Keep
-straddling source faces and detached blockers in the same union.
-Adding exact blockers can only reduce the omitted blocked area. Blend
-complete union results only where both packets certify the same field.
-The finite CPU screen preserves the far crest and crossing. Continuous
-certification, source-wide capacity, residual work and portable precision
-precede shader admission. [Projected terrain-edge envelopes](https://www.geos.ed.ac.uk/~gisteac/gis_book_abridged/files/ch38.pdf).
+The shared original-edge packet proof is parked. It preserves the finite
+crest and crossing witnesses, while three bounded CPU proofs leave
+omission unresolved over moving receivers. Keep the original near and
+far terrain and detached casters in the same disk union. Any retained
+terrain horizon needs a continuous source prefix from the lifted origin.
+A replacement needs complete source coverage and residual work accounting
+before shader admission. [Evidence](../../evidence/v1-workload/G3S-HANDOFF.md#current-checkpoint).
 
 Use the actual packed Sun and one continuous, error-bounded receiver lift.
 The CPU reference candidate projects original edges to a finite horizontal

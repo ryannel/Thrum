@@ -119,6 +119,10 @@ The Codex goal remains active. Its attachment is
   to receiver support. The scratch near split differs from the
   finite evaluator. Reproduction and the stop on subdivision
   tuning are in `tmp/g3s-sunset-lip/graph/disk-edge-packet-continuous.md`.
+  The shared-partition same-ray screen retains finite equality and
+  the 17.17 pp crest ablation, while continuous bounds are
+  0.817–70.504 pp over the eight domains. None qualifies the producer.
+  Park the packet proof spike. No production shadow code changed.
 
   The canonical Ground E baseline on `02e5e3eb` has 300 timed offscreen
   Metal frames at 1080p60, yaw −110° to −70° and 17.40000–17.79867 h.
