@@ -8,6 +8,18 @@ The Codex goal remains active. Its attachment is
 
 ## Current checkpoint
 
+- M3 production research selected stable overlap plus fixed per-pixel
+  rotation of the unrestricted last-cascade PCSS filter. The archived
+  flash occurs inside the last cascade. The independent design review
+  conditionally cleared one screen with three prepared filter arms and
+  complete matched motion. No renderer code or new capture at this
+  checkpoint. The next step is to freeze the capture manifest and
+  prepare the identical-scope fixed and rotated 32-tap arms alongside
+  stock. See the [screen protocol](../../design/modules/ATMOSPHERE-PLAN.md#m3-production-pcss-review-brief)
+  and the original brief at
+  `tmp/g3s-sunset-lip/graph/production-shadow-review.md`.
+  The physical bandwidth replay remains separate.
+
 - M2 orientation, source `9c1021bb`: the CPU witness matches 30
   named-star projections within 2.020e-7 direction error. All 18,000
   authored Sun vectors are bit-identical. The production Metal flux
