@@ -16,7 +16,7 @@
 use super::buckets::{
     BucketError, BucketKey, BucketLimits, Buckets, PipelineClass, SEGMENT_ALIGN, Segment,
 };
-use super::mesh_arena::{MeshArena, MeshId, MeshVertex};
+use super::mesh_arena::{MeshArena, MeshId};
 use super::shadow::CasterDraw;
 use super::upload::InstanceUpload;
 use super::{RenderError, storage_layout};
@@ -27,10 +27,9 @@ use crate::visibility::{MemberInputs, MemberShape};
 const TABLE_WORDS: usize = 4 + super::buckets::MAX_BUCKETS * 4;
 const TABLE_BYTES: u64 = TABLE_WORDS as u64 * 4;
 
-/// Meshes added to the arena at preparation (rows 2 onward, in order) and
-/// each logical slot's mesh row. Every slot names a row the arena holds.
+/// Each logical slot's admitted mesh row. Every slot names a row the arena
+/// holds.
 pub(super) struct MeshSelection {
-    pub(super) meshes: Vec<(Vec<MeshVertex>, Vec<u32>)>,
     pub(super) slots: Vec<MeshId>,
 }
 
