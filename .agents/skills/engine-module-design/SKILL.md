@@ -44,7 +44,9 @@ choose the techniques, the research, the experiments and how to break the work d
   - *Not foundational*: park it as a named later spike with what you learned, and move on to the milestone's other
     work.
   Tell the overseer which call you made.
-- **Re-read this skill at each milestone start and whenever an experiment fails.** Your goal should cite it.
+- **Use this skill at the moments it changes your next step:** starting a milestone (size, done-when, review) and
+  after a failed experiment (the stop-and-decide rule above). Cite it in your goal so it survives compaction; a goal
+  that names it brings it back when your context resets.
 - **Work that serves no milestone** either earns a place in the plan or waits.
 - **Long jobs run in the background.** Solvers, bakes, builds and benchmarks shouldn't hold your turn. Start them,
   work other plan items, and check them between items.
