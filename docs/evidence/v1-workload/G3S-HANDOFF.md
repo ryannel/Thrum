@@ -8,6 +8,19 @@ The Codex goal remains active. Its attachment is
 
 ## Current checkpoint
 
+- M3's current-frame resolve design is in
+  `tmp/g3s-sunset-lip/graph/production-pcss/spatial-resolve-review.md`
+  (reviewed SHA-256 prefix `6d559395`). The independent and G3t
+  reviews clear one raw receiver diagnostic and fixed-kernel check.
+  They hold runtime. At 1080p the proposed raster and resolve add
+  24.88 MB per slot and 67.39 MB nominal logical accesses per
+  frame before overdraw and PCSS reads. Actual GPU cost and physical
+  traffic are unmeasured. All three transients would be stored and
+  confined to the prepared variant. Exact coplanar synthetic/cooked
+  winner, compact-caster preservation and cooked seam review remain
+  open. The diagnostic is next. No new capture ran in this checkpoint.
+  [Review brief](../../design/modules/ATMOSPHERE-PLAN.md#m3-current-frame-visibility-review-brief).
+
 - M3's first matched production PCSS screen fails D1 at source
   `efa82534`. At row 665 across x=480–1200, stock, fixed and rotated
   report median red-code steps of −50, −29 and −8 at frames 226→227
