@@ -42,6 +42,69 @@ struct Cascade {
     view_group: wgpu::BindGroup,
 }
 
+/// A caster's local bounding box: the unit cube for legacy scenes, or the
+/// selected arena mesh's bounds. Fits and containment transform it by the
+/// instance basis, so every Sun cascade and the height layer see the caster's
+/// actual extent, on screen or not.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(super) struct CasterBox {
+    pub(super) center: [f32; 3],
+    pub(super) half: [f32; 3],
+}
+
+impl CasterBox {
+    pub(super) const UNIT: Self = Self {
+        center: [0.0; 3],
+        half: [1.0; 3],
+    };
+
+    pub(super) fn from_bounds([minimum, maximum]: [[f32; 3]; 2]) -> Self {
+        Self {
+            center: std::array::from_fn(|axis| minimum[axis].midpoint(maximum[axis])),
+            half: std::array::from_fn(|axis| (maximum[axis] - minimum[axis]) * 0.5),
+        }
+    }
+
+    /// The box's half-extent along `axis` and its centre at each translation
+    /// endpoint, both in world units. The unit box reproduces the legacy cube
+    /// arithmetic exactly.
+    fn along(self, axis: Vec3, instance: &InstanceRecord) -> (f32, [Vec3; 2]) {
+        let columns = std::array::from_fn::<_, 3, _>(|index| {
+            let column = instance.current[index];
+            Vec3::new(column[0], column[1], column[2])
+        });
+        let extent = (0..3)
+            .map(|index| self.half[index] * axis.dot(columns[index]).abs())
+            .sum::<f32>();
+        let offset = (0..3).fold(Vec3::ZERO, |sum, index| {
+            sum + columns[index] * self.center[index]
+        });
+        let centers = [instance.previous[3], instance.current[3]]
+            .map(|center| Vec3::new(center[0], center[1], center[2]) + offset);
+        (extent, centers)
+    }
+}
+
+/// The caster set for one cascade: the arena's index buffer and either the
+/// legacy cube over physical rows, or one draw per bucket over its members.
+/// Membership is every admitted instance, never the camera-visible list.
+pub(super) struct CasterDraws<'a> {
+    pub(super) indices: &'a wgpu::Buffer,
+    /// The existing caster facing rule: no culling while any instance is
+    /// mirrored or degenerate.
+    pub(super) two_sided: bool,
+    /// The bucket route's member list, bound per draw at its segment offset.
+    pub(super) members: Option<&'a wgpu::BindGroup>,
+    pub(super) draws: &'a [CasterDraw],
+}
+
+pub(super) struct CasterDraw {
+    pub(super) member_offset: u32,
+    pub(super) indices: std::ops::Range<u32>,
+    pub(super) base_vertex: i32,
+    pub(super) instances: u32,
+}
+
 struct FittedShadow {
     matrices: [Mat4; MAPS],
     samples: [u8; SAMPLE_BYTES],
@@ -49,9 +112,9 @@ struct FittedShadow {
 }
 
 impl FittedShadow {
-    fn contains_caster(&self, instance: &InstanceRecord) -> bool {
+    fn contains_caster(&self, instance: &InstanceRecord, caster: CasterBox) -> bool {
         self.matrices.iter().enumerate().all(|(index, matrix)| {
-            matrix_contains_caster(*matrix, instance, index == 0 && self.partitioned)
+            matrix_contains_caster(*matrix, instance, caster, index == 0 && self.partitioned)
         })
     }
 
@@ -70,25 +133,27 @@ struct CascadeFit {
     excluded_depth: f32,
 }
 
-fn matrix_contains_caster(matrix: Mat4, instance: &InstanceRecord, clip_upstream: bool) -> bool {
-    let [x, y, z, offset] = matrix.row(2).to_array();
-    let extent = (0..3)
-        .map(|axis| {
-            let column = instance.current[axis];
-            (x * column[0] + y * column[1] + z * column[2]).abs()
-        })
-        .sum::<f32>();
-    [instance.previous[3], instance.current[3]]
-        .iter()
-        .all(|center| {
-            let depth = x * center[0] + y * center[1] + z * center[2] + offset;
-            depth - extent >= -1e-4 && (clip_upstream || depth + extent <= 1.0 + 1e-4)
-        })
+fn matrix_contains_caster(
+    matrix: Mat4,
+    instance: &InstanceRecord,
+    caster: CasterBox,
+    clip_upstream: bool,
+) -> bool {
+    let row = matrix.row(2);
+    let (extent, centers) = caster.along(row.truncate(), instance);
+    centers.iter().all(|center| {
+        let depth = row.truncate().dot(*center) + row.w;
+        depth - extent >= -1e-4 && (clip_upstream || depth + extent <= 1.0 + 1e-4)
+    })
 }
 
 pub(super) struct ShadowPrepared {
     pipeline: wgpu::RenderPipeline,
     pipeline_two_sided: wgpu::RenderPipeline,
+    /// Culled and two-sided pipelines that fetch each instance from the
+    /// bucket route's member list, for scenes that select meshes.
+    member_pipelines: Option<[wgpu::RenderPipeline; 2]>,
+    member_layout: wgpu::BindGroupLayout,
     cascades: [Cascade; MAPS],
     queue: wgpu::Queue,
     view_layout: wgpu::BindGroupLayout,
@@ -103,19 +168,21 @@ pub(super) struct ShadowTarget {
 }
 
 impl ShadowPrepared {
-    pub(super) fn contains_caster(&self, instance: &InstanceRecord) -> bool {
-        self.fitted.contains_caster(instance)
+    pub(super) fn contains_caster(&self, instance: &InstanceRecord, caster: CasterBox) -> bool {
+        self.fitted.contains_caster(instance, caster)
     }
 
+    /// `casters` holds each slot's box when the scene selects meshes, and
+    /// prepares the member pipelines; `None` keeps the unit cube.
     pub(super) fn new(
         device: &crate::runtime::DeviceSite,
         queue: &wgpu::Queue,
         view: &SyntheticView,
-        instances: &[InstanceRecord],
+        (instances, casters): (&[InstanceRecord], Option<&[CasterBox]>),
         light_direction: Vec3,
         instance_layout: &wgpu::BindGroupLayout,
     ) -> Result<Self, RenderError> {
-        let inputs = FitInputs::new(view, instances, light_direction);
+        let inputs = FitInputs::new(view, (instances, casters), light_direction)?;
         let fitted = inputs.fit(None)?;
         let view_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("synthetic Sun cascade view"),
@@ -146,22 +213,45 @@ impl ShadowPrepared {
             });
             Cascade { buffer, view_group }
         });
+        let member_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("synthetic Sun caster members"),
+            entries: &[wgpu::BindGroupLayoutEntry {
+                binding: 0,
+                visibility: wgpu::ShaderStages::VERTEX,
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Storage { read_only: true },
+                    has_dynamic_offset: true,
+                    min_binding_size: wgpu::BufferSize::new(4),
+                },
+                count: None,
+            }],
+        });
         let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("synthetic Sun shadow"),
             bind_group_layouts: &[Some(&view_layout), Some(instance_layout)],
             immediate_size: 0,
         });
+        let member_pipeline_layout =
+            device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: Some("synthetic Sun bucket shadow"),
+                bind_group_layouts: &[
+                    Some(&view_layout),
+                    Some(instance_layout),
+                    Some(&member_layout),
+                ],
+                immediate_size: 0,
+            });
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("synthetic Sun caster"),
             source: wgpu::ShaderSource::Wgsl(include_str!("shadow.wgsl").into()),
         });
-        let create_pipeline = |cull_mode| {
+        let create = |cull_mode, layout, entry_point| {
             device.render(&wgpu::RenderPipelineDescriptor {
                 label: Some("synthetic Sun caster"),
-                layout: Some(&layout),
+                layout: Some(layout),
                 vertex: wgpu::VertexState {
                     module: &shader,
-                    entry_point: Some("vertex"),
+                    entry_point: Some(entry_point),
                     compilation_options: wgpu::PipelineCompilationOptions::default(),
                     buffers: &[],
                 },
@@ -182,8 +272,12 @@ impl ShadowPrepared {
                 cache: None,
             })
         };
-        let pipeline = create_pipeline(Some(wgpu::Face::Back));
-        let pipeline_two_sided = create_pipeline(None);
+        let pipeline = create(Some(wgpu::Face::Back), &layout, "vertex");
+        let pipeline_two_sided = create(None, &layout, "vertex");
+        let member_pipelines = casters.is_some().then(|| {
+            [Some(wgpu::Face::Back), None]
+                .map(|cull| create(cull, &member_pipeline_layout, "member_vertex"))
+        });
         let sample_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("synthetic Sun cascade samples"),
             contents: &fitted.samples,
@@ -192,6 +286,8 @@ impl ShadowPrepared {
         Ok(Self {
             pipeline,
             pipeline_two_sided,
+            member_pipelines,
+            member_layout,
             cascades,
             queue: queue.clone(),
             view_layout,
@@ -208,13 +304,18 @@ impl ShadowPrepared {
         }
     }
 
+    /// The member list's layout for the bucket route's caster bind group.
+    pub(super) fn member_layout(&self) -> &wgpu::BindGroupLayout {
+        &self.member_layout
+    }
+
     pub(super) fn update(
         &mut self,
         view: &SyntheticView,
-        instances: &[InstanceRecord],
+        casters: (&[InstanceRecord], Option<&[CasterBox]>),
         light_direction: Vec3,
     ) -> Result<(), RenderError> {
-        let inputs = FitInputs::new(view, instances, light_direction);
+        let inputs = FitInputs::new(view, casters, light_direction)?;
         self.fitted = inputs.fit(None)?;
         self.inputs = inputs;
         Ok(())
@@ -239,9 +340,7 @@ impl ShadowPrepared {
         encoder: &mut wgpu::CommandEncoder,
         target: &ShadowTarget,
         instances: &wgpu::BindGroup,
-        cube_indices: &wgpu::Buffer,
-        count: u32,
-        two_sided: bool,
+        casters: &CasterDraws<'_>,
         generation: u64,
         index: usize,
         compiled: &CompiledPass,
@@ -269,15 +368,28 @@ impl ShadowPrepared {
                 timings,
             )?
             .ok_or(RenderError::GraphPassMismatch)?;
-        pass.set_pipeline(if two_sided {
-            &self.pipeline_two_sided
-        } else {
-            &self.pipeline
-        });
+        let pipeline = match (casters.members, &self.member_pipelines) {
+            (None, _) if casters.two_sided => &self.pipeline_two_sided,
+            (None, _) => &self.pipeline,
+            (Some(_), Some([culled, two_sided])) => {
+                if casters.two_sided {
+                    two_sided
+                } else {
+                    culled
+                }
+            }
+            (Some(_), None) => return Err(RenderError::GraphPassMismatch),
+        };
+        pass.set_pipeline(pipeline);
         pass.set_bind_group(0, &cascade.view_group, &[]);
         pass.set_bind_group(1, instances, &[]);
-        pass.set_index_buffer(cube_indices.slice(..), wgpu::IndexFormat::Uint16);
-        pass.draw_indexed(0..36, 0, 0..count);
+        pass.set_index_buffer(casters.indices.slice(..), wgpu::IndexFormat::Uint32);
+        for draw in casters.draws {
+            if let Some(members) = casters.members {
+                pass.set_bind_group(2, members, &[draw.member_offset]);
+            }
+            pass.draw_indexed(draw.indices.clone(), draw.base_vertex, 0..draw.instances);
+        }
         if let Some(contribution) = contribution {
             contribution.draw_shadow(&mut pass);
         }
@@ -321,14 +433,23 @@ struct FitInputs {
 }
 
 impl FitInputs {
-    fn new(view: &SyntheticView, instances: &[InstanceRecord], light_direction: Vec3) -> Self {
+    /// Refuses a box list that does not cover every slot.
+    fn new(
+        view: &SyntheticView,
+        (instances, casters): (&[InstanceRecord], Option<&[CasterBox]>),
+        light_direction: Vec3,
+    ) -> Result<Self, RenderError> {
+        if casters.is_some_and(|casters| casters.len() != instances.len()) {
+            return Err(RenderError::SceneCapacity);
+        }
         let rotation = light_rotation(light_direction);
-        Self {
+        let set = (instances, casters);
+        Ok(Self {
             projection: view.projection(),
             rotation,
-            caster_depth: caster_depth_bounds(rotation, instances),
-            caster_height: caster_depth_bounds(light_rotation(Vec3::NEG_Y), instances),
-        }
+            caster_depth: caster_depth_bounds(rotation, set),
+            caster_height: caster_depth_bounds(light_rotation(Vec3::NEG_Y), set),
+        })
     }
 
     fn fit(&self, bounds: Option<ShadowBounds>) -> Result<FittedShadow, RenderError> {
@@ -611,8 +732,12 @@ fn depth_axis(rotation: Mat4) -> Vec3 {
 }
 
 /// Exact affine-box extent along light depth, shared by both cascades.
-/// XY texel snapping does not change this depth axis.
-fn caster_depth_bounds(rotation: Mat4, instances: &[InstanceRecord]) -> Option<(f32, f32)> {
+/// XY texel snapping does not change this depth axis. Each caster's box is
+/// its mesh bounds, or the unit cube when the scene selects no meshes.
+fn caster_depth_bounds(
+    rotation: Mat4,
+    (instances, casters): (&[InstanceRecord], Option<&[CasterBox]>),
+) -> Option<(f32, f32)> {
     if instances.is_empty() {
         return None;
     }
@@ -620,17 +745,11 @@ fn caster_depth_bounds(rotation: Mat4, instances: &[InstanceRecord]) -> Option<(
     let offset = -rotation.w_axis.z;
     let mut minimum = f32::INFINITY;
     let mut maximum = f32::NEG_INFINITY;
-    for instance in instances {
-        let extent = instance.current[..3]
-            .iter()
-            .map(|column| {
-                depth_axis
-                    .dot(Vec3::new(column[0], column[1], column[2]))
-                    .abs()
-            })
-            .sum::<f32>();
-        for center in [instance.previous[3], instance.current[3]] {
-            let depth = depth_axis.dot(Vec3::new(center[0], center[1], center[2])) + offset;
+    for (slot, instance) in instances.iter().enumerate() {
+        let caster = casters.map_or(CasterBox::UNIT, |casters| casters[slot]);
+        let (extent, centers) = caster.along(depth_axis, instance);
+        for center in centers {
+            let depth = depth_axis.dot(center) + offset;
             minimum = minimum.min(depth - extent);
             maximum = maximum.max(depth + extent);
         }
@@ -662,7 +781,7 @@ mod tests {
             2000.0,
         )
         .expect("perspective receiver");
-        let inputs = FitInputs::new(&view, &[], direction);
+        let inputs = FitInputs::new(&view, (&[], None), direction).expect("no casters");
         let low = ShadowBounds::new([-50.0, -1.0, -50.0], [50.0, 1.0, 50.0]).expect("low caster");
         let tall = ShadowBounds::new([-50.0, -1.0, -3000.0], [50.0, 400.0, 3000.0])
             .expect("tall distant caster");
@@ -693,7 +812,7 @@ mod tests {
             100.0,
         )
         .expect("perspective receiver");
-        let inputs = FitInputs::new(&view, &[], direction);
+        let inputs = FitInputs::new(&view, (&[], None), direction).expect("no casters");
         let bounds = ShadowBounds::new([-100.0; 3], [100.0, 2000.0, 100.0]).expect("finite caster");
         let fitted = inputs.fit(Some(bounds)).expect("finite fit");
         let value =
@@ -730,7 +849,8 @@ mod tests {
         .expect("narrow perspective receiver");
         let bounds =
             ShadowBounds::new([59.0, -1.0, -6.0], [61.0, 1.0, -4.0]).expect("upstream caster");
-        let fitted = FitInputs::new(&view, &[], Vec3::X)
+        let fitted = FitInputs::new(&view, (&[], None), Vec3::X)
+            .expect("no casters")
             .fit(Some(bounds))
             .expect("partitioned shadow fit");
         let receiver = Vec3::new(0.0, 0.0, -5.0);
@@ -816,7 +936,8 @@ mod tests {
         instance.current[2] = [0.1, -0.3, 1.1, 0.0];
         instance.current[3] = [2.0, -1.0, 4.0, 1.0];
         let rotation = light_rotation(Vec3::new(0.3, -0.8, 0.6).normalize());
-        let (low, high) = caster_depth_bounds(rotation, &[instance.clone()]).expect("one caster");
+        let (low, high) =
+            caster_depth_bounds(rotation, (&[instance.clone()], None)).expect("one caster");
         for bits in 0..8 {
             let local = Vec3::new(
                 if bits & 1 == 0 { -1.0 } else { 1.0 },
@@ -838,7 +959,8 @@ mod tests {
         instance.previous[0][0] = 0.1;
         instance.previous[3][0] = 8.0;
         let rotation = light_rotation(Vec3::new(0.3, -0.8, 0.6).normalize());
-        let (low, high) = caster_depth_bounds(rotation, &[instance.clone()]).expect("one caster");
+        let (low, high) =
+            caster_depth_bounds(rotation, (&[instance.clone()], None)).expect("one caster");
         for center in [instance.previous[3], instance.current[3]] {
             let mut model = instance.current;
             model[3] = center;

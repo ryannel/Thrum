@@ -165,7 +165,7 @@ fn members_follow_upload_activity_churn() {
                 instance.ids[3] = u32::from(instance.ids[3] == 0);
             }
             upload
-                .replace(&queue, &instances, &changed, |_| false)
+                .replace(&queue, &instances, &changed, |_, _| false)
                 .expect("replace");
         }
         for (slot, instance) in (0..count).zip(&instances) {
