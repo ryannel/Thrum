@@ -5,9 +5,9 @@ and [bounded frame host](../decisions/V1-BOUNDED-FRAME-HOST.md). Siblings:
 [iOS](PLATFORM-RUNTIME-IOS-PLAN.md) and [web](PLATFORM-RUNTIME-WEB-PLAN.md).
 Reviews: Design and plan over `3049433d`, approved plan SHA-256 prefix `0f467bcb` · [brief](#design-and-plan-review-brief) · initial hold resolved on lost-token cleanup, the recovery oracle, display attribution and platform distinctions. First M1 abandon seam over `f79e3434` · [brief](#lost-frame-review-brief) · approved for observed post-encode loss.
 Milestone: M1 The same Mac game resumes after graphics loss
-Now: The lost-frame abandon test and detached Metal recovery helper pass. The opt-in V1 witness builds in scratch.
+Now: The Metal abandon and detached recovery tests pass. The 1080p cooked-valley readback matches across replacement at acknowledged tick zero. The runnable witness and preflight logs are retained at `69eac45c` on `codex/wip-g3b-mac-m1-witness`.
 Next: run the arm-disabled, paused-loss and running-loss rows, then review the recovered window in motion.
-Blocked: the live composited M1 witness is queued for an owner-present window.
+Blocked: the offscreen tests leave live same-window presentation unproved. Run the prepared witness in the queued eight-minute owner-present Mac slot, with Screen Recording permission if prompted and P/E input.
 
 ## M0 Reviewed Mac qualification plan: done
 
