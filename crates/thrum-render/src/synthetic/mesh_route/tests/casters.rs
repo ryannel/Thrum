@@ -14,7 +14,7 @@ use crate::visibility::CullMode;
 /// A square pyramid three times taller than the unit cube: base half-width 1
 /// at y = -3, apex at y = 3. Its silhouette is not a box, and its bounds reach
 /// past the unit cube the legacy fit assumes.
-fn pyramid() -> SyntheticMesh {
+pub(super) fn pyramid() -> SyntheticMesh {
     let base = [
         [-1.0, -3.0, -1.0],
         [1.0, -3.0, -1.0],

@@ -18,6 +18,7 @@ use crate::graph::{
 };
 use crate::graph_record::{ExecutableGraph, RecordFamily};
 use crate::timing::{GpuTimings, TimingError};
+use crate::visibility::casters::{CasterCulling, CasterInputs};
 use crate::visibility::{VisibilityPrepared, VisibilityTarget};
 pub use camera_culling::{CountedFrame, CullMode, CullingCounts};
 use glam::Vec3;
@@ -560,6 +561,9 @@ pub struct PreparedSynthetic {
     caster_boxes: Option<Vec<CasterBox>>,
     /// The bucket route's member list for the Sun caster passes.
     shadow_members: Option<wgpu::BindGroup>,
+    /// Culled camera modes on the bucket route: each Sun pass's caster list
+    /// against its own light volume, and that list bound like the members.
+    caster_culling: Option<(CasterCulling, Vec<wgpu::BindGroup>)>,
     /// The arena cube's checked index range and base vertex.
     cube_draw: (std::ops::Range<u32>, i32),
     display: DisplayPrepared,
@@ -631,7 +635,44 @@ impl SceneContext<'_> {
             .encode(index, self.encoder, pass, self.timings.as_deref_mut())
     }
 
+    /// Write this recording's Sun fit once, before the first pass that reads
+    /// the caster views; whether the cooked contribution draws into it.
+    fn shadow_fit(&mut self) -> Result<bool, RenderError> {
+        let shadow = self
+            .prepared
+            .shadow
+            .as_ref()
+            .ok_or(RenderError::GraphPassMismatch)?;
+        Ok(*self.cooked_shadow_fit.get_or_insert_with(|| {
+            let bounds = self
+                .contribution
+                .as_deref()
+                .and_then(SceneContribution::shadow_bounds);
+            shadow.write_recording(bounds)
+        }))
+    }
+
+    /// Every Sun pass's caster list, against the views this recording fits.
+    fn caster_cull(&mut self, pass: &CompiledPass) -> Result<(), RenderError> {
+        self.shadow_fit()?;
+        let (culling, _) = self
+            .prepared
+            .caster_culling
+            .as_ref()
+            .ok_or(RenderError::GraphPassMismatch)?;
+        culling
+            .encode(
+                self.encoder,
+                self.generation,
+                pass,
+                self.timings.as_deref_mut(),
+            )?
+            .then_some(())
+            .ok_or(RenderError::GraphPassMismatch)
+    }
+
     fn shadow(&mut self, index: usize, pass: &CompiledPass) -> Result<(), RenderError> {
+        let draw_contribution = self.shadow_fit()?;
         let shadow = self
             .prepared
             .shadow
@@ -642,13 +683,6 @@ impl SceneContext<'_> {
             .shadow
             .as_ref()
             .ok_or(RenderError::GraphPassMismatch)?;
-        let draw_contribution = *self.cooked_shadow_fit.get_or_insert_with(|| {
-            let bounds = self
-                .contribution
-                .as_deref()
-                .and_then(SceneContribution::shadow_bounds);
-            shadow.write_recording(bounds)
-        });
         let prepared = &self.prepared;
         let arena = &prepared.mesh_arena;
         let buffers = arena.buffers().ok_or(RenderError::GraphPassMismatch)?;
@@ -656,6 +690,7 @@ impl SceneContext<'_> {
         // or the cube over the physical rows.
         let (indices, base_vertex) = prepared.cube_draw.clone();
         let cube = [CasterDraw {
+            bucket: 0,
             member_offset: 0,
             indices,
             base_vertex,
@@ -665,6 +700,15 @@ impl SceneContext<'_> {
             indices: &buffers.indices,
             two_sided: prepared.instance_upload.two_sided_count() != 0,
             members: prepared.shadow_members.as_ref(),
+            culled: match &prepared.caster_culling {
+                Some((culling, groups)) => Some(
+                    groups
+                        .get(index)
+                        .zip(culling.lists().nth(index).map(|(_, args)| args))
+                        .ok_or(RenderError::GraphPassMismatch)?,
+                ),
+                None => None,
+            },
             draws: prepared
                 .bucket_route
                 .as_ref()
@@ -1503,6 +1547,46 @@ impl PreparedSynthetic {
                     entries: &[route.members_entry(0)],
                 })
             });
+        // Direct draws every admitted caster in every Sun pass: the oracle.
+        let caster_culling = match (&shadow, &bucket_route, &visibility) {
+            (Some(shadow), Some(route), Some(_)) => {
+                let layout = shadow
+                    .member_layout()
+                    .ok_or(RenderError::GraphPassMismatch)?;
+                let mut culling = CasterCulling::new(
+                    device,
+                    queue,
+                    &camera_culling::mesh_records(&mesh_arena)?,
+                    route.shape()?,
+                    &CasterInputs {
+                        instances: instance_upload.buffer(),
+                        serials: history.serial_buffer(),
+                        members: route.member_inputs(),
+                        views: shadow.caster_views(),
+                    },
+                );
+                culling.set_member_groups(route.groups());
+                let groups = culling
+                    .lists()
+                    .map(|(list, _)| {
+                        device.create_bind_group(&wgpu::BindGroupDescriptor {
+                            label: Some("synthetic Sun culled casters"),
+                            layout,
+                            entries: &[wgpu::BindGroupEntry {
+                                binding: 0,
+                                resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
+                                    buffer: list,
+                                    offset: 0,
+                                    size: wgpu::BufferSize::new(culling.segment_bytes()),
+                                }),
+                            }],
+                        })
+                    })
+                    .collect();
+                Some((culling, groups))
+            }
+            _ => None,
+        };
         let exposure_resolve = ExposureResolve::new(
             device,
             &directional,
@@ -1548,6 +1632,7 @@ impl PreparedSynthetic {
             bucket_route,
             caster_boxes,
             shadow_members,
+            caster_culling,
             cube_draw,
             display,
             view_layout,
@@ -1618,6 +1703,7 @@ impl PreparedSynthetic {
     /// Number of prepared GPU scene passes for this scene's shadow recipe.
     pub fn scene_pass_count(&self) -> u32 {
         4 + u32::from(self.shadow.is_some()) * shadow::LAYERS
+            + u32::from(self.caster_culling.is_some())
             + camera_culling::pass_count(self.camera_culling())
             + u32::from(self.stars.is_some())
             + u32::from(self.air_shadow.is_some())
@@ -1809,6 +1895,9 @@ impl PreparedSynthetic {
             if let Some(visibility) = &mut self.visibility {
                 visibility.set_member_groups(route.groups());
             }
+            if let Some((culling, _)) = &mut self.caster_culling {
+                culling.set_member_groups(route.groups());
+            }
         }
         Ok(report)
     }
@@ -1833,6 +1922,14 @@ impl PreparedSynthetic {
     fn shadow_key(&self, index: u32) -> PipelineKey {
         PipelineKey {
             role: if index < 2 { index + 2 } else { 7 },
+            ..self.key
+        }
+    }
+    /// The Sun caster cull, on the bucket route in culled camera modes.
+    /// Roles from 10 are atmosphere stages.
+    fn caster_cull_key(&self) -> PipelineKey {
+        PipelineKey {
+            role: 0x5343,
             ..self.key
         }
     }
