@@ -8,6 +8,24 @@ The Codex goal remains active. Its attachment is
 
 ## Current checkpoint
 
+- Integrated Metal depth on `d7738029`: the receiver and forward
+  stored D32 planes are byte-identical at submissions 0 and 225–227.
+  Exact comparison with fragment Z rejects 1,989 pixels per frame,
+  including 463 in the crossing crop, all at +1 ULP. The bounded
+  probe recovers every late rejected mask and changes no earlier
+  acceptance. At startup it admits only six recovered masks, with
+  the rest correctly invalid. Injected ±2-ULP predicate controls
+  reject. Real cooked winner IDs, shaded stock fallback and live
+  Chrome depth parity remain due. Full `./dev check` and the
+  hardware Chrome valley smoke pass on the exact-guard WIP.
+- Named Metal timestamps at load about 19.5 attribute 0.49 ms
+  median to raster plus resolve. Matching submissions across
+  opposite orders gives +0.96–1.08 ms total p50 and +0.36–0.43 ms
+  in the existing forward pass. These samples use the exact guard
+  before the one-ULP change. `live-named-times`, `live-depth-crossing`,
+  `live-one-ulp-crossing` and the probe patches are next to the smoke.
+  [Independent review](../../design/modules/ATMOSPHERE-PLAN.md#m3-live-depth-guard-review-brief).
+
 - The first opt-in live graph is saved at `d7738029` in
   `tmp/g3s-live-receiver`. Native Metal cooked-valley smoke
   submitted 12 matched 1080p/60 frames per arm in each order.
@@ -18,8 +36,7 @@ The Codex goal remains active. Its attachment is
   Investigate the tripwire with named pass times. These are
   startup samples, and the full motion and cost comparison is
   still due. The receiver-enabled material skip test passes.
-  The actual guard and cooked tie, whole-view hook fallback,
-  Chrome and D1 motion remain open. The lossless clips,
+  The cooked tie, shaded hook fallback and D1 motion remain open. The lossless clips,
   per-frame timings, exact patch, `run-live-smoke.sh` and
   `live-witness-next.md` are in
   `tmp/g3s-sunset-lip/graph/production-pcss/opaque-winner/`.
