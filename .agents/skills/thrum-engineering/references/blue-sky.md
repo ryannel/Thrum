@@ -7,7 +7,7 @@ module must serve.
 ## Start from the experience, not the code
 
 - **Connect to the engine.** Take the required experiences, responsibility, consumers and budget from the engine
-  brief. Use [plan-engine](../../plan-engine/SKILL.md) only for questions that cross module
+  brief. Use `/plan-project` only for questions that cross module
   boundaries. A proposed boundary change goes into both the brief and the module design.
 - **Write the target before reading existing code or old plans.** If you have already seen them, say so; don't claim
   a blind study.
@@ -24,7 +24,7 @@ module must serve.
   to oceans, choose representations that extend to the far end without a rewrite. Build and prove only the
   commissioned scope, though, and give neighbouring systems explicit contracts, not unsolicited implementation.
 - **Use a reviewer to find what you missed.** Where delegation is available, give a fresh subagent the brief alone
-  and have it derive the capabilities independently ([review](../../review-milestone/references/review.md)), then reconcile its findings.
+  and have it derive the capabilities independently ([review](review.md)), then reconcile its findings.
 
 ## Research the decisions that matter
 
@@ -38,7 +38,7 @@ Search for recent successors and competing whole-system approaches, not only com
 - **Read sources substantively.** Cite the slide, page or timestamp, and say what you actually inspected. A title or
   abstract supplies no algorithm.
 - **Trace reference code end to end.** Pin the revision and follow the actual producer and consumer path. Record the
-  licence ([licence rules](../SKILL.md#boundaries)).
+  licence (licence rules in ORCHESTRATE.md).
 - **Prefer the modern technique.** An older method needs a stated reason that it beats the current one here. Existing
   code, including a better-looking earlier prototype, is a look bar, not a technique choice. It may be heavy or wrong
   by design.
@@ -127,5 +127,5 @@ would have had to invent something.
 Keep deferrals explicit: a bounded first slice can't establish the whole commissioned set, and a deferral doesn't
 quietly shrink the deliverable.
 
-Save the design ([what it covers](design.md)) and plan the work as milestones ([plan](plan.md)). Have both reviewed
-independently, then continue into [build-milestone](../../build-milestone/SKILL.md) if the build was commissioned.
+Save the design ([what it covers](design.md)) and plan the work as milestones (`/plan-module`). Have both reviewed
+independently, then continue into `/build-milestone` if the build was commissioned.

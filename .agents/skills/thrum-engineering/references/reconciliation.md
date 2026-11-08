@@ -27,4 +27,4 @@ services at their real reuse scope; do not copy a prototype's resources into eve
 Change the target when requirements or evidence overturn it, recording why. Migration convenience is not a technical
 requirement. If platform/access constraints prevent the target, distinguish the constrained proposal and unmet needs.
 Deliver the fit assessment and restructure/replacement plan with deletions, risks and validation. Implement the
-commissioned scope through [build-milestone](../../build-milestone/SKILL.md), including [performance](performance.md) when relevant.
+commissioned scope through `/build-milestone`, including [performance](performance.md) when relevant.

@@ -116,7 +116,7 @@ The native Metal recorder stays in G3t. The later dedicated performance phase ow
 
 Choose layouts, ownership, scheduling and hardware seams by best practice; reuse hot storage and one publication
 spine/job graph, with scalar references. Preserve admission validation, checked IDs, pipeline closure and history.
-Use [build-milestone](../.agents/skills/build-milestone/SKILL.md) and `./dev check`. Measure wins; keep
+Follow [ORCHESTRATE.md](../ORCHESTRATE.md) and `./dev check`. Measure wins; keep
 function/visual/device evidence separate, one compact page per gate. Shrink plan/ledger/evidence.
 
 ## After V1 and parked work

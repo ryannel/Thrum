@@ -1,6 +1,0 @@
-interface:
-  display_name: "Build in parallel"
-  short_description: "Fan-out lead for several module streams (Claude lead only)"
-  default_prompt: "Use $build-parallel to run several module streams under one lead."
-policy:
-  allow_implicit_invocation: false

@@ -1,4 +1,0 @@
-interface:
-  display_name: "Plan the engine"
-  short_description: "Engine level: module map, gate order, shared contracts, module briefs"
-  default_prompt: "Use $plan-engine to update the engine architecture, contracts and module briefs."

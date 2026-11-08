@@ -1,20 +1,7 @@
----
-name: plan-engine
-description: Designs Thrum's whole-engine architecture, the highest planning level: the module map, gate order, shared contracts and a brief per module. Use for engine-wide capabilities, module boundaries, contract changes proposed by a module or milestone, gate ordering, or starting a new module. Not for one module's design and milestones (plan-module) or building (build-milestone).
----
-# Plan the engine
+# Engine architecture
 
-Run as Claude Opus 5.5 at high effort.
-
-**Outcome:** the levels below can work without asking. Concretely:
-- the architecture brief and module map in `docs/design/` are current;
-- [the build plan](../../../docs/BUILD-PLAN.md) gate order is current (purpose and V1 exit stay the owner's);
-- [the shared contracts](../../../docs/design/CONTRACTS.md) are current;
-- each commissioned module has a brief that `/plan-module` can start from.
-
-You are the coordinating owner of shared contracts and the whole-scene budget. A contract change proposed by a module
-or milestone comes here. Reconcile its producers and consumers, update `CONTRACTS.md`, and tell the affected modules
-through their plans' logs.
+Thrum-specific guidance for `/plan-project`: how to design the engine's architecture, module map and module
+briefs. Shared contracts live in [CONTRACTS](../../../../docs/design/CONTRACTS.md).
 
 Design the engine around its intended users, supported games and the work needed to create them. Establish the whole
 system before commissioning deep module designs. Module boundaries are hypotheses to improve through research and
@@ -100,7 +87,7 @@ Keep selection status (proposed, provisional, selected, superseded) separate fro
 Each module brief supplies the requirement set, external contracts, budget, key interactions, open decisions,
 research depth and completion criteria. Include the relevant creator journey and content source when either could
 change the module boundary or its proof. Write it to `docs/design/modules/<MODULE>-BRIEF.md` (or a section of the
-architecture brief), then [plan-module](../plan-module/SKILL.md) does the research, design and milestones. Child research may expose a missing owner or contract; integrate that finding across affected
+architecture brief), then `/plan-module` does the research, design and milestones. Child research may expose a missing owner or contract; integrate that finding across affected
 consumers before treating the module design as settled. The architecture owner retains the shared contract and
 whole-scene budget, even when module studies run independently.
 

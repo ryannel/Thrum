@@ -62,21 +62,24 @@ copies in that repository; SDK distribution needs equally unambiguous version/pr
 
 Work follows one proven pattern: a planner writes a high-level design and milestones, a generator builds them, an
 automated oracle answers most questions, and a clean-context evaluator judges what the oracle can't. The skills are
-named by level, so the command says what it changes:
+the generic orchestrate suite (the `orchestration` domain of `ryannel/skills`), configured for Thrum by
+[ORCHESTRATE.md](../../ORCHESTRATE.md), with engine rules in
+[thrum-engineering](../../.agents/skills/thrum-engineering/SKILL.md). They are named by level:
 
 | Level | Skill | Produces | Model and effort |
 | --- | --- | --- | --- |
-| Engine | [`plan-engine`](../../.agents/skills/plan-engine/SKILL.md) | Module map, gate order, [contracts](CONTRACTS.md), module briefs | Claude Opus 5.5, high |
-| Module | [`plan-module`](../../.agents/skills/plan-module/SKILL.md) | Design, plan and a JSON done-when file per module | Claude Opus 5.5, high |
-| Milestone | [`build-milestone`](../../.agents/skills/build-milestone/SKILL.md) | The next milestone, verified and pushed | Codex `gpt-6.1-sol` or Claude Opus 5.5, medium |
-| Milestone | [`review-milestone`](../../.agents/skills/review-milestone/SKILL.md) | A verdict from a clean context | Claude Opus 5.5, medium |
-| Fan-out | [`build-parallel`](../../.agents/skills/build-parallel/SKILL.md) | Several module streams under one Claude lead | Lead at medium |
+| Project | `/plan-project` | Module map, gate order, [contracts](CONTRACTS.md), module briefs | Claude Opus 5.5, high |
+| Module | `/plan-module` | Design, plan and a JSON done-when file per module | Claude Opus 5.5, high |
+| Milestone | `/build-milestone` | The next milestone, verified and pushed | Codex `gpt-6.1-sol` or Claude Opus 5.5, medium |
+| Milestone | `/review-milestone` | A verdict from a clean context | Claude Opus 5.5, medium |
+| Fan-out | `/build-parallel` | Several module streams under one Claude lead | Lead at medium |
 
 There are two speeds:
 - **One chat.** The owner drives a single chat in Claude or Codex with `build-milestone`, and can move a stream
   between them at a milestone boundary. The plan, the done-when file and the plan's log are the whole handover.
-- **Fan-out.** One Claude lead runs `build-parallel`. Codex generators run through `scripts/agent_loop.py`, which pins
-  the model and effort on every turn, and evaluators and planners run as the agents in `.claude/agents/`. Escalation
+- **Fan-out.** One Claude lead runs `build-parallel`. Codex generators run through the suite's `agent_loop.py`, which pins
+  the model and effort on every turn, and evaluators and planners run as the `orchestrate-evaluator` and
+  `orchestrate-planner` agents. Escalation
   after a failed review is by count: the same session, then a fresh session, then a re-plan, then park.
 
 Every launch names its model and reasoning effort, so no default ever chooses one. Changing a role's model or effort
@@ -168,7 +171,7 @@ a checkpoint, and a report never pauses building.
 | --- | --- | --- |
 | Automated image checks | Every change with visible output: fixed cameras and a short sequence on the named target. Flag NaN, black, clipped, banded and flickering output. Where a portable recipe or ground-truth oracle exists, bound the difference with a perceptual metric such as FLIP; that is a correctness oracle. Golden captures are regression tripwires. These catch broken output; they don't judge the look. | Yes, for that change |
 | Inspection list | The planner writes each visual milestone's inspection list in its done-when file: observable qualities checked in the running game, with the bar set in words by shipped high-end games of the same kind. There are no target images to match. The generator checks its own captures against the list. | Shapes the milestone |
-| Evaluator | A clean-context [`review-milestone`](../../.agents/skills/review-milestone/SKILL.md) agent inspects frame sequences and contact sheets captured offscreen from the exact build on the named target, judges each item against the list and bar, and records `agent_reviewed`. | Yes, the milestone closes on its pass |
+| Evaluator | A clean-context `/review-milestone` agent inspects frame sequences and contact sheets captured offscreen from the exact build on the named target, judges each item against the list and bar, and records `agent_reviewed`. | Yes, the milestone closes on its pass |
 | Owner steer | The daily report carries new inspection lists, verdicts and contact sheets. The owner adjusts a bar or overturns a verdict; an overturned verdict becomes a graded example for the evaluator. | Never |
 
 Stop and ask the owner only to change purpose or the V1 exit; to spend money, such as renting cloud

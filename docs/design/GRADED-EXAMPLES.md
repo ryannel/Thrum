@@ -18,7 +18,7 @@ None yet. The first week's overturned verdicts go here.
 
 ## Standing calibration from earlier work
 
-These are the failures in [review](review.md#calibration-failures-this-engine-has-already-paid-for). Several passed an
+These are the failures in [review](../../.agents/skills/thrum-engineering/references/review.md#calibration-failures-this-engine-has-already-paid-for). Several passed an
 author's own checks:
 - a wake that was correct at scale but unreadable at the game camera;
 - moving texture standing in for growth;

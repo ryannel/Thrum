@@ -55,9 +55,9 @@ of review before it's built on.
   or sampled stills, at native size or downscaled, and which build they saw. Judge each indispensable cue separately,
   against the inspection list and the shipped-game bar; good lighting or performance doesn't compensate for failed dynamics. Cover the
   transitions (start from rest, stops, turns, camera cuts), where onset faults hide. Reviews diagnose the responsible layer
-  ([system diagnosis](../../build-milestone/references/system-diagnosis.md)) rather than prescribing cosmetic fixes.
+  ([system diagnosis](system-diagnosis.md)) rather than prescribing cosmetic fixes.
 - **Performance claims.** Challenge benchmark identity and fairness, tails, equivalence claims, actual saved work,
-  memory accounting and contention on a shared GPU ([performance](../../plan-module/references/performance.md)).
+  memory accounting and contention on a shared GPU ([performance](performance.md)).
 
 ## Close the loop
 
