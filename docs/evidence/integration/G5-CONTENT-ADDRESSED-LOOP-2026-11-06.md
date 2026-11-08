@@ -301,6 +301,30 @@ refused with 403 as before. `only_listed_page_origins_beyond_loopback_may_read_t
 is echoed with `Vary: Origin`, and that another port, scheme, host, a trailing slash and `null` get 403 with no CORS
 header; unit tests cover parsing.
 
+## Asserted tripwires (8 November)
+
+Both benches now check their tripwires against a stored history instead of only reporting them, and exit 1 naming
+every metric over its limit. `scripts/check_g5_tripwires.sh` runs both (`--record` appends passing runs). Histories:
+`docs/evidence/integration/tripwires/g5-edit-to-visible.tsv` (scan 1k/10k warm, 10k one change, targeted scan,
+startup to first resident frame, write→visible median and max, swap-frame render CPU max and GPU interval max) and
+`g5-cooked-edit.tsv` (per scenario: startup, write→swapped median, uploading render CPU p99, large upload frames, and
+staging peak, which may not grow at all).
+
+Each run records its revision, one-minute load average and CPU count and is judged only against runs of the same load
+class (load per CPU below 1 quiet, up to 4 busy, above saturated), because this machine's timings follow its load.
+A metric's limit is the larger of its same-class median times a factor (2–3 for timings, 1.5 for frame counts, 1 for
+staging) and a floor that stops millisecond-scale timings flapping; with fewer than three same-class runs it is
+recorded as seeding. Six runs at 65d0c011 seeded the `saturated` (load 73–104 on 14 CPUs) and `busy` (load 38–47)
+classes. Their run-to-run spread (largest over median) reached 2.4× for the 1k warm scan, 1.9× for 512³ startup and
+3.1 ms for swap-frame render CPU, so each timing factor is at least 1.25× its observed spread and the swap CPU floor
+is 5 ms. Startup is bimodal (35–165 ms with a warm device, 400–780 ms cold), so its floors (600 ms
+first resident, 750 ms realistic, 1000 ms large) sit above the cold runs. These are wide limits: they
+catch a doubling or a stall, not a 20% drift. Quiet-machine runs have no history yet and are only recorded.
+
+Injecting a 30 ms sleep into `StatCache::scan_all` fails the check, exit 1, at load 35.7 (`busy`):
+`REGRESSED scan_1000_warm_ms: 60.377 against a limit of 10.999 (3 busy runs)`, with every other metric of both benches
+within its limit (the 10k scans absorb 30 ms inside their spread).
+
 ## Open items closed (8 November)
 
 Apple M3 Max, shared GPU. Each check fails when its fix is removed (mutation runs recorded below).

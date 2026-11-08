@@ -14,6 +14,7 @@ mod mesh;
 mod server;
 mod stat_cache;
 mod texture;
+pub mod tripwire;
 mod watch;
 mod write;
 
