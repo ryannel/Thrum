@@ -2,7 +2,9 @@
 //!
 //! The default scene is flattened into one static mesh in glTF's metres, Y-up, right-handed frame
 //! (which is Thrum's C01 convention, so no conversion is needed). Each triangle primitive becomes a
-//! submesh. Vertices are welded, then each submesh is vertex-cache and overdraw optimized,
+//! submesh. A node whose world transform mirrors (negative determinant) reverses its triangles'
+//! winding, so the importer swaps two corners of each triangle to keep them counter-clockwise from
+//! the front, and keeps normals on the same side. Vertices are welded, then each submesh is vertex-cache and overdraw optimized,
 //! vertex fetch is reordered, and meshoptimizer splits it into meshlets with culling bounds. The
 //! portable index buffer is emitted in meshlet order.
 
@@ -85,8 +87,18 @@ fn transform_point(m: &Matrix, p: [f32; 3]) -> [f32; 3] {
     std::array::from_fn(|row| m[0][row] * p[0] + m[1][row] * p[1] + m[2][row] * p[2] + m[3][row])
 }
 
+/// Determinant of the upper 3×3: negative when the transform mirrors.
+fn determinant(m: &Matrix) -> f32 {
+    let c = |r: usize, k: usize| m[k][r];
+    c(0, 0) * (c(1, 1) * c(2, 2) - c(1, 2) * c(2, 1))
+        - c(0, 1) * (c(1, 0) * c(2, 2) - c(1, 2) * c(2, 0))
+        + c(0, 2) * (c(1, 0) * c(2, 1) - c(1, 1) * c(2, 0))
+}
+
 fn transform_normal(m: &Matrix, n: [f32; 3]) -> [f32; 3] {
-    // Inverse-transpose of the upper 3×3 via the cofactor matrix (scale is irrelevant after normalizing).
+    // Inverse-transpose of the upper 3×3 via the cofactor matrix, which equals the determinant
+    // times the inverse-transpose. Scale is irrelevant after normalizing, but the determinant's
+    // sign is not: a mirroring transform would otherwise turn every normal inward.
     let c = |r: usize, k: usize| m[k][r];
     let cofactor = [
         [
@@ -105,8 +117,9 @@ fn transform_normal(m: &Matrix, n: [f32; 3]) -> [f32; 3] {
             c(0, 0) * c(1, 1) - c(0, 1) * c(1, 0),
         ],
     ];
+    let side = if determinant(m) < 0.0 { -1.0 } else { 1.0 };
     normalize(std::array::from_fn(|row| {
-        (0..3).map(|k| cofactor[row][k] * n[k]).sum()
+        side * (0..3).map(|k| cofactor[row][k] * n[k]).sum::<f32>()
     }))
 }
 
@@ -137,7 +150,7 @@ fn gather(
                 continue;
             };
             let positions: Vec<[f32; 3]> = positions.map(|p| transform_point(&world, p)).collect();
-            let indices: Vec<u32> = match reader.read_indices() {
+            let mut indices: Vec<u32> = match reader.read_indices() {
                 Some(indices) => indices.into_u32().collect(),
                 None => (0..u32::try_from(positions.len()).unwrap_or(u32::MAX)).collect(),
             };
@@ -146,6 +159,12 @@ fn gather(
                 .any(|&index| index as usize >= positions.len())
             {
                 return Err(CookError::Source("glTF index out of range".into()));
+            }
+            if determinant(&world) < 0.0 {
+                // glTF: a negative determinant makes the primitive's front faces clockwise.
+                for triangle in indices.as_chunks_mut::<3>().0 {
+                    triangle.swap(1, 2);
+                }
             }
             let normals: Vec<[f32; 3]> = match reader.read_normals() {
                 Some(normals) => normals.map(|n| transform_normal(&world, n)).collect(),
@@ -342,4 +361,92 @@ fn encode(built: &Built) -> Vec<u8> {
         .section(mesh_tag::MESHLET_BOUNDS, &built.bounds)
         .section(mesh_tag::SUBMESHES, &built.submeshes)
         .finish()
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::Path;
+
+    use thrum_asset::{MeshProduct, ProductBytes};
+
+    use super::{cook, octahedral};
+
+    /// One triangle, counter-clockwise from +Z in its own space, optionally with +Z normals,
+    /// under `nodes` (a JSON node array whose first entry is the scene root and whose last
+    /// holds the mesh).
+    fn write_triangle(
+        directory: &Path,
+        nodes: &str,
+        positions: [[f32; 3]; 3],
+        normals: bool,
+    ) -> std::path::PathBuf {
+        let mut bin: Vec<u8> = bytemuck::cast_slice(&positions).to_vec();
+        bin.extend_from_slice(bytemuck::cast_slice(&[[0.0_f32, 0.0, 1.0]; 3]));
+        let normal_attribute = if normals { r#","NORMAL":1"# } else { "" };
+        let json = format!(
+            r#"{{"asset":{{"version":"2.0"}},"scene":0,"scenes":[{{"nodes":[0]}}],"nodes":{nodes},
+"meshes":[{{"primitives":[{{"attributes":{{"POSITION":0{normal_attribute}}}}}]}}],
+"buffers":[{{"uri":"triangle.bin","byteLength":72}}],
+"bufferViews":[{{"buffer":0,"byteOffset":0,"byteLength":36}},{{"buffer":0,"byteOffset":36,"byteLength":36}}],
+"accessors":[{{"bufferView":0,"componentType":5126,"count":3,"type":"VEC3","min":[-1,-1,-1],"max":[1,1,1]}},
+{{"bufferView":1,"componentType":5126,"count":3,"type":"VEC3"}}]}}"#
+        );
+        std::fs::write(directory.join("triangle.bin"), bin).expect("buffer");
+        let path = directory.join("triangle.gltf");
+        std::fs::write(&path, json).expect("glTF");
+        path
+    }
+
+    /// Every cooked triangle faces +Z by its winding and by its stored normals.
+    fn assert_faces_plus_z(product: &MeshProduct, case: &str) {
+        let positions = product.positions();
+        let front = octahedral([0.0, 0.0, 1.0]);
+        for triangle in product.indices().as_chunks::<3>().0 {
+            let [a, b, c] = triangle.map(|index| positions[index as usize]);
+            let e1 = [b[0] - a[0], b[1] - a[1]];
+            let e2 = [c[0] - a[0], c[1] - a[1]];
+            assert!(
+                e1[0] * e2[1] - e1[1] * e2[0] > 0.0,
+                "{case}: triangle winds clockwise from +Z"
+            );
+        }
+        for attribute in product.attributes() {
+            assert_eq!(attribute.normal_oct, front, "{case}: normal leaves +Z");
+        }
+    }
+
+    #[test]
+    fn mirrored_nodes_keep_front_faces_counter_clockwise_and_normals_outward() {
+        let root = std::env::temp_dir().join(format!("thrum-cook-mirror-{}", std::process::id()));
+        std::fs::create_dir_all(&root).expect("temp dir");
+        let local = [[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]];
+        // The triangle authored mirrored in X, still counter-clockwise around its +Z normal, so
+        // each mirroring node puts it back where the plain triangle is.
+        let [a, b, c] = local.map(|[x, y, z]| [-x, y, z]);
+        let mirrored = [a, c, b];
+        let cases = [
+            ("plain", r#"[{"mesh":0}]"#, local),
+            ("mirrored", r#"[{"mesh":0,"scale":[-1,1,1]}]"#, mirrored),
+            (
+                "mirrored parent",
+                r#"[{"children":[1],"scale":[1,-1,1]},{"mesh":0,"rotation":[0,0,1,0]}]"#,
+                mirrored,
+            ),
+            (
+                "two mirrors",
+                r#"[{"children":[1],"scale":[-1,1,1]},{"mesh":0,"scale":[-1,1,1]}]"#,
+                local,
+            ),
+        ];
+        for (case, nodes, positions) in cases {
+            for normals in [true, false] {
+                let path = write_triangle(&root, nodes, positions, normals);
+                let product =
+                    MeshProduct::open(ProductBytes::copy_from(&cook(&path).expect("cook")))
+                        .expect("mesh product");
+                assert_faces_plus_z(&product, &format!("{case}, normals {normals}"));
+            }
+        }
+        std::fs::remove_dir_all(&root).expect("remove temp dir");
+    }
 }

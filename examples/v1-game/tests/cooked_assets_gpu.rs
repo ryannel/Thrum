@@ -1128,3 +1128,72 @@ fn a_fetched_edit_swaps_in_and_reuses_unchanged_products() {
     drop(server);
     std::fs::remove_dir_all(&root).ok();
 }
+
+/// A mesh drawn through a mirroring node (negative determinant) faces and lights like the same
+/// geometry stored without one: the mirrored grid describes identical world triangles, so with
+/// the scene's back-face culling and lighting the two captures match.
+#[test]
+fn a_mirrored_node_draws_with_the_facing_and_lighting_of_its_plain_twin() {
+    let root = std::env::temp_dir().join(format!("thrum-g5-mirrored-{}", std::process::id()));
+    std::fs::remove_dir_all(&root).ok();
+    let plain = source_tree(&root.join("plain"), 16);
+    let mirrored = source_tree(&root.join("mirrored"), 16);
+    demo::write_mirrored_grid_gltf(&mirrored.source.join("meshes"), "terrain", 128, 0.25)
+        .expect("mirrored mesh");
+    for cook in [&plain, &mirrored] {
+        Cooker::open(cook.clone())
+            .expect("cooker")
+            .cook_all()
+            .expect("cook");
+    }
+
+    pollster::block_on(async {
+        let (device, queue) = game_device().await;
+        let mut host = FrameHost::new(&device, &queue, FrameConfig::default())
+            .await
+            .expect("game");
+        host.set_scene_camera(
+            v1_game::SceneCamera::perspective(
+                [0.0, 203.5, 3.0],
+                [0.0, 200.0, 0.0],
+                0.9,
+                0.1,
+                30_000.0,
+            )
+            .expect("grid camera"),
+        );
+        host.pause().expect("freeze authority");
+        host.set_time_of_day(0.4).expect("morning");
+
+        let mut capture = |store: PathBuf| {
+            let mut config = placements(store);
+            config.volume = None;
+            config.meshes[0].transform = transform(2.0, glam::Quat::IDENTITY, [0.0, 200.0, 0.0]);
+            let assets = CookedAssets::new(config).expect("rigid placements");
+            let stats = assets.stats();
+            host.set_scene_contribution(Box::new(assets))
+                .expect("attach");
+            wait_staged(&stats, 1);
+            let deadline = Instant::now() + Duration::from_secs(30);
+            loop {
+                let pixels = host.capture_pixels().expect("grid capture");
+                if stats.lock().expect("stats").drawn == Some(1) {
+                    break pixels;
+                }
+                assert!(Instant::now() < deadline, "generation 1 never drawn");
+            }
+        };
+        let plain_pixels = capture(plain.store.clone());
+        let mirrored_pixels = capture(mirrored.store.clone());
+        save("mirrored-plain", &plain_pixels);
+        save("mirrored-node", &mirrored_pixels);
+
+        let total = plain_pixels.len() / 4;
+        let changed = changed_pixels(&plain_pixels, &mirrored_pixels);
+        assert!(
+            changed * 1000 <= total,
+            "the mirrored node changed {changed} of {total} pixels"
+        );
+    });
+    std::fs::remove_dir_all(&root).expect("remove test store");
+}
