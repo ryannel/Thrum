@@ -161,14 +161,19 @@ pub fn field_in_view_share(tick: u64, extent: [u32; 2]) -> Result<f64, String> {
 }
 
 /// The field's prepared boxes, materials and Sun shadows; no local lights.
-fn field_scene(extent: [u32; 2]) -> Result<SyntheticScene, String> {
+/// With `meshes`, props draw the mixed meshes and every fifth is mirrored.
+fn field_scene(extent: [u32; 2], meshes: bool) -> Result<SyntheticScene, String> {
     let count = u32::try_from(field::ENTITY_COUNT).map_err(|_| "field exceeds u32 slots")?;
     let mut scene =
         SyntheticScene::grid(count).map_err(|error| format!("field scene: {error:?}"))?;
     scene.materials = field::materials();
     for (index, instance) in scene.instances.iter_mut().enumerate() {
         let entity = field::entity(index);
-        let (basis, normal) = field::basis(&entity);
+        let (mut basis, mut normal) = field::basis(&entity);
+        if meshes && crate::field_meshes::mirrored(index) {
+            basis[0] = basis[0].map(|value| -value);
+            normal[0] = normal[0].map(|value| -value);
+        }
         for axis in 0..3 {
             instance.current[axis][..3].copy_from_slice(&basis[axis]);
             instance.normal[axis][..3].copy_from_slice(&normal[axis]);
@@ -184,6 +189,7 @@ fn field_scene(extent: [u32; 2]) -> Result<SyntheticScene, String> {
     }
     scene.view = field_view(0, 0.0, extent, 0.0, 0.0)?;
     scene.sun_shadows = true;
+    scene.meshes = meshes.then(crate::field_meshes::selection);
     Ok(scene)
 }
 
@@ -328,7 +334,7 @@ impl GameScene {
                 }
                 scene
             }
-            GameContent::Field => field_scene(extent)?,
+            GameContent::Field => field_scene(extent, setup.field_meshes)?,
         };
         scene.camera_culling = setup.camera_culling;
         if setup.route_overlay != scene::RouteOverlay::Off {
