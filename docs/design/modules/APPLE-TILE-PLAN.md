@@ -29,9 +29,9 @@ Reviews:
   cache patch scope, per-device archives, sizing). All applied in revision 5a.
 
 Milestone: M0 counters and capture probe in progress (Claude G3t M0 session) · Updated: 2026-11-08
-Now: D0.3 landed (`be252c0d`): opt-in creation counters with a generation-owned `DeviceSite`, every renderer and cooked pipeline through it, and the guard witnesses. D0.4, the capture probe, is next and waits for a screen slot.
-Next: Thrum Core rules on the seam diff; D0.4 replay in a booked 15-minute owner-present slot, or *unmeasured*.
-Blocked: D0.1–D0.2 wait for the G7-reviewed seam 8. Subsequent code waits for its own exact seam approval.
+Now: D0.3 landed (`be252c0d`). Seam 2 (registry, D1.1) exact diff approved in shape and held at `76464f23` (local branch `claude/g3t-seam2-registry`); D1.2's per-variant eligibility report is priced and its crate-private boundary agreed in `tmp/g3t-metal-boundary/NOTES.md`.
+Next: D0.4 replay in a booked 15-minute owner-present slot, or *unmeasured*; then D0.1–D0.2 on seam 8; then seam 2 and D1.2 land together with the `THRUM_RECIPE` override, rechecked on both recipes.
+Blocked: D0.4 waits for an owner-present screen slot. D0.1–D0.2 wait for seam 8, G7's M5 route, paused behind main health. M1 code (seam 2, D1.2) waits for M0 to close, as Thrum Core ruled. Any of these unblocks the next step.
 The saved offscreen trace opens directly in Xcode. Replay stayed disabled during local device discovery, so physical traffic
 remains unmeasured. Any interactive retry needs an assigned slot.
 
