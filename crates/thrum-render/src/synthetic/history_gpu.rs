@@ -28,6 +28,7 @@ impl TransformHistory {
         device: &crate::runtime::DeviceSite,
         queue: &wgpu::Queue,
         instances: &wgpu::Buffer,
+        mesh_vertices: &wgpu::Buffer,
         instance_layout: &wgpu::BindGroupLayout,
         count: u32,
     ) -> Self {
@@ -79,6 +80,10 @@ impl TransformHistory {
                     wgpu::BindGroupEntry {
                         binding: 2,
                         resource: serial_buffer.as_entire_binding(),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 3,
+                        resource: mesh_vertices.as_entire_binding(),
                     },
                 ],
             })

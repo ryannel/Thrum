@@ -59,6 +59,7 @@ use display::{DisplayPrepared, DisplayTarget};
 use exposure::ExposureResolve;
 pub(crate) use frame_stats::{SceneTimingLayout, pass_durations};
 use history_gpu::TransformHistory;
+use mesh_arena::{ArenaLimits, MeshArena};
 pub use scene_apply::SceneApplyReport;
 use shadow::{ShadowPrepared, ShadowTarget};
 use stars::{StarPrepared, StarTarget};
@@ -436,8 +437,11 @@ pub struct PreparedSynthetic {
     /// Occlusion only: the depth-only twins of `pipeline` and
     /// `pipeline_two_sided`, for the depth prepass.
     depth_prepass: Option<[wgpu::RenderPipeline; 2]>,
+    /// Shadow casters still draw the 16-bit cube indices.
     cube_indices: wgpu::Buffer,
-    cube_reversed_indices: wgpu::Buffer,
+    /// Camera passes pull vertices and indices from the arena; it holds the
+    /// cube (row 0) and its orthographic winding (row 1) over shared vertices.
+    mesh_arena: MeshArena,
     display: DisplayPrepared,
     view_layout: wgpu::BindGroupLayout,
     view_buffer: wgpu::Buffer,
@@ -1084,18 +1088,26 @@ impl PreparedSynthetic {
             label: Some("ABI2 material table and classes"),
             entries: &entries,
         });
+        let mut mesh_arena = MeshArena::new(ArenaLimits::for_binding(
+            device.limits().max_storage_buffer_binding_size,
+        ))
+        .map_err(|_| RenderError::SceneCapacity)?;
+        mesh_arena.upload(device, queue);
+        let arena_buffers = mesh_arena.buffers().ok_or(RenderError::SceneCapacity)?;
         let instance_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("ABI2 instance table"),
             entries: &[
                 storage_layout(0, wgpu::ShaderStages::VERTEX, abi::INSTANCE_BYTES as u64),
                 storage_layout(1, wgpu::ShaderStages::VERTEX, history_gpu::ENTRY_BYTES),
                 uniform_layout(2, history_gpu::SERIAL_BYTES, wgpu::ShaderStages::VERTEX),
+                storage_layout(3, wgpu::ShaderStages::VERTEX, mesh_arena::VERTEX_BYTES),
             ],
         });
         let history = TransformHistory::new(
             device,
             queue,
             instance_upload.buffer(),
+            &arena_buffers.vertices,
             &instance_layout,
             instance_count,
         );
@@ -1284,20 +1296,6 @@ impl PreparedSynthetic {
             contents: &index_bytes,
             usage: wgpu::BufferUsages::INDEX,
         });
-        // The old orthographic diagnostic keeps world XY as clip XY while its
-        // camera looks from -Z. Reverse only its index winding; perspective
-        // cameras use the normal outward-facing cube triangles.
-        let reversed_bytes: [u8; 72] = std::array::from_fn(|byte| {
-            let index = byte / 2;
-            let triangle = index / 3;
-            let reversed = [0, 2, 1][index % 3];
-            CUBE_INDICES[triangle * 3 + reversed].to_le_bytes()[byte % 2]
-        });
-        let cube_reversed_indices = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("synthetic orthographic cube winding"),
-            contents: &reversed_bytes,
-            usage: wgpu::BufferUsages::INDEX,
-        });
         let exposure_resolve = ExposureResolve::new(
             device,
             &directional,
@@ -1340,7 +1338,7 @@ impl PreparedSynthetic {
             pipeline_two_sided,
             depth_prepass,
             cube_indices,
-            cube_reversed_indices,
+            mesh_arena,
             display,
             view_layout,
             view_buffer,
