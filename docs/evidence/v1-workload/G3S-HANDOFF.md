@@ -8,6 +8,25 @@ The Codex goal remains active. Its attachment is
 
 ## Current checkpoint
 
+- M3's 160 m stock caster control on `b4ec6eac` is positive.
+  In the old fit the 24×55 cm plate projects to 0.204×0.467
+  last-map texels (1.177612 m/texel). The near projection is
+  3.04×6.97 texels and outside depth clip at z=1.001815.
+  Keep that exact control in M4. The separate reviewed control
+  uses a 4.71045 m plate over a horizontal cooked floor,
+  aligned to the submitted Sun. Its on-arm far map gives
+  1.00964 m/texel, a 4.67×4.67-texel footprint and 25 D32
+  samples at the authored plate depth. The stock on/off
+  row at y=677 has 1,521 identical receiver depths, including
+  1,375 lit, 70 wide-filter umbra and 64 wide-filter partial
+  pixels. The fit differs between arms. Lit controls stay
+  clear and the plate depth and shaded shadow both identify
+  the positive signal. No candidate resolve ran.
+  `tmp/g3s-sunset-lip/graph/production-pcss/receiver-diagnostic/`
+  holds the frozen recipes, `record_resolvable.sh`,
+  `resolvable-qualification.json` and `resolvable-pair.png`.
+  [Control review](../../design/modules/ATMOSPHERE-PLAN.md#m3-resolvable-caster-review-brief).
+
 - M3 caster trace on `bded4d69` captured the same frame 72 with
   the valley and its authored 2.4 m × 1.8 m positive caster. The
   fitted uniforms, three 1024² D32 layers and opaque receiver
