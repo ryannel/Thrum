@@ -42,14 +42,12 @@ const IN_FLIGHT: usize = 2;
 
 /// A submitted capture of one committed endpoint, owned by the caller until
 /// [`FrameHost::try_finish_capture`] returns its pixels. It retains its own
-/// readback, so no other capture's completion can satisfy it, and the device
-/// that recorded it, so only that device is ever polled for it.
+/// readback and belongs to the recording host's device generation.
 #[must_use = "a pending capture is read with try_finish_capture"]
 pub struct PendingCapture {
     pixels: crate::synthetic::PixelReadback,
     submitted: wgpu::SubmissionIndex,
-    /// Identity only: compared, never polled unless it is the host's device.
-    device: wgpu::Device,
+    owner: Arc<()>,
     generation: u64,
     tick: u64,
     extent: [u32; 2],
@@ -328,6 +326,8 @@ struct RecordedScene {
 pub struct FrameHost<W: FrameWorld, V: SceneSource<W::Page>> {
     device: wgpu::Device,
     queue: wgpu::Queue,
+    /// Stable across visual changes. Backend device IDs can repeat across instances.
+    capture_owner: Arc<()>,
     presentation_lead: Duration,
     generation: u64,
     source: V,
@@ -552,6 +552,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         Ok(Self {
             device: device.clone(),
             queue: queue.clone(),
+            capture_owner: Arc::new(()),
             presentation_lead: Duration::ZERO,
             generation: capabilities.generation(),
             source,
@@ -1364,7 +1365,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         Ok(PendingCapture {
             pixels,
             submitted,
-            device: self.device.clone(),
+            owner: Arc::clone(&self.capture_owner),
             generation: self.generation,
             tick: self.world.source().tick,
             extent: self.render_extent,
@@ -1372,19 +1373,19 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     }
 
     /// Nonblocking check of a pending capture: `Ok(None)` until its readback
-    /// completes. A capture recorded by another device, or by a retired device
+    /// completes. A capture recorded by another host, or by a retired device
     /// generation, fails instead and is never satisfied by a later capture's
     /// completion. A platform with its own device-loss signal checks it before
     /// calling; the browser game does.
     /// # Errors
-    /// Returns a foreign device, retired generation, GPU poll or readback failure.
+    /// Returns a foreign host, retired generation, GPU poll or readback failure.
     pub fn try_finish_capture(
         &mut self,
         pending: &mut PendingCapture,
     ) -> Result<Option<Vec<u8>>, FrameError> {
-        if pending.device != self.device {
+        if !Arc::ptr_eq(&pending.owner, &self.capture_owner) {
             return Err(FrameError::InvalidState(
-                "capture was recorded by another device",
+                "capture was recorded by another frame host",
             ));
         }
         if pending.generation != self.generation {
