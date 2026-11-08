@@ -30,6 +30,7 @@
 //! ```
 
 mod capture;
+mod live_capture;
 
 use std::{
     error::Error,
@@ -332,6 +333,8 @@ pub struct SkyGame {
     status: Option<StatusProbe>,
     shown_status: Option<ContentStatus>,
     reload: Option<(Reload, ReloadReport)>,
+    /// The files `reload` reads, watched by the window and a live capture.
+    reload_files: Vec<PathBuf>,
 }
 
 impl SkyGame {
@@ -361,6 +364,7 @@ impl SkyGame {
             status: None,
             shown_status: None,
             reload: None,
+            reload_files: Vec::new(),
         }
     }
 
@@ -395,6 +399,7 @@ impl SkyGame {
             return Ok(game);
         };
         let reload = material.clone();
+        let watched = path.clone();
         let report = move || {
             material
                 .take_outcomes()
@@ -402,13 +407,15 @@ impl SkyGame {
                 .map(material_drawn)
                 .collect()
         };
-        Ok(game.with_reload(
+        let mut game = game.with_reload(
             move || {
                 reload.request(MaterialHook::read(&path)?);
                 Ok(())
             },
             report,
-        ))
+        );
+        game.reload_files = vec![watched];
+        Ok(game)
     }
 
     /// Draw an engine contribution lit by the sky. `status` reports its progress: the window
@@ -584,10 +591,14 @@ impl Game for SkyGame {
             && let Err(error) = reload()
         {
             eprintln!(
-                "{}: {error}; nothing changed (fix it and press L)",
+                "{}: {error}; nothing changed (fix it and save, or press L)",
                 self.name
             );
         }
+    }
+
+    fn reload_files(&self) -> Vec<PathBuf> {
+        self.reload_files.clone()
     }
 
     fn replay(&self) -> SkyEdits {
@@ -701,6 +712,9 @@ pub fn run(config: Config, game: impl FnOnce() -> Result<SkyGame, Box<dyn Error>
         })
     };
     match std::env::var_os(CAPTURE_VARIABLE) {
+        Some(path) if std::env::var_os(live_capture::LIVE_VARIABLE).is_some() => {
+            live_capture::run(config, named, std::path::Path::new(&path));
+        }
         Some(path) => capture::run(config, named, std::path::Path::new(&path)),
         None => crate::run_until_closed(config, named),
     }

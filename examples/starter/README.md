@@ -37,8 +37,8 @@ platform tag, and macOS is the right assumption.
   `content generation N drawn` when it appears. To experiment on a copy instead, set
   `THRUM_SCENE_ASSETS=/path/to/copy` before `./dev starter`.
 - **Parameters.** Edit [starter.params.json](starter.params.json) (display values, in degrees) and
-  press `L` in the window. Unknown keys and out-of-range values are refused by name.
-- **Material.** Edit [material.wgsl](material.wgsl), the scene's material hook, and press `L`. Its
+  save it. Unknown keys and out-of-range values are refused by name.
+- **Material.** Edit [material.wgsl](material.wgsl), the scene's material hook, and save it. Its
   `cooked_surface` function returns the base colour, roughness, metalness and emission to shade
   with, and can use the fragment's `uv`, world position and normal; the file's comments list the
   fields and a moss example. One hook runs on every mesh placement, and it is not told which placement it is
@@ -50,8 +50,11 @@ platform tag, and macOS is the right assumption.
   drawing.
 - **Code.** Edit `src/main.rs`, close the window and run `./dev starter` again.
 
-Assets reload by themselves. Parameters and the material reload only when you press `L` with the window focused, so
-a half-saved file never reaches the scene.
+Everything reloads when you save. The window checks the parameter file and the material every tenth of a second and
+reloads one about a quarter of a second after its bytes stop changing, so an editor's burst of writes is one reload
+and a save that changes nothing is none. Saving the parameter file never recompiles the material. A file that goes
+missing for longer than half a second is reported, and the scene keeps its last values. `L` still reloads both at
+once.
 
 The window needs an awake, unlocked screen. On a locked or sleeping screen the display never asks for a frame, so
 the window draws nothing and a `THRUM_FRAMES` run ends with `presented=0` and a note saying so. Review frames with

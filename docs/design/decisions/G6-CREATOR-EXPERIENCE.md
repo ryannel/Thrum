@@ -59,13 +59,15 @@ The crate has no game types, no I/O and no dependencies beyond `serde_json` and 
 A parameter file is one JSON object of control keys and display values. `Controls::apply_file` applies the valid
 entries and returns a `FileReport`: the counts, plus each refusal sorted by key. A file that is not a JSON object
 changes nothing.
-- **Mac:** `THRUM_PARAMS=<path>` is applied once rendering starts and again on `L`.
+- **Mac:** `THRUM_PARAMS=<path>` is applied once rendering starts, again on `L`, and when a save settles (see
+  [saved files reload](#saved-files-reload-built)).
 - **Chrome:** `?params=<url>`, which works alongside `?assets`, is applied on load and by a reload button.
 
 Both apply through the same edit path as the panel, so a paused apply holds the world clock.
 
-**Reload is explicit, because files do not ride the G5 watcher yet.** Making parameter files a fourth G5 product kind
-is designed in the boundary notes and is an owner question while G5 extensions are parked.
+**Parameter files stay out of the cooked asset schema.** On the Mac, a save reaches the scene through the app's own
+file watch rather than the G5 watcher. Making parameter files a fourth G5 product kind is designed in the boundary
+notes and is an owner question while G5 extensions are parked. Chrome still reloads by button.
 
 ## App runner and starter (built)
 
@@ -88,6 +90,42 @@ is designed in the boundary notes and is an owner question while G5 extensions a
   - `./dev starter`, which cooks with G5's cooker, runs G5's watcher for asset hot reload, and opens the window.
 - **Native only.** The starter runs on the Mac. Its Chrome form is an owner question; the recommendation is to defer
   it to G7's shared demo page.
+
+### Saved files reload (built)
+
+Saving the parameter file or a game's own file reloads it in the running window, as `L` does, without a key press.
+Root commissioned this on 8 Nov; root and G6 agreed the seam.
+
+- **Watch.** `crates/thrum-app/src/file_watch.rs` is a polling thread with no new dependency, because `notify` is
+  authoring-only by policy and `thrum-app` links into every scene.
+  - Every 100 ms it reads each file's metadata (length, modification time, inode). When that changes, it reads the
+    bytes.
+  - It delivers once the bytes hold for a tick and differ from the last bytes delivered. A burst is one delivery;
+    a touch or an identical rewrite is none.
+  - A file missing for 500 ms is delivered so the reload reports it. Rename-saves, symlinks and files created later
+    need no special case.
+- **What is watched.** The parameter file and `Game::reload_files()`, a read-only addition to the trait that defaults
+  to none. The sky kit names its `THRUM_MATERIAL` hook.
+- **Delivery.** The watch sets per-kind bits (parameters, game files) and wakes the event loop with a payload-free
+  `UserEvent::FilesSaved`. The event loop takes the bits and runs `file_watch::deliver`, the one body `L` also runs
+  with both bits:
+  - `load_params` only for the parameter bit (its report is tagged `(saved)`);
+  - `Game::reload` only for the game bit, so a parameter-only save never compiles the material;
+  - then a redraw.
+  - All reads are on the event loop or the watch thread; none run in the display-link or render callbacks.
+- **Lifecycle.** `App` starts the watch after the render worker and before the first load, so the baseline precedes
+  the first load and no later save is lost. `Drop` stops it before `render.shutdown()`. A delivery after the
+  renderer has stopped is dropped. If the thread cannot start, the app says so and `L` still works.
+- **Witnesses.** Unit tests in `./dev check` cover:
+  - the watch: in-place save, rename-save, burst, touch, delete-then-create, a lasting absence, a file created late,
+    both kinds coalescing and stop without a tick;
+  - the delivery body: per-kind routing, `L` doing both, and a save during shutdown being dropped.
+
+  `scripts/check_starter_live_reload.py` runs the real starter in live capture mode, `THRUM_CAPTURE_LIVE` with
+  `THRUM_CAPTURE_PNG` (`sky/live_capture.rs`). Live capture uses the same watch and delivery body offscreen and writes
+  a PNG and report line per save. It does not qualify the window's event path on glass; pause ordering through
+  `controls_edited` is unchanged and shared with `L`, but has no new test, because `App` needs a main-thread event
+  loop.
 
 ## Shader edits: the cooked material hook (built)
 

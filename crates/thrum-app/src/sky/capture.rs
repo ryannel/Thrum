@@ -13,7 +13,7 @@ use super::{ContentStatus, SkyGame};
 use crate::Config;
 
 /// Longest wait for the contribution's first drawn generation.
-const CONTENT_WAIT: Duration = Duration::from_secs(30);
+pub(super) const CONTENT_WAIT: Duration = Duration::from_secs(30);
 
 #[expect(
     clippy::print_stdout,
@@ -57,6 +57,20 @@ fn capture(
         },
     )?;
     let deadline = Instant::now() + CONTENT_WAIT;
+    wait_drawn(&mut game, &mut host, deadline)?;
+    reload(config.name, &mut game, &mut host, deadline)?;
+    let pixels = host.capture_pixels().map_err(|error| error.to_string())?;
+    drop(device);
+    write_png(path, extent, &pixels)?;
+    Ok(extent)
+}
+
+/// Render until the contribution's first generation is drawn, refusing a failure.
+pub(super) fn wait_drawn(
+    game: &mut SkyGame,
+    host: &mut thrum_render::runtime::FrameHost<super::StillWorld, super::SkyScene>,
+    deadline: Instant,
+) -> Result<(), String> {
     while let Some(status) = game.poll_status() {
         match status {
             ContentStatus::Drawn(_) => break,
@@ -73,10 +87,12 @@ fn capture(
         drop(host.capture_pixels().map_err(|error| error.to_string())?);
         std::thread::sleep(Duration::from_millis(2));
     }
-    reload(config.name, &mut game, &mut host, deadline)?;
-    let pixels = host.capture_pixels().map_err(|error| error.to_string())?;
-    drop(device);
-    let png = encode_png(extent, &pixels)?;
+    Ok(())
+}
+
+/// Encode `pixels` and write them to `path`, creating its folder.
+pub(super) fn write_png(path: &Path, extent: [u32; 2], pixels: &[u8]) -> Result<(), String> {
+    let png = encode_png(extent, pixels)?;
     if let Some(folder) = path
         .parent()
         .filter(|folder| !folder.as_os_str().is_empty())
@@ -84,8 +100,7 @@ fn capture(
         std::fs::create_dir_all(folder)
             .map_err(|error| format!("create {}: {error}", folder.display()))?;
     }
-    std::fs::write(path, png).map_err(|error| format!("write: {error}"))?;
-    Ok(extent)
+    std::fs::write(path, png).map_err(|error| format!("write: {error}"))
 }
 
 /// Apply `THRUM_PARAMS` as the window would at start; a capture refuses a file it cannot read.
@@ -154,7 +169,8 @@ fn reload(
     }
 }
 
-async fn headless_device() -> Result<(wgpu::Device, wgpu::Queue, DeviceCapabilities), String> {
+pub(super) async fn headless_device()
+-> Result<(wgpu::Device, wgpu::Queue, DeviceCapabilities), String> {
     let mut descriptor = wgpu::InstanceDescriptor::new_without_display_handle();
     descriptor.backends = wgpu::Backends::METAL;
     let instance = wgpu::Instance::new(descriptor);

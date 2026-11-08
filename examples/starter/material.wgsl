@@ -1,4 +1,4 @@
-// The rock's material hook. Edit it and press L in the window: a valid hook draws from the next
+// The rock's material hook. Edit it and save (or press L): a valid hook draws from the next
 // frame; a mistake is reported with its line here and the previous material keeps drawing.
 //
 // `surface` holds the factors the rock's placement sets; return the factors to shade with.
