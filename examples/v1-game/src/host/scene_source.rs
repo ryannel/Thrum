@@ -257,6 +257,16 @@ impl GameScene {
         Ok(())
     }
 
+    /// The authored scene camera, when content selected one.
+    pub(super) fn authored_camera(&self) -> Option<SceneCamera> {
+        self.camera
+    }
+
+    /// The installed route's pose for `tick` at `alpha`.
+    pub(super) fn route_pose(&self, tick: u64, alpha: f32) -> Option<crate::RoutePose> {
+        self.route.as_ref().map(|route| route.pose(tick, alpha))
+    }
+
     /// Refuse camera, time and control edits while a moving route owns the camera.
     pub(super) fn route_guard(&self) -> Result<(), String> {
         match self.route {
@@ -402,17 +412,13 @@ impl super::FrameHost {
     /// The authored scene camera, when content selected one.
     #[must_use]
     pub fn scene_camera(&self) -> Option<SceneCamera> {
-        self.inner.source().camera
+        self.inner.source().authored_camera()
     }
 
     /// The installed route's pose and history epoch for `tick` presented at `alpha`.
     #[must_use]
     pub fn route_pose(&self, tick: u64, alpha: f32) -> Option<crate::RoutePose> {
-        self.inner
-            .source()
-            .route
-            .as_ref()
-            .map(|route| route.pose(tick, alpha))
+        self.inner.source().route_pose(tick, alpha)
     }
 
     /// World time, in milliseconds from the clock origin, of the next tick boundary

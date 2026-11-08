@@ -274,8 +274,77 @@ impl BrowserGame {
     }
 }
 
+/// Prepare the game for the moving proof route: the canvas takes the route's render
+/// extent, and the game is built with the route's overlay and the valley's stars.
+/// The page attaches the cooked valley and installs the route with
+/// [`BrowserGame::install_route`]; nothing here admits the overlay without its route.
+///
+/// # Errors
+/// Refuses a file that is not a route, or the same failures as [`create_browser_game`].
+#[wasm_bindgen]
+pub async fn create_route_game(
+    canvas: HtmlCanvasElement,
+    route: String,
+) -> Result<BrowserGame, JsValue> {
+    let (extent, overlay) = crate::CameraRoute::declared(&route).map_err(js_error)?;
+    canvas.set_width(extent[0]);
+    canvas.set_height(extent[1]);
+    create_game(
+        canvas,
+        crate::GameSetup {
+            valley_stars: true,
+            route_overlay: overlay,
+            ..crate::GameSetup::default()
+        },
+    )
+    .await
+}
+
 #[wasm_bindgen]
 impl BrowserGame {
+    /// Install the moving route (the route file's JSON) once the cooked valley of the
+    /// route's generation has drawn, when the committed tick is the one before its origin.
+    /// Camera, time and control edits are refused from then on.
+    /// # Errors
+    /// Returns the route's installation refusals.
+    pub fn install_route(&mut self, route: &str) -> Result<(), JsValue> {
+        let drawn = self
+            .cooked
+            .as_ref()
+            .and_then(|stats| stats.lock().ok().and_then(|stats| stats.drawn));
+        game::install_route(&mut self.shell, route, drawn).map_err(js_error)
+    }
+
+    /// Latest committed authority tick.
+    #[must_use]
+    pub fn committed_tick(&self) -> f64 {
+        #[expect(
+            clippy::cast_precision_loss,
+            reason = "route runs stay far below 2^53 ticks"
+        )]
+        let tick = game::committed_tick(&self.shell) as f64;
+        tick
+    }
+
+    /// The next route step's page time in milliseconds from the clock origin:
+    /// `(tick + 1 + phi)·P`. Route mode starts the clock with `set_visible(true, 0)`.
+    #[must_use]
+    pub fn route_step_ms(&self, phi: f64) -> f64 {
+        game::route_step_ms(&self.shell, phi)
+    }
+
+    /// Route identity as JSON: counters, solar hours and retained samples from `from_tick`.
+    #[must_use]
+    pub fn route_report(&self, from_tick: f64) -> String {
+        #[expect(
+            clippy::cast_possible_truncation,
+            clippy::cast_sign_loss,
+            reason = "the page passes a committed tick it read from this game"
+        )]
+        let from = from_tick.max(0.0) as u64;
+        game::route_report(&self.shell, from).to_string()
+    }
+
     /// Draw the authored valley from fetched cooked products, with its authored camera.
     /// The products survive device replacement: a new device stages the newest fetched
     /// generation again. Publications fetched later by [`CookedValley::next_publication`] swap

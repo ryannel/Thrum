@@ -92,7 +92,8 @@ pub struct RoutePose {
     pub yaw: f32,
     /// Pitch in radians.
     pub pitch: f32,
-    /// History epoch: zero from the origin, one more after each cut.
+    /// History epoch: one from the origin (the unrouted view's epoch is zero, so the
+    /// first routed frame resets history on every target), one more after each cut.
     pub epoch: u64,
 }
 
@@ -263,7 +264,7 @@ impl CameraRoute {
         reason = "route ticks are bounded by the 560-frame cap"
     )]
     fn pose_at(&self, s: f64) -> RoutePose {
-        let epoch = self.cuts.iter().filter(|&&cut| s >= cut as f64).count() as u64;
+        let epoch = 1 + self.cuts.iter().filter(|&&cut| s >= cut as f64).count() as u64;
         let mut from = self.keys[0];
         let mut to = from;
         let mut t = 0.0;

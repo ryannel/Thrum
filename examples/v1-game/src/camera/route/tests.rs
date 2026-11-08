@@ -54,16 +54,16 @@ fn worked_cut_example_and_clamp() {
     // s = tick − 1 − origin + alpha.
     let before = route.pose(110, 0.5);
     assert!((before.eye[0] - 0.95).abs() < 1e-6, "{before:?}");
-    assert_eq!(before.epoch, 0);
+    assert_eq!(before.epoch, 1);
     let after = route.pose(111, 0.5);
     assert!((after.eye[0] - 5.1).abs() < 1e-5, "{after:?}");
     assert!((after.yaw - 41_f32.to_radians()).abs() < 1e-6);
-    assert_eq!(after.epoch, 1);
+    assert_eq!(after.epoch, 2);
     // At the origin s = −0.5, clamped to key 0; past the end, the last key.
     assert_eq!(route.pose(100, 0.5).eye[0], 0.0);
     assert_eq!(route.pose(90, 0.0).eye[0], 0.0);
     assert_eq!(route.pose(500, 0.5).eye[0], 7.0);
-    assert_eq!(route.pose(500, 0.5).epoch, 1);
+    assert_eq!(route.pose(500, 0.5).epoch, 2);
 }
 
 #[test]

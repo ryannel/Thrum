@@ -125,3 +125,79 @@ pub(crate) fn camera_culling(shell: &Shell) -> CullMode {
 pub(crate) fn dropped(shell: &Shell) -> (u64, u64) {
     (shell.host().dropped_views(), shell.host().dropped_reports())
 }
+
+/// Install the moving route once the cooked valley's declared generation has drawn,
+/// when the committed tick is the one before the route's origin. The browser admits
+/// the route overlay only for this owned cooked route, as the native capture does.
+/// # Errors
+/// Refuses a route the game cannot install, or a cooked draw of another generation.
+pub(crate) fn install_route(
+    shell: &mut Shell,
+    text: &str,
+    drawn_generation: Option<u64>,
+) -> Result<(), String> {
+    let source = shell.host().source();
+    source.route_guard()?;
+    let camera = source
+        .authored_camera()
+        .ok_or("the moving route needs the cooked valley's authored camera")?;
+    let tick_hz = thrum_core::ClockConfig::default().tick_hz.get();
+    let route = crate::CameraRoute::parse(text, camera, tick_hz)?;
+    if drawn_generation != Some(route.cooked_generation) {
+        return Err(format!(
+            "cooked generation {drawn_generation:?} has not drawn as the route's {}",
+            route.cooked_generation
+        ));
+    }
+    let tick = shell.host().world().tick();
+    shell.source_mut().install_route(route, tick)
+}
+
+/// The route step target in page milliseconds from the clock origin: `(tick + 1 + φ)·P`.
+pub(crate) fn route_step_ms(shell: &Shell, phi: f64) -> f64 {
+    super::scene_source::route_step_ms(shell.host().world().tick(), phi)
+}
+
+/// Latest committed authority tick.
+pub(crate) fn committed_tick(shell: &Shell) -> u64 {
+    shell.host().world().tick()
+}
+
+/// Route identity for the page: counters, the committed solar hour, and every retained
+/// GPU-complete sample at or after `from_tick` with its pose and rendered solar hour.
+pub(crate) fn route_report(shell: &Shell, from_tick: u64) -> serde_json::Value {
+    let source = shell.host().source();
+    let status = shell.status();
+    let (dropped_views, dropped_reports) = dropped(shell);
+    let committed = time_of_day(shell) * 24.0;
+    let samples: Vec<serde_json::Value> = shell
+        .samples()
+        .iter()
+        .filter(|sample| sample.tick >= from_tick)
+        .map(|sample| {
+            let alpha = sample.presentation_alpha;
+            let rendered = crate::environment::DayCycle::rendered_time_of_day(
+                sample.tick,
+                alpha,
+                source.day_phase_offset,
+            ) * 24.0;
+            let pose = source.route_pose(sample.tick, alpha);
+            serde_json::json!({
+                "tick": sample.tick, "alpha": alpha, "alpha_bits": alpha.to_bits(),
+                "submission": sample.submission_order,
+                "rendered_solar_hours": rendered, "rendered_solar_bits": rendered.to_bits(),
+                "eye": pose.map(|pose| pose.eye), "yaw": pose.map(|pose| pose.yaw),
+                "pitch": pose.map(|pose| pose.pitch), "epoch": pose.map(|pose| pose.epoch),
+            })
+        })
+        .collect();
+    serde_json::json!({
+        "tick": committed_tick(shell),
+        "committed_solar_hours": committed, "committed_solar_bits": committed.to_bits(),
+        "callbacks": status.callbacks, "presented": status.presented,
+        "timestamp_clamps": status.timestamp_clamps, "generation": status.generation,
+        "unavailable": status.unavailable, "overload_events": status.overload_events,
+        "dropped_views": dropped_views, "dropped_reports": dropped_reports,
+        "extent": status.extent, "samples": samples,
+    })
+}
