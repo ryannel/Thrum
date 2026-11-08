@@ -759,6 +759,14 @@ impl<G: Game + 'static> App<G> {
         if let Some(worker) = self.render.take() {
             worker.shutdown();
         }
+        if self.presented == 0 {
+            return closed_without_frames(
+                self.window_closed,
+                &self.adapter_name,
+                self.callbacks,
+                self.display_link_callbacks,
+            );
+        }
         let wall = percentile(&self.callback_walls, |duration| {
             duration.as_secs_f64() * 1e3
         });
@@ -769,9 +777,6 @@ impl<G: Game + 'static> App<G> {
             .iter()
             .filter(|sample| sample.surface_presented)
             .collect();
-        if self.presented == 0 {
-            return Err("no surface frames were presented".into());
-        }
         let missing = recovery::missing_profiles(
             self.presented,
             presented.len() + self.trimmed_presented,
@@ -939,10 +944,35 @@ fn profiler_title(
     )
 }
 
+/// The p50 and p95 of `items`, or NaN for both when there are none, so a report over a run
+/// that recorded no sample of one kind prints `NaN` instead of indexing an empty vector.
 fn percentile<T>(items: &[T], value: impl Fn(&T) -> f64) -> (f64, f64) {
     let mut sorted: Vec<_> = items.iter().map(value).collect();
     sorted.sort_by(f64::total_cmp);
+    if sorted.is_empty() {
+        return (f64::NAN, f64::NAN);
+    }
     (sorted[sorted.len() / 2], sorted[sorted.len() * 95 / 100])
+}
+
+/// The outcome of a run that presented no surface frame. A run until closed whose window
+/// closed first ends normally, as closing is how it ends, whether the close came before the
+/// first display callback or while the first frame was in flight. A bounded run, which never
+/// sets `window_closed`, still fails.
+fn closed_without_frames(
+    window_closed: bool,
+    adapter: &str,
+    callbacks: usize,
+    display_link_callbacks: usize,
+) -> Result<String, String> {
+    if window_closed {
+        Ok(format!(
+            "adapter={adapter}; presented=0; callbacks={callbacks}; display_link_callbacks={display_link_callbacks}; the window closed before any surface frame was presented{}",
+            never_drawn_hint(0, display_link_callbacks)
+        ))
+    } else {
+        Err("no surface frames were presented".into())
+    }
 }
 
 impl<G: Game + 'static> ApplicationHandler<UserEvent> for App<G> {
@@ -1241,7 +1271,39 @@ fn never_drawn_hint(presented: usize, display_link_callbacks: usize) -> &'static
 
 #[cfg(test)]
 mod tests {
-    use super::{frame_limit, never_drawn_hint, prints_report, run_frames};
+    use super::{
+        closed_without_frames, frame_limit, never_drawn_hint, percentile, prints_report, run_frames,
+    };
+
+    #[test]
+    fn percentiles_of_no_samples_are_nan_not_a_panic() {
+        let none: [f64; 0] = [];
+        let (p50, p95) = percentile(&none, |value| *value);
+        assert!(p50.is_nan() && p95.is_nan());
+        assert_eq!(percentile(&[3.0, 1.0, 2.0], |value| *value), (2.0, 3.0));
+    }
+
+    #[test]
+    fn a_window_closed_before_any_present_ends_a_run_until_closed_normally() {
+        // Closed before the first display callback: nothing was timed at all.
+        let before_callback = closed_without_frames(true, "GPU", 0, 0).expect("normal close");
+        assert!(before_callback.contains("presented=0; callbacks=0; display_link_callbacks=0"));
+        assert!(before_callback.contains("locked or sleeping screen"));
+        // Closed while the first frame was in flight: callbacks ran, but no frame reply was
+        // received, so the worker and acquire timings are empty.
+        let before_reply = closed_without_frames(true, "GPU", 1, 2).expect("normal close");
+        assert!(before_reply.contains("callbacks=1; display_link_callbacks=2"));
+        assert!(!before_reply.contains("locked or sleeping screen"));
+    }
+
+    #[test]
+    fn a_bounded_run_that_never_presents_still_fails() {
+        assert_eq!(
+            closed_without_frames(false, "GPU", 5, 5),
+            Err("no surface frames were presented".to_owned())
+        );
+        assert!(closed_without_frames(false, "GPU", 0, 0).is_err());
+    }
 
     #[test]
     fn a_window_the_display_never_drove_says_why_it_drew_nothing() {
