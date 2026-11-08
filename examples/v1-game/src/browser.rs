@@ -136,6 +136,7 @@ pub async fn create_browser_game(
         canvas,
         crate::GameSetup {
             valley_stars: valley_stars.unwrap_or(false),
+            field_meshes: false,
             ..crate::GameSetup::default()
         },
     )
@@ -167,6 +168,7 @@ pub async fn create_field_game(
             content: crate::GameContent::Field,
             camera_culling,
             valley_stars: false,
+            field_meshes: false,
         },
     )
     .await

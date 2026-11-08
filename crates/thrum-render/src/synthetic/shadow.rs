@@ -16,6 +16,8 @@ pub(super) const SIZE: u32 = 1024;
 pub(super) const FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
 pub(super) const SAMPLE_BYTES: usize = 288;
 const CASTER_VIEW_BYTES: usize = 80;
+/// The caster view uniform's bytes, for graph ranges.
+pub(super) const CASTER_VIEW_RANGE: u64 = CASTER_VIEW_BYTES as u64;
 /// Two Sun cascades, then the top-down caster height map.
 pub(super) const MAPS: usize = 3;
 /// The same layer count for graph ranges and pipeline roles.
@@ -150,10 +152,9 @@ fn matrix_contains_caster(
 pub(super) struct ShadowPrepared {
     pipeline: wgpu::RenderPipeline,
     pipeline_two_sided: wgpu::RenderPipeline,
-    /// Culled and two-sided pipelines that fetch each instance from the
-    /// bucket route's member list, for scenes that select meshes.
-    member_pipelines: Option<[wgpu::RenderPipeline; 2]>,
-    member_layout: wgpu::BindGroupLayout,
+    /// For scenes that select meshes: the member list's layout, and culled
+    /// and two-sided pipelines that fetch each instance from it.
+    members: Option<(wgpu::BindGroupLayout, [wgpu::RenderPipeline; 2])>,
     cascades: [Cascade; MAPS],
     queue: wgpu::Queue,
     view_layout: wgpu::BindGroupLayout,
@@ -192,7 +193,7 @@ impl ShadowPrepared {
                 ty: wgpu::BindingType::Buffer {
                     ty: wgpu::BufferBindingType::Uniform,
                     has_dynamic_offset: false,
-                    min_binding_size: wgpu::BufferSize::new(CASTER_VIEW_BYTES as u64),
+                    min_binding_size: wgpu::BufferSize::new(CASTER_VIEW_RANGE),
                 },
                 count: None,
             }],
@@ -213,39 +214,16 @@ impl ShadowPrepared {
             });
             Cascade { buffer, view_group }
         });
-        let member_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            label: Some("synthetic Sun caster members"),
-            entries: &[wgpu::BindGroupLayoutEntry {
-                binding: 0,
-                visibility: wgpu::ShaderStages::VERTEX,
-                ty: wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Storage { read_only: true },
-                    has_dynamic_offset: true,
-                    min_binding_size: wgpu::BufferSize::new(4),
-                },
-                count: None,
-            }],
-        });
         let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("synthetic Sun shadow"),
             bind_group_layouts: &[Some(&view_layout), Some(instance_layout)],
             immediate_size: 0,
         });
-        let member_pipeline_layout =
-            device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-                label: Some("synthetic Sun bucket shadow"),
-                bind_group_layouts: &[
-                    Some(&view_layout),
-                    Some(instance_layout),
-                    Some(&member_layout),
-                ],
-                immediate_size: 0,
-            });
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("synthetic Sun caster"),
             source: wgpu::ShaderSource::Wgsl(include_str!("shadow.wgsl").into()),
         });
-        let create = |cull_mode, layout, entry_point| {
+        let create = |cull_mode, layout: &wgpu::PipelineLayout, entry_point| {
             device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
                 label: Some("synthetic Sun caster"),
                 layout: Some(layout),
@@ -274,9 +252,32 @@ impl ShadowPrepared {
         };
         let pipeline = create(Some(wgpu::Face::Back), &layout, "vertex");
         let pipeline_two_sided = create(None, &layout, "vertex");
-        let member_pipelines = casters.is_some().then(|| {
-            [Some(wgpu::Face::Back), None]
-                .map(|cull| create(cull, &member_pipeline_layout, "member_vertex"))
+        let members = casters.is_some().then(|| {
+            let member_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                label: Some("synthetic Sun caster members"),
+                entries: &[wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::VERTEX,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Storage { read_only: true },
+                        has_dynamic_offset: true,
+                        min_binding_size: wgpu::BufferSize::new(4),
+                    },
+                    count: None,
+                }],
+            });
+            let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: Some("synthetic Sun bucket shadow"),
+                bind_group_layouts: &[
+                    Some(&view_layout),
+                    Some(instance_layout),
+                    Some(&member_layout),
+                ],
+                immediate_size: 0,
+            });
+            let pipelines =
+                [Some(wgpu::Face::Back), None].map(|cull| create(cull, &layout, "member_vertex"));
+            (member_layout, pipelines)
         });
         let sample_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("synthetic Sun cascade samples"),
@@ -286,8 +287,7 @@ impl ShadowPrepared {
         Ok(Self {
             pipeline,
             pipeline_two_sided,
-            member_pipelines,
-            member_layout,
+            members,
             cascades,
             queue: queue.clone(),
             view_layout,
@@ -304,9 +304,10 @@ impl ShadowPrepared {
         }
     }
 
-    /// The member list's layout for the bucket route's caster bind group.
-    pub(super) fn member_layout(&self) -> &wgpu::BindGroupLayout {
-        &self.member_layout
+    /// The member list's layout for the bucket route's caster bind group,
+    /// when the scene selects meshes.
+    pub(super) fn member_layout(&self) -> Option<&wgpu::BindGroupLayout> {
+        self.members.as_ref().map(|(layout, _)| layout)
     }
 
     pub(super) fn update(
@@ -368,10 +369,10 @@ impl ShadowPrepared {
                 timings,
             )?
             .ok_or(RenderError::GraphPassMismatch)?;
-        let pipeline = match (casters.members, &self.member_pipelines) {
+        let pipeline = match (casters.members, &self.members) {
             (None, _) if casters.two_sided => &self.pipeline_two_sided,
             (None, _) => &self.pipeline,
-            (Some(_), Some([culled, two_sided])) => {
+            (Some(_), Some((_, [culled, two_sided]))) => {
                 if casters.two_sided {
                     two_sided
                 } else {

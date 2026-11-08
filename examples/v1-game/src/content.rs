@@ -7,7 +7,8 @@ use thrum_asset_gpu::CookedStats;
 
 /// Select the host for `THRUM_SCENE=valley|diagnostic|field` and
 /// `THRUM_CULLING=direct|frustum|occlusion`. The valley prepares its star field
-/// unless `THRUM_STARS=off`.
+/// unless `THRUM_STARS=off`; the field draws mixed meshes with
+/// `THRUM_FIELD_MESHES=on`.
 /// Without `THRUM_CULLING`, the field uses Frustum (a measured win along its
 /// flythrough) and the fully visible grid keeps Direct.
 /// # Errors
@@ -35,6 +36,8 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
         camera_culling,
         valley_stars: scene.as_deref() == Ok("valley")
             && std::env::var("THRUM_STARS").as_deref() != Ok("off"),
+        field_meshes: content == crate::GameContent::Field
+            && std::env::var("THRUM_FIELD_MESHES").as_deref() == Ok("on"),
     })
 }
 
