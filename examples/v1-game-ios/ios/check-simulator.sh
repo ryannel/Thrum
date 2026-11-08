@@ -8,8 +8,9 @@ cd -- "$(dirname -- "$0")/../../.."
 # run, launches the game with qualification commands enabled and walks the G3b
 # rows: startup, a render-owner stall, a hidden view, surface replacement (plain
 # and during a stall), a real background/foreground round trip (plain and during
-# a stall) and touch. Touch is a real HID gesture from a self-hosted XCUITest
-# runner (simctl has none) attached to the running process.
+# a stall), touch, and rotation (portrait → landscape → portrait, captured to a
+# 20 fps frame strip). Touch and rotation are driven by a self-hosted XCUITest
+# runner (simctl has neither) attached to the running process.
 # THRUM_V1_TOUCH=skip runs the other rows and exits 2 (partial).
 # THRUM_V1_ROUTE_OUT names a directory for raw state snapshots and screenshots.
 run_simctl() {

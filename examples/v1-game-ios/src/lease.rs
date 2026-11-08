@@ -33,6 +33,9 @@ pub(crate) enum Take<S> {
 
 pub(crate) struct SurfaceLease<S> {
     epoch: AtomicU64,
+    /// The view extent the shell last observed, packed width << 32 | height.
+    /// A witness only: the epoch, not this value, orders admission.
+    extent: AtomicU64,
     slot: Mutex<Option<Leased<S>>>,
 }
 
@@ -40,6 +43,7 @@ impl<S> SurfaceLease<S> {
     pub(crate) fn new() -> Self {
         Self {
             epoch: AtomicU64::new(1),
+            extent: AtomicU64::new(0),
             slot: Mutex::new(None),
         }
     }
@@ -47,6 +51,19 @@ impl<S> SurfaceLease<S> {
     /// The epoch a new request is made under.
     pub(crate) fn epoch(&self) -> u64 {
         self.epoch.load(Ordering::Acquire)
+    }
+
+    /// Shell only: record the view extent it observed.
+    pub(crate) fn observe_extent(&self, extent: [u32; 2]) {
+        let packed = (u64::from(extent[0]) << 32) | u64::from(extent[1]);
+        self.extent.store(packed, Ordering::Release);
+    }
+
+    /// The view extent the shell last observed.
+    pub(crate) fn observed_extent(&self) -> [u32; 2] {
+        let packed = self.extent.load(Ordering::Acquire);
+        let low = u64::from(u32::MAX);
+        [packed >> 32, packed & low].map(|part| u32::try_from(part).unwrap_or(u32::MAX))
     }
 
     /// Close admission for every request made under an older epoch.
@@ -110,6 +127,16 @@ mod tests {
     use std::sync::{Arc, Barrier, mpsc};
 
     use super::{SurfaceLease, Take};
+
+    #[test]
+    fn observed_extent_round_trips_full_u32_sides() {
+        let lease = SurfaceLease::<&str>::new();
+        assert_eq!(lease.observed_extent(), [0, 0]);
+        lease.observe_extent([2622, 1206]);
+        assert_eq!(lease.observed_extent(), [2622, 1206]);
+        lease.observe_extent([u32::MAX, 1]);
+        assert_eq!(lease.observed_extent(), [u32::MAX, 1]);
+    }
 
     #[test]
     fn install_take_and_reinstall_advance_the_epoch() {

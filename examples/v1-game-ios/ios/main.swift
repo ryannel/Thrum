@@ -52,9 +52,23 @@ private let shellCommands: [String: Int32] = [
     "stall-render": 4,
     "stall-present": 5,
     "sample-actor": 6,
+    "lose-device": 7,
+    "hold-recover": 8,
+    "release-recover": 9,
+    "stale-wake": 10,
 ]
 
+// Route commands also arrive as files dropped into the app's temporary
+// directory: on a heavily loaded host each `simctl spawn notifyutil` can take
+// over a minute, while the route can write the container directly. A dispatch
+// source on the directory runs on the main queue; files run in name order.
+private var observingShellCommands = false
+private var commandDirectorySource: DispatchSourceFileSystemObject?
+
 private func observeShellCommands() {
+    // Scene reconnects must not register a second set of observers.
+    guard !observingShellCommands else { return }
+    observingShellCommands = true
     let center = CFNotificationCenterGetDarwinNotifyCenter()
     for command in shellCommands.keys {
         CFNotificationCenterAddObserver(center, nil, { _, _, name, _, _ in
@@ -64,6 +78,26 @@ private func observeShellCommands() {
             thrumV1ShellCommand(code)
         }, (shellCommandPrefix + command) as CFString, nil, .deliverImmediately)
     }
+    guard ProcessInfo.processInfo.environment["THRUM_V1_ROUTE"] == "1" else { return }
+    let directory = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("thrum-v1-commands")
+    try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    let descriptor = open(directory.path, O_EVTONLY)
+    guard descriptor >= 0 else { return }
+    let source = DispatchSource.makeFileSystemObjectSource(fileDescriptor: descriptor, eventMask: .write, queue: .main)
+    source.setEventHandler {
+        let names = (try? FileManager.default.contentsOfDirectory(atPath: directory.path)) ?? []
+        for name in names.sorted() where !name.hasPrefix(".") {
+            try? FileManager.default.removeItem(at: directory.appendingPathComponent(name))
+            // "<sequence>-<command>"
+            guard let dash = name.firstIndex(of: "-"),
+                  let code = shellCommands[String(name[name.index(after: dash)...])]
+            else { continue }
+            thrumV1ShellCommand(code)
+        }
+    }
+    source.setCancelHandler { close(descriptor) }
+    source.resume()
+    commandDirectorySource = source
 }
 
 @_cdecl("thrum_v1_start_display_link")
@@ -115,6 +149,21 @@ func thrumV1AttachView(_ rawView: UnsafeMutableRawPointer) {
     let view = Unmanaged<UIView>.fromOpaque(rawView).takeUnretainedValue()
     SceneBridge.pendingView = view
     SceneBridge.attachIfReady()
+}
+
+// Keep the drawable's aspect while UIKit animates the view's bounds through a
+// rotation. raw-window-metal leaves its sublayer on kCAGravityResize, which
+// squeezes a landscape drawable into the still-portrait animating bounds. At
+// rest the drawable matches the bounds, so this changes nothing there.
+@_cdecl("thrum_v1_fit_layer")
+func thrumV1FitLayer(_ rawView: UnsafeMutableRawPointer) -> Int32 {
+    let view = Unmanaged<UIView>.fromOpaque(rawView).takeUnretainedValue()
+    var count: Int32 = 0
+    for layer in view.layer.sublayers ?? [] where layer is CAMetalLayer {
+        layer.contentsGravity = .resizeAspect
+        count += 1
+    }
+    return count
 }
 
 // Close a window whose surface the Rust shell released. Winit does not close
