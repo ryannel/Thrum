@@ -59,16 +59,10 @@ fn sample(
             1.0,
         )
         .expect("frame updates");
-    target.arm_culling_stats();
-    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-    prepared
-        .encode(&mut encoder, GENERATION, target, Some(timings))
-        .expect("scene encodes");
-    timings
-        .finish_render(GENERATION, &encoder)
-        .expect("timestamp batch closes");
-    wait(device, queue.submit([encoder.finish()]));
-    target.map_culling_stats(prepared.camera_culling(), prepared.active_instance_count());
+    let frame = prepared
+        .submit_counted((device, queue), GENERATION, target, Some(timings))
+        .expect("counted frame submits");
+    wait(device, frame.submission().clone());
     prepared.commit_frame();
     let mut resolve = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
     assert!(
@@ -93,8 +87,8 @@ fn sample(
         .map(|pass| pass.nanoseconds / 1_000_000.0)
         .sum();
     // The resolve wait polled the device, so the count mapping has settled.
-    let counts = target
-        .take_culling_counts()
+    let counts = frame
+        .take()
         .expect("every frame reports its culling counts");
     (whole, named, counts)
 }
