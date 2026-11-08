@@ -13,7 +13,8 @@ use thrum_asset::Profile;
 use thrum_asset_gpu::{CookedAssets, CookedStats, MaterialHook, MaterialOutcome, MaterialReload};
 use thrum_cook::{CookConfig, Cooker, Durability, Quality, demo};
 use thrum_render::capabilities::DeviceCapabilities;
-use v1_game::{FrameConfig, FrameHost};
+use thrum_render::present::SurfaceProfile;
+use v1_game::{FrameConfig, FrameHost, SurfaceOutput};
 
 const EXTENT: [u32; 2] = [640, 360];
 
@@ -659,6 +660,194 @@ fn a_replaced_device_draws_the_last_accepted_hook_and_retires_the_outstanding_re
         let green = capture(&mut host, "device-green");
         assert!(changed_pixels(&after, &green) > 640 * 360 / 100);
         settle(&mut host, &device);
+    });
+    std::fs::remove_dir_all(&root).ok();
+}
+
+/// A live step longer than the 60 Hz tick, so every step completes a tick and submits (or, when
+/// encoded and skipped, drops) a view.
+const STEP: Duration = Duration::from_millis(17);
+
+/// A material validated before any cooked content is resident is ready, not drawn: live frames
+/// and a capture submitted without a cooked mesh leave it without an outcome. The first
+/// submission whose frame recorded a resident mesh with it promotes it, after the first set's
+/// swap.
+#[test]
+fn a_material_ready_before_content_is_drawn_only_with_the_first_mesh() {
+    let root = std::env::temp_dir().join(format!("thrum-g6-material-ready-{}", std::process::id()));
+    std::fs::remove_dir_all(&root).ok();
+    let cook = source_tree(&root);
+    pollster::block_on(async {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let (device, queue, capabilities) = gpu(&instance, FrameHost::DEVICE_GENERATION).await;
+        let mut host = FrameHost::new_with_capabilities(
+            &device,
+            &queue,
+            &capabilities,
+            FrameConfig {
+                render_extent: EXTENT,
+                surface: None,
+            },
+        )
+        .await
+        .expect("prepared game scene");
+        // Nothing is cooked yet: the store has no HEAD, so no set can become resident.
+        let assets = CookedAssets::new(v1_game::cooked::cooked_config(cook.store.clone()))
+            .expect("rigid placements");
+        let stats = assets.stats();
+        let material = assets.material();
+        let requested = Instant::now();
+        let serial = material.request(hook("ready/green.wgsl", GREEN));
+        host.set_scene_contribution(Box::new(assets))
+            .expect("attach");
+        let mut clock = Duration::ZERO;
+        let deadline = Instant::now() + Duration::from_secs(30);
+        while material.ready() != Some(serial) {
+            assert!(Instant::now() < deadline, "the material never became ready");
+            clock += STEP;
+            host.drive(clock, None).expect("frame");
+            settle(&mut host, &device);
+            std::thread::sleep(Duration::from_millis(2));
+        }
+        // Submissions without a cooked mesh: more live frames and a capture.
+        let submitted = stats.lock().expect("stats").submitted_frames;
+        for _ in 0..3 {
+            clock += STEP;
+            host.drive(clock, None).expect("frame");
+            settle(&mut host, &device);
+        }
+        capture(&mut host, "ready-before-content");
+        assert!(stats.lock().expect("stats").submitted_frames >= submitted + 4);
+        assert_eq!(material.take_outcomes(), Vec::<MaterialOutcome>::new());
+        assert_eq!(material.ready(), Some(serial));
+        assert_eq!(material.accepted(), None);
+        assert!(stats.lock().expect("stats").drawn.is_none());
+        // Publish content: the first frame that draws it draws the material.
+        let report = Cooker::open(cook.clone())
+            .expect("cooker")
+            .cook_all()
+            .expect("cook");
+        assert!(report.failed.is_empty(), "{:?}", report.failed);
+        let (outcome, _) = until_outcome(&material, serial, || {
+            clock += STEP;
+            host.drive(clock, None).expect("frame");
+            settle(&mut host, &device);
+        });
+        let MaterialOutcome::Promoted { timing, .. } = outcome else {
+            panic!("{outcome}");
+        };
+        let swapped = stats
+            .lock()
+            .expect("stats")
+            .swaps
+            .first()
+            .expect("a swap")
+            .swapped;
+        assert!(
+            requested + timing.drawn >= swapped,
+            "drawn {:?} before the first set swapped",
+            timing.drawn
+        );
+        assert_eq!(material.ready(), None);
+        assert_eq!(material.accepted().as_deref(), Some("ready/green.wgsl"));
+    });
+    std::fs::remove_dir_all(&root).ok();
+}
+
+/// With a mesh resident, an encoded frame that is skipped (as the web shell does when drawable
+/// acquisition fails) draws the held material in a recording that is never submitted: it
+/// promotes nothing and leaves the material ready. The next submitted frame promotes it once.
+#[test]
+fn a_skipped_frame_never_promotes_a_ready_material() {
+    let (root, cook) = cooked("material-skip");
+    pollster::block_on(async {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let (device, queue, capabilities) = gpu(&instance, FrameHost::DEVICE_GENERATION).await;
+        let mut host = FrameHost::new_with_capabilities(
+            &device,
+            &queue,
+            &capabilities,
+            FrameConfig {
+                render_extent: EXTENT,
+                // A presenter, so the scene can be encoded before a drawable and skipped.
+                surface: Some(SurfaceProfile {
+                    format: wgpu::TextureFormat::Bgra8Unorm,
+                    extent: EXTENT,
+                }),
+            },
+        )
+        .await
+        .expect("prepared game scene");
+        let drawable = device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("skip test drawable"),
+            size: wgpu::Extent3d {
+                width: EXTENT[0],
+                height: EXTENT[1],
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Bgra8Unorm,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+            view_formats: &[],
+        });
+        let view = drawable.create_view(&wgpu::TextureViewDescriptor::default());
+        let output = SurfaceOutput {
+            view: &view,
+            extent: EXTENT,
+        };
+        let present = |host: &mut FrameHost, clock: &mut Duration| {
+            *clock += STEP;
+            assert!(host.drive(*clock, Some(&output)).expect("frame").submitted);
+            settle(host, &device);
+        };
+        let assets = CookedAssets::new(v1_game::cooked::cooked_config(cook.store.clone()))
+            .expect("rigid placements");
+        let stats = assets.stats();
+        let material = assets.material();
+        host.set_scene_contribution(Box::new(assets))
+            .expect("attach");
+        let mut clock = Duration::ZERO;
+        let deadline = Instant::now() + Duration::from_secs(30);
+        while stats.lock().expect("stats").drawn.is_none() {
+            assert!(Instant::now() < deadline, "cooked set never drawn");
+            present(&mut host, &mut clock);
+        }
+        present(&mut host, &mut clock);
+        let serial = material.request(hook("skip/green.wgsl", GREEN));
+        let submitted = stats.lock().expect("stats").submitted_frames;
+        let skip = |host: &mut FrameHost, clock: &mut Duration| {
+            *clock += STEP;
+            let frame = host.advance(*clock).expect("advance");
+            assert!(frame.encode_scene().expect("encode").skip().dropped_view);
+        };
+        // Skipped frames until the validated material is held, then one more: each records the
+        // resident mesh with it.
+        let deadline = Instant::now() + Duration::from_secs(30);
+        while material.ready() != Some(serial) {
+            assert!(Instant::now() < deadline, "the material never became ready");
+            skip(&mut host, &mut clock);
+            std::thread::sleep(Duration::from_millis(2));
+        }
+        skip(&mut host, &mut clock);
+        assert_eq!(stats.lock().expect("stats").submitted_frames, submitted);
+        assert_eq!(material.take_outcomes(), Vec::<MaterialOutcome>::new());
+        assert_eq!(material.ready(), Some(serial));
+        assert_eq!(material.accepted(), None);
+        // The next submitted frame draws it with the mesh and promotes it, once.
+        present(&mut host, &mut clock);
+        let outcomes = material.take_outcomes();
+        assert!(
+            matches!(&outcomes[..], [MaterialOutcome::Promoted { serial: promoted, .. }] if *promoted == serial),
+            "{outcomes:?}"
+        );
+        for _ in 0..2 {
+            present(&mut host, &mut clock);
+        }
+        assert_eq!(material.take_outcomes(), Vec::<MaterialOutcome>::new());
+        assert_eq!(material.ready(), None);
+        assert_eq!(material.accepted().as_deref(), Some("skip/green.wgsl"));
     });
     std::fs::remove_dir_all(&root).ok();
 }

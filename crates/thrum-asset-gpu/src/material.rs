@@ -112,7 +112,9 @@ pub struct ReloadTiming {
     pub prepare: Duration,
     /// Until the compilation messages and validation scope were seen resolved at a frame boundary.
     pub eligible: Duration,
-    /// Until the first frame drawing it was submitted.
+    /// Until it was installed: the first submitted frame that recorded draws of a resident cooked
+    /// mesh with it. The GPU cull may still have drawn no primitive of that mesh; visibility is
+    /// reported separately, by [`crate::CookedStats::visible_meshlets`].
     pub drawn: Duration,
 }
 
@@ -120,7 +122,8 @@ pub struct ReloadTiming {
 /// exactly one of `Promoted`, `Rejected`, `Superseded` or `Retired`; `Dropped` answers no request.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum MaterialOutcome {
-    /// The hook draws from the reported submission on.
+    /// The hook is installed: from the reported submission on, every cooked mesh draw records it.
+    /// This says nothing about visible pixels (see [`ReloadTiming::drawn`]).
     Promoted {
         /// Request serial.
         serial: u64,
@@ -181,7 +184,7 @@ impl fmt::Display for MaterialOutcome {
                 timing,
             } => write!(
                 f,
-                "material {serial} ({name}) drawn: call {:.2} ms, prepare {:.2} ms, eligible {:.2} ms, drawn {:.2} ms",
+                "material {serial} ({name}) installed: call {:.2} ms, prepare {:.2} ms, eligible {:.2} ms, installed {:.2} ms",
                 timing.call.as_secs_f64() * 1e3,
                 timing.prepare.as_secs_f64() * 1e3,
                 timing.eligible.as_secs_f64() * 1e3,
@@ -626,12 +629,17 @@ struct State {
     /// Whether the mesh pipeline draws the accepted hook; false while it is being restored.
     drawing: bool,
     outcomes: Vec<MaterialOutcome>,
-    /// Counts changes a report shows: outcomes, and whether the accepted hook draws.
+    /// Counts changes a report shows: outcomes, whether the accepted hook draws, and readiness.
     revision: u64,
+    /// A validated request held until a submitted frame records a resident cooked mesh with it.
+    ready: Option<u64>,
 }
 
 impl State {
     fn report(&mut self, outcome: MaterialOutcome) {
+        if outcome.serial().is_some() && outcome.serial() == self.ready {
+            self.ready = None;
+        }
         self.outcomes.push(outcome);
         self.revision += 1;
     }
@@ -932,8 +940,18 @@ impl MaterialReload {
         state.accepted.is_some() && !state.drawing
     }
 
-    /// Counts changes to what [`Self::take_outcomes`] and [`Self::restoring`] report, so an idle
-    /// caller can skip building a report.
+    /// Serial of a request that compiled and validated and is held for drawing, but has no
+    /// outcome yet: no submitted frame that recorded draws of a resident cooked mesh with it. That waits for
+    /// resident cooked content, or for the next frame to be submitted (a skipped frame does not
+    /// count). The first such submitted frame promotes it, unless a newer request or a rebuilt
+    /// surface replaces it first.
+    #[must_use]
+    pub fn ready(&self) -> Option<u64> {
+        self.state().ready
+    }
+
+    /// Counts changes to what [`Self::take_outcomes`], [`Self::restoring`] and [`Self::ready`]
+    /// report, so an idle caller can skip building a report.
     #[must_use]
     pub fn revision(&self) -> u64 {
         self.state().revision
@@ -983,12 +1001,20 @@ impl MaterialReload {
             return;
         }
         state.consider_candidate(held, target);
+        if let Some(eligible) = held.as_ref()
+            && !eligible.restore
+            && state.ready != Some(eligible.serial)
+        {
+            state.ready = Some(eligible.serial);
+            state.revision += 1;
+        }
         if held.is_none() {
             state.consider_restore(held, target);
         }
     }
 
-    /// The submission carrying the first frame that drew `eligible` completed recording.
+    /// The submission carrying the first frame that recorded a resident cooked mesh with `eligible`
+    /// completed recording.
     pub(crate) fn promote(&self, eligible: Eligible) {
         let mut state = self.state();
         state.drawing = true;
@@ -1178,6 +1204,25 @@ mod tests {
                 if diagnostics[0].message.contains("failed to start: out of threads"))));
         assert!(!state.queue.running && state.queue.start().is_none());
         assert!(state.accepted.is_none(), "the built-in material draws");
+    }
+
+    #[test]
+    fn a_ready_request_stops_being_ready_once_it_has_an_outcome() {
+        for outcome in [
+            MaterialOutcome::Superseded { serial: 4 },
+            MaterialOutcome::Retired { serial: 4 },
+        ] {
+            let material = reload(State {
+                ready: Some(4),
+                ..State::default()
+            });
+            material
+                .state()
+                .report(MaterialOutcome::Superseded { serial: 3 });
+            assert_eq!(material.ready(), Some(4), "another request's outcome");
+            material.state().report(outcome);
+            assert_eq!(material.ready(), None);
+        }
     }
 
     #[test]

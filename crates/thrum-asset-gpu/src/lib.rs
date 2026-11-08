@@ -237,8 +237,13 @@ pub struct SwapRecord {
 pub struct CookedStats {
     /// Swaps in order.
     pub swaps: Vec<SwapRecord>,
-    /// Loader failures (the previous set stays drawn).
+    /// The newest loader failures, at most 64 (the previous set stays drawn).
     pub errors: Vec<String>,
+    /// Loader failures recorded since the contribution started, including any no longer in
+    /// [`Self::errors`]; a reader that remembers it can tell which entries are new.
+    pub failures: u64,
+    /// [`Self::failures`] when the first set swapped in: later ones were refused while a set drew.
+    pub failures_before_first_draw: u64,
     /// Largest staged-copy bytes recorded in one frame.
     pub max_frame_copy_bytes: u64,
     /// Staged-copy bytes recorded in the most recent frame.
@@ -327,8 +332,8 @@ struct Live {
     readback: Readback,
     /// What this frame's encoder recorded, committed only by `submitted`.
     tentative: Option<Tentative>,
-    /// A validated material replacement, drawn from the next frame and promoted by its
-    /// submission.
+    /// A validated material replacement, drawn from the next frame and promoted by the first
+    /// submission whose frame recorded a resident cooked mesh with it; held as ready until then.
     material: Option<material::Eligible>,
 }
 
@@ -353,6 +358,9 @@ struct Tentative {
     history: Option<bool>,
     /// This frame draws the held material replacement.
     material: bool,
+    /// This frame records draws of at least one resident cooked mesh (whose cull may still leave
+    /// every primitive undrawn).
+    meshed: bool,
 }
 
 /// Non-blocking copy-out of the cull's visible count: copy in a submitted frame, map after that
@@ -707,6 +715,10 @@ impl SceneContribution for CookedAssets {
             }
         }
         live.tentative = Some(tentative);
+        let meshed = live.drawn().is_some_and(draw::Bound::culls);
+        if let Some(tentative) = live.tentative.as_mut() {
+            tentative.meshed = meshed;
+        }
         if let Ok(mut stats) = self.stats.lock() {
             stats.recorded_frames += 1;
         }
@@ -809,6 +821,9 @@ impl SceneContribution for CookedAssets {
                 remote.confirmed = load::Loader::confirm(&set);
             }
             if let Ok(mut stats) = self.stats.lock() {
+                if stats.drawn.is_none() {
+                    stats.failures_before_first_draw = stats.failures;
+                }
                 stats.drawn = Some(set.generation);
                 stats.swaps.push(SwapRecord {
                     generation: set.generation,
@@ -829,7 +844,11 @@ impl SceneContribution for CookedAssets {
         if history_advanced && let Some((_, bound)) = &live.current {
             bound.continued.set(true);
         }
+        // A material is installed only once a submitted frame recorded a resident mesh with it;
+        // until then it stays held, ready, and later frame boundaries may still supersede or
+        // retire it.
         if tentative.material
+            && tentative.meshed
             && let Some(eligible) = live.material.take()
         {
             live.pipelines.install_mesh(eligible.pipeline.clone());

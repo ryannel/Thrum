@@ -1,8 +1,10 @@
 //! Live review capture of a sky scene, for a creator's saves on a machine with no visible window:
 //! the same host, contribution, file watch and reload body as the window, rendered offscreen.
 //! After each settled save is applied and drawn it writes the next numbered PNG and one report
-//! line, so a script can check each save's outcome. It exercises the shared reload path, not the
-//! window's event path, and makes no presentation or timing claim.
+//! line, so a script can check each save's outcome. A newly drawn content generation, or one the
+//! loader refused while the previous one keeps drawing, writes a `content` line of its own when
+//! no save is being reported. It exercises the shared reload path, not the window's event path,
+//! and makes no presentation or timing claim.
 
 use std::{
     fmt::Write as _,
@@ -12,7 +14,7 @@ use std::{
 
 use thrum_render::runtime::{FrameConfig, FrameHost};
 
-use super::{SkyGame, SkyScene, StillWorld, capture};
+use super::{ContentStatus, SkyGame, SkyScene, StillWorld, capture};
 use crate::{
     Config, Game,
     file_watch::{self, FileWatch, Kinds, Reload},
@@ -63,6 +65,7 @@ fn live(
         index: 0,
         outcome: String::new(),
         awaiting: false,
+        drawn: None,
     };
     // The window applies the file and reloads the game once it is up; so does this.
     live.reload_params(false)?;
@@ -101,6 +104,9 @@ fn live(
         let kinds = watch.take();
         if kinds.is_empty() {
             live.frame()?;
+            if !live.outcome.is_empty() {
+                live.write("content")?;
+            }
             std::thread::sleep(IDLE_FRAME);
             continue;
         }
@@ -131,13 +137,28 @@ struct Live {
     outcome: String,
     /// A game reload started and has not reported yet.
     awaiting: bool,
+    /// The content generation last reported drawn.
+    drawn: Option<u64>,
 }
 
 impl Live {
     /// Render one frame: a frame boundary at which uploads and a prepared material install.
     fn frame(&mut self) -> Result<Vec<u8>, String> {
         let host = self.host.as_mut().ok_or("no host")?;
-        host.capture_pixels().map_err(|error| error.to_string())
+        let pixels = host.capture_pixels().map_err(|error| error.to_string())?;
+        // The first draw is the baseline; later generations and refusals are reported.
+        if let Some(ContentStatus::Drawn(generation)) = self.game.poll_status()
+            && self.drawn != Some(generation)
+        {
+            if self.drawn.is_some() {
+                let _ = write!(self.outcome, "; content: drawn {generation}");
+            }
+            self.drawn = Some(generation);
+        }
+        for (generation, error) in self.game.poll_kept() {
+            let _ = write!(self.outcome, "; content: kept {generation} ({error})");
+        }
+        Ok(pixels)
     }
 
     /// Render until a started game reload reports, then once more so its result is drawn.
@@ -148,7 +169,7 @@ impl Live {
             if let Some((_, report)) = self.game.reload.as_mut() {
                 for line in report() {
                     let _ = match line {
-                        Ok(line) => write!(self.outcome, "; game: drawn {line}"),
+                        Ok(line) => write!(self.outcome, "; game: {line}"),
                         Err(line) => write!(self.outcome, "; game: kept the last good ({line})"),
                     };
                     self.awaiting = false;

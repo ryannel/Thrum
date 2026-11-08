@@ -34,7 +34,9 @@ platform tag, and macOS is the right assumption.
 
 - **Assets.** Save a change to `assets/meshes/rock.gltf` or `assets/textures/white.png` (any PNG of
   the same name). The watcher cooks a new generation, and the window logs
-  `content generation N drawn` when it appears. To experiment on a copy instead, set
+  `content generation N drawn` when it appears. A change it cannot draw, such as renaming the mesh
+  away from the name `src/main.rs` places, logs `content generation N kept: <reason>` and the last
+  drawn generation stays on screen. To experiment on a copy instead, set
   `THRUM_SCENE_ASSETS=/path/to/copy` before `./dev starter`.
 - **Parameters.** Edit [starter.params.json](starter.params.json) (display values, in degrees) and
   save it. Unknown keys and out-of-range values are refused by name.
