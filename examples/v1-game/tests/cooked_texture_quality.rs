@@ -41,6 +41,8 @@ fn psnr(a: &[u8], b: &[u8], stride: usize, channels: &[usize]) -> f64 {
 }
 
 struct Decoder {
+    /// The compressed sampling features this adapter has; formats without one are skipped.
+    features: wgpu::Features,
     device: wgpu::Device,
     queue: wgpu::Queue,
     shader: wgpu::ShaderModule,
@@ -55,15 +57,12 @@ impl Decoder {
                 .request_adapter(&wgpu::RequestAdapterOptions::default())
                 .await
                 .ok()?;
-            let wanted =
-                wgpu::Features::TEXTURE_COMPRESSION_BC | wgpu::Features::TEXTURE_COMPRESSION_ASTC;
-            if !adapter.features().contains(wanted) {
-                eprintln!("skipped: the adapter lacks BC or ASTC sampling");
-                return None;
-            }
+            let features = adapter.features()
+                & (wgpu::Features::TEXTURE_COMPRESSION_BC
+                    | wgpu::Features::TEXTURE_COMPRESSION_ASTC);
             let (device, queue) = adapter
                 .request_device(&wgpu::DeviceDescriptor {
-                    required_features: wanted,
+                    required_features: features,
                     ..Default::default()
                 })
                 .await
@@ -84,6 +83,7 @@ impl Decoder {
                 ),
             });
             Some(Self {
+                features,
                 device,
                 queue,
                 shader,
@@ -215,9 +215,11 @@ impl Decoder {
             usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
             mapped_at_creation: false,
         });
-        let mut encoder = self.device.create_command_encoder(&Default::default());
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
         {
-            let view = target.create_view(&Default::default());
+            let view = target.create_view(&wgpu::TextureViewDescriptor::default());
             let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("decode"),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
@@ -268,31 +270,33 @@ impl Decoder {
 
 /// BC4 (unsigned) block decode into `width`×`height` R8 texels of one slice.
 fn decode_bc4(blocks: &[u8], width: u32, height: u32) -> Vec<u8> {
-    let wide = width.div_ceil(4) as usize;
     let mut out = vec![0_u8; (width * height) as usize];
-    for (index, block) in blocks.chunks_exact(8).enumerate() {
+    let mut origins = (0..height.div_ceil(4))
+        .flat_map(|by| (0..width.div_ceil(4)).map(move |bx| (bx * 4, by * 4)));
+    for block in blocks.as_chunks::<8>().0 {
+        let (bx, by) = origins.next().expect("one block per 4×4 texels");
         let (r0, r1) = (u32::from(block[0]), u32::from(block[1]));
-        let palette: [u32; 8] = std::array::from_fn(|i| {
-            let i = i as u32;
-            match i {
+        let palette: [u8; 8] = std::array::from_fn(|index| {
+            let i = u32::try_from(index).expect("palette index");
+            let value = match i {
                 0 => r0,
                 1 => r1,
                 _ if r0 > r1 => ((8 - i) * r0 + (i - 1) * r1) / 7,
                 _ if i < 6 => ((6 - i) * r0 + (i - 1) * r1) / 5,
                 6 => 0,
                 _ => 255,
-            }
+            };
+            u8::try_from(value).expect("palette values stay within a byte")
         });
         let bits = block[2..8]
             .iter()
             .rev()
             .fold(0_u64, |bits, &byte| bits << 8 | u64::from(byte));
-        let (bx, by) = ((index % wide) as u32 * 4, (index / wide) as u32 * 4);
         for texel in 0..16_u32 {
             let (x, y) = (bx + texel % 4, by + texel / 4);
             if x < width && y < height {
                 let code = (bits >> (3 * texel)) & 7;
-                out[(y * width + x) as usize] = palette[code as usize] as u8;
+                out[(y * width + x) as usize] = palette[code as usize];
             }
         }
     }
@@ -345,11 +349,28 @@ fn other_colour_space(format: Ktx2Format) -> Ktx2Format {
     }
 }
 
+/// A compressed product has the portable product's full chain: a truncated or resized chain
+/// would otherwise pass the per-level comparison, which pairs levels in order.
+fn assert_same_levels(product: &Ktx2, portable: &Ktx2, name: &str) {
+    let sizes = |p: &Ktx2| {
+        p.levels()
+            .iter()
+            .map(|l| (l.width, l.height, l.depth))
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(
+        sizes(product),
+        sizes(portable),
+        "{name} {:?} levels differ from the portable product's",
+        product.format()
+    );
+}
+
 #[test]
 fn every_compressed_product_level_clears_the_quality_floor_and_substitutes_do_not() {
-    let Some(decoder) = Decoder::new() else {
-        return;
-    };
+    // The BC4 volume decodes on the CPU and is always checked; each colour format is checked
+    // where the adapter can sample it.
+    let decoder = Decoder::new();
     let root = std::env::temp_dir().join(format!("thrum-g5-quality-{}", std::process::id()));
     std::fs::remove_dir_all(&root).ok();
     for quality in [Quality::Fast, Quality::Final] {
@@ -363,8 +384,17 @@ fn every_compressed_product_level_clears_the_quality_floor_and_substitutes_do_no
                 .collect();
             let alpha = name == "textures/cutout";
             let channels: &[usize] = if alpha { &[0, 1, 2, 3] } else { &[0, 1, 2] };
-            for profile in [Profile::DesktopBc, Profile::AppleAstc] {
+            for (profile, feature) in [
+                (Profile::DesktopBc, wgpu::Features::TEXTURE_COMPRESSION_BC),
+                (Profile::AppleAstc, wgpu::Features::TEXTURE_COMPRESSION_ASTC),
+            ] {
                 let product = manifest_product(&store, name, profile);
+                assert_same_levels(&product, &portable, name);
+                let Some(decoder) = decoder.as_ref().filter(|d| d.features.contains(feature))
+                else {
+                    println!("QUALITY {quality:?} {name} {profile:?}: skipped, no {feature:?}");
+                    continue;
+                };
                 // The portable product's own format re-encodes the decode exactly as stored.
                 let target = wgpu_format(portable.format());
                 let decoded = decoder.decode(&product, wgpu_format(product.format()), target);
@@ -384,7 +414,9 @@ fn every_compressed_product_level_clears_the_quality_floor_and_substitutes_do_no
                 // Substitutes, measured at the base level: swapped red and blue, and the other
                 // colour-space label on the same blocks.
                 let swapped: Vec<u8> = decoded[0]
-                    .chunks_exact(4)
+                    .as_chunks::<4>()
+                    .0
+                    .iter()
                     .flat_map(|t| [t[2], t[1], t[0], t[3]])
                     .collect();
                 let swapped_db = psnr(&swapped, reference[0], 4, channels);
@@ -409,6 +441,7 @@ fn every_compressed_product_level_clears_the_quality_floor_and_substitutes_do_no
         let portable = manifest_product(&store, "cloud", Profile::Portable);
         let bc4 = manifest_product(&store, "cloud", Profile::DesktopBc);
         assert_eq!(bc4.format(), Ktx2Format::Bc4Unorm);
+        assert_same_levels(&bc4, &portable, "cloud");
         let mut levels = Vec::new();
         for (index, (level, reference)) in bc4.levels().iter().zip(portable.levels()).enumerate() {
             let blocks = bc4.level_data(level);

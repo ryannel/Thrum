@@ -15,7 +15,8 @@ use crate::write::ContainerWriter;
 use crate::{CookError, mesh, texture};
 
 /// Version of every cooker's output; bump to invalidate all cached actions.
-const COOKER_VERSION: u32 = 2;
+/// 3: mirrored glTF nodes keep front-face winding and outward normals.
+const COOKER_VERSION: u32 = 3;
 /// Encoder libraries and meshlet limits that shape product bytes. Cached actions persist across
 /// builds, so any change here must change every action key. Keep in step with Cargo.toml.
 const ENCODERS: &str =
