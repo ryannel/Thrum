@@ -96,14 +96,30 @@ impl AllowedOrigins {
                 && host
                     .chars()
                     .all(|c| c.is_ascii_alphanumeric() || c == '.' || c == '-' || (v6 && c == ':'));
-            let port_ok = port.is_none_or(|port| port.parse::<u16>().is_ok_and(|port| port > 0));
+            // Digits only, no leading zero: browsers send the canonical port.
+            let port_ok = port.is_none_or(|port| {
+                port.bytes().all(|b| b.is_ascii_digit())
+                    && !port.starts_with('0')
+                    && port.parse::<u16>().is_ok()
+            });
             if !host_ok || !port_ok {
                 return Err(format!(
                     "allowed origin `{origin}` must be http://host[:port] or https://host[:port], \
                      exactly as the page's Origin header (no path or trailing slash)"
                 ));
             }
-            allowed.push(origin.to_ascii_lowercase());
+            // Browsers omit the scheme's default port from `Origin`.
+            let origin = origin.to_ascii_lowercase();
+            let canonical = origin
+                .strip_suffix(":80")
+                .filter(|_| origin.starts_with("http://"))
+                .or_else(|| {
+                    origin
+                        .strip_suffix(":443")
+                        .filter(|_| origin.starts_with("https://"))
+                })
+                .unwrap_or(&origin);
+            allowed.push(canonical.to_owned());
         }
         Ok(Self(allowed))
     }
@@ -139,16 +155,25 @@ impl DevServer {
     /// (not a wildcard address), since `Host` must name it.
     ///
     /// # Errors
-    /// Bind failure.
+    /// Bind failure, or origins listed with a wildcard address (`InvalidInput`).
     pub fn start_allowing(
         address: &str,
         store: AssetStore,
         publications: Arc<Publications>,
         origins: AllowedOrigins,
     ) -> std::io::Result<Self> {
-        let origins = Arc::new(origins);
         let listener = TcpListener::bind(address)?;
         let address = listener.local_addr()?;
+        if !origins.0.is_empty() && address.ip().is_unspecified() {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                format!(
+                    "allowed origins need the address their pages reach, not the wildcard {address}: \
+                     requests must name it in Host"
+                ),
+            ));
+        }
+        let origins = Arc::new(origins);
         let stop = Arc::new(AtomicBool::new(false));
         let stopping = Arc::clone(&stop);
         let active = Arc::new(AtomicUsize::new(0));
@@ -350,11 +375,12 @@ fn respond(
     } else {
         "no-store"
     };
+    // Responses differ by Origin, so caches must key on it even when no Origin was sent.
     let cors = origin.map_or_else(String::new, |origin| {
-        format!("Access-Control-Allow-Origin: {origin}\r\nVary: Origin\r\n")
+        format!("Access-Control-Allow-Origin: {origin}\r\n")
     });
     let header = format!(
-        "HTTP/1.1 {status}\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nCache-Control: {cache}\r\n{cors}Connection: close\r\n\r\n",
+        "HTTP/1.1 {status}\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nCache-Control: {cache}\r\nVary: Origin\r\n{cors}Connection: close\r\n\r\n",
         body.len()
     );
     stream.write_all(header.as_bytes())?;
@@ -372,11 +398,14 @@ mod tests {
             "http://192.168.1.20:5173",
             "https://Tablet.local",
             "http://[fd00::2]:8080",
+            "https://default.local:443",
         ])
         .expect("valid origins");
         assert!(allowed.allows("http://192.168.1.20:5173"));
         assert!(allowed.allows("https://tablet.local"));
         assert!(allowed.allows("http://[fd00::2]:8080"));
+        // A default port is dropped, as browsers send it.
+        assert!(allowed.allows("https://default.local"));
         for near_miss in [
             "http://192.168.1.20:5174",
             "https://192.168.1.20:5173",
@@ -398,6 +427,8 @@ mod tests {
             "http://host/page",
             "http://host:0",
             "http://host:99999",
+            "http://host:+80",
+            "http://host:05173",
             "http://*",
             "http://user@host",
             "ftp://host",

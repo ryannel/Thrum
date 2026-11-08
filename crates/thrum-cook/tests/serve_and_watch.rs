@@ -211,7 +211,23 @@ fn only_listed_page_origins_beyond_loopback_may_read_the_dev_server() {
         assert!(!header.contains("Access-Control-Allow-Origin"), "{refused}");
     }
     assert_eq!(from("http://localhost:5173").0, 204);
+    // Caches must key on Origin even for a request without one.
+    let (_, _, header) = get_with(
+        address,
+        "/head",
+        &format!("Host: 127.0.0.1:{}\r\n", address.port()),
+    );
+    assert!(header.contains("Vary: Origin"));
     drop(server);
+    // A wildcard bind cannot match the Host those pages send, so listing origins refuses it.
+    let error = DevServer::start_allowing(
+        "0.0.0.0:0",
+        AssetStore::new(&config.store),
+        Arc::new(Publications::default()),
+        AllowedOrigins::parse([listed]).expect("valid origin"),
+    )
+    .expect_err("wildcard bind with listed origins");
+    assert_eq!(error.kind(), std::io::ErrorKind::InvalidInput);
     cleanup(&root);
 }
 

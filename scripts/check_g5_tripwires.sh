@@ -17,7 +17,7 @@ for bench in "thrum-cook edit_to_visible" "v1-game cooked_edit"; do
   set -- $bench
   report="$work/$2.md"
   rm -f "$report"
-  THRUM_G5_BENCH_OUT="$report" cargo bench --offline -q -p "$1" --bench "$2" >/dev/null 2>&1 || status=1
-  sed -n '/^tripwires/,$p' "$report" 2>/dev/null || echo "$2: bench failed before reporting"
+  THRUM_G5_BENCH_OUT="$report" cargo bench --offline -q -p "$1" --bench "$2" >"$work/$2.log" 2>&1 || status=1
+  sed -n '/^tripwires/,$p' "$report" 2>/dev/null || echo "$2: bench failed before reporting; see $work/$2.log"
 done
 exit "$status"

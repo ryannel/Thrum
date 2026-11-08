@@ -292,14 +292,22 @@ a 1 MiB budget (bound 4 MiB): 12 and 10 frames, staging peak exactly 4 MiB. It f
 limit (peak 12 MiB) and when chunks are never returned (the upload stalls). The fetched-edit test asserts the same
 bound on the remote path.
 
+`a_newer_publication_supersedes_an_upload_still_being_filled` renders no frames, so the ring never frees and a
+generation 2 replacement cannot finish filling; generation 3 is still posted, then drawn, and generation 2 never is.
+With the loader filling to completion before looking at HEAD again (the first ring build), generation 3 is never
+posted and the test fails.
+
 ## Dev-server origin allow-list (8 November)
 
 `thrum-cook watch --serve <address> --allow-origin <origin>` (repeatable) lets a page served from another device read
 the server. Origins are exact `http(s)://host[:port]` values compared without regard to case; a path, trailing slash,
-wildcard, credentials, port 0 or another scheme is refused at start by name. With no list, every non-loopback page is
+wildcard, credentials, port 0, a signed or zero-padded port or another scheme is refused at start by name, and a
+default port is dropped as browsers do. Listing origins with a wildcard bind (`0.0.0.0`) is refused, because those
+pages' `Host` would not name the bound address. With no list, every non-loopback page is
 refused with 403 as before. `only_listed_page_origins_beyond_loopback_may_read_the_dev_server` checks the listed origin
 is echoed with `Vary: Origin`, and that another port, scheme, host, a trailing slash and `null` get 403 with no CORS
-header; unit tests cover parsing.
+header, that a request without `Origin` still carries `Vary: Origin` (immutable `/cas` responses must not be
+cached across origins), and the wildcard refusal; unit tests cover parsing.
 
 ## Asserted tripwires (8 November)
 
@@ -310,20 +318,24 @@ startup to first resident frame, write→visible median and max, swap-frame rend
 `g5-cooked-edit.tsv` (per scenario: startup, write→swapped median, uploading render CPU p99, large upload frames, and
 staging peak, which may not grow at all).
 
-Each run records its revision, one-minute load average and CPU count and is judged only against runs of the same load
-class (load per CPU below 1 quiet, up to 4 busy, above saturated), because this machine's timings follow its load.
-A metric's limit is the larger of its same-class median times a factor (2–3 for timings, 1.5 for frame counts, 1 for
-staging) and a floor that stops millisecond-scale timings flapping; with fewer than three same-class runs it is
-recorded as seeding. Six runs at 65d0c011 seeded the `saturated` (load 73–104 on 14 CPUs) and `busy` (load 38–47)
-classes. Their run-to-run spread (largest over median) reached 2.4× for the 1k warm scan, 1.9× for 512³ startup and
-3.1 ms for swap-frame render CPU, so each timing factor is at least 1.25× its observed spread and the swap CPU floor
-is 5 ms. Startup is bimodal (35–165 ms with a warm device, 400–780 ms cold), so its floors (600 ms
+Each run records its revision, one-minute load average and CPU count. Timings and upload frame counts are judged
+only against runs of the same load class (load per CPU below 1 quiet, up to 4 busy, above saturated), because this
+machine's timings follow its load; staging peaks are deterministic and are judged against every class. A metric's limit
+is the larger of its median times a factor (2–4 for timings, 1.6 for frame counts, 1 for staging) and a floor that
+stops millisecond-scale timings flapping; with fewer than three runs to compare it is recorded as seeding. A
+non-finite or missing metric fails. Six runs at 65d0c011 seeded the `saturated` (load 73–104 on 14 CPUs) and `busy` (load 38–47)
+classes, three runs each. Their spread was wide: the busy 1k warm scan ran 3.6–11.0 ms, upload frames 20–28 and
+swap-frame render CPU up to 3.1 ms, so factors and floors were set until every seeded run sits at least 1.25× under its
+limit (checked per class; the swap CPU floor is 5 ms). Startup is bimodal (35–165 ms with a warm device, 400–780 ms cold), so its floors (600 ms
 first resident, 750 ms realistic, 1000 ms large) sit above the cold runs. These are wide limits: they
-catch a doubling or a stall, not a 20% drift. Quiet-machine runs have no history yet and are only recorded.
+catch a doubling or a stall, not a 20% drift. Quiet-machine runs have no timing history yet. `--record` appends
+any passing run to the baseline, so it is for runs of accepted code; recording regressions in steps would ratchet the
+limits upward.
 
 Injecting a 30 ms sleep into `StatCache::scan_all` fails the check, exit 1, at load 35.7 (`busy`):
 `REGRESSED scan_1000_warm_ms: 60.377 against a limit of 10.999 (3 busy runs)`, with every other metric of both benches
-within its limit (the 10k scans absorb 30 ms inside their spread).
+within its limit (the 10k scans absorb 30 ms inside their spread). That limit used a factor of 3; after review it is 4
+(limit 14.7), which 60.4 still fails.
 
 ## Open items closed (8 November)
 

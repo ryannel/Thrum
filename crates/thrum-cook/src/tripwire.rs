@@ -132,6 +132,9 @@ pub struct Rule {
     pub factor: f64,
     /// Limit never below this (in the metric's unit), so tiny timings do not flap.
     pub floor: f64,
+    /// The metric does not depend on load (a byte count or a frame count), so it is judged
+    /// against runs of every load class, not only the current one.
+    pub any_load: bool,
 }
 
 /// The outcome of checking a run.
@@ -166,10 +169,17 @@ pub fn check(history: &[Run], run: &Run, rules: &[Rule]) -> Verdict {
                 .push(format!("{}: missing from this run", rule.metric));
             continue;
         };
+        if !value.is_finite() {
+            verdict
+                .regressions
+                .push(format!("{}: {value} is not a measurement", rule.metric));
+            continue;
+        }
         let mut past: Vec<f64> = history
             .iter()
-            .filter(|past| past.class() == class)
+            .filter(|past| rule.any_load || past.class() == class)
             .filter_map(|past| past.metric(rule.metric))
+            .filter(|value| value.is_finite())
             .collect();
         if past.len() < MIN_HISTORY {
             verdict.seeding.push(format!(
@@ -306,6 +316,7 @@ mod tests {
         metric: "scan_ms",
         factor: 2.0,
         floor: 1.0,
+        any_load: false,
     };
 
     #[test]
@@ -341,6 +352,31 @@ mod tests {
         let mut missing = run(40.0, 1.0);
         missing.metrics.clear();
         assert_eq!(check(&history, &missing, &[RULE]).regressions.len(), 1);
+    }
+
+    #[test]
+    fn a_load_free_metric_is_judged_against_every_class_and_non_finite_values_fail() {
+        let history: Vec<Run> = [10.0, 12.0, 11.0]
+            .into_iter()
+            .map(|value| run(4.0, value))
+            .collect();
+        let any_load = Rule {
+            any_load: true,
+            ..RULE
+        };
+        assert_eq!(
+            check(&history, &run(40.0, 23.0), &[any_load])
+                .regressions
+                .len(),
+            1
+        );
+        assert_eq!(check(&history, &run(40.0, 23.0), &[RULE]).seeding.len(), 1);
+        assert_eq!(
+            check(&history, &run(4.0, f64::NAN), &[RULE])
+                .regressions
+                .len(),
+            1
+        );
     }
 
     #[test]

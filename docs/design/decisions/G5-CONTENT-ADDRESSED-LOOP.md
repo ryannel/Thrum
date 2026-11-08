@@ -54,8 +54,11 @@ contribution declares passes, and attaching refuses while frames are in flight.
 **Upload belt.** Each device generation uploads through one bounded ring of at most `STAGING_CHUNKS` (4) reusable
 staging chunks of one frame's budget each. The loader plans a publication as copies of at most 1 MiB (rows re-strided
 to 256 bytes; 3D textures split by slices, 2D by block rows) packed in order into chunks, posts it at once, and then
-fills chunks off the render thread as they free up, waiting (never the render thread) when all are in use. A remote feed
-has no thread and fills whatever is free each frame without waiting. The render thread records up to `upload_budget`
+fills chunks off the render thread as they free up, waiting (never the render thread) when all are in use. It fills in
+slices of one HEAD poll interval and polls between them, so a newer publication is posted while an older one is still
+filling. A remote feed has no thread (the browser) and fills whatever is free each frame on the thread that renders,
+without waiting. A chunk that cannot be filled fails the upload: its slot is freed, the loader records the error and the
+render thread drops the set. The render thread records up to `upload_budget`
 bytes of copies per frame (the game uses 8 MiB) from filled chunks only; a frame whose next chunk is not filled records
 nothing. Once a chunk's copies are submitted it is mapped again, and the map completes, returning it to the ring, when
 the GPU has read it. A set becomes drawable in the submitted frame that records its last copy, because those copies
@@ -217,10 +220,12 @@ dev-server client.
 - Graph Copy passes are untimed engine-wide, so the upload's GPU cost is measured by the bench, not pass timestamps.
 - Physical iPhone, Chrome and sustained measurements.
 - Tripwires are asserted only by `scripts/check_g5_tripwires.sh`, not `./dev check` (they need the GPU and minutes).
-  History is per load class; this shared machine has seeded the `busy` and `saturated` classes, so quiet-machine
-  runs are still seeding. Limits cover the shared machine's spread and catch doublings, not small drifts.
+  Timings are judged per load class; this shared machine has seeded the `busy` and `saturated` classes, so a quiet
+  run checks only staging peaks. Limits cover the shared machine's spread and catch doublings, not small drifts.
+  Recording appends to the baseline, so record only runs of accepted code, or the limits ratchet upward.
 - The dev server opens one thread per connection (at most 32). A page from another device needs its exact origin listed
-  and the server bound to the address that page reaches; there is no TLS or authentication, so it is for trusted
+  and the server bound to the address that page reaches (listing origins refuses a wildcard bind, and a host name in
+  `Host` is not accepted); there is no TLS or authentication, so it is for trusted
   local networks only.
 - Texture levels below 16 texels a side are measured (21–36 dB) but not floored; only the portable product is a
   reference, so the quality check measures encoding loss, not source fidelity.

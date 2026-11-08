@@ -10,10 +10,11 @@
 //!
 //! A [`Filler`] writes product bytes once into a free chunk (rows re-padded to the copy
 //! alignment) and unmaps it: the loader thread fills ahead and waits for free chunks, and a remote
-//! feed with no thread fills whatever is free each frame without waiting. The render thread
-//! records at most a budget of `copy_buffer_to_*` commands from filled chunks into each frame's own
-//! encoder, never fills and never waits; a frame whose next chunk is not filled yet records
-//! nothing. Once a chunk's last copy is committed (its encoder was submitted) the chunk is mapped
+//! feed with no thread (the browser) fills whatever is free each frame on the thread that renders,
+//! without waiting. The render thread records at most a budget of `copy_buffer_to_*` commands from
+//! filled chunks into each frame's own encoder and never waits; on native it never fills either. A
+//! frame whose next chunk is not filled yet records nothing. A chunk that cannot be filled fails
+//! the upload, which the render thread then drops. Once a chunk's last copy is committed (its encoder was submitted) the chunk is mapped
 //! again, and the map completes, returning it to the ring, when the GPU has finished reading it.
 //! A set becomes drawable in the frame that records its last copy, because those copies precede
 //! the forward pass in that command buffer.
@@ -21,11 +22,10 @@
 use std::collections::VecDeque;
 #[cfg(not(target_arch = "wasm32"))]
 use std::sync::Condvar;
-#[cfg(not(target_arch = "wasm32"))]
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, Weak};
 #[cfg(not(target_arch = "wasm32"))]
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use thrum_asset::Ktx2;
 
@@ -103,6 +103,8 @@ struct Stream {
     /// Per chunk, the index one past its last copy.
     chunk_ends: Vec<usize>,
     filled: Mutex<VecDeque<wgpu::Buffer>>,
+    /// A chunk could not be filled; the upload will never complete.
+    failed: AtomicBool,
     ring: StagingRing,
 }
 
@@ -127,19 +129,29 @@ impl Stream {
 
     /// Write `chunk`'s copies into the mapped `buffer`, unmap it and queue it for recording.
     fn fill(&self, chunk: usize, buffer: wgpu::Buffer) -> Result<(), String> {
-        {
-            let mut mapped = buffer
-                .get_mapped_range_mut(..)
-                .map_err(|error| format!("staging map: {error}"))?;
+        let written = buffer.get_mapped_range_mut(..).map(|mut mapped| {
             for copy in &self.copies[self.copies_of(chunk)] {
                 self.write(copy, &mut mapped);
             }
+        });
+        if let Err(error) = written {
+            return self.abandon(&buffer, format!("staging map: {error}"));
         }
         buffer.unmap();
-        if let Ok(mut filled) = self.filled.lock() {
-            filled.push_back(buffer);
+        match self.filled.lock() {
+            Ok(mut filled) => {
+                filled.push_back(buffer);
+                Ok(())
+            }
+            Err(_) => self.abandon(&buffer, "staging queue poisoned".to_owned()),
         }
-        Ok(())
+    }
+
+    /// Fail the upload and take `buffer` out of the ring's account, so the slot can be recreated.
+    fn abandon(&self, buffer: &wgpu::Buffer, reason: String) -> Result<(), String> {
+        self.failed.store(true, Ordering::Relaxed);
+        self.ring.forget(buffer);
+        Err(reason)
     }
 
     /// Write whole ranges into mapped (possibly write-combining) memory; never read it.
@@ -277,6 +289,19 @@ impl StagingRing {
         }
     }
 
+    /// Destroy a chunk that will not come back and free its slot.
+    fn forget(&self, chunk: &wgpu::Buffer) {
+        chunk.destroy();
+        if let Ok(mut state) = self.0.state.lock() {
+            state.created = state.created.saturating_sub(1);
+            if let Ok(mut stats) = self.0.stats.lock() {
+                stats.staging_bytes = state.created as u64 * self.0.chunk_size;
+            }
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        self.0.returned.notify_one();
+    }
+
     /// Return `chunk` once the GPU has finished every submitted copy from it.
     fn release(&self, chunk: &wgpu::Buffer) {
         let ring = Arc::clone(&self.0);
@@ -334,6 +359,11 @@ impl StagedUpload {
     /// Bytes this upload moves (including row padding).
     pub(crate) fn total(&self) -> u64 {
         self.total
+    }
+
+    /// Whether a chunk could not be filled, so the upload can never complete.
+    pub(crate) fn failed(&self) -> bool {
+        self.stream.failed.load(Ordering::Relaxed)
     }
 
     /// Whether `recorded` reaches the last copy.
@@ -417,14 +447,16 @@ impl StagedUpload {
 }
 
 /// How far a [`Filler`] got.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) enum Progress {
     /// Every chunk is filled.
     Done,
-    /// The upload was dropped (superseded or retired), or filling failed.
+    /// The upload was dropped (superseded or retired).
     Stopped,
     /// No chunk is free; try again later.
     Waiting,
+    /// A chunk could not be filled; the upload is marked failed.
+    Failed(String),
 }
 
 /// The filling side of an upload. It holds the upload weakly, so a superseded upload stops
@@ -437,20 +469,6 @@ pub(crate) struct Filler {
 }
 
 impl Filler {
-    fn fill_next(&mut self, stream: &Stream, chunk: wgpu::Buffer) -> Progress {
-        match stream.fill(self.next, chunk) {
-            Ok(()) => {
-                self.next += 1;
-                if self.next == self.chunks {
-                    Progress::Done
-                } else {
-                    Progress::Waiting
-                }
-            }
-            Err(_) => Progress::Stopped,
-        }
-    }
-
     /// Fill every chunk that is free now, without waiting.
     pub(crate) fn fill_available(&mut self) -> Progress {
         while self.next < self.chunks {
@@ -460,28 +478,38 @@ impl Filler {
             let Some(chunk) = self.ring.try_acquire() else {
                 return Progress::Waiting;
             };
-            if self.fill_next(&stream, chunk) == Progress::Stopped {
-                return Progress::Stopped;
+            if let Err(reason) = stream.fill(self.next, chunk) {
+                return Progress::Failed(reason);
             }
+            self.next += 1;
         }
         Progress::Done
     }
 
-    /// Fill every chunk, waiting for free ones, until done, dropped or `stop`.
+    /// Fill chunks, waiting for free ones, until done, dropped, `stop`, or `deadline` passes
+    /// ([`Progress::Waiting`]), so the caller can look for a newer publication in between.
     #[cfg(not(target_arch = "wasm32"))]
-    pub(crate) fn fill_all(&mut self, stop: &AtomicBool) -> Progress {
+    pub(crate) fn fill_until(&mut self, stop: &AtomicBool, deadline: Instant) -> Progress {
         while self.next < self.chunks {
-            let moot = || stop.load(Ordering::Relaxed) || self.stream.strong_count() == 0;
-            let Some(chunk) = self.ring.acquire_waiting(moot) else {
-                return Progress::Stopped;
+            let dropped = || stop.load(Ordering::Relaxed) || self.stream.strong_count() == 0;
+            let Some(chunk) = self
+                .ring
+                .acquire_waiting(|| dropped() || Instant::now() >= deadline)
+            else {
+                return if dropped() {
+                    Progress::Stopped
+                } else {
+                    Progress::Waiting
+                };
             };
             let Some(stream) = self.stream.upgrade() else {
                 self.ring.release_unused(chunk);
                 return Progress::Stopped;
             };
-            if self.fill_next(&stream, chunk) == Progress::Stopped {
-                return Progress::Stopped;
+            if let Err(reason) = stream.fill(self.next, chunk) {
+                return Progress::Failed(reason);
             }
+            self.next += 1;
         }
         Progress::Done
     }
@@ -623,6 +651,7 @@ impl StagingPlan {
             copies,
             chunk_ends,
             filled: Mutex::new(VecDeque::new()),
+            failed: AtomicBool::new(false),
             ring: ring.clone(),
         });
         let filler = Filler {

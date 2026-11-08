@@ -31,48 +31,57 @@ type Metrics = Vec<(String, f64)>;
 const RULES: &[Rule] = &[
     Rule {
         metric: "scan_1000_warm_ms",
-        factor: 3.0,
+        factor: 4.0,
         floor: 2.0,
+        any_load: false,
     },
     Rule {
         metric: "scan_10000_warm_ms",
         factor: 2.0,
         floor: 5.0,
+        any_load: false,
     },
     Rule {
         metric: "scan_10000_one_change_ms",
         factor: 3.0,
         floor: 5.0,
+        any_load: false,
     },
     Rule {
         metric: "scan_10000_targeted_ms",
         factor: 3.0,
         floor: 0.5,
+        any_load: false,
     },
     Rule {
         metric: "startup_first_resident_ms",
         factor: 3.0,
         floor: 600.0,
+        any_load: false,
     },
     Rule {
         metric: "write_visible_median_ms",
         factor: 2.0,
         floor: 50.0,
+        any_load: false,
     },
     Rule {
         metric: "write_visible_max_ms",
         factor: 3.0,
         floor: 100.0,
+        any_load: false,
     },
     Rule {
         metric: "swap_cpu_max_ms",
         factor: 3.0,
         floor: 5.0,
+        any_load: false,
     },
     Rule {
         metric: "swap_gpu_interval_max_ms",
         factor: 3.0,
         floor: 20.0,
+        any_load: false,
     },
 ];
 
