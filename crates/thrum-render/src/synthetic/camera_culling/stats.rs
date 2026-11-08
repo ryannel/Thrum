@@ -19,12 +19,12 @@ use crate::graph::{
     ResourceScope,
 };
 use crate::timing::GpuTimings;
+use crate::visibility::ARGS_BYTES;
 
 /// Graph name of the untimed copy of each culling list's instance count.
 pub(crate) const STATS_PASS: &str = "camera culling stats";
-/// Byte offset of `instance_count` in indexed indirect arguments.
-const COUNT_OFFSET: u64 = 4;
-const COUNT_BYTES: u64 = 4;
+/// Word index of `instance_count` in an indexed indirect argument record.
+const COUNT_WORD: usize = 1;
 
 const IDLE: u8 = 0;
 const PENDING: u8 = 1;
@@ -60,6 +60,9 @@ impl CullingCounts {
 pub(in crate::synthetic) struct CullingStats {
     buffer: wgpu::Buffer,
     lists: u64,
+    /// Bytes of each list's argument records: one per bucket on the bucket
+    /// route, whose drawn count is their sum.
+    args_bytes: u64,
     mapping: Arc<AtomicU8>,
     frame: Option<(CullMode, u32)>,
     /// This frame copies and maps: the buffer was free when it was encoded.
@@ -67,7 +70,11 @@ pub(in crate::synthetic) struct CullingStats {
 }
 
 impl CullingStats {
-    pub(in crate::synthetic) fn new(device: &wgpu::Device, mode: CullMode) -> Option<Self> {
+    pub(in crate::synthetic) fn new(
+        device: &wgpu::Device,
+        mode: CullMode,
+        args_bytes: u64,
+    ) -> Option<Self> {
         let lists = match mode {
             CullMode::Direct => return None,
             CullMode::Frustum => 1,
@@ -76,11 +83,12 @@ impl CullingStats {
         Some(Self {
             buffer: device.create_buffer(&wgpu::BufferDescriptor {
                 label: Some("camera culling counts"),
-                size: lists * COUNT_BYTES,
+                size: lists * args_bytes,
                 usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
                 mapped_at_creation: false,
             }),
             lists,
+            args_bytes,
             mapping: Arc::new(AtomicU8::new(IDLE)),
             frame: None,
             armed: false,
@@ -89,16 +97,17 @@ impl CullingStats {
 }
 
 impl PreparedSynthetic {
-    /// Declare the untimed count copy from each culling list's arguments,
+    /// Declare the untimed copy of each culling list's argument records,
     /// after the passes that write them. Direct declares nothing.
     pub(in crate::synthetic) fn append_camera_stats(
         graph: &mut FrameGraph,
         lists: &[ResourceId],
+        args_bytes: u64,
     ) -> Result<(), GraphError> {
         if lists.is_empty() {
             return Ok(());
         }
-        let bytes = u64::try_from(lists.len()).unwrap_or(u64::MAX) * COUNT_BYTES;
+        let bytes = u64::try_from(lists.len()).unwrap_or(u64::MAX) * args_bytes;
         let destination = graph.resource(
             ResourceDescriptor::Buffer {
                 bytes,
@@ -110,7 +119,7 @@ impl PreparedSynthetic {
             .iter()
             .map(|args| Access {
                 resource: args.clone(),
-                range: COUNT_OFFSET..COUNT_OFFSET + COUNT_BYTES,
+                range: 0..args_bytes,
                 kind: AccessKind::CopyRead,
                 store: true,
             })
@@ -207,10 +216,10 @@ impl SceneContext<'_> {
         for (index, list) in (0..stats.lists).zip(lists) {
             self.encoder.copy_buffer_to_buffer(
                 list.args(),
-                COUNT_OFFSET,
+                0,
                 &stats.buffer,
-                index * COUNT_BYTES,
-                COUNT_BYTES,
+                index * stats.args_bytes,
+                stats.args_bytes,
             );
         }
         Ok(())
@@ -278,17 +287,24 @@ impl OffscreenTarget {
         if state != READY {
             return None;
         }
+        let records = usize::try_from(stats.args_bytes / ARGS_BYTES).unwrap_or(0);
         let counts = stats
             .buffer
             .slice(..)
             .get_mapped_range()
             .ok()
             .and_then(|bytes| {
-                let count = |index: usize| {
+                let word = |index: usize| {
                     bytes
                         .get(index * 4..index * 4 + 4)
                         .and_then(|word| word.try_into().ok())
                         .map_or(0, u32::from_le_bytes)
+                };
+                // Each list's records, summed over buckets.
+                let count = |list: usize| {
+                    (0..records)
+                        .map(|record| word((list * records + record) * 5 + COUNT_WORD))
+                        .fold(0_u32, u32::saturating_add)
                 };
                 frame.map(|(mode, active)| CullingCounts {
                     mode,

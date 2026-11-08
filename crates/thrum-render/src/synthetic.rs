@@ -783,8 +783,10 @@ impl PreparedSynthetic {
         exposure: f32,
         meshes: Option<&MeshSelection>,
     ) -> Result<Self, RenderError> {
-        // The culled bucket route arrives with the member-indexed compaction.
-        if meshes.is_some() && scene.camera_culling != CullMode::Direct {
+        // Occlusion's history is keyed by member index, which a bucket
+        // layout change reassigns; it keeps the flat route until it follows
+        // slot identity.
+        if meshes.is_some() && scene.camera_culling == CullMode::Occlusion {
             return Err(RenderError::SceneCapacity);
         }
         let device = capabilities.device();
@@ -1149,14 +1151,6 @@ impl PreparedSynthetic {
             &instance_layout,
             instance_count,
         );
-        let visibility = camera_culling::prepare(
-            device,
-            queue,
-            generation,
-            scene.camera_culling,
-            instance_count,
-            instance_upload.active_count(),
-        );
         let shadow = if shadow_enabled {
             let direction = packed_light_direction(&light_data);
             Some(ShadowPrepared::new(
@@ -1359,6 +1353,14 @@ impl PreparedSynthetic {
                 )
             })
             .transpose()?;
+        let visibility = camera_culling::prepare(
+            device,
+            queue,
+            generation,
+            scene.camera_culling,
+            (instance_count, instance_upload.active_count()),
+            bucket_route.as_ref().map(|route| (route, &mesh_arena)),
+        )?;
         let pipeline = create_pipeline(Some(wgpu::Face::Back), false);
         let pipeline_two_sided = create_pipeline(None, false);
         let depth_prepass = (scene.camera_culling == CullMode::Occlusion).then(|| {
@@ -1672,6 +1674,9 @@ impl PreparedSynthetic {
         }
         if let Some(route) = &mut self.bucket_route {
             route.update(queue, &self.instance_upload, instances, changed_slots)?;
+            if let Some(visibility) = &mut self.visibility {
+                visibility.set_member_groups(route.groups());
+            }
         }
         Ok(report)
     }
@@ -2070,9 +2075,19 @@ impl OffscreenTarget {
                 resource: aux.as_entire_binding(),
             },
         ];
-        match &prepared.bucket_route {
-            Some(route) => view_entries.push(route.members_entry(camera_culling::VISIBLE_BINDING)),
-            None => view_entries.extend(camera_culling::visible_entry(visibility.as_ref())),
+        match (&prepared.bucket_route, &visibility, &prepared.visibility) {
+            (Some(_), Some(target), Some(culling)) => view_entries.push(wgpu::BindGroupEntry {
+                binding: camera_culling::VISIBLE_BINDING,
+                resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
+                    buffer: target.visible(),
+                    offset: 0,
+                    size: culling.segment_bytes().and_then(wgpu::BufferSize::new),
+                }),
+            }),
+            (Some(route), _, _) => {
+                view_entries.push(route.members_entry(camera_culling::VISIBLE_BINDING));
+            }
+            (None, ..) => view_entries.extend(camera_culling::visible_entry(visibility.as_ref())),
         }
         if let (Some(prepared_shadow), Some(target_shadow)) = (&prepared.shadow, &shadow) {
             view_entries.extend([
@@ -2119,7 +2134,14 @@ impl OffscreenTarget {
             air_shadow,
             visibility,
             occlusion,
-            culling_stats: camera_culling::CullingStats::new(device, prepared.camera_culling()),
+            culling_stats: camera_culling::CullingStats::new(
+                device,
+                prepared.camera_culling(),
+                prepared.visibility.as_ref().map_or(
+                    crate::visibility::ARGS_BYTES,
+                    VisibilityPrepared::args_bytes,
+                ),
+            ),
             stars,
             depth,
             width,
