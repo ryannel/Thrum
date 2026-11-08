@@ -640,6 +640,7 @@ fn caster_depth_bounds(rotation: Mat4, instances: &[InstanceRecord]) -> Option<(
 
 #[cfg(test)]
 mod tests {
+    mod disk;
     mod horizon;
     mod observer;
     mod penumbra;
