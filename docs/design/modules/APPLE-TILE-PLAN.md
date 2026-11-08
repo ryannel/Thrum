@@ -30,8 +30,8 @@ Reviews:
 
 Milestone: M0 counters and capture probe in progress (Claude G3t M0 session) · Updated: 2026-11-08
 Now: D0.3 landed (`be252c0d`). D0.4 done: Xcode replay gives per-encoder device-memory bytes on the M3 Max ([probe](../../evidence/render/G3T-TRAFFIC-PROBE-2026-11-08.md)). Seam 2 (registry, D1.1) is approved in shape and held at `76464f23` (local branch `claude/g3t-seam2-registry`); D1.2's per-variant eligibility report is priced, with a crate-private boundary.
-Next: D0.1–D0.2 on seam 8; then seam 2 and D1.2 land together with the `THRUM_RECIPE` override, rechecked on both recipes. Traffic rows report physical per-encoder bytes beside the logical model.
-Blocked: D0.1–D0.2 wait for seam 8, G7's M5 route, paused behind main health. M1 code (seam 2, D1.2) waits for M0 to close, as Thrum Core ruled.
+Next: D0.1–D0.2 on G7's moving route (seam 8, M5a on main at `bc9a338d`) through the next-submission capture flag, priced in `tmp/g3t-metal-boundary/NOTES.md`; then seam 2 and D1.2 land together with the `THRUM_RECIPE` override, rechecked on both recipes. Traffic rows report physical per-encoder bytes beside the logical model.
+Blocked: the capture flag waits for Root's nod on shape. D0.1's star-switch, mirror and cut-reset checkpoints come with G7's M5b. M1 code (seam 2, D1.2) waits for M0 to close, as Thrum Core ruled.
 The saved offscreen trace opens directly in Xcode. Replay stayed disabled during local device discovery, so physical traffic
 remains unmeasured. Any interactive retry needs an assigned slot.
 
