@@ -1285,7 +1285,8 @@ fn a_newer_publication_supersedes_an_upload_still_being_filled() {
     std::fs::remove_dir_all(&root).ok();
     let cook = source_tree(&root, 256);
     let mut cooker = Cooker::open(cook.clone()).expect("cooker");
-    assert!(cooker.cook_all().expect("cook").failed.is_empty());
+    let report = cooker.cook_all().expect("cook");
+    assert!(report.failed.is_empty(), "{:?}", report.failed);
     pollster::block_on(async {
         let (device, queue) = game_device().await;
         let mut host = FrameHost::new(&device, &queue, FrameConfig::default())
@@ -1299,7 +1300,8 @@ fn a_newer_publication_supersedes_an_upload_still_being_filled() {
         wait_for(&mut host, &device, &stats, 1, &mut clock);
         for (generation, seed) in [(2, 2), (3, 3)] {
             demo::write_cloud_volume(&cook.source.join("cloud.tvol"), 256, seed).expect("edit");
-            assert!(cooker.cook_all().expect("recook").failed.is_empty());
+            let report = cooker.cook_all().expect("recook");
+            assert!(report.failed.is_empty(), "{:?}", report.failed);
             wait_posted(&stats, generation);
         }
         wait_for(&mut host, &device, &stats, 3, &mut clock);
