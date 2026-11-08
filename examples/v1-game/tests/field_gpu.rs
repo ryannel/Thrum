@@ -39,10 +39,35 @@ fn write_ppm(path: &std::path::Path, rgba: &[u8], extent: [u32; 2]) {
 
 #[test]
 fn field_culling_matches_direct_along_the_flythrough() {
+    fly(false);
+}
+
+/// The mixed field: props as a rock, a column and a spruce, every fifth
+/// mirrored. Frustum on the bucket route matches bucket-ordered Direct; the
+/// sequence goes under `<dir>/meshes-frustum/`.
+#[test]
+fn mixed_mesh_field_frustum_matches_bucket_direct_along_the_flythrough() {
+    fly(true);
+}
+
+#[expect(
+    clippy::print_stderr,
+    reason = "the flythrough reports its culling counts"
+)]
+fn fly(field_meshes: bool) {
     let full = std::env::var_os("THRUM_FIELD_FULL_PATH").is_some();
     let sequence = std::env::var_os("THRUM_FIELD_SEQUENCE").map(std::path::PathBuf::from);
+    // Occlusion keeps the cube until its history follows slot identity.
+    let culled: &[(CullMode, &str)] = if field_meshes {
+        &[(CullMode::Frustum, "meshes-frustum")]
+    } else {
+        &[
+            (CullMode::Frustum, "frustum"),
+            (CullMode::Occlusion, "occlusion"),
+        ]
+    };
     if let Some(directory) = &sequence {
-        for mode in ["frustum", "occlusion"] {
+        for (_, mode) in culled {
             std::fs::create_dir_all(directory.join(mode)).expect("sequence directory");
         }
     }
@@ -62,7 +87,8 @@ fn field_culling_matches_direct_along_the_flythrough() {
         let capabilities =
             DeviceCapabilities::capture(&adapter, &device, FrameHost::DEVICE_GENERATION);
         let mut hosts = Vec::new();
-        for camera_culling in [CullMode::Direct, CullMode::Frustum, CullMode::Occlusion] {
+        let modes = std::iter::once(CullMode::Direct).chain(culled.iter().map(|(mode, _)| *mode));
+        for camera_culling in modes {
             hosts.push(
                 FrameHost::new_with_setup(
                     &device,
@@ -73,6 +99,7 @@ fn field_culling_matches_direct_along_the_flythrough() {
                         content: GameContent::Field,
                         camera_culling,
                         valley_stars: false,
+                        field_meshes,
                     },
                 )
                 .await
@@ -148,7 +175,7 @@ fn field_culling_matches_direct_along_the_flythrough() {
             let direct = hosts[0].capture_pixels().expect("Direct capture");
             assert_eq!(direct.len(), (extent[0] * extent[1] * 4) as usize);
             let near_event = EVENTS.iter().any(|event| tick.abs_diff(*event) <= 40);
-            for (host, mode) in hosts[1..].iter_mut().zip(["frustum", "occlusion"]) {
+            for (host, (_, mode)) in hosts[1..].iter_mut().zip(culled) {
                 let culled = host.capture_pixels().expect("culled capture");
                 if direct != culled {
                     let differing = direct
@@ -177,7 +204,7 @@ fn field_culling_matches_direct_along_the_flythrough() {
         );
         // It hides work: equality cannot pass unculled.
         assert!(
-            paired > 0 && halved * 10 >= paired * 9,
+            field_meshes || (paired > 0 && halved * 10 >= paired * 9),
             "Occlusion halved Frustum's list on only {halved} of {paired} ticks"
         );
         assert!(

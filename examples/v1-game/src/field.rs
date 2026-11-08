@@ -47,7 +47,7 @@ fn mix(index: usize, salt: u64) -> u64 {
 }
 
 /// A hash-chosen index below `count`.
-fn pick(index: usize, salt: u64, count: usize) -> usize {
+pub(crate) fn pick(index: usize, salt: u64, count: usize) -> usize {
     let count = u64::try_from(count).expect("small count");
     usize::try_from(mix(index, salt) % count).expect("below a usize count")
 }
