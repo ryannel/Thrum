@@ -5,7 +5,7 @@ use std::collections::BTreeSet;
 
 use super::{
     ContributionFrame, ContributionPasses, DEPTH_FORMAT, MOTION_FORMAT, PreparedSynthetic,
-    RenderError, SCENE_FORMAT, SceneSurface,
+    RenderError, SCENE_FORMAT, SceneSurface, receiver,
 };
 use crate::graph::{
     Access, AccessKind, FrameGraph, Pass, PassScope, PipelineKey, ResourceDescriptor, ResourceScope,
@@ -131,12 +131,23 @@ impl PreparedSynthetic {
             limits: self.capabilities.limits().clone(),
             shader_source: &self.surface.shader_source,
             pipeline_layout: &self.surface.pipeline_layout,
-            view_layout: &self.view_layout,
+            view_layout: self
+                .receiver
+                .as_ref()
+                .map_or(&self.view_layout, |receiver| &receiver.forward_view_layout),
             light_layout: &self.surface.light_layout,
             material_layout: &self.surface.material_layout,
             fragment_entry: self.surface.fragment_entry,
             color_formats: [SCENE_FORMAT, MOTION_FORMAT],
             depth_format: DEPTH_FORMAT,
+            receiver: self
+                .receiver
+                .as_ref()
+                .map(|_| crate::contribution::SceneReceiverSurface {
+                    view_layout: &self.view_layout,
+                    fragment_entry: receiver::RASTER_ENTRY,
+                    guide_format: receiver::GUIDE,
+                }),
             shadow: self
                 .shadow
                 .as_ref()

@@ -292,10 +292,34 @@ fn combine(scene_source: &str, hook: &str) -> Result<Combined, String> {
 /// The mesh pipeline of `target` with `module`'s entries: the one descriptor every cooked mesh
 /// pipeline uses, hooked or not.
 pub(crate) fn mesh_pipeline(target: &Target, module: &wgpu::ShaderModule) -> wgpu::RenderPipeline {
+    mesh_pipeline_for(
+        target,
+        module,
+        &target.layout,
+        target.fragment_entry,
+        &target.color_formats.map(|format| Some(mesh_color(format))),
+    )
+}
+
+pub(crate) fn mesh_color(format: wgpu::TextureFormat) -> wgpu::ColorTargetState {
+    wgpu::ColorTargetState {
+        format,
+        blend: None,
+        write_mask: wgpu::ColorWrites::ALL,
+    }
+}
+
+pub(crate) fn mesh_pipeline_for(
+    target: &Target,
+    module: &wgpu::ShaderModule,
+    layout: &wgpu::PipelineLayout,
+    fragment_entry: &str,
+    targets: &[Option<wgpu::ColorTargetState>],
+) -> wgpu::RenderPipeline {
     let model_attributes = wgpu::vertex_attr_array![3 => Float32x4, 4 => Float32x4, 5 => Float32x4, 6 => Float32x4, 7 => Uint32];
     target.device.render(&wgpu::RenderPipelineDescriptor {
         label: Some("cooked mesh"),
-        layout: Some(&target.layout),
+        layout: Some(layout),
         vertex: wgpu::VertexState {
             module,
             entry_point: Some("cooked_vertex"),
@@ -332,15 +356,9 @@ pub(crate) fn mesh_pipeline(target: &Target, module: &wgpu::ShaderModule) -> wgp
         multisample: wgpu::MultisampleState::default(),
         fragment: Some(wgpu::FragmentState {
             module,
-            entry_point: Some(target.fragment_entry),
+            entry_point: Some(fragment_entry),
             compilation_options: wgpu::PipelineCompilationOptions::default(),
-            targets: &target.color_formats.map(|format| {
-                Some(wgpu::ColorTargetState {
-                    format,
-                    blend: None,
-                    write_mask: wgpu::ColorWrites::ALL,
-                })
-            }),
+            targets,
         }),
         multiview_mask: None,
         cache: None,

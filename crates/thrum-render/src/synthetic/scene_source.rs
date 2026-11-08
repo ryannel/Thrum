@@ -4,9 +4,9 @@
 use super::air_shadow;
 
 /// The forward WGSL for a scene with or without the atmosphere and its aerial shadow.
-pub(super) fn compose(atmosphere: bool, air_shadow: bool) -> String {
+pub(crate) fn compose(atmosphere: bool, air_shadow: bool, receiver_resolve: bool) -> String {
     format!(
-        "{}\n{}\n{}",
+        "{}\n{}\n{}\n{}",
         concat!(
             include_str!("../atmosphere/storage.wgsl"),
             "\n",
@@ -27,6 +27,17 @@ pub(super) fn compose(atmosphere: bool, air_shadow: bool) -> String {
             )
         } else {
             ""
+        },
+        if receiver_resolve {
+            concat!(
+                include_str!("receiver_forward.wgsl"),
+                "\n",
+                include_str!("receiver_raster.wgsl")
+            )
+        } else {
+            "fn last_cascade_visibility(input: VertexOutput, receiver: ShadowReceiver) -> f32 {
+                return cascade_visibility(1u, receiver);
+            }"
         }
     )
 }
@@ -70,7 +81,7 @@ mod tests {
     fn every_forward_variant_holds_the_material_hook_point_once_in_shade() {
         for atmosphere in [false, true] {
             for air_shadow in [false, true] {
-                let source = compose(atmosphere, air_shadow);
+                let source = compose(atmosphere, air_shadow, false);
                 let variant = format!("atmosphere {atmosphere}, air shadow {air_shadow}");
                 let point = material_hook_point(&source)
                     .unwrap_or_else(|error| panic!("{variant}: {error}"));

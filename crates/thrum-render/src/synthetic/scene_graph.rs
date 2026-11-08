@@ -4,7 +4,7 @@ use super::{
     AUX_BYTES, CONTRIBUTION_UPLOAD, CUBE_INDEX_BYTES, DEPTH_FORMAT, DisplayPrepared,
     ExposureResolve, LIGHT_BYTES, MOTION_FORMAT, PreparedSynthetic, RenderError, SCENE_FORMAT,
     SceneFamily, SceneGraphs, TargetResources, VIEW_BYTES, air_shadow, camera_culling, exposure,
-    history_gpu, shadow,
+    history_gpu, receiver, shadow,
 };
 use crate::graph::{
     Access, AccessKind, CompiledGraph, FrameGraph, GraphError, Pass, PassKind, PassScope,
@@ -168,7 +168,8 @@ impl PreparedSynthetic {
             },
         ];
         let mut prepared_keys = BTreeSet::from([self.key, self.display_key(), self.exposure_key()]);
-        let (directional, view) = Self::append_frame_uniform_reads(&mut graph, &mut accesses)?;
+        let (directional, view, aux) = Self::append_frame_uniform_reads(&mut graph, &mut accesses)?;
+        let mut receiver_reads = self.receiver.as_ref().map(|_| accesses[1..].to_vec());
         let atmosphere_inputs = self
             .atmosphere
             .as_ref()
@@ -184,6 +185,7 @@ impl PreparedSynthetic {
         let contribution_start = accesses.len();
         self.append_contribution(&mut graph, &mut accesses, &mut prepared_keys)?;
         let contribution_reads = accesses[contribution_start..].to_vec();
+        let shadow_start = accesses.len();
         let shadow = self.append_shadow_passes(
             &mut graph,
             &instance,
@@ -192,6 +194,10 @@ impl PreparedSynthetic {
             &mut prepared_keys,
             &contribution_reads,
         )?;
+        if let Some(reads) = receiver_reads.as_mut() {
+            reads.extend(contribution_reads);
+            reads.extend_from_slice(&accesses[shadow_start..]);
+        }
         let air_key = self.air_shadow_key();
         let air_shadow = (shadow.as_ref().filter(|_| self.air_shadow.is_some()))
             .map(|maps| {
@@ -214,6 +220,7 @@ impl PreparedSynthetic {
         let attachment = (width, height, &mut graph, &mut accesses);
         let motion =
             Self::view_attachment(attachment, MOTION_FORMAT, AttachmentUse::Motion, false)?;
+        let camera_start = accesses.len();
         let camera = self.append_camera_visibility(
             &mut graph,
             (view, &instance),
@@ -221,6 +228,20 @@ impl PreparedSynthetic {
             &mut accesses,
             &mut prepared_keys,
         )?;
+        let receiver = receiver_reads
+            .map(|mut reads| {
+                reads.extend_from_slice(&accesses[camera_start..]);
+                receiver::Resources::declare(
+                    &mut graph,
+                    &mut prepared_keys,
+                    self.key,
+                    [width, height],
+                    reads,
+                    aux,
+                    &mut accesses,
+                )
+            })
+            .transpose()?;
         let exposure_sample =
             ExposureResolve::append_graph(&mut graph, self.exposure_key(), directional)?;
         accesses.push(Access {
@@ -254,30 +275,14 @@ impl PreparedSynthetic {
             height,
         )?;
         let readback = Self::readback_pass(&mut graph, &output, height, row_bytes)?;
-        let generation = self.key.device_generation;
-        let day = SceneGraphs::compile(&mut graph, readback.clone(), generation, &prepared_keys)?;
-        let stars = if let Some((transmittance, observer)) = &atmosphere_inputs {
-            self.append_stars(
-                &mut graph,
-                &mut prepared_keys,
-                forward,
-                (&depth, &scene, &exposure_sample, transmittance, observer),
-            )?
-        } else {
-            None
-        };
-        let night = if let Some(stars) = stars {
-            // Display reads the composite, even though its declaration precedes it.
-            graph.dependency(stars, display_pass)?;
-            Some(SceneGraphs::compile(
-                &mut graph,
-                readback,
-                generation,
-                &prepared_keys,
-            )?)
-        } else {
-            None
-        };
+        let (day, night) = self.compile_variants(
+            &mut graph,
+            &mut prepared_keys,
+            readback,
+            (forward, display_pass),
+            (&depth, &scene, &exposure_sample),
+            atmosphere_inputs.as_ref(),
+        )?;
         Ok(CompiledScene {
             day,
             night,
@@ -289,14 +294,57 @@ impl PreparedSynthetic {
                 shadow,
                 air_shadow,
                 prepass_depth: camera.prepass_depth,
+                receiver,
             },
         })
+    }
+
+    fn compile_variants(
+        &self,
+        graph: &mut FrameGraph,
+        prepared_keys: &mut BTreeSet<PipelineKey>,
+        readback: Pass,
+        (forward, display_pass): (usize, usize),
+        (depth, scene, exposure_sample): (&ResourceId, &ResourceId, &ResourceId),
+        atmosphere_inputs: Option<&(ResourceId, ResourceId)>,
+    ) -> Result<
+        (
+            SceneGraphs<CompiledGraph>,
+            Option<SceneGraphs<CompiledGraph>>,
+        ),
+        RenderError,
+    > {
+        let generation = self.key.device_generation;
+        let day = SceneGraphs::compile(graph, readback.clone(), generation, prepared_keys)?;
+        let stars = if let Some((transmittance, observer)) = atmosphere_inputs {
+            self.append_stars(
+                graph,
+                prepared_keys,
+                forward,
+                (depth, scene, exposure_sample, transmittance, observer),
+            )?
+        } else {
+            None
+        };
+        let night = if let Some(stars) = stars {
+            // Display reads the composite, even though its declaration precedes it.
+            graph.dependency(stars, display_pass)?;
+            Some(SceneGraphs::compile(
+                graph,
+                readback,
+                generation,
+                prepared_keys,
+            )?)
+        } else {
+            None
+        };
+        Ok((day, night))
     }
 
     fn append_frame_uniform_reads(
         graph: &mut FrameGraph,
         accesses: &mut Vec<Access>,
-    ) -> Result<(ResourceId, ResourceId), GraphError> {
+    ) -> Result<(ResourceId, ResourceId, ResourceId), GraphError> {
         let directional = graph.resource(
             ResourceDescriptor::Buffer {
                 bytes: LIGHT_BYTES as u64,
@@ -331,12 +379,12 @@ impl PreparedSynthetic {
             ResourceScope::Imported { initialized: true },
         )?;
         accesses.push(Access {
-            resource: aux,
+            resource: aux.clone(),
             range: 0..AUX_BYTES as u64,
             kind: AccessKind::UniformRead,
             store: true,
         });
-        Ok((directional, view))
+        Ok((directional, view, aux))
     }
 
     fn history_resources(
@@ -686,6 +734,16 @@ impl PreparedSynthetic {
                 Some(key) if key == self.depth_prepass_key() => {
                     RecordBinding::<SceneFamily>::new(id, PassKind::Render, |frame, pass| {
                         frame.depth_prepass(pass)
+                    })
+                }
+                Some(key) if key == receiver::raster_key(self.key) => {
+                    RecordBinding::<SceneFamily>::new(id, PassKind::Render, |frame, pass| {
+                        frame.receiver_raster(pass)
+                    })
+                }
+                Some(key) if key == receiver::resolve_key(self.key) => {
+                    RecordBinding::<SceneFamily>::new(id, PassKind::Compute, |frame, pass| {
+                        frame.receiver_resolve(pass)
                     })
                 }
                 Some(key) if key == self.key => {

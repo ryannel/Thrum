@@ -216,6 +216,14 @@ impl GameScene {
             GameContent::Field => field_scene(extent)?,
         };
         scene.camera_culling = setup.camera_culling;
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            scene.receiver_resolve = std::env::var_os("THRUM_G3S_RECEIVER").is_some();
+        }
+        #[cfg(target_arch = "wasm32")]
+        {
+            scene.receiver_resolve = option_env!("THRUM_G3S_RECEIVER").is_some();
+        }
         Ok(scene)
     }
 

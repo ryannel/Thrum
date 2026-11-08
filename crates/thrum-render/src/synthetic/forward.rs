@@ -24,7 +24,10 @@ impl PreparedSynthetic {
         self.bind_forward(
             &mut pass,
             target,
-            &target.view_bind_group,
+            target
+                .receiver
+                .as_ref()
+                .map_or(&target.view_bind_group, |target| &target.forward),
             exposure_side,
             false,
         )?;
@@ -95,6 +98,17 @@ impl PreparedSynthetic {
             &self.pipeline_two_sided
         };
         pass.set_pipeline(pipeline);
+        self.bind_opaque_inputs(pass, target, view_group, exposure_side);
+        Ok(())
+    }
+
+    pub(super) fn bind_opaque_inputs(
+        &self,
+        pass: &mut wgpu::RenderPass<'_>,
+        target: &OffscreenTarget,
+        view_group: &wgpu::BindGroup,
+        exposure_side: usize,
+    ) {
         let view_offset = self.view_stride * u32::from(target.frame_revision & 1 != 0);
         pass.set_bind_group(0, view_group, &[view_offset]);
         pass.set_bind_group(1, &self.light[exposure_side], &[]);
@@ -107,6 +121,5 @@ impl PreparedSynthetic {
             &self.cube_indices
         };
         pass.set_index_buffer(indices.slice(..), wgpu::IndexFormat::Uint16);
-        Ok(())
     }
 }
