@@ -8,7 +8,9 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use thrum_asset::{AssetStore, ContentHash, Head, Profile};
-use thrum_cook::{CookConfig, Cooker, DevServer, Durability, Publications, Quality, demo, watch};
+use thrum_cook::{
+    AllowedOrigins, CookConfig, Cooker, DevServer, Durability, Publications, Quality, demo, watch,
+};
 
 static NEXT: AtomicU32 = AtomicU32::new(0);
 
@@ -167,6 +169,48 @@ fn web_pages_cannot_read_the_dev_server() {
     let (status, _, header) = get(address, "/head");
     assert_eq!(status, 204);
     assert!(!header.contains("Access-Control"));
+    drop(server);
+    cleanup(&root);
+}
+
+/// A page served from another device reads the server only when its exact origin is listed;
+/// near misses and every other page stay refused, and loopback pages are still allowed.
+#[test]
+fn only_listed_page_origins_beyond_loopback_may_read_the_dev_server() {
+    let (root, config) = fixture();
+    let store = AssetStore::new(&config.store);
+    let listed = "http://192.168.1.20:5173";
+    let server = DevServer::start_allowing(
+        "127.0.0.1:0",
+        store,
+        Arc::new(Publications::default()),
+        AllowedOrigins::parse([listed]).expect("valid origin"),
+    )
+    .expect("bind");
+    let address = server.address();
+    let from = |origin: &str| {
+        get_with(
+            address,
+            "/head",
+            &format!("Host: 127.0.0.1:{}\r\nOrigin: {origin}\r\n", address.port()),
+        )
+    };
+    let (status, _, header) = from(listed);
+    assert_eq!(status, 204);
+    assert!(header.contains("Access-Control-Allow-Origin: http://192.168.1.20:5173"));
+    assert!(header.contains("Vary: Origin"));
+    for refused in [
+        "http://192.168.1.20:5174",
+        "https://192.168.1.20:5173",
+        "http://192.168.1.21:5173",
+        "http://192.168.1.20:5173/",
+        "null",
+    ] {
+        let (status, _, header) = from(refused);
+        assert_eq!(status, 403, "{refused}");
+        assert!(!header.contains("Access-Control-Allow-Origin"), "{refused}");
+    }
+    assert_eq!(from("http://localhost:5173").0, 204);
     drop(server);
     cleanup(&root);
 }

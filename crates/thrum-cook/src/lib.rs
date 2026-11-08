@@ -21,7 +21,7 @@ use std::fmt;
 
 pub use cas::{Cas, Durability};
 pub use cooker::{CookConfig, CookReport, Cooker};
-pub use server::{DevServer, Publications};
+pub use server::{AllowedOrigins, DevServer, Publications};
 pub use stat_cache::{RACY_WINDOW_NS, ScanCounts, StatCache};
 pub use texture::{Quality, encode_volume};
 pub use watch::{DEBOUNCE, MAX_BATCH, WatchEvent, watch};
