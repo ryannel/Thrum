@@ -24,6 +24,20 @@ The Codex goal remains active. Its attachment is
   in `tmp/g3s-m3-controls/`. These controls establish a stock
   comparator. D2 and D3 remain open for the selected renderer.
 
+  The archived spur D32 replay also has a signed baseline
+  against the original-triangle disk at the four fixed row-665
+  receivers. On submission 226 the stock last-cascade estimate
+  admits 1.68–8.08 percentage points of excess visibility.
+  On 227 it omits 1.51–2.58 points. Dense integration of the
+  stored comparison field still admits 0.98–1.13 excess points
+  across both frames. The signed result survives the triangle
+  reference’s saved lower and upper bounds at all eight rows.
+  These are receiver visibility estimates on the authored spur.
+  They do not measure the composed aerial or shaded image.
+  The eight values, intervals and checked input hashes are in
+  `tmp/g3s-m3-controls/disk-reference-signed.csv` and
+  `disk-reference-input-check.log`.
+
 - Frozen 1080p/60 motion on `77e84128` fails D1. All four
   arms match tick, Sun, yaw, interpolation alpha and simulated
   time across the 300-frame spur, 95-frame extinction and
