@@ -93,48 +93,56 @@ airglow variations and calibrated night colour are outside this profile.
 
 ### M3 surface Sun visibility
 
-M3 retains production **percentage-closer soft shadows (PCSS)**
-as its blocker and penumbra model. The contour-area filter is a diagnostic adaptation for the fully
-supported last cascade. It keeps
-the existing receiver-plane comparisons and reads only that frame's
-first depth layer. Unity ships a directional PCSS cone. Epic's
-shadow-map ray tracing is a separate production precedent. Its first
-layer can hide blockers, and the 16-ray adaptation gives a 6.25-point
-minimum positive result. The saved limb is only 2.49–5.53%. We held
-that design before implementation. [Unity HDRP PCSS](https://github.com/Unity-Technologies/Graphics/blob/master/Packages/com.unity.render-pipelines.core/ShaderLibrary/Shadow/PCSS.hlsl),
-[Epic SMRT](https://dev.epicgames.com/documentation/en-us/unreal-engine/virtual-shadow-maps-in-unreal-engine#softshadowswithshadowmapraytracing).
+M3 uses the established combination of stable cascades, overlapping
+handoffs and directional percentage-closer soft shadows (PCSS).
+Guerrilla shipped stable cascades, and Godot and Unreal expose split
+blending and a far fade. Thrum already snaps the cascades and blends
+the supported overlap. The archived row-665 receivers stay inside the
+last map in both frames, so changing split width cannot fix their
+flash. Keep the projection and handoffs fixed for this slice.
+[Guerrilla stable cascades](https://www.guerrilla-games.com/media/News/Files/GDC09_Valient_Rendering_Technology_Of_Killzone_2_Extended_Presenter_Notes.pdf) ·
+[Godot split controls](https://docs.godotengine.org/en/stable/classes/class_directionallight3d.html) ·
+[Unreal directional transitions](https://dev.epicgames.com/documentation/en-us/unreal-engine/directional-lights-in-unreal-engine).
 
-The saved row-665 receivers are inside the last map in both frames.
-Stock visibility drops from 4.79–12.50% to zero while dense PCSS
-retains 2.49–3.65%. Adjacent opposite-label texels differ by about
-0.44 in normalized depth, versus 0.00014 on the same side. One fitted
-plane across that silhouette would blend two surfaces. Keep separate
-depth intervals on either side of a compact tile contour. Where all
-represented depth values give the same receiver comparison, integrate
-the area of those clear regions clipped by the existing Sun footprint.
-This supplies fractional support without blending depths or requiring
-a probe to land in the narrow limb. [Saved field evidence](../../evidence/v1-workload/G3S-HANDOFF.md#current-checkpoint).
-[Treyarch depth compression](https://www.activision.com/cdn/research/SparseShadowTree.pdf)
-and [Guennebaud et al.'s contour integration](https://cgl.ethz.ch/Downloads/Publications/Papers/2007/Gue07b/Gue07b.pdf)
-inform the representation.
+The stored field has a 2.49–3.65% limb after the stock filter drops
+to zero. Both archived crossings hold blocker count and radius
+across their abrupt step. Doubling fixed taps moved the earlier
+step and raised GPU pass-sum median about 19% under shared load.
+Use Unity HDRP's production precedent of rotating directional PCSS
+per render pixel. Use the existing 32 equal-area disk positions
+with a pixel-local interleaved gradient noise phase fixed across
+submissions. HDRP varies phase over TAA frames and also rotates
+blocker probes. Thrum holds both fixed in this adaptation. Keep the
+eight blocker probes, physical Sun radius,
+receiver-plane correction, supported windows and small-radius exits.
+Apply only at the explicitly unrestricted last-cascade call.
+A near-owned complement can pass the same numeric window.
+No new coverage field, history, device path or graph pass.
+[Unity directional PCSS](https://raw.githubusercontent.com/Unity-Technologies/Graphics/master/Packages/com.unity.render-pipelines.core/ShaderLibrary/Shadow/PCSS.hlsl) ·
+[Godot filter quality guidance](https://docs.godotengine.org/en/stable/tutorials/3d/lights_and_shadows.html) ·
+[Shipping PCSS in The Division](https://www.nvidia.com/en-us/geforce/news/tom-clancys-the-division-graphics-and-performance-guide/).
 
-The bounded saved-field design uses 48-byte records per 32² depth tile
-and a 63-texel radius limit. Its query cap is 25 records, four contour expansions, 53 depth
-interval tests and 37 area rectangles. Test each merged tile interval
-first and expand only unresolved contours. All work counts toward the
-same caps. The eight saved rows then need at most 28 interval tests. Unresolved comparisons,
-out-of-map footprints and geometry absent from the first layer do
-not certify visibility. Near, restricted-last and horizon evaluation
-retain their existing owners. Select the candidate only from the
-unrestricted last-map call site. A near-owned fallback can have the
-same numeric window. The two last-map calls can both run,
-and recovering positive visibility can enable the 96-step horizon
-march. Count those and the full fallback. Runtime still needs a
-reviewed support transition and same-frame graph storage. The wider
-archive rejected the whole-receiver stock fallback. An unsupported
-region must not discard qualified coverage elsewhere in the aperture. This
-candidate has no temporal state and introduces no independent Sun,
-camera or asset authority.
+The wide call costs at most 136 depth reads versus 72. The
+near/restricted-last/unrestricted-last overlap is at most 280
+before horizon reads. Positive visibility can enable the 96-step
+horizon march, so include it in measured composed work.
+Spatial decorrelation can turn a coherent step into noise.
+Fixed phase keeps paused views stable, while pan shimmer is an
+open visual risk. Use a prepared candidate and qualify native-size
+motion on both targets before promotion. The G4 history path
+does not enter this slice.
+
+Park 16-ray SMRT and contour-area fallback. The first is too
+coarsely quantized for the saved limb, and the second switches
+243 receivers at once on the broader trajectory. A single
+unresolved 32² region can cover about 12% of the disk. Regional
+accounting by itself does not remove that risk. Filament's
+filterable moments are a production option but lose the
+receiver-relative depth correlation and can leak at overlap.
+The measured failure is in the current filter and does not yet
+establish the need for a novel coverage model.
+[Saved-field evidence](../../evidence/v1-workload/G3S-HANDOFF.md#current-checkpoint) ·
+[Filterable shadow-map limits](https://developer.nvidia.com/gpugems/gpugems3/part-ii-light-and-shadows/chapter-8-summed-area-variance-shadow-maps).
 
 M4 retains the independent finite-disk reference. Clip terrain and
 detached spans to the same solar chord and union them before integrating
