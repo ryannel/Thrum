@@ -247,14 +247,15 @@ impl SyntheticView {
         self
     }
 
-    /// Supply the authored orthonormal map from equatorial directions to world directions.
+    /// Supply the authored proper rotation from equatorial directions to world directions.
     /// # Errors
-    /// Refuses nonfinite or nonorthonormal axes and nonperspective views.
+    /// Refuses reflections, nonfinite or nonorthonormal axes and nonperspective views.
     pub fn with_celestial_basis(mut self, columns: [[f32; 3]; 3]) -> Result<Self, RenderError> {
         let basis = Mat3::from_cols_array_2d(&columns);
         let orthogonal = basis.transpose() * basis;
         if !matches!(self.projection, Projection::Perspective { .. })
             || !orthogonal.abs_diff_eq(Mat3::IDENTITY, 1e-4)
+            || basis.determinant() <= 0.0
         {
             return Err(RenderError::InvalidView);
         }
@@ -384,6 +385,27 @@ mod tests {
                 10.0
             )
             .is_err()
+        );
+    }
+
+    #[test]
+    fn celestial_basis_accepts_rotation_and_refuses_reflection() {
+        let view = SyntheticView::perspective(
+            [0.0; 3],
+            [0.0, 0.0, -1.0],
+            [0.0, 1.0, 0.0],
+            1.0,
+            1.0,
+            0.1,
+            10.0,
+        )
+        .expect("perspective camera");
+        let basis = Mat3::from_rotation_y(0.4);
+        assert!(view.with_celestial_basis(basis.to_cols_array_2d()).is_ok());
+        let reflected = Mat3::from_cols(basis.x_axis, basis.y_axis, -basis.z_axis);
+        assert!(
+            view.with_celestial_basis(reflected.to_cols_array_2d())
+                .is_err()
         );
     }
 

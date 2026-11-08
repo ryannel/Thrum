@@ -359,7 +359,7 @@ mod tests {
         assert_eq!(
             controls.model().formatted(id),
             "45°",
-            "noon at 45° latitude"
+            "noon elevation at −45° latitude"
         );
         controls.observe_time(0.25);
         assert_eq!(controls.model().formatted(id), "0°", "sunrise");

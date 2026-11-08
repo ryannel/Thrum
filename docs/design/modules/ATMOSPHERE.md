@@ -71,7 +71,9 @@ airglow variations and calibrated night colour are outside this profile.
   divide by its solid angle to recover scene radiance, then multiply by the
   current P before blending. Use the same jittered projection as opaque depth.
   Verify the displayed magnitude hierarchy after tone mapping as well as raw flux.
-  The scene's +X east, +Y up, +Z north and 45° latitude define the pole.
+  The scene's +X east, +Y up, −Z north and −45° latitude define the pole.
+  Require a proper equatorial-to-world rotation. The north celestial pole lies
+  below the northern horizon and fixed stars move west as hour angle increases.
   Zero hour angle uses the Sun's noon meridian with an authored right ascension
   at transit. One sidereal turn per artificial game day deliberately repeats the
   demo; the same interpolated phase and edit drive both outputs. Keep star
