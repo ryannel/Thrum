@@ -19,7 +19,6 @@ pub(super) const PROFILE: SurfaceProfile = SurfaceProfile {
     format: wgpu::TextureFormat::Bgra8Unorm,
     extent: [1920, 1080],
 };
-const ROW_BYTES: u32 = PROFILE.extent[0] * 4;
 const TIMEOUT: Duration = Duration::from_secs(10);
 
 pub(super) fn requested_frames() -> Result<Option<NonZeroU32>, String> {
@@ -43,7 +42,7 @@ pub(super) fn record(
     apply_initial_parameters(host)?;
     let pan = CameraPan::from_env(host.camera_orientation()[1], frames)?;
     let rate = ClockConfig::default().tick_hz;
-    let target = CaptureTarget::new(device);
+    let target = CaptureTarget::new(device, PROFILE.extent);
     let surface = SurfaceOutput {
         view: &target.view,
         extent: PROFILE.extent,
@@ -179,7 +178,11 @@ fn apply_initial_parameters(host: &mut FrameHost) -> Result<(), String> {
     Ok(())
 }
 
-fn completed_sample(host: &mut FrameHost, index: u32, tick: u64) -> Result<FrameSample, String> {
+pub(super) fn completed_sample(
+    host: &mut FrameHost,
+    index: u32,
+    tick: u64,
+) -> Result<FrameSample, String> {
     let deadline = Instant::now() + TIMEOUT;
     loop {
         if let Some(sample) = host.poll_completed()? {
@@ -197,24 +200,26 @@ fn completed_sample(host: &mut FrameHost, index: u32, tick: u64) -> Result<Frame
     }
 }
 
-fn write_json_line(log: &mut File, value: &serde_json::Value) -> Result<(), String> {
+pub(super) fn write_json_line(log: &mut File, value: &serde_json::Value) -> Result<(), String> {
     serde_json::to_writer(&mut *log, value).map_err(|error| error.to_string())?;
     log.write_all(b"\n").map_err(|error| error.to_string())
 }
 
-struct CaptureTarget {
+/// An offscreen SDR output target the game submits to, with a readback buffer.
+pub(super) struct CaptureTarget {
     texture: wgpu::Texture,
-    view: wgpu::TextureView,
+    pub(super) view: wgpu::TextureView,
     staging: wgpu::Buffer,
+    extent: [u32; 2],
 }
 
 impl CaptureTarget {
-    fn new(device: &wgpu::Device) -> Self {
+    pub(super) fn new(device: &wgpu::Device, extent: [u32; 2]) -> Self {
         let texture = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("motion capture SDR output"),
             size: wgpu::Extent3d {
-                width: PROFILE.extent[0],
-                height: PROFILE.extent[1],
+                width: extent[0],
+                height: extent[1],
                 depth_or_array_layers: 1,
             },
             mip_level_count: 1,
@@ -226,7 +231,7 @@ impl CaptureTarget {
         });
         let staging = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("motion capture readback"),
-            size: u64::from(ROW_BYTES) * u64::from(PROFILE.extent[1]),
+            size: u64::from(extent[0] * 4) * u64::from(extent[1]),
             usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
             mapped_at_creation: false,
         });
@@ -235,10 +240,12 @@ impl CaptureTarget {
             texture,
             view,
             staging,
+            extent,
         }
     }
 
-    fn write_pixels(
+    /// Copy the submitted output and write its BGRA rows to `output`.
+    pub(super) fn write_pixels(
         &self,
         device: &wgpu::Device,
         queue: &wgpu::Queue,
@@ -251,8 +258,8 @@ impl CaptureTarget {
                 buffer: &self.staging,
                 layout: wgpu::TexelCopyBufferLayout {
                     offset: 0,
-                    bytes_per_row: Some(ROW_BYTES),
-                    rows_per_image: Some(PROFILE.extent[1]),
+                    bytes_per_row: Some(self.extent[0] * 4),
+                    rows_per_image: Some(self.extent[1]),
                 },
             },
             self.texture.size(),
