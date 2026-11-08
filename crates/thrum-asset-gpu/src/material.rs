@@ -43,7 +43,7 @@ use std::time::Instant;
 #[cfg(target_arch = "wasm32")]
 use web_time::Instant;
 
-use thrum_render::contribution::{MATERIAL_HOOK_POINT, SceneSurface};
+use thrum_render::contribution::{SceneSurface, material_hook_point};
 
 /// The glue function that wraps the scene's material hook point.
 const WRAPPER: &str = "cooked_hooked_material";
@@ -268,12 +268,15 @@ struct Combined {
 /// The scene source with its material hook point wrapped by the glue, followed by the cooked
 /// entries, the glue and the hook.
 fn combine(scene_source: &str, hook: &str) -> Result<Combined, String> {
-    let at = MATERIAL_HOOK_POINT.locate(scene_source).map_err(|error| {
+    let point = material_hook_point(scene_source).map_err(|error| {
         format!("{error}; the cooked material hook does not support this scene shader")
     })?;
-    let point = MATERIAL_HOOK_POINT.expression;
-    let (before, after) = scene_source.split_at(at);
-    let mut text = format!("{before}{WRAPPER}({point}, input){}", &after[point.len()..]);
+    let mut text = format!(
+        "{}{WRAPPER}({}, input){}",
+        &scene_source[..point.start],
+        &scene_source[point.clone()],
+        &scene_source[point.end..]
+    );
     text.push('\n');
     text.push_str(include_str!("cooked.wgsl"));
     text.push('\n');
@@ -1014,7 +1017,9 @@ mod tests {
         Candidate, Job, MaterialDiagnostic, MaterialHook, MaterialOutcome, MaterialReload, Queue,
         Resolving, State, combine, locate, summary,
     };
-    use thrum_render::contribution::MATERIAL_HOOK_POINT;
+
+    /// The scene's material read, as the renderer's hook point matches it.
+    const POINT: &str = "materials[input.material]";
 
     fn hook() -> MaterialHook {
         MaterialHook {
@@ -1240,7 +1245,7 @@ mod tests {
 
     #[test]
     fn the_hook_wraps_the_single_material_read_and_follows_the_glue() {
-        let point = MATERIAL_HOOK_POINT.expression;
+        let point = POINT;
         let scene = format!("fn shade() {{ let material={point}; }}");
         let combined = combine(&scene, "fn cooked_surface() {}").expect("one hook point");
         assert!(combined.text.starts_with(
@@ -1278,7 +1283,7 @@ mod tests {
 
     #[test]
     fn a_scene_without_one_hook_point_keeps_the_accepted_hook_and_recovers_to_built_in() {
-        let point = MATERIAL_HOOK_POINT.expression;
+        let point = POINT;
         // A request refused on the current surface keeps the accepted hook drawing.
         let material = reload(State {
             surface: Some((2, 1)),

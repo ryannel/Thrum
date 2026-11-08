@@ -34,7 +34,7 @@ pub(super) fn compose(atmosphere: bool, air_shadow: bool) -> String {
 #[cfg(test)]
 mod tests {
     use super::compose;
-    use crate::contribution::{HookPointError, MATERIAL_HOOK_POINT, ShaderHookPoint};
+    use crate::contribution::{HookPointError, material_hook_point};
 
     /// The body of `struct name { .. }` in `source`.
     fn struct_body<'a>(source: &'a str, name: &str) -> &'a str {
@@ -44,25 +44,44 @@ mod tests {
         &source[start..end]
     }
 
+    /// The byte range inside the braces of the one function whose declaration starts with
+    /// `signature`.
+    fn function_body(source: &str, signature: &str) -> std::ops::Range<usize> {
+        assert_eq!(source.matches(signature).count(), 1, "one `{signature}`");
+        let declared = source.find(signature).expect("declared");
+        let open = declared + source[declared..].find('{').expect("body opens");
+        let mut depth = 0_usize;
+        for (offset, byte) in source.bytes().enumerate().skip(open) {
+            match byte {
+                b'{' => depth += 1,
+                b'}' => {
+                    depth -= 1;
+                    if depth == 0 {
+                        return open + 1..offset;
+                    }
+                }
+                _ => {}
+            }
+        }
+        panic!("`{signature}` body never closes");
+    }
+
     #[test]
     fn every_forward_variant_holds_the_material_hook_point_once_in_shade() {
         for atmosphere in [false, true] {
             for air_shadow in [false, true] {
                 let source = compose(atmosphere, air_shadow);
                 let variant = format!("atmosphere {atmosphere}, air shadow {air_shadow}");
-                let at = MATERIAL_HOOK_POINT
-                    .locate(&source)
+                let point = material_hook_point(&source)
                     .unwrap_or_else(|error| panic!("{variant}: {error}"));
-                let shade = source
-                    .find("fn shade(input: VertexOutput,")
-                    .expect("the forward shader shades in shade()");
-                let first_sample = shade
-                    + source[shade..]
+                let shade = function_body(&source, "fn shade(input: VertexOutput,");
+                let first_sample = shade.start
+                    + source[shade.clone()]
                         .find("textureSample")
                         .expect("shade samples textures");
                 assert!(
-                    shade < at && at < first_sample,
-                    "{variant}: the hook point leaves shade() before its texture samples"
+                    shade.start <= point.start && point.end <= first_sample,
+                    "{variant}: the hook point is not in shade()'s body before its texture samples"
                 );
                 let record = struct_body(&source, "MaterialRecord");
                 for field in [
@@ -92,19 +111,23 @@ mod tests {
 
     #[test]
     fn a_missing_or_repeated_hook_point_is_refused_by_name() {
-        let point = ShaderHookPoint {
-            name: "probe",
-            expression: "read(x)",
-        };
-        assert_eq!(point.locate("a read(x) b"), Ok(2));
-        assert_eq!(point.locate("a b"), Err(HookPointError::Missing("probe")));
+        let read = "materials[input.material]";
         assert_eq!(
-            point.locate("read(x) read(x) read(x)"),
-            Err(HookPointError::Duplicate("probe", 3))
+            material_hook_point(&format!("a {read} b")),
+            Ok(2..2 + read.len())
+        );
+        assert_eq!(material_hook_point("a b"), Err(HookPointError::Missing));
+        assert_eq!(
+            material_hook_point(&format!("{read}{read}{read}")),
+            Err(HookPointError::Duplicate(3))
         );
         assert_eq!(
-            HookPointError::Missing("probe").to_string(),
-            "the scene shader has no `probe` hook point"
+            HookPointError::Missing.to_string(),
+            "the scene shader has no `scene material read` hook point"
+        );
+        assert_eq!(
+            HookPointError::Duplicate(2).to_string(),
+            "the scene shader has 2 `scene material read` hook points where exactly one is required"
         );
     }
 }
