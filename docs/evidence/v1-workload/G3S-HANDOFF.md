@@ -20,14 +20,15 @@ The Codex goal remains active. Its attachment is
   The 1,024 m crest source retains 84 of 1,179 across the same bin count.
   These are far-terrain counts, with no local-caster, full-atlas or GPU
   claim. Rerun from the research note and `graph/crest-edge-support-*.log`.
-  Ground E source closure passes on 29,440 cells. The single-aperture
-  census retains 3,945,576 far edge and 2,754,890 near triangle entries
-  even after whole-bin umbra and tighter corner bounds. The estimated
-  27.92 MiB excludes staging and the remaining Sun directions. Park
-  the flat layout. The next design uses pairwise dominance over the
-  actual receiver face. Review requires fixed world sectors and a certified
-  in-footprint origin. Next check cooked triangle parity and packed aperture size. Raw CPU rows are `graph/crest-chart-population-*-ground-e-72.log`.
-  Ground E remains the route. There are no M3 runtime runs to resume.
+  Ground E's 58,880 oriented triangles match the archived Metal and
+  Chrome cooked meshes. The flat single-aperture lists cost 27.92 MiB
+  across four bins. On the true faces and six fixed world sectors, list
+  interning still leaves 41.53 MiB and 170/581 p95/max references per
+  face-sector pair. The 24,678 sampled clipped horizons match the CPU
+  triangle oracle within 2.92e-16 slope. Keep runtime on hold and find
+  shared directional structure. The origin envelope is illustrative
+  and detached casters remain open. See `tmp/g3s-sunset-lip/M3-RESEARCH.md`
+  for commands and logs. Ground E remains the route.
 
 - M2 now owns the star closeout only. The Mac's lossless 1080p60 masters
   and playback copies are under `current-main/ground-e-night-pan/` and

@@ -153,11 +153,13 @@ CPU witness narrows 951 potential edge entries to 34 over four bins at the diffi
 Both match the triangle-section reference at the sampled rays. They do not
 establish a scene-wide bound. A single-aperture Ground E census leaves 3.95 million
 far edge entries and 2.75 million near triangles under the flat box-indexed layout
-even with a tightened corner bound. Keep that layout out of the renderer. First price
-one complete aperture on the cooked receiver faces, including shared packed bytes,
-decoded list tails and the unresolved terrain complement. Price compact caster spans
-separately. Check the narrow crest, sector seam, grazing ray and local caster against
-the triangle oracle before scaling the proof to the admitted domain.
+even with a tightened corner bound. The verified cooked faces over six fixed
+sectors need 41.53 MiB after list interning, with 170 references at p95 and 581
+at maximum per face-sector pair. Sampled clipped horizons agree with the
+triangle reference. Materialized per-face lists at this subdivision are too
+costly for one aperture. A shared directional structure must reduce both storage
+and evaluation work. Price compact caster spans separately and verify the narrow
+crest, sector seam, grazing ray and local caster before scaling to the admitted domain.
 Before implementation, choose the portable representation and admit it against
 actual requested WebGPU limits, including staging and replacement overlap. Prove
 the geometry prefix, the angular error after decoding and shader rounding, and
