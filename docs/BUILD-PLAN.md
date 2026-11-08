@@ -68,7 +68,9 @@ The native Metal recorder stays in G3t. The later dedicated performance phase ow
   authority/input. Actual Chrome tab transitions pass. The iOS simulator runs world and rendering off UIKit.
   Real touch moves the committed player. Background/foreground and surface replacement recover under the
   epoch-checked lease, including a raced present. [Simulator evidence](evidence/render/G3B-IOS-SIM-ROUTE-2026-11-07.md).
-  iOS resize/rotation and device loss, and live Mac P/loss remain open. Record latency/present intervals;
+  Simulator rotation preserves the committed player, and an injected device loss recovers in the same process with
+  world and controls intact. [Rotation and recovery evidence](evidence/render/G3B-IOS-SIM-ROTATION-LOSS-2026-11-08.md).
+  Physical iPhone loss detection and recovery, and live Mac presentation and loss remain open. Record latency/present intervals;
   investigate visible stutter and hitches. [Frame history](evidence/render/V1-BOUNDED-FRAMES-2026-11-04.md) and wgpu
   allocations are baselines; native recording stays G3t.
 - [ ] **G3s — physical sky, Sun and atmosphere.** Hillaire (2020) transmittance, multiple-scattering, sky-view/aerial
