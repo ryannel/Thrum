@@ -1,0 +1,26 @@
+{
+  "swaps": 210,
+  "first_swap_ns": 4855945041,
+  "last_swap_ns": 6597610750,
+  "first_label": 4,
+  "last_label": 216,
+  "p50_ms": 8.333333,
+  "p95_ms": 8.3365,
+  "p99_ms": 8.337333,
+  "longest_ms": 8.33775,
+  "unlabelled_display_rows": 2,
+  "surface_pairs": [
+    [
+      33,
+      79
+    ],
+    [
+      74,
+      68
+    ],
+    [
+      75,
+      65
+    ]
+  ]
+}
