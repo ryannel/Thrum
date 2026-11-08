@@ -8,17 +8,24 @@ The Codex goal remains active. Its attachment is
 
 ## Current checkpoint
 
-- M3 production research selected stable overlap plus fixed per-pixel
-  rotation of the unrestricted last-cascade PCSS filter. The archived
-  flash occurs inside the last cascade. The independent design review
-  conditionally cleared one screen with three prepared filter arms and
-  complete matched motion. No renderer code or new capture at this
-  checkpoint. The next step is to freeze the capture manifest and
-  prepare the identical-scope fixed and rotated 32-tap arms alongside
-  stock. See the [screen protocol](../../design/modules/ATMOSPHERE-PLAN.md#m3-production-pcss-review-brief)
-  and the original brief at
-  `tmp/g3s-sunset-lip/graph/production-shadow-review.md`.
-  The physical bandwidth replay remains separate.
+- M3 stock baseline at `efa82534` reproduces the west-spur flash in
+  300 complete offscreen Metal submissions at 1920×1080 and 60 Hz.
+  Across x=480–1200 at y=665, frames 226→227 drop a median 50 red
+  codes and peak at −82. Forward p50/p95 is 2.043/2.850 ms and
+  pass sum with blit is 4.023/4.853 ms under shared load (1-minute
+  average 32.26→29.52). See
+  `tmp/g3s-sunset-lip/graph/production-pcss/` for `manifest.json`,
+  input hashes, the exact source snapshot, all three native and web
+  builds, and `metal-west-spur-crossing-stock-16/` for the raw
+  timing rows, lossless clip and signed pixel checks. From the root,
+  run `bash tmp/g3s-sunset-lip/graph/production-pcss/build.sh` to
+  resume building and `bash tmp/g3s-sunset-lip/graph/production-pcss/record_metal.sh west-spur-crossing stock-16 tmp/g3s-stock-repeat`
+  to rerun into a fresh output folder. The default sandbox finds no
+  Metal adapter. The device-enabled run completed without a window.
+  Fixed and rotated 32 differ by a compile-time phase flag alone.
+  No candidate screen ran. Next establish exact Chrome submission
+  capture and the fixed-Sun pan, then compare the matched arms.
+  [Reviewed screen protocol](../../design/modules/ATMOSPHERE-PLAN.md#m3-production-pcss-review-brief).
 
 - M2 orientation, source `9c1021bb`: the CPU witness matches 30
   named-star projections within 2.020e-7 direction error. All 18,000
