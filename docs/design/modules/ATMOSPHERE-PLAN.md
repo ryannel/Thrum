@@ -5,7 +5,7 @@ Reviews: Optical design and plan over `a91cdd0e`, final design `f9d0c12a` and pl
 Updated: 2026-11-08
 Milestone: M3 sunset shadows
 Now: the optional current-frame resolve reduces the frozen flash but introduces visible shadow-edge ribbing on Metal and Chrome. Keep the stock graph and park the resolve at `77e84128`.
-Next: prepare the D2 and D3 control evidence independently of the parked D1 cue. Queue the fixed-camera D1 reference and foundational ruling for the next owner review.
+Next: keep the D1 reference and foundational ruling queued. D2’s live-versus-fresh Chrome shadow control and D3’s stock discard and recovery checks are ready to repeat on a reviewed candidate.
 Blocked: further D1 trials await the foundational ruling. The proposed reference and D2/D3 preparation can proceed.
 
 ## M1 The valley remains legible at moonless midnight: done
@@ -87,6 +87,7 @@ Work
 - [x] D1–D2. Prove exact live cooked/synthetic D32 ties and winner identity on Metal and Chrome, with reversed order and later-nearer controls. Both forced ±2 ULP arms render stock inside the fixed crop and the resolved image outside.
 - [x] D1–D2. Compare live mask acceptance in both draw orders on 235 filterable 160 m ties in Metal and Chrome. Their raw tied centres are zero. The shaded edge and overlap still need independent controls for any future graph.
 - [x] D1–D3. Screen the optional live resolve on the three frozen 1080p/60 trajectories and retain the failed result. [Evidence](../../evidence/v1-workload/G3S-HANDOFF.md#current-checkpoint).
+- [x] D2–D3. Establish stock baselines for the low-Sun Chrome cooked swap, native discarded-frame image equality and device restaging, and Chrome valley recovery. [Baseline](../../evidence/v1-workload/G3S-HANDOFF.md#current-checkpoint).
 - [ ] D1–D3. Resolve cooked and tile ownership before a live candidate. Keep the submitted-slot history rules and three-screen stop limit.
 - [ ] D1–D3. Integrate one shared surface evaluator, then capture the shipped ground and spur replays, range and cooked replacement controls, and paired frame costs. Review both targets in motion before promotion.
 
