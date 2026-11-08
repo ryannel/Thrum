@@ -176,6 +176,11 @@ cooked receiver faces and the authoritative solar trajectory. Share lift values
 across incident faces so the same continuous origin feeds terrain, cone bounds
 and residual. Certify the decoded field using finer geometric bounds,
 independently of its stored knot spacing.
+Twelve adaptive time knots reduce sampled broad-edge error below 0.55 percentage
+points. The raised crest still misses by 2.96 points with 33×33 spatial knots
+and 48 time knots on a 4 m patch. Refine space conformingly or admit exact
+coverage in unresolved regions before scaling to the source. The compact
+caster sweep has zero correction at both padded cone boundaries.
 [Directional hull sweep, §§4–5](https://doi.org/10.1111/j.1467-8659.2009.01642.x) ·
 [Solar-trajectory bake and limitations, §§3 and 5](https://www.cs.cit.tum.de/fileadmin/w00cfj/cg/Research/Publications/2015/TerrainShadows/EG2015TerrainShadows.pdf).
 Before implementation, choose the portable representation and admit it against
