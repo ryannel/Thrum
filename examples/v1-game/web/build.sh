@@ -33,6 +33,8 @@ else
 fi
 "$bindgen_bin" --target web --out-dir "$build_root/$web" "$cargo_target/wasm32-unknown-unknown/release/v1_game.wasm"
 cp examples/v1-game/web/index.html "$build_root/$web/index.html"
+cp examples/v1-game/web/route.html "$build_root/$web/route.html"
+cp examples/v1-game/routes/*.json "$build_root/$web/"
 cp crates/thrum-controls/web/thrum-controls.js "$build_root/$web/thrum-controls.js"
 cp examples/v1-game/params/*.params.json "$build_root/$web/"
 if [ -n "$features" ]; then

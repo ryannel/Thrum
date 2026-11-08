@@ -21,7 +21,8 @@ mod window;
 
 #[cfg(target_arch = "wasm32")]
 pub use browser::{
-    BrowserGame, CookedValley, create_browser_game, create_field_game, fetch_cooked_valley,
+    BrowserGame, CookedValley, create_browser_game, create_field_game, create_route_game,
+    fetch_cooked_valley,
 };
 pub use camera::{CameraRoute, RouteCheckpoint, RouteKey, RoutePose, SceneCamera};
 #[cfg(not(target_arch = "wasm32"))]
