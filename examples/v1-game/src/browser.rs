@@ -149,6 +149,9 @@ async fn create_game(
     canvas: HtmlCanvasElement,
     setup: crate::GameSetup,
 ) -> Result<BrowserGame, JsValue> {
+    std::panic::set_hook(Box::new(|info| {
+        web_sys::console::error_1(&JsValue::from_str(&info.to_string()));
+    }));
     let shell = thrum_app::web::create(canvas, game::DEVICE_GENERATION, |gpu| {
         game::prepare(gpu, setup)
     })

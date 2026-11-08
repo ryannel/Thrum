@@ -21,9 +21,8 @@ objc2-quartz-core = { version = "=0.3.2", default-features = false, features = [
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 thrum-render = { path = "../thrum-render" }
 wgpu = { version = "=30.0.1", default-features = false, features = ["webgpu"] }
-wasm-bindgen = "=0.2.129"
 wasm-bindgen-futures = "=0.4.79"
-web-sys = { version = "=0.3.106", features = ["HtmlCanvasElement", "console"] }
+web-sys = { version = "=0.3.106", features = ["HtmlCanvasElement"] }
 
 [lints]
 workspace = true
