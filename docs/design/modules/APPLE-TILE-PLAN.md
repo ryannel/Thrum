@@ -170,6 +170,8 @@ Work:
 - [x] Capture probe saved under `tmp/g3t-traffic/`, with the result in `docs/evidence/render/G3T-TRAFFIC-PROBE-*.md`
       (→D0.4). Result: Xcode's per-encoder device-memory bytes, in
       [G3T-TRAFFIC-PROBE-2026-11-08](../../evidence/render/G3T-TRAFFIC-PROBE-2026-11-08.md).
+      Open: a single sample per trace, so about ±1 MiB per encoder is noise; the replay noise floor is measured in the
+      later tuning phase.
 
 ## M1 Recipe selection and graph-derived memoryless: pending
 
