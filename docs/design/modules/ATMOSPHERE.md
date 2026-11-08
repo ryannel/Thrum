@@ -93,6 +93,14 @@ airglow variations and calibrated night colour are outside this profile.
 
 ### M3 surface Sun visibility
 
+The shipped cascade remains the fallback. Dense integration of the stored
+comparison field recovers the missing solar limb. A bounded dyadic integral
+exhausts its read cap at all eight archived pixels without recovering the limb.
+Exhaustive min/max traversal can require 15,762 visits per receiver at the
+witnessed radius. Park per-fragment filter refinement. Put reuse before
+fragment evaluation and preserve original geometry through the producer.
+The depth field can omit subtexel or hidden casters. [Filter evidence](../../evidence/v1-workload/G3S-HANDOFF.md#current-checkpoint).
+
 Use one solid-angle integral over the rendered Sun. At each azimuth, clip
 terrain and detached spans to the same elevation chord, union the spans,
 then integrate their `sin(elevation)` differences. Duplicated coverage

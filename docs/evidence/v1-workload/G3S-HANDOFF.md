@@ -88,8 +88,12 @@ The Codex goal remains active. Its attachment is
   4.80% in every archived sample, flattening the crossing. Its p95
   absolute visibility error in percentage points rises from 6.67 to
   9.04 for horizontal crests, 8.34 to 10.97 for rotated crests and
-  5.16 to 9.52 for compact casters. Park fixed layouts. Design bounded
-  coverage reconstruction and keep the disk oracle as referee.
+  5.16 to 9.52 for compact casters. Park fixed layouts. The reviewed
+  dyadic min/max screen spends 253–256 classification reads across
+  83–102 cells per receiver. All eight intervals remain 29.94–33.39 pp
+  wide, and all four missing limbs remain zero. Park this per-fragment
+  design. The stored-field check and original-triangle union remain
+  separate referees.
   Rerun from `tmp/g3s-sunset-lip/M3-RESEARCH.md`.
 
 - Historical M2 star captures predate the orientation correction. The Mac's lossless 1080p60 masters
