@@ -28,6 +28,67 @@
 //!
 //! Opaque casters can contribute bounds and draws to the scene’s existing Sun cascades.
 
+/// A named expression the scene's forward shader evaluates exactly once, which a contribution
+/// compiling [`SceneSurface::shader_source`] may wrap. The renderer owns the expression and tests
+/// that every composed variant of the forward source holds it exactly once.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ShaderHookPoint {
+    /// Name used in diagnostics.
+    pub name: &'static str,
+    /// The exact WGSL expression at the hook point.
+    pub expression: &'static str,
+}
+
+/// Why a [`ShaderHookPoint`] cannot be used in a source.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum HookPointError {
+    /// The source does not contain the expression.
+    Missing(&'static str),
+    /// The source contains the expression this many times.
+    Duplicate(&'static str, usize),
+}
+
+impl std::fmt::Display for HookPointError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Missing(name) => write!(f, "the scene shader has no `{name}` hook point"),
+            Self::Duplicate(name, count) => write!(
+                f,
+                "the scene shader has {count} `{name}` hook points where exactly one is required"
+            ),
+        }
+    }
+}
+
+impl std::error::Error for HookPointError {}
+
+impl ShaderHookPoint {
+    /// Byte offset of the hook point's single occurrence in `source`.
+    ///
+    /// # Errors
+    ///
+    /// [`HookPointError`] when the expression is missing or occurs more than once.
+    pub fn locate(&self, source: &str) -> Result<usize, HookPointError> {
+        let mut found = source.match_indices(self.expression).map(|(at, _)| at);
+        match (found.next(), found.count()) {
+            (None, _) => Err(HookPointError::Missing(self.name)),
+            (Some(at), 0) => Ok(at),
+            (Some(_), more) => Err(HookPointError::Duplicate(self.name, more + 1)),
+        }
+    }
+}
+
+/// The forward fragment's read of its material record: inside the scene's `shade(input:
+/// VertexOutput, ..)`, before any texture sample, evaluating to the fragment's `MaterialRecord`.
+/// A wrapper `fn(MaterialRecord, VertexOutput) -> MaterialRecord` may replace it. The renderer
+/// keeps these names stable for it: `MaterialRecord.base`, `.emissive_cutoff` and `.surface`
+/// (`vec4<f32>`; roughness in `surface.y`, metalness in `surface.z`) and `VertexOutput.uv`,
+/// `.world_position` and `.normal`.
+pub const MATERIAL_HOOK_POINT: ShaderHookPoint = ShaderHookPoint {
+    name: "scene material read",
+    expression: "materials[input.material]",
+};
+
 /// Read-only description of a prepared scene's forward pass.
 pub struct SceneSurface<'a> {
     /// The device every scene resource belongs to.
@@ -41,6 +102,7 @@ pub struct SceneSurface<'a> {
     /// Device limits of this generation.
     pub limits: wgpu::Limits,
     /// The composed WGSL of the scene's forward shader (lighting, materials and entry points).
+    /// It holds [`MATERIAL_HOOK_POINT`] exactly once.
     pub shader_source: &'a str,
     /// The forward pipeline layout: view, light, material and instance groups.
     pub pipeline_layout: &'a wgpu::PipelineLayout,

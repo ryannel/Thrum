@@ -37,6 +37,7 @@ mod history_gpu;
 mod readback;
 mod scene_apply;
 mod scene_graph;
+mod scene_source;
 mod shadow;
 mod stars;
 mod upload;
@@ -1210,30 +1211,7 @@ impl PreparedSynthetic {
             bind_group_layouts: &bind_group_layouts,
             immediate_size: 0,
         });
-        let shader_source = format!(
-            "{}\n{}\n{}",
-            concat!(
-                include_str!("atmosphere/storage.wgsl"),
-                "\n",
-                include_str!("atmosphere/brdf.wgsl"),
-                "\n",
-                include_str!("atmosphere/irradiance.wgsl"),
-                "\n",
-                include_str!("synthetic.wgsl")
-            ),
-            air_shadow::aerial_source(atmosphere.is_some(), air_shadow.is_some()),
-            if atmosphere.is_some() {
-                concat!(
-                    include_str!("atmosphere/geometry.wgsl"),
-                    "\n",
-                    include_str!("synthetic_sun.wgsl"),
-                    "\n",
-                    include_str!("synthetic_environment.wgsl")
-                )
-            } else {
-                ""
-            }
-        );
+        let shader_source = scene_source::compose(atmosphere.is_some(), air_shadow.is_some());
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("prepared synthetic shader ABI2"),
             source: wgpu::ShaderSource::Wgsl(shader_source.as_str().into()),

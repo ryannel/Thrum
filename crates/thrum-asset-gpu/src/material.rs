@@ -43,11 +43,10 @@ use std::time::Instant;
 #[cfg(target_arch = "wasm32")]
 use web_time::Instant;
 
-use thrum_render::contribution::SceneSurface;
+use thrum_render::contribution::{MATERIAL_HOOK_POINT, SceneSurface};
 
-/// The scene shader's one read of a fragment's material record, routed through the hook glue.
-const ANCHOR: &str = "materials[input.material]";
-const HOOKED: &str = "cooked_hooked_material(materials[input.material], input)";
+/// The glue function that wraps the scene's material hook point.
+const WRAPPER: &str = "cooked_hooked_material";
 
 /// WGSL source of a game's material hook and the name its diagnostics use, such as its path.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -266,14 +265,15 @@ struct Combined {
     hook_offset: usize,
 }
 
+/// The scene source with its material hook point wrapped by the glue, followed by the cooked
+/// entries, the glue and the hook.
 fn combine(scene_source: &str, hook: &str) -> Result<Combined, String> {
-    if scene_source.matches(ANCHOR).count() != 1 {
-        return Err(format!(
-            "the scene shader has no single `{ANCHOR}` material read for the hook to wrap; \
-             the cooked material hook does not support this scene shader"
-        ));
-    }
-    let mut text = scene_source.replacen(ANCHOR, HOOKED, 1);
+    let at = MATERIAL_HOOK_POINT.locate(scene_source).map_err(|error| {
+        format!("{error}; the cooked material hook does not support this scene shader")
+    })?;
+    let point = MATERIAL_HOOK_POINT.expression;
+    let (before, after) = scene_source.split_at(at);
+    let mut text = format!("{before}{WRAPPER}({point}, input){}", &after[point.len()..]);
     text.push('\n');
     text.push_str(include_str!("cooked.wgsl"));
     text.push('\n');
@@ -1011,9 +1011,10 @@ mod tests {
     use std::time::{Duration, Instant};
 
     use super::{
-        ANCHOR, Candidate, Job, MaterialDiagnostic, MaterialHook, MaterialOutcome, MaterialReload,
-        Queue, Resolving, State, combine, locate, summary,
+        Candidate, Job, MaterialDiagnostic, MaterialHook, MaterialOutcome, MaterialReload, Queue,
+        Resolving, State, combine, locate, summary,
     };
+    use thrum_render::contribution::MATERIAL_HOOK_POINT;
 
     fn hook() -> MaterialHook {
         MaterialHook {
@@ -1239,19 +1240,80 @@ mod tests {
 
     #[test]
     fn the_hook_wraps_the_single_material_read_and_follows_the_glue() {
-        let scene = format!("fn shade() {{ let material={ANCHOR}; }}");
-        let combined = combine(&scene, "fn cooked_surface() {}").expect("one anchor");
-        assert!(
-            combined
-                .text
-                .contains("cooked_hooked_material(materials[input.material], input)")
-        );
+        let point = MATERIAL_HOOK_POINT.expression;
+        let scene = format!("fn shade() {{ let material={point}; }}");
+        let combined = combine(&scene, "fn cooked_surface() {}").expect("one hook point");
+        assert!(combined.text.starts_with(
+            "fn shade() { let material=cooked_hooked_material(materials[input.material], input); }\n"
+        ));
         assert_eq!(
             &combined.text[combined.hook_offset..],
             "fn cooked_surface() {}"
         );
-        assert!(combine("fn shade() {}", "").is_err());
-        assert!(combine(&format!("{ANCHOR} {ANCHOR}"), "").is_err());
+        let Err(missing) = combine("fn shade() {}", "") else {
+            panic!("no hook point");
+        };
+        assert_eq!(
+            missing,
+            "the scene shader has no `scene material read` hook point; \
+             the cooked material hook does not support this scene shader"
+        );
+        let Err(repeated) = combine(&format!("{point} {point}"), "") else {
+            panic!("two hook points");
+        };
+        assert!(
+            repeated.starts_with(
+                "the scene shader has 2 `scene material read` hook points where exactly one is required"
+            ),
+            "{repeated}"
+        );
+    }
+
+    /// A hook refused because `scene` has no single hook point.
+    fn refused_by_scene(scene: &str, serial: u64, target: (u64, u64)) -> Candidate {
+        let mut refused = candidate(serial, target, true);
+        refused.refused[0].message = combine(scene, "").err().expect("refused");
+        refused
+    }
+
+    #[test]
+    fn a_scene_without_one_hook_point_keeps_the_accepted_hook_and_recovers_to_built_in() {
+        let point = MATERIAL_HOOK_POINT.expression;
+        // A request refused on the current surface keeps the accepted hook drawing.
+        let material = reload(State {
+            surface: Some((2, 1)),
+            latest: 4,
+            accepted: Some((hook(), 3)),
+            drawing: true,
+            candidate: Some(refused_by_scene(&format!("{point}{point}"), 4, (2, 1))),
+            ..State::default()
+        });
+        let mut held = None;
+        material.frame_boundary(&mut held, (2, 1));
+        assert!(held.is_none(), "nothing replaces the accepted pipeline");
+        assert_eq!(material.accepted().as_deref(), Some("hooks/moss.wgsl"));
+        assert!(!material.restoring());
+        let outcomes = material.take_outcomes();
+        assert!(
+            matches!(&outcomes[..], [MaterialOutcome::Rejected { serial: 4, diagnostics }]
+                if diagnostics[0].message.contains("2 `scene material read` hook points")),
+            "{outcomes:?}"
+        );
+        // A rebuilt surface whose shader lost the hook point draws the built-in material
+        // and names the missing hook point.
+        material.state().rebuilt((2, 2));
+        material.state().restoring = Some(refused_by_scene("fn shade() {}", 3, (2, 2)));
+        material.frame_boundary(&mut held, (2, 2));
+        assert!(held.is_none(), "the built-in material keeps drawing");
+        assert_eq!(material.accepted(), None);
+        assert!(!material.restoring());
+        let outcomes = material.take_outcomes();
+        assert!(
+            matches!(&outcomes[..], [MaterialOutcome::Dropped { name, diagnostics }]
+                if name == "hooks/moss.wgsl"
+                    && diagnostics[0].message.starts_with("the scene shader has no `scene material read` hook point")),
+            "{outcomes:?}"
+        );
     }
 
     #[test]
