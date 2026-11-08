@@ -66,6 +66,7 @@ fn has_dfg(names: &[String]) -> bool {
 #[test]
 fn metal_reflection_cache_tracks_sky_but_not_amplitude_view_or_unsubmitted_work() {
     pollster::block_on(async {
+        crate::timestamp_permit::hold();
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions::default())

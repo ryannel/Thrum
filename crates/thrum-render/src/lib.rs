@@ -20,5 +20,7 @@ pub mod history;
 pub mod present;
 pub mod runtime;
 pub mod synthetic;
+#[cfg(test)]
+mod timestamp_permit;
 pub mod timing;
 mod visibility;

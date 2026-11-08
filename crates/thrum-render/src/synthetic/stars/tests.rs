@@ -190,6 +190,7 @@ fn wait(device: &wgpu::Device, submission: wgpu::SubmissionIndex) {
 }
 
 async fn metal() -> (wgpu::Device, wgpu::Queue, DeviceCapabilities) {
+    crate::timestamp_permit::hold();
     let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
         backends: wgpu::Backends::METAL,
         ..wgpu::InstanceDescriptor::new_without_display_handle()
