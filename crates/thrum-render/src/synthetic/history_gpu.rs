@@ -131,7 +131,7 @@ impl TransformHistory {
             presentation_alpha: 1.0,
             extent: None,
         };
-        history.write_serials(queue);
+        history.write_serials(queue, false);
         history
     }
 
@@ -149,7 +149,7 @@ impl TransformHistory {
 
     pub(super) fn reset(&mut self, queue: &wgpu::Queue) {
         self.submitted_serial = 0;
-        self.write_serials(queue);
+        self.write_serials(queue, false);
     }
 
     pub(super) fn set_extent(&mut self, queue: &wgpu::Queue, extent: [u32; 2]) {
@@ -159,20 +159,22 @@ impl TransformHistory {
         }
     }
 
-    pub(super) fn set_presentation_alpha(&mut self, queue: &wgpu::Queue, alpha: f32) {
+    pub(super) fn prepare_sample(&mut self, queue: &wgpu::Queue, alpha: f32, reset: bool) {
         self.presentation_alpha = if alpha.is_finite() {
             alpha.clamp(0.0, 1.0)
         } else {
             1.0
         };
-        self.write_serials(queue);
+        self.write_serials(queue, reset);
     }
 
-    fn write_serials(&self, queue: &wgpu::Queue) {
+    fn write_serials(&self, queue: &wgpu::Queue, reset: bool) {
+        // A prepared cut hides previous transforms for this sample alone.
+        // A capture or abandoned encoder cannot retire the submitted serial.
+        let read_serial = if reset { 0 } else { self.submitted_serial };
         let words = [
-            u32::try_from(self.submitted_serial & u64::from(u32::MAX))
-                .expect("masked serial fits u32"),
-            u32::try_from(self.submitted_serial >> 32).expect("high serial word fits u32"),
+            u32::try_from(read_serial & u64::from(u32::MAX)).expect("masked serial fits u32"),
+            u32::try_from(read_serial >> 32).expect("high serial word fits u32"),
             u32::try_from(self.next_serial & u64::from(u32::MAX)).expect("masked serial fits u32"),
             u32::try_from(self.next_serial >> 32).expect("high serial word fits u32"),
             self.presentation_alpha.to_bits(),

@@ -310,6 +310,7 @@ struct SubmitFrame {
 struct PreparedSample {
     sample: FrameSample,
     source: SourceTick,
+    view_history_epoch: u64,
 }
 
 struct RecordedScene {
@@ -331,6 +332,7 @@ pub struct FrameHost<W: FrameWorld, V: SceneSource<W::Page>> {
     generation: u64,
     source: V,
     history_reset_pending: bool,
+    submitted_view_history_epoch: u64,
     upload_reset_pending: bool,
     world: W,
     extractor: RenderExtractor,
@@ -554,6 +556,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             generation: capabilities.generation(),
             source,
             history_reset_pending: false,
+            submitted_view_history_epoch: 0,
             upload_reset_pending: false,
             world,
             extractor,
@@ -1024,9 +1027,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.restore_upload_slots()?;
         self.last_extracted = frame.extracted;
         let lighting = frame_scene.lighting;
-        self.scene.view = frame_scene
-            .view
-            .with_history_reset(self.history_reset_pending);
+        self.scene.view = self.view_with_history_reset(frame_scene.view);
         self.prepared
             .synchronize_history(&self.queue, authority.epoch, authority.timeline);
         let view_update_start = Instant::now();
@@ -1098,7 +1099,16 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 visual_revision,
             },
             source: frame_source,
+            view_history_epoch: self.scene.view.history_epoch(),
         }))
+    }
+
+    fn view_with_history_reset(&self, view: SyntheticView) -> SyntheticView {
+        view.with_history_reset(
+            view.history_reset()
+                || self.history_reset_pending
+                || view.history_epoch() != self.submitted_view_history_epoch,
+        )
     }
 
     fn restore_upload_slots(&mut self) -> Result<(), FrameError> {
@@ -1163,7 +1173,11 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             prepared,
             encode_cpu,
         } = recorded;
-        let PreparedSample { mut sample, source } = prepared;
+        let PreparedSample {
+            mut sample,
+            source,
+            view_history_epoch,
+        } = prepared;
         let finish_start = Instant::now();
         let slot = &mut self.slots[slot_index];
         let surface_presented = self
@@ -1223,6 +1237,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         report.wall = wall_start.elapsed();
         self.prepared.commit_frame();
         self.history_reset_pending = false;
+        self.submitted_view_history_epoch = view_history_epoch;
         self.last_view_source = Some(source);
         Ok(())
     }
@@ -1283,9 +1298,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             )
             .map_err(FrameError::Scene)?;
         let lighting = frame_scene.lighting;
-        self.scene.view = frame_scene
-            .view
-            .with_history_reset(self.history_reset_pending);
+        self.scene.view = self.view_with_history_reset(frame_scene.view);
         let applied = self
             .scene
             .apply_render_columns(self.extractor.frame(), &mut self.changed_slots);
