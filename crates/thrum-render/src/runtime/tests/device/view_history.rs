@@ -1,5 +1,26 @@
-use super::{Policy, gpu, host};
-use std::time::Duration;
+use super::{Host, Policy, gpu, host};
+use std::time::{Duration, Instant};
+
+fn retire_scene(host: &mut Host) {
+    let deadline = Instant::now() + Duration::from_secs(10);
+    loop {
+        let timeout = deadline.saturating_duration_since(Instant::now());
+        assert!(
+            !timeout.is_zero(),
+            "camera-history test scene did not retire"
+        );
+        host.device
+            .poll(wgpu::PollType::Wait {
+                submission_index: None,
+                timeout: Some(timeout),
+            })
+            .expect("wait for scene or its timing readback");
+        if host.poll_completed().expect("collect scene").is_some() {
+            assert_eq!(host.pending_frames(), 0);
+            return;
+        }
+    }
+}
 
 #[test]
 fn a_skipped_camera_cut_resets_only_the_first_submitted_view_in_its_epoch() {
@@ -25,6 +46,7 @@ fn a_skipped_camera_cut_resets_only_the_first_submitted_view_in_its_epoch() {
                 .expect("initial submission")
                 .submitted
         );
+        retire_scene(&mut host);
         host.world.authority.tick = 3;
         host.world.publication.tick = 3;
         let abandoned = host
@@ -54,6 +76,7 @@ fn a_skipped_camera_cut_resets_only_the_first_submitted_view_in_its_epoch() {
             );
             assert_eq!(host.scene.view.history_reset(), reset);
             assert_eq!(host.submitted_view_history_epoch, 1);
+            retire_scene(&mut host);
         }
     });
 }
