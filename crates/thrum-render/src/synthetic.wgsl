@@ -92,6 +92,10 @@ struct Serials {
 }
 @group(3) @binding(1) var<storage, read> history: array<HistoryRecord>;
 @group(3) @binding(2) var<uniform> serials: Serials;
+// One mesh-arena vertex (`mesh_arena::MeshVertex`, 48 bytes): position and
+// normal.x, normal.yz and uv, then tangent and bitangent sign.
+struct MeshVertex { a: vec4<f32>, b: vec4<f32>, c: vec4<f32> }
+@group(3) @binding(3) var<storage, read> mesh_vertices: array<MeshVertex>;
 struct VertexOutput {
     // Invariant, so the depth prepass rasterizes the depth the forward pass writes.
     @builtin(position) @invariant position: vec4<f32>,
@@ -111,14 +115,10 @@ struct VertexOutput {
     return vertex_at(vertex_index, visible[instance_index]);
 }
 fn vertex_at(vertex_index: u32, slot: u32) -> VertexOutput {
-    let positions = array<vec2<f32>,4>(vec2(-1.0,-1.0),vec2(1.0,-1.0),vec2(-1.0,1.0),vec2(1.0,1.0));
-    let normals = array<vec3<f32>,6>(vec3(0.0,0.0,-1.0),vec3(1.0,0.0,0.0),vec3(0.0,0.0,1.0),vec3(-1.0,0.0,0.0),vec3(0.0,1.0,0.0),vec3(0.0,-1.0,0.0));
-    let tangents = array<vec3<f32>,6>(vec3(1.0,0.0,0.0),vec3(0.0,0.0,1.0),vec3(-1.0,0.0,0.0),vec3(0.0,0.0,-1.0),vec3(1.0,0.0,0.0),vec3(1.0,0.0,0.0));
-    let face = vertex_index / 4u;
-    let n = normals[face];
-    let t = tangents[face];
-    let p = positions[vertex_index % 4u];
-    let local = n + t*p.x + cross(n,t)*p.y;
+    // The draw's index range and base vertex select the mesh in the arena.
+    let vertex = mesh_vertices[vertex_index];
+    let local = vertex.a.xyz;
+    let n = vec3(vertex.a.w, vertex.b.xy);
     let instance = instances[slot];
     var output: VertexOutput;
     var model = instance.current;
@@ -128,7 +128,7 @@ fn vertex_at(vertex_index: u32, slot: u32) -> VertexOutput {
     if instance.ids.w == 0u { output.position = vec4(2.0, 2.0, 2.0, 1.0); }
     output.world_position = world.xyz;
     output.normal = mat3x3(instance.normal0.xyz,instance.normal1.xyz,instance.normal2.xyz) * n;
-    output.uv = p*0.5+vec2(0.5);
+    output.uv = vertex.b.zw;
     output.material = instance.ids.y;
     let prior = history[slot];
     let valid = (serials.previous_lo != 0u || serials.previous_hi != 0u)
