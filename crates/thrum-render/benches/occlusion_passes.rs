@@ -1,17 +1,21 @@
 //! Paired Frustum-versus-Occlusion GPU cost of the camera draw, pass by pass,
 //! on 10k and 100k cubes: open (top-down, nothing hidden) and behind cover
-//! (a grazing view behind a wall). ABBA blocks, history committed every frame
-//! so Occlusion runs settled; GPU timestamps exclude waits. Occlusion's cost is
-//! its prepass list, depth prepass, pyramid and final cull, against the work
-//! its smaller final list saves in forward.
+//! (a grazing view behind a wall). ABBA blocks; every frame updates and then
+//! commits its view, as a host does, so Occlusion's history advances and its
+//! runs are settled. Each sample reads the frame's culling counts and the run
+//! asserts Occlusion's prepass replays a non-empty set and, behind cover, its
+//! final list hides at least 30% of Frustum's; a bench whose history stops
+//! advancing fails instead of timing Frustum's work twice. GPU timestamps
+//! exclude waits. Occlusion's cost is its prepass list, depth prepass, pyramid
+//! and final cull, against the work its smaller final list saves in forward.
 #![cfg(not(target_arch = "wasm32"))]
 
 use std::time::Duration;
 
 use thrum_render::capabilities::DeviceCapabilities;
 use thrum_render::synthetic::{
-    CullMode, FrameLighting, OffscreenTarget, PreparedSynthetic, SyntheticLight, SyntheticScene,
-    SyntheticView,
+    CullMode, CullingCounts, FrameLighting, OffscreenTarget, PreparedSynthetic, SyntheticLight,
+    SyntheticScene, SyntheticView,
 };
 use thrum_render::timing::GpuTimings;
 
@@ -38,13 +42,24 @@ fn wait(device: &wgpu::Device, submitted: wgpu::SubmissionIndex) {
         .expect("GPU finishes");
 }
 
-/// One committed frame: whole GPU ms (tone excluded) and each of `PASSES`.
+/// One updated, submitted and committed frame: whole GPU ms (tone excluded),
+/// each of `PASSES`, and the frame's culling counts.
 fn sample(
     (device, queue): (&wgpu::Device, &wgpu::Queue),
-    prepared: &mut PreparedSynthetic,
-    target: &OffscreenTarget,
+    (prepared, scene): (&mut PreparedSynthetic, &SyntheticScene),
+    target: &mut OffscreenTarget,
     timings: &mut GpuTimings,
-) -> (f64, [f64; 6]) {
+) -> (f64, [f64; 6], CullingCounts) {
+    prepared
+        .update_frame(
+            queue,
+            target,
+            scene,
+            FrameLighting::Diagnostic(SyntheticLight::default()),
+            1.0,
+        )
+        .expect("frame updates");
+    target.arm_culling_stats();
     let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
     prepared
         .encode(&mut encoder, GENERATION, target, Some(timings))
@@ -53,6 +68,7 @@ fn sample(
         .finish_render(GENERATION, &encoder)
         .expect("timestamp batch closes");
     wait(device, queue.submit([encoder.finish()]));
+    target.map_culling_stats(prepared.camera_culling(), prepared.active_instance_count());
     prepared.commit_frame();
     let mut resolve = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
     assert!(
@@ -76,7 +92,11 @@ fn sample(
         .filter(|pass| pass.name.as_ref() != "synthetic tone encode")
         .map(|pass| pass.nanoseconds / 1_000_000.0)
         .sum();
-    (whole, named)
+    // The resolve wait polled the device, so the count mapping has settled.
+    let counts = target
+        .take_culling_counts()
+        .expect("every frame reports its culling counts");
+    (whole, named, counts)
 }
 
 fn median(values: &mut [f64]) -> f64 {
@@ -125,14 +145,14 @@ fn main() {
         let lighting = FrameLighting::Diagnostic(SyntheticLight::default());
         println!(
             "adapter={}; {}x{}; shadows on; ABBA {BLOCKS} blocks (A=Frustum, B=Occlusion), \
-             history committed; medians in ms",
+             view updated and committed every frame; medians in ms",
             adapter.get_info().name,
             EXTENT[0],
             EXTENT[1]
         );
         println!(
             "count | view | whole F→O | within-block O−F | F visibility | O prepass list | \
-             O depth prepass | O pyramid | O final cull | forward F→O"
+             O depth prepass | O pyramid | O final cull | forward F→O | drawn F→O (O prepass)"
         );
         let open = SyntheticView::perspective(
             [0.0, 0.0, 2.5],
@@ -157,6 +177,7 @@ fn main() {
         for count in [10_000, 100_000] {
             for (label, view) in [("open", open), ("behind cover", cover)] {
                 let mut prepared = Vec::new();
+                let mut scenes = Vec::new();
                 for culling in [CullMode::Frustum, CullMode::Occlusion] {
                     let mut scene = SyntheticScene::grid(count).expect("grid");
                     scene.view = view;
@@ -176,8 +197,9 @@ fn main() {
                         .await
                         .expect("prepare"),
                     );
+                    scenes.push(scene);
                 }
-                let targets: Vec<_> = prepared
+                let mut targets: Vec<_> = prepared
                     .iter()
                     .map(|p| {
                         OffscreenTarget::new(&device, p, EXTENT[0], EXTENT[1]).expect("target")
@@ -193,27 +215,37 @@ fn main() {
                     for index in [0, 1, 1, 0] {
                         std::hint::black_box(sample(
                             gpu,
-                            &mut prepared[index],
-                            &targets[index],
+                            (&mut prepared[index], &scenes[index]),
+                            &mut targets[index],
                             &mut timings[index],
                         ));
                     }
                 }
                 let mut whole = [Vec::new(), Vec::new()];
                 let mut passes: [Vec<[f64; 6]>; 2] = [Vec::new(), Vec::new()];
+                let mut drawn: [Vec<f64>; 2] = [Vec::new(), Vec::new()];
+                let mut replayed = Vec::new();
                 let mut delta = Vec::new();
                 for _ in 0..BLOCKS {
                     let mut block = [0.0; 4];
                     for (position, index) in [0, 1, 1, 0].into_iter().enumerate() {
-                        let (total, named) = sample(
+                        let (total, named, counts) = sample(
                             gpu,
-                            &mut prepared[index],
-                            &targets[index],
+                            (&mut prepared[index], &scenes[index]),
+                            &mut targets[index],
                             &mut timings[index],
                         );
                         block[position] = total;
                         whole[index].push(total);
                         passes[index].push(named);
+                        drawn[index].push(f64::from(counts.drawn));
+                        if index == 1 {
+                            assert!(
+                                counts.prepass > 0,
+                                "{count} {label}: Occlusion's prepass replays last frame's set"
+                            );
+                            replayed.push(f64::from(counts.prepass));
+                        }
                     }
                     delta.push(((block[1] + block[2]) - (block[0] + block[3])) * 0.5);
                 }
@@ -225,9 +257,16 @@ fn main() {
                             .collect::<Vec<_>>(),
                     )
                 };
+                let drawn = drawn.map(|mut counts| median(&mut counts));
+                if label == "behind cover" {
+                    assert!(
+                        drawn[1] * 10.0 < drawn[0] * 7.0,
+                        "{count} {label}: Occlusion hides at least 30%: {drawn:?}"
+                    );
+                }
                 println!(
                     "{count} | {label} | {:.3} → {:.3} | {:+.3} | {:.3} | {:.3} | {:.3} | {:.3} | \
-                     {:.3} | {:.3} → {:.3}",
+                     {:.3} | {:.3} → {:.3} | {:.0} → {:.0} ({:.0})",
                     median(&mut whole[0]),
                     median(&mut whole[1]),
                     median(&mut delta),
@@ -238,6 +277,9 @@ fn main() {
                     pass(1, 4),
                     pass(0, 5),
                     pass(1, 5),
+                    drawn[0],
+                    drawn[1],
+                    median(&mut replayed),
                 );
             }
         }
