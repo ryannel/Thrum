@@ -18,6 +18,7 @@ use crate::graph::{
     Access, AccessKind, FrameGraph, GraphError, Pass, PassScope, ResourceDescriptor, ResourceId,
     ResourceScope,
 };
+use crate::timing::GpuTimings;
 
 /// Graph name of the untimed copy of each culling list's instance count.
 pub(crate) const STATS_PASS: &str = "camera culling stats";
@@ -131,6 +132,62 @@ impl PreparedSynthetic {
     }
 }
 
+/// A frame `PreparedSynthetic::submit_counted` recorded, submitted and
+/// mapped, holding its target until the counts are taken.
+#[must_use = "take the counts, or the next counted frame discards them"]
+pub struct CountedFrame<'target> {
+    target: &'target mut OffscreenTarget,
+    submission: wgpu::SubmissionIndex,
+}
+
+impl CountedFrame<'_> {
+    /// The submission to wait on before taking the counts.
+    #[must_use]
+    pub fn submission(&self) -> &wgpu::SubmissionIndex {
+        &self.submission
+    }
+
+    /// The frame's counts once the device has been polled past the
+    /// submission and the mapping has settled. `None` for Direct, a failed
+    /// or still pending mapping, or a frame whose earlier mapping had not
+    /// settled when it was armed.
+    #[must_use]
+    pub fn take(self) -> Option<CullingCounts> {
+        self.target.take_culling_counts()
+    }
+}
+
+impl PreparedSynthetic {
+    /// Record, submit and map one frame with its culling counts, in the order
+    /// `FrameHost` uses: arm the count copy, encode the scene (closing the
+    /// timestamp batch when `timings` is given), submit, then map with this
+    /// prepared scene's mode and active prefix. Call after `update_frame`
+    /// and commit the view afterwards, as for `encode`.
+    /// # Errors
+    /// Returns encoding and timestamp errors before anything is submitted.
+    pub fn submit_counted<'target>(
+        &self,
+        (device, queue): (&wgpu::Device, &wgpu::Queue),
+        generation: u64,
+        target: &'target mut OffscreenTarget,
+        mut timings: Option<&mut GpuTimings>,
+    ) -> Result<CountedFrame<'target>, RenderError> {
+        let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+            label: Some("counted synthetic frame"),
+        });
+        target.arm_culling_stats();
+        self.encode(&mut encoder, generation, target, timings.as_deref_mut())?;
+        if let Some(timings) = timings {
+            timings
+                .finish_render(generation, &encoder)
+                .map_err(RenderError::Timing)?;
+        }
+        let submission = queue.submit([encoder.finish()]);
+        target.map_culling_stats(self.camera_culling(), self.active_instance_count());
+        Ok(CountedFrame { target, submission })
+    }
+}
+
 impl SceneContext<'_> {
     /// Copy each list's instance count into the slot's count buffer.
     pub(in crate::synthetic) fn culling_stats(&mut self) -> Result<(), RenderError> {
@@ -166,7 +223,7 @@ impl OffscreenTarget {
     /// forgotten, so a mapping that settles later is reaped without being
     /// attributed to this frame. A count the last frame left untaken is
     /// discarded and unmapped.
-    pub fn arm_culling_stats(&mut self) {
+    pub(crate) fn arm_culling_stats(&mut self) {
         let Some(stats) = self.culling_stats.as_mut() else {
             return;
         };
@@ -187,10 +244,8 @@ impl OffscreenTarget {
     }
 
     /// After the host submits this slot: map an armed frame's count,
-    /// recording its mode and active prefix (`PreparedSynthetic::camera_culling`
-    /// and `active_instance_count`). Nothing waits on the mapping; poll the
-    /// device before `take_culling_counts`.
-    pub fn map_culling_stats(&mut self, mode: CullMode, active: u32) {
+    /// recording its mode and active prefix. Nothing waits on the mapping.
+    pub(crate) fn map_culling_stats(&mut self, mode: CullMode, active: u32) {
         let Some(stats) = self.culling_stats.as_mut() else {
             return;
         };
@@ -213,8 +268,7 @@ impl OffscreenTarget {
     /// the buffer. `None` for Direct, a failed mapping, a mapping still
     /// pending (left for the next arm), and an unarmed frame, which reaps
     /// an earlier frame's settled mapping without reporting it.
-    #[must_use]
-    pub fn take_culling_counts(&mut self) -> Option<CullingCounts> {
+    pub(crate) fn take_culling_counts(&mut self) -> Option<CullingCounts> {
         let stats = self.culling_stats.as_mut()?;
         if stats.mapping.load(Ordering::Acquire) == PENDING {
             return None;

@@ -24,9 +24,9 @@ pub use crate::visibility::CullMode;
 use crate::visibility::{
     self, MeshRecord, OcclusionTarget, VisibilityIds, VisibilityPrepared, VisibilityTarget,
 };
-pub use stats::CullingCounts;
 pub(super) use stats::CullingStats;
 pub(super) use stats::STATS_PASS;
+pub use stats::{CountedFrame, CullingCounts};
 
 /// Stable mesh row 0: the diagnostic cube's index range and local bounds.
 const CUBE_MESH: MeshRecord = MeshRecord {

@@ -19,7 +19,7 @@ use crate::graph::{
 use crate::graph_record::{ExecutableGraph, RecordFamily};
 use crate::timing::{GpuTimings, TimingError};
 use crate::visibility::{VisibilityPrepared, VisibilityTarget};
-pub use camera_culling::{CullMode, CullingCounts};
+pub use camera_culling::{CountedFrame, CullMode, CullingCounts};
 use glam::Vec3;
 use std::sync::Arc;
 use wgpu::util::DeviceExt;
