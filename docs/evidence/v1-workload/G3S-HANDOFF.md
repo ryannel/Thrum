@@ -91,10 +91,14 @@ The Codex goal remains active. Its attachment is
   azimuth versus 22.49% by 3D disk rays. A 32-column Metal approximation
   gives 21.57%. Sharing the traversal cuts 1080p diagnostic GPU p95 from
   55.13–56.31 to 20.37–21.03 ms (load 11.89–12.54), within one code
-  over all 76 frames. The beam still costs too much per fragment.
-  Close-clearance policy, compact receiver reach, aerial ownership,
-  discarded-frame equality and Chrome remain open. Reference rows use
-  rendered solar time, verified in the 12-frame `solar-rendered-time-witness`.
+  over all 76 frames. Depth-guided 2×2 visibility reuse still produces
+  139-code outliers after refinement. At sampled 2×2 tile positions,
+  a conservative union retains every individual receiver's candidates
+  and yields 13/43/175 leaves at p50/p95/max. Test workgroup-local
+  sharing with exact per-receiver visibility. A fixed full-frame list
+  can cost 33 MB for just 16 IDs per tile at 1080p. Close clearance,
+  compact receiver reach, aerial ownership, discarded-frame equality
+  and Chrome remain open. Reference rows use rendered solar time.
   [Maximum Mipmaps](https://pure.mpg.de/pubman/item/item_1325622_5/component/file_3590464/i3d08.pdf).
   Exact builds, raw rows and clips are in `tmp/g3s-sunset-lip/`. The
   diagnostic source and rerun command are on `codex/g3s-horizon-metal-wip`.
