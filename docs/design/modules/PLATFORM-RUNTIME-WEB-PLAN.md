@@ -13,8 +13,8 @@ runtime alone; material reload does GPU work while lost. Brief `tmp/g3b-web-shel
 report), all taken in this revision. Extraction code at 987a3ac3: APPROVE WITH CHANGES (brief
 `tmp/g3b-web-shell/review-brief-extraction.md`, report `tmp/g3b-web-shell/review-extraction.md`, Opus 5.5), all taken.
 Milestone: M1 Engine web shell carries the V1 page unchanged · Updated: 2026-11-08
-Now: M1 built and proven except the route baseline, which fails identically before the change ([evidence](../../evidence/v1-workload/G3B-WEB-SHELL-2026-11-08.md)); the loss gates and the extraction await Thrum Core's verdict as seam diffs
-Next: land both on Thrum Core's verdict, rebased and rerun
+Now: loss gates landed on main (0a9009c1); M1 extraction built and proven ([evidence](../../evidence/v1-workload/G3B-WEB-SHELL-2026-11-08.md)), awaiting Thrum Core's verdict as a seam diff
+Next: land the extraction on Thrum Core's verdict, rebased and rerun; then M1 closes
 Blocked: none
 
 ## Problem
@@ -243,13 +243,12 @@ Done when:
 - [x] The Chrome checker passes: `check_v1_browser.mjs --case all`, which includes every case but `material` (and
       now `valley-late-attach`), plus
       `--case material` on the development page. The checker is not edited after the witness commit.
-- [ ] The G7 route check passes against the committed baseline. The pre-change work item records two runs of the
+- [x] The G7 route check passes against the committed baseline. The pre-change work item records two runs of the
       witness commit's route and checker images. If those two are byte-identical, the post-change images must be
       byte-identical to them. Otherwise, the post-change route grid difference against the pre-change run must be
       zero at the route check's own cell grid.
-      Held: the route check fails on the reference itself (night-upslope drift beyond the stored baseline, the same
-      worst differences before and after). The route stops are byte-identical before and after; the change adds no
-      difference. Passing against the baseline waits on whoever owns that baseline, not on this plan.
+      The route stops are byte-identical before and after. The check failed on the reference too until Thrum Core
+      refreshed the night baseline (73fdca0c); on that baseline it passes with the extraction (0.003 / 0.004 / 0.005).
 - [x] `report()` text keeps its field names, order and number formatting. The default-page Wasm size, before and
       after, is recorded.
 - [x] `./dev check` passes, and an independent review agrees. Its brief and verdict go on the Reviews line.
@@ -314,3 +313,5 @@ uses `thrum-app`. It gets its own commission.
 - 2026-11-08 M1 runs: reference (a66352e3) and after (c1e03736) both 30/30 twice and material twice; route images
   byte-identical at the route stops; Wasm +10,414 B; `./dev check` passes. The route check's baseline item is held:
   it fails on the reference with the same night-upslope drift.
+- 2026-11-08 Loss gates with Thrum Core's retained-view correction landed on main at 0a9009c1. The extraction's route
+  check passes on Thrum Core's refreshed night baseline (73fdca0c).
