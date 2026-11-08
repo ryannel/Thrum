@@ -57,6 +57,24 @@ configuring a current candidate surface before publishing the device. The exact 
 and reported a persistent invalid extent after its retry. Raw probe and helper input hash are in
 `tmp/g3b-mac-surface-loss/`. The live window loss witness remains open.
 
+### Mac lost encoded frame
+
+The Mac render actor checks the device-loss signal on both sides of
+drawable acquisition. If the callback has reported loss, it discards
+the ready encoder and timing reservation without the empty submit
+used by healthy skip. The focused real Metal regression observes one
+healthy flush and zero additional calls after destruction. Restoring
+ordinary token drop adds one attempted flush and fails at the queue
+boundary. The abandoned camera cut leaves the submitted history epoch
+and the committed world endpoint unchanged.
+
+This covers the acquired-frame cleanup seam after an observed loss.
+The encoder’s earlier failure cleanup still flushes staging within
+encoding, before the caller receives its result. This check does not
+exercise a live acquired drawable, or measure losses racing the GPU
+calls themselves. Logs and the negative control are in
+`tmp/g3b-mac-qualification/lost-encoded-*.log`.
+
 **Pending capture identity:** two independent Metal instances can reuse the same wgpu device ID. The recording
 host now rejects a foreign capture before polling, while visual replacement keeps it readable and device replacement
 retires it. Both Metal tests and Chrome cooked-valley recovery pass. Raw checks are in `tmp/g3b-capture-identity/`.

@@ -132,6 +132,16 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> EncodedFrame<'_, W, V> {
         self.report
     }
 
+    /// Discard this frame after the platform observes loss of its device.
+    ///
+    /// Committed world progress is retained. The recorded encoder and timing
+    /// reservation are released without flushing staged writes to the lost
+    /// queue. Use [Self::skip] for a healthy device so later frames can reuse
+    /// the uploaded data.
+    pub fn abandon_lost_device(mut self) {
+        let _ = self.discard_recording();
+    }
+
     /// Submit the recorded scene and optional surface pass once, or return
     /// the dropped report if the publication was stale.
     /// # Errors
@@ -152,23 +162,54 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> EncodedFrame<'_, W, V> {
         }
         Ok(self.report)
     }
+
+    fn discard_recording(&mut self) -> Option<&mut FrameHost<W, V>> {
+        let ReadyFrame { host, recorded } = self.ready.take()?;
+        drop(recorded.encoder);
+        let discarded = host.slots[recorded.slot_index]
+            .timings
+            .discard_unsubmitted(host.generation);
+        debug_assert!(discarded.is_ok(), "unsubmitted scene timing state changed");
+        host.dropped_views = host.dropped_views.saturating_add(1);
+        if host.presenter.is_some() {
+            host.dropped_surface = host.dropped_surface.saturating_add(1);
+        }
+        Some(host)
+    }
 }
 
 impl<W: FrameWorld, V: SceneSource<W::Page>> Drop for EncodedFrame<'_, W, V> {
     fn drop(&mut self) {
-        if let Some(ReadyFrame { host, recorded }) = self.ready.take() {
-            drop(recorded.encoder);
-            let discarded = host.slots[recorded.slot_index]
-                .timings
-                .discard_unsubmitted(host.generation);
-            debug_assert!(discarded.is_ok(), "unsubmitted scene timing state changed");
+        if let Some(host) = self.discard_recording() {
             // Queue::write_buffer stages bytes until submit. Release that staging
             // even when this encoder is discarded without a scene submission.
-            host.queue.submit([]);
-            host.dropped_views = host.dropped_views.saturating_add(1);
-            if host.presenter.is_some() {
-                host.dropped_surface = host.dropped_surface.saturating_add(1);
-            }
+            staging_flush::flush(&host.queue);
         }
+    }
+}
+
+#[cfg(not(test))]
+mod staging_flush {
+    pub(super) fn flush(queue: &wgpu::Queue) {
+        queue.submit([]);
+    }
+}
+
+#[cfg(test)]
+pub(super) mod staging_flush {
+    use std::cell::Cell;
+
+    thread_local! {
+        static ATTEMPTS: Cell<u64> = const { Cell::new(0) };
+    }
+
+    pub(in crate::runtime) fn attempts() -> u64 {
+        ATTEMPTS.get()
+    }
+
+    pub(super) fn flush(queue: &wgpu::Queue) {
+        // Count the attempt before wgpu can silently discard a lost-device submit.
+        ATTEMPTS.set(ATTEMPTS.get() + 1);
+        queue.submit([]);
     }
 }
