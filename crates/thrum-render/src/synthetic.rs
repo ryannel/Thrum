@@ -883,19 +883,6 @@ impl PreparedSynthetic {
         Self::prepare_with_lighting(capabilities, queue, scene, lighting, exposure).await
     }
 
-    /// Prepare with each slot's mesh row selected: the bucket route.
-    #[cfg(test)]
-    pub(in crate::synthetic) async fn prepare_selected(
-        capabilities: &DeviceCapabilities,
-        queue: &wgpu::Queue,
-        scene: &SyntheticScene,
-        slots: Vec<mesh_arena::MeshId>,
-    ) -> Result<Self, RenderError> {
-        let lighting = FrameLighting::Diagnostic(SyntheticLight::default());
-        let selection = MeshSelection { slots };
-        Self::prepare_with_meshes(capabilities, queue, scene, lighting, 1.0, Some(selection)).await
-    }
-
     async fn prepare_with_lighting(
         capabilities: &DeviceCapabilities,
         queue: &wgpu::Queue,
@@ -2345,6 +2332,21 @@ impl OffscreenTarget {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    impl PreparedSynthetic {
+        /// Prepare with each slot's mesh row selected: the bucket route.
+        pub(in crate::synthetic) async fn prepare_selected(
+            capabilities: &DeviceCapabilities,
+            queue: &wgpu::Queue,
+            scene: &SyntheticScene,
+            slots: Vec<mesh_arena::MeshId>,
+        ) -> Result<Self, RenderError> {
+            let lighting = FrameLighting::Diagnostic(SyntheticLight::default());
+            let selection = MeshSelection { slots };
+            Self::prepare_with_meshes(capabilities, queue, scene, lighting, 1.0, Some(selection))
+                .await
+        }
+    }
 
     #[test]
     fn exposure_refuses_invalid_input_and_derived_gain() {
