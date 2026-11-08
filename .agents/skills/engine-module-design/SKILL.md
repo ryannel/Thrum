@@ -40,7 +40,8 @@ choose the techniques, the research, the experiments and how to break the work d
   and the physics make that cue read (delegate the research and keep working), take it back to the design, and record
   what changes. Then make the call and log it in the plan:
   - *Foundational* (it could change the module's design, or blocks the milestone's game outcome): push through with
-    research and design work.
+    research and design work. The research note comes first and is cited in the plan; analyses, bounds and screens
+    on the same cue are more attempts until it exists.
   - *Not foundational*: park it as a named later spike with what you learned, and move on to the milestone's other
     work.
   Tell the overseer which call you made.
