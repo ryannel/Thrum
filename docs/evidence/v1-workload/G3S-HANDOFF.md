@@ -8,6 +8,23 @@ The Codex goal remains active. Its attachment is
 
 ## Current checkpoint
 
+- The first opt-in live graph is saved at `d7738029` in
+  `tmp/g3s-live-receiver`. Native Metal cooked-valley smoke
+  submitted 12 matched 1080p/60 frames per arm in each order.
+  The first image changes 320 ground pixels by up to six codes.
+  GPU pass-sum p50 (11 warm frames) rose from 3.19 to 4.06 ms
+  at load 14, with the composed opaque phase 1.24 to 2.10 ms.
+  At load 53–54 the reverse-order row is 18.03 to 26.18 ms.
+  Investigate the tripwire with named pass times. These are
+  startup samples, and the full motion and cost comparison is
+  still due. The receiver-enabled material skip test passes.
+  The actual guard and cooked tie, whole-view hook fallback,
+  Chrome and D1 motion remain open. The lossless clips,
+  per-frame timings, exact patch, `run-live-smoke.sh` and
+  `live-witness-next.md` are in
+  `tmp/g3s-sunset-lip/graph/production-pcss/opaque-winner/`.
+  [Code review](../../design/modules/ATMOSPHERE-PLAN.md#m3-live-receiver-review-brief).
+
 - The fixed packed GPU resolve over `81f55ef2` reproduces the
   CPU oracle on the held caster, crossing and extinction crops.
   The first f32 world-position subtraction missed two crossing
