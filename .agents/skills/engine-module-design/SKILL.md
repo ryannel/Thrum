@@ -41,7 +41,8 @@ choose the techniques, the research, the experiments and how to break the work d
   what changes. Then make the call and log it in the plan:
   - *Foundational* (it could change the module's design, or blocks the milestone's game outcome): push through with
     research and design work. The research note comes first and is cited in the plan; analyses, bounds and screens
-    on the same cue are more attempts until it exists.
+    on the same cue are more attempts until it exists. The note ends in a design choice, not a list of things to
+    test: revise the design with a cost account, review it, then change the runtime once.
   - *Not foundational*: park it as a named later spike with what you learned, and move on to the milestone's other
     work.
   Tell the overseer which call you made.
