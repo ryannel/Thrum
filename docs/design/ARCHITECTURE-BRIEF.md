@@ -271,8 +271,8 @@ removal, and quality allocation across views and systems. These are research que
 
 ## Method and status
 
-Use [plan-engine](../../.agents/skills/plan-engine/SKILL.md) to maintain this brief and write module briefs; use
-[plan-module](../../.agents/skills/plan-module/SKILL.md) for a module's research, design and milestones.
+Use `/plan-project` (with [engine architecture](../../.agents/skills/thrum-engineering/references/architecture.md)) to maintain this brief and write module briefs; use
+`/plan-module` for a module's research, design and milestones.
 Keep requirements, selection, implementation, evidence and user acceptance separate. Existing research may later supply
 candidates; existing demonstrations do not select the architecture. The author has prior exposure to water research
 and repository rules, so this is a fresh requirements exercise, not a claim of blind technical independence.

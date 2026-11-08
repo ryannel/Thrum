@@ -5,8 +5,8 @@ cues, with measured cost and honest limits.
 
 ## Work from the plan
 
-Work through the [plan](../../plan-module/references/plan.md): keep its status current, tick work off as it's done, and revise it as you learn.
-A cue that won't come follows [staying on course](../SKILL.md#staying-on-course).
+Work through the plan: keep its status current, tick work off as it's done, and revise it as you learn.
+A cue that won't come follows the stay-on-course rule in `/build-milestone`.
 
 ## Let the design choose the next slice
 
@@ -39,7 +39,7 @@ the game's own controls, and capture of the running game watched in motion. Anyt
 - **Make the game able to host the milestone.** If the test game can't yet show the scene a milestone needs (no sea
   for a shadow over water, say), adding that scene through public interfaces is work in your plan. Use simple stand-ins
   for neighbours that don't exist yet, label them, and take anything that would change another module's design to
-  [plan-engine](../../plan-engine/SKILL.md).
+  `/plan-project`.
 - **Supply what the judgement needs.** Provide the content and surroundings needed to judge at the
   intended distances and speeds, and reject inadequate content before expensive preparation.
 - **Rebuild before reusing evidence.** When a source or recipe changes, rebuild the affected products and recheck the
@@ -71,9 +71,9 @@ the game's own controls, and capture of the running game watched in motion. Anyt
 - **Independent visual review is the evaluator's.** For milestones with `review: true`, the clean-context evaluator
   judges the sequences and records `agent_reviewed`. Say plainly when output is poor. Owner feedback steers later slices; it is never a pause.
 - **Tie evidence to the build.** Tie captures and timings to the actual loaded build, inputs and quality state.
-- **Measure cost on the assembled path.** For performance-sensitive work, follow [performance](../../plan-module/references/performance.md),
+- **Measure cost on the assembled path.** For performance-sensitive work, follow [performance](performance.md),
   ending with an assembled measurement. Label timings taken on a shared, contended GPU as such.
-- **Review, fix, recheck.** Use [review](../../review-milestone/references/review.md) for design, code, output and performance claims. Resolve
+- **Review, fix, recheck.** Use [review](review.md) for design, code, output and performance claims. Resolve
   actionable findings, then check whether a fix weakened another cue.
 
 Deliver:

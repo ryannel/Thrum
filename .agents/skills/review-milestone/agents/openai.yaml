@@ -1,4 +1,0 @@
-interface:
-  display_name: "Review a milestone"
-  short_description: "Milestone level: clean-context verdict against the done-when file"
-  default_prompt: "Use $review-milestone to judge this milestone against its done-when file."

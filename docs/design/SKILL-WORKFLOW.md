@@ -5,8 +5,8 @@
 > the record of the 1–2 November skill rationale and forward tests; its process instructions (model and effort, delegation, coordination) no longer apply.
 
 The [design programme](DESIGN-PROGRAMME.md) owns this commission's orchestration, evidence standard and completion
-gate. The architecture skill (now [plan-engine](../../.agents/skills/plan-engine/SKILL.md)) governs whole-engine work; the
-module skill (now [plan-module](../../.agents/skills/plan-module/SKILL.md)) governs a bounded module. This note records why
+gate. The architecture skill (now `/plan-project`) governs whole-engine work; the
+module skill (now `/plan-module`) governs a bounded module. This note records why
 their workflow boundary was adjusted and how to test it independently.
 
 ## Source rationale
