@@ -34,6 +34,7 @@ mod exposure;
 mod forward;
 mod frame_stats;
 mod history_gpu;
+mod mesh_arena;
 mod readback;
 mod scene_apply;
 mod scene_graph;
