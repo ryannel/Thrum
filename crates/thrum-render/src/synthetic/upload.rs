@@ -127,11 +127,11 @@ impl InstanceUpload {
     pub(super) fn seed_shadow_clamps(
         &mut self,
         instances: &[InstanceRecord],
-        clamped: impl Fn(&InstanceRecord) -> bool,
+        clamped: impl Fn(usize, &InstanceRecord) -> bool,
     ) {
         self.active_shadow_clamps = 0;
-        for (flag, instance) in self.shadow_clamped.iter_mut().zip(instances) {
-            *flag = clamped(instance);
+        for (slot, (flag, instance)) in self.shadow_clamped.iter_mut().zip(instances).enumerate() {
+            *flag = clamped(slot, instance);
             self.active_shadow_clamps += usize::from(*flag);
         }
     }
@@ -164,7 +164,7 @@ impl InstanceUpload {
         queue: &wgpu::Queue,
         instances: &[InstanceRecord],
         changed_slots: &[u32],
-        shadow_depth_clamped: impl Fn(&InstanceRecord) -> bool,
+        shadow_depth_clamped: impl Fn(usize, &InstanceRecord) -> bool,
     ) -> Result<InstanceUploadReport, RenderError> {
         if instances.len() != self.instance_count as usize {
             return Err(RenderError::SceneCapacity);
@@ -189,7 +189,7 @@ impl InstanceUpload {
             };
             let start = self.slot_to_physical[index] as usize * abi::INSTANCE_BYTES;
             if self.packed[start..start + abi::INSTANCE_BYTES] != bytes {
-                let clamped = shadow_depth_clamped(&instances[index]);
+                let clamped = shadow_depth_clamped(index, &instances[index]);
                 self.staged.extend_from_slice(&bytes);
                 self.staged_shadow.push(clamped);
                 self.staged_two_sided
