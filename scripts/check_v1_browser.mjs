@@ -1466,7 +1466,7 @@ async function qualifyMovingRoute(cdp, sessionId, poll, timeout, output, files) 
   for (let tick = origin; tick <= last; tick += 1) if (!record.samples[tick]) throw new Error(`moving-route: no sample for routed tick ${tick}`);
   await fs.writeFile(path.join(output, 'moving-route.record.json'), JSON.stringify(record, null, 2));
   return { file: movingRouteFile, sha256: sha(files.movingRoute), cooked, header: record.header, steps: record.steps.length, captures,
-    scope: 'Fresh route.html page with no requestAnimationFrame: the actual authored camera driven one fresh tick per step at the route phase from page clock origin 0, paced by one route-owned timer; checkpoint images are Chrome presented canvas compositor captures, not the submitted pre-display image; no timing or cadence claim' };
+    scope: 'Fresh route.html page with no requestAnimationFrame: the actual authored camera driven one fresh tick per step at the route phase from page clock origin 0, paced by one route-owned timer per step plus bounded slot-wait timers (500 ms at most) where no frame slot is free; checkpoint images are Chrome presented canvas compositor captures, not the submitted pre-display image; no timing or cadence claim' };
 }
 
 // Publish generation 2 of the watched valley copy, so the route page meets a store the route did not declare.
