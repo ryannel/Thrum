@@ -1,6 +1,6 @@
 ---
 name: build-parallel
-description: Runs several Thrum module streams at once under one Claude lead session. The lead runs Codex generators through scripts/agent_loop.py, evaluators and planners as subagents, and keeps quota and escalation by script. Use when the owner asks to fan out, run modules in parallel, or build several modules' milestones at once. Not for one stream (build-milestone in a single chat).
+description: Runs several Thrum module streams at once under one Claude lead session. The lead runs Codex generators through scripts/agent_loop.py, evaluators and planners as subagents, forecasts quota and decides escalation by script. Use when the owner asks to fan out, run modules in parallel, or build several modules' milestones at once. Not for one stream (build-milestone in a single chat).
 disable-model-invocation: true
 ---
 
@@ -22,8 +22,10 @@ opinions to their briefs. That keeps their work independent, the same way Anthro
    --module <M> --worktree <path>`). A module without them goes to `/plan-module` first, through the planner below.
 2. **Confirm with the owner, once, before launching anything:**
    - the streams;
-   - Codex quota (`python3 /Users/ryannel/Workspace/codexctl/codexctl.py quota`) against about 10% a day to the reset;
+   - the quota forecast (`python3 scripts/agent_loop.py quota`): used, burn per day, and whether it lasts to the reset;
    - your proposed number of concurrent streams.
+
+   The owner sets the pace by choosing how many streams run; the loop never holds work back for quota.
 
    This is the only question you ask. After it, nothing waits on the owner.
 3. **Set up each stream:**
@@ -47,7 +49,7 @@ opinions to their briefs. That keeps their work independent, the same way Anthro
 | `CLAIMED` with `review: true` | Run the `thrum-evaluator` subagent: "Review milestone `<id>` of `<MODULE>` at `<commit>`, worktree `<path>`." Nothing else. |
 | `BLOCKED`, `NEEDS_CONTEXT` | Read the report. Context you can supply from files goes back by resume (`--message`). A design or contract problem goes to the planner. Otherwise it goes in the daily report, and the stream moves to its next independent milestone if there is one. |
 | `BUDGET` | Treat it as a failed close: run the evaluator on what exists, so the findings drive the next attempt. |
-| `FLOOR`, `PACE` | Stop launching Codex work, and put it in the report with the evidence. Re-check pace every few hours. |
+| `FLOOR` | Stop launching Codex work, and put it in the report with the evidence. |
 | `PIN` | Stop that stream and report: a turn ran on the wrong model or effort. |
 | `DONE` with items not passing, or not yet on main | Resume with `--message` naming what's missing. |
 | `PAUSED` | The goal was paused in the Codex app, and only its play button resumes it. Put it in the report and leave the stream. |
@@ -76,7 +78,8 @@ Keep it to a screen:
 - verdicts the evaluator gave;
 - new inspection lists, so the owner can adjust a bar that's too high or too low;
 - parked or blocked items;
-- quota used against pace.
+- the quota forecast. Every result line carries one; when it first says the limit runs out before the reset, tell
+  the owner in chat with the forecast, and keep running until they change the streams.
 
 When the owner overturns a verdict, add it to `.agents/skills/review-milestone/references/graded-examples.md`.
 

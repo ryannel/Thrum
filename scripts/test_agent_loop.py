@@ -36,10 +36,16 @@ class Decisions(unittest.TestCase):
         self.assertEqual([agent_loop.escalation(n) for n in range(7)],
                          ["none", "same-session", "same-session", "fresh-session", "replan", "park", "park"])
 
-    def test_pace_allows_more_as_reset_nears(self):
-        now = 1_000_000.0
-        self.assertAlmostEqual(agent_loop.allowed_used_percent(now + 6 * 86400, now, 10), 40.0)
-        self.assertEqual(agent_loop.allowed_used_percent(now - 10, now, 10), 100.0)
+    def test_forecast_from_last_day(self):
+        h, now, reset = 3600, 1_000_000.0, 1_000_000.0 + 72 * 3600
+        samples = [(now - 24 * h, 40.0, reset), (now - 12 * h, 45.0, reset), (now, 50.0, reset)]
+        f = agent_loop.forecast(samples, now)
+        self.assertEqual(f["per_day"], 10.0)
+        self.assertIsNone(f["runs_out"])  # 50% left, 30% used by the reset
+        fast = [(now - 24 * h, 20.0, reset), (now, 50.0, reset)]
+        self.assertIsNotNone(agent_loop.forecast(fast, now)["runs_out"])  # 30%/day, 50% left, 72 h to reset
+        old_window = [(now - 20 * h, 90.0, now - 10 * h), (now - 2 * h, 1.0, reset), (now, 2.0, reset)]
+        self.assertEqual(agent_loop.forecast(old_window, now)["per_day"], 12.0)
 
     def test_report_word_reads_last_report_line(self):
         self.assertEqual(agent_loop.report_word("work\nBLOCKED: no Metal device\nevidence"), "BLOCKED")
@@ -141,26 +147,23 @@ class RunLoop(unittest.TestCase):
         self.assertEqual(last[:3], ["exec", "resume", "t1"])
         self.assertEqual(last[-1], "FINDINGS")
 
-    def test_pace_is_checked_on_every_run(self):
+    def test_quota_reads_only_the_weekly_codex_limit(self):
         sessions = self.home / "sessions"
         sessions.mkdir()
-        limits = {"limit_id": "codex", "primary": {"used_percent": 99.0, "window_minutes": 10080,
-                                                   "resets_at": 4_000_000_000}}
-        (sessions / "rollout-x.jsonl").write_text(json.dumps({"type": "event_msg", "payload": {
-            "type": "token_count", "rate_limits": limits}}))
-        self.assertEqual(self.run_loop()["result"], "PACE")
-        self.assertEqual(self.run_loop()["result"], "PACE")
-        self.assertFalse(self.log.exists())
+        def line(ts, limit_id, used, window):
+            return json.dumps({"timestamp": ts, "type": "event_msg", "payload": {"type": "token_count", "rate_limits": {
+                "limit_id": limit_id, "primary": {"used_percent": used, "window_minutes": window,
+                                                  "resets_at": 4_000_000_000}}}})
+        (sessions / "rollout-x.jsonl").write_text("\n".join([
+            line("2026-11-08T10:00:00Z", "codex", 47.0, 10080), line("2026-11-08T11:00:00Z", "premium", 0.0, 0)]))
+        self.assertEqual(agent_loop.quota_samples(0), [(1794132000.0, 47.0, 4e9)])
 
-    def test_rate_limits_ignore_other_limits(self):
-        sessions = self.home / "sessions"
-        sessions.mkdir()
-        lines = [{"type": "event_msg", "payload": {"type": "token_count", "rate_limits": {
-            "limit_id": "codex", "primary": {"used_percent": 47.0, "window_minutes": 10080, "resets_at": 1}}}},
-                 {"type": "event_msg", "payload": {"type": "token_count", "rate_limits": {
-            "limit_id": "premium", "primary": {"used_percent": 0.0, "window_minutes": 0, "resets_at": 1}}}}]
-        (sessions / "rollout-x.jsonl").write_text("\n".join(json.dumps(l) for l in lines))
-        self.assertEqual(agent_loop.latest_rate_limits()["used_percent"], 47.0)
+    def test_result_line_carries_quota(self):
+        import contextlib, io
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            self.run_loop()
+        self.assertIn("quota", json.loads(out.getvalue().splitlines()[-1]))
 
     def test_second_report_without_progress_finishes(self):
         os.environ.update(FAKE_PASS="0", FAKE_REPLY="BLOCKED: no device")
