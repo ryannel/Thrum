@@ -44,7 +44,7 @@ impl DayCycle {
         (tick % Self::TICKS_PER_DAY) as f32 / Self::TICKS_PER_DAY as f32
     }
 
-    pub(crate) fn sample(tick: u64, alpha: f32, phase_offset: f32) -> SunSample {
+    fn rendered_phase(tick: u64, alpha: f32, phase_offset: f32) -> f32 {
         debug_assert!(alpha.is_finite() && (0.0..=1.0).contains(&alpha));
         debug_assert!(phase_offset.is_finite() && (0.0..1.0).contains(&phase_offset));
         let alpha = if alpha.is_finite() {
@@ -60,7 +60,15 @@ impl DayCycle {
             ((tick - 1) % Self::TICKS_PER_DAY) as f32 + alpha
         };
         let phase = phase_ticks / Self::TICKS_PER_DAY as f32 + phase_offset;
-        let phase = if phase >= 1.0 { phase - 1.0 } else { phase };
+        if phase >= 1.0 { phase - 1.0 } else { phase }
+    }
+
+    pub(crate) fn rendered_time_of_day(tick: u64, alpha: f32, phase_offset: f32) -> f32 {
+        (Self::rendered_phase(tick, alpha, phase_offset) + 0.5).rem_euclid(1.0)
+    }
+
+    pub(crate) fn sample(tick: u64, alpha: f32, phase_offset: f32) -> SunSample {
+        let phase = Self::rendered_phase(tick, alpha, phase_offset);
         let hour_angle = TAU * phase;
         let (sin_hour, cos_hour) = hour_angle.sin_cos();
         let (sin_latitude, cos_latitude) = FRAC_PI_4.sin_cos();
@@ -133,6 +141,34 @@ mod tests {
             let length_squared = sample.toward_sun.into_iter().map(|v| v * v).sum::<f32>();
             assert!((length_squared - 1.0).abs() < 1e-5);
         }
+    }
+
+    #[test]
+    fn rendered_solar_time_uses_the_same_previous_to_current_interval_as_lighting() {
+        let tick = 1;
+        let offset = DayCycle::offset_for_time(tick, 0.0).expect("midnight");
+        let alpha = 0.25;
+        let rendered = DayCycle::rendered_time_of_day(tick, alpha, offset);
+        let ticks_per_day = DayCycle::TICKS_PER_DAY as f32;
+        let expected = 1.0 - (1.0 - alpha) / ticks_per_day;
+        assert!((rendered - expected).abs() < 1e-6);
+        assert_eq!(
+            DayCycle::rendered_time_of_day(tick, 1.0, offset),
+            DayCycle::time_of_day(tick, offset)
+        );
+        assert_eq!(
+            DayCycle::rendered_time_of_day(0, alpha, 0.0),
+            DayCycle::time_of_day(0, 0.0)
+        );
+        let direction = DayCycle::sample(tick, alpha, offset).toward_sun;
+        let offset_at_rendered = DayCycle::offset_for_time(0, rendered).expect("rendered time");
+        let resampled = DayCycle::sample(0, 0.0, offset_at_rendered).toward_sun;
+        assert!(
+            direction
+                .into_iter()
+                .zip(resampled)
+                .all(|(a, b)| (a - b).abs() < 1e-5)
+        );
     }
 
     #[test]
