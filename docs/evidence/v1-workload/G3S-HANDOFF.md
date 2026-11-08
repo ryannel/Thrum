@@ -8,24 +8,36 @@ The Codex goal remains active. Its attachment is
 
 ## Current checkpoint
 
-- M3 stock baseline at `efa82534` reproduces the west-spur flash in
-  300 complete offscreen Metal submissions at 1920×1080 and 60 Hz.
-  Across x=480–1200 at y=665, frames 226→227 drop a median 50 red
-  codes and peak at −82. Forward p50/p95 is 2.043/2.850 ms and
-  pass sum with blit is 4.023/4.853 ms under shared load (1-minute
-  average 32.26→29.52). See
-  `tmp/g3s-sunset-lip/graph/production-pcss/` for `manifest.json`,
-  input hashes, the exact source snapshot, all three native and web
-  builds, and `metal-west-spur-crossing-stock-16/` for the raw
-  timing rows, lossless clip and signed pixel checks. From the root,
-  run `bash tmp/g3s-sunset-lip/graph/production-pcss/build.sh` to
-  resume building and `bash tmp/g3s-sunset-lip/graph/production-pcss/record_metal.sh west-spur-crossing stock-16 tmp/g3s-stock-repeat`
-  to rerun into a fresh output folder. The default sandbox finds no
-  Metal adapter. The device-enabled run completed without a window.
-  Fixed and rotated 32 differ by a compile-time phase flag alone.
-  No candidate screen ran. Next establish exact Chrome submission
-  capture and the fixed-Sun pan, then compare the matched arms.
-  [Reviewed screen protocol](../../design/modules/ATMOSPHERE-PLAN.md#m3-production-pcss-review-brief).
+- M3's first matched production PCSS screen fails D1 at source
+  `efa82534`. At row 665 across x=480–1200, stock, fixed and rotated
+  report median red-code steps of −50, −29 and −8 at frames 226→227
+  on both targets. Absolute p95 is 72, 39 and 34, and the rotated
+  local p95 rises to 40 at 227→228. Independent native-pixel review
+  sees regular crosshatching along the warm penumbra in frames
+  223–231 on Metal and Chrome. At 226→227 the longest contiguous
+  drop of more than 15 green codes shrinks from 448 pixels to one.
+  Reject rotation for the visible grain. Keep the shipped shader.
+  The early 74–94 trajectory likewise shifts the worst local step
+  from frame 77 to 78 while reducing it from 81 to 47.5 red codes
+  at p95. Whole-frame GPU pass-sum p50/p95 at the 1080p crossing is
+  4.023/4.853, 4.340/7.362 and 4.070/5.245 ms on Metal, and
+  3.539/7.799, 3.211/3.801 and 3.211/5.898 ms on Chrome. These
+  sequential observations ran under changing shared load and do
+  not establish a speedup.
+- The evidence and rerun tooling are in
+  `tmp/g3s-sunset-lip/graph/production-pcss/`. The manifest,
+  shader arms and native/web probe builds are frozen there.
+  `run_screen.sh` resumes complete rows and `audit_all.sh` verifies
+  frame counts, alpha, cooked root, Sun and camera identity. All 18
+  rows pass, at 300 crossing, 95 extinction and 480 pan frames per arm.
+  `independent-review/` holds lossless strips and pixel metrics.
+  The Chrome diagnostic exports read-only completed-frame metadata,
+  drives the fixed clock directly and records the submitted canvas
+  with no RAF gaps. The fixed-Sun pan holds 17.69 h while driving
+  −110° to −70°. These are offscreen motion records. Physical
+  display cadence, route and control requalification, cooked
+  replacement and discard equality were outside this rejected
+  filter screen. [Reviewed screen protocol](../../design/modules/ATMOSPHERE-PLAN.md#m3-production-pcss-review-brief).
 
 - M2 orientation, source `9c1021bb`: the CPU witness matches 30
   named-star projections within 2.020e-7 direction error. All 18,000
