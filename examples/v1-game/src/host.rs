@@ -404,6 +404,12 @@ impl FrameHost {
     pub fn time_of_day(&self) -> f32 {
         time_of_day(&self.inner)
     }
+    /// Solar time in the current tick's display interval at the submitted frame's alpha.
+    /// Read it before advancing the host or editing the solar phase.
+    pub fn rendered_time_of_day(&self, alpha: f32) -> f32 {
+        DayCycle::rendered_time_of_day(self.tick(), alpha, self.inner.source().day_phase_offset)
+    }
+
     /// Change the game camera elevation and reset presentation history.
     /// # Errors
     /// Refuses a nonfinite pitch outside the supported scene range.

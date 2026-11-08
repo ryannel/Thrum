@@ -91,6 +91,7 @@ pub(super) fn record(
                 "frame": index, "tick": sample.tick, "submission": sample.submission_order,
                 "simulation_ns": time.as_nanos(), "alpha": sample.presentation_alpha,
                 "committed_solar_hours": host.time_of_day() * 24.0,
+                "rendered_solar_hours": host.rendered_time_of_day(sample.presentation_alpha) * 24.0,
                 "camera_yaw_radians": host.camera_orientation()[1], "gpu_pass_ns": pass_ns,
                 "gpu_blit_ns": blit_ns, "gpu_pass_sum_ns": pass_ns.iter().sum::<f64>() + blit_ns,
                 "visual_revision": sample.visual_revision,

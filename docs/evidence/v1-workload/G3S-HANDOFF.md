@@ -74,19 +74,24 @@ The Codex goal remains active. Its attachment is
   gives 0.16 m texels and restores the caster to the last map. The sparse
   search still misses it one tick later despite six matching depths.
   A bounded texel search over three caster positions cuts mean absolute
-  disk error from 5.43 to 2.25 percentage points against the cooked
+  disk error from 3.62 to 1.90 percentage points against the cooked
   quad/terrain reference. It removes the full-light fallback but leaves
   one-tick rebounds. A finer local map removes the rebound at all three
   caster positions. Max-depth blocks match all 110 exhaustive-scan
   frames and cut forward p95 from 12.70–13.63 to 5.07–5.42 ms in
   interleaved Metal runs (shared load 18.06–18.13). The extra reduction
   adds about 0.17 ms to the far bucket median. The compact fit is still local.
-  The fine terrain raster restores the 31 m crest but misses narrower
-  peaks. At 68 m a flat-topped ridge leaves 21.33% disk visible in the
-  triangle reference, 34.51% with the 64 m fine scan and 27.84% with a
-  96 m scan. The handoff and sampled heights both need work. Keep these
-  prototypes off main pending full coverage, aerial checks,
-  discarded-frame equality and Chrome qualification.
+  The fine terrain raster restores a 31 m crest but misses narrower
+  peaks. At 68 m a flat-topped ridge leaves 24.85% of the disk visible
+  at the rendered phase, versus 34.51% with the 64 m fine scan and
+  27.84% with a 96 m scan. A hierarchy with original triangle leaves
+  recovers it at 24.71%. Its maximum error across six 90-frame fixture
+  runs at one receiver is 0.34 percentage point. This is a centre-azimuth
+  result. Off-axis disk coverage, close-clearance policy, aerial ownership,
+  discarded-frame equality and Chrome remain open. The reference rows
+  now use rendered solar time, one tick behind committed at alpha zero.
+  The 12-frame Metal capture `solar-rendered-time-witness` verifies both
+  fields in `frames.jsonl`.
   [Maximum Mipmaps](https://pure.mpg.de/pubman/item/item_1325622_5/component/file_3590464/i3d08.pdf).
   Exact builds, raw rows and clips are in `tmp/g3s-sunset-lip/`. The
   diagnostic source and rerun command are on `codex/g3s-horizon-metal-wip`.
