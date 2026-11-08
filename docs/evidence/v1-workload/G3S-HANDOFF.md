@@ -8,13 +8,31 @@ The Codex goal remains active. Its attachment is
 
 ## Current checkpoint
 
-- M2 orientation is reopened. The daily review caught an equatorial reflection.
-  The game now uses a right-handed −45° equinox basis and the renderer refuses
-  reflected input. A CPU witness checked 30 named-star projections against
-  independent horizon equations (maximum direction error 2.020e-7). All
-  18,000 authored Sun tick vectors were bit-identical. The witness and
-  before/after regressions are in `tmp/g3s-sunset-lip/graph/celestial-*`.
-  Fresh Metal and Chrome orientation, motion and slider witnesses are owed.
+- M2 orientation, source `9c1021bb`: the CPU witness matches 30
+  named-star projections within 2.020e-7 direction error. All 18,000
+  authored Sun vectors are bit-identical. The production Metal flux
+  and depth referee passed in the same source checkpoint. Fresh
+  captures and exact build hashes are under
+  `tmp/g3s-star-catalog/current-main/orientation-9c1021bb/`
+  (Metal `56948ba5`, Chrome Wasm `f50141b4`). Metal retained
+  both 600-frame 1080p60 pan arms and the 1,440-frame emergence,
+  with pass sums for each submission. The independent pixel probe
+  tracks eight catalogue stars within 0.221 px over all 600 pan
+  frames and verifies occlusion at the skyline. Chrome resolves 14
+  features within 0.273 px at the slider wrap. Its 00:00 and 24:00
+  frames are byte-identical. Both targets' noon on/off controls are
+  byte-identical. The Chrome midnight toggle changes 6,514 pixels
+  and leaves the lower foreground byte-identical. The Metal and
+  Chrome midnight stills read clearly as night and preserve the
+  terrain silhouette. The denser Chrome run saved 235 pan and 698
+  twilight packets, with compositor gaps up to 450 and 500 ms.
+  D1–D3 pass at the captured route's scope, with no physical cadence
+  or retained-history camera-pan claim. Review and reproduction
+  details are in the capture directory's `independent-review/REVIEW.md`.
+  The native pass-sum p50/p95 is 3.36/12.36 ms for pan,
+  5.76/7.32 ms for pan without stars, and 3.25/3.67 ms for emergence.
+  Load changed sharply across these sequential captures. They are
+  motion timings, with no causal star-cost claim.
 
 - M3 research is in `tmp/g3s-sunset-lip/M3-RESEARCH.md`. Decoding the
   existing off-axis crest diagnostic finds 33,965 partial receivers at
@@ -48,7 +66,13 @@ The Codex goal remains active. Its attachment is
   within 0.010 pp over seven poses. Per-column terrain roofs keep
   all partial receivers on exact work, so park that evaluator.
   The independent finite-Sun ray helper now serves the Metal horizon
-  test. Runtime integration remains held.
+  test. At 128 columns the projected envelope cuts raised-patch
+  p95 CPU evaluation from 83.04 to 15.92 µs under shared load,
+  with beam admission and caster union measured separately. The
+  envelope and independent terrain cuts agree within 7.91e-14 rad.
+  The 16-column row misses the dense union by up to 2.2752 pp.
+  Retain the envelope for reference preparation and use disk clipping
+  by silhouette events for the next design review. Runtime remains held.
   Rerun from `tmp/g3s-sunset-lip/M3-RESEARCH.md`.
 
 - Historical M2 star captures predate the orientation correction. The Mac's lossless 1080p60 masters
