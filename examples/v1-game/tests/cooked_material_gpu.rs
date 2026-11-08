@@ -135,6 +135,21 @@ fn settle(host: &mut FrameHost, device: &wgpu::Device) {
     }
 }
 
+/// Drive one submitted live frame and wait for it. Steps are 16 ms against the 60 Hz tick, so about
+/// one step in 25 completes no tick, and a live frame without a completed tick submits nothing; such
+/// a step leaves the last frame's stats in place, so keep stepping until a frame is submitted.
+fn live_frame(host: &mut FrameHost, device: &wgpu::Device, clock: &mut Duration) {
+    for _ in 0..4 {
+        *clock += Duration::from_millis(16);
+        let submitted = host.drive(*clock, None).expect("frame").submitted;
+        settle(host, device);
+        if submitted {
+            return;
+        }
+    }
+    panic!("no live frame submitted in four 16 ms steps");
+}
+
 /// Drive live frames until the cooked set `generation` is drawn and one more frame follows it.
 fn drive_until_drawn(
     host: &mut FrameHost,
@@ -148,9 +163,7 @@ fn drive_until_drawn(
         let errors = stats.lock().expect("stats").errors.clone();
         assert!(errors.is_empty(), "loader errors: {errors:?}");
         assert!(Instant::now() < deadline, "cooked set never drawn");
-        *clock += Duration::from_millis(16);
-        host.drive(*clock, None).expect("frame");
-        settle(host, device);
+        live_frame(host, device, clock);
         if drawn {
             return;
         }
@@ -265,9 +278,11 @@ fn material_hooks_reload_visibly_and_invalid_hooks_keep_the_last_pixels() {
             "{outcome}"
         );
         assert_eq!(histories.last(), Some(&Some(false)), "{histories:?}");
-        clock += Duration::from_millis(16);
-        host.drive(clock, None).expect("frame");
+        // A live step that completes no tick submits nothing and keeps the promoting frame's stats.
+        assert!(!host.drive(clock, None).expect("no-tick step").submitted);
         settle(&mut host, &device);
+        assert_eq!(stats.lock().expect("stats").last_frame_history, Some(false));
+        live_frame(&mut host, &device, &mut clock);
         assert_eq!(stats.lock().expect("stats").last_frame_history, Some(true));
 
         // Paused from here, so captures differ only by material.
