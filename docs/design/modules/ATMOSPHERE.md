@@ -94,8 +94,8 @@ airglow variations and calibrated night colour are outside this profile.
 ### M3 surface Sun visibility
 
 M3 retains production **percentage-closer soft shadows (PCSS)**
-as its blocker and penumbra model. The fractional contour-area filter
-is a Thrum adaptation for the fully supported last cascade. It keeps
+as its blocker and penumbra model. The contour-area filter is a diagnostic adaptation for the fully
+supported last cascade. It keeps
 the existing receiver-plane comparisons and reads only that frame's
 first depth layer. Unity ships a directional PCSS cone. Epic's
 shadow-map ray tracing is a separate production precedent. Its first
@@ -130,7 +130,9 @@ unrestricted last-map call site. A near-owned fallback can have the
 same numeric window. The two last-map calls can both run,
 and recovering positive visibility can enable the 96-step horizon
 march. Count those and the full fallback. Runtime still needs a
-reviewed support transition and same-frame graph storage. This
+reviewed support transition and same-frame graph storage. The wider
+archive rejected the whole-receiver stock fallback. An unsupported
+region must not discard qualified coverage elsewhere in the aperture. This
 candidate has no temporal state and introduces no independent Sun,
 camera or asset authority.
 
