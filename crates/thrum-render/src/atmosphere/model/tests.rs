@@ -63,50 +63,9 @@ fn shipping_atmosphere_shader_layouts_keep_mapping_and_view_aux_separate() {
             "{common}\n{spectral}\n{}",
             include_str!("../aerial.wgsl")
         )),
-        format!(
-            "{}\n{}\n{}\n{}\n{}",
-            concat!(
-                include_str!("../storage.wgsl"),
-                "\n",
-                include_str!("../brdf.wgsl")
-            ),
-            include_str!("../irradiance.wgsl"),
-            include_str!("../../synthetic.wgsl"),
-            concat!(
-                include_str!("../../synthetic_aerial.wgsl"),
-                "\n",
-                include_str!("../../synthetic_aerial_clear.wgsl")
-            ),
-            concat!(
-                include_str!("../geometry.wgsl"),
-                "\n",
-                include_str!("../../synthetic_sun.wgsl"),
-                "\n",
-                include_str!("../../synthetic_environment.wgsl")
-            )
-        ),
-        format!(
-            "{}\n{}\n{}\n{}\n{}",
-            concat!(
-                include_str!("../storage.wgsl"),
-                "\n",
-                include_str!("../brdf.wgsl")
-            ),
-            include_str!("../irradiance.wgsl"),
-            include_str!("../../synthetic.wgsl"),
-            concat!(
-                include_str!("../../synthetic_aerial.wgsl"),
-                "\n",
-                include_str!("../../synthetic_aerial_shadowed.wgsl")
-            ),
-            concat!(
-                include_str!("../geometry.wgsl"),
-                "\n",
-                include_str!("../../synthetic_sun.wgsl"),
-                "\n",
-                include_str!("../../synthetic_environment.wgsl")
-            )
-        ),
+        crate::synthetic::scene_source::compose(true, false, false),
+        crate::synthetic::scene_source::compose(true, true, false),
+        crate::synthetic::scene_source::compose(true, true, true),
     ] {
         let module = wgpu::naga::front::wgsl::parse_str(&source).unwrap();
         wgpu::naga::valid::Validator::new(

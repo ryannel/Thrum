@@ -19,6 +19,8 @@ pub(crate) struct Pipelines {
     device: wgpu::Device,
     queue: wgpu::Queue,
     mesh: wgpu::RenderPipeline,
+    mesh_has_hook: bool,
+    receiver: Option<wgpu::RenderPipeline>,
     shadow: Option<wgpu::RenderPipeline>,
     volume: wgpu::RenderPipeline,
     volume_layout: wgpu::BindGroupLayout,
@@ -194,6 +196,20 @@ impl Pipelines {
             })
         };
         let mesh = material::mesh_pipeline(target, &module);
+        let receiver = surface.receiver.map(|receiver| {
+            let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: Some("cooked Sun receiver geometry"),
+                bind_group_layouts: &[Some(receiver.view_layout), Some(surface.light_layout)],
+                immediate_size: 0,
+            });
+            material::mesh_pipeline_for(
+                target,
+                &module,
+                &layout,
+                receiver.fragment_entry,
+                &[Some(material::mesh_color(receiver.guide_format))],
+            )
+        });
         let volume_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("cooked volume"),
             entries: &[
@@ -305,6 +321,8 @@ impl Pipelines {
             device: wgpu::Device::clone(device),
             queue: surface.queue.clone(),
             mesh,
+            mesh_has_hook: false,
+            receiver,
             shadow: surface
                 .shadow
                 .as_ref()
@@ -323,6 +341,7 @@ impl Pipelines {
     /// Draw cooked meshes with a promoted replacement from now on.
     pub(crate) fn install_mesh(&mut self, mesh: wgpu::RenderPipeline) {
         self.mesh = mesh;
+        self.mesh_has_hook = true;
     }
 
     fn buffer(&self, label: &str, size: u64, usage: wgpu::BufferUsages) -> wgpu::Buffer {
@@ -576,21 +595,42 @@ impl Pipelines {
         pass: &mut wgpu::RenderPass<'_>,
         mesh: Option<&wgpu::RenderPipeline>,
     ) {
+        Self::draw_meshes(bound, pass, mesh.unwrap_or(&self.mesh), true);
+        if let Some((group, _)) = &bound.volume {
+            pass.set_pipeline(&self.volume);
+            pass.set_bind_group(2, group, &[]);
+            pass.draw(0..36, 0..1);
+        }
+    }
+
+    pub(crate) fn supports_receivers(&self) -> bool {
+        !self.mesh_has_hook && self.receiver.is_some()
+    }
+
+    pub(crate) fn draw_receivers(&self, bound: &Bound, pass: &mut wgpu::RenderPass<'_>) {
+        if let Some(receiver) = self.receiver.as_ref() {
+            Self::draw_meshes(bound, pass, receiver, false);
+        }
+    }
+
+    fn draw_meshes(
+        bound: &Bound,
+        pass: &mut wgpu::RenderPass<'_>,
+        pipeline: &wgpu::RenderPipeline,
+        bind_material: bool,
+    ) {
         if !bound.meshes.is_empty() {
-            pass.set_pipeline(mesh.unwrap_or(&self.mesh));
+            pass.set_pipeline(pipeline);
         }
         for mesh in &bound.meshes {
-            pass.set_bind_group(2, &mesh.material, &[]);
+            if bind_material {
+                pass.set_bind_group(2, &mesh.material, &[]);
+            }
             pass.set_vertex_buffer(0, mesh.vertex[0].slice(..));
             pass.set_vertex_buffer(1, mesh.vertex[1].slice(..));
             pass.set_vertex_buffer(2, mesh.instance.slice(..));
             pass.set_index_buffer(mesh.indices.slice(..), wgpu::IndexFormat::Uint32);
             pass.multi_draw_indexed_indirect(&mesh.draws, 0, mesh.meshlets);
-        }
-        if let Some((group, _)) = &bound.volume {
-            pass.set_pipeline(&self.volume);
-            pass.set_bind_group(2, group, &[]);
-            pass.draw(0..36, 0..1);
         }
     }
 }

@@ -2,6 +2,7 @@ use super::*;
 use crate::timing::PassTiming;
 
 const TRANSFORMS: SceneTimingLayout = SceneTimingLayout {
+    receiver_passes: &[],
     transforms: true,
     star_pass: None,
     shadows: false,
@@ -104,6 +105,7 @@ fn the_horizon_height_pass_reports_in_the_far_shadow_bucket() {
         &passes,
         false,
         SceneTimingLayout {
+            receiver_passes: &[],
             shadows: true,
             ..TRANSFORMS
         },
@@ -116,6 +118,7 @@ fn the_horizon_height_pass_reports_in_the_far_shadow_bucket() {
             &missing,
             false,
             SceneTimingLayout {
+                receiver_passes: &[],
                 shadows: true,
                 ..TRANSFORMS
             }
@@ -194,4 +197,27 @@ fn occlusion_passes_are_required_once_each_and_counted_in_forward() {
     let mut repeated = passes.clone();
     repeated.push(passes[2].clone());
     assert!(pass_durations(&repeated, false, OCCLUDED).is_none());
+}
+
+#[test]
+fn receiver_passes_are_counted_once_in_the_opaque_phase() {
+    let layout = SceneTimingLayout {
+        receiver_passes: &RECEIVER_PASSES,
+        ..TRANSFORMS
+    };
+    let mut passes = timings(&[]);
+    passes.push(PassTiming {
+        name: RECEIVER_PASSES[0].into(),
+        nanoseconds: 2.0,
+    });
+    assert!(pass_durations(&passes, false, layout).is_none());
+    passes.push(PassTiming {
+        name: RECEIVER_PASSES[1].into(),
+        nanoseconds: 4.0,
+    });
+    let (values, _, _) = pass_durations(&passes, false, layout).expect("both receiver passes");
+    assert_eq!(values[3], 7.0);
+    assert!(pass_durations(&passes, false, TRANSFORMS).is_none());
+    passes.push(passes[4].clone());
+    assert!(pass_durations(&passes, false, layout).is_none());
 }

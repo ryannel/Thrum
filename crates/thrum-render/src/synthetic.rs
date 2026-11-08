@@ -35,9 +35,10 @@ mod forward;
 mod frame_stats;
 mod history_gpu;
 mod readback;
+mod receiver;
 mod scene_apply;
 mod scene_graph;
-mod scene_source;
+pub(crate) mod scene_source;
 mod shadow;
 mod stars;
 mod upload;
@@ -96,6 +97,8 @@ pub struct SyntheticScene {
     pub view: SyntheticView,
     /// Prepare two finite perspective Sun cascades; off avoids their maps and passes.
     pub sun_shadows: bool,
+    /// Opt in to the diagnostic screen-space Sun receiver resolve.
+    pub receiver_resolve: bool,
     /// Camera opaque draw: the direct oracle or GPU frustum compaction.
     pub camera_culling: CullMode,
     /// Optional immutable unit equatorial directions with incident lux in w.
@@ -155,6 +158,7 @@ impl SyntheticScene {
             local_lights: Vec::new(),
             view: SyntheticView::default(),
             sun_shadows: false,
+            receiver_resolve: false,
             camera_culling: CullMode::Direct,
             star_catalogue: None,
         })
@@ -434,6 +438,7 @@ pub struct PreparedSynthetic {
     /// Occlusion only: the depth-only twins of `pipeline` and
     /// `pipeline_two_sided`, for the depth prepass.
     depth_prepass: Option<[wgpu::RenderPipeline; 2]>,
+    receiver: Option<receiver::Prepared>,
     cube_indices: wgpu::Buffer,
     cube_reversed_indices: wgpu::Buffer,
     display: DisplayPrepared,
@@ -757,6 +762,7 @@ impl PreparedSynthetic {
         // Prepare the declared shadow recipe even while the Sun is dark, so a
         // later live light change can use the same pipelines and target maps.
         let shadow_enabled = scene.sun_shadows;
+        let receiver_enabled = shadow_enabled && scene.receiver_resolve;
         let gpu_clusters = (1..=cluster::GPU_MAX_SOURCES).contains(&scene.local_lights.len());
         let clusters = if gpu_clusters {
             ClusterTable::build_gpu(&scene.local_lights, &scene.view)?
@@ -1200,18 +1206,28 @@ impl PreparedSynthetic {
                 },
             ],
         });
-        let bind_group_layouts = [
-            Some(&view_layout),
-            Some(&light_layout),
-            Some(&material_layout),
-            Some(&instance_layout),
-        ];
-        let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some("synthetic ABI2"),
-            bind_group_layouts: &bind_group_layouts,
-            immediate_size: 0,
+        let pipeline_layout = |view| {
+            device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: Some("synthetic ABI2"),
+                bind_group_layouts: &[
+                    Some(view),
+                    Some(&light_layout),
+                    Some(&material_layout),
+                    Some(&instance_layout),
+                ],
+                immediate_size: 0,
+            })
+        };
+        let stock_layout = pipeline_layout(&view_layout);
+        let receiver_view_layout = receiver_enabled.then(|| {
+            view_entries.extend(receiver::forward_entries());
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                label: Some("synthetic receiver-resolved forward view"),
+                entries: &view_entries,
+            })
         });
-        let shader_source = scene_source::compose(atmosphere.is_some(), air_shadow.is_some());
+        let shader_source =
+            scene_source::compose(atmosphere.is_some(), air_shadow.is_some(), receiver_enabled);
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("prepared synthetic shader ABI2"),
             source: wgpu::ShaderSource::Wgsl(shader_source.as_str().into()),
@@ -1222,58 +1238,73 @@ impl PreparedSynthetic {
             "fragment"
         };
         let vertex_entry = camera_culling::vertex_entry(scene.camera_culling);
-        let create_pipeline = |cull_mode, depth_only: bool| {
-            device.render(&wgpu::RenderPipelineDescriptor {
-                label: Some("prepared opaque synthetic role"),
-                layout: Some(&layout),
-                vertex: wgpu::VertexState {
-                    module: &shader,
-                    entry_point: Some(vertex_entry),
-                    compilation_options: wgpu::PipelineCompilationOptions::default(),
-                    buffers: &[],
-                },
-                primitive: wgpu::PrimitiveState {
-                    cull_mode,
-                    ..Default::default()
-                },
-                depth_stencil: Some(wgpu::DepthStencilState {
-                    format: DEPTH_FORMAT,
-                    depth_write_enabled: Some(true),
-                    depth_compare: Some(wgpu::CompareFunction::Greater),
-                    stencil: wgpu::StencilState::default(),
-                    bias: wgpu::DepthBiasState::default(),
-                }),
-                multisample: wgpu::MultisampleState::default(),
-                // The depth prepass shares the module, vertex entry, primitive
-                // and depth state, so it rasterizes the same depth.
-                fragment: (!depth_only).then_some(wgpu::FragmentState {
-                    module: &shader,
-                    entry_point: Some(fragment_entry),
-                    compilation_options: wgpu::PipelineCompilationOptions::default(),
-                    targets: &[
-                        Some(wgpu::ColorTargetState {
-                            format: SCENE_FORMAT,
-                            blend: None,
-                            write_mask: wgpu::ColorWrites::ALL,
-                        }),
-                        Some(wgpu::ColorTargetState {
-                            format: MOTION_FORMAT,
-                            blend: None,
-                            write_mask: wgpu::ColorWrites::ALL,
-                        }),
-                    ],
-                }),
-                multiview_mask: None,
-                cache: None,
+        let create_pipeline =
+            |cull_mode,
+             layout,
+             fragment: Option<&str>,
+             targets: &[Option<wgpu::ColorTargetState>]| {
+                device.render(&wgpu::RenderPipelineDescriptor {
+                    label: Some("prepared opaque synthetic role"),
+                    layout: Some(layout),
+                    vertex: wgpu::VertexState {
+                        module: &shader,
+                        entry_point: Some(vertex_entry),
+                        compilation_options: wgpu::PipelineCompilationOptions::default(),
+                        buffers: &[],
+                    },
+                    primitive: wgpu::PrimitiveState {
+                        cull_mode,
+                        ..Default::default()
+                    },
+                    depth_stencil: Some(wgpu::DepthStencilState {
+                        format: DEPTH_FORMAT,
+                        depth_write_enabled: Some(true),
+                        depth_compare: Some(wgpu::CompareFunction::Greater),
+                        stencil: wgpu::StencilState::default(),
+                        bias: wgpu::DepthBiasState::default(),
+                    }),
+                    multisample: wgpu::MultisampleState::default(),
+                    // The depth prepass shares the module, vertex entry, primitive
+                    // and depth state, so it rasterizes the same depth.
+                    fragment: fragment.map(|entry_point| wgpu::FragmentState {
+                        module: &shader,
+                        entry_point: Some(entry_point),
+                        compilation_options: wgpu::PipelineCompilationOptions::default(),
+                        targets,
+                    }),
+                    multiview_mask: None,
+                    cache: None,
+                })
+            };
+        let target = |format| {
+            Some(wgpu::ColorTargetState {
+                format,
+                blend: None,
+                write_mask: wgpu::ColorWrites::ALL,
             })
         };
-        let pipeline = create_pipeline(Some(wgpu::Face::Back), false);
-        let pipeline_two_sided = create_pipeline(None, false);
+        let layout = receiver_view_layout
+            .as_ref()
+            .map_or_else(|| stock_layout.clone(), pipeline_layout);
+        let forward_targets = [target(SCENE_FORMAT), target(MOTION_FORMAT)];
+        let pipeline = create_pipeline(
+            Some(wgpu::Face::Back),
+            &layout,
+            Some(fragment_entry),
+            &forward_targets,
+        );
+        let pipeline_two_sided =
+            create_pipeline(None, &layout, Some(fragment_entry), &forward_targets);
         let depth_prepass = (scene.camera_culling == CullMode::Occlusion).then(|| {
-            [
-                create_pipeline(Some(wgpu::Face::Back), true),
-                create_pipeline(None, true),
-            ]
+            [Some(wgpu::Face::Back), None]
+                .map(|cull| create_pipeline(cull, &stock_layout, None, &[]))
+        });
+        let receiver = receiver_view_layout.map(|forward_view| {
+            let target = [target(receiver::GUIDE)];
+            let raster = [Some(wgpu::Face::Back), None].map(|cull| {
+                create_pipeline(cull, &stock_layout, Some(receiver::RASTER_ENTRY), &target)
+            });
+            receiver::Prepared::new(device, forward_view, raster)
         });
         let index_bytes: [u8; 72] =
             std::array::from_fn(|byte| CUBE_INDICES[byte / 2].to_le_bytes()[byte % 2]);
@@ -1337,6 +1368,7 @@ impl PreparedSynthetic {
             pipeline,
             pipeline_two_sided,
             depth_prepass,
+            receiver,
             cube_indices,
             cube_reversed_indices,
             display,
@@ -1409,6 +1441,7 @@ impl PreparedSynthetic {
     pub fn scene_pass_count(&self) -> u32 {
         4 + u32::from(self.shadow.is_some()) * shadow::LAYERS
             + camera_culling::pass_count(self.camera_culling())
+            + 2 * u32::from(self.receiver.is_some())
             + u32::from(self.stars.is_some())
             + u32::from(self.air_shadow.is_some())
             + u32::from(self.cluster_compute.is_some())
@@ -1820,6 +1853,7 @@ struct TargetResources {
     air_shadow: Option<ResourceId>,
     /// Occlusion only: the private depth the prepass draws.
     prepass_depth: Option<ResourceId>,
+    receiver: Option<receiver::Resources>,
 }
 
 struct SceneGraphs<G> {
@@ -1842,6 +1876,7 @@ pub struct OffscreenTarget {
     motion_view: wgpu::TextureView,
     display: DisplayTarget,
     view_bind_group: wgpu::BindGroup,
+    receiver: Option<receiver::Target>,
     aux_buffer: wgpu::Buffer,
     shadow: Option<ShadowTarget>,
     air_shadow: Option<AirShadowTarget>,
@@ -2014,6 +2049,12 @@ impl OffscreenTarget {
             occlusion,
             prepass_depth,
         );
+        let receiver = prepared
+            .receiver
+            .as_ref()
+            .zip(ids.receiver.as_ref())
+            .map(|(receiver, ids)| receiver.target(device, ids, &textures, &aux, &view_entries))
+            .transpose()?;
         let day_graphs = day.bind(prepared)?;
         let night_graphs = night.map(|graphs| graphs.bind(prepared)).transpose()?;
         Ok(Self {
@@ -2029,6 +2070,7 @@ impl OffscreenTarget {
             motion_view,
             display,
             view_bind_group,
+            receiver,
             aux_buffer: aux,
             shadow,
             air_shadow,

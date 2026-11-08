@@ -308,12 +308,18 @@ fn blocker_in_window(depth: f32, gap: f32, window: vec3<f32>) -> bool {
 }
 
 fn cascade_window(index: u32, receiver: ShadowReceiver, window: vec3<f32>) -> f32 {
+    return sample_cascade_window(index, receiver, window, false, vec2(0.0)).x;
+}
+
+// y is -1 outside the cascade, 0 for the point path, 1 for a wide disk.
+fn sample_cascade_window(index: u32, receiver: ShadowReceiver, window: vec3<f32>,
+                         rotated: bool, pixel: vec2<f32>) -> vec2<f32> {
     let matrix = shadows.light_view_proj[index];
     let clip = matrix*vec4(receiver.position,1.0);
     let p = clip.xyz/clip.w;
     let uv = vec2(p.x*0.5+0.5,0.5-p.y*0.5);
     if any(uv < vec2(0.0)) || any(uv > vec2(1.0)) || p.z < 0.0 || p.z > 1.0 {
-        return 1.0;
+        return vec2(1.0,-1.0);
     }
     let normal_bias = 1.0-clamp(dot(receiver.normal,light.direction_to_light.xyz),0.0,1.0);
     let base = select(shadows.bias.y,shadows.bias.x,index == 0u);
@@ -363,7 +369,7 @@ fn cascade_window(index: u32, receiver: ShadowReceiver, window: vec3<f32>) -> f3
         }
     }
     if blockers==0.0 {
-        return shadow_filter(index,uv,p.z,reference,depth_gradient,extent,uv,window);
+        return vec2(shadow_filter(index,uv,p.z,reference,depth_gradient,extent,uv,window),0.0);
     }
     // Eight search and sixteen disk taps match the 16/32 truth scores on the
     // solar crossing at about half the shadowed-fragment cost.
@@ -373,14 +379,30 @@ fn cascade_window(index: u32, receiver: ShadowReceiver, window: vec3<f32>) -> f3
     let plane_radius=0.5*nearest_gap/max(length(depth_gradient),1e-12);
     let radius=min(physical_radius,plane_radius);
     if radius*extent.x<=0.5 {
-        return shadow_filter(index,uv,p.z,reference,depth_gradient,extent,uv,window);
+        return vec2(shadow_filter(index,uv,p.z,reference,depth_gradient,extent,uv,window),0.0);
+    }
+    // Only the unrestricted last-cascade call gets the wider disk.
+    if rotated {
+            let cell = floor(pixel);
+            let phase = fract(52.9829189*fract(dot(cell,vec2(0.06711056,0.00583715))));
+            let angle = 6.28318530718*phase;
+            let rotation = vec2(cos(angle),sin(angle));
+        var wide_visible = 0.0;
+        for(var i=0u;i<32u;i++) {
+            let offset = SHADOW_DISK[i];
+            let rotated = vec2(dot(offset,vec2(rotation.x,-rotation.y)),
+                               dot(offset,rotation.yx));
+            let q = uv+rotated*radius;
+            wide_visible += shadow_filter(index,q,p.z,reference,depth_gradient,extent,uv,window);
+        }
+        return vec2(wide_visible/32.0,1.0);
     }
     var visible=0.0;
     for(var i=0u;i<16u;i++) {
         let q=uv+SHADOW_DISK[i*2u+1u]*radius;
         visible+=shadow_filter(index,q,p.z,reference,depth_gradient,extent,uv,window);
     }
-    return visible/16.0;
+    return vec2(visible/16.0,1.0);
 }
 
 // Receiver-plane reconstruction follows each physical disk sample. The
@@ -475,17 +497,17 @@ fn sun_visibility(input: VertexOutput, receiver: ShadowReceiver) -> f32 {
         let reach = shadows.split_overlap.z;
         if reach > 0.0 {
             if depth >= reach { return horizon_visibility(receiver); }
-            let cascade = cascade_visibility(1u,receiver);
+            let cascade = last_cascade_visibility(input,receiver);
             let fade_start = shadows.split_overlap.w;
             if depth <= fade_start { return low_sun_terrain(cascade,receiver); }
             let horizon = horizon_visibility(receiver);
             let visibility = select(cascade,min(cascade,horizon),light.direction_to_light.y<LOW_SUN_SINE);
             return mix(visibility,horizon,smoothstep(fade_start,reach,depth));
         }
-        return low_sun_terrain(cascade_visibility(1u,receiver),receiver);
+        return low_sun_terrain(last_cascade_visibility(input,receiver),receiver);
     }
     let first = near_visibility(receiver);
-    let second = cascade_visibility(1u,receiver);
+    let second = last_cascade_visibility(input,receiver);
     return low_sun_terrain(mix(first,second,clamp((depth-split+overlap)/(2.0*overlap),0.0,1.0)),receiver);
 }
 

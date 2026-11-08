@@ -64,19 +64,8 @@ pub(super) fn constant_depth_maps(
 
 pub(super) fn pipeline(device: &wgpu::Device, observer: &str) -> wgpu::ComputePipeline {
     let source = format!(
-        "{}\n{}",
-        concat!(
-            include_str!("../../../atmosphere/storage.wgsl"),
-            "\n",
-            include_str!("../../../atmosphere/brdf.wgsl"),
-            "\n",
-            include_str!("../../../atmosphere/irradiance.wgsl"),
-            "\n",
-            include_str!("../../../synthetic.wgsl"),
-            "\n",
-            include_str!("../../../synthetic_plain.wgsl")
-        ),
-        observer
+        "{}\n{observer}",
+        crate::synthetic::scene_source::compose(false, false, false),
     );
     let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
         label: Some("shipping finite Sun shadow observer"),

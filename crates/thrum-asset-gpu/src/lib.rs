@@ -773,6 +773,25 @@ impl SceneContribution for CookedAssets {
         }
     }
 
+    fn supports_receivers(&self, frame: &ContributionFrame) -> bool {
+        self.live.as_ref().is_some_and(|live| {
+            live.generation == frame.generation
+                && live.tentative.is_some_and(|tentative| !tentative.material)
+                && live.pipelines.supports_receivers()
+        })
+    }
+
+    fn draw_receivers(&self, pass: &mut wgpu::RenderPass<'_>, frame: &ContributionFrame) {
+        if let Some(live) = self
+            .live
+            .as_ref()
+            .filter(|live| live.generation == frame.generation)
+            && let Some(bound) = live.drawn()
+        {
+            live.pipelines.draw_receivers(bound, pass);
+        }
+    }
+
     fn shadow_bounds(&self) -> Option<ShadowBounds> {
         self.live.as_ref()?.drawn()?.shadow_bounds
     }

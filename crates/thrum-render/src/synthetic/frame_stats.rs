@@ -5,6 +5,7 @@ use super::{CullMode, OffscreenTarget, PreparedSynthetic, history_gpu};
 #[derive(Clone, Copy)]
 pub(crate) struct SceneTimingLayout {
     shadows: bool,
+    receiver_passes: &'static [&'static str],
     clusters: bool,
     transforms: bool,
     star_pass: Option<&'static str>,
@@ -28,6 +29,11 @@ impl From<(&PreparedSynthetic, &OffscreenTarget)> for SceneTimingLayout {
     fn from((prepared, target): (&PreparedSynthetic, &OffscreenTarget)) -> Self {
         Self {
             shadows: prepared.shadowed(),
+            receiver_passes: if prepared.receiver.is_some() {
+                &RECEIVER_PASSES
+            } else {
+                &[]
+            },
             clusters: prepared.gpu_clustered(),
             transforms: prepared.active_instance_count() != 0,
             star_pass: target.draw_stars.then_some(super::stars::PASS_NAME),
@@ -39,6 +45,8 @@ impl From<(&PreparedSynthetic, &OffscreenTarget)> for SceneTimingLayout {
 /// Scene pass buckets (forward includes a contribution's compute pass), the optional surface blit
 /// and the contribution's compute pass alone.
 pub(crate) type PassDurations = ([f64; 11], Option<f64>, Option<f64>);
+
+const RECEIVER_PASSES: [&str; 2] = [super::receiver::RASTER_PASS, super::receiver::RESOLVE_PASS];
 
 /// Every camera culling pass name, in any layout.
 const CULLING_PASSES: [&str; 5] = [
@@ -81,6 +89,7 @@ pub(crate) fn pass_durations(
     // name, each required exactly once when the slot layout uses them, and counted in forward.
     let culling = layout.culling;
     let mut contribution = None;
+    let mut receiver = [None, None];
     let mut air_shadow = None;
     let mut visibility = None;
     let mut culled = 0_u8;
@@ -107,6 +116,15 @@ pub(crate) fn pass_durations(
             }
             culled |= bit;
             visibility = Some(visibility.unwrap_or(0.0) + pass.nanoseconds);
+        } else if let Some(index) = RECEIVER_PASSES
+            .iter()
+            .position(|&name| name == pass.name.as_ref())
+        {
+            if layout.receiver_passes.is_empty()
+                || receiver[index].replace(pass.nanoseconds).is_some()
+            {
+                return None;
+            }
         } else if pass.name.as_ref() == super::CONTRIBUTION_COMPUTE {
             if contribution.is_some() {
                 return None;
@@ -116,7 +134,10 @@ pub(crate) fn pass_durations(
             scene_passes.push(pass);
         }
     }
-    if culled != culling || (layout.star_pass.is_some() && stars.is_none()) {
+    if culled != culling
+        || (layout.star_pass.is_some() && stars.is_none())
+        || (receiver.iter().flatten().count() != layout.receiver_passes.len())
+    {
         return None;
     }
     let passes = scene_passes.as_slice();
@@ -156,8 +177,10 @@ pub(crate) fn pass_durations(
             }
             // The contribution's compute pass is opaque-phase work that feeds forward: counted
             // in the forward bucket so totals include it, and also returned on its own.
-            scene[3] +=
-                contribution.unwrap_or(0.0) + visibility.unwrap_or(0.0) + stars.unwrap_or(0.0);
+            scene[3] += contribution.unwrap_or(0.0)
+                + visibility.unwrap_or(0.0)
+                + stars.unwrap_or(0.0)
+                + receiver.into_iter().flatten().sum::<f64>();
             scene[1] += air_shadow.unwrap_or(0.0);
             (
                 scene,

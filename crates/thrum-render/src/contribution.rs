@@ -109,6 +109,20 @@ pub struct SceneSurface<'a> {
     pub depth_format: wgpu::TextureFormat,
     /// The existing Sun depth pass, when shadows are enabled for the scene.
     pub shadow: Option<SceneShadowSurface<'a>>,
+    /// Optional current-frame Sun receiver raster. The group 0 layout does not
+    /// include the forward mask bindings.
+    pub receiver: Option<SceneReceiverSurface<'a>>,
+}
+
+/// Geometry-only raster inputs for the optional current-frame receiver mask.
+#[derive(Clone, Copy)]
+pub struct SceneReceiverSurface<'a> {
+    /// The receiver view and target aux group.
+    pub view_layout: &'a wgpu::BindGroupLayout,
+    /// The scene's packed integer receiver fragment.
+    pub fragment_entry: &'static str,
+    /// Single packed guide colour attachment.
+    pub guide_format: wgpu::TextureFormat,
 }
 
 /// Pipeline inputs for the scene's depth-only Sun cascades.
@@ -209,6 +223,18 @@ pub trait SceneContribution: wgpu::WasmNotSend {
 
     /// Draw at the end of the forward pass. Groups 0, 1 and 3 are the scene's.
     fn draw(&self, pass: &mut wgpu::RenderPass<'_>);
+
+    /// Whether this recording can replay its exact opaque winners in the Sun
+    /// receiver raster. Asked after upload and compute. Coverage-changing
+    /// material paths must return false so the whole view uses stock shadows.
+    fn supports_receivers(&self, _frame: &ContributionFrame) -> bool {
+        false
+    }
+
+    /// Replay opaque forward draws using the same tentative set and order.
+    /// Groups 0 and 1 are already bound. Record only, with no resource writes
+    /// or publication. Called only after this frame reports support.
+    fn draw_receivers(&self, _pass: &mut wgpu::RenderPass<'_>, _frame: &ContributionFrame) {}
 
     /// Bounds of the opaque casters selected by this frame's upload recording.
     /// The selection must stay fixed through both cascade draws and forward.
