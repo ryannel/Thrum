@@ -54,7 +54,7 @@ pub(crate) struct CasterIds {
 impl CasterCulling {
     /// Prepare one list per caster view over the route's member list.
     pub(crate) fn new(
-        device: &wgpu::Device,
+        device: &crate::runtime::DeviceSite,
         queue: &wgpu::Queue,
         meshes: &[MeshRecord],
         shape: MemberShape,
@@ -105,7 +105,7 @@ impl CasterCulling {
             ),
         });
         let pipeline = |entry: &str| {
-            device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+            device.compute(&wgpu::ComputePipelineDescriptor {
                 label: Some("Sun caster cull"),
                 layout: Some(&pipeline_layout),
                 module: &shader,
