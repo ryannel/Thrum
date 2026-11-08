@@ -440,18 +440,6 @@ impl VisibilityPrepared {
         }
     }
 
-    /// Allocate one frustum target's outputs.
-    #[cfg(test)]
-    pub(crate) fn target(
-        &self,
-        device: &wgpu::Device,
-        view: &wgpu::Buffer,
-        instances: &wgpu::Buffer,
-        serials: &wgpu::Buffer,
-    ) -> VisibilityTarget {
-        self.member_target(device, (view, instances, serials), None)
-    }
-
     /// One frame slot's frustum target, over the route's member list when
     /// the compaction is member-indexed.
     pub(crate) fn member_target(
