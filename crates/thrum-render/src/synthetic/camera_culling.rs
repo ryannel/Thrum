@@ -11,6 +11,8 @@
 
 use std::collections::BTreeSet;
 
+use super::mesh_arena::MeshArena;
+use super::mesh_route::BucketRoute;
 use super::{
     CompiledPass, DEPTH_FORMAT, GraphColorAttachment, GraphDepthAttachment, OffscreenTarget,
     PreparedSynthetic, RenderError, SYNTHETIC_REVISION, SceneContext, VIEW_BYTES, history_gpu,
@@ -61,32 +63,61 @@ pub(super) struct CameraGraph {
     pub(super) prepass_depth: Option<ResourceId>,
 }
 
-/// Visibility pipelines for this scene's slot capacity and the cube mesh row.
+/// Visibility pipelines for this scene's slot capacity: over the cube mesh
+/// row for the legacy route, or member-indexed over the arena's rows for
+/// the bucket route.
 pub(super) fn prepare(
     device: &crate::runtime::DeviceSite,
     queue: &wgpu::Queue,
     generation: u64,
     mode: CullMode,
-    capacity: u32,
-    active: u32,
-) -> Option<VisibilityPrepared> {
+    (capacity, active): (u32, u32),
+    route: Option<(&BucketRoute, &MeshArena)>,
+) -> Result<Option<VisibilityPrepared>, RenderError> {
     if mode == CullMode::Direct {
-        return None;
+        return Ok(None);
     }
     let key = PipelineKey {
         device_generation: generation,
         revision: SYNTHETIC_REVISION,
         role: visibility::ROLE,
     };
-    Some(VisibilityPrepared::new(
+    let Some((route, arena)) = route else {
+        return Ok(Some(VisibilityPrepared::new(
+            device,
+            queue,
+            key,
+            capacity,
+            &[CUBE_MESH],
+            active,
+            mode,
+        )));
+    };
+    let meshes = arena
+        .rows()
+        .iter()
+        .map(|row| {
+            Ok(MeshRecord {
+                first_index: row.first_index,
+                index_count: row.index_count,
+                base_vertex: row
+                    .draw_base_vertex()
+                    .map_err(|_| RenderError::SceneCapacity)?,
+                bounds_min: row.bounds[0],
+                bounds_max: row.bounds[1],
+            })
+        })
+        .collect::<Result<Vec<_>, RenderError>>()?;
+    let mut prepared = VisibilityPrepared::new_members(
         device,
         queue,
         key,
-        capacity,
-        &[CUBE_MESH],
-        active,
-        mode,
-    ))
+        (capacity, active),
+        &meshes,
+        route.shape()?,
+    );
+    prepared.set_member_groups(route.groups());
+    Ok(Some(prepared))
 }
 
 /// Culled modes: the forward view-group entry for the compacted slot list.
@@ -161,7 +192,7 @@ impl PreparedSynthetic {
     pub(super) fn append_camera_visibility(
         &self,
         graph: &mut FrameGraph,
-        (view, instance, mesh): (ResourceId, &ResourceId, &[Access]),
+        (view, instance, mesh, route): (ResourceId, &ResourceId, &[Access], &[Access]),
         extent: [u32; 2],
         accesses: &mut Vec<Access>,
         keys: &mut BTreeSet<PipelineKey>,
@@ -201,7 +232,9 @@ impl PreparedSynthetic {
                 store: true,
             },
         ];
-        let first = prepared.append_graph(graph, reads.clone())?;
+        let mut list_inputs = reads.clone();
+        list_inputs.extend_from_slice(route);
+        let first = prepared.append_graph(graph, list_inputs)?;
         keys.insert(prepared.key());
         if prepared.mode() != CullMode::Occlusion {
             accesses.extend(list_reads(prepared, &first));
@@ -268,12 +301,17 @@ impl PreparedSynthetic {
             let view_offset = self.view_stride * u32::from(target.frame_revision & 1 != 0);
             let view = self.pending_view.as_ref().unwrap_or(&self.view_sample);
             let orthographic = matches!(view.projection(), super::Projection::OrthographicFixture);
+            let indirect = target
+                .visibility
+                .as_ref()
+                .filter(|_| self.visibility.is_some())
+                .map(VisibilityTarget::args);
             return route.draw(
                 pass,
                 (&target.view_bind_group, view_offset),
                 &self.mesh_arena,
                 orthographic,
-                None,
+                indirect,
             );
         }
         match &target.visibility {
@@ -305,13 +343,11 @@ impl PreparedSynthetic {
         let occlusion = prepass_depth.and_then(|depth| {
             prepared.occlusion_target(device, inputs.0, inputs.1, inputs.2, depth, extent)
         });
-        match occlusion {
-            Some((last, prepass)) => (Some(last), Some(prepass)),
-            None => (
-                Some(prepared.target(device, inputs.0, inputs.1, inputs.2)),
-                None,
-            ),
+        if let Some((last, prepass)) = occlusion {
+            return (Some(last), Some(prepass));
         }
+        let members = self.bucket_route.as_ref().map(BucketRoute::member_inputs);
+        (Some(prepared.member_target(device, inputs, members)), None)
     }
 
     /// Occlusion only: the prepass list draws depth only into the private
@@ -367,7 +403,7 @@ fn list_reads(prepared: &VisibilityPrepared, ids: &VisibilityIds) -> [Access; 2]
         },
         Access {
             resource: ids.args.clone(),
-            range: 0..visibility::ARGS_BYTES,
+            range: 0..prepared.args_bytes(),
             kind: AccessKind::IndirectRead,
             store: true,
         },

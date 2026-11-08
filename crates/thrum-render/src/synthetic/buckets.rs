@@ -12,10 +12,6 @@
 //! 256-byte dynamic-offset alignment for the visible list. A segment holds its
 //! active members' physical rows in logical-slot order (the bucket-ordered
 //! oracle's order), then [`PADDING`] up to the next segment.
-#![cfg_attr(
-    not(test),
-    expect(dead_code, reason = "M3b buckets; wiring waits for root's review")
-)]
 
 use std::collections::BTreeMap;
 
