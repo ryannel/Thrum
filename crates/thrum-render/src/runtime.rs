@@ -801,6 +801,13 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             .count()
     }
 
+    /// Whether a frame slot was free at the last poll, so the next encode can take one.
+    pub fn has_free_slot(&self) -> bool {
+        self.slots
+            .iter()
+            .any(|slot| matches!(slot.state, SlotState::Free))
+    }
+
     /// Progress native callbacks without blocking and return the oldest completed
     /// frame, if any. Browser WebGPU delivers callbacks through its event loop.
     /// # Errors

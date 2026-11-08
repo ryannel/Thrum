@@ -307,6 +307,24 @@ impl<W: WebWorld, V: SceneSource<W::Page>> WebShell<W, V> {
         if let Some(refused_ticks) = report.overload {
             self.recover_overload(refused_ticks, now)?;
         }
+        self.collect_completed()
+    }
+
+    /// Collect GPU completions between callbacks without admitting time, and report
+    /// whether a frame slot is free for the next encode. A caller pacing its own
+    /// steps can drain completion callbacks before a step instead of dropping its
+    /// view. Nothing is polled while the device is lost.
+    /// # Errors
+    /// Returns a device polling fault.
+    pub fn poll_completed(&mut self) -> Result<bool, String> {
+        if self.graphics.is_lost() {
+            return Ok(false);
+        }
+        self.collect_completed()?;
+        Ok(self.host.has_free_slot())
+    }
+
+    fn collect_completed(&mut self) -> Result<(), String> {
         while let Some(sample) = self
             .host
             .poll_completed()
