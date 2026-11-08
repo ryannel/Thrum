@@ -50,6 +50,9 @@ choose the techniques, the research, the experiments and how to break the work d
   after a failed experiment (the stop-and-decide rule above). Cite it in your goal so it survives compaction; a goal
   that names it brings it back when your context resets.
 - **Work that serves no milestone** either earns a place in the plan or waits.
+- **Mark a goal blocked only when no milestone work can proceed.** A step that needs the owner, an unlocked screen or
+  a quiet machine goes in the plan as queued for the next owner window while you do the rest; an independent review
+  is one you commission yourself.
 - **Long jobs run in the background.** Solvers, bakes, builds and benchmarks shouldn't hold your turn. Start them,
   work other plan items, and check them between items.
 - **The overseer may steer, or correct a milestone or your goal.** When it does, update the plan, log why, have a
