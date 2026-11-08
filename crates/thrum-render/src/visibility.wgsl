@@ -97,6 +97,7 @@ struct Buckets {
 const MEMBER_PADDING: u32 = 0xffffffffu;
 @group(0) @binding(12) var<storage, read> members: array<u32>;
 @group(0) @binding(13) var<uniform> buckets: Buckets;
+var<workgroup> group_mesh: u32;
 
 var<workgroup> scan: array<u32, WORKGROUP>;
 
@@ -223,10 +224,15 @@ fn count(@builtin(global_invocation_id) global: vec3<u32>,
 fn count_members(@builtin(global_invocation_id) global: vec3<u32>,
                  @builtin(local_invocation_id) local: vec3<u32>,
                  @builtin(workgroup_id) group: vec3<u32>) {
+    // One invocation finds the workgroup's bucket; the search is per group.
+    if local.x == 0u {
+        group_mesh = buckets.segments[group_bucket(group.x)].mesh;
+    }
+    let mesh = meshes[workgroupUniformLoad(&group_mesh)];
     let slot = members[global.x];
     var draw = false;
     if slot != MEMBER_PADDING {
-        draw = listed(slot, global.x, meshes[buckets.segments[group_bucket(group.x)].mesh]);
+        draw = listed(slot, global.x, mesh);
     }
     let word = count_word(draw, local.x, group.x);
     if local.x < WORDS {
