@@ -5,7 +5,7 @@ Reviews: Optical design and plan over `a91cdd0e`, final design `f9d0c12a` and pl
 Updated: 2026-11-08
 Milestone: M3 sunset shadows
 Now: the disk-clipped CPU union agrees with independent rays on the fixed terrain and caster witnesses.
-Next: size shared silhouette edge identity over both full-view archives. Keep exact disk clipping as the CPU referee.
+Next: review a continuous multi-edge representation and the existing filtered shadow path against the fixed witnesses. Park single-edge sharing.
 Blocked: runtime integration awaits portable capacity and coverage evidence. Physical bandwidth replay is queued separately for an assigned Xcode slot.
 
 ## M1 The valley remains legible at moonless midnight: done
@@ -74,6 +74,7 @@ Work
 - [x] D2–D3. Pair per-column terrain roofs with exact triangles. Park direct roof traversal and reuse the independent ray reference in the shipping horizon test suite.
 - [x] D2–D3. Pair projected edges with triangle sections on 289 raised-crest receivers. Keep the shared envelope as reference preparation and park sampled per-pixel evaluation. [Cost and limits](../../evidence/v1-workload/G3S-HANDOFF.md#current-checkpoint).
 - [x] D2–D3. Compare exact disk support against independent rays on the fixed crest, close and overlap witnesses. Include tangency, containment, coincident boundaries and the separated near-apex case. [Counts and error](../../evidence/v1-workload/G3S-HANDOFF.md#current-checkpoint).
+- [x] D2–D3. Size shared scalar and original-edge identity over both archives. Park both as the common path. [Population evidence](../../evidence/v1-workload/G3S-HANDOFF.md#current-checkpoint).
 - [ ] D2–D3. Specify and re-review the certificate layout, the actual source and recipe admission domain, and the bounded evaluation path. The old far-horizon bake and full-view beam remain diagnostic. A field that loses the narrow-caster witness cannot enter the render path.
 - [ ] D1–D3. Recheck the shipped cameras and the matched motion with the selected coverage mechanism.
 

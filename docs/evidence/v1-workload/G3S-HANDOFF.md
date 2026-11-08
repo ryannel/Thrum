@@ -79,8 +79,10 @@ The Codex goal remains active. Its attachment is
   as the CPU referee. An orientation-independent 2×2 scalar guard at
   32.8 km admits 78/33,965 partial receivers in frame 3 and
   769,004/812,485 in frame 72 under the ideal straight-chord model.
-  Size shared edge identity with per-receiver projection instead.
-  Runtime awaits full-view capacity and a verified fallback.
+  Only 327 and zero of those frames' partial receivers have one
+  original edge spanning the aperture. Park both sharing paths.
+  Review a continuous multi-edge representation alongside the
+  existing filtered path. Runtime awaits capacity and fallback.
   Rerun from `tmp/g3s-sunset-lip/M3-RESEARCH.md`.
 
 - Historical M2 star captures predate the orientation correction. The Mac's lossless 1080p60 masters
