@@ -4,7 +4,10 @@
 //! Occlusion is also paired against Frustum, split by cover: ticks where its
 //! final list is at most half of Frustum's are behind cover, the rest open.
 //! Its whole frame includes the prepass list, depth prepass, pyramid and
-//! final cull, which fold into the forward bucket.
+//! final cull, which fold into the forward bucket. Runs at the game's
+//! 1920x1080. On a shared machine, each 300-tick segment also reports its
+//! paired medians beside the system load at its end, and the run asserts
+//! Occlusion hid work on some ticks so an inert history cannot pass.
 #![cfg(not(target_arch = "wasm32"))]
 
 use std::time::Duration;
@@ -13,7 +16,9 @@ use thrum_render::{capabilities::DeviceCapabilities, synthetic::CullMode};
 use v1_game::{FrameConfig, FrameHost, FrameSample, GameContent, GameSetup, field_in_view_share};
 
 const TICK_NS: u64 = 16_666_667;
-const EXTENT: [u32; 2] = [1280, 720];
+const EXTENT: [u32; 2] = [1920, 1080];
+/// Ticks per reported segment, each with its load.
+const SEGMENT: u64 = 300;
 const WARMUP_TICKS: u64 = 60;
 const TICKS: u64 = 1_800;
 /// `gpu_pass_ns` index of forward (includes the camera visibility pass).
@@ -33,6 +38,17 @@ fn complete(host: &mut FrameHost, device: &wgpu::Device) -> FrameSample {
             })
             .expect("GPU wait");
     }
+}
+
+/// The 1-minute load average, as reported by the OS (`?` if unavailable).
+fn load() -> String {
+    std::process::Command::new("sysctl")
+        .args(["-n", "vm.loadavg"])
+        .output()
+        .ok()
+        .and_then(|out| String::from_utf8(out.stdout).ok())
+        .and_then(|text| text.split_whitespace().nth(1).map(str::to_owned))
+        .unwrap_or_else(|| "?".to_owned())
 }
 
 fn quantile(values: &mut [f64], q: f64) -> f64 {
@@ -94,6 +110,9 @@ fn main() {
         // Occlusion − Frustum whole-frame ms: [behind cover, open].
         let mut against_frustum: [Vec<f64>; 2] = Default::default();
         let mut share = 0.0;
+        // Per segment: (F−D, O−F) whole-frame ms, and the load at its end.
+        let mut segment: [Vec<f64>; 2] = Default::default();
+        let mut segments = Vec::new();
         for tick in 1..=WARMUP_TICKS + TICKS {
             let now = Duration::from_nanos(tick * TICK_NS + 1);
             // Rotate the order each tick, so no mode always runs first.
@@ -122,6 +141,17 @@ fn main() {
                 }
             }
             if tick > WARMUP_TICKS {
+                segment[0].push(whole[1] - whole[0]);
+                segment[1].push(whole[2] - whole[1]);
+                if (tick - WARMUP_TICKS).is_multiple_of(SEGMENT) {
+                    segments.push((
+                        tick,
+                        quantile(&mut segment[0], 0.5),
+                        quantile(&mut segment[1], 0.5),
+                        load(),
+                    ));
+                    segment = Default::default();
+                }
                 deltas[0].push(whole[1] - whole[0]);
                 deltas[1].push(whole[2] - whole[0]);
                 // A count can retire after its frame; such ticks are left out.
@@ -138,12 +168,21 @@ fn main() {
         let share = share / (TICKS / 30) as f64;
         println!(
             "adapter={}; field {} instances; {}x{}; shadows on; {TICKS} ticks after {WARMUP_TICKS} warm-up; \
-             rotating order; mean in-view centres {:.1}%",
+             rotating order, shared machine; mean in-view centres {:.1}%",
             adapter.get_info().name,
             GameContent::Field.entity_count(),
             EXTENT[0],
             EXTENT[1],
             share * 100.0
+        );
+        for (tick, frustum, occlusion, load) in &segments {
+            println!(
+                "segment to tick {tick}: paired F−D median {frustum:+.3} ms, O−F median {occlusion:+.3} ms, load {load}"
+            );
+        }
+        assert!(
+            !against_frustum[0].is_empty(),
+            "Occlusion hid at least half of Frustum's list on some counted tick"
         );
         let [direct, culled @ ..] = &mut rows;
         let direct = [
