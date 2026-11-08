@@ -79,7 +79,7 @@ impl MeshId {
     }
 
     #[cfg(test)]
-    pub(super) fn for_test(row: u32) -> Self {
+    pub(super) const fn for_test(row: u32) -> Self {
         Self(row)
     }
 }

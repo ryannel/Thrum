@@ -8,6 +8,8 @@ use crate::abi::InstanceRecord;
 use crate::capabilities::DeviceCapabilities;
 use crate::synthetic::mesh_arena::MeshId;
 
+mod casters;
+
 const EXTENT: [u32; 2] = [320, 180];
 
 struct Gpu {
@@ -75,16 +77,24 @@ impl Gpu {
         prepared: &mut PreparedSynthetic,
         scene: &SyntheticScene,
     ) -> (Vec<u8>, Option<u32>) {
+        self.render_lit(
+            prepared,
+            scene,
+            FrameLighting::Diagnostic(SyntheticLight::default()),
+        )
+    }
+
+    /// One frame under `lighting`, and the culled route's drawn instances.
+    fn render_lit(
+        &self,
+        prepared: &mut PreparedSynthetic,
+        scene: &SyntheticScene,
+        lighting: FrameLighting,
+    ) -> (Vec<u8>, Option<u32>) {
         let mut target =
             OffscreenTarget::new(&self.device, prepared, EXTENT[0], EXTENT[1]).expect("target");
         prepared
-            .update_frame(
-                &self.queue,
-                &mut target,
-                scene,
-                FrameLighting::Diagnostic(SyntheticLight::default()),
-                1.0,
-            )
+            .update_frame(&self.queue, &mut target, scene, lighting, 1.0)
             .expect("update");
         let mut readback = target.readback(&self.device);
         let mut encoder = self

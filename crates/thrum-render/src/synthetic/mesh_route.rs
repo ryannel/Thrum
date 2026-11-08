@@ -16,7 +16,8 @@
 use super::buckets::{
     BucketError, BucketKey, BucketLimits, Buckets, PipelineClass, SEGMENT_ALIGN, Segment,
 };
-use super::mesh_arena::{MeshArena, MeshId};
+use super::mesh_arena::{MeshArena, MeshId, MeshVertex};
+use super::shadow::CasterDraw;
 use super::upload::InstanceUpload;
 use super::{RenderError, storage_layout};
 use crate::abi::InstanceRecord;
@@ -26,9 +27,10 @@ use crate::visibility::{MemberInputs, MemberShape};
 const TABLE_WORDS: usize = 4 + super::buckets::MAX_BUCKETS * 4;
 const TABLE_BYTES: u64 = TABLE_WORDS as u64 * 4;
 
-/// Each logical slot's mesh row, chosen by the renderer's caller at
-/// preparation. Every slot names a row the arena holds.
+/// Meshes added to the arena at preparation (rows 2 onward, in order) and
+/// each logical slot's mesh row. Every slot names a row the arena holds.
 pub(super) struct MeshSelection {
+    pub(super) meshes: Vec<(Vec<MeshVertex>, Vec<u32>)>,
     pub(super) slots: Vec<MeshId>,
 }
 
@@ -305,6 +307,30 @@ impl BucketRoute {
             }
         }
         Ok(())
+    }
+}
+
+impl BucketRoute {
+    /// The Sun caster draws: every bucket's active members, never the
+    /// camera-visible list, each bound at its segment offset.
+    pub(super) fn caster_draws(&self, arena: &MeshArena) -> Result<Vec<CasterDraw>, RenderError> {
+        self.segments()
+            .iter()
+            .filter(|segment| segment.len != 0)
+            .map(|segment| {
+                let row = arena
+                    .row(segment.key.mesh)
+                    .ok_or(RenderError::GraphPassMismatch)?;
+                Ok(CasterDraw {
+                    member_offset: segment.start * 4,
+                    indices: row.first_index..row.first_index + row.index_count,
+                    base_vertex: row
+                        .draw_base_vertex()
+                        .map_err(|_| RenderError::SceneCapacity)?,
+                    instances: segment.len,
+                })
+            })
+            .collect()
     }
 }
 
