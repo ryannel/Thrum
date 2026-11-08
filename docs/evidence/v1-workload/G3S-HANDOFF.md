@@ -8,6 +8,14 @@ The Codex goal remains active. Its attachment is
 
 ## Current checkpoint
 
+- M2 orientation is reopened. The daily review caught an equatorial reflection.
+  The game now uses a right-handed −45° equinox basis and the renderer refuses
+  reflected input. A CPU witness checked 30 named-star projections against
+  independent horizon equations (maximum direction error 2.020e-7). All
+  18,000 authored Sun tick vectors were bit-identical. The witness and
+  before/after regressions are in `tmp/g3s-sunset-lip/graph/celestial-*`.
+  Fresh Metal and Chrome orientation, motion and slider witnesses are owed.
+
 - M3 research is in `tmp/g3s-sunset-lip/M3-RESEARCH.md`. Decoding the
   existing off-axis crest diagnostic finds 33,965 partial receivers at
   frame 3 and 812,485 at frame 72 out of 1,118,754 eligible in both.
@@ -43,7 +51,7 @@ The Codex goal remains active. Its attachment is
   test. Runtime integration remains held.
   Rerun from `tmp/g3s-sunset-lip/M3-RESEARCH.md`.
 
-- M2 now owns the star closeout only. The Mac's lossless 1080p60 masters
+- Historical M2 star captures predate the orientation correction. The Mac's lossless 1080p60 masters
   and playback copies are under `current-main/ground-e-night-pan/` and
   `current-main/offscreen-emergence/`. Both clips played through at 1×
   in the hidden local playback tab (600 and 1,440 reported video frames).
@@ -57,7 +65,7 @@ The Codex goal remains active. Its attachment is
   lift late in twilight. The Chrome pan holds midnight. The Metal
   on/off pan advances from 00:00 to about 00:48 in matching ticks.
   The held midnight images show a legible ridge with and without
-  stars. D1–D3 pass. Compositor gaps reached 83 ms in the Chrome
+  stars. Compositor gaps reached 83 ms in the Chrome
   pan and 117 ms in emergence, so between-sample browser flicker and
   physical display cadence remain outside that witness.
 

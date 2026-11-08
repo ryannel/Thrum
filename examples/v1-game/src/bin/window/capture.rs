@@ -175,9 +175,9 @@ fn capture_diagnostics(
 }
 
 /// Optional consecutive-tick sunset, `THRUM_CAPTURE_LIVE_TICKS` frames from 17.7 h.
-/// The time is set once, then the world advances one fixed tick per frame, so
-/// temporal history carries over as it would live. Readback paces the frames;
-/// this makes no cadence or presentation claim.
+/// The time is set once and the world advances one fixed tick per readback.
+/// These endpoint captures do not advance display history. Readback paces
+/// the frames independently of presentation.
 fn live_sequence(host: &mut FrameHost, output: &Path) -> Result<Vec<serde_json::Value>, String> {
     let Some(ticks) = std::env::var("THRUM_CAPTURE_LIVE_TICKS")
         .ok()

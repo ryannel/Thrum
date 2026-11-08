@@ -890,7 +890,7 @@ fn cooked_mesh_outside_camera_casts_onto_visible_terrain() {
         config.volume = None;
         config.meshes[0].transform = transform(2.0, glam::Quat::IDENTITY, [0.0, 200.0, 0.0]);
         let mut roof = config.meshes[0].clone();
-        // Noon is toward +Y and -Z at 45°. The roof is above the entire camera
+        // Noon is toward +Y and -Z at −45°. The roof is above the entire camera
         // frustum and beyond the receiver reach. It casts toward the receiver centre.
         // At 1.4 km axial distance the finite Sun has a ~13 m diameter
         // footprint. A 32 m roof keeps this receiver inside a true umbra.

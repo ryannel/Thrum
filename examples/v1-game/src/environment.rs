@@ -3,7 +3,7 @@
 
 use std::f32::consts::{FRAC_PI_4, TAU};
 
-/// One equinox day at 45° latitude. The active world tick supplies time;
+/// One equinox day at −45° latitude. The active world tick supplies time;
 /// display interpolation only samples between its committed endpoints.
 pub(crate) struct DayCycle;
 
@@ -71,13 +71,16 @@ impl DayCycle {
         let phase = Self::rendered_phase(tick, alpha, phase_offset);
         let hour_angle = TAU * phase;
         let (sin_hour, cos_hour) = hour_angle.sin_cos();
-        let (sin_latitude, cos_latitude) = FRAC_PI_4.sin_cos();
+        // Local +X is east, +Y up and −Z north. The north celestial
+        // pole is below the horizon at this southern observer.
+        let (sin_latitude, cos_latitude) = (-FRAC_PI_4).sin_cos();
+        let toward_sun = [-sin_hour, cos_latitude * cos_hour, sin_latitude * cos_hour];
         SunSample {
-            toward_sun: [-sin_hour, cos_latitude * cos_hour, -sin_latitude * cos_hour],
+            toward_sun,
             equatorial_to_world: [
-                [-sin_hour, cos_latitude * cos_hour, -sin_latitude * cos_hour],
-                [cos_hour, cos_latitude * sin_hour, -sin_latitude * sin_hour],
-                [0.0, sin_latitude, cos_latitude],
+                toward_sun,
+                [cos_hour, cos_latitude * sin_hour, sin_latitude * sin_hour],
+                [0.0, sin_latitude, -cos_latitude],
             ],
             // At the top of the atmosphere; the renderer computes attenuation
             // and apparent disk radiance from this one emitter.
@@ -179,8 +182,25 @@ mod tests {
         assert_eq!(noon.equatorial_to_world[0], noon.toward_sun);
         assert_eq!(sunset.equatorial_to_world[0], sunset.toward_sun);
         assert_eq!(noon.equatorial_to_world[1], [1.0, 0.0, 0.0]);
+        let pole = noon.equatorial_to_world[2];
+        assert!(pole[1] < -0.7 && pole[2] < -0.7);
+        assert!(noon.toward_sun[1] > 0.7 && noon.toward_sun[2] < -0.7);
         assert!(sunset.equatorial_to_world[0][0] < -0.99);
         assert_eq!(noon.equatorial_to_world[2], sunset.equatorial_to_world[2]);
+        for sample in [noon, sunset, DayCycle::sample(day / 8, 1.0, 0.0)] {
+            let [a, b, pole] = sample.equatorial_to_world;
+            let cross = [
+                a[1] * b[2] - a[2] * b[1],
+                a[2] * b[0] - a[0] * b[2],
+                a[0] * b[1] - a[1] * b[0],
+            ];
+            assert!(
+                cross
+                    .into_iter()
+                    .zip(pole)
+                    .all(|(a, b)| (a - b).abs() < 1e-6)
+            );
+        }
         assert_eq!(
             DayCycle::sample(day, 1.0, 0.0).equatorial_to_world,
             DayCycle::sample(day + 1, 0.0, 0.0).equatorial_to_world,

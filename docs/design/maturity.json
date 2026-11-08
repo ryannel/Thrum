@@ -84,7 +84,7 @@
     "G3s_first_light": {
       "implementation": "partial_eight_wavelength_LUTs_receiver_Sun_SH9_GGX_native_cooked_cascades_terrain_horizon_moonless_background_and_cooked_valley_stars",
       "functional_validation": "Metal_sky_horizon_and_cascade_window_referees_authored_recovery_cooked_shadow_and_packed_spectral_twilight_pass;_night_GPU_meter_clamp_and_Metal_sky_incident_aerial_oracles_pass;_dim_card_HDR_and_SDR_match_Metal_and_Chrome;_midnight_recovery_pixels_match;_Metal_star_optics_and_Metal_Chrome_ground_E_route_pass",
-      "experienced_quality": "agent_reviewed_native_contact_shadows_blue_twilight_and_gradual_finite_Sun_ridge_crossing_with_low_Sun_contact,_low-light_twilight_key,_dithered_SDR_gradients,_terrain-shadowed_aerial_in-scatter_and_offscreen_consecutive-tick_sunset;_current_Chrome_live-sampled_and_Metal_foreground_sunset_to_midnight_reviewed;_M1_moonless_valley_done;_local_ground_albedo_reviewed_on_both_targets;_M2_stars_independently_qualified_on_Metal_and_Chrome;_1x_playback_reviewed",
+      "experienced_quality": "agent_reviewed_native_contact_shadows_blue_twilight_and_gradual_finite_Sun_ridge_crossing_with_low_Sun_contact,_low-light_twilight_key,_dithered_SDR_gradients,_terrain-shadowed_aerial_in-scatter_and_offscreen_consecutive-tick_sunset;_current_Chrome_live-sampled_and_Metal_foreground_sunset_to_midnight_reviewed;_M1_moonless_valley_done;_local_ground_albedo_reviewed_on_both_targets;_M2_star_orientation_reopened_after_reflection_review;_prior_Metal_and_Chrome_1x_playback_is_historical",
       "platform_performance": {
         "mac": "Metal_oracles_spectral_valley_shadowed_aerial_and_moonless_ABBA_recorded_under_shared_load;_midnight_callback_tail_tripwire_reproduced;_foreground_route_zero_world_overloads_with_dropped_views;_physical_cadence_unqualified;_star_scene_ABBA_and_full_frame_pan_recorded;_physical_traffic_unmeasured_queued_with_G3t_M0",
         "browser": "Chrome_M3Max_sunset_to_midnight_sweep_reviewed;_paired_720p_star_frame_costs_at_midnight_and_twilight_recorded;_physical_cadence_unqualified",
@@ -4492,7 +4492,7 @@
       "technique": "Flux-normalized catalogue star footprints with a daylight pass selector",
       "source": "https://articles.adsabs.harvard.edu/pdf/1908AnHar..50....1P",
       "owner": "thrum-render portable, v1-game catalogue",
-      "status": "Metal optics and independently reviewed Metal and Chrome motion pass. Opaque depth masks the normalized instanced draw. Logical attachment area and paired full-frame costs are recorded; no isolated speedup or physical bandwidth claim.",
+      "status": "Metal optics and independent Metal and Chrome motion evidence predate the orientation correction. The proper basis passes the named-star CPU witness. Fresh motion is owed. Opaque depth masks the normalized instanced draw. Logical attachment area and paired full-frame costs are recorded; no isolated speedup or physical bandwidth claim.",
       "evidence": "../evidence/v1-workload/G3S-HANDOFF.md"
     },
     {

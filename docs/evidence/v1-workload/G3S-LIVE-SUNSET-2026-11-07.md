@@ -1,7 +1,8 @@
 # G3s live sunset motion — 7 November 2026
 
-Earlier sunset evidence sampled one frame per 30 s of solar time. This page checks the sunset at live cadence: 300
-consecutive 60 Hz ticks, 17.70–18.10 h, with temporal history carried from frame to frame.
+Earlier sunset evidence sampled one frame per 30 s of solar time. This sequence shows 300 consecutive 60 Hz ticks
+from 17.70 to 18.10 h. Each readback is an endpoint capture. World time advances while display history stays unchanged.
+Use the game drive route to check temporal effects.
 
 [Live sunset clip](g3s-first-light/live-sunset.mp4): native Metal offscreen frames, one per world tick, played at
 60 fps. Readback paces the frames, so the clip makes no presentation or frame-time claim.
