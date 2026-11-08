@@ -2,17 +2,19 @@
 //! with its own shape and extent, on screen or not, in both Sun cascades and
 //! the top-down height layer, and Frustum's camera culling never removes one.
 
-use super::super::super::mesh_arena::{MeshId, MeshVertex};
-use super::super::MeshSelection;
+use std::sync::Arc;
+
 use super::{EXTENT, Gpu, differing, gpu, place};
-use crate::synthetic::SyntheticView;
-use crate::synthetic::{FrameLighting, PreparedSynthetic, SyntheticLight, SyntheticScene};
+use crate::synthetic::{
+    FrameLighting, PreparedSynthetic, SyntheticLight, SyntheticMesh, SyntheticMeshChoice,
+    SyntheticMeshes, SyntheticScene, SyntheticVertex, SyntheticView,
+};
 use crate::visibility::CullMode;
 
 /// A square pyramid three times taller than the unit cube: base half-width 1
 /// at y = -3, apex at y = 3. Its silhouette is not a box, and its bounds reach
 /// past the unit cube the legacy fit assumes.
-fn pyramid() -> (Vec<MeshVertex>, Vec<u32>) {
+fn pyramid() -> SyntheticMesh {
     let base = [
         [-1.0, -3.0, -1.0],
         [1.0, -3.0, -1.0],
@@ -46,7 +48,7 @@ fn pyramid() -> (Vec<MeshVertex>, Vec<u32>) {
         }
         let length = normal.iter().map(|value| value * value).sum::<f32>().sqrt();
         for position in face {
-            vertices.push(MeshVertex {
+            vertices.push(SyntheticVertex {
                 position,
                 normal: normal.map(|value| value / length),
                 uv: [0.5; 2],
@@ -55,47 +57,33 @@ fn pyramid() -> (Vec<MeshVertex>, Vec<u32>) {
         }
     }
     let indices = (0..u32::try_from(vertices.len()).expect("18 vertices")).collect();
-    (vertices, indices)
+    SyntheticMesh { vertices, indices }
 }
 
-const PYRAMID: MeshId = MeshId::for_test(2);
+const CUBE: SyntheticMeshChoice = SyntheticMeshChoice::Cube;
+const PYRAMID: SyntheticMeshChoice = SyntheticMeshChoice::Mesh(0);
 
 impl Gpu {
     fn prepare_casters(
         &self,
         scene: &SyntheticScene,
-        slots: Option<Vec<MeshId>>,
+        slots: Option<Vec<SyntheticMeshChoice>>,
         light: SyntheticLight,
     ) -> PreparedSynthetic {
-        let lighting = FrameLighting::Diagnostic(light);
-        pollster::block_on(async {
-            match slots {
-                Some(slots) => {
-                    let selection = MeshSelection {
-                        meshes: vec![pyramid()],
-                        slots,
-                    };
-                    PreparedSynthetic::prepare_meshes(
-                        &self.capabilities,
-                        &self.queue,
-                        scene,
-                        lighting,
-                        &selection,
-                    )
-                    .await
-                }
-                None => {
-                    PreparedSynthetic::prepare_with_capabilities(
-                        &self.capabilities,
-                        &self.queue,
-                        scene,
-                        lighting,
-                        1.0,
-                    )
-                    .await
-                }
-            }
-        })
+        let mut scene = scene.clone();
+        scene.meshes = slots.map(|slots| {
+            Arc::new(SyntheticMeshes {
+                meshes: vec![pyramid()],
+                slots,
+            })
+        });
+        pollster::block_on(PreparedSynthetic::prepare_with_capabilities(
+            &self.capabilities,
+            &self.queue,
+            &scene,
+            FrameLighting::Diagnostic(light),
+            1.0,
+        ))
         .expect("prepare")
     }
 
@@ -104,7 +92,7 @@ impl Gpu {
     fn cast(
         &self,
         scene: &SyntheticScene,
-        slots: Option<Vec<MeshId>>,
+        slots: Option<Vec<SyntheticMeshChoice>>,
         light: SyntheticLight,
     ) -> (Vec<u8>, Option<u32>, usize) {
         let mut prepared = self.prepare_casters(scene, slots, light);
@@ -162,8 +150,8 @@ fn an_off_screen_pyramid_casts_its_own_shape_in_the_cascades() {
         0.0,
     );
     place(&mut scene.instances[1], [0.2; 3], [2.4, 0.0, 1.0], 0.0);
-    let pyramid = vec![MeshId::CUBE, PYRAMID];
-    let cube = vec![MeshId::CUBE; 2];
+    let pyramid = vec![CUBE, PYRAMID];
+    let cube = vec![CUBE; 2];
 
     let (lit, _, _) = gpu.cast(&scene, Some(pyramid.clone()), light);
     scene.sun_shadows = true;
@@ -205,7 +193,7 @@ fn an_off_screen_pyramid_casts_its_own_shape_in_the_cascades() {
     // the prepared fit: its apex (2.3 m) leaves the height layer's range (the
     // receiver's 1.2 m top plus 1 m of padding), while a unit cube's top
     // (1.9 m) would not.
-    let mut prepared = gpu.prepare_casters(&scene, Some(vec![MeshId::CUBE, PYRAMID]), light);
+    let mut prepared = gpu.prepare_casters(&scene, Some(vec![CUBE, PYRAMID]), light);
     let mut raised = scene.instances.clone();
     raised[1].current[3][1] = 1.7;
     raised[1].previous = raised[1].current;
@@ -254,8 +242,8 @@ fn a_distant_off_screen_pyramid_shades_through_the_height_layer() {
         [1500.0, 0.0, -1000.0],
         0.0,
     );
-    let pyramid = vec![MeshId::CUBE, PYRAMID];
-    let cube = vec![MeshId::CUBE; 2];
+    let pyramid = vec![CUBE, PYRAMID];
+    let cube = vec![CUBE; 2];
     scene.sun_shadows = true;
     let (pyramid_direct, _, clamped) = gpu.cast(&scene, Some(pyramid.clone()), light);
     let (cube_direct, _, _) = gpu.cast(&scene, Some(cube), light);

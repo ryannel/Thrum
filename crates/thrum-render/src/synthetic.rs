@@ -103,6 +103,86 @@ pub struct SyntheticScene {
     pub camera_culling: CullMode,
     /// Optional immutable unit equatorial directions with incident lux in w.
     pub star_catalogue: Option<&'static [[f32; 4]]>,
+    /// Each instance slot's mesh, fixed for every preparation of this scene:
+    /// the initial one, resizes, visual replacement and device reconstruction
+    /// all prepare from the same selection. `None` draws the unit cube.
+    pub meshes: Option<Arc<SyntheticMeshes>>,
+}
+
+pub use mesh_arena::MeshVertex as SyntheticVertex;
+
+/// One indexed triangle list in its local space. Triangles wind
+/// counter-clockwise seen from outside.
+#[derive(Clone, Debug, PartialEq)]
+pub struct SyntheticMesh {
+    /// Vertices, at most the device's storage-binding limit over all meshes.
+    pub vertices: Vec<SyntheticVertex>,
+    /// Triangle-list indices into this mesh's own `vertices`.
+    pub indices: Vec<u32>,
+}
+
+/// One logical slot's mesh.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum SyntheticMeshChoice {
+    /// The unit cube every scene without a selection draws.
+    Cube,
+    /// An index into [`SyntheticMeshes::meshes`].
+    Mesh(u32),
+}
+
+/// Authored meshes and each logical instance slot's choice among them.
+///
+/// The choice belongs to the slot, not to an entity: it survives short
+/// uploads, inactive slots, physical compaction and class changes, and an
+/// entity that reuses a slot draws that slot's mesh. Changing a slot's mesh
+/// means preparing again.
+///
+/// Preparation checks the whole selection before any GPU work and refuses it
+/// with [`RenderError::SceneCapacity`] when:
+/// - `slots` does not hold exactly one choice per scene instance;
+/// - a choice names an index outside `meshes`;
+/// - a mesh has no triangles, an index count that is not a multiple of
+///   three, an index at or past its vertex count, or a non-finite value;
+/// - the meshes exceed the device's vertex or index storage limits;
+/// - the scene uses [`CullMode::Occlusion`], which keeps the cube until its
+///   history follows slot identity.
+#[derive(Clone, Debug, PartialEq)]
+pub struct SyntheticMeshes {
+    /// Authored meshes, in addition to the cube.
+    pub meshes: Vec<SyntheticMesh>,
+    /// One choice per scene instance, in logical-slot order.
+    pub slots: Vec<SyntheticMeshChoice>,
+}
+
+/// Build the arena and check every slot's choice: the admitted selection
+/// names only rows the arena holds. CPU-only, before any GPU work.
+fn admit_meshes(
+    scene: &SyntheticScene,
+    limits: ArenaLimits,
+) -> Result<(MeshArena, Option<MeshSelection>), RenderError> {
+    let mut arena = MeshArena::new(limits).map_err(|_| RenderError::SceneCapacity)?;
+    let Some(meshes) = scene.meshes.as_deref() else {
+        return Ok((arena, None));
+    };
+    if meshes.slots.len() != scene.instances.len() || scene.camera_culling == CullMode::Occlusion {
+        return Err(RenderError::SceneCapacity);
+    }
+    let rows = meshes
+        .meshes
+        .iter()
+        .map(|mesh| arena.insert(&mesh.vertices, &mesh.indices))
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|_| RenderError::SceneCapacity)?;
+    let slots = meshes
+        .slots
+        .iter()
+        .map(|choice| match *choice {
+            SyntheticMeshChoice::Cube => Some(mesh_arena::MeshId::CUBE),
+            SyntheticMeshChoice::Mesh(index) => rows.get(usize::try_from(index).ok()?).copied(),
+        })
+        .collect::<Option<Vec<_>>>()
+        .ok_or(RenderError::SceneCapacity)?;
+    Ok((arena, Some(MeshSelection { slots })))
 }
 impl SyntheticScene {
     /// Generate a bounded regular grid. Instance IDs remain stable; one draw
@@ -160,6 +240,7 @@ impl SyntheticScene {
             sun_shadows: false,
             camera_culling: CullMode::Direct,
             star_catalogue: None,
+            meshes: None,
         })
     }
 }
@@ -791,22 +872,7 @@ impl PreparedSynthetic {
         slots: Vec<mesh_arena::MeshId>,
     ) -> Result<Self, RenderError> {
         let lighting = FrameLighting::Diagnostic(SyntheticLight::default());
-        let selection = MeshSelection {
-            meshes: Vec::new(),
-            slots,
-        };
-        Self::prepare_with_meshes(capabilities, queue, scene, lighting, 1.0, Some(&selection)).await
-    }
-
-    /// Prepare with added arena meshes and a lighting choice: the bucket route.
-    #[cfg(test)]
-    pub(in crate::synthetic) async fn prepare_meshes(
-        capabilities: &DeviceCapabilities,
-        queue: &wgpu::Queue,
-        scene: &SyntheticScene,
-        lighting: FrameLighting,
-        selection: &MeshSelection,
-    ) -> Result<Self, RenderError> {
+        let selection = MeshSelection { slots };
         Self::prepare_with_meshes(capabilities, queue, scene, lighting, 1.0, Some(selection)).await
     }
 
@@ -830,15 +896,21 @@ impl PreparedSynthetic {
         scene: &SyntheticScene,
         lighting: FrameLighting,
         exposure: f32,
-        meshes: Option<&MeshSelection>,
+        internal: Option<MeshSelection>,
     ) -> Result<Self, RenderError> {
-        // Occlusion's history is keyed by member index, which a bucket
-        // layout change reassigns; it keeps the flat route until it follows
-        // slot identity.
+        let device = capabilities.device();
+        // Admit the whole selection before GPU work. Occlusion's history is
+        // keyed by member index, which a bucket layout change reassigns; it
+        // keeps the flat route until it follows slot identity.
+        let (mut mesh_arena, admitted) = admit_meshes(
+            scene,
+            ArenaLimits::for_binding(device.limits().max_storage_buffer_binding_size),
+        )?;
+        let selection = internal.or(admitted);
+        let meshes = selection.as_ref();
         if meshes.is_some() && scene.camera_culling == CullMode::Occlusion {
             return Err(RenderError::SceneCapacity);
         }
-        let device = capabilities.device();
         let generation = capabilities.generation();
         checked_display_gain(exposure)?;
         let (mut light_data, background, presentation_light_clamps) =
@@ -1177,16 +1249,6 @@ impl PreparedSynthetic {
             label: Some("ABI2 material table and classes"),
             entries: &entries,
         });
-        let mut mesh_arena = MeshArena::new(ArenaLimits::for_binding(
-            device.limits().max_storage_buffer_binding_size,
-        ))
-        .map_err(|_| RenderError::SceneCapacity)?;
-        // Added meshes take rows 2 onward, in order, before the one upload.
-        for (vertices, indices) in meshes.iter().flat_map(|selection| &selection.meshes) {
-            mesh_arena
-                .insert(vertices, indices)
-                .map_err(|_| RenderError::SceneCapacity)?;
-        }
         mesh_arena.upload(device, queue);
         let arena_buffers = mesh_arena.buffers().ok_or(RenderError::SceneCapacity)?;
         let caster_boxes = meshes
