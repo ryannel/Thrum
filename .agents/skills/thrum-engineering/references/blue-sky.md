@@ -7,7 +7,7 @@ module must serve.
 ## Start from the experience, not the code
 
 - **Connect to the engine.** Take the required experiences, responsibility, consumers and budget from the engine
-  brief. Use `/plan-project` only for questions that cross module
+  brief. Use `/plan-module` at project level only for questions that cross module
   boundaries. A proposed boundary change goes into both the brief and the module design.
 - **Write the target before reading existing code or old plans.** If you have already seen them, say so; don't claim
   a blind study.

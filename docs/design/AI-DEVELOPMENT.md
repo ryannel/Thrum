@@ -68,8 +68,7 @@ the generic orchestrate suite (the `orchestration` domain of `ryannel/skills`), 
 
 | Level | Skill | Produces | Model and effort |
 | --- | --- | --- | --- |
-| Project | `/plan-project` | Module map, gate order, [contracts](CONTRACTS.md), module briefs | Claude Opus 5.5, high |
-| Module | `/plan-module` | Design, plan and a JSON done-when file per module | Claude Opus 5.5, high |
+| Project and module | `/plan-module` | Module map, gate order, [contracts](CONTRACTS.md); then each module's design, plan and JSON done-when file | Claude Opus 5.5, high |
 | Milestone | `/build-milestone` | The next milestone, verified and pushed | Codex `gpt-6.1-sol` or Claude Opus 5.5, medium |
 | Milestone | `/review-milestone` | A verdict from a clean context | Claude Opus 5.5, medium |
 | Fan-out | `/build-parallel` | Several module streams under one Claude lead | Lead at medium |

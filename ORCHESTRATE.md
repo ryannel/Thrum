@@ -1,54 +1,40 @@
 # Orchestrate profile: Thrum
 
-Thrum's work follows the orchestrate process (`/orchestrate`, `/plan-project`, `/plan-module`, `/build-milestone`,
-`/review-milestone`, `/build-parallel`). This file is what's specific to Thrum; the skills stay generic.
+Thrum's work follows the generic orchestrate skills (`/plan-module`, `/build-milestone`, `/review-milestone`,
+`/build-parallel`). This file holds what's specific to Thrum.
 
-## Purpose
-- **Purpose and goal:** [the build plan](docs/BUILD-PLAN.md): purpose, the V1 exit and the gate order.
+- **Purpose:** [the build plan](docs/BUILD-PLAN.md): purpose, the V1 exit and the gate order.
 - **Quality bar:** would pass in a shipped high-end game of this kind, named per milestone, e.g. sea and wakes as in
-  Sea of Thieves, skies as in Red Dead Redemption 2, smooth at the display's full refresh. Judged in words against an
-  inspection list, never against target images.
-
-## Where things live
-- **Plans:** docs/design/modules  *(read by the loop)*
-- **Contracts:** [docs/design/CONTRACTS.md](docs/design/CONTRACTS.md); `/plan-project` is their coordinating owner.
-- **Evidence:** docs/evidence  *(read by the loop)*
-- **Graded examples:** [docs/design/GRADED-EXAMPLES.md](docs/design/GRADED-EXAMPLES.md)
-- **Scratch:** `tmp/<task>/` (gitignored); bulk outputs follow [the storage rules](docs/ASSET-LIFECYCLE.md).
-- **Status ledger:** [docs/design/maturity.json](docs/design/maturity.json), with implementation, correctness, visuals
-  and device recorded separately; a review pass records `agent_reviewed`.
-
-## Checks and integration
-- **Check:** `./dev check` (documentation-only work: `./dev check-docs`). `./dev help` lists commands.
-- **Integrate:** main  *(read by the loop)*
-- **CI:** manual-only (workflow_dispatch), so a fresh `./dev check` on the rebased tip is the gate.
+  Sea of Thieves, skies as in Red Dead Redemption 2, smooth at the display's full refresh. Judged in words against
+  inspection items, never against target images.
+- **Plans:** docs/design/modules  *(loop)*
+- **Evidence:** docs/evidence  *(loop; graded examples in [docs/design/GRADED-EXAMPLES.md](docs/design/GRADED-EXAMPLES.md))*
+- **Check:** `./dev check` (documentation-only work: `./dev check-docs`). CI is manual-only, so this is the gate.
+- **Branch:** main  *(loop)*
+- **Remote:** origin  *(loop)*
+- **Codex generator:** gpt-6.1-sol medium  *(loop)*
 
 ## Targets
 
-| Target | What it is | Run | Capture evidence |
-|---|---|---|---|
-| mac-metal | This M3 Max, 120 Hz ProMotion display, Metal | `scripts/run_v1_showcase.py` and `./dev` scenarios | Offscreen fixed-camera captures and frame sequences, `.ppm` converted to PNG; contact sheets |
-| chrome-webgpu | Chrome, portable WebGPU recipe | the browser showcase | Screenshots and frame sequences from the exact build |
-| ios-sim | iPhone 18 Pro simulator; function only, never speed | the iOS route | `xcrun simctl io booted screenshot`, recorded sequences |
+| Target | What it is | Run | Capture | Edge conditions |
+|---|---|---|---|---|
+| mac-metal | This M3 Max, 120 Hz ProMotion, Metal | `scripts/run_v1_showcase.py`, `./dev` scenarios | Offscreen fixed-camera captures and frame sequences (`.ppm` to PNG), contact sheets | Low sun, storm, distance, fast camera, full refresh |
+| chrome-webgpu | Chrome, portable WebGPU recipe | the browser showcase | Screenshots and frame sequences from the exact build | Same scenarios as mac-metal |
+| ios-sim | iPhone 18 Pro simulator; function only, never speed | the iOS route | `xcrun simctl io booted screenshot`, recorded sequences | Rotation, background and foreground |
 
-Label Mac stand-ins for iPhone as `proxy:iphone`. No physical iPhone is available; don't wait for one.
+Label Mac stand-ins for iPhone `proxy:iphone`. No physical iPhone is available, so don't wait for one.
 
-## Exclusive resources
-- **gpu:** device timing and capture runs share one GPU. Wrap them in `agent_loop.py lock gpu -- <command>`.
-
-## Owner
+## Rules
+- **Exclusive resources:** gpu (device timing and capture runs share one GPU).
 - **Owner decides:** changing purpose or the V1 exit; spending; publishing, licensing or deploying; irreversible
-  actions. Everything else, including gate order within the V1 exit, proceeds without asking.
-- **Licences:** no GPL or share-alike code or data; restrictive-licence code may inform ideas only.
-- **Don't touch:** Broadsides (historical context only, ported module by module under
-  [the port decision](docs/design/decisions/SEA-AND-CLOUD-PORT.md)); the owner's uncommitted files.
-
-## Models
-- **Codex generator:** gpt-6.1-sol medium  *(read by the loop)*
-- **Evaluator / planner / lead:** the orchestrate defaults (evaluator and lead Opus 5.5 medium, planner Opus 5.5 high).
+  actions. Gate order within the V1 exit is the agents' call.
+- **Licences and paths not to touch:** no GPL or share-alike code or data (restrictive-licence code may inform ideas
+  only); never modify Broadsides (ported module by module under [the port decision](docs/design/decisions/SEA-AND-CLOUD-PORT.md));
+  preserve the owner's uncommitted files.
 
 ## Project guidance
-[thrum-engineering](.agents/skills/thrum-engineering/SKILL.md) holds the engine rules each level reads:
-- **Planning:** engine architecture, research-first module design, performance as a system property, reconciliation.
-- **Building:** rigour by state, Rust code shape, hot paths, verification on named targets, build outputs.
-- **Reviewing:** the calibration failures this engine has already paid for.
+[thrum-engineering](.agents/skills/thrum-engineering/SKILL.md) holds the engine rules for planning, building and
+reviewing. The architecture brief is [docs/design/ARCHITECTURE-BRIEF.md](docs/design/ARCHITECTURE-BRIEF.md), the
+shared contracts are [docs/design/CONTRACTS.md](docs/design/CONTRACTS.md), and capability status is
+[docs/design/maturity.json](docs/design/maturity.json) (implementation, correctness, visuals and device kept apart).
+Scratch goes in `tmp/<task>/`, under [the storage rules](docs/ASSET-LIFECYCLE.md).

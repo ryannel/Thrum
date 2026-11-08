@@ -1,6 +1,6 @@
 ---
 name: thrum-engineering
-description: Thrum's engine rules for planning, building and reviewing, read alongside the generic orchestrate skills (plan-project, plan-module, build-milestone, review-milestone). Use whenever working on Thrum engine code, module designs, architecture or milestone reviews, for the engine-specific standards those skills defer to the project for. Not a process skill on its own.
+description: Thrum's engine rules for planning, building and reviewing, read alongside the generic orchestrate skills (plan-module, build-milestone, review-milestone). Use whenever working on Thrum engine code, module designs, architecture or milestone reviews, for the engine-specific standards those skills defer to the project for. Not a process skill on its own.
 ---
 
 # Thrum engineering
@@ -9,7 +9,7 @@ Thrum is a native-first Rust 3D engine and a showcase of AI-driven engineering: 
 performance beyond what a human team would build and maintain. The process and its settings are in
 [ORCHESTRATE.md](../../../ORCHESTRATE.md); this skill holds the engine rules each level reads.
 
-**Planning** (`/plan-project`, `/plan-module`):
+**Planning** (`/plan-module`):
 - [Engine architecture](references/architecture.md): users and usage profiles, responsibilities and interactions,
   module briefs, proof order.
 - [Research and design](references/blue-sky.md) and [what a design covers](references/design.md): from what the player
