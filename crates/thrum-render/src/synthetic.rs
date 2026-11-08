@@ -63,7 +63,7 @@ use history_gpu::TransformHistory;
 use mesh_arena::{ArenaLimits, MeshArena};
 use mesh_route::{BucketRoute, MeshSelection};
 pub use scene_apply::SceneApplyReport;
-use shadow::{ShadowPrepared, ShadowTarget};
+use shadow::{CasterBox, CasterDraw, CasterDraws, ShadowPrepared, ShadowTarget};
 use stars::{StarPrepared, StarTarget};
 use upload::{InstanceUpload, PackedInstances};
 pub use view::SyntheticView;
@@ -83,7 +83,6 @@ const CUBE_INDICES: [u16; 36] = [
     0, 1, 2, 2, 1, 3, 4, 5, 6, 6, 5, 7, 8, 9, 10, 10, 9, 11, 12, 13, 14, 14, 13, 15, 16, 17, 18,
     18, 17, 19, 20, 21, 22, 22, 21, 23,
 ];
-const CUBE_INDEX_BYTES: u64 = 72;
 /// Explicit shader sRGB encoding after exposure, tone and gamut mapping.
 pub const OUTPUT_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba8Unorm;
 
@@ -352,6 +351,13 @@ fn pack_directional(
     Ok(bytes)
 }
 
+/// A slot's caster box: its selected mesh bounds, or the legacy unit cube.
+fn caster_box(boxes: Option<&[CasterBox]>, slot: usize) -> CasterBox {
+    boxes
+        .and_then(|boxes| boxes.get(slot).copied())
+        .unwrap_or(CasterBox::UNIT)
+}
+
 fn packed_light_direction(data: &[u8; LIGHT_BYTES]) -> Vec3 {
     let words = data[..12].as_chunks::<4>().0;
     Vec3::new(
@@ -439,14 +445,18 @@ pub struct PreparedSynthetic {
     /// Occlusion only: the depth-only twins of `pipeline` and
     /// `pipeline_two_sided`, for the depth prepass.
     depth_prepass: Option<[wgpu::RenderPipeline; 2]>,
-    /// Shadow casters still draw the 16-bit cube indices.
-    cube_indices: wgpu::Buffer,
-    /// Camera passes pull vertices and indices from the arena; it holds the
-    /// cube (row 0) and its orthographic winding (row 1) over shared vertices.
+    /// Camera and Sun caster passes pull vertices and indices from the arena;
+    /// it holds the cube (row 0) and its orthographic winding (row 1) over
+    /// shared vertices.
     mesh_arena: MeshArena,
     /// Scenes that select meshes draw per bucket; others keep the legacy
     /// single-pipeline route.
     bucket_route: Option<BucketRoute>,
+    /// Each slot's selected mesh bounds, for the Sun fit and containment.
+    /// `None` keeps the unit cube.
+    caster_boxes: Option<Vec<CasterBox>>,
+    /// The bucket route's member list for the Sun caster passes.
+    shadow_members: Option<wgpu::BindGroup>,
     display: DisplayPrepared,
     view_layout: wgpu::BindGroupLayout,
     view_buffer: wgpu::Buffer,
@@ -534,13 +544,37 @@ impl SceneContext<'_> {
                 .and_then(SceneContribution::shadow_bounds);
             shadow.write_recording(bounds)
         });
+        let prepared = &self.prepared;
+        let arena = &prepared.mesh_arena;
+        let buffers = arena.buffers().ok_or(RenderError::GraphPassMismatch)?;
+        // Every admitted caster draws, on screen or not: the route's members,
+        // or the cube over the physical rows.
+        let draws = if let Some(route) = &prepared.bucket_route {
+            route.caster_draws(arena)?
+        } else {
+            let row = arena
+                .row(mesh_arena::MeshId::CUBE)
+                .ok_or(RenderError::GraphPassMismatch)?;
+            vec![CasterDraw {
+                member_offset: 0,
+                indices: row.first_index..row.first_index + row.index_count,
+                base_vertex: row
+                    .draw_base_vertex()
+                    .map_err(|_| RenderError::SceneCapacity)?,
+                instances: prepared.instance_upload.active_count(),
+            }]
+        };
+        let casters = CasterDraws {
+            indices: &buffers.indices,
+            two_sided: prepared.instance_upload.two_sided_count() != 0,
+            members: prepared.shadow_members.as_ref(),
+            draws: &draws,
+        };
         shadow.encode_cascade(
             self.encoder,
             shadow_target,
-            self.prepared.history.read_group(),
-            &self.prepared.cube_indices,
-            self.prepared.instance_upload.active_count(),
-            self.prepared.instance_upload.two_sided_count() != 0,
+            prepared.history.read_group(),
+            &casters,
             self.generation,
             index,
             pass,
@@ -758,8 +792,23 @@ impl PreparedSynthetic {
         slots: Vec<mesh_arena::MeshId>,
     ) -> Result<Self, RenderError> {
         let lighting = FrameLighting::Diagnostic(SyntheticLight::default());
-        let selection = MeshSelection { slots };
+        let selection = MeshSelection {
+            meshes: Vec::new(),
+            slots,
+        };
         Self::prepare_with_meshes(capabilities, queue, scene, lighting, 1.0, Some(&selection)).await
+    }
+
+    /// Prepare with added arena meshes and a lighting choice: the bucket route.
+    #[cfg(test)]
+    pub(in crate::synthetic) async fn prepare_meshes(
+        capabilities: &DeviceCapabilities,
+        queue: &wgpu::Queue,
+        scene: &SyntheticScene,
+        lighting: FrameLighting,
+        selection: &MeshSelection,
+    ) -> Result<Self, RenderError> {
+        Self::prepare_with_meshes(capabilities, queue, scene, lighting, 1.0, Some(selection)).await
     }
 
     async fn prepare_with_lighting(
@@ -1133,8 +1182,28 @@ impl PreparedSynthetic {
             device.limits().max_storage_buffer_binding_size,
         ))
         .map_err(|_| RenderError::SceneCapacity)?;
+        // Added meshes take rows 2 onward, in order, before the one upload.
+        for (vertices, indices) in meshes.iter().flat_map(|selection| &selection.meshes) {
+            mesh_arena
+                .insert(vertices, indices)
+                .map_err(|_| RenderError::SceneCapacity)?;
+        }
         mesh_arena.upload(device, queue);
         let arena_buffers = mesh_arena.buffers().ok_or(RenderError::SceneCapacity)?;
+        let caster_boxes = meshes
+            .map(|selection| {
+                selection
+                    .slots
+                    .iter()
+                    .map(|&mesh| {
+                        mesh_arena
+                            .row(mesh)
+                            .map(|row| CasterBox::from_bounds(row.bounds))
+                    })
+                    .collect::<Option<Vec<_>>>()
+                    .ok_or(RenderError::SceneCapacity)
+            })
+            .transpose()?;
         let instance_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("ABI2 instance table"),
             entries: &[
@@ -1158,7 +1227,7 @@ impl PreparedSynthetic {
                 device,
                 queue,
                 &scene.view,
-                &scene.instances,
+                (&scene.instances, caster_boxes.as_deref()),
                 direction,
                 &instance_layout,
             )?)
@@ -1169,8 +1238,9 @@ impl PreparedSynthetic {
             AirShadowPrepared::new(device, shadow::SAMPLE_BYTES as u64, LIGHT_BYTES as u64)
         });
         if let Some(shadow) = shadow.as_ref() {
-            instance_upload.seed_shadow_clamps(&scene.instances, |instance| {
-                instance.ids[3] != 0 && !shadow.contains_caster(instance)
+            instance_upload.seed_shadow_clamps(&scene.instances, |slot, instance| {
+                instance.ids[3] != 0
+                    && !shadow.contains_caster(instance, caster_box(caster_boxes.as_deref(), slot))
             });
         }
         let views: Vec<wgpu::TextureView> = classes
@@ -1347,13 +1417,16 @@ impl PreparedSynthetic {
                 create_pipeline(None, true),
             ]
         });
-        let index_bytes: [u8; 72] =
-            std::array::from_fn(|byte| CUBE_INDICES[byte / 2].to_le_bytes()[byte % 2]);
-        let cube_indices = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("synthetic shared cube indices"),
-            contents: &index_bytes,
-            usage: wgpu::BufferUsages::INDEX,
-        });
+        let shadow_members = shadow
+            .as_ref()
+            .zip(bucket_route.as_ref())
+            .map(|(shadow, route)| {
+                device.create_bind_group(&wgpu::BindGroupDescriptor {
+                    label: Some("synthetic Sun caster members"),
+                    layout: shadow.member_layout(),
+                    entries: &[route.members_entry(0)],
+                })
+            });
         let exposure_resolve = ExposureResolve::new(
             device,
             &directional,
@@ -1395,9 +1468,10 @@ impl PreparedSynthetic {
             pipeline,
             pipeline_two_sided,
             depth_prepass,
-            cube_indices,
             mesh_arena,
             bucket_route,
+            caster_boxes,
+            shadow_members,
             display,
             view_layout,
             view_buffer,
@@ -1545,7 +1619,7 @@ impl PreparedSynthetic {
         if let Some(shadow) = self.shadow.as_mut() {
             shadow.update(
                 &scene.view,
-                &scene.instances,
+                (&scene.instances, self.caster_boxes.as_deref()),
                 packed_light_direction(&light_data),
             )?;
         }
@@ -1641,12 +1715,15 @@ impl PreparedSynthetic {
         changed_slots: &[u32],
     ) -> Result<InstanceUploadReport, RenderError> {
         let shadow = self.shadow.as_ref();
-        let report = self
-            .instance_upload
-            .replace(queue, instances, changed_slots, |instance| {
-                instance.ids[3] != 0
-                    && shadow.is_some_and(|shadow| !shadow.contains_caster(instance))
-            })?;
+        let boxes = self.caster_boxes.as_deref();
+        let report =
+            self.instance_upload
+                .replace(queue, instances, changed_slots, |slot, instance| {
+                    instance.ids[3] != 0
+                        && shadow.is_some_and(|shadow| {
+                            !shadow.contains_caster(instance, caster_box(boxes, slot))
+                        })
+                })?;
         if let Some(visibility) = &mut self.visibility {
             visibility.set_active(queue, self.instance_upload.active_count());
         }
