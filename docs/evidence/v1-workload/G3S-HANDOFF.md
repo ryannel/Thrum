@@ -34,9 +34,11 @@ The Codex goal remains active. Its attachment is
   The hard archived view has 897 possible compact-caster overlaps
   among 1,118,754 receivers. The detached-area correction has zero
   step at both padded cone boundaries over 401 poses. The adaptive
-  time fit's maximum sampled error is 0.549 pp at the broad edge and
-  2.964 pp at the raised crest. Spatial error refinement and the
-  full-source proof remain open. Renderer integration remains held.
+  time fit's broad-edge maximum is 0.549 pp. The conforming raised
+  patch plus strip shares its seams and still misses by 3.103 pp.
+  Independent terrain and caster rays agree with the meridian union
+  within 0.010 pp over seven poses. Stop pure fit trials and review
+  a bounded original-geometry complement. Runtime remains held.
   Rerun from `tmp/g3s-sunset-lip/M3-RESEARCH.md`.
 
 - M2 now owns the star closeout only. The Mac's lossless 1080p60 masters
