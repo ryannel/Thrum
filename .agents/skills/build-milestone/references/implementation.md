@@ -1,8 +1,7 @@
 # Build and prove
 
 The outcome is the commissioned behaviour running in the engine on the shipped path, judged in motion against its
-cues, with measured cost and honest limits. Continue through building, running, looking and correcting without adding
-approval stops.
+cues, with measured cost and honest limits.
 
 ## Work from the plan
 
@@ -41,7 +40,7 @@ the game's own controls, and capture of the running game watched in motion. Anyt
   for a shadow over water, say), adding that scene through public interfaces is work in your plan. Use simple stand-ins
   for neighbours that don't exist yet, label them, and take anything that would change another module's design to
   [plan-engine](../../plan-engine/SKILL.md).
-- **Supply what the judgement needs.** Provide the content, references and surroundings needed to judge at the
+- **Supply what the judgement needs.** Provide the content and surroundings needed to judge at the
   intended distances and speeds, and reject inadequate content before expensive preparation.
 - **Rebuild before reusing evidence.** When a source or recipe changes, rebuild the affected products and recheck the
   loaded artifact before carrying evidence forward.
@@ -63,14 +62,14 @@ the game's own controls, and capture of the running game watched in motion. Anyt
 
 ## Look, measure, review
 
-- **Look at the output yourself.** Watch stills and motion against the cues and references, including normal motion,
+- **Look at the output yourself.** Watch stills and motion against the inspection list, including normal motion,
   starts and stops, turns, camera and scale changes, and quality transitions. Judge at the player's camera, distance and
   real frame rate, against the milestone's inspection list and its shipped-game bar; close views and offline-paced clips are diagnostics.
   Tests and source review don't replace looking.
 - **Vary the suspects.** When a defect persists, vary the variables that could plausibly cause it; don't hold them
   fixed across trials. Give each experiment a question, a prediction and a stopping point.
-- **Get independent visual review.** Have a reviewer judge the images and sequences, and record the result as
-  `agent_reviewed`. Say plainly when output is poor. Owner feedback steers later slices; it is never a pause.
+- **Independent visual review is the evaluator's.** For milestones with `review: true`, the clean-context evaluator
+  judges the sequences and records `agent_reviewed`. Say plainly when output is poor. Owner feedback steers later slices; it is never a pause.
 - **Tie evidence to the build.** Tie captures and timings to the actual loaded build, inputs and quality state.
 - **Measure cost on the assembled path.** For performance-sensitive work, follow [performance](../../plan-module/references/performance.md),
   ending with an assembled measurement. Label timings taken on a shared, contended GPU as such.

@@ -520,7 +520,7 @@ cannot repeat one-shots; already played audio cannot be undone. Corrections rese
 
 A frame is a dependency schedule, not the sum of every parallel job. Its lower bounds include the longest dependent
 path and total work divided by available parallel capacity. Shared bandwidth, synchronization and queues can increase
-actual cost. Authors supply cost variables and worst-case work caps; coordinator reconciles simultaneous consumers.
+actual cost. Authors supply cost variables and worst-case work caps; plan-engine reconciles simultaneous consumers.
 Quality allocation has hysteresis and bounded transition cost; it never oscillates providers every frame.
 
 Before selecting or enforcing a number, identify its **kind, owner, unit,
@@ -632,7 +632,7 @@ must preserve these authority/identity/content contracts and supply their own co
 
 ## Active integration scenarios
 
-The coordinator traces each scenario with owners before declaring the high-level design integrated:
+plan-engine traces each scenario with owners before declaring the high-level design integrated:
 
 | Scenario | Required handoff chain | Failure that must be prevented |
 | --- | --- | --- |

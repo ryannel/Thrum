@@ -35,18 +35,22 @@ opinions to their briefs. That keeps their work independent, the same way Anthro
 
 - **Generator (Codex).** Run `python3 scripts/agent_loop.py run --module <M> --worktree <path>` as a background
   command. It pins `gpt-6.1-sol` at medium on every turn and prints one JSON result line when it stops.
-- **Generator (Claude, for a bounded slice the owner asked for).** Start a nested session at Opus 5.5, medium, with a
-  `/goal` naming the milestone's done-when, so it keeps going unattended.
+- **Generator (Claude, for a bounded slice the owner asked for).** Run it as a subagent with the Agent tool (Opus 5.5,
+  medium), briefed with the module, the milestone id and `/build-milestone`.
+  Pass no `model` to the evaluator and planner subagents, so their agent files' model and effort hold (a set
+  `CLAUDE_CODE_EFFORT_LEVEL` also overrides them).
 - **Act on the result line:**
 
 | Result | What you do |
 |---|---|
-| `CLAIMED` with `review: false`, or `DONE` with all items passing | The oracle closed it. Start the next milestone. |
+| `CLAIMED` with `review: false`, or `DONE` with all items passing | The oracle closed it, and the generator set `state` to `done`. Start the next milestone. |
 | `CLAIMED` with `review: true` | Run the `thrum-evaluator` subagent: "Review milestone `<id>` of `<MODULE>` at `<commit>`, worktree `<path>`." Nothing else. |
 | `BLOCKED`, `NEEDS_CONTEXT` | Read the report. Context you can supply from files goes back by resume (`--message`). A design or contract problem goes to the planner. Otherwise it goes in the daily report, and the stream moves to its next independent milestone if there is one. |
 | `BUDGET` | Treat it as a failed close: run the evaluator on what exists, so the findings drive the next attempt. |
 | `FLOOR`, `PACE` | Stop launching Codex work, and put it in the report with the evidence. Re-check pace every few hours. |
 | `PIN` | Stop that stream and report: a turn ran on the wrong model or effort. |
+| `DONE` with items not passing, or not yet on main | Resume with `--message` naming what's missing. |
+| `PAUSED` | The goal was paused in the Codex app, and only its play button resumes it. Put it in the report and leave the stream. |
 
 - **After a failed review,** run `agent_loop.py next`. It prints the action:
   - `same-session`: resume with its `resume_message`;
@@ -60,8 +64,8 @@ opinions to their briefs. That keeps their work independent, the same way Anthro
 
 ## Shared resources
 
-- **GPU timing runs one at a time.** When a stream needs a device timing measurement, hold the other streams' captures
-  and timing runs until it finishes. Correctness tests can overlap.
+- **GPU timing runs one at a time.** Generators wrap timing and capture runs in `agent_loop.py gpu -- <command>`, which
+  holds a machine-wide lock. Correctness tests can overlap.
 - **Main is shared.** Generators rebase and run `./dev check` before pushing. If main breaks, the first stream to see
   it fixes it before continuing, and you note it in the report.
 

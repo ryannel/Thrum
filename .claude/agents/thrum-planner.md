@@ -14,4 +14,4 @@ Work in the worktree you're given. Commit and push verified planning changes to 
 End with:
 - one line naming what changed;
 - the files changed;
-- any decision the owner must make. Only purpose, the V1 exit or spending go to the owner.
+- any decision the owner must make. What goes to the owner: changing purpose or the V1 exit; spending; publishing, licensing or deploying; irreversible actions.

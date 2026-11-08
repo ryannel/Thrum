@@ -114,5 +114,4 @@ architecture is ready to commission modules when required experiences have owner
 budgets are accounted for, and consequential structural choices have reasoned mechanisms. Remaining empirical
 uncertainties have bounded qualification; unresolved core mechanisms remain design gaps. It need not preselect every algorithm.
 Record unqualified combinations and deferred decisions; a completed design phase does not certify implementation,
-performance or visual quality. Continue through the commissioned stage without an invented approval pause. Changes to purpose, the V1 exit
-or spending go to the owner; everything else in this level is yours, including pushing verified checkpoints to main.
+performance or visual quality. What goes to the owner: changing purpose or the V1 exit; spending; publishing, licensing or deploying; irreversible actions; everything else in this level is yours, including pushing verified checkpoints to main.
