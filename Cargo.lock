@@ -2168,6 +2168,9 @@ dependencies = [
  "thrum-controls",
  "thrum-core",
  "thrum-render",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
  "wgpu",
  "winit",
 ]

@@ -6,11 +6,10 @@ use std::{cell::RefCell, rc::Rc, sync::Arc};
 use thrum_render::{
     capabilities::DeviceCapabilities,
     present::SurfaceProfile,
-    runtime::{DevicePrepareInputs, PreparedDevice},
+    runtime::{DevicePrepareInputs, FrameHost, FrameWorld, PreparedDevice, SceneSource},
 };
 
 use super::GraphicsFault;
-use crate::FrameHost;
 
 pub(super) struct GraphicsDevice {
     pub(super) device: wgpu::Device,
@@ -107,10 +106,10 @@ impl Replacement {
         }))
     }
 
-    fn try_publish(
+    fn try_publish<W: FrameWorld, V: SceneSource<W::Page>>(
         &mut self,
         surface: &wgpu::Surface<'static>,
-        host: &mut FrameHost,
+        host: &mut FrameHost<W, V>,
         extent: [u32; 2],
     ) -> Result<Option<bool>, String> {
         if self.gpu.fault.is_lost() {
@@ -175,14 +174,18 @@ pub(super) struct Recovery {
 }
 
 impl Recovery {
-    pub(super) fn new(instance: wgpu::Instance, surface: Rc<wgpu::Surface<'static>>) -> Self {
+    pub(super) fn new(
+        instance: wgpu::Instance,
+        surface: Rc<wgpu::Surface<'static>>,
+        generation: u64,
+    ) -> Self {
         Self {
             instance,
             surface,
             pending: None,
             error: None,
-            last_attempted: FrameHost::DEVICE_GENERATION,
-            generation: FrameHost::DEVICE_GENERATION,
+            last_attempted: generation,
+            generation,
             attempts: 0,
             recovered: 0,
             awaiting_first_present: false,
@@ -193,7 +196,11 @@ impl Recovery {
         self.pending.is_some()
     }
 
-    pub(super) fn request(&mut self, host: &FrameHost, extent: [u32; 2]) -> Result<(), String> {
+    pub(super) fn request<W: FrameWorld, V: SceneSource<W::Page>>(
+        &mut self,
+        host: &FrameHost<W, V>,
+        extent: [u32; 2],
+    ) -> Result<(), String> {
         if self.is_pending() {
             return Err("graphics recovery is already preparing".to_owned());
         }
@@ -222,9 +229,9 @@ impl Recovery {
         Ok(())
     }
 
-    pub(super) fn poll(
+    pub(super) fn poll<W: FrameWorld, V: SceneSource<W::Page>>(
         &mut self,
-        host: &mut FrameHost,
+        host: &mut FrameHost<W, V>,
         extent: [u32; 2],
     ) -> Option<(GraphicsDevice, bool)> {
         let result = self.pending.as_ref()?.borrow_mut().take()?;

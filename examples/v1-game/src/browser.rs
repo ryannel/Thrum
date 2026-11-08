@@ -1,32 +1,28 @@
-//! Browser WebGPU surface adapter for the same fixed-step V1 frame host.
+//! The V1 game's browser page bindings over the engine's web shell (`thrum_app::web`).
+//!
+//! The shell owns the canvas surface, the device, loss and replacement, and the frame step; this
+//! facade keeps the game's controls, cooked valley, material reloads, capture slot and report.
 
-use std::time::Duration;
 use std::{
     cell::RefCell,
     rc::Rc,
-    sync::{
-        Arc, Mutex,
-        atomic::{AtomicBool, Ordering},
-    },
+    sync::{Arc, Mutex},
 };
 
+use thrum_app::web::SAMPLES;
 use thrum_asset::{BrowserFetch, DevClient};
 use thrum_asset_gpu::{CookedSource, CookedStats, RemoteFeed};
 #[cfg(feature = "dev-material")]
 use thrum_asset_gpu::{MaterialHook, MaterialOutcome, MaterialReload};
-use thrum_render::present::SurfaceProfile;
+use thrum_controls::Value;
 use wasm_bindgen::prelude::*;
 use web_sys::HtmlCanvasElement;
 
 use crate::{
-    FrameConfig, FrameHost, FrameSample, SurfaceOutput,
+    FrameSample,
     controls::{ControlEdits, GameControls},
+    host::web::{self as game, Shell},
 };
-use thrum_controls::Value;
-
-mod recovery;
-
-const FRAMES: usize = 600;
 
 /// The cooked valley's dev-server client and the feed of generations it has fetched.
 #[wasm_bindgen]
@@ -80,22 +76,11 @@ impl CookedValley {
     }
 }
 
-/// One browser canvas, WebGPU surface and serial V1 game host.
+/// One browser canvas running the V1 game through the engine's web shell.
 #[wasm_bindgen]
 pub struct BrowserGame {
-    canvas: HtmlCanvasElement,
-    adapter_name: String,
-    surface: Rc<wgpu::Surface<'static>>,
-    recovery: recovery::Recovery,
-    config: wgpu::SurfaceConfiguration,
-    device: wgpu::Device,
-    graphics: Arc<GraphicsFault>,
-    queue: wgpu::Queue,
-    host: FrameHost,
+    shell: Shell,
     cooked: Option<Arc<Mutex<CookedStats>>>,
-    /// A cooked contribution attached while the device was lost. It makes no GPU call on the
-    /// lost device and attaches right after the replacement device is published.
-    held_contribution: Option<Box<dyn thrum_render::contribution::SceneContribution>>,
     /// Explicit material reloads of the attached cooked valley (development builds only).
     #[cfg(feature = "dev-material")]
     material: Option<MaterialReload>,
@@ -106,18 +91,6 @@ pub struct BrowserGame {
     demo: GameControls,
     /// Model revision the page last synced to.
     page_seen: u64,
-    first_frame_ms: Option<f64>,
-    last_frame: Duration,
-    visible: bool,
-    user_paused: bool,
-    callbacks: u64,
-    presented: u64,
-    unavailable: u64,
-    overload_events: u64,
-    refused_ticks: u64,
-    timestamp_clamps: u64,
-    needs_reconfigure: bool,
-    samples: Vec<FrameSample>,
     /// The page's outstanding capture, finished from a later animation frame.
     capture: Option<thrum_render::runtime::PendingCapture>,
 }
@@ -176,75 +149,23 @@ async fn create_game(
     canvas: HtmlCanvasElement,
     setup: crate::GameSetup,
 ) -> Result<BrowserGame, JsValue> {
-    std::panic::set_hook(Box::new(|info| {
-        web_sys::console::error_1(&JsValue::from_str(&info.to_string()));
-    }));
-    let mut descriptor = wgpu::InstanceDescriptor::new_without_display_handle();
-    descriptor.backends = wgpu::Backends::BROWSER_WEBGPU;
-    let instance = wgpu::Instance::new(descriptor);
-    let surface = Rc::new(
-        instance
-            .create_surface(wgpu::SurfaceTarget::Canvas(canvas.clone()))
-            .map_err(js_error)?,
-    );
-    let gpu = recovery::request_device(
-        &instance,
-        &surface,
-        [canvas.width().max(1), canvas.height().max(1)],
-        FrameHost::DEVICE_GENERATION,
-    )
+    let shell = thrum_app::web::create(canvas, game::DEVICE_GENERATION, |gpu| {
+        game::prepare(gpu, setup)
+    })
     .await
     .map_err(js_error)?;
-    surface.configure(&gpu.device, &gpu.config);
-    let host = FrameHost::new_with_setup(
-        &gpu.device,
-        &gpu.queue,
-        &gpu.capabilities,
-        FrameConfig {
-            render_extent: [gpu.config.width, gpu.config.height],
-            surface: Some(SurfaceProfile {
-                format: gpu.config.format,
-                extent: [gpu.config.width, gpu.config.height],
-            }),
-        },
-        setup,
-    )
-    .await
-    .map_err(js_error)?;
-    let recovery = recovery::Recovery::new(instance, Rc::clone(&surface));
     let mut demo = GameControls::new().map_err(js_error)?;
-    demo.observe_camera(host.camera_orientation());
-    demo.observe_time(host.time_of_day());
+    demo.observe_camera(game::camera_orientation(&shell));
+    demo.observe_time(game::time_of_day(&shell));
     Ok(BrowserGame {
-        canvas,
-        adapter_name: gpu.adapter_name,
-        surface,
-        recovery,
-        config: gpu.config,
-        device: gpu.device,
-        graphics: gpu.fault,
-        queue: gpu.queue,
-        host,
+        shell,
         cooked: None,
-        held_contribution: None,
         #[cfg(feature = "dev-material")]
         material: None,
         #[cfg(feature = "dev-material")]
         material_reported: 0,
         demo,
         page_seen: 0,
-        first_frame_ms: None,
-        last_frame: Duration::ZERO,
-        visible: true,
-        user_paused: false,
-        callbacks: 0,
-        presented: 0,
-        unavailable: 0,
-        overload_events: 0,
-        refused_ticks: 0,
-        timestamp_clamps: 0,
-        needs_reconfigure: false,
-        samples: Vec::with_capacity(FRAMES),
         capture: None,
     })
 }
@@ -265,7 +186,7 @@ impl BrowserGame {
     /// Returns an error when no cooked valley is attached, or `graphics device is lost` while
     /// the device is lost (compiling would call it).
     pub fn reload_material(&mut self, name: String, source: String) -> Result<f64, JsValue> {
-        if self.graphics.is_lost() {
+        if self.shell.graphics_lost() {
             // Compiling would call the lost device; the accepted hook is restored on the
             // replacement, and a fresh reload is accepted once it is published.
             return Err(js_error("graphics device is lost"));
@@ -366,16 +287,12 @@ impl BrowserGame {
         let stats = assets.stats();
         #[cfg(feature = "dev-material")]
         let material = assets.material();
-        if self.graphics.is_lost() {
-            self.held_contribution = Some(Box::new(assets));
-        } else {
-            self.held_contribution = None;
-            self.host
-                .set_scene_contribution(Box::new(assets))
-                .map_err(js_error)?;
-        }
-        self.host.set_scene_camera(camera);
-        self.demo.observe_camera(self.host.camera_orientation());
+        self.shell
+            .set_scene_contribution(Box::new(assets))
+            .map_err(js_error)?;
+        game::set_scene_camera(&mut self.shell, camera);
+        self.demo
+            .observe_camera(game::camera_orientation(&self.shell));
         self.cooked = Some(stats);
         #[cfg(feature = "dev-material")]
         {
@@ -405,22 +322,23 @@ impl BrowserGame {
     /// # Errors
     /// Refuses a nonfinite time or one outside the normalized day.
     pub fn set_time_of_day(&mut self, fraction: f32) -> Result<(), JsValue> {
-        self.host.set_time_of_day(fraction).map_err(js_error)?;
-        self.demo.observe_time(self.host.time_of_day());
+        game::set_time_of_day(&mut self.shell, fraction).map_err(js_error)?;
+        self.demo.observe_time(game::time_of_day(&self.shell));
         Ok(())
     }
 
     /// Observe the solar time of the latest committed world endpoint.
     pub fn time_of_day(&self) -> f32 {
-        self.host.time_of_day()
+        game::time_of_day(&self.shell)
     }
 
     /// Look up/down within the scene's supported camera range.
     /// # Errors
     /// Refuses a nonfinite pitch or one outside plus/minus 0.6 radians.
     pub fn set_camera_pitch(&mut self, radians: f32) -> Result<(), JsValue> {
-        self.host.set_camera_pitch(radians).map_err(js_error)?;
-        self.demo.observe_camera(self.host.camera_orientation());
+        game::set_camera_pitch(&mut self.shell, radians).map_err(js_error)?;
+        self.demo
+            .observe_camera(game::camera_orientation(&self.shell));
         Ok(())
     }
 
@@ -428,8 +346,9 @@ impl BrowserGame {
     /// # Errors
     /// Refuses a nonfinite yaw or one outside that range.
     pub fn set_camera_yaw(&mut self, radians: f32) -> Result<(), JsValue> {
-        self.host.set_camera_yaw(radians).map_err(js_error)?;
-        self.demo.observe_camera(self.host.camera_orientation());
+        game::set_camera_yaw(&mut self.shell, radians).map_err(js_error)?;
+        self.demo
+            .observe_camera(game::camera_orientation(&self.shell));
         Ok(())
     }
 
@@ -506,122 +425,16 @@ impl BrowserGame {
     /// # Errors
     /// Returns a JavaScript error for an authoritative tick or GPU host fault.
     pub fn frame(&mut self, timestamp_ms: f64) -> Result<(), JsValue> {
-        let now = self.time_from_browser(timestamp_ms)?;
-        self.demo.observe_time(self.host.time_of_day());
-        if !self.visible {
-            return Ok(());
-        }
-        self.callbacks += 1;
-        self.last_frame = now;
-        let extent = [self.canvas.width(), self.canvas.height()];
-        if let Some((gpu, reconfigure)) = self.recovery.poll(&mut self.host, extent) {
-            self.adapter_name = gpu.adapter_name;
-            self.config = gpu.config;
-            self.device = gpu.device;
-            self.queue = gpu.queue;
-            self.graphics = gpu.fault;
-            self.needs_reconfigure = reconfigure;
-            // Timings belong to one device generation, while world/platform
-            // counters retain their identity across graphics reconstruction.
-            self.samples.clear();
-            // The replacement installed free frame slots, so a held attach meets the
-            // no-frames-in-flight rule before the new device's first encode.
-            if let Some(held) = self.held_contribution.take()
-                && let Err(error) = self.host.set_scene_contribution(held)
-                && let Some(Ok(mut stats)) = self.cooked.as_ref().map(|stats| stats.lock())
-            {
-                stats.errors.push(format!(
-                    "cooked valley attach on the replacement device: {error}"
-                ));
-            }
-        }
-        if self.graphics.is_lost() {
-            self.recovery.awaiting_first_present = false;
-            self.unavailable += 1;
-            // No polling, completion collection, resize or GPU encoding after
-            // loss. Authority and controls continue on the same resident world.
-            let report = self.host.advance_without_rendering(now).map_err(js_error)?;
-            if let Some(refused_ticks) = report.overload {
-                self.recover_overload(refused_ticks, now)?;
-            }
-            return Ok(());
-        }
-        let mut resize = extent != [self.config.width, self.config.height];
-        if (resize || self.needs_reconfigure)
-            && extent[0] > 0
-            && extent[1] > 0
-            && self.host.pending_frames() == 0
+        self.demo.observe_time(game::time_of_day(&self.shell));
+        let result = self.shell.frame(timestamp_ms).map_err(js_error);
+        if let Some(error) = self.shell.take_attach_error()
+            && let Some(Ok(mut stats)) = self.cooked.as_ref().map(|stats| stats.lock())
         {
-            self.config.width = extent[0];
-            self.config.height = extent[1];
-            self.surface.configure(&self.device, &self.config);
-            self.host.resize_surface(extent).map_err(js_error)?;
-            self.needs_reconfigure = false;
-            resize = false;
+            stats.errors.push(format!(
+                "cooked valley attach on the replacement device: {error}"
+            ));
         }
-        let advanced = self.host.advance(now).map_err(js_error)?;
-        let can_acquire = advanced.can_acquire_serial()
-            && extent[0] > 0
-            && extent[1] > 0
-            && !resize
-            && !self.needs_reconfigure;
-        let report = if can_acquire {
-            let encoded = advanced.encode_scene().map_err(js_error)?;
-            let frame = if encoded.can_acquire_surface() {
-                match self.surface.get_current_texture() {
-                    wgpu::CurrentSurfaceTexture::Success(frame) => Some(frame),
-                    wgpu::CurrentSurfaceTexture::Suboptimal(frame) => {
-                        self.needs_reconfigure = true;
-                        Some(frame)
-                    }
-                    wgpu::CurrentSurfaceTexture::Lost | wgpu::CurrentSurfaceTexture::Outdated => {
-                        self.needs_reconfigure = true;
-                        self.unavailable += 1;
-                        None
-                    }
-                    wgpu::CurrentSurfaceTexture::Timeout
-                    | wgpu::CurrentSurfaceTexture::Occluded => {
-                        self.unavailable += 1;
-                        None
-                    }
-                    wgpu::CurrentSurfaceTexture::Validation => {
-                        return Err(js_error("canvas surface validation fault"));
-                    }
-                }
-            } else {
-                None
-            };
-            if let Some(frame) = frame {
-                let view = frame
-                    .texture
-                    .create_view(&wgpu::TextureViewDescriptor::default());
-                let report = encoded
-                    .submit(Some(&SurfaceOutput {
-                        view: &view,
-                        extent: [self.config.width, self.config.height],
-                    }))
-                    .map_err(js_error)?;
-                if report.surface_presented {
-                    self.queue.present(frame);
-                    self.presented += 1;
-                    self.recovery.awaiting_first_present = false;
-                }
-                report
-            } else {
-                encoded.skip()
-            }
-        } else {
-            advanced.submit(None).map_err(js_error)?
-        };
-        if let Some(refused_ticks) = report.overload {
-            self.recover_overload(refused_ticks, now)?;
-        }
-        while let Some(sample) = self.host.poll_completed().map_err(js_error)? {
-            if self.samples.len() < FRAMES {
-                self.samples.push(sample);
-            }
-        }
-        Ok(())
+        result
     }
 
     /// Sample normalized player movement for the next authoritative world tick.
@@ -629,13 +442,13 @@ impl BrowserGame {
     /// # Errors
     /// Returns a JavaScript error for a nonfinite or out-of-range axis.
     pub fn set_controls(&mut self, x: f32, y: f32) -> Result<(), JsValue> {
-        self.host.set_controls([x, y, 0.0]).map_err(js_error)
+        game::set_controls(&mut self.shell, [x, y, 0.0]).map_err(js_error)
     }
 
     /// Committed position of the one local player in this V1 fixture.
     #[must_use]
     pub fn controlled_position(&self) -> String {
-        self.host.controlled_position().map_or_else(
+        game::controlled_position(&self.shell).map_or_else(
             || "player unavailable".to_owned(),
             |position| format!("player x={:.3} y={:.3}", position[0], position[1]),
         )
@@ -647,8 +460,9 @@ impl BrowserGame {
     /// # Errors
     /// Returns a JavaScript error if a retained tick or clock restart fails.
     pub fn set_visible(&mut self, visible: bool, timestamp_ms: f64) -> Result<(), JsValue> {
-        let now = self.time_from_browser(timestamp_ms)?;
-        self.set_play_state(visible, self.user_paused, now)
+        self.shell
+            .set_visible(visible, timestamp_ms)
+            .map_err(js_error)
     }
 
     /// Stop admitting world time while retaining camera and sky controls.
@@ -657,43 +471,39 @@ impl BrowserGame {
     /// # Errors
     /// Returns a timestamp, retained-update or clock restart failure.
     pub fn set_paused(&mut self, paused: bool, timestamp_ms: f64) -> Result<(), JsValue> {
-        let now = self.time_from_browser(timestamp_ms)?;
-        self.set_play_state(self.visible, paused, now)?;
-        self.demo.observe_paused(self.user_paused);
+        self.shell
+            .set_paused(paused, timestamp_ms)
+            .map_err(js_error)?;
+        self.demo.observe_paused(self.shell.paused());
         Ok(())
     }
 
     /// Whether the local user requested pause, independent of tab visibility.
     pub fn paused(&self) -> bool {
-        self.user_paused
+        self.shell.paused()
     }
 
     /// Persistent device-loss diagnostic. Rendering stops while the world and
     /// local controls remain usable until a complete replacement is published.
     pub fn graphics_fault(&self) -> Option<String> {
-        self.graphics.message()
+        self.shell.graphics_fault()
     }
 
     /// Start detached graphics reconstruction without borrowing the running world.
     /// # Errors
     /// Refuses a healthy device, duplicate attempt or invalid retained inputs.
     pub fn request_graphics_recovery(&mut self) -> Result<(), JsValue> {
-        if !self.graphics.is_lost() {
-            return Err(js_error("graphics device is still available"));
-        }
-        self.recovery
-            .request(&self.host, [self.config.width, self.config.height])
-            .map_err(js_error)
+        self.shell.request_graphics_recovery().map_err(js_error)
     }
 
     /// Whether an explicit attempt is preparing or awaiting its first present call.
     pub fn recovering(&self) -> bool {
-        self.recovery.is_pending() || self.recovery.awaiting_first_present
+        self.shell.recovering()
     }
 
     /// Last failed reconstruction attempt; a fresh explicit request clears it.
     pub fn graphics_recovery_error(&self) -> Option<String> {
-        self.recovery.error.clone()
+        self.shell.recovery_error().map(str::to_owned)
     }
 
     /// Submit a capture of the committed endpoint for the page's oracle and
@@ -703,16 +513,10 @@ impl BrowserGame {
     /// Refuses a lost device or a second outstanding capture, or returns a
     /// recording failure.
     pub fn begin_capture(&mut self) -> Result<String, JsValue> {
-        if self.graphics.is_lost() {
-            return Err(js_error("graphics device is lost"));
-        }
-        if self.capture.is_some() {
+        if self.capture.is_some() && !self.shell.graphics_lost() {
             return Err(JsValue::from_str("a capture is already outstanding"));
         }
-        let pending = self
-            .host
-            .begin_capture()
-            .map_err(|error| JsValue::from_str(&error))?;
+        let pending = self.shell.begin_capture().map_err(js_error)?;
         let [width, height] = pending.extent();
         let identity = format!(
             "tick={};extent={width}x{height};generation={}",
@@ -730,15 +534,10 @@ impl BrowserGame {
     /// # Errors
     /// Returns a lost device, retired device generation or readback failure.
     pub fn try_finish_capture(&mut self) -> Result<Option<Vec<u8>>, JsValue> {
-        if self.graphics.is_lost() && self.capture.take().is_some() {
-            return Err(js_error(
-                "graphics device was lost before the capture finished",
-            ));
-        }
         let Some(pending) = self.capture.as_mut() else {
             return Ok(None);
         };
-        match self.host.try_finish_capture(pending) {
+        match self.shell.try_finish_capture(pending) {
             Ok(None) => Ok(None),
             Ok(Some(pixels)) => {
                 self.capture = None;
@@ -746,7 +545,7 @@ impl BrowserGame {
             }
             Err(error) => {
                 self.capture = None;
-                Err(JsValue::from_str(&error))
+                Err(js_error(error))
             }
         }
     }
@@ -754,47 +553,47 @@ impl BrowserGame {
     /// Number of surface presentation calls, not physical displayed frames.
     #[must_use]
     pub fn presented(&self) -> u64 {
-        self.presented
+        self.shell.presented()
     }
 
     /// True after 600 GPU-complete frame samples have been collected.
     #[must_use]
     pub fn complete(&self) -> bool {
-        self.samples.len() == FRAMES
+        self.shell.samples().len() == SAMPLES
     }
 
     /// Final callback, world and GPU report after 600 completed frames.
     #[must_use]
     pub fn report(&self) -> String {
-        let timed = self
-            .samples
+        let samples = self.shell.samples();
+        let status = self.shell.status();
+        let (shed_views, report_drops) = game::dropped(&self.shell);
+        let timed = samples
             .iter()
             .filter(|sample| sample.gpu_pass_ns.is_some() && sample.gpu_present_ns.is_some())
             .count();
-        let tick = percentile(&self.samples, |sample| sample.tick_cpu.as_secs_f64() * 1e6);
-        let encode = percentile(&self.samples, |sample| {
-            sample.encode_cpu.as_secs_f64() * 1e6
-        });
-        let gpu = if timed == self.samples.len() && timed > 0 {
-            let near = percentile(&self.samples, |sample| {
+        let tick = percentile(samples, |sample| sample.tick_cpu.as_secs_f64() * 1e6);
+        let encode = percentile(samples, |sample| sample.encode_cpu.as_secs_f64() * 1e6);
+        let gpu = if timed == samples.len() && timed > 0 {
+            let near = percentile(samples, |sample| {
                 sample.gpu_pass_ns.map_or(0.0, |passes| passes[0]) / 1e6
             });
-            let far = percentile(&self.samples, |sample| {
+            let far = percentile(samples, |sample| {
                 sample.gpu_pass_ns.map_or(0.0, |passes| passes[1]) / 1e6
             });
-            let cluster = percentile(&self.samples, |sample| {
+            let cluster = percentile(samples, |sample| {
                 sample.gpu_pass_ns.map_or(0.0, |passes| passes[2]) / 1e6
             });
-            let forward = percentile(&self.samples, |sample| {
+            let forward = percentile(samples, |sample| {
                 sample.gpu_pass_ns.map_or(0.0, |passes| passes[3]) / 1e6
             });
-            let history = percentile(&self.samples, |sample| {
+            let history = percentile(samples, |sample| {
                 sample.gpu_pass_ns.map_or(0.0, |passes| passes[4]) / 1e6
             });
-            let display = percentile(&self.samples, |sample| {
+            let display = percentile(samples, |sample| {
                 sample.gpu_pass_ns.map_or(0.0, |passes| passes[5]) / 1e6
             });
-            let present = percentile(&self.samples, |sample| {
+            let present = percentile(samples, |sample| {
                 sample.gpu_present_ns.unwrap_or_default() / 1e6
             });
             format!(
@@ -819,20 +618,17 @@ impl BrowserGame {
         };
         // Camera culling's read-back draw counts, over the frames whose
         // count had settled when they retired; Direct reports none.
-        let mut drawn: Vec<u32> = self
-            .samples
+        let mut drawn: Vec<u32> = samples
             .iter()
             .filter_map(|sample| sample.camera_culling.map(|counts| counts.drawn))
             .collect();
         drawn.sort_unstable();
-        let mut prepass: Vec<u32> = self
-            .samples
+        let mut prepass: Vec<u32> = samples
             .iter()
             .filter_map(|sample| sample.camera_culling.map(|counts| counts.prepass))
             .collect();
         prepass.sort_unstable();
-        let culling = match self
-            .samples
+        let culling = match samples
             .iter()
             .rev()
             .find_map(|sample| sample.camera_culling)
@@ -840,7 +636,7 @@ impl BrowserGame {
             Some(last) => format!(
                 "; culling_counted={}/{} culling_drawn_p50={} culling_drawn_p95={} culling_prepass_p50={} culling_active={}",
                 drawn.len(),
-                self.samples.len(),
+                samples.len(),
                 drawn[drawn.len() / 2],
                 drawn[drawn.len() * 95 / 100],
                 prepass[prepass.len() / 2],
@@ -850,33 +646,31 @@ impl BrowserGame {
         };
         format!(
             "adapter={} format={:?} extent={}x{}; callbacks={} presented={} samples={} ticks={} elapsed={:.3}s unavailable={} overload_events={} refused_ticks={} timestamp_clamps={} shed_views={} report_drops={} generation={} recovery_attempts={} recovered={} GPU_timed={} latest_visual_age={}; tick CPU p50/p95={:.1}/{:.1} us; encode CPU p50/p95={:.1}/{:.1} us; {gpu}; culling={:?}{culling}",
-            self.adapter_name,
-            self.config.format,
-            self.config.width,
-            self.config.height,
-            self.callbacks,
-            self.presented,
-            self.samples.len(),
-            self.host.tick(),
-            self.last_frame.as_secs_f64(),
-            self.unavailable,
-            self.overload_events,
-            self.refused_ticks,
-            self.timestamp_clamps,
-            self.host.dropped_views(),
-            self.host.dropped_reports(),
-            self.recovery.generation,
-            self.recovery.attempts,
-            self.recovery.recovered,
+            status.adapter_name,
+            status.format,
+            status.extent[0],
+            status.extent[1],
+            status.callbacks,
+            status.presented,
+            samples.len(),
+            game::tick(&self.shell),
+            status.last_frame.as_secs_f64(),
+            status.unavailable,
+            status.overload_events,
+            status.refused_ticks,
+            status.timestamp_clamps,
+            shed_views,
+            report_drops,
+            status.generation,
+            status.recovery_attempts,
+            status.recovered,
             timed,
-            self.samples
-                .last()
-                .map_or(0, |sample| sample.visual_age_ticks),
+            samples.last().map_or(0, |sample| sample.visual_age_ticks),
             tick.0,
             tick.1,
             encode.0,
             encode.1,
-            self.host.camera_culling(),
+            game::camera_culling(&self.shell),
         )
     }
 }
@@ -888,105 +682,21 @@ impl BrowserGame {
         timestamp_ms: f64,
     ) -> Result<(), JsValue> {
         if let Some(time) = edits.time_of_day {
-            self.host.set_time_of_day(time).map_err(js_error)?;
+            game::set_time_of_day(&mut self.shell, time).map_err(js_error)?;
         }
         if let Some(pitch) = edits.camera_pitch {
-            self.host.set_camera_pitch(pitch).map_err(js_error)?;
+            game::set_camera_pitch(&mut self.shell, pitch).map_err(js_error)?;
         }
         if let Some(yaw) = edits.camera_yaw {
-            self.host.set_camera_yaw(yaw).map_err(js_error)?;
+            game::set_camera_yaw(&mut self.shell, yaw).map_err(js_error)?;
         }
         if let Some(overlay) = edits.display_overlay() {
-            self.host.set_display_overlay(overlay);
+            game::set_display_overlay(&mut self.shell, overlay);
         }
         if let Some(paused) = edits.paused {
             self.set_paused(paused, timestamp_ms)?;
         }
         Ok(())
-    }
-
-    fn set_play_state(
-        &mut self,
-        visible: bool,
-        user_paused: bool,
-        now: Duration,
-    ) -> Result<(), JsValue> {
-        let was_running = self.visible && !self.user_paused;
-        let will_run = visible && !user_paused;
-        if will_run && !was_running {
-            self.host.resume_after_drain(now).map_err(js_error)?;
-        } else if !will_run && was_running {
-            self.host.pause().map_err(js_error)?;
-        }
-        self.visible = visible;
-        self.user_paused = user_paused;
-        self.last_frame = now;
-        Ok(())
-    }
-
-    fn recover_overload(&mut self, refused_ticks: u64, now: Duration) -> Result<(), JsValue> {
-        self.overload_events += 1;
-        self.refused_ticks = self.refused_ticks.saturating_add(refused_ticks);
-        self.host.pause().map_err(js_error)?;
-        self.host.resume_after_drain(now).map_err(js_error)
-    }
-
-    fn time_from_browser(&mut self, timestamp_ms: f64) -> Result<Duration, JsValue> {
-        if !timestamp_ms.is_finite() || timestamp_ms < 0.0 {
-            return Err(js_error(
-                "animation timestamp must be finite and nonnegative",
-            ));
-        }
-        let first = *self.first_frame_ms.get_or_insert(timestamp_ms);
-        let now = Duration::try_from_secs_f64((timestamp_ms - first).max(0.0) / 1_000.0)
-            .map_err(|_| js_error("animation timestamp outside supported range"))?;
-        if now < self.last_frame {
-            // RAF reports the frame-start time; a visibility event samples
-            // performance.now() later in that same frame.
-            self.timestamp_clamps += 1;
-            return Ok(self.last_frame);
-        }
-        Ok(now)
-    }
-}
-
-// The callback owns no world/renderer reference. The hot path observes one
-// atomic; the cold diagnostic allocates only when loss is reported/read.
-struct GraphicsFault {
-    lost: AtomicBool,
-    first: Mutex<Option<String>>,
-}
-impl GraphicsFault {
-    fn register(device: &wgpu::Device) -> Arc<Self> {
-        let fault = Arc::new(Self {
-            lost: AtomicBool::new(false),
-            first: Mutex::new(None),
-        });
-        let signal = Arc::clone(&fault);
-        device.set_device_lost_callback(move |reason, message| {
-            if let Ok(mut first) = signal.first.lock()
-                && first.is_none()
-            {
-                *first = Some(format!("{reason:?}: {message}"));
-            }
-            signal.lost.store(true, Ordering::Release);
-        });
-        fault
-    }
-    fn is_lost(&self) -> bool {
-        self.lost.load(Ordering::Acquire)
-    }
-    fn message(&self) -> Option<String> {
-        if !self.is_lost() {
-            return None;
-        }
-        Some(
-            self.first
-                .lock()
-                .ok()
-                .and_then(|first| first.clone())
-                .unwrap_or_else(|| "Graphics device lost".to_owned()),
-        )
     }
 }
 

@@ -187,6 +187,12 @@ pub(crate) struct GameScene {
     camera: Option<SceneCamera>,
 }
 impl GameScene {
+    /// Select a checked authored camera and its orientation.
+    pub(super) fn select_camera(&mut self, camera: SceneCamera) {
+        [self.camera_pitch, self.camera_yaw] = camera.orientation();
+        self.camera = Some(camera);
+    }
+
     pub(super) fn new(setup: GameSetup) -> Self {
         Self {
             content: setup.content,
@@ -276,9 +282,7 @@ impl super::FrameHost {
 
     /// Select a checked authored camera and reset presentation history.
     pub fn set_scene_camera(&mut self, camera: SceneCamera) {
-        let source = self.inner.source_mut();
-        [source.camera_pitch, source.camera_yaw] = camera.orientation();
-        source.camera = Some(camera);
+        self.inner.source_mut().select_camera(camera);
         self.inner.invalidate_history();
     }
 }

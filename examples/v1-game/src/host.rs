@@ -23,6 +23,8 @@ pub(crate) use scene_source::GameScene;
 pub use scene_source::field_in_view_share;
 use world::WorldDriver;
 pub(crate) use world::WorldPort;
+#[cfg(target_arch = "wasm32")]
+pub(crate) mod web;
 #[cfg(not(target_arch = "wasm32"))]
 mod world_thread;
 #[cfg(not(target_arch = "wasm32"))]
@@ -639,9 +641,7 @@ impl FrameHost {
 
 /// Change the game-authored day phase and reset presentation history.
 pub(crate) fn set_time_of_day(runtime: &mut Runtime, fraction: f32) -> Result<(), String> {
-    let offset = DayCycle::offset_for_time(runtime.world().tick(), fraction)
-        .ok_or_else(|| "time of day must be finite and in [0, 1]".to_owned())?;
-    if runtime.source().day_phase_offset.to_bits() != offset.to_bits() {
+    if let Some(offset) = day_phase_edit(runtime.world().tick(), runtime.source(), fraction)? {
         runtime.source_mut().day_phase_offset = offset;
         runtime.invalidate_history();
     }
@@ -655,11 +655,8 @@ pub(crate) fn time_of_day(runtime: &Runtime) -> f32 {
 
 /// Change the game camera elevation and reset presentation history.
 pub(crate) fn set_camera_pitch(runtime: &mut Runtime, radians: f32) -> Result<(), String> {
-    if !radians.is_finite() || !(-0.6..=0.6).contains(&radians) {
-        return Err("camera pitch must be finite and within ±0.6 rad".to_owned());
-    }
-    if runtime.source().camera_pitch.to_bits() != radians.to_bits() {
-        runtime.source_mut().camera_pitch = radians;
+    if let Some(pitch) = camera_pitch_edit(runtime.source(), radians)? {
+        runtime.source_mut().camera_pitch = pitch;
         runtime.invalidate_history();
     }
     Ok(())
@@ -667,11 +664,8 @@ pub(crate) fn set_camera_pitch(runtime: &mut Runtime, radians: f32) -> Result<()
 
 /// Turn the game camera and reset presentation history.
 pub(crate) fn set_camera_yaw(runtime: &mut Runtime, radians: f32) -> Result<(), String> {
-    if !radians.is_finite() || !(-std::f32::consts::PI..=std::f32::consts::PI).contains(&radians) {
-        return Err("camera yaw must be finite and within ±π rad".to_owned());
-    }
-    if runtime.source().camera_yaw.to_bits() != radians.to_bits() {
-        runtime.source_mut().camera_yaw = radians;
+    if let Some(yaw) = camera_yaw_edit(runtime.source(), radians)? {
+        runtime.source_mut().camera_yaw = yaw;
         runtime.invalidate_history();
     }
     Ok(())
@@ -680,6 +674,29 @@ pub(crate) fn set_camera_yaw(runtime: &mut Runtime, radians: f32) -> Result<(), 
 /// Select the display diagnostic. It replaces only the display encode, so history stays valid.
 pub(crate) fn set_display_overlay(runtime: &mut Runtime, overlay: DisplayOverlay) {
     runtime.source_mut().display_overlay = overlay;
+}
+
+/// The day phase offset that shows `fraction` at `tick`, or `None` when it is already shown.
+fn day_phase_edit(tick: u64, scene: &GameScene, fraction: f32) -> Result<Option<f32>, String> {
+    let offset = DayCycle::offset_for_time(tick, fraction)
+        .ok_or_else(|| "time of day must be finite and in [0, 1]".to_owned())?;
+    Ok((scene.day_phase_offset.to_bits() != offset.to_bits()).then_some(offset))
+}
+
+/// A checked camera pitch, or `None` when it is already selected.
+fn camera_pitch_edit(scene: &GameScene, radians: f32) -> Result<Option<f32>, String> {
+    if !radians.is_finite() || !(-0.6..=0.6).contains(&radians) {
+        return Err("camera pitch must be finite and within ±0.6 rad".to_owned());
+    }
+    Ok((scene.camera_pitch.to_bits() != radians.to_bits()).then_some(radians))
+}
+
+/// A checked camera yaw, or `None` when it is already selected.
+fn camera_yaw_edit(scene: &GameScene, radians: f32) -> Result<Option<f32>, String> {
+    if !radians.is_finite() || !(-std::f32::consts::PI..=std::f32::consts::PI).contains(&radians) {
+        return Err("camera yaw must be finite and within ±π rad".to_owned());
+    }
+    Ok((scene.camera_yaw.to_bits() != radians.to_bits()).then_some(radians))
 }
 
 #[cfg(test)]

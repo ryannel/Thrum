@@ -39,6 +39,7 @@ wgpu = { version = "=30.0.1", default-features = false, features = ["vulkan"] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 js-sys = "=0.3.106"
+thrum-app = { path = "../../crates/thrum-app" }
 thrum-asset = { path = "../../crates/thrum-asset" }
 wgpu = { version = "=30.0.1", default-features = false, features = ["webgpu"] }
 wasm-bindgen = "=0.2.129"

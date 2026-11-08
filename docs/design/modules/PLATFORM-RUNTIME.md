@@ -52,6 +52,8 @@ clock sample; zero-tick acknowledgements wake observers. Refused/faulted/stopped
 Mac P ignores repeat and retains intent. Browser pause/visibility compose; observed GPU loss takes the same world through authority-only advance/drain, without GPU calls. Inline calls remain synchronous; mode misuse returns an
 error. Surface loss/occlusion never implicitly pauses authority. Camera controls remain usable while the world pauses;
 pause alone changes neither world epoch/timeline nor submitted transform history.
+The browser adapter is engine code, `thrum_app::web` ([plan](PLATFORM-RUNTIME-WEB-PLAN.md)): it owns the canvas surface,
+device, loss gating, replacement and page clock policy, while the page keeps its animation-frame loop and DOM events.
 
 Device recovery rebuilds presentation from retained scene/cooked inputs. The platform owns fresh adapter/device
 selection, a loss callback registered before preparation and one immutable capability record. Detached preparation
