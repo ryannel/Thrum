@@ -13,7 +13,8 @@ the module; what matters is below.
   judged at, as boxes you tick when the evidence exists, with a link to it. Keep to what you would genuinely refuse to
   call it done over, including a check that would catch the plausible wrong substitute. Judge only what your module's
   mechanisms produce: a cue that hinges on another owner's choices (route, camera, ship speed) uses a fixed reference
-  setup or moves to the milestone that integrates them. Ticking these is how progress
+  setup or moves to the milestone that integrates them. Cost appears only as recorded measurements and
+  [tripwires](performance.md), never as a numeric target or a required speedup that a milestone must reach. Ticking these is how progress
   inside a milestone shows. If what a milestone means has to change, edit it in the plan, say why in the log,
   update the design if the change alters what the module must do, and have the change reviewed.
 - **Break the work down your way.** List the work under each milestone at whatever grain helps you, each item

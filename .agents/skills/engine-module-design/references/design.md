@@ -16,5 +16,5 @@ A design for a substantial module usually covers:
   contracts with neighbours, the creator journey, and a normal frame walked in order with its cost.
 - **Risks:** the most likely ways this fails, the early sign of each, and the plausible wrong substitute for each
   defining cue (what could look right while missing the behaviour).
-- **Performance:** budgets, tripwires and how cost is measured ([performance](performance.md)).
+- **Performance:** the cost account, tripwires and how cost is measured ([performance](performance.md)).
 - **Open questions:** what is still undecided, and the experiment or milestone that will settle it.
