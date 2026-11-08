@@ -7,6 +7,9 @@ and [C12](../CONTRACTS.md#c12-budgets-evidence-and-acceptance--t2-with-all-owner
 [APPLE-PRESENTATION-PLAN.md](APPLE-PRESENTATION-PLAN.md).
 Commission: Thrum Core's G3t/G4 design and milestone plans (`tmp/g3t-metal-boundary/NOTES.md`).
 Reviews:
+- D0.3 creation-counter seam @ `5550ee34` (landed as `be252c0d`), exact diff and verdicts in
+  `tmp/g3t-metal-boundary/NOTES.md`: Thrum Core approved; G5 approved the cooked hunks; G6 agreed the `SceneSurface`
+  device type.
 - G3t pair @ `86ec3b6b`, brief `tmp/g3t-g4-plans/reviews/g3t-pair.md` (with `common.md`), report
   `tmp/g3t-g4-plans/reviews/g3t-pair-report.md`: changes required (9 required changes). Answered in revision 2;
   see the Log.
@@ -26,7 +29,7 @@ Reviews:
   cache patch scope, per-device archives, sizing). All applied in revision 5a.
 
 Milestone: M0 counters and capture probe in progress (Claude G3t M0 session) · Updated: 2026-11-08
-Now: D0.3 revision 4 drafted (`creation-counters`, off by default): a generation-owned `DeviceSite` minted at capture, all 16 renderer and 4 cooked sites through it, an exact escape inventory, and the guard witnesses including contribution, material reload and restore. The exact diff waits for Thrum Core and G5 in `tmp/g3t-metal-boundary/NOTES.md`.
+Now: D0.3 landed (`be252c0d`): opt-in creation counters with a generation-owned `DeviceSite`, every renderer and cooked pipeline through it, and the guard witnesses. D0.4, the capture probe, is next and waits for a screen slot.
 Next: Thrum Core rules on the seam diff; D0.4 replay in a booked 15-minute owner-present slot, or *unmeasured*.
 Blocked: D0.1–D0.2 wait for the G7-reviewed seam 8. Subsequent code waits for its own exact seam approval.
 The saved offscreen trace opens directly in Xcode. Replay stayed disabled during local device discovery, so physical traffic
@@ -152,7 +155,7 @@ Done when:
       reference-image checkpoints on macOS (Metal) and in Chrome.
 - [ ] D0.2 Two portable runs on this M3 Max give identical checkpoint images. The log names the recipe, window size and
       display refresh. The noise floor of timing is recorded.
-- [ ] D0.3 Pipeline, texture and native-object creation counters report counts by thread and phase. A test fails if a
+- [x] D0.3 Pipeline, texture and native-object creation counters report counts by thread and phase. A test fails if a
       pipeline is created after readiness.
 - [ ] D0.4 A capture probe on the offscreen valley either produces a per-encoder byte counter for one attachment (an
       Xcode GPU frame capture through `MTLCaptureManager`, or another explicitly selected counter set) or records that
@@ -162,7 +165,7 @@ Work:
 - [ ] Route keyframes with a cut marker, built from the existing showcase params (→D0.1).
 - [ ] Fixed-step route clock with fixed presentation alpha, under seam 8 (→D0.1, D0.2).
 - [ ] Capture-variant readback at route checkpoints, and a determinism rerun (→D0.1, D0.2).
-- [ ] Creation counters in the runtime (opt-in; the generation-owned pipeline seam is drafted for approval), and the
+- [x] Creation counters in the runtime (opt-in; the generation-owned pipeline seam), and the
       after-readiness test (→D0.3).
 - [ ] Capture probe saved under `tmp/g3t-traffic/`, with the result in `docs/evidence/render/G3T-TRAFFIC-PROBE-*.md`
       (→D0.4).
