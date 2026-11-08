@@ -161,11 +161,23 @@ costly for one aperture. A directional sweep shares exact upstream terrain
 sections along a fixed line. The sampled suffix hulls have 13 vertices at p95,
 but reusing their support off-axis can miss the full disk. A global sweep
 arrangement encounters 2.34 million projected vertex-order changes in six sectors.
-Test shared hull bridges within fixed source blocks, with a bounded upstream join
-and exact complement. Within a constant positive crossing set, endpoint tangents
-bound the angular envelope. Price compact caster spans separately and verify the
-narrow crest, sector seam and grazing rays before scaling to the admitted domain.
-[Directional hull sweep, §§4–5](https://doi.org/10.1111/j.1467-8659.2009.01642.x).
+Within a constant positive crossing set, endpoint tangents bound the angular
+envelope. The direct source-block join still takes 68–69 slope evaluations at
+p95 with height rejection for a single azimuth, before strip lookups. Keep it
+offline. In the harder archive frame, only 897 of 1,118,754 receiver cones can
+meet the compact caster. Investigate bounded, preintegrated terrain coverage
+using a certified terrain-only visibility estimate. Where the aperture can meet
+detached geometry, integrate the union of its spans outside the terrain interval
+and subtract that additional coverage from the same estimate. This preserves
+the terrain error bound and removes the branch step as caster coverage vanishes.
+The candidate still owes spatial and temporal error, complete caster admission
+and the shared narrow-crest oracle before runtime. Fit continuous coverage over
+cooked receiver faces and the authoritative solar trajectory. Share lift values
+across incident faces so the same continuous origin feeds terrain, cone bounds
+and residual. Certify the decoded field using finer geometric bounds,
+independently of its stored knot spacing.
+[Directional hull sweep, §§4–5](https://doi.org/10.1111/j.1467-8659.2009.01642.x) ·
+[Solar-trajectory bake and limitations, §§3 and 5](https://www.cs.cit.tum.de/fileadmin/w00cfj/cg/Research/Publications/2015/TerrainShadows/EG2015TerrainShadows.pdf).
 Before implementation, choose the portable representation and admit it against
 actual requested WebGPU limits, including staging and replacement overlap. Prove
 the geometry prefix, the angular error after decoding and shader rounding, and

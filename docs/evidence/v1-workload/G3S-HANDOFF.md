@@ -29,9 +29,13 @@ The Codex goal remains active. Its attachment is
   lengths of 6/13/30 p50/p95/max and matches 17,793 clipped oracle
   queries. Reusing support off-axis misses up to the full disk height.
   Six sectors have 2.34 million vertex-order events globally and
-  16,618 within 8-interval source blocks. Measure shared bridge changes
-  and join work next. Renderer integration and detached casters remain
-  open. Rerun from `tmp/g3s-sunset-lip/M3-RESEARCH.md`.
+  16,618 within 8-interval source blocks. Height bounds lower direct
+  join p95 from 280–283 to 68–69 slopes at width four per azimuth.
+  The hard archived view has 897 possible compact-caster overlaps
+  among 1,118,754 receivers. The next offline proof fits continuous
+  terrain coverage and subtracts only new detached coverage outside
+  the terrain interval. Renderer integration remains held.
+  Rerun from `tmp/g3s-sunset-lip/M3-RESEARCH.md`.
 
 - M2 now owns the star closeout only. The Mac's lossless 1080p60 masters
   and playback copies are under `current-main/ground-e-night-pan/` and
