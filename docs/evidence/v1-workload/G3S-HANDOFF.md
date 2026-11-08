@@ -99,11 +99,18 @@ The Codex goal remains active. Its attachment is
   including forced overflow. Standalone vs shared p50/p95 was
   12.48/12.76 vs 10.24/10.64 ms near the step, and 20.44/21.11 vs
   19.40/19.87 ms at the right crest (eight interleaved rows per path
-  and frame, load 24.07–25.17). Keep this off the runtime. Test a
-  prepared terrain representation with bounded admission and exact
-  fallback. Close clearance, compact reach, aerial ownership, strict
-  discarded-frame equality and Chrome remain open.
-  [Maximum Mipmaps](https://pure.mpg.de/pubman/item/item_1325622_5/component/file_3590464/i3d08.pdf).
+  and frame, load 24.07–25.17). Prepared world-cell lists also match
+  both frames. At 4 m they use 43.9 MB for the occupied cells of one
+  view across the short solar interval. Standalone vs prepared p50/p95
+  is 8.90/10.19 vs 9.67/11.15 ms near the step and 14.43/17.59 vs
+  15.37/17.70 ms at the crest (same-run ABBA, load 21.69). Even with
+  free lookup and upload excluded, the broad lists lose. Keep the
+  beam as a referee and recheck the authored spur separately. Close
+  clearance, compact reach, aerial ownership, strict discarded-frame
+  equality and Chrome remain open for a shadow replacement.
+  [Maximum Mipmaps](https://pure.mpg.de/pubman/item/item_1325622_5.component/file_3590464/i3d08.pdf).
+  [Fourier-Compressed Horizon Maps](https://doi.org/10.2312/hpg.20251171)
+  is a candidate reference for a compact far-field product.
   Exact builds, raw rows and clips are in `tmp/g3s-sunset-lip/`. The
   diagnostic source and rerun command are on `codex/g3s-horizon-metal-wip`.
 
@@ -178,10 +185,14 @@ The Codex goal remains active. Its attachment is
   +8° through the game's control, with stars on and off in the same
   build. Each clip has 600 consecutive ticks and GPU samples. The yaw
   edit resets retained instance-transform history as in the window.
-  The independent decode found no RGB changes under the terrain mask.
-  Two faint tracks persisted through all 600 frames, with peak changes
-  of at most two codes per frame. Sampled frames and decoded motion
-  were reviewed. Continuous playback is still open. Repeat with
+  Independent decode found no RGB changes at or below the terrain
+  edge in any of the 600 frames, and 86 interior star tracks persisted.
+  Two representative tracks changed at most 1.33 and 2.00 RGB codes
+  per frame. The emergence review found a one-code lift in one sky
+  patch near frame 980. Both clips have verified 1080p60 MP4 playback
+  copies beside the RGB masters and timing records. The review covered
+  native-size stills and all decoded frames. Playback remains open.
+  Repeat with
   `THRUM_CAPTURE_PAN_TO_DEGREES=8` and start yaw −8°, pitch +7° and
   midnight. Capture and route records are in
   `tmp/g3s-star-catalog/current-main/`.
