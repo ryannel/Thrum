@@ -115,7 +115,7 @@ target_cost = "Native-only worker pool; the V1 simulation measures serial/Rayon 
 [external_dependencies.wasm-bindgen]
 requirement = "=0.2.129"
 license = "MIT OR Apache-2.0"
-purpose = "Export the existing V1 frame host to a thin Chrome WebGPU page through the thrum-app web shell; bind the global fetch for the G5 Wasm dev-server client"
+purpose = "Export the existing V1 frame host to a thin Chrome WebGPU page; bind the global fetch for the G5 Wasm dev-server client"
 target_cost = "Wasm only. V1: JS/Wasm boundary once per animation callback, with no duplicate simulation or render implementation. thrum-asset: two imported functions and one response type, crossed once per HEAD poll and per fetched product"
 
 [external_dependencies.wasm-bindgen-futures]

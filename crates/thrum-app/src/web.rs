@@ -30,7 +30,6 @@ use thrum_render::{
         FrameConfig, FrameHost, FrameSample, FrameWorld, PendingCapture, SceneSource, SurfaceOutput,
     },
 };
-use wasm_bindgen::JsValue;
 use web_sys::HtmlCanvasElement;
 
 use crate::web_clock::{PageClock, Transition};
@@ -53,9 +52,9 @@ pub trait WebWorld: FrameWorld {
     fn resume_after_drain(&mut self, now: Duration) -> Result<(), String>;
 }
 
-/// The first device, handed to the game to prepare its runtime. The prepared runtime must not
-/// keep these handles: on loss the shell replaces the device through recovery, and a retained
-/// clone would outlive it.
+/// The first device, handed to the game to prepare its runtime. The `FrameHost` it returns
+/// keeps generation-bound handles, which the shell replaces through recovery; the game must not
+/// keep separate copies of these handles, since they would outlive a lost device.
 pub struct WebGpu {
     /// The first device; replacements reach the runtime through recovery.
     pub device: wgpu::Device,
@@ -137,9 +136,6 @@ where
     F: FnOnce(WebGpu) -> Fut,
     Fut: Future<Output = Result<FrameHost<W, V>, String>>,
 {
-    std::panic::set_hook(Box::new(|info| {
-        web_sys::console::error_1(&JsValue::from_str(&info.to_string()));
-    }));
     let mut descriptor = wgpu::InstanceDescriptor::new_without_display_handle();
     descriptor.backends = wgpu::Backends::BROWSER_WEBGPU;
     let instance = wgpu::Instance::new(descriptor);

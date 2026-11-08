@@ -36,7 +36,7 @@ to witness the loss policy.
 
 | Stays in the game (`examples/v1-game`) | Moves to the engine (`thrum_app::web`, wasm32 only) |
 |---|---|
-| The `#[wasm_bindgen]` facade: `create_browser_game`, `create_field_game`, `BrowserGame` and every method the page and checker call, with the same names, arguments and report text | `wgpu::Instance` for `BROWSER_WEBGPU`, the canvas surface, adapter and device request, the capability record, the panic hook |
+| The `#[wasm_bindgen]` facade: `create_browser_game`, `create_field_game`, `BrowserGame` and every method the page and checker call, with the same names, arguments and report text; the console panic hook, which is process-wide and belongs to the embedding application | `wgpu::Instance` for `BROWSER_WEBGPU`, the canvas surface, adapter and device request, the capability record |
 | `index.html`, its RAF loop, DOM events and input mapping | The device-loss signal and the detached, generation-checked reconstruction with its weak mailbox and explicit retry |
 | `GameControls`, parameter files, `apply_parameters`, `edit_control`, `controls_json`, and `demo.observe_time` before each `frame` call, as today | Clock policy: timestamp origin and validation, the backwards-timestamp clamp, visibility ∘ user pause, and when to pause and resume for overload |
 | The world's lifecycle: `pause`, `resume_after_drain` and the drain state (`resume_pending`) in `WorldDriver`, exposed to the shell through `WebWorld` | The frame step: reconfigure on resize or `Suboptimal`, advance, encode before acquiring, late acquire, submit, present, poll completion |
@@ -162,7 +162,7 @@ Thrum Core reviews these as an exact diff before they land:
 
 | File | Owner | Change |
 |---|---|---|
-| `crates/thrum-app/Cargo.toml` | Thrum Core (shared crate) | A `cfg(target_arch = "wasm32")` dependency table: `thrum-render`, `thrum-core`, `wgpu` (`webgpu`), `web-sys` (`HtmlCanvasElement`, `console`), `wasm-bindgen`, `wasm-bindgen-futures`. The panic hook moves as today's hand-written `set_hook`, with no new crate. The versions are the ones `v1-game` already pins. The `description` stops saying "Native macOS window" only |
+| `crates/thrum-app/Cargo.toml` | Thrum Core (shared crate) | A `cfg(target_arch = "wasm32")` dependency table: `thrum-render`, `thrum-core`, `wgpu` (`webgpu`), `web-sys` (`HtmlCanvasElement`), `wasm-bindgen-futures`. The panic hook stays in the game (Thrum Core's extraction review): the shell must not overwrite an embedding application's process-wide hook. The versions are the ones `v1-game` already pins. The `description` stops saying "Native macOS window" only |
 | `crates/thrum-app/src/lib.rs` | Thrum Core | `#[cfg(target_arch = "wasm32")] pub mod web;`, `web_clock` under `any(wasm32, test)`, and the crate doc's "empty on other targets" line rewritten |
 | `.config/architecture.toml` | Thrum Core | The `thrum-app` comment names the web shell. The purpose and cost text for `web-sys` ("Browser V1 scene only") and `wasm-bindgen-futures` ("V1 startup only") covers the engine shell. `allowed_workspace_dependencies` is unchanged |
 | `tools/xtask/src/main.rs` | Thrum Core | `check_web` also runs wasm32 Clippy on `--package thrum-app` |
@@ -315,3 +315,6 @@ uses `thrum-app`. It gets its own commission.
   it fails on the reference with the same night-upslope drift.
 - 2026-11-08 Loss gates with Thrum Core's retained-view correction landed on main at 0a9009c1. The extraction's route
   check passes on Thrum Core's refreshed night baseline (73fdca0c).
+- 2026-11-08 Thrum Core cleared the extraction at 68423c0a with one cleanup, taken: the console panic hook stays in V1's
+  `create_game`, thrum-app drops its direct `wasm-bindgen` dependency and `web-sys` `console` feature, and `WebGpu`'s
+  doc says the `FrameHost` keeps generation-bound handles while the game keeps none of its own.
