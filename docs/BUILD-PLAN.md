@@ -71,7 +71,8 @@ The native Metal recorder stays in G3t. The later dedicated performance phase ow
   Simulator rotation preserves the committed player, and an injected device loss recovers in the same process with
   world and controls intact. [Rotation and recovery evidence](evidence/render/G3B-IOS-SIM-ROTATION-LOSS-2026-11-08.md).
   Physical iPhone loss detection and recovery, and live Mac presentation and loss remain open. Record latency/present intervals;
-  investigate visible stutter and hitches. [Frame history](evidence/render/V1-BOUNDED-FRAMES-2026-11-04.md) and wgpu
+  investigate visible stutter and hitches. [Mac qualification plan](design/modules/PLATFORM-RUNTIME-MAC-PLAN.md).
+  [Frame history](evidence/render/V1-BOUNDED-FRAMES-2026-11-04.md) and wgpu
   allocations are baselines; native recording stays G3t.
 - [ ] **G3s — physical sky, Sun and atmosphere.** Hillaire (2020) transmittance, multiple-scattering, sky-view/aerial
   LUTs and Sun disk; physical illuminance drives lights and shadows. Time controls span dawn through night.

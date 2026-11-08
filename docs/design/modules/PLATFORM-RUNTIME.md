@@ -63,9 +63,19 @@ publication invalidates competing candidates, abandons old slots/reports without
 extraction/upload/history. Callbacks have generation-local mailboxes. World, clock, controls and cooked selection
 survive. Mac serializes reconstruction/configuration on its render actor, checks pending-candidate loss and rejects
 stale work. Browser uses one weak detached mailbox and fresh adapter per attempt; zero canvas defers activation.
-Candidate presenter resize and a real surface lease precede publication. Failed configuration enables explicit retry;
-UI retains restoration status until a new present call. Samples restart per generation; authority counters do not.
-Failure leaves the world alive. Surface/device epochs differ.
+On the browser, candidate presenter resize and a real surface lease precede publication. Failed configuration enables explicit retry. Its UI retains restoration status until a new present call, and its samples restart per generation while authority counters continue. The Mac configures a current nonzero surface or defers configuration, publishes the prepared device and acquires on a later frame. The Mac recovery reply updates status before a new present. Its report can retain samples across generations. Failure leaves the world alive. Surface/device epochs differ.
+
+The [Mac qualification plan](PLATFORM-RUNTIME-MAC-PLAN.md) uses the existing
+`thrum-app` window and actor. AppKit owns the view and display-link event
+delivery. Its target timestamp provides interpolation lead, while the
+independent world lane owns tick admission. The render actor owns surface
+configuration, late acquisition, presentation calls and device replacement.
+`FrameHost` owns submitted frames and history. The actor retries the
+held-drawable configuration refusal once, then leaves an unavailable
+surface recoverable. A present call and GPU completion do not identify
+physical presentation. Use OS instrumentation on the built-in display
+to qualify that step. The held-drawable helper passed on real Metal;
+live-window recovery and physical cadence remain open.
 
 Mobile adapters retain separate surface, foreground and local-play policy. Release a surface before suspend returns,
 reject old-generation input/completions and recreate only surface-dependent resources on resume. A local single-player

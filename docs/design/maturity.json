@@ -710,7 +710,7 @@
       "reviewed_design_sha256": "d0d80e788cf6356f80dccdb10460a88f12ffd29ca646cbce2b5f498f86c725be",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Later architectural decision audit reopened named boundaries; earlier review scope remains historical. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
       "open_architecture_findings": [],
-      "current_design_sha256": "1841680398c5d610f809cf1e8af0c945a42fde9c9f8ff038b3d5d2e20c815462",
+      "current_design_sha256": "f523773b41ebf68dbed1767ee98334ae2fc569102cf7e7a1dab21e450fe683c1",
       "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled; focused mobile simulator and package qualification remains open after iOS 27 scene finding. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
       "historical_architecture_findings": [
         "A01"
@@ -4186,7 +4186,7 @@
       "modules/AUDIO-UI.md": "f001d7c3cc79a2fb3657982baee9850490ad3f3ce253cfd8bb2637e9f690ae1f",
       "modules/ENVIRONMENT.md": "fc5348d28d3861fee79655cf125c79af8a9b74281d3275e2b8443073e57307fb",
       "modules/NETWORKING.md": "2e32bdf2e57737a88b957380da801de21bf287b6cba6f15144530f635f778494",
-      "modules/PLATFORM-RUNTIME.md": "1841680398c5d610f809cf1e8af0c945a42fde9c9f8ff038b3d5d2e20c815462",
+      "modules/PLATFORM-RUNTIME.md": "f523773b41ebf68dbed1767ee98334ae2fc569102cf7e7a1dab21e450fe683c1",
       "modules/PLAY-SYSTEMS.md": "86279be04e72643989cecc3a0e562fa4c948fa27c956180dbe6079c830efcd57",
       "modules/RENDERING.md": "becaf05714ca88f1fe92c120c8ddf6a523da8048cb7a22cfccc547bd023a96e0",
       "modules/TOOLS-DELIVERY.md": "242035edb43a8e414f839fed4fd4949969967d9d0859e7344be001d237c4e088",
