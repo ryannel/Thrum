@@ -20,6 +20,13 @@ The Codex goal remains active. Its attachment is
   The 1,024 m crest source retains 84 of 1,179 across the same bin count.
   These are far-terrain counts, with no local-caster, full-atlas or GPU
   claim. Rerun from the research note and `graph/crest-edge-support-*.log`.
+  Ground E source closure passes on 29,440 cells. The single-aperture
+  census retains 3,945,576 far edge and 2,754,890 near triangle entries
+  even after whole-bin umbra and tighter corner bounds. The estimated
+  27.92 MiB excludes staging and the remaining Sun directions. Park
+  the flat layout. The next design uses pairwise dominance over the
+  actual receiver face. Review requires fixed world sectors and a certified
+  in-footprint origin. Next check cooked triangle parity and packed aperture size. Raw CPU rows are `graph/crest-chart-population-*-ground-e-72.log`.
   Ground E remains the route. There are no M3 runtime runs to resume.
 
 - M2 now owns the star closeout only. The Mac's lossless 1080p60 masters

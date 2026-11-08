@@ -99,7 +99,7 @@ is idempotent. Blend only equivalent estimates of the same occluder set. Geometr
 partition, map reach and camera depth cannot omit an occluder. The point-ray
 triangle oracle remains independent of the runtime integration.
 
-The prepared far-terrain field keeps potentially dominant original edges over each
+The prepared terrain field keeps potentially dominant original edges over each
 registered receiver chart patch and azimuth interval. The cooked terrain geometry
 and placement identify the chart. An edge can be omitted only if its upper slope
 bound cannot exceed a retained lower witness anywhere in the cell. A variable-range
@@ -107,9 +107,21 @@ edge witness must intersect every ray in the cell at positive range. Evaluate th
 retained edges at the actual receiver and azimuth. Partition whole triangles so a
 range clip cannot invent an edge inside a triangle. Subdivide loose cells, round
 bounds outward and preserve wrap. The lower blocked interval requires a certified
-solid terrain prefix from the common origin to every potential winner. Keep actual triangle spans for
-disconnected or unqualified cells. Derive the origin offset from a geometric error
-bound and validate clearance at adjacent faces.
+solid terrain prefix from the common origin to every potential winner. The source
+grid certificate, cooked triangle correspondence and opacity establish the surface.
+Certify that the evaluated XZ origin stays in that footprint. A vertical lift uses
+positional error and the adjacent faces' maximum height gradient to clear the full
+local surface. Keep whole-triangle spans for boundary bands, disconnected receivers
+or numerically unresolved geometry. The terrain field has no fixed receiver-relative
+range partition.
+
+Prune with a pairwise slope comparison on the true receiver triangle in a fixed
+world meridian for each sector. With positive denominators, cross-multiply the edge
+ratios. At each angular endpoint the resulting quadratic has six triangular Bernstein
+coefficients. Their upper bounds certify dominance across the face, with vertex
+intervals enclosing transform, fragment interpolation and origin lift. Every
+omission needs a retained, fully supported witness. Split unresolved cells, keep
+ties and competitors without a proof, and share identical sparse support lists.
 
 Use original nearby terrain and compact caster triangles with conservative beam or
 tile candidate culling. Bound the inner and outer clipped span unions over each
@@ -126,9 +138,8 @@ and boundary dependency, and the caster partition and evaluator versions. Publis
 the complete recipe before view extraction and keep it pinned by submitted frames
 and captures. A replacement may use the existing recipe as a whole until the
 enhanced recipe is ready. A missing or uncertain entry within an admitted field
-requires matching geometry
-coverage. Certify bounds over supported receiver patches, Sun directions and caster
-transforms, including offscreen contributors. Select the ordinary recipe before
+requires matching geometry coverage. Certify bounds over supported receiver patches,
+Sun directions and caster transforms, including offscreen contributors. Select the ordinary recipe before
 submission if the generation or transform leaves that envelope. The route is a
 performance witness, not an admission domain. Uncertainty cannot become clear sky
 or switch methods across camera depth. Preserve the old aerial interval owner and
@@ -140,9 +151,13 @@ clear/full classifier alone cannot make refinement rare. The archived far-terrai
 CPU witness narrows 951 potential edge entries to 34 over four bins at the difficult
 4 m receiver patch. The 1,024 m crest source raises that to 84 retained entries.
 Both match the triangle-section reference at the sampled rays. They do not
-establish a scene-wide bound. Qualify the prepared field against
-the narrow crest and local caster before integrating. Record chart
-bytes, live fallback rate, interval and candidate tails, and paired frame costs.
+establish a scene-wide bound. A single-aperture Ground E census leaves 3.95 million
+far edge entries and 2.75 million near triangles under the flat box-indexed layout
+even with a tightened corner bound. Keep that layout out of the renderer. First price
+one complete aperture on the cooked receiver faces, including shared packed bytes,
+decoded list tails and the unresolved terrain complement. Price compact caster spans
+separately. Check the narrow crest, sector seam, grazing ray and local caster against
+the triangle oracle before scaling the proof to the admitted domain.
 Before implementation, choose the portable representation and admit it against
 actual requested WebGPU limits, including staging and replacement overlap. Prove
 the geometry prefix, the angular error after decoding and shader rounding, and
