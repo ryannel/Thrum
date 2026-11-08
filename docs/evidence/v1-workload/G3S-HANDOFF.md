@@ -111,6 +111,14 @@ The Codex goal remains active. Its attachment is
   limbs. Rerun `tmp/g3s-sunset-lip/graph/run-edge-packet.sh` with the
   fixed inputs in `edge-packet-inputs.sha256`. The continuous support
   certificate and full-source cost remain open. No renderer change.
+  Independent angular bands with receiver subdivision lower seven
+  scratch bounds to 0.378–0.500 pp. The moving 1,024 m crest remains
+  unresolved at 31.45 pp maximum after 20.36 million edge forms.
+  All nine fixed receivers on the same patch bound omission at
+  0.351–0.424 pp across the Sun interval, localizing the loose bound
+  to receiver support. The scratch near split differs from the
+  finite evaluator. Reproduction and the stop on subdivision
+  tuning are in `tmp/g3s-sunset-lip/graph/disk-edge-packet-continuous.md`.
 
   The canonical Ground E baseline on `02e5e3eb` has 300 timed offscreen
   Metal frames at 1080p60, yaw −110° to −70° and 17.40000–17.79867 h.
