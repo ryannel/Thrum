@@ -3,30 +3,30 @@
 Design: [Platform runtime](PLATFORM-RUNTIME.md#g3b-world-and-presentation-lifecycle--selected-partial-implementation)
 and [bounded frame host](../decisions/V1-BOUNDED-FRAME-HOST.md). Siblings:
 [iOS](PLATFORM-RUNTIME-IOS-PLAN.md) and [web](PLATFORM-RUNTIME-WEB-PLAN.md).
-Reviews: Design and plan over `3049433d`, approved plan SHA-256 prefix `0f467bcb` · [brief](#design-and-plan-review-brief) · initial hold resolved on lost-token cleanup, the recovery oracle, display attribution and platform distinctions. First M1 abandon seam over `f79e3434` · [brief](#lost-frame-review-brief) · approved for observed post-encode loss.
-Milestone: M1 The same Mac game resumes after graphics loss
-Now: The Metal abandon and detached recovery tests pass. The 1080p cooked-valley readback matches across replacement at acknowledged tick zero. The runnable witness and preflight logs are retained at `69eac45c` on `codex/wip-g3b-mac-m1-witness`.
-Next: run the arm-disabled, paused-loss and running-loss rows, then review the recovered window in motion.
-Blocked: the offscreen tests leave live same-window presentation unproved. Run the prepared witness in the queued eight-minute owner-present Mac slot, with Screen Recording permission if prompted and P/E input.
+Reviews: Design and plan over `3049433d`, approved plan SHA-256 prefix `0f467bcb` · [brief](#design-and-plan-review-brief) · initial hold resolved. First M1 abandon seam over `f79e3434` · [brief](#lost-frame-review-brief) · approved for observed post-encode loss. M1 injected input over `43e1d488` · [brief](#injected-input-review-brief) · approved after separating capture cutoff from finalization. M1 live slot `slot-04.0qL58y`, diagnostic `0c9a32dc` · [brief](../../evidence/render/mac-m1-recovery/README.md#independent-review-brief) · both done-when items pass.
+Milestone: M2 The cooked valley presents smoothly on built-in ProMotion
+Now: M1 closes with [live Metal recovery evidence](../../evidence/render/mac-m1-recovery/README.md).
+Next: prepare the M2 traced and untraced pan and independently attribute the displayed frame intervals.
+Blocked: none for M2 preparation. Reserve real-display observation for the batched screen window.
 
 ## M0 Reviewed Mac qualification plan: done
 
 - [x] Independent review verifies the runtime ownership, the two game outcomes and the limits of their instrumentation. [Verdict and brief](#design-and-plan-review-brief). [Build plan](../../BUILD-PLAN.md#active-gate-order-and-budgets) links this plan.
 
-## M1 The same Mac game resumes after graphics loss: planned
+## M1 The same Mac game resumes after graphics loss: done
 
 Owner review: [Ground E route, noon tile](../../evidence/v1-workload/g7-showcase/route-ground-e.png) (proposed, pending).
 Use the checked-in noon preset and the same-build uninterrupted run as the exact image control. The reference supplies the expected intact composition.
 
-- [ ] The cooked valley presents successfully before arming. After an actual Metal device destroy with an acquired drawable, the same PID and window resume visible frames and camera response. The running row resumes the paused noon preset through the normal input and waits for authority acknowledgement before arming. An authority sample strictly between loss and first replacement submit shows progress without old-device submission. The paused row keeps the acknowledged tick, epoch, timeline and pause intent.
-- [ ] At a matching paused endpoint, the restored scene is byte-equal to the pre-loss scene and the same diagnostic binary with the arm disabled. Separately observe a live composited frame after replacement submit and the present call, then watch recovery and camera motion at 1×. Offscreen images and present calls alone cannot establish that the window recovered.
+- [x] After a Metal destroy with a drawable held, the cooked valley resumed in the same PID and window and responded to injected E through the app key handler. Injected P traversed the same handler and Resume was acknowledged before arming. World ticks 80 and 81 committed during loss before the first replacement submit. Neither old queue submitted or presented after destroy. The paused row retained its tick, epoch, timeline and pause intent. [Raw event excerpts and audit](../../evidence/render/mac-m1-recovery/README.md).
+- [x] The paused endpoint's 2,073,600 pixels matched before and after recovery and with the same binary's arm-disabled row. The independent reviewer watched the original recordings at 1× and identified visible composited camera response after the replacement submit and present calls. [Motion excerpt and verdict](../../evidence/render/mac-m1-recovery/README.md#independent-review).
 
 Work:
 
 - [x] Give an encoded frame an explicit lost-device abandon path. The Mac actor checks observed loss before and after drawable acquisition, including acquisition refusal. Abandoning releases the encoder and timing reservation without flushing the queue or committing view history. Healthy skip still flushes once. A real Metal test checks the queue call boundary. Replacing abandonment with ordinary drop produces an extra attempted submit and fails the test. [Focused evidence](../../evidence/render/V1-BOUNDED-FRAMES-2026-11-04.md#mac-lost-encoded-frame).
-- [ ] Add a one-shot, opt-in destroy after a successful drawable acquisition and before view creation or submit. Keep the drawable held for bounded callback delivery using nonblocking maintenance, as the existing Metal device-watch test does. Route the normal generation-tagged notification and outcome, abandon the lost token and release the drawable through its owner. Time out as a failed witness, abandon without submitting, and distinguish “never fired” from “notification absent.” Record acquisition → destroy → notification → abandonment and the first new-generation submit. Keep ordinary builds free of diagnostic frame work.
-- [ ] Run the detached helper and device/replay tests before the live game. Build the normal valley with `python3 scripts/run_v1_showcase.py check`. Use `python3 scripts/run_v1_showcase.py mac --stop noon --frames 600` for the uninterrupted window. Record the exact diagnostic build and invocation when the arm exists.
-- [ ] Record session and world identity, admitted/committed ticks, pause, controls, cooked root and generation, old/new surface and device generations, first restored submission and per-generation faults. Capture before arming and after recovery has drawn the retained cooked root, with fixed acknowledged tick, view and extent. Plan a diagnostic render-owner scene readback outside the timed run, with the same warmup and no UI overlay. The current game readback is only solar time. Freeze an identical admitted endpoint for the arm-disabled run and refuse a mismatched endpoint before comparing RGB. Keep the no-injection control and the independent review. Run `./dev check`.
+- [x] Build a one-shot diagnostic destroy after acquisition and before view creation or submit. Observe the normal generation-tagged callback, abandon the encoded frame and release the drawable through its owner. Ordinary builds carry no diagnostic hooks. [Witness build and events](../../evidence/render/mac-m1-recovery/README.md).
+- [x] Run the detached Metal and paused readback preflights, then the cooked valley in the same diagnostic build with the arm disabled and with both loss modes. The arm-disabled row supplies the uninterrupted control with identical inputs.
+- [x] Record device, surface, session and world identity, the acknowledged endpoint, queue calls, cooked generation, and the first restored submission. Retain the motion excerpt and independent review alongside the paired image results.
 
 ## M2 The cooked valley presents smoothly on built-in ProMotion: planned
 
@@ -79,3 +79,12 @@ Keep encode-time failure and live-window recovery outside this proof.
 ## Log
 
 - 8 November. The owner superseded same-turn goal chaining after the successor record was lost. At M0 close, mark the goal complete and end the turn. The owner starts M1 separately.
+- 8 November. The overseer removed human key presses from M1. The diagnostic sends P/E to the app's shared key handler so the same lifecycle and camera commands run without requiring a person at the keyboard. The live composited observation and independent motion review remain required.
+- 8 November. Used the arm-disabled run of the exact diagnostic binary as the uninterrupted window control. This keeps the same build, render path and fixed endpoint for the pixel comparison.
+
+## Injected input review brief
+
+Compare the diagnostic App with `43e1d488`. Check that injected P/E use
+the physical keys' shared app handler, with the same lifecycle and edits.
+Require injected P before the normal Resume acknowledgement and E inside
+the recording. Keep the actual recovered motion review separate.
