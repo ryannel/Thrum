@@ -5,7 +5,8 @@ description: Judges a Thrum milestone from a clean context against its done-when
 
 # Review a milestone
 
-Run as Claude Opus 5.5 at medium effort, in a clean context, ideally as the `thrum-evaluator` agent.
+Run as Claude Opus 5.5 at medium effort, in a clean context, as the `thrum-evaluator` agent (from a Codex chat, its
+`gpt-6.1-sol` medium twin in `.codex/agents/thrum-evaluator.toml`).
 
 **Outcome:** a verdict on one milestone that the generator, the loop and the owner can act on without asking you
 anything. It is written to `docs/evidence/<module>/<milestone>-review.md` and summarised in the done-when file.
@@ -34,11 +35,12 @@ Don't read the author's progress narrative until you've formed your own view.
    a frame) or suspected. Include items too weak to catch the plausible wrong substitute.
 3. **The verdict is recorded:**
    - In the review file: the commit, the build, the target, each verdict and the findings.
-   - In the done-when file: each item's `status`, and an `evidence` link to the review file.
+   - In the done-when file: each item's `status`, with a link to the review file added to its `evidence` (keep the
+     generator's evidence).
    - If every item passes, set the milestone's `state` to `done` and record `agent_reviewed` with the evidence link in
      [the maturity ledger](../../../docs/design/maturity.json).
-   - If any item fails, increase the milestone's `fails` by one, and add the failure findings to the plan as new work
-     items under the milestone. Append them; don't rewrite the plan. `scripts/agent_loop.py next` reads `fails` to
+   - If any item fails, increase the milestone's `fails` by one. The findings stay in the review file; the generator
+     turns them into work items. `scripts/agent_loop.py next` reads `fails` to
      decide the escalation.
 4. **You end with one line:** `PASS <milestone>` or `FAIL <milestone>: <n> items`.
 
@@ -60,6 +62,6 @@ When asked to review a module's design and plan before building:
 ## Boundaries
 
 - **Read-only on code.** You may build, run the oracle and capture. You may edit only the review file, the done-when
-  file, the plan's work list and the maturity ledger.
+  file and the maturity ledger.
 - **Don't fix what you find.** The generator does that, so findings stay independent.
-- **Commit and push** the verdict files.
+- **Commit and push** the verdict files from the worktree you were given, so the generator's next rebase has them.

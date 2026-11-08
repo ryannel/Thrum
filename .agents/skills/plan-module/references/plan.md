@@ -42,9 +42,13 @@ Work:
 
 ## The done-when file: `docs/design/modules/<MODULE>-DONE.json`
 
-It is JSON so that agents edit fields rather than rewriting prose. Generators change only `status` and `evidence` on
-items. The evaluator increments `fails` on each failed review, and `scripts/agent_loop.py next` turns that count into
-the escalation. The planner owns everything else.
+It is JSON so that agents edit fields rather than rewriting prose. Who writes what:
+- **Generator:** items' `status` and `evidence`; the milestone's `state`, set to `in_progress` on starting and to `done`
+  when every item passes and `review` is `false`.
+- **Evaluator:** items' `status`, with its review link added to `evidence`; `state: done` on a pass; `fails` on a fail.
+  `scripts/agent_loop.py next` turns `fails` into the escalation.
+- **Lead:** `state: parked` when the loop says park.
+- **Planner:** everything else.
 
 ```json
 {

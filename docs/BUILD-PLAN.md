@@ -34,7 +34,7 @@ and never record them as iPhone results. At V1 exit report outstanding physical-
 Owner reports are asynchronous and owner review is one batched window a day. Work runs as described in
 [how work runs](design/AI-DEVELOPMENT.md#how-work-runs). Visual milestones are judged in the running game against an
 inspection list whose bar is set by shipped high-end games, and close on a clean-context evaluator's pass; acceptance
-never blocks. Ask only for purpose/exit/order changes, spending, publishing/deployment/licensing or irreversible actions;
+never blocks. Ask only for purpose/exit changes, spending, publishing/deployment/licensing or irreversible actions;
 continue unblocked work. Verified checkpoints are pushed to main (owner, 6 Nov proof of concept).
 
 <a id="active-gate-order-and-budgets"></a>

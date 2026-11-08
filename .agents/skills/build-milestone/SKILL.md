@@ -1,6 +1,6 @@
 ---
 name: build-milestone
-description: Builds and verifies the next milestone of a Thrum engine module from its plan and done-when file, in Claude or Codex. Use to implement, fix, refactor or review engine code toward a milestone or the active build-plan gate, including ordinary fixes and small slices. Not for designing or re-planning a module (plan-module), engine-wide boundaries (plan-engine) or judging a milestone (review-milestone).
+description: Builds and verifies the next milestone of a Thrum engine module from its plan and done-when file, in Claude or Codex. Use to implement, fix or refactor engine code toward a milestone or the active build-plan gate, including ordinary fixes and small slices. Not for designing or re-planning a module (plan-module), engine-wide boundaries (plan-engine) or judging a milestone (review-milestone).
 ---
 
 # Build a milestone
@@ -17,8 +17,9 @@ team would build and maintain. Without a module plan, for example an ordinary fi
 
 ## Done when
 
-1. **Every item in the milestone is `pass`, with evidence.** Only an item's `status` and `evidence` may change. If an
-   item is wrong or can't be met, say so in your report; the done-when file isn't yours to edit.
+1. **Every item in the milestone is `pass`, with evidence.** You may change only items' `status` and `evidence`, and the
+   milestone's `state`: `in_progress` when you start, `done` when every item passes and `review` is `false`. If an item
+   is wrong or can't be met, say so in your report; the rest of the done-when file isn't yours to edit.
    - `oracle` items pass when their command exits 0 on the named target.
    - `inspection` and `review` items: record your own look and the captures as evidence. The evaluator decides the
      final pass for milestones with `"review": true`.
@@ -31,7 +32,6 @@ team would build and maintain. Without a module plan, for example an ordinary fi
    `NEEDS_CONTEXT: <what is missing>`, followed by the evidence. `DONE` needs fresh evidence from this session.
 
 Before claiming items, check that each one is complete, clear and checkable on its target. If one isn't, report it.
-Keep building what doesn't depend on it.
 
 ## Staying on course
 
@@ -100,7 +100,8 @@ For per-tick, per-frame and per-message code:
   - the iPhone simulator (function only, never speed);
   - Chrome.
 
-  Label Mac stand-ins "proxy". Device timing runs alone on the GPU; in fan-out, the lead schedules it.
+  Label Mac stand-ins "proxy". Device timing runs alone on the GPU: wrap timing and capture
+  runs in `python3 scripts/agent_loop.py gpu -- <command>`, which holds a machine-wide lock.
 - **Regressions.** Investigate visible hitches, about 25% regression from a comparable baseline, or unexpected scaling
   ([performance](../plan-module/references/performance.md)).
 - **Visible output:** capture fixed cameras and a frame sequence from the exact build on the named target, offscreen.
@@ -121,8 +122,7 @@ For per-tick, per-frame and per-message code:
   - update the plan's status and log;
   - commit and push verified checkpoints to main.
 - **Never:** force-push or rewrite history.
-- **What goes to the owner:** changing purpose, the V1 exit or the gate order; spending; publishing, licensing or
-  deploying; irreversible actions. Continue unblocked work meanwhile.
+- **What goes to the owner:** changing purpose or the V1 exit; spending; publishing, licensing or deploying; irreversible actions. Continue unblocked work meanwhile.
 - **Licences:** no GPL or share-alike code or data.
 - **Broadsides:** don't modify it.
 

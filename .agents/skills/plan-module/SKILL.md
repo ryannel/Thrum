@@ -65,7 +65,7 @@ Edit the plan and done-when file, log why, and reset the milestone's `fails` cou
   - edit this module's design, plan and done-when file;
   - commit and push verified checkpoints to main.
 - **What goes to `/plan-engine`:** boundary questions, contract changes and gate order.
-- **What goes to the owner:** spending, publishing and changes of purpose.
+- **What goes to the owner:** changing purpose or the V1 exit; spending; publishing, licensing or deploying; irreversible actions.
 - **Licences:** restrictive-licence code may inform ideas only, and nothing may be copied from it. No GPL or
   share-alike code or data is allowed.
 - **Capability status:** this lives in [the maturity ledger](../../../docs/design/maturity.json), not in the plan.

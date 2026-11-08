@@ -171,7 +171,7 @@ a checkpoint, and a report never pauses building.
 | Evaluator | A clean-context [`review-milestone`](../../.agents/skills/review-milestone/SKILL.md) agent inspects frame sequences and contact sheets captured offscreen from the exact build on the named target, judges each item against the list and bar, and records `agent_reviewed`. | Yes, the milestone closes on its pass |
 | Owner steer | The daily report carries new inspection lists, verdicts and contact sheets. The owner adjusts a bar or overturns a verdict; an overturned verdict becomes a graded example for the evaluator. | Never |
 
-Stop and ask the owner only to change purpose, the V1 exit or gate order; to spend money, such as renting cloud
+Stop and ask the owner only to change purpose or the V1 exit; to spend money, such as renting cloud
 machines or devices; to publish, choose a licence or deploy; or for destructive or irreversible actions. Verified
 checkpoints are pushed to main without force. While a question waits, continue other unblocked work. Visual quality
 claims come only from the named target or a labelled proxy, never from a description of the intended result.
@@ -187,7 +187,7 @@ budget need not end its scoped performance commission.
 The [AI performance design](AI-PERFORMANCE.md) extends these tools into bounded optimization campaigns. Agents can
 change algorithms, representations, scheduling, content preparation and target specialization against an executable
 commission. T2 owns trusted evaluator identity, isolated candidate runs, hardware scheduling and structured evidence;
-module owners supply semantic/error/quality obligations. The coordinator retains whole-scene budgets and cross-module
+module owners supply semantic/error/quality obligations. plan-engine retains whole-scene budgets and cross-module
 integration. Candidate code cannot weaken its own acceptance criteria. Finalists need independent integrated runs;
 same-quality cost reduction and better-quality-within-budget are distinct claims. This is proposed infrastructure,
 not a running optimizer or permission to consume unbounded compute. Use existing performance/diagnosis routing until

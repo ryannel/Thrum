@@ -68,7 +68,7 @@ A finding names:
 - the consequence;
 - what would resolve it.
 
-Don't invent objections or demand a paper without showing why it changes the decision.
+Mark objections you can't yet prove as suspected, and say why each changes the decision.
 
 The author then does one of these:
 - revises the model or contracts;
