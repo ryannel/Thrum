@@ -106,15 +106,16 @@ terrain and detached spans to the same elevation chord, union the spans,
 then integrate their `sin(elevation)` differences. Duplicated coverage
 is idempotent. The independent reference casts rays through original triangles.
 
-The raw-extrema strip sweep is parked. Its point-receiver entrance check
-exceeds the width limit on three required witnesses before strip widening.
-A disk-aware representation needs within-band silhouette support. Any shared
-terrain producer must bound the whole receiver and azimuth support. A lower
-horizon needs a continuous original terrain prefix from the lifted receiver.
-Blend overlapping chart estimates only where they bound the same field.
-Unresolved near and far terrain and detached casters stay in the same disk
-union. Price source clipping, producer work and that residual together.
-[Heightfield sweeps](https://doi.org/10.1111/j.1467-8659.2009.01642.x).
+The candidate shared field stores original far-edge IDs for a continuous
+receiver and Sun support. Project the finite edges at the actual query
+and bound the omitted area after clipping to the true disk. Filling
+below a retained edge requires a continuous terrain prefix. Keep
+straddling source faces and detached blockers in the same union.
+Adding exact blockers can only reduce the omitted blocked area. Blend
+complete union results only where both packets certify the same field.
+The finite CPU screen preserves the far crest and crossing. Continuous
+certification, source-wide capacity, residual work and portable precision
+precede shader admission. [Projected terrain-edge envelopes](https://www.geos.ed.ac.uk/~gisteac/gis_book_abridged/files/ch38.pdf).
 
 Use the actual packed Sun and one continuous, error-bounded receiver lift.
 The CPU reference candidate projects original edges to a finite horizontal

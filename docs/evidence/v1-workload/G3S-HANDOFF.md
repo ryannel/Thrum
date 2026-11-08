@@ -103,6 +103,15 @@ The Codex goal remains active. Its attachment is
   disk-only constraints give widths of 0.12–0.24 pp on the three failures,
   leaving a certified disk-aware representation open.
 
+  Frozen original-edge packets now match the disk union within
+  1.67e-14 pp on the finite CPU rows. One packet covers each 868-sample
+  patch, with 3 IDs for raised terrain plus caster and 10 for the
+  1,024 m narrow crest. Removing only crest-top edges loses 17.17 pp.
+  Four adjacent row-665 receiver pairs use 3–6 IDs and retain positive
+  limbs. Rerun `tmp/g3s-sunset-lip/graph/run-edge-packet.sh` with the
+  fixed inputs in `edge-packet-inputs.sha256`. The continuous support
+  certificate and full-source cost remain open. No renderer change.
+
   The canonical Ground E baseline on `02e5e3eb` has 300 timed offscreen
   Metal frames at 1080p60, yaw −110° to −70° and 17.40000–17.79867 h.
   GPU pass-sum p50/p95/p99 is 3.965/5.543/6.160 ms at load 75.11–75.98.
