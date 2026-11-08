@@ -3,6 +3,13 @@ use super::{
 };
 use crate::{abi, synthetic::RenderError};
 
+impl super::InstanceUpload {
+    /// Physical row order and its packed rows, for layout witnesses.
+    pub(in crate::synthetic) fn physical_rows(&self) -> (&[u32], &[u8]) {
+        (&self.physical_to_slot, &self.packed)
+    }
+}
+
 #[test]
 fn changed_slots_form_bounded_contiguous_writes() {
     let mut runs = Vec::with_capacity(MAX_PARTIAL_WRITES);

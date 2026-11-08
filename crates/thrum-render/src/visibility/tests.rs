@@ -1,6 +1,19 @@
 use super::*;
 use glam::{Mat4, Vec3, Vec4};
 
+impl VisibilityPrepared {
+    /// Allocate one frustum target's outputs.
+    pub(crate) fn target(
+        &self,
+        device: &wgpu::Device,
+        view: &wgpu::Buffer,
+        instances: &wgpu::Buffer,
+        serials: &wgpu::Buffer,
+    ) -> VisibilityTarget {
+        self.member_target(device, (view, instances, serials), None)
+    }
+}
+
 const CUBE: MeshRecord = MeshRecord {
     first_index: 0,
     index_count: 36,
