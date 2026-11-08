@@ -28,7 +28,7 @@ choose the techniques, the research, the experiments and how to break the work d
   milestones to the plan's end on your own; when one closes, carry straight on to the next. The plan is how you, reviewers and the
   overseer see where the work is, so commit it with the work.
 - **Build and prove** ([implementation](references/implementation.md)). A milestone is done when it works in the game
-  through the module's public interface, at the shipped configuration and simulation rate, watched in motion (an offscreen capture of the running game counts), and an
+  through the module's public interface, at the shipped configuration and simulation rate, watched in motion (an offscreen capture of the running game counts; a reviewer that cannot play video gets a frame strip at 10 fps or more over the window in question), and an
   independent reviewer agrees. A lab harness or close-up still is a diagnostic.
 
 ## Staying on course
