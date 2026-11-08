@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
-"""Witness saved parameter and material edits reaching the real starter without a key press.
+"""Witness saved parameter, material and asset edits reaching the real starter without a key press.
 
 Runs `./dev starter` in live capture mode (THRUM_CAPTURE_PNG with THRUM_CAPTURE_LIVE) on
-temporary copies of the starter's parameter file and material, saves a scripted series of valid
-and invalid edits, and checks each save's report line and whether its PNG changed. It exercises
-the window's shared reload body offscreen, not the window's event path, and needs Metal.
+temporary copies of the starter's parameter file, material and assets, saves a scripted series of
+valid and invalid edits, and checks each save's report line and whether its PNG changed. An asset
+rename the cooker accepts but the starter's placements cannot draw must be reported while the
+previous content keeps drawing. It exercises the window's shared reload body offscreen, not the
+window's event path, and needs Metal.
 
 Usage: python3 scripts/check_starter_live_reload.py <output folder>
 """
 
 import json
 import os
+import shutil
 import struct
 import subprocess
 import sys
@@ -21,7 +24,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 STARTER = REPO / "examples" / "starter"
-LIVE_SECONDS = 60
+LIVE_SECONDS = 90
 LINE_WAIT = 30.0
 QUIET_WAIT = 1.5
 CHANGED = 0.002
@@ -68,11 +71,12 @@ def changed_fraction(a, b):
 
 
 class Scene:
-    def __init__(self, out, params, material):
+    def __init__(self, out, params, material, assets):
         env = dict(os.environ)
         env.update(
             THRUM_PARAMS=str(params),
             THRUM_MATERIAL=str(material),
+            THRUM_SCENE_ASSETS=str(assets),
             THRUM_CAPTURE_PNG=str(out / "live.png"),
             THRUM_CAPTURE_LIVE=str(LIVE_SECONDS),
         )
@@ -124,7 +128,10 @@ def main():
     material = out / "material.wgsl"
     params.write_text((STARTER / "starter.params.json").read_text())
     material.write_text((STARTER / "material.wgsl").read_text())
-    scene = Scene(out, params, material)
+    assets = out / "assets"
+    shutil.copytree(STARTER / "assets", assets)
+    rock, renamed = assets / "meshes" / "rock.gltf", assets / "meshes" / "boulder.gltf"
+    scene = Scene(out, params, material, assets)
     start = scene.next_line(0, 600)
     if start is None or not start[1].startswith("live 0 start"):
         scene.process.kill()
@@ -147,9 +154,12 @@ def main():
         ("refused key beside a valid one", lambda: save_in_place(params, '{"sun.elevation": 40, "sun.azimuth": 200, "sun.elevaton": 3}'), "params: 1 changed, 1 unchanged, 1 refused", True),
         ("five-write burst", burst, "params: 2 changed, 0 unchanged, 0 refused", True),
         ("touch and identical rewrites", touch, None, False),
-        ("valid material tint", lambda: save_in_place(material, MOSS), "game: drawn", True),
+        ("valid material tint", lambda: save_in_place(material, MOSS), ") installed: ", True),
         ("material compile error", lambda: save_by_rename(material, BROKEN), "game: kept the last good", False),
         ("parameter rename-save", lambda: save_by_rename(params, '{"sun.elevation": 50, "sun.azimuth": 120}'), "params: 2 changed, 0 unchanged, 0 refused", True),
+        # The cooker publishes the renamed mesh; the starter's `meshes/rock` placement cannot draw it.
+        ("mesh renamed away from its placement", lambda: os.replace(rock, renamed), "content: kept", False),
+        ("mesh name restored", lambda: os.replace(renamed, rock), "content: drawn", False),
     ]
     results, index, failures = [], 1, []
     previous = out / "live-0.png"
@@ -168,6 +178,12 @@ def main():
             failures.append(f"{name}: no report within {LINE_WAIT} s")
             break
         at, text = line
+        # An asset edit may publish more than one generation; each writes a content line.
+        while name.startswith("mesh") and (extra := scene.next_line(index + 1, QUIET_WAIT)) is not None:
+            if expect not in extra[1]:
+                failures.append(f"{name}: {extra[1]}")
+            index += 1
+            text = text + " | " + extra[1]
         png = out / f"live-{index}.png"
         fraction = changed_fraction(previous, png)
         ok = expect in text and (fraction > CHANGED if changes else fraction < UNCHANGED)

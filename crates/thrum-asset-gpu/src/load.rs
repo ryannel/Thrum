@@ -275,6 +275,7 @@ impl Loader {
                 stats.errors.remove(0);
             }
             stats.errors.push(reason.to_owned());
+            stats.failures += 1;
         });
     }
 

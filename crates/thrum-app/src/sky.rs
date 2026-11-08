@@ -35,7 +35,7 @@ mod live_capture;
 use std::{
     error::Error,
     path::PathBuf,
-    sync::Mutex,
+    sync::{Arc, Mutex},
     time::{Duration, Instant},
 };
 
@@ -317,6 +317,7 @@ impl Edits for SkyEdits {
 
 type Update = Box<dyn FnMut(&Controls, &mut Sky)>;
 type StatusProbe = Box<dyn FnMut() -> ContentStatus>;
+type KeptProbe = Box<dyn FnMut() -> Vec<(u64, String)>>;
 type Reload = Box<dyn FnMut() -> Result<(), String>>;
 type ReloadReport = Box<dyn FnMut() -> Vec<Result<String, String>>>;
 
@@ -332,6 +333,8 @@ pub struct SkyGame {
     contribution: Option<Box<dyn SceneContribution>>,
     status: Option<StatusProbe>,
     shown_status: Option<ContentStatus>,
+    /// New loader failures once content has drawn, each with the generation that stays drawn.
+    kept: Option<KeptProbe>,
     reload: Option<(Reload, ReloadReport)>,
     /// The files `reload` reads, watched by the window and a live capture.
     reload_files: Vec<PathBuf>,
@@ -363,6 +366,7 @@ impl SkyGame {
             contribution: None,
             status: None,
             shown_status: None,
+            kept: None,
             reload: None,
             reload_files: Vec::new(),
         }
@@ -394,7 +398,14 @@ impl SkyGame {
             .map_err(|error| error.to_string())?;
         let stats = assets.stats();
         let material = assets.material();
-        let game = self.with_contribution(Box::new(assets), move || cooked_status(&stats));
+        let kept = Arc::clone(&stats);
+        let mut shown = 0;
+        let mut game = self.with_contribution(Box::new(assets), move || cooked_status(&stats));
+        game.kept = Some(Box::new(move || {
+            kept.lock()
+                .map(|stats| kept_errors(&stats, &mut shown))
+                .unwrap_or_default()
+        }));
         let Some(path) = std::env::var_os(MATERIAL_VARIABLE).map(PathBuf::from) else {
             return Ok(game);
         };
@@ -510,6 +521,26 @@ impl SkyGame {
         Some(status)
     }
 
+    /// Poll for content failures after the first draw and log each once: the loader refused a
+    /// newer generation and the returned one keeps drawing.
+    #[expect(
+        clippy::print_stderr,
+        reason = "a refused asset edit is explained to the person editing assets"
+    )]
+    fn poll_kept(&mut self) -> Vec<(u64, String)> {
+        let Some(kept) = self.kept.as_mut() else {
+            return Vec::new();
+        };
+        let kept = kept();
+        for (generation, error) in &kept {
+            eprintln!(
+                "{}: content generation {generation} kept: {error}",
+                self.name
+            );
+        }
+        kept
+    }
+
     /// Prepare the still scene on `capabilities`' device, with the contribution attached.
     fn build_host(
         &mut self,
@@ -578,6 +609,7 @@ impl Game for SkyGame {
 
     fn frame_edits(&mut self) -> SkyEdits {
         drop(self.poll_status());
+        drop(self.poll_kept());
         self.poll_reload();
         self.update()
     }
@@ -686,6 +718,24 @@ fn material_drawn(outcome: &MaterialOutcome) -> Result<String, String> {
         MaterialOutcome::Promoted { .. } => Ok(outcome.to_string()),
         _ => Err(outcome.to_string()),
     }
+}
+
+/// Loader failures recorded after the `shown` count and after the first draw, each with the
+/// generation drawn when polled (a failure and a newer swap in one poll pair with the newer one);
+/// none before the first draw, when [`cooked_status`] reports the newest as the failure.
+fn kept_errors(stats: &CookedStats, shown: &mut u64) -> Vec<(u64, String)> {
+    let since = (*shown).max(stats.failures_before_first_draw);
+    let fresh = usize::try_from(stats.failures.saturating_sub(since))
+        .unwrap_or(usize::MAX)
+        .min(stats.errors.len());
+    *shown = stats.failures;
+    let Some(generation) = stats.drawn else {
+        return Vec::new();
+    };
+    stats.errors[stats.errors.len() - fresh..]
+        .iter()
+        .map(|error| (generation, error.clone()))
+        .collect()
 }
 
 fn cooked_status(stats: &Mutex<CookedStats>) -> ContentStatus {

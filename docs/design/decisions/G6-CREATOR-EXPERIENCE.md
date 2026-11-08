@@ -123,7 +123,9 @@ Root commissioned this on 8 Nov; root and G6 agreed the seam.
 
   `scripts/check_starter_live_reload.py` runs the real starter in live capture mode, `THRUM_CAPTURE_LIVE` with
   `THRUM_CAPTURE_PNG` (`sky/live_capture.rs`). Live capture uses the same watch and delivery body offscreen and writes
-  a PNG and report line per save. It does not qualify the window's event path on glass; pause ordering through
+  a PNG and report line per save. A newly drawn content generation, or an asset edit the loader refuses while the
+  previous generation keeps drawing (`content: kept N (<reason>)`, also logged by the window), writes a `content`
+  line; the script renames the starter's mesh away from its placement and back. It does not qualify the window's event path on glass; pause ordering through
   `controls_edited` is unchanged and shared with `L`, but has no new test, because `App` needs a main-thread event
   loop.
 
@@ -154,6 +156,8 @@ WGSL material hook in the cooked mesh pipeline. `thrum-asset-gpu` owns it.
   the accepted hook could not be restored on a replaced device or surface, so the built-in material draws.
 - `accepted()` names the accepted hook. `restoring()` says whether that hook is being validated again for a
   replaced device or surface, while the built-in material draws.
+- `ready()` names the serial of a request that validated and is held for drawing but has no outcome yet: no submitted
+  frame has recorded draws of a resident cooked mesh with it, because none is resident or the frame was skipped.
 - `revision()` counts changes to what those report, so an idle caller can skip building a report.
 - A request made before the assets first draw is prepared when they first build their pipelines.
 
@@ -172,8 +176,12 @@ WGSL material hook in the cooked mesh pipeline. `thrum-asset-gpu` owns it.
     draws.
 - **Eligibility.** A candidate becomes eligible only after its compilation messages and its validation error scope
   have both resolved.
-- **Installing.** The next frame boundary draws an eligible candidate. The submission carrying that frame promotes
-  it. Recording is tentative, so a cancelled frame does not promote.
+- **Installing.** The next frame boundary draws an eligible candidate. The first submission whose frame recorded
+  draws of a resident cooked mesh with it promotes it, so `Promoted` and its `drawn` time never precede resident
+  content. That is an installation, not a visibility claim: the GPU cull may have drawn none of the mesh, and
+  visible meshlets are reported separately and asynchronously (`CookedStats::visible_meshlets`). Until then it
+  is held and `ready()`: a submitted frame with no cooked mesh, or an encoded frame that is skipped (recording is
+  tentative), leaves it so, and a newer request or a rebuilt surface still replaces it.
 - **On promotion,** motion history restarts once, and residency and bindings are kept.
 - **On failure,** the previous pipeline keeps drawing. Diagnostics are translated to the hook's own file, line and
   character column; a message outside the hook has line 0.

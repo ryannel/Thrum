@@ -6,8 +6,9 @@ use thrum_render::{capabilities::DeviceCapabilities, runtime::FrameConfig};
 use super::{
     Camera, DEFAULT_GROUND, Edits, Sky, SkyEdits, SkyGame,
     capture::{crc32, encode_png},
-    cooked_store, ground_scene,
+    cooked_store, ground_scene, kept_errors,
 };
+use thrum_asset_gpu::CookedStats;
 
 const CAMERA: Camera = Camera::look_at([0.0, 1.7, 6.0], [0.0, 1.0, 0.0], 40.0);
 
@@ -248,5 +249,49 @@ fn the_sky_and_ground_render_through_every_pass() {
     assert!(
         (red - mean(&bare, 80..90, 0)).abs() > 5.0,
         "the ground replaces the sky's planet surface"
+    );
+}
+
+#[test]
+fn loader_failures_after_the_first_draw_are_reported_once_with_the_kept_generation() {
+    let mut stats = CookedStats::default();
+    let mut shown = 0;
+    let fail = |stats: &mut CookedStats, error: &str| {
+        stats.errors.push(error.to_owned());
+        stats.failures += 1;
+    };
+    fail(&mut stats, "generation 1: unreadable");
+    assert!(
+        kept_errors(&stats, &mut shown).is_empty(),
+        "the status reports it"
+    );
+    stats.drawn = Some(2);
+    assert_eq!(kept_errors(&stats, &mut shown), []);
+    fail(&mut stats, "generation 3: asset unavailable");
+    fail(&mut stats, "generation 4: asset unavailable");
+    assert_eq!(
+        kept_errors(&stats, &mut shown),
+        [
+            (2, "generation 3: asset unavailable".to_owned()),
+            (2, "generation 4: asset unavailable".to_owned())
+        ]
+    );
+    assert!(
+        kept_errors(&stats, &mut shown).is_empty(),
+        "each is reported once"
+    );
+    // A failure in the same poll as the first draw, but before it, is not reported as kept.
+    let mut late = CookedStats::default();
+    let mut late_shown = 0;
+    fail(&mut late, "generation 1: unreadable");
+    late.failures_before_first_draw = late.failures;
+    late.drawn = Some(2);
+    assert_eq!(kept_errors(&late, &mut late_shown), []);
+    // The bounded list dropped its oldest entry: only the new one is reported.
+    stats.errors.remove(0);
+    fail(&mut stats, "generation 5: asset unavailable");
+    assert_eq!(
+        kept_errors(&stats, &mut shown),
+        [(2, "generation 5: asset unavailable".to_owned())]
     );
 }

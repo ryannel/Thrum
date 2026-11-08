@@ -685,7 +685,7 @@ async function qualifyMaterial(cdp, sessionId, poll, timeout, files, output, evi
   const game = await existingGame(cdp, sessionId);
   if (!(await game.invoke('return typeof game.reload_material === "function";'))) throw new Error('The material case needs the development page: build it with examples/v1-game/web/build.sh --dev and pass its v1-game-web-dev folder as --web-root');
   evidence.statuses = {};
-  evidence.statuses.initial = await awaitStatus(/material 1 \(case\.material\.wgsl\) drawn/, 'initial identity hook drawn');
+  evidence.statuses.initial = await awaitStatus(/material 1 \(case\.material\.wgsl\) installed/, 'initial identity hook drawn');
   const cooked = JSON.parse(await game.invoke('return game.cooked_status();') ?? 'null');
   if (!cooked || !(cooked.drawn >= 1) || cooked.errors.length) throw new Error(`Cooked valley not drawn: ${JSON.stringify(cooked)}`);
   await game.invoke('document.querySelector("[data-sky=noon]").click();document.querySelector("#scene-view").click();if(!game.paused())document.querySelector("#pause-world").click();return true;');
@@ -713,7 +713,7 @@ async function qualifyMaterial(cdp, sessionId, poll, timeout, files, output, evi
   if (!mossSource.includes(`${(0.05 + nonce * 1e-6).toFixed(6)}`)) throw new Error('Moss hook no longer has the colour the case varies');
   serve(mossSource);
   await evaluate('window.__materialFrames.marks.request=window.__materialFrames.intervals.length;document.querySelector("#reload-material").click();true');
-  evidence.statuses.moss = await awaitStatus(/material 2 \(case\.material\.wgsl\) drawn/, 'moss hook drawn');
+  evidence.statuses.moss = await awaitStatus(/material 2 \(case\.material\.wgsl\) installed/, 'moss hook drawn');
   await evaluate('window.__materialFrames.marks.promoted=window.__materialFrames.intervals.length;true');
   await until(async () => { await poll(); return (await evaluate('window.__materialFrames.intervals.length-window.__materialFrames.marks.promoted')) >= 90; }, 'frames after the reload');
   const frames = await evaluate('(()=>{window.__materialFrames.stop=true;return window.__materialFrames;})()');
@@ -772,7 +772,7 @@ async function qualifyMaterial(cdp, sessionId, poll, timeout, files, output, evi
   // The replacement device takes new reloads.
   serve(materialHooks.green);
   await evaluate('document.querySelector("#reload-material").click();true');
-  evidence.statuses.green = await awaitStatus(/material 5 \(case\.material\.wgsl\) drawn/, 'green hook drawn on the replacement device');
+  evidence.statuses.green = await awaitStatus(/material 5 \(case\.material\.wgsl\) installed/, 'green hook drawn on the replacement device');
   const green = await capture('green');
   evidence.greenChanged = changedFraction(moss, green);
   if (!(evidence.greenChanged > 0.02)) throw new Error(`Reload on the replacement device was not visible: ${evidence.greenChanged}`);
