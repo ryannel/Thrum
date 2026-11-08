@@ -49,6 +49,10 @@ pub struct CookReport {
     pub reused: usize,
     /// Assets that failed, with the reason; their previous product (if any) stays published.
     pub failed: Vec<(String, String)>,
+    /// Products a profile refused for its source, with the reason. The asset publishes without
+    /// them, withdrawing any earlier product for that profile, so loaders select its portable
+    /// product.
+    pub refused: Vec<(String, Profile, String)>,
     /// Time spent cooking.
     pub cook_time: Duration,
     /// The new publication, when the manifest changed.
@@ -82,6 +86,8 @@ pub struct Cooker {
     cas: Cas,
     stat: StatCache,
     actions: HashMap<ContentHash, Product>,
+    /// Action keys a profile refused, with the reason, so unchanged sources are not re-decoded.
+    refusals: HashMap<ContentHash, String>,
     gltf_buffers: HashMap<ContentHash, Vec<String>>,
     published: BTreeMap<Binding, (ProductKind, Product)>,
     /// Products whose bytes this process has verified against their names.
@@ -109,6 +115,7 @@ impl Cooker {
             cas,
             stat,
             actions: HashMap::new(),
+            refusals: HashMap::new(),
             gltf_buffers: HashMap::new(),
             published: BTreeMap::new(),
             verified: HashSet::new(),
@@ -221,7 +228,12 @@ impl Cooker {
         let (jobs, mut failed) = self.plan();
         let mut products = BTreeMap::new();
         let mut misses = Vec::new();
+        let mut refused = BTreeMap::new();
         for job in jobs {
+            if let Some(reason) = self.refusals.get(&job.key) {
+                refused.insert((job.name, job.profile), reason.clone());
+                continue;
+            }
             match self.cached_action(&job.key) {
                 Some(product) => {
                     report.reused += 1;
@@ -244,17 +256,24 @@ impl Cooker {
                     self.remember_action(job.key, product);
                     products.insert((job.name, job.profile), (job.kind, product));
                 }
+                Err(CookError::Refused(reason)) => {
+                    self.refusals.insert(job.key, reason.clone());
+                    refused.insert((job.name, job.profile), reason);
+                }
                 Err(error) => failed.push((job.name, error.to_string())),
             }
         }
-        // Keep serving the last good products of any asset that failed to plan or cook.
+        // Keep serving the last good products of any asset that failed to plan or cook, except
+        // those its current source refuses.
         for (name, _) in &failed {
             for (binding, previous) in self
                 .published
                 .range((name.clone(), Profile::Portable)..)
                 .take_while(|((n, _), _)| n == name)
             {
-                products.entry(binding.clone()).or_insert(*previous);
+                if !refused.contains_key(binding) {
+                    products.entry(binding.clone()).or_insert(*previous);
+                }
             }
         }
         report.cook_time = start.elapsed();
@@ -268,6 +287,10 @@ impl Cooker {
         failed.sort();
         failed.dedup();
         report.failed = failed;
+        report.refused = refused
+            .into_iter()
+            .map(|((name, profile), reason)| (name, profile, reason))
+            .collect();
         Ok(report)
     }
 

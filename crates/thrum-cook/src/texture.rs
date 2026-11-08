@@ -35,6 +35,9 @@ pub(crate) fn cook_texture(
         .map_err(|error| CookError::Source(error.to_string()))?
         .to_rgba8();
     let (width, height) = image.dimensions();
+    if profile != Profile::Portable {
+        whole_blocks(profile, width, height)?;
+    }
     let mips = mip_chain(width, height, image.into_raw(), !linear);
     let has_alpha = mips[0]
         .2
@@ -98,6 +101,9 @@ pub(crate) fn cook_texture(
 /// desktop, R8 elsewhere.
 pub(crate) fn cook_volume(bytes: &[u8], profile: Profile) -> Result<Vec<u8>, CookError> {
     let (width, height, depth, voxels) = parse_volume(bytes)?;
+    if profile == Profile::DesktopBc {
+        whole_blocks(profile, width, height)?;
+    }
     let mut levels = vec![(width, height, depth, voxels.to_vec())];
     while let Some(&(w, h, d, ref data)) = levels.last() {
         if w == 1 && h == 1 && d == 1 {
@@ -119,6 +125,19 @@ pub(crate) fn cook_volume(bytes: &[u8], profile: Profile) -> Result<Vec<u8>, Coo
         ),
     };
     Ok(ktx2(format, width, height, depth, &data))
+}
+
+/// GPU APIs require a block-compressed base level to span whole 4×4 blocks, so a compressed
+/// product of any other size could never be created; refuse it by name instead.
+fn whole_blocks(profile: Profile, width: u32, height: u32) -> Result<(), CookError> {
+    if width.is_multiple_of(4) && height.is_multiple_of(4) {
+        return Ok(());
+    }
+    Err(CookError::Refused(format!(
+        "{} needs a base size that is a multiple of 4 texels; {width}×{height} is served by the \
+         portable product",
+        profile.name()
+    )))
 }
 
 /// Validate a `TVOL` source and return its extent and voxels.
