@@ -45,6 +45,12 @@ In the cooked replacement test, the replacement generation builds two offscreen 
 timing collector also reuses reset query resources after invalid counter values while reporting a timing fault.
 Scratch-only Metal allocation counts and the applied patch are in `tmp/ultrareview-2026-11-07/replacement-resources/`.
 
+**Mac held-drawable loss:** a detached Metal layer reproduced wgpu 30.0.1 returning `PreviousOutputExists`
+after a real device destroy and drawable drop. The platform owner now scopes surface validation and retries once,
+configuring a current candidate surface before publishing the device. The exact helper reacquired on the replacement
+and reported a persistent invalid extent after its retry. Raw probe and helper input hash are in
+`tmp/g3b-mac-surface-loss/`. The live window loss witness remains open.
+
 **Chrome function:** build `sh examples/v1-game/web/build.sh`; Node 24
 `scripts/check_v1_browser.mjs --case all --output tmp/new-browser-run`. Ten rows on Chrome 156 / ANGLE Metal M3 Max;
 HTTP-200 Wasm `3ec67a791896d8cb1e7467ab42de99b58fa97ef9d154d6404672538b57cdcb3a` checked against served bytes.

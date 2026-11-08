@@ -105,6 +105,27 @@ impl DeviceRecipe {
     }
 }
 
+pub(super) fn configure_surface(
+    surface: &wgpu::Surface<'_>,
+    device: &wgpu::Device,
+    config: &wgpu::SurfaceConfiguration,
+) -> Result<(), String> {
+    let configure = || {
+        let errors = device.push_error_scope(wgpu::ErrorFilter::Validation);
+        surface.configure(device, config);
+        pollster::block_on(errors.pop())
+    };
+    // In wgpu 30, dropping a drawable after device loss can leave its
+    // surface marked acquired. The first configure retires that old
+    // presentation before reporting the outstanding-output error.
+    if let Some(first) = configure()
+        && let Some(retry) = configure()
+    {
+        return Err(format!("surface configuration: {first}; retry: {retry}"));
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 #[path = "device_tests.rs"]
 mod tests;

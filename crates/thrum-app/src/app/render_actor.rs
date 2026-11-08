@@ -1,7 +1,7 @@
 //! One render owner serializes frames, configuration and GPU replacement.
 use super::{
     UserEvent,
-    device::{DeviceRecipe, DeviceWatch, PlatformGpu},
+    device::{DeviceRecipe, DeviceWatch, PlatformGpu, configure_surface},
 };
 use crate::Game;
 use objc2_quartz_core::CACurrentMediaTime;
@@ -59,7 +59,7 @@ impl FrameCounters {
         }
     }
 }
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Debug, Default)]
 pub(super) enum SurfaceStatus {
     #[default]
     NotAttempted,
@@ -67,6 +67,7 @@ pub(super) enum SurfaceStatus {
     Unavailable,
     Occluded,
     NeedsReconfigure,
+    ConfigurationRefused(String),
 }
 pub(super) struct RecoveryInfo {
     pub(super) format: wgpu::TextureFormat,
@@ -118,6 +119,7 @@ struct Actor<G: Game> {
     surface_generation: Arc<AtomicU64>,
     stopped: Arc<AtomicBool>,
     needs_reconfigure: bool,
+    refused_surface_generation: Option<u64>,
     origin: Instant,
     wake: EventLoopProxy<UserEvent>,
 }
@@ -148,6 +150,7 @@ pub(super) fn start<G: Game + 'static>(
         surface_generation,
         stopped,
         needs_reconfigure: false,
+        refused_surface_generation: None,
         origin,
         wake: wake.clone(),
     };
@@ -242,30 +245,41 @@ impl<G: Game> Actor<G> {
             self.needs_reconfigure = true;
         }
         let extent = [self.gpu.config.width, self.gpu.config.height];
-        let ready = current
+        let mut ready = current
             && !request.extent.contains(&0)
+            && self.refused_surface_generation != Some(request.surface_generation)
             && (request.extent == extent && !self.needs_reconfigure
                 || self.host.pending_frames() == 0);
         if ready && (request.extent != extent || self.needs_reconfigure) {
-            self.host.resize_surface(request.extent)?;
-            self.gpu.config.width = request.extent[0];
-            self.gpu.config.height = request.extent[1];
-            self.recipe
-                .surface
-                .configure(&self.gpu.device, &self.gpu.config);
+            let mut config = self.gpu.config.clone();
+            config.width = request.extent[0];
+            config.height = request.extent[1];
+            let result = configure_surface(&self.recipe.surface, &self.gpu.device, &config);
             ensure_device(&self.gpu.watch)?;
-            self.needs_reconfigure = false;
+            if let Err(error) = result {
+                self.needs_reconfigure = true;
+                self.refused_surface_generation = Some(request.surface_generation);
+                reply.surface_status = SurfaceStatus::ConfigurationRefused(error);
+                ready = false;
+            } else {
+                self.host.resize_surface(request.extent)?;
+                self.gpu.config = config;
+                self.needs_reconfigure = false;
+                self.refused_surface_generation = None;
+            }
         }
         let now = self.origin.elapsed();
         let lead = display_target_lead(request.target_media_seconds, CACurrentMediaTime());
         reply.target_status = Some(lead.status);
         self.host.set_presentation_lead(lead.duration);
         if !ready {
-            reply.surface_status = if current {
-                SurfaceStatus::Unavailable
-            } else {
-                SurfaceStatus::NeedsReconfigure
-            };
+            if matches!(reply.surface_status, SurfaceStatus::NotAttempted) {
+                reply.surface_status = if current {
+                    SurfaceStatus::Unavailable
+                } else {
+                    SurfaceStatus::NeedsReconfigure
+                };
+            }
             return self.host.drive(now, None);
         }
         let advanced = self.host.advance(now)?;
@@ -359,21 +373,35 @@ impl<G: Game> Actor<G> {
             Some(profile),
         ))
         .map_err(RecoveryFailure::frame)?;
+        // The previous job has dropped its drawable, but the lost device
+        // may have prevented wgpu from clearing that surface acquisition.
+        let needs_reconfigure = extent.contains(&0)
+            || self.surface_generation.load(Ordering::Acquire) != surface_generation;
+        ensure_device(&replacement.watch).map_err(RecoveryFailure::frame)?;
+        ensure_running(&self.stopped).map_err(RecoveryFailure::frame)?;
+        if !needs_reconfigure
+            && let Err(error) = configure_surface(
+                &self.recipe.surface,
+                &replacement.device,
+                &replacement.config,
+            )
+            && self.surface_generation.load(Ordering::Acquire) == surface_generation
+        {
+            return Err(RecoveryFailure::Unavailable(error));
+        }
+        replacement
+            .device
+            .poll(wgpu::PollType::Poll)
+            .map_err(|error| RecoveryFailure::Unavailable(format!("replacement poll: {error}")))?;
         ensure_device(&replacement.watch).map_err(RecoveryFailure::frame)?;
         ensure_running(&self.stopped).map_err(RecoveryFailure::frame)?;
         self.host
             .publish_device(&mut prepared)
             .map_err(RecoveryFailure::frame)?;
         self.gpu = replacement;
-        // Prior jobs have dropped every SurfaceTexture before this boundary.
-        self.needs_reconfigure = extent.contains(&0)
+        self.refused_surface_generation = None;
+        self.needs_reconfigure = needs_reconfigure
             || self.surface_generation.load(Ordering::Acquire) != surface_generation;
-        ensure_running(&self.stopped).map_err(RecoveryFailure::frame)?;
-        if !self.needs_reconfigure {
-            self.recipe
-                .surface
-                .configure(&self.gpu.device, &self.gpu.config);
-        }
         ensure_device(&self.gpu.watch).map_err(RecoveryFailure::frame)?;
         Ok(RecoveryInfo {
             format: self.gpu.config.format,
