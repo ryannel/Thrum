@@ -8,6 +8,26 @@ The Codex goal remains active. Its attachment is
 
 ## Current checkpoint
 
+- The held 160 m caster passes offline 3×3 preservation over
+  `d5768222`. All 73 submission identities match across the four
+  recordings. Per arm, stock and rotated diagnostic camera, fit,
+  three shadow layers and receiver D32 are byte-identical. The fit
+  differs between caster-on and caster-off. Their row-677 receiver
+  D32 values agree for all 281 samples. The resolve moves the two
+  half-visibility edges 0.06 and 0.24 pixels relative to rotated
+  raw. Relative to stock, the resolved edges move about 1.07 pixels
+  left and the right 10–90% transition grows 1.08 pixels. The 127
+  clear and 60 deep-umbra samples stay exact. One raw-zero row
+  sample rises by 0.098 percentage points. The largest change is
+  1.05 points on the row and 1.90 over the crop. The existing Metal
+  forward path supplied the raw guides and a CPU filter produced
+  the mask. Separate opaque-winner, shaded motion, replacement and
+  runtime cost checks remain open. D1 and the original M4 witness
+  are unchanged. See `record_preservation.sh`, `resolve-positive.cpp`
+  and `preservation-scores.json` in
+  `tmp/g3s-sunset-lip/graph/production-pcss/receiver-diagnostic/`.
+  [Independent review](../../design/modules/ATMOSPHERE-PLAN.md#m3-offline-preservation-review-brief).
+
 - M3's 160 m stock caster control on `b4ec6eac` is positive.
   In the old fit the 24×55 cm plate projects to 0.204×0.467
   last-map texels (1.177612 m/texel). The near projection is
