@@ -96,7 +96,7 @@ with game_log.open("wb") as game_output, (output / "recorder.log").open("wb") as
         (evidence / "capture-before").touch(exist_ok=False)
         wait_for(lambda: seen("m1 image phase=before generation=1"), "healthy image")
         if args.row == "running":
-            print("Press P in the game window to resume the world.", flush=True)
+            (evidence / "press-p").touch(exist_ok=False)
             wait_for(lambda: seen("m1 app pause-ack request=Resume"), "normal resume acknowledgement")
         capture = subprocess.Popen(
             [str(here / "record_owned_window"), str(game.pid), str(video), "18"],
@@ -108,8 +108,8 @@ with game_log.open("wb") as game_output, (output / "recorder.log").open("wb") as
             wait_for(lambda: cooked_swaps() > initial_swaps, "cooked valley draw on replacement")
             (evidence / "capture-after").touch(exist_ok=False)
             wait_for(lambda: seen("m1 image phase=after generation=2"), "restored image")
-            print("Press E in the game window to show camera response.", flush=True)
-            wait_for(lambda: seen("m1 app camera E"), "post-recovery camera input")
+            (evidence / "press-e").touch(exist_ok=False)
+            wait_for(lambda: seen("m1 injected input key=KeyE"), "post-recovery camera input")
             time.sleep(1)
             if capture.poll() is not None:
                 raise RuntimeError("camera input was too late for the recording")

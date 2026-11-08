@@ -53,10 +53,12 @@ lane. The app still sends and awaits the preset Pause acknowledgement.
 Use `--preflight-only` to query the console without launching. Once the
 owner grants the screen slot, use `--owner-window` for each of
 `control`, `paused`, and `running`, giving each row a fresh output path
-inside one slot directory under `$out`. Allow Screen Recording for the
-PID-filtered game-window recorder if requested. In the running row,
-press P when prompted. Press E after recovery in the two loss rows.
-Stop if the machine presents an unplanned dialog. Cap the slot at
+inside one slot directory under `$out`. Run the recorder's
+`--preflight` first. The recorder filters by game PID and window.
+The runner injects P before arming the running row and E after
+recovery in both loss rows. The app logs each action and sends both
+edges through its normal key handler. Stop on missing Screen Recording
+permission or an unplanned dialog. Cap the slot at
 eight minutes. Run `audit_live_witness.py` on the slot directory and
 watch the retained recordings at 1× against the approved or proposed
 noon reference. Offscreen equality and present calls alone leave the

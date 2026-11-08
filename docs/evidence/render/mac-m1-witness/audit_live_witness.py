@@ -35,8 +35,9 @@ for row, path in rows.items():
     recording = (path / "recorder.log").read_text().splitlines()
     recorder = only(r"^pid=(\d+) window=(\d+) ", recording)
     recorded_from = int(only(r"m1 recording start unix_ms=(\d+)$", recording).group(1))
-    recorded_to = int(only(r"m1 recording finish unix_ms=(\d+)$", recording).group(1))
-    assert recorded_from < recorded_to
+    recorded_to = int(only(r"m1 recording stop-request unix_ms=(\d+)$", recording).group(1))
+    finalized = int(only(r"m1 recording finish unix_ms=(\d+)$", recording).group(1))
+    assert recorded_from < recorded_to <= finalized
     first = only(r"m1 app presented generation=1 .* window=(.*) pid=(\d+)$", lines)
     assert first.group(2) == recorder.group(1)
     before = image(1, "before", lines)
@@ -79,7 +80,7 @@ for row, path in rows.items():
     restored_cooked = [int(match.group(1)) for line in lines[lines.index(published.string):lines.index(after.string)]
                        if (match := re.search(cooked, line))]
     assert restored_cooked and restored_cooked[-1] > warmed[-1], restored_cooked
-    camera = only(r"m1 app camera E tick=\d+ window=(.*)$", lines)
+    camera = only(r"m1 injected input key=KeyE tick=\d+ window=(.*)$", lines)
     assert camera.group(1) == first.group(1)
     assert lines.index(after.string) < lines.index(camera.string)
     present_ms = int(only(r"m1 event first-present-2 unix_ms=(\d+)$", lines).group(1))
@@ -107,7 +108,10 @@ for row, path in rows.items():
                          (match := re.search(r"m1 app loss-observed generation=1 tick=(\d+)", line))), None)
         assert observed is not None
         resume = only(r"m1 app pause-ack request=Resume", lines)
-        assert lines.index(resume.string) < start < lines.index(observed.string) < first_submit
+        resume_input = only(r"m1 injected input key=KeyP tick=\d+ window=(.*)$", lines)
+        assert resume_input.group(1) == first.group(1)
+        assert lines.index(resume_input.string) < lines.index(resume.string) < start
+        assert start < lines.index(observed.string) < first_submit
         samples = [int(match.group(1)) for line in lines[lines.index(observed.string)+1:first_submit]
                    if (match := re.search(r"m1 app authority tick=(\d+) state=Running", line))]
         assert samples and max(samples) > int(observed.group(1)), samples

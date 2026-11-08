@@ -1,4 +1,6 @@
 import Foundation
+import AppKit
+import CoreGraphics
 import ScreenCaptureKit
 
 private final class Recorder: NSObject, SCRecordingOutputDelegate {
@@ -20,7 +22,7 @@ private final class Recorder: NSObject, SCRecordingOutputDelegate {
         FileManager.default.createFile(atPath: done.path, contents: Data())
     }
 
-    private func log(_ event: String) {
+    func log(_ event: String) {
         let unixMS = UInt64(Date().timeIntervalSince1970 * 1000)
         FileHandle.standardError.write(Data("m1 recording \(event) unix_ms=\(unixMS)\n".utf8))
     }
@@ -33,8 +35,15 @@ private final class Recorder: NSObject, SCRecordingOutputDelegate {
 
 @main
 private struct WindowCapture {
+    @MainActor
     static func main() async throws {
+        _ = NSApplication.shared
         let arguments = CommandLine.arguments
+        guard CGPreflightScreenCaptureAccess() else {
+            FileHandle.standardError.write(Data("M1 SCREEN RECORDING PERMISSION REQUIRED\n".utf8))
+            exit(3)
+        }
+        if arguments == [arguments[0], "--preflight"] { return }
         guard arguments.count == 4, let pid = Int32(arguments[1]),
               let seconds = UInt64(arguments[3]), (1...60).contains(seconds)
         else { throw CocoaError(.fileWriteInvalidFileName) }
@@ -72,6 +81,7 @@ private struct WindowCapture {
         try stream.addRecordingOutput(recording)
         try await stream.startCapture()
         try await Task.sleep(for: .seconds(seconds))
+        delegate.log("stop-request")
         try stream.removeRecordingOutput(recording)
         for _ in 0..<50 {
             if FileManager.default.fileExists(atPath: done.path) {

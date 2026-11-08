@@ -32,7 +32,7 @@ m1 event first-present-2 unix_ms=2000
 m1 app presented generation=2 sequence=62 tick=0 window=Some(WindowId(123)) pid=42
 m1 game time=12.0 drawn=Some(1) swaps=2 submitted=62
 m1 image phase=after generation=2 endpoint=SourceTick { epoch: 1, tick: 0, timeline: 0 }
-m1 app camera E tick=0 window=Some(WindowId(123))
+m1 injected input key=KeyE tick=0 window=Some(WindowId(123))
 m1 event camera unix_ms=3000
 m1 app presented generation=2 sequence=63 tick=0 window=Some(WindowId(123)) pid=42
 m1 witness finish armed=true fired=true before=true after=true
@@ -42,7 +42,8 @@ m1 witness finish armed=true fired=true before=true after=true
     logs = {
         "control": early + "m1 witness finish armed=false fired=false before=true after=false\n",
         "paused": early + failure + resumed,
-        "running": early + "m1 app pause-ack request=Resume\n" + failure
+        "running": early + "m1 injected input key=KeyP tick=0 window=Some(WindowId(123))\n"
+                   + "m1 app pause-ack request=Resume\n" + failure
                    + "m1 app authority tick=1 state=Running\n" + resumed,
     }
     for row, log in logs.items():
@@ -55,7 +56,7 @@ m1 witness finish armed=true fired=true before=true after=true
         (directory / "window.mp4").symlink_to(clip)
         (directory / "recorder.log").write_text(
             "pid=42 window=1234 frame=(fixture)\nm1 recording start unix_ms=1000\n"
-            "m1 recording finish unix_ms=4000\n"
+            "m1 recording stop-request unix_ms=4000\nm1 recording finish unix_ms=4500\n"
         )
         (directory / "inputs.json").write_text(json.dumps(identities))
         (directory / "game.log").write_text(log)
@@ -68,7 +69,7 @@ m1 witness finish armed=true fired=true before=true after=true
     for name, path, old, new in (
         ("old empty submit", paused, "m1 abandoned", "m1 queue submit id=QueueId(0,1) count=0\nm1 abandoned"),
         ("world tick never advances", running, "authority tick=1", "authority tick=0"),
-        ("changed acknowledged endpoint", paused, "timeline: 0 }\nm1 app camera", "timeline: 1 }\nm1 app camera"),
+        ("changed acknowledged endpoint", paused, "timeline: 0 }\nm1 injected input key=KeyE", "timeline: 1 }\nm1 injected input key=KeyE"),
         ("cooked generation never redrawn", paused, "swaps=2", "swaps=1"),
         ("post-recovery camera input outside recording", paused, "camera unix_ms=3000", "camera unix_ms=5000"),
     ):

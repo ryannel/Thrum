@@ -58,11 +58,18 @@ replace(app, "        self.refresh_title();\n        if let Some(window) = &self
 
     fn admit_recovery""")
 replace(app, "    fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {", """    fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
-        if std::env::var_os("THRUM_M1_WITNESS").is_some_and(|path|
-            std::path::PathBuf::from(path).join("finish").is_file())
-        {
-            event_loop.exit();
-            return;
+        if let Some(path) = std::env::var_os("THRUM_M1_WITNESS") {
+            let path = std::path::PathBuf::from(path);
+            if path.join("finish").is_file() {
+                self.target_frames = self.presented;
+                event_loop.exit();
+                return;
+            }
+            if let Err(error) = self.witness_input(&path) {
+                self.error = Some(error);
+                event_loop.exit();
+                return;
+            }
         }""")
 replace(app, "        if was_transitioning || self.pause.needs_reply() || self.pause.next_request().is_some() {",
 """        if std::env::var_os("THRUM_M1_WITNESS").is_some()
@@ -71,17 +78,43 @@ replace(app, "        if was_transitioning || self.pause.needs_reply() || self.p
                 self.world_status(), self.window.as_ref().map(|window| window.id()));
         }
         if was_transitioning || self.pause.needs_reply() || self.pause.next_request().is_some() {""")
-replace(app, "                        self.set_key(code, event.state == ElementState::Pressed)", """                        if std::env::var_os("THRUM_M1_WITNESS").is_some()
-                            && code == KeyCode::KeyE && event.state == ElementState::Pressed
-                            && !event.repeat
-                        {
-                            eprintln!("m1 app camera E tick={} window={:?}", self.world_tick,
-                                self.window.as_ref().map(|window| window.id()));
-                            let unix_ms = std::time::SystemTime::UNIX_EPOCH.elapsed()
-                                .unwrap_or_default().as_millis();
-                            eprintln!("m1 event camera unix_ms={unix_ms}");
-                        }
-                        self.set_key(code, event.state == ElementState::Pressed)""")
+import textwrap
+
+keyboard = app.read_text()
+key_start = keyboard.index("                    if code == KeyCode::KeyR")
+key_end = keyboard.index("\n                } else {\n                    Ok(())", key_start)
+normal_keys = keyboard[key_start:key_end]
+normal_keys = textwrap.indent(textwrap.dedent(normal_keys), "        ")
+normal_keys = normal_keys.replace("event.state == ElementState::Pressed", "pressed")
+normal_keys = normal_keys.replace("event.repeat", "repeat")
+replace(app, keyboard[key_start:key_end],
+        "                    self.key_event(code, event.state == ElementState::Pressed, event.repeat)")
+replace(app, "    fn prepare(\n", f"""    fn key_event(&mut self, code: KeyCode, pressed: bool, repeat: bool) -> Result<(), String> {{
+{normal_keys}
+    }}
+
+    fn witness_input(&mut self, path: &std::path::Path) -> Result<(), String> {{
+        for (marker, code) in [("press-p", KeyCode::KeyP), ("press-e", KeyCode::KeyE)] {{
+            match std::fs::remove_file(path.join(marker)) {{
+                Ok(()) => {{}}
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => continue,
+                Err(error) => return Err(format!("witness input: {{error}}")),
+            }}
+            eprintln!("m1 injected input key={{code:?}} tick={{}} window={{:?}}", self.world_tick,
+                self.window.as_ref().map(|window| window.id()));
+            if code == KeyCode::KeyE {{
+                let unix_ms = std::time::SystemTime::UNIX_EPOCH.elapsed()
+                    .unwrap_or_default().as_millis();
+                eprintln!("m1 event camera unix_ms={{unix_ms}}");
+            }}
+            self.key_event(code, true, false)?;
+            self.key_event(code, false, false)?;
+        }}
+        Ok(())
+    }}
+
+    fn prepare(
+""")
 replace(app, "                self.presented += 1;", """                self.presented += 1;
                 if std::env::var_os("THRUM_M1_WITNESS").is_some()
                     && (self.presented == 1 || reply.device_generation > 1) {
