@@ -103,8 +103,10 @@ night contribution below stored precision can skip that work. Prepare graph vari
 adds a depth read, depth retention and colour attachment load/store. The
 day variant retains today's depth discard where no other consumer needs it.
 Select it only on a profile range where the brightest star is shown to be
-subvisible. Measure the real tile traffic at night and through the transition. Record named GPU intervals,
-full-frame cost and motion on Mac and Chrome. Investigate visible hitches
+subvisible. Record logical attachment area, named GPU intervals, full-frame cost and motion on Mac and Chrome.
+Physical tile traffic at night and through the transition is queued with
+[Apple tile M0.4](APPLE-TILE-PLAN.md#m0-proof-route-counters-and-capture-probe-pending).
+Investigate visible hitches
 and comparable regressions over the build plan tripwire.
 
 The isotropic and unattenuated-shell controls gave 0.54 and 0.77 millilux
