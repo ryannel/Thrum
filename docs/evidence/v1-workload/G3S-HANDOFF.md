@@ -34,6 +34,14 @@ The Codex goal remains active. Its attachment is
   Load changed sharply across these sequential captures. They are
   motion timings, with no causal star-cost claim.
 
+- M3 is scoped to the visible no-flash crossing, the transition controls
+  and regular frame integrity. M4 retains exact disk admission and
+  every witness below. The independent review accepted the split and
+  rejected the first SMRT design before implementation. Sixteen binary
+  rays resolve only 6.25 pp steps. All eight stored-field rows resolve
+  below that in the dense PCSS control. The shipped shader is unchanged.
+  See the [current milestone plan](../../design/modules/ATMOSPHERE-PLAN.md#m3-the-west-lookouts-shadow-crosses-the-ground-without-a-flash-in-progress).
+
 - M3 research is in `tmp/g3s-sunset-lip/M3-RESEARCH.md`. Decoding the
   existing off-axis crest diagnostic finds 33,965 partial receivers at
   frame 3 and 812,485 at frame 72 out of 1,118,754 eligible in both.

@@ -93,67 +93,46 @@ airglow variations and calibrated night colour are outside this profile.
 
 ### M3 surface Sun visibility
 
-The shipped cascade remains the fallback. Dense integration of the stored
-comparison field recovers the missing solar limb. A bounded dyadic integral
-exhausts its read cap at all eight archived pixels without recovering the limb.
-Exhaustive min/max traversal can require 15,762 visits per receiver at the
-witnessed radius. Park per-fragment filter refinement. Put reuse before
-fragment evaluation and preserve original geometry through the producer.
-The depth field can omit subtexel or hidden casters. [Filter evidence](../../evidence/v1-workload/G3S-HANDOFF.md#current-checkpoint).
+M3 takes **shadow-map ray tracing (SMRT)** as its production
+precedent for wide low-Sun penumbrae. Epic uses it with virtual shadow
+maps. The portable candidate would trace directions drawn from the
+existing Sun disk against the first depth layer of the existing
+cascades. The near and small-footprint PCSS path, cascade windows and
+terrain horizon remain the comparison. [Epic SMRT](https://dev.epicgames.com/documentation/en-us/unreal-engine/virtual-shadow-maps-in-unreal-engine#softshadowswithshadowmapraytracing).
 
-Use one solid-angle integral over the rendered Sun. At each azimuth, clip
-terrain and detached spans to the same elevation chord, union the spans,
-then integrate their `sin(elevation)` differences. Duplicated coverage
-is idempotent. The independent reference casts rays through original triangles.
+The fixed row-665 step is inside the last map in both frames. Eight
+search taps give the same blocker count and a stable radius of about
+53 texels. Stock disk samples jump from 4.79–12.50% to zero while the
+dense PCSS comparison field still sees 2.49–3.65%. The first SMRT
+adaptation proposed 16 fixed binary directions with six depth samples
+each. Review stopped it before a run. Its smallest positive result is
+6.25%, above the entire 2.49–5.53% dense-PCSS interval. More angular
+support alone can replace the old flash with a different staircase.
+The previous limb-weighted filter likewise flattened this witness.
+[Evidence](../../evidence/v1-workload/G3S-HANDOFF.md#current-checkpoint).
 
-The shared original-edge packet proof is parked. It preserves the finite
-crest and crossing witnesses, while three bounded CPU proofs leave
-omission unresolved over moving receivers. Keep the original near and
-far terrain and detached casters in the same disk union. Any retained
-terrain horizon needs a continuous source prefix from the lifted origin.
-A replacement needs complete source coverage and residual work accounting
-before shader admission. [Evidence](../../evidence/v1-workload/G3S-HANDOFF.md#current-checkpoint).
+A reviewed replacement needs a fractional penumbra resolve, a defined
+first-layer depth crossing and discontinuity rule, and a full depth-read
+cost account. The near complement and unrestricted overlap can invoke the last map twice. Positive visibility can also enable the 96-step horizon march that zero visibility skips. Count those paths and every neighbour and fallback fetch. Treat dense traversal
+of that representation, dense PCSS and original-triangle rays as
+separate measurements. Out-of-map samples are unsupported. The stock
+PCSS path currently treats them as lit, so using it as fallback does
+not certify an unsupported ray. The compact caster can be absent from
+both stored layers. Establish bounded coverage or preserve the stock
+visual result at the affected transition and record the residual.
+Keep surface composition separate from aerial intervals. Use no
+extra camera or shadow ownership and prove that a discarded frame
+cannot change a later submitted image.
 
-Use the actual packed Sun and one continuous, error-bounded receiver lift.
-The CPU reference candidate projects original edges to a finite horizontal
-gnomonic window over the Sun aperture. Preserve above-roof edge support
-when filling terrain below the envelope. Clip detached triangles and
-unqualified terrain homogeneously before dividing. Admit a separated
-receiver or define positive-ray contact semantics at the apex. Form
-disjoint visible polygons from terrain and caster span unions, then
-map to the Sun-centred gnomonic plane. Intersect with the exact circle
-of radius `tan(r)` and integrate signed chords and arcs. For uniform
-visibility, normalizing planar area differs from normalized solid angle
-by at most `sec(r)^3 − 1`, below 0.0033 percentage points here. Geometry
-and rounding have separate bounds. Retain independent 3D ray integration
-as the referee. [Analytic silhouette clipping](https://diglib7.eg.org/items/b4d101ec-840e-4269-b549-ef16ea70d8f9).
-
-The portable runtime representation remains open. Bound candidate
-retrieval, event growth, scratch and total receiver work in the admitted
-domain. Bind the complete terrain and detached union, with an
-error-bounded transition to the fallback. Keep the separate aerial
-interval owner.
-
-Bind footprint, original cooked geometry, roof bounds and evaluator version
-as one source generation. The submitted frame pins it with current
-transforms and Sun. Admit supported receiver, Sun and caster domains and
-their worst traversal, refinement and replacement residency before activating
-the recipe. Select a complete prepared fallback before submission when a
-generation cannot be admitted. A full queue cannot omit an unresolved
-span. A discarded frame cannot publish a different generation.
-
-The full-view beam, materialized face lists and block joins are too costly
-as defaults. The raised conforming chart misses by 3.10 percentage points
-despite matching seams. Park chart fitting. Independent 3D rays agree with
-the exact terrain/caster union within 0.010 percentage points at seven poses.
-Paired fixed-direction rows cut the raised crest's p95 visits from 95 to 85,
-with 16 added roof tests. Both partial witnesses still use exact triangles
-at every sampled receiver. Park per-column roof traversal. Advance only a
-design that shares source work across the aperture and bounds exact
-geometry work before runtime integration. Projected edges match the
-raised-patch reference. Fixed meridians still miss the thin crest
-at low sample counts. Keep the envelope for CPU reference and
-candidate preparation. [Extended-source occluder fusion, §7.2](https://www.cs.princeton.edu/courses/archive/spr01/cs598b/papers/schaufler00.pdf).
+M4 retains the independent finite-disk reference. Clip terrain and
+detached spans to the same solar chord and union them before integrating
+solid angle. The projected circle-area approximation has a normalized
+solid-angle error below 0.0033 percentage points for the actual Sun.
+Original-triangle rays remain the referee. Frozen original-edge packets
+match the finite samples, while three conservative omission proofs
+leave moving-receiver admission unresolved. Keep those witnesses and
+a predeclared work limit for the bounded follow-up. Exact matching does not
+gate the M3 visual outcome.
 
 ## Frame and cost
 
