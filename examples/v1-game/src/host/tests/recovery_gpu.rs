@@ -346,3 +346,105 @@ fn running_world_advances_while_its_destroyed_gpu_is_replaced() {
         retain("recovery-running", &pixels);
     });
 }
+
+/// The mixed field keeps its authored meshes through device loss: the
+/// replacement prepares the same per-slot selection from the retained scene
+/// and redraws the paused frame unchanged, then the world resumes on it.
+#[test]
+fn mixed_mesh_field_keeps_its_meshes_through_gpu_replacement() {
+    pollster::block_on(async {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let old = Gpu::new(&instance, 21).await;
+        let host = FrameHost::new_with_setup(
+            &old.device,
+            &old.queue,
+            &old.capabilities,
+            FrameConfig {
+                surface: Some(surface()),
+                ..FrameConfig::default()
+            },
+            crate::GameSetup {
+                content: crate::GameContent::Field,
+                camera_culling: thrum_render::synthetic::CullMode::Frustum,
+                valley_stars: false,
+                field_meshes: true,
+            },
+        )
+        .await
+        .expect("mixed-mesh field");
+        let origin = Instant::now();
+        let (mut host, controls) = host.into_threaded(origin, || {}).expect("resident world");
+        // Let the flythrough run before pausing on a fixed frame.
+        let deadline = Instant::now() + Duration::from_secs(10);
+        while controls.check_health().expect("running world") < 30 {
+            assert!(Instant::now() < deadline, "world did not run");
+            std::thread::sleep(Duration::from_millis(1));
+        }
+        let paused = transition(&mut host, &controls, &old.device, WorldLifecycle::Pause);
+        let (before, _) = draw(&mut host, origin, &old.device, &old.queue, &old.target);
+        let inputs = host.device_prepare_inputs().expect("retained CPU inputs");
+        old.device.destroy();
+        let replacement = Gpu::new(&instance, 22).await;
+        let mut candidate = inputs
+            .prepare(
+                &replacement.capabilities,
+                &replacement.queue,
+                Some(surface()),
+            )
+            .await
+            .expect("replacement after destruction");
+        host.publish_device(&mut candidate)
+            .expect("replace only GPU resources");
+        let (restored, sample) = draw(
+            &mut host,
+            origin,
+            &replacement.device,
+            &replacement.queue,
+            &replacement.target,
+        );
+        assert_eq!(sample.tick, paused.id.tick);
+        let peak = before
+            .iter()
+            .zip(&restored)
+            .map(|(a, b)| a.abs_diff(*b))
+            .max()
+            .expect("pixels");
+        let differing = before
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .zip(restored.as_chunks::<4>().0)
+            .filter(|(a, b)| a != b)
+            .count();
+        eprintln!(
+            "mixed field recovery: tick={}, peak_sdr_codes={peak}, differing_px={differing}",
+            sample.tick
+        );
+        assert!(
+            peak <= 1,
+            "the replacement redraws the same meshes: {peak} codes over {differing} px"
+        );
+        transition(
+            &mut host,
+            &controls,
+            &replacement.device,
+            WorldLifecycle::Resume,
+        );
+        let deadline = Instant::now() + Duration::from_secs(10);
+        while controls.check_health().expect("resumed owner") == paused.id.tick {
+            assert!(Instant::now() < deadline, "world did not resume");
+            std::thread::sleep(Duration::from_millis(1));
+        }
+        let (moved, _) = draw(
+            &mut host,
+            origin,
+            &replacement.device,
+            &replacement.queue,
+            &replacement.target,
+        );
+        assert_ne!(moved, restored, "the flythrough resumes on the replacement");
+        retain("mixed-field-recovery-before", &before);
+        retain("mixed-field-recovery-after", &restored);
+        retain("mixed-field-recovery-resumed", &moved);
+    });
+}
