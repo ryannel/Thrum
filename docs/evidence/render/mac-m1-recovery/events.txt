@@ -1,0 +1,90 @@
+=== control ===
+{"binary_sha256": "e8ace73480e621dedf0fb7da188c07f171a35e86164f9343b54b3d505a787e8a", "cooked_generation": 1, "params_sha256": "9c1f03df9fc1461d92e60fafa06ee58889aa41130ea7547475b5ba4a99506455", "recorder_sha256": "488caf23e8611ac6efaac59d70003a3c889bee1c9d25a9cbd73dc8bc6cd32627", "revision": "43e1d488b417f8dcf3677d6b1d80e98981d48d18", "row": "control", "started_unix_ns": 1794156236776067000, "store_root": "70d2baf823d09d85574f7cdfce7102648754544dd7d68659e9bd92dd5f30e21d"}
+5c841c1a889651cfaa4dd690f1b47b2d95afa2469ddbf8324c961b5b12d975a3  control/window.mp4
+a865b1e6fc6765f6d4dec2190328d70f12d3d0ba9a6018f724659934c8ebb588  control/pixels/before.rgba
+02e388123a3e107c8e338f94dfb60ebd4ba8f9f82a6c6fa1c3bdd9ff37d7dbb2  control/game.log
+36a95dedd65fe1938c6d5e56d96876e3b8038cec220de94622e689c9c7419ff9  control/recorder.log
+m1 app authority tick=0 state=Pausing (P) window=Some(WindowId(46892696192))
+m1 app pause-ack request=Pause endpoint=SnapshotId { epoch: WorldEpoch(1), tick: 0 }
+m1 app authority tick=0 state=Paused (P) window=Some(WindowId(46892696192))
+m1 frame submit generation=1 surface=2 sequence=1
+m1 first present generation=1 sequence=1
+m1 event first-present-1 unix_ms=1794156237570
+m1 image phase=before generation=1 endpoint=SourceTick { epoch: 1, tick: 0, timeline: 0 }
+m1 witness finish armed=false fired=false before=true after=false
+m1 recording start unix_ms=1794156238831
+m1 recording stop-request unix_ms=1794156257028
+m1 recording finish unix_ms=1794156257042
+pid=41901 window=42019 frame=(384.0, 145.0, 960.0, 572.0)
+=== paused ===
+{"binary_sha256": "e8ace73480e621dedf0fb7da188c07f171a35e86164f9343b54b3d505a787e8a", "cooked_generation": 1, "params_sha256": "9c1f03df9fc1461d92e60fafa06ee58889aa41130ea7547475b5ba4a99506455", "recorder_sha256": "488caf23e8611ac6efaac59d70003a3c889bee1c9d25a9cbd73dc8bc6cd32627", "revision": "43e1d488b417f8dcf3677d6b1d80e98981d48d18", "row": "paused", "started_unix_ns": 1794156257280934000, "store_root": "70d2baf823d09d85574f7cdfce7102648754544dd7d68659e9bd92dd5f30e21d"}
+aa4727f7507ea59e050e8d4d519e97fb252a1348106563d1afb2ecdf426d058b  paused/window.mp4
+a865b1e6fc6765f6d4dec2190328d70f12d3d0ba9a6018f724659934c8ebb588  paused/pixels/after.rgba
+a865b1e6fc6765f6d4dec2190328d70f12d3d0ba9a6018f724659934c8ebb588  paused/pixels/before.rgba
+abf33a01a3d8c106d21d8f8bf81afb7deab0c7db1bd546fb97282a6c0170c315  paused/game.log
+04d4d26be3aeda10341f6d1af131850499eed9535ad7bb8b123662ddd20bfb2e  paused/recorder.log
+m1 app authority tick=0 state=Pausing (P) window=Some(WindowId(30253974144))
+m1 app pause-ack request=Pause endpoint=SnapshotId { epoch: WorldEpoch(1), tick: 0 }
+m1 app authority tick=0 state=Paused (P) window=Some(WindowId(30253974144))
+m1 frame submit generation=1 surface=2 sequence=1
+m1 first present generation=1 sequence=1
+m1 event first-present-1 unix_ms=1794156257641
+m1 image phase=before generation=1 endpoint=SourceTick { epoch: 1, tick: 0, timeline: 0 }
+m1 acquired generation=1 sequence=260 surface=2
+m1 destroying generation=1 sequence=260 queue=Queue { inner: Core(CoreQueue { context: ContextWgpuCore { type: "Native" }, id: QueueId(0,1), error_sink: Mutex { data: ErrorSink, poisoned: false, .. } }) }
+m1 loss callback generation=1 sequence=260
+m1 app loss-observed generation=1 tick=0 window=Some(WindowId(30253974144)) pid=42487
+m1 abandoned generation=1 sequence=260
+m1 app loss-observed generation=1 tick=0 window=Some(WindowId(30253974144)) pid=42487
+m1 recovery requested from=1 generation=2
+m1 published generation=2 queue=Queue { inner: Core(CoreQueue { context: ContextWgpuCore { type: "Native" }, id: QueueId(1,1), error_sink: Mutex { data: ErrorSink, poisoned: false, .. } }) }
+m1 frame submit generation=2 surface=3 sequence=264
+m1 first present generation=2 sequence=264
+m1 event first-present-2 unix_ms=1794156259844
+m1 image phase=after generation=2 endpoint=SourceTick { epoch: 1, tick: 0, timeline: 0 }
+m1 injected input key=KeyE tick=0 window=Some(WindowId(30253974144))
+m1 event camera unix_ms=1794156260348
+m1 witness finish armed=true fired=true before=true after=true
+m1 recording start unix_ms=1794156258768
+m1 recording stop-request unix_ms=1794156277356
+m1 recording finish unix_ms=1794156277368
+pid=42487 window=42035 frame=(384.0, 145.0, 960.0, 572.0)
+=== running ===
+{"binary_sha256": "e8ace73480e621dedf0fb7da188c07f171a35e86164f9343b54b3d505a787e8a", "cooked_generation": 1, "params_sha256": "9c1f03df9fc1461d92e60fafa06ee58889aa41130ea7547475b5ba4a99506455", "recorder_sha256": "488caf23e8611ac6efaac59d70003a3c889bee1c9d25a9cbd73dc8bc6cd32627", "revision": "43e1d488b417f8dcf3677d6b1d80e98981d48d18", "row": "running", "started_unix_ns": 1794156277584263000, "store_root": "70d2baf823d09d85574f7cdfce7102648754544dd7d68659e9bd92dd5f30e21d"}
+02a32fef3c081a9a6a6a22f7d9e4922f8a2dbb93df12d8b4cb3dd91e3a53cb81  running/window.mp4
+c7ed06381ed11a3248f862cc0fa0ada8e011c4f0edb0dc6419244520a093e915  running/pixels/after.rgba
+a865b1e6fc6765f6d4dec2190328d70f12d3d0ba9a6018f724659934c8ebb588  running/pixels/before.rgba
+0efc15ae2bd3e2e287b03254ec3c45e26a564b1fc3c482ea77fb1c923577f41c  running/game.log
+f8dc0be288784e317e92c8a1746fd3ac67d928daecf3c96ff1fabffcec65351c  running/recorder.log
+m1 app authority tick=0 state=Pausing (P) window=Some(WindowId(41461252736))
+m1 app pause-ack request=Pause endpoint=SnapshotId { epoch: WorldEpoch(1), tick: 0 }
+m1 app authority tick=0 state=Paused (P) window=Some(WindowId(41461252736))
+m1 frame submit generation=1 surface=2 sequence=1
+m1 first present generation=1 sequence=1
+m1 event first-present-1 unix_ms=1794156277995
+m1 image phase=before generation=1 endpoint=SourceTick { epoch: 1, tick: 0, timeline: 0 }
+m1 injected input key=KeyP tick=0 window=Some(WindowId(41461252736))
+m1 app authority tick=0 state=Resuming (P) window=Some(WindowId(41461252736))
+m1 app pause-ack request=Resume endpoint=SnapshotId { epoch: WorldEpoch(1), tick: 0 }
+m1 app authority tick=0 state=Running (P) window=Some(WindowId(41461252736))
+m1 acquired generation=1 sequence=256 surface=2
+m1 destroying generation=1 sequence=256 queue=Queue { inner: Core(CoreQueue { context: ContextWgpuCore { type: "Native" }, id: QueueId(0,1), error_sink: Mutex { data: ErrorSink, poisoned: false, .. } }) }
+m1 loss callback generation=1 sequence=256
+m1 app loss-observed generation=1 tick=79 window=Some(WindowId(41461252736)) pid=42761
+m1 abandoned generation=1 sequence=256
+m1 app loss-observed generation=1 tick=79 window=Some(WindowId(41461252736)) pid=42761
+m1 app authority tick=80 state=Running (P) window=Some(WindowId(41461252736))
+m1 recovery requested from=1 generation=2
+m1 app authority tick=81 state=Running (P) window=Some(WindowId(41461252736))
+m1 published generation=2 queue=Queue { inner: Core(CoreQueue { context: ContextWgpuCore { type: "Native" }, id: QueueId(1,1), error_sink: Mutex { data: ErrorSink, poisoned: false, .. } }) }
+m1 frame submit generation=2 surface=3 sequence=260
+m1 first present generation=2 sequence=260
+m1 event first-present-2 unix_ms=1794156280156
+m1 image phase=after generation=2 endpoint=SourceTick { epoch: 1, tick: 119, timeline: 0 }
+m1 injected input key=KeyE tick=121 window=Some(WindowId(41461252736))
+m1 event camera unix_ms=1794156280815
+m1 witness finish armed=true fired=true before=true after=true
+m1 recording start unix_ms=1794156279088
+m1 recording stop-request unix_ms=1794156298034
+m1 recording finish unix_ms=1794156298058
+pid=42761 window=42051 frame=(384.0, 145.0, 960.0, 572.0)

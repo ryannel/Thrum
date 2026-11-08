@@ -1,0 +1,69 @@
+{
+  "control": {
+    "pid": 41901,
+    "window_server_id": 42019,
+    "before_endpoint": [
+      "1",
+      "0",
+      "0"
+    ],
+    "video": {
+      "width": 1280,
+      "height": 762,
+      "duration": "18.195000"
+    }
+  },
+  "paused": {
+    "pid": 42487,
+    "window_server_id": 42035,
+    "before_endpoint": [
+      "1",
+      "0",
+      "0"
+    ],
+    "video": {
+      "width": 1280,
+      "height": 762,
+      "duration": "18.588333"
+    },
+    "after_endpoint": [
+      "1",
+      "0",
+      "0"
+    ],
+    "old_queue_calls_after_destroy": 0,
+    "surface_before": 2,
+    "surface_after": 3,
+    "recovered_present_recording_offset_ms": 1076,
+    "camera_input_recording_offset_ms": 1580,
+    "exact_scene_pixels": 2073600
+  },
+  "running": {
+    "pid": 42761,
+    "window_server_id": 42051,
+    "before_endpoint": [
+      "1",
+      "0",
+      "0"
+    ],
+    "video": {
+      "width": 1280,
+      "height": 762,
+      "duration": "18.948333"
+    },
+    "after_endpoint": [
+      "1",
+      "119",
+      "0"
+    ],
+    "old_queue_calls_after_destroy": 0,
+    "surface_before": 2,
+    "surface_after": 3,
+    "recovered_present_recording_offset_ms": 1068,
+    "camera_input_recording_offset_ms": 1727,
+    "authority_ticks_during_loss": [
+      80,
+      81
+    ]
+  }
+}

@@ -505,21 +505,22 @@
     },
     "V1_bounded_frame_host": {
       "implementation": "partial_engine_runtime_lifecycle_Metal_and_browser_gpu_reconstruction_retry",
-      "functional_validation": "Metal_pause_replacement_Mac_overload_drain_resume_CPU_and_Chrome_reconstruction_and_real_tab_switches_pass;_iOS_simulator_off_main_input_surface_replacement_rotation_and_injected_device_loss_recovery_pass",
-      "experienced_quality": "submitted_offscreen_pause_camera_resume_gpu_replacement_reviewed;_live_motion_grid_aliasing_open",
+      "functional_validation": "Mac_live_held_drawable_Metal_recovery_preserves_authority_with_zero_old_queue_calls;_Mac_overload_drain_resume_and_Chrome_reconstruction_and_real_tab_switches_pass;_iOS_simulator_off_main_input_surface_replacement_rotation_and_injected_device_loss_recovery_pass",
+      "experienced_quality": "Mac_live_recovery_and_camera_response_independently_reviewed_at_1x;_paused_1080p_pixels_exact;_continuous_pan_and_display_cadence_open",
       "platform_performance": {
-        "mac": "owner_quiet_91ad52d_baseline_recorded_lifecycle_open",
+        "mac": "owner_quiet_91ad52d_baseline_recorded;_ProMotion_cadence_and_input_latency_open",
         "windows": "not_run",
         "browser": "Chrome156_M3Max_Metal_real_tabs_with_input_release_and_manual_pause_pass;_physical_cadence_unqualified",
         "ios": "iPhone18Pro_iOS27.2_simulator_function_only;_physical_device_pending",
         "android": "not_run"
       },
-      "diagnostic_measurement": "Quiet/newer history: V1-BOUNDED-FRAMES-2026-11-04.md. CPU/allocations/cadence are tripwires, not gates; lifecycle remains open.",
+      "diagnostic_measurement": "The quiet CPU and GPU baseline is in V1-BOUNDED-FRAMES-2026-11-04.md. The Mac live recovery recording locates recovery events and camera response. Physical cadence is unmeasured.",
       "evidence": [
         "../evidence/render/V1-BOUNDED-FRAMES-2026-11-04.md",
-        "../evidence/render/G3B-IOS-SIM-ROTATION-LOSS-2026-11-08.md"
+        "../evidence/render/G3B-IOS-SIM-ROTATION-LOSS-2026-11-08.md",
+        "../evidence/render/mac-m1-recovery/README.md"
       ],
-      "scope": "Core owns clock/lane; renderer owns FrameHost. Browser old-device work stops on loss; detached GPU reconstruction/retry preserves authority/input/pause/solar state. The simulator exercises the iOS render owner and lease through rotation and injected loss. Live Mac presentation/loss and physical iPhone loss detection/recovery stay open; native recording stays G3t."
+      "scope": "Core owns clock/lane; renderer owns FrameHost. Browser old-device work stops on loss; detached GPU reconstruction/retry preserves authority/input/pause/solar state. The simulator exercises the iOS render owner and lease through rotation and injected loss. The Mac game resumes live presentation in the same window after an injected Metal destroy with a drawable held. Physical iPhone loss and Mac display cadence remain open; native recording stays G3t."
     },
     "V1_cooked_constant_light": {
       "implementation": "partial_native_accepted_source_product_and_offscreen_visual_publication",
