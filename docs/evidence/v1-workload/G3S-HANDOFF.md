@@ -8,6 +8,22 @@ The Codex goal remains active. Its attachment is
 
 ## Current checkpoint
 
+- Stock control baseline over `66d6a9dd`. Hardware Chrome at
+  16:45 swaps to the doubled-height rock in one publication.
+  The live edit changes 10,741 pixels in the 1252×704 canvas,
+  including 2,342 by more than 12 codes on the ground beyond
+  the rock. A fresh game on the same edited publication
+  matches the live canvas byte for byte, including repeat
+  captures. All captures are paused at tick 0. The stock
+  Chrome valley also recovers after explicit device loss.
+  Native game integration fixtures pass the off-camera caster,
+  device restaging and strict discard/retry image checks.
+  Both discard arms upload the same 3,825,408 bytes in four
+  submitted frames and draw byte-identical final pixels.
+  Scratch rerun commands, decoded RGB audit and test logs are
+  in `tmp/g3s-m3-controls/`. These controls establish a stock
+  comparator. D2 and D3 remain open for the selected renderer.
+
 - Frozen 1080p/60 motion on `77e84128` fails D1. All four
   arms match tick, Sun, yaw, interpolation alpha and simulated
   time across the 300-frame spur, 95-frame extinction and
