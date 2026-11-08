@@ -292,6 +292,15 @@ a 1 MiB budget (bound 4 MiB): 12 and 10 frames, staging peak exactly 4 MiB. It f
 limit (peak 12 MiB) and when chunks are never returned (the upload stalls). The fetched-edit test asserts the same
 bound on the remote path.
 
+## Dev-server origin allow-list (8 November)
+
+`thrum-cook watch --serve <address> --allow-origin <origin>` (repeatable) lets a page served from another device read
+the server. Origins are exact `http(s)://host[:port]` values compared without regard to case; a path, trailing slash,
+wildcard, credentials, port 0 or another scheme is refused at start by name. With no list, every non-loopback page is
+refused with 403 as before. `only_listed_page_origins_beyond_loopback_may_read_the_dev_server` checks the listed origin
+is echoed with `Vary: Origin`, and that another port, scheme, host, a trailing slash and `null` get 403 with no CORS
+header; unit tests cover parsing.
+
 ## Open items closed (8 November)
 
 Apple M3 Max, shared GPU. Each check fails when its fix is removed (mutation runs recorded below).
