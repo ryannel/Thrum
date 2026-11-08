@@ -445,3 +445,41 @@ re-sign; with signatures removed, they differ in one Mach-O header byte). Runs: 
 
 Root accepted the six held views and the observed control transitions (NOTES "Root verdict on the G7 live screen
 walk"). Captures: `tmp/g7-showcase/screen/walk-20261107/` (local).
+
+### Mac presentation cadence on glass (8 November)
+
+**Setup.** The owner was present with the display unlocked and the machine otherwise quiet: Codex threads holding, CM1
+solvers paused, on AC power in the normal power mode. The shipped V1 game ran windowed on the built-in Liquid Retina
+XDR display (120 Hz ProMotion) at its shipped configuration:
+- surface `Bgra8Unorm`, 1920×1080;
+- cooked valley at root `70d2baf8…`, the 17.4 h `sunset-clear-sun` preset, paused world;
+- runs from `run_v1_showcase.py mac --frames N`, on main e6bd0eff, clean;
+- release `v1-game` `c71f7c83…`, built by the first run.
+
+**Method.** Runs of 600 and 3000 frames alternated (600, 3000, 600, 3000) and were timed externally. Differencing
+the paired wall times cancels the build check, the cook and window startup, leaving steady-state presents per second.
+The rest comes from the game's own exit summary. No frames were kept.
+
+| | Pair 1 | Pair 2 |
+|---|---|---|
+| Wall time, 600 / 3000 frames | 5.66 / 25.53 s | 5.58 / 25.54 s |
+| Presents/s, steady state (2400 frames ÷ wall difference) | 120.8 | 120.2 |
+| 3000-frame run: presented / display-link callbacks | 3000 / 3004 | 3000 / 3002 |
+| Occluded, unavailable, surface faults, dropped surface or views | 0 | 0 |
+| Late target evaluations | 0 | 0 |
+| Drawable acquire wall, p50 / p95 | 0.043 / 0.423 ms | 0.214 / 0.580 ms |
+| Render worker wall, p50 / p95 | 1.02 / 1.86 ms | 1.17 / 1.92 ms |
+| Scene / forward / surface GPU, p50 | 1.95 / 1.30 / 0.06 ms | 1.93 / 1.26 / 0.06 ms |
+
+**Findings.**
+- **Cadence:** the game presented on every display tick at the panel's 120 Hz. Over 3000 frames, 2–4 display-link
+  ticks had no present, all at startup or shutdown, since presented equals frames.
+- **Median display interval:** 8.3 ms. This is inferred from 120 presents/s on a 120 Hz link, not timed per frame.
+  The game does not record per-present intervals.
+- **Acquire-to-display latency: not measured.** wgpu hides the drawable's presented time (`APPLE-PRESENTATION.md`,
+  governor inputs), so the shipped game cannot observe when a frame reaches glass. Only the acquire wall above is
+  observed. Closing this needs G4's presentation work, not another screen window.
+
+**Limits.** The world was paused, so the camera and Sun were static while the game still rendered and presented every
+tick. This is one machine on a 120 Hz panel, with runs of 5–25 s. The thermal state was not recorded. These figures
+make no claim about Chrome or iOS.

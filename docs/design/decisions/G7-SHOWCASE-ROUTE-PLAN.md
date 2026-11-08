@@ -21,7 +21,7 @@ poses read from artifacts, split M1 boxes, and a baseline that survives a clean 
   approved E's exact source and root `70d2baf8` (G7 NOTES).
 Milestone: M4 Continuous valley ground material · Updated: 2026-11-07
 Now: M1–M4 done. M4 landed E as its own change (route evidence "M4: continuous valley ground material")
-Next: root's night baseline refresh on E; presentation cadence and latency wait for an owner-present screen window
+Next: root's night baseline refresh on E; acquire-to-display latency waits on G4 exposing presented time
 Blocked: none. The Mac screen walk ran under the owner's grant and root accepted its held views (G7 NOTES).
 
 ## M1 Local cooked valley on both targets: done
@@ -250,3 +250,7 @@ Work (each names the done-when item it serves, numbered from the top):
 - 2026-11-07 Root approved E and root `70d2baf8` with `[1, 1, 1]`. Landed on main 85a7c281: check-224619 built, passed
   and saved the baseline; check-224747 reran against it; `./dev check` passed. The Mac screen walk ran under the
   owner's grant and root accepted its held views; presentation cadence and latency stay for an owner-present window.
+- 2026-11-08 Mac presentation cadence on glass, owner present: 120.2–120.8 presents/s on the 120 Hz panel, 3000
+  presented from 3002–3004 display-link ticks, with no occlusion or drops. The median display interval is inferred
+  at 8.3 ms. Acquire-to-display latency cannot be observed through wgpu and moves to G4 (evidence "Mac presentation
+  cadence on glass").
