@@ -25,11 +25,18 @@ and noon looking up](g3s-first-light/chrome-valley.png)
 
 ## Checks
 
-- **Midnight baseline.** On the continuous ground E source `70d2baf8`, the star
-  and exposure checkpoint replaces only the two `night-upslope` grids. The
-  other ten grids retain the ground E capture values. The repeat
-  `check-20261107-231121` passes all six stops and both controls at unchanged
-  tolerance, with 0.006 codes of maximum baseline drift.
+- **Midnight baseline.** The Ground E star and exposure refresh passed the old route on
+  `check-20261107-231121`. Celestial handedness fix `9c1021bb` changed star placement afterward.
+  A clean `67503c79` run (`check-20261108-123520`) reproduced the old baseline's Metal/Chrome
+  night maxima of 2.470/2.452 codes. The other ten grids stayed within 0.005 codes.
+  Compared to the old Metal frame, 11,931 pixels changed, all within the old/new
+  stars-on support relative to the same-build stars-off control. Both current night
+  captures match the pre-extraction reference run pixel for pixel. Refresh only the
+  two night grids, with the Ground E root, route and thresholds unchanged. The
+  `check-20261108-123835` repeat passes all 12 comparisons and both controls at the
+  one-code threshold, with at most 0.005 codes of baseline drift. Raw route artifacts
+  are under the worktree's `tmp/g7-showcase/runs/` and the offscreen control is in
+  `tmp/g7-night-baseline/`.
 
 - **Equivalence.** A Metal test fetches a generation from `DevServer` over loopback HTTP. It draws that
   generation at the same world time as the mapped store with Portable selected. No pixel differs by more than
