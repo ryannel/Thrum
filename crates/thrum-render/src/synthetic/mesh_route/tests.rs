@@ -10,6 +10,7 @@ use crate::synthetic::mesh_arena::MeshId;
 
 mod admission;
 mod casters;
+mod grazing;
 
 const EXTENT: [u32; 2] = [320, 180];
 
