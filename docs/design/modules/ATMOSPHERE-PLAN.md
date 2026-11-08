@@ -5,7 +5,7 @@ Reviews: Optical design and plan over `a91cdd0e`, final design `f9d0c12a` and pl
 Updated: 2026-11-08
 Milestone: M3 sunset shadows
 Now: the disk-clipped CPU union agrees with independent rays on the fixed terrain and caster witnesses.
-Next: bound receiver-domain reuse over the full-view archives. Keep exact disk clipping as the CPU referee.
+Next: size shared silhouette edge identity over both full-view archives. Keep exact disk clipping as the CPU referee.
 Blocked: runtime integration awaits portable capacity and coverage evidence. Physical bandwidth replay is queued separately for an assigned Xcode slot.
 
 ## M1 The valley remains legible at moonless midnight: done

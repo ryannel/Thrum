@@ -76,7 +76,11 @@ The Codex goal remains active. Its attachment is
   with terrain. Across the 289 raised-patch receivers, the sweep reaches
   21 events, 15 visible pieces and 3,224 B for bands, events and active
   pointers. These exclude projection and merge scratch. Keep the union
-  as the CPU referee. Runtime awaits a full-view reuse and fallback bound.
+  as the CPU referee. An orientation-independent 2×2 scalar guard at
+  32.8 km admits 78/33,965 partial receivers in frame 3 and
+  769,004/812,485 in frame 72 under the ideal straight-chord model.
+  Size shared edge identity with per-receiver projection instead.
+  Runtime awaits full-view capacity and a verified fallback.
   Rerun from `tmp/g3s-sunset-lip/M3-RESEARCH.md`.
 
 - Historical M2 star captures predate the orientation correction. The Mac's lossless 1080p60 masters
