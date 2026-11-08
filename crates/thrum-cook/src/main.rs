@@ -2,8 +2,10 @@
 //!
 //! - `thrum-cook demo <source>` writes the deterministic demo sources;
 //! - `thrum-cook cook <source> <store> [--final]` runs one incremental cycle;
-//! - `thrum-cook watch <source> <store> [--serve <address>]` cooks on every change and optionally
-//!   serves the store over HTTP (use a loopback address unless exposure is intended).
+//! - `thrum-cook watch <source> <store> [--serve <address> [--allow-origin <origin>]...]` cooks
+//!   on every change and optionally serves the store over HTTP (use a loopback address unless
+//!   exposure is intended). Pages on loopback may read it; a page from another device needs its
+//!   exact origin listed with `--allow-origin`.
 
 use std::io::Write;
 use std::path::PathBuf;
@@ -12,10 +14,11 @@ use std::sync::atomic::AtomicBool;
 
 use thrum_asset::{AssetStore, Profile};
 use thrum_cook::{
-    CookConfig, CookReport, Cooker, DevServer, Durability, Publications, Quality, demo, watch,
+    AllowedOrigins, CookConfig, CookReport, Cooker, DevServer, Durability, Publications, Quality,
+    demo, watch,
 };
 
-const USAGE: &str = "usage: thrum-cook demo <source> | cook <source> <store> [--final] | watch <source> <store> [--serve <address>]";
+const USAGE: &str = "usage: thrum-cook demo <source> | cook <source> <store> [--final] | watch <source> <store> [--serve <address> [--allow-origin <origin>]...]";
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = std::env::args().skip(1).collect();
@@ -55,10 +58,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let publications = Arc::new(Publications::default());
             let _server = match flag("--serve").and_then(|index| args.get(index + 1)) {
                 Some(address) => {
-                    let server = DevServer::start(
+                    let origins = AllowedOrigins::parse(
+                        args.windows(2)
+                            .filter(|pair| pair[0] == "--allow-origin")
+                            .map(|pair| pair[1].as_str()),
+                    )
+                    .map_err(std::io::Error::other)?;
+                    let server = DevServer::start_allowing(
                         address,
                         AssetStore::new(&config.store),
                         Arc::clone(&publications),
+                        origins,
                     )?;
                     writeln!(out, "serving http://{}", server.address())?;
                     Some(server)

@@ -8,10 +8,11 @@
 //! It binds where it is told; callers should use loopback unless they mean to expose the store.
 //! Clients verify product bytes against their content address before use.
 //!
-//! Web pages cannot read it: a request whose `Host` is not a loopback name or the bound address
-//! is refused (DNS rebinding), and a request carrying an `Origin` other than a loopback origin is
-//! refused; a loopback origin is echoed rather than allowed with a wildcard. At most
-//! 32 requests are served at once.
+//! Web pages cannot read it unless allowed: a request whose `Host` is not a loopback name or the
+//! bound address is refused (DNS rebinding), and a request carrying an `Origin` is refused unless
+//! that origin is loopback or listed in [`AllowedOrigins`] (empty by default). An allowed origin is
+//! echoed with `Vary: Origin`, never allowed with a wildcard. At most 32 requests are served at
+//! once.
 
 use std::io::{BufRead, BufReader, Read, Write};
 use std::net::{SocketAddr, TcpListener, TcpStream};
@@ -57,6 +58,63 @@ impl Publications {
     }
 }
 
+/// Page origins beyond loopback that may read the server, for a page served from another device.
+/// Empty by default, which refuses every page that is not on loopback.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct AllowedOrigins(Vec<String>);
+
+impl AllowedOrigins {
+    /// Exact page origins, each `http://host[:port]` or `https://host[:port]` as a browser sends
+    /// it in `Origin`: no path, trailing slash, query, fragment, credentials or wildcard. Compared
+    /// without regard to case.
+    ///
+    /// # Errors
+    /// Names the first origin that is not of that form.
+    pub fn parse<S: AsRef<str>>(origins: impl IntoIterator<Item = S>) -> Result<Self, String> {
+        let mut allowed = Vec::new();
+        for origin in origins {
+            let origin = origin.as_ref();
+            let authority = origin
+                .strip_prefix("http://")
+                .or_else(|| origin.strip_prefix("https://"))
+                .unwrap_or("");
+            // `[v6]:port`, `[v6]`, `name:port` or `name`.
+            let (host, port) = if let Some(rest) = authority.strip_prefix('[') {
+                match rest.split_once(']') {
+                    Some((v6, "")) => (v6, None),
+                    Some((v6, tail)) => (v6, Some(tail.strip_prefix(':').unwrap_or(""))),
+                    None => ("", None),
+                }
+            } else {
+                match authority.split_once(':') {
+                    Some((name, port)) => (name, Some(port)),
+                    None => (authority, None),
+                }
+            };
+            let v6 = authority.starts_with('[');
+            let host_ok = !host.is_empty()
+                && host
+                    .chars()
+                    .all(|c| c.is_ascii_alphanumeric() || c == '.' || c == '-' || (v6 && c == ':'));
+            let port_ok = port.is_none_or(|port| port.parse::<u16>().is_ok_and(|port| port > 0));
+            if !host_ok || !port_ok {
+                return Err(format!(
+                    "allowed origin `{origin}` must be http://host[:port] or https://host[:port], \
+                     exactly as the page's Origin header (no path or trailing slash)"
+                ));
+            }
+            allowed.push(origin.to_ascii_lowercase());
+        }
+        Ok(Self(allowed))
+    }
+
+    fn allows(&self, origin: &str) -> bool {
+        self.0
+            .iter()
+            .any(|allowed| allowed.eq_ignore_ascii_case(origin))
+    }
+}
+
 /// A running dev server.
 #[derive(Debug)]
 pub struct DevServer {
@@ -65,7 +123,7 @@ pub struct DevServer {
 }
 
 impl DevServer {
-    /// Bind and serve `store` on background threads.
+    /// Bind and serve `store` on background threads to native clients and loopback pages.
     ///
     /// # Errors
     /// Bind failure.
@@ -74,6 +132,21 @@ impl DevServer {
         store: AssetStore,
         publications: Arc<Publications>,
     ) -> std::io::Result<Self> {
+        Self::start_allowing(address, store, publications, AllowedOrigins::default())
+    }
+
+    /// As [`Self::start`], and also to pages from `origins`. Bind the address those pages reach
+    /// (not a wildcard address), since `Host` must name it.
+    ///
+    /// # Errors
+    /// Bind failure.
+    pub fn start_allowing(
+        address: &str,
+        store: AssetStore,
+        publications: Arc<Publications>,
+        origins: AllowedOrigins,
+    ) -> std::io::Result<Self> {
+        let origins = Arc::new(origins);
         let listener = TcpListener::bind(address)?;
         let address = listener.local_addr()?;
         let stop = Arc::new(AtomicBool::new(false));
@@ -94,10 +167,11 @@ impl DevServer {
                     }
                     let store = store.clone();
                     let publications = Arc::clone(&publications);
+                    let origins = Arc::clone(&origins);
                     let active = Arc::clone(&active);
                     // A failed connection only affects that client.
                     std::thread::spawn(move || {
-                        handle(stream, address, &store, &publications).ok();
+                        handle(stream, address, &store, &publications, &origins).ok();
                         active.fetch_sub(1, Ordering::AcqRel);
                     });
                 }
@@ -171,7 +245,7 @@ fn local_authority(authority: &str, bound: SocketAddr) -> bool {
             .is_ok_and(|ip| ip.is_loopback() || ip == bound.ip())
 }
 
-/// A loopback page origin (`http://localhost:5173`), the only kind allowed to read responses.
+/// A loopback page origin (`http://localhost:5173`), always allowed to read responses.
 fn loopback_origin(origin: &str, bound: SocketAddr) -> bool {
     origin
         .strip_prefix("http://")
@@ -184,6 +258,7 @@ fn handle(
     bound: SocketAddr,
     store: &AssetStore,
     publications: &Publications,
+    origins: &AllowedOrigins,
 ) -> std::io::Result<()> {
     stream.set_read_timeout(Some(Duration::from_secs(5)))?;
     let request = read_request(&mut BufReader::new(stream.try_clone()?))?;
@@ -200,7 +275,7 @@ fn handle(
     }
     let origin = match request.origin.as_deref() {
         None => None,
-        Some(origin) if loopback_origin(origin, bound) => Some(origin),
+        Some(origin) if loopback_origin(origin, bound) || origins.allows(origin) => Some(origin),
         Some(_) => return refuse(&mut stream, "403 Forbidden"),
     };
     let target = request.target.as_str();
@@ -285,4 +360,52 @@ fn respond(
     stream.write_all(header.as_bytes())?;
     stream.write_all(body)?;
     stream.flush()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::AllowedOrigins;
+
+    #[test]
+    fn allowed_origins_are_exact_page_origins() {
+        let allowed = AllowedOrigins::parse([
+            "http://192.168.1.20:5173",
+            "https://Tablet.local",
+            "http://[fd00::2]:8080",
+        ])
+        .expect("valid origins");
+        assert!(allowed.allows("http://192.168.1.20:5173"));
+        assert!(allowed.allows("https://tablet.local"));
+        assert!(allowed.allows("http://[fd00::2]:8080"));
+        for near_miss in [
+            "http://192.168.1.20:5174",
+            "https://192.168.1.20:5173",
+            "http://192.168.1.20",
+            "http://192.168.1.20:5173/",
+            "http://tablet.local",
+            "null",
+        ] {
+            assert!(!allowed.allows(near_miss), "{near_miss}");
+        }
+        assert!(!AllowedOrigins::default().allows("http://192.168.1.20:5173"));
+    }
+
+    #[test]
+    fn a_malformed_allowed_origin_is_refused_by_name() {
+        for bad in [
+            "192.168.1.20:5173",
+            "http://host/",
+            "http://host/page",
+            "http://host:0",
+            "http://host:99999",
+            "http://*",
+            "http://user@host",
+            "ftp://host",
+            "http://",
+            "*",
+        ] {
+            let error = AllowedOrigins::parse([bad]).expect_err(bad);
+            assert!(error.contains(bad), "{error}");
+        }
+    }
 }
