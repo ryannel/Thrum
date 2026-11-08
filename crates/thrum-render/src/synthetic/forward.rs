@@ -2,6 +2,7 @@
 //! contribution, and the pipeline choice and bindings Occlusion's depth
 //! prepass shares with it.
 
+use super::mesh_arena::MeshId;
 use super::{
     CompiledPass, GpuTimings, GraphColorAttachment, GraphDepthAttachment, OffscreenTarget,
     PreparedSynthetic, Projection, RenderError, SceneContribution,
@@ -101,12 +102,26 @@ impl PreparedSynthetic {
         pass.set_bind_group(2, &self.materials, &[]);
         pass.set_bind_group(3, self.history.read_group(), &[]);
         let view = self.pending_view.as_ref().unwrap_or(&self.view_sample);
-        let indices = if matches!(view.projection(), Projection::OrthographicFixture) {
-            &self.cube_reversed_indices
+        // The orthographic diagnostic keeps world XY as clip XY while its
+        // camera looks from -Z, so it draws the cube's reversed winding. Both
+        // rows share the cube's vertices; only the index range differs.
+        let mesh = if matches!(view.projection(), Projection::OrthographicFixture) {
+            MeshId::CUBE_REVERSED
         } else {
-            &self.cube_indices
+            MeshId::CUBE
         };
-        pass.set_index_buffer(indices.slice(..), wgpu::IndexFormat::Uint16);
+        let row = self
+            .mesh_arena
+            .row(mesh)
+            .ok_or(RenderError::GraphPassMismatch)?;
+        let buffers = self
+            .mesh_arena
+            .buffers()
+            .ok_or(RenderError::GraphPassMismatch)?;
+        pass.set_index_buffer(
+            buffers.indices.slice(row.index_bytes()),
+            wgpu::IndexFormat::Uint32,
+        );
         Ok(())
     }
 }
