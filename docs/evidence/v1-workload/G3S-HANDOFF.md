@@ -14,6 +14,12 @@ The Codex goal remains active. Its attachment is
   The archive rules out assuming that only a thin edge needs detail.
   The independent design review holds runtime work pending a certified
   far field, a bounded portable evaluator and a pre-submit fallback.
+  The first CPU check of original edge support matches independent
+  triangle sections in two archive frames. A difficult 4 m patch
+  reduces 951 broad edge entries to 34 across four angular bins.
+  The 1,024 m crest source retains 84 of 1,179 across the same bin count.
+  These are far-terrain counts, with no local-caster, full-atlas or GPU
+  claim. Rerun from the research note and `graph/crest-edge-support-*.log`.
   Ground E remains the route. There are no M3 runtime runs to resume.
 
 - M2 now owns the star closeout only. The Mac's lossless 1080p60 masters
