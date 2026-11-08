@@ -8,6 +8,36 @@ The Codex goal remains active. Its attachment is
 
 ## Current checkpoint
 
+- Frozen 1080p/60 motion on `77e84128` fails D1. All four
+  arms match tick, Sun, yaw, interpolation alpha and simulated
+  time across the 300-frame spur, 95-frame extinction and
+  480-frame pan. Both backends reduce the frame 226→227
+  row-665 absolute p95 step from 72 to 21 red codes. The
+  candidate introduces regular ribbing below the shadow edge
+  on both backends. In the independently reviewed Metal
+  extinction, frame 84 keeps a warm band after the stock edge
+  fades, with a +21-code median at y=675, x=480–1200.
+  At frames 225–227, every pixel of the audited 721×40 Metal
+  crop passes the forward mask guard. The ribbing persists
+  there, so guard rejection is excluded for this witness.
+  Park the opt-in graph and keep stock. No D1–D3 closure.
+
+  | Route | Metal GPU pass sum p50/p95 ms | Chrome GPU pass sum p50/p95 ms |
+  | --- | --- | --- |
+  | Spur | 4.83/12.56 → 4.89/6.24 | 3.18/3.74 → 3.47/4.13 |
+  | Extinction | 4.18/5.44 → 5.43/6.36 | 3.28/3.74 → 3.60/4.28 |
+  | Pan | 3.63/3.88 → 4.42/5.57 | 2.88/3.08 → 5.08/11.80 |
+
+  These are ordered stock-to-resolve results under shared load
+  32.6–40.1 for Metal and 12.6–22.4 for Chrome. They include
+  the capture blit. The Metal crossing tails and Chrome pan
+  tails vary too widely to assign to a particular pass. The
+  Metal extinction median and pan tail trip the regression
+  flag. Physical traffic for the parked graph is unmeasured.
+  Clips, frame logs, per-run load, p99 and guard audit are under
+  `tmp/g3s-sunset-lip/graph/production-pcss/opaque-winner/`.
+  [Independent motion review](../../design/modules/ATMOSPHERE-PLAN.md#m3-frozen-resolve-motion-review-brief).
+
 - The one-ULP guard at `77e84128` passes `./dev check` and Chrome
   recovery after two deliberate device destructions. It is on
   `origin/codex/wip-g3s-live-receiver`.
@@ -18,8 +48,9 @@ The Codex goal remains active. Its attachment is
   original predicted crop missed the face. The final scorer checks
   every positive solo tie. That scene's tied guide flags are zero.
   A second fixture under the qualified 160 m caster records
-  235 positive Metal ties that use the mask in both draw orders.
-  The corresponding Chrome capture is pending.
+  235 positive ties on each backend with an eligible mask in
+  both draw orders. All 235 tied centres have zero raw guide
+  visibility. This is an ownership and guard witness.
 - The shaded ±2 ULP controls match stock inside the frozen crop
   and unforced resolve outside, byte for byte. The unforced
   control changes 21,386–23,501 crop pixels on Metal submissions
