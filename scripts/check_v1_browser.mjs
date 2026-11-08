@@ -143,6 +143,24 @@ async function serveCooked(args, output) {
   return { cook, origin, source };
 }
 
+// Stretch the showcase rock to twice its height in the watched copy: only its POSITION data and
+// bounds change, so any pixel change after the swap comes from geometry, not texture or material.
+async function stretchRock(source) {
+  const gltfPath = path.join(source, 'rock.gltf');
+  const gltf = JSON.parse(await fs.readFile(gltfPath, 'utf8'));
+  const position = gltf.accessors[gltf.meshes[0].primitives[0].attributes.POSITION];
+  const view = gltf.bufferViews[position.bufferView];
+  if (position.componentType !== 5126 || position.type !== 'VEC3' || gltf.buffers.length !== 1) throw new Error('Rock POSITION layout changed');
+  const binPath = path.join(source, gltf.buffers[0].uri);
+  const bin = await fs.readFile(binPath);
+  const start = (view.byteOffset ?? 0) + (position.byteOffset ?? 0), stride = view.byteStride ?? 12;
+  for (let i = 0; i < position.count; i++) bin.writeFloatLE(bin.readFloatLE(start + i * stride + 4) * 2, start + i * stride + 4);
+  position.min[1] *= 2;
+  position.max[1] *= 2;
+  await fs.writeFile(binPath, bin);
+  await fs.writeFile(gltfPath, JSON.stringify(gltf));
+}
+
 async function existingGame(cdp, sessionId) {
   const prototype = await cdp.call('Runtime.evaluate', { expression: "import('/v1_game.js').then(m => m.BrowserGame.prototype)", awaitPromise: true }, sessionId);
   if (prototype.exceptionDetails || !prototype.result.objectId) throw new Error('Existing BrowserGame prototype unavailable');
@@ -1129,6 +1147,8 @@ async function qualifySkyReflections(cdp, sessionId, poll, timeout, output, evid
 async function qualify(cdp, mode, origin, output, directory, wasm, timeout, assetsOrigin, assetsSource, files) {
   const { targetId } = await cdp.call('Target.createTarget', { url: 'about:blank' });
   let sessionId, state, response, input, game, pausedAt, pause, controls, params, tabs;
+  // Requests the page makes to the dev server, in order, for the mesh edit's asset identity.
+  const assetRequests = [];
   let failed = false;
   const lossCase = mode === 'device-loss' || mode === 'late-device-loss';
   const retryCase = mode === 'device-recovery-retry';
@@ -1163,6 +1183,7 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
         if (!expectedDestroyed && !expectedConfigure) faults.push(messages);
       }
       if (packet.method === 'Network.responseReceived' && packet.params.response.url === `${origin}/v1_game_bg.wasm`) response = packet.params;
+      if (packet.method === 'Network.requestWillBeSent' && assetsOrigin && packet.params.request.url.startsWith(assetsOrigin)) assetRequests.push(packet.params.request.url.slice(assetsOrigin.length));
       if (packet.method === 'Fetch.requestPaused') {
         if (held.released) cdp.call('Fetch.continueRequest', { requestId: packet.params.requestId }, sessionId).catch(error => faults.push(String(error)));
         else held.ids.push(packet.params.requestId);
@@ -1214,6 +1235,34 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
         if (edited.swaps !== cooked.swaps + 1 || !(edited.uploadedBytes > 0 && edited.uploadedBytes < cooked.uploadedBytes)) throw new Error(`Cooked edit uploaded more than the texture: ${JSON.stringify(edited)}`);
         await settle();
         await screenshot(cdp, sessionId, output, `${mode}-edited`);
+        // Mesh-geometry edit on the same running page: the fetched generation must swap once,
+        // fetch only the rock's product, and change pixels where the rock's silhouette grows.
+        await settle();
+        await screenshot(cdp, sessionId, output, `${mode}-edited-again`);
+        const still = changedFraction(decodePng(await fs.readFile(path.join(output, `${mode}-edited-final.png`))), decodePng(await fs.readFile(path.join(output, `${mode}-edited-again-final.png`))));
+        const requestsBefore = assetRequests.length;
+        await stretchRock(assetsSource);
+        const meshEdited = await waitFor(async () => {
+          await poll();
+          const value = JSON.parse(await (await existingGame(cdp, sessionId)).invoke('return game.cooked_status();') ?? 'null');
+          if (value?.errors.length) throw new Error(`Cooked mesh edit failed: ${JSON.stringify(value)}`);
+          return value?.drawn > edited.drawn ? value : undefined;
+        }, timeout, 'mesh-edited cooked publication drawn in Chrome');
+        await settle();
+        await screenshot(cdp, sessionId, output, `${mode}-mesh-edited`);
+        const fetched = assetRequests.slice(requestsBefore);
+        // Sort fetched objects by their magic in the served store: one generation manifest, one product.
+        const objects = await Promise.all([...new Set(fetched.filter(url => url.startsWith('/cas/')))].map(async url => {
+          const hash = url.slice(5), head = (await fs.readFile(path.join(output, 'store', 'cas', hash.slice(0, 2), hash))).subarray(0, 8).toString('latin1');
+          return { hash, manifest: head === 'THRMMANI' };
+        }));
+        const manifests = objects.filter(o => o.manifest).map(o => o.hash), products = objects.filter(o => !o.manifest).map(o => o.hash);
+        const meshChanged = changedFraction(decodePng(await fs.readFile(path.join(output, `${mode}-edited-final.png`))), decodePng(await fs.readFile(path.join(output, `${mode}-mesh-edited-final.png`))));
+        const cookLog = await fs.readFile(path.join(output, 'cook.log'), 'utf8');
+        sky.cookedMeshEdit = { status: meshEdited, fetched, manifests, products, stillChanged: still, meshChanged, cookLines: cookLog.trim().split('\n').slice(-3) };
+        if (meshEdited.drawn !== edited.drawn + 1 || meshEdited.swaps !== edited.swaps + 1) throw new Error(`Mesh edit was not exactly one drawn generation swap: ${JSON.stringify(sky.cookedMeshEdit)}`);
+        if (manifests.length !== 1 || products.length !== 1 || !(meshEdited.uploadedBytes > 0 && meshEdited.uploadedBytes < cooked.uploadedBytes)) throw new Error(`Mesh edit replaced more than the rock's product: ${JSON.stringify(sky.cookedMeshEdit)}`);
+        if (!(meshChanged >= 0.0005 && meshChanged > 20 * still)) throw new Error(`Mesh edit changed too few pixels: ${JSON.stringify(sky.cookedMeshEdit)}`);
       }
     } else if (lateAttach) {
       recovery = await qualifyLateAttach(cdp, sessionId, poll, timeout, output, onDestroy, held);

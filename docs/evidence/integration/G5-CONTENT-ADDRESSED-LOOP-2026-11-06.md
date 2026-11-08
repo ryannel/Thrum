@@ -389,6 +389,51 @@ Recorded: alpha-cutout PSNR counts hidden texels, the reference measures encoder
 swap check shows the floor's discrimination rather than the cooker's channel order (the floor covers that), the
 test's BC4 decode truncates where hardware rounds, and refusals are remembered within one process only.
 
+## Fetched mesh-geometry edit in Chrome (8 November)
+
+This closes the gate audit's consumer gap: before it, mesh edits were witnessed only on Metal through the mapped store.
+The `valley` case of `node scripts/check_v1_browser.mjs` now edits a mesh on the same running page, right after its
+texture edit.
+- **The edit.** The page fetches the cooked valley from `thrum-cook watch --serve` and draws it. The check then
+  doubles the showcase rock's POSITION y values in the watched scratch copy (`rock.bin`) and updates the accessor
+  bounds in `rock.gltf`. No texture or material changes.
+- **Asserted.**
+  - The page draws exactly one more generation, with exactly one more swap.
+  - The page fetches exactly one manifest and one product. Each `/cas/` request is classified by its object's magic
+    bytes in the served store.
+  - The upload is smaller than the first load's.
+  - The geometry pixel change is at least 0.05% and more than 20 times the change between two screenshots of the
+    unedited page.
+
+Results, Chrome 156.0.8078.81 (ANGLE Metal, Apple M3 Max, shared GPU), base 9d1cabbb, Wasm SHA-256
+`e7388437b17cbe68975cc4a3dc0f3ba46e392146ada9a9df9e058061f84318a2`:
+
+| | Result |
+|---|---|
+| Cooked status (drawn / swaps) | First load 1 / 1, texture edit 2 / 2, mesh edit 3 / 3; no errors |
+| Asset identity | Generation 3 manifest `d6176945…aeb638` (860 B); one replaced product, the rock mesh `9bfce987…923b74` (7,504 B). Two runs cooked the same hashes. |
+| Uploaded | 5,592 B for the mesh edit (first load 2,930,296 B) |
+| Pixels changed (more than 12 codes in a channel) | 0.362% after the mesh edit; 0 between the two screenshots of the unedited page |
+| Cook | `cooked 1 reused 8`, publish to generation 3 |
+
+Before and after the mesh edit (cropped from the 1280×1100 page screenshots):
+
+![before mesh edit in Chrome](../render/G5-CHROME-BEFORE-MESH-2026-11-08.png)
+![after mesh edit in Chrome](../render/G5-CHROME-AFTER-MESH-2026-11-08.png)
+
+**Visual review (agent): pass.**
+- The rock is twice as tall and keeps its texture and lighting.
+- The sphere, ground, sky and controls are unchanged.
+- The dark patch under the rock keeps its size, consistent with the open item that cooked meshes cast no shadows.
+
+**Regressions.** The `valley-recovery`, `valley-late-attach` and `params` cases pass on the same build.
+
+**Scope.**
+- Functional only, with no timing claim.
+- The check is manual, like every Chrome case, and is not in `./dev check`.
+- `scripts/check_v1_browser.mjs` is shared with the web shell owners. The change adds one request listener and the
+  mesh step inside the `valley` case.
+
 ## Open items and contract questions
 
 These are reported plainly, and the design record tracks them:
