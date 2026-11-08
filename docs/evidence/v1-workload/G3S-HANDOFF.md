@@ -8,6 +8,26 @@ The Codex goal remains active. Its attachment is
 
 ## Current checkpoint
 
+- The isolated Metal opaque-winner diagnostic over `25ebe50c`
+  uses the unchanged production Direct, Compacted and cooked
+  vertex code, separate R32Uint receiver and RGBA16Float plus
+  RG16Float forward marker fragments, and strict reverse-Z
+  Depth32Float. Direct and Compacted each have 3,498 exact
+  nonzero solo ties and 2,304 fixed interior pixels where the
+  later, nearer cooked draw wins. Reversing tie order flips
+  every tied tag and preserves depth. Across all 128×128 pixels,
+  both roles match in all five arms. The reviewer independently
+  decoded the 40 saved planes and flagged the lab's Uint16
+  cooked index format. A repeat using the live Uint32 format
+  and multidraw call produces byte-identical planes. The
+  `opaque-winner/` folder under
+  `tmp/g3s-sunset-lip/graph/production-pcss/` holds
+  `rerun.sh /absolute/new-output-directory`, `metal-b.log`,
+  the input digests and `live-seam-review.md`. The live graph,
+  per-fragment depth guard, cooked generation and hook fallback,
+  Chrome and cost still need proof.
+  [Independent review](../../design/modules/ATMOSPHERE-PLAN.md#m3-opaque-winner-review-brief).
+
 - The held 160 m caster passes offline 3×3 preservation over
   `d5768222`. All 73 submission identities match across the four
   recordings. Per arm, stock and rotated diagnostic camera, fit,
