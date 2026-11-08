@@ -6,11 +6,30 @@ use thrum_controls::{Controls, Value, macos::MacPanel};
 
 use super::pan_timeline::{PanAction, PanTimeline};
 
-// The isolated C functions take no arguments and have no caller preconditions.
-#[expect(unsafe_code, reason = "diagnostic-only bridge to the public Apple signpost macro")]
+#[repr(C)]
+struct PanAnchor {
+    mach_before: u64,
+    mach_after: u64,
+    unix_ns: u64,
+}
+
+impl PanAnchor {
+    fn log(&self, event: &str, sequence: u64) {
+        eprintln!(
+            "m2 pan {event} mach_before={} mach_after={} unix_ns={} sequence={sequence}",
+            self.mach_before, self.mach_after, self.unix_ns,
+        );
+    }
+}
+
+// The isolated C functions take no arguments and return this fixed C layout.
+#[expect(
+    unsafe_code,
+    reason = "diagnostic-only bridge to the public Apple signpost macro"
+)]
 unsafe extern "C" {
-    safe fn thrum_pan_start() -> u64;
-    safe fn thrum_pan_end() -> u64;
+    safe fn thrum_pan_start() -> PanAnchor;
+    safe fn thrum_pan_end() -> PanAnchor;
 }
 
 struct Row {
@@ -70,8 +89,7 @@ impl Witness {
             PanAction::Begin => {
                 self.active = true;
                 self.begun = true;
-                let mach = thrum_pan_start();
-                eprintln!("m2 pan start mach={mach} sequence={sequence}");
+                thrum_pan_start().log("start", sequence);
                 return Ok(());
             }
             PanAction::Move(yaw) | PanAction::End(yaw) => yaw,
@@ -83,8 +101,7 @@ impl Witness {
         self.record("action", sequence, target, yaw)?;
         if matches!(action, PanAction::End(_)) {
             self.ended = true;
-            let mach = thrum_pan_end();
-            eprintln!("m2 pan end mach={mach} sequence={sequence}");
+            thrum_pan_end().log("end", sequence);
             std::fs::write(self.output.join("end"), b"").map_err(|error| error.to_string())?;
         }
         Ok(())

@@ -83,3 +83,15 @@ The runner defaults to the known local checkout and cooked store. Set
 its worktree path for another checkout and pass the reproduced cooked
 store with `--store`. Use the verified noon preset and the fixed cooked
 root beginning `70d2baf8`.
+
+## Fallback when the trace has no pan signposts
+
+Run `sh export_pan.sh <pan.trace> <fresh-output>` and prefer the
+same-process Points of Interest events. If they are missing, use
+`python3 pan_clock.py <export/time-info.xml> <trace/game.log>`.
+The app's bracketed Mach/realtime samples at both boundaries
+must fit the exported trace epoch and timebase. The result excludes
+the estimated uncertainty at both ends and reports its bound.
+Synthetic matching and drifting anchors were tested against the
+time-info schema exported from the saved 6 November Metal trace.
+A fresh M2 trace remains necessary for an attributable result.

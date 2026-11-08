@@ -1,0 +1,3 @@
+exported schema accepts matching synthetic anchors and excludes both edges
+rejects a discontinuous synthetic wall clock
+real Rust/C anchor pair is consistent with a synthetic epoch
