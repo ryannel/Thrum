@@ -424,7 +424,27 @@ Before and after the mesh edit (cropped from the 1280×1100 page screenshots):
 **Visual review (agent): pass.**
 - The rock is twice as tall and keeps its texture and lighting.
 - The sphere, ground, sky and controls are unchanged.
-- The dark patch under the rock keeps its size, consistent with the open item that cooked meshes cast no shadows.
+- At noon the rock's shadow barely changes in this pose. The Sun is high and the shadow falls toward the camera,
+  where the ground is strongly foreshortened: its far edge moves 6 px and its area grows by about a fifth.
+
+**The shadow follows the new geometry (low-Sun probe).** Cooked meshes cast into the Sun cascades (since
+`49dbcba5`; two-sided terrain casters since `6dfd4157`). Their caster bounds and shadow index counts are rebuilt from
+each new resident set when it is bound.
+
+A one-off variant of the check captured the same page at solar times 15:30 and 16:45, before and after the mesh edit
+(base 9d1cabbb, same Wasm). The shadow is measured in rows 535–571 to the right of the rock (x ≥ 830), counting pixels
+darker than 0.75 of the row's upper-quartile luminance:
+
+| Solar time (Sun elevation) | Shadow tip beyond the rock, before → after | Shadow pixels, before → after |
+|---|---:|---:|
+| 15:30 | 84 → 161 px (1.9×) | 1,026 → 1,935 |
+| 16:45 (13°) | 219 → 396 px (1.8×) | 2,871 → 4,714 |
+
+The tip lengthens close to the doubled height (the base widens slightly too), so the cascades draw the new mesh and
+its new bounds. At 16:45, before and after:
+
+![low Sun before mesh edit](../render/G5-CHROME-LOW-SUN-BEFORE-MESH-2026-11-08.png)
+![low Sun after mesh edit](../render/G5-CHROME-LOW-SUN-AFTER-MESH-2026-11-08.png)
 
 **Regressions.** The `valley-recovery`, `valley-late-attach` and `params` cases pass on the same build.
 
@@ -440,7 +460,6 @@ These are reported plainly, and the design record tracks them:
 
 - **Not built:**
   - EAC iPhone volume products (draft parked on `claude/g5-parked-eac-layered` with a recorded selection defect).
-  - Cooked shadow casting (meshes receive shadows but cast none).
   - Depth-aware volume (the diagnostic raymarch ignores scene depth inside its box).
   - CAS garbage collection (draft with reader leases parked on `claude/g5-parked-gc-leases` with two recorded defects).
 - **Not measured:** Chrome performance (the dev-server client's Chrome run is functional only), physical iPhone, sustained runs, and physical residency during overlap.

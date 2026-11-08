@@ -213,8 +213,9 @@ dev-server client.
 - EAC R11 iPhone volume products. A layered (2D-array) draft is parked on branch `claude/g5-parked-eac-layered`;
   review found that ETC2 alone selects it and a volume deeper than `max_texture_array_layers` is then refused instead
   of falling back to the R8 3D product. Portable R8 already serves the native consumer.
-- Cooked meshes do not cast shadows: they receive the scene's shadow maps but have no shadow-pass draw. The graph
-  seam can add one without a parallel geometry owner; root plans the terrain/subject consumer that needs it.
+- Cooked meshes cast into the Sun cascades through the graph seam (`49dbcba5`; two-sided terrain casters
+  `6dfd4157`), with caster bounds rebuilt for each resident set. In Chrome, a fetched mesh edit lengthens the
+  shadow with the geometry (evidence, 8 November).
 - The volume is not occluded by scene depth inside its box and is a diagnostic consumer only.
 - Mesh-shader meshlet path (tied to G3c); the indirect path needs `multi_draw_indirect` support (Metal has it).
 - Graph Copy passes are untimed engine-wide, so the upload's GPU cost is measured by the bench, not pass timestamps.
