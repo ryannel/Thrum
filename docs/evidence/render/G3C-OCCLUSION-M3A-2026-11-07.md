@@ -106,38 +106,42 @@ checked-in baseline is 0.003, 0.004 and 0.005 against thresholds of 1.0, so no t
 (`m3a-g7-check.log`).
 
 ## Cost (contended)
+**Corrected 8 Nov.** The bench rows first recorded here came from a bench that called `commit_frame` without
+`update_frame`. History never advanced, so the prepass list was always empty and the Occlusion arm did Frustum's work
+(main review 2026-11-08, finding M1). Those rows (`m3a-cost{1,2,3}.log`) are withdrawn. The bench now updates and
+commits each frame as a host does. It reads every frame's culling counts and asserts that Occlusion's prepass is
+non-empty and that, behind cover, its final list hides at least 30% of Frustum's. A mutant without `update_frame`
+fails that assertion on its first measured frame (`bench-history/mutant-no-update.log`).
+
 `cargo bench -p thrum-render --bench occlusion_passes`: 1280×720, with Sun shadows. Frustum and Occlusion are
-interleaved in ABBA blocks (60 measured), with history committed every frame. Each row gives medians from three runs
-(`m3a-cost{1,2,3}.log`; run 1 misnamed the pyramid pass, so its pyramid column reads 0, though its whole-GPU total
-includes it). The behind-cover scene is the one where the grazing test asserts that Occlusion hides at least 30% of
-10k slots.
+interleaved in ABBA blocks (60 measured). Rows are medians from two runs under load of about 210–240
+(`bench-history/cost{1,2}.log`). Run 1 was the more contended: Frustum's visibility pass costs 3–20 times what it does
+in run 2. Drawn counts are identical in both runs.
 
-| Count | View | Run | Whole GPU F→O | Within-block O−F | F visibility | O prepass list | O depth prepass | O pyramid | O final cull | Forward F→O |
-| ---: | --- | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
-| 10k | open | 1 | 0.971 → 1.086 | +0.124 | 0.022 | 0.021 | 0.009 | — | 0.025 | 0.794 → 0.791 |
-| 10k | open | 2 | 1.924 → 3.751 | +1.143 | 0.128 | 0.260 | 0.019 | 0.335 | 0.074 | 1.107 → 1.080 |
-| 10k | open | 3 | 2.425 → 2.966 | +0.560 | 0.137 | 0.182 | 0.023 | 0.339 | 0.071 | 1.151 → 1.040 |
-| 10k | behind cover | 1 | 1.229 → 1.346 | +0.138 | 0.022 | 0.021 | 0.009 | — | 0.025 | 1.054 → 1.054 |
-| 10k | behind cover | 2 | 2.717 → 2.740 | +0.272 | 0.278 | 0.150 | 0.020 | 0.298 | 0.054 | 1.517 → 1.282 |
-| 10k | behind cover | 3 | 2.899 → 3.729 | +0.383 | 0.255 | 0.218 | 0.039 | 0.378 | 0.088 | 1.547 → 1.274 |
-| 100k | open | 1 | 3.137 → 3.328 | +0.210 | 0.107 | 0.099 | 0.017 | — | 0.105 | 1.986 → 1.978 |
-| 100k | open | 2 | 5.556 → 8.600 | +2.233 | 0.314 | 0.366 | 0.055 | 0.389 | 0.240 | 2.817 → 2.766 |
-| 100k | open | 3 | 5.425 → 6.136 | +0.962 | 0.316 | 0.250 | 0.057 | 0.347 | 0.209 | 2.727 → 2.753 |
-| 100k | behind cover | 1 | 2.305 → 2.491 | +0.230 | 0.107 | 0.099 | 0.018 | — | 0.090 | 1.169 → 1.151 |
-| 100k | behind cover | 2 | 4.786 → 5.228 | +0.487 | 0.267 | 0.238 | 0.048 | 0.363 | 0.207 | 1.700 → 1.661 |
-| 100k | behind cover | 3 | 4.010 → 5.626 | +2.077 | 0.244 | 0.342 | 0.058 | 0.370 | 0.187 | 1.578 → 1.696 |
+| Count | View | Run | Whole GPU F→O | Within-block O−F | F visibility | O prepass list | O depth prepass | O pyramid | O final cull | Forward F→O | Drawn F→O (O prepass) |
+| ---: | --- | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |
+| 10k | open | 1 | 6.031 → 7.975 | +2.162 | 0.427 | 0.367 | 0.371 | 1.012 | 0.247 | 3.101 → 2.411 | 10,000 → 10,000 (10,000) |
+| 10k | open | 2 | 1.246 → 1.287 | +0.217 | 0.023 | 0.024 | 0.051 | 0.088 | 0.029 | 0.895 → 0.879 | 10,000 → 10,000 (10,000) |
+| 10k | behind cover | 1 | 7.836 → 10.727 | +3.283 | 0.466 | 0.442 | 0.178 | 1.294 | 0.313 | 4.137 → 2.832 | 2,142 → 78 (78) |
+| 10k | behind cover | 2 | 1.441 → 1.641 | +0.181 | 0.024 | 0.029 | 0.015 | 0.085 | 0.026 | 1.096 → 1.093 | 2,142 → 78 (78) |
+| 100k | open | 1 | 7.607 → 7.932 | +0.712 | 0.196 | 0.219 | 0.551 | 0.242 | 0.143 | 3.077 → 2.814 | 100,000 → 100,000 (100,000) |
+| 100k | open | 2 | 3.783 → 4.738 | +0.623 | 0.136 | 0.138 | 0.336 | 0.092 | 0.103 | 2.256 → 2.279 | 100,000 → 100,000 (100,000) |
+| 100k | behind cover | 1 | 3.310 → 3.892 | +0.078 | 0.147 | 0.143 | 0.023 | 0.112 | 0.102 | 1.441 → 1.246 | 20,962 → 647 (647) |
+| 100k | behind cover | 2 | 2.751 → 2.954 | +0.114 | 0.140 | 0.136 | 0.021 | 0.093 | 0.089 | 1.285 → 1.145 | 20,962 → 647 (647) |
 
-Run 1 had the lightest contention (load about 230, against Frustum's visibility pass costing three times as much in
-runs 2–3). Every run puts Occlusion above Frustum.
+Every row puts Occlusion above Frustum, including behind cover, where it draws 3–4% of Frustum's list. In the open,
+nothing is hidden, and the prepass redraws the whole visible set: the depth prepass costs 0.05–0.55 ms there, against
+0.015–0.18 ms behind cover. The open 100k row is the full cost of Occlusion when it saves nothing.
 
-Per pass, across the runs: prepass list 0.021–0.366 ms, depth prepass 0.009–0.058 ms, pyramid 0.298–0.389 ms (runs
-2–3; 11 single-level dispatches on 1024×512) and final cull 0.025–0.240 ms. Every pass in run 1 is at most
-0.105 ms. The pyramid's per-level dispatches are the first candidate for M4's native recipes.
+Per pass in run 2: prepass list 0.024–0.138 ms, depth prepass 0.015–0.336 ms, pyramid 0.085–0.093 ms (11
+single-level dispatches on 1024×512) and final cull 0.026–0.103 ms. Run 1's passes are up to 1.3 ms under heavier
+contention. The pyramid's per-level dispatches are still the first candidate for M4's native recipes.
 
-Forward saves little on cubes, and the forward column is inconsistent: 10k behind cover drops by 0.23–0.27 ms in runs
-2–3 but by 0 in run 1, and 100k behind cover rises by 0.12 ms in run 3. On this Apple TBDR GPU, hidden-surface removal
-discards hidden opaque fragments whatever the draw order, so hidden boxes cost Frustum little fragment work. What is
-left to save is the vertex and binning work of 12-triangle boxes. This is the loss E1 predicted.
+Forward saves little on cubes. Behind cover in run 2, drawing 78 boxes instead of 2,142 saves 0.003 ms, and drawing 647
+instead of 20,962 saves 0.140 ms. Run 1's larger drops (1.3 and 0.2 ms) are within its contention spread. On this Apple
+TBDR GPU, hidden-surface removal discards hidden opaque fragments whatever the draw order, so hidden boxes cost
+Frustum little fragment work. What is left to save is the vertex and binning work of 12-triangle boxes.
+This is the loss E1 predicted, now measured with occlusion culling.
 
 Field route (`cargo bench -p v1-game --bench field_culling`; paired O−F per tick, split by whether Occlusion draws
 more than half of Frustum, `m3a-fieldcost1.log`, load about 290). It is one run in rotating three-way order, not
