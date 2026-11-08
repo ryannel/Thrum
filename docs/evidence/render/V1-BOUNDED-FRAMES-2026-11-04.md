@@ -51,6 +51,10 @@ configuring a current candidate surface before publishing the device. The exact 
 and reported a persistent invalid extent after its retry. Raw probe and helper input hash are in
 `tmp/g3b-mac-surface-loss/`. The live window loss witness remains open.
 
+**Pending capture identity:** two independent Metal instances can reuse the same wgpu device ID. The recording
+host now rejects a foreign capture before polling, while visual replacement keeps it readable and device replacement
+retires it. Both Metal tests and Chrome cooked-valley recovery pass. Raw checks are in `tmp/g3b-capture-identity/`.
+
 **Chrome function:** build `sh examples/v1-game/web/build.sh`; Node 24
 `scripts/check_v1_browser.mjs --case all --output tmp/new-browser-run`. Ten rows on Chrome 156 / ANGLE Metal M3 Max;
 HTTP-200 Wasm `3ec67a791896d8cb1e7467ab42de99b58fa97ef9d154d6404672538b57cdcb3a` checked against served bytes.

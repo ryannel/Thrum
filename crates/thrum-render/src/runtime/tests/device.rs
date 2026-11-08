@@ -1,5 +1,7 @@
 use super::*;
-use crate::{atmosphere::AtmosphereFrame, present::SurfaceProfile, synthetic::CullMode};
+use crate::{
+    atmosphere::AtmosphereFrame, present::SurfaceProfile, runtime::FrameError, synthetic::CullMode,
+};
 use std::{
     cell::Cell,
     sync::{Arc, atomic::Ordering},
@@ -1116,6 +1118,22 @@ fn gpu_pending_capture_is_caller_owned_and_retired_with_its_generation() {
             first_image,
             "native capture is the same operation with a wait"
         );
+        let mut before_visual = host.begin_capture().expect("capture before visual change");
+        let mut visual = host
+            .visual_prepare_inputs()
+            .prepare(
+                FrameLighting::Diagnostic(SyntheticLight::default()),
+                0.25,
+                Some([1; 32]),
+            )
+            .await
+            .expect("same-device visual replacement");
+        assert!(host.publish_visual(&mut visual).expect("publish visual"));
+        assert_eq!(
+            finish_capture(&mut host, &mut before_visual),
+            first_image,
+            "a visual replacement preserves the pending capture"
+        );
         let mut stale = host.begin_capture().expect("old generation capture");
         let inputs = host.device_prepare_inputs().expect("detached inputs");
         first.device().destroy();
@@ -1127,7 +1145,12 @@ fn gpu_pending_capture_is_caller_owned_and_retired_with_its_generation() {
         host.publish_device(&mut candidate)
             .expect("publish replacement");
         assert!(
-            host.try_finish_capture(&mut stale).is_err(),
+            matches!(
+                host.try_finish_capture(&mut stale),
+                Err(FrameError::InvalidState(
+                    "capture belongs to a retired device generation"
+                ))
+            ),
             "a retired generation terminates its capture"
         );
     });
@@ -1136,20 +1159,28 @@ fn gpu_pending_capture_is_caller_owned_and_retired_with_its_generation() {
 #[test]
 fn gpu_pending_capture_is_refused_by_another_device_with_the_same_generation() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let (first, first_queue) = gpu(&instance, 7).await;
-        let (second, second_queue) = gpu(&instance, 7).await;
+        let recorder_instance =
+            wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let other_instance =
+            wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let (first, first_queue) = gpu(&recorder_instance, 7).await;
+        let (second, second_queue) = gpu(&other_instance, 7).await;
         let mut recorder = host(&first, &first_queue, Policy::default()).await;
         let mut other = host(&second, &second_queue, Policy::default()).await;
         let mut pending = recorder.begin_capture().expect("capture");
         assert_eq!(pending.generation(), 7);
         // Let the recorder's readback complete, so a wrong host would find
-        // pixels ready if it collected without checking the device.
+        // pixels ready if it collected without checking the recording host.
         recorder
             .wait(pending.submitted.clone(), "capture")
             .expect("recorder wait");
         assert!(
-            other.try_finish_capture(&mut pending).is_err(),
+            matches!(
+                other.try_finish_capture(&mut pending),
+                Err(FrameError::InvalidState(
+                    "capture was recorded by another frame host"
+                ))
+            ),
             "another device with the same generation refuses the capture"
         );
         assert!(
