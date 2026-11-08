@@ -39,7 +39,7 @@ the game's own controls, and capture of the running game watched in motion. Anyt
 - **Make the game able to host the milestone.** If the test game can't yet show the scene a milestone needs (no sea
   for a shadow over water, say), adding that scene through public interfaces is work in your plan. Use simple stand-ins
   for neighbours that don't exist yet, label them, and take anything that would change another module's design to
-  `/plan-project`.
+  `/plan-module` at project level.
 - **Supply what the judgement needs.** Provide the content and surroundings needed to judge at the
   intended distances and speeds, and reject inadequate content before expensive preparation.
 - **Rebuild before reusing evidence.** When a source or recipe changes, rebuild the affected products and recheck the

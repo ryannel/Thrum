@@ -1,6 +1,6 @@
 # Engine architecture
 
-Thrum-specific guidance for `/plan-project`: how to design the engine's architecture, module map and module
+Thrum-specific guidance for `/plan-module` at project level: how to design the engine's architecture, module map and module
 briefs. Shared contracts live in [CONTRACTS](../../../../docs/design/CONTRACTS.md).
 
 Design the engine around its intended users, supported games and the work needed to create them. Establish the whole
