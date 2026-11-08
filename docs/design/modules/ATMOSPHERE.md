@@ -106,16 +106,20 @@ terrain and detached spans to the same elevation chord, union the spans,
 then integrate their `sin(elevation)` differences. Duplicated coverage
 is idempotent. The independent reference casts rays through original triangles.
 
-The terrain hierarchy candidate brackets each source patch with lower and upper
-affine height roofs. Bound the residual at every original vertex of a node containing
-whole source cells. Round both bounds outward on decode. For positive ray
-ranges the roof slopes have endpoint extrema. With an opaque continuous
-terrain prefix from a common origin, the lower roof certifies blocked
-directions and the upper roof bounds all terrain coverage. Only the angular
-difference needs original terrain refinement. Descend to original triangles
-around the origin/error footprint or where the upper roof could contain the
-origin. Use whole-triangle spans for disconnected or unqualified receivers.
-Keep the narrow crest and close terrain regardless of caster distance.
+The selected producer to prove sweeps terrain in the frame's actual Sun basis.
+For each angular band, clip original triangles against the full projected
+receiver strip and band displacement. An upstream section gives lower support
+only when the original ground covers it and a continuous terrain prefix joins
+it to the lifted receiver for every admitted ray. The highest possible slab
+intersection gives upper support. Use signed positive-range slope bounds and
+two horizon sweeps to share the work across the ground. Evaluate the whole
+strip and angular band, including off-axis receivers. Integrate both bounds
+against the same Sun chord. Overlapping chart supports blend estimates that
+bound the same field. Use original triangle spans for detached geometry,
+the origin slab and unresolved far coverage, and union before integrating.
+The fixed-line reuse result does not qualify this producer. The total cost
+includes source clipping, both sweeps and original-geometry residuals.
+[Heightfield sweeps](https://doi.org/10.1111/j.1467-8659.2009.01642.x).
 
 Use the actual packed Sun and one continuous, error-bounded receiver lift.
 The CPU reference candidate projects original edges to a finite horizontal
