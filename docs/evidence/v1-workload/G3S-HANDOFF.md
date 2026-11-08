@@ -8,15 +8,24 @@ The Codex goal remains active. Its attachment is
 
 ## Current checkpoint
 
-- A connected west spur removes the large lookout depth break at the
-  held Sun camera and preserves the far ridge within one pixel across
-  a ±20° pan. The six-stop Metal/Chrome route and both controls pass at
-  the existing tolerance on scratch root `32ed89be`. The remaining
-  17.69 h stripe isolates a direct-Sun leak. At x640 y434 the terrain
-  horizon reports 49/255 visibility, the cascade zero and the exact
-  triangle reference zero. The 96-tap mirror reproduces the leak.
-  Roughly 830 m between taps skips the 12.54 km crest, and the cascade
-  fade exposes the wrong horizon. The candidate remains a diagnostic.
+- The authored west spur passes all six Metal and Chrome stops and both
+  controls at the unchanged one-code threshold on `ba45ff60`. Its
+  17.4 h depth-edge contrast drops from 47.42 to 7.31 red codes.
+  In four interleaved 300-frame 1080p Metal runs, GPU p50/p95 is
+  3.94/12.49 and 3.99/11.61 ms for Ground E and 4.06/12.24 and
+  4.19/12.21 ms for the spur (load 24.51–26.21). Independent review
+  found single-pixel false shadows and a new band in the sunset
+  crossing. From frames 226 to 227, 656 pixels in one spur row change
+  by >15 green codes, versus zero in Ground E. Metal visibility
+  tracing shows a cascade step. At four sampled receivers, the
+  triangle oracle still sees part of the disk after the GPU falls
+  to zero. A smoother source onset fixes a 52.5 m terrain-height
+  discontinuity but leaves the band and worsens the flecks. Keep
+  Ground E. The 1× comparison, raw records and reruns are in
+  `tmp/g3s-sunset-lip/`. An earlier direct-Sun witness at x640 y434
+  shows the horizon at 49/255, the cascade at zero and the triangle
+  reference at zero. The far fade exposes the false light from the
+  96-tap march, which skips a 12.54 km crest.
   CPU max-hierarchy prototypes restore zero disk at that pixel on
   exact triangles and on the 32 m raster. Across 2,496 sampled rays,
   the log march's largest visibility error is 44.2 percentage points.
