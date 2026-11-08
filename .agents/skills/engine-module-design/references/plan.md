@@ -24,6 +24,8 @@ the module; what matters is below.
   when, what's next
   and anything blocking you (what you tried, the evidence, and what would unblock it). Probe a blocker directly
   before you record it, and again before you work around it; a cause inferred from a symptom is a hypothesis.
+  When another owner must act, post the request where they will see it and link it; an owner who hasn't been
+  asked isn't a blocker.
   Update the status when it changes.
   Keep these as plain `Milestone:`, `Now:`, `Next:` and `Blocked:` lines, and milestone headings as
   `## M<n> <name>: <state>`, so tools can read them; everything else is yours to shape.

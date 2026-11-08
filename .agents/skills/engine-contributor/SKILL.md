@@ -117,5 +117,6 @@ For per-tick, per-frame and per-message code:
 Each worktree's `target` is disposable. The shared sccache store rebuilds it mostly from cache.
 - When your work stops, run `cargo clean` in your worktree: a finished slice, a session going idle, or a long wait. A
   daily sweep also deletes any `target` left untouched for about 24 hours.
-- Once your item has landed on main, remove its worktree.
+- Once your item has landed on main, remove its worktree. It has landed only when `git merge-base --is-ancestor
+  <commit> origin/main` passes after a fetch; record "landed" after that, not before the push.
 - Point build output at the worktree's own `target`, not at another tree or a shared directory.
