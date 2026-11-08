@@ -71,8 +71,12 @@ The Codex goal remains active. Its attachment is
   with beam admission and caster union measured separately. The
   envelope and independent terrain cuts agree within 7.91e-14 rad.
   The 16-column row misses the dense union by up to 2.2752 pp.
-  Retain the envelope for reference preparation and use disk clipping
-  by silhouette events for the next design review. Runtime remains held.
+  The disk-clipped union agrees with independent rays within 0.01012 pp
+  on eight cases. The compact caster shares 3.048 pp of blocked directions
+  with terrain. Across the 289 raised-patch receivers, the sweep reaches
+  21 events, 15 visible pieces and 3,224 B for bands, events and active
+  pointers. These exclude projection and merge scratch. Keep the union
+  as the CPU referee. Runtime awaits a full-view reuse and fallback bound.
   Rerun from `tmp/g3s-sunset-lip/M3-RESEARCH.md`.
 
 - Historical M2 star captures predate the orientation correction. The Mac's lossless 1080p60 masters
