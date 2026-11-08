@@ -399,6 +399,22 @@ impl super::FrameHost {
         Ok(())
     }
 
+    /// The authored scene camera, when content selected one.
+    #[must_use]
+    pub fn scene_camera(&self) -> Option<SceneCamera> {
+        self.inner.source().camera
+    }
+
+    /// The installed route's pose and history epoch for `tick` presented at `alpha`.
+    #[must_use]
+    pub fn route_pose(&self, tick: u64, alpha: f32) -> Option<crate::RoutePose> {
+        self.inner
+            .source()
+            .route
+            .as_ref()
+            .map(|route| route.pose(tick, alpha))
+    }
+
     /// World time, in milliseconds from the clock origin, of the next tick boundary
     /// plus `phi` of a period: `(tick + 1 + φ)·P` for the committed tick.
     #[must_use]

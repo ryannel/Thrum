@@ -151,13 +151,7 @@ impl CameraRoute {
         if file.render_extent.contains(&0) {
             return Err("route render_extent must be nonzero".to_owned());
         }
-        let overlay = match file.overlay.as_str() {
-            "off" => RouteOverlay::Off,
-            "proof" => RouteOverlay::Proof,
-            "unmirrored" => RouteOverlay::Unmirrored,
-            "light-off" => RouteOverlay::LightOff,
-            _ => return Err("route overlay must be off, proof, unmirrored or light-off".to_owned()),
-        };
+        let overlay = overlay(&file.overlay)?;
         let keys: Vec<RouteKey> = file
             .keys
             .iter()
@@ -222,6 +216,19 @@ impl CameraRoute {
         })
     }
 
+    /// The render extent and overlay a route file declares, read before the game is
+    /// prepared so the host can be built to match. The full parse still validates them.
+    /// # Errors
+    /// Refuses a file that is not a route or an unknown overlay.
+    pub fn declared(text: &str) -> Result<([u32; 2], RouteOverlay), String> {
+        let file: RouteFile =
+            serde_json::from_str(text).map_err(|error| format!("route file: {error}"))?;
+        if file.format != ROUTE_FORMAT {
+            return Err(format!("route file must be {ROUTE_FORMAT}"));
+        }
+        Ok((file.render_extent, overlay(&file.overlay)?))
+    }
+
     /// Check that key 0 equals the authored camera's current pose.
     /// # Errors
     /// Names the differing component.
@@ -283,6 +290,16 @@ impl CameraRoute {
             pitch: lerp(from.pitch, to.pitch),
             epoch,
         }
+    }
+}
+
+fn overlay(name: &str) -> Result<RouteOverlay, String> {
+    match name {
+        "off" => Ok(RouteOverlay::Off),
+        "proof" => Ok(RouteOverlay::Proof),
+        "unmirrored" => Ok(RouteOverlay::Unmirrored),
+        "light-off" => Ok(RouteOverlay::LightOff),
+        _ => Err("route overlay must be off, proof, unmirrored or light-off".to_owned()),
     }
 }
 

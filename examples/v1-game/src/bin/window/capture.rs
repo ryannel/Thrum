@@ -10,6 +10,8 @@ use v1_game::{FrameConfig, FrameHost, controls::GameControls};
 
 #[path = "motion.rs"]
 mod motion;
+#[path = "route.rs"]
+mod route;
 
 const EXTENT: [u32; 2] = [1280, 720];
 
@@ -18,6 +20,17 @@ pub(super) async fn run(output: PathBuf) -> Result<(), String> {
         return Err("capture output must be a new directory".to_owned());
     }
     let motion_frames = motion::requested_frames()?;
+    let moving_route = route::requested()?;
+    let mut setup = v1_game::selected_setup()?;
+    if let Some((_, _, overlay)) = &moving_route {
+        if motion_frames.is_some() || std::env::var_os("THRUM_CAPTURE_PARAMS").is_some() {
+            return Err("a moving route capture takes no motion or parameter capture".to_owned());
+        }
+        if setup.route_overlay != *overlay {
+            return Err("THRUM_ROUTE_OVERLAY must match the route file's overlay".to_owned());
+        }
+        setup.route_overlay = *overlay;
+    }
     let route_only = std::env::var_os("THRUM_CAPTURE_ROUTE_ONLY").is_some();
     let params = std::env::var_os("THRUM_CAPTURE_PARAMS");
     if route_only && (params.is_none() || motion_frames.is_some()) {
@@ -47,10 +60,16 @@ pub(super) async fn run(output: PathBuf) -> Result<(), String> {
         &queue,
         &capabilities,
         FrameConfig {
-            render_extent: motion_frames.map_or(EXTENT, |_| motion::PROFILE.extent),
-            surface: motion_frames.map(|_| motion::PROFILE),
+            render_extent: match &moving_route {
+                Some((_, extent, _)) => *extent,
+                None => motion_frames.map_or(EXTENT, |_| motion::PROFILE.extent),
+            },
+            surface: match &moving_route {
+                Some((_, extent, _)) => Some(route::profile(*extent)),
+                None => motion_frames.map(|_| motion::PROFILE),
+            },
         },
-        v1_game::selected_setup()?,
+        setup,
     )
     .await?;
     let content = v1_game::attach_cooked_scene(&mut host)?;
@@ -80,6 +99,9 @@ pub(super) async fn run(output: PathBuf) -> Result<(), String> {
         None
     };
     std::fs::create_dir_all(&output).map_err(|error| error.to_string())?;
+    if let Some((text, _, _)) = &moving_route {
+        return route::record(&device, &queue, &mut host, &output, text, cooked_generation);
+    }
     if let Some(frames) = motion_frames {
         return motion::record(
             &device,
