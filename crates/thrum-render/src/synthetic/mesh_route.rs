@@ -1,0 +1,267 @@
+//! The bucket route: one draw per (mesh row, pipeline class) bucket, for
+//! scenes that select meshes from the arena (G3c M3b, experimental).
+//!
+//! Scenes that select no meshes keep the legacy route: one scene-wide
+//! pipeline over the cube, two-sided whenever any instance needs it, in
+//! physical-slot order. The bucket route draws each bucket's members in
+//! logical-slot order with that bucket's class pipeline, buckets in key
+//! order (mesh row, then class). That order is the bucket-ordered Direct
+//! oracle; the culled modes compact each bucket in place and keep it.
+//!
+//! A bucket's members start at a multiple of `SEGMENT_ALIGN` slots, so the
+//! forward view group binds the member (or visible) list at a 256-byte
+//! aligned dynamic offset per bucket and every draw starts at instance 0, as
+//! WebGPU requires without `indirect-first-instance`.
+
+use super::buckets::{
+    BucketError, BucketKey, BucketLimits, Buckets, PipelineClass, SEGMENT_ALIGN, Segment,
+};
+use super::mesh_arena::{MeshArena, MeshId};
+use super::upload::InstanceUpload;
+use super::{RenderError, storage_layout};
+use crate::abi::InstanceRecord;
+
+/// Each logical slot's mesh row, chosen by the renderer's caller at
+/// preparation. Every slot names a row the arena holds.
+pub(super) struct MeshSelection {
+    pub(super) slots: Vec<MeshId>,
+}
+
+/// The classes in pipeline-array order.
+const CLASSES: [PipelineClass; 3] = [
+    PipelineClass::Ordinary,
+    PipelineClass::Mirrored,
+    PipelineClass::TwoSided,
+];
+
+impl PipelineClass {
+    fn index(self) -> usize {
+        match self {
+            Self::Ordinary => 0,
+            Self::Mirrored => 1,
+            Self::TwoSided => 2,
+        }
+    }
+
+    /// Rasterizer state: back faces culled with the class's front face, or
+    /// none for the two-sided fallback. `flipped` reverses the front face for
+    /// a view that mirrors the screen: the orthographic fixture keeps world XY
+    /// as clip XY while its camera looks from -Z.
+    pub(super) fn primitive(self, flipped: bool) -> wgpu::PrimitiveState {
+        let (mirrored, cull_mode) = match self {
+            Self::Ordinary => (false, Some(wgpu::Face::Back)),
+            Self::Mirrored => (true, Some(wgpu::Face::Back)),
+            Self::TwoSided => (false, None),
+        };
+        wgpu::PrimitiveState {
+            front_face: if mirrored == flipped {
+                wgpu::FrontFace::Ccw
+            } else {
+                wgpu::FrontFace::Cw
+            },
+            cull_mode,
+            ..Default::default()
+        }
+    }
+}
+
+pub(super) struct BucketRoute {
+    buckets: Buckets,
+    slot_meshes: Vec<MeshId>,
+    /// The laid-out member list Direct draws from: physical rows, padded.
+    members: wgpu::Buffer,
+    /// Bytes bound at each bucket's dynamic offset: the largest segment.
+    segment_bytes: u64,
+    /// Forward pipelines by class, then unflipped and flipped.
+    forward: [[wgpu::RenderPipeline; 2]; 3],
+}
+
+impl BucketRoute {
+    /// Check the selection against the arena and the scene, fix its buckets
+    /// (every class of every selected mesh, so a class change never needs a
+    /// new segment) and lay out the first frame's members.
+    pub(super) fn new(
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        selection: &MeshSelection,
+        arena: &MeshArena,
+        upload: &InstanceUpload,
+        instances: &[InstanceRecord],
+        forward: impl Fn(wgpu::PrimitiveState) -> wgpu::RenderPipeline,
+    ) -> Result<Self, RenderError> {
+        if selection.slots.len() != instances.len()
+            || selection
+                .slots
+                .iter()
+                .any(|&mesh| arena.row(mesh).is_none())
+        {
+            return Err(RenderError::SceneCapacity);
+        }
+        let limits = BucketLimits::of(&device.limits());
+        let meshes: std::collections::BTreeSet<MeshId> = selection.slots.iter().copied().collect();
+        let keys = meshes
+            .into_iter()
+            .flat_map(|mesh| CLASSES.map(|class| BucketKey { mesh, class }));
+        let mut buckets =
+            Buckets::new(keys, instances.len(), limits).map_err(|_| RenderError::SceneCapacity)?;
+        let slots = u64::try_from(instances.len()).map_err(|_| RenderError::SceneCapacity)?;
+        let segment_bytes = slots
+            .max(1)
+            .next_multiple_of(u64::from(SEGMENT_ALIGN))
+            .checked_mul(4)
+            .ok_or(RenderError::SceneCapacity)?;
+        let member_bytes = buckets
+            .worst_member_bytes()
+            .checked_add(segment_bytes)
+            .ok_or(RenderError::SceneCapacity)?;
+        if segment_bytes > limits.max_storage_binding {
+            return Err(RenderError::SceneCapacity);
+        }
+        let members = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("synthetic bucket members"),
+            size: member_bytes,
+            usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+        for (slot, instance) in (0..).zip(instances) {
+            buckets
+                .set(slot, Self::key(selection.slots[slot as usize], instance))
+                .map_err(bucket_error)?;
+        }
+        let mut route = Self {
+            buckets,
+            slot_meshes: selection.slots.clone(),
+            members,
+            segment_bytes,
+            forward: CLASSES
+                .map(|class| [false, true].map(|flipped| forward(class.primitive(flipped)))),
+        };
+        route.publish(queue, upload)?;
+        Ok(route)
+    }
+
+    fn key(mesh: MeshId, instance: &InstanceRecord) -> Option<BucketKey> {
+        (instance.ids[3] != 0).then(|| BucketKey {
+            mesh,
+            class: PipelineClass::of(instance),
+        })
+    }
+
+    /// Follow an instance upload: re-key the changed slots and lay out the
+    /// members from the upload's current physical rows. Writes the member
+    /// list only when the layout changed; queue order keeps submitted frames
+    /// on the list they recorded.
+    pub(super) fn update(
+        &mut self,
+        queue: &wgpu::Queue,
+        upload: &InstanceUpload,
+        instances: &[InstanceRecord],
+        changed_slots: &[u32],
+    ) -> Result<(), RenderError> {
+        for &slot in changed_slots {
+            let (mesh, instance) = self
+                .slot_meshes
+                .get(slot as usize)
+                .zip(instances.get(slot as usize))
+                .ok_or(RenderError::InvalidInstanceUpdate)?;
+            self.buckets
+                .set(slot, Self::key(*mesh, instance))
+                .map_err(bucket_error)?;
+        }
+        self.publish(queue, upload)
+    }
+
+    fn publish(&mut self, queue: &wgpu::Queue, upload: &InstanceUpload) -> Result<(), RenderError> {
+        if self
+            .buckets
+            .layout(upload.slot_to_physical())
+            .map_err(bucket_error)?
+        {
+            let bytes: Vec<u8> = self
+                .buckets
+                .members()
+                .iter()
+                .flat_map(|member| member.to_le_bytes())
+                .collect();
+            queue.write_buffer(&self.members, 0, &bytes);
+        }
+        Ok(())
+    }
+
+    pub(super) fn segments(&self) -> &[Segment] {
+        self.buckets.segments()
+    }
+
+    /// The forward view-group entry the route binds per bucket.
+    pub(super) fn view_layout_entry(binding: u32) -> wgpu::BindGroupLayoutEntry {
+        let mut entry = storage_layout(binding, wgpu::ShaderStages::VERTEX, 4);
+        if let wgpu::BindingType::Buffer {
+            has_dynamic_offset, ..
+        } = &mut entry.ty
+        {
+            *has_dynamic_offset = true;
+        }
+        entry
+    }
+
+    /// Direct: the member list, bound one segment wide.
+    pub(super) fn members_entry(&self, binding: u32) -> wgpu::BindGroupEntry<'_> {
+        wgpu::BindGroupEntry {
+            binding,
+            resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
+                buffer: &self.members,
+                offset: 0,
+                size: wgpu::BufferSize::new(self.segment_bytes),
+            }),
+        }
+    }
+
+    /// Draw every bucket with its class pipeline. `view` is the view group
+    /// and its view-record offset; each bucket adds its segment's offset.
+    /// Direct draws each segment's active members; `indirect` draws the
+    /// culled count each bucket's argument record holds.
+    pub(super) fn draw(
+        &self,
+        pass: &mut wgpu::RenderPass<'_>,
+        (view_group, view_offset): (&wgpu::BindGroup, u32),
+        arena: &MeshArena,
+        orthographic: bool,
+        indirect: Option<&wgpu::Buffer>,
+    ) -> Result<(), RenderError> {
+        let buffers = arena.buffers().ok_or(RenderError::GraphPassMismatch)?;
+        pass.set_index_buffer(buffers.indices.slice(..), wgpu::IndexFormat::Uint32);
+        for (bucket, segment) in (0_u64..).zip(self.segments()) {
+            if indirect.is_none() && segment.len == 0 {
+                continue;
+            }
+            let pipelines = &self.forward[segment.key.class.index()];
+            pass.set_pipeline(&pipelines[usize::from(orthographic)]);
+            pass.set_bind_group(0, view_group, &[view_offset, segment.start * 4]);
+            if let Some(args) = indirect {
+                pass.draw_indexed_indirect(args, bucket * crate::visibility::ARGS_BYTES);
+            } else {
+                let row = arena
+                    .row(segment.key.mesh)
+                    .ok_or(RenderError::GraphPassMismatch)?;
+                let base = row
+                    .draw_base_vertex()
+                    .map_err(|_| RenderError::SceneCapacity)?;
+                let first = row.first_index;
+                pass.draw_indexed(first..first + row.index_count, base, 0..segment.len);
+            }
+        }
+        Ok(())
+    }
+}
+
+fn bucket_error(error: BucketError) -> RenderError {
+    match error {
+        BucketError::UnknownBucket | BucketError::Mapping => RenderError::InvalidInstanceUpdate,
+        BucketError::BucketCount | BucketError::Capacity | BucketError::DeviceLimit => {
+            RenderError::SceneCapacity
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests;
