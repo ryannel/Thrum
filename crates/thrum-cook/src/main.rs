@@ -116,5 +116,8 @@ fn describe(out: &mut impl Write, report: &CookReport) -> std::io::Result<()> {
     for (asset, reason) in &report.failed {
         writeln!(out, "  failed {asset}: {reason}")?;
     }
+    for (asset, profile, reason) in &report.refused {
+        writeln!(out, "  refused {asset} ({}): {reason}", profile.name())?;
+    }
     Ok(())
 }

@@ -37,6 +37,9 @@ pub enum CookError {
     Product(thrum_asset::AssetError),
     /// The filesystem watcher failed.
     Watch(String),
+    /// A profile cannot represent this source, so the asset publishes without that profile's
+    /// product and loaders select its portable one.
+    Refused(String),
 }
 
 impl fmt::Display for CookError {
@@ -46,6 +49,7 @@ impl fmt::Display for CookError {
             Self::Source(reason) => write!(f, "source import failed: {reason}"),
             Self::Product(error) => write!(f, "cooked product refused: {error}"),
             Self::Watch(reason) => write!(f, "watcher failed: {reason}"),
+            Self::Refused(reason) => write!(f, "profile refused: {reason}"),
         }
     }
 }

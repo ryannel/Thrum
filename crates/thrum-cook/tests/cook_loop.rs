@@ -472,15 +472,16 @@ fn block_compressed_profiles_refuse_partial_blocks_but_the_portable_product_publ
     config.profiles = vec![Profile::DesktopBc, Profile::AppleAstc];
     let mut cooker = Cooker::open(config).expect("open");
     let report = cooker.cook_all().expect("cook");
+    assert!(report.failed.is_empty(), "{:?}", report.failed);
     assert_eq!(
         report
-            .failed
+            .refused
             .iter()
-            .filter(|(name, _)| name == "textures/odd")
+            .filter(|(name, _, _)| name == "textures/odd")
             .count(),
-        1,
+        2,
         "{:?}",
-        report.failed
+        report.refused
     );
     let manifest = manifest_of(&fixture.store());
     assert!(
@@ -521,4 +522,103 @@ fn a_running_reader_follows_a_store_that_is_wiped_and_recreated() {
         "a new store epoch is a new publication"
     );
     assert_eq!(watcher.poll().expect("poll"), None);
+}
+
+/// Profiles published for `name` in the current manifest.
+fn published_profiles(store: &AssetStore, name: &str) -> Vec<Profile> {
+    store
+        .load_manifest(&store.read_head().expect("head").expect("published"))
+        .expect("manifest")
+        .entries()
+        .filter(|entry| entry.name == name)
+        .map(|entry| entry.profile)
+        .collect()
+}
+
+#[test]
+fn a_partial_block_source_is_refused_by_compressed_profiles_and_served_portable() {
+    let fixture = Fixture::new();
+    let store = fixture.store();
+    let mut cooker = Cooker::open(fixture.config()).expect("open");
+    let report = cooker.cook_all().expect("cook");
+    assert!(report.refused.is_empty(), "{:?}", report.refused);
+    assert_eq!(published_profiles(&store, "textures/checker").len(), 3);
+
+    // An edit to a size that is not whole 4×4 blocks withdraws the earlier compressed texture
+    // products and the BC4 volume, and keeps the portable products current.
+    demo::write_checker_png(
+        &fixture.source().join("textures/checker.png"),
+        6,
+        [10, 200, 10],
+    )
+    .expect("partial-block texture");
+    demo::write_cloud_volume(&fixture.source().join("cloud.tvol"), 6, 2)
+        .expect("partial-block volume");
+    let report = cooker.cook_all().expect("cook");
+    assert!(report.failed.is_empty(), "{:?}", report.failed);
+    let refused: Vec<(&str, Profile, &str)> = report
+        .refused
+        .iter()
+        .map(|(name, profile, reason)| (name.as_str(), *profile, reason.as_str()))
+        .collect();
+    let reason = |profile: &str| {
+        format!(
+            "{profile} needs a base size that is a multiple of 4 texels; 6×6 is served by the \
+             portable product"
+        )
+    };
+    assert_eq!(
+        refused,
+        [
+            ("cloud", Profile::DesktopBc, reason("desktop-bc").as_str()),
+            (
+                "textures/checker",
+                Profile::DesktopBc,
+                reason("desktop-bc").as_str()
+            ),
+            (
+                "textures/checker",
+                Profile::AppleAstc,
+                reason("apple-astc").as_str()
+            ),
+        ]
+    );
+    assert_eq!(
+        published_profiles(&store, "textures/checker"),
+        [Profile::Portable]
+    );
+    // The portable and ASTC-profile volumes are R8, so only BC4 is refused.
+    assert_eq!(
+        published_profiles(&store, "cloud"),
+        [Profile::Portable, Profile::AppleAstc]
+    );
+    let manifest = store
+        .load_manifest(&store.read_head().expect("head").expect("published"))
+        .expect("manifest");
+    let texture = manifest
+        .resolve(
+            "textures/checker",
+            &[Profile::DesktopBc, Profile::AppleAstc, Profile::Portable],
+        )
+        .expect("a loader preferring compression falls back");
+    assert_eq!(texture.profile, Profile::Portable);
+    let ktx = Ktx2::open(store.map(&texture.product).expect("product")).expect("ktx2");
+    assert_eq!(ktx.format(), Ktx2Format::Rgba8Srgb);
+    assert_eq!((ktx.levels()[0].width, ktx.levels()[0].height), (6, 6));
+
+    // Unchanged sources report the refusal again without re-cooking or republishing.
+    let report = cooker.cook_all().expect("cook");
+    assert_eq!((report.cooked, report.refused.len()), (0, 3));
+    assert!(report.published.is_none());
+
+    // A whole-block size publishes the compressed texture products again.
+    demo::write_checker_png(
+        &fixture.source().join("textures/checker.png"),
+        8,
+        [10, 200, 10],
+    )
+    .expect("whole-block texture");
+    let report = cooker.cook_all().expect("cook");
+    assert_eq!(report.refused.len(), 1, "{:?}", report.refused);
+    assert_eq!(published_profiles(&store, "textures/checker").len(), 3);
 }
