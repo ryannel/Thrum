@@ -16,7 +16,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use device::DeviceRecipe;
+use device::{DeviceRecipe, configure_surface};
 use display_link::ViewDisplayLink;
 use edit_flow::EditFlow;
 use pause::PauseIntent;
@@ -103,6 +103,7 @@ struct App<G: Game> {
     unavailable: usize,
     occluded: usize,
     surface_faults: usize,
+    surface_configuration_error: Option<String>,
     callback_walls: Vec<Duration>,
     worker_walls: Vec<Duration>,
     acquire_walls: Vec<Duration>,
@@ -172,6 +173,7 @@ impl<G: Game + 'static> App<G> {
             unavailable: 0,
             occluded: 0,
             surface_faults: 0,
+            surface_configuration_error: None,
             callback_walls: Vec::with_capacity(reserved * 8),
             worker_walls: Vec::with_capacity(reserved * 4),
             acquire_walls: Vec::with_capacity(reserved * 4),
@@ -338,6 +340,13 @@ impl<G: Game + 'static> App<G> {
                 && let Some(error) = &self.recovery_error
             {
                 format!("{title} | {error}")
+            } else if self.recovery.ready()
+                && let Some(error) = &self.surface_configuration_error
+            {
+                format!(
+                    "{} | Surface unavailable (R to retry) | {error}",
+                    self.config.title
+                )
             } else {
                 title
             };
@@ -443,7 +452,7 @@ impl<G: Game + 'static> App<G> {
         if gpu.watch.is_lost() {
             return Err("initial device lost before preparation".to_owned());
         }
-        recipe.surface.configure(&gpu.device, &gpu.config);
+        configure_surface(&recipe.surface, &gpu.device, &gpu.config)?;
         if gpu.watch.is_lost() {
             return Err("initial device lost during surface configuration".to_owned());
         }
@@ -578,6 +587,9 @@ impl<G: Game + 'static> App<G> {
         match reply.surface_status {
             SurfaceStatus::Presented => {
                 self.presented += 1;
+                if self.surface_configuration_error.take().is_some() {
+                    self.refresh_title();
+                }
                 if reply.sequence == self.target_sequence {
                     self.pending_display_target = false;
                 }
@@ -589,6 +601,11 @@ impl<G: Game + 'static> App<G> {
                 self.occluded += 1;
             }
             SurfaceStatus::NeedsReconfigure => self.surface_faults += 1,
+            SurfaceStatus::ConfigurationRefused(error) => {
+                self.surface_faults += 1;
+                self.surface_configuration_error = Some(error);
+                self.refresh_title();
+            }
         }
         match reply.target_status {
             Some(TargetLeadStatus::Late) => self.late_target_evaluations += 1,
@@ -604,14 +621,9 @@ impl<G: Game + 'static> App<G> {
                 }
                 if self.last_call.saturating_sub(self.profiler_title_at)
                     >= Duration::from_millis(500)
-                    && let (Some(window), Some(sample)) = (&self.window, self.samples.last())
+                    && !self.samples.is_empty()
                 {
-                    window.set_title(&profiler_title(
-                        self.config.title,
-                        sample,
-                        self.world_status(),
-                        self.recovery.label(),
-                    ));
+                    self.refresh_title();
                     self.profiler_title_at = self.last_call;
                 }
             }
@@ -1097,6 +1109,12 @@ impl<G: Game + 'static> ApplicationHandler<UserEvent> for App<G> {
                                 }
                                 self.admit_recovery()
                             })
+                        } else {
+                            Ok(())
+                        }
+                    } else if code == KeyCode::KeyR && self.surface_configuration_error.is_some() {
+                        if event.state == ElementState::Pressed && !event.repeat {
+                            self.invalidate_surface()
                         } else {
                             Ok(())
                         }
