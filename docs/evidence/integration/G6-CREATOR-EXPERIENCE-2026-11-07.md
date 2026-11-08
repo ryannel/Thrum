@@ -329,3 +329,33 @@ from its predecessor.
   main-thread event loop; the sky kit never requests a pause.
 - The manual Chrome page still reloads parameters and the material by button.
 
+## Refused asset edits and material installation (8 November)
+
+Daily review C-L1 and C-L3, landed in `9c044160`. The design is in the G6 decision (Installing, `ready()`, live
+capture). Apple M3 Max, shared GPU.
+
+### Checks
+
+| Check | Result |
+|---|---|
+| `thrum-app` unit test | A loader failure after the first draw is reported once with the generation still drawn. Nothing is reported before the first draw, or for a failure that came before the first swap. The bounded list rotating does not repeat or hide entries. |
+| v1-game `a_material_ready_before_content_is_drawn_only_with_the_first_mesh` | A material requested against a store with no HEAD becomes `ready()`. Three live frames and a capture are submitted without a mesh, and none produces an outcome. After cooking, `Promoted` arrives no earlier than the first swap. 10 of 10 repeats. |
+| v1-game `a_skipped_frame_never_promotes_a_ready_material` | With a mesh resident, frames encoded and skipped (`advance`, `encode_scene`, `skip`) record the held material, submit nothing and promote nothing. The next submitted frame promotes it exactly once. 10 of 10 repeats. |
+| `python3 scripts/check_starter_live_reload.py <out>` | Pass, 10 steps: the 8 above plus two asset renames on a copy of the starter's assets (`THRUM_SCENE_ASSETS`). |
+| `node scripts/check_v1_browser.mjs --case material` (dev page) | Pass with the `installed` outcome text. |
+
+| Save | Report | Pixels changed | Save to report |
+|---|---|---:|---:|
+| `rock.gltf` renamed away from its placement | `content: kept 1 (generation 2: malformed cooked product: asset unavailable in the requested profiles)` | 0 | 90–101 ms |
+| Name restored | `content: drawn N` | 0 | 88–106 ms |
+
+The window logs the same refusal as `thrum-starter: content generation 1 kept: …`. A material outcome now reads
+`material N (name) installed: …`. Installation means the first submitted frame that recorded draws of a resident
+cooked mesh with it; the GPU cull may still draw nothing visible, and visible meshlets are reported separately.
+
+### Limits
+
+- Save-to-report times for the content steps run from the rename to the report line, including the cook. They come
+  from one run on a shared machine and are not a budget.
+- The window event path is still not qualified on glass.
+
