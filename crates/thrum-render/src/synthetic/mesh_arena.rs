@@ -76,6 +76,11 @@ impl MeshId {
     pub(super) fn row(self) -> u32 {
         self.0
     }
+
+    #[cfg(test)]
+    pub(super) fn for_test(row: u32) -> Self {
+        Self(row)
+    }
 }
 
 /// Where a mesh lives in the arena, in draw-argument terms.
