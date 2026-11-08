@@ -1,37 +1,36 @@
-//! Synthetic mesh arena (G3c M3b, private until root reviews the wiring).
+//! Synthetic mesh arena (G3c M3b).
 //!
 //! One vertex array and one index array hold every synthetic mesh. A
 //! [`MeshId`] names a row giving the mesh's index range, base vertex and local
 //! bounds. Identity rules:
 //! - a `MeshId` never changes once allocated;
-//! - growth copies both arrays into larger buffers at the same offsets, so no
-//!   row's offsets change;
-//! - replacing a mesh keeps its `MeshId`: it is rewritten in place when it
-//!   fits its ranges, and otherwise moves to fresh space at the end, leaving
-//!   the old ranges unused (counted in [`MeshArena::unused`]);
-//! - culling never touches the arena. Mesh rows are keyed by logical slot;
-//!   [`physical_meshes`] lays them out in the upload's physical order, which
-//!   is the order the camera-visible list indexes.
+//! - each preparation builds its arena once, from the scene's authored
+//!   meshes, and uploads it before any frame: rows never change under a
+//!   prepared generation, so no in-flight or discarded frame, and no
+//!   replacement device, sees another generation's rows;
+//! - culling never touches the arena. Bucket draws and the culling table
+//!   address rows by `MeshId`; logical slots keep their mesh through
+//!   compaction and activity churn.
 //!
 //! Every mesh is checked before anything is written: a nonzero index count
 //! that is a multiple of three, every index below the mesh's vertex count,
 //! finite vertex data, and the arena's vertex and index limits. Local bounds
 //! are computed from the vertices.
-#![cfg_attr(
-    not(test),
-    expect(dead_code, reason = "M3b arena; wiring waits for root's review")
-)]
 
 use std::ops::Range;
 
-/// One packed vertex: what `synthetic.wgsl` consumes for a cube corner.
+/// One mesh vertex in local space, packed as the 48 bytes the camera and
+/// Sun caster shaders fetch.
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub(super) struct MeshVertex {
-    pub(super) position: [f32; 3],
-    pub(super) normal: [f32; 3],
-    pub(super) uv: [f32; 2],
-    /// Tangent and bitangent sign.
-    pub(super) tangent: [f32; 4],
+pub struct MeshVertex {
+    /// Local position.
+    pub position: [f32; 3],
+    /// Unit normal, transformed by the instance's normal basis.
+    pub normal: [f32; 3],
+    /// Material texture coordinate.
+    pub uv: [f32; 2],
+    /// Unit tangent and bitangent sign.
+    pub tangent: [f32; 4],
 }
 
 /// Bytes per packed vertex in the storage buffer.
@@ -129,8 +128,6 @@ pub(super) enum ArenaError {
     Capacity,
     /// A `MeshId` this arena never allocated.
     UnknownMesh,
-    /// The cube rows are fixed: the reversed row shares the cube's vertices.
-    Fixed,
 }
 
 /// Vertex and index limits, in elements.
@@ -174,8 +171,6 @@ pub(super) struct MeshArena {
     /// Element ranges written since the last upload.
     dirty_vertices: Vec<Range<usize>>,
     dirty_indices: Vec<Range<usize>>,
-    /// Vertices and indices left behind by replacements that moved.
-    unused: (u32, u32),
     gpu: Option<ArenaBuffers>,
 }
 
@@ -189,7 +184,6 @@ impl MeshArena {
             limits,
             dirty_vertices: Vec::new(),
             dirty_indices: Vec::new(),
-            unused: (0, 0),
             gpu: None,
         };
         let (vertices, indices) = cube();
@@ -211,11 +205,6 @@ impl MeshArena {
 
     pub(super) fn rows(&self) -> &[MeshRow] {
         &self.rows
-    }
-
-    /// Vertices and indices no row uses since replacements moved.
-    pub(super) fn unused(&self) -> (u32, u32) {
-        self.unused
     }
 
     /// Add a mesh at the end of the arena.
@@ -254,45 +243,6 @@ impl MeshArena {
         self.dirty_indices.push(row.indices());
         self.rows.push(MeshRow { bounds, ..row });
         Ok(id)
-    }
-
-    /// Replace a mesh's contents, keeping its `MeshId`.
-    pub(super) fn replace(
-        &mut self,
-        mesh: MeshId,
-        vertices: &[MeshVertex],
-        indices: &[u32],
-    ) -> Result<(), ArenaError> {
-        let old = *self.row(mesh).ok_or(ArenaError::UnknownMesh)?;
-        if mesh <= MeshId::CUBE_REVERSED {
-            return Err(ArenaError::Fixed);
-        }
-        let bounds = check(vertices, indices)?;
-        let (vertex_count, index_count) = counts(vertices, indices)?;
-        let row = if vertex_count <= old.vertex_count && index_count <= old.index_count {
-            let base = old.base_vertex as usize;
-            let first = old.first_index as usize;
-            self.vertices[base..base + vertices.len()].copy_from_slice(vertices);
-            self.indices[first..first + indices.len()].copy_from_slice(indices);
-            self.dirty_vertices.push(base..base + vertices.len());
-            self.dirty_indices.push(first..first + indices.len());
-            self.unused.0 += old.vertex_count - vertex_count;
-            self.unused.1 += old.index_count - index_count;
-            MeshRow {
-                first_index: old.first_index,
-                index_count,
-                base_vertex: old.base_vertex,
-                vertex_count,
-                bounds,
-            }
-        } else {
-            let row = self.append(vertices, indices, bounds)?;
-            self.unused.0 += old.vertex_count;
-            self.unused.1 += old.index_count;
-            row
-        };
-        self.rows[mesh.0 as usize] = row;
-        Ok(())
     }
 
     fn append(
@@ -493,16 +443,6 @@ fn cube() -> (Vec<MeshVertex>, Vec<u32>) {
         .map(|&index| u32::from(index))
         .collect();
     (vertices, indices)
-}
-
-/// Each physical row's mesh row, from the upload's physical order and the
-/// per-logical-slot meshes. The camera-visible list holds physical rows, so
-/// this is the table a compacted draw reads.
-pub(super) fn physical_meshes(physical_to_slot: &[u32], slot_meshes: &[MeshId]) -> Vec<u32> {
-    physical_to_slot
-        .iter()
-        .map(|&slot| slot_meshes[slot as usize].row())
-        .collect()
 }
 
 #[cfg(test)]
