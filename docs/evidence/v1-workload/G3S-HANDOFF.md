@@ -81,8 +81,12 @@ The Codex goal remains active. Its attachment is
   769,004/812,485 in frame 72 under the ideal straight-chord model.
   Only 327 and zero of those frames' partial receivers have one
   original edge spanning the aperture. Park both sharing paths.
-  Review a continuous multi-edge representation alongside the
-  existing filtered path. Runtime awaits capacity and fallback.
+  On the row-665 Metal witness, the stock taps fall to zero in frame
+  227 while dense integration of the same depth field retains
+  2.49–3.65% visibility. The blocker count stays six and the radius
+  changes by about 0.06 texels. Design a bounded filter with explicit
+  limb support before changing the shader. The disk oracle remains
+  separate from the cascade approximation. Runtime awaits validation.
   Rerun from `tmp/g3s-sunset-lip/M3-RESEARCH.md`.
 
 - Historical M2 star captures predate the orientation correction. The Mac's lossless 1080p60 masters
