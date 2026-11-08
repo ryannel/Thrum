@@ -41,6 +41,10 @@ pub struct GameSetup {
     pub camera_culling: CullMode,
     /// Prepare the authored valley's star field. Ignored for the flythrough field.
     pub valley_stars: bool,
+    /// Draw the flythrough field's props as a rock, a column and a spruce,
+    /// some mirrored, instead of boxes. Ignored for the grid; refused with
+    /// Occlusion, which keeps the cube.
+    pub field_meshes: bool,
 }
 
 impl Default for GameSetup {
@@ -49,6 +53,7 @@ impl Default for GameSetup {
             content: GameContent::Grid,
             camera_culling: CullMode::Direct,
             valley_stars: false,
+            field_meshes: false,
         }
     }
 }

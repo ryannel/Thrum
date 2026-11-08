@@ -98,6 +98,7 @@ fn main() {
                         content: GameContent::Field,
                         camera_culling,
                         valley_stars: false,
+                        field_meshes: false,
                     },
                 )
                 .await
