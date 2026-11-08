@@ -1,0 +1,13 @@
+
+running 1 test
+m1 queue submit id=QueueId(0,1) count=1
+m1 queue submit id=QueueId(0,1) count=1
+m1 queue submit id=QueueId(0,1) count=1
+m1 queue submit id=QueueId(0,1) count=1
+m1 queue submit id=QueueId(1,1) count=1
+m1 queue submit id=QueueId(1,1) count=1
+m1 queue submit id=QueueId(1,1) count=1
+cooked generation=1 epoch=WorldEpoch(1) tick=0 timeline=0 changed_pixels=0
+test host::tests::recovery_gpu::cooked_noon_readback_matches_after_device_destroy ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 48 filtered out; finished in 3.48s

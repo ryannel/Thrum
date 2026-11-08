@@ -1,0 +1,7 @@
+valid synthetic fixture passes
+rejects old empty submit
+rejects world tick never advances
+rejects changed acknowledged endpoint
+rejects cooked generation never redrawn
+rejects post-recovery camera input outside recording
+rejects one-byte paused pixel change
