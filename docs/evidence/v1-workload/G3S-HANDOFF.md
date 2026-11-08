@@ -347,7 +347,7 @@ The Codex goal remains active. Its attachment is
   rejected the first SMRT design before implementation. Sixteen binary
   rays resolve only 6.25 pp steps. All eight stored-field rows resolve
   below that in the dense PCSS control. The shipped shader is unchanged.
-  See the [current milestone plan](../../design/modules/ATMOSPHERE-PLAN.md#m3-the-west-lookouts-shadow-crosses-the-ground-without-a-flash-in-progress).
+  See the [current milestone plan](../../design/modules/ATMOSPHERE-PLAN.md#m3-sunset-crossing).
 
 - Contour-area PCSS recovers the row-665 limb on all eight saved D32
   receivers. The literal query refused all eight at 16 intersecting

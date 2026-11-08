@@ -40,7 +40,7 @@ continue unblocked work. Verified checkpoints are pushed to main (owner, 6 Nov p
 
 ## Active work and gates
 
-**Now: finish G3s sky, Sun, sunset and twilight.** Functional G3b proceeds on its own owners; G2S is closed.
+**Now: qualify the G3b Mac frame runtime.** The G3s sunset crossing is parked for fresh-context diagnosis; G2S is closed.
 The native Metal recorder stays in G3t. The later dedicated performance phase owns numeric tuning.
 
 - [x] **G0 — integrity and baselines.** Real Metal regressions fail without a device; no successful skips. One baseline
@@ -79,6 +79,7 @@ The native Metal recorder stays in G3t. The later dedicated performance phase ow
   shows twilight. The native cooked valley uses the same Sky, metre-scale camera and cooked Sun casters.
   Eight-wavelength transport yields blue twilight in the valley. Radiance accuracy, shadow polish and live motion remain.
   [Night milestones](design/modules/ATMOSPHERE-PLAN.md) qualified the moonless valley and stars on Metal and Chrome.
+  The [west-lookout crossing](design/modules/ATMOSPHERE-PLAN.md#m3-sunset-crossing) is parked at 0/3. The stock graph ships and the frozen motion and controls stay available for diagnosis.
   [Partial evidence](evidence/v1-workload/G3S-FIRST-LIGHT-2026-11-06.md). Follow the Broadsides reading map and PD/CC0 rules.
 - [ ] **G3t — tile dataflow and Metal boundary.** Direct forward output, derived memoryless/transient attachments,
   mapped upload ring, compact instances, GPU light binning, mirrored ranges, shared targets and one scene/present graph.
