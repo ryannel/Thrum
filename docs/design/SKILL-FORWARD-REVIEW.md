@@ -1,5 +1,9 @@
 # Independent forward test — engine skills
 
+> **Superseded for process (8 November 2026).** How work runs is now in
+> [AI development: how work runs](AI-DEVELOPMENT.md#how-work-runs) and the level-named skills. This document is kept as
+> the record of the 31 October–1 November skill forward test; its process instructions (model and effort, delegation, coordination) no longer apply.
+
 Tested 31 October–1 November 2026 against two realistic requests without prior skill rationale, reviewer conclusions or existing engine module designs. Generated isolated answer artifacts; exact selected evaluation outputs are retained in the handoff below (test artifacts, not adopted engine designs):
 
 - [A: reusable custom-host architecture commissions](../evidence/handoffs/2026-11-01-engine-design/skill-forward-A.md)

@@ -41,7 +41,7 @@ Use idiomatic Rust: modules express ownership, types distinguish identities/unit
 `Result` carries expected failure, and public APIs document invariants and error behavior. Avoid hidden
 global state, unchecked assumptions at external boundaries and blanket lint suppression. Workspace lints
 forbid unsafe code by default; a future necessary adapter must justify a narrow exception and its safety
-invariants in review. The [engine contributor skill](.agents/skills/engine-contributor/SKILL.md) records how
+invariants in review. The [build-milestone skill](.agents/skills/build-milestone/SKILL.md) records how
 to choose work, match rigour to state and shape code.
 
 Add a crate only for a demonstrated boundary, reuse or platform/build need. Register it in
@@ -84,8 +84,9 @@ integrated workload and unchanged quality/correctness constraints in [AI perform
 ## Review and evidence
 
 Explain the result, rationale, tests actually run and remaining limits. Update the owning specification
-and maturity entry when behavior or evidence changes. Visible output passes the agent visual review loop in the
-[engine contributor skill](.agents/skills/engine-contributor/SKILL.md#verify); owner feedback is asynchronous and never blocks work. Current document hashes can be refreshed after
+and maturity entry when behavior or evidence changes. Visible output is captured and checked as in the
+[build-milestone skill](.agents/skills/build-milestone/SKILL.md#verify), and milestones marked for review close through
+[review-milestone](.agents/skills/review-milestone/SKILL.md); owner feedback is asynchronous and never blocks work. Current document hashes can be refreshed after
 reviewing the diff; this does not update historical review hashes or promote any maturity status.
 Documentation-only changes need `./dev check-docs`, not an unrelated engine test campaign.
 

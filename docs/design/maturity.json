@@ -2114,7 +2114,7 @@
         "A03",
         "A05"
       ],
-      "current_design_sha256": "becaf05714ca88f1fe92c120c8ddf6a523da8048cb7a22cfccc547bd023a96e0",
+      "current_design_sha256": "9c412c227a23a8514d198f5067373b694202d7ce579239e89c104ec21fc3e939",
       "current_design_delta": "C4 source/run consumers and R0 pass/resource, preparation, lease and device-loss contract selected on paper. The cross-owner limit review keeps a concrete R0 output-extent and cross-frame allocation schedule open; no GPU implementation or device measurements are claimed. Prior reviewed hash retained.",
       "architecture_selection_review": {
         "status": "reconciled_for_selected_scope",
@@ -2157,7 +2157,7 @@
       },
       "reviewed_design_sha256": "23eb7fcefacef23c4d808b5beab796b08e1854b4d64316ad174374727b50bfe8",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
-      "current_design_sha256": "becaf05714ca88f1fe92c120c8ddf6a523da8048cb7a22cfccc547bd023a96e0",
+      "current_design_sha256": "9c412c227a23a8514d198f5067373b694202d7ce579239e89c104ec21fc3e939",
       "current_design_delta": "C4 source/run consumers and R0 packet/view identity plus masked/shadow extraction contract selected on paper. A separate offline terrain final-triangle certificate checks one 257\u00b2 source/product geometry profile, including actual f32 heights, protected sill, bank and seam, but no render LOD/runtime binding. Renderer implementation and visual/device proof remain open. Prior reviewed hash retained.",
       "architecture_selection_review": {
         "status": "reconciled_for_selected_scope",
@@ -2210,7 +2210,7 @@
         "A03",
         "A05"
       ],
-      "current_design_sha256": "becaf05714ca88f1fe92c120c8ddf6a523da8048cb7a22cfccc547bd023a96e0",
+      "current_design_sha256": "9c412c227a23a8514d198f5067373b694202d7ce579239e89c104ec21fc3e939",
       "current_design_delta": "C4 source/run consumers, bounded R0 material/light/display handoff and bounded R3 regional transport reconciled. The limit review requires pre-arithmetic f32 range proof, a diagnostic current-frame late-overflow path and coherent accepted temporal metadata. Actual-interface focus and runtime, visual and device proof remain open. Prior reviewed hash retained.",
       "architecture_selection_review": {
         "status": "reconciled_for_selected_scope",
@@ -2253,7 +2253,7 @@
       },
       "reviewed_design_sha256": "23eb7fcefacef23c4d808b5beab796b08e1854b4d64316ad174374727b50bfe8",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
-      "current_design_sha256": "becaf05714ca88f1fe92c120c8ddf6a523da8048cb7a22cfccc547bd023a96e0",
+      "current_design_sha256": "9c412c227a23a8514d198f5067373b694202d7ce579239e89c104ec21fc3e939",
       "current_design_delta": "C4 source/run consumers and R0 fixed SDR/spatial display contract selected on paper. The pinned FXAA HLSL reference and isolated WGSL port matched RGB exactly on 1,978,368 selected Metal pixels. The unchanged shader is retained as a notice-carrying standalone implementation input with a fresh independent regression. Three serial-completion 720p isolated timing runs were valid; a later 1080p ablation isolated invalid same-submission counter resolves and obtained 432/432 valid delayed-resolve pairs across three processes, with 144\u2013146 \u00b5s GPU stage medians. Native command-buffer span, admitted F4/V1/V4 graph promotion, ordinary moving-game visual acceptance and full runtime/device cost remain open. Prior reviewed hash retained.",
       "architecture_selection_review": {
         "status": "reconciled_for_selected_scope",
@@ -2294,7 +2294,7 @@
       },
       "reviewed_design_sha256": "23eb7fcefacef23c4d808b5beab796b08e1854b4d64316ad174374727b50bfe8",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
-      "current_design_sha256": "becaf05714ca88f1fe92c120c8ddf6a523da8048cb7a22cfccc547bd023a96e0",
+      "current_design_sha256": "9c412c227a23a8514d198f5067373b694202d7ce579239e89c104ec21fc3e939",
       "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
       "architecture_selection_review": {
         "status": "reconciled_for_selected_scope",
@@ -3033,7 +3033,7 @@
     "ARCHITECTURE-DECISIONS.md",
     "BASELINE-SPEC.md"
   ],
-  "contract_sha256": "793e966bc4f08f11e02287c1ec3aa23b95d86355536385cb65e759ba96e2c09e",
+  "contract_sha256": "6f191f32eb9611df62b05389b574159ada366efe2dc6581d9ac849569c963d8e",
   "composition_supplement": {
     "design": "COMPOSITION.md",
     "decision": "selected",
@@ -3778,7 +3778,7 @@
     "record": "ARCHITECTURE-DECISIONS.md",
     "record_sha256": "0ec345f0ed162c3c0c6898fb3913a8952f5b4d65d75f1cf3ff6270c9f58725b4",
     "contract_revision": "C4",
-    "contract_sha256": "793e966bc4f08f11e02287c1ec3aa23b95d86355536385cb65e759ba96e2c09e",
+    "contract_sha256": "6f191f32eb9611df62b05389b574159ada366efe2dc6581d9ac849569c963d8e",
     "specifications": {
       "BASELINE-SPEC.md": "8710e74f47e18788951fd1118883fbdf28d32510f336fb0b9cf3a279d4e5509b",
       "FOUNDATION-SPEC.md": "9293b1eb3beb690d96f88d5fcb8260fc42a1d21c2688fbe515a05e8f3027c1e0",
@@ -4150,17 +4150,17 @@
     "record": "SIMPLIFICATION-REVIEW.md",
     "record_sha256": "4077358422c06ab2426742834168c0bd419809ad59268d0da765c5ba0ed29c3e",
     "current_files": {
-      "AI-DEVELOPMENT.md": "af89ad8be38ee5e2df432179490f04953c96dfd4b0f155ff1c60969188596a21",
+      "AI-DEVELOPMENT.md": "a0f87a80085da7ac97ec663e9717fed05fcfc758673803a60deb07e15580564b",
       "AI-PERFORMANCE.md": "84cc89f0331c38dde12d87a114311bdeb9fd705caf359926322412786576d077",
       "ARCHITECTURE-AUDIT.md": "378286904828c06f460ed808bf24a6bb8aad3382b7d4f9c866754522f124938b",
-      "ARCHITECTURE-BRIEF.md": "0db033cae315b8ddc36241a6dd5d48eb30b2023db1135a75ad58326fd15a4b88",
+      "ARCHITECTURE-BRIEF.md": "5f2bc85981334b7ff3492249f39f9c9b2cd2e3fb386aa9656fa3379a5a1881e9",
       "ARCHITECTURE-DECISIONS.md": "0ec345f0ed162c3c0c6898fb3913a8952f5b4d65d75f1cf3ff6270c9f58725b4",
       "BASELINE-SPEC.md": "8710e74f47e18788951fd1118883fbdf28d32510f336fb0b9cf3a279d4e5509b",
       "CAPABILITY-SURVEY.md": "bd88f686bc3dcf56fc38009f2567df2d0200ffc23fea0ad16b406007c8c96530",
       "COMPOSITION.md": "392c9254d576fe771ff98f0b4937c41f0ec7ef90079e77d7155b83c0a4b40d01",
       "CONSTRUCTION-PLAN.md": "722c548d62132c80af79354056d7d14e023102133a678487bbd82f3f3887f660",
-      "CONTRACTS.md": "793e966bc4f08f11e02287c1ec3aa23b95d86355536385cb65e759ba96e2c09e",
-      "DESIGN-PROGRAMME.md": "0fcbaa525bec8a06485adf6e14f8eeb2178efcbc3ccb11d575caba1a788844e2",
+      "CONTRACTS.md": "6f191f32eb9611df62b05389b574159ada366efe2dc6581d9ac849569c963d8e",
+      "DESIGN-PROGRAMME.md": "eb4176168883dfe2fc651a06a9471fe3ed3bf9d1aacf2358e86794a8332714db",
       "ENGINE-EXPERIENCE.md": "f7994f89bfc995feb6a2a69cf58b382c4b788f552c9f0e36c116f3d2a9f2ea05",
       "ENGINE-STRUCTURE-RESEARCH.md": "aa05d06102a9dc9bd53505538188c728fa13ab58f72d33597c6d945e2ddc9a28",
       "FIRST-USE-WALKTHROUGHS.md": "777b91e4cf28be8819a0d0d69a44f6447ee2ba9bf8f5de62d8534d8d118f0e17",
@@ -4174,12 +4174,12 @@
       "PERFORMANCE-WALKTHROUGHS.md": "d66c05bf7d604443fafdf707c9be233d5d0eca9c00af0f914a30263a49aa379c",
       "PLAN-REVIEW.md": "b5db8c9779185cda35b0f27349a14676bc0dc3c8b0a8a1fe4a3252b25728ddce",
       "PLAY-ENVIRONMENT-SPEC.md": "e2dce8e340fd1825a6ecf4c063cb26791abb7d121fa33b22cf45aac6de28bf94",
-      "README.md": "fdb4dd47fc04da0fe7bbcdae4e76c173131d4624a301f0a85dbcf6cfd85d52b1",
+      "README.md": "00cfcfe785274138973c178cd5cebaa1ff00cead8889b89854f763ace2e76c66",
       "RENDER-SPEC.md": "ed808298316306669012f05bea38aff6f84691b1406855118579cfc291cf82a6",
       "SCENARIO-WALKTHROUGHS.md": "50ff7acd4100a8742ea6682f3f08e64e2ad9862ce3e2fbff78bf69e37046daff",
       "SIMPLIFICATION-REVIEW.md": "4077358422c06ab2426742834168c0bd419809ad59268d0da765c5ba0ed29c3e",
-      "SKILL-FORWARD-REVIEW.md": "63b02385a26c07a826cbbd050fc11480f512b18d692b6f395fd82d39219a76ce",
-      "SKILL-WORKFLOW.md": "da508f582d6b53b7dc5550ffb7a88890a0e618944592b82ec0ac9cf540ed7e20",
+      "SKILL-FORWARD-REVIEW.md": "eb0d8d9b9eb5680f917e856601f422f97e0a97ea6d4483fc226ad2df6b21d3ae",
+      "SKILL-WORKFLOW.md": "68dec128c3cb0d8804e65e518167a08899651716111c6cbcfb41e0387e2fe120",
       "STORAGE-LIFECYCLE.md": "0395c9cbf5ef66b799aeb9fbd65ca9cb76f3707a11d8079ed0acd85854bc404e",
       "SYSTEM-DESIGN.md": "25df14a7a19a504df481539cddd6d312722b20d935cbf54e7f64ab4cdfc06566",
       "TRAVELLER-APP.md": "93edf76b93b66f47a2db7b132bbfa56c8d2e2572343694a15dcad51c9060a25d",
@@ -4189,7 +4189,7 @@
       "modules/NETWORKING.md": "2e32bdf2e57737a88b957380da801de21bf287b6cba6f15144530f635f778494",
       "modules/PLATFORM-RUNTIME.md": "f523773b41ebf68dbed1767ee98334ae2fc569102cf7e7a1dab21e450fe683c1",
       "modules/PLAY-SYSTEMS.md": "86279be04e72643989cecc3a0e562fa4c948fa27c956180dbe6079c830efcd57",
-      "modules/RENDERING.md": "becaf05714ca88f1fe92c120c8ddf6a523da8048cb7a22cfccc547bd023a96e0",
+      "modules/RENDERING.md": "9c412c227a23a8514d198f5067373b694202d7ce579239e89c104ec21fc3e939",
       "modules/TOOLS-DELIVERY.md": "242035edb43a8e414f839fed4fd4949969967d9d0859e7344be001d237c4e088",
       "modules/WORLD-CONTENT.md": "2f930ec628acfdc3a198a1b47dd752fff27fc7b552c73ac8c982f2c03a61cca2"
     },

@@ -1,4 +1,0 @@
-interface:
-  display_name: "Engine Architecture"
-  short_description: "Design cohesive engine boundaries and shared contracts"
-  default_prompt: "Use $engine-architecture to design the whole engine against its required games, platforms and shared contracts."
