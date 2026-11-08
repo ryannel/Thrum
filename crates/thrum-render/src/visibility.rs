@@ -158,7 +158,7 @@ pub(crate) struct OcclusionTarget {
 impl VisibilityPrepared {
     /// Prepare for at most `capacity` instance slots and a stable mesh table.
     pub(crate) fn new(
-        device: &wgpu::Device,
+        device: &crate::runtime::DeviceSite,
         queue: &wgpu::Queue,
         key: PipelineKey,
         capacity: u32,
@@ -219,7 +219,7 @@ impl VisibilityPrepared {
             ),
         });
         let pipeline = |entry: &str| {
-            device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+            device.compute(&wgpu::ComputePipelineDescriptor {
                 label: Some("camera visibility"),
                 layout: Some(&pipeline_layout),
                 module: &shader,

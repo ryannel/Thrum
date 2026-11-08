@@ -26,11 +26,24 @@ use crate::{
 };
 use thrum_core::sim::{WorldAdvance, WorldPublication};
 
+#[cfg(feature = "creation-counters")]
+mod creation;
+#[cfg(not(feature = "creation-counters"))]
+#[path = "runtime/creation_off.rs"]
+mod creation;
 mod device;
 mod preparation;
 mod tokens;
 #[cfg(not(target_arch = "wasm32"))]
 mod visual;
+#[cfg(not(feature = "creation-counters"))]
+use creation::CreationPhase;
+#[cfg(feature = "creation-counters")]
+pub use creation::{
+    CreationCounts, CreationPhase, CreationReport, CreationRow, CreationViolation, Instrumentation,
+    NativeSites, PipelineKind, PipelineRow,
+};
+pub use creation::{CreationRegion, DeviceSite};
 pub use device::{DevicePrepareInputs, PreparedDevice};
 pub use tokens::{AdvancedFrame, EncodedFrame};
 #[cfg(not(target_arch = "wasm32"))]
@@ -357,6 +370,9 @@ pub struct FrameHost<W: FrameWorld, V: SceneSource<W::Page>> {
     visual_owner: Arc<()>,
     contribution: Option<Box<dyn SceneContribution>>,
     contribution_error: Option<String>,
+    creations: creation::Ledger,
+    #[cfg(feature = "creation-counters")]
+    retired_creations: Option<CreationReport>,
 }
 
 impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
@@ -377,6 +393,9 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         {
             return Err("attach a scene contribution with no frames in flight".to_owned());
         }
+        let _region = self
+            .creations
+            .region(CreationPhase::Transition, "contribution");
         contribution.rebuild(&self.prepared.scene_surface(&self.queue))?;
         let passes = contribution.passes();
         self.declare_contribution_passes(passes)
@@ -512,6 +531,8 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 "initial extraction source does not match its publication",
             ));
         }
+        let creations = capabilities.device().ledger();
+        let build = creations.region(CreationPhase::Build, "host");
         let mut changed_slots = Vec::with_capacity(capacity);
         let initial_scene_apply = scene.apply_render_columns(extractor.frame(), &mut changed_slots);
         let initial_frame = source
@@ -538,8 +559,10 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             None => None,
         };
         gpu.bind_presenter(presenter.as_ref())?;
+        drop(build);
+        creations.ready();
         Ok(Self {
-            device: device.clone(),
+            device: wgpu::Device::clone(device),
             queue: queue.clone(),
             capture_owner: Arc::new(()),
             presentation_lead: Duration::ZERO,
@@ -571,6 +594,9 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             visual_owner: Arc::new(()),
             contribution: None,
             contribution_error: None,
+            creations,
+            #[cfg(feature = "creation-counters")]
+            retired_creations: None,
         })
     }
 
@@ -586,6 +612,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             contribution_passes: self.prepared.contribution_passes(),
             render_extent: self.render_extent,
             owner: Arc::clone(&self.visual_owner),
+            creations: self.creations.detach(),
         }
     }
 
@@ -630,6 +657,8 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         if self.pending_frames() != 0 {
             return Ok(false);
         }
+        let creations = self.creations.clone();
+        let _region = creations.region(CreationPhase::Transition, "publish-visual");
         let scene = candidate.scene.as_mut().ok_or(FrameError::InvalidState(
             "visual candidate already published",
         ))?;
@@ -734,11 +763,29 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.dropped_surface
     }
 
+    /// GPU object creations on the current device generation by thread and
+    /// phase, with any pipeline built in play after readiness. Native-object
+    /// sites are reported absent; an uninstrumented backend reports so.
+    #[cfg(feature = "creation-counters")]
+    pub fn creation_report(&self) -> CreationReport {
+        self.creations.report()
+    }
+
+    /// The final creation report of the device generation the last device
+    /// replacement retired, if any.
+    #[cfg(feature = "creation-counters")]
+    pub fn retired_creation_report(&self) -> Option<&CreationReport> {
+        self.retired_creations.as_ref()
+    }
+
     /// Recompile the surface extent declaration after the platform configures
     /// a nonzero replacement; in-flight old textures remain GPU-owned.
     /// # Errors
     /// Refuses an invalid extent or a host without a surface presenter.
     pub fn resize_surface(&mut self, extent: [u32; 2]) -> Result<(), FrameError> {
+        let _region = self
+            .creations
+            .region(CreationPhase::Transition, "resize-surface");
         self.presenter
             .as_mut()
             .ok_or_else(|| "host has no surface presenter".to_owned())?
@@ -1206,6 +1253,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         let done = Arc::clone(&slot.render_done);
         self.queue
             .on_submitted_work_done(move || done.store(true, Ordering::Release));
+        self.creations.frame();
         slot.target.map_culling_stats(
             self.prepared.camera_culling(),
             self.prepared.active_instance_count(),
@@ -1251,6 +1299,8 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     /// # Errors
     /// Returns a GPU encode or submission error.
     pub fn begin_capture(&mut self) -> Result<PendingCapture, FrameError> {
+        let creations = self.creations.clone();
+        let _region = creations.region(CreationPhase::Transition, "capture");
         let needs_extract = self.extractor.frame().source().is_none_or(|source| {
             source.epoch != self.world.source().epoch
                 || source.timeline != self.world.source().timeline

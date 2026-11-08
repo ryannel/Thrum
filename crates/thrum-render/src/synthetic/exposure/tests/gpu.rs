@@ -139,7 +139,7 @@ fn gpu_meter_calibration_fixed_bits_bounds_zero_and_invalid_inputs() {
         serial_bytes[8..12].copy_from_slice(&17_u32.to_le_bytes());
         queue.write_buffer(&serials, 0, &serial_bytes);
         let exposure = ExposureResolve::new(
-            &device,
+            &crate::runtime::DeviceSite::untracked(wgpu::Device::clone(&device)),
             &light_buffer,
             &serials,
             ExposureResolve::allocate_samples(&device),

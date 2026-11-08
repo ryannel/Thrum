@@ -112,7 +112,7 @@ impl ExposureResolve {
     }
 
     pub(super) fn new(
-        device: &wgpu::Device,
+        device: &crate::runtime::DeviceSite,
         directional: &wgpu::Buffer,
         serials: &wgpu::Buffer,
         samples: [wgpu::Buffer; 2],
@@ -174,7 +174,7 @@ impl ExposureResolve {
             bind_group_layouts: &[Some(&layout)],
             immediate_size: 0,
         });
-        let pipeline = device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+        let pipeline = device.compute(&wgpu::ComputePipelineDescriptor {
             label: Some("camera exposure resolve"),
             layout: Some(&pipeline_layout),
             module: &shader,

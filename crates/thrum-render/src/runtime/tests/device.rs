@@ -860,7 +860,7 @@ fn gpu_device_replacement_abandons_slots_and_isolates_old_candidates_and_callbac
         );
         assert_eq!(host.world.source(), world);
         assert_eq!(host.generation, 8);
-        assert_eq!(host.device, *replacement.device());
+        assert_eq!(host.device, **replacement.device());
         assert_eq!(host.next_submission_order, order);
         assert_eq!(host.dropped_reports, dropped + IN_FLIGHT as u64);
         assert_eq!(host.pending_frames(), 0);
@@ -1193,6 +1193,8 @@ fn gpu_pending_capture_is_refused_by_another_device_with_the_same_generation() {
     });
 }
 
+#[cfg(feature = "creation-counters")]
+mod creation;
 mod view_history;
 
 struct RecoveryContribution {

@@ -42,7 +42,7 @@ pub(super) struct StarTarget {
 
 impl StarPrepared {
     pub(super) fn new(
-        device: &wgpu::Device,
+        device: &crate::runtime::DeviceSite,
         records: &[[f32; 4]],
         max_storage_bytes: u64,
         light: &[u8; LIGHT_BYTES],
@@ -85,7 +85,7 @@ impl StarPrepared {
             dst_factor: wgpu::BlendFactor::One,
             operation: wgpu::BlendOperation::Add,
         };
-        let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+        let pipeline = device.render(&wgpu::RenderPipelineDescriptor {
             label: Some(PASS_NAME),
             layout: None,
             vertex: wgpu::VertexState {

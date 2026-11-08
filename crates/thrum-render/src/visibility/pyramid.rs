@@ -31,7 +31,7 @@ pub(crate) fn previous_pow2(n: u32) -> u32 {
 }
 
 impl PyramidPrepared {
-    pub(crate) fn new(device: &wgpu::Device) -> Self {
+    pub(crate) fn new(device: &crate::runtime::DeviceSite) -> Self {
         let storage = wgpu::BindGroupLayoutEntry {
             binding: 1,
             visibility: wgpu::ShaderStages::COMPUTE,
@@ -73,7 +73,7 @@ impl PyramidPrepared {
                 bind_group_layouts: &[Some(layout)],
                 immediate_size: 0,
             });
-            device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+            device.compute(&wgpu::ComputePipelineDescriptor {
                 label: Some(PASS),
                 layout: Some(&pipeline_layout),
                 module: &shader,

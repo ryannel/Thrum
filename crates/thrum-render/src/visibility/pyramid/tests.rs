@@ -196,7 +196,9 @@ pub(in crate::visibility) fn build(
     depth: &wgpu::TextureView,
     extent: [u32; 2],
 ) -> PyramidTarget {
-    let prepared = PyramidPrepared::new(device);
+    let prepared = PyramidPrepared::new(&crate::runtime::DeviceSite::untracked(
+        wgpu::Device::clone(device),
+    ));
     let target = prepared.target(device, depth, extent);
     let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
     {

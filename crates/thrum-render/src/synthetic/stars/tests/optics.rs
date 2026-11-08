@@ -50,7 +50,7 @@ impl Probe {
     fn new(device: &gpu::Device, queue: &gpu::Queue) -> Self {
         let flux = [3.0, 6.0].map(|magnitude| 2.54e-6 * 10.0_f32.powf(-0.4 * magnitude));
         let stars = StarPrepared::new(
-            device,
+            &crate::runtime::DeviceSite::untracked(wgpu::Device::clone(device)),
             &std::array::from_fn::<_, 2, _>(|i| {
                 let [x, y, z] = DIRECTIONS[i].to_array();
                 [x, y, z, flux[i]]

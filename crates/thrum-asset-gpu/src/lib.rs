@@ -508,7 +508,7 @@ impl CookedAssets {
         let (resident_tx, resident_rx) = channel();
         let stop = Arc::new(AtomicBool::new(false));
         let loader = load::Loader {
-            device: surface.device.clone(),
+            device: wgpu::Device::clone(surface.device),
             ring: staging::StagingRing::new(
                 surface.device,
                 self.config.upload_budget,

@@ -232,7 +232,7 @@ pub(crate) struct Target {
     pub(crate) generation: u64,
     /// Counts surfaces the contribution has been rebuilt for.
     pub(crate) epoch: u64,
-    pub(crate) device: wgpu::Device,
+    pub(crate) device: thrum_render::runtime::DeviceSite,
     pub(crate) scene_source: Arc<str>,
     pub(crate) layout: wgpu::PipelineLayout,
     pub(crate) fragment_entry: &'static str,
@@ -290,60 +290,58 @@ fn combine(scene_source: &str, hook: &str) -> Result<Combined, String> {
 /// pipeline uses, hooked or not.
 pub(crate) fn mesh_pipeline(target: &Target, module: &wgpu::ShaderModule) -> wgpu::RenderPipeline {
     let model_attributes = wgpu::vertex_attr_array![3 => Float32x4, 4 => Float32x4, 5 => Float32x4, 6 => Float32x4, 7 => Uint32];
-    target
-        .device
-        .create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("cooked mesh"),
-            layout: Some(&target.layout),
-            vertex: wgpu::VertexState {
-                module,
-                entry_point: Some("cooked_vertex"),
-                compilation_options: wgpu::PipelineCompilationOptions::default(),
-                buffers: &[
-                    Some(wgpu::VertexBufferLayout {
-                        array_stride: 12,
-                        step_mode: wgpu::VertexStepMode::Vertex,
-                        attributes: &wgpu::vertex_attr_array![0 => Float32x3],
-                    }),
-                    Some(wgpu::VertexBufferLayout {
-                        array_stride: 12,
-                        step_mode: wgpu::VertexStepMode::Vertex,
-                        attributes: &wgpu::vertex_attr_array![1 => Snorm16x2, 2 => Float32x2],
-                    }),
-                    Some(wgpu::VertexBufferLayout {
-                        array_stride: crate::draw::INSTANCE_BYTES,
-                        step_mode: wgpu::VertexStepMode::Instance,
-                        attributes: &model_attributes,
-                    }),
-                ],
-            },
-            primitive: wgpu::PrimitiveState {
-                cull_mode: Some(wgpu::Face::Back),
-                ..Default::default()
-            },
-            depth_stencil: Some(wgpu::DepthStencilState {
-                format: target.depth_format,
-                depth_write_enabled: Some(true),
-                depth_compare: Some(wgpu::CompareFunction::Greater),
-                stencil: wgpu::StencilState::default(),
-                bias: wgpu::DepthBiasState::default(),
-            }),
-            multisample: wgpu::MultisampleState::default(),
-            fragment: Some(wgpu::FragmentState {
-                module,
-                entry_point: Some(target.fragment_entry),
-                compilation_options: wgpu::PipelineCompilationOptions::default(),
-                targets: &target.color_formats.map(|format| {
-                    Some(wgpu::ColorTargetState {
-                        format,
-                        blend: None,
-                        write_mask: wgpu::ColorWrites::ALL,
-                    })
+    target.device.render(&wgpu::RenderPipelineDescriptor {
+        label: Some("cooked mesh"),
+        layout: Some(&target.layout),
+        vertex: wgpu::VertexState {
+            module,
+            entry_point: Some("cooked_vertex"),
+            compilation_options: wgpu::PipelineCompilationOptions::default(),
+            buffers: &[
+                Some(wgpu::VertexBufferLayout {
+                    array_stride: 12,
+                    step_mode: wgpu::VertexStepMode::Vertex,
+                    attributes: &wgpu::vertex_attr_array![0 => Float32x3],
                 }),
+                Some(wgpu::VertexBufferLayout {
+                    array_stride: 12,
+                    step_mode: wgpu::VertexStepMode::Vertex,
+                    attributes: &wgpu::vertex_attr_array![1 => Snorm16x2, 2 => Float32x2],
+                }),
+                Some(wgpu::VertexBufferLayout {
+                    array_stride: crate::draw::INSTANCE_BYTES,
+                    step_mode: wgpu::VertexStepMode::Instance,
+                    attributes: &model_attributes,
+                }),
+            ],
+        },
+        primitive: wgpu::PrimitiveState {
+            cull_mode: Some(wgpu::Face::Back),
+            ..Default::default()
+        },
+        depth_stencil: Some(wgpu::DepthStencilState {
+            format: target.depth_format,
+            depth_write_enabled: Some(true),
+            depth_compare: Some(wgpu::CompareFunction::Greater),
+            stencil: wgpu::StencilState::default(),
+            bias: wgpu::DepthBiasState::default(),
+        }),
+        multisample: wgpu::MultisampleState::default(),
+        fragment: Some(wgpu::FragmentState {
+            module,
+            entry_point: Some(target.fragment_entry),
+            compilation_options: wgpu::PipelineCompilationOptions::default(),
+            targets: &target.color_formats.map(|format| {
+                Some(wgpu::ColorTargetState {
+                    format,
+                    blend: None,
+                    write_mask: wgpu::ColorWrites::ALL,
+                })
             }),
-            multiview_mask: None,
-            cache: None,
-        })
+        }),
+        multiview_mask: None,
+        cache: None,
+    })
 }
 
 /// A compile result that may still be pending.
@@ -871,7 +869,15 @@ impl MaterialReload {
     /// Compile `job`, then each job that waited meanwhile, until none waits.
     fn compile_queue(&self, mut target: Target, mut job: Job) {
         loop {
+            // Compiles run during play, on this thread: declare them, so the
+            // creation guard charges them to a transition rather than play.
+            let region = target.device.transition(if job.restore {
+                "material-restore"
+            } else {
+                "material-reload"
+            });
             let mut candidate = Candidate::prepare(&target, job.hook, job.serial, job.requested);
+            drop(region);
             candidate.restore = job.restore;
             let mut state = self.state();
             state.post(candidate);

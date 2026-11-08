@@ -2,6 +2,7 @@
 
 use super::{
     FrameError, FrameHost, FrameWorld, SceneSource,
+    creation::{CreationPhase, Ledger},
     preparation::{PreparedScene, prepare_scene},
 };
 use crate::{
@@ -35,6 +36,7 @@ pub struct PreparedDevice {
     queue: wgpu::Queue,
     scene: Option<PreparedScene>,
     presenter: Option<SurfacePresenter>,
+    creations: Ledger,
 }
 
 impl PreparedDevice {
@@ -48,6 +50,7 @@ impl PreparedDevice {
                 "device replacement already published",
             ));
         }
+        let _region = self.creations.region(CreationPhase::Build, "device-resize");
         self.presenter
             .as_mut()
             .ok_or(FrameError::InvalidState(
@@ -80,6 +83,8 @@ impl DevicePrepareInputs {
                 "device replacement requires a different, newer device",
             ));
         }
+        let creations = capabilities.device().ledger();
+        let build = creations.region(CreationPhase::Build, "device");
         let mut scene = prepare_scene(
             capabilities,
             queue,
@@ -102,6 +107,7 @@ impl DevicePrepareInputs {
             None => None,
         };
         scene.bind_presenter(presenter.as_ref())?;
+        drop(build);
         Ok(PreparedDevice {
             base_generation: self.base_generation,
             owner: self.owner,
@@ -109,6 +115,7 @@ impl DevicePrepareInputs {
             queue: queue.clone(),
             scene: Some(scene),
             presenter,
+            creations,
         })
     }
 }
@@ -160,6 +167,8 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 "stale or foreign device replacement",
             ));
         }
+        let creations = candidate.creations.clone();
+        let build = creations.region(CreationPhase::Build, "publish-device");
         let scene = candidate.scene.as_mut().ok_or(FrameError::InvalidState(
             "device replacement already published",
         ))?;
@@ -172,7 +181,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             .dropped_reports
             .saturating_add(u64::try_from(discarded).unwrap_or(u64::MAX));
         self.completed.clear();
-        self.device = candidate.capabilities.device().clone();
+        self.device = wgpu::Device::clone(candidate.capabilities.device());
         self.queue = candidate.queue.clone();
         self.generation = candidate.capabilities.generation();
         self.prepared = scene.prepared;
@@ -182,6 +191,14 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.reset_replacement_history();
         self.visual_owner = Arc::new(());
         self.rebuild_contribution();
+        drop(build);
+        creations.ready();
+        let retired = std::mem::replace(&mut self.creations, creations);
+        #[cfg(feature = "creation-counters")]
+        {
+            self.retired_creations = Some(retired.retire());
+        }
+        drop(retired);
         Ok(())
     }
 }

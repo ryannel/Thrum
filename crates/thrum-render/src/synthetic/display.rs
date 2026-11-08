@@ -56,7 +56,7 @@ pub(super) struct DisplayTarget {
 }
 
 impl DisplayPrepared {
-    pub(super) fn new(device: &wgpu::Device) -> Self {
+    pub(super) fn new(device: &crate::runtime::DeviceSite) -> Self {
         let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("synthetic display layout"),
             entries: &[
@@ -91,7 +91,7 @@ impl DisplayPrepared {
             label: Some("synthetic authored SDR display"),
             source: wgpu::ShaderSource::Wgsl(SHADER.into()),
         });
-        let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+        let pipeline = device.render(&wgpu::RenderPipelineDescriptor {
             label: Some("prepared synthetic tone encode role"),
             layout: Some(&pipeline_layout),
             vertex: wgpu::VertexState {
