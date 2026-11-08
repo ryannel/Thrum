@@ -11,7 +11,9 @@ the module; what matters is below.
   so keep each one small enough that this stays cheap.
 - **Each milestone says how you'll know it's done.** List the checks and the views, speeds and references it's
   judged at, as boxes you tick when the evidence exists, with a link to it. Keep to what you would genuinely refuse to
-  call it done over, including a check that would catch the plausible wrong substitute. Ticking these is how progress
+  call it done over, including a check that would catch the plausible wrong substitute. Judge only what your module's
+  mechanisms produce: a cue that hinges on another owner's choices (route, camera, ship speed) uses a fixed reference
+  setup or moves to the milestone that integrates them. Ticking these is how progress
   inside a milestone shows. If what a milestone means has to change, edit it in the plan, say why in the log,
   update the design if the change alters what the module must do, and have the change reviewed.
 - **Break the work down your way.** List the work under each milestone at whatever grain helps you, each item
