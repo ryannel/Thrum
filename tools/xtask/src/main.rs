@@ -57,6 +57,8 @@ fn check_web() -> TaskResult {
             "--offline",
             "--package",
             "v1-game",
+            "--package",
+            "thrum-app",
             "--lib",
             "--target",
             "wasm32-unknown-unknown",
@@ -65,7 +67,8 @@ fn check_web() -> TaskResult {
         args.extend_from_slice(&["--", "-D", "warnings"]);
         cargo(&args)
     };
-    // The default page, and the development page with the material hook reload.
+    // The engine's web shell with the default page, and the development page with the
+    // material hook reload.
     lint(&[])?;
     lint(&["--features", "dev-material"])
 }

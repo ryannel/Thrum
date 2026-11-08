@@ -12,8 +12,8 @@ runtime alone; material reload does GPU work while lost. Brief `tmp/g3b-web-shel
 `tmp/g3b-web-shell/review-design.md` (Opus 5.5, 8 November). Recheck at 14fb0b8a: APPROVE WITH CHANGES (R1–R7, same
 report), all taken in this revision.
 Milestone: M1 Engine web shell carries the V1 page unchanged · Updated: 2026-11-08
-Now: loss gates and witnesses built and passing on today's facade ([evidence](../../evidence/v1-workload/G3B-LOSS-GATES-2026-11-08.md)); posted to Thrum Core as a seam diff
-Next: Thrum Core's verdict on that diff, then the pre-change reference runs and the extraction
+Now: loss gates posted to Thrum Core as a seam diff ([evidence](../../evidence/v1-workload/G3B-LOSS-GATES-2026-11-08.md)); the extraction is written and lints on wasm
+Next: pre-change reference runs on the witness commit, then the post-change checker, route and size runs, and review
 Blocked: none
 
 ## Problem
@@ -167,7 +167,7 @@ Thrum Core reviews these as an exact diff before they land:
 | `docs/design/modules/PLATFORM-RUNTIME.md` | Thrum Core | One sentence in the G3b section naming the web shell and linking this plan |
 | `examples/v1-game/Cargo.toml` | game | `thrum-app` in the wasm32 dependency table |
 | `examples/v1-game/src/browser.rs`, `browser/recovery.rs` | game | The two loss-gate changes first; then the facade over `WebShell`, and `recovery.rs` moves into the engine |
-| `examples/v1-game/src/host.rs`, `host/world.rs`, `host/scene_source.rs` | game | A constructor that returns `Runtime`; the game's edit functions (`set_time_of_day`, `set_camera_*`, `set_scene_camera`, `set_display_overlay`) compare through `&Runtime` and then take `&mut GameScene` only on a change, `set_controls` takes `&mut WorldPort`, and its reads (`controlled_position`, `tick`, `camera_orientation`, `time_of_day`) take `&Runtime`; `WebWorld` for the inline `WorldPort`. The wrapper's GPU methods (`encode_scene`, `publish_device` and so on) become `cfg(not(target_arch = "wasm32"))` |
+| `examples/v1-game/src/host.rs`, `host/web.rs` (new, wasm32), `host/scene_source.rs` | game | `host/web.rs` holds the game's side of the shell: a constructor that returns `Runtime`, `WebWorld` for the inline `WorldPort`, and edit functions over the shell (`set_time_of_day`, `set_camera_*`, `set_scene_camera`, `set_display_overlay`, `set_controls`) with reads (`controlled_position`, `tick`, `camera_orientation`, `time_of_day`). The edit checks are factored out of `host.rs`'s setters so both paths share them: they compare through `&GameScene` and the shell's `source_mut` is taken only on a change. `GameScene::select_camera` is shared the same way. The native wrapper is unchanged and not cfg-gated: the `rg` check covers only the browser facade, which no longer names it |
 
 Not changed: `examples/v1-game/web/index.html` (the page keeps RAF, DOM and input ownership), `web/build.sh`,
 `scripts/run_v1_showcase.py`, any `thrum-render` API, the macOS and iOS worlds, and the macOS `Game` trait.
@@ -249,15 +249,16 @@ Done when:
 - [ ] `./dev check` passes, and an independent review agrees. Its brief and verdict go on the Reviews line.
 
 Work:
-- [ ] Loss gates and witnesses on today's facade, in one change: the material refusal, the deferred attach, and the
+- [x] Loss gates and witnesses on today's facade, in one change: the material refusal, the deferred attach, and the
       three checker witnesses. Run on the base commit plus this change, then posted to Thrum Core as a seam diff with
       its evidence and landed first. Serves the witness items.
 - [ ] Pre-change reference: two runs of the full checker and the route check on the witness commit, recorded under
       `tmp/g3b-web-shell/`. Serves the checker, route and report items.
-- [ ] `thrum_app::web` with the shell, recovery, loss signal and gates moved from the game, `WebWorld`, and native
-      unit tests of `web::clock` (clamp, visibility ∘ pause, overload). Serves the ownership, witness and checker items.
-- [ ] The v1-game facade rewritten over `WebShell`; `recovery.rs` removed; the host wrapper's GPU methods cfg-gated
-      off wasm; the `rg` check. Serves the ownership item.
+- [x] `thrum_app::web` with the shell, recovery, loss signal and gates moved from the game, `WebWorld`, and native
+      unit tests of `web_clock` (origin, refusal, clamp, visibility ∘ pause, a play change moving the last time).
+      Overload recovery is the shell calling `pause` then `resume_after_drain` on `WebWorld`; it has no clock state. Serves the ownership, witness and checker items.
+- [x] The v1-game facade rewritten over `WebShell`; `recovery.rs` moved into the shell; the `rg` check prints
+      nothing. Both wasm feature sets and `thrum-app` lint clean. Serves the ownership item.
 - [ ] Checker, route and Wasm-size runs; review brief and review. Serves the remaining items.
 
 ## Reuse follow-up: a second game in Chrome (parked)

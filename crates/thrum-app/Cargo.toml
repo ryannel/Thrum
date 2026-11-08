@@ -4,7 +4,7 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 publish.workspace = true
-description = "Native macOS window, display link and render owner shared by Thrum games"
+description = "Application shells shared by Thrum games: the native macOS window, display link and render owner, and the browser WebGPU canvas shell"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 pollster = "=1.0.1"
@@ -17,6 +17,13 @@ winit = { version = "=0.30.13", default-features = false, features = ["rwh_06"] 
 objc2 = "=0.6.5"
 objc2-foundation = { version = "=0.3.2", default-features = false, features = ["NSObject", "NSRunLoop"] }
 objc2-quartz-core = { version = "=0.3.2", default-features = false, features = ["CABase", "CADisplayLink", "CAFrameRateRange"] }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+thrum-render = { path = "../thrum-render" }
+wgpu = { version = "=30.0.1", default-features = false, features = ["webgpu"] }
+wasm-bindgen = "=0.2.129"
+wasm-bindgen-futures = "=0.4.79"
+web-sys = { version = "=0.3.106", features = ["HtmlCanvasElement", "console"] }
 
 [lints]
 workspace = true

@@ -7,7 +7,10 @@
 //! look-at camera and cooked meshes, mapped from controls each frame. Start from
 //! `examples/starter`.
 //!
-//! The crate is empty on other targets; browser and mobile shells own their own loops.
+//! [`web`] (wasm32 only) is the browser shell: the WebGPU canvas surface and device, device-loss
+//! gating and detached replacement, the page clock policy, the frame step and typed counters. The
+//! page keeps its animation-frame loop, DOM events and input, and calls the shell; a game keeps
+//! its report text, controls and authored scene. Mobile shells own their own loops.
 
 #[cfg(target_os = "macos")]
 mod app;
@@ -15,6 +18,10 @@ mod app;
 mod game;
 #[cfg(target_os = "macos")]
 pub mod sky;
+#[cfg(target_arch = "wasm32")]
+pub mod web;
+#[cfg(any(target_arch = "wasm32", test))]
+mod web_clock;
 
 #[cfg(target_os = "macos")]
 pub use app::{REPORT_VARIABLE, run, run_until_closed};
