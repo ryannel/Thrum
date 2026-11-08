@@ -8,6 +8,9 @@
 //! 1920x1080. On a shared machine, each 300-tick segment also reports its
 //! paired medians beside the system load at its end, and the run asserts
 //! Occlusion hid work on some ticks so an inert history cannot pass.
+//! `THRUM_FIELD_MESHES=on` runs the mixed field (rock, column and spruce
+//! props) for Direct and Frustum only: Occlusion refuses meshes until its
+//! history follows slot identity.
 #![cfg(not(target_arch = "wasm32"))]
 
 use std::time::Duration;
@@ -83,8 +86,15 @@ fn main() {
             .expect("timestamp-capable device");
         let capabilities =
             DeviceCapabilities::capture(&adapter, &device, FrameHost::DEVICE_GENERATION);
+        let field_meshes = std::env::var("THRUM_FIELD_MESHES").is_ok_and(|value| value == "on");
+        let modes: &[CullMode] = if field_meshes {
+            &[CullMode::Direct, CullMode::Frustum]
+        } else {
+            &[CullMode::Direct, CullMode::Frustum, CullMode::Occlusion]
+        };
+        let occlusion = modes.len() == 3;
         let mut hosts = Vec::new();
-        for camera_culling in [CullMode::Direct, CullMode::Frustum, CullMode::Occlusion] {
+        for &camera_culling in modes {
             hosts.push(
                 FrameHost::new_with_setup(
                     &device,
@@ -99,7 +109,7 @@ fn main() {
                         camera_culling,
                         valley_stars: false,
                         route_overlay: v1_game::RouteOverlay::Off,
-                        field_meshes: false,
+                        field_meshes,
                     },
                 )
                 .await
@@ -107,7 +117,7 @@ fn main() {
             );
         }
         // [mode][metric]: whole, forward. Deltas: Frustum − Direct, Occlusion − Direct.
-        let mut rows: [[Vec<f64>; 2]; 3] = Default::default();
+        let mut rows: Vec<[Vec<f64>; 2]> = modes.iter().map(|_| Default::default()).collect();
         let mut deltas: [Vec<f64>; 2] = Default::default();
         // Occlusion − Frustum whole-frame ms: [behind cover, open].
         let mut against_frustum: [Vec<f64>; 2] = Default::default();
@@ -118,11 +128,11 @@ fn main() {
         for tick in 1..=WARMUP_TICKS + TICKS {
             let now = Duration::from_nanos(tick * TICK_NS + 1);
             // Rotate the order each tick, so no mode always runs first.
-            let first = usize::try_from(tick % 3).expect("small");
-            let order = [first, (first + 1) % 3, (first + 2) % 3];
+            let count = modes.len();
+            let first = usize::try_from(tick).expect("small") % count;
             let mut whole = [0.0; 3];
             let mut drawn = [0_u32; 3];
-            for index in order {
+            for index in (0..count).map(|step| (first + step) % count) {
                 let report = hosts[index].drive(now, None).expect("field tick");
                 assert!(
                     report.submitted && report.tick == tick,
@@ -144,20 +154,28 @@ fn main() {
             }
             if tick > WARMUP_TICKS {
                 segment[0].push(whole[1] - whole[0]);
-                segment[1].push(whole[2] - whole[1]);
+                if occlusion {
+                    segment[1].push(whole[2] - whole[1]);
+                }
                 if (tick - WARMUP_TICKS).is_multiple_of(SEGMENT) {
                     segments.push((
                         tick,
                         quantile(&mut segment[0], 0.5),
-                        quantile(&mut segment[1], 0.5),
+                        if occlusion {
+                            quantile(&mut segment[1], 0.5)
+                        } else {
+                            f64::NAN
+                        },
                         load(),
                     ));
                     segment = Default::default();
                 }
                 deltas[0].push(whole[1] - whole[0]);
-                deltas[1].push(whole[2] - whole[0]);
+                if occlusion {
+                    deltas[1].push(whole[2] - whole[0]);
+                }
                 // A count can retire after its frame; such ticks are left out.
-                if drawn[1] > 0 && drawn[2] > 0 {
+                if occlusion && drawn[1] > 0 && drawn[2] > 0 {
                     let open = usize::from(drawn[2] * 2 > drawn[1]);
                     against_frustum[open].push(whole[2] - whole[1]);
                 }
@@ -169,7 +187,7 @@ fn main() {
         #[expect(clippy::cast_precision_loss, reason = "small count")]
         let share = share / (TICKS / 30) as f64;
         println!(
-            "adapter={}; field {} instances; {}x{}; shadows on; {TICKS} ticks after {WARMUP_TICKS} warm-up; \
+            "adapter={}; field {} instances, meshes {field_meshes}; {}x{}; shadows on; {TICKS} ticks after {WARMUP_TICKS} warm-up; \
              rotating order, shared machine; mean in-view centres {:.1}%",
             adapter.get_info().name,
             GameContent::Field.entity_count(),
@@ -183,10 +201,12 @@ fn main() {
             );
         }
         assert!(
-            !against_frustum[0].is_empty(),
+            !occlusion || !against_frustum[0].is_empty(),
             "Occlusion hid at least half of Frustum's list on some counted tick"
         );
-        let [direct, culled @ ..] = &mut rows;
+        let [direct, culled @ ..] = rows.as_mut_slice() else {
+            unreachable!("Direct always runs")
+        };
         let direct = [
             (
                 quantile(&mut direct[0], 0.5),
