@@ -118,6 +118,9 @@ fn main() {
         }
         // [mode][metric]: whole, forward. Deltas: Frustum − Direct, Occlusion − Direct.
         let mut rows: Vec<[Vec<f64>; 2]> = modes.iter().map(|_| Default::default()).collect();
+        // [mode][pass] ms: near cascade, far cascade with the height layers,
+        // local clusters, forward, history, tone.
+        let mut per_pass: Vec<[Vec<f64>; 6]> = modes.iter().map(|_| Default::default()).collect();
         let mut deltas: [Vec<f64>; 2] = Default::default();
         // Occlusion − Frustum whole-frame ms: [behind cover, open].
         let mut against_frustum: [Vec<f64>; 2] = Default::default();
@@ -150,6 +153,9 @@ fn main() {
                 if tick > WARMUP_TICKS {
                     rows[index][0].push(whole[index]);
                     rows[index][1].push(passes[FORWARD] / 1e6);
+                    for (values, ns) in per_pass[index].iter_mut().zip(passes) {
+                        values.push(ns / 1e6);
+                    }
                 }
             }
             if tick > WARMUP_TICKS {
@@ -204,6 +210,16 @@ fn main() {
             !occlusion || !against_frustum[0].is_empty(),
             "Occlusion hid at least half of Frustum's list on some counted tick"
         );
+        for (mode, passes) in modes.iter().zip(&mut per_pass) {
+            let medians: Vec<String> = passes
+                .iter_mut()
+                .map(|values| format!("{:.3}", quantile(values, 0.5)))
+                .collect();
+            println!(
+                "{mode:?} pass p50 ms (near, far+heights, clusters, forward, history, tone): {}",
+                medians.join(", ")
+            );
+        }
         let [direct, culled @ ..] = rows.as_mut_slice() else {
             unreachable!("Direct always runs")
         };
