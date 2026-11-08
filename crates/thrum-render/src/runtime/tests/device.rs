@@ -209,7 +209,7 @@ mod metal {
     }
 
     /// Collect one timed report per in-flight slot, in submission order.
-    fn drain_samples(host: &mut Host) -> Vec<FrameSample> {
+    pub(super) fn drain_samples(host: &mut Host) -> Vec<FrameSample> {
         let deadline = std::time::Instant::now() + Duration::from_secs(10);
         let mut frames = Vec::with_capacity(IN_FLIGHT);
         while frames.len() < IN_FLIGHT {
@@ -1194,3 +1194,109 @@ fn gpu_pending_capture_is_refused_by_another_device_with_the_same_generation() {
 }
 
 mod view_history;
+
+struct RecoveryContribution {
+    passes: crate::contribution::ContributionPasses,
+    refused_generation: Option<u64>,
+}
+
+impl crate::contribution::SceneContribution for RecoveryContribution {
+    fn passes(&self) -> crate::contribution::ContributionPasses {
+        self.passes
+    }
+
+    fn rebuild(&mut self, surface: &crate::contribution::SceneSurface<'_>) -> Result<(), String> {
+        if self.refused_generation == Some(surface.generation) {
+            return Err("fixture refuses the replacement device".to_owned());
+        }
+        Ok(())
+    }
+
+    fn encode_upload(
+        &mut self,
+        _: &mut wgpu::CommandEncoder,
+        _: &crate::contribution::ContributionFrame,
+    ) {
+    }
+    fn computes(&self, _: &crate::contribution::ContributionFrame) -> bool {
+        false
+    }
+    fn encode_compute(
+        &mut self,
+        _: &mut wgpu::ComputePass<'_>,
+        _: &crate::contribution::ContributionFrame,
+    ) {
+    }
+    fn encode_after_compute(&mut self, _: &mut wgpu::CommandEncoder) {}
+    fn draw(&self, _: &mut wgpu::RenderPass<'_>) {}
+    fn submitted(&mut self, _: bool) {}
+}
+
+#[test]
+fn a_refused_contribution_keeps_the_prepared_replacement_usable() {
+    pollster::block_on(async {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let (first, queue) = gpu(&instance, 7).await;
+        let mut host =
+            culled_host(&first, &queue, Policy::default(), CullMode::Direct, false).await;
+        let passes = crate::contribution::ContributionPasses {
+            upload: true,
+            compute: true,
+        };
+        host.set_scene_contribution(Box::new(RecoveryContribution {
+            passes,
+            refused_generation: Some(8),
+        }))
+        .expect("initial contribution");
+        let before = host.capture_pixels().expect("initial pixels");
+        let inputs = host.device_prepare_inputs().expect("retained inputs");
+        first.device().destroy();
+        let (second, next_queue) = gpu(&instance, 8).await;
+        let mut candidate = inputs
+            .prepare(&second, &next_queue, Some(surface()))
+            .await
+            .expect("prepared replacement");
+        host.publish_device(&mut candidate)
+            .expect("install base scene");
+        assert_eq!(host.prepared.contribution_passes(), passes);
+        assert_eq!(
+            host.contribution_error(),
+            Some("fixture refuses the replacement device")
+        );
+        assert!(host.contribution.is_none());
+        assert_eq!(
+            host.capture_pixels().expect("base scene still draws"),
+            before
+        );
+
+        #[cfg(target_os = "macos")]
+        {
+            pending_slots(&mut host);
+            for sample in metal::drain_samples(&mut host) {
+                assert!(sample.gpu_pass_ns.is_some());
+                assert!(sample.gpu_contribution_ns.is_none());
+            }
+        }
+
+        let mut stale = host
+            .visual_prepare_inputs()
+            .prepare(
+                FrameLighting::Diagnostic(SyntheticLight::default()),
+                0.125,
+                None,
+            )
+            .await
+            .expect("prepared old graph");
+        host.set_scene_contribution(Box::new(RecoveryContribution {
+            passes: crate::contribution::ContributionPasses::default(),
+            refused_generation: None,
+        }))
+        .expect("attach a replacement contribution");
+        assert!(host.contribution_error().is_none());
+        assert!(host.publish_visual(&mut stale).is_err());
+        assert_eq!(
+            host.capture_pixels().expect("reattached scene draws"),
+            before
+        );
+    });
+}

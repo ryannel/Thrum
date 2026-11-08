@@ -181,7 +181,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.scene.view = view;
         self.reset_replacement_history();
         self.visual_owner = Arc::new(());
-        self.rebuild_contribution()?;
+        self.rebuild_contribution();
         Ok(())
     }
 }
