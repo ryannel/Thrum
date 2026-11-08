@@ -8,6 +8,24 @@ The Codex goal remains active. Its attachment is
 
 ## Current checkpoint
 
+- The fixed packed GPU resolve over `81f55ef2` reproduces the
+  CPU oracle on the held caster, crossing and extinction crops.
+  The first f32 world-position subtraction missed two crossing
+  pixels by 2 and 10 codes at a single marginal neighbor pair.
+  Compute displacement from the clip delta and the homogeneous
+  divide, keeping the filter, radius and thresholds fixed.
+  Native wgpu Metal and hardware Chrome on the M3 Max now match
+  all 39,004 active codes and all 15,383 invalid sentinels in the
+  fixed crops. The three full-size R32Float outputs match each
+  other byte for byte. Both seeded D32 planes reproduce the input
+  bits. A 5×3 Chrome fixture covers partial workgroups and point
+  and invalid exclusions. This exercises the saved-frame resolve
+  only. The live receiver producer, per-fragment depth guard and
+  GPU cost remain open. The shader, negative run, raw rows and
+  `rerun.sh /absolute/new-output-directory` are in
+  `tmp/g3s-sunset-lip/graph/production-pcss/receiver-resolve-gpu/`.
+  [Independent review](../../design/modules/ATMOSPHERE-PLAN.md#m3-packed-gpu-resolve-review-brief).
+
 - The isolated Metal opaque-winner diagnostic over `25ebe50c`
   uses the unchanged production Direct, Compacted and cooked
   vertex code, separate R32Uint receiver and RGBA16Float plus
