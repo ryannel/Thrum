@@ -51,12 +51,16 @@ The next upload starts from the last committed copy, so a discarded frame's copi
 calls `submitted` only after `queue.submit` (frame and capture paths); targets and timings are recreated when a
 contribution declares passes, and attaching refuses while frames are in flight.
 
-**Upload belt.** The loader fills one `mapped_at_creation` staging buffer per publication off the render thread
-(rows re-strided to 256 bytes; 3D textures split by slices, 2D by block rows, in copy units of at most 1 MiB). The
-render thread records up to `upload_budget` bytes of copies per frame (the game uses 8 MiB). A set becomes drawable in
-the submitted frame that records its last copy, because those copies precede forward in the same command buffer. The
-newest publication wins; a superseded pending set drops with its staging. Resources are reused by content hash and
-recycled only after the render thread reports the set resident.
+**Upload belt.** Each device generation uploads through one bounded ring of at most `STAGING_CHUNKS` (4) reusable
+staging chunks of one frame's budget each. The loader plans a publication as copies of at most 1 MiB (rows re-strided
+to 256 bytes; 3D textures split by slices, 2D by block rows) packed in order into chunks, posts it at once, and then
+fills chunks off the render thread as they free up, waiting (never the render thread) when all are in use. A remote feed
+has no thread and fills whatever is free each frame without waiting. The render thread records up to `upload_budget`
+bytes of copies per frame (the game uses 8 MiB) from filled chunks only; a frame whose next chunk is not filled records
+nothing. Once a chunk's copies are submitted it is mapped again, and the map completes, returning it to the ring, when
+the GPU has read it. A set becomes drawable in the submitted frame that records its last copy, because those copies
+precede forward in the same command buffer. The newest publication wins; a superseded pending set returns its chunks.
+Resources are reused by content hash and recycled only after the render thread reports the set resident.
 
 **Meshlets.** The loader expands meshlet triangles into global `u32` indices and per-meshlet ranges. A compute pass
 tests each meshlet's bounds against the frustum planes and its normal cone against the camera, and writes
@@ -89,7 +93,7 @@ not occluded by scene depth inside its box.
 | Profile selection | Hardware-native, C06 | The consumer orders profiles from one `DeviceCapabilities` record (ASTC → AppleAstc, BC → DesktopBc, else Portable). No private probes. The cooker always adds Portable. The runtime rejects partial compressed blocks; the loader rejects extents over device limits and unenabled formats, and records GPU validation errors instead of aborting. | Tested |
 | Watcher | G5 | notify/FSEvents. Events are only hints: an 8 ms quiet window closes a batch (250 ms maximum), `need_rescan` triggers a full scan, and the stat cache stays the authority. | Implemented; latency in bench |
 | Dev server | G5 | Loopback HTTP: `/head`, a `/head?after=N` long poll, and immutable `/cas/<hash>`; `Host` checked, loopback `Origin` echoed. Client: `thrum-asset::DevClient`, target-independent protocol over a `Fetch` transport (`BrowserFetch`, the global `fetch`, on Wasm). It decodes `HEAD` with the native parser, never goes back a generation within an epoch, fetches the manifest and only the unheld products its per-kind profile preferences resolve, issues them together, and checks length and BLAKE3 before parsing. Products are 64-aligned owned bytes shared by reference count. | Server tested; client protocol unit-tested natively; Wasm client run end to end in Node against `thrum-cook watch --serve`; no browser page run |
-| No-stall swap | G5 | Loader-filled staging; copies recorded in the frame's own graph under a per-frame byte budget; swap at submission. The render thread never waits. | In-game GPU tests, discard test and `cooked_edit` bench |
+| No-stall swap | G5 | Loader-filled bounded staging ring; copies recorded in the frame's own graph under a per-frame byte budget; swap at submission. The render thread never waits. | In-game GPU tests, discard test and `cooked_edit` bench |
 | Drawn in the game | G5 gate | `SceneContribution` in the scene graph; scene fragment shader for meshes; volume raymarch. | Tested in the V1 game, visually reviewed |
 | Meshlet draw path | G5 | GPU frustum and cone cull, indirect multi-draw. | Tested: 192 of 341 meshlets kept for a mesh straddling the view edge |
 | Shipping excludes authoring | G5 | Registry edges plus a dependency-graph and symbol check of the release viewer binary. | Recorded in evidence |
@@ -115,9 +119,10 @@ Ordinary work is designed around the frequent operations:
 - **In-game frames.** A steady frame with cooked content records one cull dispatch per mesh (one thread per meshlet)
   and a draw; the render thread writes one 160-byte uniform per mesh. An upload frame adds at most `upload_budget`
   bytes of GPU copies and no CPU copy. Measured costs are in the evidence (`cooked_edit` bench).
-- **Staging peak.** One staging buffer per pending publication, the size of its changed products (150 MiB for a 512³
-  R8 volume with mips). This doubles the changed set's memory during an upload; a fixed ring sized to a few frames of
-  budget would bound it, and is the first improvement if the large-volume hitch below matters.
+- **Staging peak.** At most `STAGING_CHUNKS` × `upload_budget` (32 MiB in the game) whatever the publication's size,
+  measured at 32 MiB for a 149 MiB 512³ R8 replacement that previously needed one 149 MiB staging buffer. Chunks are
+  created on first need and reused, so steady uploads allocate nothing. The cost is that filling is paced by the GPU
+  returning chunks; the 512³ replacement still lands in 19–21 frames at 8 MiB per frame.
 - **Peak residency during a swap** is live plus the replacement for changed products only. This matches the
   `M_replacement_overlap` term in C05; the account is logical, and physical residency is not measured.
 
@@ -210,7 +215,6 @@ dev-server client.
 - The volume is not occluded by scene depth inside its box and is a diagnostic consumer only.
 - Mesh-shader meshlet path (tied to G3c); the indirect path needs `multi_draw_indirect` support (Metal has it).
 - Graph Copy passes are untimed engine-wide, so the upload's GPU cost is measured by the bench, not pass timestamps.
-- Staging is one buffer per publication; a bounded ring would cap the 512³ peak (see the cost account).
 - Physical iPhone, Chrome and sustained measurements.
 - Tripwires are recorded, not asserted; no regression history yet.
 - The dev server opens one thread per connection (at most 32). Only loopback origins may read it; a page served from

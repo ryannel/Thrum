@@ -290,6 +290,13 @@ fn run(scenario: &Scenario, report: &mut String) {
         .ok();
         writeln!(
             report,
+            "staging peak: {:.2} MiB (bounded ring of {} chunks)",
+            stats.staging_peak_bytes as f64 / f64::from(1 << 20),
+            thrum_asset_gpu::STAGING_CHUNKS
+        )
+        .ok();
+        writeln!(
+            report,
             "\n| frames | n | latency p50 | p99 | max | render CPU p50 | p99 | max |\n|---|---|---|---|---|---|---|---|"
         )
         .ok();

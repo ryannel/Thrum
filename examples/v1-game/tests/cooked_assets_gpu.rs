@@ -7,7 +7,7 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use thrum_asset::Profile;
-use thrum_asset_gpu::{COPY_UNIT, CookedAssets, CookedConfig, CookedStats};
+use thrum_asset_gpu::{COPY_UNIT, CookedAssets, CookedConfig, CookedStats, STAGING_CHUNKS};
 use thrum_cook::{CookConfig, Cooker, Durability, Quality, demo};
 use thrum_render::capabilities::DeviceCapabilities;
 use thrum_render::present::SurfaceProfile;
@@ -17,6 +17,17 @@ const EXTENT: [u32; 2] = [640, 360];
 
 /// Upload budget small enough that every product here spans several frames.
 const BUDGET: u64 = COPY_UNIT;
+
+/// Staging may never hold more than this, whatever a publication's size.
+const STAGING_BOUND: u64 = STAGING_CHUNKS * BUDGET;
+
+fn assert_staging_bounded(stats: &CookedStats) {
+    assert!(
+        stats.staging_peak_bytes > 0 && stats.staging_peak_bytes <= STAGING_BOUND,
+        "staging peaked at {} bytes against a bound of {STAGING_BOUND}",
+        stats.staging_peak_bytes
+    );
+}
 
 fn transform(scale: f32, rotation: glam::Quat, at: [f32; 3]) -> [[f32; 4]; 4] {
     glam::Mat4::from_scale_rotation_translation(glam::Vec3::splat(scale), rotation, at.into())
@@ -1120,6 +1131,7 @@ fn a_fetched_edit_swaps_in_and_reuses_unchanged_products() {
             "only the texture uploads again: {:?}",
             stats.swaps
         );
+        assert_staging_bounded(&stats);
         assert!(
             changed_pixels(&first, &second) > 640 * 360 / 50,
             "the edit is visible"
@@ -1193,6 +1205,60 @@ fn a_mirrored_node_draws_with_the_facing_and_lighting_of_its_plain_twin() {
         assert!(
             changed * 1000 <= total,
             "the mirrored node changed {changed} of {total} pixels"
+        );
+    });
+    std::fs::remove_dir_all(&root).expect("remove test store");
+}
+
+/// A publication several times larger than staging streams through the bounded ring: its chunks
+/// are filled, copied and reused, staging never exceeds the bound, and an edit of the large
+/// volume does the same again.
+#[test]
+fn a_publication_larger_than_staging_streams_through_the_bounded_ring() {
+    let root = std::env::temp_dir().join(format!("thrum-g5-ring-{}", std::process::id()));
+    std::fs::remove_dir_all(&root).ok();
+    let cook = source_tree(&root, 256);
+    let mut cooker = Cooker::open(cook.clone()).expect("cooker");
+    let report = cooker.cook_all().expect("cook");
+    assert!(report.failed.is_empty(), "{:?}", report.failed);
+    pollster::block_on(async {
+        let (device, queue) = game_device().await;
+        let mut host = FrameHost::new(&device, &queue, FrameConfig::default())
+            .await
+            .expect("prepared game scene");
+        let assets = CookedAssets::new(placements(cook.store.clone())).expect("rigid placements");
+        let stats = assets.stats();
+        host.set_scene_contribution(Box::new(assets))
+            .expect("attach");
+        let mut clock = Duration::ZERO;
+        wait_for(&mut host, &device, &stats, 1, &mut clock);
+        demo::write_cloud_volume(&cook.source.join("cloud.tvol"), 256, 2).expect("volume edit");
+        let report = cooker.cook_all().expect("recook");
+        assert!(report.failed.is_empty(), "{:?}", report.failed);
+        wait_for(&mut host, &device, &stats, 2, &mut clock);
+        let stats = stats.lock().expect("stats");
+        assert!(stats.errors.is_empty(), "{:?}", stats.errors);
+        for swap in &stats.swaps {
+            assert!(
+                swap.uploaded_bytes > 2 * STAGING_BOUND,
+                "each publication outgrows staging: {swap:?}"
+            );
+        }
+        assert!(stats.max_frame_copy_bytes <= BUDGET);
+        assert_staging_bounded(&stats);
+        println!(
+            "RING uploads {:?} bytes over {:?} frames, staging peak {} bytes",
+            stats
+                .swaps
+                .iter()
+                .map(|swap| swap.uploaded_bytes)
+                .collect::<Vec<_>>(),
+            stats
+                .swaps
+                .iter()
+                .map(|swap| swap.upload_frames)
+                .collect::<Vec<_>>(),
+            stats.staging_peak_bytes
         );
     });
     std::fs::remove_dir_all(&root).expect("remove test store");

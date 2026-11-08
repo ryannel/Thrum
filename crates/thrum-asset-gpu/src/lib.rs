@@ -54,7 +54,7 @@ pub use material::{
     MaterialDiagnostic, MaterialHook, MaterialOutcome, MaterialReload, ReloadTiming,
 };
 pub use placement::{MeshPlacement, PlacementError};
-pub use staging::COPY_UNIT;
+pub use staging::{COPY_UNIT, STAGING_CHUNKS};
 
 /// ABI revision 2 metallic-roughness factors of one mesh placement. The default is a matte
 /// white dielectric: the cooked texture's own colour, roughness 0.55, metalness 0.
@@ -135,6 +135,8 @@ struct Remote {
     seen: u64,
     /// Products of the drawn set, reused by later generations.
     confirmed: load::Confirmed,
+    /// Staging of the newest prepared generation, filled as chunks free up.
+    filler: Option<staging::Filler>,
 }
 
 impl Remote {
@@ -143,8 +145,15 @@ impl Remote {
             && serial != self.seen
         {
             self.seen = serial;
-            self.loader
+            self.filler = self
+                .loader
                 .prepare_remote(&generation, &self.confirmed, mailbox, stop);
+        }
+        // No thread here: fill whatever staging is free now, never waiting for more.
+        if let Some(filler) = self.filler.as_mut()
+            && filler.fill_available() != staging::Progress::Waiting
+        {
+            self.filler = None;
         }
     }
 }
@@ -203,7 +212,7 @@ pub struct SwapRecord {
     pub generation: u64,
     /// When the loader saw its `HEAD`.
     pub head_seen: Instant,
-    /// When its staging buffer was filled.
+    /// When the loader posted it; its staging fills in bounded chunks from then on.
     pub staged: Instant,
     /// When the render thread recorded its first copy.
     pub first_copy: Instant,
@@ -230,6 +239,11 @@ pub struct CookedStats {
     pub max_frame_copy_bytes: u64,
     /// Staged-copy bytes recorded in the most recent frame.
     pub last_frame_copy_bytes: u64,
+    /// Staging bytes the current device generation holds (its chunks, filled or not).
+    pub staging_bytes: u64,
+    /// Most staging bytes held at once, never more than [`STAGING_CHUNKS`] chunks of
+    /// [`CookedConfig::upload_budget`] (at least [`COPY_UNIT`]).
+    pub staging_peak_bytes: u64,
     /// Generation currently drawn.
     pub drawn: Option<u64>,
     /// Meshlets the GPU cull kept and the meshlets placed, from a recent frame.
@@ -491,6 +505,11 @@ impl CookedAssets {
         let stop = Arc::new(AtomicBool::new(false));
         let loader = load::Loader {
             device: surface.device.clone(),
+            ring: staging::StagingRing::new(
+                surface.device,
+                self.config.upload_budget,
+                Arc::clone(&self.stats),
+            ),
             config: self.config.clone(),
             texture_profiles: self.config.texture_preference.clone().map_or_else(
                 || texture_profiles(surface.features),
@@ -537,6 +556,7 @@ impl CookedAssets {
                     feed: feed.clone(),
                     seen: u64::MAX,
                     confirmed: load::Confirmed::default(),
+                    filler: None,
                 };
                 state.prepare_newest(&posting, &stop);
                 remote = Some(state);

@@ -19,7 +19,7 @@ use thrum_asset::{AssetStore, HeadWatcher, Manifest};
 
 #[cfg(not(target_arch = "wasm32"))]
 use crate::CookedSource;
-use crate::staging::{StagedUpload, StagingPlan};
+use crate::staging::{Bytes, Filler, StagedUpload, StagingPlan, StagingRing};
 use crate::{CookedConfig, CookedStats, wgpu_format};
 
 /// Product bytes from a mapped store or a fetched generation.
@@ -110,6 +110,8 @@ pub(crate) struct Confirmed {
 
 pub(crate) struct Loader {
     pub(crate) device: wgpu::Device,
+    /// This device generation's bounded staging.
+    pub(crate) ring: StagingRing,
     pub(crate) config: CookedConfig,
     pub(crate) texture_profiles: Vec<Profile>,
     pub(crate) volume_profiles: Vec<Profile>,
@@ -186,7 +188,7 @@ impl Loader {
                         self.prepare(Source::Store(store, &manifest), &head, &confirmed)
                     });
                     match prepared {
-                        Ok((set, upload)) => {
+                        Ok((set, upload, mut filler)) => {
                             report(&self.stats, stop, |stats| {
                                 stats.staged = Some(head.generation);
                             });
@@ -197,6 +199,9 @@ impl Loader {
                                 staged: Instant::now(),
                             };
                             mailbox.post(pending);
+                            // Fill the bounded staging as the render thread frees it. A newer
+                            // HEAD waits until this upload is filled or dropped.
+                            filler.fill_all(stop);
                         }
                         Err(error) => {
                             self.fail(stop, &format!("generation {}: {error}", head.generation));
@@ -213,18 +218,19 @@ impl Loader {
     }
 
     /// Prepare a fetched generation on this thread and post it, as the loader thread would.
-    /// Products of `confirmed` (the drawn set) are reused rather than staged again.
+    /// Products of `confirmed` (the drawn set) are reused rather than staged again. The caller
+    /// fills the returned staging without waiting, as chunks free up.
     pub(crate) fn prepare_remote(
         &self,
         generation: &RemoteGeneration,
         confirmed: &Confirmed,
         mailbox: &Mailbox,
         stop: &AtomicBool,
-    ) {
+    ) -> Option<Filler> {
         let head = generation.head();
         let seen = Instant::now();
         match self.prepare(Source::Remote(generation), &head, confirmed) {
-            Ok((set, upload)) => {
+            Ok((set, upload, filler)) => {
                 report(&self.stats, stop, |stats| {
                     stats.staged = Some(head.generation);
                 });
@@ -234,8 +240,12 @@ impl Loader {
                     head_seen: seen,
                     staged: Instant::now(),
                 });
+                Some(filler)
             }
-            Err(error) => self.fail(stop, &format!("generation {}: {error}", head.generation)),
+            Err(error) => {
+                self.fail(stop, &format!("generation {}: {error}", head.generation));
+                None
+            }
         }
     }
 
@@ -364,16 +374,10 @@ impl Loader {
         source: Source<'_>,
         head: &Head,
         confirmed: &Confirmed,
-    ) -> Result<(ResidentSet, StagedUpload), String> {
+    ) -> Result<(ResidentSet, StagedUpload, Filler), String> {
         let (opened, texture_profile, volume_profile) = self
             .open(source, confirmed)
             .map_err(|error| error.to_string())?;
-        // Expanded meshlet indices must outlive the plan that borrows them.
-        let expanded: Vec<Option<MeshletTables>> = opened
-            .meshes
-            .iter()
-            .map(|(_, mesh, _, _)| mesh.as_ref().map(MeshletTables::new))
-            .collect();
         let mut plan = StagingPlan::default();
         let mut set = ResidentSet {
             generation: head.generation,
@@ -383,29 +387,32 @@ impl Loader {
             volume_profile,
             products: Vec::new(),
         };
-        for ((mesh_hash, mesh, texture_hash, texture), tables) in
-            opened.meshes.iter().zip(&expanded)
-        {
-            let gpu_mesh = match (mesh, tables) {
-                (Some(mesh), Some(tables)) => Arc::new(self.stage_mesh(&mut plan, mesh, tables)),
-                _ => Arc::clone(confirmed.meshes.get(mesh_hash).ok_or("lost mesh")?),
+        for (mesh_hash, mesh, texture_hash, texture) in opened.meshes {
+            let gpu_mesh = match mesh {
+                Some(mesh) => Arc::new(self.stage_mesh(&mut plan, &Arc::new(mesh))),
+                None => Arc::clone(confirmed.meshes.get(&mesh_hash).ok_or("lost mesh")?),
             };
             let gpu_texture = match texture {
-                Some(texture) => Arc::new(self.stage_texture(&mut plan, texture)),
-                None => Arc::clone(confirmed.textures.get(texture_hash).ok_or("lost texture")?),
+                Some(texture) => Arc::new(self.stage_texture(&mut plan, Arc::new(texture))),
+                None => Arc::clone(
+                    confirmed
+                        .textures
+                        .get(&texture_hash)
+                        .ok_or("lost texture")?,
+                ),
             };
-            set.products.extend([*mesh_hash, *texture_hash]);
+            set.products.extend([mesh_hash, texture_hash]);
             set.meshes.push((gpu_mesh, gpu_texture));
         }
-        if let Some((hash, product)) = &opened.volume {
+        if let Some((hash, product)) = opened.volume {
             set.volume = Some(match product {
-                Some(volume) => Arc::new(self.stage_texture(&mut plan, volume)),
-                None => Arc::clone(confirmed.textures.get(hash).ok_or("lost volume")?),
+                Some(volume) => Arc::new(self.stage_texture(&mut plan, Arc::new(volume))),
+                None => Arc::clone(confirmed.textures.get(&hash).ok_or("lost volume")?),
             });
-            set.products.push(*hash);
+            set.products.push(hash);
         }
-        let upload = plan.finish(&self.device)?;
-        Ok((set, upload))
+        let (upload, filler) = plan.finish(&self.ring)?;
+        Ok((set, upload, filler))
     }
 
     fn buffer(&self, label: &str, size: usize, usage: wgpu::BufferUsages) -> wgpu::Buffer {
@@ -419,41 +426,46 @@ impl Loader {
         })
     }
 
-    fn stage_mesh<'a>(
-        &self,
-        plan: &mut StagingPlan<'a>,
-        mesh: &'a MeshProduct,
-        tables: &'a MeshletTables,
-    ) -> GpuMesh {
-        let positions: &[u8] = bytemuck::cast_slice(mesh.positions());
-        let attributes: &[u8] = bytemuck::cast_slice(mesh.attributes());
-        let bounds: &[u8] = bytemuck::cast_slice(mesh.meshlet_bounds());
-        let indices: &[u8] = bytemuck::cast_slice(&tables.indices);
-        let ranges: &[u8] = bytemuck::cast_slice(&tables.ranges);
+    fn stage_mesh(&self, plan: &mut StagingPlan, mesh: &Arc<MeshProduct>) -> GpuMesh {
+        let tables = Arc::new(MeshletTables::new(mesh));
+        let part = |part| -> Arc<dyn Bytes> {
+            Arc::new(MeshPart {
+                mesh: Arc::clone(mesh),
+                tables: Arc::clone(&tables),
+                part,
+            })
+        };
+        let (positions, attributes, indices, ranges, bounds) = (
+            part(Part::Positions),
+            part(Part::Attributes),
+            part(Part::Indices),
+            part(Part::Ranges),
+            part(Part::Bounds),
+        );
         let gpu = GpuMesh {
             positions: self.buffer(
                 "cooked positions",
-                positions.len(),
+                positions.bytes().len(),
                 wgpu::BufferUsages::VERTEX,
             ),
             attributes: self.buffer(
                 "cooked attributes",
-                attributes.len(),
+                attributes.bytes().len(),
                 wgpu::BufferUsages::VERTEX,
             ),
             indices: self.buffer(
                 "cooked meshlet indices",
-                indices.len(),
+                indices.bytes().len(),
                 wgpu::BufferUsages::INDEX,
             ),
             ranges: self.buffer(
                 "cooked meshlet ranges",
-                ranges.len(),
+                ranges.bytes().len(),
                 wgpu::BufferUsages::STORAGE,
             ),
             bounds: self.buffer(
                 "cooked meshlet bounds",
-                bounds.len(),
+                bounds.bytes().len(),
                 wgpu::BufferUsages::STORAGE,
             ),
             meshlet_count: u32::try_from(mesh.meshlets().len()).unwrap_or(u32::MAX),
@@ -469,7 +481,7 @@ impl Loader {
         gpu
     }
 
-    fn stage_texture<'a>(&self, plan: &mut StagingPlan<'a>, product: &'a Ktx2) -> GpuTexture {
+    fn stage_texture(&self, plan: &mut StagingPlan, product: Arc<Ktx2>) -> GpuTexture {
         let base = product.levels()[0];
         let texture = self.device.create_texture(&wgpu::TextureDescriptor {
             label: Some("cooked texture"),
@@ -532,6 +544,35 @@ fn caster_box(positions: &[[f32; 3]]) -> Option<(glam::Vec3, glam::Vec3)> {
         max = max.max(position);
     }
     Some((min, max))
+}
+
+/// Which array of a mesh a staged buffer reads.
+#[derive(Clone, Copy)]
+enum Part {
+    Positions,
+    Attributes,
+    Indices,
+    Ranges,
+    Bounds,
+}
+
+/// One staged array of a mesh: the product's own bytes, or its expanded meshlet tables.
+struct MeshPart {
+    mesh: Arc<MeshProduct>,
+    tables: Arc<MeshletTables>,
+    part: Part,
+}
+
+impl Bytes for MeshPart {
+    fn bytes(&self) -> &[u8] {
+        match self.part {
+            Part::Positions => bytemuck::cast_slice(self.mesh.positions()),
+            Part::Attributes => bytemuck::cast_slice(self.mesh.attributes()),
+            Part::Indices => bytemuck::cast_slice(&self.tables.indices),
+            Part::Ranges => bytemuck::cast_slice(&self.tables.ranges),
+            Part::Bounds => bytemuck::cast_slice(self.mesh.meshlet_bounds()),
+        }
+    }
 }
 
 /// Meshlets as indexed draws: global indices per meshlet, and each meshlet's index range.

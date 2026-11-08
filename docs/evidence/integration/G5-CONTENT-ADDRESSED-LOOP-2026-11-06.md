@@ -200,7 +200,7 @@ so tails are noisy. "Latency" is drive plus GPU completion; "render CPU" is the 
   copies mostly take 4–5 ms; a few take 13–21 ms, and frames with no copies while the loader fills a new 150 MiB staging
   buffer take 10–14 ms. Render CPU on those frames stays at 0.5–1.6 ms, so the render thread is not blocked; the time is
   GPU-side or memory-system contention from allocating and writing 150 MiB of shared memory. This is a recorded
-  tripwire, and the design's cost account names the fix (a bounded staging ring).
+  tripwire, and the design's cost account names the fix (a bounded staging ring, built 8 November: see below).
 - **Re-checked after the review fixes** (7 November, heavier GPU sharing): largest frame copy still 8.00 MiB; a
   texture edit still uploads 1.34 MiB in one frame; render CPU p99 3.0 ms steady and 5.2 ms uploading (realistic),
   1.1 and 1.7 ms (large). Latency tails rose with contention (realistic steady p99 14.2 ms).
@@ -268,6 +268,30 @@ Two independent read-only reviews ran on the seam: a fresh subagent code review,
 | Seam methods were `pub` though no external caller can declare their passes. | Narrowed to `pub(crate)`; the 4-byte token resources are documented as ordering tokens only. |
 | Policy: `thrum-cook` is used by `v1-game` and `thrum-asset-gpu`. | Dev-dependency only, for tests and benches; shipping graphs exclude it (see "Shipping excludes authoring"). |
 
+## Bounded staging (8 November)
+
+The one staging buffer per publication is replaced by a bounded ring of four reusable chunks of one frame's budget
+(design: the decision's upload belt). `cooked_edit`, release, Apple M3 Max, shared machine at load 40–100 (all runs
+`saturated` or `busy`); before is the same bench at 60be1ed4, interleaved:
+
+| 512³ R8 replacement (149 MiB) | Before (one buffer) | After (ring) |
+|---|---:|---:|
+| Staging peak | 149 MiB per pending publication | 32 MiB (4 × 8 MiB) |
+| HEAD seen → posted | 55–180 ms (whole fill) | 0.2–0.4 ms |
+| Upload frames | 19 | 19–21 |
+| Largest frame copy | 8.00 MiB | 8.00 MiB |
+| Steady frame latency p50 | 5.5–6.8 ms | 6.6–11.7 ms |
+| Upload frame latency p99 | 73–92 ms | 80–111 ms |
+
+The realistic scenario (256³ BC4, 1024² textures) peaks at 16 MiB of staging. Frame latency moves with machine load
+in both builds: a third run of the ring build measured steady p50 4.6 ms (realistic) and 6.6 ms (large), inside the
+before range, so the table shows no measured cost beyond noise; it is not a quiet-machine comparison.
+
+`a_publication_larger_than_staging_streams_through_the_bounded_ring` uploads a 10.4 MiB and a 9.3 MiB publication at
+a 1 MiB budget (bound 4 MiB): 12 and 10 frames, staging peak exactly 4 MiB. It fails when the ring may grow past its
+limit (peak 12 MiB) and when chunks are never returned (the upload stalls). The fetched-edit test asserts the same
+bound on the remote path.
+
 ## Open items closed (8 November)
 
 Apple M3 Max, shared GPU. Each check fails when its fix is removed (mutation runs recorded below).
@@ -328,7 +352,6 @@ These are reported plainly, and the design record tracks them:
   - EAC iPhone volume products (draft parked on `claude/g5-parked-eac-layered` with a recorded selection defect).
   - Cooked shadow casting (meshes receive shadows but cast none).
   - Depth-aware volume (the diagnostic raymarch ignores scene depth inside its box).
-  - A bounded staging ring for very large publications.
   - CAS garbage collection (draft with reader leases parked on `claude/g5-parked-gc-leases` with two recorded defects).
 - **Not measured:** Chrome performance (the dev-server client's Chrome run is functional only), physical iPhone, sustained runs, and physical residency during overlap.
 - **Contract questions for C05/T1, recorded with recommendations in the design:**
