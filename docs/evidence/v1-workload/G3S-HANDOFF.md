@@ -8,6 +8,35 @@ The Codex goal remains active. Its attachment is
 
 ## Current checkpoint
 
+- M3 raw receiver diagnostic on `5984ca51` replayed the exact 230
+  crossing and 95 extinction submission identities on Metal. It
+  saved D32, inverse camera and packed visibility/geometry guides
+  from the existing opaque winner at frames 224–229 and 74–94.
+  At frame 227, horizontal/vertical curvature RMS fell from
+  4.71/5.61 to 0.79/2.38 percentage points. The row-665
+  226→227 p95 step fell from 6.25 to 3.03 points. The strongest
+  strip-average edge stayed at y=670 and seven pixels wide in the
+  six crossing frames. The filter opened 1,698 raw-zero samples
+  at frame 227 by up to 4.03 points. That can be limb recovery or
+  false light. This is a visibility-mask diagnostic, with no shaded
+  motion or live GPU cost claim. Independent review holds integration.
+- Compact and wide caster arms at the frozen frame 72 now embed
+  their own authored placement recipe and read distinct cooked roots.
+  Both reproduce the no-caster guides and view D32 byte for byte.
+  The diagnostic does not yet observe a positive caster signal.
+  Neither that comparison nor the one-pass raw recording proves
+  compact-shadow preservation or coincident opaque winner parity.
+  G5 confirmed the conditional draw-order and hook-coverage seams.
+  No runtime change lands. See
+  `tmp/g3s-sunset-lip/graph/production-pcss/receiver-diagnostic/`
+  for `scores.json`, `edge-scores.log`, `caster-comparison.sha256`
+  and the verified `raw-canonical.tar.zst` archive. Extract it in that
+  directory to rerun the scorer. Rebuild in a fresh
+  scratch with `build.sh`, rerun `record.sh` with `crossing` or
+  `extinction` and a new output directory, and score with `resolve`
+  and `score.py`. `compact-authored.sh` repeats the fixture controls.
+  [Design and review](../../design/modules/ATMOSPHERE-PLAN.md#m3-current-frame-visibility-review-brief).
+
 - M3's current-frame resolve design is in
   `tmp/g3s-sunset-lip/graph/production-pcss/spatial-resolve-review.md`
   (reviewed SHA-256 prefix `6d559395`). The independent and G3t
