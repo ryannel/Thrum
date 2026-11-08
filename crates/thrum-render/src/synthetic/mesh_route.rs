@@ -83,6 +83,12 @@ pub(super) struct BucketRoute {
     segment_bytes: u64,
     /// Forward pipelines by class, then unflipped and flipped.
     forward: [[wgpu::RenderPipeline; 2]; 3],
+    /// Each segment's checked index range and base vertex, from the arena's
+    /// fixed rows: checked once at preparation.
+    ranges: Vec<(std::ops::Range<u32>, i32)>,
+    /// The Sun caster draws for the current layout: every bucket's active
+    /// members, never the camera-visible list. Rebuilt when members change.
+    caster_draws: Vec<CasterDraw>,
 }
 
 impl BucketRoute {
@@ -143,6 +149,21 @@ impl BucketRoute {
                 .set(slot, Self::key(selection.slots[slot as usize], instance))
                 .map_err(bucket_error)?;
         }
+        let ranges = buckets
+            .keys()
+            .iter()
+            .map(|key| {
+                let row = arena.row(key.mesh).ok_or(RenderError::SceneCapacity)?;
+                let base = row
+                    .draw_base_vertex()
+                    .map_err(|_| RenderError::SceneCapacity)?;
+                let end = row
+                    .first_index
+                    .checked_add(row.index_count)
+                    .ok_or(RenderError::SceneCapacity)?;
+                Ok((row.first_index..end, base))
+            })
+            .collect::<Result<Vec<_>, RenderError>>()?;
         let mut route = Self {
             buckets,
             slot_meshes: selection.slots.clone(),
@@ -151,7 +172,10 @@ impl BucketRoute {
             segment_bytes,
             forward: CLASSES
                 .map(|class| [false, true].map(|flipped| forward(class.primitive(flipped)))),
+            ranges,
+            caster_draws: Vec::new(),
         };
+        route.lay_out_casters();
         route.publish(queue, upload)?;
         Ok(route)
     }
@@ -201,8 +225,23 @@ impl BucketRoute {
                 .collect();
             queue.write_buffer(&self.members, 0, &bytes);
             queue.write_buffer(&self.table, 0, &self.table_bytes());
+            self.lay_out_casters();
         }
         Ok(())
+    }
+
+    fn lay_out_casters(&mut self) {
+        self.caster_draws.clear();
+        for (segment, (indices, base_vertex)) in self.buckets.segments().iter().zip(&self.ranges) {
+            if segment.len != 0 {
+                self.caster_draws.push(CasterDraw {
+                    member_offset: segment.start * 4,
+                    indices: indices.clone(),
+                    base_vertex: *base_vertex,
+                    instances: segment.len,
+                });
+            }
+        }
     }
 
     /// The uniform table `visibility.wgsl`'s `Buckets` declares.
@@ -285,7 +324,8 @@ impl BucketRoute {
     ) -> Result<(), RenderError> {
         let buffers = arena.buffers().ok_or(RenderError::GraphPassMismatch)?;
         pass.set_index_buffer(buffers.indices.slice(..), wgpu::IndexFormat::Uint32);
-        for (bucket, segment) in (0_u64..).zip(self.segments()) {
+        for ((bucket, segment), (indices, base)) in (0_u64..).zip(self.segments()).zip(&self.ranges)
+        {
             if indirect.is_none() && segment.len == 0 {
                 continue;
             }
@@ -295,14 +335,7 @@ impl BucketRoute {
             if let Some(args) = indirect {
                 pass.draw_indexed_indirect(args, bucket * crate::visibility::ARGS_BYTES);
             } else {
-                let row = arena
-                    .row(segment.key.mesh)
-                    .ok_or(RenderError::GraphPassMismatch)?;
-                let base = row
-                    .draw_base_vertex()
-                    .map_err(|_| RenderError::SceneCapacity)?;
-                let first = row.first_index;
-                pass.draw_indexed(first..first + row.index_count, base, 0..segment.len);
+                pass.draw_indexed(indices.clone(), *base, 0..segment.len);
             }
         }
         Ok(())
@@ -310,26 +343,10 @@ impl BucketRoute {
 }
 
 impl BucketRoute {
-    /// The Sun caster draws: every bucket's active members, never the
-    /// camera-visible list, each bound at its segment offset.
-    pub(super) fn caster_draws(&self, arena: &MeshArena) -> Result<Vec<CasterDraw>, RenderError> {
-        self.segments()
-            .iter()
-            .filter(|segment| segment.len != 0)
-            .map(|segment| {
-                let row = arena
-                    .row(segment.key.mesh)
-                    .ok_or(RenderError::GraphPassMismatch)?;
-                Ok(CasterDraw {
-                    member_offset: segment.start * 4,
-                    indices: row.first_index..row.first_index + row.index_count,
-                    base_vertex: row
-                        .draw_base_vertex()
-                        .map_err(|_| RenderError::SceneCapacity)?,
-                    instances: segment.len,
-                })
-            })
-            .collect()
+    /// The Sun caster draws for the current member layout, each bound at its
+    /// segment offset.
+    pub(super) fn caster_draws(&self) -> &[CasterDraw] {
+        &self.caster_draws
     }
 }
 

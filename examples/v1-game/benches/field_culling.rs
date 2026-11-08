@@ -99,6 +99,7 @@ fn main() {
                         camera_culling,
                         valley_stars: false,
                         route_overlay: v1_game::RouteOverlay::Off,
+                        field_meshes: false,
                     },
                 )
                 .await

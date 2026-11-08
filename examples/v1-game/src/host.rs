@@ -46,6 +46,10 @@ pub struct GameSetup {
     /// Reseed the moving-route proof overlay (11 static grid slots at valley metres,
     /// one mirrored basis and one retuned local light). Grid content only; off by default.
     pub route_overlay: RouteOverlay,
+    /// Draw the flythrough field's props as a rock, a column and a spruce,
+    /// some mirrored, instead of boxes. Ignored for the grid; refused with
+    /// Occlusion, which keeps the cube.
+    pub field_meshes: bool,
 }
 
 impl Default for GameSetup {
@@ -55,6 +59,7 @@ impl Default for GameSetup {
             camera_culling: CullMode::Direct,
             valley_stars: false,
             route_overlay: RouteOverlay::Off,
+            field_meshes: false,
         }
     }
 }

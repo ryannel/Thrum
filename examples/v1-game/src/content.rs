@@ -9,6 +9,7 @@ use thrum_asset_gpu::CookedStats;
 /// `THRUM_CULLING=direct|frustum|occlusion`. The valley prepares its star field
 /// unless `THRUM_STARS=off`; `THRUM_ROUTE_OVERLAY=proof|unmirrored|light-off` adds the
 /// moving-route proof overlay or one of its controls.
+/// The field draws mixed meshes with `THRUM_FIELD_MESHES=on`.
 /// Without `THRUM_CULLING`, the field uses Frustum (a measured win along its
 /// flythrough) and the fully visible grid keeps Direct.
 /// # Errors
@@ -51,6 +52,8 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
                 );
             }
         },
+        field_meshes: content == crate::GameContent::Field
+            && std::env::var("THRUM_FIELD_MESHES").as_deref() == Ok("on"),
     })
 }
 
