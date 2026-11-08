@@ -99,21 +99,27 @@ is idempotent. Blend only equivalent estimates of the same occluder set. Geometr
 partition, map reach and camera depth cannot omit an occluder. The point-ray
 triangle oracle remains independent of the runtime integration.
 
-The prepared far-terrain field encloses the terrain horizon over each registered
-receiver chart patch and azimuth interval. The cooked terrain geometry and placement
-identify the chart. Validate a solid heightfield closure before admitting a lower
-blocked interval. A variable-range edge witness must intersect every ray in the
-receiver patch and azimuth interval, with a continuous solid prefix from the common
-origin. Keep actual triangle spans for disconnected or unqualified cells. Subdivide
-loose chart or azimuth cells. Quantize outward and preserve azimuth wrap. Derive the
-origin offset from a geometric error bound and validate clearance at adjacent faces.
+The prepared far-terrain field keeps potentially dominant original edges over each
+registered receiver chart patch and azimuth interval. The cooked terrain geometry
+and placement identify the chart. An edge can be omitted only if its upper slope
+bound cannot exceed a retained lower witness anywhere in the cell. A variable-range
+edge witness must intersect every ray in the cell at positive range. Evaluate the
+retained edges at the actual receiver and azimuth. Partition whole triangles so a
+range clip cannot invent an edge inside a triangle. Subdivide loose cells, round
+bounds outward and preserve wrap. The lower blocked interval requires a certified
+solid terrain prefix from the common origin to every potential winner. Keep actual triangle spans for
+disconnected or unqualified cells. Derive the origin offset from a geometric error
+bound and validate clearance at adjacent faces.
 
 Use original nearby terrain and compact caster triangles with conservative beam or
 tile candidate culling. Bound the inner and outer clipped span unions over each
 angular bin. Include silhouette endpoints as bin edges and refine until the summed
 area enclosure meets the tolerance. The envelope handles crossings of endpoints
-inside a bin. Share candidate retrieval across receivers while retaining each
-receiver's coverage.
+inside a bin. On portable, use a Sun-centred rational meridian coordinate
+`q = tan(azimuth offset)` and `v = sin(elevation)`, evaluated by vector ratios and
+square roots with a bounded Jacobian `dv*dq/(1+q²)`. Use the actual packed Sun
+direction and charge coordinate and rounding error to the visibility tolerance.
+Share candidate retrieval across receivers while retaining each receiver's coverage.
 
 Key the prepared field by its receiver chart and transform, every covered terrain
 and boundary dependency, and the caster partition and evaluator versions. Publish
@@ -130,8 +136,12 @@ the graph's submitted-frame ownership. Unsubmitted frames never alter the admitt
 
 The old all-receiver geometry beam is too costly as a default. In the retained
 crest diagnostic, partial receivers grow from 33,965 to 812,485 at 1080p. A
-clear/full classifier alone cannot make refinement rare. Qualify the prepared
-field against the narrow crest and local caster before integrating. Record chart
+clear/full classifier alone cannot make refinement rare. The archived far-terrain
+CPU witness narrows 951 potential edge entries to 34 over four bins at the difficult
+4 m receiver patch. The 1,024 m crest source raises that to 84 retained entries.
+Both match the triangle-section reference at the sampled rays. They do not
+establish a scene-wide bound. Qualify the prepared field against
+the narrow crest and local caster before integrating. Record chart
 bytes, live fallback rate, interval and candidate tails, and paired frame costs.
 Before implementation, choose the portable representation and admit it against
 actual requested WebGPU limits, including staging and replacement overlap. Prove
