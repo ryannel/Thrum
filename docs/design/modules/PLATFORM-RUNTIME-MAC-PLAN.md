@@ -5,9 +5,9 @@ and [bounded frame host](../decisions/V1-BOUNDED-FRAME-HOST.md). Siblings:
 [iOS](PLATFORM-RUNTIME-IOS-PLAN.md) and [web](PLATFORM-RUNTIME-WEB-PLAN.md).
 Reviews: Design and plan over `3049433d`, approved plan SHA-256 prefix `0f467bcb` · [brief](#design-and-plan-review-brief) · initial hold resolved. First M1 abandon seam over `f79e3434` · [brief](#lost-frame-review-brief) · approved for observed post-encode loss. M1 injected input over `43e1d488` · [brief](#injected-input-review-brief) · approved after separating capture cutoff from finalization. M1 live slot `slot-04.0qL58y`, diagnostic `0c9a32dc` · [brief](../../evidence/render/mac-m1-recovery/README.md#independent-review-brief) · both done-when items pass. M2 pan plan over `aeb43fbc`, reviewed SHA-256 prefix `10e7730e` · [brief](#m2-pan-plan-review-brief) · approved after refining slider steps, recording brackets and trace attribution.
 Milestone: M2 The cooked valley presents smoothly on built-in ProMotion
-Now: M1 is closed. M2 is preparing a matched injected pan and checking trace attribution.
-Next: qualify the diagnostic pan and trace markers offscreen, then request a bounded live slot.
-Blocked: none for M2 preparation. Reserve real-display observation for the batched screen window.
+Now: The hidden AppKit panel delivered all 240 yaw actions. The matched runner, input proof and historical swap parser check are retained at `dd3c9c3e` on `codex/wip-g3b-mac-m2-witness`.
+Next: run the untraced and Game Performance sweeps in the queued eight-minute Mac slot, then independently review the 1× recordings and trace attribution.
+Blocked: the live slot is pending. The headless trace probes produced no exportable pan markers, so fresh cadence attribution remains open.
 
 ## M0 Reviewed Mac qualification plan: done
 
