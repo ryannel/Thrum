@@ -63,6 +63,22 @@ p50/p95 (ms) was 6.20/8.18 and 6.21/7.64 before, 6.07/7.18 and 6.29/7.61 after. 
 one possible march per affected fragment. The whole-frame samples show no clear speedup.
 Raw logs and capture hashes are in `tmp/handback-review/horizon-fade/`.
 
+The named heights pass ran in all five 1080p Ground E offscreen rows at `ba45ff60`.
+The diagnostic logged GPU timestamps already collected by the graph. Each row has
+80 samples after discarding ten warm-up frames. One-minute load was 45.6–49.5
+with a concurrent GPU correctness test. Frame pass-sums include the offscreen
+output pass. Raw data and rerun script are in `tmp/g3s-air-height-profile/`.
+
+| Solar time | Heights p50 / p95 (ms) | Frame pass-sum p50 / p95 (ms) |
+|---|---|---|
+| Noon | 0.186 / 0.373, 0.196 / 0.337 | 5.46 / 7.76, 5.53 / 6.92 |
+| 17.4 h | 0.285 / 0.414, 0.306 / 0.461 | 3.96 / 5.45, 4.10 / 5.40 |
+| Midnight | 0.330 / 0.481 | 4.16 / 5.23 |
+
+This establishes the recurring build cost, including midnight. A cadence change
+needs a complete Sun and caster invalidation rule and a separate image comparison.
+The thin-ridge aerial witness remains open.
+
 ## Independent review
 
 A fresh-context reviewer saw only unlabelled pairs: toward the Sun at sunset and sunrise, the authored sunset, and
