@@ -19,7 +19,9 @@ use thrum_asset::{AssetStore, HeadWatcher, Manifest};
 
 #[cfg(not(target_arch = "wasm32"))]
 use crate::CookedSource;
-use crate::staging::{Bytes, Filler, Progress, StagedUpload, StagingPlan, StagingRing};
+#[cfg(not(target_arch = "wasm32"))]
+use crate::staging::Progress;
+use crate::staging::{Bytes, Filler, StagedUpload, StagingPlan, StagingRing};
 use crate::{CookedConfig, CookedStats, wgpu_format};
 
 /// Product bytes from a mapped store or a fetched generation.
