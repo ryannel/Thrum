@@ -7,7 +7,7 @@ approval stops.
 ## Work from the plan
 
 Work through the [plan](plan.md): keep its status current, tick work off as it's done, and revise it as you learn.
-When a cue won't come after a few honest attempts, take the question back to the design rather than trying again.
+A cue that won't come follows the stop rule in [staying on course](../SKILL.md#staying-on-course).
 
 ## Let the design choose the next slice
 
@@ -28,10 +28,10 @@ interface only, shipped content and configuration, whichever of its neighbours e
 the game's own controls, and capture of the running game watched in motion. Anything less is a diagnostic.
 
 - **Capture without the screen.** Render the running game's frames through the shipped renderer offscreen, at the
-  shipped simulation rate and settings. Encode them at 1×, record each frame's GPU time, and review the clip. Keep the
-  clip, the timings and a few cited stills; delete the raw frame images once encoded (a 1440p minute is tens of GB). This needs
-  no display, window or unlocked session, so it is how motion is watched. Measure presentation (cadence and latency
-  on the real display) separately, in batched owner-present windows. It gates only done-when items about pacing.
+  shipped simulation rate and settings. Encode them at 1×, record each frame's GPU time, and review the clip; keep
+  the clip, timings and a few cited stills, and delete raw frames once encoded. This needs no display or unlocked
+  session, so it is how motion is watched. Presentation (cadence and latency on the real display) is measured
+  separately, in the owner window, and gates only done-when items about pacing.
 
 - **Render the interaction itself.** The first promised visual checkpoint is a rendered interaction with the required
   cue visible. A solver or geometry inspector is a diagnostic.
@@ -65,11 +65,10 @@ the game's own controls, and capture of the running game watched in motion. Anyt
 
 - **Look at the output yourself.** Watch stills and motion against the cues and references, including normal motion,
   starts and stops, turns, camera and scale changes, and quality transitions. Judge at the player's camera, distance and
-  real frame rate, side by side with the reference; close inspection views and offline-paced clips are diagnostics.
+  real frame rate, side by side with the approved reference; close views and offline-paced clips are diagnostics.
   Tests and source review don't replace looking.
 - **Vary the suspects.** When a defect persists, vary the variables that could plausibly cause it; don't hold them
-  fixed across trials. Give each experiment a question, a prediction and a stopping point, and
-  a fair push before calling it.
+  fixed across trials. Give each experiment a question, a prediction and a stopping point.
 - **Get independent visual review.** Have a reviewer judge the images and sequences, and record the result as
   `agent_reviewed`. Say plainly when output is poor. Owner feedback steers later slices; it is never a pause.
 - **Tie evidence to the build.** Tie captures and timings to the actual loaded build, inputs and quality state.

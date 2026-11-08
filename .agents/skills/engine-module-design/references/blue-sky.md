@@ -38,7 +38,7 @@ Search for recent successors and competing whole-system approaches, not only com
 - **Read sources substantively.** Cite the slide, page or timestamp, and say what you actually inspected. A title or
   abstract supplies no algorithm.
 - **Trace reference code end to end.** Pin the revision and follow the actual producer and consumer path. Record the
-  licence. Restrictive-licence code may inform ideas only: copy nothing. No GPL or share-alike code or data.
+  licence ([licence rules](../SKILL.md#reporting-and-permissions)).
 - **Prefer the modern technique.** An older method needs a stated reason that it beats the current one here. Existing
   code, including a better-looking earlier prototype, is a look bar, not a technique choice. It may be heavy or wrong
   by design.
@@ -63,8 +63,8 @@ decisive evidence. Then ask:
   wrap or vanish.
 - **Will it compose?** It must layer with the module's other regimes, such as swell plus wake, or procedural plus
   baked clouds, without replacing them.
-- **Can it run within the shipped budget?** A look that exists only in an offline or reference configuration is a
-  comparator, not a design.
+- **Can it run at the shipped configuration?** A look that exists only in an offline or reference configuration is
+  a comparator, not a design.
 
 A cue the mechanism can't produce is a design defect. Change the mechanism; don't plan to tune it in later.
 

@@ -30,7 +30,8 @@ restores the intended behaviour, verified across its consumers. A local bug can 
   Correct it at that layer. Damping a response, turning a term off or adding noise can isolate a defect or hide it;
   keep such a change only if it restores the intended contract.
 - **Bound the next experiment.** After a negative result, choose a bounded experiment that can change the responsible
-  decision. Don't run a more expensive version of the same test. More resolution can't supply an absent mechanism or
+  decision; it counts toward the [stop rule](../SKILL.md#staying-on-course). Don't run a more expensive version of the
+  same test. More resolution can't supply an absent mechanism or
   fix another quantity's calibration.
 
 ## Make shared representations explicit

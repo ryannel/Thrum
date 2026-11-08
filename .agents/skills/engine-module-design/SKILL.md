@@ -22,48 +22,47 @@ choose the techniques, the research, the experiments and how to break the work d
   Broadsides is evidence and a look bar, not a technique to copy.
 - **Keep one design** ([what it covers](references/design.md)). Revise it in place so it always reads as current;
   don't append amendments.
-- **Plan it as milestones** ([plan](references/plan.md)). Each milestone is an outcome you can see in the game, with
-  how you'll know it's done; the riskiest behaviour comes first. Break each milestone into work however suits you,
-  tick it off as you go, and keep a short status at the top of the plan. Your goal is to work through these
-  milestones to the plan's end on your own; when one closes, carry straight on to the next. The plan is how you, reviewers and the
-  overseer see where the work is, so commit it with the work.
-- **Build and prove** ([implementation](references/implementation.md)). A milestone is done when it works in the game
-  through the module's public interface, at the shipped configuration and simulation rate, watched in motion (an offscreen capture of the running game counts; a reviewer that cannot play video gets a frame strip at 10 fps or more over the window in question), and an
-  independent reviewer agrees. A lab harness or close-up still is a diagnostic.
+- **Plan it as milestones** ([plan](references/plan.md)). Each milestone is one outcome you can see in the game, with
+  how you'll know it's done; the riskiest behaviour comes first. You own the milestones and their breakdown: when one
+  closes, start the next. Commit the plan with the work, since it is how you, reviewers and the overseer see where
+  the work is.
+- **Build and prove** ([implementation](references/implementation.md)). A visual milestone opens from a reference the
+  owner has approved and closes when the game matches it side by side, watched in motion: through the module's public
+  interface, at the shipped configuration and simulation rate, with an independent reviewer agreeing. Measurements
+  explain a mismatch; they are not the done-when. A lab harness or close-up still is a diagnostic.
 
 ## Staying on course
 
-- **This is not new ground, so an experiment is a red flag.** Shipped games and published work have solved almost
-  everything a module needs. Needing to try things usually means the research or the design is missing. Before a
-  trial, find how it is done; an experiment answers a question the design has, has a stopping point, and is logged.
-- **After about three failed attempts at one cue, stop and decide.** Don't run a fourth trial. Find how shipped games
-  and the physics make that cue read (delegate the research and keep working), take it back to the design, and record
-  what changes. Then make the call and log it in the plan:
-  - *Foundational* (it could change the module's design, or blocks the milestone's game outcome): push through with
-    research and design work. The research note comes first and is cited in the plan; analyses, bounds and screens
-    on the same cue are more attempts until it exists. The note ends in a design choice, not a list of things to
-    test: revise the design with a cost account, review it, then change the runtime once.
-  - *Not foundational*: park it as a named later spike with what you learned, and move on to the milestone's other
-    work.
-  Tell the overseer which call you made.
-- **Use this skill at the moments it changes your next step:** starting a milestone (size, done-when, review) and
-  after a failed experiment (the stop-and-decide rule above). Cite it in your goal so it survives compaction; a goal
-  that names it brings it back when your context resets.
+- **An experiment is a red flag.** Shipped games and published work have solved almost everything a module needs, so
+  needing to try things usually means the research or the design is missing. Find how it is done first; an experiment
+  answers a question the design has, has a stopping point, and is logged in the plan.
+- **After about three failed attempts at one cue, stop trialling it.** Commission research on how shipped games and
+  the physics make that cue read, and work the milestone's other items meanwhile. Then propose one call in the plan
+  and tell the overseer:
+  - *park* it as a named later spike with what you learned;
+  - *re-scope* the milestone so it no longer hinges on the cue;
+  - *foundational*: it could change the module's design. The overseer or owner confirms this call, because the agent
+    deep in a cue is the one least able to judge it. Once confirmed, the research note ends in a design choice, not a
+    list of things to test: revise the design with a cost account, have it reviewed, then change the runtime once.
+
+  Until a call is confirmed, the cue stays parked; analyses, bounds and screens on it count as attempts.
+- **Done-when that doesn't move while work items pile up means the milestone is too big or judged wrongly.** Split or
+  re-scope it by the plan's rules. Parking and re-scoping this way are part of owning the milestone, not lowering the
+  bar: the parked work stays named in the plan.
 - **Work that serves no milestone** either earns a place in the plan or waits.
-- **Mark a goal blocked only when no milestone work can proceed.** A step that needs the owner, an unlocked screen or
-  a quiet machine goes in the plan as queued for the next owner window while you do the rest; an independent review
-  is one you commission yourself.
-- **Long jobs run in the background.** Solvers, bakes, builds and benchmarks shouldn't hold your turn. Start them,
-  work other plan items, and check them between items.
-- **The overseer may steer, or correct a milestone or your goal.** When it does, update the plan, log why, have a
-  changed milestone reviewed, and carry on.
+- **Nothing waits on the owner, a screen, a quiet machine or a long job.** The owner reviews in one batched window a
+  day. Queue what needs it in the plan with your recommendation, start long jobs in the background, commission
+  independent reviews yourself, and do the work these don't gate. A goal is blocked only when no milestone work can
+  proceed.
+- **The overseer may steer, or correct a milestone or your goal.** Update the plan, log why, have a changed milestone
+  reviewed, and carry on.
 
 ## Review
 
-Use independent review where it changes decisions ([review](references/review.md)). At minimum: the design (and its
-plan) before you build on it, and each milestone in the game before you call it done. Commission reviews yourself and
-carry on with other work while they run. Record each one on the plan's `Reviews:` line: what was reviewed (revision
-or build), a link to the brief the reviewer was given, and the verdict. A failed review sends you back to the design, not to a stop.
+Use independent review where it changes decisions ([review](references/review.md)). At minimum: the design and plan
+before you build on them, and each milestone in the game before you call it done. Commission reviews yourself and
+carry on while they run. Record each on the plan's `Reviews:` line: the revision or build, a link to the reviewer's
+brief, and the verdict. A failed review sends you back to the design, not to a stop.
 
 ## Routes
 
@@ -82,10 +81,10 @@ Boundary and whole-engine questions go to [engine-architecture](../engine-archit
 
 Ground progress claims in results from this session, and say plainly what is unverified, approximate or failed.
 
-Without asking, you may research, delegate research or review within AGENTS.md's terms, write throwaway
-reproductions in `tmp/<task>/`, run tests, fixtures and captures, change your module's design, plan and code, replace
-a mechanism the evidence rejects, and commit verified checkpoints. Push, publish and start a port only as
-[AGENTS.md](../../../AGENTS.md) and the owner allow; port timing for water and clouds is the owner's
+Without asking, you may research, delegate research, review or bounded build slices, write throwaway reproductions in
+`tmp/<task>/`, run tests, fixtures and captures, change your module's design, plan and code, replace a mechanism the
+evidence rejects, and commit verified checkpoints. Push, publish and start a port only as the AGENTS.md of the
+repository you work in and the owner allow; port timing for water and clouds is the owner's
 ([port decision](../../../docs/design/decisions/SEA-AND-CLOUD-PORT.md)). Keep bulk output under the
 [storage rules](../../../docs/ASSET-LIFECYCLE.md) and record licences and provenance. Restrictive-licence code may
-inform ideas only; copy nothing. No GPL or share-alike code. Anything else goes to the owner.
+inform ideas only; copy nothing. No GPL or share-alike code or data. Anything else goes to the owner.
