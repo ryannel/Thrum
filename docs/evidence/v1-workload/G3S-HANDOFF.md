@@ -16,7 +16,15 @@ The Codex goal remains active. Its attachment is
   all-frame stability and ridge masking come from the independent decode.
   This is offscreen motion evidence. The current Chrome game stream
   recorded 115 pan and 364 emergence samples on Wasm `e64183ed`.
-  Independent milestone review is in progress.
+  Both Chrome playback copies ran at source speed. The independent
+  review verified every archived sample and its original timestamp,
+  tracked three stars across the full pan, and found a one-code sky
+  lift late in twilight. The Chrome pan holds midnight. The Metal
+  on/off pan advances from 00:00 to about 00:48 in matching ticks.
+  The held midnight images show a legible ridge with and without
+  stars. D1–D3 pass. Compositor gaps reached 83 ms in the Chrome
+  pan and 117 ms in emergence, so between-sample browser flicker and
+  physical display cadence remain outside that witness.
 
 - The authored west spur passes all six Metal and Chrome stops and both
   controls at the unchanged one-code threshold on `ba45ff60`. Its
@@ -233,10 +241,15 @@ The Codex goal remains active. Its attachment is
   0.06 ms on). The aggregate cannot be attributed to star shader
   cost. Render-thread p50/p95 was 1.34–1.94/2.55–4.93 ms off and
   1.37–1.52/2.75–3.34 ms on. Both graphs upload the same rows.
-  The stars graph adds one RGBA16Float attachment load and store,
-  16,588,800 bytes each at 1080p, plus sampled depth. This is logical
-  attachment area. Physical reads and writes are unmeasured. Raw
-  paired rows and provenance are in `current-main/m2-closeout-59e76f3/`.
+  At 1080p the Direct stars graph adds a 16,588,800-byte HDR load,
+  a 16,588,800-byte HDR store, and an 8,294,400-byte opaque depth
+  store that the later star sampling keeps live. This totals
+  41,472,000 bytes of logical attachment area, plus sparse depth
+  sampling. The Metal Performance Overview offscreen probe exports
+  no per-frame or extended-system rows, and its only GPU counter is
+  RT Unit Active. Physical tile traffic and paired Chrome frame
+  costs remain open. Raw captures, provenance, paired rows and
+  counter exports are in `current-main/m2-closeout-59e76f3/`.
 
 - Star integration `00c2645` is on `codex/g3s-stars-integration`. Both
   graphs preserve Frustum count copies and nonblocking slot retirement.
