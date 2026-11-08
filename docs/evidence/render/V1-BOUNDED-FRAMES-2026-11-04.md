@@ -45,6 +45,12 @@ In the cooked replacement test, the replacement generation builds two offscreen 
 timing collector also reuses reset query resources after invalid counter values while reporting a timing fault.
 Scratch-only Metal allocation counts and the applied patch are in `tmp/ultrareview-2026-11-07/replacement-resources/`.
 
+**Refused contribution:** a real Metal device destroy followed by an optional rebuild refusal leaves both prepared
+replacement slots usable. The detached passes record no commands or timestamps, the base readback stays byte-identical,
+and a later attachment succeeds. An attachment that changes the graph invalidates old detached candidates. Recovery
+eliminates the two extra target builds on this refusal path. The focused regression failed on the old path. No
+steady-frame code changed. Raw checks are in `tmp/g3b-contribution-recovery/`.
+
 **Mac held-drawable loss:** a detached Metal layer reproduced wgpu 30.0.1 returning `PreviousOutputExists`
 after a real device destroy and drawable drop. The platform owner now scopes surface validation and retries once,
 configuring a current candidate surface before publishing the device. The exact helper reacquired on the replacement

@@ -22,17 +22,23 @@ impl PreparedScene {
         &mut self,
         presenter: Option<&SurfacePresenter>,
     ) -> Result<(), FrameError> {
-        let device = self.prepared.capabilities().device();
-        for slot in &mut self.slots {
-            slot.presentation = presenter
-                .map(|presenter| presenter.bind_target(device, &slot.target))
-                .transpose()
-                .map_err(|error| {
-                    FrameError::Gpu(format!("replacement surface binding: {error:?}"))
-                })?;
-        }
-        Ok(())
+        bind_presenter(&self.prepared, &mut self.slots, presenter)
     }
+}
+
+pub(super) fn bind_presenter(
+    prepared: &PreparedSynthetic,
+    slots: &mut [FrameSlot],
+    presenter: Option<&SurfacePresenter>,
+) -> Result<(), FrameError> {
+    let device = prepared.capabilities().device();
+    for slot in slots {
+        slot.presentation = presenter
+            .map(|presenter| presenter.bind_target(device, &slot.target))
+            .transpose()
+            .map_err(|error| FrameError::Gpu(format!("replacement surface binding: {error:?}")))?;
+    }
+    Ok(())
 }
 
 pub(super) async fn prepare_scene(
@@ -55,11 +61,22 @@ pub(super) async fn prepare_scene(
     .await
     .map_err(|error| FrameError::Gpu(format!("scene prepare: {error:?}")))?;
     prepared.set_contribution_passes(contribution_passes);
+    let slots = prepare_slots(&prepared, queue, extent, surface)?;
+    Ok(PreparedScene { prepared, slots })
+}
+
+pub(super) fn prepare_slots(
+    prepared: &PreparedSynthetic,
+    queue: &wgpu::Queue,
+    extent: [u32; 2],
+    surface: bool,
+) -> Result<Vec<FrameSlot>, FrameError> {
+    let capabilities = prepared.capabilities();
     let mut slots = Vec::with_capacity(IN_FLIGHT);
     for _ in 0..IN_FLIGHT {
-        let target = OffscreenTarget::new(capabilities.device(), &prepared, extent[0], extent[1])
+        let target = OffscreenTarget::new(capabilities.device(), prepared, extent[0], extent[1])
             .map_err(|error| FrameError::Gpu(format!("scene target: {error:?}")))?;
-        let timing_layout = SceneTimingLayout::from((&prepared, &target));
+        let timing_layout = SceneTimingLayout::from((prepared, &target));
         slots.push(FrameSlot {
             target,
             presentation: None,
@@ -74,5 +91,5 @@ pub(super) async fn prepare_scene(
             state: SlotState::Free,
         });
     }
-    Ok(PreparedScene { prepared, slots })
+    Ok(slots)
 }

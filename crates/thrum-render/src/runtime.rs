@@ -364,7 +364,8 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     /// lighting. It is rebuilt on every visual or device republication.
     ///
     /// # Errors
-    /// The contribution's own refusal to draw into the current scene; nothing is attached.
+    /// Refuses an in-flight scene, a contribution that cannot draw, or a graph preparation
+    /// fault. The current attachment is retained.
     pub fn set_scene_contribution(
         &mut self,
         mut contribution: Box<dyn SceneContribution>,
@@ -378,17 +379,10 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         }
         contribution.rebuild(&self.prepared.scene_surface(&self.queue))?;
         let passes = contribution.passes();
+        self.declare_contribution_passes(passes)
+            .map_err(|error| format!("contribution passes: {error}"))?;
         self.contribution = Some(contribution);
         self.contribution_error = None;
-        if let Err(error) = self.declare_contribution_passes(passes) {
-            // Leave no contribution attached to a graph that does not declare its passes.
-            self.contribution = None;
-            let restored = self.declare_contribution_passes(ContributionPasses::default());
-            return Err(match restored {
-                Ok(()) => format!("contribution passes: {error}"),
-                Err(again) => format!("contribution passes: {error}; restoring: {again}"),
-            });
-        }
         Ok(())
     }
 
@@ -397,55 +391,50 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.contribution_error.as_deref()
     }
 
-    /// Rebuild the contribution for a just-published scene, whose slots are all free.
-    fn rebuild_contribution(&mut self) -> Result<(), FrameError> {
-        let passes = match self.contribution.as_mut() {
-            Some(contribution) => {
-                match contribution.rebuild(&self.prepared.scene_surface(&self.queue)) {
-                    Ok(()) => contribution.passes(),
-                    Err(error) => {
-                        self.contribution = None;
-                        self.contribution_error = Some(error);
-                        ContributionPasses::default()
-                    }
-                }
-            }
-            None => ContributionPasses::default(),
-        };
-        self.declare_contribution_passes(passes)
+    /// Optional content can refuse a new generation. Keep the already prepared
+    /// graph and targets: contribution passes record no work when detached.
+    fn rebuild_contribution(&mut self) {
+        if let Some(contribution) = self.contribution.as_mut()
+            && let Err(error) = contribution.rebuild(&self.prepared.scene_surface(&self.queue))
+        {
+            self.contribution = None;
+            self.contribution_error = Some(error);
+        }
     }
 
-    /// Recreate free slot targets and timings when the declared contribution passes change, so
-    /// every graph includes exactly the passes of the attached contribution.
+    /// Prepare a complete graph/target set before changing the active slots.
     fn declare_contribution_passes(
         &mut self,
         passes: ContributionPasses,
     ) -> Result<(), FrameError> {
-        if self.prepared.contribution_passes() == passes {
+        let previous = self.prepared.contribution_passes();
+        if previous == passes {
             return Ok(());
         }
         self.prepared.set_contribution_passes(passes);
-        let capabilities = self.prepared.capabilities().clone();
-        let pass_count = self.prepared.scene_pass_count() + u32::from(self.presenter.is_some());
-        for slot in &mut self.slots {
-            slot.target = OffscreenTarget::new(
-                &self.device,
-                &self.prepared,
-                self.render_extent[0],
-                self.render_extent[1],
-            )
-            .map_err(|error| FrameError::Gpu(format!("contribution target: {error:?}")))?;
-            slot.timings = GpuTimings::new(&capabilities, &self.queue, pass_count)
-                .map_err(|error| FrameError::Gpu(format!("contribution timings: {error:?}")))?;
-            slot.presentation = self
-                .presenter
-                .as_ref()
-                .map(|presenter| presenter.bind_target(&self.device, &slot.target))
-                .transpose()
-                .map_err(|error| FrameError::Gpu(format!("contribution surface: {error:?}")))?;
+        let slots = preparation::prepare_slots(
+            &self.prepared,
+            &self.queue,
+            self.render_extent,
+            self.presenter.is_some(),
+        )
+        .and_then(|mut slots| {
+            preparation::bind_presenter(&self.prepared, &mut slots, self.presenter.as_ref())?;
+            Ok(slots)
+        });
+        match slots {
+            Ok(slots) => {
+                self.slots = slots;
+                // Detached candidates carry the previous contribution pass set.
+                self.visual_owner = Arc::new(());
+                self.reset_replacement_history();
+                Ok(())
+            }
+            Err(error) => {
+                self.prepared.set_contribution_passes(previous);
+                Err(error)
+            }
         }
-        self.reset_replacement_history();
-        Ok(())
     }
     /// Maximum submitted scene frames awaiting GPU completion.
     pub const MAX_IN_FLIGHT: usize = IN_FLIGHT;
@@ -657,7 +646,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.visual_revision = candidate.revision;
         self.reset_replacement_history();
         self.visual_owner = Arc::new(());
-        self.rebuild_contribution()?;
+        self.rebuild_contribution();
         Ok(true)
     }
 
