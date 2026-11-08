@@ -1,5 +1,11 @@
 use super::{ArenaError, ArenaLimits, INDEX_BYTES, MeshArena, MeshId, MeshVertex, VERTEX_BYTES};
 
+impl MeshId {
+    pub(in crate::synthetic) const fn for_test(row: u32) -> Self {
+        Self(row)
+    }
+}
+
 const ROOMY: ArenaLimits = ArenaLimits {
     vertices: 1 << 16,
     indices: 1 << 18,

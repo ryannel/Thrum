@@ -148,12 +148,6 @@ impl InstanceUpload {
         self.active_two_sided
     }
 
-    /// Physical row order and its packed rows, for layout witnesses.
-    #[cfg(test)]
-    pub(super) fn physical_rows(&self) -> (&[u32], &[u8]) {
-        (&self.physical_to_slot, &self.packed)
-    }
-
     /// Each logical slot's current physical row.
     pub(super) fn slot_to_physical(&self) -> &[u32] {
         &self.slot_to_physical
