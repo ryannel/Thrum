@@ -20,6 +20,11 @@ use super::mesh_arena::{MeshArena, MeshId};
 use super::upload::InstanceUpload;
 use super::{RenderError, storage_layout};
 use crate::abi::InstanceRecord;
+use crate::visibility::{MemberInputs, MemberShape};
+
+/// `Buckets` in `visibility.wgsl`: four words, then 64 four-word segments.
+const TABLE_WORDS: usize = 4 + super::buckets::MAX_BUCKETS * 4;
+const TABLE_BYTES: u64 = TABLE_WORDS as u64 * 4;
 
 /// Each logical slot's mesh row, chosen by the renderer's caller at
 /// preparation. Every slot names a row the arena holds.
@@ -70,6 +75,9 @@ pub(super) struct BucketRoute {
     slot_meshes: Vec<MeshId>,
     /// The laid-out member list Direct draws from: physical rows, padded.
     members: wgpu::Buffer,
+    /// The compaction's uniform bucket table: count, mask base, then each
+    /// segment's first workgroup, workgroups and mesh row.
+    table: wgpu::Buffer,
     /// Bytes bound at each bucket's dynamic offset: the largest segment.
     segment_bytes: u64,
     /// Forward pipelines by class, then unflipped and flipped.
@@ -123,6 +131,12 @@ impl BucketRoute {
             usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
+        let table = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("synthetic bucket table"),
+            size: TABLE_BYTES,
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
         for (slot, instance) in (0..).zip(instances) {
             buckets
                 .set(slot, Self::key(selection.slots[slot as usize], instance))
@@ -132,6 +146,7 @@ impl BucketRoute {
             buckets,
             slot_meshes: selection.slots.clone(),
             members,
+            table,
             segment_bytes,
             forward: CLASSES
                 .map(|class| [false, true].map(|flipped| forward(class.primitive(flipped)))),
@@ -184,8 +199,47 @@ impl BucketRoute {
                 .flat_map(|member| member.to_le_bytes())
                 .collect();
             queue.write_buffer(&self.members, 0, &bytes);
+            queue.write_buffer(&self.table, 0, &self.table_bytes());
         }
         Ok(())
+    }
+
+    /// The uniform table `visibility.wgsl`'s `Buckets` declares.
+    fn table_bytes(&self) -> Vec<u8> {
+        let segments = self.segments();
+        let mut words = [0_u32; TABLE_WORDS];
+        words[0] = u32::try_from(segments.len()).unwrap_or(u32::MAX);
+        words[1] = self.groups();
+        for (record, segment) in words[4..].as_chunks_mut::<4>().0.iter_mut().zip(segments) {
+            record[0] = segment.start / SEGMENT_ALIGN;
+            record[1] = segment.capacity / SEGMENT_ALIGN;
+            record[2] = segment.key.mesh.row();
+        }
+        words.iter().flat_map(|word| word.to_le_bytes()).collect()
+    }
+
+    /// Workgroups in the current member list.
+    pub(super) fn groups(&self) -> u32 {
+        u32::try_from(self.buckets.members().len()).unwrap_or(u32::MAX) / SEGMENT_ALIGN
+    }
+
+    /// The compaction's fixed shape.
+    pub(super) fn shape(&self) -> Result<MemberShape, RenderError> {
+        Ok(MemberShape {
+            buckets: u32::try_from(self.segments().len())
+                .map_err(|_| RenderError::SceneCapacity)?,
+            worst_members: u32::try_from(self.buckets.worst_member_bytes() / 4)
+                .map_err(|_| RenderError::SceneCapacity)?,
+            segment_bytes: self.segment_bytes,
+        })
+    }
+
+    /// The member list and table the compaction binds.
+    pub(super) fn member_inputs(&self) -> MemberInputs<'_> {
+        MemberInputs {
+            members: &self.members,
+            table: &self.table,
+        }
     }
 
     pub(super) fn segments(&self) -> &[Segment] {

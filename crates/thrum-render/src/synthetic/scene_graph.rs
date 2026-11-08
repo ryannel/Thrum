@@ -134,6 +134,41 @@ impl PreparedSynthetic {
         ])
     }
 
+    /// The bucket route's member list (storage) and bucket table (uniform).
+    fn bucket_route_reads(&self, graph: &mut FrameGraph) -> Result<Vec<Access>, RenderError> {
+        let Some(route) = &self.bucket_route else {
+            return Ok(Vec::new());
+        };
+        let inputs = route.member_inputs();
+        [
+            (
+                inputs.members,
+                wgpu::BufferUsages::STORAGE,
+                AccessKind::StorageRead,
+            ),
+            (
+                inputs.table,
+                wgpu::BufferUsages::UNIFORM,
+                AccessKind::UniformRead,
+            ),
+        ]
+        .into_iter()
+        .map(|(buffer, usage, kind)| {
+            let bytes = buffer.size();
+            let resource = graph.resource(
+                ResourceDescriptor::Buffer { bytes, usage },
+                ResourceScope::Imported { initialized: true },
+            )?;
+            Ok(Access {
+                resource,
+                range: 0..bytes,
+                kind,
+                store: true,
+            })
+        })
+        .collect()
+    }
+
     pub(super) fn compile_graph(
         &self,
         width: u32,
@@ -164,6 +199,7 @@ impl PreparedSynthetic {
             ResourceScope::Imported { initialized: true },
         )?;
         let mesh = self.mesh_arena_reads(&mut graph)?;
+        let route = self.bucket_route_reads(&mut graph)?;
         let mut accesses = vec![
             Access {
                 resource: material,
@@ -191,6 +227,11 @@ impl PreparedSynthetic {
             },
         ];
         accesses.extend_from_slice(&mesh);
+        // Direct's bucket draws read the member list; the culled draws read
+        // the visible list the compaction writes from it.
+        if self.visibility.is_none() {
+            accesses.extend(route.first().cloned());
+        }
         let mut prepared_keys = BTreeSet::from([self.key, self.display_key(), self.exposure_key()]);
         let (directional, view) = Self::append_frame_uniform_reads(&mut graph, &mut accesses)?;
         let atmosphere_inputs = self
@@ -240,7 +281,7 @@ impl PreparedSynthetic {
             Self::view_attachment(attachment, MOTION_FORMAT, AttachmentUse::Motion, false)?;
         let camera = self.append_camera_visibility(
             &mut graph,
-            (view, &instance, &mesh),
+            (view, &instance, &mesh, &route),
             [width, height],
             &mut accesses,
             &mut prepared_keys,
@@ -260,7 +301,11 @@ impl PreparedSynthetic {
             accesses,
             external_side_effect: true,
         });
-        Self::append_camera_stats(&mut graph, &camera.stats)?;
+        let args_bytes = self.visibility.as_ref().map_or(
+            crate::visibility::ARGS_BYTES,
+            VisibilityPrepared::args_bytes,
+        );
+        Self::append_camera_stats(&mut graph, &camera.stats, args_bytes)?;
         self.append_history_publish(
             &mut graph,
             &mut prepared_keys,
