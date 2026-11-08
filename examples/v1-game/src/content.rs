@@ -7,11 +7,12 @@ use thrum_asset_gpu::CookedStats;
 
 /// Select the host for `THRUM_SCENE=valley|diagnostic|field` and
 /// `THRUM_CULLING=direct|frustum|occlusion`. The valley prepares its star field
-/// unless `THRUM_STARS=off`.
+/// unless `THRUM_STARS=off`; `THRUM_ROUTE_OVERLAY=proof|unmirrored|light-off` adds the
+/// moving-route proof overlay or one of its controls.
 /// Without `THRUM_CULLING`, the field uses Frustum (a measured win along its
 /// flythrough) and the fully visible grid keeps Direct.
 /// # Errors
-/// Refuses an unknown culling mode.
+/// Refuses an unknown culling mode or route overlay.
 pub fn selected_setup() -> Result<crate::GameSetup, String> {
     let scene = std::env::var("THRUM_SCENE");
     let content = if scene.as_deref() == Ok("field") {
@@ -35,6 +36,21 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
         camera_culling,
         valley_stars: scene.as_deref() == Ok("valley")
             && std::env::var("THRUM_STARS").as_deref() != Ok("off"),
+        route_overlay: match (
+            scene.as_deref(),
+            std::env::var("THRUM_ROUTE_OVERLAY").as_deref(),
+        ) {
+            (_, Err(std::env::VarError::NotPresent)) => crate::RouteOverlay::Off,
+            (Ok("valley"), Ok("proof")) => crate::RouteOverlay::Proof,
+            (Ok("valley"), Ok("unmirrored")) => crate::RouteOverlay::Unmirrored,
+            (Ok("valley"), Ok("light-off")) => crate::RouteOverlay::LightOff,
+            _ => {
+                return Err(
+                    "THRUM_ROUTE_OVERLAY must be proof, unmirrored or light-off, with THRUM_SCENE=valley"
+                        .to_owned(),
+                );
+            }
+        },
     })
 }
 

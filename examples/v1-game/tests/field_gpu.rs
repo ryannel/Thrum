@@ -73,6 +73,7 @@ fn field_culling_matches_direct_along_the_flythrough() {
                         content: GameContent::Field,
                         camera_culling,
                         valley_stars: false,
+                        route_overlay: v1_game::RouteOverlay::Off,
                     },
                 )
                 .await

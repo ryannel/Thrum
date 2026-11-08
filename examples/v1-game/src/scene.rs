@@ -16,6 +16,31 @@ pub(crate) const REFLECTION_SUBJECT_POSITION: [f32; 3] = [-0.5, 0.009, 0.78];
 pub(crate) const REFLECTION_SUBJECT_MATERIAL: u64 = 2;
 pub(crate) const LOCAL_PEER: PeerId = PeerId(1);
 pub(crate) const PEER_COUNT: usize = 4;
+/// Moving-route proof overlay: static grid slots outside the moving prefix, the
+/// controlled peers and the subjects, reseeded at valley metres in front of the
+/// cooked sphere and rock. Heights are the terrain surface plus a 0.18 m half extent.
+pub(crate) const ROUTE_OVERLAY: [(usize, [f32; 3]); 11] = [
+    (5060, [-0.6, 240.075, -3.5]),
+    (5061, [0.6, 240.090, -3.5]),
+    (5062, [-1.0, 240.097, -5.5]),
+    (5063, [0.0, 240.111, -5.5]),
+    (5064, [1.0, 240.122, -5.5]),
+    (5065, [-1.0, 240.110, -7.0]),
+    (5066, [0.0, 240.116, -7.0]),
+    (5067, [1.0, 240.122, -7.0]),
+    (5068, [-1.0, 240.124, -8.5]),
+    (5069, [0.0, 240.121, -8.5]),
+    (5070, [1.0, 240.121, -8.5]),
+];
+/// The overlay slot whose cold basis mirrors local x (a negative determinant).
+pub(crate) const ROUTE_OVERLAY_MIRRORED_SLOT: usize = 5060;
+
+fn route_overlay_position(index: usize) -> Option<[f32; 3]> {
+    ROUTE_OVERLAY
+        .iter()
+        .find(|(slot, _)| *slot == index)
+        .map(|(_, position)| *position)
+}
 
 pub(crate) fn binding(peer: PeerId) -> Ownership {
     Ownership {
@@ -54,6 +79,20 @@ pub enum GameContent {
     Field,
 }
 
+/// The moving-route proof overlay and its controls. Grid content only.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RouteOverlay {
+    /// No overlay: today's seeds, bases and lights, byte for byte.
+    #[default]
+    Off,
+    /// Reseeded valley instances, one mirrored basis and the retuned light.
+    Proof,
+    /// The same instances and light with no mirrored basis (one-sided pipelines).
+    Unmirrored,
+    /// The proof overlay with the retuned light at zero intensity.
+    LightOff,
+}
+
 impl GameContent {
     /// Physical entity slots the content seeds and the renderer prepares.
     #[must_use]
@@ -70,10 +109,15 @@ impl GameContent {
     }
 }
 
-pub(crate) fn simulation(content: GameContent) -> Result<Simulation, String> {
-    match content {
-        GameContent::Grid => simulation_with_count(ENTITY_COUNT),
-        GameContent::Field => field_simulation(),
+pub(crate) fn simulation(
+    content: GameContent,
+    route_overlay: RouteOverlay,
+) -> Result<Simulation, String> {
+    let overlay = route_overlay != RouteOverlay::Off;
+    match (content, overlay) {
+        (GameContent::Grid, _) => grid_simulation(ENTITY_COUNT, overlay),
+        (GameContent::Field, false) => field_simulation(),
+        (GameContent::Field, true) => Err("the route overlay needs grid content".to_owned()),
     }
 }
 
@@ -140,6 +184,10 @@ fn field_simulation() -> Result<Simulation, String> {
 ///
 /// Returns fixture setup or seeding failure.
 pub fn simulation_with_count(entity_count: usize) -> Result<Simulation, String> {
+    grid_simulation(entity_count, false)
+}
+
+fn grid_simulation(entity_count: usize, route_overlay: bool) -> Result<Simulation, String> {
     if entity_count < PEER_COUNT || entity_count > u32::MAX as usize {
         return Err("fixture entity count is outside the physical slot range".into());
     }
@@ -151,9 +199,15 @@ pub fn simulation_with_count(entity_count: usize) -> Result<Simulation, String> 
         let y = -0.9 + (index / 100) as f64 * 0.018 + 0.009;
         let reflection_subject = entity_count == ENTITY_COUNT && index == REFLECTION_SUBJECT_SLOT;
         let ownership = peer_ownership(entity_count, index)?;
+        let overlay = route_overlay
+            .then(|| route_overlay_position(index))
+            .flatten()
+            .filter(|_| entity_count == ENTITY_COUNT);
         sim.seed(ComponentEntity {
             id: StableId(index as u128),
-            position: Position(if reflection_subject {
+            position: Position(if let Some(position) = overlay {
+                position.map(f64::from)
+            } else if reflection_subject {
                 REFLECTION_SUBJECT_POSITION.map(f64::from)
             } else {
                 [x, y, 0.5]
@@ -497,7 +551,8 @@ mod tests {
 
     #[test]
     fn four_peers_share_one_tick_authority_and_keep_independent_held_controls() {
-        let mut sim = simulation(super::GameContent::Grid).expect("10k fixture");
+        let mut sim =
+            simulation(super::GameContent::Grid, super::RouteOverlay::Off).expect("10k fixture");
         let axes = [
             [1.0, 0.0, 0.0],
             [0.0, 1.0, 0.0],
@@ -567,5 +622,41 @@ mod tests {
             .position
             .0;
         assert!((second[1] - initial[1][1] - 0.2).abs() < 1e-9);
+    }
+
+    #[test]
+    fn route_overlay_reseeds_only_its_slots_and_off_matches_the_fixture() {
+        let fixture = simulation_with_count(ENTITY_COUNT).expect("fixture");
+        let off =
+            simulation(super::GameContent::Grid, super::RouteOverlay::Off).expect("overlay off");
+        let on =
+            simulation(super::GameContent::Grid, super::RouteOverlay::Proof).expect("overlay on");
+        for index in 0..ENTITY_COUNT {
+            let id = StableId(index as u128);
+            let view = |sim: &crate::simulation::Simulation| {
+                format!(
+                    "{:?}",
+                    sim.get(sim.handle(id).expect("seeded")).expect("view")
+                )
+            };
+            assert_eq!(
+                view(&fixture),
+                view(&off),
+                "slot {index} with the overlay off"
+            );
+            match super::route_overlay_position(index) {
+                None => assert_eq!(view(&off), view(&on), "slot {index} outside the overlay"),
+                Some(position) => {
+                    let seeded = on.get(on.handle(id).expect("seeded")).expect("view");
+                    assert_eq!(seeded.position.0, position.map(f64::from));
+                    assert!((super::MOVING_COUNT..ENTITY_COUNT - PEER_COUNT).contains(&index));
+                    assert!(
+                        ![super::NEUTRAL_SUBJECT_SLOT, super::REFLECTION_SUBJECT_SLOT]
+                            .contains(&index)
+                    );
+                }
+            }
+        }
+        assert!(simulation(super::GameContent::Field, super::RouteOverlay::Proof).is_err());
     }
 }

@@ -14,7 +14,11 @@ fn threaded_control_equality_preserves_inline_signed_zero_admission() {
         "resident mailbox must admit the same bitwise control change as inline world"
     );
 
-    let mut world = WorldDriver::new(crate::scene::GameContent::Grid).expect("fixture world");
+    let mut world = WorldDriver::new(
+        crate::scene::GameContent::Grid,
+        crate::scene::RouteOverlay::Off,
+    )
+    .expect("fixture world");
     world
         .advance(Duration::from_millis(17))
         .expect("first tick");
@@ -28,7 +32,11 @@ fn threaded_control_equality_preserves_inline_signed_zero_admission() {
 
 #[test]
 fn exhausted_sequence_refuses_before_admitting_input_and_keeps_the_tick_queued() {
-    let mut driver = WorldDriver::new(crate::scene::GameContent::Grid).expect("fixture world");
+    let mut driver = WorldDriver::new(
+        crate::scene::GameContent::Grid,
+        crate::scene::RouteOverlay::Off,
+    )
+    .expect("fixture world");
     let initial = driver.controlled_position().expect("controlled actor");
     driver.world.game_mut().input_sequence = u64::MAX;
     driver.set_controls([1.0, 0.0, 0.0]).expect("valid axes");
@@ -54,7 +62,11 @@ fn exhausted_sequence_refuses_before_admitting_input_and_keeps_the_tick_queued()
 
 #[test]
 fn inline_overload_reports_once_and_drains_over_display_drives() {
-    let mut driver = WorldDriver::new(crate::scene::GameContent::Grid).expect("fixture world");
+    let mut driver = WorldDriver::new(
+        crate::scene::GameContent::Grid,
+        crate::scene::RouteOverlay::Off,
+    )
+    .expect("fixture world");
     driver.world = driver.world.with_tick_work_slice(Duration::ZERO);
     let first = driver
         .advance(Duration::from_millis(100))
@@ -87,7 +99,11 @@ fn inline_overload_reports_once_and_drains_over_display_drives() {
 
 #[test]
 fn a_new_inline_pause_cancels_deferred_resume() {
-    let mut driver = WorldDriver::new(crate::scene::GameContent::Grid).expect("fixture world");
+    let mut driver = WorldDriver::new(
+        crate::scene::GameContent::Grid,
+        crate::scene::RouteOverlay::Off,
+    )
+    .expect("fixture world");
     driver.world = driver.world.with_tick_work_slice(Duration::ZERO);
     let now = Duration::from_millis(50);
     driver.advance(now).expect("first of three ticks");

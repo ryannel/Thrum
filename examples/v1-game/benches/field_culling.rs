@@ -98,6 +98,7 @@ fn main() {
                         content: GameContent::Field,
                         camera_culling,
                         valley_stars: false,
+                        route_overlay: v1_game::RouteOverlay::Off,
                     },
                 )
                 .await

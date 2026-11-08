@@ -15,7 +15,7 @@ use thrum_content_runtime::EnvironmentProduct;
 #[cfg(not(target_arch = "wasm32"))]
 use thrum_render::synthetic::PhotometricEnvironment;
 use thrum_render::{
-    abi::MaterialRecord,
+    abi::{InstanceRecord, MaterialRecord},
     atmosphere::AtmosphereFrame,
     extract::{ExtractReport, RenderExtractor, SourceTick},
     runtime::{SceneFrame, SceneSource},
@@ -177,6 +177,54 @@ fn field_scene(extent: [u32; 2]) -> Result<SyntheticScene, String> {
     Ok(scene)
 }
 
+/// Scale a grid instance's cold basis so its first axis has length `half_extent`.
+fn scale_basis(instance: &mut InstanceRecord, half_extent: f32) {
+    let basis_length = instance.current[0][..3]
+        .iter()
+        .map(|value| value * value)
+        .sum::<f32>()
+        .sqrt();
+    let scale = half_extent / basis_length;
+    for axis in 0..3 {
+        for component in 0..3 {
+            instance.current[axis][component] *= scale;
+            instance.previous[axis][component] *= scale;
+            instance.normal[axis][component] /= scale;
+        }
+    }
+}
+
+/// The moving-route proof overlay's retuned diagnostic light, above the mirrored pair.
+pub(crate) const ROUTE_OVERLAY_LIGHT: SyntheticPointLight = SyntheticPointLight {
+    position: [0.0, 240.55, -3.2],
+    radius: 4.0,
+    candela: [8000.0, 6000.0, 4000.0],
+};
+
+/// Cold geometry for the moving-route overlay: valley-scale bases matching the
+/// authoritative reseeds, one mirrored basis, and diagnostic light 0 moved beside them.
+/// Two-sided state is all-or-nothing, so the mirrored basis switches the whole list.
+fn apply_route_overlay(scene: &mut SyntheticScene, overlay: scene::RouteOverlay) {
+    for (slot, position) in scene::ROUTE_OVERLAY {
+        let instance = &mut scene.instances[slot];
+        scale_basis(instance, 0.18);
+        instance.current[3][..3].copy_from_slice(&position);
+        instance.previous[3][..3].copy_from_slice(&position);
+    }
+    if overlay != scene::RouteOverlay::Unmirrored {
+        let mirrored = &mut scene.instances[scene::ROUTE_OVERLAY_MIRRORED_SLOT];
+        for component in 0..3 {
+            mirrored.current[0][component] = -mirrored.current[0][component];
+            mirrored.previous[0][component] = -mirrored.previous[0][component];
+            mirrored.normal[0][component] = -mirrored.normal[0][component];
+        }
+    }
+    scene.local_lights[0] = ROUTE_OVERLAY_LIGHT;
+    if overlay == scene::RouteOverlay::LightOff {
+        scene.local_lights[0].candela = [0.0; 3];
+    }
+}
+
 pub(crate) struct GameScene {
     content: GameContent,
     valley_stars: bool,
@@ -216,6 +264,12 @@ impl GameScene {
             GameContent::Field => field_scene(extent)?,
         };
         scene.camera_culling = setup.camera_culling;
+        if setup.route_overlay != scene::RouteOverlay::Off {
+            if setup.content != GameContent::Grid {
+                return Err("the route overlay needs grid content".to_owned());
+            }
+            apply_route_overlay(&mut scene, setup.route_overlay);
+        }
         Ok(scene)
     }
 
@@ -234,20 +288,7 @@ impl GameScene {
         // controlled slots. Their rotated faces expose lighting direction.
         // A 0.18 halfextent also stays outside the coloured local-light spheres.
         for slot in [scene::NEUTRAL_SUBJECT_SLOT, scene::REFLECTION_SUBJECT_SLOT] {
-            let subject = &mut scene.instances[slot];
-            let basis_length = subject.current[0][..3]
-                .iter()
-                .map(|value| value * value)
-                .sum::<f32>()
-                .sqrt();
-            let scale = 0.18 / basis_length;
-            for axis in 0..3 {
-                for component in 0..3 {
-                    subject.current[axis][component] *= scale;
-                    subject.previous[axis][component] *= scale;
-                    subject.normal[axis][component] /= scale;
-                }
-            }
+            scale_basis(&mut scene.instances[slot], 0.18);
         }
         // This cold geometry matches the authoritative spawn. Publication owns
         // position and material after extraction; no GPU identity override.
@@ -358,6 +399,44 @@ mod tests {
     use thrum_render::synthetic::{DisplayOverlay, FrameLighting, SdrToneMap, SyntheticView};
 
     #[test]
+    fn route_overlay_changes_only_its_bases_and_light_zero() {
+        let off = GameScene::scene([640, 360], crate::GameSetup::default()).unwrap();
+        let on = GameScene::scene(
+            [640, 360],
+            crate::GameSetup {
+                route_overlay: scene::RouteOverlay::Proof,
+                ..crate::GameSetup::default()
+            },
+        )
+        .unwrap();
+        let overlay: Vec<usize> = scene::ROUTE_OVERLAY.iter().map(|(slot, _)| *slot).collect();
+        for (slot, (a, b)) in off.instances.iter().zip(&on.instances).enumerate() {
+            if !overlay.contains(&slot) {
+                assert_eq!(format!("{a:?}"), format!("{b:?}"), "slot {slot}");
+            }
+        }
+        let determinant = |m: [[f32; 4]; 4]| {
+            m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1])
+                - m[1][0] * (m[0][1] * m[2][2] - m[0][2] * m[2][1])
+                + m[2][0] * (m[0][1] * m[1][2] - m[0][2] * m[1][1])
+        };
+        for (slot, position) in scene::ROUTE_OVERLAY {
+            let instance = &on.instances[slot];
+            assert_eq!(instance.current[3][..3], position);
+            let mirrored = slot == scene::ROUTE_OVERLAY_MIRRORED_SLOT;
+            assert_eq!(determinant(instance.current) < 0.0, mirrored, "slot {slot}");
+        }
+        assert_eq!(
+            format!("{:?}", &off.local_lights[1..]),
+            format!("{:?}", &on.local_lights[1..])
+        );
+        assert_eq!(
+            format!("{:?}", on.local_lights[0]),
+            format!("{:?}", super::ROUTE_OVERLAY_LIGHT)
+        );
+    }
+
+    #[test]
     fn diagnostic_camera_keeps_its_original_pose_and_bob() {
         let extent = [640, 360];
         let actual = frame_view(0, 0.0, extent, 0.0, 0.0, None).unwrap();
@@ -453,7 +532,8 @@ mod tests {
 
     #[test]
     fn reflection_subject_keeps_authoritative_material_and_static_history() {
-        let mut world = scene::simulation(scene::GameContent::Grid).expect("actual 10k fixture");
+        let mut world = scene::simulation(scene::GameContent::Grid, scene::RouteOverlay::Off)
+            .expect("actual 10k fixture");
         let mut render = GameScene::scene([640, 360], crate::GameSetup::default())
             .expect("authored lighting subjects");
         let mut extractor = RenderExtractor::new(scene::ENTITY_COUNT, scene::ENTITY_COUNT);
