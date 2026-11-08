@@ -14,11 +14,67 @@ use std::time::{Duration, Instant};
 
 use asset_loop::{Viewer, ViewerConfig};
 use thrum_asset::Profile;
+use thrum_cook::tripwire::{self, Rule};
 use thrum_cook::{CookConfig, Cooker, Durability, Quality, StatCache, demo, watch};
 
 const EDITS: usize = 12;
 const EDIT_PERIOD: Duration = Duration::from_millis(500);
 const FRAME_PERIOD: Duration = Duration::from_micros(8_333);
+
+/// Measured metrics, in milliseconds, checked against their history after the run.
+type Metrics = Vec<(String, f64)>;
+
+/// Each tripwire's allowed multiple of its same-load history median, and a floor in ms.
+/// Factors are at least 1.25 times the largest max/median spread seen over repeated runs on the
+/// shared machine. Startup is bimodal (device creation warm or cold), so its floor sits above the
+/// cold runs.
+const RULES: &[Rule] = &[
+    Rule {
+        metric: "scan_1000_warm_ms",
+        factor: 3.0,
+        floor: 2.0,
+    },
+    Rule {
+        metric: "scan_10000_warm_ms",
+        factor: 2.0,
+        floor: 5.0,
+    },
+    Rule {
+        metric: "scan_10000_one_change_ms",
+        factor: 3.0,
+        floor: 5.0,
+    },
+    Rule {
+        metric: "scan_10000_targeted_ms",
+        factor: 3.0,
+        floor: 0.5,
+    },
+    Rule {
+        metric: "startup_first_resident_ms",
+        factor: 3.0,
+        floor: 600.0,
+    },
+    Rule {
+        metric: "write_visible_median_ms",
+        factor: 2.0,
+        floor: 50.0,
+    },
+    Rule {
+        metric: "write_visible_max_ms",
+        factor: 3.0,
+        floor: 100.0,
+    },
+    Rule {
+        metric: "swap_cpu_max_ms",
+        factor: 3.0,
+        floor: 5.0,
+    },
+    Rule {
+        metric: "swap_gpu_interval_max_ms",
+        factor: 3.0,
+        floor: 20.0,
+    },
+];
 
 fn main() {
     let root = std::env::temp_dir().join(format!("thrum-g5-bench-{}", std::process::id()));
@@ -32,19 +88,34 @@ fn main() {
         std::env::consts::ARCH
     )
     .ok();
+    let mut metrics = Metrics::new();
     for files in [1_000, 10_000] {
-        scan(&root.join(format!("scan-{files}")), files, &mut report);
+        scan(
+            &root.join(format!("scan-{files}")),
+            files,
+            &mut report,
+            &mut metrics,
+        );
     }
-    edit_loop(&root.join("loop"), &mut report);
+    edit_loop(&root.join("loop"), &mut report, &mut metrics);
     make_writable(&root);
     std::fs::remove_dir_all(&root).ok();
+    // Checked against earlier runs at the same load; THRUM_TRIPWIRES_RECORD=1 appends a passing run.
+    let history = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../docs/evidence/integration/tripwires/g5-edit-to-visible.tsv");
+    let record = std::env::var_os("THRUM_TRIPWIRES_RECORD").is_some();
+    let verdict = tripwire::gate(&history, &tripwire::this_run(metrics), RULES, record);
+    report.push_str(verdict.as_ref().map_or_else(|error| error, |ok| ok));
     std::io::stdout().write_all(report.as_bytes()).ok();
     if let Some(path) = std::env::var_os("THRUM_G5_BENCH_OUT") {
         std::fs::write(path, &report).expect("write report");
     }
+    if verdict.is_err() {
+        std::process::exit(1);
+    }
 }
 
-fn scan(directory: &Path, files: usize, report: &mut String) {
+fn scan(directory: &Path, files: usize, report: &mut String, metrics: &mut Metrics) {
     let old = std::time::SystemTime::now() - Duration::from_secs(60);
     for index in 0..files {
         let path = directory.join(format!("d{:03}/f{index:05}.bin", index / 100));
@@ -78,6 +149,11 @@ fn scan(directory: &Path, files: usize, report: &mut String) {
         .scan_paths(directory, &[PathBuf::from("d000/f00000.bin")])
         .expect("targeted scan");
     let targeted = start.elapsed();
+    if files >= 10_000 {
+        metrics.push((format!("scan_{files}_one_change_ms"), ms(one_change)));
+        metrics.push((format!("scan_{files}_targeted_ms"), ms(targeted)));
+    }
+    metrics.push((format!("scan_{files}_warm_ms"), ms(warm)));
     writeln!(
         report,
         "scan {files} files x 4 KiB: cold {:.2} ms, warm no-change median {:.2} ms, one change {:.2} ms, watcher-targeted {:.3} ms",
@@ -96,7 +172,7 @@ struct Publication {
     cook: Duration,
 }
 
-fn edit_loop(root: &Path, report: &mut String) {
+fn edit_loop(root: &Path, report: &mut String, metrics: &mut Metrics) {
     let source = root.join("source");
     std::fs::create_dir_all(source.join("meshes")).expect("dir");
     std::fs::create_dir_all(source.join("textures")).expect("dir");
@@ -203,6 +279,10 @@ fn edit_loop(root: &Path, report: &mut String) {
     let publications = publications.lock().expect("log");
     let writes = writes.lock().expect("log");
     writeln!(report, "startup: device {:.1} ms, first resident frame {:.1} ms (includes adapter/device creation)", ms(device_ready), ms(first_resident.expect("resident"))).ok();
+    metrics.push((
+        "startup_first_resident_ms".into(),
+        ms(first_resident.expect("resident")),
+    ));
     if let Some(swap) = records.swaps.first() {
         writeln!(
             report,
@@ -269,8 +349,13 @@ fn edit_loop(root: &Path, report: &mut String) {
     totals.sort();
     if !totals.is_empty() {
         writeln!(report, "write->visible: median {:.1} ms, max {:.1} ms (milliseconds in table; times include the 8 ms debounce)", ms(totals[totals.len() / 2]), ms(totals[totals.len() - 1])).ok();
+        metrics.push((
+            "write_visible_median_ms".into(),
+            ms(totals[totals.len() / 2]),
+        ));
+        metrics.push(("write_visible_max_ms".into(), ms(totals[totals.len() - 1])));
     }
-    hitch(report, &records, &swap_frames, run_start);
+    hitch(report, &records, &swap_frames, run_start, metrics);
 }
 
 /// Hitch tripwire: render-thread CPU and GPU completion cadence on swap frames vs all others.
@@ -279,6 +364,7 @@ fn hitch(
     records: &asset_loop::Records,
     swap_frames: &[u64],
     run_start: Instant,
+    metrics: &mut Metrics,
 ) {
     let (mut swap_cpu, mut steady_cpu) = (Vec::new(), Vec::new());
     for frame in records.frames.iter().filter(|f| f.submitted >= run_start) {
@@ -311,6 +397,14 @@ fn hitch(
             swap_gpu.push(*interval);
         } else {
             steady_gpu.push(*interval);
+        }
+    }
+    for (name, values) in [
+        ("swap_cpu_max_ms", &swap_cpu),
+        ("swap_gpu_interval_max_ms", &swap_gpu),
+    ] {
+        if let Some(max) = values.iter().max() {
+            metrics.push((name.into(), ms(*max)));
         }
     }
     for (label, values) in [

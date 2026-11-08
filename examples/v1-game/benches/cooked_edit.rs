@@ -13,12 +13,64 @@ use std::time::{Duration, Instant};
 
 use thrum_asset::{AssetStore, Ktx2, Profile};
 use thrum_asset_gpu::{CookedAssets, CookedStats};
+use thrum_cook::tripwire::{self, Rule};
 use thrum_cook::{CookConfig, Cooker, Durability, Quality, demo};
 use v1_game::{FrameConfig, FrameHost};
 
 const BUDGET: u64 = 8 << 20;
 
+/// Measured metrics (milliseconds, frames or MiB), checked against their history after the run.
+type Metrics = Vec<(String, f64)>;
+
+/// Each tripwire's allowed multiple of its same-load history median, and a floor. Staging peaks
+/// are deterministic and may not grow at all.
+/// Timing factors are at least 1.25 times the largest max/median spread seen over repeated runs.
+/// Startup is bimodal (device creation warm or cold), so its floor sits above the cold runs.
+const RULES: &[Rule] = &[
+    Rule {
+        metric: "realistic_startup_ms",
+        factor: 3.0,
+        floor: 750.0,
+    },
+    Rule {
+        metric: "realistic_write_swapped_median_ms",
+        factor: 2.0,
+        floor: 100.0,
+    },
+    Rule {
+        metric: "realistic_upload_cpu_p99_ms",
+        factor: 3.0,
+        floor: 5.0,
+    },
+    Rule {
+        metric: "realistic_staging_peak_mib",
+        factor: 1.0,
+        floor: 0.0,
+    },
+    Rule {
+        metric: "large_startup_ms",
+        factor: 3.0,
+        floor: 1000.0,
+    },
+    Rule {
+        metric: "large_upload_frames_max",
+        factor: 1.5,
+        floor: 0.0,
+    },
+    Rule {
+        metric: "large_upload_cpu_p99_ms",
+        factor: 3.0,
+        floor: 5.0,
+    },
+    Rule {
+        metric: "large_staging_peak_mib",
+        factor: 1.0,
+        floor: 0.0,
+    },
+];
+
 struct Scenario {
+    key: &'static str,
     name: &'static str,
     volume: u32,
     profiles: Vec<Profile>,
@@ -27,6 +79,7 @@ struct Scenario {
 
 fn main() {
     let mut report = String::new();
+    let mut metrics = Metrics::new();
     writeln!(report, "# G5 in-game edit-to-visible and upload cost").ok();
     writeln!(
         report,
@@ -38,26 +91,37 @@ fn main() {
     .ok();
     for scenario in [
         Scenario {
+            key: "realistic",
             name: "realistic: 256-grid mesh, 1024² texture, 256³ volume, all profiles",
             volume: 256,
             profiles: Profile::ALL.to_vec(),
             edits: 6,
         },
         Scenario {
+            key: "large",
             name: "large: 512³ R8 volume (portable only)",
             volume: 512,
             profiles: vec![Profile::Portable],
             edits: 2,
         },
     ] {
-        run(&scenario, &mut report);
+        run(&scenario, &mut report, &mut metrics);
     }
+    // Checked against earlier runs at the same load; THRUM_TRIPWIRES_RECORD=1 appends a passing run.
+    let history = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../docs/evidence/integration/tripwires/g5-cooked-edit.tsv");
+    let record = std::env::var_os("THRUM_TRIPWIRES_RECORD").is_some();
+    let verdict = tripwire::gate(&history, &tripwire::this_run(metrics), RULES, record);
+    report.push_str(verdict.as_ref().map_or_else(|error| error, |ok| ok));
     #[expect(clippy::print_stderr, reason = "a bench reports to its terminal")]
     {
         eprint!("{report}");
     }
     if let Some(path) = std::env::var_os("THRUM_G5_BENCH_OUT") {
         std::fs::write(path, &report).expect("write report");
+    }
+    if verdict.is_err() {
+        std::process::exit(1);
     }
 }
 
@@ -108,7 +172,7 @@ fn frame(host: &mut FrameHost, device: &wgpu::Device, clock: &mut Duration) -> O
     clippy::too_many_lines,
     reason = "one bench scenario reads top to bottom: build, edit, measure, report"
 )]
-fn run(scenario: &Scenario, report: &mut String) {
+fn run(scenario: &Scenario, report: &mut String, metrics: &mut Metrics) {
     let root = std::env::temp_dir().join(format!(
         "thrum-g5-game-bench-{}-{}",
         std::process::id(),
@@ -247,6 +311,38 @@ fn run(scenario: &Scenario, report: &mut String) {
         }
         let stats = stats.lock().expect("stats");
         assert_eq!(stats.swaps.len(), 1 + scenario.edits, "every edit swapped");
+        let key = scenario.key;
+        let mut write_swapped: Vec<f64> = stats
+            .swaps
+            .iter()
+            .filter_map(|swap| {
+                let (_, write, _) = edit_started
+                    .iter()
+                    .find(|(generation, _, _)| *generation == swap.generation)?;
+                Some(ms(swap.swapped - *write))
+            })
+            .collect();
+        metrics.push((format!("{key}_startup_ms"), ms(startup.unwrap_or_default())));
+        if key == "realistic" {
+            metrics.push((
+                format!("{key}_write_swapped_median_ms"),
+                percentile(&mut write_swapped, 0.5),
+            ));
+        } else {
+            let frames = stats.swaps.iter().map(|swap| swap.upload_frames).max();
+            metrics.push((
+                format!("{key}_upload_frames_max"),
+                f64::from(frames.unwrap_or_default()),
+            ));
+        }
+        metrics.push((
+            format!("{key}_upload_cpu_p99_ms"),
+            percentile(&mut cpu_upload, 0.99),
+        ));
+        metrics.push((
+            format!("{key}_staging_peak_mib"),
+            stats.staging_peak_bytes as f64 / f64::from(1 << 20),
+        ));
         writeln!(
             report,
             "startup (attach → first set drawn): {:.1} ms; profiles drawn: texture {:?}, volume {:?}",

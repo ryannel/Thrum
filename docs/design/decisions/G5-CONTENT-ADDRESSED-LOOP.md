@@ -216,7 +216,9 @@ dev-server client.
 - Mesh-shader meshlet path (tied to G3c); the indirect path needs `multi_draw_indirect` support (Metal has it).
 - Graph Copy passes are untimed engine-wide, so the upload's GPU cost is measured by the bench, not pass timestamps.
 - Physical iPhone, Chrome and sustained measurements.
-- Tripwires are recorded, not asserted; no regression history yet.
+- Tripwires are asserted only by `scripts/check_g5_tripwires.sh`, not `./dev check` (they need the GPU and minutes).
+  History is per load class; this shared machine has seeded the `busy` and `saturated` classes, so quiet-machine
+  runs are still seeding. Limits cover the shared machine's spread and catch doublings, not small drifts.
 - The dev server opens one thread per connection (at most 32). A page from another device needs its exact origin listed
   and the server bound to the address that page reaches; there is no TLS or authentication, so it is for trusted
   local networks only.
