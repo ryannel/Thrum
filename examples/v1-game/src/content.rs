@@ -90,7 +90,7 @@ pub fn attach_cooked_scene(
     let stats = assets.stats();
     host.set_scene_contribution(Box::new(assets))?;
     if let Some(camera) = camera {
-        host.set_scene_camera(camera);
+        host.set_scene_camera(camera)?;
     }
     Ok(Some(stats))
 }

@@ -89,8 +89,8 @@ pub(crate) fn set_camera_yaw(shell: &mut Shell, radians: f32) -> Result<(), Stri
 }
 
 /// Select a checked authored camera.
-pub(crate) fn set_scene_camera(shell: &mut Shell, camera: SceneCamera) {
-    shell.source_mut().select_camera(camera);
+pub(crate) fn set_scene_camera(shell: &mut Shell, camera: SceneCamera) -> Result<(), String> {
+    shell.source_mut().select_camera(camera)
 }
 
 /// Draw a display diagnostic in place of the tone-mapped scene.
@@ -102,6 +102,7 @@ pub(crate) fn set_display_overlay(shell: &mut Shell, overlay: DisplayOverlay) {
 /// # Errors
 /// Refuses invalid controls.
 pub(crate) fn set_controls(shell: &mut Shell, axes: [f32; 3]) -> Result<(), String> {
+    shell.host().source().route_guard()?;
     shell.world_mut().set_controls(axes)
 }
 

@@ -57,6 +57,22 @@ impl SceneCamera {
         })
     }
 
+    /// The same camera moved to `eye`, keeping its lens and orientation.
+    /// # Errors
+    /// Refuses an eye the authored camera checks would refuse.
+    pub fn at(self, eye: [f32; 3]) -> Result<Self, String> {
+        if !eye.iter().all(|value| value.is_finite()) || !(0.0..=100_000.0).contains(&eye[1]) {
+            return Err("scene camera altitude must be finite and within 0–100 km".to_owned());
+        }
+        Ok(Self { eye, ..self })
+    }
+
+    /// The authored eye in world metres.
+    #[must_use]
+    pub fn eye(self) -> [f32; 3] {
+        self.eye
+    }
+
     pub(crate) fn orientation(self) -> [f32; 2] {
         [self.pitch, self.yaw]
     }
@@ -84,6 +100,9 @@ impl SceneCamera {
         .map_err(|error| format!("scene camera: {error:?}"))
     }
 }
+
+mod route;
+pub use route::{CameraRoute, RouteCheckpoint, RouteKey, RoutePose};
 
 #[cfg(test)]
 mod tests;

@@ -893,7 +893,8 @@ fn cooked_mesh_outside_camera_casts_onto_visible_terrain() {
                 30_000.0,
             )
             .expect("terrain camera"),
-        );
+        )
+        .expect("no route installed");
         host.pause().expect("freeze authority");
         host.set_time_of_day(0.5).expect("noon");
 
@@ -1173,7 +1174,8 @@ fn a_mirrored_node_draws_with_the_facing_and_lighting_of_its_plain_twin() {
                 30_000.0,
             )
             .expect("grid camera"),
-        );
+        )
+        .expect("no route installed");
         host.pause().expect("freeze authority");
         host.set_time_of_day(0.4).expect("morning");
 
