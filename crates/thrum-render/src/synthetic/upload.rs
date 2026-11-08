@@ -154,6 +154,11 @@ impl InstanceUpload {
         (&self.physical_to_slot, &self.packed)
     }
 
+    /// Each logical slot's current physical row.
+    pub(super) fn slot_to_physical(&self) -> &[u32] {
+        &self.slot_to_physical
+    }
+
     pub(super) fn replace(
         &mut self,
         queue: &wgpu::Queue,

@@ -36,6 +36,7 @@ mod forward;
 mod frame_stats;
 mod history_gpu;
 mod mesh_arena;
+mod mesh_route;
 mod readback;
 mod scene_apply;
 mod scene_graph;
@@ -59,6 +60,7 @@ use exposure::ExposureResolve;
 pub(crate) use frame_stats::{SceneTimingLayout, pass_durations};
 use history_gpu::TransformHistory;
 use mesh_arena::{ArenaLimits, MeshArena};
+use mesh_route::{BucketRoute, MeshSelection};
 pub use scene_apply::SceneApplyReport;
 use shadow::{ShadowPrepared, ShadowTarget};
 use stars::{StarPrepared, StarTarget};
@@ -441,6 +443,9 @@ pub struct PreparedSynthetic {
     /// Camera passes pull vertices and indices from the arena; it holds the
     /// cube (row 0) and its orthographic winding (row 1) over shared vertices.
     mesh_arena: MeshArena,
+    /// Scenes that select meshes draw per bucket; others keep the legacy
+    /// single-pipeline route.
+    bucket_route: Option<BucketRoute>,
     display: DisplayPrepared,
     view_layout: wgpu::BindGroupLayout,
     view_buffer: wgpu::Buffer,
@@ -743,10 +748,19 @@ impl PreparedSynthetic {
         Self::prepare_with_lighting(capabilities, queue, scene, lighting, exposure).await
     }
 
-    #[expect(
-        clippy::too_many_lines,
-        reason = "one finite pipeline preparation transaction keeps resources, layouts and its validation scope together"
-    )]
+    /// Prepare with each slot's mesh row selected: the bucket route.
+    #[cfg(test)]
+    pub(in crate::synthetic) async fn prepare_selected(
+        capabilities: &DeviceCapabilities,
+        queue: &wgpu::Queue,
+        scene: &SyntheticScene,
+        slots: Vec<mesh_arena::MeshId>,
+    ) -> Result<Self, RenderError> {
+        let lighting = FrameLighting::Diagnostic(SyntheticLight::default());
+        let selection = MeshSelection { slots };
+        Self::prepare_with_meshes(capabilities, queue, scene, lighting, 1.0, Some(&selection)).await
+    }
+
     async fn prepare_with_lighting(
         capabilities: &DeviceCapabilities,
         queue: &wgpu::Queue,
@@ -754,6 +768,25 @@ impl PreparedSynthetic {
         lighting: FrameLighting,
         exposure: f32,
     ) -> Result<Self, RenderError> {
+        Self::prepare_with_meshes(capabilities, queue, scene, lighting, exposure, None).await
+    }
+
+    #[expect(
+        clippy::too_many_lines,
+        reason = "one finite pipeline preparation transaction keeps resources, layouts and its validation scope together"
+    )]
+    async fn prepare_with_meshes(
+        capabilities: &DeviceCapabilities,
+        queue: &wgpu::Queue,
+        scene: &SyntheticScene,
+        lighting: FrameLighting,
+        exposure: f32,
+        meshes: Option<&MeshSelection>,
+    ) -> Result<Self, RenderError> {
+        // The culled bucket route arrives with the member-indexed compaction.
+        if meshes.is_some() && scene.camera_culling != CullMode::Direct {
+            return Err(RenderError::SceneCapacity);
+        }
         let device = capabilities.device();
         let generation = capabilities.generation();
         checked_display_gain(exposure)?;
@@ -866,7 +899,13 @@ impl PreparedSynthetic {
             },
             uniform_layout(1, AUX_BYTES as u64, wgpu::ShaderStages::FRAGMENT),
         ];
-        view_entries.extend(camera_culling::view_layout_entry(scene.camera_culling));
+        if meshes.is_some() {
+            view_entries.push(BucketRoute::view_layout_entry(
+                camera_culling::VISIBLE_BINDING,
+            ));
+        } else {
+            view_entries.extend(camera_culling::view_layout_entry(scene.camera_culling));
+        }
         if shadow_enabled {
             view_entries.extend([
                 uniform_layout(2, shadow::SAMPLE_BYTES as u64, wgpu::ShaderStages::FRAGMENT),
@@ -1258,7 +1297,7 @@ impl PreparedSynthetic {
             "fragment"
         };
         let vertex_entry = camera_culling::vertex_entry(scene.camera_culling);
-        let create_pipeline = |cull_mode, depth_only: bool| {
+        let create_route_pipeline = |vertex_entry, primitive, depth_only: bool| {
             device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
                 label: Some("prepared opaque synthetic role"),
                 layout: Some(&layout),
@@ -1268,10 +1307,7 @@ impl PreparedSynthetic {
                     compilation_options: wgpu::PipelineCompilationOptions::default(),
                     buffers: &[],
                 },
-                primitive: wgpu::PrimitiveState {
-                    cull_mode,
-                    ..Default::default()
-                },
+                primitive,
                 depth_stencil: Some(wgpu::DepthStencilState {
                     format: DEPTH_FORMAT,
                     depth_write_enabled: Some(true),
@@ -1303,6 +1339,26 @@ impl PreparedSynthetic {
                 cache: None,
             })
         };
+        let create_pipeline = |cull_mode, depth_only| {
+            let primitive = wgpu::PrimitiveState {
+                cull_mode,
+                ..Default::default()
+            };
+            create_route_pipeline(vertex_entry, primitive, depth_only)
+        };
+        let bucket_route = meshes
+            .map(|selection| {
+                BucketRoute::new(
+                    device,
+                    queue,
+                    selection,
+                    &mesh_arena,
+                    &instance_upload,
+                    &scene.instances,
+                    |primitive| create_route_pipeline("compacted_vertex", primitive, false),
+                )
+            })
+            .transpose()?;
         let pipeline = create_pipeline(Some(wgpu::Face::Back), false);
         let pipeline_two_sided = create_pipeline(None, false);
         let depth_prepass = (scene.camera_culling == CullMode::Occlusion).then(|| {
@@ -1361,6 +1417,7 @@ impl PreparedSynthetic {
             depth_prepass,
             cube_indices,
             mesh_arena,
+            bucket_route,
             display,
             view_layout,
             view_buffer,
@@ -1612,6 +1669,9 @@ impl PreparedSynthetic {
             })?;
         if let Some(visibility) = &mut self.visibility {
             visibility.set_active(queue, self.instance_upload.active_count());
+        }
+        if let Some(route) = &mut self.bucket_route {
+            route.update(queue, &self.instance_upload, instances, changed_slots)?;
         }
         Ok(report)
     }
@@ -2010,7 +2070,10 @@ impl OffscreenTarget {
                 resource: aux.as_entire_binding(),
             },
         ];
-        view_entries.extend(camera_culling::visible_entry(visibility.as_ref()));
+        match &prepared.bucket_route {
+            Some(route) => view_entries.push(route.members_entry(camera_culling::VISIBLE_BINDING)),
+            None => view_entries.extend(camera_culling::visible_entry(visibility.as_ref())),
+        }
         if let (Some(prepared_shadow), Some(target_shadow)) = (&prepared.shadow, &shadow) {
             view_entries.extend([
                 wgpu::BindGroupEntry {
