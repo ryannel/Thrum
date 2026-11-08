@@ -63,7 +63,7 @@ pub(super) struct CameraGraph {
 
 /// Visibility pipelines for this scene's slot capacity and the cube mesh row.
 pub(super) fn prepare(
-    device: &wgpu::Device,
+    device: &crate::runtime::DeviceSite,
     queue: &wgpu::Queue,
     generation: u64,
     mode: CullMode,

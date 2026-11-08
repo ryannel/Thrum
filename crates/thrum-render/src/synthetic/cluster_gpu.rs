@@ -13,7 +13,7 @@ pub(super) struct ClusterCompute {
 
 impl ClusterCompute {
     pub(super) fn new(
-        device: &wgpu::Device,
+        device: &crate::runtime::DeviceSite,
         bounds: wgpu::Buffer,
         heads: &wgpu::Buffer,
         indices: &wgpu::Buffer,
@@ -81,7 +81,7 @@ impl ClusterCompute {
             label: Some("synthetic cluster compute"),
             source: wgpu::ShaderSource::Wgsl(include_str!("cluster.wgsl").into()),
         });
-        let pipeline = device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+        let pipeline = device.compute(&wgpu::ComputePipelineDescriptor {
             label: Some("synthetic cluster compute"),
             layout: Some(&layout),
             module: &shader,

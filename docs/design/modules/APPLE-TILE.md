@@ -176,6 +176,44 @@ visible in the report until G4 gives motion a reader.
   - a digest that evidence rows quote.
 - *Proof counters (`thrum-render::runtime`).* Pipeline, texture and native-object creations, each tagged with its
   thread and phase (build, transition or play). G3t M0 builds these; G3t and G4 checks both read them.
+  - **Status: an opt-in diagnostic, drafted for review.** It lives behind the `creation-counters` renderer feature,
+    which is off by default. In default builds the seam is a direct wgpu call, with no ledger, report or
+    submit-path lock. D0.3 is not closed until Thrum Core approves the exact seam diff.
+  - **Pipeline events (the guard).**
+    - Each device generation has one creation authority, a `DeviceSite`. `DeviceCapabilities::capture` mints it once,
+      with its own ledger, at the selected platform generation. Cloning the capabilities or rebuilding visuals shares
+      that site. Re-capturing a raw `wgpu::Device` (`capture_device`, `DeviceSite::untracked`) yields an untracked
+      site that reaches no ledger; it is neither an identity check nor a second ledger for the generation.
+    - Every production pipeline is created through a site, `device.render(&desc)` or `.compute(&desc)`, which
+      records one event on that site's own ledger after creating. Ledgers are never looked up by device identity,
+      so devices of different `wgpu::Instance`s that compare equal never share events.
+    - `SceneSurface::device` is that site, so contributions build on the host's generation. The cooked material
+      compile thread opens `"material-reload"` or `"material-restore"` around its compile; the host opens
+      `"contribution"` at attach and `"publish-device"` when it rebuilds a replacement device.
+    - An event goes to the innermost build or transition region that the creating thread has open on that ledger. A
+      detached preparation handle opens its region on the worker thread, so a worker's build is charged to its own
+      region, and play keeps running meanwhile.
+    - An event with no open region is *unscoped*. Before readiness it counts as build; after readiness it is a play
+      violation, recorded with its thread and frame count.
+    - Events count creations, so a pipeline created and dropped between frames is still caught.
+    - Coverage tests (`runtime/tests/creation_sites.rs`, run in default builds) fail on any raw
+      `create_render_pipeline` or `create_compute_pipeline` call in the production sources of `thrum-render`
+      (outside the seam) or `thrum-asset-gpu`. Raw-device escapes are an exact inventory: one in `capabilities.rs`
+      (`capture_device`) and two in `synthetic.rs` (the public raw-device preparation entry points); the cooked crate
+      has none.
+  - **Coverage limits.**
+    - A pipeline built on an untracked site is not counted. Production has only the inventoried escapes; the shell's
+      raw device fields and the V1 `FrameHost::new_with_setup` device parameter are separate G6 seams.
+    - Native objects have no producer yet, so they report *absent*.
+  - **Live-object deltas (a diagnostic, not the guard).**
+    - It reads wgpu's per-device live-object counters at each region boundary, detach boundary and retirement. A
+      window's net change goes to its innermost open region; an unscoped window counts as build before readiness and
+      play after. The frame path is one relaxed atomic add, with no lock or counter read.
+    - A window names its thread only when it was serialized: no detached handle alive, and the closing thread and
+      every open region's thread were the owner. Every other window is *unattributed*, including every visual
+      preparation.
+    - Counts are net per window, so a create-and-drop or a deferred destruction can hide a creation. A backend with no
+      counters (WebGPU) reports *uninstrumented*, not zero.
 - *Graph (`thrum-render::graph`).* Compiled once per generation and variant, never per frame. It adds:
   - memoryless eligibility per variant;
   - a `PassBackend::{Wgpu, NativeSegment(ProviderId)}` declaration;

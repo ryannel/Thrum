@@ -82,7 +82,7 @@ impl AtmospherePrepared {
     }
 
     pub(crate) fn new(
-        device: &wgpu::Device,
+        device: &crate::runtime::DeviceSite,
         queue: &wgpu::Queue,
         generation: u64,
         frame: AtmosphereFrame,
@@ -365,7 +365,7 @@ impl AtmospherePrepared {
 }
 
 fn prepare_diffuse(
-    device: &wgpu::Device,
+    device: &crate::runtime::DeviceSite,
     uniform: &wgpu::Buffer,
     sky: &wgpu::TextureView,
     sampler: &wgpu::Sampler,
@@ -416,7 +416,7 @@ fn prepare_diffuse(
             .into(),
         ),
     });
-    let pipeline = device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+    let pipeline = device.compute(&wgpu::ComputePipelineDescriptor {
         label: Some("atmosphere diffuse irradiance"),
         layout: Some(&pipeline_layout),
         module: &shader,
@@ -450,7 +450,7 @@ fn prepare_diffuse(
 }
 
 fn prepare_aerial(
-    device: &wgpu::Device,
+    device: &crate::runtime::DeviceSite,
     uniform: &wgpu::Buffer,
     views: &[wgpu::TextureView; 4],
     aerial: &[wgpu::TextureView; 2],
@@ -509,7 +509,7 @@ fn prepare_aerial(
                 .into(),
         ),
     });
-    let pipeline = device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+    let pipeline = device.compute(&wgpu::ComputePipelineDescriptor {
         label: Some("atmosphere aerial integration"),
         layout: Some(&pipeline_layout),
         module: &shader,
@@ -594,7 +594,7 @@ fn sampler_entry(binding: u32, visibility: wgpu::ShaderStages) -> wgpu::BindGrou
 }
 
 fn prepare_compute(
-    device: &wgpu::Device,
+    device: &crate::runtime::DeviceSite,
     index: usize,
     uniform: &wgpu::Buffer,
     views: &[wgpu::TextureView; 4],
@@ -660,7 +660,7 @@ fn prepare_compute(
         bind_group_layouts: &[Some(&layout)],
         immediate_size: 0,
     });
-    let pipeline = device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+    let pipeline = device.compute(&wgpu::ComputePipelineDescriptor {
         label: Some("atmosphere LUT"),
         layout: Some(&pipeline_layout),
         module: shader,
@@ -684,7 +684,7 @@ fn prepare_compute(
 }
 
 fn prepare_sky(
-    device: &wgpu::Device,
+    device: &crate::runtime::DeviceSite,
     uniform: &wgpu::Buffer,
     views: &[wgpu::TextureView; 4],
     sampler: &wgpu::Sampler,
@@ -734,7 +734,7 @@ fn prepare_sky(
             .into(),
         ),
     });
-    let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+    let pipeline = device.render(&wgpu::RenderPipelineDescriptor {
         label: Some("atmosphere background in forward pass"),
         layout: Some(&pipeline_layout),
         vertex: wgpu::VertexState {

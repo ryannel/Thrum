@@ -81,7 +81,7 @@ pub fn material_hook_point(source: &str) -> Result<std::ops::Range<usize>, HookP
 /// Read-only description of a prepared scene's forward pass.
 pub struct SceneSurface<'a> {
     /// The device every scene resource belongs to.
-    pub device: &'a wgpu::Device,
+    pub device: &'a crate::runtime::DeviceSite,
     /// That device's queue. Contributions may create resources; they never submit.
     pub queue: &'a wgpu::Queue,
     /// Device generation; resources from another generation must not be used.

@@ -227,7 +227,7 @@ impl Fixture {
             u64::from(capacity) * crate::abi::INSTANCE_BYTES as u64,
         );
         let prepared = VisibilityPrepared::new(
-            &device,
+            &crate::runtime::DeviceSite::untracked(wgpu::Device::clone(&device)),
             &queue,
             KEY,
             capacity,

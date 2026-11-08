@@ -1223,7 +1223,7 @@ impl PreparedSynthetic {
         };
         let vertex_entry = camera_culling::vertex_entry(scene.camera_culling);
         let create_pipeline = |cull_mode, depth_only: bool| {
-            device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            device.render(&wgpu::RenderPipelineDescriptor {
                 label: Some("prepared opaque synthetic role"),
                 layout: Some(&layout),
                 vertex: wgpu::VertexState {

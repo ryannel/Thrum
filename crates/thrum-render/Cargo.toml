@@ -9,6 +9,11 @@ description = "Thrum's typed GPU graph and prepared synthetic renderer foundatio
 [lints]
 workspace = true
 
+[features]
+# Opt-in G3t D0.3 diagnostic: GPU object creation counts by phase and the
+# after-readiness pipeline guard (`runtime::FrameHost::creation_report`).
+creation-counters = ["wgpu/counters"]
+
 [dependencies]
 thrum-core = { path = "../thrum-core" }
 glam = { version = "=0.33.12", default-features = false, features = ["std"] }

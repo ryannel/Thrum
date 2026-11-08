@@ -121,7 +121,11 @@ pub(super) struct AirShadowPrepared {
 }
 
 impl AirShadowPrepared {
-    pub(super) fn new(device: &wgpu::Device, sample_bytes: u64, light_bytes: u64) -> Self {
+    pub(super) fn new(
+        device: &crate::runtime::DeviceSite,
+        sample_bytes: u64,
+        light_bytes: u64,
+    ) -> Self {
         let uniform = |binding, bytes| wgpu::BindGroupLayoutEntry {
             binding,
             visibility: wgpu::ShaderStages::FRAGMENT,
@@ -158,7 +162,7 @@ impl AirShadowPrepared {
             label: Some("synthetic Sun air shadow heights"),
             source: wgpu::ShaderSource::Wgsl(include_str!("air_shadow.wgsl").into()),
         });
-        let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+        let pipeline = device.render(&wgpu::RenderPipelineDescriptor {
             label: Some("synthetic Sun air shadow heights"),
             layout: Some(&pipeline_layout),
             vertex: wgpu::VertexState {

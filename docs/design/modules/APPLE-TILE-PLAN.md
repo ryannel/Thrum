@@ -25,9 +25,9 @@ Reviews:
   ("Revision 5 archive review"): changes required (sizes buffer for all runtime-sized arrays, per-pipeline cook keys,
   cache patch scope, per-device archives, sizing). All applied in revision 5a.
 
-Milestone: M0 counters and capture probe approved to start · Updated: 2026-11-08
-Now: design and plan landed at `ff1328bb`. The atmosphere graph `d2a5342` and M2 requalification `b7f9f754` are on main.
-Next: commission D0.3–D0.4 in an isolated worktree and review the exact counter call sites before landing.
+Milestone: M0 counters and capture probe in progress (Claude G3t M0 session) · Updated: 2026-11-08
+Now: D0.3 revision 4 drafted (`creation-counters`, off by default): a generation-owned `DeviceSite` minted at capture, all 16 renderer and 4 cooked sites through it, an exact escape inventory, and the guard witnesses including contribution, material reload and restore. The exact diff waits for Thrum Core and G5 in `tmp/g3t-metal-boundary/NOTES.md`.
+Next: Thrum Core rules on the seam diff; D0.4 replay in a booked 15-minute owner-present slot, or *unmeasured*.
 Blocked: D0.1–D0.2 wait for the G7-reviewed seam 8. Subsequent code waits for its own exact seam approval.
 The saved offscreen trace opens directly in Xcode. Replay stayed disabled during local device discovery, so physical traffic
 remains unmeasured. Any interactive retry needs an assigned slot.
@@ -75,7 +75,7 @@ Shared with G4.
 
 | Area | Owner after approval | Files | Shared call sites |
 |---|---|---|---|
-| Proof counters, capture probe | G3t | `thrum-render/src/runtime.rs` (counters); `tmp/g3t-traffic/` (probe) | All G3t and G4 checks |
+| Proof counters, capture probe | G3t | `thrum-render/src/runtime/creation.rs` (counters); `tmp/g3t-traffic/` (probe) | All G3t and G4 checks |
 | Route and fixed-step mode | Seam 8 (G7 route owner) | `scripts/run_v1_showcase.py`, `examples/v1-game/params/`, the V1 game clock | G4, G7 |
 | Registry fields | G3t | `thrum-render/src/capabilities.rs` | `thrum-app/src/app/device.rs:82`, `examples/v1-game-ios/src/ios/render.rs:204` |
 | Graph eligibility, variants, native pass kind, split execution | G3t, with the graph owner's review | `thrum-render/src/graph.rs`, `graph_record.rs` | `atmosphere/graph.rs`, `synthetic.rs` scene build, `present.rs` |
@@ -162,7 +162,8 @@ Work:
 - [ ] Route keyframes with a cut marker, built from the existing showcase params (→D0.1).
 - [ ] Fixed-step route clock with fixed presentation alpha, under seam 8 (→D0.1, D0.2).
 - [ ] Capture-variant readback at route checkpoints, and a determinism rerun (→D0.1, D0.2).
-- [ ] Creation counters in the runtime, wrapping Thrum's creation sites, and the after-readiness test (→D0.3).
+- [ ] Creation counters in the runtime (opt-in; the generation-owned pipeline seam is drafted for approval), and the
+      after-readiness test (→D0.3).
 - [ ] Capture probe saved under `tmp/g3t-traffic/`, with the result in `docs/evidence/render/G3T-TRAFFIC-PROBE-*.md`
       (→D0.4).
 

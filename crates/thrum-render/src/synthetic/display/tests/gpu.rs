@@ -175,7 +175,9 @@ fn gpu_sdr_ramps_match_f64_and_legacy_pixels_across_checked_gain_range() {
             },
             texture.size(),
         );
-        let display = DisplayPrepared::new(&device);
+        let display = DisplayPrepared::new(&crate::runtime::DeviceSite::untracked(
+            wgpu::Device::clone(&device),
+        ));
         let original = legacy_pipeline(&device, &display.layout);
         let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
         for gain in [
@@ -275,7 +277,9 @@ fn gpu_exposure_zones_band_exposed_luminance_for_every_tone_map_and_gain() {
             }
         }
         let tints = [[1.0, 1.0, 1.0], [2.0, 0.5, 0.25]];
-        let display = DisplayPrepared::new(&device);
+        let display = DisplayPrepared::new(&crate::runtime::DeviceSite::untracked(
+            wgpu::Device::clone(&device),
+        ));
         for inverse in [1.0_f32 / 16_000.0, 1.0, 2_500.0] {
             let gain = f64::from(PRE_EXPOSURE) * f64::from(inverse);
             let mut texels = Vec::new();

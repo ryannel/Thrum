@@ -198,7 +198,15 @@ impl Fixture {
         });
         let night = super::super::NightProfile::new(&device, &queue, false);
         let producers = [2, 3].map(|index| {
-            prepare_compute(&device, index, &uniform, &views, &sampler, &shader, &night)
+            prepare_compute(
+                &crate::runtime::DeviceSite::untracked(wgpu::Device::clone(&device)),
+                index,
+                &uniform,
+                &views,
+                &sampler,
+                &shader,
+                &night,
+            )
         });
         let reader = pipeline(&device, READ, "read");
         Self {
@@ -484,7 +492,7 @@ fn cache_lifecycle(fixture: &Fixture) {
     };
     let first = frame([0.0, 1.0, 0.0], 127_000.0, [1.0; 3], 2.0, 1);
     let mut prepared = AtmospherePrepared::new(
-        &fixture.device,
+        &crate::runtime::DeviceSite::untracked(wgpu::Device::clone(&fixture.device)),
         &fixture.queue,
         1,
         first,

@@ -1,10 +1,14 @@
 //! Immutable facts captured once by the platform for one adapter generation.
 //! Render preparation consumes this record; pass recording never probes a device.
 
+use crate::runtime::DeviceSite;
+
 /// Enabled GPU capabilities and identity for one device generation.
 #[derive(Clone, Debug)]
 pub struct DeviceCapabilities {
-    device: wgpu::Device,
+    /// The generation's pipeline creation authority, minted once here and
+    /// shared by every clone of this record.
+    site: DeviceSite,
     generation: u64,
     adapter: wgpu::AdapterInfo,
     features: wgpu::Features,
@@ -27,26 +31,32 @@ impl DeviceCapabilities {
                 | wgpu::Features::TEXTURE_COMPRESSION_BC
                 | wgpu::Features::TEXTURE_COMPRESSION_BC_SLICED_3D)
     }
-    /// Capture the adapter and enabled device at platform creation.
+    /// Capture the adapter and enabled device at platform creation. This mints
+    /// the generation's [`DeviceSite`]; capture each generation once.
     #[must_use]
     pub fn capture(adapter: &wgpu::Adapter, device: &wgpu::Device, generation: u64) -> Self {
-        Self::from_info(device, generation, adapter.get_info())
+        let site = DeviceSite::mint(device, generation);
+        Self::from_info(site, generation, adapter.get_info())
     }
 
     /// Capture from a device when the adapter handle is no longer retained.
-    /// The live platform should pass its adapter directly to `capture`.
+    /// The live platform should pass its adapter directly to `capture`. The
+    /// record's site is [untracked](DeviceSite::untracked): re-capturing a raw
+    /// handle never reaches, or forges, a generation's ledger.
     #[must_use]
     pub fn capture_device(device: &wgpu::Device, generation: u64) -> Self {
-        Self::from_info(device, generation, device.adapter_info())
+        let site = DeviceSite::untracked(device.clone());
+        Self::from_info(site, generation, device.adapter_info())
     }
 
-    fn from_info(device: &wgpu::Device, generation: u64, adapter: wgpu::AdapterInfo) -> Self {
+    fn from_info(site: DeviceSite, generation: u64, adapter: wgpu::AdapterInfo) -> Self {
+        let device: &wgpu::Device = &site;
         Self {
-            device: device.clone(),
-            generation,
-            adapter,
             features: device.features(),
             limits: device.limits(),
+            site,
+            generation,
+            adapter,
         }
     }
 
@@ -77,10 +87,16 @@ impl DeviceCapabilities {
     /// Whether this record describes the supplied device handle.
     #[must_use]
     pub fn matches(&self, device: &wgpu::Device) -> bool {
-        self.device == *device
+        *self.site == *device
     }
 
-    pub(crate) fn device(&self) -> &wgpu::Device {
-        &self.device
+    /// The generation's pipeline creation authority.
+    #[must_use]
+    pub fn site(&self) -> &DeviceSite {
+        &self.site
+    }
+
+    pub(crate) fn device(&self) -> &DeviceSite {
+        &self.site
     }
 }

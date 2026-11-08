@@ -172,7 +172,7 @@ impl SurfacePresenter {
             label: Some("V1 surface present"),
             source: wgpu::ShaderSource::Wgsl(include_str!("present.wgsl").into()),
         });
-        let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+        let pipeline = device.render(&wgpu::RenderPipelineDescriptor {
             label: Some("V1 surface present"),
             layout: Some(&pipeline_layout),
             vertex: wgpu::VertexState {
@@ -205,7 +205,7 @@ impl SurfacePresenter {
             return Err(PresentError::Validation(error.to_string()));
         }
         Ok(Self {
-            device: device.clone(),
+            device: wgpu::Device::clone(device),
             pipeline,
             layout,
             plan,

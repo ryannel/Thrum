@@ -217,7 +217,7 @@ impl Pipelines {
                 ],
                 immediate_size: 0,
             });
-        let volume = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+        let volume = device.render(&wgpu::RenderPipelineDescriptor {
             label: Some("cooked volume"),
             layout: Some(&volume_pipeline_layout),
             vertex: wgpu::VertexState {
@@ -271,7 +271,7 @@ impl Pipelines {
             bind_group_layouts: &[Some(&cull_layout)],
             immediate_size: 0,
         });
-        let cull = device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+        let cull = device.compute(&wgpu::ComputePipelineDescriptor {
             label: Some("cooked meshlet cull"),
             layout: Some(&cull_pipeline_layout),
             module: &cull_module,
@@ -302,7 +302,7 @@ impl Pipelines {
             ..Default::default()
         });
         Self {
-            device: device.clone(),
+            device: wgpu::Device::clone(device),
             queue: surface.queue.clone(),
             mesh,
             shadow: surface
@@ -619,7 +619,7 @@ fn world_caster_bounds(
 }
 
 fn shadow_pipeline(
-    device: &wgpu::Device,
+    device: &thrum_render::runtime::DeviceSite,
     surface: &SceneShadowSurface<'_>,
 ) -> wgpu::RenderPipeline {
     let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
@@ -631,7 +631,7 @@ fn shadow_pipeline(
         label: Some("cooked Sun casters"),
         source: wgpu::ShaderSource::Wgsl(include_str!("shadow.wgsl").into()),
     });
-    device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+    device.render(&wgpu::RenderPipelineDescriptor {
         label: Some("cooked Sun casters"),
         layout: Some(&layout),
         vertex: wgpu::VertexState {

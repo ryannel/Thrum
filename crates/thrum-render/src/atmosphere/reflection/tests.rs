@@ -732,7 +732,7 @@ fn gpu_reflection_constant_all_faces_mips_and_independent_dfg() {
             ..Default::default()
         });
         let prepared = ReflectionPrepared::new(
-            &device,
+            &crate::runtime::DeviceSite::untracked(wgpu::Device::clone(&device)),
             &uniform,
             &sky.create_view(&wgpu::TextureViewDescriptor::default()),
             &sampler,

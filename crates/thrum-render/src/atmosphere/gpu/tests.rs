@@ -90,7 +90,7 @@ fn encoded_constant_sky_integrates_in_physical_illuminance_units() {
             mapped_at_creation: false,
         });
         let (pipeline, group) = super::prepare_diffuse(
-            &device,
+            &crate::runtime::DeviceSite::untracked(wgpu::Device::clone(&device)),
             &uniform,
             &sky.create_view(&wgpu::TextureViewDescriptor::default()),
             &sampler,

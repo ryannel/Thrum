@@ -108,7 +108,7 @@ impl ShadowPrepared {
     }
 
     pub(super) fn new(
-        device: &wgpu::Device,
+        device: &crate::runtime::DeviceSite,
         queue: &wgpu::Queue,
         view: &SyntheticView,
         instances: &[InstanceRecord],
@@ -156,7 +156,7 @@ impl ShadowPrepared {
             source: wgpu::ShaderSource::Wgsl(include_str!("shadow.wgsl").into()),
         });
         let create_pipeline = |cull_mode| {
-            device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            device.render(&wgpu::RenderPipelineDescriptor {
                 label: Some("synthetic Sun caster"),
                 layout: Some(&layout),
                 vertex: wgpu::VertexState {

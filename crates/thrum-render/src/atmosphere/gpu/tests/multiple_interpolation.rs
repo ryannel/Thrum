@@ -125,7 +125,7 @@ impl Variant {
             (atmosphere.compute[1].clone(), atmosphere.groups[1].clone())
         } else {
             prepare_compute(
-                device,
+                &crate::runtime::DeviceSite::untracked(wgpu::Device::clone(device)),
                 1,
                 &atmosphere.uniform,
                 &views,
@@ -297,7 +297,7 @@ fn multiple_sun_columns_report_same_model_transport_and_irradiance_error() {
         };
         let view = SyntheticView::default();
         let mut atmosphere = AtmospherePrepared::new(
-            &device,
+            &crate::runtime::DeviceSite::untracked(wgpu::Device::clone(&device)),
             &queue,
             1,
             frame(0.0, 0.0),

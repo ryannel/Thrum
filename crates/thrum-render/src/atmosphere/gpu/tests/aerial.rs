@@ -324,7 +324,7 @@ fn aerial_storage_matches_float32_transport_and_consumer_units() {
         let frame = AtmosphereFrame::new([1.0, 0.0, 0.0], 127_000.0, [1.0; 3], 245.0, 1)
             .expect("aerial frame");
         let atmosphere = AtmospherePrepared::new(
-            &device,
+            &crate::runtime::DeviceSite::untracked(wgpu::Device::clone(&device)),
             &queue,
             1,
             frame,
@@ -538,7 +538,7 @@ fn finite_night_radiance_survives_the_aerial_composite() {
         let frame = AtmosphereFrame::new([0.0, -1.0, 0.0], 0.0, [1.0; 3], height, 1)
             .expect("moonless atmosphere frame");
         let mut atmosphere = AtmospherePrepared::new(
-            &device,
+            &crate::runtime::DeviceSite::untracked(wgpu::Device::clone(&device)),
             &queue,
             1,
             frame,

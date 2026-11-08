@@ -43,7 +43,7 @@ pub(super) struct ReflectionPrepared {
 
 impl ReflectionPrepared {
     pub(super) fn new(
-        device: &wgpu::Device,
+        device: &crate::runtime::DeviceSite,
         uniform: &wgpu::Buffer,
         sky: &wgpu::TextureView,
         sky_sampler: &wgpu::Sampler,
@@ -242,7 +242,7 @@ fn texture(device: &wgpu::Device, label: &str, size: u32, layers: u32, mips: u32
 }
 
 fn pipeline(
-    device: &wgpu::Device,
+    device: &crate::runtime::DeviceSite,
     label: &str,
     entry: &str,
     source: String,
@@ -251,7 +251,7 @@ fn pipeline(
         label: Some(label),
         source: wgpu::ShaderSource::Wgsl(source.into()),
     });
-    device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+    device.compute(&wgpu::ComputePipelineDescriptor {
         label: Some(label),
         layout: None,
         module: &module,

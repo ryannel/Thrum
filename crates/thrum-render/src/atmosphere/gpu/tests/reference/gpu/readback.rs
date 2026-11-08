@@ -70,7 +70,7 @@ impl Probe {
             mapped_at_creation: false,
         });
         let mut atmosphere = AtmospherePrepared::new(
-            device,
+            &crate::runtime::DeviceSite::untracked(wgpu::Device::clone(device)),
             queue,
             1,
             frame(45.0, 2.0),
@@ -113,7 +113,7 @@ impl Probe {
                 .map(|texture| texture.create_view(&wgpu::TextureViewDescriptor::default()));
             for index in 0..4 {
                 (atmosphere.compute[index], atmosphere.groups[index]) = prepare_compute(
-                    device,
+                    &crate::runtime::DeviceSite::untracked(wgpu::Device::clone(device)),
                     index,
                     &atmosphere.uniform,
                     &production_views,

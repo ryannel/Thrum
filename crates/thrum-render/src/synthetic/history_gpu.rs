@@ -25,7 +25,7 @@ pub(super) struct TransformHistory {
 
 impl TransformHistory {
     pub(super) fn new(
-        device: &wgpu::Device,
+        device: &crate::runtime::DeviceSite,
         queue: &wgpu::Queue,
         instances: &wgpu::Buffer,
         instance_layout: &wgpu::BindGroupLayout,
@@ -112,7 +112,7 @@ impl TransformHistory {
             bind_group_layouts: &[Some(&writer_layout)],
             immediate_size: 0,
         });
-        let pipeline = device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+        let pipeline = device.compute(&wgpu::ComputePipelineDescriptor {
             label: Some("synthetic history publisher"),
             layout: Some(&layout),
             module: &shader,

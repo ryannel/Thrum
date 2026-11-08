@@ -2,6 +2,7 @@
 
 use super::{
     FrameError,
+    creation::{CreationPhase, Detached},
     preparation::{PreparedScene, prepare_scene},
 };
 use crate::{
@@ -21,6 +22,7 @@ pub struct VisualPrepareInputs {
     pub(super) contribution_passes: ContributionPasses,
     pub(super) render_extent: [u32; 2],
     pub(super) owner: Arc<()>,
+    pub(super) creations: Detached,
 }
 
 /// Prepared product and GPU targets awaiting an extraction-barrier selection.
@@ -42,6 +44,9 @@ impl VisualPrepareInputs {
         exposure: f32,
         revision: Option<[u8; 32]>,
     ) -> Result<PreparedVisual, FrameError> {
+        let region = self
+            .creations
+            .region(CreationPhase::Transition, "prepare-visual");
         let scene = prepare_scene(
             &self.capabilities,
             &self.queue,
@@ -53,6 +58,7 @@ impl VisualPrepareInputs {
             self.contribution_passes,
         )
         .await?;
+        drop(region);
         Ok(PreparedVisual {
             lighting,
             revision,

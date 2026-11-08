@@ -225,7 +225,7 @@ impl Gpu {
         });
         let light = self.light();
         let (pipeline, group) = prepare_diffuse(
-            &self.device,
+            &crate::runtime::DeviceSite::untracked(wgpu::Device::clone(&self.device)),
             &uniform,
             &sky.create_view(&wgpu::TextureViewDescriptor::default()),
             &sampler,
@@ -640,7 +640,7 @@ fn shipping_sky_projection_separates_sampling_from_sh_truncation() {
                 .expect("declared sky frame")
         };
         let mut prepared = AtmospherePrepared::new(
-            &gpu.device,
+            &crate::runtime::DeviceSite::untracked(wgpu::Device::clone(&gpu.device)),
             &gpu.queue,
             1,
             frame(45, 0),
