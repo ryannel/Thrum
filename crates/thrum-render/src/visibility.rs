@@ -114,9 +114,36 @@ pub(crate) struct VisibilityPrepared {
     idle_pyramid: wgpu::TextureView,
     /// Occlusion only: the depth pyramid build.
     pyramid: Option<pyramid::PyramidPrepared>,
+    /// The bucket route: compaction over its member list, one argument
+    /// record per bucket.
+    members: Option<MemberCompaction>,
     capacity: u32,
     active: u32,
     key: PipelineKey,
+}
+
+/// The member-indexed compaction's fixed shape and its current layout.
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct MemberShape {
+    /// Buckets, each with its own argument record (at most 64).
+    pub(crate) buckets: u32,
+    /// The largest member list any layout can need, in slots.
+    pub(crate) worst_members: u32,
+    /// Bytes each draw binds from its bucket's offset in the visible list.
+    pub(crate) segment_bytes: u64,
+}
+
+struct MemberCompaction {
+    shape: MemberShape,
+    /// Workgroups in the current member list.
+    groups: u32,
+}
+
+/// The route's member list and uniform bucket table, bound by member targets.
+#[derive(Clone, Copy)]
+pub(crate) struct MemberInputs<'a> {
+    pub(crate) members: &'a wgpu::Buffer,
+    pub(crate) table: &'a wgpu::Buffer,
 }
 
 /// Frame-slot-owned outputs and the bind group that produces them.
@@ -166,6 +193,41 @@ impl VisibilityPrepared {
         active: u32,
         mode: CullMode,
     ) -> Self {
+        Self::build(device, queue, key, (capacity, active), meshes, mode, None)
+    }
+
+    /// Prepare the member-indexed compaction for the bucket route: the
+    /// member list replaces the slot range, and each bucket writes its own
+    /// argument record. Frustum only until Occlusion's history follows
+    /// slot identity.
+    pub(crate) fn new_members(
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        key: PipelineKey,
+        (capacity, active): (u32, u32),
+        meshes: &[MeshRecord],
+        shape: MemberShape,
+    ) -> Self {
+        Self::build(
+            device,
+            queue,
+            key,
+            (capacity, active),
+            meshes,
+            CullMode::Frustum,
+            Some(shape),
+        )
+    }
+
+    fn build(
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        key: PipelineKey,
+        (capacity, active): (u32, u32),
+        meshes: &[MeshRecord],
+        mode: CullMode,
+        shape: Option<MemberShape>,
+    ) -> Self {
         let entry = |binding, ty, dynamic| wgpu::BindGroupLayoutEntry {
             binding,
             visibility: wgpu::ShaderStages::COMPUTE,
@@ -179,31 +241,38 @@ impl VisibilityPrepared {
         let read = wgpu::BufferBindingType::Storage { read_only: true };
         let write = wgpu::BufferBindingType::Storage { read_only: false };
         let uniform = wgpu::BufferBindingType::Uniform;
+        let mut entries = vec![
+            entry(0, uniform, true),
+            entry(1, read, false),
+            entry(2, uniform, false),
+            entry(3, read, false),
+            entry(4, uniform, true),
+            entry(5, write, false),
+            entry(6, write, false),
+            entry(7, write, false),
+            entry(9, read, false),
+            entry(11, write, false),
+            wgpu::BindGroupLayoutEntry {
+                binding: 10,
+                visibility: wgpu::ShaderStages::COMPUTE,
+                ty: wgpu::BindingType::Texture {
+                    sample_type: wgpu::TextureSampleType::Float { filterable: false },
+                    view_dimension: wgpu::TextureViewDimension::D2,
+                    multisampled: false,
+                },
+                count: None,
+            },
+        ];
+        // WebGPU allows 8 storage buffers per stage: the member path trades
+        // the mask buffer for its member list and reads its table as a uniform.
+        if shape.is_some() {
+            entries.extend([entry(12, read, false), entry(13, uniform, false)]);
+        } else {
+            entries.push(entry(8, write, false));
+        }
         let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("camera visibility"),
-            entries: &[
-                entry(0, uniform, true),
-                entry(1, read, false),
-                entry(2, uniform, false),
-                entry(3, read, false),
-                entry(4, uniform, true),
-                entry(5, write, false),
-                entry(6, write, false),
-                entry(7, write, false),
-                entry(8, write, false),
-                entry(9, read, false),
-                entry(11, write, false),
-                wgpu::BindGroupLayoutEntry {
-                    binding: 10,
-                    visibility: wgpu::ShaderStages::COMPUTE,
-                    ty: wgpu::BindingType::Texture {
-                        sample_type: wgpu::TextureSampleType::Float { filterable: false },
-                        view_dimension: wgpu::TextureViewDimension::D2,
-                        multisampled: false,
-                    },
-                    count: None,
-                },
-            ],
+            entries: &entries,
         });
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("camera visibility"),
@@ -261,10 +330,12 @@ impl VisibilityPrepared {
             })
             .create_view(&wgpu::TextureViewDescriptor::default());
         let pyramid = (mode == CullMode::Occlusion).then(|| pyramid::PyramidPrepared::new(device));
+        let suffix = if shape.is_some() { "_members" } else { "" };
         let prepared = Self {
-            count: pipeline("count"),
-            offsets: pipeline("offsets"),
-            scatter: pipeline("scatter"),
+            count: pipeline(&format!("count{suffix}")),
+            offsets: pipeline(&format!("offsets{suffix}")),
+            scatter: pipeline(&format!("scatter{suffix}")),
+            members: shape.map(|shape| MemberCompaction { shape, groups: 0 }),
             layout,
             meshes,
             params,
@@ -308,9 +379,39 @@ impl VisibilityPrepared {
         }
     }
 
-    /// Bytes of one target's visible slot list.
+    /// Bytes of one target's visible slot list. The member path leaves room
+    /// to bind a full segment at any bucket's offset.
     pub(crate) fn visible_bytes(&self) -> u64 {
-        u64::from(self.capacity.max(1)) * 4
+        match &self.members {
+            Some(members) => {
+                u64::from(members.shape.worst_members) * 4 + members.shape.segment_bytes
+            }
+            None => u64::from(self.capacity.max(1)) * 4,
+        }
+    }
+
+    /// Bytes of one target's indirect arguments: one record per bucket.
+    pub(crate) fn args_bytes(&self) -> u64 {
+        let records = self
+            .members
+            .as_ref()
+            .map_or(1, |members| members.shape.buckets);
+        u64::from(records.max(1)) * ARGS_BYTES
+    }
+
+    /// The bucket route: record the current member list's workgroup count.
+    /// The member list and table themselves are the route's queue writes.
+    pub(crate) fn set_member_groups(&mut self, groups: u32) {
+        if let Some(members) = &mut self.members {
+            members.groups = groups;
+        }
+    }
+
+    /// The bucket route: bytes each draw binds at its bucket's offset.
+    pub(crate) fn segment_bytes(&self) -> Option<u64> {
+        self.members
+            .as_ref()
+            .map(|members| members.shape.segment_bytes)
     }
 
     fn groups(&self) -> u32 {
@@ -340,12 +441,24 @@ impl VisibilityPrepared {
     }
 
     /// Allocate one frustum target's outputs.
+    #[cfg(test)]
     pub(crate) fn target(
         &self,
         device: &wgpu::Device,
         view: &wgpu::Buffer,
         instances: &wgpu::Buffer,
         serials: &wgpu::Buffer,
+    ) -> VisibilityTarget {
+        self.member_target(device, (view, instances, serials), None)
+    }
+
+    /// One frame slot's frustum target, over the route's member list when
+    /// the compaction is member-indexed.
+    pub(crate) fn member_target(
+        &self,
+        device: &wgpu::Device,
+        (view, instances, serials): (&wgpu::Buffer, &wgpu::Buffer, &wgpu::Buffer),
+        members: Option<MemberInputs<'_>>,
     ) -> VisibilityTarget {
         let scratch = self.scratch(device);
         self.phase_target(
@@ -355,6 +468,7 @@ impl VisibilityPrepared {
                 instances,
                 serials,
                 pyramid: &self.idle_pyramid,
+                members,
             },
             &scratch,
             Phase::Frustum,
@@ -398,6 +512,7 @@ impl VisibilityPrepared {
             instances,
             serials,
             pyramid,
+            members: None,
         };
         let prepass = Inputs {
             pyramid: &self.idle_pyramid,
@@ -410,12 +525,15 @@ impl VisibilityPrepared {
     }
 
     fn scratch(&self, device: &wgpu::Device) -> [wgpu::Buffer; 2] {
-        let max_groups = self.capacity.div_ceil(WORKGROUP).max(1);
-        let group_offsets = storage(
-            device,
-            "visibility group offsets",
-            u64::from(max_groups) * 4,
-        );
+        // The member path keeps its masks after the counts.
+        let group_offsets = match &self.members {
+            Some(members) => {
+                let groups = members.shape.worst_members.div_ceil(WORKGROUP).max(1);
+                u64::from(groups) * u64::from(1 + WORDS) * 4
+            }
+            None => u64::from(self.capacity.div_ceil(WORKGROUP).max(1)) * 4,
+        };
+        let group_offsets = storage(device, "visibility group offsets", group_offsets);
         // One bit per slot, written by `count` and read by `scatter`, so the
         // instance records are read and tested once.
         let masks = storage(device, "visibility slot masks", bits_bytes(self.capacity));
@@ -434,15 +552,12 @@ impl VisibilityPrepared {
             instances,
             serials,
             pyramid,
+            members,
         } = inputs;
-        let visible = storage(
-            device,
-            "visibility visible slots",
-            u64::from(self.capacity.max(1)) * 4,
-        );
+        let visible = storage(device, "visibility visible slots", self.visible_bytes());
         let args = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("visibility indirect arguments"),
-            size: ARGS_BYTES,
+            size: self.args_bytes(),
             usage: wgpu::BufferUsages::STORAGE
                 | wgpu::BufferUsages::INDIRECT
                 | wgpu::BufferUsages::COPY_SRC,
@@ -450,40 +565,45 @@ impl VisibilityPrepared {
         });
         let bind = |pyramid: &wgpu::TextureView| -> [wgpu::BindGroup; 2] {
             std::array::from_fn(|write| {
+                let mut entries = vec![
+                    wgpu::BindGroupEntry {
+                        binding: 0,
+                        resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
+                            buffer: view,
+                            offset: 0,
+                            size: wgpu::BufferSize::new(VIEW_BYTES),
+                        }),
+                    },
+                    binding(1, instances),
+                    binding(2, serials),
+                    binding(3, &self.meshes),
+                    wgpu::BindGroupEntry {
+                        binding: 4,
+                        resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
+                            buffer: &self.params,
+                            offset: 0,
+                            size: wgpu::BufferSize::new(PARAMS_LEN as u64),
+                        }),
+                    },
+                    binding(5, group_offsets),
+                    binding(6, &visible),
+                    binding(7, &args),
+                    binding(9, &self.history[1 - write]),
+                    wgpu::BindGroupEntry {
+                        binding: 10,
+                        resource: wgpu::BindingResource::TextureView(pyramid),
+                    },
+                    binding(11, &self.history[write]),
+                ];
+                if let Some(members) = members {
+                    entries.extend([binding(12, members.members), binding(13, members.table)]);
+                } else {
+                    entries.push(binding(8, masks));
+                }
                 device.create_bind_group(&wgpu::BindGroupDescriptor {
                     label: Some("camera visibility"),
                     layout: &self.layout,
-                    entries: &[
-                        wgpu::BindGroupEntry {
-                            binding: 0,
-                            resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
-                                buffer: view,
-                                offset: 0,
-                                size: wgpu::BufferSize::new(VIEW_BYTES),
-                            }),
-                        },
-                        binding(1, instances),
-                        binding(2, serials),
-                        binding(3, &self.meshes),
-                        wgpu::BindGroupEntry {
-                            binding: 4,
-                            resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
-                                buffer: &self.params,
-                                offset: 0,
-                                size: wgpu::BufferSize::new(PARAMS_LEN as u64),
-                            }),
-                        },
-                        binding(5, group_offsets),
-                        binding(6, &visible),
-                        binding(7, &args),
-                        binding(8, masks),
-                        binding(9, &self.history[1 - write]),
-                        wgpu::BindGroupEntry {
-                            binding: 10,
-                            resource: wgpu::BindingResource::TextureView(pyramid),
-                        },
-                        binding(11, &self.history[write]),
-                    ],
+                    entries: &entries,
                 })
             })
         };
@@ -656,7 +776,7 @@ impl VisibilityPrepared {
         )?;
         let args = graph.resource(
             ResourceDescriptor::Buffer {
-                bytes: ARGS_BYTES,
+                bytes: self.args_bytes(),
                 usage: wgpu::BufferUsages::STORAGE
                     | wgpu::BufferUsages::INDIRECT
                     | wgpu::BufferUsages::COPY_SRC,
@@ -672,7 +792,7 @@ impl VisibilityPrepared {
             },
             Access {
                 resource: args.clone(),
-                range: 0..ARGS_BYTES,
+                range: 0..self.args_bytes(),
                 kind: AccessKind::StorageWrite,
                 store: true,
             },
@@ -692,7 +812,10 @@ impl VisibilityPrepared {
         compiled: &CompiledPass,
         timings: Option<&mut GpuTimings>,
     ) -> Result<bool, TimingError> {
-        let groups = self.groups();
+        let (groups, records) = match &self.members {
+            Some(members) => (members.groups.max(1), members.shape.buckets),
+            None => (self.groups(), 1),
+        };
         let phase = target.phase;
         // The final cull writes only the dispatched words of the next side;
         // zero the rest, so no word an older or larger frame left there
@@ -715,7 +838,7 @@ impl VisibilityPrepared {
         pass.set_pipeline(&self.count);
         pass.dispatch_workgroups(groups, 1, 1);
         pass.set_pipeline(&self.offsets);
-        pass.dispatch_workgroups(1, 1, 1);
+        pass.dispatch_workgroups(records, 1, 1);
         pass.set_pipeline(&self.scatter);
         pass.dispatch_workgroups(groups, 1, 1);
         Ok(true)
@@ -766,6 +889,7 @@ struct Inputs<'a> {
     instances: &'a wgpu::Buffer,
     serials: &'a wgpu::Buffer,
     pyramid: &'a wgpu::TextureView,
+    members: Option<MemberInputs<'a>>,
 }
 
 /// Bytes of one bit per slot, rounded up to whole workgroups.
