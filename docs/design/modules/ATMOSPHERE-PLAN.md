@@ -5,7 +5,7 @@ Reviews: Optical design and plan over `a91cdd0e`, final design `f9d0c12a` and pl
 Updated: 2026-11-08
 Milestone: M3 sunset shadows
 Now: the optimistic 16-band raw sweep retains the row-665 limb but fails the broad edge, raised crest and overlap before strip widening. The raw layout is parked.
-Next: finish the canonical pan baseline and review a producer that retains within-band disk support. Keep the full original-geometry witnesses.
+Next: review a producer that retains within-band disk support against the canonical pan and the full original-geometry witnesses.
 Blocked: shader integration awaits a proven coverage representation. Physical bandwidth replay is queued separately for an assigned Xcode slot.
 
 ## M1 The valley remains legible at moonless midnight: done
@@ -79,6 +79,7 @@ Work
 - [x] D1–D3. Review the bounded comparison-field integral. Reject the offline candidate at its fixed read cap. [Result](../../evidence/v1-workload/G3S-HANDOFF.md#current-checkpoint).
 - [x] D1–D3. Compare the independent sunset brief with the archive. Select and review a current-Sun strip sweep with continuous terrain support, overlapping chart domains and an original-geometry complement.
 - [x] D1–D3. Reject raw band extrema on the optimistic entrance screen. The disk-clipped relaxation narrows the result without qualifying a producer. [Evidence](../../evidence/v1-workload/G3S-HANDOFF.md#current-checkpoint).
+- [x] D1. Archive the canonical Metal 1080p60 pan through the full solar crossing with per-frame GPU timestamps. [Baseline](../../evidence/v1-workload/G3S-HANDOFF.md#current-checkpoint).
 - [ ] D2–D3. Specify and re-review the certificate layout, the actual source and recipe admission domain, and the bounded evaluation path. The old far-horizon bake and full-view beam remain diagnostic. A field that loses the narrow-caster witness cannot enter the render path.
 - [ ] D1–D3. Recheck the shipped cameras and the matched motion with the selected coverage mechanism.
 

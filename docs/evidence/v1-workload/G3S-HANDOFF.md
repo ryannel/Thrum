@@ -102,6 +102,12 @@ The Codex goal remains active. Its attachment is
   missing limbs have positive lower bounds. Park raw extrema. Relaxed
   disk-only constraints give widths of 0.12–0.24 pp on the three failures,
   leaving a certified disk-aware representation open.
+
+  The canonical Ground E baseline on `02e5e3eb` has 300 timed offscreen
+  Metal frames at 1080p60, yaw −110° to −70° and 17.40000–17.79867 h.
+  GPU pass-sum p50/p95/p99 is 3.965/5.543/6.160 ms at load 75.11–75.98.
+  The 10 fps strip still shows the abrupt gold band at the lookout lip.
+  Clip, strip and timings are in `tmp/g3s-sunset-lip/baseline-pan-02e5e3eb/`.
   Rerun from `tmp/g3s-sunset-lip/M3-RESEARCH.md`.
 
 - Historical M2 star captures predate the orientation correction. The Mac's lossless 1080p60 masters
