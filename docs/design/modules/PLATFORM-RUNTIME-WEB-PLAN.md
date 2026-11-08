@@ -9,10 +9,11 @@ Commission: Thrum Core's routing of daily-review finding D-M3, 8 November (`tmp/
 for the 8 November daily review"). Design and plan go to Thrum Core before any code.
 Reviews: design and plan at 12d4c81d, REVISE: pause/resume are game-owned, so the shell cannot be generic over the
 runtime alone; material reload does GPU work while lost. Brief `tmp/g3b-web-shell/review-brief-design.md`, report
-`tmp/g3b-web-shell/review-design.md` (Opus 5.5, 8 November). Answered in this revision. Recheck pending.
+`tmp/g3b-web-shell/review-design.md` (Opus 5.5, 8 November). Recheck at 14fb0b8a: APPROVE WITH CHANGES (R1–R7, same
+report), all taken in this revision.
 Milestone: M1 Engine web shell carries the V1 page unchanged · Updated: 2026-11-08
-Now: revised to answer the design review (lifecycle route, loss gates, witness, seam)
-Next: recheck of this revision, then the loss-gate and witness change on today's facade (first work item)
+Now: design approved with changes, changes taken; building the loss gates and witnesses on today's facade
+Next: post that change to Thrum Core as a seam diff with evidence, then the extraction
 Blocked: none
 
 ## Problem
@@ -79,8 +80,7 @@ impl<W: WebWorld, V: SceneSource<W::Page>> WebShell<W, V> {
     // Edits: CPU state only, allowed while lost.
     pub fn host(&self) -> &FrameHost<W, V>;
     pub fn world_mut(&mut self) -> &mut W;
-    pub fn source_mut(&mut self) -> &mut V;
-    pub fn invalidate_history(&mut self);
+    pub fn source_mut(&mut self) -> &mut V;   // resets transform history, as FrameHost::source_mut does
     // GPU-touching: gated by the loss signal.
     pub fn set_scene_contribution(&mut self, c: Box<dyn SceneContribution>) -> Result<(), String>;
     pub fn begin_capture(&mut self) -> Result<PendingCapture, String>;
@@ -102,7 +102,9 @@ impl<W: WebWorld, V: SceneSource<W::Page>> WebShell<W, V> {
   `FrameWorld` lifecycle methods were rejected: they would change a `thrum-render` API and bind the macOS and iOS
   worlds, which drive the lifecycle through `WorldControls` requests instead. Callbacks were rejected: they are the
   same contract, but untyped. This route changes no `thrum-render` API and touches neither native world.
-- **No `host_mut`.** The game reaches the runtime only through `host()` and the four CPU mutators above. Every game edit
+- **No `host_mut`.** The game reaches the runtime only through `host()` and the CPU mutators above. Each game edit
+  reads and compares through `host()` first, then takes one mutable borrow only when the value changes, as
+  `host.rs` does today. `source_mut()` resets transform history, so an unchanged edit must not reach it. Every game edit
   today uses exactly `world()`, `world_mut()`, `source()`, `source_mut()` and `invalidate_history()` (`host.rs`,
   `host/scene_source.rs`), and all five are already public on the runtime. The runtime's GPU entry points (`encode_scene`,
   `advance`, `drive`, `resize_surface`, `poll_completed`, `device_prepare_inputs`, `publish_device`, `publish_visual`,
@@ -127,13 +129,14 @@ classified by what it touches:
 | Authority and view edits: solar time, camera yaw and pitch, player input, parameter files and overlay, user pause and visibility | Allowed. They change CPU state only. The replacement device draws that retained state | Allowed: `browser.rs` 390–416 and 604–640; the lost branch of the frame step at 511–520 |
 | Capture start and finish | Refused with `graphics device is lost`. A capture outstanding at loss is dropped and reported, as now | The same: `begin_capture` 678–683 and `try_finish_capture` |
 | Material reload (`dev-material`) | Refused by the facade with `graphics device is lost`, checked through `graphics_lost()`. A request outstanding at loss is still retired, and the accepted hook is restored on the replacement device, as now | **Changes.** Today the request compiles synchronously on the lost device (`material.rs` `request` → `Candidate::prepare`), then is retired at publication |
-| Cooked valley attach | Deferred. While lost, `set_scene_contribution` keeps the contribution, and the shell attaches it right after publishing the replacement device, before its first encode | **Changes.** Today it rebuilds resources on the current device at once (`runtime.rs` `set_scene_contribution`). If frames were in flight at loss, it is refused, and the valley would never attach |
+| Cooked valley attach | Deferred. While lost, `set_scene_contribution` holds the contribution (a later attach replaces it), and the shell attaches it right after publishing the replacement device, before its first encode. `publish_device` installs free slots, so the no-frames-in-flight check passes. A refusal there ends that recovery attempt with its message in `recovery_error`, which the page already shows | **Changes.** Today it rebuilds resources on the lost device at once (`runtime.rs` `set_scene_contribution`). That makes GPU calls while lost; the page attaches before RAF starts, so no refusal occurs today |
 
 The two changes land first, on today's facade, with their checker witnesses (M1, first work item). The extraction
 then carries them unchanged.
 
 **Report fields.** `WebStatus` carries every field `report()` and the facade read today: adapter name, surface format,
-configured width and height, device generation, recovery attempts and recovered, the elapsed time since `last_frame`,
+configured width and height, device generation, recovery attempts and recovered, `last_frame` (time since the first
+timestamp),
 user pause, and the counters (callbacks, presented, unavailable, overload events, refused ticks, clamps). `samples()`
 is bounded by `FRAMES` (600) and exposes that bound for `complete()`.
 
@@ -144,7 +147,8 @@ frame. The Wasm size change is recorded in M1, and should be near zero.
 **Placement.** A `web` module in `thrum-app`, compiled only for `wasm32` (Thrum Core's ruling, 8 November). A game
 author then finds both shells in one crate, they share `percentile` and the counter vocabulary, and the architecture
 entry already permits the needed workspace crates (`thrum-render`, `thrum-core`). The clock policy is a pure submodule,
-`web::clock`, with no `web-sys` or `wgpu` types. It is compiled for `any(target_arch = "wasm32", test)`, so its unit
+`web::clock`: a state machine over visibility, user pause, timestamps and overload reports that returns pause or resume
+actions, with no `web-sys`, `wgpu`, `WebWorld` or `FrameWorld` types. It is compiled for `any(target_arch = "wasm32", test)`, so its unit
 tests run natively under `cargo test -p thrum-app` and need no wasm test runner.
 
 **Report ownership.** The shell exposes typed fields and samples. The game facade keeps the report text (ruling).
@@ -155,7 +159,7 @@ Thrum Core reviews these as an exact diff before they land:
 
 | File | Owner | Change |
 |---|---|---|
-| `crates/thrum-app/Cargo.toml` | Thrum Core (shared crate) | A `cfg(target_arch = "wasm32")` dependency table: `thrum-render`, `thrum-core`, `wgpu` (`webgpu`), `web-sys` (`HtmlCanvasElement`, `console`), `wasm-bindgen`, `wasm-bindgen-futures`, `console_error_panic_hook` if the panic hook moves. The versions are the ones `v1-game` already pins. The `description` stops saying "Native macOS window" only |
+| `crates/thrum-app/Cargo.toml` | Thrum Core (shared crate) | A `cfg(target_arch = "wasm32")` dependency table: `thrum-render`, `thrum-core`, `wgpu` (`webgpu`), `web-sys` (`HtmlCanvasElement`, `console`), `wasm-bindgen`, `wasm-bindgen-futures`. The panic hook moves as today's hand-written `set_hook`, with no new crate. The versions are the ones `v1-game` already pins. The `description` stops saying "Native macOS window" only |
 | `crates/thrum-app/src/lib.rs` | Thrum Core | `#[cfg(target_arch = "wasm32")] pub mod web;`, `web::clock` also under `test`, and the crate doc's "empty on other targets" line rewritten |
 | `.config/architecture.toml` | Thrum Core | The `thrum-app` comment names the web shell. The purpose and cost text for `web-sys` ("Browser V1 scene only") and `wasm-bindgen-futures` ("V1 startup only") covers the engine shell. `allowed_workspace_dependencies` is unchanged |
 | `tools/xtask/src/main.rs` | Thrum Core | `check_web` also runs wasm32 Clippy on `--package thrum-app` |
@@ -163,7 +167,7 @@ Thrum Core reviews these as an exact diff before they land:
 | `docs/design/modules/PLATFORM-RUNTIME.md` | Thrum Core | One sentence in the G3b section naming the web shell and linking this plan |
 | `examples/v1-game/Cargo.toml` | game | `thrum-app` in the wasm32 dependency table |
 | `examples/v1-game/src/browser.rs`, `browser/recovery.rs` | game | The two loss-gate changes first; then the facade over `WebShell`, and `recovery.rs` moves into the engine |
-| `examples/v1-game/src/host.rs`, `host/world.rs`, `host/scene_source.rs` | game | A constructor that returns `Runtime`; the game's edit functions (`set_time_of_day`, `set_camera_*`, `set_controls`, `set_scene_camera`, `set_display_overlay`) take the world and scene source (`&mut WorldPort`, `&mut GameScene`, plus `invalidate_history` where they need it) instead of `&mut Runtime`, and its reads (`controlled_position`, `tick`, `camera_orientation`, `time_of_day`) take `&Runtime`; `WebWorld` for the inline `WorldPort`. The wrapper's GPU methods (`encode_scene`, `publish_device` and so on) become `cfg(not(target_arch = "wasm32"))` |
+| `examples/v1-game/src/host.rs`, `host/world.rs`, `host/scene_source.rs` | game | A constructor that returns `Runtime`; the game's edit functions (`set_time_of_day`, `set_camera_*`, `set_scene_camera`, `set_display_overlay`) compare through `&Runtime` and then take `&mut GameScene` only on a change, `set_controls` takes `&mut WorldPort`, and its reads (`controlled_position`, `tick`, `camera_orientation`, `time_of_day`) take `&Runtime`; `WebWorld` for the inline `WorldPort`. The wrapper's GPU methods (`encode_scene`, `publish_device` and so on) become `cfg(not(target_arch = "wasm32"))` |
 
 Not changed: `examples/v1-game/web/index.html` (the page keeps RAF, DOM and input ownership), `web/build.sh`,
 `scripts/run_v1_showcase.py`, any `thrum-render` API, the macOS and iOS worlds, and the macOS `Game` trait.
@@ -185,29 +189,38 @@ checker addition covers the gaps.
    - B1: the pre-loss yaw with the edited time;
    - B2: the edited yaw with the pre-loss time;
    - C, then C′: the edited yaw and time again.
-   Each state records two images:
-   - the capture oracle's readback (`begin_capture`, `try_finish_capture`), whose `generation` must be the new one;
-   - a canvas screenshot clipped to the canvas, taken after at least three actual presents of that state, so the
-     presented frame is witnessed and not only the offscreen render.
+   Each state first presents until two consecutive canvas screenshots match (bounded at 30 presents, failing beyond),
+   so every state is converged after the history reset its edit set. Then it records two images:
+   - a canvas screenshot clipped to the canvas, the presented frame;
+   - the capture oracle's readback (`begin_capture`, `try_finish_capture`), whose `generation` must be the new one,
+     taken after those presents, so `history_reset_pending` is clear for every state.
 4. Require, for both image kinds:
    - A == A′ and C == C′. This controls for determinism, including the transform-history reset the edits set.
    - A == C.
    - A ≠ B1, so the camera is retained.
    - A ≠ B2, so the time is retained.
 
-   If the screenshots do not repeat (A ≠ A′), the screenshot comparison is reported and not claimed. The oracle
-   comparison still stands.
+   If either screenshot repeat fails (A ≠ A′ or C ≠ C′), the screenshot comparison is reported and not claimed. The
+   oracle comparison still stands, under the same rule for its own repeats.
+
+**No GPU calls while lost.** Before each destroy, the checker wraps the destroyed device's `create*` methods and its
+queue's `submit`, `writeBuffer` and `writeTexture` through CDP and counts calls. Between the loss and the replacement's
+publication the count must be zero. This discriminates the two gate changes from today's behaviour, which makes such
+calls without error.
 
 **Material reload after loss**, in the `material` case on the development page: after an actual destroy, a fresh
-`reload_material` is refused with `graphics device is lost` and starts no compile (`material_report` shows no new
-serial). After recovery, a reload is accepted and promoted on the replacement device. The existing outstanding-across-loss
+`reload_material` is refused with `graphics device is lost`, starts no compile (`material_report` shows no new
+serial), and makes no call on the lost device. After recovery, a reload is accepted and promoted on the replacement device. The existing outstanding-across-loss
 step is kept.
 
-**Attach after loss**, a new round in `valley-recovery`:
-1. Hold the cooked valley's fetch with the CDP `Fetch` domain.
-2. Destroy the device while the fetch is held, then release it.
-3. The page's `attach_cooked_valley` resolves while lost. Require `cooked_status` to show no draw and no error.
-4. Recover. Require the valley drawn on the replacement device, with one swap and frames submitted.
+**Attach after loss**, its own navigation in `valley-recovery`, before the existing rounds:
+1. Hold the cooked valley's fetch with the CDP `Fetch` domain before navigating.
+2. Once `create_browser_game` has returned, destroy the device and wait for `graphics_fault()`, since the lost callback
+   is asynchronous. Then release the fetch.
+3. The page's `attach_cooked_valley` returns while lost. Require no GPU call on the lost device, and `cooked_status`
+   with no draw and no error.
+4. When the page reports `Running`, recover through the real restore button. Require the valley drawn on the
+   replacement device, with one swap and frames submitted.
 
 ## M1 Engine web shell carries the V1 page unchanged: planned
 
@@ -226,8 +239,8 @@ Done when:
       plan claims nothing for them.
 - [ ] The Chrome checker passes: `check_v1_browser.mjs --case all`, which includes every case but `material`, plus
       `--case material` on the development page. The checker is not edited after the witness commit.
-- [ ] The G7 route check passes against the committed baseline. The pre-change work item records two runs of the base
-      commit's route and checker images. If those two are byte-identical, the post-change images must be
+- [ ] The G7 route check passes against the committed baseline. The pre-change work item records two runs of the
+      witness commit's route and checker images. If those two are byte-identical, the post-change images must be
       byte-identical to them. Otherwise, the post-change route grid difference against the pre-change run must be
       zero at the route check's own cell grid.
 - [ ] `report()` text keeps its field names, order and number formatting. The default-page Wasm size, before and
@@ -275,3 +288,9 @@ uses `thrum-app`. It gets its own commission.
   - M7: the seam now covers the host wrapper, xtask, the dependency text and a native test route for the clock policy.
   - L1–L7: corrected.
   - The material and attach rows change today's behaviour, so they land first with witnesses on today's facade.
+- 2026-11-08 Recheck at 14fb0b8a approved with changes, all taken. Game edits compare through `host()` before one
+  mutable borrow, so unchanged edits reset no history (R1). Both gate witnesses count GPU calls on the lost device, and
+  attach-after-loss gets its own navigation (R2). A deferred attach that is refused ends the attempt in
+  `recovery_error`, and a later attach replaces a held one (R3). Each witness state converges before its images, and
+  either repeat failing withdraws the screenshot claim (R4). The route reference is the witness commit (R5). The panic
+  hook moves without a new crate (R6). `web::clock` is a pure state machine (R7).
