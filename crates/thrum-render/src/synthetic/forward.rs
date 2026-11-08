@@ -29,7 +29,7 @@ impl PreparedSynthetic {
             exposure_side,
             false,
         )?;
-        self.draw_camera(&mut pass, target);
+        self.draw_camera(&mut pass, target)?;
         if let Some(contribution) = contribution {
             contribution.draw(&mut pass);
         }
@@ -97,7 +97,10 @@ impl PreparedSynthetic {
         };
         pass.set_pipeline(pipeline);
         let view_offset = self.view_stride * u32::from(target.frame_revision & 1 != 0);
-        pass.set_bind_group(0, view_group, &[view_offset]);
+        // The bucket route binds each bucket's segment offset as it draws.
+        let offsets = [view_offset, 0];
+        let bound = if self.bucket_route.is_some() { 2 } else { 1 };
+        pass.set_bind_group(0, view_group, &offsets[..bound]);
         pass.set_bind_group(1, &self.light[exposure_side], &[]);
         pass.set_bind_group(2, &self.materials, &[]);
         pass.set_bind_group(3, self.history.read_group(), &[]);

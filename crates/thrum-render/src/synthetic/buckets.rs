@@ -133,6 +133,8 @@ pub(super) struct Buckets {
     counts: Vec<u32>,
     next_segments: Vec<Segment>,
     next_members: Vec<u32>,
+    /// The admitted worst-case member list, in bytes.
+    worst_member_bytes: u64,
 }
 
 impl Buckets {
@@ -175,6 +177,7 @@ impl Buckets {
             laid_out: Vec::with_capacity(slots),
             members: Vec::with_capacity(capacity),
             next_members: Vec::with_capacity(capacity),
+            worst_member_bytes: member_bytes,
         })
     }
 
@@ -253,6 +256,11 @@ impl Buckets {
         self.laid_out.extend_from_slice(slot_to_physical);
         self.dirty = false;
         Ok(true)
+    }
+
+    /// The largest member list any layout can need, in bytes.
+    pub(super) fn worst_member_bytes(&self) -> u64 {
+        self.worst_member_bytes
     }
 
     pub(super) fn segments(&self) -> &[Segment] {
