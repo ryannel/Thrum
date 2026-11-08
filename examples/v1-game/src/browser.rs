@@ -140,6 +140,7 @@ pub async fn create_field_game(
             content: crate::GameContent::Field,
             camera_culling,
             valley_stars: false,
+            route_overlay: crate::RouteOverlay::Off,
         },
     )
     .await

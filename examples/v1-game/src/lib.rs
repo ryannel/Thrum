@@ -35,8 +35,8 @@ pub use host::{
 #[cfg(not(target_arch = "wasm32"))]
 pub use host::{ThreadedFrameHost, WorldControls};
 pub use projection::{GameProjection, ProjectionGap};
-pub use scene::GameContent;
 #[doc(hidden)]
 pub use scene::simulation_with_count;
+pub use scene::{GameContent, RouteOverlay};
 #[cfg(target_os = "macos")]
 pub use window::run_window;

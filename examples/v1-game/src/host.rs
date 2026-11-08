@@ -3,7 +3,7 @@
 use crate::{
     environment::DayCycle,
     projection::{GameProjection, ProjectionGap},
-    scene::GameContent,
+    scene::{GameContent, RouteOverlay},
 };
 pub use runtime::{DriveReport, FrameConfig, FrameSample, SurfaceOutput};
 use std::time::Duration;
@@ -43,6 +43,9 @@ pub struct GameSetup {
     pub camera_culling: CullMode,
     /// Prepare the authored valley's star field. Ignored for the flythrough field.
     pub valley_stars: bool,
+    /// Reseed the moving-route proof overlay (11 static grid slots at valley metres,
+    /// one mirrored basis and one retuned local light). Grid content only; off by default.
+    pub route_overlay: RouteOverlay,
 }
 
 impl Default for GameSetup {
@@ -51,6 +54,7 @@ impl Default for GameSetup {
             content: GameContent::Grid,
             camera_culling: CullMode::Direct,
             valley_stars: false,
+            route_overlay: RouteOverlay::Off,
         }
     }
 }
@@ -355,7 +359,10 @@ impl FrameHost {
             return Err("capability record does not match the host device".to_owned());
         }
         let scene = GameScene::scene(config.render_extent, setup)?;
-        let world = WorldPort::Inline(Box::new(WorldDriver::new(setup.content)?));
+        let world = WorldPort::Inline(Box::new(WorldDriver::new(
+            setup.content,
+            setup.route_overlay,
+        )?));
         let inner = Runtime::new(
             capabilities,
             queue,

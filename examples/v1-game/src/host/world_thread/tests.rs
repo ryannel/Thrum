@@ -32,7 +32,8 @@ fn transition(controls: &WorldControls, request: WorldLifecycle) -> WorldLifecyc
 
 #[test]
 fn world_advances_and_accepts_controls_while_render_is_idle() {
-    let driver = WorldDriver::new(scene::GameContent::Grid).expect("fixture world");
+    let driver = WorldDriver::new(scene::GameContent::Grid, scene::RouteOverlay::Off)
+        .expect("fixture world");
     let render_thread = thread::current().id();
     let (sender, worker_wake) = mpsc::sync_channel(1);
     // The window host starts its clock once the world and assets are prepared.
@@ -105,7 +106,8 @@ fn world_advances_and_accepts_controls_while_render_is_idle() {
 
 #[test]
 fn conversion_preserves_held_controls_until_a_new_valid_input() {
-    let mut driver = WorldDriver::new(scene::GameContent::Grid).expect("fixture world");
+    let mut driver = WorldDriver::new(scene::GameContent::Grid, scene::RouteOverlay::Off)
+        .expect("fixture world");
     driver
         .set_controls([1.0, 0.0, 0.0])
         .expect("held control before handoff");
@@ -171,7 +173,8 @@ fn first_overload_refusal_remains_visible_after_stopped_clock_polls() {
         .checked_sub(Duration::from_millis(200))
         .expect("monotonic clock has more than 200 ms of history");
     let (mut client, controls) = WorldClient::start(
-        WorldDriver::new(scene::GameContent::Grid).expect("fixture world"),
+        WorldDriver::new(scene::GameContent::Grid, scene::RouteOverlay::Off)
+            .expect("fixture world"),
         origin,
         || {},
     )
@@ -207,7 +210,8 @@ fn first_overload_refusal_remains_visible_after_stopped_clock_polls() {
 
 #[test]
 fn native_pause_retains_authority_and_controls_without_render_callbacks() {
-    let mut driver = WorldDriver::new(scene::GameContent::Grid).expect("10k fixture");
+    let mut driver =
+        WorldDriver::new(scene::GameContent::Grid, scene::RouteOverlay::Off).expect("10k fixture");
     driver.set_controls([1.0, 0.0, 0.0]).unwrap();
     let origin = Instant::now();
     let (mut client, controls) = WorldClient::start(driver, origin, || {}).unwrap();
@@ -282,7 +286,7 @@ fn inline_lifecycle_facade_explicitly_refuses_a_threaded_world() {
 
     let origin = Instant::now();
     let (client, controls) = WorldClient::start(
-        WorldDriver::new(scene::GameContent::Grid).unwrap(),
+        WorldDriver::new(scene::GameContent::Grid, scene::RouteOverlay::Off).unwrap(),
         origin,
         || {},
     )
