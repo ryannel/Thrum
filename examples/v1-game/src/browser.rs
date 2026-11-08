@@ -93,6 +93,9 @@ pub struct BrowserGame {
     queue: wgpu::Queue,
     host: FrameHost,
     cooked: Option<Arc<Mutex<CookedStats>>>,
+    /// A cooked contribution attached while the device was lost. It makes no GPU call on the
+    /// lost device and attaches right after the replacement device is published.
+    held_contribution: Option<Box<dyn thrum_render::contribution::SceneContribution>>,
     /// Explicit material reloads of the attached cooked valley (development builds only).
     #[cfg(feature = "dev-material")]
     material: Option<MaterialReload>,
@@ -223,6 +226,7 @@ async fn create_game(
         queue: gpu.queue,
         host,
         cooked: None,
+        held_contribution: None,
         #[cfg(feature = "dev-material")]
         material: None,
         #[cfg(feature = "dev-material")]
@@ -258,8 +262,14 @@ impl BrowserGame {
     /// methods (wgpu 30.0.1 has no `createRenderPipelineAsync`), so a cold compile stalls the
     /// page for hundreds of milliseconds. This is a development control, not part of play.
     /// # Errors
-    /// Returns an error when no cooked valley is attached.
+    /// Returns an error when no cooked valley is attached, or `graphics device is lost` while
+    /// the device is lost (compiling would call it).
     pub fn reload_material(&mut self, name: String, source: String) -> Result<f64, JsValue> {
+        if self.graphics.is_lost() {
+            // Compiling would call the lost device; the accepted hook is restored on the
+            // replacement, and a fresh reload is accepted once it is published.
+            return Err(js_error("graphics device is lost"));
+        }
         let material = self.material.as_ref().ok_or_else(|| {
             JsValue::from_str("material reload needs the cooked valley (?assets)")
         })?;
@@ -344,7 +354,9 @@ impl BrowserGame {
     /// Draw the authored valley from fetched cooked products, with its authored camera.
     /// The products survive device replacement: a new device stages the newest fetched
     /// generation again. Publications fetched later by [`CookedValley::next_publication`] swap
-    /// in as they upload.
+    /// in as they upload. While the device is lost the contribution is held, with no GPU call,
+    /// and attaches right after the replacement device is published; a refusal then is
+    /// reported in [`Self::cooked_status`] errors. A later attach replaces a held one.
     /// # Errors
     /// Returns an invalid embedded recipe or the scene's refusal of the contribution.
     pub fn attach_cooked_valley(&mut self, valley: &CookedValley) -> Result<(), JsValue> {
@@ -354,9 +366,14 @@ impl BrowserGame {
         let stats = assets.stats();
         #[cfg(feature = "dev-material")]
         let material = assets.material();
-        self.host
-            .set_scene_contribution(Box::new(assets))
-            .map_err(js_error)?;
+        if self.graphics.is_lost() {
+            self.held_contribution = Some(Box::new(assets));
+        } else {
+            self.held_contribution = None;
+            self.host
+                .set_scene_contribution(Box::new(assets))
+                .map_err(js_error)?;
+        }
         self.host.set_scene_camera(camera);
         self.demo.observe_camera(self.host.camera_orientation());
         self.cooked = Some(stats);
@@ -507,6 +524,16 @@ impl BrowserGame {
             // Timings belong to one device generation, while world/platform
             // counters retain their identity across graphics reconstruction.
             self.samples.clear();
+            // The replacement installed free frame slots, so a held attach meets the
+            // no-frames-in-flight rule before the new device's first encode.
+            if let Some(held) = self.held_contribution.take()
+                && let Err(error) = self.host.set_scene_contribution(held)
+                && let Some(Ok(mut stats)) = self.cooked.as_ref().map(|stats| stats.lock())
+            {
+                stats.errors.push(format!(
+                    "cooked valley attach on the replacement device: {error}"
+                ));
+            }
         }
         if self.graphics.is_lost() {
             self.recovery.awaiting_first_present = false;

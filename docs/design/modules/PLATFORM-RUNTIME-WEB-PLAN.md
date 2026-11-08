@@ -12,8 +12,8 @@ runtime alone; material reload does GPU work while lost. Brief `tmp/g3b-web-shel
 `tmp/g3b-web-shell/review-design.md` (Opus 5.5, 8 November). Recheck at 14fb0b8a: APPROVE WITH CHANGES (R1–R7, same
 report), all taken in this revision.
 Milestone: M1 Engine web shell carries the V1 page unchanged · Updated: 2026-11-08
-Now: design approved with changes, changes taken; building the loss gates and witnesses on today's facade
-Next: post that change to Thrum Core as a seam diff with evidence, then the extraction
+Now: loss gates and witnesses built and passing on today's facade ([evidence](../../evidence/v1-workload/G3B-LOSS-GATES-2026-11-08.md)); posted to Thrum Core as a seam diff
+Next: Thrum Core's verdict on that diff, then the pre-change reference runs and the extraction
 Blocked: none
 
 ## Problem
@@ -129,7 +129,7 @@ classified by what it touches:
 | Authority and view edits: solar time, camera yaw and pitch, player input, parameter files and overlay, user pause and visibility | Allowed. They change CPU state only. The replacement device draws that retained state | Allowed: `browser.rs` 390–416 and 604–640; the lost branch of the frame step at 511–520 |
 | Capture start and finish | Refused with `graphics device is lost`. A capture outstanding at loss is dropped and reported, as now | The same: `begin_capture` 678–683 and `try_finish_capture` |
 | Material reload (`dev-material`) | Refused by the facade with `graphics device is lost`, checked through `graphics_lost()`. A request outstanding at loss is still retired, and the accepted hook is restored on the replacement device, as now | **Changes.** Today the request compiles synchronously on the lost device (`material.rs` `request` → `Candidate::prepare`), then is retired at publication |
-| Cooked valley attach | Deferred. While lost, `set_scene_contribution` holds the contribution (a later attach replaces it), and the shell attaches it right after publishing the replacement device, before its first encode. `publish_device` installs free slots, so the no-frames-in-flight check passes. A refusal there ends that recovery attempt with its message in `recovery_error`, which the page already shows | **Changes.** Today it rebuilds resources on the lost device at once (`runtime.rs` `set_scene_contribution`). That makes GPU calls while lost; the page attaches before RAF starts, so no refusal occurs today |
+| Cooked valley attach | Deferred. While lost, `set_scene_contribution` holds the contribution (a later attach replaces it), and the shell attaches it right after publishing the replacement device, before its first encode. `publish_device` installs free slots, so the no-frames-in-flight check passes. A refusal there is reported in the cooked loader errors (`cooked_status`), where the page and checker already look for cooked failures | **Changes.** Today it rebuilds resources on the lost device at once (`runtime.rs` `set_scene_contribution`). That makes GPU calls while lost; the page attaches before RAF starts, so no refusal occurs today |
 
 The two changes land first, on today's facade, with their checker witnesses (M1, first work item). The extraction
 then carries them unchanged.
@@ -213,7 +213,7 @@ calls without error.
 serial), and makes no call on the lost device. After recovery, a reload is accepted and promoted on the replacement device. The existing outstanding-across-loss
 step is kept.
 
-**Attach after loss**, its own navigation in `valley-recovery`, before the existing rounds:
+**Attach after loss**, a new `valley-late-attach` case with its own navigation, included in `--case all`:
 1. Hold the cooked valley's fetch with the CDP `Fetch` domain before navigating.
 2. Once `create_browser_game` has returned, destroy the device and wait for `graphics_fault()`, since the lost callback
    is asynchronous. Then release the fetch.
@@ -237,7 +237,8 @@ Done when:
       These are the existing loss and recovery cases. Camera yaw is covered by the retained-view witness. Camera pitch,
       parameter files and overlay go through the same CPU edit path, but no case exercises them while lost, and this
       plan claims nothing for them.
-- [ ] The Chrome checker passes: `check_v1_browser.mjs --case all`, which includes every case but `material`, plus
+- [ ] The Chrome checker passes: `check_v1_browser.mjs --case all`, which includes every case but `material` (and
+      now `valley-late-attach`), plus
       `--case material` on the development page. The checker is not edited after the witness commit.
 - [ ] The G7 route check passes against the committed baseline. The pre-change work item records two runs of the
       witness commit's route and checker images. If those two are byte-identical, the post-change images must be
@@ -294,3 +295,7 @@ uses `thrum-app`. It gets its own commission.
   `recovery_error`, and a later attach replaces a held one (R3). Each witness state converges before its images, and
   either repeat failing withdraws the screenshot claim (R4). The route reference is the witness commit (R5). The panic
   hook moves without a new crate (R6). `web::clock` is a pure state machine (R7).
+- 2026-11-08 First work item built. The attach-after-loss witness is a separate `valley-late-attach` case, since it needs
+  the cooked requests held before navigation. A deferred attach refused on the replacement device is reported in
+  `cooked_status` errors, the page's existing home for cooked failures, rather than `recovery_error`, which would offer
+  a retry for a healthy device.
