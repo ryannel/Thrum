@@ -112,6 +112,15 @@ fn the_cube_rows_match_the_shader_cube() {
     assert_eq!((cube.vertex_count, cube.index_count), (24, 36));
     assert_eq!(cube.bounds, [[-1.0; 3], [1.0; 3]]);
     assert_eq!(reversed.bounds, cube.bounds);
+    assert_eq!(
+        (
+            reversed.base_vertex,
+            reversed.vertex_count,
+            reversed.first_index
+        ),
+        (0, 24, 36),
+        "the reversed row shares the cube's vertices"
+    );
     // Face 0 corner 3 of `synthetic.wgsl`: n + t*1 + cross(n,t)*1 = (1, -1, -1).
     let corner = arena.vertices[cube.base_vertex as usize + 3];
     assert_eq!(corner.position, [1.0, -1.0, -1.0]);
@@ -167,7 +176,11 @@ fn malformed_meshes_are_refused_before_anything_is_written() {
     );
     assert_eq!(
         arena.replace(MeshId::CUBE, &vertices, &indices),
-        Err(ArenaError::NonFinite)
+        Err(ArenaError::Fixed)
+    );
+    assert_eq!(
+        arena.replace(MeshId::CUBE_REVERSED, &vertices, &indices),
+        Err(ArenaError::Fixed)
     );
     assert_eq!(
         before,
@@ -178,7 +191,8 @@ fn malformed_meshes_are_refused_before_anything_is_written() {
 
 #[test]
 fn the_arena_refuses_growth_past_its_limits() {
-    // Room for the two cubes and one more 24-vertex, 36-index mesh.
+    // Room for the cube rows (24 shared vertices, 72 indices) and one more
+    // mesh of up to 48 vertices and 36 indices.
     let limits = ArenaLimits {
         vertices: 72,
         indices: 108,
@@ -187,10 +201,11 @@ fn the_arena_refuses_growth_past_its_limits() {
     let (vertices, indices) = fan(12, 1.0);
     assert_eq!(vertices.len(), 14);
     let fits = arena.insert(&vertices, &indices).expect("fits");
+    // Vertices would fit (52 of 72); indices would not (144 of 108).
     assert_eq!(arena.insert(&vertices, &indices), Err(ArenaError::Capacity));
     // A replacement that must move past the limit is refused and leaves the
     // row as it was.
-    let (larger, larger_indices) = fan(30, 1.0);
+    let (larger, larger_indices) = fan(40, 1.0);
     let row = *arena.row(fits).expect("row");
     assert_eq!(
         arena.replace(fits, &larger, &larger_indices),
@@ -201,8 +216,8 @@ fn the_arena_refuses_growth_past_its_limits() {
     assert_eq!((tight.vertices, tight.indices), (100, 1200));
     assert_eq!(
         MeshArena::new(ArenaLimits {
-            vertices: 47,
-            indices: 1000
+            vertices: 24,
+            indices: 71
         })
         .err(),
         Some(ArenaError::Capacity)
@@ -346,4 +361,64 @@ fn culling_churn_keeps_each_physical_row_on_its_slots_mesh() {
             .expect("replace");
         check(&upload, &instances);
     }
+}
+
+#[test]
+fn the_packed_vertex_matches_the_shader_struct() {
+    // Rust packing: position, normal, uv, tangent, little-endian f32s.
+    let vertex = MeshVertex {
+        position: [1.0, 2.0, 3.0],
+        normal: [4.0, 5.0, 6.0],
+        uv: [7.0, 8.0],
+        tangent: [9.0, 10.0, 11.0, 12.0],
+    };
+    let mut bytes = Vec::new();
+    vertex.pack(&mut bytes);
+    assert_eq!(bytes.len() as u64, VERTEX_BYTES);
+    let floats: Vec<f32> = bytes
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .map(|&word| f32::from_le_bytes(word))
+        .collect();
+    assert_eq!(floats, (1..=12).map(|v| v as f32).collect::<Vec<_>>());
+    // The shader reads position as a.xyz, normal as (a.w, b.xy), uv as b.zw
+    // and tangent as c, so its struct must be three tightly packed vec4s.
+    let source = include_str!("../../synthetic.wgsl");
+    let declaration = source
+        .lines()
+        .find(|line| line.starts_with("struct MeshVertex"))
+        .expect("synthetic.wgsl declares MeshVertex");
+    let module = wgpu::naga::front::wgsl::parse_str(declaration).expect("parses");
+    let (_, ty) = module
+        .types
+        .iter()
+        .find(|(_, ty)| ty.name.as_deref() == Some("MeshVertex"))
+        .expect("struct");
+    let wgpu::naga::TypeInner::Struct { members, span } = &ty.inner else {
+        panic!("MeshVertex is a struct");
+    };
+    assert_eq!(u64::from(*span), VERTEX_BYTES);
+    assert_eq!(
+        members.iter().map(|m| m.offset).collect::<Vec<_>>(),
+        [0, 16, 32]
+    );
+    assert!(source.contains("let local = vertex.a.xyz;"));
+    assert!(source.contains("let n = vec3(vertex.a.w, vertex.b.xy);"));
+    assert!(source.contains("output.uv = vertex.b.zw;"));
+}
+
+#[test]
+fn base_vertices_stay_within_a_draw() {
+    let limits = ArenaLimits::for_binding(u64::MAX);
+    assert_eq!(limits.vertices, i32::MAX.unsigned_abs());
+    let arena = MeshArena::new(ROOMY).expect("cube");
+    for row in arena.rows() {
+        assert_eq!(row.draw_base_vertex(), Ok(0));
+    }
+    let far = super::MeshRow {
+        base_vertex: u32::MAX,
+        ..arena.rows()[0]
+    };
+    assert_eq!(far.draw_base_vertex(), Err(ArenaError::Capacity));
 }
