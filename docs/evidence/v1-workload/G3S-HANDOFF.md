@@ -54,6 +54,17 @@ The Codex goal remains active. Its attachment is
   Inputs, both runs and logs are under
   `tmp/g3s-sunset-lip/graph/row665-probe/`. Runtime remains open.
 
+- The 83–85 diagnostic replay matches the three historical images byte
+  for byte. The contour query admits all 600 tile receivers, and the
+  nine dense checks agree within 0.00385 pp. The 83→84 p95 step falls
+  from 12.5 to 1.859 pp. The 84→85 row fails its frozen limit because
+  stock stays at zero while the candidate falls a further 2.077 pp
+  at p95. The centre's dense and terrain references also darken in
+  that interval. Independent review keeps the failure and requires a
+  separate trajectory through extinction with adjacent edge controls.
+  See `tmp/g3s-sunset-lip/graph/early-depth/`. These are last-map
+  diagnostics. The shaded game and shader admission remain open.
+
 - M3 research is in `tmp/g3s-sunset-lip/M3-RESEARCH.md`. Decoding the
   existing off-axis crest diagnostic finds 33,965 partial receivers at
   frame 3 and 812,485 at frame 72 out of 1,118,754 eligible in both.
