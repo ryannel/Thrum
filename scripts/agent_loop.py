@@ -3,18 +3,18 @@
 
 Used by the build-parallel lead (.agents/skills/build-parallel) and runnable by hand. Subcommands:
 
-  run   --module WATER --worktree PATH [--milestone M2] [--fresh] [--budget-hours 4] [--pace-per-day 10]
+  run   --module WATER --worktree PATH [--milestone M2] [--fresh] [--budget-hours 4]
         Starts (or resumes) a Codex session on the milestone and drives it one turn per `codex exec resume` until:
         CLAIMED   every item of the milestone has status pass in the worktree's done-when file
         DONE / BLOCKED / NEEDS_CONTEXT   the agent's final report line
         BUDGET    no new passing item or commit for --budget-hours
         FLOOR     two failed turns in a row, or the goal is usage- or budget-limited (likely quota or outage)
         PIN       a turn ran on a model or effort other than the pinned ones
-        PACE      the account's weekly Codex use is ahead of --pace-per-day (checked at the start of every run)
         PAUSED    the goal is paused; only the Codex app's play button resumes it
         CLAIMED also needs HEAD to be on origin/main, so the milestone was pushed. A run on the same milestone resumes
         its session (with --message as the first prompt, e.g. the evaluator's findings) unless --fresh is given.
-        Prints one JSON line with the result as the last line of output.
+        Prints one JSON line with the result and the quota forecast as the last line of output.
+        The owner sets the pace by how many streams run; the loop never holds work back for quota.
 
   next  --module WATER --worktree PATH --milestone M2
         Reads the milestone's `fails` count (written by the evaluator) and prints the escalation:
@@ -22,6 +22,10 @@ Used by the build-parallel lead (.agents/skills/build-parallel) and runnable by 
 
   status --module WATER --worktree PATH
         Prints each milestone's state, fails and passing items.
+
+  quota
+        Forecasts the weekly Codex limit from the last day of use across all sessions: used %, burn per day, and
+        when it runs out compared with the reset.
 
   gpu -- COMMAND...
         Runs COMMAND under a lock shared by every worktree of this repository, so device timing and captures from
@@ -31,6 +35,8 @@ State lives in tmp/streams/<module>/state.json under the worktree, so re-running
 """
 
 from __future__ import annotations
+
+from datetime import datetime, timezone
 
 import argparse
 import fcntl
@@ -111,11 +117,6 @@ def escalation(fails: int) -> str:
     return "park"
 
 
-def allowed_used_percent(resets_at: float, now: float, pace_per_day: float) -> float:
-    days_left = max(0.0, (resets_at - now) / 86400.0)
-    return max(0.0, 100.0 - pace_per_day * days_left)
-
-
 def rollout_for(thread_id: str) -> Path | None:
     hits = glob.glob(str(CODEX_HOME / "sessions" / "**" / f"rollout-*{thread_id}.jsonl"), recursive=True)
     return Path(max(hits, key=os.path.getmtime)) if hits else None
@@ -133,17 +134,53 @@ def pin_mismatches(rollout: Path) -> list[str]:
     return bad
 
 
-def latest_rate_limits() -> dict | None:
-    files = sorted(glob.glob(str(CODEX_HOME / "sessions" / "**" / "rollout-*.jsonl"), recursive=True),
-                   key=os.path.getmtime, reverse=True)[:5]
-    for f in files:
-        for line in reversed(Path(f).read_text().splitlines()):
-            if '"token_count"' in line:
-                limits = json.loads(line).get("payload", {}).get("rate_limits") or {}
+def quota_samples(since: float) -> list[tuple[float, float, float]]:
+    """(time, used_percent, resets_at) for the weekly Codex limit, from rollouts touched since `since`."""
+    samples = []
+    for f in glob.glob(str(CODEX_HOME / "sessions" / "**" / "rollout-*.jsonl"), recursive=True):
+        if os.path.getmtime(f) < since:
+            continue
+        with open(f) as handle:
+            for line in handle:
+                if '"token_count"' not in line:
+                    continue
+                event = json.loads(line)
+                limits = event.get("payload", {}).get("rate_limits") or {}
                 primary = limits.get("primary") or {}
-                if limits.get("limit_id") == "codex" and primary.get("window_minutes") == 10080:
-                    return primary
-    return None
+                if limits.get("limit_id") != "codex" or primary.get("window_minutes") != 10080:
+                    continue
+                when = datetime.fromisoformat(event["timestamp"].replace("Z", "+00:00")).timestamp()
+                samples.append((when, float(primary["used_percent"]), float(primary["resets_at"])))
+    return sorted(samples)
+
+
+def forecast(samples: list[tuple[float, float, float]], now: float, window_h: float = 24.0) -> dict | None:
+    """Burn rate over the last `window_h` hours of the current limit window, and when the limit runs out at that rate."""
+    if not samples:
+        return None
+    _, used, resets_at = samples[-1]
+    recent = [s for s in samples if s[2] == resets_at and s[0] >= now - window_h * 3600]
+    out = {"used_percent": used, "resets_at": iso(resets_at)}
+    if len(recent) < 2 or recent[-1][0] - recent[0][0] < 3600:
+        return {**out, "per_day": None, "runs_out": None, "note": "not enough recent use to forecast"}
+    per_day = (recent[-1][1] - recent[0][1]) / ((recent[-1][0] - recent[0][0]) / 86400)
+    out["per_day"] = round(per_day, 1)
+    if per_day <= 0:
+        return {**out, "runs_out": None, "note": "no use in the window"}
+    runs_out = now + (100 - used) / per_day * 86400
+    if runs_out >= resets_at:
+        return {**out, "runs_out": None, "note": f"lasts to the reset at this rate ({round(100 - used - per_day * (resets_at - now) / 86400)}% left then)"}
+    return {**out, "runs_out": iso(runs_out),
+            "note": f"runs out {round((resets_at - runs_out) / 3600)} h before the reset at this rate"}
+
+
+def iso(ts: float) -> str:
+    return datetime.fromtimestamp(ts, timezone.utc).astimezone().strftime("%a %d %b %H:%M")
+
+
+def quota_now() -> dict | None:
+    now = time.time()
+    return forecast(quota_samples(now - 26 * 3600), now)
 
 
 def goal_status(thread_id: str) -> str | None:
@@ -203,7 +240,7 @@ def finish(state_path: Path, state: dict, result: str, **extra) -> None:
     state.update(result=result, finished=time.time(), **extra)
     state_path.write_text(json.dumps(state, indent=2))
     print(json.dumps({"result": result, "module": state["module"], "milestone": state["milestone"],
-                      "thread": state.get("thread"), **extra}))
+                      "thread": state.get("thread"), **extra, "quota": quota_now()}))
     sys.exit(0)
 
 
@@ -221,11 +258,6 @@ def cmd_run(a: argparse.Namespace) -> None:
     state.update(module=a.module, milestone=milestone["id"], failed_turns=0, reports=0, progress_at=time.time(),
                  passing=passing(milestone), head=head_commit(worktree))
     state.pop("result", None)
-    limits = latest_rate_limits()
-    if limits:
-        allowed = allowed_used_percent(limits["resets_at"], time.time(), a.pace_per_day)
-        if limits["used_percent"] > allowed:
-            finish(state_path, state, "PACE", used=limits["used_percent"], allowed=round(allowed, 1))
     flags = codex_flags()
     timeout_s = a.turn_timeout_hours * 3600
 
@@ -287,6 +319,10 @@ def cmd_status(a: argparse.Namespace) -> None:
         print(f"{m['id']}\t{m.get('state')}\tfails={m.get('fails', 0)}\t{passing(m)}/{len(m['items'])} pass\t{m['name']}")
 
 
+def cmd_quota(a: argparse.Namespace) -> None:
+    print(json.dumps(quota_now()))
+
+
 def cmd_gpu(a: argparse.Namespace) -> None:
     command = a.command_args[1:] if a.command_args[:1] == ["--"] else a.command_args
     if not command:
@@ -307,7 +343,6 @@ def main() -> None:
     run.add_argument("--fresh", action="store_true", help="start a new Codex session even if one exists")
     run.add_argument("--message", help="first prompt on resume, e.g. the evaluator's findings message")
     run.add_argument("--budget-hours", type=float, default=4.0)
-    run.add_argument("--pace-per-day", type=float, default=10.0)
     run.add_argument("--turn-timeout-hours", type=float, default=2.0)
     run.set_defaults(func=cmd_run)
     for name, func in (("next", cmd_next), ("status", cmd_status)):
@@ -317,6 +352,7 @@ def main() -> None:
         if name == "next":
             p.add_argument("--milestone", required=True)
         p.set_defaults(func=func)
+    sub.add_parser("quota").set_defaults(func=cmd_quota)
     gpu = sub.add_parser("gpu")
     gpu.add_argument("command_args", nargs=argparse.REMAINDER)
     gpu.set_defaults(func=cmd_gpu)
