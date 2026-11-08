@@ -3,10 +3,10 @@
 Design: [Platform runtime](PLATFORM-RUNTIME.md#g3b-world-and-presentation-lifecycle--selected-partial-implementation)
 and [bounded frame host](../decisions/V1-BOUNDED-FRAME-HOST.md). Siblings:
 [iOS](PLATFORM-RUNTIME-IOS-PLAN.md) and [web](PLATFORM-RUNTIME-WEB-PLAN.md).
-Reviews: Design and plan over `3049433d`, approved plan SHA-256 prefix `0f467bcb` · [brief](#design-and-plan-review-brief) · initial hold resolved on lost-token cleanup, the recovery oracle, display attribution and platform distinctions.
+Reviews: Design and plan over `3049433d`, approved plan SHA-256 prefix `0f467bcb` · [brief](#design-and-plan-review-brief) · initial hold resolved on lost-token cleanup, the recovery oracle, display attribution and platform distinctions. First M1 abandon seam over `f79e3434` · [brief](#lost-frame-review-brief) · approved for observed post-encode loss.
 Milestone: M1 The same Mac game resumes after graphics loss
-Now: M0 complete. M1 starts with the lost-device frame abandonment seam and focused Metal proof.
-Next: qualify same-window loss and recovery, then M2 real-display presentation.
+Now: M1’s Mac actor abandons encoded work after observed device loss. The focused Metal test distinguishes that path from the healthy staging flush.
+Next: add the bounded, opt-in held-drawable destroy witness, then qualify same-window recovery.
 Blocked: none for M1 preparation. Queue live window and physical display rows in the batched owner window.
 
 ## M0 Reviewed Mac qualification plan: done
@@ -23,7 +23,7 @@ Use the checked-in noon preset and the same-build uninterrupted run as the exact
 
 Work:
 
-- [ ] First give the renderer an explicit lost-device abandon path for an encoded frame. Today both `skip()` and implicit drop flush staged writes with an empty queue submission. After observed loss, abandon the encoder and unsubmitted timing reservation without a queue call, history commit or old-fence wait. Preserve the ordinary healthy skip and staged-write behavior. Audit post-encode loss, stop and surface-generation exits together and inspect the encode-error staging flush. Review the narrow FrameHost seam before adding injection. Instrument the old queue call boundary for the controlled witness, including empty submissions, since a lost-device submit can fail silently.
+- [x] Give an encoded frame an explicit lost-device abandon path. The Mac actor checks observed loss before and after drawable acquisition, including acquisition refusal. Abandoning releases the encoder and timing reservation without flushing the queue or committing view history. Healthy skip still flushes once. A real Metal test checks the queue call boundary. Replacing abandonment with ordinary drop produces an extra attempted submit and fails the test. [Focused evidence](../../evidence/render/V1-BOUNDED-FRAMES-2026-11-04.md#mac-lost-encoded-frame).
 - [ ] Add a one-shot, opt-in destroy after a successful drawable acquisition and before view creation or submit. Keep the drawable held for bounded callback delivery using nonblocking maintenance, as the existing Metal device-watch test does. Route the normal generation-tagged notification and outcome, abandon the lost token and release the drawable through its owner. Time out as a failed witness, abandon without submitting, and distinguish “never fired” from “notification absent.” Record acquisition → destroy → notification → abandonment and the first new-generation submit. Keep ordinary builds free of diagnostic frame work.
 - [ ] Run the detached helper and device/replay tests before the live game. Build the normal valley with `python3 scripts/run_v1_showcase.py check`. Use `python3 scripts/run_v1_showcase.py mac --stop noon --frames 600` for the uninterrupted window. Record the exact diagnostic build and invocation when the arm exists.
 - [ ] Record session and world identity, admitted/committed ticks, pause, controls, cooked root and generation, old/new surface and device generations, first restored submission and per-generation faults. Capture before arming and after recovery has drawn the retained cooked root, with fixed acknowledged tick, view and extent. Plan a diagnostic render-owner scene readback outside the timed run, with the same warmup and no UI overlay. The current game readback is only solar time. Freeze an identical admitted endpoint for the arm-disabled run and refuse a mismatched endpoint before comparing RGB. Keep the no-injection control and the independent review. Run `./dev check`.
@@ -68,6 +68,13 @@ Sources: [Apple’s CADisplayLink documentation](https://developer.apple.com/doc
 [Instruments display and Metal events](https://developer.apple.com/documentation/xcode/analyzing-the-performance-of-your-metal-app) ·
 [Metal HUD intervals](https://developer.apple.com/documentation/xcode/monitoring-your-metal-apps-graphics-performance) ·
 [MTLDrawable presentedTime](https://developer.apple.com/documentation/metal/mtldrawable/presentedtime).
+
+## Lost frame review brief
+
+Review the token and Mac actor diff over `f79e3434` against C06.
+Verify timing and drop accounting, healthy staging flush, loss checks
+before and after acquisition, and the real Metal queue-attempt control.
+Keep encode-time failure and live-window recovery outside this proof.
 
 ## Log
 

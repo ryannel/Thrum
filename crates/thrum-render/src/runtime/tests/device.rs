@@ -180,6 +180,67 @@ fn a_missing_surface_binding_has_one_drop_and_one_scene_commit_on_both_routes() 
     });
 }
 
+#[test]
+fn lost_encoded_frame_abandons_staging_without_a_queue_submit() {
+    use crate::runtime::tokens::staging_flush::attempts;
+    use std::{sync::atomic::AtomicBool, time::Instant};
+
+    pollster::block_on(async {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let (capabilities, queue) = gpu(&instance, 1).await;
+        let device = capabilities.device();
+        let lost = Arc::new(AtomicBool::new(false));
+        let signal = Arc::clone(&lost);
+        device.set_device_lost_callback(move |_, _| signal.store(true, Ordering::Release));
+        let mut host = host(
+            &capabilities,
+            &queue,
+            Policy {
+                camera_cut_tick: Some(1),
+                empty: true,
+                ..Policy::default()
+            },
+        )
+        .await;
+        let initial = attempts();
+        let healthy = host
+            .advance(Duration::ZERO)
+            .expect("healthy advance")
+            .encode_scene()
+            .expect("healthy encode");
+        assert!(healthy.can_acquire_surface());
+        assert!(healthy.skip().dropped_view);
+        assert_eq!(attempts(), initial + 1, "healthy discard flushes staging");
+
+        let last_view = host.last_view_source;
+        host.world.authority.tick = 1;
+        host.world.publication.tick = 1;
+        let before = host.world.source();
+        let encoded = host
+            .advance(Duration::ZERO)
+            .expect("advance before loss")
+            .encode_scene()
+            .expect("encode before loss");
+        assert!(encoded.can_acquire_surface());
+        device.destroy();
+        let deadline = Instant::now() + Duration::from_secs(2);
+        while !lost.load(Ordering::Acquire) {
+            device.poll(wgpu::PollType::Poll).expect("loss maintenance");
+            assert!(Instant::now() < deadline, "device loss was not observed");
+            std::thread::yield_now();
+        }
+        encoded.abandon_lost_device();
+        assert_eq!(attempts(), initial + 1, "no flush on the destroyed queue");
+        assert_eq!(host.world.source(), before);
+        assert_eq!(host.pending_frames(), 0);
+        assert_eq!(host.last_view_source, last_view);
+        assert!(host.scene.view.history_reset());
+        assert_eq!(host.submitted_view_history_epoch, 0);
+        assert_eq!(host.dropped_views(), 2);
+        assert_eq!(host.dropped_surface(), 2);
+    });
+}
+
 fn pending_slots(host: &mut Host) {
     let mut report = host
         .advance(Duration::ZERO)

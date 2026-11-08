@@ -16,7 +16,8 @@ use thrum_render::{
     frame::{FrameWorker, TargetLeadStatus, display_target_lead},
     present::SurfaceProfile,
     runtime::{
-        DriveReport, FrameError, FrameHost, FrameSample, FrameWorld, SceneSource, SurfaceOutput,
+        DriveReport, EncodedFrame, FrameError, FrameHost, FrameSample, FrameWorld, SceneSource,
+        SurfaceOutput,
     },
 };
 use wgpu::{CurrentSurfaceTexture, TextureViewDescriptor};
@@ -286,7 +287,7 @@ impl<G: Game> Actor<G> {
         if !advanced.can_acquire_serial() {
             return advanced.submit(None);
         }
-        let encoded = advanced.encode_scene()?;
+        let encoded = check_encoded_device(&self.gpu.watch, advanced.encode_scene()?)?;
         if !encoded.can_acquire_surface() {
             return Ok(encoded.skip());
         }
@@ -295,11 +296,11 @@ impl<G: Game> Actor<G> {
             reply.surface_status = SurfaceStatus::NeedsReconfigure;
             return Ok(encoded.skip());
         }
-        ensure_device(&self.gpu.watch)?;
         ensure_running(&self.stopped)?;
         let acquire = Instant::now();
         let acquired = self.recipe.surface.get_current_texture();
         reply.acquire_wall = Some(acquire.elapsed());
+        let encoded = check_encoded_device(&self.gpu.watch, encoded)?;
         let frame = match acquired {
             CurrentSurfaceTexture::Success(frame) => frame,
             CurrentSurfaceTexture::Suboptimal(frame) => {
@@ -322,7 +323,6 @@ impl<G: Game> Actor<G> {
                 return Ok(encoded.skip());
             }
         };
-        ensure_device(&self.gpu.watch)?;
         if self.surface_generation.load(Ordering::Acquire) != request.surface_generation {
             self.needs_reconfigure = true;
             reply.surface_status = SurfaceStatus::NeedsReconfigure;
@@ -460,6 +460,17 @@ fn drain_wait(
         Err(error) => Err(format!("GPU drain: {error:?}")),
     }
 }
+fn check_encoded_device<'a, W: FrameWorld, V: SceneSource<W::Page>>(
+    watch: &DeviceWatch,
+    encoded: EncodedFrame<'a, W, V>,
+) -> Result<EncodedFrame<'a, W, V>, FrameError> {
+    if let Err(error) = ensure_device(watch) {
+        encoded.abandon_lost_device();
+        return Err(error);
+    }
+    Ok(encoded)
+}
+
 fn ensure_device(watch: &DeviceWatch) -> Result<(), FrameError> {
     if watch.is_lost() {
         Err(FrameError::Gpu(
