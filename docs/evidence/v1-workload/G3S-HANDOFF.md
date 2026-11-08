@@ -94,6 +94,14 @@ The Codex goal remains active. Its attachment is
   wide, and all four missing limbs remain zero. Park this per-fragment
   design. The stored-field check and original-triangle union remain
   separate referees.
+
+  With exact near geometry through 256 m forward and no strip widening,
+  the 16-band raw sweep has interval widths of 2.30 pp at the broad edge,
+  2.21 at the raised crest and 2.18 at the compact overlap, against a
+  0.5 pp entrance limit. All row-665 widths are at most 0.147 pp and the
+  missing limbs have positive lower bounds. Park raw extrema. Relaxed
+  disk-only constraints give widths of 0.12–0.24 pp on the three failures,
+  leaving a certified disk-aware representation open.
   Rerun from `tmp/g3s-sunset-lip/M3-RESEARCH.md`.
 
 - Historical M2 star captures predate the orientation correction. The Mac's lossless 1080p60 masters

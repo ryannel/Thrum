@@ -106,19 +106,14 @@ terrain and detached spans to the same elevation chord, union the spans,
 then integrate their `sin(elevation)` differences. Duplicated coverage
 is idempotent. The independent reference casts rays through original triangles.
 
-The selected producer to prove sweeps terrain in the frame's actual Sun basis.
-For each angular band, clip original triangles against the full projected
-receiver strip and band displacement. An upstream section gives lower support
-only when the original ground covers it and a continuous terrain prefix joins
-it to the lifted receiver for every admitted ray. The highest possible slab
-intersection gives upper support. Use signed positive-range slope bounds and
-two horizon sweeps to share the work across the ground. Evaluate the whole
-strip and angular band, including off-axis receivers. Integrate both bounds
-against the same Sun chord. Overlapping chart supports blend estimates that
-bound the same field. Use original triangle spans for detached geometry,
-the origin slab and unresolved far coverage, and union before integrating.
-The fixed-line reuse result does not qualify this producer. The total cost
-includes source clipping, both sweeps and original-geometry residuals.
+The raw-extrema strip sweep is parked. Its point-receiver entrance check
+exceeds the width limit on three required witnesses before strip widening.
+A disk-aware representation needs within-band silhouette support. Any shared
+terrain producer must bound the whole receiver and azimuth support. A lower
+horizon needs a continuous original terrain prefix from the lifted receiver.
+Blend overlapping chart estimates only where they bound the same field.
+Unresolved near and far terrain and detached casters stay in the same disk
+union. Price source clipping, producer work and that residual together.
 [Heightfield sweeps](https://doi.org/10.1111/j.1467-8659.2009.01642.x).
 
 Use the actual packed Sun and one continuous, error-bounded receiver lift.
