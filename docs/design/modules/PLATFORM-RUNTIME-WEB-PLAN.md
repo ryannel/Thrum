@@ -13,8 +13,8 @@ runtime alone; material reload does GPU work while lost. Brief `tmp/g3b-web-shel
 report), all taken in this revision. Extraction code at 987a3ac3: APPROVE WITH CHANGES (brief
 `tmp/g3b-web-shell/review-brief-extraction.md`, report `tmp/g3b-web-shell/review-extraction.md`, Opus 5.5), all taken.
 Milestone: M1 Engine web shell carries the V1 page unchanged · Updated: 2026-11-08
-Now: loss gates landed on main (0a9009c1); M1 extraction built and proven ([evidence](../../evidence/v1-workload/G3B-WEB-SHELL-2026-11-08.md)), awaiting Thrum Core's verdict as a seam diff
-Next: land the extraction on Thrum Core's verdict, rebased and rerun; then M1 closes
+Now: M1 closed. Loss gates on main at 0a9009c1; the extraction landed at 15934fe7 on Thrum Core's clearance ([evidence](../../evidence/v1-workload/G3B-WEB-SHELL-2026-11-08.md))
+Next: none in this plan. The single-device-authority follow-up waits for G3t's `DeviceSite`; the second-game reuse proof is parked
 Blocked: none
 
 ## Problem
@@ -225,7 +225,7 @@ step is kept.
 4. When the page reports `Running`, recover through the real restore button. Require the valley drawn on the
    replacement device, with one swap and frames submitted.
 
-## M1 Engine web shell carries the V1 page unchanged: planned
+## M1 Engine web shell carries the V1 page unchanged: done
 
 Done when:
 - [x] `thrum_app::web` owns the instance, surface, device request, loss signal, reconstruction, clock policy, frame
@@ -318,3 +318,14 @@ uses `thrum-app`. It gets its own commission.
 - 2026-11-08 Thrum Core cleared the extraction at 68423c0a with one cleanup, taken: the console panic hook stays in V1's
   `create_game`, thrum-app drops its direct `wasm-bindgen` dependency and `web-sys` `console` feature, and `WebGpu`'s
   doc says the `FrameHost` keeps generation-bound handles while the game keeps none of its own.
+- 2026-11-08 M1 closed. Thrum Core cleared the extraction at 68423c0a on one condition: keep V1's console panic hook in
+  `create_game`, drop thrum-app's unused wasm-bindgen import and console feature, and clarify the `WebGpu` handle doc.
+  All three are done. Rebased over Thrum Core's contribution-recovery change (000ffcdb) and G5's cooked mesh witness.
+  Reruns all pass:
+  - on 000ffcdb: the five Chrome recovery and loss cases, `material` on the development page and `./dev check`;
+  - on 50d33835: `--case all` 30/30 and `./dev check`;
+  - on the docs-only head: the repository checks.
+  Landed as a fast-forward at 15934fe7.
+- 2026-11-08 Follow-up agreed with G3t, not yet built. When `SceneSurface.device` becomes `&DeviceSite`, the shell drops
+  its raw `wgpu::Device` fields (`WebGpu`, `WebShell`, `GraphicsDevice`) and reads the device through the published
+  capabilities' site, so the facade keeps one device authority. That diff goes as its own seam.
