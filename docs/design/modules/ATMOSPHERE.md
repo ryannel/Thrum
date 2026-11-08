@@ -89,6 +89,58 @@ airglow variations and calibrated night colour are outside this profile.
   Earth night spectrum remain open. [Jones et al. §3](https://arxiv.org/pdf/1310.7030)
   and [USGS ROLO](https://www.usgs.gov/publications/spectral-irradiance-moon) inform that extension.
 
+### M3 surface Sun visibility
+
+Proposed for the low-Sun terrain path, pending independent design review. Use one
+solid-angle integral over the rendered Sun. At each world azimuth in its aperture,
+clip terrain and other occluder spans to the same elevation chord, union the spans,
+then integrate their `sin(elevation)` differences over azimuth. Duplicated coverage
+is idempotent. Blend only equivalent estimates of the same occluder set. Geometry
+partition, map reach and camera depth cannot omit an occluder. The point-ray
+triangle oracle remains independent of the runtime integration.
+
+The prepared far-terrain field encloses the terrain horizon over each registered
+receiver chart patch and azimuth interval. The cooked terrain geometry and placement
+identify the chart. Validate a solid heightfield closure before admitting a lower
+blocked interval. A variable-range edge witness must intersect every ray in the
+receiver patch and azimuth interval, with a continuous solid prefix from the common
+origin. Keep actual triangle spans for disconnected or unqualified cells. Subdivide
+loose chart or azimuth cells. Quantize outward and preserve azimuth wrap. Derive the
+origin offset from a geometric error bound and validate clearance at adjacent faces.
+
+Use original nearby terrain and compact caster triangles with conservative beam or
+tile candidate culling. Bound the inner and outer clipped span unions over each
+angular bin. Include silhouette endpoints as bin edges and refine until the summed
+area enclosure meets the tolerance. The envelope handles crossings of endpoints
+inside a bin. Share candidate retrieval across receivers while retaining each
+receiver's coverage.
+
+Key the prepared field by its receiver chart and transform, every covered terrain
+and boundary dependency, and the caster partition and evaluator versions. Publish
+the complete recipe before view extraction and keep it pinned by submitted frames
+and captures. A replacement may use the existing recipe as a whole until the
+enhanced recipe is ready. A missing or uncertain entry within an admitted field
+requires matching geometry
+coverage. Certify bounds over supported receiver patches, Sun directions and caster
+transforms, including offscreen contributors. Select the ordinary recipe before
+submission if the generation or transform leaves that envelope. The route is a
+performance witness, not an admission domain. Uncertainty cannot become clear sky
+or switch methods across camera depth. Preserve the old aerial interval owner and
+the graph's submitted-frame ownership. Unsubmitted frames never alter the admitted chart.
+
+The old all-receiver geometry beam is too costly as a default. In the retained
+crest diagnostic, partial receivers grow from 33,965 to 812,485 at 1080p. A
+clear/full classifier alone cannot make refinement rare. Qualify the prepared
+field against the narrow crest and local caster before integrating. Record chart
+bytes, live fallback rate, interval and candidate tails, and paired frame costs.
+Before implementation, choose the portable representation and admit it against
+actual requested WebGPU limits, including staging and replacement overlap. Prove
+the geometry prefix, the angular error after decoding and shader rounding, and
+visibility continuity across chart and recipe boundaries. A candidate path with
+no depth producer on Direct or unresolved overflow after submission is ineligible.
+[Bounded horizon context](https://www.cg.cs.tu-bs.de/upload/publications/fritsch2025fchorizonmaps/fritsch2025fchorizonmaps.pdf) ·
+[Occluder fusion](https://www-sop.inria.fr/reves/CrossmodPublic/Documents/EGSR_bmss.pdf).
+
 ## Frame and cost
 
 Environment supplies the existing timed Sun and the authored observer transform.

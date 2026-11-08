@@ -8,6 +8,14 @@ The Codex goal remains active. Its attachment is
 
 ## Current checkpoint
 
+- M3 research is in `tmp/g3s-sunset-lip/M3-RESEARCH.md`. Decoding the
+  existing off-axis crest diagnostic finds 33,965 partial receivers at
+  frame 3 and 812,485 at frame 72 out of 1,118,754 eligible in both.
+  The archive rules out assuming that only a thin edge needs detail.
+  The independent design review holds runtime work pending a certified
+  far field, a bounded portable evaluator and a pre-submit fallback.
+  Ground E remains the route. There are no M3 runtime runs to resume.
+
 - M2 now owns the star closeout only. The Mac's lossless 1080p60 masters
   and playback copies are under `current-main/ground-e-night-pan/` and
   `current-main/offscreen-emergence/`. Both clips played through at 1×
