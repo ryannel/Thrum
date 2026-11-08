@@ -25,15 +25,15 @@ Reviews:
   ("Revision 5 archive review"): changes required (sizes buffer for all runtime-sized arrays, per-pipeline cook keys,
   cache patch scope, per-device archives, sizing). All applied in revision 5a.
 
-Milestone: none started (plan awaiting re-review and seam rulings) · Updated: 2026-11-07
-Now: revision 5 rewrites seam 5 to the owner's archive direction (since 2026-11-07).
-Next: review of revision 5, Thrum Core's reading, then landing and seam rulings.
-Blocked: code commissions wait for:
-- the atmosphere graph checkpoint `d2a5342` on `codex/g3s-stars-main-wip`, for interface reads only, pending the reviewed night baseline and the exact final check on main;
-- Thrum Core approval of the exact seams in the design's *Seams* list.
+Milestone: M0 counters and capture probe approved to start · Updated: 2026-11-08
+Now: design and plan landed at `ff1328bb`. The atmosphere graph `d2a5342` and M2 requalification `b7f9f754` are on main.
+Next: commission D0.3–D0.4 in an isolated worktree and review the exact counter call sites before landing.
+Blocked: D0.1–D0.2 wait for the G7-reviewed seam 8. Subsequent code waits for its own exact seam approval.
+The saved offscreen trace opens directly in Xcode. Replay stayed disabled during local device discovery, so physical traffic
+remains unmeasured. Any interactive retry needs an assigned slot.
 
-M10–M11 also wait for seam 1, which Thrum Core reviews as an exact seam before any experiment. M0's counters and
-capture probe can be commissioned separately from the shared graph; its route waits for seam 8, reviewed with G7.
+M10–M11 also wait for seam 1. Root reviews that exact seam before an experiment.
+The M0 commission and file holds are recorded in `tmp/g3t-metal-boundary/OVERSEER.md`.
 
 ## Game outcomes
 
