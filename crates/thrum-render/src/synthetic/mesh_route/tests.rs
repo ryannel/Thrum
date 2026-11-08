@@ -8,6 +8,7 @@ use crate::abi::InstanceRecord;
 use crate::capabilities::DeviceCapabilities;
 use crate::synthetic::mesh_arena::MeshId;
 
+mod admission;
 mod casters;
 
 const EXTENT: [u32; 2] = [320, 180];

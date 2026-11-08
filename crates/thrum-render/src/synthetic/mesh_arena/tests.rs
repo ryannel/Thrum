@@ -1,9 +1,4 @@
-use super::{
-    ArenaError, ArenaLimits, INDEX_BYTES, MeshArena, MeshId, MeshVertex, VERTEX_BYTES,
-    physical_meshes,
-};
-use crate::abi;
-use crate::synthetic::upload::{InstanceUpload, PackedInstances, pack_synthetic_instance};
+use super::{ArenaError, ArenaLimits, INDEX_BYTES, MeshArena, MeshId, MeshVertex, VERTEX_BYTES};
 
 const ROOMY: ArenaLimits = ArenaLimits {
     vertices: 1 << 16,
@@ -171,18 +166,6 @@ fn malformed_meshes_are_refused_before_anything_is_written() {
         Err(ArenaError::NonFinite)
     );
     assert_eq!(
-        arena.replace(MeshId(9), &vertices, &indices),
-        Err(ArenaError::UnknownMesh)
-    );
-    assert_eq!(
-        arena.replace(MeshId::CUBE, &vertices, &indices),
-        Err(ArenaError::Fixed)
-    );
-    assert_eq!(
-        arena.replace(MeshId::CUBE_REVERSED, &vertices, &indices),
-        Err(ArenaError::Fixed)
-    );
-    assert_eq!(
         before,
         (arena.vertices.len(), arena.indices.len(), arena.rows.len())
     );
@@ -201,17 +184,12 @@ fn the_arena_refuses_growth_past_its_limits() {
     let (vertices, indices) = fan(12, 1.0);
     assert_eq!(vertices.len(), 14);
     let fits = arena.insert(&vertices, &indices).expect("fits");
-    // Vertices would fit (52 of 72); indices would not (144 of 108).
-    assert_eq!(arena.insert(&vertices, &indices), Err(ArenaError::Capacity));
-    // A replacement that must move past the limit is refused and leaves the
-    // row as it was.
-    let (larger, larger_indices) = fan(40, 1.0);
     let row = *arena.row(fits).expect("row");
-    assert_eq!(
-        arena.replace(fits, &larger, &larger_indices),
-        Err(ArenaError::Capacity)
-    );
+    // Vertices would fit (52 of 72); indices would not (144 of 108). The
+    // refusal leaves the arena as it was.
+    assert_eq!(arena.insert(&vertices, &indices), Err(ArenaError::Capacity));
     assert_eq!(*arena.row(fits).expect("row"), row);
+    assert_eq!(arena.rows.len(), 3);
     let tight = ArenaLimits::for_binding(48 * 100);
     assert_eq!((tight.vertices, tight.indices), (100, 1200));
     assert_eq!(
@@ -272,95 +250,6 @@ fn growth_keeps_every_row_and_its_offsets() {
             bytes: 0
         }
     );
-}
-
-#[test]
-fn replacement_keeps_the_mesh_identity() {
-    let (device, queue) = device();
-    let mut arena = MeshArena::new(ROOMY).expect("arena");
-    let (vertices, indices) = fan(64, 1.0);
-    let a = arena.insert(&vertices, &indices).expect("a");
-    let b = arena.insert(&vertices, &indices).expect("b");
-    arena.upload(&device, &queue);
-    let (old_a, old_b) = (*arena.row(a).expect("a"), *arena.row(b).expect("b"));
-    // Smaller: rewritten in place.
-    let (smaller, smaller_indices) = fan(16, 3.0);
-    arena
-        .replace(a, &smaller, &smaller_indices)
-        .expect("smaller");
-    let row = *arena.row(a).expect("a");
-    assert_eq!(
-        (row.base_vertex, row.first_index),
-        (old_a.base_vertex, old_a.first_index)
-    );
-    assert_eq!((row.vertex_count, row.index_count), (18, 48));
-    assert!((row.bounds[1][0] - 3.0).abs() < 1e-6);
-    assert_eq!(arena.unused(), (66 - 18, 192 - 48));
-    let upload = arena.upload(&device, &queue);
-    assert!(!upload.reallocated);
-    assert_eq!(upload.bytes, 18 * VERTEX_BYTES + 48 * INDEX_BYTES);
-    assert_gpu_matches(&arena, &device, &queue);
-    // Larger: moves to the end under the same identity; b is untouched.
-    let (larger, larger_indices) = fan(500, 0.5);
-    arena.replace(a, &larger, &larger_indices).expect("larger");
-    let row = *arena.row(a).expect("a");
-    assert!(row.base_vertex > old_b.base_vertex && row.first_index > old_b.first_index);
-    assert_eq!(*arena.row(b).expect("b"), old_b);
-    assert_eq!(arena.unused(), (66 - 18 + 18, 192 - 48 + 48));
-    arena.upload(&device, &queue);
-    assert_gpu_matches(&arena, &device, &queue);
-    assert_eq!(arena.rows().len(), 4);
-}
-
-#[test]
-fn culling_churn_keeps_each_physical_row_on_its_slots_mesh() {
-    let (device, queue) = device();
-    let count = 64_u32;
-    let mut instances: Vec<_> = (0..count)
-        .map(|slot| abi::InstanceRecord::identity(slot, 0))
-        .collect();
-    for slot in (0..count).step_by(3) {
-        instances[slot as usize].ids[3] = 0;
-    }
-    let slot_meshes: Vec<_> = (0..count).map(|slot| MeshId(2 + slot % 5)).collect();
-    let packed = PackedInstances::new(&instances, 1).expect("pack");
-    let buffer = device.create_buffer(&wgpu::BufferDescriptor {
-        label: Some("arena test instances"),
-        size: u64::from(count) * abi::INSTANCE_BYTES as u64,
-        usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
-        mapped_at_creation: false,
-    });
-    let mut upload = InstanceUpload::new(buffer, packed, &instances, 1, count);
-    let check = |upload: &InstanceUpload, instances: &[abi::InstanceRecord]| {
-        let (physical_to_slot, packed) = upload.physical_rows();
-        let table = physical_meshes(physical_to_slot, &slot_meshes);
-        let (rows, _) = packed.as_chunks::<{ abi::INSTANCE_BYTES }>();
-        let active = upload.active_count() as usize;
-        for (physical, (&slot, row)) in physical_to_slot.iter().zip(rows).enumerate() {
-            // The row holds the slot's own instance, and the table names the
-            // slot's own mesh.
-            assert_eq!(
-                *row,
-                pack_synthetic_instance(&instances[slot as usize], 1, slot).expect("pack")
-            );
-            assert_eq!(table[physical], slot_meshes[slot as usize].row());
-            assert_eq!(physical < active, instances[slot as usize].ids[3] != 0);
-        }
-    };
-    check(&upload, &instances);
-    // Deactivate, reactivate and move slots over several frames.
-    for frame in 0..6_u32 {
-        let changed: Vec<u32> = (0..count).filter(|slot| (slot + frame) % 4 == 0).collect();
-        for &slot in &changed {
-            let instance = &mut instances[slot as usize];
-            instance.ids[3] = u32::from(instance.ids[3] == 0);
-            instance.current[3][0] += 1.0;
-        }
-        upload
-            .replace(&queue, &instances, &changed, |_, _| false)
-            .expect("replace");
-        check(&upload, &instances);
-    }
 }
 
 #[test]
