@@ -94,11 +94,15 @@ The Codex goal remains active. Its attachment is
   over all 76 frames. Depth-guided 2×2 visibility reuse still produces
   139-code outliers after refinement. At sampled 2×2 tile positions,
   a conservative union retains every individual receiver's candidates
-  and yields 13/43/175 leaves at p50/p95/max. Test workgroup-local
-  sharing with exact per-receiver visibility. A fixed full-frame list
-  can cost 33 MB for just 16 IDs per tile at 1080p. Close clearance,
-  compact receiver reach, aerial ownership, discarded-frame equality
-  and Chrome remain open. Reference rows use rendered solar time.
+  and yields 13/43/175 leaves at p50/p95/max. A Metal compute replay
+  using 8 KiB of workgroup scratch matches both 1080p frames bit for bit,
+  including forced overflow. Standalone vs shared p50/p95 was
+  12.48/12.76 vs 10.24/10.64 ms near the step, and 20.44/21.11 vs
+  19.40/19.87 ms at the right crest (eight interleaved rows per path
+  and frame, load 24.07–25.17). Keep this off the runtime. Test a
+  prepared terrain representation with bounded admission and exact
+  fallback. Close clearance, compact reach, aerial ownership, strict
+  discarded-frame equality and Chrome remain open.
   [Maximum Mipmaps](https://pure.mpg.de/pubman/item/item_1325622_5/component/file_3590464/i3d08.pdf).
   Exact builds, raw rows and clips are in `tmp/g3s-sunset-lip/`. The
   diagnostic source and rerun command are on `codex/g3s-horizon-metal-wip`.
