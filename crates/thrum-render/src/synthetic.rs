@@ -143,6 +143,8 @@ pub enum SyntheticMeshChoice {
 /// - a choice names an index outside `meshes`;
 /// - a mesh has no triangles, an index count that is not a multiple of
 ///   three, an index at or past its vertex count, or a non-finite value;
+/// - a mesh has a referenced coordinate beyond ±1e30 m, so its transformed
+///   bounds could not be represented;
 /// - the meshes exceed the device's vertex or index storage limits;
 /// - the scene uses [`CullMode::Occlusion`], which keeps the cube until its
 ///   history follows slot identity.
@@ -153,6 +155,12 @@ pub struct SyntheticMeshes {
     /// One choice per scene instance, in logical-slot order.
     pub slots: Vec<SyntheticMeshChoice>,
 }
+
+/// The largest admitted mesh coordinate magnitude. Upload admits transform
+/// components up to 1e6, so a transformed bound (three basis products plus a
+/// translation, then a unit light axis) stays below 1e37, inside `f32`'s
+/// 3.4e38, through the Sun fit and containment.
+const MESH_COORDINATE_LIMIT: f32 = 1e30;
 
 /// Build the arena and check every slot's choice: the admitted selection
 /// names only rows the arena holds. CPU-only, before any GPU work.
@@ -170,9 +178,23 @@ fn admit_meshes(
     let rows = meshes
         .meshes
         .iter()
-        .map(|mesh| arena.insert(&mesh.vertices, &mesh.indices))
-        .collect::<Result<Vec<_>, _>>()
-        .map_err(|_| RenderError::SceneCapacity)?;
+        .map(|mesh| {
+            let id = arena
+                .insert(&mesh.vertices, &mesh.indices)
+                .map_err(|_| RenderError::SceneCapacity)?;
+            let bounded = arena.row(id).is_some_and(|row| {
+                row.bounds
+                    .iter()
+                    .flatten()
+                    .all(|value| value.abs() <= MESH_COORDINATE_LIMIT)
+            });
+            if bounded {
+                Ok(id)
+            } else {
+                Err(RenderError::SceneCapacity)
+            }
+        })
+        .collect::<Result<Vec<_>, _>>()?;
     let slots = meshes
         .slots
         .iter()
@@ -537,6 +559,8 @@ pub struct PreparedSynthetic {
     caster_boxes: Option<Vec<CasterBox>>,
     /// The bucket route's member list for the Sun caster passes.
     shadow_members: Option<wgpu::BindGroup>,
+    /// The arena cube's checked index range and base vertex.
+    cube_draw: (std::ops::Range<u32>, i32),
     display: DisplayPrepared,
     view_layout: wgpu::BindGroupLayout,
     view_buffer: wgpu::Buffer,
@@ -629,26 +653,21 @@ impl SceneContext<'_> {
         let buffers = arena.buffers().ok_or(RenderError::GraphPassMismatch)?;
         // Every admitted caster draws, on screen or not: the route's members,
         // or the cube over the physical rows.
-        let draws = if let Some(route) = &prepared.bucket_route {
-            route.caster_draws(arena)?
-        } else {
-            let row = arena
-                .row(mesh_arena::MeshId::CUBE)
-                .ok_or(RenderError::GraphPassMismatch)?;
-            vec![CasterDraw {
-                member_offset: 0,
-                indices: row.first_index..row.first_index + row.index_count,
-                base_vertex: row
-                    .draw_base_vertex()
-                    .map_err(|_| RenderError::SceneCapacity)?,
-                instances: prepared.instance_upload.active_count(),
-            }]
-        };
+        let (indices, base_vertex) = prepared.cube_draw.clone();
+        let cube = [CasterDraw {
+            member_offset: 0,
+            indices,
+            base_vertex,
+            instances: prepared.instance_upload.active_count(),
+        }];
         let casters = CasterDraws {
             indices: &buffers.indices,
             two_sided: prepared.instance_upload.two_sided_count() != 0,
             members: prepared.shadow_members.as_ref(),
-            draws: &draws,
+            draws: prepared
+                .bucket_route
+                .as_ref()
+                .map_or(&cube, BucketRoute::caster_draws),
         };
         shadow.encode_cascade(
             self.encoder,
@@ -1250,6 +1269,13 @@ impl PreparedSynthetic {
             entries: &entries,
         });
         mesh_arena.upload(device, queue);
+        let cube_draw = mesh_arena
+            .row(mesh_arena::MeshId::CUBE)
+            .and_then(|row| {
+                let base = row.draw_base_vertex().ok()?;
+                Some((row.first_index..row.first_index + row.index_count, base))
+            })
+            .ok_or(RenderError::SceneCapacity)?;
         let arena_buffers = mesh_arena.buffers().ok_or(RenderError::SceneCapacity)?;
         let caster_boxes = meshes
             .map(|selection| {
@@ -1503,11 +1529,12 @@ impl PreparedSynthetic {
         });
         let shadow_members = shadow
             .as_ref()
+            .and_then(ShadowPrepared::member_layout)
             .zip(bucket_route.as_ref())
-            .map(|(shadow, route)| {
+            .map(|(layout, route)| {
                 device.create_bind_group(&wgpu::BindGroupDescriptor {
                     label: Some("synthetic Sun caster members"),
-                    layout: shadow.member_layout(),
+                    layout,
                     entries: &[route.members_entry(0)],
                 })
             });
@@ -1556,6 +1583,7 @@ impl PreparedSynthetic {
             bucket_route,
             caster_boxes,
             shadow_members,
+            cube_draw,
             display,
             view_layout,
             view_buffer,

@@ -543,10 +543,20 @@ impl PreparedSynthetic {
             },
             ResourceScope::Transient,
         )?;
+        // Every caster pass interpolates translations by the history
+        // serials' presentation alpha.
+        let serials = graph.resource(
+            ResourceDescriptor::Buffer {
+                bytes: history_gpu::SERIAL_BYTES,
+                usage: wgpu::BufferUsages::UNIFORM,
+            },
+            ResourceScope::Imported { initialized: true },
+        )?;
         for index in 0..shadow::LAYERS {
+            // The caster view: light matrix and upstream clip flag.
             let matrix = graph.resource(
                 ResourceDescriptor::Buffer {
-                    bytes: 64,
+                    bytes: shadow::CASTER_VIEW_RANGE,
                     usage: wgpu::BufferUsages::UNIFORM,
                 },
                 ResourceScope::Imported { initialized: true },
@@ -571,7 +581,13 @@ impl PreparedSynthetic {
                     },
                     Access {
                         resource: matrix,
-                        range: 0..64,
+                        range: 0..shadow::CASTER_VIEW_RANGE,
+                        kind: AccessKind::UniformRead,
+                        store: true,
+                    },
+                    Access {
+                        resource: serials.clone(),
+                        range: 0..history_gpu::SERIAL_BYTES,
                         kind: AccessKind::UniformRead,
                         store: true,
                     },

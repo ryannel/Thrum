@@ -53,6 +53,13 @@ fn invalid_selections_are_refused_and_a_valid_one_prepares() {
     not_triangles.indices.pop();
     let mut non_finite = triangle();
     non_finite.vertices[1].uv[0] = f32::INFINITY;
+    // Finite, but its extent (4e30) and any scaled centre would leave the
+    // range the Sun fit can represent.
+    let mut extreme = triangle();
+    extreme.vertices[0].position = [-2e30, 0.0, 0.0];
+    extreme.vertices[1].position = [2e30, 0.0, 0.0];
+    let mut large = triangle();
+    large.vertices[1].position = [1e29, 0.0, 0.0];
     let mut occlusion = with(vec![triangle()], vec![Cube, Mesh(0), Cube]);
     occlusion.camera_culling = CullMode::Occlusion;
     for (case, scene) in [
@@ -71,6 +78,7 @@ fn invalid_selections_are_refused_and_a_valid_one_prepares() {
         ),
         ("partial triangle", with(vec![not_triangles], vec![Cube; 3])),
         ("non-finite vertex", with(vec![non_finite], vec![Cube; 3])),
+        ("extreme bounds", with(vec![extreme], vec![Cube; 3])),
         ("occlusion", occlusion),
     ] {
         assert!(
@@ -85,4 +93,10 @@ fn invalid_selections_are_refused_and_a_valid_one_prepares() {
     );
     let valid = with(vec![triangle()], vec![Cube, Mesh(0), Cube]);
     assert_eq!(prepare(&valid).ok(), Some(true), "the bucket route");
+    let large = with(vec![large], vec![Cube, Mesh(0), Cube]);
+    assert_eq!(
+        prepare(&large).ok(),
+        Some(true),
+        "within the coordinate limit"
+    );
 }

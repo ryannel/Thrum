@@ -263,6 +263,11 @@ impl Buckets {
         &self.segments
     }
 
+    /// The fixed bucket keys, in segment order.
+    pub(super) fn keys(&self) -> &[BucketKey] {
+        &self.keys
+    }
+
     /// The concatenated, padded member list the compaction kernel reads.
     pub(super) fn members(&self) -> &[u32] {
         &self.members
