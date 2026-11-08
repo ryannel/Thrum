@@ -294,7 +294,7 @@ impl BrowserGame {
         self.shell
             .set_scene_contribution(Box::new(assets))
             .map_err(js_error)?;
-        game::set_scene_camera(&mut self.shell, camera);
+        game::set_scene_camera(&mut self.shell, camera).map_err(js_error)?;
         self.demo
             .observe_camera(game::camera_orientation(&self.shell));
         self.cooked = Some(stats);

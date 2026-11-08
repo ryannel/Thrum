@@ -3,7 +3,7 @@
 mod star_catalogue;
 
 use crate::{
-    camera::SceneCamera,
+    camera::{CameraRoute, SceneCamera},
     environment::DayCycle,
     field,
     host::GameSetup,
@@ -51,6 +51,16 @@ pub(super) fn photometric(product: &EnvironmentProduct) -> PhotometricEnvironmen
         ambient_lux: values.ambient_lux(),
         background_radiance: values.background_radiance(),
     }
+}
+
+/// `(tick + 1 + φ)·P` in milliseconds at the game's 60 Hz clock.
+pub(crate) fn route_step_ms(tick: u64, phi: f64) -> f64 {
+    #[expect(
+        clippy::cast_precision_loss,
+        reason = "route runs stay below 560 ticks past origin"
+    )]
+    let ticks = tick as f64 + 1.0 + phi;
+    ticks * 1000.0 / 60.0
 }
 
 fn frame_phase(tick: u64, alpha: f32) -> f32 {
@@ -233,12 +243,57 @@ pub(crate) struct GameScene {
     pub(super) camera_yaw: f32,
     pub(super) display_overlay: DisplayOverlay,
     camera: Option<SceneCamera>,
+    route_overlay: scene::RouteOverlay,
+    route: Option<CameraRoute>,
 }
 impl GameScene {
     /// Select a checked authored camera and its orientation.
-    pub(super) fn select_camera(&mut self, camera: SceneCamera) {
+    /// # Errors
+    /// Refuses while a moving route is installed.
+    pub(super) fn select_camera(&mut self, camera: SceneCamera) -> Result<(), String> {
+        self.route_guard()?;
         [self.camera_pitch, self.camera_yaw] = camera.orientation();
         self.camera = Some(camera);
+        Ok(())
+    }
+
+    /// Refuse camera, time and control edits while a moving route owns the camera.
+    pub(super) fn route_guard(&self) -> Result<(), String> {
+        match self.route {
+            Some(_) => Err(
+                "a moving route is installed; camera, time and control edits are refused"
+                    .to_owned(),
+            ),
+            None => Ok(()),
+        }
+    }
+
+    /// Install `route` when the committed tick is the one before its origin.
+    /// It sets the day phase so the origin shows the route's solar hour, and the
+    /// caller resets history. Returns the day-phase offset applied.
+    /// # Errors
+    /// Refuses a second route, no authored camera, an overlay other than the one this
+    /// game was prepared with, the wrong tick, or a key 0 that is not the current pose.
+    pub(super) fn install_route(&mut self, route: CameraRoute, tick: u64) -> Result<(), String> {
+        self.route_guard()?;
+        let camera = self
+            .camera
+            .ok_or("a moving route needs the authored valley camera")?;
+        if route.overlay != self.route_overlay {
+            return Err("the route's overlay differs from the game's setup".to_owned());
+        }
+        if route.origin_tick == 0 || tick != route.origin_tick - 1 {
+            return Err(format!(
+                "install the route at committed tick {}, not {tick}",
+                route.origin_tick.saturating_sub(1)
+            ));
+        }
+        route.check_start(camera, self.camera_pitch, self.camera_yaw)?;
+        self.day_phase_offset =
+            DayCycle::offset_for_time(route.origin_tick, route.solar_hours / 24.0)
+                .ok_or("route solar hour is outside the day")?;
+        self.route = Some(route);
+        Ok(())
     }
 
     pub(super) fn new(setup: GameSetup) -> Self {
@@ -250,6 +305,8 @@ impl GameScene {
             camera_yaw: 0.0,
             display_overlay: DisplayOverlay::Off,
             camera: None,
+            route_overlay: setup.route_overlay,
+            route: None,
         }
     }
     pub(super) fn scene(extent: [u32; 2], setup: GameSetup) -> Result<SyntheticScene, String> {
@@ -322,9 +379,31 @@ impl super::FrameHost {
     }
 
     /// Select a checked authored camera and reset presentation history.
-    pub fn set_scene_camera(&mut self, camera: SceneCamera) {
-        self.inner.source_mut().select_camera(camera);
+    /// # Errors
+    /// Refuses while a moving route is installed.
+    pub fn set_scene_camera(&mut self, camera: SceneCamera) -> Result<(), String> {
+        self.inner.source_mut().select_camera(camera)?;
         self.inner.invalidate_history();
+        Ok(())
+    }
+
+    /// Install a moving camera route when the committed tick is `origin_tick − 1`.
+    /// From then on the authored camera follows the route and camera, time and
+    /// control edits are refused. History resets so both targets align at the origin.
+    /// # Errors
+    /// See the route's installation refusals.
+    pub fn set_camera_route(&mut self, route: CameraRoute) -> Result<(), String> {
+        let tick = self.inner.world().tick();
+        self.inner.source_mut().install_route(route, tick)?;
+        self.inner.invalidate_history();
+        Ok(())
+    }
+
+    /// World time, in milliseconds from the clock origin, of the next tick boundary
+    /// plus `phi` of a period: `(tick + 1 + φ)·P` for the committed tick.
+    #[must_use]
+    pub fn route_step_ms(&self, phi: f64) -> f64 {
+        route_step_ms(self.inner.world().tick(), phi)
     }
 }
 
@@ -340,7 +419,15 @@ impl SceneSource<PublishedPage> for GameScene {
         lighting: Option<FrameLighting>,
     ) -> Result<SceneFrame, String> {
         let field = self.content == GameContent::Field && self.camera.is_none();
-        let view = if field {
+        let routed = self.route.as_ref().zip(self.camera);
+        let view = if let Some((route, camera)) = routed {
+            let pose = route.pose(source.tick, alpha);
+            camera
+                .at(pose.eye)?
+                .view(extent, pose.pitch, pose.yaw)?
+                .with_sdr_tone_map(SdrToneMap::NeutralHighlights)
+                .with_history_epoch(pose.epoch)
+        } else if field {
             field_view(
                 source.tick,
                 alpha,
@@ -397,6 +484,80 @@ mod tests {
     use crate::{camera::SceneCamera, environment::DayCycle};
     use thrum_core::StableId;
     use thrum_render::synthetic::{DisplayOverlay, FrameLighting, SdrToneMap, SyntheticView};
+
+    #[test]
+    fn installed_route_moves_the_authored_camera_and_refuses_edits() {
+        let camera = SceneCamera::perspective(
+            [0.0, 244.92, 16.0],
+            [0.0, 240.92, -60.0],
+            46_f32.to_radians(),
+            0.1,
+            30_000.0,
+        )
+        .unwrap();
+        let [pitch, yaw] = camera.orientation();
+        let route_text = |overlay: &str| {
+            serde_json::json!({
+                "format": "thrum-v1-moving-route", "version": 1, "cooked_root": "root",
+                "cooked_generation": 1, "tick_hz": 60, "phase": [1, 2], "origin_tick": 50,
+                "start": {"solar_hours": 17.3}, "render_extent": [640, 360],
+                "keys": [
+                    {"tick": 0, "eye": [0.0, 244.92, 16.0], "yaw_degrees": yaw.to_degrees(), "pitch_degrees": pitch.to_degrees()},
+                    {"tick": 10, "eye": [2.0, 244.92, 6.0], "yaw_degrees": 20.0, "pitch_degrees": -10.0},
+                    {"tick": 10, "eye": [4.0, 244.92, 0.0], "yaw_degrees": 30.0, "pitch_degrees": -10.0},
+                    {"tick": 20, "eye": [4.0, 244.92, -4.0], "yaw_degrees": 30.0, "pitch_degrees": -10.0},
+                ],
+                "cuts": [10], "checkpoints": [{"tick": 5, "name": "a"}], "overlay": overlay,
+            })
+            .to_string()
+        };
+        let parse = |overlay| crate::CameraRoute::parse(&route_text(overlay), camera, 60).unwrap();
+        let mut policy = GameScene::new(crate::GameSetup {
+            route_overlay: scene::RouteOverlay::Proof,
+            ..crate::GameSetup::default()
+        });
+        assert!(
+            policy.install_route(parse("proof"), 49).is_err(),
+            "needs a camera"
+        );
+        policy.select_camera(camera).unwrap();
+        assert!(
+            policy.install_route(parse("off"), 49).is_err(),
+            "overlay mismatch"
+        );
+        assert!(
+            policy.install_route(parse("proof"), 48).is_err(),
+            "wrong tick"
+        );
+        policy.install_route(parse("proof"), 49).unwrap();
+        assert!(
+            policy.install_route(parse("proof"), 49).is_err(),
+            "second route"
+        );
+        assert!(policy.select_camera(camera).is_err());
+        assert!(policy.route_guard().is_err());
+        let solar = DayCycle::time_of_day(50, policy.day_phase_offset) * 24.0;
+        assert!((solar - 17.3).abs() < 1e-4, "{solar}");
+        let view = |tick, alpha| {
+            policy
+                .frame(
+                    SourceTick {
+                        epoch: 1,
+                        tick,
+                        timeline: 0,
+                    },
+                    alpha,
+                    [640, 360],
+                    None,
+                )
+                .unwrap()
+                .view
+        };
+        assert_eq!(view(50, 0.5).camera_position(), [0.0, 244.92, 16.0]);
+        let moved = view(55, 0.5).camera_position();
+        assert!((moved[0] - 0.9).abs() < 1e-4, "{moved:?}");
+        assert!((view(62, 0.5).camera_position()[0] - 4.0).abs() < 1e-4);
+    }
 
     #[test]
     fn route_overlay_changes_only_its_bases_and_light_zero() {
@@ -478,6 +639,8 @@ mod tests {
             camera_yaw,
             display_overlay: DisplayOverlay::Off,
             camera: Some(camera),
+            route_overlay: scene::RouteOverlay::Off,
+            route: None,
         };
         let first = policy
             .frame(

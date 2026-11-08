@@ -23,7 +23,7 @@ mod window;
 pub use browser::{
     BrowserGame, CookedValley, create_browser_game, create_field_game, fetch_cooked_valley,
 };
-pub use camera::SceneCamera;
+pub use camera::{CameraRoute, RouteCheckpoint, RouteKey, RoutePose, SceneCamera};
 #[cfg(not(target_arch = "wasm32"))]
 pub use content::{attach_cooked_scene, selected_setup};
 #[doc(hidden)]

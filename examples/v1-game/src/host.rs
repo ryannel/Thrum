@@ -504,6 +504,7 @@ impl FrameHost {
     /// # Errors
     /// Refuses invalid controls or a stopped owner.
     pub fn set_controls(&mut self, axes: [f32; 3]) -> Result<(), String> {
+        self.inner.source().route_guard()?;
         self.inner.world_mut().set_controls(axes)
     }
     /// Position of the game fixture's controlled actor.
@@ -685,6 +686,7 @@ pub(crate) fn set_display_overlay(runtime: &mut Runtime, overlay: DisplayOverlay
 
 /// The day phase offset that shows `fraction` at `tick`, or `None` when it is already shown.
 fn day_phase_edit(tick: u64, scene: &GameScene, fraction: f32) -> Result<Option<f32>, String> {
+    scene.route_guard()?;
     let offset = DayCycle::offset_for_time(tick, fraction)
         .ok_or_else(|| "time of day must be finite and in [0, 1]".to_owned())?;
     Ok((scene.day_phase_offset.to_bits() != offset.to_bits()).then_some(offset))
@@ -692,6 +694,7 @@ fn day_phase_edit(tick: u64, scene: &GameScene, fraction: f32) -> Result<Option<
 
 /// A checked camera pitch, or `None` when it is already selected.
 fn camera_pitch_edit(scene: &GameScene, radians: f32) -> Result<Option<f32>, String> {
+    scene.route_guard()?;
     if !radians.is_finite() || !(-0.6..=0.6).contains(&radians) {
         return Err("camera pitch must be finite and within ±0.6 rad".to_owned());
     }
@@ -700,6 +703,7 @@ fn camera_pitch_edit(scene: &GameScene, radians: f32) -> Result<Option<f32>, Str
 
 /// A checked camera yaw, or `None` when it is already selected.
 fn camera_yaw_edit(scene: &GameScene, radians: f32) -> Result<Option<f32>, String> {
+    scene.route_guard()?;
     if !radians.is_finite() || !(-std::f32::consts::PI..=std::f32::consts::PI).contains(&radians) {
         return Err("camera yaw must be finite and within ±π rad".to_owned());
     }

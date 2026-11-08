@@ -113,7 +113,7 @@ fn prove_paused_recovery(phase: f32, midnight: bool, overlay: DisplayOverlay) {
             30_000.0,
         )
         .expect("authored camera");
-        host.set_scene_camera(camera);
+        host.set_scene_camera(camera).expect("no route installed");
         let orientation = host.camera_orientation();
         assert!((orientation[0] - (-0.1_f32).atan2(2.0)).abs() < 1e-6);
         assert_eq!(orientation[1], 0.0);
