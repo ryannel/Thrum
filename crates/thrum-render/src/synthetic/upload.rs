@@ -284,15 +284,22 @@ impl InstanceUpload {
 }
 
 fn needs_two_sided(instance: &InstanceRecord) -> bool {
+    determinant(instance) <= DEGENERATE_DETERMINANT
+}
+
+/// At or below this, a transform is degenerate (or reflected, if negative).
+pub(super) const DEGENERATE_DETERMINANT: f64 = 1e-12;
+
+/// The f64 determinant of the current basis: the one authority for facing.
+pub(super) fn determinant(instance: &InstanceRecord) -> f64 {
     let m = &instance.current;
     let (a, b, c) = (
         [f64::from(m[0][0]), f64::from(m[0][1]), f64::from(m[0][2])],
         [f64::from(m[1][0]), f64::from(m[1][1]), f64::from(m[1][2])],
         [f64::from(m[2][0]), f64::from(m[2][1]), f64::from(m[2][2])],
     );
-    let determinant = a[0] * (b[1] * c[2] - b[2] * c[1]) - a[1] * (b[0] * c[2] - b[2] * c[0])
-        + a[2] * (b[0] * c[1] - b[1] * c[0]);
-    determinant <= 1e-12
+    a[0] * (b[1] * c[2] - b[2] * c[1]) - a[1] * (b[0] * c[2] - b[2] * c[0])
+        + a[2] * (b[0] * c[1] - b[1] * c[0])
 }
 
 fn swap_physical(
