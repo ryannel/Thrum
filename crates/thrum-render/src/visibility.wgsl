@@ -72,6 +72,31 @@ const WORDS: u32 = WORKGROUP / 32u;
 @group(0) @binding(10) var pyramid: texture_2d<f32>;
 // The other side, written by the final cull for the next frame.
 @group(0) @binding(11) var<storage, read_write> next_bits: array<u32>;
+// Member-indexed buckets (M3b, experimental): only the `*_members` entry
+// points use these. Each bucket's segment of `members` starts at a multiple of
+// WORKGROUP and holds physical slots, padded with MEMBER_PADDING, so every
+// workgroup lies in one bucket. History bits are keyed by member index.
+// WebGPU allows 8 storage buffers per stage and the flat path uses 8, so the
+// member path reads its segments from a uniform and keeps its slot masks in
+// `group_offsets` after the per-group counts (from `mask_base`), leaving
+// `masks` unbound.
+struct Segment {
+    first_group: u32,
+    groups: u32,
+    mesh: u32,
+    padding: u32,
+}
+const MAX_BUCKETS: u32 = 64u;
+struct Buckets {
+    count: u32,
+    mask_base: u32,
+    padding0: u32,
+    padding1: u32,
+    segments: array<Segment, MAX_BUCKETS>,
+}
+const MEMBER_PADDING: u32 = 0xffffffffu;
+@group(0) @binding(12) var<storage, read> members: array<u32>;
+@group(0) @binding(13) var<uniform> buckets: Buckets;
 
 var<workgroup> scan: array<u32, WORKGROUP>;
 
@@ -95,8 +120,7 @@ struct Bounds {
 
 // Conservative world AABB of the slot's mesh at the interpolated translation
 // the forward vertex shader uses.
-fn world_bounds(slot: u32) -> Bounds {
-    let mesh = meshes[params.mesh];
+fn world_bounds(slot: u32, mesh: MeshRecord) -> Bounds {
     let local_center = (mesh.bounds_min.xyz + mesh.bounds_max.xyz) * 0.5;
     let local_extent = (mesh.bounds_max.xyz - mesh.bounds_min.xyz) * 0.5;
     let basis = mat3x3(instances[slot].current[0].xyz, instances[slot].current[1].xyz,
@@ -109,7 +133,7 @@ fn world_bounds(slot: u32) -> Bounds {
     return Bounds(center, extent);
 }
 
-fn in_view(slot: u32) -> bool {
+fn in_view(slot: u32, mesh: MeshRecord) -> bool {
     if slot >= params.active_count {
         return false;
     }
@@ -117,7 +141,7 @@ fn in_view(slot: u32) -> bool {
     if instances[slot].ids.w == 0u {
         return false;
     }
-    let bounds = world_bounds(slot);
+    let bounds = world_bounds(slot, mesh);
     let center = bounds.center;
     let extent = bounds.extent;
     let r0 = plane_row(0u);
@@ -134,8 +158,7 @@ fn in_view(slot: u32) -> bool {
 // `magnitude` bounds the |clip x|, |clip y|, |clip z| and |clip w| terms for every position either
 // path forms for this slot: the vertex shader's model * local, at the same
 // interpolated translation, and these corners.
-fn hidden_by_depth(slot: u32) -> bool {
-    let mesh = meshes[params.mesh];
+fn hidden_by_depth(slot: u32, mesh: MeshRecord) -> bool {
     let reach = max(abs(mesh.bounds_min.xyz), abs(mesh.bounds_max.xyz));
     let current = instances[slot].current;
     let spread = mat3x3(abs(current[0].xyz), abs(current[1].xyz), abs(current[2].xyz));
@@ -143,7 +166,7 @@ fn hidden_by_depth(slot: u32) -> bool {
     let rows = mat4x4(abs(plane_row(0u)), abs(plane_row(1u)), abs(plane_row(2u)), abs(plane_row(3u)));
     // Each component is |row| . (world, 1); transposed rows multiply as columns.
     let magnitude = vec4(world, 1.0) * rows;
-    let bounds = world_bounds(slot);
+    let bounds = world_bounds(slot, mesh);
     var corners: array<vec4<f32>, 8>;
     for (var index = 0u; index < 8u; index++) {
         let sign = vec3(select(-1.0, 1.0, (index & 1u) != 0u), select(-1.0, 1.0, (index & 2u) != 0u),
@@ -153,8 +176,19 @@ fn hidden_by_depth(slot: u32) -> bool {
     return occluded_by_pyramid(corners, magnitude);
 }
 
-fn drawn_last(slot: u32) -> bool {
-    return ((bits[slot / 32u] >> (slot % 32u)) & 1u) == 1u;
+fn drawn_last(index: u32) -> bool {
+    return ((bits[index / 32u] >> (index % 32u)) & 1u) == 1u;
+}
+
+// Whether this phase lists `slot`, whose history bit is at `index`.
+fn listed(slot: u32, index: u32, mesh: MeshRecord) -> bool {
+    let framed = in_view(slot, mesh);
+    if params.phase == PHASE_PREPASS {
+        return framed && drawn_last(index);
+    } else if params.phase == PHASE_FINAL {
+        return framed && !hidden_by_depth(slot, mesh);
+    }
+    return framed;
 }
 
 // Inclusive Hillis-Steele scan of `scan`; every invocation must call it.
@@ -175,32 +209,8 @@ fn scan_workgroup(local: u32) {
 fn count(@builtin(global_invocation_id) global: vec3<u32>,
          @builtin(local_invocation_id) local: vec3<u32>,
          @builtin(workgroup_id) group: vec3<u32>) {
-    let slot = global.x;
-    let framed = in_view(slot);
-    var draw = framed;
-    if params.phase == PHASE_PREPASS {
-        draw = framed && drawn_last(slot);
-    } else if params.phase == PHASE_FINAL {
-        draw = framed && !hidden_by_depth(slot);
-    }
-    scan[local.x] = select(0u, 1u, draw);
-    scan_workgroup(local.x);
-    if local.x == WORKGROUP - 1u {
-        group_offsets[group.x] = scan[local.x];
-    }
-    // Recover each slot's flag from the inclusive scan and pack 32 per word.
+    let word = count_word(listed(global.x, global.x, meshes[params.mesh]), local.x, group.x);
     if local.x < WORDS {
-        let base = local.x * 32u;
-        var before = 0u;
-        if base > 0u {
-            before = scan[base - 1u];
-        }
-        var word = 0u;
-        for (var bit = 0u; bit < 32u; bit = bit + 1u) {
-            let at = scan[base + bit];
-            word = word | ((at - before) << bit);
-            before = at;
-        }
         masks[group.x * WORDS + local.x] = word;
         // The final list is exactly the next last-visible set.
         if params.phase == PHASE_FINAL {
@@ -209,49 +219,146 @@ fn count(@builtin(global_invocation_id) global: vec3<u32>,
     }
 }
 
+@compute @workgroup_size(256)
+fn count_members(@builtin(global_invocation_id) global: vec3<u32>,
+                 @builtin(local_invocation_id) local: vec3<u32>,
+                 @builtin(workgroup_id) group: vec3<u32>) {
+    let slot = members[global.x];
+    var draw = false;
+    if slot != MEMBER_PADDING {
+        draw = listed(slot, global.x, meshes[buckets.segments[group_bucket(group.x)].mesh]);
+    }
+    let word = count_word(draw, local.x, group.x);
+    if local.x < WORDS {
+        group_offsets[buckets.mask_base + group.x * WORDS + local.x] = word;
+        if params.phase == PHASE_FINAL {
+            next_bits[group.x * WORDS + local.x] = word;
+        }
+    }
+}
+
+// The bucket whose segment holds workgroup `group`.
+fn group_bucket(group: u32) -> u32 {
+    let last = min(buckets.count, MAX_BUCKETS) - 1u;
+    for (var bucket = 0u; bucket < last; bucket = bucket + 1u) {
+        let segment = buckets.segments[bucket];
+        if group < segment.first_group + segment.groups {
+            return bucket;
+        }
+    }
+    return last;
+}
+
+// Scan one workgroup's flags into its count, and return the 32-slot mask word
+// of invocations below WORDS (zero above); every invocation must call it.
+fn count_word(draw: bool, local: u32, group: u32) -> u32 {
+    scan[local] = select(0u, 1u, draw);
+    scan_workgroup(local);
+    if local == WORKGROUP - 1u {
+        group_offsets[group] = scan[local];
+    }
+    // Recover each slot's flag from the inclusive scan and pack 32 per word.
+    var word = 0u;
+    if local < WORDS {
+        let base = local * 32u;
+        var before = 0u;
+        if base > 0u {
+            before = scan[base - 1u];
+        }
+        for (var bit = 0u; bit < 32u; bit = bit + 1u) {
+            let at = scan[base + bit];
+            word = word | ((at - before) << bit);
+            before = at;
+        }
+    }
+    return word;
+}
+
 // One workgroup turns per-group counts into exclusive offsets and writes the
 // bucket's indirect arguments, including the GPU-written instance count.
 @compute @workgroup_size(256)
 fn offsets(@builtin(local_invocation_id) local: vec3<u32>) {
-    let per = (params.groups + WORKGROUP - 1u) / WORKGROUP;
-    let begin = min(local.x * per, params.groups);
-    let end = min(begin + per, params.groups);
+    let total = scan_offsets(local.x, 0u, params.groups, 0u);
+    if local.x == WORKGROUP - 1u {
+        write_args(0u, meshes[params.mesh], total);
+    }
+}
+
+// One workgroup per bucket: offsets restart at the bucket's segment start,
+// and each bucket writes its own indirect arguments.
+@compute @workgroup_size(256)
+fn offsets_members(@builtin(local_invocation_id) local: vec3<u32>,
+                   @builtin(workgroup_id) bucket: vec3<u32>) {
+    let segment = buckets.segments[bucket.x];
+    let total = scan_offsets(local.x, segment.first_group, segment.groups,
+        segment.first_group * WORKGROUP);
+    if local.x == WORKGROUP - 1u {
+        write_args(bucket.x, meshes[segment.mesh], total);
+    }
+}
+
+// Turn the counts of `groups` workgroups from `first` into exclusive offsets
+// starting at `base`, and return the total; every invocation must call it.
+fn scan_offsets(local: u32, first: u32, groups: u32, base: u32) -> u32 {
+    let per = (groups + WORKGROUP - 1u) / WORKGROUP;
+    let begin = first + min(local * per, groups);
+    let end = min(begin + per, first + groups);
     var sum = 0u;
     for (var index = begin; index < end; index = index + 1u) {
         sum = sum + group_offsets[index];
     }
-    scan[local.x] = sum;
-    scan_workgroup(local.x);
-    var running = scan[local.x] - sum;
+    scan[local] = sum;
+    scan_workgroup(local);
+    var running = base + scan[local] - sum;
     for (var index = begin; index < end; index = index + 1u) {
         let group_count = group_offsets[index];
         group_offsets[index] = running;
         running = running + group_count;
     }
-    if local.x == WORKGROUP - 1u {
-        let mesh = meshes[params.mesh];
-        args[0] = mesh.index_count;
-        args[1] = scan[local.x];
-        args[2] = mesh.first_index;
-        args[3] = bitcast<u32>(mesh.base_vertex);
-        args[4] = 0u;
-    }
+    return scan[WORKGROUP - 1u];
+}
+
+fn write_args(record: u32, mesh: MeshRecord, instances: u32) {
+    let at = record * 5u;
+    args[at] = mesh.index_count;
+    args[at + 1u] = instances;
+    args[at + 2u] = mesh.first_index;
+    args[at + 3u] = bitcast<u32>(mesh.base_vertex);
+    args[at + 4u] = 0u;
 }
 
 @compute @workgroup_size(256)
 fn scatter(@builtin(global_invocation_id) global: vec3<u32>,
            @builtin(local_invocation_id) local: vec3<u32>,
            @builtin(workgroup_id) group: vec3<u32>) {
-    let first = group.x * WORDS;
     let word_index = local.x / 32u;
     let lane = local.x % 32u;
-    let word = masks[first + word_index];
+    let word = masks[group.x * WORDS + word_index];
     if ((word >> lane) & 1u) == 0u {
         return;
     }
-    var position = group_offsets[group.x] + countOneBits(word & ((1u << lane) - 1u));
+    var before = countOneBits(word & ((1u << lane) - 1u));
     for (var index = 0u; index < word_index; index = index + 1u) {
-        position = position + countOneBits(masks[first + index]);
+        before = before + countOneBits(masks[group.x * WORDS + index]);
     }
-    visible[position] = global.x;
+    visible[group_offsets[group.x] + before] = global.x;
+}
+
+@compute @workgroup_size(256)
+fn scatter_members(@builtin(global_invocation_id) global: vec3<u32>,
+                   @builtin(local_invocation_id) local: vec3<u32>,
+                   @builtin(workgroup_id) group: vec3<u32>) {
+    let first = buckets.mask_base + group.x * WORDS;
+    let word_index = local.x / 32u;
+    let lane = local.x % 32u;
+    let word = group_offsets[first + word_index];
+    if ((word >> lane) & 1u) == 0u {
+        return;
+    }
+    var before = countOneBits(word & ((1u << lane) - 1u));
+    for (var index = 0u; index < word_index; index = index + 1u) {
+        before = before + countOneBits(group_offsets[first + index]);
+    }
+    // A listed member is never padding: its flag came from a real slot.
+    visible[group_offsets[group.x] + before] = members[global.x];
 }

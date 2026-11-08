@@ -863,3 +863,242 @@ fn unready_depth_hides_nothing() {
     let camera = perspective(Vec3::new(0.0, 0.0, 60.0), Vec3::ZERO, 1.0);
     assert_eq!(occlusion.frame(camera, &instances, 0.5), 0);
 }
+
+/// Member-indexed buckets (M3b, experimental): each bucket's segment of the
+/// member list compacts into its own aligned range of the visible list with
+/// its own indirect arguments, and lists exactly what the flat frustum list
+/// holds for its members, in the same order.
+#[test]
+fn member_indexed_buckets_match_the_flat_list() {
+    let count = 3_000_u32;
+    let mut fixture = Fixture::new(count);
+    let mut random = Lcg(29);
+    let instances = scatter(&mut random, count as usize, 60.0);
+    let camera = perspective(Vec3::new(0.0, 10.0, 90.0), Vec3::ZERO, 1.0);
+    let flat = fixture.run(camera, &instances, 0.5);
+    assert!(flat.len() > 500 && flat.len() < 2_900, "{}", flat.len());
+    // Bucket 0 holds most slots (several workgroups), bucket 1 every third,
+    // bucket 2 none; every seventh slot is in no bucket.
+    let bucket_of = |slot: u32| -> Option<usize> {
+        if slot.is_multiple_of(7) {
+            None
+        } else if slot.is_multiple_of(3) {
+            Some(1)
+        } else {
+            Some(0)
+        }
+    };
+    let shifted = MeshRecord {
+        first_index: 36,
+        index_count: 72,
+        base_vertex: 24,
+        ..CUBE
+    };
+    let bucket_mesh = [0_u32, 1, 0];
+    let mut lists = vec![Vec::new(); 3];
+    for slot in 0..count {
+        if let Some(bucket) = bucket_of(slot) {
+            lists[bucket].push(slot);
+        }
+    }
+    let mut members = Vec::new();
+    let mut segments = Vec::new();
+    for (list, mesh) in lists.iter().zip(bucket_mesh) {
+        let start = u32::try_from(members.len()).expect("small");
+        let groups = u32::try_from(list.len())
+            .expect("small")
+            .max(1)
+            .div_ceil(WORKGROUP);
+        members.extend(list);
+        members.resize((start + groups * WORKGROUP) as usize, u32::MAX);
+        segments.push([start / WORKGROUP, groups, mesh, 0]);
+    }
+    let total_groups = u32::try_from(members.len()).expect("small") / WORKGROUP;
+    // Uniform bucket table: count, mask base, padding, then 64 segments.
+    let mut table = vec![3, total_groups, 0, 0];
+    table.extend(segments.concat());
+    table.resize(4 + 64 * 4, 0);
+    let device = &fixture.device;
+    let words =
+        |values: &[u32]| -> Vec<u8> { values.iter().flat_map(|v| v.to_le_bytes()).collect() };
+    let filled = |label: &str, bytes: &[u8]| {
+        let buffer = storage(device, label, bytes.len() as u64);
+        fixture.queue.write_buffer(&buffer, 0, bytes);
+        buffer
+    };
+    let member_buffer = filled("test members", &words(&members));
+    let segment_buffer = device.create_buffer(&wgpu::BufferDescriptor {
+        label: Some("test bucket table"),
+        size: table.len() as u64 * 4,
+        usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        mapped_at_creation: false,
+    });
+    fixture
+        .queue
+        .write_buffer(&segment_buffer, 0, &words(&table));
+    let mesh_buffer = filled("test meshes", &[CUBE.pack(), shifted.pack()].concat());
+    // Counts, then the member path's masks.
+    let group_offsets = storage(
+        device,
+        "test group offsets",
+        u64::from(total_groups * (1 + WORDS)) * 4,
+    );
+    let visible = storage(device, "test visible", members.len() as u64 * 4);
+    let args = device.create_buffer(&wgpu::BufferDescriptor {
+        label: Some("test bucket args"),
+        size: 3 * ARGS_BYTES,
+        usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
+        mapped_at_creation: false,
+    });
+    let (layout, [count_members, offsets_members, scatter_members]) = member_pipelines(device);
+    let prepared = &fixture.prepared;
+    let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+        label: Some("test member visibility"),
+        layout: &layout,
+        entries: &[
+            wgpu::BindGroupEntry {
+                binding: 0,
+                resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
+                    buffer: &fixture.view,
+                    offset: 0,
+                    size: wgpu::BufferSize::new(VIEW_BYTES),
+                }),
+            },
+            binding(1, &fixture.instances),
+            binding(2, &fixture.serials),
+            binding(3, &mesh_buffer),
+            wgpu::BindGroupEntry {
+                binding: 4,
+                resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
+                    buffer: &prepared.params,
+                    offset: 0,
+                    size: wgpu::BufferSize::new(PARAMS_LEN as u64),
+                }),
+            },
+            binding(5, &group_offsets),
+            binding(6, &visible),
+            binding(7, &args),
+            binding(9, &prepared.history[1]),
+            wgpu::BindGroupEntry {
+                binding: 10,
+                resource: wgpu::BindingResource::TextureView(&prepared.idle_pyramid),
+            },
+            binding(11, &prepared.history[0]),
+            binding(12, &member_buffer),
+            binding(13, &segment_buffer),
+        ],
+    });
+    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+    {
+        let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor::default());
+        // Phase 0 (frustum) parameters, at offset 0.
+        pass.set_bind_group(0, &group, &[0, 0]);
+        pass.set_pipeline(&count_members);
+        pass.dispatch_workgroups(total_groups, 1, 1);
+        pass.set_pipeline(&offsets_members);
+        pass.dispatch_workgroups(3, 1, 1);
+        pass.set_pipeline(&scatter_members);
+        pass.dispatch_workgroups(total_groups, 1, 1);
+    }
+    fixture.queue.submit([encoder.finish()]);
+    let args = read(device, &fixture.queue, &args, 3 * ARGS_BYTES);
+    let listed = read(device, &fixture.queue, &visible, members.len() as u64 * 4);
+    let meshes = [CUBE, shifted];
+    for (bucket, segment) in segments.iter().enumerate() {
+        let expected: Vec<u32> = flat
+            .iter()
+            .copied()
+            .filter(|&slot| bucket_of(slot) == Some(bucket))
+            .collect();
+        let record = &args[bucket * 5..bucket * 5 + 5];
+        let mesh = meshes[segment[2] as usize];
+        assert_eq!(
+            record,
+            [
+                mesh.index_count,
+                u32::try_from(expected.len()).expect("small"),
+                mesh.first_index,
+                mesh.base_vertex.cast_unsigned(),
+                0
+            ],
+            "bucket {bucket} arguments"
+        );
+        let start = (segment[0] * WORKGROUP) as usize;
+        assert_eq!(
+            listed[start..start + expected.len()],
+            expected,
+            "bucket {bucket} list"
+        );
+    }
+    assert_eq!(args[11], 0, "the empty bucket draws nothing");
+}
+
+/// The member-indexed entry points under a layout of at most 8 storage
+/// buffers (binding 8 unbound, binding 13 a uniform bucket table).
+fn member_pipelines(device: &wgpu::Device) -> (wgpu::BindGroupLayout, [wgpu::ComputePipeline; 3]) {
+    let entry = |binding, ty, dynamic| wgpu::BindGroupLayoutEntry {
+        binding,
+        visibility: wgpu::ShaderStages::COMPUTE,
+        ty: wgpu::BindingType::Buffer {
+            ty,
+            has_dynamic_offset: dynamic,
+            min_binding_size: None,
+        },
+        count: None,
+    };
+    let read_only = wgpu::BufferBindingType::Storage { read_only: true };
+    let write = wgpu::BufferBindingType::Storage { read_only: false };
+    let uniform = wgpu::BufferBindingType::Uniform;
+    let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+        label: Some("test member visibility"),
+        entries: &[
+            entry(0, uniform, true),
+            entry(1, read_only, false),
+            entry(2, uniform, false),
+            entry(3, read_only, false),
+            entry(4, uniform, true),
+            entry(5, write, false),
+            entry(6, write, false),
+            entry(7, write, false),
+            entry(9, read_only, false),
+            entry(11, write, false),
+            entry(12, read_only, false),
+            entry(13, uniform, false),
+            wgpu::BindGroupLayoutEntry {
+                binding: 10,
+                visibility: wgpu::ShaderStages::COMPUTE,
+                ty: wgpu::BindingType::Texture {
+                    sample_type: wgpu::TextureSampleType::Float { filterable: false },
+                    view_dimension: wgpu::TextureViewDimension::D2,
+                    multisampled: false,
+                },
+                count: None,
+            },
+        ],
+    });
+    let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+        label: Some("test member visibility"),
+        bind_group_layouts: &[Some(&layout)],
+        immediate_size: 0,
+    });
+    let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+        label: Some("test member visibility"),
+        source: wgpu::ShaderSource::Wgsl(
+            [include_str!("../visibility.wgsl"), pyramid::OCCLUSION_WGSL]
+                .concat()
+                .into(),
+        ),
+    });
+    let pipeline = |entry: &str| {
+        device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+            label: Some(entry),
+            layout: Some(&pipeline_layout),
+            module: &shader,
+            entry_point: Some(entry),
+            compilation_options: wgpu::PipelineCompilationOptions::default(),
+            cache: None,
+        })
+    };
+    let pipelines = ["count_members", "offsets_members", "scatter_members"].map(pipeline);
+    (layout, pipelines)
+}
