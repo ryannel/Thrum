@@ -166,7 +166,7 @@ impl OffscreenTarget {
     /// forgotten, so a mapping that settles later is reaped without being
     /// attributed to this frame. A count the last frame left untaken is
     /// discarded and unmapped.
-    pub(crate) fn arm_culling_stats(&mut self) {
+    pub fn arm_culling_stats(&mut self) {
         let Some(stats) = self.culling_stats.as_mut() else {
             return;
         };
@@ -187,8 +187,10 @@ impl OffscreenTarget {
     }
 
     /// After the host submits this slot: map an armed frame's count,
-    /// recording its mode and active prefix. Nothing waits on the mapping.
-    pub(crate) fn map_culling_stats(&mut self, mode: CullMode, active: u32) {
+    /// recording its mode and active prefix (`PreparedSynthetic::camera_culling`
+    /// and `active_instance_count`). Nothing waits on the mapping; poll the
+    /// device before `take_culling_counts`.
+    pub fn map_culling_stats(&mut self, mode: CullMode, active: u32) {
         let Some(stats) = self.culling_stats.as_mut() else {
             return;
         };
@@ -211,7 +213,8 @@ impl OffscreenTarget {
     /// the buffer. `None` for Direct, a failed mapping, a mapping still
     /// pending (left for the next arm), and an unarmed frame, which reaps
     /// an earlier frame's settled mapping without reporting it.
-    pub(crate) fn take_culling_counts(&mut self) -> Option<CullingCounts> {
+    #[must_use]
+    pub fn take_culling_counts(&mut self) -> Option<CullingCounts> {
         let stats = self.culling_stats.as_mut()?;
         if stats.mapping.load(Ordering::Acquire) == PENDING {
             return None;
