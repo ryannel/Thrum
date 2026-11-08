@@ -148,6 +148,12 @@ impl InstanceUpload {
         self.active_two_sided
     }
 
+    /// Physical row order and its packed rows, for layout witnesses.
+    #[cfg(test)]
+    pub(super) fn physical_rows(&self) -> (&[u32], &[u8]) {
+        (&self.physical_to_slot, &self.packed)
+    }
+
     pub(super) fn replace(
         &mut self,
         queue: &wgpu::Queue,
