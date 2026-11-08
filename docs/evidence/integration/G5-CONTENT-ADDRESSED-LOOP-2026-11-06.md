@@ -302,7 +302,23 @@ Apple M3 Max, shared GPU. Each check fails when its fix is removed (mutation run
   In Chrome the page logged `E2E_READY generation 1 opened 3`, the driver edited one volume, and the page logged
   `E2E_DONE generation 2 shared 2 replaced 1`; the test passed in 12.9 s. The cross-origin requests succeeded because
   the server echoed `Access-Control-Allow-Origin: http://127.0.0.1:8000` with `Vary: Origin`; a foreign `Origin` got
-  403. The run is manual (it needs a browser) and is not in `./dev check`.
+  403. A second run with the hardened driver passed in 10.1 s and released port 8000. The run is manual: interactive
+  mode reports only in the page, so the watcher triggers the edit and the stop. It is not in `./dev check`.
+
+Independent review of these four changes found nothing blocking. Fixed:
+
+- The mirrored-node fix changed mesh bytes without changing action keys, so a store cooked earlier would keep serving
+  the old winding from its action cache. `COOKER_VERSION` is now 3.
+- The quality test skipped everything on an adapter missing BC or ASTC. Each colour format is now skipped alone,
+  and the CPU-decoded BC4 volume is always checked.
+- Level pairing stopped at the shorter chain. Every compressed product must now have the portable product's level
+  sizes.
+- The driver script could leave `wasm-bindgen-test-runner` holding port 8000, carried on without a server, and ran
+  to its limit regardless. It now stops the runner, refuses a busy port or a missing server, and stops on request.
+
+Recorded: alpha-cutout PSNR counts hidden texels, the reference measures encoder loss rather than mip generation, the
+swap check shows the floor's discrimination rather than the cooker's channel order (the floor covers that), the
+test's BC4 decode truncates where hardware rounds, and refusals are remembered within one process only.
 
 ## Open items and contract questions
 
