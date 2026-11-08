@@ -13,8 +13,8 @@ runtime alone; material reload does GPU work while lost. Brief `tmp/g3b-web-shel
 report), all taken in this revision. Extraction code at 987a3ac3: APPROVE WITH CHANGES (brief
 `tmp/g3b-web-shell/review-brief-extraction.md`, report `tmp/g3b-web-shell/review-extraction.md`, Opus 5.5), all taken.
 Milestone: M1 Engine web shell carries the V1 page unchanged · Updated: 2026-11-08
-Now: loss gates posted to Thrum Core as a seam diff ([evidence](../../evidence/v1-workload/G3B-LOSS-GATES-2026-11-08.md)); the extraction is written, reviewed and lints on wasm
-Next: pre-change reference runs on the witness commit, then the post-change checker, route and size runs
+Now: M1 built and proven except the route baseline, which fails identically before the change ([evidence](../../evidence/v1-workload/G3B-WEB-SHELL-2026-11-08.md)); the loss gates and the extraction await Thrum Core's verdict as seam diffs
+Next: land both on Thrum Core's verdict, rebased and rerun
 Blocked: none
 
 ## Problem
@@ -228,41 +228,44 @@ step is kept.
 ## M1 Engine web shell carries the V1 page unchanged: planned
 
 Done when:
-- [ ] `thrum_app::web` owns the instance, surface, device request, loss signal, reconstruction, clock policy, frame
+- [x] `thrum_app::web` owns the instance, surface, device request, loss signal, reconstruction, clock policy, frame
       step, loss gates, status and samples. The facade holds a `WebShell` and no runtime, so the runtime's GPU methods
       are unreachable from it except through the shell's gates. This command prints nothing:
       `rg -n 'wgpu::Instance|set_device_lost_callback|get_current_texture|\.present\(|FrameHost|Runtime\b|\.host\.' examples/v1-game/src/browser.rs examples/v1-game/src/browser/`
-- [ ] A camera and time changed during loss are retained, and the recovered device both renders and presents them:
+- [x] A camera and time changed during loss are retained, and the recovered device both renders and presents them:
       the retained-view witness passes, first on today's facade and then on the extracted shell.
-- [ ] While lost, material reload is refused and attach is deferred, then drawn on recovery: the two new witnesses
+- [x] While lost, material reload is refused and attach is deferred, then drawn on recovery: the two new witnesses
       pass, first on today's facade and then on the extracted shell.
-- [ ] Capture stays refused while lost, and input, pause, visibility, overload and solar time stay usable while lost.
+- [x] Capture stays refused while lost, and input, pause, visibility, overload and solar time stay usable while lost.
       These are the existing loss and recovery cases. Camera yaw is covered by the retained-view witness. Camera pitch,
       parameter files and overlay go through the same CPU edit path, but no case exercises them while lost, and this
       plan claims nothing for them.
-- [ ] The Chrome checker passes: `check_v1_browser.mjs --case all`, which includes every case but `material` (and
+- [x] The Chrome checker passes: `check_v1_browser.mjs --case all`, which includes every case but `material` (and
       now `valley-late-attach`), plus
       `--case material` on the development page. The checker is not edited after the witness commit.
 - [ ] The G7 route check passes against the committed baseline. The pre-change work item records two runs of the
       witness commit's route and checker images. If those two are byte-identical, the post-change images must be
       byte-identical to them. Otherwise, the post-change route grid difference against the pre-change run must be
       zero at the route check's own cell grid.
-- [ ] `report()` text keeps its field names, order and number formatting. The default-page Wasm size, before and
+      Held: the route check fails on the reference itself (night-upslope drift beyond the stored baseline, the same
+      worst differences before and after). The route stops are byte-identical before and after; the change adds no
+      difference. Passing against the baseline waits on whoever owns that baseline, not on this plan.
+- [x] `report()` text keeps its field names, order and number formatting. The default-page Wasm size, before and
       after, is recorded.
-- [ ] `./dev check` passes, and an independent review agrees. Its brief and verdict go on the Reviews line.
+- [x] `./dev check` passes, and an independent review agrees. Its brief and verdict go on the Reviews line.
 
 Work:
 - [x] Loss gates and witnesses on today's facade, in one change: the material refusal, the deferred attach, and the
       three checker witnesses. Run on the base commit plus this change, then posted to Thrum Core as a seam diff with
       its evidence and landed first. Serves the witness items.
-- [ ] Pre-change reference: two runs of the full checker and the route check on the witness commit, recorded under
+- [x] Pre-change reference: two runs of the full checker and the route check on the witness commit, recorded under
       `tmp/g3b-web-shell/`. Serves the checker, route and report items.
 - [x] `thrum_app::web` with the shell, recovery, loss signal and gates moved from the game, `WebWorld`, and native
       unit tests of `web_clock` (origin, refusal, clamp, visibility ∘ pause, a play change moving the last time).
       Overload recovery is the shell calling `pause` then `resume_after_drain` on `WebWorld`; it has no clock state. Serves the ownership, witness and checker items.
 - [x] The v1-game facade rewritten over `WebShell`; `recovery.rs` moved into the shell; the `rg` check prints
       nothing. Both wasm feature sets and `thrum-app` lint clean. Serves the ownership item.
-- [ ] Checker, route and Wasm-size runs; review brief and review. Serves the remaining items.
+- [x] Checker, route and Wasm-size runs; review brief and review. Serves the remaining items.
 
 ## Reuse follow-up: a second game in Chrome (parked)
 
@@ -308,3 +311,6 @@ uses `thrum-app`. It gets its own commission.
   recorded only after the world applies it; plan text says `web_clock` and puts overload in the shell (the R7 entry
   above predates the rename); doc nits. The seam-table row for the game host changed: `host/web.rs` is new and the
   native wrapper is not cfg-gated. Thrum Core sees it in the extraction seam diff.
+- 2026-11-08 M1 runs: reference (a66352e3) and after (c1e03736) both 30/30 twice and material twice; route images
+  byte-identical at the route stops; Wasm +10,414 B; `./dev check` passes. The route check's baseline item is held:
+  it fails on the reference with the same night-upslope drift.
