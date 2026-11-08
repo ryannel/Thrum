@@ -101,6 +101,11 @@ impl EncodedFrame<'_> {
     pub fn skip(self) -> DriveReport {
         self.0.skip()
     }
+    /// Discard the view after the platform observes loss of its device,
+    /// without the empty queue submit a healthy skip makes.
+    pub fn abandon_lost_device(self) {
+        self.0.abandon_lost_device();
+    }
     /// Append the optional drawable consumer and submit through the engine.
     /// # Errors
     /// Returns an engine submission failure.

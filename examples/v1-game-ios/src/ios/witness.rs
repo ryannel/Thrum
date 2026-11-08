@@ -75,6 +75,13 @@ pub(super) struct Witness {
     pub(super) stale_loss_wakes: u64,
     pub(super) lost_frames: u64,
     pub(super) lost_held_drops: u64,
+    /// Recorded frames skipped on a healthy device, each flushing staging
+    /// with an empty queue submit.
+    pub(super) empty_submits: u64,
+    /// Empty submits on a frame that replied `DeviceLost`; must stay zero.
+    pub(super) lost_empty_submits: u64,
+    /// Recorded frames abandoned on a lost device with no queue call.
+    pub(super) lost_abandons: u64,
     pub(super) stale_generation_refusals: u64,
     pub(super) recover_requests: u64,
     pub(super) recoveries: u64,
@@ -196,6 +203,11 @@ impl Witness {
             TargetLeadStatus::Late => self.late_targets += 1,
             TargetLeadStatus::Invalid => self.invalid_targets += 1,
             TargetLeadStatus::Clamped => self.clamped_targets += 1,
+        }
+        self.empty_submits += u64::from(frame.empty_submit);
+        self.lost_abandons += u64::from(frame.abandoned);
+        if frame.status == SurfaceStatus::DeviceLost {
+            self.lost_empty_submits += u64::from(frame.empty_submit);
         }
         if let Some(report) = frame.report {
             self.world_tick = self.world_tick.max(report.tick);
@@ -325,7 +337,7 @@ impl Witness {
         let actor = self
             .actor_position
             .map_or_else(|| "none".to_owned(), |[x, y, z]| format!("{x},{y},{z}"));
-        let tail: [(&str, String); 42] = [
+        let tail: [(&str, String); 45] = [
             ("actor_samples", self.actor_samples.to_string()),
             ("actor_position", actor),
             ("stall_active", self.stall_active.to_string()),
@@ -372,6 +384,9 @@ impl Witness {
             ("stale_loss_wakes", self.stale_loss_wakes.to_string()),
             ("lost_frames", self.lost_frames.to_string()),
             ("lost_held_drops", self.lost_held_drops.to_string()),
+            ("empty_submits", self.empty_submits.to_string()),
+            ("lost_empty_submits", self.lost_empty_submits.to_string()),
+            ("lost_abandons", self.lost_abandons.to_string()),
             (
                 "stale_generation_refusals",
                 self.stale_generation_refusals.to_string(),

@@ -609,12 +609,16 @@ def device_loss(base: dict[str, str]) -> dict[str, str]:
     check(s.get("stall_status") == "DeviceLost", "the held drawable was not dropped as lost", s)
     check(num(s, "lost_held_drops") > num(b, "lost_held_drops"), "no held drawable was dropped on the lost device", s)
     check(num(s, "raced_presents") == num(b, "raced_presents"), "a present raced the loss", s)
+    check(num(s, "lost_abandons") > num(b, "lost_abandons"), "the held frame was not abandoned on the lost device", s)
+    check(num(s, "lost_empty_submits") == 0, "a frame on a lost device flushed an empty queue submit", s)
     check(num(s, "loss_replacements") == num(b, "loss_replacements") + 1 and settled(s),
           "the surface that held the lost drawable was not replaced", s)
     snapshot("15-held-loss", s)
     log(f"held-frame loss: the drawable held across the loss dropped as DeviceLost and its surface was replaced "
         f"(wgpu cannot discard a destroyed device's drawable); generation "
-        f"{b['device_generation']} -> {s['device_generation']}, stale loss wakes {s['stale_loss_wakes']}, "
+        f"{b['device_generation']} -> {s['device_generation']}, abandoned frames "
+        f"{num(s, 'lost_abandons') - num(b, 'lost_abandons')}, empty submits on lost frames {s['lost_empty_submits']} "
+        f"(healthy empty submits {s['empty_submits']}), stale loss wakes {s['stale_loss_wakes']}, "
         f"stale-generation refusals {s['stale_generation_refusals']}")
 
     p0, b = sample("before loss during rotation")
@@ -665,6 +669,9 @@ def device_loss(base: dict[str, str]) -> dict[str, str]:
     p1, s = sample("after swipe on the recovered device")
     check(distance(p0, p1) >= MIN_SWIPE_TRAVEL, "the swipe after recovery did not move the committed actor", s)
     log(f"swipe after device recovery: committed actor moved {distance(p0, p1):.3f} m")
+    check(num(s, "lost_empty_submits") == 0, "a frame on a lost device flushed an empty queue submit", s)
+    log(f"device rows: {s['lost_abandons']} frames abandoned on lost devices with no queue call, "
+        f"{s['lost_empty_submits']} empty submits on lost frames, {s['empty_submits']} healthy empty submits")
     return s
 
 

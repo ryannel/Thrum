@@ -16,7 +16,9 @@ use thrum_render::{
     present::SurfaceProfile,
     runtime::{DriveReport, FrameError},
 };
-use v1_game::{FrameConfig, FrameHost, SurfaceOutput, ThreadedFrameHost, WorldControls};
+use v1_game::{
+    EncodedFrame, FrameConfig, FrameHost, SurfaceOutput, ThreadedFrameHost, WorldControls,
+};
 
 /// The platform's first device generation; it matches the host's own.
 const FIRST_GENERATION: u64 = FrameHost::DEVICE_GENERATION;
@@ -140,6 +142,11 @@ pub(super) struct FrameReply {
     pub(super) extent_dropped: bool,
     /// Presented, then the shell's observed extent differed from the drawable.
     pub(super) old_extent_present: bool,
+    /// A recorded frame was skipped on a healthy device: the engine flushed
+    /// its staged writes with an empty queue submit.
+    pub(super) empty_submit: bool,
+    /// A recorded frame was abandoned after loss, with no queue call.
+    pub(super) abandoned: bool,
 }
 
 /// A published replacement device.
@@ -357,6 +364,8 @@ impl FrameReply {
             raced_present: false,
             extent_dropped: false,
             old_extent_present: false,
+            empty_submit: false,
+            abandoned: false,
         }
     }
 }
@@ -636,7 +645,7 @@ impl Owner {
                 }
             }
         };
-        reply.report = Some(if ready {
+        reply.report = if ready {
             gpu.present(
                 now,
                 &lease,
@@ -646,8 +655,8 @@ impl Owner {
                 &self.signals.lose_now,
             )?
         } else {
-            gpu.host.drive(now, None)?
-        });
+            Some(gpu.host.drive(now, None)?)
+        };
         if reply.status == SurfaceStatus::DeviceLost {
             // Lost inside the section: no completion poll on the lost device.
             return Ok(reply);
@@ -703,6 +712,8 @@ impl Gpu {
         Ok(Some(true))
     }
 
+    /// Returns `None` when the frame was abandoned on a lost device: its
+    /// world progress stays committed, but no report or queue call follows.
     fn present(
         &mut self,
         now: Duration,
@@ -711,20 +722,25 @@ impl Gpu {
         reply: &mut FrameReply,
         stalling: &dyn Fn(),
         lose_now: &AtomicBool,
-    ) -> Result<DriveReport, FrameError> {
+    ) -> Result<Option<DriveReport>, FrameError> {
         let advanced = self.host.advance(now)?;
         if !advanced.can_acquire_serial() {
-            return advanced.submit(None);
+            return advanced.submit(None).map(Some);
         }
         let encoded = advanced.encode_scene()?;
         if !encoded.can_acquire_surface() {
-            return Ok(encoded.skip());
+            // Nothing recorded, so this skip makes no queue call.
+            return Ok(Some(encoded.skip()));
         }
         reply.presentable_encode = true;
         let queue = &self.queue;
         let device = &self.device;
         let lost = &self.watch.lost;
         let destroyed = std::cell::Cell::new(false);
+        let is_lost = || destroyed.get() || lost.load(Ordering::Acquire);
+        if is_lost() {
+            return Ok(abandon(encoded, reply));
+        }
         let mut pending = Some(encoded);
         let result = lease.section(request.epoch, |leased| {
             let encoded = pending
@@ -733,6 +749,15 @@ impl Gpu {
             let acquiring = Instant::now();
             let texture = leased.surface.get_current_texture();
             reply.acquire = acquiring.elapsed();
+            if is_lost() {
+                // wgpu's callback fired during the acquire.
+                reply.acquired = matches!(
+                    texture,
+                    CurrentSurfaceTexture::Success(_) | CurrentSurfaceTexture::Suboptimal(_)
+                );
+                drop(texture);
+                return Ok(abandon(encoded, reply));
+            }
             let frame = match texture {
                 CurrentSurfaceTexture::Success(frame) => frame,
                 CurrentSurfaceTexture::Suboptimal(frame) => {
@@ -741,15 +766,15 @@ impl Gpu {
                 }
                 CurrentSurfaceTexture::Timeout | CurrentSurfaceTexture::Occluded => {
                     reply.status = SurfaceStatus::Missing;
-                    return Ok(encoded.skip());
+                    return Ok(Some(skip(encoded, reply)));
                 }
                 CurrentSurfaceTexture::Outdated | CurrentSurfaceTexture::Lost => {
                     leased.configured = None;
                     reply.status = SurfaceStatus::Reconfigure;
-                    return Ok(encoded.skip());
+                    return Ok(Some(skip(encoded, reply)));
                 }
                 CurrentSurfaceTexture::Validation => {
-                    encoded.skip();
+                    skip(encoded, reply);
                     return Err(FrameError::InvalidState("iOS surface validation fault"));
                 }
             };
@@ -773,16 +798,15 @@ impl Gpu {
                 }
             };
             hold(StallPoint::AfterAcquire, reply);
-            if destroyed.get() || lost.load(Ordering::Acquire) {
+            if is_lost() {
                 // Nothing more is called on a lost device; the drawable drops.
-                reply.status = SurfaceStatus::DeviceLost;
                 drop(frame);
-                return Ok(encoded.skip());
+                return Ok(abandon(encoded, reply));
             }
             if !lease.is_current(request.epoch) {
                 reply.status = SurfaceStatus::StaleDropped;
                 drop(frame);
-                return Ok(encoded.skip());
+                return Ok(Some(skip(encoded, reply)));
             }
             let view = frame.texture.create_view(&TextureViewDescriptor::default());
             let report = encoded.submit(Some(&SurfaceOutput {
@@ -798,7 +822,7 @@ impl Gpu {
                     reply.status = SurfaceStatus::StaleDropped;
                     reply.extent_dropped = true;
                     drop(frame);
-                    return Ok(report);
+                    return Ok(Some(report));
                 }
                 hold(StallPoint::BeforePresent, reply);
                 queue.present(frame);
@@ -806,7 +830,7 @@ impl Gpu {
                 reply.raced_present = !lease.is_current(request.epoch);
                 reply.old_extent_present = drawn != lease.observed_extent();
             }
-            Ok(report)
+            Ok(Some(report))
         });
         if destroyed.get() {
             self.watch.destroyed = true;
@@ -814,12 +838,31 @@ impl Gpu {
         if let Some(report) = result {
             return report;
         }
-        reply.status = SurfaceStatus::NoLease;
-        Ok(pending
+        let encoded = pending
             .take()
-            .expect("a refused section leaves the encoded frame")
-            .skip())
+            .expect("a refused section leaves the encoded frame");
+        if self.watch.destroyed || self.watch.is_lost() {
+            return Ok(abandon(encoded, reply));
+        }
+        reply.status = SurfaceStatus::NoLease;
+        Ok(Some(skip(encoded, reply)))
     }
+}
+
+/// Abandon a recorded frame on a lost device. A healthy skip would flush
+/// staging with an empty submit to the lost queue; this makes no queue call.
+fn abandon(encoded: EncodedFrame<'_>, reply: &mut FrameReply) -> Option<DriveReport> {
+    reply.status = SurfaceStatus::DeviceLost;
+    reply.abandoned = true;
+    encoded.abandon_lost_device();
+    None
+}
+
+/// Skip a recorded frame on a healthy device. The engine flushes its staged
+/// writes with an empty queue submit, which the witness counts.
+fn skip(encoded: EncodedFrame<'_>, reply: &mut FrameReply) -> DriveReport {
+    reply.empty_submit = true;
+    encoded.skip()
 }
 
 #[expect(
