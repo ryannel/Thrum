@@ -1,0 +1,59 @@
+Slot start: 2026-11-08T19:30:56+01:00
+
+=== control ===
+{
+  "row": "control",
+  "base": "0d53d3aa",
+  "cooked_root": "70d2baf823d09d85574f7cdfce7102648754544dd7d68659e9bd92dd5f30e21d",
+  "cooked_generation": 1,
+  "binary_sha256": "12c331ac83892cb9273993fe892887c7f0dc245630726d101f5d27914d1887bc",
+  "preset_sha256": "9c1f03df9fc1461d92e60fafa06ee58889aa41130ea7547475b5ba4a99506455",
+  "recorder_sha256": "b27c5a336d290b46184e4478844763db17deb24ee5c1a7f2e01c696b136e0499"
+}
+630282e8e20e95aa2081b6301191d19db2e08b2e886caaacee2fd1bb06b4540f  control/window.mp4
+dd1f7eb7b6bd272dd351ff342633ca5c719d691c8eea007e8df55a33f9e11d52  control/pan.csv
+1893ce607bf22d5b004e770998a0573f604763dfec4cd87e7ae8e898a31178ef  control/game.log
+90d7293edea5eb81867468a24068ce23ccaa38fb635982661d82df45682fc6e2  control/recorder.log
+m2 app pid=54097 window=WindowId(35716121216)
+m2 lifecycle Pause SnapshotId { epoch: WorldEpoch(1), tick: 0 }
+m2 cooked ready generation=1
+m2 pan start mach_before=64263866934447 mach_after=64263866934448 unix_ns=1794162659036074000 sequence=141
+m2 pan end mach_before=64263915151020 mach_after=64263915151021 unix_ns=1794162661045098000 sequence=379
+adapter=Apple M3 Max; surface=Bgra8Unorm 1920x1080; presented=520; callbacks=935; display_link_callbacks=946; late_target_evaluations=0; invalid_target_evaluations=0; clamped_target_evaluations=0; committed_ticks=0; unavailable=1; occluded=1; surface_faults=0; dropped_surface=1; dropped_views=1; dropped_stale_views=0; dropped_reports=0; callback wall p50/p95=0.004/0.016 ms; render-worker wall p50/p95=0.778/9.257 ms; drawable-acquire wall p50/p95=0.031/8.650 ms; tick CPU p50/p95=0.000/0.000 us; live-view CPU p50/p95=161.958/278.209 us; upload CPU p50/p95=186.250/341.500 us; encode CPU p50/p95=553.917/843.250 us; upload+encode CPU p50/p95=747.875/1154.292 us; scene GPU p50/p95=4.295/8.657 ms; forward GPU p50/p95=1.740/3.277 ms; surface GPU p50/p95=1.383/2.967 ms; culling=Direct with no counts; device_losses=0; world_overloads=0; overload_refused_ticks=0; final_drain_device_lost=false; retained_presented_profiles=520; missing_presented_profiles=0; profiles describe retained samples
+m1 recording start unix_ms=1794162658263
+m1 recording stop-request unix_ms=1794162665733
+m1 recording finish unix_ms=1794162665757
+pid=54097 window=42218 builtInDisplay=1 frame=(383.0, 145.0, 962.0, 572.0)
+
+=== trace ===
+{
+  "row": "trace",
+  "base": "0d53d3aa",
+  "cooked_root": "70d2baf823d09d85574f7cdfce7102648754544dd7d68659e9bd92dd5f30e21d",
+  "cooked_generation": 1,
+  "binary_sha256": "12c331ac83892cb9273993fe892887c7f0dc245630726d101f5d27914d1887bc",
+  "preset_sha256": "9c1f03df9fc1461d92e60fafa06ee58889aa41130ea7547475b5ba4a99506455",
+  "recorder_sha256": "b27c5a336d290b46184e4478844763db17deb24ee5c1a7f2e01c696b136e0499"
+}
+ff14d83eb7f47c9923916daa377a8ced347fe12babd2dd59e13a0e59628b60fa  trace/window.mp4
+16959d0dd50546c2698e1c5bbcdaaacfad91937717539d99e6b0cb5e0b0630ee  trace/pan.csv
+06539c3222c8619de610cabca12c89d33bd8520c80ce0cecdc027d530f0e53ac  trace/game.log
+8720885743bc22bbef845bdbea6015e16c0b2cf6f37c4534f740ba24f830f43b  trace/recorder.log
+m2 app pid=54193 window=WindowId(47963849344)
+m2 lifecycle Pause SnapshotId { epoch: WorldEpoch(1), tick: 0 }
+m2 cooked ready generation=1
+m2 pan start mach_before=64264166326381 mach_after=64264166326381 unix_ns=1794162671510736000 sequence=129
+m2 pan end mach_before=64264214450601 mach_after=64264214450602 unix_ns=1794162673515912000 sequence=365
+adapter=Apple M3 Max; surface=Bgra8Unorm 1920x1080; presented=453; callbacks=888; display_link_callbacks=906; late_target_evaluations=1; invalid_target_evaluations=0; clamped_target_evaluations=0; committed_ticks=0; unavailable=0; occluded=0; surface_faults=0; dropped_surface=0; dropped_views=0; dropped_stale_views=0; dropped_reports=0; callback wall p50/p95=0.001/0.017 ms; render-worker wall p50/p95=1.035/9.934 ms; drawable-acquire wall p50/p95=0.040/12.524 ms; tick CPU p50/p95=0.000/0.000 us; live-view CPU p50/p95=206.917/359.083 us; upload CPU p50/p95=239.583/424.375 us; encode CPU p50/p95=890.666/1272.833 us; upload+encode CPU p50/p95=1137.792/1654.667 us; scene GPU p50/p95=4.045/7.832 ms; forward GPU p50/p95=1.689/3.551 ms; surface GPU p50/p95=1.311/3.243 ms; culling=Direct with no counts; device_losses=0; world_overloads=0; overload_refused_ticks=0; final_drain_device_lost=false; retained_presented_profiles=453; missing_presented_profiles=0; profiles describe retained samples
+m1 recording start unix_ms=1794162670719
+m1 recording stop-request unix_ms=1794162678028
+m1 recording finish unix_ms=1794162678048
+pid=54193 window=42226 builtInDisplay=1 frame=(383.0, 145.0, 962.0, 572.0)
+
+=== trace finalization and export ===
+Starting recording with the Game Performance template. Launching process: v1-game. Time limit: 16.0 s
+Ctrl-C to stop the recording
+Target app exited, ending recording...
+Recording completed. Saving output file...
+Runner stopped the Instruments process after a 75-second finalization timeout.
+Export failed: Document Missing Template Error

@@ -3,11 +3,11 @@
 Design: [Platform runtime](PLATFORM-RUNTIME.md#g3b-world-and-presentation-lifecycle--selected-partial-implementation)
 and [bounded frame host](../decisions/V1-BOUNDED-FRAME-HOST.md). Siblings:
 [iOS](PLATFORM-RUNTIME-IOS-PLAN.md) and [web](PLATFORM-RUNTIME-WEB-PLAN.md).
-Reviews: Design and plan over `3049433d`, approved plan SHA-256 prefix `0f467bcb` · [brief](#design-and-plan-review-brief) · initial hold resolved. First M1 abandon seam over `f79e3434` · [brief](#lost-frame-review-brief) · approved for observed post-encode loss. M1 injected input over `43e1d488` · [brief](#injected-input-review-brief) · approved after separating capture cutoff from finalization. M1 live slot `slot-04.0qL58y`, diagnostic `0c9a32dc` · [brief](../../evidence/render/mac-m1-recovery/README.md#independent-review-brief) · both done-when items pass. M2 pan plan over `aeb43fbc`, reviewed SHA-256 prefix `10e7730e` · [brief](#m2-pan-plan-review-brief) · approved after refining slider steps, recording brackets and trace attribution.
+Reviews: Design and plan over `3049433d`, approved plan SHA-256 prefix `0f467bcb` · [brief](#design-and-plan-review-brief) · initial hold resolved. First M1 abandon seam over `f79e3434` · [brief](#lost-frame-review-brief) · approved for observed post-encode loss. M1 injected input over `43e1d488` · [brief](#injected-input-review-brief) · approved after separating capture cutoff from finalization. M1 live slot `slot-04.0qL58y`, diagnostic `0c9a32dc` · [brief](../../evidence/render/mac-m1-recovery/README.md#independent-review-brief) · both done-when items pass. M2 pan plan over `aeb43fbc`, reviewed SHA-256 prefix `10e7730e` · [brief](#m2-pan-plan-review-brief) · approved after refining slider steps, recording brackets and trace attribution. M2 live slot `slot.mQNT7T` over `0d53d3aa` · [briefs](../../evidence/render/mac-m2-pan/README.md#independent-review-briefs) · motion passes with recorded holds, cadence open and finalization parked.
 Milestone: M2 The cooked valley presents smoothly on built-in ProMotion
-Now: The hidden AppKit panel delivered all 240 yaw actions. The matched runner and checked clock fallback are retained at `22bb7404` on `codex/wip-g3b-mac-m2-witness`. The fallback passed schema and anchor preflights against a saved trace and synthetic joins.
-Next: run the untraced and Game Performance sweeps in an eight-minute slot when the console reports unlocked, then independently review the 1× recordings and trace attribution.
-Blocked: the 18:26 CET preflight reported a locked console. The live rows need an unlocked owner window. Headless trace probes produced no exportable pan markers, so fresh cadence attribution remains open.
+Now: Paused by owner request (8 Nov 19:40 CET) for workflow review.
+Next: run the three-view offscreen parity command in [Resume first](../../evidence/render/mac-m2-pan/README.md#resume-first) with the compiled `474b4306` diagnostic, the fixed noon store and the 0°, 18°, 36° witnesses from `framing.mKC7g4`.
+Blocked: cadence remains open. The live trace did not finalize, and export found no readable template. Instruments trace finalization is parked after three attempts.
 
 ## M0 Reviewed Mac qualification plan: done
 
@@ -28,12 +28,12 @@ Work:
 - [x] Run the detached Metal and paused readback preflights, then the cooked valley in the same diagnostic build with the arm disabled and with both loss modes. The arm-disabled row supplies the uninterrupted control with identical inputs.
 - [x] Record device, surface, session and world identity, the acknowledged endpoint, queue calls, cooked generation, and the first restored submission. Retain the motion excerpt and independent review alongside the paired image results.
 
-## M2 The cooked valley presents smoothly on built-in ProMotion: planned
+## M2 The cooked valley presents smoothly on built-in ProMotion: motion passed, cadence open
 
 Owner review: [Ground E route, noon tile](../../evidence/v1-workload/g7-showcase/route-ground-e.png) (proposed, pending).
 Use the same noon view and a slow input-driven pan. A no-trace run provides the motion and overhead control.
 
-- [ ] The release window on the M3 Max built-in ProMotion panel retains smooth input-driven motion. Review the normal-speed pan alongside the untraced control. A visible stall, jump or repeated image during continuous input is a finding to resolve or record before closing visual motion.
+- [x] The release window on the M3 Max built-in ProMotion panel retains coherent input-driven motion. Independent 1× review of the matched `0d53d3aa` recordings passed. Decoded scene holds of 38.3 ms untraced and 51.7 ms traced are recorded. The later G3c build still needs corroboration. [Motion evidence and verdict](../../evidence/render/mac-m2-pan/README.md).
 - [ ] The app’s displayed frame intervals on the built-in panel are independently attributable and recorded. Trace rows must distinguish window/app swaps from display refresh and app submissions. Without attributable swaps, the cadence box remains open. No numeric performance threshold is a gate.
 
 Work:
@@ -86,6 +86,8 @@ Keep encode-time failure and live-window recovery outside this proof.
 
 - 8 November. Initial M2 review identified authored holds from the one-degree yaw slider, incomplete recording brackets and a possible ambiguous trace join. Qualify a finer shipped yaw step, bracket the sweep in both recordings and use pan markers and actual compositor Swap Time. Keep the input schedule separate from the display result.
 - 8 November, 18:26 CET. The granted slot's fresh preflight (`slot.tAxImE`) reported a locked console. Neither live row launched. The overseer's standing grant applies once the console is unlocked. M2 remains active for work that needs no screen.
+- 8 November, 19:30 CET. Slot `slot.mQNT7T` recorded both full live sweeps and closed both game windows. Independent 1× review passed motion with short holds recorded. The trace process exceeded its finalization cap and export refused the bundle. Park Instruments trace finalization after the two headless attempts and this live attempt. Leave the physical cadence criterion unchanged.
+- 8 November, 19:40 CET. Owner requested a pause for workflow review. The post-G3c diagnostic build finished. Its visual corroboration is the first resume step.
 
 ## M2 pan plan review brief
 
