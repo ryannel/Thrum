@@ -254,3 +254,6 @@ Work (each names the done-when item it serves, numbered from the top):
   presented from 3002–3004 display-link ticks, with no occlusion or drops. The median display interval is inferred
   at 8.3 ms. Acquire-to-display latency cannot be observed through wgpu and moves to G4 (evidence "Mac presentation
   cadence on glass").
+- 2026-11-08 Moving-world rerun: the world unpaused at 17.4 h, 1920×1080, 119.5–119.9 presents/s, 3000 presented
+  from 3004 ticks, one or two dropped surfaces per run, scene GPU p50 about 4–4.9 ms. The camera was fixed; latency
+  stays with G4.

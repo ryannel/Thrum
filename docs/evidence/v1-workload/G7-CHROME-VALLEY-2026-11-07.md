@@ -483,3 +483,28 @@ The rest comes from the game's own exit summary. No frames were kept.
 **Limits.** The world was paused, so the camera and Sun were static while the game still rendered and presented every
 tick. This is one machine on a 120 Hz panel, with runs of 5–25 s. The thermal state was not recorded. These figures
 make no claim about Chrome or iOS.
+
+**Moving world (rerun in the same window).** The overseer asked for the shipped workload in motion. The same
+binary (`c71f7c83…`, main 6db05c87) ran the default 1920×1080 window with the world unpaused from the 17.4 h preset,
+so solar time advanced and the Sun, sky and shadows moved every tick. It ran directly with a fresh cook of root
+`70d2baf8…` (`tmp/g7-showcase/cadence2/run.py`), timed in the same 600/3000/600/3000 order. No frames were kept.
+
+| Run | Wall | Presented / display-link ticks | Committed world ticks | Dropped surface / views | Acquire wall p50 / p95 | Scene GPU p50 / p95 |
+|---|---|---|---|---|---|---|
+| 600 (first, cold) | 6.25 s | 600 / 606 | 328 | 2 / 2 | 0.024 / 0.053 ms | 4.92 / 5.78 ms |
+| 3000 | 25.38 s | 3000 / 3004 | 1509 | 1 / 1 | 0.029 / 0.390 ms | 4.48 / 5.32 ms |
+| 600 | 5.30 s | 600 / 603 | 306 | 1 / 1 | 0.114 / 0.526 ms | 4.47 / 5.88 ms |
+| 3000 | 25.31 s | 3000 / 3004 | 1507 | 1 / 1 | 0.083 / 0.609 ms | 3.98 / 4.95 ms |
+
+- **Presents/s, steady state:** 119.5 and 119.9, each 3000-frame run measured against the warm 600-frame run (2400
+  frames ÷ 20.08 s and ÷ 20.01 s). The first 600-frame run started about 1 s slower than the second, so pairing it
+  would overstate the rate (125.5) and is not used.
+- **Cadence:** every display tick but four presented in each 3000-frame run. The world committed about 60 ticks/s,
+  so it really moved. Each run dropped one or two surfaces or views, where the paused runs dropped none, and the
+  game's summary does not say when. Late target evaluations were 0–1.
+- **Display interval:** a median of 8.3 ms, inferred from the rate as before. Acquire-to-display latency is still
+  unobservable through wgpu.
+- **Cost of motion:** scene GPU time roughly doubles over the paused runs (p50 about 4–4.9 ms against 1.9 ms), as
+  shadows and sky update each tick. It still sits well inside the 8.3 ms interval.
+- **Limits:** the camera stayed fixed, since the shipped game turns it only from input. These are short runs on one
+  machine.
