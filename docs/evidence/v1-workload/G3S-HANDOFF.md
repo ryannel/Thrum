@@ -86,12 +86,15 @@ The Codex goal remains active. Its attachment is
   at the rendered phase, versus 34.51% with the 64 m fine scan and
   27.84% with a 96 m scan. A hierarchy with original triangle leaves
   recovers it at 24.71%. Its maximum error across six 90-frame fixture
-  runs at one receiver is 0.34 percentage point. This is a centre-azimuth
-  result. Off-axis disk coverage, close-clearance policy, aerial ownership,
-  discarded-frame equality and Chrome remain open. The reference rows
-  now use rendered solar time, one tick behind committed at alpha zero.
-  The 12-frame Metal capture `solar-rendered-time-witness` verifies both
-  fields in `frames.jsonl`.
+  runs at one receiver is 0.34 percentage point for the centre azimuth.
+  A cooked off-axis crest exposes the limit: 35.29% visible by centre
+  azimuth versus 22.49% by 3D disk rays. A 32-column Metal approximation
+  gives 21.57%. Sharing the traversal cuts 1080p diagnostic GPU p95 from
+  55.13–56.31 to 20.37–21.03 ms (load 11.89–12.54), within one code
+  over all 76 frames. The beam still costs too much per fragment.
+  Close-clearance policy, compact receiver reach, aerial ownership,
+  discarded-frame equality and Chrome remain open. Reference rows use
+  rendered solar time, verified in the 12-frame `solar-rendered-time-witness`.
   [Maximum Mipmaps](https://pure.mpg.de/pubman/item/item_1325622_5/component/file_3590464/i3d08.pdf).
   Exact builds, raw rows and clips are in `tmp/g3s-sunset-lip/`. The
   diagnostic source and rerun command are on `codex/g3s-horizon-metal-wip`.
