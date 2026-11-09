@@ -1,18 +1,29 @@
 # Orchestrate profile: Thrum
 
 Thrum's work follows the generic orchestrate skills (`/plan-module`, `/build-milestone`, `/review-milestone`,
-`/build-parallel`). This file holds what's specific to Thrum.
+`/build`). This file holds what's specific to Thrum.
 
 - **Purpose:** [the build plan](docs/BUILD-PLAN.md): purpose, the V1 exit and the gate order.
 - **Quality bar:** would pass in a shipped high-end game of this kind, named per milestone, e.g. sea and wakes as in
   Sea of Thieves, skies as in Red Dead Redemption 2, smooth at the display's full refresh. Judged in words against
   inspection items, never against target images.
 - **Plans:** docs/design/modules  *(loop)*
-- **Evidence:** docs/evidence  *(loop; graded examples in [docs/design/GRADED-EXAMPLES.md](docs/design/GRADED-EXAMPLES.md))*
-- **Check:** `./dev check` (documentation-only work: `./dev check-docs`). CI is manual-only, so this is the gate.
+- **Evidence:** docs/evidence  *(loop)*
+- **Graded examples:** docs/design/GRADED-EXAMPLES.md  *(loop: past verdicts the owner agreed with or overturned)*
+- **Check:** ./dev check  *(loop: CI is manual-only, so this is the gate; documentation-only work may run ./dev check-docs while building)*
+- **Integrate:** push  *(loop: owner allows verified checkpoints straight to main)*
 - **Branch:** main  *(loop)*
 - **Remote:** origin  *(loop)*
-- **Codex generator:** gpt-6.1-sol medium  *(loop)*
+- **Builders:** one Codex builder unless the owner says otherwise
+- **Codex model:** gpt-6.1-sol  *(loop)*
+- **Claude model:** claude-opus-5-5  *(loop)*
+- **Codex sandbox:** workspace-write  *(loop: GPU and Instruments runs go through Codex's auto-reviewed approvals)*
+- **Writable roots:** ~/.cargo  *(loop)*
+
+## Starting from a clean clone
+`./dev help` lists the commands; `./dev check` builds and tests the workspace. Builders work in their own worktree on
+a `build/<module>` branch and push `HEAD:main`. Large captures and recordings go in `tmp/<task>/` under
+[the storage rules](docs/ASSET-LIFECYCLE.md); only selected evidence is committed.
 
 ## Targets
 
