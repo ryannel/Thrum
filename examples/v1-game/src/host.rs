@@ -102,6 +102,11 @@ impl EncodedFrame<'_> {
         self.0.can_acquire_surface()
     }
 
+    /// Actual resources and matrix of this encoded frame.
+    pub fn frame_extent(&self) -> Option<runtime::FrameExtent> {
+        self.0.frame_extent()
+    }
+
     /// Skip a view while retaining its committed world update.
     pub fn skip(self) -> DriveReport {
         self.0.skip()
@@ -279,6 +284,24 @@ impl ThreadedFrameHost {
     /// Refuses an invalid or unavailable surface.
     pub fn resize_surface(&mut self, extent: [u32; 2]) -> Result<(), runtime::FrameError> {
         self.inner.inner.resize_surface(extent)
+    }
+
+    /// Resize the scene grid and presenter coherently on the render owner.
+    /// # Errors
+    /// Returns a preparation fault. Zero extents or busy slots defer.
+    pub fn resize_scene_surface(&mut self, extent: [u32; 2]) -> Result<bool, runtime::FrameError> {
+        self.inner.inner.resize_scene_surface(extent)
+    }
+
+    /// Resize with a final platform lease/epoch validity check.
+    /// # Errors
+    /// Returns a preparation fault. A stale epoch defers publication.
+    pub fn resize_scene_surface_if(
+        &mut self,
+        extent: [u32; 2],
+        current: impl FnOnce() -> bool,
+    ) -> Result<bool, runtime::FrameError> {
+        self.inner.inner.resize_scene_surface_if(extent, current)
     }
 
     /// Optional scene views skipped.

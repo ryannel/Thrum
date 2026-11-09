@@ -637,6 +637,25 @@ impl GraphTextures {
         }
     }
 
+    /// Count unique allocated textures and their unpadded texel storage.
+    pub(crate) fn allocation(&self) -> (u32, u64) {
+        let mut count = 0;
+        let mut bytes = 0;
+        for texture in self.slots.iter().flatten() {
+            count += 1;
+            let (bw, bh) = texture.format().block_dimensions();
+            let block_bytes = u64::from(texture.format().block_copy_size(None).unwrap_or(0));
+            for mip in 0..texture.mip_level_count() {
+                bytes += u64::from((texture.width() >> mip).max(1).div_ceil(bw))
+                    * u64::from((texture.height() >> mip).max(1).div_ceil(bh))
+                    * u64::from(texture.depth_or_array_layers())
+                    * u64::from(texture.sample_count())
+                    * block_bytes;
+            }
+        }
+        (count, bytes)
+    }
+
     pub(crate) fn texture(&self, resource: &ResourceId) -> Option<&wgpu::Texture> {
         if !Arc::ptr_eq(&self.owner, &resource.owner) {
             return None;

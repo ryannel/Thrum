@@ -124,6 +124,30 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> EncodedFrame<'_, W, V> {
         self.ready.is_some()
     }
 
+    /// Inspect the resources and matrix used by this exact encoded token.
+    pub fn frame_extent(&self) -> Option<super::FrameExtent> {
+        let ready = self.ready.as_ref()?;
+        let host = &ready.host;
+        let presenter = host.presenter.as_ref()?;
+        let (source, viewport) = presenter.source_viewport();
+        let (target_textures, target_bytes) = host.slots[ready.recorded.slot_index]
+            .target
+            .texture_allocation();
+        Some(super::FrameExtent {
+            target_textures,
+            target_bytes,
+            attachments: host.slots[ready.recorded.slot_index]
+                .target
+                .attachment_extents(),
+            view_projection: host.scene.view.view_proj_columns(),
+            source,
+            destination: presenter.extent(),
+            viewport,
+            submission: host.next_submission_order,
+            revision: host.presenter_generation,
+        })
+    }
+
     /// Drop optional presentation and return the admitted world progress.
     /// Pending uploads are flushed without a scene or history submission.
     pub fn skip(mut self) -> DriveReport {

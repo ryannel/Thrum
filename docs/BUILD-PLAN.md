@@ -95,6 +95,9 @@ Metal recorder remains a later performance candidate; the dedicated performance 
   epoch-checked lease, including a raced present. [Simulator evidence](evidence/render/G3B-IOS-SIM-ROUTE-2026-11-07.md).
   Simulator rotation preserves the committed player, and an injected device loss recovers in the same process with
   world and controls intact. [Rotation and recovery evidence](evidence/render/G3B-IOS-SIM-ROTATION-LOSS-2026-11-08.md).
+  iOS M7 is claimed for review with native oriented scene targets, correct projection and full-surface presentation,
+  including recovery refit. [Extent evidence](evidence/render/ios-extent/README.md). COOKED-DRAW M1 retains its M7
+  acceptance gate and unchanged M1.9–M1.11 reruns.
   A held-drawable Metal destroy recovers in the same Mac window with world and controls intact.
   [Live Mac evidence](evidence/render/mac-m1-recovery/README.md). Physical iPhone loss and Mac display cadence
   remain open. Mac M2 needs only `T2-CAPTURE:M0` and qualifies the current surface path; its unattended runtime-image

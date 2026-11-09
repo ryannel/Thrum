@@ -32,6 +32,7 @@ mod creation;
 #[path = "runtime/creation_off.rs"]
 mod creation;
 mod device;
+mod extent;
 mod preparation;
 mod submitted_capture;
 mod tokens;
@@ -46,6 +47,7 @@ pub use creation::{
 };
 pub use creation::{CreationRegion, DeviceSite};
 pub use device::{DevicePrepareInputs, PreparedDevice};
+pub use extent::FrameExtent;
 pub use submitted_capture::{CaptureLimits, SubmittedImage};
 pub use tokens::{AdvancedFrame, EncodedFrame};
 #[cfg(not(target_arch = "wasm32"))]
@@ -671,7 +673,8 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         ))?;
         scene.bind_presenter(self.presenter.as_ref())?;
         let queue = self.queue.clone();
-        let view = self.refresh_replacement(scene, &queue, Some(candidate.lighting))?;
+        let view =
+            self.refresh_replacement(scene, &queue, Some(candidate.lighting), self.render_extent)?;
         let scene = candidate.scene.take().ok_or(FrameError::InvalidState(
             "visual candidate already published",
         ))?;
@@ -691,12 +694,13 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         replacement: &mut preparation::PreparedScene,
         queue: &wgpu::Queue,
         lighting: Option<FrameLighting>,
+        extent: [u32; 2],
     ) -> Result<SyntheticView, FrameError> {
         let authority = self.world.source();
         let alpha = self.presentation_alpha();
         let frame = self
             .source
-            .frame(authority, alpha, self.render_extent, lighting)
+            .frame(authority, alpha, extent, lighting)
             .map_err(FrameError::Scene)?;
         let view = frame.view.with_history_reset(true);
         let previous = std::mem::replace(&mut self.scene.view, view);

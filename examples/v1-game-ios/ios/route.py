@@ -9,6 +9,7 @@ callback that waited on the render owner from one that did not.
 from __future__ import annotations
 
 import json
+import hashlib
 import math
 import os
 import signal
@@ -151,10 +152,51 @@ def sample(label: str) -> tuple[list[float], dict[str, str]]:
     return position, s
 
 
+def extent_proof(state: dict[str, str]) -> dict:
+    """Resource/matrix witness from an identified, actually presented token."""
+    raw = state.get("frame_extent", "none")
+    check(raw != "none", "missing encoded-frame extent witness", state)
+    attachments, matrix, source, destination, viewport, submission, revision, textures, texture_bytes = raw.split(";")
+    grid = lambda value: [int(side) for side in value.split("x")]
+    surface = grid(state["presented_extent"])
+    targets = [grid(value) for value in attachments.split(",")]
+    drawable = grid(state.get("drawable", "0x0"))
+    view = [int(value) for value in viewport.split(",")]
+    check(all(target == surface for target in targets), "actual scene attachments differ from surface", state)
+    check(grid(source) == grid(destination) == drawable == surface,
+          "presenter source/destination or actual drawable differs from scene grid", state)
+    check(view == [0, 0, *surface], "presenter does not use the full surface viewport", state)
+    columns = [float(value) for value in matrix.split(",")]
+    check(len(columns) == 16 and all(math.isfinite(value) for value in columns), "invalid encoded matrix", state)
+    fx = math.sqrt(sum(columns[column * 4] ** 2 for column in range(3)))
+    fy = math.sqrt(sum(columns[column * 4 + 1] ** 2 for column in range(3)))
+    aspect = fy / fx
+    fov = math.degrees(2 * math.atan(1 / fy))
+    check(math.isclose(aspect, surface[0] / surface[1], rel_tol=1e-5), "encoded projection aspect differs from surface", state)
+    check(math.isclose(fov, 65.0, abs_tol=1e-3), "diagnostic vertical field of view changed", state)
+    return dict(attachments=targets, drawable=drawable, source=grid(source), destination=grid(destination),
+                viewport=view, projection_columns=columns, aspect=aspect, vertical_fov_degrees=fov,
+                submission=int(submission), revision=int(revision), epoch=num(state, "presented_epoch"),
+                generation=num(state, "presented_generation"), presented=num(state, "presented"),
+                textures_per_slot=int(textures), texture_bytes_per_slot=int(texture_bytes))
+
+
 def snapshot(name: str, state: dict[str, str], screenshot: bool = True) -> None:
     (OUT / f"{name}.txt").write_text("".join(f"{k}={v}\n" for k, v in state.items()))
+    if state.get("state") == "Active" and num(state, "presented_epoch") == num(state, "epoch"):
+        (OUT / f"{name}-extent.json").write_text(json.dumps(extent_proof(state), indent=2) + "\n")
     if screenshot:
+        before = read()
+        began = time.monotonic()
         simctl("io", DEVICE, "screenshot", str(OUT / f"{name}.png"))
+        after = read()
+        if state.get("state") == "Active" and num(state, "presented_epoch") == num(state, "epoch"):
+            first, last = extent_proof(before), extent_proof(after)
+            check(first["epoch"] == last["epoch"] and first["drawable"] == last["drawable"],
+                  "screenshot crossed an extent transition", after)
+            (OUT / f"{name}-capture.json").write_text(json.dumps(dict(before=first, after=last,
+                capture_wall_seconds=time.monotonic() - began,
+                scope="simctl settled-state bracket, compositor frame identity unavailable"), indent=2) + "\n")
 
 
 def presents_after(base: dict[str, str], frames: int = 60):
@@ -177,6 +219,12 @@ def startup() -> dict[str, str]:
     check(num(s, "completed_gpu") >= 590 and num(s, "surface_samples") >= 590, "GPU completions lag presents", s)
     check(num(s, "display_link_callbacks") >= 600, "display link callbacks below 600", s)
     check("Apple_iOS_simulator_GPU" in s.get("adapter", ""), "simulator Metal adapter not selected", s)
+    first = extent_proof(s)
+    s = wait(presents_after(s, 120), 30, "steady presentation at the identical extent")
+    second = extent_proof(s)
+    check(first["revision"] == second["revision"], "steady identical extents rebuilt target resources", s)
+    (OUT / "steady-extent.json").write_text(json.dumps(dict(before=first, after=second,
+        target_ring_replacements=0, target_texture_creations=0), indent=2) + "\n")
     snapshot("01-startup", s)
     log(f"startup: presented={s['presented']} completed={s['completed_gpu']} "
         f"callbacks={s['display_link_callbacks']} pending<={s['max_pending_frames']} "
@@ -462,10 +510,11 @@ def record(name: str) -> tuple[subprocess.Popen, float]:
     """Record the simulator's framebuffer (an offscreen capture of the running game)."""
     path = OUT / f"{name}.mp4"
     step(f"xcrun simctl io {DEVICE} recordVideo {path.name}")
+    started = time.monotonic()
     process = subprocess.Popen(["xcrun", "simctl", "io", DEVICE, "recordVideo", "--codec=h264", "--force", str(path)],
                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     time.sleep(1.5)
-    return process, time.monotonic()
+    return process, started
 
 
 def strip(name: str, recording: subprocess.Popen, started: float, resized_at: float) -> None:
@@ -486,6 +535,9 @@ def strip(name: str, recording: subprocess.Popen, started: float, resized_at: fl
     subprocess.run(["ffmpeg", "-loglevel", "error", "-y", *source,
                     "-vf", f"fps={STRIP_FPS},scale=-2:360,tile=15x4", "-frames:v", "1", str(OUT / f"{name}-strip.png")],
                    check=True)
+    (OUT / f"{name}-strip.json").write_text(json.dumps(dict(fps=STRIP_FPS, frames=count,
+        video_seek_seconds=begin, resize_observed_since_record_command=resized_at-started,
+        scope="20 fps simctl compositor samples, command/observation alignment only, no engine frame IDs"), indent=2) + "\n")
     log(f"{name}: {count} frames at {STRIP_FPS} fps from {begin:.2f} s ({name}-strip.png, {name}-frames/)")
 
 
@@ -520,6 +572,8 @@ def rotate(name: str, test: str, base: dict[str, str], landscape: bool) -> dict[
           f"{name} presented an old-extent drawable outside the one raced section", s)
     check(num(s, "max_resize_gap_replies") <= MAX_RESIZE_GAP_REPLIES,
           f"{name} took more than {MAX_RESIZE_GAP_REPLIES} replies to present at the new extent", s)
+    check(s.get("device_generation") == b.get("device_generation"), f"{name} rebuilt the device", s)
+    extent_proof(s)
     check(num(s, "world_tick") > num(b, "world_tick"), f"world ticks stopped across {name}", s)
     check(distance(p0, p1) <= STILL_TOLERANCE, f"{name} moved the committed actor", s)
     log(f"{name}: host load {load()}")
@@ -676,6 +730,17 @@ def device_loss(base: dict[str, str]) -> dict[str, str]:
 
 
 def identity() -> None:
+    executable = Path(os.environ.get("CARGO_TARGET_DIR", "target")) / "v1-game-ios-sim/ThrumV1.app/ThrumV1"
+    paths = subprocess.check_output(["git", "ls-files", "-z", "--cached", "--others", "--exclude-standard"]).decode().split("\0")
+    sources = {path: hashlib.sha256(Path(path).read_bytes()).hexdigest()
+               for path in sorted(paths) if path and Path(path).is_file()
+               and Path(path).suffix in (".rs", ".wgsl", ".py", ".swift", ".sh", ".toml", ".lock")}
+    (OUT / "source-files.json").write_text(json.dumps(sources, indent=2) + "\n")
+    record = dict(source_sha256=hashlib.sha256(json.dumps(sources, sort_keys=True).encode()).hexdigest(), commit=subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
+                  patch_sha256=hashlib.sha256(subprocess.check_output(["git", "diff", "HEAD", "--binary"])).hexdigest(),
+                  binary_sha256=hashlib.sha256(executable.read_bytes()).hexdigest(),
+                  simulator=DEVICE, xcode=subprocess.check_output(["xcodebuild", "-version"], text=True).strip())
+    (OUT / "identity.json").write_text(json.dumps(record, indent=2) + "\n")
     listing = json.loads(subprocess.run(["xcrun", "simctl", "list", "devices", "-j"], check=True,
                                         capture_output=True, text=True).stdout)
     for runtime, devices in listing["devices"].items():

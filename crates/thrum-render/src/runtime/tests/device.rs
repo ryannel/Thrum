@@ -1257,6 +1257,7 @@ fn gpu_pending_capture_is_refused_by_another_device_with_the_same_generation() {
 
 #[cfg(feature = "creation-counters")]
 mod creation;
+mod extent;
 mod view_history;
 
 struct RecoveryContribution {
