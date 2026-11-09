@@ -5,9 +5,12 @@ Design: [COOKED-DRAW.md](COOKED-DRAW.md) · [brief](COOKED-DRAW-BRIEF.md) · Don
 [the G5 decision](../decisions/G5-CONTENT-ADDRESSED-LOOP.md).
 Reviews: [revised design review](../../evidence/COOKED-DRAW/design-review.md) of `2394162b` is DESIGN OK. The lead owns implementation review.
 Milestone: M1 Cooked scene draws on adapters without indirect execution (claimed)
-Now: All twelve M1 items pass; M1 is claimed for lead review. Accepted M7 supplies oriented scene sizing.
+Now: M1 has a live claim whose loop verification stopped before review on the console-lock gate. The revised
+M1.7/M1.8 definitions require fresh passes after the harness change. Accepted M7 supplies oriented scene sizing.
 Plain `./dev check` passes 666 Rust tests and the wrapper regression cases. Tripwire metrics pass against same-load BASE history, including quiet.
-Next: The lead independently reviews this claim after required land integration.
+Next: The builder replaces lock admission with witness recording and denied Screen Recording preflights, reruns
+the exact standalone M1.7 and M1.8 commands, then the loop verifies the refreshed claim before independent review.
+Blocked: Review awaits the harness correction and fresh verification, with no owner console-lock setup required.
 
 ## Ownership and agreements
 
@@ -89,15 +92,47 @@ Stop rules:
   direct draws or a shader change. Exact derivative/ordering diagnosis is not required unless a failed check or
   unclassified discrepancy demands further investigation.
 - If a `simctl` capture or the XCUITest rotation gesture turns out to need an unlocked console or an OS grant,
-  record that row's reason and continue the locked engine-state rows. The owner then decides whether to rescope the
-  item as attended.
+  record that row's reason and continue the engine-state rows with console state recorded as a witness. The owner
+  then decides whether to rescope the item as attended.
 
-Checks: `./dev check` under `gpu` for code. This planning revision passed `RUSTC_WRAPPER= ./dev check-docs`
-(the local sccache wrapper cannot run in this sandbox) and `git diff --check`; all eleven other done-when items
-were verified unchanged. Scratch goes in
-`tmp/cooked-draw/`, under [the storage rules](../../ASSET-LIFECYCLE.md).
+Checks: `./dev check` under `gpu` for code. This console witness revision passed `./dev check-docs` and
+`git diff --check`. The definition audit preserves accepted milestones and all builder/reviewer proof fields.
+Scratch goes in `tmp/cooked-draw/`, under [the storage rules](../../ASSET-LIFECYCLE.md).
+
+## Console witness correction and verification handoff
+
+The builder owns `scripts/cooked_draw_ios_sim.py` and the affected cases in `scripts/test_t2_capture.py`. Remove
+`wait_for_console_lock`, its 120-second manual setup wait and every before/after lock state refusal, across ordinary,
+`--lifecycle`, `--rotation` and `--visuals` modes. Retain actual before/after observations and raw probe output,
+recording unavailable observations with a reason. Add read-only denied Screen Recording preflights before and after,
+with explicit launcher/harness permission identity, following the existing ungranted-launcher attribution pattern
+where needed. An unrelated denied helper is insufficient. No permission is requested or changed. Existing simulator,
+content, advancement, lifecycle, cleanup and validation failures still fail their rows.
+
+Replace the manual-lock admission/timeout tests with controls accepting locked, unlocked and changing observations
+without waiting, retaining unavailable-probe reasons, and refusing missing, failed or granted permission preflights
+for the independence proof. Run `./dev check` and the exact standalone M1.7 and M1.8 commands under `gpu` on fresh
+owned simulators. Re-run any other mode affected by the shared harness change as required for the refreshed claim.
+The loop stopped verification before review, so the existing M1.7/M1.8 pass fields and evidence are historical
+claims under the superseded wording. Fresh evidence and loop verification are owed before review. Preserve prior
+lock witnesses in the history. The loop records the revised definitions and clears obsolete proof. This owner scope
+correction spends no failure re-plan and leaves `fails`/`replans` to their existing values. Independent review of
+the revised definitions and refreshed claim is owed to the lead/loop; no other agents may be launched here.
 
 ## Log
+
+- 2026-11-09 Owner corrected console locking from a run precondition to a recorded capability witness. Overnight
+  locked runs established that the route could work without desktop capture; requiring that setup on every check
+  blocked verification during normal Mac use without strengthening the proof. Revised M1.7/M1.8 to accept either
+  console state and use denied, attributed Screen Recording preflights for capture independence. M1.9 now refers
+  to those engine-state proofs without requiring lock. Named the simulator harness and regression changes above,
+  with code left to the builder. The live claim stopped before review, so both standalone passes must be rerun
+  under the new wording, then verified by the loop before review. Prior lock evidence remains history. No owner
+  decision is outstanding; no acceptance record or implementation changed. The loop commits and integrates this
+  planning scope correction and records the new definitions. `./dev check-docs` and `git diff --check` pass.
+  Audited all module done-when files for console-lock preconditions. The other affected unaccepted rows are
+  T2-CAPTURE M2.1/M2.2 and PLATFORM-RUNTIME-MAC M2.1/M3.1, revised in their own plans. Remaining required locked
+  runs belong to accepted T2 M0/M1 history. Accepted items, proof fields and failure/re-plan counters are unchanged.
 
 - 2026-11-09 Replanned dependency after builder checkpoint `b0dae34c` blocked M1.10. Its README and
   `rotation/layout-failure.json` show the source stays 640×360 while surface/presented extents rotate. G3b now owns

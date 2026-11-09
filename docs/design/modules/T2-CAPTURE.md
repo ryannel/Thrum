@@ -77,8 +77,12 @@ SDR preview cannot certify EDR brightness or the physical display transform.
 The manifest pins source revision plus dirty diff digest, executable/web bundle and shader hashes, cooked root and
 product hashes/generation, scenario/control/parameter hashes, run/session IDs, target/device/backend, recipe and
 registry digest, extent, capture stage, channel order, row stride, colour/transfer/exposure/overlay inclusion,
-clock origins, opportunity rate, duration, warm-up and load. Record actual console lock and permission preflight
-status without requesting a grant. A denied OS capture preflight is metadata, not a prerequisite to engine capture.
+clock origins, opportunity rate, duration, warm-up and load. Record actual console state before and after as witness
+metadata, accepting locked, unlocked and changed state, with unavailable observations recorded with a reason.
+Open no-desktop-capture proofs require denied read-only Screen Recording preflights before and after under the
+identified launcher/harness permission identity. Missing, failed or granted preflights cannot establish that claim.
+No permission is requested or changed. Neither console observation values nor manual locking gate a run or pass.
+Accepted M0/M1 definitions and their recorded lock witnesses retain their historical meaning.
 
 Per opportunity/submission retain monotonic host request/accept/submit times, committed endpoint pair/timeline,
 interpolation alpha, view/history/cut and content/device/surface generations, submission ID, copy/map completion and
@@ -186,9 +190,11 @@ it read `tmp/platform-runtime-mac-m2/console-probe.txt` at 01:59 CET (`IOConsole
 `CGSSessionScreenIsLocked = Yes`) and the successful 02:00 CET [offscreen parity record](../../evidence/render/mac-m2-pan/parity-20261109.json).
 The second review locates probe scratch in the separate platform-runtime-mac worktree; the parity JSON alone
 does not record lock state. This is historical feasibility evidence, not a fresh T2 run or runtime-motion
-qualification. M0 records lock state alongside
-its own run, opportunistically when the console is already locked. Never lock an active user's session to arrange
-the test and never unlock it by automation. Until that condition occurs, the locked row stays open and other work proceeds.
+qualification. Accepted M0/M1 subsequently retained locked-run witnesses with their own proof.
+The owner's console-witness correction applies to open work and later consumers. Record state during the actual
+run without arranging or waiting for a locked console. Capture independence rests on the denied, attributed
+permission preflights and the actual engine-output path. Never lock an active user's session to arrange a test
+or unlock it by automation.
 
 ## Rollout and attended boundaries
 
@@ -207,9 +213,9 @@ physical display proof. Keep those stronger rows dependent/unavailable. No depen
 
 | Check | Attendance and reason |
 | --- | --- |
-| Engine image/effect evolution and application motion on Mac | Unattended by design; M0 must actually prove a locked-console, permission-unavailable run before claiming this |
-| Chrome canvas / engine-rendered UI | Unattended after M1 proves the real WebGPU adapter while locked; browser scheduling is labelled, never Mac panel evidence |
-| iOS simulator engine output | Unattended after M2 proves the route while locked; `simctl` image/video is supplemental and never physical-device timing |
+| Engine image/effect evolution and application motion on Mac | Accepted M0 includes locked, permission-denied capability proof. Open consumer rows require denied, attributed Screen Recording preflights and record either console state as a witness |
+| Chrome canvas / engine-rendered UI | Accepted M1 includes real WebGPU and locked-run proof. Later open rows record either console state with denied, attributed preflights; browser scheduling is labelled, never Mac panel evidence |
+| iOS simulator engine output | M2 proves the route with denied, attributed preflights; either console state is witness metadata. `simctl` image/video is supplemental and never physical-device timing |
 | Mac M2 windowed tap and built-in-panel swaps/display-link qualification | **Attended setup**: unlocked active built-in display and any Instruments authorization required by the OS. Mac M2.3 qualifies the tap; M2.4 commissions bounded trace-finalization diagnosis. M2.2 uses a capture-off traced arm for cadence and separate capture-on content/observer arms. Agent injects inputs, runs and reviews; owner need not play. No Screen Recording grant is required for engine pixels |
 | Composited/native widgets, OS focus/input, browser chrome | **Attended when the target/tool requires it**: engine output excludes these surfaces. Prefer OS automation without screen recording; if a compositor image is essential, declare that adapter's OS grant/session requirement before the row |
 | Physical HDR/EDR brightness, input-to-photon or physical-device interaction | **Attended/instrumented**: needs actual display/device and correlated observation or sensor; an SDR movie and GPU completion cannot prove it. No physical iPhone is available; keep that proof pending rather than asking for it |

@@ -17,7 +17,10 @@ clock domains and missing samples. Runtime capture must not turn a slow run into
 Use the real render graph and temporal path, bounded asynchronous readback and bounded disk/encoding work.
 Capture is opt-in; disabled capture adds no image copy, readback, allocation or synchronization to frames.
 
-First prove a complete cooked noon pan on Mac while the console is locked and capture permission is unavailable.
+Accepted Mac M0 and Chrome M1 retain their locked, permission-denied capability witnesses. For open work, prove
+desktop-capture independence with denied, attributed read-only Screen Recording preflights and record console state
+as witness metadata, accepting either state and transitions without a lock wait. This owner clarification applies
+to simulator M2 and later consumers. The complete cooked noon pan remains required on Mac.
 Keep the world paused for the Mac M2 camera proof; also exercise a running world with interpolated presentation.
 Review full frames, native-size crops and normal-speed motion; retain negative controls for timing and capture gaps.
 Then qualify Chrome and iOS simulator consumers separately, without turning either into native panel evidence.

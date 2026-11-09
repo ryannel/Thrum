@@ -166,7 +166,9 @@ compiler, local ad-hoc codesigning and LaunchServices. It builds a local backgro
 folder. LaunchServices gives that app its own permission identity. The launcher only starts Chrome when its
 read-only Screen Recording preflight is false, records it again after Chrome exits and never requests access.
 The runner refuses software GPUs, unavailable hardware, incomplete exports and a changed permission preflight.
-Console lock is observed before and after the run. Run with the console already locked to reproduce that row.
+Console state is observed before and after the run. Accepted T2 M1 retains its locked-run capability witness.
+For open checks and later consumers, either state or a transition is accepted as witness metadata. The denied
+launcher preflights establish independence from desktop capture; no manual console-lock setup is required.
 
 `--mode fixed` uses synthetic 60 Hz world samples and may wait for GPU completion and export. `--mode realtime`
 feeds actual elapsed page time to the ordinary web shell. Its visible headless page uses 60 Hz timer opportunities,

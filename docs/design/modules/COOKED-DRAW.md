@@ -197,8 +197,16 @@ the state file it already writes:
   driven by its XCUITest orientation gesture.
 
 After each row, the route must present at the current extent with the cooked set still drawn through the direct
-path. The locked-console engine-state rows do not depend on the XCUITest gesture. If the gesture needs an unlocked
+path. The engine-state rows do not depend on the XCUITest gesture. If the gesture needs an unlocked
 console, only the rotation row is recorded with that reason.
+
+Console state is recorded before and after every simulator mode as witness metadata. Locked, unlocked and changed
+states are accepted, and unavailable observations retain their reason. No manual-lock wait or lock state refusal
+belongs in these checks. M1.7/M1.8 prove independence from desktop capture with denied read-only Screen Recording
+preflights before and after under the identified launcher/harness permission identity. Missing, failed or granted
+preflights leave that proof incomplete. The route continues to use engine state and simulator output; no grant is
+requested. The builder replaces the lock admission in `scripts/cooked_draw_ios_sim.py` and updates the obsolete
+manual-lock regression cases in `scripts/test_t2_capture.py`.
 
 **What the simulator pan can show.** Before T2-CAPTURE M2, simulator frames come only from `simctl` screenshots or a
 `simctl` recording. Both are sampled, and neither is tied to submitted frames. The evidence records the following:
@@ -336,8 +344,9 @@ that route unchanged. M2 also adds the submitted-frame temporal proof that M1's 
   cross-partition exactness assumption is refuted by the checkpoint; the revised oracle is not yet qualified.
 - The simulator draws the rest of the cooked pipelines (ASTC or portable textures, 3D volume, casters) without
   further gaps.
-- `simctl` screenshots of a headless simulator work while the console is locked, with no OS grant.
-- The XCUITest orientation gesture works on a locked console. If it doesn't, only the rotation row is attended.
+- `simctl` screenshots of a headless simulator work without desktop capture, with denied Screen Recording
+  preflights and observed console state. Recorded locked runs remain capability witnesses.
+- The XCUITest orientation gesture may need an unlocked console. If it does, only the rotation row is attended.
 
 ## Adjacent gap
 
