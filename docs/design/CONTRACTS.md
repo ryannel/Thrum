@@ -261,12 +261,10 @@ bed correspondence. The initial shallow HLL has full-cell support on matching te
 capacity profile may have source-triangle-clipped partial cells. A visual seam, foam or residual may only change that
 support within its declared cue/error contract and cannot silently grant physical water or hide an uncovered ray.
 
-G3t M9 is planned delivery within V2 of one determinant/class/range authority shared by supported synthetic
-paths and the experimental mixed-mesh bucket consumer. V2 preserves admitted raster semantics independently of
-facing sign: legacy scene-wide two-sided policy, open/unknown and near-singular meshes cannot silently become
-back-culled. Shared ranges retain each path's direct order and off-camera shadow membership. Migrating the private
-bucket consumer does not qualify its mixed-mesh route. The [G3t design](modules/APPLE-TILE.md) owns the scoped
-mechanism/proof; independent review is owed before implementation.
+V2 retains determinant/membership/facing ownership and established raster semantics independently of facing sign:
+legacy scene-wide two-sided policy, open/unknown and near-singular meshes cannot silently become back-culled.
+Preserve direct order and off-camera shadow membership. G3t's scoped re-plan does not refactor shared ranges or
+private buckets; any future consolidation belongs to V2/G3c and does not qualify mixed-mesh rendering by itself.
 
 For each view/provider, retain the sample time and transforms of the image actually used as history. This is not
 necessarily tick n-1, the preceding host frame, or the last OS-displayed image. P4/E1/V5 and material animation own

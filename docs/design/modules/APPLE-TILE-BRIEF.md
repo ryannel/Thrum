@@ -1,17 +1,19 @@
 # Apple tile recipe brief (G3t)
 
-9 November 2026. Commissioned by the [build order](../../BUILD-PLAN.md#active-gate-order-and-budgets),
-under the [architecture responsibility map](../ARCHITECTURE-BRIEF.md#proposed-module-map).
+9 November 2026. Scoped re-plan explicitly recommissioned by the lead after two failed design reviews, under the [build order](../../BUILD-PLAN.md#active-gate-order-and-budgets)
+and the [architecture responsibility map](../ARCHITECTURE-BRIEF.md#proposed-module-map).
 This brief is the input to independent design review; it states requirements rather than selecting mechanisms.
 
 The same reusable renderer must draw the cooked V1 valley on Apple hardware and portable WebGPU. Apple should
-avoid unnecessary external attachment traffic, upload copies and repeated per-frame work while preserving the
+derive attachment storage from actual readers and supply G4's native boundary while preserving the
 portable image, lighting meaning, interpolation, visibility and temporal history. Chrome remains portable.
 The target is this M3 Max; the iPhone simulator proves function only. Physical-device measurements stay owed.
 
 G3t owns recipe selection in the existing generation registry, graph-derived attachment storage, scene/present
-dataflow, upload transport, internal instance transport, light-list execution and the isolated Apple feature
-handoff. It must integrate with the existing visibility owner rather than creating another culler. F1/platform
+dataflow, a replaceable pre-tone scene-linear input and the isolated Apple feature handoff. Upload/instance
+transport, expanded light-list execution, scratch sharing and mirrored-range consolidation are deferred optimizations,
+not prerequisites of this scoped G4/Mac M3 commission. Existing semantics must survive unchanged.
+It integrates with the existing visibility owner rather than creating another culler. F1/platform
 owns lifecycle, device and surface; V1/FrameHost owns submissions, slots, completion and retirement; W1 owns world
 state; V2 owns visibility and draw membership; V3 owns light/material meaning; V4/G4 owns reconstruction and display.
 
@@ -23,8 +25,8 @@ Required outcomes:
   have prepared portable fallbacks. Required resources and pipelines exist before local readiness.
 - Attachment loads/stores and transient eligibility follow actual readers, including occlusion, capture and future
   reconstruction. Reduced logical traffic must not be reported as measured physical bandwidth.
-- Upload writes cannot race in-flight GPU reads. Dirty changes survive skipped frames and slot reuse. Compact
-  transport must retain every value that supported shader consumers use, including supplied normals and history.
+- Upload writes cannot race in-flight GPU reads. Dirty changes survive skipped frames and slot reuse. Retain all
+  admitted values, supplied normals and history; this commission requires no transport/layout rewrite.
 - Light overflow and mirrored/degenerate rasterization preserve established renderer semantics. Cost/scaling rows
   must expose CPU fallback and validation work rather than concealing them.
 - G4 receives one prepared, generation-owned native-feature boundary with graph resources, a portable fallback,
@@ -38,6 +40,9 @@ boundary requires otherwise; register actual dependencies and narrowly justify a
 
 Sequence shared capture first: APPLE-TILE M0 needs `T2-CAPTURE:M0`, then adds its own linear recipe comparison
 through that owner. Offscreen work proceeds independently of PLATFORM-RUNTIME-MAC M2's attended panel cadence.
+T2 Mac M0 and Chrome M1 are done. Earlier simulator diagnostic function can use labelled interim simctl
+observations; final cooked simulator function waits for COOKED-DRAW M1. Stronger simulator submitted/runtime-motion
+proof stays with T2 M2 and does not gate the G4 native boundary or Mac M3.
 That does not close Mac cadence, diagnose the parked atmosphere crossing or commission the complete native recorder.
 Record live/display-only qualification separately; do not replace it with callbacks or offscreen timing.
 

@@ -33,8 +33,11 @@ Milestone: none started (plan awaiting re-review and seam rulings) · Updated: 2
 Now: revision 5 replaces the archive options with the owner's direction (since 2026-11-07).
 Next: review of revision 5, Thrum Core's reading, then landing and seam rulings.
 Blocked: APPLE-TILE is parked after [two failed design reviews](../../evidence/APPLE-TILE/design-review-2.md).
-All G3t handoffs below wait for explicit lead recommission, a scoped re-plan resolving its seven findings, fresh
-independent design approval and delivery of the named milestone; T2 completion alone cannot unblock G4.
+The lead has explicitly commissioned the scoped re-plan answering its seven findings; fresh independent design
+approval/unpark through the loop and delivery of each named milestone remain owed. T2 M0/M1 are done and cannot
+automatically unblock G4. M4–M9 of G3t are removed as deferred optimizations. G4 needs the retained pre-tone input
+seam and native segment, not fused SDR tone/present, compact rows, GPU overflow or shared mirrored ranges.
+COOKED-DRAW owns cooked draw.rs capability/history changes; G4 seam 3 must preserve those on integration.
 Other code commissions wait for the atmosphere graph checkpoint `d2a5342` on `codex/g3s-stars-main-wip`, for interface reads only, pending the reviewed night baseline and the exact final check on main, and Thrum Core approval of the exact seams in the
 design's *Seams* list. Some milestones have further waits:
 - M4 and M6 wait for G3t M3.
@@ -81,9 +84,9 @@ noise threshold and labels. Additions:
 | Sky and star motion at infinity | Atmosphere owner, by G4 request (seam 4) | `atmosphere/sky.wgsl`, star pass | Atmosphere plan |
 | Third forward target and mip bias | G4, with the G5, asset and atmosphere owners' review (seam 3) | `synthetic.rs` forward targets, `contribution.rs:56`, `thrum-asset-gpu/src/draw.rs`, `material.rs`, `atmosphere/gpu.rs` | All forward contributors |
 | History protocol | G4, with the C07 owner's review (seam 1) | `history.rs`, `runtime.rs` | The existing drop contract; G3t M10–M11 for native frames |
-| Reconstruction | G4 | new `reconstruction/{mod,taau,jitter,exposure,reference}.rs`, `taau.wgsl` | Present input (G3t M3) |
+| Reconstruction | G4 | new `reconstruction/{mod,taau,jitter,exposure,reference}.rs`, `taau.wgsl` | Pre-tone linear input (G3t M3) |
 | Render extent and transitions | G4, with the frame-runtime and G3b owners' review (seam 5) | `runtime.rs:39`, `runtime/preparation.rs`, `render_actor.rs`, `examples/v1-game-ios/src/ios/render.rs:24` | G3t M11 provider rebuild |
-| EDR present | G4 | `present.rs`, `present.wgsl` | G3t M3 present pass |
+| EDR present | G4 | `present.rs`, `present.wgsl` | G3t M3 pre-tone input; G4 owns EDR display math |
 | Platform display record, EDR layer, thermal | G4, with the platform owner's review (seam 6) | `thrum-app/src/app/device.rs`, `app.rs`, `display_link.rs`; iOS `ios.rs`, `ios/render.rs` | G3b lease (untouched) |
 | Governor and missed ticks | G4 (seam 7) | new `governor.rs`; `runtime.rs` (missed-tick count, value commit) | C04 |
 | MetalFX provider | G4 | new `apple_tile/metalfx.rs` | G3t `apple_tile/segment.rs` |
@@ -106,9 +109,9 @@ Review order:
 | G4 milestone | Can start when | Runs in parallel with |
 |---|---|---|
 | M1 jitter, matrices, motion | G3t M0, atmosphere checkpoint, seams 2 and 4 | G3t M1–M3 |
-| M2 temporal inputs, history protocol | M1, G3t M1 (eligibility report), G3t M2 (shares `runtime.rs`), seams 1 and 3 | G3t M3–M9 |
-| M3 TAAU at native scale | M2, **G3t M3** (TAAU output feeds the present pass) | G3t M4–M9 |
-| M4 surface extent and transitions | M3, **G3t M3**, seam 5 | G3t M4–M10 |
+| M2 temporal inputs, history protocol | M1, G3t M1 (eligibility report), G3t M2 (shares `runtime.rs`), seams 1 and 3 | G3t M3/M10–M11 (sequential integration for shared files) |
+| M3 TAAU at native scale | M2, **G3t M3** (TAAU output feeds the retained pre-tone input) | G3t M10–M11 |
+| M4 surface extent and transitions | M3, **G3t M3**, seam 5 | G3t M10–M11 |
 | M5 dynamic scale | M4 | M6 |
 | M6 EDR on macOS | **G3t M3**, seam 6 | M5 |
 | M7 governor | M5, seam 7 | M6 |
@@ -120,8 +123,10 @@ Review order:
 **Handoffs from G3t**, with their contracts in [G3t's plan](APPLE-TILE-PLAN.md#sequence-and-dependencies):
 - *G3t M0 → all checks.*
 - *G3t M1 → M2.*
-- *G3t M3 → M4 and M6.* This is the first producer/consumer handoff: the present pass reads one scene-linear input
-  with exposure and H, and the surface is bound at execute time.
+- *G3t M3 → M3/M4/M6.* One replaceable pre-tone scene-linear input carries matching exposure, extent and
+  sample/generation identity. The existing SDR tone-to-Rgba8Unorm-to-present path and nearest mapping remain.
+  G4 inserts TAAU/MetalFX there and owns the qualified EDR branch, headroom transform and transition filtering.
+  The surface is bound at execute time; no fused-shader feasibility or traffic saving is inherited from G3t.
 - *G3t M11 → M8.* The first native handoff, unlocked by G3t D10.1–D11.3.
 
 G3t M11 proves replacement with bounded provider fixtures; M12 records current readers and fixed extents. Neither
@@ -193,7 +198,7 @@ Work:
 ## M3 TAAU at native scale in game: pending
 
 This is the first in-game reconstruction on portable. It runs at the current 640×360 extent, after G3t M3, so
-TAAU's output feeds G3t's present pass directly and nothing is reworked.
+TAAU's linear output feeds G3t's pre-tone input; the existing SDR transform still runs once.
 
 Done when:
 - [ ] D3.1 TAAU runs at scale 1.0 in the V1 game on Mac (forced portable) and in Chrome on the route. The present pass
@@ -411,19 +416,21 @@ Work:
 
 That is **22.5 build days**, plus 1–2 days of review and seam turnaround.
 
-**Combined date (G3t 15.5 + G4 22.5 build days, with the handoffs above).**
-- *Two agents, one per plan:* about **23–24 working days** from seam approval to both paired records. G4 waits for
-  G3t M3 around day 6 and for G3t M11 around day 13.
-- *Four agents on disjoint files, following both parallel tables:* about **15–16 days**, with M10 on its own files.
-- *Not in the date:* U1, the upstream contribution, is later and does not gate V1; its timing depends on #8526's
-  review.
-- *Largest date risks:* G3t M2–M3 (frame runtime), seam 1, the third forward target across three owners, and the
-  render-extent change. That change raises pixel work 9× at the window and 33× full screen before the governor
-  lands.
+**Combined schedule.** The earlier G3t 15.5-day / G4 22.5-day combined estimates predate the scoped re-plan and
+are withdrawn. G4 can build against the named handoffs after delivery and approval; M4–M9 of G3t are not gates.
+Fresh sizing belongs to G4's own re-plan. G3t M2/M3 runtime work, G4's history/third-target seams, extent changes and
+native boundary remain risks; no delivery date follows from a documentation change. U1 remains outside V1 and
+requires the existing owner authorization for each public post.
 
 Revision 1 said 9.5–11.5 days for G4. Reviewers estimated 13–16 days.
 
 ## Log
+
+- 2026-11-09 Scoped APPLE-TILE re-plan consumer reconciliation only: G3t M3 now supplies a pre-tone colour/exposure
+  seam while retaining SDR shaders/intermediate. G4 owns its EDR branch/filtering and later arithmetic qualification.
+  G3t M4–M9 are removed, leaving M10/M11 native providers and M12 integrated proof; revised dependency table only,
+  not a full G4 re-plan or acceptance. Preserve concurrent COOKED-DRAW ownership in draw.rs. Independent design
+  review of these handoffs is owed to the loop.
 
 - 2026-11-09 Reconciled G3t producer handoffs only: G3t M11 uses bounded extent fixtures and M12 fixed extents,
   removing reverse G4 prerequisites. G4 owns requalification with real reconstruction readers/live scale steps.

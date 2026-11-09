@@ -3,188 +3,166 @@
 Design: [APPLE-TILE.md](APPLE-TILE.md) · [Brief](APPLE-TILE-BRIEF.md) ·
 Done when: [APPLE-TILE-DONE.json](APPLE-TILE-DONE.json) owns criteria and proof status.
 [Boundary](../decisions/G3T-METAL-BOUNDARY.md) and C04/C06/C07/C08/C12 govern.
-Reviews: [design review 2 at `224b58a1`](../../evidence/APPLE-TILE/design-review-2.md): DESIGN CHANGES (7 findings). Second failed design review; module parked by the lead. These findings remain unresolved.
-Milestone: M0 A repeatable offscreen valley proves the comparison path (parked)
-Now: 9 November parked after two failed design reviews; no implementation or new runtime proof claimed.
-Next: await an explicit lead commission for a scoped re-plan addressing the seven second-review findings, then fresh independent design approval before any build.
-Blocked: APPLE-TILE design is parked. T2 completion does not restart it. On recommission, M0 still needs `T2-CAPTURE:M0`; M1 additionally needs T2 Chrome M1 and simulator M2. G3t M2/M3 actual-window observer/grant findings remain unresolved. Mac M2 can qualify the current path independently; Mac M3 alone waits here for post-change requalification.
+Reviews: [design review 2 at `224b58a1`](../../evidence/APPLE-TILE/design-review-2.md): DESIGN CHANGES (7 findings); independent review of this scoped re-plan is owed to the lead/loop.
+Milestone: M0 A repeatable offscreen valley proves the comparison path (parked; state unchanged)
+Now: 9 November lead-commissioned scoped re-plan answers all seven findings by retaining needed dataflow/boundary work and cutting optional optimizations. No new runtime proof.
+Next: fresh independent design review through the loop, which settles unpark; then build the retained milestones in order.
+Blocked: M0 remains parked pending loop design approval/unpark. T2 M0/M1 are done, not an automatic restart. M2/M3/final window proof needs attended session and OS-capture grant. Only M12 cooked simulator function needs COOKED-DRAW M1; T2 simulator M2 is not a prerequisite.
 
 ## Sequence and dependencies
 
-The retained build order selects G3t after G3b functional work, but the module is currently parked.
-The lead must explicitly recommission a scoped design re-plan and obtain independent design approval before build. One builder works
-sequentially; no parallel-agent commission is implied. Each milestone follows the preceding one. M0 needs
-`T2-CAPTURE:M0` for shared submitted-output/sequence capture; G3t still owns scene-linear checkpoint and recipe
-comparison extensions through that capture owner. M2 also needs `PLATFORM-RUNTIME-MAC:M1` (already done)
-for the loss/abandon boundary it must preserve. M1 needs `T2-CAPTURE:M1` and `T2-CAPTURE:M2` for the first
-new Chrome and simulator visual proofs; keep M0's existing Chrome smoke separate. At M1 start, retain the Chrome
-pre-change portable baseline before changing its renderer, using the qualified shared tap and pinned prior source.
-Existing main supplies committed pages, frame host, atmosphere, cooked contributions, moving-route control and
-supported visibility. M9 delivers the one shared V2 class/range mechanism and migrates the private bucket
-consumer; no existing supported class ranges or future mixed-mesh qualification are assumed. The legacy raster
-policy/order stays intact, including two-sided mirrors and open meshes.
+Retained sequence: **M0 → M1 → M2 → M3 → M10 → M11 → M12**. IDs are kept for consumers. Removed M4–M9
+are deferred work, not completed milestones. One builder integrates sequentially; this task launches no agents.
+M0 consumes accepted `T2-CAPTURE:M0`; M1 consumes accepted `T2-CAPTURE:M1`. G3t adds scene-linear checkpoints
+through the shared tap. M2 also names delivered `PLATFORM-RUNTIME-MAC:M1`. Before M1 changes rendering, retain
+Mac and Chrome same-target portable baselines using their qualified target taps and pinned source/cooked inputs.
 
-G4 consumes M0 proof tools, M1 eligibility, M3 direct present input and M11 prepared native-provider lifetime/reset/
-timing. M11 uses bounded extent replacement fixtures; M12 uses fixed extents and current readers. Neither waits back
-on G4. G4 must later requalify actual reconstruction readers and dynamic scale transitions. Its full prose-to-JSON
-migration belongs to its own planning commission; this task does not pretend its old prose is machine-readable.
+Mac M2 qualifies the current path after T2 M0 independently. Mac M3 needs Mac M2 by module order and
+`APPLE-TILE:M3`: T2 M0/M1 (both done), then G3t M0–M3, including attended D2.5/D3.5 and simulator diagnostic
+function checks. **Neither COOKED-DRAW M1 nor T2 simulator M2 is on that chain.** Mac M3 reruns its complete
+runtime-motion and capture-OFF built-in-panel cadence protocols plus real-window tap/tooling preflight on the changed
+build. G3t never waits back on Mac M2/M3; old results qualify only their recorded builds.
 
-Mac M2 qualifies the current surface path after T2 M0 without waiting here. New Mac M3 explicitly needs
-`APPLE-TILE:M3` and reruns the full M2.1/M2.2 motion/cadence protocols with windowed-tap/tooling revalidation
-on the changed path. That later milestone is blocked on this parked design, transitively including T2 M1/M2 and
-G3t M0–M3. G3t D2.5/D3.5 retain their functional actual-window obligations; their observer/grant defect in the
-second review is unresolved. No reverse Mac dependency is added to G3t.
+G4 receives M0 proof tools, M1 eligibility, M3 pre-tone linear input/exposure binding and M11 native
+provider lifetime/reset/timing. G4 reconstruction inserts before the retained SDR tone stage; G4 owns the later EDR
+branch and its display semantics. M11 bounded extent fixtures and M12 fixed extents/current readers do not wait for
+G4; G4 later reruns actual reconstruction-reader/scale-transition proofs. Full G4 JSON migration remains its own commission.
 
-## Carried work
+M12 alone needs `COOKED-DRAW:M1` for cooked simulator endpoint/function evidence. Earlier simulator rows use the
+existing diagnostic scene and `simctl` interim observations, with no submitted/runtime-motion claim. This preserves
+T2 rollout rather than waiting on or implementing its blocked M2. G5 owns cooked residency/draw and COOKED-DRAW's
+changes to `DeviceCapabilities`, `SceneSurface` and `thrum-asset-gpu/src/draw.rs`. Extend the same registry, preserve
+selected direct/indirect paths and path-independent history. No draw.rs classifier/layout/target refactor is
+commissioned here; keep any mechanical execution/creation-site adaptation narrow, merge sequentially and rerun
+G5's affected parity/history witnesses. G4 seam 3 handles later forward target changes in that file.
 
-- D0.3's historical creation seam remains implemented at `be252c0d` in `runtime/creation.rs`,
-  `runtime/tests/creation_sites.rs`, `capabilities.rs` and the cooked consumer. Its claim is reset to open with empty
-  evidence: rerun the diagnostic check on the integrated M0 revision and retain actual output before claiming.
-  Plan prose and earlier approvals (below) do not prove the revised M0 check.
-- D0.4 stays a builder pass from the [8 November traffic probe](../../evidence/render/G3T-TRAFFIC-PROBE-2026-11-08.md).
-  It establishes a per-encoder replay method, not live/per-attachment bytes or a new timing baseline. Original bulk
-  captures/screenshots are absent here; the retained transcription/limits are the available evidence.
-- The old M0 never closed. M0 is now parked; all item claims are retained. Only Mac handoff references change below. Initial `fails`/`replans` were zero:
-  historical conditional design reviews and missing screen slots were not failed claimed milestone reviews. M0 has
-  `replans: 2` after shared-capture sequencing and the first design re-plan. M2/M3/M12 now also have
-  `replans: 2` for the Mac M3 handoff correction; M1/M4–M9 retain `replans: 1`. M0 is parked and M1–M12
-  remain open with `fails: 0`; unchanged M10/M11 retain their counters. D0.4 is the only
-  retained pass. This is a design re-plan, not a failed claimed-milestone review.
+## Disposition of second-review findings
+
+| Finding | Resolution in this re-plan | Decisive proof / boundary |
+| --- | --- | --- |
+| 1 CPU/GPU f32 exactness and fusion feasibility | Cut fusion, compact rows and expanded GPU ranking. Keep locked shader math mode, existing shader arithmetic/entry points and the Rgba8Unorm quantization boundary. G4 receives a pre-tone input seam, not a fused shader. Replace diagnostic blend arithmetic with exact stateful load/select/store. | D0.2 retains full-frame two-pass SDR/sRGB/letterbox controls; D3.1/D3.2 identity rebinding must be exact. D10.1 first proves a small native copy/select fixture before route integration; D10.2 readbacks/twin/negative controls are exact. Future fusion/ranking requires separate feasibility evidence and reviewed semantics, never a widened metric. |
+| 2 M9 has no supported draw win / uncommissioned consolidation | Remove M9 and its shared-classifier obligation from C07/RENDERING. Preserve existing V2 policy, physical-slot order and mirror fixture. | No classifier or private bucket migration here. D0.2 omission control and retained recipe/pre-change image/order witnesses reject missing mirrors. V2/G3c owns any future consolidation. |
+| 3 No actual-window observer/grant | Name OS game-window capture, tool/process/window identity and Screen Recording permission, with explicit JSON `attended` fields. Compare settled OS window frames to T2 still/fixed references of the same paused-world state; inspect content and resized letterbox geometry. Mac M2.3 keeps same-submission tap qualification. | D2.5/D3.5 and final D12.3 require actual OS-window evidence. Dynamic OS video proves functional response only. No engine-only pass or panel claim; missing setup keeps the item open. |
+| 4 Chrome GPU overflow could close on CPU fallback | Expanded GPU builder is removed on both targets. Existing CPU overflow is an explicit retained outcome, never called GPU qualification. | D12.4 requires exact list/readback and pre-change Chrome still/fixed byte comparisons plus T2 realtime motion, actual path counts and omission controls. No GPU-32/64 claim remains. |
+| 5 Hidden Mac critical path | Preserve the already-landed Mac M2/M3 split. Remove T2 simulator M2 from G3t M1; earlier simulator checks use diagnostic endpoint/function evidence. M12 alone consumes COOKED-DRAW M1. | Dependency table above, BUILD-PLAN and Mac plan name the full chain and attended rows. Mac M2 waits only on T2 M0; Mac M3 has no simulator cooked/capture dependency. |
+| 6 Apple duplicate buffers may survive rejected pointer path | Remove M4/M5. Both recipes retain queue-ordered single buffers; no duplicate/import candidate is built or left resident. | D3.1 rejects deferred optimizations in the seam; D12.1/D12.2 reconcile actual allocations/upload bytes with the unchanged transport baseline. A future pointer candidate must include duplication in its promotion/teardown decision. |
+| 7 Exactness missing in item statements | Remove D5.2/D7.3/D8.3 with their mechanisms. Every retained ordinary image item names exact same-target scene-linear and submitted SDR comparisons; native witness is exact to its own twin. | D0.2/D1.3/D1.4/D2.3/D3.1/D3.2/D3.4/D10.2/D11.2/D12.3/D12.4 and the comparison contract; no blend allowance remains. |
+
+## Carried work and state
+
+- D0.3 creation diagnostics remain implemented at `be252c0d` in renderer creation/runtime/capabilities and the cooked
+  consumer, but its status stays open with empty evidence until its current-revision command is rerun.
+- D0.4 alone retains its builder pass and [traffic-probe evidence](../../evidence/render/G3T-TRAFFIC-PROBE-2026-11-08.md).
+  It establishes a per-encoder replay method, not a current physical-traffic gain. Missing original bulk scratch is
+  not recreated or treated as proof.
+- M0 remains `parked`; all other retained milestone states remain `open`, with zero `fails`. Each retained definition
+  revision increments `replans` once: M0/M2/M3/M12 to 3, M1 to 2, M10/M11 to 1. Removed M4–M9 have no successor
+  acceptance claim. No `*-ACCEPTED.json` is edited; the loop records definitions/proof invalidation and settles unpark.
 
 ## Proof and builder handoff
 
-Start with existing `python3 scripts/run_v1_showcase.py moving` for route smoke proof; it currently runs native
-submitted SDR and Chrome canvas captures, not scene-linear recipe comparisons. M0 consumes the T2 renderer tap
-and extends proof tooling to retain linear input, full-resolution sequences and a full-resolution same-target
-comparator, retaining the native pre-change baseline at M0 and Chrome baseline at M1 start before changing its
-renderer. Add a durable runbook with
-exact new commands when implemented; names for nonexistent commands are deliberately not used as JSON checks.
-The JSON's `ask`/`inspect` proofs require actual tests/readbacks/sequences and source tracing, not a prose assertion.
+Use [the capture runbook](../../CAPTURE.md) and implemented T2 target adapters. Mac selects `still` or `fixed`
+for exact submitted checkpoints; Chrome selects `fixed` (its adapter has no `still` switch). Both select `realtime`
+for host-time elapsed engine motion. Add the linear comparison stage
+through the same tap. Retain native/Chrome pre-change sources, compiler/shader/content/route/sample/exposure/format
+identities and exact full-resolution images. Never silently refresh a baseline. Compare deterministic matching samples;
+realtime scheduling alone does not supply byte-matched frame identities. Existing
+`python3 scripts/run_v1_showcase.py moving` remains endpoint/no-history route smoke only.
 
-Use scratch `tmp/g3t-<milestone>/`, selected evidence `docs/evidence/render/G3T-<milestone>-<date>.md`. Pin build,
-shader, route and cooked identities and retain decisive artifacts under the storage rules. Unavailable tools/targets
-stay open, not successful skips. Acquire the GPU lock for GPU checks; no physical replay or screen automation is part
-of this planning task. Use normal-speed sequence review; physical swaps remain Mac qualification M2/M3 proof.
+Simulator uses `simctl` endpoint/function capture with recorded coverage and timing limits. No row in this plan
+claims simulator exact submitted output or elapsed-time engine motion; those stay with T2 M2. M12's cooked scene
+must wait on its owner COOKED-DRAW, never build a substitute. New commands are documented only when implemented.
+Run GPU work under `gpu` exclusivity; no GPU or screen automation is part of this planning turn.
 
-The design's mechanism-specific comparison table requires exact same-target pre-blend scene-linear/SDR bytes,
-including pre-change portable controls. M3 preserves SDR quantization in the fused shader; native blend vs twin alone
-allows 1 ULP f16/channel. Small-omission light/mirror/night-star negative controls must fail. Chrome-only route checks
-now also require full-resolution baseline comparisons and source/dependency/readback proofs. G7's coarse-grid
-smoke evaluator stays unchanged. Numeric performance/allocation figures remain baselines/tripwires. A safe candidate
-may close unpromoted except that M8 must GPU-qualify every named overflow case; CPU fallback cannot satisfy D8.1.
-Any acceleration promotion requires measured win, retained quality, complete validation/admission/fallback CPU cost,
-resident fallback bytes and comparable sustained-run thermal evidence under C12.
+D2.5/D3.5/D12.3 declare **attended setup** in JSON: unlocked active Mac session and Screen Recording permission for
+the chosen OS capture process. Record actual window/PID/tool and compare settled OS
+window evidence to T2 `still`/`fixed` reference images at matching paused-world controls/content/extent. Inspect content
+and letterbox in content-pixel coordinates; these are matched states, not the same submission. Mac M2.3 owns separate
+windowed-tap integration/correspondence, which this observer does not require or qualify. Dynamic OS video with controls
+proves response only. Agent runs/reviews after setup; do not automate grant changes. Missing setup leaves these rows open
+while unblocked work proceeds. Mac M3 separately owns attended Instruments/panel qualification with capture OFF.
 
-Ownership in implementation: renderer graph/runtime/capabilities and isolated `apple_tile` changes stay in their
-existing crates; update native/iOS/browser/capture consumers sequentially. V2 keeps mesh/membership/facing ownership;
-V3 keeps overflow ranking; G4 keeps reconstruction/display/archives. No contract changes during a build: re-plan
-producer and consumers first. Register dependencies only when actually introduced, and justify each unsafe adapter.
+Use `tmp/g3t-<milestone>/` for scratch and selected `docs/evidence/render/` records under the storage rules. Retain
+lossless sources, provenance, exact diffs and 1x views; inspect full frames and native-size crops for Sun, stars,
+local lights, shadows, mirrors, cut/skip/history and replacement. Exact bytes do not replace visual review.
+Performance baselines use capture OFF, paired capture ON observer-cost arms, A/A and alternating recipes. Any
+promotion needs a measured complete-frame win with full fallback/validation/resident costs and comparable sustained
+thermal records (at least ten minutes per recipe after warmup, a measurement method rather than an invented budget).
+Physical replay counters may remain unmeasured, and physical iPhone/cadence qualifications remain separate.
 
 <a id="m0-proof-route-counters-and-capture-probe-pending"></a>
 
 ## M0 A repeatable offscreen valley proves the comparison path: parked
 
-Outcome criteria: D0.1, D0.2, D0.3, D0.4, D0.5 in the done-when file.
+Outcome criteria: D0.1–D0.5 in the done-when file.
 
-- [ ] Extend existing route/capture proof without changing G7 content/evaluator; preserve and rerun creation diagnostics; retain counter limits.
-- [ ] Record actual proof and independent verdict where required; run scoped checks and `./dev check` before claiming.
+- [ ] Extend T2 linear comparison and full-resolution controls; retain pre-change sources and rerun creation diagnostics.
+- [ ] Retain actual target proof and run scoped checks plus `./dev check` before claiming.
 
 ## M1 The valley selects a recipe and stores only actual future inputs: open
 
-Outcome criteria: D1.1, D1.2, D1.3, D1.4, D1.5 in the done-when file.
+Outcome criteria: D1.1–D1.5 in the done-when file.
 
-- [ ] Add truthful registry/override and per-variant eligibility; prepare allocations; prove actual storage and fallback on named targets.
-- [ ] Record actual proof and independent verdict where required; run scoped checks and `./dev check` before claiming.
+- [ ] Add truthful registry/override, per-variant storage and ready fallback; preserve COOKED-DRAW facts/selection. Prove Mac/Chrome exact bytes and simulator diagnostic function.
+- [ ] Retain actual target proof and run scoped checks plus `./dev check` before claiming.
 
 ## M2 The existing frame lifecycle runs through one split graph: open
 
-Outcome criteria: D2.1, D2.2, D2.3, D2.4, D2.5 in the done-when file.
+Outcome criteria: D2.1–D2.5 in the done-when file.
 
-- [ ] Merge graph/late surface binding and preserve healthy skip, lost abandon, history and iOS lease behavior.
-- [ ] Record actual proof and independent verdict where required; run scoped checks and `./dev check` before claiming.
+- [ ] Merge graph and late surface binding; preserve refusal/loss/background/history rules. Complete attended OS-window matched-state reference comparisons and functional recovery.
+- [ ] Retain actual target proof and run scoped checks plus `./dev check` before claiming.
 
-## M3 Present consumes scene-linear colour directly: open
+## M3 G4 can replace the pre-tone linear input without changing SDR output: open
 
-Outcome criteria: D3.1, D3.2, D3.3, D3.4, D3.5 in the done-when file.
+Outcome criteria: D3.1–D3.5 in the done-when file.
 
-- [ ] Move tone/display to present, keep prepared linear capture and update every pass-timing consumer.
-- [ ] Record actual proof and independent verdict where required; run scoped checks and `./dev check` before claiming.
-
-## M4 Apple slots receive pending changes while portable keeps queue ordering: open
-
-Outcome criteria: D4.1, D4.2, D4.3 in the done-when file.
-
-- [ ] Prepare Apple per-slot buffers/bind groups and reconcile all pending changes; retain portable single-buffer queue ordering and record upload-byte deltas.
-- [ ] Record actual proof and independent verdict where required; run scoped checks and `./dev check` before claiming.
-
-## M5 Apple upload transport is safe under completion and fallback: open
-
-Outcome criteria: D5.1, D5.2, D5.3 in the done-when file.
-
-- [ ] Implement narrowly reviewed shared-buffer import/completion rules and explicit safe fallback; measure before promotion.
-- [ ] Record actual proof and independent verdict where required; run scoped checks and `./dev check` before claiming.
-
-## M6 Only safely ordered scratch is shared between slots: open
-
-Outcome criteria: D6.1, D6.2 in the done-when file.
-
-- [ ] Share only proven scratch lifetimes and retain history/readback/occlusion ownership; test delayed consumers.
-- [ ] Record actual proof and independent verdict where required; run scoped checks and `./dev check` before claiming.
-
-## M7 Compact internal rows preserve supplied values and motion: open
-
-Outcome criteria: D7.1, D7.2, D7.3, D7.4 in the done-when file.
-
-- [ ] Pack private 128-byte rows and update every shader consumer while keeping public admission and supplied normals.
-- [ ] Record actual proof and independent verdict where required; run scoped checks and `./dev check` before claiming.
-
-## M8 GPU light lists preserve the established lighting choice: open
-
-Outcome criteria: D8.1, D8.2, D8.3 in the done-when file.
-
-- [ ] Extend GPU binning with established strongest-32 ranking; exact CPU oracle, visible fallback and dense-light proof.
-- [ ] Record actual proof and independent verdict where required; run scoped checks and `./dev check` before claiming.
-
-## M9 Mirrored ranges preserve existing visibility ownership: open
-
-Outcome criteria: D9.1, D9.2, D9.3 in the done-when file.
-
-- [ ] Deliver shared V2 ranges, migrate supported/private bucket consumers, and preserve admitted raster policy/order; validate open/back-side/interior meshes, synthetic slot 5060, shadows and ties.
-- [ ] Record actual proof and independent verdict where required; run scoped checks and `./dev check` before claiming.
+- [ ] Expose one colour/exposure input with exact identity substitution; keep tone/intermediate/present arithmetic. Migrate pass-name timing and prove attended window function.
+- [ ] Retain actual target proof and run scoped checks plus `./dev check` before claiming.
 
 ## M10 A stateful native segment composes inside one submission: open
 
-Outcome criteria: D10.1, D10.2, D10.3, D10.4 in the done-when file.
+Outcome criteria: D10.1–D10.4 in the done-when file.
 
-- [ ] Implement reviewed whole-encoder segment and stateful twin; prove ordering, lifetime, discard/reset and iOS race.
-- [ ] Record actual proof and independent verdict where required; run scoped checks and `./dev check` before claiming.
+- [ ] Start with exact same-submit copy/select fixture and twin. Then prove route/history, held lifetime, discard/reset and diagnostic simulator background race.
+- [ ] Retain actual target proof and run scoped checks plus `./dev check` before claiming.
 
 ## M11 Native providers survive replacement and expose truthful timing: open
 
-Outcome criteria: D11.1, D11.2, D11.3 in the done-when file.
+Outcome criteria: D11.1–D11.3 in the done-when file.
 
-- [ ] Prove generation/extent replacement and prepared rejection/recovery, then report native timing with clock limits.
-- [ ] Record actual proof and independent verdict where required; run scoped checks and `./dev check` before claiming.
+- [ ] Use bounded extent fixtures and prepared twins for replacement/rejection/errors, complete generation retention and explicit clock-domain timing.
+- [ ] Retain actual target proof and run scoped checks plus `./dev check` before claiming.
 
 ## M12 An integrated record states qualified wins and remaining targets: open
 
-Outcome criteria: D12.1, D12.2, D12.3, D12.4, D12.5, D12.6 in the done-when file.
+Outcome criteria: D12.1–D12.6 in the done-when file.
 
-- [ ] Rerun integrated route on both recipes/Chrome/simulator, measure fixed extents/ablations, record outstanding device/display rows.
-- [ ] Record actual proof and independent verdict where required; run scoped checks and `./dev check` before claiming.
+- [ ] Rerun retained mechanisms and full workload, actual final Mac window, exact Chrome baseline, and COOKED-DRAW-dependent simulator function; record sustained costs and owed qualifications.
+- [ ] Retain actual target proof and run scoped checks plus `./dev check` before claiming.
 
 ## Design review handoff
 
-On explicit lead recommission, resolve the second review findings, then give a fresh `/review-milestone` reviewer only [APPLE-TILE-BRIEF.md](APPLE-TILE-BRIEF.md) first. It derives the required
-capabilities before reading this design/JSON and actual consumers. Review the whole-encoder C06 amendment, unchanged
-skip/abandon semantics, private compact layout, supplied normals, mandatory GPU overflow qualification, shared V2
-range/raster authority, resident fallback cost, thermal/validation promotion rows, actual Mac window proofs and
-post-M3 Mac cadence ordering. Check the lack of G4 cycles. Verify every JSON proof catches the wrong substitutes.
-Record a new design verdict on Reviews;
-no historical approval or self-review substitutes for that read. The module stays parked until that recommission
-and approved re-plan; this task launches no agents and does not commission the outstanding G3t redesign.
+Fresh independent review is owed to the loop; no agents can be launched in this turn. Start from
+[the revised brief](APPLE-TILE-BRIEF.md), derive its capabilities, then read design/JSON and actual consumers.
+Check each disposition above, unchanged shader/quantization assumptions, exact native copy/select feasibility,
+C06 whole-encoder ordering/initialization, prepared resource/twin cost and discard/reset/loss rules. Check the G4
+pre-tone seam in its consumer documents, COOKED-DRAW ownership, target capture modes, explicit window grants and
+Mac critical path. Judge whether all proofs reject omitted work. No owner-only decision is required by this scoped
+re-plan. Approval, unpark and milestone acceptance belong to the loop; this planner claims none of them.
 
 ## Log
+
+- 2026-11-09 Lead explicitly recommissioned this scoped re-plan after two failed design reviews. Answered all seven
+  second-review findings in the disposition table; cut fused present and M4–M9 instead of adding arithmetic or
+  ownership prerequisites. Retained SDR shaders/quantization, exposed G4 pre-tone input, and selected an exact native
+  copy/select stand-in. Updated producer/consumer documents, capture modes/attended grants and Mac critical path.
+  T2 M0/M1 are delivered; earlier simulator rows use diagnostic interim function, final cooked function waits only
+  on COOKED-DRAW M1. Preserved every retained milestone state and D0.4 evidence; incremented retained replan counters.
+  No runtime/GPU proof, new review, commit, acceptance edit or unpark in this turn. Fresh loop design review is owed.
+  Validation: `RUSTC_WRAPPER= ./dev check-docs` passed (595 Markdown files, 2595 local links, 30 module records).
+  The wrapper override avoids sandbox-denied sccache; no check was bypassed. Loop schema/planner-delta and dependency
+  checks passed; retained states, claims and D0.4 evidence are unchanged, and no acceptance record was touched.
 
 - 2026-11-09 Recorded the lead's park after [design review 2](../../evidence/APPLE-TILE/design-review-2.md)
   returned DESIGN CHANGES (7 findings) at `224b58a1`, following the first failed review. Set M0 `state` to

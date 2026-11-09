@@ -41,19 +41,22 @@ continue unblocked work. Verified checkpoints are pushed to main (owner, 6 Nov p
 
 ## Active work and gates
 
-**[T2 unattended capture M0](design/modules/T2-CAPTURE-PLAN.md) is claimed for lead review.**
-The builder proved exact submitted images and elapsed-time motion on locked-console Metal without a desktop grant;
-[full evidence](evidence/render/t2-capture-m0/README.md) includes bounded failure controls and observer cost. G3b Mac M2 qualifies the current surface path after T2 M0 only. New Mac M3 needs G3t M3 for
-fresh post-change motion/cadence; that later obligation is blocked on parked APPLE-TILE. M2's built-in-panel cadence stays open with
-**attended setup** (unlocked active panel and any Instruments authorization). Screen Recording is no longer required
-for engine pixels. T2 design review 3 clears M0 to build; independent review of the implemented M0 claim is owed. The Mac M2 builder
-owns real-window tap qualification (M2.3) and bounded trace-finalization diagnosis (M2.4); M2.2 cadence uses capture
-OFF, with capture-ON content/observer arms separate. APPLE-TILE is parked after two failed design reviews and
-cannot restart on T2 completion. The lead must
-explicitly recommission a scoped re-plan resolving its seven findings, followed by fresh independent design approval
-before build. G3t M0 retains its T2 M0 dependency and has no reverse Mac cadence dependency. The G3s sunset
-crossing stays parked; G2S is closed. The complete native Metal recorder remains a later performance candidate;
-the dedicated performance phase owns numeric tuning.
+**[T2 unattended capture M0 and M1](design/modules/T2-CAPTURE-PLAN.md) are done.** Metal and Chrome now have
+qualified submitted-output and elapsed-time engine capture. [Mac evidence](evidence/render/t2-capture-m0/README.md)
+and [Chrome evidence](evidence/render/t2-capture-m1/README.md) include provenance and bounded failure controls.
+T2 simulator M2 is blocked on [COOKED-DRAW M1](design/modules/COOKED-DRAW-PLAN.md), owned by G5.
+G3b Mac M2 qualifies the current surface path after T2 M0 only. New Mac M3 needs Mac M2 and G3t M3 for fresh
+post-change motion/cadence: T2 M0/M1 (done) → G3t M0–M3, including attended actual-window checks and simulator
+diagnostic function, with no simulator cooked/capture dependency. Mac panel cadence needs **attended setup**
+(unlocked active panel and any Instruments authorization). Mac M2.3 owns real-window tap qualification, M2.4 bounded
+trace-finalization diagnosis; M2.2 qualifies cadence with capture OFF and separate capture-ON observer/content arms.
+Engine pixels need no Screen Recording grant; G3t's actual OS-window observer separately requires that grant.
+
+APPLE-TILE remains parked after two failed design reviews. The lead has now commissioned the scoped re-plan
+answering the seven findings; fresh independent design approval and unpark through the loop remain owed. T2
+completion alone cannot restart it. G3t keeps M0–M3/M10–M12 and removes M4–M9 optional optimization definitions.
+G3t has no reverse Mac cadence dependency. G3s sunset crossing stays parked; G2S is closed. The complete native
+Metal recorder remains a later performance candidate; the dedicated performance phase owns numeric tuning.
 
 - [x] **G0 — integrity and baselines.** Real Metal regressions fail without a device; no successful skips. One baseline
   command records runnable rows and absent consumers. Dead source/cook/mobile crates are removed and shipping trees
@@ -87,8 +90,8 @@ the dedicated performance phase owns numeric tuning.
   remain open. Mac M2 needs only `T2-CAPTURE:M0` and qualifies the current surface path; its unattended runtime-image
   and attended panel-swap proofs remain distinct and both are required. No M2 tooling item waits on APPLE-TILE.
   New Mac M3 needs `APPLE-TILE:M3` and reruns both protocols plus windowed-tap/tooling preflight on the changed path.
-  M3 is blocked on parked APPLE-TILE, transitively T2 Chrome M1, simulator M2 and sequential G3t M0–M3; M2 can
-  close first. M2.3 owns the unproved real-window tap; M2.4 resumes the failed Instruments
+  M3 is blocked on parked APPLE-TILE: delivered T2 Mac M0/Chrome M1 then sequential G3t M0–M3 and their
+  attended OS-window proofs. Neither simulator cooked drawing nor T2 simulator M2 gates it; M2 can close first. M2.3 owns the unproved real-window tap; M2.4 resumes the failed Instruments
   finalization investigation after design re-review/prerequisites, with a changed hypothesis and at most two new
   diagnostic attempts. M2.2 remains blocked on those proofs and active-panel/tool setup; an unreadable trace cannot
   close it. Its capture-OFF traced arm qualifies cadence; capture-ON arms show content/observer cost. Record
@@ -103,22 +106,22 @@ the dedicated performance phase owns numeric tuning.
   [Night milestones](design/modules/ATMOSPHERE-PLAN.md) qualified the moonless valley and stars on Metal and Chrome.
   The [west-lookout crossing](design/modules/ATMOSPHERE-PLAN.md#m3-sunset-crossing) is parked at 0/3. The stock graph ships and the frozen motion and controls stay available for diagnosis.
   [Partial evidence](evidence/v1-workload/G3S-FIRST-LIGHT-2026-11-06.md). Follow the Broadsides reading map and PD/CC0 rules.
-- [ ] **G3t — tile dataflow and Metal boundary.** Direct forward output, derived memoryless/transient attachments,
-  mapped upload ring, compact instances, GPU light binning, mirrored ranges, shared targets and one scene/present graph.
-  One registry-selected boundary supports native archives, MetalFX and EDR with portable fallback. The complete Metal
-  recorder stays a later performance candidate in the [boundary record](design/decisions/G3T-METAL-BOUNDARY.md).
-  Record attachment traffic, full GPU work, uploads and light/mirror scaling. No raw/wgpu encoder splice or rival queue.
+- [ ] **G3t — tile dataflow and Metal boundary.** One registry, graph-derived attachment storage, one split
+  scene/output graph, G4 pre-tone colour/exposure input and a prepared generation-owned native segment/twin.
+  Retain existing SDR shaders/intermediate, queue-ordered uploads, 192-byte rows, CPU light overflow and V2 raster/order.
+  Defer fused present, pointer rings/slot duplication, scratch sharing, compact rows, expanded GPU binning and
+  mirror-range consolidation. No raw/wgpu encoder splice or rival queue; the complete native recorder stays later
+  under [the boundary record](design/decisions/G3T-METAL-BOUNDARY.md).
   [Design](design/modules/APPLE-TILE.md), [plan](design/modules/APPLE-TILE-PLAN.md) and
-  [done-when criteria](design/modules/APPLE-TILE-DONE.json) reconcile existing work into sequential milestones.
-  **Parked after two failed design reviews.** The [second review](evidence/APPLE-TILE/design-review-2.md)
-  requests seven changes; they remain unresolved. M0 is parked and still needs `T2-CAPTURE:M0` on recommission;
-  shared capture completion does not restart it. The lead must explicitly commission a scoped re-plan resolving
-  those findings and obtain fresh independent design approval before build. Carried counter/probe items are not
-  module completion. G3t M2/M3 retain real-window proof obligations; Mac M3 owns post-G3t requalification. Shared V2 ranges
-  preserve admitted raster semantics; portable uploads remain queue-ordered without slot copies.
-  The planned whole-raw-encoder feature handoff preserves one submit and existing view-drop/loss rules; it does not
-  commission the complete recorder. New physical replay/display rows remain unmeasured; mark attended setup where
-  an unlocked display/tool grant is required. Every later visual milestone follows [T2 capture and attended exceptions](design/modules/T2-CAPTURE.md#rollout-and-attended-boundaries).
+  [criteria](design/modules/APPLE-TILE-DONE.json) answer the [seven second-review findings](evidence/APPLE-TILE/design-review-2.md).
+  **Lead recommission received; scoped re-plan awaits fresh independent design approval/unpark through the loop.**
+  M0 remains parked; no new implementation or qualification is claimed. Retained IDs are M0–M3/M10–M12.
+  T2 M0/M1 are delivered; final M12 cooked simulator function alone needs COOKED-DRAW M1. Preserve G5's registry,
+  direct/indirect path and shared draw.rs edits; no classifier/transport refactor is commissioned here.
+  D2.5/D3.5/final window proof requires attended unlocked setup and Screen Recording permission for OS window
+  capture; engine output alone cannot prove the window. Mac M3 owns fresh post-G3t-M3 motion/capture-OFF cadence.
+  Record logical bytes, complete costs and any measured wins honestly; physical replay/device rows remain unqualified
+  without their own proof. Follow [T2 capture modes and attended boundaries](design/modules/T2-CAPTURE.md#rollout-and-attended-boundaries).
 - [ ] **G3c — GPU-driven culling.** Compute frustum and Hi-Z, GPU-written indirect counts, one indexed indirect draw per
   mesh/pipeline bucket, stable mesh offsets and compute-readable materials. Validate visibility and image equivalence;
   record full/partial-visibility cost and unexpected growth as tripwires.
