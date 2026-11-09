@@ -7,8 +7,8 @@ Done when: [PLATFORM-RUNTIME-MAC-DONE.json](PLATFORM-RUNTIME-MAC-DONE.json) owns
 
 Reviews: M0 over `3049433d`: approved ([record](#log)). M1 `0c9a32dc`: both items pass ([review](../../evidence/render/mac-m1-recovery/README.md#independent-review)). M2 `0d53d3aa`: motion passes, cadence open ([review](../../evidence/render/mac-m2-pan/README.md#review-verdict-and-open-cadence-row)). Migration design review owed.
 Milestone: M2 The cooked valley presents smoothly on built-in ProMotion
-Now: Prose-plan migration complete; runtime work remains paused by owner request (8 Nov 19:40 CET).
-Next: run the three-view offscreen parity command in [Resume first](../../evidence/render/mac-m2-pan/README.md#resume-first) with the compiled `474b4306` diagnostic, the fixed noon store and the 0°, 18°, 36° witnesses from `framing.mKC7g4`.
+Now: M2 resumed 9 November; retained post-G3c diagnostic passes three-view offscreen parity. Live qualification is blocked by the locked console and unreadable trace.
+Next: corroborate the diagnostic with an untraced live pan once the console is unlocked; resolve parked Instruments finalization before attempting the matched trace row. [Parity and remaining proof](../../evidence/render/mac-m2-pan/README.md#resume-first).
 Blocked: cadence remains open. The live trace did not finalize, and export found no readable template. Instruments trace finalization is parked after three attempts.
 
 ## M0 Reviewed Mac qualification plan: done
@@ -85,6 +85,8 @@ before and after acquisition, and the real Metal queue-attempt control.
 Keep encode-time failure and live-window recovery outside this proof.
 
 ## Log
+
+- 9 November, resumed M2. Under the GPU lock, the retained `474b4306` diagnostic produced byte-identical 0°/18°/36° noon PPMs against `framing.mKC7g4`; static parity is verified, live motion is not extended. Fresh trace export exits 10 (`Document Missing Template Error`), and console probes report locked. No live capture launched and no claim made. [Evidence](../../evidence/render/mac-m2-pan/README.md#9-november-blocker-probe).
 
 - 9 November. Migrated the prose criteria to `PLATFORM-RUNTIME-MAC-DONE.json` without changing the design or acceptance scope. Carried M0/M1 completion and M2's reviewed motion pass; cadence stays open. M2 remains `in_progress` with runtime work paused; only Instruments trace finalization is parked. Initialized `fails` and `replans` to zero: the trace attempts and partial reviews were not failed reviews of a claimed whole milestone. Independent review of this migration is owed; no other agent was launched, as instructed by the owner.
 - 8 November. M0 design and plan over `3049433d`, approved plan SHA-256 prefix `0f467bcb`: initial hold resolved and approved. [Review brief](#design-and-plan-review-brief). This is the carried M0 verdict, not a review of the JSON migration.

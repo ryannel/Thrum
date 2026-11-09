@@ -64,9 +64,12 @@ fresh attributable swap rows.
 ## Resume first
 
 G3c changed the default vertex path after the reviewed slot. The
-current release diagnostic over `474b4306` built successfully and
-has not been run. Check the same three offscreen noon views before
-carrying the visual result to the new build:
+retained release diagnostic over `474b4306` passed the three-view offscreen
+parity check on 9 November: all complete PPM bytes at 0°, 18° and 36°
+match `framing.mKC7g4`. The builder inspected the three-view contact sheet
+for the rock, sphere, ridge continuity and endpoint framing. This is static
+parity, not new live-motion or cadence evidence. [Run identity and results](parity-20261109.json).
+The reproducible original command is:
 
 ```sh
 out=/Users/ryannel/Workspace/thrum/tmp/g3b-mac-m2
@@ -91,3 +94,13 @@ below. The parked Instruments investigation needs a separate follow-up.
 slot=$(mktemp -d "$out/slot.XXXXXX")
 python3 "$out/run_pan.py" control "$slot/control" --owner-window
 ```
+
+## 9 November blocker probe
+
+The retained live `slot.mQNT7T/trace/pan.trace` still fails a fresh
+`xcrun xctrace export --input <trace> --toc` with exit 10 and
+`Document Missing Template Error`. The console reports both
+`IOConsoleLocked = Yes` and `CGSSessionScreenIsLocked = Yes`. No new
+live row was launched. Instruments finalization remains parked after its
+three recorded attempts; M2.2 stays open. Full probe output is in this
+worktree’s `tmp/platform-runtime-mac-m2/`.

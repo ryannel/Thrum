@@ -1,0 +1,32 @@
+{
+  "exit_code": 0,
+  "views": {
+    "00": {
+      "captured": true,
+      "byte_identical": true,
+      "ppm_sha256": "d7d3d2fca5e15a1cc4294be7963503d49e934dfd0b5904ea71000fa142a2021e"
+    },
+    "18": {
+      "captured": true,
+      "byte_identical": true,
+      "ppm_sha256": "797c2c369ccd664286a25fe9a7cd77bad24298381771140f4852bc5e90554d28"
+    },
+    "36": {
+      "captured": true,
+      "byte_identical": true,
+      "ppm_sha256": "c8ceca8f6f392735d072b531ce05325ecde4c21aee2fe602dae1fa1383b82e26"
+    }
+  },
+  "observed_utc": "2026-11-09T01:00Z",
+  "target": "mac-metal",
+  "source_build": "retained diagnostic over 474b4306; not a build of current worktree tip",
+  "inputs": {
+    "tmp/platform-runtime-mac-m2/v1-game": "f356f504807e037644a0ae4a5bf6170cb731ef886171e92195e52038910e8d79",
+    "tmp/platform-runtime-mac-m2/store/HEAD": "9d7f9eab7fe752165145eb355d26f0d03f4647dcf74e553424f6fe9e4913bbc6",
+    "tmp/platform-runtime-mac-m2/framing/noon-yaw-00.params.json": "fbebc85f2afc34499d943f792eddd94f92a0c0f3e6cb03d117c25b459eda437a",
+    "tmp/platform-runtime-mac-m2/framing/noon-yaw-18.params.json": "f4aa6aa9066b4914d8a32b33cd63b3394b20543dce9b2a12c30ae32c2ff5c149",
+    "tmp/platform-runtime-mac-m2/framing/noon-yaw-36.params.json": "ade5f8e3ac5f04f18fa7cc02e6beaf34d9a44dc4236bdf142632943e04c4df74"
+  },
+  "method": "Copied retained binary, fixed cooked store and framing.mKC7g4 into this worktree; ran route-only offscreen capture under agent_loop.py lock gpu with Metal access outside sandbox. Compared complete PPM bytes to retained witnesses.",
+  "limits": "Static offscreen parity only; no new live motion or app-attributed panel swaps."
+}
