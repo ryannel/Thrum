@@ -4,28 +4,28 @@
   "design": {
     "verdict": "ok",
     "review": "docs/evidence/COOKED-DRAW/design-review.md",
-    "commit": "dccdbb9b35603ee37c7e570f8298edfd2102db05",
-    "hash": "a783b5d9a2cf9615c6c3e03e19fdb1b29fcc26fabd3cdcedb3dd1c155b0f946e",
+    "commit": "2394162b498fd498f93e11ffa54d4ba471430595",
+    "hash": "f55f4215aef551b154d892642a797bbe9e42a8763bb5a3c865dd763accb309c6",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.1-sol",
-    "effort": "medium",
+    "effort": "high",
     "observed": {
       "model": "gpt-6.1-sol",
-      "effort": "medium"
+      "effort": "high"
     },
     "cli": "codex-cli 0.167.0-alpha.3.2",
     "path": "visible",
-    "at": "2026-11-09T13:14:48Z"
+    "at": "2026-11-09T13:54:20Z"
   },
   "milestones": {
     "M1": {
-      "definitions": "5e171aa247d93a95acac9d51cbd7ccf9ee3264fa40b5c308b382d4796145260f",
+      "definitions": "f3b6a8417592b47561535477d551c7a79c18f516c2fbd56a66634b126a68776e",
       "authorised": {
         "by": "design review",
         "review": "docs/evidence/COOKED-DRAW/design-review.md",
-        "commit": "dccdbb9b35603ee37c7e570f8298edfd2102db05",
-        "at": "2026-11-09T13:14:48Z"
+        "commit": "2394162b498fd498f93e11ffa54d4ba471430595",
+        "at": "2026-11-09T13:54:20Z"
       },
       "reviews": []
     }
