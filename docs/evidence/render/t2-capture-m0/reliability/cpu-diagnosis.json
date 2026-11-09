@@ -1,0 +1,281 @@
+{
+  "cpu_map_source": "ioreg -p IODeviceTree -n cpus -r -l (0-3 E, 4-13 P)",
+  "frequency_scope": "No privileged frequency counters; scheduler/core-placement explanation observed, remaining frequency/cache effects inferred rather than measured. sudo -n powermetrics refused because a password is required.",
+  "arms": [
+    {
+      "arm": "core-pilot/off-0",
+      "active_pacing": false,
+      "latency_activity": false,
+      "qos": [
+        21,
+        33
+      ],
+      "step_cpu_median_ms": 1.5997085,
+      "step_wall_median_ms": 1.6125,
+      "groups": {
+        "same_E": {
+          "count": 135,
+          "median_ms": 1.894459
+        },
+        "same_P": {
+          "count": 216,
+          "median_ms": 0.5554795
+        },
+        "migrated": {
+          "count": 129,
+          "median_ms": 1.917542
+        }
+      }
+    },
+    {
+      "arm": "core-pilot/off-1",
+      "active_pacing": false,
+      "latency_activity": false,
+      "qos": [
+        21,
+        33
+      ],
+      "step_cpu_median_ms": 1.641271,
+      "step_wall_median_ms": 1.646813,
+      "groups": {
+        "same_E": {
+          "count": 174,
+          "median_ms": 1.770062
+        },
+        "same_P": {
+          "count": 166,
+          "median_ms": 1.0452285
+        },
+        "migrated": {
+          "count": 140,
+          "median_ms": 1.8813545
+        }
+      }
+    },
+    {
+      "arm": "core-pilot/off-2",
+      "active_pacing": false,
+      "latency_activity": false,
+      "qos": [
+        21,
+        33
+      ],
+      "step_cpu_median_ms": 0.6155,
+      "step_wall_median_ms": 0.617667,
+      "groups": {
+        "same_E": {
+          "count": 83,
+          "median_ms": 1.784333
+        },
+        "same_P": {
+          "count": 327,
+          "median_ms": 0.568041
+        },
+        "migrated": {
+          "count": 69,
+          "median_ms": 1.820791
+        }
+      }
+    },
+    {
+      "arm": "core-pilot/off-3",
+      "active_pacing": false,
+      "latency_activity": false,
+      "qos": [
+        21,
+        33
+      ],
+      "step_cpu_median_ms": 1.107167,
+      "step_wall_median_ms": 1.112479,
+      "groups": {
+        "same_E": {
+          "count": 104,
+          "median_ms": 1.937104
+        },
+        "same_P": {
+          "count": 296,
+          "median_ms": 0.6410415
+        },
+        "migrated": {
+          "count": 80,
+          "median_ms": 1.9275829999999998
+        }
+      }
+    },
+    {
+      "arm": "activity-pilot/off-0",
+      "active_pacing": false,
+      "latency_activity": true,
+      "qos": [
+        21,
+        33
+      ],
+      "step_cpu_median_ms": 0.624063,
+      "step_wall_median_ms": 0.626979,
+      "groups": {
+        "same_E": {
+          "count": 20,
+          "median_ms": 1.9041670000000002
+        },
+        "same_P": {
+          "count": 394,
+          "median_ms": 0.6057710000000001
+        },
+        "migrated": {
+          "count": 66,
+          "median_ms": 0.8361665
+        }
+      }
+    },
+    {
+      "arm": "activity-pilot/off-1",
+      "active_pacing": false,
+      "latency_activity": true,
+      "qos": [
+        21,
+        33
+      ],
+      "step_cpu_median_ms": 1.705854,
+      "step_wall_median_ms": 1.723542,
+      "groups": {
+        "same_E": {
+          "count": 144,
+          "median_ms": 1.9222920000000001
+        },
+        "same_P": {
+          "count": 191,
+          "median_ms": 0.931417
+        },
+        "migrated": {
+          "count": 145,
+          "median_ms": 1.941417
+        }
+      }
+    },
+    {
+      "arm": "activity-pilot/off-2",
+      "active_pacing": false,
+      "latency_activity": true,
+      "qos": [
+        21,
+        33
+      ],
+      "step_cpu_median_ms": 1.639,
+      "step_wall_median_ms": 1.6501045,
+      "groups": {
+        "same_E": {
+          "count": 180,
+          "median_ms": 1.833729
+        },
+        "same_P": {
+          "count": 187,
+          "median_ms": 0.911625
+        },
+        "migrated": {
+          "count": 113,
+          "median_ms": 1.932958
+        }
+      }
+    },
+    {
+      "arm": "resident-pilot/off-0",
+      "active_pacing": true,
+      "latency_activity": false,
+      "qos": [
+        21,
+        33
+      ],
+      "step_cpu_median_ms": 0.505083,
+      "step_wall_median_ms": 0.507062,
+      "groups": {
+        "same_E": {
+          "count": 0,
+          "median_ms": null
+        },
+        "same_P": {
+          "count": 460,
+          "median_ms": 0.5045835000000001
+        },
+        "migrated": {
+          "count": 20,
+          "median_ms": 0.5707295
+        }
+      }
+    },
+    {
+      "arm": "resident-pilot/off-1",
+      "active_pacing": true,
+      "latency_activity": false,
+      "qos": [
+        21,
+        33
+      ],
+      "step_cpu_median_ms": 0.5015,
+      "step_wall_median_ms": 0.5034995,
+      "groups": {
+        "same_E": {
+          "count": 0,
+          "median_ms": null
+        },
+        "same_P": {
+          "count": 455,
+          "median_ms": 0.497709
+        },
+        "migrated": {
+          "count": 25,
+          "median_ms": 0.597958
+        }
+      }
+    },
+    {
+      "arm": "resident-pilot/off-2",
+      "active_pacing": true,
+      "latency_activity": false,
+      "qos": [
+        21,
+        33
+      ],
+      "step_cpu_median_ms": 0.484021,
+      "step_wall_median_ms": 0.4858125,
+      "groups": {
+        "same_E": {
+          "count": 0,
+          "median_ms": null
+        },
+        "same_P": {
+          "count": 470,
+          "median_ms": 0.480896
+        },
+        "migrated": {
+          "count": 10,
+          "median_ms": 0.7024790000000001
+        }
+      }
+    },
+    {
+      "arm": "resident-pilot/off-3",
+      "active_pacing": true,
+      "latency_activity": false,
+      "qos": [
+        21,
+        33
+      ],
+      "step_cpu_median_ms": 0.505938,
+      "step_wall_median_ms": 0.5075,
+      "groups": {
+        "same_E": {
+          "count": 0,
+          "median_ms": null
+        },
+        "same_P": {
+          "count": 462,
+          "median_ms": 0.502625
+        },
+        "migrated": {
+          "count": 18,
+          "median_ms": 0.555792
+        }
+      }
+    }
+  ]
+}

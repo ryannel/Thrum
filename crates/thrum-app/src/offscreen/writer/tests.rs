@@ -28,6 +28,7 @@ fn slow_output_has_finite_leases_nonblocking_refusal_and_a_finalization_deadline
         },
         2,
         1024,
+        SpoolEncoding::Raw,
     )
     .unwrap();
     assert!(writer.submit(vec![1; 8]).is_none());
@@ -95,13 +96,85 @@ fn write_flush_and_output_limit_failures_cannot_finalize_successfully() {
             "allowance exhausted",
         ),
     ] {
-        let writer = ImageWriter::<Vec<u8>>::start(sink, 2, allowance).unwrap();
-        assert!(writer.submit(vec![1; 8]).is_none());
-        assert!(
-            writer
-                .finish(Duration::from_secs(1))
-                .unwrap_err()
-                .contains(expected)
-        );
+        for encoding in [SpoolEncoding::Raw, SpoolEncoding::ZstdDelta] {
+            let writer = ImageWriter::<Vec<u8>>::start(
+                RefusedSink {
+                    flush_failure: sink.flush_failure,
+                },
+                2,
+                allowance,
+                encoding,
+            )
+            .unwrap();
+            assert!(writer.submit(vec![1; 8]).is_none());
+            assert!(
+                writer
+                    .finish(Duration::from_secs(1))
+                    .unwrap_err()
+                    .contains(expected)
+            );
+        }
     }
+}
+
+struct MemorySink(std::sync::Arc<std::sync::Mutex<Vec<u8>>>);
+impl Write for MemorySink {
+    fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
+        self.0.lock().unwrap().extend_from_slice(bytes);
+        Ok(bytes.len())
+    }
+    fn flush(&mut self) -> io::Result<()> {
+        Ok(())
+    }
+}
+#[test]
+fn lossless_spool_reconstructs_every_byte_and_hash_and_refuses_changed_record_sizes() {
+    let saved = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
+    let originals: Vec<Vec<u8>> = (0..5)
+        .map(|frame| {
+            (0..8193)
+                .map(|i| u8::try_from((i * 17 + frame * 11) % 256).unwrap())
+                .collect()
+        })
+        .collect();
+    let writer = ImageWriter::start(
+        MemorySink(std::sync::Arc::clone(&saved)),
+        8,
+        1024 * 1024,
+        SpoolEncoding::ZstdDelta,
+    )
+    .unwrap();
+    for image in &originals {
+        assert!(writer.submit(image.clone()).is_none());
+    }
+    let report = writer.finish(Duration::from_secs(5)).unwrap();
+    let encoded = saved.lock().unwrap();
+    assert_eq!(report.encoded_bytes, encoded.len() as u64);
+    let delta = zstd::stream::decode_all(&encoded[..]).unwrap();
+    let mut previous = vec![0_u8; 8193];
+    for ((bytes, original), hash) in delta
+        .as_chunks::<8193>()
+        .0
+        .iter()
+        .zip(&originals)
+        .zip(report.frame_hashes)
+    {
+        for (p, d) in previous.iter_mut().zip(bytes) {
+            *p ^= *d;
+        }
+        assert_eq!(&previous, original);
+        assert_eq!(hash, format!("{:x}", Sha256::digest(original)));
+    }
+    assert!(zstd::stream::decode_all(&encoded[..encoded.len() / 2]).is_err());
+    drop(encoded);
+    let writer =
+        ImageWriter::start(MemorySink(saved), 8, 1024 * 1024, SpoolEncoding::ZstdDelta).unwrap();
+    assert!(writer.submit(vec![1; 8]).is_none());
+    assert!(writer.submit(vec![2; 9]).is_none());
+    assert!(
+        writer
+            .finish(Duration::from_secs(5))
+            .unwrap_err()
+            .contains("size changed")
+    );
 }

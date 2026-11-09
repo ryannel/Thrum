@@ -1,0 +1,14 @@
+import json,statistics as st,gzip,hashlib,shutil
+from pathlib import Path
+root=Path('tmp/t2-capture-m0-r3/qualified')
+def stats(vals,scale=1):
+ vals=[x/scale for x in vals if x is not None];return {'n':len(vals),'min':min(vals),'median':st.median(vals),'p95':sorted(vals)[int((len(vals)-1)*.95)],'max':max(vals)} if vals else None
+def summarize(d):
+ r=json.loads((d/'runtime.json').read_text());m=json.loads((d/'manifest.json').read_text());ops=r['opportunities'][1:];im=r['images'];w=r['writer_result'].get('Ok',{});gpu=r['gpu']
+ return {'name':d.name,'scenario':r['scenario'],'mode':r['mode'],'complete':m['complete'],'capture_complete':r['complete'],'locked':m.get('locked_permission_unavailable_qualified'),'binary_sha256':m['binary_sha256'],'build_source_digest':m['build_source_digest'],'active_pacing':r['active_pacing'],'qos':[r['thread_qos_before'],r['thread_qos_after']],'disk_limit_Bps':r['disk_limit_Bps'],'disk_free_before_bytes':m['disk_free_before_bytes'],'images':len(im),'opportunities':len(r['opportunities']),'submissions':sum(x['submitted'] for x in r['opportunities']),'skipped_opportunities':sum(x.get('skipped_before',0) for x in ops),'ring_omissions':r['ring_omissions'],'writer_omissions':r['writer_omissions'],'pixel_peak':[max([x['capture_usage'][i] for x in ops if x['capture_usage']] or [0]) for i in range(2)],'writer':{k:v for k,v in w.items() if k!='frame_sha256'},'interval_ms':r['interval_end_ns']/1e6,'duration_with_drain_ms':r['duration_including_drain_ns']/1e6,'step_cpu_ms':stats([x['step_thread_cpu_ns'] for x in ops],1e6),'step_wall_ms':stats([x['step_wall_ns'] for x in ops],1e6),'loop_cpu_ms':stats([x['loop_thread_cpu_ns'] for x in ops],1e6),'loop_wall_ms':stats([x['loop_work_wall_ns'] for x in ops],1e6),'drain_wall_ms':stats([x['drain_wall_ns'] for x in ops],1e6),'cpu_residency':{'same_P':sum(x['step_cpu_start']==x['step_cpu_end'] and x['step_cpu_start']>=4 for x in ops),'same_E':sum(x['step_cpu_start']==x['step_cpu_end'] and x['step_cpu_start']<4 for x in ops),'migrated':sum(x['step_cpu_start']!=x['step_cpu_end'] for x in ops)},'gpu_scene_ms':stats([sum(x['gpu_pass_ns']) for x in gpu if x['gpu_pass_ns']],1e6),'gpu_copy_bracket_ms':stats([x['readback_copy_gpu_bracket_ns'] for x in im],1e6),'process_usage':m.get('engine_process_usage'),'full_flush_ms':m.get('full_flush_ns',0)/1e6,'verification_ms':m.get('deferred_packaging_total_ns',0)/1e6,'retained_bytes':m['retained_bytes'],'load':m.get('system_load'),'diagnostic_actions':r['diagnostic_actions']}
+if __name__=='__main__':
+ rows=[]
+ for d in sorted(root.iterdir()):
+  if d.is_dir() and (d/'runtime.json').exists():rows.append(summarize(d))
+ (root/'summary.json').write_text(json.dumps(rows,indent=2)+'\n')
+ for r in rows:print(r['name'],r['complete'],r['images'],r['step_cpu_ms']['median'] if r['step_cpu_ms'] else None,r['writer'].get('encoded_queue_peak'))

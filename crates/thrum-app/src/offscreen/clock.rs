@@ -51,6 +51,17 @@ impl OpportunityClock {
     /// than bursting synthetic callbacks after a stall. Fixed mode may wait for
     /// readback between calls; its scenario time remains explicitly synthetic.
     pub fn next_opportunity(&mut self) -> Opportunity {
+        self.next_with_pacing(false)
+    }
+
+    /// Diagnostic cost arm: actively wait for exactly the same opportunity times.
+    /// This keeps the render owner runnable to control scheduler/frequency changes;
+    /// it burns CPU and is never the default or a display-cadence claim.
+    pub fn next_active_opportunity(&mut self) -> Opportunity {
+        self.next_with_pacing(true)
+    }
+
+    fn next_with_pacing(&mut self, active: bool) -> Opportunity {
         let previous = self.index;
         if self.timebase == Timebase::Elapsed {
             let elapsed = u32::try_from(
@@ -60,7 +71,11 @@ impl OpportunityClock {
             self.index = self.index.max(elapsed.saturating_add(1));
         }
         let due = Duration::from_secs_f64(f64::from(self.index) / f64::from(self.hz));
-        if let Some(wait) = due.checked_sub(self.origin.elapsed()) {
+        if active {
+            while self.origin.elapsed() < due {
+                std::hint::spin_loop();
+            }
+        } else if let Some(wait) = due.checked_sub(self.origin.elapsed()) {
             std::thread::sleep(wait);
         }
         let requested = self.origin.elapsed();

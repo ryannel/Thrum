@@ -1,0 +1,21 @@
+{
+  "target": "Apple M3 Max / Metal",
+  "binary_sha256": "afbfd378083b97876e34389e5e7e7e39962a80b569174841ba74cc44db88a5f3",
+  "build_source_digest": "8975eeb07e0a63723f363c6b258bc294b1324b3cbbf4a392a77b9b906aebac5d",
+  "writer_complete_probes": 5,
+  "consecutive_complete_sessions": 30,
+  "exact_series_images_verified": 14423,
+  "strict_200_MBps_sessions": 20,
+  "all_positive_finalized_and_locked": true,
+  "all_copy_brackets_positive": true,
+  "mode_endpoint_parity": true,
+  "focused_checks": [
+    "cargo test -p thrum-app writer --offline (3 pass, raw and compressed failure/round-trip coverage)",
+    "cargo clippy -p thrum-app -p v1-game --all-targets --offline -- -D warnings (pass)",
+    "python3 -W error -m unittest discover -s scripts -p test_t2_capture.py (5 pass)",
+    "./dev check-docs (pass)"
+  ],
+  "integration_gate": "Fresh ./dev check under integrate + gpu locks after rebase; non-force HEAD:main push and ancestry verification; logs retained in tmp/t2-capture-m0-r3/",
+  "precommit_full_check": "PASS ./dev check, gpu lock, tmp/t2-capture-m0-r3/check-before-commit.log",
+  "creation_counter_device_tests": "PASS 6/6 real-Metal submitted_capture tests with creation-counters, gpu lock"
+}

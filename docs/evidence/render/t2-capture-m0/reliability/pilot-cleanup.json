@@ -1,0 +1,184 @@
+{
+  "owner": "T2-CAPTURE M0 builder",
+  "selected_root": "tmp/t2-capture-m0-r3/qualified",
+  "reason": "Rejected and superseded pilot spools; compact original measurement metadata promoted, selected exact sources independently verified and retained through review.",
+  "removed": [
+    {
+      "path": "tmp/t2-capture-m0-r3/pan-capped-pilot/frames.zst",
+      "bytes": 580489368
+    },
+    {
+      "path": "tmp/t2-capture-m0-r3/off-interactive-2/frames.zst",
+      "bytes": 0
+    },
+    {
+      "path": "tmp/t2-capture-m0-r3/writer-feasibility/frames.zst",
+      "bytes": 279898187
+    },
+    {
+      "path": "tmp/t2-capture-m0-r3/pan-pilot/frames.zst",
+      "bytes": 579891181
+    },
+    {
+      "path": "tmp/t2-capture-m0-r3/off-inherited-2/frames.zst",
+      "bytes": 0
+    },
+    {
+      "path": "tmp/t2-capture-m0-r3/writer-feasibility-hw/frames.zst",
+      "bytes": 581288893
+    },
+    {
+      "path": "tmp/t2-capture-m0-r3/off-interactive-1/frames.zst",
+      "bytes": 0
+    },
+    {
+      "path": "tmp/t2-capture-m0-r3/off-interactive-0/frames.zst",
+      "bytes": 0
+    },
+    {
+      "path": "tmp/t2-capture-m0-r3/off-inherited-0/frames.zst",
+      "bytes": 0
+    },
+    {
+      "path": "tmp/t2-capture-m0-r3/off-inherited-1/frames.zst",
+      "bytes": 0
+    },
+    {
+      "path": "tmp/t2-capture-m0-r3/qos-valid/off-interactive-2/frames.zst",
+      "bytes": 0
+    },
+    {
+      "path": "tmp/t2-capture-m0-r3/qos-valid/off-interactive-3/frames.zst",
+      "bytes": 0
+    },
+    {
+      "path": "tmp/t2-capture-m0-r3/qos-valid/off-inherited-3/frames.zst",
+      "bytes": 0
+    },
+    {
+      "path": "tmp/t2-capture-m0-r3/qos-valid/off-inherited-2/frames.zst",
+      "bytes": 0
+    },
+    {
+      "path": "tmp/t2-capture-m0-r3/qos-valid/off-interactive-1/frames.zst",
+      "bytes": 0
+    },
+    {
+      "path": "tmp/t2-capture-m0-r3/qos-valid/pan-capped/frames.zst",
+      "bytes": 485084497
+    },
+    {
+      "path": "tmp/t2-capture-m0-r3/qos-valid/off-interactive-0/frames.zst",
+      "bytes": 0
+    },
+    {
+      "path": "tmp/t2-capture-m0-r3/qos-valid/off-inherited-0/frames.zst",
+      "bytes": 0
+    },
+    {
+      "path": "tmp/t2-capture-m0-r3/qos-valid/off-inherited-1/frames.zst",
+      "bytes": 0
+    },
+    {
+      "path": "tmp/t2-capture-m0-r3/resident-pilot/on-3/frames.zst",
+      "bytes": 581187969
+    },
+    {
+      "path": "tmp/t2-capture-m0-r3/resident-pilot/on-2/frames.zst",
+      "bytes": 581187969
+    },
+    {
+      "path": "tmp/t2-capture-m0-r3/resident-pilot/off-3/frames.zst",
+      "bytes": 0
+    },
+    {
+      "path": "tmp/t2-capture-m0-r3/resident-pilot/off-2/frames.zst",
+      "bytes": 0
+    },
+    {
+      "path": "tmp/t2-capture-m0-r3/resident-pilot/on-0/frames.zst",
+      "bytes": 581187969
+    },
+    {
+      "path": "tmp/t2-capture-m0-r3/resident-pilot/on-1/frames.zst",
+      "bytes": 581187969
+    },
+    {
+      "path": "tmp/t2-capture-m0-r3/resident-pilot/off-0/frames.zst",
+      "bytes": 0
+    },
+    {
+      "path": "tmp/t2-capture-m0-r3/resident-pilot/off-1/frames.zst",
+      "bytes": 0
+    },
+    {
+      "path": "tmp/t2-capture-m0-r3/resident-pilot/cap-200/frames.zst",
+      "bytes": 580792785
+    },
+    {
+      "path": "tmp/t2-capture-m0-r3/core-pilot/on-3/frames.zst",
+      "bytes": 580191943
+    },
+    {
+      "path": "tmp/t2-capture-m0-r3/core-pilot/on-2/frames.zst",
+      "bytes": 580116808
+    },
+    {
+      "path": "tmp/t2-capture-m0-r3/core-pilot/off-3/frames.zst",
+      "bytes": 0
+    },
+    {
+      "path": "tmp/t2-capture-m0-r3/core-pilot/off-2/frames.zst",
+      "bytes": 0
+    },
+    {
+      "path": "tmp/t2-capture-m0-r3/core-pilot/on-0/frames.zst",
+      "bytes": 580733465
+    },
+    {
+      "path": "tmp/t2-capture-m0-r3/core-pilot/on-1/frames.zst",
+      "bytes": 580123205
+    },
+    {
+      "path": "tmp/t2-capture-m0-r3/core-pilot/off-0/frames.zst",
+      "bytes": 0
+    },
+    {
+      "path": "tmp/t2-capture-m0-r3/core-pilot/off-1/frames.zst",
+      "bytes": 0
+    },
+    {
+      "path": "tmp/t2-capture-m0-r3/core-pilot/cap-200/frames.zst",
+      "bytes": 579264957
+    },
+    {
+      "path": "tmp/t2-capture-m0-r3/activity-pilot/on-2/frames.zst",
+      "bytes": 580429347
+    },
+    {
+      "path": "tmp/t2-capture-m0-r3/activity-pilot/off-2/frames.zst",
+      "bytes": 0
+    },
+    {
+      "path": "tmp/t2-capture-m0-r3/activity-pilot/on-0/frames.zst",
+      "bytes": 579872626
+    },
+    {
+      "path": "tmp/t2-capture-m0-r3/activity-pilot/on-1/frames.zst",
+      "bytes": 580116994
+    },
+    {
+      "path": "tmp/t2-capture-m0-r3/activity-pilot/off-0/frames.zst",
+      "bytes": 0
+    },
+    {
+      "path": "tmp/t2-capture-m0-r3/activity-pilot/off-1/frames.zst",
+      "bytes": 0
+    },
+    {
+      "path": "tmp/t2-capture-m0-r3/activity-pilot/cap-200/frames.zst",
+      "bytes": 580114782
+    }
+  ],
+  "removed_bytes": 10633160914
+}

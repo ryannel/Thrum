@@ -1,7 +1,9 @@
 //! Authored V1 scenarios on the shared unattended engine driver.
 
 use serde_json::{Value, json};
+use std::io::Write;
 use std::{
+    os::fd::AsFd,
     path::Path,
     time::{Duration, Instant},
 };
@@ -10,7 +12,8 @@ use thrum_app::{
     offscreen::{
         Offscreen,
         clock::{OpportunityClock, Timebase},
-        writer::ImageWriter,
+        thread_policy::{self, RenderThreadPolicy, WorkClock},
+        writer::{ImageWriter, SpoolEncoding},
     },
 };
 use thrum_render::{capabilities::DeviceCapabilities, runtime::SubmittedImage};
@@ -96,7 +99,7 @@ impl Trace {
         while let Some(sample) = driver.completed()? {
             self.gpu.push(
                 json!({"submission_id":sample.submission_order,"tick":sample.tick,
-                "gpu_pass_ns":sample.gpu_pass_ns,"render_cpu_ns":sample.render_cpu.as_nanos()}),
+                "encode_cpu_ns":sample.encode_cpu.as_nanos(),"upload_cpu_ns":sample.upload_cpu.as_nanos(),"extract_cpu_ns":sample.extract_cpu.as_nanos(),"gpu_pass_ns":sample.gpu_pass_ns,"render_cpu_ns":sample.render_cpu.as_nanos()}),
             );
         }
         if let Some(writer) = writer {
@@ -120,17 +123,30 @@ impl Trace {
 }
 
 struct ScenarioSink {
+    output: std::fs::File,
+    next_write: Instant,
+    limit: Option<u64>,
     slow: bool,
 }
-impl std::io::Write for ScenarioSink {
+impl Write for ScenarioSink {
     fn write(&mut self, bytes: &[u8]) -> std::io::Result<usize> {
         if self.slow {
-            std::thread::sleep(Duration::from_millis(50));
+            std::thread::sleep(Duration::from_millis(500));
         }
-        std::io::Write::write(&mut std::io::stdout(), bytes)
+        if self.limit.is_some()
+            && let Some(wait) = self.next_write.checked_duration_since(Instant::now())
+        {
+            std::thread::sleep(wait);
+        }
+        let begin = Instant::now();
+        let n = self.output.write(bytes)?;
+        if let Some(limit) = self.limit {
+            self.next_write = begin + Duration::from_secs_f64(n as f64 / limit as f64);
+        }
+        Ok(n)
     }
     fn flush(&mut self) -> std::io::Result<()> {
-        std::io::Write::flush(&mut std::io::stdout())
+        self.output.flush()
     }
 }
 
@@ -142,6 +158,33 @@ fn accepted_yaw<G: Game>(driver: &Offscreen<G>) -> Result<f32, String> {
     } else {
         Err("camera yaw is not numeric".to_owned())
     }
+}
+
+fn start_writer(
+    scenario: &str,
+    encoding: SpoolEncoding,
+    limit: Option<u64>,
+) -> Result<ImageWriter, String> {
+    let output = std::fs::File::from(
+        std::io::stdout()
+            .as_fd()
+            .try_clone_to_owned()
+            .map_err(|e| e.to_string())?,
+    );
+    ImageWriter::start(
+        std::io::BufWriter::with_capacity(
+            4 * 1024 * 1024,
+            ScenarioSink {
+                output,
+                next_write: Instant::now(),
+                limit,
+                slow: scenario == "writer-slow",
+            },
+        ),
+        96,
+        8 * 1024 * 1024 * 1024,
+        encoding,
+    )
 }
 
 fn warmup<G: Game>(driver: &mut Offscreen<G>) -> Result<(), String> {
@@ -161,8 +204,48 @@ fn warmup<G: Game>(driver: &mut Offscreen<G>) -> Result<(), String> {
     Ok(())
 }
 
+fn capture_settings() -> Result<
+    (
+        thread_policy::ThreadPolicyReport,
+        SpoolEncoding,
+        Option<u64>,
+    ),
+    String,
+> {
+    let qos = match std::env::var("THRUM_CAPTURE_QOS").as_deref() {
+        Ok("inherited") => RenderThreadPolicy::Inherited,
+        Ok("interactive") | Err(_) => RenderThreadPolicy::Interactive,
+        _ => return Err("invalid capture QoS".to_owned()),
+    };
+    let qos = thread_policy::configure(qos).map_err(|e| e.to_string())?;
+    let encoding = match std::env::var("THRUM_CAPTURE_ENCODING").as_deref() {
+        Ok("raw") => SpoolEncoding::Raw,
+        Ok("zstd-delta") | Err(_) => SpoolEncoding::ZstdDelta,
+        _ => return Err("invalid spool encoding".to_owned()),
+    };
+    let disk_limit = std::env::var("THRUM_CAPTURE_DISK_BPS")
+        .ok()
+        .map(|v| v.parse::<u64>())
+        .transpose()
+        .map_err(|e| e.to_string())?;
+    if disk_limit == Some(0) {
+        return Err("disk rate must be positive".to_owned());
+    }
+    Ok((qos, encoding, disk_limit))
+}
+
+fn active_pacing() -> Result<bool, String> {
+    match std::env::var("THRUM_CAPTURE_PACING").as_deref() {
+        Ok("active") => Ok(true),
+        Ok("sleep") | Err(_) => Ok(false),
+        _ => Err("capture pacing must be sleep or active".to_owned()),
+    }
+}
+
 async fn record(output: &Path, scenario: &str) -> Result<(), String> {
     let mode = capture_mode(scenario)?;
+    let (qos, encoding, disk_limit) = capture_settings()?;
+    let active_pacing = active_pacing()?;
     let (adapter, device, queue, capabilities) = metal_device().await?;
     let mut driver = Offscreen::new(
         super::capture_game()?,
@@ -187,13 +270,7 @@ async fn record(output: &Path, scenario: &str) -> Result<(), String> {
         )?;
     }
     let writer = if capture {
-        Some(ImageWriter::start(
-            ScenarioSink {
-                slow: scenario == "writer-slow",
-            },
-            96,
-            8 * 1024 * 1024 * 1024,
-        )?)
+        Some(start_writer(scenario, encoding, disk_limit)?)
     } else {
         None
     };
@@ -249,7 +326,11 @@ async fn record(output: &Path, scenario: &str) -> Result<(), String> {
         if mode == "still" {
             break;
         }
-        let opportunity = clock.next_opportunity();
+        let opportunity = if active_pacing {
+            clock.next_active_opportunity()
+        } else {
+            clock.next_opportunity()
+        };
         let t = opportunity.scenario_time.as_secs_f64();
         if mode == "realtime" && t >= 6.0 {
             break;
@@ -263,6 +344,7 @@ async fn record(output: &Path, scenario: &str) -> Result<(), String> {
         {
             break;
         }
+        let work = WorkClock::start().map_err(|e| e.to_string())?;
         let active_world = matches!(scenario, "running" | "writer-slow");
         if active_world && (1.0..3.0).contains(&t) && !running {
             driver.parameters(r#"{"world.paused":false}"#)?;
@@ -280,18 +362,24 @@ async fn record(output: &Path, scenario: &str) -> Result<(), String> {
             trace.delay("render-owner-before-ordinary-step", origin);
             stalled = true;
         }
+        let step = WorkClock::start().map_err(|e| e.to_string())?;
         let report = driver.step_for(&opportunity)?;
+        let step = step.finish().map_err(|e| e.to_string())?;
+        let returned = origin.elapsed();
         if t >= 3.0 && report.submitted && final_hold.is_none() {
             final_hold = Some(origin.elapsed());
         }
-        trace.opportunities.push(json!({"id":opportunity.index,"request_ns":opportunity.requested.as_nanos(),
+        let drain = Instant::now();
+        trace.drain(&mut driver, writer.as_ref(), origin)?;
+        let drain = drain.elapsed();
+        let work = work.finish().map_err(|e| e.to_string())?;
+        trace.opportunities.push(json!({"step_cpu_start":step.cpu_start,"step_cpu_end":step.cpu_end,"loop_cpu_start":work.cpu_start,"loop_cpu_end":work.cpu_end,"step_thread_cpu_ns":step.cpu.as_nanos(),"step_wall_ns":step.wall.as_nanos(),"loop_thread_cpu_ns":work.cpu.as_nanos(),"loop_work_wall_ns":work.wall.as_nanos(),"drain_wall_ns":drain.as_nanos(),"id":opportunity.index,"request_ns":opportunity.requested.as_nanos(),
             "scenario_ns":opportunity.scenario_time.as_nanos(),"accepted_ns":if control_dispatched {Some(accepted.as_nanos())} else {None},
             "control_dispatched":control_dispatched,
             "skipped_before":opportunity.skipped_before,"skip_reason":"driver busy or host oversleep",
-            "returned_ns":origin.elapsed().as_nanos(),"requested_yaw_degrees":yaw,"accepted_yaw_degrees":accepted_yaw,
+            "returned_ns":returned.as_nanos(),"requested_yaw_degrees":yaw,"accepted_yaw_degrees":accepted_yaw,
             "submitted":report.submitted,"tick":report.tick,"dropped_view":report.dropped_view,
             "submission_id":if report.submitted {driver.last_submission()} else {None},"capture_usage":driver.capture_usage()}));
-        trace.drain(&mut driver, writer.as_ref(), origin)?;
         last_sample_time = opportunity.scenario_time;
         if mode == "fixed" {
             let deadline = Instant::now() + Duration::from_secs(10);
@@ -334,7 +422,8 @@ async fn record(output: &Path, scenario: &str) -> Result<(), String> {
             || (trace.images.len() == submitted
                 && driver.omissions() == 0
                 && trace.writer_omissions == 0));
-    let result = json!({"scenario":scenario,"adapter":adapter.get_info().name,"backend":"Metal","mode":mode,
+    let result = json!({"active_pacing":active_pacing,"thread_qos_before":qos.before,"thread_qos_after":qos.after,"spool_encoding":format!("{encoding:?}"),"disk_limit_Bps":disk_limit,
+        "scenario":scenario,"adapter":adapter.get_info().name,"backend":"Metal","mode":mode,
         "presentation_lead_policy":"engine clock next opportunity target, shared display_target_lead at consumption; untargeted prime/warmup zero",
         "surface_generation_scope":"engine presenter incarnation: prepare, resize, device publish; not OS surface lease",
         "recipe":"current portable wgpu Metal offscreen ordinary presenter","enabled_features":format!("{:?}",capabilities.features()),
@@ -345,7 +434,7 @@ async fn record(output: &Path, scenario: &str) -> Result<(), String> {
         "opportunities":trace.opportunities,"images":trace.images,"gpu":trace.gpu,"diagnostic_actions":trace.stalls,
         "ring_omissions":driver.omissions(),"writer_omissions":trace.writer_omissions,
         "writer_result":writer_result.as_ref().map(|report| json!({"bytes":report.bytes,"frames":report.frames,
-            "write_ns":report.write_time.as_nanos(),"flush_ns":report.flush_time.as_nanos()})),"complete":complete});
+            "write_ns":report.write_time.as_nanos(),"flush_ns":report.flush_time.as_nanos(),"io_ns":report.io_time.as_nanos(),"encoded_queue_peak":report.encoded_queue_peak,"encoded_bytes":report.encoded_bytes,"frame_sha256":report.frame_hashes})),"complete":complete});
     std::fs::write(
         output.join("runtime.json"),
         serde_json::to_vec_pretty(&result).map_err(|e| e.to_string())?,

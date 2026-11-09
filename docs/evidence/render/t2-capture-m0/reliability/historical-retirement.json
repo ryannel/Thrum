@@ -1,0 +1,177 @@
+{
+  "restore_commit": "c65a90e6",
+  "replacement": "../reliability/README.md",
+  "removed": [
+    {
+      "file": "docs/evidence/render/t2-capture-m0/rework/integrated/running/final.png",
+      "bytes": 2074690,
+      "sha256": "52043a709f76ae7fb42cb3e4df19062b3aa8bcf38be18705c7827dcebf303e91"
+    },
+    {
+      "file": "docs/evidence/render/t2-capture-m0/rework/integrated/running/preview-1x.mp4",
+      "bytes": 12918745,
+      "sha256": "d70652932a5e7cb37092dc7149de7ab9209bc5993789cc75509f9e69effb25bb"
+    },
+    {
+      "file": "docs/evidence/render/t2-capture-m0/rework/integrated/running/initial.png",
+      "bytes": 2054391,
+      "sha256": "43bbbffa18f6ba444a0fa033f765aa8344ddbc249ff21306c163e0b826ac4337"
+    },
+    {
+      "file": "docs/evidence/render/t2-capture-m0/rework/integrated/running/contact.png",
+      "bytes": 1583816,
+      "sha256": "a6b33f0ceed897453662cf69c67d0baa832c19d36a97b1b16dc083e82f3e8120"
+    },
+    {
+      "file": "docs/evidence/render/t2-capture-m0/rework/integrated/running/middle.png",
+      "bytes": 2071929,
+      "sha256": "405a9456f6ae95359eceb0049ab400f2d9bcc4c9b975e54fd6f5c35b5351337c"
+    },
+    {
+      "file": "docs/evidence/render/t2-capture-m0/rework/integrated/running/native-sequence.png",
+      "bytes": 634764,
+      "sha256": "c16902af6f7b5cf32543d7c98b43b80065490347c6016636e302a6d662fe270a"
+    },
+    {
+      "file": "docs/evidence/render/t2-capture-m0/rework/integrated/pan-1/final.png",
+      "bytes": 2623897,
+      "sha256": "5df466e13be254637f72531013b29e3ae8025201e4974de443329f82516dad42"
+    },
+    {
+      "file": "docs/evidence/render/t2-capture-m0/rework/integrated/pan-1/preview-1x.mp4",
+      "bytes": 2696764,
+      "sha256": "3f4d0e331998541f2628ba85ae309568b5799210db95f6d0bb77960e8e547b2b"
+    },
+    {
+      "file": "docs/evidence/render/t2-capture-m0/rework/integrated/pan-1/initial.png",
+      "bytes": 2606027,
+      "sha256": "afd01f719bc9c2ddb83a2d57ccadddfa67280e5daec122e5b113adef15b08489"
+    },
+    {
+      "file": "docs/evidence/render/t2-capture-m0/rework/integrated/pan-1/contact.png",
+      "bytes": 1132152,
+      "sha256": "e6cc55bb2b00306da3ea57d76a1a8feec8140ad0d0624cbf7eefbecf2eeff908"
+    },
+    {
+      "file": "docs/evidence/render/t2-capture-m0/rework/integrated/pan-1/middle.png",
+      "bytes": 2623236,
+      "sha256": "60fe8d5edf3723a0b8ceb48759f964a4e6d91c78bffd1d23b9776464bc31d366"
+    },
+    {
+      "file": "docs/evidence/render/t2-capture-m0/rework/integrated/pan-1/native-sequence.png",
+      "bytes": 1668955,
+      "sha256": "cb17cd78b8ce6dfc63a40d3010cec730e3e22625533faf4290227beba0f022ab"
+    },
+    {
+      "file": "docs/evidence/render/t2-capture-m0/rework/integrated/input-stall/final.png",
+      "bytes": 2623897,
+      "sha256": "5df466e13be254637f72531013b29e3ae8025201e4974de443329f82516dad42"
+    },
+    {
+      "file": "docs/evidence/render/t2-capture-m0/rework/integrated/input-stall/preview-1x.mp4",
+      "bytes": 2615560,
+      "sha256": "3ae8df7b899da3438779ebd07baa9381f2703450da5cffabab312f9c4403d91e"
+    },
+    {
+      "file": "docs/evidence/render/t2-capture-m0/rework/integrated/input-stall/initial.png",
+      "bytes": 2606027,
+      "sha256": "afd01f719bc9c2ddb83a2d57ccadddfa67280e5daec122e5b113adef15b08489"
+    },
+    {
+      "file": "docs/evidence/render/t2-capture-m0/rework/integrated/input-stall/contact.png",
+      "bytes": 1129637,
+      "sha256": "b8f4b6cc156895f63d852d0c2403d83c63b06f8980e261b1250362c85ea88aa8"
+    },
+    {
+      "file": "docs/evidence/render/t2-capture-m0/rework/integrated/input-stall/middle.png",
+      "bytes": 2623478,
+      "sha256": "13daabeb3a119f9a56794b9ab70be9120000ee43fd96b40499805f3a37a2d95a"
+    },
+    {
+      "file": "docs/evidence/render/t2-capture-m0/rework/integrated/input-stall/native-sequence.png",
+      "bytes": 618230,
+      "sha256": "9421f6551ed8271453eebe37e3937a816227fd1b3649003e8235d1311713367f"
+    },
+    {
+      "file": "docs/evidence/render/t2-capture-m0/rework/integrated/fixed/final.png",
+      "bytes": 2623897,
+      "sha256": "5df466e13be254637f72531013b29e3ae8025201e4974de443329f82516dad42"
+    },
+    {
+      "file": "docs/evidence/render/t2-capture-m0/rework/integrated/fixed/preview-1x.mp4",
+      "bytes": 2686052,
+      "sha256": "91d35b9896a44608bb1e8d109a015d0e0747544f0484d404e0566c29b59cef4f"
+    },
+    {
+      "file": "docs/evidence/render/t2-capture-m0/rework/integrated/fixed/initial.png",
+      "bytes": 2606027,
+      "sha256": "afd01f719bc9c2ddb83a2d57ccadddfa67280e5daec122e5b113adef15b08489"
+    },
+    {
+      "file": "docs/evidence/render/t2-capture-m0/rework/integrated/fixed/contact.png",
+      "bytes": 1130952,
+      "sha256": "d2ff0b36c90c8939b7490609633d45511d4793d052ef5443583339a364eabbc9"
+    },
+    {
+      "file": "docs/evidence/render/t2-capture-m0/rework/integrated/fixed/middle.png",
+      "bytes": 2623236,
+      "sha256": "60fe8d5edf3723a0b8ceb48759f964a4e6d91c78bffd1d23b9776464bc31d366"
+    },
+    {
+      "file": "docs/evidence/render/t2-capture-m0/rework/integrated/still/final.png",
+      "bytes": 2606027,
+      "sha256": "afd01f719bc9c2ddb83a2d57ccadddfa67280e5daec122e5b113adef15b08489"
+    },
+    {
+      "file": "docs/evidence/render/t2-capture-m0/rework/integrated/still/preview-1x.mp4",
+      "bytes": 660136,
+      "sha256": "73612a8ecf79859b874d311ab7720d2cc84259857b17b0161267597b64f33946"
+    },
+    {
+      "file": "docs/evidence/render/t2-capture-m0/rework/integrated/still/initial.png",
+      "bytes": 2606027,
+      "sha256": "afd01f719bc9c2ddb83a2d57ccadddfa67280e5daec122e5b113adef15b08489"
+    },
+    {
+      "file": "docs/evidence/render/t2-capture-m0/rework/integrated/still/contact.png",
+      "bytes": 496178,
+      "sha256": "1ec32cd95b45a72d6d4b0e61f645297e48b50ce8b7d152a18d1d7d9023e8ca28"
+    },
+    {
+      "file": "docs/evidence/render/t2-capture-m0/rework/integrated/still/middle.png",
+      "bytes": 2606027,
+      "sha256": "afd01f719bc9c2ddb83a2d57ccadddfa67280e5daec122e5b113adef15b08489"
+    },
+    {
+      "file": "docs/evidence/render/t2-capture-m0/rework/integrated/render-stall/final.png",
+      "bytes": 2623897,
+      "sha256": "5df466e13be254637f72531013b29e3ae8025201e4974de443329f82516dad42"
+    },
+    {
+      "file": "docs/evidence/render/t2-capture-m0/rework/integrated/render-stall/preview-1x.mp4",
+      "bytes": 2503302,
+      "sha256": "d9f47a23b36bba7822e945635decb1942e82d3e13f7dfabaa07b8cc09e6b7a79"
+    },
+    {
+      "file": "docs/evidence/render/t2-capture-m0/rework/integrated/render-stall/initial.png",
+      "bytes": 2606027,
+      "sha256": "afd01f719bc9c2ddb83a2d57ccadddfa67280e5daec122e5b113adef15b08489"
+    },
+    {
+      "file": "docs/evidence/render/t2-capture-m0/rework/integrated/render-stall/contact.png",
+      "bytes": 1133363,
+      "sha256": "c8e9170773694770ec4549e9e7fbbbf2673504fd6910cf62e3bf6076672974ee"
+    },
+    {
+      "file": "docs/evidence/render/t2-capture-m0/rework/integrated/render-stall/middle.png",
+      "bytes": 2626208,
+      "sha256": "bf5ad0086d175d0e9d0de465785fe4ea01feb5c8df19110ace381f11a432fa58"
+    },
+    {
+      "file": "docs/evidence/render/t2-capture-m0/rework/integrated/render-stall/native-sequence.png",
+      "bytes": 1666372,
+      "sha256": "0986f6ed60e77ff6e9a0854ff161bfa5eaa23714fbddf40c27f1311b306205ff"
+    }
+  ],
+  "removed_bytes": 80709923
+}

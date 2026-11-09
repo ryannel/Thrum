@@ -1,0 +1,32 @@
+[
+  {
+    "file": "rgba.lz4",
+    "bytes": 1920158097,
+    "reason": "rejected transform/level/representation candidate; selected engine-native level1 XOR is independently verified in pan-pilot"
+  },
+  {
+    "file": "delta.lz4",
+    "bytes": 963613845,
+    "reason": "rejected transform/level/representation candidate; selected engine-native level1 XOR is independently verified in pan-pilot"
+  },
+  {
+    "file": "zstd-rgba.zst",
+    "bytes": 1194676404,
+    "reason": "rejected transform/level/representation candidate; selected engine-native level1 XOR is independently verified in pan-pilot"
+  },
+  {
+    "file": "zstd-delta.zst",
+    "bytes": 581077750,
+    "reason": "rejected transform/level/representation candidate; selected engine-native level1 XOR is independently verified in pan-pilot"
+  },
+  {
+    "file": "zstd-predict.zst",
+    "bytes": 625398149,
+    "reason": "rejected transform/level/representation candidate; selected engine-native level1 XOR is independently verified in pan-pilot"
+  },
+  {
+    "file": "zstd-delta3.zst",
+    "bytes": 573417349,
+    "reason": "rejected transform/level/representation candidate; selected engine-native level1 XOR is independently verified in pan-pilot"
+  }
+]
