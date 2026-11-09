@@ -125,6 +125,7 @@ pub(super) struct FrameReply {
     pub(super) drawable: [u32; 2],
     pub(super) status: SurfaceStatus,
     pub(super) report: Option<DriveReport>,
+    pub(super) cooked: String,
     pub(super) completed: u32,
     pub(super) surface_samples: u32,
     pub(super) pending_frames: usize,
@@ -260,6 +261,7 @@ struct Gpu {
     queue: wgpu::Queue,
     watch: Watch,
     host: ThreadedFrameHost,
+    cooked: Option<Arc<Mutex<thrum_asset_gpu::CookedStats>>>,
     format: wgpu::TextureFormat,
     host_extent: [u32; 2],
 }
@@ -361,6 +363,7 @@ impl FrameReply {
             drawable: [0; 2],
             status: SurfaceStatus::NoView,
             report: None,
+            cooked: String::new(),
             completed: 0,
             surface_samples: 0,
             pending_frames: 0,
@@ -434,7 +437,7 @@ impl Owner {
             .unwrap_or(Some(wgpu::TextureFormat::Bgra8Unorm))
             .ok_or("no supported iOS SDR surface format")?;
         let extent = [extent[0].max(1), extent[1].max(1)];
-        let host = pollster::block_on(FrameHost::new_with_capabilities(
+        let mut host = pollster::block_on(FrameHost::new_with_capabilities(
             &device,
             &queue,
             &capabilities,
@@ -443,14 +446,20 @@ impl Owner {
                 surface: Some(SurfaceProfile { format, extent }),
             },
         ))?;
+        let cooked = v1_game::attach_cooked_scene(&mut host)?;
         let (host, controls) = host.into_threaded(self.origin, world_advanced)?;
-        let name = adapter.get_info().name;
+        let name = format!(
+            "{:?}; downlevel={:?}",
+            capabilities.adapter(),
+            capabilities.downlevel()
+        );
         self.gpu = Some(Gpu {
             adapter,
             device,
             queue,
             watch,
             host,
+            cooked,
             format,
             host_extent: extent,
         });
@@ -695,6 +704,16 @@ impl Owner {
             reply.completed += 1;
             reply.surface_samples += u32::from(sample.surface_presented);
         }
+        reply.cooked = gpu
+            .cooked
+            .as_ref()
+            .and_then(|stats| stats.lock().ok())
+            .map_or_else(String::new, |stats| {
+                format!(
+                    "cooked_path={:?}\ncooked_drawn={:?}\ncooked_device_generation={:?}\ncooked_submitted={}\ncooked_errors={:?}",
+                    stats.draw_path, stats.drawn, stats.drawn_device_generation, stats.submitted_frames, stats.errors
+                )
+            });
         reply.pending_frames = gpu.host.pending_frames();
         Ok(reply)
     }

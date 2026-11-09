@@ -8,7 +8,7 @@ use std::cell::Cell;
 
 use crate::load::ResidentSet;
 use crate::material::{self, Target};
-use crate::{CookedMaterial, MeshPlacement, VolumePlacement};
+use crate::{CookedDrawPath, CookedMaterial, MeshPlacement, VolumePlacement};
 
 const CULL_BYTES: usize = 160;
 const VOLUME_BYTES: usize = 144;
@@ -23,8 +23,7 @@ pub(crate) struct Pipelines {
     volume: wgpu::RenderPipeline,
     volume_layout: wgpu::BindGroupLayout,
     material_layout: wgpu::BindGroupLayout,
-    cull: wgpu::ComputePipeline,
-    cull_layout: wgpu::BindGroupLayout,
+    cull: Option<(wgpu::ComputePipeline, wgpu::BindGroupLayout)>,
     defaults: [wgpu::TextureView; 3],
     sampler: wgpu::Sampler,
     volume_sampler: wgpu::Sampler,
@@ -37,7 +36,7 @@ pub(crate) struct Bound {
     volume: Option<(wgpu::BindGroup, wgpu::Buffer)>,
     /// Meshlets the last cull kept (one `u32`), copied out for [`crate::CookedStats`] and
     /// cleared after each frame's cull.
-    pub(crate) visible: wgpu::Buffer,
+    pub(crate) visible: Option<wgpu::Buffer>,
     /// This set was drawn in the last submitted frame, so its geometry has motion history.
     pub(crate) continued: Cell<bool>,
 }
@@ -45,6 +44,10 @@ pub(crate) struct Bound {
 impl Bound {
     /// Whether a frame drawing this set dispatches any cull work.
     pub(crate) fn culls(&self) -> bool {
+        self.visible.is_some() && self.has_meshes()
+    }
+
+    pub(crate) fn has_meshes(&self) -> bool {
         !self.meshes.is_empty()
     }
 
@@ -56,9 +59,8 @@ impl Bound {
 
 struct BoundMesh {
     material: wgpu::BindGroup,
-    cull: wgpu::BindGroup,
-    cull_uniform: wgpu::Buffer,
-    draws: wgpu::Buffer,
+    indirect: Option<IndirectMesh>,
+    index_count: u32,
     instance: wgpu::Buffer,
     model: glam::Mat4,
     max_scale: f32,
@@ -68,6 +70,12 @@ struct BoundMesh {
     vertex: [wgpu::Buffer; 2],
     indices: wgpu::Buffer,
     shadow_indices: u32,
+}
+
+struct IndirectMesh {
+    cull: wgpu::BindGroup,
+    cull_uniform: wgpu::Buffer,
+    draws: wgpu::Buffer,
 }
 
 fn texture_entry(
@@ -252,33 +260,39 @@ impl Pipelines {
             multiview_mask: None,
             cache: None,
         });
-        let cull_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            label: Some("cooked meshlet cull"),
-            entries: &[
-                uniform_entry(0, wgpu::ShaderStages::COMPUTE),
-                storage_entry(1, true),
-                storage_entry(2, true),
-                storage_entry(3, false),
-                storage_entry(4, false),
-            ],
-        });
-        let cull_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("cooked meshlet cull"),
-            source: wgpu::ShaderSource::Wgsl(include_str!("cull.wgsl").into()),
-        });
-        let cull_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some("cooked meshlet cull"),
-            bind_group_layouts: &[Some(&cull_layout)],
-            immediate_size: 0,
-        });
-        let cull = device.compute(&wgpu::ComputePipelineDescriptor {
-            label: Some("cooked meshlet cull"),
-            layout: Some(&cull_pipeline_layout),
-            module: &cull_module,
-            entry_point: Some("cull_meshlets"),
-            compilation_options: wgpu::PipelineCompilationOptions::default(),
-            cache: None,
-        });
+        let cull =
+            (CookedDrawPath::select(surface.downlevel) == CookedDrawPath::Indirect).then(|| {
+                let cull_layout =
+                    device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                        label: Some("cooked meshlet cull"),
+                        entries: &[
+                            uniform_entry(0, wgpu::ShaderStages::COMPUTE),
+                            storage_entry(1, true),
+                            storage_entry(2, true),
+                            storage_entry(3, false),
+                            storage_entry(4, false),
+                        ],
+                    });
+                let cull_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+                    label: Some("cooked meshlet cull"),
+                    source: wgpu::ShaderSource::Wgsl(include_str!("cull.wgsl").into()),
+                });
+                let cull_pipeline_layout =
+                    device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                        label: Some("cooked meshlet cull"),
+                        bind_group_layouts: &[Some(&cull_layout)],
+                        immediate_size: 0,
+                    });
+                let cull = device.compute(&wgpu::ComputePipelineDescriptor {
+                    label: Some("cooked meshlet cull"),
+                    layout: Some(&cull_pipeline_layout),
+                    module: &cull_module,
+                    entry_point: Some("cull_meshlets"),
+                    compilation_options: wgpu::PipelineCompilationOptions::default(),
+                    cache: None,
+                });
+                (cull, cull_layout)
+            });
         let defaults = [
             [128, 128, 255, 255],
             [255, 255, 255, 255],
@@ -313,7 +327,6 @@ impl Pipelines {
             volume_layout,
             material_layout: surface.material_layout.clone(),
             cull,
-            cull_layout,
             defaults,
             sampler,
             volume_sampler,
@@ -341,11 +354,13 @@ impl Pipelines {
         placements: &[MeshPlacement],
         volume: Option<&VolumePlacement>,
     ) -> Bound {
-        let visible = self.buffer(
-            "cooked visible meshlets",
-            4,
-            wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
-        );
+        let visible = self.cull.as_ref().map(|_| {
+            self.buffer(
+                "cooked visible meshlets",
+                4,
+                wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
+            )
+        });
         let mut shadow_bounds: Option<ShadowBounds> = None;
         let meshes = set
             .meshes
@@ -402,42 +417,53 @@ impl Pipelines {
                 // History flag (byte 64) starts at zero: the first submitted frame has no history.
                 self.queue
                     .write_buffer(&instance, 0, bytemuck::cast_slice(&model.to_cols_array()));
-                let cull_uniform = self.buffer(
-                    "cooked cull",
-                    CULL_BYTES as u64,
-                    wgpu::BufferUsages::UNIFORM,
-                );
-                let draws = self.buffer(
-                    "cooked meshlet draws",
-                    u64::from(mesh.meshlet_count.max(1)) * DRAW_ARGS_BYTES,
-                    wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::INDIRECT,
-                );
-                let cull = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
-                    label: Some("cooked meshlet cull"),
-                    layout: &self.cull_layout,
-                    entries: &[
-                        wgpu::BindGroupEntry {
-                            binding: 0,
-                            resource: cull_uniform.as_entire_binding(),
-                        },
-                        wgpu::BindGroupEntry {
-                            binding: 1,
-                            resource: mesh.bounds.as_entire_binding(),
-                        },
-                        wgpu::BindGroupEntry {
-                            binding: 2,
-                            resource: mesh.ranges.as_entire_binding(),
-                        },
-                        wgpu::BindGroupEntry {
-                            binding: 3,
-                            resource: draws.as_entire_binding(),
-                        },
-                        wgpu::BindGroupEntry {
-                            binding: 4,
-                            resource: visible.as_entire_binding(),
-                        },
-                    ],
-                });
+                let indirect =
+                    self.cull
+                        .as_ref()
+                        .zip(visible.as_ref())
+                        .map(|((_, layout), visible)| {
+                            let cull_uniform = self.buffer(
+                                "cooked cull",
+                                CULL_BYTES as u64,
+                                wgpu::BufferUsages::UNIFORM,
+                            );
+                            let draws = self.buffer(
+                                "cooked meshlet draws",
+                                u64::from(mesh.meshlet_count.max(1)) * DRAW_ARGS_BYTES,
+                                wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::INDIRECT,
+                            );
+                            let cull = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+                                label: Some("cooked meshlet cull"),
+                                layout,
+                                entries: &[
+                                    wgpu::BindGroupEntry {
+                                        binding: 0,
+                                        resource: cull_uniform.as_entire_binding(),
+                                    },
+                                    wgpu::BindGroupEntry {
+                                        binding: 1,
+                                        resource: mesh.bounds.as_entire_binding(),
+                                    },
+                                    wgpu::BindGroupEntry {
+                                        binding: 2,
+                                        resource: mesh.ranges.as_entire_binding(),
+                                    },
+                                    wgpu::BindGroupEntry {
+                                        binding: 3,
+                                        resource: draws.as_entire_binding(),
+                                    },
+                                    wgpu::BindGroupEntry {
+                                        binding: 4,
+                                        resource: visible.as_entire_binding(),
+                                    },
+                                ],
+                            });
+                            IndirectMesh {
+                                cull,
+                                cull_uniform,
+                                draws,
+                            }
+                        });
                 let (scale, _, _) = model.to_scale_rotation_translation();
                 let shadow_indices = if self.shadow.is_some()
                     && mesh.index_count != 0
@@ -451,9 +477,8 @@ impl Pipelines {
                 };
                 BoundMesh {
                     material,
-                    cull,
-                    cull_uniform,
-                    draws,
+                    indirect,
+                    index_count: mesh.index_count,
                     instance,
                     model,
                     max_scale: scale.abs().max_element(),
@@ -514,26 +539,35 @@ impl Pipelines {
         }
     }
 
-    /// Cull every placed mesh's meshlets for this frame's camera into `pass`, and set each
-    /// instance's history flag: valid only when it was drawn in the previous submitted frame
-    /// (`continued`) and the scene keeps its view history. Queue writes land with the next
-    /// submission even when this frame is discarded; they derive only from committed state and
-    /// this frame's view, and the next recording rewrites the cull uniform, so a discarded frame
-    /// changes nothing the next frame draws. Returns the flag.
-    pub(crate) fn cull(
-        &self,
-        bound: &Bound,
-        pass: &mut wgpu::ComputePass<'_>,
-        frame: &ContributionFrame,
-    ) -> bool {
+    /// History derives only from committed state, on both draw paths. Queue writes from a
+    /// discarded recording are overwritten from that state by the next recording.
+    pub(crate) fn history(&self, bound: &Bound, frame: &ContributionFrame) -> bool {
         let continued = bound.continued.get() && !frame.history_reset;
-        pass.set_pipeline(&self.cull);
         for mesh in &bound.meshes {
             if mesh.history.get() != continued {
                 self.queue
                     .write_buffer(&mesh.instance, 64, &u32::from(continued).to_le_bytes());
                 mesh.history.set(continued);
             }
+        }
+        continued
+    }
+
+    /// Record the unchanged meshlet cull on the indirect path only.
+    pub(crate) fn cull(
+        &self,
+        bound: &Bound,
+        pass: &mut wgpu::ComputePass<'_>,
+        frame: &ContributionFrame,
+    ) {
+        let Some((pipeline, _)) = &self.cull else {
+            return;
+        };
+        pass.set_pipeline(pipeline);
+        for mesh in &bound.meshes {
+            let Some(indirect) = &mesh.indirect else {
+                continue;
+            };
             let mut bytes = [0u8; CULL_BYTES];
             let view_proj = glam::Mat4::from_cols_array_2d(&frame.view_proj);
             bytes[..64].copy_from_slice(bytemuck::cast_slice(&view_proj.to_cols_array()));
@@ -546,11 +580,10 @@ impl Pipelines {
             ];
             bytes[128..144].copy_from_slice(bytemuck::cast_slice(&camera));
             bytes[144..148].copy_from_slice(&mesh.meshlets.to_le_bytes());
-            self.queue.write_buffer(&mesh.cull_uniform, 0, &bytes);
-            pass.set_bind_group(0, &mesh.cull, &[]);
+            self.queue.write_buffer(&indirect.cull_uniform, 0, &bytes);
+            pass.set_bind_group(0, &indirect.cull, &[]);
             pass.dispatch_workgroups(mesh.meshlets.div_ceil(64), 1, 1);
         }
-        continued
     }
 
     pub(crate) fn draw_shadow(&self, bound: &Bound, pass: &mut wgpu::RenderPass<'_>) {
@@ -585,7 +618,11 @@ impl Pipelines {
             pass.set_vertex_buffer(1, mesh.vertex[1].slice(..));
             pass.set_vertex_buffer(2, mesh.instance.slice(..));
             pass.set_index_buffer(mesh.indices.slice(..), wgpu::IndexFormat::Uint32);
-            pass.multi_draw_indexed_indirect(&mesh.draws, 0, mesh.meshlets);
+            if let Some(indirect) = &mesh.indirect {
+                pass.multi_draw_indexed_indirect(&indirect.draws, 0, mesh.meshlets);
+            } else {
+                pass.draw_indexed(0..mesh.index_count, 0, 0..1);
+            }
         }
         if let Some((group, _)) = &bound.volume {
             pass.set_pipeline(&self.volume);

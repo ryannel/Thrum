@@ -14,6 +14,7 @@ const NAME: &str = "thrum-v1-ios-state.txt";
 #[derive(Default)]
 pub(super) struct Witness {
     pub(super) state: String,
+    cooked: String,
     pub(super) adapter: String,
     pub(super) format: String,
     pub(super) display_thread: String,
@@ -182,6 +183,7 @@ impl Witness {
     }
 
     pub(super) fn frame(&mut self, frame: &FrameReply) {
+        self.cooked.clone_from(&frame.cooked);
         self.replies += 1;
         if self.resize_open {
             self.resize_replies += 1;
@@ -462,6 +464,7 @@ impl Witness {
         for (key, value) in tail {
             let _ = writeln!(out, "{key}={value}");
         }
+        let _ = writeln!(out, "{}", self.cooked);
         replace(&out);
     }
 }

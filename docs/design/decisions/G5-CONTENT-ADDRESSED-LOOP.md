@@ -219,7 +219,12 @@ dev-server client.
 - The volume is not occluded by scene depth inside its box and is a diagnostic consumer only.
 - Mesh-shader meshlet path (tied to G3c); the indirect path needs `multi_draw_indirect` support (Metal has it).
 - No draw path for adapters without indirect execution: the iOS simulator draws no cooked content. A
-  capability-selected direct full-range draw is planned in [COOKED-DRAW](../modules/COOKED-DRAW.md) (not built).
+  capability-selected direct full-range draw has an unclaimed implementation checkpoint in
+  [COOKED-DRAW](../modules/COOKED-DRAW.md), blocked on exact-byte parity: the first Metal valley view differs
+  at 1,506 pixels despite deterministic repeat controls. [Evidence](../../evidence/render/cooked-draw/README.md).
+  Known adapter downlevel flags alone enable indirect; absent or unknown facts select direct. No cull/count/readback
+  resources are created on direct. Mac reports indirect support; the simulator omits it. Chrome remains unqualified
+  for this change. This checkpoint delivers no M1 acceptance, performance claim or T2 M2 handoff.
 - Graph Copy passes are untimed engine-wide, so the upload's GPU cost is measured by the bench, not pass timestamps.
 - Physical iPhone, Chrome and sustained measurements.
 - Tripwires are asserted only by `scripts/check_g5_tripwires.sh`, not `./dev check` (they need the GPU and minutes).

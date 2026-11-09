@@ -18,6 +18,7 @@ v1-game = { path = "../v1-game" }
 
 [target.'cfg(target_os = "ios")'.dependencies]
 pollster = "=1.0.1"
+thrum-asset-gpu = { path = "../../crates/thrum-asset-gpu" }
 thrum-render = { path = "../../crates/thrum-render" }
 wgpu = { version = "=30.0.1", default-features = false, features = ["std", "metal", "wgsl"] }
 winit = { version = "=0.30.13", default-features = false, features = ["rwh_06"] }

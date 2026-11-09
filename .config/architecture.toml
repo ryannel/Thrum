@@ -87,7 +87,7 @@ allowed_workspace_dependencies = ["thrum-app"]
 
 [packages.v1-game-ios]
 manifest = "examples/v1-game-ios/Cargo.toml"
-allowed_workspace_dependencies = ["v1-game", "thrum-render", "thrum-core"]
+allowed_workspace_dependencies = ["v1-game", "thrum-render", "thrum-core", "thrum-asset-gpu"]
 
 # Every direct third-party crate must be listed here with an exact Cargo
 # requirement, its declared license, purpose and target/build cost note.

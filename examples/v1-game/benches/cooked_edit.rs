@@ -235,9 +235,16 @@ fn run(scenario: &Scenario, report: &mut String, metrics: &mut Metrics) {
             })
             .await
             .expect("device");
-        let mut host = FrameHost::new(&device, &queue, FrameConfig::default())
-            .await
-            .expect("game");
+        let capabilities =
+            thrum_render::capabilities::DeviceCapabilities::capture(&adapter, &device, 1);
+        let mut host = FrameHost::new_with_capabilities(
+            &device,
+            &queue,
+            &capabilities,
+            FrameConfig::default(),
+        )
+        .await
+        .expect("game");
         let mut config = v1_game::cooked::cooked_config(root.join("store"));
         config.upload_budget = BUDGET;
         config.poll_interval = Duration::from_millis(1);
@@ -246,6 +253,15 @@ fn run(scenario: &Scenario, report: &mut String, metrics: &mut Metrics) {
         let attach = Instant::now();
         host.set_scene_contribution(Box::new(assets))
             .expect("attach");
+        assert_eq!(
+            stats.lock().expect("stats").draw_path,
+            Some(thrum_asset_gpu::CookedDrawPath::Indirect)
+        );
+        writeln!(
+            report,
+            "selected cooked path: Indirect (adapter-backed record)"
+        )
+        .ok();
         let mut clock = Duration::ZERO;
         let mut steady = Vec::new();
         let mut upload = Vec::new();

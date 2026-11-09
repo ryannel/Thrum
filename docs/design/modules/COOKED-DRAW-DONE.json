@@ -4,7 +4,7 @@
     {
       "id": "M1",
       "name": "Cooked scene draws on adapters without indirect execution, selected from the capability record",
-      "state": "open",
+      "state": "in_progress",
       "fails": 0,
       "replans": 1,
       "bar": "Where both paths run, the same correct scene, with exact production-direct parity against a diagnostic full-range indirect reference at matching partitions (M1.3); on the iOS simulator the cooked valley is as complete as on Mac through lifecycle and rotation, and continuous in every sampled pan frame (function only), the way shipped compatibility renderers such as Unreal's ES3.1 mobile path or Unity's GLES fallback draw the same content with less GPU-driven work. The indirect path on Mac and Chrome is untouched.",
