@@ -3,6 +3,9 @@
 Use Rust 1.99.1 and Python 3.11+. `./dev` selects the pinned Rust toolchain even if a standalone
 Cargo comes first on PATH. PowerShell users can use `./dev.ps1` with the same commands. The workspace lockfile is committed. Run `rustup run 1.99.1 cargo fetch --locked` once on a clean copy; checks then use locked offline Cargo commands.
 
+The Bash `./dev` launcher defaults to an empty `RUSTC_WRAPPER`, overriding machine-wide Cargo wrapper configuration.
+Set `RUSTC_WRAPPER` explicitly when opting into a compiler wrapper for a particular invocation.
+
 | Command | What it does |
 | --- | --- |
 | `./dev help` | List implemented contributor commands |

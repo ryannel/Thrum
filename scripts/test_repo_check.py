@@ -1,12 +1,45 @@
 """Adversarial fixtures for checks that guard subsequent agent contributions."""
 import copy
+import json
+import os
 from pathlib import Path
+import shutil
+import subprocess
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
 
 import design_hashes
 import repo_check
+
+
+class DevLauncher(unittest.TestCase):
+    @unittest.skipUnless(shutil.which("bash"), "the Unix dev launcher requires Bash")
+    def test_configured_wrapper_is_opt_in_and_explicit_wrapper_is_preserved(self):
+        with tempfile.TemporaryDirectory() as directory:
+            tools = Path(directory)
+            rustup = tools / "rustup"
+            rustup.write_text(
+                f"#!{sys.executable}\n"
+                "import json, os, sys\n"
+                "if sys.argv[1:2] == ['which']:\n"
+                f"    print({str(tools / 'rustc')!r})\n"
+                "else:\n"
+                "    print(json.dumps({'wrapper': os.environ.get('RUSTC_WRAPPER', 'configured-wrapper')}))\n"
+            )
+            rustup.chmod(0o755)
+            for supplied in [None, "", "/explicit/compiler-wrapper"]:
+                with self.subTest(supplied=supplied):
+                    environment = dict(os.environ, PATH=str(tools) + os.pathsep + os.environ["PATH"])
+                    environment.pop("RUSTC_WRAPPER", None)
+                    if supplied is not None:
+                        environment["RUSTC_WRAPPER"] = supplied
+                    result = subprocess.run(
+                        ["bash", str(repo_check.ROOT / "dev"), "help"],
+                        env=environment, text=True, capture_output=True, check=True,
+                    )
+                    self.assertEqual(json.loads(result.stdout)["wrapper"], supplied or "")
 
 
 class RepositoryChecks(unittest.TestCase):

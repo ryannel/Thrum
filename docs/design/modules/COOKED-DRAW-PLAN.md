@@ -6,7 +6,7 @@ Design: [COOKED-DRAW.md](COOKED-DRAW.md) · [brief](COOKED-DRAW-BRIEF.md) · Don
 Reviews: [revised design review](../../evidence/COOKED-DRAW/design-review.md) of `2394162b` is DESIGN OK. The lead owns implementation review.
 Milestone: M1 Cooked scene draws on adapters without indirect execution (claimed)
 Now: All twelve M1 items pass; M1 is claimed for lead review. Accepted M7 supplies oriented scene sizing.
-Final `./dev check` passes 666 tests; all tripwire metrics pass against same-load BASE history, including quiet.
+Plain `./dev check` passes 666 Rust tests and the wrapper regression cases. Tripwire metrics pass against same-load BASE history, including quiet.
 Next: The lead independently reviews this claim after required land integration.
 
 ## Ownership and agreements
@@ -159,3 +159,5 @@ were verified unchanged. Scratch goes in
   - Release Mac costs use four order-alternated I/D pairs, 128 GPU-complete samples per arm, and actual host load records. Direct has no contribution compute sample. These are descriptive costs, with no selection or speed promotion. The first tripwire run reported an unseeded quiet class and was not treated as a qualified comparison; genuine BASE bench runs were collected under their actual load classes before the final gate. No reviewer launched; acceptance definitions and planner needs remain unchanged.
 
 - 2026-11-09 M1 claimed: all twelve items pass with named-target evidence. Final integrated-M7 D/R/I rerun reproduces the retained inspected payloads; Mac/Chrome BASE comparisons and both-build repeats are exact. Fresh locked ordinary simulator lifecycle/recovery/rotation and held/sampled visuals pass. All tripwire metrics pass against same-load history; three actual quiet BASE measurements per history were added without changing the encoder. Final `./dev check` passes 666 tests in 62 groups, zero failures; explicit iOS target Clippy passes. Owned bulk scratch is retired after retained-source/evidence verification. Only M1 state and item status/evidence changed in the done-when file; planner needs and review fields are preserved. No reviewer launched. Integration through land is next.
+
+- 2026-11-09 Fixed the loop's plain Check failure. The original launcher inherited the user Cargo configuration's sccache wrapper and exited 2 with empty output. A non-quiet Cargo diagnostic reported Operation not permitted. Earlier successful checks supplied RUSTC_WRAPPER= externally. The launcher now supplies that default itself and preserves explicit caller values. The regression fixture covers unset, empty and explicit wrappers, and rejects the original launcher in the unset case. Plain ./dev check passes 666 Rust tests and all twelve repository Python tests under the GPU lock with the caller environment unmodified. Renderer and target proof remain valid. Only M1 item evidence changes in the done-when record. The correction goes through the required land gate.
