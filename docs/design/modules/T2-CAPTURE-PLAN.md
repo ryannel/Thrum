@@ -2,11 +2,11 @@
 
 Design: [T2-CAPTURE.md](T2-CAPTURE.md) · [brief](T2-CAPTURE-BRIEF.md) ·
 Done when: [T2-CAPTURE-DONE.json](T2-CAPTURE-DONE.json).
-Reviews: [M0 third review](../../evidence/T2-CAPTURE/M0-review.md) passed in dff3eb5e. M1 builder claim awaits lead review.
-Milestone: M1 Chrome WebGPU images and runtime motion without desktop capture (claimed)
-Now: Chrome fixed-time and five consecutive elapsed-time cooked-route sessions pass on hardware WebGPU while locked, with denied launcher preflight. The final series verifies 2,407 original images. Pending-readback loss/recovery, resize, actual stall and bounded saturation/slow-export refusal pass. [Evidence](../../evidence/render/t2-capture-m1/README.md) retains every attempt, native checkpoints, exact timing/provenance and 1× previews. Full Check and affected actual-tab/lifecycle/route consumers pass.
-Next: integrate through the locked rebase/Check/push gate, then lead review of M1. Simulator M2 remains open.
-Blocked: no M1 prerequisite remains. Attended Mac window/panel/tooling owners retain their separate work.
+Reviews: [M0 third review](../../evidence/T2-CAPTURE/M0-review.md) passed in dff3eb5e; [M1 review](../../evidence/T2-CAPTURE/M1-review.md) passed in e2909ad4.
+Milestone: M2 iOS simulator engine motion without desktop capture (open, blocked on cooked rendering)
+Now: The ordinary diagnostic foreground route runs while locked on Apple iOS simulator GPU / Metal. The existing cooked contribution fails before capture: this adapter lacks INDIRECT_EXECUTION, but G5's meshlet draw requires indirect buffers/draws. A minimal source-restoring probe reproduces the missing prerequisite. [Evidence](../../evidence/render/t2-capture-m2/README.md).
+Next: G5 / thrum-asset-gpu must supply and qualify a capability-selected cooked draw path on ios-sim. Then resume T2 M2's foreground tap, motion and pending-capture lifecycle proofs.
+Blocked: M2.1 and M2.2 remain open. No simulator capture, cooked motion, pending-capture lifecycle or physical-device proof is claimed. No reviewer launched.
 
 ## Ownership and sequence
 
@@ -91,6 +91,21 @@ single ownership, final submitted-image correspondence, real-time versus synthet
 nonblocking bounded readback and the attended Mac cadence boundary. No proof item is passed by this plan.
 
 ## Log
+
+- 2026-11-09 Attempted M2 on the real locked iPhone 18 Pro / iOS 27.2 simulator. Shared booted-device
+  install/container requests wedged; a fresh owned simulator boots and runs the ordinary diagnostic foreground route.
+  The cooked scene fails on the existing G5 contribution: Apple iOS simulator GPU omits INDIRECT_EXECUTION;
+  `thrum-asset-gpu` creates indirect meshlet argument buffers and issues indirect draws. The initial adaptation
+  reports the explicit missing-downlevel-flag validation error; a minimal probe with capture disabled records the
+  actual adapter/flags, diagnostic presents and cooked validation failure. This is a missing G5 target path, not
+  an attended desktop-capture grant. Did not implement another owner's renderer fallback; removed the unverified
+  capture prototype and retained the minimal reproducible probe instead. Both M2 items/state stay open; only their
+  evidence fields change in the criteria. M1's selected PNG hashes and compressed evidence were verified after its
+  passed review, then 16,008,456,538 bytes of owned scratch were retired with a closeout record. Integration records
+  this blocker, not a milestone claim. `./dev check-docs` passes and criteria ownership validation confirms that
+  only M2 evidence fields changed. The profile Check runs in the locked integration gate. Resume after G5
+  provides the simulator-capable cooked path.
+
 
 - 2026-11-09 Built M1 with the existing renderer-owned tap, normal WebShell submission/lifecycle and V1 route.
   Fixed-time samples wait explicitly. Elapsed-time samples consume actual page time, initial pause release and
