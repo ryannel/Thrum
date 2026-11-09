@@ -4,14 +4,14 @@
     {
       "id": "M1",
       "name": "Cooked scene draws on adapters without indirect execution, selected from the capability record",
-      "state": "open",
+      "state": "blocked",
       "fails": 0,
       "replans": 0,
       "bar": "Where both paths run, identical pixels; on the iOS simulator the cooked valley is as complete as on Mac through lifecycle and rotation, and continuous in every sampled pan frame (function only), the way shipped compatibility renderers such as Unreal's ES3.1 mobile path or Unity's GLES fallback draw the same content with less GPU-driven work. The indirect path on Mac and Chrome is untouched.",
       "items": [
         {
           "id": "M1.1",
-          "statement": "The capability record captured from a real adapter carries its downlevel execution flags, SceneSurface lends them, and CookedAssets selects its draw path at every rebuild from that record alone: indirect only when adapter-read flags include INDIRECT_EXECUTION, direct otherwise. A record built without an adapter (capture_device) holds unknown downlevel facts and never selects indirect: the public FrameHost::new → attach_cooked_scene route draws through the direct path and creates no INDIRECT-usage buffer on any device. A diagnostic mask that clears INDIRECT_EXECUTION in a captured record is opt-in only and recorded whenever used.",
+          "statement": "The capability record captured from a real adapter carries its downlevel execution flags, SceneSurface lends them, and CookedAssets selects its draw path at every rebuild from that record alone: indirect only when adapter-read flags include INDIRECT_EXECUTION, direct otherwise. A record built without an adapter (capture_device) holds unknown downlevel facts and never selects indirect: the public FrameHost::new \u2192 attach_cooked_scene route draws through the direct path and creates no INDIRECT-usage buffer on any device. A diagnostic mask that clears INDIRECT_EXECUTION in a captured record is opt-in only and recorded whenever used.",
           "check": "./dev check",
           "lock": "gpu",
           "ask": "Read the diff. Is the cooked draw path chosen only from the record lent through SceneSurface, never from cfg(target_os), adapter or device name, backend, or a private adapter/device query? Can any record not built from an adapter report INDIRECT_EXECUTION, by default, assumption or provenance marker? Does a test build a host through FrameHost::new (capture_device), attach cooked content and prove the direct path is selected with no INDIRECT-usage buffer or indirect draw recorded, alongside the adapter-backed and masked-record arms? Do the Mac app, Chrome and iOS routes build their record with the adapter-backed capture? Is the diagnostic mask unreachable without explicit opt-in, applied to the record (not inside thrum-asset-gpu), and recorded in evidence when used? Do unit tests cover selection with the flag, without it, with unknown facts, and re-selection on a new device generation?",
@@ -35,7 +35,7 @@
         },
         {
           "id": "M1.3",
-          "statement": "On this Mac, with the same build and cooked store, the direct path's final submitted output (through the indirect-masked record) is byte-identical to the indirect path's for these fixed-time views: valley noon pan at 0°, 18° and 36°; a low-sun valley view; and the diagnostic scene with its volume, mirrored node and edge-straddling mesh. A same-path rerun of each arm is also byte-identical, so the comparison is meaningful. Each arm's evidence records the path it actually selected.",
+          "statement": "On this Mac, with the same build and cooked store, the direct path's final submitted output (through the indirect-masked record) is byte-identical to the indirect path's for these fixed-time views: valley noon pan at 0\u00b0, 18\u00b0 and 36\u00b0; a low-sun valley view; and the diagnostic scene with its volume, mirrored node and edge-straddling mesh. A same-path rerun of each arm is also byte-identical, so the comparison is meaningful. Each arm's evidence records the path it actually selected.",
           "check": "python3 scripts/cooked_draw_parity.py paths --target mac-metal --output tmp/cooked-draw/paths-$(date +%s)",
           "lock": "gpu",
           "target": "mac-metal",
@@ -57,7 +57,7 @@
         },
         {
           "id": "M1.5",
-          "statement": "Chrome WebGPU's record reports INDIRECT_EXECUTION and selects the indirect path, and its cooked valley output through the T2 browser tap is byte-identical between the recorded base and the claimed commit at fixed times (pan 0°, 18°, 36° and a low-sun view), with a same-build rerun control, in one Chrome session on real hardware WebGPU.",
+          "statement": "Chrome WebGPU's record reports INDIRECT_EXECUTION and selects the indirect path, and its cooked valley output through the T2 browser tap is byte-identical between the recorded base and the claimed commit at fixed times (pan 0\u00b0, 18\u00b0, 36\u00b0 and a low-sun view), with a same-build rerun control, in one Chrome session on real hardware WebGPU.",
           "check": "python3 scripts/cooked_draw_parity.py indirect --base \"$(cat docs/evidence/render/cooked-draw/BASE)\" --target chrome-webgpu --output tmp/cooked-draw/indirect-chrome-$(date +%s)",
           "lock": "gpu",
           "target": "chrome-webgpu",
@@ -104,7 +104,7 @@
         },
         {
           "id": "M1.9",
-          "statement": "With cooked content attached on the simulator, the route's portrait → landscape → portrait rotation row (the existing XCUITest orientation gesture in examples/v1-game-ios/ios/route.py) presents at each new current extent on the same process, window, lease and device generation, with the cooked set still drawn through the direct path, cooked submitted frames advancing after each transition, and no validation error.",
+          "statement": "With cooked content attached on the simulator, the route's portrait \u2192 landscape \u2192 portrait rotation row (the existing XCUITest orientation gesture in examples/v1-game-ios/ios/route.py) presents at each new current extent on the same process, window, lease and device generation, with the cooked set still drawn through the direct path, cooked submitted frames advancing after each transition, and no validation error.",
           "check": "python3 scripts/cooked_draw_ios_sim.py --rotation --output tmp/cooked-draw/ios-sim-rotation-$(date +%s)",
           "lock": "gpu",
           "ask": "Do the state records before and after each orientation show the presented extent, surface epoch, unchanged process/generation, selected path, drawn set and advancing cooked submitted frames? If the XCUITest gesture needed an unlocked console or an OS grant, is that reason recorded for this row alone, with the locked engine-state rows (M1.7, M1.8) proved separately?",
@@ -117,7 +117,7 @@
         {
           "id": "M1.10",
           "statement": "The cooked valley reads as complete, textured, lit and shadowed on the simulator.",
-          "inspect": "Native-size simctl screenshots of the valley start view, the 36° pan end, a low-sun view, the diagnostic scene, and the valley in landscape after rotation and back in portrait, each judged whole and in full-resolution crops of the frame edges, horizon and objects. Inspection list: (1) terrain complete to the horizon and frame edges, with no missing patches, meshlet-shaped gaps, cracks or holes; (2) terrain reads as textured ground with its base colour, not default white, black or magenta, and no channel swap; (3) sphere reads metallic with sky reflection, rock matte, both facing outward; the mirrored diagnostic node faces and lights like its plain twin; (4) Sun direction and sky ambient read the same as the Mac indirect capture of that view (content presence only, not an image target); (5) sphere and rock cast Sun shadows onto the terrain; (6) the diagnostic volume is present and not clipped or blacked out; (7) after each rotation the image fills the new extent with the scene at the correct aspect, not stretched, letterboxed by stale content or missing cooked meshes; (8) no z-fighting, flicker or differences between two successive stills of a held view. Label simulator function only.",
+          "inspect": "Native-size simctl screenshots of the valley start view, the 36\u00b0 pan end, a low-sun view, the diagnostic scene, and the valley in landscape after rotation and back in portrait, each judged whole and in full-resolution crops of the frame edges, horizon and objects. Inspection list: (1) terrain complete to the horizon and frame edges, with no missing patches, meshlet-shaped gaps, cracks or holes; (2) terrain reads as textured ground with its base colour, not default white, black or magenta, and no channel swap; (3) sphere reads metallic with sky reflection, rock matte, both facing outward; the mirrored diagnostic node faces and lights like its plain twin; (4) Sun direction and sky ambient read the same as the Mac indirect capture of that view (content presence only, not an image target); (5) sphere and rock cast Sun shadows onto the terrain; (6) the diagnostic volume is present and not clipped or blacked out; (7) after each rotation the image fills the new extent with the scene at the correct aspect, not stretched, letterboxed by stale content or missing cooked meshes; (8) no z-fighting, flicker or differences between two successive stills of a held view. Label simulator function only.",
           "target": "ios-sim",
           "status": "open",
           "evidence": "",
@@ -144,7 +144,8 @@
           "verdict": "",
           "review": ""
         }
-      ]
+      ],
+      "blocked": "Reconcile whole-range drawing with exact-byte parity before resuming M1."
     }
   ]
 }
