@@ -238,6 +238,16 @@ is memoryless or transient where the recipe supports it, never stored to memory 
 persist per adapter, driver and recipe; a stale or rejected cache is discarded and rebuilt, never trusted. Raw backend
 calls live in one isolated module per backend behind the executor, each with a declared portable fallback.
 
+G3t's planned native-feature handoff uses a dedicated whole raw encoder between ordinary wgpu encoders, all in one
+ordered coordinator submission on the same queue. No encoder mixes APIs; providers cannot submit, touch the surface
+or own completion. The graph declares native reads/writes. Native-written textures are initialized through wgpu,
+never aliased/discarded, and retained with their provider generation until GPU completion. Encoded work discarded
+before submission resets provider-internal history before reuse; it does not change the healthy view-drop contract.
+Observed loss abandons without old-queue work, and the iOS foreground lease still forbids background submission.
+Generation-tagged native errors enter the platform loss path; optional rejection selects a prepared portable twin.
+This is a planned contract, not implementation qualification; independent review of the
+[G3t design](modules/APPLE-TILE.md) and its stateful stand-in proof is owed before implementation.
+
 ## C07 Render scene, views and temporal data — V2 with P4/V3/V4
 
 W1 owns world state. V2 owns derived draw instances, visibility and render spatial indexes. Views own projection,

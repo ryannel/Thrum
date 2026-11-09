@@ -7,6 +7,8 @@ and [C12](../CONTRACTS.md#c12-budgets-evidence-and-acceptance--t2-with-all-owner
 [APPLE-TILE-PLAN.md](APPLE-TILE-PLAN.md).
 Commission: Thrum Core's G3t/G4 design and milestone plans (`tmp/g3t-metal-boundary/NOTES.md`).
 Reviews:
+- G3t handoff reconciliation, 9 November: independent review owed for the changed native drop/reset and dependency
+  interfaces below; earlier approvals do not approve these changes. Full G4 plan migration remains owed when G4 is planned.
 - G4 pair @ `86ec3b6b`, brief `tmp/g3t-g4-plans/reviews/g4-pair.md` (with `common.md`), report
   `tmp/g3t-g4-plans/reviews/g4-pair-report.md`: changes required (14 required changes). Answered in revision 2; see
   the Log.
@@ -33,7 +35,7 @@ Next: review of revision 5, Thrum Core's reading, then landing and seam rulings.
 Blocked: code commissions wait for the atmosphere graph checkpoint `d2a5342` on `codex/g3s-stars-main-wip`, for interface reads only, pending the reviewed night baseline and the exact final check on main, and Thrum Core approval of the exact seams in the
 design's *Seams* list. Some milestones have further waits:
 - M4 and M6 wait for G3t M3.
-- M8 waits for G3t M11 and G3t seam 1.
+- M8 waits for G3t M11 and independent review of its C06 whole-encoder segment.
 - D9.1's launch-to-ready split can be commissioned once G3t M0's counters exist, ahead of the rest of M9.
 - The upstream contribution (U1) does not gate V1. It follows D9.1 and the metallib and pre-warm layer, and each
   public post waits for the owner's OK.
@@ -55,7 +57,7 @@ the SDR path for function only. iPhone EDR and timing are owed.
 
 ## Evidence conventions
 
-As in [G3t's conventions](APPLE-TILE-PLAN.md#evidence-conventions): fixed-step route, reference image, counters,
+As in [G3t's conventions](APPLE-TILE-PLAN.md#proof-and-builder-handoff): fixed-step route, reference image, counters,
 noise threshold and labels. Additions:
 - **Reconstruction reference.** At each still route checkpoint, portable accumulates 64 jittered frames at native
   resolution with the camera held, using the M1 jitter sequence. The result is a converged supersample.
@@ -82,7 +84,7 @@ noise threshold and labels. Additions:
 | Platform display record, EDR layer, thermal | G4, with the platform owner's review (seam 6) | `thrum-app/src/app/device.rs`, `app.rs`, `display_link.rs`; iOS `ios.rs`, `ios/render.rs` | G3b lease (untouched) |
 | Governor and missed ticks | G4 (seam 7) | new `governor.rs`; `runtime.rs` (missed-tick count, value commit) | C04 |
 | MetalFX provider | G4 | new `apple_tile/metalfx.rs` | G3t `apple_tile/segment.rs` |
-| Pipeline preparation and archives | G4, with the asset-pipeline owner's review for the cook | metallib cook step, passthrough loader, wgpu-hal Metal `PipelineCache` patch | G3t seam 5; every pipeline site |
+| Pipeline preparation and archives | G4, with the asset-pipeline owner's review for the cook | metallib cook step, passthrough loader, wgpu-hal Metal `PipelineCache` patch | G4 M10 pipeline preparation; every pipeline site |
 
 Review order:
 1. History protocol.
@@ -112,14 +114,16 @@ Review order:
 | M10 offline metallibs, pre-warm, local archive | D9.1 | M2–M9 (own files) |
 | M11 paired proof | M1–M10, G3t M12 | none |
 
-**Handoffs from G3t**, with their contracts in [G3t's plan](APPLE-TILE-PLAN.md#parallel-work-and-handoffs-with-g4):
+**Handoffs from G3t**, with their contracts in [G3t's plan](APPLE-TILE-PLAN.md#sequence-and-dependencies):
 - *G3t M0 → all checks.*
 - *G3t M1 → M2.*
 - *G3t M3 → M4 and M6.* This is the first producer/consumer handoff: the present pass reads one scene-linear input
   with exposure and H, and the surface is bound at execute time.
 - *G3t M11 → M8.* The first native handoff, unlocked by G3t D10.1–D11.3.
 
-G4 feeds back to G3t: M2's readers for G3t M12's eligibility rerun, and M5's scale steps for its two-scale rows.
+G3t M11 proves replacement with bounded provider fixtures; M12 records current readers and fixed extents. Neither
+waits for G4. G4's paired proof reruns eligibility with M2's real reconstruction readers and traffic with M5's actual
+scale steps; these are G4 integration obligations, not backward G3t prerequisites.
 
 M1–M3 are the early in-game work on portable through public interfaces. They need G3t's proof tooling and graph
 milestones, not the boundary ruling.
@@ -290,7 +294,7 @@ Work:
 
 ## M8 MetalFX temporal: pending
 
-This needs G3t M11 and seam 1.
+This needs G3t M11 and independent review of its C06 whole-encoder segment.
 
 Done when:
 - [ ] D8.1 On Apple tile the MetalFX provider runs inside the native segment on the route, at scales 1.0 to 0.5.
@@ -304,8 +308,8 @@ Done when:
 - [ ] D8.4 At still checkpoints, ΔE to the reference is recorded next to TAAU's at each scale. Agent review of the M3
       motion set finds no ghosting beyond TAAU's, including a sequence across a governor scale step.
 - [ ] D8.5 A forced provider rejection selects the prepared TAAU twin with no pipeline creation.
-- [ ] D8.6 A failed acquisition on a MetalFX frame shows the admitted outcome (submitted without present, or discarded
-      with a MetalFX reset at the next encode), and an iOS background drop resets history. Both are counted in the
+- [ ] D8.6 A failed acquisition discards the MetalFX frame with a provider reset at the next encode under G3t/C06;
+      an iOS background drop resets history. Both are counted in the
       proof log next to portable's drop.
 
 Work:
@@ -337,7 +341,7 @@ Work:
 
 ## M10 Offline metallibs, pre-warm and the local archive: pending
 
-Built and proved when G4 reaches this milestone. The listed points are designed then, not now (G3t seam 5).
+Built and proved when G4 reaches this milestone. The listed points are designed then, not now (the G4 pipeline preparation boundary).
 
 Done when:
 - [ ] D10.1 *Offline metallibs:* route pipelines load through passthrough with zero WGSL fallbacks in a parity run,
@@ -356,7 +360,7 @@ Done when:
 ## U1 Upstream Metal pipeline cache (later, not V1-gating, if needed): pending
 
 After M10 is proved. The owner writes every public description and comment, and nothing is posted without the owner's
-OK on each post (G3t seam 5).
+OK on each post (the G4 pipeline preparation boundary).
 
 Done when:
 - [ ] U1.1 A change we can stand behind is coordinated on gfx-rs/wgpu#8526 and, with the owner's walkthrough and
@@ -417,6 +421,11 @@ That is **22.5 build days**, plus 1–2 days of review and seam turnaround.
 Revision 1 said 9.5–11.5 days for G4. Reviewers estimated 13–16 days.
 
 ## Log
+
+- 2026-11-09 Reconciled G3t producer handoffs only: G3t M11 uses bounded extent fixtures and M12 fixed extents,
+  removing reverse G4 prerequisites. G4 owns requalification with real reconstruction readers/live scale steps.
+  Native acquire refusal now has one planned outcome, discard and provider reset; healthy flush, lost abandon and
+  iOS background refusal remain distinct. Independent interface review is owed; other G4 design gaps/status remain.
 
 - 2026-11-07 Revision 1 drafted for Thrum Core's G3t/G4 commission.
 - 2026-11-07 Revision 2 answers the G4 pair review and the composed-frame review:
