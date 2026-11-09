@@ -152,7 +152,7 @@ def sample(label: str) -> tuple[list[float], dict[str, str]]:
     return position, s
 
 
-def extent_proof(state: dict[str, str]) -> dict:
+def extent_proof(state: dict[str, str], expected_fov: float = 65.0) -> dict:
     """Resource/matrix witness from an identified, actually presented token."""
     raw = state.get("frame_extent", "none")
     check(raw != "none", "missing encoded-frame extent witness", state)
@@ -173,7 +173,7 @@ def extent_proof(state: dict[str, str]) -> dict:
     aspect = fy / fx
     fov = math.degrees(2 * math.atan(1 / fy))
     check(math.isclose(aspect, surface[0] / surface[1], rel_tol=1e-5), "encoded projection aspect differs from surface", state)
-    check(math.isclose(fov, 65.0, abs_tol=1e-3), "diagnostic vertical field of view changed", state)
+    check(math.isclose(fov, expected_fov, abs_tol=1e-3), "selected camera vertical field of view changed", state)
     return dict(attachments=targets, drawable=drawable, source=grid(source), destination=grid(destination),
                 viewport=view, projection_columns=columns, aspect=aspect, vertical_fov_degrees=fov,
                 submission=int(submission), revision=int(revision), epoch=num(state, "presented_epoch"),
@@ -574,7 +574,10 @@ def rotate(name: str, test: str, base: dict[str, str], landscape: bool) -> dict[
           f"{name} took more than {MAX_RESIZE_GAP_REPLIES} replies to present at the new extent", s)
     check(s.get("device_generation") == b.get("device_generation"), f"{name} rebuilt the device", s)
     extent_proof(s)
-    check(num(s, "world_tick") > num(b, "world_tick"), f"world ticks stopped across {name}", s)
+    if b.get("cooked_qualification_held") == "true":
+        check(num(s, "world_tick") == num(b, "world_tick"), f"held qualification world advanced across {name}", s)
+    else:
+        check(num(s, "world_tick") > num(b, "world_tick"), f"world ticks stopped across {name}", s)
     check(distance(p0, p1) <= STILL_TOLERANCE, f"{name} moved the committed actor", s)
     log(f"{name}: host load {load()}")
     log(f"{name}: extent {b.get('presented_extent')} -> {s['presented_extent']}, epoch {b['epoch']} -> {s['epoch']}, "

@@ -83,6 +83,8 @@ impl CookedValley {
 pub struct BrowserGame {
     shell: Shell,
     cooked: Option<Arc<Mutex<CookedStats>>>,
+    /// Facts from the first adapter-backed record, for fixed-view qualification.
+    initial_downlevel: String,
     /// Explicit material reloads of the attached cooked valley (development builds only).
     #[cfg(feature = "dev-material")]
     material: Option<MaterialReload>,
@@ -157,7 +159,9 @@ async fn create_game(
     std::panic::set_hook(Box::new(|info| {
         web_sys::console::error_1(&JsValue::from_str(&info.to_string()));
     }));
+    let mut initial_downlevel = String::new();
     let shell = thrum_app::web::create(canvas, game::DEVICE_GENERATION, |gpu| {
+        initial_downlevel = format!("{:?}", gpu.capabilities.downlevel());
         game::prepare(gpu, setup)
     })
     .await
@@ -168,6 +172,7 @@ async fn create_game(
     Ok(BrowserGame {
         shell,
         cooked: None,
+        initial_downlevel,
         #[cfg(feature = "dev-material")]
         material: None,
         #[cfg(feature = "dev-material")]
@@ -393,6 +398,9 @@ impl BrowserGame {
         Some(
             serde_json::json!({
                 "drawn": stats.drawn,
+                "drawPath": format!("{:?}", stats.draw_path),
+                "initialDownlevel": self.initial_downlevel,
+                "visibleMeshlets": stats.visible_meshlets,
                 "swaps": stats.swaps.len(),
                 "uploadedBytes": stats.swaps.last().map_or(0, |swap| swap.uploaded_bytes),
                 "submittedFrames": stats.submitted_frames,

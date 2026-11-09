@@ -23,6 +23,7 @@ use crate::{
     world_policy::WorldPolicy,
 };
 
+mod cooked_view;
 mod render;
 mod witness;
 
@@ -71,6 +72,7 @@ enum Command {
     HoldRecover,
     ReleaseRecover,
     StaleWake,
+    CookedPan,
 }
 
 #[expect(
@@ -101,6 +103,7 @@ extern "C" fn thrum_v1_shell_command(code: i32) {
         8 => Command::HoldRecover,
         9 => Command::ReleaseRecover,
         10 => Command::StaleWake,
+        11 => Command::CookedPan,
         _ => return,
     };
     if let Some(shell) = SHELL.get() {
@@ -573,6 +576,7 @@ impl Shell {
                 self.signals.stale_wake.store(true, Ordering::Release);
                 self.stale_request = true;
             }
+            Command::CookedPan => self.signals.cooked_pan.store(true, Ordering::Release),
         }
         self.witness.last_command = format!("{command:?}");
         self.write();

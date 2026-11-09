@@ -4,10 +4,10 @@ Design: [COOKED-DRAW.md](COOKED-DRAW.md) · [brief](COOKED-DRAW-BRIEF.md) · Don
 [COOKED-DRAW-DONE.json](COOKED-DRAW-DONE.json). Owner: G5 (`thrum-asset-gpu`), under
 [the G5 decision](../decisions/G5-CONTENT-ADDRESSED-LOOP.md).
 Reviews: [revised design review](../../evidence/COOKED-DRAW/design-review.md) of `2394162b` is DESIGN OK. The lead owns implementation review.
-Milestone: M1 Cooked scene draws on adapters without indirect execution (in progress)
-Now: Checkpoint `b0dae34c` passes M1.1–M1.3 and M1.9; M1.10 failed on fixed-640×360 letterboxing, which G3b owned.
-`PLATFORM-RUNTIME-IOS:M7` (oriented scene/render sizing) has since passed review.
-Next: Resume M1.10 on the integrated host, then Mac/Chrome base parity, cost/tripwires and simulator visual/pan proof.
+Milestone: M1 Cooked scene draws on adapters without indirect execution (claimed)
+Now: All twelve M1 items pass; M1 is claimed for lead review. Accepted M7 supplies oriented scene sizing.
+Final `./dev check` passes 666 tests; all tripwire metrics pass against same-load BASE history, including quiet.
+Next: The lead independently reviews this claim after required land integration.
 
 ## Ownership and agreements
 
@@ -30,21 +30,21 @@ Ask for these agreements before the builder starts. The builder may build agains
 objects, the change returns here as a re-plan. The builder never redesigns another owner's interface inside this
 milestone.
 
-## M1 Cooked scene draws on adapters without indirect execution: in progress
+## M1 Cooked scene draws on adapters without indirect execution: claimed
 
 Work, riskiest first:
-- [ ] **Simulator first.** Build the record field, the surface field, selection and the direct draw. Then attach
+- [x] **Simulator first.** Build the record field, the surface field, selection and the direct draw. Then attach
       the cooked valley in the iOS route and run it on a fresh owned simulator, before any polishing. This settles
       whether the simulator reveals a further unsupported feature. A feature this module owns is fixed here.
       Anything owned elsewhere is reported `BLOCKED`, naming its owner (→M1.7).
-- [ ] Adapter-less records hold unknown downlevel facts and never select indirect. Add a test that runs
+- [x] Adapter-less records hold unknown downlevel facts and never select indirect. Add a test that runs
       `FrameHost::new` → cooked attach and proves the direct path is selected with no indirect-usage buffer
       (→M1.1).
-- [ ] The diagnostic record mask, and the cooked GPU suite run under both records in `./dev check`. Move the suite's
+- [x] The diagnostic record mask, and the cooked GPU suite run under both records in `./dev check`. Move the suite's
       indirect arm and the `cooked_edit` bench off `FrameHost::new` and onto adapter-backed `capture`, and make each
       assert its selected path. The suite covers discard, capture-no-history, device replacement, remote feed,
       material promotion and casters. The motion-history flag moves to a step both paths run (→M1.1, M1.2, M1.6).
-- [ ] `scripts/cooked_draw_parity.py`, built on the T2 Mac and browser taps:
+- [x] `scripts/cooked_draw_parity.py`, built on the T2 Mac and browser taps:
   - the `paths` arm on one build: production masked-direct D against opt-in diagnostic full-range indirect R,
     byte for byte at matching draw partitions in every existing view. Derive R's arguments independently from cooked
     ranges/placements and validate/record them. Keep selected production meshlet indirect I as the third arm (→M1.3);
@@ -61,22 +61,22 @@ Work, riskiest first:
   cannot change selection, production indirect work or output, production direct resources, or cost runs. Cook the
   store once, and use it for both builds. The existing checkpoint command is incomplete and must be updated; its
   original failure is not a new-oracle pass.
-- [ ] Record `docs/evidence/render/cooked-draw/BASE`: the parent of this module's first commit in the integrated
+- [x] Record `docs/evidence/render/cooked-draw/BASE`: the parent of this module's first commit in the integrated
       history. Integrate the module's commits contiguously on the main tip, so that BASE..claim holds only this
       module's changes. Re-record BASE after each rebase.
-- [ ] A command diff of the indirect path against BASE, the G5 tripwires, and paired, order-alternated
+- [x] A command diff of the indirect path against BASE, the G5 tripwires, and paired, order-alternated
       indirect/direct measurements on Mac, labelled with their load class (→M1.6).
-- [ ] `scripts/cooked_draw_ios_sim.py`, derived from the T2 M2 probe, without its source patch. It creates and
+- [x] `scripts/cooked_draw_ios_sim.py`, derived from the T2 M2 probe, without its source patch. It creates and
       deletes a fresh simulator, then builds, cooks, installs and launches with the store in the app container. It
       checks the route state, requiring presented and cooked submitted frames to keep advancing. It takes `simctl`
       stills and a pan sequence, and records the pan's coverage: presented frames, samples and their times, holds,
       and the largest gap. It runs a `--lifecycle` mode (background/foreground, device replacement) and a
       `--rotation` mode, which reuses the route's existing `rotation` row with cooked content attached. It fails on
       errors and never skips (→M1.7–M1.11).
-- [ ] Inspect the simulator stills, including the rotated ones, and the pan sequence against the M1.10 and M1.11
+- [x] Inspect the simulator stills, including the rotated ones, and the pan sequence against the M1.10 and M1.11
       inspection lists. State the pan conclusion only within its recorded coverage, and leave proof over every
       submitted frame to T2-CAPTURE M2. Keep the lists, coverage records and crops in the evidence.
-- [ ] Update the G5 decision (meshlet section, capability inventory, open items), `maturity.json`, the evidence
+- [x] Update the G5 decision (meshlet section, capability inventory, open items), `maturity.json`, the evidence
       README and the T2 handoff. Close out scratch (→M1.12).
 
 Stop rules:
@@ -153,3 +153,9 @@ were verified unchanged. Scratch goes in
   readback, per-meshlet direct draws and a simulator override, on cost and complexity grounds. T2-CAPTURE M2 now
   `needs` `COOKED-DRAW:M1`. The design names an adjacent gap for G3c: synthetic culled modes use indirect draws
   without selection. No implementation, and no agents launched. Independent design review is owed.
+
+- 2026-11-09 Resumed after PLATFORM-RUNTIME-IOS M7 review. M1.10's former fixed-source blocker is resolved by the owning runtime. A fresh locked held-view run covers noon start, 36-degree end, low sun, mirrored diagnostic twins/volume and both orientations. Sixteen pan samples span the start/end holds and moving view; native edge/horizon crops are inspected, with the 1.118-second largest sampling gap explicitly limiting the conclusion. Ordinary lifecycle and the existing rotation row also pass on the integrated host without held controls. The rotation harness now checks the selected authored 46-degree valley FOV instead of assuming the 65-degree diagnostic camera.
+  - Production indirect BASE/current output and counts match exactly for five Mac views and four Chrome views, with both-build repeats. BASE is the integrated parent of the first implementation commit. Baseline archives receive caller/fixture/witness overlays only; production encoders/shaders are unchanged. Separate Cargo target roots avoid mixed-revision build-cache reuse.
+  - Release Mac costs use four order-alternated I/D pairs, 128 GPU-complete samples per arm, and actual host load records. Direct has no contribution compute sample. These are descriptive costs, with no selection or speed promotion. The first tripwire run reported an unseeded quiet class and was not treated as a qualified comparison; genuine BASE bench runs were collected under their actual load classes before the final gate. No reviewer launched; acceptance definitions and planner needs remain unchanged.
+
+- 2026-11-09 M1 claimed: all twelve items pass with named-target evidence. Final integrated-M7 D/R/I rerun reproduces the retained inspected payloads; Mac/Chrome BASE comparisons and both-build repeats are exact. Fresh locked ordinary simulator lifecycle/recovery/rotation and held/sampled visuals pass. All tripwire metrics pass against same-load history; three actual quiet BASE measurements per history were added without changing the encoder. Final `./dev check` passes 666 tests in 62 groups, zero failures; explicit iOS target Clippy passes. Owned bulk scratch is retired after retained-source/evidence verification. Only M1 state and item status/evidence changed in the done-when file; planner needs and review fields are preserved. No reviewer launched. Integration through land is next.

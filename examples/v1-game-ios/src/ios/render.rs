@@ -194,6 +194,8 @@ pub(super) struct Reported {
 /// Flags the shell sets and the owner reads; none orders frame admission.
 #[derive(Default)]
 pub(super) struct Signals {
+    /// Explicit held-view qualification only: begin the cooked camera pan.
+    pub(super) cooked_pan: AtomicBool,
     /// Route only: destroy the device at the owner's next opportunity.
     pub(super) lose_now: AtomicBool,
     /// Route only: hold the next recovery after preparation, before the
@@ -262,6 +264,7 @@ struct Gpu {
     watch: Watch,
     host: ThreadedFrameHost,
     cooked: Option<Arc<Mutex<thrum_asset_gpu::CookedStats>>>,
+    cooked_view: Option<super::cooked_view::View>,
     format: wgpu::TextureFormat,
     host_extent: [u32; 2],
 }
@@ -447,6 +450,7 @@ impl Owner {
             },
         ))?;
         let cooked = v1_game::attach_cooked_scene(&mut host)?;
+        let cooked_view = super::cooked_view::View::prepare(&mut host)?;
         let (host, controls) = host.into_threaded(self.origin, world_advanced)?;
         let name = format!(
             "{:?}; downlevel={:?}",
@@ -460,6 +464,7 @@ impl Owner {
             watch,
             host,
             cooked,
+            cooked_view,
             format,
             host_extent: extent,
         });
@@ -651,6 +656,13 @@ impl Owner {
             .as_mut()
             .ok_or(FrameError::InvalidState("iOS render owner is not prepared"))?;
         let lead = display_target_lead(request.target_media_seconds, media_time_now());
+        if let Some(view) = &mut gpu.cooked_view {
+            view.update(
+                &mut gpu.host,
+                self.signals.cooked_pan.swap(false, Ordering::AcqRel),
+            )
+            .map_err(FrameError::Scene)?;
+        }
         gpu.host.set_presentation_lead(lead.duration);
         let mut reply = FrameReply::new(request, gpu.watch.generation, lead.status);
         let usable = !request.extent.contains(&0);
@@ -715,6 +727,9 @@ impl Owner {
                 )
             });
         reply.pending_frames = gpu.host.pending_frames();
+        if let Some(view) = &gpu.cooked_view {
+            reply.cooked.push_str(&view.witness());
+        }
         Ok(reply)
     }
 }
