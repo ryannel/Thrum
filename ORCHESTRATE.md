@@ -29,9 +29,15 @@ a `build/<module>` branch and push `HEAD:main`. Large captures and recordings go
 
 | Target | What it is | Run | Capture | Edge conditions |
 |---|---|---|---|---|
-| mac-metal | This M3 Max, 120 Hz ProMotion, Metal | `scripts/run_v1_showcase.py`, `./dev` scenarios | Offscreen fixed-camera captures and frame sequences (`.ppm` to PNG), contact sheets | Low sun, storm, distance, fast camera, full refresh |
-| chrome-webgpu | Chrome, portable WebGPU recipe | the browser showcase | Screenshots and frame sequences from the exact build | Same scenarios as mac-metal |
-| ios-sim | iPhone 18 Pro simulator; function only, never speed | the iOS route | `xcrun simctl io booted screenshot`, recorded sequences | Rotation, background and foreground |
+| mac-metal | This M3 Max, 120 Hz ProMotion, Metal | `scripts/run_v1_showcase.py`, `./dev` scenarios | [T2 engine capture](docs/design/modules/T2-CAPTURE.md): fixed-time images and elapsed-time motion, lossless sources/contact sheets; active-panel rows separate | Low sun, storm, distance, fast camera, full refresh |
+| chrome-webgpu | Chrome, portable WebGPU recipe | the browser showcase | T2 M1: exact submitted canvas output/time records; DOM/browser chrome separate | Same scenarios as mac-metal |
+| ios-sim | iPhone 18 Pro simulator; function only, never speed | the iOS route | T2 M2: engine output/time records; `simctl` screenshot/video supplemental, function only | Rotation, background and foreground |
+
+T2 capture is planned, not qualified. Later visual milestones depend on its target milestone and select fixed-time
+quality or elapsed-time runtime motion proof. Engine capture requires no OS Screen Recording grant by design;
+locked-console execution must be proved. Built-in-panel cadence remains **attended setup** (unlocked active panel
+and any Instruments authorization), with automated actions/review. Native/compositor UI and physical output checks
+name their own attended reason where required. Never treat engine pixels/movie PTS as display swaps or photons.
 
 Label Mac stand-ins for iPhone `proxy:iphone`. No physical iPhone is available, so don't wait for one.
 

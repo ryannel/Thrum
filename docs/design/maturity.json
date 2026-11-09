@@ -711,8 +711,8 @@
       "reviewed_design_sha256": "d0d80e788cf6356f80dccdb10460a88f12ffd29ca646cbce2b5f498f86c725be",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Later architectural decision audit reopened named boundaries; earlier review scope remains historical. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
       "open_architecture_findings": [],
-      "current_design_sha256": "f523773b41ebf68dbed1767ee98334ae2fc569102cf7e7a1dab21e450fe683c1",
-      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled; focused mobile simulator and package qualification remains open after iOS 27 scene finding. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
+      "current_design_sha256": "89e4b8d49f2662e8431a99fb3bdd6f48beb5a7de6b9c4d4a883e0cf2c7e53bcd",
+      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled; focused mobile simulator and package qualification remains open after iOS 27 scene finding. Prior reviewed hashes retained; initial selected subset only, no runtime promotion. 9 Nov: planned T2-CAPTURE handoff adds renderer-owned submitted-output readback, F1 offscreen elapsed-time driving and explicit attended panel limits under C12; this addition awaits independent design review and carries no runtime promotion.",
       "historical_architecture_findings": [
         "A01"
       ],
@@ -788,7 +788,7 @@
         "COMPOSITION.md"
       ],
       "open_architecture_findings": [],
-      "current_design_sha256": "242035edb43a8e414f839fed4fd4949969967d9d0859e7344be001d237c4e088",
+      "current_design_sha256": "bd4b6c2d6f0aa4cdfdd4e36f7a863a838f941687ba51a7a25d9bde3a3914f15d",
       "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
       "historical_architecture_findings": [
         "A03",
@@ -2114,8 +2114,8 @@
         "A03",
         "A05"
       ],
-      "current_design_sha256": "32ac88ad57135438d6af72d97168c272a897c89de5424a4bf7daf945df5a6819",
-      "current_design_delta": "C4 source/run consumers and R0 pass/resource, preparation, lease and device-loss contract selected on paper. The cross-owner limit review keeps a concrete R0 output-extent and cross-frame allocation schedule open; no GPU implementation or device measurements are claimed. Prior reviewed hash retained.",
+      "current_design_sha256": "a0f898a535b56e8c67a84de56a8587bdea777a11762df62f6638012ea15d0529",
+      "current_design_delta": "C4 source/run consumers and R0 pass/resource, preparation, lease and device-loss contract selected on paper. The cross-owner limit review keeps a concrete R0 output-extent and cross-frame allocation schedule open; no GPU implementation or device measurements are claimed. Prior reviewed hash retained. 9 Nov: planned T2-CAPTURE handoff adds renderer-owned submitted-output readback, F1 offscreen elapsed-time driving and explicit attended panel limits under C12; this addition awaits independent design review and carries no runtime promotion.",
       "architecture_selection_review": {
         "status": "reconciled_for_selected_scope",
         "record": "ARCHITECTURE-DECISIONS.md",
@@ -2157,7 +2157,7 @@
       },
       "reviewed_design_sha256": "23eb7fcefacef23c4d808b5beab796b08e1854b4d64316ad174374727b50bfe8",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
-      "current_design_sha256": "32ac88ad57135438d6af72d97168c272a897c89de5424a4bf7daf945df5a6819",
+      "current_design_sha256": "a0f898a535b56e8c67a84de56a8587bdea777a11762df62f6638012ea15d0529",
       "current_design_delta": "C4 source/run consumers and R0 packet/view identity plus masked/shadow extraction contract selected on paper. A separate offline terrain final-triangle certificate checks one 257\u00b2 source/product geometry profile, including actual f32 heights, protected sill, bank and seam, but no render LOD/runtime binding. Renderer implementation and visual/device proof remain open. Prior reviewed hash retained.",
       "architecture_selection_review": {
         "status": "reconciled_for_selected_scope",
@@ -2210,7 +2210,7 @@
         "A03",
         "A05"
       ],
-      "current_design_sha256": "32ac88ad57135438d6af72d97168c272a897c89de5424a4bf7daf945df5a6819",
+      "current_design_sha256": "a0f898a535b56e8c67a84de56a8587bdea777a11762df62f6638012ea15d0529",
       "current_design_delta": "C4 source/run consumers, bounded R0 material/light/display handoff and bounded R3 regional transport reconciled. The limit review requires pre-arithmetic f32 range proof, a diagnostic current-frame late-overflow path and coherent accepted temporal metadata. Actual-interface focus and runtime, visual and device proof remain open. Prior reviewed hash retained.",
       "architecture_selection_review": {
         "status": "reconciled_for_selected_scope",
@@ -2253,8 +2253,8 @@
       },
       "reviewed_design_sha256": "23eb7fcefacef23c4d808b5beab796b08e1854b4d64316ad174374727b50bfe8",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
-      "current_design_sha256": "32ac88ad57135438d6af72d97168c272a897c89de5424a4bf7daf945df5a6819",
-      "current_design_delta": "C4 source/run consumers and R0 fixed SDR/spatial display contract selected on paper. The pinned FXAA HLSL reference and isolated WGSL port matched RGB exactly on 1,978,368 selected Metal pixels. The unchanged shader is retained as a notice-carrying standalone implementation input with a fresh independent regression. Three serial-completion 720p isolated timing runs were valid; a later 1080p ablation isolated invalid same-submission counter resolves and obtained 432/432 valid delayed-resolve pairs across three processes, with 144\u2013146 \u00b5s GPU stage medians. Native command-buffer span, admitted F4/V1/V4 graph promotion, ordinary moving-game visual acceptance and full runtime/device cost remain open. Prior reviewed hash retained.",
+      "current_design_sha256": "a0f898a535b56e8c67a84de56a8587bdea777a11762df62f6638012ea15d0529",
+      "current_design_delta": "C4 source/run consumers and R0 fixed SDR/spatial display contract selected on paper. The pinned FXAA HLSL reference and isolated WGSL port matched RGB exactly on 1,978,368 selected Metal pixels. The unchanged shader is retained as a notice-carrying standalone implementation input with a fresh independent regression. Three serial-completion 720p isolated timing runs were valid; a later 1080p ablation isolated invalid same-submission counter resolves and obtained 432/432 valid delayed-resolve pairs across three processes, with 144\u2013146 \u00b5s GPU stage medians. Native command-buffer span, admitted F4/V1/V4 graph promotion, ordinary moving-game visual acceptance and full runtime/device cost remain open. Prior reviewed hash retained. 9 Nov: planned T2-CAPTURE handoff adds renderer-owned submitted-output readback, F1 offscreen elapsed-time driving and explicit attended panel limits under C12; this addition awaits independent design review and carries no runtime promotion.",
       "architecture_selection_review": {
         "status": "reconciled_for_selected_scope",
         "record": "ARCHITECTURE-DECISIONS.md",
@@ -2294,7 +2294,7 @@
       },
       "reviewed_design_sha256": "23eb7fcefacef23c4d808b5beab796b08e1854b4d64316ad174374727b50bfe8",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
-      "current_design_sha256": "32ac88ad57135438d6af72d97168c272a897c89de5424a4bf7daf945df5a6819",
+      "current_design_sha256": "a0f898a535b56e8c67a84de56a8587bdea777a11762df62f6638012ea15d0529",
       "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
       "architecture_selection_review": {
         "status": "reconciled_for_selected_scope",
@@ -2729,7 +2729,7 @@
       "reviewed_design_sha256": "2c8ae719815a3519217b1c919fa6159f573881d61cf52ca6660aa3d8f8007569",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Developer composition supplement reviewed in research/COMPOSITION-REVIEW.md; original family mechanisms retain earlier scope. Later architectural decision audit reopened named boundaries; earlier review scope remains historical. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
       "open_architecture_findings": [],
-      "current_design_sha256": "242035edb43a8e414f839fed4fd4949969967d9d0859e7344be001d237c4e088",
+      "current_design_sha256": "bd4b6c2d6f0aa4cdfdd4e36f7a863a838f941687ba51a7a25d9bde3a3914f15d",
       "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
       "open_plan_review_findings": [],
       "historical_architecture_findings": [
@@ -2788,8 +2788,8 @@
       "reviewed_design_sha256": "2c8ae719815a3519217b1c919fa6159f573881d61cf52ca6660aa3d8f8007569",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Developer composition supplement reviewed in research/COMPOSITION-REVIEW.md; original family mechanisms retain earlier scope. Later architectural decision audit reopened named boundaries; earlier review scope remains historical. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
       "open_architecture_findings": [],
-      "current_design_sha256": "242035edb43a8e414f839fed4fd4949969967d9d0859e7344be001d237c4e088",
-      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion.",
+      "current_design_sha256": "bd4b6c2d6f0aa4cdfdd4e36f7a863a838f941687ba51a7a25d9bde3a3914f15d",
+      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. Prior reviewed hashes retained; initial selected subset only, no runtime promotion. 9 Nov: planned T2-CAPTURE handoff adds renderer-owned submitted-output readback, F1 offscreen elapsed-time driving and explicit attended panel limits under C12; this addition awaits independent design review and carries no runtime promotion.",
       "historical_architecture_findings": [
         "A02",
         "A03"
@@ -2831,7 +2831,25 @@
         "platform_performance": "observed free-space samples before/after external filler were 241319936 and 13762560 bytes in the local image; no CPU, RSS, transient physical high-water or device qualification follows",
         "scope": "Project, accepted source store, external job parent, F4 input and competing filler shared one bounded APFS image. The test exercises a synchronous registered F4 write fault and successful checked refund; concurrent F3 stage/store work, uncertain cleanup or sync, compiler output/cache lifetime, physical reserve and ready publication remain open."
       },
-      "current_priority": "parked until its active gate"
+      "current_priority": "T2-CAPTURE M0 planned for unattended visual/runtime evidence after independent design review; retained-root work stays parked",
+      "unattended_frame_evidence": {
+        "design": "modules/T2-CAPTURE.md",
+        "plan": "modules/T2-CAPTURE-PLAN.md",
+        "done_when": "modules/T2-CAPTURE-DONE.json",
+        "design_stage": "detailed",
+        "integration_review": "pending",
+        "implementation": "not_started_for_target",
+        "functional_validation": "not_run",
+        "experienced_quality": "not_reviewed",
+        "platform_performance": {
+          "mac": "not_run",
+          "browser": "not_run",
+          "ios_sim": "not_run",
+          "physical_display": "not_run"
+        },
+        "scope": "9 November planning only: T2 owns scenarios/artifacts, V1/V4 the submitted-output tap and F1 drivers/lifetime. Distinct fixed-time quality and elapsed-time runtime modes; Mac M0 precedes Mac qualification M2 and G3t M0. Locked-console and unavailable-permission capture not yet proved. Mac built-in-panel cadence retains attended setup and fresh independent swap attribution; Instruments finalization stays parked. Historical Mac motion pass is not extended to changed M2.1. No new runtime, correctness, visual or device evidence.",
+        "review": "independent design/JSON and affected-consumer review owed; owner prohibited subagents"
+      }
     },
     {
       "id": "N1",
@@ -3033,7 +3051,7 @@
     "ARCHITECTURE-DECISIONS.md",
     "BASELINE-SPEC.md"
   ],
-  "contract_sha256": "811c6c86f249907879681e55440507d05b60aae2435686600cceb4b06b744224",
+  "contract_sha256": "50666e664ec12575c97c373159fd4f860ea4f3f369b2d7e5e0f357931c587b2c",
   "composition_supplement": {
     "design": "COMPOSITION.md",
     "decision": "selected",
@@ -3778,7 +3796,7 @@
     "record": "ARCHITECTURE-DECISIONS.md",
     "record_sha256": "0ec345f0ed162c3c0c6898fb3913a8952f5b4d65d75f1cf3ff6270c9f58725b4",
     "contract_revision": "C4",
-    "contract_sha256": "811c6c86f249907879681e55440507d05b60aae2435686600cceb4b06b744224",
+    "contract_sha256": "50666e664ec12575c97c373159fd4f860ea4f3f369b2d7e5e0f357931c587b2c",
     "specifications": {
       "BASELINE-SPEC.md": "8710e74f47e18788951fd1118883fbdf28d32510f336fb0b9cf3a279d4e5509b",
       "FOUNDATION-SPEC.md": "9293b1eb3beb690d96f88d5fcb8260fc42a1d21c2688fbe515a05e8f3027c1e0",
@@ -4150,16 +4168,16 @@
     "record": "SIMPLIFICATION-REVIEW.md",
     "record_sha256": "4077358422c06ab2426742834168c0bd419809ad59268d0da765c5ba0ed29c3e",
     "current_files": {
-      "AI-DEVELOPMENT.md": "b11c4546db0d695fd65001580610ab93ce8520acd6806ce1acb4a6256f7608ff",
+      "AI-DEVELOPMENT.md": "84d2129fc5826c8a85f30586cc7731cb95d417d93b5c5a3bccbaa8b9f835cb98",
       "AI-PERFORMANCE.md": "84cc89f0331c38dde12d87a114311bdeb9fd705caf359926322412786576d077",
       "ARCHITECTURE-AUDIT.md": "378286904828c06f460ed808bf24a6bb8aad3382b7d4f9c866754522f124938b",
-      "ARCHITECTURE-BRIEF.md": "a6fd8918837537552fb927124bd480f5aadcac8e2ca19cf91676c3202ce9e067",
+      "ARCHITECTURE-BRIEF.md": "86fdf2e70777f94ed5dd2b463ec59b3956bfc05a0cde3082fe19703d1e5cade1",
       "ARCHITECTURE-DECISIONS.md": "0ec345f0ed162c3c0c6898fb3913a8952f5b4d65d75f1cf3ff6270c9f58725b4",
       "BASELINE-SPEC.md": "8710e74f47e18788951fd1118883fbdf28d32510f336fb0b9cf3a279d4e5509b",
       "CAPABILITY-SURVEY.md": "bd88f686bc3dcf56fc38009f2567df2d0200ffc23fea0ad16b406007c8c96530",
       "COMPOSITION.md": "392c9254d576fe771ff98f0b4937c41f0ec7ef90079e77d7155b83c0a4b40d01",
       "CONSTRUCTION-PLAN.md": "722c548d62132c80af79354056d7d14e023102133a678487bbd82f3f3887f660",
-      "CONTRACTS.md": "811c6c86f249907879681e55440507d05b60aae2435686600cceb4b06b744224",
+      "CONTRACTS.md": "50666e664ec12575c97c373159fd4f860ea4f3f369b2d7e5e0f357931c587b2c",
       "DESIGN-PROGRAMME.md": "eb4176168883dfe2fc651a06a9471fe3ed3bf9d1aacf2358e86794a8332714db",
       "ENGINE-EXPERIENCE.md": "f7994f89bfc995feb6a2a69cf58b382c4b788f552c9f0e36c116f3d2a9f2ea05",
       "ENGINE-STRUCTURE-RESEARCH.md": "aa05d06102a9dc9bd53505538188c728fa13ab58f72d33597c6d945e2ddc9a28",
@@ -4187,10 +4205,10 @@
       "modules/AUDIO-UI.md": "f001d7c3cc79a2fb3657982baee9850490ad3f3ce253cfd8bb2637e9f690ae1f",
       "modules/ENVIRONMENT.md": "fc5348d28d3861fee79655cf125c79af8a9b74281d3275e2b8443073e57307fb",
       "modules/NETWORKING.md": "2e32bdf2e57737a88b957380da801de21bf287b6cba6f15144530f635f778494",
-      "modules/PLATFORM-RUNTIME.md": "f523773b41ebf68dbed1767ee98334ae2fc569102cf7e7a1dab21e450fe683c1",
+      "modules/PLATFORM-RUNTIME.md": "89e4b8d49f2662e8431a99fb3bdd6f48beb5a7de6b9c4d4a883e0cf2c7e53bcd",
       "modules/PLAY-SYSTEMS.md": "86279be04e72643989cecc3a0e562fa4c948fa27c956180dbe6079c830efcd57",
-      "modules/RENDERING.md": "32ac88ad57135438d6af72d97168c272a897c89de5424a4bf7daf945df5a6819",
-      "modules/TOOLS-DELIVERY.md": "242035edb43a8e414f839fed4fd4949969967d9d0859e7344be001d237c4e088",
+      "modules/RENDERING.md": "a0f898a535b56e8c67a84de56a8587bdea777a11762df62f6638012ea15d0529",
+      "modules/TOOLS-DELIVERY.md": "bd4b6c2d6f0aa4cdfdd4e36f7a863a838f941687ba51a7a25d9bde3a3914f15d",
       "modules/WORLD-CONTENT.md": "2f930ec628acfdc3a198a1b47dd752fff27fc7b552c73ac8c982f2c03a61cca2"
     },
     "coordinated_handoffs": {

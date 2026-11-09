@@ -174,6 +174,16 @@ a checkpoint, and a report never pauses building.
 | Evaluator | A clean-context `/review-milestone` agent inspects frame sequences and contact sheets captured offscreen from the exact build on the named target, judges each item against the list and bar, and records `agent_reviewed`. | Yes, the milestone closes on its pass |
 | Owner steer | The daily report carries new inspection lists, verdicts and contact sheets. The owner adjusts a bar or overturns a verdict; an overturned verdict becomes a graded example for the evaluator. | Never |
 
+Every later visual milestone plans evidence through [T2 capture](modules/T2-CAPTURE.md): exact submitted engine
+images by default, full-resolution source sequences plus review artifacts, and explicit fixed-time versus real-time
+claims. Runtime/live-motion criteria need elapsed-time capture that preserves stalls; a smooth offline movie is
+insufficient. List included/excluded surfaces and required target capability (`T2-CAPTURE:M0` Mac, `M1` Chrome,
+`M2` simulator) in the first milestone that needs it. Existing passed evidence keeps its original scope. Until the
+target path is built/proved, retain an explicit dependency or unavailable result rather than asking for desktop
+access by default. Physical display/compositor/native UI/input/photon checks remain separate. Mark genuinely
+attended setup or observation, its required OS grant/device, and why engine output/automation cannot prove it;
+continue unblocked visual work. Never automate screen unlocking or weaken privacy settings.
+
 Stop and ask the owner only to change purpose or the V1 exit; to spend money, such as renting cloud
 machines or devices; to publish, choose a licence or deploy; or for destructive or irreversible actions. Verified
 checkpoints are pushed to main without force. While a question waits, continue other unblocked work. Visual quality

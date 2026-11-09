@@ -36,7 +36,8 @@ The creator continues to cook the same source and use the public scene contribut
 content fork or authoring dependency belongs in shipping rendering. Extend existing crates unless a demonstrated
 boundary requires otherwise; register actual dependencies and narrowly justify any unsafe backend access.
 
-Sequence work so an offscreen game proof can proceed while PLATFORM-RUNTIME-MAC M2 waits for an unlocked display.
+Sequence shared capture first: APPLE-TILE M0 needs `T2-CAPTURE:M0`, then adds its own linear recipe comparison
+through that owner. Offscreen work proceeds independently of PLATFORM-RUNTIME-MAC M2's attended panel cadence.
 That does not close Mac cadence, diagnose the parked atmosphere crossing or commission the complete native recorder.
 Record live/display-only qualification separately; do not replace it with callbacks or offscreen timing.
 
