@@ -46,8 +46,8 @@
           "id": "D0.4",
           "statement": "The retained Xcode replay probe establishes per-encoder device-memory byte measurement on this M3 Max; uncaptured rows stay unmeasured and logical attachment bytes stay separate.",
           "target": "mac-metal",
-          "status": "pass",
-          "evidence": "docs/evidence/render/G3T-TRAFFIC-PROBE-2026-11-08.md",
+          "status": "open",
+          "evidence": "",
           "ask": "Read G3T-TRAFFIC-PROBE-2026-11-08.md: does it establish the actual counter and units, per-encoder rather than per-attachment attribution, one-replay/shared-load limits and unavailable raw scratch? No new replay or physical-traffic result is implied.",
           "verdict": "",
           "review": ""
