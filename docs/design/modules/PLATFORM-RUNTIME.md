@@ -65,6 +65,13 @@ survive. Mac serializes reconstruction/configuration on its render actor, checks
 stale work. Browser uses one weak detached mailbox and fresh adapter per attempt; zero canvas defers activation.
 On the browser, candidate presenter resize and a real surface lease precede publication. Failed configuration enables explicit retry. Its UI retains restoration status until a new present call, and its samples restart per generation while authority counters continue. The Mac configures a current nonzero surface or defers configuration, publishes the prepared device and acquires on a later frame. The Mac recovery reply updates status before a new present. Its report can retain samples across generations. Failure leaves the world alive. Surface/device epochs differ.
 
+The [iOS runtime child](PLATFORM-RUNTIME-IOS.md) and [M7 plan](PLATFORM-RUNTIME-IOS-PLAN.md) assign
+current-oriented-extent scene sizing to G3b: UIKit publishes full-bounds pixel extent and epoch; the render owner
+coherently prepares scene targets, projection, history reset and presenter for that extent. Rotation and recovery
+use the same policy. This native-resolution correction precedes G4 reconstruction/governor work and preserves
+explicit fixed-render-extent callers. `COOKED-DRAW:M1` needs `PLATFORM-RUNTIME-IOS:M7`; the extent milestone uses
+the diagnostic scene independently, and cooked visual acceptance stays with G5's unchanged items.
+
 The [Mac qualification plan](PLATFORM-RUNTIME-MAC-PLAN.md) uses the existing
 `thrum-app` window and actor. AppKit owns the view and display-link event
 delivery. Its target timestamp provides interpolation lead, while the

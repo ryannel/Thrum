@@ -337,7 +337,8 @@
         "../evidence/render/G3B-IOS-SIM-ROUTE-2026-11-07.md",
         "../evidence/render/G3B-IOS-SIM-ROTATION-LOSS-2026-11-08.md"
       ],
-      "scope": "A separate static-library UIKit shell attaches the Winit window to its active UIWindowScene through a synchronous borrowed UIView bridge, and owns only lifecycle, drawable acquisition and presentation. The shared V1 fixed-step host runs the same 10k/1.5k-moving world, clustered scene and two Sun cascades. Hidden/overload time is explicitly excluded or counted. G3b (7 Nov) moved world and rendering off UIKit: UIKit forwards targets, touches and lifecycle; the world lane ticks; a render owner acquires late under an epoch lease with an exact one-present race bound. The fresh-simulator route exercises real background/foreground, surface replacement (plain, stalled, raced), denied drawables and real HID touch through production admission. G3b M5/M6 (8 Nov) added real rotation (full-bounds extent, resizeAspect, counted old-extent presents) and device-loss recovery through the public prepare/publish path with matched generations, triggered by Device::destroy (recovery, not detection). Physical-iPhone loss detection and recovery, cooked hot reload, and sustained device/visual budgets remain open."
+      "scope": "A separate static-library UIKit shell attaches the Winit window to its active UIWindowScene through a synchronous borrowed UIView bridge, and owns only lifecycle, drawable acquisition and presentation. The shared V1 fixed-step host runs the same 10k/1.5k-moving world, clustered scene and two Sun cascades. Hidden/overload time is explicitly excluded or counted. G3b (7 Nov) moved world and rendering off UIKit: UIKit forwards targets, touches and lifecycle; the world lane ticks; a render owner acquires late under an epoch lease with an exact one-present race bound. The fresh-simulator route exercises real background/foreground, surface replacement (plain, stalled, raced), denied drawables and real HID touch through production admission. G3b M5/M6 (8 Nov) added real rotation (full-bounds extent, resizeAspect, counted old-extent presents) and device-loss recovery through the public prepare/publish path with matched generations, triggered by Device::destroy (recovery, not detection). Physical-iPhone loss detection and recovery, cooked hot reload, and sustained device/visual budgets remain open.",
+      "planned_extent_correction": "PLATFORM-RUNTIME-IOS M7: G3b owns coherent current-oriented-extent scene targets, projection and presenter, including recovery refit. Supersedes fixed-640x360 framing deferral; simulator proof and independent design review owed. COOKED-DRAW M1.10 remains unchanged and unaccepted. No implementation/correctness/visual/device status promoted."
     },
     "V1_local_player_input": {
       "implementation": "partial_one_local_peer_keyboard_axes_through_shared_fixed_tick_input_frame_admission",
@@ -720,8 +721,8 @@
       "reviewed_design_sha256": "d0d80e788cf6356f80dccdb10460a88f12ffd29ca646cbce2b5f498f86c725be",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Later architectural decision audit reopened named boundaries; earlier review scope remains historical. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
       "open_architecture_findings": [],
-      "current_design_sha256": "d091f45bcedb98cb7d6bf184f3f311dd9a002d5b474049be5812b9429577b48c",
-      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled; focused mobile simulator and package qualification remains open after iOS 27 scene finding. Prior reviewed hashes retained; initial selected subset only, no runtime promotion. 9 Nov: planned T2-CAPTURE handoff adds renderer-owned submitted-output readback, F1 offscreen elapsed-time driving and explicit attended panel limits under C12; this addition awaits independent design review and carries no runtime promotion.",
+      "current_design_sha256": "18c740ada74a2ce8e15000bbb4c703cf295f7b330967ab593e0b5b8fe5eebf85",
+      "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled; focused mobile simulator and package qualification remains open after iOS 27 scene finding. Prior reviewed hashes retained; initial selected subset only, no runtime promotion. 9 Nov: planned T2-CAPTURE handoff adds renderer-owned submitted-output readback, F1 offscreen elapsed-time driving and explicit attended panel limits under C12; this addition awaits independent design review and carries no runtime promotion. 9 Nov: G3b PLATFORM-RUNTIME-IOS M7 plans coupled oriented scene/internal/surface extent and simulator rotation/recovery proof; COOKED-DRAW M1 depends on it. Independent review and implementation remain owed; no capability promotion.",
       "historical_architecture_findings": [
         "A01"
       ],
@@ -4221,7 +4222,7 @@
       "modules/AUDIO-UI.md": "f001d7c3cc79a2fb3657982baee9850490ad3f3ce253cfd8bb2637e9f690ae1f",
       "modules/ENVIRONMENT.md": "fc5348d28d3861fee79655cf125c79af8a9b74281d3275e2b8443073e57307fb",
       "modules/NETWORKING.md": "2e32bdf2e57737a88b957380da801de21bf287b6cba6f15144530f635f778494",
-      "modules/PLATFORM-RUNTIME.md": "d091f45bcedb98cb7d6bf184f3f311dd9a002d5b474049be5812b9429577b48c",
+      "modules/PLATFORM-RUNTIME.md": "18c740ada74a2ce8e15000bbb4c703cf295f7b330967ab593e0b5b8fe5eebf85",
       "modules/PLAY-SYSTEMS.md": "86279be04e72643989cecc3a0e562fa4c948fa27c956180dbe6079c830efcd57",
       "modules/RENDERING.md": "9f000b3692aa3c8fa1f1921e441e57fc72bda6ab8c9a77163162dd19e6654165",
       "modules/TOOLS-DELIVERY.md": "bd4b6c2d6f0aa4cdfdd4e36f7a863a838f941687ba51a7a25d9bde3a3914f15d",
