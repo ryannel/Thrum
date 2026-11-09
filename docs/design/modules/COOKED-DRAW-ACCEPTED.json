@@ -21,7 +21,23 @@
   "milestones": {
     "M1": {
       "definitions": "d1196bb729f84b156579757c4ff72f23c25b3ae74178bc3f82c820e22867ca30",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "pass",
+          "commit": "50180fa0cdbda7b8ab2ec7ea09b2d34d96059654",
+          "review": "docs/evidence/COOKED-DRAW/M1-review.md",
+          "host": "codex",
+          "model": "gpt-6.1-sol",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.1-sol",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.167.0-alpha.3.2",
+          "path": "visible",
+          "at": "2026-11-09T20:01:03Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Some done-when items treat a locked Mac console as a precondition for running a check. COOKED-DRAW M1.7 says the simulator run happens \"with the console locked\", and scripts/cooked_draw_ios_sim.py ref",
@@ -40,6 +56,13 @@
         },
         "cli": "codex-cli 0.167.0-alpha.3.2",
         "path": "visible"
+      },
+      "accepted": {
+        "by": "review",
+        "commit": "50180fa0cdbda7b8ab2ec7ea09b2d34d96059654",
+        "review": "docs/evidence/COOKED-DRAW/M1-review.md",
+        "checked": "50180fa0cdbda7b8ab2ec7ea09b2d34d96059654",
+        "at": "2026-11-09T20:01:03Z"
       }
     }
   }
