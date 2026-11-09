@@ -2,9 +2,9 @@
 
 Design: [T2-CAPTURE.md](T2-CAPTURE.md) · [brief](T2-CAPTURE-BRIEF.md) ·
 Done when: [T2-CAPTURE-DONE.json](T2-CAPTURE-DONE.json).
-Reviews: [design review at `1fb6b422`](../../evidence/T2-CAPTURE/design-review.md): DESIGN CHANGES (10 findings); revised here, independent re-review owed. No agent launched, per owner instruction.
+Reviews: [design review 2 at `6317102f`](../../evidence/T2-CAPTURE/design-review-2.md): DESIGN CHANGES (2 findings); revised here, independent re-review owed. No agent launched, per owner instruction.
 Milestone: M0 Mac engine images and runtime motion without a desktop capture grant (open)
-Now: 9 November review findings addressed in the design/criteria and Mac M2 handoff; no capture implementation started.
+Now: 9 November second-review findings revised: Mac M2 is decoupled from parked APPLE-TILE, post-change proof belongs to Mac M3, and pan quality uses worded criteria. No implementation started.
 Next: fresh /review-milestone design re-review from the brief, then /build-milestone M0 beginning with the writer probe; Mac qualification M2 consumes M0.
 Blocked: design review owed before build. Physical panel qualification has an attended setup requirement; it does not block M0.
 
@@ -13,7 +13,8 @@ Blocked: design review owed before build. Physical panel qualification has an at
 T2 owns this child work of TOOLS-DELIVERY; no new crate. Build sequentially. Existing committed pages/world lane,
 FrameHost, cooked content, platform loss/lease and scene/controls are available now. M0 must preserve
 `PLATFORM-RUNTIME-MAC:M1` (done). M1/M2 here follow M0; no dependency on G3t/G4 or Mac qualification M2.
-Mac qualification M2 and APPLE-TILE M0 depend on `T2-CAPTURE:M0`. Later visual milestones use M0 on Mac,
+Mac qualification M2 needs only `T2-CAPTURE:M0`; Mac M3 separately needs `APPLE-TILE:M3` for post-change requalification.
+APPLE-TILE is parked after two failed design reviews; its M0 dependency on `T2-CAPTURE:M0` does not authorize a restart. Later visual milestones use M0 on Mac,
 M1 on Chrome and M2 on the simulator at the first proof requiring this tooling. Existing completed evidence is not
 invalidated. Captures cannot close an attended panel item.
 Mac M2.3 commissions and proves integration of the shared tap on a real CAMetalLayer window; Mac M2.4 owns bounded
@@ -90,6 +91,14 @@ single ownership, final submitted-image correspondence, real-time versus synthet
 nonblocking bounded readback and the attended Mac cadence boundary. No proof item is passed by this plan.
 
 ## Log
+
+- 2026-11-09 Addressed [second-review F1/F2](../../evidence/T2-CAPTURE/design-review-2.md): Mac M2 now
+  qualifies the current path after T2 M0 only; new Mac M3 owns post-G3t motion/cadence with an explicit Apple M3
+  dependency. Recorded APPLE-TILE parked after its second failed design review in plans and consumers; no restart
+  or resolution of its seven findings is claimed. Replaced Ground E image-quality comparison with worded pan
+  criteria and restricted the PNG to scene/framing identity. T2 M0 `replans` is 2; M1/M2 remain at 1. All are open
+  with no new evidence. `./dev check-docs`, JSON/dependency validation and historical-proof preservation checks pass.
+  Independent design re-review of this revision is owed; no agents launched.
 
 - 2026-11-09 Addressed [review F1–F10](../../evidence/T2-CAPTURE/design-review.md) without commissioning implementation.
   F1: Mac M2.3 owns real-window tap integration/proof. F2: M2.2 gains a capture-OFF traced cadence arm alongside two

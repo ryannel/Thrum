@@ -6,7 +6,7 @@
       "name": "Mac engine images and runtime motion without a desktop capture grant",
       "state": "open",
       "fails": 0,
-      "replans": 1,
+      "replans": 2,
       "bar": "Camera continuity expected of Red Dead Redemption 2 and evidence fit for a shipped high-end game: complete native-size images and honest 1x elapsed-time motion, with every omitted sample and observer limit explicit.",
       "items": [
         {
@@ -62,7 +62,7 @@
           "ask": "Join every submitted image to requested/accepted/submitted controls in the 1920x1080 0-to-36-degree two-second pan at 120 Hz requested opportunities, with one-second initial and final holds. Show fresh submission IDs while the committed world tick stays paused. Account for all opportunities/submissions; capture omissions make the interval inconclusive. A fixed-step route or endpoint redraw cannot pass.",
           "verdict": "",
           "review": "",
-          "inspect": "At 1x inspect the full noon pan and both holds against the proposed Ground E composition: rock/ridge/sphere coherence, endpoint agreement, repeats, jumps and pauses. Inspect native-size full frames and crops. This proves engine runtime motion, not built-in-display smoothness."
+          "inspect": "At 1x inspect the full noon pan and both one-second holds: rock and ridges retain coherent relative placement; the sphere follows the authored sweep, including its exit from frame; settled endpoints agree with the declared yaw and scene; no cut, snap or reversal. Record repeats, local holds and gross pauses against host time. Inspect native-size full frames and crops. The Ground E PNG identifies scene and framing only; judge quality against this worded list and the milestone bar, never by matching a target image or awaiting owner image approval. This proves engine runtime motion, not built-in-display smoothness."
         },
         {
           "id": "M0.6",

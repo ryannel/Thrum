@@ -83,6 +83,10 @@ The headless target uses the ordinary presenter/SurfaceOutput admission path so 
 without advancing authority. Mac M2.3 owns real-window tap integration/proof (same engine output, no drawable lease
 extension, capture-off direct output, pending-capture surface loss); M2.4 owns bounded trace-finalization diagnosis.
 M2.2 requires both and uses a capture-OFF traced arm for cadence, with separate capture-ON content/observer arms.
+Mac M2 needs only T2 M0 and qualifies the current path, independently of parked APPLE-TILE. New Mac M3 needs
+`APPLE-TILE:M3` and reruns the complete motion/cadence protocols plus windowed-tap/tooling preflight after its
+graph/present changes; earlier evidence qualifies only the earlier build. The parked producer requires explicit
+lead recommission and independent design approval before build; it does not gate M2 tooling.
 
 Mobile adapters retain separate surface, foreground and local-play policy. Release a surface before suspend returns,
 reject old-generation input/completions and recreate only surface-dependent resources on resume. A local single-player

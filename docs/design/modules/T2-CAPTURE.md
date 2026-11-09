@@ -1,6 +1,6 @@
 # Unattended frame evidence — T2 capture
 
-Status: revised after the [design review](../../evidence/T2-CAPTURE/design-review.md), 9 November 2026;
+Status: revised after [design review 2](../../evidence/T2-CAPTURE/design-review-2.md), 9 November 2026;
 independent re-review owed, implementation unqualified.
 [Brief](T2-CAPTURE-BRIEF.md) · [plan](T2-CAPTURE-PLAN.md) · [criteria](T2-CAPTURE-DONE.json).
 This is a child of [Diagnostics and delivery](TOOLS-DELIVERY.md), not a new engine subsystem or package.
@@ -180,15 +180,18 @@ PNG throughput from the critical path; the early raw-spool probe can still rejec
 Locked-console feasibility is supported by the [retained design review's probe account](../../evidence/T2-CAPTURE/design-review.md#what-checks-out):
 it read `tmp/platform-runtime-mac-m2/console-probe.txt` at 01:59 CET (`IOConsoleLocked = Yes`,
 `CGSSessionScreenIsLocked = Yes`) and the successful 02:00 CET [offscreen parity record](../../evidence/render/mac-m2-pan/parity-20261109.json).
-The probe scratch is not present in this checkout, and the parity JSON alone does not record lock state. This is
-historical feasibility evidence, not a fresh T2 run or runtime-motion qualification. M0 records lock state alongside
+The second review locates probe scratch in the separate platform-runtime-mac worktree; the parity JSON alone
+does not record lock state. This is historical feasibility evidence, not a fresh T2 run or runtime-motion
+qualification. M0 records lock state alongside
 its own run, opportunistically when the console is already locked. Never lock an active user's session to arrange
 the test and never unlock it by automation. Until that condition occurs, the locked row stays open and other work proceeds.
 
 ## Rollout and attended boundaries
 
 M0 delivers Mac unattended still/fixed-time/real-time capture and the reusable engine tap. Mac qualification M2 consumes
-it, without waiting for Chrome or simulator rollout. Mac M2.3 owns integration/qualification of this same tap on a real
+it on the current surface path, without waiting for Chrome, simulator rollout or parked APPLE-TILE. Mac M3
+needs `APPLE-TILE:M3` and owns fresh post-change motion/cadence requalification; that later obligation cannot
+gate Mac M2. Mac M2.3 owns integration/qualification of this same tap on a real
 CAMetalLayer surface: known-pattern output correspondence, lease lifetime, capture-off direct presentation and
 pending-capture surface loss. It needs attended unlocked setup and does not block unattended M0. G3t M0 consumes
 M0 for shared output capture and adds its own scene-linear comparison cases. M1 and M2 of this tooling plan qualify Chrome and iOS simulator respectively;
