@@ -33,7 +33,6 @@ use crate::lease::{Leased, SurfaceLease};
 pub(super) const THREAD: &str = "thrum-v1-ios-render";
 /// Completed samples polled per job; the host retains at most this many frames.
 const SAMPLE_SLOTS: usize = 2;
-const RENDER_EXTENT: [u32; 2] = [640, 360];
 
 pub(super) type Lease = SurfaceLease<wgpu::Surface<'static>>;
 pub(super) type RenderWorker = FrameWorker<Job, Reported>;
@@ -122,6 +121,8 @@ pub(super) struct FrameReply {
     pub(super) generation: u64,
     /// The request's surface extent, which a presented drawable has.
     pub(super) extent: [u32; 2],
+    pub(super) frame_extent: Option<thrum_render::runtime::FrameExtent>,
+    pub(super) drawable: [u32; 2],
     pub(super) status: SurfaceStatus,
     pub(super) report: Option<DriveReport>,
     pub(super) completed: u32,
@@ -172,6 +173,10 @@ pub(super) enum RecoverFault {
     Failed(String),
 }
 
+#[expect(
+    clippy::large_enum_variant,
+    reason = "the bounded single reply slot retains frame diagnostics inline without per-frame heap allocation"
+)]
 pub(super) enum Reply {
     Prepared(Result<Prepared, String>),
     Frame(Result<FrameReply, String>),
@@ -265,6 +270,7 @@ struct Owner {
     instance: Option<wgpu::Instance>,
     signals: Arc<Signals>,
     gpu: Option<Gpu>,
+    diagnostics: bool,
     origin: Instant,
     /// The next candidate generation; strictly increasing across attempts.
     next_generation: u64,
@@ -299,6 +305,7 @@ pub(super) fn start(
         instance: None,
         signals,
         gpu: None,
+        diagnostics: std::env::var("THRUM_V1_ROUTE").is_ok_and(|value| value == "1"),
         origin: Instant::now(),
         next_generation: FIRST_GENERATION + 1,
         lost_wake: lost,
@@ -350,6 +357,8 @@ impl FrameReply {
             epoch: request.epoch,
             generation,
             extent: request.extent,
+            frame_extent: None,
+            drawable: [0; 2],
             status: SurfaceStatus::NoView,
             report: None,
             completed: 0,
@@ -430,7 +439,7 @@ impl Owner {
             &queue,
             &capabilities,
             FrameConfig {
-                render_extent: RENDER_EXTENT,
+                render_extent: extent,
                 surface: Some(SurfaceProfile { format, extent }),
             },
         ))?;
@@ -551,7 +560,10 @@ impl Owner {
         if watch.is_lost() {
             return Err(RecoverFault::CandidateLost);
         }
-        let extent = self.lease.observed_extent().map(|side| side.max(1));
+        let extent = self.lease.observed_extent();
+        if extent.contains(&0) {
+            return Err(RecoverFault::Deferred);
+        }
         let mut prepared = pollster::block_on(inputs.prepare(
             &capabilities,
             &queue,
@@ -561,6 +573,7 @@ impl Owner {
             }),
         ))
         .map_err(fail)?;
+        prepared.resize_scene_surface(extent).map_err(fail)?;
         let mut held = Duration::ZERO;
         if self.signals.hold_recover.load(Ordering::Acquire) {
             // Route only: widen the window between preparation and the refit
@@ -577,10 +590,13 @@ impl Owner {
             return Err(RecoverFault::CandidateLost);
         }
         // A rotation during preparation: fit the candidate before publishing.
-        let current = self.lease.observed_extent().map(|side| side.max(1));
+        let current = self.lease.observed_extent();
+        if current.contains(&0) {
+            return Err(RecoverFault::Deferred);
+        }
         let refitted = current != extent;
         if refitted {
-            prepared.resize_surface(current).map_err(fail)?;
+            prepared.resize_scene_surface(current).map_err(fail)?;
             if watch.is_lost() {
                 return Err(RecoverFault::CandidateLost);
             }
@@ -592,6 +608,9 @@ impl Owner {
         let background = &self.signals.background;
         let published = self.lease.section(self.lease.epoch(), |leased| {
             if background.load(Ordering::Acquire) {
+                return None;
+            }
+            if self.lease.observed_extent() != current || current.contains(&0) {
                 return None;
             }
             leased.configured = None;
@@ -630,7 +649,9 @@ impl Owner {
             reply.status = SurfaceStatus::Denied;
             false
         } else {
-            match lease.section(request.epoch, |leased| gpu.configure(leased, request)) {
+            match lease.section(request.epoch, |leased| {
+                gpu.configure(leased, request, &lease)
+            }) {
                 None => {
                     reply.status = SurfaceStatus::NoLease;
                     false
@@ -653,7 +674,13 @@ impl Owner {
                 &mut reply,
                 &*self.stalling,
                 &self.signals.lose_now,
+                self.diagnostics,
             )?
+        } else if !usable || reply.status == SurfaceStatus::Reconfigure {
+            // Drain old-grid submissions before resizing. Encoding another old
+            // view here can keep a busy ring occupied indefinitely.
+            drop(gpu.host.advance(now)?);
+            None
         } else {
             Some(gpu.host.drive(now, None)?)
         };
@@ -680,6 +707,7 @@ impl Gpu {
         &mut self,
         leased: &mut Leased<wgpu::Surface<'static>>,
         request: &FrameRequest,
+        lease: &Lease,
     ) -> Result<Option<bool>, FrameError> {
         if leased.configured == Some((request.epoch, request.extent)) {
             return Ok(Some(false));
@@ -688,7 +716,12 @@ impl Gpu {
             return Ok(None);
         }
         if request.extent != self.host_extent {
-            self.host.resize_surface(request.extent)?;
+            if !self
+                .host
+                .resize_scene_surface_if(request.extent, || lease.is_current(request.epoch))?
+            {
+                return Ok(None);
+            }
             self.host_extent = request.extent;
         }
         let mut config = leased
@@ -722,6 +755,7 @@ impl Gpu {
         reply: &mut FrameReply,
         stalling: &dyn Fn(),
         lose_now: &AtomicBool,
+        diagnostics: bool,
     ) -> Result<Option<DriveReport>, FrameError> {
         let advanced = self.host.advance(now)?;
         if !advanced.can_acquire_serial() {
@@ -731,6 +765,9 @@ impl Gpu {
         if !encoded.can_acquire_surface() {
             // Nothing recorded, so this skip makes no queue call.
             return Ok(Some(encoded.skip()));
+        }
+        if diagnostics {
+            reply.frame_extent = encoded.frame_extent();
         }
         reply.presentable_encode = true;
         let queue = &self.queue;
@@ -818,6 +855,7 @@ impl Gpu {
                 drop(frame);
             } else if report.surface_presented {
                 let drawn = [frame.texture.width(), frame.texture.height()];
+                reply.drawable = drawn;
                 if drawn != lease.observed_extent() {
                     reply.status = SurfaceStatus::StaleDropped;
                     reply.extent_dropped = true;

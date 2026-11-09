@@ -1,0 +1,7 @@
+{
+  "fps": 20,
+  "frames": 60,
+  "video_seek_seconds": 5.55656574992463,
+  "resize_observed_since_record_command": 6.55656574992463,
+  "scope": "20 fps simctl compositor samples, command/observation alignment only, no engine frame IDs"
+}

@@ -7,7 +7,7 @@ Done when: [PLATFORM-RUNTIME-IOS-DONE.json](PLATFORM-RUNTIME-IOS-DONE.json).
 [C06](../CONTRACTS.md#c06-gpu-execution-and-lifetime--v1), [C07](../CONTRACTS.md#c07-render-scene-views-and-temporal-data--v2-with-p4v3v4)
 and [C11](../CONTRACTS.md#c11-input-audio-and-ui-lifecycle--p1a1u1-with-f1).
 Commission: Thrum Core's G3b iOS boundary (`tmp/g3b-ios-boundary/NOTES.md`).
-Reviews: Independent M7 design/plan review owed to the lead/loop; no agents launched in this planner turn.
+Reviews: M7 design/plan approved at `5dacae7b`; [independent design review](../../evidence/PLATFORM-RUNTIME-IOS/design-review.md). M7 claim awaits lead/loop review.
 Historical reviews: 2026-11-08 M5/M6 close review of `route-full6` and the uncommitted tree on `d063f2e8` (fresh subagent, brief
 `tmp/g3b-ios-rotation/close-review-brief.md`). M6 passed. M5 needed changes, with one blocking finding: winit's
 creation and layout `Resized` events reconfigured each new window at a transient extent, so `Resized` now reads the
@@ -19,10 +19,10 @@ required, three blocking: one extent source, stale-extent claim, `destroy` needs
 2026-11-07 independent design/plan review (fresh subagent given the commission, this plan, the contracts and
 the work-in-progress tree): changes required, two blocking. Answered below; see *Review answers*. Thrum Core's
 rulings on seam 2 (approved with conditions) are answered in *Root conditions*.
-Milestone: M7 Scene and internal render size follow the oriented iOS surface (open) · Updated: 2026-11-09
-Now: G3b owns the scene/surface extent correction exposed by COOKED-DRAW checkpoint `b0dae34c`; M7 is planned,
-not implemented or accepted. M1–M6 retain their historical simulator closeout below.
-Next: Lead/loop independent design review, then build M7 through the shared render owner and the existing iOS route.
+Milestone: M7 Scene and internal render size follow the oriented iOS surface (claimed) · Updated: 2026-11-09
+Now: M7's coupled render-owner operation and full simulator route are implemented and builder-verified.
+Selected evidence is in [ios-extent](../../evidence/render/ios-extent/README.md). M1–M6 retain their historical closeout.
+Next: Lead/loop review of M7, then COOKED-DRAW's unchanged M1.9–M1.11 reruns after acceptance.
 Blocked: no upstream milestone. COOKED-DRAW M1 needs `PLATFORM-RUNTIME-IOS:M7`; M7 does not need cooked drawing.
 
 Scope: the iPhone 18 Pro / iOS 27.2 simulator as a function target. M1–M4 covered off-main frames, touch, lifecycle and
@@ -246,7 +246,7 @@ Thrum Core approved seam 2(a) and 2(b) with conditions. Each, in turn:
 7. *Exact lifecycle guarantee and a race exercised without a GPU/fence wait.* See *Linearization point* above and the
    raced-present row.
 
-## M7 Scene and internal render size follow the oriented iOS surface: open
+## M7 Scene and internal render size follow the oriented iOS surface: claimed
 
 The [child design](PLATFORM-RUNTIME-IOS.md) owns this correction across the UIKit shell, shared `thrum-render`
 `FrameHost`/prepared-device path and V1 threaded facade. G5 remains the cooked draw owner; G4 is not a prerequisite
@@ -255,29 +255,27 @@ capture. Active loop definitions begin at M7 in the new DONE file. M1–M6 below
 not newly claimed/accepted milestones; their evidence and review history are retained without forging acceptance.
 
 Work and proof:
-- [ ] Add the coupled scene/surface extent transition on the render owner and expose it to the existing iOS host.
+- [x] Add the coupled scene/surface extent transition on the render owner and expose it to the existing iOS host.
   Account for all targets/bindings, camera aspect, history reset, pending frames, zero extents and retryable failure;
   preserve size-independent content and surface-only caller behaviour (M7.1).
-- [ ] Replace iOS's fixed 640×360 preparation/resize with the current full-bounds pixel extent. Extend actual
+- [x] Replace iOS's fixed 640×360 preparation/resize with the current full-bounds pixel extent. Extend actual
   target/projection/presenter witnesses and assertions in the existing route, then run
   `bash examples/v1-game-ios/ios/check-simulator.sh` under `gpu` on its fresh owned simulator (M7.2).
-- [ ] Inspect native startup/landscape/returned-portrait screenshots, full-resolution crops and both rotation strips
+- [x] Inspect native startup/landscape/returned-portrait screenshots, full-resolution crops and both rotation strips
   against M7.3. Full viewport alone is insufficient: actual internal targets must match too.
-- [ ] Refit scene and presenter together when rotation overlaps prepared-device recovery. Extend the existing
+- [x] Refit scene and presenter together when rotation overlaps prepared-device recovery. Extend the existing
   background/replacement/loss rows, including `hold-recover` plus rotation; retain M5/M6 lifecycle bounds (M7.4).
-- [ ] Record attachment bytes, pixel count and peak transition overlap. Prove identical extents reuse resources and
+- [x] Record attachment bytes, pixel count and peak transition overlap. Prove identical extents reuse resources and
   steady frames add no resize allocation/readback work; simulator results remain function only (M7.5).
-- [ ] Update selected evidence under `docs/evidence/render/ios-extent/`, iOS maturity and the G3b work list; close
+- [x] Update selected evidence under `docs/evidence/render/ios-extent/`, iOS maturity and the G3b work list; close
   owned scratch under `tmp/ios-extent/` and record the consumer handoff (M7.6).
 
 No dependency on unaccepted COOKED-DRAW or T2 simulator capture is added: M7 uses the existing diagnostic scene.
 After M7 acceptance, COOKED-DRAW must rerun M1.9–M1.11 on the integrated host, retaining every M1.10 requirement.
 The checkpoint evidence is accessible through `git show b0dae34c:docs/evidence/render/cooked-draw/README.md` and
 `git show b0dae34c:docs/evidence/render/cooked-draw/rotation/layout-failure.json`; do not import its code wholesale.
-Independent design review is owed to the lead/loop. After the loop commits and authorises these definitions,
-`agent_loop.py ready` must list PLATFORM-RUNTIME-IOS under `design_owed`; after that review it must list M7 as
-`ready` and COOKED-DRAW M1 as `waiting` on `PLATFORM-RUNTIME-IOS:M7` (or design-owed first if its review is stale).
-The planner leaves files uncommitted for the enclosing loop, which owns commit/integration and acceptance records.
+The lead approved the reviewed design at `5dacae7b`; the child design remains the exact reviewed specification.
+M7 is claimed for independent milestone review. COOKED-DRAW M1 continues to wait on M7 acceptance.
 No owner decision is needed within this scope.
 
 Planner validation: `RUSTC_WRAPPER= ./dev check-docs` and `git diff --check` pass. The loop's schema,
@@ -450,6 +448,17 @@ From the 7 Nov close review and the 8 Nov daily main review (`chunk-E.md`), tria
 - L8 (no-op example binaries off macOS) is outside this shell; passed to the overseer.
 
 ## Log
+- 2026-11-09 Built M7. Shared scene/surface resize prepares a replacement ring and presenter, validates the
+  current epoch before publication, drains pending frames, reuses identical extents and preserves fixed-render
+  surface-only callers. Device candidates refit scene and presenter, then refresh current camera/lighting at
+  publication. Contributions retain size-independent pipelines and receive C07 history reset with the new matrix.
+  Full pre-change and final fresh-simulator routes passed. Final rotation has two-reply gaps, unchanged identities,
+  zero old-extent presents, matrix-derived 65° vertical FOV, and matching actual targets/drawables in both orientations.
+  Inspected native whole images/crops and both 60-frame strips. Resource overlap includes recovery's third ring.
+  Evidence and limits are in [the M7 record](../../evidence/render/ios-extent/README.md).
+  Initial native regression-test setup used an entry point that could skip unchanged publication; corrected it
+  to the serial encoded-token submission used by iOS. The final gate covers that correction. Claim awaits lead review.
+
 - 2026-11-09 Planned M7 from COOKED-DRAW M1.10's extent blocker at local checkpoint `b0dae34c`.
   Read the layout/source record, README and landscape/portrait screenshots with `git show`. G3b owns the current
   surface-to-scene extent relationship, including shared render-owner changes. G4's earlier framing deferral is

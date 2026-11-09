@@ -1,0 +1,126 @@
+G3b iOS route on 20018E34-457A-42E6-BC69-A922AEE9FCC8 (function evidence only); host load 65.94 16.94 7.89
+simulator: Thrum V1 function 87987 20018E34-457A-42E6-BC69-A922AEE9FCC8 type=com.apple.CoreSimulator.SimDeviceType.iPhone-18-Pro runtime=com.apple.CoreSimulator.SimRuntime.iOS-27-2 state=Booted
+manual steps: none; every interaction below is a logged simctl command, Darwin notification or XCUITest HID gesture
+startup: presented=718 completed=717 callbacks=926 pending<=2 threads display/prepare/frame/world=main/thrum-v1-ios-render/thrum-v1-ios-render/thrum-world
+step 16:06:59: command stall-render (file drop #1)
+stall: 8 s inside the lease section; callbacks during stall=480, world ticks during stall=481, UIKit max during stall=399 us
+step 16:07:08: command hide-view (file drop #2)
+step 16:07:15: command show-view (file drop #3)
+denied: 120 denied, 0 acquired, 0 presented, 120 world ticks while hidden; missing stays 0
+step 16:07:16: command replace-surface (file drop #4)
+replacement: epoch 2 -> 4, presented on epoch 4, same pid 89840, live detached windows 0
+step 16:07:19: command stall-render (file drop #5)
+step 16:07:19: command replace-surface (file drop #6)
+stalled replacement: deferred=1 stale_dropped=1 completed releases=1; presents resumed on epoch 6
+step 16:07:28: command stall-present (file drop #7)
+step 16:07:28: command replace-surface (file drop #8)
+raced present: one admitted present after revocation (raced_presents=1), deferred=2, old window detached after release; presents resumed on epoch 8
+step 16:07:38: xcrun simctl launch 20018E34-457A-42E6-BC69-A922AEE9FCC8 com.apple.Preferences
+step 16:07:41: xcrun simctl launch 20018E34-457A-42E6-BC69-A922AEE9FCC8 org.thrum.v1
+06: pid 89840, world epoch 1 at tick 3333 paused and resumed at tick 3333; surface epoch 8 -> 10; deferred releases 2
+step 16:07:45: command stall-render (file drop #9)
+step 16:07:45: xcrun simctl launch 20018E34-457A-42E6-BC69-A922AEE9FCC8 com.apple.Preferences
+step 16:07:47: xcrun simctl launch 20018E34-457A-42E6-BC69-A922AEE9FCC8 org.thrum.v1
+07-stall: pid 89840, world epoch 1 at tick 3488 paused and resumed at tick 3488; surface epoch 10 -> 12; deferred releases 3
+step 16:07:55: command sample-actor (file drop #10)
+actor before nudge: 0.8910, 0.8910, 0.5000
+touch nudge: XCUITest testNudge
+step 16:07:55: xcodebuild test-without-building -only-testing:ThrumV1UITests/ThrumV1Touch/testNudge (HID gesture)
+step 16:08:06: command sample-actor (file drop #11)
+actor after nudge: 1.2910, 0.8910, 0.5000
+nudge: committed actor moved 0.400 m right, past the grid edge (compare 08a-before-nudge-corner.png with 08a-after-nudge-corner.png)
+step 16:08:07: command sample-actor (file drop #12)
+actor before swipe: 1.2910, 0.8910, 0.5000
+touch swipe: XCUITest testSwipe
+step 16:08:07: xcodebuild test-without-building -only-testing:ThrumV1UITests/ThrumV1Touch/testSwipe (HID gesture)
+step 16:08:16: command sample-actor (file drop #13)
+actor after swipe: 1.2910, 10.6160, 0.5000
+touch: starts=2 moving sends=9 released to rest; committed actor moved 9.725 m
+touch hold-background: XCUITest testHold
+step 16:08:16: xcodebuild test-without-building -only-testing:ThrumV1UITests/ThrumV1Touch/testHold (HID gesture)
+step 16:08:21: xcrun simctl launch 20018E34-457A-42E6-BC69-A922AEE9FCC8 com.apple.Preferences
+step 16:08:53: xcrun simctl launch 20018E34-457A-42E6-BC69-A922AEE9FCC8 org.thrum.v1
+background while held: cancels=0 clears=1, axes at rest
+touch hold-replace: XCUITest testHold
+step 16:08:56: xcodebuild test-without-building -only-testing:ThrumV1UITests/ThrumV1Touch/testHold (HID gesture)
+step 16:09:01: command replace-surface (file drop #14)
+step 16:09:02: command sample-actor (file drop #15)
+actor after replacement cleared held input: 1.2910, 11.3410, 0.5000
+step 16:09:34: command sample-actor (file drop #16)
+actor after the old window's late events: 1.2910, 11.3410, 0.5000
+replacement while held: clears=2 stale=2 old-window events=2, axes stayed at rest; committed actor moved 0.000000 m between samples (events before the first sample)
+touch swipe-after: XCUITest testSwipe
+step 16:09:34: xcodebuild test-without-building -only-testing:ThrumV1UITests/ThrumV1Touch/testSwipe (HID gesture)
+step 16:09:42: command sample-actor (file drop #17)
+actor after the recovered swipe: 1.2910, 21.0660, 0.5000
+touch after recovery: moving sends=27; committed actor moved 9.725 m
+step 16:09:43: command sample-actor (file drop #18)
+actor before 12-landscape: 1.2910, 21.0660, 0.5000
+step 16:09:43: xcrun simctl io 20018E34-457A-42E6-BC69-A922AEE9FCC8 recordVideo 12-landscape.mp4
+step 16:09:45: xcodebuild test-without-building -only-testing:ThrumV1UITests/ThrumV1Touch/testLandscape (HID gesture)
+12-landscape: 60 frames at 20 fps from 3.84 s (12-landscape-strip.png, 12-landscape-frames/)
+step 16:09:54: command sample-actor (file drop #19)
+actor after 12-landscape: 1.2910, 21.0660, 0.5000
+12-landscape: host load 13.00 21.48 12.55
+12-landscape: extent 1206x2622 -> 2622x1206, epoch 16 -> 17, gap 2 replies (max so far), reconfigure waits 1, stale drops 0 (extent 0), raced 0, old-extent presents 0; ticks 8478 -> 9134; committed actor moved 0.000000 m
+step 16:09:54: command sample-actor (file drop #20)
+actor before landscape swipe: 1.2910, 21.0660, 0.5000
+touch landscape-swipe: XCUITest testSwipe
+step 16:09:55: xcodebuild test-without-building -only-testing:ThrumV1UITests/ThrumV1Touch/testSwipe (HID gesture)
+step 16:10:03: command sample-actor (file drop #21)
+actor after landscape swipe: 1.2910, 30.8285, 0.5000
+landscape swipe: committed actor moved 9.763 m
+step 16:10:03: command sample-actor (file drop #22)
+actor before 13-portrait: 1.2910, 30.8285, 0.5000
+step 16:10:03: xcrun simctl io 20018E34-457A-42E6-BC69-A922AEE9FCC8 recordVideo 13-portrait.mp4
+step 16:10:04: xcodebuild test-without-building -only-testing:ThrumV1UITests/ThrumV1Touch/testPortrait (HID gesture)
+13-portrait: 60 frames at 20 fps from 3.93 s (13-portrait-strip.png, 13-portrait-frames/)
+step 16:10:14: command sample-actor (file drop #23)
+actor after 13-portrait: 1.2910, 30.8285, 0.5000
+13-portrait: host load 10.88 20.46 12.39
+13-portrait: extent 2622x1206 -> 1206x2622, epoch 17 -> 18, gap 2 replies (max so far), reconfigure waits 1, stale drops 0 (extent 0), raced 0, old-extent presents 0; ticks 9663 -> 10325; committed actor moved 0.000000 m
+step 16:10:14: command sample-actor (file drop #24)
+actor before device loss: 1.2910, 30.8285, 0.5000
+step 16:10:14: command lose-device (file drop #25)
+step 16:10:16: command sample-actor (file drop #26)
+actor after device recovery: 1.2910, 30.8285, 0.5000
+device loss: generation 1 -> 2 (lost 1), lost frames 1, stale-generation refusals 0, recovery 41069 us on the owner, epoch 18 -> 20, presents on generation 2 at 1206x2622; ticks 10356 -> 10457; committed actor moved 0.000000 m
+step 16:10:16: command stale-wake (file drop #27)
+stale generation: wake for generation 1 ignored, a request carrying it refused unrun; generation 2 keeps presenting
+step 16:10:18: command sample-actor (file drop #28)
+actor before held-frame loss: 1.2910, 30.8285, 0.5000
+step 16:10:18: command stall-render (file drop #29)
+step 16:10:18: command lose-device (file drop #30)
+step 16:10:28: command sample-actor (file drop #31)
+actor after held-frame recovery: 1.2910, 30.8285, 0.5000
+held-frame loss: the drawable held across the loss dropped as DeviceLost and its surface was replaced (wgpu cannot discard a destroyed device's drawable); generation 2 -> 3, abandoned frames 1, empty submits on lost frames 0 (healthy empty submits 2), stale loss wakes 1, stale-generation refusals 1
+step 16:10:28: command sample-actor (file drop #32)
+actor before loss during rotation: 1.2910, 30.8285, 0.5000
+step 16:10:29: command hold-recover (file drop #33)
+step 16:10:29: command lose-device (file drop #34)
+step 16:10:29: xcodebuild test-without-building -only-testing:ThrumV1UITests/ThrumV1Touch/testLandscape (HID gesture)
+step 16:10:33: command release-recover (file drop #35)
+step 16:10:36: command sample-actor (file drop #36)
+actor after loss during rotation: 1.2910, 30.8285, 0.5000
+loss during rotation: one publication refitted to 2622x1206, presents at 2622x1206
+step 16:10:37: xcodebuild test-without-building -only-testing:ThrumV1UITests/ThrumV1Touch/testPortrait (HID gesture)
+step 16:10:44: command sample-actor (file drop #37)
+actor before loss across background: 1.2910, 30.8285, 0.5000
+step 16:10:44: command hold-recover (file drop #38)
+step 16:10:44: command lose-device (file drop #39)
+step 16:10:44: xcrun simctl launch 20018E34-457A-42E6-BC69-A922AEE9FCC8 com.apple.Preferences
+step 16:10:45: command release-recover (file drop #40)
+step 16:10:45: xcrun simctl launch 20018E34-457A-42E6-BC69-A922AEE9FCC8 org.thrum.v1
+step 16:10:48: command sample-actor (file drop #41)
+actor after loss across background: 1.2910, 30.8285, 0.5000
+loss across background: deferred 1 while suspended, one publication after resume; generation 6
+step 16:10:49: command sample-actor (file drop #42)
+actor before swipe after device recovery: 1.2910, 30.8285, 0.5000
+touch swipe-after-device: XCUITest testSwipe
+step 16:10:49: xcodebuild test-without-building -only-testing:ThrumV1UITests/ThrumV1Touch/testSwipe (HID gesture)
+step 16:10:58: command sample-actor (file drop #43)
+actor after swipe on the recovered device: 1.2910, 40.5535, 0.5000
+swipe after device recovery: committed actor moved 9.725 m
+device rows: 1 frames abandoned on lost devices with no queue call, 0 empty submits on lost frames, 2 healthy empty submits
+UIKit handler maxima: frame/input 1502 us (device-lost), lifecycle 30413 us (resumed), during stalls 11745 us; world overloads 1 (562 refused ticks)
+iPhone 18 Pro simulator G3b function route passed; host load 8.30 18.40 12.04

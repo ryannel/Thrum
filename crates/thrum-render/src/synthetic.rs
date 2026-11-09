@@ -2397,6 +2397,26 @@ impl OffscreenTarget {
     pub fn extent(&self) -> [u32; 2] {
         [self.width, self.height]
     }
+    pub(crate) fn texture_allocation(&self) -> (u32, u64) {
+        self.textures.allocation()
+    }
+
+    /// Actual depth, scene, motion and output texture dimensions for diagnostics.
+    pub(crate) fn attachment_extents(&self) -> [[u32; 2]; 4] {
+        [
+            &self.ids.depth,
+            &self.ids.scene,
+            &self.ids.motion,
+            &self.ids.output,
+        ]
+        .map(|id| {
+            let texture = self
+                .textures
+                .texture(id)
+                .expect("compiled target owns each attachment");
+            [texture.width(), texture.height()]
+        })
+    }
     pub(crate) fn output_view(&self) -> &wgpu::TextureView {
         &self.view
     }

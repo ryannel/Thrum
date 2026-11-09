@@ -1,0 +1,8 @@
+{
+  "source_sha256": "a34741ea487e1499c29c4a0d6d8dd2e46b220f4bc51d4d2696b1c11c1804bcf2",
+  "commit": "5dacae7b3e75847085ceb600b622f4ff89db90d6",
+  "patch_sha256": "4d16362aac1836373b7a711902038361daaf79a008635708c3624986236764c4",
+  "binary_sha256": "3242c1c88a9ea9315c884293a99eec60d2e7f46e90ad71ccbf6c55c39a428f43",
+  "simulator": "B230120E-541B-4FB5-9628-269E83B221C8",
+  "xcode": "Xcode 27.2\nBuild version 27B52"
+}

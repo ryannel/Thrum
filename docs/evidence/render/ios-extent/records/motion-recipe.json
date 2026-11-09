@@ -1,0 +1,28 @@
+{
+  "scope": "Selected panels preserve all 60 samples per rotation, in chronological 20-frame groups. They are presentation samples from simctl recording, scaled to 360px high per frame.",
+  "filter": "fps=20,select=between(n\\,START\\,END),scale=-2:360,tile=5x4",
+  "input_options": [
+    "-display_rotation",
+    "0",
+    "-ss",
+    "video_seek_seconds from the named strip JSON",
+    "-t",
+    "3"
+  ],
+  "groups": [
+    [
+      0,
+      19
+    ],
+    [
+      20,
+      39
+    ],
+    [
+      40,
+      59
+    ]
+  ],
+  "tool": "ffmpeg version 9.0.2 Copyright (c) 2000-2026 the FFmpeg developers",
+  "raw_video_retention": "Owned tmp video is disposable after proof selection. Exact submitted-frame/scanout identity is unavailable."
+}

@@ -269,6 +269,44 @@ impl SurfacePresenter {
         Ok(())
     }
 
+    /// Prepare new source and destination extents, retaining the pipeline.
+    /// The original remains usable if validation or graph compilation fails.
+    /// # Errors
+    /// Refuses zero/oversized extents or an invalid graph.
+    pub(crate) fn refit(
+        &self,
+        source_extent: [u32; 2],
+        extent: [u32; 2],
+    ) -> Result<Self, PresentError> {
+        check_extent(self.extent_limit, source_extent)?;
+        check_extent(self.extent_limit, extent)?;
+        let profile = SurfaceProfile {
+            format: self.profile.format,
+            extent,
+        };
+        let (plan, surface_resource) = compile_plan(self.generation, source_extent, profile)?;
+        Ok(Self {
+            device: self.device.clone(),
+            pipeline: self.pipeline.clone(),
+            layout: self.layout.clone(),
+            plan,
+            surface_resource,
+            generation: self.generation,
+            extent_limit: self.extent_limit,
+            source_extent,
+            profile,
+            owner: Arc::new(()),
+        })
+    }
+
+    /// Source grid and viewport used by the presentation pass.
+    pub fn source_viewport(&self) -> ([u32; 2], [u32; 4]) {
+        (
+            self.source_extent,
+            letterbox(self.source_extent, self.profile.extent),
+        )
+    }
+
     /// Current configured surface extent.
     pub fn extent(&self) -> [u32; 2] {
         self.profile.extent

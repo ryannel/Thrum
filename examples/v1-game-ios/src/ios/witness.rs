@@ -66,6 +66,8 @@ pub(super) struct Witness {
     pub(super) extent_drops: u64,
     pub(super) old_extent_presents: u64,
     pub(super) presented_extent: [u32; 2],
+    frame_extent: Option<thrum_render::runtime::FrameExtent>,
+    drawable: [u32; 2],
     pub(super) install_retries: u64,
     pub(super) loss_replacements: u64,
     pub(super) device_generation: u64,
@@ -214,6 +216,8 @@ impl Witness {
         }
         match frame.status {
             SurfaceStatus::Presented => {
+                self.frame_extent = frame.frame_extent;
+                self.drawable = frame.drawable;
                 self.presented += 1;
                 self.presented_epoch = frame.epoch;
                 self.presented_extent = frame.extent;
@@ -249,6 +253,42 @@ impl Witness {
                 self.resume_tick = tick;
             }
         }
+    }
+
+    fn extent_text(&self) -> String {
+        self.frame_extent.map_or_else(
+            || "none".to_owned(),
+            |frame| {
+                let attachments = frame
+                    .attachments
+                    .map(|extent| format!("{}x{}", extent[0], extent[1]))
+                    .join(",");
+                let matrix = frame
+                    .view_projection
+                    .iter()
+                    .flatten()
+                    .map(ToString::to_string)
+                    .collect::<Vec<_>>()
+                    .join(",");
+                format!(
+                    "{};{};{}x{};{}x{};{},{},{},{};{};{};{};{}",
+                    attachments,
+                    matrix,
+                    frame.source[0],
+                    frame.source[1],
+                    frame.destination[0],
+                    frame.destination[1],
+                    frame.viewport[0],
+                    frame.viewport[1],
+                    frame.viewport[2],
+                    frame.viewport[3],
+                    frame.submission,
+                    frame.revision,
+                    frame.target_textures,
+                    frame.target_bytes
+                )
+            },
+        )
     }
 
     pub(super) fn write(&self) {
@@ -337,7 +377,7 @@ impl Witness {
         let actor = self
             .actor_position
             .map_or_else(|| "none".to_owned(), |[x, y, z]| format!("{x},{y},{z}"));
-        let tail: [(&str, String); 45] = [
+        let tail: [(&str, String); 47] = [
             ("actor_samples", self.actor_samples.to_string()),
             ("actor_position", actor),
             ("stall_active", self.stall_active.to_string()),
@@ -408,6 +448,11 @@ impl Witness {
                 format!("{}x{}", self.recovered_extent[0], self.recovered_extent[1]),
             ),
             ("recover_error", self.recover_error.clone()),
+            ("frame_extent", self.extent_text()),
+            (
+                "drawable",
+                format!("{}x{}", self.drawable[0], self.drawable[1]),
+            ),
             ("old_extent_presents", self.old_extent_presents.to_string()),
             (
                 "presented_extent",

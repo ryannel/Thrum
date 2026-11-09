@@ -1,0 +1,119 @@
+{
+  "01-startup": {
+    "source_extent": [
+      1206,
+      2622
+    ],
+    "crops": {
+      "top": [
+        1206,
+        192,
+        0,
+        0
+      ],
+      "bottom": [
+        1206,
+        192,
+        0,
+        2430
+      ],
+      "left": [
+        192,
+        768,
+        0,
+        927
+      ],
+      "right": [
+        192,
+        768,
+        1014,
+        927
+      ],
+      "object": [
+        512,
+        512,
+        347,
+        927
+      ]
+    },
+    "scope": "native pixel crops, no scaling"
+  },
+  "12-landscape": {
+    "source_extent": [
+      2622,
+      1206
+    ],
+    "crops": {
+      "top": [
+        2622,
+        192,
+        0,
+        0
+      ],
+      "bottom": [
+        2622,
+        192,
+        0,
+        1014
+      ],
+      "left": [
+        192,
+        768,
+        0,
+        219
+      ],
+      "right": [
+        192,
+        768,
+        2430,
+        219
+      ],
+      "object": [
+        512,
+        512,
+        1055,
+        219
+      ]
+    },
+    "scope": "native pixel crops, no scaling"
+  },
+  "13-portrait": {
+    "source_extent": [
+      1206,
+      2622
+    ],
+    "crops": {
+      "top": [
+        1206,
+        192,
+        0,
+        0
+      ],
+      "bottom": [
+        1206,
+        192,
+        0,
+        2430
+      ],
+      "left": [
+        192,
+        768,
+        0,
+        927
+      ],
+      "right": [
+        192,
+        768,
+        1014,
+        927
+      ],
+      "object": [
+        512,
+        512,
+        347,
+        927
+      ]
+    },
+    "scope": "native pixel crops, no scaling"
+  }
+}

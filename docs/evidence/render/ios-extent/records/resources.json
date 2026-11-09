@@ -1,0 +1,80 @@
+{
+  "scope": "Texture texel storage from actual route resources and their graph allocation. Excludes driver padding, buffers, drawable pool, pipelines and size-independent scene assets. Simulator function only.",
+  "attachments_per_slot": [
+    {
+      "name": "depth",
+      "format": "Depth32Float",
+      "bytes_per_pixel": 4
+    },
+    {
+      "name": "scene",
+      "format": "Rgba16Float",
+      "bytes_per_pixel": 8
+    },
+    {
+      "name": "motion",
+      "format": "Rg16Float",
+      "bytes_per_pixel": 4
+    },
+    {
+      "name": "output",
+      "format": "Rgba8Unorm",
+      "bytes_per_pixel": 4
+    },
+    {
+      "name": "Sun maps",
+      "format": "Depth32Float",
+      "extent": [
+        1024,
+        1024,
+        3
+      ],
+      "bytes": 12582912
+    },
+    {
+      "name": "air shadow",
+      "format": "Rg32Float",
+      "extent": [
+        512,
+        512,
+        1
+      ],
+      "bytes": 2097152
+    }
+  ],
+  "orientations": [
+    [
+      1206,
+      2622
+    ],
+    [
+      2622,
+      1206
+    ]
+  ],
+  "pixels_per_orientation": 3162132,
+  "baseline_pixels": 230400,
+  "pixel_ratio": 13.72453125,
+  "textures_per_slot": 6,
+  "bytes_per_slot": 77922704,
+  "slots_per_ring": 2,
+  "bytes_per_ring": 155845408,
+  "ordinary_transition": {
+    "rings_peak": 2,
+    "textures_peak": 24,
+    "texture_bytes_peak": 311690816,
+    "ownership": "Old ring is GPU-complete before preparation. One replacement ring is prepared, then published, then old handles drop."
+  },
+  "recovery_refit": {
+    "rings_peak": 3,
+    "textures_peak": 36,
+    "texture_bytes_peak": 467536224,
+    "ownership": "Lost host ring plus old and new candidate rings during refit. Candidate old ring drops after refit. Lost host ring drops on publication."
+  },
+  "repeated_identical_extent": {
+    "ring_replacements": 0,
+    "new_target_textures": 0,
+    "evidence": "steady-extent.json and native GPU resource handle equality assertions. Revision is a ring publication witness, not a global GPU allocation counter."
+  },
+  "limits": "Ownership bounds count app-held target rings, not total driver residency or recovery device memory. Ordinary resize retains scene/presenter pipelines, asset selection and contribution bindings. C07 history reset is forwarded in ContributionFrame. Completion polling stays off UIKit."
+}

@@ -1,0 +1,18 @@
+{
+  "profile_check": "./dev check",
+  "wrapper": "RUSTC_WRAPPER= under orchestrate gpu lock",
+  "exit_code": 0,
+  "workspace_test_totals": {
+    "passed": 651,
+    "failed": 0,
+    "ignored": 0
+  },
+  "ios_full_route_exit_code": 0,
+  "ios_clippy_exit_code": 0,
+  "check_docs_exit_code": 0,
+  "native_extent_tests": [
+    "coupled_extent_changes_real_targets_projection_and_history_atomically",
+    "detached_device_refits_scene_and_presenter_and_refreshes_current_camera"
+  ],
+  "limits": "No physical-device or simulator speed/cadence qualification. Lead independent milestone review remains owed."
+}

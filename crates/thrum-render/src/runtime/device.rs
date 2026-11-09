@@ -37,6 +37,7 @@ pub struct PreparedDevice {
     scene: Option<PreparedScene>,
     presenter: Option<SurfacePresenter>,
     creations: Ledger,
+    render_extent: [u32; 2],
 }
 
 impl PreparedDevice {
@@ -58,6 +59,33 @@ impl PreparedDevice {
             ))?
             .resize(self.capabilities.device(), extent)
             .map_err(|error| FrameError::Gpu(format!("replacement surface resize: {error:?}")))
+    }
+    /// Refit both candidate scene targets and presenter after an oriented resize.
+    /// # Errors
+    /// Refuses zero/invalid extents or a consumed candidate without publication.
+    pub fn resize_scene_surface(&mut self, extent: [u32; 2]) -> Result<(), FrameError> {
+        let scene = self.scene.as_mut().ok_or(FrameError::InvalidState(
+            "device replacement already published",
+        ))?;
+        let presenter = self.presenter.as_ref().ok_or(FrameError::InvalidState(
+            "candidate has no surface presenter",
+        ))?;
+        if extent == self.render_extent && extent == presenter.extent() {
+            return Ok(());
+        }
+        let _region = self
+            .creations
+            .region(CreationPhase::Build, "device-scene-resize");
+        let presenter = presenter
+            .refit(extent, extent)
+            .map_err(|error| FrameError::Gpu(format!("replacement scene resize: {error:?}")))?;
+        let mut slots =
+            super::preparation::prepare_slots(&scene.prepared, &self.queue, extent, true)?;
+        super::preparation::bind_presenter(&scene.prepared, &mut slots, Some(&presenter))?;
+        scene.slots = slots;
+        self.presenter = Some(presenter);
+        self.render_extent = extent;
+        Ok(())
     }
 }
 
@@ -116,6 +144,7 @@ impl DevicePrepareInputs {
             scene: Some(scene),
             presenter,
             creations,
+            render_extent: self.render_extent,
         })
     }
 }
@@ -172,7 +201,12 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         let scene = candidate.scene.as_mut().ok_or(FrameError::InvalidState(
             "device replacement already published",
         ))?;
-        let view = self.refresh_replacement(scene, &candidate.queue, self.visual_lighting)?;
+        let view = self.refresh_replacement(
+            scene,
+            &candidate.queue,
+            self.visual_lighting,
+            candidate.render_extent,
+        )?;
         let scene = candidate.scene.take().ok_or(FrameError::InvalidState(
             "device replacement already published",
         ))?;
@@ -184,6 +218,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.device = wgpu::Device::clone(candidate.capabilities.device());
         self.queue = candidate.queue.clone();
         self.generation = candidate.capabilities.generation();
+        self.render_extent = candidate.render_extent;
         self.prepared = scene.prepared;
         self.slots = scene.slots;
         self.presenter = candidate.presenter.take();

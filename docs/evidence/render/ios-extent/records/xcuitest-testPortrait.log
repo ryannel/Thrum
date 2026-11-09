@@ -1,0 +1,66 @@
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild test-without-building -xctestrun target/v1-game-ios-sim/uitest/ThrumV1UITests.xctestrun -destination id=B230120E-541B-4FB5-9628-269E83B221C8 "-only-testing:ThrumV1UITests/ThrumV1Touch/testPortrait"
+
+    t =      nans Interface orientation changed to Landscape Right
+Test Suite 'Selected tests' started at 2026-11-09 16:22:23.644.
+Test Suite 'ThrumV1UITests.xctest' started at 2026-11-09 16:22:23.645.
+Test Suite 'ThrumV1Touch' started at 2026-11-09 16:22:23.645.
+Test Case '-[ThrumV1UITests.ThrumV1Touch testPortrait]' started.
+    t =     0.01s Start Test at 2026-11-09 16:22:23.655
+    t =     0.03s Set Up
+    t =     0.03s Setting device orientation to Portrait
+    t =     0.04s     Device orientation changed to Portrait
+    t =     0.09s     Interface orientation changed to Portrait
+    t =     0.10s     Wait for org.thrum.v1 to idle
+objc[97374]: Class UIAccessibilityLoaderWebShared is implemented in both /private/var/run/com.apple.security.cryptexd/mnt/com.apple.iPhoneOS.SimulatorRuntime-v24.2.8117.0.YDOXcI/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.2.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebCore.axbundle/WebCore (0x106bc8310) and /private/var/run/com.apple.security.cryptexd/mnt/com.apple.iPhoneOS.SimulatorRuntime-v24.2.8117.0.YDOXcI/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.2.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebKit.axbundle/WebKit (0x105e78398). This may cause spurious casting failures and mysterious crashes. One of the duplicates must be removed or renamed.
+    t =     2.41s Tear Down
+Test Case '-[ThrumV1UITests.ThrumV1Touch testPortrait]' passed (2.477 seconds).
+Test Suite 'ThrumV1Touch' passed at 2026-11-09 16:22:26.132.
+	 Executed 1 test, with 0 failures (0 unexpected) in 2.477 (2.487) seconds
+Test Suite 'ThrumV1UITests.xctest' passed at 2026-11-09 16:22:26.133.
+	 Executed 1 test, with 0 failures (0 unexpected) in 2.477 (2.488) seconds
+Test Suite 'Selected tests' passed at 2026-11-09 16:22:26.133.
+	 Executed 1 test, with 0 failures (0 unexpected) in 2.477 (2.489) seconds
+2026-11-09 16:22:26.421 xcodebuild[97372:151877967] [MT] IDETestOperationsObserverDebug: 6.884 elapsed -- Testing started completed.
+2026-11-09 16:22:26.421 xcodebuild[97372:151877967] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-11-09 16:22:26.421 xcodebuild[97372:151877967] [MT] IDETestOperationsObserverDebug: 6.884 sec, +6.884 sec -- end
+
+Test session results, code coverage, and logs:
+	/Users/ryannel/Library/Developer/Xcode/DerivedData/temporary-fymyvvjcyoczqpezfagkjrkqffkj/Logs/Test/Test-Transient Testing-2026.11.09_16-22-19-+0100.xcresult
+
+** TEST EXECUTE SUCCEEDED **
+
+Testing started
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild test-without-building -xctestrun target/v1-game-ios-sim/uitest/ThrumV1UITests.xctestrun -destination id=B230120E-541B-4FB5-9628-269E83B221C8 "-only-testing:ThrumV1UITests/ThrumV1Touch/testPortrait"
+
+    t =      nans Interface orientation changed to Landscape Right
+Test Suite 'Selected tests' started at 2026-11-09 16:22:56.431.
+Test Suite 'ThrumV1UITests.xctest' started at 2026-11-09 16:22:56.431.
+Test Suite 'ThrumV1Touch' started at 2026-11-09 16:22:56.431.
+Test Case '-[ThrumV1UITests.ThrumV1Touch testPortrait]' started.
+    t =     0.01s Start Test at 2026-11-09 16:22:56.440
+    t =     0.03s Set Up
+    t =     0.03s Setting device orientation to Portrait
+    t =     0.03s     Device orientation changed to Portrait
+    t =     0.08s     Interface orientation changed to Portrait
+    t =     0.13s     Wait for org.thrum.v1 to idle
+objc[97507]: Class UIAccessibilityLoaderWebShared is implemented in both /private/var/run/com.apple.security.cryptexd/mnt/com.apple.iPhoneOS.SimulatorRuntime-v24.2.8117.0.YDOXcI/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.2.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebCore.axbundle/WebCore (0x103fc4310) and /private/var/run/com.apple.security.cryptexd/mnt/com.apple.iPhoneOS.SimulatorRuntime-v24.2.8117.0.YDOXcI/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.2.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebKit.axbundle/WebKit (0x103344398). This may cause spurious casting failures and mysterious crashes. One of the duplicates must be removed or renamed.
+    t =     2.40s Tear Down
+Test Case '-[ThrumV1UITests.ThrumV1Touch testPortrait]' passed (2.457 seconds).
+Test Suite 'ThrumV1Touch' passed at 2026-11-09 16:22:58.897.
+	 Executed 1 test, with 0 failures (0 unexpected) in 2.457 (2.466) seconds
+Test Suite 'ThrumV1UITests.xctest' passed at 2026-11-09 16:22:58.897.
+	 Executed 1 test, with 0 failures (0 unexpected) in 2.457 (2.466) seconds
+Test Suite 'Selected tests' passed at 2026-11-09 16:22:58.898.
+	 Executed 1 test, with 0 failures (0 unexpected) in 2.457 (2.467) seconds
+2026-11-09 16:22:59.181 xcodebuild[97505:151880024] [MT] IDETestOperationsObserverDebug: 6.816 elapsed -- Testing started completed.
+2026-11-09 16:22:59.181 xcodebuild[97505:151880024] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-11-09 16:22:59.181 xcodebuild[97505:151880024] [MT] IDETestOperationsObserverDebug: 6.816 sec, +6.816 sec -- end
+
+Test session results, code coverage, and logs:
+	/Users/ryannel/Library/Developer/Xcode/DerivedData/temporary-czeypgakebdwbfgwwdlnrjifxcwd/Logs/Test/Test-Transient Testing-2026.11.09_16-22-52-+0100.xcresult
+
+** TEST EXECUTE SUCCEEDED **
+
+Testing started
