@@ -4,7 +4,9 @@
 [Brief](APPLE-TILE-BRIEF.md) · [Plan](APPLE-TILE-PLAN.md) · [Done when](APPLE-TILE-DONE.json) ·
 [Boundary](../decisions/G3T-METAL-BOUNDARY.md) · [G4 consumer](APPLE-PRESENTATION.md).
 C04/C06/C07/C08/C12 in [CONTRACTS](../CONTRACTS.md) govern.
-Independent review of this revision is owed. Earlier designs and code were inspected; this is reconciliation,
+The [design review](../../evidence/APPLE-TILE/design-review.md) requested nine changes at `74be9f89`;
+this revision addresses them. Independent review of the revised design/JSON is owed. Earlier designs and code were
+inspected; this is reconciliation,
 not a blind design. Historical reviews remain in the plan log; missing scratch is not current proof.
 
 The planned [T2 capture service](T2-CAPTURE.md) owns submitted-output capture and sequence readback. G3t M0
@@ -19,7 +21,7 @@ shadows, mirrored props and interpolation. No new game types or second world, vi
 
 | Cue | Required range and observation | Convincing wrong substitute rejected |
 | --- | --- | --- |
-| Same scene | Fixed cooked root; moving valley near/far, Sun-facing, local-light/mirror and cut checkpoints; noon and night; native portable vs Apple, Chrome portable | Dropping a pass, darkening overflowing lights or hiding mirrors to improve time |
+| Same scene | Fixed cooked root; moving valley near/far, Sun-facing, local-light/synthetic-mirror (overlay slot 5060) and cut checkpoints; noon and night; native portable vs Apple, Chrome portable | Dropping a pass, darkening overflowing lights or hiding mirrors to improve time |
 | Stable motion | Normal-speed frame sequences, cut/reset, changing rows, two slots, dropped views and generation replacement | Matching a still while reusing stale transforms, normals or history |
 | Prepared execution | Day/night/capture variants and fallback already prepared; no pipeline creation in play | Moving compilation into the first use of a rare variant |
 | Honest hardware use | Actual storage modes, upload calls, eligible bytes, full passes and fallback counts | Calling a recipe Apple tile while always executing portable or equating logical bytes with DRAM bytes |
@@ -52,6 +54,11 @@ Inspected on 9 November 2026; these are API/architecture evidence, not measureme
   raw encoder access and safety: backend may be absent, raw work cannot destroy/end the command buffer or overlap
   wgpu recording. The locked core's Raw/Wgpu recording distinction requires a dedicated whole raw encoder.
 
+- [wgpu 30.0.1 Queue::write_buffer](https://docs.rs/wgpu/30.0.1/wgpu/struct.Queue.html#method.write_buffer),
+  performance considerations, inspected for this revision: writes stage immediately and execute before the next
+  submission's command buffers. This supports retaining portable queue-ordered single buffers; pointer writes have
+  different lifetime requirements.
+
 Alternatives: keep public wgpu wherever expressive; use an isolated backend for shared-buffer import and native
 features only. Reject a mixed raw/wgpu encoder, raw drawable writes, a second queue and an early full native recorder.
 A public `map_async` upload fallback is feasible only with unmap before submit; ordinary `write_buffer` remains the
@@ -67,16 +74,20 @@ as unpromoted. Do not turn an unsuccessful optimization into a V1 exit change.
 | Passes, hazards, storage, phase partition | `thrum-render::graph` | Extend one compiled graph; atmosphere and contributions keep declaring accesses |
 | Slots, submit, completion, retirement | `FrameHost` | Add resource handoffs without another queue or completion authority |
 | World and publication | Core/W1 | Read committed pages; never change simulation for graphics quality |
-| Meshes, membership, facing and visibility | V2 existing mesh arena/buckets/culling | Consume its indirect ranges; never recompute conflicting facing keys |
+| Meshes, membership, facing and visibility | V2 in `thrum-render` | M9 defines one shared class/range mechanism for supported draws and experimental buckets; no second classifier/culler |
 | Light and material meaning | V3 existing ABI/cluster oracle | Preserve admission and overflow ranking |
 | Accepted sample/history | Existing C07 history owners; G4 reconstruction | Commit only submitted images, reset on invalidity |
 | Apple buffers/providers | Isolated renderer `apple_tile` backend | Generation-owned resources; executor supplies recording/completion |
 | Route/content | V1 game/G7 | Reuse fixed route and cooked inputs; add G3t proof fixtures without changing G7 baseline |
 
 The existing runtime/sky/content/visibility capabilities are present on main; no new cross-module implementation is
-needed for M0. M2 consumes the already-done `PLATFORM-RUNTIME-MAC:M1` loss boundary. Mac M2 is deliberately not a
-`needs` link. There is no dependency on unfinished mixed-mesh qualification: M9 uses existing supported paths and
-leaves unqualified bucket code unpromoted. G4 first needs M0 proof tools, M1 eligibility, M3 present input and M11 native
+needed for M0. M1 additionally needs `T2-CAPTURE:M1` for new Chrome image proofs and `T2-CAPTURE:M2` for simulator
+output proofs; M0's existing Chrome smoke stays distinct. M2 consumes the already-done `PLATFORM-RUNTIME-MAC:M1` loss boundary. Mac M2 is deliberately not a
+`needs` link. M9 supplies the shared V2 class/range mechanism within this commission and migrates its bucket consumer,
+without promoting the experimental mixed-mesh route. No nonexistent external range milestone is assumed.
+Mac M2 qualification is rerun after G3t M2/M3 land: any earlier motion/cadence result stays historical.
+G3t M2/M3 each require a functional real Mac window run; display cadence remains a separate Mac M2 proof. G4 first
+needs M0 proof tools, M1 eligibility, M3 present input and M11 native
 providers. G3t does not wait back on G4; M11 uses bounded provider extent fixtures, and M12 records current readers
 and two fixed extents. G4 later reruns these with real reconstruction readers and live scale transitions.
 
@@ -89,7 +100,22 @@ per-display refresh/headroom remains platform state. `THRUM_RECIPE=portable|appl
 reject unknown or unsupported forced selections, never silently mislabel them. Chrome always resolves portable.
 Apple tile is opt-in during construction; the normal default remains portable until integrated paired evidence
 justifies promotion. Eligibility alone is not a measured win. All selected and fallback pipelines/bind groups/variant
-allocations are prepared before readiness. Diagnostics stay
+allocations are prepared before readiness. The resident fallback set is explicit:
+
+- Common scene assets, stored HDR/motion/history, uploads and compatible bind groups are shared, counted once.
+- Every selected day/star/capture variant's unique attachment descriptor is resident before readiness; a stored
+  star/capture depth and a memoryless day depth may therefore both be resident. Count both, never claim their
+  per-pass traffic saving as an equal resident-memory saving.
+- A stored portable twin of a memoryless-only attachment is not kept solely for a force override. Unsupported
+  storage is resolved during preparation; changing the whole recipe uses generation replacement, with the new
+  complete allocation set ready before publication and old/new overlap reserved through completion.
+- Same-generation optional upload rejection uses queue writes to the same `COPY_DST` buffers. Optional native
+  provider rejection uses its already resident portable twin and required outputs/history/bind groups; count every
+  unique twin resource. No lazy allocation or compilation is allowed on rejection.
+
+D1.2/D1.3 report unique resident bytes by selected variant, fallback-only resources and retained generations for
+both recipes. A complete resident total can show no memory win even when logical attachment traffic falls.
+Diagnostics stay
 opt-in, following the existing `creation-counters` feature and generation-owned `DeviceSite`.
 
 **Graph storage.** Derive eligibility independently for every prepared day/star/capture variant from compiled live
@@ -113,12 +139,16 @@ does not commit image history. Observed device loss abandons without any old-que
 refuses submission and resets affected histories. Resize/replacement uses platform generation admission, retains old
 resources until completion and rejects stale callbacks. M2 must retain these distinctions under the merged graph.
 
-**Uploads.** Give both frame slots independent instance, directional, local-light, cluster and bounds buffers and
-prepared bind groups. Track each slot's last applied source/mapping/visual generation and accumulate every compatible
+**Uploads.** Portable retains one queue-ordered buffer per instance, directional/local-light, cluster and bounds
+class and its existing prepared bind groups. Queue writes execute before the next submission and after prior
+submitted uses; they do not require per-slot copies. Retain its existing dirty tracking and refusal/flush rules.
+Only the Apple recipe gives both frame slots independent buffers/bind groups for pointer-written classes. Track each
+slot's last applied source/mapping/visual generation and accumulate every compatible
 dirty change since it was written. Skips, refusals or a busy slot do not advance that cursor. Gaps, replay timeline or
 mapping changes force complete reconciliation. A two-frame dirty union alone is insufficient after dropped frames.
 
-Portable uses `write_buffer`. The Apple candidate imports initialized nonzero shared `MTLBuffer`s from the same
+Portable uses `write_buffer` without per-slot duplication. The Apple candidate imports initialized nonzero shared
+`MTLBuffer`s from the same
 Metal device, with matching size/usages and `COPY_DST` for fallback. CPU contents writes require completion of every
 prior GPU read of that slot. A busy slot uses queue-ordered `write_buffer` with a counter; it never writes the pointer.
 Do not reuse native storage or release it before generation/slot completion. Register real dependencies and narrowly
@@ -150,13 +180,36 @@ intersection and perspective bounds, zero lights and zero intensity. CPU supplie
 dense cluster list. GPU top-32 selection is bounded (insertion into 32 candidates per cell); use the same f32
 operations/order and qualify score boundaries/ties against the CPU oracle. A device/compiler disagreement selects
 the prepared CPU oracle path with a visible fallback reason; it cannot claim GPU qualification. Test clustered
-membership exactly and resulting lighting against the existing image path. Record CPU bounds cost as well as GPU work.
+membership exactly and resulting lighting against the existing image path. All named 0/4/16/32/64-light cases,
+including all-overlap overflow and tie cases, must qualify on the Mac GPU
+for M8 to close. Fallback is safe runtime behavior, not a substitute for an overflow qualification; an unqualified
+case leaves D8.1 open and requires re-planning if the mechanism cannot satisfy it. Record CPU bounds,
+validation/admission and fallback cost as well as GPU work.
 
-**Mirrors.** Reuse V2's CPU f64 determinant/facing authority and existing indirect membership. Split ordinary and
-negative-determinant ranges with opposite front-face culling; preserve slot order inside each range and test equal-depth
-ties against the corresponding direct oracle. Near-singular transforms keep the existing two-sided policy. Never use
-cull-none for every mirrored row or promote unqualified mixed-mesh code to satisfy this milestone. Include shadow and
-camera/prepass consumers. Draw-count cost is per occupied mesh/pipeline class, not universally one additional draw.
+**Mirrors.** M9 owns delivery of a shared mechanism *inside V2*, using the existing CPU f64 determinant and
+mesh/membership state. Refactor the experimental bucket classifier/layout into that one authority and migrate both
+supported direct/frustum/occlusion consumers and the private bucket consumer. G3t does not create a separate
+classifier or culler, and this migration does not qualify mixed-mesh rendering. Record source review across upload,
+buckets, mesh route, forward, camera/prepass and shadow consumers before claiming D9.1.
+
+Facing sign and admitted raster policy are separate. The supported legacy route currently uses scene-wide cull-none
+when any active row is mirrored or degenerate; preserve that policy for the affected order group, including ordinary
+rows. Open, unknown-closure, explicitly two-sided and near-singular meshes retain two-sided rendering. Closure alone
+does not authorize replacing established two-sided semantics (including views inside closed geometry). Opposite
+front faces with back-face culling apply only to already admitted one-sided semantics; no newly narrowed admission
+is introduced to make this optimization pass. Mirrored legacy ranges may therefore remain two-sided, with no culling
+win claimed. A cull-none substitution is a failure only in an admitted one-sided witness.
+
+The shared range description preserves each path's established direct order, including equal-depth ties: supported
+legacy draws use stable runs of existing physical-slot order rather than globally regrouping by class. Coalesce
+adjacent runs with identical admitted pipeline state even when determinant signs differ: a legacy scene-wide
+two-sided group can remain one draw. Only genuinely different admitted states require additional runs. The private
+bucket path retains its documented bucket/logical order. Existing visibility compacts within those ranges; shadow
+membership still includes off-camera casters. Compare each to its corresponding direct oracle and the supported
+pre-change baseline. Runtime mirror proof uses synthetic overlay slot 5060 and dedicated open/back-side/interior
+fixtures. Cooked placements refuse negative scale and the cook bakes mirrored winding; do not claim they exercise
+runtime mirror classification. Count all occupied runs/buckets and CPU range maintenance, including the potential
+extra draws from stable runs. If no semantic-preserving win is measured, keep acceleration unpromoted.
 
 **Native feature handoff.** C06 and the boundary decision define the planned whole-encoder segment; independent
 review is required before its implementation. Close the producing wgpu encoder, record only raw commands in a
@@ -202,27 +255,64 @@ inputs; this plan does not pre-approve a dependency patch, public post or librar
 At 1920×1080, nominal uncompressed attachment sizes are depth D32 8.29 MB, HDR RGBA16F 16.59 MB, motion RG16F
 8.29 MB and Rgba8 intermediate 8.29 MB. Removing the intermediate removes its logical write/read (16.59 MB/frame).
 Memoryless depth avoids a logical store only in variants without readers; actual physical savings depend on
-compression/caches. Both slots' private frame buffers add one copy of each class. At 10k rows, private 128-byte
-transport is 1.28 MB instead of 1.92 MB; two slots cost 2.56 MB plus other classes. Worst-case dirty upload is every
+compression/caches. Only Apple pointer-written frame buffers add one copy of each class; portable retains one
+queue-ordered copy. At 10k rows, private 128-byte
+transport is 1.28 MB instead of 1.92 MB; Apple two-slot storage costs 2.56 MB plus other classes; portable costs
+1.28 MB. Worst-case dirty upload is every
 active row; ordinary dirty work is proportional to accumulated changed ranges, bounded by full reconciliation.
+Alternating-slot reconciliation can write a persistent change into both Apple
+slots (about twice portable upload bytes under steady dirty motion); report actual recipe and pre-change portable
+byte/range deltas as tripwires, including full-rebuild bursts. No portable upload-byte increase is assumed beneficial.
 
 9,216 clusters × L lights gives 589,824 candidate tests at L=64. Bounded top-32 insertion adds at most 32 comparisons
 per accepted candidate; forward evaluates at most 32 references per covered cluster. Fixed 32-ID storage is about
-1.18 MB plus 73,728 B heads, per slot, before scratch. Record overflow, source counts, CPU bounds, binning and forward
-times; no unsupported sub-0.1-ms prediction. Mirrored work follows occupied bucket/range count and caster coverage.
+1.18 MB plus 73,728 B heads, per allocation, before scratch; portable keeps one and Apple duplicates only
+pointer-written classes. Record overflow, source counts, CPU bounds, binning and forward
+times; no unsupported sub-0.1-ms prediction. Mirrored work follows occupied stable-run/bucket count,
+range-maintenance CPU cost and caster coverage.
 Sharing only eligible scratch saves one duplicate of that subset. Native segments add encoder/command-buffer owners
 and retain provider histories; include them in complete frame time, creation counts and peak generation overlap.
+Include all resident prepared variants and portable-twin resources from the registry
+rules above, deduplicated by allocation, in both recipe totals; a selected memoryless attachment is not proof that
+fallback storage saved memory.
 
 M0 supplies matched baseline identity, same-target repeats, prepared linear-image checkpoints and full-resolution
 motion sequences. Existing G7's coarse-grid comparator stays unchanged and is only a route/content smoke test.
-G3t compares matching native recipes per pixel after the fixed SDR transform (H=1), using provisional CIEDE2000 p99≤2,
-max≤6; require byte-identical same-target repeats before comparing. Do not widen tolerance to absorb failures.
-Native stand-in vs twin allows 1 ULP f16/channel. CPU/GPU light membership is exact. Independent visual review still
-checks missing geometry, normal response, shadows, lighting and reset/motion; scalar metrics alone cannot close it.
+G3t retains a full-resolution pre-change native portable baseline at M0 and a Chrome portable baseline after
+`T2-CAPTURE:M1`, before M1 changes its rendering, with build/shader/content,
+route/sample, format, exposure and H=1 identity. Later milestones compare against that baseline as well as paired
+same-build recipes; shared regressions cannot disappear by comparing two changed paths. Chrome is compared to its
+own recorded WebGPU baseline, not expected to be bit-identical to a different backend. Baseline artifacts and the
+comparator are retained under the storage rules; a new baseline cannot silently replace an earlier one.
+
+The comparison contract is mechanism-specific; no global perceptual allowance is used:
+
+| Milestones | Expected difference and required proof |
+| --- | --- |
+| M1 storage, M2 scheduling, M4/M5 uploads, M6 sharing, M7 transport, M8 exact light lists | No arithmetic/meaning change: exact scene-linear checkpoint and submitted SDR bytes on the same target, including recipe pairs and the pre-change portable baseline. Membership/IDs remain exact. |
+| M3 direct present | Scene-linear bytes are exact. Preserve existing SDR quantization and nearest-source/letterbox mapping in the fused shader, including the sRGB decode/attachment-encode branch, so submitted SDR bytes match the pre-change present oracle exactly. Removing an attachment does not authorize changing tone semantics. |
+| M9 ranges | Exact supported-path colour/depth and order-sensitive witnesses against pre-change/direct oracles; preserve admitted raster policy. Recipe pairs are exact. |
+| M10/M11 native blend | Only native-vs-WGSL arithmetic of the labelled blend permits at most 1 ULP f16/channel, measured per pixel on its output/history. Pre-blend scene bytes remain exact. Forced portable twin is exact to its own reference; this allowance does not apply to unrelated passes or geometry. |
+| M12 integration | Apply the rows above by stage; ordinary paths remain exact. Native stand-in uses only its separately qualified bound. |
+
+M0 must reject negative controls for a phase mismatch, missing contribution, one dropped weak local light in a
+saturated cluster, one omitted mirrored cube (slot 5060), and the star layer removed at night. Choose fixed
+checkpoints where each contributes nonzero scene-linear pixels, retain per-pixel/crop differences and show that each
+fails the applicable comparison, including the blend bound if active. Invisible fixtures are inadequate negative
+controls. An exactness failure or omission hidden by the bound is a design issue to resolve before building further,
+not a reason to widen a metric. Independent visual review still checks geometry, normals, shadows, lighting and
+reset/motion at full resolution; scalar metrics alone cannot close it.
 
 Record source/build/shader/route/cooked hashes, registry digest, device/backend, viewport, mode, warmup, run order and
 load. Use paired A/A controls and alternating recipe runs; report p50/p95 CPU upload/encode, full GPU and passes,
-allocations and outstanding work. M12 also exercises the representative 10,000-entity field with 1,000–2,000 movers,
+allocations, resident fallback/variant bytes and outstanding work. Record validation/admission CPU work separately
+from bounds, upload and encode, and record CPU-oracle fallback work/counts for lights and uploads. C12 promotion
+requires a sustained paired run: after warmup, repeat each matched route for at least ten minutes (a reproducible
+measurement window, not a performance budget), recording actual duration, thermal state at start/throughout/end,
+power/load and observed throttling. Repeat if the thermal/load comparison is confounded; unavailable thermal data
+leaves performance qualification/promotion open. D5.3 needs this evidence for upload promotion; D12.2 needs it for
+integrated promotion. Functional completion may record a safe candidate as unpromoted. M12 also exercises the
+representative 10,000-entity field with 1,000–2,000 movers,
 full/partial visibility and supported direct/culling paths, so a small valley route cannot stand in for scaling.
 Separate display callbacks, submit, GPU completion and physical swaps. Read physical
 per-encoder bytes only by the retained Xcode replay method; without a screen/tool slot mark them unmeasured, and do not
@@ -240,4 +330,6 @@ win with preserved quality; inconclusive candidates remain unpromoted with prepa
 - Native initialization/lifetimes differ from wgpu assumptions: same-submit stateful twin, discard/reset, held slot,
   extent replacement and generation loss witnesses precede MetalFX.
 - Quiet timings, physical traffic and real display cadence may be unavailable. Keep their evidence limits explicit;
-  none is supplied by docs checks. M12 records what was actually run and the live/device rows still owed.
+  none is supplied by docs checks. Functional real-window runs at M2/M3 cannot be replaced by offscreen output;
+  without an unlocked active-display slot those items stay open. M12 records cadence/physical-device rows still owed,
+  and Mac M2 must qualify the post-M3 surface path rather than inherit old results.
