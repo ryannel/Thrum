@@ -147,7 +147,7 @@
     {
       "id": "M2",
       "name": "iOS simulator engine motion without desktop capture",
-      "state": "claimed",
+      "state": "blocked",
       "fails": 0,
       "replans": 1,
       "needs": [
@@ -178,7 +178,8 @@
           "check": "./dev check",
           "lock": "gpu"
         }
-      ]
+      ],
+      "blocked": "The final profile Check is running through the workspace tests under the GPU lock. All 3,217 stored images have passed independent hash verification, including the 87 images from controls that correctly refused continuous-evidence completion."
     }
   ]
 }
