@@ -14,6 +14,7 @@ crate-type = ["rlib", "cdylib"]
 workspace = true
 
 [features]
+draw-probe = ["thrum-asset-gpu/draw-probe"]
 # The browser page's material hook reload (`?material=`), a development control that compiles
 # shaders synchronously; only `web/build.sh --dev` enables it.
 dev-material = []
@@ -74,3 +75,8 @@ harness = false
 [[bench]]
 name = "field_culling"
 harness = false
+
+[[bin]]
+name = "cooked_draw_probe"
+path = "src/bin/cooked_draw_probe.rs"
+required-features = ["draw-probe"]

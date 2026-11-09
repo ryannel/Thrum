@@ -68,7 +68,13 @@ Resources are reused by content hash and recycled only after the render thread r
 **Meshlets.** The loader expands meshlet triangles into global `u32` indices and per-meshlet ranges. A compute pass
 tests each meshlet's bounds against the frustum planes and its normal cone against the camera, and writes
 `DrawIndexedIndirect` arguments; forward draws them with `multi_draw_indexed_indirect`. Rejected meshlets get
-zero-count arguments.
+zero-instance arguments.
+
+The capability record selects this path only with known adapter-read `INDIRECT_EXECUTION`. Otherwise each placed
+mesh uses one full-range indexed draw without cull/range/bounds/count/readback resources. Shared history and
+submission state serve both paths. The explicitly enabled `draw-probe` feature qualifies direct against independent
+full-range indirect arguments, with missing-mesh controls. Ordinary builds compile without that probe.
+[COOKED-DRAW evidence](../../evidence/render/cooked-draw/README.md).
 
 **Motion history.** Each placement's instance record carries a history flag. It is zero for the first submitted frame
 of a new or replaced product, after a rebuild (device or visual republication) and on a scene history reset
@@ -98,7 +104,7 @@ not occluded by scene depth inside its box.
 | Dev server | G5 | Loopback HTTP: `/head`, a `/head?after=N` long poll, and immutable `/cas/<hash>`; `Host` checked; a loopback `Origin` or one listed with `--allow-origin` (exact `http(s)://host[:port]`, none by default) is echoed, any other is refused with 403. Client: `thrum-asset::DevClient`, target-independent protocol over a `Fetch` transport (`BrowserFetch`, the global `fetch`, on Wasm). It decodes `HEAD` with the native parser, never goes back a generation within an epoch, fetches the manifest and only the unheld products its per-kind profile preferences resolve, issues them together, and checks length and BLAKE3 before parsing. Products are 64-aligned owned bytes shared by reference count. | Server tested; client protocol unit-tested natively; Wasm client run end to end in Node and a Chrome page against `thrum-cook watch --serve`; allow-list near misses refused in tests |
 | No-stall swap | G5 | Loader-filled bounded staging ring; copies recorded in the frame's own graph under a per-frame byte budget; swap at submission. The render thread never waits. | In-game GPU tests, discard test and `cooked_edit` bench |
 | Drawn in the game | G5 gate | `SceneContribution` in the scene graph; scene fragment shader for meshes; volume raymarch. | Tested in the V1 game, visually reviewed |
-| Meshlet draw path | G5 | GPU frustum and cone cull, indirect multi-draw. | Tested: 192 of 341 meshlets kept for a mesh straddling the view edge |
+| Meshlet draw path | G5 | Registry-selected GPU frustum/cone cull with indirect multi-draw, or one full-range indexed draw when indirect facts are absent/unknown. | Mac D/R exact in all five qualification views with negative controls. Simulator direct function/lifecycle/rotation. M1 remains open on current-extent rendering and remaining proofs. |
 | Shipping excludes authoring | G5 | Registry edges plus a dependency-graph and symbol check of the release viewer binary. | Recorded in evidence |
 
 ## Cost account
@@ -218,13 +224,11 @@ dev-server client.
   shadow with the geometry (evidence, 8 November).
 - The volume is not occluded by scene depth inside its box and is a diagnostic consumer only.
 - Mesh-shader meshlet path (tied to G3c); the indirect path needs `multi_draw_indirect` support (Metal has it).
-- No draw path for adapters without indirect execution: the iOS simulator draws no cooked content. A
-  capability-selected direct full-range draw has an unclaimed implementation checkpoint in
-  [COOKED-DRAW](../modules/COOKED-DRAW.md), blocked on exact-byte parity: the first Metal valley view differs
-  at 1,506 pixels despite deterministic repeat controls. [Evidence](../../evidence/render/cooked-draw/README.md).
-  Known adapter downlevel flags alone enable indirect; absent or unknown facts select direct. No cull/count/readback
-  resources are created on direct. Mac reports indirect support; the simulator omits it. Chrome remains unqualified
-  for this change. This checkpoint delivers no M1 acceptance, performance claim or T2 M2 handoff.
+- COOKED-DRAW M1 remains in progress. Both paths are implemented and the revised five-view direct/reference oracle
+  is qualified. Mac reports indirect support, while the simulator selects direct from flags omitting it. Chrome base
+  parity and paired cost/tripwire results remain pending. Simulator rotation function passes, but its fixed 640×360
+  render source is letterboxed after both orientation changes. G3b/render-owner current-extent scene reconstruction
+  is needed for M1.10. [Evidence](../../evidence/render/cooked-draw/README.md). T2 M2 handoff remains gated on acceptance.
 - Graph Copy passes are untimed engine-wide, so the upload's GPU cost is measured by the bench, not pass timestamps.
 - Physical iPhone, Chrome and sustained measurements.
 - Tripwires are asserted only by `scripts/check_g5_tripwires.sh`, not `./dev check` (they need the GPU and minutes).

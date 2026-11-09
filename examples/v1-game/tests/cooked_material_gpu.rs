@@ -10,7 +10,9 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use thrum_asset::Profile;
-use thrum_asset_gpu::{CookedAssets, CookedStats, MaterialHook, MaterialOutcome, MaterialReload};
+use thrum_asset_gpu::{
+    CookedAssets, CookedDrawPath, CookedStats, MaterialHook, MaterialOutcome, MaterialReload,
+};
 use thrum_cook::{CookConfig, Cooker, Durability, Quality, demo};
 use thrum_render::capabilities::DeviceCapabilities;
 use thrum_render::present::SurfaceProfile;
@@ -107,6 +109,7 @@ fn cooked(name: &str) -> (PathBuf, CookConfig) {
 async fn gpu(
     instance: &wgpu::Instance,
     generation: u64,
+    path: CookedDrawPath,
 ) -> (wgpu::Device, wgpu::Queue, DeviceCapabilities) {
     let adapter = instance
         .request_adapter(&wgpu::RequestAdapterOptions::default())
@@ -121,6 +124,11 @@ async fn gpu(
         .await
         .expect("device");
     let capabilities = DeviceCapabilities::capture(&adapter, &device, generation);
+    let capabilities = if path == CookedDrawPath::Direct {
+        capabilities.without_indirect_execution()
+    } else {
+        capabilities
+    };
     (device, queue, capabilities)
 }
 
@@ -240,10 +248,17 @@ fn capture(host: &mut FrameHost, name: &str) -> Vec<u8> {
 
 #[test]
 fn material_hooks_reload_visibly_and_invalid_hooks_keep_the_last_pixels() {
+    for path in [CookedDrawPath::Indirect, CookedDrawPath::Direct] {
+        material_hooks_reload_visibly_and_invalid_hooks_keep_the_last_pixels_case(path);
+    }
+}
+
+fn material_hooks_reload_visibly_and_invalid_hooks_keep_the_last_pixels_case(path: CookedDrawPath) {
     let (root, cook) = cooked("material");
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let (device, queue, capabilities) = gpu(&instance, FrameHost::DEVICE_GENERATION).await;
+        let (device, queue, capabilities) =
+            gpu(&instance, FrameHost::DEVICE_GENERATION, path).await;
         let mut host = FrameHost::new_with_capabilities(
             &device,
             &queue,
@@ -261,6 +276,7 @@ fn material_hooks_reload_visibly_and_invalid_hooks_keep_the_last_pixels() {
         let material = assets.material();
         host.set_scene_contribution(Box::new(assets))
             .expect("attach");
+        assert_eq!(stats.lock().expect("stats").draw_path, Some(path));
         let mut clock = Duration::ZERO;
         drive_until_drawn(&mut host, &device, &stats, &mut clock);
         assert_eq!(stats.lock().expect("stats").last_frame_history, Some(true));
@@ -373,10 +389,17 @@ fn material_hooks_reload_visibly_and_invalid_hooks_keep_the_last_pixels() {
 /// The no-hook default and the identity hook draw the same pixels.
 #[test]
 fn the_identity_hook_draws_the_built_in_material() {
+    for path in [CookedDrawPath::Indirect, CookedDrawPath::Direct] {
+        the_identity_hook_draws_the_built_in_material_case(path);
+    }
+}
+
+fn the_identity_hook_draws_the_built_in_material_case(path: CookedDrawPath) {
     let (root, cook) = cooked("identity");
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let (device, queue, capabilities) = gpu(&instance, FrameHost::DEVICE_GENERATION).await;
+        let (device, queue, capabilities) =
+            gpu(&instance, FrameHost::DEVICE_GENERATION, path).await;
         let mut host = FrameHost::new_with_capabilities(
             &device,
             &queue,
@@ -394,6 +417,7 @@ fn the_identity_hook_draws_the_built_in_material() {
         let material = assets.material();
         host.set_scene_contribution(Box::new(assets))
             .expect("attach");
+        assert_eq!(stats.lock().expect("stats").draw_path, Some(path));
         let mut clock = Duration::ZERO;
         drive_until_drawn(&mut host, &device, &stats, &mut clock);
         host.pause().expect("pause");
@@ -417,10 +441,17 @@ fn the_identity_hook_draws_the_built_in_material() {
 
 #[test]
 fn a_hook_that_writes_non_finite_factors_draws_the_placement_material() {
+    for path in [CookedDrawPath::Indirect, CookedDrawPath::Direct] {
+        a_hook_that_writes_non_finite_factors_draws_the_placement_material_case(path);
+    }
+}
+
+fn a_hook_that_writes_non_finite_factors_draws_the_placement_material_case(path: CookedDrawPath) {
     let (root, cook) = cooked("non-finite");
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let (device, queue, capabilities) = gpu(&instance, FrameHost::DEVICE_GENERATION).await;
+        let (device, queue, capabilities) =
+            gpu(&instance, FrameHost::DEVICE_GENERATION, path).await;
         let mut host = FrameHost::new_with_capabilities(
             &device,
             &queue,
@@ -438,6 +469,7 @@ fn a_hook_that_writes_non_finite_factors_draws_the_placement_material() {
         let material = assets.material();
         host.set_scene_contribution(Box::new(assets))
             .expect("attach");
+        assert_eq!(stats.lock().expect("stats").draw_path, Some(path));
         let mut clock = Duration::ZERO;
         drive_until_drawn(&mut host, &device, &stats, &mut clock);
         host.pause().expect("pause");
@@ -461,10 +493,19 @@ fn a_hook_that_writes_non_finite_factors_draws_the_placement_material() {
 
 #[test]
 fn requests_before_the_first_frame_wait_for_the_scene_and_the_newest_draws() {
+    for path in [CookedDrawPath::Indirect, CookedDrawPath::Direct] {
+        requests_before_the_first_frame_wait_for_the_scene_and_the_newest_draws_case(path);
+    }
+}
+
+fn requests_before_the_first_frame_wait_for_the_scene_and_the_newest_draws_case(
+    path: CookedDrawPath,
+) {
     let (root, cook) = cooked("material-early");
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let (device, queue, capabilities) = gpu(&instance, FrameHost::DEVICE_GENERATION).await;
+        let (device, queue, capabilities) =
+            gpu(&instance, FrameHost::DEVICE_GENERATION, path).await;
         let mut host = FrameHost::new_with_capabilities(
             &device,
             &queue,
@@ -488,6 +529,7 @@ fn requests_before_the_first_frame_wait_for_the_scene_and_the_newest_draws() {
         );
         host.set_scene_contribution(Box::new(assets))
             .expect("attach");
+        assert_eq!(stats.lock().expect("stats").draw_path, Some(path));
         let mut clock = Duration::ZERO;
         let (outcome, _) = until_outcome(&material, second, || {
             clock += Duration::from_millis(16);
@@ -506,10 +548,19 @@ fn requests_before_the_first_frame_wait_for_the_scene_and_the_newest_draws() {
 
 #[test]
 fn a_burst_during_a_compile_compiles_only_the_outstanding_and_the_newest_request() {
+    for path in [CookedDrawPath::Indirect, CookedDrawPath::Direct] {
+        a_burst_during_a_compile_compiles_only_the_outstanding_and_the_newest_request_case(path);
+    }
+}
+
+fn a_burst_during_a_compile_compiles_only_the_outstanding_and_the_newest_request_case(
+    path: CookedDrawPath,
+) {
     let (root, cook) = cooked("material-burst");
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let (device, queue, capabilities) = gpu(&instance, FrameHost::DEVICE_GENERATION).await;
+        let (device, queue, capabilities) =
+            gpu(&instance, FrameHost::DEVICE_GENERATION, path).await;
         let mut host = FrameHost::new_with_capabilities(
             &device,
             &queue,
@@ -527,6 +578,7 @@ fn a_burst_during_a_compile_compiles_only_the_outstanding_and_the_newest_request
         let material = assets.material();
         host.set_scene_contribution(Box::new(assets))
             .expect("attach");
+        assert_eq!(stats.lock().expect("stats").draw_path, Some(path));
         let mut clock = Duration::ZERO;
         drive_until_drawn(&mut host, &device, &stats, &mut clock);
         host.pause().expect("pause");
@@ -570,10 +622,20 @@ fn a_burst_during_a_compile_compiles_only_the_outstanding_and_the_newest_request
 
 #[test]
 fn a_replaced_device_draws_the_last_accepted_hook_and_retires_the_outstanding_reload() {
+    for path in [CookedDrawPath::Indirect, CookedDrawPath::Direct] {
+        a_replaced_device_draws_the_last_accepted_hook_and_retires_the_outstanding_reload_case(
+            path,
+        );
+    }
+}
+
+fn a_replaced_device_draws_the_last_accepted_hook_and_retires_the_outstanding_reload_case(
+    path: CookedDrawPath,
+) {
     let (root, cook) = cooked("material-device");
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let (old_device, old_queue, old_capabilities) = gpu(&instance, 1).await;
+        let (old_device, old_queue, old_capabilities) = gpu(&instance, 1, path).await;
         let config = FrameConfig {
             render_extent: EXTENT,
             surface: None,
@@ -588,6 +650,7 @@ fn a_replaced_device_draws_the_last_accepted_hook_and_retires_the_outstanding_re
         let material = assets.material();
         host.set_scene_contribution(Box::new(assets))
             .expect("attach");
+        assert_eq!(stats.lock().expect("stats").draw_path, Some(path));
         let mut clock = Duration::ZERO;
         drive_until_drawn(&mut host, &old_device, &stats, &mut clock);
         host.pause().expect("pause");
@@ -603,7 +666,7 @@ fn a_replaced_device_draws_the_last_accepted_hook_and_retires_the_outstanding_re
 
         // Request a reload, then replace the device before any frame could draw it.
         let outstanding = material.request(hook("hooks/green.wgsl", GREEN));
-        let (device, queue, capabilities) = gpu(&instance, 2).await;
+        let (device, queue, capabilities) = gpu(&instance, 2, path).await;
         let mut candidate = host
             .device_prepare_inputs()
             .expect("inputs")
@@ -674,12 +737,19 @@ const STEP: Duration = Duration::from_millis(17);
 /// swap.
 #[test]
 fn a_material_ready_before_content_is_drawn_only_with_the_first_mesh() {
+    for path in [CookedDrawPath::Indirect, CookedDrawPath::Direct] {
+        a_material_ready_before_content_is_drawn_only_with_the_first_mesh_case(path);
+    }
+}
+
+fn a_material_ready_before_content_is_drawn_only_with_the_first_mesh_case(path: CookedDrawPath) {
     let root = std::env::temp_dir().join(format!("thrum-g6-material-ready-{}", std::process::id()));
     std::fs::remove_dir_all(&root).ok();
     let cook = source_tree(&root);
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let (device, queue, capabilities) = gpu(&instance, FrameHost::DEVICE_GENERATION).await;
+        let (device, queue, capabilities) =
+            gpu(&instance, FrameHost::DEVICE_GENERATION, path).await;
         let mut host = FrameHost::new_with_capabilities(
             &device,
             &queue,
@@ -700,6 +770,7 @@ fn a_material_ready_before_content_is_drawn_only_with_the_first_mesh() {
         let serial = material.request(hook("ready/green.wgsl", GREEN));
         host.set_scene_contribution(Box::new(assets))
             .expect("attach");
+        assert_eq!(stats.lock().expect("stats").draw_path, Some(path));
         let mut clock = Duration::ZERO;
         let deadline = Instant::now() + Duration::from_secs(30);
         while material.ready() != Some(serial) {
@@ -759,10 +830,17 @@ fn a_material_ready_before_content_is_drawn_only_with_the_first_mesh() {
 /// promotes nothing and leaves the material ready. The next submitted frame promotes it once.
 #[test]
 fn a_skipped_frame_never_promotes_a_ready_material() {
+    for path in [CookedDrawPath::Indirect, CookedDrawPath::Direct] {
+        a_skipped_frame_never_promotes_a_ready_material_case(path);
+    }
+}
+
+fn a_skipped_frame_never_promotes_a_ready_material_case(path: CookedDrawPath) {
     let (root, cook) = cooked("material-skip");
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let (device, queue, capabilities) = gpu(&instance, FrameHost::DEVICE_GENERATION).await;
+        let (device, queue, capabilities) =
+            gpu(&instance, FrameHost::DEVICE_GENERATION, path).await;
         let mut host = FrameHost::new_with_capabilities(
             &device,
             &queue,
@@ -808,6 +886,7 @@ fn a_skipped_frame_never_promotes_a_ready_material() {
         let material = assets.material();
         host.set_scene_contribution(Box::new(assets))
             .expect("attach");
+        assert_eq!(stats.lock().expect("stats").draw_path, Some(path));
         let mut clock = Duration::ZERO;
         let deadline = Instant::now() + Duration::from_secs(30);
         while stats.lock().expect("stats").drawn.is_none() {

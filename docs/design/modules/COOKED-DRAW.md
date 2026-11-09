@@ -1,7 +1,9 @@
 # Cooked draw path: capability-selected direct fallback
 
-9 November 2026. **M1 implemented in part; revised parity oracle awaits build and independent review.**
-The blocked checkpoint is `9c230ff4`; no milestone acceptance is claimed. This is a child design of
+9 November 2026. **M1 implemented in part; revised Mac parity oracle qualified.**
+Checkpoint `9c230ff4` records the superseded oracle failure. Current progress and the G3b/render-owner
+current-extent dependency are recorded in the [plan](COOKED-DRAW-PLAN.md) and
+[evidence](../../evidence/render/cooked-draw/README.md). M1 acceptance remains open. This is a child design of
 [the G5 decision](../decisions/G5-CONTENT-ADDRESSED-LOOP.md), owned by G5 (`thrum-asset-gpu`). It sits under
 [C04](../CONTRACTS.md#c04-feature-composition-and-quality--f2), [C06](../CONTRACTS.md#c06-gpu-execution-and-lifetime--v1),
 [C07](../CONTRACTS.md#c07-render-scene-views-and-temporal-data--v2-with-p4v3v4),

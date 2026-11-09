@@ -66,6 +66,29 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
 pub fn attach_cooked_scene(
     host: &mut FrameHost,
 ) -> Result<Option<Arc<Mutex<CookedStats>>>, String> {
+    attach_selected(host, Ok)
+}
+
+/// Attach selected content with an explicit compile-time-enabled qualification control.
+/// # Errors
+/// Refuses invalid content, incomplete reference arguments or a renderer failure.
+#[cfg(feature = "draw-probe")]
+pub fn attach_cooked_scene_with_probe(
+    host: &mut FrameHost,
+    probe: Option<thrum_asset_gpu::draw_probe::Probe>,
+) -> Result<Option<Arc<Mutex<CookedStats>>>, String> {
+    attach_selected(host, |assets| match probe {
+        Some(probe) => assets.with_draw_probe(probe),
+        None => Ok(assets),
+    })
+}
+
+fn attach_selected(
+    host: &mut FrameHost,
+    configure: impl FnOnce(
+        thrum_asset_gpu::CookedAssets,
+    ) -> Result<thrum_asset_gpu::CookedAssets, String>,
+) -> Result<Option<Arc<Mutex<CookedStats>>>, String> {
     if std::env::var("THRUM_SCENE").as_deref() == Ok("field") {
         return Ok(None);
     }
@@ -83,13 +106,18 @@ pub fn attach_cooked_scene(
         }
         Err(std::env::VarError::NotPresent) | Ok("diagnostic") => (
             None,
-            thrum_asset_gpu::CookedAssets::new(crate::cooked::cooked_config(
-                std::path::PathBuf::from(store),
-            ))
+            thrum_asset_gpu::CookedAssets::new(
+                if std::env::var("THRUM_COOKED_DRAW_DIAGNOSTIC").as_deref() == Ok("1") {
+                    crate::cooked::qualification_config(std::path::PathBuf::from(store))
+                } else {
+                    crate::cooked::cooked_config(std::path::PathBuf::from(store))
+                },
+            )
             .map_err(|error| error.to_string())?,
         ),
         _ => return Err("THRUM_SCENE must be valley, diagnostic or field".to_owned()),
     };
+    let assets = configure(assets)?;
     let stats = assets.stats();
     host.set_scene_contribution(Box::new(assets))?;
     if let Some(camera) = camera {

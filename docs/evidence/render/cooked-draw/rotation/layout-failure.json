@@ -1,0 +1,47 @@
+{
+  "item": "M1.10",
+  "result": "open_requirement_failed",
+  "owners": [
+    "G3b iOS shell",
+    "thrum-render FrameHost/SurfacePresenter"
+  ],
+  "render_extent": [
+    640,
+    360
+  ],
+  "expected_viewports": {
+    "portrait": {
+      "surface": [
+        1206,
+        2622
+      ],
+      "viewport": [
+        0,
+        972,
+        1206,
+        678
+      ]
+    },
+    "landscape": {
+      "surface": [
+        2622,
+        1206
+      ],
+      "viewport": [
+        239,
+        0,
+        2144,
+        1206
+      ]
+    }
+  },
+  "source_hashes": {
+    "examples/v1-game-ios/src/ios/render.rs": "716652904693c77b8939e35ee6d8356405dd2f9667f046ba5ed4aaaf16aa06c8",
+    "crates/thrum-render/src/present.rs": "b2caf08c18376fac77ab5171318db6f436fb5c438dc8d4a3e92552dc5e0e119f",
+    "crates/thrum-render/src/runtime.rs": "597f58cdae5b5cc03781a33483963b7f4d33fcaf00ba62c93566f4d30b090962",
+    "crates/thrum-render/src/runtime/device.rs": "fff909dccab2cc2b79f4520fac79fefa2f10e49265bdb16fb4cbf367c45885b6"
+  },
+  "cause": "iOS fixes render extent at 640x360. Surface resize updates the presenter profile while retaining that source extent. SurfacePresenter letterboxes to preserve its source aspect.",
+  "required_owner_work": "Scene aspect/internal render extent must follow current oriented surface extent on the same process, window, lease and device generation, through an owning-runtime path.",
+  "inspection": "Viewed both complete native simulator screenshots. Landscape has left/right borders; portrait has large top/bottom borders. Cooked content remains drawn but does not fill either current extent."
+}

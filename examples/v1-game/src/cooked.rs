@@ -48,3 +48,19 @@ pub fn cooked_config(source: impl Into<CookedSource>) -> CookedConfig {
         texture_preference: None,
     }
 }
+
+/// Qualification fixture with a plain/mirrored pair beside the edge-straddling terrain.
+/// The command's cooker supplies `meshes/mirror`, whose source node has negative X scale.
+#[must_use]
+#[cfg(not(target_arch = "wasm32"))]
+pub(crate) fn qualification_config(source: impl Into<CookedSource>) -> CookedConfig {
+    let mut config = cooked_config(source);
+    config.meshes[0].transform =
+        placement(0.6, std::f32::consts::FRAC_PI_2 * 0.8, [-1.25, -0.1, 0.9]);
+    for (name, x) in [("meshes/terrain", -0.3), ("meshes/mirror", 0.3)] {
+        let mut mesh = MeshPlacement::new(name, "textures/checker");
+        mesh.transform = placement(0.18, std::f32::consts::FRAC_PI_2, [x, 0.1, 1.0]);
+        config.meshes.push(mesh);
+    }
+    config
+}

@@ -26,6 +26,8 @@ pub use browser::{
     fetch_cooked_valley,
 };
 pub use camera::{CameraRoute, RouteCheckpoint, RouteKey, RoutePose, SceneCamera};
+#[cfg(feature = "draw-probe")]
+pub use content::attach_cooked_scene_with_probe;
 #[cfg(not(target_arch = "wasm32"))]
 pub use content::{attach_cooked_scene, selected_setup};
 #[doc(hidden)]

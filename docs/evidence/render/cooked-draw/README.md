@@ -1,59 +1,57 @@
-# COOKED-DRAW M1 blocked checkpoint
+# COOKED-DRAW M1 proof checkpoint
 
-9 November 2026. **M1 is not claimed.** The proposed one-draw fallback fails M1.3's exact-byte oracle on
-Apple M3 Max / Metal. The capability record, optional cull resources, shared history work, direct whole-range draw,
-iOS cooked attachment and both-path cooked GPU suite are implemented in this worktree. No reviewer was launched.
+9 November 2026. M1 remains in progress. M1.1, M1.2, revised M1.3 and M1.9 now have proof alongside the standing
+M1.7/M1.8 results. The remaining acceptance work includes a G3b/render-owner dependency.
 
-## Decisive result
+## Current-extent blocker
 
-The [named parity command](../../../../scripts/cooked_draw_parity.py) renders ordinary paused-world submissions
-through the T2 submitted-output tap at 1920×1080, with one cooked showcase store. The first required view (valley,
-noon, yaw 0°) fails. Both arms repeat exactly; the two paths differ at **1,506 pixels**, maximum channel delta 18.
-The difference occupies x=23–1898, y=359–827, along terrain triangle edges. Original final images:
-[indirect](indirect.png), [direct](direct.png), [difference mask](difference.png).
-[Run record](paths-failure.json.gz) pins the binary, content products, adapter facts, paths and hashes.
+M1.10 requires the rotated scene to fill the current extent. The fresh locked-console rotation run presents new
+extents on the same process, window and device, with Direct selected and cooked submissions advancing. Its images
+retain the fixed 640×360 scene aspect. Portrait uses viewport `[0,972,1206,678]` inside `1206×2622`; landscape uses
+`[239,0,2144,1206]` inside `2622×1206`. Native screenshots show the corresponding borders. G3b iOS/render runtime
+must supply matching scene/internal render aspect through orientation changes. `resize_surface` updates the
+presenter while retaining its source extent. The build-milestone skill returns missing owning-module work to that
+owner. [Layout/source record](rotation/layout-failure.json), [rotation states and commands](rotation/function.json.gz),
+[landscape](rotation/12-landscape.png), [portrait](rotation/13-portrait.png).
 
-Two scratch-only shader controls isolate draw partitioning:
+## Revised Mac oracle
 
-- [Retain all meshlets](cull-diagnostic.json): indirect keeps 680/680 rather than 171/680, but its final bytes are
-  unchanged. The mismatch is **not explained by rejected meshlets**.
-- [One full-range indirect command per mesh](single-diagnostic.json): output is byte-identical to direct, still
-  differing from the meshlet-partitioned indirect result at 1,506 pixels.
+The opt-in `draw-probe` feature derives R arguments independently from validated cooked products and placement
+order. D executes the real masked-record direct encoder. I executes selected production meshlet indirect. All five
+views have exact D/R equality, exact I/D/R repeats, detected D-only terrain omissions, unchanged post-defect R
+arguments/output and restored D/R equality. Commands, actual resource usages, source/binary/store hashes and
+submitted-frame identities are retained. Ordinary builds omit the probe feature. [Run record](paths/report.json.gz).
 
-This establishes a draw-partition-dependent result on this pipeline/driver, not its low-level numerical cause.
-Both controls restored `cull.wgsl`; neither changes the production indirect path. Their reproducers are
-[keep-all](diagnose.py) and [single-command](diagnose-single.py), run from the repository root under the GPU lock
-*after* the named parity command has populated `tmp/cooked-draw/paths-failure/`.
+| I/D comparison | Changed pixels | Maximum channel delta |
+|---|---:|---:|
+| Noon 0° | 1506 | 18 |
+| Noon 18° | 2225 | 41 |
+| Noon 36° | 2128 | 38 |
+| Low sun | 1504 | 50 |
+| Diagnostic | 139 | 56 |
 
-**Planner decision required:** reconcile the single whole-range draw with exact parity against meshlet-partitioned
-indirect drawing. Investigate a partition-invariant shared shader/raster mechanism, or explicitly re-plan the draw
-strategy/oracle. Do not silently substitute per-meshlet direct draws, alter indirect rendering, or loosen equality.
+These observations supply no threshold. Retain-all-meshlets controls reproduce I exactly in every view. Whole-frame,
+native-crop and unthresholded-difference inspection finds matching geometry, silhouettes, texture/material detail,
+lighting/shadows and volume. Plain/mirrored diagnostic twins face outward; terrain crosses the left frustum edge.
+Residuals follow draw partitioning across the controls, without a derivative/ordering cause claim or an unclassified
+scene discrepancy. Each view folder retains I, D, omitted-mesh, difference and native-crop images.
+[Inspection assessment](paths/inspection.json).
 
-## Other proof and limits
+## Correctness and remaining proof
 
-The fresh owned iPhone 18 Pro / iOS 27.2 simulator reports adapter flags without `INDIRECT_EXECUTION`, selects
-Direct, draws cooked content and advances presented/cooked counters while the console is locked. The final [function/lifecycle record](ios-function.json.gz) proves 12 advancing samples over
-22.82 seconds, a suspended hold without presented/cooked counter or generation changes, foreground resume and
-device generation 1→2 with `cooked_device_generation=Some(2)`, content generation 1 drawn and no errors.
-Both console lock witnesses are true; the owned simulator was deleted. M1.7 and M1.8 pass.
-The [selected simulator screenshot](ios-valley.png) is function evidence only. The full [repository check](check.json) passes: 651 tests in 62 result
-groups; the 13 cooked GPU cases cover both draw paths. The existing material suite remains indirect-only. Simulator screenshots show textured ground, metallic
-sphere, matte rock and Sun shadows. They also show the existing 640×360 render image letterboxed in portrait.
-No rotation, low-sun/diagnostic view or sampled pan acceptance is claimed. Simulator function only; no speed result.
+`./dev check` passes 664 tests. Both cooked and material GPU suites exercise adapter-backed and masked records.
+Replacement covers unchanged paths and capability changes both ways. The observed-resource arm also runs the
+actual public `FrameHost::new` → `attach_cooked_scene` route in a child and proves unknown facts select Direct,
+zero INDIRECT buffers, zero cull/count/readback resources and core indexed commands. Direct loading omits unused
+meshlet bounds/ranges. [Check record](check.json). Standing locked simulator function/lifecycle proof is retained.
+[Function/lifecycle record](ios-function.json.gz).
 
-Remaining: complete allocation/command audit, both-path material-promotion qualification, all other M1.3 views, Mac/Chrome base comparison, paired cost
-runs, G5 tripwires, rotation and the complete simulator inspection/pan. The parity command fails closed after the
-first view; base/Chrome arms explicitly refuse as unimplemented. T2-CAPTURE M2 remains blocked on M1 acceptance.
+M1.4/M1.5 Mac/Chrome base comparisons, M1.6 cost/tripwires, complete simulator stills/pan and M1.12 remain open.
+The incomplete base-comparison command refuses that mode. Chrome flags/selection and comparative cost remain
+unqualified for this change. Simulator results establish function. T2-CAPTURE M2 remains gated on M1 acceptance.
 
-This checkpoint is retained locally, without integration or a milestone claim, because its acceptance oracle fails.
-
-## Reproduce and retention
-
-Use the profile GPU lock around `python3 scripts/cooked_draw_parity.py paths --target mac-metal --output
- tmp/cooked-draw/paths-failure` (new directory; expected exit 1). The recorded pre-implementation [BASE](BASE) is
-not a before/after parity result. `scripts/cooked_draw_ios_sim.py --lifecycle --output <new-dir>` builds, cooks,
-creates/cleans an owned simulator and fails closed. `--rotation` is implemented but unqualified.
-
-Owned scratch is `tmp/cooked-draw/` (owner record: `tmp/cooked-draw/OWNER.md`); selected PNGs and compact
-records above are retained. Reconstructible scratch remains only until the planner resolves this blocker and the
-next builder has inspected it. No source asset or unique master is held there.
+Selected originals and compact metadata follow the repo-structure retention rules. Scratch in `tmp/cooked-draw/`
+retains reconstructible stores/captures until owner disposition and the next builder's inspection. Source generation
+lives in `scripts/cooked_draw_fixture.py`; [BASE](BASE) records the pre-implementation parent after rebase, pending
+before/after proof. [Selected evidence hashes](selected-hashes.json). The older `paths-failure.json.gz` and scratch
+shader controls retain historical evidence of the superseded oracle.

@@ -9,6 +9,9 @@ description = "GPU residency for cooked G5 products: staged budgeted uploads, me
 [lints]
 workspace = true
 
+[features]
+draw-probe = []
+
 [dependencies]
 bytemuck = { version = "=1.25.2", features = ["derive"] }
 glam = { version = "=0.33.12", default-features = false, features = ["std"] }

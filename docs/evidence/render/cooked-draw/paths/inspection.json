@@ -1,0 +1,70 @@
+{
+  "views": {
+    "noon-0": {
+      "result": "pass",
+      "indirect_direct": {
+        "changed_pixels": 1506,
+        "maximum_channel_delta": 18
+      },
+      "geometry": "I and D have the same complete geometry and silhouettes. Terrain reaches the horizon and each frame edge in the valley. The diagnostic terrain crosses the left frustum edge.",
+      "materials_lighting": "Same textured ground, sphere reflection and matte rock, Sun direction and shadow shape where visible. No material/channel changes or objectionable shading seams in the native crops.",
+      "partition_control": "Retaining all meshlets gives the exact I image. Full-range indirect matches D exactly. Residuals therefore follow draw partitioning across these controls.",
+      "diagnostic": "not applicable"
+    },
+    "noon-18": {
+      "result": "pass",
+      "indirect_direct": {
+        "changed_pixels": 2225,
+        "maximum_channel_delta": 41
+      },
+      "geometry": "I and D have the same complete geometry and silhouettes. Terrain reaches the horizon and each frame edge in the valley. The diagnostic terrain crosses the left frustum edge.",
+      "materials_lighting": "Same textured ground, sphere reflection and matte rock, Sun direction and shadow shape where visible. No material/channel changes or objectionable shading seams in the native crops.",
+      "partition_control": "Retaining all meshlets gives the exact I image. Full-range indirect matches D exactly. Residuals therefore follow draw partitioning across these controls.",
+      "diagnostic": "not applicable"
+    },
+    "noon-36": {
+      "result": "pass",
+      "indirect_direct": {
+        "changed_pixels": 2128,
+        "maximum_channel_delta": 38
+      },
+      "geometry": "I and D have the same complete geometry and silhouettes. Terrain reaches the horizon and each frame edge in the valley. The diagnostic terrain crosses the left frustum edge.",
+      "materials_lighting": "Same textured ground, sphere reflection and matte rock, Sun direction and shadow shape where visible. No material/channel changes or objectionable shading seams in the native crops.",
+      "partition_control": "Retaining all meshlets gives the exact I image. Full-range indirect matches D exactly. Residuals therefore follow draw partitioning across these controls.",
+      "diagnostic": "not applicable"
+    },
+    "low-sun": {
+      "result": "pass",
+      "indirect_direct": {
+        "changed_pixels": 1504,
+        "maximum_channel_delta": 50
+      },
+      "geometry": "I and D have the same complete geometry and silhouettes. Terrain reaches the horizon and each frame edge in the valley. The diagnostic terrain crosses the left frustum edge.",
+      "materials_lighting": "Same textured ground, sphere reflection and matte rock, Sun direction and shadow shape where visible. No material/channel changes or objectionable shading seams in the native crops.",
+      "partition_control": "Retaining all meshlets gives the exact I image. Full-range indirect matches D exactly. Residuals therefore follow draw partitioning across these controls.",
+      "diagnostic": "not applicable"
+    },
+    "diagnostic": {
+      "result": "pass",
+      "indirect_direct": {
+        "changed_pixels": 139,
+        "maximum_channel_delta": 56
+      },
+      "geometry": "I and D have the same complete geometry and silhouettes. Terrain reaches the horizon and each frame edge in the valley. The diagnostic terrain crosses the left frustum edge.",
+      "materials_lighting": "Same textured ground, sphere reflection and matte rock, Sun direction and shadow shape where visible. No material/channel changes or objectionable shading seams in the native crops.",
+      "partition_control": "Retaining all meshlets gives the exact I image. Full-range indirect matches D exactly. Residuals therefore follow draw partitioning across these controls.",
+      "diagnostic": "Plain and source-node-mirrored twins face outward with the same checker detail and lighting. Volume remains present and shaded in both paths."
+    }
+  },
+  "method": "Whole I/D images and native crops of frame edges, horizon, objects and maximum residuals, with unthresholded difference maps and all-meshlet controls. Inspection list was written before looking at the images in tmp/cooked-draw/inspection-plan.md.",
+  "residual_class": "draw-partition-dependent shading residuals, without a low-level derivative/ordering attribution",
+  "unclassified_discrepancies": [],
+  "negative_controls": "Each D-only omission visibly removes the terrain placement. R-after retains its output and independently derived command arguments. Restored D is exactly R.",
+  "inspection_plan": "M1.3 inspection of replanned-paths, before viewing its images.\nFor each of noon 0/18/36, low Sun and diagnostic, compare I/D whole frames, terrain edges/silhouettes, texture/material detail, shadow direction/shape, and native crops around the maximum residual plus frame edges/horizon/objects. Diagnose residuals with I/all/R controls. Require complete same geometry and outward-facing plain/mirrored twins, full diagnostic volume and no visible seams, holes or objectionable shading. Cross-partition counts/deltas are observations only. Exact D/R and repeat/control failures are independent gates.\nM1.10 rotation inspection requires image fill and correct aspect at each new current extent. Compare native simulator landscape/portrait and existing presenter viewport formula against the actual recorded extents.\n",
+  "final_source_refresh": "Final probe binary, including adapter-less public-route support, reproduces every retained inspected image and difference map exactly.",
+  "identity_audit": {
+    "distinct_binary_hashes": 1,
+    "decoded_selected_pngs_match_original_rgba_hashes": 15,
+    "reference_arguments_unchanged_after_defects": true
+  }
+}
