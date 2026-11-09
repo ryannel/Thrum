@@ -1,0 +1,13 @@
+{
+  "owner": "T2-CAPTURE M1 builder, this worktree",
+  "review": "e2909ad4 PASS",
+  "selected_root": "docs/evidence/render/t2-capture-m1",
+  "verified_gzip_files": 210,
+  "verified_selected_png_hashes": 21,
+  "limits": "Only selected originals, timing/manifests and views are retained in Git; full local sources and served bundle retire after passed lead review. Bundle can be rebuilt, exact original bundle is not backed up.",
+  "deleted_bytes": 16008456538,
+  "removed_root": "tmp/t2-capture-m1",
+  "selected_root_verified_before_deletion": true,
+  "retained_git_tree": "c64b6b274e103bc61b4e8e70f6da515722467e86",
+  "selected_root_unchanged_from_reviewed_commit": true
+}

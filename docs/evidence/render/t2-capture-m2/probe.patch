@@ -1,0 +1,24 @@
+diff --git a/examples/v1-game-ios/src/ios/render.rs b/examples/v1-game-ios/src/ios/render.rs
+index 4f2e4963..d6d84ede 100644
+--- a/examples/v1-game-ios/src/ios/render.rs
++++ b/examples/v1-game-ios/src/ios/render.rs
+@@ -425,7 +425,7 @@ impl Owner {
+             .unwrap_or(Some(wgpu::TextureFormat::Bgra8Unorm))
+             .ok_or("no supported iOS SDR surface format")?;
+         let extent = [extent[0].max(1), extent[1].max(1)];
+-        let host = pollster::block_on(FrameHost::new_with_capabilities(
++        let mut host = pollster::block_on(FrameHost::new_with_capabilities(
+             &device,
+             &queue,
+             &capabilities,
+@@ -434,8 +434,9 @@ impl Owner {
+                 surface: Some(SurfaceProfile { format, extent }),
+             },
+         ))?;
++        v1_game::attach_cooked_scene(&mut host)?;
+         let (host, controls) = host.into_threaded(self.origin, world_advanced)?;
+-        let name = adapter.get_info().name;
++        let name = format!("{:?}; downlevel={:?}", adapter.get_info(), adapter.get_downlevel_capabilities());
+         self.gpu = Some(Gpu {
+             adapter,
+             device,
