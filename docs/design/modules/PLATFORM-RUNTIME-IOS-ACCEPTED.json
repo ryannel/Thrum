@@ -20,7 +20,23 @@
   "milestones": {
     "M7": {
       "definitions": "e93155eca1db1f52c48f5e3f04eadcb623f33d5f8493ad473d6399bef82bc3a6",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "pass",
+          "commit": "749d2afa283ba57976e714ca67c2196090454eb5",
+          "review": "docs/evidence/PLATFORM-RUNTIME-IOS/M7-review.md",
+          "host": "codex",
+          "model": "gpt-6.1-sol",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.1-sol",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.167.0-alpha.3.2",
+          "path": "visible",
+          "at": "2026-11-09T16:06:43Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "COOKED-DRAW M1 is blocked on M1.10: on the iOS simulator the cooked valley renders at a fixed 640x360 and is letterboxed in both orientations instead of filling the current oriented surface extent. Ev",
@@ -39,6 +55,13 @@
         },
         "cli": "codex-cli 0.167.0-alpha.3.2",
         "path": "visible"
+      },
+      "accepted": {
+        "by": "review",
+        "commit": "749d2afa283ba57976e714ca67c2196090454eb5",
+        "review": "docs/evidence/PLATFORM-RUNTIME-IOS/M7-review.md",
+        "checked": "749d2afa283ba57976e714ca67c2196090454eb5",
+        "at": "2026-11-09T16:06:43Z"
       }
     }
   }
