@@ -6,7 +6,7 @@
       "name": "A repeatable offscreen valley proves the comparison path",
       "state": "open",
       "fails": 0,
-      "replans": 1,
+      "replans": 2,
       "bar": "The same complete cooked valley as portable, with stable lighting, silhouettes, shadows and motion expected of a shipped high-end game; matched full-resolution stills and normal-speed sequences must expose omitted work.",
       "items": [
         {
@@ -22,11 +22,11 @@
         },
         {
           "id": "D0.2",
-          "statement": "Two same-build portable native runs have byte-identical matching checkpoint images and complete route/sample identity. A prepared capture branch records the matching scene-linear input; same-target timing spread and provisional recipe image tolerance are recorded without changing the G7 evaluator.",
+          "statement": "Two same-build native portable runs have byte-identical matching checkpoint images and complete route/sample identity. Retained full-resolution pre-change portable baselines, scene-linear readbacks and the mechanism-specific exactness contract in APPLE-TILE.md govern later changes; only the labelled native blend permits its separate 1-ULP f16 bound.",
           "target": "mac-metal",
           "status": "open",
           "evidence": "",
-          "ask": "Compare exact checkpoint hashes and linear readbacks, not just coarse grids. Are exposure/headroom fixed, all frames accounted for, p99<=2 and max<=6 CIEDE2000 fixed for recipe comparisons, and noise/contended timing distinguished from display evidence? Does a deliberately mismatched phase or missing contribution fail the proof?",
+          "ask": "Compare exact checkpoint hashes and linear readbacks, not coarse grids. Retain native pre-change portable images and provenance before M1, with fixed exposure/headroom, formats and complete sample accounting. Do phase mismatch, missing contribution, one dropped weak local light in an overflowing cluster, one omitted mirrored cube at overlay slot 5060 and the removed night star layer each fail the applicable per-pixel comparison? Show nonzero affected pixels/crops, including rejection under the native-blend bound when enabled. Keep same-target timing spread separate from image and display proof; do not widen tolerance or replace the baseline to pass.",
           "verdict": "",
           "review": ""
         },
@@ -34,8 +34,8 @@
           "id": "D0.3",
           "statement": "Opt-in generation-owned creation diagnostics retain pipeline events by thread/phase and reject an unscoped pipeline creation after readiness; default builds retain the direct creation seam and no diagnostic submit lock.",
           "target": "mac-metal",
-          "status": "pass",
-          "evidence": "docs/design/modules/APPLE-TILE-PLAN.md#carried-work",
+          "status": "open",
+          "evidence": "",
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters creation -- --nocapture",
           "ask": "Confirm production pipeline coverage, same-generation clones and detached preparation attribution. Keep live-object net deltas distinct from creation events; native-object instrumentation remains absent until a native producer exists.",
           "lock": "gpu",
@@ -74,7 +74,7 @@
       "name": "The valley selects a recipe and stores only actual future inputs",
       "state": "open",
       "fails": 0,
-      "replans": 0,
+      "replans": 1,
       "bar": "The same complete cooked valley as portable, with stable lighting, silhouettes, shadows and motion expected of a shipped high-end game; matched full-resolution stills and normal-speed sequences must expose omitted work.",
       "items": [
         {
@@ -93,17 +93,17 @@
           "target": "mac-metal",
           "status": "open",
           "evidence": "",
-          "ask": "Run graph mutation tests: add a reader, explicit store, history/persistent use and capture-only read; verify only the affected variant changes and no normal-path usage is widened. Inspect a Texture::as_hal storage-mode log for Memoryless vs Private under both recipes.",
+          "ask": "Run graph mutation tests: add a reader, explicit store, history/persistent use and capture-only read; verify only the affected variant changes and no normal-path usage is widened. Inspect a Texture::as_hal storage-mode log for Memoryless vs Private under both recipes. Report unique resident allocations/bytes under both recipes, including all prepared day/star/capture variants, fallback-only resources and old/new generation overlap. Verify no stored twin exists solely for a memoryless-only attachment override; whole-recipe changes prepare a new generation before publication.",
           "verdict": "",
           "review": ""
         },
         {
           "id": "D1.3",
-          "statement": "Both native recipes retain the complete route image within the fixed tolerance and no validation errors or pipeline/texture creation when switching prepared variants.",
+          "statement": "Both native recipes retain exact scene-linear and submitted SDR route bytes against paired and pre-change portable controls, with no validation errors or pipeline/texture creation when switching prepared variants.",
           "target": "mac-metal",
           "status": "open",
           "evidence": "",
-          "inspect": "Compare matched day/night frames and full-resolution motion sequences against portable, checking Sun, sky, stars, shadows, mirror and local light. Inspect creation events through a variant switch and the per-variant storage report.",
+          "inspect": "Compare matched day/night frames and full-resolution motion sequences against portable, checking Sun, sky, stars, shadows, mirror and local light. Inspect creation events through a variant switch and the per-variant storage report. Reconcile the resident total and fallback-only bytes under both recipes with D1.2; simultaneous stored and memoryless variants count as separate allocations. A traffic reduction alone cannot establish a resident-memory saving.",
           "verdict": "",
           "review": ""
         },
@@ -114,7 +114,11 @@
           "status": "open",
           "evidence": "",
           "check": "python3 scripts/run_v1_showcase.py moving",
-          "lock": "gpu"
+          "lock": "gpu",
+          "ask": "Trace the actual wasm target dependency tree and cfg/feature boundaries: native Apple/Metal crates and apple_tile implementation must be excluded. After T2-CAPTURE M1, retain a pre-change Chrome portable baseline before changing its rendering, then run the full-resolution G3t comparator against the retained pre-change Chrome portable baseline with matching route/content/sample identity; exact scene-linear and submitted SDR output is required. The existing moving command remains smoke proof. Retain the pre-change source revision so the baseline can be reproduced; do not regenerate it with changed output.",
+          "inspect": "Review full-resolution Chrome day/night route frames and 1x motion for Sun, stars, geometry, shadows, mirrors and local lights against its pre-change portable baseline. Native-vs-Chrome coarse-grid agreement alone cannot pass.",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "D1.5",
@@ -126,6 +130,10 @@
           "verdict": "",
           "review": ""
         }
+      ],
+      "needs": [
+        "T2-CAPTURE:M1",
+        "T2-CAPTURE:M2"
       ]
     },
     {
@@ -133,7 +141,7 @@
       "name": "The existing frame lifecycle runs through one split graph",
       "state": "open",
       "fails": 0,
-      "replans": 0,
+      "replans": 1,
       "bar": "A production renderer boundary: one owner, prepared fallback, deterministic visible semantics and explicit adverse-case evidence, as in the public wgpu/Metal lifecycle model.",
       "items": [
         {
@@ -158,7 +166,7 @@
         },
         {
           "id": "D2.3",
-          "statement": "The merged graph preserves complete image and motion on both native recipes.",
+          "statement": "The merged graph preserves complete image and motion on both native recipes. Same-target scene-linear and submitted SDR bytes remain exact against M0 and paired recipes.",
           "target": "mac-metal",
           "status": "open",
           "evidence": "",
@@ -175,6 +183,17 @@
           "ask": "Run the lease/background race test under merged execution and drive background/foreground plus surface replacement in the simulator. Old-generation callbacks cannot submit or publish.",
           "verdict": "",
           "review": ""
+        },
+        {
+          "id": "D2.5",
+          "statement": "ATTENDED SETUP: the changed surface path functions in a real Mac game window under both native recipes, including moving input, resize and replacement. This is required functional proof, separate from Mac M2 cadence.",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "inspect": "On an unlocked active Mac display, launch the cooked game in a real AppKit window with matching content and recipe identity. Observe presented scene and ordinary control response, resize/letterbox and surface/device replacement recovery; retain window/PID, extent, submission/lifecycle logs and actual window observation evidence. An acquired-format texture or offscreen engine sequence alone cannot prove window presentation. Without a display slot this item stays open; do not waive it as cadence owed.",
+          "ask": "Confirm pre-change Mac motion/cadence evidence is historical. PLATFORM-RUNTIME-MAC M2 is explicitly rerun after G3t M2/M3 land and uses the post-M3 render path, with no reverse dependency or claim that this functional run proves panel swaps.",
+          "verdict": "",
+          "review": ""
         }
       ],
       "needs": [
@@ -186,7 +205,7 @@
       "name": "Present consumes scene-linear colour directly",
       "state": "open",
       "fails": 0,
-      "replans": 0,
+      "replans": 1,
       "bar": "The same complete cooked valley as portable, with stable lighting, silhouettes, shadows and motion expected of a shipped high-end game; matched full-resolution stills and normal-speed sequences must expose omitted work.",
       "items": [
         {
@@ -201,13 +220,14 @@
         },
         {
           "id": "D3.2",
-          "statement": "Prepared reference-image capture and SDR/sRGB surface/letterbox behavior survive moving tone encoding, with both native recipes within the fixed image tolerance.",
+          "statement": "Prepared reference-image capture and SDR/sRGB surface/letterbox behavior survive moving tone encoding. Both native recipes preserve exact scene-linear and submitted SDR bytes against the pre-change present oracle.",
           "target": "mac-metal",
           "status": "open",
           "evidence": "",
           "inspect": "Review full-resolution route/capture comparisons, surface-format/letterbox witnesses and motion; check exposure correspondence through a cut.",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "ask": "Trace the fused shader: does it preserve the old SDR quantization, nearest-source mapping and sRGB decode/attachment encode semantics without allocating the Rgba8 intermediate? Run full-resolution surface-format and letterbox byte witnesses. A new tone curve, shifted sample or arbitrary image tolerance cannot pass."
         },
         {
           "id": "D3.3",
@@ -226,45 +246,60 @@
           "status": "open",
           "evidence": "",
           "check": "python3 scripts/run_v1_showcase.py moving",
-          "lock": "gpu"
+          "lock": "gpu",
+          "ask": "Run the full-resolution G3t comparator against the retained pre-change Chrome portable baseline, with exact scene-linear/submitted SDR bytes and complete route/sample identity. Trace browser pass-name timing consumers and optional-pass tests; the native-vs-Chrome smoke command cannot establish unchanged output.",
+          "inspect": "Review full-resolution day/night images, letterbox/surface-format witnesses and normal-speed Chrome motion against its own pre-change baseline for missing scene content and exposure/cut errors.",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "D3.5",
+          "statement": "ATTENDED SETUP: the changed surface path functions in a real Mac game window under both native recipes, including moving input, resize and replacement. This is required functional proof, separate from Mac M2 cadence.",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "inspect": "On an unlocked active Mac display, launch the cooked game in a real AppKit window with matching content and recipe identity. Observe presented scene and ordinary control response, resize/letterbox and surface/device replacement recovery; retain window/PID, extent, submission/lifecycle logs and actual window observation evidence. An acquired-format texture or offscreen engine sequence alone cannot prove window presentation. Without a display slot this item stays open; do not waive it as cadence owed.",
+          "ask": "Confirm pre-change Mac motion/cadence evidence is historical. PLATFORM-RUNTIME-MAC M2 is explicitly rerun after G3t M2/M3 land and uses the post-M3 render path, with no reverse dependency or claim that this functional run proves panel swaps.",
+          "verdict": "",
+          "review": ""
         }
       ]
     },
     {
       "id": "M4",
-      "name": "Each frame slot receives every pending source change",
+      "name": "Apple slots receive pending changes while portable keeps queue ordering",
       "state": "open",
       "fails": 0,
-      "replans": 0,
+      "replans": 1,
       "bar": "The same complete cooked valley as portable, with stable lighting, silhouettes, shadows and motion expected of a shipped high-end game; matched full-resolution stills and normal-speed sequences must expose omitted work.",
       "items": [
         {
           "id": "D4.1",
-          "statement": "Both recipes prepare per-slot frame buffers/bind groups for instances, directional/local lights, cluster lists and bounds; no bind group is created during play.",
+          "statement": "Only Apple pointer-written frame classes receive prepared per-slot buffers/bind groups for instances, directional/local lights, cluster lists and bounds. Portable retains its single queue-ordered buffers and existing dirty tracking; neither recipe creates bind groups in play.",
           "target": "mac-metal",
           "status": "open",
           "evidence": "",
-          "ask": "Trace forward, shadow, visibility/prepass, transform-history and atmosphere consumers to the selected slot. Report the extra copy per class and creation counts.",
+          "ask": "Trace forward, shadow, visibility/prepass, transform-history and atmosphere consumers to the selected allocation. Confirm portable uses queue-ordered write_buffer with no added slot copies/cursors, and Apple allocates duplicates only for classes it pointer-writes. Report resident bytes and creation counts per recipe/class.",
           "verdict": "",
           "review": ""
         },
         {
           "id": "D4.2",
-          "statement": "Each slot reconciles accumulated dirtiness from its own last applied generation/sample, including alternating edits, dropped views, refusal/retry, gaps, replay timeline, churn and mapping changes.",
+          "statement": "Each Apple slot reconciles accumulated dirtiness from its own last applied generation/sample, including alternating edits, dropped views, refusal/retry, gaps, replay timeline, churn and mapping changes.",
           "target": "mac-metal",
           "status": "open",
           "evidence": "",
-          "ask": "Run the existing active-prefix/churn and changed-slot/invalid-row GPU tests plus new multi-slot skipped/refused-frame tests. Use distinct values/dirty sets per frame and compare each slot with fresh full preparation; advancing a cursor on an unsuccessful write must fail.",
+          "ask": "Run the existing active-prefix/churn and changed-slot/invalid-row GPU tests plus new multi-slot skipped/refused-frame tests. Use distinct values/dirty sets per frame and compare each slot with fresh full preparation; advancing a cursor on an unsuccessful write must fail. Run portable single-buffer dirty/refusal regressions separately; do not impose Apple cursor machinery on portable.",
           "verdict": "",
           "review": ""
         },
         {
           "id": "D4.3",
-          "statement": "The real valley remains within image tolerance through slot reuse; upload CPU p50/p95 and bytes/ranges are recorded on both recipes.",
+          "statement": "The real valley preserves exact same-target scene-linear and submitted SDR bytes through Apple slot reuse and portable queue writes. Upload CPU p50/p95, bytes/ranges, resident copies and deltas against pre-change portable are recorded for both recipes.",
           "target": "mac-metal",
           "status": "open",
           "evidence": "",
-          "inspect": "Review matched route and changing-row sequences for stale transforms, lights, normals or shadows. Separate upload CPU and GPU time.",
+          "inspect": "Review matched route and changing-row sequences for stale transforms, lights, normals or shadows. Separate upload CPU and GPU time. Include steady dirty motion and full-reconciliation bursts; expose the extra Apple slot propagation and any portable upload-byte increase as a tripwire, with investigation rather than an invented speed gate.",
           "verdict": "",
           "review": ""
         }
@@ -275,7 +310,7 @@
       "name": "Apple upload transport is safe under completion and fallback",
       "state": "open",
       "fails": 0,
-      "replans": 0,
+      "replans": 1,
       "bar": "A production renderer boundary: one owner, prepared fallback, deterministic visible semantics and explicit adverse-case evidence, as in the public wgpu/Metal lifecycle model.",
       "items": [
         {
@@ -300,11 +335,11 @@
         },
         {
           "id": "D5.3",
-          "statement": "Paired upload CPU, calls and bytes are recorded with A/A controls; the safe shared path has zero write_buffer calls for eligible completed-slot classes. Promote only on measured win with retained quality; otherwise record unpromoted candidate and prepared write_buffer fallback.",
+          "statement": "Paired upload CPU, calls and bytes are recorded with A/A controls; the safe shared path has zero write_buffer calls for eligible completed-slot classes. Promote only on measured win with retained quality, validation/admission CPU cost and matched sustained-run thermal evidence required by C12; otherwise record unpromoted candidate and prepared write_buffer fallback.",
           "target": "mac-metal",
           "status": "open",
           "evidence": "",
-          "ask": "Check warmup, build/extent/load identity, p50/p95, run order and counted busy-slot exceptions. A failed or inconclusive candidate cannot be labelled a selected acceleration, and no allocation/speed threshold is an admission gate.",
+          "ask": "Check warmup, build/extent/load identity, p50/p95, run order and counted busy-slot exceptions. A failed or inconclusive candidate cannot be labelled a selected acceleration, and no allocation/speed threshold is an admission gate. Include per-recipe resident bytes, portable upload-byte delta, fallback CPU work and the design's sustained paired-run duration/start-through-end thermal/power/load records. Missing thermal comparison means unpromoted, not performance-qualified.",
           "verdict": "",
           "review": ""
         }
@@ -315,7 +350,7 @@
       "name": "Only safely ordered scratch is shared between slots",
       "state": "open",
       "fails": 0,
-      "replans": 0,
+      "replans": 1,
       "bar": "A production renderer boundary: one owner, prepared fallback, deterministic visible semantics and explicit adverse-case evidence, as in the public wgpu/Metal lifecycle model.",
       "items": [
         {
@@ -330,7 +365,7 @@
         },
         {
           "id": "D6.2",
-          "statement": "A delayed slot plus changing next-slot content and retained capture consumer preserves both outputs without corruption or early retirement; the valley remains within tolerance.",
+          "statement": "A delayed slot plus changing next-slot content and retained capture consumer preserves both outputs without corruption or early retirement; the valley remains exact in same-target scene-linear and submitted SDR bytes.",
           "target": "mac-metal",
           "status": "open",
           "evidence": "",
@@ -345,7 +380,7 @@
       "name": "Compact internal rows preserve supplied values and motion",
       "state": "open",
       "fails": 0,
-      "replans": 0,
+      "replans": 1,
       "bar": "The same complete cooked valley as portable, with stable lighting, silhouettes, shadows and motion expected of a shipped high-end game; matched full-resolution stills and normal-speed sequences must expose omitted work.",
       "items": [
         {
@@ -387,7 +422,11 @@
           "status": "open",
           "evidence": "",
           "check": "python3 scripts/run_v1_showcase.py moving",
-          "lock": "gpu"
+          "lock": "gpu",
+          "ask": "Trace the actual WebGPU-bound instance buffer and all compiled WGSL consumers to the private 128-byte row, offsets 0/48/60/64/112 and stride 128. Run CPU-to-WGSL decode/stride readbacks on WebGPU with supplied-normal and history witnesses; a Chrome path left on 192-byte rows cannot pass.",
+          "inspect": "Compare full-resolution Chrome route output and normal-speed interpolation/cut/normal-lighting sequences against the retained pre-change portable baseline with exact same-target bytes. The moving command is only smoke proof.",
+          "verdict": "",
+          "review": ""
         }
       ]
     },
@@ -396,26 +435,26 @@
       "name": "GPU light lists preserve the established lighting choice",
       "state": "open",
       "fails": 0,
-      "replans": 0,
+      "replans": 1,
       "bar": "The same complete cooked valley as portable, with stable lighting, silhouettes, shadows and motion expected of a shipped high-end game; matched full-resolution stills and normal-speed sequences must expose omitted work.",
       "items": [
         {
           "id": "D8.1",
-          "statement": "For qualified 0/4/16/32/64-light cases, the GPU list builder matches the CPU oracle per cluster, preserving conservative bounds, orthographic intersection, zero intensity, strongest-32 score ranking, index ties, sorted IDs and overflow counts.",
+          "statement": "All named 0/4/16/32/64-light cases must be GPU-qualified on mac-metal, including all-overlap overflow, score-boundary and tie cases; the GPU list builder matches the CPU oracle per cluster, preserving conservative bounds, orthographic intersection, zero intensity, strongest-32 score ranking, index ties, sorted IDs and overflow counts.",
           "target": "mac-metal",
           "status": "open",
           "evidence": "",
-          "ask": "Run independent CPU-vs-GPU readback tests with all-overlap overflow, score boundaries/ties, camera changes and zero lights. CPU uploads only per-source data, not completed dense lists. F32 ranking disagreements select the prepared CPU path with a reason and cannot count as GPU-qualified cases.",
+          "ask": "Run independent CPU-vs-GPU readback tests with all-overlap overflow, score boundaries/ties, camera changes and zero lights. CPU uploads only per-source data, not completed dense lists. F32 ranking disagreements select the prepared CPU path with a reason and cannot count as GPU-qualified cases. Every named case must execute the GPU builder and match exact oracle readbacks; CPU fallback leaves this item unsatisfied. If overflow cannot qualify, keep M8 open and re-plan rather than treating a subset as completion.",
           "verdict": "",
           "review": ""
         },
         {
           "id": "D8.2",
-          "statement": "Both recipes preserve dense local-light images and normal-speed motion; GPU binning/forward, CPU bounds/full frame, overflow, allocation and fallback counts are recorded from 4 through 64 lights.",
+          "statement": "Both recipes preserve dense local-light images and normal-speed motion; record GPU binning/forward time, CPU bounds/validation/admission/fallback and full-frame cost, overflow, allocations and fallback counts from 4 through 64 lights.",
           "target": "mac-metal",
           "status": "open",
           "evidence": "",
-          "inspect": "Review near/far lit receivers and saturated clusters during the camera route. Reject missing strongest lights or flicker hidden by a global image metric. Report all fallback work and departures from the bounded top-32 cost model.",
+          "inspect": "Review near/far lit receivers and saturated clusters during the camera route. Reject missing strongest lights or flicker hidden by a global image metric. Report all fallback work and departures from the bounded top-32 cost model. Require exact same-target pre-blend HDR/SDR comparisons and membership readbacks, not a perceptual allowance for missing weak lights.",
           "verdict": "",
           "review": ""
         },
@@ -436,36 +475,36 @@
       "name": "Mirrored ranges preserve existing visibility ownership",
       "state": "open",
       "fails": 0,
-      "replans": 0,
+      "replans": 1,
       "bar": "The same complete cooked valley as portable, with stable lighting, silhouettes, shadows and motion expected of a shipped high-end game; matched full-resolution stills and normal-speed sequences must expose omitted work.",
       "items": [
         {
           "id": "D9.1",
-          "statement": "Existing V2 membership/facing authority supplies ordinary/mirrored indirect ranges with opposite cull faces, stable order and matching camera, prepass and shadow consumption; near-singular transforms retain the existing two-sided policy.",
+          "statement": "M9 delivers one V2-owned class/range mechanism using existing determinant/membership state, shared by supported draw paths and the private bucket consumer. All camera/prepass/shadow consumers preserve their admitted raster policy and established direct order; no experimental mixed-mesh promotion is implied.",
           "target": "mac-metal",
           "status": "open",
           "evidence": "",
-          "ask": "Trace CPU f64 determinant classification through the existing supported culling paths and direct oracle. No second facing calculation, private rival culler or promotion of unqualified mixed-mesh code. Test empty ranges, churn, reflection and determinant boundary cases.",
+          "ask": "Trace upload, shared classifier/range layout, buckets, mesh_route, visibility, forward and shadow consumers: no second determinant/class/range authority may remain. Preserve legacy scene-wide cull-none for its affected order group; open/unknown, explicitly two-sided and near-singular meshes stay two-sided. Closure alone cannot narrow legacy semantics. Opposite front-face culling is limited to already admitted one-sided semantics. Supported legacy ranges preserve physical-slot order using stable runs; private buckets keep their existing oracle order. Test empty runs, churn and determinant boundaries, and record V2/G3c source/contract review in the independent M9 verdict. Coalesce adjacent equal raster states across facing signs so legacy two-sided groups do not incur one draw per sign run.",
           "verdict": "",
           "review": ""
         },
         {
           "id": "D9.2",
-          "statement": "Mirrored near surfaces, equal-depth ties, off-camera casters and the valley match the corresponding direct draw oracle under both recipes.",
+          "statement": "Synthetic mirror overlay slot 5060, open/back-side/interior fixtures, equal-depth ties and off-camera casters preserve exact colour/depth against supported pre-change and corresponding direct oracles on both recipes.",
           "target": "mac-metal",
           "status": "open",
           "evidence": "",
-          "inspect": "Review the existing mirrored-row near-surface witness adapted to ranges, plus normal-speed mirror/cut/shadow sequences. Replacing all negative-determinant ranges with cull-none must fail an assertion or visible witness.",
+          "inspect": "Review near-surface, open single-sided geometry viewed from both sides, unknown closure, interior views, cut and shadow sequences. Verify cooked negative winding is baked and is not the runtime mirror fixture. Wrongly back-culling a required two-sided range must fail; cull-none must fail the pipeline-state assertion only for an admitted one-sided witness. Inspect output and direct ordering, not just facing labels.",
           "verdict": "",
           "review": ""
         },
         {
           "id": "D9.3",
-          "statement": "Draw counts and full GPU work are recorded at zero and 1/11 mirrored instances, by occupied mesh/pipeline class.",
+          "statement": "CPU range-maintenance cost, draws and complete GPU work are recorded at zero and 1/11 mirrored instances, by occupied stable run/bucket and admitted raster policy.",
           "target": "mac-metal",
           "status": "open",
           "evidence": "",
-          "ask": "Compare direct/frustum/occlusion where already supported and count ordinary, mirrored and degenerate ranges separately. Do not report a universal +1 draw when the workload has multiple buckets.",
+          "ask": "Compare supported direct/frustum/occlusion and count ordinary, mirrored and two-sided runs separately, including interleaved signs and order-sensitive ties. Report extra stable-run draws and any lack of culling win honestly; no universal +1 draw or benefit from unqualified buckets.",
           "verdict": "",
           "review": ""
         }
@@ -566,36 +605,36 @@
       "name": "An integrated record states qualified wins and remaining targets",
       "state": "open",
       "fails": 0,
-      "replans": 0,
+      "replans": 1,
       "bar": "The same complete cooked valley as portable, with stable lighting, silhouettes, shadows and motion expected of a shipped high-end game; matched full-resolution stills and normal-speed sequences must expose omitted work.",
       "items": [
         {
           "id": "D12.1",
-          "statement": "Paired Apple/portable route rows record full GPU/pass/native times, upload/encode CPU, creation/allocation/retirement, logical bytes and registry digest at fixed extents 1280x720 and 1920x1080, with A/A and alternating runs. The integrated scaling row also runs the representative 10,000-entity field with 1,000\u20132,000 movers and full/partial visibility through existing supported draw paths.",
+          "statement": "Paired Apple/portable route rows record full GPU/pass/native times, upload/encode CPU, creation/allocation/retirement, logical bytes and registry digest at fixed extents 1280x720 and 1920x1080, with A/A and alternating runs. The integrated scaling row also runs the representative 10,000-entity field with 1,000–2,000 movers and full/partial visibility through existing supported draw paths. Record validation/admission and CPU-fallback work, resident selected/fallback/variant totals, portable upload-byte deltas and a sustained paired run with actual duration and thermal state at start/throughout/end.",
           "target": "mac-metal",
           "status": "open",
           "evidence": "",
-          "ask": "Review source/shader/route/cooked hashes, warmup/load, p50/p95, fallback counts and end-of-window outstanding work. No new G4 dynamic scaling/reconstruction or physical cadence claim follows from these fixed extents.",
+          "ask": "Review source/shader/route/cooked hashes, warmup/load, p50/p95, fallback counts and end-of-window outstanding work. No new G4 dynamic scaling/reconstruction or physical cadence claim follows from these fixed extents. Check the design's at-least-ten-minute-per-recipe sustained window after warmup (method, not a numeric performance gate), power/load, thermal sampling and throttling. Confounded/unavailable thermal comparisons cannot qualify promotion. Account every unique fallback allocation and generation overlap; include all validation/admission/oracle work in complete CPU cost.",
           "verdict": "",
           "review": ""
         },
         {
           "id": "D12.2",
-          "statement": "Eligibility and one-off mechanism ablations identify actual readers and the selected paths at the shipped configuration, with comparable win/no measurable effect/unpromoted conclusions and assigned tripwire follow-up.",
+          "statement": "Eligibility and one-off mechanism ablations identify actual readers and the selected paths at the shipped configuration, with comparable win/no measurable effect/unpromoted conclusions and assigned tripwire follow-up. Any promoted path requires preserved quality, full validation/fallback costs and comparable sustained-run thermal evidence; otherwise it remains unpromoted.",
           "target": "mac-metal",
           "status": "open",
           "evidence": "",
-          "ask": "Check M1/M3-M9 mechanisms, complete stage costs, excluded scratch and later readers. Keep physical replay bytes separate and unmeasured where no new replay exists. Native provider is still a stand-in until G4 qualifies MetalFX.",
+          "ask": "Check M1/M3-M9 mechanisms, complete stage costs, excluded scratch and later readers. Keep physical replay bytes separate and unmeasured where no new replay exists. Native provider is still a stand-in until G4 qualifies MetalFX. Reconcile D12.1 thermal/duration, resident fallback bytes and validation/admission CPU costs with each win claim. Missing or confounded sustained thermal evidence cannot be called performance-qualified; no numeric budget is invented.",
           "verdict": "",
           "review": ""
         },
         {
           "id": "D12.3",
-          "statement": "The integrated native game preserves required image and normal-speed motion on both recipes and records live-display/device qualifications still owed without claiming Mac M2 closure.",
+          "statement": "The integrated native game preserves required image and normal-speed motion on both recipes and records cadence/physical-device qualifications still owed without claiming Mac M2 closure.",
           "target": "mac-metal",
           "status": "open",
           "evidence": "",
-          "inspect": "Review full-resolution matched checkpoint and motion sets including cut, night, local lights, mirrors, skipped views and fallback/recovery. Read all module source changes against C04/C06/C07/C08/C12 and the brief; no omitted consumer can be waived by this item.",
+          "inspect": "Review full-resolution matched checkpoint and motion sets including cut, night, local lights, mirrors, skipped views and fallback/recovery. Read all module source changes against C04/C06/C07/C08/C12 and the brief; no omitted consumer can be waived by this item. Confirm D2.5/D3.5 actual Mac window runs passed and the final assembly has a functional window smoke run on both recipes. Functional window presentation cannot be recorded as owed to close G3t; only cadence and physical-device qualification can remain owed. Mac M2 must rerun the post-M3 path.",
           "verdict": "",
           "review": ""
         },
@@ -606,7 +645,11 @@
           "status": "open",
           "evidence": "",
           "check": "python3 scripts/run_v1_showcase.py moving",
-          "lock": "gpu"
+          "lock": "gpu",
+          "ask": "Run WebGPU dense-light readbacks against the CPU oracle including 32/64 all-overlap overflow/ties, and visibility direct/frustum/occlusion membership/order witnesses where supported. Trace actual 128-byte shader bindings, graph timing and present consumers. Compare complete full-resolution output to the retained pre-change Chrome portable baseline under the mechanism-specific contract; native-vs-Chrome coarse-grid parity cannot pass a shared omission.",
+          "inspect": "Review native-size Chrome noon/night checkpoints and 1x route/cut/mirror/lighting sequences against its pre-change baseline. Require the one-light, one-mirrored-cube and night-star negative controls to fail; account every route sample and any fallback.",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "D12.5",

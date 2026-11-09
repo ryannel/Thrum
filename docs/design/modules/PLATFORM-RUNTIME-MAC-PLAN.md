@@ -5,11 +5,11 @@ and [bounded frame host](../decisions/V1-BOUNDED-FRAME-HOST.md). Siblings:
 [iOS](PLATFORM-RUNTIME-IOS-PLAN.md) and [web](PLATFORM-RUNTIME-WEB-PLAN.md).
 Done when: [PLATFORM-RUNTIME-MAC-DONE.json](PLATFORM-RUNTIME-MAC-DONE.json) owns milestone criteria and proof status; the shared platform design above remains authoritative.
 
-Reviews: M2 historical `0d53d3aa`: motion passed, cadence open ([record](../../evidence/render/mac-m2-pan/README.md#review-verdict-and-open-cadence-row)). Independent review of the JSON migration and 9 November capture re-plan is owed; historical M0/M1 reviews remain in the log.
+Reviews: [T2/Mac evidence design review at `1fb6b422`](../../evidence/T2-CAPTURE/design-review.md): DESIGN CHANGES; capture/windowed-tap and cadence findings remain a separate re-plan. Independent review of this Apple tile surface-order revision is owed; historical M0/M1 reviews remain in the log.
 Milestone: M2 The cooked valley presents smoothly on built-in ProMotion (replanned, open)
-Now: 9 November evidence re-plan separates unattended engine runtime motion from attended built-in-panel cadence; no new capture or runtime proof claimed.
-Next: independent design/JSON review, then T2-CAPTURE M0, then fresh M2.1 unattended motion. M2.2 remains a separate attended display/tool row.
-Blocked: `T2-CAPTURE:M0` is planned, not built. M2.2 needs an unlocked active built-in display and any Instruments authorization; trace finalization remains parked. Screen Recording permission is no longer required for engine image proof.
+Now: 9 November evidence re-plan separates runtime motion from panel cadence; qualification is ordered after G3t M3 surface changes. No fresh proof claimed.
+Next: independent design/JSON review and T2-CAPTURE M0; final M2 qualification reruns after APPLE-TILE M3. Earlier diagnostic runs remain possible; M2.2 is a separate attended display/tool row.
+Blocked: T2/Mac evidence review findings remain unresolved (separate re-plan); `T2-CAPTURE:M0` and final-qualification prerequisite `APPLE-TILE:M3` are planned, not built. M2.2 needs an unlocked active built-in display and any Instruments authorization; trace finalization remains parked. Screen Recording permission is no longer required for engine image proof.
 
 ## M0 Reviewed Mac qualification plan: done
 
@@ -40,6 +40,13 @@ Owner reference: [Ground E noon tile](../../evidence/v1-workload/g7-showcase/rou
 Use the same noon view and slow normal-control pan. Preserve the historical `0d53d3aa` motion pass and decoded
 38.3 ms untraced / 51.7 ms traced local holds in [evidence](../../evidence/render/mac-m2-pan/README.md).
 That verdict is not a fresh pass of the changed M2.1 or the later build; both new items are open. M0/M1 stay done.
+
+**Surface-path ordering:** final Mac M2 qualification runs after `APPLE-TILE:M3` is done. G3t M2 merges the surface
+graph and M3 moves tone encoding into present; runs taken before those changes cannot qualify their later path.
+Rerun both M2.1 and M2.2 on the post-M3 assembly and matching build/content/recipe, preserving earlier results as
+historical. The JSON dependency enforces the final order. G3t D2.5/D3.5 separately require functional actual Mac
+window runs; those prove presentation/input/resize/recovery, never panel cadence. No reverse Mac M2 dependency is
+added to G3t, so unattended G3t proof can proceed while Mac cadence waits.
 
 - [ ] **M2.1 unattended — current-build runtime content motion.** After T2-CAPTURE M0, run the paused-world
   1920×1080 noon 0°–36° pan over two seconds, plus settled endpoint holds, with 120 Hz requested offscreen
@@ -105,6 +112,11 @@ before and after acquisition, and the real Metal queue-attempt control.
 Keep encode-time failure and live-window recovery outside this proof.
 
 ## Log
+
+- 9 November, Apple tile design-review finding 7. Ordered final Mac M2 qualification after `APPLE-TILE:M3`,
+  with both motion and cadence rerun on its changed surface path; added the JSON dependency and incremented M2
+  `replans` to 2, keeping both items open and M0/M1 unchanged. G3t M2/M3 now require their own functional Mac
+  window proofs. Existing runs remain historical; no cadence or implementation promotion. Independent review owed.
 
 - 9 November, unattended-evidence re-plan. Settled T2 ownership of capture and its V1/V4/F1 handoffs in C12 with
   Mac/G3t consumers. M2 now needs `T2-CAPTURE:M0`. Reset changed M2 items to open, incremented `replans` to 1,

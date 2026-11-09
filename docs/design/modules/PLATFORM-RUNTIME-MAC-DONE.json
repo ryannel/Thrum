@@ -57,12 +57,12 @@
       "name": "The cooked valley presents smoothly on built-in ProMotion",
       "state": "open",
       "fails": 0,
-      "replans": 1,
+      "replans": 2,
       "bar": "Coherent slow camera motion fit for a shipped high-end game in the cooked noon valley, reviewed at 1x from exact submitted engine output. Unattended elapsed-time runtime motion and attended built-in ProMotion cadence are separate required proofs. Record local holds and investigate visible hitches; no numeric performance threshold is a gate.",
       "items": [
         {
           "id": "M2.1",
-          "statement": "The current release cooked noon valley retains coherent elapsed-time input-driven motion in an unattended real-time offscreen run, including both endpoint holds and the full two-second 0-to-36-degree pan. This qualifies engine runtime motion; it does not establish display-link, compositor or panel behavior.",
+          "statement": "The current release cooked noon valley retains coherent elapsed-time input-driven motion in an unattended real-time offscreen run, including both endpoint holds and the full two-second 0-to-36-degree pan. This qualifies engine runtime motion; it does not establish display-link, compositor or panel behavior. Final qualification uses the post-APPLE-TILE-M3 surface path; earlier runs must be rerun.",
           "inspect": "Using T2-CAPTURE M0, rerun the documented 1920x1080 pan with a paused world, 120 Hz requested opportunities and normal semantic controls while the console is locked and Screen Recording permission is unavailable. Review full-resolution source images, native-size crops and the host-time-preserving 1x movie against the proposed Ground E noon composition. Inspect rock, ridges and sphere together for continuity, framing, local holds, gross pauses, snaps or reversals. Verify actual monotonic timing, complete initial/final holds and full sweep, and join requested, accepted and submitted yaw to image/submission IDs. Capture omissions make the interval inconclusive. Do not substitute a fixed-step route, endpoint redraw or static parity. Preserve the historical 0d53d3aa motion pass and its 38.3/51.7 ms content holds as historical evidence only.",
           "target": "mac-metal",
           "status": "open",
@@ -72,7 +72,7 @@
         },
         {
           "id": "M2.2",
-          "statement": "ATTENDED SETUP: the current build's displayed frame intervals on the active built-in panel are independently attributable for the full pan, with app/window swaps separate from refresh and submission. An unlocked active display and any OS Instruments authorization are needed; an engine tap removes the Screen Recording grant requirement. Without fresh attributable swaps, cadence and the whole milestone remain open.",
+          "statement": "ATTENDED SETUP: the current build's displayed frame intervals on the active built-in panel are independently attributable for the full pan, with app/window swaps separate from refresh and submission. An unlocked active display and any OS Instruments authorization are needed; an engine tap removes the Screen Recording grant requirement. Without fresh attributable swaps, cadence and the whole milestone remain open. Final qualification uses the post-APPLE-TILE-M3 surface path; earlier runs must be rerun.",
           "inspect": "On the unlocked built-in panel run matched release/noon/fixed-store untraced and Game Performance arms, with the same extent and input sweep through the normal AppKit slider target/action. Use T2-CAPTURE engine output for both arms, bracketing settled start, full pan and settled end; review original host-time-preserving 1x sequences for coherent content and record local holds. Require the same build/content identity as M2.1 or rerun it. Inspect a readable trace and displayed-surfaces-interval export: unique game window, PID, built-in display, resolved XML references and rotating surfaces into one unambiguous app-labelled stream. Use numeric Swap Time, not frame-label continuity. Align the full pan with same-process Points of Interest markers or a calibrated monotonic-clock join with correlated anchor and stated error. Record intervals, gaps/unmatched samples, display mode, build/recipe, run order/load and CPU/GPU rows; compare untraced control and report capture overhead. Trace finalization remains parked until separately resumed; this plan does not claim that blocker is solved. Leave the item open if export, attribution or alignment is ambiguous.",
           "ask": "Does the evidence distinguish callback target, opportunity, actor acquisition/submit, GPU completion, engine image/sample time, movie PTS, VSync and attributed compositor Swap Time? Is there independent OS attribution for this run/pan rather than the historical 5 November trace? Does attended setup name unlocked-display and any Instruments authorization needs without requiring the owner to play or grant Screen Recording for engine pixels? Engine pixels exclude native widgets/final compositor appearance: are those limits explicit, with any essential additional OS/physical observation separately attended and justified? Are input-to-photon and physical iPhone timing unmeasured, all interval figures observations, and the historical motion pass preserved without extending it to a new build?",
           "target": "mac-metal",
@@ -83,7 +83,8 @@
         }
       ],
       "needs": [
-        "T2-CAPTURE:M0"
+        "T2-CAPTURE:M0",
+        "APPLE-TILE:M3"
       ]
     }
   ]
