@@ -4,8 +4,8 @@
     {
       "id": "M0",
       "name": "Mac engine images and runtime motion without a desktop capture grant",
-      "state": "claimed",
-      "fails": 1,
+      "state": "in_progress",
+      "fails": 2,
       "replans": 2,
       "bar": "Camera continuity expected of Red Dead Redemption 2 and evidence fit for a shipped high-end game: complete native-size images and honest 1x elapsed-time motion, with every omitted sample and observer limit explicit.",
       "items": [
@@ -50,7 +50,7 @@
           "status": "pass",
           "evidence": "docs/evidence/render/t2-capture-m0/rework/README.md, verification.json and integrated still/fixed/pan/running manifests \u2014 exact corrected binary/source/recipe pinned; locked before/after with denied read-only Screen Recording preflight throughout. Engine stamps live device/presenter generation, consumed common-policy lead and render submission ID. Metal tests prove 7\u21928 device and 1\u21923 presenter changes with pending old identity preserved. Still/fixed/pan endpoint parity verified; independent original review separately proved legacy pre/post parity.",
           "ask": "Rerun retained commands on the actual M3 Max under gpu exclusivity. Inspect recorded lock/permission status, adapter/backend, recipe, source/dirty/build/shader/cooked/parameter hashes and per-frame world/interpolation/history/submission IDs. Verify the headless real-time driver uses actual monotonic elapsed time, the ordinary threaded world/render paths and validated semantic controls. Verify complete source-frame coverage and finalized manifest; no GPU timestamps or OS capture grant required. Preserve fixed-time route/endpoint parity. Unavailable hardware or inability to establish the required locked condition cannot pass. Record the locked condition opportunistically; never lock an active user or unlock by automation. Trace engine output through the ordinary presenter/SurfaceOutput admission path: paused-world semantic camera edits must create fresh submissions with unchanged committed tick and no capture-only admission bypass.",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": "docs/evidence/T2-CAPTURE/M0-review.md"
         },
         {
