@@ -20,14 +20,13 @@
   },
   "milestones": {
     "M1": {
-      "definitions": "f3b6a8417592b47561535477d551c7a79c18f516c2fbd56a66634b126a68776e",
+      "definitions": "8cff3f50416fe62e020799bebae83846858423ef2eef7b1d0773fe04f38352d4",
+      "reviews": [],
       "authorised": {
-        "by": "design review",
-        "review": "docs/evidence/COOKED-DRAW/design-review.md",
-        "commit": "2394162b498fd498f93e11ffa54d4ba471430595",
-        "at": "2026-11-09T13:54:20Z"
-      },
-      "reviews": []
+        "by": "plan",
+        "task": "COOKED-DRAW M1 is blocked on M1.10: on the iOS simulator the cooked valley renders at a fixed 640x360 and is letterboxed in both orientations instead of filling the current oriented surface extent. Ev",
+        "at": "2026-11-09T15:00:26Z"
+      }
     }
   }
 }

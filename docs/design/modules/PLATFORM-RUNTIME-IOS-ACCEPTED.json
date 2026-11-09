@@ -1,0 +1,15 @@
+{
+  "module": "PLATFORM-RUNTIME-IOS",
+  "design": null,
+  "milestones": {
+    "M7": {
+      "definitions": "e93155eca1db1f52c48f5e3f04eadcb623f33d5f8493ad473d6399bef82bc3a6",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "COOKED-DRAW M1 is blocked on M1.10: on the iOS simulator the cooked valley renders at a fixed 640x360 and is letterboxed in both orientations instead of filling the current oriented surface extent. Ev",
+        "at": "2026-11-09T15:00:26Z"
+      }
+    }
+  }
+}
