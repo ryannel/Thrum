@@ -6,7 +6,7 @@
       "name": "A repeatable offscreen valley proves the comparison path",
       "state": "open",
       "fails": 0,
-      "replans": 0,
+      "replans": 1,
       "bar": "The same complete cooked valley as portable, with stable lighting, silhouettes, shadows and motion expected of a shipped high-end game; matched full-resolution stills and normal-speed sequences must expose omitted work.",
       "items": [
         {
@@ -64,6 +64,9 @@
           "verdict": "",
           "review": ""
         }
+      ],
+      "needs": [
+        "T2-CAPTURE:M0"
       ]
     },
     {

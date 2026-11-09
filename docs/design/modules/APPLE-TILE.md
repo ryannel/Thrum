@@ -7,6 +7,10 @@ C04/C06/C07/C08/C12 in [CONTRACTS](../CONTRACTS.md) govern.
 Independent review of this revision is owed. Earlier designs and code were inspected; this is reconciliation,
 not a blind design. Historical reviews remain in the plan log; missing scratch is not current proof.
 
+The planned [T2 capture service](T2-CAPTURE.md) owns submitted-output capture and sequence readback. G3t M0
+needs `T2-CAPTURE:M0` and adds its scene-linear comparison stages through the same renderer-owned tap; it does
+not implement a rival recorder. Real-display/physical-counter tools retain any attended setup needs explicitly.
+
 ## Purpose, range and cues
 
 Use Apple's tile/unified-memory hardware through the existing renderer, with portable as the reference and prepared

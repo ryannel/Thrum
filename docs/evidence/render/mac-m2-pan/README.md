@@ -1,5 +1,22 @@
 # Mac M2 pan on the built-in panel
 
+## Current disposition — 9 November unattended-evidence re-plan
+
+This page retains historical observations and failed attempts, not a pass for a new build or the new capture path.
+[Mac M2](../../../design/modules/PLATFORM-RUNTIME-MAC-PLAN.md) now depends on
+[T2-CAPTURE M0](../../../design/modules/T2-CAPTURE-PLAN.md). Engine-owned submitted-image capture will supply
+fresh elapsed-time runtime motion without Screen Recording access or an unlocked console once implemented and
+proved. Three-view parity and a fixed-step movie cannot supply that live-runtime proof. The previous motion verdict
+stays historical; changed M2.1 is open for fresh evidence.
+
+M2.2 remains open for fresh independently attributable built-in-panel swaps. It is **attended setup** because it needs
+an unlocked active built-in display and any Instruments authorization. The agent can inject the normal AppKit pan
+and review output without the owner playing. Engine capture removes the screen-recorder grant prerequisite for
+pixels, but cannot observe compositor/native UI appearance, physical cadence or photons by itself. Instruments
+finalization remains separately parked after the three attempts below; this plan does not resume or solve it.
+No new run or proof is claimed. The historical grant/unlocked-slot resume instructions below are superseded by
+this dependency and proof split. Independent design/JSON review is owed.
+
 The 8 November 2026 slot started at 19:30:56 CET on an M3 Max. The
 matched release diagnostic was built from `0d53d3aa`. Both recorded
 game windows occupied built-in display 1 with a 1920×1080 game
@@ -61,7 +78,7 @@ separately. For the stop-rule review, inspect all three Instruments
 attempts and keep the original cadence criterion open if none yields
 fresh attributable swap rows.
 
-## Resume first
+## Historical resume instructions (superseded above)
 
 G3c changed the default vertex path after the reviewed slot. The
 retained release diagnostic over `474b4306` passed the three-view offscreen
@@ -121,8 +138,7 @@ recording or trace was launched, and no permission prompt was requested.
 Unlocking the console therefore resolved the old lock blocker but did
 not provide Screen Recording permission to this execution context.
 
-M2.2 remains open, and the milestone is not claimed. Grant Screen
-Recording access to the recorder's execution context, then rerun the
-permission preflight and matched control/trace rows. Instruments
-finalization and fresh attributable swaps remain unverified; the prior
-motion verdict and all instrumentation limits above are unchanged.
+At that probe M2.2 remained open and the milestone was not claimed. The then-planned next step was a Screen
+Recording grant and matched control/trace rows. The current re-plan above replaces that recorder prerequisite with
+engine capture; the failed preflight remains a historical fact. Instruments finalization and fresh attributable
+swaps remain unverified, and the prior motion verdict retains its original scope.

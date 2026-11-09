@@ -586,6 +586,22 @@ against the portable recipe on the same device, its image difference from portab
 thermal state after a sustained run; without comparison it is not performance-qualified. Functional delivery does not
 wait for numeric tuning; the [6 November owner decision](decisions/PERFORMANCE-PHILOSOPHY-2026-11-06.md) governs.
 
+### Unattended visual and motion evidence — planned T2 capture extension
+
+T2 owns scenario/artifact provenance and completeness; V1/V4 own submitted-image capture, GPU resources and colour
+stage; F1 owns driver/world-clock and platform lease policy. Games provide scene/control bindings. The
+[T2 capture design](modules/T2-CAPTURE.md) specifies the handoffs and modes. Sequence capture uses the ordinary submitted
+render/temporal path with bounded asynchronous readback under the one executor; it cannot privately redraw an
+endpoint, acquire a surface, submit a rival queue or advance authority. Endpoint still capture keeps its separate
+no-history semantics. Disabled sequence capture adds no copy/readback work.
+Fixed-time sequences prove appearance/evolution. Real-time motion proof uses actual elapsed host time, preserves
+stalls/gaps in image PTS and identifies sample/history/submission and clock domains. Neither establishes compositor
+swaps, physical cadence, EDR output or photon response. Engine images exclude OS/DOM/native UI unless separately
+captured and declared. All later visual milestones select the appropriate mode and target dependency, retain
+independent visual review and explicitly mark genuinely attended observations with the reason. Mac qualification
+M2.2 retains its active built-in-panel swap proof; Screen Recording access is not an engine-image prerequisite.
+This extension settles producer/consumer ownership for planning; no implementation or device result is implied.
+
 [RENDER-SPEC](RENDER-SPEC.md) and [PLAY-ENVIRONMENT-SPEC](PLAY-ENVIRONMENT-SPEC.md) select
 their initial algorithms and limits. The [V1 N1 transport/codec decision](decisions/A0-N1-TRANSPORT-CODEC.md)
 supersedes the older [NETWORK-SPEC](NETWORK-SPEC.md) transport and full-record recipe; C13 below

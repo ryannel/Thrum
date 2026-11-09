@@ -41,10 +41,13 @@ continue unblocked work. Verified checkpoints are pushed to main (owner, 6 Nov p
 
 ## Active work and gates
 
-**Next build: G3t Apple tile, after independent review of its reconciled plan.** G3b Mac M2's remaining live proof
-waits for the owner's unlocked display; its acceptance scope is unchanged. G3t starts with an offscreen game proof
-and does not depend on that cadence row. The G3s sunset crossing stays parked; G2S is closed. The complete native
-Metal recorder remains a later performance candidate; the dedicated performance phase owns numeric tuning.
+**Next build: [T2 unattended capture M0](design/modules/T2-CAPTURE-PLAN.md), after independent design review.**
+It supplies exact submitted images and elapsed-time motion without a desktop capture grant; locked-console execution
+must be proved. G3b Mac M2 then uses it for fresh runtime motion, while its built-in-panel cadence stays open with
+**attended setup** (unlocked active panel and any Instruments authorization). Screen Recording is no longer required
+for engine pixels. G3t M0 follows shared capture and does not depend on the panel cadence row. The G3s sunset
+crossing stays parked; G2S is closed. The complete native Metal recorder remains a later performance candidate;
+the dedicated performance phase owns numeric tuning.
 
 - [x] **G0 — integrity and baselines.** Real Metal regressions fail without a device; no successful skips. One baseline
   command records runnable rows and absent consumers. Dead source/cook/mobile crates are removed and shipping trees
@@ -75,7 +78,8 @@ Metal recorder remains a later performance candidate; the dedicated performance 
   world and controls intact. [Rotation and recovery evidence](evidence/render/G3B-IOS-SIM-ROTATION-LOSS-2026-11-08.md).
   A held-drawable Metal destroy recovers in the same Mac window with world and controls intact.
   [Live Mac evidence](evidence/render/mac-m1-recovery/README.md). Physical iPhone loss and Mac display cadence
-  remain open. Record latency/present intervals and investigate visible hitches. [Mac qualification plan](design/modules/PLATFORM-RUNTIME-MAC-PLAN.md).
+  remain open. Mac M2 now needs `T2-CAPTURE:M0`; its unattended runtime-image and attended panel-swap proofs
+  remain distinct and both are required. Record latency/present intervals and investigate visible hitches. [Mac qualification plan](design/modules/PLATFORM-RUNTIME-MAC-PLAN.md).
   [Frame history](evidence/render/V1-BOUNDED-FRAMES-2026-11-04.md) and wgpu
   allocations are baselines; native recording stays G3t.
 - [ ] **G3s — physical sky, Sun and atmosphere.** Hillaire (2020) transmittance, multiple-scattering, sky-view/aerial
@@ -93,9 +97,11 @@ Metal recorder remains a later performance candidate; the dedicated performance 
   Record attachment traffic, full GPU work, uploads and light/mirror scaling. No raw/wgpu encoder splice or rival queue.
   [Design](design/modules/APPLE-TILE.md), [plan](design/modules/APPLE-TILE-PLAN.md) and
   [done-when criteria](design/modules/APPLE-TILE-DONE.json) reconcile existing work into sequential milestones.
-  M0 is open; carried counter/probe items are not module completion. Independent design/JSON review is owed.
+  M0 is open and needs `T2-CAPTURE:M0`; it consumes shared output capture and adds scene-linear comparison.
+  Carried counter/probe items are not module completion. Independent design/JSON review is owed.
   The planned whole-raw-encoder feature handoff preserves one submit and existing view-drop/loss rules; it does not
-  commission the complete recorder. New physical replay/display rows remain unmeasured without a screen/tool slot.
+  commission the complete recorder. New physical replay/display rows remain unmeasured; mark attended setup where
+  an unlocked display/tool grant is required. Every later visual milestone follows [T2 capture and attended exceptions](design/modules/T2-CAPTURE.md#rollout-and-attended-boundaries).
 - [ ] **G3c — GPU-driven culling.** Compute frustum and Hi-Z, GPU-written indirect counts, one indexed indirect draw per
   mesh/pipeline bucket, stable mesh offsets and compute-readable materials. Validate visibility and image equivalence;
   record full/partial-visibility cost and unexpected growth as tripwires.

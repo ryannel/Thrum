@@ -5,15 +5,17 @@ Done when: [APPLE-TILE-DONE.json](APPLE-TILE-DONE.json) owns criteria and proof 
 [Boundary](../decisions/G3T-METAL-BOUNDARY.md) and C04/C06/C07/C08/C12 govern.
 Reviews: independent design/JSON review of the 9 November reconciliation is owed; no other agent was launched, as instructed. Earlier reviews are retained in the log and do not approve this revision.
 Milestone: M0 A repeatable offscreen valley proves the comparison path (open)
-Now: next module planned on 9 November; offscreen first, no implementation started by this task.
-Next: independent /review-milestone design review from the brief, then build M0 with /build-milestone.
-Blocked: design review owed. Mac M2 waits for the owner's unlocked display separately; it is not a dependency of M0. New physical-traffic replay and real-display rows need a screen/tool slot and remain unmeasured meanwhile.
+Now: G3t planned on 9 November; shared unattended capture M0 is sequenced first, no implementation started by this task.
+Next: independent design review of T2 capture and this consumer handoff, build T2-CAPTURE M0, then G3t M0.
+Blocked: design review and `T2-CAPTURE:M0` owed. Mac M2 panel cadence is separate, not a G3t prerequisite. New physical-traffic replay and real-display rows are attended setup where the tool needs an unlocked display/OS authorization; they remain unmeasured.
 
 ## Sequence and dependencies
 
 The build order selects G3t after G3b functional work while its remaining Mac qualification waits. One builder works
-sequentially; no parallel-agent commission is implied. Each milestone follows the preceding one. Only M2 adds a
-cross-module prerequisite, `PLATFORM-RUNTIME-MAC:M1` (already done), for the loss/abandon boundary it must preserve.
+sequentially; no parallel-agent commission is implied. Each milestone follows the preceding one. M0 needs
+`T2-CAPTURE:M0` for shared submitted-output/sequence capture; G3t still owns scene-linear checkpoint and recipe
+comparison extensions through that capture owner. M2 also needs `PLATFORM-RUNTIME-MAC:M1` (already done)
+for the loss/abandon boundary it must preserve.
 Existing main supplies committed pages, frame host, atmosphere, cooked contributions, moving-route control and
 supported visibility. No future mixed-mesh milestone is implicitly assumed.
 
@@ -30,14 +32,15 @@ migration belongs to its own planning commission; this task does not pretend its
 - D0.4 stays a builder pass from the [8 November traffic probe](../../evidence/render/G3T-TRAFFIC-PROBE-2026-11-08.md).
   It establishes a per-encoder replay method, not live/per-attachment bytes or a new timing baseline. Original bulk
   captures/screenshots are absent here; the retained transcription/limits are the available evidence.
-- The old M0 never closed. M0 stays open, and every other new item stays open. Initial `fails`/`replans` are zero:
-  historical conditional design reviews and missing screen slots were not failed claimed milestone reviews.
+- The old M0 never closed. M0 stays open, and every other new item stays open. Initial `fails`/`replans` were zero:
+  historical conditional design reviews and missing screen slots were not failed claimed milestone reviews. M0 now
+  has `replans: 1` for the shared-capture prerequisite; `fails` remains zero and no item gained a pass.
 
 ## Proof and builder handoff
 
 Start with existing `python3 scripts/run_v1_showcase.py moving` for route smoke proof; it currently runs native
-submitted SDR and Chrome canvas captures, not scene-linear recipe comparisons. M0 extends proof tooling to retain
-linear input, full-resolution sequences and an explicit same-native-recipe comparator. Add a durable runbook with
+submitted SDR and Chrome canvas captures, not scene-linear recipe comparisons. M0 consumes the T2 renderer tap
+and extends proof tooling to retain linear input, full-resolution sequences and an explicit same-native-recipe comparator. Add a durable runbook with
 exact new commands when implemented; names for nonexistent commands are deliberately not used as JSON checks.
 The JSON's `ask`/`inspect` proofs require actual tests/readbacks/sequences and source tracing, not a prose assertion.
 
@@ -158,6 +161,11 @@ lack of G4 cycles. Verify every JSON proof catches the wrong substitutes. Record
 no historical approval or self-review substitutes for that read. Review is owed because this task forbids agents.
 
 ## Log
+
+- 2026-11-09 Capture ownership settled in C12/T2-CAPTURE. Added `T2-CAPTURE:M0` to M0 so G3t consumes one
+  renderer-owned submitted-output path rather than building a duplicate recorder. M0 stays open with `replans: 1`
+  and `fails: 0`; carried item status is unchanged. Scene-linear recipe comparison
+  remains G3t work. Independent review of this handoff is owed; no implementation/evidence status changed.
 
 - 2026-11-09 Owner requested the next module while Mac M2 waits for an unlocked display, with no agents. Selected
   G3t from the build order; converted criteria to JSON and reconciled the current consumers. Preserved D0.3/D0.4

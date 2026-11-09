@@ -199,7 +199,7 @@ advances. Use direct explicit contracts where possible; no universal service con
 | ID / module | Owns and provides | Boundary |
 | --- | --- | --- |
 | T1 Authoring and automation | Inspector, scene/prefab editing, undo/redo, content/animation/style preview, declared edit/restart support, extensible controls and CLI/API | Shared schemas and operations support human and programmatic use; editor-only dependencies stay out of the game |
-| T2 Diagnostics and delivery | CPU/GPU/memory attribution, captures, debug views, regression scenes, source-stored build configurations, package inclusion/size diagnosis and export provenance | Separate authoring/build/player support and startup/offline/residency promises; qualify profiles and reproducible demos |
+| T2 Diagnostics and delivery | CPU/GPU/memory attribution, [unattended frame evidence](modules/T2-CAPTURE.md), debug views, regression scenes, source-stored build configurations, package inclusion/size diagnosis and export provenance | Separate authoring/build/player support and startup/offline/residency promises; qualify profiles and reproducible demos |
 
 ### Environmental decomposition
 

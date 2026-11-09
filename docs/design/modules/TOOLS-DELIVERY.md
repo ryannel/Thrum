@@ -30,6 +30,14 @@ F3 owns stable IDs, units, schema registry and compatibility rules. F4 owns sour
 | C11 input/audio/UI | U1 editor controls and A1 event handling consume committed state; editor focus/input does not bypass game action priority. |
 | C12 budgets/evidence | T2 attributes complete critical paths, peaks and gates; root maturity ledger separates design, implementation, function, appearance and platform proof. |
 
+## Commissioned capture child
+
+[T2-CAPTURE](T2-CAPTURE.md), [plan](T2-CAPTURE-PLAN.md) and [criteria](T2-CAPTURE-DONE.json) commission
+unattended engine-image and elapsed-time motion evidence. T2 owns scenarios/artifacts; V1/V4 own submitted-output
+readback and F1 owns scheduling/platform lifetime. No new crate or competing render/clock owner is selected.
+Mac capture M0 precedes fresh Mac qualification M2 and G3t M0; Chrome and simulator consumers qualify separately.
+C12 owns the shared evidence boundary. This plan is unbuilt and independently unreviewed.
+
 ## First-use obligations
 
 The [AI development design](../AI-DEVELOPMENT.md) specifies two clients of these same tools: engine contributors

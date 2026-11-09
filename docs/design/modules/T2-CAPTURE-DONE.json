@@ -1,0 +1,131 @@
+{
+  "module": "T2-CAPTURE",
+  "milestones": [
+    {
+      "id": "M0",
+      "name": "Mac engine images and runtime motion without a desktop capture grant",
+      "state": "open",
+      "fails": 0,
+      "replans": 0,
+      "bar": "Camera continuity expected of Red Dead Redemption 2 and evidence fit for a shipped high-end game: complete native-size images and honest 1x elapsed-time motion, with every omitted sample and observer limit explicit.",
+      "items": [
+        {
+          "id": "M0.1",
+          "statement": "An opt-in FrameHost tap reads the actual final submitted engine output, preserving normal temporal history, one GPU coordinator and platform lease/loss rules. Disabled capture has no frame copies, readback resources or per-frame allocation.",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "ask": "Trace submitted frame to graph copy to image digest; verify no endpoint redraw, second scene render, private game queue submit, drawable bridge or present-lease extension. Run real Metal tests comparing tap pixels with the same output texture, known colour/channel/row-padding cases including odd widths, and submitted history with capture on/off. Preserve existing endpoint-capture tests and Mac M1 loss behavior.",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M0.2",
+          "statement": "Bounded asynchronous staging and writer queues preserve frame/generation identity through resize, loss, abandon, exhaustion and cancellation; slow or failed output cannot block world/render work or silently complete the evidence interval.",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "ask": "Run pending-map loss/replacement and stale-callback controls, ring/writer saturation, disk-limit/write error and bounded-finalization failure. Show finite allocated/queued bytes and continuing ticks/render progress while capture is incomplete; no lost-queue submit or lost-fence wait. Check frames are recycled only after their GPU/CPU leases end, and old generations cannot populate a new session.",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M0.3",
+          "statement": "One documented implemented workflow produces exact-build stills, fixed-time sequences and separately labelled real-time offscreen sequences on Metal while the console is locked and Screen Recording permission is unavailable, without requesting a grant.",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "ask": "Rerun retained commands on the actual M3 Max under gpu exclusivity. Inspect recorded lock/permission status, adapter/backend, recipe, source/dirty/build/shader/cooked/parameter hashes and per-frame world/interpolation/history/submission IDs. Verify the headless real-time driver uses actual monotonic elapsed time, the ordinary threaded world/render paths and validated semantic controls. Verify complete source-frame coverage and finalized manifest; no GPU timestamps or OS capture grant required. Preserve fixed-time route/endpoint parity. Unavailable hardware or inability to establish the required locked condition cannot pass.",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M0.4",
+          "statement": "The locked-console real-time cooked noon pan and a running-world/interpolated sequence retain complete initial/final holds and coherent scene motion; deliberately injected runtime stalls remain visible for their actual elapsed duration.",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "ask": "Join every image to the submitted sample and requested/accepted/submitted controls. Inspect a 1920x1080 paused-world 0-to-36-degree two-second pan at 120 Hz requested opportunities and a running 60 Hz world with intermediate-alpha samples. Check all opportunities/submissions accounted for; capture omissions make the affected interval inconclusive. Compare injected-stall elapsed duration with movie PTS and images, and demonstrate that fixed-time movie smoothness cannot satisfy this real-time item.",
+          "inspect": "At 1x inspect the full noon pan and both holds against the proposed Ground E composition: rock/ridge/sphere coherence, endpoint agreement, repeats, jumps and pauses; inspect native-size frames/crops and the running-world intermediate poses for interpolation/history artifacts. Review the stall negative control and timeline at 1x. This is engine runtime motion, not built-in-display smoothness.",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M0.5",
+          "statement": "Matched capture-on/off runs record observer cost and bounded working-set/disk growth, and consumer documentation makes unattended versus attended evidence explicit for Mac M2 and later visual milestones.",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "ask": "Read paired same-build/recipe/workload CPU/GPU/interval/queue/memory/bytes/disk results with run order and load; investigate visible hitches, comparable regressions and unexpected scaling under C12 without inventing numeric gates. Review the implemented runbook, C12 and Mac M2 handoff; neither engine PTS nor synthetic opportunities are called compositor swaps, panel refresh or input-to-photon. Verify storage retention and a deliberately incomplete manifest is refused.",
+          "verdict": "",
+          "review": ""
+        }
+      ],
+      "needs": [
+        "PLATFORM-RUNTIME-MAC:M1"
+      ]
+    },
+    {
+      "id": "M1",
+      "name": "Chrome WebGPU images and runtime motion without desktop capture",
+      "state": "open",
+      "fails": 0,
+      "replans": 0,
+      "bar": "Portable cooked-scene camera continuity expected of Red Dead Redemption 2, with complete canvas sample identity and explicit browser scheduling and surface limits; scene-specific artistic bars remain with the consuming milestone.",
+      "items": [
+        {
+          "id": "M1.1",
+          "statement": "Chrome captures the actual submitted portable output in fixed-time and elapsed-time modes on hardware WebGPU while the desktop is locked, without OS Screen Recording access or silent software fallback.",
+          "target": "chrome-webgpu",
+          "status": "open",
+          "evidence": "",
+          "ask": "Rerun the documented cooked-route commands; verify real adapter/backend, browser build/flags and scheduling/throttling profile, exact bundle/content/recipe hashes, clocks and complete frame joins. Do not pass by faking visibility, weakening the existing route refusal rules or asserting headless Chrome is the real visible-tab/display path.",
+          "inspect": "Inspect full-resolution route checkpoints, cuts and 1x moving output for missing content, temporal artifacts and pauses. The manifest names canvas/engine UI included and DOM/browser/native controls excluded.",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.2",
+          "statement": "Browser asynchronous capture and artifact export survive loss/resize and slow output with bounded queues and explicit gaps; elapsed-time stalls remain visible and existing lifecycle policy is preserved.",
+          "target": "chrome-webgpu",
+          "status": "open",
+          "evidence": "",
+          "ask": "Run pending-readback loss/recovery, saturation and injected-stall controls; show the page loop/authority continue, stale captures fail, PTS do not hide delay and missing samples refuse completion. Rerun affected actual-tab/visibility/device-loss consumers; headless canvas proof cannot replace them.",
+          "verdict": "",
+          "review": ""
+        }
+      ]
+    },
+    {
+      "id": "M2",
+      "name": "iOS simulator engine motion without desktop capture",
+      "state": "open",
+      "fails": 0,
+      "replans": 0,
+      "bar": "Functionally intact cooked scene and normal-speed interaction through simulator lifecycle changes, with honest function-only provenance and no device-speed or physical-display claim.",
+      "items": [
+        {
+          "id": "M2.1",
+          "statement": "The real simulator foreground route captures engine-rendered stills and elapsed-time motion while the desktop is locked without Screen Recording access, through the shared renderer tap and normal control handler.",
+          "target": "ios-sim",
+          "status": "open",
+          "evidence": "",
+          "ask": "Rerun the documented route; verify booted model/runtime, host/backend, source/content/recipe and actual world/view/submission IDs and lock state. Separate semantic input from real UIKit touch and mark any OS UI/automation grant row attended with its reason. Required unattended engine-output proof stays open if the target is unavailable.",
+          "inspect": "Inspect complete native-size output and 1x camera/actor motion with initial/final holds and transition frames; identify missing scene content, repeats and continuity breaks. Label simulator function only.",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M2.2",
+          "statement": "Pending captures cancel safely across background/foreground, surface replacement and device-generation recovery without background submission or stale pixels; output remains bounded and gaps explicit.",
+          "target": "ios-sim",
+          "status": "open",
+          "evidence": "",
+          "ask": "Run lifecycle rows with a capture pending plus saturation/stall controls. Trace foreground/surface leases and generation IDs; prove no background GPU submit, lost-queue work or stale publication, and fresh output after resume. Validate PTS/coverage and incomplete-result refusal; preserve affected iOS route tests and keep physical iPhone evidence pending.",
+          "verdict": "",
+          "review": ""
+        }
+      ]
+    }
+  ]
+}

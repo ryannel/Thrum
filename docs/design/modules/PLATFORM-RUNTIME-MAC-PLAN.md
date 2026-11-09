@@ -5,11 +5,11 @@ and [bounded frame host](../decisions/V1-BOUNDED-FRAME-HOST.md). Siblings:
 [iOS](PLATFORM-RUNTIME-IOS-PLAN.md) and [web](PLATFORM-RUNTIME-WEB-PLAN.md).
 Done when: [PLATFORM-RUNTIME-MAC-DONE.json](PLATFORM-RUNTIME-MAC-DONE.json) owns milestone criteria and proof status; the shared platform design above remains authoritative.
 
-Reviews: M0 over `3049433d`: approved ([record](#log)). M1 `0c9a32dc`: both items pass ([review](../../evidence/render/mac-m1-recovery/README.md#independent-review)). M2 `0d53d3aa`: motion passes, cadence open ([review](../../evidence/render/mac-m2-pan/README.md#review-verdict-and-open-cadence-row)). Migration design review owed.
-Milestone: M2 The cooked valley presents smoothly on built-in ProMotion
-Now: M2 resumed 9 November; console is unlocked. The recorder permission preflight refuses Screen Recording access both inside and outside the sandbox; no live row launched.
-Next: grant Screen Recording access to the recorder execution context, then rerun the matched control/trace rows; fresh trace finalization and attributable swaps remain unverified. [Direct permission probe](../../evidence/render/mac-m2-pan/README.md#unlocked-console-probe-9-november-0113-utc).
-Blocked: Screen Recording permission preflight exits 3 on the unlocked console, including outside the sandbox. Cadence remains open; the previous trace did not finalize.
+Reviews: M2 historical `0d53d3aa`: motion passed, cadence open ([record](../../evidence/render/mac-m2-pan/README.md#review-verdict-and-open-cadence-row)). Independent review of the JSON migration and 9 November capture re-plan is owed; historical M0/M1 reviews remain in the log.
+Milestone: M2 The cooked valley presents smoothly on built-in ProMotion (replanned, open)
+Now: 9 November evidence re-plan separates unattended engine runtime motion from attended built-in-panel cadence; no new capture or runtime proof claimed.
+Next: independent design/JSON review, then T2-CAPTURE M0, then fresh M2.1 unattended motion. M2.2 remains a separate attended display/tool row.
+Blocked: `T2-CAPTURE:M0` is planned, not built. M2.2 needs an unlocked active built-in display and any Instruments authorization; trace finalization remains parked. Screen Recording permission is no longer required for engine image proof.
 
 ## M0 Reviewed Mac qualification plan: done
 
@@ -33,21 +33,33 @@ Work:
 - [x] Run the detached Metal and paused readback preflights, then the cooked valley in the same diagnostic build with the arm disabled and with both loss modes. The arm-disabled row supplies the uninterrupted control with identical inputs.
 - [x] Record device, surface, session and world identity, the acknowledged endpoint, queue calls, cooked generation, and the first restored submission. Retain the motion excerpt and independent review alongside the paired image results.
 
-## M2 The cooked valley presents smoothly on built-in ProMotion: in progress
+## M2 The cooked valley presents smoothly on built-in ProMotion: open after re-plan
 
-Owner review: [Ground E route, noon tile](../../evidence/v1-workload/g7-showcase/route-ground-e.png) (proposed, pending).
-Use the same noon view and a slow input-driven pan. A no-trace run provides the motion and overhead control.
+Uses [T2 capture](T2-CAPTURE.md); `needs: T2-CAPTURE:M0`. This is milestone M2 on the M3 Max.
+Owner reference: [Ground E noon tile](../../evidence/v1-workload/g7-showcase/route-ground-e.png) (proposed, pending).
+Use the same noon view and slow normal-control pan. Preserve the historical `0d53d3aa` motion pass and decoded
+38.3 ms untraced / 51.7 ms traced local holds in [evidence](../../evidence/render/mac-m2-pan/README.md).
+That verdict is not a fresh pass of the changed M2.1 or the later build; both new items are open. M0/M1 stay done.
 
-M2.1 motion passed for the matched `0d53d3aa` recordings, with decoded holds of 38.3 ms untraced and 51.7 ms traced
-recorded. The later G3c build still needs corroboration. [Evidence and verdict](../../evidence/render/mac-m2-pan/README.md).
-M2.2 cadence is open: require independently attributable app/window swaps on the built-in panel, separate from
-display refresh and app submissions. No numeric performance threshold is a gate.
-
-Work:
-
-- [ ] Use the same release diagnostic build, noon preset, extent and fixed cooked root for both arms. Qualify the shipped yaw slider with a step fine enough for a slow pan. At about 18°/s, a 1° step holds the view for about 56 ms even with perfectly regular presentation. Use a 0.05° slider step and preserve the 5° keyboard action. Verify the finer normal control path before building the live witness.
-- [ ] Identify the unique game window on the built-in panel. Once the cooked view is ready and the recorder has a complete frame, hold the start view, inject the same elapsed-time yaw sweep at display-link opportunities through the existing AppKit slider target/action and normal app edit handler, then hold the final view before capture cutoff and finalization. Log requested, accepted and submitted yaw separately. Independently review the original recordings side by side at 1× against the proposed noon reference. Require the full sweep in both recordings and the attributed trace. Keep recording rate separate from physical display intervals and photon timing.
-- [ ] Use Game Performance for the app-labelled Display rows. The prior 5 November export (`tmp/g3b-present-short-displayed.xml`) contains 210 labelled compositor swaps on the built-in display. The raw surface IDs rotate, and the trace says they were composited. This is a short historical trace, not direct scanout or qualification of this build. In the traced row use a fixed cooked store rather than a changing watcher:
+- [ ] **M2.1 unattended — current-build runtime content motion.** After T2-CAPTURE M0, run the paused-world
+  1920×1080 noon 0°–36° pan over two seconds, plus settled endpoint holds, with 120 Hz requested offscreen
+  opportunities. Use actual monotonic elapsed time and the normal semantic control/edit handler. Record locked-console
+  and unavailable Screen Recording conditions without requesting permission. Retain every submitted output image,
+  requested/accepted/submitted yaw and interpolation/history/sample IDs. Review the original sequence at 1× and
+  native-size crops for coherent rock/ridge/sphere motion and record local holds. A fixed-step movie, endpoint
+  redraw or three static parity images cannot replace this proof. This does not qualify AppKit/display cadence.
+- [ ] **M2.2 attended setup — current-build panel cadence.** The built-in panel must be unlocked and active; any
+  OS authorization for Instruments must already be available or be explicitly arranged. The agent injects the
+  AppKit slider pan and reviews evidence; the owner need not operate the game. Run same-build, preset, extent and
+  fixed cooked-root control/traced arms. Keep the 0.05° slider step and normal 5° keyboard action. Engine capture
+  of both arms replaces mandatory ScreenCaptureKit movies, so no Screen Recording grant is required for pixels.
+  Require initial/final holds and the complete sweep in both taps and trace, with requested/accepted/submitted yaw.
+  Review content at 1× and compare observer overhead. Engine pixels exclude native controls and final composition.
+- [ ] Require a fresh readable Game Performance trace and `displayed-surfaces-interval` export. Identify unique
+  game window/PID, active built-in display and one app-labelled swap stream; resolve rotating surface IDs/XML refs.
+  Use numeric Swap Time, not frame-label continuity. Same-process pan markers or a calibrated monotonic join with
+  correlated anchor and stated error must bracket the full pan. Historical 5 November swaps do not qualify this run.
+  Useful existing command shape (not a successful new result):
   ```sh
   xcrun xctrace record --no-prompt --template 'Game Performance' --time-limit 16s \
     --output "$trace" --target-stdout "$game_log" \
@@ -58,9 +70,17 @@ Work:
   xcrun xctrace export --input "$trace" \
     --xpath '/trace-toc/run/data/table[@schema="displayed-surfaces-interval"]'
   ```
-  Keep the display export, named process/PID and surface evidence in scratch. Resolve XML references and use numeric Swap Time and one unambiguous app-labelled stream on the built-in display. Frame labels can skip and surface IDs rotate. Use same-process Points of Interest pan markers on the trace timeline. Accept a calibrated monotonic-clock join only with a correlated anchor and stated error. Leave cadence open if the layer or pan alignment is ambiguous.
-- [ ] Keep callback targets, actor acquisition and submit, GPU timestamps and app-attributed display swaps separate. Align the observation to the same run and pan interval using recorded process and time markers. Report unmatched samples explicitly. Display VSync alone shows display opportunity. HUD intervals can supplement the trace. Input-to-photon remains unmeasured without a correlated input and physical displayed response. No raw drawable bridge.
-- [ ] Record view resolution, display mode, source/build, recipe, run order/load and CPU/GPU frame rows. Headless 1× captures diagnose scene motion. M2’s live motion and physical cadence witnesses use the real panel. Physical iPhone timing and loss detection remain open.
+  The builder adds the implemented capture arguments from T2's runbook. **Instruments trace finalization remains
+  parked** after three attempts; only a separately resumed tool investigation may spend further attempts on it.
+  A locked display or failed/unreadable trace leaves M2.2 open and does not block unattended visual work.
+- [ ] Separate callback target, actual opportunity, actor acquisition/submit, GPU timestamps, engine image time,
+  movie PTS, VSync and app-attributed swaps. Record unmatched samples, source/build, content, recipe, view resolution,
+  display mode and run order/load. If the build differs from M2.1, rerun its unattended row. Input-to-photon and
+  physical iPhone timing/loss stay unmeasured. Native/compositor appearance needs separate attended evidence if a
+  specific observation requires it. No raw drawable bridge, screen unlock automation or mandatory Screen Recording.
+
+M2 cannot close until both items pass independent review. This changes the image acquisition method and separates
+its claims; it neither waives real-panel cadence nor declares unattended engine motion proof already implemented.
 
 ## Design and plan review brief
 
@@ -86,6 +106,13 @@ Keep encode-time failure and live-window recovery outside this proof.
 
 ## Log
 
+- 9 November, unattended-evidence re-plan. Settled T2 ownership of capture and its V1/V4/F1 handoffs in C12 with
+  Mac/G3t consumers. M2 now needs `T2-CAPTURE:M0`. Reset changed M2 items to open, incremented `replans` to 1,
+  kept `fails` at 0 and preserved historical M0/M1 and motion evidence. M2.1 requires fresh elapsed-time engine
+  motion while locked; M2.2 keeps fresh attributable built-in swaps and is marked attended setup with reason.
+  Screen Recording is removed from the engine-image prerequisite. Instruments finalization remains parked.
+  No implementation or fresh evidence claimed; independent design/migration review owed, no agents launched.
+
 - 9 November 01:13 UTC: unlocked-console preflight directly refused Screen Recording permission (exit 3), including outside the sandbox under the GPU lock. No live row launched; M2 remains in progress. [Evidence](../../evidence/render/mac-m2-pan/README.md#unlocked-console-probe-9-november-0113-utc).
 
 - 9 November, resumed M2. Under the GPU lock, the retained `474b4306` diagnostic produced byte-identical 0°/18°/36° noon PPMs against `framing.mKC7g4`; static parity is verified, live motion is not extended. Fresh trace export exits 10 (`Document Missing Template Error`), and console probes report locked. No live capture launched and no claim made. [Evidence](../../evidence/render/mac-m2-pan/README.md#9-november-blocker-probe).
@@ -108,11 +135,12 @@ Keep encode-time failure and live-window recovery outside this proof.
 
 ## M2 pan plan review brief
 
-Verify the normal AppKit input route, separation of authored steps and
-frame pacing, matched recording brackets, and whether Game Performance
-can attribute one swap stream to the game's PID on the built-in panel.
-Require trace-domain pan markers or a calibrated join and keep cadence
-open if the trace cannot establish attribution.
+Start from [the unattended-evidence brief](T2-CAPTURE-BRIEF.md), then review the T2 design/JSON, C12, Mac M2
+items and the G3t consumer dependency. Check that M2.1 can expose runtime stalls without any desktop grant;
+synthetic fixed-time movie smoothness cannot pass. For M2.2 require normal AppKit routing, same-build capture
+brackets and fresh independent Game Performance swap attribution for the complete pan. Engine taps supply image
+content, not final compositor/native-widget appearance, physical panel observation or photon timing. Confirm that
+attended setup is justified by real display/tool needs and the parked trace failure has not been waived.
 
 ## Injected input review brief
 

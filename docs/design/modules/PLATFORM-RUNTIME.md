@@ -74,8 +74,11 @@ configuration, late acquisition, presentation calls and device replacement.
 held-drawable configuration refusal once, then leaves an unavailable
 surface recoverable. A present call and GPU completion do not identify
 physical presentation. Use OS instrumentation on the built-in display
-to qualify that step. The held-drawable helper passed on real Metal;
-live-window recovery and physical cadence remain open.
+to qualify that step. Held-drawable live-window recovery passed (Mac M1); physical cadence remains open.
+The [T2 capture plan](T2-CAPTURE.md) adds an offscreen opportunity/output adapter over the shared world/render
+paths for unattended runtime motion. It does not qualify AppKit callbacks or replace the active-panel swap row.
+Mac M2 separates that unattended image proof from attended display/tool setup; Screen Recording is not needed
+for engine pixels.
 
 Mobile adapters retain separate surface, foreground and local-play policy. Release a surface before suspend returns,
 reject old-generation input/completions and recreate only surface-dependent resources on resume. A local single-player
