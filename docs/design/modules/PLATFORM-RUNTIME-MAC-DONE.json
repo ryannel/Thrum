@@ -107,7 +107,8 @@
       ],
       "needs": [
         "T2-CAPTURE:M0"
-      ]
+      ],
+      "blocked": "Attended setup: M2.2-M2.4 need the Mac unlocked with the built-in panel active (and any Instruments authorization); run docs/evidence/render/mac-m2-current/RUNBOOK.md, then unblock."
     },
     {
       "id": "M3",
