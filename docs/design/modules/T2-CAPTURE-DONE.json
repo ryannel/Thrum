@@ -150,7 +150,9 @@
       "state": "blocked",
       "fails": 0,
       "replans": 1,
-      "needs": ["COOKED-DRAW:M1"],
+      "needs": [
+        "COOKED-DRAW:M1"
+      ],
       "bar": "Functionally intact cooked scene and normal-speed interaction through simulator lifecycle changes, with honest function-only provenance and no device-speed or physical-display claim.",
       "items": [
         {
@@ -158,7 +160,7 @@
           "statement": "The real simulator foreground route captures engine-rendered stills and elapsed-time motion without desktop capture through the shared renderer tap and normal control handler. Denied read-only Screen Recording preflights before and after under the identified launcher/harness permission identity prove independence from desktop capture, with no permission request. Console state before and after is witness metadata only, accepting locked, unlocked or changed state, with unavailable observations recorded with a reason. Missing, failed or granted permission preflights cannot pass this proof.",
           "target": "ios-sim",
           "status": "open",
-          "evidence": "docs/evidence/render/t2-capture-m2/README.md and prerequisite-report.json.gz \u2014 BLOCKED, not pass: locked iPhone 18 Pro / iOS 27.2 diagnostic foreground route runs, but Apple iOS simulator GPU lacks INDIRECT_EXECUTION and the existing G5 cooked meshlet contribution faults before capture. G5 / thrum-asset-gpu must provide the simulator-capable cooked draw path. Minimal probe and actual adapter flags retained; no cooked image/motion claim.",
+          "evidence": "",
           "ask": "Rerun the documented route; verify booted model/runtime, host/backend, source/content/recipe and actual world/view/submission IDs and before/after console observations. Verify the denied before/after Screen Recording preflights and their actual launcher/harness attribution; an unrelated denied helper cannot establish this proof. No wait, refusal or pass condition may depend on console lock state. Separate semantic input from real UIKit touch and mark any OS UI/automation grant row attended with its reason. Required unattended engine-output proof stays open if the target is unavailable.",
           "inspect": "Inspect complete native-size output and 1x camera/actor motion with initial/final holds and transition frames; identify missing scene content, repeats and continuity breaks. Label simulator function only.",
           "verdict": "",
@@ -169,7 +171,7 @@
           "statement": "Pending captures cancel safely across background/foreground, surface replacement and device-generation recovery without background submission or stale pixels; output remains bounded and gaps explicit.",
           "target": "ios-sim",
           "status": "open",
-          "evidence": "docs/evidence/render/t2-capture-m2/README.md \u2014 open, not verified: required cooked foreground prerequisite fails in G5 / thrum-asset-gpu before a T2 observer is enabled. Pending-capture lifecycle, saturation/stall, coverage and target-specific capture qualification remain owed after that owner supplies the simulator-capable cooked draw path. No physical iPhone claim.",
+          "evidence": "",
           "ask": "Run lifecycle rows with a capture pending plus saturation/stall controls. Trace foreground/surface leases and generation IDs; prove no background GPU submit, lost-queue work or stale publication, and fresh output after resume. Validate PTS/coverage and incomplete-result refusal; preserve affected iOS route tests and keep physical iPhone evidence pending. Run ./dev check for shared regressions under gpu; additionally retain and rerun the implemented target-specific iOS simulator command on this target, failing rather than skipping unavailable required hardware. The workspace check alone cannot prove this target row. Apply M2.1's denied permission preflights and console witness policy throughout the lifecycle/capture command; neither console state nor a lock transition gates engine-output proof.",
           "verdict": "",
           "review": "",
