@@ -1,7 +1,23 @@
 {
   "module": "APPLE-TILE",
   "adopted": true,
-  "design": null,
+  "design": {
+    "verdict": "ok",
+    "review": "docs/evidence/APPLE-TILE/design-review.md",
+    "commit": "2514d8240876d2ca6772698cfe6f451332fc48b4",
+    "hash": "d90de51acfddeb2fda00e9b763dc5b13be3d0f5ddedff520a78f24e069bc1e4f",
+    "by": "review",
+    "host": "codex",
+    "model": "gpt-6.1-sol",
+    "effort": "high",
+    "observed": {
+      "model": "gpt-6.1-sol",
+      "effort": "high"
+    },
+    "cli": "codex-cli 0.167.0-alpha.3.2",
+    "path": "visible",
+    "at": "2026-11-09T14:07:58Z"
+  },
   "milestones": {
     "M0": {
       "definitions": "726ef4423172ce4b7d425fdce54e24643b1254a2ad86581ef1053120841805a9",
