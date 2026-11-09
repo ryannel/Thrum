@@ -79,6 +79,10 @@ The [T2 capture plan](T2-CAPTURE.md) adds an offscreen opportunity/output adapte
 paths for unattended runtime motion. It does not qualify AppKit callbacks or replace the active-panel swap row.
 Mac M2 separates that unattended image proof from attended display/tool setup; Screen Recording is not needed
 for engine pixels.
+The headless target uses the ordinary presenter/SurfaceOutput admission path so paused-world camera edits submit
+without advancing authority. Mac M2.3 owns real-window tap integration/proof (same engine output, no drawable lease
+extension, capture-off direct output, pending-capture surface loss); M2.4 owns bounded trace-finalization diagnosis.
+M2.2 requires both and uses a capture-OFF traced arm for cadence, with separate capture-ON content/observer arms.
 
 Mobile adapters retain separate surface, foreground and local-play policy. Release a surface before suspend returns,
 reject old-generation input/completions and recreate only surface-dependent resources on resume. A local single-player

@@ -13,7 +13,11 @@ M2.2 remains open for fresh independently attributable built-in-panel swaps. It 
 an unlocked active built-in display and any Instruments authorization. The agent can inject the normal AppKit pan
 and review output without the owner playing. Engine capture removes the screen-recorder grant prerequisite for
 pixels, but cannot observe compositor/native UI appearance, physical cadence or photons by itself. Instruments
-finalization remains separately parked after the three attempts below; this plan does not resume or solve it.
+finalization failed after the three attempts below. The revised plan now assigns a bounded investigation to the Mac
+M2 builder in M2.4, after independent re-review and milestone prerequisites: changed hypotheses only, at most two
+new diagnostic record attempts. It does not claim the failure solved. M2.3 separately commissions qualification of
+the shared tap on a real CAMetalLayer surface. M2.2 requires both and a fresh capture-OFF traced cadence arm;
+capture-ON untraced/traced arms establish content and observer cost, with ON swaps labelled under capture.
 No new run or proof is claimed. The historical grant/unlocked-slot resume instructions below are superseded by
 this dependency and proof split. Independent design/JSON review is owed.
 

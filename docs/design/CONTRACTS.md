@@ -601,12 +601,18 @@ stage; F1 owns driver/world-clock and platform lease policy. Games provide scene
 render/temporal path with bounded asynchronous readback under the one executor; it cannot privately redraw an
 endpoint, acquire a surface, submit a rival queue or advance authority. Endpoint still capture keeps its separate
 no-history semantics. Disabled sequence capture adds no copy/readback work.
+The headless output enters the ordinary presenter/SurfaceOutput gate, including paused-world camera updates;
+capture cannot bypass admission or tick paused authority to force images. Mac M2 owns integration/qualification of
+the shared tap on the real window, including output correspondence, lease lifetime and surface-loss cancellation.
 Fixed-time sequences prove appearance/evolution. Real-time motion proof uses actual elapsed host time, preserves
 stalls/gaps in image PTS and identifies sample/history/submission and clock domains. Neither establishes compositor
 swaps, physical cadence, EDR output or photon response. Engine images exclude OS/DOM/native UI unless separately
 captured and declared. All later visual milestones select the appropriate mode and target dependency, retain
 independent visual review and explicitly mark genuinely attended observations with the reason. Mac qualification
 M2.2 retains its active built-in-panel swap proof; Screen Recording access is not an engine-image prerequisite.
+Shipping cadence is measured with capture disabled; capture-on swaps remain labelled under capture and paired
+observer arms quantify overhead. Existing Chrome endpoint and simulator OS captures retain their fixed-time and
+function-only scopes until target T2 qualification; they cannot close submitted-temporal/runtime-motion criteria.
 This extension settles producer/consumer ownership for planning; no implementation or device result is implied.
 
 [RENDER-SPEC](RENDER-SPEC.md) and [PLAY-ENVIRONMENT-SPEC](PLAY-ENVIRONMENT-SPEC.md) select

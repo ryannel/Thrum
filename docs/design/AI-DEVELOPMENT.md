@@ -178,10 +178,15 @@ Every later visual milestone plans evidence through [T2 capture](modules/T2-CAPT
 images by default, full-resolution source sequences plus review artifacts, and explicit fixed-time versus real-time
 claims. Runtime/live-motion criteria need elapsed-time capture that preserves stalls; a smooth offline movie is
 insufficient. List included/excluded surfaces and required target capability (`T2-CAPTURE:M0` Mac, `M1` Chrome,
-`M2` simulator) in the first milestone that needs it. Existing passed evidence keeps its original scope. Until the
-target path is built/proved, retain an explicit dependency or unavailable result rather than asking for desktop
-access by default. Physical display/compositor/native UI/input/photon checks remain separate. Mark genuinely
-attended setup or observation, its required OS grant/device, and why engine output/automation cannot prove it;
+`M2` simulator) in the first milestone that needs it. Existing passed evidence keeps its original scope. Until those
+paths land, existing Chrome canvas endpoint captures may still prove fixed-time endpoint image/oracle claims with
+endpoint/no-history provenance; `simctl` screenshots/video may prove simulator function/UI/lifecycle within their
+recorded timing limits. They do not prove exact submitted temporal output or elapsed-time engine motion. For those
+stronger claims retain an explicit target dependency or unavailable result rather than asking for desktop access
+by default. Physical display/compositor/native UI/input/photon checks remain separate. Mac M2 owns real-window tap
+qualification and bounded trace diagnosis; its shipping cadence row uses capture OFF and labels ON swap figures
+under capture. Mark genuinely attended setup or observation, its required OS grant/device, and why engine
+output/automation cannot prove it;
 continue unblocked visual work. Never automate screen unlocking or weaken privacy settings.
 
 Stop and ask the owner only to change purpose or the V1 exit; to spend money, such as renting cloud
