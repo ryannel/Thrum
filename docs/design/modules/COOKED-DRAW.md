@@ -36,10 +36,11 @@ and any later downlevel device.
   to the indirect path's for the same build, store and fixed-time view.
 - **The indirect path is untouched.** Its output on Mac Metal and Chrome WebGPU is byte-identical before and after
   the change, and it records the same per-frame commands.
-- **The simulator draws the cooked valley.** It is complete, textured, lit and shadowed, and it stays continuous
-  while the camera pans. This is function only.
-- **The record decides.** The path comes from the capability record captured from the real adapter. No platform,
-  OS, backend or adapter-name test is allowed, and no private device query.
+- **The simulator draws the cooked valley.** It is complete, textured, lit and shadowed. It survives
+  background/foreground, device replacement and rotation, and it shows no discontinuity in the sampled frames of a
+  camera pan. This is function only. Complete submitted-frame temporal proof belongs to T2-CAPTURE M2.
+- **The record decides.** The path comes from adapter facts in the capability record. No platform, OS, backend or
+  adapter-name test is allowed, and no private device query. Unknown facts never enable indirect execution.
 
 Bar: where both paths run, they produce identical pixels. On the simulator, the cooked valley is as complete as on
 Mac. Shipped engines' compatibility renderers work this way: Unreal's ES3.1 mobile path and Unity's GLES fallback
@@ -48,17 +49,28 @@ draw the same content with less GPU-driven work.
 ## Mechanism
 
 **Selection.** At capture, `DeviceCapabilities` records the adapter's downlevel flags next to its features and
-limits. `SceneSurface` lends that fact the same way it lends `features` today. At every `rebuild`, `CookedAssets`
-picks its draw path from the surface:
-- **indirect** when the record reports `INDIRECT_EXECUTION`;
-- **direct** otherwise.
+limits. The flags are known only when they come from an adapter. `SceneSurface` lends that fact the same way it lends
+`features` today. At every `rebuild`, `CookedAssets` picks its draw path from the surface:
+- **indirect** only when the record holds adapter-read downlevel flags that include `INDIRECT_EXECUTION`;
+- **direct** otherwise, including when the flags are unknown.
 
 `rebuild` already runs for every device generation, so a replacement device re-selects. Texture-profile selection
 already works this way (G5's "Profile selection" row).
 
-`DeviceCapabilities::capture_device` has no adapter to read, and wgpu 30 exposes downlevel flags only on `Adapter`.
-Its record therefore assumes WebGPU-compliant flags, which is what wgpu's own WebGPU backend reports, and marks them
-as assumed. Every production route (the Mac app, Chrome and the iOS route) uses the adapter-backed `capture`.
+**Adapter-less records are conservative.** `DeviceCapabilities::capture_device` has no adapter to read, and wgpu 30
+exposes downlevel flags only on `Adapter`. So its record says the downlevel facts are unknown. It never assumes them
+and never invents support. The public route `FrameHost::new` → `capture_device` → `attach_cooked_scene` therefore
+selects the direct path on every device. The direct path uses only core indexed drawing, so it is valid on any
+adapter, and where both paths run it gives the same pixels (M1.3). An adapter-less host on a capable device pays the
+direct path's extra vertex work. Its stats and evidence name the path and the unknown-facts reason.
+
+Refusing to attach cooked content to an adapter-less host was the alternative. It was rejected: it gains nothing over
+an always-valid path, and it would break the existing tests and benches that use `FrameHost::new`.
+
+Code that needs the indirect path has to build its record with the adapter-backed `capture`. That covers the Mac
+app, Chrome, the iOS route, the indirect arm of the cooked GPU suite, and the `cooked_edit` tripwire bench. The bench
+and the cull-count tests use `FrameHost::new` today, so they move to `new_with_capabilities` with `capture`. Otherwise
+they would silently measure or test the direct path.
 
 A diagnostic mask can clear `INDIRECT_EXECUTION` in a captured record. It must be opted into explicitly, it is never
 on by default, and evidence records it whenever it is used. The mask lets this Mac exercise the direct path through
@@ -101,8 +113,34 @@ work, but the fragment work and the pixels are the same.
 `CookedStats` gains the selected draw path. `visible_meshlets` stays `None` on the direct path, because no cull ran.
 
 **iOS route.** The simulator route attaches cooked content through the game's existing `attach_cooked_scene`
-selection (`THRUM_ASSET_STORE`, `THRUM_SCENE`). With those unset, the route is unchanged. The route reports the
-selected path and the cooked stats in the state file it already writes.
+selection (`THRUM_ASSET_STORE`, `THRUM_SCENE`). With those unset, the route is unchanged. The route reports these in
+the state file it already writes:
+- the selected path;
+- the drawn generation;
+- the cooked submitted-frame count;
+- the cooked errors.
+
+**Simulator coverage.** The simulator command reuses the route's existing rows, with cooked content attached:
+- background/foreground;
+- device-generation replacement;
+- portrait → landscape → portrait rotation, which is the `rotation` row in `examples/v1-game-ios/ios/route.py`,
+  driven by its XCUITest orientation gesture.
+
+After each row, the route must present at the current extent with the cooked set still drawn through the direct
+path. The locked-console engine-state rows do not depend on the XCUITest gesture. If the gesture needs an unlocked
+console, only the rotation row is recorded with that reason.
+
+**What the simulator pan can show.** Before T2-CAPTURE M2, simulator frames come only from `simctl` screenshots or a
+`simctl` recording. Both are sampled, and neither is tied to submitted frames. The evidence records the following:
+- the route's presented-frame count over the pan;
+- the samples taken, with their times;
+- the holds;
+- the largest gap between samples.
+
+The M1 conclusion covers only the sampled frames. It can show that content is complete in every sample, that the
+frame edges fill as terrain enters, and that no sample is missing geometry. It cannot rule out a defect confined to
+unsampled frames. Proof over every submitted frame, with exact frame and time identity, stays with T2-CAPTURE M2. The
+direct path has no delayed visibility, so no mechanism in it predicts one-frame holes.
 
 ## Alternatives rejected
 
@@ -153,7 +191,7 @@ and C06 lifetime keep their meaning on both paths.
 
 | Change | Producer | Consumers | Agreement needed |
 |---|---|---|---|
-| `DeviceCapabilities` records adapter downlevel flags. `capture_device` marks its facts as assumed and compliant. | `thrum-render` `capabilities.rs` (V1 graphics execution; implements F2's C04 registry) | Call sites need no signature change: `thrum-app` device creation, web recovery, sky capture, `v1-game-ios` render, `asset-loop`, benches. Readers: `thrum-asset-gpu` now, and later G3c culling | Render/registry owner (Thrum Core) |
+| `DeviceCapabilities` records adapter downlevel flags. `capture_device` records them as unknown, and unknown never selects indirect. | `thrum-render` `capabilities.rs` (V1 graphics execution; implements F2's C04 registry) | Call sites need no signature change: `thrum-app` device creation, web recovery, sky capture, `v1-game-ios` render, `asset-loop`, benches. Readers: `thrum-asset-gpu` now, and later G3c culling | Render/registry owner (Thrum Core) |
 | `SceneSurface` lends the downlevel fact | `thrum-render` contribution seam (V1) | `thrum-asset-gpu` | Render owner |
 | C04 wording, proposed: "features, limits and downlevel execution facts" in the registry list | C04 owner (F2) | All registry readers | C04 owner; the text only clarifies the existing rule |
 | `CookedStats` gains the draw path. `visible_meshlets` is documented as `None` on the direct path | `thrum-asset-gpu` | V1 cooked tests, the [G6 creator note](../decisions/G6-CREATOR-EXPERIENCE.md), T2 evidence | G5 (this module) |
@@ -166,7 +204,8 @@ identical on both paths. Neither work blocks the other. The only overlap is the 
 G4 M2 has not started.
 
 **T2-CAPTURE dependency.** T2-CAPTURE M2 `needs` `COOKED-DRAW:M1`. M1 delivers the iOS route with the cooked valley
-on the direct path, through lifecycle changes. M2's capture items then run on that route unchanged.
+on the direct path, through background/foreground, device replacement and rotation. M2's capture items then run on
+that route unchanged. M2 also adds the submitted-frame temporal proof that M1's sampled pan cannot give.
 
 ## Risks
 
@@ -180,6 +219,12 @@ on the direct path, through lifecycle changes. M2's capture items then run on th
 - **Plausible wrong substitute: a simulator-only switch.** For example, `cfg(target_os = "ios")` or an adapter-name
   match. It would pass the simulator rows. The selection test and review questions reject it, and so does the
   masked-record arm on Mac, which must pick the direct path with no platform change.
+- **Plausible wrong substitute: assumed capability.** A record that claims indirect support it never read from an
+  adapter would pass every adapter-backed row, then fail on the first adapter-less host on a downlevel device. M1.1's
+  adapter-less test rejects it: that route must select the direct path and create no indirect-usage buffer.
+- **A test or bench silently changes path.** A cull-count test or the `cooked_edit` bench still built through
+  `FrameHost::new` would quietly measure or test the direct path. M1.2 and M1.6 require each arm to record its
+  selected path.
 - **Plausible wrong substitute: a direct path missing state.** A direct path that draws but skips the history flag,
   discard handling or remote feeds could also look right in stills. Running the whole cooked GPU suite under the
   masked record rejects it.
@@ -195,7 +240,9 @@ on the direct path, through lifecycle changes. M2's capture items then run on th
 - `computes()` false skips the compute pass, while `encode_after_compute` still runs (`synthetic.rs`).
 - Contribution tokens are imported, and `graph.rs` creates no buffers.
 - `DeviceCapabilities` records no downlevel flags today.
-- `capture_device` users include `FrameHost::new` in `v1-game` (tests).
+- `FrameHost::new` (`examples/v1-game/src/host.rs`) is public and calls `capture_device`. Its callers include the
+  cooked GPU tests and the `cooked_edit` bench, and `attach_cooked_scene` accepts any host.
+- The iOS route's `rotation` row uses an XCUITest orientation gesture through `xcodebuild`.
 - The iOS route uses `capture` and does not attach cooked content.
 - wgpu 30: `Adapter::get_downlevel_capabilities` is the only downlevel query. The WebGPU backend reports all flags.
   Metal sets `INDIRECT_EXECUTION` from `iOS_GPUFamily3_v1`, `macOS_GPUFamily1_v1` or `tvOS_GPUFamily2_v1`, and
@@ -209,6 +256,7 @@ on the direct path, through lifecycle changes. M2's capture items then run on th
 - The simulator draws the rest of the cooked pipelines (ASTC or portable textures, 3D volume, casters) without
   further gaps.
 - `simctl` screenshots of a headless simulator work while the console is locked, with no OS grant.
+- The XCUITest orientation gesture works on a locked console. If it doesn't, only the rotation row is attended.
 
 ## Adjacent gap
 
