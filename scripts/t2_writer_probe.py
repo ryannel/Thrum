@@ -32,12 +32,12 @@ def chunk(kind, payload):
             + struct.pack(">I", zlib.crc32(kind + payload)))
 
 
-def package(raw, path):
-    stride = WIDTH * 4
+def package(raw, path, width=WIDTH, height=HEIGHT):
+    stride = width * 4
     scanlines = b"".join(b"\0" + raw[start:start + stride]
                          for start in range(0, len(raw), stride))
     path.write_bytes(b"\x89PNG\r\n\x1a\n"
-                     + chunk(b"IHDR", struct.pack(">IIBBBBB", WIDTH, HEIGHT, 8, 6, 0, 0, 0))
+                     + chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 6, 0, 0, 0))
                      + chunk(b"IDAT", zlib.compress(scanlines, 1)) + chunk(b"IEND", b""))
     # Decode the written file, checking lengths, CRCs and exact RGBA bytes.
     png = path.read_bytes()
@@ -55,7 +55,7 @@ def package(raw, path):
     decoded = zlib.decompress(compressed)
     rows = [decoded[start + 1:start + 1 + stride]
             for start in range(0, len(decoded), stride + 1)]
-    if len(rows) != HEIGHT or any(decoded[y * (stride + 1)] != 0 for y in range(HEIGHT)):
+    if len(rows) != height or any(decoded[y * (stride + 1)] != 0 for y in range(height)):
         raise ValueError("invalid unfiltered RGBA scanlines")
     digest = hashlib.sha256(raw).hexdigest()
     if hashlib.sha256(b"".join(rows)).hexdigest() != digest:

@@ -1,0 +1,226 @@
+[
+  {
+    "name": "fixed-02",
+    "command": [
+      "node",
+      "scripts/capture_v1_browser.mjs",
+      "--mode",
+      "fixed",
+      "--control",
+      "ordinary",
+      "--output",
+      "tmp/t2-capture-m1/fixed-02"
+    ],
+    "started": 1794215897.4687092,
+    "ended": 1794215920.778077,
+    "exit_code": 0
+  },
+  {
+    "name": "series-00",
+    "command": [
+      "node",
+      "scripts/capture_v1_browser.mjs",
+      "--mode",
+      "realtime",
+      "--control",
+      "ordinary",
+      "--output",
+      "tmp/t2-capture-m1/series-00"
+    ],
+    "started": 1794215920.7784152,
+    "ended": 1794215938.67371,
+    "exit_code": 0
+  },
+  {
+    "name": "series-01",
+    "command": [
+      "node",
+      "scripts/capture_v1_browser.mjs",
+      "--mode",
+      "realtime",
+      "--control",
+      "ordinary",
+      "--output",
+      "tmp/t2-capture-m1/series-01"
+    ],
+    "started": 1794215938.674161,
+    "ended": 1794215956.7784908,
+    "exit_code": 0
+  },
+  {
+    "name": "series-02",
+    "command": [
+      "node",
+      "scripts/capture_v1_browser.mjs",
+      "--mode",
+      "realtime",
+      "--control",
+      "ordinary",
+      "--output",
+      "tmp/t2-capture-m1/series-02"
+    ],
+    "started": 1794215956.778931,
+    "ended": 1794215974.781688,
+    "exit_code": 0
+  },
+  {
+    "name": "series-03",
+    "command": [
+      "node",
+      "scripts/capture_v1_browser.mjs",
+      "--mode",
+      "realtime",
+      "--control",
+      "ordinary",
+      "--output",
+      "tmp/t2-capture-m1/series-03"
+    ],
+    "started": 1794215974.782091,
+    "ended": 1794215992.901796,
+    "exit_code": 0
+  },
+  {
+    "name": "series-04",
+    "command": [
+      "node",
+      "scripts/capture_v1_browser.mjs",
+      "--mode",
+      "realtime",
+      "--control",
+      "ordinary",
+      "--output",
+      "tmp/t2-capture-m1/series-04"
+    ],
+    "started": 1794215992.902165,
+    "ended": 1794216011.080899,
+    "exit_code": 0
+  },
+  {
+    "name": "off-00",
+    "command": [
+      "node",
+      "scripts/capture_v1_browser.mjs",
+      "--mode",
+      "realtime",
+      "--control",
+      "off",
+      "--output",
+      "tmp/t2-capture-m1/off-00"
+    ],
+    "started": 1794216011.081442,
+    "ended": 1794216024.2070038,
+    "exit_code": 0
+  },
+  {
+    "name": "off-01",
+    "command": [
+      "node",
+      "scripts/capture_v1_browser.mjs",
+      "--mode",
+      "realtime",
+      "--control",
+      "off",
+      "--output",
+      "tmp/t2-capture-m1/off-01"
+    ],
+    "started": 1794216024.207294,
+    "ended": 1794216037.099236,
+    "exit_code": 0
+  },
+  {
+    "name": "off-02",
+    "command": [
+      "node",
+      "scripts/capture_v1_browser.mjs",
+      "--mode",
+      "realtime",
+      "--control",
+      "off",
+      "--output",
+      "tmp/t2-capture-m1/off-02"
+    ],
+    "started": 1794216037.099658,
+    "ended": 1794216049.946337,
+    "exit_code": 0
+  },
+  {
+    "name": "stall-02",
+    "command": [
+      "node",
+      "scripts/capture_v1_browser.mjs",
+      "--mode",
+      "realtime",
+      "--control",
+      "stall",
+      "--output",
+      "tmp/t2-capture-m1/stall-02"
+    ],
+    "started": 1794216049.946783,
+    "ended": 1794216068.003793,
+    "exit_code": 0
+  },
+  {
+    "name": "resize-02",
+    "command": [
+      "node",
+      "scripts/capture_v1_browser.mjs",
+      "--mode",
+      "realtime",
+      "--control",
+      "resize",
+      "--output",
+      "tmp/t2-capture-m1/resize-02"
+    ],
+    "started": 1794216068.0043461,
+    "ended": 1794216085.715455,
+    "exit_code": 0
+  },
+  {
+    "name": "saturation-02",
+    "command": [
+      "node",
+      "scripts/capture_v1_browser.mjs",
+      "--mode",
+      "realtime",
+      "--control",
+      "saturation",
+      "--output",
+      "tmp/t2-capture-m1/saturation-02"
+    ],
+    "started": 1794216085.7158022,
+    "ended": 1794216103.5124989,
+    "exit_code": 0
+  },
+  {
+    "name": "slow-02",
+    "command": [
+      "node",
+      "scripts/capture_v1_browser.mjs",
+      "--mode",
+      "realtime",
+      "--control",
+      "slow",
+      "--output",
+      "tmp/t2-capture-m1/slow-02"
+    ],
+    "started": 1794216103.512817,
+    "ended": 1794216116.857013,
+    "exit_code": 0
+  },
+  {
+    "name": "loss-02",
+    "command": [
+      "node",
+      "scripts/capture_v1_browser.mjs",
+      "--mode",
+      "realtime",
+      "--control",
+      "loss",
+      "--output",
+      "tmp/t2-capture-m1/loss-02"
+    ],
+    "started": 1794216116.857346,
+    "ended": 1794216121.969051,
+    "exit_code": 0
+  }
+]

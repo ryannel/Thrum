@@ -114,16 +114,16 @@ submissions, 109 images, 370 ring omissions, 6/96 pixel peaks, ticks continue th
 refused and `complete:false`. No compression failure is hidden: compressed write, flush, byte-limit, changed-size,
 truncation/hash/extra-byte and round-trip failures are automated; slow raw admission/deadline tests remain.
 
-Each session has a 16 GiB output/free-space allowance. Bulk `frames.zst` originals, exact binaries, selected full
-PNG sequences and host-time previews remain in `tmp/t2-capture-m0-r3/qualified/` **through the next lead review**.
-They are not a durable backup. Gzip metadata is byte-for-byte reversible; selected hashes and restoration paths
-are in `retention.json`. The raw negative-control partial spool is not a source master. After source verification,
-80.71 MB of historical duplicate pictures/movies were retired with exact hashes/Git restoration in
-[historical retirement](historical-retirement.json); the old measurements and review remain. New selected views
-are 13.99 MB. Cargo outputs are reconstructible; frozen binaries are outside `target/` before cleanup. This
-worktree stays because it contains the retained review roots. Superseded pilot spools (10.63 GB) were removed
-with original metadata retained; see `pilot-cleanup.json`. Renderer timing failure still invalidates capture,
-and the existing device-wide mappable-buffer feature scope is unchanged (second-review minor F4).
+Each session used a 16 GiB output/free-space allowance. Complete local sources and frozen binaries were kept
+through the third lead review, which passed in `dff3eb5e`. At the owner's requested closeout, the 15 selected
+files (13.99 MB) were checked against their recorded sizes and SHA-256 values, then the expired
+`tmp/t2-capture-m0-r3/` tree was removed. [Closeout](closeout.json) records 2,673 files and 23,523,426,370 bytes.
+Complete local archives have no durable backup. The selected views, original hashes, timings, recipes and source
+commit remain in Git. New complete archives require rerunning the recipes. `retention.json` preserves the
+historical archive identities and now points to the closeout. The raw negative-control partial spool was not a
+source master. Earlier 80.71 MB duplicate retirement remains in [historical retirement](historical-retirement.json),
+and the 10.63 GB superseded pilot cleanup remains in `pilot-cleanup.json`. Renderer timing failure still invalidates
+capture, and the existing device-wide mappable-buffer feature scope is unchanged (second-review minor F4).
 
 `recipes/` preserves the actual qualification/continuation/analysis scripts; `order.json` is the actual outcome
 record. The first script stopped when the weak compressed negative control did not saturate; the continuation

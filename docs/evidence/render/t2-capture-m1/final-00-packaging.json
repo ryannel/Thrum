@@ -1,0 +1,8 @@
+{
+  "timebase": "realtime",
+  "preview_pts_max_error_seconds": 0.0,
+  "preview_terminal_duplicate": true,
+  "source_manifest_sha256": "76bbcc8e360eeb843aa95a607690bf01530f318de5a1d0a46bc415824df69318",
+  "full_frames_verified": 481,
+  "terminal_duplicate_is_submission": false
+}

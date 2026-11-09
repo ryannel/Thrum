@@ -13,10 +13,12 @@ rustup run 1.99.1 cargo build --locked --offline -p thrum-cook
 target/debug/thrum-cook cook examples/v1-game/assets/showcase tmp/t2-capture-m0/valley
 ```
 
+Set `ORCHESTRATE_LOOP` to the `build/scripts/agent_loop.py` beside the installed orchestrate
+`build-milestone` skill directory. This location comes from the active skill installation.
 Run the cooked noon pan with a new output directory:
 
 ```sh
-python3 "$HOME/.claude/skills/build/scripts/agent_loop.py" lock gpu --worktree . -- python3 scripts/capture_v1_runtime.py --binary target/release/v1-game --store tmp/t2-capture-m0/valley --output tmp/t2-capture-m0/pan --case pan --mode realtime
+python3 "${ORCHESTRATE_LOOP:?Set ORCHESTRATE_LOOP to the installed orchestrate build/scripts/agent_loop.py}" lock gpu --worktree . -- python3 scripts/capture_v1_runtime.py --binary target/release/v1-game --store tmp/t2-capture-m0/valley --output tmp/t2-capture-m0/pan --case pan --mode realtime
 ```
 
 The explicit `--worktree .` also works around this installed lock script's parsing of the command separator.
@@ -146,3 +148,62 @@ requested opportunities and movie PTS prove no compositor swaps, panel refresh, 
 Mac M2 needs T2 M0 only; APPLE-TILE stays parked. Chrome endpoint captures retain fixed-time endpoint/oracle
 scope until T2 M1; simulator OS captures retain function/UI scope until T2 M2 supplies submitted output.
 Physical-device qualification remains separate.
+
+## Chrome WebGPU
+
+Build the portable game and cooker, then choose a new output directory under `tmp/`:
+
+```sh
+sh examples/v1-game/web/build.sh
+rustup run 1.99.1 cargo build --locked --offline -p thrum-cook
+python3 "${ORCHESTRATE_LOOP:?Set ORCHESTRATE_LOOP from the installed build-milestone skill}" lock gpu --worktree . -- node scripts/capture_v1_browser.mjs --mode realtime --output tmp/t2-capture-m1/my-route
+python3 scripts/package_v1_browser.py --output tmp/t2-capture-m1/my-route
+```
+
+If the compiler cache cannot start in the restricted runner, set `RUSTC_WRAPPER=` for the build.
+The Chrome command requires Node 24+, this Mac's real Apple M3 Max/Metal WebGPU adapter, Chrome, Xcode's Swift
+compiler, local ad-hoc codesigning and LaunchServices. It builds a local background launcher app under the output
+folder. LaunchServices gives that app its own permission identity. The launcher only starts Chrome when its
+read-only Screen Recording preflight is false, records it again after Chrome exits and never requests access.
+The runner refuses software GPUs, unavailable hardware, incomplete exports and a changed permission preflight.
+Console lock is observed before and after the run. Run with the console already locked to reproduce that row.
+
+`--mode fixed` uses synthetic 60 Hz world samples and may wait for GPU completion and export. `--mode realtime`
+feeds actual elapsed page time to the ordinary web shell. Its visible headless page uses 60 Hz timer opportunities,
+with normal visibility, pause, overload and recovery policy. Browser flags and scheduling are recorded. This is a
+controlled browser workload. It supplies no actual-tab display or panel timing claim. The original deterministic
+`route.html` and its refusal controls retain their existing behavior.
+
+Both modes install the checked-in cooked moving route at its ordinary tick barrier, capture an initial paused
+hold, release the normal pause control, run the complete route including its cut, and retain a final hold. The
+renderer copies its actual final submitted SDR output in the same coordinator submission. It preserves history,
+three GPU slots and eight CPU leases. JS copies a ready image to a typed array and immediately returns its CPU
+lease. Up to eight asynchronous HTTP exports are admitted, with a separate eight-request receiver bound. Node's
+compression workers package each original RGBA record losslessly. The declared conservative export working
+allowance is 32 full frames, in addition to the renderer's 11 frame buffers and codec/runtime allocations.
+An export deadline, ring exhaustion, missing submission, write failure or output allowance refusal invalidates
+continuous evidence while the ordinary page loop continues. Each session preflights 16 GiB free and caps output
+at 16 GiB. Consecutive content qualification must use the consuming workload and retain every attempt.
+
+`manifest.json` pins source files, actual served Wasm/JS/route hashes, cooked root/generation, GPU/browser, launcher,
+flags, encoding and permission/lock observations. `runtime.json` retains opportunities, world clocks, pauses,
+submission IDs, source ticks/timeline, alpha, history/device/presenter generations and omissions. Renderer
+`submit_ms` is monotonic time since the session's origin. The page records a bracket around session creation.
+Pixel availability and HTTP completion never become sample times. Images include canvas scene/engine overlays.
+DOM controls, browser/native chrome, OS composition and physical output are excluded.
+
+The receiver hashes original RGBA before gzip. Final verification independently decompresses every source and
+checks size, hash, contiguous submission IDs and complete head/tail coverage against the shell's presentation
+counter. Final storage sync is recorded separately. Deferred packaging verifies PNG round trips and builds a 1×
+preview from host submit times in real-time mode, or the declared synthetic times in fixed mode. A terminal
+encoding duplicate is labelled. Skipped opportunities preserve elapsed gaps with the previous image held.
+`packaging.json` records FFprobe coverage/PTS verification. Retain the compressed full sources through review,
+then promote selected native frames, timeline records and previews under the storage rules.
+
+Diagnostic controls use `--control stall`, `resize`, `saturation`, `slow`, `loss` or `off`. The stall blocks actual
+page dispatch for 250 ms. Saturation withholds readback collection for two seconds. Slow output delays each
+receiver request by 500 ms. Loss destroys the actual GPUDevice with a readback pending, proves authority progress
+and stale-session refusal, then captures a replacement-device image. Negative controls return success only when
+the expected incomplete outcome is proved, with `complete: false` and `negative_control_pass: true` in the manifest.
+The off arm allocates no tap and is labelled `observer_only`. It is for matched observer cost. It cannot supply
+image evidence. Rerun existing actual-tab/visibility/device-loss checks separately with `scripts/check_v1_browser.mjs`.

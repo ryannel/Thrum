@@ -2839,24 +2839,31 @@
         "platform_performance": "observed free-space samples before/after external filler were 241319936 and 13762560 bytes in the local image; no CPU, RSS, transient physical high-water or device qualification follows",
         "scope": "Project, accepted source store, external job parent, F4 input and competing filler shared one bounded APFS image. The test exercises a synchronous registered F4 write fault and successful checked refund; concurrent F3 stage/store work, uncertain cleanup or sync, compiler output/cache lifetime, physical reserve and ready publication remain open."
       },
-      "current_priority": "T2-CAPTURE Mac M0 implemented and claimed for lead review; Chrome M1/simulator M2 remain open; retained-root work stays parked",
+      "current_priority": "T2-CAPTURE Mac M0 reviewed PASS; Chrome M1 implemented and claimed for lead review; simulator M2 open; retained-root work parked",
       "unattended_frame_evidence": {
         "design": "modules/T2-CAPTURE.md",
         "plan": "modules/T2-CAPTURE-PLAN.md",
         "done_when": "modules/T2-CAPTURE-DONE.json",
         "design_stage": "detailed",
-        "integration_review": "milestone_M0_reclaimed_after_two_failed_reviews_lead_re_review_owed",
+        "integration_review": "M0_third_review_pass_M1_builder_claim_lead_review_owed",
         "implementation": "Mac M0 submitted-output tap with six/96 pixel leases, original-RGBA SHA-256 and lossless XOR/Zstd writer; separate finite 256 MiB encoded burst reserve; engine-owned generations/lead and existing measured copy GPU upper bracket",
         "functional_validation": "Five full native writer probes and thirty consecutive integrated sessions independently verify every original hash: 14,423/14,423 images, zero omissions/skips; twenty at strict 200 MB/s on normal nearly-full disk. Still/fixed endpoints, running and stall controls pass; explicit raw slow writer refuses with continuing ticks. Focused writer/decoder tests pass; fresh profile Check gates integration.",
-        "experienced_quality": "builder_inspected_corrected_binary_native_frames_adjacent_crops_and_host_time_sequences; existing_alpha_clamps_exposed; independent_re_review_owed",
+        "experienced_quality": "Mac M0 third independent review PASS; Chrome M1 builder native-frame/timed-playback inspection complete, independent lead review owed",
         "platform_performance": {
           "mac": "Sleep-paced OFF inversion diagnosed with active CPU/wall clocks and E/P CPU IDs. Explicit active-pacing matched OFF/ON/ON/OFF twice: OFF step median 0.516\u20130.526 ms, paired ON step +0.138\u20130.152 ms and loop +0.310\u20130.330 ms; copy GPU upper brackets 1.184\u20131.191 ms separate from scene. Whole-child warmup/pacing spread reported without precise percentage. Thirty session GPU/CPU pixel peaks 2/2 against 6/96, pan bytes ~580 MB vs ~4 GB raw; uncached writes, full sync, load/profiles, RSS and deferred full-hash verification retained. No physical display or uncaptured native cadence claim.",
-          "browser": "not_run",
+          "browser": "Five native 1280x720 cooked-route sessions at 60 requested timer opportunities/s, approximately eight seconds each, 600.4\u2013601.6 MB encoded, largest ordinary submit gaps 21.8\u201323.7 ms, export peak three of eight. Separate sleep-paced OFF wall medians do not isolate causal observer cost. Final sync 33\u201351 ms. Browser scheduling only.",
           "ios_sim": "not_run",
           "physical_display": "not_run"
         },
-        "scope": "M0 current-path locked-console Mac engine output only, denied Screen Recording preflight. Ten pan, ten input-stall and ten running sessions, full exact originals/provenance retained. Six/96 pixel leases within 1 GiB pixel allowance plus separate finite encoded/codec working set; 16 GiB per-session output allowance. Selected compact views and full local archives/binaries retained through next review. Existing alpha clamps remain outside T2. Mac M2.3 windowed tap, M2.4 tooling and attended M2.2 panel remain separate; Chrome/simulator stronger proofs need M1/M2. No window/compositor/panel/HDR/EDR qualification.",
-        "review": "../evidence/T2-CAPTURE/M0-review.md failed second claim M0.3/.8; current builder evidence ../evidence/render/t2-capture-m0/reliability/README.md; lead re-review owed, no reviewer launched"
+        "scope": "M0 current-path locked-console Mac engine output only, denied Screen Recording preflight. Ten pan, ten input-stall and ten running sessions, full exact originals/provenance retained. Six/96 pixel leases within 1 GiB pixel allowance plus separate finite encoded/codec working set; 16 GiB per-session output allowance. Selected compact views remain in Git. Complete M0 local archives/binaries expired and were removed after the passing third review, with verified selected roots and explicit closeout. Existing alpha clamps remain outside T2. Mac M2.3 windowed tap, M2.4 tooling and attended M2.2 panel remain separate; Chrome M1 is claimed with separate builder proof below; simulator stronger proof needs M2. No window/compositor/panel/HDR/EDR qualification.",
+        "review": "../evidence/T2-CAPTURE/M0-review.md PASS third review dff3eb5e; M1 builder evidence ../evidence/render/t2-capture-m1/README.md, lead review owed",
+        "browser_m1": {
+          "implementation": "Shared renderer submitted-output tap exposed through normal WebShell and V1 browser facade; bounded asynchronous typed-array/HTTP/gzip export and fixed/elapsed route drivers",
+          "functional_validation": "Fixed 481 images and five final consecutive elapsed sessions, 2,407 original hashes, zero omissions/dropped views/overloads; locked console and denied launcher preflight. Pending loss/recovery, viewport resize, saturation/slow export refusal and actual stall pass. Existing real tabs/lifecycle and deterministic route controls pass. Full GPU-locked Check passes.",
+          "experienced_quality": "Builder inspected native checkpoints, cut and timed rate-1 Chrome playback; lead review owed",
+          "evidence": "../evidence/render/t2-capture-m1/README.md"
+        },
+        "m0_storage_closeout": "Third-review expiry reached; owner-requested 23.52 GB scratch deletion after verifying 15 retained selected files. ../evidence/render/t2-capture-m0/reliability/closeout.json"
       }
     },
     {

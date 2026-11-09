@@ -1,0 +1,8 @@
+{
+  "timebase": "fixed",
+  "preview_pts_max_error_seconds": 3.3300000001901253e-07,
+  "preview_terminal_duplicate": true,
+  "source_manifest_sha256": "99f36d83ba274e4425e661050214523092c2ed581d8b5a52223ef636d4b2edd8",
+  "full_frames_verified": 481,
+  "terminal_duplicate_is_submission": false
+}

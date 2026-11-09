@@ -1,0 +1,12 @@
+{
+  "owner": "T2-CAPTURE builder",
+  "review": "dff3eb5e, M0 third review PASS",
+  "expiry": "next lead review reached; owner requested closeout",
+  "removed_root": "tmp/t2-capture-m0-r3",
+  "removed_files": 2673,
+  "removed_bytes": 23523426370,
+  "retained_selected_files_verified": 15,
+  "retained_selected_bytes": 13991493,
+  "source_recipe_commit": "1fa0a23ccae51876f021a1678880b8b9a224018a",
+  "limits": "Complete local source archives expire here. Retained selected views, hashes, logs and previews remain in Git. Re-running recipes is required to generate new complete archives."
+}

@@ -2,11 +2,11 @@
 
 Design: [T2-CAPTURE.md](T2-CAPTURE.md) · [brief](T2-CAPTURE-BRIEF.md) ·
 Done when: [T2-CAPTURE-DONE.json](T2-CAPTURE-DONE.json).
-Reviews: [M0 second review](../../evidence/T2-CAPTURE/M0-review.md) failed M0.3/.8; M0.4 passes. Builder reliability rework is reclaimed for lead review; no reviewer launched.
-Milestone: M0 Mac engine images and runtime motion without a desktop capture grant (claimed after second rework)
-Now: 9 November, five full writer probes and 30 consecutive exact-frame sessions pass, including twenty at a strict 200 MB/s sink cap on the normally nearly-full volume. Lossless XOR/Zstd reduces disk demand; finite encoded reserve absorbs moving bursts. E/P scheduling explains the noisy sleeping OFF baseline; explicit matched active pacing stabilizes OFF step CPU to 0.516–0.526 ms. [Evidence](../../evidence/render/t2-capture-m0/reliability/README.md) retains every attempt, stable observer cost, full original hashes, controls and compact views.
-Next: fresh profile Check and locked rebase/Check/push gate integration; independent M0 re-review is owed. Chrome M1 and simulator M2 remain open.
-Blocked: no M0 prerequisite remains. World/presentation alpha clamping and attended Mac M2 panel/window/tooling remain with their existing owners.
+Reviews: [M0 third review](../../evidence/T2-CAPTURE/M0-review.md) passed in dff3eb5e. M1 builder claim awaits lead review.
+Milestone: M1 Chrome WebGPU images and runtime motion without desktop capture (claimed)
+Now: Chrome fixed-time and five consecutive elapsed-time cooked-route sessions pass on hardware WebGPU while locked, with denied launcher preflight. The final series verifies 2,407 original images. Pending-readback loss/recovery, resize, actual stall and bounded saturation/slow-export refusal pass. [Evidence](../../evidence/render/t2-capture-m1/README.md) retains every attempt, native checkpoints, exact timing/provenance and 1× previews. Full Check and affected actual-tab/lifecycle/route consumers pass.
+Next: integrate through the locked rebase/Check/push gate, then lead review of M1. Simulator M2 remains open.
+Blocked: no M1 prerequisite remains. Attended Mac window/panel/tooling owners retain their separate work.
 
 ## Ownership and sequence
 
@@ -55,7 +55,7 @@ capture service rather than copying it. Follow CONTRIBUTING and the architecture
 - Keep source frames/time records plus 1× preview, contact sheet, crops and compact evidence. The independent reviewer
   runs the retained command, validates provenance and reviews the real-time sequence against the inspection list.
 
-## M1 Chrome WebGPU evidence without desktop capture: open
+## M1 Chrome WebGPU evidence without desktop capture: claimed
 
 - Adapt the actual submitted portable output to the same capture semantics; keep DOM/native surfaces excluded in
   the manifest. Exercise the cooked moving route in fixed-time and actual elapsed page/runtime time modes.
@@ -91,6 +91,18 @@ single ownership, final submitted-image correspondence, real-time versus synthet
 nonblocking bounded readback and the attended Mac cadence boundary. No proof item is passed by this plan.
 
 ## Log
+
+- 2026-11-09 Built M1 with the existing renderer-owned tap, normal WebShell submission/lifecycle and V1 route.
+  Fixed-time samples wait explicitly. Elapsed-time samples consume actual page time, initial pause release and
+  ordinary overload policy. Five consecutive final runs verify 2,407 original images on this less-compressible
+  cooked workload, independently of M0's writer margin. A local LaunchServices app records denied preflight and
+  launches normal sandboxed Chrome. Final loss/resize/stall/ring/export controls and existing tab/lifecycle/route
+  consumers pass. The earlier saturation arm drained during timer pacing and is retained as a superseded control.
+  Native frames, the declared cut, normal-speed Chrome playback and exact preview PTS were inspected. Full Check
+  passes under gpu. M0 follow-ups correct live-compression text, preserve disk errors, remove the stale runbook
+  home path and close out 23.52 GB after selected-root verification. Only M1 state/status/evidence changes in the
+  done-when file. M1 claims await locked integration and the lead's independent review. No reviewer launched.
+
 
 - 2026-11-09 Fixed second-review M0.3/.8 with original-frame-hashed temporal XOR/Zstd, separate finite codec/I/O
   ownership and 256 MiB encoded burst reserve. Five native writer probes and thirty consecutive integrated sessions

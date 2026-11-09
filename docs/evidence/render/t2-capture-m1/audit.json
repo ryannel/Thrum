@@ -1,0 +1,138 @@
+{
+  "sessions": [
+    {
+      "session": "fixed-final",
+      "verified_images": 481,
+      "complete": true,
+      "negative_control_pass": false,
+      "encoded_bytes": 600226958
+    },
+    {
+      "session": "final-00",
+      "verified_images": 481,
+      "complete": true,
+      "negative_control_pass": false,
+      "encoded_bytes": 600413137
+    },
+    {
+      "session": "final-01",
+      "verified_images": 481,
+      "complete": true,
+      "negative_control_pass": false,
+      "encoded_bytes": 600422945
+    },
+    {
+      "session": "final-02",
+      "verified_images": 482,
+      "complete": true,
+      "negative_control_pass": false,
+      "encoded_bytes": 601601791
+    },
+    {
+      "session": "final-03",
+      "verified_images": 482,
+      "complete": true,
+      "negative_control_pass": false,
+      "encoded_bytes": 601479457
+    },
+    {
+      "session": "final-04",
+      "verified_images": 481,
+      "complete": true,
+      "negative_control_pass": false,
+      "encoded_bytes": 600559148
+    },
+    {
+      "session": "stall-final",
+      "verified_images": 483,
+      "complete": true,
+      "negative_control_pass": false,
+      "encoded_bytes": 602963862
+    },
+    {
+      "session": "resize-final",
+      "verified_images": 482,
+      "complete": true,
+      "negative_control_pass": false,
+      "encoded_bytes": 601589396
+    },
+    {
+      "session": "saturation-final",
+      "verified_images": 363,
+      "complete": false,
+      "negative_control_pass": true,
+      "encoded_bytes": 439024785
+    },
+    {
+      "session": "slow-final",
+      "verified_images": 94,
+      "complete": false,
+      "negative_control_pass": true,
+      "encoded_bytes": 118087964
+    },
+    {
+      "session": "loss-final",
+      "verified_images": 1,
+      "complete": false,
+      "negative_control_pass": true,
+      "encoded_bytes": 1370577
+    }
+  ],
+  "source_mismatches": [
+    {
+      "path": "scripts/capture_v1_browser.mjs",
+      "reason": "indentation-only cleanup after measurement; exact measured runner retained as capture-runner-measured.mjs"
+    }
+  ],
+  "initial_hold": {
+    "identical_frames": 61,
+    "duration_ms": 1018.0
+  },
+  "final_hold": {
+    "camera_pose_frames": 79,
+    "duration_ms": 1301.3999999999996,
+    "basis": "Authored route final pose is constant from relative tick 340 onward; retained pose reports 521\u2013538 agree, native final frames inspected. Running world/solar lighting can change pixel hashes."
+  },
+  "stall": {
+    "before": {
+      "alpha": 0.0039999401196837425,
+      "device_generation": 1,
+      "history_epoch": 1,
+      "presenter_generation": 1,
+      "session": 1,
+      "source_epoch": "1",
+      "source_tick": 208,
+      "submission_id": 268,
+      "submit_ms": 1488.6,
+      "surface_presented": true,
+      "tick": 208,
+      "timeline": 0,
+      "ordinal": 89,
+      "file": "frames/000089.rgba.gz",
+      "rgba_sha256": "ca889b91d88bbc597545953104a81a6d53d77d4c1b1dc292054822bf0902fb27",
+      "bytes": 1384146
+    },
+    "after": {
+      "alpha": 1,
+      "device_generation": 1,
+      "history_epoch": 1,
+      "presenter_generation": 1,
+      "session": 1,
+      "source_epoch": "1",
+      "source_tick": 208,
+      "submission_id": 269,
+      "submit_ms": 1759.5,
+      "surface_presented": true,
+      "tick": 208,
+      "timeline": 0,
+      "ordinal": 90,
+      "file": "frames/000090.rgba.gz",
+      "rgba_sha256": "c1e90b17cbbbc0d10b85c74635d7b13ef964d9b043b534498b823af75798551f",
+      "bytes": 1384673
+    },
+    "gap_ms": 270.9000000000001
+  },
+  "series_images": 2407,
+  "full_check": "PASS ./dev check under gpu lock, check-full.log.gz",
+  "lifecycle": "PASS actual tabs, resize, device loss, device recovery, all seven deterministic moving-route controls; lifecycle-order.json"
+}

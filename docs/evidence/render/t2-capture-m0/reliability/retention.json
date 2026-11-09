@@ -347,5 +347,7 @@
       "sha256": "3fff6057f6c7189e22a94e2e685df794df94ea809379364f6784d858ad07af35"
     }
   ],
-  "selected_bytes": 13991493
+  "selected_bytes": 13991493,
+  "local_archives_status": "expired after passing third lead review dff3eb5e; deleted at owner-requested closeout",
+  "closeout": "closeout.json"
 }

@@ -1,0 +1,62 @@
+[
+  {
+    "case": "tabs",
+    "command": [
+      "node",
+      "scripts/check_v1_browser.mjs",
+      "--case",
+      "tabs",
+      "--output",
+      "tmp/t2-capture-m1/legacy-tabs"
+    ],
+    "exit_code": 0
+  },
+  {
+    "case": "resize",
+    "command": [
+      "node",
+      "scripts/check_v1_browser.mjs",
+      "--case",
+      "resize",
+      "--output",
+      "tmp/t2-capture-m1/legacy-resize"
+    ],
+    "exit_code": 0
+  },
+  {
+    "case": "device-loss",
+    "command": [
+      "node",
+      "scripts/check_v1_browser.mjs",
+      "--case",
+      "device-loss",
+      "--output",
+      "tmp/t2-capture-m1/legacy-device-loss"
+    ],
+    "exit_code": 0
+  },
+  {
+    "case": "device-recovery",
+    "command": [
+      "node",
+      "scripts/check_v1_browser.mjs",
+      "--case",
+      "device-recovery",
+      "--output",
+      "tmp/t2-capture-m1/legacy-device-recovery"
+    ],
+    "exit_code": 0
+  },
+  {
+    "case": "moving-route-controls",
+    "command": [
+      "node",
+      "scripts/check_v1_browser.mjs",
+      "--case",
+      "moving-route-controls",
+      "--output",
+      "tmp/t2-capture-m1/legacy-moving-route-controls"
+    ],
+    "exit_code": 0
+  }
+]
