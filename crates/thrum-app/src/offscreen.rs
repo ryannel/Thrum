@@ -16,6 +16,7 @@ use thrum_render::{
 use crate::{Game, Gpu};
 
 pub mod clock;
+pub mod thread_policy;
 pub mod writer;
 
 /// A prepared game on the calling render-owner thread, with its ordinary

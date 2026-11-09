@@ -59,5 +59,28 @@ class CaptureTests(unittest.TestCase):
             package(bytes(FRAME_BYTES), CorruptOutput())
 
 
+
+class SpoolTests(unittest.TestCase):
+    def test_independent_decoder_checks_original_hash_truncation_and_extra_data(self):
+        import subprocess
+        from unittest.mock import patch
+        import capture_spool
+        originals = [bytes(range(17)), bytes(reversed(range(17)))]
+        deltas = [originals[0], bytes(a ^ b for a, b in zip(*originals))]
+        expected = [hashlib.sha256(data).hexdigest() for data in originals]
+        with tempfile.TemporaryDirectory() as directory, patch.object(capture_spool, 'FRAME_BYTES', 17):
+            path = Path(directory) / 'source.zst'
+            encoded = subprocess.check_output(['zstd', '-q', '-c'], input=b''.join(deltas))
+            path.write_bytes(encoded)
+            self.assertEqual(list(capture_spool.decoded_frames(path, 'ZstdDelta', expected)), originals)
+            with self.assertRaises(ValueError):
+                list(capture_spool.decoded_frames(path, 'ZstdDelta', ['0' * 64] * 2))
+            path.write_bytes(encoded[:-3])
+            with self.assertRaises(ValueError):
+                list(capture_spool.decoded_frames(path, 'ZstdDelta', expected))
+            path.write_bytes(encoded)
+            with self.assertRaises(ValueError):
+                list(capture_spool.decoded_frames(path, 'ZstdDelta', expected[:1]))
+
 if __name__ == "__main__":
     unittest.main()

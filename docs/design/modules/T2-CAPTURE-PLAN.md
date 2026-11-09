@@ -2,11 +2,11 @@
 
 Design: [T2-CAPTURE.md](T2-CAPTURE.md) · [brief](T2-CAPTURE-BRIEF.md) ·
 Done when: [T2-CAPTURE-DONE.json](T2-CAPTURE-DONE.json).
-Reviews: [design review 3](../../evidence/T2-CAPTURE/design-review-3.md) clears M0 build; [M0 review](../../evidence/T2-CAPTURE/M0-review.md) failed M0.3/.4/.8. Rework is builder-verified and reclaimed for lead re-review; no reviewer launched.
-Milestone: M0 Mac engine images and runtime motion without a desktop capture grant (claimed after rework)
-Now: 9 November M0.3/.4/.8 reworked and target-verified on locked-console M3 Max/Metal. Five full writer probes and five consecutive corrected-build pans complete; engine lead/generations, measured GPU copy bounds, host load and CPU profiles are in the [rework evidence](../../evidence/render/t2-capture-m0/rework/README.md). All nine items are reclaimed; profile Check gates integration.
-Next: independent M0 re-review is owed. Mac qualification M2 consumes M0 after acceptance; Chrome M1 and simulator M2 remain open.
-Blocked: no M0 delivery prerequisite remains. Attended panel/window/tooling qualifications stay with the named Mac M2 owners and do not follow from engine images.
+Reviews: [M0 second review](../../evidence/T2-CAPTURE/M0-review.md) failed M0.3/.8; M0.4 passes. Builder reliability rework is reclaimed for lead review; no reviewer launched.
+Milestone: M0 Mac engine images and runtime motion without a desktop capture grant (claimed after second rework)
+Now: 9 November, five full writer probes and 30 consecutive exact-frame sessions pass, including twenty at a strict 200 MB/s sink cap on the normally nearly-full volume. Lossless XOR/Zstd reduces disk demand; finite encoded reserve absorbs moving bursts. E/P scheduling explains the noisy sleeping OFF baseline; explicit matched active pacing stabilizes OFF step CPU to 0.516–0.526 ms. [Evidence](../../evidence/render/t2-capture-m0/reliability/README.md) retains every attempt, stable observer cost, full original hashes, controls and compact views.
+Next: fresh profile Check and locked rebase/Check/push gate integration; independent M0 re-review is owed. Chrome M1 and simulator M2 remain open.
+Blocked: no M0 prerequisite remains. World/presentation alpha clamping and attended Mac M2 panel/window/tooling remain with their existing owners.
 
 ## Ownership and sequence
 
@@ -91,6 +91,16 @@ single ownership, final submitted-image correspondence, real-time versus synthet
 nonblocking bounded readback and the attended Mac cadence boundary. No proof item is passed by this plan.
 
 ## Log
+
+- 2026-11-09 Fixed second-review M0.3/.8 with original-frame-hashed temporal XOR/Zstd, separate finite codec/I/O
+  ownership and 256 MiB encoded burst reserve. Five native writer probes and thirty consecutive integrated sessions
+  retain every original image; twenty are strictly disk-capped below the review's normal 280 MB/s floor. Actual
+  thread CPU/wall and E/P endpoint IDs diagnose the sleeping baseline; an explicit active-pacing control stabilizes
+  unfiltered OFF medians to ~2% spread, with paired region cost, scene/copy GPU, load/profiles, memory/bytes and
+  full flush reported separately. Raw slow-sink saturation refuses while ticks/rendering continue. Original engine
+  provenance/lead and renderer ownership are unchanged. All exact sources verified; compact selected views replace
+  80.71 MB historical duplicates with a Git restoration audit. Only permitted done-when fields changed; both failure
+  counters and reviewer verdicts remain. Fresh Check/integration gates the claim; lead re-review owed, no reviewer.
 
 - 2026-11-09 Reclaimed M0 after [first milestone review](../../evidence/T2-CAPTURE/M0-review.md).
   Expanded the finite CPU burst reserve to 96 (six staging, 1 GiB pixel cap); five consecutive full writer probes

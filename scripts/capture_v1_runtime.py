@@ -2,7 +2,7 @@
 """Spool and validate an elapsed-host-time V1 Metal capture (no desktop API).
 
 Run under the repository's gpu lock. The game must be built first. Each session
-has a 16 GiB allowance; output must be new. Compression starts after process exit.
+has a 16 GiB allowance; output must be new. Live lossless encoding runs on the writer; PNG/movie packaging is deferred.
 """
 import argparse
 import fcntl
@@ -18,6 +18,7 @@ import uuid
 
 from t2_writer_probe import ALLOWANCE, FRAME_BYTES, package
 from t2_load import LoadRecord
+from capture_spool import decoded_frames
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -40,35 +41,76 @@ def read_exact(stream, length):
     return result
 
 
-def archive_sources(output, records):
-    """Bounded streaming lossless RGB archive, with every decoded RGBA hash checked.
+def finalize(output, manifest, runtime, verify_only=False):
+    if runtime["scenario"] == "off":
+        validate_runtime(runtime, 0)
+        manifest.update(complete=True, packaging_pending=False, records=[])
+        return
+    encoding = runtime['spool_encoding']
+    report = runtime['writer_result']['Ok']
+    source = output / manifest['spool_file']
+    if source.stat().st_size != report['encoded_bytes']:
+        raise ValueError('encoded byte count differs from writer')
+    records = validate_runtime(runtime, report['bytes'])
+    if len(records) != len(report['frame_sha256']):
+        raise ValueError('missing original frame hashes')
+    frame_dir = output / 'png'
+    if not verify_only:
+        frame_dir.mkdir(exist_ok=True)
+    begin = time.monotonic_ns()
+    by_id = {row['submission_id']: row for row in runtime['images']}
+    for record, raw in zip(records, decoded_frames(source, encoding, report['frame_sha256']), strict=True):
+        identity = record['submission_id']
+        record['rgba_sha256'] = hashlib.sha256(raw).hexdigest()
+        if not verify_only:
+            assert package(raw, frame_dir / f'{identity:06}.png') == record['rgba_sha256']
+        record['submit_ns'] = by_id[identity]['submit_ns']
+        if manifest['timebase'] == 'fixed':
+            record['sample_ns'] = next(row['scenario_ns'] for row in runtime['opportunities'] if row['submission_id'] == identity)
+    manifest['deferred_packaging_ns'] = time.monotonic_ns() - begin
+    manifest['records'] = records
+    manifest['lossless_source_archive'] = {'file': source.name, 'sha256': digest(source), 'bytes': source.stat().st_size,
+        'encoding': encoding, 'decoded_frames_verified': len(records), 'timebase': 'ordinal; use submission records',
+        'equality': 'independent zstd CLI + XOR reconstruction equals each original pre-encoding writer SHA-256'}
+    if records and not verify_only:
+        preview(output, manifest, runtime, records)
+    manifest['deferred_packaging_total_ns'] = time.monotonic_ns() - begin
+    manifest.update(complete=True, packaging_pending=False)
 
-    Archive timestamps are indices only. runtime.json/manifest records own host
-    times; preview-1x.mp4 is the separate elapsed-time viewing representation.
-    """
-    target = output / "source-lossless.mkv"
-    subprocess.run(["ffmpeg", "-v", "error", "-f", "rawvideo", "-pixel_format", "rgba",
-                    "-video_size", "1920x1080", "-framerate", "120", "-i", str(output / "frames.rgba"),
-                    "-c:v", "libx264rgb", "-crf", "0", "-preset", "ultrafast", "-threads", "2",
-                    str(target)], check=True, timeout=120)
-    process = subprocess.Popen(["ffmpeg", "-v", "error", "-i", str(target), "-f", "rawvideo",
-                                "-pix_fmt", "rgba", "pipe:1"], stdout=subprocess.PIPE)
-    try:
-        for record in records:
-            rgba = read_exact(process.stdout, FRAME_BYTES)
-            if hashlib.sha256(rgba).hexdigest() != record["rgba_sha256"]:
-                raise ValueError("lossless source archive decoded hash mismatch (including alpha)")
-        if process.stdout.read(1):
-            raise ValueError("extra source archive frames")
-        if process.wait(timeout=15):
-            raise ValueError("source archive decoder failed")
-    finally:
-        if process.poll() is None:
-            process.kill()
-            process.wait()
-    return {"file": target.name, "sha256": digest(target), "bytes": target.stat().st_size,
-            "decoded_frames_verified": len(records), "timebase": "ordinal only; use retained submit_ns records"}
 
+def preview(output, manifest, runtime, records):
+    mode = manifest['timebase']
+    pts_key = "sample_ns" if mode == "fixed" else "submit_ns"
+    ordered = sorted(records, key=lambda row: row[pts_key])
+    if ordered:
+        lines = ["ffconcat version 1.0"]
+        for index, record in enumerate(ordered):
+            end = ordered[index + 1][pts_key] if index + 1 < len(ordered) else max(
+                runtime["interval_end_ns"] if mode == "realtime" else 4_000_000_000,
+                record[pts_key] + 8_333_333)
+            # Quantize absolute endpoints before differencing. Flooring
+            # each duration independently accumulates ~0.5 us/frame drift.
+            duration_us = max(1, round(end / 1000) - round(record[pts_key] / 1000))
+            lines += [f"file 'png/{record['submission_id']:06}.png'", "option framerate 1000000",
+                      f"duration {duration_us / 1e6:.6f}"]
+        lines += [f"file 'png/{ordered[-1]['submission_id']:06}.png'", "option framerate 1000000"]
+        (output / "timeline.ffconcat").write_text("\n".join(lines) + "\n")
+        subprocess.run(["ffmpeg", "-v", "error", "-f", "concat", "-safe", "0", "-i",
+                        str(output / "timeline.ffconcat"), "-fps_mode", "vfr", "-c:v", "libx264",
+                        "-crf", "16", "-pix_fmt", "yuv420p", str(output / "preview-1x.mp4")], check=True)
+        subprocess.run(["ffmpeg", "-v", "error", "-i", str(output / "preview-1x.mp4"),
+                        "-vf", "fps=4,scale=480:270,tile=4x4", "-frames:v", "1",
+                        str(output / "contact.png")], check=True)
+        pts = json.loads(subprocess.check_output(["ffprobe", "-v", "error", "-select_streams", "v:0",
+            "-show_entries", "frame=best_effort_timestamp_time", "-of", "json", str(output / "preview-1x.mp4")]))["frames"]
+        if len(pts) != len(ordered) + 1:
+            raise ValueError("preview changed source-frame coverage")
+        errors = [abs(float(frame["best_effort_timestamp_time"]) - record[pts_key] / 1e9)
+                  for frame, record in zip(pts, ordered)]
+        if max(errors) > 0.00001:
+            raise ValueError("preview compressed or quantized the declared sample times")
+        manifest["preview_pts_max_error_seconds"] = max(errors)
+        manifest["preview_terminal_duplicate"] = True
 
 def validate_runtime(runtime, spool_bytes):
     """Refuse incomplete intervals and non-bijective submission/image joins."""
@@ -101,6 +143,17 @@ def validate_runtime(runtime, spool_bytes):
 
 def run(args):
     output = args.output.resolve()
+    if args.finalize:
+        manifest = json.loads((output / 'manifest.json').read_text())
+        runtime = json.loads((output / 'runtime.json').read_text())
+        try:
+            finalize(output, manifest, runtime, args.verify_only)
+        except Exception as error:
+            manifest.update(complete=False, failure=str(error))
+        save_manifest(output, manifest)
+        if not manifest['complete']:
+            raise SystemExit(manifest.get('failure', 'incomplete'))
+        return
     if output.exists():
         raise ValueError("output must be a new directory")
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -122,7 +175,7 @@ def run(args):
         "build_source_files": source_files,
         "build_source_digest": hashlib.sha256(json.dumps(source_files, sort_keys=True).encode()).hexdigest(),
         "script_sha256": digest(Path(__file__)),
-        "helper_sha256": {name: digest(ROOT / "scripts" / name) for name in ("t2_load.py", "t2_writer_probe.py")},
+        "helper_sha256": {name: digest(ROOT / "scripts" / name) for name in ("t2_load.py", "t2_writer_probe.py", "capture_spool.py")},
         "shader_hashes": {str(p.relative_to(ROOT)): digest(p) for p in sorted((ROOT / "crates").rglob("*.wgsl"))},
         "cooked_hashes": {str(p.relative_to(store)): digest(p) for p in sorted(store.rglob("*")) if p.is_file()} if store else {},
         "scenario": args.case,
@@ -133,11 +186,19 @@ def run(args):
         "cpu_pool_bytes": 96 * FRAME_BYTES,
         "gpu_staging_bytes": 6 * FRAME_BYTES,
         "pixel_byte_allowance": 1024 * 1024 * 1024,
+        "encoded_queue_bound_bytes": 64 * 4 * 1024 * 1024,
+        "codec_frame_scratch_bytes": 2 * FRAME_BYTES,
+        "codec_workers": 2,
+        "codec_window_bytes_per_worker": 4 * 1024 * 1024,
+        "memory_scope": "pixel leases plus finite encoded buffers and codec scratch; allocator/driver/codec overhead measured separately by process RSS",
         "extent": [1920, 1080], "channel_order": "RGBA", "row_stride": 1920 * 4,
         "encoding": "SDR sRGB encoded bytes in Rgba8Unorm", "stage": "final engine output before identity present",
         "excluded": ["native controls", "OS composition", "physical output"],
         "gpu_timestamps_required": False, "display_swap_times": None,
         "complete": False,
+        "spool_file": "frames.zst" if os.environ.get("THRUM_CAPTURE_ENCODING") != "raw" else "frames.rgba",
+        "disk_free_before_bytes": shutil.disk_usage(output).free,
+        "decoder_version": subprocess.check_output(["zstd", "--version"], text=True).strip(),
     }
     probe = subprocess.check_output(["/usr/sbin/ioreg", "-n", "Root", "-d1"], text=True)
     manifest["console_locked"] = '"IOConsoleLocked" = Yes' in probe
@@ -158,7 +219,7 @@ def run(args):
     load = LoadRecord(output)
     begin = time.monotonic_ns()
     try:
-        with (output / "stderr.txt").open("wb") as errors, (output / "frames.rgba").open("wb", buffering=0) as spool:
+        with (output / "stderr.txt").open("wb") as errors, (output / manifest["spool_file"]).open("wb", buffering=0) as spool:
             fcntl.fcntl(spool.fileno(), 48, 1)  # Darwin F_NOCACHE: measured writer recipe.
             # Inherit the uncached file description directly. A pipe added
             # another ~1 GB/s transfer with frequent kernel-buffer waits.
@@ -201,56 +262,13 @@ def run(args):
         manifest["resolved_recipe_digest"] = hashlib.sha256(json.dumps({
             "recipe": runtime["recipe"], "enabled_features": runtime["enabled_features"],
             "shader_hashes": manifest["shader_hashes"]}, sort_keys=True).encode()).hexdigest()
-        records = validate_runtime(runtime, (output / "frames.rgba").stat().st_size)
-        frame_dir = output / "png"
-        frame_dir.mkdir()
-        packaging = time.monotonic_ns()
-        by_id = {row["submission_id"]: row for row in runtime["images"]}
-        with (output / "frames.rgba").open("rb") as spool:
-            for record in records:
-                identity = record["submission_id"]
-                record["rgba_sha256"] = package(spool.read(FRAME_BYTES), frame_dir / f"{identity:06}.png")
-                record["submit_ns"] = by_id[identity]["submit_ns"]
-                if args.mode == "fixed":
-                    record["sample_ns"] = next(row["scenario_ns"] for row in runtime["opportunities"]
-                                               if row["submission_id"] == identity)
-        manifest["deferred_packaging_ns"] = time.monotonic_ns() - packaging
-        if records:
-            manifest["lossless_source_archive"] = archive_sources(output, records)
-        pts_key = "sample_ns" if args.mode == "fixed" else "submit_ns"
-        ordered = sorted(records, key=lambda row: row[pts_key])
-        if ordered:
-            lines = ["ffconcat version 1.0"]
-            for index, record in enumerate(ordered):
-                end = ordered[index + 1][pts_key] if index + 1 < len(ordered) else max(
-                    runtime["interval_end_ns"] if args.mode == "realtime" else 4_000_000_000,
-                    record[pts_key] + 8_333_333)
-                # Quantize absolute endpoints before differencing. Flooring
-                # each duration independently accumulates ~0.5 us/frame drift.
-                duration_us = max(1, round(end / 1000) - round(record[pts_key] / 1000))
-                lines += [f"file 'png/{record['submission_id']:06}.png'", "option framerate 1000000",
-                          f"duration {duration_us / 1e6:.6f}"]
-            lines += [f"file 'png/{ordered[-1]['submission_id']:06}.png'", "option framerate 1000000"]
-            (output / "timeline.ffconcat").write_text("\n".join(lines) + "\n")
-            subprocess.run(["ffmpeg", "-v", "error", "-f", "concat", "-safe", "0", "-i",
-                            str(output / "timeline.ffconcat"), "-fps_mode", "vfr", "-c:v", "libx264",
-                            "-crf", "16", "-pix_fmt", "yuv420p", str(output / "preview-1x.mp4")], check=True)
-            subprocess.run(["ffmpeg", "-v", "error", "-i", str(output / "preview-1x.mp4"),
-                            "-vf", "fps=4,scale=480:270,tile=4x4", "-frames:v", "1",
-                            str(output / "contact.png")], check=True)
-            pts = json.loads(subprocess.check_output(["ffprobe", "-v", "error", "-select_streams", "v:0",
-                "-show_entries", "frame=best_effort_timestamp_time", "-of", "json", str(output / "preview-1x.mp4")]))["frames"]
-            if len(pts) != len(ordered) + 1:
-                raise ValueError("preview changed source-frame coverage")
-            errors = [abs(float(frame["best_effort_timestamp_time"]) - record[pts_key] / 1e9)
-                      for frame, record in zip(pts, ordered)]
-            if max(errors) > 0.00001:
-                raise ValueError("preview compressed or quantized the declared sample times")
-            manifest["preview_pts_max_error_seconds"] = max(errors)
-            manifest["preview_terminal_duplicate"] = True
-        manifest["records"] = records
-        manifest["deferred_packaging_total_ns"] = time.monotonic_ns() - packaging
-        manifest["complete"] = True
+        report = runtime['writer_result'].get('Ok', {})
+        validate_runtime(runtime, report.get('bytes', 0))
+        if (output / manifest['spool_file']).stat().st_size != report['encoded_bytes']:
+            raise ValueError('encoded byte count differs from writer')
+        manifest.update(capture_complete=True, packaging_pending=True)
+        if not args.defer:
+            finalize(output, manifest, runtime, args.verify_only)
     except Exception as error:
         manifest["failure"] = str(error)
         if process is not None and process.poll() is None:
@@ -262,15 +280,19 @@ def run(args):
         if sampler is not None and sampler.poll() is None:
             sampler.terminate()
             sampler.wait(timeout=5)
-        manifest["retained_bytes"] = sum(p.stat().st_size for p in output.rglob("*") if p.is_file())
-        if manifest["retained_bytes"] > ALLOWANCE:
-            manifest.update(complete=False, failure="session output allowance exceeded")
-        temporary = output / "manifest.partial.json"
-        temporary.write_text(json.dumps(manifest, indent=2) + "\n")
-        temporary.replace(output / "manifest.json")
+        save_manifest(output, manifest)
     print(json.dumps({key: manifest[key] for key in ("complete", "console_locked", "retained_bytes")}))
-    if not manifest["complete"]:
+    if not manifest["complete"] and not (args.defer and manifest.get("capture_complete")):
         raise SystemExit(manifest.get("failure", "incomplete"))
+
+
+def save_manifest(output, manifest):
+    manifest['retained_bytes'] = sum(p.stat().st_size for p in output.rglob('*') if p.is_file())
+    if manifest['retained_bytes'] > ALLOWANCE:
+        manifest.update(complete=False, capture_complete=False, failure='session output allowance exceeded')
+    temporary = output / 'manifest.partial.json'
+    temporary.write_text(json.dumps(manifest, indent=2) + '\n')
+    temporary.replace(output / 'manifest.json')
 
 
 if __name__ == "__main__":
@@ -279,6 +301,9 @@ if __name__ == "__main__":
     parser.add_argument("--binary", type=Path, default=Path("target/debug/v1-game"))
     parser.add_argument("--store", type=Path)
     parser.add_argument("--case", choices=["pan", "running", "render-stall", "input-stall", "off", "writer-slow"], default="pan")
+    parser.add_argument("--defer", action="store_true", help="record pending evidence; finalize after consecutive sessions")
+    parser.add_argument("--finalize", action="store_true", help="decode/hash and finalize a previously recorded session")
+    parser.add_argument("--verify-only", action="store_true", help="verify every original RGBA hash without PNG/movie duplicates")
     parser.add_argument("--profile", action="store_true", help="separate CPU sample arm; includes preparation/warmup")
     parser.add_argument("--mode", choices=["realtime", "fixed", "still"], default="realtime")
     run(parser.parse_args())

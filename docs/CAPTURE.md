@@ -2,7 +2,7 @@
 
 `scripts/capture_v1_runtime.py` records the ordinary V1 game through the renderer's submitted-output tap.
 It requires a real Metal adapter, Python 3, Swift/CoreGraphics for a read-only permission preflight and
-FFmpeg/FFprobe. It never requests Screen Recording permission or changes console lock. Unavailable hardware
+FFmpeg/FFprobe and the `zstd` CLI (independent source verification). It never requests Screen Recording permission or changes console lock. Unavailable hardware
 and incomplete intervals fail explicitly.
 
 Build and cook in this worktree:
@@ -47,7 +47,7 @@ Additional cases use the same binary:
 - `--case running`, without `--store`: moving diagnostic grid, with a running 60 Hz world between holds.
 - `--case render-stall`: diagnostic 250 ms render-owner delay before the ordinary step.
 - `--case input-stall`: diagnostic 250 ms dispatch delay before semantic handling; renders continue with held controls. Intermediate edits are coalesced to the newest value; requested/start coincide at diagnostic activation.
-- `--case writer-slow`: running-world saturation, delaying writer calls 50 ms; expected incomplete/failure.
+- `--case writer-slow`: running-world slow output, delaying 4 MiB writer calls 500 ms. Use `THRUM_CAPTURE_ENCODING=raw` for the saturation/refusal control; the compressed diagnostic grid can fit the finite encoded reserve and finish successfully.
 - `--case off`: matched pan with capture disabled; no tap buffers or writer queue.
 
 Ordinary pan/running/off schedules contain no diagnostic actions.
@@ -69,12 +69,20 @@ capability record and shaders. Native controls and OS composition are excluded.
 The graph copies the actual final SDR engine texture in the ordinary submission, retaining temporal history.
 There is no endpoint redraw, extra scene render, second queue or drawable acquisition/lease extension. Six GPU
 slots and 96 reusable CPU buffers use 846,028,800 pixel bytes within a 1 GiB allowance. This is a bounded
-0.8-second CPU burst reserve at 120 records/s, not the four-second session in RAM. The initial three/eight and
-six/32 profiles overflowed in independent review; the revised profile is qualified by five consecutive full writer
-probes followed by five complete integrated pans. Every attempt is retained in the rework evidence. An uncached inherited file
-description receives sequential raw RGBA on a dedicated writer. Nonblocking admission and generation checks
-keep slow/failed capture from stopping the app. Exhaustion, stale sessions, output-byte refusal, write/flush
-errors and finalization deadlines produce incomplete results.
+0.8-second CPU burst reserve at 120 records/s, not the four-second session in RAM. Earlier raw-spool
+profiles overflowed on this normally 94–97%-full volume. The current writer hashes each original RGBA record,
+XORs it with its predecessor, then uses Zstd level 1 with two workers and a 4 MiB window. It preserves every
+channel exactly. The ARM SHA-256 path is enabled; the software-only hash was too slow in the feasibility probe.
+Compression and disk I/O have separate workers. A finite 64 × 4 MiB encoded-buffer pool absorbs the moving
+portion's byte burst; two full-frame codec scratch buffers and codec allocations are additional to pixel leases.
+The encoded reserve is sized from the observed ~580 MB / two-second pan burst at a 200 MB/s disk cap, rather
+than from the four-second raw session. The inherited file is `F_NOCACHE`; final `fsync` and `F_FULLFSYNC` are
+charged after capture. This is not a guarantee on arbitrary scenes or slower disks: run the same series on a new
+workload/device. Record all attempts, including refusals; never silently retry a failed continuous proof.
+Nonblocking pixel admission and generation checks keep slow/failed capture from stopping the app. Exhaustion,
+stale sessions, output-byte refusal, write/flush errors and finalization deadlines produce incomplete results.
+Sessions are limited to 1024 full-size records. Raw encoding remains an explicit diagnostic control via
+`THRUM_CAPTURE_ENCODING=raw`; it is not the reliable default on this disk.
 
 Each arm records host load averages, a background-process snapshot and one-second `iostat -d -C -U` CPU/disk
 samples (first data row averages since boot; default devices include spool disk0). The engine image record's
@@ -89,13 +97,32 @@ Use `--profile` for separate matched CPU-sampled arms. `/usr/bin/sample` begins 
 marker (observed within 10 ms), samples at 1 ms through process exit, and writes `cpu-sample.txt`; sampling arms
 are not used as unprofiled cost baselines.
 
-Packaging follows capture/drain and storage `fsync` plus Darwin `F_FULLFSYNC`. Every decoded PNG hash must
-match its raw frame. `source-lossless.mkv` is an archival frame sequence; every decoded RGBA hash, including
-alpha, is verified. Its timestamps are ordinal only: retained submission records own host time.
-`timeline.ffconcat` and `preview-1x.mp4` preserve host submission times (synthetic times in fixed mode), holding
-the previous image across gaps. One labelled terminal duplicate is not a submission. FFprobe verifies frame
-coverage and PTS error. `contact.png` is navigation; inspect native frames/crops and the source sequence.
-There is no pixel interpolation, frame synthesis or time compression.
+Capture defaults to sleep-paced elapsed-time opportunities and requested user-interactive thread QoS.
+QoS is recorded before/after; it is not CPU affinity. Each opportunity records active thread CPU time, wall time
+and its start/end CPU numbers. The lighter sleeping OFF loop can migrate to efficiency cores and run at a
+different CPU power state from ON. Do not subtract those noisy callback medians to claim a speedup or observer
+cost. `THRUM_CAPTURE_PACING=active` is an explicit **diagnostic cost control**: both OFF and ON actively wait for
+the same 120 Hz deadlines, keeping the render owner runnable. It burns CPU in pacing, outside the step/loop
+regions; whole-child CPU includes that cost, preparation and warmup. Compare matched active arms for controlled
+step/loop overhead, and retain ordinary sleep-paced runs separately. This is not a native/display performance
+promotion. `THRUM_CAPTURE_QOS=inherited` retains the inherited class for diagnosis.
+
+Packaging follows capture/drain and durable storage flush. `frames.zst` is itself the lossless source archive:
+the independent `zstd` CLI decodes temporal differences, then Python reconstructs full RGBA and checks every
+original **pre-encoding** writer SHA-256. Its record order is ordinal; manifest submission records own host time.
+`--defer` records a pending, **not complete** manifest so consecutive sessions do not run heavy packaging between
+captures. Afterwards run:
+
+```sh
+python3 scripts/capture_v1_runtime.py --output tmp/t2-capture-m0/pan --finalize --verify-only
+```
+
+This verifies every full source frame without duplicating PNGs/movie. Omit `--verify-only` to create all PNGs,
+`timeline.ffconcat`, `preview-1x.mp4` and `contact.png`. PNG round trips must match the same original hashes.
+The preview preserves host submission times (synthetic times in fixed mode), holding the previous image across
+gaps. One labelled terminal duplicate is not a submission. FFprobe verifies frame coverage and PTS error.
+`contact.png` is navigation; inspect native frames/crops and the source sequence. There is no pixel interpolation,
+frame synthesis or time compression.
 
 Legacy `THRUM_CAPTURE_MOTION_FRAMES` and `THRUM_CAPTURE_ROUTE` collect the same renderer tap. Their existing
 fixed-time clocks, BGRA stream/checkpoint format and endpoint oracles remain unchanged. They are not live-motion proof.
@@ -103,15 +130,15 @@ fixed-time clocks, BGRA stream/checkpoint format and endpoint oracles remain unc
 ## Retention and handoff
 
 Create a task storage record before bulk work. A four-second session needs 16 GiB free and has a 16 GiB output
-allowance including raw/PNG/archive coexistence. Run sessions serially. Verify the archive, timing records and
-selected promoted evidence before deleting owned reconstructible raw/PNG files. Retain complete local sources
+allowance including compressed source/PNG/preview coexistence. Run sessions serially. Verify the archive, timing records and
+selected promoted evidence before deleting owned reconstructible expanded PNG files. Retain complete local sources
 through review with an explicit expiry decision. Promote compact selected excerpts, hashes, timings and previews
-to Git. The [M0 rework evidence](evidence/render/t2-capture-m0/rework/README.md) records the complete repeated series and observer arms. Local bulk archives are not durable backups; no remote/LFS store is configured or implied.
+to Git. The [current M0 evidence](evidence/render/t2-capture-m0/reliability/README.md) records the repeated series, all attempts and controlled observer arms. Local bulk archives are not durable backups; no remote/LFS store is configured or implied.
 
-Archive record ordinal `k` maps to its `submission_id`, RGBA hash and `submit_ns` in `manifest.json`. Extract a
-native frame with `ffmpeg -i source-lossless.mkv -vf 'select=eq(n\,0)' -frames:v 1 -pix_fmt rgba restored.png`
-(replace zero with `k`). Its decoded RGBA must match the record's hash. To rebuild deleted PNGs, decode in record
-order and name each file by its submission ID before using the retained `timeline.ffconcat`.
+Archive record ordinal `k` maps to its `submission_id`, RGBA hash and `submit_ns` in `manifest.json`.
+`scripts/capture_spool.py:decoded_frames` streams verified originals from `frames.zst` using the writer's hashes
+in `runtime.json`. To rebuild PNGs/timeline/preview, run `--finalize` without `--verify-only` in the retained session.
+Historical `source-lossless.mkv` archives use the old FFmpeg extraction recipe; they are not the new live format.
 
 Mac M2.3 owns real-window tap/lease qualification; M2.4 owns bounded trace-finalization diagnosis. M2.2 owns
 attended built-in-panel swaps with capture OFF and separate ON observer/content arms. Engine timestamps,
