@@ -17,6 +17,19 @@ import time
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def wait_for_console_lock(observe, timeout=120):
+    """Allow bounded manual setup, requiring a real locked observation before continuing."""
+    if observe():
+        return
+    print(f'Mac console is unlocked. Waiting up to {timeout:g} seconds for manual locking.', flush=True)
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        time.sleep(.5)
+        if observe():
+            return
+    raise RuntimeError('locked-console proof required. Please lock the Mac manually and rerun the check')
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', required=True, type=Path)
@@ -38,12 +51,19 @@ def main():
         return result.stdout.strip()
 
     def console(label):
-        raw = run(['ioreg', '-n', 'Root', '-d1', '-l'])
-        (out / f'console-{label}.txt').write_text(raw)
-        locked = '"IOConsoleLocked" = Yes' in raw
-        report[f'console_locked_{label}'] = locked
-        if not locked and not args.rotation:
-            raise RuntimeError('locked-console proof required')
+        def observe():
+            raw = run(['ioreg', '-n', 'Root', '-d1', '-l'])
+            (out / f'console-{label}.txt').write_text(raw)
+            locked = '"IOConsoleLocked" = Yes' in raw
+            report[f'console_locked_{label}'] = locked
+            report.setdefault('console_observations', []).append(
+                {'phase': label, 'monotonic': time.monotonic(), 'locked': locked})
+            return locked
+
+        if args.rotation:
+            observe()
+        else:
+            wait_for_console_lock(observe, timeout=120 if label == 'before' else 0)
 
     try:
         if shutil.disk_usage(out).free < 2 * 1024**3:
