@@ -41,12 +41,12 @@ continue unblocked work. Verified checkpoints are pushed to main (owner, 6 Nov p
 
 ## Active work and gates
 
-**Next build: [T2 unattended capture M0](design/modules/T2-CAPTURE-PLAN.md), after independent design review.**
-It supplies exact submitted images and elapsed-time motion without a desktop capture grant; locked-console execution
-must be proved. G3b Mac M2 qualifies the current surface path after T2 M0 only. New Mac M3 needs G3t M3 for
+**[T2 unattended capture M0](design/modules/T2-CAPTURE-PLAN.md) is claimed for lead review.**
+The builder proved exact submitted images and elapsed-time motion on locked-console Metal without a desktop grant;
+[full evidence](evidence/render/t2-capture-m0/README.md) includes bounded failure controls and observer cost. G3b Mac M2 qualifies the current surface path after T2 M0 only. New Mac M3 needs G3t M3 for
 fresh post-change motion/cadence; that later obligation is blocked on parked APPLE-TILE. M2's built-in-panel cadence stays open with
 **attended setup** (unlocked active panel and any Instruments authorization). Screen Recording is no longer required
-for engine pixels. The two findings from T2 design review 2 are revised; independent re-review is owed. The Mac M2 builder
+for engine pixels. T2 design review 3 clears M0 to build; independent review of the implemented M0 claim is owed. The Mac M2 builder
 owns real-window tap qualification (M2.3) and bounded trace-finalization diagnosis (M2.4); M2.2 cadence uses capture
 OFF, with capture-ON content/observer arms separate. APPLE-TILE is parked after two failed design reviews and
 cannot restart on T2 completion. The lead must

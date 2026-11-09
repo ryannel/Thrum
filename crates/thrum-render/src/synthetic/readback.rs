@@ -14,6 +14,11 @@ pub struct PixelReadback {
     pub(super) pending: Option<Receiver<Result<(), wgpu::BufferAsyncError>>>,
 }
 impl PixelReadback {
+    pub(crate) fn cancel_unsubmitted(&mut self) {
+        // The caller has dropped the unsubmitted encoder. Its deferred map
+        // action never ran, so there is no GPU mapping to unmap or wait for.
+        self.pending = None;
+    }
     pub(super) fn check_target(&self, target: &OffscreenTarget) -> Result<(), RenderError> {
         if self.pending.is_some() {
             return Err(RenderError::Readback);
@@ -64,14 +69,24 @@ impl PixelReadback {
     /// # Errors
     /// Refuses stale generations, failed mapping or a disconnected completion callback.
     pub fn try_collect(&mut self, generation: u64) -> Result<Option<Vec<u8>>, RenderError> {
+        let mut pixels = Vec::new();
+        self.try_collect_into(generation, &mut pixels)
+            .map(|ready| ready.then_some(pixels))
+    }
+
+    pub(crate) fn try_collect_into(
+        &mut self,
+        generation: u64,
+        pixels: &mut Vec<u8>,
+    ) -> Result<bool, RenderError> {
         if self.generation != generation {
             return Err(RenderError::StaleTarget);
         }
         let Some(pending) = &self.pending else {
-            return Ok(None);
+            return Ok(false);
         };
         match pending.try_recv() {
-            Err(TryRecvError::Empty) => return Ok(None),
+            Err(TryRecvError::Empty) => return Ok(false),
             Err(TryRecvError::Disconnected) | Ok(Err(_)) => {
                 self.pending = None;
                 return Err(RenderError::Readback);
@@ -84,12 +99,16 @@ impl PixelReadback {
             .slice(..)
             .get_mapped_range()
             .map_err(|_| RenderError::Readback)?;
-        let mut pixels = Vec::with_capacity(self.extent[0] as usize * self.extent[1] as usize * 4);
+        pixels.clear();
+        pixels.reserve(self.extent[0] as usize * self.extent[1] as usize * 4);
         for row in mapped.chunks_exact(self.row_bytes as usize) {
             pixels.extend_from_slice(&row[..self.extent[0] as usize * 4]);
         }
         drop(mapped);
         self.buffer.unmap();
-        Ok(Some(pixels))
+        Ok(true)
     }
 }
+
+#[cfg(test)]
+mod tests;

@@ -1,0 +1,21 @@
+{
+  "storage_flush_ns": 16387208,
+  "duration_ns": 3992329333,
+  "drain_including_flush_ns": 25016459,
+  "writer_alive_after_deadline": false,
+  "queue_peak": 2,
+  "cpu_buffers_peak": 3,
+  "missing_ids": [],
+  "errors": [],
+  "cpu_pool_bytes": 66355200,
+  "integrated_gpu_staging_start_bytes": 24883200,
+  "output_allowance_bytes": 17179869184,
+  "actual_spool_bytes": 3981312000,
+  "source_revision": "3bec77b5f8908289b43ea47ee7d0c2f2a5e01a70",
+  "probe_script_sha256": "00c40e69e2cbf719eef2b52060493d1b15401b803a8ce32da659d923e2e1fb60",
+  "scope": "writer feasibility only; no GPU frames or motion proof",
+  "uncached": true,
+  "deferred_packaging_validation_ns": 9128248084,
+  "complete": true,
+  "retained_bytes": 4025876862
+}

@@ -627,6 +627,30 @@ impl FrameHost {
             .poll_completed()
             .map_err(|error| error.to_string())
     }
+    /// Enable the renderer-owned tap for ordinary submitted sequence frames.
+    /// # Errors
+    /// Refuses an already active capture session.
+    pub fn enable_submitted_capture(&mut self, session: u64) -> Result<(), String> {
+        self.inner
+            .enable_submitted_capture(session)
+            .map_err(|error| error.to_string())
+    }
+    /// Collect an ordinary submitted frame without redrawing an endpoint.
+    /// # Errors
+    /// Returns mapping or retired-generation failure.
+    pub fn try_submitted_image(&mut self) -> Result<Option<runtime::SubmittedImage>, String> {
+        self.inner
+            .try_submitted_image()
+            .map_err(|error| error.to_string())
+    }
+    /// Return the sequence writer's CPU image lease.
+    pub fn recycle_submitted_image(&mut self, image: runtime::SubmittedImage) {
+        self.inner.recycle_submitted_image(image);
+    }
+    /// End the sequence observer without waiting for GPU work.
+    pub fn disable_submitted_capture(&mut self) {
+        self.inner.disable_submitted_capture();
+    }
     /// Capture the latest committed endpoint for untimed visual inspection.
     /// # Errors
     /// Returns an engine recording, completion or readback failure.

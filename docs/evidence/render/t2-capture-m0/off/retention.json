@@ -1,0 +1,13 @@
+{
+  "complete": true,
+  "local_source_directory": "tmp/t2-capture-m0/off-proof",
+  "local_bulk_is_backup": false,
+  "expiry": "retain through lead review; close out only after verdict and selected-root verification",
+  "selected_files": {
+    "runtime.json": "8ae9158763121e5d5c2744395ac4bf41be526fedf9dddd29180790e288928107",
+    "manifest.json": "252e6f871ef39e2dddaf4ff1f4390371e0706443aba875f436e1175ef781c9d8"
+  },
+  "source_archive": null,
+  "bulk_cleanup": "raw spool and PNG duplicates; archival source/times retained",
+  "metadata_encoding": "Selected manifest/runtime JSON compacted without changing parsed values; original formatted JSON remains in the retained local source directory."
+}

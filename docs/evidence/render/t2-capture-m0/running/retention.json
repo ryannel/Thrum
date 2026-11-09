@@ -1,0 +1,28 @@
+{
+  "complete": true,
+  "local_source_directory": "tmp/t2-capture-m0/running-proof",
+  "local_bulk_is_backup": false,
+  "expiry": "retain through lead review; close out only after verdict and selected-root verification",
+  "selected_files": {
+    "final.png": "52043a709f76ae7fb42cb3e4df19062b3aa8bcf38be18705c7827dcebf303e91",
+    "runtime.json": "d15e97e227c1eaf9e82cb7c0ed26f1d8ab2f39ffb68bb2b47f121b57f860eec4",
+    "timeline.ffconcat": "54b6c665836f4bb8572c1f4e24f45e94c194b65b626182afb41733cd94f219d4",
+    "preview-1x.mp4": "5fe80a62a4189e70679054e5817a358036e856f0fcfbe5785540d71aa4d90d16",
+    "crop-2.1.png": "9ff7cab45994b48929259dec9c338561a5198b3a9e672527147eb8fc814ce91f",
+    "initial.png": "43bbbffa18f6ba444a0fa033f765aa8344ddbc249ff21306c163e0b826ac4337",
+    "crop-2.3.png": "af34b142c7bad10a46e832411f2ac5906227da0ceb5a960fb11ad396327fca9a",
+    "contact.png": "86c5bd932c3dba32356ba71728933f92b6947ff0aaa4693088697d56727a631c",
+    "crop-1.75.png": "73d4ea2f1c7e906b7365449bcda7df297f52bef565b85e23ddbc8e53b4660b81",
+    "manifest.json": "f90f9de775bb8c8329d3da3934f16335698e1f07496199c68bcca5022439906e",
+    "crop-1.9.png": "0387155f4f5a79ab33835961ca747aac20a32e515f32475dac0b1cde2ce95612"
+  },
+  "source_archive": {
+    "file": "source-lossless.mkv",
+    "sha256": "4bbb016a151dc2a8bd3996ce833cb633e1b7d2491fee682a4d7b768ef78c842b",
+    "bytes": 48808577,
+    "decoded_frames_verified": 481,
+    "timebase": "ordinal only; use retained submit_ns records"
+  },
+  "bulk_cleanup": "raw spool and PNG duplicates; archival source/times retained",
+  "metadata_encoding": "Selected manifest/runtime JSON compacted without changing parsed values; original formatted JSON remains in the retained local source directory."
+}

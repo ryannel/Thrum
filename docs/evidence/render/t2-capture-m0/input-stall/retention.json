@@ -1,0 +1,26 @@
+{
+  "complete": true,
+  "local_source_directory": "tmp/t2-capture-m0/input-stall-proof",
+  "local_bulk_is_backup": false,
+  "expiry": "retain through lead review; close out only after verdict and selected-root verification",
+  "selected_files": {
+    "runtime.json": "9bc52d53b1afbe7586910d124146f625dd5892e46a80c804e08230e350b8257a",
+    "timeline.ffconcat": "c6f88d7e109df154ea3e40248cc010967b73da881c7989ab9a0d612b103c0fbc",
+    "preview-1x.mp4": "51f5c930b7542abc676a71084bffd01a0d034cc9ad0d135969d3b6b6907cdf27",
+    "crop-2.1.png": "134a87dfee4c2573a9d3185f609b065ae2ee4e78ffa41f20ea3ed62d6783370e",
+    "crop-2.3.png": "b0aec47b2297676b24956afd2953be4c9977e6b7855e218390ba8420e6993540",
+    "contact.png": "13d5d3f5cd53e4616529bde0c281b9bb9b7a658428d318d217399bf2750a8f33",
+    "crop-1.75.png": "11950e5d293bba55752456c919dc9578522fdd513527256a33212f4091387509",
+    "manifest.json": "a2f1e16827b136fc22ac954d0c6d2f2f7399126fa3bf4292309db8560728eb41",
+    "crop-1.9.png": "49794d8043f3d04e92181a801156d81c8fcc734b92f4c018a837b25756ae6ce4"
+  },
+  "source_archive": {
+    "file": "source-lossless.mkv",
+    "sha256": "4c53cf92e3f5125a27cdc194b248101bc0e84e6a89fe48bea30b27402b039cfd",
+    "bytes": 198904899,
+    "decoded_frames_verified": 481,
+    "timebase": "ordinal only; use retained submit_ns records"
+  },
+  "bulk_cleanup": "raw spool and PNG duplicates; archival source/times retained",
+  "metadata_encoding": "Selected manifest/runtime JSON compacted without changing parsed values; original formatted JSON remains in the retained local source directory."
+}

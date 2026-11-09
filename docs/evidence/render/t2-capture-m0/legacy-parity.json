@@ -1,0 +1,59 @@
+{
+  "scope": "fixed-time compatibility and endpoint semantics only; no elapsed-motion or display proof",
+  "binary_sha256": "b98b874068e6fb547f2947c612dfb73f741f6807739d3272edda9935dcc1b4ea",
+  "route_sha256": "7cedae789b8f04470c46ed94c13bc13094d97dfbe1e32cc83b8f70457115a094",
+  "runs": {
+    "legacy-route-a": {
+      "files": {
+        "route.jsonl": "3e5c74fb323b2e692bbb4392531de05b7eb7ea8c05a44935da24a50986554d35",
+        "checkpoints/mirror-light.ppm": "fc182c378b1a60cba4efc97a7e5b819ea7b0ec63041313cc65fc80b77ceb1fa4",
+        "checkpoints/post-cut.ppm": "5b2a3dfe7e27cad9b828d64c013dca00540c796d68731e6e2ba2505190ad09eb",
+        "checkpoints/approach.ppm": "124d5fbea2ad6c48e5274918301067b02950eb4e3ee67b00bf72f65ad356f752",
+        "checkpoints/pre-cut.ppm": "c65a9a4ba73f442cd2082d405b7ed35f82e583d22d1ea506b130be081d69ac55",
+        "checkpoints/near-plane.ppm": "5f63d0eda7b09c466c727dbe3bdcbedb3266a0b9b7e04147c45572cb0fd7446b"
+      },
+      "samples": 361,
+      "phase": [
+        1,
+        2
+      ],
+      "checkpoint_hashes": {
+        "mirror-light.ppm": "fc182c378b1a60cba4efc97a7e5b819ea7b0ec63041313cc65fc80b77ceb1fa4",
+        "post-cut.ppm": "5b2a3dfe7e27cad9b828d64c013dca00540c796d68731e6e2ba2505190ad09eb",
+        "approach.ppm": "124d5fbea2ad6c48e5274918301067b02950eb4e3ee67b00bf72f65ad356f752",
+        "pre-cut.ppm": "c65a9a4ba73f442cd2082d405b7ed35f82e583d22d1ea506b130be081d69ac55",
+        "near-plane.ppm": "5f63d0eda7b09c466c727dbe3bdcbedb3266a0b9b7e04147c45572cb0fd7446b"
+      }
+    },
+    "legacy-route-b": {
+      "files": {
+        "route.jsonl": "3e5c74fb323b2e692bbb4392531de05b7eb7ea8c05a44935da24a50986554d35",
+        "checkpoints/mirror-light.ppm": "fc182c378b1a60cba4efc97a7e5b819ea7b0ec63041313cc65fc80b77ceb1fa4",
+        "checkpoints/post-cut.ppm": "5b2a3dfe7e27cad9b828d64c013dca00540c796d68731e6e2ba2505190ad09eb",
+        "checkpoints/approach.ppm": "124d5fbea2ad6c48e5274918301067b02950eb4e3ee67b00bf72f65ad356f752",
+        "checkpoints/pre-cut.ppm": "c65a9a4ba73f442cd2082d405b7ed35f82e583d22d1ea506b130be081d69ac55",
+        "checkpoints/near-plane.ppm": "5f63d0eda7b09c466c727dbe3bdcbedb3266a0b9b7e04147c45572cb0fd7446b"
+      },
+      "samples": 361,
+      "phase": [
+        1,
+        2
+      ],
+      "checkpoint_hashes": {
+        "mirror-light.ppm": "fc182c378b1a60cba4efc97a7e5b819ea7b0ec63041313cc65fc80b77ceb1fa4",
+        "post-cut.ppm": "5b2a3dfe7e27cad9b828d64c013dca00540c796d68731e6e2ba2505190ad09eb",
+        "approach.ppm": "124d5fbea2ad6c48e5274918301067b02950eb4e3ee67b00bf72f65ad356f752",
+        "pre-cut.ppm": "c65a9a4ba73f442cd2082d405b7ed35f82e583d22d1ea506b130be081d69ac55",
+        "near-plane.ppm": "5f63d0eda7b09c466c727dbe3bdcbedb3266a0b9b7e04147c45572cb0fd7446b"
+      }
+    },
+    "legacy-endpoint": {
+      "files": {
+        "captures.json": "c2459dbc8f589498b7c6b95fbec47f92453e0c04473052ba251f33d1b244ab2a",
+        "route/showcase-noon.ppm": "d7d3d2fca5e15a1cc4294be7963503d49e934dfd0b5904ea71000fa142a2021e"
+      },
+      "world_tick": 0
+    }
+  },
+  "all_five_checkpoint_pairs_identical": true
+}

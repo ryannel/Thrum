@@ -1,0 +1,22 @@
+{
+  "complete": true,
+  "local_source_directory": "tmp/t2-capture-m0/cost-on-proof",
+  "local_bulk_is_backup": false,
+  "expiry": "retain through lead review; close out only after verdict and selected-root verification",
+  "selected_files": {
+    "runtime.json": "b63e649b88aef821a1d5364cba51a0ef267880fecb66d3e209744df4cc620eff",
+    "timeline.ffconcat": "c18416773de7f6a028c3e1874432d5873e60cda4127301bae18095d1316fba66",
+    "preview-1x.mp4": "77e9412357437f03f61b8926b974bc42c1b09286ca8e927d5a046189e082e83c",
+    "contact.png": "b4daa79a2fa8ad3ccb86ce37170aac1b01ffea0859cf3108a320e775043ba9dc",
+    "manifest.json": "ed2f1a35d9f9dbc1f32e4bb46359e7847e333d4eba2d22cb7a682cd6c9fd0f14"
+  },
+  "source_archive": {
+    "file": "source-lossless.mkv",
+    "sha256": "7987ebb16d153e5118aeb6410259b4bfc1b6e8de170ce64789971c85e936d32b",
+    "bytes": 226804261,
+    "decoded_frames_verified": 481,
+    "timebase": "ordinal only; use retained submit_ns records"
+  },
+  "bulk_cleanup": "raw spool and PNG duplicates; archival source/times retained",
+  "metadata_encoding": "Selected manifest/runtime JSON compacted without changing parsed values; original formatted JSON remains in the retained local source directory."
+}

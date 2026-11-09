@@ -1,0 +1,8 @@
+{
+  "command": "python3 /Users/ryannel/.claude/skills/build/scripts/agent_loop.py lock gpu --worktree . -- ./dev check",
+  "exit_code": 0,
+  "log_sha256": "0b7d4852129226f3d7231ca82c130a345eaad96de4582b290f3859991c5ef7f3",
+  "scope": "Current implementation before claim commit; fresh integrated-tip Check is additionally required under integrate lock before push.",
+  "review": "Owed to lead; no reviewer launched.",
+  "done_when_definitions_unchanged": true
+}

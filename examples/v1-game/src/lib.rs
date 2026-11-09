@@ -41,4 +41,4 @@ pub use projection::{GameProjection, ProjectionGap};
 pub use scene::simulation_with_count;
 pub use scene::{GameContent, RouteOverlay};
 #[cfg(target_os = "macos")]
-pub use window::run_window;
+pub use window::{capture_game, run_runtime_capture, run_window};

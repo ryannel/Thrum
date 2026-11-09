@@ -1,0 +1,24 @@
+{
+  "complete": true,
+  "local_source_directory": "tmp/t2-capture-m0/still-proof",
+  "local_bulk_is_backup": false,
+  "expiry": "retain through lead review; close out only after verdict and selected-root verification",
+  "selected_files": {
+    "final.png": "afd01f719bc9c2ddb83a2d57ccadddfa67280e5daec122e5b113adef15b08489",
+    "runtime.json": "d2eaff7a9a1e53b1a31a0fc174ca160d4227f920d2e2a704efddde3ffcbcba95",
+    "timeline.ffconcat": "50fe0c3909e31d018d7376e8f862ac1918b65fa7eab098a284845575ebf65fe9",
+    "preview-1x.mp4": "73612a8ecf79859b874d311ab7720d2cc84259857b17b0161267597b64f33946",
+    "initial.png": "afd01f719bc9c2ddb83a2d57ccadddfa67280e5daec122e5b113adef15b08489",
+    "contact.png": "1ec32cd95b45a72d6d4b0e61f645297e48b50ce8b7d152a18d1d7d9023e8ca28",
+    "manifest.json": "0027a1f34cc10ec7c273232b79278c2327c86a3d2a15c9852323f832095cc523"
+  },
+  "source_archive": {
+    "file": "source-lossless.mkv",
+    "sha256": "fd9bb40e6356b1851e49d14ab1735d915be723d5d4bbec27600dc66e41961452",
+    "bytes": 1701051,
+    "decoded_frames_verified": 1,
+    "timebase": "ordinal only; use retained submit_ns records"
+  },
+  "bulk_cleanup": "raw spool and PNG duplicates; archival source/times retained",
+  "metadata_encoding": "Selected manifest/runtime JSON compacted without changing parsed values; original formatted JSON remains in the retained local source directory."
+}

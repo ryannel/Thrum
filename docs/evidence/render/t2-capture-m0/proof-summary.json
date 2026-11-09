@@ -1,0 +1,459 @@
+{
+  "target": "mac-metal, Apple M3 Max",
+  "cases": {
+    "pan": {
+      "complete": true,
+      "locked_and_permission_unavailable": true,
+      "binary_sha256": "b98b874068e6fb547f2947c612dfb73f741f6807739d3272edda9935dcc1b4ea",
+      "opportunities": 481,
+      "submitted": 481,
+      "images": 481,
+      "scheduled_skips": 0,
+      "ring_omissions": 0,
+      "writer_omissions": 0,
+      "tick_min": 0,
+      "tick_max": 0,
+      "intermediate_alpha_samples": 0,
+      "history_epochs": [
+        0
+      ],
+      "gpu_slots_peak": 2,
+      "cpu_leases_peak": 12,
+      "largest_submission_gap_ms": 12.370209,
+      "diagnostic_actions": [],
+      "render_cpu_median_ms": 0.807563,
+      "scene_gpu_median_ms": 2.684916,
+      "gpu_timing_scope": "scene pass sum only; excludes presenter/copy; no GPU-span or display claim",
+      "writer": {
+        "Ok": {
+          "bytes": 3989606400,
+          "flush_ns": 334,
+          "frames": 481,
+          "write_ns": 1237367240
+        }
+      },
+      "full_storage_flush_ms": 9.828084,
+      "png_packaging_seconds": 32.333005833,
+      "total_packaging_seconds": 0.0,
+      "engine_process_usage": null,
+      "preview_pts_max_error_seconds": 5.00000000069889e-07,
+      "session_peak_output_bytes": 5479375556,
+      "map_observation_lag_median_ms": 8.478792
+    },
+    "off": {
+      "complete": true,
+      "locked_and_permission_unavailable": true,
+      "binary_sha256": "b98b874068e6fb547f2947c612dfb73f741f6807739d3272edda9935dcc1b4ea",
+      "opportunities": 481,
+      "submitted": 481,
+      "images": 0,
+      "scheduled_skips": 0,
+      "ring_omissions": 0,
+      "writer_omissions": 0,
+      "tick_min": 0,
+      "tick_max": 0,
+      "intermediate_alpha_samples": 0,
+      "history_epochs": [],
+      "gpu_slots_peak": 0,
+      "cpu_leases_peak": 0,
+      "largest_submission_gap_ms": 0,
+      "diagnostic_actions": [],
+      "render_cpu_median_ms": 0.667458,
+      "scene_gpu_median_ms": 2.67396,
+      "gpu_timing_scope": "scene pass sum only; excludes presenter/copy; no GPU-span or display claim",
+      "writer": {
+        "Ok": {
+          "bytes": 0,
+          "flush_ns": 0,
+          "frames": 0,
+          "write_ns": 0
+        }
+      },
+      "full_storage_flush_ms": 12.385417,
+      "png_packaging_seconds": 4.6834e-05,
+      "total_packaging_seconds": 0.0,
+      "engine_process_usage": null,
+      "preview_pts_max_error_seconds": null,
+      "session_peak_output_bytes": 376624
+    },
+    "running": {
+      "complete": true,
+      "locked_and_permission_unavailable": true,
+      "binary_sha256": "b98b874068e6fb547f2947c612dfb73f741f6807739d3272edda9935dcc1b4ea",
+      "opportunities": 481,
+      "submitted": 481,
+      "images": 481,
+      "scheduled_skips": 0,
+      "ring_omissions": 0,
+      "writer_omissions": 0,
+      "tick_min": 0,
+      "tick_max": 119,
+      "intermediate_alpha_samples": 206,
+      "history_epochs": [
+        0
+      ],
+      "gpu_slots_peak": 2,
+      "cpu_leases_peak": 3,
+      "largest_submission_gap_ms": 12.605042,
+      "diagnostic_actions": [],
+      "render_cpu_median_ms": 0.6067705,
+      "scene_gpu_median_ms": 2.6620625,
+      "gpu_timing_scope": "scene pass sum only; excludes presenter/copy; no GPU-span or display claim",
+      "writer": {
+        "Ok": {
+          "bytes": 3989606400,
+          "flush_ns": 375,
+          "frames": 481,
+          "write_ns": 1023330889
+        }
+      },
+      "full_storage_flush_ms": 9.4,
+      "png_packaging_seconds": 32.511658458,
+      "total_packaging_seconds": 0.0,
+      "engine_process_usage": null,
+      "preview_pts_max_error_seconds": 5.00000000069889e-07,
+      "session_peak_output_bytes": 5049696295,
+      "map_observation_lag_median_ms": 8.403417
+    },
+    "render-stall": {
+      "complete": true,
+      "locked_and_permission_unavailable": true,
+      "binary_sha256": "b98b874068e6fb547f2947c612dfb73f741f6807739d3272edda9935dcc1b4ea",
+      "opportunities": 450,
+      "submitted": 450,
+      "images": 450,
+      "scheduled_skips": 31,
+      "ring_omissions": 0,
+      "writer_omissions": 0,
+      "tick_min": 0,
+      "tick_max": 0,
+      "intermediate_alpha_samples": 0,
+      "history_epochs": [
+        0
+      ],
+      "gpu_slots_peak": 2,
+      "cpu_leases_peak": 5,
+      "largest_submission_gap_ms": 264.61875,
+      "diagnostic_actions": [
+        {
+          "end_ns": 2058482542,
+          "kind": "render-owner-before-ordinary-step",
+          "requested_ns": 1802553625,
+          "start_ns": 1802553625
+        }
+      ],
+      "render_cpu_median_ms": 0.773417,
+      "scene_gpu_median_ms": 2.670458,
+      "gpu_timing_scope": "scene pass sum only; excludes presenter/copy; no GPU-span or display claim",
+      "writer": {
+        "Ok": {
+          "bytes": 3732480000,
+          "flush_ns": 209,
+          "frames": 450,
+          "write_ns": 1127852045
+        }
+      },
+      "full_storage_flush_ms": 14.426667,
+      "png_packaging_seconds": 31.275007584,
+      "total_packaging_seconds": 0.0,
+      "engine_process_usage": null,
+      "preview_pts_max_error_seconds": 5.00000000069889e-07,
+      "session_peak_output_bytes": 5112588466,
+      "map_observation_lag_median_ms": 8.4653335
+    },
+    "input-stall": {
+      "complete": true,
+      "locked_and_permission_unavailable": true,
+      "binary_sha256": "b98b874068e6fb547f2947c612dfb73f741f6807739d3272edda9935dcc1b4ea",
+      "opportunities": 481,
+      "submitted": 481,
+      "images": 481,
+      "scheduled_skips": 0,
+      "ring_omissions": 0,
+      "writer_omissions": 0,
+      "tick_min": 0,
+      "tick_max": 0,
+      "intermediate_alpha_samples": 0,
+      "history_epochs": [
+        0
+      ],
+      "gpu_slots_peak": 2,
+      "cpu_leases_peak": 4,
+      "largest_submission_gap_ms": 11.915459,
+      "diagnostic_actions": [
+        {
+          "end_ns": 2050449000,
+          "kind": "input-dispatch-before-semantic-handler",
+          "requested_ns": 1800220208,
+          "start_ns": 1800220208
+        }
+      ],
+      "render_cpu_median_ms": 0.808854,
+      "scene_gpu_median_ms": 2.680729,
+      "gpu_timing_scope": "scene pass sum only; excludes presenter/copy; no GPU-span or display claim",
+      "writer": {
+        "Ok": {
+          "bytes": 3989606400,
+          "flush_ns": 292,
+          "frames": 481,
+          "write_ns": 1123883431
+        }
+      },
+      "full_storage_flush_ms": 8.506417,
+      "png_packaging_seconds": 35.649444834,
+      "total_packaging_seconds": 0.0,
+      "engine_process_usage": null,
+      "preview_pts_max_error_seconds": 5.00000000069889e-07,
+      "session_peak_output_bytes": 5452189814,
+      "map_observation_lag_median_ms": 8.435208
+    },
+    "writer-slow": {
+      "complete": false,
+      "locked_and_permission_unavailable": true,
+      "binary_sha256": "b98b874068e6fb547f2947c612dfb73f741f6807739d3272edda9935dcc1b4ea",
+      "opportunities": 481,
+      "submitted": 480,
+      "images": 103,
+      "scheduled_skips": 0,
+      "ring_omissions": 377,
+      "writer_omissions": 0,
+      "tick_min": 0,
+      "tick_max": 119,
+      "intermediate_alpha_samples": 27,
+      "history_epochs": [
+        0
+      ],
+      "gpu_slots_peak": 6,
+      "cpu_leases_peak": 32,
+      "largest_submission_gap_ms": 82.108458,
+      "diagnostic_actions": [],
+      "render_cpu_median_ms": 1.088458,
+      "scene_gpu_median_ms": 2.6066675,
+      "gpu_timing_scope": "scene pass sum only; excludes presenter/copy; no GPU-span or display claim",
+      "writer": {
+        "Ok": {
+          "bytes": 854323200,
+          "flush_ns": 1125,
+          "frames": 103,
+          "write_ns": 6137878835
+        }
+      },
+      "full_storage_flush_ms": 7.802042,
+      "png_packaging_seconds": 0.0,
+      "total_packaging_seconds": 0.0,
+      "engine_process_usage": {
+        "peak_rss_bytes": 392871936,
+        "user_seconds": 0.8366239999999999,
+        "system_seconds": 1.091477,
+        "input_blocks": 0,
+        "output_blocks": 0,
+        "voluntary_switches": 258,
+        "involuntary_switches": 30883
+      },
+      "preview_pts_max_error_seconds": null,
+      "session_peak_output_bytes": 854748433,
+      "map_observation_lag_median_ms": 49.453542
+    },
+    "fixed": {
+      "complete": true,
+      "locked_and_permission_unavailable": true,
+      "binary_sha256": "b98b874068e6fb547f2947c612dfb73f741f6807739d3272edda9935dcc1b4ea",
+      "opportunities": 481,
+      "submitted": 481,
+      "images": 481,
+      "scheduled_skips": 0,
+      "ring_omissions": 0,
+      "writer_omissions": 0,
+      "tick_min": 0,
+      "tick_max": 0,
+      "intermediate_alpha_samples": 0,
+      "history_epochs": [
+        0
+      ],
+      "gpu_slots_peak": 1,
+      "cpu_leases_peak": 5,
+      "largest_submission_gap_ms": 11.193791,
+      "diagnostic_actions": [],
+      "render_cpu_median_ms": 0.695437,
+      "scene_gpu_median_ms": 2.673208,
+      "gpu_timing_scope": "scene pass sum only; excludes presenter/copy; no GPU-span or display claim",
+      "writer": {
+        "Ok": {
+          "bytes": 3989606400,
+          "flush_ns": 500,
+          "frames": 481,
+          "write_ns": 1246657835
+        }
+      },
+      "full_storage_flush_ms": 12.399875,
+      "png_packaging_seconds": 32.17503225,
+      "total_packaging_seconds": 0.0,
+      "engine_process_usage": {
+        "peak_rss_bytes": 137953280,
+        "user_seconds": 0.856293,
+        "system_seconds": 1.41893,
+        "input_blocks": 0,
+        "output_blocks": 0,
+        "voluntary_switches": 806,
+        "involuntary_switches": 31226
+      },
+      "preview_pts_max_error_seconds": 3.3300000001901253e-07,
+      "session_peak_output_bytes": 5479483093,
+      "map_observation_lag_median_ms": 3.274083
+    },
+    "still": {
+      "complete": true,
+      "locked_and_permission_unavailable": true,
+      "binary_sha256": "b98b874068e6fb547f2947c612dfb73f741f6807739d3272edda9935dcc1b4ea",
+      "opportunities": 1,
+      "submitted": 1,
+      "images": 1,
+      "scheduled_skips": 0,
+      "ring_omissions": 0,
+      "writer_omissions": 0,
+      "tick_min": 0,
+      "tick_max": 0,
+      "intermediate_alpha_samples": 0,
+      "history_epochs": [
+        0
+      ],
+      "gpu_slots_peak": 0,
+      "cpu_leases_peak": 0,
+      "largest_submission_gap_ms": 0,
+      "diagnostic_actions": [],
+      "render_cpu_median_ms": null,
+      "scene_gpu_median_ms": null,
+      "gpu_timing_scope": "scene pass sum only; excludes presenter/copy; no GPU-span or display claim",
+      "writer": {
+        "Ok": {
+          "bytes": 8294400,
+          "flush_ns": 250,
+          "frames": 1,
+          "write_ns": 1265500
+        }
+      },
+      "full_storage_flush_ms": 10.515875,
+      "png_packaging_seconds": 0.068376625,
+      "total_packaging_seconds": 0.0,
+      "engine_process_usage": {
+        "peak_rss_bytes": 98238464,
+        "user_seconds": 0.319654,
+        "system_seconds": 0.471114,
+        "input_blocks": 0,
+        "output_blocks": 0,
+        "voluntary_switches": 11,
+        "involuntary_switches": 8864
+      },
+      "preview_pts_max_error_seconds": 0.0,
+      "session_peak_output_bytes": 13760049,
+      "map_observation_lag_median_ms": 3.451834
+    },
+    "cost-off": {
+      "complete": true,
+      "locked_and_permission_unavailable": true,
+      "binary_sha256": "b98b874068e6fb547f2947c612dfb73f741f6807739d3272edda9935dcc1b4ea",
+      "opportunities": 480,
+      "submitted": 480,
+      "images": 0,
+      "scheduled_skips": 0,
+      "ring_omissions": 0,
+      "writer_omissions": 0,
+      "tick_min": 0,
+      "tick_max": 0,
+      "intermediate_alpha_samples": 0,
+      "history_epochs": [],
+      "gpu_slots_peak": 0,
+      "cpu_leases_peak": 0,
+      "largest_submission_gap_ms": 0,
+      "diagnostic_actions": [],
+      "render_cpu_median_ms": 0.64625,
+      "scene_gpu_median_ms": 2.6772085,
+      "gpu_timing_scope": "scene pass sum only; excludes presenter/copy; no GPU-span or display claim",
+      "writer": {
+        "Ok": {
+          "bytes": 0,
+          "flush_ns": 0,
+          "frames": 0,
+          "write_ns": 0
+        }
+      },
+      "full_storage_flush_ms": 8.832167,
+      "png_packaging_seconds": 4.275e-05,
+      "total_packaging_seconds": 5.125e-05,
+      "engine_process_usage": {
+        "peak_rss_bytes": 84230144,
+        "user_seconds": 0.53933,
+        "system_seconds": 0.608893,
+        "input_blocks": 0,
+        "output_blocks": 0,
+        "voluntary_switches": 9,
+        "involuntary_switches": 27217
+      },
+      "preview_pts_max_error_seconds": null,
+      "session_peak_output_bytes": 375920
+    },
+    "cost-on": {
+      "complete": true,
+      "locked_and_permission_unavailable": true,
+      "binary_sha256": "b98b874068e6fb547f2947c612dfb73f741f6807739d3272edda9935dcc1b4ea",
+      "opportunities": 481,
+      "submitted": 481,
+      "images": 481,
+      "scheduled_skips": 0,
+      "ring_omissions": 0,
+      "writer_omissions": 0,
+      "tick_min": 0,
+      "tick_max": 0,
+      "intermediate_alpha_samples": 0,
+      "history_epochs": [
+        0
+      ],
+      "gpu_slots_peak": 2,
+      "cpu_leases_peak": 7,
+      "largest_submission_gap_ms": 11.806541,
+      "diagnostic_actions": [],
+      "render_cpu_median_ms": 0.8047500000000001,
+      "scene_gpu_median_ms": 2.6770199999999997,
+      "gpu_timing_scope": "scene pass sum only; excludes presenter/copy; no GPU-span or display claim",
+      "writer": {
+        "Ok": {
+          "bytes": 3989606400,
+          "flush_ns": 208,
+          "frames": 481,
+          "write_ns": 1253724870
+        }
+      },
+      "full_storage_flush_ms": 10.842208,
+      "png_packaging_seconds": 34.531584042,
+      "total_packaging_seconds": 67.004964084,
+      "engine_process_usage": {
+        "peak_rss_bytes": 162971648,
+        "user_seconds": 0.994656,
+        "system_seconds": 1.679675,
+        "input_blocks": 0,
+        "output_blocks": 0,
+        "voluntary_switches": 827,
+        "involuntary_switches": 32204
+      },
+      "preview_pts_max_error_seconds": 5.00000000069889e-07,
+      "session_peak_output_bytes": 5480204056,
+      "map_observation_lag_median_ms": 8.4105
+    }
+  },
+  "observer_order": [
+    "pan",
+    "off",
+    "cost-off",
+    "cost-on"
+  ],
+  "mode_initial_pixel_hashes_equal": true,
+  "pan_fixed_final_pixel_hashes_equal": true,
+  "input_hold": {
+    "fresh_submissions": 30,
+    "unique_rgba_hashes": 1,
+    "accepted_yaw_values": [
+      14.29999828338623
+    ]
+  },
+  "archive_restore_first_rgba_verified": true
+}

@@ -1,0 +1,13 @@
+{
+  "complete": false,
+  "local_source_directory": "tmp/t2-capture-m0/writer-slow-proof",
+  "local_bulk_is_backup": false,
+  "expiry": "retain through lead review; close out only after verdict and selected-root verification",
+  "selected_files": {
+    "runtime.json": "e14b82b1c9526b002f74754c919b56c1b73d906e9d846fc23b2f6b81e2fe86f0",
+    "manifest.json": "ba4c2742230ae1710bfb26cc55b622e6ff7506a0dba43c89b244bba4623297bb"
+  },
+  "source_archive": null,
+  "bulk_cleanup": "raw spool and PNG duplicates; archival source/times retained",
+  "metadata_encoding": "Selected manifest/runtime JSON compacted without changing parsed values; original formatted JSON remains in the retained local source directory."
+}

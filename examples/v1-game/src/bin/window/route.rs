@@ -37,7 +37,6 @@ pub(super) fn profile(extent: [u32; 2]) -> SurfaceProfile {
 /// Run the route from world time zero and write `route.jsonl` and checkpoint images.
 pub(super) fn record(
     device: &wgpu::Device,
-    queue: &wgpu::Queue,
     host: &mut FrameHost,
     directory: &Path,
     text: &str,
@@ -89,6 +88,12 @@ pub(super) fn record(
             break;
         }
         let time = Duration::from_secs_f64(host.route_step_ms(phi) / 1000.0);
+        let capture = checkpoints
+            .peek()
+            .is_some_and(|checkpoint| route.origin_tick + checkpoint.tick == tick + 1);
+        if capture {
+            host.enable_submitted_capture(tick + 1)?;
+        }
         let frame = host.drive(time, Some(&surface))?;
         if !frame.surface_presented
             || frame.dropped_view
@@ -137,7 +142,8 @@ pub(super) fn record(
         )?;
         if let Some(name) = checkpoint {
             let mut bgra = Vec::new();
-            target.write_pixels(device, queue, &mut bgra)?;
+            target.write_pixels(host, sample.submission_order, &mut bgra)?;
+            host.disable_submitted_capture();
             write_ppm(
                 &checkpoints_dir.join(format!("{name}.ppm")),
                 route.render_extent,

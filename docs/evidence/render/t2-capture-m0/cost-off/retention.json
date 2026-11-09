@@ -1,0 +1,13 @@
+{
+  "complete": true,
+  "local_source_directory": "tmp/t2-capture-m0/cost-off-proof",
+  "local_bulk_is_backup": false,
+  "expiry": "retain through lead review; close out only after verdict and selected-root verification",
+  "selected_files": {
+    "runtime.json": "4d3baf318c3ebe058408662be2c8f6cddbe6ff63a2c975382cb46aa32f182d9e",
+    "manifest.json": "eb7e468533d23369b333b8016ca896798dc7366cf9d622a71eadedb7b3558698"
+  },
+  "source_archive": null,
+  "bulk_cleanup": "raw spool and PNG duplicates; archival source/times retained",
+  "metadata_encoding": "Selected manifest/runtime JSON compacted without changing parsed values; original formatted JSON remains in the retained local source directory."
+}

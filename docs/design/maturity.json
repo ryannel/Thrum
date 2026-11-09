@@ -2839,24 +2839,24 @@
         "platform_performance": "observed free-space samples before/after external filler were 241319936 and 13762560 bytes in the local image; no CPU, RSS, transient physical high-water or device qualification follows",
         "scope": "Project, accepted source store, external job parent, F4 input and competing filler shared one bounded APFS image. The test exercises a synchronous registered F4 write fault and successful checked refund; concurrent F3 stage/store work, uncertain cleanup or sync, compiler output/cache lifetime, physical reserve and ready publication remain open."
       },
-      "current_priority": "T2-CAPTURE M0 planned for unattended visual/runtime evidence after independent design review; retained-root work stays parked",
+      "current_priority": "T2-CAPTURE Mac M0 implemented and claimed for lead review; Chrome M1/simulator M2 remain open; retained-root work stays parked",
       "unattended_frame_evidence": {
         "design": "modules/T2-CAPTURE.md",
         "plan": "modules/T2-CAPTURE-PLAN.md",
         "done_when": "modules/T2-CAPTURE-DONE.json",
         "design_stage": "detailed",
-        "integration_review": "design_changes_revised_rereview_owed",
-        "implementation": "not_started_for_target",
-        "functional_validation": "not_run",
-        "experienced_quality": "not_reviewed",
+        "integration_review": "milestone_M0_claimed_review_owed",
+        "implementation": "Mac M0 renderer-owned submitted-output tap, bounded raw writer and app-owned offscreen opportunity driver implemented in existing crates; V1 legacy sequences migrated",
+        "functional_validation": "Builder ./dev check passes, including real-Metal RGBA/BGRA correspondence, odd-width/channel, disabled-allocation, pending loss/replacement, resize/abandon, stale session and bounded writer/packaging failure regressions; locked Mac still/fixed/elapsed scenario joins and source hashes pass",
+        "experienced_quality": "builder_inspected_M0_sequences_and_native_frames; independent_milestone_review_owed",
         "platform_performance": {
-          "mac": "not_run",
+          "mac": "Matched same-build ON/OFF/OFF/ON baseline: reverse pair render CPU 0.646/0.805 ms, scene-pass GPU 2.677/2.677 ms, engine peak RSS 84.23/162.97 MB; copy/present GPU span and physical display unmeasured. Recorded bytes/queues/write/full flush/deferred packaging; opt-in observer cost, not whole-engine performance qualification",
           "browser": "not_run",
           "ios_sim": "not_run",
           "physical_display": "not_run"
         },
-        "scope": "9 November planning only: T2 owns scenarios/artifacts, V1/V4 the submitted-output tap and F1 drivers/lifetime. Distinct fixed-time quality and elapsed-time runtime modes; Mac M0 precedes Mac qualification M2 and G3t M0. New capture locked-console and unavailable-permission qualification not yet proved; historical offscreen parity/probe account supports feasibility only. Review revision selects raw spill/deferred packaging, early bounded throughput probe and ordinary presenter admission. Mac M2.3 owns real-window tap qualification; M2.4 commissions bounded trace-finalization diagnosis after independent re-review/prerequisites (changed hypothesis, at most two new diagnostic attempts). M2.2 remains blocked on those proofs and active-panel/tool setup; shipping cadence uses capture OFF with separate ON content/observer arms. Historical Mac motion pass is not extended to changed M2.1. No new runtime, correctness, visual or device evidence. Second-review revision decouples all Mac M2 work from parked APPLE-TILE; only T2 M0 is its delivery prerequisite. New Mac M3 needs APPLE-TILE M3 for full post-change motion/cadence and windowed-tap/tooling revalidation. Ground E PNG is scene/framing identity only; pan quality uses worded criteria. Existing trace diagnostic allowance is unchanged.",
-        "review": "../evidence/T2-CAPTURE/design-review-2.md requests 2 changes at 6317102f; revised T2/Mac design/JSON, M2/M3 split and consumers await independent re-review; owner prohibited subagents"
+        "scope": "M0 current-path Mac engine output only: locked-console permission-unavailable still/fixed/elapsed modes; 481-image paused cooked pan, running-world interpolation and distinct real render/input stalls. Six staging/32 CPU buffers under 512 MiB pixel allowance; 16 GiB serial-session output allowance. Explicit slow-writer failure preserves ticks/render progress. Selected source/time evidence and verified local source archives retained through review. No window, compositor/panel, HDR/EDR, physical-device or uncaptured cadence qualification. Mac M2.3 windowed tap and M2.4 bounded tooling investigation remain separate, and M2.2 remains attended. Mac M2 depends only on T2 M0; APPLE-TILE stays parked. Chrome/simulator stronger evidence still needs M1/M2.",
+        "review": "../evidence/T2-CAPTURE/design-review-3.md clears M0 build; builder evidence ../evidence/render/t2-capture-m0/README.md; independent M0 review owed to lead, no reviewer launched"
       }
     },
     {

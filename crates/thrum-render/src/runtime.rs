@@ -33,6 +33,7 @@ mod creation;
 mod creation;
 mod device;
 mod preparation;
+mod submitted_capture;
 mod tokens;
 #[cfg(not(target_arch = "wasm32"))]
 mod visual;
@@ -45,6 +46,7 @@ pub use creation::{
 };
 pub use creation::{CreationRegion, DeviceSite};
 pub use device::{DevicePrepareInputs, PreparedDevice};
+pub use submitted_capture::{CaptureLimits, SubmittedImage};
 pub use tokens::{AdvancedFrame, EncodedFrame};
 #[cfg(not(target_arch = "wasm32"))]
 pub use visual::{PreparedVisual, VisualPrepareInputs};
@@ -326,6 +328,7 @@ struct PreparedSample {
 
 struct RecordedScene {
     slot_index: usize,
+    capture_slot: Option<usize>,
     encoder: wgpu::CommandEncoder,
     prepared: PreparedSample,
     encode_cpu: Duration,
@@ -341,6 +344,7 @@ pub struct FrameHost<W: FrameWorld, V: SceneSource<W::Page>> {
     queue: wgpu::Queue,
     /// Stable across visual changes. Backend device IDs can repeat across instances.
     capture_owner: Arc<()>,
+    submitted_capture: Option<submitted_capture::Tap>,
     presentation_lead: Duration,
     generation: u64,
     source: V,
@@ -565,6 +569,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             device: wgpu::Device::clone(device),
             queue: queue.clone(),
             capture_owner: Arc::new(()),
+            submitted_capture: None,
             presentation_lead: Duration::ZERO,
             generation: capabilities.generation(),
             source,
@@ -1182,15 +1187,26 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
         let slot = &mut self.slots[slot_index];
         slot.target.arm_culling_stats();
+        let capture = submitted_capture::reserve(
+            &mut self.submitted_capture,
+            self.generation,
+            self.render_extent,
+        );
+        let capture_slot = capture.as_ref().map(|(index, _)| *index);
         if let Err(error) = self.prepared.encode_contributed(
             &mut encoder,
             self.generation,
             &slot.target,
             Some(&mut slot.timings),
-            None,
+            capture.map(|(_, readback)| readback),
             self.contribution.as_deref_mut(),
         ) {
             drop(encoder);
+            if let Some(index) = capture_slot
+                && let Some(tap) = self.submitted_capture.as_mut()
+            {
+                tap.abandon(index);
+            }
             let discarded = slot.timings.discard_unsubmitted(self.generation);
             self.queue.submit([]);
             discarded.map_err(|timing| format!("render timing discard: {timing:?}"))?;
@@ -1198,6 +1214,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         }
         Ok(RecordedScene {
             slot_index,
+            capture_slot,
             encoder,
             prepared,
             encode_cpu: start.elapsed(),
@@ -1213,6 +1230,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     ) -> Result<(), FrameError> {
         let RecordedScene {
             slot_index,
+            capture_slot,
             mut encoder,
             prepared,
             encode_cpu,
@@ -1246,6 +1264,11 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         }
         if let Err(error) = slot.timings.finish_render(self.generation, &encoder) {
             drop(encoder);
+            if let Some(index) = capture_slot
+                && let Some(tap) = self.submitted_capture.as_mut()
+            {
+                tap.abandon(index);
+            }
             let discarded = slot.timings.discard_unsubmitted(self.generation);
             self.queue.submit([]);
             discarded
@@ -1274,6 +1297,11 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         };
         sample.surface_presented = surface_presented;
         sample.submission_order = self.next_submission_order;
+        if let Some(index) = capture_slot
+            && let Some(tap) = self.submitted_capture.as_mut()
+        {
+            tap.submitted(index, &sample, source, view_history_epoch);
+        }
         self.next_submission_order = self.next_submission_order.wrapping_add(1);
         slot.timing_layout = SceneTimingLayout::from((&self.prepared, &slot.target));
         slot.state = SlotState::Rendering(sample);

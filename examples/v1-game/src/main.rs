@@ -6,6 +6,13 @@ mod capture;
 
 #[cfg(target_os = "macos")]
 fn main() {
+    if let Some(output) = std::env::var_os("THRUM_CAPTURE_RUNTIME") {
+        let scenario = std::env::var("THRUM_CAPTURE_CASE").unwrap_or_else(|_| "pan".to_owned());
+        if let Err(error) = v1_game::run_runtime_capture(std::path::Path::new(&output), &scenario) {
+            report_capture_failure(&error);
+        }
+        return;
+    }
     if let Some(output) = std::env::var_os("THRUM_CAPTURE_SCENE") {
         if let Err(error) = pollster::block_on(capture::run(output.into())) {
             report_capture_failure(&error);
