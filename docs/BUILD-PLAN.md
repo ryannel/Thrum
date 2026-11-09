@@ -1,6 +1,6 @@
 # Thrum build plan
 
-Updated 7 November 2026. Active status page; Git retains history. [Contracts](design/CONTRACTS.md) own invariants;
+Updated 9 November 2026. Active status page; Git retains history. [Contracts](design/CONTRACTS.md) own invariants;
 [maturity](design/maturity.json) separates implementation, correctness, visuals and device results.
 
 ## Purpose
@@ -41,8 +41,10 @@ continue unblocked work. Verified checkpoints are pushed to main (owner, 6 Nov p
 
 ## Active work and gates
 
-**Now: qualify the G3b Mac frame runtime.** The G3s sunset crossing is parked for fresh-context diagnosis; G2S is closed.
-The native Metal recorder stays in G3t. The later dedicated performance phase owns numeric tuning.
+**Next build: G3t Apple tile, after independent review of its reconciled plan.** G3b Mac M2's remaining live proof
+waits for the owner's unlocked display; its acceptance scope is unchanged. G3t starts with an offscreen game proof
+and does not depend on that cadence row. The G3s sunset crossing stays parked; G2S is closed. The complete native
+Metal recorder remains a later performance candidate; the dedicated performance phase owns numeric tuning.
 
 - [x] **G0 — integrity and baselines.** Real Metal regressions fail without a device; no successful skips. One baseline
   command records runnable rows and absent consumers. Dead source/cook/mobile crates are removed and shipping trees
@@ -89,6 +91,11 @@ The native Metal recorder stays in G3t. The later dedicated performance phase ow
   One registry-selected boundary supports native archives, MetalFX and EDR with portable fallback. The complete Metal
   recorder stays a later performance candidate in the [boundary record](design/decisions/G3T-METAL-BOUNDARY.md).
   Record attachment traffic, full GPU work, uploads and light/mirror scaling. No raw/wgpu encoder splice or rival queue.
+  [Design](design/modules/APPLE-TILE.md), [plan](design/modules/APPLE-TILE-PLAN.md) and
+  [done-when criteria](design/modules/APPLE-TILE-DONE.json) reconcile existing work into sequential milestones.
+  M0 is open; carried counter/probe items are not module completion. Independent design/JSON review is owed.
+  The planned whole-raw-encoder feature handoff preserves one submit and existing view-drop/loss rules; it does not
+  commission the complete recorder. New physical replay/display rows remain unmeasured without a screen/tool slot.
 - [ ] **G3c — GPU-driven culling.** Compute frustum and Hi-Z, GPU-written indirect counts, one indexed indirect draw per
   mesh/pipeline bucket, stable mesh offsets and compute-readable materials. Validate visibility and image equivalence;
   record full/partial-visibility cost and unexpected growth as tripwires.

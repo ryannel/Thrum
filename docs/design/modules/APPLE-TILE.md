@@ -1,428 +1,239 @@
 # Apple tile recipe and backend dataflow (G3t)
 
-[Boundary decision](../decisions/G3T-METAL-BOUNDARY.md) ·
-[Hardware-native engine](../decisions/HARDWARE-NATIVE-ENGINE.md) ·
-[Executing render graph](../decisions/G3-EXECUTING-RENDER-GRAPH.md) ·
-[C04](../CONTRACTS.md#c04-feature-composition-and-quality--f2) ·
-[C06](../CONTRACTS.md#c06-gpu-execution-and-lifetime--v1) ·
-[C07](../CONTRACTS.md#c07-render-scene-views-and-temporal-data--v2-with-p4v3v4) ·
-[C12](../CONTRACTS.md#c12-budgets-evidence-and-acceptance--t2-with-all-owners) ·
-[Milestones](APPLE-TILE-PLAN.md) · [Presentation (G4)](APPLE-PRESENTATION.md)
+9 November 2026. Planned, unbuilt except the carried creation-counter and traffic-probe work.
+[Brief](APPLE-TILE-BRIEF.md) · [Plan](APPLE-TILE-PLAN.md) · [Done when](APPLE-TILE-DONE.json) ·
+[Boundary](../decisions/G3T-METAL-BOUNDARY.md) · [G4 consumer](APPLE-PRESENTATION.md).
+C04/C06/C07/C08/C12 in [CONTRACTS](../CONTRACTS.md) govern.
+Independent review of this revision is owed. Earlier designs and code were inspected; this is reconciliation,
+not a blind design. Historical reviews remain in the plan log; missing scratch is not current proof.
 
-Revision 3 for Thrum Core review, 7 November 2026. It answers the three independent reviews of revision 1
-(`86ec3b6b`) and the re-reviews of revision 2 (`c507ad3d`) recorded in the plan. Interface and path names below are
-proposals.
+## Purpose, range and cues
 
-## Purpose and scope
+Use Apple's tile/unified-memory hardware through the existing renderer, with portable as the reference and prepared
+fallback. The player sees the same cooked valley and diagnostic field, with intact Sun, stars, local lights,
+shadows, mirrored props and interpolation. No new game types or second world, visibility, queue or history authority.
 
-On Apple GPUs the V1 game should draw the same valley image as the portable recipe, using the hardware the way a
-tile-based GPU wants:
-- attachments that die inside a pass never leave tile memory;
-- no full-screen intermediate exists only to copy into the next pass;
-- per-frame data reaches the GPU without a staging copy;
-- the forward pass does no work the GPU can do better elsewhere.
+| Cue | Required range and observation | Convincing wrong substitute rejected |
+| --- | --- | --- |
+| Same scene | Fixed cooked root; moving valley near/far, Sun-facing, local-light/mirror and cut checkpoints; noon and night; native portable vs Apple, Chrome portable | Dropping a pass, darkening overflowing lights or hiding mirrors to improve time |
+| Stable motion | Normal-speed frame sequences, cut/reset, changing rows, two slots, dropped views and generation replacement | Matching a still while reusing stale transforms, normals or history |
+| Prepared execution | Day/night/capture variants and fallback already prepared; no pipeline creation in play | Moving compilation into the first use of a rare variant |
+| Honest hardware use | Actual storage modes, upload calls, eligible bytes, full passes and fallback counts | Calling a recipe Apple tile while always executing portable or equating logical bytes with DRAM bytes |
 
-G3t delivers that as one registry-selected configuration of the one graph portable already runs. It also defines the
-prepared native-feature handoff that G4's MetalFX work consumes.
+The quality bar is the same intact, temporally stable scene expected of a shipped high-end game; portable supplies
+matched image semantics, not an assertion that the valley's artistic polish is finished. G3s sunset diagnosis stays
+parked. Mac cadence is still PLATFORM-RUNTIME-MAC M2; offscreen motion establishes neither display cadence nor latency.
+Physical iPhone timing/loss is owed; ios-sim is function only.
 
-Consumers are the V1 game on macOS (M3 Max) and in the iOS shell, G4 presentation, and G3c culling, which shares
-depth, instance data and indirect draws. Portable stays the running fallback and image oracle, and Chrome always runs
-portable.
+Commissioned: registry recipes, graph-derived transient/memoryless attachments, merged scene/present execution,
+direct output, slot-safe uploads, shared eligible transients, compact internal transport, GPU light assignment,
+existing visibility integration, prepared native segments and paired evidence. G4 owns TAAU/MetalFX/EDR/governor,
+real render-scale transitions and pipeline archives. The complete Metal recorder, Metal 4 queue, tile shaders,
+Android recipe and further quantization remain later work.
 
-Commissioned:
-- the recipe and registry fields;
-- graph-derived memoryless and transient attachments;
-- a merged scene/present graph with direct output;
-- shared transient targets;
-- mapped per-slot uploads;
-- compact instances;
-- GPU light binning;
-- mirrored ranges;
-- the native-segment handoff and its prepared-feature records;
-- proof tooling, and traffic and scaling evidence.
+## Research and selection
 
-Deferred:
-- the complete native recorder, kept as the later performance candidate (boundary decision);
-- tile shaders, imageblocks and programmable blending, which wgpu cannot express;
-- Metal 4 command objects;
-- Android tile;
-- quantised instance rows below 80 B (only if M12 shows instance bandwidth matters);
-- the cooked-placement 80 B instance layout in `thrum-asset-gpu`, which keeps its own path.
+Inspected on 9 November 2026; these are API/architecture evidence, not measurements of Thrum:
 
-## Cues
+- [wgpu 30.0.1 TextureUsages](https://docs.rs/wgpu/30.0.1/wgpu/struct.TextureUsages.html#associatedconstant.TRANSIENT_ATTACHMENT),
+  `TRANSIENT_ATTACHMENT`: attachment-only usage, clear/dont-care load and discard store. This permits the selected
+  public-API path only when the compiled variant has no later reader. More recent API changes do not change our lockfile.
+- [Apple WWDC20 10603](https://developer.apple.com/videos/play/wwdc2020/10603/), transcript's memory-bandwidth discussion:
+  store only future pass inputs; compression and caches separate logical traffic from device-memory traffic. The
+  [Thrum probe](../../evidence/render/G3T-TRAFFIC-PROBE-2026-11-08.md) supplies the actual per-encoder counter method.
+- [wgpu 30.0.1 Device](https://docs.rs/wgpu/30.0.1/wgpu/struct.Device.html#method.create_buffer_from_hal),
+  `create_buffer_from_hal` safety: same device, matching descriptor, initialized, nonzero storage. Shared Metal buffers
+  are a selected candidate with explicit import and lifetime proofs, not assumed safe from the signature alone.
+- [wgpu 30.0.1 CommandEncoder](https://docs.rs/wgpu/30.0.1/wgpu/struct.CommandEncoder.html#method.as_hal_mut),
+  raw encoder access and safety: backend may be absent, raw work cannot destroy/end the command buffer or overlap
+  wgpu recording. The locked core's Raw/Wgpu recording distinction requires a dedicated whole raw encoder.
 
-The player sees no difference between recipes. These are the cues:
-- **Same image.** Along the fixed valley route, the reference image matches portable within tolerance. That covers
-  the sky, Sun disk, stars, shadows, local lights, mirrored props and the grid fixture. A recipe that drops a pass or
-  reads an undefined attachment fails tolerance or validation.
-- **No hitch.** The recipe is chosen before readiness. A switch between atmosphere day and star variants at dusk, or
-  between capture and normal frames, selects allocations prepared at the generation build and compiles nothing.
-- **Visible scaling.** From 4 to 64 local lights, and with mirrored instances present, the image stays correct and
-  cost follows the cost model below. A dark frame from light-list overflow, or back faces on mirrored props, is a
-  defect.
+Alternatives: keep public wgpu wherever expressive; use an isolated backend for shared-buffer import and native
+features only. Reject a mixed raw/wgpu encoder, raw drawable writes, a second queue and an early full native recorder.
+A public `map_async` upload fallback is feasible only with unmap before submit; ordinary `write_buffer` remains the
+prepared safe fallback. If the ring cannot prove safety or a benefit, retain that fallback and record the candidate
+as unpromoted. Do not turn an unsuccessful optimization into a V1 exit change.
 
-## Techniques and evidence
+## Owners and dependency boundary
 
-Research notes: `tmp/g3t-g4-plans/{code-interfaces,primary-sources,docs-survey}.md` (the code at `5045cb7d`, Apple
-SDK 27.2 headers and documentation, wgpu 30.0.1 source, and the governing documents). Review reports:
-`tmp/g3t-g4-plans/reviews/`.
+| State | Single owner | G3t action / consumers |
+| --- | --- | --- |
+| Device, surface, lifecycle lease | Platform (`thrum-app`, iOS shell, browser host) | Read generation facts; retain Mac/iOS/background/loss rules |
+| Hardware recipe | `thrum-render::capabilities` | Capture once per adapter generation; passes never probe |
+| Passes, hazards, storage, phase partition | `thrum-render::graph` | Extend one compiled graph; atmosphere and contributions keep declaring accesses |
+| Slots, submit, completion, retirement | `FrameHost` | Add resource handoffs without another queue or completion authority |
+| World and publication | Core/W1 | Read committed pages; never change simulation for graphics quality |
+| Meshes, membership, facing and visibility | V2 existing mesh arena/buckets/culling | Consume its indirect ranges; never recompute conflicting facing keys |
+| Light and material meaning | V3 existing ABI/cluster oracle | Preserve admission and overflow ranking |
+| Accepted sample/history | Existing C07 history owners; G4 reconstruction | Commit only submitted images, reset on invalidity |
+| Apple buffers/providers | Isolated renderer `apple_tile` backend | Generation-owned resources; executor supplies recording/completion |
+| Route/content | V1 game/G7 | Reuse fixed route and cooked inputs; add G3t proof fixtures without changing G7 baseline |
 
-**Three tiers, chosen in order.** Each mechanism uses the lowest tier that can express it.
+The existing runtime/sky/content/visibility capabilities are present on main; no new cross-module implementation is
+needed for M0. M2 consumes the already-done `PLATFORM-RUNTIME-MAC:M1` loss boundary. Mac M2 is deliberately not a
+`needs` link. There is no dependency on unfinished mixed-mesh qualification: M9 uses existing supported paths and
+leaves unqualified bucket code unpromoted. G4 first needs M0 proof tools, M1 eligibility, M3 present input and M11 native
+providers. G3t does not wait back on G4; M11 uses bounded provider extent fixtures, and M12 records current readers
+and two fixed extents. G4 later reruns these with real reconstruction readers and live scale transitions.
 
-1. *Public wgpu, recipe-selected.*
-   - Memoryless: wgpu 30 maps `TextureUsages::TRANSIENT_ATTACHMENT` to `MTLStorageModeMemoryless`
-     (`AdapterInfo::transient_saves_memory`). It requires usage exactly `RENDER_ATTACHMENT | TRANSIENT_ATTACHMENT`, 2D,
-     one mip and one layer, a Clear or DontCare load, and a Discard store.
-   - The rest is public wgpu too: compute light binning, compact instances, mirrored ranges, the merged graph and
-     shared targets.
-2. *Isolated `apple_tile` backend objects, outside any encoder.* The boundary decision assigns rings to this backend.
-   The Apple upload ring is a persistently mapped `MTLStorageModeShared` buffer, imported once per generation with
-   `Device::create_buffer_from_hal`. The CPU writes through its contents pointer only after the slot's previous
-   submission completes. This is not an encoder splice and adds no queue.
-3. *Native segment (a proposed boundary amendment, seam 1; the current boundary remains in effect until Thrum Core
-   rules).* Some work has no wgpu path, such as a MetalFX scaler.
-   - The executor closes the current wgpu encoder and opens a dedicated wgpu `CommandEncoder` used **only** through
-     `as_hal_mut`. In it the provider records into wgpu-hal's `raw_command_buffer()`. The executor then resumes a fresh
-     wgpu encoder.
-   - All encoders go to the one `queue.submit` in graph order.
-   - wgpu-core permits a whole-Raw encoder (`record_as_hal_mut` sets `EncodingApi::Raw`; `finish` accepts it) and
-     panics on mixing. The design never mixes, never writes the drawable natively and never uses a second queue.
-   - MetalFX's classic scalers encode into an `MTLCommandBuffer` they do not own, so they fit this shape.
-   - *Producer to segment.* Each wgpu `CommandEncoder` becomes one `MTLCommandBuffer`, and the one submit commits them
-     in order on one queue. The producing encoder E1 is therefore committed before the segment's buffer N. wgpu creates
-     Metal resources hazard-tracked by default, so Metal orders N's reads after E1's writes to the same resource.
-     wgpu-hal's Metal texture transitions are no-ops, so no barrier is emitted or needed.
-   - *Segment to wgpu.* The resuming encoder E2 is committed after N, and tracking orders E2's reads of native-written
-     textures after N's writes. Command buffers retain the resources they reference only
-     because wgpu-hal 30's `retain_command_buffer_references` defaults to true; the lifetime guarantee is generation
-     ownership, proven by G3t D10.3, not that default.
-   - *What wgpu-core cannot observe.* Native writes (its initialization state never sees them), native-only resource
-     lifetimes, errors raised inside N, and the provider's internal history, which MetalFX advances at encode. Each has
-     an answer below: native-written textures are cleared once and never aliased or discarded; the generation owns
-     their lifetime; the segment registers a completed handler on N's raw `MTLCommandBuffer` that reads its `status` and `error` and
-     raises device loss; and the executor resets the provider after any
-     frame that was encoded but not executed.
-   - Thrum Core reviews this exact seam, the transitions above and the G3t M10 stand-in, before any experiment starts.
-4. *Complete native recorder.* This remains the later candidate.
+## Mechanisms
 
-**If seam 1 is refused:** MetalFX is unreachable until the complete recorder exists. The Apple recipe then ships
-TAAU, and BUILD-PLAN's V1 "MetalFX" item becomes an owner decision. G3t M10–M11 drop out, and G4 M8 moves to after
-the recorder.
+**Registry and preparation.** Extend `DeviceCapabilities` with resolved `Portable`/`AppleTile`, stable digest and
+feature facts. Apple eligibility requires Metal, unified memory and the supported transient path; unavailable native
+facts select portable. Capture native feature facts once at platform creation, including feature availability for G4;
+per-display refresh/headroom remains platform state. `THRUM_RECIPE=portable|apple-tile` is a diagnostic override:
+reject unknown or unsupported forced selections, never silently mislabel them. Chrome always resolves portable.
+Apple tile is opt-in during construction; the normal default remains portable until integrated paired evidence
+justifies promotion. Eligibility alone is not a measured win. All selected and fallback pipelines/bind groups/variant
+allocations are prepared before readiness. Diagnostics stay
+opt-in, following the existing `creation-counters` feature and generation-owned `DeviceSite`.
 
-**Alternatives rejected.**
-- An in-encoder raw splice: wgpu forbids it, and `as_hal_mut` cannot flush pending wgpu commands.
-- Raw drawable writes: wgpu does not mark the surface initialized.
-- A Metal 4 queue for MetalFX 4: it is a second queue and needs event synchronisation.
-- `map_async` rings as the Apple path: wgpu requires an unmap before each submit, a poll point, and a boxed callback
-  per map per frame. This stays the fallback only if the raw import fails at M5.
-- A literal "direct forward output" that writes display-encoded colour from forward into the drawable while HDR stays
-  in tile: late acquisition forbids touching the drawable before scene encoding completes, and reconstruction needs
-  stored HDR.
-- wgpu `PipelineCache`: it is a stub on Metal in 30.0.1.
-- Tile shaders: wgpu has no feature for them.
+**Graph storage.** Derive eligibility independently for every prepared day/star/capture variant from compiled live
+uses. Only transient render-only attachments with clear/dont-care and discard, no explicit store and no later reader
+are eligible; history, persistent, imported, sampled, copied or native-written resources are not. Use the locked
+wgpu descriptor restrictions. Allocate eligible Apple textures with `TRANSIENT_ATTACHMENT`; stored textures keep their
+required usages. Inspect actual Metal storage modes. Day depth can be eligible; stars, occlusion or G4 readers make
+it stored. Motion's explicit store remains ineligible until its producer contract changes. Capture must not widen
+normal-path usages. Report reasons per resource/variant and prepare all variants before play.
 
-Shipped tile engines follow the same discipline: load only what a pass needs, store only what later passes read, and
-keep single-pass depth and MSAA memoryless (Apple TBDR guidance; WWDC20 10603).
+**One graph, late surface.** Compile scene and present together per generation/variant, with an execute-time surface
+binding. The pre-acquire partition contains all scene work; the post-acquire partition contains the surface consumer
+and its dependent timing/readback epilogue. Reject scene work placed behind acquisition without a surface dependency.
+At first retain the current tone intermediate. In M3 move tone/display encoding into present: one scene-linear HDR
+input plus the matching exposure and display headroom writes the chosen surface format. Remove the steady Rgba8
+intermediate; capture reads a prepared branch from the same linear input, never a raw drawable. Pass-name timing
+replaces positional slots; update app, iOS, browser and capture consumers together.
 
-**The honest limit on memoryless, from today's graph.**
+Healthy acquisition refusal still drops scene views, flushes pending uploads through the existing token path, and
+does not commit image history. Observed device loss abandons without any old-queue call. A background iOS lease
+refuses submission and resets affected histories. Resize/replacement uses platform generation admission, retains old
+resources until completion and rejects stale callbacks. M2 must retain these distinctions under the merged graph.
 
-| Attachment | Day | Night (star variant) | After G4 | After G3c Hi-Z |
-|---|---|---|---|---|
-| Forward depth | Discarded and render-attachment-only, so eligible | Stored (star pass reads it) | Stored (reconstruction) | Stored |
-| Motion | Stored only because `external_side_effect` plus `store: true` forces it (`graph.rs:663-671`); nothing reads it, so a dead store of about 8.3 MB/frame at 1080p | Same | Stored and read | Stored and read |
-| Sun shadow cascades | Stored, sampled by forward | Same | Same | Same |
+**Uploads.** Give both frame slots independent instance, directional, local-light, cluster and bounds buffers and
+prepared bind groups. Track each slot's last applied source/mapping/visual generation and accumulate every compatible
+dirty change since it was written. Skips, refusals or a busy slot do not advance that cursor. Gaps, replay timeline or
+mapping changes force complete reconciliation. A two-frame dirty union alone is insufficient after dropped frames.
 
-Memoryless therefore pays at V1's shipped configuration only for day-variant depth until G4 lands, and afterwards
-only for views and passes with no later reader. The tile win must come from:
-- load/store discipline;
-- removing the 8-bit output intermediate (direct output);
-- not uploading through staging copies;
-- smaller instance rows.
+Portable uses `write_buffer`. The Apple candidate imports initialized nonzero shared `MTLBuffer`s from the same
+Metal device, with matching size/usages and `COPY_DST` for fallback. CPU contents writes require completion of every
+prior GPU read of that slot. A busy slot uses queue-ordered `write_buffer` with a counter; it never writes the pointer.
+Do not reuse native storage or release it before generation/slot completion. Register real dependencies and narrowly
+review/document unsafe access when implemented; this design grants no blanket lint exception.
 
-Shared transients halve transient *memory footprint*. They are not a traffic win. The plan measures each mechanism and
-assumes none. The eligibility rule treats an explicit `store` flag as ineligible, so the motion dead store stays
-visible in the report until G4 gives motion a reader.
+**Transient sharing.** Share only scratch whose entire previous use is ordered before its next write on the one
+queue. Slot N's passes must finish their reads before slot N+1 overwrites. History, retained capture/readback inputs,
+Hi-Z/prepass state and outputs exposed to other consumers retain their own ownership unless that lifetime is proven.
+A held-submission witness must include the final present/capture consumer. Report the eligible subset's saved
+footprint; do not promise half of total renderer memory or call footprint a bandwidth saving.
 
-**Mechanisms per BUILD-PLAN item.**
+**Compact instance transport.** Keep public `InstanceRecord` and its admitted 192-byte pack semantics. Introduce a
+private 128-byte synthetic GPU row: three affine rows (48 B), previous simulation translation (12 B), supplied normal
+columns (48 B), four IDs (16 B), padding (4 B). Offsets are affine 0, prior translation 48, padding 60, normals 64, IDs 112, stride 128.
+WGSL members must realize those offsets/stride explicitly, with CPU
+layout tests and shader reads. Current transforms are already required affine by the synthetic admission path.
+Preserve all supplied normal values used by shading, current identity/generation and translation interpolation;
+accepted-image motion still reads the separate submitted transform history. Update forward, shadow, prepass,
+visibility, history and upload together, including private bucket consumers. The cooked placement path remains
+separate. Reconstructing arbitrary supplied normals from the model matrix is invalid; an 80-byte restricted profile
+would need a separately admitted contract and is deferred. Do not silently generalize translation interpolation to
+rotation/scale interpolation.
 
-| Item | Mechanism | Tier | Check |
-|---|---|---|---|
-| Memoryless/transient | Eligibility per *prepared variant* (day, star, capture). Eligible attachments get their own memoryless allocation, which has no backing memory. These are never aliased with stored ones, and every variant's allocations are created at the generation build. | 1 | Scripted storage-mode log through `Texture::as_hal`; same image |
-| Direct output | One graph per generation with the surface imported late. Execution is split into a pre-acquire phase and a post-acquire phase. Tone and display encode move into the present pass, so the `Rgba8Unorm` output disappears. | 1 | Graph-declared bytes fall by the output write and read; same image |
-| Shared targets | One transient set per generation instead of per slot. One queue with tracked hazards orders slot N+1 after slot N. | 1 | Transient footprint halves; held-submission test |
-| Mapped per-slot upload rings | Per-slot frame buffers and bind groups on both recipes. On Apple they are backed by persistently mapped shared buffers. | 1 + 2 | Zero `write_buffer` for the per-frame classes on Apple tile; upload CPU recorded |
-| Compact instances | 192 B → 80 B: current 3×4 affine (48 B), previous-simulation-sample translation (12 B), ids (16 B), padding (4 B). Today's shaders interpolate only the previous translation by `presentation_alpha` (`synthetic.wgsl:124` and three others), so nothing read is lost. The normal matrix is derived in the shader. Both recipes. | 1 | Same image; instance bytes ×0.42 |
-| GPU light binning | Deterministic GPU build of the full 32-per-cluster CSR: one invocation per cluster scans lights in index order, keeps the lowest-index 32 and counts overflow | 1 | Per-cluster equality with the CPU oracle |
-| Mirrored ranges | G3c's visibility compute writes two indirect argument records, normal and mirrored, drawn with opposite cull faces | 1 | Same image; +1 indirect draw |
-| Prepared native features | `NativeFeatures` record and native-segment handoff (below) | 3 | Stateful stand-in inside the one submit |
+**Lights.** Extend the existing one-invocation-per-cluster GPU builder beyond its current four-light path. Keep the
+32×18×16 grid, declared source capacity and existing conservative projected bounds. At overflow keep the strongest
+32 by the CPU oracle's score (maximum RGB candela divided by max(cluster-centre squared distance, 0.0001)); ties
+prefer lower source index, output IDs sorted ascending, unused entries deterministic. Preserve orthographic exact
+intersection and perspective bounds, zero lights and zero intensity. CPU supplies per-light bounds/inputs, not a
+dense cluster list. GPU top-32 selection is bounded (insertion into 32 candidates per cell); use the same f32
+operations/order and qualify score boundaries/ties against the CPU oracle. A device/compiler disagreement selects
+the prepared CPU oracle path with a visible fallback reason; it cannot claim GPU qualification. Test clustered
+membership exactly and resulting lighting against the existing image path. Record CPU bounds cost as well as GPU work.
 
-**What would change these choices:**
-- A measured tile-shader win on the valley would justify asking for tier 4.
-- If G4 D9.1 shows pipeline state creation is negligible even cold, the archive layer still ships (V1 requires it), but
-  its proof weighs less than the metallib layer's.
-- A wgpu Metal 4 path would move MetalFX 4 into tier 3.
+**Mirrors.** Reuse V2's CPU f64 determinant/facing authority and existing indirect membership. Split ordinary and
+negative-determinant ranges with opposite front-face culling; preserve slot order inside each range and test equal-depth
+ties against the corresponding direct oracle. Near-singular transforms keep the existing two-sided policy. Never use
+cull-none for every mirrored row or promote unqualified mixed-mesh code to satisfy this milestone. Include shadow and
+camera/prepass consumers. Draw-count cost is per occupied mesh/pipeline class, not universally one additional draw.
 
-## The system as it runs
+**Native feature handoff.** C06 and the boundary decision define the planned whole-encoder segment; independent
+review is required before its implementation. Close the producing wgpu encoder, record only raw commands in a
+separate wgpu-owned encoder, then resume a fresh wgpu encoder. Submit the ordered list once on the coordinator's
+queue. Providers never submit, end/commit command buffers or touch the surface. Graph declares all reads/writes.
+Tracked same-queue resources provide producer→native→consumer ordering; qualify that assumption on locked wgpu/Metal
+with a stateful storage-writing stand-in and wgpu twin before integrating MetalFX.
 
-**State and owners.**
-- *Platform (`thrum-app`, iOS shell).* Owns the adapter, device and generation, the surface and display link, and
-  every per-display fact: headroom, refresh and backing scale. Display facts are not adapter facts and live in G4's
-  display record, not in the registry.
-- *Registry (`thrum-render::capabilities`).* Built once per adapter generation:
-  - `recipe: Recipe::{Portable, AppleTile}`, from the backend, `transient_saves_memory`, and unified memory read
-    through `Adapter::as_hal` (`hasUnifiedMemory`);
-  - `native: Option<NativeFeatures>` on Apple: memoryless, Metal family, MetalFX support and scale range, binary
-    archives, OS/SDK build;
-  - a digest that evidence rows quote.
-- *Proof counters (`thrum-render::runtime`).* Pipeline, texture and native-object creations, each tagged with its
-  thread and phase (build, transition or play). G3t M0 builds these; G3t and G4 checks both read them.
-  - **Status: an opt-in diagnostic, landed for D0.3.** It lives behind the `creation-counters` renderer feature,
-    which is off by default. In default builds the seam is a direct wgpu call, with no ledger, report or
-    submit-path lock.
-  - **Pipeline events (the guard).**
-    - Each device generation has one creation authority, a `DeviceSite`. `DeviceCapabilities::capture` mints it once,
-      with its own ledger, at the selected platform generation. Cloning the capabilities or rebuilding visuals shares
-      that site. Re-capturing a raw `wgpu::Device` (`capture_device`, `DeviceSite::untracked`) yields an untracked
-      site that reaches no ledger; it is neither an identity check nor a second ledger for the generation.
-    - Every production pipeline is created through a site, `device.render(&desc)` or `.compute(&desc)`, which
-      records one event on that site's own ledger after creating. Ledgers are never looked up by device identity,
-      so devices of different `wgpu::Instance`s that compare equal never share events.
-    - `SceneSurface::device` is that site, so contributions build on the host's generation. The cooked material
-      compile thread opens `"material-reload"` or `"material-restore"` around its compile; the host opens
-      `"contribution"` at attach and `"publish-device"` when it rebuilds a replacement device.
-    - An event goes to the innermost build or transition region that the creating thread has open on that ledger. A
-      detached preparation handle opens its region on the worker thread, so a worker's build is charged to its own
-      region, and play keeps running meanwhile.
-    - An event with no open region is *unscoped*. Before readiness it counts as build; after readiness it is a play
-      violation, recorded with its thread and frame count.
-    - Events count creations, so a pipeline created and dropped between frames is still caught.
-    - Coverage tests (`runtime/tests/creation_sites.rs`, run in default builds) fail on any raw
-      `create_render_pipeline` or `create_compute_pipeline` call in the production sources of `thrum-render`
-      (outside the seam) or `thrum-asset-gpu`. Raw-device escapes are an exact inventory: one in `capabilities.rs`
-      (`capture_device`) and two in `synthetic.rs` (the public raw-device preparation entry points); the cooked crate
-      has none.
-  - **Coverage limits.**
-    - A pipeline built on an untracked site is not counted. Production has only the inventoried escapes; the shell's
-      raw device fields and the V1 `FrameHost::new_with_setup` device parameter are separate G6 seams.
-    - Native objects have no producer yet, so they report *absent*.
-  - **Live-object deltas (a diagnostic, not the guard).**
-    - It reads wgpu's per-device live-object counters at each region boundary, detach boundary and retirement. A
-      window's net change goes to its innermost open region; an unscoped window counts as build before readiness and
-      play after. The frame path is one relaxed atomic add, with no lock or counter read.
-    - A window names its thread only when it was serialized: no detached handle alive, and the closing thread and
-      every open region's thread were the owner. Every other window is *unattributed*, including every visual
-      preparation.
-    - Counts are net per window, so a create-and-drop or a deferred destruction can hide a creation. A backend with no
-      counters (WebGPU) reports *uninstrumented*, not zero.
-- *Graph (`thrum-render::graph`).* Compiled once per generation and variant, never per frame. It adds:
-  - memoryless eligibility per variant;
-  - a `PassBackend::{Wgpu, NativeSegment(ProviderId)}` declaration;
-  - a surface import whose extent and view are bound at execute time.
+Initialize native-written textures once through wgpu; never alias/discard them. The generation retains every native
+resource until slot completion. Provider construction declares formats, extents, usages, scale range and portable
+twin before readiness. Provider-internal history resets after any encoded-but-discarded frame, failed submission,
+cut or incompatible generation. Keep the ordinary presentation-drop contract for native frames too: discard and
+reset instead of adding submit-without-present. Loss still forbids even a flush; iOS background still forbids submit.
+Raw command-buffer errors join the normal device-loss path via generation-tagged completion. Report native GPU
+start/end times separately from wgpu query times. A rejected optional provider uses its prepared twin. M10's blend
+stand-in is composition proof only; M11 covers provider replacement extents without waiting for G4's live transitions.
 
-  Execution has two phases. Phase 1 holds every pass that does not depend on the surface. Phase 2 holds the surface
-  pass and any timing or readback after it. The compiler refuses other work after the surface pass. Native segments
-  declare reads and writes like any pass, so hazards and lifetimes derive unchanged. A native segment cannot import
-  the surface. Native-written textures are generation-persistent: never aliased, never stored with Discard, and
-  retired with their generation after GPU completion.
-- *Executor and runtime (`thrum-render::runtime`).* The one owner of queue, submission, completion and retirement.
-  - A frame is an ordered encoder list (wgpu and native), submitted once.
-  - The existing presentation-drop contract is preserved until the runtime seam is reviewed. On portable, if
-    acquisition fails, views drop and pre-acquire work may still be cancelled; the existing
-    `unavailable_surface_drops_only_views_and_resize_reuses_preparation` test stays as it is. Temporal history commits
-    only when a frame carrying an accepted sample is successfully submitted (`history.rs`), so a cancelled frame
-    leaves history at the last submitted sample.
-  - A frame containing a native segment whose provider keeps internal history is the exception, because that history
-    advanced at encode. The proposed runtime seam (seam 3) submits such a frame without its present phase. If Thrum
-    Core refuses it, the frame is discarded and the provider resets on its next encode.
-  - On iOS, background GPU submission is forbidden, so an encoded frame found after suspension is dropped and every
-    history reset, native or not. This is not device loss.
-  - Each outcome (submitted without present, discarded with a reset, iOS background refusal) is counted and observable
-    in the proof (G3t M10–M11, G4 M8).
-  - `FrameSample` timing becomes a list keyed by graph pass names instead of the fixed 11-slot array.
-- *`apple_tile` backend (`thrum-render/src/apple_tile/`, `cfg(target_vendor = "apple")`).* Owns:
-  - the shared-storage rings;
-  - the segment trampoline (`as_hal_mut` → `raw_command_buffer`; `Texture::as_hal` → `raw_handle`);
-  - segment timing, read at completion from each segment command buffer's `GPUStartTime`/`GPUEndTime`;
-  - native provider objects keyed by generation, extents, formats and scale range.
+**Pipeline preparation boundary (formerly G3t seam 5).** G4 M9 records launch-to-ready stages; G4 M10 owns offline
+metallibs/passthrough reflection, parallel pre-warm and a pinned Metal pipeline-cache/archive patch. Preserve
+per-pipeline cook/compatibility keys, matching runtime MSL demand and strict archive-miss qualification on each shipped
+device. A rejected cache rebuilds before readiness. Upstream contribution is later and does not gate V1; the owner's
+per-post authorization remains required. G3t's creation authority/registry and generation retirement are shared
+inputs; this plan does not pre-approve a dependency patch, public post or library change.
 
-  It owns no queue, surface or history.
+## Worked execution and creator cases
 
-**Per-slot frame buffers and the Apple ring.** Today the instance table, directional, local-light, cluster and
-cluster-bounds buffers are single buffers that both slots share, ordered by `queue.write_buffer`.
-- Both recipes move these to per-slot buffers, with per-slot bind groups prepared at the generation build for
-  forward, shadow, visibility, history and atmosphere consumers.
-- Instance dirty rows go to the slot being written as the union of the rows dirtied since that slot's last write:
-  this frame's and the previous frame's.
-- Portable fills the slot buffers with `write_buffer`.
-- Apple tile writes the same bytes straight into the shared buffer once the slot's `render_done` is set. A slot still
-  busy at encode time takes `write_buffer` for that frame, and the fallback is counted.
-- Memory cost is one extra copy per buffer: at 10k instances × 80 B, about 0.8 MB.
+1. Cook the unchanged valley, capture its root and prepare device/recipe/variants. Attach the cooked contribution
+   through the existing scene seam; no authoring dependency enters the runtime. A live asset replacement updates the
+   contribution generation and invalidates only matching derived state under C05/C07.
+2. Admit a committed sample. Reconcile that slot's dirty data, then write its completed-slot buffers. Encode atmosphere,
+   contribution, Sun shadows, air shadows, light lists, existing visibility/prepass, forward/sky/stars and accepted
+   transform capture in graph order. Later G4 inserts its reconstruction consumer before present.
+3. Acquire late, bind the actual surface, present the matching linear input/exposure, submit once. Only successful
+   submitted work advances image history; completion retires slot/generation resources.
+4. If acquire fails after native encoding, drop the view, perform only the healthy upload flush and mark the provider
+   reset before reuse. If loss was observed, abandon without queue calls instead. If iOS suspended, refuse submission
+   under its lease. Retained world/input/cooked source continues under its existing owner.
+5. During generation replacement, prepare registry/resources/providers and fallback off the rendering critical path,
+   publish at the existing safe boundary, reset incompatible histories and retire old resources after completion.
 
-**Prepared native-feature handoff (consumed by G4 M8).**
-- *Generation.* Providers are created at the generation build for one device generation and recipe generation, with
-  declared input and output formats, required texture usages, extents and scale range. The build runs before
-  readiness, or during a transition off the render thread (G4 owns transitions).
-- *Lifetime.* A provider object and every native-touched texture live until their generation retires after GPU
-  completion. wgpu-core does not track textures touched only by raw encoding, so the generation, not the command
-  buffer, is what keeps them alive until retirement.
-- *Encode.* `encode(raw_cmd_buf, inputs, outputs, params)`, only inside a native segment, from graph textures to graph
-  textures, never the drawable.
-- *State and reset.* A provider may keep internal history. It must reset when told, and the executor tells it after
-  any generation change or any frame whose submission failed.
-- *Initialization.* A native-written texture is cleared once through wgpu at creation, and is never aliased or
-  discarded afterwards, so wgpu-core's lazy initialization never overwrites native output.
-- *Completion.* The provider completes with the slot's submission. Raw work cannot publish history or retire resources
-  before that.
-- *Acquisition.* Unchanged: phase 2 alone touches the drawable.
-- *Fallback.* Each provider names a portable twin prepared at the same build. Unsupported hardware, creation failure or
-  a forced rejection selects the twin without compiling. A command-buffer error takes the device-loss path.
-- *Timing.* Each segment reports GPU start and end from its own command buffer, merged into `FrameSample` under the
-  segment's pass name.
+## Cost account and proof
 
-**Archives.** V1 has no tier-3 pipeline that can use an `MTLBinaryArchive`: classic MetalFX scalers take no archive,
-and wgpu 30 cannot build pipelines from native objects or from a Metal cache. Seam 5 closes that gap for
-wgpu pipelines in two layers, measured first. Offline metallibs through wgpu 30's passthrough remove naga and the runtime
-MSL compile. A Metal `PIPELINE_CACHE` over `MTLBinaryArchive`, carried as a pinned wgpu patch, removes cold
-pipeline-state compiles. Contributing that cache upstream (gfx-rs/wgpu#8526) is a later item and does not gate V1. V1's archive item stays as written.
+At 1920×1080, nominal uncompressed attachment sizes are depth D32 8.29 MB, HDR RGBA16F 16.59 MB, motion RG16F
+8.29 MB and Rgba8 intermediate 8.29 MB. Removing the intermediate removes its logical write/read (16.59 MB/frame).
+Memoryless depth avoids a logical store only in variants without readers; actual physical savings depend on
+compression/caches. Both slots' private frame buffers add one copy of each class. At 10k rows, private 128-byte
+transport is 1.28 MB instead of 1.92 MB; two slots cost 2.56 MB plus other classes. Worst-case dirty upload is every
+active row; ordinary dirty work is proportional to accumulated changed ranges, bounded by full reconciliation.
 
-**A normal frame (Apple tile, after G3t).** The steps run in order:
-1. Encode stage on the render owner. The slot's shared buffers are written once its previous use has completed.
-2. Phase 1 encoders:
-   - atmosphere compute;
-   - optional contribution;
-   - Sun shadow cascades (stored);
-   - air shadow;
-   - GPU binning;
-   - camera visibility, which writes normal and mirrored indirect records;
-   - forward opaque plus sky: depth memoryless in the day variant without readers, stored otherwise;
-   - instance history;
-   - under G4, reconstruction (native segment or TAAU).
-3. Late acquire.
-4. Phase 2: the present pass encodes tone and display into the drawable.
-5. One submit; completion retires the slot.
+9,216 clusters × L lights gives 589,824 candidate tests at L=64. Bounded top-32 insertion adds at most 32 comparisons
+per accepted candidate; forward evaluates at most 32 references per covered cluster. Fixed 32-ID storage is about
+1.18 MB plus 73,728 B heads, per slot, before scratch. Record overflow, source counts, CPU bounds, binning and forward
+times; no unsupported sub-0.1-ms prediction. Mirrored work follows occupied bucket/range count and caster coverage.
+Sharing only eligible scratch saves one duplicate of that subset. Native segments add encoder/command-buffer owners
+and retain provider histories; include them in complete frame time, creation counts and peak generation overlap.
 
-If acquisition fails, the existing drop contract applies; a frame carrying a stateful native segment follows seam 3.
+M0 supplies matched baseline identity, same-target repeats, prepared linear-image checkpoints and full-resolution
+motion sequences. Existing G7's coarse-grid comparator stays unchanged and is only a route/content smoke test.
+G3t compares matching native recipes per pixel after the fixed SDR transform (H=1), using provisional CIEDE2000 p99≤2,
+max≤6; require byte-identical same-target repeats before comparing. Do not widen tolerance to absorb failures.
+Native stand-in vs twin allows 1 ULP f16/channel. CPU/GPU light membership is exact. Independent visual review still
+checks missing geometry, normal response, shadows, lighting and reset/motion; scalar metrics alone cannot close it.
 
-Valley baseline at 1080p offscreen on this M3 Max: GPU pass sum p50 3.86 ms (forward and sky 1.94, atmosphere 1.24,
-shadow 0.50); upload p50 628 µs; encode p50 1.63 ms. These are host-shared baselines, not budgets.
+Record source/build/shader/route/cooked hashes, registry digest, device/backend, viewport, mode, warmup, run order and
+load. Use paired A/A controls and alternating recipe runs; report p50/p95 CPU upload/encode, full GPU and passes,
+allocations and outstanding work. M12 also exercises the representative 10,000-entity field with 1,000–2,000 movers,
+full/partial visibility and supported direct/culling paths, so a small valley route cannot stand in for scaling.
+Separate display callbacks, submit, GPU completion and physical swaps. Read physical
+per-encoder bytes only by the retained Xcode replay method; without a screen/tool slot mark them unmeasured, and do not
+block the offscreen functional milestones. No numeric performance/allocation gate; visible hitches, about 25%
+comparable regression and unexpected scaling trigger investigation. Accelerated-path promotion requires a measured
+win with preserved quality; inconclusive candidates remain unpromoted with prepared fallback.
 
-**Cost account and models (nominal, 1920×1080).**
+## Risks and bounded unknowns
 
-*Attachments, before compression.*
-
-| Attachment | Bytes |
-|---|---|
-| Depth D32 | 8.3 MB |
-| Scene `Rgba16Float` | 16.6 MB |
-| Motion | 8.3 MB |
-| `Rgba8` output, removed | 8.3 MB written + 8.3 MB read |
-
-Memoryless day depth saves an 8.3 MB store. Shared transients save about 33 MB of footprint.
-
-*Instances.*
-
-| Rows | 192 B rows | 80 B rows |
-|---|---|---|
-| 10k | 1.92 MB | 0.80 MB |
-| Valley (1,500/frame) | 288 KB | 120 KB |
-
-*Lights.*
-- The GPU build tests 9,216 clusters × L lights, so cost is linear in L: about 0.6 M tests at L = 64. It is expected
-  to be well under 0.1 ms on M3 Max, a model to be measured.
-- Forward shading is linear in the mean lights per covered cluster, capped at 32.
-- CPU frame time should stay within noise from 4 to 64 lights on the GPU build. On the CPU build it is linear in L.
-
-*Mirrors.* One extra indirect draw and no change in shaded pixels.
-
-*Traffic.* Graph-declared bytes are recorded per attachment. Measured device bandwidth needs a counter capture that
-M0 must first prove possible: the commission's probe found only `GPUTimestamp` in `MTLDevice.counterSets`, and only
-`RT Unit Active` from an Instruments run with the Performance Limiters counter set. If no byte counter can be
-captured, rows record graph-declared bytes labelled *unmeasured*, and GPU time is the measured signal.
-
-## Risks
-
-- **Memoryless buys little at the shipped configuration.** The early sign is the per-variant table above.
-  - The plausible wrong substitute is to claim a tile win from a flag on an attachment nobody uses at the shipped
-    setting.
-  - Guard: report eligibility per variant at the shipped configuration.
-- **Native segment and wgpu tracking disagree.**
-  - Lazy initialization may clear native output.
-  - A native-only texture may be freed in flight.
-  - Guard: the native texture rules above, plus a *stateful* stand-in that writes through storage, proven before
-    MetalFX.
-- **The raw ring breaks wgpu's assumptions.** `create_buffer_from_hal` import, lazy-init state and usage flags are
-  unproven.
-  - Early sign: validation errors or zero-filled rows.
-  - Fallback: `map_async` rings, with their costs recorded.
-- **Shared transients race across slots.** Early sign: flicker under a stall. Guard: a held-submission test.
-- **Variant allocations multiply.** Prepared variants: atmosphere day/star × capture × reconstructor twin.
-  - Memoryless allocations cost no memory. Stored allocations are shared across variants by descriptor.
-  - Guard: report allocation bytes per variant at the generation build.
-- **The merged graph's split execution hides ordering bugs.** Guard: compile-time refusal of non-surface work after the
-  surface pass; the existing frame-token tests.
-
-## Performance
-
-Following the 6 November decision, there are no admission gates. The tripwires are:
-- a visible hitch;
-- about a 25% comparable regression;
-- scaling that departs from the models above.
-
-Every row names the recipe and registry digest. Rows are paired Apple tile and portable runs on the same M3 Max over
-the M0 route, in its fixed-step mode, and record:
-- GPU pass and segment times;
-- display-link present intervals;
-- upload CPU time;
-- graph-declared bytes;
-- measured bandwidth where M0 proved a capture;
-- image tolerance on the reference image.
-
-Mac rows standing in for the iPhone are labelled proxy. The iPhone simulator is function only. Physical iPhone timing
-is owed. Whole-frame present intervals on the Mac also depend on G3b's open live Mac presentation row.
-
-## Seams for Thrum Core (proposals)
-
-1. **Boundary amendment (proposed).** Admit the tier-3 *whole-encoder native segment* inside the one submission, as
-   defined above, including its producer and consumer transitions and what wgpu-core cannot observe. The current
-   boundary remains in effect; Thrum Core reviews this exact seam before an experiment starts. The decision currently excludes a "partial raw splice". If this is refused, see *If seam 1 is refused*.
-2. **Registry.** `Recipe`, `NativeFeatures` and the digest in `DeviceCapabilities`. Per-display facts go to the
-   platform's display record, not the registry.
-3. **Graph.**
-   - Per-variant memoryless eligibility.
-   - `PassBackend::NativeSegment`.
-   - Native-written textures as generation-persistent.
-   - One graph per generation with split execution and an execute-time surface binding.
-   - The `FrameSample` timing schema keyed by pass name.
-   - Submit-without-present only for frames carrying a stateful native segment; the portable presentation-drop
-     contract is unchanged.
-4. **Per-slot frame buffers.** For both recipes, with per-slot bind groups in forward, shadow, visibility, history and
-   atmosphere (atmosphere and G3c owners to review).
-5. **Pipeline preparation and archives (V1's "binary archives" item stays as written).** Built when G4 reaches M10,
-   then proved; details are designed when the milestone starts. Today wgpu 30 translates WGSL with naga and compiles
-   MSL at every pipeline creation on every launch, and its Metal `PipelineCache` is a stub. Four distinct pieces:
-   - *Offline metallibs* loaded through wgpu 30's `PASSTHROUGH_SHADERS`, which skip naga and the runtime MSL compile.
-     Passthrough loses wgpu-hal's per-pipeline reflection, so a pinned wgpu patch carries reflection from the cook.
-   - *Parallel pre-warm*: closure-time preparation creates pipelines across worker threads.
-   - *Local archive qualification*: a Metal `PIPELINE_CACHE` over `MTLBinaryArchive` in a pinned wgpu patch, with a
-     shipped archive proved by a strict fail-on-miss witness. This stays within V1.
-   - *Later upstream contribution* under gfx-rs/wgpu#8526, not V1-gating, only if needed and only as a change we can
-     stand behind. wgpu's CONTRIBUTING allows LLM-written code but not fully agentic PRs, so the owner writes every
-     public description and comment, and nothing is posted without the owner's OK on each post.
-6. **Compact instance ABI.** 80 B rows for both recipes: `abi.rs`, `synthetic.wgsl`, `shadow.wgsl`,
-   `history_gpu.wgsl`, `visibility.wgsl`, `thrum-app/src/sky.rs` and `tests/contracts.rs`. Reviewed by G3c and the
-   G3b interpolation owner.
-7. **Mirrored indirect records.** G3c's visibility compute emits normal and mirrored indirect argument records.
-8. **Route.** A fixed valley route with motion and a fixed-step mode (fixed dt, fixed presentation alpha), shared with
-   G4 and G7. The G7 presets are paused today.
-9. **Dependencies.** Register `wgpu-hal` (Metal), `objc2-metal` at wgpu-hal's version (0.3.2) and `objc2-metal-fx` for
-   `thrum-render` in `.config/architecture.toml` when M5 and M10 need them.
-10. **Stale text.** `decisions/G3-EXECUTING-RENDER-GRAPH.md:23` still requires a ≥10% win over portable, which the 6
-    November performance decision retired.
-
-## Open questions
-
-- Can any device byte counter be captured on this M3 Max: an Xcode GPU frame capture with memory counters, or
-  another explicitly selected counter set? Settled by M0. If not, traffic stays graph-declared and labelled
-  unmeasured.
-- Does the raw shared-storage ring import cleanly, and does it beat `write_buffer` in upload CPU time? Settled by M5.
-- Is the native segment sound with wgpu-core tracking for a stateful, storage-writing provider? Settled by M10.
+- Late readers defeat memoryless: per-variant reasons and later-reader mutation tests expose it.
+- Shared resources race: held GPU/capture consumers and changing slot data must show ordered correct output.
+- Compact normals/history disappear: supplied-normal, shear/reflection, skipped-frame and submitted-history tests
+  compare the wide admitted source to shader output.
+- GPU light ranking drifts near ties: exact oracle tests, dense overflow images and explicit CPU fallback reject it.
+- Native initialization/lifetimes differ from wgpu assumptions: same-submit stateful twin, discard/reset, held slot,
+  extent replacement and generation loss witnesses precede MetalFX.
+- Quiet timings, physical traffic and real display cadence may be unavailable. Keep their evidence limits explicit;
+  none is supplied by docs checks. M12 records what was actually run and the live/device rows still owed.

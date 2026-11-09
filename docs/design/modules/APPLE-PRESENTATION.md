@@ -8,7 +8,8 @@
 [C12](../CONTRACTS.md#c12-budgets-evidence-and-acceptance--t2-with-all-owners) ·
 [Render spec](../RENDER-SPEC.md) · [Apple tile (G3t)](APPLE-TILE.md) · [Milestones](APPLE-PRESENTATION-PLAN.md)
 
-Revision 3 for Thrum Core review, 7 November 2026. It answers the three independent reviews of revision 1
+Revision 3 for Thrum Core review, 7 November 2026; G3t handoffs reconciled 9 November (independent review owed).
+It answers the three independent reviews of revision 1
 (`86ec3b6b`) and the re-reviews of revision 2 (`c507ad3d`) recorded in the plan. Interface and path names below are
 proposals.
 
@@ -44,7 +45,7 @@ Commissioned:
 - the governor;
 - generation transitions;
 - cold start;
-- offline metallibs and binary archives (G3t seam 5);
+- offline metallibs and binary archives (G4 M10);
 - prepared handling of cuts, resizes, dropped frames, display changes, surface replacement and provider or archive
   rejection;
 - paired proof.
@@ -145,7 +146,7 @@ upscalers.
     reads, whether or not the CPU has observed N's completion;
   - a frame's history sample is accepted when its submission succeeds;
   - on portable, a dropped presentation may cancel the frame, and history stays at the last submitted sample (the
-    existing drop contract); a frame carrying a MetalFX segment follows G3t seam 3;
+    existing drop contract); a discarded MetalFX frame resets the provider before its next encode;
   - a failed submission or device loss resets history and tells the MetalFX provider to reset on its next encode;
   - MetalFX's internal history advances at encode, so a discarded or failed frame resets it at the next encode.
 - The previous matrices in the view record are the last *submitted* frame's.
@@ -298,11 +299,10 @@ current display shader is a pre-AA diagnostic. So TAAU at scale 1.0 becomes the 
 **Archives and cold start.**
 - G4's native objects are MetalFX scalers. They take no binary archive, and their cost is synchronous creation in
   generation builds.
-- M9 takes a planning baseline of launch-to-ready. M10 then builds and proves the four pieces of G3t seam 5: offline
+- M9 takes a planning baseline of launch-to-ready. M10 then builds and proves the pipeline preparation work: offline
   metallibs, parallel pre-warm and local archive qualification, all within V1. Their details are designed when M10
   starts.
-- Contributing the cache upstream (gfx-rs/wgpu#8526) is a later item that does not gate V1, under the owner's rules in
-  G3t seam 5.
+- Contributing the cache upstream (gfx-rs/wgpu#8526) is a later item that does not gate V1, under the owner's per-post authorization rules in G4 M10/U1.
 
 **What would change these choices:**
 - A MetalFX neural upscaler (M5 Pro/Max) would be a new provider behind the same contract.
@@ -358,8 +358,8 @@ current display shader is a pre-AA diagnostic. So TAAU at scale 1.0 becomes the 
 - *Scale change:* values only, no reset.
 - *Dropped presentation:* on portable the existing drop contract holds. The frame may be cancelled, and TAAU history
   stays at the last submitted sample because it commits at successful submission. A frame carrying a MetalFX segment
-  is submitted without present if Thrum Core admits G3t seam 3's runtime change; otherwise it is discarded and MetalFX
-  resets at the next encode. On iOS in the background the frame is dropped and history resets. Each outcome is
+  is discarded and MetalFX resets at the next encode, under the reconciled G3t/C06 handoff. On iOS in the background
+  the frame is dropped and history resets. Each outcome is
   counted in the proof.
 - *Resize or backing-scale change:* a generation transition.
 - *Refresh change:* governor budget only.
@@ -415,8 +415,9 @@ Mac rows standing in for iPhone are labelled proxy. iPhone EDR and timing are ow
 ## Seams for Thrum Core (proposals)
 
 1. **Temporal acceptance (RENDER-SPEC:403-409, `history.rs`, C07).** Submission-order acceptance on one queue. The
-   presentation-drop contract is unchanged until the runtime seam is reviewed: TAAU history commits at successful
-   submission of an accepted sample, and native frames follow G3t seam 3. Provider reset on failure or generation change. `HistoryKey.extent` is
+   presentation-drop contract stays unchanged: TAAU history commits at successful submission of an accepted sample;
+   discarded native frames reset the provider before reuse under G3t/C06. Provider reset on failure or generation
+   change. `HistoryKey.extent` is
    the output extent. Governor value commits do not bump the profile epoch.
    - A GPU execution error surfaces only at completion, after up to `IN_FLIGHT = 2` later frames may have read the
      affected history. Such an error takes the device-loss path, which rebuilds the generation and resets every
@@ -441,14 +442,15 @@ Mac rows standing in for iPhone are labelled proxy. iPhone EDR and timing are ow
    properties on the main thread. Headroom, refresh and backing scale are per surface (platform owner).
 7. **Governor.** Location, inputs (missed ticks from the frame host, thermal state from the platform) and value
    commits inside a profile generation (C04).
-8. **Native provider.** MetalFX through G3t's native segment (depends on G3t seam 1).
-9. **Pipeline preparation and archives.** Shared with G3t seam 5: the measured split, offline metallibs through
+8. **Native provider.** MetalFX through G3t's independently reviewed whole-encoder segment (depends on G3t M11).
+9. **Pipeline preparation and archives.** Owned by G4 M10 under the G3t boundary: the measured split, offline metallibs through
    passthrough, and the Metal `PIPELINE_CACHE` in a pinned patch; upstream later. V1's archive item stays as written.
 
 ## Open questions
 
 - Does MetalFX beat TAAU in quality per millisecond on the valley at 0.67 and 0.5? Settled by M11.
-- Does tile traffic follow the drawn subrectangle at reduced scale? Settled by G3t M12's two-scale rows, where M0
+- Does tile traffic follow the drawn subrectangle at reduced scale? G4's paired proof reruns G3t M12's fixed-extent
+  baseline with real reconstruction readers and scale steps, where M0
   proved a capture method.
 - Is the TAAU 1080p estimate right? Settled by M3.
 - Does MetalFX's history track a GPU-written exposure texture under a changing storage scale? Settled by M8.
