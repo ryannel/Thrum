@@ -1,120 +1,140 @@
 # COOKED-DRAW design review
 
-9 November 2026. Reviewed integrated tip `dccdbb9b35603ee37c7e570f8298edfd2102db05` using
-`orchestrate:review-milestone` (Reviewing a design) and `thrum-engineering`.
-No agents launched. No milestone is being judged.
+9 November 2026. Reviewed integrated tip `2394162b498fd498f93e11ffa54d4ba471430595` with
+`orchestrate:review-milestone` and `thrum-engineering`, following the design-review procedure.
+The review covers the complete brief, design, plan and twelve done-when items, including the revised M1.3 oracle.
 
-**DESIGN OK. No blocking or advisory findings.** The capability-selected full-range indexed fallback meets the
-commission, preserves the existing indirect route, and has discriminating acceptance proofs. The interface-owner
-agreements named in the plan remain pending; this review does not grant them.
+**DESIGN OK. Zero blocking findings and zero advisory findings.** The revised oracle can qualify the production
+direct encoder while preserving the commissioned indirect output and work. M1 implementation and target
+qualification remain outstanding. Interface-owner agreements retain the obligations recorded in the plan.
 
-## Requirements and inspection list
+## Requirements derived before reading the design
 
-Read the brief before the design, plan and acceptance definitions. Derived these requirements from it:
+- Draw cooked content on adapters lacking indirect execution, selecting solely from actual capability-registry
+  facts. Handle unknown facts conservatively and reselect for a replacement device generation.
+- Keep indirect selection on supported Mac and Chrome routes, with byte-identical before/after output and
+  unchanged per-frame work.
+- Render complete, textured, lit and shadowed cooked content on the simulator. Cover background/foreground,
+  replacement and rotation, and keep simulator conclusions within function evidence.
+- Preserve the contribution seam, single state authorities, C06 GPU lifetime, C07 motion history and C12 evidence
+  meaning. Identify changed interfaces, producers, consumers and required agreements.
+- Account for repeated work, storage, transfers and waits before building. Record measurements and existing
+  tripwires without inventing a budget.
+- Deliver the prerequisite for T2-CAPTURE M2 and keep its submitted-frame temporal proof with that consumer.
 
-- Cooked content must draw without indirect execution, selected exclusively from actual adapter facts in the
-  capability registry. Unknown facts need a safe outcome.
-- Supported Mac and Chrome routes must retain indirect drawing, identical output and unchanged per-frame work.
-- Simulator content must be complete, textured, lit and shadowed, with function demonstrated through the profile's
-  lifecycle and rotation edges. Simulator observations cannot establish device speed.
-- Preserve one owner for capability facts, resources, submission and history. Identify interface changes and the
-  producers and consumers that must agree to them.
-- Account for repeated cost before implementation, retain measurements and existing tripwires, and introduce no
-  invented performance budget.
-- Supply the prerequisite for T2-CAPTURE M2 without claiming that sampled simulator imagery proves every submitted
-  frame or physical display output.
+These requirements formed the inspection list for the design comparison. I formed the mechanism and proof
+assessment before reading the previous design review. The previous review applies to the earlier oracle.
 
-Used this list to compare the complete COOKED-DRAW design, plan and all 12 done-when items with the scoped source
-boundaries below. Read the existing review only after forming this assessment. The three governing COOKED-DRAW
-files have no diff from its reviewed revision `2c82de2700e2db8003029ab3cb2702c0c08be86e`; this is a fresh review of
-the current integrated tip, not runtime requalification.
+## Mechanism, scope and boundary assessment
 
-## Mechanism and boundary assessment
+The record-backed selector and whole-range direct draw satisfy the brief. Adapter-backed capture supplies known
+flags. Adapter-less `capture_device` supplies unknown facts and selects direct, covering the public
+`FrameHost::new` route. `SceneSurface` carries the fact to `CookedAssets`, which reselects at rebuild. The mask clears
+the registry flag through explicit diagnostic opt-in. M1.1 checks all three provenance cases and device reselection.
+Mac, browser and iOS preparation retain adapters for capture. The existing constructor and platform boundaries
+support these additions. Relevant source includes `crates/thrum-render/src/capabilities.rs`,
+`examples/v1-game/src/host.rs` and `examples/v1-game-ios/src/ios/render.rs`.
 
-**Selection and provenance.** `crates/thrum-render/src/capabilities.rs:38` captures an adapter-backed record;
-`:48` also exposes adapter-less capture. `examples/v1-game/src/host.rs:344` uses the latter in the public
-constructor, and `examples/v1-game/src/content.rs:66` permits cooked attachment to that host. The design explicitly
-covers this real route: unknown downlevel facts select direct and never invent indirect support. Adapter-backed
-records select indirect only when the flag is present. Reselection at rebuild follows the existing generation
-boundary. The diagnostic mask clears the recorded flag and is explicit and evidenced. It does not add a second
-selector inside the contribution.
+The existing loader expands meshlet triangles into contiguous global index ranges. A full-range indexed draw with
+base vertex zero and one instance fits that representation. The existing forward draw binds the shared material,
+vertex streams, placement instance and index buffer. Sun casters already draw full ranges. The contribution executor
+checks `computes()` before beginning compute and calls `encode_after_compute` independently. This supports omitting
+cull dispatches and readbacks while retaining shared upload, history and submission handling. The design explicitly
+moves history work out of culling and requires both-path tests for discard, capture without history, recovery,
+remote feeds, material promotion and casters. Relevant source includes `crates/thrum-asset-gpu/src/load.rs`,
+`draw.rs`, `lib.rs` and `crates/thrum-render/src/synthetic.rs`.
 
-The ordinary app and browser recovery retain adapters when capturing records
-(`crates/thrum-app/src/app/device.rs:82`, `crates/thrum-app/src/web/recovery.rs:47`); the iOS route does likewise at
-initial preparation and recovery (`examples/v1-game-ios/src/ios/render.rs:409`, `:550`). Migrating the indirect
-cooked-test and bench arms away from adapter-less capture prevents a silent change in what they exercise.
+The capability and surface additions retain C04's registry authority. The common tentative/submitted protocol
+retains C06 and C07 meaning. The design's interface table names render/registry, G5, V1 game and iOS-shell ownership
+and affected consumers. The plan requires agreement requests before building and explicitly permits building against
+those proposals, with objections returning for replanning. The separate synthetic-renderer indirect gap is explicitly
+assigned to G3c. The scoped fallback can proceed with that deferral.
 
-**Draw representation and equality hypothesis.** `crates/thrum-asset-gpu/src/load.rs:601` expands meshlet indices
-in meshlet order and records contiguous ranges. `draw.rs:573` binds the shared material, vertex streams, instance
-and index buffer before indirect drawing. The cull shader writes zero base vertex and first instance. Drawing the
-whole range with base vertex zero and one instance therefore fits the existing representation without new products,
-CPU meshlet traversal or delayed visibility readback. Sun casters already use a full-range direct draw
-(`draw.rs:567`).
+The cost account covers per-placement commands and writes, meshlet dispatches and argument storage, count readback,
+all-index vertex work and representative valley scale. One direct draw per placement avoids CPU meshlet traversal
+and delayed GPU visibility feedback. The diagnostic reference's O(P) arguments and commands are confined to proof
+runs. M1.6 preserves the production indirect command/resource audit and existing tripwires, alongside paired,
+order-alternated Mac measurements with load labels. The simulator-first order exposes further unsupported features
+before completing the comparison harness.
 
-The parity argument is appropriate within the admitted placement domain: `placement.rs:156` rejects non-rigid,
-nonuniform and mirrored runtime transforms, while source-node mirror correction belongs to the cooker
-(`crates/thrum-cook/src/mesh.rs:163`). The mesh pipeline back-face culls, and the indirect shader rejects frustum
-bounds and normal cones. Whether that existing culler is conservative in the actual diagnostic and valley views
-remains a hypothesis checked by M1.3. The explicit stop rule preserves an adverse result rather than permitting a
-culler change or relaxed oracle to hide it. Equal pixels are not being claimed by this design review.
+The iOS route uses the existing cooked-content selection. The planned state witnesses extend lifecycle and device
+replacement checks to actual cooked drawing. The existing `examples/v1-game-ios/ios/route.py` rotation row supplies
+the portrait/landscape transitions. Sampled-pan coverage includes sample times, holds and maximum gap, with its
+conclusion limited to those samples. T2-CAPTURE M2 retains the stronger temporal proof, and its done-when file
+contains `needs: ["COOKED-DRAW:M1"]`.
 
-**State and execution.** `crates/thrum-render/src/synthetic.rs:758` checks `computes()` before beginning contribution
-compute and calls `encode_after_compute` independently at `:766`. Thus the seam supports the proposed no-compute
-fallback. Current history writes are inside `draw.rs:529`'s cull routine and must move into common work; counter
-copy/clear handling at `lib.rs:752` must become path-dependent. The design explicitly requires both, along with
-shared tentative/submitted state and material promotion. M1.2 tests discard, capture without history, restaging,
-remote feeds, material promotion and casters under both paths. A still-image-only implementation cannot satisfy it.
+## Revised parity oracle
 
-The proposed record and surface additions preserve C04's single capability authority and C06/C07 ownership and
-history semantics. The design names render/registry, G5, game and iOS-shell owners and affected consumers. The plan
-requires agreement requests before building, permits building against the proposals, and returns objections for
-replanning. The synthetic renderer's separate unselected indirect paths are explicitly deferred to G3c rather than
-silently presented as fixed by this module.
+The brief requires exact indirect before/after output. The earlier additional direct-versus-meshlet byte-equality
+premise has contrary checkpoint evidence. I inspected the historical JSON and reproducer source in Git object
+`9c230ff4f54294078bb59cffb851e8ec6c68c83e`, verified all thirteen selected artifact hashes, and independently decoded
+the retained production PNGs with the repository's PNG reader. The 1920×1080 RGBA images differ at 1,506 pixels,
+with maximum channel delta 18. The retain-all control's recorded raw-output hash matches the decoded indirect image,
+and the full-range-indirect control's recorded raw-output hash matches the decoded direct image. Those checks
+corroborate the retained comparison records. Fresh execution and perceptual assessment remain M1 work.
 
-**Simulator and capture.** Existing `attach_cooked_scene` selects valley or diagnostic content from the named
-environment variables and leaves unset content alone. Attaching through it before handing the host to the iOS
-render owner is consistent with the existing seam. `examples/v1-game-ios/ios/route.py:535` supplies the specified
-landscape/portrait row. The new cooked generation, path and submitted-count witnesses extend lifecycle and rotation
-proof to the attached content. Sampled pan claims are explicitly limited by times, holds and maximum sample gap.
-T2-CAPTURE M2 retains exact submitted-frame temporal proof, and its done-when file contains
-`needs: ["COOKED-DRAW:M1"]`.
+The specification supports the design's caution about derivatives. WGSL describes approximate quad-based
+derivatives and gives derivative builtins no finite accuracy bound. WebGPU defines indexed-indirect drawing through
+buffer-supplied arguments. These facts support testing equivalent command arguments at matching partitions.
+Attributing the particular Metal discrepancy to derivatives remains an inference requiring further evidence.
+[WGSL derivatives](https://www.w3.org/TR/WGSL/#derivatives),
+[WGSL accuracy](https://www.w3.org/TR/WGSL/#floating-point-accuracy),
+[WebGPU indexed indirect drawing](https://www.w3.org/TR/webgpu/#dom-gpurendercommandsmixin-drawindexedindirect).
 
-**Cost and scope.** The account identifies per-placement uniforms, argument storage, dispatches, command counts,
-visibility readback and all-index vertex work, with representative valley counts. It removes CPU/GPU round trips
-rather than adding them to compensate for absent indirect execution. Both paths retain shared fragment, shadow and
-volume work. Paired, order-alternated Mac measurements and the existing G5 tripwires are appropriate for this
-functional fallback; the design does not use them to promote a different selector or claim simulator speed. The
-simulator-first order exposes another unsupported feature before investing in the complete parity harness.
+M1.3 now has three distinguishable roles. D executes the production direct encoder through the masked record.
+R emits full-range indirect commands derived independently from cooked ranges and placement records, with validated
+coverage. I executes ordinary selected meshlet culling and drawing. D/R equality remains exact in every original
+view, with exact same-arm repeats for all three arms. Independent argument validation and command/submission
+witnesses address a reference that repeats faulty direct arguments. The D-only missing-mesh control must break
+comparison while R stays unchanged, and restoration must recover exact equality. This can expose a comparator that
+reads one arm twice or ignores the altered submitted output.
+
+I/D scene correctness also remains a gate. Full images and unthresholded differences receive whole-frame and
+native-resolution inspection across terrain edges, silhouettes, entering geometry, mirror handling, textures,
+lighting, shadows and volume. Geometry/culling defects, objectionable shading seams and unclassified scene
+discrepancies block acceptance. The checkpoint's pixel counts supply historical observations only. Further
+investigation is required when these checks fail or a discrepancy remains unclassified. This supplies a bounded
+functional proof without requiring the precise low-level cause before building the replacement harness.
+
+M1.4 and M1.5 still compare selected production indirect output against the pre-implementation base byte for byte.
+M1.6 still audits its work. Probe controls must remain opt-in and excluded from those comparisons and timings.
+The design therefore preserves the brief's indirect invariance while revising the unsupported cross-partition oracle.
 
 ## Acceptance proof assessment
 
-These assess the planned proofs, not implementation verdicts. The proposed commands are implementation deliverables.
+The table assesses judgeability and plausible-fake coverage of the planned proofs. Milestone verdicts remain for a
+later review of the implementation and running targets.
 
-| Item | Judgeability and convincing-fake coverage |
+| Item | Assessment |
 | --- | --- |
-| M1.1 | Adapter-backed, masked and unknown-fact cases, public-constructor attachment and generation reselection are judgeable. Source tracing rejects platform switches, assumed support and private probes; resource/command inspection rejects indirect work hidden behind a direct label. |
-| M1.2 | Both suite arms assert their selected path and path-specific counts. Stateful discard, history, recovery, feed, material and caster cases reject a happy-path-only fallback. Allocation and recording inspection cover the no-indirect/no-compute claim. |
-| M1.3 | One build/store, varied views, actual path records and deterministic rerun controls support an exact final-output oracle. A mismatch or nondeterministic control cannot pass. |
-| M1.4 | Pinned pre-implementation base, shared cooked store, identical views, visible counts and repeat control can establish Mac before/after parity. Reviewer must check that separate base and claim binaries actually execute. |
-| M1.5 | Real hardware WebGPU, same-session base/claim runs, path records and repeat controls can establish Chrome parity. A browser endpoint returning the same cached output for both builds would fail source/bundle identity review. |
-| M1.6 | Indirect command/write/resource comparison complements pixel equality. An adapter-backed bench must retain indirect selection and same-load history. Paired timing records must identify load and order; no compute pass on direct must be reported as absent. |
-| M1.7 | Fresh simulator, lock witnesses, drawn generation, advancing presented/cooked submitted counts and fail-closed tooling reject a loaded-but-undrawn or stalled scene. |
-| M1.8 | Lifecycle and device replacement require resumed current-generation drawing and reject background submissions and stale publication. |
-| M1.9 | Current extents, surface epochs, retained identities and advancing cooked frames make both orientation transitions checkable. Any attended gesture exception remains separate from locked engine-state rows. |
-| M1.10 | Native-size named views and crops separately inspect geometry, textures, facing, material response, lighting, shadows, volume and rotated aspect. Counters alone cannot satisfy this proof. |
-| M1.11 | Sample times, gaps, holds and edge-entry samples support only the stated sampled continuity conclusion. Every-submitted-frame or cadence claims remain outside this proof. |
-| M1.12 | Decision, maturity ledger, evidence and T2 handoff can be checked against the implementation and actual target records, keeping maturity dimensions and storage closeout separate. |
+| M1.1 | Judgeable through adapter-backed, masked and unknown-fact tests, public-host attachment, generation reselection and source tracing. Resource/command inspection can reject an indirect path hidden behind a direct label. |
+| M1.2 | Both suite arms assert their selection and path-specific counts. Stateful cases and allocation/recording review can reject a fallback that only draws a correct still. |
+| M1.3 | Exact D/R comparisons, all original views, independent argument coverage, arm identities, repeats, a D-only defect and restoration provide discriminating automated proof. Explicit I/D inspection and residual classification retain the scene-quality gate. |
+| M1.4 | The pinned pre-implementation base, shared store, original views, visible counts and repeat control permit exact Mac regression comparison. Separate base and claim binaries and their submitted outputs must be traced during implementation review. |
+| M1.5 | Real hardware WebGPU, one Chrome session, base/claim identity, path records and repeat controls permit Chrome regression comparison. Source/bundle identity review can reject cached or substituted output. |
+| M1.6 | Command, dispatch, resource and queue-write comparison complements image equality. Adapter-backed bench selection, same-load tripwires and labelled paired measurements make the work/cost claim judgeable. |
+| M1.7 | Fresh simulator, lock witnesses, absent indirect capability, actual drawn generation and advancing presented/cooked counters reject undrawn or stalled content. Missing tools and errors fail closed. |
+| M1.8 | Current-generation drawing and resumed counters after lifecycle and replacement, with background/lost-queue witnesses, can reject stale publication and lifecycle violations. |
+| M1.9 | Both rotations have current extents, surface epochs, retained process/window/lease/device identities and advancing cooked frames. Attended exceptions remain explicit for that row. |
+| M1.10 | Named views and native-size crops inspect geometry, textures, facing, materials, Sun shadows, volume and rotated aspect separately. Complete imagery is required alongside counters. |
+| M1.11 | Timed samples, edge-entry views, holds and gaps make the stated sampled-continuity conclusion judgeable. Submitted-frame temporal qualification stays assigned to T2 M2. |
+| M1.12 | Decision, maturity, evidence and handoff records can be reconciled with actual target results and scratch disposition while retaining separate implementation, correctness, visual and device status. |
 
-## Validation and limits
+Parsed twelve unique item IDs with proofs. A semantic comparison against `1ab6c7fb` confirms that M1.3 is the only
+item whose statement or proof definitions changed. Historical evidence/status fields remain provisional inputs for
+future qualification against the claimed assembly.
 
-Read project and skill calibration examples, relevant C04/C06/C07/C12 clauses, the hardware-native and G5 decisions,
-the retained T2 M2 blocker and dependency, and scoped capability, content, contribution, draw, loader, placement,
-material, cooker and iOS-route code. This was not a whole-engine source review. No images or motion were judged,
-no GPU command was executed, and no implementation, visual or performance result is established.
+## Validation and scope
 
-The done-when JSON parses with 12 unique open item IDs. `./dev check-docs` passes with `RUSTC_WRAPPER=`
-and the installed Rust 1.99.1 compiler explicitly selected (the inherited-wrapper invocation exited 2 without
-diagnostics). `git diff --check` passes. Only this review file is changed; acceptance definitions and milestone
-state remain untouched.
+Read the project and skill calibration examples, relevant C04/C06/C07/C12 clauses, the hardware-native and G5
+decisions, the T2 M2 prerequisite record and dependency, and the scoped source boundaries described above.
+The historical checkpoint inspection covered selected records and reproducers. Whole-checkpoint implementation
+review, fresh GPU/simulator execution, image perception and motion inspection remain outside this design verdict.
+The revised oracle, negative control and remaining target proofs still require implementation and qualification.
+No agents were launched.
+
+`./dev check-docs` passes with `RUSTC_WRAPPER=` and the pinned Rust 1.99.1 compiler explicitly selected.
+Its existing source-size notes remain informational. Build outputs used an owned target directory under
+`/private/tmp`. `git diff --check` passes. The working-tree change is limited to this review file.
 
 DESIGN OK
