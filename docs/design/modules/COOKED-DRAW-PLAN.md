@@ -4,10 +4,13 @@ Design: [COOKED-DRAW.md](COOKED-DRAW.md) · [brief](COOKED-DRAW-BRIEF.md) · Don
 [COOKED-DRAW-DONE.json](COOKED-DRAW-DONE.json). Owner: G5 (`thrum-asset-gpu`), under
 [the G5 decision](../decisions/G5-CONTENT-ADDRESSED-LOOP.md).
 Reviews: Independent review of this revised design is owed to the lead/loop; no agents launched in this planner turn.
-Milestone: M1 Cooked scene draws on adapters without indirect execution (open after parity re-plan)
-Now: M1.3 uses exact production-direct versus diagnostic full-range indirect parity at matching partitions, plus scene inspection against selected meshlet indirect. Checkpoint `9c230ff4` remains historical evidence, not proof of the new oracle.
-Next: Independent design review, then implement the revised paths harness and complete all outstanding M1 proof.
-Blocked: none at planning level. Replacement oracle, negative control and scene inspection are unrun; M1 and T2-CAPTURE M2 remain unaccepted.
+Milestone: M1 Cooked scene draws on adapters without indirect execution (open, waiting on iOS extent)
+Now: Checkpoint `b0dae34c` exposes M1.10's fixed-640×360 letterboxing failure in both orientations. G3b owns the
+missing scene/surface extent transition; the checkpoint is evidence, not milestone acceptance.
+Next: Lead/loop design review and acceptance of `PLATFORM-RUNTIME-IOS:M7`, then resume all outstanding M1 proofs,
+including unchanged cooked rotation/stills/pan M1.9–M1.11 on the integrated host.
+Blocked: Dependency `PLATFORM-RUNTIME-IOS:M7` is now in M1's `needs`. M1 returns to open so the loop sequences the
+owner work before resuming G5. Existing parity/base/cost/visual proof remains subject to review and rerun.
 
 ## Ownership and agreements
 
@@ -21,6 +24,9 @@ Blocked: none at planning level. Replacement oracle, negative control and scene 
   Neither changes any signature that call sites use.
 - **The V1 game and G3b iOS shell owners** must agree that the iOS route attaches cooked content through
   `attach_cooked_scene`.
+- **G3b / PLATFORM-RUNTIME-IOS M7** owns current-oriented-extent scene sizing, including shared host/prepared-device
+  changes. M1 needs its acceptance. Diagnostic-scene M7 proof does not accept M1.10; G5 reruns cooked visuals after
+  integration. G4 reconstruction/governor work is not needed for this baseline correction.
 - **G4 seam 3** shares `draw.rs`. There is no sequencing dependency. Merge with care.
 
 Ask for these agreements before the builder starts. The builder may build against them as proposed. If an owner
@@ -95,6 +101,14 @@ were verified unchanged. Scratch goes in
 `tmp/cooked-draw/`, under [the storage rules](../../ASSET-LIFECYCLE.md).
 
 ## Log
+
+- 2026-11-09 Replanned dependency after builder checkpoint `b0dae34c` blocked M1.10. Its README and
+  `rotation/layout-failure.json` show the source stays 640×360 while surface/presented extents rotate. G3b now owns
+  PLATFORM-RUNTIME-IOS M7 for coherent scene, internal target, projection and surface extent changes. Added
+  `needs: ["PLATFORM-RUNTIME-IOS:M7"]`, changed blocked to open for dependency sequencing and removed the obsolete
+  free-text blocker. All item definitions, including M1.10, are unchanged; fails/replans are unchanged because this
+  routes missing owner work, not a four-review failure. No new proof or acceptance claimed. The enclosing loop
+  records the definitions and invalidates obsolete proof; fresh design review remains owed. No owner decision.
 
 - 2026-11-09 Re-planned M1.3 at the owner's request after blocked checkpoint `9c230ff4`. The first valley view's
   1,506 differing pixels / max delta 18 persisted with all meshlets kept; one full-range indirect command matched

@@ -52,6 +52,9 @@ from engine pixels or successful repository checks.
 qualified submitted-output and elapsed-time engine capture. [Mac evidence](evidence/render/t2-capture-m0/README.md)
 and [Chrome evidence](evidence/render/t2-capture-m1/README.md) include provenance and bounded failure controls.
 T2 simulator M2 is blocked on [COOKED-DRAW M1](design/modules/COOKED-DRAW-PLAN.md), owned by G5.
+COOKED-DRAW M1 in turn needs [PLATFORM-RUNTIME-IOS M7](design/modules/PLATFORM-RUNTIME-IOS-PLAN.md): G3b owns
+matching the scene/internal render size to the current oriented surface. M7 uses the diagnostic scene without a
+cooked dependency; after its acceptance G5 reruns cooked rotation and visual proof with M1.10 unchanged.
 G3b Mac M2 qualifies the current surface path after T2 M0 only. New Mac M3 needs Mac M2 and G3t M3 for fresh
 post-change motion/cadence: T2 M0/M1 (done) → G3t M0–M3, including attended actual-window checks and simulator
 diagnostic function, with no simulator cooked/capture dependency. Mac panel cadence needs **attended setup**

@@ -1,11 +1,14 @@
 # Platform runtime iOS shell plan (G3b)
 
-Design: [PLATFORM-RUNTIME.md](PLATFORM-RUNTIME.md#i1-phone-shell-lifecycle-slice--selected-target-partial-implementation),
+Design: [PLATFORM-RUNTIME-IOS.md](PLATFORM-RUNTIME-IOS.md), family
+[PLATFORM-RUNTIME.md](PLATFORM-RUNTIME.md#i1-phone-shell-lifecycle-slice--selected-target-partial-implementation),
+Done when: [PLATFORM-RUNTIME-IOS-DONE.json](PLATFORM-RUNTIME-IOS-DONE.json).
 [V1 iOS surface decision](../decisions/V1-IOS-SURFACE.md), contracts [C02](../CONTRACTS.md#c02-time-and-committed-state--f1-coordinator-w1-world),
 [C06](../CONTRACTS.md#c06-gpu-execution-and-lifetime--v1), [C07](../CONTRACTS.md#c07-render-scene-views-and-temporal-data--v2-with-p4v3v4)
 and [C11](../CONTRACTS.md#c11-input-audio-and-ui-lifecycle--p1a1u1-with-f1).
 Commission: Thrum Core's G3b iOS boundary (`tmp/g3b-ios-boundary/NOTES.md`).
-Reviews: 2026-11-08 M5/M6 close review of `route-full6` and the uncommitted tree on `d063f2e8` (fresh subagent, brief
+Reviews: Independent M7 design/plan review owed to the lead/loop; no agents launched in this planner turn.
+Historical reviews: 2026-11-08 M5/M6 close review of `route-full6` and the uncommitted tree on `d063f2e8` (fresh subagent, brief
 `tmp/g3b-ios-rotation/close-review-brief.md`). M6 passed. M5 needed changes, with one blocking finding: winit's
 creation and layout `Resized` events reconfigured each new window at a transient extent, so `Resized` now reads the
 layer extent. The non-blocking findings were also taken: publish inside the background-checked section, recheck the
@@ -16,17 +19,16 @@ required, three blocking: one extent source, stale-extent claim, `destroy` needs
 2026-11-07 independent design/plan review (fresh subagent given the commission, this plan, the contracts and
 the work-in-progress tree): changes required, two blocking. Answered below; see *Review answers*. Thrum Core's
 rulings on seam 2 (approved with conditions) are answered in *Root conditions*.
-Milestone: M5 and M6 closed · Updated: 2026-11-08
-Now: M1–M6 closed on the simulator. Close review passed on `route-full7`. Evidence:
-`docs/evidence/render/G3B-IOS-SIM-ROTATION-LOSS-2026-11-08.md`.
-Next: Thrum Core's call on the BUILD-PLAN G3b wording; a quieter timing rerun of the UIKit handler rows; the
-physical-iPhone rows (loss detection, timing) remain open.
-Blocked: none.
+Milestone: M7 Scene and internal render size follow the oriented iOS surface (open) · Updated: 2026-11-09
+Now: G3b owns the scene/surface extent correction exposed by COOKED-DRAW checkpoint `b0dae34c`; M7 is planned,
+not implemented or accepted. M1–M6 retain their historical simulator closeout below.
+Next: Lead/loop independent design review, then build M7 through the shared render owner and the existing iOS route.
+Blocked: no upstream milestone. COOKED-DRAW M1 needs `PLATFORM-RUNTIME-IOS:M7`; M7 does not need cooked drawing.
 
 Scope: the iPhone 18 Pro / iOS 27.2 simulator as a function target. M1–M4 covered off-main frames, touch, lifecycle and
-surface replacement; M5 adds rotation and M6 device loss. Simulator timing, a physical iPhone and G3b's Mac live rows
-are out of scope. Portrait sizing and non-integer presenter scaling belong to G4 (Thrum Core's disposition of the
-simulator visual findings): rotation proves the lifecycle, not the framing. Pre-change reference:
+surface replacement; M5 adds rotation and M6 device loss. M7 adds native-resolution scene framing at the current
+oriented extent, superseding the earlier G4 framing deferral for this baseline. G4 retains reconstruction/governor
+policy. Simulator timing, a physical iPhone and G3b's Mac live rows are out of scope. Pre-change reference:
 `tmp/g3b-ios-lifecycle/late-acquire/` (serial UIKit callback, 601 presented, 600 completed) and
 `tmp/g3b-ios-lifecycle/current/*.png`; M1 captures a fresh baseline screenshot from the pre-change build before the
 first post-change run.
@@ -104,7 +106,8 @@ surface stays revoked (no present can happen) and the checker fails on missing r
   source. The current window's `Resized` is handled on UIKit as it arrives: an extent change bumps the surface epoch
   at once; an in-flight section then drops its old-extent drawable at its next check, exactly like a revocation. The
   next request carries the new epoch and extent. The owner reconfigures only when no frame is pending (`Reconfigure`
-  replies meanwhile), resizes the host's presenter bindings with `resize_surface`, then configures the surface. The
+  replies meanwhile), resizes the host's presenter bindings with `resize_surface`, then configures the surface. That is the historical
+  M5 surface-only behaviour; M7 replaces the iOS call with a coherent scene-and-surface extent transition. The
   window, surface, lease and world stay the same: rotation is not a replacement.
   *What the epoch cannot stop.* UIKit animates the layer's bounds through a rotation, and an acquire just before
   `Resized` can still return an old-size drawable under a current epoch (Metal reports no `Suboptimal`). With
@@ -242,6 +245,46 @@ Thrum Core approved seam 2(a) and 2(b) with conditions. Each, in turn:
    that no moving axes were sent after the clear, and the actor then stays put. The log says which case occurred.
 7. *Exact lifecycle guarantee and a race exercised without a GPU/fence wait.* See *Linearization point* above and the
    raced-present row.
+
+## M7 Scene and internal render size follow the oriented iOS surface: open
+
+The [child design](PLATFORM-RUNTIME-IOS.md) owns this correction across the UIKit shell, shared `thrum-render`
+`FrameHost`/prepared-device path and V1 threaded facade. G5 remains the cooked draw owner; G4 is not a prerequisite
+for native-resolution framing. Preserve explicit fixed-render-extent surface-only consumers on Mac, browser and
+capture. Active loop definitions begin at M7 in the new DONE file. M1–M6 below are historical pre-loop closeouts,
+not newly claimed/accepted milestones; their evidence and review history are retained without forging acceptance.
+
+Work and proof:
+- [ ] Add the coupled scene/surface extent transition on the render owner and expose it to the existing iOS host.
+  Account for all targets/bindings, camera aspect, history reset, pending frames, zero extents and retryable failure;
+  preserve size-independent content and surface-only caller behaviour (M7.1).
+- [ ] Replace iOS's fixed 640×360 preparation/resize with the current full-bounds pixel extent. Extend actual
+  target/projection/presenter witnesses and assertions in the existing route, then run
+  `bash examples/v1-game-ios/ios/check-simulator.sh` under `gpu` on its fresh owned simulator (M7.2).
+- [ ] Inspect native startup/landscape/returned-portrait screenshots, full-resolution crops and both rotation strips
+  against M7.3. Full viewport alone is insufficient: actual internal targets must match too.
+- [ ] Refit scene and presenter together when rotation overlaps prepared-device recovery. Extend the existing
+  background/replacement/loss rows, including `hold-recover` plus rotation; retain M5/M6 lifecycle bounds (M7.4).
+- [ ] Record attachment bytes, pixel count and peak transition overlap. Prove identical extents reuse resources and
+  steady frames add no resize allocation/readback work; simulator results remain function only (M7.5).
+- [ ] Update selected evidence under `docs/evidence/render/ios-extent/`, iOS maturity and the G3b work list; close
+  owned scratch under `tmp/ios-extent/` and record the consumer handoff (M7.6).
+
+No dependency on unaccepted COOKED-DRAW or T2 simulator capture is added: M7 uses the existing diagnostic scene.
+After M7 acceptance, COOKED-DRAW must rerun M1.9–M1.11 on the integrated host, retaining every M1.10 requirement.
+The checkpoint evidence is accessible through `git show b0dae34c:docs/evidence/render/cooked-draw/README.md` and
+`git show b0dae34c:docs/evidence/render/cooked-draw/rotation/layout-failure.json`; do not import its code wholesale.
+Independent design review is owed to the lead/loop. After the loop commits and authorises these definitions,
+`agent_loop.py ready` must list PLATFORM-RUNTIME-IOS under `design_owed`; after that review it must list M7 as
+`ready` and COOKED-DRAW M1 as `waiting` on `PLATFORM-RUNTIME-IOS:M7` (or design-owed first if its review is stale).
+The planner leaves files uncommitted for the enclosing loop, which owns commit/integration and acceptance records.
+No owner decision is needed within this scope.
+
+Planner validation: `RUSTC_WRAPPER= ./dev check-docs` and `git diff --check` pass. The loop's schema,
+planner-delta and dependency-cycle checks pass, and all COOKED-DRAW item values are unchanged. An in-memory
+`cmd_ready` preview using the loop's post-plan authorisation shows iOS `design_owed`, then M7 `ready` after design
+approval, while COOKED-DRAW M1 waits on M7. This previews the pending commit; the ordinary CLI reads the integrated
+tip and will see these definitions only after the enclosing loop lands them. No acceptance file was written.
 
 ## M1 Off-main frames: done
 Done when:
@@ -407,6 +450,12 @@ From the 7 Nov close review and the 8 Nov daily main review (`chunk-E.md`), tria
 - L8 (no-op example binaries off macOS) is outside this shell; passed to the overseer.
 
 ## Log
+- 2026-11-09 Planned M7 from COOKED-DRAW M1.10's extent blocker at local checkpoint `b0dae34c`.
+  Read the layout/source record, README and landscape/portrait screenshots with `git show`. G3b owns the current
+  surface-to-scene extent relationship, including shared render-owner changes. G4's earlier framing deferral is
+  superseded for native-resolution correctness. Added the loop child design and M7 definitions; historical M1–M6
+  closeouts remain evidence, not new claims. COOKED-DRAW M1 now needs M7; M1.10 is unchanged. No agents launched,
+  no implementation/visual/speed acceptance claimed; independent design review owed. No owner decision required.
 - 2026-11-08 Overseer brief: M5 rotation and M6 device loss added; M4 marked done on Thrum Core's acceptance.
 - 2026-11-08 Plan review: changes required. winit's iOS `inner_size` is the safe area while `Resized` is the full
   bounds (fixed: one source, `outer_size`); the epoch cannot stop the compositor scaling the last drawable between
