@@ -4,19 +4,19 @@
   "design": {
     "verdict": "ok",
     "review": "docs/evidence/COOKED-DRAW/design-review.md",
-    "commit": "2394162b498fd498f93e11ffa54d4ba471430595",
-    "hash": "f55f4215aef551b154d892642a797bbe9e42a8763bb5a3c865dd763accb309c6",
+    "commit": "58c3414ee8f86cc06fe0dd5867cf07c1a9fc7372",
+    "hash": "7141bf98b406161e0f9ee76086122f114898f7c15bffbf5fbf7be63544db5d0a",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.1-sol",
-    "effort": "high",
+    "effort": "medium",
     "observed": {
       "model": "gpt-6.1-sol",
-      "effort": "high"
+      "effort": "medium"
     },
     "cli": "codex-cli 0.167.0-alpha.3.2",
     "path": "visible",
-    "at": "2026-11-09T13:54:20Z"
+    "at": "2026-11-09T18:32:09Z"
   },
   "milestones": {
     "M1": {
