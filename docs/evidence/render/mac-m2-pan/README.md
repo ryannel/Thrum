@@ -104,3 +104,25 @@ The retained live `slot.mQNT7T/trace/pan.trace` still fails a fresh
 live row was launched. Instruments finalization remains parked after its
 three recorded attempts; M2.2 stays open. Full probe output is in this
 worktree’s `tmp/platform-runtime-mac-m2/`.
+
+## Unlocked-console probe, 9 November 01:13 UTC
+
+The owner unlocked the console for the resumed M2 slot. A fresh direct
+`ioreg -n Root -d 1` probe reports `IOConsoleLocked = No`. The retained
+`474b4306` diagnostic executable, recorder and fixed cooked store were
+copied into this worktree's `tmp/platform-runtime-mac-m2/`; the runner
+was adjusted only to use those local paths.
+
+Under the shared `gpu` lock, `run_pan.py control <fresh-output>
+--preflight-only` refused at `CGPreflightScreenCaptureAccess()` with
+`M1 SCREEN RECORDING PERMISSION REQUIRED` (recorder exit 3). The same
+preflight outside the Codex sandbox returned the same refusal. No game,
+recording or trace was launched, and no permission prompt was requested.
+Unlocking the console therefore resolved the old lock blocker but did
+not provide Screen Recording permission to this execution context.
+
+M2.2 remains open, and the milestone is not claimed. Grant Screen
+Recording access to the recorder's execution context, then rerun the
+permission preflight and matched control/trace rows. Instruments
+finalization and fresh attributable swaps remain unverified; the prior
+motion verdict and all instrumentation limits above are unchanged.
