@@ -1,0 +1,38 @@
+{
+  "noon-0": {
+    "changed_pixels_including_system_ui": 0,
+    "maximum_delta": 0
+  },
+  "noon-36": {
+    "changed_pixels_including_system_ui": 0,
+    "maximum_delta": 0
+  },
+  "low-sun": {
+    "changed_pixels_including_system_ui": 29216,
+    "maximum_delta": 218,
+    "difference_bounds_xyxy": [
+      0,
+      0,
+      746,
+      153
+    ]
+  },
+  "diagnostic": {
+    "changed_pixels_including_system_ui": 0,
+    "maximum_delta": 0
+  },
+  "landscape": {
+    "changed_pixels_including_system_ui": 0,
+    "maximum_delta": 0
+  },
+  "portrait": {
+    "changed_pixels_including_system_ui": 29216,
+    "maximum_delta": 132,
+    "difference_bounds_xyxy": [
+      0,
+      0,
+      746,
+      153
+    ]
+  }
+}

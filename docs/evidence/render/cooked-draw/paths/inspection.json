@@ -61,7 +61,7 @@
   "unclassified_discrepancies": [],
   "negative_controls": "Each D-only omission visibly removes the terrain placement. R-after retains its output and independently derived command arguments. Restored D is exactly R.",
   "inspection_plan": "M1.3 inspection of replanned-paths, before viewing its images.\nFor each of noon 0/18/36, low Sun and diagnostic, compare I/D whole frames, terrain edges/silhouettes, texture/material detail, shadow direction/shape, and native crops around the maximum residual plus frame edges/horizon/objects. Diagnose residuals with I/all/R controls. Require complete same geometry and outward-facing plain/mirrored twins, full diagnostic volume and no visible seams, holes or objectionable shading. Cross-partition counts/deltas are observations only. Exact D/R and repeat/control failures are independent gates.\nM1.10 rotation inspection requires image fill and correct aspect at each new current extent. Compare native simulator landscape/portrait and existing presenter viewport formula against the actual recorded extents.\n",
-  "final_source_refresh": "Final probe binary, including adapter-less public-route support, reproduces every retained inspected image and difference map exactly.",
+  "final_source_refresh": "The integrated M7 renderer and final probe reproduce all fifteen retained inspected I/D/omit images byte-exact after decoding, plus all retained difference maps/native crops. All five revised oracle/control cases pass again.",
   "identity_audit": {
     "distinct_binary_hashes": 1,
     "decoded_selected_pngs_match_original_rgba_hashes": 15,

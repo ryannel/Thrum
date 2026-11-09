@@ -1,57 +1,47 @@
-# COOKED-DRAW M1 proof checkpoint
+# COOKED-DRAW M1 evidence
 
-9 November 2026. M1 remains in progress. M1.1, M1.2, revised M1.3 and M1.9 now have proof alongside the standing
-M1.7/M1.8 results. The remaining acceptance work includes a G3b/render-owner dependency.
+9 November 2026. M1 is claimed: all twelve items pass. `./dev check` passes 666 tests; same-load tripwires pass. Builder inspection is
+separate from the lead's owed independent review. No physical-device or speed result is claimed.
 
-## Current-extent blocker
+| Target | Actual facts and selected path | Evidence |
+|---|---|---|
+| Mac M3 Max / Metal | Adapter-read `INDIRECT_EXECUTION`: I. Explicit record mask clears it: D. | [Oracle](paths/report.json.gz), [inspection](paths/inspection.json), [BASE preservation](indirect/mac.json.gz) |
+| Chrome 156 / hardware WebGPU, M3 Max | First adapter-backed record contains `INDIRECT_EXECUTION`; production I; no mask. | [One-session BASE/current/repeats](indirect/chrome.json.gz) |
+| iPhone 18 Pro / iOS 27.2 simulator | Adapter record omits `INDIRECT_EXECUTION`; production D; no mask. | [Locked ordinary function/lifecycle](ios-function.json.gz), [rotation](rotation/function.json.gz), [visual inspection](ios-visuals/inspection.json) |
 
-M1.10 requires the rotated scene to fill the current extent. The fresh locked-console rotation run presents new
-extents on the same process, window and device, with Direct selected and cooked submissions advancing. Its images
-retain the fixed 640×360 scene aspect. Portrait uses viewport `[0,972,1206,678]` inside `1206×2622`; landscape uses
-`[239,0,2144,1206]` inside `2622×1206`. Native screenshots show the corresponding borders. G3b iOS/render runtime
-must supply matching scene/internal render aspect through orientation changes. `resize_surface` updates the
-presenter while retaining its source extent. The build-milestone skill returns missing owning-module work to that
-owner. [Layout/source record](rotation/layout-failure.json), [rotation states and commands](rotation/function.json.gz),
-[landscape](rotation/12-landscape.png), [portrait](rotation/13-portrait.png).
+Unknown adapter facts also select D. The public adapter-less host/attach test observes Direct and zero indirect
+resources. Both-path GPU/material suites cover discard, history, capability changes, replacement, remote feeds,
+promotion and Sun casters. Direct creates no INDIRECT, cull, count or readback resources. [Check](check.json).
 
-## Revised Mac oracle
+Mac D/R is exact in five views: noon 0°/18°/36°, low sun and diagnostic volume/mirrored/edge-straddling meshes.
+R independently validates cooked ranges/placements. I/D/R repeats are exact; visible D-only omissions are detected,
+R remains unchanged and restored D/R is exact. Retain-all-meshlets equals I. Inspected I/D residuals track draw
+partitioning with matching geometry/materials/light/shadows/volume; no tolerance, edge exclusion or low-level cause
+is claimed. The refreshed integrated renderer reproduces every retained inspected image. [Assessment](paths/inspection.json).
 
-The opt-in `draw-probe` feature derives R arguments independently from validated cooked products and placement
-order. D executes the real masked-record direct encoder. I executes selected production meshlet indirect. All five
-views have exact D/R equality, exact I/D/R repeats, detected D-only terrain omissions, unchanged post-defect R
-arguments/output and restored D/R equality. Commands, actual resource usages, source/binary/store hashes and
-submitted-frame identities are retained. Ordinary builds omit the probe feature. [Run record](paths/report.json.gz).
+Production I output/counts and both-build repeats are exact across [BASE](BASE) and current: five Mac and four Chrome
+views. BASE is the parent of the first implementation commit. Archived builds have separate Cargo roots and only
+caller/fixture/witness overlays. Chrome uses the T2 submitted tap in one hardware session without a Screen Recording
+grant. Identical captured payloads are [deduplicated](indirect/payloads.json); individual identities/hashes remain.
 
-| I/D comparison | Changed pixels | Maximum channel delta |
-|---|---:|---:|
-| Noon 0° | 1506 | 18 |
-| Noon 18° | 2225 | 41 |
-| Noon 36° | 2128 | 38 |
-| Low sun | 1504 | 50 |
-| Diagnostic | 139 | 56 |
+Accepted PLATFORM-RUNTIME-IOS M7 resolves the historical [letterboxing failure](rotation/layout-failure.json).
+Fresh locked ordinary runs advance counters, hold background submissions, recover the drawn set on generation 2
+and rotate on the same process/window/generation. Held qualification uses public pause/Sun/yaw controls separately.
+Six native still views/crops pass; held scene pairs are identical (two pairs differ only in status-bar UI). Attachments,
+viewport and projection match each oriented extent and the authored 46° FOV. [States/times](ios-visuals/run.json.gz).
+Sixteen native pan samples span presented counts 1559–2759 and both holds; largest sample-start gap is 1.118178 s.
+Every sample has complete entering terrain. The [lossless sequence](ios-visuals/pan-lossless.mkv) round-trips all samples
+exactly; playback uses one second per sample for inspection, with actual times in the record. Unsampled frames,
+cadence and speed remain unqualified.
 
-These observations supply no threshold. Retain-all-meshlets controls reproduce I exactly in every view. Whole-frame,
-native-crop and unthresholded-difference inspection finds matching geometry, silhouettes, texture/material detail,
-lighting/shadows and volume. Plain/mirrored diagnostic twins face outward; terrain crosses the left frustum edge.
-Residuals follow draw partitioning across the controls, without a derivative/ordering cause claim or an unclassified
-scene discrepancy. Each view folder retains I, D, omitted-mesh, difference and native-crop images.
-[Inspection assessment](paths/inspection.json).
+Four release Mac I/D pairs alternate order, 128 completed samples per arm, 1920×1080 valley noon, quiet load.
+Per-run median forward: I 1.240–1.244 ms / D 1.283–1.330 ms; contribution compute: I 0.01025–0.01048 ms / D absent;
+encode CPU: I 0.270–0.289 ms / D 0.149–0.188 ms. Forward includes contribution compute. No path is promoted.
+[Samples/load](cost/paired.json.gz), [command audit](cost/command-audit.json), [passing tripwires](cost/tripwires.json.gz),
+[three genuine quiet BASE runs per history](cost/baseline-history.json.gz). Existing busy/saturated history is preserved.
 
-## Correctness and remaining proof
-
-`./dev check` passes 664 tests. Both cooked and material GPU suites exercise adapter-backed and masked records.
-Replacement covers unchanged paths and capability changes both ways. The observed-resource arm also runs the
-actual public `FrameHost::new` → `attach_cooked_scene` route in a child and proves unknown facts select Direct,
-zero INDIRECT buffers, zero cull/count/readback resources and core indexed commands. Direct loading omits unused
-meshlet bounds/ranges. [Check record](check.json). Standing locked simulator function/lifecycle proof is retained.
-[Function/lifecycle record](ios-function.json.gz).
-
-M1.4/M1.5 Mac/Chrome base comparisons, M1.6 cost/tripwires, complete simulator stills/pan and M1.12 remain open.
-The incomplete base-comparison command refuses that mode. Chrome flags/selection and comparative cost remain
-unqualified for this change. Simulator results establish function. T2-CAPTURE M2 remains gated on M1 acceptance.
-
-Selected originals and compact metadata follow the repo-structure retention rules. Scratch in `tmp/cooked-draw/`
-retains reconstructible stores/captures until owner disposition and the next builder's inspection. Source generation
-lives in `scripts/cooked_draw_fixture.py`; [BASE](BASE) records the pre-implementation parent after rebase, pending
-before/after proof. [Selected evidence hashes](selected-hashes.json). The older `paths-failure.json.gz` and scratch
-shader controls retain historical evidence of the superseded oracle.
+Reproduce the named DONE checks under `agent_loop.py lock gpu`; `scripts/cooked_draw_ios_sim.py --visuals` supplies
+stills/pan and `scripts/cooked_draw_cost.py` supplies paired costs (both require a new `--output`). Use pinned Rust
+1.99.1 and `RUSTC_WRAPPER=`. After M1 acceptance, T2-CAPTURE M2 may consume ordinary cooked attach; it still owns
+submitted-frame identity/time and every-frame proof. Retained code/fixtures and [selected hashes](selected-hashes.json)
+support reconstruction; owned bulk scratch is retired with [closeout conditions](closeout.json); build output is cleaned at stop.

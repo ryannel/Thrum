@@ -4,11 +4,12 @@
   "gpu_lock": true,
   "toolchain": "Rust 1.99.1, pinned toolchain bin first on PATH, RUSTC_WRAPPER empty",
   "test_result_groups": 62,
-  "passed_tests": 664,
+  "passed_tests": 666,
   "failed_tests": 0,
   "cooked_assets_gpu": "13 cases run with adapter-backed and masked records, unchanged-path replacements and both directions of capability change. Additional draw-probe-feature run observes actual resource usages and bound commands, including a child using FrameHost::new then attach_cooked_scene.",
   "cooked_material_gpu": "8 cases each run under both records, including deferred promotion, discarded frames and device replacement.",
   "qualification_clippy": "cargo clippy -p v1-game --all-targets --features draw-probe -- -D warnings passed after final public-route test edit",
-  "log_sha256": "80c624413ea902b9704a2ff91332232fd3c508011cfa66dcb09c2e2b7906a64e",
-  "limit": "Repository correctness gate. Mac/Chrome base parity and cost/tripwire proof remain pending."
+  "log_sha256": "8ae58fbf6f63130df100ffb03c2612e6a942317d8a2262d480483d97bc480574",
+  "limit": "Repository correctness gate; visual/device results are recorded separately. Native/Chrome BASE preservation, revised oracle, simulator function and sampled visual proofs and cost/tripwires pass with their stated limits.",
+  "ios_clippy": "cargo clippy --locked --offline -p v1-game-ios --lib --target aarch64-apple-ios-sim -- -D warnings passed"
 }

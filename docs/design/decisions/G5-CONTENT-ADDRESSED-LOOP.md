@@ -104,7 +104,7 @@ not occluded by scene depth inside its box.
 | Dev server | G5 | Loopback HTTP: `/head`, a `/head?after=N` long poll, and immutable `/cas/<hash>`; `Host` checked; a loopback `Origin` or one listed with `--allow-origin` (exact `http(s)://host[:port]`, none by default) is echoed, any other is refused with 403. Client: `thrum-asset::DevClient`, target-independent protocol over a `Fetch` transport (`BrowserFetch`, the global `fetch`, on Wasm). It decodes `HEAD` with the native parser, never goes back a generation within an epoch, fetches the manifest and only the unheld products its per-kind profile preferences resolve, issues them together, and checks length and BLAKE3 before parsing. Products are 64-aligned owned bytes shared by reference count. | Server tested; client protocol unit-tested natively; Wasm client run end to end in Node and a Chrome page against `thrum-cook watch --serve`; allow-list near misses refused in tests |
 | No-stall swap | G5 | Loader-filled bounded staging ring; copies recorded in the frame's own graph under a per-frame byte budget; swap at submission. The render thread never waits. | In-game GPU tests, discard test and `cooked_edit` bench |
 | Drawn in the game | G5 gate | `SceneContribution` in the scene graph; scene fragment shader for meshes; volume raymarch. | Tested in the V1 game, visually reviewed |
-| Meshlet draw path | G5 | Registry-selected GPU frustum/cone cull with indirect multi-draw, or one full-range indexed draw when indirect facts are absent/unknown. | Mac D/R exact in all five qualification views with negative controls. Simulator direct function/lifecycle/rotation. M1 remains open on current-extent rendering and remaining proofs. |
+| Meshlet draw path | G5 | Registry-selected GPU frustum/cone cull with indirect multi-draw, or one full-range indexed draw when indirect facts are absent/unknown. | Mac D/R exact in five views with negative controls. Mac/Chrome indirect BASE output and repeats exact. Simulator direct function/lifecycle/rotation and held/sampled visuals pass with oriented M7 sizing. M1 claimed; lead review owed. |
 | Shipping excludes authoring | G5 | Registry edges plus a dependency-graph and symbol check of the release viewer binary. | Recorded in evidence |
 
 ## Cost account
@@ -224,16 +224,24 @@ dev-server client.
   shadow with the geometry (evidence, 8 November).
 - The volume is not occluded by scene depth inside its box and is a diagnostic consumer only.
 - Mesh-shader meshlet path (tied to G3c); the indirect path needs `multi_draw_indirect` support (Metal has it).
-- COOKED-DRAW M1 remains in progress. Both paths are implemented and the revised five-view direct/reference oracle
-  is qualified. Mac reports indirect support, while the simulator selects direct from flags omitting it. Chrome base
-  parity and paired cost/tripwire results remain pending. Simulator rotation function passes, but its fixed 640×360
-  render source is letterboxed after both orientation changes. G3b/render-owner current-extent scene reconstruction
-  is needed for M1.10. [Evidence](../../evidence/render/cooked-draw/README.md). T2 M2 handoff remains gated on acceptance.
+- COOKED-DRAW M1 is claimed with all twelve items passing; independent lead review is owed. Known adapter-read indirect support
+  selects meshlet indirect on Mac and Chrome; unknown/missing facts select one full-range indexed draw, including
+  the simulator. Mac direct/reference parity is exact in five views with repeats and negative controls. Production
+  indirect BASE/current output and counts are exact on Mac and Chrome. Simulator views fill both current oriented
+  extents through accepted PLATFORM-RUNTIME-IOS M7; fresh locked ordinary lifecycle/recovery/rotation and held
+  still/sampled-pan inspection pass. The sixteen pan samples have a 1.118-second largest gap; unsampled frames
+  remain unqualified. [Evidence](../../evidence/render/cooked-draw/README.md). T2 M2 may use ordinary cooked attach
+  after M1 acceptance, but still owns submitted-output/time identity and every-frame proof.
+- Paired release Mac valley measurements (1920×1080, quiet load, four alternating I/D pairs, 128 samples per arm)
+  record per-run median forward time 1.240–1.244 ms indirect / 1.283–1.330 ms direct, contribution compute
+  0.01025–0.01048 ms indirect / absent direct, and encode CPU 0.270–0.289 ms indirect / 0.149–0.188 ms direct.
+  Forward already includes contribution compute; do not add it again. These descriptive figures promote no path,
+  establish no cadence/budget, and imply no simulator or physical-device speed result.
 - Graph Copy passes are untimed engine-wide, so the upload's GPU cost is measured by the bench, not pass timestamps.
 - Physical iPhone, Chrome and sustained measurements.
 - Tripwires are asserted only by `scripts/check_g5_tripwires.sh`, not `./dev check` (they need the GPU and minutes).
-  Timings are judged per load class; this shared machine has seeded the `busy` and `saturated` classes, so a quiet
-  run checks only staging peaks. Limits cover the shared machine's spread and catch doublings, not small drifts.
+  Timings are judged per load class; this shared machine has seeded `quiet`, `busy` and `saturated` classes. Quiet history was
+  measured from the pre-COOKED-DRAW accepted BASE, with only adapter-backed bench-caller/provenance overlays. Limits cover the shared machine's spread and catch doublings, not small drifts.
   Recording appends to the baseline, so record only runs of accepted code, or the limits ratchet upward.
 - The dev server opens one thread per connection (at most 32). A page from another device needs its exact origin listed
   and the server bound to the address that page reaches (listing origins refuses a wildcard bind, and a host name in

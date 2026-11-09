@@ -138,6 +138,12 @@ def main():
     out.mkdir(parents=True,exist_ok=False)
     if args.mode == 'paths' and args.target == 'mac-metal':
         paths(out,environment())
+    elif args.mode == 'indirect' and args.target == 'mac-metal' and args.base:
+        from cooked_draw_indirect import native
+        native(out,args.base,environment())
+    elif args.mode == 'indirect' and args.target == 'chrome-webgpu' and args.base:
+        from cooked_draw_indirect import browser
+        browser(out,args.base,environment())
     else:
         raise RuntimeError('indirect base qualification is not implemented yet')
 

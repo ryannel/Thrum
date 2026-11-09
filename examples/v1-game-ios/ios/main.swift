@@ -56,6 +56,7 @@ private let shellCommands: [String: Int32] = [
     "hold-recover": 8,
     "release-recover": 9,
     "stale-wake": 10,
+    "cooked-pan": 11,
 ]
 
 // Route commands also arrive as files dropped into the app's temporary

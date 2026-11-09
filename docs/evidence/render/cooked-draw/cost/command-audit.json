@@ -1,0 +1,45 @@
+{
+  "base": "dbf79d6b1d6eabf628f49d5aac89bba7fcb322cb",
+  "method": "source audit of BASE..working tree, selected production Indirect branch; diagnostic feature inactive in ordinary builds",
+  "files": {
+    "draw.rs": {
+      "base_sha256": "34a8ab7a650f93a64b9176a3818cc34538b9527e1c01eb5d8855df88ed73d503",
+      "claim_sha256": "624c57c77b42d84a00b56e40536d66d077bfb0b6c9750976e4ee7c7e1e43ad30"
+    },
+    "lib.rs": {
+      "base_sha256": "e03e5e73eb07cab2c19b1a21a75061311714ee442e441e7c5573b967aee9fba0",
+      "claim_sha256": "8461793b0c53f536d3915e9238e97bf8e6e29d3aa39a141df89342f338aeceff"
+    },
+    "load.rs": {
+      "base_sha256": "abffd52c9a941c04a3022f903d7d938733a3f11f71fdabb037692550b5bfa113",
+      "claim_sha256": "163d1ed35f0567a3922c73e6479261ec6f089395d1a39eb5c4e8ae6f594950bc"
+    }
+  },
+  "findings": [
+    "Cull pipeline and bindings remain the same on I. One dispatch per placed mesh, ceil(meshlet_count/64) x 1 x 1; unchanged cull shader arguments and rejection code.",
+    "Forward retains pipeline, bindings, vertex/index buffers, placement order and multi_draw_indexed_indirect(draws, offset 0, meshlet_count). Sun caster index draws and diagnostic volume draw remain identical.",
+    "Indirect draw arguments remain STORAGE|INDIRECT|COPY_DST, meshlet bounds/ranges STORAGE|COPY_DST, cull uniforms UNIFORM|COPY_DST; visible count STORAGE|COPY_SRC|COPY_DST. Readback remains MAP_READ|COPY_DST. Vertex/index, material, instance, upload staging and volume usages are unchanged.",
+    "Per-frame cull writes remain 160 bytes at offset 0 per mesh. Conditional history writes remain four bytes at instance offset 64 when continued changes. History evaluation moved from encode_compute to encode_upload so Direct shares it; on I it derives the same continued/history_reset/material-promotion state. Writes are issued earlier in CPU recording, with the same values/count and before the next queue submission. Per-mesh interleaving of history and cull writes is reorganized; no added per-frame queue write on I.",
+    "Visible count readback copy and subsequent clear_buffer remain. Optional wrappers branch only on the selected path. Loader still stages the same meshlet metadata on I; Direct alone omits it.",
+    "Feature-observed command/resource records run only on resident swap; no probe draw executes with diagnostic_mode production. Paired cost arms explicitly select production, and baseline comparisons omit draw-probe entirely."
+  ],
+  "limits": "This is a source/command audit, not a driver trace. Exact native and Chrome output/count comparisons and GPU suites independently test effects.",
+  "shaders": {
+    "crates/thrum-asset-gpu/src/cull.wgsl": {
+      "base_sha256": "a2c91474da3af2c347a9f0f8444e80280fa508d264fa9cf67713586844c54281",
+      "claim_sha256": "a2c91474da3af2c347a9f0f8444e80280fa508d264fa9cf67713586844c54281"
+    },
+    "crates/thrum-asset-gpu/src/shadow.wgsl": {
+      "base_sha256": "bce1546f47efc0be2ad08eedff56c412851ddbbaac1ebf10c5edd96b098d4d6d",
+      "claim_sha256": "bce1546f47efc0be2ad08eedff56c412851ddbbaac1ebf10c5edd96b098d4d6d"
+    },
+    "crates/thrum-asset-gpu/src/material.wgsl": {
+      "base_sha256": "70d5a75247ce74ef0a2d7e3c75d05f34904860fe2af3872ebee5e6c3055ba657",
+      "claim_sha256": "70d5a75247ce74ef0a2d7e3c75d05f34904860fe2af3872ebee5e6c3055ba657"
+    },
+    "crates/thrum-asset-gpu/src/cooked.wgsl": {
+      "base_sha256": "914343fde6d19b1c2d8e397afffec66b40fa2f56ae8fbe7a66aeb30cc9857d8b",
+      "claim_sha256": "914343fde6d19b1c2d8e397afffec66b40fa2f56ae8fbe7a66aeb30cc9857d8b"
+    }
+  }
+}

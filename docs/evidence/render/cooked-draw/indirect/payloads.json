@@ -1,0 +1,88 @@
+{
+  "native": {
+    "noon-0": {
+      "retained_image": "../paths/noon-0/I.png",
+      "identical_payload_arms": [
+        "base",
+        "claim",
+        "base-repeat",
+        "claim-repeat"
+      ]
+    },
+    "noon-18": {
+      "retained_image": "../paths/noon-18/I.png",
+      "identical_payload_arms": [
+        "base",
+        "claim",
+        "base-repeat",
+        "claim-repeat"
+      ]
+    },
+    "noon-36": {
+      "retained_image": "../paths/noon-36/I.png",
+      "identical_payload_arms": [
+        "base",
+        "claim",
+        "base-repeat",
+        "claim-repeat"
+      ]
+    },
+    "low-sun": {
+      "retained_image": "../paths/low-sun/I.png",
+      "identical_payload_arms": [
+        "base",
+        "claim",
+        "base-repeat",
+        "claim-repeat"
+      ]
+    },
+    "diagnostic": {
+      "retained_image": "../paths/diagnostic/I.png",
+      "identical_payload_arms": [
+        "base",
+        "claim",
+        "base-repeat",
+        "claim-repeat"
+      ]
+    }
+  },
+  "chrome": {
+    "noon-0": {
+      "retained_image": "chrome/noon-0.png",
+      "identical_payload_arms": [
+        "base",
+        "claim",
+        "base-repeat",
+        "claim-repeat"
+      ]
+    },
+    "noon-18": {
+      "retained_image": "chrome/noon-18.png",
+      "identical_payload_arms": [
+        "base",
+        "claim",
+        "base-repeat",
+        "claim-repeat"
+      ]
+    },
+    "noon-36": {
+      "retained_image": "chrome/noon-36.png",
+      "identical_payload_arms": [
+        "base",
+        "claim",
+        "base-repeat",
+        "claim-repeat"
+      ]
+    },
+    "low-sun": {
+      "retained_image": "chrome/low-sun.png",
+      "identical_payload_arms": [
+        "base",
+        "claim",
+        "base-repeat",
+        "claim-repeat"
+      ]
+    }
+  },
+  "scope": "Exact comparisons already passed. Repeated identical payloads are deduplicated; individual capture identity and raw hashes remain in the target reports."
+}

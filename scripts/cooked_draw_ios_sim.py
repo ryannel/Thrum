@@ -22,6 +22,7 @@ def main():
     parser.add_argument('--output', required=True, type=Path)
     parser.add_argument('--lifecycle', action='store_true')
     parser.add_argument('--rotation', action='store_true')
+    parser.add_argument('--visuals', action='store_true', help='held views and sampled pan; function only')
     args = parser.parse_args()
     os.chdir(ROOT)
     out = args.output.resolve()
@@ -56,7 +57,12 @@ def main():
         store = out / 'store'
         rustc = run(['rustup', 'which', '--toolchain', '1.99.1', 'rustc'])
         env.update(RUSTC=rustc, PATH=str(Path(rustc).parent) + os.pathsep + env['PATH'])
-        run(['cargo', 'run', '--locked', '--offline', '-p', 'thrum-cook', '--', 'cook', 'examples/v1-game/assets/showcase', str(store)], env, 300)
+        if args.visuals:
+            from cooked_draw_fixture import sources, cook
+            sources(out / 'source', env)
+            cook(out / 'source', store, env)
+        else:
+            run(['cargo', 'run', '--locked', '--offline', '-p', 'thrum-cook', '--', 'cook', 'examples/v1-game/assets/showcase', str(store)], env, 300)
         report['content_hashes'] = {str(p.relative_to(store)): hashlib.sha256(p.read_bytes()).hexdigest() for p in store.rglob('*') if p.is_file()}
         device = run(['xcrun', 'simctl', 'create', 'Thrum COOKED-DRAW owned', 'com.apple.CoreSimulator.SimDeviceType.iPhone-18-Pro', 'com.apple.CoreSimulator.SimRuntime.iOS-27-2'])
         report['device'] = device
@@ -70,6 +76,10 @@ def main():
         shutil.copytree(store, installed)
         state = container / 'tmp/thrum-v1-ios-state.txt'
         launch_env = dict(env, SIMCTL_CHILD_THRUM_V1_ROUTE='1', SIMCTL_CHILD_THRUM_SCENE='valley', SIMCTL_CHILD_THRUM_ASSET_STORE=str(installed), SIMCTL_CHILD_THRUM_STARS='off')
+        if args.visuals:
+            if args.lifecycle or args.rotation:
+                raise RuntimeError('held visual proof is separate from ordinary lifecycle/rotation proof')
+            launch_env.update(SIMCTL_CHILD_THRUM_COOKED_DRAW_HELD='1')
         run(['xcrun', 'simctl', 'launch', device, 'org.thrum.v1'], launch_env)
 
         def read():
@@ -104,12 +114,15 @@ def main():
             previous = s
             time.sleep(1)
         run(['xcrun', 'simctl', 'io', device, 'screenshot', str(out / 'valley-start.png')])
-        if args.lifecycle or args.rotation:
+        if args.lifecycle or args.rotation or args.visuals:
             old_argv = sys.argv
             sys.argv = ['route.py', device, str(state)]
             os.environ['THRUM_V1_ROUTE_OUT'] = str(out / 'route')
             route = runpy.run_path('examples/v1-game-ios/ios/route.py')
             sys.argv = old_argv
+            original_extent_proof = route['extent_proof']
+            selected_fov = json.loads((ROOT / 'examples/v1-game/assets/showcase/scene.json').read_text())['camera']['vertical_fov_degrees']
+            route['rotate'].__globals__['extent_proof'] = lambda s: original_extent_proof(s, selected_fov)
             if args.lifecycle:
                 before = read()
                 original_snapshot = route['background'].__globals__['snapshot']
@@ -144,6 +157,57 @@ def main():
                 if not healthy(after) or int(after['cooked_submitted']) <= int(before['cooked_submitted']) or after['device_generation'] != before['device_generation']:
                     raise RuntimeError('cooked rotation continuity failed')
                 report['rotation'] = {'before': before, 'after': after}
+            if args.visuals:
+                report['views'] = []
+                def shot(name):
+                    before = read()
+                    began = time.monotonic()
+                    run(['xcrun', 'simctl', 'io', device, 'screenshot', str(out / f'{name}.png')])
+                    row = {'name': name, 'begin': began, 'end': time.monotonic(), 'before': before, 'after': read()}
+                    if not healthy(row['after']) or int(row['after']['world_tick']) != 0:
+                        raise RuntimeError(f'held view is unhealthy or world advanced: {row}')
+                    report['views'].append(row)
+                    return row
+                def pair(name):
+                    shot(name + '-a')
+                    time.sleep(.5)
+                    shot(name + '-b')
+                pair('noon-0')
+                base = read()
+                route['post']('cooked-pan')
+                route['wait'](lambda s: float(s.get('cooked_pan_seconds', 0)) > 0, 15, 'cooked pan started')
+                pan = []
+                for index in range(16):
+                    pan.append(shot(f'pan-{index:02}'))
+                    time.sleep(.6)
+                route['wait'](lambda s: float(s.get('cooked_yaw', 0)) == 36, 15, 'cooked pan end hold')
+                pair('noon-36')
+                report['pan'] = {'before_command': base, 'after_hold': read(), 'samples': pan,
+                                 'largest_begin_gap_seconds': max(b['begin'] - a['begin'] for a,b in zip(pan,pan[1:])),
+                                 'scope': 'simctl compositor samples only; witness counters bracket observations, not exact frame IDs; no conclusion about unsampled frames, speed or cadence',
+                                 'start_hold_seconds': 2, 'pan_seconds': 8,
+                                 'end_hold_observed_min_seconds': max(0, float(read()['cooked_pan_seconds']) - 10)}
+                # Relaunch the same installed binary for the start camera's orientation proof.
+                def relaunch(scene='valley', solar='12'):
+                    run(['xcrun', 'simctl', 'terminate', device, 'org.thrum.v1'])
+                    state.unlink(missing_ok=True)
+                    view_env = dict(launch_env, SIMCTL_CHILD_THRUM_SCENE=scene,
+                                    SIMCTL_CHILD_THRUM_COOKED_DRAW_SOLAR=solar,
+                                    SIMCTL_CHILD_THRUM_COOKED_DRAW_DIAGNOSTIC='1')
+                    run(['xcrun', 'simctl', 'launch', device, 'org.thrum.v1'], view_env)
+                    route['wait'](healthy, 60, 'fresh held cooked view')
+                    time.sleep(3)
+                relaunch()
+                run(['examples/v1-game-ios/ios/build-uitest.sh'], env, 300)
+                landscape = route['rotate']('12-landscape', 'testLandscape', read(), landscape=True)
+                pair('landscape')
+                portrait = route['rotate']('13-portrait', 'testPortrait', landscape, landscape=False)
+                pair('portrait')
+                report['visual_rotation'] = {'landscape': landscape, 'portrait': portrait}
+                relaunch(solar='6.5')
+                pair('low-sun')
+                relaunch(scene='diagnostic')
+                pair('diagnostic')
         console('after')
         report['pass'] = True
     except BaseException as error:

@@ -1,0 +1,75 @@
+{
+  "items": [
+    "M1.10",
+    "M1.11"
+  ],
+  "target": "ios-sim",
+  "scope": "simulator function only; builder inspected, independent review owed",
+  "list_before_inspection": "M1.10 eight points and M1.11 sampled continuity in COOKED-DRAW-DONE.json",
+  "result": "pass",
+  "views": {
+    "noon-0": "Whole native portrait and native edge/horizon/object crops: continuous textured earth to both edges and horizon; blue sky, metallic reflective sphere and matte outward rock; both cast coherent Sun shadows. Rock has faceted shape and shadow aliasing also present in the Mac content; no missing patch, crack, meshlet gap or channel swap.",
+    "noon-36": "Whole portrait and crops: the camera turned away from the sphere and rock; complete textured entering terrain across both edges, continuous hill silhouettes, no meshlet gaps or cracks.",
+    "low-sun": "Whole portrait and native crops: warm grazing Sun lights outward faces and ridges, blue ambient on shadowed ground, long sphere and rock shadows; same content and lighting direction as Mac indirect low-sun view. No image-target equality inferred.",
+    "diagnostic": "Whole portrait and native crops: checker-textured plain/mirrored twins face and light alike. The edge-straddling mesh is present at the left. The cloud volume is visible as a translucent grey region with the diagnostic instance wall visible through its thinner areas; no black fill or clipping defect.",
+    "rotation": "Landscape and restored portrait fill actual oriented native extents. All attachment/source/destination/drawable sizes match. Full viewport and projection matrix verify aspect and authored 46 degree vertical FOV. Geometry is proportionate and cooked content persists. Dynamic Island/status bar belong to compositor UI.",
+    "held_pairs": "Noon-0, noon-36, diagnostic and landscape pairs are exactly identical including UI. Portrait/low-sun pairs differ only within [0,0,746,153], where the compositor status-bar style changes; the scene pixels are identical. No scene flicker or z-fighting observed."
+  },
+  "pan": "Viewed all sixteen full-frame samples in chronological strips and native edge/horizon/object crops. Sphere and rock move out of the left edge as expected; hills and textured terrain enter and remain complete at both edges. No sample shows popping, holes or flicker. Sampling supports no assertion about unsampled frames, cadence or speed; every-submitted-frame proof belongs to T2-CAPTURE M2.",
+  "coverage": {
+    "presented_before_command": "1559",
+    "presented_after_end_hold": "2759",
+    "sample_count": 16,
+    "largest_begin_gap_seconds": 1.1181780002079904,
+    "sample_times_and_bracketing_state": "run.json.gz: pan.samples",
+    "motion": "2-second start hold, 8-second continuous 0\u201336 degree yaw, then end hold; world tick 0; no simulator timing result",
+    "start_hold_seconds": 2,
+    "end_hold_observed_min_seconds": 8.601381
+  },
+  "pan_crop_regions_xy": [
+    [
+      0,
+      950
+    ],
+    [
+      886,
+      950
+    ],
+    [
+      443,
+      900
+    ],
+    [
+      0,
+      1450
+    ]
+  ],
+  "pan_crop_size": [
+    320,
+    256
+  ],
+  "sequence": {
+    "file": "pan-lossless.mkv",
+    "encoding": "lossless FFV1 BGRA, native 1206x2622, sixteen samples",
+    "decoded_rgba_sha256": [
+      "1e7b30499be43c95f32ff272785c2c19024d676d7a93a2cd4dc5b8f8e7f03500",
+      "4f5c33822d9d52149bf17de5b19709297c08b13b621e12a2744200795a86d94d",
+      "326abadc44467d716cc8b1cbb74321f2ebc8c2953369c4fd6b0e27467e961da1",
+      "cfdde03898330e989b76c1cf0b7de7745148c8ec4a2cdc1e2d6c231bbd627e96",
+      "11283f6565fe9a060ca0528591db1b3794c94242c0cf8ac6c103fcd47a3e6549",
+      "212d52101b1b795217ccf30fda640a1866790a43d9a74c399d7c798143b6b0cc",
+      "e8bafaa301d0c267e57eca8821a05c938e9a26ca307482b6eb9d2c0b4ec004df",
+      "b91562ab29c5786e419d7224661ce0f3d275967ef64a29eb916ffcfeafaa7d33",
+      "7d9e3650334df881e9356c20b97e20a3284751e472b35dcf20555e6a8e4288e9",
+      "e047d3d5e6f17d9c6528238de3435f101689c0a3040920df3e9acfb3d7cde8f8",
+      "768e8de6f8a5c1fa0ee531ba539981dbb51dedc561e5997319f28aee3ec732ac",
+      "e047d3d5e6f17d9c6528238de3435f101689c0a3040920df3e9acfb3d7cde8f8",
+      "6e63c0768960bba56516242911990c7674c4989a13d26cfa5e4ed4097e7b0f20",
+      "6e63c0768960bba56516242911990c7674c4989a13d26cfa5e4ed4097e7b0f20",
+      "6e63c0768960bba56516242911990c7674c4989a13d26cfa5e4ed4097e7b0f20",
+      "6e63c0768960bba56516242911990c7674c4989a13d26cfa5e4ed4097e7b0f20"
+    ],
+    "roundtrip": "Every decoded frame compared byte-exact with original simctl RGBA",
+    "playback": "one second per sample for inspection only; actual sample intervals are in run.json.gz, not movie timestamps"
+  }
+}
