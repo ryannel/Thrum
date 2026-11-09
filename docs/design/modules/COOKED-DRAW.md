@@ -1,6 +1,7 @@
 # Cooked draw path: capability-selected direct fallback
 
-9 November 2026. **Planned; nothing implemented.** This is a child design of
+9 November 2026. **M1 implemented in part; revised parity oracle awaits build and independent review.**
+The blocked checkpoint is `9c230ff4`; no milestone acceptance is claimed. This is a child design of
 [the G5 decision](../decisions/G5-CONTENT-ADDRESSED-LOOP.md), owned by G5 (`thrum-asset-gpu`). It sits under
 [C04](../CONTRACTS.md#c04-feature-composition-and-quality--f2), [C06](../CONTRACTS.md#c06-gpu-execution-and-lifetime--v1),
 [C07](../CONTRACTS.md#c07-render-scene-views-and-temporal-data--v2-with-p4v3v4),
@@ -10,9 +11,10 @@ Plan: [COOKED-DRAW-PLAN.md](COOKED-DRAW-PLAN.md). Done when: [COOKED-DRAW-DONE.j
 
 ## Purpose and scope
 
-The cooked scene must draw on every adapter Thrum runs on. Today it requires indirect execution. The iOS simulator's
-Metal adapter lacks it, so the simulator draws no cooked content, and T2-CAPTURE M2 is blocked
-([evidence](../../evidence/render/t2-capture-m2/README.md)).
+The cooked scene must draw on every adapter Thrum runs on. The commissioned gap was its requirement for indirect
+execution: the iOS simulator's Metal adapter lacks it, blocking T2-CAPTURE M2
+([original evidence](../../evidence/render/t2-capture-m2/README.md)). The local builder checkpoint now draws the
+cooked valley on the simulator, but M1 remains unaccepted and T2-CAPTURE M2 stays gated on it.
 
 The consumers are the V1 game on all three targets, T2-CAPTURE M2, which needs the cooked valley on the simulator,
 and any later downlevel device.
@@ -32,8 +34,10 @@ and any later downlevel device.
 
 ## What must hold
 
-- **Same scene, both paths.** Where both paths can run (this Mac), the direct path's final image is byte-identical
-  to the indirect path's for the same build, store and fixed-time view.
+- **Same scene, both paths.** On this Mac, the production direct path's final submitted image is byte-identical
+  to a diagnostic full-range indirect reference with the same draw partition, build, store and fixed-time view.
+  The selected meshlet-indirect path also renders the same complete, correctly placed, textured, lit and shadowed
+  content; cross-partition shading differences are recorded and inspected under M1.3, not required to be zero.
 - **The indirect path is untouched.** Its output on Mac Metal and Chrome WebGPU is byte-identical before and after
   the change, and it records the same per-frame commands.
 - **The simulator draws the cooked valley.** It is complete, textured, lit and shadowed. It survives
@@ -42,9 +46,10 @@ and any later downlevel device.
 - **The record decides.** The path comes from adapter facts in the capability record. No platform, OS, backend or
   adapter-name test is allowed, and no private device query. Unknown facts never enable indirect execution.
 
-Bar: where both paths run, they produce identical pixels. On the simulator, the cooked valley is as complete as on
-Mac. Shipped engines' compatibility renderers work this way: Unreal's ES3.1 mobile path and Unity's GLES fallback
-draw the same content with less GPU-driven work.
+Bar: both selected paths render the same correct scene; the direct path has exact parity against a reference
+with matching draw partitions (M1.3). On the simulator, the cooked valley is as complete as on Mac. Shipped engines'
+compatibility renderers work this way: Unreal's ES3.1 mobile path and Unity's GLES fallback draw the same content with
+less GPU-driven work.
 
 ## Mechanism
 
@@ -61,8 +66,8 @@ already works this way (G5's "Profile selection" row).
 exposes downlevel flags only on `Adapter`. So its record says the downlevel facts are unknown. It never assumes them
 and never invents support. The public route `FrameHost::new` → `capture_device` → `attach_cooked_scene` therefore
 selects the direct path on every device. The direct path uses only core indexed drawing, so it is valid on any
-adapter, and where both paths run it gives the same pixels (M1.3). An adapter-less host on a capable device pays the
-direct path's extra vertex work. Its stats and evidence name the path and the unknown-facts reason.
+adapter, and its whole-range draw is qualified by M1.3's reference and scene checks. An adapter-less host on a capable
+device pays the direct path's extra vertex work. Its stats and evidence name the path and the unknown-facts reason.
 
 Refusing to attach cooked content to an adapter-less host was the alternative. It was rejected: it gains nothing over
 an always-valid path, and it would break the existing tests and benches that use `FrameHost::new`.
@@ -91,16 +96,78 @@ uniform. It records no visible counter and no readback. `computes()` returns fal
 The draw needs only core indexed drawing. It uses no `BASE_VERTEX`, no `INDIRECT_FIRST_INSTANCE` and no compute.
 The simulator reports neither `BASE_VERTEX` nor `INDIRECT_EXECUTION`.
 
-**Why the images match.** The loader writes each meshlet's indices contiguously, in meshlet order. So one draw over
-the whole range rasterizes the same primitives in the same order as the per-meshlet draws.
+**Scene equivalence and draw partitioning.** The loader writes meshlet indices contiguously, in meshlet order.
+A whole-range draw traverses the same primitives in the same order as the per-meshlet draws before culling.
+Culling must remain conservative: a frustum-rejected sphere is outside a clip plane; a cone-rejected meshlet is
+back-facing under the pipeline's back-face cull; meshoptimizer's cone test is conservative. Depth remains `Greater`.
+These are geometry and visibility arguments, not a guarantee of identical shading across draw boundaries.
 
-Culling is conservative:
-- a frustum-rejected meshlet's bounding sphere is outside a clip plane, so it yields no fragments;
-- a cone-rejected meshlet is back-facing, and the mesh pipeline culls back faces;
-- meshoptimizer's cone test is conservative.
+At checkpoint `9c230ff4`, Apple M3 Max / Metal produced 1,506 differing final pixels (maximum channel delta 18)
+along terrain triangle edges. Keeping every meshlet left the selected indirect image unchanged, while one full-range
+indirect command per mesh matched direct exactly. Same-path repeats were exact. The
+retained controls (the builder's checkpoint `9c230ff4`, `docs/evidence/render/cooked-draw/README.md`, integrated with M1) establish partition dependence for that view,
+not a culling defect or the low-level cause. Pixel-quad derivatives and draw-boundary ordering remain hypotheses.
 
-So the same fragments are written, in the same order, under depth `Greater`. The direct path costs extra vertex
-work, but the fragment work and the pixels are the same.
+Research checked 9 November 2026: [WGSL §§15.6.2 and 15.7.4.1](https://www.w3.org/TR/WGSL/#derivatives) describe
+quad-based approximate derivatives and give derivative functions no finite error bound;
+[WebGPU §17.2.1](https://www.w3.org/TR/webgpu/#dom-gpurendercommandsmixin-drawindexedindirect) defines indexed
+indirect drawing from buffer-supplied arguments. These support matching draw partitions for an execution-path
+oracle; they do not establish this Metal discrepancy's cause. Equal primitive order alone is insufficient evidence
+for byte equality across different partitions.
+
+**M1.3 parity oracle (selected).** Keep the whole-range production direct strategy and every existing required view:
+valley noon pan at 0°, 18° and 36°, a low-sun valley view, and the diagnostic scene with its volume, mirrored node
+and edge-straddling mesh. On one build and cooked store, capture final submitted output through the T2 Mac tap:
+
+- **D — production direct:** select it only through the opt-in indirect-masked capability record. Exercise the actual
+  production direct encoder, with one whole-range `draw_indexed` per placed mesh, unchanged shaders and bindings.
+- **R — diagnostic full-range indirect reference:** an explicitly enabled, separately labelled probe mode on the
+  capable Mac emits one whole-range indexed indirect command per placed mesh, with no visibility rejection. Use the
+  same pipelines, shaders, buffers, bindings, placement order and state as D. Build reference arguments independently
+  from the cooked mesh ranges and placement records, never by copying D's encoded arguments or image. Record each
+  placement's index count/range, base vertex 0 and single instance, and validate coverage against the cooked product.
+  R uses indirect commands only as a test oracle; it is neither the selected production indirect path nor a new recipe.
+- **I — selected production indirect:** unmasked capability record, ordinary meshlet cull and draws, with no override.
+  Retain its image and actual selected-path witness for every view alongside D and R.
+
+Require **D = R byte for byte for every view**, with byte-identical same-arm reruns of D, R and I. Use identical
+extent, fixed world/time, camera, lighting, warmup and capture conditions. Record source/binary and store hashes,
+adapter facts, capability mask, selected path, diagnostic mode and submitted-frame identity. Equality is a measured
+same-device qualification, not a cross-device or cross-driver determinism promise. A D/R mismatch or unstable repeat
+fails closed and must be investigated; do not introduce tolerances or fall back to visual-only acceptance.
+
+Prove the oracle detects a real direct-path defect: in an explicitly enabled negative-control run, omit a visibly
+covered placed mesh from D only, leaving R and its arguments unchanged. The exact comparison must fail with differing
+submitted bytes. Restore D and require exact equality again. Retain the defect, command witness and comparison result;
+a harness that compares one arm to itself or derives both arms from faulty D commands must not pass.
+
+For I versus D, retain full images, unthresholded difference maps, differing-pixel counts and maximum channel deltas
+for every view. Inspect whole frames and native-resolution crops of terrain triangle edges, silhouettes, entering
+geometry, the mirrored and edge-straddling meshes, material/texture detail, Sun shadows and volume. Require the same
+complete geometry, placement, materials, lighting and shadows, without visible cracks, holes or objectionable shading
+seams. Cross-partition residuals need a recorded assessment and partition-control evidence (retain-all meshlets and
+full-range indirect) where attribution is uncertain. Edge location alone does not exonerate a defect. Neither 1,506
+pixels nor delta 18 is a tolerance, and no mask may hide edge pixels. A geometry/culling discrepancy, visible quality
+failure or unclassified scene discrepancy blocks the claim. No byte-equality gate is imposed between I and D, or
+between different meshlet-visibility partitions; diagnostic controls are evidence, not new production behaviour.
+
+The reference and negative controls must be opt-in probe facilities, absent from ordinary selection and per-frame
+work. Do not patch production WGSL between arms or leave an override enabled for M1.4–M1.6. Review the probe's command
+witness and independence from D. The production direct path still allocates no indirect/cull/readback resources.
+M1.4/M1.5 still compare **production I before versus after**, byte for byte; M1.6 still audits its unchanged commands,
+resources and writes. The reference cannot satisfy any of those items or substitute for simulator qualification.
+
+**Cause investigation and shader decision.** Identifying the exact derivative, scheduling or ordering cause is not
+a prerequisite for this re-plan or M1 acceptance: the retained controls refute the original oracle's premise, and
+the replacement checks production direct execution at matching partitions. This is not a declaration that the driver
+is correct or that every edge difference is harmless. Investigate further if the replacement oracle fails, if scene
+inspection fails or cannot classify a discrepancy, or if validation indicates undefined shader behaviour.
+
+A partition-invariant shared shader change is **not commissioned or worthwhile for M1**. It would broaden work into
+material/derivative semantics, may change filtering, quality and cost, and would threaten M1.4/M1.5's unchanged indirect
+pixels. A direct-only shader would break the shared-pipeline requirement in M1.2. Reconsider only for a demonstrated
+visible defect or a separately commissioned need for partition invariance, with cause isolation and quality/cost proof;
+any change to the preserved indirect output or selection requires a separate scope decision.
 
 **Path-independent state.** Both paths share these in one place:
 - the per-placement motion-history flag (C07), which today is written inside the cull step;
@@ -149,7 +216,9 @@ direct path has no delayed visibility, so no mechanism in it predicts one-frame 
 | CPU meshlet cull with coalesced direct draws over runs of kept meshlets | It saves vertex work for culled meshlets. But it adds O(meshlets) render-thread work every frame (G5's account keeps the render thread near zero), and a second cull implementation that must match the GPU one. It also needs CPU-side bounds for remote feeds, and one draw per run. The saving matters only on real downlevel GPUs, and none is a V1 target. Promote it only if such a target appears and measurement shows the direct path is vertex-bound. |
 | GPU cull, compacted into a per-frame index buffer, then a direct draw of the maximum count | Without indirect execution the count stays CPU-known, so culled meshlets become degenerate triangles that still cost vertex work. It writes about 0.7 MB of indices per frame for the showcase terrain, and needs an index copy per frame in flight. It also adds a compute-to-index hazard. More cost and complexity, and no clear saving. |
 | GPU cull with the visibility read back to the CPU and drawn a frame later | Geometry entering the view would be missing for a frame, which shows as popping. It also adds map synchronization. This is incorrect, not merely slower. |
-| One direct draw per meshlet | Hundreds of draws per mesh and no culling benefit. Strictly worse than one draw. |
+| One direct draw per meshlet | Hundreds of draws per mesh and no culling benefit. Matching the production indirect partition does not justify that fallback cost. |
+| Whole-range direct versus selected meshlet indirect, with a pixel-count threshold or ignored edge mask | Conflates command execution with partition-dependent shading; a fitted threshold can conceal a real draw defect. M1.3 instead uses exact equality at matching partitions plus scene inspection. |
+| Change the shared shader to force partition invariance | Low-level cause is unverified, and changing the supported indirect output violates the commissioned invariance. M1.3 needs a valid oracle, not a new shading model. |
 | Making the simulator report indirect support (patching wgpu or overriding by platform) | It breaks capability selection. Apple's DTS describes the simulator device as [Apple-family-2-like](https://developer.apple.com/forums/thread/776140), and Apple's [feature tables](https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf) put indirect arguments at Apple3. Real downlevel devices would still lack a fallback. |
 
 ## Cost account
@@ -164,7 +233,7 @@ meshlets at 124 triangles each), sphere (2,208 triangles) and rock (224 triangle
 | Compute | One cull dispatch per mesh, M threads; visible-count copy and clear | None |
 | Encoded draws | One multi-draw per mesh. wgpu-hal 30 Metal expands it into M indirect draw commands; the WebGPU backend also loops | One `draw_indexed` per mesh |
 | Vertex work | Indices of kept meshlets | All I indices, about 61k triangles for the valley. At most one extra Sun-cascade caster pass, which already draws full ranges per cascade |
-| Fragment work | Visible fragments | The same fragments |
+| Fragment work | Visible geometry; partition-dependent helper/shading work | Same visible geometry; helper/shading work may differ |
 | Memory | 20 B × M arguments, 160 B uniform, 4 B counter and readback, per placement | None of these |
 
 **Tripwires and measurements:**
@@ -174,6 +243,11 @@ meshlets at 124 triangles each), sphere (2,208 triangles) and rock (224 triangle
   forward and contribution time, and render-thread encode time. Each is labelled with its load class. No speed claim
   follows for either path.
 - **Simulator.** Its timing is never recorded as speed.
+
+The diagnostic reference adds O(P) 20-byte indexed-indirect argument records and O(P) commands per captured
+reference frame, plus submitted-output readback already used by the harness. Repeats and negative controls multiply
+offline proof work only. These controls add no ordinary-frame allocations, writes, dispatches or commands and are
+excluded from M1.6's production-path timings.
 
 Neither path has a cost target. Only the profile tripwires apply: visible hitches, about 25% comparable
 regression and unexpected scaling.
@@ -213,9 +287,12 @@ that route unchanged. M2 also adds the submitted-frame temporal proof that M1's 
   different validation error once indirect is gone. The response: run the simulator route first, before polishing
   (see the plan). A feature this module owns is handled here. Anything owned elsewhere is reported `BLOCKED` to its
   owner.
-- **Parity fails because the direct path draws visible geometry the indirect cull rejected.** That would be an
+- **Scene comparison shows direct drawing visible geometry the indirect cull rejected.** That would be an
   existing cull defect in the indirect path. Record it and report `BLOCKED` for a plan decision. Never alter the
-  indirect path silently, and never loosen the comparison.
+  indirect path silently or waive the scene-correctness check. A shading-only byte difference does not establish this.
+- **A reference repeats the direct defect.** Copying D's emitted ranges into R, comparing the same capture twice or
+  leaving a diagnostic override enabled could manufacture parity. Independent cooked-range validation, arm/command
+  witnesses, the D-only missing-mesh negative control and restored equality reject these substitutes.
 - **Plausible wrong substitute: a simulator-only switch.** For example, `cfg(target_os = "ios")` or an adapter-name
   match. It would pass the simulator rows. The selection test and review questions reject it, and so does the
   masked-record arm on Mac, which must pick the direct path with no platform change.
@@ -229,9 +306,9 @@ that route unchanged. M2 also adds the submitted-frame temporal proof that M1's 
   discard handling or remote feeds could also look right in stills. Running the whole cooked GPU suite under the
   masked record rejects it.
 
-## Checked in code and assumed
+## Code account and proof limits
 
-**Checked in code:**
+**Original design inspection (before checkpoint `9c230ff4`; retained as rationale):**
 - The draw-argument buffer and `multi_draw_indexed_indirect` call (`draw.rs`).
 - The cull shader writes `first_instance` and `base_vertex` as 0 (`cull.wgsl`).
 - Meshlet index ranges are contiguous and ordered (`load.rs`, `MeshletTables`).
@@ -252,7 +329,8 @@ that route unchanged. M2 also adds the submitted-frame temporal proof that M1's 
 
 **Assumed, and settled by M1:**
 - The M3 Max record reports `INDIRECT_EXECUTION`.
-- Forced-direct output is byte-identical to indirect output.
+- Production direct matches the full-range indirect reference exactly across all M1.3 views. The original
+  cross-partition exactness assumption is refuted by the checkpoint; the revised oracle is not yet qualified.
 - The simulator draws the rest of the cooked pipelines (ASTC or portable textures, 3D volume, casters) without
   further gaps.
 - `simctl` screenshots of a headless simulator work while the console is locked, with no OS grant.
