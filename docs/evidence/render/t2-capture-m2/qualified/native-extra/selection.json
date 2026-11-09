@@ -1,0 +1,758 @@
+[
+  {
+    "session": "01-pan",
+    "index": 0,
+    "box": [
+      0,
+      1450,
+      512,
+      512
+    ],
+    "image": {
+      "alpha": 1.0,
+      "device_generation": 1,
+      "extent": [
+        1206,
+        2622
+      ],
+      "history_epoch": 0,
+      "map_ns": 22367500,
+      "presentation_lead_ns": 13542875,
+      "presenter_generation": 1,
+      "previous_endpoint_tick": null,
+      "row_stride": 4824,
+      "source_epoch": "1",
+      "source_tick": 0,
+      "submission_id": 120,
+      "submit_ns": 3897500,
+      "surface_epoch": 2,
+      "surface_presented": true,
+      "tap_elapsed_ns": 3172500,
+      "tick": 0,
+      "timeline": 0,
+      "visual_revision": null
+    },
+    "file": "tmp/t2-capture-m2-resume/native-extra/01-pan/0000.png",
+    "png_sha256": "b716030a39fb0e833bdff0e3498b5dee9dd0bdd4ba458302f15c241222f3ccef"
+  },
+  {
+    "session": "01-pan",
+    "index": 363,
+    "box": [
+      0,
+      1450,
+      512,
+      512
+    ],
+    "image": {
+      "alpha": 1.0,
+      "device_generation": 1,
+      "extent": [
+        1206,
+        2622
+      ],
+      "history_epoch": 0,
+      "map_ns": 6201579625,
+      "presentation_lead_ns": 15969500,
+      "presenter_generation": 1,
+      "previous_endpoint_tick": null,
+      "row_stride": 4824,
+      "source_epoch": "1",
+      "source_tick": 0,
+      "submission_id": 483,
+      "submit_ns": 6184640667,
+      "surface_epoch": 2,
+      "surface_presented": true,
+      "tap_elapsed_ns": 6183915667,
+      "tick": 0,
+      "timeline": 0,
+      "visual_revision": null
+    },
+    "file": "tmp/t2-capture-m2-resume/native-extra/01-pan/0363.png",
+    "png_sha256": "f81ceedb3ee2d532f7eca22c10e4752a9676b902527f2eede4ab5270f5a23fd9"
+  },
+  {
+    "session": "01-pan",
+    "index": 725,
+    "box": [
+      0,
+      1450,
+      512,
+      512
+    ],
+    "image": {
+      "alpha": 1.0,
+      "device_generation": 1,
+      "extent": [
+        1206,
+        2622
+      ],
+      "history_epoch": 0,
+      "map_ns": 12235006042,
+      "presentation_lead_ns": 16143500,
+      "presenter_generation": 1,
+      "previous_endpoint_tick": null,
+      "row_stride": 4824,
+      "source_epoch": "1",
+      "source_tick": 0,
+      "submission_id": 845,
+      "submit_ns": 12217558917,
+      "surface_epoch": 2,
+      "surface_presented": true,
+      "tap_elapsed_ns": 12216833917,
+      "tick": 0,
+      "timeline": 0,
+      "visual_revision": null
+    },
+    "file": "tmp/t2-capture-m2-resume/native-extra/01-pan/0725.png",
+    "png_sha256": "c15a1fd7842e961a5961bf7fac184bb7509c6b55429bca44b46598988596d367"
+  },
+  {
+    "session": "04-running",
+    "index": 108,
+    "box": [
+      347,
+      2000,
+      512,
+      512
+    ],
+    "image": {
+      "alpha": 1.0,
+      "device_generation": 1,
+      "extent": [
+        1206,
+        2622
+      ],
+      "history_epoch": 0,
+      "map_ns": 1820569875,
+      "presentation_lead_ns": 15592333,
+      "presenter_generation": 1,
+      "previous_endpoint_tick": 232,
+      "row_stride": 4824,
+      "source_epoch": "1",
+      "source_tick": 233,
+      "submission_id": 230,
+      "submit_ns": 1802670625,
+      "surface_epoch": 2,
+      "surface_presented": true,
+      "tap_elapsed_ns": 1802206458,
+      "tick": 233,
+      "timeline": 0,
+      "visual_revision": null
+    },
+    "file": "tmp/t2-capture-m2-resume/native-extra/04-running/0108.png",
+    "png_sha256": "f496501dc9c3dfb53eea20db8ae88c6cc7f0d5333653f35042cdf54bfa62c122"
+  },
+  {
+    "session": "04-running",
+    "index": 109,
+    "box": [
+      347,
+      2000,
+      512,
+      512
+    ],
+    "image": {
+      "alpha": 1.0,
+      "device_generation": 1,
+      "extent": [
+        1206,
+        2622
+      ],
+      "history_epoch": 0,
+      "map_ns": 1836455375,
+      "presentation_lead_ns": 15583334,
+      "presenter_generation": 1,
+      "previous_endpoint_tick": 233,
+      "row_stride": 4824,
+      "source_epoch": "1",
+      "source_tick": 234,
+      "submission_id": 231,
+      "submit_ns": 1820084750,
+      "surface_epoch": 2,
+      "surface_presented": true,
+      "tap_elapsed_ns": 1819620583,
+      "tick": 234,
+      "timeline": 0,
+      "visual_revision": null
+    },
+    "file": "tmp/t2-capture-m2-resume/native-extra/04-running/0109.png",
+    "png_sha256": "b649c349c46e775a374b4288c876920aef6acb53cd36ff697f68d0ff528a0dc9"
+  },
+  {
+    "session": "04-running",
+    "index": 110,
+    "box": [
+      347,
+      2000,
+      512,
+      512
+    ],
+    "image": {
+      "alpha": 1.0,
+      "device_generation": 1,
+      "extent": [
+        1206,
+        2622
+      ],
+      "history_epoch": 0,
+      "map_ns": 1853765333,
+      "presentation_lead_ns": 16156584,
+      "presenter_generation": 1,
+      "previous_endpoint_tick": 234,
+      "row_stride": 4824,
+      "source_epoch": "1",
+      "source_tick": 235,
+      "submission_id": 232,
+      "submit_ns": 1835871917,
+      "surface_epoch": 2,
+      "surface_presented": true,
+      "tap_elapsed_ns": 1835407750,
+      "tick": 235,
+      "timeline": 0,
+      "visual_revision": null
+    },
+    "file": "tmp/t2-capture-m2-resume/native-extra/04-running/0110.png",
+    "png_sha256": "e06bf858c54529895d6499a36fa758998f3b41bd0c263c456233c08259149426"
+  },
+  {
+    "session": "04-running",
+    "index": 111,
+    "box": [
+      347,
+      2000,
+      512,
+      512
+    ],
+    "image": {
+      "alpha": 1.0,
+      "device_generation": 1,
+      "extent": [
+        1206,
+        2622
+      ],
+      "history_epoch": 0,
+      "map_ns": 1869247250,
+      "presentation_lead_ns": 15840542,
+      "presenter_generation": 1,
+      "previous_endpoint_tick": 235,
+      "row_stride": 4824,
+      "source_epoch": "1",
+      "source_tick": 236,
+      "submission_id": 233,
+      "submit_ns": 1853288333,
+      "surface_epoch": 2,
+      "surface_presented": true,
+      "tap_elapsed_ns": 1852824166,
+      "tick": 236,
+      "timeline": 0,
+      "visual_revision": null
+    },
+    "file": "tmp/t2-capture-m2-resume/native-extra/04-running/0111.png",
+    "png_sha256": "3e557e9d440a39bd2c7d7f3230f3360a0d8a49c67dd58c3f87da7be46a3ce2b3"
+  },
+  {
+    "session": "04-running",
+    "index": 112,
+    "box": [
+      347,
+      2000,
+      512,
+      512
+    ],
+    "image": {
+      "alpha": 1.0,
+      "device_generation": 1,
+      "extent": [
+        1206,
+        2622
+      ],
+      "history_epoch": 0,
+      "map_ns": 1886582542,
+      "presentation_lead_ns": 16166542,
+      "presenter_generation": 1,
+      "previous_endpoint_tick": 236,
+      "row_stride": 4824,
+      "source_epoch": "1",
+      "source_tick": 237,
+      "submission_id": 234,
+      "submit_ns": 1868807417,
+      "surface_epoch": 2,
+      "surface_presented": true,
+      "tap_elapsed_ns": 1868343250,
+      "tick": 237,
+      "timeline": 0,
+      "visual_revision": null
+    },
+    "file": "tmp/t2-capture-m2-resume/native-extra/04-running/0112.png",
+    "png_sha256": "f7ddc32c2d252230f6b8809cc225355a003ed967949f11f792102cf9791b6bec"
+  },
+  {
+    "session": "04-running",
+    "index": 113,
+    "box": [
+      347,
+      2000,
+      512,
+      512
+    ],
+    "image": {
+      "alpha": 1.0,
+      "device_generation": 1,
+      "extent": [
+        1206,
+        2622
+      ],
+      "history_epoch": 0,
+      "map_ns": 1902816833,
+      "presentation_lead_ns": 16156666,
+      "presenter_generation": 1,
+      "previous_endpoint_tick": 237,
+      "row_stride": 4824,
+      "source_epoch": "1",
+      "source_tick": 238,
+      "submission_id": 235,
+      "submit_ns": 1886001083,
+      "surface_epoch": 2,
+      "surface_presented": true,
+      "tap_elapsed_ns": 1885536916,
+      "tick": 238,
+      "timeline": 0,
+      "visual_revision": null
+    },
+    "file": "tmp/t2-capture-m2-resume/native-extra/04-running/0113.png",
+    "png_sha256": "4fcce874a6d781c5b3ac6eb72212bd3c152e0e0ab9e9862090f0e69eb8d5e025"
+  },
+  {
+    "session": "04-running",
+    "index": 114,
+    "box": [
+      347,
+      2000,
+      512,
+      512
+    ],
+    "image": {
+      "alpha": 1.0,
+      "device_generation": 1,
+      "extent": [
+        1206,
+        2622
+      ],
+      "history_epoch": 0,
+      "map_ns": 1919831375,
+      "presentation_lead_ns": 16176292,
+      "presenter_generation": 1,
+      "previous_endpoint_tick": 238,
+      "row_stride": 4824,
+      "source_epoch": "1",
+      "source_tick": 239,
+      "submission_id": 236,
+      "submit_ns": 1902298750,
+      "surface_epoch": 2,
+      "surface_presented": true,
+      "tap_elapsed_ns": 1901834583,
+      "tick": 239,
+      "timeline": 0,
+      "visual_revision": null
+    },
+    "file": "tmp/t2-capture-m2-resume/native-extra/04-running/0114.png",
+    "png_sha256": "40581019db2e69a77c35a6c62631ea60e54d801253b2d02df78d285df4227987"
+  },
+  {
+    "session": "04-running",
+    "index": 115,
+    "box": [
+      347,
+      2000,
+      512,
+      512
+    ],
+    "image": {
+      "alpha": 1.0,
+      "device_generation": 1,
+      "extent": [
+        1206,
+        2622
+      ],
+      "history_epoch": 0,
+      "map_ns": 1936034375,
+      "presentation_lead_ns": 16179625,
+      "presenter_generation": 1,
+      "previous_endpoint_tick": 239,
+      "row_stride": 4824,
+      "source_epoch": "1",
+      "source_tick": 240,
+      "submission_id": 237,
+      "submit_ns": 1919397250,
+      "surface_epoch": 2,
+      "surface_presented": true,
+      "tap_elapsed_ns": 1918933083,
+      "tick": 240,
+      "timeline": 0,
+      "visual_revision": null
+    },
+    "file": "tmp/t2-capture-m2-resume/native-extra/04-running/0115.png",
+    "png_sha256": "b77b292ed3f119c272f45ccd4c7371fe48e40980449f2725e9d783f19eb75b0e"
+  },
+  {
+    "session": "04-running",
+    "index": 116,
+    "box": [
+      347,
+      2000,
+      512,
+      512
+    ],
+    "image": {
+      "alpha": 1.0,
+      "device_generation": 1,
+      "extent": [
+        1206,
+        2622
+      ],
+      "history_epoch": 0,
+      "map_ns": 1952490500,
+      "presentation_lead_ns": 16176834,
+      "presenter_generation": 1,
+      "previous_endpoint_tick": 240,
+      "row_stride": 4824,
+      "source_epoch": "1",
+      "source_tick": 241,
+      "submission_id": 238,
+      "submit_ns": 1935632250,
+      "surface_epoch": 2,
+      "surface_presented": true,
+      "tap_elapsed_ns": 1935168083,
+      "tick": 241,
+      "timeline": 0,
+      "visual_revision": null
+    },
+    "file": "tmp/t2-capture-m2-resume/native-extra/04-running/0116.png",
+    "png_sha256": "46bbfbb36726aeec9a29bd15fc3eab8cf8990e063abea56b1afa7f880093e3f7"
+  },
+  {
+    "session": "04-running",
+    "index": 117,
+    "box": [
+      347,
+      2000,
+      512,
+      512
+    ],
+    "image": {
+      "alpha": 1.0,
+      "device_generation": 1,
+      "extent": [
+        1206,
+        2622
+      ],
+      "history_epoch": 0,
+      "map_ns": 1970113750,
+      "presentation_lead_ns": 16167500,
+      "presenter_generation": 1,
+      "previous_endpoint_tick": 241,
+      "row_stride": 4824,
+      "source_epoch": "1",
+      "source_tick": 242,
+      "submission_id": 239,
+      "submit_ns": 1952020292,
+      "surface_epoch": 2,
+      "surface_presented": true,
+      "tap_elapsed_ns": 1951556125,
+      "tick": 242,
+      "timeline": 0,
+      "visual_revision": null
+    },
+    "file": "tmp/t2-capture-m2-resume/native-extra/04-running/0117.png",
+    "png_sha256": "5b0782b70f05be22b6e2e182e065c65ee76be6d7af5682feb25de6aa1c3224eb"
+  },
+  {
+    "session": "04-running",
+    "index": 118,
+    "box": [
+      347,
+      2000,
+      512,
+      512
+    ],
+    "image": {
+      "alpha": 1.0,
+      "device_generation": 1,
+      "extent": [
+        1206,
+        2622
+      ],
+      "history_epoch": 0,
+      "map_ns": 1986526750,
+      "presentation_lead_ns": 16160375,
+      "presenter_generation": 1,
+      "previous_endpoint_tick": 242,
+      "row_stride": 4824,
+      "source_epoch": "1",
+      "source_tick": 243,
+      "submission_id": 240,
+      "submit_ns": 1969504250,
+      "surface_epoch": 2,
+      "surface_presented": true,
+      "tap_elapsed_ns": 1969040083,
+      "tick": 243,
+      "timeline": 0,
+      "visual_revision": null
+    },
+    "file": "tmp/t2-capture-m2-resume/native-extra/04-running/0118.png",
+    "png_sha256": "3a73dc7c936563384bbe3afffe1a9dc8abac582306234948a8b3efaabfaaff0c"
+  },
+  {
+    "session": "04-running",
+    "index": 119,
+    "box": [
+      347,
+      2000,
+      512,
+      512
+    ],
+    "image": {
+      "alpha": 1.0,
+      "device_generation": 1,
+      "extent": [
+        1206,
+        2622
+      ],
+      "history_epoch": 0,
+      "map_ns": 2002532333,
+      "presentation_lead_ns": 16150958,
+      "presenter_generation": 1,
+      "previous_endpoint_tick": 243,
+      "row_stride": 4824,
+      "source_epoch": "1",
+      "source_tick": 244,
+      "submission_id": 241,
+      "submit_ns": 1985945875,
+      "surface_epoch": 2,
+      "surface_presented": true,
+      "tap_elapsed_ns": 1985481708,
+      "tick": 244,
+      "timeline": 0,
+      "visual_revision": null
+    },
+    "file": "tmp/t2-capture-m2-resume/native-extra/04-running/0119.png",
+    "png_sha256": "08854425a11f53c59bce81b92d65d7403bb830dd04281cbe19362f8cadfff946"
+  },
+  {
+    "session": "04-running",
+    "index": 120,
+    "box": [
+      347,
+      2000,
+      512,
+      512
+    ],
+    "image": {
+      "alpha": 1.0,
+      "device_generation": 1,
+      "extent": [
+        1206,
+        2622
+      ],
+      "history_epoch": 0,
+      "map_ns": 2019267208,
+      "presentation_lead_ns": 16159917,
+      "presenter_generation": 1,
+      "previous_endpoint_tick": 244,
+      "row_stride": 4824,
+      "source_epoch": "1",
+      "source_tick": 245,
+      "submission_id": 242,
+      "submit_ns": 2002083750,
+      "surface_epoch": 2,
+      "surface_presented": true,
+      "tap_elapsed_ns": 2001619583,
+      "tick": 245,
+      "timeline": 0,
+      "visual_revision": null
+    },
+    "file": "tmp/t2-capture-m2-resume/native-extra/04-running/0120.png",
+    "png_sha256": "04184801dc404f5e568fe3101fe85c6200b8f271deb06f2c51495ea4d284c74e"
+  },
+  {
+    "session": "04-running",
+    "index": 121,
+    "box": [
+      347,
+      2000,
+      512,
+      512
+    ],
+    "image": {
+      "alpha": 1.0,
+      "device_generation": 1,
+      "extent": [
+        1206,
+        2622
+      ],
+      "history_epoch": 0,
+      "map_ns": 2036570708,
+      "presentation_lead_ns": 16159541,
+      "presenter_generation": 1,
+      "previous_endpoint_tick": 245,
+      "row_stride": 4824,
+      "source_epoch": "1",
+      "source_tick": 246,
+      "submission_id": 243,
+      "submit_ns": 2018687750,
+      "surface_epoch": 2,
+      "surface_presented": true,
+      "tap_elapsed_ns": 2018223583,
+      "tick": 246,
+      "timeline": 0,
+      "visual_revision": null
+    },
+    "file": "tmp/t2-capture-m2-resume/native-extra/04-running/0121.png",
+    "png_sha256": "be6ec12c9fecf93c7e4644e2941c3635dcf01aa8b67c7d8ebd2182c062d1e10c"
+  },
+  {
+    "session": "04-running",
+    "index": 122,
+    "box": [
+      347,
+      2000,
+      512,
+      512
+    ],
+    "image": {
+      "alpha": 1.0,
+      "device_generation": 1,
+      "extent": [
+        1206,
+        2622
+      ],
+      "history_epoch": 0,
+      "map_ns": 2052929042,
+      "presentation_lead_ns": 16161750,
+      "presenter_generation": 1,
+      "previous_endpoint_tick": 246,
+      "row_stride": 4824,
+      "source_epoch": "1",
+      "source_tick": 247,
+      "submission_id": 244,
+      "submit_ns": 2036154917,
+      "surface_epoch": 2,
+      "surface_presented": true,
+      "tap_elapsed_ns": 2035690750,
+      "tick": 247,
+      "timeline": 0,
+      "visual_revision": null
+    },
+    "file": "tmp/t2-capture-m2-resume/native-extra/04-running/0122.png",
+    "png_sha256": "1cf03e50edd6837b128b92bbafe04321db3c63f01d1b72627a6ab3167bc5411b"
+  },
+  {
+    "session": "04-running",
+    "index": 123,
+    "box": [
+      347,
+      2000,
+      512,
+      512
+    ],
+    "image": {
+      "alpha": 1.0,
+      "device_generation": 1,
+      "extent": [
+        1206,
+        2622
+      ],
+      "history_epoch": 0,
+      "map_ns": 2069420792,
+      "presentation_lead_ns": 16167916,
+      "presenter_generation": 1,
+      "previous_endpoint_tick": 247,
+      "row_stride": 4824,
+      "source_epoch": "1",
+      "source_tick": 248,
+      "submission_id": 245,
+      "submit_ns": 2052464208,
+      "surface_epoch": 2,
+      "surface_presented": true,
+      "tap_elapsed_ns": 2052000041,
+      "tick": 248,
+      "timeline": 0,
+      "visual_revision": null
+    },
+    "file": "tmp/t2-capture-m2-resume/native-extra/04-running/0123.png",
+    "png_sha256": "e108fca7f308a4c176b624db37fd2ed94ca0d8148d31623c6641e69500946125"
+  },
+  {
+    "session": "05-stall",
+    "index": 61,
+    "box": [
+      347,
+      1055,
+      512,
+      512
+    ],
+    "image": {
+      "alpha": 1.0,
+      "device_generation": 1,
+      "extent": [
+        1206,
+        2622
+      ],
+      "history_epoch": 0,
+      "map_ns": 9059789000,
+      "presentation_lead_ns": 16164791,
+      "presenter_generation": 1,
+      "previous_endpoint_tick": 185,
+      "row_stride": 4824,
+      "source_epoch": "1",
+      "source_tick": 186,
+      "submission_id": 183,
+      "submit_ns": 1018833958,
+      "surface_epoch": 2,
+      "surface_presented": true,
+      "tap_elapsed_ns": 1017896750,
+      "tick": 186,
+      "timeline": 0,
+      "visual_revision": null
+    },
+    "file": "tmp/t2-capture-m2-resume/native-extra/05-stall/0061.png",
+    "png_sha256": "195104241c761e93044f9386297f2dd3c0d5a60035bf37ea001325eb01714950"
+  },
+  {
+    "session": "05-stall",
+    "index": 62,
+    "box": [
+      347,
+      1055,
+      512,
+      512
+    ],
+    "image": {
+      "alpha": 1.0,
+      "device_generation": 1,
+      "extent": [
+        1206,
+        2622
+      ],
+      "history_epoch": 0,
+      "map_ns": 9095733541,
+      "presentation_lead_ns": 16185375,
+      "presenter_generation": 1,
+      "previous_endpoint_tick": 186,
+      "row_stride": 4824,
+      "source_epoch": "1",
+      "source_tick": 187,
+      "submission_id": 184,
+      "submit_ns": 9056249333,
+      "surface_epoch": 2,
+      "surface_presented": true,
+      "tap_elapsed_ns": 9055312125,
+      "tick": 187,
+      "timeline": 0,
+      "visual_revision": null
+    },
+    "file": "tmp/t2-capture-m2-resume/native-extra/05-stall/0062.png",
+    "png_sha256": "c7a0096d863c5e3e72c4c0c02dda5bb12862afca8b43c27f116802aab87ed505"
+  }
+]

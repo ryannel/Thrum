@@ -1,0 +1,77 @@
+{
+  "retired_spools": [
+    {
+      "path": "tmp/t2-capture-m2-resume/series-04/04-running/capture/frames.spool",
+      "bytes": 265088182,
+      "sha256": "7c3ac44ac0e88359765360bb44b0e58f57508724df0418a6952aa1c6dda39460",
+      "reason": "superseded by independently verified final-series; compressed slow control did not exercise refusal"
+    },
+    {
+      "path": "tmp/t2-capture-m2-resume/series-04/06-surface/capture/frames.spool",
+      "bytes": 37107199,
+      "sha256": "21be27e18d40f1771c4df25cbabeef6c8dcc36b220a15f46baac5174870dca6f",
+      "reason": "superseded by independently verified final-series; compressed slow control did not exercise refusal"
+    },
+    {
+      "path": "tmp/t2-capture-m2-resume/series-04/06-surface/retired/frames.spool",
+      "bytes": 13,
+      "sha256": "f96deff1816083fdff8bc3e46c3fe6ca46a6bb49f4d5a00627616c13237a512c",
+      "reason": "superseded by independently verified final-series; compressed slow control did not exercise refusal"
+    },
+    {
+      "path": "tmp/t2-capture-m2-resume/series-04/09-saturation/capture/frames.spool",
+      "bytes": 4089614,
+      "sha256": "879c3f7b45178ddea70f8acd2df38b34c096949fb15731e45021ebb40bbfb7ba",
+      "reason": "superseded by independently verified final-series; compressed slow control did not exercise refusal"
+    },
+    {
+      "path": "tmp/t2-capture-m2-resume/series-04/03-pan/capture/frames.spool",
+      "bytes": 1714797239,
+      "sha256": "8f7e98c9bdabac9a7bccbb2ca832b27d5b4be8980aed3b044e74a4f00888a129",
+      "reason": "superseded by independently verified final-series; compressed slow control did not exercise refusal"
+    },
+    {
+      "path": "tmp/t2-capture-m2-resume/series-04/05-stall/capture/frames.spool",
+      "bytes": 32645127,
+      "sha256": "afb31641428250ac2bace11c4e3c653367ba1f533b8dd3b2929faaabdd4264bc",
+      "reason": "superseded by independently verified final-series; compressed slow control did not exercise refusal"
+    },
+    {
+      "path": "tmp/t2-capture-m2-resume/series-04/02-pan/capture/frames.spool",
+      "bytes": 1712649310,
+      "sha256": "c3b5e8681e533fddb0a8676706f7c4293deca568991b0df846048cc8dbb54a7c",
+      "reason": "superseded by independently verified final-series; compressed slow control did not exercise refusal"
+    },
+    {
+      "path": "tmp/t2-capture-m2-resume/series-04/08-loss/capture/frames.spool",
+      "bytes": 37203934,
+      "sha256": "1837d90166ad59c649c5a0acce9fee4bae6a0cf0b69d2dbbf696fc04fd8f3d69",
+      "reason": "superseded by independently verified final-series; compressed slow control did not exercise refusal"
+    },
+    {
+      "path": "tmp/t2-capture-m2-resume/series-04/08-loss/retired/frames.spool",
+      "bytes": 13,
+      "sha256": "f96deff1816083fdff8bc3e46c3fe6ca46a6bb49f4d5a00627616c13237a512c",
+      "reason": "superseded by independently verified final-series; compressed slow control did not exercise refusal"
+    },
+    {
+      "path": "tmp/t2-capture-m2-resume/series-04/01-pan/capture/frames.spool",
+      "bytes": 1713667807,
+      "sha256": "6c5caade884ffd08e697f7791f49743de9ccf7ee644f475a61cd5aae469e92b9",
+      "reason": "superseded by independently verified final-series; compressed slow control did not exercise refusal"
+    },
+    {
+      "path": "tmp/t2-capture-m2-resume/series-04/07-background/capture/frames.spool",
+      "bytes": 37204645,
+      "sha256": "7f15ab241d1e05106e71a7c760d0cdee369ef6a31ca9f79bbfbeb68fa0ec9d93",
+      "reason": "superseded by independently verified final-series; compressed slow control did not exercise refusal"
+    },
+    {
+      "path": "tmp/t2-capture-m2-resume/series-04/07-background/retired/frames.spool",
+      "bytes": 13,
+      "sha256": "f96deff1816083fdff8bc3e46c3fe6ca46a6bb49f4d5a00627616c13237a512c",
+      "reason": "superseded by independently verified final-series; compressed slow control did not exercise refusal"
+    }
+  ],
+  "selected_sources": "tmp/t2-capture-m2-resume/final-series retained through review"
+}

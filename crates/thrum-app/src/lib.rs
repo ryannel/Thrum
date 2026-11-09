@@ -14,6 +14,9 @@
 
 #[cfg(target_os = "macos")]
 mod app;
+/// Bounded submitted-image sink shared by native platform adapters.
+#[cfg(any(target_os = "macos", target_os = "ios"))]
+pub mod capture_writer;
 #[cfg(target_os = "macos")]
 mod file_watch;
 #[cfg(target_os = "macos")]

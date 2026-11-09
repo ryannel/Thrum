@@ -31,6 +31,8 @@ pub struct SubmittedImage {
     owner: std::sync::Arc<()>,
     /// The sample recorded at submission, before any subsequent world advance.
     pub sample: FrameSample,
+    /// Actual source grid of this submitted image.
+    pub extent: [u32; 2],
     /// Tightly packed SDR RGBA8, with the host's render extent.
     pub rgba: Vec<u8>,
     /// Capture session selected by the caller.
@@ -86,6 +88,7 @@ pub(super) struct Tap {
     generation: u64,
     extent: [u32; 2],
     started_at: Instant,
+    accepting: bool,
     slots: Vec<Slot>,
     omitted: u64,
     free_cpu: Vec<Vec<u8>>,
@@ -106,6 +109,9 @@ impl Tap {
         generation: u64,
         extent: [u32; 2],
     ) -> Option<(usize, &mut PixelReadback)> {
+        if !self.accepting {
+            return None;
+        }
         if self.generation != generation || self.extent != extent {
             self.omitted = self.omitted.saturating_add(1);
             return None;
@@ -211,6 +217,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             generation: self.generation,
             extent: self.render_extent,
             started_at: Instant::now(),
+            accepting: true,
             slots,
             omitted: 0,
             cpu_capacity: limits.cpu_buffers,
@@ -262,10 +269,14 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         let Some(mut rgba) = tap.free_cpu.pop() else {
             return Ok(None);
         };
-        for slot in &mut tap.slots {
-            let Some(stamp) = slot.sample else {
-                continue;
-            };
+        let oldest = tap
+            .slots
+            .iter()
+            .enumerate()
+            .filter_map(|(i, slot)| slot.sample.map(|stamp| (i, stamp)))
+            .min_by_key(|(_, stamp)| stamp.sample.submission_order);
+        if let Some((index, stamp)) = oldest {
+            let slot = &mut tap.slots[index];
             let collect = (|| {
                 if !slot.timing_collected {
                     let std::task::Poll::Ready(copy_ns) = slot.readback.copy_duration()? else {
@@ -277,7 +288,10 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 slot.readback.try_collect_into(self.generation, &mut rgba)
             })();
             match collect {
-                Ok(false) => continue,
+                Ok(false) => {
+                    tap.free_cpu.push(rgba);
+                    return Ok(None);
+                }
                 Err(error) => {
                     // A failed mapping cannot be reused. Retire the GPU slot and
                     // return its CPU lease; the session is explicitly incomplete.
@@ -294,6 +308,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             slot.reserved = false;
             return Ok(Some(SubmittedImage {
                 owner: std::sync::Arc::clone(&tap.owner),
+                extent: tap.extent,
                 sample: stamp.sample,
                 rgba,
                 session: tap.session,
@@ -323,6 +338,13 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 <= self.render_extent[0] as usize * self.render_extent[1] as usize * 4
         {
             tap.free_cpu.push(image.rgba);
+        }
+    }
+
+    /// Stop admitting copies while pending mappings drain. Does not submit or wait.
+    pub fn stop_submitted_capture(&mut self) {
+        if let Some(tap) = &mut self.submitted_capture {
+            tap.accepting = false;
         }
     }
 

@@ -1,0 +1,780 @@
+ffconcat version 1.0
+file 'png/000122.png'
+option framerate 1000000
+duration 0.015664
+file 'png/000123.png'
+option framerate 1000000
+duration 0.016699
+file 'png/000124.png'
+option framerate 1000000
+duration 0.016177
+file 'png/000125.png'
+option framerate 1000000
+duration 0.017019
+file 'png/000126.png'
+option framerate 1000000
+duration 0.017018
+file 'png/000127.png'
+option framerate 1000000
+duration 0.016557
+file 'png/000128.png'
+option framerate 1000000
+duration 0.016224
+file 'png/000129.png'
+option framerate 1000000
+duration 0.017000
+file 'png/000130.png'
+option framerate 1000000
+duration 0.016606
+file 'png/000131.png'
+option framerate 1000000
+duration 0.016971
+file 'png/000132.png'
+option framerate 1000000
+duration 0.016457
+file 'png/000133.png'
+option framerate 1000000
+duration 0.016745
+file 'png/000134.png'
+option framerate 1000000
+duration 0.017261
+file 'png/000135.png'
+option framerate 1000000
+duration 0.016716
+file 'png/000136.png'
+option framerate 1000000
+duration 0.015529
+file 'png/000137.png'
+option framerate 1000000
+duration 0.017209
+file 'png/000138.png'
+option framerate 1000000
+duration 0.016666
+file 'png/000139.png'
+option framerate 1000000
+duration 0.016891
+file 'png/000140.png'
+option framerate 1000000
+duration 0.016068
+file 'png/000141.png'
+option framerate 1000000
+duration 0.016850
+file 'png/000142.png'
+option framerate 1000000
+duration 0.016749
+file 'png/000143.png'
+option framerate 1000000
+duration 0.017420
+file 'png/000144.png'
+option framerate 1000000
+duration 0.015457
+file 'png/000145.png'
+option framerate 1000000
+duration 0.017226
+file 'png/000146.png'
+option framerate 1000000
+duration 0.017100
+file 'png/000147.png'
+option framerate 1000000
+duration 0.017123
+file 'png/000148.png'
+option framerate 1000000
+duration 0.015960
+file 'png/000149.png'
+option framerate 1000000
+duration 0.016721
+file 'png/000150.png'
+option framerate 1000000
+duration 0.016678
+file 'png/000151.png'
+option framerate 1000000
+duration 0.016277
+file 'png/000152.png'
+option framerate 1000000
+duration 0.016266
+file 'png/000153.png'
+option framerate 1000000
+duration 0.017421
+file 'png/000154.png'
+option framerate 1000000
+duration 0.016737
+file 'png/000155.png'
+option framerate 1000000
+duration 0.017002
+file 'png/000156.png'
+option framerate 1000000
+duration 0.015748
+file 'png/000157.png'
+option framerate 1000000
+duration 0.016600
+file 'png/000158.png'
+option framerate 1000000
+duration 0.017553
+file 'png/000159.png'
+option framerate 1000000
+duration 0.016167
+file 'png/000160.png'
+option framerate 1000000
+duration 0.016188
+file 'png/000161.png'
+option framerate 1000000
+duration 0.016999
+file 'png/000162.png'
+option framerate 1000000
+duration 0.017177
+file 'png/000163.png'
+option framerate 1000000
+duration 0.016958
+file 'png/000164.png'
+option framerate 1000000
+duration 0.016110
+file 'png/000165.png'
+option framerate 1000000
+duration 0.015982
+file 'png/000166.png'
+option framerate 1000000
+duration 0.017107
+file 'png/000167.png'
+option framerate 1000000
+duration 0.016801
+file 'png/000168.png'
+option framerate 1000000
+duration 0.016161
+file 'png/000169.png'
+option framerate 1000000
+duration 0.017812
+file 'png/000170.png'
+option framerate 1000000
+duration 0.016059
+file 'png/000171.png'
+option framerate 1000000
+duration 0.016202
+file 'png/000172.png'
+option framerate 1000000
+duration 0.016846
+file 'png/000173.png'
+option framerate 1000000
+duration 0.016972
+file 'png/000174.png'
+option framerate 1000000
+duration 0.016561
+file 'png/000175.png'
+option framerate 1000000
+duration 0.016439
+file 'png/000176.png'
+option framerate 1000000
+duration 0.017131
+file 'png/000177.png'
+option framerate 1000000
+duration 0.016036
+file 'png/000178.png'
+option framerate 1000000
+duration 0.018024
+file 'png/000179.png'
+option framerate 1000000
+duration 0.015520
+file 'png/000180.png'
+option framerate 1000000
+duration 0.016618
+file 'png/000181.png'
+option framerate 1000000
+duration 0.017378
+file 'png/000182.png'
+option framerate 1000000
+duration 0.016387
+file 'png/000183.png'
+option framerate 1000000
+duration 0.016706
+file 'png/000184.png'
+option framerate 1000000
+duration 0.016692
+file 'png/000185.png'
+option framerate 1000000
+duration 0.016541
+file 'png/000186.png'
+option framerate 1000000
+duration 0.017262
+file 'png/000187.png'
+option framerate 1000000
+duration 0.016699
+file 'png/000188.png'
+option framerate 1000000
+duration 0.016473
+file 'png/000189.png'
+option framerate 1000000
+duration 0.016531
+file 'png/000190.png'
+option framerate 1000000
+duration 0.016105
+file 'png/000191.png'
+option framerate 1000000
+duration 0.016084
+file 'png/000192.png'
+option framerate 1000000
+duration 0.018114
+file 'png/000193.png'
+option framerate 1000000
+duration 0.016708
+file 'png/000194.png'
+option framerate 1000000
+duration 0.016727
+file 'png/000195.png'
+option framerate 1000000
+duration 0.016362
+file 'png/000196.png'
+option framerate 1000000
+duration 0.016914
+file 'png/000197.png'
+option framerate 1000000
+duration 0.016479
+file 'png/000198.png'
+option framerate 1000000
+duration 0.016537
+file 'png/000199.png'
+option framerate 1000000
+duration 0.016397
+file 'png/000200.png'
+option framerate 1000000
+duration 0.016996
+file 'png/000201.png'
+option framerate 1000000
+duration 0.015804
+file 'png/000202.png'
+option framerate 1000000
+duration 0.017278
+file 'png/000203.png'
+option framerate 1000000
+duration 0.016112
+file 'png/000204.png'
+option framerate 1000000
+duration 0.017888
+file 'png/000205.png'
+option framerate 1000000
+duration 0.015383
+file 'png/000206.png'
+option framerate 1000000
+duration 0.016818
+file 'png/000207.png'
+option framerate 1000000
+duration 0.017308
+file 'png/000208.png'
+option framerate 1000000
+duration 0.017118
+file 'png/000209.png'
+option framerate 1000000
+duration 0.015387
+file 'png/000210.png'
+option framerate 1000000
+duration 0.016950
+file 'png/000211.png'
+option framerate 1000000
+duration 0.016600
+file 'png/000212.png'
+option framerate 1000000
+duration 0.016877
+file 'png/000213.png'
+option framerate 1000000
+duration 0.016123
+file 'png/000214.png'
+option framerate 1000000
+duration 0.016925
+file 'png/000215.png'
+option framerate 1000000
+duration 0.016642
+file 'png/000216.png'
+option framerate 1000000
+duration 0.016799
+file 'png/000217.png'
+option framerate 1000000
+duration 0.016709
+file 'png/000218.png'
+option framerate 1000000
+duration 0.016335
+file 'png/000219.png'
+option framerate 1000000
+duration 0.016996
+file 'png/000220.png'
+option framerate 1000000
+duration 0.016903
+file 'png/000221.png'
+option framerate 1000000
+duration 0.016149
+file 'png/000222.png'
+option framerate 1000000
+duration 0.016690
+file 'png/000223.png'
+option framerate 1000000
+duration 0.016962
+file 'png/000224.png'
+option framerate 1000000
+duration 0.016813
+file 'png/000225.png'
+option framerate 1000000
+duration 0.016132
+file 'png/000226.png'
+option framerate 1000000
+duration 0.016907
+file 'png/000227.png'
+option framerate 1000000
+duration 0.016444
+file 'png/000228.png'
+option framerate 1000000
+duration 0.017983
+file 'png/000229.png'
+option framerate 1000000
+duration 0.015944
+file 'png/000230.png'
+option framerate 1000000
+duration 0.017414
+file 'png/000231.png'
+option framerate 1000000
+duration 0.015787
+file 'png/000232.png'
+option framerate 1000000
+duration 0.017417
+file 'png/000233.png'
+option framerate 1000000
+duration 0.015519
+file 'png/000234.png'
+option framerate 1000000
+duration 0.017193
+file 'png/000235.png'
+option framerate 1000000
+duration 0.016298
+file 'png/000236.png'
+option framerate 1000000
+duration 0.017098
+file 'png/000237.png'
+option framerate 1000000
+duration 0.016236
+file 'png/000238.png'
+option framerate 1000000
+duration 0.016388
+file 'png/000239.png'
+option framerate 1000000
+duration 0.017484
+file 'png/000240.png'
+option framerate 1000000
+duration 0.016441
+file 'png/000241.png'
+option framerate 1000000
+duration 0.016138
+file 'png/000242.png'
+option framerate 1000000
+duration 0.016604
+file 'png/000243.png'
+option framerate 1000000
+duration 0.017467
+file 'png/000244.png'
+option framerate 1000000
+duration 0.016309
+file 'png/000245.png'
+option framerate 1000000
+duration 0.016487
+file 'png/000246.png'
+option framerate 1000000
+duration 0.017768
+file 'png/000247.png'
+option framerate 1000000
+duration 0.015786
+file 'png/000248.png'
+option framerate 1000000
+duration 0.016840
+file 'png/000249.png'
+option framerate 1000000
+duration 0.016171
+file 'png/000250.png'
+option framerate 1000000
+duration 0.016871
+file 'png/000251.png'
+option framerate 1000000
+duration 0.016998
+file 'png/000252.png'
+option framerate 1000000
+duration 0.016300
+file 'png/000253.png'
+option framerate 1000000
+duration 0.017160
+file 'png/000254.png'
+option framerate 1000000
+duration 0.015896
+file 'png/000255.png'
+option framerate 1000000
+duration 0.017108
+file 'png/000256.png'
+option framerate 1000000
+duration 0.016947
+file 'png/000257.png'
+option framerate 1000000
+duration 0.016515
+file 'png/000258.png'
+option framerate 1000000
+duration 0.016398
+file 'png/000259.png'
+option framerate 1000000
+duration 0.016511
+file 'png/000260.png'
+option framerate 1000000
+duration 0.017041
+file 'png/000261.png'
+option framerate 1000000
+duration 0.016998
+file 'png/000262.png'
+option framerate 1000000
+duration 0.016103
+file 'png/000263.png'
+option framerate 1000000
+duration 0.017545
+file 'png/000264.png'
+option framerate 1000000
+duration 0.016518
+file 'png/000265.png'
+option framerate 1000000
+duration 0.016135
+file 'png/000266.png'
+option framerate 1000000
+duration 0.016291
+file 'png/000267.png'
+option framerate 1000000
+duration 0.016928
+file 'png/000268.png'
+option framerate 1000000
+duration 0.017647
+file 'png/000269.png'
+option framerate 1000000
+duration 0.015628
+file 'png/000270.png'
+option framerate 1000000
+duration 0.017287
+file 'png/000271.png'
+option framerate 1000000
+duration 0.015719
+file 'png/000272.png'
+option framerate 1000000
+duration 0.017185
+file 'png/000273.png'
+option framerate 1000000
+duration 0.016865
+file 'png/000274.png'
+option framerate 1000000
+duration 0.016864
+file 'png/000275.png'
+option framerate 1000000
+duration 0.016387
+file 'png/000276.png'
+option framerate 1000000
+duration 0.016571
+file 'png/000277.png'
+option framerate 1000000
+duration 0.017173
+file 'png/000278.png'
+option framerate 1000000
+duration 0.016490
+file 'png/000279.png'
+option framerate 1000000
+duration 0.016061
+file 'png/000280.png'
+option framerate 1000000
+duration 0.016640
+file 'png/000281.png'
+option framerate 1000000
+duration 0.017243
+file 'png/000282.png'
+option framerate 1000000
+duration 0.016399
+file 'png/000283.png'
+option framerate 1000000
+duration 0.016014
+file 'png/000284.png'
+option framerate 1000000
+duration 0.016784
+file 'png/000285.png'
+option framerate 1000000
+duration 0.017520
+file 'png/000286.png'
+option framerate 1000000
+duration 0.015943
+file 'png/000287.png'
+option framerate 1000000
+duration 0.017047
+file 'png/000288.png'
+option framerate 1000000
+duration 0.016234
+file 'png/000289.png'
+option framerate 1000000
+duration 0.017008
+file 'png/000290.png'
+option framerate 1000000
+duration 0.016148
+file 'png/000291.png'
+option framerate 1000000
+duration 0.016970
+file 'png/000292.png'
+option framerate 1000000
+duration 0.017722
+file 'png/000293.png'
+option framerate 1000000
+duration 0.016837
+file 'png/000294.png'
+option framerate 1000000
+duration 0.015390
+file 'png/000295.png'
+option framerate 1000000
+duration 0.016900
+file 'png/000296.png'
+option framerate 1000000
+duration 0.017168
+file 'png/000297.png'
+option framerate 1000000
+duration 0.016151
+file 'png/000298.png'
+option framerate 1000000
+duration 0.016483
+file 'png/000299.png'
+option framerate 1000000
+duration 0.016970
+file 'png/000300.png'
+option framerate 1000000
+duration 0.016259
+file 'png/000301.png'
+option framerate 1000000
+duration 0.016708
+file 'png/000302.png'
+option framerate 1000000
+duration 0.017069
+file 'png/000303.png'
+option framerate 1000000
+duration 0.016991
+file 'png/000304.png'
+option framerate 1000000
+duration 0.016663
+file 'png/000305.png'
+option framerate 1000000
+duration 0.016027
+file 'png/000306.png'
+option framerate 1000000
+duration 0.016782
+file 'png/000307.png'
+option framerate 1000000
+duration 0.016225
+file 'png/000308.png'
+option framerate 1000000
+duration 0.017352
+file 'png/000309.png'
+option framerate 1000000
+duration 0.016108
+file 'png/000310.png'
+option framerate 1000000
+duration 0.017030
+file 'png/000311.png'
+option framerate 1000000
+duration 0.016497
+file 'png/000312.png'
+option framerate 1000000
+duration 0.016983
+file 'png/000313.png'
+option framerate 1000000
+duration 0.016237
+file 'png/000314.png'
+option framerate 1000000
+duration 0.017000
+file 'png/000315.png'
+option framerate 1000000
+duration 0.016709
+file 'png/000316.png'
+option framerate 1000000
+duration 0.016463
+file 'png/000317.png'
+option framerate 1000000
+duration 0.016715
+file 'png/000318.png'
+option framerate 1000000
+duration 0.017474
+file 'png/000319.png'
+option framerate 1000000
+duration 0.016168
+file 'png/000320.png'
+option framerate 1000000
+duration 0.016158
+file 'png/000321.png'
+option framerate 1000000
+duration 0.016634
+file 'png/000322.png'
+option framerate 1000000
+duration 0.016883
+file 'png/000323.png'
+option framerate 1000000
+duration 0.016296
+file 'png/000324.png'
+option framerate 1000000
+duration 0.017102
+file 'png/000325.png'
+option framerate 1000000
+duration 0.017416
+file 'png/000326.png'
+option framerate 1000000
+duration 0.016055
+file 'png/000327.png'
+option framerate 1000000
+duration 0.016535
+file 'png/000328.png'
+option framerate 1000000
+duration 0.017118
+file 'png/000329.png'
+option framerate 1000000
+duration 0.016758
+file 'png/000330.png'
+option framerate 1000000
+duration 0.016159
+file 'png/000331.png'
+option framerate 1000000
+duration 0.016442
+file 'png/000332.png'
+option framerate 1000000
+duration 0.016645
+file 'png/000333.png'
+option framerate 1000000
+duration 0.016547
+file 'png/000334.png'
+option framerate 1000000
+duration 0.017128
+file 'png/000335.png'
+option framerate 1000000
+duration 0.016080
+file 'png/000336.png'
+option framerate 1000000
+duration 0.016622
+file 'png/000337.png'
+option framerate 1000000
+duration 0.017051
+file 'png/000338.png'
+option framerate 1000000
+duration 0.016817
+file 'png/000339.png'
+option framerate 1000000
+duration 0.016300
+file 'png/000340.png'
+option framerate 1000000
+duration 0.016381
+file 'png/000341.png'
+option framerate 1000000
+duration 0.017003
+file 'png/000342.png'
+option framerate 1000000
+duration 0.017276
+file 'png/000343.png'
+option framerate 1000000
+duration 0.015738
+file 'png/000344.png'
+option framerate 1000000
+duration 0.017792
+file 'png/000345.png'
+option framerate 1000000
+duration 0.016819
+file 'png/000346.png'
+option framerate 1000000
+duration 0.016453
+file 'png/000347.png'
+option framerate 1000000
+duration 0.015889
+file 'png/000348.png'
+option framerate 1000000
+duration 0.017032
+file 'png/000349.png'
+option framerate 1000000
+duration 0.016580
+file 'png/000350.png'
+option framerate 1000000
+duration 0.016966
+file 'png/000351.png'
+option framerate 1000000
+duration 0.016364
+file 'png/000352.png'
+option framerate 1000000
+duration 0.016308
+file 'png/000353.png'
+option framerate 1000000
+duration 0.016637
+file 'png/000354.png'
+option framerate 1000000
+duration 0.017082
+file 'png/000355.png'
+option framerate 1000000
+duration 0.016501
+file 'png/000356.png'
+option framerate 1000000
+duration 0.017219
+file 'png/000357.png'
+option framerate 1000000
+duration 0.016219
+file 'png/000358.png'
+option framerate 1000000
+duration 0.017017
+file 'png/000359.png'
+option framerate 1000000
+duration 0.016312
+file 'png/000360.png'
+option framerate 1000000
+duration 0.016244
+file 'png/000361.png'
+option framerate 1000000
+duration 0.017187
+file 'png/000362.png'
+option framerate 1000000
+duration 0.016717
+file 'png/000363.png'
+option framerate 1000000
+duration 0.016084
+file 'png/000364.png'
+option framerate 1000000
+duration 0.017428
+file 'png/000365.png'
+option framerate 1000000
+duration 0.016316
+file 'png/000366.png'
+option framerate 1000000
+duration 0.016797
+file 'png/000367.png'
+option framerate 1000000
+duration 0.016194
+file 'png/000368.png'
+option framerate 1000000
+duration 0.016811
+file 'png/000369.png'
+option framerate 1000000
+duration 0.017006
+file 'png/000370.png'
+option framerate 1000000
+duration 0.016556
+file 'png/000371.png'
+option framerate 1000000
+duration 0.016609
+file 'png/000372.png'
+option framerate 1000000
+duration 0.016839
+file 'png/000373.png'
+option framerate 1000000
+duration 0.016426
+file 'png/000374.png'
+option framerate 1000000
+duration 0.016885
+file 'png/000375.png'
+option framerate 1000000
+duration 0.016169
+file 'png/000376.png'
+option framerate 1000000
+duration 0.016826
+file 'png/000377.png'
+option framerate 1000000
+duration 0.016942
+file 'png/000378.png'
+option framerate 1000000
+duration 0.016429
+file 'png/000379.png'
+option framerate 1000000
+duration 0.017827
+file 'png/000380.png'
+option framerate 1000000
+duration 0.016667
+file 'png/000380.png'
+option framerate 1000000

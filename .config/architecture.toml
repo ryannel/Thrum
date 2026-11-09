@@ -87,7 +87,7 @@ allowed_workspace_dependencies = ["thrum-app"]
 
 [packages.v1-game-ios]
 manifest = "examples/v1-game-ios/Cargo.toml"
-allowed_workspace_dependencies = ["v1-game", "thrum-render", "thrum-core", "thrum-asset-gpu"]
+allowed_workspace_dependencies = ["v1-game", "thrum-render", "thrum-core", "thrum-asset-gpu", "thrum-app"]
 
 # Every direct third-party crate must be listed here with an exact Cargo
 # requirement, its declared license, purpose and target/build cost note.
@@ -266,13 +266,13 @@ target_cost = "Cooker only; events are hints re-checked by the stat cache"
 requirement = "=0.13.3"
 license = "MIT"
 purpose = "Fast lossless capture intermediate using bounded two-worker compression of exact temporal XOR RGBA records"
-target_cost = "macOS thrum-app opt-in capture writer only; native zstd code, two worker threads and bounded compression buffers; measured CPU and byte reduction, no world/render-thread compression"
+target_cost = "macOS/iOS thrum-app opt-in capture writer only; native zstd code, two worker threads and bounded compression buffers; measured CPU and byte reduction, no world/render-thread compression"
 
 [external_dependencies.sha2]
 requirement = "=0.10.9"
 license = "MIT OR Apache-2.0"
 purpose = "Hash original RGBA records before live lossless encoding for independent decoder equality checks"
-target_cost = "macOS capture writer thread only; ARM SHA-256 dispatch with portable fallback per full image and at most 1024 bounded digests per session"
+target_cost = "macOS/iOS capture writer thread only; ARM SHA-256 dispatch with portable fallback per full image and at most 1024 bounded digests per session"
 
 [external_dependencies.cpu-time]
 requirement = "=1.0.0"

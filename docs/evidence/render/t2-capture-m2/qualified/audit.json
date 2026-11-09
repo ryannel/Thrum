@@ -1,0 +1,150 @@
+{
+  "scope": "simulator function only",
+  "sessions": [
+    {
+      "case": "01-pan",
+      "verified_images": 726,
+      "complete": true,
+      "expected": 726,
+      "renderer_omissions": 0,
+      "writer_omissions": 0,
+      "peak": [
+        2,
+        5
+      ],
+      "max_gap_ns": 73206958,
+      "alpha_interior": 0
+    },
+    {
+      "case": "02-pan",
+      "verified_images": 728,
+      "complete": true,
+      "expected": 728,
+      "renderer_omissions": 0,
+      "writer_omissions": 0,
+      "peak": [
+        2,
+        4
+      ],
+      "max_gap_ns": 145503875,
+      "alpha_interior": 0
+    },
+    {
+      "case": "03-pan",
+      "verified_images": 734,
+      "complete": true,
+      "expected": 734,
+      "renderer_omissions": 0,
+      "writer_omissions": 0,
+      "peak": [
+        2,
+        1
+      ],
+      "max_gap_ns": 18106667,
+      "alpha_interior": 0
+    },
+    {
+      "case": "04-running",
+      "verified_images": 259,
+      "complete": true,
+      "expected": 259,
+      "renderer_omissions": 0,
+      "writer_omissions": 0,
+      "peak": [
+        2,
+        1
+      ],
+      "max_gap_ns": 18113750,
+      "alpha_interior": 0
+    },
+    {
+      "case": "05-stall",
+      "verified_images": 136,
+      "complete": true,
+      "expected": 136,
+      "renderer_omissions": 0,
+      "writer_omissions": 0,
+      "peak": [
+        3,
+        3
+      ],
+      "max_gap_ns": 8037415375,
+      "alpha_interior": 0
+    },
+    {
+      "case": "06-surface",
+      "verified_images": 182,
+      "complete": true,
+      "expected": 182,
+      "renderer_omissions": 0,
+      "writer_omissions": 0,
+      "peak": [
+        2,
+        1
+      ],
+      "max_gap_ns": 17838291,
+      "alpha_interior": 182
+    },
+    {
+      "case": "07-background",
+      "verified_images": 183,
+      "complete": true,
+      "expected": 183,
+      "renderer_omissions": 0,
+      "writer_omissions": 0,
+      "peak": [
+        2,
+        1
+      ],
+      "max_gap_ns": 18319833,
+      "alpha_interior": 183
+    },
+    {
+      "case": "08-loss",
+      "verified_images": 182,
+      "complete": true,
+      "expected": 182,
+      "renderer_omissions": 0,
+      "writer_omissions": 0,
+      "peak": [
+        2,
+        1
+      ],
+      "max_gap_ns": 20446667,
+      "alpha_interior": 0
+    },
+    {
+      "case": "09-saturation",
+      "verified_images": 6,
+      "complete": false,
+      "expected": 183,
+      "renderer_omissions": 177,
+      "writer_omissions": 0,
+      "peak": [
+        6,
+        0
+      ],
+      "max_gap_ns": 16847584,
+      "alpha_interior": 1
+    },
+    {
+      "case": "10-slow",
+      "verified_images": 81,
+      "complete": false,
+      "expected": 302,
+      "renderer_omissions": 221,
+      "writer_omissions": 0,
+      "peak": [
+        6,
+        32
+      ],
+      "max_gap_ns": 134498667,
+      "alpha_interior": 0
+    }
+  ],
+  "source_changes_after_run": [
+    "scripts/capture_v1_simulator.py artifact-retention fix only, exact measured driver archived",
+    "scripts/test_t2_capture.py two retention regressions added"
+  ],
+  "binary_matches": true
+}

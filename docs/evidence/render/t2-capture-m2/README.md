@@ -38,3 +38,7 @@ metadata before deleting 16,008,456,538 bytes of owned scratch. Full M1 local so
 its passed review; selected originals, time records and views remain in Git. M2 retains this compact failure
 record and reproducer; scratch/build products are reconstructible. Profile Check and integration results
 are recorded in the plan log.
+
+## Resolved by M2 implementation
+
+COOKED-DRAW M1 passed on main. [Fresh simulator qualification](qualified/README.md) records the implemented M2 claim. The earlier failure below remains historical evidence.

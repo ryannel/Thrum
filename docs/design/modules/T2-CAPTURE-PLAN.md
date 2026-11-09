@@ -3,12 +3,10 @@
 Design: [T2-CAPTURE.md](T2-CAPTURE.md) · [brief](T2-CAPTURE-BRIEF.md) ·
 Done when: [T2-CAPTURE-DONE.json](T2-CAPTURE-DONE.json).
 Reviews: [M0 third review](../../evidence/T2-CAPTURE/M0-review.md) passed in dff3eb5e; [M1 review](../../evidence/T2-CAPTURE/M1-review.md) passed in e2909ad4.
-Milestone: M2 iOS simulator engine motion without desktop capture (blocked on COOKED-DRAW M1 acceptance)
-Now: The earlier locked diagnostic probe recorded missing INDIRECT_EXECUTION as the cooked-rendering blocker.
-COOKED-DRAW now has a live M1 claim, with fresh M1.7/M1.8 verification owed under the console witness correction
-before review. T2 M2 resumes after that milestone is accepted. [Earlier probe](../../evidence/render/t2-capture-m2/README.md).
-Next: [COOKED-DRAW](COOKED-DRAW-PLAN.md) M1 (G5) supplies and qualifies the capability-selected direct cooked draw path and the iOS route's cooked attach on ios-sim; M2 `needs` `COOKED-DRAW:M1`. Then resume T2 M2's foreground tap, motion and pending-capture lifecycle proofs on that route.
-Blocked: M2.1 and M2.2 remain open. No simulator capture, cooked motion, pending-capture lifecycle or physical-device proof is claimed. No reviewer launched.
+Milestone: M2 iOS simulator engine motion without desktop capture (claimed)
+Now: Native foreground simulator capture, complete motion, lifecycle retirement/recovery and refusal controls pass. See [builder evidence](../../evidence/render/t2-capture-m2/qualified/README.md).
+Next: independent lead review of M2.
+Blocked: none. Physical iPhone and physical display qualification remain with their named owners.
 
 ## Ownership and sequence
 
@@ -68,7 +66,7 @@ capture service rather than copying it. Follow CONTRIBUTING and the architecture
 - Preserve existing actual-tab/visibility/device-loss qualification. It is distinct from unattended canvas image proof.
   Prove capture cancellation/recovery and browser-nonblocking readback/packaging, plus real-time stall/gap controls.
 
-## M2 iOS simulator evidence without desktop capture: blocked on COOKED-DRAW M1 acceptance
+## M2 iOS simulator evidence without desktop capture: building after COOKED-DRAW M1 acceptance
 
 - Reuse the renderer tap in the real simulator route under its existing foreground lease and normal input dispatch.
   Prove normal-speed camera/actor response, pending-capture background/foreground and surface/device-generation
@@ -203,3 +201,5 @@ nonblocking bounded readback and the attended Mac cadence boundary. No proof ite
   with V1/V4/F1 producers and Mac/G3t consumers under C12; selected submitted-image tap plus distinct fixed-time and
   real-time drivers. ScreenCaptureKit permission and Instruments export are independent blockers. Replanned Mac M2
   without waiving built-in-panel cadence or claiming old images qualify the later build. Fresh design review owed.
+
+- 2026-11-09 Claimed M2 after accepted COOKED-DRAW M1. The ordinary simulator renderer uses the shared bounded writer/tap with actual adapter, source extent, submission/lease history and callback disposition. Three pans plus running/stall/fresh lifecycle intervals preserve 3,130 originals without omissions. Pending lease/device controls cancel, background counters hold, and explicit ring/Raw slow controls refuse while the world advances. Actual UIKit touch/rotation regression passes independently of semantic input. Denied attributed preflights pass before/after with naturally changed console witness. Builder native-frame/timing inspection complete. All attempts, finite resources, startup service-reset side effect and source retention are documented. Full Check passes serially, iOS Clippy and ten capture tests pass. Integration repeats Check. Only M2 state/status/evidence change in DONE. Independent review is owed.
