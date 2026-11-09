@@ -34,4 +34,5 @@ V1 test game, but no general engine runtime exists yet; examples of future SDK c
   are asynchronous: never wait for a reply to a progress report. Stop to ask only for direction changes,
   spending, publishing or irreversible actions, and continue with unblocked work meanwhile.
 
-Local commits are useful verified checkpoints. Do not push, publish or deploy without authorization.
+Local commits are useful verified checkpoints. The owner authorizes pushing verified checkpoints to `main`, as
+ORCHESTRATE.md's `Integrate` line says. Don't publish or deploy without authorization.
