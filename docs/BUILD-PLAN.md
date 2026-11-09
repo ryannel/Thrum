@@ -41,6 +41,13 @@ continue unblocked work. Verified checkpoints are pushed to main (owner, 6 Nov p
 
 ## Active work and gates
 
+Mac M2.1 current-release locked-console motion passes builder inspection (481 exact originals, complete pan/holds);
+attended preparation is in [the current evidence/runbook](evidence/render/mac-m2-current/README.md).
+The locked-panel preflight was tried and refused before launching a game or trace. Windowed tap M2.3, trace tooling
+M2.4 and cadence M2.2 remain open for unlocked active built-in-panel/Instruments setup; zero of the two new trace
+attempts were consumed. The collector uses the existing shared tap and separate ON/OFF arms; no panel pass is inferred
+from engine pixels or successful repository checks.
+
 **[T2 unattended capture M0 and M1](design/modules/T2-CAPTURE-PLAN.md) are done.** Metal and Chrome now have
 qualified submitted-output and elapsed-time engine capture. [Mac evidence](evidence/render/t2-capture-m0/README.md)
 and [Chrome evidence](evidence/render/t2-capture-m1/README.md) include provenance and bounded failure controls.

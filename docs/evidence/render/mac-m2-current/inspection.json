@@ -1,0 +1,109 @@
+{
+  "item": "M2.1",
+  "binary_sha256": "c281cde11af9dd0cf86062c8d7516cecd8b2aaa79d44cc1756f11042198c8769",
+  "source_digest": "5a7375f2a9e82d6c205bbe27ac9f47b6210c00a37d3e07bf4e1ae2c3979b3d79",
+  "source_base": "1ab6c7fb174c66a120f76029fcb5109351607e26",
+  "recipe": "3f9c9ae8e22944d2d7c450af14554f7d6c46941b614b4e60c4eef78dec9070d0",
+  "images": 481,
+  "initial_hold_seconds": 1.0034175,
+  "first_final_yaw_submit_seconds": 3.004167541,
+  "interval_end_seconds": 4.010893666,
+  "final_hold_seconds": 1.0067261250000001,
+  "max_image_gap_ms": 12.008083,
+  "skipped_opportunities": 0,
+  "ring_omissions": 0,
+  "writer_omissions": 0,
+  "ticks": [
+    0
+  ],
+  "sweep_exact_repeated_byte_runs": [],
+  "selected": [
+    {
+      "t": 0,
+      "submission_id": 228,
+      "submit_ns": 0,
+      "accepted_yaw_degrees": 0.0,
+      "rgba_sha256": "a865b1e6fc6765f6d4dec2190328d70f12d3d0ba9a6018f724659934c8ebb588",
+      "full": "full-0.png",
+      "crop": "crop-0.png",
+      "crop_rect_xywh": [
+        800,
+        650,
+        480,
+        340
+      ]
+    },
+    {
+      "t": 1.5,
+      "submission_id": 408,
+      "submit_ns": 1503259958,
+      "accepted_yaw_degrees": 9.049986839294434,
+      "rgba_sha256": "106d41b6c24b0f8ac73a83dd9ddf4eca83150092ba3ed6a0ef27de15db379500",
+      "full": "full-1.5.png",
+      "crop": "crop-1.5.png",
+      "crop_rect_xywh": [
+        800,
+        650,
+        480,
+        340
+      ]
+    },
+    {
+      "t": 2,
+      "submission_id": 468,
+      "submit_ns": 2003271375,
+      "accepted_yaw_degrees": 18.049991607666016,
+      "rgba_sha256": "689665b1968011d7c05d796935adb92f2d4cab022e09687dc0eff19b361a4b7b",
+      "full": "full-2.png",
+      "crop": "crop-2.png",
+      "crop_rect_xywh": [
+        400,
+        650,
+        480,
+        340
+      ]
+    },
+    {
+      "t": 2.5,
+      "submission_id": 528,
+      "submit_ns": 2503091208,
+      "accepted_yaw_degrees": 27.04999542236328,
+      "rgba_sha256": "8f4abd98f38343aaddab7dbd233f0670746568384a9f93340e6c058d4eca99aa",
+      "full": "full-2.5.png",
+      "crop": "crop-2.5.png",
+      "crop_rect_xywh": [
+        100,
+        650,
+        480,
+        340
+      ]
+    },
+    {
+      "t": 3.5,
+      "submission_id": 648,
+      "submit_ns": 3504010333,
+      "accepted_yaw_degrees": 35.9999885559082,
+      "rgba_sha256": "85ea3ba193209eece43900842400319b6e568e42c147fcabcf8def92170053c8",
+      "full": "full-3.5.png",
+      "crop": "crop-3.5.png",
+      "crop_rect_xywh": [
+        100,
+        650,
+        480,
+        340
+      ]
+    }
+  ],
+  "preview_pts_max_error_seconds": 5.00000000069889e-07,
+  "locked_permission_unavailable_qualified": true,
+  "browser_review": {
+    "rate": 1,
+    "duration_s": 4.011388,
+    "first_wall_ms": 4022.2,
+    "second_wall_ms": 4029.8,
+    "browser_dropped_total_after_two": 8,
+    "sampled_review_wall_ms": 4028.8,
+    "dropped_total_after_sampled_pass": 122,
+    "scope": "browser decoding/composition drops are review observer effects, not source omissions or panel swaps"
+  }
+}

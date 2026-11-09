@@ -5,6 +5,7 @@ mod device;
 mod display_link;
 mod edit_flow;
 mod pause;
+mod qualification;
 mod recovery;
 mod render_actor;
 
@@ -121,6 +122,7 @@ struct App<G: Game> {
     adapter_name: String,
     error: Option<String>,
     closed_by_user: bool,
+    qualification: Option<qualification::Pan>,
 }
 
 impl<G: Game + 'static> App<G> {
@@ -192,6 +194,7 @@ impl<G: Game + 'static> App<G> {
             adapter_name: String::new(),
             error: None,
             closed_by_user: false,
+            qualification: qualification::Pan::from_environment(),
         }
     }
 
@@ -475,6 +478,15 @@ impl<G: Game + 'static> App<G> {
         self.origin = prepared.origin;
         let host = prepared.host;
         self.counters = FrameCounters::read(&host);
+        if let Some(output) = std::env::var_os("THRUM_MAC_QUALIFY") {
+            let number = display_link::window_number(&window)?;
+            let monitor = window.current_monitor();
+            std::fs::write(std::path::Path::new(&output).join("window.txt"), format!(
+                "pid={}\nwindow_number={number}\nadapter={}\nformat={:?}\nextent={}x{}\nmonitor={:?}\nposition={:?}\nscale={}\n",
+                std::process::id(), gpu.adapter_name, gpu.config.format, gpu.config.width, gpu.config.height,
+                monitor.as_ref().map(|m| (m.name(), m.size(), m.refresh_rate_millihertz())), window.outer_position(), window.scale_factor()
+            )).map_err(|e| e.to_string())?;
+        }
         self.window = Some(window);
         let panel_wake = wake.clone();
         let panel = MacPanel::new(
@@ -701,6 +713,13 @@ impl<G: Game + 'static> App<G> {
         let extent = [size.width, size.height];
         self.observe_extent(extent)?;
         self.edits.carry(self.game.frame_edits());
+        if let Some(pan) = &mut self.qualification {
+            pan.request(
+                self.target_sequence,
+                self.display_target.ok_or("display target missing")?,
+                self.game.controls(),
+            )?;
+        }
         let job = RenderJob::Frame(FrameRequest {
             sequence: self.target_sequence,
             device_generation: self.recovery.active,
@@ -1074,6 +1093,31 @@ impl<G: Game + 'static> ApplicationHandler<UserEvent> for App<G> {
                 }
             }
             UserEvent::DisplayTarget(target) => {
+                if let Some(pan) = &mut self.qualification {
+                    let result = self
+                        .panel
+                        .as_mut()
+                        .ok_or_else(|| "panel missing".to_owned())
+                        .and_then(|panel| pan.step(panel, self.game.controls_mut()));
+                    match result {
+                        Ok(done) => {
+                            if let Err(error) = self.controls_edited() {
+                                self.error = Some(error);
+                                event_loop.exit();
+                                return;
+                            }
+                            if done {
+                                event_loop.exit();
+                                return;
+                            }
+                        }
+                        Err(error) => {
+                            self.error = Some(error);
+                            event_loop.exit();
+                            return;
+                        }
+                    }
+                }
                 self.display_target = Some(target);
                 self.target_sequence = self.target_sequence.saturating_add(1);
                 self.display_link_callbacks += 1;
@@ -1299,7 +1343,19 @@ fn run_with<G: Game + 'static>(
             app.presented, app.target_frames
         ));
     }
-    match app.error.take().map_or_else(|| app.finish(), Err) {
+    if let Some(pan) = &app.qualification
+        && let Err(error) = pan.finish()
+    {
+        app.error = Some(error);
+    }
+    let result = app.error.take().map_or_else(|| app.finish(), Err);
+    if let Some(output) = std::env::var_os("THRUM_MAC_QUALIFY") {
+        let path = std::path::Path::new(&output).join("gpu-samples.txt");
+        if let Err(error) = std::fs::write(path, format!("{:#?}\n", app.samples)) {
+            eprintln!("{}: sample record: {error}", config.name);
+        }
+    }
+    match result {
         Ok(report) => {
             if prints_report(until_closed, std::env::var(REPORT_VARIABLE).ok().as_deref()) {
                 println!("{report}");

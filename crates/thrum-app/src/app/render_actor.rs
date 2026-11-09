@@ -123,6 +123,7 @@ struct Actor<G: Game> {
     refused_surface_generation: Option<u64>,
     origin: Instant,
     wake: EventLoopProxy<UserEvent>,
+    observer: Option<super::qualification::Observer>,
 }
 pub(super) type RenderWorker<G> =
     FrameWorker<RenderJob<<G as Game>::Edits>, RenderReply<<G as Game>::Readback>>;
@@ -132,7 +133,7 @@ pub(super) type RenderWorker<G> =
 )]
 pub(super) fn start<G: Game + 'static>(
     name: &str,
-    host: FrameHost<G::World, G::Scene>,
+    mut host: FrameHost<G::World, G::Scene>,
     gpu: PlatformGpu,
     recipe: DeviceRecipe,
     surface_generation: Arc<AtomicU64>,
@@ -144,7 +145,9 @@ pub(super) fn start<G: Game + 'static>(
         assert!(FrameHost::<G::World, G::Scene>::MAX_IN_FLIGHT == SAMPLE_SLOTS);
     }
     let signal = wake.clone();
+    let observer = super::qualification::Observer::start(&mut host, origin)?;
     let mut actor = Actor::<G> {
+        observer,
         host,
         gpu,
         recipe,
@@ -222,6 +225,12 @@ impl<G: Game> Actor<G> {
             },
             RenderJob::Finish => RenderOutcome::Finish(self.finish()),
         };
+        if !self.gpu.watch.is_lost()
+            && let Some(observer) = &mut self.observer
+            && let Err(error) = observer.collect::<G>(&mut self.host)
+        {
+            reply.outcome = RenderOutcome::Frame(Err(error));
+        }
         reply.device_generation = self.gpu.watch.generation;
         reply.surface_extent = [self.gpu.config.width, self.gpu.config.height];
         reply.counters = FrameCounters::read(&self.host);
@@ -263,6 +272,11 @@ impl<G: Game> Actor<G> {
                 reply.surface_status = SurfaceStatus::ConfigurationRefused(error);
                 ready = false;
             } else {
+                if let Some(observer) = &mut self.observer {
+                    observer
+                        .replace::<G>(&mut self.host)
+                        .map_err(FrameError::Scene)?;
+                }
                 self.host.resize_surface(request.extent)?;
                 self.gpu.config = config;
                 self.needs_reconfigure = false;
@@ -340,6 +354,22 @@ impl<G: Game> Actor<G> {
             reply.surface_status = SurfaceStatus::Presented;
         } else {
             reply.surface_status = SurfaceStatus::Unavailable;
+        }
+        if report.submitted
+            && let Some(observer) = &mut self.observer
+        {
+            observer
+                .frame::<G>(
+                    &self.host,
+                    request.sequence,
+                    request.surface_generation,
+                    report.surface_presented,
+                )
+                .map_err(FrameError::Scene)?;
+            if observer.replace_after_present() {
+                self.surface_generation.fetch_add(1, Ordering::AcqRel);
+                self.needs_reconfigure = true;
+            }
         }
         Ok(report)
     }
@@ -432,6 +462,9 @@ impl<G: Game> Actor<G> {
                 Err(error) => return Err(error.to_string()),
             }
             if self.host.pending_frames() == 0 {
+                if let Some(mut observer) = self.observer.take() {
+                    observer.finish::<G>(&mut self.host)?;
+                }
                 return Ok(Finished {
                     samples,
                     lost_device: self.gpu.watch.is_lost(),
