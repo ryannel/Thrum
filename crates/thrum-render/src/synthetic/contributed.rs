@@ -128,6 +128,7 @@ impl PreparedSynthetic {
             queue,
             generation: self.key.device_generation,
             features: self.capabilities.features(),
+            downlevel: self.capabilities.downlevel(),
             limits: self.capabilities.limits().clone(),
             shader_source: &self.surface.shader_source,
             pipeline_layout: &self.surface.pipeline_layout,

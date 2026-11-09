@@ -232,6 +232,25 @@ pub struct SwapRecord {
     pub volume_profile: Option<Profile>,
 }
 
+/// Selected cooked-mesh recording mechanism for this device generation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CookedDrawPath {
+    /// GPU meshlet cull and indirect drawing.
+    Indirect,
+    /// One core indexed draw per placement; no meshlet cull resources.
+    Direct,
+}
+
+impl CookedDrawPath {
+    fn select(flags: Option<wgpu::DownlevelFlags>) -> Self {
+        if flags.is_some_and(|flags| flags.contains(wgpu::DownlevelFlags::INDIRECT_EXECUTION)) {
+            Self::Indirect
+        } else {
+            Self::Direct
+        }
+    }
+}
+
 /// Shared observations, readable while the contribution belongs to the frame host.
 #[derive(Debug, Default)]
 pub struct CookedStats {
@@ -255,7 +274,11 @@ pub struct CookedStats {
     pub staging_peak_bytes: u64,
     /// Generation currently drawn.
     pub drawn: Option<u64>,
-    /// Meshlets the GPU cull kept and the meshlets placed, from a recent frame.
+    /// Device generation on which the drawn content was submitted.
+    pub drawn_device_generation: Option<u64>,
+    /// Path selected at the latest rebuild.
+    pub draw_path: Option<CookedDrawPath>,
+    /// Meshlets the GPU cull kept and the meshlets placed, from a recent frame. None on the direct path.
     pub visible_meshlets: Option<(u32, u32)>,
     /// Newest generation the loader has staged (drawn or still uploading).
     pub staged: Option<u64>,
@@ -329,7 +352,7 @@ struct Live {
     pipelines: draw::Pipelines,
     pending: Option<Pending>,
     current: Option<(Arc<load::ResidentSet>, draw::Bound)>,
-    readback: Readback,
+    readback: Option<Readback>,
     /// What this frame's encoder recorded, committed only by `submitted`.
     tentative: Option<Tentative>,
     /// A validated material replacement, drawn from the next frame and promoted by the first
@@ -414,7 +437,7 @@ impl Readback {
         if self.state.load(Ordering::Acquire) != IDLE {
             return None;
         }
-        encoder.copy_buffer_to_buffer(&bound.visible, 0, &self.buffer, 0, 4);
+        encoder.copy_buffer_to_buffer(bound.visible.as_ref()?, 0, &self.buffer, 0, 4);
         Some(bound.meshlets())
     }
 
@@ -586,7 +609,8 @@ impl CookedAssets {
             pipelines,
             pending: None,
             current: None,
-            readback: Readback::new(surface.device),
+            readback: (CookedDrawPath::select(surface.downlevel) == CookedDrawPath::Indirect)
+                .then(|| Readback::new(surface.device)),
             tentative: None,
             material: None,
         }
@@ -594,6 +618,10 @@ impl CookedAssets {
 
     /// Rebuild pipelines and bindings for `surface`, or restart on a new device generation.
     fn rebuild_inner(&mut self, surface: &SceneSurface<'_>) {
+        if let Ok(mut stats) = self.stats.lock() {
+            stats.draw_path = Some(CookedDrawPath::select(surface.downlevel));
+            stats.visible_meshlets = None;
+        }
         // A material candidate for the previous surface cannot publish. The new pipelines draw
         // the built-in material until the accepted hook validates against this surface.
         self.epoch += 1;
@@ -607,6 +635,9 @@ impl CookedAssets {
             // Same device: the scene shader or layouts may have changed; resources stay, history
             // restarts with the new bindings.
             Some(live) if live.generation == surface.generation => {
+                live.readback = (CookedDrawPath::select(surface.downlevel)
+                    == CookedDrawPath::Indirect)
+                    .then(|| Readback::new(surface.device));
                 live.pipelines = pipelines;
                 live.tentative = None;
                 if let Some((set, bound)) = live.current.as_mut() {
@@ -620,6 +651,11 @@ impl CookedAssets {
             }
             // New device generation: products are mapped and staged again for it.
             _ => {
+                if let Ok(mut stats) = self.stats.lock() {
+                    stats.drawn = None;
+                    stats.drawn_device_generation = None;
+                    stats.last_frame_history = None;
+                }
                 self.live = None;
                 self.live = Some(self.start(surface, pipelines));
             }
@@ -715,9 +751,20 @@ impl SceneContribution for CookedAssets {
             }
         }
         live.tentative = Some(tentative);
-        let meshed = live.drawn().is_some_and(draw::Bound::culls);
+        let meshed = live.drawn().is_some_and(draw::Bound::has_meshes);
+        let history = live
+            .drawn()
+            .filter(|bound| bound.has_meshes())
+            .map(|bound| {
+                let frame = ContributionFrame {
+                    history_reset: frame.history_reset || tentative.material,
+                    ..*frame
+                };
+                live.pipelines.history(bound, &frame)
+            });
         if let Some(tentative) = live.tentative.as_mut() {
             tentative.meshed = meshed;
+            tentative.history = history;
         }
         if let Ok(mut stats) = self.stats.lock() {
             stats.recorded_frames += 1;
@@ -736,16 +783,7 @@ impl SceneContribution for CookedAssets {
         if let Some(live) = self.live_for(frame)
             && let Some(bound) = live.drawn()
         {
-            // A new material restarts the meshes' motion history once, like a new set.
-            let promoting = live.tentative.is_some_and(|tentative| tentative.material);
-            let frame = ContributionFrame {
-                history_reset: frame.history_reset || promoting,
-                ..*frame
-            };
-            let history = live.pipelines.cull(bound, pass, &frame);
-            if let Some(tentative) = live.tentative.as_mut() {
-                tentative.history = Some(history);
-            }
+            live.pipelines.cull(bound, pass, frame);
         }
     }
 
@@ -757,9 +795,14 @@ impl SceneContribution for CookedAssets {
         let Some(bound) = live.drawn() else {
             return;
         };
-        let counted = live.readback.record(encoder, bound, &stats);
+        let Some(readback) = &live.readback else {
+            return;
+        };
+        let counted = readback.record(encoder, bound, &stats);
         // The next frame's cull counts from zero.
-        encoder.clear_buffer(&bound.visible, 0, None);
+        if let Some(visible) = &bound.visible {
+            encoder.clear_buffer(visible, 0, None);
+        }
         if let Some(tentative) = live.tentative.as_mut() {
             tentative.counted = counted;
         }
@@ -792,8 +835,10 @@ impl SceneContribution for CookedAssets {
         let Some(tentative) = live.tentative.take() else {
             return;
         };
-        if let Some(total) = tentative.counted {
-            live.readback.submitted(total);
+        if let Some(total) = tentative.counted
+            && let Some(readback) = &mut live.readback
+        {
+            readback.submitted(total);
         }
         if let Ok(mut stats) = self.stats.lock() {
             stats.submitted_frames += 1;
@@ -825,6 +870,7 @@ impl SceneContribution for CookedAssets {
                     stats.failures_before_first_draw = stats.failures;
                 }
                 stats.drawn = Some(set.generation);
+                stats.drawn_device_generation = Some(live.generation);
                 stats.swaps.push(SwapRecord {
                     generation: set.generation,
                     head_seen: pending.set.head_seen,
@@ -858,5 +904,23 @@ impl SceneContribution for CookedAssets {
                 bound.continued.set(false);
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod draw_path_tests {
+    use super::CookedDrawPath;
+
+    #[test]
+    fn only_known_indirect_support_selects_indirect() {
+        assert_eq!(CookedDrawPath::select(None), CookedDrawPath::Direct);
+        assert_eq!(
+            CookedDrawPath::select(Some(wgpu::DownlevelFlags::empty())),
+            CookedDrawPath::Direct
+        );
+        assert_eq!(
+            CookedDrawPath::select(Some(wgpu::DownlevelFlags::INDIRECT_EXECUTION)),
+            CookedDrawPath::Indirect
+        );
     }
 }

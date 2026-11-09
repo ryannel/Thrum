@@ -88,6 +88,8 @@ pub struct SceneSurface<'a> {
     pub generation: u64,
     /// Device features and limits of this generation.
     pub features: wgpu::Features,
+    /// Adapter execution flags; unknown on an adapter-less record.
+    pub downlevel: Option<wgpu::DownlevelFlags>,
     /// Device limits of this generation.
     pub limits: wgpu::Limits,
     /// The composed WGSL of the scene's forward shader (lighting, materials and entry points).

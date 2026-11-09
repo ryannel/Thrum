@@ -2482,6 +2482,7 @@ name = "v1-game-ios"
 version = "0.1.0"
 dependencies = [
  "pollster",
+ "thrum-asset-gpu",
  "thrum-core",
  "thrum-render",
  "v1-game",

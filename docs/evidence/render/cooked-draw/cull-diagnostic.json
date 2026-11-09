@@ -1,0 +1,27 @@
+{
+  "diagnostic_only": "all meshlets retained; source restored after run",
+  "all_meshlets": {
+    "adapter": "AdapterInfo { name: \"Apple M3 Max\", vendor: 0, device: 0, device_type: IntegratedGpu, device_pci_bus_id: \"\", driver: \"\", driver_info: \"\", backend: Metal, subgroup_min_size: 4, subgroup_max_size: 64, transient_saves_memory: Some(true), limit_bucket: None }",
+    "drawn": 1,
+    "encode_ns": 4576625,
+    "extent": [
+      1920,
+      1080
+    ],
+    "flags": "Some(DownlevelFlags(COMPUTE_SHADERS | FRAGMENT_WRITABLE_STORAGE | INDIRECT_EXECUTION | BASE_VERTEX | READ_ONLY_DEPTH_STENCIL | NON_POWER_OF_TWO_MIPMAPPED_TEXTURES | CUBE_ARRAY_TEXTURES | COMPARISON_SAMPLERS | INDEPENDENT_BLEND | VERTEX_STORAGE | ANISOTROPIC_FILTERING | FRAGMENT_STORAGE | MULTISAMPLED_SHADING | DEPTH_TEXTURE_AND_BUFFER_COPIES | WEBGPU_TEXTURE_FORMAT_SUPPORT | BUFFER_BINDINGS_NOT_16_BYTE_ALIGNED | UNRESTRICTED_INDEX_BUFFER | FULL_DRAW_INDEX_UINT32 | DEPTH_BIAS_CLAMP | VIEW_FORMATS | UNRESTRICTED_EXTERNAL_TEXTURE_COPIES | SURFACE_VIEW_FORMATS | NONBLOCKING_QUERY_RESOLVE | SHADER_F16_IN_F32 | MSL2_1 | TEXTURE_COMPRESSION))",
+    "gpu_pass_ns": null,
+    "masked": false,
+    "path": "Some(Indirect)",
+    "solar": 12.0,
+    "submission": 16,
+    "tick": 0,
+    "visible": [
+      680,
+      680
+    ],
+    "yaw": 0.0
+  },
+  "all_meshlets_sha256": "6ef98a3eb2fb40ee282e4e6ea653b6c759125f0e595b0155c73a34e43f82c61b",
+  "indirect_different_pixels": 0,
+  "direct_different_pixels": 1506
+}

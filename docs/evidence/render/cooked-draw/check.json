@@ -1,0 +1,13 @@
+{
+  "command": "./dev check",
+  "exit": 0,
+  "toolchain": "Rust 1.99.1 aarch64-apple-darwin; pinned toolchain bin first on PATH; RUSTC_WRAPPER empty",
+  "gpu_lock": true,
+  "test_result_groups": 62,
+  "passed_tests": 651,
+  "failed_tests": 0,
+  "cooked_assets_gpu": "13 tests passed, each existing case executes adapter-backed indirect and explicitly masked direct; separate public adapter-less host case",
+  "cooked_material_gpu": "existing 8 tests passed, adapter-backed indirect only; dual-path material-promotion qualification pending",
+  "log_sha256": "194298fe90dca4dca06d94ac1f215d9744f51bb1a5ce9bfd23347406195c15f9",
+  "limit": "Repository correctness gate; not M1.3 parity or complete target/visual/cost qualification"
+}

@@ -7,7 +7,9 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use thrum_asset::Profile;
-use thrum_asset_gpu::{COPY_UNIT, CookedAssets, CookedConfig, CookedStats, STAGING_CHUNKS};
+use thrum_asset_gpu::{
+    COPY_UNIT, CookedAssets, CookedConfig, CookedDrawPath, CookedStats, STAGING_CHUNKS,
+};
 use thrum_cook::{CookConfig, Cooker, Durability, Quality, demo};
 use thrum_render::capabilities::DeviceCapabilities;
 use thrum_render::present::SurfaceProfile;
@@ -93,7 +95,7 @@ fn wait_for(
     }
 }
 
-async fn game_device() -> (wgpu::Device, wgpu::Queue) {
+async fn game_device(path: CookedDrawPath) -> (wgpu::Device, wgpu::Queue, DeviceCapabilities) {
     let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
     let adapter = instance
         .request_adapter(&wgpu::RequestAdapterOptions::default())
@@ -103,13 +105,15 @@ async fn game_device() -> (wgpu::Device, wgpu::Queue) {
     // Timestamps too, so contributed frames exercise the renderer's timing collector.
     let features = DeviceCapabilities::requested_content_features(&adapter)
         | DeviceCapabilities::requested_timing_features(&adapter);
-    adapter
+    let (device, queue) = adapter
         .request_device(&wgpu::DeviceDescriptor {
             required_features: features,
             ..Default::default()
         })
         .await
-        .expect("device")
+        .expect("device");
+    let caps = selected_capabilities(&adapter, &device, 1, path);
+    (device, queue, caps)
 }
 
 fn changed_pixels(a: &[u8], b: &[u8]) -> usize {
@@ -135,6 +139,12 @@ fn save(name: &str, pixels: &[u8]) {
 
 #[test]
 fn cooked_edits_become_visible_in_the_game_with_its_lighting() {
+    for path in [CookedDrawPath::Indirect, CookedDrawPath::Direct] {
+        cooked_edits_become_visible_in_the_game_with_its_lighting_case(path);
+    }
+}
+
+fn cooked_edits_become_visible_in_the_game_with_its_lighting_case(path: CookedDrawPath) {
     let root = std::env::temp_dir().join(format!("thrum-g5-game-{}", std::process::id()));
     std::fs::remove_dir_all(&root).ok();
     let cook = source_tree(&root, 96);
@@ -143,10 +153,15 @@ fn cooked_edits_become_visible_in_the_game_with_its_lighting() {
     assert!(report.failed.is_empty(), "{:?}", report.failed);
 
     pollster::block_on(async {
-        let (device, queue) = game_device().await;
-        let mut host = FrameHost::new(&device, &queue, FrameConfig::default())
-            .await
-            .expect("prepared game scene");
+        let (device, queue, capabilities) = game_device(path).await;
+        let mut host = FrameHost::new_with_capabilities(
+            &device,
+            &queue,
+            &capabilities,
+            FrameConfig::default(),
+        )
+        .await
+        .expect("prepared game scene");
         let before = host.capture_pixels().expect("game before cooked assets");
         save("before", &before);
 
@@ -243,25 +258,18 @@ fn cooked_edits_become_visible_in_the_game_with_its_lighting() {
                 .iter()
                 .all(|swap| swap.texture_profile.is_some() && swap.volume_profile.is_some())
         );
-        eprintln!(
-            "profiles: texture {:?}, volume {:?}; uploads {:?} bytes over {:?} frames",
-            swaps[0].texture_profile,
-            swaps[0].volume_profile,
-            swaps
-                .iter()
-                .map(|swap| swap.uploaded_bytes)
-                .collect::<Vec<_>>(),
-            swaps
-                .iter()
-                .map(|swap| swap.upload_frames)
-                .collect::<Vec<_>>()
-        );
     });
     std::fs::remove_dir_all(&root).ok();
 }
 
 #[test]
 fn off_screen_meshlets_are_culled_and_bc7_is_drawn_where_supported() {
+    for path in [CookedDrawPath::Indirect, CookedDrawPath::Direct] {
+        off_screen_meshlets_are_culled_and_bc7_is_drawn_where_supported_case(path);
+    }
+}
+
+fn off_screen_meshlets_are_culled_and_bc7_is_drawn_where_supported_case(path: CookedDrawPath) {
     let root = std::env::temp_dir().join(format!("thrum-g5-cull-{}", std::process::id()));
     std::fs::remove_dir_all(&root).ok();
     let cook = source_tree(&root, 32);
@@ -270,13 +278,18 @@ fn off_screen_meshlets_are_culled_and_bc7_is_drawn_where_supported() {
         .cook_all()
         .expect("cook");
     pollster::block_on(async {
-        let (device, queue) = game_device().await;
+        let (device, queue, capabilities) = game_device(path).await;
         let bc = device
             .features()
             .contains(wgpu::Features::TEXTURE_COMPRESSION_BC);
-        let mut host = FrameHost::new(&device, &queue, FrameConfig::default())
-            .await
-            .expect("prepared game scene");
+        let mut host = FrameHost::new_with_capabilities(
+            &device,
+            &queue,
+            &capabilities,
+            FrameConfig::default(),
+        )
+        .await
+        .expect("prepared game scene");
         let mut config = placements(cook.store.clone());
         config.volume = None;
         // Straddle the left edge of the view: about half the meshlets are outside it.
@@ -290,29 +303,34 @@ fn off_screen_meshlets_are_culled_and_bc7_is_drawn_where_supported() {
         let stats = assets.stats();
         host.set_scene_contribution(Box::new(assets))
             .expect("attach");
+        assert_eq!(stats.lock().expect("stats").draw_path, Some(path));
         let mut clock = Duration::ZERO;
         wait_for(&mut host, &device, &stats, 1, &mut clock);
         let deadline = Instant::now() + Duration::from_secs(10);
-        let (visible, total) = loop {
-            if let Some(counts) = stats.lock().expect("stats").visible_meshlets {
-                break counts;
-            }
-            assert!(Instant::now() < deadline, "no cull readback");
-            clock += Duration::from_millis(16);
-            host.drive(clock, None).expect("frame");
-            device
-                .poll(wgpu::PollType::Wait {
-                    submission_index: None,
-                    timeout: Some(Duration::from_secs(10)),
-                })
-                .expect("GPU wait");
-            host.poll_completed().expect("GPU progress");
-        };
-        eprintln!("meshlets kept {visible} of {total}");
-        assert!(
-            visible > total / 5 && visible < total * 4 / 5,
-            "frustum culling keeps only the on-screen part: {visible} of {total}"
-        );
+        if path == CookedDrawPath::Indirect {
+            let (visible, total) = loop {
+                if let Some(counts) = stats.lock().expect("stats").visible_meshlets {
+                    break counts;
+                }
+                assert!(Instant::now() < deadline, "no cull readback");
+                clock += Duration::from_millis(16);
+                host.drive(clock, None).expect("frame");
+                device
+                    .poll(wgpu::PollType::Wait {
+                        submission_index: None,
+                        timeout: Some(Duration::from_secs(10)),
+                    })
+                    .expect("GPU wait");
+                host.poll_completed().expect("GPU progress");
+            };
+
+            assert!(
+                visible > total / 5 && visible < total * 4 / 5,
+                "frustum culling keeps only the on-screen part: {visible} of {total}"
+            );
+        } else {
+            assert_eq!(stats.lock().expect("stats").visible_meshlets, None);
+        }
         save("cull-bc7", &host.capture_pixels().expect("pixels"));
         let profile = stats.lock().expect("stats").swaps[0].texture_profile;
         if bc {
@@ -383,13 +401,19 @@ fn settle(host: &mut FrameHost, device: &wgpu::Device) {
 /// rendering. Both must then swap on the same submitted frame and draw identical pixels.
 #[test]
 fn discarded_frames_leave_no_trace_on_cooked_uploads() {
+    for path in [CookedDrawPath::Indirect, CookedDrawPath::Direct] {
+        discarded_frames_leave_no_trace_on_cooked_uploads_case(path);
+    }
+}
+
+fn discarded_frames_leave_no_trace_on_cooked_uploads_case(path: CookedDrawPath) {
     let root = std::env::temp_dir().join(format!("thrum-g5-discard-{}", std::process::id()));
     std::fs::remove_dir_all(&root).ok();
     let cook = source_tree(&root, 160);
     let mut cooker = Cooker::open(cook.clone()).expect("cooker");
     cooker.cook_all().expect("cook");
     pollster::block_on(async {
-        let (device, queue) = game_device().await;
+        let (device, queue, capabilities) = game_device(path).await;
         // Discarding happens when a drawable is not acquired, so these hosts present.
         let surface = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("discard test drawable"),
@@ -419,7 +443,7 @@ fn discarded_frames_leave_no_trace_on_cooked_uploads() {
         };
         let mut hosts = Vec::new();
         for _ in 0..2 {
-            let mut host = FrameHost::new(&device, &queue, config)
+            let mut host = FrameHost::new_with_capabilities(&device, &queue, &capabilities, config)
                 .await
                 .expect("prepared game scene");
             let assets =
@@ -427,6 +451,7 @@ fn discarded_frames_leave_no_trace_on_cooked_uploads() {
             let stats = assets.stats();
             host.set_scene_contribution(Box::new(assets))
                 .expect("attach");
+            assert_eq!(stats.lock().expect("stats").draw_path, Some(path));
             hosts.push((host, stats));
         }
         let mut clock = Duration::ZERO;
@@ -539,9 +564,7 @@ fn discarded_frames_leave_no_trace_on_cooked_uploads() {
                 (swap.upload_frames, swap.uploaded_bytes)
             })
             .collect();
-        eprintln!(
-            "discard test: generation {generation} upload (frames, bytes) per host {swaps:?}"
-        );
+
         assert!(swaps[0].0 > 1, "the edit spans frames: {swaps:?}");
         assert_eq!(swaps[0], swaps[1], "discarded frames advanced no upload");
         let pixels: Vec<_> = hosts
@@ -657,27 +680,37 @@ fn timed(sample: &FrameSample, device: &wgpu::Device, drawing: bool) {
 
 #[test]
 fn contributed_frames_keep_complete_gpu_timings_and_reset_history_for_new_sets() {
+    for path in [CookedDrawPath::Indirect, CookedDrawPath::Direct] {
+        contributed_frames_keep_complete_gpu_timings_and_reset_history_for_new_sets_case(path);
+    }
+}
+
+fn contributed_frames_keep_complete_gpu_timings_and_reset_history_for_new_sets_case(
+    path: CookedDrawPath,
+) {
     let root = std::env::temp_dir().join(format!("thrum-g5-timing-{}", std::process::id()));
     std::fs::remove_dir_all(&root).ok();
     let cook = source_tree(&root, 64);
     let mut cooker = Cooker::open(cook.clone()).expect("cooker");
     cooker.cook_all().expect("cook");
     pollster::block_on(async {
-        let (device, queue) = game_device().await;
+        let (device, queue, capabilities) = game_device(path).await;
         let view = drawable(&device);
-        let mut host = FrameHost::new(&device, &queue, presenting())
-            .await
-            .expect("prepared game scene");
+        let mut host =
+            FrameHost::new_with_capabilities(&device, &queue, &capabilities, presenting())
+                .await
+                .expect("prepared game scene");
         let assets = CookedAssets::new(placements(cook.store.clone())).expect("rigid placements");
         let stats = assets.stats();
         host.set_scene_contribution(Box::new(assets))
             .expect("attach");
+        assert_eq!(stats.lock().expect("stats").draw_path, Some(path));
         let mut clock = Duration::ZERO;
         until_swap(&mut host, &device, &view, &stats, &mut clock);
         timed(
             &presented_frame(&mut host, &device, &view, &mut clock),
             &device,
-            true,
+            path == CookedDrawPath::Indirect,
         );
         assert_eq!(stats.lock().expect("stats").last_frame_history, Some(true));
         // A capture does not become the previous frame; history continues across it.
@@ -685,7 +718,7 @@ fn contributed_frames_keep_complete_gpu_timings_and_reset_history_for_new_sets()
         timed(
             &presented_frame(&mut host, &device, &view, &mut clock),
             &device,
-            true,
+            path == CookedDrawPath::Indirect,
         );
         assert_eq!(stats.lock().expect("stats").last_frame_history, Some(true));
         // An edit swaps in a new set, whose first frame again has no history.
@@ -702,7 +735,7 @@ fn contributed_frames_keep_complete_gpu_timings_and_reset_history_for_new_sets()
         timed(
             &presented_frame(&mut host, &device, &view, &mut clock),
             &device,
-            true,
+            path == CookedDrawPath::Indirect,
         );
         assert_eq!(stats.lock().expect("stats").last_frame_history, Some(true));
     });
@@ -711,6 +744,12 @@ fn contributed_frames_keep_complete_gpu_timings_and_reset_history_for_new_sets()
 
 #[test]
 fn a_replaced_device_restages_and_draws_the_current_set() {
+    for path in [CookedDrawPath::Indirect, CookedDrawPath::Direct] {
+        a_replaced_device_restages_and_draws_the_current_set_case(path);
+    }
+}
+
+fn a_replaced_device_restages_and_draws_the_current_set_case(path: CookedDrawPath) {
     let root = std::env::temp_dir().join(format!("thrum-g5-device-{}", std::process::id()));
     std::fs::remove_dir_all(&root).ok();
     let cook = source_tree(&root, 64);
@@ -733,7 +772,7 @@ fn a_replaced_device_restages_and_draws_the_current_set() {
                     })
                     .await
                     .expect("device");
-                let capabilities = DeviceCapabilities::capture(&adapter, &device, generation);
+                let capabilities = selected_capabilities(&adapter, &device, generation, path);
                 (device, queue, capabilities)
             }
         };
@@ -750,6 +789,7 @@ fn a_replaced_device_restages_and_draws_the_current_set() {
         let stats = assets.stats();
         host.set_scene_contribution(Box::new(assets))
             .expect("attach");
+        assert_eq!(stats.lock().expect("stats").draw_path, Some(path));
         let mut clock = Duration::ZERO;
         let old_view = drawable(&old_device);
         until_swap(&mut host, &old_device, &old_view, &stats, &mut clock);
@@ -784,21 +824,29 @@ fn a_replaced_device_restages_and_draws_the_current_set() {
 /// the set it counted.
 #[test]
 fn captures_never_establish_history_and_cull_counts_follow_their_set() {
+    for path in [CookedDrawPath::Indirect, CookedDrawPath::Direct] {
+        captures_never_establish_history_and_cull_counts_follow_their_set_case(path);
+    }
+}
+
+fn captures_never_establish_history_and_cull_counts_follow_their_set_case(path: CookedDrawPath) {
     let root = std::env::temp_dir().join(format!("thrum-g5-capture-{}", std::process::id()));
     std::fs::remove_dir_all(&root).ok();
     let cook = source_tree(&root, 32);
     let mut cooker = Cooker::open(cook.clone()).expect("cooker");
     cooker.cook_all().expect("cook");
     pollster::block_on(async {
-        let (device, queue) = game_device().await;
+        let (device, queue, capabilities) = game_device(path).await;
         let view = drawable(&device);
-        let mut host = FrameHost::new(&device, &queue, presenting())
-            .await
-            .expect("prepared game scene");
+        let mut host =
+            FrameHost::new_with_capabilities(&device, &queue, &capabilities, presenting())
+                .await
+                .expect("prepared game scene");
         let assets = CookedAssets::new(placements(cook.store.clone())).expect("rigid placements");
         let stats = assets.stats();
         host.set_scene_contribution(Box::new(assets))
             .expect("attach");
+        assert_eq!(stats.lock().expect("stats").draw_path, Some(path));
         wait_staged(&stats, 1);
         let deadline = Instant::now() + Duration::from_secs(30);
         while stats.lock().expect("stats").drawn != Some(1) {
@@ -809,7 +857,7 @@ fn captures_never_establish_history_and_cull_counts_follow_their_set() {
         timed(
             &presented_frame(&mut host, &device, &view, &mut clock),
             &device,
-            true,
+            path == CookedDrawPath::Indirect,
         );
         assert_eq!(
             stats.lock().expect("stats").last_frame_history,
@@ -818,13 +866,16 @@ fn captures_never_establish_history_and_cull_counts_follow_their_set() {
         );
         let counted = |stats: &Mutex<CookedStats>| {
             let visible = stats.lock().expect("stats").visible_meshlets;
+            if path == CookedDrawPath::Direct {
+                assert_eq!(visible, None);
+            }
             if let Some((kept, total)) = visible {
                 assert!(kept <= total, "count {kept} paired with total {total}");
             }
             visible
         };
         let mut before = None;
-        while before.is_none() {
+        while path == CookedDrawPath::Indirect && before.is_none() {
             assert!(Instant::now() < deadline, "no cull count");
             presented_frame(&mut host, &device, &view, &mut clock);
             before = counted(&stats);
@@ -856,7 +907,8 @@ fn captures_never_establish_history_and_cull_counts_follow_their_set() {
             presented_frame(&mut host, &device, &view, &mut clock);
             let now = counted(&stats);
             if stats.lock().expect("stats").drawn == Some(2)
-                && now.map(|(_, total)| total) < before.map(|(_, total)| total)
+                && (path == CookedDrawPath::Direct
+                    || now.map(|(_, total)| total) < before.map(|(_, total)| total))
             {
                 break;
             }
@@ -867,6 +919,12 @@ fn captures_never_establish_history_and_cull_counts_follow_their_set() {
 
 #[test]
 fn cooked_mesh_outside_camera_casts_onto_visible_terrain() {
+    for path in [CookedDrawPath::Indirect, CookedDrawPath::Direct] {
+        cooked_mesh_outside_camera_casts_onto_visible_terrain_case(path);
+    }
+}
+
+fn cooked_mesh_outside_camera_casts_onto_visible_terrain_case(path: CookedDrawPath) {
     let root = std::env::temp_dir().join(format!("thrum-g5-off-camera-sun-{}", std::process::id()));
     std::fs::remove_dir_all(&root).ok();
     let cook = source_tree(&root, 16);
@@ -880,10 +938,15 @@ fn cooked_mesh_outside_camera_casts_onto_visible_terrain() {
         .expect("cook");
 
     pollster::block_on(async {
-        let (device, queue) = game_device().await;
-        let mut host = FrameHost::new(&device, &queue, FrameConfig::default())
-            .await
-            .expect("game");
+        let (device, queue, capabilities) = game_device(path).await;
+        let mut host = FrameHost::new_with_capabilities(
+            &device,
+            &queue,
+            &capabilities,
+            FrameConfig::default(),
+        )
+        .await
+        .expect("game");
         host.set_scene_camera(
             v1_game::SceneCamera::perspective(
                 [0.0, 202.0, 4.0],
@@ -913,6 +976,7 @@ fn cooked_mesh_outside_camera_casts_onto_visible_terrain() {
             let stats = assets.stats();
             host.set_scene_contribution(Box::new(assets))
                 .expect("attach");
+            assert_eq!(stats.lock().expect("stats").draw_path, Some(path));
             wait_staged(&stats, 1);
             let deadline = Instant::now() + Duration::from_secs(30);
             loop {
@@ -991,6 +1055,12 @@ impl thrum_asset::Fetch for LoopbackFetch {
 /// sample compressed variants listed in the manifest.
 #[test]
 fn a_fetched_generation_draws_like_the_mapped_store() {
+    for path in [CookedDrawPath::Indirect, CookedDrawPath::Direct] {
+        a_fetched_generation_draws_like_the_mapped_store_case(path);
+    }
+}
+
+fn a_fetched_generation_draws_like_the_mapped_store_case(path: CookedDrawPath) {
     let root = std::env::temp_dir().join(format!("thrum-g5-remote-{}", std::process::id()));
     std::fs::remove_dir_all(&root).ok();
     let cook = source_tree(&root, 64);
@@ -1017,7 +1087,7 @@ fn a_fetched_generation_draws_like_the_mapped_store() {
             thrum_asset::DevClient::new(LoopbackFetch, &format!("http://{}", server.address()))
                 .expect("client");
         let fetched = client.poll().await.expect("fetch").expect("a publication");
-        let (device, queue) = game_device().await;
+        let (device, queue, capabilities) = game_device(path).await;
         let compressed = fetched
             .manifest()
             .resolve("textures/checker", &[Profile::DesktopBc])
@@ -1035,13 +1105,19 @@ fn a_fetched_generation_draws_like_the_mapped_store() {
             thrum_asset_gpu::CookedSource::Store(cook.store.clone()),
             thrum_asset_gpu::CookedSource::Remote(feed.clone()),
         ] {
-            let mut host = FrameHost::new(&device, &queue, FrameConfig::default())
-                .await
-                .expect("prepared game scene");
+            let mut host = FrameHost::new_with_capabilities(
+                &device,
+                &queue,
+                &capabilities,
+                FrameConfig::default(),
+            )
+            .await
+            .expect("prepared game scene");
             let assets = CookedAssets::new(config(source)).expect("rigid placements");
             let stats = assets.stats();
             host.set_scene_contribution(Box::new(assets))
                 .expect("attach");
+            assert_eq!(stats.lock().expect("stats").draw_path, Some(path));
             let mut clock = Duration::ZERO;
             wait_for(&mut host, &device, &stats, 1, &mut clock);
             // Same world time for both, so only the product path can differ.
@@ -1067,6 +1143,12 @@ fn a_fetched_generation_draws_like_the_mapped_store() {
 /// the edited product; the unchanged mesh is reused from the drawn set.
 #[test]
 fn a_fetched_edit_swaps_in_and_reuses_unchanged_products() {
+    for path in [CookedDrawPath::Indirect, CookedDrawPath::Direct] {
+        a_fetched_edit_swaps_in_and_reuses_unchanged_products_case(path);
+    }
+}
+
+fn a_fetched_edit_swaps_in_and_reuses_unchanged_products_case(path: CookedDrawPath) {
     let root = std::env::temp_dir().join(format!("thrum-g5-remote-edit-{}", std::process::id()));
     std::fs::remove_dir_all(&root).ok();
     let cook = source_tree(&root, 64);
@@ -1086,10 +1168,15 @@ fn a_fetched_edit_swaps_in_and_reuses_unchanged_products() {
         let feed = thrum_asset_gpu::RemoteFeed::new(
             client.poll().await.expect("fetch").expect("generation 1"),
         );
-        let (device, queue) = game_device().await;
-        let mut host = FrameHost::new(&device, &queue, FrameConfig::default())
-            .await
-            .expect("prepared game scene");
+        let (device, queue, capabilities) = game_device(path).await;
+        let mut host = FrameHost::new_with_capabilities(
+            &device,
+            &queue,
+            &capabilities,
+            FrameConfig::default(),
+        )
+        .await
+        .expect("prepared game scene");
         let mut config =
             v1_game::cooked::cooked_config(thrum_asset_gpu::CookedSource::Remote(feed.clone()));
         config.upload_budget = BUDGET;
@@ -1098,6 +1185,7 @@ fn a_fetched_edit_swaps_in_and_reuses_unchanged_products() {
         let stats = assets.stats();
         host.set_scene_contribution(Box::new(assets))
             .expect("attach");
+        assert_eq!(stats.lock().expect("stats").draw_path, Some(path));
         let mut clock = Duration::ZERO;
         wait_for(&mut host, &device, &stats, 1, &mut clock);
         let first = host.capture_pixels().expect("capture");
@@ -1147,6 +1235,12 @@ fn a_fetched_edit_swaps_in_and_reuses_unchanged_products() {
 /// the scene's back-face culling and lighting the two captures match.
 #[test]
 fn a_mirrored_node_draws_with_the_facing_and_lighting_of_its_plain_twin() {
+    for path in [CookedDrawPath::Indirect, CookedDrawPath::Direct] {
+        a_mirrored_node_draws_with_the_facing_and_lighting_of_its_plain_twin_case(path);
+    }
+}
+
+fn a_mirrored_node_draws_with_the_facing_and_lighting_of_its_plain_twin_case(path: CookedDrawPath) {
     let root = std::env::temp_dir().join(format!("thrum-g5-mirrored-{}", std::process::id()));
     std::fs::remove_dir_all(&root).ok();
     let plain = source_tree(&root.join("plain"), 16);
@@ -1161,10 +1255,15 @@ fn a_mirrored_node_draws_with_the_facing_and_lighting_of_its_plain_twin() {
     }
 
     pollster::block_on(async {
-        let (device, queue) = game_device().await;
-        let mut host = FrameHost::new(&device, &queue, FrameConfig::default())
-            .await
-            .expect("game");
+        let (device, queue, capabilities) = game_device(path).await;
+        let mut host = FrameHost::new_with_capabilities(
+            &device,
+            &queue,
+            &capabilities,
+            FrameConfig::default(),
+        )
+        .await
+        .expect("game");
         host.set_scene_camera(
             v1_game::SceneCamera::perspective(
                 [0.0, 203.5, 3.0],
@@ -1187,6 +1286,7 @@ fn a_mirrored_node_draws_with_the_facing_and_lighting_of_its_plain_twin() {
             let stats = assets.stats();
             host.set_scene_contribution(Box::new(assets))
                 .expect("attach");
+            assert_eq!(stats.lock().expect("stats").draw_path, Some(path));
             wait_staged(&stats, 1);
             let deadline = Instant::now() + Duration::from_secs(30);
             loop {
@@ -1217,6 +1317,12 @@ fn a_mirrored_node_draws_with_the_facing_and_lighting_of_its_plain_twin() {
 /// volume does the same again.
 #[test]
 fn a_publication_larger_than_staging_streams_through_the_bounded_ring() {
+    for path in [CookedDrawPath::Indirect, CookedDrawPath::Direct] {
+        a_publication_larger_than_staging_streams_through_the_bounded_ring_case(path);
+    }
+}
+
+fn a_publication_larger_than_staging_streams_through_the_bounded_ring_case(path: CookedDrawPath) {
     let root = std::env::temp_dir().join(format!("thrum-g5-ring-{}", std::process::id()));
     std::fs::remove_dir_all(&root).ok();
     let cook = source_tree(&root, 256);
@@ -1224,14 +1330,20 @@ fn a_publication_larger_than_staging_streams_through_the_bounded_ring() {
     let report = cooker.cook_all().expect("cook");
     assert!(report.failed.is_empty(), "{:?}", report.failed);
     pollster::block_on(async {
-        let (device, queue) = game_device().await;
-        let mut host = FrameHost::new(&device, &queue, FrameConfig::default())
-            .await
-            .expect("prepared game scene");
+        let (device, queue, capabilities) = game_device(path).await;
+        let mut host = FrameHost::new_with_capabilities(
+            &device,
+            &queue,
+            &capabilities,
+            FrameConfig::default(),
+        )
+        .await
+        .expect("prepared game scene");
         let assets = CookedAssets::new(placements(cook.store.clone())).expect("rigid placements");
         let stats = assets.stats();
         host.set_scene_contribution(Box::new(assets))
             .expect("attach");
+        assert_eq!(stats.lock().expect("stats").draw_path, Some(path));
         let mut clock = Duration::ZERO;
         wait_for(&mut host, &device, &stats, 1, &mut clock);
         demo::write_cloud_volume(&cook.source.join("cloud.tvol"), 256, 2).expect("volume edit");
@@ -1248,20 +1360,6 @@ fn a_publication_larger_than_staging_streams_through_the_bounded_ring() {
         }
         assert!(stats.max_frame_copy_bytes <= BUDGET);
         assert_staging_bounded(&stats);
-        println!(
-            "RING uploads {:?} bytes over {:?} frames, staging peak {} bytes",
-            stats
-                .swaps
-                .iter()
-                .map(|swap| swap.uploaded_bytes)
-                .collect::<Vec<_>>(),
-            stats
-                .swaps
-                .iter()
-                .map(|swap| swap.upload_frames)
-                .collect::<Vec<_>>(),
-            stats.staging_peak_bytes
-        );
     });
     std::fs::remove_dir_all(&root).expect("remove test store");
 }
@@ -1283,6 +1381,12 @@ fn wait_posted(stats: &Mutex<CookedStats>, generation: u64) {
 /// and drawn and generation 2 never is.
 #[test]
 fn a_newer_publication_supersedes_an_upload_still_being_filled() {
+    for path in [CookedDrawPath::Indirect, CookedDrawPath::Direct] {
+        a_newer_publication_supersedes_an_upload_still_being_filled_case(path);
+    }
+}
+
+fn a_newer_publication_supersedes_an_upload_still_being_filled_case(path: CookedDrawPath) {
     let root = std::env::temp_dir().join(format!("thrum-g5-supersede-{}", std::process::id()));
     std::fs::remove_dir_all(&root).ok();
     let cook = source_tree(&root, 256);
@@ -1290,14 +1394,20 @@ fn a_newer_publication_supersedes_an_upload_still_being_filled() {
     let report = cooker.cook_all().expect("cook");
     assert!(report.failed.is_empty(), "{:?}", report.failed);
     pollster::block_on(async {
-        let (device, queue) = game_device().await;
-        let mut host = FrameHost::new(&device, &queue, FrameConfig::default())
-            .await
-            .expect("prepared game scene");
+        let (device, queue, capabilities) = game_device(path).await;
+        let mut host = FrameHost::new_with_capabilities(
+            &device,
+            &queue,
+            &capabilities,
+            FrameConfig::default(),
+        )
+        .await
+        .expect("prepared game scene");
         let assets = CookedAssets::new(placements(cook.store.clone())).expect("rigid placements");
         let stats = assets.stats();
         host.set_scene_contribution(Box::new(assets))
             .expect("attach");
+        assert_eq!(stats.lock().expect("stats").draw_path, Some(path));
         let mut clock = Duration::ZERO;
         wait_for(&mut host, &device, &stats, 1, &mut clock);
         for (generation, seed) in [(2, 2), (3, 3)] {
@@ -1318,4 +1428,49 @@ fn a_newer_publication_supersedes_an_upload_still_being_filled() {
         assert_staging_bounded(&stats);
     });
     std::fs::remove_dir_all(&root).expect("remove test store");
+}
+
+fn selected_capabilities(
+    adapter: &wgpu::Adapter,
+    device: &wgpu::Device,
+    generation: u64,
+    path: CookedDrawPath,
+) -> DeviceCapabilities {
+    let caps = DeviceCapabilities::capture(adapter, device, generation);
+    assert!(
+        caps.downlevel()
+            .expect("adapter facts")
+            .contains(wgpu::DownlevelFlags::INDIRECT_EXECUTION)
+    );
+    match path {
+        CookedDrawPath::Indirect => caps,
+        CookedDrawPath::Direct => caps.without_indirect_execution(),
+    }
+}
+
+#[test]
+fn adapter_less_public_host_selects_direct() {
+    let root = std::env::temp_dir().join(format!("thrum-g5-unknown-{}", std::process::id()));
+    std::fs::remove_dir_all(&root).ok();
+    let cook = source_tree(&root, 64);
+    Cooker::open(cook.clone())
+        .expect("cooker")
+        .cook_all()
+        .expect("cook");
+    pollster::block_on(async {
+        let (device, queue, _) = game_device(CookedDrawPath::Indirect).await;
+        let mut host = FrameHost::new(&device, &queue, FrameConfig::default())
+            .await
+            .expect("public host");
+        let assets = CookedAssets::new(placements(cook.store)).expect("assets");
+        let stats = assets.stats();
+        host.set_scene_contribution(Box::new(assets))
+            .expect("attach");
+        let mut clock = Duration::ZERO;
+        wait_for(&mut host, &device, &stats, 1, &mut clock);
+        let stats = stats.lock().expect("stats");
+        assert_eq!(stats.draw_path, Some(CookedDrawPath::Direct));
+        assert_eq!(stats.visible_meshlets, None);
+    });
+    std::fs::remove_dir_all(&root).ok();
 }

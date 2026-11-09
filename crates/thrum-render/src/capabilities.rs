@@ -13,6 +13,7 @@ pub struct DeviceCapabilities {
     adapter: wgpu::AdapterInfo,
     features: wgpu::Features,
     limits: wgpu::Limits,
+    downlevel: Option<wgpu::DownlevelFlags>,
 }
 
 impl DeviceCapabilities {
@@ -37,7 +38,12 @@ impl DeviceCapabilities {
     #[must_use]
     pub fn capture(adapter: &wgpu::Adapter, device: &wgpu::Device, generation: u64) -> Self {
         let site = DeviceSite::mint(device, generation);
-        Self::from_info(site, generation, adapter.get_info())
+        Self::from_info(
+            site,
+            generation,
+            adapter.get_info(),
+            Some(adapter.get_downlevel_capabilities().flags),
+        )
     }
 
     /// Capture from a device when the adapter handle is no longer retained.
@@ -47,12 +53,18 @@ impl DeviceCapabilities {
     #[must_use]
     pub fn capture_device(device: &wgpu::Device, generation: u64) -> Self {
         let site = DeviceSite::untracked(device.clone());
-        Self::from_info(site, generation, device.adapter_info())
+        Self::from_info(site, generation, device.adapter_info(), None)
     }
 
-    fn from_info(site: DeviceSite, generation: u64, adapter: wgpu::AdapterInfo) -> Self {
+    fn from_info(
+        site: DeviceSite,
+        generation: u64,
+        adapter: wgpu::AdapterInfo,
+        downlevel: Option<wgpu::DownlevelFlags>,
+    ) -> Self {
         let device: &wgpu::Device = &site;
         Self {
+            downlevel,
             features: device.features(),
             limits: device.limits(),
             site,
@@ -77,6 +89,21 @@ impl DeviceCapabilities {
     #[must_use]
     pub fn features(&self) -> wgpu::Features {
         self.features
+    }
+
+    /// Adapter-read execution facts, unknown when no adapter was retained.
+    #[must_use]
+    pub fn downlevel(&self) -> Option<wgpu::DownlevelFlags> {
+        self.downlevel
+    }
+
+    /// Explicit diagnostic mask. Only removes support; cannot invent adapter facts.
+    #[must_use]
+    pub fn without_indirect_execution(mut self) -> Self {
+        if let Some(flags) = &mut self.downlevel {
+            flags.remove(wgpu::DownlevelFlags::INDIRECT_EXECUTION);
+        }
+        self
     }
 
     /// Limits enabled on this device.

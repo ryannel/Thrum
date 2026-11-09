@@ -1,0 +1,6 @@
+{
+  "diagnostic_only": "one full-range indirect command per placement; source restored after run",
+  "single_indirect_sha256": "2a4f14114bc53fc7bfcd68bacc6d68bc2c60a38c51027eb159f390dd48781af1",
+  "indirect_different_pixels": 1506,
+  "direct_different_pixels": 0
+}
