@@ -5,7 +5,7 @@ Done when: [T2-CAPTURE-DONE.json](T2-CAPTURE-DONE.json).
 Reviews: [M0 third review](../../evidence/T2-CAPTURE/M0-review.md) passed in dff3eb5e; [M1 review](../../evidence/T2-CAPTURE/M1-review.md) passed in e2909ad4.
 Milestone: M2 iOS simulator engine motion without desktop capture (open, blocked on cooked rendering)
 Now: The ordinary diagnostic foreground route runs while locked on Apple iOS simulator GPU / Metal. The existing cooked contribution fails before capture: this adapter lacks INDIRECT_EXECUTION, but G5's meshlet draw requires indirect buffers/draws. A minimal source-restoring probe reproduces the missing prerequisite. [Evidence](../../evidence/render/t2-capture-m2/README.md).
-Next: G5 / thrum-asset-gpu must supply and qualify a capability-selected cooked draw path on ios-sim. Then resume T2 M2's foreground tap, motion and pending-capture lifecycle proofs.
+Next: [COOKED-DRAW](COOKED-DRAW-PLAN.md) M1 (G5) supplies and qualifies the capability-selected direct cooked draw path and the iOS route's cooked attach on ios-sim; M2 `needs` `COOKED-DRAW:M1`. Then resume T2 M2's foreground tap, motion and pending-capture lifecycle proofs on that route.
 Blocked: M2.1 and M2.2 remain open. No simulator capture, cooked motion, pending-capture lifecycle or physical-device proof is claimed. No reviewer launched.
 
 ## Ownership and sequence
@@ -91,6 +91,10 @@ single ownership, final submitted-image correspondence, real-time versus synthet
 nonblocking bounded readback and the attended Mac cadence boundary. No proof item is passed by this plan.
 
 ## Log
+
+- 2026-11-09 Planner linked M2 to its prerequisite: `needs` `COOKED-DRAW:M1`, G5's capability-selected direct
+  cooked draw path and the iOS route's cooked attach. Items, bar and counters are unchanged, and M2 stays blocked. The lead may `unblock` it once
+  the link lands, because the loop then holds M2 until COOKED-DRAW:M1 is accepted.
 
 - 2026-11-09 Attempted M2 on the real locked iPhone 18 Pro / iOS 27.2 simulator. Shared booted-device
   install/container requests wedged; a fresh owned simulator boots and runs the ordinary diagnostic foreground route.

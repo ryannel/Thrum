@@ -150,6 +150,7 @@
       "state": "blocked",
       "fails": 0,
       "replans": 1,
+      "needs": ["COOKED-DRAW:M1"],
       "bar": "Functionally intact cooked scene and normal-speed interaction through simulator lifecycle changes, with honest function-only provenance and no device-speed or physical-display claim.",
       "items": [
         {
