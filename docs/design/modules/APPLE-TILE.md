@@ -4,9 +4,10 @@
 [Brief](APPLE-TILE-BRIEF.md) · [Plan](APPLE-TILE-PLAN.md) · [Done when](APPLE-TILE-DONE.json) ·
 [Boundary](../decisions/G3T-METAL-BOUNDARY.md) · [G4 consumer](APPLE-PRESENTATION.md).
 C04/C06/C07/C08/C12 in [CONTRACTS](../CONTRACTS.md) govern.
-The [design review](../../evidence/APPLE-TILE/design-review.md) requested nine changes at `74be9f89`;
-this revision addresses them. Independent review of the revised design/JSON is owed. Earlier designs and code were
-inspected; this is reconciliation,
+The [second design review](../../evidence/APPLE-TILE/design-review-2.md) returned DESIGN CHANGES with seven
+findings at `224b58a1`. APPLE-TILE is parked after two failed design reviews; those seven findings remain unresolved.
+Restart requires explicit lead recommission for a scoped re-plan and fresh independent design approval before build.
+Earlier designs and code were inspected; this is reconciliation,
 not a blind design. Historical reviews remain in the plan log; missing scratch is not current proof.
 
 The planned [T2 capture service](T2-CAPTURE.md) owns submitted-output capture and sequence readback. G3t M0
@@ -85,8 +86,10 @@ needed for M0. M1 additionally needs `T2-CAPTURE:M1` for new Chrome image proofs
 output proofs; M0's existing Chrome smoke stays distinct. M2 consumes the already-done `PLATFORM-RUNTIME-MAC:M1` loss boundary. Mac M2 is deliberately not a
 `needs` link. M9 supplies the shared V2 class/range mechanism within this commission and migrates its bucket consumer,
 without promoting the experimental mixed-mesh route. No nonexistent external range milestone is assumed.
-Mac M2 qualification is rerun after G3t M2/M3 land: any earlier motion/cadence result stays historical.
-G3t M2/M3 each require a functional real Mac window run; display cadence remains a separate Mac M2 proof. G4 first
+Mac M2 qualifies the current surface path after T2 M0, independently of parked G3t. New Mac M3 needs
+`APPLE-TILE:M3` and reruns motion/cadence plus windowed-tap/tooling preflight on the changed path. Earlier results
+qualify only their earlier build. G3t M2/M3 retain functional real-window obligations; their second-review
+observer/grant finding remains unresolved. Panel cadence remains separate Mac-owned proof. G4 first
 needs M0 proof tools, M1 eligibility, M3 present input and M11 native
 providers. G3t does not wait back on G4; M11 uses bounded provider extent fixtures, and M12 records current readers
 and two fixed extents. G4 later reruns these with real reconstruction readers and live scale transitions.
@@ -332,4 +335,4 @@ win with preserved quality; inconclusive candidates remain unpromoted with prepa
 - Quiet timings, physical traffic and real display cadence may be unavailable. Keep their evidence limits explicit;
   none is supplied by docs checks. Functional real-window runs at M2/M3 cannot be replaced by offscreen output;
   without an unlocked active-display slot those items stay open. M12 records cadence/physical-device rows still owed,
-  and Mac M2 must qualify the post-M3 surface path rather than inherit old results.
+  and Mac M3 must qualify the post-G3t-M3 surface path rather than inherit old results.

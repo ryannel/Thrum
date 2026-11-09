@@ -4,7 +4,7 @@
     {
       "id": "M0",
       "name": "A repeatable offscreen valley proves the comparison path",
-      "state": "open",
+      "state": "parked",
       "fails": 0,
       "replans": 2,
       "bar": "The same complete cooked valley as portable, with stable lighting, silhouettes, shadows and motion expected of a shipped high-end game; matched full-resolution stills and normal-speed sequences must expose omitted work.",
@@ -141,7 +141,7 @@
       "name": "The existing frame lifecycle runs through one split graph",
       "state": "open",
       "fails": 0,
-      "replans": 1,
+      "replans": 2,
       "bar": "A production renderer boundary: one owner, prepared fallback, deterministic visible semantics and explicit adverse-case evidence, as in the public wgpu/Metal lifecycle model.",
       "items": [
         {
@@ -191,7 +191,7 @@
           "status": "open",
           "evidence": "",
           "inspect": "On an unlocked active Mac display, launch the cooked game in a real AppKit window with matching content and recipe identity. Observe presented scene and ordinary control response, resize/letterbox and surface/device replacement recovery; retain window/PID, extent, submission/lifecycle logs and actual window observation evidence. An acquired-format texture or offscreen engine sequence alone cannot prove window presentation. Without a display slot this item stays open; do not waive it as cadence owed.",
-          "ask": "Confirm pre-change Mac motion/cadence evidence is historical. PLATFORM-RUNTIME-MAC M2 is explicitly rerun after G3t M2/M3 land and uses the post-M3 render path, with no reverse dependency or claim that this functional run proves panel swaps.",
+          "ask": "Confirm pre-change Mac motion/cadence evidence qualifies only its earlier build. PLATFORM-RUNTIME-MAC M2 qualifies the current path after T2 M0 independently of parked APPLE-TILE; new Mac M3 explicitly needs APPLE-TILE M3 and reruns the full M2.1/M2.2 protocols plus windowed-tap/tooling preflight on the changed path. No reverse dependency is added here, and this functional run cannot prove panel swaps.",
           "verdict": "",
           "review": ""
         }
@@ -205,7 +205,7 @@
       "name": "Present consumes scene-linear colour directly",
       "state": "open",
       "fails": 0,
-      "replans": 1,
+      "replans": 2,
       "bar": "The same complete cooked valley as portable, with stable lighting, silhouettes, shadows and motion expected of a shipped high-end game; matched full-resolution stills and normal-speed sequences must expose omitted work.",
       "items": [
         {
@@ -259,7 +259,7 @@
           "status": "open",
           "evidence": "",
           "inspect": "On an unlocked active Mac display, launch the cooked game in a real AppKit window with matching content and recipe identity. Observe presented scene and ordinary control response, resize/letterbox and surface/device replacement recovery; retain window/PID, extent, submission/lifecycle logs and actual window observation evidence. An acquired-format texture or offscreen engine sequence alone cannot prove window presentation. Without a display slot this item stays open; do not waive it as cadence owed.",
-          "ask": "Confirm pre-change Mac motion/cadence evidence is historical. PLATFORM-RUNTIME-MAC M2 is explicitly rerun after G3t M2/M3 land and uses the post-M3 render path, with no reverse dependency or claim that this functional run proves panel swaps.",
+          "ask": "Confirm pre-change Mac motion/cadence evidence qualifies only its earlier build. PLATFORM-RUNTIME-MAC M2 qualifies the current path after T2 M0 independently of parked APPLE-TILE; new Mac M3 explicitly needs APPLE-TILE M3 and reruns the full M2.1/M2.2 protocols plus windowed-tap/tooling preflight on the changed path. No reverse dependency is added here, and this functional run cannot prove panel swaps.",
           "verdict": "",
           "review": ""
         }
@@ -605,7 +605,7 @@
       "name": "An integrated record states qualified wins and remaining targets",
       "state": "open",
       "fails": 0,
-      "replans": 1,
+      "replans": 2,
       "bar": "The same complete cooked valley as portable, with stable lighting, silhouettes, shadows and motion expected of a shipped high-end game; matched full-resolution stills and normal-speed sequences must expose omitted work.",
       "items": [
         {
@@ -630,11 +630,11 @@
         },
         {
           "id": "D12.3",
-          "statement": "The integrated native game preserves required image and normal-speed motion on both recipes and records cadence/physical-device qualifications still owed without claiming Mac M2 closure.",
+          "statement": "The integrated native game preserves required image and normal-speed motion on both recipes and records cadence/physical-device qualifications still owed without claiming post-change Mac M3 closure.",
           "target": "mac-metal",
           "status": "open",
           "evidence": "",
-          "inspect": "Review full-resolution matched checkpoint and motion sets including cut, night, local lights, mirrors, skipped views and fallback/recovery. Read all module source changes against C04/C06/C07/C08/C12 and the brief; no omitted consumer can be waived by this item. Confirm D2.5/D3.5 actual Mac window runs passed and the final assembly has a functional window smoke run on both recipes. Functional window presentation cannot be recorded as owed to close G3t; only cadence and physical-device qualification can remain owed. Mac M2 must rerun the post-M3 path.",
+          "inspect": "Review full-resolution matched checkpoint and motion sets including cut, night, local lights, mirrors, skipped views and fallback/recovery. Read all module source changes against C04/C06/C07/C08/C12 and the brief; no omitted consumer can be waived by this item. Confirm D2.5/D3.5 actual Mac window runs passed and the final assembly has a functional window smoke run on both recipes. Functional window presentation cannot be recorded as owed to close G3t; only cadence and physical-device qualification can remain owed. Mac M3 owns the full post-APPLE-TILE-M3 requalification; a pre-change Mac M2 verdict cannot qualify this assembly.",
           "verdict": "",
           "review": ""
         },

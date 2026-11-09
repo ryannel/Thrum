@@ -43,12 +43,16 @@ continue unblocked work. Verified checkpoints are pushed to main (owner, 6 Nov p
 
 **Next build: [T2 unattended capture M0](design/modules/T2-CAPTURE-PLAN.md), after independent design review.**
 It supplies exact submitted images and elapsed-time motion without a desktop capture grant; locked-console execution
-must be proved. G3b Mac M2 uses it for fresh runtime motion; final qualification reruns after G3t M3. Its built-in-panel cadence stays open with
+must be proved. G3b Mac M2 qualifies the current surface path after T2 M0 only. New Mac M3 needs G3t M3 for
+fresh post-change motion/cadence; that later obligation is blocked on parked APPLE-TILE. M2's built-in-panel cadence stays open with
 **attended setup** (unlocked active panel and any Instruments authorization). Screen Recording is no longer required
-for engine pixels. The T2 design-review findings are revised; independent re-review is owed. The Mac M2 builder
+for engine pixels. The two findings from T2 design review 2 are revised; independent re-review is owed. The Mac M2 builder
 owns real-window tap qualification (M2.3) and bounded trace-finalization diagnosis (M2.4); M2.2 cadence uses capture
-OFF, with capture-ON content/observer arms separate. G3t M0 follows shared capture and does not depend on the panel
-cadence row. The G3s sunset crossing stays parked; G2S is closed. The complete native Metal recorder remains a later performance candidate;
+OFF, with capture-ON content/observer arms separate. APPLE-TILE is parked after two failed design reviews and
+cannot restart on T2 completion. The lead must
+explicitly recommission a scoped re-plan resolving its seven findings, followed by fresh independent design approval
+before build. G3t M0 retains its T2 M0 dependency and has no reverse Mac cadence dependency. The G3s sunset
+crossing stays parked; G2S is closed. The complete native Metal recorder remains a later performance candidate;
 the dedicated performance phase owns numeric tuning.
 
 - [x] **G0 — integrity and baselines.** Real Metal regressions fail without a device; no successful skips. One baseline
@@ -80,8 +84,11 @@ the dedicated performance phase owns numeric tuning.
   world and controls intact. [Rotation and recovery evidence](evidence/render/G3B-IOS-SIM-ROTATION-LOSS-2026-11-08.md).
   A held-drawable Metal destroy recovers in the same Mac window with world and controls intact.
   [Live Mac evidence](evidence/render/mac-m1-recovery/README.md). Physical iPhone loss and Mac display cadence
-  remain open. Mac M2 now needs `T2-CAPTURE:M0` and `APPLE-TILE:M3`; its unattended runtime-image and attended panel-swap proofs
-  remain distinct and both are required. M2.3 owns the unproved real-window tap; M2.4 resumes the failed Instruments
+  remain open. Mac M2 needs only `T2-CAPTURE:M0` and qualifies the current surface path; its unattended runtime-image
+  and attended panel-swap proofs remain distinct and both are required. No M2 tooling item waits on APPLE-TILE.
+  New Mac M3 needs `APPLE-TILE:M3` and reruns both protocols plus windowed-tap/tooling preflight on the changed path.
+  M3 is blocked on parked APPLE-TILE, transitively T2 Chrome M1, simulator M2 and sequential G3t M0–M3; M2 can
+  close first. M2.3 owns the unproved real-window tap; M2.4 resumes the failed Instruments
   finalization investigation after design re-review/prerequisites, with a changed hypothesis and at most two new
   diagnostic attempts. M2.2 remains blocked on those proofs and active-panel/tool setup; an unreadable trace cannot
   close it. Its capture-OFF traced arm qualifies cadence; capture-ON arms show content/observer cost. Record
@@ -103,9 +110,11 @@ the dedicated performance phase owns numeric tuning.
   Record attachment traffic, full GPU work, uploads and light/mirror scaling. No raw/wgpu encoder splice or rival queue.
   [Design](design/modules/APPLE-TILE.md), [plan](design/modules/APPLE-TILE-PLAN.md) and
   [done-when criteria](design/modules/APPLE-TILE-DONE.json) reconcile existing work into sequential milestones.
-  M0 is open and needs `T2-CAPTURE:M0`; it consumes shared output capture and adds scene-linear comparison.
-  Carried counter/probe items are not module completion. The nine-finding [design review](evidence/APPLE-TILE/design-review.md) is addressed; independent re-review is owed.
-  G3t M2/M3 require functional real Mac windows; final Mac M2 qualification reruns after G3t M3. Shared V2 ranges
+  **Parked after two failed design reviews.** The [second review](evidence/APPLE-TILE/design-review-2.md)
+  requests seven changes; they remain unresolved. M0 is parked and still needs `T2-CAPTURE:M0` on recommission;
+  shared capture completion does not restart it. The lead must explicitly commission a scoped re-plan resolving
+  those findings and obtain fresh independent design approval before build. Carried counter/probe items are not
+  module completion. G3t M2/M3 retain real-window proof obligations; Mac M3 owns post-G3t requalification. Shared V2 ranges
   preserve admitted raster semantics; portable uploads remain queue-ordered without slot copies.
   The planned whole-raw-encoder feature handoff preserves one submit and existing view-drop/loss rules; it does not
   commission the complete recorder. New physical replay/display rows remain unmeasured; mark attended setup where
@@ -116,7 +125,7 @@ the dedicated performance phase owns numeric tuning.
 - [ ] **G4 — Apple reconstruction and governor.** MetalFX, EDR and binary archives through the native boundary;
   governor reacts to GPU/thermal/present evidence. Compare Apple tile and portable on this Mac with image tolerance and
   counters. No pipeline compilation during play.
-  Physical iPhone comparison remains pending.
+  G4 handoffs are blocked on parked APPLE-TILE and delivery of its named milestones. Physical iPhone comparison remains pending.
 - [ ] **G5 — content-addressed loop.** Stat cache, BLAKE3 CAS, aligned mmap products, glTF meshlets, KTX2 ASTC/BC7,
   atomic manifest, watcher and dev server. Keep only runtime validation the game needs; shipping never links authoring.
   Prove visible asset edits without GPU stalls; track scan/edit-to-visible latency and startup/hitch tripwires.

@@ -3,15 +3,16 @@
 Design: [APPLE-TILE.md](APPLE-TILE.md) · [Brief](APPLE-TILE-BRIEF.md) ·
 Done when: [APPLE-TILE-DONE.json](APPLE-TILE-DONE.json) owns criteria and proof status.
 [Boundary](../decisions/G3T-METAL-BOUNDARY.md) and C04/C06/C07/C08/C12 govern.
-Reviews: [design review of `74be9f89`](../../evidence/APPLE-TILE/design-review.md): DESIGN CHANGES (9 findings), addressed by this revision; independent re-review of revised design/JSON is owed. No agents launched, as instructed.
-Milestone: M0 A repeatable offscreen valley proves the comparison path (open)
-Now: 9 November design re-plan addresses all nine review findings; no implementation or new runtime proof claimed.
-Next: T2 capture re-plan and independent design re-reviews, T2-CAPTURE M0, then G3t M0 with a retained native pre-change baseline.
-Blocked: design re-review and `T2-CAPTURE:M0` owed; its [new upstream review](../../evidence/T2-CAPTURE/design-review.md) requests a separate T2/Mac evidence re-plan. Mac M2 panel cadence is separate and reruns after G3t M3. G3t M2/M3 functional window proofs require an unlocked active display and stay open without it. New physical-traffic replay and real-display rows are attended setup where the tool needs an unlocked display/OS authorization; they remain unmeasured.
+Reviews: [design review 2 at `224b58a1`](../../evidence/APPLE-TILE/design-review-2.md): DESIGN CHANGES (7 findings). Second failed design review; module parked by the lead. These findings remain unresolved.
+Milestone: M0 A repeatable offscreen valley proves the comparison path (parked)
+Now: 9 November parked after two failed design reviews; no implementation or new runtime proof claimed.
+Next: await an explicit lead commission for a scoped re-plan addressing the seven second-review findings, then fresh independent design approval before any build.
+Blocked: APPLE-TILE design is parked. T2 completion does not restart it. On recommission, M0 still needs `T2-CAPTURE:M0`; M1 additionally needs T2 Chrome M1 and simulator M2. G3t M2/M3 actual-window observer/grant findings remain unresolved. Mac M2 can qualify the current path independently; Mac M3 alone waits here for post-change requalification.
 
 ## Sequence and dependencies
 
-The build order selects G3t after G3b functional work while its remaining Mac qualification waits. One builder works
+The retained build order selects G3t after G3b functional work, but the module is currently parked.
+The lead must explicitly recommission a scoped design re-plan and obtain independent design approval before build. One builder works
 sequentially; no parallel-agent commission is implied. Each milestone follows the preceding one. M0 needs
 `T2-CAPTURE:M0` for shared submitted-output/sequence capture; G3t still owns scene-linear checkpoint and recipe
 comparison extensions through that capture owner. M2 also needs `PLATFORM-RUNTIME-MAC:M1` (already done)
@@ -28,10 +29,11 @@ timing. M11 uses bounded extent replacement fixtures; M12 uses fixed extents and
 on G4. G4 must later requalify actual reconstruction readers and dynamic scale transitions. Its full prose-to-JSON
 migration belongs to its own planning commission; this task does not pretend its old prose is machine-readable.
 
-Mac M2 qualifies the post-G3t-M3 surface path. Its current items are already open; earlier motion/cadence evidence
-remains historical, and any run taken before M2/M3 lands must be rerun afterward. G3t D2.5/D3.5 require functional
-real Mac window runs at each surface change; these are not cadence evidence and cannot be waived. This ordering
-does not add Mac M2 as a dependency of G3t or block M0 offscreen work.
+Mac M2 qualifies the current surface path after T2 M0 without waiting here. New Mac M3 explicitly needs
+`APPLE-TILE:M3` and reruns the full M2.1/M2.2 motion/cadence protocols with windowed-tap/tooling revalidation
+on the changed path. That later milestone is blocked on this parked design, transitively including T2 M1/M2 and
+G3t M0–M3. G3t D2.5/D3.5 retain their functional actual-window obligations; their observer/grant defect in the
+second review is unresolved. No reverse Mac dependency is added to G3t.
 
 ## Carried work
 
@@ -42,10 +44,11 @@ does not add Mac M2 as a dependency of G3t or block M0 offscreen work.
 - D0.4 stays a builder pass from the [8 November traffic probe](../../evidence/render/G3T-TRAFFIC-PROBE-2026-11-08.md).
   It establishes a per-encoder replay method, not live/per-attachment bytes or a new timing baseline. Original bulk
   captures/screenshots are absent here; the retained transcription/limits are the available evidence.
-- The old M0 never closed. M0 stays open, and every other new item stays open. Initial `fails`/`replans` were zero:
+- The old M0 never closed. M0 is now parked; all item claims are retained. Only Mac handoff references change below. Initial `fails`/`replans` were zero:
   historical conditional design reviews and missing screen slots were not failed claimed milestone reviews. M0 has
-  `replans: 2` after shared-capture sequencing and this design review; changed M1–M9 and M12 definitions
-  have `replans: 1`. All remain open with `fails: 0`; unchanged M10/M11 retain their counters. D0.4 is the only
+  `replans: 2` after shared-capture sequencing and the first design re-plan. M2/M3/M12 now also have
+  `replans: 2` for the Mac M3 handoff correction; M1/M4–M9 retain `replans: 1`. M0 is parked and M1–M12
+  remain open with `fails: 0`; unchanged M10/M11 retain their counters. D0.4 is the only
   retained pass. This is a design re-plan, not a failed claimed-milestone review.
 
 ## Proof and builder handoff
@@ -61,7 +64,7 @@ The JSON's `ask`/`inspect` proofs require actual tests/readbacks/sequences and s
 Use scratch `tmp/g3t-<milestone>/`, selected evidence `docs/evidence/render/G3T-<milestone>-<date>.md`. Pin build,
 shader, route and cooked identities and retain decisive artifacts under the storage rules. Unavailable tools/targets
 stay open, not successful skips. Acquire the GPU lock for GPU checks; no physical replay or screen automation is part
-of this planning task. Use normal-speed sequence review; physical swaps remain Mac M2's proof.
+of this planning task. Use normal-speed sequence review; physical swaps remain Mac qualification M2/M3 proof.
 
 The design's mechanism-specific comparison table requires exact same-target pre-blend scene-linear/SDR bytes,
 including pre-change portable controls. M3 preserves SDR quantization in the fused shader; native blend vs twin alone
@@ -79,7 +82,7 @@ producer and consumers first. Register dependencies only when actually introduce
 
 <a id="m0-proof-route-counters-and-capture-probe-pending"></a>
 
-## M0 A repeatable offscreen valley proves the comparison path: open
+## M0 A repeatable offscreen valley proves the comparison path: parked
 
 Outcome criteria: D0.1, D0.2, D0.3, D0.4, D0.5 in the done-when file.
 
@@ -172,15 +175,25 @@ Outcome criteria: D12.1, D12.2, D12.3, D12.4, D12.5, D12.6 in the done-when file
 
 ## Design review handoff
 
-Give a fresh `/review-milestone` reviewer only [APPLE-TILE-BRIEF.md](APPLE-TILE-BRIEF.md) first. It derives the required
+On explicit lead recommission, resolve the second review findings, then give a fresh `/review-milestone` reviewer only [APPLE-TILE-BRIEF.md](APPLE-TILE-BRIEF.md) first. It derives the required
 capabilities before reading this design/JSON and actual consumers. Review the whole-encoder C06 amendment, unchanged
 skip/abandon semantics, private compact layout, supplied normals, mandatory GPU overflow qualification, shared V2
 range/raster authority, resident fallback cost, thermal/validation promotion rows, actual Mac window proofs and
 post-M3 Mac cadence ordering. Check the lack of G4 cycles. Verify every JSON proof catches the wrong substitutes.
 Record a new design verdict on Reviews;
-no historical approval or self-review substitutes for that read. Review is owed because this task forbids agents.
+no historical approval or self-review substitutes for that read. The module stays parked until that recommission
+and approved re-plan; this task launches no agents and does not commission the outstanding G3t redesign.
 
 ## Log
+
+- 2026-11-09 Recorded the lead's park after [design review 2](../../evidence/APPLE-TILE/design-review-2.md)
+  returned DESIGN CHANGES (7 findings) at `224b58a1`, following the first failed review. Set M0 `state` to
+  `parked`; later milestones remain open but cannot start through sequential ordering. Updated only the
+  D2.5/D3.5/D12.3 Mac handoff references from M2 to new Mac M3 and incremented M2/M3/M12 `replans` to 2.
+  Preserved other definitions/counters and D0.4 evidence: design-review failures are not failed claimed-milestone reviews. No resolution of
+  the seven findings is claimed. Restart requires explicit lead recommission of a scoped re-plan and fresh
+  independent design approval before build. Decoupled Mac M2 in its owning plan; new Mac M3 alone carries the
+  post-G3t dependency, so T2/Mac current-path work can proceed while this module is parked.
 
 - 2026-11-09 Integration read of upstream `8f65fd0d`: the [T2/Mac evidence design review](../../evidence/T2-CAPTURE/design-review.md)
   requests changes to capture/windowed-tap and cadence proof. Those findings remain a separate re-plan; this Apple

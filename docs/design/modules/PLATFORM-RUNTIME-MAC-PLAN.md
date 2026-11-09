@@ -5,11 +5,11 @@ and [bounded frame host](../decisions/V1-BOUNDED-FRAME-HOST.md). Siblings:
 [iOS](PLATFORM-RUNTIME-IOS-PLAN.md) and [web](PLATFORM-RUNTIME-WEB-PLAN.md).
 Done when: [PLATFORM-RUNTIME-MAC-DONE.json](PLATFORM-RUNTIME-MAC-DONE.json) owns milestone criteria and proof status; the shared platform design above remains authoritative.
 
-Reviews: [T2/Mac evidence design review at `1fb6b422`](../../evidence/T2-CAPTURE/design-review.md): DESIGN CHANGES; findings addressed in this re-plan. Independent re-review of the T2/Mac criteria and Apple tile surface ordering is owed; historical M0/M1 reviews remain in the log.
+Reviews: [T2/Mac design review 2 at `6317102f`](../../evidence/T2-CAPTURE/design-review-2.md): DESIGN CHANGES (2 findings); revised here. Independent re-review of T2/Mac criteria and the M2/M3 split is owed; historical M0/M1 reviews remain in the log.
 Milestone: M2 The cooked valley presents smoothly on built-in ProMotion (replanned, open)
-Now: 9 November review revision assigns windowed-tap and trace-tooling proofs, separates capture-off cadence, and retains final qualification after G3t M3. No fresh proof claimed.
-Next: independent design/JSON re-review; T2-CAPTURE M0 and APPLE-TILE M3; Mac builder then diagnoses trace tooling (M2.4), qualifies windowed tap (M2.3), and runs final motion/cadence rows (M2.1/M2.2).
-Blocked: design re-review and unbuilt `T2-CAPTURE:M0` / `APPLE-TILE:M3`. M2.2 additionally depends on unproved M2.3/M2.4 and attended unlocked active panel/Instruments setup. M2.4 owns bounded resumption of the prior trace-finalization failure; it is not solved. Screen Recording is not required for engine images.
+Now: 9 November second-review revision lets M2 qualify the current surface path after T2 M0; new M3 owns post-G3t requalification. No fresh proof claimed.
+Next: independent design/JSON re-review; T2-CAPTURE M0; Mac builder diagnoses trace tooling (M2.4), qualifies windowed tap (M2.3), and runs current-path motion/cadence (M2.1/M2.2). M3 follows only when APPLE-TILE M3 is delivered.
+Blocked: M2 needs design re-review and unbuilt `T2-CAPTURE:M0`, not APPLE-TILE. M2.2 additionally needs M2.3/M2.4 and attended unlocked active panel/Instruments setup. M3 is blocked on parked APPLE-TILE (two failed design reviews), transitively T2 M1/M2 and G3t M0–M3; the lead must recommission its scoped re-plan, followed by independent design approval before build. M2.4 owns bounded trace diagnosis; it is not solved. Screen Recording is not required for engine images.
 
 ## M0 Reviewed Mac qualification plan: done
 
@@ -36,17 +36,22 @@ Work:
 ## M2 The cooked valley presents smoothly on built-in ProMotion: open after re-plan
 
 Uses [T2 capture](T2-CAPTURE.md); `needs: T2-CAPTURE:M0`. This is milestone M2 on the M3 Max.
-Owner reference: [Ground E noon tile](../../evidence/v1-workload/g7-showcase/route-ground-e.png) (proposed, pending).
-Use the same noon view and slow normal-control pan. Preserve the historical `0d53d3aa` motion pass and decoded
+Scene/framing identity only: [Ground E noon tile](../../evidence/v1-workload/g7-showcase/route-ground-e.png).
+Its owner image review is not an acceptance gate. Judge quality against the JSON worded list and milestone bar:
+rock/ridge coherence, authored sphere sweep/exit, yaw-consistent settled endpoints, and no cut, snap or reversal;
+record repeats, local holds and pauses at actual elapsed time. Use the same noon view and slow normal-control pan.
+Preserve the historical `0d53d3aa` motion pass and decoded
 38.3 ms untraced / 51.7 ms traced local holds in [evidence](../../evidence/render/mac-m2-pan/README.md).
 That verdict is not a fresh pass of the changed M2.1 or the later build; all four M2 items are open. M0/M1 stay done.
 
-**Surface-path ordering:** final Mac M2 qualification runs after `APPLE-TILE:M3` is done. G3t M2 merges the surface
-graph and M3 moves tone encoding into present; runs taken before those changes cannot qualify their later path.
-Rerun both M2.1 and M2.2 on the post-M3 assembly and matching build/content/recipe, preserving earlier results as
-historical. The JSON dependency enforces the final order. G3t D2.5/D3.5 separately require functional actual Mac
-window runs; those prove presentation/input/resize/recovery, never panel cadence. No reverse Mac M2 dependency is
-added to G3t, so unattended G3t proof can proceed while Mac cadence waits.
+**Surface-path ordering:** M2 qualifies the current path with only `T2-CAPTURE:M0` as its delivery prerequisite;
+windowed-tap and trace-tooling work can proceed before G3t. APPLE-TILE is parked after its second failed design
+review and cannot gate any M2 item. Its surface-graph/tone changes still require new qualification: Mac M3 below
+needs `APPLE-TILE:M3` and reruns the full motion/cadence protocols on the changed assembly. Earlier verdicts qualify
+only their recorded build. G3t D2.5/D3.5 separately require functional actual-window runs; those cannot replace Mac
+panel cadence. No reverse Mac dependency is added to G3t. M3 remains a required post-change V1 qualification, not
+a reason to hold current-path M2 open. The parked module restarts only on an explicit lead commission to resolve
+its seven design findings and obtain fresh independent design approval before build.
 
 - [ ] **M2.1 unattended — current-build runtime content motion.** After T2-CAPTURE M0, run the paused-world
   1920×1080 noon 0°–36° pan over two seconds, plus one-second settled endpoint holds, with 120 Hz requested offscreen
@@ -57,11 +62,12 @@ added to G3t, so unattended G3t proof can proceed while Mac cadence waits.
   native-size crops for coherent rock/ridge/sphere motion and record local holds. A fixed-step movie, endpoint
   redraw or three static parity images cannot replace this proof. This does not qualify AppKit/display cadence.
 - [ ] **M2.4 trace tooling — explicit bounded resumption.** The Mac M2 qualification builder owns this investigation
-  after this re-plan passes independent design review and its milestone prerequisites are done. The previous park
+  after this re-plan passes independent design review and T2-CAPTURE M0 is done, without waiting for APPLE-TILE. The previous park
   prevented unchanged retries; this item commissions a changed investigation, not another claim that unlock fixes it.
   First inspect retained failed bundles/logs and document a falsifiable changed hypothesis. Record only with unlocked
   active panel and existing Instruments authorization. At most **two new diagnostic record attempts total** are
-  allowed for this re-plan, each 16 s recording plus 75 s maximum finalization; use finite recorded export timeouts.
+  allowed under the 9 November tooling commission, each 16 s recording plus 75 s maximum finalization;
+  this dependency re-plan and the M3 split do not renew the allowance; use finite recorded export timeouts.
   Stop only the owned trace/game processes at the deadline. Do not repeat an unchanged failed hypothesis. Success
   requires a fresh readable TOC and `displayed-surfaces-interval` export with real app/window swaps plus a reusable
   command. No justified hypothesis, unavailable authorization or exhausted attempts leaves M2.4/M2.2 open and
@@ -72,7 +78,7 @@ added to G3t, so unattended G3t proof can proceed while Mac cadence waits.
   pixels equal the engine output consumed by the normal present pass (with declared format conversions) and bind
   that producer to the actual surface submission. This proves engine output correspondence, not compositor pixels.
   Show capture neither acquires nor extends a drawable lease; test surface loss/replacement with readback pending,
-  stale-generation refusal and healthy fresh presentation. With capture OFF, prove the ordinary G3t direct present
+  stale-generation refusal and healthy fresh presentation. With capture OFF, prove the current direct present
   path remains, with no tap target/copy/readback/worker/per-frame allocation. Use `./dev check` under `gpu` for
   regressions and a retained actual-window scenario; occluded/offscreen substitution cannot qualify this item.
   This is integration/qualification of T2's existing producer, not a second recorder or GPU owner.
@@ -118,6 +124,25 @@ M2 cannot close until **all four items** pass independent review. M2.3 and M2.4 
 qualification run. This re-plan commissions explicit tooling/window integration and separates observer roles;
 it neither waives real-panel cadence nor claims capture or the trace failure already solved.
 
+## M3 The post-G3t Mac surface path requalifies runtime motion and built-in cadence: open, blocked
+
+Delivery prerequisite: `APPLE-TILE:M3`; module ordering also requires Mac M2 done. This milestone is split from the
+former post-G3t M2 obligation, with `replans: 4`, and preserves the complete acceptance bar. APPLE-TILE is parked;
+M3 cannot start on T2 completion alone. Its transitive chain includes T2 Chrome M1, simulator M2 and G3t M0–M3.
+
+- [ ] **M3.1 unattended runtime motion.** Rerun the complete M2.1 protocol on the integrated post-G3t-M3 release
+  assembly with fresh build/shader/content/recipe identity. Keep the locked-console elapsed-time pan, holds,
+  source frames/crops, control/submission joins and worded visual inspection. No earlier verdict qualifies new output.
+- [ ] **M3.2 attended built-in cadence and observer arms.** Revalidate the M2.3 windowed-tap correspondence,
+  lease/loss and capture-OFF proofs on the changed path. Rerun the qualified M2.4 trace/export command and all
+  M2.2 arms on M3.1's build: ON untraced, ON traced and OFF traced. Fresh attributed numeric swaps with a calibrated
+  full-interval join qualify cadence only in OFF. Keep the unlocked active panel and Instruments authorization
+  reasons explicit. Functional window logs alone cannot pass. A tooling regression requires a scoped re-plan;
+  this milestone grants no new diagnostic attempts.
+
+Both items need fresh independent review before final Mac qualification of the changed V1 path. Historical M2
+verdicts remain attached to their build. This split does not waive cadence or resolve APPLE-TILE's seven findings.
+
 ## Design and plan review brief
 
 Check the code and contracts over `3049433d`. Trace the world and platform
@@ -141,6 +166,14 @@ before and after acquisition, and the real Metal queue-attempt control.
 Keep encode-time failure and live-window recovery outside this proof.
 
 ## Log
+
+- 9 November, second T2 design review F1/F2. Removed `APPLE-TILE:M3` from M2 prerequisites, qualifying the current
+  surface path after T2 M0 only. Split the full post-change motion/cadence rerun into Mac M3 with an explicit
+  `APPLE-TILE:M3` dependency; its windowed-tap/tooling preflight is rerun on that build. M2 `replans` increments
+  from 3 to 4, `fails` stays 0, state/items stay open; new M3 inherits `replans: 4`. M0/M1 and all historical
+  evidence remain unchanged. The two-attempt tooling allowance is not renewed. Ground E is identity only;
+  pan quality uses worded criteria. APPLE-TILE is parked after two failed design reviews, with no automatic
+  restart when T2 lands. Independent T2/Mac design re-review is owed; no agents launched.
 
 - 9 November, T2 review revision. Addressed F1–F3 with Mac-owned M2.3 real-window tap integration/proof, M2.4 bounded
   trace-finalization resumption (two changed-hypothesis attempts, owner/trigger/stop rule), and M2.2's capture-OFF
@@ -183,7 +216,9 @@ Keep encode-time failure and live-window recovery outside this proof.
 ## M2 pan plan review brief
 
 Start from [the unattended-evidence brief](T2-CAPTURE-BRIEF.md), then review the T2 design/JSON, C12, Mac M2
-items and the G3t consumer dependency. Check that M2.1 can expose runtime stalls without any desktop grant;
+items and the split M3 post-G3t dependency. Confirm no M2 item waits on parked APPLE-TILE, and that M3
+retains fresh motion, windowed-tap and panel/tooling proof on the changed path without renewing diagnostic attempts.
+Check that M2.1 can expose runtime stalls without any desktop grant;
 synthetic fixed-time movie smoothness cannot pass. For M2.2 require normal AppKit routing, same-build capture
 brackets and fresh independent Game Performance swap attribution for the complete pan. Engine taps supply image
 content, not final compositor/native-widget appearance, physical panel observation or photon timing. Confirm that

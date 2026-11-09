@@ -14,12 +14,15 @@ an unlocked active built-in display and any Instruments authorization. The agent
 and review output without the owner playing. Engine capture removes the screen-recorder grant prerequisite for
 pixels, but cannot observe compositor/native UI appearance, physical cadence or photons by itself. Instruments
 finalization failed after the three attempts below. The revised plan now assigns a bounded investigation to the Mac
-M2 builder in M2.4, after independent re-review and milestone prerequisites: changed hypotheses only, at most two
+M2 builder in M2.4, after independent re-review and T2 M0 only (no APPLE-TILE wait): changed hypotheses only, at most two
 new diagnostic record attempts. It does not claim the failure solved. M2.3 separately commissions qualification of
 the shared tap on a real CAMetalLayer surface. M2.2 requires both and a fresh capture-OFF traced cadence arm;
 capture-ON untraced/traced arms establish content and observer cost, with ON swaps labelled under capture.
 No new run or proof is claimed. The historical grant/unlocked-slot resume instructions below are superseded by
-this dependency and proof split. Independent design/JSON review is owed.
+this dependency and proof split. Mac M2 qualifies the current path; new Mac M3 explicitly needs APPLE-TILE M3
+and reruns motion/cadence plus windowed-tap/tooling preflight after its changes. APPLE-TILE is parked after two
+failed design reviews, so M3 waits for lead recommission, approved redesign and delivery; it cannot hold M2 open.
+The dependency split does not renew the two-attempt trace allowance. Independent design/JSON review is owed.
 
 The 8 November 2026 slot started at 19:30:56 CET on an M3 Max. The
 matched release diagnostic was built from `0d53d3aa`. Both recorded

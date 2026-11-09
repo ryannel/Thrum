@@ -40,6 +40,9 @@ and any Instruments authorization), with automated actions/review. Native/compos
 name their own attended reason where required. Never treat engine pixels/movie PTS as display swaps or photons.
 Mac M2.3 owns the real-window tap integration/proof and M2.4 the bounded trace-finalization investigation;
 M2.2 qualifies panel cadence with capture OFF, keeping capture-ON content/observer arms separate.
+Mac M2 needs only T2 M0 and qualifies the current path. APPLE-TILE is parked after two failed design reviews;
+new Mac M3 needs APPLE-TILE M3 for fresh post-change motion/cadence proof. Restarting APPLE-TILE requires explicit
+lead recommission of a scoped re-plan and fresh independent design approval; T2 completion cannot restart it.
 Interim Chrome endpoint/`simctl` captures cannot prove submitted temporal output or elapsed-time engine motion;
 those stronger rows retain their T2 target dependency or an unavailable result.
 

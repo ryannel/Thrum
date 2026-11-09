@@ -613,6 +613,9 @@ M2.2 retains its active built-in-panel swap proof; Screen Recording access is no
 Shipping cadence is measured with capture disabled; capture-on swaps remain labelled under capture and paired
 observer arms quantify overhead. Existing Chrome endpoint and simulator OS captures retain their fixed-time and
 function-only scopes until target T2 qualification; they cannot close submitted-temporal/runtime-motion criteria.
+Mac M2 qualifies the current surface path after T2 M0 without waiting on parked APPLE-TILE. Mac M3 explicitly
+needs APPLE-TILE M3 and owns fresh motion/cadence and windowed-tap/tooling revalidation after its surface changes;
+no earlier result qualifies changed output. This later dependency cannot delay current-path M2 tooling.
 This extension settles producer/consumer ownership for planning; no implementation or device result is implied.
 
 [RENDER-SPEC](RENDER-SPEC.md) and [PLAY-ENVIRONMENT-SPEC](PLAY-ENVIRONMENT-SPEC.md) select

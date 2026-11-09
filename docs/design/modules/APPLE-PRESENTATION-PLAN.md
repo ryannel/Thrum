@@ -32,7 +32,10 @@ Reviews:
 Milestone: none started (plan awaiting re-review and seam rulings) · Updated: 2026-11-07
 Now: revision 5 replaces the archive options with the owner's direction (since 2026-11-07).
 Next: review of revision 5, Thrum Core's reading, then landing and seam rulings.
-Blocked: code commissions wait for the atmosphere graph checkpoint `d2a5342` on `codex/g3s-stars-main-wip`, for interface reads only, pending the reviewed night baseline and the exact final check on main, and Thrum Core approval of the exact seams in the
+Blocked: APPLE-TILE is parked after [two failed design reviews](../../evidence/APPLE-TILE/design-review-2.md).
+All G3t handoffs below wait for explicit lead recommission, a scoped re-plan resolving its seven findings, fresh
+independent design approval and delivery of the named milestone; T2 completion alone cannot unblock G4.
+Other code commissions wait for the atmosphere graph checkpoint `d2a5342` on `codex/g3s-stars-main-wip`, for interface reads only, pending the reviewed night baseline and the exact final check on main, and Thrum Core approval of the exact seams in the
 design's *Seams* list. Some milestones have further waits:
 - M4 and M6 wait for G3t M3.
 - M8 waits for G3t M11 and independent review of its C06 whole-encoder segment.

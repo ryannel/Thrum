@@ -24,7 +24,8 @@
       "moving-shore research",
       "cloud cohort lab",
       "nonlinear M-LUT layout candidate: codex/g3s-multiple-layout at 11cb21e; mixed oracle accuracy, not selected",
-      "sea/cloud port awaits owner timing; converge on readiness with the single G3s sky"
+      "sea/cloud port awaits owner timing; converge on readiness with the single G3s sky",
+      "APPLE-TILE G3t design after two failed design reviews; seven findings at 224b58a1 unresolved; explicit lead recommission and fresh independent design approval required before build"
     ],
     "interpretation": "Functional gates govern; quiet figures remain history. Investigate visible hitches, >~25% comparable regression or unexpected growth; no iPhone result."
   },
@@ -520,7 +521,7 @@
         "../evidence/render/G3B-IOS-SIM-ROTATION-LOSS-2026-11-08.md",
         "../evidence/render/mac-m1-recovery/README.md"
       ],
-      "scope": "Core owns clock/lane; renderer owns FrameHost. Browser old-device work stops on loss; detached GPU reconstruction/retry preserves authority/input/pause/solar state. The simulator exercises the iOS render owner and lease through rotation and injected loss. The Mac game resumes live presentation in the same window after an injected Metal destroy with a drawable held. Physical iPhone loss and Mac display cadence remain open; native recording stays G3t."
+      "scope": "Core owns clock/lane; renderer owns FrameHost. Browser old-device work stops on loss; detached GPU reconstruction/retry preserves authority/input/pause/solar state. The simulator exercises the iOS render owner and lease through rotation and injected loss. The Mac game resumes live presentation in the same window after an injected Metal destroy with a drawable held. Physical iPhone loss and Mac display cadence remain open; native recording stays G3t. Mac M2 current-path qualification needs only T2-CAPTURE M0; windowed tap M2.3 and bounded trace investigation M2.4 do not wait on parked APPLE-TILE. New Mac M3 needs APPLE-TILE M3 and requalifies motion/cadence plus windowed-tap/tooling on the changed build; transitively blocked on parked G3t and T2 Chrome M1/simulator M2. No new evidence or diagnostic-attempt allowance."
     },
     "V1_cooked_constant_light": {
       "implementation": "partial_native_accepted_source_product_and_offscreen_visual_publication",
@@ -573,6 +574,13 @@
         "../evidence/integration/G6-CREATOR-EXPERIENCE-2026-11-07.md",
         "decisions/G6-CREATOR-EXPERIENCE.md"
       ]
+    },
+    "G3t_apple_tile": {
+      "design_stage": "parked_after_two_failed_design_reviews",
+      "integration_review": "design_changes_7_findings_unresolved",
+      "review": "../evidence/APPLE-TILE/design-review-2.md",
+      "reviewed_revision": "224b58a1",
+      "scope": "Planning status only. M0 parked; later milestones retained but cannot start. No implementation, correctness, visual or device promotion. Restart requires explicit lead recommission of a scoped re-plan resolving the seven findings and fresh independent design approval before build. T2 completion alone cannot restart it. Mac M2 qualifies the current path independently; Mac M3 post-change requalification and G4 handoffs wait for the relevant G3t deliveries."
     }
   },
   "user_selected": [
@@ -711,7 +719,7 @@
       "reviewed_design_sha256": "d0d80e788cf6356f80dccdb10460a88f12ffd29ca646cbce2b5f498f86c725be",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Later architectural decision audit reopened named boundaries; earlier review scope remains historical. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
       "open_architecture_findings": [],
-      "current_design_sha256": "110f096a062de7c1d247d78765cf4660d9e974bb911047e0216c1a96c15a7092",
+      "current_design_sha256": "281b8f7844e19e312381d5ad77c9f59c634e693f57c73b3d99f69f887a7f2b65",
       "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled; focused mobile simulator and package qualification remains open after iOS 27 scene finding. Prior reviewed hashes retained; initial selected subset only, no runtime promotion. 9 Nov: planned T2-CAPTURE handoff adds renderer-owned submitted-output readback, F1 offscreen elapsed-time driving and explicit attended panel limits under C12; this addition awaits independent design review and carries no runtime promotion.",
       "historical_architecture_findings": [
         "A01"
@@ -2158,7 +2166,7 @@
       "reviewed_design_sha256": "23eb7fcefacef23c4d808b5beab796b08e1854b4d64316ad174374727b50bfe8",
       "review_basis": "WHOLE-ENGINE-REVIEW.md and scoped integration dispositions; status/navigation-only updates do not extend technical review scope. Current C3 resolution and scoped baseline review are recorded separately in architecture_resolution; original reviewed_design_sha256 is not overwritten.",
       "current_design_sha256": "37aab08b739092fbda484c47028d24370bbeb326167389bc549a68715493bff2",
-      "current_design_delta": "C4 source/run consumers and R0 packet/view identity plus masked/shadow extraction contract selected on paper. A separate offline terrain final-triangle certificate checks one 257\u00b2 source/product geometry profile, including actual f32 heights, protected sill, bank and seam, but no render LOD/runtime binding. Renderer implementation and visual/device proof remain open. Prior reviewed hash retained. 9 Nov: G3t M9 plans one shared V2 class/range authority for supported synthetic and private bucket consumers, preserving admitted two-sided policy and draw order; independent design re-review is owed. No runtime or performance promotion.",
+      "current_design_delta": "C4 source/run consumers and R0 packet/view identity plus masked/shadow extraction contract selected on paper. A separate offline terrain final-triangle certificate checks one 257\u00b2 source/product geometry profile, including actual f32 heights, protected sill, bank and seam, but no render LOD/runtime binding. Renderer implementation and visual/device proof remain open. Prior reviewed hash retained. 9 Nov: G3t M9 plans one shared V2 class/range authority for supported synthetic and private bucket consumers, preserving admitted two-sided policy and draw order; independent design re-review is owed. No runtime or performance promotion. APPLE-TILE is now parked after design review 2 (seven unresolved findings); this proposed handoff is not build-authorized until lead recommission and fresh independent design approval.",
       "architecture_selection_review": {
         "status": "reconciled_for_selected_scope",
         "record": "ARCHITECTURE-DECISIONS.md",
@@ -2847,8 +2855,8 @@
           "ios_sim": "not_run",
           "physical_display": "not_run"
         },
-        "scope": "9 November planning only: T2 owns scenarios/artifacts, V1/V4 the submitted-output tap and F1 drivers/lifetime. Distinct fixed-time quality and elapsed-time runtime modes; Mac M0 precedes Mac qualification M2 and G3t M0. New capture locked-console and unavailable-permission qualification not yet proved; historical offscreen parity/probe account supports feasibility only. Review revision selects raw spill/deferred packaging, early bounded throughput probe and ordinary presenter admission. Mac M2.3 owns real-window tap qualification; M2.4 commissions bounded trace-finalization diagnosis after independent re-review/prerequisites (changed hypothesis, at most two new diagnostic attempts). M2.2 remains blocked on those proofs and active-panel/tool setup; shipping cadence uses capture OFF with separate ON content/observer arms. Historical Mac motion pass is not extended to changed M2.1. No new runtime, correctness, visual or device evidence.",
-        "review": "../evidence/T2-CAPTURE/design-review.md requests 10 changes at 1fb6b422; revised design/JSON and affected consumers await independent re-review; owner prohibited subagents"
+        "scope": "9 November planning only: T2 owns scenarios/artifacts, V1/V4 the submitted-output tap and F1 drivers/lifetime. Distinct fixed-time quality and elapsed-time runtime modes; Mac M0 precedes Mac qualification M2 and G3t M0. New capture locked-console and unavailable-permission qualification not yet proved; historical offscreen parity/probe account supports feasibility only. Review revision selects raw spill/deferred packaging, early bounded throughput probe and ordinary presenter admission. Mac M2.3 owns real-window tap qualification; M2.4 commissions bounded trace-finalization diagnosis after independent re-review/prerequisites (changed hypothesis, at most two new diagnostic attempts). M2.2 remains blocked on those proofs and active-panel/tool setup; shipping cadence uses capture OFF with separate ON content/observer arms. Historical Mac motion pass is not extended to changed M2.1. No new runtime, correctness, visual or device evidence. Second-review revision decouples all Mac M2 work from parked APPLE-TILE; only T2 M0 is its delivery prerequisite. New Mac M3 needs APPLE-TILE M3 for full post-change motion/cadence and windowed-tap/tooling revalidation. Ground E PNG is scene/framing identity only; pan quality uses worded criteria. Existing trace diagnostic allowance is unchanged.",
+        "review": "../evidence/T2-CAPTURE/design-review-2.md requests 2 changes at 6317102f; revised T2/Mac design/JSON, M2/M3 split and consumers await independent re-review; owner prohibited subagents"
       }
     },
     {
@@ -3051,7 +3059,7 @@
     "ARCHITECTURE-DECISIONS.md",
     "BASELINE-SPEC.md"
   ],
-  "contract_sha256": "f23df82d318b0bf3dbede951f56749f6ac8e0fb47eea4c461d2bee7870b59179",
+  "contract_sha256": "5a3db096694daf1ec42d52fd6a08d91ce68f77a03d3cce0a77b8e55b52aee7de",
   "composition_supplement": {
     "design": "COMPOSITION.md",
     "decision": "selected",
@@ -3796,7 +3804,7 @@
     "record": "ARCHITECTURE-DECISIONS.md",
     "record_sha256": "0ec345f0ed162c3c0c6898fb3913a8952f5b4d65d75f1cf3ff6270c9f58725b4",
     "contract_revision": "C4",
-    "contract_sha256": "f23df82d318b0bf3dbede951f56749f6ac8e0fb47eea4c461d2bee7870b59179",
+    "contract_sha256": "5a3db096694daf1ec42d52fd6a08d91ce68f77a03d3cce0a77b8e55b52aee7de",
     "specifications": {
       "BASELINE-SPEC.md": "8710e74f47e18788951fd1118883fbdf28d32510f336fb0b9cf3a279d4e5509b",
       "FOUNDATION-SPEC.md": "9293b1eb3beb690d96f88d5fcb8260fc42a1d21c2688fbe515a05e8f3027c1e0",
@@ -4177,7 +4185,7 @@
       "CAPABILITY-SURVEY.md": "bd88f686bc3dcf56fc38009f2567df2d0200ffc23fea0ad16b406007c8c96530",
       "COMPOSITION.md": "392c9254d576fe771ff98f0b4937c41f0ec7ef90079e77d7155b83c0a4b40d01",
       "CONSTRUCTION-PLAN.md": "722c548d62132c80af79354056d7d14e023102133a678487bbd82f3f3887f660",
-      "CONTRACTS.md": "f23df82d318b0bf3dbede951f56749f6ac8e0fb47eea4c461d2bee7870b59179",
+      "CONTRACTS.md": "5a3db096694daf1ec42d52fd6a08d91ce68f77a03d3cce0a77b8e55b52aee7de",
       "DESIGN-PROGRAMME.md": "eb4176168883dfe2fc651a06a9471fe3ed3bf9d1aacf2358e86794a8332714db",
       "ENGINE-EXPERIENCE.md": "f7994f89bfc995feb6a2a69cf58b382c4b788f552c9f0e36c116f3d2a9f2ea05",
       "ENGINE-STRUCTURE-RESEARCH.md": "aa05d06102a9dc9bd53505538188c728fa13ab58f72d33597c6d945e2ddc9a28",
@@ -4205,7 +4213,7 @@
       "modules/AUDIO-UI.md": "f001d7c3cc79a2fb3657982baee9850490ad3f3ce253cfd8bb2637e9f690ae1f",
       "modules/ENVIRONMENT.md": "fc5348d28d3861fee79655cf125c79af8a9b74281d3275e2b8443073e57307fb",
       "modules/NETWORKING.md": "2e32bdf2e57737a88b957380da801de21bf287b6cba6f15144530f635f778494",
-      "modules/PLATFORM-RUNTIME.md": "110f096a062de7c1d247d78765cf4660d9e974bb911047e0216c1a96c15a7092",
+      "modules/PLATFORM-RUNTIME.md": "281b8f7844e19e312381d5ad77c9f59c634e693f57c73b3d99f69f887a7f2b65",
       "modules/PLAY-SYSTEMS.md": "86279be04e72643989cecc3a0e562fa4c948fa27c956180dbe6079c830efcd57",
       "modules/RENDERING.md": "37aab08b739092fbda484c47028d24370bbeb326167389bc549a68715493bff2",
       "modules/TOOLS-DELIVERY.md": "bd4b6c2d6f0aa4cdfdd4e36f7a863a838f941687ba51a7a25d9bde3a3914f15d",
