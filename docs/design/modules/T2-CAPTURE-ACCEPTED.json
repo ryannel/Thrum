@@ -3,8 +3,20 @@
   "adopted": true,
   "design": {
     "verdict": "ok",
-    "hash": "37d7fb70337788d3ba3138f12b19e403239eedf58aa431bba137e3f6a90fdde9",
-    "by": "adopted"
+    "review": "docs/evidence/T2-CAPTURE/design-review.md",
+    "commit": "bce5a43206979da35aba1f1d432dc74f8e9da5a7",
+    "hash": "ae14ac7bb699e5a75f183b34c41ae4f4268b1f9b1f31af21900ca6334a71ad1e",
+    "by": "review",
+    "host": "codex",
+    "model": "gpt-6.1-sol",
+    "effort": "medium",
+    "observed": {
+      "model": "gpt-6.1-sol",
+      "effort": "medium"
+    },
+    "cli": "codex-cli 0.167.0-alpha.3.2",
+    "path": "visible",
+    "at": "2026-11-09T20:05:01Z"
   },
   "milestones": {
     "M0": {

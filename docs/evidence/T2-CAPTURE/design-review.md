@@ -1,228 +1,121 @@
-# T2-CAPTURE design review (with the Mac M2 re-plan)
+# T2-CAPTURE design review
 
-9 November 2026. Independent `/review-milestone` design review of revision `1fb6b422`: the
-[brief](../../design/modules/T2-CAPTURE-BRIEF.md), [design](../../design/modules/T2-CAPTURE.md),
-[plan](../../design/modules/T2-CAPTURE-PLAN.md) and [done-when file](../../design/modules/T2-CAPTURE-DONE.json),
-plus the same commit's re-plan of [Mac M2](../../design/modules/PLATFORM-RUNTIME-MAC-PLAN.md)
-([criteria](../../design/modules/PLATFORM-RUNTIME-MAC-DONE.json)) and its consumer edits (ORCHESTRATE, BUILD-PLAN,
-AI-DEVELOPMENT, C12, RENDERING, PLATFORM-RUNTIME, TOOLS-DELIVERY, APPLE-TILE, maturity ledger, Mac M2 evidence page).
-Reviewer: Claude Opus 5.5. No milestone is judged, so no done-when file is changed. Nothing was built or run on a GPU;
-this is a document and source read plus the retained 9 November probe records. `./dev check-docs` passes on
-`1fb6b422` and both JSON files parse.
+9 November 2026. Reviewed integrated revision `bce5a43206979da35aba1f1d432dc74f8e9da5a7` using
+`orchestrate:review-milestone`, “Reviewing a design”, and Thrum's engineering review guidance.
 
-**Verdict: DESIGN CHANGES, 10 findings.** The design meets the owner's aim for engine images and elapsed-time runtime
-motion. It drops the Screen Recording prerequisite everywhere, and it keeps fixed-time and real-time claims apart
-properly. Its stall and gap controls would catch the usual fake, a smooth fixed-step movie passed off as live. But
-Mac M2 has no route to done. M2.2 needs a windowed engine tap that no T2 item builds or proves. It would measure
-panel cadence with capture switched on. And it still depends on a parked Instruments failure that nobody owns. Two
-mechanisms also need settling before M0 is built: writer throughput for the required interval, and the paused-world
-render gate.
+**Verdict — DESIGN OK.** No blocking design findings. One verified advisory concerns stale status prose.
+This assessment covers the current brief, design, plan and every done-when definition, including the open
+simulator console-witness correction. It grants no milestone, implementation, visual or device qualification.
+No agents were launched. Only this review file is changed.
 
-## Capabilities derived from the brief (written before reading the design)
+## Requirements derived from the brief
 
-1. Exact-build stills, fixed-time sequences and separately labelled elapsed-time runtime sequences of the real engine
-   output on the named GPU and recipe, with no OS Screen Recording grant and with the console locked.
-2. Runtime capture keeps input, committed state, interpolation and history, frame identity, clock domains and missing
-   samples. A slow run must not turn into a smooth movie.
-3. The real render graph and temporal path, with bounded asynchronous readback and bounded disk and encoding work.
-   Disabled capture adds no copy, readback, allocation or synchronization.
-4. A first proof on Mac: the cooked noon pan with a paused world while locked and without the permission, then a
-   running world with interpolation. Full frames, native-size crops, 1x motion, and negative controls for timing and
-   capture gaps.
-5. Chrome and the iOS simulator qualified separately, never as native panel evidence.
-6. Every later visual milestone names its capture mode, surfaces, target and inspection list.
-7. Panel cadence, compositor and native UI, OS input and focus, and EDR or photon proofs stay separate. Attended rows
-   are labelled with their reason. No security bypass, no automatic unlock, and no offscreen sequence silently
-   standing in for a display result.
-8. Overhead and scaling are measured, with no numeric gate, and historical Mac evidence is preserved.
+The brief was read before the design and criteria. It requires the following capabilities.
 
-## Coverage against the brief
+1. Reproducible exact-build stills, fixed-time sequences and separately labelled elapsed-time runtime motion of
+   actual engine output, with target, recipe, content and control provenance.
+2. Ordinary world, input, interpolation, history and submission semantics. Preserve clock domains, repeated
+   images, stalls and missing samples so slow rendering cannot become a smooth synthetic-time movie.
+3. One rendering authority with bounded asynchronous GPU readback, CPU buffering, storage and finalization.
+   Disabled capture adds no image copy, readback, allocation or synchronization.
+4. Preserve accepted Mac/Chrome capability witnesses. Open proofs require denied, attributed read-only Screen
+   Recording preflights before and after. Console state is metadata, including transitions or an explained
+   unavailable observation. Its value must never cause admission, refusal or a manual-lock wait.
+5. Retain the complete paused-world Mac noon pan and a separate running-world interpolation proof. Qualify
+   Chrome and simulator consumers independently, with native-size images, normal-speed motion and negative controls.
+6. Separate engine evidence from panel cadence, compositor/native UI, OS input/focus and physical EDR/photon
+   observations. Label genuinely attended rows with their reason and preserve the historical cadence obligation.
+7. Measure observer overhead and resource scaling under C12, without adding a numerical speed gate or paid tool.
 
-| Capability | Where the design covers it | Verdict |
+## Coverage and mechanism assessment
+
+| Requirement | Design and proof coverage | Assessment |
 | --- | --- | --- |
-| 1 | Modes table, M0.3, rollout table | Covered, but the locked-console mechanism is supported by evidence the design doesn't cite (F8) |
-| 2 | Walk-one-frame steps 1–5, completeness section, M0.4 | Covered. The stall control and PTS-from-host-time rule are strong |
-| 3 | Steps 2–4, cost section, M0.1 and M0.2 | Covered on paper. Writer throughput for the required interval isn't shown (F4) |
-| 4 | M0.4, Mac M2.1 | Covered. The paused-world render gate isn't addressed (F5) |
-| 5 | M1, M2 | Covered |
-| 6 | AI-DEVELOPMENT and ORCHESTRATE additions | Covered. Chrome and iOS have a capture gap until M1 and M2 exist (F10) |
-| 7 | Attended table, Mac M2.2 | Covered for labelling. The M2.2 route is incomplete (F1–F3) |
-| 8 | Cost section, M0.5, the historical motion pass kept | Covered |
+| Exact output and provenance | Mechanism steps 2–5, completeness section, M0.1/.4/.9, M1.1, M2.1 | Final submitted output is joined to generation, frame, build, content, recipe and image digest. Endpoint still oracles retain explicit separate semantics. |
+| Runtime honesty | Evidence-mode table, ordinary elapsed-time driver, host-derived PTS, M0.5–.7, M1.2, M2.1/.2 | Fixed-time smoothness, delayed map completion and encoded duplicate frames cannot count as fresh runtime samples. Unknown gaps refuse completion. |
+| Ownership and bounded work | FrameHost tap, coordinator graph copy, bounded staging/CPU/encoded pools, finite output allowance and drain deadline | Consistent with C02/C06/C07/C11/C12 and TOOLS-DELIVERY. No extra device, clock, private submit or drawable lease is commissioned. |
+| Console-witness correction | Completeness and rollout sections, M2 plan, M2.1 statement/ask, M2.2 ask | Denied permission proof is mandatory and attributed to the actual launcher/harness. Missing, failed or granted preflights cannot pass. Both lifecycle commands inherit the policy. |
+| Target qualification | Separate M0/M1/M2 and M2 prerequisite `COOKED-DRAW:M1` | Simulator cooked drawing belongs to G5. T2 adds submitted-output capture and timing on the ordinary foreground route after that prerequisite. Simulator results remain function only. |
+| Attended boundaries | Rollout table, C12, profile and plan handoff | Mac real-window tap, capture-OFF cadence and bounded trace investigation have separate owners. Engine PTS cannot qualify swaps or photons. |
+| Cost and retention | Cost/failure account, M0.2/.3/.8/.9, target saturation controls | Raw bandwidth, finite pools, encoded reserve, durable flush, packaging and peak output coexistence are accounted for. New content repeats throughput qualification. |
 
-Nothing outside the brief was added: no crate, no native encoder, no Metal recorder, no raw drawable bridge.
+The normal frame has a complete ownership chain. Scenario actions enter the normal semantic handler and world
+lane, the render actor admits an opportunity, FrameHost produces the ordinary history-bearing output, and the
+coordinator encodes its readback copy. Generation-tagged completion transfers pixels to bounded writer ownership.
+Packaging verifies originals and timing before atomic completion. The paused-world output uses the ordinary
+presenter/SurfaceOutput admission path without advancing authority. The simulator retains the foreground lease
+and cancels pending old-generation work rather than publishing it after recovery.
+
+No unsupported scope expansion was found. A physical-device speed claim, native UI recorder, new crate or separate
+rendering authority is outside the commissioned work. The writer is explicitly qualified for measured content,
+with overflow requiring an incomplete result and a rerun. Future scene-linear/EDR capture is a declared extension
+with additional stage/format costs and separate qualification.
+
+## Done-when judgeability and convincing-fake checks
+
+The inspection questions used for this document review were whether each item names an observable result, whether
+its proof reaches the required target and boundary, and whether a plausible substitute can pass while missing the
+brief. These are design assessments of the definitions, not renewed verdicts on accepted milestone evidence.
+
+| Item | Judgeable proof and substitute it excludes |
+| --- | --- |
+| M0.1 | Trace the submitted texture through graph copy and hash, compare output/history on real Metal, exercise channel/padding and disabled-resource controls. Excludes endpoint redraw and a private submission path. |
+| M0.2 | Pending-map loss, stale callbacks, saturation, write/limit errors and deadline failure with continuing world/render work and finite byte accounting. Excludes hidden blocking or successful incomplete evidence. |
+| M0.3 | Actual disk writer probe, decoded original hashes, flush/drain costs and complete four-second workload. Excludes cached write acceptance, fidelity reduction and a session-sized RAM substitute. The evolved compressed-writer mechanism is explained in the design and retained accepted history. |
+| M0.4 | Retained real-Metal commands with full identity, actual elapsed time, shared dispatch and paused committed tick. Excludes synthetic clocks and capture-only admission. Its locked-condition requirement belongs to accepted historical scope. |
+| M0.5 | Complete 1080p paused pan, two-second transition and one-second endpoint holds, native crops and 1x host-time inspection. Excludes fixed-step footage, endpoint redraw and hidden omissions. |
+| M0.6 | Moving-actor images joined to committed endpoint pairs, intermediate alpha and history, plus native and 1x inspection. Excludes endpoint-only presentation and history resets. |
+| M0.7 | Separate real render/input stalls, recorded host intervals and ordinary-run controls. Excludes timestamp editing and always-enabled diagnostic hooks. |
+| M0.8 | Matched on/off workload with order, load, CPU/GPU, queues, memory, bytes, disk, flush and packaging observations. Excludes calling captured timing an uncaptured baseline. |
+| M0.9 | Rerunnable runbook, retention and target/attended handoffs. Excludes undocumented workflows and engine-image claims about display cadence. |
+| M1.1 | Actual hardware WebGPU bundle, browser flags/scheduling, output identity and full-resolution checkpoints/1x motion. Excludes software fallback, fake visibility and display-path substitution. |
+| M1.2 | Pending-readback loss, resize, saturation and stall controls with continuing authority, coverage refusal and actual-tab regression checks. Excludes headless proof replacing ordinary browser lifecycle qualification. |
+| M2.1 | Real cooked simulator foreground route, native stills and 1x camera/actor motion through the shared tap/control handler, exact identity and denied attributed preflights. Excludes unrelated denied helpers, console-lock admission and simctl snapshots standing in for submitted motion. |
+| M2.2 | Pending-capture background/foreground, surface/device replacement and saturation/stall rows with generation/lease traces, fresh resumed output, host PTS and incomplete-result refusal. Excludes background submit, stale publication and lifecycle counters standing in for captured pixels. |
+
+M2.1/.2 are broad but coherent target-rollout items. Their asks require target-specific commands beyond the
+workspace check, fail on unavailable required hardware and distinguish semantic actions from actual UIKit touch.
+A reviewer can require acceptance controls for locked, unlocked, changing and unavailable console observations,
+and refusal controls for missing, failed, granted or misattributed permission proof, directly from these definitions.
+Neither permission denial alone nor a retained old simulator screenshot can close the items.
 
 ## What checks out
 
-- **The code facts the design states are accurate.** `FrameHost::capture_pixels` waits, and `begin_capture`
-  redraws the current committed endpoint without committing history (`crates/thrum-render/src/runtime.rs:1295-1330`).
-  V1 `motion.rs` owns a game-side copy (`:255`) and waits on the poll (`:273`). It also steps one tick per frame with
-  `host.set_camera_yaw`. Migrating that path is necessary, as the design says.
-- **The core unattended mechanism is plausible on this machine.** The retained probe
-  `tmp/platform-runtime-mac-m2/console-probe.txt` (01:59 CET, `IOConsoleLocked = Yes`,
-  `CGSSessionScreenIsLocked = Yes`) was followed at 02:00 CET by a successful offscreen Metal render. That was the
-  route-only parity run, exit 0 and byte-identical
-  ([record](../render/mac-m2-pan/parity-20261109.json)). Offscreen Metal readback has therefore already completed
-  while the console was locked and without Screen Recording. I verified this from the files and did not rerun it.
-  The console was still locked at review time.
-- **Clock honesty.** Real-time mode refuses a synthetic frame counter. PTS come from host sample or submission time,
-  not copy completion. Skipped renders hold the prior image as labelled duplicates. Overflow makes the interval
-  inconclusive. M0.4 demands that a fixed-time movie cannot satisfy it, and compares stall duration with PTS. Together
-  these catch the main convincing fake.
-- **Single ownership.** The ownership split is consistent across T2, C12, RENDERING, PLATFORM-RUNTIME, TOOLS-DELIVERY
-  and APPLE-TILE: T2 owns scenarios and artifacts, V1/V4 the tap and readback, F1 the drivers. G3t consumes the tap and
-  doesn't build a rival recorder.
-- **Attended reasoning for panel cadence is genuine.** A locked session occludes the game window. The app then stops
-  presenting (`crates/thrum-app/src/app.rs:599`, `:1157`), so no built-in-panel swaps exist to attribute.
-- **The re-plan's bookkeeping follows the transition table.** Mac M2 goes to `open` with `replans: 1` and
-  `fails: 0`. Its changed items are reset. The historical `0d53d3aa` pass is kept as history only, and APPLE-TILE M0
-  gains `replans: 1` and `needs: T2-CAPTURE:M0`.
+The shared contracts and current profile preserve the ownership and attended boundaries above. The COOKED-DRAW
+criteria M1.7/.8 implement the same denied-preflight and console-witness policy, and M1.11 explicitly leaves
+every-submitted-frame motion proof to T2 M2. The integrated history contains `7f70ef13`, the COOKED-DRAW M1 pass,
+followed by `bce5a432`, the T2 M2 unblock. The T2 prerequisite therefore remains meaningful without a new dependency
+on Mac panel qualification or APPLE-TILE.
 
-## Findings (worst first)
+The older review formerly at this path recorded reading a 01:59 CET locked-console probe followed by the successful
+02:00 CET offscreen parity record. The design still links this section for that historical account. This review
+does not independently re-establish that probe or turn it into current motion qualification. Accepted M0/M1 records
+retain their historical witnesses, while open M2 explicitly uses the revised console policy.
 
-### F1. Mac M2.2 depends on a windowed engine tap that no T2 item builds or proves (verified from documents)
+## Findings
 
-Mac M2.2's `inspect` says "Use T2-CAPTURE engine output for both arms" of the live AppKit-window run. The plan's
-M2.2 work item says engine capture "of both arms replaces mandatory ScreenCaptureKit movies". So M2.2 needs the
-**real-time windowed tap** (design modes table row 3, and step 3: "one final engine texture feeding both the normal
-present pass and readback", no drawable lease extension, direct output kept when disabled).
+### A1 — Stale current-status prose obscures accepted prerequisite progress
 
-No T2 M0 item delivers it. M0.3 lists "stills, fixed-time sequences and separately labelled real-time **offscreen**
-sequences". M0.1's "preserving ... platform lease/loss rules" is a constraint, not a windowed proof, and M0.4 is
-offscreen only. Mac M2 `needs` only `T2-CAPTURE:M0`. The windowed tap would therefore first be built inside an
-attended unlocked slot, with no done-when criteria for these properties:
+**Advisory, verified from documents and integrated history.** `T2-CAPTURE.md` lines 3–4 describe Chrome M1 as
+claimed for review, although `T2-CAPTURE-DONE.json` marks it done. `T2-CAPTURE-PLAN.md` lines 6–11 still describe
+COOKED-DRAW M1 as claimed and M2 as blocked on its acceptance, although the integrated tip includes its pass and
+T2's unblock. TOOLS-DELIVERY's “Commissioned capture child” also calls the plan unbuilt and independently unreviewed.
 
-- tap pixels equal what was presented;
-- no lease extension;
-- present path unchanged when capture is disabled;
-- surface-loss cancellation.
+Reproduce by comparing those current-status paragraphs with the done-when records and `git log -4 --oneline` at
+this revision. The expected status prose should identify accepted Mac/Chrome and COOKED-DRAW progress while keeping
+T2 simulator capture unproved. Update those summaries during the next authorized documentation/build change.
+The dependency, open simulator definitions and required proofs are consistent, so this prose drift does not block
+design approval. Historical log entries should keep their historical meaning.
 
-A windowed proof can't run while locked, because the window is occluded. So it can't simply be added to the
-unattended M0.
+## Scope and verification
 
-**Should be:** a separate T2 item or milestone, `M0w windowed tap` (attended setup: unlocked active panel, no Screen
-Recording), that Mac M2.2 `needs`. Or move these criteria into Mac M2.2 as its own item. Either way, prove the tap on
-a real CAMetalLayer surface with a known pattern and a surface-loss control.
+Read the brief first, then the complete T2 design, plan and JSON definitions, the profile, build-plan target guidance,
+project and skill graded examples, Thrum review/design guidance, relevant C02/C06/C07/C11/C12 contracts,
+TOOLS-DELIVERY ownership and COOKED-DRAW simulator criteria. Older T2 reviews were consulted after forming the
+coverage assessment. Inspected the capture runbook's target and permission guidance and the integrated history.
+No engine implementation audit, external API revalidation, GPU run or new image/motion inspection was performed.
+Those belong to milestone verification and receive no new claim here.
 
-### F2. M2.2 would qualify panel cadence of a capture-perturbed app (verified from documents)
+`./dev check-docs` and `git diff --check` pass. Final status contains only this review file.
 
-M2.2 requires engine capture on **both** the untraced and traced arms. With capture on, the tap at 1920×1080 and
-120 Hz adds about 1 GB/s of readback (design cost section), plus an extra copy or present pass. It also turns off
-G3t's direct-output path (step 3). The design itself says "captured application timing is never an uncaptured
-baseline". Yet the only fresh swap trace M2.2 requires is captured. The qualified cadence would then be the
-captured app's, not the shipping configuration's.
-
-**Should be:** add a capture-off traced arm (same build, input and store) as the cadence row. Keep the capture-on
-arm for content and observer overhead, and label any cadence figure from it as "under capture".
-
-### F3. Mac M2 has no route to done: trace finalization is parked with no owner (verified from documents)
-
-M2.2 requires "a fresh readable Game Performance trace and `displayed-surfaces-interval` export". The plan
-(`PLATFORM-RUNTIME-MAC-PLAN.md:74`) keeps Instruments trace finalization "parked after three attempts; only a
-separately resumed tool investigation may spend further attempts on it". No milestone, module, build-plan line or
-maturity entry commissions or owns that investigation. BUILD-PLAN's G3b line names only the T2 dependency. So the owner
-unlocking the console still cannot close M2, and the milestone reads as `open` when it is in fact blocked behind
-an unowned task.
-
-**Should be:** name the owner and trigger for resuming trace finalization (an item in Mac M2 or a T2 tooling item,
-with its stop rule). Or record M2.2 as blocked on it in the status lines and in BUILD-PLAN, so the critical path is
-visible.
-
-### F4. Writer throughput for the required continuous interval isn't shown to be feasible (suspected, not measured)
-
-M0.4 and Mac M2.1 require every 1920×1080 frame at 120 Hz requested opportunities, over a two-second pan plus holds.
-That is about 0.995 GB/s raw (design's own figure), so roughly 4–5 GB per run. The design forbids blocking the
-renderer. It treats any capture overflow as inconclusive, and forbids reducing resolution or sample count. It defers
-faster encoding "only if measured throughput requires it".
-
-It never states a writer strategy that sustains 120 lossless 1080p frames per second inside bounded CPU queues. One
-such strategy is to spill raw rows to disk with a worker pool and encode afterwards. Single-threaded PNG at 1080p is
-far slower than 8 ms. Without that, M0.4 and M2.1 may be unpassable by construction, or push the builder toward
-oversized queues.
-
-**Should be:** state the writer strategy in the design (for example, raw spill with N workers, lossless packaging
-after the interval). State the per-run storage allowance under ASSET-LIFECYCLE. Make an early M0 step a measured
-throughput probe.
-
-### F5. Paused-world offscreen frames hit an existing no-render gate (verified in code; consequence suspected)
-
-`FrameHost::finish_advance` returns without rendering when `completed_ticks == 0`, there is no recovered
-publication, and `surface.is_none()` (`crates/thrum-render/src/runtime.rs:946`). With the world paused, as the Mac
-pan requires, no ticks complete. A headless driver that passes no output target therefore submits nothing.
-
-The design's "supply an engine-owned output target instead of a drawable" can avoid this, but only if that target
-goes through the same presenter and `SurfaceOutput` path as a drawable. That isn't stated. The risks are a
-capture-only bypass of the admission gate, or ticking the world to force frames.
-
-**Should be:** state that the headless target goes through the presenter path. Have M0.3 or M0.4 ask that
-paused-world camera edits produce fresh submissions through the ordinary gate, with no capture-specific branch.
-
-### F6. No item has a `check`, so the loop reruns nothing (verified from documents)
-
-All T2 items are `ask`/`inspect` only, with no `lock`. Row padding, odd widths, channel order, stale-generation
-rejection, ring saturation, disabled-capture zero allocation and incomplete-manifest refusal are naturally automated
-real-Metal tests. G0 already makes Metal regressions fail without a device. The plan's reason ("no nonexistent CLI is
-a JSON check") doesn't apply to `./dev check`.
-
-**Should be:** give M0.1 and M0.2 (and M1.2/M2.2 for their targets) `"check": "./dev check"` with `"lock": "gpu"`.
-Keep the `ask` naming the specific tests the reviewer must see.
-
-### F7. Items bundle several qualities (verified from documents)
-
-- M0.4 judges three things: the paused pan, the running-world interpolation, and the stall control.
-- M0.5 judges five: overhead, working-set scaling, the runbook and handoff, storage retention, and refusal of an
-  incomplete manifest. The refusal also duplicates M0.2 and M0.3.
-
-A failure then can't point at one thing.
-
-**Should be:** split M0.4 into the paused pan, the running world and the stall control. Split M0.5 into overhead and
-documentation, and drop the duplicate refusal.
-
-### F8. The locked-console condition: evidence not cited, and how it is obtained not stated (verified from documents)
-
-The design rests on locked-console Metal execution but cites none of the existing evidence (see "What checks out").
-`parity-20261109.json` doesn't record the lock state, even though the probe file shows it was locked. The plan also
-doesn't say how M0.3's locked condition is obtained. It could be opportunistic, while the owner is away, or by an
-agent locking the session, and an agent locking an in-use session would disrupt the owner.
-
-**Should be:** cite the probe and the parity run as the feasibility basis. Say the locked condition is taken
-opportunistically and recorded, never forced on an active user, and never unlocked by automation.
-
-### F9. The stall-injection mechanism is unspecified (suspected)
-
-M0.4 needs deliberately injected render and input stalls. The design doesn't say where the hook lives. A stall flag
-compiled into ordinary builds or defaulted on is a known fingerprint of work that only looks finished.
-
-**Should be:** a declared scenario or diagnostic action that is off unless the scenario requests it. The M0.4 `ask`
-should check it can't run in an ordinary run.
-
-### F10. Leftovers and capture gaps in consumers (verified from documents)
-
-- Mac M2.2 keeps `"evidence": "docs/evidence/render/mac-m2-pan/README.md#review-verdict-and-open-cadence-row"` while
-  `status` is `open`. That is a builder field carried from the old item. Clear it, so a later claim isn't read
-  against historical evidence.
-- ORCHESTRATE's chrome-webgpu and ios-sim capture columns now name only the unbuilt T2 M1 and M2. AI-DEVELOPMENT says
-  that until they exist, consumers record a dependency or an unavailable result. That blocks fixed-time and
-  function-only work the existing canvas endpoint capture and `simctl` screenshots could still prove, and nothing
-  says whether that is intended. State which existing captures stay valid for which claims until M1 and M2 land.
-
-## Done-when judgeability
-
-| Item | Could a reviewer judge it? | Would it catch a convincing fake? |
-| --- | --- | --- |
-| T2 M0.1 | Yes, by source trace and tests | Mostly. Without a `check` (F6), tests can rot between reviews |
-| T2 M0.2 | Yes | Yes, given the stale-callback and saturation controls |
-| T2 M0.3 | Yes, if the lock condition is recorded | Yes on clocks. Needs the paused-world gate question (F5) |
-| T2 M0.4 | Yes | Yes. The stall-versus-PTS comparison defeats the fixed-step fake. Bundled (F7); throughput risk (F4) |
-| T2 M0.5 | Yes | Weak as bundled (F7) |
-| T2 M1.1, M1.2, M2.1, M2.2 | Yes | Adequate. Each names its refusal controls and forbids faked visibility |
-| Mac M2.1 | Yes | Yes. It forbids the fixed-step, endpoint-redraw and parity substitutes |
-| Mac M2.2 | Not as written: its windowed tap is unproved (F1) | No, for the shipping cadence claim (F2). Unreachable while trace finalization is parked (F3) |
-
-## Owner's aim
-
-The aim is met for engine images and runtime motion. Mac M2.1, T2 M0 and every later Mac visual milestone need
-neither an unlock nor Screen Recording, and the existing locked-console offscreen run supports the design's
-feasibility. The remaining attended row, M2.2's panel cadence, is genuinely attended: a locked session stops
-presentation. But as planned, unlocking alone doesn't close it (F1–F3).
-
-DESIGN CHANGES: 10 findings
+DESIGN OK
