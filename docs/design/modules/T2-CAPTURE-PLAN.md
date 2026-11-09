@@ -3,8 +3,10 @@
 Design: [T2-CAPTURE.md](T2-CAPTURE.md) · [brief](T2-CAPTURE-BRIEF.md) ·
 Done when: [T2-CAPTURE-DONE.json](T2-CAPTURE-DONE.json).
 Reviews: [M0 third review](../../evidence/T2-CAPTURE/M0-review.md) passed in dff3eb5e; [M1 review](../../evidence/T2-CAPTURE/M1-review.md) passed in e2909ad4.
-Milestone: M2 iOS simulator engine motion without desktop capture (open, blocked on cooked rendering)
-Now: The ordinary diagnostic foreground route runs while locked on Apple iOS simulator GPU / Metal. The existing cooked contribution fails before capture: this adapter lacks INDIRECT_EXECUTION, but G5's meshlet draw requires indirect buffers/draws. A minimal source-restoring probe reproduces the missing prerequisite. [Evidence](../../evidence/render/t2-capture-m2/README.md).
+Milestone: M2 iOS simulator engine motion without desktop capture (blocked on COOKED-DRAW M1 acceptance)
+Now: The earlier locked diagnostic probe recorded missing INDIRECT_EXECUTION as the cooked-rendering blocker.
+COOKED-DRAW now has a live M1 claim, with fresh M1.7/M1.8 verification owed under the console witness correction
+before review. T2 M2 resumes after that milestone is accepted. [Earlier probe](../../evidence/render/t2-capture-m2/README.md).
 Next: [COOKED-DRAW](COOKED-DRAW-PLAN.md) M1 (G5) supplies and qualifies the capability-selected direct cooked draw path and the iOS route's cooked attach on ios-sim; M2 `needs` `COOKED-DRAW:M1`. Then resume T2 M2's foreground tap, motion and pending-capture lifecycle proofs on that route.
 Blocked: M2.1 and M2.2 remain open. No simulator capture, cooked motion, pending-capture lifecycle or physical-device proof is claimed. No reviewer launched.
 
@@ -66,11 +68,15 @@ capture service rather than copying it. Follow CONTRIBUTING and the architecture
 - Preserve existing actual-tab/visibility/device-loss qualification. It is distinct from unattended canvas image proof.
   Prove capture cancellation/recovery and browser-nonblocking readback/packaging, plus real-time stall/gap controls.
 
-## M2 iOS simulator evidence without desktop capture: open
+## M2 iOS simulator evidence without desktop capture: blocked on COOKED-DRAW M1 acceptance
 
 - Reuse the renderer tap in the real simulator route under its existing foreground lease and normal input dispatch.
-  Prove locked-console run, normal-speed camera/actor response, pending-capture background/foreground and surface/
-  device-generation replacement. No capture may submit in the background or publish old-generation pixels.
+  Prove normal-speed camera/actor response, pending-capture background/foreground and surface/device-generation
+  replacement with denied read-only Screen Recording preflights before and after under the identified launcher/
+  harness identity. Record console state before/after as witness metadata, accepting either state and transitions,
+  with unavailable observations recorded with a reason. No manual-lock wait or lock state refusal. Missing, failed
+  or granted permission preflights leave capture independence unproved. No capture may submit in the background
+  or publish old-generation pixels.
 - Qualify simulator evidence as function only; name the simulated model, runtime, host, engine and surface identities.
   `simctl` snapshots/video can corroborate the simulator UI if available without a desktop grant. If simulator boot
   or UI automation demands an OS grant, record that specific row attended and continue engine evidence work; do not
@@ -91,6 +97,18 @@ single ownership, final submitted-image correspondence, real-time versus synthet
 nonblocking bounded readback and the attended Mac cadence boundary. No proof item is passed by this plan.
 
 ## Log
+
+- 2026-11-09 Owner scope correction removes console lock as an admission/pass condition from open M2.1 and applies
+  the same policy to M2.2 lifecycle capture. Record actual console observations as witnesses in either state; denied,
+  attributed before/after Screen Recording preflights and the submitted-output tap establish independence from
+  desktop capture. The M2 builder applies this policy to its implemented target harness and any reused COOKED-DRAW
+  simulator helper, including refusal controls for missing/failed/granted preflights and acceptance controls for
+  locked/unlocked/changing observations. The earlier blocked probe remains history, with no new pass claimed.
+  M2 remains blocked on COOKED-DRAW M1 acceptance and retains function-only scope. Accepted M0/M1 definitions,
+  evidence and verdicts are preserved. Their lock witnesses are valid historical capability proof, and future
+  consumers record lock state without arranging it. No failure counters or dependency edges change. Independent
+  review of the revised definitions is owed to the lead/loop. No agents launched and no owner decision remains.
+  `./dev check-docs` and `git diff --check` pass.
 
 - 2026-11-09 Planner linked M2 to its prerequisite: `needs` `COOKED-DRAW:M1`, G5's capability-selected direct
   cooked draw path and the iOS route's cooked attach. Items, bar and counters are unchanged, and M2 stays blocked. The lead may `unblock` it once

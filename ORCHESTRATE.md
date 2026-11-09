@@ -37,7 +37,8 @@ T2 M0 (Mac) and M1 (Chrome) are done; simulator M2 remains blocked on G5 COOKED-
 milestones requiring submitted-output or elapsed-time engine motion proof depend on the relevant accepted target
 milestone and explicitly select its implemented capture mode (Mac still/fixed/realtime; Chrome fixed/realtime).
 Simulator interim simctl evidence remains function only. Engine capture requires no OS Screen Recording grant by design;
-locked-console execution must be proved. Built-in-panel cadence remains **attended setup** (unlocked active panel
+open checks claiming desktop-capture independence require denied, attributed read-only Screen Recording preflights. Console state is recorded as a witness, never an admission/pass condition or a manual-lock wait.
+Accepted locked-run evidence remains valid history. Built-in-panel cadence remains **attended setup** (unlocked active panel
 and any Instruments authorization), with automated actions/review. Native/compositor UI and physical output checks
 name their own attended reason where required. Never treat engine pixels/movie PTS as display swaps or photons.
 Mac M2.3 owns the real-window tap integration/proof and M2.4 the bounded trace-finalization investigation;
