@@ -83,6 +83,8 @@ integrated workload and unchanged quality/correctness constraints in [AI perform
 
 ## Review and evidence
 
+For unattended submitted-output images and elapsed-time motion on Mac, use the [capture runbook](docs/CAPTURE.md).
+
 Explain the result, rationale, tests actually run and remaining limits. Update the owning specification
 and maturity entry when behavior or evidence changes. Visible output is captured and checked as in the
 [Thrum engineering rules](.agents/skills/thrum-engineering/references/building.md#verify), and milestones marked for review close through

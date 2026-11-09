@@ -2,11 +2,11 @@
 
 Design: [T2-CAPTURE.md](T2-CAPTURE.md) · [brief](T2-CAPTURE-BRIEF.md) ·
 Done when: [T2-CAPTURE-DONE.json](T2-CAPTURE-DONE.json).
-Reviews: [design review 2 at `6317102f`](../../evidence/T2-CAPTURE/design-review-2.md): DESIGN CHANGES (2 findings); revised here, independent re-review owed. No agent launched, per owner instruction.
-Milestone: M0 Mac engine images and runtime motion without a desktop capture grant (open)
-Now: 9 November second-review findings revised: Mac M2 is decoupled from parked APPLE-TILE, post-change proof belongs to Mac M3, and pan quality uses worded criteria. No implementation started.
-Next: fresh /review-milestone design re-review from the brief, then /build-milestone M0 beginning with the writer probe; Mac qualification M2 consumes M0.
-Blocked: design review owed before build. Physical panel qualification has an attended setup requirement; it does not block M0.
+Reviews: [design review 3](../../evidence/T2-CAPTURE/design-review-3.md) clears T2 M0 to build; its remaining minor finding belongs to parked Mac M3. M0 milestone review is owed to the lead; no reviewer launched.
+Milestone: M0 Mac engine images and runtime motion without a desktop capture grant (claimed)
+Now: 9 November M0 implemented and builder-verified on locked-console M3 Max/Metal with Screen Recording unavailable. All nine items pass with [selected evidence](../../evidence/render/t2-capture-m0/README.md); full Check passes before the claim commit.
+Next: independent M0 review is owed. Mac qualification M2 consumes M0 after acceptance; Chrome M1 and simulator M2 remain open.
+Blocked: no M0 delivery prerequisite remains. Attended panel/window/tooling qualifications stay with the named Mac M2 owners and do not follow from engine images.
 
 ## Ownership and sequence
 
@@ -29,7 +29,7 @@ existing scripts own manifests, lossless/movie packaging and validation. V1 keep
 content and bindings. G3t owns linear recipe comparison and G4 owns output-provider/EDR qualification; both use this
 capture service rather than copying it. Follow CONTRIBUTING and the architecture registry if dependencies change.
 
-## M0 Mac engine images and runtime motion without a desktop capture grant: open
+## M0 Mac engine images and runtime motion without a desktop capture grant: claimed
 
 - Start with **M0.3's writer feasibility probe**, before full scenario integration: raw sequential spool at
   1920×1080, 120 records/s for four seconds, bounded buffers and 16 GiB output allowance per session. Record storage
@@ -91,6 +91,18 @@ single ownership, final submitted-image correspondence, real-time versus synthet
 nonblocking bounded readback and the attended Mac cadence boundary. No proof item is passed by this plan.
 
 ## Log
+
+- 2026-11-09 Built M0 through the existing FrameHost graph, app/game semantic handler and ordinary presenter gate.
+  The early writer probe selected uncached raw spill; integrated bursts selected bounded six/32 buffering under
+  512 MiB, preserving 1920×1080 and 120 requested opportunities/s. All still/fixed/elapsed cases run while locked
+  with denied Screen Recording preflight; the 481-image paused pan and 206 intermediate-alpha running samples
+  pass builder inspection. Explicit render/input stalls preserve elapsed duration; slow output fails honestly while
+  ticks/rendering continue. Legacy native route checkpoint pairs and endpoint semantics are preserved after removing
+  game-side copy/submission. Added queue/loss/resize/abandon, disabled allocation, channel/padding and packaging
+  refusal regressions to the Check. The full Check passes; [evidence](../../evidence/render/t2-capture-m0/README.md)
+  records cost, limits, exact sources and retention. Only M0 state/items' status/evidence changed in the done-when file;
+  definitions, counters and review fields are untouched. Claim integration follows the profile's locked rebase/Check/push.
+  Independent milestone review remains the lead's; no reviewer launched. APPLE-TILE and attended Mac items stay parked/open.
 
 - 2026-11-09 Addressed [second-review F1/F2](../../evidence/T2-CAPTURE/design-review-2.md): Mac M2 now
   qualifies the current path after T2 M0 only; new Mac M3 owns post-G3t motion/cadence with an explicit Apple M3

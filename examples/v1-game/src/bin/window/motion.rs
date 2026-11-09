@@ -7,7 +7,6 @@ use std::{
     io::{self, Write},
     num::NonZeroU32,
     path::Path,
-    sync::mpsc,
     time::{Duration, Instant},
 };
 
@@ -33,7 +32,6 @@ pub(super) fn requested_frames() -> Result<Option<NonZeroU32>, String> {
 
 pub(super) fn record(
     device: &wgpu::Device,
-    queue: &wgpu::Queue,
     host: &mut FrameHost,
     directory: &Path,
     frames: NonZeroU32,
@@ -43,6 +41,7 @@ pub(super) fn record(
     let pan = CameraPan::from_env(host.camera_orientation()[1], frames)?;
     let rate = ClockConfig::default().tick_hz;
     let target = CaptureTarget::new(device, PROFILE.extent);
+    host.enable_submitted_capture(1)?;
     let surface = SurfaceOutput {
         view: &target.view,
         extent: PROFILE.extent,
@@ -83,7 +82,7 @@ pub(super) fn record(
         let (Some(pass_ns), Some(blit_ns)) = (sample.gpu_pass_ns, sample.gpu_present_ns) else {
             return Err(format!("motion frame {index} lacks GPU timestamps"));
         };
-        target.write_pixels(device, queue, &mut pixels)?;
+        target.write_pixels(host, sample.submission_order, &mut pixels)?;
         write_json_line(
             &mut log,
             &serde_json::json!({
@@ -97,6 +96,7 @@ pub(super) fn record(
             }),
         )?;
     }
+    host.disable_submitted_capture();
     pixels.flush().map_err(|error| error.to_string())
 }
 
@@ -205,18 +205,17 @@ pub(super) fn write_json_line(log: &mut File, value: &serde_json::Value) -> Resu
     log.write_all(b"\n").map_err(|error| error.to_string())
 }
 
-/// An offscreen SDR output target the game submits to, with a readback buffer.
+/// An ordinary offscreen presenter target. Readback remains renderer-owned.
 pub(super) struct CaptureTarget {
-    texture: wgpu::Texture,
+    _texture: wgpu::Texture,
     pub(super) view: wgpu::TextureView,
-    staging: wgpu::Buffer,
     extent: [u32; 2],
 }
 
 impl CaptureTarget {
     pub(super) fn new(device: &wgpu::Device, extent: [u32; 2]) -> Self {
         let texture = device.create_texture(&wgpu::TextureDescriptor {
-            label: Some("motion capture SDR output"),
+            label: Some("fixed-time ordinary presenter output"),
             size: wgpu::Extent3d {
                 width: extent[0],
                 height: extent[1],
@@ -226,67 +225,48 @@ impl CaptureTarget {
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
             format: PROFILE.format,
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
             view_formats: &[],
-        });
-        let staging = device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("motion capture readback"),
-            size: u64::from(extent[0] * 4) * u64::from(extent[1]),
-            usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-            mapped_at_creation: false,
         });
         let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
         Self {
-            texture,
+            _texture: texture,
             view,
-            staging,
             extent,
         }
     }
 
-    /// Copy the submitted output and write its BGRA rows to `output`.
+    /// Fixed-time tools may wait between explicit samples. This collects the
+    /// same submitted graph output; it creates no copy encoder or queue submit.
     pub(super) fn write_pixels(
         &self,
-        device: &wgpu::Device,
-        queue: &wgpu::Queue,
+        host: &mut FrameHost,
+        submission: u64,
         output: &mut impl Write,
     ) -> Result<(), String> {
-        let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-        encoder.copy_texture_to_buffer(
-            self.texture.as_image_copy(),
-            wgpu::TexelCopyBufferInfo {
-                buffer: &self.staging,
-                layout: wgpu::TexelCopyBufferLayout {
-                    offset: 0,
-                    bytes_per_row: Some(self.extent[0] * 4),
-                    rows_per_image: Some(self.extent[1]),
-                },
-            },
-            self.texture.size(),
-        );
-        let (send, receive) = mpsc::channel();
-        encoder.map_buffer_on_submit(&self.staging, wgpu::MapMode::Read, .., move |result| {
-            let _ = send.send(result);
-        });
-        let submission = queue.submit([encoder.finish()]);
-        device
-            .poll(wgpu::PollType::Wait {
-                submission_index: Some(submission),
-                timeout: Some(TIMEOUT),
-            })
-            .map_err(|error| error.to_string())?;
-        receive
-            .try_recv()
-            .map_err(|error| error.to_string())?
-            .map_err(|error| error.to_string())?;
-        let mapped = self
-            .staging
-            .slice(..)
-            .get_mapped_range()
-            .map_err(|error| error.to_string())?;
-        let result = output.write_all(&mapped).map_err(|error| error.to_string());
-        drop(mapped);
-        self.staging.unmap();
-        result
+        let deadline = Instant::now() + TIMEOUT;
+        loop {
+            if let Some(mut image) = host.try_submitted_image()? {
+                if image.sample.submission_order != submission
+                    || image.rgba.len() != self.extent[0] as usize * self.extent[1] as usize * 4
+                {
+                    return Err("fixed-time submitted image identity mismatch".to_owned());
+                }
+                // Preserve the legacy BGRA byte stream and route PPM oracles.
+                for pixel in image.rgba.as_chunks_mut::<4>().0 {
+                    pixel.swap(0, 2);
+                }
+                let result = output
+                    .write_all(&image.rgba)
+                    .map_err(|error| error.to_string());
+                host.recycle_submitted_image(image);
+                return result;
+            }
+            let _ = host.poll_completed()?;
+            if Instant::now() >= deadline {
+                return Err("fixed-time submitted image deadline".to_owned());
+            }
+            std::thread::sleep(Duration::from_micros(200));
+        }
     }
 }

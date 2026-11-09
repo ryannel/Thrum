@@ -100,17 +100,10 @@ pub(super) async fn run(output: PathBuf) -> Result<(), String> {
     };
     std::fs::create_dir_all(&output).map_err(|error| error.to_string())?;
     if let Some((text, _, _)) = &moving_route {
-        return route::record(&device, &queue, &mut host, &output, text, cooked_generation);
+        return route::record(&device, &mut host, &output, text, cooked_generation);
     }
     if let Some(frames) = motion_frames {
-        return motion::record(
-            &device,
-            &queue,
-            &mut host,
-            &output,
-            frames,
-            cooked_generation,
-        );
+        return motion::record(&device, &mut host, &output, frames, cooked_generation);
     }
     let mut manifest = serde_json::json!({
         "scope":"Same V1 FrameHost, frozen authority, real GPU offscreen readback. No live presentation, timing or physical-device qualification.",

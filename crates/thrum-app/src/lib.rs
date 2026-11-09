@@ -19,6 +19,8 @@ mod file_watch;
 #[cfg(target_os = "macos")]
 mod game;
 #[cfg(target_os = "macos")]
+pub mod offscreen;
+#[cfg(target_os = "macos")]
 pub mod sky;
 #[cfg(target_arch = "wasm32")]
 pub mod web;

@@ -14,6 +14,15 @@ use crate::{
     host::{self, GameScene, Runtime, WorldPort},
 };
 
+mod capture;
+
+/// Run a declared unattended capture scenario through the ordinary game.
+/// # Errors
+/// Returns GPU, control, readback or output failure.
+pub fn run_runtime_capture(output: &std::path::Path, scenario: &str) -> Result<(), String> {
+    capture::run(output, scenario)
+}
+
 const KEY_A: u8 = 1;
 const KEY_D: u8 = 2;
 const KEY_W: u8 = 4;
@@ -80,6 +89,17 @@ struct WindowGame {
     demo: GameControls,
     world: Option<WorldControls>,
     held_keys: u8,
+}
+
+/// Construct the ordinary game for the engine's headless presenter adapter.
+/// # Errors
+/// Returns a demo-control declaration failure.
+pub fn capture_game() -> Result<impl Game, String> {
+    Ok(WindowGame {
+        demo: GameControls::new().map_err(|error| error.to_string())?,
+        world: None,
+        held_keys: 0,
+    })
 }
 
 impl WindowGame {

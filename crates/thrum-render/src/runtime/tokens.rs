@@ -166,6 +166,11 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> EncodedFrame<'_, W, V> {
     fn discard_recording(&mut self) -> Option<&mut FrameHost<W, V>> {
         let ReadyFrame { host, recorded } = self.ready.take()?;
         drop(recorded.encoder);
+        if let Some(index) = recorded.capture_slot
+            && let Some(tap) = host.submitted_capture.as_mut()
+        {
+            tap.abandon(index);
+        }
         let discarded = host.slots[recorded.slot_index]
             .timings
             .discard_unsubmitted(host.generation);

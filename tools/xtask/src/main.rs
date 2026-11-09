@@ -320,6 +320,15 @@ fn main() -> TaskResult {
                 "-p",
                 "test_scene_package.py",
             ])?;
+            python(&[
+                "-m",
+                "unittest",
+                "discover",
+                "-s",
+                "scripts",
+                "-p",
+                "test_t2_capture.py",
+            ])?;
             cargo(&["fmt", "--all", "--", "--check"])?;
             cargo(&[
                 "clippy",
