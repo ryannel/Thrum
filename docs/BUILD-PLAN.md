@@ -45,8 +45,10 @@ continue unblocked work. Verified checkpoints are pushed to main (owner, 6 Nov p
 It supplies exact submitted images and elapsed-time motion without a desktop capture grant; locked-console execution
 must be proved. G3b Mac M2 uses it for fresh runtime motion; final qualification reruns after G3t M3. Its built-in-panel cadence stays open with
 **attended setup** (unlocked active panel and any Instruments authorization). Screen Recording is no longer required
-for engine pixels. G3t M0 follows shared capture and does not depend on the panel cadence row. The G3s sunset
-crossing stays parked; G2S is closed. The complete native Metal recorder remains a later performance candidate;
+for engine pixels. The T2 design-review findings are revised; independent re-review is owed. The Mac M2 builder
+owns real-window tap qualification (M2.3) and bounded trace-finalization diagnosis (M2.4); M2.2 cadence uses capture
+OFF, with capture-ON content/observer arms separate. G3t M0 follows shared capture and does not depend on the panel
+cadence row. The G3s sunset crossing stays parked; G2S is closed. The complete native Metal recorder remains a later performance candidate;
 the dedicated performance phase owns numeric tuning.
 
 - [x] **G0 — integrity and baselines.** Real Metal regressions fail without a device; no successful skips. One baseline
@@ -79,7 +81,11 @@ the dedicated performance phase owns numeric tuning.
   A held-drawable Metal destroy recovers in the same Mac window with world and controls intact.
   [Live Mac evidence](evidence/render/mac-m1-recovery/README.md). Physical iPhone loss and Mac display cadence
   remain open. Mac M2 now needs `T2-CAPTURE:M0` and `APPLE-TILE:M3`; its unattended runtime-image and attended panel-swap proofs
-  remain distinct and both are required. Record latency/present intervals and investigate visible hitches. [Mac qualification plan](design/modules/PLATFORM-RUNTIME-MAC-PLAN.md).
+  remain distinct and both are required. M2.3 owns the unproved real-window tap; M2.4 resumes the failed Instruments
+  finalization investigation after design re-review/prerequisites, with a changed hypothesis and at most two new
+  diagnostic attempts. M2.2 remains blocked on those proofs and active-panel/tool setup; an unreadable trace cannot
+  close it. Its capture-OFF traced arm qualifies cadence; capture-ON arms show content/observer cost. Record
+  latency/present intervals and investigate visible hitches. [Mac qualification plan](design/modules/PLATFORM-RUNTIME-MAC-PLAN.md).
   [Frame history](evidence/render/V1-BOUNDED-FRAMES-2026-11-04.md) and wgpu
   allocations are baselines; native recording stays G3t.
 - [ ] **G3s — physical sky, Sun and atmosphere.** Hillaire (2020) transmittance, multiple-scattering, sky-view/aerial

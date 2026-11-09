@@ -2,10 +2,10 @@
 
 Design: [T2-CAPTURE.md](T2-CAPTURE.md) · [brief](T2-CAPTURE-BRIEF.md) ·
 Done when: [T2-CAPTURE-DONE.json](T2-CAPTURE-DONE.json).
-Reviews: independent design/JSON review owed; no agent launched, per owner instruction.
+Reviews: [design review at `1fb6b422`](../../evidence/T2-CAPTURE/design-review.md): DESIGN CHANGES (10 findings); revised here, independent re-review owed. No agent launched, per owner instruction.
 Milestone: M0 Mac engine images and runtime motion without a desktop capture grant (open)
-Now: evidence ownership, mechanisms and Mac M2 proof split planned on 9 November; no capture implementation started.
-Next: fresh /review-milestone design review from the brief, then /build-milestone M0; Mac qualification M2 consumes M0.
+Now: 9 November review findings addressed in the design/criteria and Mac M2 handoff; no capture implementation started.
+Next: fresh /review-milestone design re-review from the brief, then /build-milestone M0 beginning with the writer probe; Mac qualification M2 consumes M0.
 Blocked: design review owed before build. Physical panel qualification has an attended setup requirement; it does not block M0.
 
 ## Ownership and sequence
@@ -16,6 +16,11 @@ FrameHost, cooked content, platform loss/lease and scene/controls are available 
 Mac qualification M2 and APPLE-TILE M0 depend on `T2-CAPTURE:M0`. Later visual milestones use M0 on Mac,
 M1 on Chrome and M2 on the simulator at the first proof requiring this tooling. Existing completed evidence is not
 invalidated. Captures cannot close an attended panel item.
+Mac M2.3 commissions and proves integration of the shared tap on a real CAMetalLayer window; Mac M2.4 owns bounded
+trace-finalization diagnosis. Neither task is hidden inside unattended M0, and neither adds a reverse dependency.
+Before Chrome M1/simulator M2, existing canvas endpoint images may prove fixed-time endpoint/oracle claims and
+`simctl` captures may prove simulator function/UI/lifecycle within their recorded limits. New submitted-temporal or
+elapsed-time engine-motion claims still need the target's T2 milestone.
 
 Implementation ownership: `thrum-render` owns graph tap, targets, staging, fences and generation cancellation;
 `thrum-app` owns headless/windowed scheduling and normal control dispatch; core keeps its existing world clock;
@@ -25,18 +30,27 @@ capture service rather than copying it. Follow CONTRIBUTING and the architecture
 
 ## M0 Mac engine images and runtime motion without a desktop capture grant: open
 
+- Start with **M0.3's writer feasibility probe**, before full scenario integration: raw sequential spool at
+  1920×1080, 120 records/s for four seconds, bounded buffers and 16 GiB output allowance per session. Record storage
+  write/flush, queue peaks, drain and deferred lossless packaging/hash validation. Revise an overflowing writer
+  before proceeding; do not grow a session-sized RAM queue or shrink the required capture workload.
 - Add opt-in renderer-owned final-output readback to ordinary submitted frames, with bounded asynchronous GPU/CPU
   queues, explicit missing samples and loss/resize/abandon handling. Preserve endpoint still capture semantics.
 - Provide fixed-time and monotonic real-time offscreen drivers using shared world/render/control paths. Migrate V1
   sequence copying; retain existing route/endpoint baselines and parity oracles. No AppKit/screen capture prerequisite.
 - Deliver a documented, implemented command for stills, fixed-time sequences and real-time sequences. Pin artifacts
-  and validate completeness. Command names are left to the builder; no nonexistent CLI is a JSON check.
+  and validate completeness. Commands are named by the builder; the JSON already reruns `./dev check` under `gpu`
+  for the tap/queue regressions. Target-specific scenario commands remain additional required proof.
 - Prove the cooked noon 0°–36° two-second pan with initial/final holds, 1920×1080 output and 120 Hz requested
-  opportunities, world paused, through the normal semantic control handler. Repeat with running-world motion and
-  interpolation between 60 Hz endpoints. Locked-console and unavailable-permission conditions must be recorded.
-- Capture and inspect a deliberately injected render/input stall. It must remain visible for its real elapsed duration.
+  opportunities, world paused, through the normal semantic control handler and ordinary presenter/`SurfaceOutput`
+  gate. Use one-second initial/final holds. Fresh submissions must not advance the paused world or use a capture-only
+  admission bypass. M0.5 judges the pan; M0.6 separately judges running-world motion/interpolation between 60 Hz
+  endpoints. Record lock/permission conditions opportunistically, never locking an active user or unlocking by automation.
+- M0.7 captures explicit diagnostic scenario render/input stalls, disabled in ordinary runs. Each must remain visible
+  for its real elapsed duration; prove the hook does not fire without its diagnostic action.
   Saturate/slow the writer, lose a device with a mapping pending and refuse output/finalization; prove honest failure
-  and bounded resources without stalling or corrupting the continuing app. Pair capture on/off and report overhead.
+  and bounded resources without stalling or corrupting the continuing app (M0.2). M0.8 separately pairs capture on/off
+  and records overhead/scaling; M0.9 judges runbook, retention and consumer handoff.
 - Keep source frames/time records plus 1× preview, contact sheet, crops and compact evidence. The independent reviewer
   runs the retained command, validates provenance and reviews the real-time sequence against the inspection list.
 
@@ -68,12 +82,26 @@ new documented scenario commands. Checks must fail on unavailable required hardw
 `./dev check-docs`. Exact source images, sample logs and decisive failure controls live in `tmp/t2-capture-<milestone>/`
 with a storage record, byte allowance and closeout condition. Promote compact reproducible proof and selected excerpts
 to `docs/evidence/render/` under ASSET-LIFECYCLE; ignored scratch alone is not durable selected evidence.
+The default four-second SDR session allowance is 16 GiB including raw/packaged coexistence; run bulk sessions
+serially and verify retained selected roots before reusing their space. Longer/HDR sessions declare their own cap.
 
 The design reviewer starts with the brief and independently derives coverage before reading the design/JSON. Check
 single ownership, final submitted-image correspondence, real-time versus synthetic clocks, output-stage/UI limits,
 nonblocking bounded readback and the attended Mac cadence boundary. No proof item is passed by this plan.
 
 ## Log
+
+- 2026-11-09 Addressed [review F1–F10](../../evidence/T2-CAPTURE/design-review.md) without commissioning implementation.
+  F1: Mac M2.3 owns real-window tap integration/proof. F2: M2.2 gains a capture-OFF traced cadence arm alongside two
+  capture-ON observer/content arms. F3: Mac M2.4 explicitly commissions bounded trace diagnosis, with trigger/stop rule.
+  F4: raw spill, deferred packaging, 16 GiB per-run allowance and early M0.3 throughput probe. F5: ordinary
+  presenter/SurfaceOutput gate and paused-tick proof. F6: `./dev check`/`gpu` checks plus target-specific runs.
+  F7: separate pan, running-world, stalls, overhead and documentation criteria. F8: cited historical locked-console
+  feasibility with its missing local probe limitation; future lock condition is opportunistic and recorded.
+  F9: explicit diagnostic-only stall actions and ordinary-run control. F10: cleared Mac M2.2's stale claim evidence
+  and preserved scoped interim Chrome/simulator capture. T2 M0/M1/M2 `replans` incremented to 1, `fails` reset to 0,
+  all remain open. Mac M2 increments to 3, preserving the Apple tile M3 dependency and historical M0/M1 proofs.
+  Latest review still requests changes; fresh independent design/JSON/consumer re-review is owed, no agents launched.
 
 - 2026-11-09 Owner requested unattended visual/live-motion evidence and prohibited subagents. Settled T2 ownership
   with V1/V4/F1 producers and Mac/G3t consumers under C12; selected submitted-image tap plus distinct fixed-time and

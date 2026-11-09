@@ -6,7 +6,7 @@
       "name": "Mac engine images and runtime motion without a desktop capture grant",
       "state": "open",
       "fails": 0,
-      "replans": 0,
+      "replans": 1,
       "bar": "Camera continuity expected of Red Dead Redemption 2 and evidence fit for a shipped high-end game: complete native-size images and honest 1x elapsed-time motion, with every omitted sample and observer limit explicit.",
       "items": [
         {
@@ -15,9 +15,11 @@
           "target": "mac-metal",
           "status": "open",
           "evidence": "",
-          "ask": "Trace submitted frame to graph copy to image digest; verify no endpoint redraw, second scene render, private game queue submit, drawable bridge or present-lease extension. Run real Metal tests comparing tap pixels with the same output texture, known colour/channel/row-padding cases including odd widths, and submitted history with capture on/off. Preserve existing endpoint-capture tests and Mac M1 loss behavior.",
+          "ask": "Trace submitted frame to graph copy to image digest; verify no endpoint redraw, second scene render, private game queue submit, drawable bridge or present-lease extension. Run real Metal tests comparing tap pixels with the same output texture, known colour/channel/row-padding cases including odd widths, and submitted history with capture on/off. Preserve existing endpoint-capture tests and Mac M1 loss behavior. Verify disabled-capture zero-allocation and unchanged submitted-history tests run in ./dev check; these required real-Metal tests fail when no device is available.",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "check": "./dev check",
+          "lock": "gpu"
         },
         {
           "id": "M0.2",
@@ -25,38 +27,82 @@
           "target": "mac-metal",
           "status": "open",
           "evidence": "",
-          "ask": "Run pending-map loss/replacement and stale-callback controls, ring/writer saturation, disk-limit/write error and bounded-finalization failure. Show finite allocated/queued bytes and continuing ticks/render progress while capture is incomplete; no lost-queue submit or lost-fence wait. Check frames are recycled only after their GPU/CPU leases end, and old generations cannot populate a new session.",
+          "ask": "Run pending-map loss/replacement and stale-callback controls, ring/writer saturation, disk-limit/write error and bounded-finalization failure. Show finite allocated/queued bytes and continuing ticks/render progress while capture is incomplete; no lost-queue submit or lost-fence wait. Check frames are recycled only after their GPU/CPU leases end, and old generations cannot populate a new session. Include automated incomplete-manifest refusal and decoded raw-spool/PNG hash equality; prove bounded CPU pool ownership through slow disk writes and packaging failures. These regressions run in ./dev check and fail on unavailable required hardware.",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "check": "./dev check",
+          "lock": "gpu"
         },
         {
           "id": "M0.3",
-          "statement": "One documented implemented workflow produces exact-build stills, fixed-time sequences and separately labelled real-time offscreen sequences on Metal while the console is locked and Screen Recording permission is unavailable, without requesting a grant.",
+          "statement": "Before full scenario integration, a measured bounded raw-spool writer sustains the required four-second 1920x1080, 120-record/s workload without overflow; lossless packaging runs after the interval.",
           "target": "mac-metal",
           "status": "open",
           "evidence": "",
-          "ask": "Rerun retained commands on the actual M3 Max under gpu exclusivity. Inspect recorded lock/permission status, adapter/backend, recipe, source/dirty/build/shader/cooked/parameter hashes and per-frame world/interpolation/history/submission IDs. Verify the headless real-time driver uses actual monotonic elapsed time, the ordinary threaded world/render paths and validated semantic controls. Verify complete source-frame coverage and finalized manifest; no GPU timestamps or OS capture grant required. Preserve fixed-time route/endpoint parity. Unavailable hardware or inability to establish the required locked condition cannot pass.",
+          "ask": "Run the writer probe on the actual target disk using full raw frame records, declared finite GPU/CPU byte caps and a 16 GiB per-session output allowance. Record write service rate, queue peaks, actual storage/flush behavior, drain and deferred packaging time; verify every decoded image hash. Start with three staging slots/eight CPU buffers in integrated capture. A cached write-acceptance rate alone is insufficient. If the probe overflows, revise the writer before the complete pan; no session-sized RAM queue, live PNG requirement or reduced fidelity may hide failure. Retain commands and measurements; do not call this measured until run.",
           "verdict": "",
           "review": ""
         },
         {
           "id": "M0.4",
-          "statement": "The locked-console real-time cooked noon pan and a running-world/interpolated sequence retain complete initial/final holds and coherent scene motion; deliberately injected runtime stalls remain visible for their actual elapsed duration.",
+          "statement": "One documented implemented workflow produces exact-build stills, fixed-time sequences and separately labelled real-time offscreen sequences on Metal while the console is locked and Screen Recording permission is unavailable, without requesting a grant.",
           "target": "mac-metal",
           "status": "open",
           "evidence": "",
-          "ask": "Join every image to the submitted sample and requested/accepted/submitted controls. Inspect a 1920x1080 paused-world 0-to-36-degree two-second pan at 120 Hz requested opportunities and a running 60 Hz world with intermediate-alpha samples. Check all opportunities/submissions accounted for; capture omissions make the affected interval inconclusive. Compare injected-stall elapsed duration with movie PTS and images, and demonstrate that fixed-time movie smoothness cannot satisfy this real-time item.",
-          "inspect": "At 1x inspect the full noon pan and both holds against the proposed Ground E composition: rock/ridge/sphere coherence, endpoint agreement, repeats, jumps and pauses; inspect native-size frames/crops and the running-world intermediate poses for interpolation/history artifacts. Review the stall negative control and timeline at 1x. This is engine runtime motion, not built-in-display smoothness.",
+          "ask": "Rerun retained commands on the actual M3 Max under gpu exclusivity. Inspect recorded lock/permission status, adapter/backend, recipe, source/dirty/build/shader/cooked/parameter hashes and per-frame world/interpolation/history/submission IDs. Verify the headless real-time driver uses actual monotonic elapsed time, the ordinary threaded world/render paths and validated semantic controls. Verify complete source-frame coverage and finalized manifest; no GPU timestamps or OS capture grant required. Preserve fixed-time route/endpoint parity. Unavailable hardware or inability to establish the required locked condition cannot pass. Record the locked condition opportunistically; never lock an active user or unlock by automation. Trace engine output through the ordinary presenter/SurfaceOutput admission path: paused-world semantic camera edits must create fresh submissions with unchanged committed tick and no capture-only admission bypass.",
           "verdict": "",
           "review": ""
         },
         {
           "id": "M0.5",
-          "statement": "Matched capture-on/off runs record observer cost and bounded working-set/disk growth, and consumer documentation makes unattended versus attended evidence explicit for Mac M2 and later visual milestones.",
+          "statement": "The locked-console real-time cooked noon paused-world pan retains complete endpoint holds and coherent scene motion through the ordinary presenter path.",
           "target": "mac-metal",
           "status": "open",
           "evidence": "",
-          "ask": "Read paired same-build/recipe/workload CPU/GPU/interval/queue/memory/bytes/disk results with run order and load; investigate visible hitches, comparable regressions and unexpected scaling under C12 without inventing numeric gates. Review the implemented runbook, C12 and Mac M2 handoff; neither engine PTS nor synthetic opportunities are called compositor swaps, panel refresh or input-to-photon. Verify storage retention and a deliberately incomplete manifest is refused.",
+          "ask": "Join every submitted image to requested/accepted/submitted controls in the 1920x1080 0-to-36-degree two-second pan at 120 Hz requested opportunities, with one-second initial and final holds. Show fresh submission IDs while the committed world tick stays paused. Account for all opportunities/submissions; capture omissions make the interval inconclusive. A fixed-step route or endpoint redraw cannot pass.",
+          "verdict": "",
+          "review": "",
+          "inspect": "At 1x inspect the full noon pan and both holds against the proposed Ground E composition: rock/ridge/sphere coherence, endpoint agreement, repeats, jumps and pauses. Inspect native-size full frames and crops. This proves engine runtime motion, not built-in-display smoothness."
+        },
+        {
+          "id": "M0.6",
+          "statement": "A locked-console elapsed-time sequence of a running 60 Hz world preserves intermediate-alpha presentation and temporal history.",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "ask": "Join source images to adjacent committed endpoints, interpolation alpha, history and submission IDs in a declared moving-actor scenario at 120 Hz requested opportunities. Show intermediate-alpha samples and no endpoint redraw/history reset; account for gaps and refuse incomplete capture.",
+          "verdict": "",
+          "review": "",
+          "inspect": "Inspect full frames, native-size moving-actor crops and the host-time-preserving 1x sequence through initial hold, running motion and final hold for continuity and interpolation/history artifacts."
+        },
+        {
+          "id": "M0.7",
+          "statement": "Explicit diagnostic render and input-dispatch stalls remain visible for their actual elapsed duration; ordinary runs never activate these actions.",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "ask": "Trace scenario-only actions that delay render-actor work and input dispatch before normal semantic handling, with start/end monotonic times and pinned scenario hash. Verify they are off by default and cannot fire in an ordinary schedule. Compare elapsed delays with image repeats/gaps and PTS; never edit timestamps or compress time to simulate the control. Demonstrate why fixed-time movie smoothness cannot satisfy this item.",
+          "verdict": "",
+          "review": "",
+          "inspect": "At 1x inspect both stall controls and their timelines: the held content or delayed input response must last for the recorded host-time delay and then recover; distinguish capture omissions from actual runtime stalls."
+        },
+        {
+          "id": "M0.8",
+          "statement": "Matched capture-on/off runs record observer cost and bounded working-set/disk scaling.",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "ask": "Read paired same-build/recipe/workload CPU/GPU/interval/queue/memory/bytes/disk results with run order and load, including deferred packaging and flush costs. Investigate visible hitches, comparable regressions and unexpected scaling under C12 without inventing numeric gates. Captured timing is never the uncaptured baseline.",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M0.9",
+          "statement": "The implemented runbook and consumer handoff state capture modes, provenance, limits, storage retention and the separate attended Mac proof owners.",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "ask": "Rerun retained documented commands; review C12 and Mac M2 handoff, including M2.3 windowed tap and M2.4 trace investigation. Neither engine PTS nor synthetic opportunities are called compositor swaps, panel refresh or input-to-photon. Verify ASSET-LIFECYCLE records, 16 GiB session allowance, free-space preflight, selected source/time retention and ownership-scoped closeout. Chrome endpoint and simctl interim evidence keeps its explicit limited scope; stronger submitted-motion rows retain their target dependency.",
           "verdict": "",
           "review": ""
         }
@@ -70,7 +116,7 @@
       "name": "Chrome WebGPU images and runtime motion without desktop capture",
       "state": "open",
       "fails": 0,
-      "replans": 0,
+      "replans": 1,
       "bar": "Portable cooked-scene camera continuity expected of Red Dead Redemption 2, with complete canvas sample identity and explicit browser scheduling and surface limits; scene-specific artistic bars remain with the consuming milestone.",
       "items": [
         {
@@ -90,9 +136,11 @@
           "target": "chrome-webgpu",
           "status": "open",
           "evidence": "",
-          "ask": "Run pending-readback loss/recovery, saturation and injected-stall controls; show the page loop/authority continue, stale captures fail, PTS do not hide delay and missing samples refuse completion. Rerun affected actual-tab/visibility/device-loss consumers; headless canvas proof cannot replace them.",
+          "ask": "Run pending-readback loss/recovery, saturation and injected-stall controls; show the page loop/authority continue, stale captures fail, PTS do not hide delay and missing samples refuse completion. Rerun affected actual-tab/visibility/device-loss consumers; headless canvas proof cannot replace them. Run ./dev check for shared regressions under gpu; additionally retain and rerun the implemented target-specific Chrome command on this target, failing rather than skipping unavailable required hardware. The workspace check alone cannot prove this target row.",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "check": "./dev check",
+          "lock": "gpu"
         }
       ]
     },
@@ -101,7 +149,7 @@
       "name": "iOS simulator engine motion without desktop capture",
       "state": "open",
       "fails": 0,
-      "replans": 0,
+      "replans": 1,
       "bar": "Functionally intact cooked scene and normal-speed interaction through simulator lifecycle changes, with honest function-only provenance and no device-speed or physical-display claim.",
       "items": [
         {
@@ -121,9 +169,11 @@
           "target": "ios-sim",
           "status": "open",
           "evidence": "",
-          "ask": "Run lifecycle rows with a capture pending plus saturation/stall controls. Trace foreground/surface leases and generation IDs; prove no background GPU submit, lost-queue work or stale publication, and fresh output after resume. Validate PTS/coverage and incomplete-result refusal; preserve affected iOS route tests and keep physical iPhone evidence pending.",
+          "ask": "Run lifecycle rows with a capture pending plus saturation/stall controls. Trace foreground/surface leases and generation IDs; prove no background GPU submit, lost-queue work or stale publication, and fresh output after resume. Validate PTS/coverage and incomplete-result refusal; preserve affected iOS route tests and keep physical iPhone evidence pending. Run ./dev check for shared regressions under gpu; additionally retain and rerun the implemented target-specific iOS simulator command on this target, failing rather than skipping unavailable required hardware. The workspace check alone cannot prove this target row.",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "check": "./dev check",
+          "lock": "gpu"
         }
       ]
     }

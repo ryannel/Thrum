@@ -30,14 +30,18 @@ a `build/<module>` branch and push `HEAD:main`. Large captures and recordings go
 | Target | What it is | Run | Capture | Edge conditions |
 |---|---|---|---|---|
 | mac-metal | This M3 Max, 120 Hz ProMotion, Metal | `scripts/run_v1_showcase.py`, `./dev` scenarios | [T2 engine capture](docs/design/modules/T2-CAPTURE.md): fixed-time images and elapsed-time motion, lossless sources/contact sheets; active-panel rows separate | Low sun, storm, distance, fast camera, full refresh |
-| chrome-webgpu | Chrome, portable WebGPU recipe | the browser showcase | T2 M1: exact submitted canvas output/time records; DOM/browser chrome separate | Same scenarios as mac-metal |
-| ios-sim | iPhone 18 Pro simulator; function only, never speed | the iOS route | T2 M2: engine output/time records; `simctl` screenshot/video supplemental, function only | Rotation, background and foreground |
+| chrome-webgpu | Chrome, portable WebGPU recipe | the browser showcase | Until T2 M1, existing canvas endpoint captures prove fixed-time endpoint images/oracles only; M1 adds exact submitted output/time records. DOM/browser chrome separate | Same scenarios as mac-metal |
+| ios-sim | iPhone 18 Pro simulator; function only, never speed | the iOS route | Until T2 M2, `simctl` screenshots/video prove simulator function/UI/lifecycle within recorded timing limits; M2 adds engine output/time records | Rotation, background and foreground |
 
-T2 capture is planned, not qualified. Later visual milestones depend on its target milestone and select fixed-time
-quality or elapsed-time runtime motion proof. Engine capture requires no OS Screen Recording grant by design;
+T2 capture is planned, not qualified. Later visual milestones requiring submitted-output or elapsed-time engine
+motion proof depend on its target milestone and select the corresponding capture mode. Engine capture requires no OS Screen Recording grant by design;
 locked-console execution must be proved. Built-in-panel cadence remains **attended setup** (unlocked active panel
 and any Instruments authorization), with automated actions/review. Native/compositor UI and physical output checks
 name their own attended reason where required. Never treat engine pixels/movie PTS as display swaps or photons.
+Mac M2.3 owns the real-window tap integration/proof and M2.4 the bounded trace-finalization investigation;
+M2.2 qualifies panel cadence with capture OFF, keeping capture-ON content/observer arms separate.
+Interim Chrome endpoint/`simctl` captures cannot prove submitted temporal output or elapsed-time engine motion;
+those stronger rows retain their T2 target dependency or an unavailable result.
 
 Label Mac stand-ins for iPhone `proxy:iphone`. No physical iPhone is available, so don't wait for one.
 
