@@ -1,6 +1,22 @@
 {
   "module": "PLATFORM-RUNTIME-IOS",
-  "design": null,
+  "design": {
+    "verdict": "ok",
+    "review": "docs/evidence/PLATFORM-RUNTIME-IOS/design-review.md",
+    "commit": "fc906ed9d783a06f093f358522fdff4a27bcb8eb",
+    "hash": "fe29a169655e23cdf8a7a8fb677a2fb62e9a95558d39fbfd4a17cb0bc1b512c9",
+    "by": "review",
+    "host": "codex",
+    "model": "gpt-6.1-sol",
+    "effort": "high",
+    "observed": {
+      "model": "gpt-6.1-sol",
+      "effort": "high"
+    },
+    "cli": "codex-cli 0.167.0-alpha.3.2",
+    "path": "visible",
+    "at": "2026-11-09T15:03:58Z"
+  },
   "milestones": {
     "M7": {
       "definitions": "e93155eca1db1f52c48f5e3f04eadcb623f33d5f8493ad473d6399bef82bc3a6",
