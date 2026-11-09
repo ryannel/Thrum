@@ -1,0 +1,62 @@
+[
+  {
+    "name": "probe-1",
+    "command": [
+      "python3",
+      "scripts/t2_writer_probe.py",
+      "tmp/t2-capture-m0-rework/probe-1",
+      "--uncached"
+    ],
+    "returncode": 0,
+    "expected": 0,
+    "wall_ns": 13060224583
+  },
+  {
+    "name": "probe-2",
+    "command": [
+      "python3",
+      "scripts/t2_writer_probe.py",
+      "tmp/t2-capture-m0-rework/probe-2",
+      "--uncached"
+    ],
+    "returncode": 0,
+    "expected": 0,
+    "wall_ns": 12761128291
+  },
+  {
+    "name": "probe-3",
+    "command": [
+      "python3",
+      "scripts/t2_writer_probe.py",
+      "tmp/t2-capture-m0-rework/probe-3",
+      "--uncached"
+    ],
+    "returncode": 0,
+    "expected": 0,
+    "wall_ns": 12805765958
+  },
+  {
+    "name": "probe-4",
+    "command": [
+      "python3",
+      "scripts/t2_writer_probe.py",
+      "tmp/t2-capture-m0-rework/probe-4",
+      "--uncached"
+    ],
+    "returncode": 0,
+    "expected": 0,
+    "wall_ns": 13137735916
+  },
+  {
+    "name": "probe-5",
+    "command": [
+      "python3",
+      "scripts/t2_writer_probe.py",
+      "tmp/t2-capture-m0-rework/probe-5",
+      "--uncached"
+    ],
+    "returncode": 0,
+    "expected": 0,
+    "wall_ns": 12861275333
+  }
+]

@@ -1,0 +1,20 @@
+{
+  "local_source_directory": "tmp/t2-capture-m0-rework/final/pan-5",
+  "local_bulk_is_backup": false,
+  "expiry": "retain through lead re-review; close out after verdict",
+  "selected_files": {
+    "runtime.json": "9416ea335ed17e97823b7fbf739f02036a789a7fbe179606ed7f1b41fba70310",
+    "stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "manifest.json": "dd8d3af991afa7d807bfdff75320c006f1fd4ec748dcbfb9fd462bb9cb734c20",
+    "console.txt": "69b09b67212976ee401951f73d9a418158402039d9a9651d88a550916d24a801",
+    "system-iostat.txt": "be515b6532e6fb4fd63341b432499625b27dbc83a393ce131852f06c5d469b61"
+  },
+  "source_archive": {
+    "file": "source-lossless.mkv",
+    "sha256": "e704318d11212446e5401c1675be2f23de5e187994beef2245773f727a301084",
+    "bytes": 226777011,
+    "decoded_frames_verified": 481,
+    "timebase": "ordinal only; use retained submit_ns records"
+  },
+  "bulk_cleanup": "verified complete archive and all RGBA hashes before deleting owned raw/PNG duplicates"
+}

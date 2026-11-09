@@ -2,7 +2,7 @@
 """Measure the T2 raw-spool feasibility workload before renderer integration.
 
 This is a disk/writer probe, not rendered-frame or runtime-motion evidence.
-Uses eight reusable CPU buffers; PNG compression starts only after capture.
+Uses 96 reusable CPU buffers; PNG compression starts only after capture.
 """
 
 import argparse
@@ -19,9 +19,12 @@ import threading
 import time
 import zlib
 
+from t2_load import LoadRecord
+
 WIDTH, HEIGHT, RATE, COUNT = 1920, 1080, 120, 480
 FRAME_BYTES = WIDTH * HEIGHT * 4
 ALLOWANCE = 16 * 1024**3
+CPU_BUFFERS = 96
 
 
 def chunk(kind, payload):
@@ -70,10 +73,10 @@ def run(output, uncached=False):
     (output / "console.txt").write_text("\n".join(
         line for line in console.splitlines()
         if "IOConsoleLocked" in line or "IOConsoleUsers" in line) + "\n")
-    pool, pending = queue.Queue(8), queue.Queue(8)
+    pool, pending = queue.Queue(CPU_BUFFERS), queue.Queue(CPU_BUFFERS)
     # Nonzero, spatially varying RGBA data; records differ in their first pixel.
     pattern = bytes(range(256)) * (FRAME_BYTES // 256)
-    for _ in range(8):
+    for _ in range(CPU_BUFFERS):
         pool.put(bytearray(pattern))
     errors, records = [], []
     spool = output / "frames.rgba"
@@ -110,6 +113,7 @@ def run(output, uncached=False):
             errors.append(repr(error))
 
     worker = threading.Thread(target=writer, daemon=True)
+    load = LoadRecord(output)
     worker.start()
     origin = time.monotonic_ns()
     misses, queue_peak, used_peak = [], 0, 0
@@ -126,16 +130,18 @@ def run(output, uncached=False):
         struct.pack_into("<I", buffer, 0, index)
         pending.put_nowait((index, buffer))
         queue_peak = max(queue_peak, pending.qsize())
-        used_peak = max(used_peak, 8 - pool.qsize())
+        used_peak = max(used_peak, CPU_BUFFERS - pool.qsize())
     interval_end = time.monotonic_ns()
     pending.put(None, timeout=10)
     worker.join(timeout=30)
+    metrics["load_helper_sha256"] = hashlib.sha256(Path(__file__).with_name("t2_load.py").read_bytes()).hexdigest()
+    metrics["system_load"] = load.finish()
     metrics.update({"duration_ns": interval_end - origin,
                     "drain_including_flush_ns": time.monotonic_ns() - interval_end,
                     "writer_alive_after_deadline": worker.is_alive(),
                     "queue_peak": queue_peak, "cpu_buffers_peak": used_peak,
                     "missing_ids": misses, "errors": errors,
-                    "cpu_pool_bytes": 8 * FRAME_BYTES,
+                    "cpu_pool_bytes": CPU_BUFFERS * FRAME_BYTES,
                     "integrated_gpu_staging_start_bytes": 3 * FRAME_BYTES,
                     "output_allowance_bytes": ALLOWANCE,
                     "actual_spool_bytes": spool.stat().st_size,
@@ -143,6 +149,11 @@ def run(output, uncached=False):
                         ["git", "rev-parse", "HEAD"], text=True).strip(),
                     "probe_script_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
                     "scope": "writer feasibility only; no GPU frames or motion proof"})
+    metrics["write_service_ns"] = sum(row["write_end_ns"] - row["write_start_ns"] for row in records)
+    metrics["service_records_per_second"] = len(records) * 1e9 / metrics["write_service_ns"]
+    metrics["service_bytes_per_second"] = len(records) * FRAME_BYTES * 1e9 / metrics["write_service_ns"]
+    metrics["required_bytes_per_second"] = RATE * FRAME_BYTES
+    metrics["buffer_seconds_at_required_rate"] = CPU_BUFFERS / RATE
     metrics["uncached"] = uncached
     (output / "writes.json").write_text(json.dumps(records, indent=2) + "\n")
     complete = (not misses and not errors and not worker.is_alive()

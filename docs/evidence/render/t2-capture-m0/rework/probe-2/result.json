@@ -1,0 +1,61 @@
+{
+  "storage_flush_ns": 13150084,
+  "system_load": {
+    "before_load_1_5_15": [
+      1.921875,
+      1.84033203125,
+      2.138671875
+    ],
+    "after_load_1_5_15": [
+      1.921875,
+      1.84033203125,
+      2.138671875
+    ],
+    "sample_duration_ns": 4092003792,
+    "disk_samples": "system-iostat.txt",
+    "disk_scope": "all disks; -I interval totals, first data row since boot; subsequent rows 1 s",
+    "background_process_snapshot": [
+      "  PID  %CPU COMM",
+      "21302  38.9 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+      "  333  34.1 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd",
+      "21333   4.5 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+      "  674   3.4 /System/Library/CoreServices/Finder.app/Contents/MacOS/Finder",
+      "89115   2.5 /Users/ryannel/Library/Developer/CoreSimulator/Devices/90298BEA-DAD1-4972-98AC-6E65ADE5FF1F/data/Containers/Bundle/Application/6C19DECF-F057-4A46-AD41-25197559945C/ThrumV1.app/ThrumV1",
+      "36549   1.2 /Applications/ChatGPT.app/Contents/MacOS/ChatGPT",
+      "83041   1.2 /Applications/NordVPN.app/Contents/MacOS/NordVPN",
+      "  358   1.0 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds",
+      "36995   0.8 /Applications/ChatGPT.app/Contents/Frameworks/Codex Framework.framework/Versions/157.0.8103.39/Helpers/Codex (Aperitif Renderer).app/Contents/MacOS/Codex (Aperitif Renderer)",
+      "  530   0.7 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds_stores",
+      " 6599   0.7 /System/Library/Frameworks/AppKit.framework/Versions/C/XPCServices/com.apple.appkit.xpc.openAndSavePanelService.xpc/Contents/MacOS/com.apple.appkit.xpc.openAndSavePanelService",
+      "99565   0.6 /Users/ryannel/Library/Application Support/Claude/claude-code/2.1.317/91184d3d9ba3/claude.app/Contents/MacOS/claude",
+      "56520   0.5 /Users/ryannel/.nvm/versions/node/v24.16.0/bin/node",
+      "36980   0.5 /Applications/ChatGPT.app/Contents/Frameworks/Codex Framework.framework/Versions/157.0.8103.39/Helpers/Codex (Aperitif).app/Contents/MacOS/Codex (Aperitif)",
+      "47121   0.4 /Applications/Claude.app/Contents/MacOS/Claude"
+    ],
+    "process_cpu_scope": "ps lifetime CPU snapshot, not interval CPU; load averages are host-wide",
+    "sampler": "iostat subprocess plus one ps snapshot, same recipe in each arm"
+  },
+  "duration_ns": 3994040708,
+  "drain_including_flush_ns": 40790833,
+  "writer_alive_after_deadline": false,
+  "queue_peak": 3,
+  "cpu_buffers_peak": 4,
+  "missing_ids": [],
+  "errors": [],
+  "cpu_pool_bytes": 796262400,
+  "integrated_gpu_staging_start_bytes": 24883200,
+  "output_allowance_bytes": 17179869184,
+  "actual_spool_bytes": 3981312000,
+  "source_revision": "2f08966949faff8058733fe74f7d0f8e63916a89",
+  "probe_script_sha256": "3f6f2d8f1283aa47af8ba5cf5692d8311a9ffd16bf2e82a9e8a2e85f5cee5fd0",
+  "scope": "writer feasibility only; no GPU frames or motion proof",
+  "write_service_ns": 3163406581,
+  "service_records_per_second": 151.73515882623752,
+  "service_bytes_per_second": 1258552101.3683445,
+  "required_bytes_per_second": 995328000,
+  "buffer_seconds_at_required_rate": 0.8,
+  "uncached": true,
+  "deferred_packaging_validation_ns": 8530554083,
+  "complete": true,
+  "retained_bytes": 4025877436
+}

@@ -1,0 +1,29 @@
+{
+  "local_source_directory": "tmp/t2-capture-m0-rework/final/input-stall",
+  "local_bulk_is_backup": false,
+  "expiry": "retain through lead re-review; close out after verdict",
+  "selected_files": {
+    "runtime.json": "7f12050c3b2e75c61f74bf06f92d33dea4713473a83cade933a17b8224dcd635",
+    "timeline.ffconcat": "42ae83ffce2bfc514b68347f2b1c837b2b2594edce63deb00b03187385abec0a",
+    "stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "manifest.json": "844b9f0366c9bdd5dba2f50731312f031f3fc63535fe8efc90e5dde4bc6bfc0e",
+    "console.txt": "69b09b67212976ee401951f73d9a418158402039d9a9651d88a550916d24a801",
+    "system-iostat.txt": "8cd057295324860f2bb1a785d24f8effb5052dedf82f811364f745624a0db47d"
+  },
+  "source_archive": {
+    "file": "source-lossless.mkv",
+    "sha256": "fd9a32d0c55b9b3a1b6c29f19a9aa1c7fce03255b4be2fd14b154a73dbc0307c",
+    "bytes": 197181904,
+    "decoded_frames_verified": 481,
+    "timebase": "ordinal only; use retained submit_ns records"
+  },
+  "bulk_cleanup": "verified complete archive and all RGBA hashes before deleting owned raw/PNG duplicates",
+  "superseded_assets": {
+    "final.png": "5df466e13be254637f72531013b29e3ae8025201e4974de443329f82516dad42",
+    "preview-1x.mp4": "ce1f9c48ef371179e46195a556acf66451fbb13de3d4b75e9dabc90189ade445",
+    "initial.png": "afd01f719bc9c2ddb83a2d57ccadddfa67280e5daec122e5b113adef15b08489",
+    "contact.png": "45cf4e7681c4ddcd70488cd6f42182e4a0fd679ff9f54fddb4ae0cdb6713e837",
+    "middle.png": "c08d3af8d5c7ee3e8f6c5bdb041668ad1a8e7390d0dc1e0cf3b09076f6439cc0"
+  },
+  "superseded_reason": "Pre-accounting binary; corrected exact-build selected images/previews are in ../../integrated/input-stall; all attempt metrics, hashes, times and verified local source archive remain."
+}

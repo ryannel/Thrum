@@ -2415,13 +2415,24 @@ impl OffscreenTarget {
             buffer: device.create_buffer(&wgpu::BufferDescriptor {
                 label: Some("synthetic pixel readback"),
                 size: self.readback_bytes(),
-                usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
+                usage: wgpu::BufferUsages::COPY_DST
+                    | wgpu::BufferUsages::MAP_READ
+                    | if device
+                        .features()
+                        .contains(wgpu::Features::MAPPABLE_PRIMARY_BUFFERS)
+                    {
+                        wgpu::BufferUsages::STORAGE
+                    } else {
+                        wgpu::BufferUsages::empty()
+                    },
                 mapped_at_creation: false,
             }),
             generation: self.generation,
             extent: self.extent(),
             row_bytes: self.row_bytes,
             pending: None,
+            copy_timing: None,
+            resolving_copy_timing: false,
         }
     }
 }

@@ -1,0 +1,61 @@
+{
+  "storage_flush_ns": 15315958,
+  "system_load": {
+    "before_load_1_5_15": [
+      1.939453125,
+      1.84521484375,
+      2.13671875
+    ],
+    "after_load_1_5_15": [
+      1.78369140625,
+      1.814453125,
+      2.1240234375
+    ],
+    "sample_duration_ns": 4069091000,
+    "disk_samples": "system-iostat.txt",
+    "disk_scope": "all disks; -I interval totals, first data row since boot; subsequent rows 1 s",
+    "background_process_snapshot": [
+      "  PID  %CPU COMM",
+      "  333  30.1 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd",
+      "21302  27.3 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+      "21374   9.4 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+      "83154   6.2 /Library/PrivilegedHelperTools/com.nordvpn.macos.helper",
+      "89115   2.4 /Users/ryannel/Library/Developer/CoreSimulator/Devices/90298BEA-DAD1-4972-98AC-6E65ADE5FF1F/data/Containers/Bundle/Application/6C19DECF-F057-4A46-AD41-25197559945C/ThrumV1.app/ThrumV1",
+      " 6599   1.5 /System/Library/Frameworks/AppKit.framework/Versions/C/XPCServices/com.apple.appkit.xpc.openAndSavePanelService.xpc/Contents/MacOS/com.apple.appkit.xpc.openAndSavePanelService",
+      "  358   1.4 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds",
+      "36549   1.4 /Applications/ChatGPT.app/Contents/MacOS/ChatGPT",
+      "  674   1.4 /System/Library/CoreServices/Finder.app/Contents/MacOS/Finder",
+      "83041   1.2 /Applications/NordVPN.app/Contents/MacOS/NordVPN",
+      "  530   1.1 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds_stores",
+      "  570   0.9 /System/Library/DriverExtensions/com.apple.DriverKit-AppleBCMWLAN.dext/com.apple.DriverKit-AppleBCMWLAN",
+      "36995   0.6 /Applications/ChatGPT.app/Contents/Frameworks/Codex Framework.framework/Versions/157.0.8103.39/Helpers/Codex (Aperitif Renderer).app/Contents/MacOS/Codex (Aperitif Renderer)",
+      "  480   0.4 /usr/libexec/airportd",
+      "47121   0.4 /Applications/Claude.app/Contents/MacOS/Claude"
+    ],
+    "process_cpu_scope": "ps lifetime CPU snapshot, not interval CPU; load averages are host-wide",
+    "sampler": "iostat subprocess plus one ps snapshot, same recipe in each arm"
+  },
+  "duration_ns": 3992238834,
+  "drain_including_flush_ns": 19667125,
+  "writer_alive_after_deadline": false,
+  "queue_peak": 13,
+  "cpu_buffers_peak": 14,
+  "missing_ids": [],
+  "errors": [],
+  "cpu_pool_bytes": 796262400,
+  "integrated_gpu_staging_start_bytes": 24883200,
+  "output_allowance_bytes": 17179869184,
+  "actual_spool_bytes": 3981312000,
+  "source_revision": "2f08966949faff8058733fe74f7d0f8e63916a89",
+  "probe_script_sha256": "3f6f2d8f1283aa47af8ba5cf5692d8311a9ffd16bf2e82a9e8a2e85f5cee5fd0",
+  "scope": "writer feasibility only; no GPU frames or motion proof",
+  "write_service_ns": 2352790619,
+  "service_records_per_second": 204.01305416799607,
+  "service_bytes_per_second": 1692165876.4910266,
+  "required_bytes_per_second": 995328000,
+  "buffer_seconds_at_required_rate": 0.8,
+  "uncached": true,
+  "deferred_packaging_validation_ns": 8593915875,
+  "complete": true,
+  "retained_bytes": 4025877436
+}

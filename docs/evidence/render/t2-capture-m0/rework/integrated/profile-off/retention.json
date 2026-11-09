@@ -1,0 +1,15 @@
+{
+  "local_source_directory": "tmp/t2-capture-m0-rework/integrated/profile-off",
+  "local_bulk_is_backup": false,
+  "expiry": "retain through lead re-review; close out after verdict",
+  "selected_files": {
+    "runtime.json": "8ebf831b1c58d9d8fef0828b534e06a87716254dc455b0f31cdd03513eb2788b",
+    "cpu-sample.txt": "e62fab555ccbdd92f9fe6193d840106f127b209803749dcac4667c2460720df8",
+    "stderr.txt": "1c39ada402318bd6d616c792e592e9c32b98c696388cfe1bf43d167844b38024",
+    "manifest.json": "61cc08b8b23c2dd0e1fdbda07d8a2f38dc77744b231ca58019896064cdc11b7d",
+    "console.txt": "69b09b67212976ee401951f73d9a418158402039d9a9651d88a550916d24a801",
+    "system-iostat.txt": "2de867bb61566cdb606fa0acfa40a4252cf176c440c223e2042295ee39035f28"
+  },
+  "source_archive": null,
+  "bulk_cleanup": "verified complete archive and all RGBA hashes before deleting owned raw/PNG duplicates"
+}

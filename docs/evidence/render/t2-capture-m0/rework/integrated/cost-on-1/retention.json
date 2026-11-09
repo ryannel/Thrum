@@ -1,0 +1,20 @@
+{
+  "local_source_directory": "tmp/t2-capture-m0-rework/integrated/cost-on-1",
+  "local_bulk_is_backup": false,
+  "expiry": "retain through lead re-review; close out after verdict",
+  "selected_files": {
+    "runtime.json": "a7b27d78fdf8129a0ca2cfa1680c54005341e3fab797c3c43849c2b73456e454",
+    "stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "manifest.json": "d3cce461bc44d0714dec85887d61a4a9585c0e57e4ab4f1160b47575ac4077ab",
+    "console.txt": "69b09b67212976ee401951f73d9a418158402039d9a9651d88a550916d24a801",
+    "system-iostat.txt": "3444e150ea97a3017b0955a38793075df2534458a05ad6e1580486e963280aab"
+  },
+  "source_archive": {
+    "file": "source-lossless.mkv",
+    "sha256": "a809d0a5bfcd8fc1290c2d06f6f4a1e69d1e67dba6fc6f5db4de896553340a1c",
+    "bytes": 329229947,
+    "decoded_frames_verified": 481,
+    "timebase": "ordinal only; use retained submit_ns records"
+  },
+  "bulk_cleanup": "verified complete archive and all RGBA hashes before deleting owned raw/PNG duplicates"
+}

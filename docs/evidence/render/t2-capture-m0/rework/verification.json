@@ -1,0 +1,14 @@
+{
+  "target": "Apple M3 Max / Metal",
+  "binary_sha256": "0e77c57d5fe2b15b7e803afe15c847a81e7b2492b0baa3f328b814570dccbe97",
+  "build_source_digest": "05009ccdf8601a219bc7bf514198dfb1a96ffce5836d3d7821df44c131d7be8f",
+  "writer_probe_complete_runs": 5,
+  "integrated_pan_complete_runs": 5,
+  "all_sessions": 17,
+  "source_recipe_binary_and_script_pins_verified": true,
+  "all_positive_locked_permission_unavailable": true,
+  "all_final_image_gpu_copy_brackets_positive": true,
+  "mode_endpoint_parity": true,
+  "focused_tests": "six real-Metal submitted_capture tests pass with default features and with creation-counters; the latter checks setup pipeline authority/phase",
+  "integration_gate": "fresh ./dev check under integrate + gpu locks before non-force HEAD:main push; log retained in tmp/t2-capture-m0-rework/check-integrated.log"
+}

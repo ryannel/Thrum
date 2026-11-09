@@ -48,6 +48,7 @@ struct Enabled {
     capacity: u32,
     names: PassNames,
     results: Vec<PassTiming>,
+    preceding_gaps: Vec<Option<f64>>,
     completion: Completion,
     phase: Phase,
 }
@@ -156,6 +157,23 @@ pub struct GpuTimings {
     enabled: Option<Enabled>,
 }
 impl GpuTimings {
+    pub(crate) fn ready_to_resolve(&self) -> bool {
+        self.enabled.as_ref().is_some_and(|e| {
+            matches!(e.phase, Phase::Rendering) && e.completion.ready() == Ok(true)
+        })
+    }
+
+    /// Adjacent valid pass boundaries from the last collected batch. No extra
+    /// GPU markers/resources/submission: a copy between the passes is included.
+    pub(crate) fn gap_between(&self, before: &str, after: &str) -> Option<f64> {
+        let enabled = self.enabled.as_ref()?;
+        let index =
+            enabled.results.windows(2).position(|pair| {
+                pair[0].name.as_ref() == before && pair[1].name.as_ref() == after
+            })? + 1;
+        enabled.preceding_gaps[index]
+    }
+
     /// Allocate bounded query/resolve/readback storage on the executor's device.
     /// Feature absent from the *enabled device* is a successful disabled path.
     ///
@@ -213,6 +231,7 @@ impl GpuTimings {
                 capacity: max_passes,
                 names: PassNames::with_capacity(max_passes as usize),
                 results: Vec::with_capacity(max_passes as usize),
+                preceding_gaps: Vec::with_capacity(max_passes as usize),
                 completion: Completion::new(),
                 phase: Phase::Recording,
             }),
@@ -450,6 +469,8 @@ impl GpuTimings {
             return Err(TimingError::MapFailed);
         };
         enabled.results.clear();
+        enabled.preceding_gaps.clear();
+        let mut previous_end = None;
         let mut invalid = None;
         for (index, name) in enabled.names.iter().enumerate() {
             let base = index * 16;
@@ -461,12 +482,25 @@ impl GpuTimings {
                     .expect("query scalar"),
             );
             if start != 0 && start != u64::MAX && end != u64::MAX && end >= start {
+                enabled.preceding_gaps.push(
+                    previous_end
+                        .map(|previous| {
+                            if start >= previous {
+                                (start - previous) as f64
+                            } else {
+                                -((previous - start) as f64)
+                            }
+                        })
+                        .map(|ticks| ticks * enabled.period),
+                );
+                previous_end = Some(end);
                 let delta = end - start;
                 enabled.results.push(PassTiming {
                     name: Arc::clone(name),
                     nanoseconds: delta as f64 * enabled.period,
                 });
             } else {
+                previous_end = None;
                 invalid = Some((start, end));
             }
         }
@@ -475,6 +509,7 @@ impl GpuTimings {
         enabled.names.clear();
         if let Some((start, end)) = invalid {
             enabled.results.clear();
+            enabled.preceding_gaps.clear();
             return Err(TimingError::InvalidTimestamp { start, end });
         }
         Ok(Some(&enabled.results))

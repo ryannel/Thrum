@@ -346,6 +346,7 @@ pub struct FrameHost<W: FrameWorld, V: SceneSource<W::Page>> {
     capture_owner: Arc<()>,
     submitted_capture: Option<submitted_capture::Tap>,
     presentation_lead: Duration,
+    presenter_generation: u64,
     generation: u64,
     source: V,
     history_reset_pending: bool,
@@ -571,6 +572,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             capture_owner: Arc::new(()),
             submitted_capture: None,
             presentation_lead: Duration::ZERO,
+            presenter_generation: u64::from(presenter.is_some()),
             generation: capabilities.generation(),
             source,
             history_reset_pending: false,
@@ -795,7 +797,14 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             .as_mut()
             .ok_or_else(|| "host has no surface presenter".to_owned())?
             .resize(&self.device, extent)
-            .map_err(|error| FrameError::Gpu(format!("surface resize: {error:?}")))
+            .map_err(|error| FrameError::Gpu(format!("surface resize: {error:?}")))?;
+        self.presenter_generation += 1;
+        Ok(())
+    }
+
+    /// Engine-owned identity of the last successful queue submission.
+    pub fn last_submission(&self) -> Option<u64> {
+        self.next_submission_order.checked_sub(1)
     }
 
     /// Number of submitted render packets awaiting GPU completion or readback.
@@ -1275,6 +1284,11 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 .map_err(|timing| format!("failed timing discard after {error:?}: {timing:?}"))?;
             return Err(FrameError::Gpu(format!("finish timestamps: {error:?}")));
         }
+        if let Some(index) = capture_slot
+            && let Some(tap) = self.submitted_capture.as_mut()
+        {
+            tap.finish_timing(index, &encoder)?;
+        }
         slot.render_done.store(false, Ordering::Release);
         self.queue.submit([encoder.finish()]);
         if let Some(contribution) = self.contribution.as_mut() {
@@ -1300,7 +1314,18 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         if let Some(index) = capture_slot
             && let Some(tap) = self.submitted_capture.as_mut()
         {
-            tap.submitted(index, &sample, source, view_history_epoch);
+            tap.submitted(
+                index,
+                &submitted_capture::Stamp {
+                    sample,
+                    source,
+                    history_epoch: view_history_epoch,
+                    submitted_at: Instant::now(),
+                    device_generation: self.generation,
+                    presenter_generation: self.presenter_generation,
+                    presentation_lead: self.presentation_lead,
+                },
+            );
         }
         self.next_submission_order = self.next_submission_order.wrapping_add(1);
         slot.timing_layout = SceneTimingLayout::from((&self.prepared, &slot.target));

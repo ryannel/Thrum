@@ -20,7 +20,8 @@ impl DeviceCapabilities {
     /// device. The enabled result is captured in this record afterward.
     #[must_use]
     pub fn requested_timing_features(adapter: &wgpu::Adapter) -> wgpu::Features {
-        adapter.features() & wgpu::Features::TIMESTAMP_QUERY
+        adapter.features()
+            & (wgpu::Features::TIMESTAMP_QUERY | wgpu::Features::MAPPABLE_PRIMARY_BUFFERS)
     }
     /// Compressed-texture families the adapter offers, so cooked content can use its native
     /// profile (ASTC on Apple GPUs, BC on desktop) instead of the uncompressed portable one.

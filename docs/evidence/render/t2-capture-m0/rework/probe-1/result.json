@@ -1,0 +1,61 @@
+{
+  "storage_flush_ns": 13791875,
+  "system_load": {
+    "before_load_1_5_15": [
+      2.09814453125,
+      1.86767578125,
+      2.1533203125
+    ],
+    "after_load_1_5_15": [
+      2.08984375,
+      1.86962890625,
+      2.15234375
+    ],
+    "sample_duration_ns": 4073614042,
+    "disk_samples": "system-iostat.txt",
+    "disk_scope": "all disks; -I interval totals, first data row since boot; subsequent rows 1 s",
+    "background_process_snapshot": [
+      "  PID  %CPU COMM",
+      "21299  12.3 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+      "21302   5.7 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+      "83154   4.7 /Library/PrivilegedHelperTools/com.nordvpn.macos.helper",
+      "45453   3.5 /Applications/Gemini.app/Contents/Helpers/agy",
+      "89115   3.3 /Users/ryannel/Library/Developer/CoreSimulator/Devices/90298BEA-DAD1-4972-98AC-6E65ADE5FF1F/data/Containers/Bundle/Application/6C19DECF-F057-4A46-AD41-25197559945C/ThrumV1.app/ThrumV1",
+      " 4094   1.5 /Users/ryannel/Library/Application Support/Claude/claude-code/2.1.317/91184d3d9ba3/claude.app/Contents/MacOS/claude",
+      "19206   1.4 /Applications/ChatGPT.app/Contents/Resources/codex-cli/bin/../CodexCLI.app/Contents/MacOS/codex",
+      "92310   0.9 /usr/libexec/trustd",
+      "  570   0.9 /System/Library/DriverExtensions/com.apple.DriverKit-AppleBCMWLAN.dext/com.apple.DriverKit-AppleBCMWLAN",
+      "83041   0.7 /Applications/NordVPN.app/Contents/MacOS/NordVPN",
+      "  333   0.6 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd",
+      "47121   0.6 /Applications/Claude.app/Contents/MacOS/Claude",
+      "  510   0.6 /usr/sbin/mDNSResponder",
+      "45904   0.5 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper",
+      "  502   0.4 /usr/libexec/syspolicyd"
+    ],
+    "process_cpu_scope": "ps lifetime CPU snapshot, not interval CPU; load averages are host-wide",
+    "sampler": "iostat subprocess plus one ps snapshot, same recipe in each arm"
+  },
+  "duration_ns": 3994319958,
+  "drain_including_flush_ns": 22264417,
+  "writer_alive_after_deadline": false,
+  "queue_peak": 14,
+  "cpu_buffers_peak": 15,
+  "missing_ids": [],
+  "errors": [],
+  "cpu_pool_bytes": 796262400,
+  "integrated_gpu_staging_start_bytes": 24883200,
+  "output_allowance_bytes": 17179869184,
+  "actual_spool_bytes": 3981312000,
+  "source_revision": "2f08966949faff8058733fe74f7d0f8e63916a89",
+  "probe_script_sha256": "3f6f2d8f1283aa47af8ba5cf5692d8311a9ffd16bf2e82a9e8a2e85f5cee5fd0",
+  "scope": "writer feasibility only; no GPU frames or motion proof",
+  "write_service_ns": 3703307349,
+  "service_records_per_second": 129.61387072817865,
+  "service_bytes_per_second": 1075069289.367805,
+  "required_bytes_per_second": 995328000,
+  "buffer_seconds_at_required_rate": 0.8,
+  "uncached": true,
+  "deferred_packaging_validation_ns": 8827619958,
+  "complete": true,
+  "retained_bytes": 4025877436
+}

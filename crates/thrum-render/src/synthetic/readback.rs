@@ -3,6 +3,7 @@
 use std::sync::mpsc::{self, Receiver, TryRecvError};
 
 use super::{OffscreenTarget, RenderError};
+mod copy_timing;
 
 /// One bounded asynchronous sRGB-encoded SDR RGBA8 readback slot, reusable
 /// after collection. Each pixel retains four bytes including opaque alpha.
@@ -11,6 +12,8 @@ pub struct PixelReadback {
     pub(super) generation: u64,
     pub(super) extent: [u32; 2],
     pub(super) row_bytes: u32,
+    pub(super) copy_timing: Option<copy_timing::CopyTiming>,
+    pub(super) resolving_copy_timing: bool,
     pub(super) pending: Option<Receiver<Result<(), wgpu::BufferAsyncError>>>,
 }
 impl PixelReadback {
@@ -18,6 +21,9 @@ impl PixelReadback {
         // The caller has dropped the unsubmitted encoder. Its deferred map
         // action never ran, so there is no GPU mapping to unmap or wait for.
         self.pending = None;
+        if let Some(timer) = &mut self.copy_timing {
+            let _ = timer.timings.discard_unsubmitted(self.generation);
+        }
     }
     pub(super) fn check_target(&self, target: &OffscreenTarget) -> Result<(), RenderError> {
         if self.pending.is_some() {
@@ -34,6 +40,9 @@ impl PixelReadback {
         encoder: &mut wgpu::CommandEncoder,
         target: &OffscreenTarget,
     ) -> Result<(), RenderError> {
+        if let Some(timer) = &mut self.copy_timing {
+            timer.marker(self.generation, encoder, false)?;
+        }
         encoder.copy_texture_to_buffer(
             wgpu::TexelCopyTextureInfo {
                 texture: target
@@ -58,12 +67,60 @@ impl PixelReadback {
                 depth_or_array_layers: 1,
             },
         );
+        if let Some(timer) = &mut self.copy_timing {
+            timer.marker(self.generation, encoder, true)?;
+        }
         let (send, receive) = mpsc::channel();
         encoder.map_buffer_on_submit(&self.buffer, wgpu::MapMode::Read, .., move |result| {
             let _ = send.send(result);
         });
         self.pending = Some(receive);
         Ok(())
+    }
+    pub(crate) fn enable_copy_timing(
+        &mut self,
+        capabilities: &crate::capabilities::DeviceCapabilities,
+        queue: &wgpu::Queue,
+    ) -> Result<(), RenderError> {
+        self.copy_timing = copy_timing::CopyTiming::new(capabilities, queue, &self.buffer)?;
+        Ok(())
+    }
+    pub(crate) fn finish_copy_timing(
+        &mut self,
+        encoder: &wgpu::CommandEncoder,
+    ) -> Result<(), RenderError> {
+        if let Some(timer) = &mut self.copy_timing {
+            timer.timings.finish_render(self.generation, encoder)?;
+        }
+        self.resolving_copy_timing = false;
+        Ok(())
+    }
+    pub(crate) fn copy_timing_ready_to_resolve(&self) -> bool {
+        !self.resolving_copy_timing
+            && self
+                .copy_timing
+                .as_ref()
+                .is_some_and(|timer| timer.timings.ready_to_resolve())
+    }
+    pub(crate) fn resolve_copy_timing(
+        &mut self,
+        encoder: &mut wgpu::CommandEncoder,
+    ) -> Result<(), RenderError> {
+        if self.copy_timing_ready_to_resolve() {
+            self.resolving_copy_timing = self
+                .copy_timing
+                .as_mut()
+                .expect("ready timer")
+                .timings
+                .resolve_if_ready(self.generation, encoder)?;
+        }
+        Ok(())
+    }
+    pub(crate) fn copy_duration(&mut self) -> Result<std::task::Poll<Option<f64>>, RenderError> {
+        let Some(timer) = &mut self.copy_timing else {
+            return Ok(std::task::Poll::Ready(None));
+        };
+        Ok(timer.collect(self.generation)?.map(Some))
     }
     /// Nonblocking collection, removing row padding. The caller polls the device.
     /// # Errors

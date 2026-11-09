@@ -1,0 +1,400 @@
+[
+  {
+    "name": "probe-1",
+    "command": [
+      "python3",
+      "scripts/t2_writer_probe.py",
+      "tmp/t2-capture-m0-rework/final/probe-1",
+      "--uncached"
+    ],
+    "returncode": 0,
+    "expected": 0,
+    "wall_ns": 13478044500
+  },
+  {
+    "name": "probe-2",
+    "command": [
+      "python3",
+      "scripts/t2_writer_probe.py",
+      "tmp/t2-capture-m0-rework/final/probe-2",
+      "--uncached"
+    ],
+    "returncode": 0,
+    "expected": 0,
+    "wall_ns": 12814671584
+  },
+  {
+    "name": "probe-3",
+    "command": [
+      "python3",
+      "scripts/t2_writer_probe.py",
+      "tmp/t2-capture-m0-rework/final/probe-3",
+      "--uncached"
+    ],
+    "returncode": 0,
+    "expected": 0,
+    "wall_ns": 12829880375
+  },
+  {
+    "name": "probe-4",
+    "command": [
+      "python3",
+      "scripts/t2_writer_probe.py",
+      "tmp/t2-capture-m0-rework/final/probe-4",
+      "--uncached"
+    ],
+    "returncode": 0,
+    "expected": 0,
+    "wall_ns": 13690045875
+  },
+  {
+    "name": "probe-5",
+    "command": [
+      "python3",
+      "scripts/t2_writer_probe.py",
+      "tmp/t2-capture-m0-rework/final/probe-5",
+      "--uncached"
+    ],
+    "returncode": 0,
+    "expected": 0,
+    "wall_ns": 12897189834
+  },
+  {
+    "name": "pan-1",
+    "command": [
+      "python3",
+      "scripts/capture_v1_runtime.py",
+      "--binary",
+      "target/release/v1-game",
+      "--output",
+      "tmp/t2-capture-m0-rework/final/pan-1",
+      "--case",
+      "pan",
+      "--mode",
+      "realtime",
+      "--store",
+      "tmp/t2-capture-m0/valley"
+    ],
+    "returncode": 0,
+    "expected": 0,
+    "wall_ns": 72966134125
+  },
+  {
+    "name": "pan-2",
+    "command": [
+      "python3",
+      "scripts/capture_v1_runtime.py",
+      "--binary",
+      "target/release/v1-game",
+      "--output",
+      "tmp/t2-capture-m0-rework/final/pan-2",
+      "--case",
+      "pan",
+      "--mode",
+      "realtime",
+      "--store",
+      "tmp/t2-capture-m0/valley"
+    ],
+    "returncode": 0,
+    "expected": 0,
+    "wall_ns": 71649088916
+  },
+  {
+    "name": "pan-3",
+    "command": [
+      "python3",
+      "scripts/capture_v1_runtime.py",
+      "--binary",
+      "target/release/v1-game",
+      "--output",
+      "tmp/t2-capture-m0-rework/final/pan-3",
+      "--case",
+      "pan",
+      "--mode",
+      "realtime",
+      "--store",
+      "tmp/t2-capture-m0/valley"
+    ],
+    "returncode": 0,
+    "expected": 0,
+    "wall_ns": 72805734666
+  },
+  {
+    "name": "pan-4",
+    "command": [
+      "python3",
+      "scripts/capture_v1_runtime.py",
+      "--binary",
+      "target/release/v1-game",
+      "--output",
+      "tmp/t2-capture-m0-rework/final/pan-4",
+      "--case",
+      "pan",
+      "--mode",
+      "realtime",
+      "--store",
+      "tmp/t2-capture-m0/valley"
+    ],
+    "returncode": 0,
+    "expected": 0,
+    "wall_ns": 72190338666
+  },
+  {
+    "name": "pan-5",
+    "command": [
+      "python3",
+      "scripts/capture_v1_runtime.py",
+      "--binary",
+      "target/release/v1-game",
+      "--output",
+      "tmp/t2-capture-m0-rework/final/pan-5",
+      "--case",
+      "pan",
+      "--mode",
+      "realtime",
+      "--store",
+      "tmp/t2-capture-m0/valley"
+    ],
+    "returncode": 0,
+    "expected": 0,
+    "wall_ns": 73228192125
+  },
+  {
+    "name": "cost-off-1",
+    "command": [
+      "python3",
+      "scripts/capture_v1_runtime.py",
+      "--binary",
+      "target/release/v1-game",
+      "--output",
+      "tmp/t2-capture-m0-rework/final/cost-off-1",
+      "--case",
+      "off",
+      "--mode",
+      "realtime",
+      "--store",
+      "tmp/t2-capture-m0/valley"
+    ],
+    "returncode": 0,
+    "expected": 0,
+    "wall_ns": 7632433333
+  },
+  {
+    "name": "cost-on-1",
+    "command": [
+      "python3",
+      "scripts/capture_v1_runtime.py",
+      "--binary",
+      "target/release/v1-game",
+      "--output",
+      "tmp/t2-capture-m0-rework/final/cost-on-1",
+      "--case",
+      "pan",
+      "--mode",
+      "realtime",
+      "--store",
+      "tmp/t2-capture-m0/valley"
+    ],
+    "returncode": 0,
+    "expected": 0,
+    "wall_ns": 71845314000
+  },
+  {
+    "name": "cost-off-2",
+    "command": [
+      "python3",
+      "scripts/capture_v1_runtime.py",
+      "--binary",
+      "target/release/v1-game",
+      "--output",
+      "tmp/t2-capture-m0-rework/final/cost-off-2",
+      "--case",
+      "off",
+      "--mode",
+      "realtime",
+      "--store",
+      "tmp/t2-capture-m0/valley"
+    ],
+    "returncode": 0,
+    "expected": 0,
+    "wall_ns": 7494681000
+  },
+  {
+    "name": "cost-on-2",
+    "command": [
+      "python3",
+      "scripts/capture_v1_runtime.py",
+      "--binary",
+      "target/release/v1-game",
+      "--output",
+      "tmp/t2-capture-m0-rework/final/cost-on-2",
+      "--case",
+      "pan",
+      "--mode",
+      "realtime",
+      "--store",
+      "tmp/t2-capture-m0/valley"
+    ],
+    "returncode": 0,
+    "expected": 0,
+    "wall_ns": 72297854541
+  },
+  {
+    "name": "profile-off",
+    "command": [
+      "python3",
+      "scripts/capture_v1_runtime.py",
+      "--binary",
+      "target/release/v1-game",
+      "--output",
+      "tmp/t2-capture-m0-rework/final/profile-off",
+      "--case",
+      "off",
+      "--mode",
+      "realtime",
+      "--store",
+      "tmp/t2-capture-m0/valley",
+      "--profile"
+    ],
+    "returncode": 0,
+    "expected": 0,
+    "wall_ns": 7775823916
+  },
+  {
+    "name": "profile-on",
+    "command": [
+      "python3",
+      "scripts/capture_v1_runtime.py",
+      "--binary",
+      "target/release/v1-game",
+      "--output",
+      "tmp/t2-capture-m0-rework/final/profile-on",
+      "--case",
+      "pan",
+      "--mode",
+      "realtime",
+      "--store",
+      "tmp/t2-capture-m0/valley",
+      "--profile"
+    ],
+    "returncode": 0,
+    "expected": 0,
+    "wall_ns": 73170739625
+  },
+  {
+    "name": "running",
+    "command": [
+      "python3",
+      "scripts/capture_v1_runtime.py",
+      "--binary",
+      "target/release/v1-game",
+      "--output",
+      "tmp/t2-capture-m0-rework/final/running",
+      "--case",
+      "running",
+      "--mode",
+      "realtime"
+    ],
+    "returncode": 0,
+    "expected": 0,
+    "wall_ns": 58194537958
+  },
+  {
+    "name": "fixed",
+    "command": [
+      "python3",
+      "scripts/capture_v1_runtime.py",
+      "--binary",
+      "target/release/v1-game",
+      "--output",
+      "tmp/t2-capture-m0-rework/final/fixed",
+      "--case",
+      "pan",
+      "--mode",
+      "fixed",
+      "--store",
+      "tmp/t2-capture-m0/valley"
+    ],
+    "returncode": 0,
+    "expected": 0,
+    "wall_ns": 72984529833
+  },
+  {
+    "name": "still",
+    "command": [
+      "python3",
+      "scripts/capture_v1_runtime.py",
+      "--binary",
+      "target/release/v1-game",
+      "--output",
+      "tmp/t2-capture-m0-rework/final/still",
+      "--case",
+      "pan",
+      "--mode",
+      "still",
+      "--store",
+      "tmp/t2-capture-m0/valley"
+    ],
+    "returncode": 0,
+    "expected": 0,
+    "wall_ns": 4666753209
+  },
+  {
+    "name": "render-stall",
+    "command": [
+      "python3",
+      "scripts/capture_v1_runtime.py",
+      "--binary",
+      "target/release/v1-game",
+      "--output",
+      "tmp/t2-capture-m0-rework/final/render-stall",
+      "--case",
+      "render-stall",
+      "--mode",
+      "realtime",
+      "--store",
+      "tmp/t2-capture-m0/valley"
+    ],
+    "returncode": 0,
+    "expected": 0,
+    "wall_ns": 66365964125
+  },
+  {
+    "name": "input-stall",
+    "command": [
+      "python3",
+      "scripts/capture_v1_runtime.py",
+      "--binary",
+      "target/release/v1-game",
+      "--output",
+      "tmp/t2-capture-m0-rework/final/input-stall",
+      "--case",
+      "input-stall",
+      "--mode",
+      "realtime",
+      "--store",
+      "tmp/t2-capture-m0/valley"
+    ],
+    "returncode": 0,
+    "expected": 0,
+    "wall_ns": 70525400375
+  },
+  {
+    "name": "writer-slow",
+    "command": [
+      "python3",
+      "scripts/capture_v1_runtime.py",
+      "--binary",
+      "target/release/v1-game",
+      "--output",
+      "tmp/t2-capture-m0-rework/final/writer-slow",
+      "--case",
+      "writer-slow",
+      "--mode",
+      "realtime"
+    ],
+    "returncode": 1,
+    "expected": 1,
+    "wall_ns": 17688894167
+  }
+]

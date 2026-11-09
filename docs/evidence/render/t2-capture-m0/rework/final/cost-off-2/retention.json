@@ -1,0 +1,14 @@
+{
+  "local_source_directory": "tmp/t2-capture-m0-rework/final/cost-off-2",
+  "local_bulk_is_backup": false,
+  "expiry": "retain through lead re-review; close out after verdict",
+  "selected_files": {
+    "runtime.json": "6efa611a349fb84530dd549f87fc639a96051cbd4a9bbcd383542c81558f4cb0",
+    "stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "manifest.json": "9d3b754530f70554c2c4ab228b6c4488c4fab5795d1091a8a0fcf7d1454144f1",
+    "console.txt": "69b09b67212976ee401951f73d9a418158402039d9a9651d88a550916d24a801",
+    "system-iostat.txt": "1333e9099ac8822991b1b319803bf4cff9eb68d395ac1b79a23b607adc5778fb"
+  },
+  "source_archive": null,
+  "bulk_cleanup": "verified complete archive and all RGBA hashes before deleting owned raw/PNG duplicates"
+}

@@ -1,0 +1,62 @@
+{
+  "storage_flush_ns": 14274916,
+  "load_helper_sha256": "6466463feeaaab13f31ea24f43eb407290c03014505095c538add1d4891111a9",
+  "system_load": {
+    "before_load_1_5_15": [
+      1.666015625,
+      1.828125,
+      2.01904296875
+    ],
+    "after_load_1_5_15": [
+      1.6923828125,
+      1.83056640625,
+      2.0185546875
+    ],
+    "sample_duration_ns": 4074517750,
+    "disk_samples": "system-iostat.txt",
+    "disk_scope": "default devices including spool disk0; first row since boot; subsequent rows 1 s averages",
+    "background_process_snapshot": [
+      "  PID  %CPU COMM",
+      "23439  75.7 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+      "23444  24.6 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+      "23443   8.1 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+      "23440   7.9 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+      "83154   4.8 /Library/PrivilegedHelperTools/com.nordvpn.macos.helper",
+      "89115   3.3 /Users/ryannel/Library/Developer/CoreSimulator/Devices/90298BEA-DAD1-4972-98AC-6E65ADE5FF1F/data/Containers/Bundle/Application/6C19DECF-F057-4A46-AD41-25197559945C/ThrumV1.app/ThrumV1",
+      "34867   2.3 /Users/ryannel/Library/Application Support/Claude/claude-code/2.1.317/91184d3d9ba3/claude.app/Contents/MacOS/claude",
+      "83041   2.1 /Applications/NordVPN.app/Contents/MacOS/NordVPN",
+      "19206   1.4 /Applications/ChatGPT.app/Contents/Resources/codex-cli/bin/../CodexCLI.app/Contents/MacOS/codex",
+      " 2009   1.2 /Users/ryannel/Library/Application Support/Claude/claude-code/2.1.317/91184d3d9ba3/claude.app/Contents/MacOS/claude",
+      "92310   0.9 /usr/libexec/trustd",
+      "  333   0.8 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd",
+      "  570   0.8 /System/Library/DriverExtensions/com.apple.DriverKit-AppleBCMWLAN.dext/com.apple.DriverKit-AppleBCMWLAN",
+      "45838   0.6 /Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+      "47121   0.5 /Applications/Claude.app/Contents/MacOS/Claude"
+    ],
+    "process_cpu_scope": "ps lifetime CPU snapshot, not interval CPU; load averages are host-wide",
+    "sampler": "iostat -d -C -U -w 1 subprocess plus one ps snapshot, same recipe in each arm"
+  },
+  "duration_ns": 3992049167,
+  "drain_including_flush_ns": 20657750,
+  "writer_alive_after_deadline": false,
+  "queue_peak": 10,
+  "cpu_buffers_peak": 11,
+  "missing_ids": [],
+  "errors": [],
+  "cpu_pool_bytes": 796262400,
+  "integrated_gpu_staging_start_bytes": 24883200,
+  "output_allowance_bytes": 17179869184,
+  "actual_spool_bytes": 3981312000,
+  "source_revision": "2f08966949faff8058733fe74f7d0f8e63916a89",
+  "probe_script_sha256": "0d620b16d2c637f4b012fd08030a9a7658bdb1368d43423acdb91c8cd0c4bcb6",
+  "scope": "writer feasibility only; no GPU frames or motion proof",
+  "write_service_ns": 3042696790,
+  "service_records_per_second": 157.75479225453813,
+  "service_bytes_per_second": 1308481348.876041,
+  "required_bytes_per_second": 995328000,
+  "buffer_seconds_at_required_rate": 0.8,
+  "uncached": true,
+  "deferred_packaging_validation_ns": 9255153625,
+  "complete": true,
+  "retained_bytes": 4025877471
+}

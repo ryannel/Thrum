@@ -1,0 +1,62 @@
+{
+  "storage_flush_ns": 16838250,
+  "load_helper_sha256": "6466463feeaaab13f31ea24f43eb407290c03014505095c538add1d4891111a9",
+  "system_load": {
+    "before_load_1_5_15": [
+      1.806640625,
+      1.8515625,
+      2.0234375
+    ],
+    "after_load_1_5_15": [
+      1.82177734375,
+      1.85400390625,
+      2.02294921875
+    ],
+    "sample_duration_ns": 4081686083,
+    "disk_samples": "system-iostat.txt",
+    "disk_scope": "default devices including spool disk0; first row since boot; subsequent rows 1 s averages",
+    "background_process_snapshot": [
+      "  PID  %CPU COMM",
+      "23443  36.9 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+      "  333  36.5 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd",
+      "23481   8.3 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+      "89115   3.6 /Users/ryannel/Library/Developer/CoreSimulator/Devices/90298BEA-DAD1-4972-98AC-6E65ADE5FF1F/data/Containers/Bundle/Application/6C19DECF-F057-4A46-AD41-25197559945C/ThrumV1.app/ThrumV1",
+      "  674   3.4 /System/Library/CoreServices/Finder.app/Contents/MacOS/Finder",
+      "83154   1.9 /Library/PrivilegedHelperTools/com.nordvpn.macos.helper",
+      "  358   1.9 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds",
+      "  530   1.7 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds_stores",
+      " 6599   1.6 /System/Library/Frameworks/AppKit.framework/Versions/C/XPCServices/com.apple.appkit.xpc.openAndSavePanelService.xpc/Contents/MacOS/com.apple.appkit.xpc.openAndSavePanelService",
+      "83041   0.8 /Applications/NordVPN.app/Contents/MacOS/NordVPN",
+      "36549   0.7 /Applications/ChatGPT.app/Contents/MacOS/ChatGPT",
+      "45866   0.6 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/156.0.8078.80/Helpers/Google Chrome Helper (Aperitif Renderer).app/Contents/MacOS/Google Chrome Helper (Aperitif Renderer)",
+      "56520   0.5 /Users/ryannel/.nvm/versions/node/v24.16.0/bin/node",
+      "22775   0.4 /private/var/run/com.apple.security.cryptexd/mnt/com.apple.iPhoneOS.SimulatorRuntime-v24.2.8117.0.YDOXcI/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.2.simruntime/Contents/Resources/RuntimeRoot/usr/libexec/backboardd",
+      "47121   0.4 /Applications/Claude.app/Contents/MacOS/Claude"
+    ],
+    "process_cpu_scope": "ps lifetime CPU snapshot, not interval CPU; load averages are host-wide",
+    "sampler": "iostat -d -C -U -w 1 subprocess plus one ps snapshot, same recipe in each arm"
+  },
+  "duration_ns": 3995154458,
+  "drain_including_flush_ns": 21018917,
+  "writer_alive_after_deadline": false,
+  "queue_peak": 4,
+  "cpu_buffers_peak": 5,
+  "missing_ids": [],
+  "errors": [],
+  "cpu_pool_bytes": 796262400,
+  "integrated_gpu_staging_start_bytes": 24883200,
+  "output_allowance_bytes": 17179869184,
+  "actual_spool_bytes": 3981312000,
+  "source_revision": "2f08966949faff8058733fe74f7d0f8e63916a89",
+  "probe_script_sha256": "0d620b16d2c637f4b012fd08030a9a7658bdb1368d43423acdb91c8cd0c4bcb6",
+  "scope": "writer feasibility only; no GPU frames or motion proof",
+  "write_service_ns": 1802656835,
+  "service_records_per_second": 266.2736415941307,
+  "service_bytes_per_second": 2208580092.8383574,
+  "required_bytes_per_second": 995328000,
+  "buffer_seconds_at_required_rate": 0.8,
+  "uncached": true,
+  "deferred_packaging_validation_ns": 8586441709,
+  "complete": true,
+  "retained_bytes": 4025877468
+}

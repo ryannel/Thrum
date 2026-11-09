@@ -1,6 +1,9 @@
 # T2-CAPTURE M0 evidence — 9 November 2026
 
-Builder verification complete; M0 is claimed for independent lead review. No reviewer was launched.
+Historical first claim, independently rejected in [M0 review](../../T2-CAPTURE/M0-review.md).
+The measurements below describe that original build; its eight/32-buffer throughput and unmeasured-copy
+cost claim are superseded by the [M0 rework](rework/README.md). Original artifacts remain as history.
+The lead owns re-review; no reviewer was launched by the builder.
 Commands and limits: [capture runbook](../../../CAPTURE.md); [storage record](STORAGE.md).
 
 Inspection checklist, fixed before final visual review: inspect native initial/final frames, full 1× host-time
@@ -12,7 +15,7 @@ held input response last for their logged delays and recover. Neither a target P
 is an acceptance criterion here. Fixed-time output cannot prove elapsed runtime motion.
 
 The writer feasibility probe retained [measurements](writer-result.json), [write timings](writer-writes.json)
-and [decoded frame hashes](writer-hashes.json). The exact retained script hash matches `scripts/t2_writer_probe.py`.
+and [decoded frame hashes](writer-hashes.json). The retained script hash identifies the first-claim version of `scripts/t2_writer_probe.py`, before rework.
 The first cached-write probe missed 79/480 records. Darwin uncached sequential writes with eight CPU buffers
 retained 480/480 full 1920×1080 records at 120/s: queue peak 2, CPU lease peak 3, 3,981,312,000 raw bytes,
 25.016 ms drain including 16.387 ms full storage flush, then 9.128 s deferred PNG packaging/hash validation.
@@ -44,7 +47,7 @@ preflight `false`, without requesting a grant. All use binary SHA-256
 | Case | Submitted/source images | Result and retained proof |
 | --- | --- | --- |
 | Cooked elapsed pan | 481 / 481 | [Manifest](pan/manifest.json), [controls/times](pan/runtime.json), [1× preview](pan/preview-1x.mp4), [contact](pan/contact.png), native initial/final frames and crops |
-| Running 60 Hz world | 481 / 481 | [Manifest](running/manifest.json), [endpoint/alpha/history records](running/runtime.json), [1× preview](running/preview-1x.mp4), native frames/crops; ticks 0–119, 206 intermediate-alpha samples, history epoch 0 |
+| Running 60 Hz world | 481 / 481 | [Manifest](running/manifest.json), [endpoint/alpha/history records](running/runtime.json), [1× preview](running/preview-1x.mp4), native frames/crops; ticks 0–119, 206 intermediate-alpha samples with 0.01 < alpha < 0.99 (209 with 0 < alpha < 1), history epoch 0 |
 | Render stall | 450 / 450 | [Records](render-stall/runtime.json), [1× preview](render-stall/preview-1x.mp4); 255.929 ms actual delay, 264.619 ms image hold/gap; zero capture omissions |
 | Input stall | 481 / 481 | [Records](input-stall/runtime.json), [1× preview](input-stall/preview-1x.mp4); 250.229 ms actual dispatch delay, 30 fresh submissions with one accepted yaw and one identical pixel hash, then recovery |
 | Slow writer | 480 / 103 | [Incomplete manifest](writer-slow/manifest.json), [continuing app records](writer-slow/runtime.json); expected exit 1, 377 explicit ring omissions, ticks 0–119, GPU/CPU peaks 6/32, bounded finalization in 14.012 s |
@@ -65,9 +68,10 @@ the retained 1× clips are independently PTS-checked. No target-image quality ma
 The running fixture includes the ordinary 2,000-mover grid and authored diagnostic camera bob; it is not cooked-scene
 artistic qualification. In that case `control_dispatched=false` means the unused yaw candidate is not an applied edit.
 
-[Legacy parity](legacy-parity.json): two native fixed-time route replays each retain 361 samples at phase 1/2;
-all five checkpoint PPM pairs are byte-identical after migration to the renderer tap. The endpoint route remains at
-world tick 0. Real-Metal tests also compare tap pixels with actual RGBA and BGRA presenter outputs at odd width,
+[Legacy replay](legacy-parity.json) compares two post-migration runs (determinism only): 361 samples at phase
+1/2 and five identical checkpoint pairs. The [independent M0 review](../../T2-CAPTURE/M0-review.md) separately
+built base `5385aa64` and claim `770bb4ef`: all five checkpoints, route log and endpoint were byte-identical
+pre/post migration. The endpoint route remains at world tick 0. Real-Metal tests also compare tap pixels with actual RGBA and BGRA presenter outputs at odd width,
 including independent known-channel/padding controls. An archive extraction was restored to native PNG and its
 decoded RGBA exactly matched the retained initial source hash.
 

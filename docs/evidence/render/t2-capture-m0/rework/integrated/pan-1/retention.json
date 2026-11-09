@@ -1,0 +1,28 @@
+{
+  "local_source_directory": "tmp/t2-capture-m0-rework/integrated/pan-1",
+  "local_bulk_is_backup": false,
+  "expiry": "retain through lead re-review; close out after verdict",
+  "selected_files": {
+    "final.png": "5df466e13be254637f72531013b29e3ae8025201e4974de443329f82516dad42",
+    "runtime.json": "7690a014a2f60ea5ef1c625e81832b83427aa5927b965cf6f225000b364376ba",
+    "timeline.ffconcat": "4fdc935e51f79281c4e54976de84909a666f20810cab325d3f4142277ee1cb54",
+    "preview-1x.mp4": "3f4d0e331998541f2628ba85ae309568b5799210db95f6d0bb77960e8e547b2b",
+    "initial.png": "afd01f719bc9c2ddb83a2d57ccadddfa67280e5daec122e5b113adef15b08489",
+    "contact.png": "e6cc55bb2b00306da3ea57d76a1a8feec8140ad0d0624cbf7eefbecf2eeff908",
+    "stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "manifest.json": "cf3031d64decfae058c335c73ac7ab4a3e7d655f53efb76ddedcd3501c753b4d",
+    "console.txt": "69b09b67212976ee401951f73d9a418158402039d9a9651d88a550916d24a801",
+    "system-iostat.txt": "23af7645232a6525ef00d155f39b060b5036d989d26de9c9672582c6fd312350",
+    "middle.png": "60fe8d5edf3723a0b8ceb48759f964a4e6d91c78bffd1d23b9776464bc31d366",
+    "native-sequence.png": "cb17cd78b8ce6dfc63a40d3010cec730e3e22625533faf4290227beba0f022ab",
+    "native-sequence.json": "6f4edd882326a1a11be4f3dfbbb04007071fe8c422ffd12612d8fa822e85716e"
+  },
+  "source_archive": {
+    "file": "source-lossless.mkv",
+    "sha256": "135cc60c953fea4fef96c0e81b2fd822b92c1e59f3e9dceee1ea388fab9c4bbc",
+    "bytes": 329321855,
+    "decoded_frames_verified": 480,
+    "timebase": "ordinal only; use retained submit_ns records"
+  },
+  "bulk_cleanup": "verified complete archive and all RGBA hashes before deleting owned raw/PNG duplicates"
+}

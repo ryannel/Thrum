@@ -1,0 +1,38 @@
+[
+  {
+    "submission_id": 478,
+    "offset": 1841356800,
+    "rgba_sha256": "07e1203e66716d56efed852de5865e97fbbcfe44374a95bc091a4632c9ce14e1",
+    "submit_ns": 1853240875
+  },
+  {
+    "submission_id": 479,
+    "offset": 1849651200,
+    "rgba_sha256": "1b3b80390b243511c8e11122468f099889dfea6e9427e969bcc213e06a5d1d6f",
+    "submit_ns": 1861759333
+  },
+  {
+    "submission_id": 480,
+    "offset": 1857945600,
+    "rgba_sha256": "151dac9ecdc94b15e7dce1a0846be6107666c9f8cc5bbe4689aecb16754110d0",
+    "submit_ns": 1869948375
+  },
+  {
+    "submission_id": 481,
+    "offset": 1866240000,
+    "rgba_sha256": "a967f36cdd60b66d372f843e798749933370cc1d3921eff78b734d40447e417d",
+    "submit_ns": 1878358542
+  },
+  {
+    "submission_id": 482,
+    "offset": 1874534400,
+    "rgba_sha256": "41defa49342bf465cdceebcfa8b3de32fae6dbc1f6ff3dfa0241b7e08b5f7165",
+    "submit_ns": 1886569000
+  },
+  {
+    "submission_id": 483,
+    "offset": 1882828800,
+    "rgba_sha256": "7201a03af10e66f42e844a8e9eef8a5ddb32e0e0ca1520beff7b4c70dfb0724c",
+    "submit_ns": 1894194667
+  }
+]

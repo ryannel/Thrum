@@ -1,0 +1,21 @@
+{
+  "local_source_directory": "tmp/t2-capture-m0-rework/integrated/profile-on",
+  "local_bulk_is_backup": false,
+  "expiry": "retain through lead re-review; close out after verdict",
+  "selected_files": {
+    "runtime.json": "736f256a84506c1d575f293822c01cb40d040bc21721293dd830f18b3875110e",
+    "cpu-sample.txt": "7e747ebd4c5f519721884a50d71efa3fd0941ce0091247aef7cf13540e2df155",
+    "stderr.txt": "634d294ec4ec9b855f5a805e177c474720750d26bab1d8e10a160e0701b56742",
+    "manifest.json": "3019133f8bc964a57275bb028e16078de0a84f5d01b42e312a182c106b439210",
+    "console.txt": "69b09b67212976ee401951f73d9a418158402039d9a9651d88a550916d24a801",
+    "system-iostat.txt": "b001fe60864188a2bba4a83146a5f75b851afe970dc5a1b3ef3c0b546c7319f7"
+  },
+  "source_archive": {
+    "file": "source-lossless.mkv",
+    "sha256": "9c81ccc017eebbcdc37f35f5396688fb11f71217f47264b1457dce7819a45d4b",
+    "bytes": 328432326,
+    "decoded_frames_verified": 481,
+    "timebase": "ordinal only; use retained submit_ns records"
+  },
+  "bulk_cleanup": "verified complete archive and all RGBA hashes before deleting owned raw/PNG duplicates"
+}

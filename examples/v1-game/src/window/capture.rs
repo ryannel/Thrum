@@ -77,7 +77,8 @@ impl Trace {
             "epoch":image.source.epoch,"timeline":image.source.timeline,
             "previous_endpoint_tick":image.source.tick.checked_sub(1),"current_endpoint_tick":image.source.tick,
             "alpha":image.sample.presentation_alpha,"history_epoch":image.history_epoch,
-            "visual_revision":image.sample.visual_revision,"device_generation":1,"surface_generation":1,
+            "visual_revision":image.sample.visual_revision,"device_generation":image.device_generation,"surface_generation":image.presenter_generation,
+            "presentation_lead_ns":image.presentation_lead.as_nanos(),"readback_copy_gpu_bracket_ns":image.copy_gpu_ns,
             "submit_ns":image.submitted_at.saturating_duration_since(origin).as_nanos(),
             "map_observed_ns":origin.elapsed().as_nanos()}));
         if let Some(image) = writer.submit(image) {
@@ -143,19 +144,7 @@ fn accepted_yaw<G: Game>(driver: &Offscreen<G>) -> Result<f32, String> {
     }
 }
 
-async fn record(output: &Path, scenario: &str) -> Result<(), String> {
-    let mode = capture_mode(scenario)?;
-    let (adapter, device, queue, capabilities) = metal_device().await?;
-    let mut driver = Offscreen::new(
-        super::capture_game()?,
-        &device,
-        &capabilities,
-        &queue,
-        [1920, 1080],
-    )?;
-    let preset_requested = Instant::now();
-    driver.parameters(include_str!("../../params/showcase-noon.params.json"))?;
-    let preset_accepted = Instant::now();
+fn warmup<G: Game>(driver: &mut Offscreen<G>) -> Result<(), String> {
     let warmup = Instant::now();
     while warmup.elapsed() < Duration::from_secs(3) {
         driver.step()?;
@@ -169,14 +158,31 @@ async fn record(output: &Path, scenario: &str) -> Result<(), String> {
             return Err("warmup drain timeout".to_owned());
         }
     }
+    Ok(())
+}
+
+async fn record(output: &Path, scenario: &str) -> Result<(), String> {
+    let mode = capture_mode(scenario)?;
+    let (adapter, device, queue, capabilities) = metal_device().await?;
+    let mut driver = Offscreen::new(
+        super::capture_game()?,
+        &device,
+        &capabilities,
+        &queue,
+        [1920, 1080],
+    )?;
+    let preset_requested = Instant::now();
+    driver.parameters(include_str!("../../params/showcase-noon.params.json"))?;
+    let preset_accepted = Instant::now();
+    warmup(&mut driver)?;
     let capture = scenario != "off";
     if capture {
         driver.enable_capture_with_limits(
             1,
             thrum_render::runtime::CaptureLimits {
                 staging_slots: 6,
-                cpu_buffers: 32,
-                byte_allowance: 512 * 1024 * 1024,
+                cpu_buffers: 96,
+                byte_allowance: 1024 * 1024 * 1024,
             },
         )?;
     }
@@ -185,7 +191,7 @@ async fn record(output: &Path, scenario: &str) -> Result<(), String> {
             ScenarioSink {
                 slow: scenario == "writer-slow",
             },
-            32,
+            96,
             8 * 1024 * 1024 * 1024,
         )?)
     } else {
@@ -194,6 +200,11 @@ async fn record(output: &Path, scenario: &str) -> Result<(), String> {
     let mut trace = Trace::default();
     // A real initial submission anchors zero. This gives a full initial hold,
     // rather than losing the first render's latency from the required second.
+    std::fs::write(
+        output.join("measurement-ready.txt"),
+        b"before prime; measured interval follows\n",
+    )
+    .map_err(|e| e.to_string())?;
     let prime_requested = Instant::now();
     let primed = driver.step()?;
     if !primed.submitted {
@@ -269,7 +280,7 @@ async fn record(output: &Path, scenario: &str) -> Result<(), String> {
             trace.delay("render-owner-before-ordinary-step", origin);
             stalled = true;
         }
-        let report = driver.step()?;
+        let report = driver.step_for(&opportunity)?;
         if t >= 3.0 && report.submitted && final_hold.is_none() {
             final_hold = Some(origin.elapsed());
         }
@@ -324,6 +335,8 @@ async fn record(output: &Path, scenario: &str) -> Result<(), String> {
                 && driver.omissions() == 0
                 && trace.writer_omissions == 0));
     let result = json!({"scenario":scenario,"adapter":adapter.get_info().name,"backend":"Metal","mode":mode,
+        "presentation_lead_policy":"engine clock next opportunity target, shared display_target_lead at consumption; untargeted prime/warmup zero",
+        "surface_generation_scope":"engine presenter incarnation: prepare, resize, device publish; not OS surface lease",
         "recipe":"current portable wgpu Metal offscreen ordinary presenter","enabled_features":format!("{:?}",capabilities.features()),
         "extent":[1920,1080],"requested_hz":120,"interval_end_ns":interval_end_ns,
         "last_scenario_ns":last_sample_time.as_nanos(),"duration_including_drain_ns":origin.elapsed().as_nanos(),

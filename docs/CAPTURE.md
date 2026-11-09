@@ -16,7 +16,7 @@ target/debug/thrum-cook cook examples/v1-game/assets/showcase tmp/t2-capture-m0/
 Run the cooked noon pan with a new output directory:
 
 ```sh
-python3 /Users/ryannel/.claude/skills/build/scripts/agent_loop.py lock gpu --worktree . -- python3 scripts/capture_v1_runtime.py --binary target/release/v1-game --store tmp/t2-capture-m0/valley --output tmp/t2-capture-m0/pan --case pan --mode realtime
+python3 "$HOME/.claude/skills/build/scripts/agent_loop.py" lock gpu --worktree . -- python3 scripts/capture_v1_runtime.py --binary target/release/v1-game --store tmp/t2-capture-m0/valley --output tmp/t2-capture-m0/pan --case pan --mode realtime
 ```
 
 The explicit `--worktree .` also works around this installed lock script's parsing of the command separator.
@@ -37,12 +37,16 @@ indices name driver busy/oversleep. Submitted-image omissions invalidate continu
 normal parameter validation and `Game::apply`, the handler used by the native panel. The engine adapter
 owns scheduling and supplies an engine texture through ordinary presenter/`SurfaceOutput` admission.
 World work remains on its resident lane; rendering runs on the dedicated render-owner thread.
+The engine opportunity clock targets the next 120 Hz opportunity. `Offscreen::step_for` consumes that target
+with the native actor's shared `display_target_lead` policy (expired target: zero, maximum: 50 ms).
+The host stamps the actual consumed lead on each submitted image; untargeted prime/warmup steps declare zero.
+This is an offscreen target policy, not a measured display target or a claim that its alpha equals a window's.
 
 Additional cases use the same binary:
 
 - `--case running`, without `--store`: moving diagnostic grid, with a running 60 Hz world between holds.
 - `--case render-stall`: diagnostic 250 ms render-owner delay before the ordinary step.
-- `--case input-stall`: diagnostic 250 ms dispatch delay before semantic handling; renders continue with held controls.
+- `--case input-stall`: diagnostic 250 ms dispatch delay before semantic handling; renders continue with held controls. Intermediate edits are coalesced to the newest value; requested/start coincide at diagnostic activation.
 - `--case writer-slow`: running-world saturation, delaying writer calls 50 ms; expected incomplete/failure.
 - `--case off`: matched pan with capture disabled; no tap buffers or writer queue.
 
@@ -51,7 +55,10 @@ Ordinary pan/running/off schedules contain no diagnostic actions.
 ## Artifacts and bounds
 
 `runtime.json` joins opportunities, requested/accepted controls, exact submission IDs, adjacent endpoint ticks,
-timeline, interpolation alpha, history epoch, device generation, map observations and GPU/CPU samples. Capture
+timeline, interpolation alpha, consumed presentation lead, history epoch, device generation, engine presenter
+generation, map observations and GPU/CPU samples. The renderer stamps device and presenter identities at actual
+submission; presenter generation advances on prepare/resize/device publish and does not identify an OS lease.
+Capture
 is of the scene grid: surface viewport resize does not relabel old pixels as a new-sized screenshot.
 
 `manifest.json` pins source revision, dirty diff and source files (including untracked implementation), binary,
@@ -61,11 +68,26 @@ capability record and shaders. Native controls and OS composition are excluded.
 
 The graph copies the actual final SDR engine texture in the ordinary submission, retaining temporal history.
 There is no endpoint redraw, extra scene render, second queue or drawable acquisition/lease extension. Six GPU
-slots and 32 reusable CPU buffers use 315,187,200 pixel bytes within a 512 MiB allowance. The initial three/eight
-profile was measured first; integrated bursts motivated the larger bounded profile. An uncached inherited file
+slots and 96 reusable CPU buffers use 846,028,800 pixel bytes within a 1 GiB allowance. This is a bounded
+0.8-second CPU burst reserve at 120 records/s, not the four-second session in RAM. The initial three/eight and
+six/32 profiles overflowed in independent review; the revised profile is qualified by five consecutive full writer
+probes followed by five complete integrated pans. Every attempt is retained in the rework evidence. An uncached inherited file
 description receives sequential raw RGBA on a dedicated writer. Nonblocking admission and generation checks
 keep slow/failed capture from stopping the app. Exhaustion, stale sessions, output-byte refusal, write/flush
 errors and finalization deadlines produce incomplete results.
+
+Each arm records host load averages, a background-process snapshot and one-second `iostat -d -C -U` CPU/disk
+samples (first data row averages since boot; default devices include spool disk0). The engine image record's
+`readback_copy_gpu_bracket_ns` measures a GPU upper bracket around the texture-to-buffer copy. Real compute
+markers read the staging buffer before and after its blit write, forcing WAR/RAW dependencies; stage-boundary
+counters measure before-marker end to after-marker end. The bracket includes the after-marker and encoder
+transitions; it excludes mapping, CPU row unpacking and timestamp-resolution cost. It uses enabled native
+`MAPPABLE_PRIMARY_BUFFERS` plus `TIMESTAMP_QUERY`; unsupported devices explicitly record null. Timers resolve
+asynchronously in later coordinator work after completion. Scene GPU timings remain separate; neither measures
+a whole-GPU span. Capture-disabled frames allocate no copy timers or marker resources.
+Use `--profile` for separate matched CPU-sampled arms. `/usr/bin/sample` begins after the engine's pre-prime ready
+marker (observed within 10 ms), samples at 1 ms through process exit, and writes `cpu-sample.txt`; sampling arms
+are not used as unprofiled cost baselines.
 
 Packaging follows capture/drain and storage `fsync` plus Darwin `F_FULLFSYNC`. Every decoded PNG hash must
 match its raw frame. `source-lossless.mkv` is an archival frame sequence; every decoded RGBA hash, including
@@ -84,7 +106,7 @@ Create a task storage record before bulk work. A four-second session needs 16 Gi
 allowance including raw/PNG/archive coexistence. Run sessions serially. Verify the archive, timing records and
 selected promoted evidence before deleting owned reconstructible raw/PNG files. Retain complete local sources
 through review with an explicit expiry decision. Promote compact selected excerpts, hashes, timings and previews
-to Git. Local bulk archives are not durable backups; no remote/LFS store is configured or implied.
+to Git. The [M0 rework evidence](evidence/render/t2-capture-m0/rework/README.md) records the complete repeated series and observer arms. Local bulk archives are not durable backups; no remote/LFS store is configured or implied.
 
 Archive record ordinal `k` maps to its `submission_id`, RGBA hash and `submit_ns` in `manifest.json`. Extract a
 native frame with `ffmpeg -i source-lossless.mkv -vf 'select=eq(n\,0)' -frames:v 1 -pix_fmt rgba restored.png`

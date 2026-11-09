@@ -27,7 +27,6 @@ pub struct Offscreen<G: Game> {
     view: wgpu::TextureView,
     extent: [u32; 2],
     origin: Instant,
-    next_submission: u64,
 }
 
 impl<G: Game> Offscreen<G> {
@@ -79,7 +78,6 @@ impl<G: Game> Offscreen<G> {
             view,
             extent,
             origin: prepared.origin,
-            next_submission: 0,
         })
     }
 
@@ -163,6 +161,27 @@ impl<G: Game> Offscreen<G> {
     /// # Errors
     /// Returns the ordinary world/render failure; no capture admission bypass.
     pub fn step(&mut self) -> Result<DriveReport, String> {
+        self.host.set_presentation_lead(Duration::ZERO);
+        self.drive()
+    }
+
+    /// Consume a clock target using the native render actor's lead policy.
+    /// Expired targets have zero lead; controls/render delay is included.
+    /// # Errors
+    /// Returns the ordinary world/render failure.
+    pub fn step_for(&mut self, opportunity: &clock::Opportunity) -> Result<DriveReport, String> {
+        let lead = thrum_render::frame::display_target_lead(
+            opportunity
+                .target
+                .saturating_duration_since(self.origin)
+                .as_secs_f64(),
+            self.origin.elapsed().as_secs_f64(),
+        );
+        self.host.set_presentation_lead(lead.duration);
+        self.drive()
+    }
+
+    fn drive(&mut self) -> Result<DriveReport, String> {
         let report = self
             .host
             .drive(
@@ -173,15 +192,12 @@ impl<G: Game> Offscreen<G> {
                 }),
             )
             .map_err(|e| e.to_string())?;
-        if report.submitted {
-            self.next_submission += 1;
-        }
         Ok(report)
     }
 
     /// Submission ID associated with the last successful ordinary step.
     pub fn last_submission(&self) -> Option<u64> {
-        self.next_submission.checked_sub(1)
+        self.host.last_submission()
     }
 
     /// Drain one normal completed frame, driving nonblocking device polling.

@@ -1,0 +1,14 @@
+{
+  "local_source_directory": "tmp/t2-capture-m0-rework/integrated/writer-slow",
+  "local_bulk_is_backup": false,
+  "expiry": "retain through lead re-review; close out after verdict",
+  "selected_files": {
+    "runtime.json": "b865e5b3bf4cebcfe5c716767ce6c348206952ffd7074845bcdd98dc24c1fdb1",
+    "stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "manifest.json": "a56ceb6b7369f929c9ecdbcc3c2081bf71b92e6aa3f7e18b4e3cac364cb48d26",
+    "console.txt": "69b09b67212976ee401951f73d9a418158402039d9a9651d88a550916d24a801",
+    "system-iostat.txt": "3327a2e420ba81b855d7a1ed0e71d74eb3828ccd2661a7d8f9cc9a5cc2462080"
+  },
+  "source_archive": null,
+  "bulk_cleanup": "verified complete archive and all RGBA hashes before deleting owned raw/PNG duplicates"
+}

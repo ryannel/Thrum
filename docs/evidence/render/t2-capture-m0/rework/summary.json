@@ -1,0 +1,2394 @@
+{
+  "scope": "M3 Max Metal; final rework build, all attempts in attempts.json; observed rates not universal guarantees",
+  "writer_probes": [
+    {
+      "name": "probe-1",
+      "complete": true,
+      "service_records_per_second": 157.75479225453813,
+      "service_bytes_per_second": 1308481348.876041,
+      "required_bytes_per_second": 995328000,
+      "queue_peak": 10,
+      "cpu_buffers_peak": 11,
+      "cpu_pool_bytes": 796262400,
+      "missing_ids": [],
+      "errors": [],
+      "storage_flush_ns": 14274916,
+      "drain_including_flush_ns": 20657750,
+      "deferred_packaging_validation_ns": 9255153625,
+      "write_ms": {
+        "n": 480,
+        "median": 6.7924375,
+        "p95": 11.32775,
+        "p99": 15.567375,
+        "max": 21.2975
+      },
+      "load": {
+        "before_load_1_5_15": [
+          1.666015625,
+          1.828125,
+          2.01904296875
+        ],
+        "after_load_1_5_15": [
+          1.6923828125,
+          1.83056640625,
+          2.0185546875
+        ],
+        "sample_duration_ns": 4074517750,
+        "disk_samples": "system-iostat.txt",
+        "disk_scope": "default devices including spool disk0; first row since boot; subsequent rows 1 s averages",
+        "background_process_snapshot": [
+          "  PID  %CPU COMM",
+          "23439  75.7 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+          "23444  24.6 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+          "23443   8.1 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+          "23440   7.9 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+          "83154   4.8 /Library/PrivilegedHelperTools/com.nordvpn.macos.helper",
+          "89115   3.3 /Users/ryannel/Library/Developer/CoreSimulator/Devices/90298BEA-DAD1-4972-98AC-6E65ADE5FF1F/data/Containers/Bundle/Application/6C19DECF-F057-4A46-AD41-25197559945C/ThrumV1.app/ThrumV1",
+          "34867   2.3 /Users/ryannel/Library/Application Support/Claude/claude-code/2.1.317/91184d3d9ba3/claude.app/Contents/MacOS/claude",
+          "83041   2.1 /Applications/NordVPN.app/Contents/MacOS/NordVPN",
+          "19206   1.4 /Applications/ChatGPT.app/Contents/Resources/codex-cli/bin/../CodexCLI.app/Contents/MacOS/codex",
+          " 2009   1.2 /Users/ryannel/Library/Application Support/Claude/claude-code/2.1.317/91184d3d9ba3/claude.app/Contents/MacOS/claude",
+          "92310   0.9 /usr/libexec/trustd",
+          "  333   0.8 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd",
+          "  570   0.8 /System/Library/DriverExtensions/com.apple.DriverKit-AppleBCMWLAN.dext/com.apple.DriverKit-AppleBCMWLAN",
+          "45838   0.6 /Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+          "47121   0.5 /Applications/Claude.app/Contents/MacOS/Claude"
+        ],
+        "process_cpu_scope": "ps lifetime CPU snapshot, not interval CPU; load averages are host-wide",
+        "sampler": "iostat -d -C -U -w 1 subprocess plus one ps snapshot, same recipe in each arm"
+      }
+    },
+    {
+      "name": "probe-2",
+      "complete": true,
+      "service_records_per_second": 266.2736415941307,
+      "service_bytes_per_second": 2208580092.8383574,
+      "required_bytes_per_second": 995328000,
+      "queue_peak": 4,
+      "cpu_buffers_peak": 5,
+      "cpu_pool_bytes": 796262400,
+      "missing_ids": [],
+      "errors": [],
+      "storage_flush_ns": 16838250,
+      "drain_including_flush_ns": 21018917,
+      "deferred_packaging_validation_ns": 8586441709,
+      "write_ms": {
+        "n": 480,
+        "median": 2.79825,
+        "p95": 9.078208,
+        "p99": 13.181625,
+        "max": 22.592459
+      },
+      "load": {
+        "before_load_1_5_15": [
+          1.806640625,
+          1.8515625,
+          2.0234375
+        ],
+        "after_load_1_5_15": [
+          1.82177734375,
+          1.85400390625,
+          2.02294921875
+        ],
+        "sample_duration_ns": 4081686083,
+        "disk_samples": "system-iostat.txt",
+        "disk_scope": "default devices including spool disk0; first row since boot; subsequent rows 1 s averages",
+        "background_process_snapshot": [
+          "  PID  %CPU COMM",
+          "23443  36.9 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+          "  333  36.5 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd",
+          "23481   8.3 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+          "89115   3.6 /Users/ryannel/Library/Developer/CoreSimulator/Devices/90298BEA-DAD1-4972-98AC-6E65ADE5FF1F/data/Containers/Bundle/Application/6C19DECF-F057-4A46-AD41-25197559945C/ThrumV1.app/ThrumV1",
+          "  674   3.4 /System/Library/CoreServices/Finder.app/Contents/MacOS/Finder",
+          "83154   1.9 /Library/PrivilegedHelperTools/com.nordvpn.macos.helper",
+          "  358   1.9 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds",
+          "  530   1.7 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds_stores",
+          " 6599   1.6 /System/Library/Frameworks/AppKit.framework/Versions/C/XPCServices/com.apple.appkit.xpc.openAndSavePanelService.xpc/Contents/MacOS/com.apple.appkit.xpc.openAndSavePanelService",
+          "83041   0.8 /Applications/NordVPN.app/Contents/MacOS/NordVPN",
+          "36549   0.7 /Applications/ChatGPT.app/Contents/MacOS/ChatGPT",
+          "45866   0.6 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/156.0.8078.80/Helpers/Google Chrome Helper (Aperitif Renderer).app/Contents/MacOS/Google Chrome Helper (Aperitif Renderer)",
+          "56520   0.5 /Users/ryannel/.nvm/versions/node/v24.16.0/bin/node",
+          "22775   0.4 /private/var/run/com.apple.security.cryptexd/mnt/com.apple.iPhoneOS.SimulatorRuntime-v24.2.8117.0.YDOXcI/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.2.simruntime/Contents/Resources/RuntimeRoot/usr/libexec/backboardd",
+          "47121   0.4 /Applications/Claude.app/Contents/MacOS/Claude"
+        ],
+        "process_cpu_scope": "ps lifetime CPU snapshot, not interval CPU; load averages are host-wide",
+        "sampler": "iostat -d -C -U -w 1 subprocess plus one ps snapshot, same recipe in each arm"
+      }
+    },
+    {
+      "name": "probe-3",
+      "complete": true,
+      "service_records_per_second": 270.88309278215854,
+      "service_bytes_per_second": 2246812724.7723355,
+      "required_bytes_per_second": 995328000,
+      "queue_peak": 4,
+      "cpu_buffers_peak": 5,
+      "cpu_pool_bytes": 796262400,
+      "missing_ids": [],
+      "errors": [],
+      "storage_flush_ns": 20227792,
+      "drain_including_flush_ns": 23539291,
+      "deferred_packaging_validation_ns": 8607140125,
+      "write_ms": {
+        "n": 480,
+        "median": 2.497292,
+        "p95": 9.86075,
+        "p99": 15.37575,
+        "max": 22.418125
+      },
+      "load": {
+        "before_load_1_5_15": [
+          1.755859375,
+          1.83935546875,
+          2.0166015625
+        ],
+        "after_load_1_5_15": [
+          1.6953125,
+          1.8251953125,
+          2.01025390625
+        ],
+        "sample_duration_ns": 4080816417,
+        "disk_samples": "system-iostat.txt",
+        "disk_scope": "default devices including spool disk0; first row since boot; subsequent rows 1 s averages",
+        "background_process_snapshot": [
+          "  PID  %CPU COMM",
+          "  333  39.3 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd",
+          "23507  24.4 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+          "23443  22.2 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+          "  674   3.3 /System/Library/CoreServices/Finder.app/Contents/MacOS/Finder",
+          "83154   3.1 /Library/PrivilegedHelperTools/com.nordvpn.macos.helper",
+          "89115   2.4 /Users/ryannel/Library/Developer/CoreSimulator/Devices/90298BEA-DAD1-4972-98AC-6E65ADE5FF1F/data/Containers/Bundle/Application/6C19DECF-F057-4A46-AD41-25197559945C/ThrumV1.app/ThrumV1",
+          "83041   1.8 /Applications/NordVPN.app/Contents/MacOS/NordVPN",
+          " 6599   1.5 /System/Library/Frameworks/AppKit.framework/Versions/C/XPCServices/com.apple.appkit.xpc.openAndSavePanelService.xpc/Contents/MacOS/com.apple.appkit.xpc.openAndSavePanelService",
+          "  358   1.2 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds",
+          "45838   1.1 /Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+          "  530   0.8 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds_stores",
+          "47121   0.5 /Applications/Claude.app/Contents/MacOS/Claude",
+          "20965   0.3 /Users/ryannel/.nvm/versions/node/v24.16.0/bin/node",
+          "36549   0.3 /Applications/ChatGPT.app/Contents/MacOS/ChatGPT",
+          "45904   0.2 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper"
+        ],
+        "process_cpu_scope": "ps lifetime CPU snapshot, not interval CPU; load averages are host-wide",
+        "sampler": "iostat -d -C -U -w 1 subprocess plus one ps snapshot, same recipe in each arm"
+      }
+    },
+    {
+      "name": "probe-4",
+      "complete": true,
+      "service_records_per_second": 146.3815303155358,
+      "service_bytes_per_second": 1214146965.04918,
+      "required_bytes_per_second": 995328000,
+      "queue_peak": 30,
+      "cpu_buffers_peak": 31,
+      "cpu_pool_bytes": 796262400,
+      "missing_ids": [],
+      "errors": [],
+      "storage_flush_ns": 55734625,
+      "drain_including_flush_ns": 337979167,
+      "deferred_packaging_validation_ns": 8967173708,
+      "write_ms": {
+        "n": 480,
+        "median": 1.757,
+        "p95": 25.140125,
+        "p99": 39.259167,
+        "max": 69.46125
+      },
+      "load": {
+        "before_load_1_5_15": [
+          1.587890625,
+          1.79736328125,
+          1.99755859375
+        ],
+        "after_load_1_5_15": [
+          1.54052734375,
+          1.78369140625,
+          1.99169921875
+        ],
+        "sample_duration_ns": 4395833917,
+        "disk_samples": "system-iostat.txt",
+        "disk_scope": "default devices including spool disk0; first row since boot; subsequent rows 1 s averages",
+        "background_process_snapshot": [
+          "  PID  %CPU COMM",
+          "  333  27.3 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd",
+          "23443  13.7 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+          "23537   7.3 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+          "89115   3.1 /Users/ryannel/Library/Developer/CoreSimulator/Devices/90298BEA-DAD1-4972-98AC-6E65ADE5FF1F/data/Containers/Bundle/Application/6C19DECF-F057-4A46-AD41-25197559945C/ThrumV1.app/ThrumV1",
+          "83041   3.0 /Applications/NordVPN.app/Contents/MacOS/NordVPN",
+          "83154   2.8 /Library/PrivilegedHelperTools/com.nordvpn.macos.helper",
+          "  674   2.6 /System/Library/CoreServices/Finder.app/Contents/MacOS/Finder",
+          "99610   2.0 /Users/ryannel/Library/Application Support/Claude/claude-code/2.1.317/91184d3d9ba3/claude.app/Contents/MacOS/claude",
+          "92310   0.6 /usr/libexec/trustd",
+          "  358   0.6 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds",
+          "56520   0.5 /Users/ryannel/.nvm/versions/node/v24.16.0/bin/node",
+          "45904   0.4 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper",
+          "47121   0.4 /Applications/Claude.app/Contents/MacOS/Claude",
+          " 6599   0.4 /System/Library/Frameworks/AppKit.framework/Versions/C/XPCServices/com.apple.appkit.xpc.openAndSavePanelService.xpc/Contents/MacOS/com.apple.appkit.xpc.openAndSavePanelService",
+          "  510   0.3 /usr/sbin/mDNSResponder"
+        ],
+        "process_cpu_scope": "ps lifetime CPU snapshot, not interval CPU; load averages are host-wide",
+        "sampler": "iostat -d -C -U -w 1 subprocess plus one ps snapshot, same recipe in each arm"
+      }
+    },
+    {
+      "name": "probe-5",
+      "complete": true,
+      "service_records_per_second": 297.3186512551915,
+      "service_bytes_per_second": 2466079820.9710608,
+      "required_bytes_per_second": 995328000,
+      "queue_peak": 3,
+      "cpu_buffers_peak": 4,
+      "cpu_pool_bytes": 796262400,
+      "missing_ids": [],
+      "errors": [],
+      "storage_flush_ns": 16172583,
+      "drain_including_flush_ns": 22861000,
+      "deferred_packaging_validation_ns": 8674952334,
+      "write_ms": {
+        "n": 480,
+        "median": 2.6730835,
+        "p95": 7.999542,
+        "p99": 11.67575,
+        "max": 17.102166
+      },
+      "load": {
+        "before_load_1_5_15": [
+          1.8251953125,
+          1.8388671875,
+          2.0087890625
+        ],
+        "after_load_1_5_15": [
+          1.8388671875,
+          1.84130859375,
+          2.00830078125
+        ],
+        "sample_duration_ns": 4075008792,
+        "disk_samples": "system-iostat.txt",
+        "disk_scope": "default devices including spool disk0; first row since boot; subsequent rows 1 s averages",
+        "background_process_snapshot": [
+          "  PID  %CPU COMM",
+          "  333  29.3 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd",
+          "23443  28.3 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+          "23568   8.2 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+          "25521   4.4 /Users/ryannel/Library/Application Support/Claude/claude-code/2.1.317/91184d3d9ba3/claude.app/Contents/MacOS/claude",
+          " 6599   3.0 /System/Library/Frameworks/AppKit.framework/Versions/C/XPCServices/com.apple.appkit.xpc.openAndSavePanelService.xpc/Contents/MacOS/com.apple.appkit.xpc.openAndSavePanelService",
+          "89115   2.6 /Users/ryannel/Library/Developer/CoreSimulator/Devices/90298BEA-DAD1-4972-98AC-6E65ADE5FF1F/data/Containers/Bundle/Application/6C19DECF-F057-4A46-AD41-25197559945C/ThrumV1.app/ThrumV1",
+          "  358   2.0 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds",
+          " 6670   1.9 /Users/ryannel/Library/Application Support/Claude/claude-code/2.1.317/91184d3d9ba3/claude.app/Contents/MacOS/claude",
+          "  674   1.7 /System/Library/CoreServices/Finder.app/Contents/MacOS/Finder",
+          "83041   1.4 /Applications/NordVPN.app/Contents/MacOS/NordVPN",
+          "  530   1.4 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds_stores",
+          "83154   1.0 /Library/PrivilegedHelperTools/com.nordvpn.macos.helper",
+          "57040   0.8 /Users/ryannel/Library/Application Support/Claude/claude-code/2.1.317/91184d3d9ba3/claude.app/Contents/MacOS/claude",
+          "35936   0.7 /Users/ryannel/Library/Application Support/Claude/claude-code/2.1.317/91184d3d9ba3/claude.app/Contents/MacOS/claude",
+          "47121   0.4 /Applications/Claude.app/Contents/MacOS/Claude"
+        ],
+        "process_cpu_scope": "ps lifetime CPU snapshot, not interval CPU; load averages are host-wide",
+        "sampler": "iostat -d -C -U -w 1 subprocess plus one ps snapshot, same recipe in each arm"
+      }
+    }
+  ],
+  "sessions": [
+    {
+      "name": "cost-off-1",
+      "complete": true,
+      "runtime_complete": true,
+      "locked_unavailable": true,
+      "binary_sha256": "0e77c57d5fe2b15b7e803afe15c847a81e7b2492b0baa3f328b814570dccbe97",
+      "source_digest": "05009ccdf8601a219bc7bf514198dfb1a96ffce5836d3d7821df44c131d7be8f",
+      "recipe_digest": "3f9c9ae8e22944d2d7c450af14554f7d6c46941b614b4e60c4eef78dec9070d0",
+      "opportunities": 481,
+      "submitted": 481,
+      "images": 0,
+      "omissions": [
+        0,
+        0
+      ],
+      "skipped": 0,
+      "render_cpu_ms": {
+        "n": 480,
+        "median": 1.0076665,
+        "p95": 2.233875,
+        "p99": 2.526167,
+        "max": 2.877
+      },
+      "scene_gpu_ms": {
+        "n": 480,
+        "median": 2.672145,
+        "p95": 2.827917,
+        "p99": 2.917916,
+        "max": 2.971125
+      },
+      "copy_gpu_bracket_ms": null,
+      "lead_ms": null,
+      "submit_gap_ms": null,
+      "interval_ns": 4008862958,
+      "duration_with_drain_ns": 4009079333,
+      "lease_peaks": [
+        0,
+        0
+      ],
+      "writer": {
+        "Ok": {
+          "bytes": 0,
+          "flush_ns": 0,
+          "frames": 0,
+          "write_ns": 0
+        }
+      },
+      "full_flush_ns": 6269750,
+      "packaging_ns": 61084,
+      "usage": {
+        "peak_rss_bytes": 82313216,
+        "user_seconds": 0.7525029999999999,
+        "system_seconds": 0.890265,
+        "input_blocks": 0,
+        "output_blocks": 0,
+        "voluntary_switches": 5,
+        "involuntary_switches": 24774
+      },
+      "system_load": {
+        "before_load_1_5_15": [
+          3.1103515625,
+          2.71875,
+          2.6669921875
+        ],
+        "after_load_1_5_15": [
+          2.63134765625,
+          2.62890625,
+          2.63525390625
+        ],
+        "sample_duration_ns": 7149900125,
+        "disk_samples": "system-iostat.txt",
+        "disk_scope": "default devices including spool disk0; first row since boot; subsequent rows 1 s averages",
+        "background_process_snapshot": [
+          "  PID  %CPU COMM",
+          "26632  21.8 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+          "27240  16.2 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+          "  333  16.2 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd",
+          "92314   1.9 /System/Library/PrivateFrameworks/TCC.framework/Support/tccd",
+          "25521   1.8 /Users/ryannel/Library/Application Support/Claude/claude-code/2.1.317/91184d3d9ba3/claude.app/Contents/MacOS/claude",
+          "89115   1.6 /Users/ryannel/Library/Developer/CoreSimulator/Devices/90298BEA-DAD1-4972-98AC-6E65ADE5FF1F/data/Containers/Bundle/Application/6C19DECF-F057-4A46-AD41-25197559945C/ThrumV1.app/ThrumV1",
+          "  502   1.2 /usr/libexec/syspolicyd",
+          "83041   1.0 /Applications/NordVPN.app/Contents/MacOS/NordVPN",
+          "  674   1.0 /System/Library/CoreServices/Finder.app/Contents/MacOS/Finder",
+          "  530   0.9 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds_stores",
+          "92302   0.7 /usr/libexec/trustd",
+          "  358   0.6 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds",
+          " 6599   0.5 /System/Library/Frameworks/AppKit.framework/Versions/C/XPCServices/com.apple.appkit.xpc.openAndSavePanelService.xpc/Contents/MacOS/com.apple.appkit.xpc.openAndSavePanelService",
+          "47121   0.4 /Applications/Claude.app/Contents/MacOS/Claude",
+          "  329   0.4 /usr/libexec/logd"
+        ],
+        "process_cpu_scope": "ps lifetime CPU snapshot, not interval CPU; load averages are host-wide",
+        "sampler": "iostat -d -C -U -w 1 subprocess plus one ps snapshot, same recipe in each arm"
+      },
+      "ticks": [
+        null,
+        null
+      ],
+      "intermediate_alpha_0_1": 0,
+      "intermediate_alpha_01_99": 0,
+      "history_epochs": [],
+      "preview_pts_error_s": null,
+      "diagnostic_actions": []
+    },
+    {
+      "name": "cost-off-2",
+      "complete": true,
+      "runtime_complete": true,
+      "locked_unavailable": true,
+      "binary_sha256": "0e77c57d5fe2b15b7e803afe15c847a81e7b2492b0baa3f328b814570dccbe97",
+      "source_digest": "05009ccdf8601a219bc7bf514198dfb1a96ffce5836d3d7821df44c131d7be8f",
+      "recipe_digest": "3f9c9ae8e22944d2d7c450af14554f7d6c46941b614b4e60c4eef78dec9070d0",
+      "opportunities": 481,
+      "submitted": 481,
+      "images": 0,
+      "omissions": [
+        0,
+        0
+      ],
+      "skipped": 0,
+      "render_cpu_ms": {
+        "n": 479,
+        "median": 1.363792,
+        "p95": 2.577458,
+        "p99": 2.867709,
+        "max": 3.070459
+      },
+      "scene_gpu_ms": {
+        "n": 479,
+        "median": 2.674418,
+        "p95": 2.829165,
+        "p99": 2.891707,
+        "max": 2.926711
+      },
+      "copy_gpu_bracket_ms": null,
+      "lead_ms": null,
+      "submit_gap_ms": null,
+      "interval_ns": 4010637083,
+      "duration_with_drain_ns": 4010734333,
+      "lease_peaks": [
+        0,
+        0
+      ],
+      "writer": {
+        "Ok": {
+          "bytes": 0,
+          "flush_ns": 0,
+          "frames": 0,
+          "write_ns": 0
+        }
+      },
+      "full_flush_ns": 13004250,
+      "packaging_ns": 59791,
+      "usage": {
+        "peak_rss_bytes": 83673088,
+        "user_seconds": 0.819753,
+        "system_seconds": 0.911029,
+        "input_blocks": 0,
+        "output_blocks": 0,
+        "voluntary_switches": 5,
+        "involuntary_switches": 24504
+      },
+      "system_load": {
+        "before_load_1_5_15": [
+          2.43994140625,
+          2.5546875,
+          2.6025390625
+        ],
+        "after_load_1_5_15": [
+          2.404296875,
+          2.54541015625,
+          2.5986328125
+        ],
+        "sample_duration_ns": 7159671167,
+        "disk_samples": "system-iostat.txt",
+        "disk_scope": "default devices including spool disk0; first row since boot; subsequent rows 1 s averages",
+        "background_process_snapshot": [
+          "  PID  %CPU COMM",
+          "26632  20.2 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+          "27506  14.1 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+          "  333  11.7 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd",
+          "89115   2.7 /Users/ryannel/Library/Developer/CoreSimulator/Devices/90298BEA-DAD1-4972-98AC-6E65ADE5FF1F/data/Containers/Bundle/Application/6C19DECF-F057-4A46-AD41-25197559945C/ThrumV1.app/ThrumV1",
+          "  502   1.2 /usr/libexec/syspolicyd",
+          "32967   0.9 /Users/ryannel/Library/Application Support/Claude/claude-code/2.1.317/91184d3d9ba3/claude.app/Contents/MacOS/claude",
+          "36549   0.7 /Applications/ChatGPT.app/Contents/MacOS/ChatGPT",
+          "  674   0.7 /System/Library/CoreServices/Finder.app/Contents/MacOS/Finder",
+          " 6599   0.6 /System/Library/Frameworks/AppKit.framework/Versions/C/XPCServices/com.apple.appkit.xpc.openAndSavePanelService.xpc/Contents/MacOS/com.apple.appkit.xpc.openAndSavePanelService",
+          "83041   0.6 /Applications/NordVPN.app/Contents/MacOS/NordVPN",
+          "  530   0.6 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds_stores",
+          "47121   0.5 /Applications/Claude.app/Contents/MacOS/Claude",
+          "56520   0.5 /Users/ryannel/.nvm/versions/node/v24.16.0/bin/node",
+          "57040   0.5 /Users/ryannel/Library/Application Support/Claude/claude-code/2.1.317/91184d3d9ba3/claude.app/Contents/MacOS/claude",
+          "36995   0.4 /Applications/ChatGPT.app/Contents/Frameworks/Codex Framework.framework/Versions/157.0.8103.39/Helpers/Codex (Aperitif Renderer).app/Contents/MacOS/Codex (Aperitif Renderer)"
+        ],
+        "process_cpu_scope": "ps lifetime CPU snapshot, not interval CPU; load averages are host-wide",
+        "sampler": "iostat -d -C -U -w 1 subprocess plus one ps snapshot, same recipe in each arm"
+      },
+      "ticks": [
+        null,
+        null
+      ],
+      "intermediate_alpha_0_1": 0,
+      "intermediate_alpha_01_99": 0,
+      "history_epochs": [],
+      "preview_pts_error_s": null,
+      "diagnostic_actions": []
+    },
+    {
+      "name": "cost-on-1",
+      "complete": true,
+      "runtime_complete": true,
+      "locked_unavailable": true,
+      "binary_sha256": "0e77c57d5fe2b15b7e803afe15c847a81e7b2492b0baa3f328b814570dccbe97",
+      "source_digest": "05009ccdf8601a219bc7bf514198dfb1a96ffce5836d3d7821df44c131d7be8f",
+      "recipe_digest": "3f9c9ae8e22944d2d7c450af14554f7d6c46941b614b4e60c4eef78dec9070d0",
+      "opportunities": 481,
+      "submitted": 481,
+      "images": 481,
+      "omissions": [
+        0,
+        0
+      ],
+      "skipped": 0,
+      "render_cpu_ms": {
+        "n": 480,
+        "median": 0.8344375,
+        "p95": 1.099875,
+        "p99": 1.206,
+        "max": 2.05725
+      },
+      "scene_gpu_ms": {
+        "n": 480,
+        "median": 2.6807905,
+        "p95": 2.838417,
+        "p99": 2.899669,
+        "max": 2.914585
+      },
+      "copy_gpu_bracket_ms": {
+        "n": 481,
+        "median": 1.044042,
+        "p95": 1.208292,
+        "p99": 1.233667,
+        "max": 1.249042
+      },
+      "lead_ms": {
+        "n": 481,
+        "median": 6.02025,
+        "p95": 7.814417,
+        "p99": 8.240375,
+        "max": 8.308167
+      },
+      "submit_gap_ms": {
+        "n": 480,
+        "median": 8.274208,
+        "p95": 10.5865,
+        "p99": 11.686834,
+        "max": 12.323458
+      },
+      "interval_ns": 4008412292,
+      "duration_with_drain_ns": 4013692625,
+      "lease_peaks": [
+        3,
+        5
+      ],
+      "writer": {
+        "Ok": {
+          "bytes": 3989606400,
+          "flush_ns": 42,
+          "frames": 481,
+          "write_ns": 1056519534
+        }
+      },
+      "full_flush_ns": 15716667,
+      "packaging_ns": 46899272875,
+      "usage": {
+        "peak_rss_bytes": 153616384,
+        "user_seconds": 0.930616,
+        "system_seconds": 1.584687,
+        "input_blocks": 0,
+        "output_blocks": 0,
+        "voluntary_switches": 700,
+        "involuntary_switches": 34205
+      },
+      "system_load": {
+        "before_load_1_5_15": [
+          2.63134765625,
+          2.62890625,
+          2.63525390625
+        ],
+        "after_load_1_5_15": [
+          2.50048828125,
+          2.6015625,
+          2.62548828125
+        ],
+        "sample_duration_ns": 7153786166,
+        "disk_samples": "system-iostat.txt",
+        "disk_scope": "default devices including spool disk0; first row since boot; subsequent rows 1 s averages",
+        "background_process_snapshot": [
+          "  PID  %CPU COMM",
+          "27273  14.2 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+          "89115   3.1 /Users/ryannel/Library/Developer/CoreSimulator/Devices/90298BEA-DAD1-4972-98AC-6E65ADE5FF1F/data/Containers/Bundle/Application/6C19DECF-F057-4A46-AD41-25197559945C/ThrumV1.app/ThrumV1",
+          "83041   1.7 /Applications/NordVPN.app/Contents/MacOS/NordVPN",
+          "  333   1.5 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd",
+          "83154   1.3 /Library/PrivilegedHelperTools/com.nordvpn.macos.helper",
+          "26632   1.3 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+          "47121   0.8 /Applications/Claude.app/Contents/MacOS/Claude",
+          "45904   0.6 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper",
+          "  370   0.6 /usr/libexec/opendirectoryd",
+          "36549   0.5 /Applications/ChatGPT.app/Contents/MacOS/ChatGPT",
+          " 2009   0.3 /Users/ryannel/Library/Application Support/Claude/claude-code/2.1.317/91184d3d9ba3/claude.app/Contents/MacOS/claude",
+          "  530   0.3 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds_stores",
+          "  358   0.3 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds",
+          "22775   0.3 /private/var/run/com.apple.security.cryptexd/mnt/com.apple.iPhoneOS.SimulatorRuntime-v24.2.8117.0.YDOXcI/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.2.simruntime/Contents/Resources/RuntimeRoot/usr/libexec/backboardd",
+          "  329   0.3 /usr/libexec/logd"
+        ],
+        "process_cpu_scope": "ps lifetime CPU snapshot, not interval CPU; load averages are host-wide",
+        "sampler": "iostat -d -C -U -w 1 subprocess plus one ps snapshot, same recipe in each arm"
+      },
+      "ticks": [
+        0,
+        0
+      ],
+      "intermediate_alpha_0_1": 0,
+      "intermediate_alpha_01_99": 0,
+      "history_epochs": [
+        0
+      ],
+      "preview_pts_error_s": 5.00000000069889e-07,
+      "diagnostic_actions": [],
+      "first_hash": "a865b1e6fc6765f6d4dec2190328d70f12d3d0ba9a6018f724659934c8ebb588",
+      "final_hash": "85ea3ba193209eece43900842400319b6e568e42c147fcabcf8def92170053c8",
+      "distinct_hashes": 242,
+      "initial_hold_ns": 1003326708,
+      "final_hold_ns": 1005541584
+    },
+    {
+      "name": "cost-on-2",
+      "complete": true,
+      "runtime_complete": true,
+      "locked_unavailable": true,
+      "binary_sha256": "0e77c57d5fe2b15b7e803afe15c847a81e7b2492b0baa3f328b814570dccbe97",
+      "source_digest": "05009ccdf8601a219bc7bf514198dfb1a96ffce5836d3d7821df44c131d7be8f",
+      "recipe_digest": "3f9c9ae8e22944d2d7c450af14554f7d6c46941b614b4e60c4eef78dec9070d0",
+      "opportunities": 480,
+      "submitted": 480,
+      "images": 480,
+      "omissions": [
+        0,
+        0
+      ],
+      "skipped": 0,
+      "render_cpu_ms": {
+        "n": 479,
+        "median": 0.760959,
+        "p95": 1.003125,
+        "p99": 1.074791,
+        "max": 1.876209
+      },
+      "scene_gpu_ms": {
+        "n": 479,
+        "median": 2.685044,
+        "p95": 2.852165,
+        "p99": 2.900167,
+        "max": 2.940625
+      },
+      "copy_gpu_bracket_ms": {
+        "n": 480,
+        "median": 1.1538755,
+        "p95": 1.224625,
+        "p99": 1.242959,
+        "max": 1.274042
+      },
+      "lead_ms": {
+        "n": 480,
+        "median": 5.9031035,
+        "p95": 7.906708,
+        "p99": 8.267792,
+        "max": 8.3055
+      },
+      "submit_gap_ms": {
+        "n": 479,
+        "median": 8.294416,
+        "p95": 10.869125,
+        "p99": 11.872417,
+        "max": 12.33
+      },
+      "interval_ns": 4002581917,
+      "duration_with_drain_ns": 4010831375,
+      "lease_peaks": [
+        3,
+        11
+      ],
+      "writer": {
+        "Ok": {
+          "bytes": 3981312000,
+          "flush_ns": 209,
+          "frames": 480,
+          "write_ns": 1834788658
+        }
+      },
+      "full_flush_ns": 10323583,
+      "packaging_ns": 45924446834,
+      "usage": {
+        "peak_rss_bytes": 203948032,
+        "user_seconds": 1.119434,
+        "system_seconds": 1.923103,
+        "input_blocks": 0,
+        "output_blocks": 0,
+        "voluntary_switches": 2420,
+        "involuntary_switches": 34539
+      },
+      "system_load": {
+        "before_load_1_5_15": [
+          2.650390625,
+          2.62939453125,
+          2.63330078125
+        ],
+        "after_load_1_5_15": [
+          2.75830078125,
+          2.65185546875,
+          2.64111328125
+        ],
+        "sample_duration_ns": 7169474792,
+        "disk_samples": "system-iostat.txt",
+        "disk_scope": "default devices including spool disk0; first row since boot; subsequent rows 1 s averages",
+        "background_process_snapshot": [
+          "  PID  %CPU COMM",
+          "  333  17.4 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd",
+          "26632  15.9 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+          "27392   9.7 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+          "89115   2.5 /Users/ryannel/Library/Developer/CoreSimulator/Devices/90298BEA-DAD1-4972-98AC-6E65ADE5FF1F/data/Containers/Bundle/Application/6C19DECF-F057-4A46-AD41-25197559945C/ThrumV1.app/ThrumV1",
+          "  674   1.5 /System/Library/CoreServices/Finder.app/Contents/MacOS/Finder",
+          "83041   1.3 /Applications/NordVPN.app/Contents/MacOS/NordVPN",
+          "  370   0.6 /usr/libexec/opendirectoryd",
+          " 6599   0.6 /System/Library/Frameworks/AppKit.framework/Versions/C/XPCServices/com.apple.appkit.xpc.openAndSavePanelService.xpc/Contents/MacOS/com.apple.appkit.xpc.openAndSavePanelService",
+          "36549   0.6 /Applications/ChatGPT.app/Contents/MacOS/ChatGPT",
+          "  530   0.6 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds_stores",
+          "36995   0.4 /Applications/ChatGPT.app/Contents/Frameworks/Codex Framework.framework/Versions/157.0.8103.39/Helpers/Codex (Aperitif Renderer).app/Contents/MacOS/Codex (Aperitif Renderer)",
+          "  358   0.4 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds",
+          "47121   0.4 /Applications/Claude.app/Contents/MacOS/Claude",
+          "45852   0.2 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/156.0.8078.80/Helpers/Google Chrome Helper (Aperitif).app/Contents/MacOS/Google Chrome Helper (Aperitif)",
+          "36980   0.2 /Applications/ChatGPT.app/Contents/Frameworks/Codex Framework.framework/Versions/157.0.8103.39/Helpers/Codex (Aperitif).app/Contents/MacOS/Codex (Aperitif)"
+        ],
+        "process_cpu_scope": "ps lifetime CPU snapshot, not interval CPU; load averages are host-wide",
+        "sampler": "iostat -d -C -U -w 1 subprocess plus one ps snapshot, same recipe in each arm"
+      },
+      "ticks": [
+        0,
+        0
+      ],
+      "intermediate_alpha_0_1": 0,
+      "intermediate_alpha_01_99": 0,
+      "history_epochs": [
+        0
+      ],
+      "preview_pts_error_s": 5.00000000069889e-07,
+      "diagnostic_actions": [],
+      "first_hash": "a865b1e6fc6765f6d4dec2190328d70f12d3d0ba9a6018f724659934c8ebb588",
+      "final_hash": "85ea3ba193209eece43900842400319b6e568e42c147fcabcf8def92170053c8",
+      "distinct_hashes": 241,
+      "initial_hold_ns": 1010421625,
+      "final_hold_ns": 1001375292
+    },
+    {
+      "name": "fixed",
+      "complete": true,
+      "runtime_complete": true,
+      "locked_unavailable": true,
+      "binary_sha256": "0e77c57d5fe2b15b7e803afe15c847a81e7b2492b0baa3f328b814570dccbe97",
+      "source_digest": "05009ccdf8601a219bc7bf514198dfb1a96ffce5836d3d7821df44c131d7be8f",
+      "recipe_digest": "3f9c9ae8e22944d2d7c450af14554f7d6c46941b614b4e60c4eef78dec9070d0",
+      "opportunities": 481,
+      "submitted": 481,
+      "images": 481,
+      "omissions": [
+        0,
+        0
+      ],
+      "skipped": 0,
+      "render_cpu_ms": {
+        "n": 480,
+        "median": 0.7357505,
+        "p95": 1.00975,
+        "p99": 1.487166,
+        "max": 2.623959
+      },
+      "scene_gpu_ms": {
+        "n": 480,
+        "median": 2.659188,
+        "p95": 2.786584,
+        "p99": 2.820668,
+        "max": 2.86279
+      },
+      "copy_gpu_bracket_ms": {
+        "n": 481,
+        "median": 1.235667,
+        "p95": 1.275625,
+        "p99": 1.291125,
+        "max": 1.30625
+      },
+      "lead_ms": {
+        "n": 481,
+        "median": 7.918,
+        "p95": 8.111667,
+        "p99": 8.238125,
+        "max": 8.311
+      },
+      "submit_gap_ms": {
+        "n": 480,
+        "median": 8.328479,
+        "p95": 8.864166,
+        "p99": 9.099333,
+        "max": 11.043958
+      },
+      "interval_ns": 4008857916,
+      "duration_with_drain_ns": 4009037500,
+      "lease_peaks": [
+        1,
+        5
+      ],
+      "writer": {
+        "Ok": {
+          "bytes": 3989606400,
+          "flush_ns": 541,
+          "frames": 481,
+          "write_ns": 1130570255
+        }
+      },
+      "full_flush_ns": 7889458,
+      "packaging_ns": 46077590167,
+      "usage": {
+        "peak_rss_bytes": 136642560,
+        "user_seconds": 0.949029,
+        "system_seconds": 1.513001,
+        "input_blocks": 0,
+        "output_blocks": 0,
+        "voluntary_switches": 643,
+        "involuntary_switches": 35211
+      },
+      "system_load": {
+        "before_load_1_5_15": [
+          4.060546875,
+          3.3388671875,
+          2.91796875
+        ],
+        "after_load_1_5_15": [
+          3.9755859375,
+          3.3330078125,
+          2.91796875
+        ],
+        "sample_duration_ns": 7159949167,
+        "disk_samples": "system-iostat.txt",
+        "disk_scope": "default devices including spool disk0; first row since boot; subsequent rows 1 s averages",
+        "background_process_snapshot": [
+          "  PID  %CPU COMM",
+          "27826  59.2 /private/var/run/com.apple.security.cryptexd/mnt/com.apple.iPhoneOS.SimulatorRuntime-v24.2.8117.0.YDOXcI/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.2.simruntime/Contents/Resources/RuntimeRoot/System/Library/Frameworks/CFNetwork.framework/CFNetworkAgent",
+          "26632  19.9 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+          "  333  15.5 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd",
+          "27827  15.0 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+          "83041   3.4 /Applications/NordVPN.app/Contents/MacOS/NordVPN",
+          "89115   3.3 /Users/ryannel/Library/Developer/CoreSimulator/Devices/90298BEA-DAD1-4972-98AC-6E65ADE5FF1F/data/Containers/Bundle/Application/6C19DECF-F057-4A46-AD41-25197559945C/ThrumV1.app/ThrumV1",
+          "45852   2.3 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/156.0.8078.80/Helpers/Google Chrome Helper (Aperitif).app/Contents/MacOS/Google Chrome Helper (Aperitif)",
+          "92314   1.9 /System/Library/PrivateFrameworks/TCC.framework/Support/tccd",
+          "83154   1.6 /Library/PrivilegedHelperTools/com.nordvpn.macos.helper",
+          "  502   1.3 /usr/libexec/syspolicyd",
+          "92302   0.7 /usr/libexec/trustd",
+          "  674   0.7 /System/Library/CoreServices/Finder.app/Contents/MacOS/Finder",
+          "  530   0.7 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds_stores",
+          "45838   0.7 /Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+          " 6599   0.6 /System/Library/Frameworks/AppKit.framework/Versions/C/XPCServices/com.apple.appkit.xpc.openAndSavePanelService.xpc/Contents/MacOS/com.apple.appkit.xpc.openAndSavePanelService"
+        ],
+        "process_cpu_scope": "ps lifetime CPU snapshot, not interval CPU; load averages are host-wide",
+        "sampler": "iostat -d -C -U -w 1 subprocess plus one ps snapshot, same recipe in each arm"
+      },
+      "ticks": [
+        0,
+        0
+      ],
+      "intermediate_alpha_0_1": 0,
+      "intermediate_alpha_01_99": 0,
+      "history_epochs": [
+        0
+      ],
+      "preview_pts_error_s": 3.3300000001901253e-07,
+      "diagnostic_actions": [],
+      "first_hash": "a865b1e6fc6765f6d4dec2190328d70f12d3d0ba9a6018f724659934c8ebb588",
+      "final_hash": "85ea3ba193209eece43900842400319b6e568e42c147fcabcf8def92170053c8",
+      "distinct_hashes": 241,
+      "initial_hold_ns": 1009984791,
+      "final_hold_ns": 1007563750
+    },
+    {
+      "name": "input-stall",
+      "complete": true,
+      "runtime_complete": true,
+      "locked_unavailable": true,
+      "binary_sha256": "0e77c57d5fe2b15b7e803afe15c847a81e7b2492b0baa3f328b814570dccbe97",
+      "source_digest": "05009ccdf8601a219bc7bf514198dfb1a96ffce5836d3d7821df44c131d7be8f",
+      "recipe_digest": "3f9c9ae8e22944d2d7c450af14554f7d6c46941b614b4e60c4eef78dec9070d0",
+      "opportunities": 480,
+      "submitted": 480,
+      "images": 480,
+      "omissions": [
+        0,
+        0
+      ],
+      "skipped": 0,
+      "render_cpu_ms": {
+        "n": 479,
+        "median": 0.72225,
+        "p95": 0.984125,
+        "p99": 1.133625,
+        "max": 1.909208
+      },
+      "scene_gpu_ms": {
+        "n": 479,
+        "median": 2.670584,
+        "p95": 2.81875,
+        "p99": 2.871751,
+        "max": 2.928126
+      },
+      "copy_gpu_bracket_ms": {
+        "n": 480,
+        "median": 1.148,
+        "p95": 1.226083,
+        "p99": 1.255333,
+        "max": 1.276834
+      },
+      "lead_ms": {
+        "n": 480,
+        "median": 5.921104,
+        "p95": 7.894333,
+        "p99": 8.237625,
+        "max": 8.296124
+      },
+      "submit_gap_ms": {
+        "n": 479,
+        "median": 8.315958,
+        "p95": 11.002541,
+        "p99": 11.674292,
+        "max": 12.326542
+      },
+      "interval_ns": 4002144208,
+      "duration_with_drain_ns": 4007270083,
+      "lease_peaks": [
+        3,
+        5
+      ],
+      "writer": {
+        "Ok": {
+          "bytes": 3981312000,
+          "flush_ns": 417,
+          "frames": 480,
+          "write_ns": 1974657744
+        }
+      },
+      "full_flush_ns": 7282750,
+      "packaging_ns": 45537265792,
+      "usage": {
+        "peak_rss_bytes": 153485312,
+        "user_seconds": 0.839491,
+        "system_seconds": 1.503025,
+        "input_blocks": 0,
+        "output_blocks": 0,
+        "voluntary_switches": 2376,
+        "involuntary_switches": 35112
+      },
+      "system_load": {
+        "before_load_1_5_15": [
+          3.01806640625,
+          3.09423828125,
+          2.86328125
+        ],
+        "after_load_1_5_15": [
+          2.7763671875,
+          3.04248046875,
+          2.84619140625
+        ],
+        "sample_duration_ns": 7136884667,
+        "disk_samples": "system-iostat.txt",
+        "disk_scope": "default devices including spool disk0; first row since boot; subsequent rows 1 s averages",
+        "background_process_snapshot": [
+          "  PID  %CPU COMM",
+          "26632  26.5 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+          "  333  18.6 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd",
+          "28077  15.1 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+          "89115   2.8 /Users/ryannel/Library/Developer/CoreSimulator/Devices/90298BEA-DAD1-4972-98AC-6E65ADE5FF1F/data/Containers/Bundle/Application/6C19DECF-F057-4A46-AD41-25197559945C/ThrumV1.app/ThrumV1",
+          " 6670   1.8 /Users/ryannel/Library/Application Support/Claude/claude-code/2.1.317/91184d3d9ba3/claude.app/Contents/MacOS/claude",
+          "83154   1.5 /Library/PrivilegedHelperTools/com.nordvpn.macos.helper",
+          "  502   1.2 /usr/libexec/syspolicyd",
+          "  530   0.9 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds_stores",
+          "83041   0.9 /Applications/NordVPN.app/Contents/MacOS/NordVPN",
+          "36549   0.7 /Applications/ChatGPT.app/Contents/MacOS/ChatGPT",
+          "  674   0.6 /System/Library/CoreServices/Finder.app/Contents/MacOS/Finder",
+          "  358   0.6 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds",
+          "56520   0.5 /Users/ryannel/.nvm/versions/node/v24.16.0/bin/node",
+          "47121   0.5 /Applications/Claude.app/Contents/MacOS/Claude",
+          "  370   0.4 /usr/libexec/opendirectoryd"
+        ],
+        "process_cpu_scope": "ps lifetime CPU snapshot, not interval CPU; load averages are host-wide",
+        "sampler": "iostat -d -C -U -w 1 subprocess plus one ps snapshot, same recipe in each arm"
+      },
+      "ticks": [
+        0,
+        0
+      ],
+      "intermediate_alpha_0_1": 0,
+      "intermediate_alpha_01_99": 0,
+      "history_epochs": [
+        0
+      ],
+      "preview_pts_error_s": 5.00000000069889e-07,
+      "diagnostic_actions": [
+        {
+          "end_ns": 2053552167,
+          "kind": "input-dispatch-before-semantic-handler",
+          "requested_ns": 1803515958,
+          "start_ns": 1803515958
+        }
+      ],
+      "first_hash": "a865b1e6fc6765f6d4dec2190328d70f12d3d0ba9a6018f724659934c8ebb588",
+      "final_hash": "85ea3ba193209eece43900842400319b6e568e42c147fcabcf8def92170053c8",
+      "distinct_hashes": 212,
+      "initial_hold_ns": 1003533833,
+      "final_hold_ns": 1001049208
+    },
+    {
+      "name": "pan-1",
+      "complete": true,
+      "runtime_complete": true,
+      "locked_unavailable": true,
+      "binary_sha256": "0e77c57d5fe2b15b7e803afe15c847a81e7b2492b0baa3f328b814570dccbe97",
+      "source_digest": "05009ccdf8601a219bc7bf514198dfb1a96ffce5836d3d7821df44c131d7be8f",
+      "recipe_digest": "3f9c9ae8e22944d2d7c450af14554f7d6c46941b614b4e60c4eef78dec9070d0",
+      "opportunities": 480,
+      "submitted": 480,
+      "images": 480,
+      "omissions": [
+        0,
+        0
+      ],
+      "skipped": 0,
+      "render_cpu_ms": {
+        "n": 479,
+        "median": 0.753041,
+        "p95": 1.080542,
+        "p99": 1.758334,
+        "max": 2.046916
+      },
+      "scene_gpu_ms": {
+        "n": 479,
+        "median": 2.682291,
+        "p95": 2.852291,
+        "p99": 2.919124,
+        "max": 2.948499
+      },
+      "copy_gpu_bracket_ms": {
+        "n": 480,
+        "median": 1.1569165,
+        "p95": 1.229084,
+        "p99": 1.244208,
+        "max": 1.268292
+      },
+      "lead_ms": {
+        "n": 480,
+        "median": 5.946041,
+        "p95": 7.718167,
+        "p99": 8.195249,
+        "max": 8.325291
+      },
+      "submit_gap_ms": {
+        "n": 479,
+        "median": 8.302167,
+        "p95": 10.451083,
+        "p99": 11.730791,
+        "max": 11.960416
+      },
+      "interval_ns": 4003341000,
+      "duration_with_drain_ns": 4011476750,
+      "lease_peaks": [
+        3,
+        5
+      ],
+      "writer": {
+        "Ok": {
+          "bytes": 3981312000,
+          "flush_ns": 41,
+          "frames": 480,
+          "write_ns": 2108860994
+        }
+      },
+      "full_flush_ns": 13220958,
+      "packaging_ns": 47028300125,
+      "usage": {
+        "peak_rss_bytes": 157089792,
+        "user_seconds": 0.842495,
+        "system_seconds": 1.506014,
+        "input_blocks": 0,
+        "output_blocks": 0,
+        "voluntary_switches": 2289,
+        "involuntary_switches": 34558
+      },
+      "system_load": {
+        "before_load_1_5_15": [
+          2.08642578125,
+          2.58154296875,
+          2.64599609375
+        ],
+        "after_load_1_5_15": [
+          1.9990234375,
+          2.5458984375,
+          2.63232421875
+        ],
+        "sample_duration_ns": 7490040083,
+        "disk_samples": "system-iostat.txt",
+        "disk_scope": "default devices including spool disk0; first row since boot; subsequent rows 1 s averages",
+        "background_process_snapshot": [
+          "  PID  %CPU COMM",
+          "54584   9.6 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/156.0.8078.80/Helpers/Google Chrome Helper (Aperitif Renderer).app/Contents/MacOS/Google Chrome Helper (Aperitif Renderer)",
+          "26633   9.6 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+          "83154   7.1 /Library/PrivilegedHelperTools/com.nordvpn.macos.helper",
+          "26629   5.1 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+          "89115   3.2 /Users/ryannel/Library/Developer/CoreSimulator/Devices/90298BEA-DAD1-4972-98AC-6E65ADE5FF1F/data/Containers/Bundle/Application/6C19DECF-F057-4A46-AD41-25197559945C/ThrumV1.app/ThrumV1",
+          "26632   3.1 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+          "83041   3.0 /Applications/NordVPN.app/Contents/MacOS/NordVPN",
+          "  570   1.5 /System/Library/DriverExtensions/com.apple.DriverKit-AppleBCMWLAN.dext/com.apple.DriverKit-AppleBCMWLAN",
+          "19206   1.0 /Applications/ChatGPT.app/Contents/Resources/codex-cli/bin/../CodexCLI.app/Contents/MacOS/codex",
+          "45852   1.0 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/156.0.8078.80/Helpers/Google Chrome Helper (Aperitif).app/Contents/MacOS/Google Chrome Helper (Aperitif)",
+          "36549   0.9 /Applications/ChatGPT.app/Contents/MacOS/ChatGPT",
+          "92310   0.9 /usr/libexec/trustd",
+          "  333   0.8 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd",
+          "  370   0.7 /usr/libexec/opendirectoryd",
+          "  674   0.6 /System/Library/CoreServices/Finder.app/Contents/MacOS/Finder"
+        ],
+        "process_cpu_scope": "ps lifetime CPU snapshot, not interval CPU; load averages are host-wide",
+        "sampler": "iostat -d -C -U -w 1 subprocess plus one ps snapshot, same recipe in each arm"
+      },
+      "ticks": [
+        0,
+        0
+      ],
+      "intermediate_alpha_0_1": 0,
+      "intermediate_alpha_01_99": 0,
+      "history_epochs": [
+        0
+      ],
+      "preview_pts_error_s": 5.00000000069889e-07,
+      "diagnostic_actions": [],
+      "first_hash": "a865b1e6fc6765f6d4dec2190328d70f12d3d0ba9a6018f724659934c8ebb588",
+      "final_hash": "85ea3ba193209eece43900842400319b6e568e42c147fcabcf8def92170053c8",
+      "distinct_hashes": 242,
+      "initial_hold_ns": 1002668917,
+      "final_hold_ns": 1000899000
+    },
+    {
+      "name": "pan-2",
+      "complete": true,
+      "runtime_complete": true,
+      "locked_unavailable": true,
+      "binary_sha256": "0e77c57d5fe2b15b7e803afe15c847a81e7b2492b0baa3f328b814570dccbe97",
+      "source_digest": "05009ccdf8601a219bc7bf514198dfb1a96ffce5836d3d7821df44c131d7be8f",
+      "recipe_digest": "3f9c9ae8e22944d2d7c450af14554f7d6c46941b614b4e60c4eef78dec9070d0",
+      "opportunities": 480,
+      "submitted": 480,
+      "images": 480,
+      "omissions": [
+        0,
+        0
+      ],
+      "skipped": 0,
+      "render_cpu_ms": {
+        "n": 479,
+        "median": 0.713375,
+        "p95": 1.01025,
+        "p99": 1.121208,
+        "max": 1.651833
+      },
+      "scene_gpu_ms": {
+        "n": 479,
+        "median": 2.687791,
+        "p95": 2.832415,
+        "p99": 2.878918,
+        "max": 2.957375
+      },
+      "copy_gpu_bracket_ms": {
+        "n": 480,
+        "median": 1.1573125,
+        "p95": 1.227584,
+        "p99": 1.254167,
+        "max": 1.26875
+      },
+      "lead_ms": {
+        "n": 480,
+        "median": 5.8947285,
+        "p95": 7.738916,
+        "p99": 8.188292,
+        "max": 8.304708
+      },
+      "submit_gap_ms": {
+        "n": 479,
+        "median": 8.312666,
+        "p95": 10.567708,
+        "p99": 11.601125,
+        "max": 12.132125
+      },
+      "interval_ns": 4002808250,
+      "duration_with_drain_ns": 4024536000,
+      "lease_peaks": [
+        3,
+        14
+      ],
+      "writer": {
+        "Ok": {
+          "bytes": 3981312000,
+          "flush_ns": 209,
+          "frames": 480,
+          "write_ns": 2433018038
+        }
+      },
+      "full_flush_ns": 7667125,
+      "packaging_ns": 45670546917,
+      "usage": {
+        "peak_rss_bytes": 231079936,
+        "user_seconds": 0.830741,
+        "system_seconds": 1.522737,
+        "input_blocks": 0,
+        "output_blocks": 0,
+        "voluntary_switches": 2774,
+        "involuntary_switches": 36407
+      },
+      "system_load": {
+        "before_load_1_5_15": [
+          2.79248046875,
+          2.6591796875,
+          2.66748046875
+        ],
+        "after_load_1_5_15": [
+          2.67041015625,
+          2.63671875,
+          2.6591796875
+        ],
+        "sample_duration_ns": 7189937833,
+        "disk_samples": "system-iostat.txt",
+        "disk_scope": "default devices including spool disk0; first row since boot; subsequent rows 1 s averages",
+        "background_process_snapshot": [
+          "  PID  %CPU COMM",
+          "26632  14.5 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+          "  333  10.5 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd",
+          "26753   9.2 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+          "83154   1.9 /Library/PrivilegedHelperTools/com.nordvpn.macos.helper",
+          "51429   1.5 /Users/ryannel/Library/Application Support/Claude/claude-code/2.1.317/91184d3d9ba3/claude.app/Contents/MacOS/claude",
+          "89115   1.3 /Users/ryannel/Library/Developer/CoreSimulator/Devices/90298BEA-DAD1-4972-98AC-6E65ADE5FF1F/data/Containers/Bundle/Application/6C19DECF-F057-4A46-AD41-25197559945C/ThrumV1.app/ThrumV1",
+          "83041   1.2 /Applications/NordVPN.app/Contents/MacOS/NordVPN",
+          "  674   0.8 /System/Library/CoreServices/Finder.app/Contents/MacOS/Finder",
+          "36549   0.7 /Applications/ChatGPT.app/Contents/MacOS/ChatGPT",
+          "  370   0.5 /usr/libexec/opendirectoryd",
+          "36995   0.5 /Applications/ChatGPT.app/Contents/Frameworks/Codex Framework.framework/Versions/157.0.8103.39/Helpers/Codex (Aperitif Renderer).app/Contents/MacOS/Codex (Aperitif Renderer)",
+          "47121   0.5 /Applications/Claude.app/Contents/MacOS/Claude",
+          "56520   0.4 /Users/ryannel/.nvm/versions/node/v24.16.0/bin/node",
+          "  530   0.4 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds_stores",
+          "  358   0.4 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds"
+        ],
+        "process_cpu_scope": "ps lifetime CPU snapshot, not interval CPU; load averages are host-wide",
+        "sampler": "iostat -d -C -U -w 1 subprocess plus one ps snapshot, same recipe in each arm"
+      },
+      "ticks": [
+        0,
+        0
+      ],
+      "intermediate_alpha_0_1": 0,
+      "intermediate_alpha_01_99": 0,
+      "history_epochs": [
+        0
+      ],
+      "preview_pts_error_s": 5.00000000069889e-07,
+      "diagnostic_actions": [],
+      "first_hash": "a865b1e6fc6765f6d4dec2190328d70f12d3d0ba9a6018f724659934c8ebb588",
+      "final_hash": "85ea3ba193209eece43900842400319b6e568e42c147fcabcf8def92170053c8",
+      "distinct_hashes": 242,
+      "initial_hold_ns": 1003439000,
+      "final_hold_ns": 1000582917
+    },
+    {
+      "name": "pan-3",
+      "complete": true,
+      "runtime_complete": true,
+      "locked_unavailable": true,
+      "binary_sha256": "0e77c57d5fe2b15b7e803afe15c847a81e7b2492b0baa3f328b814570dccbe97",
+      "source_digest": "05009ccdf8601a219bc7bf514198dfb1a96ffce5836d3d7821df44c131d7be8f",
+      "recipe_digest": "3f9c9ae8e22944d2d7c450af14554f7d6c46941b614b4e60c4eef78dec9070d0",
+      "opportunities": 481,
+      "submitted": 481,
+      "images": 481,
+      "omissions": [
+        0,
+        0
+      ],
+      "skipped": 0,
+      "render_cpu_ms": {
+        "n": 480,
+        "median": 0.803104,
+        "p95": 1.09525,
+        "p99": 1.268917,
+        "max": 1.85975
+      },
+      "scene_gpu_ms": {
+        "n": 480,
+        "median": 2.677248,
+        "p95": 2.833874,
+        "p99": 2.895875,
+        "max": 2.968625
+      },
+      "copy_gpu_bracket_ms": {
+        "n": 481,
+        "median": 1.148584,
+        "p95": 1.225333,
+        "p99": 1.253084,
+        "max": 1.331458
+      },
+      "lead_ms": {
+        "n": 481,
+        "median": 5.943875,
+        "p95": 7.831208,
+        "p99": 8.127042,
+        "max": 8.2935
+      },
+      "submit_gap_ms": {
+        "n": 480,
+        "median": 8.3087085,
+        "p95": 11.003083,
+        "p99": 11.521958,
+        "max": 11.879959
+      },
+      "interval_ns": 4010877792,
+      "duration_with_drain_ns": 4025036583,
+      "lease_peaks": [
+        3,
+        20
+      ],
+      "writer": {
+        "Ok": {
+          "bytes": 3989606400,
+          "flush_ns": 41,
+          "frames": 481,
+          "write_ns": 1648263517
+        }
+      },
+      "full_flush_ns": 12093750,
+      "packaging_ns": 46045597208,
+      "usage": {
+        "peak_rss_bytes": 281952256,
+        "user_seconds": 0.892044,
+        "system_seconds": 1.579247,
+        "input_blocks": 0,
+        "output_blocks": 0,
+        "voluntary_switches": 1482,
+        "involuntary_switches": 36540
+      },
+      "system_load": {
+        "before_load_1_5_15": [
+          2.3046875,
+          2.5322265625,
+          2.6181640625
+        ],
+        "after_load_1_5_15": [
+          2.2001953125,
+          2.50634765625,
+          2.6083984375
+        ],
+        "sample_duration_ns": 7166086459,
+        "disk_samples": "system-iostat.txt",
+        "disk_scope": "default devices including spool disk0; first row since boot; subsequent rows 1 s averages",
+        "background_process_snapshot": [
+          "  PID  %CPU COMM",
+          "26632  19.9 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+          "  333  17.3 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd",
+          "26873  10.3 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+          "89115   2.8 /Users/ryannel/Library/Developer/CoreSimulator/Devices/90298BEA-DAD1-4972-98AC-6E65ADE5FF1F/data/Containers/Bundle/Application/6C19DECF-F057-4A46-AD41-25197559945C/ThrumV1.app/ThrumV1",
+          "83041   2.8 /Applications/NordVPN.app/Contents/MacOS/NordVPN",
+          "49463   1.4 /Users/ryannel/Library/Application Support/Claude/claude-code/2.1.317/91184d3d9ba3/claude.app/Contents/MacOS/claude",
+          "  674   1.0 /System/Library/CoreServices/Finder.app/Contents/MacOS/Finder",
+          "  530   0.9 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds_stores",
+          "  358   0.6 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds",
+          "61098   0.6 /Users/ryannel/Workspace/Broadsides/tmp/worktrees/magic-t0/node_modules/@esbuild/darwin-arm64/bin/esbuild",
+          "  370   0.5 /usr/libexec/opendirectoryd",
+          " 6599   0.5 /System/Library/Frameworks/AppKit.framework/Versions/C/XPCServices/com.apple.appkit.xpc.openAndSavePanelService.xpc/Contents/MacOS/com.apple.appkit.xpc.openAndSavePanelService",
+          "47121   0.4 /Applications/Claude.app/Contents/MacOS/Claude",
+          "22775   0.3 /private/var/run/com.apple.security.cryptexd/mnt/com.apple.iPhoneOS.SimulatorRuntime-v24.2.8117.0.YDOXcI/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.2.simruntime/Contents/Resources/RuntimeRoot/usr/libexec/backboardd",
+          "  502   0.2 /usr/libexec/syspolicyd"
+        ],
+        "process_cpu_scope": "ps lifetime CPU snapshot, not interval CPU; load averages are host-wide",
+        "sampler": "iostat -d -C -U -w 1 subprocess plus one ps snapshot, same recipe in each arm"
+      },
+      "ticks": [
+        0,
+        0
+      ],
+      "intermediate_alpha_0_1": 0,
+      "intermediate_alpha_01_99": 0,
+      "history_epochs": [
+        0
+      ],
+      "preview_pts_error_s": 5.00000000069889e-07,
+      "diagnostic_actions": [],
+      "first_hash": "a865b1e6fc6765f6d4dec2190328d70f12d3d0ba9a6018f724659934c8ebb588",
+      "final_hash": "85ea3ba193209eece43900842400319b6e568e42c147fcabcf8def92170053c8",
+      "distinct_hashes": 242,
+      "initial_hold_ns": 1003157625,
+      "final_hold_ns": 1007933917
+    },
+    {
+      "name": "pan-4",
+      "complete": true,
+      "runtime_complete": true,
+      "locked_unavailable": true,
+      "binary_sha256": "0e77c57d5fe2b15b7e803afe15c847a81e7b2492b0baa3f328b814570dccbe97",
+      "source_digest": "05009ccdf8601a219bc7bf514198dfb1a96ffce5836d3d7821df44c131d7be8f",
+      "recipe_digest": "3f9c9ae8e22944d2d7c450af14554f7d6c46941b614b4e60c4eef78dec9070d0",
+      "opportunities": 481,
+      "submitted": 481,
+      "images": 481,
+      "omissions": [
+        0,
+        0
+      ],
+      "skipped": 0,
+      "render_cpu_ms": {
+        "n": 480,
+        "median": 0.7441665,
+        "p95": 0.89625,
+        "p99": 0.977083,
+        "max": 1.143208
+      },
+      "scene_gpu_ms": {
+        "n": 480,
+        "median": 2.6841455,
+        "p95": 2.830079,
+        "p99": 2.912667,
+        "max": 2.942209
+      },
+      "copy_gpu_bracket_ms": {
+        "n": 481,
+        "median": 1.168625,
+        "p95": 1.234625,
+        "p99": 1.254959,
+        "max": 1.269
+      },
+      "lead_ms": {
+        "n": 481,
+        "median": 5.878624,
+        "p95": 7.917666,
+        "p99": 8.239541,
+        "max": 8.298999
+      },
+      "submit_gap_ms": {
+        "n": 480,
+        "median": 8.309625,
+        "p95": 11.162708,
+        "p99": 11.774917,
+        "max": 11.95675
+      },
+      "interval_ns": 4010820917,
+      "duration_with_drain_ns": 4019500000,
+      "lease_peaks": [
+        3,
+        3
+      ],
+      "writer": {
+        "Ok": {
+          "bytes": 3989606400,
+          "flush_ns": 250,
+          "frames": 481,
+          "write_ns": 1340328164
+        }
+      },
+      "full_flush_ns": 10125959,
+      "packaging_ns": 46303900042,
+      "usage": {
+        "peak_rss_bytes": 136200192,
+        "user_seconds": 0.773972,
+        "system_seconds": 1.378151,
+        "input_blocks": 0,
+        "output_blocks": 0,
+        "voluntary_switches": 2211,
+        "involuntary_switches": 33258
+      },
+      "system_load": {
+        "before_load_1_5_15": [
+          2.455078125,
+          2.52001953125,
+          2.6044921875
+        ],
+        "after_load_1_5_15": [
+          2.41845703125,
+          2.51123046875,
+          2.6005859375
+        ],
+        "sample_duration_ns": 7158513083,
+        "disk_samples": "system-iostat.txt",
+        "disk_scope": "default devices including spool disk0; first row since boot; subsequent rows 1 s averages",
+        "background_process_snapshot": [
+          "  PID  %CPU COMM",
+          "  333  20.0 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd",
+          "26632  18.5 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+          "27002  12.9 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+          "  377   7.2 /usr/libexec/locationd",
+          "  480   4.9 /usr/libexec/airportd",
+          "89115   2.7 /Users/ryannel/Library/Developer/CoreSimulator/Devices/90298BEA-DAD1-4972-98AC-6E65ADE5FF1F/data/Containers/Bundle/Application/6C19DECF-F057-4A46-AD41-25197559945C/ThrumV1.app/ThrumV1",
+          "  674   1.6 /System/Library/CoreServices/Finder.app/Contents/MacOS/Finder",
+          "  358   1.0 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds",
+          "  530   1.0 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds_stores",
+          "83041   1.0 /Applications/NordVPN.app/Contents/MacOS/NordVPN",
+          "  370   0.8 /usr/libexec/opendirectoryd",
+          "  570   0.8 /System/Library/DriverExtensions/com.apple.DriverKit-AppleBCMWLAN.dext/com.apple.DriverKit-AppleBCMWLAN",
+          "83154   0.6 /Library/PrivilegedHelperTools/com.nordvpn.macos.helper",
+          "  373   0.6 /usr/libexec/timed",
+          " 6599   0.5 /System/Library/Frameworks/AppKit.framework/Versions/C/XPCServices/com.apple.appkit.xpc.openAndSavePanelService.xpc/Contents/MacOS/com.apple.appkit.xpc.openAndSavePanelService"
+        ],
+        "process_cpu_scope": "ps lifetime CPU snapshot, not interval CPU; load averages are host-wide",
+        "sampler": "iostat -d -C -U -w 1 subprocess plus one ps snapshot, same recipe in each arm"
+      },
+      "ticks": [
+        0,
+        0
+      ],
+      "intermediate_alpha_0_1": 0,
+      "intermediate_alpha_01_99": 0,
+      "history_epochs": [
+        0
+      ],
+      "preview_pts_error_s": 5.00000000069889e-07,
+      "diagnostic_actions": [],
+      "first_hash": "a865b1e6fc6765f6d4dec2190328d70f12d3d0ba9a6018f724659934c8ebb588",
+      "final_hash": "85ea3ba193209eece43900842400319b6e568e42c147fcabcf8def92170053c8",
+      "distinct_hashes": 242,
+      "initial_hold_ns": 1003315542,
+      "final_hold_ns": 1007090125
+    },
+    {
+      "name": "pan-5",
+      "complete": true,
+      "runtime_complete": true,
+      "locked_unavailable": true,
+      "binary_sha256": "0e77c57d5fe2b15b7e803afe15c847a81e7b2492b0baa3f328b814570dccbe97",
+      "source_digest": "05009ccdf8601a219bc7bf514198dfb1a96ffce5836d3d7821df44c131d7be8f",
+      "recipe_digest": "3f9c9ae8e22944d2d7c450af14554f7d6c46941b614b4e60c4eef78dec9070d0",
+      "opportunities": 481,
+      "submitted": 481,
+      "images": 481,
+      "omissions": [
+        0,
+        0
+      ],
+      "skipped": 0,
+      "render_cpu_ms": {
+        "n": 480,
+        "median": 0.7454585,
+        "p95": 1.019666,
+        "p99": 1.216875,
+        "max": 1.880125
+      },
+      "scene_gpu_ms": {
+        "n": 480,
+        "median": 2.687104,
+        "p95": 2.820708,
+        "p99": 2.897584,
+        "max": 3.025124
+      },
+      "copy_gpu_bracket_ms": {
+        "n": 481,
+        "median": 1.158416,
+        "p95": 1.231,
+        "p99": 1.253416,
+        "max": 1.284083
+      },
+      "lead_ms": {
+        "n": 481,
+        "median": 5.915124,
+        "p95": 7.905291,
+        "p99": 8.208833,
+        "max": 8.32375
+      },
+      "submit_gap_ms": {
+        "n": 480,
+        "median": 8.283312,
+        "p95": 10.924708,
+        "p99": 11.686875,
+        "max": 12.181625
+      },
+      "interval_ns": 4011408334,
+      "duration_with_drain_ns": 4016554000,
+      "lease_peaks": [
+        3,
+        6
+      ],
+      "writer": {
+        "Ok": {
+          "bytes": 3989606400,
+          "flush_ns": 250,
+          "frames": 481,
+          "write_ns": 2163179255
+        }
+      },
+      "full_flush_ns": 5236000,
+      "packaging_ns": 45883152584,
+      "usage": {
+        "peak_rss_bytes": 161857536,
+        "user_seconds": 0.8353309999999999,
+        "system_seconds": 1.468512,
+        "input_blocks": 0,
+        "output_blocks": 0,
+        "voluntary_switches": 2569,
+        "involuntary_switches": 35175
+      },
+      "system_load": {
+        "before_load_1_5_15": [
+          3.61767578125,
+          2.75390625,
+          2.67919921875
+        ],
+        "after_load_1_5_15": [
+          3.48779296875,
+          2.7412109375,
+          2.6748046875
+        ],
+        "sample_duration_ns": 7151233542,
+        "disk_samples": "system-iostat.txt",
+        "disk_scope": "default devices including spool disk0; first row since boot; subsequent rows 1 s averages",
+        "background_process_snapshot": [
+          "  PID  %CPU COMM",
+          "  333  15.4 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd",
+          "26632  14.3 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+          "27130   8.1 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+          "89115   2.8 /Users/ryannel/Library/Developer/CoreSimulator/Devices/90298BEA-DAD1-4972-98AC-6E65ADE5FF1F/data/Containers/Bundle/Application/6C19DECF-F057-4A46-AD41-25197559945C/ThrumV1.app/ThrumV1",
+          "36549   1.3 /Applications/ChatGPT.app/Contents/MacOS/ChatGPT",
+          "83041   1.2 /Applications/NordVPN.app/Contents/MacOS/NordVPN",
+          "  674   0.9 /System/Library/CoreServices/Finder.app/Contents/MacOS/Finder",
+          "57040   0.8 /Users/ryannel/Library/Application Support/Claude/claude-code/2.1.317/91184d3d9ba3/claude.app/Contents/MacOS/claude",
+          "47121   0.8 /Applications/Claude.app/Contents/MacOS/Claude",
+          "36995   0.6 /Applications/ChatGPT.app/Contents/Frameworks/Codex Framework.framework/Versions/157.0.8103.39/Helpers/Codex (Aperitif Renderer).app/Contents/MacOS/Codex (Aperitif Renderer)",
+          "32967   0.6 /Users/ryannel/Library/Application Support/Claude/claude-code/2.1.317/91184d3d9ba3/claude.app/Contents/MacOS/claude",
+          "  530   0.6 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds_stores",
+          "56520   0.5 /Users/ryannel/.nvm/versions/node/v24.16.0/bin/node",
+          "  370   0.4 /usr/libexec/opendirectoryd",
+          "83154   0.4 /Library/PrivilegedHelperTools/com.nordvpn.macos.helper"
+        ],
+        "process_cpu_scope": "ps lifetime CPU snapshot, not interval CPU; load averages are host-wide",
+        "sampler": "iostat -d -C -U -w 1 subprocess plus one ps snapshot, same recipe in each arm"
+      },
+      "ticks": [
+        0,
+        0
+      ],
+      "intermediate_alpha_0_1": 0,
+      "intermediate_alpha_01_99": 0,
+      "history_epochs": [
+        0
+      ],
+      "preview_pts_error_s": 5.00000000069889e-07,
+      "diagnostic_actions": [],
+      "first_hash": "a865b1e6fc6765f6d4dec2190328d70f12d3d0ba9a6018f724659934c8ebb588",
+      "final_hash": "85ea3ba193209eece43900842400319b6e568e42c147fcabcf8def92170053c8",
+      "distinct_hashes": 242,
+      "initial_hold_ns": 1003867875,
+      "final_hold_ns": 1008330417
+    },
+    {
+      "name": "profile-off",
+      "complete": true,
+      "runtime_complete": true,
+      "locked_unavailable": true,
+      "binary_sha256": "0e77c57d5fe2b15b7e803afe15c847a81e7b2492b0baa3f328b814570dccbe97",
+      "source_digest": "05009ccdf8601a219bc7bf514198dfb1a96ffce5836d3d7821df44c131d7be8f",
+      "recipe_digest": "3f9c9ae8e22944d2d7c450af14554f7d6c46941b614b4e60c4eef78dec9070d0",
+      "opportunities": 481,
+      "submitted": 473,
+      "images": 0,
+      "omissions": [
+        0,
+        0
+      ],
+      "skipped": 0,
+      "render_cpu_ms": {
+        "n": 472,
+        "median": 1.229479,
+        "p95": 3.330042,
+        "p99": 3.873708,
+        "max": 4.23775
+      },
+      "scene_gpu_ms": {
+        "n": 472,
+        "median": 2.668874,
+        "p95": 2.843332,
+        "p99": 2.904041,
+        "max": 3.00475
+      },
+      "copy_gpu_bracket_ms": null,
+      "lead_ms": null,
+      "submit_gap_ms": null,
+      "interval_ns": 4008897125,
+      "duration_with_drain_ns": 4009191084,
+      "lease_peaks": [
+        0,
+        0
+      ],
+      "writer": {
+        "Ok": {
+          "bytes": 0,
+          "flush_ns": 0,
+          "frames": 0,
+          "write_ns": 0
+        }
+      },
+      "full_flush_ns": 7577041,
+      "packaging_ns": 50250,
+      "usage": {
+        "peak_rss_bytes": 81887232,
+        "user_seconds": 0.772276,
+        "system_seconds": 0.8322569999999999,
+        "input_blocks": 0,
+        "output_blocks": 0,
+        "voluntary_switches": 0,
+        "involuntary_switches": 25423
+      },
+      "system_load": {
+        "before_load_1_5_15": [
+          2.404296875,
+          2.54541015625,
+          2.5986328125
+        ],
+        "after_load_1_5_15": [
+          2.0341796875,
+          2.4609375,
+          2.56787109375
+        ],
+        "sample_duration_ns": 7170924333,
+        "disk_samples": "system-iostat.txt",
+        "disk_scope": "default devices including spool disk0; first row since boot; subsequent rows 1 s averages",
+        "background_process_snapshot": [
+          "  PID  %CPU COMM",
+          "27531  15.1 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+          "99565   3.0 /Users/ryannel/Library/Application Support/Claude/claude-code/2.1.317/91184d3d9ba3/claude.app/Contents/MacOS/claude",
+          "89115   2.7 /Users/ryannel/Library/Developer/CoreSimulator/Devices/90298BEA-DAD1-4972-98AC-6E65ADE5FF1F/data/Containers/Bundle/Application/6C19DECF-F057-4A46-AD41-25197559945C/ThrumV1.app/ThrumV1",
+          "  333   1.5 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd",
+          "26632   1.5 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+          "  371   1.4 /System/Library/PrivateFrameworks/ApplePushService.framework/apsd",
+          "47121   1.0 /Applications/Claude.app/Contents/MacOS/Claude",
+          " 2009   1.0 /Users/ryannel/Library/Application Support/Claude/claude-code/2.1.317/91184d3d9ba3/claude.app/Contents/MacOS/claude",
+          "34867   0.9 /Users/ryannel/Library/Application Support/Claude/claude-code/2.1.317/91184d3d9ba3/claude.app/Contents/MacOS/claude",
+          "83041   0.7 /Applications/NordVPN.app/Contents/MacOS/NordVPN",
+          "56520   0.7 /Users/ryannel/.nvm/versions/node/v24.16.0/bin/node",
+          "45904   0.7 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper",
+          "83154   0.7 /Library/PrivilegedHelperTools/com.nordvpn.macos.helper",
+          "  370   0.6 /usr/libexec/opendirectoryd",
+          "35936   0.4 /Users/ryannel/Library/Application Support/Claude/claude-code/2.1.317/91184d3d9ba3/claude.app/Contents/MacOS/claude"
+        ],
+        "process_cpu_scope": "ps lifetime CPU snapshot, not interval CPU; load averages are host-wide",
+        "sampler": "iostat -d -C -U -w 1 subprocess plus one ps snapshot, same recipe in each arm"
+      },
+      "ticks": [
+        null,
+        null
+      ],
+      "intermediate_alpha_0_1": 0,
+      "intermediate_alpha_01_99": 0,
+      "history_epochs": [],
+      "preview_pts_error_s": null,
+      "diagnostic_actions": []
+    },
+    {
+      "name": "profile-on",
+      "complete": true,
+      "runtime_complete": true,
+      "locked_unavailable": true,
+      "binary_sha256": "0e77c57d5fe2b15b7e803afe15c847a81e7b2492b0baa3f328b814570dccbe97",
+      "source_digest": "05009ccdf8601a219bc7bf514198dfb1a96ffce5836d3d7821df44c131d7be8f",
+      "recipe_digest": "3f9c9ae8e22944d2d7c450af14554f7d6c46941b614b4e60c4eef78dec9070d0",
+      "opportunities": 481,
+      "submitted": 481,
+      "images": 481,
+      "omissions": [
+        0,
+        0
+      ],
+      "skipped": 0,
+      "render_cpu_ms": {
+        "n": 480,
+        "median": 0.867125,
+        "p95": 1.116041,
+        "p99": 1.220583,
+        "max": 1.373042
+      },
+      "scene_gpu_ms": {
+        "n": 480,
+        "median": 2.6913955,
+        "p95": 2.844583,
+        "p99": 2.8875,
+        "max": 2.947456
+      },
+      "copy_gpu_bracket_ms": {
+        "n": 481,
+        "median": 1.124458,
+        "p95": 1.223625,
+        "p99": 1.252334,
+        "max": 2.228875
+      },
+      "lead_ms": {
+        "n": 481,
+        "median": 6.560791,
+        "p95": 8.052292,
+        "p99": 8.285583,
+        "max": 8.300083
+      },
+      "submit_gap_ms": {
+        "n": 480,
+        "median": 8.277292,
+        "p95": 11.17775,
+        "p99": 11.771666,
+        "max": 12.865584
+      },
+      "interval_ns": 4011041250,
+      "duration_with_drain_ns": 4016452167,
+      "lease_peaks": [
+        3,
+        2
+      ],
+      "writer": {
+        "Ok": {
+          "bytes": 3989606400,
+          "flush_ns": 83,
+          "frames": 481,
+          "write_ns": 1061931627
+        }
+      },
+      "full_flush_ns": 23474125,
+      "packaging_ns": 47052214083,
+      "usage": {
+        "peak_rss_bytes": 131776512,
+        "user_seconds": 0.8694689999999999,
+        "system_seconds": 1.453375,
+        "input_blocks": 0,
+        "output_blocks": 0,
+        "voluntary_switches": 848,
+        "involuntary_switches": 32459
+      },
+      "system_load": {
+        "before_load_1_5_15": [
+          2.0341796875,
+          2.4609375,
+          2.56787109375
+        ],
+        "after_load_1_5_15": [
+          4.43359375,
+          2.951171875,
+          2.740234375
+        ],
+        "sample_duration_ns": 7161803833,
+        "disk_samples": "system-iostat.txt",
+        "disk_scope": "default devices including spool disk0; first row since boot; subsequent rows 1 s averages",
+        "background_process_snapshot": [
+          "  PID  %CPU COMM",
+          "27556  15.0 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+          "83154   3.9 /Library/PrivilegedHelperTools/com.nordvpn.macos.helper",
+          "89115   3.4 /Users/ryannel/Library/Developer/CoreSimulator/Devices/90298BEA-DAD1-4972-98AC-6E65ADE5FF1F/data/Containers/Bundle/Application/6C19DECF-F057-4A46-AD41-25197559945C/ThrumV1.app/ThrumV1",
+          "83041   3.1 /Applications/NordVPN.app/Contents/MacOS/NordVPN",
+          " 6670   2.8 /Users/ryannel/Library/Application Support/Claude/claude-code/2.1.317/91184d3d9ba3/claude.app/Contents/MacOS/claude",
+          "  333   1.8 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd",
+          "49463   1.7 /Users/ryannel/Library/Application Support/Claude/claude-code/2.1.317/91184d3d9ba3/claude.app/Contents/MacOS/claude",
+          "45852   1.3 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/156.0.8078.80/Helpers/Google Chrome Helper (Aperitif).app/Contents/MacOS/Google Chrome Helper (Aperitif)",
+          "26632   1.2 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+          "44089   1.0 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/156.0.8078.80/Helpers/Google Chrome Helper (Aperitif Renderer).app/Contents/MacOS/Google Chrome Helper (Aperitif Renderer)",
+          "  570   0.8 /System/Library/DriverExtensions/com.apple.DriverKit-AppleBCMWLAN.dext/com.apple.DriverKit-AppleBCMWLAN",
+          "  510   0.7 /usr/sbin/mDNSResponder",
+          "47121   0.6 /Applications/Claude.app/Contents/MacOS/Claude",
+          "45904   0.5 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper",
+          "  370   0.5 /usr/libexec/opendirectoryd"
+        ],
+        "process_cpu_scope": "ps lifetime CPU snapshot, not interval CPU; load averages are host-wide",
+        "sampler": "iostat -d -C -U -w 1 subprocess plus one ps snapshot, same recipe in each arm"
+      },
+      "ticks": [
+        0,
+        0
+      ],
+      "intermediate_alpha_0_1": 0,
+      "intermediate_alpha_01_99": 0,
+      "history_epochs": [
+        0
+      ],
+      "preview_pts_error_s": 5.00000000069889e-07,
+      "diagnostic_actions": [],
+      "first_hash": "a865b1e6fc6765f6d4dec2190328d70f12d3d0ba9a6018f724659934c8ebb588",
+      "final_hash": "85ea3ba193209eece43900842400319b6e568e42c147fcabcf8def92170053c8",
+      "distinct_hashes": 242,
+      "initial_hold_ns": 1002724333,
+      "final_hold_ns": 1007636792
+    },
+    {
+      "name": "render-stall",
+      "complete": true,
+      "runtime_complete": true,
+      "locked_unavailable": true,
+      "binary_sha256": "0e77c57d5fe2b15b7e803afe15c847a81e7b2492b0baa3f328b814570dccbe97",
+      "source_digest": "05009ccdf8601a219bc7bf514198dfb1a96ffce5836d3d7821df44c131d7be8f",
+      "recipe_digest": "3f9c9ae8e22944d2d7c450af14554f7d6c46941b614b4e60c4eef78dec9070d0",
+      "opportunities": 451,
+      "submitted": 451,
+      "images": 451,
+      "omissions": [
+        0,
+        0
+      ],
+      "skipped": 30,
+      "render_cpu_ms": {
+        "n": 450,
+        "median": 0.818521,
+        "p95": 1.11525,
+        "p99": 1.261625,
+        "max": 2.209083
+      },
+      "scene_gpu_ms": {
+        "n": 450,
+        "median": 2.6825425,
+        "p95": 2.836666,
+        "p99": 2.889124,
+        "max": 2.918503
+      },
+      "copy_gpu_bracket_ms": {
+        "n": 451,
+        "median": 1.052625,
+        "p95": 1.210167,
+        "p99": 1.233875,
+        "max": 1.25175
+      },
+      "lead_ms": {
+        "n": 451,
+        "median": 5.9305,
+        "p95": 7.858,
+        "p99": 8.288667,
+        "max": 8.30725
+      },
+      "submit_gap_ms": {
+        "n": 450,
+        "median": 8.2975205,
+        "p95": 10.875375,
+        "p99": 11.875084,
+        "max": 261.871042
+      },
+      "interval_ns": 4011358666,
+      "duration_with_drain_ns": 4016729125,
+      "lease_peaks": [
+        3,
+        2
+      ],
+      "writer": {
+        "Ok": {
+          "bytes": 3740774400,
+          "flush_ns": 166,
+          "frames": 451,
+          "write_ns": 1053021126
+        }
+      },
+      "full_flush_ns": 15397708,
+      "packaging_ns": 42830606750,
+      "usage": {
+        "peak_rss_bytes": 132431872,
+        "user_seconds": 0.88318,
+        "system_seconds": 1.4801659999999999,
+        "input_blocks": 0,
+        "output_blocks": 0,
+        "voluntary_switches": 960,
+        "involuntary_switches": 33091
+      },
+      "system_load": {
+        "before_load_1_5_15": [
+          2.9169921875,
+          3.12646484375,
+          2.8642578125
+        ],
+        "after_load_1_5_15": [
+          2.92333984375,
+          3.1240234375,
+          2.86474609375
+        ],
+        "sample_duration_ns": 7160652625,
+        "disk_samples": "system-iostat.txt",
+        "disk_scope": "default devices including spool disk0; first row since boot; subsequent rows 1 s averages",
+        "background_process_snapshot": [
+          "  PID  %CPU COMM",
+          "27936 100.0 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+          "27964  15.4 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+          "26632   4.1 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+          "89115   2.8 /Users/ryannel/Library/Developer/CoreSimulator/Devices/90298BEA-DAD1-4972-98AC-6E65ADE5FF1F/data/Containers/Bundle/Application/6C19DECF-F057-4A46-AD41-25197559945C/ThrumV1.app/ThrumV1",
+          "35936   1.9 /Users/ryannel/Library/Application Support/Claude/claude-code/2.1.317/91184d3d9ba3/claude.app/Contents/MacOS/claude",
+          "  333   1.8 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd",
+          "83041   1.6 /Applications/NordVPN.app/Contents/MacOS/NordVPN",
+          "  408   0.9 /usr/libexec/runningboardd",
+          "    1   0.7 /sbin/launchd",
+          "  329   0.6 /usr/libexec/logd",
+          "  370   0.6 /usr/libexec/opendirectoryd",
+          "  395   0.5 /usr/sbin/notifyd",
+          "47121   0.4 /Applications/Claude.app/Contents/MacOS/Claude",
+          "92361   0.4 /usr/libexec/gamepolicyd",
+          "36549   0.3 /Applications/ChatGPT.app/Contents/MacOS/ChatGPT"
+        ],
+        "process_cpu_scope": "ps lifetime CPU snapshot, not interval CPU; load averages are host-wide",
+        "sampler": "iostat -d -C -U -w 1 subprocess plus one ps snapshot, same recipe in each arm"
+      },
+      "ticks": [
+        0,
+        0
+      ],
+      "intermediate_alpha_0_1": 0,
+      "intermediate_alpha_01_99": 0,
+      "history_epochs": [
+        0
+      ],
+      "preview_pts_error_s": 5.00000000069889e-07,
+      "diagnostic_actions": [
+        {
+          "end_ns": 2056127750,
+          "kind": "render-owner-before-ordinary-step",
+          "requested_ns": 1800852583,
+          "start_ns": 1800852583
+        }
+      ],
+      "first_hash": "a865b1e6fc6765f6d4dec2190328d70f12d3d0ba9a6018f724659934c8ebb588",
+      "final_hash": "85ea3ba193209eece43900842400319b6e568e42c147fcabcf8def92170053c8",
+      "distinct_hashes": 212,
+      "initial_hold_ns": 1003567375,
+      "final_hold_ns": 1007932375
+    },
+    {
+      "name": "running",
+      "complete": true,
+      "runtime_complete": true,
+      "locked_unavailable": true,
+      "binary_sha256": "0e77c57d5fe2b15b7e803afe15c847a81e7b2492b0baa3f328b814570dccbe97",
+      "source_digest": "05009ccdf8601a219bc7bf514198dfb1a96ffce5836d3d7821df44c131d7be8f",
+      "recipe_digest": "3f9c9ae8e22944d2d7c450af14554f7d6c46941b614b4e60c4eef78dec9070d0",
+      "opportunities": 481,
+      "submitted": 481,
+      "images": 481,
+      "omissions": [
+        0,
+        0
+      ],
+      "skipped": 0,
+      "render_cpu_ms": {
+        "n": 480,
+        "median": 0.615625,
+        "p95": 0.902833,
+        "p99": 0.9775,
+        "max": 1.929542
+      },
+      "scene_gpu_ms": {
+        "n": 480,
+        "median": 2.663458,
+        "p95": 5.046498,
+        "p99": 5.157916,
+        "max": 5.252374
+      },
+      "copy_gpu_bracket_ms": {
+        "n": 481,
+        "median": 0.917083,
+        "p95": 1.516834,
+        "p99": 1.566542,
+        "max": 1.615917
+      },
+      "lead_ms": {
+        "n": 481,
+        "median": 5.895124,
+        "p95": 7.64375,
+        "p99": 8.198249,
+        "max": 8.293791
+      },
+      "submit_gap_ms": {
+        "n": 480,
+        "median": 8.246896,
+        "p95": 10.977875,
+        "p99": 11.89975,
+        "max": 12.404083
+      },
+      "interval_ns": 4009919750,
+      "duration_with_drain_ns": 4015035625,
+      "lease_peaks": [
+        3,
+        6
+      ],
+      "writer": {
+        "Ok": {
+          "bytes": 3989606400,
+          "flush_ns": 42,
+          "frames": 481,
+          "write_ns": 2136428700
+        }
+      },
+      "full_flush_ns": 6994750,
+      "packaging_ns": 43444129250,
+      "usage": {
+        "peak_rss_bytes": 149798912,
+        "user_seconds": 0.765793,
+        "system_seconds": 1.401549,
+        "input_blocks": 0,
+        "output_blocks": 0,
+        "voluntary_switches": 2566,
+        "involuntary_switches": 35232
+      },
+      "system_load": {
+        "before_load_1_5_15": [
+          5.935546875,
+          3.50390625,
+          2.9501953125
+        ],
+        "after_load_1_5_15": [
+          5.5400390625,
+          3.4619140625,
+          2.9384765625
+        ],
+        "sample_duration_ns": 7146357000,
+        "disk_samples": "system-iostat.txt",
+        "disk_scope": "default devices including spool disk0; first row since boot; subsequent rows 1 s averages",
+        "background_process_snapshot": [
+          "  PID  %CPU COMM",
+          "26632  16.8 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+          "27709  10.0 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+          "  333   9.4 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd",
+          "89115   3.1 /Users/ryannel/Library/Developer/CoreSimulator/Devices/90298BEA-DAD1-4972-98AC-6E65ADE5FF1F/data/Containers/Bundle/Application/6C19DECF-F057-4A46-AD41-25197559945C/ThrumV1.app/ThrumV1",
+          "83041   3.1 /Applications/NordVPN.app/Contents/MacOS/NordVPN",
+          "92314   2.0 /System/Library/PrivateFrameworks/TCC.framework/Support/tccd",
+          "  502   1.2 /usr/libexec/syspolicyd",
+          "83154   1.2 /Library/PrivilegedHelperTools/com.nordvpn.macos.helper",
+          "  358   1.1 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds",
+          "78708   1.0 launchd_sim",
+          "22750   1.0 launchd_sim",
+          "92302   0.8 /usr/libexec/trustd",
+          "  530   0.7 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds_stores",
+          "  674   0.6 /System/Library/CoreServices/Finder.app/Contents/MacOS/Finder",
+          "27411   0.6 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mdworker_shared"
+        ],
+        "process_cpu_scope": "ps lifetime CPU snapshot, not interval CPU; load averages are host-wide",
+        "sampler": "iostat -d -C -U -w 1 subprocess plus one ps snapshot, same recipe in each arm"
+      },
+      "ticks": [
+        0,
+        119
+      ],
+      "intermediate_alpha_0_1": 155,
+      "intermediate_alpha_01_99": 36,
+      "history_epochs": [
+        0
+      ],
+      "preview_pts_error_s": 5.00000000069889e-07,
+      "diagnostic_actions": [],
+      "first_hash": "d1d13f8402d0bd6981fa5ba32c35be87778ea161c1376f8b621e04e8d20e89ef",
+      "final_hash": "03bd0abc34a49e6cd84c22b37cdee6867de054f062b02d83ee816b8e4da6e612",
+      "distinct_hashes": 239,
+      "initial_hold_ns": 1027813167,
+      "final_hold_ns": 1006947333
+    },
+    {
+      "name": "still",
+      "complete": true,
+      "runtime_complete": true,
+      "locked_unavailable": true,
+      "binary_sha256": "0e77c57d5fe2b15b7e803afe15c847a81e7b2492b0baa3f328b814570dccbe97",
+      "source_digest": "05009ccdf8601a219bc7bf514198dfb1a96ffce5836d3d7821df44c131d7be8f",
+      "recipe_digest": "3f9c9ae8e22944d2d7c450af14554f7d6c46941b614b4e60c4eef78dec9070d0",
+      "opportunities": 1,
+      "submitted": 1,
+      "images": 1,
+      "omissions": [
+        0,
+        0
+      ],
+      "skipped": 0,
+      "render_cpu_ms": null,
+      "scene_gpu_ms": null,
+      "copy_gpu_bracket_ms": {
+        "n": 1,
+        "median": 1.227209,
+        "p95": 1.227209,
+        "p99": 1.227209,
+        "max": 1.227209
+      },
+      "lead_ms": {
+        "n": 1,
+        "median": 0.0,
+        "p95": 0.0,
+        "p99": 0.0,
+        "max": 0.0
+      },
+      "submit_gap_ms": null,
+      "interval_ns": 4133417,
+      "duration_with_drain_ns": 5704459,
+      "lease_peaks": [
+        0,
+        0
+      ],
+      "writer": {
+        "Ok": {
+          "bytes": 8294400,
+          "flush_ns": 166,
+          "frames": 1,
+          "write_ns": 876792
+        }
+      },
+      "full_flush_ns": 16210000,
+      "packaging_ns": 749316500,
+      "usage": {
+        "peak_rss_bytes": 98418688,
+        "user_seconds": 0.179255,
+        "system_seconds": 0.22120199999999998,
+        "input_blocks": 0,
+        "output_blocks": 0,
+        "voluntary_switches": 7,
+        "involuntary_switches": 8923
+      },
+      "system_load": {
+        "before_load_1_5_15": [
+          2.9970703125,
+          3.1455078125,
+          2.86962890625
+        ],
+        "after_load_1_5_15": [
+          2.9970703125,
+          3.1455078125,
+          2.86962890625
+        ],
+        "sample_duration_ns": 3159907041,
+        "disk_samples": "system-iostat.txt",
+        "disk_scope": "default devices including spool disk0; first row since boot; subsequent rows 1 s averages",
+        "background_process_snapshot": [
+          "  PID  %CPU COMM",
+          "27936  98.7 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+          "26632  15.0 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+          "  333  14.2 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd",
+          "27942   9.9 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+          "77554   5.0 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/156.0.8078.80/Helpers/Google Chrome Helper (Aperitif Renderer).app/Contents/MacOS/Google Chrome Helper (Aperitif Renderer)",
+          "89115   3.2 /Users/ryannel/Library/Developer/CoreSimulator/Devices/90298BEA-DAD1-4972-98AC-6E65ADE5FF1F/data/Containers/Bundle/Application/6C19DECF-F057-4A46-AD41-25197559945C/ThrumV1.app/ThrumV1",
+          "83154   2.5 /Library/PrivilegedHelperTools/com.nordvpn.macos.helper",
+          "83041   1.2 /Applications/NordVPN.app/Contents/MacOS/NordVPN",
+          "36549   1.0 /Applications/ChatGPT.app/Contents/MacOS/ChatGPT",
+          "  570   0.9 /System/Library/DriverExtensions/com.apple.DriverKit-AppleBCMWLAN.dext/com.apple.DriverKit-AppleBCMWLAN",
+          "  674   0.9 /System/Library/CoreServices/Finder.app/Contents/MacOS/Finder",
+          "36995   0.5 /Applications/ChatGPT.app/Contents/Frameworks/Codex Framework.framework/Versions/157.0.8103.39/Helpers/Codex (Aperitif Renderer).app/Contents/MacOS/Codex (Aperitif Renderer)",
+          "  370   0.5 /usr/libexec/opendirectoryd",
+          "47121   0.5 /Applications/Claude.app/Contents/MacOS/Claude",
+          "  358   0.5 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds"
+        ],
+        "process_cpu_scope": "ps lifetime CPU snapshot, not interval CPU; load averages are host-wide",
+        "sampler": "iostat -d -C -U -w 1 subprocess plus one ps snapshot, same recipe in each arm"
+      },
+      "ticks": [
+        0,
+        0
+      ],
+      "intermediate_alpha_0_1": 0,
+      "intermediate_alpha_01_99": 0,
+      "history_epochs": [
+        0
+      ],
+      "preview_pts_error_s": 0.0,
+      "diagnostic_actions": [],
+      "first_hash": "a865b1e6fc6765f6d4dec2190328d70f12d3d0ba9a6018f724659934c8ebb588",
+      "final_hash": "a865b1e6fc6765f6d4dec2190328d70f12d3d0ba9a6018f724659934c8ebb588",
+      "distinct_hashes": 1,
+      "initial_hold_ns": null,
+      "final_hold_ns": null
+    },
+    {
+      "name": "writer-slow",
+      "complete": false,
+      "runtime_complete": false,
+      "locked_unavailable": true,
+      "binary_sha256": "0e77c57d5fe2b15b7e803afe15c847a81e7b2492b0baa3f328b814570dccbe97",
+      "source_digest": "05009ccdf8601a219bc7bf514198dfb1a96ffce5836d3d7821df44c131d7be8f",
+      "recipe_digest": "3f9c9ae8e22944d2d7c450af14554f7d6c46941b614b4e60c4eef78dec9070d0",
+      "opportunities": 481,
+      "submitted": 480,
+      "images": 167,
+      "omissions": [
+        313,
+        0
+      ],
+      "skipped": 0,
+      "render_cpu_ms": {
+        "n": 479,
+        "median": 1.095,
+        "p95": 2.393334,
+        "p99": 2.955708,
+        "max": 3.396167
+      },
+      "scene_gpu_ms": {
+        "n": 479,
+        "median": 2.615166,
+        "p95": 4.894833,
+        "p99": 5.190709,
+        "max": 5.576164
+      },
+      "copy_gpu_bracket_ms": {
+        "n": 167,
+        "median": 0.897833,
+        "p95": 1.236834,
+        "p99": 1.533333,
+        "max": 1.575541
+      },
+      "lead_ms": {
+        "n": 167,
+        "median": 6.143416,
+        "p95": 7.831333,
+        "p99": 7.987708,
+        "max": 8.226375
+      },
+      "submit_gap_ms": {
+        "n": 166,
+        "median": 9.18975,
+        "p95": 67.682416,
+        "p99": 69.518916,
+        "max": 79.766167
+      },
+      "interval_ns": 4011293333,
+      "duration_with_drain_ns": 14013373792,
+      "lease_peaks": [
+        6,
+        96
+      ],
+      "writer": {
+        "Ok": {
+          "bytes": 1385164800,
+          "flush_ns": 750,
+          "frames": 167,
+          "write_ns": 10023089373
+        }
+      },
+      "full_flush_ns": 5106625,
+      "packaging_ns": null,
+      "usage": {
+        "peak_rss_bytes": 923566080,
+        "user_seconds": 0.9270849999999999,
+        "system_seconds": 1.306384,
+        "input_blocks": 0,
+        "output_blocks": 0,
+        "voluntary_switches": 698,
+        "involuntary_switches": 32026
+      },
+      "system_load": {
+        "before_load_1_5_15": [
+          2.5791015625,
+          2.91748046875,
+          2.80810546875
+        ],
+        "after_load_1_5_15": [
+          2.37646484375,
+          2.85546875,
+          2.78759765625
+        ],
+        "sample_duration_ns": 17149791542,
+        "disk_samples": "system-iostat.txt",
+        "disk_scope": "default devices including spool disk0; first row since boot; subsequent rows 1 s averages",
+        "background_process_snapshot": [
+          "  PID  %CPU COMM",
+          "  333  24.8 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd",
+          "26632  17.7 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+          "28203  10.3 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+          "    1   6.5 /sbin/launchd",
+          "83041   3.0 /Applications/NordVPN.app/Contents/MacOS/NordVPN",
+          "89115   2.3 /Users/ryannel/Library/Developer/CoreSimulator/Devices/90298BEA-DAD1-4972-98AC-6E65ADE5FF1F/data/Containers/Bundle/Application/6C19DECF-F057-4A46-AD41-25197559945C/ThrumV1.app/ThrumV1",
+          "92314   1.8 /System/Library/PrivateFrameworks/TCC.framework/Support/tccd",
+          "  674   1.5 /System/Library/CoreServices/Finder.app/Contents/MacOS/Finder",
+          "  502   1.1 /usr/libexec/syspolicyd",
+          "92302   1.0 /usr/libexec/trustd",
+          "  530   0.8 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds_stores",
+          " 6599   0.6 /System/Library/Frameworks/AppKit.framework/Versions/C/XPCServices/com.apple.appkit.xpc.openAndSavePanelService.xpc/Contents/MacOS/com.apple.appkit.xpc.openAndSavePanelService",
+          "  358   0.6 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds",
+          "47121   0.4 /Applications/Claude.app/Contents/MacOS/Claude",
+          "83154   0.3 /Library/PrivilegedHelperTools/com.nordvpn.macos.helper"
+        ],
+        "process_cpu_scope": "ps lifetime CPU snapshot, not interval CPU; load averages are host-wide",
+        "sampler": "iostat -d -C -U -w 1 subprocess plus one ps snapshot, same recipe in each arm"
+      },
+      "ticks": [
+        0,
+        119
+      ],
+      "intermediate_alpha_0_1": 14,
+      "intermediate_alpha_01_99": 14,
+      "history_epochs": [
+        0
+      ],
+      "preview_pts_error_s": null,
+      "diagnostic_actions": []
+    }
+  ],
+  "observer_order": [
+    "cost-off-1",
+    "cost-on-1",
+    "cost-on-2",
+    "cost-off-2"
+  ],
+  "profile_order": [
+    "profile-off",
+    "profile-on"
+  ]
+}

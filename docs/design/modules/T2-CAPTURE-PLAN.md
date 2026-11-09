@@ -2,10 +2,10 @@
 
 Design: [T2-CAPTURE.md](T2-CAPTURE.md) · [brief](T2-CAPTURE-BRIEF.md) ·
 Done when: [T2-CAPTURE-DONE.json](T2-CAPTURE-DONE.json).
-Reviews: [design review 3](../../evidence/T2-CAPTURE/design-review-3.md) clears T2 M0 to build; its remaining minor finding belongs to parked Mac M3. M0 milestone review is owed to the lead; no reviewer launched.
-Milestone: M0 Mac engine images and runtime motion without a desktop capture grant (claimed)
-Now: 9 November M0 implemented and builder-verified on locked-console M3 Max/Metal with Screen Recording unavailable. All nine items pass with [selected evidence](../../evidence/render/t2-capture-m0/README.md); full Check passes before the claim commit.
-Next: independent M0 review is owed. Mac qualification M2 consumes M0 after acceptance; Chrome M1 and simulator M2 remain open.
+Reviews: [design review 3](../../evidence/T2-CAPTURE/design-review-3.md) clears M0 build; [M0 review](../../evidence/T2-CAPTURE/M0-review.md) failed M0.3/.4/.8. Rework is builder-verified and reclaimed for lead re-review; no reviewer launched.
+Milestone: M0 Mac engine images and runtime motion without a desktop capture grant (claimed after rework)
+Now: 9 November M0.3/.4/.8 reworked and target-verified on locked-console M3 Max/Metal. Five full writer probes and five consecutive corrected-build pans complete; engine lead/generations, measured GPU copy bounds, host load and CPU profiles are in the [rework evidence](../../evidence/render/t2-capture-m0/rework/README.md). All nine items are reclaimed; profile Check gates integration.
+Next: independent M0 re-review is owed. Mac qualification M2 consumes M0 after acceptance; Chrome M1 and simulator M2 remain open.
 Blocked: no M0 delivery prerequisite remains. Attended panel/window/tooling qualifications stay with the named Mac M2 owners and do not follow from engine images.
 
 ## Ownership and sequence
@@ -29,7 +29,7 @@ existing scripts own manifests, lossless/movie packaging and validation. V1 keep
 content and bindings. G3t owns linear recipe comparison and G4 owns output-provider/EDR qualification; both use this
 capture service rather than copying it. Follow CONTRIBUTING and the architecture registry if dependencies change.
 
-## M0 Mac engine images and runtime motion without a desktop capture grant: claimed
+## M0 Mac engine images and runtime motion without a desktop capture grant: claimed after rework
 
 - Start with **M0.3's writer feasibility probe**, before full scenario integration: raw sequential spool at
   1920×1080, 120 records/s for four seconds, bounded buffers and 16 GiB output allowance per session. Record storage
@@ -91,6 +91,22 @@ single ownership, final submitted-image correspondence, real-time versus synthet
 nonblocking bounded readback and the attended Mac cadence boundary. No proof item is passed by this plan.
 
 ## Log
+
+- 2026-11-09 Reclaimed M0 after [first milestone review](../../evidence/T2-CAPTURE/M0-review.md).
+  Expanded the finite CPU burst reserve to 96 (six staging, 1 GiB pixel cap); five consecutive full writer probes
+  and five consecutive corrected-build pans complete without omission, at unchanged 1920×1080/120 Hz workload.
+  FrameHost stamps actual device/presenter/lead provenance; the engine opportunity adapter consumes the shared
+  native lead policy. Dependency-ordered real GPU markers measure a readback-copy upper bracket on Metal,
+  where encoder writes are unsupported and empty markers produced zero counters. Pipeline creation uses the
+  generation site in a setup transition; feature-enabled tests verify accounting. Added per-arm host load/disk
+  samples and separate actual CPU profiles: row unpacking, stdout scanning and file writes are observed costs;
+  whole-child CPU rises 53%/76%, so lower step time is not claimed as an improvement. Repeated still/fixed/running,
+  stall and slow-writer controls on the exact corrected binary; exposed existing alpha clamps. Failed collection
+  now retires its slot and restores the CPU lease. Clarified legacy parity (reviewer proved pre/post), alpha-count
+  thresholds and input coalescing. Historical attempts remain separate; selected roots/archives verified before
+  owned duplicate cleanup. All item statuses/evidence and M0 state updated, with planner/reviewer definitions,
+  counters and verdicts unchanged. Fresh locked rebase/Check/push gates integration; lead re-review remains owed.
+
 
 - 2026-11-09 Built M0 through the existing FrameHost graph, app/game semantic handler and ordinary presenter gate.
   The early writer probe selected uncached raw spill; integrated bursts selected bounded six/32 buffering under

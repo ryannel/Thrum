@@ -123,7 +123,7 @@ async fn host_and_output(
     (host, output, instance)
 }
 
-fn submit(host: &mut FrameHost<StaticWorld, StaticScene>, output: &wgpu::Texture) {
+fn submit(host: &mut FrameHost<StaticWorld, StaticScene>, output: &wgpu::Texture) -> FrameSample {
     let view = output.create_view(&wgpu::TextureViewDescriptor::default());
     let report = host
         .drive(
@@ -140,11 +140,13 @@ fn submit(host: &mut FrameHost<StaticWorld, StaticScene>, output: &wgpu::Texture
     );
     assert_eq!(report.tick, 0);
     let deadline = Instant::now() + Duration::from_secs(5);
+    let mut completed = None;
     while host.pending_frames() != 0 {
-        let _ = host.poll_completed().unwrap();
+        completed = host.poll_completed().unwrap().or(completed);
         assert!(Instant::now() < deadline);
         std::thread::yield_now();
     }
+    completed.expect("ordinary submitted frame completed")
 }
 
 fn image(host: &mut FrameHost<StaticWorld, StaticScene>) -> super::super::SubmittedImage {
@@ -167,8 +169,30 @@ fn submitted_tap_matches_the_actual_odd_width_surface_and_preserves_history() {
         pollster::block_on(async {
             let (mut host, output, _instance) = Box::pin(host_and_output(format)).await;
             host.enable_submitted_capture(42).unwrap();
+            #[cfg(feature = "creation-counters")]
+            {
+                let report = host.creation_report();
+                assert_eq!(report.violations, 0);
+                assert!(
+                    report
+                        .pipelines
+                        .iter()
+                        .any(|row| row.label == "capture-copy-timing"
+                            && row.phase == crate::runtime::CreationPhase::Transition
+                            && row.compute > 0)
+                );
+            }
+            host.set_presentation_lead(Duration::from_millis(7));
             submit(&mut host, &output);
             let image = image(&mut host);
+            assert!(
+                image
+                    .copy_gpu_ns
+                    .is_some_and(|ns| ns.is_finite() && ns > 0.0)
+            );
+            assert_eq!(image.device_generation, 7);
+            assert_eq!(image.presenter_generation, 1);
+            assert_eq!(image.presentation_lead, Duration::from_millis(7));
             assert_eq!(image.rgba.len(), 65 * 37 * 4);
             assert_eq!(image.session, 42);
             assert_eq!(image.source, host.world.source());
@@ -341,7 +365,10 @@ fn pending_capture_device_loss_is_rejected_without_polling_the_lost_queue() {
         host.disable_submitted_capture();
         host.enable_submitted_capture(2).unwrap();
         submit(&mut host, &output);
-        assert_eq!(image(&mut host).session, 2);
+        let fresh = image(&mut host);
+        assert_eq!(fresh.session, 2);
+        assert_eq!(fresh.device_generation, 8);
+        assert_eq!(fresh.presenter_generation, 2);
     });
 }
 
@@ -399,6 +426,7 @@ fn pending_scene_grid_pixels_keep_their_identity_across_surface_viewport_resize(
         host.resize_surface([83, 41]).unwrap();
         let old = image(&mut host);
         assert_eq!(old.sample.submission_order, 0);
+        assert_eq!(old.presenter_generation, 1);
         assert_eq!(
             old.rgba.len(),
             65 * 37 * 4,
@@ -410,7 +438,9 @@ fn pending_scene_grid_pixels_keep_their_identity_across_surface_viewport_resize(
             let _ = host.poll_completed().unwrap();
         }
         submit(&mut host, &output);
-        assert_eq!(image(&mut host).sample.submission_order, 1);
+        let fresh = image(&mut host);
+        assert_eq!(fresh.sample.submission_order, 1);
+        assert_eq!(fresh.presenter_generation, 3);
         assert_eq!(host.submitted_capture_omissions(), 0);
     });
 }

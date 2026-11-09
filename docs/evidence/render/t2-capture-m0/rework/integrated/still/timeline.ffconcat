@@ -1,0 +1,6 @@
+ffconcat version 1.0
+file 'png/000263.png'
+option framerate 1000000
+duration 4.000000
+file 'png/000263.png'
+option framerate 1000000
