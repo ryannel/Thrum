@@ -4,25 +4,28 @@
   "design": {
     "verdict": "ok",
     "review": "docs/evidence/COOKED-DRAW/design-review.md",
-    "commit": "2c82de2700e2db8003029ab3cb2702c0c08be86e",
+    "commit": "dccdbb9b35603ee37c7e570f8298edfd2102db05",
     "hash": "a783b5d9a2cf9615c6c3e03e19fdb1b29fcc26fabd3cdcedb3dd1c155b0f946e",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.1-sol",
-    "effort": "high",
+    "effort": "medium",
     "observed": {
       "model": "gpt-6.1-sol",
-      "effort": "high"
+      "effort": "medium"
     },
     "cli": "codex-cli 0.167.0-alpha.3.2",
     "path": "visible",
-    "at": "2026-11-09T13:03:57Z"
+    "at": "2026-11-09T13:14:48Z"
   },
   "milestones": {
     "M1": {
-      "definitions": "88ec08562801eabaa95900e4b882f80e344e21e81d5e3c498c9eb032c187414f",
+      "definitions": "5e171aa247d93a95acac9d51cbd7ccf9ee3264fa40b5c308b382d4796145260f",
       "authorised": {
-        "by": "adopted"
+        "by": "design review",
+        "review": "docs/evidence/COOKED-DRAW/design-review.md",
+        "commit": "dccdbb9b35603ee37c7e570f8298edfd2102db05",
+        "at": "2026-11-09T13:14:48Z"
       },
       "reviews": []
     }
