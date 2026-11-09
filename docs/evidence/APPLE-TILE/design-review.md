@@ -1,201 +1,170 @@
-# APPLE-TILE (G3t) design review
+# APPLE-TILE scoped design review
 
-9 November 2026. Independent `/review-milestone` design review of revision `74be9f89`: the
-[brief](../../design/modules/APPLE-TILE-BRIEF.md), the [design](../../design/modules/APPLE-TILE.md), the
-[plan](../../design/modules/APPLE-TILE-PLAN.md) and the [done-when file](../../design/modules/APPLE-TILE-DONE.json),
-against C04/C06/C07/C08/C12 and the current consumers on that revision. Reviewer: Claude Opus 5.5. No milestone is
-judged, so the done-when file is unchanged. Nothing was built or run on a GPU. This is a document and source read,
-including the locked wgpu 30.0.1 sources in the cargo registry.
+9 November 2026. Reviewed integrated revision `2514d8240876d2ca6772698cfe6f451332fc48b4` using
+`orchestrate:review-milestone`, “Reviewing a design”. **DESIGN OK: no blocking findings; two verified advisory
+wording/status findings below.** This approves the scoped design for building, not implementation, visual quality,
+performance, milestone completion or unpark. The loop owns those transitions.
 
-**Verdict: DESIGN CHANGES, 9 findings.** The design is well researched, and most of its mechanisms check out against
-the code and the locked wgpu sources. But four of its proofs can pass while the work draws less or does something
-different, and two mechanisms conflict with existing owners or decisions. These need settling before M0 is built
-past its proof tooling.
+## Scope and requirements
 
-## Capabilities derived from the brief (written before reading the design)
+I read the [brief](../../design/modules/APPLE-TILE-BRIEF.md) before comparing the design and criteria. Its required
+capabilities are:
 
-1. The same cooked valley, with sky, Sun, stars, local lights, shadows and mirrored geometry, survives moving views,
-   a cut, day and night, dropped views, slot reuse, resize and device replacement.
-2. One immutable generation registry. Prepared portable fallbacks. Every required resource and pipeline exists
-   before readiness.
-3. Attachment load/store and transient eligibility follow actual readers, including occlusion, capture and future
-   reconstruction. Logical bytes are never reported as physical bandwidth.
-4. Uploads cannot race GPU reads. Dirty data survives skips and slot reuse. Compact transport keeps every value a
-   supported shader reads, including supplied normals and history.
-5. Light overflow and mirrored/degenerate rasterization keep established semantics. Cost rows expose CPU fallback
-   and validation work.
-6. G4 gets one prepared, generation-owned native boundary with graph resources, a fallback, reset, completion,
-   errors and timing. No rival queue, raw drawable or mixed encoder.
-7. Correctness, agent visual review and lifecycle evidence are mandatory. Numbers are baselines and tripwires.
-   Promotion only on a measured win.
-8. Same cook, same contribution seam, no new schema. Extend existing crates. Register dependencies and justify unsafe
-   code.
-9. Offscreen proof proceeds while Mac M2 waits. Live/display qualification is recorded separately.
-10. Proofs must not pass while less required work is drawn. Milestone dependencies must resolve.
+1. Preserve the complete cooked scene, lighting, mirrors and temporal behavior through movement, cuts, skipped views,
+   slot reuse, resize and replacement on the supported targets.
+2. Select hardware paths through one generation registry, with readiness, prepared fallback and retirement under the
+   existing owners.
+3. Derive attachment storage from actual live readers, including capture and reconstruction, without confusing logical
+   traffic, resident allocation and physical bandwidth.
+4. Preserve safe queue-ordered uploads, admitted instance values/normals, existing light overflow and V2 raster/order
+   semantics. This commission need not replace their representations.
+5. Supply G4 with a replaceable pre-tone linear input and an isolated native feature boundary: graph resources,
+   prepared twin, reset, completion, error and timing semantics under one coordinator and queue.
+6. Prove correctness, lifecycle and visible behavior independently; qualify promotion with measured complete costs.
+   Keep simulator function, engine motion, actual-window function, panel cadence and physical-device evidence separate.
+7. Retain the creator's cook/contribution seam, preserve shared G5 work and resolve prerequisites without a reverse
+   dependency on G4 or Mac cadence.
 
-## What checks out
+The review covers the complete [design](../../design/modules/APPLE-TILE.md),
+[plan](../../design/modules/APPLE-TILE-PLAN.md) and all 33 items in the
+[done-when file](../../design/modules/APPLE-TILE-DONE.json), C04/C06/C07/C08/C12, the Metal boundary and hardware-native
+decisions, and relevant G4, Mac, T2 and COOKED-DRAW consumer definitions. I also inspected the current capability
+record, graph recording, scene declarations, tone/present shaders and bindings, FrameHost and cancellation tokens,
+the moving-route tool, capture runbook and locked wgpu 30.0.1 core/HAL sources. This is a reconciliation review with
+existing code in view. I read the previous review after forming my assessment of the revised scope. No agents were
+launched.
 
-- **Compact row.** 48 + 12 + 4 + 48 + 16 = 128 B, with the stated offsets. Every supported shader reads only
-  `previous[3].xyz` from the previous matrix (`synthetic.wgsl:125`, `visibility.wgsl:129,166`,
-  `history_gpu.wgsl:35`, `shadow.wgsl:53`). Current transforms are admitted affine (`upload.rs:363-377`). Keeping
-  the supplied normal columns satisfies capability 4.
-- **Overflow ranking.** The CPU oracle in `cluster.rs` uses the grid, capacity and tie rules the design states:
-  32×18×16, capacity 32, worst = lowest score and then highest index, replaced on a greater score or an equal score
-  with a lower index, and IDs sorted ascending. The current GPU builder is the four-source, fixed-stride path
-  (`cluster_gpu.rs`, `cluster.wgsl`), as the design says.
-- **Locked wgpu facts.** wgpu-types 30.0.1 has `TRANSIENT_ATTACHMENT` and `transient_saves_memory`. wgpu-core
-  restricts transient usage to `TRANSIENT_ATTACHMENT | RENDER_ATTACHMENT` (`device/resource.rs:1519`). wgpu-hal
-  Metal maps it to `MTLStorageModeMemoryless` when supported (`metal/device.rs:561`). wgpu-core's
-  `EncodingApi::{Wgpu, Raw}` forbids mixing on one encoder (`command/mod.rs:311,552`). So the whole-raw-encoder
-  segment is the right shape, and the design rightly qualifies Metal hazard tracking rather than assuming it.
-- **Dependencies.** `PLATFORM-RUNTIME-MAC:M1` is `done`. G4's dependency table points only forward at G3t
-  M0/M1/M3/M11/M12, so there's no cycle.
-- **Checks.** The cited checks exist (`metal_motion_history_*`, the `creation-counters` feature, the `moving`
-  subcommand), and the GPU-using checks carry `lock: gpu`.
-- **Determinism.** Byte-identical same-target repeats are already established on this route
-  (G3S/G7 evidence), so D0.2's exact-repeat rule is achievable.
+Reviewed artifact SHA-256 values:
 
-## Findings, worst first
+| Artifact | SHA-256 |
+| --- | --- |
+| APPLE-TILE-BRIEF.md | `f8b69b720d1d1729627eda41600a29eac58a866d726e8664f741116fef11a8a7` |
+| APPLE-TILE.md | `d90de51acfddeb2fda00e9b763dc5b13be3d0f5ddedff520a78f24e069bc1e4f` |
+| APPLE-TILE-PLAN.md | `95aa73f6bf0a748e9a55c6d743db2b758323f2c39498beab87c7b1e2c5ae8d34` |
+| APPLE-TILE-DONE.json | `15f4dd380ce274beffa15ec92c18588eefdb3bf44439bde4001316146888e2e2` |
 
-### 1. The Chrome-only items can pass while both targets draw less (verified)
+## Findings, ranked
 
-D1.4, D3.4, D7.4 and D12.4 are proved only by `python3 scripts/run_v1_showcase.py moving`. In
-`scripts/run_v1_showcase.py:801-880`, that command compares Chrome against native from the same revision under the
-32×18 coarse-grid `THRESHOLDS`, plus a repeat check. It doesn't compare against a pre-change baseline. So:
+### 1. Advisory, verified: D12.5 misnames the native handoff
 
-- D1.4's "unchanged route images" is never checked.
-- A change that drops content on both targets passes.
-- D7.4 ("Chrome shaders consume the same private transport") passes if Chrome stays on the old 192-byte row.
-- D1.4's "no native dependency" isn't examined.
-- D12.4's "retains lighting/visibility/present semantics" is a 32×18 grid judgement.
+**Location:** `docs/design/modules/APPLE-TILE-DONE.json:420`; compare
+`docs/design/modules/APPLE-PRESENTATION-PLAN.md:118`, `:121` and `:130`.
 
-The brief explicitly asks reviewers to reject "proof that could pass while drawing less required work".
+**Evidence:** D12.5 asks to confirm that “G4 M11 native handoff” does not transitively need the final cooked-simulator
+item. The consumer plan instead identifies **G3t M11 → G4 M8** as the native handoff. **G4 M11** is the final paired
+proof and explicitly needs G3t M12, so that particular confirmation would be false if read literally.
 
-*Change.* Give each of these items an `ask` or `inspect` that settles its own statement:
-- D7.4: the WGSL stride/offset test runs on the WebGPU path, or the shader source traces to the 128-B struct.
-- D1.4: the wasm dependency tree is free of `apple_tile`/native crates.
-- D1.4 and D3.4: the finer G3t comparator against a recorded pre-change portable baseline, at full resolution.
-- D12.4: the light/visibility witnesses.
+**Consequence:** A later reviewer could confuse early native-boundary availability with final G4 qualification.
+This is advisory because the item statement concerns simulator function, and the producer design, dependency
+sequence and consumer handoff table consistently identify the intended boundary. It does not introduce an actual
+cycle or place cooked simulator work on the native-handoff path.
 
-### 2. M9's mirrored ranges have no existing owner on the supported path (verified)
+**Resolution:** Name G3t M11/G4 M8 in that question and retain G4 M11's explicit dependency on final G3t M12. Do not
+remove the final qualification dependency to make the mistaken name true.
 
-On the supported legacy route, every instance is drawn with one scene-wide pipeline, and that pipeline is two-sided
-(cull none) whenever any instance is mirrored or degenerate: `needs_two_sided` is `determinant <= 1e-12`
-(`upload.rs:285-289`), and `forward.rs:87-96` uses it. The only ordinary/mirrored/two-sided range split is the
-experimental G3c M3b bucket route (`buckets.rs:1-47`, `mesh_route.rs:1-70`), which is "private until root reviews
-the wiring". The design forbids promoting it.
+### 2. Advisory, verified: one maturity scope retains the removed simulator dependency
 
-So D9.1's "existing V2 membership/facing authority supplies ordinary/mirrored indirect ranges" names ranges that
-don't exist on the supported path. M9 must either qualify the bucket route, which the design forbids, or build a
-second class/range mechanism beside it, which is a rival to V2's own experimental implementation.
+**Location:** `docs/design/maturity.json:524`, the frame-runtime scope; compare its G3t scope at `:583`,
+`docs/design/modules/PLATFORM-RUNTIME-MAC-DONE.json:119` and APPLE-TILE's retained `needs` entries.
 
-The change also replaces the established cull-none result for mirrored rows with back-face culling. That's
-image-identical only for closed meshes. An open or single-sided mesh loses its back side, against the brief's
-"preserve established renderer semantics".
+**Evidence:** The frame-runtime scope still says Mac M3 is transitively blocked on T2 “Chrome M1/simulator M2”.
+The revised APPLE-TILE chain needs delivered T2 M0/M1, uses diagnostic simulator function before M12 and has no
+T2 simulator M2 dependency. The G3t ledger entry and active plans correctly describe the revised chain.
 
-The valley's mirrored geometry is also narrower than the cue table implies. Cooked placements refuse mirrored
-transforms (`thrum-asset-gpu/src/placement.rs:196`), and the cook bakes mirrored winding (`thrum-cook/src/mesh.rs:5`).
-So the only runtime mirror is overlay slot 5060 (`examples/v1-game/src/scene.rs:36`).
+**Consequence:** Status readers can infer an obsolete blocker. This is advisory because the executable dependency
+records and owning plans agree; no capability is falsely promoted and no prerequisite is missing from the build
+sequence.
 
-*Change.* Choose and state one owner for class ranges:
-- either M9 qualifies the bucket route's class split with the G3c/V2 owner's review;
-- or M9 defines the shared range mechanism that the bucket route will also use.
+**Resolution:** Align that frame-runtime scope sentence with the current chain, leaving final cooked simulator function
+under COOKED-DRAW M1 and stronger simulator capture under T2 M2. This review changes neither record.
 
-State the admission rule for open meshes, keeping two-sided where closure isn't known. Name the synthetic overlay
-as the mirror fixture.
+## Mechanism and boundary assessment
 
-### 3. Per-slot buffers on portable contradict the boundary decision and add unaccounted cost (verified)
+**Scope is now proportionate to the brief.** Deferring fused present, pointer uploads/duplicates, scratch sharing,
+compact rows, expanded GPU ranking and mirror-range consolidation removes the unsupported exactness premises and
+uncommissioned classifier refactor. It does not omit a required capability: existing upload, instance, lighting and
+visibility semantics remain mandatory. No deferred optimization is credited as delivered or as a saving.
 
-D4.1 and the Uploads mechanism give both recipes per-slot instance, light, cluster and bounds buffers. The
-[boundary decision](../../design/decisions/G3T-METAL-BOUNDARY.md) (line 15) puts per-slot upload rings in the
-`apple_tile` backend.
+**Storage has a usable decision rule.** Eligibility is per compiled variant, excludes explicit stores and later readers,
+and respects attachment-only usage restrictions. The public
+[wgpu 30.0.1 transient-attachment contract](https://docs.rs/wgpu/30.0.1/wgpu/struct.TextureUsages.html#associatedconstant.TRANSIENT_ATTACHMENT)
+requires clear/dont-care and discard, consistent with the design. The locked Metal allocator selects Memoryless for
+supported transient textures (`wgpu-hal-30.0.1/src/metal/device.rs:561`). The plan requires actual storage-mode
+inspection and mutation tests rather than inferring success from a recipe label. Stored star/capture variants and
+old/new generations are counted separately; a resident-memory win is not presumed.
 
-Today, portable uses single buffers with queue-ordered `write_buffer` (`synthetic.rs:1794-1825`), which is already
-race-free with two frames in flight. On portable, per-slot copies double the resident bytes. Under steady motion
-they also roughly double the dirty upload bytes, because each change is written into both slots as each one
-reconciles. Per-slot copies also add the dirty-cursor complexity of D4.2 where there was none.
+**The scene/output split preserves a concrete frame path.** Current scene declarations already express forward colour,
+exposure, tone output and readback; current SurfacePresenter separately samples the encoded Rgba8 intermediate.
+M2 joins those declarations and partitions only at the surface dependency. M3 changes the bound linear source,
+carrying exposure/sample/extent identity, while retaining `synthetic_display.wgsl`, Rgba8Unorm quantization and both
+`present.wgsl` format branches. This is compatible with G4's documented TAAU/MetalFX insertion and later EDR branch.
+It no longer requires reproducing cross-shader arithmetic or hardware quantization in a fused shader.
 
-The cost account counts the extra copy but not the doubled upload, and it states no portable benefit.
+**Normal and adverse execution compose with existing owners.** A committed sample is reconciled and encoded before
+late acquisition; successful submission alone accepts image history. A healthy refused drawable discards scene work
+and flushes pending queue writes; observed loss abandons without that queue call. These are distinct existing token
+paths in `crates/thrum-render/src/runtime/tokens.rs`, not a newly invented submit-without-present policy. Native
+provider reset joins discard, cut, failure and incompatible generation replacement. The iOS foreground lease still
+authorizes submission, and old-generation completion cannot publish live state.
 
-*Change.* Either restrict per-slot storage to the recipe whose pointer writes need it, or justify the portable cost.
-Add the portable upload-byte delta to D4.3's recorded rows as a tripwire.
+**The native segment is a plausible, bounded handoff, with proof still owed.** The public
+[raw-encoder safety contract](https://docs.rs/wgpu/30.0.1/wgpu/struct.CommandEncoder.html#method.as_hal_mut) keeps
+command-buffer finishing with wgpu. Locked core `command/mod.rs` also rejects mixing Raw/Wgpu encoding on one
+encoder. A dedicated whole raw encoder between finished ordinary encoders addresses both constraints. Declared
+resources, wgpu initialization, tracked same-queue resources and generation retention supply the intended ordering
+and lifetime mechanism. The first M10 step must qualify it on the locked stack before route integration or MetalFX.
+This review does not claim that experiment has run.
 
-### 4. The recipe tolerance isn't derived and can absorb small omissions (suspected)
+The replacement witness avoids the prior floating-point feasibility premise: scene/history regions use copies,
+while only a reserved binary-exact tile uses integer selection and storage writes. Distinct preinitialized histories,
+submission-selected state, exact twin readbacks and explicit no-op/stale/reset controls can discriminate native work
+from a concealed portable producer. M10/M11 must still demonstrate the actual command path, initialization, held-slot
+retention, command-buffer errors, replacement and reset. The witness is composition proof, not a MetalFX or speed
+qualification.
 
-CIEDE2000 p99≤2 and max≤6 is called provisional, but the design never derives it from expected sources of
-difference. The mechanisms that legitimately separate Apple tile from portable shouldn't change the output:
-- memoryless and transient storage;
-- shared uploads;
-- compact rows that copy the same f32 values;
-- exact light membership;
-- the same shaders.
+## Criteria and proof assessment
 
-So the expected difference is near zero. A max of 6 ΔE could hide a missing faint star, one dropped weak light in a
-saturated cell, or a few pixels of a far cube. D0.2's negative controls (a mismatched phase, a missing contribution)
-are gross failures that any metric catches.
+All retained items have an identifiable observation or code/contract question. The following is an assessment of their
+**definitions**, not milestone verdicts or a claim that their checks have passed.
 
-*Change.* For each milestone, state where Apple-vs-portable differences come from, and require exact equality
-where none is expected. Add small-omission negative controls to D0.2 that must exceed whatever tolerance is
-selected: drop one local light, one mirrored cube, and the star layer at night.
+| Items | Judgeability and convincing-fake protection |
+| --- | --- |
+| D0.1, D0.2 | Real cooked route and full-resolution pre-change linear/SDR controls, deterministic identity and separate realtime motion; phase, contribution, weak-light, mirror and star omissions must produce nonzero exact diffs. The unchanged two-pass SDR/sRGB/letterbox control makes later comparisons concrete. |
+| D0.3, D0.4 | A runnable creation-counter check and production-coverage question distinguish first-use creation from net live counts. The replay-probe question is explicitly historical, per-encoder and method-only, with absent scratch and measurement limits disclosed. |
+| D0.5 | Chrome endpoint smoke is labelled as such; a retained same-target submitted baseline is separately required before renderer changes. It cannot qualify temporal motion through coarse cross-target agreement. |
+| D1.1, D1.2 | Selection/refusal/unknown-fact cases, graph-reader mutations and actual Metal storage inspection expose false Apple labels, unsupported force overrides and transient resources with later readers. |
+| D1.3, D1.4, D1.5 | Native paired/pre-change bytes, Chrome's own exact baseline and wasm dependency boundary, plus simulator actual-fact/function observations cover distinct target claims. Prepared-variant switches and resident totals expose lazy creation and hidden fallback allocations. |
+| D2.1, D2.2 | Graph partition/order questions and separate healthy-refusal, loss and successful-submit witnesses reject early acquisition, accidental scene submission and lost-device flushes. |
+| D2.3, D2.4, D2.5 | Exact native checkpoints and separate motion, simulator background/lease recovery, and required OS-window observations cover rendering, lifecycle and composited function separately. The attended grant and matched-state reference protocol are explicit. |
+| D3.1, D3.2 | Trace the replaceable colour/exposure/identity binding and all graph edges; exact identity rebinding against both SDR surface branches and non-1:1 letterboxing rejects tone duplication, quantization changes and source-coordinate dither errors. Actual alternate-input binding must be established by the D3.1 code trace; identity pixels alone are insufficient. |
+| D3.3, D3.4, D3.5 | Optional-pass timing/schema tracing covers every platform consumer; Chrome exact checkpoints/motion and fresh actual-window observations prevent Mac-only or offscreen-only closure. |
+| D10.1, D10.2 | Whole-encoder API separation, an early exact same-submit fixture and the stateful native/twin route witness expose no-op native work, hidden WGSL production and stale source/history. Failure returns to design review. |
+| D10.3, D10.4 | Held submissions, acquire refusal, failed submission, replacement/loss and iOS background races cover completion ownership and reset rather than only the successful path. |
+| D11.1, D11.2, D11.3 | Bounded replacement fixtures, rejected preparation/provider, command errors, exact recovery controls and completion-tagged native timing expose premature retirement, stale generation publication and invented/cross-clock timing. |
+| D12.1, D12.2 | Complete CPU/GPU/validation/fallback and unique resident costs, capture-OFF baselines, observer arms, A/A and alternating runs, representative scaling and sustained thermal records prevent promotion on omitted work or hidden duplicates. An inconclusive candidate can remain unpromoted. |
+| D12.3, D12.4 | Final native/window and Chrome pre-change comparisons retain exact ordinary bytes, omission controls and normal-speed motion. Existing CPU light overflow must be counted honestly; it does not satisfy a new GPU-overflow claim. |
+| D12.5, D12.6 | COOKED-DRAW-owned simulator function and final checked-revision/integration questions preserve the downstream owner and separate maturity dimensions. D12.5's handoff name has advisory finding 1; its function requirement remains judgeable. |
 
-### 5. D8.1 can close M8 with every overflow case on the CPU fallback (verified from the item text)
+## Dependencies, earlier findings and limits
 
-D8.1 says "for qualified 0/4/16/32/64-light cases", and a ranking disagreement selects the CPU path and "cannot
-count as GPU-qualified". As written, the 32 and 64 overflow cases can all fall back while 0/4/16 match. D8.1 would
-then pass, and M8 ("GPU light lists preserve the established lighting choice") would close without any
-GPU-qualified overflow, which is the point of the milestone.
+The retained order is M0 → M1 → M2 → M3 → M10 → M11 → M12. M0 needs delivered T2 Mac M0; M1 needs delivered T2
+Chrome M1; M2 names the delivered Mac M1 loss boundary. No retained milestone needs T2 simulator M2. Only M12
+needs COOKED-DRAW M1 for cooked simulator function. Mac M2 remains independent; Mac M3 needs Mac M2 and G3t M3,
+including the attended M2/M3 window proofs and diagnostic simulator rows. G3t does not wait back on Mac M2/M3.
+G4 reconstruction consumes M3, and its native provider consumes G3t M11 without waiting for G3t M12. G4's final
+paired proof deliberately still consumes M12. I found no cycle in these relevant dependency paths.
 
-*Change.* Require that the named cases, overflow included, are GPU-qualified on mac-metal. If a case can't be
-qualified, D8.1 records it as an explicit unqualified outcome that doesn't satisfy the item, and that is a re-plan
-decision.
+The seven findings in [review 2](design-review-2.md) are substantively answered: unsupported arithmetic mechanisms
+and M9 are removed; actual-window observer/grants are named; CPU overflow is an explicit retained outcome; the Mac
+critical path is split; duplicate-upload work is deferred with its pointer candidate; and exactness is stated for
+retained ordinary image items. The two advisory inconsistencies above do not reverse those decisions.
 
-### 6. Promotion evidence omits C12's thermal row and the brief's validation-work row (verified)
+I ran `RUSTC_WRAPPER= ./dev check-docs`; repository checks passed before writing this report, including 595 Markdown
+files, 2595 local links, 30 module records, crate policy and current design hashes. The final report is checked again
+before handoff. The wrapper override avoids the configured external compiler cache; it bypasses no repository check.
+No GPU, browser, simulator, OS-window, motion, Instruments or performance experiment was run for this design review;
+no images or videos were judged. Future milestone reviewers must execute the specified target proofs and preserve
+unavailable results rather than inheriting a behavioral pass from this document. Only this requested review file is
+changed; definitions, acceptance records, milestone states and source code are untouched.
 
-C12 says a dedicated recipe's comparison records "thermal state after a sustained run; without comparison it is not
-performance-qualified". Neither the design, D5.3, D12.1 nor D12.2 mentions thermal state or a sustained run. The
-brief asks cost rows to expose "CPU fallback and validation work". D8.2 and D12.1 record fallback but not validation
-work. So D12.2 could record a "win" that C12 says isn't qualified.
-
-*Change.* Add the sustained run, the thermal state and validation/admission CPU cost to D12.1's recorded rows, and
-make promotion in D5.3 and D12.2 require them.
-
-### 7. G3t M2/M3 replace the live present path that Mac M2 is qualifying, and no item runs it on a Mac window (verified)
-
-M2 (late acquire, merged graph) and M3 (tone moved into present, intermediate removed) change the surface path that
-`PLATFORM-RUNTIME-MAC` M2 measures. Mac M2.1 already passes on the current path. Neither plan says whether landing
-G3t M2/M3 invalidates that evidence, or which revision Mac M2 qualifies.
-
-G3t's own proofs of the merged surface path are an acquired-format texture (`examples/v1-game/tests/surface_gpu.rs`,
-which says "a real window/swapchain is exercised separately") and the iOS simulator. D12.3 lets the module close
-with the real macOS windowed path "recorded as owed". That's right for cadence, but it means a functional break in
-the Mac window could ship unseen.
-
-*Change.* State the order in both plans: Mac M2 is either qualified before G3t M2/M3 land, or re-run after them.
-Add a functional windowed-run item for mac-metal at M2/M3 or M12, kept separate from cadence. Without a display
-slot it stays open rather than waived.
-
-### 8. Prepared fallback allocations aren't costed and could cancel the memory saving (suspected)
-
-"All selected and fallback pipelines/bind groups/variant allocations are prepared before readiness." If the
-prepared portable fallback includes a stored twin of every memoryless attachment, Apple tile saves no memory. The
-cost account doesn't say which fallback resources are allocated and which are rebuilt through the existing
-generation-replacement path.
-
-*Change.* Say which resources are resident for the fallback, count them in the cost account, and have D1.2/D1.3
-report the resident total under both recipes.
-
-### 9. D0.3 carries `status: pass` with plan prose as its evidence (verified, low)
-
-D0.3's `evidence` points at the plan's Carried work section rather than a check output, and the plan itself says to
-rerun it on the integrated M0 revision. The reviewer will rerun the check anyway. But the builder's claim should
-point at actual output from the M0 revision when M0 is claimed. D0.4 is acceptable as an `ask` over the retained
-probe document.
-
-## Done-when judgeability
-
-Apart from the findings above, I could judge each item. Most items pair an `ask` with an `inspect` that names the
-adverse cases, and several carry useful falsifiers: D4.2's failing cursor, D6.2's early overwrite, D9.2's
-cull-none, and D10.2's no-op native segment. The weak ones are the Chrome-only checks (finding 1), D8.1's
-"qualified" escape (finding 5), and every image item that relies on the underived tolerance (finding 4).
-
-DESIGN CHANGES: 9 findings
+DESIGN OK
