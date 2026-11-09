@@ -17,6 +17,7 @@ import platform
 import uuid
 
 from t2_writer_probe import ALLOWANCE, FRAME_BYTES, package
+from t2_load import LoadRecord
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -48,7 +49,7 @@ def archive_sources(output, records):
     target = output / "source-lossless.mkv"
     subprocess.run(["ffmpeg", "-v", "error", "-f", "rawvideo", "-pixel_format", "rgba",
                     "-video_size", "1920x1080", "-framerate", "120", "-i", str(output / "frames.rgba"),
-                    "-c:v", "libx264rgb", "-crf", "0", "-preset", "medium", "-threads", "2",
+                    "-c:v", "libx264rgb", "-crf", "0", "-preset", "ultrafast", "-threads", "2",
                     str(target)], check=True, timeout=120)
     process = subprocess.Popen(["ffmpeg", "-v", "error", "-i", str(target), "-f", "rawvideo",
                                 "-pix_fmt", "rgba", "pipe:1"], stdout=subprocess.PIPE)
@@ -121,6 +122,7 @@ def run(args):
         "build_source_files": source_files,
         "build_source_digest": hashlib.sha256(json.dumps(source_files, sort_keys=True).encode()).hexdigest(),
         "script_sha256": digest(Path(__file__)),
+        "helper_sha256": {name: digest(ROOT / "scripts" / name) for name in ("t2_load.py", "t2_writer_probe.py")},
         "shader_hashes": {str(p.relative_to(ROOT)): digest(p) for p in sorted((ROOT / "crates").rglob("*.wgsl"))},
         "cooked_hashes": {str(p.relative_to(store)): digest(p) for p in sorted(store.rglob("*")) if p.is_file()} if store else {},
         "scenario": args.case,
@@ -128,9 +130,9 @@ def run(args):
         "scenario_source_sha256": digest(ROOT / "examples/v1-game/src/window/capture.rs"),
         "parameter_sha256": digest(ROOT / "examples/v1-game/params/showcase-noon.params.json"),
         "output_allowance_bytes": ALLOWANCE,
-        "cpu_pool_bytes": 32 * FRAME_BYTES,
+        "cpu_pool_bytes": 96 * FRAME_BYTES,
         "gpu_staging_bytes": 6 * FRAME_BYTES,
-        "pixel_byte_allowance": 512 * 1024 * 1024,
+        "pixel_byte_allowance": 1024 * 1024 * 1024,
         "extent": [1920, 1080], "channel_order": "RGBA", "row_stride": 1920 * 4,
         "encoding": "SDR sRGB encoded bytes in Rgba8Unorm", "stage": "final engine output before identity present",
         "excluded": ["native controls", "OS composition", "physical output"],
@@ -152,6 +154,8 @@ def run(args):
     manifest["environment"] = {key: value for key, value in environment.items() if key.startswith("THRUM_")}
     records = []
     process = None
+    sampler = None
+    load = LoadRecord(output)
     begin = time.monotonic_ns()
     try:
         with (output / "stderr.txt").open("wb") as errors, (output / "frames.rgba").open("wb", buffering=0) as spool:
@@ -161,6 +165,9 @@ def run(args):
             process = subprocess.Popen([str(binary)], env=environment, stdout=spool, stderr=errors)
             deadline = time.monotonic() + 90
             while True:
+                if args.profile and sampler is None and (output / "measurement-ready.txt").exists():
+                    sampler = subprocess.Popen(["/usr/bin/sample", str(process.pid), "8", "1", "-mayDie", "-file", str(output / "cpu-sample.txt")], stdout=errors, stderr=errors)
+                    manifest["cpu_profile_scope"] = "1 ms sampler requested after engine ready marker before prime; observed within 10 ms; ends on child exit; separate profiled arms"
                 waited, status, usage = os.wait4(process.pid, os.WNOHANG)
                 if waited:
                     process.returncode = os.waitstatus_to_exitcode(status)
@@ -179,6 +186,10 @@ def run(args):
             os.fsync(spool.fileno())
             fcntl.fcntl(spool.fileno(), 51)  # F_FULLFSYNC, not just cached acceptance.
             manifest["full_flush_ns"] = time.monotonic_ns() - flush
+        manifest["system_load"] = load.finish()
+        load = None
+        if sampler is not None:
+            manifest["cpu_profile_returncode"] = sampler.wait(timeout=15)
         manifest["capture_and_flush_ns"] = time.monotonic_ns() - begin
         if returncode:
             raise ValueError(f"game failed: exit {returncode}; see stderr.txt")
@@ -246,6 +257,11 @@ def run(args):
             process.kill()
             process.wait()
     finally:
+        if load is not None:
+            manifest["system_load"] = load.finish()
+        if sampler is not None and sampler.poll() is None:
+            sampler.terminate()
+            sampler.wait(timeout=5)
         manifest["retained_bytes"] = sum(p.stat().st_size for p in output.rglob("*") if p.is_file())
         if manifest["retained_bytes"] > ALLOWANCE:
             manifest.update(complete=False, failure="session output allowance exceeded")
@@ -263,5 +279,6 @@ if __name__ == "__main__":
     parser.add_argument("--binary", type=Path, default=Path("target/debug/v1-game"))
     parser.add_argument("--store", type=Path)
     parser.add_argument("--case", choices=["pan", "running", "render-stall", "input-stall", "off", "writer-slow"], default="pan")
+    parser.add_argument("--profile", action="store_true", help="separate CPU sample arm; includes preparation/warmup")
     parser.add_argument("--mode", choices=["realtime", "fixed", "still"], default="realtime")
     run(parser.parse_args())

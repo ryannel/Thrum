@@ -187,6 +187,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.prepared = scene.prepared;
         self.slots = scene.slots;
         self.presenter = candidate.presenter.take();
+        self.presenter_generation += 1;
         self.scene.view = view;
         self.reset_replacement_history();
         self.visual_owner = Arc::new(());

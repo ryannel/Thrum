@@ -41,6 +41,15 @@ pub struct SubmittedImage {
     pub history_epoch: u64,
     /// Monotonic host observation immediately following the queue submission.
     pub submitted_at: Instant,
+    /// GPU copy upper bracket, including the dependent marker/encoder overhead.
+    pub copy_gpu_ns: Option<f64>,
+    /// Device generation captured by the render owner at submission.
+    pub device_generation: u64,
+    /// Engine presenter incarnation (initial prepare, resize, device publish).
+    /// This does not identify an OS drawable or compositor lease.
+    pub presenter_generation: u64,
+    /// Lead actually consumed by world interpolation for this submission.
+    pub presentation_lead: std::time::Duration,
 }
 
 impl AsRef<[u8]> for SubmittedImage {
@@ -49,10 +58,24 @@ impl AsRef<[u8]> for SubmittedImage {
     }
 }
 
+#[derive(Clone, Copy)]
+pub(super) struct Stamp {
+    pub sample: FrameSample,
+    pub source: SourceTick,
+    pub history_epoch: u64,
+    pub submitted_at: Instant,
+    pub device_generation: u64,
+    pub presenter_generation: u64,
+    pub presentation_lead: std::time::Duration,
+}
+
 struct Slot {
     readback: PixelReadback,
     reserved: bool,
-    sample: Option<(FrameSample, SourceTick, u64, Instant)>,
+    sample: Option<Stamp>,
+    retired: bool,
+    timing_collected: bool,
+    copy_ns: Option<f64>,
 }
 
 pub(super) struct Tap {
@@ -84,9 +107,15 @@ impl Tap {
             self.omitted = self.omitted.saturating_add(1);
             return None;
         }
-        if let Some(index) = self.slots.iter().position(|slot| !slot.reserved) {
+        if let Some(index) = self
+            .slots
+            .iter()
+            .position(|slot| !slot.reserved && !slot.retired)
+        {
             let slot = &mut self.slots[index];
             slot.reserved = true;
+            slot.timing_collected = false;
+            slot.copy_ns = None;
             Some((index, &mut slot.readback))
         } else {
             self.omitted = self.omitted.saturating_add(1);
@@ -94,16 +123,20 @@ impl Tap {
         }
     }
 
-    pub(super) fn submitted(
-        &mut self,
-        index: usize,
-        sample: &FrameSample,
-        source: SourceTick,
-        history: u64,
-    ) {
-        self.slots[index].sample = Some((*sample, source, history, Instant::now()));
+    pub(super) fn submitted(&mut self, index: usize, stamp: &Stamp) {
+        self.slots[index].sample = Some(*stamp);
     }
 
+    pub(super) fn finish_timing(
+        &mut self,
+        index: usize,
+        encoder: &wgpu::CommandEncoder,
+    ) -> Result<(), FrameError> {
+        self.slots[index]
+            .readback
+            .finish_copy_timing(encoder)
+            .map_err(|e| FrameError::Gpu(format!("copy timing: {e:?}")))
+    }
     pub(super) fn abandon(&mut self, index: usize) {
         let slot = &mut self.slots[index];
         slot.readback.cancel_unsubmitted();
@@ -153,18 +186,28 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 "capture pixel-byte allowance exhausted",
             ));
         }
+        let slots = (0..limits.staging_slots)
+            .map(|_| {
+                let mut readback = self.slots[0].target.readback(&self.device);
+                readback
+                    .enable_copy_timing(self.prepared.capabilities(), &self.queue)
+                    .map_err(|e| FrameError::Gpu(format!("copy timing prepare: {e:?}")))?;
+                Ok(Slot {
+                    readback,
+                    reserved: false,
+                    sample: None,
+                    retired: false,
+                    timing_collected: false,
+                    copy_ns: None,
+                })
+            })
+            .collect::<Result<Vec<_>, FrameError>>()?;
         self.submitted_capture = Some(Tap {
             owner: std::sync::Arc::new(()),
             session,
             generation: self.generation,
             extent: self.render_extent,
-            slots: (0..limits.staging_slots)
-                .map(|_| Slot {
-                    readback: self.slots[0].target.readback(&self.device),
-                    reserved: false,
-                    sample: None,
-                })
-                .collect(),
+            slots,
             omitted: 0,
             cpu_capacity: limits.cpu_buffers,
             free_cpu: (0..limits.cpu_buffers)
@@ -190,30 +233,74 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         if tap.generation != self.generation || tap.extent != self.render_extent {
             return Err(FrameError::InvalidState("retired capture generation"));
         }
+        // Resolve only after completion, in later render-coordinator work.
+        if tap
+            .slots
+            .iter()
+            .any(|s| s.sample.is_some() && s.readback.copy_timing_ready_to_resolve())
+        {
+            let mut encoder = self
+                .device
+                .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                    label: Some("submitted copy timestamp resolution"),
+                });
+            for slot in &mut tap.slots {
+                if slot.sample.is_some() {
+                    slot.readback
+                        .resolve_copy_timing(&mut encoder)
+                        .map_err(|e| {
+                            FrameError::Gpu(format!("copy timestamp resolution: {e:?}"))
+                        })?;
+                }
+            }
+            self.queue.submit([encoder.finish()]);
+        }
         let Some(mut rgba) = tap.free_cpu.pop() else {
             return Ok(None);
         };
         for slot in &mut tap.slots {
-            let Some((sample, source, history_epoch, submitted_at)) = slot.sample else {
+            let Some(stamp) = slot.sample else {
                 continue;
             };
-            if slot
-                .readback
-                .try_collect_into(self.generation, &mut rgba)
-                .map_err(|error| FrameError::Gpu(format!("submitted readback: {error:?}")))?
-            {
-                slot.sample = None;
-                slot.reserved = false;
-                return Ok(Some(SubmittedImage {
-                    owner: std::sync::Arc::clone(&tap.owner),
-                    sample,
-                    rgba,
-                    session: tap.session,
-                    source,
-                    history_epoch,
-                    submitted_at,
-                }));
+            let collect = (|| {
+                if !slot.timing_collected {
+                    let std::task::Poll::Ready(copy_ns) = slot.readback.copy_duration()? else {
+                        return Ok(false);
+                    };
+                    slot.copy_ns = copy_ns;
+                    slot.timing_collected = true;
+                }
+                slot.readback.try_collect_into(self.generation, &mut rgba)
+            })();
+            match collect {
+                Ok(false) => continue,
+                Err(error) => {
+                    // A failed mapping cannot be reused. Retire the GPU slot and
+                    // return its CPU lease; the session is explicitly incomplete.
+                    slot.retired = true;
+                    slot.reserved = false;
+                    slot.sample = None;
+                    tap.omitted += 1;
+                    tap.free_cpu.push(rgba);
+                    return Err(FrameError::Gpu(format!("submitted readback: {error:?}")));
+                }
+                Ok(true) => {}
             }
+            slot.sample = None;
+            slot.reserved = false;
+            return Ok(Some(SubmittedImage {
+                owner: std::sync::Arc::clone(&tap.owner),
+                sample: stamp.sample,
+                rgba,
+                session: tap.session,
+                source: stamp.source,
+                history_epoch: stamp.history_epoch,
+                submitted_at: stamp.submitted_at,
+                device_generation: stamp.device_generation,
+                presenter_generation: stamp.presenter_generation,
+                presentation_lead: stamp.presentation_lead,
+                copy_gpu_ns: slot.copy_ns,
+            }));
         }
         tap.free_cpu.push(rgba);
         Ok(None)

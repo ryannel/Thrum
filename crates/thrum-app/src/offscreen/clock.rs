@@ -28,6 +28,7 @@ pub struct Opportunity {
     pub requested: Duration,
     /// Scheduled indices skipped while the driver was busy or overslept.
     pub skipped_before: u32,
+    pub(super) target: Instant,
 }
 
 impl OpportunityClock {
@@ -66,6 +67,7 @@ impl OpportunityClock {
         let index = self.index;
         self.index = self.index.saturating_add(1);
         Opportunity {
+            target: self.origin + due + Duration::from_secs_f64(1.0 / f64::from(self.hz)),
             index,
             skipped_before: index - previous,
             requested,
