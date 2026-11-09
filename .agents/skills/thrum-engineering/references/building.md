@@ -57,7 +57,7 @@ For per-tick, per-frame and per-message code:
   - Chrome.
 
   Label Mac stand-ins "proxy". Device timing runs alone on the GPU: wrap timing and capture
-  runs in `agent_loop.py lock gpu -- <command>`, which holds a machine-wide lock.
+  runs in `agent_loop.py lock gpu -- <command>`, which holds a lock shared by every worktree of this repository.
 - **Regressions.** Investigate visible hitches, about 25% regression from a comparable baseline, or unexpected scaling
   ([performance](performance.md)).
 - **Visible output:** capture fixed cameras and a frame sequence from the exact build on the named target, offscreen.

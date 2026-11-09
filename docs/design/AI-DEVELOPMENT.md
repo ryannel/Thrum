@@ -71,14 +71,15 @@ the generic orchestrate suite (the `orchestration` domain of `ryannel/skills`), 
 | Project and module | `/plan-module` | Module map, gate order, [contracts](CONTRACTS.md); then each module's design, plan and JSON done-when file | Claude Opus 5.5, high |
 | Milestone | `/build-milestone` | The next milestone, verified and pushed | Codex `gpt-6.1-sol` or Claude Opus 5.5, medium |
 | Milestone | `/review-milestone` | A verdict from a clean context | Claude Opus 5.5, medium |
-| Fan-out | `/build-parallel` | Several module streams under one Claude lead | Lead at medium |
+| Unattended | `/build` | Keeps N builders busy on ready milestones, on Codex, Claude Code or another host | Lead, builders and reviewers at medium |
 
 There are two speeds:
 - **One chat.** The owner drives a single chat in Claude or Codex with `build-milestone`, and can move a stream
   between them at a milestone boundary. The plan, the done-when file and the plan's log are the whole handover.
-- **Fan-out.** One Claude lead runs `build-parallel`. Codex generators run through the suite's `agent_loop.py`, which pins
-  the model and effort on every turn, and evaluators and planners run as the `orchestrate-evaluator` and
-  `orchestrate-planner` agents. Escalation
+- **Unattended.** A lead on any host runs `build`, told how many builders on which hosts. Builders, reviewers and
+  planners run through the suite's `agent_loop.py`, which names the model and effort on every launch, starts a fresh
+  session per milestone, holds milestones whose `needs` aren't done, and reruns every check before it accepts a claim.
+  Reviews run on the other host where two are available. Escalation
   after a failed review is by count: the same session, then a fresh session, then a re-plan, then park.
 
 Every launch names its model and reasoning effort, so no default ever chooses one. Changing a role's model or effort

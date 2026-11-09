@@ -154,7 +154,7 @@ We updated two existing references rather than adding a skill for each stage. Th
 | --- | --- |
 | Make or change a ship, plant or other asset | Relevant craft/tool skill owns quality and construction; `repo-structure` routes placement, delivery and retention |
 | Select, deliver or tidy asset work | `repo-structure` → storage reference and existing asset contract; no new lifecycle schema |
-| Optimize a module within a commissioned design | Relevant `engine-module-design` performance reference → repository storage policy; ordinary local fixes need no architecture redesign |
+| Optimize a module within a commissioned design | The `thrum-engineering` performance reference → repository storage policy; ordinary local fixes need no architecture redesign |
 | Clean up disk | Existing `repo-structure` ownership/recovery guidance; an explicit cleanup task still needs actual path/process/source inspection |
 
 The storage reference now covers offline local work, exact promotion preconditions, compact closeout, retained user
