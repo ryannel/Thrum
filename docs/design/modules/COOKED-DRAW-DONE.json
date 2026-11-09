@@ -1,0 +1,138 @@
+{
+  "module": "COOKED-DRAW",
+  "milestones": [
+    {
+      "id": "M1",
+      "name": "Cooked scene draws on adapters without indirect execution, selected from the capability record",
+      "state": "open",
+      "fails": 0,
+      "replans": 0,
+      "bar": "Where both paths run, identical pixels; on the iOS simulator the cooked valley is as complete and continuous as on Mac (function only), the way shipped compatibility renderers such as Unreal's ES3.1 mobile path or Unity's GLES fallback draw the same content with less GPU-driven work. The indirect path on Mac and Chrome is untouched.",
+      "items": [
+        {
+          "id": "M1.1",
+          "statement": "The capability record captured from a real adapter carries its downlevel execution flags, SceneSurface lends them, and CookedAssets selects its draw path at every rebuild from that record alone: indirect when INDIRECT_EXECUTION is reported, direct otherwise. A record built without an adapter (capture_device) marks its downlevel facts as assumed WebGPU-compliant. A diagnostic mask that clears INDIRECT_EXECUTION in a captured record is opt-in only and recorded whenever used.",
+          "check": "./dev check",
+          "lock": "gpu",
+          "ask": "Read the diff. Is the cooked draw path chosen only from the record lent through SceneSurface, never from cfg(target_os), adapter or device name, backend, or a private adapter/device query? Do the Mac app, Chrome and iOS routes all build their record with the adapter-backed capture? Is the diagnostic mask unreachable without explicit opt-in, applied to the record (not inside thrum-asset-gpu), and recorded in evidence when used? Do unit tests cover selection with and without the flag and re-selection on a new device generation?",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.2",
+          "statement": "On the direct path the contribution creates no INDIRECT-usage buffer, cull uniform, visible counter or readback, records no compute dispatch, and draws each placed mesh with one draw_indexed over its whole meshlet-ordered index range (base vertex 0, one instance) using the same pipeline, bindings, instance record and index buffer as the indirect path. Discarded frames, capture-without-history, motion-history flags, device-generation restaging, remote feeds, material promotion and Sun casters behave the same on both paths; CookedStats names the selected path and leaves visible_meshlets None on the direct path.",
+          "check": "./dev check",
+          "lock": "gpu",
+          "ask": "Does ./dev check run the cooked GPU suite (examples/v1-game/tests/cooked_assets_gpu.rs) under both an adapter-backed record and an indirect-masked record, with cull-count assertions on the indirect arm and draw-path/None-count assertions on the direct arm? Does the direct arm cover discard, capture-no-history, device replacement, remote feed, material promotion and casters, not only a happy-path draw? Is the motion-history flag maintained in a step both paths run, and does the direct path allocate nothing it does not use?",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.3",
+          "statement": "On this Mac, with the same build and cooked store, the direct path's final submitted output (through the indirect-masked record) is byte-identical to the indirect path's for these fixed-time views: valley noon pan at 0°, 18° and 36°; a low-sun valley view; and the diagnostic scene with its volume, mirrored node and edge-straddling mesh. A same-path rerun of each arm is also byte-identical, so the comparison is meaningful.",
+          "check": "python3 scripts/cooked_draw_parity.py paths --target mac-metal --output tmp/cooked-draw/paths-$(date +%s)",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.4",
+          "statement": "The indirect path's output on this Mac is byte-identical before and after the change: the M1.3 views rendered by the recorded pre-change base (the main commit immediately before this milestone's first implementation commit, stored in docs/evidence/render/cooked-draw/BASE) and by the claimed commit, from one cooked store, with the indirect arm's visible-meshlet counts unchanged and a same-build rerun control.",
+          "check": "python3 scripts/cooked_draw_parity.py indirect --base \"$(cat docs/evidence/render/cooked-draw/BASE)\" --target mac-metal --output tmp/cooked-draw/indirect-mac-$(date +%s)",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.5",
+          "statement": "Chrome WebGPU's record reports INDIRECT_EXECUTION and selects the indirect path, and its cooked valley output through the T2 browser tap is byte-identical between the recorded base and the claimed commit at fixed times (pan 0°, 18°, 36° and a low-sun view), with a same-build rerun control, in one Chrome session on real hardware WebGPU.",
+          "check": "python3 scripts/cooked_draw_parity.py indirect --base \"$(cat docs/evidence/render/cooked-draw/BASE)\" --target chrome-webgpu --output tmp/cooked-draw/indirect-chrome-$(date +%s)",
+          "lock": "gpu",
+          "target": "chrome-webgpu",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.6",
+          "statement": "The indirect path's per-frame work is unchanged: the same dispatches, draw commands, buffer usages and per-frame queue writes as the base, and the G5 tripwires pass against their same-load history. Paired, order-alternated Mac runs of the valley record indirect versus masked-direct GPU forward and contribution time and render-thread encode time, with build, load class and order; no speed claim is made for either path and no simulator timing is recorded.",
+          "check": "sh scripts/check_g5_tripwires.sh",
+          "lock": "gpu",
+          "ask": "Compare the indirect path's per-frame recording in the diff against the base: are dispatches, draws, queue writes and buffer usages identical? Are the paired direct/indirect figures recorded with their conditions, labelled for load, and free of any promotion or selection claim?",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.7",
+          "statement": "On a fresh, owned iPhone 18 Pro / iOS 27.2 simulator with the console locked, the ordinary iOS route attaches the cooked valley through the game's existing content selection and, over at least ten seconds of presented frames, records an adapter record without INDIRECT_EXECUTION, the direct path selected, the cooked generation drawn, and no wgpu validation or cooked loader errors. The documented command builds, cooks, installs, runs and cleans up, and fails rather than skipping on any missing simulator, tool, error or undrawn set.",
+          "check": "python3 scripts/cooked_draw_ios_sim.py --output tmp/cooked-draw/ios-sim-$(date +%s)",
+          "lock": "gpu",
+          "ask": "Is the route's cooked attach the existing attach_cooked_scene selection, with the route unchanged when THRUM_ASSET_STORE and THRUM_SCENE are unset? Do the retained state records name the simulated model, runtime, host, adapter flags, selected path, drawn generation, lock state and source/content hashes? Is any OS grant requested?",
+          "target": "ios-sim",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.8",
+          "statement": "With cooked content attached on the simulator, a background/foreground cycle and the route's device-generation replacement each end with the cooked set drawn again through the direct path on the current generation, with no background submission, no old-generation publication and no validation error.",
+          "check": "python3 scripts/cooked_draw_ios_sim.py --lifecycle --output tmp/cooked-draw/ios-sim-lifecycle-$(date +%s)",
+          "lock": "gpu",
+          "ask": "Do the state records after each lifecycle row show the new generation, the re-selected direct path and the drawn set, and do the route's existing witness counters show zero background or lost-queue submissions?",
+          "target": "ios-sim",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.9",
+          "statement": "The cooked valley reads as complete, textured, lit and shadowed on the simulator.",
+          "inspect": "Native-size simctl screenshots of the valley start view, the 36° pan end, a low-sun view and the diagnostic scene, each judged whole and in full-resolution crops of the frame edges, horizon and objects. Inspection list: (1) terrain complete to the horizon and frame edges, with no missing patches, meshlet-shaped gaps, cracks or holes; (2) terrain reads as textured ground with its base colour, not default white, black or magenta, and no channel swap; (3) sphere reads metallic with sky reflection, rock matte, both facing outward; the mirrored diagnostic node faces and lights like its plain twin; (4) Sun direction and sky ambient read the same as the Mac indirect capture of that view (content presence only, not an image target); (5) sphere and rock cast Sun shadows onto the terrain; (6) the diagnostic volume is present and not clipped or blacked out; (7) no z-fighting, flicker or differences between two successive stills of a held view. Label simulator function only.",
+          "target": "ios-sim",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.10",
+          "statement": "While the route pans the camera on the simulator, cooked content stays continuous: no geometry missing at the frame edges as terrain enters view, no popping, flicker or one-frame holes.",
+          "inspect": "A frame sequence of the route's camera pan (simctl screenshots at short intervals, or a simctl recording decoded to frames), including the frames where terrain enters at each frame edge and the start and end holds. Judge content continuity only, never speed or cadence.",
+          "target": "ios-sim",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.11",
+          "statement": "The G5 decision, the maturity ledger and the evidence README record both draw paths, the selection rule, each target's actual adapter flags and selected path, the parity and cost results and their limits, and T2-CAPTURE M2's handoff; scratch is closed out under the storage rules.",
+          "ask": "Do the G5 decision's meshlet section and capability inventory, maturity.json and docs/evidence/render/cooked-draw/README.md agree with the code and the evidence, keep implementation, correctness, visual and device status separate, and claim no speed or physical-device result? Is owned scratch under tmp/cooked-draw/ retired or recorded with its closeout condition?",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        }
+      ]
+    }
+  ]
+}

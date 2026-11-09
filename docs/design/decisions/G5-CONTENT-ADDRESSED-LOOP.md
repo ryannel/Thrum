@@ -218,6 +218,8 @@ dev-server client.
   shadow with the geometry (evidence, 8 November).
 - The volume is not occluded by scene depth inside its box and is a diagnostic consumer only.
 - Mesh-shader meshlet path (tied to G3c); the indirect path needs `multi_draw_indirect` support (Metal has it).
+- No draw path for adapters without indirect execution: the iOS simulator draws no cooked content. A
+  capability-selected direct full-range draw is planned in [COOKED-DRAW](../modules/COOKED-DRAW.md) (not built).
 - Graph Copy passes are untimed engine-wide, so the upload's GPU cost is measured by the bench, not pass timestamps.
 - Physical iPhone, Chrome and sustained measurements.
 - Tripwires are asserted only by `scripts/check_g5_tripwires.sh`, not `./dev check` (they need the GPU and minutes).
