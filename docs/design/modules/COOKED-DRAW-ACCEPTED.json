@@ -1,0 +1,30 @@
+{
+  "module": "COOKED-DRAW",
+  "adopted": true,
+  "design": {
+    "verdict": "changes",
+    "review": "docs/evidence/COOKED-DRAW/design-review.md",
+    "commit": "82fa10acbf74d4e9746cfd11170d5592fb6c3185",
+    "hash": "6a3896fcd778a338e6fffee1a4c828ead7c000bb7af2636b57d58aa0996e6eea",
+    "by": "review",
+    "host": "codex",
+    "model": "gpt-6.1-sol",
+    "effort": "high",
+    "observed": {
+      "model": "gpt-6.1-sol",
+      "effort": "high"
+    },
+    "cli": "codex-cli 0.167.0-alpha.3.2",
+    "path": "visible",
+    "at": "2026-11-09T12:57:02Z"
+  },
+  "milestones": {
+    "M1": {
+      "definitions": "88ec08562801eabaa95900e4b882f80e344e21e81d5e3c498c9eb032c187414f",
+      "authorised": {
+        "by": "adopted"
+      },
+      "reviews": []
+    }
+  }
+}
