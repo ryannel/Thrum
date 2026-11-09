@@ -31,7 +31,7 @@ G4 adds:
 Consumers are the V1 game on macOS and in Chrome, the iOS shell (function only in the simulator), G7's showcase route
 and evidence. G4 consumes, from [APPLE-TILE](APPLE-TILE.md):
 - G3t's proof tooling (route, counters, reference image);
-- the present pass that owns tone;
+- the replaceable pre-tone scene-linear colour/exposure input, with the existing SDR tone/intermediate/present path;
 - the execute-time surface binding;
 - the native-segment handoff.
 
@@ -216,7 +216,8 @@ current display shader is a pre-AA diagnostic. So TAAU at scale 1.0 becomes the 
 **Generation transitions (resize, backing-scale change, device loss).**
 - A new extent needs new targets and a new MetalFX scaler, so it cannot be free.
 - The frame host keeps presenting the old generation. The present pass scales its output into the resized drawable
-  with linear filtering; the surface binding is execute-time (G3t M3).
+  with linear filtering implemented and qualified by G4; the surface binding is execute-time (G3t M2/M3).
+  G3t itself retains nearest-source SDR mapping and its intermediate.
 - Meanwhile a preparation thread builds the new generation: targets, bind groups, providers with synchronous
   initialization, and the history keys. wgpu's `Device` is `Send + Sync`.
 - Live drag-resizes are debounced: the build starts once the extent has been stable for 100 ms.
@@ -335,8 +336,11 @@ current display shader is a pre-AA diagnostic. So TAAU at scale 1.0 becomes the 
   - the 1×1 exposure resolve.
 
   The MetalFX provider is `apple_tile/metalfx.rs`, implementing G3t's `NativeProvider`.
-- *Present (`present.rs`, `present.wgsl`; tone moved there by G3t M3).* Adds the EDR transform and the transition-time
-  linear scaling.
+- *Display (`synthetic/display.rs`, `synthetic_display.wgsl`, `present.rs`, `present.wgsl`).* G3t M3 exposes the
+  pre-tone linear colour/exposure input and retains the current two-pass SDR arithmetic/quantization. G4 feeds
+  reconstruction into that input, and adds/qualifies its EDR branch and transition-time linear scaling. No G3t
+  fusion or cross-shader bit-equivalence is assumed. Ordinary SDR keeps the retained branch; a later fused SDR
+  replacement needs separate feasibility evidence and reviewed semantics, not a widened image tolerance.
 - *Generation builder (`runtime/preparation.rs`, proposed thread).* Builds new generations off the render thread. The
   frame host switches at a boundary.
 - *Governor (`thrum-render/src/governor.rs`).* A pure policy over `FrameSample`s, missed ticks and the display record.

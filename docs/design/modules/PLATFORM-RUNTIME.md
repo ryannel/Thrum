@@ -85,8 +85,11 @@ extension, capture-off direct output, pending-capture surface loss); M2.4 owns b
 M2.2 requires both and uses a capture-OFF traced arm for cadence, with separate capture-ON content/observer arms.
 Mac M2 needs only T2 M0 and qualifies the current path, independently of parked APPLE-TILE. New Mac M3 needs
 `APPLE-TILE:M3` and reruns the complete motion/cadence protocols plus windowed-tap/tooling preflight after its
-graph/present changes; earlier evidence qualifies only the earlier build. The parked producer requires explicit
-lead recommission and independent design approval before build; it does not gate M2 tooling.
+graph/input-seam changes; earlier evidence qualifies only the earlier build. The lead has commissioned the scoped
+APPLE-TILE re-plan; fresh independent design approval/unpark through the loop is owed. Its M3 chain needs delivered
+T2 M0/M1 then G3t M0–M3, with no simulator cooked/capture dependency. G3t's OS-window observer needs its own
+attended unlocked-session/Screen Recording setup and uses matched-state references, not Mac M2.3 submission proof.
+The producer does not gate Mac M2 tooling.
 
 Mobile adapters retain separate surface, foreground and local-play policy. Release a surface before suspend returns,
 reject old-generation input/completions and recreate only surface-dependent resources on resume. A local single-player

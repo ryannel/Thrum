@@ -12,7 +12,7 @@ The owner-approved eight-second Metal System Trace shows little drawable-wait ov
 
 One immutable capability registry per adapter generation selects portable wgpu or Apple tile before pipeline closure; passes never probe privately. Both consume the same compiled graph, view contract, material/instance ABI, source generations and pass identities. The graph owns dependencies, culling, attachment lifetimes, history transitions and timestamps. Its executor derives load/store and memoryless eligibility: an attachment read after a render pass must be stored; a last-use attachment may be transient or memoryless where supported. Acquisition is last before the drawable consumer; no feature owns another surface or queue.
 
-One isolated `apple_tile` backend owns mapped per-slot upload rings, attachment storage, native pipeline archives, MetalFX and EDR handoff under coordinator generation/submission order. Portable remains the running fallback and oracle. Unsupported features, invalid caches or failed optional pipelines select an already prepared path; no compilation during play. Cache keys include adapter, driver, OS/SDK, recipe, shader and ABI revisions. Device loss rebuilds native objects from retained cooked inputs. Raw calls cannot publish history or retire resources before successful submission.
+One isolated `apple_tile` backend owns native-feature handoff under coordinator generation/submission order; the graph derives attachment storage. The scoped G3t re-plan retains queue-ordered single upload buffers and defers mapped per-slot rings. G4 owns native pipeline archives, MetalFX and EDR providers. Portable remains the running fallback and oracle. Unsupported features, invalid caches or failed optional pipelines select an already prepared path; no compilation during play. Cache keys include adapter, driver, OS/SDK, recipe, shader and ABI revisions. Device loss rebuilds native objects from retained cooked inputs. Raw calls cannot publish history or retire resources before successful submission.
 
 The local macOS 27.2 SDK exposes memoryless textures, `MTLBinaryArchive` and Metal 4 command allocators/archives; availability belongs to the registry. Pinned wgpu-hal uses `MTLCommandQueue`. Core `EncodingApi::set` rejects mixing Raw/Wgpu recording in either order, including a no-op callback. `as_hal_mut` cannot flush pending native encoding. Raw surface writes also do not mark wgpu's surface initialized. A complete native-recorder candidate must own graph-equivalent recording, initialization, lifetimes, surface and completion handoff. Today's closures take a wgpu encoder; full Metal recording needs commands both recipes can consume. A second queue for part of a frame is excluded.
 
@@ -28,9 +28,16 @@ The graph declares every native read/write. Native-written textures are initiali
 discarded; generation ownership retains native resources through completion. Keep the existing acquisition-refusal
 drop contract and reset stateful providers after encoded-but-discarded work. Loss abandons without queue calls;
 iOS background submission stays forbidden. Completion errors join generation-tagged device recovery. Each provider
-has a prepared portable twin. G3t M10's stateful storage-writing blend/twin qualifies ordering, initialization,
+has a prepared portable twin. G3t M10's exact stateful storage-writing copy/select witness and prepared WGSL twin qualify ordering, initialization,
 retention and reset before G4 uses MetalFX. M11 qualifies replacement, rejection, errors and timing. Neither a
 stand-in pass nor a repository check qualifies MetalFX, a hardware win or displayed cadence.
+
+G3t M3 now exposes a replaceable colour/exposure input before the existing SDR tone stage. It retains the
+Rgba8Unorm intermediate and both shaders/quantization semantics. G4 inserts reconstruction there and owns the later
+EDR display branch. Fused tone/present, compact rows, expanded GPU light ranking, scratch sharing and mirrored-range
+consolidation are deferred rather than prerequisites of this boundary. No CPU/GPU floating-point exactness premise
+or removed-intermediate traffic saving is claimed. Fresh independent review of the scoped re-plan is owed; milestone
+states and unpark remain with the loop.
 
 ## Owner decision and later performance candidate
 

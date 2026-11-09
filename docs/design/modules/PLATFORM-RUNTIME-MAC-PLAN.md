@@ -8,8 +8,8 @@ Done when: [PLATFORM-RUNTIME-MAC-DONE.json](PLATFORM-RUNTIME-MAC-DONE.json) owns
 Reviews: [T2/Mac design review 2 at `6317102f`](../../evidence/T2-CAPTURE/design-review-2.md): DESIGN CHANGES (2 findings); revised here. Independent re-review of T2/Mac criteria and the M2/M3 split is owed; historical M0/M1 reviews remain in the log.
 Milestone: M2 The cooked valley presents smoothly on built-in ProMotion (replanned, open)
 Now: 9 November second-review revision lets M2 qualify the current surface path after T2 M0; new M3 owns post-G3t requalification. No fresh proof claimed.
-Next: independent design/JSON re-review; T2-CAPTURE M0; Mac builder diagnoses trace tooling (M2.4), qualifies windowed tap (M2.3), and runs current-path motion/cadence (M2.1/M2.2). M3 follows only when APPLE-TILE M3 is delivered.
-Blocked: M2 needs design re-review and unbuilt `T2-CAPTURE:M0`, not APPLE-TILE. M2.2 additionally needs M2.3/M2.4 and attended unlocked active panel/Instruments setup. M3 is blocked on parked APPLE-TILE (two failed design reviews), transitively T2 M1/M2 and G3t M0–M3; the lead must recommission its scoped re-plan, followed by independent design approval before build. M2.4 owns bounded trace diagnosis; it is not solved. Screen Recording is not required for engine images.
+Next: independent design/JSON re-review; consume delivered T2-CAPTURE M0; Mac builder diagnoses trace tooling (M2.4), qualifies windowed tap (M2.3), and runs current-path motion/cadence (M2.1/M2.2). M3 follows only when APPLE-TILE M3 is delivered.
+Blocked: Mac design re-review and attended panel/tool setup remain separate obligations; T2 M0 is now delivered. M2 has no APPLE-TILE dependency. M3 needs Mac M2 and parked APPLE-TILE M3: delivered T2 M0/M1 then sequential G3t M0–M3, including attended OS-window capture and diagnostic simulator function. No simulator cooked or T2 M2 dependency remains on that chain. The lead has commissioned G3t's scoped re-plan; fresh independent design approval/unpark through the loop is still owed. M2.4 owns bounded trace diagnosis. Engine pixels need no Screen Recording grant; G3t OS-window capture names its own grant.
 
 ## M0 Reviewed Mac qualification plan: done
 
@@ -46,12 +46,12 @@ That verdict is not a fresh pass of the changed M2.1 or the later build; all fou
 
 **Surface-path ordering:** M2 qualifies the current path with only `T2-CAPTURE:M0` as its delivery prerequisite;
 windowed-tap and trace-tooling work can proceed before G3t. APPLE-TILE is parked after its second failed design
-review and cannot gate any M2 item. Its surface-graph/tone changes still require new qualification: Mac M3 below
+review and cannot gate any M2 item. Its surface-graph/input-seam changes still require new qualification: Mac M3 below
 needs `APPLE-TILE:M3` and reruns the full motion/cadence protocols on the changed assembly. Earlier verdicts qualify
 only their recorded build. G3t D2.5/D3.5 separately require functional actual-window runs; those cannot replace Mac
 panel cadence. No reverse Mac dependency is added to G3t. M3 remains a required post-change V1 qualification, not
-a reason to hold current-path M2 open. The parked module restarts only on an explicit lead commission to resolve
-its seven design findings and obtain fresh independent design approval before build.
+a reason to hold current-path M2 open. The lead has commissioned the scoped re-plan answering its seven findings;
+fresh independent design approval/unpark through the loop remains owed before build.
 
 - [ ] **M2.1 unattended — current-build runtime content motion.** After T2-CAPTURE M0, run the paused-world
   1920×1080 noon 0°–36° pan over two seconds, plus one-second settled endpoint holds, with 120 Hz requested offscreen
@@ -127,8 +127,12 @@ it neither waives real-panel cadence nor claims capture or the trace failure alr
 ## M3 The post-G3t Mac surface path requalifies runtime motion and built-in cadence: open, blocked
 
 Delivery prerequisite: `APPLE-TILE:M3`; module ordering also requires Mac M2 done. This milestone is split from the
-former post-G3t M2 obligation, with `replans: 4`, and preserves the complete acceptance bar. APPLE-TILE is parked;
-M3 cannot start on T2 completion alone. Its transitive chain includes T2 Chrome M1, simulator M2 and G3t M0–M3.
+former post-G3t M2 obligation, with `replans: 4`, and preserves the complete acceptance bar. APPLE-TILE remains parked pending fresh independent design review/unpark of its lead-commissioned scoped re-plan;
+M3 cannot start on T2 completion alone. Its transitive chain is delivered T2 Mac M0/Chrome M1 then G3t M0–M3,
+including attended D2.5/D3.5 OS-window evidence (unlocked session and Screen Recording permission for that observer)
+and diagnostic simulator endpoint/function checks. It does not wait on cooked simulator COOKED-DRAW M1 or T2 M2.
+G3t retains the SDR tone/intermediate and only exposes G4 pre-tone input; the changed scheduling/input path still
+requires the full requalification. Mac cadence continues to use capture OFF with its own attended panel/Instruments setup.
 
 - [ ] **M3.1 unattended runtime motion.** Rerun the complete M2.1 protocol on the integrated post-G3t-M3 release
   assembly with fresh build/shader/content/recipe identity. Keep the locked-console elapsed-time pan, holds,
@@ -166,6 +170,11 @@ before and after acquisition, and the real Metal queue-attempt control.
 Keep encode-time failure and live-window recovery outside this proof.
 
 ## Log
+
+- 9 November, scoped APPLE-TILE re-plan handoff: T2 M0/M1 are delivered. Mac M2 remains independent; Mac M3
+  still needs APPLE-TILE M3, whose chain now excludes simulator cooked/capture. G3t M2/M3 retain explicit attended
+  OS-window observer/grant proof, distinct from Mac capture-OFF cadence. No Mac JSON definitions, item claims or
+  acceptance changed; fresh G3t independent approval/unpark and the named deliveries remain owed.
 
 - 9 November, second T2 design review F1/F2. Removed `APPLE-TILE:M3` from M2 prerequisites, qualifying the current
   surface path after T2 M0 only. Split the full post-change motion/cadence rerun into Mac M3 with an explicit

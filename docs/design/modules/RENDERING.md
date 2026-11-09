@@ -94,11 +94,10 @@ copy/readback lifetime, V4 identifies output/colour stage, and T2 packages sampl
 submitted temporal output; an endpoint still remains a different capture mode. G3t/G4 consume this shared path
 without introducing a second capture producer. Physical display/EDR qualification remains separate.
 
-G3t M9 delivers the planned [shared V2 class/range mechanism](APPLE-TILE.md) under C07 within the existing renderer.
-It consolidates the experimental bucket classifier/layout with supported synthetic draw consumers, without
-qualifying that experimental route. Facing sign is not permission to change admitted raster policy: preserve legacy
-scene-wide two-sided behavior, open/unknown and near-singular meshes, direct tie order and off-camera shadow casters.
-There is no parallel culler or range owner; the M9 proof and independent review cover both consumers.
+V2 retains existing determinant/membership and raster-policy ownership under C07. The scoped
+[G3t design](APPLE-TILE.md) preserves legacy two-sided behavior, open/unknown and near-singular meshes, direct tie
+order and off-camera shadow casters without refactoring the experimental bucket route. Shared-range consolidation
+is later V2/G3c work, not a G4/native-boundary prerequisite.
 
 ## Ownership and lifecycle at each boundary
 
