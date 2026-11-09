@@ -147,7 +147,7 @@
     {
       "id": "M2",
       "name": "iOS simulator engine motion without desktop capture",
-      "state": "blocked",
+      "state": "open",
       "fails": 0,
       "replans": 1,
       "needs": [
@@ -178,8 +178,7 @@
           "check": "./dev check",
           "lock": "gpu"
         }
-      ],
-      "blocked": "Goal marked blocked after three consecutive audits. Main remains at `e6cb0425`, with both M2 items open. G5 / `thrum-asset-gpu` must supply a simulator-compatible cooked draw path before M2 can proceed. [Evidence and reproducer](/Users/ryannel/Workspace/thrum/.claude/worktrees/t2-capture/docs/evidence/render/t2-capture-m2/README.md)."
+      ]
     }
   ]
 }
