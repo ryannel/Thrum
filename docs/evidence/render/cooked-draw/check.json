@@ -2,14 +2,32 @@
   "command": "./dev check",
   "exit": 0,
   "gpu_lock": true,
-  "toolchain": "Rust 1.99.1, pinned toolchain bin first on PATH, RUSTC_WRAPPER empty",
+  "toolchain": "The launcher selects pinned Rust 1.99.1 and defaults RUSTC_WRAPPER to empty. The caller supplied no toolchain or wrapper overrides.",
   "test_result_groups": 62,
   "passed_tests": 666,
   "failed_tests": 0,
   "cooked_assets_gpu": "13 cases run with adapter-backed and masked records, unchanged-path replacements and both directions of capability change. Additional draw-probe-feature run observes actual resource usages and bound commands, including a child using FrameHost::new then attach_cooked_scene.",
   "cooked_material_gpu": "8 cases each run under both records, including deferred promotion, discarded frames and device replacement.",
   "qualification_clippy": "cargo clippy -p v1-game --all-targets --features draw-probe -- -D warnings passed after final public-route test edit",
-  "log_sha256": "8ae58fbf6f63130df100ffb03c2612e6a942317d8a2262d480483d97bc480574",
+  "log_sha256": "2134d81293e1737a1b78df0a1acbe7023a3bcbc11ecaed137f4c924411bc4aac",
   "limit": "Repository correctness gate; visual/device results are recorded separately. Native/Chrome BASE preservation, revised oracle, simulator function and sampled visual proofs and cost/tripwires pass with their stated limits.",
-  "ios_clippy": "cargo clippy --locked --offline -p v1-game-ios --lib --target aarch64-apple-ios-sim -- -D warnings passed"
+  "ios_clippy": "cargo clippy --locked --offline -p v1-game-ios --lib --target aarch64-apple-ios-sim -- -D warnings passed",
+  "launcher_correction": {
+    "before_commit": "9f2e3deba22fd9b2731bd45f487c91eead84ab1d",
+    "before_plain_exit": 2,
+    "before_output": "empty stdout and stderr",
+    "diagnosis": "Unconfigured RUSTC_WRAPPER inherited build.rustc-wrapper=/opt/homebrew/bin/sccache from the user Cargo configuration. Non-quiet Cargo reported sccache Operation not permitted (os error 1).",
+    "prior_evidence_scope": "Earlier successful gate runs explicitly supplied RUSTC_WRAPPER= in the caller environment.",
+    "caller_environment": {
+      "RUSTC_WRAPPER": null,
+      "RUSTC": null
+    },
+    "correction": "dev exports an empty RUSTC_WRAPPER when the caller leaves it unset. Explicit empty and nonempty values are preserved.",
+    "source_sha256": {
+      "dev": "8c996c672b4a319f00408646af7fd87283715cd5e8b00c87b9b7e167738b9fea",
+      "scripts/test_repo_check.py": "9509dcb64792fa3e5791ae38159ce8090b1d3e604223843ef4203a25dae9fdc0"
+    },
+    "regression": "The three unset/empty/explicit wrapper cases pass in scripts/test_repo_check.py. Removing the default export makes exactly the unset case fail. The repository Python suite passes all twelve tests.",
+    "validation": "Plain ./dev check completed under the GPU lock with exit 0 and 666 Rust tests. No caller wrapper or PATH setup was used."
+  }
 }

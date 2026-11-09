@@ -1,7 +1,9 @@
 # COOKED-DRAW M1 evidence
 
-9 November 2026. M1 is claimed: all twelve items pass. `./dev check` passes 666 tests; same-load tripwires pass. Builder inspection is
-separate from the lead's owed independent review. No physical-device or speed result is claimed.
+9 November 2026. M1 is claimed with all twelve items passing. Plain `./dev check` passes 666 Rust tests and the
+launcher regression cases. The launcher defaults to an empty compiler wrapper and preserves explicitly supplied
+`RUSTC_WRAPPER` values. Earlier checks used a caller override. Same-load tripwires pass. Builder inspection and the
+lead's independent review are recorded separately.
 
 | Target | Actual facts and selected path | Evidence |
 |---|---|---|
@@ -41,7 +43,6 @@ encode CPU: I 0.270–0.289 ms / D 0.149–0.188 ms. Forward includes contributi
 [three genuine quiet BASE runs per history](cost/baseline-history.json.gz). Existing busy/saturated history is preserved.
 
 Reproduce the named DONE checks under `agent_loop.py lock gpu`; `scripts/cooked_draw_ios_sim.py --visuals` supplies
-stills/pan and `scripts/cooked_draw_cost.py` supplies paired costs (both require a new `--output`). Use pinned Rust
-1.99.1 and `RUSTC_WRAPPER=`. After M1 acceptance, T2-CAPTURE M2 may consume ordinary cooked attach; it still owns
+stills/pan and `scripts/cooked_draw_cost.py` supplies paired costs (both require a new `--output`). The launcher pins Rust 1.99.1. After M1 acceptance, T2-CAPTURE M2 may consume ordinary cooked attach; it still owns
 submitted-frame identity/time and every-frame proof. Retained code/fixtures and [selected hashes](selected-hashes.json)
 support reconstruction; owned bulk scratch is retired with [closeout conditions](closeout.json); build output is cleaned at stop.
