@@ -5,7 +5,10 @@ from pathlib import Path
 from t2_writer_probe import FRAME_BYTES
 
 
-def decoded_frames(path, encoding, expected):
+def decoded_frames(path, encoding, expected, frame_bytes=None):
+    frame_bytes = FRAME_BYTES if frame_bytes is None else frame_bytes
+    if not 0 < frame_bytes <= 128 * 1024 * 1024:
+        raise ValueError("invalid source frame size")
     if len(expected) > 1024:
         raise ValueError('capture record limit exceeded')
     process = None
@@ -19,7 +22,7 @@ def decoded_frames(path, encoding, expected):
     previous = 0
     try:
         for digest in expected:
-            parts, remaining = [], FRAME_BYTES
+            parts, remaining = [], frame_bytes
             while remaining:
                 block = stream.read(remaining)
                 if not block:
@@ -29,7 +32,7 @@ def decoded_frames(path, encoding, expected):
             raw = b''.join(parts)
             if encoding == 'ZstdDelta':
                 previous ^= int.from_bytes(raw, 'little')
-                raw = previous.to_bytes(FRAME_BYTES, 'little')
+                raw = previous.to_bytes(frame_bytes, 'little')
             if hashlib.sha256(raw).hexdigest() != digest:
                 raise ValueError('decoded spool differs from original writer RGBA hash')
             yield raw

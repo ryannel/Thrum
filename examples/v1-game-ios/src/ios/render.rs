@@ -4,7 +4,7 @@
 use std::{
     sync::{
         Arc, Mutex, PoisonError,
-        atomic::{AtomicBool, Ordering},
+        atomic::{AtomicBool, AtomicU64, Ordering},
     },
     thread,
     time::{Duration, Instant},
@@ -194,6 +194,8 @@ pub(super) struct Reported {
 /// Flags the shell sets and the owner reads; none orders frame admission.
 #[derive(Default)]
 pub(super) struct Signals {
+    pub(super) capture: AtomicU64,
+    pub(super) capture_callbacks: super::capture::Callbacks,
     /// Explicit held-view qualification only: begin the cooked camera pan.
     pub(super) cooked_pan: AtomicBool,
     /// Route only: destroy the device at the owner's next opportunity.
@@ -270,6 +272,7 @@ struct Gpu {
 }
 
 struct Owner {
+    capture: super::capture::Recorder,
     lease: Arc<Lease>,
     /// The instance the first device came from; recoveries use it again.
     instance: Option<wgpu::Instance>,
@@ -306,6 +309,7 @@ pub(super) fn start(
         recover_held,
     } = wakes;
     let mut owner = Owner {
+        capture: super::capture::Recorder::default(),
         lease,
         instance: None,
         signals,
@@ -490,6 +494,15 @@ impl Owner {
                 .gpu
                 .as_mut()
                 .ok_or("iOS render owner is not prepared")?;
+            if self.signals.background.load(Ordering::Acquire) {
+                if let Err(error) =
+                    self.capture
+                        .cancel(&mut gpu.host, &self.signals, "app backgrounded")
+                {
+                    self.capture.failed(&mut gpu.host, &self.signals, &error);
+                }
+                return Ok(unrun(gpu.watch.generation, SurfaceStatus::NoLease));
+            }
             if self.signals.stale_wake.swap(false, Ordering::AcqRel)
                 && gpu.watch.generation > FIRST_GENERATION
             {
@@ -505,6 +518,12 @@ impl Owner {
                 let _ = gpu.device.poll(wgpu::PollType::Poll);
             }
             if gpu.watch.destroyed || gpu.watch.is_lost() {
+                if let Err(error) =
+                    self.capture
+                        .cancel(&mut gpu.host, &self.signals, "device generation lost")
+                {
+                    self.capture.failed(&mut gpu.host, &self.signals, &error);
+                }
                 return Ok(unrun(gpu.watch.generation, SurfaceStatus::DeviceLost));
             }
             if request.generation != gpu.watch.generation {
@@ -564,6 +583,12 @@ impl Owner {
             .gpu
             .as_mut()
             .ok_or_else(|| RecoverFault::Failed("iOS render owner is not prepared".into()))?;
+        if let Err(error) =
+            self.capture
+                .cancel(&mut gpu.host, &self.signals, "device generation recovery")
+        {
+            self.capture.failed(&mut gpu.host, &self.signals, &error);
+        }
         let fail = |error: FrameError| RecoverFault::Failed(error.to_string());
         let inputs = gpu.host.device_prepare_inputs().map_err(fail)?;
         let generation = self.next_generation;
@@ -655,6 +680,18 @@ impl Owner {
             .gpu
             .as_mut()
             .ok_or(FrameError::InvalidState("iOS render owner is not prepared"))?;
+        if self.diagnostics
+            && let Err(error) = self.capture.before(
+                &mut gpu.host,
+                &self.signals,
+                &lease,
+                request,
+                gpu.watch.generation,
+                &gpu.adapter,
+            )
+        {
+            self.capture.failed(&mut gpu.host, &self.signals, &error);
+        }
         let lead = display_target_lead(request.target_media_seconds, media_time_now());
         if let Some(view) = &mut gpu.cooked_view {
             view.update(
@@ -729,6 +766,13 @@ impl Owner {
         reply.pending_frames = gpu.host.pending_frames();
         if let Some(view) = &gpu.cooked_view {
             reply.cooked.push_str(&view.witness());
+        }
+        if self.diagnostics
+            && let Err(error) = self
+                .capture
+                .after(&mut gpu.host, &reply, &lease, &self.signals)
+        {
+            self.capture.failed(&mut gpu.host, &self.signals, &error);
         }
         Ok(reply)
     }

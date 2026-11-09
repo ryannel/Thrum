@@ -1,11 +1,14 @@
 """Capture completeness and deferred lossless packaging refusal controls."""
 import copy
 import hashlib
+import json
+import shutil
 from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
 
+from capture_v1_simulator import export_session
 from capture_v1_runtime import validate_runtime
 from cooked_draw_ios_sim import console_witness
 from cooked_draw_sim_launcher import validate_preflights
@@ -54,6 +57,38 @@ class SimulatorConsoleSetup(unittest.TestCase):
                 validate_preflights(dict(launcher, **change), route, 'qualification-app')
         with self.assertRaises(RuntimeError):
             validate_preflights(launcher, dict(route, route_pass=False), 'qualification-app')
+
+
+class SimulatorArtifactExport(unittest.TestCase):
+    def test_unexpected_control_completion_retains_diagnostics_before_refusal(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / 'source'
+            source.mkdir()
+            record = {'complete': True, 'images': []}
+            (source / 'runtime.json').write_text(json.dumps(record))
+            (source / 'frames.spool').write_bytes(b'original source')
+            with self.assertRaisesRegex(ValueError, 'incorrectly completed'):
+                export_session(source, root / 'export', negative=True)
+            self.assertEqual(json.loads((root / 'export/runtime.json').read_text()), record)
+            self.assertEqual((root / 'export/frames.spool').read_bytes(), b'original source')
+
+    def test_failed_spool_copy_keeps_compact_runtime_diagnostics(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / 'source'
+            source.mkdir()
+            (source / 'runtime.json').write_text('{"complete":false}')
+            (source / 'frames.spool').write_bytes(b'original source')
+            copyfile = shutil.copyfile
+            def failing_spool_copy(src, dest, **kwargs):
+                if Path(src).name == 'frames.spool':
+                    raise OSError('disk full')
+                return copyfile(src, dest, **kwargs)
+            with patch('capture_v1_simulator.shutil.copyfile', side_effect=failing_spool_copy):
+                with self.assertRaisesRegex(OSError, 'disk full'):
+                    export_session(source, root / 'export')
+            self.assertEqual(json.loads((root / 'export/runtime.json').read_text()), {'complete': False})
 
 
 def runtime():

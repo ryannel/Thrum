@@ -17,7 +17,7 @@ use crate::{Game, Gpu};
 
 pub mod clock;
 pub mod thread_policy;
-pub mod writer;
+pub use crate::capture_writer as writer;
 
 /// A prepared game on the calling render-owner thread, with its ordinary
 /// autonomous world lane and an engine texture replacing the OS surface.

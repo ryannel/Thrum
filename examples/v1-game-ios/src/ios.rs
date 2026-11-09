@@ -23,6 +23,7 @@ use crate::{
     world_policy::WorldPolicy,
 };
 
+mod capture;
 mod cooked_view;
 mod render;
 mod witness;
@@ -73,6 +74,12 @@ enum Command {
     ReleaseRecover,
     StaleWake,
     CookedPan,
+    CaptureBegin,
+    CaptureEnd,
+    CaptureSaturate,
+    CaptureSlow,
+    CaptureMove,
+    CaptureRest,
 }
 
 #[expect(
@@ -104,6 +111,12 @@ extern "C" fn thrum_v1_shell_command(code: i32) {
         9 => Command::ReleaseRecover,
         10 => Command::StaleWake,
         11 => Command::CookedPan,
+        12 => Command::CaptureBegin,
+        13 => Command::CaptureEnd,
+        14 => Command::CaptureSaturate,
+        15 => Command::CaptureSlow,
+        16 => Command::CaptureMove,
+        17 => Command::CaptureRest,
         _ => return,
     };
     if let Some(shell) = SHELL.get() {
@@ -577,6 +590,17 @@ impl Shell {
                 self.stale_request = true;
             }
             Command::CookedPan => self.signals.cooked_pan.store(true, Ordering::Release),
+            Command::CaptureBegin | Command::CaptureSaturate | Command::CaptureSlow => {
+                let mode = match command {
+                    Command::CaptureSaturate => 2,
+                    Command::CaptureSlow => 3,
+                    _ => 1,
+                };
+                self.signals.capture.store(mode, Ordering::Release);
+            }
+            Command::CaptureEnd => self.signals.capture.store(4, Ordering::Release),
+            Command::CaptureMove => self.send_axes([1.0, 0.0, 0.0])?,
+            Command::CaptureRest => self.send_axes([0.0; 3])?,
         }
         self.witness.last_command = format!("{command:?}");
         self.write();
@@ -584,6 +608,9 @@ impl Shell {
     }
 
     fn target(&mut self, target: f64) {
+        if self.route {
+            self.signals.capture_callbacks.observe(target);
+        }
         self.witness.display_link_callbacks += 1;
         if self.route && self.witness.display_thread.is_empty() {
             // Thread roles are recorded once, and only for the route.

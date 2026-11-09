@@ -279,6 +279,52 @@ impl ThreadedFrameHost {
         self.inner.inner.poll_completed()
     }
 
+    /// Enable the renderer tap with finite allocation limits.
+    /// # Errors
+    /// Refuses an active session or invalid limits.
+    pub fn enable_submitted_capture(
+        &mut self,
+        session: u64,
+        limits: runtime::CaptureLimits,
+    ) -> Result<(), String> {
+        self.inner
+            .inner
+            .enable_submitted_capture_with_limits(session, limits)
+            .map_err(|e| e.to_string())
+    }
+
+    /// Collect a submitted image without advancing the world.
+    /// # Errors
+    /// Refuses mapping failure or retired generation.
+    pub fn try_submitted_image(&mut self) -> Result<Option<runtime::SubmittedImage>, String> {
+        self.inner.try_submitted_image()
+    }
+
+    /// Return a CPU lease to its generation-bound pool.
+    pub fn recycle_submitted_image(&mut self, image: runtime::SubmittedImage) {
+        self.inner.recycle_submitted_image(image);
+    }
+
+    /// Stop new copies while pending images drain.
+    pub fn stop_submitted_capture(&mut self) {
+        self.inner.inner.stop_submitted_capture();
+    }
+
+    /// Cancel capture without submitting or waiting for GPU work.
+    pub fn disable_submitted_capture(&mut self) {
+        self.inner.disable_submitted_capture();
+    }
+
+    /// Samples omitted by the renderer's finite ring.
+    pub fn submitted_capture_omissions(&self) -> u64 {
+        self.inner.inner.submitted_capture_omissions()
+    }
+
+    /// Current staging and CPU leases.
+    pub fn submitted_capture_usage(&self) -> Option<(usize, usize)> {
+        self.inner.inner.submitted_capture_usage()
+    }
+
     /// Resize the surface binding after a coordinated platform change.
     /// # Errors
     /// Refuses an invalid or unavailable surface.

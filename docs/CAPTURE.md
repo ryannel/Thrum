@@ -209,3 +209,13 @@ and stale-session refusal, then captures a replacement-device image. Negative co
 the expected incomplete outcome is proved, with `complete: false` and `negative_control_pass: true` in the manifest.
 The off arm allocates no tap and is labelled `observer_only`. It is for matched observer cost. It cannot supply
 image evidence. Rerun existing actual-tab/visibility/device-loss checks separately with `scripts/check_v1_browser.mjs`.
+
+## iOS simulator submitted-output workflow
+
+Run `python3 scripts/capture_v1_simulator.py --case all --output tmp/<task>/capture` under the orchestrate `gpu` lock. The command builds/cooks, creates an owned fresh simulator, records the actual native foreground engine texture and removes its owned device on exit. The attributed LaunchServices parent performs denied read-only Screen Recording preflights before and after. Console observations are witness metadata with no admission condition. `--no-build` reuses the linked app/cooker and records their exact hashes.
+
+Cases include disabled capture, three held-world cooked pans, running semantic axes, an eight-second render stall, pending surface/background/device retirement, ring saturation, explicit Raw slow-output refusal and the existing real UIKit touch/rotation regression. Simulator function is qualified separately from physical iPhone/display performance. Native UIKit and OS composition are excluded from the texture. The portrait diagnostic controlled actor can be outside the camera, so visible autonomous grid motion and committed semantic actor movement are separate observations.
+
+The simulator uses six GPU slots, 32 CPU buffers and a 1 GiB pixel allowance, plus the shared finite 256 MiB encoded reserve and codec scratch. Writer output is bounded at 8 GiB, 1,024 records, 16 seconds and ten seconds to finalize. The complete driver preflights 20 GiB. Exhaustion/cancellation refuses continuous evidence. Callback dispositions and exact source extent, adjacent endpoint, alpha, history, surface/device identity and original hashes accompany every session. Source images retain native resolution.
+
+`python3 scripts/package_v1_simulator.py --session <output>/01-pan` independently decodes every original, verifies PNG round trips and packages a VFR 1x viewing aid from actual submission time. Selected full-native PNGs and native crops accompany the preview. Keep full local spools through review. The driver restarts IconServices only in its owned simulator before app launch to recover headless fresh-device startup. See [M2 qualification](evidence/render/t2-capture-m2/qualified/README.md) for measured results, exact provenance, exceptions and retention.

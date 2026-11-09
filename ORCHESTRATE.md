@@ -33,7 +33,7 @@ a `build/<module>` branch and push `HEAD:main`. Large captures and recordings go
 | chrome-webgpu | Chrome, portable WebGPU recipe | the browser showcase | T2 M1 qualified submitted fixed checkpoints/realtime output/time records; DOM/browser chrome separate | Same scenarios as mac-metal |
 | ios-sim | iPhone 18 Pro simulator; function only, never speed | the iOS route | Until T2 M2, `simctl` screenshots/video prove simulator function/UI/lifecycle within recorded timing limits; M2 adds engine output/time records | Rotation, background and foreground |
 
-T2 M0 (Mac) and M1 (Chrome) are done; simulator M2 remains blocked on G5 COOKED-DRAW M1. Later visual
+T2 M0 (Mac) and M1 (Chrome) are done; simulator M2 is implemented and claimed for lead review after accepted COOKED-DRAW M1. Later visual
 milestones requiring submitted-output or elapsed-time engine motion proof depend on the relevant accepted target
 milestone and explicitly select its implemented capture mode (Mac still/fixed/realtime; Chrome fixed/realtime).
 Simulator interim simctl evidence remains function only. Engine capture requires no OS Screen Recording grant by design;

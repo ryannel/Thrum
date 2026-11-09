@@ -444,3 +444,29 @@ fn pending_scene_grid_pixels_keep_their_identity_across_surface_viewport_resize(
         assert_eq!(host.submitted_capture_omissions(), 0);
     });
 }
+
+#[test]
+fn stopping_admission_drains_in_submission_order_while_rendering_continues() {
+    pollster::block_on(async {
+        let (mut host, output, _instance) =
+            Box::pin(host_and_output(wgpu::TextureFormat::Rgba8Unorm)).await;
+        host.enable_submitted_capture(71).unwrap();
+        let first = submit(&mut host, &output).submission_order;
+        submit(&mut host, &output);
+        let frame = image(&mut host);
+        assert_eq!(frame.sample.submission_order, first);
+        assert_eq!(frame.extent, [65, 37]);
+        host.recycle_submitted_image(frame);
+        submit(&mut host, &output); // Reuse an earlier ring slot while an older image is pending.
+        host.stop_submitted_capture();
+        submit(&mut host, &output);
+        for order in [first + 1, first + 2] {
+            let frame = image(&mut host);
+            assert_eq!(frame.sample.submission_order, order);
+            host.recycle_submitted_image(frame);
+        }
+        assert!(host.try_submitted_image().unwrap().is_none());
+        assert_eq!(host.submitted_capture_usage(), Some((0, 0)));
+        assert_eq!(host.submitted_capture_omissions(), 0);
+    });
+}

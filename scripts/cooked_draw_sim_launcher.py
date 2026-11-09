@@ -32,7 +32,7 @@ def validate_preflights(launcher, route, identity):
         raise RuntimeError('simulator route did not pass')
 
 
-def launch(arguments, output):
+def launch(arguments, output, driver=None):
     output = output.resolve()
     if output.exists():
         raise FileExistsError(output)
@@ -53,7 +53,7 @@ def launch(arguments, output):
                         str(source), '-o', str(executable)], check=True, timeout=120)
         subprocess.run(['/usr/bin/codesign', '--force', '--sign', '-', str(bundle)], check=True, timeout=30)
         command = ['/usr/bin/open', '-n', '-W', str(bundle), '--args', str(support), sys.executable,
-                   str(ROOT), os.environ['PATH'], str(ROOT / 'scripts/cooked_draw_ios_sim.py'), *arguments]
+                   str(ROOT), os.environ['PATH'], str(driver or ROOT / 'scripts/cooked_draw_ios_sim.py'), *arguments]
         result = subprocess.run(command, cwd=ROOT, check=False, timeout=1800)
         if (output / 'report.json').exists():
             report.update(json.loads((output / 'report.json').read_text()))

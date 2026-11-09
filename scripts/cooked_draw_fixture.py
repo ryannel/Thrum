@@ -16,9 +16,10 @@ def environment():
     return env
 
 
-def sources(folder, env):
+def sources(folder, env, cooker=None):
     """One source/store contains the valley and the explicitly selected diagnostic fixture."""
-    subprocess.run(['cargo', 'run', '--locked', '--offline', '-p', 'thrum-cook', '--', 'demo', str(folder)], env=env, check=True)
+    command = [str(cooker)] if cooker else ['cargo', 'run', '--locked', '--offline', '-p', 'thrum-cook', '--']
+    subprocess.run([*command, 'demo', str(folder)], env=env, check=True)
     for source in (ROOT / 'examples/v1-game/assets/showcase').iterdir():
         if source.is_file() and source.suffix in ['.gltf', '.bin', '.png', '.json']:
             shutil.copyfile(source, folder / source.name)
@@ -52,8 +53,9 @@ def sources(folder, env):
     (folder / 'meshes/mirror.gltf').write_text(json.dumps(mesh, indent=2) + '\n')
 
 
-def cook(folder, store, env):
-    subprocess.run(['cargo', 'run', '--locked', '--offline', '-p', 'thrum-cook', '--', 'cook', str(folder), str(store)], env=env, check=True)
+def cook(folder, store, env, cooker=None):
+    command = [str(cooker)] if cooker else ['cargo', 'run', '--locked', '--offline', '-p', 'thrum-cook', '--']
+    subprocess.run([*command, 'cook', str(folder), str(store)], env=env, check=True)
 
 
 def placements(scene):
