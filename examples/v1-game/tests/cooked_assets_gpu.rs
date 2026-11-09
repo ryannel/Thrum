@@ -24,6 +24,10 @@ const BUDGET: u64 = COPY_UNIT;
 const STAGING_BOUND: u64 = STAGING_CHUNKS * BUDGET;
 
 fn assert_staging_bounded(stats: &CookedStats) {
+    #[cfg(feature = "draw-probe")]
+    if stats.draw_path == Some(CookedDrawPath::Direct) {
+        assert_eq!(stats.probe_resources, (0, false));
+    }
     assert!(
         stats.staging_peak_bytes > 0 && stats.staging_peak_bytes <= STAGING_BOUND,
         "staging peaked at {} bytes against a bound of {STAGING_BOUND}",
@@ -745,11 +749,20 @@ fn contributed_frames_keep_complete_gpu_timings_and_reset_history_for_new_sets_c
 #[test]
 fn a_replaced_device_restages_and_draws_the_current_set() {
     for path in [CookedDrawPath::Indirect, CookedDrawPath::Direct] {
-        a_replaced_device_restages_and_draws_the_current_set_case(path);
+        a_replaced_device_restages_and_draws_the_current_set_case(path, path);
+        let other = if path == CookedDrawPath::Direct {
+            CookedDrawPath::Indirect
+        } else {
+            CookedDrawPath::Direct
+        };
+        a_replaced_device_restages_and_draws_the_current_set_case(path, other);
     }
 }
 
-fn a_replaced_device_restages_and_draws_the_current_set_case(path: CookedDrawPath) {
+fn a_replaced_device_restages_and_draws_the_current_set_case(
+    path: CookedDrawPath,
+    replacement_path: CookedDrawPath,
+) {
     let root = std::env::temp_dir().join(format!("thrum-g5-device-{}", std::process::id()));
     std::fs::remove_dir_all(&root).ok();
     let cook = source_tree(&root, 64);
@@ -757,7 +770,7 @@ fn a_replaced_device_restages_and_draws_the_current_set_case(path: CookedDrawPat
     cooker.cook_all().expect("cook");
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let gpu = |generation| {
+        let gpu = |generation, path| {
             let instance = &instance;
             async move {
                 let adapter = instance
@@ -776,7 +789,7 @@ fn a_replaced_device_restages_and_draws_the_current_set_case(path: CookedDrawPat
                 (device, queue, capabilities)
             }
         };
-        let (old_device, old_queue, old_capabilities) = gpu(1).await;
+        let (old_device, old_queue, old_capabilities) = gpu(1, path).await;
         let mut host = FrameHost::new_with_capabilities(
             &old_device,
             &old_queue,
@@ -793,7 +806,7 @@ fn a_replaced_device_restages_and_draws_the_current_set_case(path: CookedDrawPat
         let mut clock = Duration::ZERO;
         let old_view = drawable(&old_device);
         until_swap(&mut host, &old_device, &old_view, &stats, &mut clock);
-        let (device, queue, capabilities) = gpu(2).await;
+        let (device, queue, capabilities) = gpu(2, replacement_path).await;
         let mut candidate = host
             .device_prepare_inputs()
             .expect("inputs")
@@ -811,10 +824,27 @@ fn a_replaced_device_restages_and_draws_the_current_set_case(path: CookedDrawPat
         // The same generation is staged and uploaded again for the new device.
         until_swap(&mut host, &device, &view, &stats, &mut clock);
         let stats = stats.lock().expect("stats");
+        assert_eq!(stats.draw_path, Some(replacement_path));
+        assert_eq!(stats.drawn_device_generation, Some(2));
+        if replacement_path == CookedDrawPath::Direct {
+            assert_eq!(stats.visible_meshlets, None);
+        }
         let swaps = &stats.swaps;
         assert_eq!(swaps.len(), 2);
         assert_eq!(swaps[0].generation, swaps[1].generation);
-        assert_eq!(swaps[0].uploaded_bytes, swaps[1].uploaded_bytes);
+        if path == replacement_path {
+            assert_eq!(swaps[0].uploaded_bytes, swaps[1].uploaded_bytes);
+        } else if replacement_path == CookedDrawPath::Direct {
+            assert!(
+                swaps[1].uploaded_bytes < swaps[0].uploaded_bytes,
+                "direct omits meshlet cull metadata uploads"
+            );
+        } else {
+            assert!(
+                swaps[1].uploaded_bytes > swaps[0].uploaded_bytes,
+                "indirect restages its cull metadata"
+            );
+        }
     });
     std::fs::remove_dir_all(&root).ok();
 }
@@ -1462,7 +1492,7 @@ fn adapter_less_public_host_selects_direct() {
         let mut host = FrameHost::new(&device, &queue, FrameConfig::default())
             .await
             .expect("public host");
-        let assets = CookedAssets::new(placements(cook.store)).expect("assets");
+        let assets = CookedAssets::new(placements(cook.store.clone())).expect("assets");
         let stats = assets.stats();
         host.set_scene_contribution(Box::new(assets))
             .expect("attach");
@@ -1471,6 +1501,46 @@ fn adapter_less_public_host_selects_direct() {
         let stats = stats.lock().expect("stats");
         assert_eq!(stats.draw_path, Some(CookedDrawPath::Direct));
         assert_eq!(stats.visible_meshlets, None);
+        #[cfg(feature = "draw-probe")]
+        {
+            assert_eq!(stats.probe_resources, (0, false));
+            assert_eq!(stats.probe_commands.len(), 1);
+            assert!(
+                stats
+                    .probe_commands
+                    .iter()
+                    .all(|command| command.contains("draw_indexed range=")
+                        && !command.contains("indirect"))
+            );
+        }
     });
+    #[cfg(feature = "draw-probe")]
+    {
+        // A child exercises the real environment-selected game attachment without mutating
+        // this parallel test process's environment.
+        let output = root.join("public-route");
+        let status = std::process::Command::new(env!("CARGO_BIN_EXE_cooked_draw_probe"))
+            .env("THRUM_SCENE", "diagnostic")
+            .env("THRUM_ASSET_STORE", &cook.store)
+            .env("THRUM_COOKED_DRAW_DIAGNOSTIC", "0")
+            .env("COOKED_DRAW_OUTPUT", &output)
+            .env("COOKED_DRAW_ADAPTER_LESS", "1")
+            .env("COOKED_DRAW_MASK_INDIRECT", "0")
+            .env("COOKED_DRAW_MODE", "production")
+            .env("COOKED_DRAW_MESHES", "[\"meshes/terrain\"]")
+            .status()
+            .expect("public route process");
+        assert!(status.success());
+        let record: serde_json::Value = serde_json::from_slice(
+            &std::fs::read(output.join("report.json")).expect("public route witness"),
+        )
+        .expect("JSON witness");
+        assert_eq!(record["flags"], "None");
+        assert_eq!(record["path"], "Some(Direct)");
+        assert_eq!(
+            record["resource_observation"],
+            serde_json::json!([0, false])
+        );
+    }
     std::fs::remove_dir_all(&root).ok();
 }

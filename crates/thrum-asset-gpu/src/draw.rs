@@ -16,6 +16,8 @@ const DRAW_ARGS_BYTES: u64 = 20;
 
 /// Pipelines and fixed resources for one scene surface.
 pub(crate) struct Pipelines {
+    #[cfg(feature = "draw-probe")]
+    probe: Option<crate::draw_probe::Probe>,
     device: wgpu::Device,
     queue: wgpu::Queue,
     mesh: wgpu::RenderPipeline,
@@ -51,6 +53,54 @@ impl Bound {
         !self.meshes.is_empty()
     }
 
+    #[cfg(feature = "draw-probe")]
+    pub(crate) fn probe_resources(&self) -> (usize, bool) {
+        let count = self
+            .meshes
+            .iter()
+            .flat_map(|mesh| {
+                mesh.indirect
+                    .as_ref()
+                    .map(|indirect| &indirect.draws)
+                    .into_iter()
+                    .chain(
+                        mesh.probe
+                            .as_ref()
+                            .and_then(crate::draw_probe::Bound::indirect_buffer),
+                    )
+            })
+            .filter(|buffer| buffer.usage().contains(wgpu::BufferUsages::INDIRECT))
+            .count();
+        (
+            count,
+            self.visible.is_some() || self.meshes.iter().any(|mesh| mesh.indirect.is_some()),
+        )
+    }
+
+    #[cfg(feature = "draw-probe")]
+    pub(crate) fn probe_commands(&self) -> Vec<String> {
+        self.meshes
+            .iter()
+            .enumerate()
+            .map(|(index, mesh)| {
+                let command = if let Some(probe) = &mesh.probe {
+                    probe.description()
+                } else if mesh.indirect.is_some() {
+                    format!(
+                        "multi_draw_indexed_indirect offset=0 count={}",
+                        mesh.meshlets
+                    )
+                } else {
+                    format!(
+                        "draw_indexed range=0..{} base_vertex=0 instances=0..1",
+                        mesh.index_count
+                    )
+                };
+                format!("placement {index}: {command}")
+            })
+            .collect()
+    }
+
     /// Meshlets across every placed mesh.
     pub(crate) fn meshlets(&self) -> u32 {
         self.meshes.iter().map(|mesh| mesh.meshlets).sum()
@@ -58,6 +108,8 @@ impl Bound {
 }
 
 struct BoundMesh {
+    #[cfg(feature = "draw-probe")]
+    probe: Option<crate::draw_probe::Bound>,
     material: wgpu::BindGroup,
     indirect: Option<IndirectMesh>,
     index_count: u32,
@@ -316,6 +368,8 @@ impl Pipelines {
             ..Default::default()
         });
         Self {
+            #[cfg(feature = "draw-probe")]
+            probe: None,
             device: wgpu::Device::clone(device),
             queue: surface.queue.clone(),
             mesh,
@@ -331,6 +385,11 @@ impl Pipelines {
             sampler,
             volume_sampler,
         }
+    }
+
+    #[cfg(feature = "draw-probe")]
+    pub(crate) fn probe(&mut self, probe: Option<crate::draw_probe::Probe>) {
+        self.probe = probe;
     }
 
     /// Draw cooked meshes with a promoted replacement from now on.
@@ -366,7 +425,10 @@ impl Pipelines {
             .meshes
             .iter()
             .zip(placements)
-            .map(|((mesh, texture), placement)| {
+            .enumerate()
+            .map(|(placement_index, ((mesh, texture), placement))| {
+                #[cfg(not(feature = "draw-probe"))]
+                let _ = placement_index;
                 let base = texture.texture.create_view(&wgpu::TextureViewDescriptor {
                     dimension: Some(wgpu::TextureViewDimension::D2Array),
                     ..Default::default()
@@ -442,11 +504,19 @@ impl Pipelines {
                                     },
                                     wgpu::BindGroupEntry {
                                         binding: 1,
-                                        resource: mesh.bounds.as_entire_binding(),
+                                        resource: mesh
+                                            .bounds
+                                            .as_ref()
+                                            .expect("indirect loader stages meshlet bounds")
+                                            .as_entire_binding(),
                                     },
                                     wgpu::BindGroupEntry {
                                         binding: 2,
-                                        resource: mesh.ranges.as_entire_binding(),
+                                        resource: mesh
+                                            .ranges
+                                            .as_ref()
+                                            .expect("indirect loader stages meshlet ranges")
+                                            .as_entire_binding(),
                                     },
                                     wgpu::BindGroupEntry {
                                         binding: 3,
@@ -476,6 +546,10 @@ impl Pipelines {
                     0
                 };
                 BoundMesh {
+                    #[cfg(feature = "draw-probe")]
+                    probe: self.probe.as_ref().and_then(|probe| {
+                        probe.bind(&self.device, &self.queue, placement_index, mesh.index_count)
+                    }),
                     material,
                     indirect,
                     index_count: mesh.index_count,
@@ -618,6 +692,11 @@ impl Pipelines {
             pass.set_vertex_buffer(1, mesh.vertex[1].slice(..));
             pass.set_vertex_buffer(2, mesh.instance.slice(..));
             pass.set_index_buffer(mesh.indices.slice(..), wgpu::IndexFormat::Uint32);
+            #[cfg(feature = "draw-probe")]
+            if let Some(probe) = &mesh.probe {
+                probe.draw(pass);
+                continue;
+            }
             if let Some(indirect) = &mesh.indirect {
                 pass.multi_draw_indexed_indirect(&indirect.draws, 0, mesh.meshlets);
             } else {

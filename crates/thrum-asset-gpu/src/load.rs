@@ -64,9 +64,9 @@ pub(crate) struct GpuMesh {
     /// Meshlet triangles expanded to global vertex indices, meshlet after meshlet.
     pub(crate) indices: wgpu::Buffer,
     /// Per meshlet: first index and index count.
-    pub(crate) ranges: wgpu::Buffer,
+    pub(crate) ranges: Option<wgpu::Buffer>,
     /// Per meshlet culling bounds.
-    pub(crate) bounds: wgpu::Buffer,
+    pub(crate) bounds: Option<wgpu::Buffer>,
     pub(crate) meshlet_count: u32,
     pub(crate) index_count: u32,
     pub(crate) caster_box: Option<(glam::Vec3, glam::Vec3)>,
@@ -111,6 +111,7 @@ pub(crate) struct Confirmed {
 }
 
 pub(crate) struct Loader {
+    pub(crate) indirect: bool,
     pub(crate) device: wgpu::Device,
     /// This device generation's bounded staging.
     pub(crate) ring: StagingRing,
@@ -473,16 +474,20 @@ impl Loader {
                 indices.bytes().len(),
                 wgpu::BufferUsages::INDEX,
             ),
-            ranges: self.buffer(
-                "cooked meshlet ranges",
-                ranges.bytes().len(),
-                wgpu::BufferUsages::STORAGE,
-            ),
-            bounds: self.buffer(
-                "cooked meshlet bounds",
-                bounds.bytes().len(),
-                wgpu::BufferUsages::STORAGE,
-            ),
+            ranges: self.indirect.then(|| {
+                self.buffer(
+                    "cooked meshlet ranges",
+                    ranges.bytes().len(),
+                    wgpu::BufferUsages::STORAGE,
+                )
+            }),
+            bounds: self.indirect.then(|| {
+                self.buffer(
+                    "cooked meshlet bounds",
+                    bounds.bytes().len(),
+                    wgpu::BufferUsages::STORAGE,
+                )
+            }),
             meshlet_count: u32::try_from(mesh.meshlets().len()).unwrap_or(u32::MAX),
             index_count: u32::try_from(tables.indices.len()).unwrap_or(0),
             caster_box: caster_box(mesh.positions()),
@@ -491,8 +496,12 @@ impl Loader {
         plan.buffer(positions, gpu.positions.clone());
         plan.buffer(attributes, gpu.attributes.clone());
         plan.buffer(indices, gpu.indices.clone());
-        plan.buffer(ranges, gpu.ranges.clone());
-        plan.buffer(bounds, gpu.bounds.clone());
+        if let Some(buffer) = &gpu.ranges {
+            plan.buffer(ranges, buffer.clone());
+        }
+        if let Some(buffer) = &gpu.bounds {
+            plan.buffer(bounds, buffer.clone());
+        }
         gpu
     }
 

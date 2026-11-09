@@ -27,25 +27,52 @@ async fn run() -> Result<(), String> {
         .await
         .map_err(|e| e.to_string())?;
     let mut capabilities = DeviceCapabilities::capture(&adapter, &device, 1);
+    let captured_flags = capabilities.downlevel();
     let masked = std::env::var("COOKED_DRAW_MASK_INDIRECT").as_deref() == Ok("1");
     if masked {
         capabilities = capabilities.without_indirect_execution();
     }
+    let adapter_less = std::env::var("COOKED_DRAW_ADAPTER_LESS").as_deref() == Ok("1");
+    if adapter_less {
+        capabilities = DeviceCapabilities::capture_device(&device, 1);
+    }
     let extent = [1920, 1080];
-    let mut host = FrameHost::new_with_capabilities(
-        &device,
-        &queue,
-        &capabilities,
-        FrameConfig {
-            render_extent: extent,
-            surface: Some(SurfaceProfile {
-                format: wgpu::TextureFormat::Rgba8Unorm,
-                extent,
-            }),
-        },
-    )
-    .await?;
-    let stats = v1_game::attach_cooked_scene(&mut host)?.ok_or("no cooked content selected")?;
+    let config = FrameConfig {
+        render_extent: extent,
+        surface: Some(SurfaceProfile {
+            format: wgpu::TextureFormat::Rgba8Unorm,
+            extent,
+        }),
+    };
+    let mut host = if adapter_less {
+        FrameHost::new(&device, &queue, config).await?
+    } else {
+        FrameHost::new_with_capabilities(&device, &queue, &capabilities, config).await?
+    };
+    let mode = std::env::var("COOKED_DRAW_MODE").unwrap_or_else(|_| "production".into());
+    let names: Vec<String> =
+        serde_json::from_str(&std::env::var("COOKED_DRAW_MESHES").map_err(|e| e.to_string())?)
+            .map_err(|e| e.to_string())?;
+    let store = PathBuf::from(std::env::var("THRUM_ASSET_STORE").map_err(|e| e.to_string())?);
+    let reference =
+        thrum_asset_gpu::draw_probe::reference_commands(&store, &names, mode == "partitioned")?;
+    let probe = match mode.as_str() {
+        "production" => None,
+        "reference" | "partitioned" => Some(thrum_asset_gpu::draw_probe::Probe::Reference(
+            reference.clone(),
+        )),
+        "omit" => Some(thrum_asset_gpu::draw_probe::Probe::Omit(0)),
+        _ => return Err("unknown draw probe mode".into()),
+    };
+    if probe.is_some() && !masked {
+        return Err("draw controls require explicit masked-record arm".into());
+    }
+    let stats = if adapter_less {
+        v1_game::attach_cooked_scene(&mut host)?
+    } else {
+        v1_game::attach_cooked_scene_with_probe(&mut host, probe)?
+    }
+    .ok_or("no cooked content selected")?;
     host.pause()?;
     let yaw: f32 = std::env::var("COOKED_DRAW_YAW")
         .unwrap_or_else(|_| "0".into())
@@ -76,6 +103,7 @@ async fn run() -> Result<(), String> {
     let deadline = Instant::now() + Duration::from_secs(60);
     // Fixed world and view; warm history and atmosphere only after content has drawn.
     let mut warm = 0;
+    let mut timing_samples = Vec::new();
     loop {
         if Instant::now() >= deadline {
             return Err("cooked warmup deadline".into());
@@ -91,7 +119,9 @@ async fn run() -> Result<(), String> {
                 timeout: Some(Duration::from_secs(10)),
             })
             .map_err(|e| e.to_string())?;
-        while host.poll_completed()?.is_some() {}
+        while let Some(sample) = host.poll_completed()? {
+            timing_samples.push(serde_json::json!({"submission": sample.submission_order, "encode_ns": sample.encode_cpu.as_nanos(), "forward_ns": sample.gpu_pass_ns.map(|times| times[3]), "contribution_ns":sample.gpu_contribution_ns}));
+        }
         let stats = stats.lock().map_err(|e| e.to_string())?;
         if !stats.errors.is_empty() {
             return Err(format!("cooked errors: {:?}", stats.errors));
@@ -101,6 +131,29 @@ async fn run() -> Result<(), String> {
         }
         if warm >= 16 {
             break;
+        }
+    }
+    timing_samples.clear();
+    let measured_frames: u32 = std::env::var("COOKED_DRAW_SAMPLES")
+        .unwrap_or_else(|_| "0".into())
+        .parse()
+        .map_err(|_| "samples")?;
+    for _ in 0..measured_frames {
+        host.drive(
+            Duration::ZERO,
+            Some(&SurfaceOutput {
+                view: &view,
+                extent,
+            }),
+        )?;
+        device
+            .poll(wgpu::PollType::Wait {
+                submission_index: None,
+                timeout: Some(Duration::from_secs(10)),
+            })
+            .map_err(|e| e.to_string())?;
+        while let Some(sample) = host.poll_completed()? {
+            timing_samples.push(serde_json::json!({"submission":sample.submission_order,"encode_ns":sample.encode_cpu.as_nanos(),"forward_ns":sample.gpu_pass_ns.map(|times| times[3]),"contribution_ns":sample.gpu_contribution_ns}));
         }
     }
     host.enable_submitted_capture(1)?;
@@ -122,7 +175,7 @@ async fn run() -> Result<(), String> {
         if let Some(image) = host.try_submitted_image()? {
             std::fs::write(output.join("output.rgba"), &image.rgba).map_err(|e| e.to_string())?;
             let stats = stats.lock().map_err(|e| e.to_string())?;
-            let report = serde_json::json!({"adapter":format!("{:?}", capabilities.adapter()), "flags":format!("{:?}",capabilities.downlevel()), "masked":masked, "path":format!("{:?}", stats.draw_path), "drawn":stats.drawn, "visible":stats.visible_meshlets, "extent":extent, "yaw":yaw, "solar":solar, "submission":image.sample.submission_order, "tick":image.sample.tick, "encode_ns":image.sample.encode_cpu.as_nanos(), "gpu_pass_ns":image.sample.gpu_pass_ns});
+            let report = serde_json::json!({"adapter":format!("{:?}", capabilities.adapter()), "flags":format!("{:?}",capabilities.downlevel()), "adapter_flags":format!("{captured_flags:?}"), "masked":masked, "diagnostic_mode":mode, "adapter_less_host":adapter_less, "reference_commands":reference, "encoded_commands": stats.probe_commands, "resource_observation":stats.probe_resources, "mesh_placements":names, "timing_samples":timing_samples, "path":format!("{:?}", stats.draw_path), "drawn":stats.drawn, "visible":stats.visible_meshlets, "extent":extent, "yaw":yaw, "solar":solar, "submission":image.sample.submission_order, "tick":image.sample.tick, "encode_ns":image.sample.encode_cpu.as_nanos(), "gpu_pass_ns":image.sample.gpu_pass_ns});
             std::fs::write(
                 output.join("report.json"),
                 serde_json::to_vec_pretty(&report).map_err(|e| e.to_string())?,

@@ -254,6 +254,12 @@ impl CookedDrawPath {
 /// Shared observations, readable while the contribution belongs to the frame host.
 #[derive(Debug, Default)]
 pub struct CookedStats {
+    /// Actual bound draw commands observed at the last resident swap in a probe build.
+    #[cfg(feature = "draw-probe")]
+    pub probe_commands: Vec<String>,
+    /// Actual INDIRECT-usage buffer count and presence of cull/count/readback resources.
+    #[cfg(feature = "draw-probe")]
+    pub probe_resources: (usize, bool),
     /// Swaps in order.
     pub swaps: Vec<SwapRecord>,
     /// The newest loader failures, at most 64 (the previous set stays drawn).
@@ -489,9 +495,16 @@ impl Live {
     }
 }
 
+/// Explicitly enabled command controls for the cooked-draw qualification binary.
+/// This module is absent from ordinary builds.
+#[cfg(feature = "draw-probe")]
+pub mod draw_probe;
+
 /// Cooked products drawn in the scene. Attach with
 /// `FrameHost::set_scene_contribution(Box::new(assets))`.
 pub struct CookedAssets {
+    #[cfg(feature = "draw-probe")]
+    draw_probe: Option<draw_probe::Probe>,
     config: CookedConfig,
     stats: Arc<Mutex<CookedStats>>,
     live: Option<Live>,
@@ -513,11 +526,26 @@ impl CookedAssets {
         }
         Ok(Self {
             config,
+            #[cfg(feature = "draw-probe")]
+            draw_probe: None,
             stats: Arc::new(Mutex::new(CookedStats::default())),
             live: None,
             material: MaterialReload::new(),
             epoch: 0,
         })
+    }
+
+    /// Attach probe-only commands before the contribution is prepared.
+    /// # Errors
+    /// Refuses mismatched placement coverage or a control attached after preparation.
+    #[cfg(feature = "draw-probe")]
+    pub fn with_draw_probe(mut self, probe: draw_probe::Probe) -> Result<Self, String> {
+        probe.validate(self.config.meshes.len())?;
+        if self.live.is_some() {
+            return Err("draw probe must precede preparation".into());
+        }
+        self.draw_probe = Some(probe);
+        Ok(self)
     }
 
     /// Explicit reloads of the meshes' material hook. Without a request the meshes draw the
@@ -539,6 +567,7 @@ impl CookedAssets {
         let (resident_tx, resident_rx) = channel();
         let stop = Arc::new(AtomicBool::new(false));
         let loader = load::Loader {
+            indirect: CookedDrawPath::select(surface.downlevel) == CookedDrawPath::Indirect,
             device: wgpu::Device::clone(surface.device),
             ring: staging::StagingRing::new(
                 surface.device,
@@ -630,6 +659,12 @@ impl CookedAssets {
             self.material.release(&held);
         }
         let pipelines = draw::Pipelines::new(surface, &target);
+        #[cfg(feature = "draw-probe")]
+        let pipelines = {
+            let mut pipelines = pipelines;
+            pipelines.probe(self.draw_probe.clone());
+            pipelines
+        };
         self.material.retarget(&target);
         match self.live.as_mut() {
             // Same device: the scene shader or layouts may have changed; resources stay, history
@@ -868,6 +903,12 @@ impl SceneContribution for CookedAssets {
             if let Ok(mut stats) = self.stats.lock() {
                 if stats.drawn.is_none() {
                     stats.failures_before_first_draw = stats.failures;
+                }
+                #[cfg(feature = "draw-probe")]
+                {
+                    stats.probe_commands = bound.probe_commands();
+                    stats.probe_resources = bound.probe_resources();
+                    stats.probe_resources.1 |= live.readback.is_some();
                 }
                 stats.drawn = Some(set.generation);
                 stats.drawn_device_generation = Some(live.generation);

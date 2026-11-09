@@ -3,14 +3,11 @@
 Design: [COOKED-DRAW.md](COOKED-DRAW.md) · [brief](COOKED-DRAW-BRIEF.md) · Done when:
 [COOKED-DRAW-DONE.json](COOKED-DRAW-DONE.json). Owner: G5 (`thrum-asset-gpu`), under
 [the G5 decision](../decisions/G5-CONTENT-ADDRESSED-LOOP.md).
-Reviews: Independent review of this revised design is owed to the lead/loop; no agents launched in this planner turn.
-Milestone: M1 Cooked scene draws on adapters without indirect execution (open, waiting on iOS extent)
-Now: Checkpoint `b0dae34c` exposes M1.10's fixed-640×360 letterboxing failure in both orientations. G3b owns the
-missing scene/surface extent transition; the checkpoint is evidence, not milestone acceptance.
-Next: Lead/loop design review and acceptance of `PLATFORM-RUNTIME-IOS:M7`, then resume all outstanding M1 proofs,
-including unchanged cooked rotation/stills/pan M1.9–M1.11 on the integrated host.
-Blocked: Dependency `PLATFORM-RUNTIME-IOS:M7` is now in M1's `needs`. M1 returns to open so the loop sequences the
-owner work before resuming G5. Existing parity/base/cost/visual proof remains subject to review and rerun.
+Reviews: [revised design review](../../evidence/COOKED-DRAW/design-review.md) of `2394162b` is DESIGN OK. The lead owns implementation review.
+Milestone: M1 Cooked scene draws on adapters without indirect execution (in progress)
+Now: Checkpoint `b0dae34c` passes M1.1–M1.3 and M1.9; M1.10 failed on fixed-640×360 letterboxing, which G3b owned.
+`PLATFORM-RUNTIME-IOS:M7` (oriented scene/render sizing) has since passed review.
+Next: Resume M1.10 on the integrated host, then Mac/Chrome base parity, cost/tripwires and simulator visual/pan proof.
 
 ## Ownership and agreements
 
@@ -33,7 +30,7 @@ Ask for these agreements before the builder starts. The builder may build agains
 objects, the change returns here as a re-plan. The builder never redesigns another owner's interface inside this
 milestone.
 
-## M1 Cooked scene draws on adapters without indirect execution: open after re-plan
+## M1 Cooked scene draws on adapters without indirect execution: in progress
 
 Work, riskiest first:
 - [ ] **Simulator first.** Build the record field, the surface field, selection and the direct draw. Then attach
@@ -109,6 +106,11 @@ were verified unchanged. Scratch goes in
   free-text blocker. All item definitions, including M1.10, are unchanged; fails/replans are unchanged because this
   routes missing owner work, not a four-review failure. No new proof or acceptance claimed. The enclosing loop
   records the definitions and invalidates obsolete proof; fresh design review remains owed. No owner decision.
+- 2026-11-09 Resumed from rebased checkpoint `478c17ff` under the revised, reviewed M1.3. Added compile-time opt-in reference/omission controls, independent cooked-product coverage validation and command/resource observations. Normal builds omit these controls. M1.3 passes exact D/R and I/D/R repeats in every required view, detects each D-only terrain omission, retains R output/arguments across the defect and restores equality. All-meshlet I controls are exactly I in every view. Whole-frame/native-crop inspection classifies the residuals as partition-dependent shading with matching geometry, materials, lighting, shadows and volume. The low-level cause remains unverified.
+  - Direct loading now omits unused meshlet range/bounds buffers. The material GPU suite covers both records. Device replacement covers unchanged paths and capability re-selection in both directions. The qualification feature exposes actual buffer usages and bound commands for the public adapter-less-host assertion, including a child calling the exact game attachment entry point. `./dev check` includes that observed-resource arm and passes 664 Rust test/doc-test results; final feature-enabled all-targets Clippy also passes.
+  - M1.9 runs the real XCUITest rotation row on a fresh owned iPhone 18 Pro / iOS 27.2 simulator with both console-lock witnesses true. Process/window/device identities persist and cooked submissions advance at each new extent.
+  - M1.10 fails its current-extent fill requirement. Observed presenter viewports are portrait `[0,972,1206,678]` inside `1206×2622` and landscape `[239,0,2144,1206]` inside `2622×1206`. **Owner dependency** is G3b iOS/render runtime support for matching scene/internal render aspect to current oriented extent on the same process, window, lease and generation. `resize_surface` updates the presenter and retains the internal source extent. This builder leaves that owning-runtime work for its owner, as build-milestone requires.
+  - M1.4/M1.5 base comparisons, M1.6 cost/tripwires, the rest of M1.10 and M1.11 pan proof remain unfinished. M1.7/M1.8 stand as the owner directed. T2-CAPTURE M2 remains gated on M1 acceptance. Acceptance definitions remain unchanged. No reviewer launched.
 
 - 2026-11-09 Re-planned M1.3 at the owner's request after blocked checkpoint `9c230ff4`. The first valley view's
   1,506 differing pixels / max delta 18 persisted with all meshlets kept; one full-range indirect command matched

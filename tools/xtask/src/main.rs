@@ -350,7 +350,32 @@ fn main() -> TaskResult {
                 "warnings",
             ])?;
             check_web()?;
+            cargo(&[
+                "clippy",
+                "--locked",
+                "--offline",
+                "-p",
+                "v1-game",
+                "--all-targets",
+                "--features",
+                "draw-probe",
+                "--",
+                "-D",
+                "warnings",
+            ])?;
             cargo(&["test", "--locked", "--offline", "--workspace"])?;
+            // Qualification-only observations inspect the real bound buffers and commands.
+            cargo(&[
+                "test",
+                "--locked",
+                "--offline",
+                "-p",
+                "v1-game",
+                "--features",
+                "draw-probe",
+                "--test",
+                "cooked_assets_gpu",
+            ])?;
         }
         other => return Err(format!("unknown command {other:?}; see ./dev help").into()),
     }
