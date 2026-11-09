@@ -329,6 +329,15 @@ fn main() -> TaskResult {
                 "-p",
                 "test_t2_capture.py",
             ])?;
+            python(&[
+                "-m",
+                "unittest",
+                "discover",
+                "-s",
+                "scripts",
+                "-p",
+                "test_mac_m2_window.py",
+            ])?;
             cargo(&["fmt", "--all", "--", "--check"])?;
             cargo(&[
                 "clippy",

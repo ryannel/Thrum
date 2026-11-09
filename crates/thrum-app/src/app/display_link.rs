@@ -103,3 +103,22 @@ impl Drop for ViewDisplayLink {
         self.link.invalidate();
     }
 }
+
+/// Stable OS window number for joining this process to Instruments surface rows.
+#[expect(
+    unsafe_code,
+    reason = "the live winit NSView owns its AppKit window; only its numeric windowNumber is read"
+)]
+pub(super) fn window_number(window: &Window) -> Result<isize, String> {
+    let handle = window.window_handle().map_err(|e| e.to_string())?;
+    let RawWindowHandle::AppKit(handle) = handle.as_raw() else {
+        return Err("window has no AppKit view".to_owned());
+    };
+    // SAFETY: winit retains the NSView and attached NSWindow throughout this call.
+    let view = unsafe { &*handle.ns_view.as_ptr().cast::<AnyObject>() };
+    // SAFETY: NSView's window selector returns its owning live NSWindow.
+    let native: Option<Retained<AnyObject>> = unsafe { msg_send![view, window] };
+    let native = native.ok_or("view has no AppKit window")?;
+    // SAFETY: windowNumber is an NSInteger-returning selector on NSWindow.
+    Ok(unsafe { msg_send![&*native, windowNumber] })
+}

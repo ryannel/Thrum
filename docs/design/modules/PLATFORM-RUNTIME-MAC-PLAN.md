@@ -5,11 +5,12 @@ and [bounded frame host](../decisions/V1-BOUNDED-FRAME-HOST.md). Siblings:
 [iOS](PLATFORM-RUNTIME-IOS-PLAN.md) and [web](PLATFORM-RUNTIME-WEB-PLAN.md).
 Done when: [PLATFORM-RUNTIME-MAC-DONE.json](PLATFORM-RUNTIME-MAC-DONE.json) owns milestone criteria and proof status; the shared platform design above remains authoritative.
 
-Reviews: [T2/Mac design review 2 at `6317102f`](../../evidence/T2-CAPTURE/design-review-2.md): DESIGN CHANGES (2 findings); revised here. Independent re-review of T2/Mac criteria and the M2/M3 split is owed; historical M0/M1 reviews remain in the log.
-Milestone: M2 The cooked valley presents smoothly on built-in ProMotion (replanned, open)
-Now: 9 November second-review revision lets M2 qualify the current surface path after T2 M0; new M3 owns post-G3t requalification. No fresh proof claimed.
-Next: independent design/JSON re-review; consume delivered T2-CAPTURE M0; Mac builder diagnoses trace tooling (M2.4), qualifies windowed tap (M2.3), and runs current-path motion/cadence (M2.1/M2.2). M3 follows only when APPLE-TILE M3 is delivered.
-Blocked: Mac design re-review and attended panel/tool setup remain separate obligations; T2 M0 is now delivered. M2 has no APPLE-TILE dependency. M3 needs Mac M2 and parked APPLE-TILE M3: delivered T2 M0/M1 then sequential G3t M0–M3, including attended OS-window capture and diagnostic simulator function. No simulator cooked or T2 M2 dependency remains on that chain. The lead has commissioned G3t's scoped re-plan; fresh independent design approval/unpark through the loop is still owed. M2.4 owns bounded trace diagnosis. Engine pixels need no Screen Recording grant; G3t OS-window capture names its own grant.
+Reviews: [T2/Mac design review 3](../../evidence/T2-CAPTURE/design-review-3.md) clears Mac M2 to build; its minor Mac M3 finding is outside this milestone. Historical M0/M1 reviews remain in the log.
+Milestone: M2 The cooked valley presents smoothly on built-in ProMotion (blocked on attended setup)
+Now: T2 M0 is done. M2.1 current-release locked-console runtime pan passes builder inspection (481 exact originals, complete holds, coherent 1x motion); opt-in native tap/AppKit pan, surface-retirement diagnostics and a bounded resumable collector are implemented and compile/regression checked. No real-window or cadence pass is claimed while locked.
+Next: use the [one-command attended runbook](../../evidence/render/mac-m2-current/RUNBOOK.md) after unlock. M2.3 window qualification precedes M2.4 and M2.2 trace/cadence qualification. M3 follows its own delivery prerequisite.
+Blocked: M2.3/M2.4/M2.2 require the unlocked active built-in panel and any Instruments authorization. The collector preflight actually refused on this locked console; zero new trace attempts were consumed. Screen Recording is not an engine-image prerequisite. The two-attempt 9 November allowance is unchanged.
+M3 handoff: Mac M3 still needs Mac M2 and APPLE-TILE M3. Its chain is delivered T2 M0/M1 then sequential G3t M0–M3, including attended OS-window observer/grant proof and diagnostic simulator function; simulator cooked/T2 M2 is no longer on that chain.
 
 ## M0 Reviewed Mac qualification plan: done
 
@@ -42,7 +43,7 @@ rock/ridge coherence, authored sphere sweep/exit, yaw-consistent settled endpoin
 record repeats, local holds and pauses at actual elapsed time. Use the same noon view and slow normal-control pan.
 Preserve the historical `0d53d3aa` motion pass and decoded
 38.3 ms untraced / 51.7 ms traced local holds in [evidence](../../evidence/render/mac-m2-pan/README.md).
-That verdict is not a fresh pass of the changed M2.1 or the later build; all four M2 items are open. M0/M1 stay done.
+That historical verdict does not pass the changed M2.1 or a later build. Current proof/status is in the JSON and [current evidence](../../evidence/render/mac-m2-current/README.md); M0/M1 stay done.
 
 **Surface-path ordering:** M2 qualifies the current path with only `T2-CAPTURE:M0` as its delivery prerequisite;
 windowed-tap and trace-tooling work can proceed before G3t. APPLE-TILE is parked after its second failed design
@@ -170,6 +171,8 @@ before and after acquisition, and the real Metal queue-attempt control.
 Keep encode-time failure and live-window recovery outside this proof.
 
 ## Log
+
+- 9 November, Mac M2 builder. T2 M0 and design review 3 prerequisites are satisfied. Added opt-in real-window shared-tap collection, normal AppKit target/action elapsed pan, renderer submission/lease/clock markers and pending-readback surface-retirement diagnostics. The capture-OFF arm keeps the ordinary direct path and creates no tap/writer. Full `./dev check` under `gpu` passes; the new evidence-join refusal controls pass. Actual-window output/retirement/pattern qualification remains attended and unpassed. The resumable collector refused the locked console before launching; nonrecording Instruments options discovery succeeds outside the sandbox. Retained historical logs reject “make the target exit” as a new hypothesis; the bounded changed probe excludes unrelated OS logs while retaining Game Performance and independent swaps. No diagnostic attempt consumed. [Runbook](../../evidence/render/mac-m2-current/RUNBOOK.md).
 
 - 9 November, scoped APPLE-TILE re-plan handoff: T2 M0/M1 are delivered. Mac M2 remains independent; Mac M3
   still needs APPLE-TILE M3, whose chain now excludes simulator cooked/capture. G3t M2/M3 retain explicit attended
