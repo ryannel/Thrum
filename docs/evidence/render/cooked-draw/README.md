@@ -9,7 +9,7 @@ lead's independent review are recorded separately.
 |---|---|---|
 | Mac M3 Max / Metal | Adapter-read `INDIRECT_EXECUTION`: I. Explicit record mask clears it: D. | [Oracle](paths/report.json.gz), [inspection](paths/inspection.json), [BASE preservation](indirect/mac.json.gz) |
 | Chrome 156 / hardware WebGPU, M3 Max | First adapter-backed record contains `INDIRECT_EXECUTION`; production I; no mask. | [One-session BASE/current/repeats](indirect/chrome.json.gz) |
-| iPhone 18 Pro / iOS 27.2 simulator | Adapter record omits `INDIRECT_EXECUTION`; production D; no mask. | [Locked ordinary function/lifecycle](ios-function.json.gz), [rotation](rotation/function.json.gz), [visual inspection](ios-visuals/inspection.json) |
+| iPhone 18 Pro / iOS 27.2 simulator | Adapter record omits `INDIRECT_EXECUTION`; production D; no mask. | [Ordinary function/lifecycle](ios-function.json.gz), [rotation](rotation/function.json.gz), [visual inspection](ios-visuals/inspection.json) |
 
 Unknown adapter facts also select D. The public adapter-less host/attach test observes Direct and zero indirect
 resources. Both-path GPU/material suites cover discard, history, capability changes, replacement, remote feeds,
@@ -27,11 +27,11 @@ caller/fixture/witness overlays. Chrome uses the T2 submitted tap in one hardwar
 grant. Identical captured payloads are [deduplicated](indirect/payloads.json); individual identities/hashes remain.
 
 Accepted PLATFORM-RUNTIME-IOS M7 resolves the historical [letterboxing failure](rotation/layout-failure.json).
-Fresh locked ordinary runs advance counters, hold background submissions, recover the drawn set on generation 2
+Fresh ordinary runs advance counters, hold background submissions, recover the drawn set on generation 2
 and rotate on the same process/window/generation. Held qualification uses public pause/Sun/yaw controls separately.
-Six native still views/crops pass; held scene pairs are identical (two pairs differ only in status-bar UI). Attachments,
+Six native still views/crops pass; held scene pairs are identical (restored portrait differs only in status-bar UI). Attachments,
 viewport and projection match each oriented extent and the authored 46° FOV. [States/times](ios-visuals/run.json.gz).
-Sixteen native pan samples span presented counts 1559–2759 and both holds; largest sample-start gap is 1.118178 s.
+Sixteen native pan samples span presented counts 1559–2759 and both holds; largest sample-start gap is 1.125629 s.
 Every sample has complete entering terrain. The [lossless sequence](ios-visuals/pan-lossless.mkv) round-trips all samples
 exactly; playback uses one second per sample for inspection, with actual times in the record. Unsampled frames,
 cadence and speed remain unqualified.
@@ -42,10 +42,19 @@ encode CPU: I 0.270–0.289 ms / D 0.149–0.188 ms. Forward includes contributi
 [Samples/load](cost/paired.json.gz), [command audit](cost/command-audit.json), [passing tripwires](cost/tripwires.json.gz),
 [three genuine quiet BASE runs per history](cost/baseline-history.json.gz). Existing busy/saturated history is preserved.
 
-M1.7 and M1.8 require the owner to lock the Mac manually before the loop verification and keep it locked through
-the simulator rows. Startup allows a bounded 120-second setup wait and still requires the real lock witness.
-The [standalone function run](ios-function-only.json.gz) and [standalone lifecycle run](ios-function.json.gz) both pass
-with locked witnesses before and after.
+M1.7 and M1.8 pass as exact standalone commands on fresh owned simulators. Each mode runs under its
+own LaunchServices app. Its read-only `CGPreflightScreenCaptureAccess` results are denied before and after
+the actual Python harness child. Reports retain bundle/executable identities, binary/source hashes, PIDs and
+the parent/child chain. Function, lifecycle, rotation and visuals all pass this attributed proof. No permission
+request is made. Console observations happen before/after without admission or waiting. All fresh observations
+happened to be locked. Tests accept locked, unlocked, changing and unavailable observations and reject missing,
+failed, granted or unrelated permission proof. Historical manual-lock reports remain in [history](history/manual-lock-setup.json).
+
+The [standalone function report](ios-function-only.json.gz) records twelve samples over 22.054 seconds,
+with presented/cooked counts advancing 119–1438. The [lifecycle report](ios-function.json.gz) records background
+hold, foreground resumption and redrawn cooked generation 2 with presented/cooked counts reaching 1792.
+Both runs delete their owned simulators. [Source reuse assessment](console-revalidation.json) documents why
+unchanged Mac/Chrome oracle, preservation and cost evidence remains applicable.
 
 Reproduce the named DONE checks under `agent_loop.py lock gpu`; `scripts/cooked_draw_ios_sim.py --visuals` supplies
 stills/pan and `scripts/cooked_draw_cost.py` supplies paired costs (both require a new `--output`). The launcher pins Rust 1.99.1. After M1 acceptance, T2-CAPTURE M2 may consume ordinary cooked attach; it still owns

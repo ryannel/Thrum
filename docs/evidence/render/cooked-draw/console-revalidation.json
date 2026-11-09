@@ -1,0 +1,35 @@
+{
+  "reason": "Planner revised console witness and permission proof. Native renderer, cooked contribution, game and shader sources used by the existing Mac/Chrome comparisons are unchanged.",
+  "unchanged_source_count": 262,
+  "other_recorded_source_differences": {
+    "examples/v1-game-ios/src/ios/cooked_view.rs": "The earlier recorded aggregate hash predates the corrected comment describing the open-ended end hold. This iOS-only helper is outside native/browser builds. Fresh iOS mode runs cover the current helper."
+  },
+  "evidence_reused": [
+    "M1.1",
+    "M1.2",
+    "M1.3",
+    "M1.4",
+    "M1.5",
+    "M1.6"
+  ],
+  "existing_target_records": [
+    "check.json",
+    "paths/report.json.gz",
+    "indirect/mac.json.gz",
+    "indirect/chrome.json.gz",
+    "cost/paired.json.gz",
+    "cost/tripwires.json.gz"
+  ],
+  "fresh_target_records_required": [
+    "M1.7 standalone",
+    "M1.8 standalone",
+    "rotation mode",
+    "visual mode"
+  ],
+  "fresh_target_records_completed": [
+    "ios-function-only.json.gz",
+    "ios-function.json.gz",
+    "rotation/function.json.gz",
+    "ios-visuals/run.json.gz"
+  ]
+}

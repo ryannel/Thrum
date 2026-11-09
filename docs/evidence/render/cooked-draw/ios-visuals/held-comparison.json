@@ -1,29 +1,33 @@
 {
   "noon-0": {
     "changed_pixels_including_system_ui": 0,
-    "maximum_delta": 0
+    "maximum_delta": 0,
+    "retained_a": "noon-0-a.png",
+    "retained_b": "noon-0-a.png"
   },
   "noon-36": {
     "changed_pixels_including_system_ui": 0,
-    "maximum_delta": 0
+    "maximum_delta": 0,
+    "retained_a": "noon-36-a.png",
+    "retained_b": "noon-36-a.png"
   },
   "low-sun": {
-    "changed_pixels_including_system_ui": 29216,
-    "maximum_delta": 218,
-    "difference_bounds_xyxy": [
-      0,
-      0,
-      746,
-      153
-    ]
+    "changed_pixels_including_system_ui": 0,
+    "maximum_delta": 0,
+    "retained_a": "low-sun-a.png",
+    "retained_b": "low-sun-b.png"
   },
   "diagnostic": {
     "changed_pixels_including_system_ui": 0,
-    "maximum_delta": 0
+    "maximum_delta": 0,
+    "retained_a": "diagnostic-a.png",
+    "retained_b": "diagnostic-a.png"
   },
   "landscape": {
     "changed_pixels_including_system_ui": 0,
-    "maximum_delta": 0
+    "maximum_delta": 0,
+    "retained_a": "landscape-a.png",
+    "retained_b": "landscape-a.png"
   },
   "portrait": {
     "changed_pixels_including_system_ui": 29216,
@@ -33,6 +37,8 @@
       0,
       746,
       153
-    ]
+    ],
+    "retained_a": "portrait-a.png",
+    "retained_b": "portrait-b.png"
   }
 }

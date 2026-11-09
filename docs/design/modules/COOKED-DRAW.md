@@ -1,7 +1,7 @@
 # Cooked draw path: capability-selected direct fallback
 
 9 November 2026. **M1 claimed; all twelve items pass, independent lead review owed.**
-The revised Mac oracle, Mac/Chrome BASE preservation, locked simulator function/lifecycle/rotation and sampled
+The revised Mac oracle, Mac/Chrome BASE preservation, simulator function/lifecycle/rotation with attributed denied permission preflights and sampled
 cooked visual proof are recorded in the [plan](COOKED-DRAW-PLAN.md) and
 [evidence](../../evidence/render/cooked-draw/README.md). PLATFORM-RUNTIME-IOS M7 supplies oriented scene sizing.
 This is a child design of

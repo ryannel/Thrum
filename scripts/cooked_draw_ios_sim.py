@@ -8,26 +8,24 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import runpy
 import shutil
 import subprocess
 import sys
 import time
 
+from cooked_draw_sim_launcher import REPORT_ENV, launch
+
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def wait_for_console_lock(observe, timeout=120):
-    """Allow bounded manual setup, requiring a real locked observation before continuing."""
-    if observe():
-        return
-    print(f'Mac console is unlocked. Waiting up to {timeout:g} seconds for manual locking.', flush=True)
-    deadline = time.monotonic() + timeout
-    while time.monotonic() < deadline:
-        time.sleep(.5)
-        if observe():
-            return
-    raise RuntimeError('locked-console proof required. Please lock the Mac manually and rerun the check')
+def console_witness(raw, reason=None):
+    """Console state is observational, including unavailable or changed observations."""
+    match = re.search(r'^\s*"IOConsoleLocked"\s*=\s*(Yes|No)\s*$', raw, re.MULTILINE)
+    if match:
+        return {'locked': match[1] == 'Yes'}
+    return {'locked': None, 'reason': reason or 'IOConsoleLocked property unavailable'}
 
 
 def main():
@@ -38,9 +36,13 @@ def main():
     parser.add_argument('--visuals', action='store_true', help='held views and sampled pan; function only')
     args = parser.parse_args()
     os.chdir(ROOT)
+    if REPORT_ENV not in os.environ:
+        launch(sys.argv[1:], args.output)
+        return
     out = args.output.resolve()
     out.mkdir(parents=True, exist_ok=False)
     report = {'target': 'ios-sim', 'scope': 'simulator function only', 'commands': [], 'samples': []}
+    report.update(harness_pid=os.getpid(), launcher_pid=os.getppid())
     device = None
 
     def run(command, env=None, timeout=180):
@@ -51,19 +53,15 @@ def main():
         return result.stdout.strip()
 
     def console(label):
-        def observe():
+        try:
             raw = run(['ioreg', '-n', 'Root', '-d1', '-l'])
             (out / f'console-{label}.txt').write_text(raw)
-            locked = '"IOConsoleLocked" = Yes' in raw
-            report[f'console_locked_{label}'] = locked
-            report.setdefault('console_observations', []).append(
-                {'phase': label, 'monotonic': time.monotonic(), 'locked': locked})
-            return locked
-
-        if args.rotation:
-            observe()
-        else:
-            wait_for_console_lock(observe, timeout=120 if label == 'before' else 0)
+            witness = console_witness(raw)
+        except (OSError, subprocess.SubprocessError, UnicodeError) as error:
+            witness = console_witness('', str(error))
+        report[f'console_locked_{label}'] = witness['locked']
+        report.setdefault('console_observations', []).append(
+            dict(witness, phase=label, monotonic=time.monotonic()))
 
     try:
         if shutil.disk_usage(out).free < 2 * 1024**3:
@@ -71,6 +69,9 @@ def main():
         report['commit'] = run(['git', 'rev-parse', 'HEAD'])
         report['diff_sha256'] = hashlib.sha256(run(['git', 'diff', 'HEAD']).encode()).hexdigest()
         report['host'] = run(['sw_vers'])
+        launcher = json.loads(Path(os.environ[REPORT_ENV]).read_text())
+        if launcher.get('screen_recording_before') is not False or launcher.get('launcher_pid') != os.getppid():
+            raise RuntimeError('missing denied preflight from the actual harness launcher')
         console('before')
         env = dict(os.environ, RUSTC_WRAPPER='')
         run(['examples/v1-game-ios/ios/build-simulator.sh'], env, 300)
@@ -229,7 +230,7 @@ def main():
                 relaunch(scene='diagnostic')
                 pair('diagnostic')
         console('after')
-        report['pass'] = True
+        report['route_pass'] = True
     except BaseException as error:
         report['failure'] = str(error)
         raise

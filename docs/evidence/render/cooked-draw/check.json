@@ -9,7 +9,7 @@
   "cooked_assets_gpu": "13 cases run with adapter-backed and masked records, unchanged-path replacements and both directions of capability change. Additional draw-probe-feature run observes actual resource usages and bound commands, including a child using FrameHost::new then attach_cooked_scene.",
   "cooked_material_gpu": "8 cases each run under both records, including deferred promotion, discarded frames and device replacement.",
   "qualification_clippy": "cargo clippy -p v1-game --all-targets --features draw-probe -- -D warnings passed after final public-route test edit",
-  "log_sha256": "2134d81293e1737a1b78df0a1acbe7023a3bcbc11ecaed137f4c924411bc4aac",
+  "log_sha256": "b1b5030d2bf0dce918ab4bd0d2ae10ea8f9a3355b4f9c53a5990556eb8ac87dd",
   "limit": "Repository correctness gate; visual/device results are recorded separately. Native/Chrome BASE preservation, revised oracle, simulator function and sampled visual proofs and cost/tripwires pass with their stated limits.",
   "ios_clippy": "cargo clippy --locked --offline -p v1-game-ios --lib --target aarch64-apple-ios-sim -- -D warnings passed",
   "launcher_correction": {
@@ -30,29 +30,20 @@
     "regression": "The three unset/empty/explicit wrapper cases pass in scripts/test_repo_check.py. Removing the default export makes exactly the unset case fail. The repository Python suite passes all twelve tests.",
     "validation": "Plain ./dev check completed under the GPU lock with exit 0 and 666 Rust tests. No caller wrapper or PATH setup was used."
   },
-  "console_setup": {
-    "cause": "The loop ran M1.7 and M1.8 while IOConsoleLocked was No. The original detector correctly refused the unlocked host.",
-    "owner_setup": "Owner chose manual console locking. IOConsoleLocked became Yes before both exact named checks. Keep the console locked through the loop verification.",
-    "behavior": "Locked-console rows wait up to 120 seconds for manual setup at startup. They require an observed IOConsoleLocked Yes and fail if the console is unlocked at the final witness. Rotation retains its separately recorded lock scope.",
-    "unit_tests": "All seven tests in test_t2_capture.py pass, including already-locked, observed manual-lock transition and missing-lock timeout refusal.",
-    "source_sha256": {
-      "scripts/cooked_draw_ios_sim.py": "25624ef30577404dc9016725f0eb57e986ddbf6cd666395c20b3ad8967625b46",
-      "scripts/test_t2_capture.py": "079a97834404a7eb49fc4912a7073fe62723804d4b92a325cb1aed6d60920b75"
-    },
-    "exact_runs": {
-      "M1.7": {
-        "command": "python3 scripts/cooked_draw_ios_sim.py --output tmp/cooked-draw/ios-sim-1794246469",
-        "exit": 0,
-        "evidence": "ios-function-only.json.gz",
-        "observed_seconds": 22.103273707907647
-      },
-      "M1.8": {
-        "command": "python3 scripts/cooked_draw_ios_sim.py --lifecycle --output tmp/cooked-draw/ios-sim-lifecycle-1794246578",
-        "exit": 0,
-        "evidence": "ios-function.json.gz",
-        "device_generation_after": 2
-      }
-    },
-    "unit_log_sha256": "6db92e511d699ae243667714476e2ec890478b7a0720af366ece336314d0da27"
+  "historical_console_setup": "history/manual-lock-setup.json",
+  "console_witness_revision": {
+    "planner_revision": "58c3414e",
+    "console_policy": "Recorded before/after, with raw ioreg output or unavailable reason. No admission, refusal or waiting based on lock state in any simulator mode.",
+    "permission_proof": "Actual LaunchServices parent calls read-only CGPreflightScreenCaptureAccess before/after its direct Python harness child. Both endpoints must be false. Report validates bundle identity, API, launcher executable and actual parent/child PIDs.",
+    "tests": "Eight capture tests pass, accepting locked/unlocked/changing/unavailable witnesses and rejecting missing/failed/granted/unrelated preflights or failed route.",
+    "fresh_modes": [
+      "ios-function-only.json.gz",
+      "ios-function.json.gz",
+      "rotation/function.json.gz",
+      "ios-visuals/run.json.gz"
+    ],
+    "actual_console": "All four fresh modes observed true before and after. No setup request or lock action was made for these runs.",
+    "actual_permission": "All four modes recorded false before and after, with distinct identified launcher app instances and matching harness parent/child PIDs.",
+    "full_gate": "Plain ./dev check completed with exit 0 under the 1.5.2 GPU lock after the harness correction. Caller supplied no Rust/compiler wrapper overrides."
   }
 }

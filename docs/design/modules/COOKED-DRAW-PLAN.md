@@ -5,12 +5,12 @@ Design: [COOKED-DRAW.md](COOKED-DRAW.md) · [brief](COOKED-DRAW-BRIEF.md) · Don
 [the G5 decision](../decisions/G5-CONTENT-ADDRESSED-LOOP.md).
 Reviews: [revised design review](../../evidence/COOKED-DRAW/design-review.md) of `2394162b` is DESIGN OK. The lead owns implementation review.
 Milestone: M1 Cooked scene draws on adapters without indirect execution (claimed)
-Now: M1 has a live claim whose loop verification stopped before review on the console-lock gate. The revised
-M1.7/M1.8 definitions require fresh passes after the harness change. Accepted M7 supplies oriented scene sizing.
-Plain `./dev check` passes 666 Rust tests and the wrapper regression cases. Tripwire metrics pass against same-load BASE history, including quiet.
-Next: The builder replaces lock admission with witness recording and denied Screen Recording preflights, reruns
-the exact standalone M1.7 and M1.8 commands, then the loop verifies the refreshed claim before independent review.
-Blocked: Review awaits the harness correction and fresh verification, with no owner console-lock setup required.
+Now: The console witness correction passes exact standalone M1.7/M1.8 and fresh rotation/visual runs.
+All four modes retain before/after console observations and denied read-only Screen Recording preflights from
+identified actual launcher parents. Accepted M7 supplies oriented scene sizing. The refreshed claim is awaiting
+loop verification and independent lead review.
+Next: The lead verifies the integrated claim and runs independent implementation review.
+Blocked: Nothing in the builder scope.
 
 ## Ownership and agreements
 
@@ -120,6 +120,19 @@ correction spends no failure re-plan and leaves `fails`/`replans` to their exist
 the revised definitions and refreshed claim is owed to the lead/loop; no other agents may be launched here.
 
 ## Log
+
+- 2026-11-09 Builder applied planner revision `58c3414e`. Removed every console admission/refusal and manual
+  setup wait across all simulator modes. Console observations retain actual raw output or an unavailable reason.
+  A fresh LaunchServices app parents each real Python harness and records read-only Screen Recording preflights
+  before and after. Identity and parent/child PID checks reject unrelated proof. Eight capture tests accept every
+  console state and reject missing/failed/granted preflight evidence and failed routes. Exact standalone function
+  and lifecycle checks pass on fresh owned simulators. Rotation and held visual modes also pass. Every fresh
+  preflight is denied and every console witness happened to be locked, with no setup gate. Six native still pairs
+  and sixteen pan samples were re-inspected. Only restored-portrait compositor UI changes between held pairs.
+  Maximum sample-start gap is 1.125629 seconds, retaining the sampled-only claim. Prior manual-lock evidence is
+  preserved in history. Unchanged native/browser renderer sources support reuse of the existing oracle,
+  preservation and cost records. Plain `./dev check` passes 666 Rust tests under the GPU lock, and
+  documentation checks pass. The lead owns independent review.
 
 - 2026-11-09 Owner corrected console locking from a run precondition to a recorded capability witness. Overnight
   locked runs established that the route could work without desktop capture; requiring that setup on every check
