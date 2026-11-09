@@ -1,176 +1,189 @@
-# T2-CAPTURE M0 independent milestone review (second claim)
+# T2-CAPTURE M0 independent milestone review (third claim)
 
 Reviewer: Claude Opus 5.5 (claude-opus-5-5), independent of the Codex builder, 9 November 2026.
-Claimed commit: `6be1b11b` (rework of the first claim `770bb4ef`, whose review FAILED M0.3, M0.4 and M0.8; that
-review is in this file at `2f089669`). Target: mac-metal, Apple M3 Max, console locked in every run
+Claimed commit: `1fa0a23c` (rework of `6be1b11b`, whose second review at `c65a90e6` FAILED M0.3 and M0.8; the
+first review is at `2f089669`). Target: mac-metal, Apple M3 Max. Console locked in every run
 (`console_locked` and `console_locked_after_capture` true), Screen Recording preflight `false`, no grant requested.
 
-**Verdict: FAIL M0: 2 fail, 0 cant_tell, 0 outside the items.**
-M0.3 and M0.8 fail. M0.1, M0.2, M0.4, M0.5, M0.6, M0.7 and M0.9 pass.
+**Verdict: PASS M0.** All nine items pass. No blocking defect outside the items. Advisory findings are listed below.
 
 ## What I ran (verified by running)
 
-All GPU and capture work ran serially under `agent_loop.py lock gpu`, from the clean worktree at `6be1b11b`.
+All GPU and capture work ran serially under `agent_loop.py lock gpu`, from the clean worktree at `1fa0a23c`.
+Nothing else of mine ran during captures. Load-1 was 1.9 to 5.8 (other agents active); the data volume was 97% full
+(about 34 GB free at the start, down to 18 GB during the series).
 
-- `./dev check`: passed (4 min 25 s, no failing test). It includes the six real-Metal `submitted_capture` tests
-  (now asserting copy-bracket, device 7→8 and presenter 1→3 generations and a 7 ms consumed lead), the odd-width
-  readback test and the creation-site scanners.
-- Rebuilt `target/release/v1-game`: SHA-256 `0e77c57d…dccbe97`, identical to the binary in the builder's
-  `integrated/` manifests; build source digest `05009ccd…` matches. Fresh cook in `tmp/t2-review2-m0/valley`.
-- Writer probe `scripts/t2_writer_probe.py <dir> --uncached`: 10 consecutive runs.
-- Runbook capture command: 12 cooked pans, 5 input stalls, running, render stall, writer-slow, still, fixed,
-  two capture-off arms, and the refused `--case running --mode fixed`. 20 capture-on sessions expected complete.
-- Legacy route (`moving-v1.json`, proof overlay) and noon endpoint with the claimed binary, compared with the first
-  review's outputs from the base binary.
+- `./dev check` (the profile's Check): passed in 4 min 26 s, no failing test. It includes the six real-Metal
+  `submitted_capture` tests, the three writer tests (raw/compressed failure, round trip, changed record size) and
+  the five Python capture tests (`test_t2_capture.py`, also rerun on their own).
+- Rebuilt `target/release/v1-game`: SHA-256 `afbfd378…88a5f3`, identical to the builder's frozen binary; build
+  source digest `8975eeb0…` and an empty dirty diff in every manifest. Fresh cook in my scratch store.
+- **30 back-to-back ordinary sessions** (10 pan, 10 input stall, 10 running, rotating, `--defer`, uncapped), then
+  `--finalize --verify-only` on every one: the independent `zstd` CLI plus XOR reconstruction matched every
+  original writer SHA-256.
+- Margin probes: pan and input stall with the sink capped at 150, 120, 100 and 80 MB/s; two pans each under 7 and
+  14 busy-loop CPU hogs (14 = every core).
+- Runbook cases with full packaging: still, fixed, refused `--case running --mode fixed`, render stall, running,
+  pan, raw `writer-slow` (expected refusal) and compressed `writer-slow`.
+- Cost arms: active pacing OFF/ON/ON/OFF twice, then sleep pacing OFF/ON/ON/OFF.
 
-Host conditions: load-1 between 2.0 and 5.1 during the series; the data volume was 94–97% full (35–55 GB free),
-which is how this Mac is normally used. Nothing else of mine ran during captures.
+## Results
 
-### Results
+### M0.3 throughput and margin
+
+| Run | Result |
+| --- | --- |
+| 30 ordinary back-to-back | **30/30 complete**, 14,425/14,425 images verified, zero ring/writer omissions, zero skipped opportunities. Max image gap 12.0–13.0 ms. Pixel-lease peaks 2/6 GPU and 1–2/96 CPU; encoded-buffer peak 1–13/64. Disk I/O time 0.36–0.76 s per 4 s session for 505–581 MB (pan/stall) and 0.03–0.05 s for 50 MB (running). Writer thread busy 1.94–2.02 s per session |
+| Cap 150 MB/s | pan complete (CPU leases peak **67/96**, encoded 64/64); stall complete (1/96) |
+| Cap 120 MB/s | **pan refused** (13 ring omissions, 96/96); stall complete (40/96) |
+| Cap 100 MB/s | pan refused (28 omissions); stall complete (85/96) |
+| Cap 80 MB/s | pan refused (46); stall refused (15) |
+| 7 busy loops | 2/2 pans complete, CPU leases 1–2/96 |
+| 14 busy loops (all cores) | 2/2 pans complete, CPU leases 33–35/96, one skipped opportunity (driver busy, not a capture omission) |
+
+Every refusal was explicit (`complete: false`, exit 1, about 14 s bounded drain) and rendering continued.
+
+**Measured margin.** Disk: the pan needs a sustained sink between 120 and 150 MB/s; in normal conditions the
+sink was busy at most 19% of the interval (effective ~0.8–1.6 GB/s), roughly **7× headroom**. Against the worst
+sustained dip the second review observed on this volume (280–705 MB/s for four seconds, which overflowed the raw
+writer), headroom is about **1.9×**. CPU: the writer thread spends about 4.1 ms per 8.33 ms record (**~2×**), and
+the pan still completed with every core saturated by other work. The margin is clear in normal conditions. It is
+specific to this content: the pan writes ~580 MB per session, the running grid 50 MB (see A2).
+
+### Frame exactness after the format change (verified)
+
+- All **481 fixed-mode hashes are identical** to the fixed run from the second review, which used the old raw
+  spool and a different binary (`0e77c57d…`). The still equals the fixed initial frame.
+- All 11 of my complete real-time pans share one (initial, final) hash pair, equal to the old raw-spool pans and
+  the fixed endpoints.
+- Every frame in every complete session (normal, capped, stressed, cases) decodes through the independent
+  `zstd` CLI to its original pre-encoding SHA-256; packaged PNGs round-trip to the same hashes.
+
+### Other cases
 
 | Case | Result |
 | --- | --- |
-| Writer probe ×10 | 10/10 complete, no missing IDs. Service rate 109.4, 199.3, 287.3, 248.3, 261.4, 278.6, **124.2**, 266.0, 409.6, 314.1 records/s. Queue peak 53 (run 1), **85 of 96** (run 7), otherwise 2–16. Run 7 drain 803 ms |
-| Pan ×12 | 12/12 complete; 480–481 opportunities = submissions = images; 0 ring/writer omissions, 0 skipped; CPU lease peaks 2–18/96; writer 2.3–3.8 GB/s |
-| Input stall ×5 | **run 1 overflowed**: 121 ring omissions, 360/481 images, 799.5 ms image gap, CPU leases 96/96, writer 0.58 GB/s; disk0 280–705 MB/s throughout the interval (`tmp` iostat). Correctly refused (exit 1, `complete: false`). Runs 2–5 complete |
-| Running | complete 481/481; ticks 0–119; history epoch 0; 114 strict intermediate alphas; lead 0–8.32 ms (median 5.89) |
-| Render stall | complete 451/451; logged delay 251.2 ms; image gap 259.8 ms; 30 skipped opportunities then normal motion |
-| Writer slow | expected incomplete (exit 1): 163 images, 318 ring omissions, ticks 0–119 continue, peaks 6/96, drain 14.01 s |
-| Still / fixed | still = fixed initial = every pan's initial hash; fixed final = every pan's final hash; all 481 fixed hashes identical to the builder's and the first claim's fixed runs |
+| Still / fixed | complete; parity above |
 | Fixed running | refused: "running-world and diagnostic controls require actual elapsed time" |
-| Off ×2 | 480/481 submitted, no images, no tap usage |
-| Legacy parity | `route.jsonl`, all five checkpoint PPMs and the noon endpoint (`d7d3d2fc…`) byte-identical to the base binary's |
+| Render stall | 450/450; delay 260.0 ms; image gap 267.6 ms; 31 skipped opportunities, then motion resumes |
+| Input stall (n01) | delay 250.2 ms; 30 fresh contiguous submissions inside it, one distinct hash; max gap 12.2 ms |
+| Running | 481/481; ticks 0–119; history epoch 0; 110 strict intermediate alphas among 235 interior samples, no alpha regressions; 125 alpha-one clamps and 7 pixel repeats (A5); lead 0–8.31 ms; preview PTS error 0.5 µs |
+| Writer slow, raw | refused: 109/473 images, 364 ring omissions, peaks 6/96, ticks 0–119 continue, "raw writer finalization timeout" |
+| Writer slow, compressed | completes (its 50 MB stream fits the encoded reserve), as the runbook says |
+| Ordinary runs | `diagnostic_actions` empty in pan, running, still and fixed |
 
-Integrated capture-on sessions expected complete: **19 of 20 complete, 1 overflow.**
+### M0.8 cost arms
+
+| Arm | Step CPU median ms | Loop CPU median ms | E-core samples | Copy bracket median ms | Whole-child CPU s | RSS MB |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| active OFF a0 / a3 / a4 / a7 | 0.507 / 0.524 / 0.525 / 0.523 | 0.509–0.528 | 0–1 of 480 | – | 4.75–5.40 | 85–86 |
+| active ON a1 / a2 / a5 / a6 | 0.650 / 0.664 / 0.664 / 0.660 | 0.830–0.846 | 0–1 | 1.181–1.192 | 10.21–10.94 | 286–290 |
+| sleep OFF s0 / s3 | **1.724 / 0.853** | 1.738 / 0.860 | **385 / 163** | – | 2.63 / 1.57 | 85–86 |
+| sleep ON s1 / s2 | 0.658 / 0.681 | 0.831 / 0.854 | 0 | 1.182–1.183 | 7.24 / 6.58 | 285–286 |
+
+This reproduces the builder's diagnosis. The noisy sleep-paced OFF baseline comes from the render owner landing on
+efficiency cores (CPUs 0–3) when the process is otherwise idle; the ON arms stay on performance cores. With active
+pacing, OFF spans 0.507–0.525 ms (3.5%), and capture adds 0.13–0.16 ms per step and 0.30–0.33 ms per loop, plus a
+positive copy bracket on every image. Whole-child CPU roughly doubles (about 5 s of extra CPU per four-second
+session, mostly hashing, XOR and Zstd on the writer and codec threads), and RSS rises by ~200 MB. The README states
+these scopes without a native-cadence claim.
 
 ## Findings, worst first
 
-### F1. Throughput still does not hold reliably on this Mac (M0.3 fails; verified)
+No blocking findings.
 
-The writer is disk-bound, and the disk does not always deliver the required ~1 GB/s. The 96-buffer (0.8 s) reserve
-absorbs short dips but not a dip lasting the interval:
+### A1. The governing design still says no compression during the interval (advisory; read)
 
-- Input stall run 1 (`tmp/t2-review2-m0/input-stall/`): iostat shows disk0 at 280–705 MB/s for the whole four
-  seconds. The CPU pool filled (96/96), the GPU ring then overflowed (121 omissions) and the session was refused.
-  This is an ordinary scenario, not a stress case.
-- Probe run 1 averaged 109.4 records/s, below the 120 required, and completed only because the reserve absorbed a
-  ~50-frame backlog. Probe run 7 reached 85 of 96 buffers (11 from overflow) when per-write times rose to 50–90 ms
-  in the last second.
+`docs/design/modules/T2-CAPTURE.md` step 4 (lines 60–62) says the writer "appends raw pixel records" and "No
+compression runs during the measured interval"; lines 119, 129 and 177 still describe the raw spool and its ~3.98 GB
+budget. The implementation now compresses live (XOR + Zstd on two workers), and the runbook and plan say so, but the
+design was not updated. The change is the fix the second review invited, it is lossless, and M0.3's ask does not
+forbid it, so I do not fail M0.3 on it. It is still drift between the design and the code, and the design's reason
+for the rule (keeping work off the critical path during capture) now rests on the M0.8 measurements instead. The
+design owner should update step 4 and the feasibility section. The owner may promote this finding.
 
-Together with the builder's ten clean runs, the probe passes every time, but the integrated workflow overflowed
-1 in 20 here (the first review saw 1 in 5 pans), and two of ten probes show the margin is thin. The item requires a
-writer that "sustains" the workload; on this machine the storage rate sometimes falls below it for seconds at a
-time, so the bounded reserve cannot guarantee it. Every failure is refused honestly, so this is a reliability
-defect, not fake evidence. I think it matters because later milestones consume this workflow in long series of
-sessions, which is exactly when the disk is slowest; the owner may judge a measured retry rate acceptable instead.
+### A2. Throughput depends on how well the content compresses (advisory; verified for the M0 workload only)
 
-Reproduce: run the runbook pan/input-stall commands back to back (about 15 sessions, ~60 GB written) on the 95%-full
-data volume, then check `ring_omissions` and `system-iostat.txt`.
+The pan writes ~580 MB and the grid 50 MB, against 3.99 GB raw. The pan already needs 120–150 MB/s sustained.
+Full-screen high-frequency motion (sea, clouds, foliage, grain) will compress far worse, and later visual
+milestones consume this workflow. `docs/CAPTURE.md` says so, and qualification covers this workload only. Each
+consumer should rerun a back-to-back series on its own content before relying on capture.
 
-To pass: either reduce the bytes the disk must take (for example a fast lossless intermediate), add a measured
-storage-throughput preflight that refuses before the interval, or have the runbook state and record the observed
-refusal rate with an automatic rerun, with repeated integrated series showing the result.
+### A3. A mid-stream disk error is reported as "encoded I/O worker stopped" (advisory; read, not reproduced)
 
-### F2. Running-world interpolation clamps on half the samples now that the lead is applied (outside T2; verified, does not fail an item)
+In `crates/thrum-app/src/offscreen/writer.rs` lines 120–121, `result?` is evaluated before `io?`. When the I/O
+worker's `write_all` fails during a session, `Output::dispatch` returns the generic "encoded I/O worker stopped",
+and that error wins over the worker's real error. The session is still refused. Only the diagnosis is lost. The
+existing test covers only a failure that surfaces at finish.
 
-With the shared `display_target_lead` now consumed, 122 of 236 interior running samples clamp at alpha 1.0
-(builder: 82 of 235; first claim with zero lead: 19–27). Six adjacent running samples in my capture are
-pixel-identical repeats at the same tick. The capture records this honestly, and the windowed actor uses the same
-policy, so this is an existing world-presentation pacing limit (interpolation cannot run ahead of the latest
-committed tick by the lead). It belongs to the world/presentation owner (Mac M2 qualification), not to T2. M0.6
-passes because the capture preserves what the engine presented.
+### A4. Capture changes the render thread's scheduling class (advisory; verified)
 
-### F3. Capture-off baseline is unstable and the inversion is not investigated (M0.8 fails; verified)
+`capture.rs` defaults the render owner to user-interactive QoS (recorded 0x15→0x21) in both OFF and ON arms. The
+windowed game does not do this. This is recorded and matched across arms, but it means a captured run is scheduled
+differently from the ordinary app. Consumers comparing captured timing with windowed behaviour should know this.
 
-Step CPU median: my OFF arms 1.039 and 1.727 ms; ON pans 0.817–0.844 ms. Builder: OFF 1.008/1.364, ON
-0.834/0.761. Whole-child CPU: my OFF arms 1.66 and 2.45 s, ON pans 2.41–2.50 s, so my second OFF arm equals ON.
-The OFF baseline varies by 35–66% between matched arms and is consistently above ON. The rework README says the
-lower ON value "is not a speedup" but does not explain why OFF is slower or so variable (plausibly CPU frequency
-and scheduling in a lighter loop, which a profile or a frequency/QoS record would show). M0.8 asks to investigate
-unexpected scaling, and the headline "+53%/+76% whole-child CPU" depends on that unstable baseline. Load, the copy
-GPU bracket (my median 0.9–1.2 ms, positive on every image), and the CPU profiles are now present, so F4 of the
-first review is otherwise fixed. I think this is minor; it fails on the unmet "investigate" clause.
+### A5. Existing items carried forward (advisory)
 
-To pass: explain the OFF/ON step-CPU inversion and the OFF-arm spread with evidence (for example repeated OFF/ON
-pairs with CPU frequency or QoS, or profiles of both loops), and state the observer cost with its spread.
-
-### F4. Lower-severity issues (do not fail items on their own)
-
-- **Diagnostic timing gates image collection (read).** In `submitted_capture.rs` `try_submitted_image`, the slot's
-  copy-timer collection runs before pixel collection in one closure; a timing error retires the slot and drops the
-  image, making the session incomplete. Evidence completeness now depends on a diagnostic timer. The timer also adds
-  one resolution `queue.submit` per completed capture frame.
-- **Device-wide feature change for a diagnostic (read).** `capabilities.rs` now requests
-  `MAPPABLE_PRIMARY_BUFFERS` on every device that offers it, and `OffscreenTarget::readback` adds `STORAGE` usage to
-  every readback buffer when present, including non-capture endpoint readbacks. Harmless on Apple unified memory;
-  wgpu warns the feature can be slow on discrete GPUs, so it should be scoped to capture timing.
-- **Runbook overstates qualification (read).** `docs/CAPTURE.md` says the six/96 profile "is qualified by five
-  consecutive full writer probes followed by five complete integrated pans" without stating the storage-rate limit
-  or an expected refusal rate (see F1).
-- **Evidence weight (read).** This commit adds 95 MB under `docs/evidence/render/t2-capture-m0/rework/` (the M0
-  evidence folder is now 158 MB), including duplicated PNGs and previews across sessions. Worth trimming under the
-  storage rules.
-- **Lead is a synthetic target (read).** The offscreen lead targets the next 120 Hz opportunity, not a measured
-  display target; `docs/CAPTURE.md` labels this correctly.
+- Running-world interpolation clamps on about half the interior samples (125/235, with 7 pixel repeats). This is
+  world/presentation pacing, outside T2 (second review F2).
+- Second-review F4 items are unchanged: a timer error still drops the image, and `MAPPABLE_PRIMARY_BUFFERS` and the
+  `STORAGE` readback usage are still device-wide.
+- The runbook's lock path `$HOME/.claude/skills/build/scripts/agent_loop.py` does not exist on this host now (the
+  script lives in the orchestrate plugin cache). Its other commands ran as written.
+- The 1024-record session cap refuses intervals longer than ~8.5 s at 120 Hz; this is documented.
 
 ## Item verdicts
 
-- **M0.1 pass.** Path unchanged from the first review except the added dependency-ordered marker passes around
-  the copy, inside the same encoder and submission; no redraw, extra scene render or game queue. Real-Metal
-  correspondence, disabled zero-allocation and loss tests pass in the Check. Disabled capture creates no timer or
-  marker resources. Legacy route/endpoint parity re-verified byte-identical. Minor scope issues in F4.
-- **M0.2 pass.** Loss/replacement, abandon, stale, saturation, resize and writer-failure tests pass in the Check.
-  Writer-slow refuses explicitly with bounded 6/96 peaks while ticks 0–119 continue. The first review's
-  reserved-slot-on-error issue is fixed (slot retired, CPU lease returned). My input-stall overflow was also refused
-  correctly, with rendering continuing.
-- **M0.3 fail.** See F1.
-- **M0.4 pass.** Locked console and preflight `false` in every run; binary/source/recipe pins match. Device and
-  presenter generations now come from `FrameHost` at submission (tests prove changes); lead is consumed through
-  `Offscreen::step_for` with the windowed actor's `display_target_lead`, stamped per image and varying 0–8.3 ms.
-  Paused-world pans give fresh contiguous submission IDs at tick 0 through the ordinary presenter. Still/fixed/pan
-  parity and legacy parity hold. First-review F2 and F3 are fixed.
-- **M0.5 pass.** Pan 1 against my list (below), and 12/12 pans complete with identical endpoints.
-- **M0.6 pass.** See the list below; F2 is an engine observation, not a capture defect.
-- **M0.7 pass.** Render stall: 251.2 ms delay, 259.8 ms gap, then recovery. Input stall (four complete runs):
-  257–258 ms delay, 32 identical fresh submissions spanning 259–260 ms, then motion. Ordinary runs have empty
-  `diagnostic_actions`; fixed mode refuses running and stall scenarios.
-- **M0.8 fail.** See F3.
-- **M0.9 pass.** I ran the runbook's build, cook and capture commands and they reproduce every case. It states
-  modes, provenance, lead and generation scope, copy-bracket scope, profile arms, 16 GiB allowance, free-space
-  preflight, retention and the Mac M2 owners, and makes no swap/panel/photon claims. The overstatement is charged
-  to F1/F4.
+- **M0.1 pass.** The renderer tap is unchanged since the second review. The real-Metal correspondence, odd-width,
+  disabled-zero-allocation, loss and history tests pass in the Check. Frames remain exact after the new format.
+- **M0.2 pass.** Writer failure, byte-limit, changed-size and round-trip tests cover both encodings, and the Python
+  decoder refuses a wrong hash, truncation and extra data. Raw slow-writer saturation refuses with bounded 6/96
+  peaks while ticks continue. Every capped overflow refused, with a bounded drain.
+- **M0.3 pass.** 30/30 back-to-back sessions complete with clear margin (disk about 7× normal and about 1.9× the
+  worst observed dip; writer CPU about 2×, and it holds with every core loaded). Every original hash was verified.
+  The writer is bounded (96 pixel leases plus 64 × 4 MiB encoded), and PNG/movie packaging is deferred. See A1 and A2.
+- **M0.4 pass.** Locked console and preflight `false` in every run. One frozen binary, source digest and recipe. The
+  engine stamps device and presenter generations and the consumed lead (0–8.3 ms). Paused pans give fresh
+  contiguous IDs at tick 0. Still, fixed and pan parity hold, and so does parity across formats.
+- **M0.5 pass.** Pan list below.
+- **M0.6 pass.** Running list below; the clamps are A5.
+- **M0.7 pass.** Render stall 260.0 ms with a 267.6 ms gap, then recovery. Input stall 250.2 ms with 30 fresh
+  identical submissions, then motion. Ordinary schedules have no actions, and fixed mode refuses controls.
+- **M0.8 pass.** The OFF/ON inversion is explained and reproduced (E-core placement). The stable active-pacing
+  control gives the observer cost with its spread. Bytes, RSS, queue peaks, flush and deferred verification are
+  recorded. The second review's "investigate" gap is closed.
+- **M0.9 pass.** I ran the runbook's build, cook, capture, defer and finalize commands. It states modes, the live
+  lossless format and its limits, the encoded reserve, the pacing and QoS controls, the 16 GiB allowance, retention
+  and the Mac M2 owners. It makes no swap, panel or photon claims. The stale design text is A1.
 
 ## Inspection lists (written before viewing any frame)
 
-**M0.5 pan** (my pan 1; native PNGs, per-frame differences at 480×270, contact sheet, native crops of 499/500):
+**M0.5 pan** (`pan-full`: native PNGs, contact sheet, native 800×450 crops of 495/496):
+- P1 initial hold ≥1 s identical, equal to still/fixed: holds (120 frames, 1.003 s; hash equal).
+- P2 every turn submission new, gap ≤17 ms: holds (240 turn frames, no repeats; max gap 12.0 ms).
+- P3 rock/ridges coherent, sphere exits: holds (contact sheet; sphere leaves frame by the third row).
+- P4 no cut/snap/reversal: holds (accepted yaw monotone 0→36°).
+- P5 final hold ≥1 s equal to fixed final: holds (120 frames; hash equal).
+- P6 tick 0, contiguous IDs: holds.
+- P7 native crops clean: holds (about 4 px shift, crisp rock and ridge edges, no row or channel corruption).
 
-- P1 initial hold ≥1 s identical at yaw 0, equal to still/fixed: holds (121 frames, 1.01 s; hash equal).
-- P2 every turn submission a new state, no gap >17 ms: holds (239 single-frame runs; max gap 11.85 ms).
-- P3 rock and ridges translate together, sphere exits: holds (contact sheet, sphere leaves frame by ~2.5 s).
-- P4 no cut/snap/reversal: holds (moving-frame difference 0.63–1.18, max/median 1.25; accepted yaw monotone).
-- P5 final hold ≥1 s at 36°, equal to fixed final: holds (120 frames; hash equal).
-- P6 tick 0, contiguous IDs, lead recorded: holds.
-- P7 native mid-turn crops without smear/ghosting: holds (about 4 px shift, clean edges).
+**M0.6 running** (`running-full`, frames 496/497): R1 initial hold: holds. R2 movers advance: holds (cube rotation
+advances between adjacent frames, no trails). R3 alpha monotone within pairs: holds (0 regressions). R4 history
+epoch 0: holds. R5 no jumps beyond the known clamps: clamps only (A5). R6 final hold: holds. R7 lead 0–8.31 ms: holds.
 
-I judged motion from frames, hashes and per-frame differences; I did not watch the MP4 at 1x.
+**M0.7 stalls** (render-stall frames 473/474): S1 holds (the camera advances by the elapsed stall across the gap).
+S2 and S3 hold, with the figures above.
 
-**M0.6 running:** R1 static initial hold: holds (1.03 s). R2 movers advance: holds (native crops 496/497).
-R3 alpha in (0,1) monotone within an endpoint pair: holds (114 strict, no regressions). R4 history epoch constant:
-holds. R5 no endpoint jumps beyond clamps: 122 clamps and 6 pixel repeats (F2, engine). R6 static final hold: holds.
-R7 lead plausible: holds (4.6–8.3 ms while running, zero only on the primed frame).
-
-**M0.7 stalls:** S1, S2 and S3 hold with the figures above.
+I judged motion from native frames, hashes and timing records; I did not watch the MP4 at 1x.
 
 ## Proposed item hardening (not applied; definitions unchanged)
 
-- M0.3: qualify throughput on a repeated integrated series (for example 20 back-to-back sessions on the normal
-  data volume), recording the refusal rate and disk rate, not only on isolated probes.
-- M0.8: require at least two OFF/ON pairs with the spread stated, and an explanation of any OFF > ON inversion.
+- For any later visual milestone that uses capture: qualify a back-to-back series on that milestone's own content,
+  recording the encoded bytes per session and the sink rate at which it refuses (A2).
 
 ## Reviewer scratch
 
-`tmp/t2-review2-m0/` (git-ignored) holds my manifests, runtime records, iostat logs and crops; bulk raw, PNG and
-archive files were deleted after analysis. The first review's `tmp/t2-review-m0/` was deleted. Delete mine after
-the next verdict.
+`tmp/t2-review3-m0/` and the second review's `tmp/t2-review2-m0/` were deleted after this verdict was written.
+The builder's `tmp/t2-capture-m0-r3/` (22 GB) is the builder's to close out now that the review is done.
 
-FAIL M0: 2 fail, 0 cant_tell, 0 outside the items
+PASS M0

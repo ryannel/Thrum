@@ -4,7 +4,7 @@
     {
       "id": "M0",
       "name": "Mac engine images and runtime motion without a desktop capture grant",
-      "state": "claimed",
+      "state": "done",
       "fails": 2,
       "replans": 2,
       "bar": "Camera continuity expected of Red Dead Redemption 2 and evidence fit for a shipped high-end game: complete native-size images and honest 1x elapsed-time motion, with every omitted sample and observer limit explicit.",
@@ -40,7 +40,7 @@
           "status": "pass",
           "evidence": "docs/evidence/render/t2-capture-m0/reliability/README.md, order.json, summary.json and sessions/ \u2014 five consecutive full 480-record native writer probes, then 30 consecutive complete integrated sessions (10 pan, 10 input-stall, 10 running): 14,423/14,423 exact submissions/images, zero omitted/skipped samples. Last 20 strictly cap uncached writes at 200 MB/s on the 96\u201397%-full normal volume; GPU/CPU peaks only 2/2 against 6/96. Full 1080p RGBA input preserved through lossless XOR/Zstd, original pre-encoding SHA checked independently for every frame. Separate finite 256 MiB encoded burst reserve; actual write/full-sync/drain/verification/RSS and every attempt retained.",
           "ask": "Run the writer probe on the actual target disk using full raw frame records, declared finite GPU/CPU byte caps and a 16 GiB per-session output allowance. Record write service rate, queue peaks, actual storage/flush behavior, drain and deferred packaging time; verify every decoded image hash. Start with three staging slots/eight CPU buffers in integrated capture. A cached write-acceptance rate alone is insufficient. If the probe overflows, revise the writer before the complete pan; no session-sized RAM queue, live PNG requirement or reduced fidelity may hide failure. Retain commands and measurements; do not call this measured until run.",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": "docs/evidence/T2-CAPTURE/M0-review.md"
         },
         {
@@ -93,7 +93,7 @@
           "status": "pass",
           "evidence": "docs/evidence/render/t2-capture-m0/reliability/README.md, cpu-diagnosis.json, summary.json and sessions/cost-* \u2014 sleep-paced inversion diagnosed with active CPU/wall clocks and real E/P CPU IDs; QoS/activity-only failures retained. Explicit matched active-pacing OFF/ON/ON/OFF twice stabilizes unfiltered OFF step medians 0.516\u20130.526 ms (~2%); paired ON step +0.138\u20130.152 ms, loop +0.310\u20130.330 ms. Scene GPU, positive copy upper bracket 1.184\u20131.191 ms, CPU profiles, load, queue/bytes/RSS/full-sync/deferred verification retained. Pacing burns CPU; whole-child spread including warmup reported separately, no noisy percentage or native cadence claim.",
           "ask": "Read paired same-build/recipe/workload CPU/GPU/interval/queue/memory/bytes/disk results with run order and load, including deferred packaging and flush costs. Investigate visible hitches, comparable regressions and unexpected scaling under C12 without inventing numeric gates. Captured timing is never the uncaptured baseline.",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": "docs/evidence/T2-CAPTURE/M0-review.md"
         },
         {
