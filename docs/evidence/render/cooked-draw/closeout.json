@@ -28,7 +28,9 @@
     "resume-rotation",
     "smoke",
     "store",
-    "visuals-current"
+    "visuals-current",
+    "ios-sim-1794246469",
+    "ios-sim-lifecycle-1794246578"
   ],
   "retained_roots": [
     "docs/evidence/render/cooked-draw",
@@ -44,12 +46,14 @@
     "scripts/cooked_draw_cost.py": "d1c3bf82eb3869b9b7c8b2ce6984279a80fd27111605c401d3654d71018ef64f",
     "scripts/cooked_draw_indirect_probe.rs.in": "60aa94d9dc57c6f63eba2c149ded609d67d260dcd6d7288dcedb32186f382c16",
     "scripts/cooked_draw_browser_page.mjs": "95189b8ab3b34f47927baca9ca197ff94090a28ca5d636b69cf9260f7db42c09",
-    "scripts/cooked_draw_ios_sim.py": "f529b0555ea05973137a6e0f1ced53b1411c18e35671f3027d01c4da1032511d",
+    "scripts/cooked_draw_ios_sim.py": "25624ef30577404dc9016725f0eb57e986ddbf6cd666395c20b3ad8967625b46",
     "scripts/cooked_draw_fixture.py": "c1bda0aee5d9b33f83c82392178a626632c8689aa68ea3cbc3eb955d2b065107",
     "examples/v1-game-ios/src/ios/cooked_view.rs": "5142203f4a4d3d749a86d76800a9f1584dc083fe2518453ef3f2d6bc96cb9fd9",
-    "examples/v1-game/assets/showcase/scene.json": "31da2737afccc1a2c8533d7db1221839c41a38f55d1258ad52e92b8d206786a9"
+    "examples/v1-game/assets/showcase/scene.json": "31da2737afccc1a2c8533d7db1221839c41a38f55d1258ad52e92b8d206786a9",
+    "scripts/test_t2_capture.py": "079a97834404a7eb49fc4912a7073fe62723804d4b92a325cb1aed6d60920b75"
   },
   "recovery_verification": "Fresh final M7 paths run rebuilt/cooked from retained fixture scripts and reproduced all fifteen previously selected I/D/omit images after decoding, plus all differences/crops; native and Chrome BASE/current commands pass. Lossless simulator sequence round-tripped all sixteen original native samples. Every retained PNG decoded and every selected compressed JSON parsed before deletion.",
   "limits": "No remote backup or general storage service is configured. Selected code, fixtures, exact measurements and evidence are Git-owned; temporary stores/builds are reconstructible.",
-  "remaining_condition": "Small task logs expire at the lead milestone review. Worktree target is cleaned when this build stops."
+  "remaining_condition": "Small task logs expire at the lead milestone review. Worktree target is cleaned when this build stops.",
+  "manual_console_requalification": "Exact M1.7 and M1.8 commands passed on fresh owned simulators after manual owner locking. Reports and function still retained; reconstructible stores retired. Manual locking remains a required host setup through loop verification."
 }

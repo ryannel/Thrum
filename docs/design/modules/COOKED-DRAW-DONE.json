@@ -88,7 +88,7 @@
           "ask": "Is the route's cooked attach the existing attach_cooked_scene selection, with the route unchanged when THRUM_ASSET_STORE and THRUM_SCENE are unset? Do the retained state records name the simulated model, runtime, host, adapter flags, selected path, drawn generation, lock state and source/content hashes? Is any OS grant requested?",
           "target": "ios-sim",
           "status": "pass",
-          "evidence": "docs/evidence/render/cooked-draw/ios-function.json.gz and ios-valley.png. Fresh final ordinary --lifecycle --rotation run on owned iPhone 18 Pro / iOS 27.2 passes; build/cook/install/run/cleanup retained. Both console-lock witnesses true. Twelve advancing state observations exceed ten seconds; actual adapter flags omit INDIRECT_EXECUTION, CookedStats selects Direct, drawn generation 1/current device 1, presented/cooked counters advance, errors empty. Held visual controls are absent. Owned simulator deleted, no OS grant requested.",
+          "evidence": "docs/evidence/render/cooked-draw/ios-function-only.json.gz, ios-valley.png and check.json. Exact standalone named M1.7 command passes on a fresh owned iPhone 18 Pro / iOS 27.2 after the owner manually locks the host. Real IOConsoleLocked witnesses are true before/after. Twelve advancing state observations span 22.103 seconds; presented and cooked counters advance 119 to 1439. Adapter facts omit INDIRECT_EXECUTION, Direct selected, drawn generation 1 on device 1, errors empty, no held-view controls. Build/cook/install/run/cleanup retained; owned simulator deleted. Startup now allows up to 120 seconds for manual setup and still refuses missing lock evidence. Seven capture tests cover locked admission, observed manual locking and timeout refusal. Console must remain locked for loop verification.",
           "verdict": "",
           "review": ""
         },
@@ -100,7 +100,7 @@
           "ask": "Do the state records after each lifecycle row show the new generation, the re-selected direct path and the drawn set, and do the route's existing witness counters show zero background or lost-queue submissions?",
           "target": "ios-sim",
           "status": "pass",
-          "evidence": "docs/evidence/render/cooked-draw/ios-function.json.gz. Fresh final ordinary combined run passes background/foreground and device replacement. Background hold retains presented/cooked counters and device generation unchanged; foreground counters resume. Drawn cooked set returns through Direct on device generation 2 with advancing counters. Lost empty submits and recovery failures are zero; no validation or loader error; console locked throughout.",
+          "evidence": "docs/evidence/render/cooked-draw/ios-function.json.gz and check.json. Exact standalone --lifecycle named command passes with real locked-console witnesses before/after following manual owner setup. Background hold retains presented/cooked counters at 1543 and device generation 1; foreground rendering resumes. Device replacement redraws the cooked set through Direct on device generation 2 with cooked submitted count 1798, advancing presented counters and no loader/validation error. Lost empty submissions and recovery failures are zero. The fresh owned simulator was deleted. The bounded manual setup wait preserves refusal when lock evidence is missing; keep the host locked through loop verification.",
           "verdict": "",
           "review": ""
         },

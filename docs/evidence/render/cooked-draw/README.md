@@ -42,6 +42,11 @@ encode CPU: I 0.270–0.289 ms / D 0.149–0.188 ms. Forward includes contributi
 [Samples/load](cost/paired.json.gz), [command audit](cost/command-audit.json), [passing tripwires](cost/tripwires.json.gz),
 [three genuine quiet BASE runs per history](cost/baseline-history.json.gz). Existing busy/saturated history is preserved.
 
+M1.7 and M1.8 require the owner to lock the Mac manually before the loop verification and keep it locked through
+the simulator rows. Startup allows a bounded 120-second setup wait and still requires the real lock witness.
+The [standalone function run](ios-function-only.json.gz) and [standalone lifecycle run](ios-function.json.gz) both pass
+with locked witnesses before and after.
+
 Reproduce the named DONE checks under `agent_loop.py lock gpu`; `scripts/cooked_draw_ios_sim.py --visuals` supplies
 stills/pan and `scripts/cooked_draw_cost.py` supplies paired costs (both require a new `--output`). The launcher pins Rust 1.99.1. After M1 acceptance, T2-CAPTURE M2 may consume ordinary cooked attach; it still owns
 submitted-frame identity/time and every-frame proof. Retained code/fixtures and [selected hashes](selected-hashes.json)

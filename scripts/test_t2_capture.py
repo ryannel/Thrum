@@ -4,9 +4,31 @@ import hashlib
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import Mock, patch
 
 from capture_v1_runtime import validate_runtime
+from cooked_draw_ios_sim import wait_for_console_lock
 from t2_writer_probe import FRAME_BYTES, package
+
+
+class SimulatorConsoleSetup(unittest.TestCase):
+    def test_locked_console_continues_and_manual_lock_is_observed(self):
+        with patch('cooked_draw_ios_sim.time.sleep') as sleep:
+            wait_for_console_lock(Mock(return_value=True), timeout=0)
+            sleep.assert_not_called()
+            observe = Mock(side_effect=[False, True])
+            wait_for_console_lock(observe)
+            self.assertEqual(observe.call_count, 2)
+            sleep.assert_called_once_with(.5)
+
+    def test_missing_lock_evidence_still_fails_after_the_setup_deadline(self):
+        with patch('cooked_draw_ios_sim.time.monotonic', side_effect=[0, 120]), \
+                patch('cooked_draw_ios_sim.time.sleep') as sleep:
+            observe = Mock(return_value=False)
+            with self.assertRaisesRegex(RuntimeError, 'lock the Mac manually'):
+                wait_for_console_lock(observe)
+            sleep.assert_not_called()
+            observe.assert_called_once()
 
 
 def runtime():

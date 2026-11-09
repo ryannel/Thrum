@@ -29,5 +29,30 @@
     },
     "regression": "The three unset/empty/explicit wrapper cases pass in scripts/test_repo_check.py. Removing the default export makes exactly the unset case fail. The repository Python suite passes all twelve tests.",
     "validation": "Plain ./dev check completed under the GPU lock with exit 0 and 666 Rust tests. No caller wrapper or PATH setup was used."
+  },
+  "console_setup": {
+    "cause": "The loop ran M1.7 and M1.8 while IOConsoleLocked was No. The original detector correctly refused the unlocked host.",
+    "owner_setup": "Owner chose manual console locking. IOConsoleLocked became Yes before both exact named checks. Keep the console locked through the loop verification.",
+    "behavior": "Locked-console rows wait up to 120 seconds for manual setup at startup. They require an observed IOConsoleLocked Yes and fail if the console is unlocked at the final witness. Rotation retains its separately recorded lock scope.",
+    "unit_tests": "All seven tests in test_t2_capture.py pass, including already-locked, observed manual-lock transition and missing-lock timeout refusal.",
+    "source_sha256": {
+      "scripts/cooked_draw_ios_sim.py": "25624ef30577404dc9016725f0eb57e986ddbf6cd666395c20b3ad8967625b46",
+      "scripts/test_t2_capture.py": "079a97834404a7eb49fc4912a7073fe62723804d4b92a325cb1aed6d60920b75"
+    },
+    "exact_runs": {
+      "M1.7": {
+        "command": "python3 scripts/cooked_draw_ios_sim.py --output tmp/cooked-draw/ios-sim-1794246469",
+        "exit": 0,
+        "evidence": "ios-function-only.json.gz",
+        "observed_seconds": 22.103273707907647
+      },
+      "M1.8": {
+        "command": "python3 scripts/cooked_draw_ios_sim.py --lifecycle --output tmp/cooked-draw/ios-sim-lifecycle-1794246578",
+        "exit": 0,
+        "evidence": "ios-function.json.gz",
+        "device_generation_after": 2
+      }
+    },
+    "unit_log_sha256": "6db92e511d699ae243667714476e2ec890478b7a0720af366ece336314d0da27"
   }
 }
