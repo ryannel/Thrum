@@ -228,7 +228,7 @@ dev-server client.
   selects meshlet indirect on Mac and Chrome; unknown/missing facts select one full-range indexed draw, including
   the simulator. Mac direct/reference parity is exact in five views with repeats and negative controls. Production
   indirect BASE/current output and counts are exact on Mac and Chrome. Simulator views fill both current oriented
-  extents through accepted PLATFORM-RUNTIME-IOS M7; fresh locked ordinary lifecycle/recovery/rotation and held
+  extents through accepted PLATFORM-RUNTIME-IOS M7; fresh ordinary lifecycle/recovery/rotation with attributed denied permission preflights and held
   still/sampled-pan inspection pass. The sixteen pan samples have a 1.118-second largest gap; unsampled frames
   remain unqualified. [Evidence](../../evidence/render/cooked-draw/README.md). T2 M2 may use ordinary cooked attach
   after M1 acceptance, but still owns submitted-output/time identity and every-frame proof.
