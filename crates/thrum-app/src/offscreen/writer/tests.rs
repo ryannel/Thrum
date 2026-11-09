@@ -178,3 +178,32 @@ fn lossless_spool_reconstructs_every_byte_and_hash_and_refuses_changed_record_si
             .contains("size changed")
     );
 }
+
+#[test]
+fn live_encoding_reports_the_disk_error_after_its_io_channel_closes() {
+    // More than two encoded chunks forces the codec to observe disconnection,
+    // as opposed to a small stream whose only error occurs in the final flush.
+    let mut state = 17_u64;
+    let pixels: Vec<u8> = (0..12 * 1024 * 1024)
+        .map(|_| {
+            state ^= state << 13;
+            state ^= state >> 7;
+            state ^= state << 17;
+            state.to_le_bytes()[0]
+        })
+        .collect();
+    let writer = ImageWriter::start(
+        RefusedSink {
+            flush_failure: false,
+        },
+        2,
+        32 * 1024 * 1024,
+        SpoolEncoding::ZstdDelta,
+    )
+    .unwrap();
+    assert!(writer.submit(pixels).is_none());
+    assert_eq!(
+        writer.finish(Duration::from_secs(10)).unwrap_err(),
+        "disk write refused"
+    );
+}

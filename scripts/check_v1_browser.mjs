@@ -80,8 +80,9 @@ async function assets(directory) {
   return result;
 }
 
-async function serve(files) {
+async function serve(files, receive) {
   const server = createServer((request, response) => {
+    if (receive?.(request, response)) return;
     let pathname;
     try { pathname = new URL(request.url, 'http://localhost').pathname; }
     catch { response.writeHead(400).end(); return; }
@@ -1903,4 +1904,7 @@ async function main() {
   console.log(`PASS ${results.length} case(s); artifacts: ${output}`);
 }
 
-main().catch(error => { console.error(error); process.exitCode = 1; });
+export { Cdp, assets, serve, serveCooked, hardware, waitFor, cleanup, cookedHead, movingRouteFiles, destroyActualDevice };
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main().catch(error => { console.error(error); process.exitCode = 1; });
+}

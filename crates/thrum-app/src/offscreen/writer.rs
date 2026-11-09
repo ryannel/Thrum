@@ -117,7 +117,12 @@ impl<I: AsRef<[u8]> + Send + 'static> ImageWriter<I> {
                         let begin = Instant::now();
                         let io = worker.finish();
                         let tail = begin.elapsed();
-                        let mut report = result?;
+                        let mut report = result.map_err(|error| match &io {
+                            Err(disk) if error.contains("encoded I/O worker stopped") => {
+                                disk.clone()
+                            }
+                            _ => error,
+                        })?;
                         let io = io?;
                         report.flush_time += tail;
                         report.io_time = io.time;

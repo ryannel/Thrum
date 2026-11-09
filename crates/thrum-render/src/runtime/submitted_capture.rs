@@ -41,6 +41,8 @@ pub struct SubmittedImage {
     pub history_epoch: u64,
     /// Monotonic host observation immediately following the queue submission.
     pub submitted_at: Instant,
+    /// Submission time relative to this capture session's monotonic origin.
+    pub submitted_elapsed: std::time::Duration,
     /// GPU copy upper bracket, including the dependent marker/encoder overhead.
     pub copy_gpu_ns: Option<f64>,
     /// Device generation captured by the render owner at submission.
@@ -83,6 +85,7 @@ pub(super) struct Tap {
     session: u64,
     generation: u64,
     extent: [u32; 2],
+    started_at: Instant,
     slots: Vec<Slot>,
     omitted: u64,
     free_cpu: Vec<Vec<u8>>,
@@ -207,6 +210,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             session,
             generation: self.generation,
             extent: self.render_extent,
+            started_at: Instant::now(),
             slots,
             omitted: 0,
             cpu_capacity: limits.cpu_buffers,
@@ -296,6 +300,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 source: stamp.source,
                 history_epoch: stamp.history_epoch,
                 submitted_at: stamp.submitted_at,
+                submitted_elapsed: stamp.submitted_at.duration_since(tap.started_at),
                 device_generation: stamp.device_generation,
                 presenter_generation: stamp.presenter_generation,
                 presentation_lead: stamp.presentation_lead,

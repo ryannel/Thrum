@@ -1,7 +1,7 @@
 # Unattended frame evidence — T2 capture
 
-Status: revised after [design review 2](../../evidence/T2-CAPTURE/design-review-2.md), 9 November 2026;
-independent re-review owed, implementation unqualified.
+Status: Mac M0 passed its third milestone review. Chrome M1 is implemented and claimed for lead review,
+9 November 2026. Simulator M2 remains open. See the [plan](T2-CAPTURE-PLAN.md) for current proof.
 [Brief](T2-CAPTURE-BRIEF.md) · [plan](T2-CAPTURE-PLAN.md) · [criteria](T2-CAPTURE-DONE.json).
 This is a child of [Diagnostics and delivery](TOOLS-DELIVERY.md), not a new engine subsystem or package.
 The author inspected current capture code before completing this design; this is not a blind study.
@@ -57,10 +57,10 @@ Walk one frame:
    produce one final engine texture feeding both the normal present pass and readback. Capture neither acquires nor
    extends a drawable lease. Preserve G3t's direct-output optimization when capture is disabled.
 4. Completion/map callbacks carry capture-session, frame and device generations. Copy complete pixels into a bounded
-   CPU buffer pool, unmap, and recycle only after both GPU and CPU ownership allow it. A dedicated writer appends raw
-   pixel records to a sequential disk spool; frame IDs and offsets handle out-of-order completions. No compression
-   runs during the measured interval. After capture/drain, a bounded worker pool packages lossless PNGs and the
-   host-time movie from the spool, checking decoded pixel hashes before finalization. Disk I/O and packaging happen
+   CPU buffer pool, unmap, and recycle only after both GPU and CPU ownership allow it. A dedicated writer hashes original RGBA records, then losslessly compresses consecutive-frame XOR differences
+   with two Zstd level-1 workers during capture. A separate I/O worker drains a finite 256 MiB encoded reserve
+   to the sequential spool; frame IDs join records to submissions. After capture/drain and durable flush,
+   packaging reconstructs every original record and checks its hash before creating lossless PNGs and the host-time movie. Disk I/O and packaging happen
    off the world/render lanes. No per-frame GPU wait, pipe write or encoder backpressure on those lanes.
 5. The writer atomically finalizes artifacts and their manifest after a bounded drain. Missing or invalid pixels,
    late callbacks and write/encode failure produce explicit incomplete outcomes. Never report successful evidence
@@ -116,17 +116,20 @@ On queue exhaustion, never block the renderer: report the missing capture and in
 stop capture with a reason while the app remains healthy. Finalization has a deadline and retains usable incomplete
 diagnostics. Do not allocate one unbounded array of the entire session or keep GPU frame slots hostage to encoding.
 
-The first M0 feasibility step measures raw-spool throughput on this disk at 1920×1080 and 120 records/s, before
-building the full scenario. Start with three GPU staging slots and eight reusable CPU frame buffers (about 91.2 MB
-combined, excluding the output texture and metadata). Record service rate, queue high-water, actual disk writes and
+The first M0 feasibility step measured raw-spool throughput on this disk at 1920×1080 and 120 records/s, before
+building the full scenario. Its initial three GPU staging slots and eight reusable CPU frame buffers (about 91.2 MB
+combined, excluding the output texture and metadata) did not sustain this disk. The qualified M0 writer uses six
+GPU slots and 96 CPU buffers under a 1 GiB pixel cap, live XOR/Zstd and a separate 256 MiB encoded reserve. Record service rate, queue high-water, actual disk writes and
 drain time; a cached write-acceptance rate alone does not establish sustainable storage throughput. Include the
 final flush and packaging costs. Reject a strategy that overflows over the full four-second interval (one-second
 hold, two-second pan, one-second hold). If sequential raw spill cannot sustain it, revise the writer mechanism from
 measurements before proceeding; do not hide the deficit in a session-sized RAM queue or reduce required fidelity.
-These initial capacities may be tuned within explicitly recorded byte caps; throughput remains unqualified until run.
+Capacities may be tuned within explicitly recorded byte caps. M0 throughput is qualified only for its measured
+scene and device; subsequent content must repeat the series.
 
 Under [ASSET-LIFECYCLE](../../ASSET-LIFECYCLE.md), each four-second SDR session has a **16 GiB local output allowance**
-covering raw spool (about 3.98 GB), lossless packaging, preview and metadata at peak coexistence. This is an operational
+covering live compressed spool (or diagnostic raw spool, about 3.98 GB), deferred PNG/movie packaging, preview
+and metadata at peak coexistence. This is an operational
 storage cap, not a performance gate. Run one bulk session at a time, preflight free space and declare a separate
 allowance for longer/HDR cases before allocation. The task's storage record names owner, inputs, expected peak,
 retained excerpts and expiry. Reuse the allowance only after verifying retained selected evidence and deleting owned
@@ -151,8 +154,8 @@ Research consulted 9 November 2026; official sources were inspected for the foll
 - [wgpu 30.0.1 CommandEncoder](https://docs.rs/wgpu/30.0.1/wgpu/struct.CommandEncoder.html), texture-to-buffer copy
   and mapping-on-submit APIs, and [Buffer](https://docs.rs/wgpu/30.0.1/wgpu/struct.Buffer.html), mapping/lifetime and
   web polling: support renderer-owned asynchronous readback. Mapping does not by itself supply bounded queues or provenance.
-  Rechecked mapping exclusivity and texture-copy APIs for this revision; raw spill and deferred packaging are this
-  design's throughput strategy, not a throughput guarantee supplied by wgpu.
+  Rechecked mapping exclusivity and texture-copy APIs for this revision; live lossless compression, bounded encoded spill and deferred PNG/movie packaging are this
+  design's qualified M0 throughput strategy, not a throughput guarantee supplied by wgpu.
 - [Apple ScreenCaptureKit sample](https://developer.apple.com/documentation/screencapturekit/capturing-screen-content-in-macos),
   setup, stream configuration and output processing: OS window capture requires Screen Recording permission and has
   its own queue/rate. The local denied preflight is therefore not fixed by unlocking alone.
@@ -174,8 +177,9 @@ capture similarly redraws an endpoint; do not mistake it for a tap of an interpo
 
 Rejected defaults: ScreenCaptureKit/desktop screenshots retain permission/session dependency; fixed-step video alone
 conceals runtime pacing; standalone game readback duplicates GPU lifetime/submission ownership. A new native video
-encoder path or complete Metal recorder is not needed for the first proof. Deferred lossless packaging removes live
-PNG throughput from the critical path; the early raw-spool probe can still reject the selected writer mechanism.
+encoder path or complete Metal recorder is not needed for the first proof. Live XOR/Zstd reduces storage demand while deferred PNG/movie packaging removes PNG throughput from the
+critical path. M0 margin applies to its measured scene compressibility. Each M1 content workload needs its own
+back-to-back capture series and sink-rate refusal measurements before throughput is qualified.
 
 Locked-console feasibility is supported by the [retained design review's probe account](../../evidence/T2-CAPTURE/design-review.md#what-checks-out):
 it read `tmp/platform-runtime-mac-m2/console-probe.txt` at 01:59 CET (`IOConsoleLocked = Yes`,

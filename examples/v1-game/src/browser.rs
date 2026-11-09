@@ -3,6 +3,8 @@
 //! The shell owns the canvas surface, the device, loss and replacement, and the frame step; this
 //! facade keeps the game's controls, cooked valley, material reloads, capture slot and report.
 
+mod submitted_capture;
+
 use std::{
     cell::RefCell,
     rc::Rc,

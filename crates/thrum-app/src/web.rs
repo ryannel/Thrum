@@ -34,6 +34,7 @@ use web_sys::HtmlCanvasElement;
 
 use crate::web_clock::{PageClock, Transition};
 
+mod capture;
 mod recovery;
 
 /// Frame samples kept per device generation, the size of one report.
