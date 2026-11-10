@@ -178,11 +178,17 @@ function/visual/device evidence separate, one compact page per gate. Shrink plan
 ## After V1 and parked work
 
 **Next goal after V1:** [a swarm-survival test game](design/NEXT-GOAL-SWARM-GAME.md), with 2D support and online
-multiplayer built up towards it. Owner, 10 November 2026.
+multiplayer built up towards it. Owner, 10 November 2026. It is planned as
+[track 3 of the module list](design/modules/ARCHITECTURE.md#track-3-the-swarm-survival-game-after-v1): `SIM-2D`
+(a crowd that steps identically on every target), `RENDER-2D`, `GAME-UI`, `TRANSPORT`, `SESSION` and `SWARM` (the
+game). Each has a brief there, with its interfaces, the build order after the exit and the owner's decisions. None
+has a done-when file, so none can start before the exit.
 
 Teaching demos follow, chosen individually: cloud formation, water and others under the [port decision](design/decisions/SEA-AND-CLOUD-PORT.md).
 The sea and clouds they build on are planned in [the module list](design/modules/ARCHITECTURE.md#where-sea-and-clouds-are-finished).
-Transport reopens after V1: compact wire, Quinn, clock sync, relevance/prediction and four rendered peers under conditioning.
+Transport reopens after V1 as `TRANSPORT` and `SESSION` in track 3: Quinn and WebTransport, clock sync, prediction
+and four rendered peers under conditioning. The compact wire carries the baseline and repair; relevance waits for
+a game whose state must travel.
 Android/desktop-high recipes and physical iPhone runs follow on suitable hardware. A dedicated AI performance phase
 profiles whole frames, derives targets, and revisits retained commands, mapped uploads and complete native recording.
 
