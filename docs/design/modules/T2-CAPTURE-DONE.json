@@ -147,7 +147,7 @@
     {
       "id": "M2",
       "name": "iOS simulator engine motion without desktop capture",
-      "state": "open",
+      "state": "blocked",
       "fails": 0,
       "replans": 1,
       "needs": [
@@ -178,7 +178,8 @@
           "check": "./dev check",
           "lock": "gpu"
         }
-      ]
+      ],
+      "blocked": "the Codex goal is blocked"
     }
   ]
 }
