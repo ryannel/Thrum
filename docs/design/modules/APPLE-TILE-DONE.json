@@ -4,7 +4,7 @@
     {
       "id": "M0",
       "name": "A repeatable offscreen valley proves the comparison path",
-      "state": "open",
+      "state": "blocked",
       "fails": 0,
       "replans": 3,
       "bar": "The same complete cooked valley as portable, with stable lighting, silhouettes, shadows and motion expected of a shipped high-end game; matched full-resolution stills and normal-speed sequences must expose omitted work.",
@@ -67,7 +67,8 @@
       ],
       "needs": [
         "T2-CAPTURE:M0"
-      ]
+      ],
+      "blocked": "A fresh capture attempt again refused the 16 GiB free-space preflight. Only 14 GiB is available after cleanup. Additional storage is required. [Failure log](/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m0/blocked-audit-preflight.log)."
     },
     {
       "id": "M1",
