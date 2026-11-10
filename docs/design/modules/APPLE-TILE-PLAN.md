@@ -5,7 +5,7 @@ Done when: [APPLE-TILE-DONE.json](APPLE-TILE-DONE.json) owns criteria and proof 
 [Boundary](../decisions/G3T-METAL-BOUNDARY.md) and C04/C06/C07/C08/C12 govern.
 Reviews: [design review 2 at `224b58a1`](../../evidence/APPLE-TILE/design-review-2.md): DESIGN CHANGES (7 findings); independent review of this scoped re-plan is owed to the lead/loop.
 Milestone: M0 A repeatable offscreen valley proves the comparison path (open)
-Now: M0 builder reran D0.3 on Metal and inspected D0.4's historical replay method. Both pass with retained evidence.
+Now: D0.3/D0.4 pass. The exact pixel comparator is implemented and exercised on all ten retained endpoint repeats, with one-byte rejection and native-size difference crops.
 Next: retain native and Chrome pre-change T2 baselines, implement the M0 scene-linear comparison/controls and qualify the complete route.
 Blocked: the runtime capture command refused its 16 GiB free-space preflight on this volume (14 GiB initially, 13 GiB during builds). D0.1/D0.2/D0.5 remain open. M2/M3/final attended rows and M12's COOKED-DRAW dependency retain their existing requirements.
 
@@ -152,6 +152,13 @@ Mac critical path. Judge whether all proofs reject omitted work. No owner-only d
 re-plan. Approval, unpark and milestone acceptance belong to the loop; this planner claims none of them.
 
 ## Log
+
+- 2026-11-11 Continued M0 implementation despite the capture storage refusal. Added the exact pixel comparator
+  for existing PNG/PPM checkpoints and raw RGBA8/RGBA16F exports. All ten retained endpoint repeat comparisons
+  passed. A one-byte edited-source control failed with the correct native-coordinate mask/crop. The capture
+  suite passed 16 tests, including exact alpha and half-float bit sensitivity. This establishes the comparator's
+  pixel behavior; scene-linear tap integration and real renderer omission controls remain pending. Evidence and
+  implemented invocation are in [the partial M0 record](../../evidence/render/apple-tile-m0/README.md).
 
 - 2026-11-10 M0 builder started from the loop's explicit commission and open JSON state. D0.3's current-revision
   Metal command passed 12 active tests, including pipeline coverage, generation clones, detached attribution and

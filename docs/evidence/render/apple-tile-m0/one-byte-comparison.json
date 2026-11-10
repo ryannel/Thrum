@@ -1,0 +1,36 @@
+{
+  "reference": {
+    "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g7-showcase/runs/moving-20261110-235303/native-1/checkpoints/mirror-light.ppm",
+    "file_sha256": "fc182c378b1a60cba4efc97a7e5b819ea7b0ec63041313cc65fc80b77ceb1fa4",
+    "pixels_sha256": "2b67f520ceb78fcd0c04479061b335d3e076e230cf9b86d0d811448a0db3dfce",
+    "extent": [
+      1280,
+      720
+    ],
+    "bytes_per_pixel": 3,
+    "encoding": "ppm"
+  },
+  "candidate": {
+    "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m0/one-byte-control.ppm",
+    "file_sha256": "d5c9392e3b1f8006c828c9d71498c1dc9fcd60685ffc8a8cf29a82cdc37338c0",
+    "pixels_sha256": "75c4043b865985b99a89da1239ecdcfc92f77ff88e5cee9048fb203ccd591579",
+    "extent": [
+      1280,
+      720
+    ],
+    "bytes_per_pixel": 3,
+    "encoding": "ppm"
+  },
+  "equal": false,
+  "scope": "exact stored pixel bytes only; target/sample/exposure/history identity must be established by the caller",
+  "changed_pixels": 1,
+  "changed_bytes": 1,
+  "bounds_xyxy_exclusive": [
+    100,
+    100,
+    101,
+    101
+  ],
+  "mask_sha256": "d2911a05040435960c931c7ffc563336ed8c6e763f56d532d5da8f62d61e2b2b",
+  "crop_sha256": "ad95131bc0b799c0b1af477fb14fcf26a6a9f76079e48bf090acb7e8367bfd0e"
+}

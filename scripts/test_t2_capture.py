@@ -10,6 +10,7 @@ from unittest.mock import patch
 
 from capture_v1_simulator import export_session
 from capture_v1_runtime import validate_runtime
+from compare_v1_pixels import compare, load_pixels
 from cooked_draw_ios_sim import console_witness
 from cooked_draw_sim_launcher import validate_preflights
 from t2_writer_probe import FRAME_BYTES, package
@@ -166,3 +167,85 @@ class SpoolTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+class PixelComparison(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+
+    def raw(self, name, data):
+        path = self.root / name
+        path.write_bytes(data)
+        return path
+
+    def test_one_alpha_byte_fails_and_masks_retain_native_coordinates(self):
+        baseline = bytes([15, 16, 17, 255] * 12)
+        changed = bytearray(baseline)
+        changed[(2 * 4 + 3) * 4 + 3] = 254
+        left = self.raw('left.rgba', baseline)
+        right = self.raw('right.rgba', changed)
+        output = self.root / 'diff'
+        result = compare(left, right, 'rgba8', [4, 3], output)
+        self.assertFalse(result['equal'])
+        self.assertEqual(result['changed_pixels'], 1)
+        self.assertEqual(result['changed_bytes'], 1)
+        self.assertEqual(result['bounds_xyxy_exclusive'], [3, 2, 4, 3])
+        identity, crop = load_pixels(output / 'difference-crop.png', 'png', None)
+        self.assertEqual(identity['extent'], [1, 1])
+        self.assertEqual(crop, b'\xff' * 4)
+        _, mask = load_pixels(output / 'difference.png', 'png', None)
+        self.assertEqual(mask[-4:], b'\xff' * 4)
+        self.assertEqual(mask[:-4], b'\0\0\0\xff' * 11)
+
+    def test_half_float_signed_zero_is_distinct_without_float_conversion(self):
+        left = self.raw('positive.rgba16f', bytes(8))
+        right = self.raw('negative.rgba16f', bytes(7) + b'\x80')
+        result = compare(left, right, 'rgba16f', [1, 1], self.root / 'diff')
+        self.assertFalse(result['equal'])
+        self.assertEqual(result['changed_bytes'], 1)
+
+    def test_equal_pixels_have_hashes_and_no_difference_artifacts(self):
+        raw = bytes(range(16))
+        left = self.root / 'left.png'
+        right = self.root / 'right.png'
+        package(raw, left, 2, 2)
+        package(raw, right, 2, 2)
+        output = self.root / 'same'
+        result = compare(left, right, 'png', None, output)
+        self.assertTrue(result['equal'])
+        self.assertEqual(result['reference']['pixels_sha256'], hashlib.sha256(raw).hexdigest())
+        self.assertEqual(sorted(p.name for p in output.iterdir()), ['comparison.json'])
+        self.assertEqual(json.loads((output / 'comparison.json').read_text()), result)
+        with self.assertRaisesRegex(ValueError, 'new directory'):
+            compare(left, right, 'png', None, output)
+
+    def test_raw_requires_extent_and_complete_pixels(self):
+        path = self.raw('partial', bytes(7))
+        with self.assertRaisesRegex(ValueError, 'require --extent'):
+            load_pixels(path, 'rgba16f', None)
+        with self.assertRaisesRegex(ValueError, 'image length'):
+            load_pixels(path, 'rgba16f', [1, 1])
+        with self.assertRaisesRegex(ValueError, 'excessive'):
+            load_pixels(path, 'rgba8', [-1, 1])
+
+    def test_extent_and_channel_mismatch_are_refused(self):
+        a, b = self.root / 'a.png', self.root / 'b.png'
+        package(bytes(16), a, 2, 2)
+        package(bytes(16), b, 1, 4)
+        with self.assertRaisesRegex(ValueError, 'layouts differ'):
+            compare(a, b, 'png', None, self.root / 'diff')
+        with self.assertRaisesRegex(ValueError, 'differs from --extent'):
+            load_pixels(a, 'png', [1, 4])
+        ppm = self.raw('rgb.ppm', b'P6\n1 1\n255\n\0\0\0')
+        identity, pixels = load_pixels(ppm, 'ppm', None)
+        self.assertEqual(identity['bytes_per_pixel'], 3)
+        self.assertEqual(pixels, bytes(3))
+
+    def test_corrupted_png_crc_is_refused_before_comparison(self):
+        path = self.root / 'bad.png'
+        package(bytes(16), path, 2, 2)
+        raw = bytearray(path.read_bytes())
+        raw[-1] ^= 1
+        path.write_bytes(raw)
+        with self.assertRaisesRegex(ValueError, 'CRC mismatch'):
+            load_pixels(path, 'png', None)
