@@ -15,9 +15,12 @@ shared sky, Sun, light-transmittance and environment-reflection products."
 The sections below through [Frame and cost](#frame-and-cost) are the design M1–M4 were built from and are
 unchanged. [Environment identity and products](#environment-identity-and-products) governs M5 and
 [Closing G3s](#closing-g3s) governs M6. Both were revised on 10 November after
-[the design review](../../evidence/ATMOSPHERE/design-review.md): the numerical acceptance is now written out
+[the first design review](../../evidence/ATMOSPHERE/design-review-1.md): the numerical acceptance is written out
 product by product, environment reflection is a lent and tested operation, and the limits of each lent lookup
-and of the cloud field are stated.
+and of the cloud field are stated. They were revised again on 11 November after
+[the second review](../../evidence/ATMOSPHERE/design-review.md): the sky and aerial handoff rows H2 and H4 now
+compare against an independently evaluated filtered decode, with wrong lookups that must fail, and the lent
+values are stated to be free of pre-exposure.
 
 The V1 valley uses one Earth sky from noon through astronomical night. The shipped
 Hillaire transport owns sunlight, the sky-view and aerial LUTs, and the shared diffuse
@@ -227,7 +230,10 @@ are the functions the forward pass calls (`sun_irradiance`, the shared aerial de
 the reflection read inside `indirect_radiance`), moved to where a contribution's own pipeline can compose them.
 The resources stay owned by the atmosphere and are read-only to everyone else. Chart sizes, mip counts, storage
 gains and channel packing stay private: a contribution passes physical arguments and gets decoded scene-linear
-values, pre-exposed like the forward pass's.
+values in physical units, with no pre-exposure applied. Transmittance and the split-sum pair are dimensionless.
+The exposure scale is lent beside them and the library never applies it. A contribution multiplies its finished
+colour by that scale once, as it writes to the scene target, after it has combined its lighting and composed
+aerial `(T,S)`. The forward pass does the same in the last line of its shading.
 
 | Operation | Returns | Support, and what happens outside it |
 |---|---|---|
@@ -330,16 +336,50 @@ against Metal's GPU output.
 | | Lent operation | What the contribution-side result must meet |
 |---|---|---|
 | H1 | Sun light at a world position | The cases and bounds of P1 and P2, against their f64 references |
-| H2 | Sky radiance along a direction | Night part: the cases and bound of P3. Solar part: the 11 view directions and six Sun elevations of the all-orders grid, against an f64 decode of the read-back sky-view texels placed by the CPU model's mapping. The result lies within the range of the texels the filter may read there, never across the horizon split, widened by one storage step. Plus the P11 row at its bound |
+| H2 | Sky radiance along a direction | Night part: the cases and bound of P3. Solar part: the filtered-decode rule below, on the live sky-view chart at the 11 view directions and six Sun elevations of the all-orders grid, and on a known field. Its three wrong lookups fail. Plus the P11 row at its bound |
 | H3 | Incident diffuse on a normal | The cases and bounds of P6; with nightglow on, the added horizontal irradiance within P4's bound |
-| H4 | Aerial `(T,S)` to a point | Night part: the cases and bound of P5. Solar part and transmittance: P10's fixed-texel decode at its bound, and on the live volume at P10's Sun elevations the result within the range of the read-back texels around the point in screen and depth, widened by one storage step |
+| H4 | Aerial `(T,S)` to a point | Night part: the cases and bound of P5. Solar part and transmittance: P10's fixed-texel decode at its bound, and the filtered-decode rule below, on the live volume at P10's Sun elevations and on a known field. Its three wrong lookups fail |
 | H5 | Environment reflection | The cases and bounds of P7, P8 and P9 through the lent library. The same run also stores a known night term in the fixture and requires it back in absolute units, unchanged by the raw Sun's illuminance, within P7's rounding allowance |
 
-The range rule in H2 and H4 is not a tuned number. A filtered read is a weighted average of the texels it
-touches, so a correct lookup cannot leave their range, while a wrong gain, a wrong mapping or a stale resource
-does. It proves the handoff and the units, not the accuracy of what is stored. H5 varies direction, roughness
-(the sharpest and widest levels have different closed forms), the raw Sun's illuminance, the night term and a
-rewritten sky, so a constant, stale or wrongly scaled reflection fails.
+**The filtered-decode rule, for H2 and H4.** Lying between the neighbouring texels is not enough: a lookup that
+returns one depth slice instead of blending two stays in that range at every query. So each result is compared
+with the one value a correct lookup returns at that point.
+
+- **Expected value.** The test reads back the stored texels and evaluates, in f64 on the CPU, the operation's
+  addressing and blend at the query, then decodes to physical units. For the sky this is the CPU model's
+  direction-to-chart mapping and a bilinear blend of four texels of one horizon half, with coordinates held to
+  the edge texel centres as the production read holds them. For the aerial volume it is a bilinear blend in the
+  point's screen position inside a depth slice, then a linear blend by distance between the two adjacent slices
+  at their square-root spacing, held at 32 km. This evaluation is written in the test. It does not call, include
+  or translate the lent library's code.
+- **Bound.** Per channel, the result is within `C/32 + 1e-5 × M` of the expected value. `C` is the largest
+  minus the smallest of the decoded texels the blend reads there, and `M` is the largest of them. `C/32` allows
+  each sampler axis a weight error of 1/64, four times the 1/256 step of the 8-bit weights GPU samplers commonly
+  keep. `1e-5 × M` is P10's decode allowance for float32 arithmetic. The read-back texels are exact, so no
+  storage step is added. If a correct lookup misses this bound on a target, the builder records that target's
+  measured weight resolution and brings it back as a plan change. The bound is not widened during the build.
+- **Live arm.** The production chart or volume, at the row's named cases. It shows that the lookup reads the
+  right resource with the right gain and mapping on real contents. For aerial `S` the fixture path has no
+  geometric shadow, so the result equals the stored in-scatter.
+- **Known-field arm.** The fixture writes a field through the lent layout, as P10's fixed-texel fixture does.
+  Its value differs between neighbouring texels by a comparable step along every blended axis (both chart axes
+  for the sky; both screen axes and depth for the volume) and differs between channels. Queries sit a quarter,
+  a half and three quarters of the way between texel centres on every axis at once. For the sky they cover
+  both halves of the chart, the row beside the horizon split and two Sun azimuths. For the volume they cover
+  the first, a middle and the last pair of slices, and one point beyond 32 km that must return the 32 km value.
+- **Wrong lookups that must fail.** The same harness runs deliberately wrong lookups through the same bound on
+  the known field, and each must fail at every query that sits between texel centres. Sky: the nearest single texel, one row
+  alone, and one column alone. Aerial: the lower slice alone, the upper slice alone, and the nearest
+  single texel in screen. A run in which one of them passes is a failed run, on Metal and in Chrome.
+
+The rule proves the handoff, the addressing and the units. It does not prove the accuracy of what is stored.
+
+**Exposure control.** At least one case of each row H1–H5 is repeated with the lent exposure scale set to a
+value other than 1, and meets the same bound against the same physical reference. A library that applied the
+scale would fail it.
+
+H5 varies direction, roughness (the sharpest and widest levels have different closed forms), the raw Sun's
+illuminance, the night term and a rewritten sky, so a constant, stale or wrongly scaled reflection fails.
 
 The Chrome run needs a page that drives the production producers with the referees' frames, as
 [the cooked-draw browser check](../../../scripts/cooked_draw_browser.mjs) drives its own page. The builder
@@ -363,6 +403,8 @@ arranges it.
 | The off path is not free | The forward shader text or pipeline count changes with no provider | A placeholder texture |
 | Receivers disagree | A cooked mesh stays bright inside a patch that darkens the terrain under it | Patching one receiver's shader separately |
 | The cooked volume is skipped, or reads the field at the wrong point | The volume stays bright under a patch, or its shade ignores where its samples are | Reading the field once at the volume's centre or at the fragment |
+| A lent sky or aerial lookup steps where the product blends | An independent surface shows bands in depth or across the sky that the terrain beside it does not | Accepting any value between the neighbouring texels |
+| A contribution pre-exposes twice, or not at all | A module's surface is brighter or darker than the scene by the exposure scale, and the gap changes as the meter moves | Applying the scale inside a lent lookup |
 | The reflection handoff is wrong while the forward pass is right | The first independent consumer shows a sky of the wrong brightness, or copies mip and gain rules to fix it | Testing only the forward fragment path |
 | The texture limit is hit in Chrome | Pipeline creation fails on the portable recipe with the provider on | Dropping another texture silently |
 | The lent library exposes internals modules then depend on | A contribution reads chart layouts directly | Publishing chart formats as interface |
