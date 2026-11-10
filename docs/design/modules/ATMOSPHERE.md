@@ -14,7 +14,10 @@ shared sky, Sun, light-transmittance and environment-reflection products."
 
 The sections below through [Frame and cost](#frame-and-cost) are the design M1–M4 were built from and are
 unchanged. [Environment identity and products](#environment-identity-and-products) governs M5 and
-[Closing G3s](#closing-g3s) governs M6.
+[Closing G3s](#closing-g3s) governs M6. Both were revised on 10 November after
+[the design review](../../evidence/ATMOSPHERE/design-review.md): the numerical acceptance is now written out
+product by product, environment reflection is a lent and tested operation, and the limits of each lent lookup
+and of the cloud field are stated.
 
 The V1 valley uses one Earth sky from noon through astronomical night. The shipped
 Hillaire transport owns sunlight, the sky-view and aerial LUTs, and the shared diffuse
@@ -210,33 +213,63 @@ forward pass and cooked draws already are.
 contribution: the source epoch and simulation time; the **true Sun** as geometric receiver-to-source direction,
 raw perpendicular illuminance, photometric colour and angular radius, with no air, cloud or terrain attenuation
 applied; and, kept apart, the apparent surface light the forward pass uses today. The epoch changes exactly when
-the sky model, air profile or a LUT generation changes, and never when only time advances. This is
+the sky model, the air profile or a LUT generation changes. A LUT generation is a replacement of the resources
+or of the model behind them: a new device, a changed chart size or format. Recomputing a chart's contents as
+time advances is not a generation, so a time scrub never moves the epoch. This is
 [C08](../CONTRACTS.md#c08-light-materials-and-transport--v3-with-e1-and-v4)'s light handoff made concrete.
 The true Sun is separate because the apparent light changes quickly as the last surface light disappears, and a
 medium lit from it flickers; the Broadsides cloud work found and repaired exactly this.
 
 **Lent products, not copies.** A contribution receives a bind-group layout and a WGSL library for the products
 the atmosphere already computes: the transmittance and multiple-scattering charts, the sky-view LUT, the aerial
-volume, the diffuse and reflection products and the exposure scale. The library exposes four lookups: Sun
-transmittance to a world position, sky radiance along a direction, incident diffuse, and aerial `(T,S)` for a
-view segment. They are the functions the forward pass calls (`sun_irradiance` and the shared aerial decoder),
-moved to where a contribution's own pipeline can compose them. The resources stay owned by the atmosphere and
-are read-only to everyone else.
+volume, the diffuse and reflection products and the exposure scale. The library exposes five operations. They
+are the functions the forward pass calls (`sun_irradiance`, the shared aerial decoder, `ambient_irradiance` and
+the reflection read inside `indirect_radiance`), moved to where a contribution's own pipeline can compose them.
+The resources stay owned by the atmosphere and are read-only to everyone else. Chart sizes, mip counts, storage
+gains and channel packing stay private: a contribution passes physical arguments and gets decoded scene-linear
+values, pre-exposed like the forward pass's.
+
+| Operation | Returns | Support, and what happens outside it |
+|---|---|---|
+| Sun light at a world position | RGB illuminance on a plane facing the Sun, from the true Sun through the air only; no geometric shadow, no cloud factor | Any world position. Above the 100 km top the light is unattenuated unless the ray enters the shell. Below the first chart row (6.15 m) the altitude clamps, a known approximation that reaches 1.2% in blue at sea level with the Sun on the horizon. A Sun behind the planet at that point returns exactly zero |
+| Sky radiance along a direction | RGB radiance of the sky without the Sun's disk: the solar part and the night part, already summed | The active camera's observer altitude only; any direction, including the ground side below the horizon. The night part exists for 0–15 km observer altitude; outside that the result is Sun-only and the fallback is reported, as today |
+| Incident diffuse on a normal | RGB irradiance from the sky, never negative | One answer per frame at the camera's location, for any normal. It does not vary with world position |
+| Aerial `(T,S)` to a point | RGB transmittance and in-scattered radiance, night included, accumulated **from the active camera** to a point in its view | The active view only, addressed by the point's screen position and its distance from the camera. Beyond 32 km it returns the 32 km value. A segment that starts anywhere but the camera, and any second camera, is not offered in M5; a consumer that needs one proposes it through [the module list](ARCHITECTURE.md#interfaces) |
+| Environment reflection | RGB radiance of the disk-free sky filtered to a GGX lobe around a direction at a roughness, solar and night parts decoded and summed; and the split-sum pair `(scale, bias)` for a view cosine and the same roughness | One cube per frame at the camera's location, no parallax. Roughness is the material roughness the forward pass uses, clamped to 0.045–1. View cosine 0–1. The library maps roughness to its filtered level; a contribution never names a mip |
+
+The reflection operation is the one `SEA` uses as the fallback under its screen-space reflection. It returns the
+filtered radiance and the pair separately, so a consumer can apply its own Fresnel term.
 
 **One Sun-path optical depth.** C08 and [ENVIRONMENT](ENVIRONMENT.md) already say that a cloud source supplies
 path optical depth `tau` toward the Sun and that V3 applies `exp(-tau)` at most once. A provider registers one
 product: a 2D field of `tau` along the current true Sun direction for receivers below a declared plane, with its
-world mapping, advection displacement, validity region and source epoch. The shared direct-Sun term multiplies
-by `exp(-tau)` in the same place it reads surface transmittance, so every receiver that calls it gets the factor
-once: terrain, synthetic instances, cooked meshes and the cooked volume. Sky light, emission, geometric shadow
-and aerial in-scatter are not touched; shading of in-scatter by clouds is `CLOUDS`' later decision.
+world mapping, advection displacement, validity region, lowest valid Sun elevation and source epoch. A receiver
+reads the field where its own ray toward the true Sun crosses the plane, so receivers at different heights under
+one cloud agree. One cloud-factor function does that read and returns `exp(-tau)`. The shared direct-Sun term
+calls it in the same place it reads surface transmittance, so terrain, synthetic instances and cooked meshes get
+the factor once. Sky light, emission, geometric shadow and aerial in-scatter are not touched; shading of
+in-scatter by clouds is `CLOUDS`' later decision.
 
-**Absent means absent.** Provider presence is a scene-build fact. Without a provider the forward shader is
-composed without the lookup, as it is today, so there is no added texture, binding or sample. With one, the
-shader variant adds one sampled texture to the light group.
+The cooked volume is the one receiver that does not go through the direct-Sun term today: its march lights each
+sample from the frame's directional light. With a provider, the march multiplies that Sun term by the same
+cloud-factor function at each lit march sample's world position. Without one, the volume's shader and lighting
+are exactly today's. M5 does not move the volume onto per-sample air transmittance; that would change every
+scene with a volume and nobody asked for it.
+
+**Where the factor is exactly 1.** A receiver at or above the plane, a read that falls outside the validity
+region, a frame the provider marks invalid, and a true Sun below the provider's lowest valid elevation all get no
+cloud shade: the factor is exactly 1, never a clamped edge value. The read moves further from the receiver as
+the Sun lowers and has no answer at a horizontal Sun, which is why the provider declares a lowest elevation. The
+provider owns continuity at these limits, by bringing `tau` to zero toward the region's edge and toward its
+lowest elevation. With the Sun behind the planet the direct term is already zero. M5 supports one plane.
+
+**Absent means absent.** Provider presence is a scene-build fact. Without a provider the forward shader and the
+cooked-volume shader are composed without the lookup, as they are today, so there is no added texture, binding or
+sample. With one, the shader variant adds one sampled texture to the light group.
 
 **A diagnostic provider** in `examples/v1-game`, behind an opt-in control and labelled as a stand-in, supplies a
-moving analytic `tau` pattern with a declared drift. It exists to prove the path; `CLOUDS` replaces it.
+moving analytic `tau` pattern with a declared drift, plane, region and lowest valid Sun elevation; that elevation is
+below the low-Sun views M5 captures. It exists to prove the path; `CLOUDS` replaces it.
 
 ### Alternatives considered
 
@@ -255,7 +288,62 @@ The forward pass already forms direct sunlight in one function and already lends
 composed shader source to contributions, so the cooked mesh path is lit by the same code. The portable limit is
 16 sampled textures per stage; the builder records each forward pipeline's count with the provider on, read from
 the capability record, before choosing the binding. The lookups are pure functions of the existing charts, so a
-GPU test can compare a contribution-side evaluation with the f64 references the M1 referees already use.
+GPU test can run a contribution-side evaluation through the cases of the referees that already exist. Which
+referee, which cases and which bound each operation must meet is the table below.
+
+### Numerical acceptance
+
+Two different things are proved, and they are kept apart.
+
+**Preserved referees.** These tests already run in `./dev check` on Metal against the production producers.
+Each compares one product with a reference inside a stated scope. M5 and M6 must leave their references, cases
+and bounds unchanged and passing. They are the whole of what is claimed for product accuracy.
+
+| | Product and quantity | Reference | Cases | Bound |
+|---|---|---|---|---|
+| P1 | Sun transmittance chart, RGB, dimensionless | f64 direct-light quadrature | 0, 0.1, 2 and 6.15 m; Sun at 0, 0.5, 1, 2 and 5° | Relative error at most 0.6, 0.9 and 1.6% in R, G and B, with the denominator floored at 0.001 |
+| P2 | Sun light at a world position, as illuminance over the raw illuminance and colour | f64 receiver transmission | Seven receivers from 0 to 5,000 m and ±20 km at a 245 m camera, Sun at −2, −0.6, 0, 1 and 30°; three receivers at 100–130 km, Sun at −13, −10.07, −1 and 5°; two camera origins | Absolute error at most 0.05 × expected + 0.005; exactly zero behind the local horizon |
+| P3 | Night sky luminance, cd/m² | f64 night profile | 0, 1.8 and 15 km; zenith, peak and both split-horizon rows | Relative error at most 10% |
+| P4 | Night horizontal illuminance, lux | f64 night profile | 0, 1.8 and 15 km | Relative error at most 5% |
+| P5 | Night aerial in-scatter, cd/m² | f64 shell and diffuse paths | Horizontal 1, 10 and 30 km paths at 1.8 km | Relative error at most 10% |
+| P6 | Incident diffuse: nine SH coefficients and irradiance on 14 normals, per unit Sun | f64 hemisphere integral of the read-back sky, refined until it moves under 0.25% of the sky's zeroth moment M0 | Sun at 90, 45 (two azimuths), 0, −3, −6, −9 and −12° | Coefficients within 1% of M0; irradiance within the SH truncation bound of 3/32 M0 plus the projection error |
+| P7 | Reflection cube, radiance on a direction-coded sky with values in 1–2 | Closed form at the sharpest level and at the widest level's axes | Two Sun azimuths with the sky rewritten and refiltered between them; face centres, every edge and every corner; all levels | Absolute error under 1/1024 + 0.019; under 0.01 across an edge or corner |
+| P8 | Split-sum pair | Independent Gauss–Legendre hemisphere quadrature | Six view-cosine and roughness nodes and the two analytic limits | Absolute error under 0.006; the pair never sums over 1.001 |
+| P9 | Reflection as a consumer composes it | White furnace and source scaling | Base colour, metalness, three roughnesses and five view cosines; raw Sun at 1, 0 and 2 | At most 1.002 × source + 1e-6; exactly zero facing away or with no source; doubling within 2e-6 |
+| P10 | Aerial storage and decode, solar part | A float32 run of the same integrator, and a fixed-texel decode | Sun at 2, 0, −2, −4, −6 and −9° | Within 0.1% plus half a storage step; decode within 1e-5 relative |
+| P11 | One upper-twilight spectral sky row, radiance per unit Sun | The recorded eight-node spectral value | Sun −5.08°, view 20° up, 95.1° from the Sun, 245 m | Relative error at most 2.5% per channel |
+
+P6 and P10 take their reference from the atmosphere's own sky or integrator, so they qualify the projection and
+the storage, not the sky. The all-orders solar comparison (198 rows against quadrature and Monte Carlo) stays in
+the check as a **report**. It has no bound, and passing it qualifies nothing.
+
+**What stays unqualified.** No test bounds the solar sky radiance or the solar aerial `(T,S)` against an
+independent transport reference, apart from the one row of P11. That was true before M5, M5 and M6 do not change
+it, and M6 writes it in the maturity ledger. Closing it is a separate accuracy campaign, with its own plan and
+cost.
+
+**The handoff, new in M5.** For each lent operation, a contribution with its own pipeline, using only the lent
+layout and library, must return the stored product in the right units. This runs on Metal in `./dev check` and
+in Chrome on hardware WebGPU. The expected values come from the same references on both; Chrome is never judged
+against Metal's GPU output.
+
+| | Lent operation | What the contribution-side result must meet |
+|---|---|---|
+| H1 | Sun light at a world position | The cases and bounds of P1 and P2, against their f64 references |
+| H2 | Sky radiance along a direction | Night part: the cases and bound of P3. Solar part: the 11 view directions and six Sun elevations of the all-orders grid, against an f64 decode of the read-back sky-view texels placed by the CPU model's mapping. The result lies within the range of the texels the filter may read there, never across the horizon split, widened by one storage step. Plus the P11 row at its bound |
+| H3 | Incident diffuse on a normal | The cases and bounds of P6; with nightglow on, the added horizontal irradiance within P4's bound |
+| H4 | Aerial `(T,S)` to a point | Night part: the cases and bound of P5. Solar part and transmittance: P10's fixed-texel decode at its bound, and on the live volume at P10's Sun elevations the result within the range of the read-back texels around the point in screen and depth, widened by one storage step |
+| H5 | Environment reflection | The cases and bounds of P7, P8 and P9 through the lent library. The same run also stores a known night term in the fixture and requires it back in absolute units, unchanged by the raw Sun's illuminance, within P7's rounding allowance |
+
+The range rule in H2 and H4 is not a tuned number. A filtered read is a weighted average of the texels it
+touches, so a correct lookup cannot leave their range, while a wrong gain, a wrong mapping or a stale resource
+does. It proves the handoff and the units, not the accuracy of what is stored. H5 varies direction, roughness
+(the sharpest and widest levels have different closed forms), the raw Sun's illuminance, the night term and a
+rewritten sky, so a constant, stale or wrongly scaled reflection fails.
+
+The Chrome run needs a page that drives the production producers with the referees' frames, as
+[the cooked-draw browser check](../../../scripts/cooked_draw_browser.mjs) drives its own page. The builder
+arranges it.
 
 ### State and owners
 
@@ -274,14 +362,19 @@ GPU test can compare a contribution-side evaluation with the f64 references the 
 | Shade applied twice or to the wrong term | Shaded ground goes black, or shade deepens inside geometric shadow | Darkening final colour instead of direct irradiance |
 | The off path is not free | The forward shader text or pipeline count changes with no provider | A placeholder texture |
 | Receivers disagree | A cooked mesh stays bright inside a patch that darkens the terrain under it | Patching one receiver's shader separately |
+| The cooked volume is skipped, or reads the field at the wrong point | The volume stays bright under a patch, or its shade ignores where its samples are | Reading the field once at the volume's centre or at the fragment |
+| The reflection handoff is wrong while the forward pass is right | The first independent consumer shows a sky of the wrong brightness, or copies mip and gain rules to fix it | Testing only the forward fragment path |
 | The texture limit is hit in Chrome | Pipeline creation fails on the portable recipe with the provider on | Dropping another texture silently |
 | The lent library exposes internals modules then depend on | A contribution reads chart layouts directly | Publishing chart formats as interface |
 
 ### Cost
 
-With no provider: nothing. With one: one filtered 2D sample per lit fragment, and the provider's own work to
+With no provider: nothing. With one: one filtered 2D sample per lit surface fragment; one per lit march sample
+in a cooked volume, so a volume pays its step count and not one read per pixel; and the provider's own work to
 produce the field, which is its cost to account for. Record forward GPU time and whole-frame time paired on and
-off on the valley, with load and order; set no budget.
+off on the valley, with load and order, on Mac and in Chrome; set no budget. The valley has no volume, so its
+figures say nothing about one; a volume's added cost is its lit step count times one read, and is measured when a
+scene with a volume is on the route.
 
 ### Open questions
 
@@ -289,6 +382,8 @@ off on the valley, with load and order; set no budget.
   declared approximation as C08 requires.
 - Whether the field needs more than one height band. The diagnostic uses one plane; `CLOUDS` may propose more
   through [the module list](ARCHITECTURE.md#interfaces).
+- Whether a consumer needs aerial transport for a segment that does not start at the camera, or for a second
+  camera. Neither is offered in M5; `CLOUDS` or `SEA` proposes it the same way.
 
 ## Closing G3s
 
@@ -304,12 +399,24 @@ Sun is behind it; missing object shadows at sunrise; shadow acne at low Sun; a h
 steps in the sky gradient and twilight colour. The bar is the time of day in Red Dead Redemption 2 and Horizon
 Forbidden West, in words.
 
-**What keeps it honest.** The scalar and f64 references from M1 and M2 run on the shipped graph in the workspace
-check, so a fix that pleases the eye cannot move radiance off the model.
+**What keeps it honest.** The preserved referees P1–P11 and the handoff rows H1–H5 of
+[the numerical acceptance](#numerical-acceptance) still pass on the final build: all of them on Metal in the
+workspace check, and H1–H5 in Chrome. No reference, case or bound may change in M6 to make a picture pass, so a
+fix that pleases the eye cannot move a qualified product off its model. This is preservation. It does not newly
+qualify the solar sky or solar aerial transport against an all-orders reference; the ledger names that as open.
+Twilight colour is covered numerically by the one row of P11 and otherwise judged by eye in the scrub.
+
+**Cost.** Whole-frame and atmosphere pass costs on the route are measured on the final build and, in the same
+session and configuration (extent, TAAU on, load class, order alternated), on the commit M6 started from. That
+pair is the comparison. The M1 and M2 records predate TAAU and describe other builds and loads; they are quoted
+as history and not called paired.
 
 **What is out.** The west-lookout shadow crossing (M3) stays a parked spike and the exact finite-disk match (M4)
-stays deferred; both are named in the review as known and are not judged. Moon, weather and calibrated night
-colour stay outside the profile, as the first section says.
+stays deferred; both are named in the review as known and are not judged. The exclusion is narrow: it covers the
+moving shadow edge on the authored spur between 17.40 and 17.80 h. The held `sunset-clear-sun` stop at 17.4 h is
+judged like every other stop, and the terrain lip recorded on the shipped Ground E pan is a separate finding,
+judged under the brightness-step entry. Moon, weather and calibrated night colour stay outside the profile, as
+the first section says.
 
 **Risk.** Shadow defects have consumed days here before. If the review fails on one item twice, the builder stops
 and reports it instead of opening a new shadow method; a new method is a re-plan with its own cost account.
