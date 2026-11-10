@@ -17,7 +17,9 @@
           "ask": "Do tests in ./dev check cover an epoch change on profile change and on device replacement, no change across a time scrub, and the true Sun staying continuous through sunset while the apparent surface light fades? Is the identity produced in one place and only read elsewhere?",
           "target": "mac-metal",
           "status": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M5.2",
@@ -27,7 +29,9 @@
           "ask": "Read the referee tests. Does the contribution use only the lent layout and library, with no private chart, mip or storage-gain knowledge? Does each of H1-H5 assert the bound its row names against the reference its row names, and never against the forward pass's own output? Does H5 vary direction, roughness, the raw Sun's illuminance, the night term and a rewritten sky, so a constant, stale or wrongly scaled reflection fails? Are the preserved referees P1-P11 unchanged in reference, cases and bound?",
           "target": "mac-metal",
           "status": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M5.3",
@@ -37,7 +41,9 @@
           "ask": "Read the environment case. Does it run the lent operations in a real hardware Chrome session, apply the H1-H5 bounds itself, and fail on a missing or unresolved row?",
           "target": "chrome-webgpu",
           "status": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M5.4",
@@ -47,7 +53,9 @@
           "ask": "Read scripts/environment_products.py. Does off-parity render the base commit and the claimed commit from one cooked store through the engine tap, compare bytes with no tolerance or mask, and include a same-build rerun control and a negative control that must fail?",
           "target": "mac-metal",
           "status": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M5.5",
@@ -56,7 +64,9 @@
           "lock": "gpu",
           "target": "chrome-webgpu",
           "status": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M5.6",
@@ -66,7 +76,9 @@
           "ask": "Do GPU tests show a uniform tau of ln 2 halving the direct term, and only the direct term, on each receiver kind including the cooked volume; a field that differs between two world points giving each receiver, and each volume march sample, its own point's factor; and tau of zero, a receiver above the plane and a read outside the region all matching no provider? Is exp(-tau) one shared cloud-factor function that the direct-Sun term and the volume's march both call, never a per-receiver patch or a darkening of final colour?",
           "target": "mac-metal",
           "status": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M5.7",
@@ -96,7 +108,9 @@
           "ask": "Are the paired figures recorded with build, load class and order and labelled as observations? Is every forward pipeline within the sampled-texture limit read from the capability record, with the count stated?",
           "target": "mac-metal",
           "status": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M5.10",
@@ -105,7 +119,9 @@
           "lock": "gpu",
           "target": "chrome-webgpu",
           "status": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         }
       ]
     },
@@ -148,7 +164,9 @@
           "ask": "Did any reference, case, bound or test in the numerical acceptance table change in this milestone? If one did, is the change justified by the model and not by the image? Does any referee run a test-only variant of a producer instead of the production one?",
           "target": "mac-metal",
           "status": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M6.4",
@@ -157,7 +175,9 @@
           "lock": "gpu",
           "target": "chrome-webgpu",
           "status": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M6.5",
@@ -165,7 +185,9 @@
           "ask": "Is the comparison a fresh rerun of the starting commit at a matched extent, TAAU setting, load class and alternated order, with no budget claim and no earlier record called paired? Does the evidence name the cause of each hitch seen in the scrub, or state that none was seen?",
           "target": "mac-metal",
           "status": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M6.6",
@@ -173,7 +195,9 @@
           "ask": "Do the ledger rows and the build plan's G3s line match the evidence, with the known defects listed and nothing claimed for a physical iPhone?",
           "target": "mac-metal",
           "status": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         }
       ]
     }
