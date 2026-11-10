@@ -63,7 +63,7 @@ the road to the exit.
 | `ATMOSPHERE` | G3s | The one sky, Sun, aerial perspective, night and stars; the environment identity; the direct-Sun path to receivers | M1–M2 done, M3 parked, M4 deferred; M5 ready, M6 waits on `APPLE-PRESENTATION:M3` |
 | `CULLING` | G3c | Instance visibility lists, occlusion history, the mesh-bucket route and Sun-caster culling | Frustum and occlusion run on the field; plan owed |
 | `CONTENT-LOOP` | G5 | Cooked products, the manifest, runtime mapping and GPU residency of cooked meshes, textures and volumes | Native loop complete; closing milestone and plan owed |
-| `CREATOR` | G6 | The typed controls model and its views, parameter files, the app runner, sky kit and starter, the creator docs, profiler readouts | Mac built; M1 ready |
+| `CREATOR` | G6 | The typed controls model and its views, parameter files, the app runner, sky kit and starter, the creator docs, the profile window and profiler rows | Mac built; M1 ready; M2 waits on `APPLE-TILE:M3` |
 | `SHOWCASE` | G7 | The exit scene and route in `examples/v1-game`, the V1 exit record | Route slice built; plan owed, last in order |
 | `EFFECT-GRAPH` | track 2 | Graph resource kinds and cadence that simulated effects need; how an engine module declares its own passes | Not started; plan owed |
 | `SEA` | track 2 | Sea state on the GPU (spectral cascades, wake fields, foam material), the body-query ring, sea optics | [Brief](SEA-BRIEF.md); plan owed |
@@ -100,13 +100,15 @@ Mac qualification waits on an attended session.
 
 1. **In flight.** `PLATFORM-RUNTIME-MAC` M2. `APPLE-TILE` M0, then M1–M3. `APPLE-TILE` is first because everything
    after it reads its graph, its recipe selection or its pre-tone input.
-2. **Ready now, in other files.** `CREATOR` M1 and M2 (`thrum-app`, `thrum-controls`, `examples/starter`, docs).
+2. **Ready now, in other files.** `CREATOR` M1 (`thrum-app`, `thrum-controls`, `examples/starter`, docs).
    `ATMOSPHERE` M5 (`thrum-render/src/atmosphere`, the forward light group, the contribution seam).
 3. **After `APPLE-TILE:M0`.** `APPLE-PRESENTATION` M1 (jitter, matrices and motion), which runs on the current
    portable output and needs only M0's proof tools.
 4. **After `APPLE-TILE:M2`.** `APPLE-PRESENTATION` M2 (temporal inputs and history; it shares `runtime.rs`).
    `EFFECT-GRAPH` and `CULLING`, which both edit the graph and scene files M2 moves.
-5. **After `APPLE-TILE:M3`.** `APPLE-PRESENTATION` M3 (TAAU in the game). `PLATFORM-RUNTIME-MAC` M3.
+5. **After `APPLE-TILE:M3`.** `APPLE-PRESENTATION` M3 (TAAU in the game). `PLATFORM-RUNTIME-MAC` M3. `CREATOR` M2
+   (the profiler), which reads pass-name timing and adds the timing-demand switch in `runtime.rs`; it merges one
+   after the other with the two beside it.
 6. **After TAAU.** `ATMOSPHERE` M6, because antialiasing changes every edge and gradient the sky review judges.
    `APPLE-PRESENTATION` M4–M7 (extent, scale, EDR, governor). `APPLE-TILE` M10–M11, then `APPLE-PRESENTATION` M8
    (MetalFX), M9 and M10. `CONTENT-LOOP` and `CREATOR` M3 close at any point here.
@@ -162,6 +164,7 @@ interface by itself: a builder writes a proposal in its plan's log and a planner
 | **Body query**: one batched asynchronous GPU query, one to two ticks late, with support and age | `SEA` → games and P3 | [E1 water decision](../decisions/E1-GPU-WATER.md), C09; `SEA.md` (owed) |
 | **Quality knobs**: each cadence and step budget is a runtime value with a declared history invalidation | `SEA`, `CLOUDS`, `ATMOSPHERE` → the governor in `APPLE-PRESENTATION:M7` | C04, port decision |
 | Typed controls, parameter files, the scene shell on Mac and web | `CREATOR` → `SHOWCASE`, demo scenes for `SEA` and `CLOUDS` | C11, [G6 decision](../decisions/G6-CREATOR-EXPERIENCE.md), [CREATOR](CREATOR.md) |
+| **Frame timing feed**: completed frame samples with pass-name GPU timing, and one timing-demand switch on the frame host (on by default; off writes no timestamps and the sample says GPU time was not requested) | The frame runtime (`APPLE-TILE:M3` for pass names; the switch by the ruling below) → `CREATOR`'s profiler, frames reports, Mac qualification, capture | C12, [CREATOR](CREATOR.md#the-frame-timing-feed) |
 | Engine capture modes and evidence | `T2-CAPTURE` → every visual milestone | C12, [T2 capture](T2-CAPTURE.md) |
 
 **Seam rulings for `APPLE-PRESENTATION` M1–M3.** Its design proposed nine seams to Thrum Core. Under the loop the
@@ -175,6 +178,13 @@ module list settles them. Seams 1–4 are accepted as written there:
   atmosphere shaders, for motion output only.
 
 Seams 5–9 are settled when M4–M11 are migrated.
+
+**Seam ruling for `CREATOR` M2.** The profiler needs the frame host to stop timing frames while it is off, which
+no interface offered. The timing-demand switch and the "not requested" reason are built in `thrum-render`'s
+runtime and timing files by the `CREATOR` M2 builder, after `APPLE-TILE:M3` is Done, with the behaviour
+[CREATOR](CREATOR.md#the-frame-timing-feed) defines. `APPLE-TILE`'s items do not change. Once built, the switch
+belongs to the frame runtime: later work there (`APPLE-TILE` M10–M12, `APPLE-PRESENTATION`, `EFFECT-GRAPH`) keeps
+its tests passing, and any timing it adds, a native segment's included, is not gathered while the switch is off.
 
 Track 3's interfaces are in [their own table](#interfaces-track-3).
 
@@ -634,6 +644,9 @@ For [track 3](#track-3-the-swarm-survival-game-after-v1):
 - 2026-11-10 First module list. Planned from the owner's request above. `CREATOR`, `ATMOSPHERE` M5–M6 and
   `APPLE-PRESENTATION` M1–M3 gained done-when files; the other modules gained briefs. Assumptions that belong to
   a planned module are in that module's plan log. The two below belong to modules without a plan yet.
+- 2026-11-11 `CREATOR` revised after its design review. Its profiler could not be built as a reader of the
+  existing timing interfaces, so the frame timing feed and its seam ruling were added above, and `CREATOR` M2
+  moved from step 2 to step 5 of the build order, behind `APPLE-TILE:M3`. No other module's plan changed.
 - Assumption: finished sea excludes inland water, coasts and surf, and the three cues the 10 November spikes left
   open (spray release at chase distance, the attached sheet, a visibly rising gas cloud); they are parked spikes.
 - Assumption: finished clouds excludes the ten-genera, squall and warm-front scope of the Broadsides game, and
