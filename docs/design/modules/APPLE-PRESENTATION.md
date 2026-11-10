@@ -8,17 +8,29 @@
 [C12](../CONTRACTS.md#c12-budgets-evidence-and-acceptance--t2-with-all-owners) ·
 [Render spec](../RENDER-SPEC.md) · [Apple tile (G3t)](APPLE-TILE.md) · [Milestones](APPLE-PRESENTATION-PLAN.md)
 
-Revision 3 for Thrum Core review, 7 November 2026; G3t handoffs reconciled 9 November (independent review owed).
-It answers the three independent reviews of revision 1
+Revision 3 for Thrum Core review, 7 November 2026; G3t handoffs reconciled 9 November. Revised 10 November after
+[the loop's design review](../../evidence/APPLE-PRESENTATION/design-review.md) at `4bbe44a4` (changes requested); a
+fresh design review of this revision is owed. It answers the three independent reviews of revision 1
 (`86ec3b6b`) and the re-reviews of revision 2 (`c507ad3d`) recorded in the plan. Interface and path names below are
 proposals.
 
 **The owner's request.** The V1 exit in [the build plan](../../BUILD-PLAN.md#goal-and-exit-rule) asks for "MetalFX,
 EDR and a quality governor" and gate G4 for "No pipeline compilation during play." The 10 November planning task
 that put this module on the loop says, word for word: "The owner wants work lined up continuously toward the V1
-exit in docs/BUILD-PLAN.md, so builders always have a next milestone". [The module list](ARCHITECTURE.md) places
-this module and accepts seams 1–4 below as proposed; M1–M3 are in [the done-when file](APPLE-PRESENTATION-DONE.json)
-and M4–M11 are migrated next, when seams 5–9 are settled.
+exit in docs/BUILD-PLAN.md, so builders always have a next milestone". The task for this revision says, word for
+word: "Revise APPLE-PRESENTATION's design and plan as docs/evidence/APPLE-PRESENTATION/design-review.md asks".
+[The module list](ARCHITECTURE.md) places this module and accepts seams 1–4 below as proposed; M1–M3 are in
+[the done-when file](APPLE-PRESENTATION-DONE.json) and M4–M11 are migrated next, when seams 5–9 are settled.
+
+**What a design approval covers.** A Design Approved result for this revision approves M1–M3 and seams 1–4, and
+nothing later. Everything this page says about M4–M11 and seams 5–9 is direction for the plan run that migrates
+them. That run settles, and a new design review reads, at least:
+- the final EDR transform and its H = 1 identity;
+- the output and exposure handoff of the normalising MetalFX fallback;
+- the lifecycle of a generation build (cancellation, device loss, the switch);
+- the archive mechanism.
+
+No builder starts M4 or later on the strength of an approval of M1–M3.
 
 ## Purpose and scope
 
@@ -127,6 +139,9 @@ upscalers.
   - *Stars:* camera motion plus the retained sidereal phase delta. The star pipeline blends additively on colour only.
     Its motion target uses blending disabled (replace), so star pixels carry their own motion, not the sum with the
     sky's (seam 4).
+  - *The star pass is its own pass.* Today it declares and attaches colour alone (`synthetic/stars.rs`). Its graph
+    accesses and attachments follow its shader outputs: motion from M1, reactive from M2. A star pipeline that
+    declares a target the pass does not attach, or the reverse, is a defect the M2 witness reads for.
 - Stars and the Sun are reactive only on cuts and phase edits, never permanently.
 
 **Disocclusion.**
@@ -158,6 +173,46 @@ upscalers.
   - MetalFX's internal history advances at encode, so a discarded or failed frame resets it at the next encode.
 - The previous matrices in the view record are the last *submitted* frame's.
 
+**The temporal-input witness (M2).** Until M3, nothing reads the reactive target, and final colour is the same
+whether history advanced at submission or earlier. Screenshots of the valley therefore cannot prove M2: a target
+that is declared, cleared and never written passes them. M2 is proved on each target by a witness that reads the
+temporal inputs themselves, from frames the game's own frame path submitted.
+
+- *One fixture, two targets.* One checked-in definition holds the steps and the expected values. The Mac tests and
+  the Chrome case both read it, as the moving route's file already serves both targets. Each target drives the
+  steps its own way. The content it needs (the cooked valley with its volume, the star field, the Sun disk) runs on
+  both targets today.
+- *Where values are read.* On the Mac, GPU tests read the reactive and motion targets back. In Chrome the case
+  runs the built game in hardware Chrome and takes the values from frames the page submitted, through T2's Chrome
+  capture. Either a reactive view beside M1's motion view in the display pass, or a readback of the attachment in
+  the same submission, does that. A side render (`begin_capture`), a pipeline declaration and a CPU-side flag are
+  not observations.
+- *History identity.* For each submitted frame the frame host reports the identity of its history sample and of
+  the sample it took as its predecessor. Both come from the state the view record's previous matrices are packed
+  from, not from a separate counter. The game page's own report carries them; T2's capture record is not changed
+  by this module.
+- *The unsubmitted view.* Between two submitted frames, A and C, the fixture makes the frame path hold a view it
+  does not submit. The view is abandoned at the latest point the target's frame path can abandon one: on the Mac a
+  frame encoded and then cancelled on failed acquisition; in Chrome whatever the browser path really does, for
+  example a canvas acquisition the checker makes fail once, as its retry case already injects one configure
+  failure. The witness records the trigger and how far the view got. The camera moves after A, and the unsubmitted
+  view and C share one pose P. So if history advanced early, C would see no camera change and write zero motion on
+  static geometry.
+
+| Row | Step | Observed in the submitted frame | A fault it catches |
+|---|---|---|---|
+| W1 | One object has no valid history: a spawn, or another of M1's invalid-history cases that marks a single object | Reactive is 1 on the object's pixels | An inert target; invalid history left unmarked |
+| W2 | The next submitted frame, same object | Reactive is 0 on those pixels | Marking that never clears |
+| W3 | The cooked volume in view, nothing changing | Reactive is above 0 on the volume and 0 beside it; on the Mac it equals the alpha the volume wrote | A volume that does not write the target |
+| W4 | A time-of-day edit with stars in view, and one with the Sun disk in view | Reactive is above 0 on star pixels and on the disk in that frame | A star pass or sky that does not write on a phase edit |
+| W5 | Steady frames before and after W4, and every other step | Star and Sun pixels read 0; a region no reactive writer covers reads 0 in every step | Stars reactive permanently; a target cleared to a nonzero value |
+| W6 | Submit A, the unsubmitted view, submit C | C's predecessor is A's sample; the unsubmitted view is no frame's predecessor | History advanced before submission |
+| W7 | The same | C's motion on static geometry is the camera change from A to P, which the fixture makes clearly nonzero | Previous matrices advanced before submission |
+
+A row that cannot be observed on a target fails the witness there. It is not skipped. W6 and W7 on the Mac are the
+pipelined frame-host tests of the acceptance protocol above; W1–W5 on the Mac and W1–W7 in Chrome are the witness
+runs. The browser checker's existing cases stay as a regression check, and prove nothing about these rows.
+
 **History keys and scale.**
 - `HistoryKey.extent` is the *output* extent. Reconstruction converts render grids to the output grid, which is
   exactly the provider conversion C07 allows. So a governor scale change does not reset history.
@@ -188,6 +243,29 @@ upscalers.
 It is the fallback, the image oracle for MetalFX, and Chrome's reconstructor. There is no FXAA in the code: the
 current display shader is a pre-AA diagnostic. So TAAU at scale 1.0 becomes the AA of the admitted temporal profile
 (seam 2).
+
+**Reconstruction reference and tolerance.** This is how a reconstructor's still image is judged, from M3 on.
+- *Reference.* At a still route checkpoint, with the world paused, a separate accumulation mode on portable renders
+  the frame at native resolution once for each offset of the M1 jitter sequence, and averages the frames in
+  scene-linear colour before the one SDR transform. That gives 32 distinct sub-pixel samples for each pixel, under
+  a box filter. It is a deterministic 32-sample supersample. It is not claimed to be converged, and its frame count
+  is not evidence that it is.
+- *Held state.* The committed tick, camera, solar time and celestial phase, cooked content generation, resolved
+  exposure and storage scale p are the same for every accumulated frame, and for the TAAU and no-AA frames judged
+  against the reference. The mode records them and refuses a checkpoint where any differs. It runs the 32-phase
+  cycle twice, 64 frames in all. The second cycle adds no new sample: the two cycles' averages must agree within
+  float rounding, which shows the state was held.
+- *Judged frames.* TAAU's frame is taken after the camera has been held for the same 64 frames. The no-AA frame is
+  one unjittered frame in the same state.
+- *Difference.* All three images pass through the same SDR transform to the submitted 8-bit sRGB output. ΔE is
+  CIEDE2000, per pixel, after decoding sRGB (IEC 61966-2-1) to CIELAB with a D65 white. It is taken over the whole
+  frame at the checkpoint's render extent, with no mask, crop or downscale. p99 is the 99th percentile of those
+  per-pixel values.
+- *Tolerance.* TAAU's p99 to the reference is at most 3, and is lower than the no-AA frame's p99 at the same
+  checkpoint. The second condition is firm. The 3 is provisional, and it binds until a plan revision changes it: a
+  candidate that misses it has failed. Its first recorded distribution goes to the planner, who may tighten the
+  bound, or change it where the record shows the reference or the metric is at fault and not the candidate. Either
+  change is a plan revision with its evidence in the log and a design review. A builder does not change it.
 
 **MetalFX temporal (Apple).** The provider runs inside G3t's native segment.
 - Classic `MTLFXTemporalScaler`, encoded into the segment's `raw_command_buffer()`.
@@ -409,6 +487,8 @@ pixels of the window, which is why the governor exists before the paired proof.
   replayed scale trace.
 - **EDR changes SDR appearance.** Guard: the H = 1 identity; the owner's visual check.
 - **Adding a third forward target breaks contributors.** Guard: SceneContribution and cooked-pipeline tests in G4 M2.
+- **The reactive target is declared but inert, or history advances before submission, on one target only.** Nothing
+  visible changes until M3. Guard: the temporal-input witness on the Mac and in Chrome.
 
 ## Performance
 
@@ -441,8 +521,8 @@ Mac rows standing in for iPhone are labelled proxy. iPhone EDR and timing are ow
      the jitter offset, the mip bias and the subrectangle grow it.
 3. **Forward contributors.**
    - A third forward colour target (`R8Unorm` reactive): `SceneContribution::color_formats` (`contribution.rs:56`), the
-     cooked-asset pipelines (`thrum-asset-gpu/src/draw.rs:239-249`, `material.rs:333`) and the atmosphere sky
-     pipeline.
+     cooked-asset pipelines (`thrum-asset-gpu/src/draw.rs:239-249`, `material.rs:333`), the atmosphere sky
+     pipeline, and the separate star pass with its own attachments and graph accesses.
    - Cooked materials adopt `textureSampleBias`.
    - G5, asset and atmosphere owners review.
 4. **Sky motion at infinity.** `atmosphere/sky.wgsl` and the star pass write motion with the retained celestial and
@@ -463,5 +543,6 @@ Mac rows standing in for iPhone are labelled proxy. iPhone EDR and timing are ow
 - Does tile traffic follow the drawn subrectangle at reduced scale? G4's paired proof reruns G3t M12's fixed-extent
   baseline with real reconstruction readers and scale steps, where M0
   proved a capture method.
-- Is the TAAU 1080p estimate right? Settled by M3.
+- Is the TAAU 1080p estimate right? M3 records TAAU's time at its own 640×360 extent, kept apart from this
+  estimate; the 1080p figure is settled when M4 gives the surface extent.
 - Does MetalFX's history track a GPU-written exposure texture under a changing storage scale? Settled by M8.

@@ -8,10 +8,10 @@ and [C12](../CONTRACTS.md#c12-budgets-evidence-and-acceptance--t2-with-all-owner
 Commission: Thrum Core's G3t/G4 design and milestone plans (`tmp/g3t-metal-boundary/NOTES.md`).
 Done when: [APPLE-PRESENTATION-DONE.json](APPLE-PRESENTATION-DONE.json) owns M1–M3. M4–M11 below are prose until
 they are migrated. Module list and seam rulings: [ARCHITECTURE.md](ARCHITECTURE.md#interfaces).
-Reviews: none yet through the loop; the design review of this module is owed before M1 starts. Earlier reviews are in the log.
-Milestone: M1 Jitter, matrices and motion (waiting on `APPLE-TILE:M0`) · Updated: 2026-11-10
-Now: M1–M3 migrated to the done-when file; nothing built (since 2026-11-10)
-Next: design review; M1 when `APPLE-TILE:M0` is Done; then a plan run migrates M4–M11 and settles seams 5–9.
+Reviews: design review of M1–M3 at `4bbe44a4`: changes requested, one Must Fix (D2.5) · [review](../../evidence/APPLE-PRESENTATION/design-review.md). The design and items were revised the same day; a fresh design review is owed before M1 starts. Earlier reviews are in the log.
+Milestone: M1 Jitter, matrices and motion (waiting on `APPLE-TILE:M0`) · Updated: 2026-11-10 (revised after the design review)
+Now: M1–M3 revised after the design review; nothing built (since 2026-11-10)
+Next: design review of the revision, which can approve M1–M3 and seams 1–4 only; M1 when `APPLE-TILE:M0` is Done; then a plan run migrates M4–M11, settles seams 5–9 and gets its own design review.
 Blocked: M1 waits on `APPLE-TILE:M0`, M2 on `APPLE-TILE:M2`, M3 on `APPLE-TILE:M3`. Later waits are in the
 [dependency table](#parallel-work-and-dependencies-on-g3t).
 
@@ -34,10 +34,13 @@ the SDR path for function only. iPhone EDR and timing are owed.
 
 As in [G3t's conventions](APPLE-TILE-PLAN.md#proof-and-builder-handoff): fixed-step route, reference image, counters,
 noise threshold and labels. Additions:
-- **Reconstruction reference.** At each still route checkpoint, portable accumulates 64 jittered frames at native
-  resolution with the camera held, using the M1 jitter sequence. The result is a converged supersample.
-- **Reconstruction tolerance.** ΔE p99 to that reference must be at most 3 (provisional, restated after M3's first
-  run). It must also be lower than the no-AA path's p99 at the same checkpoint.
+- **Reconstruction reference and tolerance.** [The design](APPLE-PRESENTATION.md#techniques-and-evidence) defines
+  both, under *Reconstruction reference and tolerance*: a 32-sample reference averaged in scene-linear colour with
+  the scene, time and exposure held and checked; CIEDE2000 on the submitted SDR output over the whole frame; p99 at
+  most 3 (provisional, changed only by a plan revision) and lower than the no-AA frame's.
+- **Temporal-input witness.** [The design](APPLE-PRESENTATION.md#techniques-and-evidence) defines rows W1–W7 under
+  *The temporal-input witness*: one fixture read by the Mac tests and the Chrome case, with values taken from
+  submitted frames.
 - **Motion review.** Pans, translating lights, reveals behind a moving prop, a spawn, a time-of-day scrub and a cut,
   recorded as sequences and judged by agent review. Each review states that it watched motion.
 - **Display overrides.** The only display is the built-in XDR panel (3456×2234, potential headroom 16). Rows for SDR
@@ -141,12 +144,12 @@ Work:
 Done when:
 - [ ] D2.1 With reconstruction enabled, depth and motion are stored and sampleable, and G3t's eligibility report shows
       them stored.
-- [ ] D2.2 A third forward target, reactive `R8Unorm`, is written by:
+- [ ] D2.2 A third forward target, reactive `R8Unorm`, is declared by every forward drawer: synthetic,
+      SceneContribution, cooked direct and indirect, the sky, and the separate star pass, whose attachments and
+      graph accesses match its shader outputs. Their tests pass. It is written by:
   - invalid-history objects (1);
   - the cooked volume (its alpha);
   - stars and the Sun on cuts and phase edits only.
-
-  The SceneContribution, cooked-asset and atmosphere pipelines declare it, and their tests pass.
 - [ ] D2.3 Each frame resolves a 1×1 `R16Float` exposure texture, and the history sample retains the storage scale p
       (test).
 - [ ] D2.4 Submission-order acceptance:
@@ -157,12 +160,22 @@ Done when:
   - a frame cancelled on failed acquisition leaves the history sample at the last submitted frame, and an iOS
     background drop resets history, both counted in the proof log;
   - `HistoryKey` uses the output extent.
+- [ ] D2.5 In Chrome, on the game's own frame path, witness rows W1–W7 hold (`check_v1_browser.mjs --case
+      temporal`).
+- [ ] D2.6 On the Mac, witness rows W1–W5 hold, read back from the reactive target (W6 and W7 on the Mac are
+      D2.4's pipelined tests).
+- [ ] D2.7 The browser checker's existing cases still pass with the third target declared. Regression only.
 
 Work:
 - [ ] Sampleable depth and the motion reader in the graph (→D2.1).
-- [ ] Reactive target across synthetic, contribution, cooked and sky pipelines, under seam 3 (→D2.2).
+- [ ] Reactive target across synthetic, contribution, cooked, sky and star-pass pipelines, with the star pass's
+      attachments and graph accesses, under seam 3 (→D2.2).
 - [ ] Exposure resolve and p retention (→D2.3).
 - [ ] `history.rs` and `runtime.rs` acceptance changes and the pipelined tests, under seam 1 (→D2.4).
+- [ ] The witness fixture definition, read by both targets, and the Mac GPU tests for W1–W5 (→D2.6).
+- [ ] The frame host's per-frame history identity in the game page's report; a reactive view or attachment
+      readback that reaches Chrome's submitted frames; the `temporal` case with its unsubmitted view (→D2.5).
+- [ ] The existing browser cases rerun (→D2.7).
 
 ## M3 TAAU at native scale in game: waiting on APPLE-TILE M3
 
@@ -172,8 +185,8 @@ TAAU's linear output feeds G3t's pre-tone input; the existing SDR transform stil
 Done when:
 - [ ] D3.1 TAAU runs at scale 1.0 in the V1 game on Mac (forced portable) and in Chrome on the route. The present pass
       reads its output.
-- [ ] D3.2 At still checkpoints, the reference tool's converged image exists. TAAU's ΔE p99 meets the reconstruction
-      tolerance, and is lower than the no-AA path's.
+- [ ] D3.2 At still checkpoints, the design's 32-sample reference exists, with its held state checked. TAAU's ΔE
+      p99 meets the reconstruction tolerance, and is lower than the no-AA frame's.
 - [ ] D3.3 Agent review of motion sequences, watched in motion, finds no ghosting or crawl:
   - pans and translating lights;
   - a reveal behind a moving prop;
@@ -181,13 +194,14 @@ Done when:
   - a held-camera star field (no shimmer);
   - a time-of-day scrub (no brightness lag).
 - [ ] D3.4 A cut shows no prior history on the next frame (frame pair).
-- [ ] D3.5 TAAU GPU time is recorded, as a record row against the design's estimate.
+- [ ] D3.5 TAAU GPU time is recorded at M3's own 640×360 extent, kept apart from the design's 1080p estimate.
 
 Work:
 - [ ] `taau.rs` and `taau.wgsl`: dilation, YCoCg clip, luma weighting, reactive and depth rejection, linear-depth
       history, p rescale (→D3.1, D3.3).
 - [ ] Registry-resolved `Reconstructor`, with TAAU as the default (→D3.1).
-- [ ] `reference.rs`: the 64-frame accumulation mode (→D3.2).
+- [ ] `reference.rs`: the accumulation mode (the 32-phase cycle run twice, the two averages compared) and the
+      CIEDE2000 comparison (→D3.2).
 - [ ] Reset wiring (→D3.4).
 - [ ] Timing row (→D3.5).
 
@@ -372,7 +386,7 @@ Work:
 | Milestone | Days |
 |---|---|
 | M1 | 1.5 |
-| M2 | 2.5 |
+| M2 | 3.5 |
 | M3 | 1.5 |
 | M4 | 2.5 |
 | M5 | 1 |
@@ -383,7 +397,8 @@ Work:
 | M10 | 6 |
 | M11 | 1.5 |
 
-That is **22.5 build days**, plus 1–2 days of review and seam turnaround.
+That is **23.5 build days**, plus 1–2 days of review and seam turnaround. M2 grew by a day on 10 November for the
+temporal-input witness on both targets.
 
 **Combined schedule.** The earlier G3t 15.5-day / G4 22.5-day combined estimates predate the scoped re-plan and
 are withdrawn. G4 can build against the named handoffs after delivery and approval; M4–M9 of G3t are not gates.
@@ -395,6 +410,30 @@ Revision 1 said 9.5–11.5 days for G4. Reviewers estimated 13–16 days.
 
 ## Log
 
+- 2026-11-10 Revised after [the design review](../../evidence/APPLE-PRESENTATION/design-review.md) at `4bbe44a4`
+  (changes requested, one Must Fix), under the task "Revise APPLE-PRESENTATION's design and plan as
+  docs/evidence/APPLE-PRESENTATION/design-review.md asks".
+  - Finding 1 (Must Fix): D2.5 claimed Chrome's reactive and history behaviour on the strength of the existing
+    browser cases, which read neither. The design now defines the temporal-input witness, rows W1–W7, with one
+    fixture for both targets and values taken from submitted frames. D2.5 is that witness in Chrome, through a new
+    `temporal` case with an `ask` on what it reads. The existing suite moved to D2.7 as a named regression check.
+  - Finding 2: the reconstruction reference and tolerance moved into the design and are now exact: 32 distinct
+    samples (the cycle run twice only to show the state was held), the held state listed and checked, CIEDE2000
+    on the submitted SDR output, and a rule for changing the provisional bound. D3.2 follows.
+  - Finding 3: D2.2 is now the declaration, including the star pass's own attachments and graph accesses, and the
+    new D2.6 reads positive reactive values back on the Mac (rows W1–W5).
+  - Finding 4: the design and the status lines above say that an approval covers M1–M3 and seams 1–4 only, and
+    name what the M4–M11 plan run must settle and have reviewed.
+  - From the item notes: D3.5 records TAAU's time at M3's 640×360 extent, apart from the 1080p estimate.
+  - M1's items, D2.1, D2.3, D2.4 and the other M3 items are unchanged. M2's sizing is 3.5 days.
+- Assumption: the Chrome witness covers the same rows as the Mac, the volume and phase-edit rows included. The
+  review required only the invalid-history rows and the history identity in Chrome; the fixture is shared, and
+  Chrome is where cloud and sunset demos will run.
+- Assumption: ΔE is CIEDE2000 on the submitted 8-bit SDR output, since reconstruction is judged as displayed. The
+  bound stays at 3 and binds until a plan revision changes it. This replaces the earlier assumption that the
+  bound is "restated after M3's first run".
+- Assumption: the per-frame history identity reaches Chrome through the game page's own report, so T2's capture
+  record is not changed. A builder who needs a T2 record change proposes it here first.
 - 2026-11-10 Moved onto the loop from [the module list](ARCHITECTURE.md). M1–M3's done-when lists became items
   D1.1–D3.5 in the done-when file with the same meaning, each with a proof. Two items were added so Chrome is
   proved as its own target: D2.5 (the browser checker still passes with the third target) and D3.3c (the motion
@@ -404,8 +443,8 @@ Revision 1 said 9.5–11.5 days for G4. Reviewers estimated 13–16 days.
   main. M4–M11 stay in prose here and are migrated by the next plan run, which restates the sizing.
 - Assumption: seams 1–4 of the design are accepted as written, with the G4 builder making the motion-only edit in
   the atmosphere shaders (seam 4) and the third forward target across contributors (seam 3) itself.
-- Assumption: M1–M3 keep the provisional reconstruction tolerance the design states (ΔE p99 at most 3, and below
-  the no-AA path), restated after M3's first run as the design says.
+- Superseded on 10 November by the assumption above: M1–M3 keep the provisional reconstruction tolerance the design
+  states (ΔE p99 at most 3, and below the no-AA path), restated after M3's first run as the design says.
 - Status before this migration (7–9 November):
   Milestone: none started (plan awaiting re-review and seam rulings) · Updated: 2026-11-07
   Now: revision 5 replaces the archive options with the owner's direction (since 2026-11-07).
