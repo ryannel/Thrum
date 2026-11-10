@@ -11,7 +11,7 @@
       "items": [
         {
           "id": "M5.1",
-          "statement": "Each frame every scene contribution is lent one environment identity: source epoch and simulation time, and the true Sun (geometric direction, raw perpendicular illuminance, colour, angular radius, no attenuation applied) kept apart from the apparent surface light. The epoch changes when the sky model, air profile or a LUT generation changes, and not when only time advances.",
+          "statement": "Each frame every scene contribution is lent one environment identity: source epoch and simulation time, and the true Sun (geometric direction, raw perpendicular illuminance, colour, angular radius, no attenuation applied) kept apart from the apparent surface light. The epoch changes when the sky model, the air profile or a LUT generation (a replacement of resources or model) changes, and never when only time advances and chart contents are recomputed.",
           "check": "./dev check",
           "lock": "gpu",
           "ask": "Do tests in ./dev check cover an epoch change on profile change and on device replacement, no change across a time scrub, and the true Sun staying continuous through sunset while the apparent surface light fades? Is the identity produced in one place and only read elsewhere?",
@@ -21,26 +21,27 @@
         },
         {
           "id": "M5.2",
-          "statement": "Through the lent bind-group layout and WGSL library alone, a contribution's own pipeline evaluates Sun transmittance to a world position, sky radiance along a direction, incident diffuse and aerial (T,S) for a view segment, and each matches the f64 atmosphere reference within the tolerance the M1 referees already use, on Metal.",
+          "statement": "Through the lent bind-group layout and WGSL library alone, a contribution's own pipeline evaluates the five lent operations on Metal: Sun light at a world position, sky radiance along a direction, incident diffuse, aerial (T,S) from the camera to a point, and environment reflection with its split-sum pair. Each meets its handoff row H1-H5 in the design's numerical acceptance table.",
           "check": "./dev check",
           "lock": "gpu",
-          "ask": "Read the referee test. Does its contribution use only the lent layout and library, with no private access to atmosphere internals or chart layouts, and does it compare against the independent f64 reference rather than against the forward pass's own output?",
+          "ask": "Read the referee tests. Does the contribution use only the lent layout and library, with no private chart, mip or storage-gain knowledge? Does each of H1-H5 assert the bound its row names against the reference its row names, and never against the forward pass's own output? Does H5 vary direction, roughness, the raw Sun's illuminance, the night term and a rewritten sky, so a constant, stale or wrongly scaled reflection fails? Are the preserved referees P1-P11 unchanged in reference, cases and bound?",
           "target": "mac-metal",
           "status": "open",
           "evidence": ""
         },
         {
           "id": "M5.3",
-          "statement": "The same lent lookups give the same answers in Chrome on hardware WebGPU, within the same tolerance.",
+          "statement": "In Chrome on hardware WebGPU the same five lent operations meet the same handoff rows H1-H5, with expected values from the same references and not from Metal's GPU output.",
           "check": "node scripts/check_v1_browser.mjs --case environment",
           "lock": "gpu",
+          "ask": "Read the environment case. Does it run the lent operations in a real hardware Chrome session, apply the H1-H5 bounds itself, and fail on a missing or unresolved row?",
           "target": "chrome-webgpu",
           "status": "open",
           "evidence": ""
         },
         {
           "id": "M5.4",
-          "statement": "With no optical-depth provider, the composed forward shader text and the route stills are byte-identical to the recorded base commit on the Mac, and no texture, binding, pass or per-frame write is added.",
+          "statement": "With no optical-depth provider, the composed forward and cooked-volume shader text and the route stills are byte-identical to the recorded base commit on the Mac, and no texture, binding, pass or per-frame write is added.",
           "check": "python3 scripts/environment_products.py off-parity --target mac-metal",
           "lock": "gpu",
           "ask": "Read scripts/environment_products.py. Does off-parity render the base commit and the claimed commit from one cooked store through the engine tap, compare bytes with no tolerance or mask, and include a same-build rerun control and a negative control that must fail?",
@@ -59,10 +60,10 @@
         },
         {
           "id": "M5.6",
-          "statement": "A registered provider's optical depth multiplies direct sunlight by exp(-tau) exactly once on every direct-Sun receiver (terrain, synthetic instances, cooked meshes, the cooked volume) and changes nothing else: sky light, emission and geometric shadow are unchanged, and toggling the provider resets only the history it must.",
+          "statement": "A registered provider's optical depth multiplies direct sunlight by exp(-tau), read for the receiver's own world point, exactly once on every direct-Sun receiver (terrain, synthetic instances, cooked meshes and each lit march sample of the cooked volume) and changes nothing else: sky light, emission and geometric shadow are unchanged, the factor is exactly 1 outside the field's declared support, and toggling the provider resets only the history it must.",
           "check": "./dev check",
           "lock": "gpu",
-          "ask": "Do GPU tests show a uniform tau of ln 2 halving the direct term, and only the direct term, on each receiver kind, and tau of zero matching no provider? Is exp(-tau) applied in the one shared direct-Sun function rather than per receiver or on final colour?",
+          "ask": "Do GPU tests show a uniform tau of ln 2 halving the direct term, and only the direct term, on each receiver kind including the cooked volume; a field that differs between two world points giving each receiver, and each volume march sample, its own point's factor; and tau of zero, a receiver above the plane and a read outside the region all matching no provider? Is exp(-tau) one shared cloud-factor function that the direct-Sun term and the volume's march both call, never a per-receiver patch or a darkening of final colour?",
           "target": "mac-metal",
           "status": "open",
           "evidence": ""
@@ -89,11 +90,20 @@
         },
         {
           "id": "M5.9",
-          "statement": "Cost is recorded, not gated: forward GPU time and whole-frame time on the valley, paired and order-alternated with the provider off and on, and each forward pipeline's sampled-texture count with the provider on against the adapter's limit on Mac and Chrome.",
+          "statement": "Cost on the Mac is recorded, not gated: forward GPU time and whole-frame time on the valley, paired and order-alternated with the provider off and on, and each forward pipeline's sampled-texture count with the provider on against the adapter's limit.",
           "check": "python3 scripts/environment_products.py cost --target mac-metal",
           "lock": "gpu",
-          "ask": "Are the paired figures recorded with build, load class and order and labelled as observations? Is every forward pipeline within the sampled-texture limit read from the capability record on both targets, with the count stated?",
+          "ask": "Are the paired figures recorded with build, load class and order and labelled as observations? Is every forward pipeline within the sampled-texture limit read from the capability record, with the count stated?",
           "target": "mac-metal",
+          "status": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M5.10",
+          "statement": "In Chrome the same is recorded: whole-frame time on the valley paired with the provider off and on, and each forward pipeline's sampled-texture count with the provider on against the browser adapter's limit, with every pipeline created.",
+          "check": "python3 scripts/environment_products.py cost --target chrome-webgpu",
+          "lock": "gpu",
+          "target": "chrome-webgpu",
           "status": "open",
           "evidence": ""
         }
@@ -113,7 +123,7 @@
         {
           "id": "M6.1",
           "statement": "On the Mac, on the six-stop route and a continuous dawn-to-night scrub with slow pans, a clean-context reviewer finds none of: a horizontal brightness step across the ground, a flat near ridge with a hard bright rim at low Sun, a ridge lit warm with the Sun behind it, missing object shadows at sunrise, shadow acne at low Sun, a hard horizon line, or banding in the sky gradient and twilight.",
-          "inspect": "Capture the route stops as fixed-time stills and the scrub and pans with the Mac real-time engine capture, TAAU on. Judge each named defect at every stop in whole frames and native-size crops, and in motion at 1x. Leave out only the 17.40 to 17.80 h west-lookout crossing.",
+          "inspect": "Capture the route stops as fixed-time stills and the scrub and pans, including the Ground E pan, with the Mac real-time engine capture, TAAU on. Judge each named defect at every stop in whole frames and native-size crops, and in motion at 1x. Leave out only the moving shadow edge on the authored spur between 17.40 and 17.80 h. The held 17.4 h stop is judged, and the Ground E terrain lip is judged as a brightness step.",
           "target": "mac-metal",
           "status": "open",
           "evidence": "",
@@ -132,25 +142,34 @@
         },
         {
           "id": "M6.3",
-          "statement": "On the shipped graph, sky and aerial radiance, receiver Sun illuminance and twilight colour still match their scalar and f64 references within the tolerances this design declares, on Metal and in Chrome.",
+          "statement": "On Metal, on the final build, the preserved referees P1-P11 and the handoff rows H1-H5 of the design's numerical acceptance table pass against the production producers with no reference, case or bound changed since M5, and the all-orders solar grid still reports all 198 rows.",
           "check": "./dev check",
           "lock": "gpu",
-          "ask": "Which referees run on the shipped graph rather than a test-only variant, and did any tolerance, reference or test change in this milestone? If one did, is the change justified by the model and not by the image?",
+          "ask": "Did any reference, case, bound or test in the numerical acceptance table change in this milestone? If one did, is the change justified by the model and not by the image? Does any referee run a test-only variant of a producer instead of the production one?",
           "target": "mac-metal",
           "status": "open",
           "evidence": ""
         },
         {
           "id": "M6.4",
-          "statement": "Whole-frame and atmosphere pass costs on the route are recorded paired against the M1 and M2 records, and any visible hitch during the scrub is investigated and explained.",
-          "ask": "Are the costs paired, labelled for load and compared with the earlier records without a budget claim, and does the evidence name the cause of each hitch seen in the scrub or state that none was seen?",
-          "target": "mac-metal",
+          "statement": "In Chrome on hardware WebGPU, on the final build, the handoff rows H1-H5 pass at their declared bounds.",
+          "check": "node scripts/check_v1_browser.mjs --case environment",
+          "lock": "gpu",
+          "target": "chrome-webgpu",
           "status": "open",
           "evidence": ""
         },
         {
           "id": "M6.5",
-          "statement": "The maturity ledger's G3s rows state implementation, correctness, visuals and device separately, and name what is not qualified: the west-lookout crossing, the exact disk match, Moon, weather, calibrated night colour and physical display cadence.",
+          "statement": "Whole-frame and atmosphere pass costs on the route are recorded on the final build and, in the same session and configuration, on the commit this milestone started from; the M1 and M2 records are quoted as history only. Any visible hitch during the scrub is investigated and explained.",
+          "ask": "Is the comparison a fresh rerun of the starting commit at a matched extent, TAAU setting, load class and alternated order, with no budget claim and no earlier record called paired? Does the evidence name the cause of each hitch seen in the scrub, or state that none was seen?",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M6.6",
+          "statement": "The maturity ledger's G3s rows state implementation, correctness, visuals and device separately, and name what is not qualified: the west-lookout crossing, the exact disk match, solar sky and solar aerial accuracy against an all-orders reference, Moon, weather, calibrated night colour and physical display cadence.",
           "ask": "Do the ledger rows and the build plan's G3s line match the evidence, with the known defects listed and nothing claimed for a physical iPhone?",
           "target": "mac-metal",
           "status": "open",
