@@ -1,10 +1,12 @@
-# Thrum module list: the road to the V1 exit, with sea and clouds
+# Thrum module list: the road to the V1 exit, with sea and clouds, and the goal after V1
 
 10 November 2026. This is the project plan the orchestrate loop builds from: the modules, what each owns, the build
 order, the interfaces between them and a brief for each. [The build plan](../../BUILD-PLAN.md) owns the purpose and
 the V1 exit. [The architecture brief](../ARCHITECTURE-BRIEF.md) owns the engine-wide responsibility map (F1–T2) and
 [CONTRACTS](../CONTRACTS.md) owns shared invariants. A module here is a unit of build ownership: one builder can
 work on it without touching the others, and each kind of state has exactly one module in charge of it.
+The goal after V1, a swarm-survival game with 2D and online multiplayer, is
+[track 3](#track-3-the-swarm-survival-game-after-v1). It was added the same day from a second request, quoted there.
 
 ## The owner's request
 
@@ -35,7 +37,7 @@ Quoted word for word from the 10 November planning task:
 > Boundaries. Don't change the definitions of PLATFORM-RUNTIME-MAC M2 or APPLE-TILE, because builders are on them.
 > Read Broadsides but don't change it.
 
-## Two tracks
+## Three tracks
 
 **Track 1, the V1 exit.** Unchanged. Its remaining gates are G3b, G3s, G3t, G3c, G4, G5, G6 and G7. Nothing in
 track 2 gates it.
@@ -44,6 +46,11 @@ track 2 gates it.
 lays. They are finished here, not in Broadsides; [the reasons](#where-sea-and-clouds-are-finished) are below.
 Track 2 adds one foundation module, `EFFECT-GRAPH`, and asks track 1 for three things it was already going to
 build. When builders start track 2 is the owner's decision; this plan only fixes the order.
+
+**Track 3, the goal after V1.** An original swarm-survival game that proves 2D and online multiplayer, set by the
+owner in [the brief](../NEXT-GOAL-SWARM-GAME.md). Six new modules, none of which starts before the exit or gates
+it. They are listed in [their own section](#track-3-the-swarm-survival-game-after-v1), so the tables below stay
+the road to the exit.
 
 ## Modules and what each owns
 
@@ -65,6 +72,7 @@ build. When builders start track 2 is the owner's decision; this plan only fixes
 State that no module above owns stays where it is: committed world state and the tick page in `thrum-core`
 (G1/G2S, done), input and replay in `thrum-network` and core (done for V1), and game content (the valley, presets,
 hull data, cloud genus tables, looks) in `examples/` and never in engine crates.
+[Track 3's modules](#modules-and-what-each-owns-track-3) are in their own table.
 
 ## Coverage of the V1 exit
 
@@ -167,6 +175,8 @@ module list settles them. Seams 1–4 are accepted as written there:
   atmosphere shaders, for motion output only.
 
 Seams 5–9 are settled when M4–M11 are migrated.
+
+Track 3's interfaces are in [their own table](#interfaces-track-3).
 
 ## Where sea and clouds are finished
 
@@ -275,6 +285,311 @@ validation, recovers across device replacement, costs nothing when absent, and r
 
 [SEA brief](SEA-BRIEF.md) and [CLOUDS brief](CLOUDS-BRIEF.md).
 
+## Track 3: the swarm-survival game, after V1
+
+Added 10 November 2026. [The brief](../NEXT-GOAL-SWARM-GAME.md) is the owner's page; this section turns it into
+modules. Nothing here starts before the V1 exit, changes a V1 module's plan or gates the exit. No module below has
+a design, a plan or a done-when file, so no builder can start one.
+
+### The owner's request (track 3)
+
+Quoted word for word from the 10 November planning task:
+
+> Add the goal after V1 to the module list in docs/design/modules/ARCHITECTURE.md: the original swarm-survival
+> test game in docs/design/NEXT-GOAL-SWARM-GAME.md, with the 2D support and online multiplayer it needs. Done when
+> ARCHITECTURE.md names the new modules (2D rendering, multiplayer/networking, the game and anything else the brief
+> needs), their owners, interfaces with existing modules, build order after the V1 exit, and a brief for each; the
+> BUILD-PLAN 'After V1' section points at them. Don't change V1 modules' plans or the V1 exit; list any decision
+> that belongs to the owner. No done-when files yet: this work starts after V1.
+
+And from the brief, what the owner asked for:
+
+> - **A swarm survivor.** One or more players hold out against ever-growing crowds of enemies, with automatic
+>   attacks and upgrades between waves. It's an original game: its own name, characters, art and rules.
+> - **2D support in the engine.** The engine supports 2D games as well as 3D, and this game proves it.
+> - **Multiplayer.** Several players play together over the network.
+
+The brief's three defaults are kept as written: cooperative online play for 2 to 4 players; top-down 2D with
+sprites on Mac, Chrome and the iOS simulator; thousands of enemies and projectiles on screen at once.
+
+### What the game needs from the engine
+
+One run of the game, walked across the engine, gives the modules.
+
+| The run needs | The engine has | So track 3 adds |
+|---|---|---|
+| Thousands of bodies that chase, crowd each other and get hit, every tick | The registered simulation, with rewind and replay proven at 10,000 entities (G2S). No spatial queries | `SIM-2D` |
+| The same crowd on two to four machines | Headless multiplayer fitness, and a parked wire design sized for 128 visible actors a peer | `SIM-2D` and `SESSION` |
+| Players on separate machines, one of them a browser | No sockets. Transport was parked for after V1 | `TRANSPORT` |
+| Thousands of sprites, layered and crisp, with no sky or Sun | A 3D forward scene only | `RENDER-2D` |
+| A health bar, a timer, a level-up choice and a join screen on all three targets | Demo panels in AppKit and the DOM; no text drawn in the frame, nothing on iOS | `GAME-UI` |
+| The game: its name, rules, characters and art | `examples/v1-game`, which is a different game | `SWARM` |
+
+### Mechanisms settled here
+
+Three choices decide where the lines between modules fall, so they are settled at this level. Each is provisional
+until the design review of the module that owns it passes.
+
+**1. The crowd is shared by causes, not by state.** Every peer steps the same registered rules from the same
+baseline and the same admitted input frames. The host stays the only authority (C13): it admits inputs, commits
+ticks and sends each peer the frames it admitted. In steady play no per-enemy state travels. Each peer sends a
+digest of its committed state, and a peer whose digest differs is repaired with a full image.
+
+- *Why not replicate the crowd.* The parked wire design packs a moving actor into about 18 bytes and proposes 64
+  kbit/s down to each client at 20 Hz ([A0](../decisions/A0-N1-TRANSPORT-CODEC.md),
+  [A5](../decisions/A5-STATE-DELTA-SESSION.md)). A 2D pose could shrink to about 6 bytes. 3,000 movers × 6 bytes ×
+  20 Hz is 2.9 Mbit/s for each client, 45 times that target, and a crowd that chases the players changes every
+  tick, so deltas against a baseline save little. Vampire Survivors' own online co-op met the same wall with
+  hundreds of enemies: each client simulates the crowd locally and takes position corrections at 1 Hz, because
+  full sync for each enemy "likely wouldn't scale"
+  ([coherence case study](https://coherence.io/blog/tradecraft/vampire-survivors-online-coop-case-study)).
+- *What travels.* An input frame is about 31 bytes for each player and tick
+  ([input wire](../decisions/A5-INPUT-WIRE.md)), which does not grow with the crowd. A peer that joins gets a
+  baseline and catches up from the inputs that followed, as Factorio's joining clients do
+  ([Friday Facts 149](https://www.factorio.com/blog/post/fff-149)).
+- *What it rests on.* The game's rules must give the same bytes on Mac arm64, Chrome's wasm32 and the iOS
+  simulator. C13 promises no bit identity across platforms, so the rules earn it: integers or fixed point, or
+  floats held to add, subtract, multiply, divide and square root with non-finite values refused; no platform maths
+  library; no order taken from hashing, threads or pointer width; random streams keyed by seed, tick and entity.
+  `SIM-2D` owns that profile and its first milestone tries to break it on all three targets.
+- *What keeps a miss from spreading.* The digest catches a divergence within the interval `SESSION` sets, and
+  repair is the reliable full image A5 already selects. A client that changes its rules only desyncs itself.
+- *Range.* 2 to 4 peers and the brief's thousands. If a full-world replay does not fit a frame at that size, the
+  crowd is shown at the confirmed tick and only the player's own character is predicted, which needs no crowd
+  replay. `SESSION`'s planner chooses between the two from `SIM-2D`'s measured costs.
+- *If the profile cannot be held.* The fallback is Vampire Survivors' own method: local simulation with corrections
+  through the acknowledged deltas of A5, at a rate the byte budget allows.
+- *Precedent in Thrum.* C13 already shares water by causes, and [NETWORKING](NETWORKING.md) leaves room for a game
+  to "supply a qualified specialist protocol". The acknowledged-delta design stays selected for games whose state
+  must travel. This game uses it for the baseline and for repair.
+
+**2. 2D is its own scene half, not sprites in the 3D forward pass.** A profile selects a 2D scene whose passes run
+through the one graph executor and write the same pre-tone scene-linear input. Exposure, tone, EDR, the governor,
+present and capture are shared from that point. A 2D game then carries no sky tables, cascades or light clusters
+(E02), and a 3D game carries no sprite path. Bevy
+([`core_2d`](https://docs.rs/bevy/latest/bevy/core_pipeline/core_2d/index.html)), Godot and Unity's URP each keep
+a 2D path separate from 3D on one backend. Drawing sprites inside a lit 3D scene is not part of this goal.
+
+**3. A native process hosts and browsers join.** A browser cannot accept connections, and WebTransport gives it a
+client only. So the authority is a headless host or a Mac player who also hosts, both on the one rules path of
+C13. Chrome and the iOS simulator join as clients.
+
+<a id="modules-and-what-each-owns-track-3"></a>
+
+### Modules and what each owns (track 3)
+
+The responsibility column names the row of [the architecture brief](../ARCHITECTURE-BRIEF.md#proposed-module-map)
+that the module builds. The code home is where the planner is expected to put it; the planner confirms it and
+registers any new crate in `.config/architecture.toml`. Each module is built by the profile's builder.
+
+| Module | Responsibility | Owns (state and code) | Expected code home |
+|---|---|---|---|
+| `SIM-2D` | W1 and P3, for crowds | The deterministic rules profile and the check that enforces it; the digest of committed state; the 2D spatial index and its overlap, nearest and neighbour queries | `thrum-core` |
+| `RENDER-2D` | V2 and V3, for 2D | The 2D scene half and its passes; the 2D view record (orthographic camera, world units to pixels); sprite rows extracted from the tick page; draw order; sprite materials and blending; GPU residency of sprite sheets | `thrum-render` |
+| `GAME-UI` | U1 | Text and interface drawn in the frame: the glyph cache, the interface tree and its layout, focus, the paint list; routing of key, pointer and touch events to the interface before the game | A new crate |
+| `TRANSPORT` | N1 adapters, F1 network I/O | Connections and their state: native QUIC, the browser's WebTransport, the in-memory conditioned link, a host's TLS identity. It holds no game state and gives no meaning to a message | A new crate, so a game that is not networked links no sockets |
+| `SESSION` | N1 | The match and each connection's epoch; the handshake and its manifests; clock sync and input lead; input staging and relay; baseline and join; digest exchange and repair; the prediction branch; retained results | `thrum-network` |
+| `SWARM` | Game policy and content | The game: its name, premise, characters, art, rules, waves, upgrades and screens; the schemas and rule set it declares to `SESSION`; its sprite and font sources; the record that closes track 3 | A new folder in `examples/`, never an engine crate |
+
+State no module above owns stays where it is: the tick, committed world state, rewind and the tick page in
+`thrum-core` (G1 and G2S); cooked products in `CONTENT-LOOP`; the graph, the split and the output half in
+`APPLE-TILE` and `APPLE-PRESENTATION`; the demo panels and the app runner in `CREATOR`.
+
+### What track 3 asks of existing modules
+
+Each ask is new work inside state that an existing module owns. It becomes a milestone of that module, numbered
+after its V1 milestones and added by that module's planner when track 3 starts. None is added now, so no V1 plan
+changes.
+
+| Owner | Ask | For |
+|---|---|---|
+| `CONTENT-LOOP` | A sprite-sheet product (pages, frames, pivots) and a font product, cooked, mapped and hot-reloaded like meshes and textures | `RENDER-2D`, `GAME-UI` |
+| `APPLE-TILE` | A profile selects the 2D scene half in place of the 3D one. The output half gains an interface stage at output extent, after reconstruction | `RENDER-2D`, `GAME-UI` |
+| `APPLE-PRESENTATION` | The governor and reconstruction accept a scene that declares no temporal reconstruction, so sprites stay crisp | `RENDER-2D` |
+| `CREATOR`, with `PLATFORM-RUNTIME-IOS` and `PLATFORM-RUNTIME-WEB` | An app runner on all three targets for a game that brings no sky kit. The iOS shell lives in `examples/v1-game-ios` today and serves one game | `SWARM` |
+| Repository guard | `.config/architecture.toml` names one external game; it must admit a second | `SWARM` |
+
+If `EFFECT-GRAPH` is Done when `RENDER-2D` is planned, the 2D scene half declares its passes through that seam.
+A second way to declare passes is not built.
+
+<a id="interfaces-track-3"></a>
+
+### Interfaces (track 3)
+
+New interfaces are defined in the design of the module that provides them and are provisional until its design
+review passes. Changes to a numbered contract are settled with its producers and consumers, as the brief requires.
+
+| Interface | Provider → consumers | Defined in |
+|---|---|---|
+| Tick page, committed and previous endpoints, rewind and replay | core → `SIM-2D`, `RENDER-2D`, `SESSION` | C02, [G2 decision](../decisions/G2-GENERIC-SIMULATION.md); unchanged |
+| **Deterministic rules profile**: what a rule may compute with and in what order, so one input trace gives one result on every target | `SIM-2D` → `SWARM` (its rules), `SESSION` | `SIM-2D.md` (owed); C02 |
+| **World digest**: one value for each committed tick over all authority state | `SIM-2D` → `SESSION` | `SIM-2D.md` (owed) |
+| **2D queries**: overlap, nearest and neighbours, with results in a fixed order | `SIM-2D` → `SWARM` | `SIM-2D.md` (owed); C03 |
+| **Sprite rows**: a game's read-model components map to sheet frame, layer, tint and transform, interpolated between tick endpoints on the GPU | `RENDER-2D` → `SWARM`, any 2D game | `RENDER-2D.md` (owed); C07 |
+| **2D scene half**: passes declared through the one graph, writing the pre-tone scene-linear input | `APPLE-TILE` → `RENDER-2D` | [APPLE-TILE](APPLE-TILE.md), C06; `RENDER-2D.md` (owed) |
+| Sprite-sheet and font products | `CONTENT-LOOP` → `RENDER-2D`, `GAME-UI`, games | C05 |
+| **Interface stage**: a paint list drawn at output extent after reconstruction | `APPLE-TILE` and `APPLE-PRESENTATION` → `GAME-UI` | C06, C07; `GAME-UI.md` (owed) |
+| **Event routing**: the interface consumes an event or passes it on as a game action | shells → `GAME-UI` → the game | C11 |
+| **Message link**: a reliable ordered stream, datagrams with a stated size limit, backpressure and lifecycle events, the same on every adapter | `TRANSPORT` → `SESSION` | `TRANSPORT.md` (owed); [NETWORKING](NETWORKING.md#transport-and-overload), A0 |
+| **Session**: join and leave, the admitted input frames of every player for each tick, the baseline, the confirmed tick, the prediction branch, and connection state a screen can show | `SESSION` → `SWARM` | `SESSION.md` (owed); C13, A0 and the A5 decisions |
+| **Rule set in the gameplay manifest**: a match names its deterministic rule set and build, and refuses a peer that differs. A proposed addition to C13 | `SESSION`, with `SIM-2D`, core and the game | `SESSION.md` (owed) |
+| Quality knobs | `RENDER-2D` → the governor | C04; the interface above, unchanged |
+| The app runner and typed controls | `CREATOR` → `SWARM` | C11, [CREATOR](CREATOR.md) |
+| Engine capture, one for each peer process | `T2-CAPTURE` → every visual milestone | C12, [T2 capture](T2-CAPTURE.md); unchanged |
+
+### Build order after the V1 exit
+
+Track 3 starts when `SHOWCASE` is Done. Whether it runs before, after or beside track 2 is the owner's decision.
+Each module needs a `plan-module` run from its brief and a design review that returns Design Approved before a
+builder starts it. Plans are owed in the order below.
+
+1. **The two proofs that can overturn the plan.** `SIM-2D`, first milestone: one input trace gives equal digests
+   on Mac, in Chrome and on the iOS simulator at the brief's crowd size, with tick, rewind and replay costs
+   recorded. `TRANSPORT`, first milestone: one native host holds a Mac client, a Chrome client and an iOS-simulator
+   client over real sockets under the A0 conditioner. They share no files with each other or with the renderer.
+2. **Sprites.** `RENDER-2D`, after `APPLE-TILE`'s and `CONTENT-LOOP`'s asks. It can run beside step 1.
+3. **A match without pictures.** `SESSION` on the in-memory conditioned link, after `SIM-2D`'s first milestone.
+   Its socket milestones follow `TRANSPORT`'s first milestone.
+4. **Interface.** `GAME-UI`, after `RENDER-2D`'s first milestone and the interface-stage ask.
+5. **The game.** `SWARM` opens with the owner's choice of concept, which only `SWARM` waits on. Then a
+   single-player slice after `SIM-2D` and `RENDER-2D`, the full run after `GAME-UI`, co-op after `SESSION` on
+   sockets, and the close.
+
+A lone builder takes them in that order: `SIM-2D`, `TRANSPORT`, `RENDER-2D`, `SESSION`, `GAME-UI`, `SWARM`.
+`SWARM`'s options milestone is built first of all, so the owner's answer is in before any art is made.
+
+**Reaching the targets.** `TRANSPORT`, `SESSION` and `SWARM` open local sockets and drive Chrome, which Codex's
+`workspace-write` sandbox does not allow without a request for each run. Their planners settle how a builder and a
+reviewer reach those targets; [the choice](#owner-decisions) is the owner's.
+
+### What finished means (track 3)
+
+Proposed, for the owner to change: two to four players, on any mix of Mac, Chrome and the iOS simulator, join one
+host and play a whole run of an original swarm survivor together, with thousands of enemies and projectiles on
+screen, smooth at the display's full refresh on the Mac, and the peers still agree under the A0 conditioner. The
+engine modules hold no game types, and a second small 2D scene builds on them without `SWARM`.
+
+### Module briefs (track 3)
+
+A `plan-module` run turns each brief into a design, a plan and a done-when file. Costs are recorded as tripwires;
+no budget below is a gate. The quality bar is a shipped game, named for each milestone by the planner.
+
+#### SIM-2D
+
+- **For.** A game runs a crowd of thousands whose every tick gives the same bytes on every target, and finds
+  neighbours and hits cheaply.
+- **Requirement.** "Thousands of enemies and projectiles on screen at once" and "Several players play together
+  over the network".
+- **Built already.** One atomic tick in canonical slot order, sparse undo and replay, and equality of serial and
+  forced-parallel runs (G2S). The G2 decision records 61 µs for tick and page and 81 µs for an eight-tick rewind
+  at 10,000 simple movers.
+- **To build.** The rules profile and a check that fails a rule which breaks it. The digest. A uniform-grid index
+  with overlap, nearest and neighbour queries in a fixed order. A reference crowd (chase, separation, projectile
+  hits, spawn and despawn churn) that later modules reuse as their diagnostic scene.
+- **Contracts.** C01, C02, C03; the rule-set addition to C13 with `SESSION`.
+- **Open for its planner.** Fixed point or restricted floats, chosen by the three-target proof. Whether the
+  queries sit in `thrum-core` or beside it.
+- **First proof and what rejects it.** Equal digests on the three targets for a long trace with churn. If a
+  difference cannot be removed inside the profile, mechanism 1 falls back and `SESSION` is planned on corrections.
+- **Research.** Cross-platform determinism in shipped engines (Rapier's deterministic build, Photon Quantum's
+  fixed point, Box2D 3); uniform grids and separation for crowds.
+- **Done.** Equal digests across the targets and across serial and parallel runs; queries match a brute-force
+  oracle; tick, rewind and replay costs at 2,000, 5,000 and 10,000 bodies are on record.
+
+#### RENDER-2D
+
+- **For.** A game draws thousands of sprites that read clearly and move smoothly, and pays for nothing 3D.
+- **Cues.** A crowd at the brief's size at full refresh. Sprites crisp at every window size and pixel density,
+  with no shimmer when the camera scrolls. Overlap order that never flickers. Motion smooth between ticks. Frame
+  animation, hit flash and tint, and blended effects.
+- **Built already.** The instance field's changed-row upload and GPU interpolation between tick endpoints, the
+  graph, cooked textures.
+- **To build.** The 2D scene half and view record, sprite rows, instanced drawing from sheet pages so a crowd is a
+  few draws, a stable draw order, sheet residency.
+- **Contracts.** C04, C05, C06, C07, C12. `needs`: `APPLE-TILE:M3`, and the `APPLE-TILE` and `CONTENT-LOOP` asks.
+- **Open for its planner.** How order is resolved (sorted rows or depth). Reconstruction for sprites, with none as
+  the default. Whether bright effects use EDR. How text shares the sprite path with `GAME-UI`.
+- **Not in scope.** 2D lights, tile-map tools, skeletal 2D animation, sprites in a 3D scene.
+- **Bar.** Crowd legibility as in Vampire Survivors and Halls of Torment; pixel stability as in Celeste.
+- **Done.** `SIM-2D`'s reference crowd drawn on `mac-metal` and `chrome-webgpu`, and working on `ios-sim`; the
+  frame record shows no sky, cascade or cluster work; a second small 2D scene builds on it.
+
+#### GAME-UI
+
+- **For.** A game shows a status display and menus in its own frame on all three targets.
+- **Cues.** A health bar, timer and counters readable at every window size, at 1× and 2× density and inside the
+  iOS safe area. A modal choice of three or four upgrades worked by key, pointer and touch. A join screen. An event
+  the interface consumes never moves the player.
+- **Built already.** [The U1 design](AUDIO-UI.md#u1-operating-model), which is wider than this game. Typed demo
+  controls in `thrum-controls`, which stay for demos and the profiler and are not replaced.
+- **To build.** The smallest slice of U1 that this game uses: Latin text from one font product, a retained tree
+  with simple layout, focus, the paint list, event routing under C11.
+- **Contracts.** C06, C07, C11. `needs`: `RENDER-2D`'s first milestone, the interface-stage and font-product asks.
+- **Open for its planner.** The text stack, after a licence and Wasm audit of current Rust crates. How a join
+  address or code is entered on each target without a full text-input stack.
+- **Not in scope, and recorded as unqualified.** Complex scripts, localisation, IME, accessibility bridges.
+- **Done.** The status display and modal on the three targets; focus and tree survive device loss; text stays
+  crisp at both densities.
+
+#### TRANSPORT
+
+- **For.** Two processes exchange messages over the internet's real protocols, and one of them may be a browser.
+- **Requirement.** "Several players play together over the network", on the brief's three targets.
+- **Selected already.** Native QUIC through Quinn and WebTransport in the browser, datagrams and one reliable
+  ordered stream (A0). WebTransport became Baseline in March 2026
+  ([web features](https://web-platform-dx.github.io/web-features-explorer/features/webtransport/)); only Chrome
+  is a target here.
+- **To build.** The message link on three adapters: Quinn (Mac, the host and the iOS simulator), WebTransport in
+  Wasm, and the in-memory conditioned link the A5 fixtures use. A host identity that Chrome accepts on a local
+  machine. Counters for bytes, loss and queue age.
+- **Contracts.** C11 (a suspended app has lost its socket), C12, C13, [NETWORKING](NETWORKING.md#transport-and-overload).
+- **Open for its planner.** The WebTransport crate, after an audit of licence, datagram support, the Wasm client
+  and upkeep (`wtransport`, `web-transport-quinn`, `webtrans`). The async runtime Quinn brings and where its
+  thread sits beside the world lane. Whether the WebSocket fallback of A0 is built; the default is no.
+- **First proof and what rejects it.** The three clients hold a session with one host at 100 ms round trip, 20 ms
+  jitter and 2% loss, through disconnect and reconnect. If Chrome cannot hold datagrams to a local host, input
+  moves to the reliable stream for that adapter and the cost is recorded.
+- **Done.** The proof above; malformed input fuzzed; a game without networking links no transport code.
+
+#### SESSION
+
+- **For.** Two to four players share one run and keep seeing the same crowd.
+- **Built already.** Envelopes, input batches, future-input staging, state deltas and acknowledgements in
+  `thrum-network`; a four-peer, 600-tick run with no sockets; controller replay; core rewind.
+- **To build.** The handshake with protocol, gameplay and rule-set identity. Clock sync and an input lead sized
+  from measured round trip and jitter. Relay of admitted frames. The baseline for join and reconnect. Digest
+  exchange and repair. Retained results, which A5 left open. The session loop a headless host runs.
+- **Contracts.** C02, C03, C13, A0 and the A5 decisions. `needs`: `SIM-2D`'s first milestone; `TRANSPORT`'s first
+  milestone for the socket milestones.
+- **Open for its planner.** Whole-world rollback or a confirmed-tick crowd with a predicted player, from
+  `SIM-2D`'s costs and how each feels. How often digests travel. How a modal choice in co-op reaches every peer in
+  order: Vampire Survivors saw level-up screens arrive out of order after dropped packets and moved them to ordered
+  commands.
+- **Proof order.** Four peers on the conditioned in-memory link with the reference crowd: equal digests under
+  loss, reorder and duplication; a forced divergence repaired; a join in progress; a reconnect; a slow peer that
+  does not stall the host. Then the same on sockets across the three targets.
+- **Costs to record.** Bytes for each peer, replay steps, correction distance, baseline size and join time. A0's
+  proposed 64 kbit/s is a tripwire.
+- **Done.** The proof order passes on sockets, and a game that is not networked pays nothing for it.
+
+#### SWARM
+
+- **For.** The owner's game: an original swarm survivor that proves the five modules above in a product.
+- **Requirement.** "One or more players hold out against ever-growing crowds of enemies, with automatic attacks
+  and upgrades between waves. It's an original game: its own name, characters, art and rules."
+- **Owns the taste.** Its first milestone lays out a few concepts that differ in kind (a name, a premise, one
+  hero, two enemies and a palette on one mock arena) and the owner picks one. The quality bar starts from the
+  chosen concept.
+- **To build.** A single-player slice with the crowd at the brief's size. The run: waves, pick-ups, upgrades,
+  winning and losing, the status display and menus. Co-op for 2 to 4 with its own rules (shared or separate
+  upgrades, what a fallen player does, whether a choice pauses the run). The three targets.
+- **Contracts.** Every interface in the table above; C13 for what the game declares.
+- **Art.** Made in this repository, original or under the project's PD and CC0 rules. A paid generation service is
+  spending.
+- **Bar.** Vampire Survivors, Brotato, Halls of Torment and Deep Rock Galactic: Survivor.
+- **Done.** [What finished means](#what-finished-means-track-3). The owner's judgement of how it plays is an
+  attended item in the last milestone.
+
 ## Owner decisions
 
 Nothing below is decided by this plan.
@@ -292,6 +607,28 @@ Nothing below is decided by this plan.
 5. **Broadsides threads.** This plan asks nothing more of them. Whether they stay paused is the owner's call.
 6. **Spending.** None is requested. Physical-device runs stay owed and are reported at the exit.
 
+For [track 3](#track-3-the-swarm-survival-game-after-v1):
+
+7. **When track 3 starts.** The brief says after V1, and this plan holds every track 3 module until `SHOWCASE` is
+   Done. Whether the game goes before, after or beside sea and clouds is the owner's order to set.
+8. **The game's identity.** Its name, premise, characters and look are the owner's taste. `SWARM`'s first
+   milestone lays out options and waits for the owner's pick.
+9. **Art and licence.** The plan assumes art made in this repository, original or PD and CC0. A paid generation
+   service is spending. The licence the game and its art are published under is the owner's.
+10. **A public host.** Play across the internet needs a machine others can reach, a domain and a certificate,
+    which is spending and deploying. Until the owner asks for one, "online" is proved between separate processes
+    on this Mac over real QUIC and WebTransport under the A0 conditioner. Putting the game on the website is
+    publishing.
+11. **Sockets and Chrome under the Codex sandbox.** `TRANSPORT`, `SESSION` and `SWARM` need both for most checks.
+    The choices are a request for each run as today, `Codex sandbox: danger-full-access`, or a Claude builder for
+    those modules.
+12. **Sound.** The brief does not ask for it and no audio module is planned. A1 stays a design.
+13. **The purpose line.** The build plan still says "3D engine" and requirement E08 of the architecture brief
+    still puts pure 2D outside scope. The 10 November goal overrides both; rewording them is the owner's page.
+14. **What finishes the goal.** [The proposal](#what-finished-means-track-3) stands in for an exit the owner has
+    not written.
+15. **Builders.** Steps 1 and 2 of track 3's order hold three lanes that share no files.
+
 ## Log
 
 - 2026-11-10 First module list. Planned from the owner's request above. `CREATOR`, `ATMOSPHERE` M5–M6 and
@@ -301,3 +638,20 @@ Nothing below is decided by this plan.
   open (spray release at chase distance, the attached sheet, a visibly rising gas cloud); they are parked spikes.
 - Assumption: finished clouds excludes the ten-genera, squall and warm-front scope of the Broadsides game, and
   the consolidation the owner asked for is the port decision's hybrid of weather layers and placed volumes.
+- 2026-11-10 Track 3 added from the owner's second request, quoted in its section: six modules with briefs, the
+  asks of existing modules, interfaces and a build order after the exit. No V1 module's plan, no done-when file
+  and no part of the exit changed. The brief's three defaults are unchanged. Researched: Vampire Survivors' online
+  co-op, Factorio's join, WebTransport's browser state and the 2D paths of Bevy, Godot and Unity. The readings
+  below stand until the owner overturns them; each moves to its module's plan log when that module is planned.
+- Assumption: "2D support in the engine" means a reusable sprite path (sprites, layers, a 2D camera, text and
+  interface) that a second 2D game can build on. 2D lights, tile-map tools, skeletal 2D animation and 2D rigid
+  bodies are not built.
+- Assumption: "over the network" is proved by separate processes on this Mac over real QUIC and WebTransport under
+  the A0 conditioner. A public host is the owner's to order.
+- Assumption: a native process hosts; Chrome and the iOS simulator only join. Players join by address or code.
+  Matchmaking, accounts, relays and host migration are not built.
+- Assumption: Chrome is the only browser, so the WebSocket fallback of A0 is not built.
+- Assumption: every peer simulates the one arena, so the interest management the build plan lists as "relevance"
+  is not built for this game.
+- Assumption: no sound, and no gamepad: keys, pointer and touch only.
+- Assumption: the iOS simulator proves function for the game, never speed, as in V1.
