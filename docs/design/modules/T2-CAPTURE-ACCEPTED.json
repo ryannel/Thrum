@@ -41,7 +41,22 @@
     },
     "M2": {
       "definitions": "dfa21a4ee21c8083506b5d344361509170f3095b2968dcb8e3889dbcbe2a1cdd",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "pass",
+          "commit": "60b79a2b0401de3f82498e5c20156cf0286b117d",
+          "review": "docs/evidence/T2-CAPTURE/M2-review.md",
+          "host": "claude",
+          "model": "claude-opus-5-5",
+          "effort": "high",
+          "observed": {
+            "model": "claude-opus-5-5"
+          },
+          "cli": "2.1.319 (Claude Code)",
+          "path": "visible",
+          "at": "2026-11-10T00:57:24Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Some done-when items treat a locked Mac console as a precondition for running a check. COOKED-DRAW M1.7 says the simulator run happens \"with the console locked\", and scripts/cooked_draw_ios_sim.py ref",
@@ -60,6 +75,13 @@
         },
         "cli": "codex-cli 0.167.0-alpha.3.2",
         "path": "visible"
+      },
+      "accepted": {
+        "by": "review",
+        "commit": "60b79a2b0401de3f82498e5c20156cf0286b117d",
+        "review": "docs/evidence/T2-CAPTURE/M2-review.md",
+        "checked": "60b79a2b0401de3f82498e5c20156cf0286b117d",
+        "at": "2026-11-10T00:57:24Z"
       }
     }
   }
