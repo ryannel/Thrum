@@ -4,10 +4,10 @@ Design: [APPLE-TILE.md](APPLE-TILE.md) · [Brief](APPLE-TILE-BRIEF.md) ·
 Done when: [APPLE-TILE-DONE.json](APPLE-TILE-DONE.json) owns criteria and proof status.
 [Boundary](../decisions/G3T-METAL-BOUNDARY.md) and C04/C06/C07/C08/C12 govern.
 Reviews: [design review 2 at `224b58a1`](../../evidence/APPLE-TILE/design-review-2.md): DESIGN CHANGES (7 findings); independent review of this scoped re-plan is owed to the lead/loop.
-Milestone: M0 A repeatable offscreen valley proves the comparison path (parked; state unchanged)
-Now: 9 November lead-commissioned scoped re-plan answers all seven findings by retaining needed dataflow/boundary work and cutting optional optimizations. No new runtime proof.
-Next: fresh independent design review through the loop, which settles unpark; then build the retained milestones in order.
-Blocked: M0 remains parked pending loop design approval/unpark. T2 M0/M1 are done, not an automatic restart. M2/M3/final window proof needs attended session and OS-capture grant. Only M12 cooked simulator function needs COOKED-DRAW M1; T2 simulator M2 is not a prerequisite.
+Milestone: M0 A repeatable offscreen valley proves the comparison path (open)
+Now: M0 builder reran D0.3 on Metal and inspected D0.4's historical replay method. Both pass with retained evidence.
+Next: retain native and Chrome pre-change T2 baselines, implement the M0 scene-linear comparison/controls and qualify the complete route.
+Blocked: the runtime capture command refused its 16 GiB free-space preflight on this volume (14 GiB initially, 13 GiB during builds). D0.1/D0.2/D0.5 remain open. M2/M3/final attended rows and M12's COOKED-DRAW dependency retain their existing requirements.
 
 ## Sequence and dependencies
 
@@ -92,7 +92,7 @@ Physical replay counters may remain unmeasured, and physical iPhone/cadence qual
 
 <a id="m0-proof-route-counters-and-capture-probe-pending"></a>
 
-## M0 A repeatable offscreen valley proves the comparison path: parked
+## M0 A repeatable offscreen valley proves the comparison path: open
 
 Outcome criteria: D0.1–D0.5 in the done-when file.
 
@@ -152,6 +152,16 @@ Mac critical path. Judge whether all proofs reject omitted work. No owner-only d
 re-plan. Approval, unpark and milestone acceptance belong to the loop; this planner claims none of them.
 
 ## Log
+
+- 2026-11-10 M0 builder started from the loop's explicit commission and open JSON state. D0.3's current-revision
+  Metal command passed 12 active tests, including pipeline coverage, generation clones, detached attribution and
+  the unscoped play guard. D0.4's retained Xcode probe passed inspection with its original limits. Evidence is in
+  [the partial M0 record](../../evidence/render/apple-tile-m0/README.md). The runtime capture command refused its
+  free-space preflight before allocation. Initial space was 14 GiB against the declared 16 GiB requirement.
+  The required moving-route smoke passed all 361 ticks across two native and two Chrome runs, with all five
+  checkpoint repeats byte-identical within each target. Its seven Chrome refusal controls passed. This remains
+  endpoint/no-history smoke. Documentation checks passed. No renderer/shader change or baseline refresh was made.
+  D0.1/D0.2/D0.5 and M0 remain open.
 
 - 2026-11-09 Lead explicitly recommissioned this scoped re-plan after two failed design reviews. Answered all seven
   second-review findings in the disposition table; cut fused present and M4–M9 instead of adding arithmetic or
