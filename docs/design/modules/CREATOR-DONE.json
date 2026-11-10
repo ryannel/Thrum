@@ -64,38 +64,59 @@
       "state": "open",
       "fails": 0,
       "replans": 0,
-      "bar": "As readable as Unreal's stat unit and stat gpu: after an edit a creator can tell which stage or pass got slower. A number is current, or it says unavailable; turning the profiler on changes the frame by no more than it reports.",
+      "needs": [
+        "APPLE-TILE:M3"
+      ],
+      "bar": "As readable as Unreal's stat unit and stat gpu: after an edit a creator can tell which stage or pass got slower. A number is current, or its row says why there is none; the profiler costs what its paired run records while on, and one branch a frame while off.",
       "items": [
         {
           "id": "M2.1",
-          "statement": "A profiler group in the controls model shows, on the Mac panel and the Chrome page, the display interval, CPU time of world tick, extraction, encode and submit, and GPU time per named graph pass, each a median over a stated window refreshed a few times a second.",
-          "ask": "Is every readout fed by a measurement the engine already takes (the shell's frame samples, thrum-render's GpuTimings) rather than a second timer, and do unit tests in ./dev check cover the median window and the refresh rate?",
+          "statement": "With the profiler on, the Mac panel and the Chrome page show the frame-callback interval and present calls, CPU time of world tick, extract, upload and encode + submit, and GPU time per named graph pass, each a median over a stated window of recent completed frames, refreshed a few times a second.",
+          "ask": "Does every CPU and GPU number come from the frame host's completed samples through the profile window, and every interval row from the shell's callback record, with no second timer and no row named as display cadence? Do tests in ./dev check cover the window, the median and the refresh rate?",
           "target": "mac-metal",
           "status": "open",
           "evidence": ""
         },
         {
           "id": "M2.2",
-          "statement": "Where a measurement is unavailable (no timestamp queries on the adapter, a discarded frame, coarsened browser timing) the row says so with the reason or the resolution; it never shows zero or a stale number as current.",
+          "statement": "A number is current or its row says why there is none. In Chrome, after more than 600 completed frames, a load change moves the row that measures it. No timestamp queries, profiler off, a timing fault, no recent frame and coarse browser steps each show their reason, never zero or an old number.",
           "check": "node scripts/check_starter_browser.mjs --case profiler",
           "lock": "gpu",
-          "ask": "Does the profiler case fail if a GPU row shows a number while the adapter reports no timestamp-query feature, and is the discarded-frame case covered by a test?",
+          "ask": "Read the profiler case and the tests. Does the case change the load only after frame 600 and fail when a row is fed from the shell's first-600 report buffer or shows a number while the adapter reports no timestamp-query feature? Do tests cover each reason, and the window emptying on a device replacement?",
           "target": "chrome-webgpu",
           "status": "open",
           "evidence": ""
         },
         {
           "id": "M2.3",
-          "statement": "With the profiler off, no timestamp query is written and no readout work runs; with it on, a paired on/off run on the V1 valley records its own cost with build, load and order.",
-          "ask": "Read the diff: can any timestamp write, readback or readout formatting run while the profiler is off? Are the paired figures recorded as observations, with no budget claimed?",
+          "statement": "Timing demand is one switch on the frame host, on by default. A frame encoded with it off writes no timestamp, submits no resolve or readback, and says GPU time was not requested. Switching either way with frames in flight, and across a device replacement, loses no frame sample and frees every slot.",
+          "ask": "Read the thrum-render diff and its device tests in ./dev check. Do the tests switch both ways with frames in flight and across a replacement, and does a host that never touches the switch behave as before? Does the diff change anything else in the frame lifecycle?",
           "target": "mac-metal",
           "status": "open",
           "evidence": ""
         },
         {
           "id": "M2.4",
-          "statement": "On the V1 valley on the Mac, switching a known load on and off moves the matching profiler row and leaves the others steady, and the panel stays legible at the default window size.",
-          "inspect": "Run the valley with the profiler on. Toggle sun shadows, the exposure-zones overlay and the cooked volume one at a time, capturing the panel offscreen before and after each. Does the row for the changed pass move by a plausible amount while unrelated rows stay within their noise, and can every row be read without resizing?",
+          "statement": "On the running Chrome page, switching the profiler off stops timestamp work once the frames in flight have drained and the rows say it is off; switching it on again shows only numbers from frames after the switch. Frames keep presenting throughout.",
+          "check": "node scripts/check_starter_browser.mjs --case profiler-switch",
+          "lock": "gpu",
+          "ask": "Read the profiler-switch case. Does it count real resolve and readback work, not a UI flag, and would it fail if a number from before the switch were shown after it?",
+          "target": "chrome-webgpu",
+          "status": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M2.5",
+          "statement": "Only the window and page shells turn timing demand off, and only for an app that declared the profiler group, with its toggle off, in a run that writes no frames report. A paired on/off run on the V1 valley records what the profiler costs, with build, load, order and the spread of identical runs.",
+          "ask": "Do THRUM_REPORT, the Mac qualification command and the V1 page's 600-sample report still run timed from their first frame, with their output unchanged? Are the paired figures recorded as observations, with no budget claimed?",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M2.6",
+          "statement": "On the Mac, two known changes each move the row that measures them by more than that row's spread with no change: pausing the valley's world lowers World tick, and a starter material-hook edit that adds fragment work raises the GPU pass that draws the cooked mesh. The panel stays legible at the default window size.",
+          "inspect": "With the profiler on, repeat each change and a no-change control at least three times, capturing the panel offscreen before and after. Does the named row move the named way beyond its no-change spread each time, does no row outside the design's coupled list move beyond its spread without a recorded cause, and can every row be read without resizing?",
           "target": "mac-metal",
           "status": "open",
           "evidence": "",
@@ -103,9 +124,9 @@
           "review": ""
         },
         {
-          "id": "M2.5",
-          "statement": "The same profiler rows are present and readable on the starter's page in Chrome, with GPU rows either numeric with their resolution or marked unavailable.",
-          "inspect": "Open the starter's URL in Chrome with the profiler on and screenshot the page at the default size and at 480 px wide. Are the rows the same set as on the Mac, readable, and honest about resolution or unavailability?",
+          "id": "M2.7",
+          "statement": "The same profiler rows are present and readable on the starter's page in Chrome, with GPU rows either numeric with their step or showing their reason.",
+          "inspect": "Open the starter's URL in Chrome with the profiler on and screenshot the page at the default size and at 480 px wide, then again after switching it off. Are the rows the same set as on the Mac, readable, labelled by their source, and honest about step size or the reason a number is missing?",
           "target": "chrome-webgpu",
           "status": "open",
           "evidence": "",
@@ -125,7 +146,7 @@
         {
           "id": "M3.1",
           "statement": "Using only README.md, the creator guide and the starter's README, an agent that has not opened crates/ or any other design document builds a new small scene (not the starter, stones, the sunset or the lighthouse) with lit ground, sky, one cooked mesh of its own, a camera and one slider; it runs on the Mac and in Chrome in about 100 game lines with zero engine game types.",
-          "inspect": "Do this yourself before reading engine source or other design documents. Build the scene under tmp/, run it offscreen on the Mac and in Chrome, and record the game-line count, every engine item the scene names, each point of friction and one capture per target. A step that could only be completed by reading crates/ fails the item.",
+          "inspect": "Do this first. Until your scene runs on both targets, read only the review skill, ORCHESTRATE.md, the graded examples, these items, the three documents and what they tell a creator to run or copy, and log every file you open. Build the scene under tmp/, run it offscreen on the Mac and in Chrome, and record the game-line count, every engine item it names, each point of friction and one capture per target. A step that needed crates/ fails the item. If you read this module's design, crates/ or another design document first, say so and give cant_tell.",
           "target": "mac-metal",
           "status": "open",
           "evidence": "",
@@ -154,9 +175,9 @@
         },
         {
           "id": "M3.4",
-          "statement": "In the visible starter window on the built-in display, dragging a Sun slider in the panel moves the light, and saving the parameter file and an asset updates the window without a key press.",
-          "inspect": "From the attended session's recorded window frames and report lines: did the slider drag, the parameter save and the asset save each change the visible scene, in order, with no key press?",
-          "attended": "Unlocked built-in display with the starter window and panel visible; a person drags a slider and saves the parameter file and one asset while the session records. Batch with the Mac qualification session.",
+          "statement": "In the visible starter window on the built-in display, a Sun slider dragged in the panel moves the light, and saving the parameter file and an asset updates the window without a key press.",
+          "inspect": "If the session is unlocked, launch the starter, drag the slider and save the parameter file and one asset yourself, capturing the real window and panel by window id around each. If it is locked, judge the attended run's window captures and report lines, and say so. Did each change the visible scene, in order, with no key press? An offscreen frame does not count.",
+          "attended": "Setup only: the built-in display unlocked and awake, with Screen Recording and Accessibility permission already granted to the agent's process. The agent drags, saves and captures; without the Accessibility grant a person does the drag only. Batch with the Mac qualification session.",
           "target": "mac-metal",
           "status": "open",
           "evidence": "",
