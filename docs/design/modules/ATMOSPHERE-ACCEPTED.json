@@ -1,6 +1,25 @@
 {
   "module": "ATMOSPHERE",
-  "design": null,
+  "design": {
+    "verdict": "changes",
+    "review": "docs/evidence/ATMOSPHERE/design-review.md",
+    "commit": "4bbe44a433598650be47c1753c57da79f5d1df93",
+    "hash": "5a00c930692d1e01faa364127cb0abbfecbbfe4e8478c60408a3b318daf18ba6",
+    "by": "review",
+    "host": "codex",
+    "model": "gpt-6-astra",
+    "effort": "high",
+    "observed": {
+      "model": "gpt-6-astra",
+      "effort": "high"
+    },
+    "cli": "codex-cli 0.167.0-alpha.3.2",
+    "path": "visible",
+    "usage": {
+      "incomplete_turns": 1
+    },
+    "at": "2026-11-10T22:21:19Z"
+  },
   "milestones": {
     "M5": {
       "definitions": "f79d2639f34716127affb411fbe3d6d6c82ecbef59fd8d256b2e64cff64a4520",
