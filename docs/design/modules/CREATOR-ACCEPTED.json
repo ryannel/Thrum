@@ -1,6 +1,25 @@
 {
   "module": "CREATOR",
-  "design": null,
+  "design": {
+    "verdict": "changes",
+    "review": "docs/evidence/CREATOR/design-review.md",
+    "commit": "4bbe44a433598650be47c1753c57da79f5d1df93",
+    "hash": "cb4a70966f68798044981ec4ad7fcc495b8c168e60503cf9c86f7df9dad242e8",
+    "by": "review",
+    "host": "codex",
+    "model": "gpt-6-astra",
+    "effort": "high",
+    "observed": {
+      "model": "gpt-6-astra",
+      "effort": "high"
+    },
+    "cli": "codex-cli 0.167.0-alpha.3.2",
+    "path": "visible",
+    "usage": {
+      "incomplete_turns": 1
+    },
+    "at": "2026-11-10T22:24:36Z"
+  },
   "milestones": {
     "M1": {
       "definitions": "ffc77bacc900ad9a6e5b65fbb0dc2afd227468a593e473d04a9a7d904bad1df0",
