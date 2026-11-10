@@ -1,6 +1,6 @@
 # Thrum build plan
 
-Updated 9 November 2026. Active status page; Git retains history. [Contracts](design/CONTRACTS.md) own invariants;
+Updated 10 November 2026. Active status page; Git retains history. [Contracts](design/CONTRACTS.md) own invariants;
 [maturity](design/maturity.json) separates implementation, correctness, visuals and device results.
 
 ## Purpose
@@ -40,6 +40,16 @@ continue unblocked work. Verified checkpoints are pushed to main (owner, 6 Nov p
 <a id="active-gate-order-and-budgets"></a>
 
 ## Active work and gates
+
+**Road to the exit.** [The module list](design/modules/ARCHITECTURE.md) plans all remaining work as loop modules:
+what each owns, the build order, the interfaces between them and a brief for each. Ready to build on 10 November:
+`PLATFORM-RUNTIME-MAC` M2, `APPLE-TILE` M0 (the owner unparked it that day), `CREATOR` M1
+([G6 close](design/modules/CREATOR-PLAN.md)) and `ATMOSPHERE` M5 ([G3s](design/modules/ATMOSPHERE-PLAN.md)).
+Waiting on `APPLE-TILE`: `APPLE-PRESENTATION` M1–M3 ([G4](design/modules/APPLE-PRESENTATION-PLAN.md)). Plans still
+owed, none of them startable yet: G4 M4–M11, G3c, the G5 close, G7, and the sea and cloud track. Sea and clouds
+are planned as two Thrum modules ([SEA](design/modules/SEA-BRIEF.md), [CLOUDS](design/modules/CLOUDS-BRIEF.md)) that
+never gate the exit; when their builders start is the owner's decision. The paragraphs below are each gate's own
+status and may trail the loop's record.
 
 Mac M2.1 current-release locked-console motion passes builder inspection (481 exact originals, complete pan/holds);
 attended preparation is in [the current evidence/runbook](evidence/render/mac-m2-current/README.md).
@@ -171,6 +181,7 @@ function/visual/device evidence separate, one compact page per gate. Shrink plan
 multiplayer built up towards it. Owner, 10 November 2026.
 
 Teaching demos follow, chosen individually: cloud formation, water and others under the [port decision](design/decisions/SEA-AND-CLOUD-PORT.md).
+The sea and clouds they build on are planned in [the module list](design/modules/ARCHITECTURE.md#where-sea-and-clouds-are-finished).
 Transport reopens after V1: compact wire, Quinn, clock sync, relevance/prediction and four rendered peers under conditioning.
 Android/desktop-high recipes and physical iPhone runs follow on suitable hardware. A dedicated AI performance phase
 profiles whole frames, derives targets, and revisits retained commands, mapped uploads and complete native recording.

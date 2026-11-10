@@ -1,7 +1,20 @@
 # Atmosphere for the V1 outdoor scene
 
 [Rendering contract](../RENDER-SPEC.md#5-initial-atmosphere-fog-and-transport-operator) ·
-[Environment source](ENVIRONMENT.md) · [Milestones](ATMOSPHERE-PLAN.md)
+[Environment source](ENVIRONMENT.md) · [Milestones](ATMOSPHERE-PLAN.md) · [Done when](ATMOSPHERE-DONE.json) ·
+[Module list](ARCHITECTURE.md)
+
+**The owner's request** for the work added on 10 November (M5 and M6), word for word from that day's planning
+task: "The owner wants work lined up continuously toward the V1 exit in docs/BUILD-PLAN.md, so builders always
+have a next milestone, and wants water and clouds finished and consolidated ... Decide, with reasons ... where in
+the build order the port's readiness conditions are met." The exit clause this module closes is "physical sky, Sun
+and aerial perspective with time controls". The readiness condition it meets, from
+[the port decision](../decisions/SEA-AND-CLOUD-PORT.md#readiness-6-november), is "G3s: finish and qualify the one
+shared sky, Sun, light-transmittance and environment-reflection products."
+
+The sections below through [Frame and cost](#frame-and-cost) are the design M1–M4 were built from and are
+unchanged. [Environment identity and products](#environment-identity-and-products) governs M5 and
+[Closing G3s](#closing-g3s) governs M6.
 
 The V1 valley uses one Earth sky from noon through astronomical night. The shipped
 Hillaire transport owns sunlight, the sky-view and aerial LUTs, and the shared diffuse
@@ -176,3 +189,128 @@ at ground level. At 1.8 km, it predicts roughly 1.24, 11.8 and 31.5 μcd/m²
 of first-scatter along horizontal 1, 10 and 30 km paths. Doubling the
 quadrature changed sampled radiance by less than 0.065%. These are scalar
 model checks. Packed GPU transport and visible night remain open.
+
+## Environment identity and products
+
+M5. Other engine modules read the one sky and Sun instead of bringing their own, and one cloud optical depth
+dims direct sunlight once. `SEA` and `CLOUDS` are the consumers ([module list](ARCHITECTURE.md#interfaces)); the
+forward pass and cooked draws already are.
+
+### Cues
+
+| Cue | Where it must hold | Bar |
+|---|---|---|
+| E1 Anything a module draws is lit by the same Sun and sky as the terrain beside it, at every time of day | A contribution's own pipeline, on Metal and in Chrome, noon through night | No visible seam in brightness or colour between a module's surface and the scene's |
+| E2 Cloud shade crosses the land: the patch dims direct sunlight only, moves in world space and agrees on every lit surface | The V1 valley at noon and low Sun; terrain, synthetic instances, cooked meshes and the cooked volume | Cloud shade in Red Dead Redemption 2 or Horizon Forbidden West: shaded ground stays sky-lit and blue-leaning, never black |
+| E3 With no cloud source, nothing changes | Every scene today | Identical pixels and identical per-frame work |
+
+### Mechanism
+
+**One identity.** Each frame the atmosphere publishes one environment identity and lends it to every scene
+contribution: the source epoch and simulation time; the **true Sun** as geometric receiver-to-source direction,
+raw perpendicular illuminance, photometric colour and angular radius, with no air, cloud or terrain attenuation
+applied; and, kept apart, the apparent surface light the forward pass uses today. The epoch changes exactly when
+the sky model, air profile or a LUT generation changes, and never when only time advances. This is
+[C08](../CONTRACTS.md#c08-light-materials-and-transport--v3-with-e1-and-v4)'s light handoff made concrete.
+The true Sun is separate because the apparent light changes quickly as the last surface light disappears, and a
+medium lit from it flickers; the Broadsides cloud work found and repaired exactly this.
+
+**Lent products, not copies.** A contribution receives a bind-group layout and a WGSL library for the products
+the atmosphere already computes: the transmittance and multiple-scattering charts, the sky-view LUT, the aerial
+volume, the diffuse and reflection products and the exposure scale. The library exposes four lookups: Sun
+transmittance to a world position, sky radiance along a direction, incident diffuse, and aerial `(T,S)` for a
+view segment. They are the functions the forward pass calls (`sun_irradiance` and the shared aerial decoder),
+moved to where a contribution's own pipeline can compose them. The resources stay owned by the atmosphere and
+are read-only to everyone else.
+
+**One Sun-path optical depth.** C08 and [ENVIRONMENT](ENVIRONMENT.md) already say that a cloud source supplies
+path optical depth `tau` toward the Sun and that V3 applies `exp(-tau)` at most once. A provider registers one
+product: a 2D field of `tau` along the current true Sun direction for receivers below a declared plane, with its
+world mapping, advection displacement, validity region and source epoch. The shared direct-Sun term multiplies
+by `exp(-tau)` in the same place it reads surface transmittance, so every receiver that calls it gets the factor
+once: terrain, synthetic instances, cooked meshes and the cooked volume. Sky light, emission, geometric shadow
+and aerial in-scatter are not touched; shading of in-scatter by clouds is `CLOUDS`' later decision.
+
+**Absent means absent.** Provider presence is a scene-build fact. Without a provider the forward shader is
+composed without the lookup, as it is today, so there is no added texture, binding or sample. With one, the
+shader variant adds one sampled texture to the light group.
+
+**A diagnostic provider** in `examples/v1-game`, behind an opt-in control and labelled as a stand-in, supplies a
+moving analytic `tau` pattern with a declared drift. It exists to prove the path; `CLOUDS` replaces it.
+
+### Alternatives considered
+
+- **Bake cloud attenuation into the Sun's illuminance.** One number cannot vary across the land, and C08 forbids
+  pairing an already-attenuated Sun with a cloud query.
+- **Draw cloud shadows into the Sun's shadow cascades.** Cascades hold binary geometric depth; soft, semi-transparent
+  shade would need a second map per cascade and would be applied by a different path from the one the sea reads.
+- **A 1×1 placeholder texture when no provider exists.** Simpler, but every scene would pay a sample for a
+  feature it does not use, against the engine's rule that off removes the work.
+- **Let each module sample the LUTs through its own private copies of the lookup code.** Two decoders drift; one
+  library keeps aerial perspective applied once.
+
+### Check that it can work
+
+The forward pass already forms direct sunlight in one function and already lends its light group layout and
+composed shader source to contributions, so the cooked mesh path is lit by the same code. The portable limit is
+16 sampled textures per stage; the builder records each forward pipeline's count with the provider on, read from
+the capability record, before choosing the binding. The lookups are pure functions of the existing charts, so a
+GPU test can compare a contribution-side evaluation with the f64 references the M1 referees already use.
+
+### State and owners
+
+| State | Owner |
+|---|---|
+| Sky, transmittance, aerial, diffuse and reflection products; the environment identity | `ATMOSPHERE` |
+| The Sun's timed direction and raw illuminance | The environment source (E1), as today |
+| Exposure and storage scale | V4 (`APPLE-PRESENTATION`), lent alongside |
+| The optical-depth field's contents | Its provider (`CLOUDS`; the game's diagnostic until then) |
+| Applying `exp(-tau)` on the direct-Sun path | `ATMOSPHERE` (V3 transport) |
+
+### Risks
+
+| Risk | Early sign | Wrong substitute to refuse |
+|---|---|---|
+| Shade applied twice or to the wrong term | Shaded ground goes black, or shade deepens inside geometric shadow | Darkening final colour instead of direct irradiance |
+| The off path is not free | The forward shader text or pipeline count changes with no provider | A placeholder texture |
+| Receivers disagree | A cooked mesh stays bright inside a patch that darkens the terrain under it | Patching one receiver's shader separately |
+| The texture limit is hit in Chrome | Pipeline creation fails on the portable recipe with the provider on | Dropping another texture silently |
+| The lent library exposes internals modules then depend on | A contribution reads chart layouts directly | Publishing chart formats as interface |
+
+### Cost
+
+With no provider: nothing. With one: one filtered 2D sample per lit fragment, and the provider's own work to
+produce the field, which is its cost to account for. Record forward GPU time and whole-frame time paired on and
+off on the valley, with load and order; set no budget.
+
+### Open questions
+
+- Whether aerial in-scatter should also be shaded by cloud. Settled in `CLOUDS`, with a joint integrator or a
+  declared approximation as C08 requires.
+- Whether the field needs more than one height band. The diagnostic uses one plane; `CLOUDS` may propose more
+  through [the module list](ARCHITECTURE.md#interfaces).
+
+## Closing G3s
+
+M6. The gate closes when the valley's sky and sunlight pass a clean-context review in motion on Mac and Chrome.
+It runs after TAAU is in the game (`APPLE-PRESENTATION:M3`), because reconstruction changes every edge and
+gradient a reviewer judges.
+
+**What is reviewed.** The fixed six-stop route of [the route decision](../decisions/G7-SHOWCASE-ROUTE.md) and one
+continuous scrub from dawn through noon, sunset and twilight to night, with slow pans, captured from the running
+game with the engine tap. The inspection list is the set of defects earlier reviews recorded: a horizontal
+brightness step across the ground; a flat near ridge with a hard bright rim at low Sun; a ridge lit warm when the
+Sun is behind it; missing object shadows at sunrise; shadow acne at low Sun; a hard horizon line; and banding or
+steps in the sky gradient and twilight colour. The bar is the time of day in Red Dead Redemption 2 and Horizon
+Forbidden West, in words.
+
+**What keeps it honest.** The scalar and f64 references from M1 and M2 run on the shipped graph in the workspace
+check, so a fix that pleases the eye cannot move radiance off the model.
+
+**What is out.** The west-lookout shadow crossing (M3) stays a parked spike and the exact finite-disk match (M4)
+stays deferred; both are named in the review as known and are not judged. Moon, weather and calibrated night
+colour stay outside the profile, as the first section says.
+
+**Risk.** Shadow defects have consumed days here before. If the review fails on one item twice, the builder stops
+and reports it instead of opening a new shadow method; a new method is a re-plan with its own cost account.
+

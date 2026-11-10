@@ -6,45 +6,14 @@ contracts [C04](../CONTRACTS.md#c04-feature-composition-and-quality--f2),
 and [C12](../CONTRACTS.md#c12-budgets-evidence-and-acceptance--t2-with-all-owners). Paired plan:
 [APPLE-TILE-PLAN.md](APPLE-TILE-PLAN.md).
 Commission: Thrum Core's G3t/G4 design and milestone plans (`tmp/g3t-metal-boundary/NOTES.md`).
-Reviews:
-- G3t handoff reconciliation, 9 November: independent review owed for the changed native drop/reset and dependency
-  interfaces below; earlier approvals do not approve these changes. Full G4 plan migration remains owed when G4 is planned.
-- G4 pair @ `86ec3b6b`, brief `tmp/g3t-g4-plans/reviews/g4-pair.md` (with `common.md`), report
-  `tmp/g3t-g4-plans/reviews/g4-pair-report.md`: changes required (14 required changes). Answered in revision 2; see
-  the Log.
-- Composed frame across G3t and G4 @ `86ec3b6b`, brief `tmp/g3t-g4-plans/reviews/composed-frame.md`, report
-  `tmp/g3t-g4-plans/reviews/composed-frame-report.md`: changes required (14 required changes). Answered in
-  revision 2.
-- G4 pair re-review @ `c507ad3d`, same brief, report section *Revision 2*: approve with changes (N1–N5 required,
-  N6–N8 recommended). All answered in revision 3.
-- Composed-frame re-review @ `c507ad3d`, same brief, report section *Revision 2*: approve with changes (11 of 14
-  answered; new N1–N9). Answered in revision 3.
-- Composed frame, exact-revision recheck @ `9938b0d0` (Opus 5.5 medium), brief `tmp/g3t-g4-plans/reviews/composed-frame.md`,
-  report `tmp/g3t-g4-plans/reviews/composed-frame-report.md` ("Revision 4 recheck"): approve with changes (one leftover
-  always-submitted rule, three small gaps). All applied in revision 4a.
-- Archive review of revision 5 @ `16c5d8f7` (Opus 5.5 medium), report `tmp/g3t-g4-plans/reviews/composed-frame-report.md`
-  ("Revision 5 archive review"): changes required (sizes buffer for all runtime-sized arrays, per-pipeline cook keys,
-  cache patch scope, per-device archives, sizing). All applied in revision 5a.
-- Root's review of the archive revision @ `fe1749c1` (NOTES, "Root review of the archive revision at fe1749c1"): changes
-  needed. Under the owner's direction its points are recorded as one-line outcomes in M10, to be designed when M10
-  starts (revision 7).
-
-Milestone: none started (plan awaiting re-review and seam rulings) · Updated: 2026-11-07
-Now: revision 5 replaces the archive options with the owner's direction (since 2026-11-07).
-Next: review of revision 5, Thrum Core's reading, then landing and seam rulings.
-Blocked: APPLE-TILE is parked after [two failed design reviews](../../evidence/APPLE-TILE/design-review-2.md).
-The lead has explicitly commissioned the scoped re-plan answering its seven findings; fresh independent design
-approval/unpark through the loop and delivery of each named milestone remain owed. T2 M0/M1 are done and cannot
-automatically unblock G4. M4–M9 of G3t are removed as deferred optimizations. G4 needs the retained pre-tone input
-seam and native segment, not fused SDR tone/present, compact rows, GPU overflow or shared mirrored ranges.
-COOKED-DRAW owns cooked draw.rs capability/history changes; G4 seam 3 must preserve those on integration.
-Other code commissions wait for the atmosphere graph checkpoint `d2a5342` on `codex/g3s-stars-main-wip`, for interface reads only, pending the reviewed night baseline and the exact final check on main, and Thrum Core approval of the exact seams in the
-design's *Seams* list. Some milestones have further waits:
-- M4 and M6 wait for G3t M3.
-- M8 waits for G3t M11 and independent review of its C06 whole-encoder segment.
-- D9.1's launch-to-ready split can be commissioned once G3t M0's counters exist, ahead of the rest of M9.
-- The upstream contribution (U1) does not gate V1. It follows D9.1 and the metallib and pre-warm layer, and each
-  public post waits for the owner's OK.
+Done when: [APPLE-PRESENTATION-DONE.json](APPLE-PRESENTATION-DONE.json) owns M1–M3. M4–M11 below are prose until
+they are migrated. Module list and seam rulings: [ARCHITECTURE.md](ARCHITECTURE.md#interfaces).
+Reviews: none yet through the loop; the design review of this module is owed before M1 starts. Earlier reviews are in the log.
+Milestone: M1 Jitter, matrices and motion (waiting on `APPLE-TILE:M0`) · Updated: 2026-11-10
+Now: M1–M3 migrated to the done-when file; nothing built (since 2026-11-10)
+Next: design review; M1 when `APPLE-TILE:M0` is Done; then a plan run migrates M4–M11 and settles seams 5–9.
+Blocked: M1 waits on `APPLE-TILE:M0`, M2 on `APPLE-TILE:M2`, M3 on `APPLE-TILE:M3`. Later waits are in the
+[dependency table](#parallel-work-and-dependencies-on-g3t).
 
 ## Game outcomes
 
@@ -136,7 +105,7 @@ scale steps; these are G4 integration obligations, not backward G3t prerequisite
 M1–M3 are the early in-game work on portable through public interfaces. They need G3t's proof tooling and graph
 milestones, not the boundary ruling.
 
-## M1 Jitter, matrices and motion: pending
+## M1 Jitter, matrices and motion: waiting on APPLE-TILE M0
 
 Every M1 witness runs through the current portable output, offscreen, before G3t M3: the jitter-sequence and
 record-layout unit tests (D1.1); motion-texture readback (it has `COPY_SRC`) for the static-scene zero-motion test
@@ -167,7 +136,7 @@ Work:
 - [ ] Invalid-history flag (→D1.4).
 - [ ] Motion mode in `synthetic/display.rs` and the review sequence (→D1.5).
 
-## M2 Temporal inputs and history protocol: pending
+## M2 Temporal inputs and history protocol: waiting on APPLE-TILE M2
 
 Done when:
 - [ ] D2.1 With reconstruction enabled, depth and motion are stored and sampleable, and G3t's eligibility report shows
@@ -195,7 +164,7 @@ Work:
 - [ ] Exposure resolve and p retention (→D2.3).
 - [ ] `history.rs` and `runtime.rs` acceptance changes and the pipelined tests, under seam 1 (→D2.4).
 
-## M3 TAAU at native scale in game: pending
+## M3 TAAU at native scale in game: waiting on APPLE-TILE M3
 
 This is the first in-game reconstruction on portable. It runs at the current 640×360 extent, after G3t M3, so
 TAAU's linear output feeds G3t's pre-tone input; the existing SDR transform still runs once.
@@ -425,6 +394,57 @@ requires the existing owner authorization for each public post.
 Revision 1 said 9.5–11.5 days for G4. Reviewers estimated 13–16 days.
 
 ## Log
+
+- 2026-11-10 Moved onto the loop from [the module list](ARCHITECTURE.md). M1–M3's done-when lists became items
+  D1.1–D3.5 in the done-when file with the same meaning, each with a proof. Two items were added so Chrome is
+  proved as its own target: D2.5 (the browser checker still passes with the third target) and D3.3c (the motion
+  review in Chrome, split from D3.3). The done-when file is now the authority for M1–M3; the lists below remain as
+  the builder's work breakdown. The module list accepts seams 1–4 as
+  the design proposes them, so M1–M3 no longer wait on a separate ruling. The atmosphere checkpoint `d2a5342` is on
+  main. M4–M11 stay in prose here and are migrated by the next plan run, which restates the sizing.
+- Assumption: seams 1–4 of the design are accepted as written, with the G4 builder making the motion-only edit in
+  the atmosphere shaders (seam 4) and the third forward target across contributors (seam 3) itself.
+- Assumption: M1–M3 keep the provisional reconstruction tolerance the design states (ΔE p99 at most 3, and below
+  the no-AA path), restated after M3's first run as the design says.
+- Status before this migration (7–9 November):
+  Milestone: none started (plan awaiting re-review and seam rulings) · Updated: 2026-11-07
+  Now: revision 5 replaces the archive options with the owner's direction (since 2026-11-07).
+  Next: review of revision 5, Thrum Core's reading, then landing and seam rulings.
+  Blocked: APPLE-TILE is parked after [two failed design reviews](../../evidence/APPLE-TILE/design-review-2.md).
+  The lead has explicitly commissioned the scoped re-plan answering its seven findings; fresh independent design
+  approval/unpark through the loop and delivery of each named milestone remain owed. T2 M0/M1 are done and cannot
+  automatically unblock G4. M4–M9 of G3t are removed as deferred optimizations. G4 needs the retained pre-tone input
+  seam and native segment, not fused SDR tone/present, compact rows, GPU overflow or shared mirrored ranges.
+  COOKED-DRAW owns cooked draw.rs capability/history changes; G4 seam 3 must preserve those on integration.
+  Other code commissions wait for the atmosphere graph checkpoint `d2a5342` on `codex/g3s-stars-main-wip`, for interface reads only, pending the reviewed night baseline and the exact final check on main, and Thrum Core approval of the exact seams in the
+  design's *Seams* list. Some milestones have further waits:
+  - M4 and M6 wait for G3t M3.
+  - M8 waits for G3t M11 and independent review of its C06 whole-encoder segment.
+  - D9.1's launch-to-ready split can be commissioned once G3t M0's counters exist, ahead of the rest of M9.
+  - The upstream contribution (U1) does not gate V1. It follows D9.1 and the metallib and pre-warm layer, and each
+    public post waits for the owner's OK.
+- Reviews before the loop:
+  - G3t handoff reconciliation, 9 November: independent review owed for the changed native drop/reset and dependency
+    interfaces below; earlier approvals do not approve these changes. Full G4 plan migration remains owed when G4 is planned.
+  - G4 pair @ `86ec3b6b`, brief `tmp/g3t-g4-plans/reviews/g4-pair.md` (with `common.md`), report
+    `tmp/g3t-g4-plans/reviews/g4-pair-report.md`: changes required (14 required changes). Answered in revision 2; see
+    the Log.
+  - Composed frame across G3t and G4 @ `86ec3b6b`, brief `tmp/g3t-g4-plans/reviews/composed-frame.md`, report
+    `tmp/g3t-g4-plans/reviews/composed-frame-report.md`: changes required (14 required changes). Answered in
+    revision 2.
+  - G4 pair re-review @ `c507ad3d`, same brief, report section *Revision 2*: approve with changes (N1–N5 required,
+    N6–N8 recommended). All answered in revision 3.
+  - Composed-frame re-review @ `c507ad3d`, same brief, report section *Revision 2*: approve with changes (11 of 14
+    answered; new N1–N9). Answered in revision 3.
+  - Composed frame, exact-revision recheck @ `9938b0d0` (Opus 5.5 medium), brief `tmp/g3t-g4-plans/reviews/composed-frame.md`,
+    report `tmp/g3t-g4-plans/reviews/composed-frame-report.md` ("Revision 4 recheck"): approve with changes (one leftover
+    always-submitted rule, three small gaps). All applied in revision 4a.
+  - Archive review of revision 5 @ `16c5d8f7` (Opus 5.5 medium), report `tmp/g3t-g4-plans/reviews/composed-frame-report.md`
+    ("Revision 5 archive review"): changes required (sizes buffer for all runtime-sized arrays, per-pipeline cook keys,
+    cache patch scope, per-device archives, sizing). All applied in revision 5a.
+  - Root's review of the archive revision @ `fe1749c1` (NOTES, "Root review of the archive revision at fe1749c1"): changes
+    needed. Under the owner's direction its points are recorded as one-line outcomes in M10, to be designed when M10
+    starts (revision 7).
 
 - 2026-11-09 Scoped APPLE-TILE re-plan consumer reconciliation only: G3t M3 now supplies a pre-tone colour/exposure
   seam while retaining SDR shaders/intermediate. G4 owns its EDR branch/filtering and later arithmetic qualification.
