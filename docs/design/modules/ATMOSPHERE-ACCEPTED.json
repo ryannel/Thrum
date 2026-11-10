@@ -22,12 +22,12 @@
   },
   "milestones": {
     "M5": {
-      "definitions": "b6c3641ff30045782baa7a3baa94fb1f6c4f039d3c5116b14d366d254faf6561",
+      "definitions": "462cc70d0d96c9476c5df44631a9601eb2e99ad982ce940fc6aff87d5a9aa5ae",
       "reviews": [],
       "authorised": {
         "by": "plan",
         "task": "Revise ATMOSPHERE's design and plan as docs/evidence/ATMOSPHERE/design-review.md asks",
-        "at": "2026-11-10T22:38:33Z"
+        "at": "2026-11-10T23:39:35Z"
       }
     },
     "M6": {
@@ -48,11 +48,15 @@
     {
       "task": "Revise ATMOSPHERE's design and plan as docs/evidence/ATMOSPHERE/design-review.md asks",
       "at": "2026-11-10T22:38:33Z"
+    },
+    {
+      "task": "Revise ATMOSPHERE's design and plan as docs/evidence/ATMOSPHERE/design-review.md asks",
+      "at": "2026-11-10T23:39:35Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-10T22:38:33Z"
+    "at": "2026-11-10T23:39:35Z"
   },
   "design_history": [
     {
