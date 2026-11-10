@@ -55,7 +55,7 @@
     {
       "id": "M2",
       "name": "The cooked valley presents smoothly on built-in ProMotion",
-      "state": "open",
+      "state": "blocked",
       "fails": 0,
       "replans": 4,
       "bar": "Coherent slow camera motion fit for a shipped high-end game in the cooked noon valley, reviewed at 1x from exact submitted engine output. Unattended elapsed-time runtime motion and attended built-in ProMotion cadence are separate required proofs. Record local holds and investigate visible hitches; no numeric performance threshold is a gate.",
@@ -107,7 +107,8 @@
       ],
       "needs": [
         "T2-CAPTURE:M0"
-      ]
+      ],
+      "blocked": "Unlock the local console and leave the built-in panel awake to resume the attended trace."
     },
     {
       "id": "M3",
