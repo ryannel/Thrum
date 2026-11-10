@@ -1,0 +1,36 @@
+{
+  "action": "restored pre-existing boot state after shared CoreSimulatorService reset",
+  "devices": [
+    {
+      "dataPath": "/Users/ryannel/Library/Developer/CoreSimulator/Devices/47494973-E92C-4194-9DE7-3C557951B608/data",
+      "dataPathSize": 4376616960,
+      "logPath": "/Users/ryannel/Library/Logs/CoreSimulator/47494973-E92C-4194-9DE7-3C557951B608",
+      "udid": "47494973-E92C-4194-9DE7-3C557951B608",
+      "lastUsedAt": "2026-11-10T00:15:34Z",
+      "isAvailable": true,
+      "logPathSize": 438272,
+      "deviceTypeIdentifier": "com.apple.CoreSimulator.SimDeviceType.iPhone-18-Pro",
+      "state": "Booted",
+      "name": "iPhone 18 Pro"
+    },
+    {
+      "dataPath": "/Users/ryannel/Library/Developer/CoreSimulator/Devices/90298BEA-DAD1-4972-98AC-6E65ADE5FF1F/data",
+      "dataPathSize": 4273364992,
+      "logPath": "/Users/ryannel/Library/Logs/CoreSimulator/90298BEA-DAD1-4972-98AC-6E65ADE5FF1F",
+      "udid": "90298BEA-DAD1-4972-98AC-6E65ADE5FF1F",
+      "lastUsedAt": "2026-11-10T00:15:35Z",
+      "isAvailable": true,
+      "logPathSize": 495616,
+      "deviceTypeIdentifier": "com.apple.CoreSimulator.SimDeviceType.iPhone-13",
+      "state": "Booted",
+      "name": "Thrum I1 iPhone 13"
+    }
+  ],
+  "scope": "boot state restored; previous in-app session state is not recoverable",
+  "initial_integration": "480bcff3014140737548c16e907f360127e91c0b",
+  "integration_result": {
+    "result": "LANDED",
+    "detail": "480bcff3014140737548c16e907f360127e91c0b",
+    "commit": "480bcff3014140737548c16e907f360127e91c0b"
+  }
+}

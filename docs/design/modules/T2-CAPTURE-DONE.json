@@ -147,7 +147,7 @@
     {
       "id": "M2",
       "name": "iOS simulator engine motion without desktop capture",
-      "state": "open",
+      "state": "claimed",
       "fails": 0,
       "replans": 1,
       "needs": [

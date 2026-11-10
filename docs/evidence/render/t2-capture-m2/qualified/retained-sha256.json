@@ -5,7 +5,7 @@
   "driver-measured.py": "5148399773ed788dc16f9265c6e63a59743804ffbb02e52af72c665d43463d0f",
   "check-full.log.gz": "d562aeef292aca1dca9fd31e0c991b817570a88ca95a08e68fddbbeeac1788f6",
   "superseded-closeout.json": "5ae2ade45c549cc043debae82f3194e7f6e3e1bd8bd6da06854bd69522c35814",
-  "README.md": "814045decaeaaa80217e92c35a6a8dee6c060e3d2389e473642d80fb13d318ab",
+  "README.md": "1e6a6d2862c5d246aad190833fac3bca16fe9f2276f9e2730684882469ba643c",
   "capture-tests-final.log.gz": "c6060725999e22a5a69ec8a8f8d8ed4c11c526f2918371e51e482435007d0080",
   "build-control.log.gz": "bb75510f9694aab4b79880103831754ae60cbc3e7588dd49bd93678d06b964f7",
   "inspection-list.md": "e592a22118f400f672d271277e4c24f8f45b64589596ca3fa7ac262bfae8ed5b",
@@ -229,5 +229,6 @@
   "sessions/07-background/capture/pending.json.gz": "92b97fed64c4a30ce97f1d637f6cc3416074f8a708d0b32a9a72325ebe1a120b",
   "sessions/07-background/retired/identity.json.gz": "e3e987a76d327ae11ea70d7896cef8b329918f5501e171b52332b6914d342498",
   "sessions/07-background/retired/runtime.json.gz": "00db5d565ffc4fcab769ec6bf1ca253a2b2407acd8e77e6532751efe687f680d",
-  "sessions/07-background/retired/pending.json.gz": "9cd10abfb085c82f3cd68053c07edccbc7eadb932ff512600fe68291d8f8f35c"
+  "sessions/07-background/retired/pending.json.gz": "9cd10abfb085c82f3cd68053c07edccbc7eadb932ff512600fe68291d8f8f35c",
+  "simulator-restoration.json": "09b4d75021ae13c4af890a46a3352218430b45bc6b16f7d25eba50fe91216200"
 }
