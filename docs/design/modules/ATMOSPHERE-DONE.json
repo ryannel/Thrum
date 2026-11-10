@@ -1,0 +1,160 @@
+{
+  "module": "ATMOSPHERE",
+  "milestones": [
+    {
+      "id": "M5",
+      "name": "Other modules read the one sky and Sun, and one cloud optical depth dims direct sunlight once",
+      "state": "open",
+      "fails": 0,
+      "replans": 0,
+      "bar": "Cloud shade crossing a landscape as in Red Dead Redemption 2 or Horizon Forbidden West: the patch dims direct sunlight only, moves in world space, agrees on every lit surface and leaves the shaded ground sky-lit, never black. The diagnostic pattern is a stand-in, so its shape and softness are not judged here. With no cloud source the scene and its cost are exactly what they were.",
+      "items": [
+        {
+          "id": "M5.1",
+          "statement": "Each frame every scene contribution is lent one environment identity: source epoch and simulation time, and the true Sun (geometric direction, raw perpendicular illuminance, colour, angular radius, no attenuation applied) kept apart from the apparent surface light. The epoch changes when the sky model, air profile or a LUT generation changes, and not when only time advances.",
+          "check": "./dev check",
+          "lock": "gpu",
+          "ask": "Do tests in ./dev check cover an epoch change on profile change and on device replacement, no change across a time scrub, and the true Sun staying continuous through sunset while the apparent surface light fades? Is the identity produced in one place and only read elsewhere?",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M5.2",
+          "statement": "Through the lent bind-group layout and WGSL library alone, a contribution's own pipeline evaluates Sun transmittance to a world position, sky radiance along a direction, incident diffuse and aerial (T,S) for a view segment, and each matches the f64 atmosphere reference within the tolerance the M1 referees already use, on Metal.",
+          "check": "./dev check",
+          "lock": "gpu",
+          "ask": "Read the referee test. Does its contribution use only the lent layout and library, with no private access to atmosphere internals or chart layouts, and does it compare against the independent f64 reference rather than against the forward pass's own output?",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M5.3",
+          "statement": "The same lent lookups give the same answers in Chrome on hardware WebGPU, within the same tolerance.",
+          "check": "node scripts/check_v1_browser.mjs --case environment",
+          "lock": "gpu",
+          "target": "chrome-webgpu",
+          "status": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M5.4",
+          "statement": "With no optical-depth provider, the composed forward shader text and the route stills are byte-identical to the recorded base commit on the Mac, and no texture, binding, pass or per-frame write is added.",
+          "check": "python3 scripts/environment_products.py off-parity --target mac-metal",
+          "lock": "gpu",
+          "ask": "Read scripts/environment_products.py. Does off-parity render the base commit and the claimed commit from one cooked store through the engine tap, compare bytes with no tolerance or mask, and include a same-build rerun control and a negative control that must fail?",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M5.5",
+          "statement": "The same holds in Chrome: with no provider the route stills are byte-identical to the base commit in one browser session.",
+          "check": "python3 scripts/environment_products.py off-parity --target chrome-webgpu",
+          "lock": "gpu",
+          "target": "chrome-webgpu",
+          "status": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M5.6",
+          "statement": "A registered provider's optical depth multiplies direct sunlight by exp(-tau) exactly once on every direct-Sun receiver (terrain, synthetic instances, cooked meshes, the cooked volume) and changes nothing else: sky light, emission and geometric shadow are unchanged, and toggling the provider resets only the history it must.",
+          "check": "./dev check",
+          "lock": "gpu",
+          "ask": "Do GPU tests show a uniform tau of ln 2 halving the direct term, and only the direct term, on each receiver kind, and tau of zero matching no provider? Is exp(-tau) applied in the one shared direct-Sun function rather than per receiver or on final colour?",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M5.7",
+          "statement": "In the V1 valley on the Mac with the diagnostic provider on, shade patches cross terrain, instances and cooked meshes together in world space at the declared drift; shaded ground stays sky-lit and is not darkened again inside geometric shadow; the boundary lines up across receiver kinds.",
+          "inspect": "Capture the valley at noon and at low Sun with the Mac real-time engine capture, provider off then on, with a slow pan. Look at whole frames and native-size crops of: a patch edge crossing from terrain onto a cooked mesh, shaded ground beside sunlit ground, a patch passing over ground already in a ridge's shadow, and the same world point over two seconds of drift.",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M5.8",
+          "statement": "The same shade reads the same way in Chrome on the valley at noon and low Sun.",
+          "inspect": "Capture the same four views with Chrome fixed-time capture and a short real-time sequence. Compare each with the Mac capture for the placement and depth of shade and for any receiver that disagrees.",
+          "target": "chrome-webgpu",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M5.9",
+          "statement": "Cost is recorded, not gated: forward GPU time and whole-frame time on the valley, paired and order-alternated with the provider off and on, and each forward pipeline's sampled-texture count with the provider on against the adapter's limit on Mac and Chrome.",
+          "check": "python3 scripts/environment_products.py cost --target mac-metal",
+          "lock": "gpu",
+          "ask": "Are the paired figures recorded with build, load class and order and labelled as observations? Is every forward pipeline within the sampled-texture limit read from the capability record on both targets, with the count stated?",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": ""
+        }
+      ]
+    },
+    {
+      "id": "M6",
+      "name": "The valley's sky and sunlight pass the route in motion on Mac and Chrome, and G3s closes",
+      "state": "open",
+      "fails": 0,
+      "replans": 0,
+      "needs": ["APPLE-PRESENTATION:M3"],
+      "bar": "Time of day as in Red Dead Redemption 2 or Horizon Forbidden West: colour that moves continuously through dawn, noon, sunset, twilight and night, shadows that sit on the ground without acne or steps, and a horizon that reads as distance. Judged in words from the running game with reconstruction on, never against a target image. The parked west-lookout crossing and the deferred exact disk match are known and not judged.",
+      "items": [
+        {
+          "id": "M6.1",
+          "statement": "On the Mac, on the six-stop route and a continuous dawn-to-night scrub with slow pans, a clean-context reviewer finds none of: a horizontal brightness step across the ground, a flat near ridge with a hard bright rim at low Sun, a ridge lit warm with the Sun behind it, missing object shadows at sunrise, shadow acne at low Sun, a hard horizon line, or banding in the sky gradient and twilight.",
+          "inspect": "Capture the route stops as fixed-time stills and the scrub and pans with the Mac real-time engine capture, TAAU on. Judge each named defect at every stop in whole frames and native-size crops, and in motion at 1x. Leave out only the 17.40 to 17.80 h west-lookout crossing.",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M6.2",
+          "statement": "The same review passes in Chrome on the same route and scrub.",
+          "inspect": "Capture the same stops and scrub with Chrome fixed-time and real-time capture, TAAU on. Judge the same list, and note any stop where Chrome and the Mac differ in more than texture profile.",
+          "target": "chrome-webgpu",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M6.3",
+          "statement": "On the shipped graph, sky and aerial radiance, receiver Sun illuminance and twilight colour still match their scalar and f64 references within the tolerances this design declares, on Metal and in Chrome.",
+          "check": "./dev check",
+          "lock": "gpu",
+          "ask": "Which referees run on the shipped graph rather than a test-only variant, and did any tolerance, reference or test change in this milestone? If one did, is the change justified by the model and not by the image?",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M6.4",
+          "statement": "Whole-frame and atmosphere pass costs on the route are recorded paired against the M1 and M2 records, and any visible hitch during the scrub is investigated and explained.",
+          "ask": "Are the costs paired, labelled for load and compared with the earlier records without a budget claim, and does the evidence name the cause of each hitch seen in the scrub or state that none was seen?",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M6.5",
+          "statement": "The maturity ledger's G3s rows state implementation, correctness, visuals and device separately, and name what is not qualified: the west-lookout crossing, the exact disk match, Moon, weather, calibrated night colour and physical display cadence.",
+          "ask": "Do the ledger rows and the build plan's G3s line match the evidence, with the known defects listed and nothing claimed for a physical iPhone?",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": ""
+        }
+      ]
+    }
+  ]
+}

@@ -13,6 +13,13 @@ It answers the three independent reviews of revision 1
 (`86ec3b6b`) and the re-reviews of revision 2 (`c507ad3d`) recorded in the plan. Interface and path names below are
 proposals.
 
+**The owner's request.** The V1 exit in [the build plan](../../BUILD-PLAN.md#goal-and-exit-rule) asks for "MetalFX,
+EDR and a quality governor" and gate G4 for "No pipeline compilation during play." The 10 November planning task
+that put this module on the loop says, word for word: "The owner wants work lined up continuously toward the V1
+exit in docs/BUILD-PLAN.md, so builders always have a next milestone". [The module list](ARCHITECTURE.md) places
+this module and accepts seams 1–4 below as proposed; M1–M3 are in [the done-when file](APPLE-PRESENTATION-DONE.json)
+and M4–M11 are migrated next, when seams 5–9 are settled.
+
 ## Purpose and scope
 
 The V1 valley should:

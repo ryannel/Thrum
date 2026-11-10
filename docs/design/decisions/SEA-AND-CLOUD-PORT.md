@@ -83,6 +83,14 @@ ping-pong history, automatic timestamps and immutable device capabilities exist.
 Historical Broadsides Mac observations were about 22 ms whole-frame sea at 1440p and 20 ms / 365 MiB clouds at 1080p.
 They qualify no Thrum recipe, physical iPhone result or visual acceptance. Re-measure each reviewed module here.
 
+## Planning, 10 November
+
+The owner asked for both to be finished and consolidated. [The module list](../modules/ARCHITECTURE.md) plans them
+as two Thrum modules, `SEA` and `CLOUDS`, finished here and not in Broadsides, and names the milestone that meets
+each readiness condition above ([table](../modules/ARCHITECTURE.md#where-the-ports-readiness-conditions-are-met)).
+Their briefs are [SEA-BRIEF](../modules/SEA-BRIEF.md) and [CLOUDS-BRIEF](../modules/CLOUDS-BRIEF.md). When builders
+start them is still the owner's decision, and the reference commits in those briefs supersede the two above.
+
 ## Porting policy
 
 Port module by module only when the owner schedules it. Keep the foundation converging on the readiness above; no automatic import at G7 and no Broadsides build dependency.
