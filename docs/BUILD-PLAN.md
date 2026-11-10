@@ -167,6 +167,9 @@ function/visual/device evidence separate, one compact page per gate. Shrink plan
 
 ## After V1 and parked work
 
+**Next goal after V1:** [a swarm-survival test game](design/NEXT-GOAL-SWARM-GAME.md), with 2D support and online
+multiplayer built up towards it. Owner, 10 November 2026.
+
 Teaching demos follow, chosen individually: cloud formation, water and others under the [port decision](design/decisions/SEA-AND-CLOUD-PORT.md).
 Transport reopens after V1: compact wire, Quinn, clock sync, relevance/prediction and four rendered peers under conditioning.
 Android/desktop-high recipes and physical iPhone runs follow on suitable hardware. A dedicated AI performance phase
