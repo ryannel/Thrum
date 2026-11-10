@@ -1,21 +1,25 @@
 # CREATOR design review
 
-Reviewed integrated revision `4bbe44a433598650be47c1753c57da79f5d1df93` on 10 November 2026.
+Reviewed integrated revision `d64769fed5b9c5d1f3e4927db9fe269b9269f3de` on 10 November 2026.
+Previous design review: revision `4bbe44a433598650be47c1753c57da79f5d1df93`.
 Result: **changes requested — one blocking finding**.
 
 ## Request and review scope
 
 I read the complete, sole entry in `CREATOR-ACCEPTED.json.briefs`, including its project-level planning request,
-before comparing CREATOR's design and criteria. There is no previous CREATOR design review to resolve.
+before comparing CREATOR's design and criteria. There are no re-plan or retry briefs in this checkout.
+I started from the previous review and independently checked its blocking finding against the current design
+and timing producers.
 The request requires startable work toward the existing V1 exit, preserving the in-flight Mac and APPLE-TILE
 definitions. For CREATOR, the build plan and architecture brief require reusable creator scenes, native/browser
 typed demo UI, hot reload, a profiler, and a fresh agent making a small scene from public documentation alone.
 Sea/cloud implementation, port scheduling and the completeness of their separate designs are outside this review.
 
-Read: ORCHESTRATE, the review skill and its calibration examples, Thrum's review rules and graded examples,
-the build plan, relevant architecture-brief requirements, the module list, the G6 decision, creator guide,
-CREATOR design/plan and all 15 done-when items, C11/C12, and the web-shell boundary plan. No plans-folder
-BRIEF.md or GLOSSARY.md was present. I then inspected the timing producers and shell consumers named below.
+Read: ORCHESTRATE, the requested review skill at version 1.6.2 and its calibration examples, Thrum's review
+rules and graded examples, the complete CREATOR design/plan and all 15 done-when items. I also read the relevant
+sections of the build plan, architecture brief, module list, G6 decision, creator guide, C11/C12 and web-shell
+boundary plan. No plans-folder BRIEF.md or GLOSSARY.md was present. I inspected the timing producer and shell
+consumer code named below.
 I did not review the entire engine or certify its existing implementation. No other agents were launched.
 
 Inspection questions, set before the source inspection:
@@ -29,6 +33,19 @@ Inspection questions, set before the source inspection:
 
 This is a design and interface review. No runtime, visual-quality or device-performance pass is claimed, and no
 captures were necessary. The referenced source is evidence about the proposed mechanism, not a milestone verdict.
+
+## Previous findings and revision check
+
+- **F1: unresolved.** The read-only profiler scope and all three producer limitations remain. The source checks
+  below independently confirm them; no producer interface, ownership agreement or sequencing resolution was added.
+- **S1: unchanged Suggestion.** The proposed load toggles and interpretation of coupled costs remain unspecified.
+- **S2: unchanged Suggestion.** The newcomer exercise still needs launch ordering ahead of normal reviewer reading.
+- **S3: unchanged Suggestion.** M3.4 still assigns the drag and saves to a person instead of separating setup from actions.
+
+`git diff 4bbe44a43359 HEAD` contains only review reports and their accepted-record updates. There are no changes
+to CREATOR's design, plan or item definitions, the shared contracts, or implementation. All 15 items were reread;
+none was weakened or sharpened. There is no new blocking finding in this round. F1 below retains its original
+scope and resolution rather than adding a new refinement.
 
 ## Must Fix
 
@@ -135,7 +152,7 @@ All done-when items were assessed for judgeability and plausible substitutes:
 No done-when fields or other design files were changed. Approval here would concern the design only; it would not
 promote implementation, visual or device maturity.
 
-Validation: `./dev check-docs` passed (614 Markdown files, 2,781 local links, 30 module records, crate policy and
-current design hashes). The worktree contains only this new review; no captures or implementation edits were made.
+Validation: `./dev check-docs` passed (616 Markdown files, 2,802 local links, 30 module records, crate policy and
+current design hashes). Only this review is changed; no captures or implementation edits were made.
 
 DESIGN CHANGES: 1 blocking findings
