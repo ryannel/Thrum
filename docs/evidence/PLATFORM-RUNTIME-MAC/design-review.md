@@ -1,41 +1,51 @@
 # PLATFORM-RUNTIME-MAC design review
 
-9 November 2026. Reviewed revision `d0f8c09940651867afb9383be9d74133308e5701`, including the complete Mac plan migration diff and the new done-when file. No findings requiring design changes.
+10 November 2026. Reviewed integrated revision `9d6c6f6fcdd0b7ad533cce994a01f9567ab33887` under the review-milestone design-review procedure. No blocking or advisory design findings.
 
-This is a design and acceptance-criteria review under `review-milestone`, not a new milestone verdict. No agents were launched. No runtime, recording or device qualification was performed, and no historical pass was independently re-awarded here. The done-when file and design remain unchanged.
+## Previous round
 
-## Commission and scope
+The previous review, dated 9 November against `d0f8c09940651867afb9383be9d74133308e5701`, ended DESIGN OK and raised no blocking findings. There are therefore no outstanding blocking findings to resolve. This review checks the consolidated design and revised acceptance definitions, including console witnesses, current-path M2, windowed capture, bounded trace diagnosis and post-G3t M3.
 
-The requirements come from the build plan's purpose, V1 exit and G3b row, the architecture brief's platform requirements, C02/C06/C07, and the Mac plan's design-review brief. The Mac commission is to qualify the existing bounded frame runtime in the cooked game: survive held-drawable device destruction in the same world/window, retain explicit running or paused authority policy, restore controls and composition, and observe slow camera motion and attributable presentation on the built-in ProMotion panel.
+## Requirements and scope
 
-The design must preserve one world clock, platform surface/device ownership and renderer submission/history ownership. Display callbacks, queue calls, GPU completion, video timestamps and attributed display swaps must remain distinct. Native recording, reconstruction/governor work, sibling platform qualification and physical iPhone timing have separate owners. Numeric performance figures are observations under the owner's performance decision.
+The commission comes from the build plan's purpose, V1 exit and G3b requirements, the architecture brief, the shared platform runtime design and C02/C06/C07/C12. The plan's embedded review brief adds the held-drawable recovery and observation boundaries. These require the same cooked game, world, window and controls to survive graphics loss, explicit running or paused authority policy, coherent slow input-driven camera motion, and attributable built-in-panel presentation observations.
 
-The Mac plan was the first module-specific document read; its review brief is embedded after its proposed design. This was a review of an existing qualification design and migration, not a blind technique-selection exercise. I read the requirements and shared governing documents before judging the JSON items, then consulted the historical evidence records. I had no builder discussion or expected verdict.
+The requirements imply one authoritative clock, platform-owned surface/device recovery and renderer-owned submission/history. A successful queue call, GPU completion, engine movie or display-link callback cannot alone establish displayed cadence. Browser/iOS qualification, G3t mechanisms, G4 reconstruction and physical-device timing retain their own owners. Numeric performance results are observations, while visible hitches require investigation.
+
+I read these governing requirements before assessing the revised Mac design and all done-when items. The module has no separate brief file. Its review brief is embedded in its plan. This is a review of an existing qualification design, with exposure to its prior review and scoped implementation, rather than a blind technique-selection review.
 
 ## Design assessment
 
-The ownership model is coherent. The shared platform design and bounded-frame-host decision put tick admission in `ClockedWorld`/`WorldLane`, surface configuration/acquisition and device reconstruction in the Mac render actor, and frame slots/submission/history in `FrameHost`. The scoped code read supports those seams: `display_link.rs` only delivers target timestamps; `render_actor.rs` encodes before acquisition, checks observed loss around acquisition, abandons lost encoded work and publishes a prepared newer device; `recovery.rs` tracks device attempts separately from world lifecycle. The normal game edit handler applies camera changes through the host, and the shipped yaw control has the planned 0.05° step.
+The design preserves the governing ownership boundaries. AppKit supplies display targets and window identity. The world clock/lane owns authority. The render actor owns late acquisition, surface epochs and serialized replacement. FrameHost owns GPU admission, slots, submission and submitted history. The scoped source read of `display_link.rs`, `render_actor.rs` and `recovery.rs` supports those seams, including loss checks around acquisition and explicit encoded-frame abandonment. The design confines the recovery claim to observed loss and the specified injection, with unchanged-world and same-build image controls.
 
-The recovery mechanism and proof distinguish an unchanged paused image from a working restored game. The arm-disabled diagnostic supplies an exact same-build image control, while running-authority events, queue-call auditing and composited post-replacement input response address different failure modes. The proposed Ground E image supplies composition context rather than an independent exact pixel oracle. The scope is observed injected destruction, not proof of every possible hardware loss race.
+The revised unattended proof is consistent with T2 and C12. Actual monotonic elapsed time drives the ordinary semantic input and renderer paths, while a paused world retains authority. Complete submitted source frames and joins prevent endpoint redraws or a fixed-step movie from standing in for runtime motion. Console observations accept either state and transitions. Denied attributed launcher/driver preflights establish the separately stated capture-independence proof.
 
-The cadence mechanism is a qualification hypothesis with an explicit refusal condition. A readable, app-attributed Game Performance swap stream joined to the full pan would answer the stated observation; a display-link callback, present call, ScreenCaptureKit timestamp or historical trace would not. The plan explicitly leaves cadence open if attribution, export or alignment fails. The three failed trace attempts do not become positive evidence or a numeric performance gate. No raw drawable bridge or replacement rendering backend is introduced.
+The current harness still checks `locked_permission_unavailable_qualified` in `scripts/capture_mac_m2_ungranted.py`, and `scripts/capture_v1_runtime.py` still lacks the commissioned driver after-run permission preflight. These are explicitly identified implementation work in the design and plan. M2.1 is open and requires a fresh run after correction, so the design does not convert that unfinished work into an accepted capability. The earlier locked-run pass retains only its historical scope.
 
-## Done-when audit
+M2.3 commissions qualification of the existing renderer tap on the actual window. Its known-pattern correspondence, producer/submission binding, pending-readback loss, stale-generation refusal and disabled-path checks cover the important integration risks. The runbook explicitly says an offscreen pattern test alone cannot pass the live-window item. Capture retains T2's bounded resources and the existing executor.
 
-| Item | Can a later reviewer judge it? | Convincing substitute it excludes |
-| --- | --- | --- |
-| M0.1 | Yes. Read named contracts/designs, follow owners and verify the build-plan link. | A second world clock, rival submission owner or an unsupported presentation claim. |
-| M1.1 | Yes. Inspect source boundaries and same-build raw event/audit records for all three rows, device generations, PID/window, acknowledged policy and tick ordering. | Restarting the process, pausing running authority, or ignoring empty old-queue submissions. |
-| M1.2 | Yes. Full paused RGBA comparison plus normal-speed transition and input-response inspection, with capture gaps disclosed. | A static restored screenshot, a partial image comparison or a present call standing in for visible interaction. |
-| M2.1 | Yes. Matched manifests, full sweep and endpoint holds, normal input route and content/log comparison constrain the motion judgment. | A fine-looking still, partial/slow playback, mismatched builds or authored yaw steps mistaken for pacing. |
-| M2.2 | Yes, if fresh readable attributed trace data exists; otherwise it cannot pass. Numeric Swap Time, process/display identity and correlated pan markers define the required evidence. | VSync, recording PTS, app submissions or an old trace presented as current displayed cadence. |
+M2.4 treats trace finalization as an unresolved tooling hypothesis with a refusal outcome. The changed hypothesis, two-attempt total allowance, finite recording/finalization/export limits and owned-process cleanup bound the investigation. The runbook conservatively charges the two matched traced arms against that allowance. A readable export still needs app/window attribution and a valid full-pan clock join. Neither an existing trace directory nor the historical swap stream can pass.
 
-The JSON preserves the substantive pre-migration criteria. M0/M1 remain historical completed work; M2 remains in progress with its cadence item open. M2.1 explicitly limits its carried pass to `0d53d3aa` and requires later-build corroboration before extending it. The resume evidence specifies three-view offscreen parity followed by an untraced live pan; image parity alone cannot extend a motion verdict. A future cadence run must satisfy M2.2's matched-run and pan-attribution requirements rather than borrowing the old motion result for a different workload.
+M2.2 uses capture OFF for its shipping cadence observation and matched ON arms for content and observer cost. AppKit controls, build/content/recipe matching, numeric swap times and calibrated attribution constrain the observation. M3 repeats the complete proof after APPLE-TILE M3 changes the assembly. Current-path M2 can proceed independently, and the later delivery dependency does not create a cycle.
 
-The items use `ask` and `inspect` rather than command checks. That is judgeable here because they require concrete source boundaries, raw logs/readbacks, complete recordings and a trace; the reviewer must answer those questions from the artifacts, not accept the evidence summaries. Historical records were read only to check migration scope and revision limits. Their recordings and raw scratch inputs were not re-reviewed.
+## Acceptance-item audit
+
+The prospective inspection list used for this design review was ownership and loss ordering, authority policy, full motion coverage and provenance, console/permission independence, real-window correspondence and lease lifetime, disabled observer work, bounded trace failure, swap attribution/timebase joins, and post-change requalification. These are design inspection questions. Runtime images and motion were not inspected in this review.
+
+| Item | Judgeability and convincing substitutes excluded |
+| --- | --- |
+| M0.1 | Named contracts, owners and build-plan link permit a concrete boundary audit. It excludes rival clocks and unsupported physical-presentation claims. |
+| M1.1 | Same-binary diagnostic rows, raw queue audit, PID/window identity, acknowledgements and tick ordering distinguish retained authority from restart or implicit pause. |
+| M1.2 | Full RGBA equality plus normal-speed composited post-recovery response distinguishes intact recovery from a frozen image or a present-call log. |
+| M2.1 | Full-resolution elapsed-time sources, holds, yaw/submission joins, denied preflights and explicit console policy are judgeable. Capture omissions refuse the interval. Static parity and historical passes cannot substitute. |
+| M2.2 | Matched arms, fresh numeric app/window/display swaps and a calibrated full-interval join are judgeable when available. Ambiguous exports or anchors leave it open. Capture-on observations cannot qualify shipping cadence. |
+| M2.3 | Source tracing, real-Metal checks and actual-window pattern/replacement inspection jointly establish producer correspondence, lease ownership, cancellation and the disabled direct path. Offscreen-only evidence cannot pass. |
+| M2.4 | Hypothesis and durable attempt records, deadlines, fresh exports and attribution make both success and blocked outcomes observable. Tool completion alone cannot close cadence. |
+| M3.1 | Incorporates every M2.1 proof on a fresh integrated post-G3t build with source/shader/content/recipe identity. Earlier output cannot qualify it. |
+| M3.2 | Incorporates the full M2.2 observer protocol and revalidates M2.3/M2.4 on that build. Functional-window logs and earlier traces cannot substitute. |
 
 ## Limits and verdict
 
-This review covers the Mac qualification design, its governing lifecycle boundaries and all five acceptance items. It does not approve the entire platform-family roadmap, revalidate the implementation, close the current-build corroboration work or establish displayed cadence. The runtime pause and parked trace-finalization investigation remain as recorded.
+This review assesses design and proof sufficiency. It does not re-award historical milestone verdicts or establish current implementation correctness, motion quality, window correspondence or panel cadence. No runtime, GPU recording, permission change or trace attempt was performed. No agents were launched. Only this review file was changed.
 
 DESIGN OK

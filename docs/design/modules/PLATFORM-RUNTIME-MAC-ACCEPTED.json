@@ -3,8 +3,20 @@
   "adopted": true,
   "design": {
     "verdict": "ok",
-    "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "by": "adopted"
+    "review": "docs/evidence/PLATFORM-RUNTIME-MAC/design-review.md",
+    "commit": "9d6c6f6fcdd0b7ad533cce994a01f9567ab33887",
+    "hash": "62f9cfc194cb7b91694f8525389d7d981daa7bbd85383ca0fd7f88e9ffe48892",
+    "by": "review",
+    "host": "codex",
+    "model": "gpt-6.1-sol",
+    "effort": "medium",
+    "observed": {
+      "model": "gpt-6.1-sol",
+      "effort": "medium"
+    },
+    "cli": "codex-cli 0.167.0-alpha.3.2",
+    "path": "visible",
+    "at": "2026-11-10T15:24:21Z"
   },
   "milestones": {
     "M0": {
