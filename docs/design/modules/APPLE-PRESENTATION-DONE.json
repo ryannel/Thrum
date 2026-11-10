@@ -81,7 +81,9 @@
           "ask": "Does the eligibility report from APPLE-TILE M1 list depth and motion as stored only when a reader exists, and is the disabled path's attachment storage unchanged from before this milestone?",
           "target": "mac-metal",
           "status": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "D2.2",
@@ -91,7 +93,9 @@
           "ask": "Does every forward drawer declare the third target, including the cooked direct and indirect paths with their COOKED-DRAW selection and history rules intact, and does the star pass attach and declare access to every target its shader writes? Does a contribution get the target through the contribution seam rather than a private binding?",
           "target": "mac-metal",
           "status": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "D2.3",
@@ -101,7 +105,9 @@
           "ask": "Does a test change the storage scale between two frames and show the history sample rescaled correctly rather than reinterpreted?",
           "target": "mac-metal",
           "status": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "D2.4",
@@ -111,7 +117,9 @@
           "ask": "Read the pipelined tests. Is each of the six clauses asserted separately on the real frame host, are the cancelled-acquisition and background-drop cases counted in the proof log, and does the existing presentation-drop contract behave as before?",
           "target": "mac-metal",
           "status": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "D2.5",
@@ -121,7 +129,9 @@
           "ask": "Read the temporal case. Are the reactive and motion values taken from frames the page submitted, not from a side render or a declaration? Is the unsubmitted view abandoned at the latest point the browser frame path allows, with the predecessor identity read from the state the previous matrices are packed from? Would a reactive target that is never written, and history advanced before submission, each fail a row?",
           "target": "chrome-webgpu",
           "status": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "D2.6",
@@ -131,7 +141,9 @@
           "ask": "Do GPU tests drive the witness fixture through the real forward and star passes, read the reactive target back, and assert each of W1-W5 against the expected values in the fixture definition that the Chrome case also reads?",
           "target": "mac-metal",
           "status": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "D2.7",
@@ -140,7 +152,9 @@
           "lock": "gpu",
           "target": "chrome-webgpu",
           "status": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         }
       ]
     },
@@ -163,7 +177,9 @@
           "ask": "Is the reconstructor resolved from the registry with TAAU as the portable default, and does its output enter only through the pre-tone input APPLE-TILE M3 delivered, with no second tone or exposure step?",
           "target": "mac-metal",
           "status": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "D3.2",
@@ -173,7 +189,9 @@
           "ask": "Read the reconstruction arm. Is the reference accumulated by a separate mode from the TAAU path it judges, with the held state checked and not assumed? Is the difference the design's CIEDE2000 over the whole frame without masks, against the bound the design states? Does a deliberately broken TAAU (history disabled) fail?",
           "target": "mac-metal",
           "status": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "D3.3",
@@ -203,7 +221,9 @@
           "ask": "Does the cut arm compare the post-cut frame with an independently reset render, and does a control with the reset suppressed fail?",
           "target": "mac-metal",
           "status": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "D3.5",
@@ -211,7 +231,9 @@
           "ask": "Is the timing a paired on/off record on the route at the stated extent, labelled for load, and is it kept from being read as the 1080p figure the design estimates?",
           "target": "mac-metal",
           "status": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         }
       ]
     }
