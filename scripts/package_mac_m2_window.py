@@ -59,6 +59,7 @@ def joins(surface, requests, images, hashes):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', required=True, type=Path)
+    parser.add_argument('--verify-only', action='store_true')
     args = parser.parse_args()
     output = args.output.resolve()
     surface = table(output / 'surface.tsv')
@@ -71,12 +72,30 @@ def main():
     retirements = table(output / 'retirements.tsv')
     if missing and not retirements:
         raise ValueError('continuous interval omitted submitted images')
+    selected_ids = {records[0]['submission_id'], records[-1]['submission_id']} if records else set()
+    for retirement in retirements:
+        stamp = int(retirement['origin_ns'])
+        before = [row for row in records if row['submit_ns'] < stamp]
+        after = [row for row in records if row['submit_ns'] > stamp]
+        if before:
+            selected_ids.add(before[-1]['submission_id'])
+        if after:
+            selected_ids.add(after[0]['submission_id'])
     frame_dir = output / 'png'
     frame_dir.mkdir(exist_ok=True)
+    environment = json.loads((output / 'environment.json').read_text())
+    pattern_digest = None
+    if environment.get('THRUM_MAC_PATTERN') == '1':
+        expected = bytes(channel for y in range(1080) for x in range(1920)
+                         for channel in (x % 251, y % 241, (x // 251 + y // 241 * 17) % 239, 255))
+        pattern_digest = hashlib.sha256(expected).hexdigest()
+        if any(digest != pattern_digest for digest in hashes):
+            raise ValueError('window tap differs from the independent channel/row oracle')
     for record, raw in zip(records, decoded_frames(output / 'frames.zst', 'ZstdDelta', hashes), strict=True):
         if len(raw) != FRAME_BYTES or hashlib.sha256(raw).hexdigest() != record['rgba_sha256']:
             raise ValueError('source hash/size mismatch')
-        package(raw, frame_dir / f"{record['submission_id']:06}.png")
+        if not args.verify_only or record['submission_id'] in selected_ids:
+            package(raw, frame_dir / f"{record['submission_id']:06}.png")
     if not records:
         raise ValueError('no decoded sources')
     start = records[0]['submit_ns']
@@ -88,7 +107,8 @@ def main():
                 'scope': 'engine output consumed by present, excludes compositor/native widgets/panel',
                 'qualified': False}
     # Reuse T2's lossless native PNG checks and host-time-preserving preview/PTS verifier.
-    if not (output / 'preview-1x.mp4').exists():
+    manifest['pattern_rgba_sha256'] = pattern_digest
+    if not args.verify_only and not (output / 'preview-1x.mp4').exists():
         preview(output, manifest, runtime, records)
     (output / 'window-manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
     print(f"Verified {len(records)} originals, {len(missing)} retired/missing; no cadence verdict")

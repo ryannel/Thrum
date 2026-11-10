@@ -509,7 +509,7 @@
     "V1_bounded_frame_host": {
       "implementation": "partial_engine_runtime_lifecycle_Metal_and_browser_gpu_reconstruction_retry",
       "functional_validation": "Mac_live_held_drawable_Metal_recovery_preserves_authority_with_zero_old_queue_calls;_Mac_overload_drain_resume_and_Chrome_reconstruction_and_real_tab_switches_pass;_iOS_simulator_off_main_input_surface_replacement_rotation_and_injected_device_loss_recovery_pass",
-      "experienced_quality": "Mac_live_recovery_and_camera_response_independently_reviewed_at_1x;_paused_1080p_pixels_exact;_display_cadence_open;_M2_1_current_release_locked_console_elapsed_pan_agent_reviewed_with_complete_originals_and_holds_no_panel_claim",
+      "experienced_quality": "Mac_live_recovery_and_camera_response_independently_reviewed_at_1x;_paused_1080p_pixels_exact;_display_cadence_open;_M2_1_10Nov_current_release_permission_denied_elapsed_pan_480_exact_originals_complete_holds;_M2_3_real_window_pattern_replacement_and_OFF_builder_proof;_panel_cadence_open",
       "platform_performance": {
         "mac": "owner_quiet_91ad52d_baseline_recorded;_ProMotion_cadence_and_input_latency_open",
         "windows": "not_run",
@@ -522,9 +522,10 @@
         "../evidence/render/V1-BOUNDED-FRAMES-2026-11-04.md",
         "../evidence/render/G3B-IOS-SIM-ROTATION-LOSS-2026-11-08.md",
         "../evidence/render/mac-m1-recovery/README.md",
-        "../evidence/render/mac-m2-current/README.md"
+        "../evidence/render/mac-m2-current/README.md",
+        "../evidence/render/mac-m2-20261110/README.md"
       ],
-      "scope": "Core owns clock/lane; renderer owns FrameHost. Browser old-device work stops on loss; detached GPU reconstruction/retry preserves authority/input/pause/solar state. The simulator exercises the iOS render owner and lease through rotation and injected loss. The Mac game resumes live presentation in the same window after an injected Metal destroy with a drawable held. Physical iPhone loss and Mac display cadence remain open; native recording stays G3t. Mac M2 current-path qualification needs only T2-CAPTURE M0; windowed tap M2.3 and bounded trace investigation M2.4 do not wait on parked APPLE-TILE. New Mac M3 needs APPLE-TILE M3 and requalifies motion/cadence plus windowed-tap/tooling on the changed build; transitively blocked on parked G3t and T2 Chrome M1/simulator M2. No diagnostic-attempt allowance is renewed. Mac M2.1 now has fresh builder-inspected locked-console current-path runtime motion with denied launcher/driver Screen Recording preflights. M2.3 window tap, M2.4 trace tooling and M2.2 cadence remain attended/unqualified; their compiled harness and runbook consume no trace attempt."
+      "scope": "Core owns clock/lane; renderer owns FrameHost. Browser old-device work stops on loss; detached GPU reconstruction/retry preserves authority/input/pause/solar state. The simulator exercises the iOS render owner and lease through rotation and injected loss. The Mac game resumes live presentation in the same window after an injected Metal destroy with a drawable held. Physical iPhone loss and Mac display cadence remain open; native recording stays G3t. Mac M2 current-path qualification needs only T2-CAPTURE M0; windowed tap M2.3 and bounded trace investigation M2.4 do not wait on parked APPLE-TILE. New Mac M3 needs APPLE-TILE M3 and requalifies motion/cadence plus windowed-tap/tooling on the changed build; transitively blocked on parked G3t and T2 Chrome M1/simulator M2. No diagnostic-attempt allowance is renewed. Mac M2.1 has fresh 10 November builder-inspected current-path runtime motion with attributed denied launcher/driver before/after Screen Recording preflights and witness-only console observations. M2.3 has actual CAMetalLayer full-byte channel/row correspondence, pending-readback replacement, stale CPU-image refusal and OFF-path builder proof. M2.4 trace tooling and M2.2 cadence remain attended/unqualified. Four same-process SDK signposts prepare calibration but no new trace attempt was consumed. Current native diagnostic gaps are explicit retirement gaps. No physical cadence or input-to-photon claim."
     },
     "V1_cooked_constant_light": {
       "implementation": "partial_native_accepted_source_product_and_offscreen_visual_publication",

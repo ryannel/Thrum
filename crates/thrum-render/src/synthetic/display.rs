@@ -87,9 +87,20 @@ impl DisplayPrepared {
             bind_group_layouts: &[Some(&layout)],
             immediate_size: 0,
         });
+        // A cold, explicit Mac qualification fixture uses this same final output,
+        // tap and presentation binding. It changes only the authored diagnostic pixels.
+        #[cfg(target_os = "macos")]
+        let pattern = std::env::var("THRUM_MAC_PATTERN").as_deref() == Ok("1");
+        #[cfg(not(target_os = "macos"))]
+        let pattern = false;
+        let source = if pattern {
+            include_str!("display/capture_pattern.wgsl")
+        } else {
+            SHADER
+        };
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("synthetic authored SDR display"),
-            source: wgpu::ShaderSource::Wgsl(SHADER.into()),
+            source: wgpu::ShaderSource::Wgsl(source.into()),
         });
         let pipeline = device.render(&wgpu::RenderPipelineDescriptor {
             label: Some("prepared synthetic tone encode role"),

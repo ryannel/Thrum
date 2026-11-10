@@ -51,12 +51,12 @@ are planned as two Thrum modules ([SEA](design/modules/SEA-BRIEF.md), [CLOUDS](d
 never gate the exit; when their builders start is the owner's decision. The paragraphs below are each gate's own
 status and may trail the loop's record.
 
-Mac M2.1 current-release locked-console motion passes builder inspection (481 exact originals, complete pan/holds);
-attended preparation is in [the current evidence/runbook](evidence/render/mac-m2-current/README.md).
-The locked-panel preflight was tried and refused before launching a game or trace. Windowed tap M2.3, trace tooling
-M2.4 and cadence M2.2 remain open for unlocked active built-in-panel/Instruments setup; zero of the two new trace
-attempts were consumed. The collector uses the existing shared tap and separate ON/OFF arms; no panel pass is inferred
-from engine pixels or successful repository checks.
+Mac M2.1 has fresh current-release runtime motion with 480 exact originals, complete pan/holds and attributed denied
+before/after launcher/driver preflights. M2.3 has actual-window pattern/lease/replacement/OFF builder proof on that
+same binary. [Current evidence and the one-command runbook](evidence/render/mac-m2-20261110/README.md) retain the
+untraced arms. M2.4 trace tooling and M2.2 capture-OFF cadence remain open for attended unlocked active built-in-panel/
+Instruments setup. Zero of the two new diagnostic trace attempts were used. Fresh independent swaps and calibrated
+full-pan alignment are owed. Engine images and repository checks have their separate proof scopes.
 
 **[T2 unattended capture M0 and M1](design/modules/T2-CAPTURE-PLAN.md) are done.** Metal and Chrome now have
 qualified submitted-output and elapsed-time engine capture. [Mac evidence](evidence/render/t2-capture-m0/README.md)
@@ -114,7 +114,7 @@ Metal recorder remains a later performance candidate; the dedicated performance 
   and attended panel-swap proofs remain distinct and both are required. No M2 tooling item waits on APPLE-TILE.
   New Mac M3 needs `APPLE-TILE:M3` and reruns both protocols plus windowed-tap/tooling preflight on the changed path.
   M3 is blocked on parked APPLE-TILE: delivered T2 Mac M0/Chrome M1 then sequential G3t M0–M3 and their
-  attended OS-window proofs. Neither simulator cooked drawing nor T2 simulator M2 gates it; M2 can close first. M2.3 owns the unproved real-window tap; M2.4 resumes the failed Instruments
+  attended OS-window proofs. Neither simulator cooked drawing nor T2 simulator M2 gates it; M2 can close first. M2.3 has builder real-window tap proof; M2.4 resumes the failed Instruments
   finalization investigation after design re-review/prerequisites, with a changed hypothesis and at most two new
   diagnostic attempts. M2.2 remains blocked on those proofs and active-panel/tool setup; an unreadable trace cannot
   close it. Its capture-OFF traced arm qualifies cadence; capture-ON arms show content/observer cost. Record

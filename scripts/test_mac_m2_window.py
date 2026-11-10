@@ -41,6 +41,37 @@ class WindowEvidenceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'nonmonotonic'):
             joins(surface, requests, images, ['one', 'two'])
 
+class PermissionEvidenceTests(unittest.TestCase):
+    def test_console_witness_does_not_affect_denied_permission_proof(self):
+        from capture_v1_runtime import permission_proof_valid
+        observed = {'denied': True, 'error': None, 'api': 'CGPreflightScreenCaptureAccess', 'probe_pid': 23}
+        for before, after in [(False, False), (True, True), (True, False), (False, True), (None, None)]:
+            manifest = {'permission_before': observed, 'permission_after': observed,
+                        'console_locked': before, 'console_locked_after_capture': after}
+            self.assertTrue(permission_proof_valid(manifest))
+        for field in ['permission_before', 'permission_after']:
+            for invalid in [{}, dict(observed, denied=False), dict(observed, denied=None),
+                            dict(observed, error='probe failed'), dict(observed, probe_pid=None)]:
+                manifest = {'permission_before': observed, 'permission_after': observed}
+                manifest[field] = invalid
+                self.assertFalse(permission_proof_valid(manifest))
+
+    def test_permission_observations_must_belong_to_the_actual_driver_and_parent(self):
+        from capture_v1_runtime import validate_permission_attribution
+        observed = {'denied': True, 'error': None, 'api': 'CGPreflightScreenCaptureAccess', 'probe_pid': 23}
+        launcher = {'capture_exit_code': 0, 'screen_recording_before': False, 'screen_recording_after': False,
+                    'bundle_identifier': 'our-app', 'preflight_api': 'CGPreflightScreenCaptureAccess',
+                    'launcher_executable': '/our-app/Launcher', 'launcher_pid': 10, 'capture_driver_pid': 11}
+        manifest = {'permission_before': observed, 'permission_after': observed,
+                    'driver_identity': {'pid': 11, 'parent_pid': 10, 'executable': '/python',
+                                        'responsible_bundle_identifier': 'our-app'}}
+        validate_permission_attribution(launcher, manifest, 'our-app')
+        for change in [{'screen_recording_after': True}, {'launcher_pid': 99},
+                       {'capture_driver_pid': 99}, {'capture_exit_code': False},
+                       {'bundle_identifier': 'other-app'}, {'launcher_executable': ''}]:
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                validate_permission_attribution(dict(launcher, **change), manifest, 'our-app')
+
 
 if __name__ == '__main__':
     unittest.main()
