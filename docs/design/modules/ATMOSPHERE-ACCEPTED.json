@@ -3,8 +3,8 @@
   "design": {
     "verdict": "changes",
     "review": "docs/evidence/ATMOSPHERE/design-review.md",
-    "commit": "4bbe44a433598650be47c1753c57da79f5d1df93",
-    "hash": "5a00c930692d1e01faa364127cb0abbfecbbfe4e8478c60408a3b318daf18ba6",
+    "commit": "27473469f1715ebfc77cdd4a6cd24137a29b1415",
+    "hash": "8319f1dca92b5f11b915c09bd9075605d183d07530e52a1d5295acfa8016cd44",
     "by": "review",
     "host": "codex",
     "model": "gpt-6-astra",
@@ -18,7 +18,7 @@
     "usage": {
       "incomplete_turns": 1
     },
-    "at": "2026-11-10T22:21:19Z"
+    "at": "2026-11-10T22:44:52Z"
   },
   "milestones": {
     "M5": {
@@ -53,5 +53,27 @@
   "planner": {
     "host": "claude",
     "at": "2026-11-10T22:38:33Z"
-  }
+  },
+  "design_history": [
+    {
+      "verdict": "changes",
+      "review": "docs/evidence/ATMOSPHERE/design-review-1.md",
+      "commit": "4bbe44a433598650be47c1753c57da79f5d1df93",
+      "hash": "5a00c930692d1e01faa364127cb0abbfecbbfe4e8478c60408a3b318daf18ba6",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.167.0-alpha.3.2",
+      "path": "visible",
+      "usage": {
+        "incomplete_turns": 1
+      },
+      "at": "2026-11-10T22:21:19Z"
+    }
+  ]
 }
