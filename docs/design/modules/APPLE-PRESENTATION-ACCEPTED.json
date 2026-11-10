@@ -1,6 +1,25 @@
 {
   "module": "APPLE-PRESENTATION",
-  "design": null,
+  "design": {
+    "verdict": "changes",
+    "review": "docs/evidence/APPLE-PRESENTATION/design-review.md",
+    "commit": "4bbe44a433598650be47c1753c57da79f5d1df93",
+    "hash": "255a77bc45d47120311453a6c2dcc1641d8f2a76d565b8ab2d449bdb426d52b0",
+    "by": "review",
+    "host": "codex",
+    "model": "gpt-6-astra",
+    "effort": "high",
+    "observed": {
+      "model": "gpt-6-astra",
+      "effort": "high"
+    },
+    "cli": "codex-cli 0.167.0-alpha.3.2",
+    "path": "visible",
+    "usage": {
+      "incomplete_turns": 1
+    },
+    "at": "2026-11-10T22:21:07Z"
+  },
   "milestones": {
     "M1": {
       "definitions": "725f33df97a7d80dbf172e590547323279b37838dda8db48034cbe08fab9756f",
