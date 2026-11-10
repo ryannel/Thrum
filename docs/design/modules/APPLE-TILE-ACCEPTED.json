@@ -82,5 +82,13 @@
         "at": "2026-11-09T14:02:56Z"
       }
     }
-  }
+  },
+  "decisions": [
+    {
+      "action": "unpark",
+      "milestone": "M0",
+      "words": "Owner instructed in chat (10 Nov 2026): the scoped re-plan passed design review at e3cce53a",
+      "at": "2026-11-10T21:46:34Z"
+    }
+  ]
 }
