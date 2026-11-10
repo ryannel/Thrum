@@ -1,0 +1,12 @@
+{
+  "command": "env RUSTC_WRAPPER= python3 /Users/ryannel/.claude/plugins/cache/ryannel-skills/orchestrate/1.4.0/skills/orchestration/build/scripts/agent_loop.py lock gpu --worktree . -- ./dev check",
+  "exit": 0,
+  "log_sha256": "83510327cc2f85120c7b9612508c0ae09520f3332c67864fa35bb9e5f292d348",
+  "real_target": "Apple M3 Max / Metal",
+  "python_refusal_tests": {
+    "count": 6,
+    "exit": 0
+  },
+  "docs_check_exit": 0,
+  "trace_attempts_consumed": 0
+}

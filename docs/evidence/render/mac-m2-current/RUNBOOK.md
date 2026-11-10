@@ -1,4 +1,6 @@
-# Attended Mac M2 continuation
+# Attended Mac M2 continuation, historical preparation
+
+Use the [current one-command runbook](../mac-m2-20261110/RUNBOOK.md). The retained notes below describe the earlier checkpoint.
 
 Run from this worktree, on its retained release binary and `tmp/mac-m2/valley` cooked store.
 The owner only needs to unlock and activate the **built-in panel**, and arrange Instruments authorization if macOS

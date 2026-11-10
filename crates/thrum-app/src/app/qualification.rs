@@ -12,7 +12,7 @@ use std::{
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 use thrum_controls::{Controls, Value, macos::MacPanel};
-use thrum_render::runtime::{CaptureLimits, FrameHost, FrameWorld, SceneSource};
+use thrum_render::runtime::{CaptureLimits, FrameHost, FrameWorld, SceneSource, SubmittedImage};
 
 const RECORDS: usize = 2048;
 
@@ -21,6 +21,7 @@ pub(super) struct Pan {
     start: Option<Instant>,
     rows: Vec<(u128, f64, f64, f64)>,
     requests: Vec<(u64, f64, f64, f64)>,
+    signposts: Vec<(u32, f64, f64)>,
 }
 impl Pan {
     pub(super) fn from_environment() -> Option<Self> {
@@ -29,6 +30,7 @@ impl Pan {
             start: None,
             rows: Vec::with_capacity(RECORDS),
             requests: Vec::with_capacity(RECORDS),
+            signposts: Vec::with_capacity(4),
         })
     }
     pub(super) fn step(
@@ -39,6 +41,14 @@ impl Pan {
         let now = Instant::now();
         let start = *self.start.get_or_insert(now);
         let elapsed = now.duration_since(start).as_secs_f64();
+        let boundaries = [3.0, 4.0, 6.0, 7.1];
+        while self.signposts.len() < boundaries.len() && elapsed >= boundaries[self.signposts.len()]
+        {
+            let stage = u32::try_from(self.signposts.len()).expect("four signpost stages");
+            let before = CACurrentMediaTime();
+            super::qualification_signpost::mark(stage);
+            self.signposts.push((stage, before, CACurrentMediaTime()));
+        }
         // Warm up for three seconds, then one-second holds around the two-second pan.
         let yaw = ((elapsed - 4.0) / 2.0).clamp(0.0, 1.0) * 36.0;
         let id = controls.lookup("camera.yaw").map_err(|e| e.to_string())?;
@@ -85,6 +95,14 @@ impl Pan {
         Ok(())
     }
     pub(super) fn finish(&self) -> Result<(), String> {
+        let mut markers = BufWriter::new(
+            File::create(self.output.join("signposts.tsv")).map_err(|e| e.to_string())?,
+        );
+        writeln!(markers, "stage\tmedia_before\tmedia_after").map_err(|e| e.to_string())?;
+        for (stage, before, after) in &self.signposts {
+            writeln!(markers, "{stage}\t{before:.9}\t{after:.9}").map_err(|e| e.to_string())?;
+        }
+        markers.flush().map_err(|e| e.to_string())?;
         let mut file = BufWriter::new(
             File::create(self.output.join("controls.tsv")).map_err(|e| e.to_string())?,
         );
@@ -128,6 +146,8 @@ pub(super) struct Observer {
     session: u64,
     retired: usize,
     retirements: Vec<(u64, usize, usize, u128)>,
+    stale_image: Option<SubmittedImage>,
+    stale_recycle: Option<(usize, usize)>,
 }
 impl Observer {
     pub(super) fn start<W: FrameWorld, V: SceneSource<W::Page>>(
@@ -177,6 +197,8 @@ impl Observer {
             session: 1,
             retired: 0,
             retirements: Vec::with_capacity(1),
+            stale_image: None,
+            stale_recycle: None,
         }))
     }
     pub(super) fn frame<G: Game>(
@@ -201,7 +223,7 @@ impl Observer {
         Ok(())
     }
     pub(super) fn replace_after_present(&mut self) -> bool {
-        if self.replace_surface && self.frames.len() == 30 && self.session == 1 {
+        if self.replace_surface && self.frames.len() == 360 && self.session == 1 {
             self.replacement_pending = true;
             return true;
         }
@@ -222,6 +244,7 @@ impl Observer {
             self.origin.elapsed().as_nanos(),
         ));
         self.retired = self.frames.len() - self.images.len();
+        self.stale_image = host.try_submitted_image().map_err(|e| e.to_string())?;
         host.disable_submitted_capture();
         self.session += 1;
         host.enable_submitted_capture_with_limits(
@@ -252,6 +275,15 @@ impl Observer {
         while let Some(image) = host.try_submitted_image().map_err(|e| e.to_string())? {
             if self.images.len() == RECORDS {
                 return Err("image marker capacity exhausted".to_owned());
+            }
+            if let Some(stale) = self.stale_image.take() {
+                let before = host.submitted_capture_usage().ok_or("fresh tap missing")?.1;
+                host.recycle_submitted_image(stale);
+                let after = host.submitted_capture_usage().ok_or("fresh tap missing")?.1;
+                self.stale_recycle = Some((before, after));
+                if before == 0 || before != after {
+                    return Err("stale CPU image entered the replacement tap".to_owned());
+                }
             }
             self.images.push((
                 image.sample.submission_order,
@@ -323,7 +355,16 @@ impl Observer {
                 .map_err(|e| e.to_string())?;
         }
         retirement.flush().map_err(|e| e.to_string())?;
-        if self.replace_surface && (self.retirements.len() != 1 || self.retirements[0].1 == 0) {
+        std::fs::write(
+            self.output.join("stale-recycle.txt"),
+            format!("{:?}\n", self.stale_recycle),
+        )
+        .map_err(|e| e.to_string())?;
+        if self.replace_surface
+            && (self.retirements.len() != 1
+                || self.retirements[0].1 == 0
+                || self.stale_recycle.is_none())
+        {
             return Err("surface replacement did not retain a pending readback".to_owned());
         }
         if let Some(writer) = self.writer.take() {

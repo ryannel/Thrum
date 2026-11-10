@@ -1,0 +1,28 @@
+{
+  "recorded_unix_ns": 1794349039384851000,
+  "before": {
+    "console_locked": false,
+    "built_in_online": true,
+    "built_in_active": false,
+    "built_in_asleep": true
+  },
+  "wake_command": [
+    "caffeinate",
+    "-u",
+    "-d",
+    "-t",
+    "60"
+  ],
+  "after": {
+    "built_in_display_id": 1,
+    "built_in_active": true,
+    "built_in_asleep": false
+  },
+  "keep_awake_command": [
+    "caffeinate",
+    "-d",
+    "-t",
+    "900"
+  ],
+  "scope": "temporary setup of an already-unlocked panel for the authorized qualification"
+}

@@ -6,6 +6,7 @@ mod display_link;
 mod edit_flow;
 mod pause;
 mod qualification;
+mod qualification_signpost;
 mod recovery;
 mod render_actor;
 
@@ -123,6 +124,7 @@ struct App<G: Game> {
     error: Option<String>,
     closed_by_user: bool,
     qualification: Option<qualification::Pan>,
+    qualification_report: Option<Result<String, String>>,
 }
 
 impl<G: Game + 'static> App<G> {
@@ -195,6 +197,7 @@ impl<G: Game + 'static> App<G> {
             error: None,
             closed_by_user: false,
             qualification: qualification::Pan::from_environment(),
+            qualification_report: None,
         }
     }
 
@@ -1078,6 +1081,10 @@ impl<G: Game + 'static> ApplicationHandler<UserEvent> for App<G> {
     }
 
     fn user_event(&mut self, event_loop: &ActiveEventLoop, event: UserEvent) {
+        if self.qualification_report.is_some() {
+            event_loop.exit();
+            return;
+        }
         match event {
             UserEvent::DeviceLost(generation) => {
                 let result = self.device_lost(generation).and_then(|()| {
@@ -1107,6 +1114,7 @@ impl<G: Game + 'static> ApplicationHandler<UserEvent> for App<G> {
                                 return;
                             }
                             if done {
+                                self.qualification_report = Some(self.finish());
                                 event_loop.exit();
                                 return;
                             }
@@ -1182,6 +1190,9 @@ impl<G: Game + 'static> ApplicationHandler<UserEvent> for App<G> {
     }
 
     fn window_event(&mut self, event_loop: &ActiveEventLoop, id: WindowId, event: WindowEvent) {
+        if self.qualification_report.is_some() {
+            return;
+        }
         if self.window.as_ref().is_none_or(|window| window.id() != id) {
             return;
         }
@@ -1191,7 +1202,8 @@ impl<G: Game + 'static> ApplicationHandler<UserEvent> for App<G> {
                 if self.run_deadline.is_none() {
                     self.window_closed = true;
                 } else {
-                    self.closed_by_user |= self.presented < self.target_frames;
+                    self.closed_by_user |=
+                        self.qualification_report.is_none() && self.presented < self.target_frames;
                 }
                 let result = self.invalidate_surface();
                 event_loop.exit();
@@ -1348,7 +1360,14 @@ fn run_with<G: Game + 'static>(
     {
         app.error = Some(error);
     }
-    let result = app.error.take().map_or_else(|| app.finish(), Err);
+    let result = app.error.take().map_or_else(
+        || {
+            app.qualification_report
+                .take()
+                .unwrap_or_else(|| app.finish())
+        },
+        Err,
+    );
     if let Some(output) = std::env::var_os("THRUM_MAC_QUALIFY") {
         let path = std::path::Path::new(&output).join("gpu-samples.txt");
         if let Err(error) = std::fs::write(path, format!("{:#?}\n", app.samples)) {

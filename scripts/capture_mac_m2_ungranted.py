@@ -12,7 +12,7 @@ import subprocess
 import sys
 import uuid
 
-from capture_v1_runtime import ROOT, digest
+from capture_v1_runtime import ROOT, digest, validate_permission_attribution
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--output', type=Path, required=True)
@@ -39,9 +39,12 @@ command = ['/usr/bin/open', '-n', '-W', str(bundle), '--args', str(output), sys.
     'launcher_source_sha256': digest(ROOT / 'scripts/mac_m2_capture_launcher.swift')}, indent=2) + '\n')
 subprocess.run(command, cwd=ROOT, check=True, timeout=180)
 report = json.loads((output / 'launcher.json').read_text())
+if report.get('error') or report.get('capture_exit_code') != 0:
+    log = output / 'capture.log'
+    if log.exists():
+        print(log.read_text()[-5000:], file=sys.stderr)
+    raise SystemExit(report.get('error') or f"capture driver exited {report.get('capture_exit_code')}")
 manifest = json.loads((output / 'session/manifest.json').read_text())
-if (report.get('capture_exit_code') != 0 or report.get('screen_recording_before') is not False
-        or report.get('screen_recording_after') is not False
-        or not manifest.get('locked_permission_unavailable_qualified')):
-    raise SystemExit('Unqualified lock/permission condition or child failure; retain logs, no pass')
-print('Locked console and denied launcher/driver Screen Recording preflights verified; finalize and inspect session before passing M2.1.')
+identity = plistlib.loads((contents / 'Info.plist').read_bytes())['CFBundleIdentifier']
+validate_permission_attribution(report, manifest, identity)
+print('Denied attributed launcher/driver preflights verified. Console observations retained. Finalize and inspect the session before passing M2.1.')

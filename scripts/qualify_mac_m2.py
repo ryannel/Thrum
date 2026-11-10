@@ -14,6 +14,7 @@ import os
 from pathlib import Path
 import shutil
 import signal
+import re
 import subprocess
 import time
 
@@ -65,13 +66,31 @@ print("screen_recording_preflight=\\(CGPreflightScreenCaptureAccess())")
         raise RuntimeError('BLOCKED: Instruments setup/authorization unavailable; no recording attempted')
 
 
-def bounded(command, log, seconds, environment=None):
+def bounded(command, log, seconds, environment=None, observe=None, finalization_seconds=None):
     """Only terminate the process group created here; never enumerate/kill others."""
     with log.open('wb') as stream:
         process = subprocess.Popen(command, cwd=ROOT, env=environment, stdout=stream,
                                    stderr=subprocess.STDOUT, start_new_session=True)
         try:
-            return process.wait(timeout=seconds)
+            if observe is None and finalization_seconds is None:
+                return process.wait(timeout=seconds)
+            started = time.monotonic()
+            deadline = started + seconds
+            saving = None
+            while time.monotonic() < deadline:
+                if observe is not None:
+                    observe()
+                if finalization_seconds is not None and saving is None and 'Saving output file' in log.read_text(errors='replace'):
+                    saving = time.monotonic()
+                    deadline = min(deadline, saving + finalization_seconds)
+                    save(log.with_suffix('.timing.json'), {'start_monotonic_s': started,
+                         'saving_observed_monotonic_s': saving, 'deadline_monotonic_s': deadline,
+                         'finalization_limit_s': finalization_seconds})
+                try:
+                    return process.wait(timeout=0.05)
+                except subprocess.TimeoutExpired:
+                    pass
+            raise subprocess.TimeoutExpired(command, seconds)
         except subprocess.TimeoutExpired:
             os.killpg(process.pid, signal.SIGTERM)
             try:
@@ -83,6 +102,8 @@ def bounded(command, log, seconds, environment=None):
 
 
 def collect(args, output, name, tap, replace=False, grid=False, traced=False):
+    if shutil.disk_usage(output).free < 16 * 1024**3:
+        raise RuntimeError('less than 16 GiB free before this arm; no attempt consumed')
     arm = output / name
     arm.mkdir()
     env = {key: value for key, value in os.environ.items() if not key.startswith('THRUM_')}
@@ -92,6 +113,8 @@ def collect(args, output, name, tap, replace=False, grid=False, traced=False):
         env.update(THRUM_SCENE='valley', THRUM_ASSET_STORE=str(args.store.resolve()))
     if replace:
         env['THRUM_MAC_REPLACE'] = '1'
+    if grid:
+        env['THRUM_MAC_PATTERN'] = '1'
     save(arm / 'environment.json', {key: value for key, value in env.items() if key.startswith('THRUM_')})
     command = [str(args.binary.resolve())]
     if traced:
@@ -102,6 +125,9 @@ def collect(args, output, name, tap, replace=False, grid=False, traced=False):
         ledger['attempts'].append({'arm': str(arm), 'unix_ns': time.time_ns(), 'hypothesis': HYPOTHESIS, 'status': 'started'})
         LEDGER.parent.mkdir(parents=True, exist_ok=True)
         save(LEDGER, ledger)
+        with LEDGER.open('r+') as journal:
+            journal.flush()
+            os.fsync(journal.fileno())
         save(arm / 'recording-options.json', {'Points of Interest': {'excludeOSLogs': True}})
         command = ['xcrun', 'xctrace', 'record', '--no-prompt', '--template', 'Game Performance',
                    '--recording-options', str(arm / 'recording-options.json'),
@@ -115,15 +141,33 @@ def collect(args, output, name, tap, replace=False, grid=False, traced=False):
                                  'finalization_limit_s': 75 if traced else None})
     load = LoadRecord(arm)
     begin = time.monotonic_ns()
+    observations = set()
+    def inspect_window():
+        if not replace or 'screen_recording_preflight=true' not in (output / 'display.txt').read_text():
+            return
+        elapsed = (time.monotonic_ns() - begin) / 1e9
+        metadata = arm / 'window.txt'
+        for target in (2, 6):
+            if target in observations or elapsed < target or not metadata.exists():
+                continue
+            observations.add(target)
+            number = re.search(r'^window_number=(\d+)$', metadata.read_text(), re.MULTILINE)
+            if number:
+                capture = subprocess.run(['/usr/sbin/screencapture', '-x', '-l', number[1],
+                    str(arm / f'window-{target}s.png')], capture_output=True, text=True, timeout=5)
+                save(arm / f'window-{target}s.json', {'exit': capture.returncode, 'stderr': capture.stderr,
+                    'scope': 'separate attended OS-window observation with existing grant'})
     try:
-        code = bounded(command, arm / 'process.log', 91 if traced else 30, env)
+        code = bounded(command, arm / 'process.log', 91 if traced else 30, env,
+                       inspect_window if replace else None, finalization_seconds=75 if traced else None)
         if code:
             raise RuntimeError(f'{name} exited {code}; see process.log')
         if not (arm / 'surface.tsv').exists():
             raise RuntimeError(f'{name} did not finalize its surface/image records')
         if traced:
             for filename, extra in [('toc.xml', ['--toc']), ('swaps.xml', ['--xpath',
-                    '/trace-toc/run/data/table[@schema="displayed-surfaces-interval"]'])]:
+                    '/trace-toc/run/data/table[@schema="displayed-surfaces-interval"]']),
+                    ('signposts.xml', ['--xpath', "/trace-toc/run/data/table[contains(@schema, 'signpost')]"])]:
                 code = bounded(['xcrun', 'xctrace', 'export', '--input', str(arm / 'pan.trace'),
                                 '--output', str(arm / filename)] + extra, arm / (filename + '.log'), 30)
                 if code or not (arm / filename).exists():
@@ -160,9 +204,14 @@ def main():
                     'cooked_hashes': {str(p.relative_to(args.store)): digest(p) for p in sorted(args.store.rglob('*')) if p.is_file()},
                     'hypothesis': HYPOTHESIS, 'qualified': False}
         pin = output / 'identity.json'
-        if pin.exists() and json.loads(pin.read_text()) != identity:
-            raise RuntimeError('build/content changed: use a fresh output and rerun M2.1; trace budget is not renewed')
-        save(pin, identity)
+        if pin.exists():
+            retained = json.loads(pin.read_text())
+            matched_fields = ('binary_sha256', 'preset_sha256', 'cooked_hashes', 'hypothesis')
+            if any(retained.get(key) != identity[key] for key in matched_fields):
+                raise RuntimeError('build/content changed: use a fresh output and rerun M2.1; trace budget is not renewed')
+            save(output / 'resume-source.json', identity)
+        else:
+            save(pin, identity)
         for name, tap, replace, grid in [('grid-replacement', 'on', True, True),
                                          ('valley-replacement', 'on', True, False),
                                          ('on-untraced', 'on', False, False),

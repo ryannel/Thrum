@@ -8,14 +8,15 @@ Done when: [PLATFORM-RUNTIME-MAC-DONE.json](PLATFORM-RUNTIME-MAC-DONE.json) owns
 
 Reviews: [T2/Mac design review 3](../../evidence/T2-CAPTURE/design-review-3.md) clears Mac M2 to build; its minor Mac M3 finding is outside this milestone. Historical M0/M1 reviews remain in the log.
 Milestone: M2 The cooked valley presents smoothly on built-in ProMotion (blocked on attended setup)
-Now: T2 M0 is done. The prior M2.1 locked runtime pan passed builder inspection (481 exact originals, complete
-holds, coherent 1x motion). Fresh qualification is owed after removing its harness lock gate. The native tap/AppKit
-pan, surface-retirement diagnostics and bounded collector are implemented and compile/regression checked.
-Real-window and cadence proof still await attended setup.
-Next: the builder removes the unattended M2.1 harness lock gate and reruns its permission-denied motion proof.
-Use the [one-command attended runbook](../../evidence/render/mac-m2-current/RUNBOOK.md) after unlock for M2.3 window
-qualification, then M2.4 and M2.2 trace/cadence qualification. M3 follows its own delivery prerequisite.
-Blocked: M2.3/M2.4/M2.2 require the unlocked active built-in panel and any Instruments authorization. The collector preflight actually refused on this locked console; zero new trace attempts were consumed. Screen Recording is not an engine-image prerequisite. The two-attempt 9 November allowance is unchanged.
+Now: fresh M2.1 permission-denied runtime motion has 480 exact originals, complete holds and no capture omissions.
+M2.3 has actual-window channel/row correspondence, pending-readback replacement, stale-image refusal and OFF-path
+builder proof on the same release binary. The console witness policy accepts either state and transitions.
+Next: use the [one-command attended runbook](../../evidence/render/mac-m2-20261110/RUNBOOK.md) for M2.4 tooling
+and M2.2 capture-OFF cadence. The four untraced window arms are retained. The owner need only arrange the active
+unlocked built-in panel and any Instruments authorization. The builder performs the remaining collection/review.
+Blocked: M2.2/M2.4 await attended trace setup and fresh attributed swaps/full-pan clock alignment. Zero of the two
+new 9 November diagnostic recordings were used. No other module delivery is missing for M2. Selected current
+proof and scope are in [10 November evidence](../../evidence/render/mac-m2-20261110/README.md).
 M3 handoff: Mac M3 still needs Mac M2 and APPLE-TILE M3. Its chain is delivered T2 M0/M1 then sequential G3t M0–M3, including attended OS-window observer/grant proof and diagnostic simulator function; simulator cooked/T2 M2 is no longer on that chain.
 
 ## M0 Reviewed Mac qualification plan: done
@@ -60,7 +61,7 @@ panel cadence. No reverse Mac dependency is added to G3t. M3 remains a required 
 a reason to hold current-path M2 open. The lead has commissioned the scoped re-plan answering its seven findings;
 fresh independent design approval/unpark through the loop remains owed before build.
 
-- [ ] **M2.1 unattended — current-build runtime content motion.** After T2-CAPTURE M0, run the paused-world
+- [x] **M2.1 unattended — current-build runtime content motion.** After T2-CAPTURE M0, run the paused-world
   1920×1080 noon 0°–36° pan over two seconds, plus one-second settled endpoint holds, with 120 Hz requested offscreen
   opportunities. Use actual monotonic elapsed time and the normal semantic control/edit handler. Require denied
   read-only Screen Recording preflights before/after under identified launcher/driver permission identities. Record
@@ -82,7 +83,7 @@ fresh independent design approval/unpark through the loop remains owed before bu
   command. No justified hypothesis, unavailable authorization or exhausted attempts leaves M2.4/M2.2 open and
   explicitly blocked in status/build-plan; record the cause and continue unblocked work. Further attempts require
   another scoped re-plan. Tooling success alone does not pass the final full-pan cadence row.
-- [ ] **M2.3 attended setup — shared windowed tap.** Integrate the T2 renderer-owned tap in the real CAMetalLayer
+- [x] **M2.3 attended setup — shared windowed tap.** Integrate the T2 renderer-owned tap in the real CAMetalLayer
   window, using the normal callback/lease/present path. With a known colour/channel/row pattern, prove captured
   pixels equal the engine output consumed by the normal present pass (with declared format conversions) and bind
   that producer to the actual surface submission. This proves engine output correspondence, not compositor pixels.
@@ -192,6 +193,16 @@ Add focused acceptance/refusal controls, rerun the documented M2.1 pan under `gp
 completeness proof before review. M3.1 repeats this corrected protocol after APPLE-TILE M3 on its new build.
 
 ## Log
+
+10 November builder checkpoint. Replaced the M2.1 harness lock gate with witness-only console observations and
+strict before/after launcher/driver permission attribution. Fresh current-release pan has 480 originals, 1.002243 /
+1.000102 s endpoint holds, 11.869208 ms maximum source gap and zero capture omissions. Real CAMetalLayer channel/
+row fixture matches every byte across replacement. Both replacement arms retire three pending samples, refuse a
+stale CPU image and resume fresh presentation. OFF produces zero capture images/spool. Same-process SDK signposts
+and finite exports prepare the full-pan trace calibration. The already-unlocked sleeping panel was woken with
+bounded caffeinate assertions, recorded separately. M2.2/M2.4 remain open for the requested attended continuation,
+with zero new trace attempts consumed. [Evidence and one-command runbook](../../evidence/render/mac-m2-20261110/README.md).
+
 
 - 2026-11-09 Completed the module's missing design file, `PLATFORM-RUNTIME-MAC.md`, so the design/plan/done-when
   set is available at the loop's conventional paths. Consolidated the existing ownership, recovery, current-path

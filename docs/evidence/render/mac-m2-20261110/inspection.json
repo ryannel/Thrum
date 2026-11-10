@@ -1,0 +1,113 @@
+{
+  "item": "M2.1",
+  "binary_sha256": "aa1591522962933b55ec1f347cc538880f5eb14b7ea227bf4adcb7f00b585507",
+  "source_digest": "c9b45c7123de480b1dbeda00ce82ef53275f661c3e86ea95bb9d61bd0cbc91f1",
+  "source_base": "2604a40f8d0126c68148af9ee21a9aa55fe4f27f",
+  "recipe": "bdb560487b4e876ec59689aaf1f60ce6b74bdc83fffa21ad8efecd94030be75c",
+  "images": 480,
+  "initial_hold_seconds": 1.002242791,
+  "first_final_yaw_submit_seconds": 3.001437458,
+  "interval_end_seconds": 4.001539,
+  "final_hold_seconds": 1.0001015420000003,
+  "max_image_gap_ms": 11.869208,
+  "skipped_opportunities": 0,
+  "ring_omissions": 0,
+  "writer_omissions": 0,
+  "ticks": [
+    0
+  ],
+  "sweep_exact_repeated_byte_runs": [],
+  "selected": [
+    {
+      "t": 0,
+      "submission_id": 248,
+      "submit_ns": 0,
+      "accepted_yaw_degrees": 0.0,
+      "rgba_sha256": "a865b1e6fc6765f6d4dec2190328d70f12d3d0ba9a6018f724659934c8ebb588",
+      "full": "full-0.png",
+      "crop": "crop-0.png",
+      "crop_rect_xywh": [
+        800,
+        650,
+        480,
+        340
+      ]
+    },
+    {
+      "t": 1.5,
+      "submission_id": 428,
+      "submit_ns": 1502265000,
+      "accepted_yaw_degrees": 8.999990463256836,
+      "rgba_sha256": "49b0e79057a73072fa915c0624bbf401ff0c07515cb27dd7aefee878ba534730",
+      "full": "full-1.5.png",
+      "crop": "crop-1.5.png",
+      "crop_rect_xywh": [
+        800,
+        650,
+        480,
+        340
+      ]
+    },
+    {
+      "t": 2,
+      "submission_id": 488,
+      "submit_ns": 2002297625,
+      "accepted_yaw_degrees": 18.049991607666016,
+      "rgba_sha256": "689665b1968011d7c05d796935adb92f2d4cab022e09687dc0eff19b361a4b7b",
+      "full": "full-2.png",
+      "crop": "crop-2.png",
+      "crop_rect_xywh": [
+        400,
+        650,
+        480,
+        340
+      ]
+    },
+    {
+      "t": 2.5,
+      "submission_id": 548,
+      "submit_ns": 2502229250,
+      "accepted_yaw_degrees": 27.04999542236328,
+      "rgba_sha256": "8f4abd98f38343aaddab7dbd233f0670746568384a9f93340e6c058d4eca99aa",
+      "full": "full-2.5.png",
+      "crop": "crop-2.5.png",
+      "crop_rect_xywh": [
+        100,
+        650,
+        480,
+        340
+      ]
+    },
+    {
+      "t": 3.5,
+      "submission_id": 668,
+      "submit_ns": 3502025833,
+      "accepted_yaw_degrees": 35.9999885559082,
+      "rgba_sha256": "85ea3ba193209eece43900842400319b6e568e42c147fcabcf8def92170053c8",
+      "full": "full-3.5.png",
+      "crop": "crop-3.5.png",
+      "crop_rect_xywh": [
+        100,
+        650,
+        480,
+        340
+      ]
+    }
+  ],
+  "preview_pts_max_error_seconds": 5.00000000069889e-07,
+  "desktop_capture_independence_qualified": true,
+  "console_before": {
+    "locked": false
+  },
+  "console_after": {
+    "locked": false
+  },
+  "browser_review": {
+    "rate": 1,
+    "duration_s": 4.002029,
+    "wall_ms": 4013.6,
+    "callbacks": 469,
+    "dropped": 0,
+    "scope": "native-size browser playback plus selected original frame/crop review; screenshot observations do not constitute continuous physical-panel observation"
+  }
+}

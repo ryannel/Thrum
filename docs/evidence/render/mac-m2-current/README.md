@@ -1,4 +1,6 @@
-# Mac M2 current-path qualification
+# Mac M2 qualification checkpoint, 9 November
+
+Historical checkpoint. The [10 November evidence](../mac-m2-20261110/README.md) supersedes the current-build claims below. Its console-witness policy accepts either state and its attributed preflights cover both before and after.
 
 **M2.1 passes builder inspection; M2 remains blocked on attended M2.3/M2.4/M2.2.** No panel proof is claimed.
 The current release on Apple M3 Max/Metal retains the complete 1920×1080 paused-noon elapsed-time pan through the

@@ -4,7 +4,13 @@ import CoreGraphics
 
 let output = URL(fileURLWithPath: CommandLine.arguments[1])
 let reportURL = output.appendingPathComponent("launcher.json")
-var report: [String: Any] = ["screen_recording_before": CGPreflightScreenCaptureAccess()]
+var report: [String: Any] = [
+    "screen_recording_before": CGPreflightScreenCaptureAccess(),
+    "bundle_identifier": Bundle.main.bundleIdentifier ?? "unavailable",
+    "launcher_pid": ProcessInfo.processInfo.processIdentifier,
+    "launcher_executable": CommandLine.arguments[0],
+    "preflight_api": "CGPreflightScreenCaptureAccess"
+]
 func save() throws {
     try JSONSerialization.data(withJSONObject: report, options: [.prettyPrinted, .sortedKeys])
         .write(to: reportURL, options: .atomic)
@@ -23,6 +29,7 @@ do {
     child.arguments = Array(CommandLine.arguments.dropFirst(4))
     var environment = ProcessInfo.processInfo.environment
     environment["PATH"] = "/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+    environment["THRUM_MAC_LAUNCHER_ID"] = Bundle.main.bundleIdentifier
     child.environment = environment
     child.standardOutput = log
     child.standardError = log
