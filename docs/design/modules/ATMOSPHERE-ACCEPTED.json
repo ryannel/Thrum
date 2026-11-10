@@ -1,0 +1,34 @@
+{
+  "module": "ATMOSPHERE",
+  "design": null,
+  "milestones": {
+    "M5": {
+      "definitions": "f79d2639f34716127affb411fbe3d6d6c82ecbef59fd8d256b2e64cff64a4520",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan the rest of Thrum's road to delivering the engine, as a project-level plan that brings water and clouds into it.",
+        "at": "2026-11-10T22:13:33Z"
+      }
+    },
+    "M6": {
+      "definitions": "fe966e929e2ec2ff329dec83f8d2bca54e7600ffa021a3ef6bd4e7ed80ba1a08",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan the rest of Thrum's road to delivering the engine, as a project-level plan that brings water and clouds into it.",
+        "at": "2026-11-10T22:13:33Z"
+      }
+    }
+  },
+  "briefs": [
+    {
+      "task": "Plan the rest of Thrum's road to delivering the engine, as a project-level plan that brings water and clouds into it.\n\nPurpose. The owner wants work lined up continuously toward the V1 exit in docs/BUILD-PLAN.md, so builders always have a next milestone, and wants water and clouds finished and consolidated. Today only PLATFORM-RUNTIME-MAC M2 and APPLE-TILE (G3t) are planned and open; everything after them is unplanned.\n\nWater and clouds are built in the Broadsides repository at /Users/ryannel/Workspace/Broadsides, not here. Water is on branch codex/water-rust-system, with notes/water/DESIGN.md, DESIGN-PLAN.md and HANDOFF.md. Three spikes on 10 November left results on branches claude/fable-hull-release, claude/fable-near-waterline and claude/fable-foam (notes/water/FABLE-*.md on each). Two cloud paths, a baked library and a procedural one, were built by separate Codex agents in Broadsides; find their branches and notes there. docs/design/decisions/SEA-AND-CLOUD-PORT.md governs bringing them into Thrum: it says Thrum wasn't ready on 6 November and that the owner schedules porting. The owner has now asked for both to be finished and consolidated. Decide, with reasons, what finished means for each, whether that finishing happens in Broadsides first or as Thrum modules, and where in the build order the port's readiness conditions are met.\n\nDone means: the project plan (module map, build order, contracts and a brief per module) covers the remaining work to the V1 exit plus water and clouds; each module that can start next has its design, plan and done-when file, so a builder can start it; and the build plan's active section points to it. List anything that needs an owner decision, such as port timing or spending, in your result rather than deciding it.\n\nBoundaries. Don't change the definitions of PLATFORM-RUNTIME-MAC M2 or APPLE-TILE, because builders are on them. Read Broadsides but don't change it.",
+      "at": "2026-11-10T22:13:33Z"
+    }
+  ],
+  "planner": {
+    "host": "claude",
+    "at": "2026-11-10T22:13:33Z"
+  }
+}
