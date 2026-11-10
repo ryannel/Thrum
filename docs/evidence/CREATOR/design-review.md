@@ -1,158 +1,156 @@
 # CREATOR design review
 
-Reviewed integrated revision `d64769fed5b9c5d1f3e4927db9fe269b9269f3de` on 10 November 2026.
-Previous design review: revision `4bbe44a433598650be47c1753c57da79f5d1df93`.
-Result: **changes requested — one blocking finding**.
+Reviewed integrated revision `17cf2703befa0d510acc1e31a7b4bbbf4367038e` on 11 November 2026.
+Previous review: `d64769fed5b9c5d1f3e4927db9fe269b9269f3de`.
+Design revision: `84652bd38c4c31c6b8d84cc5f1946123ef5e3f2d`.
+Result: **design approved, with two Suggestions; no blocking findings**.
 
-## Request and review scope
+## Request and scope
 
-I read the complete, sole entry in `CREATOR-ACCEPTED.json.briefs`, including its project-level planning request,
-before comparing CREATOR's design and criteria. There are no re-plan or retry briefs in this checkout.
-I started from the previous review and independently checked its blocking finding against the current design
-and timing producers.
-The request requires startable work toward the existing V1 exit, preserving the in-flight Mac and APPLE-TILE
-definitions. For CREATOR, the build plan and architecture brief require reusable creator scenes, native/browser
-typed demo UI, hot reload, a profiler, and a fresh agent making a small scene from public documentation alone.
-Sea/cloud implementation, port scheduling and the completeness of their separate designs are outside this review.
+I read both entries of `CREATOR-ACCEPTED.json.briefs`, whole and in order: the project-level commission to plan
+continuous work toward the existing V1 exit, followed by the task to revise CREATOR as the previous review asks.
+For this module, that requires reusable creator scenes, native/browser typed demo UI, hot reload, a useful profiler,
+and a fresh agent making a small scene from public documentation alone. The request protects the in-flight
+PLATFORM-RUNTIME-MAC M2 and APPLE-TILE definitions. It does not commission a separate profiling framework or a
+change to the V1 exit. Sea/cloud implementation and their port timing are outside this module review.
 
-Read: ORCHESTRATE, the requested review skill at version 1.6.2 and its calibration examples, Thrum's review
-rules and graded examples, the complete CREATOR design/plan and all 15 done-when items. I also read the relevant
-sections of the build plan, architecture brief, module list, G6 decision, creator guide, C11/C12 and web-shell
-boundary plan. No plans-folder BRIEF.md or GLOSSARY.md was present. I inspected the timing producer and shell
-consumer code named below.
-I did not review the entire engine or certify its existing implementation. No other agents were launched.
+I used the requested review-milestone skill at version 1.6.2, its design-review procedure and calibration examples,
+ORCHESTRATE, Thrum's engineering review rules and graded examples. I read the previous review first, then the
+complete current CREATOR design, plan and all 17 items, comparing the changed definitions with the previous
+revision. I also inspected the relevant build-plan and architecture-brief requirements, module-list ownership,
+interfaces and build order, G6 decision and creator-guide sections, C11/C12, the web-shell boundary, and the
+APPLE-TILE M3 timing requirement. There is no plans-folder BRIEF.md or GLOSSARY.md.
 
-Inspection questions, set before the source inspection:
+Source inspection was scoped to the existing frame sample, timing allocation/resolve, completion delivery and
+device publication paths; the Mac shell/actor and Chrome shell consumers; and the named valley pause control.
+This is a design and interface review, not an implementation, visual-quality or device-performance verdict.
+No runtime captures were necessary, and no other agents were launched.
 
-- Does the kit reuse one shell and controls authority while keeping scene source shared across targets?
-- Can the existing measurements actually supply current CPU-stage, GPU-pass and interval readouts?
-- Can a UI-only profiler consumer stop timestamp production without changing runtime ownership?
-- Do the criteria distinguish a real cooked scene, visible edits and honest timing from status-only substitutes?
-- Can the fresh-agent and attended proofs be executed without acquiring prior implementation knowledge or
-  making routine work depend on owner operation?
+Inspection questions set before checking those implementation seams:
 
-This is a design and interface review. No runtime, visual-quality or device-performance pass is claimed, and no
-captures were necessary. The referenced source is evidence about the proposed mechanism, not a milestone verdict.
+- Can the revised feed deliver current samples after Chrome's report buffer fills?
+- Do CPU and interval labels match the actual measurement authority?
+- Can timing stop without cancelling in-flight work or changing existing report consumers?
+- Are ownership and build order settled before the runtime edits begin?
+- Do the revised proofs reject frozen numbers, a UI-only off switch and stale samples after re-enabling?
+- Are the newcomer and actual-window exercises executable in the stated order?
 
-## Previous findings and revision check
+## Previous findings
 
-- **F1: unresolved.** The read-only profiler scope and all three producer limitations remain. The source checks
-  below independently confirm them; no producer interface, ownership agreement or sequencing resolution was added.
-- **S1: unchanged Suggestion.** The proposed load toggles and interpretation of coupled costs remain unspecified.
-- **S2: unchanged Suggestion.** The newcomer exercise still needs launch ordering ahead of normal reviewer reading.
-- **S3: unchanged Suggestion.** M3.4 still assigns the drag and saves to a person instead of separating setup from actions.
+### F1 — Resolved: the producer interface is now designed and assigned
 
-`git diff 4bbe44a43359 HEAD` contains only review reports and their accepted-record updates. There are no changes
-to CREATOR's design, plan or item definitions, the shared contracts, or implementation. All 15 items were reread;
-none was weakened or sharpened. There is no new blocking finding in this round. F1 below retains its original
-scope and resolution rather than adding a new refinement.
+The former consumer-only design could not supply current Chrome samples, separate encode/submit rows or live
+control of timestamp work. The revision resolves each part rather than leaving the builder to invent a boundary:
 
-## Must Fix
+1. **Freshness.** `CREATOR.md:124–130` assigns a bounded profile window in `thrum-app`, fed from each shell's
+   completion drain independently of report retention. Chrome's existing `web.rs:328–337` drains every sample
+   but retains only the first 600; a feed at that drain can observe subsequent completions without changing
+   `samples()` or the V1 report. Mac delivery likewise already carries completed samples through the render
+   actor. M2.2 now requires an actual load change after frame 600, not repeated reading of a frozen buffer.
+2. **Measurement meaning.** `CREATOR.md:91–105` uses the combined Encode + submit span, matching
+   `runtime.rs:194–197,1309`, and labels shell observations as callback intervals and present calls. The design
+   explicitly leaves physical cadence with Mac qualification. This narrows an unsupported label, not the
+   requested ability to locate expensive stages; the plan records the choice as an assumption.
+3. **Timing demand.** `CREATOR.md:131–158` defines the switch on the frame host, its default-on compatibility,
+   the untimed sample reason, per-frame in-flight behavior, preallocated query storage, device replacement and
+   report-run override. Existing `timing.rs:183–235` has bounded per-slot storage and an unsupported-feature
+   path; `runtime.rs:1531–1548` shows the completion/resolve branch that must honor a frame's captured demand.
+   The proposed state is sufficient to distinguish an untimed frame from a timed frame still completing.
+4. **Ownership and sequencing.** The module list's frame timing interface and CREATOR seam ruling assign the
+   runtime switch to the CREATOR M2 builder after APPLE-TILE M3, then to the runtime owner for maintenance.
+   M2's explicit dependency agrees. APPLE-TILE M3 already promises graph-pass names and consumer migration.
+   The CREATOR plan also serializes Mac shell integration with PLATFORM-RUNTIME-MAC M3 if open. The planner's
+   revision changes only CREATOR's three design/plan/item files and the module list, leaving the protected
+   module definitions alone.
+5. **Existing consumers.** Report and qualification runs remain timed from their first frame; the first-600
+   report and Mac history retain their meanings. The default-on host preserves callers that never use the
+   new control. M2.3–M2.5 explicitly require tests and consumer inspection, including real browser work counts.
 
-### F1 — Design the profiler's producer interface; the proposed read-only consumer cannot deliver M2
+These are bounded additions to the existing authority. They do not require another timer or an independent
+frame lifecycle. The required implementation and device tests are still future work.
 
-**Verified.** Locations: `docs/design/modules/CREATOR.md:85–103,119–121`,
-`CREATOR-PLAN.md:13–17,28–33`, and `CREATOR-DONE.json` M2.1–M2.3.
+### S1 — Resolved: executable perturbations and coupled costs
 
-The design says the profiler is fed **only** by measurements already taken, and that this module **only reads**
-the runtime's frame samples and GPU timings. M2 nevertheless requires separate encode and submit measurements,
-current rolling readouts, and an off state with no timestamp writes or readbacks. The named interfaces do not
-provide those behaviors:
+The unavailable shadow/volume toggles were replaced by the existing `world.paused` control
+(`examples/v1-game/src/controls.rs:107`) and the existing starter material hook. M2.6 names the expected CPU/GPU
+rows, repeated no-change controls and readability inspection. `CREATOR.md:178–185` explains coupled rows and
+requires an explanation for changes outside that list. This preserves the causal proof while making its actions
+buildable. The builder must retain the exact material edit and run settings so the reviewer can repeat them.
 
-1. **Chrome's samples stop updating.** `crates/thrum-app/src/web.rs:328–337` drains completed frames but appends
-   them only while `samples.len() < SAMPLES`; `SAMPLES` is 600 (`web.rs:40–41`). The public `samples()` getter
-   (`web.rs:482–484`) exposes that initial batch. After 600 completions, a median of this buffer remains an
-   initial-run value even if the creator changes the load. A repeated read or slower UI refresh cannot make it
-   current. A run longer than 600 completions followed by a load change is an ordinary failing case, not a stress
-   condition.
-2. **Submit time is not a separate measurement.** `crates/thrum-render/src/runtime.rs:184–208` exposes tick,
-   extraction, upload and combined encode time. The documented `encode_cpu` includes finish, submit and completion
-   registration; `runtime.rs:1256–1309` actually accumulates them into that one value. M2.1's separate encode and
-   submit rows cannot both be obtained from these samples. Repeating that value under two labels would mislead the
-   creator; adding the required producer measurements contradicts the read-only scope and the ask's prohibition
-   on a second timer unless the plan explicitly reconciles it.
-3. **Turning the UI off cannot turn GPU timing off.** Slots construct `GpuTimings` in
-   `crates/thrum-render/src/runtime/preparation.rs:83–88`. `timing.rs:183–203` disables it only when the enabled
-   device lacks timestamp queries. Runtime encoding passes the timing batch unconditionally
-   (`runtime.rs:1209–1215,1264–1270`), and completion resolves it in a later submission
-   (`runtime.rs:1537–1548`). There is no public profiler enable/disable operation in `FrameHost` or `GpuTimings`.
-   Hiding readouts leaves the writes and readbacks running. Removing the device feature at startup would not
-   provide the requested live on/off behavior either.
+### S2 — Resolved: newcomer ordering is explicit
 
-**Consequence:** building the stated readout-only mechanism fails the M2 statements. A builder must instead
-invent and change a runtime interface outside the settled scope. That also invalidates the module list's
-assumption that CREATOR M2 is ready in other files while APPLE-TILE changes the frame lifecycle.
+M3.1 puts the exercise first, permits the process prelude and three public documents, requires an ordered read
+log, and gives `cant_tell` if the reviewer already read internals. The plan has a launch instruction for a new
+review session. Source/design review follows the exercise. This review has read internals and is not that proof.
 
-**Required resolution:** settle a bounded producer/consumer interface with explicit ownership and sequencing
-relative to the in-flight runtime/APPLE-TILE work, without changing their protected definitions. Specify the
-fresh-sample delivery path, the actual CPU measurements and labels, and how profiling enable/disable handles
-in-flight query batches, completion, device replacement and existing reporting consumers. Define interval rows
-by their actual source (callback/target/present observation); shell timing must not silently become physical
-display cadence. Amend M2's proofs to exercise a load change after the first 600 completed Chrome frames and a
-live on/off transition. Keep one measurement authority. The planner can choose the interface; this review does
-not require a particular data structure or a new profiling framework.
+### S3 — Resolved: attendance is setup, with agent-driven actions
+
+M3.4 names unlocked/awake setup and Screen Recording/Accessibility grants, then has the agent drag, save and
+capture the actual window and panel by window ID. The fallback person performs only the drag when Accessibility
+is unavailable. Offscreen frames are expressly excluded. The locked-session evidence route remains explicit;
+it must use the attended run's actual-window captures, not claim a fresh interaction the reviewer did not perform.
+
+## Changed criteria and plausible substitutes
+
+Every changed item was reread against the prior findings; the renumbering does not silently remove the former
+load-response or DOM inspections. M2 grows from five to seven items. M1 definitions are unchanged; M3.2 and M3.5
+only gain empty review fields, with no change to their acceptance statements.
+
+| Definition | Assessment |
+|---|---|
+| M2 bar and needs | Judgeable. Preserves useful, current readouts, replaces the vague overhead promise with an observed paired cost, and puts runtime work after APPLE-TILE M3. Read the off-cost claim with the explicit report-run and in-flight exceptions. |
+| M2.1 | Judgeable. Names actual sources, the combined CPU span, sample window and refresh tests. A second timer or physical-display label cannot pass. Present calls are counts; the design's source table governs their meaning. |
+| M2.2 | Stronger than before: late-run perturbation catches the first-600 substitute; reasons, faults, missing support and replacement clearing are checked. See S5 on precision labels. |
+| M2.3 | Judgeable against the designed per-frame switch and device tests. Untimed frames still complete, timed in-flight frames finish normally, and default callers retain behavior. Read “loses no frame sample” as no additional loss from the switch: the design expressly retains abandonment of a lost device's batches. `runtime/device.rs:213–225` already counts/discards those batches and replaces slots. |
+| M2.4 | A new real-browser transition proof counts resolve/readback work and requires continued presentation and fresh post-enable samples. Merely hiding rows cannot pass. S4 sharpens the ordering exercised by that proof. |
+| M2.5 | Preserves the former paired-cost requirement and adds report/qualification compatibility. The cost comparison must exercise a genuinely untimed off arm; a report-enabled run keeps timing on by design and cannot alone measure the full on/off difference. |
+| M2.6 | Carries the former M2.4 visual/causal inspection with runnable perturbations, repeated controls and explained coupling. The measured row must actually move; a control-state display is insufficient. |
+| M2.7 | Carries the former M2.5 DOM inspection and adds an off state. Same-scene rows must remain readable at normal and narrow widths. |
+| M3.1 | Stronger ordering and provenance for the existing fresh-agent exercise; still requires an original cooked mesh, both targets and actual captures. |
+| M3.4 | Preserves real-window response to all three actions and removes routine dependence on a human operator. No offscreen substitute is accepted. |
+
+The unchanged M1.1–M1.5 still require the real hardware browser scene, shared control declarations, accepted and
+refused live edits, shared scene source and legible page states. M3.2–M3.3 still require sufficient public docs
+and reproducible mistake/recovery behavior; M3.5 reconciles evidence with separate maturity dimensions.
+No new gap against the accepted briefs or interface was found. The browser starter and held overlays remain
+explicit scope decisions examined in the earlier review, not hidden changes in this revision.
 
 ## Suggestions
 
-### S1 — Make the M2.4 load perturbations executable and interpret coupled costs
+### S4 — Exercise late completions across a rapid off/on transition
 
-**Verified wording and source mismatch.** M2.4 asks the reviewer to toggle Sun shadows, exposure zones and the
-cooked volume. `examples/v1-game/src/controls.rs:84–110` declares the exposure toggle but no shadow or volume
-toggle; CREATOR's plan does not assign those additions. Name an existing runnable perturbation or commission
-the minimal diagnostic control explicitly. Also explain which timings should respond together: GPU passes share
-resources, and some current `FrameSample` rows aggregate work (`runtime.rs:204–213`). Requiring every unrelated
-row to remain steady can reject honest measurements under contention. A bounded repeated before/after test with
-recorded noise and expected affected rows would make this inspection more useful. This sharpens the proof;
-it is not a separate architectural blocker.
+**Suggestion; verified ordering risk, not an observed implementation failure.** Locations:
+`CREATOR.md:124–140`, M2.3 and M2.4. Emptying the profile window at a toggle does not by itself exclude an old
+frame that completes after the new on state. For example, encode timed frame A, switch off and on before A
+completes, then deliver A. A feed conditioned only on the current toggle would admit A into the new window.
+`FrameSample` already has `submission_order` (`runtime.rs:179–180`), and the shells track device generations.
 
-### S2 — Route the M3 newcomer exercise before the normal review prelude
+Include that ordering in the switch tests and make sample admission honor the new profiling interval, using
+frame/generation identity rather than clearing alone. Do not discard the same completion from the independent
+report path. This sharpens an existing proof: M2.4 already forbids displaying pre-switch numbers, so the wrong
+implementation would violate its present statement. No new runtime authority is needed.
 
-**Verified process ambiguity.** M3.1 prohibits reading any other design document before doing the exercise,
-whereas ordinary reviewer startup reads project settings, graded examples and the design. Preserve the strong
-fresh-agent requirement by making its ordering explicit in the future M3 launch: the three public documents and
-the exercise first, with a read log, then the normal source/design review. A reviewer contaminated by the normal
-prelude should not silently count as fresh. This design review did read internals and is not the M3 exercise.
+### S5 — Distinguish observed timestamp spacing from known precision
 
-### S3 — Keep attended setup separate from routine test actions
+**Suggestion; verified ambiguity in the inference, not a blocker to usable readouts.** Locations:
+`CREATOR.md:110–112`, M2.2 and M2.7. A finite window of durations cannot uniquely identify timestamp resolution:
+values of 0.2 and 0.4 ms are compatible with both a 0.1 ms and a finer grid; an all-zero window provides no step
+estimate. Inferring a step from those values must not certify the adapter's actual precision.
 
-**Verified.** M3.4's `attended` text requires a person to drag the slider and save the files. An unlocked visible
-window is a legitimate setup requirement, but ORCHESTRATE and `AI-DEVELOPMENT.md:178–190` distinguish attended
-setup from automated actions and review. Permit the agent to perform the drag and file saves once setup is ready;
-name the selected window/native-UI capture method and any required grant. Preserve proof of the actual visible
-window rather than substituting an offscreen image. This avoids an unnecessary human-operation dependency.
+The cited [Chrome announcement](https://developer.chrome.com/blog/new-in-webgpu-121) documents 100-microsecond
+quantization and its development flag. Use a conservatively labeled browser precision policy or an explicitly
+estimated spacing, and an unknown/below-resolution reason when the observations do not distinguish it. Include
+constant, zero and sparse-value windows in the formatter tests. The existing items already allow an honest
+reason instead of a number, so this is clearer labeling and proof coverage, not a requirement for a new timing
+measurement or browser capability API.
 
-## Coverage and criterion assessment
+## Validation and limits
 
-The browser starter is a justified, explicitly recorded extension of the earlier Mac-only starter. Reusing
-`WebShell`, the DOM controls model and the cooked-client path is a plausible mechanism, and the design preserves
-page ownership of RAF/listeners and shell ownership of clock/loss policy. The held overlays, cooked parameter
-product, iOS and public-page shader reload are explicit inherited limits rather than hidden omissions. M1 reaches
-a useful scene before the profiler and closeout work.
+No implementation, milestone state, done-when definition or accepted record was changed. Only this review was
+written; no captures were created. Documentation validation is recorded below. Approval concerns this design
+revision only and does not promote implementation, correctness, visuals or device maturity.
 
-All done-when items were assessed for judgeability and plausible substitutes:
+Validation: `./dev check-docs` passed (622 Markdown files, 2,893 local links, 30 module records, crate policy
+and current design hashes). `git diff --check` passed; `git status --short` confirms only this review changed.
 
-| Item | Design assessment |
-|---|---|
-| M1.1 | Judgeable: the command, real hardware WebGPU, cooked-scene pixels and slider response are required; the ask rejects status-only/fallback substitutes. |
-| M1.2 | Judgeable: shared declarations and checked file application can be traced through both views. |
-| M1.3 | Judgeable: live accepted edit and refused edit retaining the previous drawn generation are distinct observable states. |
-| M1.4 | Judgeable by reading scene source and the kit runner and counting game lines. |
-| M1.5 | Concrete page-state inspection, with canvas and DOM evidence correctly separated. |
-| M2.1 | Blocked by F1: the current producer does not expose all the promised measurements or a continuously updating Chrome sample set. |
-| M2.2 | Honest unavailability is judgeable once F1 establishes current sample identity and delivery. Include freshness in that resolution. |
-| M2.3 | Blocked by F1: the stated consumer cannot disable the runtime's timestamp work. Paired cost observations are otherwise appropriate. |
-| M2.4 | Useful causal/legibility inspection after F1; S1 makes the selected perturbations reproducible. |
-| M2.5 | Judgeable DOM inspection; numeric rows still need M2.1/M2.2's provenance, not just readable labels. |
-| M3.1 | Strong end-to-end proof rejecting starter copies and internal-source dependence; preserve newcomer ordering as in S2. |
-| M3.2 | Judgeable against the commands and files actually used by M3.1. |
-| M3.3 | Concrete diagnostic/recovery cases with report and image evidence; initial missing-store failure need not fabricate a last-good scene. |
-| M3.4 | Observable native-window behavior with a legitimate setup requirement; S3 removes unnecessary manual operation. |
-| M3.5 | Judgeable reconciliation of the evidence and separately recorded maturity dimensions. |
-
-No done-when fields or other design files were changed. Approval here would concern the design only; it would not
-promote implementation, visual or device maturity.
-
-Validation: `./dev check-docs` passed (616 Markdown files, 2,802 local links, 30 module records, crate policy and
-current design hashes). Only this review is changed; no captures or implementation edits were made.
-
-DESIGN CHANGES: 1 blocking findings
+DESIGN OK
