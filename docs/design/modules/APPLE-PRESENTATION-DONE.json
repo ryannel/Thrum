@@ -85,10 +85,10 @@
         },
         {
           "id": "D2.2",
-          "statement": "A third forward target, reactive R8Unorm, is written by invalid-history objects (1), the cooked volume (its alpha), and stars and the Sun on cuts and phase edits only; the scene-contribution, cooked-asset and atmosphere pipelines all declare it and their tests pass.",
+          "statement": "A third forward target, reactive R8Unorm, is declared by every forward drawer: synthetic, scene contribution, cooked direct and indirect, the sky, and the separate star pass, whose attachments and graph accesses match its shader outputs; their pipeline tests pass.",
           "check": "./dev check",
           "lock": "gpu",
-          "ask": "Does every forward drawer declare the third target, including the cooked direct and indirect paths with their COOKED-DRAW selection and history rules intact? Is a steady star field written as non-reactive, and does a contribution get the target through the contribution seam rather than a private binding?",
+          "ask": "Does every forward drawer declare the third target, including the cooked direct and indirect paths with their COOKED-DRAW selection and history rules intact, and does the star pass attach and declare access to every target its shader writes? Does a contribution get the target through the contribution seam rather than a private binding?",
           "target": "mac-metal",
           "status": "open",
           "evidence": ""
@@ -115,7 +115,27 @@
         },
         {
           "id": "D2.5",
-          "statement": "The reactive target and the history rules behave the same in Chrome: the valley route runs with the third target declared and the browser checker's existing cases pass.",
+          "statement": "In Chrome, on the game's own frame path, rows W1-W7 of the design's temporal-input witness hold: reactive is written where history is invalid and cleared where it is valid, and the frame after an unsubmitted view takes the last submitted frame as its predecessor, in identity and in the motion it writes.",
+          "check": "node scripts/check_v1_browser.mjs --case temporal",
+          "lock": "gpu",
+          "ask": "Read the temporal case. Are the reactive and motion values taken from frames the page submitted, not from a side render or a declaration? Is the unsubmitted view abandoned at the latest point the browser frame path allows, with the predecessor identity read from the state the previous matrices are packed from? Would a reactive target that is never written, and history advanced before submission, each fail a row?",
+          "target": "chrome-webgpu",
+          "status": "open",
+          "evidence": ""
+        },
+        {
+          "id": "D2.6",
+          "statement": "On the Mac, rows W1-W5 of the design's temporal-input witness hold, read back from the reactive target itself: 1 on invalid-history geometry and 0 once valid, the volume's alpha on the cooked volume, above 0 on stars and the Sun disk on a phase edit, and 0 for steady stars and uncovered pixels.",
+          "check": "./dev check",
+          "lock": "gpu",
+          "ask": "Do GPU tests drive the witness fixture through the real forward and star passes, read the reactive target back, and assert each of W1-W5 against the expected values in the fixture definition that the Chrome case also reads?",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": ""
+        },
+        {
+          "id": "D2.7",
+          "statement": "With the third target declared, the browser checker's existing cases still pass in Chrome. This is a regression check only; it proves nothing about reactive values or history.",
           "check": "node scripts/check_v1_browser.mjs --case all",
           "lock": "gpu",
           "target": "chrome-webgpu",
@@ -147,10 +167,10 @@
         },
         {
           "id": "D3.2",
-          "statement": "At each still route checkpoint a converged reference exists (64 jittered native frames with the camera held), and TAAU's colour difference to it meets the design's reconstruction tolerance and is lower than the no-AA path's at the same checkpoint.",
+          "statement": "At each still route checkpoint the design's reconstruction reference exists (the 32 jitter offsets at native resolution, averaged with the scene, time and exposure held), and TAAU's p99 colour difference to it meets the design's reconstruction tolerance and is lower than the no-AA frame's at the same checkpoint.",
           "check": "python3 scripts/run_v1_showcase.py reconstruction --target mac-metal",
           "lock": "gpu",
-          "ask": "Read the reconstruction arm. Is the reference accumulated by a separate mode from the TAAU path it judges, is the difference computed over the whole frame without masks, and does a deliberately broken TAAU (history disabled) fail?",
+          "ask": "Read the reconstruction arm. Is the reference accumulated by a separate mode from the TAAU path it judges, with the held state checked and not assumed? Is the difference the design's CIEDE2000 over the whole frame without masks, against the bound the design states? Does a deliberately broken TAAU (history disabled) fail?",
           "target": "mac-metal",
           "status": "open",
           "evidence": ""
@@ -187,8 +207,8 @@
         },
         {
           "id": "D3.5",
-          "statement": "TAAU's GPU time on the route is recorded beside the design's estimate, with build, extent, load and order; a departure from the estimate is recorded as a tripwire, not a failure.",
-          "ask": "Is the timing a paired on/off record on the route at the stated extent, labelled for load, with the design's estimate restated or corrected?",
+          "statement": "TAAU's GPU time on the route is recorded at M3's own 640x360 extent, kept apart from the design's 1080p estimate, with build, load and order; a departure from the estimate is recorded as a tripwire, not a failure.",
+          "ask": "Is the timing a paired on/off record on the route at the stated extent, labelled for load, and is it kept from being read as the 1080p figure the design estimates?",
           "target": "mac-metal",
           "status": "open",
           "evidence": ""
