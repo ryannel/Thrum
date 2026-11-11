@@ -1,51 +1,111 @@
 # PLATFORM-RUNTIME-MAC design review
 
-10 November 2026. Reviewed integrated revision `9d6c6f6fcdd0b7ad533cce994a01f9567ab33887` under the review-milestone design-review procedure. No blocking or advisory design findings.
+11 November 2026. Reviewed integrated tip `3e5be4a760190434acd2655d43d7cf92c549ee8e` using the
+review-milestone skill's “Reviewing a design” procedure and Thrum's engineering review rules.
+
+No Must Fix findings or Suggestions.
 
 ## Previous round
 
-The previous review, dated 9 November against `d0f8c09940651867afb9383be9d74133308e5701`, ended DESIGN OK and raised no blocking findings. There are therefore no outstanding blocking findings to resolve. This review checks the consolidated design and revised acceptance definitions, including console witnesses, current-path M2, windowed capture, bounded trace diagnosis and post-G3t M3.
+The previous review, dated 10 November against `9d6c6f6fcdd0b7ad533cce994a01f9567ab33887`, ended
+`DESIGN OK` with no blocking or advisory findings. There are no outstanding Must Fix findings to resolve.
+I compared the current definitions with that revision and with the pre-reshape checkout `42fdce97`,
+then read every current item and the relocated protocol. This is a review of the existing qualification
+design and its reshape, not a new technique-selection or implementation review.
 
-## Requirements and scope
+## Request and required outcome
 
-The commission comes from the build plan's purpose, V1 exit and G3b requirements, the architecture brief, the shared platform runtime design and C02/C06/C07/C12. The plan's embedded review brief adds the held-drawable recovery and observation boundaries. These require the same cooked game, world, window and controls to survive graphics loss, explicit running or paused authority policy, coherent slow input-driven camera motion, and attributable built-in-panel presentation observations.
+I read the complete `briefs` array in [ACCEPTED.json](../../plans/PLATFORM-RUNTIME-MAC/ACCEPTED.json)
+and [the project brief](../../plans/BRIEF.md) before assessing the design. The array contains one task:
+reshape the migrated plans into orchestrate 1.7.0 form, retaining milestone scope and done-when items,
+moving detailed designs and review briefs to their appropriate files, shortening done milestones to
+headings and review links, and repairing moved links. It does not commission a new runtime mechanism.
 
-The requirements imply one authoritative clock, platform-owned surface/device recovery and renderer-owned submission/history. A successful queue call, GPU completion, engine movie or display-link callback cannot alone establish displayed cadence. Browser/iOS qualification, G3t mechanisms, G4 reconstruction and physical-device timing retain their own owners. Numeric performance results are observations, while visible hitches require investigation.
+For this module, the project brief's G3b and the module-list entry require recovery of the same Mac game
+and qualification of motion on the built-in ProMotion display. The existing contracts require one
+world clock, platform-owned surface/device lifetime, renderer-owned GPU submission and history, and
+separate evidence for engine images, elapsed-time motion and independently attributed presentation.
+The post-Apple-tile assembly must be qualified afresh. Numeric timings remain observations; visual
+hitches require investigation. Browser, iOS, G4 and physical input-to-photon qualification keep their
+separate scopes.
 
-I read these governing requirements before assessing the revised Mac design and all done-when items. The module has no separate brief file. Its review brief is embedded in its plan. This is a review of an existing qualification design, with exposure to its prior review and scoped implementation, rather than a blind technique-selection review.
+## Reshape and mechanism assessment
 
-## Design assessment
+The module's [plan](../../plans/PLATFORM-RUNTIME-MAC/PLAN.md) now has short outcome-named milestones.
+M0/M1 consist of headings and links to retained records, which lead to their historical verdicts.
+Detailed M2/M3 protocols moved into [the design](../../plans/PLATFORM-RUNTIME-MAC/DESIGN.md#m2-and-m3-qualification-protocol).
+Review briefs and the console-witness commission are retained under this evidence folder and linked
+from the log. The plan still links the attended runbook. The project brief and module list retain G3b
+and its owning module.
 
-The design preserves the governing ownership boundaries. AppKit supplies display targets and window identity. The world clock/lane owns authority. The render actor owns late acquisition, surface epochs and serialized replacement. FrameHost owns GPU admission, slots, submission and submitted history. The scoped source read of `display_link.rs`, `render_actor.rs` and `recovery.rs` supports those seams, including loss checks around acquisition and explicit encoded-frame abandonment. The design confines the recovery claim to observed loss and the specified injection, with unchanged-world and same-build image controls.
+The comparison against `42fdce97` found only milestone-name and relocated evidence/review-pointer
+changes in `DONE.json`. No statement, inspection, reviewer question, automated check, target, quality
+bar, dependency or acceptance state changed in the reshape. Compared with the previous reviewed tip,
+there are also intervening builder status/evidence updates; those are not new acceptance definitions
+or independently awarded milestone passes. The legacy `docs/BUILD-PLAN.md` wording remains in the
+closed M0 question; its successor G3b link is in `docs/plans/BRIEF.md`. This historical wording does
+not make an open item unjudgeable or warrant changing the preserved criterion.
 
-The revised unattended proof is consistent with T2 and C12. Actual monotonic elapsed time drives the ordinary semantic input and renderer paths, while a paused world retains authority. Complete submitted source frames and joins prevent endpoint redraws or a fixed-step movie from standing in for runtime motion. Console observations accept either state and transitions. Denied attributed launcher/driver preflights establish the separately stated capture-independence proof.
+The design's ownership and recovery sequence remain consistent with C02/C06/C07 and the shared
+platform/frame-host designs: close old-device admission, abandon lost encoded work without queue
+flush or history publication, retain authority and controls, then prepare and publish a fresh
+validated generation. Surface and device epochs remain distinct. The same-binary control, paused
+image oracle and running/paused loss rows distinguish recovery from a restart or frozen screenshot.
 
-The current harness still checks `locked_permission_unavailable_qualified` in `scripts/capture_mac_m2_ungranted.py`, and `scripts/capture_v1_runtime.py` still lacks the commissioned driver after-run permission preflight. These are explicitly identified implementation work in the design and plan. M2.1 is open and requires a fresh run after correction, so the design does not convert that unfinished work into an accepted capability. The earlier locked-run pass retains only its historical scope.
+The relocated protocol preserves C12 and T2's capture boundaries. Actual elapsed time and ordinary
+semantic controls drive unattended motion, including while authority is paused. Complete submitted
+images and control/submission identities expose omissions and holds. Console observations accept
+both states and transitions; denied attributed permission preflights establish the separate
+capture-independence claim. The real-window tap must share the presented producer, reject stale
+readback after replacement, and leave the disabled direct path free of capture work.
 
-M2.3 commissions qualification of the existing renderer tap on the actual window. Its known-pattern correspondence, producer/submission binding, pending-readback loss, stale-generation refusal and disabled-path checks cover the important integration risks. The runbook explicitly says an offscreen pattern test alone cannot pass the live-window item. Capture retains T2's bounded resources and the existing executor.
+The cost model is inherited from T2's bounded staging, CPU buffers and writer queues, with explicit
+incomplete outcomes instead of blocking the renderer. Matched ON/OFF and traced/untraced arms measure
+observer costs. Only the capture-OFF arm qualifies shipping cadence, through fresh attributed swaps
+and a calibrated full-interval clock join. A requested 120 Hz workload or movie timestamps cannot
+stand in for those observations.
 
-M2.4 treats trace finalization as an unresolved tooling hypothesis with a refusal outcome. The changed hypothesis, two-attempt total allowance, finite recording/finalization/export limits and owned-process cleanup bound the investigation. The runbook conservatively charges the two matched traced arms against that allowance. A readable export still needs app/window attribution and a valid full-pan clock join. Neither an existing trace directory nor the historical swap stream can pass.
+The unresolved trace-finalization mechanism remains an explicit bounded investigation. A changed
+hypothesis precedes recording; the two-attempt allowance is not renewed by the reshape or M3.
+Unreadable exports, ambiguous attribution or exhausted attempts leave the relevant items open.
+The linked runbook accounts for both traced arms within the allowance and requires usable exports,
+not merely a trace directory. This is a judgeable experiment, not an unsupported promise of success.
 
-M2.2 uses capture OFF for its shipping cadence observation and matched ON arms for content and observer cost. AppKit controls, build/content/recipe matching, numeric swap times and calibrated attribution constrain the observation. M3 repeats the complete proof after APPLE-TILE M3 changes the assembly. Current-path M2 can proceed independently, and the later delivery dependency does not create a cycle.
+M2 needs T2 M0 and has no Apple-tile delivery dependency. M2.3/M2.4 precede final M2.2 qualification.
+M3 follows Mac M2 and Apple-tile M3, revalidating motion, window capture and cadence on the changed
+assembly. The T2 and Apple-tile dependency records preserve this ordering without a cycle.
 
 ## Acceptance-item audit
 
-The prospective inspection list used for this design review was ownership and loss ordering, authority policy, full motion coverage and provenance, console/permission independence, real-window correspondence and lease lifetime, disabled observer work, bounded trace failure, swap attribution/timebase joins, and post-change requalification. These are design inspection questions. Runtime images and motion were not inspected in this review.
+Design inspection covered retained scope, state ownership, failure ordering, clock distinctions,
+complete motion coverage, permission/console handling, window-producer correspondence, stale work,
+disabled observer cost, bounded investigation, attribution and post-change requalification.
+No runtime image or motion inspection was performed in this design review.
 
-| Item | Judgeability and convincing substitutes excluded |
+| Item | Judgeability and plausible false proof excluded |
 | --- | --- |
-| M0.1 | Named contracts, owners and build-plan link permit a concrete boundary audit. It excludes rival clocks and unsupported physical-presentation claims. |
-| M1.1 | Same-binary diagnostic rows, raw queue audit, PID/window identity, acknowledgements and tick ordering distinguish retained authority from restart or implicit pause. |
-| M1.2 | Full RGBA equality plus normal-speed composited post-recovery response distinguishes intact recovery from a frozen image or a present-call log. |
-| M2.1 | Full-resolution elapsed-time sources, holds, yaw/submission joins, denied preflights and explicit console policy are judgeable. Capture omissions refuse the interval. Static parity and historical passes cannot substitute. |
-| M2.2 | Matched arms, fresh numeric app/window/display swaps and a calibrated full-interval join are judgeable when available. Ambiguous exports or anchors leave it open. Capture-on observations cannot qualify shipping cadence. |
-| M2.3 | Source tracing, real-Metal checks and actual-window pattern/replacement inspection jointly establish producer correspondence, lease ownership, cancellation and the disabled direct path. Offscreen-only evidence cannot pass. |
-| M2.4 | Hypothesis and durable attempt records, deadlines, fresh exports and attribution make both success and blocked outcomes observable. Tool completion alone cannot close cadence. |
-| M3.1 | Incorporates every M2.1 proof on a fresh integrated post-G3t build with source/shader/content/recipe identity. Earlier output cannot qualify it. |
-| M3.2 | Incorporates the full M2.2 observer protocol and revalidates M2.3/M2.4 on that build. Functional-window logs and earlier traces cannot substitute. |
+| M0.1 | Historical ownership and instrumentation review has retained records and a current G3b link. No new runtime claim is inferred from it. |
+| M1.1 | Same-binary control and loss rows, queue-call audit, retained PID/window, acknowledgements and tick ordering distinguish retained authority from restart, hidden pause or old-queue work. |
+| M1.2 | Complete RGBA equality plus composited post-replacement input response distinguishes intact recovery from a matching frozen endpoint. |
+| M2.1 | Full elapsed-time sources, endpoint holds, yaw/submission joins and denied attributed preflights are observable after T2 M0. Fixed-time animation, static parity and missing frames cannot pass. |
+| M2.2 | Fresh numeric swaps, unique app/window/display attribution, matched observer arms and a bounded-error join cover the full pan and holds. Capture-ON or historical swaps cannot qualify shipping cadence. Unavailable evidence keeps the item open. |
+| M2.3 | Code tracing, real-Metal checks and a live-window pattern/replacement scenario jointly test producer correspondence, drawable lifetime, stale-readback refusal and the OFF path. Offscreen-only proof cannot pass. |
+| M2.4 | The hypothesis, attempt journal, deadlines, fresh exports and reusable command make success or failure observable within M2. Tool completion without attributable swaps cannot pass. |
+| M3.1 | Incorporates every M2.1 requirement on the post-Apple-tile build with fresh source/shader/content/recipe identity. An earlier verdict cannot qualify changed output. |
+| M3.2 | Incorporates the complete M2.2 protocol and revalidates M2.3/M2.4 on that assembly. Earlier traces, window-function logs and renewed diagnostic retries cannot substitute. |
 
-## Limits and verdict
+## Verification and limits
 
-This review assesses design and proof sufficiency. It does not re-award historical milestone verdicts or establish current implementation correctness, motion quality, window correspondence or panel cadence. No runtime, GPU recording, permission change or trace attempt was performed. No agents were launched. Only this review file was changed.
+Read the full module design, plan and all nine acceptance items; the saved request and previous review;
+the reshape diff and moved records; C02/C06/C07/C12; the shared platform and bounded-frame-host designs;
+T2's relevant ownership, frame flow, cost and rollout sections; the dependency records; and the current
+attended runbook. The project and skill calibration examples informed the review.
+
+`./dev check-docs` passed: 663 Markdown files, 3,193 local links, 30 module records, crate policy and
+current design hashes. `git diff --check` passed after writing this review.
+
+This verdict assesses design and proof sufficiency, not implementation correctness, current motion
+quality or panel cadence. No runtime/GPU capture, trace attempt, permission change or other agent
+was launched. Only this review file was changed; no milestone verdicts were edited.
 
 DESIGN OK
