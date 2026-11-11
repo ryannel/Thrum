@@ -102,3 +102,12 @@ with zero new trace attempts consumed. [Evidence and one-command runbook](../../
 [evidence](../../evidence/PLATFORM-RUNTIME-MAC/console-witness-correction.md), and the M2 and M3 protocol detail to
 [the design](DESIGN.md#m2-and-m3-qualification-protocol). M0 and M3 were renamed for what someone can see. No item
 or scope changed.
+
+- 2026-11-11 M2 scoped re-plan, missing display events. Read-only export of both retained traces shows
+  system-wide kernel tracing worked, so authorization and Developer mode are not the cause. One kernel source
+  (codes `0x34,0x11`/`0x34,0x0f`) emitted nothing and every display table is empty with it; the reason is not
+  established. Both recordings were also windowed to about 2.9 seconds and began after the pan started. The traces
+  already hold OS-reported presented time per game drawable, which shows three missed refreshes. M2 now judges
+  cadence from that witness: M2.4 is the command, new M2.5 the full-interval recording, M2.2 the three arms. Six
+  recordings granted; M3.2 follows the same witness. No owner action beyond an unlocked awake panel. Design review
+  owed. [Diagnosis](../../evidence/PLATFORM-RUNTIME-MAC/m2-display-event-diagnosis.md).

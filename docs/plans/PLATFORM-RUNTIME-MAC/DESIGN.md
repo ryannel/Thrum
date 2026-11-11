@@ -15,7 +15,8 @@ at 1× for cuts, snaps, reversals, repeats and local holds. The Ground E view id
 milestone's worded inspection list and shipped high-end game quality bar govern visual acceptance.
 
 M0/M1 retain their accepted plan/recovery evidence. M2 qualifies the current surface path through elapsed-time
-engine motion, real-window tap correspondence and independently attributed built-in-panel swaps. M3 repeats the
+engine motion, real-window tap correspondence and OS-reported presented times for the game's drawables on the
+built-in panel. M3 repeats the
 complete qualification after APPLE-TILE M3 changes the surface/present path. Each result identifies its actual
 build, content and recipe. The done-when file owns criteria and proof status.
 
@@ -71,24 +72,52 @@ publication and resume healthy presentation. Capture observes the existing submi
 a drawable lease. Its disabled arm retains direct presentation with zero tap targets, copies, readbacks, workers or
 per-frame capture allocations. T2 retains bounded readback/writer ownership under [C12](../../design/CONTRACTS.md#c12-budgets-evidence-and-acceptance--t2-with-all-owners).
 
-M2.4 owns the bounded trace-finalization investigation. Inspect retained failures and document a changed falsifiable
-hypothesis before recording. The existing 9 November allowance permits at most two new diagnostic attempts total,
-each with 16 seconds recording, at most 75 seconds finalization and finite export timeouts. A readable fresh TOC
-and displayed-surfaces-interval export must identify actual app/window swaps. Exhausted attempts, unavailable setup
-or an unjustified hypothesis leave the tooling and cadence rows blocked. Further attempts need a scoped re-plan.
+M2.4 and M2.5 qualify the cadence witness. The witness is the OS-reported presented time of each game drawable:
+the `ca-client-presented-handler` table that Instruments records for the launched game. The evidence reads it as
+CoreAnimation's record of when each drawable reached the screen, the value `MTLDrawable.presentedTime` exposes:
+it sits on the refresh grid while handler callback times jitter, and M2.5 validates it against the markers. The
+game needs no change and no raw drawable bridge. Both 11 November traces hold it for every drawable in their
+retained window, with three two-refresh intervals between them
+([diagnosis](../../evidence/PLATFORM-RUNTIME-MAC/m2-display-event-diagnosis.md)). The Instruments display tables
+are not the witness. Their kernel source emitted nothing in either trace while the rest of system-wide kernel
+tracing worked, and the cause is not established. Export them with every recording: populated tables corroborate,
+and empty ones are recorded without blocking.
 
-After M2.3/M2.4, M2.2 runs matched capture-ON/untraced, capture-ON/traced and capture-OFF/traced arms using the same
-release build, cooked root, recipe, extent and normal AppKit slider target/action sweep. ON arms retain complete
-content motion and expose capture/tracing overhead. The OFF arm supplies shipping cadence through numeric Swap Time,
-unique game PID/window/built-in-display attribution and resolved rotating surface identities. Same-process markers
-or a calibrated monotonic join with stated error must cover the full pan and holds. Ambiguous joins or unreadable
-exports leave cadence open. Record run order, load, intervals, gaps and unmatched samples.
+M2.4 is one reusable command that turns a trace into the witness result, built with no new recording. It derives
+presented time per drawable through a conversion validated against the same-process markers with stated error,
+joins drawables by ordinal to the game's submission records, and reports intervals as multiples of the display's
+reported refresh period. A missing ordinal, a zero or absent presented time and an unfamiliar status are unmatched
+samples, never presented frames. The command must reproduce the three retained two-refresh intervals from the
+11 November tables.
 
-These window/panel/tool rows need an unlocked active built-in display and any required Instruments authorization.
-Engine pixels require no Screen Recording grant. OS-window/compositor observation, when separately required by
-APPLE-TILE, has its own attended permission identity. Callback targets, opportunities, submission, GPU completion,
-image times, movie PTS, VSync and attributed swaps remain distinct measurements. Input-to-photon and physical
-iPhone qualification require their own evidence.
+M2.5 is a fresh recording that covers the whole marked interval. Game Performance records as a ring buffer and
+kept under three seconds on 11 November, starting after the pan began. The builder chooses a recording
+configuration that is not windowed, or a window and instrument set whose retained rows span both `MacM2Whole`
+markers, and proves coverage from the trace itself. A smaller instrument set is allowed when the witness table,
+the same-process markers and display identity remain.
+
+This re-plan grants six trace recordings across M2.5 and M2.2. Each has at most 16 seconds of recording, at most
+75 seconds of finalization and finite export timeouts, and runs under the `gpu` lock. The 9 November allowance is
+spent and is not renewed by renaming outputs. If the six are used without a qualified witness and both traced
+arms, the builder stops with M2.5 and M2.2 open, and more recordings need a scoped re-plan.
+
+After M2.3, M2.4 and M2.5, M2.2 runs matched capture-ON/untraced, capture-ON/traced and capture-OFF/traced arms
+using the same release build, cooked root, recipe, extent and normal AppKit slider target/action sweep. ON arms retain
+complete content motion and expose capture and tracing overhead. The OFF arm supplies shipping cadence through the
+qualified witness: presented intervals for the full pan and both holds, attributed by game PID and by the window
+record on the built-in display. The trace's display identity must list the built-in panel as the only display;
+otherwise the window's display is identified separately. Every interval longer than one refresh period is listed
+with its drawable, time and yaw, joined to the game's own records and investigated. Record run order and host load:
+the lock covers the GPU, not other builders' CPU work, so name that load beside a missed refresh. An M2.5
+recording that meets every OFF-arm condition may serve as that arm.
+
+These window, panel and tool rows need an unlocked active built-in display. They need no Developer mode change
+and no new Instruments authorization: both 11 November recordings collected system-wide kernel events without a
+prompt. Engine pixels require no Screen Recording grant. OS-window or compositor observation, when separately
+required by APPLE-TILE, has its own attended permission identity. Callback targets, opportunities, submission, GPU
+completion, image times, movie PTS and OS-reported presented times remain distinct measurements. The witness is
+the presented time the OS delivers to the game process. It is not the kernel's display-swap record, scan-out or
+photons. Input-to-photon and physical iPhone qualification require their own evidence.
 
 ## Cost, sequence and review
 
@@ -98,14 +127,16 @@ regressions under the existing performance policy. Timing figures remain observa
 
 M2 needs only `T2-CAPTURE:M0` and can complete on the current path. In module order M3 follows Mac M2 and needs
 `APPLE-TILE:M3`, then reruns motion, window-tap/tooling validation and all cadence arms on the integrated build.
-Its trace work uses the existing allowance. COOKED-DRAW and T2 simulator M2 retain their separate ownership and
-qualification. Independent review of every required item closes each qualification milestone.
+It gets one recording per traced arm and no diagnostic recordings. COOKED-DRAW and T2 simulator M2 retain their
+separate ownership and qualification. Independent review of every required item closes each qualification milestone.
 
 ## M2 and M3 qualification protocol
 
 Moved from the module plan on 11 November 2026, when the plans took the orchestrate 1.7.0 shape.
 
-The M2 and M3 work lists as the plan held them, with their protocol detail. The plan now carries a short list for each milestone and points here. Sentences that reported another module's status were removed; nothing else changed.
+The M2 and M3 work lists with their protocol detail. The plan carries a short list for each milestone and points
+here. The cadence witness was revised on 11 November 2026 after both commissioned traces returned empty display
+tables.
 
 ### M2 The cooked valley presents smoothly on built-in ProMotion
 
@@ -135,18 +166,18 @@ a reason to hold current-path M2 open.
   requested/accepted/submitted yaw and interpolation/history/sample IDs. Review the original sequence at 1× and
   native-size crops for coherent rock/ridge/sphere motion and record local holds. A fixed-step movie, endpoint
   redraw or three static parity images cannot replace this proof. This does not qualify AppKit/display cadence.
-- **M2.4 trace tooling — explicit bounded resumption.** The Mac M2 qualification builder owns this investigation
-  after this re-plan passes independent design review and T2-CAPTURE M0 is done, without waiting for APPLE-TILE. The previous park
-  prevented unchanged retries; this item commissions a changed investigation, not another claim that unlock fixes it.
-  First inspect retained failed bundles/logs and document a falsifiable changed hypothesis. Record only with unlocked
-  active panel and existing Instruments authorization. At most **two new diagnostic record attempts total** are
-  allowed under the 9 November tooling commission, each 16 s recording plus 75 s maximum finalization;
-  this dependency re-plan and the M3 split do not renew the allowance; use finite recorded export timeouts.
-  Stop only the owned trace/game processes at the deadline. Do not repeat an unchanged failed hypothesis. Success
-  requires a fresh readable TOC and `displayed-surfaces-interval` export with real app/window swaps plus a reusable
-  command. No justified hypothesis, unavailable authorization or exhausted attempts leaves M2.4/M2.2 open and
-  explicitly blocked; record the cause and continue unblocked work. Further attempts require
-  another scoped re-plan. Tooling success alone does not pass the final full-pan cadence row.
+- **M2.4 unattended — cadence witness command.** Build the reusable command described under
+  [window output, panel cadence and trace tooling](#window-output-panel-cadence-and-trace-tooling), with no new
+  recording, against the retained
+  [capture-OFF](../../evidence/PLATFORM-RUNTIME-MAC/m2-presented-off-traced.tsv.gz) and
+  [capture-ON](../../evidence/PLATFORM-RUNTIME-MAC/m2-presented-on-traced.tsv.gz) tables. It must find the
+  two-refresh intervals at drawables 526→527 and 544→545 (OFF) and 558→559 (ON), and join 544→545 to the game's
+  15.47 ms present-call gap in the retained capture-OFF surface records. Those traces start after the pan began,
+  so the command must refuse them as cadence evidence for the whole interval.
+- **M2.5 attended setup — full-interval witness recording.** On the unlocked active panel, record the release
+  game with a configuration that covers both `MacM2Whole` markers. Show full coverage from the trace itself, the
+  validated time conversion, the ordinal join of every submission and the display tables' row counts. Recordings
+  come from the six-recording allowance. Witness success alone does not pass the cadence item.
 - **M2.3 attended setup — shared windowed tap.** Integrate the T2 renderer-owned tap in the real CAMetalLayer
   window, using the normal callback/lease/present path. With a known colour/channel/row pattern, prove captured
   pixels equal the engine output consumed by the normal present pass (with declared format conversions) and bind
@@ -156,47 +187,37 @@ a reason to hold current-path M2 open.
   path remains, with no tap target/copy/readback/worker/per-frame allocation. Use `./dev check` under `gpu` for
   regressions and a retained actual-window scenario; occluded/offscreen substitution cannot qualify this item.
   This is integration/qualification of T2's existing producer, not a second recorder or GPU owner.
-- **M2.2 attended setup — capture-OFF panel cadence.** The built-in panel must be unlocked and active; required
-  Instruments authorization must already be available or explicitly arranged. The agent injects the normal AppKit
-  slider target/action and reviews the output; the owner need not play. After M2.3/M2.4 pass, run three matched arms:
+- **M2.2 attended setup — capture-OFF panel cadence.** The built-in panel must be unlocked and active. The agent
+  injects the normal AppKit slider target/action and reviews the output; the owner need not play. After M2.3,
+  M2.4 and M2.5 pass, run three matched arms:
 
   | Arm | Required proof |
   | --- | --- |
   | Capture ON, untraced | Complete host-time source sequence, one-second initial hold, two-second 0°–36° sweep and one-second final hold; requested/accepted/submitted yaw; review content at 1× |
-  | Capture ON, Game Performance | Same complete content interval; trace overhead versus ON/untraced; capture-versus-OFF observer comparison. Label any swap figures **under capture** |
-  | Capture OFF, Game Performance | Shipping configuration's cadence claim, with ordinary direct output and no capture resources/work. Normal frame/pan markers join the complete input interval to independent OS swaps |
+  | Capture ON, traced | Same complete content interval; trace overhead versus ON/untraced; capture-versus-OFF observer comparison. Label any presented intervals **under capture** |
+  | Capture OFF, traced | Shipping configuration's cadence claim, with ordinary direct output and no capture resources or work. Normal frame and pan markers join the complete input interval to the qualified witness |
 
   Keep build, release settings, preset, extent, recipe and fixed cooked root identical to M2.1, or rerun M2.1.
-  Keep the 0.05° slider step and normal 5° keyboard action. Compare ON/OFF traced arms for capture overhead and
-  ON traced/untraced arms for trace overhead; record run order/load. No Screen Recording grant is required for
-  engine pixels. Engine images exclude native controls and final composition.
-- For the OFF traced cadence arm, require a fresh readable Game Performance trace and
-  `displayed-surfaces-interval` export. Identify unique game window/PID, active built-in display and one app-labelled
-  swap stream; resolve rotating surface IDs/XML refs. Use numeric Swap Time, not frame-label continuity.
-  Same-process pan markers or a calibrated monotonic join with correlated anchor and stated error must bracket
-  the full pan and holds. Historical 5 November swaps do not qualify this run.
-  Existing command shape for M2.4 to repair/verify (not a successful new result):
-  ```sh
-  xcrun xctrace record --no-prompt --template 'Game Performance' --time-limit 16s \
-    --output "$trace" --target-stdout "$game_log" \
-    --env THRUM_SCENE=valley --env "THRUM_ASSET_STORE=$store" \
-    --env "THRUM_PARAMS=$preset" --env THRUM_V1_FRAMES=10000 \
-    --launch -- "$release_game"
-  xcrun xctrace export --input "$trace" --toc
-  xcrun xctrace export --input "$trace" \
-    --xpath '/trace-toc/run/data/table[@schema="displayed-surfaces-interval"]'
-  ```
-  Use the implemented T2 capture switch for the ON arms and explicitly disable it for the cadence arm. A locked
-  display, unreadable export or ambiguous swap attribution leaves M2.2 open; it does not block unattended visual work.
+  Keep the 0.05° slider step and normal 5° keyboard action. Both traced arms use M2.5's recording
+  configuration and M2.4's command. Compare ON/OFF traced arms for capture overhead and ON traced/untraced arms for trace
+  overhead; record run order and load. No Screen Recording grant is required for engine pixels. Engine images
+  exclude native controls and final composition.
+- For the OFF traced cadence arm, require a fresh readable trace whose retained rows span both `MacM2Whole`
+  markers. Identify the unique game PID and window and the built-in display. Every submission in the pan and both
+  holds has one presented row or is reported unmatched. Report presented intervals in refresh periods and list
+  each interval longer than one period with drawable, time, yaw, the game's own present-call record and host load.
+  Handler callback time and frame-label continuity are not presented time. Historical traces do not qualify this
+  run. A locked display, an uncovered interval, an unvalidated conversion or ambiguous attribution leaves M2.2
+  open; it does not block unattended visual work.
 - Separate callback target, actual opportunity, actor acquisition/submit, GPU timestamps, engine image time,
-  movie PTS, VSync and app-attributed swaps. Record unmatched samples, source/build, content, recipe, view resolution,
-  display mode and run order/load. Input-to-photon and physical iPhone timing/loss stay unmeasured.
-  Native/compositor appearance needs separate attended evidence if a specific observation requires it. No raw
-  drawable bridge, screen unlock automation or mandatory Screen Recording.
+  movie PTS and OS-reported presented time. Record unmatched samples, source/build, content, recipe, view
+  resolution, display mode and run order/load. Kernel display swaps, scan-out, input-to-photon and physical iPhone
+  timing or loss stay unmeasured. Native or compositor appearance needs separate attended evidence if a specific
+  observation requires it. No raw drawable bridge, screen unlock automation or mandatory Screen Recording.
 
-M2 cannot close until **all four items** pass independent review. M2.3 and M2.4 must pass before M2.2's final
-qualification run. This re-plan commissions explicit tooling/window integration and separates observer roles;
-it neither waives real-panel cadence nor claims capture or the trace failure already solved.
+M2 cannot close until **all five items** pass independent review. M2.3, M2.4 and M2.5 must pass before M2.2's
+final qualification run. The witness change replaces the source of the cadence measurement; it neither waives
+real-panel cadence nor extends any earlier verdict.
 
 ### M3 The post-G3t Mac surface path requalifies runtime motion and built-in cadence
 
@@ -205,18 +226,18 @@ former post-G3t M2 obligation, with `replans: 4`, and preserves the complete acc
 including attended D2.5/D3.5 OS-window evidence (unlocked session and Screen Recording permission for that observer)
 and diagnostic simulator endpoint/function checks. It does not wait on cooked simulator COOKED-DRAW M1 or T2 M2.
 G3t retains the SDR tone/intermediate and only exposes G4 pre-tone input; the changed scheduling/input path still
-requires the full requalification. Mac cadence continues to use capture OFF with its own attended panel/Instruments setup.
+requires the full requalification. Mac cadence continues to use capture OFF with its own attended panel setup.
 
 - **M3.1 unattended runtime motion.** Rerun the complete M2.1 protocol on the integrated post-G3t-M3 release
   assembly with fresh build/shader/content/recipe identity. Apply M2.1's denied permission preflights and console
   witness policy, accepting either state and transitions. Keep the elapsed-time pan, holds,
   source frames/crops, control/submission joins and worded visual inspection. No earlier verdict qualifies new output.
 - **M3.2 attended built-in cadence and observer arms.** Revalidate the M2.3 windowed-tap correspondence,
-  lease/loss and capture-OFF proofs on the changed path. Rerun the qualified M2.4 trace/export command and all
-  M2.2 arms on M3.1's build: ON untraced, ON traced and OFF traced. Fresh attributed numeric swaps with a calibrated
-  full-interval join qualify cadence only in OFF. Keep the unlocked active panel and Instruments authorization
-  reasons explicit. Functional window logs alone cannot pass. A tooling regression requires a scoped re-plan;
-  this milestone grants no new diagnostic attempts.
+  lease/loss and capture-OFF proofs on the changed path. Rerun M2.5's qualified recording configuration and
+  M2.4's command and all M2.2 arms on M3.1's build: ON untraced, ON traced and OFF traced. Fresh presented times from the
+  qualified witness, covering the full interval, qualify cadence only in OFF. Keep the unlocked active panel
+  reason explicit. Functional window logs alone cannot pass. A tooling regression requires a scoped re-plan;
+  this milestone grants one recording per traced arm and no diagnostic recordings.
 
 Both items need fresh independent review before final Mac qualification of the changed V1 path. Historical M2
 verdicts remain attached to their build. This split does not waive cadence.
