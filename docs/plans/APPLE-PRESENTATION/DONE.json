@@ -4,7 +4,7 @@
     {
       "id": "M1",
       "name": "Every pixel of the valley carries correct motion under jitter, including the sky and stars",
-      "state": "claimed",
+      "state": "done",
       "fails": 0,
       "replans": 0,
       "needs": [
@@ -67,12 +67,6 @@
           "evidence": "docs/evidence/APPLE-PRESENTATION/m1-mf1/README.md",
           "verdict": "pass",
           "review": "docs/evidence/APPLE-PRESENTATION/M1-review.md"
-        }
-      ],
-      "findings": [
-        {
-          "name": "jitter-presented-without-reconstruction",
-          "repeat": false
         }
       ],
       "rounds": 1
