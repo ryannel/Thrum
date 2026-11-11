@@ -15,13 +15,13 @@ use thrum_render::runtime::FrameHost;
 
 type Builder = Box<dyn FnOnce() -> Result<SkyGame, Box<dyn Error>>>;
 thread_local! {
-    static BUILDER: RefCell<Option<Builder>> = RefCell::new(None);
+    static BUILDER: RefCell<Option<(Config, Builder)>> = RefCell::new(None);
     static FEED: RefCell<Option<RemoteFeed>> = const { RefCell::new(None) };
 }
 
 /// Register the scene's builder. The page fetches assets before invoking it.
-pub fn run(_config: Config, build: impl FnOnce() -> Result<SkyGame, Box<dyn Error>> + 'static) {
-    BUILDER.with(|slot| *slot.borrow_mut() = Some(Box::new(build)));
+pub fn run(config: Config, build: impl FnOnce() -> Result<SkyGame, Box<dyn Error>> + 'static) {
+    BUILDER.with(|slot| *slot.borrow_mut() = Some((config, Box::new(build))));
 }
 
 pub(super) fn feed() -> Result<RemoteFeed, String> {
@@ -47,7 +47,8 @@ pub struct BrowserScene {
     shell: WebShell<StillWorld, SkyScene>,
     game: SkyGame,
     seen: u64,
-    kept: String,
+    kept: Option<(u64, String)>,
+    config: Config,
     transport_error: Rc<RefCell<Option<String>>>,
 }
 
@@ -67,7 +68,7 @@ pub async fn create_scene(
         .ok_or_else(|| js("asset store has no publication; cook the scene's assets and restart ./dev starter --web"))?;
     let feed = RemoteFeed::new(generation);
     FEED.with(|slot| *slot.borrow_mut() = Some(feed.clone()));
-    let build = BUILDER
+    let (config, build) = BUILDER
         .with(|slot| slot.borrow_mut().take())
         .ok_or_else(|| js("scene builder was not registered; rebuild with ./dev starter --web"))?;
     let mut game = build().map_err(js)?;
@@ -106,7 +107,10 @@ pub async fn create_scene(
                 Ok(Some(generation)) => feed.publish(generation),
                 Ok(None) => {}
                 Err(error) => {
-                    *polling_error.borrow_mut() = Some(asset_error(&origin, error));
+                    *polling_error.borrow_mut() = Some(format!(
+                        "{}; check the store URL and restart the scene command",
+                        asset_error(&origin, error)
+                    ));
                     break;
                 }
             }
@@ -116,13 +120,19 @@ pub async fn create_scene(
         shell,
         game,
         seen: 0,
-        kept: String::new(),
+        kept: None,
+        config,
         transport_error,
     })
 }
 
 #[wasm_bindgen]
 impl BrowserScene {
+    /// The scene title declared by its creator.
+    pub fn title(&self) -> String {
+        self.config.window_title.to_owned()
+    }
+
     /// Draw one callback through the shared shell.
     /// # Errors
     /// Reports asset, input, clock or graphics failures with their cause.
@@ -196,23 +206,36 @@ impl BrowserScene {
             );
         }
         let content = self.game.poll_status();
-        if let Some(error) = self.transport_error.borrow_mut().take() {
-            self.kept = error;
-        }
         let kept = self.game.poll_kept();
-        if !kept.is_empty() {
-            self.kept = kept.into_iter().map(|(generation, error)| format!("Generation {generation} stays drawn. {error}; fix the named asset and save it again")).collect::<Vec<_>>().join("\n");
+        if let Some((generation, _)) = kept.last() {
+            let message = kept.iter().map(|(generation, error)| {
+                format!("Generation {generation} stays drawn. {error}; fix the named asset and save it again")
+            }).collect::<Vec<_>>().join("\n");
+            self.kept = Some((*generation, message));
+        }
+        if let Some(super::ContentStatus::Drawn(current)) = &content
+            && self.kept.as_ref().is_some_and(|(held, _)| current > held)
+        {
+            self.kept = None;
         }
         let content = match content {
             Some(super::ContentStatus::Drawn(generation)) => {
                 format!("Cooked generation {generation} drawn")
             }
             Some(super::ContentStatus::Failed(error)) => {
-                format!("Asset load failed: {error}; fix the named asset and save again")
+                format!("Asset load failed: {error}")
             }
             _ => "Cooked assets loading; keep this page open".into(),
         };
-        format!("{content}. {}", self.kept)
+        let refusal = self
+            .kept
+            .as_ref()
+            .map_or("", |(_, message)| message.as_str());
+        let transport = self.transport_error.borrow();
+        format!(
+            "{content}. {refusal} {}",
+            transport.as_deref().unwrap_or_default()
+        )
     }
     /// Enable the qualified submitted-output tap for a fixed capture.
     /// # Errors
@@ -264,5 +287,5 @@ fn asset_error(origin: &str, error: thrum_asset::AssetError) -> String {
         thrum_asset::AssetError::Transport(_) => "fetch request did not complete".to_owned(),
         error => error.to_string(),
     };
-    format!("asset store {origin}: {cause}; check the store URL and restart the scene command")
+    format!("asset store {origin}: {cause}")
 }

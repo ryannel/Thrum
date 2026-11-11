@@ -13,7 +13,7 @@ Set `RUSTC_WRAPPER` explicitly when opting into a compiler wrapper for a particu
 | `./dev check-docs` | Local Markdown links/anchors, skill metadata, maturity hashes and dependency policy |
 | `./dev baseline-inventory` | Run the G0 fixed budget baselines on the M-series Mac and list absent consumers |
 | `./dev check-web` | Lint/compile the V1 game, starter and kit test targets for `wasm32-unknown-unknown` |
-| `./dev check-mobile-core` | Compile the portable core for ARM64 iOS device, iOS simulator and Android |
+| `./dev check-mobile-core` | Compile the portable core for ARM64 iOS device, iOS simulator and Android, plus the starter facade for iOS simulator |
 | `./dev fmt` | Apply rustfmt |
 | `./dev starter` | Cook and watch the [starter](examples/starter/README.md)'s assets and open its window (macOS) |
 | `./dev scene <folder>` | The same for any scene package, such as your copy of the starter (macOS) |

@@ -12,6 +12,7 @@ try {
   const query = new URLSearchParams(location.search);
   const game = await create_scene(canvas, query.get('store') ?? config.store);
   window.game = game;
+  document.title = game.title();
   const view = mountControls(document.querySelector('#controls'), game.controls_json(), {
     edit: (key, value) => game.edit_control(key, value),
     changes: () => game.control_changes(), onError: report,

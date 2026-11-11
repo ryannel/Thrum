@@ -116,6 +116,20 @@ try {
   const { targetId } = await cdp.call('Target.createTarget',{ url:'about:blank' });
   sid=(await cdp.call('Target.attachToTarget',{ targetId,flatten:true })).sessionId;
   await cdp.call('Page.enable',{},sid);
+  await cdp.call('Page.addScriptToEvaluateOnNewDocument', {source: `
+    const originalRequestAdapter = GPU.prototype.requestAdapter;
+    GPU.prototype.requestAdapter = async function(...arguments_) {
+      const adapter = await originalRequestAdapter.apply(this, arguments_);
+      if (adapter) {
+        const info = adapter.info;
+        globalThis.__creatorSelectedAdapter = {
+          vendor: info.vendor, architecture: info.architecture,
+          isFallbackAdapter: info.isFallbackAdapter ?? adapter.isFallbackAdapter,
+        };
+      }
+      return adapter;
+    };
+  `}, sid);
   const evaluate=async expression=>{
     const r=await cdp.call('Runtime.evaluate',{ expression,awaitPromise:true,returnByValue:true },sid);
     if(r.exceptionDetails)throw Error(JSON.stringify(r.exceptionDetails));
@@ -130,6 +144,11 @@ try {
   },'drawn cooked generation');
   await cdp.call('Page.navigate',{ url },sid);
   results.drawnStatus=await drawn();
+  results.pageAdapter=await evaluate('globalThis.__creatorSelectedAdapter');
+  assert(results.pageAdapter?.isFallbackAdapter===false && /apple/i.test(results.pageAdapter.vendor) && /metal/i.test(results.pageAdapter.architecture),
+    `Running page did not receive the required hardware adapter: ${JSON.stringify(results.pageAdapter)}`);
+  results.title=await evaluate('document.title');
+  assert(results.title==='Thrum starter','page ignored the configured scene title');
   const capture=async name=>{
     await evaluate('game.begin_capture()');
     const image=await until(()=>evaluate('(()=>{const c=game.capture();return c?{rgba:btoa(Array.from({length:Math.ceil(c.rgba.length/8192)},(_,i)=>String.fromCharCode(...c.rgba.subarray(i*8192,(i+1)*8192))).join("")),identity:c.identity,width:document.querySelector("canvas").width,height:document.querySelector("canvas").height}:null})()'),'submitted image');
@@ -215,6 +234,15 @@ try {
     assert(await evaluate('globalThis.__creatorReloadWitness===game'),'asset edits reloaded the page or replaced its running scene');
     results.samePageAndScene=true;
     await screenshot('refused');
+    await fs.rename(gltf+'.removed',gltf);
+    results.restored=await until(async()=>{
+      const status=await evaluate('document.querySelector("#status").textContent');
+      return /generation 5 drawn/.test(status) && !/stays drawn|fix the named asset/.test(status) && status;
+    },'fixed generation with refusal cleared',15000);
+    const restored=await capture('asset-restored');
+    assert(hash(restored)===hash(textured),'fixed edit did not restore the pre-refusal pixels');
+    assert(await evaluate('globalThis.__creatorReloadWitness===game'),'fixing an edit replaced the running page or scene');
+    await screenshot('restored');
   }
   if(mode==='journey') {
     const other=await cdp.call('Target.createTarget',{ url:'about:blank',background:true });

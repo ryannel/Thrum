@@ -1,0 +1,36 @@
+   Compiling shlex v2.0.1
+   Compiling find-msvc-tools v0.1.15
+   Compiling cc v1.10.0
+   Compiling thrum-app v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/creator-m1/crates/thrum-app)
+    Checking thrum-starter v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/creator-m1/examples/starter)
+error[E0432]: unresolved import `thrum_app::sky`
+  --> examples/starter/src/main.rs:17:20
+   |
+17 |     use thrum_app::sky::{Camera, Controls, CookedMaterial, Display, MeshPlacement, SkyGame};
+   |                    ^^^ could not find `sky` in `thrum_app`
+   |
+note: found an item that was configured out
+  --> crates/thrum-app/src/lib.rs:27:9
+   |
+26 | #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+   |          --------------------------------------------- the item is gated here
+27 | pub mod sky;
+   |         ^^^
+
+error[E0433]: cannot find `sky` in `thrum_app`
+  --> examples/starter/src/main.rs:9:16
+   |
+ 9 |     thrum_app::sky::run(
+   |                ^^^ could not find `sky` in `thrum_app`
+   |
+note: found an item that was configured out
+  --> crates/thrum-app/src/lib.rs:27:9
+   |
+26 | #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+   |          --------------------------------------------- the item is gated here
+27 | pub mod sky;
+   |         ^^^
+
+Some errors have detailed explanations: E0432, E0433.
+For more information about an error, try `rustc --explain E0432`.
+error: could not compile `thrum-starter` (bin "thrum-starter") due to 2 previous errors

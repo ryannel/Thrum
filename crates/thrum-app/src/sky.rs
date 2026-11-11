@@ -45,29 +45,33 @@ use std::{
 use std::time::Instant;
 use thrum_asset_gpu::{CookedAssets, CookedConfig, CookedStats};
 pub use thrum_asset_gpu::{CookedMaterial, MeshPlacement};
-#[cfg(target_os = "macos")]
+#[cfg(not(target_arch = "wasm32"))]
 use thrum_asset_gpu::{MaterialHook, MaterialOutcome};
 pub use thrum_controls::{Controls, Display};
 use thrum_core::{
     WorldEpoch,
     sim::{SnapshotId, WorldAdvance, WorldPublication},
 };
+#[cfg(any(target_os = "macos", target_arch = "wasm32"))]
 use thrum_render::{
     abi::{InstanceRecord, MaterialRecord},
+    synthetic::SyntheticScene,
+};
+use thrum_render::{
     atmosphere::AtmosphereFrame,
     contribution::SceneContribution,
     extract::{ExtractReport, RenderExtractor, SourceTick},
     runtime::{FrameWorld, SceneFrame, SceneSource},
-    synthetic::{DisplayOverlay, FrameLighting, SdrToneMap, SyntheticScene, SyntheticView},
+    synthetic::{DisplayOverlay, FrameLighting, SdrToneMap, SyntheticView},
 };
 #[cfg(target_os = "macos")]
 use winit::keyboard::KeyCode;
 
-#[cfg(target_os = "macos")]
+#[cfg(not(target_arch = "wasm32"))]
 use crate::Config;
 #[cfg(target_os = "macos")]
 use crate::{Edits, Game, Gpu, KeyResponse, Prepared};
-#[cfg(target_os = "macos")]
+#[cfg(not(target_arch = "wasm32"))]
 use std::{error::Error, path::PathBuf};
 #[cfg(target_os = "macos")]
 use thrum_render::{
@@ -88,9 +92,11 @@ pub const MATERIAL_VARIABLE: &str = "THRUM_MATERIAL";
 pub const DEFAULT_GROUND: [f32; 3] = [0.16, 0.15, 0.11];
 /// Half the width of the ground square, in metres: it reaches within a pixel of the horizon
 /// from standing height, where the sky's own planet surface takes over.
+#[cfg(any(target_os = "macos", target_arch = "wasm32"))]
 const GROUND_HALF_WIDTH_M: f32 = 4_000.0;
 /// Half the ground slab's thickness; its top face is the ground at Y = 0.
 const GROUND_HALF_DEPTH_M: f32 = 0.5;
+#[cfg(any(target_os = "macos", target_arch = "wasm32"))]
 const GROUND_ROUGHNESS: f32 = 0.95;
 
 /// Near and far clip planes of every kit camera, in metres.
@@ -187,6 +193,7 @@ impl Sky {
     }
 
     /// Refuse values the renderer cannot draw, naming the field and the fix.
+    #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
     fn check(&self) -> Result<(), String> {
         if !(-90.0..=90.0).contains(&self.sun_elevation_degrees) {
             return Err(format!(
@@ -319,6 +326,7 @@ impl SceneSource<SourceTick> for SkyScene {
 }
 
 /// The desired sky carried to the render owner, when it changed.
+#[cfg(any(target_os = "macos", target_arch = "wasm32"))]
 #[derive(Clone, Copy, Debug, Default)]
 pub struct SkyEdits(Option<Sky>);
 
@@ -332,6 +340,7 @@ impl Edits for SkyEdits {
     }
 }
 
+#[cfg(any(target_os = "macos", target_arch = "wasm32"))]
 type Update = Box<dyn FnMut(&Controls, &mut Sky)>;
 type StatusProbe = Box<dyn FnMut() -> ContentStatus>;
 type KeptProbe = Box<dyn FnMut() -> Vec<(u64, String)>>;
@@ -340,15 +349,22 @@ type ReloadReport = Box<dyn FnMut() -> Vec<Result<String, String>>>;
 
 /// A still scene under the sky, hosted by the app shell. See the [module](self) example.
 pub struct SkyGame {
+    #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
     name: &'static str,
+    #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
     controls: Controls,
+    #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
     sky: Sky,
+    #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
     sent: Option<Sky>,
+    #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
     refused: Option<String>,
+    #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
     update: Update,
     ground: Option<[f32; 3]>,
     contribution: Option<Box<dyn SceneContribution>>,
     status: Option<StatusProbe>,
+    #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
     shown_status: Option<ContentStatus>,
     /// New loader failures once content has drawn, each with the generation that stays drawn.
     kept: Option<KeptProbe>,
@@ -368,21 +384,30 @@ impl SkyGame {
         camera: Camera,
         update: impl FnMut(&Controls, &mut Sky) + 'static,
     ) -> Self {
+        #[cfg(not(any(target_os = "macos", target_arch = "wasm32")))]
+        drop((controls, camera, update));
         Self {
+            #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
             name: "thrum",
+            #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
             controls,
+            #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
             sky: Sky {
                 sun_elevation_degrees: 30.0,
                 sun_azimuth_degrees: 135.0,
                 camera,
                 exposure_zones: false,
             },
+            #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
             sent: None,
+            #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
             refused: None,
+            #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
             update: Box::new(update),
             ground: Some(DEFAULT_GROUND),
             contribution: None,
             status: None,
+            #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
             shown_status: None,
             kept: None,
             reload: None,
@@ -412,7 +437,7 @@ impl SkyGame {
     /// The variable is unset or names a store nothing was cooked into, or a placement's
     /// transform is not rigid with one uniform scale; each message says what to do.
     pub fn with_meshes(self, meshes: Vec<MeshPlacement>) -> Result<Self, String> {
-        #[cfg(target_os = "macos")]
+        #[cfg(not(target_arch = "wasm32"))]
         let source: thrum_asset_gpu::CookedSource =
             cooked_store(std::env::var_os(STORE_VARIABLE))?.into();
         #[cfg(target_arch = "wasm32")]
@@ -426,7 +451,7 @@ impl SkyGame {
         let assets = CookedAssets::new(CookedConfig::new(source, meshes))
             .map_err(|error| error.to_string())?;
         let stats = assets.stats();
-        #[cfg(target_os = "macos")]
+        #[cfg(not(target_arch = "wasm32"))]
         let material = assets.material();
         let kept = Arc::clone(&stats);
         let mut shown = 0;
@@ -449,12 +474,13 @@ impl SkyGame {
         }));
         #[cfg(target_arch = "wasm32")]
         return Ok(game);
-        #[cfg(target_os = "macos")]
+        #[cfg(not(target_arch = "wasm32"))]
         {
             let Some(path) = std::env::var_os(MATERIAL_VARIABLE).map(PathBuf::from) else {
                 return Ok(game);
             };
             let reload = material.clone();
+            #[cfg(target_os = "macos")]
             let watched = path.clone();
             let report = move || {
                 material
@@ -463,14 +489,19 @@ impl SkyGame {
                     .map(material_drawn)
                     .collect()
             };
-            let mut game = game.with_reload(
+            let game = game.with_reload(
                 move || {
                     reload.request(MaterialHook::read(&path)?);
                     Ok(())
                 },
                 report,
             );
-            game.reload_files = vec![watched];
+            #[cfg(target_os = "macos")]
+            let game = {
+                let mut game = game;
+                game.reload_files = vec![watched];
+                game
+            };
             Ok(game)
         }
     }
@@ -508,6 +539,7 @@ impl SkyGame {
         clippy::print_stderr,
         reason = "reload outcomes are reported to the person editing the file"
     )]
+    #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
     fn poll_reload(&mut self) {
         if let Some((_, report)) = self.reload.as_mut() {
             for line in report() {
@@ -523,6 +555,7 @@ impl SkyGame {
         clippy::print_stderr,
         reason = "a refused sky is explained to the person editing the scene"
     )]
+    #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
     fn update(&mut self) -> SkyEdits {
         let mut sky = self.sky;
         (self.update)(&self.controls, &mut sky);
@@ -550,6 +583,7 @@ impl SkyGame {
         clippy::print_stderr,
         reason = "content progress and hot reloads are reported to the person editing assets"
     )]
+    #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
     fn poll_status(&mut self) -> Option<ContentStatus> {
         let status = (self.status.as_mut()?)();
         if self.shown_status.as_ref() != Some(&status) {
@@ -573,6 +607,7 @@ impl SkyGame {
         clippy::print_stderr,
         reason = "a refused asset edit is explained to the person editing assets"
     )]
+    #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
     fn poll_kept(&mut self) -> Vec<(u64, String)> {
         let Some(kept) = self.kept.as_mut() else {
             return Vec::new();
@@ -706,6 +741,7 @@ impl Game for SkyGame {
 
 /// The scene's one instance row: the ground slab, or an inactive row (generation zero) that
 /// draws nothing, since the renderer needs at least one.
+#[cfg(any(target_os = "macos", target_arch = "wasm32"))]
 fn ground_scene(ground: Option<[f32; 3]>) -> Result<SyntheticScene, String> {
     let mut scene = SyntheticScene::grid(1).map_err(|error| format!("sky scene: {error:?}"))?;
     scene.sun_shadows = true;
@@ -743,7 +779,7 @@ fn ground_scene(ground: Option<[f32; 3]>) -> Result<SyntheticScene, String> {
 
 /// The cooked store `THRUM_ASSET_STORE` names, refused with the next step when it is unset or
 /// nothing was cooked there.
-#[cfg(target_os = "macos")]
+#[cfg(not(target_arch = "wasm32"))]
 fn cooked_store(variable: Option<std::ffi::OsString>) -> Result<PathBuf, String> {
     let store = variable.map(PathBuf::from).ok_or(
         "THRUM_ASSET_STORE is not set, so there are no cooked meshes to draw; run the scene \
@@ -762,7 +798,7 @@ fn cooked_store(variable: Option<std::ffi::OsString>) -> Result<PathBuf, String>
 
 /// What cooked assets show: the drawn generation, or why nothing is drawn yet.
 /// A drawn material hook, or why the previous material still draws.
-#[cfg(target_os = "macos")]
+#[cfg(not(target_arch = "wasm32"))]
 fn material_drawn(outcome: &MaterialOutcome) -> Result<String, String> {
     match outcome {
         MaterialOutcome::Promoted { .. } => Ok(outcome.to_string()),
@@ -827,3 +863,18 @@ mod tests;
 
 #[cfg(target_arch = "wasm32")]
 pub use browser::{BrowserScene, create_scene, run};
+
+/// Report the available runners on native platforms without a sky window shell.
+#[cfg(not(any(target_os = "macos", target_arch = "wasm32")))]
+#[expect(
+    clippy::print_stderr,
+    reason = "the scene runner explains its supported platforms"
+)]
+pub fn run(config: Config, _game: impl FnOnce() -> Result<SkyGame, Box<dyn Error>>) {
+    eprintln!(
+        "{}: the native sky window is unavailable on {}; run ./dev scene <folder> --web in Chrome, or run the native scene on macOS",
+        config.name,
+        std::env::consts::OS
+    );
+    std::process::exit(1);
+}

@@ -4,8 +4,8 @@ Design: [CREATOR.md](CREATOR.md), under [the G6 decision](../decisions/G6-CREATO
 Done when: [CREATOR-DONE.json](CREATOR-DONE.json) · Module list: [ARCHITECTURE.md](ARCHITECTURE.md)
 Reviews: [design review 2 at `d64769fe`](../../evidence/CREATOR/design-review.md): DESIGN CHANGES (1 Must Fix, 3 Suggestions). Revised 11 November; a fresh design review of this revision is owed through the loop.
 Milestone: M1 The starter scene runs in Chrome from one command
-Now: M1 claimed with hardware Chrome scene, controls, live edits and page-state evidence (since 2026-11-11)
-Next: lead review of M1. M2 starts when `APPLE-TILE:M3` is Done. M3 closes the gate.
+Now: M1 reclaimed after fixing review 1 blockers F1 and F2 (since 2026-11-11)
+Next: lead re-review of M1. M2 starts when `APPLE-TILE:M3` is Done. M3 closes the gate.
 Blocked: none. M2 waits on `APPLE-TILE:M3`. M3.4 needs attended setup on the unlocked built-in display.
 
 ## Ownership
@@ -20,7 +20,7 @@ It reads frame samples from `thrum-render`. In M2 only, under
 reason to the frame runtime, and one call in `examples/v1-game` that declares the profiler group. Any other change
 to the frame runtime, the shells' policy or the V1 game goes in the log as a proposal for the module list.
 
-## M1 The starter scene runs in Chrome from one command: claimed
+## M1 The starter scene runs in Chrome from one command: claimed after review 1
 
 - [x] The kit's web runner, facade and page on `thrum_app::web`, with the Mac-only kit pieces gated by target.
 - [x] The web form of `./dev scene <folder>` and `./dev starter`: build for wasm32, cook, watch, serve, print the
@@ -28,6 +28,22 @@ to the frame runtime, the shells' policy or the V1 game goes in the log as a pro
 - [x] `scripts/check_starter_browser.mjs` with `scene`, `controls`, `edit` and `journey` cases, on hardware
       WebGPU only, reading pixels.
 - [x] `./dev check-web` also compiles and lints the starter for wasm32.
+
+### Review 1 work
+
+Review: [M1 review 1](../../evidence/CREATOR/M1-review.md).
+
+- [x] F1. Clear a retained loader refusal when a later generation draws. Extend the edit case through
+      restoring the mesh, checking restored submitted pixels and a resolved status on the same page.
+- [x] F2. Put unsupported native platform handling inside the kit, preserve the scene's common source,
+      and compile the starter on an installed non-Mac native target through a normal dev check.
+- [x] S3. Gate hardware proof on the adapter actually returned to the running page.
+- [x] S4. Use the scene's Config title in the browser.
+- [x] S5. Describe Mac and web controls and parameter loading in the source comment.
+
+S2's duplicated next steps are removed in the reviewed load-failure and missing-store paths. S1's cooker
+error channel and S7's pre-existing view-heading duplication remain follow-up suggestions. S6's Mac diagnostics
+retain their existing path and remain covered by the planned M3 mistake journey.
 
 ## M2 The demo UI shows where a frame's time goes: waiting on `APPLE-TILE:M3`
 
@@ -98,3 +114,13 @@ Judge on M3.1; start another.
   The final milestone gate has four passes, including `./dev check`. One earlier V1 allocation-suite failure
   cleared in focused exact-binary runs and full reruns, with its cause unconfirmed and retained in the evidence.
   Mac and Wasm linting include the native test gate and the kit's Wasm test target. Independent review is the lead's.
+
+- 2026-11-11 Reclaimed M1 after [review 1](../../evidence/CREATOR/M1-review.md). F1 is reproduced by the
+  strengthened edit case before the fix. Refusals now expire when a later generation draws, while transport
+  errors retain their own lifetime. Generation 5 restores the pre-refusal pixels on the same running page.
+  F2 moves platform handling into the kit, reuses its existing public types on native targets, and reports
+  unsupported native window runners. The starter's common 40-line source compiles for iOS simulator, and
+  `./dev check-mobile-core` now includes that starter probe. Linux/Windows host CI was not run here.
+  S3 observes the adapter actually returned to the page, S4 applies Config.window_title, and S5 clarifies
+  web parameter loading. Reviewed S2 duplicate messages are shortened. [Fresh evidence](../../evidence/CREATOR/M1-r1.md)
+  includes four passing Chrome cases, native compile/lint records, six inspected page states and the full gate.

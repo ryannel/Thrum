@@ -1,0 +1,20 @@
+{
+  "base_revision": "3af46cc96afecf4f9404b5837934498d07629923",
+  "sha256": {
+    ".config/architecture.toml": "8beffffc5e3bcd0b3a80124f30f15caec117dcac21d7fb0682a32c3aa08b6946",
+    "Cargo.lock": "f6453e0c59364a21bab7bef6c3f1fea9ec196cd969eadcfaefc3ccbfa3172e96",
+    "crates/thrum-app/Cargo.toml": "c0060a4508cd64d29e6c14d840963672ab12d8ae0dca07acf36e22efe989b79c",
+    "crates/thrum-app/src/config.rs": "9ed78d96fa963f4f6ec6e23db39e79dc463233423841089797c452c4de497db4",
+    "crates/thrum-app/src/game.rs": "edc42d16203e627aa3c6fcfd8d8f9e6c6507abda784ceb1e7eb20774e63fec87",
+    "crates/thrum-app/src/lib.rs": "ff04763246105c8da8654e6c57644210856951e241471002d3fd127b2d7fac1f",
+    "crates/thrum-app/src/sky.rs": "b72c4d3fbf8ab3d4f7dedf83f3590ac1e33b53971a5a3118c73bf3e00bbdd4cd",
+    "crates/thrum-app/src/sky/browser.rs": "91d21efcc66831134b63273ff881547d527dc17047adb36ceafad5f37b5ec457",
+    "crates/thrum-app/web/index.html": "aef18783a988b683067db535ee33edbd8ca659fa5a127892caef14dcb12aae0a",
+    "crates/thrum-app/web/scene.js": "fbd9e6c0fd3e35bfab92ac520392a8b9241fdefb70e6ce2c67bbabee2bd6c975",
+    "examples/starter/Cargo.toml": "347fe7d77cb56534cb8186f26ab13a87d194223f677929917182f0cb2be6a503",
+    "examples/starter/src/main.rs": "49e3d90e37dbdd3453e30add1e82b22d76a55b3b3595d5ff4533c531f64c539a",
+    "tools/xtask/src/main.rs": "4fef29c05dbbd201599cc4f6016f84705598e1952371b04165fdda9733a82926",
+    "scripts/scene_web.py": "9c9e33e6d0d192d3858dc884ae9036d0e358ee26285b306088a749300a2fb7fb",
+    "scripts/check_starter_browser.mjs": "2e01eedb7db91f8a2a37c0fe703a5caaead494084927cbb64ddf63fc1e9a4d36"
+  }
+}

@@ -6,17 +6,20 @@ rust-version.workspace = true
 publish.workspace = true
 description = "Application shells shared by Thrum games: the native macOS window, display link and render owner, and the browser WebGPU canvas shell"
 
+[dependencies]
+thrum-asset-gpu = { path = "../thrum-asset-gpu" }
+thrum-controls = { path = "../thrum-controls" }
+thrum-core = { path = "../thrum-core" }
+thrum-render = { path = "../thrum-render" }
+wgpu = { version = "=30.0.1", default-features = false, features = ["std"] }
+
 [target.'cfg(any(target_os = "macos", target_os = "ios"))'.dependencies]
 zstd = { version = "=0.13.3", default-features = false, features = ["zstdmt"] }
 sha2 = { version = "=0.10.9", features = ["asm-aarch64"] }
-thrum-render = { path = "../thrum-render" }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 pollster = "=1.0.1"
 cpu-time = "=1.0.0"
-thrum-asset-gpu = { path = "../thrum-asset-gpu" }
-thrum-controls = { path = "../thrum-controls" }
-thrum-core = { path = "../thrum-core" }
 wgpu = { version = "=30.0.1", default-features = false, features = ["std", "metal"] }
 winit = { version = "=0.30.13", default-features = false, features = ["rwh_06"] }
 objc2 = "=0.6.5"
@@ -25,12 +28,8 @@ objc2-quartz-core = { version = "=0.3.2", default-features = false, features = [
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 thrum-asset = { path = "../thrum-asset" }
-thrum-asset-gpu = { path = "../thrum-asset-gpu" }
-thrum-controls = { path = "../thrum-controls" }
-thrum-core = { path = "../thrum-core" }
 wasm-bindgen = "=0.2.129"
 js-sys = "=0.3.106"
-thrum-render = { path = "../thrum-render" }
 wgpu = { version = "=30.0.1", default-features = false, features = ["webgpu"] }
 wasm-bindgen-futures = "=0.4.79"
 web-sys = { version = "=0.3.106", features = ["HtmlCanvasElement"] }

@@ -1,0 +1,3 @@
+   Compiling thrum-app v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/creator-m1/crates/thrum-app)
+    Checking thrum-starter v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/creator-m1/examples/starter)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.63s

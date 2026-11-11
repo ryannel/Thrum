@@ -1,9 +1,10 @@
 //! Thrum starter: one cooked rock on lit ground under a physically based sky, a camera, and Sun
 //! sliders.
 //!
-//! Run it with `./dev starter`, which cooks `assets/`, watches them for edits and opens the
-//! window. Edit a slider in the panel, `starter.params.json` or `material.wgsl` (press L to
-//! reload them) or any file under `assets/` while it runs. See README.md.
+//! `./dev starter` opens the Mac window with its panel and saved parameter/material reloads.
+//! `./dev starter --web` serves the same scene in Chrome. Its DOM controls are live, and
+//! `?params=starter.params.json` applies a parameter file. Material hooks run on the Mac.
+//! Both commands re-cook saved files under `assets/`. See README.md.
 
 fn main() {
     thrum_app::sky::run(

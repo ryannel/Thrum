@@ -1,0 +1,8 @@
+CREATOR M1 in /Users/ryannel/Workspace/thrum/.claude/worktrees/creator-m1: 4 pass
+  M1.1  pass  node scripts/check_starter_browser.mjs --case scene
+  M1.2  pass  node scripts/check_starter_browser.mjs --case controls
+  M1.3  pass  node scripts/check_starter_browser.mjs --case edit
+  M1.4  no check (ask)
+  M1.5  no check (inspect)
+  Check  pass  ./dev check
+Everything, with each check's full output tail, as JSON: add --json.

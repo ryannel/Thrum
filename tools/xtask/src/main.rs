@@ -326,6 +326,17 @@ fn main() -> TaskResult {
                     "--target",
                     target,
                 ])?;
+                if target == "aarch64-apple-ios-sim" {
+                    cargo(&[
+                        "check",
+                        "--locked",
+                        "--offline",
+                        "--package",
+                        "thrum-starter",
+                        "--target",
+                        target,
+                    ])?;
+                }
             }
         }
         "check" => {

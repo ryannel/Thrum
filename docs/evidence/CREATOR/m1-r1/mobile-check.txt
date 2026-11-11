@@ -1,0 +1,23 @@
+   Compiling crossbeam-utils v0.8.23
+    Checking either v1.19.0
+    Checking smallvec v1.16.4
+   Compiling crossbeam-epoch v0.9.21
+   Compiling crossbeam-deque v0.8.8
+   Compiling rayon-core v1.13.0
+    Checking rayon v1.12.0
+    Checking thrum-core v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/creator-m1/crates/thrum-core)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.09s
+    Checking smallvec v1.16.4
+    Checking thrum-core v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/creator-m1/crates/thrum-core)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.48s
+    Checking thrum-core v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/creator-m1/crates/thrum-core)
+    Checking thrum-asset v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/creator-m1/crates/thrum-asset)
+   Compiling thrum-app v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/creator-m1/crates/thrum-app)
+    Checking thrum-controls v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/creator-m1/crates/thrum-controls)
+    Checking thrum-render v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/creator-m1/crates/thrum-render)
+    Checking thrum-asset-gpu v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/creator-m1/crates/thrum-asset-gpu)
+    Checking thrum-starter v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/creator-m1/examples/starter)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.42s
+    Checking smallvec v1.16.4
+    Checking thrum-core v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/creator-m1/crates/thrum-core)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.64s
