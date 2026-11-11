@@ -590,7 +590,7 @@
       "scope": "Planning status only. Lead commissioned the scoped re-plan answering all seven findings; independent review/unpark through the loop remains owed and M0 stays parked. Retain M0-M3/M10-M12; defer fused SDR present, pointer uploads/slot duplicates, scratch sharing, compact rows, GPU light expansion and mirror consolidation. Existing SDR arithmetic/intermediate and transport semantics remain. No implementation, correctness, visual or device promotion. T2 M0/M1 are delivered, not a restart. Mac M2 qualifies independently; Mac M3 needs G3t M3 with no simulator cooked/capture chain. G4 consumes the pre-tone input and native boundary; final M12 cooked simulator function alone needs COOKED-DRAW M1.",
       "M1": {
         "implementation": "partial_generation_registry_and_graph_qualified_attachments_in_builder_checkpoint",
-        "functional_validation": "Mac_exact_retained_and_paired_SDR_linear_pass_Chrome_1924_full_frames_exact_simulator_diagnostic_lifecycle_pass_workspace_tests_pass_required_repository_gate_blocked_by_plan_migration",
+        "functional_validation": "Mac_exact_retained_and_paired_SDR_linear_pass_Chrome_1924_full_frames_exact_simulator_diagnostic_lifecycle_pass_workspace_tests_and_required_repository_gate_pass_after_documentation_rebase",
         "experienced_quality": "not_reviewed",
         "builder_observation": "Full frames, crops and recorded motion sequences inspected. Lead review is owed. Existing midnight route local-light saturation is byte-identical before and after.",
         "platform_performance": {

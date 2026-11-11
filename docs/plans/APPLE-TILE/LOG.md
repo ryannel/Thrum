@@ -121,4 +121,7 @@
 - 2026-11-11 Plan reshaped for orchestrate 1.7.0: status lines removed, `Sequence and dependencies` and `Proof
   and builder handoff` moved to the design, and the second-review dispositions, carried state and design review
   handoff moved to [evidence](../../evidence/APPLE-TILE/replan-handoff-2026-11-11.md). No item or scope changed.
-- 2026-11-11 M1 builder implemented opt-in generation recipes, native fact/digest capture, graph-derived storage and prepared day depth. Both native recipes preserve the retained SDR/linear bytes. Chrome day/night SDR/linear comparisons pass 1,924 frames, and the simulator diagnostic/lifecycle route passes with actual unsupported unified-memory facts selecting Portable. Workspace/scoped/Wasm and mutation/storage checks pass. [Target evidence](../../evidence/render/apple-tile-m1/README.md) records residency, overlap, visuals and limits. The milestone's named moving command passes, but the required repository gate fails on the shared plan-folder migration's 540 links, 45 anchors and eight missing design paths. All five target items have evidence. M1 stays open pending that gate and integration. No reviewer was launched.
+- 2026-11-11 M1 implements generation recipes and graph-qualified storage. Native retained bytes, 1,924 Chrome
+  frame comparisons and simulator diagnostic/lifecycle checks pass. [Evidence](../../evidence/render/apple-tile-m1/README.md)
+  records residency/overlap and limits. The initial migration gate failed. Rebase onto repaired main preserved
+  the planner updates, and the milestone command plus full `./dev check` now pass. M1 is claimed for lead review.
