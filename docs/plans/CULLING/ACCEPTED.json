@@ -25,30 +25,30 @@
   },
   "milestones": {
     "M1": {
-      "definitions": "1ecede9d1e71763d45c3652fcb1ac904194b40c4b1e1f8dc0c7f93df8913a0c4",
+      "definitions": "f89e65b9bff540a7bb6edce4e3e32a14b987b183b367fb8e02a172a45c36646d",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Plan the modules CULLING and EFFECT-GRAPH from docs/plans/ARCHITECTURE.md: write each one's DESIGN, PLAN and done-when f",
-        "at": "2026-11-11T15:19:29Z"
+        "task": "Revise the BASELINE-GUARD, CULLING and EFFECT-GRAPH designs and plans as their design reviews ask: docs/evidence/BASELIN",
+        "at": "2026-11-11T15:55:43Z"
       }
     },
     "M2": {
-      "definitions": "6bb70526782e05d905104a44c3e116d86ed932df96bea651acbd7c70512c7718",
+      "definitions": "960d274c06855d1b346692f2e89325cc93cfe1716b3b119414c4e0a61c86a7ea",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Plan the modules CULLING and EFFECT-GRAPH from docs/plans/ARCHITECTURE.md: write each one's DESIGN, PLAN and done-when f",
-        "at": "2026-11-11T15:19:29Z"
+        "task": "Revise the BASELINE-GUARD, CULLING and EFFECT-GRAPH designs and plans as their design reviews ask: docs/evidence/BASELIN",
+        "at": "2026-11-11T15:55:43Z"
       }
     },
     "M3": {
-      "definitions": "00ff30f81e1e10ffd06a9e423485c4a5d1fe969adebcbf801d3d580c519b7531",
+      "definitions": "4d8cc4e46e33b52bc4c90aa18cbdaf78142a7b64d65a81b87aeee3a7055c39e7",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Plan the modules CULLING and EFFECT-GRAPH from docs/plans/ARCHITECTURE.md: write each one's DESIGN, PLAN and done-when f",
-        "at": "2026-11-11T15:19:29Z"
+        "task": "Revise the BASELINE-GUARD, CULLING and EFFECT-GRAPH designs and plans as their design reviews ask: docs/evidence/BASELIN",
+        "at": "2026-11-11T15:55:43Z"
       }
     }
   },
@@ -56,10 +56,14 @@
     {
       "task": "Plan the modules CULLING and EFFECT-GRAPH from docs/plans/ARCHITECTURE.md: write each one's DESIGN, PLAN and done-when file. Both depend on APPLE-TILE M2, which is in its second review now, so builders can start them once it passes. Everything else is waiting on APPLE-TILE M2 or M3, so these are the next work. Keep each first milestone small enough to start right after APPLE-TILE M2 lands. Also: APPLE-PRESENTATION M1's jitter change broke APPLE-TILE's exact baseline comparisons, and nothing caught it before it merged (docs/evidence/APPLE-TILE/M2-review.md MF1). Say in ARCHITECTURE.md or the affected designs how a module's change that alters another module's exact baselines gets caught before landing.",
       "at": "2026-11-11T15:19:29Z"
+    },
+    {
+      "task": "Revise the BASELINE-GUARD, CULLING and EFFECT-GRAPH designs and plans as their design reviews ask: docs/evidence/BASELINE-GUARD/design-review.md, docs/evidence/CULLING/design-review.md and docs/evidence/EFFECT-GRAPH/design-review.md. Address every finding or record why not. APPLE-TILE M2 has now passed, so CULLING and EFFECT-GRAPH can start as soon as their designs pass.",
+      "at": "2026-11-11T15:55:43Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-11T15:19:29Z"
+    "at": "2026-11-11T15:55:43Z"
   }
 }
