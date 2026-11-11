@@ -46,8 +46,13 @@ def analyse(arm):
             'missing_sample_ordinals':sorted(wanted-metrics.keys()),
             'missing_gpu_scene_query_ordinals':sorted(i for i in wanted if i in metrics and metrics[i]['gpu_scene_query_ms'] is None),
             'load':json.loads((arm/'load.json').read_text())}
+    if (arm/'collection.json').exists():
+        result['collection']=json.loads((arm/'collection.json').read_text())
     if (arm/'witness.json').exists():
         witness=json.loads((arm/'witness.json').read_text())
+        result['witness_full_interval_coverage']=witness['coverage']
+        result['witness_qualified']=witness['qualified']
+        result['unmatched_affecting_marked_interval']=len(witness['unmatched_affecting_marked_interval'])
         drawables={r['drawable']:r for r in witness['drawables']}
         result['marked_missed_refreshes']=[]
         for missed in witness['missed_refreshes']:

@@ -24,7 +24,7 @@ Needs `T2-CAPTURE:M0` only; no item waits on `APPLE-TILE`. Each item's full prot
 judged from the OS-reported presented time of each game drawable, because both 11 November traces had empty
 display tables for a cause that is not authorization
 ([diagnosis](../../evidence/PLATFORM-RUNTIME-MAC/m2-display-event-diagnosis.md)).
-[The attended runbook](../../evidence/render/mac-m2-20261110/RUNBOOK.md) holds the tested collection commands; its
+[The attended runbook](../../evidence/render/mac-m2-presented-20261111/RUNBOOK.md) holds the tested collection commands; its
 trace steps are replaced by M2.4 and M2.5. For the attended items the owner unlocks the Mac and wakes the
 built-in panel, and nothing else. Verdicts on `0d53d3aa` qualify only that build
 ([history](../../evidence/render/mac-m2-pan/README.md)).

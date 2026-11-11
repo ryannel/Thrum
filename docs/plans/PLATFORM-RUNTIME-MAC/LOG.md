@@ -6,7 +6,9 @@ references, and reports missing/invalid rows. Fourteen targeted tests pass (eigh
 M2.1 release binary, preset and cooked-store hashes are unchanged, so M2.1/M2.3 retain their exact-build evidence.
 The first new 16-second-window attempt retained the whole marked interval but hit its process deadline; it is
 not a bounded-completion pass. A second attempt uses only Metal Application, Display and Points of Interest.
-Both commissions are retained; only the new six-recording commission authorizes the current work.
+Attempt 2 completed in bounds but retained only 130 handler rows from the final 1.075 seconds; its full-interval
+witness is refused. Attempt 3 removes ring-window recording while keeping the smaller instrument set. Both
+commissions are retained; only the new six-recording commission authorizes the current work.
 [Witness proof and fresh recording status](../../evidence/render/mac-m2-presented-20261111/README.md).
 
 11 November diagnostic closeout. The remaining capture-OFF probe ran under the GPU lock on the awake built-in

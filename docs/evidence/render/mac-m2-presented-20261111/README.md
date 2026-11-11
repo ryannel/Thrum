@@ -59,3 +59,10 @@ snapshot are host observations, not evidence for any specific cause.
 These are diagnostic observations. Host render-method elapsed durations include waits; GPU query intervals
 do not locate display presentation. All strict over-one-period values remain in the witness, while
 nearest-grid two-refresh intervals are listed separately. No numeric performance threshold is a gate.
+
+Attempt 2 completed collection and exports in 44.663 seconds but kept only 130 handler rows, from 7.582904 to
+8.657917 trace seconds, while Whole spans 4.544904–8.645149 seconds. It is refused for incomplete coverage.
+All 360 unjoined whole-interval submissions remain listed. The panel stayed unlocked/awake.
+[Attempt 2](attempt-2-off/invocation.json), [coverage refusal](attempt-2-off/witness.json.gz),
+[display counts](attempt-2-off/row-counts.json) and [load](attempt-2-off/load.json).
+The next changed hypothesis removes `--window` entirely while retaining the smaller instrument set.

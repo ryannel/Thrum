@@ -8,21 +8,23 @@ The Mac must be unlocked with the built-in main panel awake. The collector check
 attempt and every 0.5 seconds while recording/exporting, terminating only its owned process group on refusal.
 Other builders’ CPU work may continue; retain the load and iostat records beside every result.
 
-The second attempt, changed from the first explicit-window configuration, is:
+Two attempts are used: full Game Performance exceeded its process deadline; the smaller explicit-window run
+finished but retained only the final 1.075 seconds. The current changed configuration removes the ring window:
 
 ```sh
-python3 /Users/ryannel/.claude/plugins/cache/ryannel-skills/orchestrate/1.7.1/skills/orchestration/build/scripts/agent_loop.py lock gpu --worktree . -- python3 scripts/qualify_mac_m2.py --presented-minimal --presented-arm off-traced --output tmp/mac-m2/presented-minimal-20261111
+python3 /Users/ryannel/.claude/plugins/cache/ryannel-skills/orchestrate/1.7.1/skills/orchestration/build/scripts/agent_loop.py lock gpu --worktree . -- python3 scripts/qualify_mac_m2.py --presented-minimal --presented-deferred --presented-arm off-traced --output tmp/mac-m2/presented-deferred-20261111
 ```
 
 Never overwrite an arm. The command refuses an unchanged failed hypothesis. It pins the retained release binary,
 preset and cooked store. It records at most 16 seconds with a 75-second finalization allowance, and finite
 30-second exports. It saves its executed collector source and hash. The minimal configuration retains the
-Metal Application, Display and Points of Interest instruments with an explicit 16-second ring window.
+Metal Application, Display and Points of Interest instruments, omitting `--window`; the installed Blank template
+declares `windowLimit=0`. Verify the fresh TOC mode and actual retained coverage before accepting it.
 
 Inspect the fresh result without another recording:
 
 ```sh
-python3 scripts/mac_m2_presented.py --input tmp/mac-m2/presented-minimal-20261111/off-traced/pan.trace --arm tmp/mac-m2/presented-minimal-20261111/off-traced --output tmp/mac-m2/presented-minimal-20261111/off-traced/witness.json
+python3 scripts/mac_m2_presented.py --input tmp/mac-m2/presented-deferred-20261111/off-traced/pan.trace --arm tmp/mac-m2/presented-deferred-20261111/off-traced --output tmp/mac-m2/presented-deferred-20261111/off-traced/witness.json
 ```
 
 Also inspect TOC recording mode, game PID/window, display identity (only the built-in panel, or identify the
