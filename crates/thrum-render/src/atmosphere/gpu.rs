@@ -48,6 +48,7 @@ const REFLECTION_VALID: u8 = 32;
 const DFG_VALID: u8 = 64;
 
 pub(crate) struct AtmospherePrepared {
+    environment: super::environment::EnvironmentState,
     pub(super) generation: u64,
     pub(super) epoch: u64,
     pub(super) textures: [wgpu::Texture; 4],
@@ -76,6 +77,15 @@ pub(crate) struct AtmospherePrepared {
 }
 
 impl AtmospherePrepared {
+    pub(crate) fn products(
+        &self,
+        device: &wgpu::Device,
+        directional: &wgpu::Buffer,
+        exposure: &[wgpu::Buffer; 2],
+    ) -> super::EnvironmentProducts {
+        super::products::create(self, device, directional, exposure)
+    }
+
     pub(crate) fn observer_uniform(&self) -> &wgpu::Buffer {
         &self.uniform
     }
@@ -112,7 +122,10 @@ impl AtmospherePrepared {
                 sample_count: 1,
                 dimension: wgpu::TextureDimension::D2,
                 format: wgpu::TextureFormat::Rgba16Float,
-                usage: wgpu::TextureUsages::STORAGE_BINDING | wgpu::TextureUsages::TEXTURE_BINDING,
+                usage: wgpu::TextureUsages::STORAGE_BINDING
+                    | wgpu::TextureUsages::TEXTURE_BINDING
+                    | wgpu::TextureUsages::COPY_SRC
+                    | wgpu::TextureUsages::COPY_DST,
                 view_formats: &[],
             })
         });
@@ -137,7 +150,10 @@ impl AtmospherePrepared {
                 sample_count: 1,
                 dimension: wgpu::TextureDimension::D2,
                 format: wgpu::TextureFormat::Rgba16Float,
-                usage: wgpu::TextureUsages::STORAGE_BINDING | wgpu::TextureUsages::TEXTURE_BINDING,
+                usage: wgpu::TextureUsages::STORAGE_BINDING
+                    | wgpu::TextureUsages::TEXTURE_BINDING
+                    | wgpu::TextureUsages::COPY_SRC
+                    | wgpu::TextureUsages::COPY_DST,
                 view_formats: &[],
             })
         });
@@ -183,6 +199,7 @@ impl AtmospherePrepared {
             prepare_aerial(device, &uniform, &views, &aerial_views, &sampler, &night);
         let reflection = ReflectionPrepared::new(device, &uniform, &views[2], &sampler);
         let mut result = Self {
+            environment: super::environment::EnvironmentState::new(frame),
             generation,
             epoch: frame.profile_epoch,
             textures,
@@ -220,6 +237,7 @@ impl AtmospherePrepared {
         view: &SyntheticView,
         extent: [u32; 2],
     ) {
+        self.environment.update(frame);
         if frame.profile_epoch != self.epoch {
             self.validity &= DFG_VALID;
             self.epoch = frame.profile_epoch;
@@ -303,6 +321,10 @@ impl AtmospherePrepared {
             | GROUND_VALID
             | REFLECTION_VALID
             | DFG_VALID;
+    }
+
+    pub(crate) fn environment(&self) -> super::EnvironmentFrame {
+        self.environment.sample()
     }
 
     pub(crate) fn pass_count(&self) -> u32 {

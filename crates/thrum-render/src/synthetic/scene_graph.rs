@@ -235,6 +235,9 @@ impl PreparedSynthetic {
         }
         let mut prepared_keys = BTreeSet::from([self.key, self.display_key(), self.exposure_key()]);
         let (directional, view) = Self::append_frame_uniform_reads(&mut graph, &mut accesses)?;
+        if let Some(cloud) = &self.cloud {
+            cloud.append_reads(&mut graph, &mut accesses)?;
+        }
         let atmosphere_inputs = self
             .atmosphere
             .as_ref()

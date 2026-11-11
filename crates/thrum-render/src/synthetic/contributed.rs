@@ -124,6 +124,10 @@ impl PreparedSynthetic {
     /// The forward pass a [`SceneContribution`] draws into.
     pub(crate) fn scene_surface<'a>(&'a self, queue: &'a wgpu::Queue) -> SceneSurface<'a> {
         SceneSurface {
+            sun_optical_depth: self.cloud.is_some(),
+            environment: self.atmosphere.as_ref(),
+            directional: &self.directional_buffer,
+            exposure: &self.exposure.samples,
             device: self.capabilities.device(),
             queue,
             generation: self.key.device_generation,
@@ -149,6 +153,11 @@ impl PreparedSynthetic {
     pub(crate) fn contribution_frame(&self) -> ContributionFrame {
         let view = self.pending_view.as_ref().unwrap_or(&self.view_sample);
         ContributionFrame {
+            exposure_side: self.history.write_side(),
+            environment: self
+                .atmosphere
+                .as_ref()
+                .map(crate::atmosphere::AtmospherePrepared::environment),
             view_proj: view.raster_projection().to_cols_array_2d(),
             camera: view.camera_position(),
             generation: self.key.device_generation,

@@ -291,3 +291,8 @@ requirement = "=0.3.2"
 license = "MIT OR Apache-2.0 OR Zlib"
 purpose = "Read generation Metal unified-memory facts and inspect prepared texture storage modes for APPLE-TILE"
 target_cost = "Apple-only binding already in locked wgpu Metal closure; read-only preparation queries, no frame work"
+[external_dependencies.half]
+requirement = "=2.7.1"
+license = "MIT OR Apache-2.0"
+purpose = "Encode the registered Sun-path optical-depth field for portable filtered R16Float sampling"
+target_cost = "Native and Wasm renderer setup or source replacement only, one conversion per field texel, no conversion on the fragment or per-frame metadata path"

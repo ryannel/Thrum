@@ -239,7 +239,15 @@ impl Pipelines {
     /// restored by [`crate::MaterialReload`] once it validates against the surface.
     pub(crate) fn new(surface: &SceneSurface<'_>, target: &Target) -> Self {
         let device = surface.device;
-        let source = format!("{}\n{}", surface.shader_source, include_str!("cooked.wgsl"));
+        let cooked = if surface.sun_optical_depth {
+            include_str!("cooked.wgsl").replace(
+                "light.irradiance.rgb * exp(-optical)",
+                "light.irradiance.rgb * cloud_factor((cooked_volume.model * vec4(p, 1.0)).xyz) * exp(-optical)",
+            )
+        } else {
+            include_str!("cooked.wgsl").into()
+        };
+        let source = format!("{}\n{cooked}", surface.shader_source);
         let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("cooked scene entries"),
             source: wgpu::ShaderSource::Wgsl(source.into()),

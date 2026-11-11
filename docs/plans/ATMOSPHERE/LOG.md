@@ -209,3 +209,25 @@
   the lookups stay one hardware-filtered read, and the bound of H2 and H4 gains one stored half-float step `Q`.
   M5.2's question names it. The design needs a new review before M5 resumes.
   [Full entry](../../evidence/ATMOSPHERE/log-entries.md#entry-3).
+
+
+## 11 November 2026 — M5 H2 admission blocker
+
+Added the environment identity and on-demand lent products, optional Sun-path optical-depth variant,
+per-march cooked-volume factor and opt-in diagnostic provider. CPU tests and the Metal handoff smoke
+pass. H1 low-altitude and H4 filtered arms pass. H2 fails its unchanged allowance on the live Metal
+chart. A controlled 257-position measurement isolates low-contrast fp16 filtering precision.
+[Evidence and reproduction](../../evidence/ATMOSPHERE/m5-h2-blocker.md) record the measurements,
+partial proof scope and remaining work. The design requires a planner decision before numerical
+admission continues. M5 stays open; integration is pending.
+
+
+## 11 November 2026 — M5 independent cloud-factor qualification
+
+The production cloud variant passes seven Metal cases and 56 receiver-point queries for zero optical
+depth, uniform ln2, spatial variation, height-dependent Sun-ray projection, displacement and clear
+validity limits. This qualifies the shared lookup; receiver-kind and cooked-volume tests remain pending.
+The packed surface light and lent identity now share one prepared CPU transmission result.
+The identity tests pass, and the repeated handoff tests retain the H2 miss with four other tests passing.
+Origin/main at `be9ea93c` retains the design instruction requiring this miss to return to planning.
+[Selected evidence](../../evidence/ATMOSPHERE/m5-h2-blocker.md) includes the cloud-factor log.

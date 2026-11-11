@@ -80,6 +80,12 @@ pub fn material_hook_point(source: &str) -> Result<std::ops::Range<usize>, HookP
 
 /// Read-only description of a prepared scene's forward pass.
 pub struct SceneSurface<'a> {
+    /// The prepared light group and shader include the shared `cloud_factor`
+    /// operation. Volume contributions apply it once per lit march sample.
+    pub sun_optical_depth: bool,
+    pub(crate) environment: Option<&'a crate::atmosphere::AtmospherePrepared>,
+    pub(crate) directional: &'a wgpu::Buffer,
+    pub(crate) exposure: &'a [wgpu::Buffer; 2],
     /// The device every scene resource belongs to.
     pub device: &'a crate::runtime::DeviceSite,
     /// That device's queue. Contributions may create resources; they never submit.
@@ -111,6 +117,18 @@ pub struct SceneSurface<'a> {
     pub depth_format: wgpu::TextureFormat,
     /// The existing Sun depth pass, when shadows are enabled for the scene.
     pub shadow: Option<SceneShadowSurface<'a>>,
+}
+
+impl SceneSurface<'_> {
+    /// Borrow the atmosphere's physical lighting operations for an independent
+    /// contribution pipeline. Creates read-only bindings on request, sharing
+    /// the existing products. Scenes with authored or diagnostic light return
+    /// `None`. Rebuild the result when this surface is replaced.
+    #[must_use]
+    pub fn environment_products(&self) -> Option<crate::atmosphere::EnvironmentProducts> {
+        self.environment
+            .map(|environment| environment.products(self.device, self.directional, self.exposure))
+    }
 }
 
 /// Pipeline inputs for the scene's depth-only Sun cascades.
@@ -162,6 +180,12 @@ impl ShadowBounds {
 /// Per-frame camera facts a contribution may need on the CPU (for example to cull).
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct ContributionFrame {
+    /// Resolved exposure side used by this frame's forward pass, also used to
+    /// select [`crate::atmosphere::EnvironmentProducts::group`].
+    pub exposure_side: usize,
+    /// The atmosphere's sole sampled environment, absent for diagnostic and
+    /// authored photometric lighting. Every callback receives the same sample.
+    pub environment: Option<crate::atmosphere::EnvironmentFrame>,
     /// Column-major jittered reverse-Z view-projection of the frame being encoded.
     /// Culling uses the same raster frustum as the forward vertices; motion uses
     /// the separately bound unjittered matrices.

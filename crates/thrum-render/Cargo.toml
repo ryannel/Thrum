@@ -17,6 +17,7 @@ creation-counters = ["wgpu/counters"]
 [dependencies]
 thrum-core = { path = "../thrum-core" }
 glam = { version = "=0.33.12", default-features = false, features = ["std"] }
+half = { version = "=2.7.1", default-features = false }
 wgpu = { version = "=30.0.1", default-features = false, features = ["std", "wgsl"] }
 
 [target.'cfg(any(target_os = "macos", target_os = "ios"))'.dependencies]

@@ -7,7 +7,7 @@
 //! remain open.
 
 use crate::abi::{self, AbiError, InstanceRecord, MaterialRecord, TextureClasses};
-use crate::atmosphere::{AtmosphereFrame, AtmospherePrepared};
+use crate::atmosphere::{AtmosphereFrame, AtmospherePrepared, CloudPrepared, SunOpticalDepth};
 use crate::capabilities::DeviceCapabilities;
 use crate::contribution::{
     ContributionFrame, ContributionPasses, SceneContribution, SceneSurface, SurfaceParts,
@@ -91,6 +91,9 @@ pub const OUTPUT_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba8Unorm;
 /// Immutable CPU scene, converted at prepare time rather than each draw.
 #[derive(Clone, Debug)]
 pub struct SyntheticScene {
+    /// Optional Sun-path optical-depth provider. Presence is fixed at prepare
+    /// time. Metadata and same-sized contents may change on the live frame.
+    pub sun_optical_depth: Option<SunOpticalDepth>,
     /// Nonempty storage-buffer material table.
     pub materials: Vec<MaterialRecord>,
     /// Nonempty indexed draw instances.
@@ -258,6 +261,7 @@ impl SyntheticScene {
             })
             .collect();
         Ok(Self {
+            sun_optical_depth: None,
             materials,
             instances,
             local_lights: Vec::new(),
@@ -545,6 +549,7 @@ pub struct InstanceUploadReport {
 /// Fully prepared opaque/static forward and SDR display roles. Both pipelines
 /// finish creation before this object is returned; encode never builds them.
 pub struct PreparedSynthetic {
+    cloud: Option<CloudPrepared>,
     capabilities: DeviceCapabilities,
     classes: TextureClasses,
     owner: Arc<()>,
@@ -999,13 +1004,37 @@ impl PreparedSynthetic {
         let [local_light_bytes, cluster_head_bytes, cluster_index_bytes] = clusters.capacities();
         let dropped_light_references = clusters.dropped_references;
         let limits = capabilities.limits();
+        if scene.sun_optical_depth.is_some() && !matches!(lighting, FrameLighting::Atmosphere(_)) {
+            return Err(RenderError::InvalidLighting);
+        }
         if matches!(lighting, FrameLighting::Atmosphere(_))
-            && (limits.max_sampled_textures_per_shader_stage < 9 + 2 * u32::from(shadow_enabled)
+            && (limits.max_sampled_textures_per_shader_stage
+                < 9 + 2 * u32::from(shadow_enabled) + u32::from(scene.sun_optical_depth.is_some())
                 || limits.max_samplers_per_shader_stage < 3 + u32::from(shadow_enabled)
-                || limits.max_bindings_per_bind_group < 12)
+                || limits.max_bindings_per_bind_group
+                    < if scene.sun_optical_depth.is_some() {
+                        15
+                    } else {
+                        13
+                    })
         {
             return Err(AbiError::DeviceLimits.into());
         }
+        let cloud = scene
+            .sun_optical_depth
+            .as_ref()
+            .map(|field| {
+                CloudPrepared::new(
+                    device,
+                    queue,
+                    field,
+                    match lighting {
+                        FrameLighting::Atmosphere(frame) => frame.simulation_time_seconds(),
+                        _ => 0.0,
+                    },
+                )
+            })
+            .transpose()?;
         if [local_light_bytes, cluster_head_bytes, cluster_index_bytes]
             .into_iter()
             .any(|bytes| bytes > limits.max_storage_buffer_binding_size)
@@ -1166,6 +1195,19 @@ impl PreparedSynthetic {
             light_entries.push(uniform_layout(7, 128, wgpu::ShaderStages::FRAGMENT));
         }
         light_entries.push(uniform_layout(12, 16, wgpu::ShaderStages::FRAGMENT));
+        if cloud.is_some() {
+            light_entries.push(wgpu::BindGroupLayoutEntry {
+                binding: 13,
+                visibility: wgpu::ShaderStages::FRAGMENT,
+                ty: wgpu::BindingType::Texture {
+                    sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                    view_dimension: wgpu::TextureViewDimension::D2,
+                    multisampled: false,
+                },
+                count: None,
+            });
+            light_entries.push(uniform_layout(14, 48, wgpu::ShaderStages::FRAGMENT));
+        }
         let light_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("synthetic directional and clustered sources"),
             entries: &light_entries,
@@ -1276,6 +1318,18 @@ impl PreparedSynthetic {
                 wgpu::BindGroupEntry {
                     binding: 11,
                     resource: wgpu::BindingResource::TextureView(atmosphere.transmittance_view()),
+                },
+            ]);
+        }
+        if let Some(cloud) = &cloud {
+            light_bindings.extend([
+                wgpu::BindGroupEntry {
+                    binding: 13,
+                    resource: wgpu::BindingResource::TextureView(&cloud.view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 14,
+                    resource: cloud.uniform.as_entire_binding(),
                 },
             ]);
         }
@@ -1466,7 +1520,11 @@ impl PreparedSynthetic {
             bind_group_layouts: &bind_group_layouts,
             immediate_size: 0,
         });
-        let shader_source = scene_source::compose(atmosphere.is_some(), air_shadow.is_some());
+        let shader_source = scene_source::compose_with_cloud(
+            atmosphere.is_some(),
+            air_shadow.is_some(),
+            cloud.is_some(),
+        );
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("prepared synthetic shader ABI2"),
             source: wgpu::ShaderSource::Wgsl(shader_source.as_str().into()),
@@ -1661,6 +1719,7 @@ impl PreparedSynthetic {
             jitter_phase: 0,
             pending_view: None,
             frame_revision: 0,
+            cloud,
             directional_buffer: directional,
             local_light_buffer: local_lights,
             cluster_head_buffer: cluster_heads,
@@ -1783,6 +1842,11 @@ impl PreparedSynthetic {
         if self.atmosphere.is_some() != matches!(lighting, FrameLighting::Atmosphere(_)) {
             return Err(RenderError::InvalidLighting);
         }
+        match (&self.cloud, &scene.sun_optical_depth) {
+            (None, None) => {}
+            (Some(cloud), Some(field)) if cloud.accepts(field) => {}
+            _ => return Err(RenderError::SceneCapacity),
+        }
         if scene.instances.len()
             != usize::try_from(self.instance_count).map_err(|_| RenderError::SceneCapacity)?
         {
@@ -1859,6 +1923,16 @@ impl PreparedSynthetic {
         self.dropped_light_references = self.clusters.dropped_references;
         self.presentation_light_clamps = clamps;
         self.background = background;
+        if let (Some(cloud), Some(field)) = (&mut self.cloud, &scene.sun_optical_depth) {
+            cloud.update(
+                queue,
+                field,
+                match lighting {
+                    FrameLighting::Atmosphere(frame) => frame.simulation_time_seconds(),
+                    _ => 0.0,
+                },
+            );
+        }
         if let (Some(atmosphere), FrameLighting::Atmosphere(frame)) =
             (&mut self.atmosphere, lighting)
         {
@@ -2588,6 +2662,9 @@ impl OffscreenTarget {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[cfg(target_os = "macos")]
+    mod cloud;
 
     impl PreparedSynthetic {
         /// Prepare with each slot's mesh row selected: the bucket route.
