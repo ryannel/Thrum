@@ -24,11 +24,11 @@ record-layout unit tests (D1.1); motion-texture readback (it has `COPY_SRC`) for
 (D1.2) and the sky pan test (D1.3); and a motion mode in the existing `synthetic/display.rs` display pass for the route
 review (D1.5). The first G4 witnesses that need G3t M3 are TAAU (M3) and the extent change (M4).
 
-- [ ] View-record fields and jitter sequence, with `pack_aux` carrying the subrectangle (→D1.1).
-- [ ] Unjittered clip motion in `synthetic.wgsl` (→D1.2).
-- [ ] Sky and star motion at infinity, delivered by the atmosphere owner under seam 4 (→D1.3).
-- [ ] Invalid-history flag (→D1.4).
-- [ ] Motion mode in `synthetic/display.rs` and the review sequence (→D1.5).
+- [x] View-record fields and jitter sequence, with `pack_aux` carrying the subrectangle (→D1.1).
+- [x] Unjittered clip motion in `synthetic.wgsl` (→D1.2).
+- [x] Sky and star motion at infinity, delivered by the atmosphere owner under seam 4 (→D1.3).
+- [x] Invalid-history flag (→D1.4).
+- [x] Motion mode in `synthetic/display.rs` and the review sequence (→D1.5).
 
 ## M2 Depth, motion, reactive and exposure are stored for reconstruction, and history advances only with submitted frames
 
