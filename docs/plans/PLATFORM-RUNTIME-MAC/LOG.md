@@ -1,5 +1,12 @@
 # PLATFORM-RUNTIME-MAC log
 
+11 November attended stop. While attempt 3 was still waiting for GPU, the 0.5-second guard observed the
+built-in main display inactive/asleep with the console still unlocked, at 14:10:01 UTC. It cancelled only the
+owned queued request before acquisition or recording. Two of the new six recordings are used; four remain.
+M2.2/M2.5 stay open until the owner wakes/keeps awake the built-in panel and a GPU slot is available. The changed
+non-windowed command is ready in the runbook. Unattended verification/integration of this checkpoint continues.
+[Panel stop, both attempts and command](../../evidence/render/mac-m2-presented-20261111/README.md).
+
 11 November presented-time re-plan build (`ab66bca5`). The reusable witness command reproduces all three known
 two-refresh intervals and the 15.470792 ms game gap, rejects the truncated historical windows, resolves PID/XML
 references, and reports missing/invalid rows. Fourteen targeted tests pass (eight witness/deadline, six existing window controls). M2.4 has builder proof. The pinned retained
