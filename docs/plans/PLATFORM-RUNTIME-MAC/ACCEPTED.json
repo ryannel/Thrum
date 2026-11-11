@@ -4,19 +4,25 @@
   "design": {
     "verdict": "ok",
     "review": "docs/evidence/PLATFORM-RUNTIME-MAC/design-review.md",
-    "commit": "9d6c6f6fcdd0b7ad533cce994a01f9567ab33887",
-    "hash": "62f9cfc194cb7b91694f8525389d7d981daa7bbd85383ca0fd7f88e9ffe48892",
+    "commit": "3e5be4a760190434acd2655d43d7cf92c549ee8e",
+    "hash": "117d14185437deddac6d76a47385e449d91cedad2838dc9756efc2c9adbe84f9",
     "by": "review",
     "host": "codex",
-    "model": "gpt-6.1-sol",
-    "effort": "medium",
+    "model": "gpt-6-astra",
+    "effort": "high",
     "observed": {
-      "model": "gpt-6.1-sol",
-      "effort": "medium"
+      "model": "gpt-6-astra",
+      "effort": "high"
     },
     "cli": "codex-cli 0.167.0-alpha.3.2",
-    "path": "visible",
-    "at": "2026-11-10T15:24:21Z"
+    "path": "headless",
+    "usage": {
+      "input": 87090,
+      "cached": 741504,
+      "output": 4871,
+      "turns": 1
+    },
+    "at": "2026-11-11T04:50:25Z"
   },
   "milestones": {
     "M0": {
@@ -67,5 +73,24 @@
   "planner": {
     "host": "claude",
     "at": "2026-11-11T04:36:27Z"
-  }
+  },
+  "design_history": [
+    {
+      "verdict": "ok",
+      "review": "docs/evidence/PLATFORM-RUNTIME-MAC/design-review-1.md",
+      "commit": "9d6c6f6fcdd0b7ad533cce994a01f9567ab33887",
+      "hash": "62f9cfc194cb7b91694f8525389d7d981daa7bbd85383ca0fd7f88e9ffe48892",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6.1-sol",
+      "effort": "medium",
+      "observed": {
+        "model": "gpt-6.1-sol",
+        "effort": "medium"
+      },
+      "cli": "codex-cli 0.167.0-alpha.3.2",
+      "path": "visible",
+      "at": "2026-11-10T15:24:21Z"
+    }
+  ]
 }
