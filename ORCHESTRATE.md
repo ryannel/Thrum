@@ -18,11 +18,12 @@ Thrum's work follows the generic orchestrate skills (`/plan-module`, `/build-mil
 - **Codex model:** gpt-6.1-sol  *(loop)*
 - **Claude model:** claude-opus-5-5  *(loop)*
 - **Default host:** codex  *(loop: builders)*
-- **Review host:** other  *(loop: milestone reviews on Claude, design reviews on the host that didn't plan)*
+- **Review host:** codex  *(loop: owner, 11 Nov 2026: "move milestone reviews to astra on medium"; design reviews stay on Codex since Claude plans)*
 - **Planner host:** claude  *(loop)*
 - **Claude planner:** claude-fable-5-2 high  *(loop: owner, 10 Nov 2026)*
 - **Codex design reviewer:** gpt-6-astra high  *(loop: owner, 10 Nov 2026)*
-- **Claude reviewer:** high  *(loop: owner, 10 Nov 2026; Opus 5.5)*
+- **Codex reviewer:** gpt-6-astra medium  *(loop: owner, 11 Nov 2026: "move milestone reviews to astra on medium")*
+- **Claude reviewer:** high  *(loop: owner, 10 Nov 2026; Opus 5.5; used only when a review is sent to Claude by hand)*
 - **Codex sandbox:** workspace-write  *(loop: GPU and Instruments runs go through Codex's auto-reviewed approvals)*
 - **Writable roots:** ~/.cargo  *(loop)*
 
