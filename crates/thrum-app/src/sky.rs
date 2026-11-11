@@ -29,18 +29,24 @@
 //! });
 //! ```
 
+#[cfg(target_arch = "wasm32")]
+mod browser;
+#[cfg(target_os = "macos")]
 mod capture;
+#[cfg(target_os = "macos")]
 mod live_capture;
 
 use std::{
-    error::Error,
-    path::PathBuf,
     sync::{Arc, Mutex},
-    time::{Duration, Instant},
+    time::Duration,
 };
 
-use thrum_asset_gpu::{CookedAssets, CookedConfig, CookedStats, MaterialHook, MaterialOutcome};
+#[cfg(target_os = "macos")]
+use std::time::Instant;
+use thrum_asset_gpu::{CookedAssets, CookedConfig, CookedStats};
 pub use thrum_asset_gpu::{CookedMaterial, MeshPlacement};
+#[cfg(target_os = "macos")]
+use thrum_asset_gpu::{MaterialHook, MaterialOutcome};
 pub use thrum_controls::{Controls, Display};
 use thrum_core::{
     WorldEpoch,
@@ -49,15 +55,25 @@ use thrum_core::{
 use thrum_render::{
     abi::{InstanceRecord, MaterialRecord},
     atmosphere::AtmosphereFrame,
-    capabilities::DeviceCapabilities,
     contribution::SceneContribution,
     extract::{ExtractReport, RenderExtractor, SourceTick},
-    runtime::{FrameConfig, FrameHost, FrameWorld, SceneFrame, SceneSource},
+    runtime::{FrameWorld, SceneFrame, SceneSource},
     synthetic::{DisplayOverlay, FrameLighting, SdrToneMap, SyntheticScene, SyntheticView},
 };
+#[cfg(target_os = "macos")]
 use winit::keyboard::KeyCode;
 
-use crate::{Config, Edits, Game, Gpu, KeyResponse, Prepared};
+#[cfg(target_os = "macos")]
+use crate::Config;
+#[cfg(target_os = "macos")]
+use crate::{Edits, Game, Gpu, KeyResponse, Prepared};
+#[cfg(target_os = "macos")]
+use std::{error::Error, path::PathBuf};
+#[cfg(target_os = "macos")]
+use thrum_render::{
+    capabilities::DeviceCapabilities,
+    runtime::{FrameConfig, FrameHost},
+};
 
 /// Environment variable naming a PNG file: [`run`] renders one frame there without a window.
 pub const CAPTURE_VARIABLE: &str = "THRUM_CAPTURE_PNG";
@@ -306,6 +322,7 @@ impl SceneSource<SourceTick> for SkyScene {
 #[derive(Clone, Copy, Debug, Default)]
 pub struct SkyEdits(Option<Sky>);
 
+#[cfg(target_os = "macos")]
 impl Edits for SkyEdits {
     fn merge(self, newer: Self) -> Self {
         Self(newer.0.or(self.0))
@@ -337,6 +354,7 @@ pub struct SkyGame {
     kept: Option<KeptProbe>,
     reload: Option<(Reload, ReloadReport)>,
     /// The files `reload` reads, watched by the window and a live capture.
+    #[cfg(target_os = "macos")]
     reload_files: Vec<PathBuf>,
 }
 
@@ -368,6 +386,7 @@ impl SkyGame {
             shown_status: None,
             kept: None,
             reload: None,
+            #[cfg(target_os = "macos")]
             reload_files: Vec::new(),
         }
     }
@@ -393,40 +412,67 @@ impl SkyGame {
     /// The variable is unset or names a store nothing was cooked into, or a placement's
     /// transform is not rigid with one uniform scale; each message says what to do.
     pub fn with_meshes(self, meshes: Vec<MeshPlacement>) -> Result<Self, String> {
-        let store = cooked_store(std::env::var_os(STORE_VARIABLE))?;
-        let assets = CookedAssets::new(CookedConfig::new(store, meshes))
+        #[cfg(target_os = "macos")]
+        let source: thrum_asset_gpu::CookedSource =
+            cooked_store(std::env::var_os(STORE_VARIABLE))?.into();
+        #[cfg(target_arch = "wasm32")]
+        let source = thrum_asset_gpu::CookedSource::Remote(browser::feed()?);
+        let names = meshes
+            .iter()
+            .map(|mesh| format!("mesh {} with texture {}", mesh.mesh, mesh.texture))
+            .collect::<Vec<_>>()
+            .join(", ");
+        let status_names = names.clone();
+        let assets = CookedAssets::new(CookedConfig::new(source, meshes))
             .map_err(|error| error.to_string())?;
         let stats = assets.stats();
+        #[cfg(target_os = "macos")]
         let material = assets.material();
         let kept = Arc::clone(&stats);
         let mut shown = 0;
-        let mut game = self.with_contribution(Box::new(assets), move || cooked_status(&stats));
+        let mut game =
+            self.with_contribution(Box::new(assets), move || match cooked_status(&stats) {
+                ContentStatus::Failed(error) => ContentStatus::Failed(format!(
+                    "{status_names}: {error}; fix the asset and save again"
+                )),
+                status => status,
+            });
         game.kept = Some(Box::new(move || {
             kept.lock()
-                .map(|stats| kept_errors(&stats, &mut shown))
+                .map(|stats| {
+                    kept_errors(&stats, &mut shown)
+                        .into_iter()
+                        .map(|(generation, error)| (generation, format!("{names}: {error}")))
+                        .collect()
+                })
                 .unwrap_or_default()
         }));
-        let Some(path) = std::env::var_os(MATERIAL_VARIABLE).map(PathBuf::from) else {
-            return Ok(game);
-        };
-        let reload = material.clone();
-        let watched = path.clone();
-        let report = move || {
-            material
-                .take_outcomes()
-                .iter()
-                .map(material_drawn)
-                .collect()
-        };
-        let mut game = game.with_reload(
-            move || {
-                reload.request(MaterialHook::read(&path)?);
-                Ok(())
-            },
-            report,
-        );
-        game.reload_files = vec![watched];
-        Ok(game)
+        #[cfg(target_arch = "wasm32")]
+        return Ok(game);
+        #[cfg(target_os = "macos")]
+        {
+            let Some(path) = std::env::var_os(MATERIAL_VARIABLE).map(PathBuf::from) else {
+                return Ok(game);
+            };
+            let reload = material.clone();
+            let watched = path.clone();
+            let report = move || {
+                material
+                    .take_outcomes()
+                    .iter()
+                    .map(material_drawn)
+                    .collect()
+            };
+            let mut game = game.with_reload(
+                move || {
+                    reload.request(MaterialHook::read(&path)?);
+                    Ok(())
+                },
+                report,
+            );
+            game.reload_files = vec![watched];
+            Ok(game)
+        }
     }
 
     /// Draw an engine contribution lit by the sky. `status` reports its progress: the window
@@ -542,6 +588,7 @@ impl SkyGame {
     }
 
     /// Prepare the still scene on `capabilities`' device, with the contribution attached.
+    #[cfg(target_os = "macos")]
     fn build_host(
         &mut self,
         capabilities: &DeviceCapabilities,
@@ -570,6 +617,7 @@ impl SkyGame {
     }
 }
 
+#[cfg(target_os = "macos")]
 impl Game for SkyGame {
     type World = StillWorld;
     type Scene = SkyScene;
@@ -695,6 +743,7 @@ fn ground_scene(ground: Option<[f32; 3]>) -> Result<SyntheticScene, String> {
 
 /// The cooked store `THRUM_ASSET_STORE` names, refused with the next step when it is unset or
 /// nothing was cooked there.
+#[cfg(target_os = "macos")]
 fn cooked_store(variable: Option<std::ffi::OsString>) -> Result<PathBuf, String> {
     let store = variable.map(PathBuf::from).ok_or(
         "THRUM_ASSET_STORE is not set, so there are no cooked meshes to draw; run the scene \
@@ -713,6 +762,7 @@ fn cooked_store(variable: Option<std::ffi::OsString>) -> Result<PathBuf, String>
 
 /// What cooked assets show: the drawn generation, or why nothing is drawn yet.
 /// A drawn material hook, or why the previous material still draws.
+#[cfg(target_os = "macos")]
 fn material_drawn(outcome: &MaterialOutcome) -> Result<String, String> {
     match outcome {
         MaterialOutcome::Promoted { .. } => Ok(outcome.to_string()),
@@ -754,6 +804,7 @@ fn cooked_status(stats: &Mutex<CookedStats>) -> ContentStatus {
 /// `THRUM_CAPTURE_PNG` names a file, render one frame there offscreen after applying
 /// `THRUM_PARAMS` and waiting for cooked meshes to draw. Failures, including an error `game`
 /// returns, are explained on standard error with a nonzero exit.
+#[cfg(target_os = "macos")]
 pub fn run(config: Config, game: impl FnOnce() -> Result<SkyGame, Box<dyn Error>>) {
     let named = move || {
         game().map_err(|error| error.to_string()).map(|mut game| {
@@ -771,4 +822,8 @@ pub fn run(config: Config, game: impl FnOnce() -> Result<SkyGame, Box<dyn Error>
 }
 
 #[cfg(test)]
+#[cfg(target_os = "macos")]
 mod tests;
+
+#[cfg(target_arch = "wasm32")]
+pub use browser::{BrowserScene, create_scene, run};

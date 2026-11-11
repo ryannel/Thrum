@@ -35,8 +35,9 @@ budgets above:
 
 - **One command.** `./dev starter`, or `./dev scene <folder>` for a copy, cooks the scene's assets, watches them and
   opens a lit scene. It has the physically based sky, a cooked mesh on lit ground, a camera and sliders. The
-  [starter](../../examples/starter/README.md) is 44 game lines on the sky kit (`thrum_app::sky`), with no engine
-  game types. This runs on the Mac only; the browser runs the V1 game's page, not the starter.
+  [starter](../../examples/starter/README.md) is 40 game lines on the sky kit (`thrum_app::sky`), with no engine
+  game types. `./dev starter --web` or `./dev scene <folder> --web` builds the same source for Chrome, cooks and
+  watches assets, and prints the loopback page URL. The starter README lists setup and `?params` use.
 - **Diagnostics.** Each of these names the object, the cause and a next step:
   - control declarations and parameter files, with nearest-key suggestions;
   - mesh placements;
@@ -54,7 +55,7 @@ budgets above:
 - **Controls.** Typed sliders, toggles, text and readouts drive an AppKit panel and the browser page from one
   model. Game-computed readouts (v1-game's Sun elevation) work in both. Exposure zones, a
   false-colour overlay of exposed luminance in one-stop bands, is drawn by the display pass. It is a toggle in v1-game
-  on the Mac and in Chrome, and `sky.exposure_zones` in the sky kit.
+  on the Mac and in Chrome, and `display.exposure_zones` in the sky kit.
 - **A fresh agent.** Three runs, each by an agent that read only the creator docs:
   - a stone circle in 114 lines;
   - a sunset in 76;

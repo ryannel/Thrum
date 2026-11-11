@@ -4,8 +4,8 @@ Design: [CREATOR.md](CREATOR.md), under [the G6 decision](../decisions/G6-CREATO
 Done when: [CREATOR-DONE.json](CREATOR-DONE.json) · Module list: [ARCHITECTURE.md](ARCHITECTURE.md)
 Reviews: [design review 2 at `d64769fe`](../../evidence/CREATOR/design-review.md): DESIGN CHANGES (1 Must Fix, 3 Suggestions). Revised 11 November; a fresh design review of this revision is owed through the loop.
 Milestone: M1 The starter scene runs in Chrome from one command
-Now: design and items revised after the second design review; nothing built under this plan yet (since 2026-11-11)
-Next: design review, then M1. M2 starts when `APPLE-TILE:M3` is Done. M3 closes the gate.
+Now: M1 claimed with hardware Chrome scene, controls, live edits and page-state evidence (since 2026-11-11)
+Next: lead review of M1. M2 starts when `APPLE-TILE:M3` is Done. M3 closes the gate.
 Blocked: none. M2 waits on `APPLE-TILE:M3`. M3.4 needs attended setup on the unlocked built-in display.
 
 ## Ownership
@@ -20,14 +20,14 @@ It reads frame samples from `thrum-render`. In M2 only, under
 reason to the frame runtime, and one call in `examples/v1-game` that declares the profiler group. Any other change
 to the frame runtime, the shells' policy or the V1 game goes in the log as a proposal for the module list.
 
-## M1 The starter scene runs in Chrome from one command: not started
+## M1 The starter scene runs in Chrome from one command: claimed
 
-- [ ] The kit's web runner, facade and page on `thrum_app::web`, with the Mac-only kit pieces gated by target.
-- [ ] The web form of `./dev scene <folder>` and `./dev starter`: build for wasm32, cook, watch, serve, print the
+- [x] The kit's web runner, facade and page on `thrum_app::web`, with the Mac-only kit pieces gated by target.
+- [x] The web form of `./dev scene <folder>` and `./dev starter`: build for wasm32, cook, watch, serve, print the
       URL.
-- [ ] `scripts/check_starter_browser.mjs` with `scene`, `controls`, `edit` and `journey` cases, on hardware
+- [x] `scripts/check_starter_browser.mjs` with `scene`, `controls`, `edit` and `journey` cases, on hardware
       WebGPU only, reading pixels.
-- [ ] `./dev check-web` also compiles and lints the starter for wasm32.
+- [x] `./dev check-web` also compiles and lints the starter for wasm32.
 
 ## M2 The demo UI shows where a frame's time goes: waiting on `APPLE-TILE:M3`
 
@@ -89,3 +89,12 @@ Judge on M3.1; start another.
   engine source.
 - Assumption: G6 closes without the clipping overlay, the shadow-cascade overlay and parameter files as a cooked
   product, which the G6 decision holds or parks.
+
+- 2026-11-11 Built and claimed M1. `./dev starter --web` and `./dev scene <folder> --web` build the shared
+  40-line scene, cook and watch its assets, and serve the kit page. Shared model setters drive its DOM controls.
+  Hardware Chrome 157 proofs cover submitted Sun edits, mesh and texture publications, refused generation
+  retention, the same running page/scene, parameter refusals, tab visibility and a 480 px window. The builder
+  inspected all six page states. [M1 evidence](../../evidence/CREATOR/M1.md) records the source and artifact hashes.
+  The final milestone gate has four passes, including `./dev check`. One earlier V1 allocation-suite failure
+  cleared in focused exact-binary runs and full reruns, with its cause unconfirmed and retained in the evidence.
+  Mac and Wasm linting include the native test gate and the kit's Wasm test target. Independent review is the lead's.
