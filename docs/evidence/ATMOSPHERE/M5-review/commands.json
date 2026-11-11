@@ -1,0 +1,71 @@
+[
+  {
+    "command": [
+      "node",
+      "scripts/check_v1_browser.mjs",
+      "--case",
+      "environment"
+    ],
+    "exit": 0,
+    "log": "target-check-0.log"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/environment_products.py",
+      "off-parity",
+      "--target",
+      "mac-metal"
+    ],
+    "exit": 0,
+    "log": "target-check-1.log"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/environment_products.py",
+      "off-parity",
+      "--target",
+      "chrome-webgpu"
+    ],
+    "exit": 0,
+    "log": "target-check-2.log"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/environment_products.py",
+      "cost",
+      "--target",
+      "mac-metal"
+    ],
+    "exit": 0,
+    "log": "target-check-3.log"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/environment_products.py",
+      "cost",
+      "--target",
+      "chrome-webgpu"
+    ],
+    "exit": 0,
+    "log": "target-check-4.log"
+  },
+  {
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--offline",
+      "-p",
+      "thrum-render",
+      "metal_h2_sampler_precision_report",
+      "--",
+      "--nocapture"
+    ],
+    "exit": 0,
+    "log": "target-check-5.log"
+  }
+]

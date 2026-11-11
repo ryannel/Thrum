@@ -1,0 +1,12 @@
+warning: linker stderr: ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/ATMOSPHERE/target/release/deps/libintel_tex_2-109965a54605b5eb.rlib[5](kernel_ispc.o)', assuming: macOS
+         ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/ATMOSPHERE/target/release/deps/libintel_tex_2-109965a54605b5eb.rlib[6](kernel_astc_ispc.o)', assuming: macOS
+  |
+  = note: `#[warn(linker_messages)]` on by default
+
+warning: `thrum-cook` (bin "thrum-cook") generated 1 warning
+    Finished `release` profile [optimized] target(s) in 0.22s
+{"complete": false, "console_locked": true, "retained_bytes": 581928434}
+{"complete": false, "console_locked": true, "retained_bytes": 568147452}
+{"complete": false, "console_locked": true, "retained_bytes": 567869981}
+{"complete": false, "console_locked": true, "retained_bytes": 581683044}
+PASS cost mac-metal /Users/ryannel/Workspace/thrum/.git/orchestrate/verify/ATMOSPHERE/tmp/atmosphere-m5/cost-mac-metal-1794416253442294000

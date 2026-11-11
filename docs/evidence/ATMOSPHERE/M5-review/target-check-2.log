@@ -1,0 +1,21 @@
+warning: linker stderr: ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/ATMOSPHERE/tmp/atmosphere-m5/base-e0956ee65b42/target/debug/deps/libintel_tex_2-c0ef7c86e34586ec.rlib[5](kernel_ispc.o)', assuming: macOS
+         ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/ATMOSPHERE/tmp/atmosphere-m5/base-e0956ee65b42/target/debug/deps/libintel_tex_2-c0ef7c86e34586ec.rlib[6](kernel_astc_ispc.o)', assuming: macOS
+  |
+  = note: `#[warn(linker_messages)]` on by default
+
+warning: `thrum-cook` (bin "thrum-cook") generated 1 warning
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.14s
+warning: linker stderr: ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/ATMOSPHERE/target/debug/deps/libintel_tex_2-c0ef7c86e34586ec.rlib[5](kernel_ispc.o)', assuming: macOS
+         ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/ATMOSPHERE/target/debug/deps/libintel_tex_2-c0ef7c86e34586ec.rlib[6](kernel_astc_ispc.o)', assuming: macOS
+  |
+  = note: `#[warn(linker_messages)]` on by default
+
+warning: `thrum-cook` (bin "thrum-cook") generated 1 warning
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+scan 257.834µs (reused 10 hashed 0 unstable 0), cooked 0 reused 9 in 885.042µs, publish 238.625µs -> unchanged
+    Finished `release` profile [optimized] target(s) in 0.16s
+Run: python3 -m http.server 8765 --bind 127.0.0.1 --directory "target/v1-game-web"
+    Finished `release` profile [optimized] target(s) in 0.11s
+Run: python3 -m http.server 8765 --bind 127.0.0.1 --directory "target/v1-game-web"
+PASS 1 case(s); artifacts: /Users/ryannel/Workspace/thrum/.git/orchestrate/verify/ATMOSPHERE/tmp/atmosphere-m5/off-parity-chrome-webgpu-1794416242381509000/browser
+PASS off-parity chrome-webgpu /Users/ryannel/Workspace/thrum/.git/orchestrate/verify/ATMOSPHERE/tmp/atmosphere-m5/off-parity-chrome-webgpu-1794416242381509000

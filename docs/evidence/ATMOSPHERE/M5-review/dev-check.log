@@ -1,0 +1,142 @@
+note: crates/thrum-app/src/app.rs: 1313 code lines; check it still holds one responsibility
+note: crates/thrum-core/src/sim/publication.rs: 1378 code lines; check it still holds one responsibility
+note: crates/thrum-core/src/sim/registered_world.rs: 1814 code lines; check it still holds one responsibility
+note: crates/thrum-core/src/sim/runtime.rs: 1730 code lines; check it still holds one responsibility
+note: crates/thrum-render/src/graph.rs: 1254 code lines; check it still holds one responsibility
+note: crates/thrum-render/src/runtime/tests/device.rs: 1284 code lines; check it still holds one responsibility
+note: crates/thrum-render/src/runtime.rs: 1380 code lines; check it still holds one responsibility
+note: crates/thrum-render/src/synthetic.rs: 2363 code lines; check it still holds one responsibility
+Repository checks passed: 695 Markdown files, 3616 local links, 30 module records, crate policy and current design hashes.
+............
+----------------------------------------------------------------------
+Ran 12 tests in 0.434s
+
+OK
+..............
+----------------------------------------------------------------------
+Ran 14 tests in 0.014s
+
+OK
+.................
+----------------------------------------------------------------------
+Ran 17 tests in 0.081s
+
+OK
+......
+----------------------------------------------------------------------
+Ran 6 tests in 0.000s
+
+OK
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.29s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.18s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.15s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.14s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.16s
+   Compiling v1-game v0.1.0 (/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/ATMOSPHERE/examples/v1-game)
+warning: linker stderr: ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/ATMOSPHERE/target/debug/deps/libintel_tex_2-ad87d7835ed898ef.rlib[5](kernel_ispc.o)', assuming: macOS
+         ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/ATMOSPHERE/target/debug/deps/libintel_tex_2-ad87d7835ed898ef.rlib[6](kernel_astc_ispc.o)', assuming: macOS
+  |
+  = note: `#[warn(linker_messages)]` on by default
+
+warning: `thrum-cook` (lib test) generated 1 warning
+warning: `thrum-cook` (test "hostile_products") generated 1 warning (1 duplicate)
+warning: `thrum-cook` (test "edit_to_visible") generated 1 warning (1 duplicate)
+warning: `thrum-cook` (test "cook_loop") generated 1 warning (1 duplicate)
+warning: `thrum-cook` (test "serve_and_watch") generated 1 warning (1 duplicate)
+warning: `thrum-cook` (bin "thrum-cook") generated 1 warning (1 duplicate)
+   Compiling v1-game-ios v0.1.0 (/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/ATMOSPHERE/examples/v1-game-ios)
+warning: `v1-game` (test "cooked_texture_quality") generated 1 warning (1 duplicate)
+warning: `v1-game` (test "cooked_assets_gpu") generated 1 warning (1 duplicate)
+warning: `v1-game` (test "cooked_material_gpu") generated 1 warning (1 duplicate)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.55s
+     Running unittests src/lib.rs (target/debug/deps/asset_loop-dfdda71a33b0a3eb)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/asset_loop-3960902f927aa0c6)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/thrum_app-bfab80055db16375)
+
+running 53 tests
+test app::pause::tests::health_during_pending_resume_is_classified_after_its_acknowledgement ... ok
+test app::pause::tests::pending_pause_preserves_a_later_resume_and_busy_preserves_intent ... ok
+test app::pause::tests::only_nonrepeated_press_changes_intent ... ok
+test app::recovery::tests::loss_is_single_flight_busy_retains_queue_and_retry_is_explicit ... ok
+test app::edit_flow::tests::a_frame_in_flight_during_an_edit_cannot_revert_it ... ok
+test app::edit_flow::tests::an_edit_cancelled_by_gpu_replacement_is_applied_after_recovery ... ok
+test app::recovery::tests::candidate_loss_before_reply_cannot_publish_ready_or_restart_old_generation ... ok
+test app::pause::tests::manual_pause_during_overload_remains_paused_until_manual_resume ... ok
+test app::pause::tests::overload_reuses_pending_manual_pause_and_preserves_later_resume ... ok
+test app::pause::tests::overload_drains_before_resuming_and_busy_retains_the_request ... ok
+test app::recovery::tests::generation_exhaustion_keeps_the_last_device_identity ... ok
+test app::recovery::tests::lost_profiles_are_explicit_and_never_create_present_calls_or_timings ... ok
+test app::pause::tests::rapid_toggles_and_invalid_ack_leave_the_accepted_request_intact ... ok
+test app::tests::a_bounded_run_that_never_presents_still_fails ... ok
+test app::tests::a_run_until_closed_is_bounded_only_when_its_variable_is_set ... ok
+test app::render_actor::tests::final_wait_reports_observed_loss_but_preserves_genuine_wait_failures ... ok
+test app::render_actor::tests::shutdown_gate_refuses_work_without_a_gpu_or_world_operation ... ok
+test app::tests::frame_count_for_present_qualification_is_bounded ... ok
+test app::render_actor::tests::only_gpu_failures_with_a_device_loss_signal_become_recovery ... ok
+test app::tests::percentiles_of_no_samples_are_nan_not_a_panic ... ok
+test file_watch::tests::a_parameter_save_never_reloads_the_game_and_l_reloads_both_in_order ... ok
+test file_watch::tests::a_save_landing_during_shutdown_is_dropped ... ok
+test file_watch::tests::nothing_to_watch_starts_no_thread ... ok
+test app::tests::a_window_the_display_never_drove_says_why_it_drew_nothing ... ok
+test app::tests::a_window_closed_before_any_present_ends_a_run_until_closed_normally ... ok
+test sky::capture::tests::a_capture_refuses_a_parameter_file_with_a_refused_entry ... ok
+test sky::tests::loader_failures_after_the_first_draw_are_reported_once_with_the_kept_generation ... ok
+test sky::tests::missing_or_uncooked_stores_name_the_next_step ... ok
+test sky::tests::png_is_a_valid_stored_rgb_image ... ok
+test sky::tests::sun_bearing_is_clockwise_from_north_with_y_up ... ok
+test sky::tests::the_ground_is_one_wide_slab_with_its_top_at_zero ... ok
+test capture_writer::tests::lossless_spool_reconstructs_every_byte_and_hash_and_refuses_changed_record_sizes ... ok
+test sky::tests::undrawable_skies_are_refused_by_field ... ok
+test sky::tests::update_sends_only_changed_drawable_skies ... ok
+test web_clock::tests::a_play_change_moves_the_last_admitted_time ... ok
+test web_clock::tests::a_timestamp_before_the_last_admitted_one_is_clamped_and_counted ... ok
+test web_clock::tests::an_unapplied_transition_is_not_recorded ... ok
+test capture_writer::tests::slow_output_has_finite_leases_nonblocking_refusal_and_a_finalization_deadline ... ok
+test web_clock::tests::invalid_timestamps_are_refused ... ok
+test web_clock::tests::the_first_timestamp_is_the_origin ... ok
+test web_clock::tests::visibility_and_pause_compose ... ok
+test capture_writer::tests::write_flush_and_output_limit_failures_cannot_finalize_successfully ... ok
+test file_watch::tests::stopping_joins_without_waiting_for_a_tick_and_no_wake_follows ... ok
+test app::device::tests::public_destroy_delivers_immutable_generation_without_a_window_or_callback_cycle ... FAILED
+test sky::tests::the_sky_and_ground_render_through_every_pass ... FAILED
+test file_watch::tests::a_touch_or_an_identical_rewrite_is_never_delivered ... ok
+test file_watch::tests::a_rename_save_is_delivered_once ... ok
+test file_watch::tests::an_in_place_save_is_delivered_once_with_its_kind ... ok
+test file_watch::tests::saves_to_both_kinds_before_the_event_loop_runs_coalesce_into_one_take ... ok
+test capture_writer::tests::live_encoding_reports_the_disk_error_after_its_io_channel_closes ... ok
+test file_watch::tests::a_file_missing_at_start_is_delivered_when_created ... ok
+test file_watch::tests::a_burst_of_writes_is_delivered_once ... ok
+test file_watch::tests::a_delete_then_create_save_is_delivered_once_and_a_lasting_absence_is_delivered ... ok
+
+failures:
+
+---- app::device::tests::public_destroy_delivers_immutable_generation_without_a_window_or_callback_cycle stdout ----
+
+thread 'app::device::tests::public_destroy_delivers_immutable_generation_without_a_window_or_callback_cycle' (170530887) panicked at crates/thrum-app/src/app/device_tests.rs:16:14:
+called `Result::unwrap()` on an `Err` value: NotFound { active_backends: Backends(METAL), requested_backends: Backends(METAL), supported_backends: Backends(METAL), no_fallback_backends: Backends(0x0), no_adapter_backends: Backends(METAL), incompatible_surface_backends: Backends(0x0) }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- sky::tests::the_sky_and_ground_render_through_every_pass stdout ----
+
+thread 'sky::tests::the_sky_and_ground_render_through_every_pass' (170530952) panicked at crates/thrum-app/src/sky/tests.rs:175:14:
+called `Result::unwrap()` on an `Err` value: NotFound { active_backends: Backends(METAL), requested_backends: Backends(METAL), supported_backends: Backends(METAL), no_fallback_backends: Backends(0x0), no_adapter_backends: Backends(METAL), incompatible_surface_backends: Backends(0x0) }
+
+
+failures:
+    app::device::tests::public_destroy_delivers_immutable_generation_without_a_window_or_callback_cycle
+    sky::tests::the_sky_and_ground_render_through_every_pass
+
+test result: FAILED. 51 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.23s
+
+error: test failed, to rerun pass `-p thrum-app --lib`
+Error: "/Users/ryannel/.rustup/toolchains/1.99.1-aarch64-apple-darwin/bin/cargo test --locked --offline --workspace failed (exit status: 101)"

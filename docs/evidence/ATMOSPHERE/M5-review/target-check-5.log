@@ -1,0 +1,85 @@
+   Compiling thiserror v2.0.21
+   Compiling num-traits v0.2.19
+   Compiling syn v3.0.9
+   Compiling syn v2.0.119
+   Compiling objc2-core-foundation v0.3.2
+   Compiling rustix v1.1.6
+   Compiling errno v0.3.14
+   Compiling anstyle v1.0.14
+   Compiling clap_lex v1.1.1
+   Compiling regex-lite v0.1.9
+   Compiling condtype v1.3.0
+   Compiling thiserror-impl v2.0.21
+   Compiling bytemuck_derive v1.12.1
+   Compiling zerocopy-derive v0.8.63
+   Compiling divan-macros v0.1.21
+   Compiling objc2-foundation v0.3.2
+   Compiling objc2-core-graphics v0.3.2
+   Compiling objc2-metal v0.3.2
+   Compiling bytemuck v1.25.2
+   Compiling zerocopy v0.8.63
+   Compiling terminal_size v0.4.4
+   Compiling clap_builder v4.6.7
+   Compiling clap v4.6.7
+   Compiling divan v0.1.21
+   Compiling objc2-quartz-core v0.3.2
+   Compiling raw-window-metal v1.1.0
+   Compiling naga-types v30.0.1
+   Compiling wgpu-types v30.0.1
+   Compiling half v2.7.1
+   Compiling naga v30.0.1
+   Compiling wgpu-naga-bridge v30.0.1
+   Compiling wgpu-hal v30.0.1
+   Compiling wgpu-core-deps-apple v30.0.1
+   Compiling wgpu-core v30.0.1
+   Compiling wgpu v30.0.1
+   Compiling thrum-render v0.1.0 (/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/ATMOSPHERE/crates/thrum-render)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 16.88s
+     Running unittests src/lib.rs (target/debug/deps/thrum_render-9436cb8afaec24d7)
+
+running 1 test
+H2 precision target AdapterInfo { name: "Apple M3 Max", vendor: 0, device: 0, device_type: IntegratedGpu, device_pci_bus_id: "", driver: "", driver_info: "", backend: Metal, subgroup_min_size: 4, subgroup_max_size: 64, transient_saves_memory: Some(true), limit_bucket: None }; texture Rgba16Float; linear sampler; 257 positions across one texel interval
+high-contrast: maximum error in stored steps=0.000681137
+high-contrast: base=0 step=1; distinct returned values=257; outside revised H2 bound=0/257; maximum GPU/f64 address error in texels=0.000006814
+weight=0.25: actual=2.441406250000e-4, f64=2.441403981040e-4, allowance=3.148101897590e-5, f64 at observed GPU address=2.441410906613e-4
+weight=0.50: actual=4.882812500000e-4, f64=4.882809612967e-4, allowance=3.148101897590e-5, f64 at observed GPU address=4.882807843387e-4
+weight=0.75: actual=7.324218750000e-4, f64=7.324217636591e-4, allowance=3.148101897590e-5, f64 at observed GPU address=7.324204780161e-4
+low-contrast: maximum error in stored steps=0.500000296
+low-contrast: base=64 step=0.0625; distinct returned values=2; outside revised H2 bound=0/257; maximum GPU/f64 address error in texels=0.000006814
+weight=0.25: actual=6.250000000000e-2, f64=6.251525877488e-2, allowance=6.356811614387e-5, f64 at observed GPU address=6.251525881817e-2
+weight=0.50: actual=6.256103515625e-2, f64=6.253051756008e-2, allowance=6.356811614387e-5, f64 at observed GPU address=6.253051754902e-2
+weight=0.75: actual=6.256103515625e-2, f64=6.254577636023e-2, allowance=6.356811614387e-5, f64 at observed GPU address=6.254577627988e-2
+test atmosphere::products::tests::filtered::metal_h2_sampler_precision_report ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 238 filtered out; finished in 0.33s
+
+     Running tests/contracts.rs (target/debug/deps/contracts-eadfaf46c1ae6a35)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 11 filtered out; finished in 0.00s
+
+     Running tests/extract.rs (target/debug/deps/extract-5cabfa90a3e9175b)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 14 filtered out; finished in 0.00s
+
+     Running tests/gpu.rs (target/debug/deps/gpu-7d905ddfbfce005c)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.00s
+
+     Running tests/upload_gpu.rs (target/debug/deps/upload_gpu-dfb659bcab1d2cb1)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.00s
+
+     Running tests/visibility.rs (target/debug/deps/visibility-d56c8fda1633fd9c)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.00s
+

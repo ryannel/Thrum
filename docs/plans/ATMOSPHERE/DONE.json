@@ -4,7 +4,7 @@
     {
       "id": "M5",
       "name": "Other modules read the one sky and Sun, and one cloud optical depth dims direct sunlight once",
-      "state": "claimed",
+      "state": "done",
       "fails": 0,
       "replans": 0,
       "bar": "Cloud shade crossing a landscape as in Red Dead Redemption 2 or Horizon Forbidden West: the patch dims direct sunlight only, moves in world space, agrees on every lit surface and leaves the shaded ground sky-lit, never black. The diagnostic pattern is a stand-in, so its shape and softness are not judged here. With no cloud source the scene and its cost are exactly what they were.",
@@ -18,8 +18,8 @@
           "target": "mac-metal",
           "status": "pass",
           "evidence": "docs/evidence/ATMOSPHERE/m5-claim.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/ATMOSPHERE/M5-review.md"
         },
         {
           "id": "M5.2",
@@ -30,8 +30,8 @@
           "target": "mac-metal",
           "status": "pass",
           "evidence": "docs/evidence/ATMOSPHERE/m5-claim.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/ATMOSPHERE/M5-review.md"
         },
         {
           "id": "M5.3",
@@ -42,8 +42,8 @@
           "target": "chrome-webgpu",
           "status": "pass",
           "evidence": "docs/evidence/ATMOSPHERE/m5-claim.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/ATMOSPHERE/M5-review.md"
         },
         {
           "id": "M5.4",
@@ -54,8 +54,8 @@
           "target": "mac-metal",
           "status": "pass",
           "evidence": "docs/evidence/ATMOSPHERE/m5-claim.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/ATMOSPHERE/M5-review.md"
         },
         {
           "id": "M5.5",
@@ -65,8 +65,8 @@
           "target": "chrome-webgpu",
           "status": "pass",
           "evidence": "docs/evidence/ATMOSPHERE/m5-claim.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/ATMOSPHERE/M5-review.md"
         },
         {
           "id": "M5.6",
@@ -77,8 +77,8 @@
           "target": "mac-metal",
           "status": "pass",
           "evidence": "docs/evidence/ATMOSPHERE/m5-claim.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/ATMOSPHERE/M5-review.md"
         },
         {
           "id": "M5.7",
@@ -87,8 +87,8 @@
           "target": "mac-metal",
           "status": "pass",
           "evidence": "docs/evidence/ATMOSPHERE/m5-claim.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/ATMOSPHERE/M5-review.md"
         },
         {
           "id": "M5.8",
@@ -97,8 +97,8 @@
           "target": "chrome-webgpu",
           "status": "pass",
           "evidence": "docs/evidence/ATMOSPHERE/m5-claim.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/ATMOSPHERE/M5-review.md"
         },
         {
           "id": "M5.9",
@@ -109,8 +109,8 @@
           "target": "mac-metal",
           "status": "pass",
           "evidence": "docs/evidence/ATMOSPHERE/m5-claim.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/ATMOSPHERE/M5-review.md"
         },
         {
           "id": "M5.10",
@@ -120,8 +120,8 @@
           "target": "chrome-webgpu",
           "status": "pass",
           "evidence": "docs/evidence/ATMOSPHERE/m5-claim.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/ATMOSPHERE/M5-review.md"
         }
       ]
     },

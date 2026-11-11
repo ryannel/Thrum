@@ -1,0 +1,17 @@
+warning: linker stderr: ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/ATMOSPHERE/tmp/atmosphere-m5/base-e0956ee65b42/target/debug/deps/libintel_tex_2-c0ef7c86e34586ec.rlib[5](kernel_ispc.o)', assuming: macOS
+         ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/ATMOSPHERE/tmp/atmosphere-m5/base-e0956ee65b42/target/debug/deps/libintel_tex_2-c0ef7c86e34586ec.rlib[6](kernel_astc_ispc.o)', assuming: macOS
+  |
+  = note: `#[warn(linker_messages)]` on by default
+
+warning: `thrum-cook` (bin "thrum-cook") generated 1 warning
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.39s
+   Compiling v1-game v0.1.0 (/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/ATMOSPHERE/examples/v1-game)
+warning: linker stderr: ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/ATMOSPHERE/target/debug/deps/libintel_tex_2-c0ef7c86e34586ec.rlib[5](kernel_ispc.o)', assuming: macOS
+         ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/ATMOSPHERE/target/debug/deps/libintel_tex_2-c0ef7c86e34586ec.rlib[6](kernel_astc_ispc.o)', assuming: macOS
+  |
+  = note: `#[warn(linker_messages)]` on by default
+
+warning: `thrum-cook` (bin "thrum-cook") generated 1 warning
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.17s
+scan 280.25µs (reused 10 hashed 0 unstable 0), cooked 0 reused 9 in 2.013208ms, publish 393.083µs -> unchanged
+PASS off-parity mac-metal /Users/ryannel/Workspace/thrum/.git/orchestrate/verify/ATMOSPHERE/tmp/atmosphere-m5/off-parity-mac-metal-1794416236398571000

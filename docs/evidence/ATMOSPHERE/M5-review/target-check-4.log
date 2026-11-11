@@ -1,0 +1,4 @@
+    Finished `release` profile [optimized] target(s) in 0.12s
+Run: python3 -m http.server 8765 --bind 127.0.0.1 --directory "target/v1-game-web"
+PASS 1 case(s); artifacts: /Users/ryannel/Workspace/thrum/.git/orchestrate/verify/ATMOSPHERE/tmp/atmosphere-m5/cost-chrome-webgpu-1794416284672999000/browser
+PASS cost chrome-webgpu /Users/ryannel/Workspace/thrum/.git/orchestrate/verify/ATMOSPHERE/tmp/atmosphere-m5/cost-chrome-webgpu-1794416284672999000

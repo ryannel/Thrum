@@ -1,0 +1,127 @@
+{
+  "format": "thrum-v1-moving-route",
+  "version": 1,
+  "cooked_root": "70d2baf823d09d85574f7cdfce7102648754544dd7d68659e9bd92dd5f30e21d",
+  "cooked_generation": 1,
+  "tick_hz": 60,
+  "phase": [
+    1,
+    2
+  ],
+  "origin_tick": 180,
+  "start": {
+    "solar_hours": 12
+  },
+  "render_extent": [
+    1280,
+    720
+  ],
+  "keys": [
+    {
+      "tick": 0,
+      "eye": [
+        0.0,
+        244.9226672381398,
+        16.0
+      ],
+      "yaw_degrees": 0.0,
+      "pitch_degrees": -3.0127875041833403
+    },
+    {
+      "tick": 90,
+      "eye": [
+        0.0,
+        243.0,
+        8.0
+      ],
+      "yaw_degrees": 0.0,
+      "pitch_degrees": -12.0
+    },
+    {
+      "tick": 180,
+      "eye": [
+        2.5,
+        241.2,
+        1.0
+      ],
+      "yaw_degrees": -29.0,
+      "pitch_degrees": -12.0
+    },
+    {
+      "tick": 200,
+      "eye": [
+        2.0,
+        241.0,
+        -0.5
+      ],
+      "yaw_degrees": -35.0,
+      "pitch_degrees": -14.0
+    },
+    {
+      "tick": 200,
+      "eye": [
+        -3.0,
+        240.9,
+        -12.0
+      ],
+      "yaw_degrees": 160.0,
+      "pitch_degrees": -5.0
+    },
+    {
+      "tick": 290,
+      "eye": [
+        -0.6,
+        240.3,
+        -9.6
+      ],
+      "yaw_degrees": 175.0,
+      "pitch_degrees": -2.0
+    },
+    {
+      "tick": 340,
+      "eye": [
+        0.0,
+        240.2,
+        -8.96
+      ],
+      "yaw_degrees": 180.0,
+      "pitch_degrees": -8.0
+    },
+    {
+      "tick": 360,
+      "eye": [
+        0.0,
+        240.2,
+        -8.96
+      ],
+      "yaw_degrees": 180.0,
+      "pitch_degrees": -8.0
+    }
+  ],
+  "cuts": [
+    200
+  ],
+  "checkpoints": [
+    {
+      "tick": 45,
+      "name": "approach"
+    },
+    {
+      "tick": 170,
+      "name": "mirror-light"
+    },
+    {
+      "tick": 196,
+      "name": "pre-cut"
+    },
+    {
+      "tick": 206,
+      "name": "post-cut"
+    },
+    {
+      "tick": 350,
+      "name": "near-plane"
+    }
+  ],
+  "overlay": "off"
+}

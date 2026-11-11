@@ -1,0 +1,197 @@
+[
+  {
+    "name": "metal-noon-off-realtime-r2",
+    "command": [
+      "python3",
+      "scripts/capture_v1_runtime.py",
+      "--binary",
+      "target/release/v1-game",
+      "--store",
+      "tmp/atmosphere-m5/store",
+      "--output",
+      "tmp/m5-independent-review/metal-noon-off-realtime-r2",
+      "--mode",
+      "realtime",
+      "--case",
+      "route",
+      "--route",
+      "docs/evidence/ATMOSPHERE/M5-review/metal-noon-route.json",
+      "--defer"
+    ],
+    "exit": 0,
+    "path": "tmp/m5-independent-review/metal-noon-off-realtime-r2"
+  },
+  {
+    "name": "metal-noon-on-realtime-r2",
+    "command": [
+      "python3",
+      "scripts/capture_v1_runtime.py",
+      "--binary",
+      "target/release/v1-game",
+      "--store",
+      "tmp/atmosphere-m5/store",
+      "--output",
+      "tmp/m5-independent-review/metal-noon-on-realtime-r2",
+      "--mode",
+      "realtime",
+      "--case",
+      "route",
+      "--route",
+      "docs/evidence/ATMOSPHERE/M5-review/metal-noon-route.json",
+      "--defer"
+    ],
+    "exit": 0,
+    "path": "tmp/m5-independent-review/metal-noon-on-realtime-r2"
+  },
+  {
+    "name": "metal-low-off-realtime-r2",
+    "command": [
+      "python3",
+      "scripts/capture_v1_runtime.py",
+      "--binary",
+      "target/release/v1-game",
+      "--store",
+      "tmp/atmosphere-m5/store",
+      "--output",
+      "tmp/m5-independent-review/metal-low-off-realtime-r2",
+      "--mode",
+      "realtime",
+      "--case",
+      "route",
+      "--route",
+      "docs/evidence/ATMOSPHERE/M5-review/metal-low-route.json",
+      "--defer"
+    ],
+    "exit": 0,
+    "path": "tmp/m5-independent-review/metal-low-off-realtime-r2"
+  },
+  {
+    "name": "metal-low-on-realtime-r2",
+    "command": [
+      "python3",
+      "scripts/capture_v1_runtime.py",
+      "--binary",
+      "target/release/v1-game",
+      "--store",
+      "tmp/atmosphere-m5/store",
+      "--output",
+      "tmp/m5-independent-review/metal-low-on-realtime-r2",
+      "--mode",
+      "realtime",
+      "--case",
+      "route",
+      "--route",
+      "docs/evidence/ATMOSPHERE/M5-review/metal-low-route.json",
+      "--defer"
+    ],
+    "exit": 0,
+    "path": "tmp/m5-independent-review/metal-low-on-realtime-r2"
+  },
+  {
+    "name": "metal-west-off-realtime-r2",
+    "command": [
+      "python3",
+      "scripts/capture_v1_runtime.py",
+      "--binary",
+      "target/release/v1-game",
+      "--store",
+      "tmp/atmosphere-m5/store",
+      "--output",
+      "tmp/m5-independent-review/metal-west-off-realtime-r2",
+      "--mode",
+      "realtime",
+      "--case",
+      "route",
+      "--route",
+      "docs/evidence/ATMOSPHERE/M5-review/metal-west-route.json",
+      "--defer"
+    ],
+    "exit": 0,
+    "path": "tmp/m5-independent-review/metal-west-off-realtime-r2"
+  },
+  {
+    "name": "metal-west-on-realtime-r2",
+    "command": [
+      "python3",
+      "scripts/capture_v1_runtime.py",
+      "--binary",
+      "target/release/v1-game",
+      "--store",
+      "tmp/atmosphere-m5/store",
+      "--output",
+      "tmp/m5-independent-review/metal-west-on-realtime-r2",
+      "--mode",
+      "realtime",
+      "--case",
+      "route",
+      "--route",
+      "docs/evidence/ATMOSPHERE/M5-review/metal-west-route.json",
+      "--defer"
+    ],
+    "exit": 0,
+    "path": "tmp/m5-independent-review/metal-west-on-realtime-r2"
+  },
+  {
+    "name": "chrome-noon-off-fixed-r2",
+    "command": [
+      "node",
+      "scripts/capture_v1_browser.mjs",
+      "--output",
+      "tmp/m5-independent-review/chrome-noon-off-fixed-r2",
+      "--mode",
+      "fixed",
+      "--scene",
+      "day",
+      "--overlay",
+      "off",
+      "--diagnostic-clouds",
+      "off",
+      "--route-file",
+      "docs/evidence/ATMOSPHERE/M5-review/noon-route.json"
+    ],
+    "exit": 0,
+    "path": "tmp/m5-independent-review/chrome-noon-off-fixed-r2"
+  },
+  {
+    "name": "chrome-noon-on-fixed-r2",
+    "command": [
+      "node",
+      "scripts/capture_v1_browser.mjs",
+      "--output",
+      "tmp/m5-independent-review/chrome-noon-on-fixed-r2",
+      "--mode",
+      "fixed",
+      "--scene",
+      "day",
+      "--overlay",
+      "off",
+      "--diagnostic-clouds",
+      "on",
+      "--route-file",
+      "docs/evidence/ATMOSPHERE/M5-review/noon-route.json"
+    ],
+    "exit": 0,
+    "path": "tmp/m5-independent-review/chrome-noon-on-fixed-r2"
+  },
+  {
+    "name": "chrome-low-off-fixed-r2",
+    "command": [
+      "node",
+      "scripts/capture_v1_browser.mjs",
+      "--output",
+      "tmp/m5-independent-review/chrome-low-off-fixed-r2",
+      "--mode",
+      "fixed",
+      "--scene",
+      "day",
+      "--overlay",
+      "off",
+      "--diagnostic-clouds",
+      "off",
+      "--route-file",
+      "docs/evidence/ATMOSPHERE/M5-review/low-route.json"
+    ],
+    "exit": 0,
+    "path": "tmp/m5-independent-review/chrome-low-off-fixed-r2"
+  }
+]

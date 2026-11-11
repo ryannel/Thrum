@@ -1,0 +1,191 @@
+{
+  "metal": [
+    {
+      "order": 0,
+      "provider": "off",
+      "forward_gpu_median_ms": 1.1484999999999999,
+      "whole_gpu_including_present_median_ms": 3.8133955,
+      "cpu_wall_median_ms": 0.633146,
+      "counts": {
+        "synthetic_forward_atmosphere_shadowed": 11,
+        "cooked_mesh_atmosphere_shadowed": 11,
+        "cooked_volume_atmosphere_shadowed": 8
+      },
+      "limit": 16,
+      "samples": 480
+    },
+    {
+      "order": 1,
+      "provider": "on",
+      "forward_gpu_median_ms": 1.1921665,
+      "whole_gpu_including_present_median_ms": 3.9561035,
+      "cpu_wall_median_ms": 0.6443125000000001,
+      "counts": {
+        "synthetic_forward_atmosphere_shadowed": 12,
+        "cooked_mesh_atmosphere_shadowed": 12,
+        "cooked_volume_atmosphere_shadowed": 9
+      },
+      "limit": 16,
+      "samples": 480
+    },
+    {
+      "order": 2,
+      "provider": "on",
+      "forward_gpu_median_ms": 1.194208,
+      "whole_gpu_including_present_median_ms": 3.955667,
+      "cpu_wall_median_ms": 0.653458,
+      "counts": {
+        "synthetic_forward_atmosphere_shadowed": 12,
+        "cooked_mesh_atmosphere_shadowed": 12,
+        "cooked_volume_atmosphere_shadowed": 9
+      },
+      "limit": 16,
+      "samples": 479
+    },
+    {
+      "order": 3,
+      "provider": "off",
+      "forward_gpu_median_ms": 1.148791,
+      "whole_gpu_including_present_median_ms": 3.824083,
+      "cpu_wall_median_ms": 0.65475,
+      "counts": {
+        "synthetic_forward_atmosphere_shadowed": 11,
+        "cooked_mesh_atmosphere_shadowed": 11,
+        "cooked_volume_atmosphere_shadowed": 8
+      },
+      "limit": 16,
+      "samples": 479
+    }
+  ],
+  "chrome": [
+    {
+      "order": 0,
+      "provider": "off",
+      "raf_interval_median_ms": 16.699999999999818,
+      "pipelines": [
+        {
+          "name": "prepared opaque synthetic role",
+          "sampled": 11,
+          "limit": 16,
+          "created": true
+        },
+        {
+          "name": "prepared opaque synthetic role",
+          "sampled": 11,
+          "limit": 16,
+          "created": true
+        },
+        {
+          "name": "cooked mesh",
+          "sampled": 11,
+          "limit": 16,
+          "created": true
+        },
+        {
+          "name": "cooked volume",
+          "sampled": 8,
+          "limit": 16,
+          "created": true
+        }
+      ],
+      "samples": 241
+    },
+    {
+      "order": 1,
+      "provider": "on",
+      "raf_interval_median_ms": 16.699999999999818,
+      "pipelines": [
+        {
+          "name": "prepared opaque synthetic role",
+          "sampled": 12,
+          "limit": 16,
+          "created": true
+        },
+        {
+          "name": "prepared opaque synthetic role",
+          "sampled": 12,
+          "limit": 16,
+          "created": true
+        },
+        {
+          "name": "cooked mesh",
+          "sampled": 12,
+          "limit": 16,
+          "created": true
+        },
+        {
+          "name": "cooked volume",
+          "sampled": 9,
+          "limit": 16,
+          "created": true
+        }
+      ],
+      "samples": 241
+    },
+    {
+      "order": 2,
+      "provider": "on",
+      "raf_interval_median_ms": 16.699999999999818,
+      "pipelines": [
+        {
+          "name": "prepared opaque synthetic role",
+          "sampled": 12,
+          "limit": 16,
+          "created": true
+        },
+        {
+          "name": "prepared opaque synthetic role",
+          "sampled": 12,
+          "limit": 16,
+          "created": true
+        },
+        {
+          "name": "cooked mesh",
+          "sampled": 12,
+          "limit": 16,
+          "created": true
+        },
+        {
+          "name": "cooked volume",
+          "sampled": 9,
+          "limit": 16,
+          "created": true
+        }
+      ],
+      "samples": 241
+    },
+    {
+      "order": 3,
+      "provider": "off",
+      "raf_interval_median_ms": 16.699999999999818,
+      "pipelines": [
+        {
+          "name": "prepared opaque synthetic role",
+          "sampled": 11,
+          "limit": 16,
+          "created": true
+        },
+        {
+          "name": "prepared opaque synthetic role",
+          "sampled": 11,
+          "limit": 16,
+          "created": true
+        },
+        {
+          "name": "cooked mesh",
+          "sampled": 11,
+          "limit": 16,
+          "created": true
+        },
+        {
+          "name": "cooked volume",
+          "sampled": 8,
+          "limit": 16,
+          "created": true
+        }
+      ],
+      "samples": 241
+    }
+  ],
+  "scope": "Fresh locked OFF/ON/ON/OFF observations. Metal engine capture ON, Chrome RAF intervals. No performance gate or physical display cadence claim."
+}
