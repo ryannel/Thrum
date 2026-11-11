@@ -1,0 +1,11 @@
+   Compiling v1-game v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/culling/examples/v1-game)
+    Finished `release` profile [optimized] target(s) in 1.60s
+     Running tests/field_frustum_diagnostic.rs (target/release/deps/field_frustum_diagnostic-4d42d42398cb11d9)
+
+running 1 test
+test diagnose_full_prefix_through_866 has been running for over 60 seconds
+866 frames compared; Frustum drew 21771 of 100513 at its fewest; 0 culled frames retired before their count; Occlusion drew at most half of Frustum on 859 of 866 paired ticks
+test diagnose_full_prefix_through_866 ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 477.29s
+

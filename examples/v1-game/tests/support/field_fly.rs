@@ -171,6 +171,20 @@ pub(super) fn fly(field_meshes: bool, with_occlusion: bool) {
                         .zip(culled.as_chunks::<4>().0)
                         .filter(|(a, b)| a != b)
                         .count();
+                    if let Some(directory) = std::env::var_os("THRUM_FIELD_FAILURE_DIR") {
+                        let directory = std::path::PathBuf::from(directory);
+                        std::fs::create_dir_all(&directory).expect("failure directory");
+                        write_ppm(
+                            &directory.join(format!("{mode}-{tick}-direct.ppm")),
+                            &direct,
+                            extent,
+                        );
+                        write_ppm(
+                            &directory.join(format!("{mode}-{tick}-culled.ppm")),
+                            &culled,
+                            extent,
+                        );
+                    }
                     panic!("{mode} differs from Direct at tick {tick}: {differing} pixels");
                 }
                 if let Some(directory) = sequence.as_ref().filter(|_| near_event) {

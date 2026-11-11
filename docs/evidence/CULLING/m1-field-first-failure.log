@@ -1,0 +1,23 @@
+   Compiling thrum-render v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/culling/crates/thrum-render)
+   Compiling thrum-asset-gpu v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/culling/crates/thrum-asset-gpu)
+   Compiling thrum-app v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/culling/crates/thrum-app)
+   Compiling v1-game v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/culling/examples/v1-game)
+    Finished `release` profile [optimized] target(s) in 12.43s
+     Running tests/field_occlusion_gpu.rs (target/release/deps/field_occlusion_gpu-8c946c96fc500c53)
+
+running 1 test
+test mixed_mesh_occlusion_matches_bucket_direct_through_first_cut has been running for over 60 seconds
+
+thread 'mixed_mesh_occlusion_matches_bucket_direct_through_first_cut' (171903272) panicked at examples/v1-game/tests/support/field_fly.rs:174:21:
+meshes-frustum differs from Direct at tick 866: 2 pixels
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test mixed_mesh_occlusion_matches_bucket_direct_through_first_cut ... FAILED
+
+failures:
+
+failures:
+    mixed_mesh_occlusion_matches_bucket_direct_through_first_cut
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 511.30s
+
+error: test failed, to rerun pass `-p v1-game --test field_occlusion_gpu`
