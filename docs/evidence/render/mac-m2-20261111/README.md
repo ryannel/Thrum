@@ -24,7 +24,7 @@ The first changed hypothesis excluded ordinary OS-log messages to reduce finaliz
 Game Performance display events. It saved a readable trace, but its raw and derived display-event tables were
 empty. The second hypothesis restored OS logs, retaining the absence of a desktop recorder and using capture OFF.
 It also saved a trace with empty display-event tables. That observation rejects OS-log exclusion as a sufficient
-explanation. The missing event source remains undiagnosed. Collection, finalization and the three standard exports
+explanation. The missing event source remains undiagnosed. A post-run read-only `DevToolsSecurity -status` reports Developer mode disabled. That policy observation leaves the actual recording authorization and its effect on display-event collection unverified. [Authorization observation](authorization-status.json). Collection, finalization and the three standard exports
 took 70.185 seconds for ON and 63.357 seconds for OFF. Each trace's recorded interval was below the 16-second cap,
 and each entire collection/export interval was below 75 seconds. Both process groups exited normally. The finite
 record/finalization/export commands and deadlines are retained.
@@ -65,7 +65,7 @@ attached shadows, the sphere's authored leftward sweep and exit, and settled 0°
 navigation sheets retain the three-second warm-up, initial hold, pan and final hold. No exact repeated image bytes
 occur inside either sweep. Largest source-image gaps were 17.438/27.879 ms, both during warm-up. The traced sweep
 has local gaps of 15.715 and 13.088 ms, recorded with their source IDs/yaws in its manifest. These are source-image
-observations. Ground E supplies scene/framing context. Timed movie inspection remains pending shared GPU availability; the finite playback-review request was cancelled for handoff.
+observations. Ground E supplies scene/framing context. Timed movie inspection is queued under the shared GPU lock; source-image inspection is complete.
 [Untraced selected sources](on-untraced-current/selected.json), [traced selected sources](on-traced/selected.json),
 [untraced 1× movie](on-untraced-current/pan-1x.mp4) and [traced 1× movie](on-traced/pan-1x.mp4).
 
@@ -80,7 +80,6 @@ Complete local trace bundles are `tmp/mac-m2/final-window-20261110/on-traced/pan
 Lossless ON archives, expanded originals, hashes, input/submission tables and previews remain under the same root,
 with the fresh baseline in `on-untraced-current`. Exact executed collector sources are retained by SHA-256 in
 collectors/. Selected evidence lives here in Git. Ignored local archives have no durable backup. The
-[runbook](../mac-m2-20261110/RUNBOOK.md) records the tested commands and exhausted allowance. The CPU test-binary build, six Python refusal controls and documentation check passed. The full `./dev check`
-remains queued under the GPU lock, PID 74999/tool session 86138. APPLE-TILE lock PID 70052 and its manual
-release-wait helper PID 74630 currently prevent it from starting. Timed playback and integration remain pending.
-[Verification state](verification.json) records the live wait for resumption. Independent lead review remains owed.
+[runbook](../mac-m2-20261110/RUNBOOK.md) records the tested commands and exhausted allowance. The CPU test-binary build, six Python refusal controls, documentation check and full `./dev check` passed.
+The full check ran under the GPU lock; its [compressed log](check.log.gz) and hash are recorded in
+[verification state](verification.json). Timed playback and integration remain pending. Independent lead review remains owed.

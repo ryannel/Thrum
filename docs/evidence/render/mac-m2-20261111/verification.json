@@ -1,5 +1,5 @@
 {
-  "recorded_unix_ns": 1794395050362710000,
+  "recorded_unix_ns": 1794395820242000000,
   "python_refusal_tests": {
     "passed": 6
   },
@@ -9,15 +9,14 @@
   "documentation_check": "pass",
   "workspace_test_compilation": "pass; cargo test --locked --offline --workspace --no-run",
   "full_check": {
-    "state": "queued",
-    "pid": 74999,
-    "tool_session": 86138,
+    "state": "pass",
+    "exit": 0,
     "command": "./dev check",
-    "gpu_holder_pid": 70052,
-    "gpu_holder_helper_pid": 74630,
-    "log": "tmp/mac-m2/check-20261111.log"
+    "exclusive_resource": "gpu",
+    "log": "check.log.gz",
+    "log_sha256": "404a9a5799414aadadb9823393be7765900c9f93c25736b355ee266c78d3f076"
   },
-  "timed_movie_review": "pending shared GPU availability; finite review request cancelled for handoff",
-  "integration": "pending full check and mandated land command",
+  "timed_movie_review": "pending finite GPU review slot",
+  "integration": "pending required land command",
   "diagnostic_budget": "exhausted; both recorded traces have zero raw swap/VSync and derived display-surface rows"
 }

@@ -6,7 +6,9 @@ displayed-surface tables contain zero rows. Restoring OS logs did not restore di
 markers calibrate with 0.666/0.333 microsecond bounds. Both ON archives independently verify all 851/848 originals
 without omissions. OFF has 846 presentations, zero images and no spool. Host load and panel witnesses are retained.
 The two diagnostic attempts are exhausted. M2.2/M2.4 stay open and M2 stays open. A scoped re-plan must address the
-missing display-event source before further recording. Verification and integration of this checkpoint continue.
+missing display-event source before further recording. The full `./dev check` passed under the GPU lock, as did
+the six Python refusal controls, test-binary compilation and documentation check. Timed source playback and
+integration of this checkpoint continue; no additional diagnostic recording is authorized.
 [Both hypotheses, raw evidence and source inspection](../../evidence/render/mac-m2-20261111/README.md).
 
 11 November attended checkpoint. The GPU-locked fresh baseline and ON/Game Performance probe completed while the

@@ -1,0 +1,11 @@
+{
+  "recorded_unix_ns": 1794395527596905000,
+  "command": [
+    "/usr/sbin/DevToolsSecurity",
+    "-status"
+  ],
+  "exit": 0,
+  "stdout": "Developer mode is currently disabled.\n",
+  "scope": "post-run read-only system developer-policy observation; per-recording elevated authorization and causal effect remain unverified",
+  "system_policy_changed": false
+}
