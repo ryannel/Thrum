@@ -4,7 +4,7 @@
     {
       "id": "M1",
       "name": "An engine module can declare volume, cube and mipped-array textures in the frame, and wrong declarations are refused",
-      "state": "open",
+      "state": "blocked",
       "fails": 0,
       "replans": 0,
       "needs": [
@@ -72,7 +72,8 @@
           "review": ""
         }
       ],
-      "rounds": 0
+      "rounds": 0,
+      "blocked": "The goal is marked blocked after three checks confirmed the same condition. Free additional space with rebuild headroom, then resume M1.5 verification and integration."
     },
     {
       "id": "M2",
