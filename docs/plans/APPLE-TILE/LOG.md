@@ -133,3 +133,10 @@
   D2.1/D2.2/D2.4 pass; D2.3 remains open because Computer Use rejected IINA playback access, and D2.5 remains open
   after a denied OS-observer Screen Recording preflight (console unlocked; no grant request/change).
   M2 stays open, with no claim or performance/panel promotion. [Evidence and unblock steps](../../evidence/render/apple-tile-m2/README.md).
+
+- 2026-11-11 M2 visible-session closeout completes IINA 1x route/cut/skipped-view inspection and both-recipe
+  attended OS-window matched-state, control response, deliberate resize/letterbox/restoration and recovery video.
+  The retained final binary is unchanged; original window/replacement records were preserved, with short missing
+  recovery movies added. Owner setup and latest direction are cited verbatim from ACCEPTED.json M2 owner_answers.
+  The milestone check and full `./dev check` pass. All five items pass; M2 is claimed for lead review. No panel
+  cadence, performance or physical-device claim. [Evidence](../../evidence/render/apple-tile-m2/README.md).
