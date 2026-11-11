@@ -1,0 +1,18 @@
+running 14 tests
+test refuses_volume_layers ... ok
+test refuses_nonsquare_cube ... ok
+test refuses_volume_multisampling ... ok
+test refuses_cube_with_other_than_six_faces ... ok
+test refuses_layer_range_outside_descriptor ... ok
+test refuses_mip_range_outside_descriptor ... ok
+test refuses_volume_attachment ... ok
+test refuses_incompatible_view ... ok
+test refuses_cube_storage_view ... ok
+test refuses_storage_binding_spanning_mips ... ok
+test transient_reuse_requires_identical_dimension ... ok
+test capability_record_refuses_storage_access_counts_and_extents ... ok
+test existing_scene_variants_keep_compiled_order_storage_and_slots ... ok
+test metal_every_texel_every_mip_all_scopes_resize_and_replacement ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.32s
+

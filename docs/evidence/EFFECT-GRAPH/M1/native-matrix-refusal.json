@@ -1,0 +1,15 @@
+{
+  "passed": false,
+  "revision": "3d56bf2103dceb4f4c190e73b8484a7c470d8e4e",
+  "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "binary_sha256": "3c3f16da343e18912533671b62a068d72681c6c4c9ac584e3701fb156f979243",
+  "route_sha256": "7cedae789b8f04470c46ed94c13bc13094d97dfbe1e32cc83b8f70457115a094",
+  "failures": [
+    "less than 16 GiB free before capture"
+  ],
+  "target": "mac-metal",
+  "observed_free_bytes": 9511161856,
+  "required_free_bytes": 17179869184,
+  "observed_at": "2026-11-11T21:33:58.227114+00:00",
+  "original_manifest_sha256": "a0847c02059f9a9bce344663dcb34503336a500926cbe491b69ee8971bf29077"
+}

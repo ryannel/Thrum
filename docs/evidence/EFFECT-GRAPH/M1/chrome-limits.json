@@ -1,0 +1,126 @@
+{
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/157.0.0.0 Safari/537.36",
+  "adapter": {
+    "vendor": "apple",
+    "architecture": "metal-3",
+    "device": "",
+    "description": ""
+  },
+  "features": [
+    "core-features-and-limits"
+  ],
+  "limits": {
+    "maxStorageTexturesPerShaderStage": 4,
+    "maxTextureDimension2D": 8192,
+    "maxTextureDimension3D": 2048,
+    "maxTextureArrayLayers": 256
+  },
+  "storage": {
+    "r32float": {
+      "write-only": true,
+      "read-only": true,
+      "read-write": true
+    },
+    "r32sint": {
+      "write-only": true,
+      "read-only": true,
+      "read-write": true
+    },
+    "r32uint": {
+      "write-only": true,
+      "read-only": true,
+      "read-write": true
+    },
+    "rg32float": {
+      "write-only": true,
+      "read-only": true,
+      "read-write": false
+    },
+    "rg32sint": {
+      "write-only": true,
+      "read-only": true,
+      "read-write": false
+    },
+    "rg32uint": {
+      "write-only": true,
+      "read-only": true,
+      "read-write": false
+    },
+    "rgba8unorm": {
+      "write-only": true,
+      "read-only": true,
+      "read-write": false
+    },
+    "rgba8snorm": {
+      "write-only": true,
+      "read-only": true,
+      "read-write": false
+    },
+    "rgba8sint": {
+      "write-only": true,
+      "read-only": true,
+      "read-write": false
+    },
+    "rgba8uint": {
+      "write-only": true,
+      "read-only": true,
+      "read-write": false
+    },
+    "rgba16float": {
+      "write-only": true,
+      "read-only": true,
+      "read-write": false
+    },
+    "rgba16sint": {
+      "write-only": true,
+      "read-only": true,
+      "read-write": false
+    },
+    "rgba16uint": {
+      "write-only": true,
+      "read-only": true,
+      "read-write": false
+    },
+    "rgba32float": {
+      "write-only": true,
+      "read-only": true,
+      "read-write": false
+    },
+    "rgba32sint": {
+      "write-only": true,
+      "read-only": true,
+      "read-write": false
+    },
+    "rgba32uint": {
+      "write-only": true,
+      "read-only": true,
+      "read-write": false
+    },
+    "bgra8unorm": {
+      "write-only": false,
+      "read-only": false,
+      "read-write": false
+    },
+    "rgba8unorm-srgb": {
+      "write-only": false,
+      "read-only": false,
+      "read-write": false
+    },
+    "depth32float": {
+      "write-only": false,
+      "read-only": false,
+      "read-write": false
+    }
+  },
+  "views": {
+    "2d": true,
+    "2d-array": true,
+    "3d": true,
+    "cube": false,
+    "cube-array": false
+  },
+  "mipBindings": {
+    "1": true,
+    "2": false
+  }
+}
