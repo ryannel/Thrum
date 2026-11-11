@@ -4,8 +4,8 @@
   "design": {
     "verdict": "ok",
     "review": "docs/evidence/PLATFORM-RUNTIME-MAC/design-review.md",
-    "commit": "3e5be4a760190434acd2655d43d7cf92c549ee8e",
-    "hash": "117d14185437deddac6d76a47385e449d91cedad2838dc9756efc2c9adbe84f9",
+    "commit": "4af24b81f803bbc055fad6b72ac6fc5e87b85fb7",
+    "hash": "42f84fabbfda567f13b9f1e8248bea85272b7e7bf124bbc53377452ee75eea9d",
     "by": "review",
     "host": "codex",
     "model": "gpt-6-astra",
@@ -17,12 +17,12 @@
     "cli": "codex-cli 0.167.0-alpha.3.2",
     "path": "headless",
     "usage": {
-      "input": 87090,
-      "cached": 741504,
-      "output": 4871,
+      "input": 111528,
+      "cached": 1448448,
+      "output": 7022,
       "turns": 1
     },
-    "at": "2026-11-11T04:50:25Z"
+    "at": "2026-11-11T12:46:23Z"
   },
   "milestones": {
     "M0": {
@@ -95,6 +95,29 @@
       "cli": "codex-cli 0.167.0-alpha.3.2",
       "path": "visible",
       "at": "2026-11-10T15:24:21Z"
+    },
+    {
+      "verdict": "ok",
+      "review": "docs/evidence/PLATFORM-RUNTIME-MAC/design-review-2.md",
+      "commit": "3e5be4a760190434acd2655d43d7cf92c549ee8e",
+      "hash": "117d14185437deddac6d76a47385e449d91cedad2838dc9756efc2c9adbe84f9",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.167.0-alpha.3.2",
+      "path": "headless",
+      "usage": {
+        "input": 87090,
+        "cached": 741504,
+        "output": 4871,
+        "turns": 1
+      },
+      "at": "2026-11-11T04:50:25Z"
     }
   ]
 }
