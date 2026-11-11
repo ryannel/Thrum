@@ -14,7 +14,7 @@ Thrum's work follows the generic orchestrate skills (`/plan-module`, `/build-mil
 - **Integrate:** push  *(loop: owner allows verified checkpoints straight to main)*
 - **Branch:** main  *(loop)*
 - **Remote:** origin  *(loop)*
-- **Builders:** one Codex builder unless the owner says otherwise
+- **Builders:** two Codex builders  *(owner, 11 Nov 2026: "Yes, run two builders now")*
 - **Codex model:** gpt-6.1-sol  *(loop)*
 - **Claude model:** claude-opus-5-5  *(loop)*
 - **Default host:** codex  *(loop: builders)*
