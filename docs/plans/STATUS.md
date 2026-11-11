@@ -23,6 +23,7 @@ The orchestrate script writes this page from the plan files and records after ea
 - ATMOSPHERE assumes: G3s closes with the west-lookout crossing (M3) still parked and named as a known defect, and with M4 deferred; neither is judged in M6. ([plan](ATMOSPHERE/PLAN.md))
 - ATMOSPHERE assumes: the sky's closing review waits for TAAU, so it is judged once on the image the exit will show. ([plan](ATMOSPHERE/PLAN.md))
 - ATMOSPHERE assumes: solar sky radiance and solar aerial transport stay unqualified against an all-orders reference when G3s closes. M5 and M6 prove that the lent lookups return the stored products in the right units and that the existing bounded referees still pass; the ledger names the gap. A full accuracy campaign would be a separate plan. ([plan](ATMOSPHERE/PLAN.md))
+- ATMOSPHERE assumes: the lent sky and aerial lookups stay one hardware-filtered read, and their handoff bound allows one stored half-float step (at most 0.1% of the value), because Metal returns filtered half-float reads at that precision. Blending exact texels in the shader for float32 results was rejected: it costs every sky pixel and lit fragment more reads and changes every scene's image for no visible gain. ([plan](ATMOSPHERE/PLAN.md))
 - ATMOSPHERE assumes: the terrain lip on the shipped Ground E pan is judged in M6.1 as a brightness step, and the held 17.4 h stop is judged; only the moving spur edge of the parked M3 crossing is left out. ([plan](ATMOSPHERE/PLAN.md))
 
 ### Now and next
