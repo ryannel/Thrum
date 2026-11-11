@@ -4,19 +4,22 @@
   "design": {
     "verdict": "ok",
     "review": "docs/evidence/APPLE-TILE/design-review.md",
-    "commit": "2514d8240876d2ca6772698cfe6f451332fc48b4",
+    "commit": "019f849d519ba0978f31971d55da1780888023bb",
     "hash": "d90de51acfddeb2fda00e9b763dc5b13be3d0f5ddedff520a78f24e069bc1e4f",
     "by": "review",
     "host": "codex",
-    "model": "gpt-6.1-sol",
+    "model": "gpt-6-astra",
     "effort": "high",
     "observed": {
-      "model": "gpt-6.1-sol",
+      "model": "gpt-6-astra",
       "effort": "high"
     },
     "cli": "codex-cli 0.167.0-alpha.3.2",
     "path": "visible",
-    "at": "2026-11-09T14:07:58Z"
+    "usage": {
+      "incomplete_turns": 1
+    },
+    "at": "2026-11-11T01:48:14Z"
   },
   "milestones": {
     "M0": {
@@ -100,5 +103,24 @@
   "planner": {
     "host": "claude",
     "at": "2026-11-11T01:45:14Z"
-  }
+  },
+  "design_history": [
+    {
+      "verdict": "ok",
+      "review": "docs/evidence/APPLE-TILE/design-review-1.md",
+      "commit": "2514d8240876d2ca6772698cfe6f451332fc48b4",
+      "hash": "d90de51acfddeb2fda00e9b763dc5b13be3d0f5ddedff520a78f24e069bc1e4f",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6.1-sol",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.167.0-alpha.3.2",
+      "path": "visible",
+      "at": "2026-11-09T14:07:58Z"
+    }
+  ]
 }
