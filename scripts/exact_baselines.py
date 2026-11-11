@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 import gzip
 import hashlib
 import json
+import zlib
 import os
 from pathlib import Path
 import shutil
@@ -127,7 +128,7 @@ def verify(root=ROOT):
                     if path.suffix == '.gz':
                         gzip.decompress(data)
                     report['references'][str(path.relative_to(root))] = hashlib.sha256(data).hexdigest()
-                except (OSError, ValueError, EOFError) as error:
+                except (OSError, ValueError, EOFError, zlib.error) as error:
                     raise ValueError(f"baseline {entry['id']} owner {entry['owner']}: unreadable reference {path}: {error}") from error
         run('native-build', ['rustup', 'run', '1.99.1', 'cargo', 'build', '--release', '--locked', '--offline',
                              '-p', 'v1-game', '--features', 'draw-probe,thrum-render/creation-counters'])

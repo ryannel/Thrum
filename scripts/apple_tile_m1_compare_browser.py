@@ -4,6 +4,7 @@ import argparse
 import gzip
 import hashlib
 import json
+import zlib
 from pathlib import Path
 
 IDENTITY = ['session', 'submission_id', 'tick', 'source_tick', 'source_epoch', 'timeline',
@@ -52,7 +53,7 @@ def compare_digest(reference, candidate, output, linear, expected_records=481):
     try:
         encoded = reference.read_bytes()
         before = json.loads(gzip.decompress(encoded) if reference.suffix == '.gz' else encoded)
-    except (OSError, ValueError, EOFError) as error:
+    except (OSError, ValueError, EOFError, zlib.error) as error:
         raise ValueError(f'unreadable retained reference {reference}: {error}') from error
     after = json.loads((candidate / 'manifest.json').read_text())
     if not before['complete'] or not after['complete'] or before['mode'] != 'fixed' or after['mode'] != 'fixed':
