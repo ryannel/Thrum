@@ -1,0 +1,121 @@
+   Compiling num-traits v0.2.19
+   Compiling objc2-core-foundation v0.3.2
+   Compiling thiserror v2.0.21
+   Compiling bytemuck v1.25.2
+   Compiling zerocopy v0.8.63
+   Compiling simd-adler32 v0.3.10
+   Compiling serde_core v1.0.229
+   Compiling adler2 v2.0.1
+   Compiling objc-sys v0.3.5
+   Compiling zmij v1.0.23
+   Compiling typenum v1.20.1
+   Compiling itoa v1.0.18
+   Compiling crc32fast v1.5.4
+   Compiling constant_time_eq v0.4.2
+   Compiling naga-types v30.0.1
+   Compiling core-foundation-sys v0.8.7
+   Compiling miniz_oxide v0.9.1
+   Compiling objc2 v0.5.3
+   Compiling blake3 v1.8.7
+   Compiling miniz_oxide v0.8.9
+   Compiling fdeflate v0.3.7
+   Compiling wgpu-types v30.0.1
+   Compiling core-foundation v0.9.4
+   Compiling memmap2 v0.9.12
+   Compiling foreign-types-shared v0.3.1
+   Compiling zune-core v0.5.3
+   Compiling pxfm v0.1.30
+   Compiling dispatch v0.2.0
+   Compiling bitflags v1.3.2
+   Compiling generic-array v0.14.7
+   Compiling foreign-types v0.5.0
+   Compiling core-graphics-types v0.1.3
+   Compiling thrum-asset v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/crates/thrum-asset)
+   Compiling zstd-sys v2.1.2+zstd.1.5.7
+   Compiling same-file v1.0.6
+   Compiling tracing-core v0.1.36
+   Compiling pin-project-lite v0.2.17
+   Compiling zune-jpeg v0.5.15
+   Compiling byteorder-lite v0.1.0
+   Compiling block2 v0.5.1
+   Compiling flate2 v1.1.11
+   Compiling walkdir v2.5.0
+   Compiling zstd-safe v7.4.0
+   Compiling objc2-foundation v0.3.2
+   Compiling objc2-core-graphics v0.3.2
+   Compiling crypto-common v0.1.7
+   Compiling block-buffer v0.10.4
+   Compiling objc2-foundation v0.2.2
+   Compiling png v0.18.1
+   Compiling digest v0.10.7
+   Compiling tracing v0.1.44
+   Compiling objc2-core-services v0.3.2
+   Compiling core-graphics v0.23.2
+   Compiling astcenc-sys v0.2.0
+   Compiling sha2-asm v0.6.4
+   Compiling float-cmp v0.10.0
+   Compiling thrum-app v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/crates/thrum-app)
+   Compiling cpufeatures v0.2.17
+   Compiling notify-types v2.2.0
+   Compiling smol_str v0.2.2
+   Compiling base64 v0.13.1
+   Compiling dpi v0.1.2
+   Compiling cursor-icon v1.2.0
+   Compiling urlencoding v2.1.3
+   Compiling lazy_static v1.5.1
+   Compiling byteorder v1.5.0
+   Compiling notify v8.2.1
+   Compiling sha2 v0.10.9
+   Compiling meshopt v0.7.0
+   Compiling intel_tex_2 v0.5.0
+   Compiling zstd v0.13.3
+   Compiling cpu-time v1.0.0
+   Compiling divan v0.1.21
+   Compiling thrum-content-runtime v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/crates/thrum-content-runtime)
+   Compiling serde_json v1.0.154
+   Compiling serde v1.0.229
+   Compiling moxcms v0.8.1
+   Compiling gltf-json v1.4.1
+   Compiling half v2.7.1
+   Compiling objc2-metal v0.3.2
+   Compiling objc2-app-kit v0.3.2
+   Compiling naga v30.0.1
+   Compiling astcenc-rs v0.2.0
+   Compiling objc2-app-kit v0.2.2
+   Compiling image v0.25.10
+   Compiling objc2-quartz-core v0.3.2
+   Compiling winit v0.30.13
+   Compiling thrum-controls v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/crates/thrum-controls)
+   Compiling raw-window-metal v1.1.0
+   Compiling gltf v1.4.1
+   Compiling thrum-cook v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/crates/thrum-cook)
+   Compiling wgpu-naga-bridge v30.0.1
+   Compiling wgpu-hal v30.0.1
+   Compiling wgpu-core-deps-apple v30.0.1
+   Compiling wgpu-core v30.0.1
+   Compiling wgpu v30.0.1
+   Compiling thrum-render v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/crates/thrum-render)
+   Compiling thrum-asset-gpu v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/crates/thrum-asset-gpu)
+   Compiling v1-game v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/examples/v1-game)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 14.59s
+     Running unittests src/lib.rs (target/debug/deps/v1_game-41ccafac028fc038)
+
+running 11 tests
+test host::tests::abandoned_advanced_frame_keeps_its_tick_and_counts_the_skipped_view ... ok
+test host::tests::abandoned_encoded_scene_reuses_slot_and_timestamp_batch ... ok
+test host::tests::abandoned_overload_frame_counts_its_completed_queued_ticks ... ok
+test host::tests::capture_after_abandoned_fractional_view_uses_last_submitted_sample ... ok
+test host::tests::capture_refreshes_the_latest_committed_world_after_an_unsent_view ... ok
+test host::tests::held_publication_drops_one_view_then_recovers_on_a_paused_zero_tick_callback ... ok
+test host::tests::lifecycle_gpu::threaded_pause_keeps_pixels_still_camera_live_and_resume_advances_the_same_world ... ok
+test host::tests::recovery_gpu::destroyed_gpu_replacement_keeps_paused_world_camera_sky_and_held_input ... recovery paused: peak_sdr_codes=0, tick=0, uploaded_rows=0, abandoned_reports=1
+recovery paused: peak_sdr_codes=0, tick=0, uploaded_rows=0, abandoned_reports=1
+ok
+test host::tests::recovery_gpu::destroyed_gpu_replacement_keeps_the_exposure_zones_overlay ... recovery paused: peak_sdr_codes=0, tick=0, uploaded_rows=0, abandoned_reports=1
+ok
+test host::tests::recovery_gpu::mixed_mesh_field_keeps_its_meshes_through_gpu_replacement ... mixed field recovery: tick=30, peak_sdr_codes=0, differing_px=0
+ok
+test host::tests::recovery_gpu::running_world_advances_while_its_destroyed_gpu_is_replaced ... recovery running: tick_before=0, tick_after=11, epoch_unchanged=true, uploaded_rows=1501
+ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 48 filtered out; finished in 8.72s

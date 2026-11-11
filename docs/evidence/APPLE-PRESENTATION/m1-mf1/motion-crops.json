@@ -1,0 +1,59 @@
+{
+  "day-skyline.png": {
+    "arm": "day",
+    "ticks": [
+      30,
+      60,
+      90
+    ],
+    "xywh": [
+      450,
+      300,
+      450,
+      240
+    ]
+  },
+  "night-stars.png": {
+    "arm": "night",
+    "ticks": [
+      30,
+      60,
+      90
+    ],
+    "xywh": [
+      700,
+      50,
+      450,
+      240
+    ]
+  },
+  "day-mover-hold.png": {
+    "arm": "day",
+    "ticks": [
+      130,
+      160,
+      200,
+      230
+    ],
+    "xywh": [
+      500,
+      600,
+      450,
+      260
+    ]
+  },
+  "moving-near-far.png": {
+    "arm": "moving",
+    "ticks": [
+      90,
+      120,
+      150
+    ],
+    "xywh": [
+      350,
+      50,
+      850,
+      650
+    ]
+  }
+}

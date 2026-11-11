@@ -1,0 +1,2704 @@
+{
+  "target": "mac-metal",
+  "extent": [
+    640,
+    360
+  ],
+  "pairs": 70,
+  "capture_manifest_sha256": "bc5946318a2ecadd1c02d993b1398b13cd7a8fe8788b0f930c2e153f923a1429",
+  "comparison_script_sha256": "732134791477bfb1ebce3029505f0faf3be8aba28e4f0e57d14fa4bf9bd60702",
+  "regions_xywh": {
+    "sphere": [
+      208,
+      188,
+      100,
+      100
+    ],
+    "skyline": [
+      0,
+      110,
+      640,
+      70
+    ],
+    "ground": [
+      0,
+      280,
+      160,
+      80
+    ],
+    "sphere_upper_silhouette_highlight": [
+      218,
+      193,
+      67,
+      62
+    ],
+    "shadow": [
+      208,
+      254,
+      100,
+      34
+    ]
+  },
+  "consecutive_pairs": [
+    {
+      "ticks": [
+        10,
+        11
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3364,
+        "above24_pixels": 89,
+        "peak_code_delta": 110
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 302,
+          "above24_pixels": 6,
+          "peak_code_delta": 38
+        },
+        "skyline": {
+          "changed_rgb_pixels": 854,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 77,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 91,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 183,
+          "above24_pixels": 6,
+          "peak_code_delta": 38
+        }
+      }
+    },
+    {
+      "ticks": [
+        11,
+        12
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3365,
+        "above24_pixels": 87,
+        "peak_code_delta": 110
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 254,
+          "above24_pixels": 8,
+          "peak_code_delta": 75
+        },
+        "skyline": {
+          "changed_rgb_pixels": 824,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 76,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 59,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 172,
+          "above24_pixels": 8,
+          "peak_code_delta": 75
+        }
+      }
+    },
+    {
+      "ticks": [
+        12,
+        13
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3441,
+        "above24_pixels": 89,
+        "peak_code_delta": 109
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 298,
+          "above24_pixels": 7,
+          "peak_code_delta": 76
+        },
+        "skyline": {
+          "changed_rgb_pixels": 791,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 79,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 93,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 179,
+          "above24_pixels": 7,
+          "peak_code_delta": 76
+        }
+      }
+    },
+    {
+      "ticks": [
+        13,
+        14
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3377,
+        "above24_pixels": 75,
+        "peak_code_delta": 108
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 292,
+          "above24_pixels": 4,
+          "peak_code_delta": 65
+        },
+        "skyline": {
+          "changed_rgb_pixels": 812,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 87,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 90,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 176,
+          "above24_pixels": 3,
+          "peak_code_delta": 65
+        }
+      }
+    },
+    {
+      "ticks": [
+        14,
+        15
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3450,
+        "above24_pixels": 80,
+        "peak_code_delta": 109
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 285,
+          "above24_pixels": 5,
+          "peak_code_delta": 74
+        },
+        "skyline": {
+          "changed_rgb_pixels": 836,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 79,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 77,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 181,
+          "above24_pixels": 5,
+          "peak_code_delta": 74
+        }
+      }
+    },
+    {
+      "ticks": [
+        15,
+        16
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3528,
+        "above24_pixels": 91,
+        "peak_code_delta": 108
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 312,
+          "above24_pixels": 2,
+          "peak_code_delta": 45
+        },
+        "skyline": {
+          "changed_rgb_pixels": 856,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 102,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 95,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 185,
+          "above24_pixels": 2,
+          "peak_code_delta": 45
+        }
+      }
+    },
+    {
+      "ticks": [
+        16,
+        17
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3407,
+        "above24_pixels": 83,
+        "peak_code_delta": 108
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 282,
+          "above24_pixels": 3,
+          "peak_code_delta": 69
+        },
+        "skyline": {
+          "changed_rgb_pixels": 802,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 72,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 78,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 183,
+          "above24_pixels": 2,
+          "peak_code_delta": 69
+        }
+      }
+    },
+    {
+      "ticks": [
+        17,
+        18
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3491,
+        "above24_pixels": 75,
+        "peak_code_delta": 108
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 302,
+          "above24_pixels": 0,
+          "peak_code_delta": 17
+        },
+        "skyline": {
+          "changed_rgb_pixels": 825,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 82,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 81,
+          "above24_pixels": 0,
+          "peak_code_delta": 2
+        },
+        "shadow": {
+          "changed_rgb_pixels": 189,
+          "above24_pixels": 0,
+          "peak_code_delta": 17
+        }
+      }
+    },
+    {
+      "ticks": [
+        18,
+        19
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3639,
+        "above24_pixels": 93,
+        "peak_code_delta": 109
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 297,
+          "above24_pixels": 15,
+          "peak_code_delta": 65
+        },
+        "skyline": {
+          "changed_rgb_pixels": 877,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 86,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 87,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 185,
+          "above24_pixels": 15,
+          "peak_code_delta": 65
+        }
+      }
+    },
+    {
+      "ticks": [
+        19,
+        20
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3311,
+        "above24_pixels": 89,
+        "peak_code_delta": 113
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 297,
+          "above24_pixels": 3,
+          "peak_code_delta": 60
+        },
+        "skyline": {
+          "changed_rgb_pixels": 749,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 70,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 81,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 184,
+          "above24_pixels": 3,
+          "peak_code_delta": 60
+        }
+      }
+    },
+    {
+      "ticks": [
+        20,
+        21
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3529,
+        "above24_pixels": 80,
+        "peak_code_delta": 113
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 282,
+          "above24_pixels": 4,
+          "peak_code_delta": 73
+        },
+        "skyline": {
+          "changed_rgb_pixels": 857,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 82,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 89,
+          "above24_pixels": 0,
+          "peak_code_delta": 6
+        },
+        "shadow": {
+          "changed_rgb_pixels": 170,
+          "above24_pixels": 4,
+          "peak_code_delta": 73
+        }
+      }
+    },
+    {
+      "ticks": [
+        21,
+        22
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3390,
+        "above24_pixels": 88,
+        "peak_code_delta": 115
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 280,
+          "above24_pixels": 8,
+          "peak_code_delta": 72
+        },
+        "skyline": {
+          "changed_rgb_pixels": 835,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 76,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 73,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 173,
+          "above24_pixels": 7,
+          "peak_code_delta": 72
+        }
+      }
+    },
+    {
+      "ticks": [
+        22,
+        23
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3435,
+        "above24_pixels": 79,
+        "peak_code_delta": 118
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 283,
+          "above24_pixels": 4,
+          "peak_code_delta": 63
+        },
+        "skyline": {
+          "changed_rgb_pixels": 815,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 89,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 83,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 173,
+          "above24_pixels": 4,
+          "peak_code_delta": 63
+        }
+      }
+    },
+    {
+      "ticks": [
+        23,
+        24
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3542,
+        "above24_pixels": 82,
+        "peak_code_delta": 118
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 310,
+          "above24_pixels": 8,
+          "peak_code_delta": 53
+        },
+        "skyline": {
+          "changed_rgb_pixels": 806,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 97,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 100,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 179,
+          "above24_pixels": 7,
+          "peak_code_delta": 53
+        }
+      }
+    },
+    {
+      "ticks": [
+        24,
+        25
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3627,
+        "above24_pixels": 93,
+        "peak_code_delta": 116
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 289,
+          "above24_pixels": 6,
+          "peak_code_delta": 72
+        },
+        "skyline": {
+          "changed_rgb_pixels": 828,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 86,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 79,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 171,
+          "above24_pixels": 6,
+          "peak_code_delta": 72
+        }
+      }
+    },
+    {
+      "ticks": [
+        25,
+        26
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3452,
+        "above24_pixels": 86,
+        "peak_code_delta": 116
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 273,
+          "above24_pixels": 9,
+          "peak_code_delta": 79
+        },
+        "skyline": {
+          "changed_rgb_pixels": 807,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 73,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 82,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 164,
+          "above24_pixels": 9,
+          "peak_code_delta": 79
+        }
+      }
+    },
+    {
+      "ticks": [
+        26,
+        27
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3436,
+        "above24_pixels": 89,
+        "peak_code_delta": 118
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 296,
+          "above24_pixels": 4,
+          "peak_code_delta": 72
+        },
+        "skyline": {
+          "changed_rgb_pixels": 804,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 85,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 97,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 174,
+          "above24_pixels": 4,
+          "peak_code_delta": 72
+        }
+      }
+    },
+    {
+      "ticks": [
+        27,
+        28
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3459,
+        "above24_pixels": 91,
+        "peak_code_delta": 117
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 277,
+          "above24_pixels": 3,
+          "peak_code_delta": 59
+        },
+        "skyline": {
+          "changed_rgb_pixels": 794,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 96,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 86,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 170,
+          "above24_pixels": 3,
+          "peak_code_delta": 59
+        }
+      }
+    },
+    {
+      "ticks": [
+        28,
+        29
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3541,
+        "above24_pixels": 80,
+        "peak_code_delta": 119
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 284,
+          "above24_pixels": 3,
+          "peak_code_delta": 41
+        },
+        "skyline": {
+          "changed_rgb_pixels": 860,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 84,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 81,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 165,
+          "above24_pixels": 3,
+          "peak_code_delta": 41
+        }
+      }
+    },
+    {
+      "ticks": [
+        29,
+        30
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3416,
+        "above24_pixels": 79,
+        "peak_code_delta": 119
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 271,
+          "above24_pixels": 5,
+          "peak_code_delta": 46
+        },
+        "skyline": {
+          "changed_rgb_pixels": 782,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 73,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 85,
+          "above24_pixels": 0,
+          "peak_code_delta": 3
+        },
+        "shadow": {
+          "changed_rgb_pixels": 168,
+          "above24_pixels": 5,
+          "peak_code_delta": 46
+        }
+      }
+    },
+    {
+      "ticks": [
+        30,
+        31
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3593,
+        "above24_pixels": 96,
+        "peak_code_delta": 118
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 303,
+          "above24_pixels": 11,
+          "peak_code_delta": 79
+        },
+        "skyline": {
+          "changed_rgb_pixels": 821,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 93,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 98,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 177,
+          "above24_pixels": 9,
+          "peak_code_delta": 79
+        }
+      }
+    },
+    {
+      "ticks": [
+        31,
+        32
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3435,
+        "above24_pixels": 83,
+        "peak_code_delta": 114
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 262,
+          "above24_pixels": 5,
+          "peak_code_delta": 79
+        },
+        "skyline": {
+          "changed_rgb_pixels": 854,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 63,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 78,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 161,
+          "above24_pixels": 5,
+          "peak_code_delta": 79
+        }
+      }
+    },
+    {
+      "ticks": [
+        32,
+        33
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3568,
+        "above24_pixels": 70,
+        "peak_code_delta": 111
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 258,
+          "above24_pixels": 2,
+          "peak_code_delta": 46
+        },
+        "skyline": {
+          "changed_rgb_pixels": 812,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 99,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 68,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 160,
+          "above24_pixels": 2,
+          "peak_code_delta": 46
+        }
+      }
+    },
+    {
+      "ticks": [
+        33,
+        34
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3525,
+        "above24_pixels": 80,
+        "peak_code_delta": 109
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 286,
+          "above24_pixels": 0,
+          "peak_code_delta": 23
+        },
+        "skyline": {
+          "changed_rgb_pixels": 827,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 101,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 91,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 166,
+          "above24_pixels": 0,
+          "peak_code_delta": 6
+        }
+      }
+    },
+    {
+      "ticks": [
+        34,
+        35
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3420,
+        "above24_pixels": 84,
+        "peak_code_delta": 107
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 285,
+          "above24_pixels": 9,
+          "peak_code_delta": 69
+        },
+        "skyline": {
+          "changed_rgb_pixels": 832,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 75,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 95,
+          "above24_pixels": 0,
+          "peak_code_delta": 6
+        },
+        "shadow": {
+          "changed_rgb_pixels": 172,
+          "above24_pixels": 9,
+          "peak_code_delta": 69
+        }
+      }
+    },
+    {
+      "ticks": [
+        35,
+        36
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3588,
+        "above24_pixels": 88,
+        "peak_code_delta": 107
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 269,
+          "above24_pixels": 5,
+          "peak_code_delta": 42
+        },
+        "skyline": {
+          "changed_rgb_pixels": 851,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 77,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 85,
+          "above24_pixels": 0,
+          "peak_code_delta": 5
+        },
+        "shadow": {
+          "changed_rgb_pixels": 161,
+          "above24_pixels": 5,
+          "peak_code_delta": 42
+        }
+      }
+    },
+    {
+      "ticks": [
+        36,
+        37
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3549,
+        "above24_pixels": 82,
+        "peak_code_delta": 108
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 268,
+          "above24_pixels": 5,
+          "peak_code_delta": 65
+        },
+        "skyline": {
+          "changed_rgb_pixels": 843,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 89,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 79,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 165,
+          "above24_pixels": 4,
+          "peak_code_delta": 65
+        }
+      }
+    },
+    {
+      "ticks": [
+        37,
+        38
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3513,
+        "above24_pixels": 90,
+        "peak_code_delta": 111
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 296,
+          "above24_pixels": 12,
+          "peak_code_delta": 90
+        },
+        "skyline": {
+          "changed_rgb_pixels": 869,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 81,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 92,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 167,
+          "above24_pixels": 12,
+          "peak_code_delta": 90
+        }
+      }
+    },
+    {
+      "ticks": [
+        38,
+        39
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3622,
+        "above24_pixels": 88,
+        "peak_code_delta": 111
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 264,
+          "above24_pixels": 2,
+          "peak_code_delta": 39
+        },
+        "skyline": {
+          "changed_rgb_pixels": 902,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 84,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 90,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 154,
+          "above24_pixels": 2,
+          "peak_code_delta": 39
+        }
+      }
+    },
+    {
+      "ticks": [
+        39,
+        40
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3602,
+        "above24_pixels": 77,
+        "peak_code_delta": 112
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 270,
+          "above24_pixels": 1,
+          "peak_code_delta": 36
+        },
+        "skyline": {
+          "changed_rgb_pixels": 816,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 96,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 82,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 160,
+          "above24_pixels": 1,
+          "peak_code_delta": 36
+        }
+      }
+    },
+    {
+      "ticks": [
+        40,
+        41
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3566,
+        "above24_pixels": 82,
+        "peak_code_delta": 114
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 282,
+          "above24_pixels": 4,
+          "peak_code_delta": 52
+        },
+        "skyline": {
+          "changed_rgb_pixels": 909,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 91,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 90,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 164,
+          "above24_pixels": 4,
+          "peak_code_delta": 52
+        }
+      }
+    },
+    {
+      "ticks": [
+        41,
+        42
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3634,
+        "above24_pixels": 82,
+        "peak_code_delta": 113
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 282,
+          "above24_pixels": 0,
+          "peak_code_delta": 5
+        },
+        "skyline": {
+          "changed_rgb_pixels": 871,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 90,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 94,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 158,
+          "above24_pixels": 0,
+          "peak_code_delta": 5
+        }
+      }
+    },
+    {
+      "ticks": [
+        42,
+        43
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3501,
+        "above24_pixels": 94,
+        "peak_code_delta": 115
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 282,
+          "above24_pixels": 9,
+          "peak_code_delta": 80
+        },
+        "skyline": {
+          "changed_rgb_pixels": 837,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 91,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 75,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 168,
+          "above24_pixels": 9,
+          "peak_code_delta": 80
+        }
+      }
+    },
+    {
+      "ticks": [
+        43,
+        44
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3639,
+        "above24_pixels": 89,
+        "peak_code_delta": 118
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 285,
+          "above24_pixels": 4,
+          "peak_code_delta": 79
+        },
+        "skyline": {
+          "changed_rgb_pixels": 881,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 85,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 87,
+          "above24_pixels": 0,
+          "peak_code_delta": 4
+        },
+        "shadow": {
+          "changed_rgb_pixels": 168,
+          "above24_pixels": 3,
+          "peak_code_delta": 79
+        }
+      }
+    },
+    {
+      "ticks": [
+        44,
+        45
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3605,
+        "above24_pixels": 86,
+        "peak_code_delta": 118
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 268,
+          "above24_pixels": 5,
+          "peak_code_delta": 58
+        },
+        "skyline": {
+          "changed_rgb_pixels": 853,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 71,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 78,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 170,
+          "above24_pixels": 5,
+          "peak_code_delta": 58
+        }
+      }
+    },
+    {
+      "ticks": [
+        45,
+        46
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3584,
+        "above24_pixels": 90,
+        "peak_code_delta": 117
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 304,
+          "above24_pixels": 5,
+          "peak_code_delta": 65
+        },
+        "skyline": {
+          "changed_rgb_pixels": 896,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 82,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 94,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 177,
+          "above24_pixels": 4,
+          "peak_code_delta": 65
+        }
+      }
+    },
+    {
+      "ticks": [
+        46,
+        47
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3671,
+        "above24_pixels": 86,
+        "peak_code_delta": 117
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 295,
+          "above24_pixels": 7,
+          "peak_code_delta": 38
+        },
+        "skyline": {
+          "changed_rgb_pixels": 854,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 108,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 95,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 172,
+          "above24_pixels": 6,
+          "peak_code_delta": 38
+        }
+      }
+    },
+    {
+      "ticks": [
+        47,
+        48
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3653,
+        "above24_pixels": 88,
+        "peak_code_delta": 118
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 304,
+          "above24_pixels": 6,
+          "peak_code_delta": 74
+        },
+        "skyline": {
+          "changed_rgb_pixels": 864,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 97,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 96,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 178,
+          "above24_pixels": 6,
+          "peak_code_delta": 74
+        }
+      }
+    },
+    {
+      "ticks": [
+        48,
+        49
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3594,
+        "above24_pixels": 86,
+        "peak_code_delta": 119
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 286,
+          "above24_pixels": 10,
+          "peak_code_delta": 84
+        },
+        "skyline": {
+          "changed_rgb_pixels": 899,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 74,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 88,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 165,
+          "above24_pixels": 10,
+          "peak_code_delta": 84
+        }
+      }
+    },
+    {
+      "ticks": [
+        49,
+        50
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3578,
+        "above24_pixels": 83,
+        "peak_code_delta": 120
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 274,
+          "above24_pixels": 4,
+          "peak_code_delta": 51
+        },
+        "skyline": {
+          "changed_rgb_pixels": 785,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 83,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 85,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 155,
+          "above24_pixels": 4,
+          "peak_code_delta": 51
+        }
+      }
+    },
+    {
+      "ticks": [
+        50,
+        51
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3656,
+        "above24_pixels": 86,
+        "peak_code_delta": 117
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 289,
+          "above24_pixels": 4,
+          "peak_code_delta": 78
+        },
+        "skyline": {
+          "changed_rgb_pixels": 882,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 88,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 89,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 172,
+          "above24_pixels": 4,
+          "peak_code_delta": 78
+        }
+      }
+    },
+    {
+      "ticks": [
+        51,
+        52
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3651,
+        "above24_pixels": 88,
+        "peak_code_delta": 115
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 282,
+          "above24_pixels": 7,
+          "peak_code_delta": 76
+        },
+        "skyline": {
+          "changed_rgb_pixels": 810,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 84,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 92,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 165,
+          "above24_pixels": 7,
+          "peak_code_delta": 76
+        }
+      }
+    },
+    {
+      "ticks": [
+        52,
+        53
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3691,
+        "above24_pixels": 88,
+        "peak_code_delta": 112
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 275,
+          "above24_pixels": 4,
+          "peak_code_delta": 55
+        },
+        "skyline": {
+          "changed_rgb_pixels": 890,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 80,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 90,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 165,
+          "above24_pixels": 4,
+          "peak_code_delta": 55
+        }
+      }
+    },
+    {
+      "ticks": [
+        53,
+        54
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3710,
+        "above24_pixels": 80,
+        "peak_code_delta": 109
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 292,
+          "above24_pixels": 3,
+          "peak_code_delta": 45
+        },
+        "skyline": {
+          "changed_rgb_pixels": 830,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 86,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 93,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 162,
+          "above24_pixels": 3,
+          "peak_code_delta": 45
+        }
+      }
+    },
+    {
+      "ticks": [
+        54,
+        55
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3523,
+        "above24_pixels": 91,
+        "peak_code_delta": 109
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 267,
+          "above24_pixels": 10,
+          "peak_code_delta": 84
+        },
+        "skyline": {
+          "changed_rgb_pixels": 876,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 75,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 92,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 153,
+          "above24_pixels": 10,
+          "peak_code_delta": 84
+        }
+      }
+    },
+    {
+      "ticks": [
+        55,
+        56
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3655,
+        "above24_pixels": 81,
+        "peak_code_delta": 111
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 271,
+          "above24_pixels": 5,
+          "peak_code_delta": 59
+        },
+        "skyline": {
+          "changed_rgb_pixels": 894,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 80,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 87,
+          "above24_pixels": 0,
+          "peak_code_delta": 2
+        },
+        "shadow": {
+          "changed_rgb_pixels": 154,
+          "above24_pixels": 3,
+          "peak_code_delta": 42
+        }
+      }
+    },
+    {
+      "ticks": [
+        56,
+        57
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3606,
+        "above24_pixels": 74,
+        "peak_code_delta": 113
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 280,
+          "above24_pixels": 3,
+          "peak_code_delta": 40
+        },
+        "skyline": {
+          "changed_rgb_pixels": 840,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 90,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 92,
+          "above24_pixels": 0,
+          "peak_code_delta": 2
+        },
+        "shadow": {
+          "changed_rgb_pixels": 165,
+          "above24_pixels": 3,
+          "peak_code_delta": 40
+        }
+      }
+    },
+    {
+      "ticks": [
+        57,
+        58
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3722,
+        "above24_pixels": 93,
+        "peak_code_delta": 114
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 292,
+          "above24_pixels": 7,
+          "peak_code_delta": 66
+        },
+        "skyline": {
+          "changed_rgb_pixels": 896,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 101,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 97,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 162,
+          "above24_pixels": 7,
+          "peak_code_delta": 66
+        }
+      }
+    },
+    {
+      "ticks": [
+        58,
+        59
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3669,
+        "above24_pixels": 76,
+        "peak_code_delta": 114
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 290,
+          "above24_pixels": 8,
+          "peak_code_delta": 71
+        },
+        "skyline": {
+          "changed_rgb_pixels": 839,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 85,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 90,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 163,
+          "above24_pixels": 8,
+          "peak_code_delta": 71
+        }
+      }
+    },
+    {
+      "ticks": [
+        59,
+        60
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3709,
+        "above24_pixels": 78,
+        "peak_code_delta": 110
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 270,
+          "above24_pixels": 0,
+          "peak_code_delta": 11
+        },
+        "skyline": {
+          "changed_rgb_pixels": 877,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 71,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 82,
+          "above24_pixels": 0,
+          "peak_code_delta": 2
+        },
+        "shadow": {
+          "changed_rgb_pixels": 158,
+          "above24_pixels": 0,
+          "peak_code_delta": 5
+        }
+      }
+    },
+    {
+      "ticks": [
+        60,
+        61
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3791,
+        "above24_pixels": 89,
+        "peak_code_delta": 112
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 287,
+          "above24_pixels": 8,
+          "peak_code_delta": 58
+        },
+        "skyline": {
+          "changed_rgb_pixels": 936,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 107,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 95,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 168,
+          "above24_pixels": 8,
+          "peak_code_delta": 58
+        }
+      }
+    },
+    {
+      "ticks": [
+        61,
+        62
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3751,
+        "above24_pixels": 77,
+        "peak_code_delta": 113
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 261,
+          "above24_pixels": 2,
+          "peak_code_delta": 39
+        },
+        "skyline": {
+          "changed_rgb_pixels": 860,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 85,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 79,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 156,
+          "above24_pixels": 2,
+          "peak_code_delta": 39
+        }
+      }
+    },
+    {
+      "ticks": [
+        62,
+        63
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3705,
+        "above24_pixels": 88,
+        "peak_code_delta": 112
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 289,
+          "above24_pixels": 9,
+          "peak_code_delta": 71
+        },
+        "skyline": {
+          "changed_rgb_pixels": 843,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 85,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 87,
+          "above24_pixels": 0,
+          "peak_code_delta": 2
+        },
+        "shadow": {
+          "changed_rgb_pixels": 172,
+          "above24_pixels": 8,
+          "peak_code_delta": 71
+        }
+      }
+    },
+    {
+      "ticks": [
+        63,
+        64
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3746,
+        "above24_pixels": 81,
+        "peak_code_delta": 111
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 282,
+          "above24_pixels": 3,
+          "peak_code_delta": 59
+        },
+        "skyline": {
+          "changed_rgb_pixels": 890,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 68,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 82,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 163,
+          "above24_pixels": 3,
+          "peak_code_delta": 59
+        }
+      }
+    },
+    {
+      "ticks": [
+        64,
+        65
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3621,
+        "above24_pixels": 80,
+        "peak_code_delta": 112
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 297,
+          "above24_pixels": 6,
+          "peak_code_delta": 68
+        },
+        "skyline": {
+          "changed_rgb_pixels": 891,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 101,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 97,
+          "above24_pixels": 0,
+          "peak_code_delta": 3
+        },
+        "shadow": {
+          "changed_rgb_pixels": 170,
+          "above24_pixels": 6,
+          "peak_code_delta": 68
+        }
+      }
+    },
+    {
+      "ticks": [
+        65,
+        66
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3662,
+        "above24_pixels": 83,
+        "peak_code_delta": 111
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 279,
+          "above24_pixels": 2,
+          "peak_code_delta": 57
+        },
+        "skyline": {
+          "changed_rgb_pixels": 904,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 87,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 95,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 157,
+          "above24_pixels": 1,
+          "peak_code_delta": 48
+        }
+      }
+    },
+    {
+      "ticks": [
+        66,
+        67
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3822,
+        "above24_pixels": 95,
+        "peak_code_delta": 111
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 295,
+          "above24_pixels": 7,
+          "peak_code_delta": 81
+        },
+        "skyline": {
+          "changed_rgb_pixels": 903,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 94,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 96,
+          "above24_pixels": 0,
+          "peak_code_delta": 3
+        },
+        "shadow": {
+          "changed_rgb_pixels": 171,
+          "above24_pixels": 7,
+          "peak_code_delta": 81
+        }
+      }
+    },
+    {
+      "ticks": [
+        67,
+        68
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3833,
+        "above24_pixels": 91,
+        "peak_code_delta": 112
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 273,
+          "above24_pixels": 7,
+          "peak_code_delta": 85
+        },
+        "skyline": {
+          "changed_rgb_pixels": 879,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 82,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 80,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 160,
+          "above24_pixels": 7,
+          "peak_code_delta": 85
+        }
+      }
+    },
+    {
+      "ticks": [
+        68,
+        69
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3663,
+        "above24_pixels": 87,
+        "peak_code_delta": 112
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 288,
+          "above24_pixels": 7,
+          "peak_code_delta": 83
+        },
+        "skyline": {
+          "changed_rgb_pixels": 897,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 93,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 87,
+          "above24_pixels": 0,
+          "peak_code_delta": 3
+        },
+        "shadow": {
+          "changed_rgb_pixels": 167,
+          "above24_pixels": 7,
+          "peak_code_delta": 83
+        }
+      }
+    },
+    {
+      "ticks": [
+        69,
+        70
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3560,
+        "above24_pixels": 81,
+        "peak_code_delta": 112
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 269,
+          "above24_pixels": 2,
+          "peak_code_delta": 61
+        },
+        "skyline": {
+          "changed_rgb_pixels": 842,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 65,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 86,
+          "above24_pixels": 0,
+          "peak_code_delta": 6
+        },
+        "shadow": {
+          "changed_rgb_pixels": 154,
+          "above24_pixels": 2,
+          "peak_code_delta": 61
+        }
+      }
+    },
+    {
+      "ticks": [
+        70,
+        71
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3750,
+        "above24_pixels": 86,
+        "peak_code_delta": 115
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 281,
+          "above24_pixels": 4,
+          "peak_code_delta": 62
+        },
+        "skyline": {
+          "changed_rgb_pixels": 899,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 80,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 90,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 163,
+          "above24_pixels": 4,
+          "peak_code_delta": 62
+        }
+      }
+    },
+    {
+      "ticks": [
+        71,
+        72
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3767,
+        "above24_pixels": 77,
+        "peak_code_delta": 114
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 266,
+          "above24_pixels": 2,
+          "peak_code_delta": 51
+        },
+        "skyline": {
+          "changed_rgb_pixels": 880,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 85,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 80,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 159,
+          "above24_pixels": 2,
+          "peak_code_delta": 51
+        }
+      }
+    },
+    {
+      "ticks": [
+        72,
+        73
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3792,
+        "above24_pixels": 86,
+        "peak_code_delta": 116
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 276,
+          "above24_pixels": 2,
+          "peak_code_delta": 45
+        },
+        "skyline": {
+          "changed_rgb_pixels": 866,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 65,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 81,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 163,
+          "above24_pixels": 2,
+          "peak_code_delta": 45
+        }
+      }
+    },
+    {
+      "ticks": [
+        73,
+        74
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3733,
+        "above24_pixels": 81,
+        "peak_code_delta": 116
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 292,
+          "above24_pixels": 3,
+          "peak_code_delta": 65
+        },
+        "skyline": {
+          "changed_rgb_pixels": 881,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 110,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 90,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 176,
+          "above24_pixels": 3,
+          "peak_code_delta": 65
+        }
+      }
+    },
+    {
+      "ticks": [
+        74,
+        75
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3780,
+        "above24_pixels": 84,
+        "peak_code_delta": 113
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 262,
+          "above24_pixels": 3,
+          "peak_code_delta": 53
+        },
+        "skyline": {
+          "changed_rgb_pixels": 905,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 91,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 88,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 159,
+          "above24_pixels": 1,
+          "peak_code_delta": 53
+        }
+      }
+    },
+    {
+      "ticks": [
+        75,
+        76
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3785,
+        "above24_pixels": 89,
+        "peak_code_delta": 112
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 291,
+          "above24_pixels": 6,
+          "peak_code_delta": 76
+        },
+        "skyline": {
+          "changed_rgb_pixels": 914,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 84,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 81,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 178,
+          "above24_pixels": 5,
+          "peak_code_delta": 76
+        }
+      }
+    },
+    {
+      "ticks": [
+        76,
+        77
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3879,
+        "above24_pixels": 86,
+        "peak_code_delta": 113
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 285,
+          "above24_pixels": 7,
+          "peak_code_delta": 67
+        },
+        "skyline": {
+          "changed_rgb_pixels": 908,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 93,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 84,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 175,
+          "above24_pixels": 7,
+          "peak_code_delta": 67
+        }
+      }
+    },
+    {
+      "ticks": [
+        77,
+        78
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3709,
+        "above24_pixels": 85,
+        "peak_code_delta": 114
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 272,
+          "above24_pixels": 0,
+          "peak_code_delta": 7
+        },
+        "skyline": {
+          "changed_rgb_pixels": 903,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 82,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 83,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 162,
+          "above24_pixels": 0,
+          "peak_code_delta": 7
+        }
+      }
+    },
+    {
+      "ticks": [
+        78,
+        79
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3864,
+        "above24_pixels": 88,
+        "peak_code_delta": 113
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 293,
+          "above24_pixels": 6,
+          "peak_code_delta": 76
+        },
+        "skyline": {
+          "changed_rgb_pixels": 917,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 67,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 94,
+          "above24_pixels": 0,
+          "peak_code_delta": 2
+        },
+        "shadow": {
+          "changed_rgb_pixels": 174,
+          "above24_pixels": 6,
+          "peak_code_delta": 76
+        }
+      }
+    },
+    {
+      "ticks": [
+        79,
+        80
+      ],
+      "whole_frame": {
+        "changed_rgb_pixels": 3814,
+        "above24_pixels": 85,
+        "peak_code_delta": 114
+      },
+      "regions": {
+        "sphere": {
+          "changed_rgb_pixels": 301,
+          "above24_pixels": 7,
+          "peak_code_delta": 84
+        },
+        "skyline": {
+          "changed_rgb_pixels": 915,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "ground": {
+          "changed_rgb_pixels": 76,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "sphere_upper_silhouette_highlight": {
+          "changed_rgb_pixels": 96,
+          "above24_pixels": 0,
+          "peak_code_delta": 1
+        },
+        "shadow": {
+          "changed_rgb_pixels": 178,
+          "above24_pixels": 7,
+          "peak_code_delta": 84
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,62 @@
+[
+  {
+    "arm": "held-640",
+    "pairs": 70,
+    "whole_frame_above24_range": [
+      70,
+      96
+    ],
+    "regions": {
+      "sphere": {
+        "max_above24_pixels": 15,
+        "peak_code_delta": 90
+      },
+      "skyline": {
+        "max_above24_pixels": 0,
+        "peak_code_delta": 1
+      },
+      "ground": {
+        "max_above24_pixels": 0,
+        "peak_code_delta": 1
+      },
+      "sphere_upper_silhouette_highlight": {
+        "max_above24_pixels": 0,
+        "peak_code_delta": 6
+      },
+      "shadow": {
+        "max_above24_pixels": 15,
+        "peak_code_delta": 90
+      }
+    }
+  },
+  {
+    "arm": "held-1080",
+    "pairs": 70,
+    "whole_frame_above24_range": [
+      660,
+      846
+    ],
+    "regions": {
+      "sphere": {
+        "max_above24_pixels": 134,
+        "peak_code_delta": 101
+      },
+      "skyline": {
+        "max_above24_pixels": 0,
+        "peak_code_delta": 1
+      },
+      "ground": {
+        "max_above24_pixels": 0,
+        "peak_code_delta": 1
+      },
+      "sphere_upper_silhouette_highlight": {
+        "max_above24_pixels": 0,
+        "peak_code_delta": 24
+      },
+      "shadow": {
+        "max_above24_pixels": 134,
+        "peak_code_delta": 101
+      }
+    }
+  }
+]
