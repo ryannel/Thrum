@@ -33,6 +33,7 @@ The orchestrate script writes this page from the plan files and records after ea
 
 ### Recently done
 
+- The valley selects a recipe and stores only actual future inputs (APPLE-TILE M1), 11 Nov · [review](../evidence/APPLE-TILE/M1-review.md)
 - The starter scene runs in Chrome from one command, with its controls and live asset edits (CREATOR M1), 11 Nov · [review](../evidence/CREATOR/M1-review.md)
 - A repeatable offscreen valley proves the comparison path (APPLE-TILE M0), 11 Nov · [review](../evidence/APPLE-TILE/M0-review.md)
 - iOS simulator engine motion without desktop capture (T2-CAPTURE M2), 10 Nov · [review](../evidence/T2-CAPTURE/M2-review.md)
