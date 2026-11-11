@@ -57,23 +57,23 @@ Read [Environment identity and products](DESIGN.md#environment-identity-and-prod
       [Base record](../../evidence/ATMOSPHERE/m5-h2/base.json).
 - [x] The environment identity, with the true Sun kept apart from the apparent surface light, lent to
       contributions each frame.
-- [ ] The lent layout and WGSL library with the five operations, reflection included, each documented with the
+- [x] The lent layout and WGSL library with the five operations, reflection included, each documented with the
       support and limits the design's table gives it.
-- [ ] The handoff referees H1–H5 of [the numerical acceptance](DESIGN.md#numerical-acceptance) on Metal, run
+- [x] The handoff referees H1–H5 of [the numerical acceptance](DESIGN.md#numerical-acceptance) on Metal, run
       from a contribution's own pipeline; the preserved referees P1–P11 untouched.
-- [ ] For H2 and H4, the f64 filtered decode written apart from the library, its live and known-field arms, and
+- [x] For H2 and H4, the f64 filtered decode written apart from the library, its live and known-field arms, and
       the wrong lookups that must fail; one case of each row repeated at a non-unit exposure scale. The bound
       carries the stored-step term `Q`; the known fields step by at least 32 stored steps; the Metal run keeps
       the 257-position precision record.
-- [ ] The browser page and the `environment` case of `scripts/check_v1_browser.mjs` that run H1–H5 in Chrome,
+- [x] The browser page and the `environment` case of `scripts/check_v1_browser.mjs` that run H1–H5 in Chrome,
       with the same filtered decode, wrong lookups and exposure control.
-- [ ] The Sun-path optical-depth product, the one cloud-factor function, and the shader variant in which the
+- [x] The Sun-path optical-depth product, the one cloud-factor function, and the shader variant in which the
       shared direct-Sun term calls it; the factor is exactly 1 outside the field's support; no provider composes
       today's shader.
-- [ ] The cooked volume's march calls the same cloud-factor function at each lit march sample's world position.
+- [x] The cooked volume's march calls the same cloud-factor function at each lit march sample's world position.
       With no provider its shader text and lighting are today's.
-- [ ] GPU tests for M5.6 on every receiver kind, including a field that differs between two world points.
-- [ ] `scripts/environment_products.py`: the off-parity arm against the base on Mac and Chrome, and the paired
+- [x] GPU tests for M5.6 on every receiver kind, including a field that differs between two world points.
+- [x] `scripts/environment_products.py`: the off-parity arm against the base on Mac and Chrome, and the paired
       cost arm on Mac and Chrome.
 - [ ] The labelled diagnostic provider in `examples/v1-game`, opt-in, and its captures at noon and low Sun.
 

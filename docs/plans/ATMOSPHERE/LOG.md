@@ -231,3 +231,15 @@ The packed surface light and lent identity now share one prepared CPU transmissi
 The identity tests pass, and the repeated handoff tests retain the H2 miss with four other tests passing.
 Origin/main at `be9ea93c` retains the design instruction requiring this miss to return to planning.
 [Selected evidence](../../evidence/ATMOSPHERE/m5-h2-blocker.md) includes the cloud-factor log.
+
+
+## 11 November 2026 — M5 target qualification checkpoint
+
+Cherry-picked the previous M5 work and merged the dependency conflicts. Metal and hardware Chrome
+pass H1–H5 under the revised H2/H4 allowance, with independent references and wrong-lookup controls.
+The full milestone checker passes all nine commands, including shared surface/cooked-march cloud
+cases, base/current/rerun parity and order-alternated costs. Captures are complete and packaging
+continues. M5.7 and M5.8 await the required 1× review because Computer Use's browser host is
+unavailable and IINA access was rejected. M5 stays open. Newly integrated APPLE-PRESENTATION
+changes to shared shaders require reconciliation and fresh affected proofs before the claim.
+[Target evidence](../../evidence/ATMOSPHERE/m5-claim.md).
