@@ -130,27 +130,14 @@ def verify(root=ROOT):
                    ['CARGO_TARGET_DIR', 'RUSTFLAGS', 'CARGO_ENCODED_RUSTFLAGS', 'RUSTC', 'RUSTC_WRAPPER']}
     environment['RUSTC_WRAPPER'] = ''
 
-    def run(name, command, baseline=None, capture_directory=None):
+    def run(name, command, baseline=None):
         start = time.monotonic()
         log = output / (name + '.log')
         print(f'RUN {name}', flush=True)
         with log.open('w') as stream:
-            process = subprocess.Popen(command, cwd=root, env=environment, stdout=stream, stderr=subprocess.STDOUT)
-            deadline = time.monotonic() + 3000
-            try:
-                while True:
-                    try:
-                        code = process.wait(timeout=1)
-                        break
-                    except subprocess.TimeoutExpired:
-                        if time.monotonic() >= deadline:
-                            raise TimeoutError(f'{name} exceeded 3000 seconds') from None
-                        if capture_directory is not None:
-                            archive_completed_runs(capture_directory, output)
-            except BaseException:
-                process.kill()
-                process.wait()
-                raise
+            result = subprocess.run(command, cwd=root, env=environment, stdout=stream,
+                                    stderr=subprocess.STDOUT, timeout=3000)
+            code = result.returncode
         report['commands'].append({'name': name, 'command': command, 'exit': code,
                                    'seconds': time.monotonic() - start, 'log': str(log.relative_to(root))})
         save(output / 'record.json', report)
@@ -192,7 +179,9 @@ def verify(root=ROOT):
         for script in native['comparisons']:
             name = Path(script).stem
             directory = output / name
-            run(name, [sys.executable, script, '--store', str(output / 'valley'), '--output', str(directory)], native, capture_directory=directory)
+            run(name, [sys.executable, 'scripts/exact_baselines_native.py', '--matrix', name,
+                       '--binary', str(root / 'target/release/v1-game'), '--store', str(output / 'valley'),
+                       '--output', str(directory), '--records', str(output)], native)
             manifest = json.loads((directory / 'manifest.json').read_text())
             if not manifest['passed']:
                 raise ValueError(f"baseline {native['id']} owner {native['owner']}: {name} did not pass")
