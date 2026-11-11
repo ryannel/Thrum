@@ -1,0 +1,13 @@
+CREATOR M1 in /Users/ryannel/Workspace/thrum/.claude/worktrees/creator-m1: 3 pass, 1 fail
+  M1.1  pass  node scripts/check_starter_browser.mjs --case scene
+  M1.2  pass  node scripts/check_starter_browser.mjs --case controls
+  M1.3  pass  node scripts/check_starter_browser.mjs --case edit
+  M1.4  no check (ask)
+  M1.5  no check (inspect)
+  Check  fail (exit 1)  ./dev check
+      the check ran and failed, as it should before the work exists; the output says whether that's the reason
+      |      Running tests/field_gpu.rs (target/debug/deps/field_gpu-200eb3cfb7873a6f)
+      |      Running tests/frame_alloc.rs (target/debug/deps/frame_alloc-fcf93718e8c4af8f)
+      | error: test failed, to rerun pass `-p v1-game --test frame_alloc`
+      | Error: "/Users/ryannel/.rustup/toolchains/1.99.1-aarch64-apple-darwin/bin/cargo test --locked --offline --workspace failed (exit status: 101)"
+Everything, with each check's full output tail, as JSON: add --json.

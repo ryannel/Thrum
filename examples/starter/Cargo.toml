@@ -9,5 +9,5 @@ description = "Starter scene: a physically based sky, lit ground, one cooked mes
 [lints]
 workspace = true
 
-[target.'cfg(target_os = "macos")'.dependencies]
+[dependencies]
 thrum-app = { path = "../../crates/thrum-app" }

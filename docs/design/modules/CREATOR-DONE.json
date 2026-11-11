@@ -4,7 +4,7 @@
     {
       "id": "M1",
       "name": "The starter scene runs in Chrome from one command, with its controls and live asset edits",
-      "state": "open",
+      "state": "claimed",
       "fails": 0,
       "replans": 0,
       "bar": "As direct as serving a Bevy example with trunk or opening a three.js example: one command, one URL, the scene and its controls, with every failure named by object, cause and next step. Function and legibility only; render quality belongs to the render gates.",
@@ -16,8 +16,8 @@
           "lock": "gpu",
           "ask": "Read scripts/check_starter_browser.mjs. Does the scene case run the documented command, drive a real Chrome on hardware WebGPU, and fail on a software adapter, an undrawn cooked generation, a fallback scene, or a slider that changes state but not pixels?",
           "target": "chrome-webgpu",
-          "status": "open",
-          "evidence": ""
+          "status": "pass",
+          "evidence": "docs/evidence/CREATOR/M1.md and docs/evidence/CREATOR/m1/scene-run.json"
         },
         {
           "id": "M1.2",
@@ -26,8 +26,8 @@
           "lock": "gpu",
           "ask": "Is any control, group, range or refusal text declared separately for the web, or does the page render only what the model reports?",
           "target": "chrome-webgpu",
-          "status": "open",
-          "evidence": ""
+          "status": "pass",
+          "evidence": "docs/evidence/CREATOR/M1.md and docs/evidence/CREATOR/m1/controls-run.json"
         },
         {
           "id": "M1.3",
@@ -35,24 +35,24 @@
           "check": "node scripts/check_starter_browser.mjs --case edit",
           "lock": "gpu",
           "target": "chrome-webgpu",
-          "status": "open",
-          "evidence": ""
+          "status": "pass",
+          "evidence": "docs/evidence/CREATOR/M1.md and docs/evidence/CREATOR/m1/edit-run.json"
         },
         {
           "id": "M1.4",
           "statement": "A kit scene's game code is one file for both targets: examples/starter/src has no target-specific code and names no engine game types, and the web form adds no game lines.",
           "ask": "Read examples/starter/src and the kit's web runner. Is there any cfg on target, web-only item or engine game type in the scene's source, and does the reported game-line count match the Mac build's?",
           "target": "chrome-webgpu",
-          "status": "open",
-          "evidence": ""
+          "status": "pass",
+          "evidence": "docs/evidence/CREATOR/M1.md and docs/evidence/CREATOR/m1/source-files.json"
         },
         {
           "id": "M1.5",
           "statement": "The page stays legible and explains itself through first load, a missing asset store, a misspelt parameter key, a tab switch and a narrow window.",
           "inspect": "Open the starter's URL in Chrome and capture each state: loading, drawn, missing store, misspelt ?params key, after a tab switch, and a 480 px wide window. Use Chrome fixed capture for the canvas and page screenshots for the DOM. For each, is the scene or the message readable, and does every message name the object, the cause and a next step?",
           "target": "chrome-webgpu",
-          "status": "open",
-          "evidence": "",
+          "status": "pass",
+          "evidence": "docs/evidence/CREATOR/M1.md and docs/evidence/CREATOR/m1/journey-run.json",
           "verdict": "",
           "review": ""
         }

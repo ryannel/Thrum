@@ -70,7 +70,22 @@ fn check_web() -> TaskResult {
     // The engine's web shell with the default page, and the development page with the
     // material hook reload.
     lint(&[])?;
-    lint(&["--features", "dev-material"])
+    lint(&["--features", "dev-material"])?;
+    cargo(&[
+        "clippy",
+        "--locked",
+        "--offline",
+        "-p",
+        "thrum-starter",
+        "-p",
+        "thrum-app",
+        "--all-targets",
+        "--target",
+        "wasm32-unknown-unknown",
+        "--",
+        "-D",
+        "warnings",
+    ])
 }
 
 fn baseline_inventory() -> TaskResult {
@@ -262,17 +277,30 @@ fn main() -> TaskResult {
         .into());
     }
     let args: Vec<String> = env::args().skip(1).collect();
-    if (args.len() > 1 && args[0] != "scene") || args.len() > 2 {
+    let valid_args = match args.as_slice() {
+        [] | [_] => true,
+        [command, flag] if command == "starter" && flag == "--web" => true,
+        [command, _] if command == "scene" => true,
+        [command, _, flag] if command == "scene" && flag == "--web" => true,
+        _ => false,
+    };
+    if !valid_args {
         return Err("expected one command; see ./dev help".into());
     }
     match args.first().map_or("help", String::as_str) {
         "help" | "--help" | "-h" => println!(
-            "Thrum contributor commands:\n  check                  Repository guard, guard tests, fmt, Clippy, Rust tests (including Mac Metal), game Wasm Clippy\n  check-docs             Links, metadata, design hashes and crate policy\n  baseline-inventory     Run G0 fixed budget baselines and list absent consumers on the M-series Mac\n  check-web              Lint/compile the V1 game for wasm32-unknown-unknown\n  check-mobile-core      Compile the portable core for ARM64 iOS, iOS simulator and Android\n  fmt                    Apply rustfmt\n  scene <folder>         Build a scene package, cook and watch its assets/ and open its window (macOS)\n  starter                The same for examples/starter\n  refresh-design-hashes  Refresh current digests after reviewing design changes"
+            "Thrum contributor commands:\n  check                  Repository guard, guard tests, fmt, Clippy, Rust tests (including Mac Metal), game Wasm Clippy\n  check-docs             Links, metadata, design hashes and crate policy\n  baseline-inventory     Run G0 fixed budget baselines and list absent consumers on the M-series Mac\n  check-web              Lint/compile the V1 game and starter for wasm32-unknown-unknown\n  check-mobile-core      Compile the portable core for ARM64 iOS, iOS simulator and Android\n  fmt                    Apply rustfmt\n  scene <folder> [--web]  Build a scene package, cook and watch its assets/ and open its window (macOS)\n  starter [--web]        The same for examples/starter; --web serves Chrome\n  refresh-design-hashes  Refresh current digests after reviewing design changes"
         ),
         "check-docs" => python(&["scripts/repo_check.py"])?,
         "baseline-inventory" => baseline_inventory()?,
         "refresh-design-hashes" => python(&["scripts/design_hashes.py", "--write"])?,
         "fmt" => cargo(&["fmt", "--all"])?,
+        "starter" if args.get(1).map(String::as_str) == Some("--web") => {
+            python(&["scripts/scene_web.py", "examples/starter"])?;
+        }
+        "scene" if args.get(2).map(String::as_str) == Some("--web") => {
+            python(&["scripts/scene_web.py", &args[1]])?;
+        }
         "starter" => scene(&root, "examples/starter")?,
         "scene" => match args.get(1) {
             Some(folder) => scene(&root, folder)?,

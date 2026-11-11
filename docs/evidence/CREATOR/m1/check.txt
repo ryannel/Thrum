@@ -1,0 +1,19 @@
+11 November 2026, Apple M3 Max/Metal, Rustup Rust 1.99.1.
+Final claim gate, with RUST_TEST_NOCAPTURE=1 for retained diagnostics.
+CREATOR M1 in /Users/ryannel/Workspace/thrum/.claude/worktrees/creator-m1: 4 pass
+  M1.1  pass  node scripts/check_starter_browser.mjs --case scene
+  M1.2  pass  node scripts/check_starter_browser.mjs --case controls
+  M1.3  pass  node scripts/check_starter_browser.mjs --case edit
+  M1.4  no check (ask)
+  M1.5  no check (inspect)
+  Check  pass  ./dev check
+Everything, with each check's full output tail, as JSON: add --json.
+
+./dev check-web passed with the starter and thrum-app all-targets Wasm lint.
+Native workspace all-targets Clippy passed.
+The separately GPU-locked journey case passed.
+Retained engine PNGs independently decoded, CRC-checked and matched to the run-record RGBA hashes.
+All four final browser cases served the same Wasm artifact.
+The worktree build cache was cleared after a standalone command mixed Homebrew and Rustup entries.
+Final browser artifacts and the claim gate were rebuilt through ./dev's pinned toolchain.
+The earlier allocation-suite failure and two passing exact-binary reruns are retained separately.

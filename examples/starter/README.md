@@ -1,7 +1,7 @@
 # Thrum starter
 
 One cooked rock on lit ground under a physically based sky, a camera, two Sun sliders, an exposure-zones toggle
-and a reloadable material hook, in 44 lines of game code ([src/main.rs](src/main.rs), counting non-blank, non-comment lines). The game names no
+and a reloadable material hook, in 40 lines of game code ([src/main.rs](src/main.rs), counting non-blank, non-comment lines). The game names no
 engine game types: it uses the sky kit in `thrum_app::sky`, which brings the typed controls, cooked meshes, the
 ground, the material hook and the window.
 
@@ -213,3 +213,14 @@ and the fix. Cook failures are printed by `thrum-cook`, and the previous generat
 `examples/v1-game/assets/showcase/`. They were generated in this repository by its stdlib Python
 recipe `examples/v1-game/assets/showcase/generate.py` (commit `a5f29b7`), with no third-party
 content. They are covered by the repository's own terms; Thrum has no distribution licence yet.
+
+## Run in Chrome
+
+Run `./dev starter --web`, then open the printed `SCENE_URL` in Chrome with hardware WebGPU.
+For a copied scene use `./dev scene <folder> --web`. The command builds the same game file for
+Wasm, cooks and watches `assets/`, and serves the page and asset store on loopback until Ctrl-C.
+Install the matching `wasm-bindgen-cli` (0.2.129) and the Rust `wasm32-unknown-unknown` target first.
+The Sun controls come from the same model as the Mac panel. Save a mesh or texture to see it
+re-cooked without reloading the page. A refused edit keeps the last drawn generation and reports
+the asset to fix. Append `?params=starter.params.json` to apply a parameter file. Each refused
+key is reported, while valid keys apply. The web form adds zero game lines.

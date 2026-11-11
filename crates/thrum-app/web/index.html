@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Thrum scene</title>
+<style>
+body { margin: 0 auto; padding: 16px; max-width: 1100px; background: #181d23; color: #f2f1ec; font: 16px system-ui; }
+canvas { display:block; width:100%; height:auto; aspect-ratio:16/9; background:#252e39; }
+#status, #problems { white-space:pre-wrap; overflow-wrap:anywhere; line-height:1.5; }
+#problems { color:#ffd1a9; }
+@media(max-width:600px) { .tc-row { grid-template-columns: 7rem minmax(5rem,1fr) 3rem; } .tc-group { min-width:0; width:100%; } }
+</style>
+<canvas id="scene" width="960" height="540" aria-label="Lit scene under the sky"></canvas>
+<p id="status" role="status">Scene is loading its WebGPU renderer and cooked assets. Keep this page open. If loading fails, fix the reported file and rerun the scene command.</p>
+<p id="problems" role="alert"></p><section id="controls" aria-label="Scene controls"></section>
+<script type="module" src="page.js"></script></html>

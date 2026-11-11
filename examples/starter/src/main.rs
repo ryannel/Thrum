@@ -5,7 +5,6 @@
 //! window. Edit a slider in the panel, `starter.params.json` or `material.wgsl` (press L to
 //! reload them) or any file under `assets/` while it runs. See README.md.
 
-#[cfg(target_os = "macos")]
 fn main() {
     thrum_app::sky::run(
         thrum_app::Config::new("thrum-starter", "Thrum starter"),
@@ -13,12 +12,6 @@ fn main() {
     );
 }
 
-/// The window runs on the Mac only.
-#[cfg(not(target_os = "macos"))]
-fn main() {}
-
-/// Everything Mac-only sits in this one module behind one `cfg`.
-#[cfg(target_os = "macos")]
 mod scene {
     use std::error::Error;
     use thrum_app::sky::{Camera, Controls, CookedMaterial, Display, MeshPlacement, SkyGame};

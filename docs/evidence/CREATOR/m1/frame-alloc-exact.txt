@@ -1,0 +1,9 @@
+
+running 2 tests
+G3b threaded 100 warm submissions: submitted=120/132 callbacks, coalesced_displays=141, sampled_submitted=100; render allocations median/max=624/627, bytes median/max=109036/109440; world allocations/bytes after wake 5=0/0
+test autonomous_world_and_render_callback_report_warm_allocations ... ok
+G3b late-surface submit 600 warm frames: advance alloc median/max=0/0; scene encode alloc median/max=135/154; submit alloc median/max=440/446, bytes median/max=66282/66918
+test late_surface_submit_reports_main_thread_allocation_cost ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 15.04s
+

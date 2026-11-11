@@ -23,7 +23,7 @@ mod file_watch;
 mod game;
 #[cfg(target_os = "macos")]
 pub mod offscreen;
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_arch = "wasm32"))]
 pub mod sky;
 #[cfg(target_arch = "wasm32")]
 pub mod web;
@@ -33,7 +33,10 @@ mod web_clock;
 #[cfg(target_os = "macos")]
 pub use app::{REPORT_VARIABLE, run, run_until_closed};
 #[cfg(target_os = "macos")]
-pub use game::{Config, Edits, Game, Gpu, KeyResponse, Prepared, WorldLink};
+pub use game::{Edits, Game, Gpu, KeyResponse, Prepared, WorldLink};
 /// Physical key codes delivered to [`Game::key`].
 #[cfg(target_os = "macos")]
 pub use winit::keyboard::KeyCode;
+
+mod config;
+pub use config::Config;
