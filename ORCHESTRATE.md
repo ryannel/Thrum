@@ -7,7 +7,7 @@ Thrum's work follows the generic orchestrate skills (`/plan-module`, `/build-mil
 - **Quality bar:** would pass in a shipped high-end game of this kind, named per milestone, e.g. sea and wakes as in
   Sea of Thieves, skies as in Red Dead Redemption 2, smooth at the display's full refresh. Judged in words against
   inspection items, never against target images.
-- **Plans:** docs/design/modules  *(loop)*
+- **Plans:** docs/plans
 - **Evidence:** docs/evidence  *(loop)*
 - **Graded examples:** docs/design/GRADED-EXAMPLES.md  *(loop: past verdicts the owner agreed with or overturned)*
 - **Check:** ./dev check  *(loop: CI is manual-only, so this is the gate; documentation-only work may run ./dev check-docs while building)*
