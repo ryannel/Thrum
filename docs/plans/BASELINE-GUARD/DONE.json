@@ -1,0 +1,59 @@
+{
+  "module": "BASELINE-GUARD",
+  "milestones": [
+    {
+      "id": "M1",
+      "name": "A change that alters a registered exact image fails the land gate on the Mac",
+      "state": "open",
+      "fails": 0,
+      "replans": 0,
+      "bar": "A merge gate that cannot be argued with, like a golden-image presubmit in a shipped engine: exact, named, and failing on the smallest real change.",
+      "items": [
+        {
+          "id": "M1.1",
+          "statement": "`./dev check` on the Mac draws the game's default output and compares it exactly with APPLE-TILE's retained M0 bytes, for both recipes, as submitted SDR and scene-linear bytes, at checkpoints that include `mirror-light` and `approach`.",
+          "check": "cargo test --locked --offline -p v1-game --test baseline_guard",
+          "lock": "gpu",
+          "ask": "Does the guard build its frames through the game's own host, scene source, route and capture tap, with no tolerance, nearest-frame search, retry or skip, and does `./dev check` run it?",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.2",
+          "statement": "Re-enabling raster jitter on the game's default views, as APPLE-PRESENTATION M1 first did, makes the guard fail, naming the baseline, its owner and the checkpoint; so does changing one code value in one retained file.",
+          "ask": "Read the two retained mutant logs. Did the guard fail on each, with a message that names the baseline, its owner, the checkpoint and the differing pixel count, and were both mutants kept out of main?",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.3",
+          "statement": "One command verifies every registered baseline in full from a clean checkout: it builds the release game, cooks the valley, runs the owners' matrices, records the revision, clean-diff hash and binary hash, and refuses a dirty tree.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "lock": "gpu",
+          "ask": "Does the verifier add no comparison of its own, report low disk space as its own named failure, and do its registry file and the table in ARCHITECTURE.md list the same baselines, owners and commands?",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.4",
+          "statement": "The time the guard adds to `./dev check` is recorded from three runs, with the load.",
+          "ask": "What do the three recorded runs show the guard adds to `./dev check`? If checkpoints were dropped to shorten it, is the comparison still exact and do `mirror-light` and `approach` remain?",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        }
+      ]
+    }
+  ]
+}

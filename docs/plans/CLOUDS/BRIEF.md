@@ -105,7 +105,7 @@ Proposed shape for the planner, riskiest first:
 1. **Weather authority on the CPU**, with its evaluator and tests. Needs nothing.
 2. **First cloud frame at cost.** One fair preset over the valley under G3s at full refresh, written to the frame
    contract. The riskiest step: it settles whether the re-costed march reaches the look. Needs `APPLE-TILE:M3`,
-   `APPLE-PRESENTATION:M3`, `ATMOSPHERE:M5`, `EFFECT-GRAPH:M1`.
+   `APPLE-PRESENTATION:M3`, `ATMOSPHERE:M5`, `EFFECT-GRAPH:M3`.
 3. **Shade and shadow-only**, then **light through the day**, then **placed volumes**, then **the weather range
    and motion**.
 4. **Recipes, knobs, Chrome and close.** Needs `APPLE-PRESENTATION:M7`, `CREATOR:M1` and the `CONTENT-LOOP`
