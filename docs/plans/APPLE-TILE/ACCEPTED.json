@@ -166,6 +166,11 @@
           "text": "I'm at the Mac now. [Asked to switch on Screen Recording for Claude and ChatGPT and allow IINA in Codex Computer Use:] Done",
           "at": "2026-11-11T08:37:44Z",
           "item": "D2.3"
+        },
+        {
+          "text": "[Asked how to finish the resize and 1x playback checks, given Codex Computer Use calls Thrum M2 and IINA not approved:] Show it in Codex",
+          "at": "2026-11-11T10:16:52Z",
+          "item": "D2.5"
         }
       ]
     },
@@ -226,6 +231,13 @@
       "words": "I'm at the Mac now. [Asked to switch on Screen Recording for Claude and ChatGPT and allow IINA in Codex Computer Use:] Done",
       "at": "2026-11-11T08:37:44Z",
       "item": "D2.3"
+    },
+    {
+      "action": "answer",
+      "milestone": "M2",
+      "words": "[Asked how to finish the resize and 1x playback checks, given Codex Computer Use calls Thrum M2 and IINA not approved:] Show it in Codex",
+      "at": "2026-11-11T10:16:52Z",
+      "item": "D2.5"
     }
   ],
   "briefs": [
