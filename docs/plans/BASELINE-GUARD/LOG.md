@@ -23,3 +23,10 @@
   revision, commands and logs are kept, and a failure tells a changed image from an unreadable reference.
 - 2026-11-11 The planner did not run the checks, which need the GPU, Chrome and work that does not exist yet. Each
   was parsed as shell and the done-when file validated with the loop's own validator.
+
+- 2026-11-11 M1 builder: untouched main `1d35b9a6` passed both unchanged native matrices (38 + 4
+  exact comparisons) and all four Chrome sets (481 records each). Fresh release/Wasm builds and task-owned
+  cook only; [preflight records](../../evidence/BASELINE-GUARD/M1/preflight/provenance.json) retain hashes.
+  Implemented registry, clean-tree verifier, digest mode and content-key gate; proof and integration experiments
+  are in progress. Coverage also includes `.cargo/` (design review S3), `tools/` and the registry itself; the
+  architecture table records the same wider inputs. No retained reference or owner matrix was changed.

@@ -1,0 +1,8 @@
+{
+  "baseline": "docs/evidence/render/apple-tile-m0/chrome-baseline/prechange-chrome-fixed-manifest.json.gz",
+  "owner": "APPLE-TILE",
+  "comparison": "retained identity and decoded SHA-256",
+  "complete": true,
+  "records": 481,
+  "failures": []
+}

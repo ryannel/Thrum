@@ -1,0 +1,2 @@
+    Finished `release` profile [optimized] target(s) in 0.17s
+Run: python3 -m http.server 8765 --bind 127.0.0.1 --directory "target/v1-game-web"

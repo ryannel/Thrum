@@ -1,0 +1,45 @@
+{
+  "schema": 1,
+  "covered_paths": [
+    "crates/", "examples/v1-game/", "scripts/", "tools/", ".cargo/",
+    "Cargo.toml", "Cargo.lock", "rust-toolchain.toml", ".config/exact-baselines.json",
+    "docs/evidence/render/apple-tile-m0/native-baseline/",
+    "docs/evidence/render/apple-tile-m0/chrome-baseline/prechange-chrome-fixed-manifest.json.gz",
+    "docs/evidence/render/apple-tile-m1/chrome/chrome-prechange-linear-3/manifest.json.gz",
+    "docs/evidence/render/apple-tile-m1/chrome/chrome-prechange-night-sdr/manifest.json.gz",
+    "docs/evidence/render/apple-tile-m1/chrome/chrome-prechange-night-linear/manifest.json.gz"
+  ],
+  "baselines": [
+    {
+      "id": "apple-tile-native",
+      "owner": "APPLE-TILE",
+      "reference": "docs/evidence/render/apple-tile-m0/native-baseline/",
+      "comparisons": ["scripts/apple_tile_m1.py", "scripts/apple_tile_m2.py"],
+      "candidate": "release v1-game with draw-probe,thrum-render/creation-counters; freshly cooked showcase valley"
+    },
+    {
+      "id": "chrome-day-sdr", "owner": "APPLE-TILE", "scene": "day", "source": "sdr",
+      "reference": "docs/evidence/render/apple-tile-m0/chrome-baseline/prechange-chrome-fixed-manifest.json.gz",
+      "candidate": "scripts/capture_v1_browser.mjs --mode fixed --scene day --source sdr",
+      "comparison": "scripts/apple_tile_m1_compare_browser.py --reference-digest", "records": 481
+    },
+    {
+      "id": "chrome-day-scene-linear", "owner": "APPLE-TILE", "scene": "day", "source": "scene-linear",
+      "reference": "docs/evidence/render/apple-tile-m1/chrome/chrome-prechange-linear-3/manifest.json.gz",
+      "candidate": "scripts/capture_v1_browser.mjs --mode fixed --scene day --source scene-linear",
+      "comparison": "scripts/apple_tile_m1_compare_browser.py --reference-digest --linear", "records": 481
+    },
+    {
+      "id": "chrome-night-sdr", "owner": "APPLE-TILE", "scene": "night", "source": "sdr",
+      "reference": "docs/evidence/render/apple-tile-m1/chrome/chrome-prechange-night-sdr/manifest.json.gz",
+      "candidate": "scripts/capture_v1_browser.mjs --mode fixed --scene night --source sdr",
+      "comparison": "scripts/apple_tile_m1_compare_browser.py --reference-digest", "records": 481
+    },
+    {
+      "id": "chrome-night-scene-linear", "owner": "APPLE-TILE", "scene": "night", "source": "scene-linear",
+      "reference": "docs/evidence/render/apple-tile-m1/chrome/chrome-prechange-night-linear/manifest.json.gz",
+      "candidate": "scripts/capture_v1_browser.mjs --mode fixed --scene night --source scene-linear",
+      "comparison": "scripts/apple_tile_m1_compare_browser.py --reference-digest --linear", "records": 481
+    }
+  ]
+}
