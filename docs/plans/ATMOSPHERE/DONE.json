@@ -4,7 +4,7 @@
     {
       "id": "M5",
       "name": "Other modules read the one sky and Sun, and one cloud optical depth dims direct sunlight once",
-      "state": "open",
+      "state": "claimed",
       "fails": 0,
       "replans": 0,
       "bar": "Cloud shade crossing a landscape as in Red Dead Redemption 2 or Horizon Forbidden West: the patch dims direct sunlight only, moves in world space, agrees on every lit surface and leaves the shaded ground sky-lit, never black. The diagnostic pattern is a stand-in, so its shape and softness are not judged here. With no cloud source the scene and its cost are exactly what they were.",
@@ -85,8 +85,8 @@
           "statement": "In the V1 valley on the Mac with the diagnostic provider on, shade patches cross terrain, instances and cooked meshes together in world space at the declared drift; shaded ground stays sky-lit and is not darkened again inside geometric shadow; the boundary lines up across receiver kinds.",
           "inspect": "Capture the valley at noon and at low Sun with the Mac real-time engine capture, provider off then on, with a slow pan. Look at whole frames and native-size crops of: a patch edge crossing from terrain onto a cooked mesh, shaded ground beside sunlit ground, a patch passing over ground already in a ridge's shadow, and the same world point over two seconds of drift.",
           "target": "mac-metal",
-          "status": "open",
-          "evidence": "",
+          "status": "pass",
+          "evidence": "docs/evidence/ATMOSPHERE/m5-claim.md",
           "verdict": "",
           "review": ""
         },
@@ -95,8 +95,8 @@
           "statement": "The same shade reads the same way in Chrome on the valley at noon and low Sun.",
           "inspect": "Capture the same four views with Chrome fixed-time capture and a short real-time sequence. Compare each with the Mac capture for the placement and depth of shade and for any receiver that disagrees.",
           "target": "chrome-webgpu",
-          "status": "open",
-          "evidence": "",
+          "status": "pass",
+          "evidence": "docs/evidence/ATMOSPHERE/m5-claim.md",
           "verdict": "",
           "review": ""
         },

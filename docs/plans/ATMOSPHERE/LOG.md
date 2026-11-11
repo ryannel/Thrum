@@ -262,3 +262,31 @@ lock, then stopped playback and released the reservation. Shade moves across lit
 geometric-shadow regions remain sky-lit. The four native packages and all six Chrome fixed packages
 are verified. Native west-facing captures and Chrome real-time captures remain queued; M5.7 and
 M5.8 stay open. [Inspection observations](../../evidence/ATMOSPHERE/m5/records/visual-inspection.json).
+
+
+## 11 November 2026 — M5 complete capture checkpoint; remaining playback blocked
+
+All eighteen target/mode/provider capture arms and their packages are complete. Promoted 36 exact
+PNGs, twelve full-length viewing clips and compressed source/time records; every build-source hash
+still matches. Static inspections cover both targets at noon, low Sun and the west-facing ridge view.
+Native noon/low-Sun 1× review passed earlier. The console locked before the final Chrome/west 1×
+review: IINA and Chrome return `cgWindowNotFound`; the read-only console witness says locked. Released
+the GPU reservation. Engine capture itself is unaffected. M5.7, M5.8 and M5's state remain open pending
+an unlocked console for playback. [Evidence](../../evidence/ATMOSPHERE/m5-claim.md).
+
+
+## 11 November 2026 — M5 rebase onto integrated MF1
+
+APPLE-PRESENTATION M1 MF1 integrated while playback was queued. Rebased M5, preserving MF1's
+`raster_projection()` authority and M5's environment/exposure fields in the sole merge conflict.
+Both parity arms now start from MF1's `e0956ee6`, with earlier base records retained. Earlier
+qualification is history; M5 items reopen for a fresh exact-build target campaign and captures.
+
+
+## 11 November 2026 — M5 claimed on the MF1-rebased build
+
+All nine fresh milestone commands and the Metal precision report pass. All eighteen capture
+packages are verified. Whole/native-size inspections and original 1× playback cover both targets,
+noon/low Sun and the west-facing ridge, off/on. Shade moves coherently between receivers while
+geometric-shadow regions retain sky light. Claim M5 for lead review; the diagnostic shape/softness
+and physical display cadence remain unqualified. [Evidence](../../evidence/ATMOSPHERE/m5-claim.md).
