@@ -87,6 +87,26 @@
         "by": "plan",
         "task": "Re-plan APPLE-TILE (G3t, tile dataflow and Metal boundary) so it can pass design review and unpark. It was parked after two failed design reviews; docs/evidence/APPLE-TILE/design-review-2.md lists sev",
         "at": "2026-11-09T14:02:56Z"
+      },
+      "claim": {
+        "commit": "bffdc07f447d4ae207cdfb5ab29151119e278b63",
+        "checked": "bffdc07f447d4ae207cdfb5ab29151119e278b63",
+        "at": "2026-11-11T05:33:44Z",
+        "host": "codex",
+        "model": "gpt-6.1-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.1-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.167.0-alpha.3.2",
+        "path": "visible",
+        "usage": {
+          "incomplete_turns": 1
+        },
+        "session_usage": {
+          "incomplete_turns": 1
+        }
       }
     },
     "M2": {
