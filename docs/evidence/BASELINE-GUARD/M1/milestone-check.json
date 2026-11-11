@@ -1,0 +1,55 @@
+{
+  "module": "BASELINE-GUARD",
+  "milestone": "M1",
+  "tree": "/Users/ryannel/Workspace/thrum/.claude/worktrees/baseline-guard",
+  "plan": "/Users/ryannel/Workspace/thrum/.claude/worktrees/baseline-guard/docs/plans/BASELINE-GUARD/DONE.json",
+  "pass": 3,
+  "fail": 0,
+  "error": 0,
+  "timeout": 0,
+  "items": [
+    {
+      "id": "M1.1",
+      "check": "python3 scripts/exact_baselines.py verify",
+      "lock": "gpu",
+      "exit": 0,
+      "result": "pass",
+      "output": "RUN native-build\nRUN cooker-build\nRUN web-build\nRUN cook\nRUN apple_tile_m1\nRUN apple_tile_m2\nRUN chrome-day-sdr\nRUN chrome-day-sdr-compare\nRUN chrome-day-scene-linear\nRUN chrome-day-scene-linear-compare\nRUN chrome-night-sdr\nRUN chrome-night-sdr-compare\nRUN chrome-night-scene-linear\nRUN chrome-night-scene-linear-compare\nPASS exact baselines; proof tmp/baseline-guard/proofs/7e7c9a3cdee311cc3cc11a759b0dd1421bf55290754065ea7c71d2f53245ee19.json; 884.58s"
+    },
+    {
+      "id": "M1.2",
+      "result": "no check",
+      "proof": [
+        "ask"
+      ]
+    },
+    {
+      "id": "M1.3",
+      "check": "python3 scripts/test_exact_baselines.py",
+      "exit": 0,
+      "result": "pass",
+      "output": "test_digest_and_byte_modes_and_failures (__main__.ChromeTests.test_digest_and_byte_modes_and_failures) ... ok\ntest_covered_change_refuses_until_exact_proof (__main__.GateTests.test_covered_change_refuses_until_exact_proof) ... ok\ntest_covered_rebase_invalidates_proof (__main__.GateTests.test_covered_rebase_invalidates_proof) ... ok\ntest_missing_base_and_dirty_inputs_fail_closed (__main__.GateTests.test_missing_base_and_dirty_inputs_fail_closed) ... fatal: Not a valid object name refs/remotes/origin/main\nok\ntest_no_covered_change_passes_without_proof (__main__.GateTests.test_no_covered_change_passes_without_proof) ... ok\ntest_uncovered_rebase_preserves_proof (__main__.GateTests.test_uncovered_rebase_preserves_proof) ... ok\ntest_only_published_successful_captures_are_released (__main__.RetentionTests.test_only_published_successful_captures_are_released) ... ok\n\n----------------------------------------------------------------------\nRan 7 tests in 2.134s\n\nOK"
+    },
+    {
+      "id": "M1.4",
+      "result": "no check",
+      "proof": [
+        "ask"
+      ]
+    },
+    {
+      "id": "M1.5",
+      "result": "no check",
+      "proof": [
+        "ask"
+      ]
+    },
+    {
+      "id": "Check",
+      "check": "./dev check",
+      "exit": 0,
+      "result": "pass",
+      "output": "tests thrum_asset\n   Doc-tests thrum_asset_gpu\nWARNING: No rustdoc doctest environment variable provided so doctests will be run in the same process\n   Doc-tests thrum_content_runtime\n   Doc-tests thrum_controls\nWARNING: No rustdoc doctest environment variable provided so doctests will be run in the same process\n   Doc-tests thrum_cook\n   Doc-tests thrum_core\n   Doc-tests thrum_network\n   Doc-tests thrum_render\n   Doc-tests v1_game\n   Compiling thrum-asset-gpu v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/baseline-guard/crates/thrum-asset-gpu)\n   Compiling thrum-app v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/baseline-guard/crates/thrum-app)\n   Compiling v1-game v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/baseline-guard/examples/v1-game)\nwarning: linker stderr: ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.claude/worktrees/baseline-guard/target/debug/deps/libintel_tex_2-ad87d7835ed898ef.rlib[5](kernel_ispc.o)', assuming: macOS\n         ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.claude/worktrees/baseline-guard/target/debug/deps/libintel_tex_2-ad87d7835ed898ef.rlib[6](kernel_astc_ispc.o)', assuming: macOS\n  |\n  = note: `#[warn(linker_messages)]` on by default\n\nwarning: `v1-game` (test \"cooked_assets_gpu\") generated 1 warning\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.26s\n     Running tests/cooked_assets_gpu.rs (target/debug/deps/cooked_assets_gpu-df1f129eb280c7bf)"
+    }
+  ]
+}

@@ -4,7 +4,7 @@
     {
       "id": "M1",
       "name": "A change that alters a registered exact image, on the Mac or in Chrome, is refused before it reaches main",
-      "state": "open",
+      "state": "claimed",
       "fails": 0,
       "replans": 0,
       "bar": "A merge gate in the manner of Rust's bors and a merge queue: the commit that reaches main is the commit that was tested, the comparison is exact and named, and it fails on the smallest real change.",
@@ -57,8 +57,8 @@
           "statement": "The time one verifier run and one gate check take is recorded from three runs each, with the load.",
           "ask": "What do the recorded runs show a covered-path landing pays, and how close is one verifier run to the loop's one-hour limit on a check?",
           "target": "mac-metal",
-          "status": "open",
-          "evidence": "",
+          "status": "pass",
+          "evidence": "docs/evidence/BASELINE-GUARD/M1.md",
           "verdict": "",
           "review": ""
         }

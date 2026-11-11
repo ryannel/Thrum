@@ -1,0 +1,173 @@
+{
+  "verifier_runs": [
+    {
+      "directory": "/Users/ryannel/Workspace/thrum/.claude/worktrees/baseline-guard/tmp/baseline-guard/verify-20261111T170800.828925Z",
+      "revision": "97249ddf232176c9881d267b03e86d9400746e2e",
+      "content_key": "38e006bbfa332a563f84cacfc1e065d60922757436bae31e74d94e6a346179d4",
+      "seconds": 900.2671119580045,
+      "load": [
+        4.1787109375,
+        3.51513671875,
+        4.12353515625
+      ],
+      "comparisons": {
+        "apple_tile_m1": {
+          "passed": true,
+          "comparisons": 38
+        },
+        "apple_tile_m2": {
+          "passed": true,
+          "comparisons": 4
+        },
+        "chrome-day-sdr": {
+          "passed": true,
+          "records": 481
+        },
+        "chrome-day-scene-linear": {
+          "passed": true,
+          "records": 481
+        },
+        "chrome-night-sdr": {
+          "passed": true,
+          "records": 481
+        },
+        "chrome-night-scene-linear": {
+          "passed": true,
+          "records": 481
+        }
+      }
+    },
+    {
+      "directory": "/Users/ryannel/Workspace/thrum/.claude/worktrees/baseline-guard/tmp/baseline-guard/verify-20261111T181215.840672Z",
+      "revision": "ea1886d5d60870bf417248f7dde420177eb30f97",
+      "content_key": "f6b5c8fa282dbbe27b2b26b863a151911e4fa52154b3fc58a52e14e5f2aad35b",
+      "seconds": 896.9920577500015,
+      "load": [
+        2.8857421875,
+        2.8193359375,
+        2.60693359375
+      ],
+      "comparisons": {
+        "apple_tile_m1": {
+          "passed": true,
+          "comparisons": 38
+        },
+        "apple_tile_m2": {
+          "passed": true,
+          "comparisons": 4
+        },
+        "chrome-day-sdr": {
+          "passed": true,
+          "records": 481
+        },
+        "chrome-day-scene-linear": {
+          "passed": true,
+          "records": 481
+        },
+        "chrome-night-sdr": {
+          "passed": true,
+          "records": 481
+        },
+        "chrome-night-scene-linear": {
+          "passed": true,
+          "records": 481
+        }
+      }
+    },
+    {
+      "directory": "/Users/ryannel/Workspace/thrum/.claude/worktrees/baseline-guard/tmp/baseline-guard/verify-20261111T190257.788591Z",
+      "revision": "3f55900e2214f7c1b6b46934c147e5a98f84d0b1",
+      "content_key": "7e7c9a3cdee311cc3cc11a759b0dd1421bf55290754065ea7c71d2f53245ee19",
+      "seconds": 884.5795797919855,
+      "load": [
+        2.2119140625,
+        3.36279296875,
+        2.984375
+      ],
+      "comparisons": {
+        "apple_tile_m1": {
+          "passed": true,
+          "comparisons": 38
+        },
+        "apple_tile_m2": {
+          "passed": true,
+          "comparisons": 4
+        },
+        "chrome-day-sdr": {
+          "passed": true,
+          "records": 481
+        },
+        "chrome-day-scene-linear": {
+          "passed": true,
+          "records": 481
+        },
+        "chrome-night-sdr": {
+          "passed": true,
+          "records": 481
+        },
+        "chrome-night-scene-linear": {
+          "passed": true,
+          "records": 481
+        }
+      }
+    }
+  ],
+  "gate_runs": [
+    {
+      "run": 1,
+      "revision": "3f55900e2214f7c1b6b46934c147e5a98f84d0b1",
+      "command": [
+        "python3",
+        "scripts/exact_baselines.py",
+        "gate"
+      ],
+      "seconds_including_python_startup": 0.15828312514349818,
+      "load": [
+        12.2958984375,
+        4.91015625,
+        3.552734375
+      ],
+      "exit": 0,
+      "stdout": "PASS exact-baseline gate: proof tmp/baseline-guard/proofs/7e7c9a3cdee311cc3cc11a759b0dd1421bf55290754065ea7c71d2f53245ee19.json\nGate seconds: 0.097079; load: (12.2958984375, 4.91015625, 3.552734375)\n",
+      "stderr": ""
+    },
+    {
+      "run": 2,
+      "revision": "3f55900e2214f7c1b6b46934c147e5a98f84d0b1",
+      "command": [
+        "python3",
+        "scripts/exact_baselines.py",
+        "gate"
+      ],
+      "seconds_including_python_startup": 0.12254924979060888,
+      "load": [
+        12.2958984375,
+        4.91015625,
+        3.552734375
+      ],
+      "exit": 0,
+      "stdout": "PASS exact-baseline gate: proof tmp/baseline-guard/proofs/7e7c9a3cdee311cc3cc11a759b0dd1421bf55290754065ea7c71d2f53245ee19.json\nGate seconds: 0.062331; load: (12.2958984375, 4.91015625, 3.552734375)\n",
+      "stderr": ""
+    },
+    {
+      "run": 3,
+      "revision": "3f55900e2214f7c1b6b46934c147e5a98f84d0b1",
+      "command": [
+        "python3",
+        "scripts/exact_baselines.py",
+        "gate"
+      ],
+      "seconds_including_python_startup": 0.16226495895534754,
+      "load": [
+        12.2958984375,
+        4.91015625,
+        3.552734375
+      ],
+      "exit": 0,
+      "stdout": "PASS exact-baseline gate: proof tmp/baseline-guard/proofs/7e7c9a3cdee311cc3cc11a759b0dd1421bf55290754065ea7c71d2f53245ee19.json\nGate seconds: 0.085707; load: (12.2958984375, 4.91015625, 3.552734375)\n",
+      "stderr": ""
+    }
+  ],
+  "scope": "Full release and Wasm builds, fresh cook, both native matrices and four fixed Chrome sets. GPU queueing and repository Check add to landing time.",
+  "check_timeout_seconds": 3600
+}

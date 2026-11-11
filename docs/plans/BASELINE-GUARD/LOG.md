@@ -40,3 +40,10 @@
   four scratch cases, with a fixed local remote after each refusal. Native difference metrics, failed manifests,
   patches, base, commands and logs are [retained](../../evidence/BASELINE-GUARD/M1/refusals-final/report.json).
   M1.5 and the complete milestone check remain.
+
+- 2026-11-11 M1 claimed with all five items passing. The rebased source includes APPLE-TILE M3 and passes
+  42 native comparisons and all 1,924 Chrome records at covered key `7e7c9a3c`. The required milestone check
+  passes all three automated commands, including the profile Check. Its explicit `--timeout 3600` follows the
+  design's one-hour allowance after the standalone command's 600-second default interrupted an earlier run.
+  [M1 evidence](../../evidence/BASELINE-GUARD/M1.md) records all four final-version land refusals, three full
+  verifier timings with load, three gate timings, preserved references and byte-mode semantics. Lead review remains.

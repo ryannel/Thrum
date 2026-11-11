@@ -1,0 +1,56 @@
+[
+  {
+    "run": 1,
+    "revision": "3f55900e2214f7c1b6b46934c147e5a98f84d0b1",
+    "command": [
+      "python3",
+      "scripts/exact_baselines.py",
+      "gate"
+    ],
+    "seconds_including_python_startup": 0.15828312514349818,
+    "load": [
+      12.2958984375,
+      4.91015625,
+      3.552734375
+    ],
+    "exit": 0,
+    "stdout": "PASS exact-baseline gate: proof tmp/baseline-guard/proofs/7e7c9a3cdee311cc3cc11a759b0dd1421bf55290754065ea7c71d2f53245ee19.json\nGate seconds: 0.097079; load: (12.2958984375, 4.91015625, 3.552734375)\n",
+    "stderr": ""
+  },
+  {
+    "run": 2,
+    "revision": "3f55900e2214f7c1b6b46934c147e5a98f84d0b1",
+    "command": [
+      "python3",
+      "scripts/exact_baselines.py",
+      "gate"
+    ],
+    "seconds_including_python_startup": 0.12254924979060888,
+    "load": [
+      12.2958984375,
+      4.91015625,
+      3.552734375
+    ],
+    "exit": 0,
+    "stdout": "PASS exact-baseline gate: proof tmp/baseline-guard/proofs/7e7c9a3cdee311cc3cc11a759b0dd1421bf55290754065ea7c71d2f53245ee19.json\nGate seconds: 0.062331; load: (12.2958984375, 4.91015625, 3.552734375)\n",
+    "stderr": ""
+  },
+  {
+    "run": 3,
+    "revision": "3f55900e2214f7c1b6b46934c147e5a98f84d0b1",
+    "command": [
+      "python3",
+      "scripts/exact_baselines.py",
+      "gate"
+    ],
+    "seconds_including_python_startup": 0.16226495895534754,
+    "load": [
+      12.2958984375,
+      4.91015625,
+      3.552734375
+    ],
+    "exit": 0,
+    "stdout": "PASS exact-baseline gate: proof tmp/baseline-guard/proofs/7e7c9a3cdee311cc3cc11a759b0dd1421bf55290754065ea7c71d2f53245ee19.json\nGate seconds: 0.085707; load: (12.2958984375, 4.91015625, 3.552734375)\n",
+    "stderr": ""
+  }
+]
