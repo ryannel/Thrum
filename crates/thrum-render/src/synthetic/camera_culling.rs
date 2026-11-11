@@ -100,6 +100,7 @@ pub(super) fn prepare(
         (capacity, active),
         &meshes,
         route.shape()?,
+        mode,
     );
     prepared.set_member_groups(route.groups());
     Ok(Some(prepared))
@@ -169,7 +170,14 @@ pub(super) fn prepass_view_group(
         .map(|entry| match entry.binding {
             VISIBLE_BINDING => wgpu::BindGroupEntry {
                 binding: VISIBLE_BINDING,
-                resource: target.prepass().visible().as_entire_binding(),
+                resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
+                    buffer: target.prepass().visible(),
+                    offset: 0,
+                    size: match &entry.resource {
+                        wgpu::BindingResource::Buffer(binding) => binding.size,
+                        _ => None,
+                    },
+                }),
             },
             _ => entry.clone(),
         })
@@ -275,7 +283,9 @@ impl PreparedSynthetic {
             accesses: prepass,
             external_side_effect: false,
         });
-        let last = prepared.append_final_graph(graph, reads, &first, &depth, extent)?;
+        let mut final_reads = reads;
+        final_reads.extend_from_slice(route);
+        let last = prepared.append_final_graph(graph, final_reads, &first, &depth, extent)?;
         keys.extend([
             prepared.final_key(),
             prepared.pyramid_key(),
@@ -315,6 +325,7 @@ impl PreparedSynthetic {
                 &self.mesh_arena,
                 orthographic,
                 indirect,
+                false,
             );
         }
         match &target.visibility {
@@ -343,8 +354,9 @@ impl PreparedSynthetic {
             self.instance_upload.buffer(),
             self.history.serial_buffer(),
         );
+        let members = self.bucket_route.as_ref().map(BucketRoute::member_inputs);
         let occlusion = prepass_depth.and_then(|depth| {
-            prepared.occlusion_target(device, inputs.0, inputs.1, inputs.2, depth, extent)
+            prepared.occlusion_target(device, inputs.0, inputs.1, inputs.2, depth, extent, members)
         });
         if let Some((last, prepass)) = occlusion {
             return (Some(last), Some(prepass));
@@ -395,7 +407,20 @@ impl PreparedSynthetic {
             exposure_side,
             true,
         )?;
-        pass.draw_indexed_indirect(prepass.target.prepass().args(), 0);
+        if let Some(route) = &self.bucket_route {
+            let view_offset = self.view_stride * u32::from(target.frame_revision & 1 != 0);
+            let view = self.pending_view.as_ref().unwrap_or(&self.view_sample);
+            route.draw(
+                &mut pass,
+                (&prepass.view_bind_group, view_offset),
+                &self.mesh_arena,
+                matches!(view.projection(), super::Projection::OrthographicFixture),
+                Some(prepass.target.prepass().args()),
+                true,
+            )?;
+        } else {
+            pass.draw_indexed_indirect(prepass.target.prepass().args(), 0);
+        }
         Ok(())
     }
 }

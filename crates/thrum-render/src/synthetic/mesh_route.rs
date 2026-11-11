@@ -83,6 +83,7 @@ pub(super) struct BucketRoute {
     segment_bytes: u64,
     /// Forward pipelines by class, then unflipped and flipped.
     forward: [[wgpu::RenderPipeline; 2]; 3],
+    depth: Option<[[wgpu::RenderPipeline; 2]; 3]>,
     /// Each segment's checked index range and base vertex, from the arena's
     /// fixed rows: checked once at preparation.
     ranges: Vec<(std::ops::Range<u32>, i32)>,
@@ -102,7 +103,8 @@ impl BucketRoute {
         arena: &MeshArena,
         upload: &InstanceUpload,
         instances: &[InstanceRecord],
-        forward: impl Fn(wgpu::PrimitiveState) -> wgpu::RenderPipeline,
+        forward: impl Fn(wgpu::PrimitiveState, bool) -> wgpu::RenderPipeline,
+        occlusion: bool,
     ) -> Result<Self, RenderError> {
         if selection.slots.len() != instances.len()
             || selection
@@ -171,7 +173,12 @@ impl BucketRoute {
             table,
             segment_bytes,
             forward: CLASSES
-                .map(|class| [false, true].map(|flipped| forward(class.primitive(flipped)))),
+                .map(|class| [false, true].map(|flipped| forward(class.primitive(flipped), false))),
+            depth: occlusion.then(|| {
+                CLASSES.map(|class| {
+                    [false, true].map(|flipped| forward(class.primitive(flipped), true))
+                })
+            }),
             ranges,
             caster_draws: Vec::new(),
         };
@@ -324,6 +331,7 @@ impl BucketRoute {
         arena: &MeshArena,
         orthographic: bool,
         indirect: Option<&wgpu::Buffer>,
+        depth_only: bool,
     ) -> Result<(), RenderError> {
         let buffers = arena.buffers().ok_or(RenderError::GraphPassMismatch)?;
         pass.set_index_buffer(buffers.indices.slice(..), wgpu::IndexFormat::Uint32);
@@ -332,7 +340,12 @@ impl BucketRoute {
             if indirect.is_none() && segment.len == 0 {
                 continue;
             }
-            let pipelines = &self.forward[segment.key.class.index()];
+            let pipelines = if depth_only {
+                self.depth.as_ref().ok_or(RenderError::GraphPassMismatch)?
+            } else {
+                &self.forward
+            };
+            let pipelines = &pipelines[segment.key.class.index()];
             pass.set_pipeline(&pipelines[usize::from(orthographic)]);
             pass.set_bind_group(0, view_group, &[view_offset, segment.start * 4]);
             if let Some(args) = indirect {

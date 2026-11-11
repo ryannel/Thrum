@@ -153,9 +153,7 @@ pub enum SyntheticMeshChoice {
 ///   three, an index at or past its vertex count, or a non-finite value;
 /// - a mesh has a referenced coordinate beyond ±1e30 m, so its transformed
 ///   bounds could not be represented;
-/// - the meshes exceed the device's vertex or index storage limits;
-/// - the scene uses [`CullMode::Occlusion`], which keeps the cube until its
-///   history follows slot identity.
+/// - the meshes exceed the device's vertex or index storage limits.
 #[derive(Clone, Debug, PartialEq)]
 pub struct SyntheticMeshes {
     /// Authored meshes, in addition to the cube.
@@ -180,7 +178,7 @@ fn admit_meshes(
     let Some(meshes) = scene.meshes.as_deref() else {
         return Ok((arena, None));
     };
-    if meshes.slots.len() != scene.instances.len() || scene.camera_culling == CullMode::Occlusion {
+    if meshes.slots.len() != scene.instances.len() {
         return Err(RenderError::SceneCapacity);
     }
     let rows = meshes
@@ -986,18 +984,13 @@ impl PreparedSynthetic {
     ) -> Result<Self, RenderError> {
         capabilities.recipe().map_err(RenderError::Recipe)?;
         let device = capabilities.device();
-        // Admit the whole selection before GPU work. Occlusion's history is
-        // keyed by member index, which a bucket layout change reassigns; it
-        // keeps the flat route until it follows slot identity.
+        // Admit the whole selection before GPU work.
         let (mut mesh_arena, admitted) = admit_meshes(
             scene,
             ArenaLimits::for_binding(device.limits().max_storage_buffer_binding_size),
         )?;
         let selection = internal.or(admitted);
         let meshes = selection.as_ref();
-        if meshes.is_some() && scene.camera_culling == CullMode::Occlusion {
-            return Err(RenderError::SceneCapacity);
-        }
         let generation = capabilities.generation();
         checked_display_gain(exposure)?;
         let (mut light_data, background, presentation_light_clamps) =
@@ -1605,7 +1598,10 @@ impl PreparedSynthetic {
                     &mesh_arena,
                     &instance_upload,
                     &scene.instances,
-                    |primitive| create_route_pipeline("compacted_vertex", primitive, false),
+                    |primitive, depth_only| {
+                        create_route_pipeline("compacted_vertex", primitive, depth_only)
+                    },
+                    scene.camera_culling == CullMode::Occlusion,
                 )
             })
             .transpose()?;

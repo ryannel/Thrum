@@ -198,8 +198,7 @@ impl VisibilityPrepared {
 
     /// Prepare the member-indexed compaction for the bucket route: the
     /// member list replaces the slot range, and each bucket writes its own
-    /// argument record. Frustum only until Occlusion's history follows
-    /// slot identity.
+    /// argument record. History follows logical slot identity.
     pub(crate) fn new_members(
         device: &crate::runtime::DeviceSite,
         queue: &wgpu::Queue,
@@ -207,6 +206,7 @@ impl VisibilityPrepared {
         (capacity, active): (u32, u32),
         meshes: &[MeshRecord],
         shape: MemberShape,
+        mode: CullMode,
     ) -> Self {
         Self::build(
             device,
@@ -214,7 +214,7 @@ impl VisibilityPrepared {
             key,
             (capacity, active),
             meshes,
-            CullMode::Frustum,
+            mode,
             Some(shape),
         )
     }
@@ -473,12 +473,14 @@ impl VisibilityPrepared {
         serials: &wgpu::Buffer,
         depth: &wgpu::TextureView,
         extent: [u32; 2],
+        members: Option<MemberInputs<'_>>,
     ) -> Option<(VisibilityTarget, OcclusionTarget)> {
         let pyramid = self.pyramid.as_ref()?.target(device, depth, extent);
         let mips = pyramid
             .texture()
             .create_view(&wgpu::TextureViewDescriptor::default());
-        let [prepass, last] = self.occlusion_targets(device, view, instances, serials, &mips);
+        let [prepass, last] =
+            self.occlusion_targets(device, view, instances, serials, &mips, members);
         Some((last, OcclusionTarget { prepass, pyramid }))
     }
 
@@ -493,6 +495,7 @@ impl VisibilityPrepared {
         instances: &wgpu::Buffer,
         serials: &wgpu::Buffer,
         pyramid: &wgpu::TextureView,
+        members: Option<MemberInputs<'_>>,
     ) -> [VisibilityTarget; 2] {
         let scratch = self.scratch(device);
         let inputs = Inputs {
@@ -500,7 +503,7 @@ impl VisibilityPrepared {
             instances,
             serials,
             pyramid,
-            members: None,
+            members,
         };
         let prepass = Inputs {
             pyramid: &self.idle_pyramid,
@@ -805,14 +808,11 @@ impl VisibilityPrepared {
             None => (self.groups(), 1),
         };
         let phase = target.phase;
-        // The final cull writes only the dispatched words of the next side;
-        // zero the rest, so no word an older or larger frame left there
-        // survives a shrink, a capture or a side flip.
+        // Logical slots from different buckets can share a word. Clear the
+        // next side before the atomic ORs; layout shrink and inactive slots
+        // must not retain bits from an earlier submission.
         if phase == Phase::Final {
-            let written = u64::from(groups) * u64::from(WORDS) * 4;
-            if written < bits_bytes(self.capacity) {
-                encoder.clear_buffer(&self.history[write_side & 1], written, None);
-            }
+            encoder.clear_buffer(&self.history[write_side & 1], 0, None);
         }
         let Some(mut pass) = compiled.begin_compute(encoder, generation, timings)? else {
             return Ok(false);

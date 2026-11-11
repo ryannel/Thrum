@@ -71,11 +71,11 @@ const WORDS: u32 = WORKGROUP / 32u;
 // This frame's min depth pyramid, every mip; read by the final cull only.
 @group(0) @binding(10) var pyramid: texture_2d<f32>;
 // The other side, written by the final cull for the next frame.
-@group(0) @binding(11) var<storage, read_write> next_bits: array<u32>;
+@group(0) @binding(11) var<storage, read_write> next_bits: array<atomic<u32>>;
 // Member-indexed buckets (M3b, experimental): only the `*_members` entry
 // points use these. Each bucket's segment of `members` starts at a multiple of
 // WORKGROUP and holds physical slots, padded with MEMBER_PADDING, so every
-// workgroup lies in one bucket. History bits are keyed by member index.
+// workgroup lies in one bucket. History bits are keyed by logical slot.
 // WebGPU allows 8 storage buffers per stage and the flat path uses 8, so the
 // member path reads its segments from a uniform and keeps its slot masks in
 // `group_offsets` after the per-group counts (from `mask_base`), leaving
@@ -213,9 +213,8 @@ fn count(@builtin(global_invocation_id) global: vec3<u32>,
     let word = count_word(listed(global.x, global.x, meshes[params.mesh]), local.x, group.x);
     if local.x < WORDS {
         masks[group.x * WORDS + local.x] = word;
-        // The final list is exactly the next last-visible set.
         if params.phase == PHASE_FINAL {
-            next_bits[group.x * WORDS + local.x] = word;
+            atomicStore(&next_bits[group.x * WORDS + local.x], word);
         }
     }
 }
@@ -232,14 +231,15 @@ fn count_members(@builtin(global_invocation_id) global: vec3<u32>,
     let slot = members[global.x];
     var draw = false;
     if slot != MEMBER_PADDING {
-        draw = listed(slot, global.x, mesh);
+        draw = listed(slot, instances[slot].ids.x, mesh);
+    }
+    if draw && params.phase == PHASE_FINAL {
+        let logical = instances[slot].ids.x;
+        atomicOr(&next_bits[logical / 32u], 1u << (logical % 32u));
     }
     let word = count_word(draw, local.x, group.x);
     if local.x < WORDS {
         group_offsets[buckets.mask_base + group.x * WORDS + local.x] = word;
-        if params.phase == PHASE_FINAL {
-            next_bits[group.x * WORDS + local.x] = word;
-        }
     }
 }
 

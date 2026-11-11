@@ -23,3 +23,9 @@
 - 2026-11-11 Exact baselines, from `BASELINE-GUARD`'s review: M2 gained `BASELINE-GUARD:M1` in its `needs`, and M2
   and M3 carry the verifier (Mac and Chrome) in place of the native-only command. M1 keeps the native matrix and
   does not wait; the plan lists that as an assumption.
+
+- 2026-11-11 M1 implementation: logical-slot bucket history, class-matched depth twins and mesh admission.
+  [Metal evidence](../../evidence/CULLING/M1.md): eight tests pass through churn, reveal, resize and fresh-device
+  preparation; all three required mutations fail pixel equality, including the mesh tie with zero tolerance.
+  The footprint reference search found no witness in 8,640 valid poses. Full flythrough, exact images, Check
+  and integration remain unverified; no speed or new motion-quality claim.

@@ -20,10 +20,10 @@ Frustum, Occlusion on cubes, the bucket route and Sun-caster culling were built 
 
 Criteria: M1.1–M1.5 in the done-when file.
 
-- [ ] Key the visible-last bits by logical slot on the bucket route, clear the next side each frame, and lift the refusal in mesh admission.
-- [ ] Add a depth-only twin of each bucket class pipeline and draw the prepass per bucket from the prepass list.
+- [x] Key the visible-last bits by logical slot on the bucket route, clear the next side each frame, and lift the refusal in mesh admission.
+- [x] Add a depth-only twin of each bucket class pipeline and draw the prepass per bucket from the prepass list.
 - [ ] Witness equality with bucket-ordered Direct: layout churn, the release flythrough, resize and device replacement, and the mesh tie at the far turned pose, with the design's mutants recorded as failing.
-- [ ] Search the reference for a pose that needs the footprint widening. Record the witness and its failing no-widening mutant, or the poses searched.
+- [x] Search the reference for a pose that needs the footprint widening. Record the witness and its failing no-widening mutant, or the poses searched.
 - [ ] Rerun `APPLE-TILE`'s M0 matrix on a release build of the commit to be claimed.
 
 ## M2 The game picks its culling mode from the device and the measurements, and says which mode ran

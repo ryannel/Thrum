@@ -49,8 +49,8 @@ pub struct GameSetup {
     /// one mirrored basis and one retuned local light). Grid content only; off by default.
     pub route_overlay: RouteOverlay,
     /// Draw the flythrough field's props as a rock, a column and a spruce,
-    /// some mirrored, instead of boxes. Ignored for the grid; refused with
-    /// Occlusion, which keeps the cube.
+    /// some mirrored, instead of boxes. Ignored for the grid. Occlusion uses
+    /// the same mesh buckets with a class-matched depth prepass.
     pub field_meshes: bool,
 }
 
