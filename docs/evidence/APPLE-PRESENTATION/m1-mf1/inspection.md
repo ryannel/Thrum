@@ -1,0 +1,5 @@
+# MF1 inspection list
+
+Written before inspecting the fixed build. Repeat the reviewer’s held day view at 640×360 and 1920×1080 through submitted engine capture with the display overlay off. Compare every consecutive pair, count pixel changes above 24 codes, and inspect consecutive native crops of the sphere silhouette and highlight, skyline, ridges, shadow boundaries and ground texture. Identify the independently moving cube. Compare the same static regions with the reviewer’s original images. The paused-world GPU regression must compare every consecutive frame exactly across a complete sequence cycle. The jitter-enabled control must visibly change its submitted colour attachment while spatial frames retain advancing metadata and identical colour bytes.
+
+Reinspect current day, night and translating motion sequences as ordered whole frames and native crops, including the skyline, near/far boundary, stars and moving cube. Check the original M1 direction and magnitude criteria. Read the existing advisory findings alongside the results.

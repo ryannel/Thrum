@@ -1,0 +1,329 @@
+{
+  "format": "thrum-v1-moving-route",
+  "version": 1,
+  "cooked_root": "70d2baf823d09d85574f7cdfce7102648754544dd7d68659e9bd92dd5f30e21d",
+  "cooked_generation": 1,
+  "tick_hz": 60,
+  "phase": [
+    1,
+    2
+  ],
+  "origin_tick": 180,
+  "start": {
+    "solar_hours": 12
+  },
+  "render_extent": [
+    640,
+    360
+  ],
+  "keys": [
+    {
+      "tick": 0,
+      "eye": [
+        0.0,
+        244.9226672381398,
+        16.0
+      ],
+      "yaw_degrees": 0,
+      "pitch_degrees": -3.0127875041833403
+    },
+    {
+      "tick": 80,
+      "eye": [
+        0.0,
+        244.9226672381398,
+        16.0
+      ],
+      "yaw_degrees": 0,
+      "pitch_degrees": -3.0127875041833403
+    }
+  ],
+  "cuts": [],
+  "checkpoints": [
+    {
+      "tick": 10,
+      "name": "frame-0010"
+    },
+    {
+      "tick": 11,
+      "name": "frame-0011"
+    },
+    {
+      "tick": 12,
+      "name": "frame-0012"
+    },
+    {
+      "tick": 13,
+      "name": "frame-0013"
+    },
+    {
+      "tick": 14,
+      "name": "frame-0014"
+    },
+    {
+      "tick": 15,
+      "name": "frame-0015"
+    },
+    {
+      "tick": 16,
+      "name": "frame-0016"
+    },
+    {
+      "tick": 17,
+      "name": "frame-0017"
+    },
+    {
+      "tick": 18,
+      "name": "frame-0018"
+    },
+    {
+      "tick": 19,
+      "name": "frame-0019"
+    },
+    {
+      "tick": 20,
+      "name": "frame-0020"
+    },
+    {
+      "tick": 21,
+      "name": "frame-0021"
+    },
+    {
+      "tick": 22,
+      "name": "frame-0022"
+    },
+    {
+      "tick": 23,
+      "name": "frame-0023"
+    },
+    {
+      "tick": 24,
+      "name": "frame-0024"
+    },
+    {
+      "tick": 25,
+      "name": "frame-0025"
+    },
+    {
+      "tick": 26,
+      "name": "frame-0026"
+    },
+    {
+      "tick": 27,
+      "name": "frame-0027"
+    },
+    {
+      "tick": 28,
+      "name": "frame-0028"
+    },
+    {
+      "tick": 29,
+      "name": "frame-0029"
+    },
+    {
+      "tick": 30,
+      "name": "frame-0030"
+    },
+    {
+      "tick": 31,
+      "name": "frame-0031"
+    },
+    {
+      "tick": 32,
+      "name": "frame-0032"
+    },
+    {
+      "tick": 33,
+      "name": "frame-0033"
+    },
+    {
+      "tick": 34,
+      "name": "frame-0034"
+    },
+    {
+      "tick": 35,
+      "name": "frame-0035"
+    },
+    {
+      "tick": 36,
+      "name": "frame-0036"
+    },
+    {
+      "tick": 37,
+      "name": "frame-0037"
+    },
+    {
+      "tick": 38,
+      "name": "frame-0038"
+    },
+    {
+      "tick": 39,
+      "name": "frame-0039"
+    },
+    {
+      "tick": 40,
+      "name": "frame-0040"
+    },
+    {
+      "tick": 41,
+      "name": "frame-0041"
+    },
+    {
+      "tick": 42,
+      "name": "frame-0042"
+    },
+    {
+      "tick": 43,
+      "name": "frame-0043"
+    },
+    {
+      "tick": 44,
+      "name": "frame-0044"
+    },
+    {
+      "tick": 45,
+      "name": "frame-0045"
+    },
+    {
+      "tick": 46,
+      "name": "frame-0046"
+    },
+    {
+      "tick": 47,
+      "name": "frame-0047"
+    },
+    {
+      "tick": 48,
+      "name": "frame-0048"
+    },
+    {
+      "tick": 49,
+      "name": "frame-0049"
+    },
+    {
+      "tick": 50,
+      "name": "frame-0050"
+    },
+    {
+      "tick": 51,
+      "name": "frame-0051"
+    },
+    {
+      "tick": 52,
+      "name": "frame-0052"
+    },
+    {
+      "tick": 53,
+      "name": "frame-0053"
+    },
+    {
+      "tick": 54,
+      "name": "frame-0054"
+    },
+    {
+      "tick": 55,
+      "name": "frame-0055"
+    },
+    {
+      "tick": 56,
+      "name": "frame-0056"
+    },
+    {
+      "tick": 57,
+      "name": "frame-0057"
+    },
+    {
+      "tick": 58,
+      "name": "frame-0058"
+    },
+    {
+      "tick": 59,
+      "name": "frame-0059"
+    },
+    {
+      "tick": 60,
+      "name": "frame-0060"
+    },
+    {
+      "tick": 61,
+      "name": "frame-0061"
+    },
+    {
+      "tick": 62,
+      "name": "frame-0062"
+    },
+    {
+      "tick": 63,
+      "name": "frame-0063"
+    },
+    {
+      "tick": 64,
+      "name": "frame-0064"
+    },
+    {
+      "tick": 65,
+      "name": "frame-0065"
+    },
+    {
+      "tick": 66,
+      "name": "frame-0066"
+    },
+    {
+      "tick": 67,
+      "name": "frame-0067"
+    },
+    {
+      "tick": 68,
+      "name": "frame-0068"
+    },
+    {
+      "tick": 69,
+      "name": "frame-0069"
+    },
+    {
+      "tick": 70,
+      "name": "frame-0070"
+    },
+    {
+      "tick": 71,
+      "name": "frame-0071"
+    },
+    {
+      "tick": 72,
+      "name": "frame-0072"
+    },
+    {
+      "tick": 73,
+      "name": "frame-0073"
+    },
+    {
+      "tick": 74,
+      "name": "frame-0074"
+    },
+    {
+      "tick": 75,
+      "name": "frame-0075"
+    },
+    {
+      "tick": 76,
+      "name": "frame-0076"
+    },
+    {
+      "tick": 77,
+      "name": "frame-0077"
+    },
+    {
+      "tick": 78,
+      "name": "frame-0078"
+    },
+    {
+      "tick": 79,
+      "name": "frame-0079"
+    },
+    {
+      "tick": 80,
+      "name": "frame-0080"
+    }
+  ],
+  "overlay": "motion"
+}

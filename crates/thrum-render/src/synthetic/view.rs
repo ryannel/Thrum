@@ -36,6 +36,7 @@ pub struct SyntheticView {
     history_epoch: u64,
     celestial: Option<Mat3>,
     jitter_sample: Option<(u32, [u32; 2])>,
+    raster_jitter: bool,
 }
 
 impl Default for SyntheticView {
@@ -60,6 +61,7 @@ impl Default for SyntheticView {
             history_epoch: 0,
             celestial: None,
             jitter_sample: None,
+            raster_jitter: false,
         }
     }
 }
@@ -145,6 +147,7 @@ impl SyntheticView {
             history_epoch: 0,
             celestial: None,
             jitter_sample: None,
+            raster_jitter: false,
         })
     }
 
@@ -304,10 +307,25 @@ impl SyntheticView {
         self.camera.to_array()
     }
 
-    /// Select a continuous 32-phase Halton(2,3) sample in render pixels.
-    /// The host advances the phase only after submission; extent changes do not restart it.
+    /// Select jittered rasterization for a temporal consumer or explicit jitter witness.
+    /// The host advances the 32-phase sequence only after submission.
     #[must_use]
-    pub fn with_jitter_phase(mut self, phase: u32, extent: [u32; 2]) -> Self {
+    pub fn with_jitter_phase(self, phase: u32, extent: [u32; 2]) -> Self {
+        let mut view = self.at_jitter_phase(phase, extent);
+        view.raster_jitter = true;
+        view
+    }
+
+    /// Retain temporal sample metadata while presenting spatial, unjittered output.
+    /// A reconstructor selects [`Self::with_jitter_phase`] when it consumes the sample.
+    #[must_use]
+    pub fn with_jitter_sequence(self, phase: u32, extent: [u32; 2]) -> Self {
+        let mut view = self.at_jitter_phase(phase, extent);
+        view.raster_jitter = false;
+        view
+    }
+
+    pub(super) fn at_jitter_phase(mut self, phase: u32, extent: [u32; 2]) -> Self {
         self.jitter_sample = Some((phase % 32, extent.map(|axis| axis.max(1))));
         self
     }
@@ -319,6 +337,18 @@ impl SyntheticView {
 
     pub(super) fn jitter_enabled(&self) -> bool {
         self.jitter_sample.is_some()
+    }
+
+    pub(super) fn raster_jitter_enabled(&self) -> bool {
+        self.raster_jitter && self.jitter_enabled()
+    }
+
+    pub(super) fn raster_projection(&self) -> Mat4 {
+        if self.raster_jitter_enabled() {
+            self.jittered_projection()
+        } else {
+            self.view_proj
+        }
     }
 
     pub(super) fn jittered_projection(&self) -> Mat4 {
@@ -343,7 +373,7 @@ impl SyntheticView {
     pub(crate) fn pack_view(&self, previous: &Self, exposure: f32) -> [u8; VIEW_BYTES] {
         let mut bytes = [0; VIEW_BYTES];
         for (offset, value) in self
-            .jittered_projection()
+            .raster_projection()
             .to_cols_array()
             .into_iter()
             .enumerate()
@@ -548,6 +578,26 @@ mod tests {
 #[cfg(test)]
 mod temporal_tests {
     use super::*;
+
+    #[test]
+    fn spatial_output_retains_the_sequence_and_both_matrices() {
+        let base = SyntheticView::default();
+        for phase in 0..96 {
+            let spatial = base.with_jitter_sequence(phase, [64, 32]);
+            let temporal = base.with_jitter_phase(phase, [64, 32]);
+            let record = spatial.pack_view(&base, 1.0);
+            let jittered = temporal.pack_view(&base, 1.0);
+            assert_eq!(&record[64..], &jittered[64..]);
+            assert_eq!(&record[..64], &record[160..224]);
+            assert_ne!(&jittered[..64], &jittered[160..224]);
+            assert_ne!(&record[152..160], &[0; 8]);
+            assert_eq!(&record[228..232], &(phase % 32).to_le_bytes());
+            assert_eq!(spatial.raster_projection(), base.view_proj);
+            assert_ne!(temporal.raster_projection(), base.view_proj);
+            let next = spatial.at_jitter_phase(phase + 1, [128, 64]);
+            assert!(!next.raster_jitter_enabled());
+        }
+    }
 
     #[test]
     fn continuous_halton_values_and_exact_record_layout() {

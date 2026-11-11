@@ -1,0 +1,71 @@
+   Compiling wasm-bindgen-shared v0.2.129
+   Compiling rustversion v1.0.23
+   Compiling bumpalo v3.20.3
+    Checking unicode-ident v1.0.27
+    Checking cfg-if v1.0.5
+    Checking once_cell v1.21.4
+    Checking slab v0.4.12
+    Checking pin-project-lite v0.2.17
+    Checking futures-task v0.3.34
+    Checking futures-core v0.3.34
+   Compiling cc v1.10.0
+    Checking foldhash v0.2.0
+   Compiling thiserror v2.0.21
+   Compiling syn v3.0.9
+    Checking equivalent v1.0.3
+    Checking arrayvec v0.7.8
+    Checking rustc-hash v1.1.0
+   Compiling wgpu v30.0.1
+   Compiling serde_core v1.0.229
+    Checking static_assertions v1.1.0
+    Checking raw-window-handle v0.6.2
+    Checking hashbrown v0.17.1
+    Checking log v0.4.34
+    Checking futures-util v0.3.34
+    Checking bitflags v2.13.2
+   Compiling zmij v1.0.23
+    Checking profiling v1.0.18
+    Checking smallvec v1.16.4
+    Checking constant_time_eq v0.4.2
+   Compiling serde_json v1.0.154
+    Checking glam v0.33.12
+    Checking memchr v2.8.3
+    Checking itoa v1.0.18
+    Checking indexmap v2.14.2
+   Compiling serde v1.0.229
+    Checking pollster v1.0.1
+   Compiling blake3 v1.8.7
+   Compiling thrum-app v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/crates/thrum-app)
+   Compiling wasm-bindgen v0.2.129
+   Compiling wasm-bindgen-macro-support v0.2.129
+   Compiling bytemuck_derive v1.12.1
+   Compiling thiserror-impl v2.0.21
+   Compiling serde_derive v1.0.229
+    Checking thrum-controls v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/crates/thrum-controls)
+    Checking bytemuck v1.25.2
+   Compiling wasm-bindgen-macro v0.2.129
+    Checking naga-types v30.0.1
+    Checking js-sys v0.3.106
+    Checking wasm-bindgen-futures v0.4.79
+    Checking web-sys v0.3.106
+    Checking web-time v1.1.0
+    Checking thrum-asset v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/crates/thrum-asset)
+    Checking thrum-core v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/crates/thrum-core)
+    Checking wgpu-types v30.0.1
+    Checking thrum-render v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/crates/thrum-render)
+    Checking thrum-asset-gpu v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/crates/thrum-asset-gpu)
+    Checking v1-game v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/examples/v1-game)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 18.66s
+    Checking v1-game v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/examples/v1-game)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.23s
+   Compiling serde_core v1.0.229
+    Checking web-sys v0.3.106
+    Checking serde_json v1.0.154
+    Checking thrum-controls v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/crates/thrum-controls)
+    Checking wgpu-types v30.0.1
+    Checking wgpu v30.0.1
+    Checking thrum-render v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/crates/thrum-render)
+    Checking thrum-asset-gpu v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/crates/thrum-asset-gpu)
+    Checking thrum-app v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/crates/thrum-app)
+    Checking thrum-starter v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/examples/starter)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 9.36s

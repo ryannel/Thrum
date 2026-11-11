@@ -510,7 +510,7 @@ impl SceneSource<PublishedPage> for GameScene {
             )?
         }
         .with_display_overlay(self.display_overlay)
-        .with_jitter_phase(0, [640, 360]);
+        .with_jitter_sequence(0, [640, 360]);
         // The diagnostic fixture's local Y zero is a two-metre reference datum.
         // Authored scene and field coordinates already measure altitude above sea level.
         let camera_altitude_m = view.camera_position()[1]

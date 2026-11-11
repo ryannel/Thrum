@@ -1,0 +1,10 @@
+   Compiling thrum-render v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/crates/thrum-render)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.75s
+     Running unittests src/lib.rs (target/debug/deps/thrum_render-8417c18508aef1b4)
+
+running 2 tests
+test synthetic::view::temporal_tests::spatial_output_retains_the_sequence_and_both_matrices ... ok
+test synthetic::view::temporal_tests::continuous_halton_values_and_exact_record_layout ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 220 filtered out; finished in 0.00s
+

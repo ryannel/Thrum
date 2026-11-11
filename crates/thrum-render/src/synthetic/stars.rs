@@ -240,7 +240,9 @@ impl StarPrepared {
         ) {
             destination.copy_from_slice(&value.to_le_bytes());
         }
-        bytes[160..168].copy_from_slice(&jitter[152..160]);
+        if view.raster_jitter_enabled() {
+            bytes[160..168].copy_from_slice(&jitter[152..160]);
+        }
         Some(bytes)
     }
 }

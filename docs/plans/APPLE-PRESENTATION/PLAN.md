@@ -29,6 +29,7 @@ review (D1.5). The first G4 witnesses that need G3t M3 are TAAU (M3) and the ext
 - [x] Sky and star motion at infinity, delivered by the atmosphere owner under seam 4 (→D1.3).
 - [x] Invalid-history flag (→D1.4).
 - [x] Motion mode in `synthetic/display.rs` and the review sequence (→D1.5).
+- [ ] MF1 Keep spatial presentation stable while retaining submitted jitter metadata, restore consecutive-frame regressions and repeat the reviewer's held-camera captures.
 
 ## M2 Depth, motion, reactive and exposure are stored for reconstruction, and history advances only with submitted frames
 
