@@ -30,3 +30,8 @@
   Implemented registry, clean-tree verifier, digest mode and content-key gate; proof and integration experiments
   are in progress. Coverage also includes `.cargo/` (design review S3), `tools/` and the registry itself; the
   architecture table records the same wider inputs. No retained reference or owner matrix was changed.
+
+- 2026-11-11 M1.1–M1.3 pass with [target evidence](../../evidence/BASELINE-GUARD/M1.md). The final verifier
+  passes 42 native comparisons and 1,924 Chrome records at covered key `f6b5c8fa`; all seven focused tests pass.
+  Successful owner-published captures are archived incrementally after disk space dropped during shared work.
+  Final-version mutant refusals, the third timing and the milestone check remain in progress.
