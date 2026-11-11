@@ -104,12 +104,14 @@ def finalize(output, manifest, runtime, verify_only=False):
         validate_runtime(runtime, 0)
         manifest.update(complete=True, packaging_pending=False, records=[])
         return
+    frame_bytes = FRAME_BYTES * manifest.get('bytes_per_pixel', 4) // 4
+    verify_only = verify_only or manifest.get('capture_source') == 'scene-linear'
     encoding = runtime['spool_encoding']
     report = runtime['writer_result']['Ok']
     source = output / manifest['spool_file']
     if source.stat().st_size != report['encoded_bytes']:
         raise ValueError('encoded byte count differs from writer')
-    records = validate_runtime(runtime, report['bytes'])
+    records = validate_runtime(runtime, report['bytes'], frame_bytes)
     if len(records) != len(report['frame_sha256']):
         raise ValueError('missing original frame hashes')
     frame_dir = output / 'png'
@@ -117,7 +119,7 @@ def finalize(output, manifest, runtime, verify_only=False):
         frame_dir.mkdir(exist_ok=True)
     begin = time.monotonic_ns()
     by_id = {row['submission_id']: row for row in runtime['images']}
-    for record, raw in zip(records, decoded_frames(source, encoding, report['frame_sha256']), strict=True):
+    for record, raw in zip(records, decoded_frames(source, encoding, report['frame_sha256'], frame_bytes), strict=True):
         identity = record['submission_id']
         record['rgba_sha256'] = hashlib.sha256(raw).hexdigest()
         if not verify_only:
@@ -170,7 +172,7 @@ def preview(output, manifest, runtime, records):
         manifest["preview_pts_max_error_seconds"] = max(errors)
         manifest["preview_terminal_duplicate"] = True
 
-def validate_runtime(runtime, spool_bytes):
+def validate_runtime(runtime, spool_bytes, frame_bytes=FRAME_BYTES):
     """Refuse incomplete intervals and non-bijective submission/image joins."""
     if not runtime["complete"] or runtime["backend"] != "Metal":
         raise ValueError("runtime incomplete or wrong backend")
@@ -185,7 +187,7 @@ def validate_runtime(runtime, spool_bytes):
             raise ValueError("capture-off row produced pixels")
         return []
     if (len(set(image_ids)) != len(image_ids) or set(image_ids) != set(submitted)
-            or spool_bytes != len(images) * FRAME_BYTES):
+            or spool_bytes != len(images) * frame_bytes):
         raise ValueError("incomplete runtime/record join")
     previous = -1
     for image in sorted(images, key=lambda row: row["submission_id"]):
@@ -195,7 +197,7 @@ def validate_runtime(runtime, spool_bytes):
         if event.get("accepted_ns") is not None and image["submit_ns"] < event["accepted_ns"]:
             raise ValueError("image predates its accepted controls")
         previous = image["submit_ns"]
-    return [{"submission_id": identity, "offset": index * FRAME_BYTES}
+    return [{"submission_id": identity, "offset": index * frame_bytes}
             for index, identity in enumerate(image_ids)]
 
 
@@ -218,6 +220,9 @@ def run(args):
     if shutil.disk_usage(output.parent).free < ALLOWANCE:
         raise ValueError("less than declared 16 GiB free space")
     output.mkdir()
+    pixel_bytes = 8 if args.source == 'scene-linear' else 4
+    frame_bytes = FRAME_BYTES * pixel_bytes // 4
+    cpu_buffers = 32 if args.source == 'scene-linear' else 96
     binary = args.binary.resolve()
     store = args.store.resolve() if args.store else None
     source_names = subprocess.check_output(["git", "ls-files", "-z", "--cached", "--others", "--exclude-standard",
@@ -239,18 +244,21 @@ def run(args):
         "scenario": args.case,
         "timebase": args.mode,
         "scenario_source_sha256": digest(ROOT / "examples/v1-game/src/window/capture.rs"),
-        "parameter_sha256": digest(ROOT / "examples/v1-game/params/showcase-noon.params.json"),
+        "parameter_sha256": digest(args.params.resolve()),
         "output_allowance_bytes": ALLOWANCE,
-        "cpu_pool_bytes": 96 * FRAME_BYTES,
-        "gpu_staging_bytes": 6 * FRAME_BYTES,
+        "capture_source": args.source,
+        "bytes_per_pixel": pixel_bytes,
+        "cpu_pool_bytes": cpu_buffers * frame_bytes,
+        "gpu_staging_bytes": 6 * (frame_bytes + 32),
         "pixel_byte_allowance": 1024 * 1024 * 1024,
         "encoded_queue_bound_bytes": 64 * 4 * 1024 * 1024,
-        "codec_frame_scratch_bytes": 2 * FRAME_BYTES,
+        "codec_frame_scratch_bytes": 2 * frame_bytes,
         "codec_workers": 2,
         "codec_window_bytes_per_worker": 4 * 1024 * 1024,
         "memory_scope": "pixel leases plus finite encoded buffers and codec scratch; allocator/driver/codec overhead measured separately by process RSS",
-        "extent": [1920, 1080], "channel_order": "RGBA", "row_stride": 1920 * 4,
-        "encoding": "SDR sRGB encoded bytes in Rgba8Unorm", "stage": "final engine output before identity present",
+        "extent": [1920, 1080], "channel_order": "RGBA", "row_stride": 1920 * pixel_bytes,
+        "encoding": "scene-linear Rgba16Float" if args.source == 'scene-linear' else "SDR sRGB encoded bytes in Rgba8Unorm",
+        "stage": "pre-tone scene-linear composite" if args.source == 'scene-linear' else "final engine output before identity present",
         "excluded": ["native controls", "OS composition", "physical output"],
         "gpu_timestamps_required": False, "display_swap_times": None,
         "complete": False,
@@ -269,7 +277,21 @@ def run(args):
     manifest['screen_recording_preflight'] = ('false' if manifest['permission_before']['denied'] is True
         else 'true' if manifest['permission_before']['denied'] is False else None)
     manifest['screen_recording_preflight_error'] = manifest['permission_before']['error']
-    environment = dict(os.environ, THRUM_CAPTURE_RUNTIME=str(output), THRUM_CAPTURE_CASE=args.case, THRUM_CAPTURE_MODE=args.mode)
+    environment = dict(os.environ, THRUM_CAPTURE_RUNTIME=str(output), THRUM_CAPTURE_CASE=args.case, THRUM_CAPTURE_MODE=args.mode, THRUM_CAPTURE_SOURCE=args.source, THRUM_CAPTURE_RUNTIME_PARAMS=str(args.params.resolve()))
+    if args.case == 'route':
+        if args.route is None:
+            raise ValueError('--case route requires --route')
+        route = json.loads(args.route.read_text())
+        if store is None:
+            raise ValueError('route capture requires a cooked store')
+        from run_v1_showcase import store_root
+        if store_root(store) != route['cooked_root']:
+            raise ValueError('runtime route cooked root mismatch')
+        environment['THRUM_CAPTURE_RUNTIME_ROUTE'] = str(args.route.resolve())
+        environment['THRUM_ROUTE_OVERLAY'] = route['overlay']
+        manifest['route_sha256'] = digest(args.route.resolve())
+    else:
+        environment.pop('THRUM_CAPTURE_RUNTIME_ROUTE', None)
     if store:
         environment.update(THRUM_ASSET_STORE=str(store), THRUM_SCENE="valley")
     manifest["environment"] = {key: value for key, value in environment.items() if key.startswith("THRUM_")}
@@ -323,7 +345,10 @@ def run(args):
             "recipe": runtime["recipe"], "enabled_features": runtime["enabled_features"],
             "shader_hashes": manifest["shader_hashes"]}, sort_keys=True).encode()).hexdigest()
         report = runtime['writer_result'].get('Ok', {})
-        validate_runtime(runtime, report.get('bytes', 0))
+        expected_source = 'SceneLinear' if args.source == 'scene-linear' else 'Sdr'
+        if runtime.get('pixel_source', 'Sdr') != expected_source:
+            raise ValueError('engine capture source differs from requested source')
+        validate_runtime(runtime, report.get('bytes', 0), frame_bytes)
         if (output / manifest['spool_file']).stat().st_size != report['encoded_bytes']:
             raise ValueError('encoded byte count differs from writer')
         manifest.update(capture_complete=True, packaging_pending=True)
@@ -360,10 +385,14 @@ if __name__ == "__main__":
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--binary", type=Path, default=Path("target/debug/v1-game"))
     parser.add_argument("--store", type=Path)
-    parser.add_argument("--case", choices=["pan", "running", "render-stall", "input-stall", "off", "writer-slow"], default="pan")
+    parser.add_argument("--params", type=Path, default=ROOT / "examples/v1-game/params/showcase-noon.params.json")
+    parser.add_argument("--route", type=Path, help="checked cooked route for --case route")
+    parser.add_argument("--case", choices=["pan", "route", "variants", "running", "render-stall", "input-stall", "off", "writer-slow"], default="pan")
     parser.add_argument("--defer", action="store_true", help="record pending evidence; finalize after consecutive sessions")
     parser.add_argument("--finalize", action="store_true", help="decode/hash and finalize a previously recorded session")
     parser.add_argument("--verify-only", action="store_true", help="verify every original RGBA hash without PNG/movie duplicates")
     parser.add_argument("--profile", action="store_true", help="separate CPU sample arm; includes preparation/warmup")
     parser.add_argument("--mode", choices=["realtime", "fixed", "still"], default="realtime")
+    parser.add_argument("--source", choices=["sdr", "scene-linear"], default="sdr",
+                        help="scene-linear keeps exact RGBA16Float sources with verification only")
     run(parser.parse_args())

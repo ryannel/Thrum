@@ -241,6 +241,24 @@ fn apply_route_overlay(scene: &mut SyntheticScene, overlay: scene::RouteOverlay)
     }
 }
 
+#[cfg(all(feature = "draw-probe", not(target_arch = "wasm32")))]
+fn g3t_overlay_control(scene: &mut SyntheticScene, control: &str) -> Result<(), String> {
+    match control {
+        "mirror-omit" => {}
+        "overflow" | "weak-off" => {
+            scene.local_lights = vec![ROUTE_OVERLAY_LIGHT; 34];
+            scene.local_lights[31].candela = [1000.0; 3];
+            scene.local_lights[32].candela = [250.0; 3];
+            scene.local_lights[33].candela = [100.0; 3];
+            if control == "weak-off" {
+                scene.local_lights[31].candela = [0.0; 3];
+            }
+        }
+        _ => return Err("unknown G3t overlay control".to_owned()),
+    }
+    Ok(())
+}
+
 pub(crate) struct GameScene {
     content: GameContent,
     valley_stars: bool,
@@ -251,6 +269,8 @@ pub(crate) struct GameScene {
     camera: Option<SceneCamera>,
     route_overlay: scene::RouteOverlay,
     route: Option<CameraRoute>,
+    #[cfg(all(feature = "draw-probe", not(target_arch = "wasm32")))]
+    omit_mirror: bool,
 }
 impl GameScene {
     /// Select a checked authored camera and its orientation.
@@ -323,6 +343,8 @@ impl GameScene {
             camera: None,
             route_overlay: setup.route_overlay,
             route: None,
+            #[cfg(all(feature = "draw-probe", not(target_arch = "wasm32")))]
+            omit_mirror: std::env::var("THRUM_G3T_OVERLAY_CONTROL").as_deref() == Ok("mirror-omit"),
         }
     }
     pub(super) fn scene(extent: [u32; 2], setup: GameSetup) -> Result<SyntheticScene, String> {
@@ -342,6 +364,10 @@ impl GameScene {
                 return Err("the route overlay needs grid content".to_owned());
             }
             apply_route_overlay(&mut scene, setup.route_overlay);
+            #[cfg(all(feature = "draw-probe", not(target_arch = "wasm32")))]
+            if let Ok(control) = std::env::var("THRUM_G3T_OVERLAY_CONTROL") {
+                g3t_overlay_control(&mut scene, &control)?;
+            }
         }
         Ok(scene)
     }
@@ -437,6 +463,10 @@ impl super::FrameHost {
 
 impl SceneSource<PublishedPage> for GameScene {
     fn extract(&self, into: &mut RenderExtractor, page: &PublishedPage) -> ExtractReport {
+        #[cfg(all(feature = "draw-probe", not(target_arch = "wasm32")))]
+        if self.omit_mirror {
+            return scene::extract_without_mirror(into, page);
+        }
         scene::extract(into, page)
     }
     fn frame(
@@ -587,6 +617,36 @@ mod tests {
         assert!((view(62, 0.5).camera_position()[0] - 4.0).abs() < 1e-4);
     }
 
+    #[cfg(all(feature = "draw-probe", not(target_arch = "wasm32")))]
+    #[test]
+    fn g3t_overflow_control_removes_only_the_selected_weak_source() {
+        let setup = crate::GameSetup {
+            route_overlay: scene::RouteOverlay::Proof,
+            ..crate::GameSetup::default()
+        };
+        let mut positive = GameScene::scene([640, 360], setup).unwrap();
+        let mut negative = GameScene::scene([640, 360], setup).unwrap();
+        super::g3t_overlay_control(&mut positive, "overflow").unwrap();
+        super::g3t_overlay_control(&mut negative, "weak-off").unwrap();
+        assert_eq!(positive.local_lights.len(), 34);
+        assert_eq!(negative.local_lights.len(), 34);
+        for (index, (a, b)) in positive
+            .local_lights
+            .iter()
+            .zip(&negative.local_lights)
+            .enumerate()
+        {
+            assert_eq!(a.position, b.position);
+            assert_eq!(a.radius, b.radius);
+            if index == 31 {
+                assert_eq!(a.candela, [1000.0; 3]);
+                assert_eq!(b.candela, [0.0; 3]);
+            } else {
+                assert_eq!(a.candela, b.candela);
+            }
+        }
+    }
+
     #[test]
     fn route_overlay_changes_only_its_bases_and_light_zero() {
         let off = GameScene::scene([640, 360], crate::GameSetup::default()).unwrap();
@@ -669,6 +729,8 @@ mod tests {
             camera: Some(camera),
             route_overlay: scene::RouteOverlay::Off,
             route: None,
+            #[cfg(all(feature = "draw-probe", not(target_arch = "wasm32")))]
+            omit_mirror: false,
         };
         let first = policy
             .frame(

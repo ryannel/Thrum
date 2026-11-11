@@ -228,6 +228,21 @@ fn grid_simulation(entity_count: usize, route_overlay: bool) -> Result<Simulatio
 }
 
 pub(crate) fn extract(extractor: &mut RenderExtractor, snapshot: &PublishedPage) -> ExtractReport {
+    extract_rows::<false>(extractor, snapshot)
+}
+
+#[cfg(all(feature = "draw-probe", not(target_arch = "wasm32")))]
+pub(crate) fn extract_without_mirror(
+    extractor: &mut RenderExtractor,
+    snapshot: &PublishedPage,
+) -> ExtractReport {
+    extract_rows::<true>(extractor, snapshot)
+}
+
+fn extract_rows<const OMIT_MIRROR: bool>(
+    extractor: &mut RenderExtractor,
+    snapshot: &PublishedPage,
+) -> ExtractReport {
     let source = SourceTick {
         epoch: snapshot.id().epoch.0,
         tick: snapshot.id().tick,
@@ -244,6 +259,9 @@ pub(crate) fn extract(extractor: &mut RenderExtractor, snapshot: &PublishedPage)
         [0.0; 3],
         |sink| {
             snapshot.visit(|handle, id, position, visual| {
+                if OMIT_MIRROR && handle.slot as usize == ROUTE_OVERLAY_MIRRORED_SLOT {
+                    return;
+                }
                 if let Some(visual) = visual {
                     sink.push(handle.slot, handle.generation, id.0, position.0, visual);
                 }
@@ -261,6 +279,10 @@ pub(crate) fn extract(extractor: &mut RenderExtractor, snapshot: &PublishedPage)
                     while list.get(next_index[index]) == Some(&slot) {
                         next_index[index] += 1;
                     }
+                }
+                if OMIT_MIRROR && slot as usize == ROUTE_OVERLAY_MIRRORED_SLOT {
+                    sink.remove(slot);
+                    continue;
                 }
                 if let Some(handle) = snapshot.handle(slot)
                     && let (Some(id), Some(position), Some(visual)) = (

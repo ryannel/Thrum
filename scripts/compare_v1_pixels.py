@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Compare complete checkpoint bytes and save native-size difference masks.
 
-PNG/PPM inputs retain their declared channels. Raw rgba8 and rgba16f inputs
+PNG/PPM inputs retain their declared channels. Raw rgba8, bgra8 and rgba16f inputs
 require an explicit extent. rgba16f compares all eight stored bytes per pixel,
 without decoding floats or introducing a tolerance. This tool proves pixel
 identity only. The caller must separately establish target and sample identity.
@@ -119,7 +119,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--reference', type=Path, required=True)
     parser.add_argument('--candidate', type=Path, required=True)
-    parser.add_argument('--encoding', choices=['png', 'ppm', 'rgba8', 'rgba16f'], required=True)
+    parser.add_argument('--encoding', choices=['png', 'ppm', 'rgba8', 'bgra8', 'rgba16f'], required=True)
     parser.add_argument('--extent', nargs=2, type=int, metavar=('WIDTH', 'HEIGHT'))
     parser.add_argument('--output', type=Path, required=True)
     args = parser.parse_args()

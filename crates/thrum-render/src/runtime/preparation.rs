@@ -6,7 +6,8 @@ use crate::{
     contribution::ContributionPasses,
     present::SurfacePresenter,
     synthetic::{
-        FrameLighting, OffscreenTarget, PreparedSynthetic, SceneTimingLayout, SyntheticScene,
+        CaptureSource, FrameLighting, OffscreenTarget, PreparedSynthetic, SceneTimingLayout,
+        SyntheticScene,
     },
     timing::GpuTimings,
 };
@@ -71,11 +72,27 @@ pub(super) fn prepare_slots(
     extent: [u32; 2],
     surface: bool,
 ) -> Result<Vec<FrameSlot>, FrameError> {
+    prepare_capture_slots(prepared, queue, extent, surface, CaptureSource::Sdr)
+}
+
+pub(super) fn prepare_capture_slots(
+    prepared: &PreparedSynthetic,
+    queue: &wgpu::Queue,
+    extent: [u32; 2],
+    surface: bool,
+    source: CaptureSource,
+) -> Result<Vec<FrameSlot>, FrameError> {
     let capabilities = prepared.capabilities();
     let mut slots = Vec::with_capacity(IN_FLIGHT);
     for _ in 0..IN_FLIGHT {
-        let target = OffscreenTarget::new(capabilities.device(), prepared, extent[0], extent[1])
-            .map_err(|error| FrameError::Gpu(format!("scene target: {error:?}")))?;
+        let target = OffscreenTarget::with_capture_source(
+            capabilities.device(),
+            prepared,
+            extent[0],
+            extent[1],
+            source,
+        )
+        .map_err(|error| FrameError::Gpu(format!("scene target: {error:?}")))?;
         let timing_layout = SceneTimingLayout::from((prepared, &target));
         slots.push(FrameSlot {
             target,

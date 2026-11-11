@@ -1056,9 +1056,17 @@ impl FrameGraph {
         pass: Pass,
         generation: u64,
         prepared: &BTreeSet<PipelineKey>,
+        producer: Option<usize>,
     ) -> Result<CompiledGraph, GraphError> {
-        self.pass(pass);
-        let compiled = self.compile(generation, prepared);
+        let dependencies = self.explicit_dependencies.len();
+        let terminal = self.pass(pass);
+        let compiled = (|| {
+            if let Some(producer) = producer {
+                self.dependency(producer, terminal)?;
+            }
+            self.compile(generation, prepared)
+        })();
+        self.explicit_dependencies.truncate(dependencies);
         drop(self.passes.pop());
         compiled
     }

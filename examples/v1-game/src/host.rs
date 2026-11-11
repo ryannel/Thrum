@@ -704,6 +704,19 @@ impl FrameHost {
             .enable_submitted_capture(session)
             .map_err(|error| error.to_string())
     }
+    /// Enable a declared engine stage through the same submitted-image tap.
+    /// # Errors
+    /// Refuses active capture, pending frames during a stage change or preparation failure.
+    pub fn enable_submitted_capture_from(
+        &mut self,
+        session: u64,
+        source: thrum_render::synthetic::CaptureSource,
+    ) -> Result<(), String> {
+        self.inner
+            .enable_submitted_capture_from(session, runtime::CaptureLimits::default(), source)
+            .map_err(|error| error.to_string())
+    }
+
     /// Collect an ordinary submitted frame without redrawing an endpoint.
     /// # Errors
     /// Returns mapping or retired-generation failure.

@@ -65,14 +65,34 @@ pub(super) async fn run(output: PathBuf) -> Result<(), String> {
                 None => motion_frames.map_or(EXTENT, |_| motion::PROFILE.extent),
             },
             surface: match &moving_route {
-                Some((_, extent, _)) => Some(route::profile(*extent)),
+                Some((_, extent, _)) => Some(route::profile(*extent)?),
                 None => motion_frames.map(|_| motion::PROFILE),
             },
         },
         setup,
     )
     .await?;
-    let content = v1_game::attach_cooked_scene(&mut host)?;
+    #[cfg(feature = "draw-probe")]
+    let content = {
+        let omit = std::env::var("THRUM_G3T_OMIT_PLACEMENT")
+            .ok()
+            .map(|value| value.parse::<usize>())
+            .transpose()
+            .map_err(|error| error.to_string())?;
+        v1_game::attach_cooked_scene_with_probe(
+            &mut host,
+            omit.map(thrum_asset_gpu::draw_probe::Probe::Omit),
+        )?
+    };
+    #[cfg(not(feature = "draw-probe"))]
+    let content = {
+        if std::env::var_os("THRUM_G3T_OMIT_PLACEMENT").is_some()
+            || std::env::var_os("THRUM_G3T_OVERLAY_CONTROL").is_some()
+        {
+            return Err("G3t omission controls require the draw-probe build feature".to_owned());
+        }
+        v1_game::attach_cooked_scene(&mut host)?
+    };
     host.pause()?;
     let deadline = Instant::now() + Duration::from_secs(30);
     let cooked_generation = if let Some(stats) = &content {
@@ -100,7 +120,14 @@ pub(super) async fn run(output: PathBuf) -> Result<(), String> {
     };
     std::fs::create_dir_all(&output).map_err(|error| error.to_string())?;
     if let Some((text, _, _)) = &moving_route {
-        return route::record(&device, &mut host, &output, text, cooked_generation);
+        return route::record(
+            &capabilities,
+            &queue,
+            &mut host,
+            &output,
+            text,
+            cooked_generation,
+        );
     }
     if let Some(frames) = motion_frames {
         return motion::record(&device, &mut host, &output, frames, cooked_generation);

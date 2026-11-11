@@ -1,0 +1,22 @@
+{
+  "alpha_bits": 1056964607,
+  "capture_source": "Sdr",
+  "device_generation": 1,
+  "epoch": 1,
+  "exposure_gpu_words": [
+    981467136,
+    1166652782,
+    1094548132,
+    1175417432,
+    0,
+    225,
+    0,
+    1
+  ],
+  "headroom": 1,
+  "history_epoch": 1,
+  "presenter_generation": 1,
+  "source_tick": 225,
+  "submission_id": 224,
+  "timeline": 0
+}

@@ -115,6 +115,12 @@ class CaptureTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             validate_runtime(runtime(), FRAME_BYTES - 1)
 
+    def test_scene_linear_coverage_uses_all_eight_stored_bytes_per_pixel(self):
+        self.assertEqual(validate_runtime(runtime(), FRAME_BYTES * 2, FRAME_BYTES * 2),
+                         [{"submission_id": 4, "offset": 0}])
+        with self.assertRaises(ValueError):
+            validate_runtime(runtime(), FRAME_BYTES, FRAME_BYTES * 2)
+
     def test_capture_off_cannot_sneak_in_pixels(self):
         record = runtime()
         record.update(scenario="off", images=[])

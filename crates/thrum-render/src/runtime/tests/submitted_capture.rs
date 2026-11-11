@@ -54,7 +54,15 @@ fn disabled_capture_frame_hook_allocates_nothing_and_has_no_readback_graph_pass(
     ALLOCATIONS.with(|count| count.set(0));
     COUNTING.with(|active| active.set(true));
     for _ in 0..10000 {
-        assert!(super::super::submitted_capture::reserve(&mut disabled, 1, [65, 37]).is_none());
+        assert!(
+            super::super::submitted_capture::reserve(
+                &mut disabled,
+                1,
+                [65, 37],
+                crate::synthetic::CaptureSource::Sdr
+            )
+            .is_none()
+        );
     }
     COUNTING.with(|active| active.set(false));
     assert_eq!(ALLOCATIONS.with(Cell::get), 0);
@@ -468,5 +476,77 @@ fn stopping_admission_drains_in_submission_order_while_rendering_continues() {
         assert!(host.try_submitted_image().unwrap().is_none());
         assert_eq!(host.submitted_capture_usage(), Some((0, 0)));
         assert_eq!(host.submitted_capture_omissions(), 0);
+    });
+}
+
+#[test]
+fn scene_linear_capture_uses_the_ordinary_submission_and_can_restore_sdr() {
+    use crate::synthetic::CaptureSource;
+    pollster::block_on(async {
+        let (mut host, output, _instance) =
+            Box::pin(host_and_output(wgpu::TextureFormat::Rgba8Unorm)).await;
+        host.enable_submitted_capture(1).unwrap();
+        submit(&mut host, &output);
+        let baseline = image(&mut host);
+        let sdr = baseline.rgba.clone();
+        let epoch = baseline.history_epoch;
+        host.recycle_submitted_image(baseline);
+        host.disable_submitted_capture();
+        host.enable_submitted_capture_from(
+            2,
+            crate::runtime::CaptureLimits::default(),
+            CaptureSource::SceneLinear,
+        )
+        .unwrap();
+        submit(&mut host, &output);
+        let first = image(&mut host);
+        assert_eq!(first.pixel_source, CaptureSource::SceneLinear);
+        assert_eq!(first.rgba.len(), 65 * 37 * 8);
+        assert_eq!(first.history_epoch, epoch);
+        assert!(first.sample.surface_presented);
+        let linear = first.rgba.clone();
+        let first_exposure = first
+            .exposure_gpu_words
+            .expect("same-submission exposure metadata");
+        host.recycle_submitted_image(first);
+        submit(&mut host, &output);
+        let repeat = image(&mut host);
+        assert_eq!(repeat.rgba, linear);
+        let repeat_exposure = repeat
+            .exposure_gpu_words
+            .expect("same-submission exposure metadata");
+        assert_eq!(first_exposure[..4], repeat_exposure[..4]);
+        assert_ne!(first_exposure[5..7], repeat_exposure[5..7]);
+        host.recycle_submitted_image(repeat);
+        host.disable_submitted_capture();
+        host.enable_submitted_capture(3).unwrap();
+        submit(&mut host, &output);
+        let restored = image(&mut host);
+        assert_eq!(restored.pixel_source, CaptureSource::Sdr);
+        assert_eq!(restored.rgba, sdr);
+        assert_eq!(restored.history_epoch, epoch);
+        assert_eq!(host.submitted_capture_omissions(), 0);
+    });
+}
+
+#[test]
+fn linear_capture_allowance_is_validated_before_target_replacement() {
+    use crate::synthetic::CaptureSource;
+    pollster::block_on(async {
+        let (mut host, _output, _instance) =
+            Box::pin(host_and_output(wgpu::TextureFormat::Rgba8Unorm)).await;
+        let limits = crate::runtime::CaptureLimits {
+            staging_slots: 1,
+            cpu_buffers: 1,
+            byte_allowance: 30_000,
+        };
+        assert!(
+            host.enable_submitted_capture_from(1, limits, CaptureSource::SceneLinear)
+                .is_err()
+        );
+        assert_eq!(host.slots[0].target.capture_source(), CaptureSource::Sdr);
+        assert!(host.submitted_capture.is_none());
+        host.enable_submitted_capture_with_limits(2, limits)
+            .unwrap();
     });
 }

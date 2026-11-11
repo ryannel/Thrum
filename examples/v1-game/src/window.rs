@@ -79,6 +79,7 @@ pub fn run_window() {
                 demo: GameControls::new().map_err(|error| error.to_string())?,
                 world: None,
                 held_keys: 0,
+                capture_route: None,
             })
         },
     );
@@ -89,6 +90,7 @@ struct WindowGame {
     demo: GameControls,
     world: Option<WorldControls>,
     held_keys: u8,
+    capture_route: Option<String>,
 }
 
 /// Construct the ordinary game for the engine's headless presenter adapter.
@@ -99,6 +101,10 @@ pub fn capture_game() -> Result<impl Game, String> {
         demo: GameControls::new().map_err(|error| error.to_string())?,
         world: None,
         held_keys: 0,
+        capture_route: std::env::var_os("THRUM_CAPTURE_RUNTIME_ROUTE")
+            .map(std::fs::read_to_string)
+            .transpose()
+            .map_err(|error| error.to_string())?,
     })
 }
 
@@ -135,19 +141,27 @@ impl Game for WindowGame {
         gpu: Gpu<'_>,
         world_advanced: Box<dyn Fn() + Send>,
     ) -> Result<Prepared<WorldPort, GameScene>, String> {
+        let render_extent = [1920, 1080];
         let mut host = pollster::block_on(FrameHost::new_with_setup(
             gpu.device,
             gpu.queue,
             gpu.capabilities,
             FrameConfig {
-                render_extent: [1920, 1080],
+                render_extent,
                 surface: Some(gpu.surface),
             },
             crate::selected_setup()?,
         ))?;
-        crate::attach_cooked_scene(&mut host)?;
+        let content = crate::attach_cooked_scene(&mut host)?;
         self.demo.observe_camera(host.camera_orientation());
-        let origin = Instant::now();
+        let offset = if let Some(route) = &self.capture_route {
+            capture::prepare_route(&mut host, content, route, render_extent)?
+        } else {
+            std::time::Duration::ZERO
+        };
+        let origin = Instant::now()
+            .checked_sub(offset)
+            .ok_or("capture route origin underflow")?;
         let (host, controls) = host.into_threaded(origin, world_advanced)?;
         self.world = Some(controls);
         Ok(Prepared {
