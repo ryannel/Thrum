@@ -5,9 +5,11 @@ Run apple_tile_m1.py separately for the unchanged complete M0 comparison matrix.
 This adds both retained surface format controls and T2 realtime stall recovery.
 """
 import argparse
+import hashlib
 import json
 import os
 from pathlib import Path
+import subprocess
 
 from apple_tile_m0 import ROOT, ROUTE, digest, finish_t2, run_native, run_t2, save, validate_store
 from apple_tile_m1 import BASELINE, retained_comparison
@@ -20,7 +22,11 @@ def run(args):
     route = json.loads(ROUTE.read_text())
     validate_store(args.store, route)
     args.output.mkdir(parents=True, exist_ok=False)
-    report = {'passed': False, 'binary_sha256': digest(args.binary), 'runs': {}, 'comparisons': {}, 'failures': []}
+    report = {'passed': False,
+              'revision': subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(),
+              'diff_sha256': hashlib.sha256(subprocess.check_output(['git', 'diff', 'HEAD'])).hexdigest(),
+              'binary_sha256': digest(args.binary), 'route_sha256': digest(ROUTE),
+              'runs': {}, 'comparisons': {}, 'failures': []}
     previous = os.environ.get('THRUM_RECIPE')
     try:
         for recipe in ['portable', 'apple-tile']:
