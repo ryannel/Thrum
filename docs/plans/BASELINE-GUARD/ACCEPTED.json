@@ -1,6 +1,28 @@
 {
   "module": "BASELINE-GUARD",
-  "design": null,
+  "design": {
+    "verdict": "changes",
+    "review": "docs/evidence/BASELINE-GUARD/design-review.md",
+    "commit": "9619c1370075b6b03f9d436f12af454f6020197c",
+    "hash": "8be565bd5a8d6503a76f72faa161268229f35d85799b2ccbaa5ce9c5dd5efa67",
+    "by": "review",
+    "host": "codex",
+    "model": "gpt-6-astra",
+    "effort": "high",
+    "observed": {
+      "model": "gpt-6-astra",
+      "effort": "high"
+    },
+    "cli": "codex-cli 0.167.0-alpha.3.2",
+    "path": "headless",
+    "usage": {
+      "input": 71880,
+      "cached": 736256,
+      "output": 6212,
+      "turns": 1
+    },
+    "at": "2026-11-11T15:23:09Z"
+  },
   "milestones": {
     "M1": {
       "definitions": "75a65f7d9603ccbb55c5b4050412d868de114833388b701d4cedda1789eb0fa9",
