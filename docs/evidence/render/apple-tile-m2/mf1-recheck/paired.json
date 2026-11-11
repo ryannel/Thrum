@@ -2,7 +2,7 @@
   "sdr": [
     {
       "reference": {
-        "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m2/mf1-recheck/m1/portable-sdr/checkpoints/approach.rgba8",
+        "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m2/mf1-rebased/m1/portable-sdr/checkpoints/approach.rgba8",
         "file_sha256": "168a804e069d23d94a01d3ce413aa947a13f5d34a5e02ad8f34a1cec97e1b084",
         "pixels_sha256": "168a804e069d23d94a01d3ce413aa947a13f5d34a5e02ad8f34a1cec97e1b084",
         "extent": [
@@ -13,7 +13,7 @@
         "encoding": "rgba8"
       },
       "candidate": {
-        "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m2/mf1-recheck/m1/apple-tile-sdr/checkpoints/approach.rgba8",
+        "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m2/mf1-rebased/m1/apple-tile-sdr/checkpoints/approach.rgba8",
         "file_sha256": "168a804e069d23d94a01d3ce413aa947a13f5d34a5e02ad8f34a1cec97e1b084",
         "pixels_sha256": "168a804e069d23d94a01d3ce413aa947a13f5d34a5e02ad8f34a1cec97e1b084",
         "extent": [
@@ -75,7 +75,7 @@
     },
     {
       "reference": {
-        "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m2/mf1-recheck/m1/portable-sdr/checkpoints/mirror-light.rgba8",
+        "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m2/mf1-rebased/m1/portable-sdr/checkpoints/mirror-light.rgba8",
         "file_sha256": "719ef93e987a6dedf9b74e17f0d878fa0dc2647cc40cce681033fc2a85c3b213",
         "pixels_sha256": "719ef93e987a6dedf9b74e17f0d878fa0dc2647cc40cce681033fc2a85c3b213",
         "extent": [
@@ -86,7 +86,7 @@
         "encoding": "rgba8"
       },
       "candidate": {
-        "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m2/mf1-recheck/m1/apple-tile-sdr/checkpoints/mirror-light.rgba8",
+        "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m2/mf1-rebased/m1/apple-tile-sdr/checkpoints/mirror-light.rgba8",
         "file_sha256": "719ef93e987a6dedf9b74e17f0d878fa0dc2647cc40cce681033fc2a85c3b213",
         "pixels_sha256": "719ef93e987a6dedf9b74e17f0d878fa0dc2647cc40cce681033fc2a85c3b213",
         "extent": [
@@ -148,7 +148,7 @@
     },
     {
       "reference": {
-        "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m2/mf1-recheck/m1/portable-sdr/checkpoints/pre-cut.rgba8",
+        "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m2/mf1-rebased/m1/portable-sdr/checkpoints/pre-cut.rgba8",
         "file_sha256": "8fd76e0c80846c02c8c97fd504fea90aa3e255a5d8fc079e035108071f553879",
         "pixels_sha256": "8fd76e0c80846c02c8c97fd504fea90aa3e255a5d8fc079e035108071f553879",
         "extent": [
@@ -159,7 +159,7 @@
         "encoding": "rgba8"
       },
       "candidate": {
-        "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m2/mf1-recheck/m1/apple-tile-sdr/checkpoints/pre-cut.rgba8",
+        "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m2/mf1-rebased/m1/apple-tile-sdr/checkpoints/pre-cut.rgba8",
         "file_sha256": "8fd76e0c80846c02c8c97fd504fea90aa3e255a5d8fc079e035108071f553879",
         "pixels_sha256": "8fd76e0c80846c02c8c97fd504fea90aa3e255a5d8fc079e035108071f553879",
         "extent": [
@@ -221,7 +221,7 @@
     },
     {
       "reference": {
-        "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m2/mf1-recheck/m1/portable-sdr/checkpoints/post-cut.rgba8",
+        "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m2/mf1-rebased/m1/portable-sdr/checkpoints/post-cut.rgba8",
         "file_sha256": "9d09e38d9a27f1b41434bc3bc4198e686896e7ed8fdca8f1fbccb21ab93a744c",
         "pixels_sha256": "9d09e38d9a27f1b41434bc3bc4198e686896e7ed8fdca8f1fbccb21ab93a744c",
         "extent": [
@@ -232,7 +232,7 @@
         "encoding": "rgba8"
       },
       "candidate": {
-        "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m2/mf1-recheck/m1/apple-tile-sdr/checkpoints/post-cut.rgba8",
+        "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m2/mf1-rebased/m1/apple-tile-sdr/checkpoints/post-cut.rgba8",
         "file_sha256": "9d09e38d9a27f1b41434bc3bc4198e686896e7ed8fdca8f1fbccb21ab93a744c",
         "pixels_sha256": "9d09e38d9a27f1b41434bc3bc4198e686896e7ed8fdca8f1fbccb21ab93a744c",
         "extent": [
@@ -294,7 +294,7 @@
     },
     {
       "reference": {
-        "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m2/mf1-recheck/m1/portable-sdr/checkpoints/near-plane.rgba8",
+        "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m2/mf1-rebased/m1/portable-sdr/checkpoints/near-plane.rgba8",
         "file_sha256": "302094d02247a3f2a217fd57c4a91a5542f8a05e450d76252abbb170142cab3b",
         "pixels_sha256": "302094d02247a3f2a217fd57c4a91a5542f8a05e450d76252abbb170142cab3b",
         "extent": [
@@ -305,7 +305,7 @@
         "encoding": "rgba8"
       },
       "candidate": {
-        "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m2/mf1-recheck/m1/apple-tile-sdr/checkpoints/near-plane.rgba8",
+        "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m2/mf1-rebased/m1/apple-tile-sdr/checkpoints/near-plane.rgba8",
         "file_sha256": "302094d02247a3f2a217fd57c4a91a5542f8a05e450d76252abbb170142cab3b",
         "pixels_sha256": "302094d02247a3f2a217fd57c4a91a5542f8a05e450d76252abbb170142cab3b",
         "extent": [
@@ -369,7 +369,7 @@
   "scene-linear": [
     {
       "reference": {
-        "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m2/mf1-recheck/m1/portable-scene-linear/checkpoints/approach.rgba16f",
+        "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m2/mf1-rebased/m1/portable-scene-linear/checkpoints/approach.rgba16f",
         "file_sha256": "e506413f84ef4445df7241d6f29d74ad37fe945cf8b7c94707246bd2f553778a",
         "pixels_sha256": "e506413f84ef4445df7241d6f29d74ad37fe945cf8b7c94707246bd2f553778a",
         "extent": [
@@ -380,7 +380,7 @@
         "encoding": "rgba16f"
       },
       "candidate": {
-        "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m2/mf1-recheck/m1/apple-tile-scene-linear/checkpoints/approach.rgba16f",
+        "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m2/mf1-rebased/m1/apple-tile-scene-linear/checkpoints/approach.rgba16f",
         "file_sha256": "e506413f84ef4445df7241d6f29d74ad37fe945cf8b7c94707246bd2f553778a",
         "pixels_sha256": "e506413f84ef4445df7241d6f29d74ad37fe945cf8b7c94707246bd2f553778a",
         "extent": [
@@ -442,7 +442,7 @@
     },
     {
       "reference": {
-        "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m2/mf1-recheck/m1/portable-scene-linear/checkpoints/mirror-light.rgba16f",
+        "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m2/mf1-rebased/m1/portable-scene-linear/checkpoints/mirror-light.rgba16f",
         "file_sha256": "bd895bc0bd5d8b8777620f576c577b94775c97a9f2193bfeaf366f14a81d3e73",
         "pixels_sha256": "bd895bc0bd5d8b8777620f576c577b94775c97a9f2193bfeaf366f14a81d3e73",
         "extent": [
@@ -453,7 +453,7 @@
         "encoding": "rgba16f"
       },
       "candidate": {
-        "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m2/mf1-recheck/m1/apple-tile-scene-linear/checkpoints/mirror-light.rgba16f",
+        "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m2/mf1-rebased/m1/apple-tile-scene-linear/checkpoints/mirror-light.rgba16f",
         "file_sha256": "bd895bc0bd5d8b8777620f576c577b94775c97a9f2193bfeaf366f14a81d3e73",
         "pixels_sha256": "bd895bc0bd5d8b8777620f576c577b94775c97a9f2193bfeaf366f14a81d3e73",
         "extent": [
@@ -515,7 +515,7 @@
     },
     {
       "reference": {
-        "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m2/mf1-recheck/m1/portable-scene-linear/checkpoints/pre-cut.rgba16f",
+        "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m2/mf1-rebased/m1/portable-scene-linear/checkpoints/pre-cut.rgba16f",
         "file_sha256": "0464181e03b9b55b0ca824dd19ad0229b539864eeea4d7535b3e25492a5b01ec",
         "pixels_sha256": "0464181e03b9b55b0ca824dd19ad0229b539864eeea4d7535b3e25492a5b01ec",
         "extent": [
@@ -526,7 +526,7 @@
         "encoding": "rgba16f"
       },
       "candidate": {
-        "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m2/mf1-recheck/m1/apple-tile-scene-linear/checkpoints/pre-cut.rgba16f",
+        "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m2/mf1-rebased/m1/apple-tile-scene-linear/checkpoints/pre-cut.rgba16f",
         "file_sha256": "0464181e03b9b55b0ca824dd19ad0229b539864eeea4d7535b3e25492a5b01ec",
         "pixels_sha256": "0464181e03b9b55b0ca824dd19ad0229b539864eeea4d7535b3e25492a5b01ec",
         "extent": [
@@ -588,7 +588,7 @@
     },
     {
       "reference": {
-        "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m2/mf1-recheck/m1/portable-scene-linear/checkpoints/post-cut.rgba16f",
+        "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m2/mf1-rebased/m1/portable-scene-linear/checkpoints/post-cut.rgba16f",
         "file_sha256": "e6cec37fa59ee447ef4ecd69a2e7c516e21a19804914849beb4e14bf1644858d",
         "pixels_sha256": "e6cec37fa59ee447ef4ecd69a2e7c516e21a19804914849beb4e14bf1644858d",
         "extent": [
@@ -599,7 +599,7 @@
         "encoding": "rgba16f"
       },
       "candidate": {
-        "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m2/mf1-recheck/m1/apple-tile-scene-linear/checkpoints/post-cut.rgba16f",
+        "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m2/mf1-rebased/m1/apple-tile-scene-linear/checkpoints/post-cut.rgba16f",
         "file_sha256": "e6cec37fa59ee447ef4ecd69a2e7c516e21a19804914849beb4e14bf1644858d",
         "pixels_sha256": "e6cec37fa59ee447ef4ecd69a2e7c516e21a19804914849beb4e14bf1644858d",
         "extent": [
@@ -661,7 +661,7 @@
     },
     {
       "reference": {
-        "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m2/mf1-recheck/m1/portable-scene-linear/checkpoints/near-plane.rgba16f",
+        "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m2/mf1-rebased/m1/portable-scene-linear/checkpoints/near-plane.rgba16f",
         "file_sha256": "15c237b6e2953c02c66fef86666b503d82d2b02f4d5f2f5008930cfa4b8c554b",
         "pixels_sha256": "15c237b6e2953c02c66fef86666b503d82d2b02f4d5f2f5008930cfa4b8c554b",
         "extent": [
@@ -672,7 +672,7 @@
         "encoding": "rgba16f"
       },
       "candidate": {
-        "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m2/mf1-recheck/m1/apple-tile-scene-linear/checkpoints/near-plane.rgba16f",
+        "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m2/mf1-rebased/m1/apple-tile-scene-linear/checkpoints/near-plane.rgba16f",
         "file_sha256": "15c237b6e2953c02c66fef86666b503d82d2b02f4d5f2f5008930cfa4b8c554b",
         "pixels_sha256": "15c237b6e2953c02c66fef86666b503d82d2b02f4d5f2f5008930cfa4b8c554b",
         "extent": [

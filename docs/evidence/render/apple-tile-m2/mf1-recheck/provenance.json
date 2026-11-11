@@ -1,10 +1,11 @@
 {
-  "revision": "ae70bbb3edd74310f3603b1ad4fac5b25ce539ad",
+  "revision": "9af8664f63b95c18e7d3b8e5432288c066204aac",
   "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "status": "",
-  "binary_sha256": "e7f1b779ecf808e4a6e9ef313bdf57e208562799bc7c3ae11b25c3047ee48fd4",
+  "binary_sha256": "8b4178416ea8039ef5672ba6651ad902f79c23de2aed3edad03aac537a2a8468",
   "compiler": "rustc 1.99.1 (58cf8f9c3 2026-10-13) (Homebrew)\nbinary: rustc\ncommit-hash: 58cf8f9c35b355199727627d07ae34a4e2846d67\ncommit-date: 2026-10-13\nhost: aarch64-apple-darwin\nrelease: 1.99.1\nLLVM version: 23.1.3\n",
   "build_command": "RUSTC_WRAPPER= cargo build --locked --offline --release -p v1-game --features draw-probe,thrum-render/creation-counters",
   "jitter_fix": "ae0cc8fa",
-  "cooked_store": "tmp/g3t-m0/valley"
+  "cooked_store": "tmp/g3t-m0/valley",
+  "integrated_renderer_change": "7f020ca1"
 }
