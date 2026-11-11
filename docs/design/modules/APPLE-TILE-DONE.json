@@ -22,7 +22,7 @@
         },
         {
           "id": "D0.2",
-          "statement": "Same-target portable fixed checkpoints are byte-identical across repeats. Retained full-resolution pre-change scene-linear and submitted SDR baselines govern all ordinary paths; the diagnostic native copy/select witness is exact against its own stateful twin. No CPU/GPU f32 agreement is assumed.",
+          "statement": "Same-target portable fixed checkpoints are byte-identical across repeats. Retained full-resolution pre-change scene-linear and submitted SDR baselines govern all ordinary paths. No CPU/GPU f32 agreement is assumed. The diagnostic native copy/select witness is not part of M0: M10 first builds it and proves it exact against its own twin (D10.1/D10.2).",
           "target": "mac-metal",
           "status": "open",
           "evidence": "docs/evidence/render/apple-tile-m0/README.md",
