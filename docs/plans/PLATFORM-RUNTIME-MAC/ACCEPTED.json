@@ -57,5 +57,15 @@
         "at": "2026-11-09T18:29:05Z"
       }
     }
+  },
+  "briefs": [
+    {
+      "task": "Bring Thrum's plans into the orchestrate 1.7.0 shape after the migration to docs/plans (commit 42fdce97). Your first landing will be refused until the oversized plans are trimmed; that is intended, so trim and land again. Done when:\n- ARCHITECTURE.md opens with the module table (# | Module | What it's for | Needs), in plain words, with no status column, and the status column and status prose elsewhere in it are gone.\n- Every milestone is named for what someone can see or do.\n- Done milestones are a heading plus a link to their review.\n- Review briefs (about 400 lines, ATMOSPHERE's plan especially) and pasted handoffs are moved to docs/evidence/<MODULE>/.\n- Design sections are moved out of plans into DESIGN.md, such as PLATFORM-RUNTIME-IOS's 'Shell design'.\n- The per-module *-BRIEF.md files are folded into their module folders.\n- docs/BUILD-PLAN.md is folded into BRIEF.md, with Purpose: pointing at it.\n- The stray plans docs/design/CONSTRUCTION-PLAN.md, docs/design/decisions/G7-SHOWCASE-ROUTE-PLAN.md and docs/evidence/i2a/SOURCE-SPACE-PLAN.md are converted or deleted.\n- The status prose is removed from ORCHESTRATE.md's Targets section.\nDon't change any done-when item, record file or milestone scope; this is a reshape, not a replan. Fix links that the moves break.",
+      "at": "2026-11-11T04:36:27Z"
+    }
+  ],
+  "planner": {
+    "host": "claude",
+    "at": "2026-11-11T04:36:27Z"
   }
 }
