@@ -1,6 +1,28 @@
 {
   "module": "EFFECT-GRAPH",
-  "design": null,
+  "design": {
+    "verdict": "changes",
+    "review": "docs/evidence/EFFECT-GRAPH/design-review.md",
+    "commit": "c9dd6cd0d58617e5b269054e9b9b5a564095ced9",
+    "hash": "efcef49432f4c83ff2d08cc23df4e7c4bbc622e384b69152a80a79e872f1faef",
+    "by": "review",
+    "host": "codex",
+    "model": "gpt-6-astra",
+    "effort": "high",
+    "observed": {
+      "model": "gpt-6-astra",
+      "effort": "high"
+    },
+    "cli": "codex-cli 0.167.0-alpha.3.2",
+    "path": "headless",
+    "usage": {
+      "input": 93221,
+      "cached": 1073664,
+      "output": 6906,
+      "turns": 1
+    },
+    "at": "2026-11-11T15:37:47Z"
+  },
   "milestones": {
     "M1": {
       "definitions": "2626bc03cd1b0f5d133f7e8672aae7afd1b0d9a4b84c9c609d4ac06c2d248a61",
