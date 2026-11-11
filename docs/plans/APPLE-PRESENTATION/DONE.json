@@ -4,7 +4,7 @@
     {
       "id": "M1",
       "name": "Every pixel of the valley carries correct motion under jitter, including the sky and stars",
-      "state": "claimed",
+      "state": "in_progress",
       "fails": 0,
       "replans": 0,
       "needs": [
@@ -19,8 +19,10 @@
           "lock": "gpu",
           "ask": "Do tests in ./dev check assert the sequence values, the absence of (0,0) and the record layout byte for byte, and does RENDER-SPEC state the same layout with its design hash refreshed? Do the previous matrices come from the last submitted frame, not the last encoded one?",
           "target": "mac-metal",
-          "status": "pass",
-          "evidence": "docs/evidence/APPLE-PRESENTATION/m1/README.md"
+          "status": "open",
+          "evidence": "",
+          "verdict": "pass",
+          "review": "docs/evidence/APPLE-PRESENTATION/M1-review.md"
         },
         {
           "id": "D1.2",
@@ -29,8 +31,10 @@
           "lock": "gpu",
           "ask": "Does the test read the real motion target back from the GPU over several jitter phases and fail on any nonzero texel, with a moving-object control that must be nonzero?",
           "target": "mac-metal",
-          "status": "pass",
-          "evidence": "docs/evidence/APPLE-PRESENTATION/m1/README.md"
+          "status": "open",
+          "evidence": "",
+          "verdict": "pass",
+          "review": "docs/evidence/APPLE-PRESENTATION/M1-review.md"
         },
         {
           "id": "D1.3",
@@ -39,28 +43,39 @@
           "lock": "gpu",
           "ask": "Is the expected sky motion derived independently of the shader, does the test cover a time step with the camera still (phase delta only), and is the change inside the atmosphere shaders limited to motion output as the module list's seam 4 ruling says?",
           "target": "mac-metal",
-          "status": "pass",
-          "evidence": "docs/evidence/APPLE-PRESENTATION/m1/README.md"
+          "status": "open",
+          "evidence": "",
+          "verdict": "pass",
+          "review": "docs/evidence/APPLE-PRESENTATION/M1-review.md"
         },
         {
           "id": "D1.4",
           "statement": "Objects with invalid history are marked as such, ready for the reactive target, instead of writing a fabricated zero vector: a spawn, a camera cut, a device replacement and a cooked asset swap each mark their geometry.",
           "ask": "For each of the four cases, where is the mark set and where is it cleared, and can any drawer in the forward pass (synthetic, contribution, cooked on both draw paths) still emit zero motion for geometry with no previous position?",
           "target": "mac-metal",
-          "status": "pass",
-          "evidence": "docs/evidence/APPLE-PRESENTATION/m1/README.md"
+          "status": "open",
+          "evidence": "",
+          "verdict": "pass",
+          "review": "docs/evidence/APPLE-PRESENTATION/M1-review.md"
         },
         {
           "id": "D1.5",
           "statement": "A motion view in the existing display pass shows motion on the valley route: during a pan, terrain, objects, sky and stars all move in the expected direction with magnitudes that grow sensibly from the pan's centre to its edge.",
           "inspect": "Capture a pan on the valley route with the motion view on, as a fixed-time sequence from the Mac engine capture. Watch it in motion and check whole frames and crops of: the skyline, a near object against far terrain, the star field at night, and a moving object. Say that you watched motion.",
           "target": "mac-metal",
-          "status": "pass",
-          "evidence": "docs/evidence/APPLE-PRESENTATION/m1/README.md",
-          "verdict": "",
-          "review": ""
+          "status": "open",
+          "evidence": "",
+          "verdict": "pass",
+          "review": "docs/evidence/APPLE-PRESENTATION/M1-review.md"
         }
-      ]
+      ],
+      "findings": [
+        {
+          "name": "jitter-presented-without-reconstruction",
+          "repeat": false
+        }
+      ],
+      "rounds": 1
     },
     {
       "id": "M2",
