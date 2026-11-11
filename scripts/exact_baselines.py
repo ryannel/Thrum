@@ -78,6 +78,38 @@ def archive_manifest(directory, output):
     shutil.rmtree(directory)
 
 
+def archive_completed_runs(directory, output):
+    """Release only captures whose successful result the unchanged owner published.
+
+    Both owner matrices publish their top-level manifest after finishing a run's
+    comparisons or motion verification. Neither reads completed runs again. Keep
+    their identities and source manifests before deleting reconstructible pixels.
+    An in-progress or failed capture is never removed.
+    """
+    try:
+        report = json.loads((directory / 'manifest.json').read_text())
+    except (OSError, json.JSONDecodeError):
+        return
+    if report.get('failures'):
+        return
+    for name, row in report.get('runs', {}).items():
+        compared = any((key == name or key.startswith(name + '-')) and result.get('equal') is True
+                       for key, result in report.get('comparisons', {}).items())
+        if not row.get('complete') and not compared:
+            continue
+        capture = directory / name
+        if not capture.is_dir() or capture.resolve().parent != directory.resolve():
+            continue
+        records = {}
+        for path in capture.rglob('*.json'):
+            records[str(path.relative_to(capture))] = json.loads(path.read_text())
+        if (capture / 'route.jsonl').exists():
+            records['route.jsonl'] = [json.loads(line) for line in (capture / 'route.jsonl').read_text().splitlines()]
+        archive = output / f'{directory.name}-{name}-records.json.gz'
+        archive.write_bytes(gzip.compress(json.dumps(records).encode(), mtime=0))
+        shutil.rmtree(capture)
+
+
 def verify(root=ROOT):
     if git('status', '--porcelain', '--untracked-files=all', root=root):
         raise ValueError('dirty tree: verifier requires a clean checkout (including untracked sources)')
@@ -92,25 +124,40 @@ def verify(root=ROOT):
     started = time.monotonic()
     report = {'passed': False, 'revision': git('rev-parse', 'HEAD', root=root), 'content_key': key,
               'target': 'mac-metal + chrome-webgpu', 'commands': [], 'comparisons': {},
+              'diff_sha256': hashlib.sha256(subprocess.check_output(['git', 'diff', 'HEAD'], cwd=root)).hexdigest(),
               'load': os.getloadavg(), 'disk_free_before_bytes': shutil.disk_usage(root).free}
     environment = {k: v for k, v in os.environ.items() if not k.startswith('THRUM_') and k not in
                    ['CARGO_TARGET_DIR', 'RUSTFLAGS', 'CARGO_ENCODED_RUSTFLAGS', 'RUSTC', 'RUSTC_WRAPPER']}
     environment['RUSTC_WRAPPER'] = ''
 
-    def run(name, command, baseline=None):
+    def run(name, command, baseline=None, capture_directory=None):
         start = time.monotonic()
         log = output / (name + '.log')
         print(f'RUN {name}', flush=True)
         with log.open('w') as stream:
-            result = subprocess.run(command, cwd=root, env=environment, stdout=stream,
-                                    stderr=subprocess.STDOUT, timeout=3000)
-        report['commands'].append({'name': name, 'command': command, 'exit': result.returncode,
+            process = subprocess.Popen(command, cwd=root, env=environment, stdout=stream, stderr=subprocess.STDOUT)
+            deadline = time.monotonic() + 3000
+            try:
+                while True:
+                    try:
+                        code = process.wait(timeout=1)
+                        break
+                    except subprocess.TimeoutExpired:
+                        if time.monotonic() >= deadline:
+                            raise TimeoutError(f'{name} exceeded 3000 seconds') from None
+                        if capture_directory is not None:
+                            archive_completed_runs(capture_directory, output)
+            except BaseException:
+                process.kill()
+                process.wait()
+                raise
+        report['commands'].append({'name': name, 'command': command, 'exit': code,
                                    'seconds': time.monotonic() - start, 'log': str(log.relative_to(root))})
         save(output / 'record.json', report)
-        if result.returncode:
+        if code:
             identity = f"baseline {baseline['id']} owner {baseline['owner']}: " if baseline else ''
             detail = log.read_text()[-3000:]
-            raise ValueError(f'{identity}comparison/stage {name} failed (exit {result.returncode}): {detail}')
+            raise ValueError(f'{identity}comparison/stage {name} failed (exit {code}): {detail}')
 
     try:
         entries = registry(root)['baselines']
@@ -145,11 +192,12 @@ def verify(root=ROOT):
         for script in native['comparisons']:
             name = Path(script).stem
             directory = output / name
-            run(name, [sys.executable, script, '--store', str(output / 'valley'), '--output', str(directory)], native)
+            run(name, [sys.executable, script, '--store', str(output / 'valley'), '--output', str(directory)], native, capture_directory=directory)
             manifest = json.loads((directory / 'manifest.json').read_text())
             if not manifest['passed']:
                 raise ValueError(f"baseline {native['id']} owner {native['owner']}: {name} did not pass")
             report['comparisons'][name] = {'passed': True, 'comparisons': len(manifest['comparisons'])}
+            archive_completed_runs(directory, output)
             archive_manifest(directory, output / (name + '-manifest.json.gz'))
         for entry in entries[1:]:
             name = entry['id']
