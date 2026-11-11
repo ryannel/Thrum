@@ -174,7 +174,7 @@ impl<G: Game> Actor<G> {
             sequence: 0,
             device_generation: self.gpu.watch.generation,
             outcome: RenderOutcome::DeviceLost,
-            samples: [None; SAMPLE_SLOTS],
+            samples: [const { None }; SAMPLE_SLOTS],
             counters: FrameCounters::read(&self.host),
             worker_wall: Duration::ZERO,
             target_status: None,

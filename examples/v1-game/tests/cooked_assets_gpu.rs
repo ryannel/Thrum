@@ -668,14 +668,14 @@ fn until_swap(
 fn timed(sample: &FrameSample, device: &wgpu::Device, drawing: bool) {
     assert!(!sample.timing_fault, "contributed frame timing fault");
     if device.features().contains(wgpu::Features::TIMESTAMP_QUERY) {
-        let scene = sample.gpu_pass_ns.expect("scene pass times");
+        let scene = sample.gpu_pass_ns.as_ref().expect("scene pass times");
         assert!(sample.gpu_present_ns.is_some(), "present time");
         if drawing {
             let contribution = sample
                 .gpu_contribution_ns
                 .expect("contribution compute time");
             assert!(
-                scene[3] >= contribution,
+                scene.forward() >= contribution,
                 "forward includes the contribution"
             );
         }

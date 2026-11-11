@@ -17,7 +17,7 @@ use super::{
 
 mod daylight;
 
-pub(super) const PASS_NAME: &str = "atmosphere stars";
+pub(crate) const PASS_NAME: &str = "atmosphere stars";
 const UNIFORM_LEN: usize = 176;
 const UNIFORM_BYTES: u64 = UNIFORM_LEN as u64;
 const SHADER: &str = concat!(

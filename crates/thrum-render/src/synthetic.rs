@@ -34,7 +34,7 @@ mod contributed;
 mod display;
 mod exposure;
 mod forward;
-mod frame_stats;
+pub(crate) mod frame_stats;
 mod history_gpu;
 mod mesh_arena;
 mod mesh_route;
@@ -43,7 +43,7 @@ mod scene_apply;
 mod scene_graph;
 mod scene_source;
 mod shadow;
-mod stars;
+pub(crate) mod stars;
 mod target_storage;
 mod upload;
 mod view;
@@ -58,7 +58,9 @@ use cluster_gpu::ClusterCompute;
 pub(crate) use contributed::CONTRIBUTION_COMPUTE;
 use contributed::CONTRIBUTION_UPLOAD;
 pub use display::{DisplayOverlay, SdrToneMap};
-use display::{DisplayPrepared, DisplayTarget};
+pub(crate) use display::{
+    PreToneInput, PreToneViews, PreparedPreToneInput, SdrToneStage, ToneOutput,
+};
 use exposure::ExposureResolve;
 pub(crate) use frame_stats::{SceneTimingLayout, pass_durations};
 use history_gpu::TransformHistory;
@@ -576,7 +578,7 @@ pub struct PreparedSynthetic {
     caster_culling: Option<(CasterCulling, Vec<wgpu::BindGroup>)>,
     /// The arena cube's checked index range and base vertex.
     cube_draw: (std::ops::Range<u32>, i32),
-    display: DisplayPrepared,
+    display: SdrToneStage,
     view_layout: wgpu::BindGroupLayout,
     view_buffer: wgpu::Buffer,
     view_stride: u32,
@@ -841,9 +843,13 @@ impl SceneContext<'_> {
         self.prepared.display.encode(
             self.encoder,
             self.generation,
-            self.target,
+            &self.target.display,
             pass,
-            self.exposure_side,
+            ToneOutput {
+                resource: &self.target.ids.output,
+                view: &self.target.view,
+                exposure_side: self.exposure_side,
+            },
             self.timings.as_deref_mut(),
         )
     }
@@ -861,6 +867,12 @@ impl SceneContext<'_> {
 }
 
 impl PreparedSynthetic {
+    /// The prepared, generation-bound SDR stage for graph composition. G4 may
+    /// declare and prepare a reconstruction output through this same stage.
+    pub(crate) fn sdr_tone_stage(&self) -> &SdrToneStage {
+        &self.display
+    }
+
     /// Prepare on the V1 executor's existing device and upload queue. No private
     /// adapter, device, submission or cook authority is created here.
     /// # Errors
@@ -1674,7 +1686,14 @@ impl PreparedSynthetic {
             queue,
             scene.view.exposure_policy(exposure, atmosphere.is_some()),
         );
-        let display = DisplayPrepared::new(device);
+        let display = SdrToneStage::new(
+            device,
+            PipelineKey {
+                role: 1,
+                device_generation: generation,
+                revision: SYNTHETIC_REVISION,
+            },
+        );
         let stars = if atmosphere.is_some() {
             scene
                 .star_catalogue
@@ -2270,6 +2289,7 @@ fn storage_buffer(
 }
 
 struct TargetResources {
+    pre_tone: PreToneInput,
     depth: ResourceId,
     scene: ResourceId,
     motion: ResourceId,
@@ -2299,7 +2319,7 @@ pub struct OffscreenTarget {
     view: wgpu::TextureView,
     scene_view: wgpu::TextureView,
     motion_view: wgpu::TextureView,
-    display: DisplayTarget,
+    display: PreparedPreToneInput,
     view_bind_group: wgpu::BindGroup,
     aux_buffer: wgpu::Buffer,
     shadow: Option<ShadowTarget>,
@@ -2317,6 +2337,23 @@ pub struct OffscreenTarget {
     frame_revision: u64,
 }
 impl OffscreenTarget {
+    pub(crate) fn untimed_pass_names(
+        &self,
+        readback: bool,
+        presented: bool,
+    ) -> impl Iterator<Item = String> + '_ {
+        let plan = self.graph(readback).plan();
+        let executed = if presented {
+            usize::MAX
+        } else {
+            plan.pre_acquire_passes.unwrap_or(usize::MAX)
+        };
+        plan.pass_bindings()
+            .take(executed)
+            .filter(|(_, pass)| pass.kind == Some(crate::graph::PassKind::Copy))
+            .map(|(_, pass)| pass.name.clone())
+    }
+
     pub(crate) fn bind_surface_graph(
         &mut self,
         prepared: &PreparedSynthetic,
@@ -2339,6 +2376,15 @@ impl OffscreenTarget {
                 &compiled.night.as_ref().unwrap_or(&compiled.day).readback,
             )
             .map_err(RenderError::Graph)?;
+        self.display = prepared.sdr_tone_stage().prepare_input(
+            &self.device,
+            compiled.ids.pre_tone.clone(),
+            PreToneViews {
+                colour: &self.scene_view,
+                motion: &self.motion_view,
+                exposure: &prepared.exposure.samples,
+            },
+        )?;
         self.ids = compiled.ids;
         self.day_graphs = compiled.day.bind(prepared)?;
         self.night_graphs = compiled
@@ -2427,12 +2473,15 @@ impl OffscreenTarget {
             .ok_or(RenderError::GraphPassMismatch)?
             .create_view(&wgpu::TextureViewDescriptor::default());
         let (stars, draw_stars) = prepared.prepare_star_target(device, &depth, [width, height]);
-        let display = prepared.display.target(
+        let display = prepared.sdr_tone_stage().prepare_input(
             device,
-            &scene_view,
-            &motion_view,
-            &prepared.exposure.samples,
-        );
+            ids.pre_tone.clone(),
+            PreToneViews {
+                colour: &scene_view,
+                motion: &motion_view,
+                exposure: &prepared.exposure.samples,
+            },
+        )?;
         let aux = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("synthetic target view aux"),
             contents: &prepared

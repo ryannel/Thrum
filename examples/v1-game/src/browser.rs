@@ -677,22 +677,46 @@ impl BrowserGame {
         let encode = percentile(samples, |sample| sample.encode_cpu.as_secs_f64() * 1e6);
         let gpu = if timed == samples.len() && timed > 0 {
             let near = percentile(samples, |sample| {
-                sample.gpu_pass_ns.map_or(0.0, |passes| passes[0]) / 1e6
+                sample
+                    .gpu_pass_ns
+                    .as_ref()
+                    .map_or(0.0, thrum_render::timing::SceneGpuTimings::shadow_near)
+                    / 1e6
             });
             let far = percentile(samples, |sample| {
-                sample.gpu_pass_ns.map_or(0.0, |passes| passes[1]) / 1e6
+                sample
+                    .gpu_pass_ns
+                    .as_ref()
+                    .map_or(0.0, thrum_render::timing::SceneGpuTimings::shadow_far)
+                    / 1e6
             });
             let cluster = percentile(samples, |sample| {
-                sample.gpu_pass_ns.map_or(0.0, |passes| passes[2]) / 1e6
+                sample
+                    .gpu_pass_ns
+                    .as_ref()
+                    .map_or(0.0, thrum_render::timing::SceneGpuTimings::clusters)
+                    / 1e6
             });
             let forward = percentile(samples, |sample| {
-                sample.gpu_pass_ns.map_or(0.0, |passes| passes[3]) / 1e6
+                sample
+                    .gpu_pass_ns
+                    .as_ref()
+                    .map_or(0.0, thrum_render::timing::SceneGpuTimings::forward)
+                    / 1e6
             });
             let history = percentile(samples, |sample| {
-                sample.gpu_pass_ns.map_or(0.0, |passes| passes[4]) / 1e6
+                sample
+                    .gpu_pass_ns
+                    .as_ref()
+                    .map_or(0.0, thrum_render::timing::SceneGpuTimings::history)
+                    / 1e6
             });
             let display = percentile(samples, |sample| {
-                sample.gpu_pass_ns.map_or(0.0, |passes| passes[5]) / 1e6
+                sample
+                    .gpu_pass_ns
+                    .as_ref()
+                    .map_or(0.0, thrum_render::timing::SceneGpuTimings::tone)
+                    / 1e6
             });
             let present = percentile(samples, |sample| {
                 sample.gpu_present_ns.unwrap_or_default() / 1e6

@@ -24,11 +24,6 @@ const EXTENT: [u32; 2] = [1920, 1080];
 const SEGMENT: u64 = 300;
 const WARMUP_TICKS: u64 = 60;
 const TICKS: u64 = 1_800;
-/// `gpu_pass_ns` index of forward (includes the camera visibility pass).
-const FORWARD: usize = 3;
-/// `gpu_pass_ns` index of tone, excluded from the whole-frame sum.
-const TONE: usize = 5;
-
 fn complete(host: &mut FrameHost, device: &wgpu::Device) -> FrameSample {
     loop {
         if let Some(sample) = host.poll_completed().expect("GPU progress") {
@@ -143,18 +138,20 @@ fn main() {
                     "one frame per tick"
                 );
                 let sample = complete(&mut hosts[index], &device);
-                let passes = sample.gpu_pass_ns.expect("timed passes");
+                let passes = sample.gpu_pass_ns.as_ref().expect("timed passes");
                 drawn[index] = sample.camera_culling.map_or(0, |counts| counts.drawn);
-                whole[index] = passes
-                    .iter()
-                    .enumerate()
-                    .filter(|(slot, _)| *slot != TONE)
-                    .map(|(_, ns)| ns / 1e6)
-                    .sum();
+                whole[index] = (passes.sum() - passes.tone()) / 1e6;
                 if tick > WARMUP_TICKS {
                     rows[index][0].push(whole[index]);
-                    rows[index][1].push(passes[FORWARD] / 1e6);
-                    for (values, ns) in per_pass[index].iter_mut().zip(passes) {
+                    rows[index][1].push(passes.forward() / 1e6);
+                    for (values, ns) in per_pass[index].iter_mut().zip([
+                        passes.shadow_near(),
+                        passes.shadow_far(),
+                        passes.clusters(),
+                        passes.forward(),
+                        passes.history(),
+                        passes.tone(),
+                    ]) {
                         values.push(ns / 1e6);
                     }
                 }

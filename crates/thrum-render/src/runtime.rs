@@ -171,7 +171,7 @@ impl From<&'static str> for FrameError {
 /// One completed simulation-to-GPU frame. GPU pass values are absent when the
 /// adapter lacks timestamp queries or a timing readback fails. Callback time
 /// excludes deferred GPU completion and must not be added to GPU pass times.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub struct FrameSample {
     /// Last complete world tick used by the draw.
     pub tick: u64,
@@ -201,11 +201,9 @@ pub struct FrameSample {
     /// CPU wall attributable to the render owner. Inline hosts exclude their
     /// tick callback; threaded hosts keep the full render callback wall.
     pub render_cpu: Duration,
-    /// Actual GPU pass durations: near Sun shadow, far Sun shadow plus the horizon height map and the air shadow heights, local clusters,
-    /// forward, history, tone, then atmosphere transmittance, multiple/ground
-    /// irradiance preparation, sky view/specular preparation, diffuse irradiance and aerial perspective. The sky draw and an attached
-    /// scene contribution's compute pass are included in forward. Disabled or cached compute passes report zero.
-    pub gpu_pass_ns: Option<[f64; 11]>,
+    /// Actual GPU durations keyed by executed graph pass name. `None` means
+    /// unsupported or unusable counters; optional absent passes have no entry.
+    pub gpu_pass_ns: Option<crate::timing::SceneGpuTimings>,
     /// GPU time for the optional surface blit, when it was submitted and timed.
     pub gpu_present_ns: Option<f64>,
     /// GPU time for a scene contribution's compute pass alone (already in forward), when one is
@@ -306,6 +304,7 @@ struct FrameSlot {
     presentation: Option<PresentationBinding>,
     timings: GpuTimings,
     timing_layout: SceneTimingLayout,
+    timing_readback: bool,
     render_done: Arc<AtomicBool>,
     state: SlotState,
 }
@@ -849,7 +848,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         let oldest_pending = self
             .slots
             .iter()
-            .filter_map(|slot| match slot.state {
+            .filter_map(|slot| match &slot.state {
                 SlotState::Free => None,
                 SlotState::Rendering(sample) | SlotState::Resolving(sample) => {
                     Some(sample.submission_order)
@@ -1335,7 +1334,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             tap.submitted(
                 index,
                 &submitted_capture::Stamp {
-                    sample,
+                    sample: sample.clone(),
                     source,
                     history_epoch: view_history_epoch,
                     submitted_at: Instant::now(),
@@ -1347,6 +1346,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         }
         self.next_submission_order = self.next_submission_order.wrapping_add(1);
         slot.timing_layout = SceneTimingLayout::from((&self.prepared, &slot.target));
+        slot.timing_readback = capture_slot.is_some();
         slot.state = SlotState::Rendering(sample);
         report.submitted = true;
         report.surface_presented = surface_presented;
@@ -1577,9 +1577,13 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                         .or_else(|| slot.target.take_culling_counts());
                     match slot.timings.try_collect(self.generation) {
                         Ok(Some(passes)) => {
-                            if let Some((scene, present, contribution)) =
+                            if let Some((mut scene, present, contribution)) =
                                 pass_durations(passes, sample.surface_presented, slot.timing_layout)
                             {
+                                scene.unmeasured(slot.target.untimed_pass_names(
+                                    slot.timing_readback,
+                                    sample.surface_presented,
+                                ));
                                 sample.gpu_pass_ns = Some(scene);
                                 sample.gpu_present_ns = present;
                                 sample.gpu_contribution_ns = contribution;
@@ -1631,10 +1635,6 @@ fn duration_ns_u32(value: Duration) -> u32 {
     u32::try_from(value.as_nanos()).unwrap_or(u32::MAX)
 }
 
-#[expect(
-    clippy::large_types_passed_by_value,
-    reason = "ownership transfers the completed sample into the report queue without a clone"
-)]
 fn retain_sample(queue: &mut VecDeque<FrameSample>, dropped: &mut u64, sample: FrameSample) {
     if queue.len() == IN_FLIGHT {
         if queue

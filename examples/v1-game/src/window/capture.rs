@@ -103,7 +103,7 @@ impl Trace {
         if let Some(writer) = writer {
             let deadline = origin + Duration::from_secs(10);
             loop {
-                let _ = driver.completed()?;
+                drop(driver.completed()?);
                 if let Some(image) = driver.image()? {
                     origin = image.submitted_at;
                     self.image(driver, writer, image, origin);
@@ -194,7 +194,7 @@ impl Trace {
         while let Some(sample) = driver.completed()? {
             self.gpu.push(
                 json!({"submission_id":sample.submission_order,"tick":sample.tick,
-                "encode_cpu_ns":sample.encode_cpu.as_nanos(),"upload_cpu_ns":sample.upload_cpu.as_nanos(),"extract_cpu_ns":sample.extract_cpu.as_nanos(),"gpu_pass_ns":sample.gpu_pass_ns,"render_cpu_ns":sample.render_cpu.as_nanos(),"wall_ns":sample.wall.as_nanos(),"tick_cpu_ns":sample.tick_cpu.as_nanos(),"gpu_present_ns":sample.gpu_present_ns}),
+                "encode_cpu_ns":sample.encode_cpu.as_nanos(),"upload_cpu_ns":sample.upload_cpu.as_nanos(),"extract_cpu_ns":sample.extract_cpu.as_nanos(),"gpu_pass_ns":sample.gpu_pass_ns.as_ref().map(thrum_render::timing::SceneGpuTimings::values),"render_cpu_ns":sample.render_cpu.as_nanos(),"wall_ns":sample.wall.as_nanos(),"tick_cpu_ns":sample.tick_cpu.as_nanos(),"gpu_present_ns":sample.gpu_present_ns}),
             );
         }
         if let Some(writer) = writer {
@@ -291,7 +291,7 @@ fn warmup<G: Game>(driver: &mut Offscreen<G>) -> Result<(), String> {
     }
     let deadline = Instant::now() + Duration::from_secs(10);
     while driver.pending_frames() != 0 {
-        let _ = driver.completed()?;
+        drop(driver.completed()?);
         if Instant::now() >= deadline {
             return Err("warmup drain timeout".to_owned());
         }

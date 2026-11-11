@@ -450,6 +450,8 @@ pub struct AttachmentStorage {
 /// One closed pass handed to an encoder callback in compiled order.
 #[derive(Clone, Debug)]
 pub(crate) struct CompiledPass {
+    /// Declared reads retained for prepared input correspondence checks.
+    pub(crate) reads: Vec<Access>,
     /// Stable diagnostic label chosen at graph closure.
     pub(crate) name: String,
     /// Pipeline identity checked during closure; copy passes have none.
@@ -1412,6 +1414,12 @@ impl FrameGraph {
                 .iter()
                 .enumerate()
                 .map(|(position, &index)| CompiledPass {
+                    reads: self.passes[index]
+                        .accesses
+                        .iter()
+                        .filter(|a| a.kind.reads())
+                        .cloned()
+                        .collect(),
                     name: self.passes[index].name.clone(),
                     pipeline: self.passes[index].pipeline,
                     kind: pass_kind(&self.passes[index]),

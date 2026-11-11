@@ -263,7 +263,7 @@ mod metal {
     use super::*;
 
     /// Collect one timed report per in-flight slot and return each frame's pass buckets.
-    fn drain_timed(host: &mut Host) -> Vec<[f64; 11]> {
+    fn drain_timed(host: &mut Host) -> Vec<crate::timing::SceneGpuTimings> {
         drain_samples(host)
             .into_iter()
             .map(|sample| sample.gpu_pass_ns.expect("real Metal pass timestamps"))
@@ -322,10 +322,16 @@ mod metal {
             }
             for passes in populated
                 .iter()
-                .map(|sample| sample.gpu_pass_ns.expect("timed"))
+                .map(|sample| sample.gpu_pass_ns.as_ref().expect("timed"))
             {
-                assert!(passes[3] > 0.0, "forward includes the visibility pass");
-                assert!(passes[4] > 0.0, "the populated prefix publishes history");
+                assert!(
+                    passes.forward() > 0.0,
+                    "forward includes the visibility pass"
+                );
+                assert!(
+                    passes.history() > 0.0,
+                    "the populated prefix publishes history"
+                );
             }
             // The next submissions on the same slots carry an empty active prefix:
             // visibility still dispatches its offsets pass and stays timed.
@@ -343,13 +349,17 @@ mod metal {
             }
             for passes in empty
                 .iter()
-                .map(|sample| sample.gpu_pass_ns.expect("timed"))
+                .map(|sample| sample.gpu_pass_ns.as_ref().expect("timed"))
             {
                 assert!(
-                    passes[3] > 0.0,
+                    passes.forward() > 0.0,
                     "visibility and the sky-free forward pass are timed"
                 );
-                assert_eq!(passes[4], 0.0, "there is no transform history to publish");
+                assert_eq!(
+                    passes.history(),
+                    0.0,
+                    "there is no transform history to publish"
+                );
             }
         });
     }
@@ -521,8 +531,11 @@ mod metal {
                 let samples = drain_samples(host);
                 let prepass = prepass_counts(host);
                 for (sample, &prepass) in samples.iter().zip(&prepass) {
-                    let passes = sample.gpu_pass_ns.expect("timed");
-                    assert!(passes[3] > 0.0, "{label}: forward and culling are timed");
+                    let passes = sample.gpu_pass_ns.as_ref().expect("timed");
+                    assert!(
+                        passes.forward() > 0.0,
+                        "{label}: forward and culling are timed"
+                    );
                     let counts = sample.camera_culling.expect("occlusion counts");
                     assert_eq!(
                         (counts.mode, counts.active, counts.drawn),
@@ -808,9 +821,19 @@ mod metal {
                     "Metal frame timestamp collection failed"
                 );
                 assert!(sample.camera_culling.is_none(), "Direct lists nothing");
-                let passes = sample.gpu_pass_ns.expect("real Metal pass timestamps");
-                assert!(passes[3] > 0.0, "the sky still executes the forward pass");
-                assert_eq!(passes[4], 0.0, "there is no transform history to publish");
+                let passes = sample
+                    .gpu_pass_ns
+                    .as_ref()
+                    .expect("real Metal pass timestamps");
+                assert!(
+                    passes.forward() > 0.0,
+                    "the sky still executes the forward pass"
+                );
+                assert_eq!(
+                    passes.history(),
+                    0.0,
+                    "there is no transform history to publish"
+                );
             }
         });
     }

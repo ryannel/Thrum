@@ -98,7 +98,7 @@ async fn run() -> Result<(), String> {
             })
             .map_err(|e| e.to_string())?;
         while let Some(sample) = host.poll_completed()? {
-            timing_samples.push(serde_json::json!({"submission": sample.submission_order, "encode_ns": sample.encode_cpu.as_nanos(), "forward_ns": sample.gpu_pass_ns.map(|times| times[3]), "contribution_ns":sample.gpu_contribution_ns}));
+            timing_samples.push(serde_json::json!({"submission": sample.submission_order, "encode_ns": sample.encode_cpu.as_nanos(), "forward_ns": sample.gpu_pass_ns.as_ref().map(thrum_render::timing::SceneGpuTimings::forward), "contribution_ns":sample.gpu_contribution_ns}));
         }
         let stats = stats.lock().map_err(|e| e.to_string())?;
         if !stats.errors.is_empty() {
@@ -131,7 +131,7 @@ async fn run() -> Result<(), String> {
             })
             .map_err(|e| e.to_string())?;
         while let Some(sample) = host.poll_completed()? {
-            timing_samples.push(serde_json::json!({"submission":sample.submission_order,"encode_ns":sample.encode_cpu.as_nanos(),"forward_ns":sample.gpu_pass_ns.map(|times| times[3]),"contribution_ns":sample.gpu_contribution_ns}));
+            timing_samples.push(serde_json::json!({"submission":sample.submission_order,"encode_ns":sample.encode_cpu.as_nanos(),"forward_ns":sample.gpu_pass_ns.as_ref().map(thrum_render::timing::SceneGpuTimings::forward),"contribution_ns":sample.gpu_contribution_ns}));
         }
     }
     host.enable_submitted_capture(1)?;
@@ -149,7 +149,7 @@ async fn run() -> Result<(), String> {
         device
             .poll(wgpu::PollType::Poll)
             .map_err(|e| e.to_string())?;
-        let _ = host.poll_completed()?;
+        drop(host.poll_completed()?);
         if let Some(image) = host.try_submitted_image()? {
             std::fs::write(output.join("output.rgba"), &image.rgba).map_err(|e| e.to_string())?;
             let stats = stats.lock().map_err(|e| e.to_string())?;
