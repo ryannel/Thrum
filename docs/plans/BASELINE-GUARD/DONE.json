@@ -4,7 +4,7 @@
     {
       "id": "M1",
       "name": "A change that alters a registered exact image, on the Mac or in Chrome, is refused before it reaches main",
-      "state": "open",
+      "state": "claimed",
       "fails": 0,
       "replans": 0,
       "bar": "A merge gate in the manner of Rust's bors and a merge queue: the commit that reaches main is the commit that was tested, the comparison is exact and named, and it fails on the smallest real change.",
@@ -16,7 +16,7 @@
           "lock": "gpu",
           "ask": "Does the verifier take every input from the checkout and its own fresh outputs, reading nothing from another task's scratch such as tmp/g3t-m0? Does its record hold the revision, the content key, the native binary's hash, the Wasm artefact hashes and the cooked root? Do its registry and the table in ARCHITECTURE.md list the same baselines, owners and covered paths?",
           "target": "mac-metal",
-          "status": "open",
+          "status": "pass",
           "evidence": "docs/evidence/BASELINE-GUARD/M1.md",
           "verdict": "",
           "review": ""

@@ -64,3 +64,8 @@
   pass. The repository Check hit its one-hour timeout after repeated device waits from the per-binary Cargo
   runner used by this builder. Changed that verification runner to one GPU lease around the complete xtask
   Check, with the inner runner removed to prevent recursive locking. Resuming the failed full profile Check.
+
+- 2026-11-11 Reclaimed M1 after the synchronous publication fix. The repaired verifier passes all 42 native
+  comparisons and 1,924 Chrome records in 1021.79 seconds. M1.3's nine tests pass, and the full
+  repository Check passes after resuming it under one GPU lock. The earlier aggregate timeout and the successful
+  component results are retained without rewriting their outcomes. [Requalification](../../evidence/BASELINE-GUARD/M1/disk-repair/requalification.json).
