@@ -62,7 +62,7 @@
         },
         {
           "id": "M1.5",
-          "statement": "APPLE-TILE's M0 exact matrix passes on a release build of the claimed commit: this milestone moved no retained image.",
+          "statement": "APPLE-TILE's M0 exact matrix passes on a release build of the claimed commit: this milestone moved no retained Mac image. Chrome's baseline is not checked here; the design says when it is.",
           "check": "cargo build --locked --offline --release -p v1-game --features draw-probe,thrum-render/creation-counters && cargo build --locked --offline --release -p thrum-cook && rm -rf tmp/exact-m0 && mkdir -p tmp/exact-m0 && target/release/thrum-cook cook examples/v1-game/assets/showcase tmp/exact-m0/valley && python3 scripts/apple_tile_m1.py --store tmp/exact-m0/valley --output tmp/exact-m0/m1 && python3 scripts/apple_tile_m2.py --store tmp/exact-m0/valley --output tmp/exact-m0/m2",
           "lock": "gpu",
           "target": "mac-metal",
@@ -78,7 +78,10 @@
       "state": "open",
       "fails": 0,
       "replans": 0,
-      "bar": "State that behaves like the persistent simulations of a shipped game, such as Sea of Thieves' sea: it moves with the world's clock, never with the frame rate, and a hitch, a dropped frame or a device loss leaves no jump, smear or stale texel.",
+      "needs": [
+        "BASELINE-GUARD:M1"
+      ],
+      "bar": "State that behaves like the persistent simulations of a shipped game, such as Sea of Thieves' sea: it moves with the world's clock, never with the frame rate. A repeated tick or a pause changes nothing, and a hitch, a dropped frame or a device loss leaves no jump, smear or stale texel.",
       "items": [
         {
           "id": "M2.1",
@@ -94,10 +97,10 @@
         },
         {
           "id": "M2.2",
-          "statement": "After a scripted run that mixes submitted frames, several frames in one tick, a discarded frame, a capture frame, a stall of many ticks, a pause and a resize, the effect's GPU state equals a CPU run of the same rule bit for bit, and its wrapping anchor equals the last committed one.",
+          "statement": "After a scripted run that mixes submitted frames, several frames in one tick, a pause, a discarded frame, a capture frame, a stall of many ticks, a backward tick, a timeline change and a resize, the effect's GPU state matches the design's state table bit for bit: a nonempty field is unchanged by the repeated ticks and the pause, and is at its declared reset after the backward tick and after the timeline change. Its wrapping anchor equals the last committed one.",
           "check": "cargo test --locked --offline -p v1-game --test effect_state_gpu",
           "lock": "gpu",
-          "ask": "Read the scripted run. Does it include each kind of frame the statement lists, read back persistent, ping-pong and wrapping state exactly, and count the ticks a stall dropped beyond the effect's declared bound?",
+          "ask": "Read the scripted run. Are the kept-state and reset expectations written from the design's state table, not taken from stepping code the GPU path shares? Is the field nonempty before the repeated ticks and the pause? Are the ticks a stall dropped beyond the declared bound counted?",
           "target": "mac-metal",
           "status": "open",
           "evidence": "",
@@ -106,10 +109,10 @@
         },
         {
           "id": "M2.3",
-          "statement": "A pass's cadence changes at run time with no graph compilation and no pipeline creation; on frames where the pass is skipped its readers see the last written contents, and the first frame of a new epoch runs every pass.",
+          "statement": "A pass's cadence changes at run time with no graph compilation and no pipeline creation. With two ping-pong histories updated at different cadences, a consumer reads each history's newest submitted result on every frame: the tentative side when its producer ran, the committed side when it was skipped, and the committed side again after a frame whose update was discarded. The first frame of an epoch and a reset frame write every texel.",
           "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test effect_cadence_gpu",
           "lock": "gpu",
-          "ask": "Does the compiler refuse a skippable pass that writes a transient or an attachment another pass loads, as the design's cadence rule requires?",
+          "ask": "Does the test read back the consumer's own output on each run-to-skip and skip-to-run boundary of both histories and after the discarded update, and every texel after the first frame of an epoch and after a reset? Does the compiler refuse each declaration the design's cadence section lists?",
           "target": "mac-metal",
           "status": "open",
           "evidence": "",
@@ -127,7 +130,7 @@
         },
         {
           "id": "M2.5",
-          "statement": "In Chrome the same scripted run ends with the effect's state equal to the CPU oracle, through a device loss and recovery.",
+          "statement": "In Chrome the same scripted run ends with the effect's state matching the same expectations, through a device loss and recovery, with the cube, every texel of the volume and every mip of the array read back exactly.",
           "check": "node scripts/check_v1_browser.mjs --case effect-state",
           "lock": "gpu",
           "target": "chrome-webgpu",
@@ -146,8 +149,8 @@
         },
         {
           "id": "M2.7",
-          "statement": "With no effect attached, the frame records show no added pass, resource or copy; with the diagnostic attached, per-pass GPU time and bytes per effect are recorded on the valley route.",
-          "ask": "Do the frame records with no effect attached list exactly the passes they listed before this milestone, and are the diagnostic's per-pass times and resource bytes recorded with the load?",
+          "statement": "With no effect attached, the frame records show no added pass, resource or copy; with the diagnostic attached, per-pass GPU time, read from the executor's named pass timings, and bytes per effect are recorded on the valley route.",
+          "ask": "Do the frame records with no effect attached list exactly the passes they listed before this milestone? Are the diagnostic's per-pass times and resource bytes recorded with the load, from the executor's named pass timings and without changing the host's frame-sample fields, which APPLE-TILE M3 owns?",
           "target": "mac-metal",
           "status": "open",
           "evidence": "",
@@ -156,8 +159,8 @@
         },
         {
           "id": "M2.8",
-          "statement": "APPLE-TILE's M0 exact matrix passes on a release build of the claimed commit: this milestone moved no retained image.",
-          "check": "cargo build --locked --offline --release -p v1-game --features draw-probe,thrum-render/creation-counters && cargo build --locked --offline --release -p thrum-cook && rm -rf tmp/exact-m0 && mkdir -p tmp/exact-m0 && target/release/thrum-cook cook examples/v1-game/assets/showcase tmp/exact-m0/valley && python3 scripts/apple_tile_m1.py --store tmp/exact-m0/valley --output tmp/exact-m0/m1 && python3 scripts/apple_tile_m2.py --store tmp/exact-m0/valley --output tmp/exact-m0/m2",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
           "lock": "gpu",
           "target": "mac-metal",
           "status": "open",
@@ -168,7 +171,7 @@
     },
     {
       "id": "M3",
-      "name": "A test effect draws through the scene as water or cloud would, hidden by nearer objects and stable in motion, on Mac and in Chrome",
+      "name": "A test effect draws through the scene as water or cloud would, hidden by nearer objects, and hands its motion to reconstruction, on Mac and in Chrome",
       "state": "open",
       "fails": 0,
       "replans": 0,
@@ -176,14 +179,14 @@
         "APPLE-TILE:M3",
         "APPLE-PRESENTATION:M2"
       ],
-      "bar": "A translucent pass that composes as water does in Sea of Thieves or glass in a shipped engine: hidden by nearer geometry in the same frame, refracting what is behind it, and stable under reconstruction, with no edge shimmer or ghost on a cut.",
+      "bar": "A translucent pass that composes as water does in Sea of Thieves or glass in a shipped engine: hidden by nearer geometry in the same frame, refracting what is behind it, dimming sky and stars once, with no seam where it meets opaque surfaces. Its motion, reactive coverage and reset reach reconstruction's inputs exactly. How a reconstructed effect looks in motion is judged in SEA and CLOUDS, not here.",
       "items": [
         {
           "id": "M3.1",
-          "statement": "An after-opaque pass draws after opaque geometry, sky and stars and before the pre-tone input. It reads this frame's scene depth and, on request, one shared copy of scene colour; with no request, no copy pass and no stored depth exist.",
+          "statement": "An after-opaque pass draws after opaque geometry, sky and stars and before the pre-tone input, and reads this frame's scene depth. Stored depth and the colour copy follow separate requests: a depth-only effect stores depth and adds no copy pass, a refracting effect adds one shared copy, and with no effect nothing is added beyond what other readers, such as reconstruction, already store.",
           "check": "cargo test --locked --offline -p v1-game --test effect_after_opaque_gpu",
           "lock": "gpu",
-          "ask": "Does a moving occluder hide the slab in the same frame, proving it reads this frame's depth, and do the compiled graphs with and without the refraction request differ only by the copy and the stored depth?",
+          "ask": "Does a moving occluder hide the slab in the same frame, proving it reads this frame's depth? Do the compiled graphs for the four cases (no effect with reconstruction off, no effect with reconstruction on, a depth-only effect, a refracting effect) each hold exactly the storage and passes their declared accesses require?",
           "target": "mac-metal",
           "status": "open",
           "evidence": "",
@@ -192,7 +195,7 @@
         },
         {
           "id": "M3.2",
-          "statement": "The slab's pixels carry motion from unjittered positions and reactive coverage in submitted frames, mark history invalid where it has none, and honour the frame's reset flag on a cut, a device replacement and an effect reset.",
+          "statement": "The slab's pixels carry motion from unjittered positions and reactive coverage in submitted frames, mark history invalid where it has none, and honour the frame's reset flag on a cut, a device replacement and an effect reset. This proves reconstruction's inputs; reconstructed output is not judged here.",
           "check": "cargo test --locked --offline -p v1-game --test effect_after_opaque_gpu",
           "lock": "gpu",
           "ask": "Are the motion and reactive values read from submitted frames and compared with the slab's known displacement, with temporal sampling selected?",
@@ -257,8 +260,8 @@
         },
         {
           "id": "M3.8",
-          "statement": "APPLE-TILE's M0 exact matrix passes on a release build of the claimed commit: this milestone moved no retained image.",
-          "check": "cargo build --locked --offline --release -p v1-game --features draw-probe,thrum-render/creation-counters && cargo build --locked --offline --release -p thrum-cook && rm -rf tmp/exact-m0 && mkdir -p tmp/exact-m0 && target/release/thrum-cook cook examples/v1-game/assets/showcase tmp/exact-m0/valley && python3 scripts/apple_tile_m1.py --store tmp/exact-m0/valley --output tmp/exact-m0/m1 && python3 scripts/apple_tile_m2.py --store tmp/exact-m0/valley --output tmp/exact-m0/m2",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
           "lock": "gpu",
           "target": "mac-metal",
           "status": "open",

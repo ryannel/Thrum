@@ -32,7 +32,9 @@ This design reconciles work that already exists; it is not a blind study. Read f
 [the occlusion experiment](../../evidence/render/G3C-OCCLUSION-EXPERIMENT-2026-11-07.md),
 [shipped Occlusion](../../evidence/render/G3C-OCCLUSION-M3A-2026-11-07.md)), the earlier session's uncommitted
 design and plan, and `crates/thrum-render/src/visibility*` and `synthetic/{camera_culling,mesh_route,buckets}.rs`
-on main. This file replaces that earlier design as the governing one.
+on main. This file replaces that earlier design as the governing one. For the revision after
+[the design review](../../evidence/CULLING/design-review.md), also read: `runtime.rs` (`visual_prepare_inputs`,
+`publish_visual`, `rebuild_contribution`), `runtime/visual.rs` and `rebuild_inner` in `thrum-asset-gpu`.
 
 ## Purpose and scope
 
@@ -57,13 +59,25 @@ culling mode.
 
 1. Occlusion on the bucket route, so it works on realistic meshes, with the mesh tie witness the evidence owes.
 2. The mode follows the device and the measurements: a capability-selected fallback to Direct, Chrome on mixed
-   meshes, the field default decided from paired rows, and a live switch.
+   meshes, and the field default decided from paired rows.
 3. The valley's 10,000 entities culled by default with no pixel changed, on Mac and Chrome, and the gate closed.
 
 **Not built here:** LOD selection; several cameras; meshlet culling of field meshes; a visibility buffer; Metal
 indirect command buffers; GPU-written draw *counts* (`MULTI_DRAW_INDIRECT_COUNT` has no Metal or WebGPU support in
 wgpu 30); and the native-only culling recipes (subgroup compaction, first-instance draws), which stay candidates for
 the performance phase the brief sets after the exit.
+
+**A live mode switch is not built either.** Neither the V1 exit nor gate G3c asks for one, and the mode is chosen
+when a scene is prepared, at launch or page load. The first version of this design promised a switch through the
+host's scene republication. The design review showed that path cannot deliver it: the publication entry points
+are compiled only for native targets, so Chrome has none; preparation takes no requested mode, and publication
+leaves the host's retained scene on the old one; and publication rebuilds the cooked contribution's pipelines
+synchronously, where a failure detaches the cooked scene after the switch has been committed. A switch that works
+is a transaction across the frame runtime, the browser host and the contribution seam, which this module does not
+own and the gate does not need. If the owner asks for one, it is planned as its own milestone with those owners.
+The mechanism to cost first is preparing a requested set of modes inside one prepared scene, as the day and night
+graphs are prepared today, so a switch selects a prepared variant and no republication, pipeline rebuild or new
+browser entry point is involved.
 
 ## Cues
 
@@ -72,7 +86,6 @@ the performance phase the brief sets after the exit.
 | **C1 Nothing visible disappears or pops** | The game camera in motion, Mac and Chrome | 1 to 100,513 instances; 0–100% in view; snap turns, cuts, resize, device replacement, dropped frames, slot churn; moving and mirrored instances; near-plane crossings | A test that passes at sampled frames or on scenes without ties. Rejected by byte equality with the oracle at every tick of a scripted path, plus tie witnesses |
 | **C2 Occluders hide the work behind them** | Flying behind walls and props in the mixed-mesh field | One wall to full cover; stepping out of cover | Counters that fall while the forward cost does not. Rejected by paired per-pass GPU time on meshes with real vertex work |
 | **C3 The mode is right for the device and the scene** | Mac both recipes, Chrome, the iOS simulator | Adapters with and without indirect execution; cheap cubes to meshes of a few thousand triangles | A culled mode that silently runs Direct, making every equality test vacuous. Rejected by asserting the resolved mode and a nonzero hidden count |
-| **C4 A creator can flip the mode and see no change** | The game's controls on Mac and in Chrome | Any mode to any mode, while moving | A switch that stalls or compiles in the frame. Rejected by creation counters and frame records across the switch |
 
 The bar is a shipped GPU-driven renderer, where culling is invisible: the player never sees it work. Here that is
 held to something stricter and checkable, byte equality with drawing everything.
@@ -150,9 +163,19 @@ choose occluders: a stale bit costs time, never a pixel.
 forms. It bounds the rounding difference between the vertex shader's clip position and the cull's, plus the two
 divides, the rasterizer's interpolation and the compare. The cull also widens each slot's texel rectangle by the
 x/y rounding bound before flooring. `visibility/occlusion.wgsl` and its mirror `occlusion_reference.rs` hold the
-exact form, and GPU tests pin the shader's slack to the reference at its boundary. The rasterizer's four-ulp
-interpolation term is assumed; on cubes a zero-tolerance mutant still passes, so the witness that needs the bound
-is a mesh face lying on its own bounds at a rounded far pose (M1).
+exact form, and GPU tests pin the shader's slack to the reference at its boundary.
+
+The bound has two parts, and each needs its own witness:
+
+- **Depth slack.** On cubes a zero-tolerance mutant still passes, so the witness that needs the slack is a mesh
+  face lying on its own bounds, flush with a prepass occluder at a rounded far pose (M1).
+- **Footprint widening.** The depth witness says nothing about it. Its witness is a slot that shows only in a
+  texel column the unwidened rectangle would leave out. The reference searches poses for one. If it finds one, a
+  mutant without the widening must lose pixels there. If it finds none, the evidence records the poses searched,
+  and the widening stays as derived and unfalsified on this device.
+
+The rasterizer's four-ulp interpolation term is an assumption. No test here establishes it: the depth witness
+passing with the full ε is consistent with it and does not prove it.
 
 ### Built: the bucket route and Sun-caster culling
 
@@ -178,7 +201,8 @@ visible-last bit sat at the member's list index, which a layout change hands to 
 - **Unchanged:** the pyramid, the test and its ε, the four pass names, and the final draw, which is the Frustum
   bucket draw over the final list. Member order inside a bucket is kept, so equal-depth winners match the oracle.
 - **Mutants that must fail:** a two-sided prepass on a back-culled open mesh; the final draw reading the prepass
-  list; zero tolerance on the mesh tie witness.
+  list; zero depth tolerance on the mesh tie witness; and no footprint widening on the footprint witness, where
+  the search finds one.
 
 **Check that it can work.** The equality argument above does not depend on the mesh, only on prepass parity and a
 conservative test. Parity holds per bucket by sharing the pipeline state. The test is conservative for any mesh
@@ -213,11 +237,10 @@ proves the valley's entities on the meshes that exist, and `SHOWCASE` reruns the
 - **Default by measurement.** A scene's default is Frustum. It becomes Occlusion only when paired whole-GPU rows on
   that scene favour it in two separate runs, behind cover and in the open, at 1920×1080. Scenes fully in view may
   keep Direct. The rows and the reason are recorded either way.
-- **Live switch.** The mode is fixed per prepared scene. A typed control requests the same scene prepared with
-  another mode through the host's existing scene republication, off the frame path. Frames keep presenting the old
-  mode until the new one is ready, the swap happens at a frame boundary, the visible-last bits start empty and
-  the old resources retire after their GPU work completes. No pipeline is created on the frame path. Direct is the
-  oracle a creator can flip to.
+- **The mode is fixed per prepared scene.** It is requested at launch (`THRUM_CULLING` natively, the page's
+  culling argument in Chrome) and resolved once, at preparation. Device replacement prepares the same requested
+  mode again and resolves it against the new generation's record. Direct stays requestable everywhere, as the
+  oracle a creator can launch.
 
 ### M3: the valley's entities
 
@@ -253,20 +276,25 @@ pyramid and a second list: about 13.8 MB per host at 720p and 27.8 MB at 1080p, 
 
 **Transitions.** A camera cut or a slot swap leaves stale bits, which cost one frame of prepass efficiency. Resize
 reallocates the pyramid and keeps the bits. Device replacement rebuilds everything and clears the bits. A dropped
-submission leaves the bits as of the last executed final cull. A capture does not advance them. A mode switch is a
-new prepared scene.
+submission leaves the bits as of the last executed final cull. A capture does not advance them. The mode changes
+only when a scene is prepared.
 
 ## Exact baselines
 
 [The module list](../ARCHITECTURE.md#exact-baselines) says how a change that alters another module's exact images
 is caught. For this module:
 
-- It must not move `APPLE-TILE`'s M0 baseline. Every milestone reruns that baseline's full matrix at the claimed
-  commit as an automated check.
+- It must not move `APPLE-TILE`'s registered baselines, on the Mac or in Chrome. Once `BASELINE-GUARD` M1 is
+  Done, the proof gate in `./dev check` refuses any landing whose exact content has not passed the verifier, and
+  M2 and M3 wait for it and carry the verifier as their claim-time check.
+- M1 may be built before the gate exists. It carries the native matrix as an automated check, and its builder
+  reruns that check after every rebase and before `land`. Chrome's baseline is first rechecked when
+  `BASELINE-GUARD`'s builder runs the verifier on main; M1 is meant to change no default output on either
+  target.
 - Its own exact comparisons are relative (each mode against its oracle in the same run), so they hold no retained
   bytes. Another module's builder must not loosen them.
-- M3 changes a default. It is allowed only because the new default is byte-equal to the old one; the guard in the
-  land gate then keeps checking that for free.
+- M3 changes a default. It is allowed only because the new default is byte-equal to the old one, which the
+  verifier then proves on every landing.
 
 ## Risks
 
@@ -277,6 +305,8 @@ is caught. For this module:
 3. **A silent fallback hides a failure.** Mitigation: resolved-mode and hidden-count assertions in every witness.
 4. **Shared files move under the builder.** `scene_graph.rs` and `synthetic.rs` are also edited by `APPLE-TILE` M3,
    `APPLE-PRESENTATION` M2 and `EFFECT-GRAPH`. Integrate sequentially and rerun the exact checks after every rebase.
+6. **The interpolation allowance is wrong on some rasterizer.** It is assumed, not measured. Early sign: the mesh
+   tie witness loses pixels with the full ε. Fallback: as risk 1.
 5. **wgpu's indirect-call validation adds untimed GPU work.** It stays on in shipped builds and is bounded once
    with a bench-only comparison.
 
@@ -286,8 +316,8 @@ Costs are recorded, never gated ([performance rules](../../../.agents/skills/thr
 Paired, interleaved rows through the frame host's pass-name timing; p50 and p95; two separate runs; the load
 recorded and every row labelled contended, because the GPU is shared. Tripwires: about 25% paired regression
 against the previous checkpoint at the same configuration; per-instance cost that stops being flat from 10,000
-slots to the prepare limit; per-bucket cost that grows from 1 to 64 buckets; allocation growth per encode; a
-visible hitch at a mode switch. No quiet-GPU figure exists, and none is claimed.
+slots to the prepare limit; per-bucket cost that grows from 1 to 64 buckets; allocation growth per encode. No
+quiet-GPU figure exists, and none is claimed.
 
 ## Proof and builder handoff
 
@@ -306,5 +336,5 @@ visible hitch at a mode switch. No quiet-GPU figure exists, and none is claimed.
 | Question | Settled by |
 |---|---|
 | Does the derived ε hold on a mesh face lying on its bounds? | M1's tie witness and its zero-tolerance mutant |
+| Does any pose need the footprint widening? | M1's reference search, and the no-widening mutant if it finds one |
 | Does Occlusion win on realistic meshes at 1080p on this Mac? | M2's paired rows |
-| Does republication for a live switch restage cooked content visibly? | M2's switch test; if it does, the switch keeps the contribution's residency and the finding goes to `CONTENT-LOOP` |

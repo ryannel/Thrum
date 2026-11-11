@@ -35,10 +35,10 @@
         },
         {
           "id": "M1.3",
-          "statement": "A mesh whose face lies on its own bounds, flush with a prepass occluder at a rounded far pose, keeps every tied pixel under the derived tolerance and the widened footprint; a zero-tolerance cull loses pixels there.",
+          "statement": "A mesh whose face lies on its own bounds, flush with a prepass occluder at a rounded far pose, keeps every tied pixel under the derived tolerance and the widened footprint. A cull with zero depth tolerance loses pixels there. The footprint widening has its own witness, or a record that the reference's search found none.",
           "check": "cargo test --locked --offline -p thrum-render --test visibility_buckets",
           "lock": "gpu",
-          "ask": "Does the tie witness use a mesh face lying on its bounds at the far, turned pose, and does the evidence hold the zero-tolerance mutant's failure? On cubes that mutant passed, so a cube witness does not answer this.",
+          "ask": "Which witness exercises the depth slack and which the footprint widening? Does the evidence hold the zero-depth-tolerance mutant failing on the mesh tie witness (a cube witness does not answer this), and for the widening either a no-widening mutant failing on its witness or the poses searched without finding one?",
           "target": "mac-metal",
           "status": "open",
           "evidence": "",
@@ -59,7 +59,7 @@
         },
         {
           "id": "M1.5",
-          "statement": "APPLE-TILE's M0 exact matrix passes on a release build of the claimed commit: this milestone moved no retained image.",
+          "statement": "APPLE-TILE's M0 exact matrix passes on a release build of the claimed commit: this milestone moved no retained Mac image. Chrome's baseline is not checked here; the design says when it is.",
           "check": "cargo build --locked --offline --release -p v1-game --features draw-probe,thrum-render/creation-counters && cargo build --locked --offline --release -p thrum-cook && rm -rf tmp/exact-m0 && mkdir -p tmp/exact-m0 && target/release/thrum-cook cook examples/v1-game/assets/showcase tmp/exact-m0/valley && python3 scripts/apple_tile_m1.py --store tmp/exact-m0/valley --output tmp/exact-m0/m1 && python3 scripts/apple_tile_m2.py --store tmp/exact-m0/valley --output tmp/exact-m0/m2",
           "lock": "gpu",
           "target": "mac-metal",
@@ -71,11 +71,14 @@
     },
     {
       "id": "M2",
-      "name": "The culling mode follows the device and the measurements, and switches while the game runs",
+      "name": "The game picks its culling mode from the device and the measurements, and says which mode ran",
       "state": "open",
       "fails": 0,
       "replans": 0,
-      "bar": "A renderer that picks its path from device facts and says which one ran, as Unreal's mobile path and Unity's fallback do; and a debug switch as quiet as the view-mode switch in a shipped engine's editor, with no stall and no changed pixel.",
+      "needs": [
+        "BASELINE-GUARD:M1"
+      ],
+      "bar": "A renderer that picks its path from device facts and says which one ran, as Unreal's mobile path and Unity's fallback do: a device that cannot run a culled mode still draws the whole scene, and a default is never set on a guess.",
       "items": [
         {
           "id": "M2.1",
@@ -119,29 +122,8 @@
         },
         {
           "id": "M2.5",
-          "statement": "On the Mac a typed control switches between Direct, Frustum and Occlusion while the game runs: frames keep presenting during preparation, no pipeline is created on the frame path, and the frames on both sides of the swap equal Direct.",
-          "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test culling_switch_gpu",
-          "lock": "gpu",
-          "ask": "Read the switch test. Does it count pipeline creations on the frame path, compare the frames on both sides of the swap with Direct, and start the new mode with empty visibility history?",
-          "target": "mac-metal",
-          "status": "open",
-          "evidence": "",
-          "verdict": "",
-          "review": ""
-        },
-        {
-          "id": "M2.6",
-          "statement": "In Chrome the same control switches the mode while the page runs, and the canvas before and after the swap equals Chrome's Direct.",
-          "check": "node scripts/check_v1_browser.mjs --case culling-switch",
-          "lock": "gpu",
-          "target": "chrome-webgpu",
-          "status": "open",
-          "evidence": ""
-        },
-        {
-          "id": "M2.7",
-          "statement": "APPLE-TILE's M0 exact matrix passes on a release build of the claimed commit: this milestone moved no retained image.",
-          "check": "cargo build --locked --offline --release -p v1-game --features draw-probe,thrum-render/creation-counters && cargo build --locked --offline --release -p thrum-cook && rm -rf tmp/exact-m0 && mkdir -p tmp/exact-m0 && target/release/thrum-cook cook examples/v1-game/assets/showcase tmp/exact-m0/valley && python3 scripts/apple_tile_m1.py --store tmp/exact-m0/valley --output tmp/exact-m0/m1 && python3 scripts/apple_tile_m2.py --store tmp/exact-m0/valley --output tmp/exact-m0/m2",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
           "lock": "gpu",
           "target": "mac-metal",
           "status": "open",
@@ -245,8 +227,8 @@
         },
         {
           "id": "M3.10",
-          "statement": "APPLE-TILE's M0 exact matrix passes on a release build of the claimed commit: this milestone moved no retained image.",
-          "check": "cargo build --locked --offline --release -p v1-game --features draw-probe,thrum-render/creation-counters && cargo build --locked --offline --release -p thrum-cook && rm -rf tmp/exact-m0 && mkdir -p tmp/exact-m0 && target/release/thrum-cook cook examples/v1-game/assets/showcase tmp/exact-m0/valley && python3 scripts/apple_tile_m1.py --store tmp/exact-m0/valley --output tmp/exact-m0/m1 && python3 scripts/apple_tile_m2.py --store tmp/exact-m0/valley --output tmp/exact-m0/m2",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
           "lock": "gpu",
           "target": "mac-metal",
           "status": "open",

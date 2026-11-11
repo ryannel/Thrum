@@ -17,108 +17,181 @@ The owner's planning task of 11 November 2026, word for word:
 > that alters another module's exact baselines gets caught before landing.
 
 This module answers the last two sentences. [The module list](../ARCHITECTURE.md#exact-baselines) states the
-rules; this module builds the one part of them that did not exist.
+rules; this module builds the parts of them that do not exist.
 
 ## What went wrong, and why a rule alone would not fix it
 
 Read: [APPLE-TILE M2's review](../../evidence/APPLE-TILE/M2-review.md),
-[APPLE-PRESENTATION M1's first review](../../evidence/APPLE-PRESENTATION/M1-review-1.md), the build skill's `land`
-command, and `scripts/apple_tile_m0.py`, `apple_tile_m1.py` and `apple_tile_m2.py`.
+[APPLE-PRESENTATION M1's first review](../../evidence/APPLE-PRESENTATION/M1-review-1.md),
+[this design's first review](../../evidence/BASELINE-GUARD/design-review.md), `land` in the build skill's
+`agent_loop.py`, and `scripts/apple_tile_m0.py`, `apple_tile_m1.py`, `apple_tile_m2.py`,
+`apple_tile_m1_compare_browser.py` and `capture_v1_browser.mjs`.
 
-- `APPLE-TILE`'s exact comparison against its M0 baseline lives in two scripts. They need a release build and a
-  cooked store, and nothing runs them automatically.
-- A builder merges with `land`, which rebases, runs `./dev check` and pushes. `./dev check` is the only gate before
-  main, and it did not hold the comparison.
+- `APPLE-TILE`'s exact comparisons need a release build, a cooked store and, for Chrome, a browser. Nothing runs
+  them automatically.
+- A builder merges with `land`. Under one lock it fetches, rebases, runs `./dev check` and pushes, and it does not
+  hand control back between the rebase and the push. `./dev check` is the only gate before main, and it did not
+  hold the comparison.
 - So `APPLE-PRESENTATION` M1's jitter change merged with 316,181 of 800,000 pixels different at one checkpoint.
-  The tests in `./dev check` that did notice (paused frames stopped being identical) were edited by the same
-  builder.
 - `APPLE-TILE` M2 was then claimed on a binary built before its rebase, so its own evidence missed the break too.
 
-A written rule tells a builder what not to do. Only a failing gate stops the merge.
+A written rule tells a builder what not to do. Only a failing gate stops the push. The first design put a few Mac
+checkpoints in `./dev check` and left the full matrix, and all of Chrome, to a rerun the builder was asked to make
+after `land`'s rebase. `land` gives no chance to make it: a night, surface-format or Chrome regression would have
+been pushed first and found afterwards. This design replaces that.
 
 ## Purpose and scope
 
 **Commissioned:**
 
-1. **The guard.** On the Mac, `./dev check` draws the game's default output and compares it, byte for byte, with
-   each registered exact baseline.
-2. **The verifier.** One command runs every registered baseline's full verify matrix from a clean checkout, for
-   builders before a claim, the loop at a claim and reviewers.
+1. **The verifier.** One command that, from a clean checkout, draws fresh output on the Mac and in Chrome at the
+   current commit and compares it with every registered exact baseline. On a full pass it writes a proof.
+2. **The gate.** `./dev check` refuses a commit that changes the covered paths unless a proof exists for exactly
+   that content. `land` runs `./dev check` on the rebased commit, so nothing unproven is pushed.
 
-**Not commissioned:** changing any baseline, comparison or tolerance; a guard for Chrome inside `./dev check`
-(no browser runs there; rule 3 of the module list covers Chrome at the claim); toleranced baselines such as the G7
-route's; visual judgement of any kind.
+**Not commissioned:** changing any baseline, comparison or tolerance; toleranced baselines such as the G7 route's;
+visual judgement of any kind; the small image test inside `./dev check` that the first design proposed. The gate
+makes it unnecessary, and with it goes the open question of whether a debug build draws the release bytes.
 
-**Owns:** the guard's tests, the registry file they read and the verifier. The retained bytes, and the right to
-refresh them, stay with each baseline's owner module.
+**Owns:** the registry file, the verifier, its proof records and the gate. The retained references, and the right
+to refresh them, stay with each baseline's owner module.
+
+## Research
+
+- **Test the commit that will be pushed.** Graydon Hoare's rule for Rust's bors, to keep a repository that always
+  passes its tests by testing each change as integrated before the branch advances, and the merge queues built on
+  it ([Jane Street's account](https://blog.janestreet.com/making-never-break-the-build-scale/)). `land` already has
+  this shape, holding a lock from rebase to push. What it lacks is the expensive test.
+- **Reuse a result only for identical inputs.** Build systems such as Bazel key a cached result by a hash of the
+  action's inputs ([remote caching](https://bazel.build/remote/caching)). The proof below is keyed the same way,
+  so a rebase that changes an input invalidates it and one that does not keeps it.
 
 ## Mechanism
 
-### The guard
+### The registry
 
-- **It runs the game's own default path.** The guard builds its frames through `examples/v1-game`'s host, scene
-  source, route and capture tap, the same path the baseline was captured through, with the capture settings the
-  baseline records and nothing else. That is the code the jitter change edited. A guard that set up its own view
-  would have passed that day.
-- **It compares exactly.** Submitted SDR bytes and scene-linear bytes, for the portable and the Apple tile recipe,
-  against the retained files. No tolerance, no search for the nearest of several frames, no retry, and no skip: on
-  a host without Metal the guard is not compiled, like the other Metal tests, and where it is compiled a missing
-  device fails it.
-- **It is small.** It guards a subset of the baseline's checkpoints, chosen so that both of the comparisons the
-  review's MF1 failed on (`mirror-light` and `approach`) would fail again. The full matrix stays the authority and
-  runs through the verifier.
-- **It says what to do.** A failure names the baseline, its owner, the checkpoint and the number of differing
-  pixels, and points at [the rules](../ARCHITECTURE.md#exact-baselines).
-- **It reads a registry.** One file lists each guarded baseline: its identity, owner, retained files and guarded
-  checkpoints. A second baseline is a new entry and its bytes, with no new test code. The table in the module list
-  is the same registry for people; the two must agree.
+One file lists each registered baseline: its identity, its owner, its retained reference files, how a fresh
+candidate is produced and compared, and the **covered paths**. The table in
+[the module list](../ARCHITECTURE.md#exact-baselines) is the same registry for people; the two must agree.
+
+Covered paths err wide: `crates/`, `examples/v1-game/`, `scripts/`, the workspace manifest, lockfile and toolchain
+file, and each baseline's own retained files. A planner narrows them only with evidence that a path cannot reach
+the game's native or Wasm build.
+
+### The content key and the proof
+
+The **content key** of a commit is a digest of the Git object IDs of the covered paths at that commit. Two commits
+with the same key have byte-identical covered files, whatever else differs between them.
+
+A **proof** is the record the verifier writes when every registered comparison passed on a clean tree. It names
+the content key and is kept untracked in the worktree. It is the only thing the gate accepts.
 
 ### The verifier
 
-One command builds the release game with the features the owner's scripts need, cooks the showcase valley fresh,
-runs each registered baseline's full verify command, and exits non-zero on any difference. It refuses a dirty tree,
-builds the binary itself so the binary is the commit's, and writes the revision, the clean-diff hash and the
-binary hash into its record. It adds no comparison of its own; it wraps the owners' scripts.
+One command, from a clean checkout:
+
+1. refuses a tree with uncommitted changes, and reports low disk space as its own named failure;
+2. builds the release game with the features the owners' scripts need, builds the Wasm page with
+   `examples/v1-game/web/build.sh`, and cooks the showcase valley fresh;
+3. runs `APPLE-TILE`'s native matrices (`apple_tile_m1.py`, `apple_tile_m2.py`) unchanged;
+4. captures the four Chrome `fixed` runs with `capture_v1_browser.mjs` and compares each with its retained set;
+5. exits non-zero on any difference, naming the baseline, its owner and the comparison;
+6. on a full pass writes the proof, with the revision, the content key, the native binary's hash, the Wasm
+   artefact hashes and the cooked root.
+
+It takes every input from the checkout and its own fresh outputs. It never reads another task's scratch.
+
+### The Chrome references
+
+The first design registered a Chrome baseline whose comparator needs both captures unpacked, and the reference's
+481 frames exist only in one builder's scratch. They are not needed. Each retained manifest already holds, for
+every one of its 481 records, the frame's identity fields and the SHA-256 of its decoded bytes. Four are committed:
+
+| Set | Retained manifest (under `docs/evidence/render/`) |
+|---|---|
+| Day, submitted SDR | `apple-tile-m0/chrome-baseline/prechange-chrome-fixed-manifest.json.gz` |
+| Day, scene-linear | `apple-tile-m1/chrome/chrome-prechange-linear-3/manifest.json.gz` |
+| Night, submitted SDR | `apple-tile-m1/chrome/chrome-prechange-night-sdr/manifest.json.gz` |
+| Night, scene-linear | `apple-tile-m1/chrome/chrome-prechange-night-linear/manifest.json.gz` |
+
+The comparison for each set: both captures complete and `fixed`, the same number of records, the identity fields
+the owner's comparator already checks equal record by record, and each fresh frame's decoded bytes, hashed again
+from the file, equal to the retained digest. Equal SHA-256 is treated as equal bytes. This is exact, uses the
+owner's bytes as committed, and regenerates nothing.
+
+It is a reference-by-digest mode of `scripts/apple_tile_m1_compare_browser.py`, added by this module's builder
+under [the ruling in the module list](../ARCHITECTURE.md#exact-baselines). The script's byte mode and
+`APPLE-TILE`'s items do not change.
+
+### The gate
+
+A step of `./dev check`, with no GPU and no browser:
+
+1. If the commit has no covered-path change that main lacks (the difference from the merge base with the remote
+   main branch to the commit, over the covered paths), it passes. Main's own covered content was proved when it
+   landed.
+2. Otherwise it computes the commit's content key and passes only if a proof names that key. If not, it fails and
+   names the verifier command. If the base cannot be resolved, it fails.
+
+There is no flag or environment variable that skips it.
 
 ### Check that it can work
 
-- **Would it have caught MF1?** The jitter change moved every rasterised surface by a sub-pixel offset, so any
-  checkpoint with geometry differs in hundreds of thousands of pixels. M1 proves it with that mutant.
-- **Are the bytes reproducible?** The M0 matrix matched exactly on two separately rebuilt binaries on 11 November
-  ([the MF1 recheck](../../evidence/render/apple-tile-m2/MF1-recheck.md): 38 of 38 and 4 of 4 comparisons, then all
-  42 again after another module integrated), so the output is deterministic on this Mac.
-- **Does the gate's debug build draw the same bytes as the baseline's release build?** Expected, because the GPU
-  work is identical and Rust does not reorder floating-point arithmetic between profiles, but not yet shown. The
-  builder tests this first. If the bytes differ, the cause is diagnosed, and only then may the guard keep its own
-  retained set, captured by the gate's build at a commit where the verifier passes, with that derivation recorded
-  in the registry. Loosening the comparison is not an option.
-- **Can the test get a cooked valley?** `./dev check` already cooks content inside its Metal tests.
+- **The sequence the review gave.** A builder proves its branch. Another builder lands a covered-path change.
+  `land` rebases the first branch, so its covered content, and its key, change. `./dev check` finds no proof for
+  the new key and fails, and `land` does not push. The builder runs the verifier on the rebased commit, which now
+  draws the combined result, and lands again. A rebase that brings in only other paths keeps the key and the proof.
+- **A fix with no plan** goes through the same `land` and the same gate.
+- **Chrome and night are inside it**, because the proof exists only when every registered comparison passed.
+- **Would it have caught MF1?** The jitter change moved every rasterised surface, so the native matrix fails and no
+  proof is written. M1 shows it with that mutant, a night-only mutant and a Chrome-only mutant.
+- **Are the bytes reproducible?** The native matrix matched on two separately rebuilt binaries on 11 November
+  ([the MF1 recheck](../../evidence/render/apple-tile-m2/MF1-recheck.md): 38 of 38 and 4 of 4, then all 42 again
+  after another module integrated). Chrome's four sets each matched all 481 frames against a fresh build at
+  `APPLE-TILE` M1. Chrome has not been rerun since, so the builder's first step is the verifier's comparisons on
+  untouched main.
+- **Can the builder, the reviewer and the loop reach it?** A Codex agent asks to launch Chrome outside its
+  sandbox, and the loop reruns a milestone's checks itself, both as the existing browser checks already do. The
+  gate needs neither a GPU nor a browser, so `land` can always run it.
+
+## What it does not stop
+
+- A push of a commit that `./dev check` did not pass: `land --no-check`, or a plain `git push` after a rebase
+  with no check. Rule 1 of the module list forbids both for a covered-path change.
+- A forged proof. The proof is a local file, as `./dev check` is local code.
+
+Both are caught after the fact by the claim-time item of rule 3, whose command a builder cannot change, and by
+the next builder's verifier run, which fails on main.
 
 ## Cost
 
-The guard adds a cook of the showcase valley and a few frames at the route's render extent to every `./dev check`
-on the Mac. The added time is recorded, not budgeted. If it becomes the slowest GPU test in the gate, the answer is
-fewer checkpoints, never a weaker comparison.
+A landing that changes covered paths pays one verifier run on its final content: two builds, a cook, the native
+matrices and four Chrome captures of 481 frames. A rebase that brings in another covered-path change pays it
+again. Landings that touch only other paths pay the gate's key computation. The times are recorded in M1, not
+budgeted. The scripts need 16 GiB free.
 
 ## Risks
 
-1. **A macOS or driver update changes the bytes**, and every merge fails. The sign is that untouched main fails.
-   The baseline's owner then refreshes it under rule 1, with the cause recorded; the guard is not disabled.
-2. **The guard is edited by the builder it stops.** Rule 1 forbids it, a reviewer checks it, and the claim-time
-   matrix, whose command a builder cannot change, still runs.
-3. **The subset misses a change the full matrix catches.** Rule 3 covers it at the claim.
-4. **Disk.** The owners' scripts refuse to capture with under 16 GiB free. The verifier reports that as its own
-   named failure, so it is not mistaken for a changed image.
+1. **A macOS, driver or Chrome update changes the bytes**, and no covered-path change can land. The sign is that
+   untouched main fails the verifier. The baseline's owner refreshes it under rule 1, with the cause recorded. The
+   gate is not disabled.
+2. **Chrome's references no longer match main.** Found by the builder's first step. It ends `BLOCKED` with the
+   comparison, and the refresh is `APPLE-TILE`'s.
+3. **The gate is edited by the builder it stops.** Rule 1 forbids it and a reviewer checks it.
+4. **A verifier run nears the loop's one-hour limit on a check.** M1 records the time. The fallback is a
+   comparison-only entry to the owners' scripts, proposed to `APPLE-TILE`, never fewer comparisons.
+5. **Two builders invalidate each other's proofs.** Each landing forces at most one more run on the other, and
+   whichever lands first makes progress.
 
 ## Proof and builder handoff
 
-`mac-metal` only. GPU runs hold the `gpu` lock. Scratch goes in `tmp/baseline-guard/`; selected evidence in
-`docs/evidence/BASELINE-GUARD/`. The mutants are run in scratch and never merged. After this milestone the registry
-table in the module list names the verifier as each baseline's full verify command.
+`mac-metal` and `chrome-webgpu`. GPU runs hold the `gpu` lock. Scratch goes in `tmp/baseline-guard/`; selected
+evidence in `docs/evidence/BASELINE-GUARD/`. Mutants run in scratch and are never merged. The demonstration of
+`land` refusing runs in a scratch clone whose remote is a local bare repository, never against the real remote.
 
 ## Open questions
 
 | Question | Settled by |
 |---|---|
-| Do the gate's debug build and the baseline's release build draw identical bytes? | The builder's first experiment in M1 |
-| How long does the guard add to `./dev check`? | M1 records it |
+| Do Chrome's four retained sets still match untouched main? | The builder's first step in M1 |
+| How long do one verifier run and one gate check take? | M1 records them |
