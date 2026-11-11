@@ -4,7 +4,7 @@
     {
       "id": "M1",
       "name": "Every pixel of the valley carries correct motion under jitter, including the sky and stars",
-      "state": "blocked",
+      "state": "open",
       "fails": 0,
       "replans": 0,
       "needs": [
@@ -60,8 +60,7 @@
           "verdict": "",
           "review": ""
         }
-      ],
-      "blocked": "The same live nested GPU lock prevents testing and capture. The lead must restart APPLE-TILE\u2019s check without its outer `lock gpu` wrapper."
+      ]
     },
     {
       "id": "M2",
