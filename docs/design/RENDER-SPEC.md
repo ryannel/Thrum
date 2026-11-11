@@ -409,11 +409,17 @@ retaining history across delayed GPU acceptance requires an explicit GPU-owned
 metadata path or bounded delayed lease protocol. Submission completion alone
 does not certify an accepted sample.
 APPLE-PRESENTATION M1 extends group 0 binding 0 to a 240-byte `ViewRecord`:
-current jittered view-projection at 0, previous submitted unjittered view-projection
+current raster view-projection at 0, previous submitted unjittered view-projection
 at 64, camera XYZ/time at 128, storage scale/inverse fixed gain/jitter XY at 144,
 current unjittered view-projection at 160, and mip bias (f32), phase (u32), two
-reserved zero words at 224. Jitter is in render pixels, X right/Y down; the
-raster projection adds `(2*jitter.x/width, -2*jitter.y/height)*clip.w`.
+reserved zero words at 224. Jitter is in render pixels, X right/Y down.
+The game retains nonzero temporal sample offsets and the phase on every submitted
+frame. Raster sampling is selected before packing the shared view buffer.
+Spatial output packs the unjittered matrix at 0. A temporal consumer or explicit
+jitter witness selects the jittered matrix, which adds
+`(2*jitter.x/width, -2*jitter.y/height)*clip.w`. Geometry and culling read that same
+selected matrix, and star raster offsets follow the same selection. Both modes
+retain the unjittered matrix at 160 and advance the phase on submission.
 The continuous Halton(2,3) cycle uses indices 1 through 32, centred by subtracting
 0.5, and advances only on submission, independently of extent changes. It is
 explicitly selected by a temporal view; diagnostic spatial fixtures may disable it.

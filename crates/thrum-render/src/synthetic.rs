@@ -72,7 +72,7 @@ pub use view::SyntheticView;
 use view::{AUX_BYTES, Projection};
 
 /// Synthetic source revision; not a substitute for an F4 product identity.
-pub const SYNTHETIC_REVISION: u64 = 17;
+pub const SYNTHETIC_REVISION: u64 = 18;
 /// Portable reversed-Z opaque depth, sampled by the optional star composite.
 pub const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
 const VIEW_BYTES: usize = view::VIEW_BYTES;
@@ -1776,7 +1776,7 @@ impl PreparedSynthetic {
         let view = if scene.view.jitter_enabled() {
             scene
                 .view
-                .with_jitter_phase(self.jitter_phase, target.extent())
+                .at_jitter_phase(self.jitter_phase, target.extent())
         } else {
             scene.view
         };

@@ -149,7 +149,7 @@ impl PreparedSynthetic {
     pub(crate) fn contribution_frame(&self) -> ContributionFrame {
         let view = self.pending_view.as_ref().unwrap_or(&self.view_sample);
         ContributionFrame {
-            view_proj: view.jittered_projection().to_cols_array_2d(),
+            view_proj: view.raster_projection().to_cols_array_2d(),
             camera: view.camera_position(),
             generation: self.key.device_generation,
             history_reset: view.history_reset(),

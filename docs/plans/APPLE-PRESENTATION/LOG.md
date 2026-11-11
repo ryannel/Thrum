@@ -78,3 +78,7 @@
   Integration recheck: the first land gate stopped at the final cooked draw-probe check; the identical pinned
   binary passed all 13 isolated cases without changes. The final land gate serializes test cases, with every
   assertion and explicit concurrency witness enabled; details are retained with the builder evidence.
+
+- 2026-11-11 MF1 repair separates submitted jitter metadata from raster selection and restores consecutive
+  pause/recovery comparisons. Layout, native lint, WebAssembly and docs checks pass. Metal proof remains
+  queued behind the shared release-file hold. [Progress](../../evidence/APPLE-PRESENTATION/m1-mf1/progress.md).

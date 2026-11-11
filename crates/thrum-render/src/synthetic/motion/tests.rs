@@ -129,8 +129,11 @@ fn metal_static_jitter_is_zero_at_every_texel_and_motion_control_is_nonzero() {
             first.contains(&[65504.0; 2]),
             "spawn has explicit invalid motion"
         );
+        let first_colour = submitted_colour(&device, &queue, &target);
+        let mut jitter_changed_colour = false;
         for _ in 0..35 {
             let values = frame(&device, &queue, &mut prepared, &mut target, &scene, light);
+            jitter_changed_colour |= submitted_colour(&device, &queue, &target) != first_colour;
             assert!(
                 values
                     .iter()
@@ -138,7 +141,33 @@ fn metal_static_jitter_is_zero_at_every_texel_and_motion_control_is_nonzero() {
                 "any nonzero texel fails"
             );
         }
+        assert!(
+            jitter_changed_colour,
+            "explicit raster jitter must change the colour control"
+        );
         println!("M1 static: 35 jitter phases, all 4096 texels numerically exact zero per frame");
+        scene.view = scene.view.with_jitter_sequence(0, [64, 64]);
+        frame(&device, &queue, &mut prepared, &mut target, &scene, light);
+        let spatial_colour = submitted_colour(&device, &queue, &target);
+        for _ in 0..35 {
+            let phase = prepared.jitter_phase;
+            let values = frame(&device, &queue, &mut prepared, &mut target, &scene, light);
+            let submitted = prepared.view_sample;
+            let record = submitted.pack_view(&submitted, 1.0);
+            assert_eq!(&record[228..232], &phase.to_le_bytes());
+            assert_ne!(&record[152..160], &[0; 8]);
+            assert_eq!(&record[..64], &record[160..224]);
+            assert_eq!(prepared.jitter_phase, (phase + 1) % 32);
+            assert!(
+                values
+                    .iter()
+                    .all(|v| v.iter().all(|axis| axis.abs().to_bits() == 0))
+            );
+            assert_eq!(submitted_colour(&device, &queue, &target), spatial_colour);
+        }
+        println!(
+            "MF1 spatial: 35 submissions retain nonzero sample offsets and advance phase with raster jitter disabled"
+        );
         let mut replacement = PreparedSynthetic::prepare(&device, &queue, 41, &scene)
             .await
             .expect("replacement preparation");
@@ -158,6 +187,26 @@ fn metal_static_jitter_is_zero_at_every_texel_and_motion_control_is_nonzero() {
         let cut = frame(&device, &queue, &mut prepared, &mut target, &scene, light);
         assert!(cut.contains(&[65504.0; 2]));
     });
+}
+
+fn submitted_colour(
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    target: &OffscreenTarget,
+) -> Vec<u8> {
+    let mut readback = target.readback(device);
+    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+    readback
+        .copy_into(&mut encoder, target, None)
+        .expect("submitted colour copy");
+    queue.submit([encoder.finish()]);
+    device
+        .poll(wgpu::PollType::wait_indefinitely())
+        .expect("colour completion");
+    readback
+        .try_collect(41)
+        .expect("colour readback")
+        .expect("completed colour")
 }
 
 fn camera(yaw: f32, phase: f32) -> SyntheticView {

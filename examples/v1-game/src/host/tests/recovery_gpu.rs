@@ -66,42 +66,6 @@ fn surface() -> SurfaceProfile {
     }
 }
 
-fn paused_phase_references(
-    host: &mut ThreadedFrameHost,
-    origin: Instant,
-    gpu: &Gpu,
-    first: Vec<u8>,
-    tick: u64,
-    visual_revision: Option<[u8; 32]>,
-) -> Vec<Vec<u8>> {
-    let mut phases = vec![first];
-    for _ in 0..31 {
-        let (pixels, sample) = draw(host, origin, &gpu.device, &gpu.queue, &gpu.target);
-        assert_eq!(sample.tick, tick);
-        assert_eq!(sample.completed_ticks, 0);
-        assert_eq!(sample.visual_revision, visual_revision);
-        phases.push(pixels);
-    }
-    phases
-}
-
-fn closest_phase<'a>(phases: &'a [Vec<u8>], actual: &[u8]) -> (&'a [u8], u8) {
-    phases
-        .iter()
-        .map(|reference| {
-            assert_eq!(reference.len(), actual.len());
-            let peak = reference
-                .iter()
-                .zip(actual)
-                .map(|(a, b)| a.abs_diff(*b))
-                .max()
-                .expect("pixels");
-            (reference.as_slice(), peak)
-        })
-        .min_by_key(|(_, peak)| *peak)
-        .expect("32 prior whole-frame phase images")
-}
-
 fn controlled_x(host: &mut ThreadedFrameHost) -> f64 {
     // Observe the retained published authority; do not add a production probe.
     let page = host
@@ -203,17 +167,6 @@ fn prove_paused_recovery(phase: f32, midnight: bool, overlay: DisplayOverlay) {
                 "the upper-right patch must be dim, nonblack midnight sky"
             );
         }
-        // Jitter advances between submissions. Retain every old phase before
-        // loss: the first replacement frame must match one whole reference,
-        // rather than waiting for a later good replacement frame.
-        let phases = paused_phase_references(
-            &mut host,
-            origin,
-            &old,
-            expected,
-            paused.id.tick,
-            prior.visual_revision,
-        );
         let before_x = controlled_x(&mut host);
         let view = old
             .target
@@ -261,7 +214,24 @@ fn prove_paused_recovery(phase: f32, midnight: bool, overlay: DisplayOverlay) {
             sample.uploaded_rows, 0,
             "installation already uploaded the unchanged paused scene"
         );
-        let (expected, peak) = closest_phase(&phases, &restored);
+        let (consecutive, stable_sample) = draw(
+            &mut host,
+            origin,
+            &replacement.device,
+            &replacement.queue,
+            &replacement.target,
+        );
+        assert_eq!(stable_sample.tick, paused.id.tick);
+        assert_eq!(
+            consecutive, restored,
+            "consecutive replacement frames are identical"
+        );
+        let peak = expected
+            .iter()
+            .zip(&restored)
+            .map(|(a, b)| a.abs_diff(*b))
+            .max()
+            .expect("pixels");
         assert!(
             peak <= 1,
             "replacement changed fixed-view pixels by {peak} SDR codes"
@@ -318,7 +288,7 @@ fn prove_paused_recovery(phase: f32, midnight: bool, overlay: DisplayOverlay) {
             (true, DisplayOverlay::Off) => "recovery-midnight",
             (false, DisplayOverlay::Off) => "recovery",
         };
-        retain(&format!("{label}-before"), expected);
+        retain(&format!("{label}-before"), &expected);
         retain(&format!("{label}-after"), &restored);
         retain(&format!("{label}-resumed"), &moved);
     });
@@ -425,15 +395,7 @@ fn mixed_mesh_field_keeps_its_meshes_through_gpu_replacement() {
             std::thread::sleep(Duration::from_millis(1));
         }
         let paused = transition(&mut host, &controls, &old.device, WorldLifecycle::Pause);
-        let (before, prior) = draw(&mut host, origin, &old.device, &old.queue, &old.target);
-        let phases = paused_phase_references(
-            &mut host,
-            origin,
-            &old,
-            before,
-            paused.id.tick,
-            prior.visual_revision,
-        );
+        let (before, _) = draw(&mut host, origin, &old.device, &old.queue, &old.target);
         let inputs = host.device_prepare_inputs().expect("retained CPU inputs");
         old.device.destroy();
         let replacement = Gpu::new(&instance, 22).await;
@@ -455,7 +417,12 @@ fn mixed_mesh_field_keeps_its_meshes_through_gpu_replacement() {
             &replacement.target,
         );
         assert_eq!(sample.tick, paused.id.tick);
-        let (before, peak) = closest_phase(&phases, &restored);
+        let peak = before
+            .iter()
+            .zip(&restored)
+            .map(|(a, b)| a.abs_diff(*b))
+            .max()
+            .expect("pixels");
         let differing = before
             .as_chunks::<4>()
             .0
@@ -490,7 +457,7 @@ fn mixed_mesh_field_keeps_its_meshes_through_gpu_replacement() {
             &replacement.target,
         );
         assert_ne!(moved, restored, "the flythrough resumes on the replacement");
-        retain("mixed-field-recovery-before", before);
+        retain("mixed-field-recovery-before", &before);
         retain("mixed-field-recovery-after", &restored);
         retain("mixed-field-recovery-resumed", &moved);
     });
