@@ -1,18 +1,11 @@
 # Attended Mac M2 continuation
 
-11 November continuation. The first diagnostic saved a readable trace and calibrated pan signposts, but raw
-swap/VSync and derived displayed-surface exports have zero rows. M2.4 and M2.2 stay open. One diagnostic attempt
-remains. The second was queued and stopped before recording when the built-in panel went asleep. The console
-was still unlocked. [Fresh diagnosis](../mac-m2-20261111/README.md) retains the raw exports and load records.
-After the owner wakes the built-in panel, the remaining changed-hypothesis diagnostic uses this command.
-
-```sh
-python3 /Users/ryannel/.claude/plugins/cache/ryannel-skills/orchestrate/1.7.1/skills/orchestration/build/scripts/agent_loop.py lock gpu --worktree . -- python3 scripts/qualify_mac_m2.py --output tmp/mac-m2/final-window-20261110 --diagnostic-with-os-logs
-```
-
-It restores OS-log collection after the empty-display-event result, with capture OFF and the desktop recorder
-absent. The hypothesis is written into the durable attempt journal before launch. Inspect its fresh raw and
-derived swap exports before any pass. The remaining instructions document the original two-arm route.
+11 November stop. Both diagnostic attempts under the 9 November commission are used. Both saved readable Game
+Performance traces within the bounds, with capture ON and OFF respectively. Both have zero raw swap/VSync and
+derived displayed-surface rows. M2.2/M2.4 stay open. The [complete evidence](../mac-m2-20261111/README.md) retains
+both hypotheses, traces' exports, clock calibration, load records and source inspection. Further diagnostic
+recording requires a scoped re-plan. Preserve `tmp/mac-m2/trace-commission.json`; renaming an output or resuming
+this command grants no new allowance. The commands below document the tested collection methods.
 
 Run from `/Users/ryannel/Workspace/thrum/.claude/worktrees/mac-m2`, on its retained release binary and `tmp/mac-m2/valley` cooked store.
 The retained binary hash is `aa1591522962933b55ec1f347cc538880f5eb14b7ea227bf4adcb7f00b585507`.

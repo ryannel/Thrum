@@ -1,0 +1,23 @@
+{
+  "recorded_unix_ns": 1794395050362710000,
+  "python_refusal_tests": {
+    "passed": 6
+  },
+  "budget_refusal_control": "pass; exhausted journal refused before creating an arm or modifying the journal",
+  "panel_guard_owned_child_termination": "pass",
+  "native_coregraphics_witness": "pass",
+  "documentation_check": "pass",
+  "workspace_test_compilation": "pass; cargo test --locked --offline --workspace --no-run",
+  "full_check": {
+    "state": "queued",
+    "pid": 74999,
+    "tool_session": 86138,
+    "command": "./dev check",
+    "gpu_holder_pid": 70052,
+    "gpu_holder_helper_pid": 74630,
+    "log": "tmp/mac-m2/check-20261111.log"
+  },
+  "timed_movie_review": "pending shared GPU availability; finite review request cancelled for handoff",
+  "integration": "pending full check and mandated land command",
+  "diagnostic_budget": "exhausted; both recorded traces have zero raw swap/VSync and derived display-surface rows"
+}

@@ -1,40 +1,86 @@
-# Mac M2 attended diagnostic, 11 November
+# Mac M2 attended diagnostics, 11 November
 
-M2.2 and M2.4 remain open. The first diagnostic finalized and exported a readable Game Performance trace, but its
-raw display-surface-swap/VSync tables and derived displayed-surfaces-interval table have zero rows. The built-in
-display identity is present. A readable directory and pan signposts therefore leave the required swap proof
-unmet. [Result](result.json), [TOC](toc.xml.gz), [swap export](swaps.xml.gz) and [raw display tables](raw-displays.xml.gz).
+**M2.2 and M2.4 remain open. The two-attempt diagnostic commission is exhausted.** Both Game Performance recordings
+finalized and exported readable data, but both raw swap/VSync tables and derived displayed-surfaces-interval have
+zero rows. Display identity and the four same-process pan markers are present. A scoped re-plan must address the
+missing display-event source before further diagnostic recording. [Result](result.json) and [durable journal](trace-commission.json).
 
-The first configuration used Points of Interest `excludeOSLogs=true` and the existing release binary
-`aa1591522962933b55ec1f347cc538880f5eb14b7ea227bf4adcb7f00b585507`, matching the completed M2.1/M2.3 proofs.
-The trace identifies game PID 49285 and window 45393 at 1920×1080 on the M3 Max built-in 3456×2234, 120 Hz display.
-Its recorded duration is 8.611888 seconds. Collection, finalization and the three exports finished in 70.185 seconds.
-[Invocation](invocation.json), [process log](process.log), [timing](process.timing.json) and [window](window.txt).
+| Arm | Engine presentations | Original images | Raw swaps / VSync | Derived swaps | Clock-offset bound |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| ON untraced | 851 | 851 | Untraced | Untraced | Host clock |
+| ON Game Performance, OS logs excluded | 848 | 848 | 0 / 0 | 0 | 0.666 µs |
+| OFF Game Performance, OS logs included | 846 | 0 | 0 / 0 | 0 | 0.333 µs |
 
-The four MacM2Whole/MacM2Pan SDK marker boundaries all resolve to that PID. Duplicate schema projections contain
-identical events and are deduplicated. Their media-clock brackets intersect in a consistent offset interval with
-width 0.665896 microseconds. This provides the calibrated clock join for this run. The missing swap stream leaves
-cadence unqualified. [Signposts](signposts.xml.gz) and [clock calibration](clock-calibration.json).
+The same release binary `aa1591522962933b55ec1f347cc538880f5eb14b7ea227bf4adcb7f00b585507` matches the completed
+M2.1/M2.3 proofs. All three arms use the same cooked noon store, preset, engine recipe, 1920×1080 extent and normal
+AppKit slider target/action pan. The ON trace identifies PID 49285/window 45393, and OFF PID 74068/window 45482,
+on the M3 Max built-in 3456×2234 display reporting 120 Hz. The OFF arm marks capture disabled in every surface row,
+retains normal frame markers, produces zero images and creates no spool. The 10 November proof establishes the
+underlying disabled-resource and direct-present behavior. The assembly predates later engine changes on main;
+Mac M3 owns the planned post-APPLE-TILE requalification.
+[First invocation](invocation.json), [first window](window.txt) and [OFF invocation/window records](off-traced/window.txt).
 
-The GPU lock covered the fresh ON/untraced baseline, ON/traced collection and bounded probe inspection. Another
-builder's attended visual-review holder and earlier GPU checks delayed acquisition. Per-arm host load was sampled
-throughout collection and exports. The traced arm's one-minute load rose from 3.52 to 19.51. iostat retains interval
-CPU and disk samples, while the process snapshot reports lifetime CPU. These load records cover more than the pan
-itself. They establish the conditions for later contamination review. [Load](load.json) and [samples](system-iostat.txt.gz).
+The first changed hypothesis excluded ordinary OS-log messages to reduce finalization work while preserving
+Game Performance display events. It saved a readable trace, but its raw and derived display-event tables were
+empty. The second hypothesis restored OS logs, retaining the absence of a desktop recorder and using capture OFF.
+It also saved a trace with empty display-event tables. That observation rejects OS-log exclusion as a sufficient
+explanation. The missing event source remains undiagnosed. Collection, finalization and the three standard exports
+took 70.185 seconds for ON and 63.357 seconds for OFF. Each trace's recorded interval was below the 16-second cap,
+and each entire collection/export interval was below 75 seconds. Both process groups exited normally. The finite
+record/finalization/export commands and deadlines are retained.
+[First log/timing](process.log), [OFF log](off-traced/process.log) and [OFF timing](off-traced/process.timing.json).
 
-A read-only panel guard samples every 0.5 seconds, with a two-second I/O Registry timeout. Its failure stops only
-the process group created by the collector. A refusal control verified owned-child termination, and actual panel
-observations verified the CoreGraphics binding. Temporary bounded caffeinate assertions kept the panel awake
-during the attended queue. [Panel witnesses](panel-witness.jsonl.gz).
+The first trace's raw exports are [TOC](toc.xml.gz), [derived swaps](swaps.xml.gz) and
+[raw display tables](raw-displays.xml.gz). The second has its own [TOC](off-traced/toc.xml.gz),
+[derived swaps](off-traced/swaps.xml.gz) and [raw display tables](off-traced/raw-displays.xml.gz).
+Each raw export contains one device-display-info row and zero display-surface-swap, display-surface-queue and
+VSync rows. No app/window swap stream or numeric Swap Time is available for attribution or interval measurement.
+The PID/window logs and display identity alone leave the cadence criterion unmet.
 
-The second diagnostic hypothesis restores OS-log collection to test whether exclusion removed the required display
-event source. It retains capture OFF, the same build/content/extent/input and the absence of a desktop recorder.
-Before this recording acquired the GPU lock, the panel became inactive and asleep while the console remained
-unlocked. The queued owned process was stopped immediately. One of the two commissioned diagnostic attempts remains.
-[Journal](trace-commission.json) and [one-command continuation](../mac-m2-20261110/RUNBOOK.md).
+All four MacM2Whole/MacM2Pan boundaries resolve to the correct game PID in each trace. Identical duplicate schema
+projections are deduplicated. Each media-before/media-after bracket constrains the same-process trace-clock offset;
+all four bounds intersect consistently. Their widths are 0.666 and 0.333 microseconds. These calibrations establish
+the clock joins while the absent swap streams leave cadence unqualified.
+[First signposts/calibration](clock-calibration.json) and [OFF calibration](off-traced/clock-calibration.json).
+The [analysis script](analyse-traces.py) resolves XML references, counts table rows and retains all anchor values
+in [analysis.json](analysis.json). It reads the complete local roots under `tmp/mac-m2/final-window-20261110`.
 
-Complete local original archives remain in `tmp/mac-m2/final-window-20261110/on-untraced-current` and `on-traced`,
-with timing, input, submission and writer hashes. Fresh packaging and visual inspection are pending. These new
-content arms have no new quality verdict. The completed 10 November M2.1/M2.3 proofs retain their scope. Exact
-collector source snapshots are retained by SHA-256 in collectors/. Ignored local source archives have no durable
-backup. Further diagnostic attempts after the remaining one require a scoped re-plan.
+Per-arm load, iostat interval CPU/disk samples and process snapshots are retained. The one-minute load changed
+3.52→19.51 during ON/traced and 11.76→6.34 during OFF/traced. These sampler intervals include startup, finalization
+and export as well as the pan. Process CPU snapshots are lifetime percentages. The GPU lock covered each complete
+recording/export batch. Other builders' GPU holders delayed acquisition, and their CPU work could continue under
+the lock. These are shared-machine observations. OS-log tracing options differ between the two traced arms.
+[ON load](load.json), [OFF load](off-traced/load.json) and [per-arm CPU/GPU comparison](analysis.json).
+
+Across all samples including warm-up, render-method elapsed medians were 0.907 / 1.267 / 1.213 ms for untraced ON /
+traced ON / traced OFF. Reported gpu_present_ns medians were 1.136 / 1.126 / 1.125 ms, with zero missing GPU-query
+sample rows. These comparisons retain host-load, tracing-option and run-order confounds. They support no isolated
+causal percentage for capture overhead. Host method elapsed durations include waits. GPU query intervals,
+callback targets, accepted input, engine submission, map observation and movie PTS keep their own timestamps.
+Compositor Swap Time, physical panel output and input-to-photon timing remain unmeasured.
+
+Both ON source archives independently decoded and matched every original RGBA hash, with all 851/848 image-to-
+submission/input joins and zero omissions. The native frames and crops preserve coherent rock/ridge placement,
+attached shadows, the sphere's authored leftward sweep and exit, and settled 0°/36° endpoints. The full-sequence
+navigation sheets retain the three-second warm-up, initial hold, pan and final hold. No exact repeated image bytes
+occur inside either sweep. Largest source-image gaps were 17.438/27.879 ms, both during warm-up. The traced sweep
+has local gaps of 15.715 and 13.088 ms, recorded with their source IDs/yaws in its manifest. These are source-image
+observations. Ground E supplies scene/framing context. Timed movie inspection remains pending shared GPU availability; the finite playback-review request was cancelled for handoff.
+[Untraced selected sources](on-untraced-current/selected.json), [traced selected sources](on-traced/selected.json),
+[untraced 1× movie](on-untraced-current/pan-1x.mp4) and [traced 1× movie](on-traced/pan-1x.mp4).
+
+The panel stayed unlocked, active and awake throughout both recordings and exports. The read-only guard samples
+every 0.5 seconds with a two-second I/O Registry timeout; failure stops the collector's owned process group.
+Earlier, the remaining diagnostic was stopped while still queued when the panel slept, consuming no attempt.
+The owner then woke it and the lead held the display awake for the completed continuation. Bounded temporary
+caffeinate assertions were also used during the earlier queue. [ON panel witness](panel-witness.jsonl.gz),
+[OFF witness](off-traced/panel-witness.jsonl.gz) and [result history](result.json).
+
+Complete local trace bundles are `tmp/mac-m2/final-window-20261110/on-traced/pan.trace` and `off-traced/pan.trace`.
+Lossless ON archives, expanded originals, hashes, input/submission tables and previews remain under the same root,
+with the fresh baseline in `on-untraced-current`. Exact executed collector sources are retained by SHA-256 in
+collectors/. Selected evidence lives here in Git. Ignored local archives have no durable backup. The
+[runbook](../mac-m2-20261110/RUNBOOK.md) records the tested commands and exhausted allowance. The CPU test-binary build, six Python refusal controls and documentation check passed. The full `./dev check`
+remains queued under the GPU lock, PID 74999/tool session 86138. APPLE-TILE lock PID 70052 and its manual
+release-wait helper PID 74630 currently prevent it from starting. Timed playback and integration remain pending.
+[Verification state](verification.json) records the live wait for resumption. Independent lead review remains owed.

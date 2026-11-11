@@ -1,0 +1,77 @@
+[
+  {
+    "time_seconds": 3.5,
+    "submission_id": 418,
+    "submit_ns": 3500199291,
+    "yaw_degrees": 0.0,
+    "rgba_sha256": "f543634baa6edaf6e4ff562ed363bbd6abcc343959c6a440358e945832eb16e7",
+    "full": "full-3.5.png",
+    "crop": "crop-3.5.png",
+    "crop_rect_xywh": [
+      800,
+      650,
+      480,
+      340
+    ]
+  },
+  {
+    "time_seconds": 4.5,
+    "submission_id": 538,
+    "submit_ns": 4501549666,
+    "yaw_degrees": 9.19999218,
+    "rgba_sha256": "14dd404ba00670e0135ca3d6a087ca2a0cf286f0819b77be8c3b29143b82f093",
+    "full": "full-4.5.png",
+    "crop": "crop-4.5.png",
+    "crop_rect_xywh": [
+      800,
+      650,
+      480,
+      340
+    ]
+  },
+  {
+    "time_seconds": 5.0,
+    "submission_id": 597,
+    "submit_ns": 5000837583,
+    "yaw_degrees": 18.199995041,
+    "rgba_sha256": "906a46bb5f19161ebfa8fade94e1b2655c044c79decbe42bdcfd3f5698771f0f",
+    "full": "full-5.png",
+    "crop": "crop-5.png",
+    "crop_rect_xywh": [
+      400,
+      650,
+      480,
+      340
+    ]
+  },
+  {
+    "time_seconds": 5.5,
+    "submission_id": 657,
+    "submit_ns": 5501565500,
+    "yaw_degrees": 27.199998856,
+    "rgba_sha256": "c76d6ba06c1dd12ec9ca644e560d59ec30f01a5735a5d55769fc53d541e4a0f3",
+    "full": "full-5.5.png",
+    "crop": "crop-5.5.png",
+    "crop_rect_xywh": [
+      400,
+      650,
+      480,
+      340
+    ]
+  },
+  {
+    "time_seconds": 6.5,
+    "submission_id": 777,
+    "submit_ns": 6500536583,
+    "yaw_degrees": 35.999988556,
+    "rgba_sha256": "f497512e6989c0ef9bc6ba7a02e88bf73a465fefa22bc851d52672a2247822a0",
+    "full": "full-6.5.png",
+    "crop": "crop-6.5.png",
+    "crop_rect_xywh": [
+      100,
+      650,
+      480,
+      340
+    ]
+  }
+]

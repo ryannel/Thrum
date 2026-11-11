@@ -1,5 +1,14 @@
 # PLATFORM-RUNTIME-MAC log
 
+11 November diagnostic closeout. The remaining capture-OFF probe ran under the GPU lock on the awake built-in
+panel. Both probes finalized and exported readable traces within bounds, but both raw swap/VSync and derived
+displayed-surface tables contain zero rows. Restoring OS logs did not restore display events. All four same-PID
+markers calibrate with 0.666/0.333 microsecond bounds. Both ON archives independently verify all 851/848 originals
+without omissions. OFF has 846 presentations, zero images and no spool. Host load and panel witnesses are retained.
+The two diagnostic attempts are exhausted. M2.2/M2.4 stay open and M2 stays open. A scoped re-plan must address the
+missing display-event source before further recording. Verification and integration of this checkpoint continue.
+[Both hypotheses, raw evidence and source inspection](../../evidence/render/mac-m2-20261111/README.md).
+
 11 November attended checkpoint. The GPU-locked fresh baseline and ON/Game Performance probe completed while the
 built-in panel was active. The probe finalized and exported readable data in 70.185 seconds, but both raw swap/
 VSync and derived displayed-surface tables have zero rows. Four same-process markers give a consistent clock

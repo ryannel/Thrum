@@ -1,0 +1,35 @@
+{
+  "before_load_1_5_15": [
+    11.76318359375,
+    7.76806640625,
+    5.79248046875
+  ],
+  "after_load_1_5_15": [
+    6.3388671875,
+    6.9169921875,
+    5.60546875
+  ],
+  "sample_duration_ns": 63412037250,
+  "disk_samples": "system-iostat.txt",
+  "disk_scope": "default devices including spool disk0; first row since boot; subsequent rows 1 s averages",
+  "background_process_snapshot": [
+    "  PID  %CPU COMM",
+    "74022 137.5 /opt/homebrew/bin/rustc",
+    "59101  33.4 /private/var/run/com.apple.security.cryptexd/mnt/com.apple.iPhoneOS.SimulatorRuntime-v24.2.8117.0.YDOXcI/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.2.simruntime/Contents/Resources/RuntimeRoot/System/Library/PrivateFrameworks/DVTInstrumentsFoundation.framework/DTServiceHub",
+    "59100  29.1 /private/var/run/com.apple.security.cryptexd/mnt/com.apple.iPhoneOS.SimulatorRuntime-v24.2.8117.0.YDOXcI/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.2.simruntime/Contents/Resources/RuntimeRoot/System/Library/PrivateFrameworks/DVTInstrumentsFoundation.framework/DTServiceHub",
+    "74029  13.5 /Applications/Xcode.app/Contents/SharedFrameworks/DVTInstrumentsFoundation.framework/Resources/DTServiceHub",
+    "    1   7.5 /sbin/launchd",
+    "92302   7.1 /usr/libexec/trustd",
+    "61324   4.9 /usr/libexec/xpcroleaccountd",
+    "49551   3.5 /usr/libexec/diagnosticd",
+    "  402   3.3 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer",
+    "26113   3.0 /private/var/run/com.apple.security.cryptexd/mnt/com.apple.iPhoneOS.SimulatorRuntime-v24.2.8117.0.YDOXcI/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.2.simruntime/Contents/Resources/RuntimeRoot/usr/libexec/diagnosticd",
+    "74030   2.7 /private/var/db/com.apple.xpc.roleaccountd.staging/exec/16777232.231734314.xpc/Contents/MacOS/com.apple.dt.instruments.dtarbiter",
+    "92314   2.4 /System/Library/PrivateFrameworks/TCC.framework/Support/tccd",
+    "46716   2.3 /Applications/ChatGPT.app/Contents/Resources/codex-cli/bin/../CodexCLI.app/Contents/MacOS/codex",
+    "26112   2.2 /private/var/run/com.apple.security.cryptexd/mnt/com.apple.iPhoneOS.SimulatorRuntime-v24.2.8117.0.YDOXcI/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.2.simruntime/Contents/Resources/RuntimeRoot/usr/libexec/diagnosticd",
+    "23180   2.1 /Users/ryannel/Library/Application Support/Claude/claude-code/2.1.321/ddbdf2b334e1/claude.app/Contents/MacOS/claude"
+  ],
+  "process_cpu_scope": "ps lifetime CPU snapshot, not interval CPU; load averages are host-wide",
+  "sampler": "iostat -d -C -U -w 1 subprocess plus one ps snapshot, same recipe in each arm"
+}

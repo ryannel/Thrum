@@ -1,0 +1,44 @@
+{
+  "pid": 74068,
+  "anchors": [
+    {
+      "stage": 0,
+      "name": "MacM2Whole",
+      "kind": "Begin",
+      "trace_ns": 4465231875,
+      "offset_low_s": "2907643.741048251",
+      "offset_high_s": "2907643.741052876"
+    },
+    {
+      "stage": 1,
+      "name": "MacM2Pan",
+      "kind": "Begin",
+      "trace_ns": 5465224500,
+      "offset_low_s": "2907643.741052251",
+      "offset_high_s": "2907643.741052876"
+    },
+    {
+      "stage": 2,
+      "name": "MacM2Pan",
+      "kind": "End",
+      "trace_ns": 7465599291,
+      "offset_low_s": "2907643.741052543",
+      "offset_high_s": "2907643.741052876"
+    },
+    {
+      "stage": 3,
+      "name": "MacM2Whole",
+      "kind": "End",
+      "trace_ns": 8565567291,
+      "offset_low_s": "2907643.741052335",
+      "offset_high_s": "2907643.741052876"
+    }
+  ],
+  "duplicates_identical": 4,
+  "offset_intersection_s": [
+    "2907643.741052543",
+    "2907643.741052876"
+  ],
+  "offset_bound_us": 0.333,
+  "consistent": true
+}
