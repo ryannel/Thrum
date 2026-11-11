@@ -464,6 +464,7 @@ impl Occlusion {
             &fixture.instances,
             &fixture.serials,
             &pyramid,
+            None,
         );
         Self {
             fixture,

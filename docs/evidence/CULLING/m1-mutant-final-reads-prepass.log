@@ -1,0 +1,21 @@
+   Compiling thrum-render v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/culling/crates/thrum-render)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.30s
+     Running tests/visibility_buckets.rs (target/debug/deps/visibility_buckets-3c6f6fdfddbbf965)
+
+running 1 test
+
+thread 'churn_reveal_resize_and_device_replacement_keep_bucket_direct' (171881318) panicked at crates/thrum-render/tests/visibility_buckets.rs:211:5:
+assertion `left == right` failed: Occlusion: pixels changed
+  left: 32331
+ right: 0
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test churn_reveal_resize_and_device_replacement_keep_bucket_direct ... FAILED
+
+failures:
+
+failures:
+    churn_reveal_resize_and_device_replacement_keep_bucket_direct
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.30s
+
+error: test failed, to rerun pass `-p thrum-render --test visibility_buckets`

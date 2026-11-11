@@ -79,7 +79,6 @@ fn invalid_selections_are_refused_and_a_valid_one_prepares() {
         ("partial triangle", with(vec![not_triangles], vec![Cube; 3])),
         ("non-finite vertex", with(vec![non_finite], vec![Cube; 3])),
         ("extreme bounds", with(vec![extreme], vec![Cube; 3])),
-        ("occlusion", occlusion),
     ] {
         assert!(
             matches!(prepare(&scene), Err(RenderError::SceneCapacity)),
@@ -90,6 +89,11 @@ fn invalid_selections_are_refused_and_a_valid_one_prepares() {
         prepare(&base).ok(),
         Some(false),
         "no selection: legacy route"
+    );
+    assert_eq!(
+        prepare(&occlusion).ok(),
+        Some(true),
+        "Occlusion bucket route"
     );
     let valid = with(vec![triangle()], vec![Cube, Mesh(0), Cube]);
     assert_eq!(prepare(&valid).ok(), Some(true), "the bucket route");

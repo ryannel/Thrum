@@ -19,8 +19,8 @@
           "lock": "gpu",
           "ask": "Read the tests this check runs. Do they compare every frame with bucket-ordered Direct, assert that Occlusion is the resolved mode and hides at least one slot, and fail under each mutant the design names: a two-sided prepass on a back-culled open mesh, and the final draw reading the prepass list?",
           "target": "mac-metal",
-          "status": "open",
-          "evidence": "",
+          "status": "pass",
+          "evidence": "docs/evidence/CULLING/M1.md",
           "verdict": "",
           "review": ""
         },
@@ -42,8 +42,8 @@
           "lock": "gpu",
           "ask": "Which witness exercises the depth slack and which the footprint widening? Does the evidence hold the zero-depth-tolerance mutant failing on the mesh tie witness (a cube witness does not answer this), and for the widening either a no-widening mutant failing on its witness or the poses searched without finding one?",
           "target": "mac-metal",
-          "status": "open",
-          "evidence": "",
+          "status": "pass",
+          "evidence": "docs/evidence/CULLING/M1.md",
           "verdict": "",
           "review": ""
         },
@@ -54,8 +54,8 @@
           "lock": "gpu",
           "ask": "Does a test in this target resize the surface and replace the device while slots are hidden, and compare the next frames with the oracle?",
           "target": "mac-metal",
-          "status": "open",
-          "evidence": "",
+          "status": "pass",
+          "evidence": "docs/evidence/CULLING/M1.md",
           "verdict": "",
           "review": ""
         },

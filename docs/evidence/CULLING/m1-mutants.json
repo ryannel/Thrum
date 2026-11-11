@@ -1,0 +1,32 @@
+[
+  {
+    "mutant": "two-sided-prepass",
+    "exit": 101,
+    "pixel_assertion_failed": true,
+    "source_sha256": "712d18e36e9a2bbbc66ed4568327ed9dd6208fd207dbe76821571c17a8468a00",
+    "path": "crates/thrum-render/src/synthetic/mesh_route.rs",
+    "replace": "forward(class.primitive(flipped), true)",
+    "with_text": "forward(wgpu::PrimitiveState { cull_mode: None, ..class.primitive(flipped) }, true)",
+    "restored_sha256": "6aba7c16633519d4d5e2974747382edbd921cdb5e17ed1a5007785a293ed588c"
+  },
+  {
+    "mutant": "final-reads-prepass",
+    "exit": 101,
+    "pixel_assertion_failed": true,
+    "source_sha256": "2c56ac9c29a5a4a3383e699eee6817db7333a61c35091beb273c468752728d00",
+    "path": "crates/thrum-render/src/synthetic/camera_culling.rs",
+    "replace": "(&target.view_bind_group, view_offset),",
+    "with_text": "(target.occlusion.as_ref().map_or(&target.view_bind_group, |prepass| &prepass.view_bind_group), view_offset),",
+    "restored_sha256": "8e605ac80338670e78e45d90a4371958cff4337a2a041c77229bc21e7ca93abd"
+  },
+  {
+    "mutant": "zero-depth-tolerance",
+    "exit": 101,
+    "pixel_assertion_failed": true,
+    "source_sha256": "aca4dd13a84a86f09da48a50f0698e5b7823a2a27ed5db213b5f8ecd1004b75c",
+    "path": "crates/thrum-render/src/visibility/occlusion.wgsl",
+    "replace": "return nearest + slack < farthest;",
+    "with_text": "return nearest < farthest;",
+    "restored_sha256": "ae506c29a826a23611dea927f7f6ec1a75fdfaa5d5ed38ef6517a8a128bc6fa8"
+  }
+]
