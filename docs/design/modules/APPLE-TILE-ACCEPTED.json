@@ -24,7 +24,29 @@
   "milestones": {
     "M0": {
       "definitions": "2e5589327aafa45baba4a5f1acbcf6d22e8665fccc092bd822ac1b77ff58251b",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "pass",
+          "commit": "c2b6e42e2102b79e5a7a0339c08283e23376ebcc",
+          "review": "docs/evidence/APPLE-TILE/M0-review.md",
+          "host": "claude",
+          "model": "claude-opus-5-5",
+          "effort": "high",
+          "observed": {
+            "model": "claude-opus-5-5"
+          },
+          "cli": "2.1.319 (Claude Code)",
+          "path": "visible",
+          "usage": {
+            "input": 198472,
+            "cached": 10144437,
+            "output": 37915,
+            "cost_usd": 4.374307,
+            "turns": 1
+          },
+          "at": "2026-11-11T03:34:51Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Resolve APPLE-TILE M0's scope conflict: the builder blocked because done-when item D0.2 requires a native witness that t",
@@ -49,6 +71,13 @@
         "session_usage": {
           "incomplete_turns": 3
         }
+      },
+      "accepted": {
+        "by": "review",
+        "commit": "c2b6e42e2102b79e5a7a0339c08283e23376ebcc",
+        "review": "docs/evidence/APPLE-TILE/M0-review.md",
+        "checked": "cffd8ddc6a620b483cd42d95d964a72aaeb96a70",
+        "at": "2026-11-11T03:34:51Z"
       }
     },
     "M1": {
