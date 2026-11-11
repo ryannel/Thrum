@@ -88,11 +88,11 @@ def bounded(command, log, seconds, environment=None, observe=None, finalization_
             while time.monotonic() < deadline:
                 if observe is not None:
                     observe()
-                if finalization_seconds is not None and saving is None and 'Saving output file' in log.read_text(errors='replace'):
+                if finalization_seconds is not None and saving is None and any(event in log.read_text(errors='replace') for event in ('Target app exited, ending recording', 'Recording completed. Saving output file')):
                     saving = time.monotonic()
                     deadline = min(deadline, saving + finalization_seconds)
                     save(log.with_suffix('.timing.json'), {'start_monotonic_s': started,
-                         'saving_observed_monotonic_s': saving, 'deadline_monotonic_s': deadline,
+                         'recording_stop_observed_monotonic_s': saving, 'deadline_monotonic_s': deadline,
                          'finalization_limit_s': finalization_seconds})
                 try:
                     return process.wait(timeout=0.05)

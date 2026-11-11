@@ -1,5 +1,6 @@
 test_callback_time_and_delta_are_not_presented_time (test_mac_m2_presented.PresentedWitness.test_callback_time_and_delta_are_not_presented_time) ... ok
 test_complete_synthetic_interval_is_accepted (test_mac_m2_presented.PresentedWitness.test_complete_synthetic_interval_is_accepted) ... ok
+test_finalization_cap_starts_at_recording_stop (test_mac_m2_presented.PresentedWitness.test_finalization_cap_starts_at_recording_stop) ... ok
 test_known_missed_refreshes_and_truncated_refusal (test_mac_m2_presented.PresentedWitness.test_known_missed_refreshes_and_truncated_refusal) ... ok
 test_missing_ordinal_and_wrong_conversion_refused (test_mac_m2_presented.PresentedWitness.test_missing_ordinal_and_wrong_conversion_refused) ... ok
 test_unmatched_scope_uses_os_presented_bounds (test_mac_m2_presented.PresentedWitness.test_unmatched_scope_uses_os_presented_bounds) ... ok
@@ -13,6 +14,6 @@ test_source_order_cannot_be_rewritten_as_movie_time (test_mac_m2_window.WindowEv
 test_surface_retirement_remains_an_explicit_missing_image (test_mac_m2_window.WindowEvidenceTests.test_surface_retirement_remains_an_explicit_missing_image) ... ok
 
 ----------------------------------------------------------------------
-Ran 13 tests in 2.727s
+Ran 14 tests in 3.421s
 
 OK

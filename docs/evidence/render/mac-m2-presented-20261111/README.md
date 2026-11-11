@@ -42,3 +42,20 @@ A locked or sleeping panel stops the owned work. No security setting or Screen R
 Kernel display swaps, scan-out, photons, input-to-photon and physical iPhone timing remain unmeasured.
 
 [Attended collection and inspection commands](RUNBOOK.md).
+
+The first explicit-window attempt recorded 8.704884 seconds, PID 21493, 842 game submissions and 840 OS handler
+rows. Both converted presented times and handler rows span the four markers. Status 1 at drawable 1 and missing
+terminal drawable 841 are reported, bounded outside the marked presented interval by neighboring valid OS rows.
+The whole interval has 491 game submissions and five two-refresh intervals in the complete run (three overlap
+the marked interval). The trace is diagnostic only because its process exceeded the 91-second overall cap.
+Background one-minute load was 3.245→4.697 over collection/finalization; the retained iostat and lifetime process
+snapshot are host observations, not evidence for any specific cause.
+[First attempt](attempt-1-off/invocation.json), [bounded failure](attempt-1-off/collection.json),
+[converted witness](attempt-1-off/witness.json.gz), [row counts](attempt-1-off/row-counts.json),
+[load](attempt-1-off/load.json) and [commission](trace-commission.json).
+
+[First-attempt marked CPU/GPU samples and miss investigations](attempt-1-costs.json.gz) are reproducible with
+`python3 docs/evidence/render/mac-m2-presented-20261111/analyse-arms.py --root tmp/mac-m2/presented-20261111 --output tmp/mac-m2/attempt1-costs.json`.
+These are diagnostic observations. Host render-method elapsed durations include waits; GPU query intervals
+do not locate display presentation. All strict over-one-period values remain in the witness, while
+nearest-grid two-refresh intervals are listed separately. No numeric performance threshold is a gate.

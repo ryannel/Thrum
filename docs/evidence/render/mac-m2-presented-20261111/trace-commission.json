@@ -1,0 +1,11 @@
+{
+  "commission": "11-November-2026-presented-time-ab66bca5",
+  "attempts": [
+    {
+      "arm": "/Users/ryannel/Workspace/thrum/.claude/worktrees/mac-m2/tmp/mac-m2/presented-20261111/off-traced",
+      "unix_ns": 1794401764316562000,
+      "hypothesis": "Explicit --window 16s replaces the template 5s ring buffer; retained ca-client-presented-handler rows must span both Whole markers. Empty display tables are recorded, not a failure.",
+      "status": "failed; no unchanged retry"
+    }
+  ]
+}

@@ -2,7 +2,7 @@
 
 11 November presented-time re-plan build (`ab66bca5`). The reusable witness command reproduces all three known
 two-refresh intervals and the 15.470792 ms game gap, rejects the truncated historical windows, resolves PID/XML
-references, and reports missing/invalid rows. Thirteen targeted tests pass (seven witness, six existing window controls). M2.4 has builder proof. The pinned retained
+references, and reports missing/invalid rows. Fourteen targeted tests pass (eight witness/deadline, six existing window controls). M2.4 has builder proof. The pinned retained
 M2.1 release binary, preset and cooked-store hashes are unchanged, so M2.1/M2.3 retain their exact-build evidence.
 The first new 16-second-window attempt retained the whole marked interval but hit its process deadline; it is
 not a bounded-completion pass. A second attempt uses only Metal Application, Display and Points of Interest.
