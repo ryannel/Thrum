@@ -26,7 +26,41 @@
   "milestones": {
     "M5": {
       "definitions": "f83a2045b8ddc289ffb8525b1ef027a2b98bac932d85fa7706ce52d9b447f2b8",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "pass",
+          "commit": "783502e58ee6ed24161f812c249cfd7e19e872da",
+          "review": "docs/evidence/ATMOSPHERE/M5-review.md",
+          "items": {
+            "M5.1": "pass",
+            "M5.2": "pass",
+            "M5.3": "pass",
+            "M5.4": "pass",
+            "M5.5": "pass",
+            "M5.6": "pass",
+            "M5.7": "pass",
+            "M5.8": "pass",
+            "M5.9": "pass",
+            "M5.10": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.167.0-alpha.3.2",
+          "path": "headless",
+          "usage": {
+            "input": 308453,
+            "cached": 20230272,
+            "output": 29599,
+            "turns": 1
+          },
+          "at": "2026-11-11T17:09:31Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Unblock ATMOSPHERE M5: H2 fails its Metal precision bound. Current main retains the design instruction requiring a plann",
@@ -59,6 +93,13 @@
           "output": 1033842,
           "turns": 2
         }
+      },
+      "accepted": {
+        "by": "review",
+        "commit": "783502e58ee6ed24161f812c249cfd7e19e872da",
+        "review": "docs/evidence/ATMOSPHERE/M5-review.md",
+        "checked": "c9dd6cd0d58617e5b269054e9b9b5a564095ced9",
+        "at": "2026-11-11T17:09:31Z"
       }
     },
     "M6": {
