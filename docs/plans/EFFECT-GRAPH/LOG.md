@@ -11,3 +11,21 @@
 - 2026-11-11 The heavy checks (release build, GPU, Chrome) were not dry-run by the planner, for lack of disk and
   because the GPU is shared. Each check was parsed as shell and the done-when file validated with the loop's own
   validator.
+- 2026-11-11 [Design review](../../evidence/EFFECT-GRAPH/design-review.md): changes requested, four Must Fix. MF1:
+  the tick rule reset state on a repeated tick. MF2: a skipped ping-pong writer left readers on the older side, and
+  time-sliced writes had no initialisation. MF3: M3.1 removed stored depth with the refraction request. MF4: M3's
+  bar promised stability under reconstruction with no reconstructor in its `needs`.
+- 2026-11-11 Design revised. MF1: a state table (equal tick keeps, later advances, earlier or a new timeline
+  resets), and M2.2 asserts its rows directly. MF2: each history pair has its own committed side with `previous`,
+  `next` and `result` bindings and flips only when its producer ran; three cadence classes; full frames on a new
+  epoch and on reset; time-sliced passes may not write a history. M2.3's witness uses two histories and a consumer.
+- 2026-11-11 MF3: depth storage follows the union of its readers and the colour copy its own request; M3.1 covers
+  four cases. MF4: M3's bar and name now stop at reconstruction's inputs, and reconstructed appearance is judged
+  in `SEA` and `CLOUDS`; `APPLE-PRESENTATION:M3` was not added to `needs`, so M3 is still built beside TAAU.
+- 2026-11-11 Suggestions applied. S1: M2.5 names the cube, volume and array-mip readbacks in Chrome. S2: M2.7 uses
+  the executor's named pass timings and leaves the host's sample fields to `APPLE-TILE:M3`. S3: list order is an
+  execution order only; C08's segment admission stays with `SEA`, `CLOUDS` and V3.
+- 2026-11-11 Planner's additions while revising: a multi-tick advance is one execution with a count, never a
+  producer run twice in a frame; a same-generation `rebuild` keeps state unless the effect's descriptors changed.
+  Exact baselines, from `BASELINE-GUARD`'s review: M2 gained `BASELINE-GUARD:M1` in `needs`, M2 and M3 carry the
+  verifier, and M1 keeps the native matrix and does not wait (an assumption in the plan).

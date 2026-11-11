@@ -10,3 +10,16 @@
   there.
 - 2026-11-11 The planner did not run the guard's checks: they need a release build and the GPU. Each check was
   parsed as shell and the done-when file validated with the loop's own validator.
+- 2026-11-11 [Design review](../../evidence/BASELINE-GUARD/design-review.md): changes requested, two Must Fix.
+  MF1: `land` rebases, checks and pushes without handing control back, so the full matrix could only run after a
+  failing push. MF2: the Chrome comparator needs 481 reference frames that exist only in another builder's scratch.
+- 2026-11-11 Design revised for both. MF1: the verifier writes a proof keyed by a digest of the covered paths, and
+  `./dev check` refuses a covered-path change without a proof for exactly that content, so `land` cannot push it.
+  M1.3 and M1.4 are the acceptance items the review asked for. MF2: the retained Chrome manifests already hold a
+  SHA-256 for every frame, so four sets (day and night, SDR and scene-linear) are compared by digest from a fresh
+  Wasm build, with no bulk reference and no regeneration; ruled in the module list with `APPLE-TILE`.
+- 2026-11-11 S1 not applied, because its subject is gone: the small image test inside `./dev check` is no longer
+  built, so there is no debug-build reference set to approve or maintain. S2 applied in M1.4: patches, base
+  revision, commands and logs are kept, and a failure tells a changed image from an unreadable reference.
+- 2026-11-11 The planner did not run the checks, which need the GPU, Chrome and work that does not exist yet. Each
+  was parsed as shell and the done-when file validated with the loop's own validator.

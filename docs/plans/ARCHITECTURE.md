@@ -11,8 +11,8 @@
 | 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE M0, M2, M3, M11 and M12 |
 | 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads | APPLE-PRESENTATION M3 |
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is refused before it reaches main | |
-| 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE M2 |
-| 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame | APPLE-TILE M2 and M3, APPLE-PRESENTATION M2 |
+| 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE M2, BASELINE-GUARD M1 |
+| 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame | APPLE-TILE M2 and M3, APPLE-PRESENTATION M2, BASELINE-GUARD M1 |
 | 12 | CONTENT-LOOP | Edited meshes, textures and volumes appear in the running game without a stall | APPLE-PRESENTATION M2 |
 | 13 | SHOWCASE | The V1 exit: the showcase valley on Mac and in Chrome, reviewed, with its closing record | The last milestone of modules 1 to 10 and 12 |
 | 14 | SEA | An open sea from waterline to horizon, with floating bodies, wakes and foam | ATMOSPHERE M5, EFFECT-GRAPH, APPLE-TILE M3, APPLE-PRESENTATION M3 and M7, CONTENT-LOOP; the owner's port timing |
@@ -93,7 +93,7 @@ the road to the exit.
 | `APPLE-TILE` | G3t | Recipe selection from the capability registry, the frame lifecycle and its one split scene/output graph, the pre-tone scene-linear input, the native Metal segment | [Design](APPLE-TILE/DESIGN.md) |
 | `APPLE-PRESENTATION` | G4 | The view record (jitter, matrices), motion and reactive targets, history keys and acceptance, reconstruction, render extent and generation transitions, exposure retention, EDR present, the display record, the quality governor, pipeline preparation | [Design](APPLE-PRESENTATION/DESIGN.md); [brief for M4–M11](#apple-presentation-m4m11-g4) |
 | `ATMOSPHERE` | G3s | The one sky, Sun, aerial perspective, night and stars; the environment identity; the direct-Sun path to receivers | [Design](ATMOSPHERE/DESIGN.md) |
-| `BASELINE-GUARD` | T2 | The exact-image guard in the land gate, its registry file and the one-command verifier. Retained bytes stay with each baseline's owner | [Design](BASELINE-GUARD/DESIGN.md) |
+| `BASELINE-GUARD` | T2 | The exact-baseline registry, the one-command verifier, its proofs and the proof gate in `./dev check`. Retained references stay with each baseline's owner | [Design](BASELINE-GUARD/DESIGN.md) |
 | `CULLING` | G3c | Instance visibility lists, occlusion history, the culling mode and its resolution, the mesh-bucket route and Sun-caster culling | [Design](CULLING/DESIGN.md) |
 | `CONTENT-LOOP` | G5 | Cooked products, the manifest, runtime mapping and GPU residency of cooked meshes, textures and volumes | [Brief](#content-loop-g5) |
 | `CREATOR` | G6 | The typed controls model and its views, parameter files, the app runner, sky kit and starter, the creator docs, the profile window and profiler rows | [Design](CREATOR/DESIGN.md) |
@@ -140,7 +140,8 @@ reasoning behind those entries. The project settings allow one Codex builder, so
 4. **After `APPLE-TILE:M2`.** `APPLE-PRESENTATION` M2 (temporal inputs and history; it shares `runtime.rs`).
    `CULLING` M1 (Occlusion on mixed meshes) and `EFFECT-GRAPH` M1 (3D, cube and mipped-array textures in the graph),
    which both edit the graph and scene files M2 moves. `BASELINE-GUARD` M1 waits on nothing and is built first of
-   these, so the land gate guards the exact images before the others change the renderer.
+   these. `CULLING` M1 and `EFFECT-GRAPH` M1 do not wait for it, by an assumption in each plan; their later
+   milestones do, so the proof gate is in place before most of their renderer changes land.
 5. **After `APPLE-TILE:M3`.** `APPLE-PRESENTATION` M3 (TAAU in the game). `PLATFORM-RUNTIME-MAC` M3. `CREATOR` M2
    (the profiler), which reads pass-name timing and adds the timing-demand switch in `runtime.rs`; it merges one
    after the other with the two beside it.
@@ -174,6 +175,10 @@ So a first sea or cloud frame can be built in Thrum once `APPLE-TILE:M3`, `APPLE
 `ATMOSPHERE:M5` and `EFFECT-GRAPH:M3` are Done. That point falls at step 5–6 of the build order, before G7. The
 ports close after `APPLE-PRESENTATION:M7`. Demo scenes in Chrome also need `CREATOR:M1`.
 
+`EFFECT-GRAPH:M3` proves that an effect's motion, reactive coverage and reset reach reconstruction's inputs. How
+an effect looks after reconstruction (shimmer, ghosting, a cut) is accepted in `SEA`'s and `CLOUDS`' own
+milestones, on `APPLE-PRESENTATION:M3`'s reconstructor.
+
 ## Interfaces
 
 Existing contracts are named by number. New interfaces are named here and defined in the design of the module
@@ -198,7 +203,7 @@ interface by itself: a builder writes a proposal in its module's log and a plann
 | Typed controls, parameter files, the scene shell on Mac and web | `CREATOR` → `SHOWCASE`, demo scenes for `SEA` and `CLOUDS` | C11, [G6 decision](../design/decisions/G6-CREATOR-EXPERIENCE.md), [CREATOR](CREATOR/DESIGN.md) |
 | **Frame timing feed**: completed frame samples with pass-name GPU timing, and one timing-demand switch on the frame host (on by default; off writes no timestamps and the sample says GPU time was not requested) | The frame runtime (`APPLE-TILE:M3` for pass names; the switch by the ruling below) → `CREATOR`'s profiler, frames reports, Mac qualification, capture | C12, [CREATOR](CREATOR/DESIGN.md#the-frame-timing-feed) |
 | Engine capture modes and evidence | `T2-CAPTURE` → every visual milestone | C12, [T2 capture](T2-CAPTURE/DESIGN.md) |
-| **Exact baselines**: retained bytes, their owner, the guard in the land gate and the full verify command | Each baseline's owner (bytes), `BASELINE-GUARD` (guard and verifier) → every module that edits the renderer | [Exact baselines](#exact-baselines) |
+| **Exact baselines**: retained references, their owner, the one-command verifier, and the proof gate in `./dev check` that `land` runs before it pushes | Each baseline's owner (references), `BASELINE-GUARD` (registry, verifier, gate) → every module that edits the covered paths | [Exact baselines](#exact-baselines) |
 
 **Seam rulings for `APPLE-PRESENTATION` M1–M3.** Its design proposed nine seams to Thrum Core. Under the loop the
 module list settles them. Seams 1–4 are accepted as written there:
@@ -230,45 +235,69 @@ and the change merged. `APPLE-TILE` M2 was then claimed on evidence from a binar
 ([APPLE-TILE M2 review](../evidence/APPLE-TILE/M2-review.md), MF1;
 [APPLE-PRESENTATION M1 review](../evidence/APPLE-PRESENTATION/M1-review-1.md), MF1). Three rules close those holes.
 
-**1. An exact comparison is its owner's interface.** A builder never changes another module's retained bytes, its
-comparison, its tolerance or its sampling (accepting the closest of several frames, for example), nor an exact
-test of output another module owns, to make its own change pass. When its change fails one, it stops, writes the
-proposal in its log and ends `BLOCKED`; a planner settles it here with the owner, as for any interface. A change
-that needs different output is built behind a selection whose default leaves every registered image exact, which
-is how MF1 was fixed: jitter is gated on explicit temporal sampling. When a milestone is meant to change the
-default output, its planner names here, before it is built, which baselines move and which milestone of the owner
-refreshes them. A refresh records the cause and the old and new hashes in both modules' logs. Nobody refreshes a
-baseline silently.
+**1. An exact comparison is its owner's interface.** A builder never changes another module's retained
+references, its comparison, its tolerance or its sampling (accepting the closest of several frames, for example),
+nor an exact test of output another module owns, to make its own change pass. The registry, the verifier and the
+gate of rule 2 are `BASELINE-GUARD`'s in the same way. When its change fails one, it stops, writes the proposal in
+its log and ends `BLOCKED`; a planner settles it here with the owner, as for any interface. A change that needs
+different output is built behind a selection whose default leaves every registered image exact, which is how MF1
+was fixed: jitter is gated on explicit temporal sampling. When a milestone is meant to change the default output,
+its planner names here, before it is built, which baselines move and which milestone of the owner refreshes them.
+A refresh records the cause and the old and new hashes in both modules' logs. Nobody refreshes a baseline
+silently. A loop builder pushes a covered-path change only through `land` with its check on, never
+`land --no-check`. Any other thread that pushes one runs `./dev check` on the exact commit it pushes.
 
-**2. Before the push: a guard in the land gate.** `land` rebases, runs `./dev check` and pushes under one lock, so
-`./dev check` is the only thing between any change and main, a fix with no plan included. Every exact baseline
-the Mac can draw therefore has a guard inside `./dev check`, which draws the game's default output and compares it
-with the retained bytes exactly. [BASELINE-GUARD](BASELINE-GUARD/DESIGN.md) builds the guard and a one-command
-verifier. Until its M1 is Done, rule 3 is the only automatic catch, and it acts after the push.
+**2. Before the push: a proof for exactly the content being pushed.** `land` rebases, runs `./dev check` and
+pushes under one lock, without handing control back in between, so `./dev check` is the only thing between any
+change and main, a fix with no plan included. A full comparison needs a release build, a cook and Chrome, which
+`./dev check` cannot run. So [BASELINE-GUARD](BASELINE-GUARD/DESIGN.md) builds two parts:
 
-**3. At the claim: the full matrix as a planner-written check.** A builder cannot change an item's `check`, and
-the loop reruns every `check` on a clean copy of main before it records a milestone. So each milestone that edits
-a baseline's covered paths carries an item whose `check` is that baseline's full verify command; the planner adds
-it. The builder runs the milestone's checks after its last rebase and before `land`, and again if `land`'s rebase
-brought in commits under the covered paths. Every exact or visual proof records the revision, clean-diff hash and
-binary hash it ran on, and that revision is the commit claimed. A reviewer who finds a baseline, a guard or an
-exact test changed by a module that does not own it, with no ruling here, records a Must Fix.
+- a **verifier**, one command that draws fresh output on the Mac and in Chrome at a commit and compares it with
+  every registered baseline. On a full pass it writes a **proof** that names a digest of the covered paths at that
+  commit;
+- a **gate** in `./dev check`, which passes a commit that changes no covered path beyond main, and refuses any
+  other commit unless a proof names its exact covered content.
 
-| Baseline | Owner | What it pins | Full verify command | Covered paths |
+A builder runs the verifier before `land`. If `land`'s rebase brings in another covered-path change, the content
+and its digest change, the gate fails and nothing is pushed; the builder runs the verifier on the rebased commit
+and lands again. So the full matrix, Chrome and night included, has always passed on the content that reaches
+main. Every module's landings are covered from the day the gate exists, with no item added to any plan. Until
+`BASELINE-GUARD` M1 is Done, rule 3 is the only automatic catch, and it acts after the push.
+
+**3. At the claim: the verifier again, as a planner-written check.** A builder cannot change an item's `check`,
+and the loop reruns every `check` on a clean copy of main before it records a milestone. So each milestone that
+edits covered paths, in a module planned from now on, carries an item whose `check` is the verifier. It is the
+backstop for a skipped gate or a forged proof. Every exact or visual proof records the revision, clean-diff hash
+and binary hash it ran on, and that revision is the commit claimed. A reviewer who finds a baseline, the gate or
+an exact test changed by a module that does not own it, with no ruling here, records a Must Fix.
+
+| Baseline | Owner | What it pins | Compared by | Covered paths |
 |---|---|---|---|---|
-| `docs/evidence/render/apple-tile-m0/native-baseline/` | `APPLE-TILE` | On the Mac, for both recipes: submitted SDR and scene-linear bytes at the moving route's checkpoints, Sun and night stills at 1080p, and letterbox bytes in two surface formats | `scripts/apple_tile_m1.py` and `scripts/apple_tile_m2.py`, on a release build of the commit and a fresh cook of the showcase valley | `crates/thrum-render`, `crates/thrum-asset-gpu`, `crates/thrum-app`, `examples/v1-game` |
-| `docs/evidence/render/apple-tile-m0/chrome-baseline/` | `APPLE-TILE` | Chrome's portable submitted bytes on the same route | `scripts/apple_tile_m1_compare_browser.py` over a fresh `fixed` capture | The same, and `examples/v1-game/web` |
-| `docs/evidence/v1-workload/g7-showcase-baseline.json` | `SHOWCASE` | The six route stops on both targets, within thresholds, not exactly | `python3 scripts/run_v1_showcase.py check` | The same |
+| `docs/evidence/render/apple-tile-m0/native-baseline/` | `APPLE-TILE` | On the Mac, for both recipes: submitted SDR and scene-linear bytes at the moving route's checkpoints, Sun and night stills at 1080p, and letterbox bytes in two surface formats | `scripts/apple_tile_m1.py` and `scripts/apple_tile_m2.py`, on a release build of the commit and a fresh cook of the showcase valley | `crates/`, `examples/v1-game/`, `scripts/`, the workspace manifest, lockfile and toolchain file, and the baseline's own files |
+| Four Chrome manifests: `docs/evidence/render/apple-tile-m0/chrome-baseline/prechange-chrome-fixed-manifest.json.gz` (day, submitted SDR), and under `docs/evidence/render/apple-tile-m1/chrome/` the `manifest.json.gz` of `chrome-prechange-linear-3` (day, scene-linear), `chrome-prechange-night-sdr` and `chrome-prechange-night-linear` | `APPLE-TILE` | Chrome's portable output on the moving route: for each of 481 records, the identity fields and the SHA-256 of the frame's decoded bytes | A fresh Wasm build and `fixed` capture of the commit, compared record by record with the retained digests by `scripts/apple_tile_m1_compare_browser.py` | The same |
+| `docs/evidence/v1-workload/g7-showcase-baseline.json` | `SHOWCASE` | The six route stops on both targets, within thresholds, not exactly. Not in the verifier | `python3 scripts/run_v1_showcase.py check` | The same |
 
-Exact tests that hold no retained bytes (a culled mode against Direct, the cooked direct path against its
+The verifier, `python3 scripts/exact_baselines.py verify`, runs the first two rows; it exists once
+`BASELINE-GUARD` M1 is Done.
+
+**Ruling on the Chrome reference (with `APPLE-TILE`).** The complete reference captures, 481 frames each, were
+kept only in the scratch of the builder that made them, so a clean checkout could not run the byte comparison.
+The retained manifests are the reference: each holds every record's identity fields and the SHA-256 of its decoded
+bytes. A fresh frame whose decoded bytes hash to the retained digest is taken as byte-equal. `BASELINE-GUARD` M1
+adds this reference-by-digest mode to `scripts/apple_tile_m1_compare_browser.py`; the script's byte mode, the
+retained files and `APPLE-TILE`'s items do not change. If a set does not match on untouched main, the builder
+ends `BLOCKED` and `APPLE-TILE` refreshes it under rule 1.
+
+Exact tests that hold no retained references (a culled mode against Direct, the cooked direct path against its
 reference, paused frames against each other) come under rule 1: they belong to the module that owns the output.
 
-Milestones planned before this rule that edit covered paths (`APPLE-PRESENTATION` M2 and M3, `ATMOSPHERE` M6,
-`CREATOR` M2) gain the rule-3 item when their plans are next revised; `APPLE-TILE` M3 already proves it in D3.2.
-`APPLE-PRESENTATION` M3 puts TAAU in the game: if that changes the default output, its planner settles the refresh
-under rule 1 before it is built. Chrome cannot run inside `./dev check`, so the Chrome baseline is guarded by rule 3
-alone; the portable shaders are shared, so most changes that move it also move the Mac's portable bytes and fail
-the guard.
+`CULLING` M1 and `EFFECT-GRAPH` M1 may be built before the gate exists. Each carries the native matrix as its
+rule-3 item, and its builder reruns that item after every rebase and before `land`; Chrome is first rechecked
+when `BASELINE-GUARD`'s builder runs the verifier on main. Their later milestones wait for `BASELINE-GUARD` M1 and
+carry the verifier. Milestones planned before this rule (`APPLE-PRESENTATION` M2 and M3, `ATMOSPHERE` M6, `CREATOR`
+M2, `APPLE-TILE` M3) need no new item: the gate covers their landings once it exists. `APPLE-PRESENTATION` M3 puts
+TAAU in the game: if that changes the default output, its planner settles the refresh under rule 1 before it is
+built.
 
 
 ## Where sea and clouds are finished
@@ -751,3 +780,9 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   change had moved its baseline unnoticed: three rules, a registry, and a new one-milestone module,
   `BASELINE-GUARD`, inserted at row 9 (later rows renumbered). The entity-visibility interface settles the open
   decision between `CULLING` and `CONTENT-LOOP`. No other module's done-when item changed.
+- 2026-11-11 `BASELINE-GUARD`, `CULLING` and `EFFECT-GRAPH` revised after their design reviews.
+  [Exact baselines](#exact-baselines): rule 2 is now a proof gate in `./dev check`, keyed to the exact covered
+  content, because `land` cannot hand control back between its rebase and its push; rule 3 is the backstop; the
+  Chrome baseline is four retained digest manifests, by a ruling with `APPLE-TILE`. `CULLING` M2 and `EFFECT-GRAPH`
+  M2 gained `BASELINE-GUARD:M1` in their `needs`. `CULLING` no longer builds a live mode switch. No other module's
+  done-when item changed.
