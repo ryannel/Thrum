@@ -10,7 +10,7 @@ import { Cdp, assets, serve, serveCooked, hardware, waitFor, cleanup, cookedHead
 const compress = promisify(gzip);
 const decompress = promisify(gunzip);
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
-const args = { mode: 'realtime', source: 'sdr', scene: 'day', control: 'ordinary', output: '', 'web-root': 'target/v1-game-web', cook: 'target/debug/thrum-cook', 'assets-source': 'examples/v1-game/assets/showcase', chrome: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' };
+const args = { mode: 'realtime', source: 'sdr', scene: 'day', 'diagnostic-clouds': 'off', overlay: 'route', 'route-file': '', control: 'ordinary', output: '', 'web-root': 'target/v1-game-web', cook: 'target/debug/thrum-cook', 'assets-source': 'examples/v1-game/assets/showcase', chrome: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' };
 for (let i = 2; i < process.argv.length; i += 2) {
   const key = process.argv[i].slice(2);
   if (!Object.hasOwn(args, key) || !process.argv[i + 1]) throw new Error(`Unknown or incomplete option ${process.argv[i]}`);
@@ -18,7 +18,9 @@ for (let i = 2; i < process.argv.length; i += 2) {
 }
 if (!['fixed', 'realtime'].includes(args.mode) || !['ordinary', 'stall', 'saturation', 'resize', 'loss', 'slow', 'off'].includes(args.control)) throw new Error('Invalid mode/control');
 if (!['sdr', 'scene-linear'].includes(args.source) || (args.source === 'scene-linear' && args.control !== 'ordinary')) throw new Error('Unsupported capture source/control');
-if (!['day', 'night'].includes(args.scene)) throw new Error('Unknown route scene');
+if (!['day', 'night', 'noon'].includes(args.scene)) throw new Error('Unknown route scene');
+if (!['route','off'].includes(args.overlay)) throw new Error('Invalid overlay option');
+if (!['off','on'].includes(args['diagnostic-clouds'])) throw new Error('Invalid diagnostic-clouds option');
 const output = path.resolve(args.output);
 const tmp = await fs.realpath('tmp');
 if (!output.startsWith(tmp + path.sep) || !args.output) throw new Error('Use a new output directory under tmp/');
@@ -31,6 +33,11 @@ await fs.mkdir(path.join(output, 'frames'));
 const profile = await fs.mkdtemp(path.join(output, 'chrome-profile-'));
 const files = await assets(path.resolve(args['web-root']));
 await movingRouteFiles(files, path.resolve(args['web-root']));
+let captureRoute;
+if (args['route-file']) {
+  captureRoute = await fs.readFile(path.resolve(args['route-file']));
+  files.set('/capture-route.json', { bytes: captureRoute, type: 'application/json', sha256: sha(captureRoute) });
+}
 for (const [name, type] of [['capture.html', 'text/html'], ['capture.mjs', 'text/javascript']]) {
   const bytes = await fs.readFile(path.join(args['web-root'], name));
   const source = await fs.readFile(path.join('examples/v1-game/web', name));
@@ -42,10 +49,11 @@ const sourceHashes = {};
 for (const file of sourceFiles) {
   if (/^(crates|examples|scripts)\//.test(file) || ['Cargo.lock', '.config/architecture.toml'].includes(file)) sourceHashes[file] = sha(await fs.readFile(file));
 }
-const route = JSON.parse(files.movingRoute);
+const route = JSON.parse(captureRoute ?? files.movingRoute);
 const frameBytes = route.render_extent[0] * route.render_extent[1] * (args.source === 'scene-linear' ? 8 : 4);
-const manifest = { complete: false, target: 'chrome-webgpu', source: args.source, scene: args.scene, mode: args.mode, control: args.control, records: [], export_peak: 0, export_working_byte_cap: 32 * frameBytes, output_allowance: 16 * 1024 ** 3,
+const manifest = { complete: false, target: 'chrome-webgpu', source: args.source, scene: args.scene, diagnostic_clouds: args['diagnostic-clouds'], overlay: args.overlay, mode: args.mode, control: args.control, records: [], export_peak: 0, export_working_byte_cap: 32 * frameBytes, output_allowance: 16 * 1024 ** 3,
   source_revision: execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(), dirty_diff_sha256: sha(execFileSync('git', ['diff', 'HEAD'])),
+  route_file: args['route-file'] || null, route_sha256: sha(captureRoute ?? files.movingRoute),
   source_files: sourceHashes, artifacts: Object.fromEntries([...files].map(([name, value]) => [name, value.sha256])) };
 manifest.console = execFileSync('/usr/sbin/ioreg', ['-n', 'Root', '-d1'], { encoding: 'utf8' }).split('\n').filter(line => /IOConsoleLocked|CGSSessionScreenIsLocked/.test(line)).join('\n');
 const bundle = path.join(output, 'ThrumCapture.app');
@@ -113,7 +121,7 @@ try {
   const { targetId } = await cdp.call('Target.createTarget', { url: 'about:blank' });
   const { sessionId } = await cdp.call('Target.attachToTarget', { targetId, flatten: true });
   await cdp.call('Page.enable', {}, sessionId);
-  await cdp.call('Page.navigate', { url: `${manifest.origin}/capture.html?mode=${args.mode}&control=${args.control}&source=${args.source}&scene=${args.scene}&assets=${encodeURIComponent(serving.origin)}` }, sessionId);
+  await cdp.call('Page.navigate', { url: `${manifest.origin}/capture.html?mode=${args.mode}&control=${args.control}&source=${args.source}&scene=${args.scene}&diagnostic-clouds=${args['diagnostic-clouds']}&overlay=${args.overlay}&route=${captureRoute ? 'capture-route.json' : 'moving-v1.json'}&assets=${encodeURIComponent(serving.origin)}` }, sessionId);
   let destroyed = false;
   const record = await waitFor(async () => {
     if (args.control === 'loss' && !destroyed) {

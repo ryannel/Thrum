@@ -12,9 +12,35 @@ struct Field {
     width: usize,
     height: usize,
     values: Vec<[f64; 3]>,
+    steps: Vec<[f64; 3]>,
 }
 
 impl Field {
+    fn assert_known_contrast(&self) {
+        let layers = self.values.len() / (self.width * self.height);
+        for (index, first) in self.values.iter().enumerate() {
+            let x = index % self.width;
+            let y = index / self.width % self.height;
+            let z = index / (self.width * self.height);
+            for next in [
+                (x + 1 < self.width).then_some(index + 1),
+                (y + 1 < self.height).then_some(index + self.width),
+                (z + 1 < layers).then_some(index + self.width * self.height),
+            ]
+            .into_iter()
+            .flatten()
+            {
+                for (c, value) in first.iter().enumerate() {
+                    let quantum = self.steps[index][c].max(self.steps[next][c]);
+                    assert!(
+                        (value - self.values[next][c]).abs() >= 32.0 * quantum,
+                        "known field must differ by at least 32 stored steps: texel {index} neighbour {next} channel {c}"
+                    );
+                }
+            }
+        }
+    }
+
     #[expect(
         clippy::cast_possible_truncation,
         clippy::cast_sign_loss,
@@ -34,6 +60,7 @@ impl Field {
         let mut sum = [0.0; 3];
         let mut minimum = [f64::INFINITY; 3];
         let mut maximum = [f64::NEG_INFINITY; 3];
+        let mut steps = [0.0_f64; 3];
         for (layer, wz) in [(low, 1.0 - depth_weight), (high, depth_weight)] {
             for (row, wy) in [
                 (iy, 1.0 - y.fract()),
@@ -43,18 +70,29 @@ impl Field {
                     (ix, 1.0 - x.fract()),
                     ((ix + 1).min(self.width - 1), x.fract()),
                 ] {
-                    let texel = self.values[(layer * self.height + row) * self.width + column];
+                    let index = (layer * self.height + row) * self.width + column;
+                    let texel = self.values[index];
                     for channel in 0..3 {
                         sum[channel] += texel[channel] * wx * wy * wz;
                         minimum[channel] = minimum[channel].min(texel[channel]);
                         maximum[channel] = maximum[channel].max(texel[channel]);
+                        steps[channel] = steps[channel].max(self.steps[index][channel]);
                     }
                 }
             }
         }
-        let bound = std::array::from_fn(|i| (maximum[i] - minimum[i]) / 32.0 + 1e-5 * maximum[i]);
+        let bound = std::array::from_fn(|i| {
+            (maximum[i] - minimum[i]) / 32.0 + 1e-5 * maximum[i] + steps[i]
+        });
         (sum, bound)
     }
+}
+
+// One representable RGBA16Float interval at the stored magnitude, then decoded.
+fn stored_step(value: f64, scale: f64) -> f64 {
+    let stored = (value * scale).abs();
+    let exponent = stored.log2().floor().max(-14.0);
+    2.0_f64.powf(exponent - 10.0) / scale
 }
 
 fn sky_uv(direction: [f32; 4], azimuth: f64) -> [f64; 2] {
@@ -123,7 +161,10 @@ fn variant(products: &EnvironmentProducts, old: &str, replacement: &str) -> Envi
     }
 }
 
-fn exposure_two(prepared: &PreparedSynthetic, queue: &wgpu::Queue) -> EnvironmentProducts {
+pub(super) fn exposure_two(
+    prepared: &PreparedSynthetic,
+    queue: &wgpu::Queue,
+) -> EnvironmentProducts {
     let surface = prepared.scene_surface(queue);
     let exposure = surface
         .device
@@ -142,7 +183,7 @@ fn exposure_two(prepared: &PreparedSynthetic, queue: &wgpu::Queue) -> Environmen
     )
 }
 
-fn submit(
+pub(super) fn submit(
     device: &wgpu::Device,
     queue: &wgpu::Queue,
     prepared: &mut PreparedSynthetic,
@@ -247,6 +288,10 @@ fn metal_h2_filtered_decode_rejects_each_wrong_lookup_on_every_known_field_query
             let field = Field {
                 width: 192,
                 height: 108,
+                steps: observer::texels(&device, &queue, chart)
+                    .iter()
+                    .map(|texel| std::array::from_fn(|i| stored_step(texel[i], 1.0) / 1024.0))
+                    .collect(),
                 values: observer::texels(&device, &queue, chart)
                     .iter()
                     .map(|texel| std::array::from_fn(|i| texel[i] / 1024.0))
@@ -270,114 +315,22 @@ fn metal_h2_filtered_decode_rejects_each_wrong_lookup_on_every_known_field_query
                 );
             }
         }
-        let old = "textureSampleLevel(environment_sky,aerial_sampler,uv,0.0)";
-        let wrong = [
-            variant(
-                &products,
-                old,
-                "textureLoad(environment_sky,vec2<i32>(floor(uv*size)),0)",
-            ),
-            variant(
-                &products,
-                old,
-                "textureSampleLevel(environment_sky,aerial_sampler,vec2(uv.x,(floor(uv.y*size.y)+0.5)/size.y),0.0)",
-            ),
-            variant(
-                &products,
-                old,
-                "textureSampleLevel(environment_sky,aerial_sampler,vec2((floor(uv.x*size.x)+0.5)/size.x,uv.y),0.0)",
-            ),
-        ];
-        for azimuth in [0.0_f32, 1.0] {
-            let frame =
-                AtmosphereFrame::new([azimuth.cos(), 0.0, azimuth.sin()], 1.0, [1.0; 3], 2.0, 1)
-                    .unwrap();
-            prepared
-                .update_frame(
-                    &queue,
-                    &mut target,
-                    &scene,
-                    FrameLighting::Atmosphere(frame),
-                    1.0,
-                )
-                .unwrap();
-            submit(&device, &queue, &mut prepared, &target);
-            let surface = prepared.scene_surface(&queue);
-            let chart = &surface.environment.expect("atmosphere surface").textures[2];
-            observer::write_field(&queue, chart, |x, y, _| {
-                [
-                    1.0 + x as f32 + y as f32,
-                    1.0 + x as f32 + 2.0 * y as f32,
-                    1.0 + 2.0 * x as f32 + y as f32,
-                    0.0,
-                ]
-            });
-            let field = Field {
-                width: 192,
-                height: 108,
-                values: observer::texels(&device, &queue, chart)
-                    .iter()
-                    .map(|texel| std::array::from_fn(|i| texel[i] / 1024.0))
-                    .collect(),
-            };
-            let mut queries = Vec::new();
-            for row in [20.0, 52.0, 54.0, 80.0] {
-                for wy in [0.25, 0.5, 0.75] {
-                    for wx in [0.25, 0.5, 0.75] {
-                        queries.push(direction(
-                            [(20.5 + wx) / 192.0, (row + 0.5 + wy) / 108.0],
-                            f64::from(azimuth),
-                        ));
-                    }
-                }
-            }
-            let correct = observer::sample(
-                &device,
-                &queue,
-                &products,
-                "vec4(environment_sky_radiance(q.xyz),1.0)",
-                &queries,
-                0,
-            );
-            let exposed = observer::sample(
-                &device,
-                &queue,
-                &exposure_two(&prepared, &queue),
-                "vec4(environment_sky_radiance(q.xyz),1.0)",
-                &queries,
-                0,
-            );
-            for ((query, actual), scaled) in queries.iter().zip(correct).zip(exposed) {
-                let expected = field.sample(sky_uv(*query, f64::from(azimuth)), 0, 0, 0.0);
-                assert!(
-                    within(actual, expected),
-                    "H2 known field {query:?} {actual:?} {expected:?}"
-                );
-                assert!(
-                    within(scaled, expected),
-                    "H2 exposure must stay outside lookup"
-                );
-            }
-            for (kind, substitute) in wrong.iter().enumerate() {
-                let result = observer::sample(
-                    &device,
-                    &queue,
-                    substitute,
-                    "vec4(environment_sky_radiance(q.xyz),1.0)",
-                    &queries,
-                    0,
-                );
-                for (query, actual) in queries.iter().zip(result) {
-                    assert!(
-                        !within(
-                            actual,
-                            field.sample(sky_uv(*query, f64::from(azimuth)), 0, 0, 0.0)
-                        ),
-                        "H2 wrong lookup {kind} incorrectly passed at {query:?}"
-                    );
-                }
-            }
-        }
+        known_sky_fields(
+            &device,
+            &queue,
+            &mut prepared,
+            &mut target,
+            &scene,
+            &products,
+        );
+        spectral_row(
+            &device,
+            &queue,
+            &mut prepared,
+            &mut target,
+            &scene,
+            &products,
+        );
     });
 }
 
@@ -446,6 +399,10 @@ fn aerial_fields(
         Field {
             width: 32,
             height: 32,
+            steps: transmittance
+                .iter()
+                .map(|t| std::array::from_fn(|i| stored_step(t[i], 1.0)))
+                .collect(),
             values: transmittance
                 .iter()
                 .map(|value| [value[0], value[1], value[2]])
@@ -454,6 +411,15 @@ fn aerial_fields(
         Field {
             width: 32,
             height: 32,
+            steps: scatter
+                .iter()
+                .zip(&transmittance)
+                .map(|(s, t)| {
+                    std::array::from_fn(|i| {
+                        stored_step(s[i], 1.0) / 1024.0 + stored_step(t[3], 1.0) / 65_536.0
+                    })
+                })
+                .collect(),
             values: scatter
                 .iter()
                 .zip(&transmittance)
@@ -553,11 +519,39 @@ fn metal_h4_filtered_decode_rejects_each_wrong_lookup_on_every_known_field_query
                     aerial_expected(&scatter, *query)
                 );
             }
+            let fixed_queries: Vec<_> = [0_u16, 15, 31]
+                .into_iter()
+                .map(|low| {
+                    [
+                        10.5 / 32.0,
+                        12.5 / 32.0,
+                        32_000.0 * (f32::from(low) / 32.0).powi(2),
+                        0.0,
+                    ]
+                })
+                .collect();
+            let (transmission, scatter) = aerial_fields(&device, &queue, &prepared);
+            for (q, (t, s)) in
+                fixed_queries
+                    .iter()
+                    .zip(aerial_samples(&device, &queue, &products, &fixed_queries))
+            {
+                for (actual, field) in [(t, &transmission), (s, &scatter)] {
+                    let expected = aerial_expected(field, *q).0;
+                    for c in 0..3 {
+                        assert!(
+                            (f64::from(actual[c]) - expected[c]).abs()
+                                <= 1e-5 * expected[c].abs().max(1e-12),
+                            "H4 fixed-texel decode {q:?} channel {c} {actual:?} expected {expected:?}"
+                        );
+                    }
+                }
+            }
         }
         let surface = prepared.scene_surface(&queue);
         let atmosphere = surface.environment.unwrap();
         observer::write_field(&queue, &atmosphere.aerial_textures[0], |x, y, z| {
-            let [x, y, z] = [x, y, z].map(|v| v as f32);
+            let [x, y, z] = [x, y, z].map(|v| (v % 2) as f32);
             [
                 1.0 + x + y + z,
                 1.0 + x + 2.0 * y + 3.0 * z,
@@ -566,15 +560,17 @@ fn metal_h4_filtered_decode_rejects_each_wrong_lookup_on_every_known_field_query
             ]
         });
         observer::write_field(&queue, &atmosphere.aerial_textures[1], |x, y, z| {
-            let [x, y, z] = [x, y, z].map(|v| v as f32);
+            let [x, y, z] = [x, y, z].map(|v| (v % 2) as f32);
             [
-                0.25 + (x + y + z) / 512.0,
-                0.25 + (x + 2.0 * y + 3.0 * z) / 512.0,
-                0.25 + (3.0 * x + y + 2.0 * z) / 512.0,
+                0.25 + (x + y + z) / 16.0,
+                0.25 + (x + 2.0 * y + 3.0 * z) / 16.0,
+                0.25 + (3.0 * x + y + 2.0 * z) / 16.0,
                 0.0,
             ]
         });
         let (transmission, scatter) = aerial_fields(&device, &queue, &prepared);
+        transmission.assert_known_contrast();
+        scatter.assert_known_contrast();
         for products in [&products, &exposure_two(&prepared, &queue)] {
             for (query, (t, s)) in
                 with_clamp
@@ -691,6 +687,14 @@ fn metal_h2_sampler_precision_report() {
             let field = Field {
                 width: 192,
                 height: 108,
+                steps: texels
+                    .iter()
+                    .map(|v| {
+                        std::array::from_fn(|i| {
+                            stored_step(v[i], 1.0) / 1024.0 + stored_step(v[3], 1.0) / 65_536.0
+                        })
+                    })
+                    .collect(),
                 values: texels
                     .iter()
                     .map(|v| std::array::from_fn(|i| v[i] / 1024.0 + v[3] / 65_536.0))
@@ -719,8 +723,19 @@ fn metal_h2_sampler_precision_report() {
                     !within(**value, field.sample(sky_uv(**query, 0.0), 0, 0, 0.0))
                 })
                 .count();
+            let maximum_error_steps = actual
+                .iter()
+                .zip(&queries)
+                .map(|(value, query)| {
+                    let expected = field.sample(sky_uv(*query, 0.0), 0, 0, 0.0).0[0];
+                    (f64::from(value[0]) - expected).abs()
+                        / (stored_step(f64::from(base + step), 1.0) / 1024.0)
+                })
+                .fold(0.0_f64, f64::max);
+            eprintln!("{label}: maximum error in stored steps={maximum_error_steps:.9}");
+            assert_eq!(failed, 0, "revised H2 precision bound");
             eprintln!(
-                "{label}: base={base} step={step}; distinct returned values={}; outside unchanged H2 bound={failed}/257; maximum GPU/f64 address error in texels={maximum_address_error:.9}",
+                "{label}: base={base} step={step}; distinct returned values={}; outside revised H2 bound={failed}/257; maximum GPU/f64 address error in texels={maximum_address_error:.9}",
                 levels.len()
             );
             for index in [64, 128, 192] {
@@ -742,4 +757,166 @@ fn metal_h2_sampler_precision_report() {
             }
         }
     });
+}
+
+fn spectral_row(
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    prepared: &mut PreparedSynthetic,
+    target: &mut OffscreenTarget,
+    scene: &SyntheticScene,
+    products: &EnvironmentProducts,
+) {
+    let elevation = -5.084_449_f32.to_radians();
+    let frame = AtmosphereFrame::new(
+        [elevation.cos(), elevation.sin(), 0.0],
+        1.0,
+        [1.0; 3],
+        244.922_67,
+        1,
+    )
+    .expect("valid spectral handoff fixture");
+    prepared
+        .update_frame(queue, target, scene, FrameLighting::Atmosphere(frame), 1.0)
+        .expect("valid spectral handoff fixture");
+    submit(device, queue, prepared, target);
+    let (sy, cy) = 20.0_f32.to_radians().sin_cos();
+    let (sa, ca) = 95.104_59_f32.to_radians().sin_cos();
+    for products in [products, &exposure_two(prepared, queue)] {
+        let result = observer::sample(
+            device,
+            queue,
+            products,
+            "vec4(environment_sky_radiance(q.xyz),1.0)",
+            &[[cy * ca, sy, cy * sa, 0.0]],
+            0,
+        );
+        for (c, expected) in [2.982_646e-5, 4.289_131e-5, 8.114_284e-5]
+            .into_iter()
+            .enumerate()
+        {
+            assert!(
+                (f64::from(result[0][c]) - expected).abs() <= 0.025 * expected,
+                "H2 P11 channel {c}: {:?} expected {expected}",
+                result[0]
+            );
+        }
+    }
+}
+
+fn known_sky_fields(
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    prepared: &mut PreparedSynthetic,
+    target: &mut OffscreenTarget,
+    scene: &SyntheticScene,
+    products: &EnvironmentProducts,
+) {
+    let old = "textureSampleLevel(environment_sky,aerial_sampler,uv,0.0)";
+    let wrong = [
+        variant(
+            products,
+            old,
+            "textureLoad(environment_sky,vec2<i32>(floor(uv*size)),0)",
+        ),
+        variant(
+            products,
+            old,
+            "textureSampleLevel(environment_sky,aerial_sampler,vec2(uv.x,(floor(uv.y*size.y)+0.5)/size.y),0.0)",
+        ),
+        variant(
+            products,
+            old,
+            "textureSampleLevel(environment_sky,aerial_sampler,vec2((floor(uv.x*size.x)+0.5)/size.x,uv.y),0.0)",
+        ),
+    ];
+    for azimuth in [0.0_f32, 1.0] {
+        let frame =
+            AtmosphereFrame::new([azimuth.cos(), 0.0, azimuth.sin()], 1.0, [1.0; 3], 2.0, 1)
+                .expect("known sky fixture admitted");
+        prepared
+            .update_frame(queue, target, scene, FrameLighting::Atmosphere(frame), 1.0)
+            .expect("known sky fixture admitted");
+        submit(device, queue, prepared, target);
+        let surface = prepared.scene_surface(queue);
+        let chart = &surface.environment.expect("atmosphere surface").textures[2];
+        observer::write_field(queue, chart, |x, y, _| {
+            [
+                1.0 + (x % 2) as f32 + (y % 2) as f32,
+                1.0 + (x % 2) as f32 + 2.0 * (y % 2) as f32,
+                1.0 + 2.0 * (x % 2) as f32 + (y % 2) as f32,
+                0.0,
+            ]
+        });
+        let field = Field {
+            width: 192,
+            height: 108,
+            steps: observer::texels(device, queue, chart)
+                .iter()
+                .map(|texel| std::array::from_fn(|i| stored_step(texel[i], 1.0) / 1024.0))
+                .collect(),
+            values: observer::texels(device, queue, chart)
+                .iter()
+                .map(|texel| std::array::from_fn(|i| texel[i] / 1024.0))
+                .collect(),
+        };
+        field.assert_known_contrast();
+        let mut queries = Vec::new();
+        for row in [20.0, 52.0, 54.0, 80.0] {
+            for wy in [0.25, 0.5, 0.75] {
+                for wx in [0.25, 0.5, 0.75] {
+                    queries.push(direction(
+                        [(20.5 + wx) / 192.0, (row + 0.5 + wy) / 108.0],
+                        f64::from(azimuth),
+                    ));
+                }
+            }
+        }
+        let correct = observer::sample(
+            device,
+            queue,
+            products,
+            "vec4(environment_sky_radiance(q.xyz),1.0)",
+            &queries,
+            0,
+        );
+        let exposed = observer::sample(
+            device,
+            queue,
+            &exposure_two(prepared, queue),
+            "vec4(environment_sky_radiance(q.xyz),1.0)",
+            &queries,
+            0,
+        );
+        for ((query, actual), scaled) in queries.iter().zip(correct).zip(exposed) {
+            let expected = field.sample(sky_uv(*query, f64::from(azimuth)), 0, 0, 0.0);
+            assert!(
+                within(actual, expected),
+                "H2 known field {query:?} {actual:?} {expected:?}"
+            );
+            assert!(
+                within(scaled, expected),
+                "H2 exposure must stay outside lookup"
+            );
+        }
+        for (kind, substitute) in wrong.iter().enumerate() {
+            let result = observer::sample(
+                device,
+                queue,
+                substitute,
+                "vec4(environment_sky_radiance(q.xyz),1.0)",
+                &queries,
+                0,
+            );
+            for (query, actual) in queries.iter().zip(result) {
+                assert!(
+                    !within(
+                        actual,
+                        field.sample(sky_uv(*query, f64::from(azimuth)), 0, 0, 0.0)
+                    ),
+                    "H2 wrong lookup {kind} incorrectly passed at {query:?}"
+                );
+            }
+        }
+    }
 }

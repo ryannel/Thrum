@@ -144,3 +144,115 @@ fn metal_h1_lent_sun_meets_low_altitude_f64_quadrature() {
         }
     });
 }
+
+#[test]
+fn metal_h1_lent_receiver_matrix_at_two_camera_origins() {
+    pollster::block_on(async {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let adapter = instance
+            .request_adapter(&wgpu::RequestAdapterOptions::default())
+            .await
+            .unwrap();
+        assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
+        let (device, queue) = adapter
+            .request_device(&wgpu::DeviceDescriptor::default())
+            .await
+            .unwrap();
+        let caps = DeviceCapabilities::capture(&adapter, &device, 130);
+        let near = [
+            [0.0, 0.0, 0.0],
+            [0.0, 10.0, 0.0],
+            [0.0, 245.0, 0.0],
+            [0.0, 1500.0, 0.0],
+            [0.0, 5000.0, 0.0],
+            [20_000.0, 245.0, 0.0],
+            [-20_000.0, 245.0, 0.0],
+        ];
+        let upper = [
+            [0.0, 100_000.0, 0.0],
+            [0.0, 120_000.0, 0.0],
+            [0.0, 130_000.0, 0.0],
+        ];
+        for (altitude, points, elevations) in [
+            (
+                245.0,
+                near.as_slice(),
+                [-2.0_f32, -0.6, 0.0, 1.0, 30.0].as_slice(),
+            ),
+            (
+                100_000.0,
+                upper.as_slice(),
+                [-13.0_f32, -10.07, -1.0, 5.0].as_slice(),
+            ),
+        ] {
+            for eye in [[0.0, 245.0, 16.0], [8132.0, 123.0, -3211.0]] {
+                let mut scene = SyntheticScene::grid(1).unwrap();
+                scene.view = SyntheticView::perspective(
+                    eye,
+                    [eye[0], eye[1], eye[2] - 100.0],
+                    [0.0, 1.0, 0.0],
+                    1.0,
+                    1.0,
+                    0.1,
+                    32_000.0,
+                )
+                .unwrap();
+                for &degrees in elevations {
+                    let (y, x) = degrees.to_radians().sin_cos();
+                    let frame = AtmosphereFrame::new([x, y, 0.0], 117_000.0, [1.0; 3], altitude, 1)
+                        .unwrap();
+                    let mut prepared = PreparedSynthetic::prepare_with_capabilities(
+                        &caps,
+                        &queue,
+                        &scene,
+                        FrameLighting::Atmosphere(frame),
+                        1.0,
+                    )
+                    .await
+                    .unwrap();
+                    let target = OffscreenTarget::new(&device, &prepared, 8, 8).unwrap();
+                    let mut encoder =
+                        device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+                    prepared.encode(&mut encoder, 130, &target, None).unwrap();
+                    queue.submit([encoder.finish()]);
+                    prepared.commit_frame();
+                    let products = prepared
+                        .scene_surface(&queue)
+                        .environment_products()
+                        .unwrap();
+                    let queries: Vec<_> = points
+                        .iter()
+                        .map(|p| [eye[0] + p[0], eye[1] + p[1] - altitude, eye[2] + p[2], 0.0])
+                        .collect();
+                    for products in [&products, &super::filtered::exposure_two(&prepared, &queue)] {
+                        let results = super::observer::sample(
+                            &device,
+                            &queue,
+                            products,
+                            "vec4(sun_irradiance(q.xyz),1.0)",
+                            &queries,
+                            0,
+                        );
+                        for (point, result) in points.iter().zip(results) {
+                            let expected = transmission(
+                                point.map(f64::from),
+                                [f64::from(x), f64::from(y), 0.0],
+                            );
+                            for i in 0..3 {
+                                let actual = f64::from(result[i]) / (117_000.0 * 1.0);
+                                assert!(
+                                    (actual - expected[i]).abs() <= 0.05 * expected[i] + 0.005,
+                                    "H1 receiver {point:?} sun {degrees} channel {i} actual {actual} expected {}",
+                                    expected[i]
+                                );
+                                if expected.iter().all(|v| v.to_bits() == 0) {
+                                    assert_eq!(actual, 0.0);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    });
+}

@@ -2285,6 +2285,7 @@ version = "0.1.0"
 dependencies = [
  "bytemuck",
  "glam",
+ "pollster",
  "thrum-asset",
  "thrum-render",
  "web-time",
