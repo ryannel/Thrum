@@ -253,3 +253,12 @@ base includes the concurrently integrated motion inputs, with the initial base p
 session can access IINA. Three native and four Chrome source packages are hash-verified while the
 remaining captures and 1× review queue for the shared GPU. M5.7 and M5.8 remain open.
 [Current evidence](../../evidence/ATMOSPHERE/m5-claim.md).
+
+
+## 11 November 2026 — M5 native motion inspection checkpoint
+
+Reviewed the native noon and low-Sun off/on sequences at verified 1× playback under the shared GPU
+lock, then stopped playback and released the reservation. Shade moves across lit receivers while
+geometric-shadow regions remain sky-lit. The four native packages and all six Chrome fixed packages
+are verified. Native west-facing captures and Chrome real-time captures remain queued; M5.7 and
+M5.8 stay open. [Inspection observations](../../evidence/ATMOSPHERE/m5/records/visual-inspection.json).

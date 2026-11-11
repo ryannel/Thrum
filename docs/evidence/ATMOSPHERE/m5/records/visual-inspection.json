@@ -65,8 +65,90 @@
       ],
       "inspection": "Whole frame and native-size cooked-rock/ground crops near 1.25 and 3.25 seconds.",
       "observation": "The cloud pattern is visible over lit terrain. The shaded side of the cooked rock and the long geometric ground shadows remain sky-lit; no blackening appears."
+    },
+    {
+      "target": "chrome-webgpu",
+      "scene": "west",
+      "source_pairs": [
+        {
+          "directory": "tmp/atmosphere-m5/chrome-west-off-fixed-06",
+          "manifest_sha256": "7ac7d0d498830d1a50843a82678adf737bbef9fa8a945098683111df8b025cbc"
+        },
+        {
+          "directory": "tmp/atmosphere-m5/chrome-west-on-fixed-06",
+          "manifest_sha256": "2b981261990afac4f383f25f3c43379bb5febdb99394a25074df4959ab7aded6"
+        }
+      ],
+      "inspection": "Whole frame and native-size ridge/ground crops at fixed ordinals 75 and 195 (two simulation seconds apart).",
+      "observation": "The diagnostic bands darken lit slopes and ground while the broad blue ridge shadow remains sky-lit. The provider-on pattern changes phase over two seconds. The reflective sphere retains its sky response."
     }
   ],
-  "motion_1x": [],
+  "motion_1x": [
+    {
+      "target": "mac-metal",
+      "scenes": [
+        "noon",
+        "low-sun"
+      ],
+      "date_utc": "2026-11-11",
+      "viewer": "IINA 1.5.0; Playback Speed: 1x verified before and after",
+      "viewing_aid": "tmp/atmosphere-m5/review-videos/native-four-1x.mp4",
+      "sha256": "9681d8ab4a334de5a4e49e2e838680f84cdaf323435a4ea7431479f87f2e0347",
+      "layout": "Top: noon off/on. Bottom: low-Sun off/on. Each source starts at its own first PTS, elapsed timing unchanged; 640x360 per panel before half-size player view.",
+      "source_command": "tmp/atmosphere-m5/review-four-command.json",
+      "observed_elapsed_ms": [
+        0,
+        2446,
+        4911,
+        7369
+      ],
+      "observation": "Across the walk and pan, the provider-on pattern moves across the hills and ground while the cooked rock receives the same local shade. The rock underside and long geometric shadows retain sky light. The off controls retain steady direct light. No receiver-specific boundary detachment or black shade appeared. The authored route cut occurs in all four arms.",
+      "source_command_arguments": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-y",
+        "-i",
+        "tmp/atmosphere-m5/metal-noon-off-realtime-06/preview-1x.mp4",
+        "-i",
+        "tmp/atmosphere-m5/metal-noon-on-realtime-06/preview-1x.mp4",
+        "-i",
+        "tmp/atmosphere-m5/metal-low-sun-off-realtime-06/preview-1x.mp4",
+        "-i",
+        "tmp/atmosphere-m5/metal-low-sun-on-realtime-06/preview-1x.mp4",
+        "-filter_complex",
+        "[0:v]setpts=PTS-STARTPTS,scale=640:360,pad=640:384:0:24:black[v0];[1:v]setpts=PTS-STARTPTS,scale=640:360,pad=640:384:0:24:black[v1];[2:v]setpts=PTS-STARTPTS,scale=640:360,pad=640:384:0:24:black[v2];[3:v]setpts=PTS-STARTPTS,scale=640:360,pad=640:384:0:24:black[v3];[v0][v1][v2][v3]xstack=inputs=4:layout=0_0|640_0|0_384|640_384:shortest=1[out]",
+        "-map",
+        "[out]",
+        "-c:v",
+        "libx264",
+        "-crf",
+        "20",
+        "-pix_fmt",
+        "yuv420p",
+        "-fps_mode",
+        "vfr",
+        "tmp/atmosphere-m5/review-videos/native-four-1x.mp4"
+      ],
+      "sources": [
+        {
+          "file": "tmp/atmosphere-m5/metal-noon-off-realtime-06/preview-1x.mp4",
+          "sha256": "696f892658ac17d5ea0dd78ded73f74dc9ae7e46ce26150256123dc1103b22ba"
+        },
+        {
+          "file": "tmp/atmosphere-m5/metal-noon-on-realtime-06/preview-1x.mp4",
+          "sha256": "555e395ae83336c593274dc05493d9cf91ddbb53a3760a628c63c2addf6a4e3f"
+        },
+        {
+          "file": "tmp/atmosphere-m5/metal-low-sun-off-realtime-06/preview-1x.mp4",
+          "sha256": "aa154ffe82ea4bd2dbd5cfa606995247551320bd0bc96e0050ef85babf6552fe"
+        },
+        {
+          "file": "tmp/atmosphere-m5/metal-low-sun-on-realtime-06/preview-1x.mp4",
+          "sha256": "51740aa21ee3360b7e735988ecae0abbc94a167cd0445df9a8b464803ec888cb"
+        }
+      ]
+    }
+  ],
   "remaining": "Complete all target sequences and review at 1x under the shared GPU lock."
 }
