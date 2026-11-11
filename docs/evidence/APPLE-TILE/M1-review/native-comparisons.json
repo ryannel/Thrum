@@ -1,0 +1,252 @@
+{
+ "revision": "bffdc07f447d4ae207cdfb5ab29151119e278b63",
+ "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+ "binary_sha256": "b43fe57180ba9bc95000f746e1421f7a1b9295523b30002f18f640a88b686f54",
+ "passed": true,
+ "runs": {
+  "portable-sdr": {
+   "recipe": "Ok(Portable)",
+   "registry_digest": "f8fa043b9369e8dc",
+   "resident_device_bytes": 92700672
+  },
+  "portable-scene-linear": {
+   "recipe": "Ok(Portable)",
+   "registry_digest": "f8fa043b9369e8dc",
+   "resident_device_bytes": 92700672
+  },
+  "apple-tile-sdr": {
+   "recipe": "Ok(AppleTile)",
+   "registry_digest": "efbee560684e6cdf",
+   "resident_device_bytes": 92700672
+  },
+  "apple-tile-scene-linear": {
+   "recipe": "Ok(AppleTile)",
+   "registry_digest": "efbee560684e6cdf",
+   "resident_device_bytes": 92700672
+  },
+  "portable-sdr-repeat": {
+   "recipe": "Ok(Portable)",
+   "registry_digest": "f8fa043b9369e8dc",
+   "resident_device_bytes": 92700672
+  },
+  "portable-scene-linear-repeat": {
+   "recipe": "Ok(Portable)",
+   "registry_digest": "f8fa043b9369e8dc",
+   "resident_device_bytes": 92700672
+  },
+  "portable-sun-sdr": {
+   "recipe": null,
+   "registry_digest": null,
+   "resident_device_bytes": null
+  },
+  "portable-sun-linear": {
+   "recipe": null,
+   "registry_digest": null,
+   "resident_device_bytes": null
+  },
+  "portable-night-sdr": {
+   "recipe": null,
+   "registry_digest": null,
+   "resident_device_bytes": null
+  },
+  "portable-night-linear": {
+   "recipe": null,
+   "registry_digest": null,
+   "resident_device_bytes": null
+  },
+  "portable-variants-motion": {
+   "recipe": null,
+   "registry_digest": null,
+   "resident_device_bytes": null
+  },
+  "portable-route-motion": {
+   "recipe": null,
+   "registry_digest": null,
+   "resident_device_bytes": null
+  },
+  "apple-tile-sun-sdr": {
+   "recipe": null,
+   "registry_digest": null,
+   "resident_device_bytes": null
+  },
+  "apple-tile-sun-linear": {
+   "recipe": null,
+   "registry_digest": null,
+   "resident_device_bytes": null
+  },
+  "apple-tile-night-sdr": {
+   "recipe": null,
+   "registry_digest": null,
+   "resident_device_bytes": null
+  },
+  "apple-tile-night-linear": {
+   "recipe": null,
+   "registry_digest": null,
+   "resident_device_bytes": null
+  },
+  "apple-tile-variants-motion": {
+   "recipe": null,
+   "registry_digest": null,
+   "resident_device_bytes": null
+  },
+  "apple-tile-route-motion": {
+   "recipe": null,
+   "registry_digest": null,
+   "resident_device_bytes": null
+  }
+ },
+ "comparisons": {
+  "portable-sdr-approach": {
+   "equal": true,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/sdr-1/approach.png"
+  },
+  "portable-sdr-mirror-light": {
+   "equal": true,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/sdr-1/mirror-light.png"
+  },
+  "portable-sdr-pre-cut": {
+   "equal": true,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/sdr-1/pre-cut.png"
+  },
+  "portable-sdr-post-cut": {
+   "equal": true,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/sdr-1/post-cut.png"
+  },
+  "portable-sdr-near-plane": {
+   "equal": true,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/sdr-1/near-plane.png"
+  },
+  "portable-scene-linear-approach": {
+   "equal": true,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/scene-linear-1/approach.rgba16f.gz"
+  },
+  "portable-scene-linear-mirror-light": {
+   "equal": true,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/scene-linear-1/mirror-light.rgba16f.gz"
+  },
+  "portable-scene-linear-pre-cut": {
+   "equal": true,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/scene-linear-1/pre-cut.rgba16f.gz"
+  },
+  "portable-scene-linear-post-cut": {
+   "equal": true,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/scene-linear-1/post-cut.rgba16f.gz"
+  },
+  "portable-scene-linear-near-plane": {
+   "equal": true,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/scene-linear-1/near-plane.rgba16f.gz"
+  },
+  "apple-tile-sdr-approach": {
+   "equal": true,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/sdr-1/approach.png"
+  },
+  "apple-tile-sdr-mirror-light": {
+   "equal": true,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/sdr-1/mirror-light.png"
+  },
+  "apple-tile-sdr-pre-cut": {
+   "equal": true,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/sdr-1/pre-cut.png"
+  },
+  "apple-tile-sdr-post-cut": {
+   "equal": true,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/sdr-1/post-cut.png"
+  },
+  "apple-tile-sdr-near-plane": {
+   "equal": true,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/sdr-1/near-plane.png"
+  },
+  "apple-tile-scene-linear-approach": {
+   "equal": true,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/scene-linear-1/approach.rgba16f.gz"
+  },
+  "apple-tile-scene-linear-mirror-light": {
+   "equal": true,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/scene-linear-1/mirror-light.rgba16f.gz"
+  },
+  "apple-tile-scene-linear-pre-cut": {
+   "equal": true,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/scene-linear-1/pre-cut.rgba16f.gz"
+  },
+  "apple-tile-scene-linear-post-cut": {
+   "equal": true,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/scene-linear-1/post-cut.rgba16f.gz"
+  },
+  "apple-tile-scene-linear-near-plane": {
+   "equal": true,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/scene-linear-1/near-plane.rgba16f.gz"
+  },
+  "portable-sdr-repeat-approach": {
+   "equal": true,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/sdr-1/approach.png"
+  },
+  "portable-sdr-repeat-mirror-light": {
+   "equal": true,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/sdr-1/mirror-light.png"
+  },
+  "portable-sdr-repeat-pre-cut": {
+   "equal": true,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/sdr-1/pre-cut.png"
+  },
+  "portable-sdr-repeat-post-cut": {
+   "equal": true,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/sdr-1/post-cut.png"
+  },
+  "portable-sdr-repeat-near-plane": {
+   "equal": true,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/sdr-1/near-plane.png"
+  },
+  "portable-scene-linear-repeat-approach": {
+   "equal": true,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/scene-linear-1/approach.rgba16f.gz"
+  },
+  "portable-scene-linear-repeat-mirror-light": {
+   "equal": true,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/scene-linear-1/mirror-light.rgba16f.gz"
+  },
+  "portable-scene-linear-repeat-pre-cut": {
+   "equal": true,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/scene-linear-1/pre-cut.rgba16f.gz"
+  },
+  "portable-scene-linear-repeat-post-cut": {
+   "equal": true,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/scene-linear-1/post-cut.rgba16f.gz"
+  },
+  "portable-scene-linear-repeat-near-plane": {
+   "equal": true,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/scene-linear-1/near-plane.rgba16f.gz"
+  },
+  "portable-sun-sdr": {
+   "equal": true,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/sun-sdr/checkpoint-0.png"
+  },
+  "portable-sun-linear": {
+   "equal": true,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/sun-linear/checkpoint-0.rgba16f.gz"
+  },
+  "portable-night-sdr": {
+   "equal": true,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/night-sdr/checkpoint-0.png"
+  },
+  "portable-night-linear": {
+   "equal": true,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/night-linear/checkpoint-0.rgba16f.gz"
+  },
+  "apple-tile-sun-sdr": {
+   "equal": true,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/sun-sdr/checkpoint-0.png"
+  },
+  "apple-tile-sun-linear": {
+   "equal": true,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/sun-linear/checkpoint-0.rgba16f.gz"
+  },
+  "apple-tile-night-sdr": {
+   "equal": true,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/night-sdr/checkpoint-0.png"
+  },
+  "apple-tile-night-linear": {
+   "equal": true,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/night-linear/checkpoint-0.rgba16f.gz"
+  }
+ }
+}

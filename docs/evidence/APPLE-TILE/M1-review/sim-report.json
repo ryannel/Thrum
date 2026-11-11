@@ -1,0 +1,7 @@
+{
+ "revision": "bffdc07f447d4ae207cdfb5ab29151119e278b63",
+ "default_passed": true,
+ "rotation": "passed",
+ "initial_adapter": "AdapterInfo_{_name:_\"Apple_iOS_simulator_GPU\",_vendor:_0,_device:_0,_device_type:_DiscreteGpu,_device_pci_bus_id:_\"\",_driver:_\"\",_driver_info:_\"\",_backend:_Metal,_subgroup_min_size:_4,_subgroup_max_size:_64,_transient_saves_memory:_Some(true),_limit_bucket:_None_};_downlevel=Some(DownlevelFlags(COMPUTE_SHADERS_|_FRAGMENT_WRITABLE_STORAGE_|_READ_ONLY_DEPTH_STENCIL_|_NON_POWER_OF_TWO_MIPMAPPED_TEXTURES_|_INDEPENDENT_BLEND_|_VERTEX_STORAGE_|_ANISOTROPIC_FILTERING_|_FRAGMENT_STORAGE_|_MULTISAMPLED_SHADING_|_DEPTH_TEXTURE_AND_BUFFER_COPIES_|_WEBGPU_TEXTURE_FORMAT_SUPPORT_|_BUFFER_BINDINGS_NOT_16_BYTE_ALIGNED_|_UNRESTRICTED_INDEX_BUFFER_|_FULL_DRAW_INDEX_UINT32_|_DEPTH_BIAS_CLAMP_|_VIEW_FORMATS_|_UNRESTRICTED_EXTERNAL_TEXTURE_COPIES_|_SURFACE_VIEW_FORMATS_|_NONBLOCKING_QUERY_RESOLVE_|_SHADER_F16_IN_F32_|_MSL2_1_|_TEXTURE_COMPRESSION));_recipe=Ok(Portable);_registry=f0bba45f1b65747d;_unified_memory=Some(false)",
+ "forced_state": "fault=frame GPU: scene prepare: Recipe(UnsupportedAppleTile)\n"
+}

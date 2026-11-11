@@ -1,0 +1,10 @@
+tmp/review-m1/counters.log:test synthetic::target_storage::tests::metal_recipe_replacement_retains_old_target_and_exact_channels ... ok
+tmp/review-m1/counters.log:test synthetic::stars::tests::opaque_depth_store_and_star_pass_follow_the_current_target_view ... ok
+tmp/review-m1/counters.log:test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 221 filtered out; finished in 1.11s
+tmp/review-m1/unit.log:test capabilities::recipe::tests::recipe_requires_known_backend_facts_and_explicit_request ... ok
+tmp/review-m1/unit.log:test graph::storage_tests::transient_storage_respects_locked_wgpu_layer_and_mip_restrictions ... ok
+tmp/review-m1/unit.log:test graph::storage_tests::only_live_variant_uses_determine_attachment_storage ... ok
+tmp/review-m1/unit.log:test synthetic::target_storage::tests::metal_recipe_replacement_retains_old_target_and_exact_channels ... ok
+tmp/review-m1/unit.log:test atmosphere::gpu::tests::aerial::aerial_storage_matches_float32_transport_and_consumer_units ... ok
+tmp/review-m1/unit.log:test synthetic::stars::tests::opaque_depth_store_and_star_pass_follow_the_current_target_view ... ok
+tmp/review-m1/unit.log:test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 208 filtered out; finished in 1.15s

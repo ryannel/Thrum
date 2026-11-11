@@ -1,0 +1,98 @@
+{
+ "chrome-fixed-sdr-day": {
+  "frames": 481,
+  "ref_frames": 481,
+  "hash_equal": 481,
+  "identity_equal": 481,
+  "keys": [
+   "session",
+   "submission_id",
+   "tick",
+   "source_tick",
+   "source_epoch",
+   "timeline",
+   "alpha",
+   "history_epoch",
+   "device_generation",
+   "presenter_generation",
+   "surface_presented"
+  ],
+  "source": "sdr",
+  "scene": "day",
+  "rev": "bffdc07f44",
+  "dirty": "e3b0c442"
+ },
+ "chrome-fixed-sdr-night": {
+  "frames": 481,
+  "ref_frames": 481,
+  "hash_equal": 481,
+  "identity_equal": 481,
+  "keys": [
+   "session",
+   "submission_id",
+   "tick",
+   "source_tick",
+   "source_epoch",
+   "timeline",
+   "alpha",
+   "history_epoch",
+   "device_generation",
+   "presenter_generation",
+   "surface_presented"
+  ],
+  "source": "sdr",
+  "scene": "night",
+  "rev": "bffdc07f44",
+  "dirty": "e3b0c442"
+ },
+ "chrome-fixed-scene-linear-day": {
+  "frames": 481,
+  "ref_frames": 481,
+  "hash_equal": 481,
+  "identity_equal": 481,
+  "keys": [
+   "session",
+   "submission_id",
+   "tick",
+   "source_tick",
+   "source_epoch",
+   "timeline",
+   "alpha",
+   "history_epoch",
+   "device_generation",
+   "presenter_generation",
+   "surface_presented",
+   "pixel_source",
+   "exposure_gpu_words"
+  ],
+  "source": "scene-linear",
+  "scene": "day",
+  "rev": "bffdc07f44",
+  "dirty": "e3b0c442"
+ },
+ "chrome-fixed-scene-linear-night": {
+  "frames": 481,
+  "ref_frames": 481,
+  "hash_equal": 481,
+  "identity_equal": 481,
+  "keys": [
+   "session",
+   "submission_id",
+   "tick",
+   "source_tick",
+   "source_epoch",
+   "timeline",
+   "alpha",
+   "history_epoch",
+   "device_generation",
+   "presenter_generation",
+   "surface_presented",
+   "pixel_source",
+   "exposure_gpu_words"
+  ],
+  "source": "scene-linear",
+  "scene": "night",
+  "rev": "bffdc07f44",
+  "dirty": "e3b0c442"
+ }
+}

@@ -82,7 +82,36 @@
     },
     "M1": {
       "definitions": "497e0bedb637fb5a167b935858d23169f2c25cf13439af18596a63b818c592e9",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "pass",
+          "commit": "bffdc07f447d4ae207cdfb5ab29151119e278b63",
+          "review": "docs/evidence/APPLE-TILE/M1-review.md",
+          "items": {
+            "D1.1": "pass",
+            "D1.2": "pass",
+            "D1.3": "pass",
+            "D1.4": "pass",
+            "D1.5": "pass"
+          },
+          "host": "claude",
+          "model": "claude-opus-5-5",
+          "effort": "high",
+          "observed": {
+            "model": "claude-opus-5-5"
+          },
+          "cli": "2.1.319 (Claude Code)",
+          "path": "headless",
+          "usage": {
+            "input": 241646,
+            "cached": 15604365,
+            "output": 54666,
+            "cost_usd": 6.146505,
+            "turns": 1
+          },
+          "at": "2026-11-11T05:52:52Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Re-plan APPLE-TILE (G3t, tile dataflow and Metal boundary) so it can pass design review and unpark. It was parked after two failed design reviews; docs/evidence/APPLE-TILE/design-review-2.md lists sev",
@@ -107,6 +136,13 @@
         "session_usage": {
           "incomplete_turns": 1
         }
+      },
+      "accepted": {
+        "by": "review",
+        "commit": "bffdc07f447d4ae207cdfb5ab29151119e278b63",
+        "review": "docs/evidence/APPLE-TILE/M1-review.md",
+        "checked": "bffdc07f447d4ae207cdfb5ab29151119e278b63",
+        "at": "2026-11-11T05:52:52Z"
       }
     },
     "M2": {
