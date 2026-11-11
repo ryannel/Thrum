@@ -29,7 +29,7 @@ qualification. [Selected lossless frames, original-time 1x movies and records](m
 The builder inspected full frames, native details, contact sheets, cut-adjacent sources and IINA 1x playback for
 Sun, stars, terrain, shadows, mirror/local lights, cut and recovery. The inherited valley presentation remains.
 The earlier [denied preflight](window-preflight.json) and playback refusal are history; the attended
-[passing preflight](window/preflight-after.json) records no automated grant change. Independent lead review is owed.
+[passing preflight](window/preflight-after.json) and [visible postflight](window/visible-postflight.json) record no automated grant change. Independent lead review is owed.
 [Simulator records](ios) prove diagnostic function only.
 
 Preparation recompiles and binds the small variant plans; checked texture-slot/descriptor/storage correspondence

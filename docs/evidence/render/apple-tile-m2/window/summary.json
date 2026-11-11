@@ -58,7 +58,7 @@
   },
   "remaining": [],
   "computer_use": "2026-11-11 visible Codex session: cua.getApp(com.colliderli.iina) and cua.getApp(ThrumM2.app) succeeded; game access preflight opened a window briefly before GPU lock, immediately closed; no observation claimed from that preflight.",
-  "selected_video": "Each window-response-1x.mp4 is the first eight seconds of the retained 65-second host-time OS recording, reencoded at original timestamps with libx264 CRF18; full source remains in tmp/g3t-m2/attended.",
+  "selected_video": "Each window-response-1x.mp4 retains the first eight seconds at original timestamps, reencoded with libx264 CRF18. The portable original is 8.000000 seconds; the Apple tile original is 65.018333 seconds. Full sources remain in tmp/g3t-m2/attended.",
   "resize": "resize.json and per-recipe before/resized/restored captures",
   "visual_review": "Sun/night/noon settled OS frames compared to matching paused T2 references under both recipes. Sun disk, sky/stars, terrain, local lights and mirror present. These are matched states, not the same submission; no OS byte equality claimed.",
   "recovery_video": {
