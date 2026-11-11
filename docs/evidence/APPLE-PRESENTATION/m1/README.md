@@ -33,3 +33,5 @@ is inferred. The GPU lock was queued normally throughout.
 Cost account: reuse the existing motion target and display pass; +80 view bytes, +16 auxiliary bytes, a 208-byte
 sky correspondence record and +80 star-view bytes per frame. Geometry adds four interpolated components; stars add two flat motion components. Matrix deltas are per view; covered fragments evaluate a homogeneous difference and divide, and sky rays project camera/solar correspondence. No new steady-frame
 allocation or pass is introduced; debug sampling requires attachment storage. Device cost remains unmeasured.
+
+Integration recheck: the [first land attempt](first-land-attempt.json) stopped at the final draw-probe cooked GPU test; its retained tail did not identify the assertion. The [same pinned binary then passed all 13 cases](cooked-pinned-recheck.log) without code changes. The final land gate runs every test with `RUST_TEST_THREADS=1`; assertions and explicit concurrency witnesses remain enabled.

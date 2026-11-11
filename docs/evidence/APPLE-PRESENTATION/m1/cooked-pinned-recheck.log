@@ -1,0 +1,27 @@
+   Compiling v1-game v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/examples/v1-game)
+warning: linker stderr: ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/target/debug/deps/libintel_tex_2-ad87d7835ed898ef.rlib[5](kernel_ispc.o)', assuming: macOS
+         ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/target/debug/deps/libintel_tex_2-ad87d7835ed898ef.rlib[6](kernel_astc_ispc.o)', assuming: macOS
+  |
+  = note: `#[warn(linker_messages)]` on by default
+
+warning: `v1-game` (test "cooked_assets_gpu") generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.03s
+     Running tests/cooked_assets_gpu.rs (target/debug/deps/cooked_assets_gpu-e0660e84a3e781da)
+
+running 13 tests
+test off_screen_meshlets_are_culled_and_bc7_is_drawn_where_supported ... ok
+test captures_never_establish_history_and_cull_counts_follow_their_set ... ok
+test cooked_mesh_outside_camera_casts_onto_visible_terrain ... ok
+test adapter_less_public_host_selects_direct ... ok
+test a_fetched_edit_swaps_in_and_reuses_unchanged_products ... ok
+test contributed_frames_keep_complete_gpu_timings_and_reset_history_for_new_sets ... ok
+test cooked_edits_become_visible_in_the_game_with_its_lighting ... ok
+test a_mirrored_node_draws_with_the_facing_and_lighting_of_its_plain_twin ... ok
+test a_replaced_device_restages_and_draws_the_current_set ... ok
+test discarded_frames_leave_no_trace_on_cooked_uploads ... ok
+test a_fetched_generation_draws_like_the_mapped_store ... ok
+test a_publication_larger_than_staging_streams_through_the_bounded_ring ... ok
+test a_newer_publication_supersedes_an_upload_still_being_filled ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 25.11s
+
