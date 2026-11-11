@@ -65,6 +65,11 @@ def main():
                         '.with_jitter_sequence(0, [640, 360]);\n        #[cfg(target_arch = "wasm32")]\n        let view = view.with_jitter_phase(0, [640, 360]);'),
     }
     for name, (file, before, after) in mutations.items():
+        if name == 'chrome-only':
+            # The proved implementation must be a covered change beyond fixture main.
+            # Otherwise a docs-only branch would correctly need no proof after rebase.
+            prior = '1d35b9a6136a4f040fd3fb73d3d48af654732ccb'
+            git(ROOT, '--git-dir', str(remote), 'update-ref', 'refs/heads/main', prior)
         git(builder, 'reset', '--hard', base)
         path = builder / file
         text = path.read_text()
@@ -109,6 +114,9 @@ def main():
     proof_file = guard.proof_path(builder)
     proof_file.parent.mkdir(parents=True, exist_ok=True)
     guard.save(proof_file, proof)
+    if not git(builder, 'diff', '--name-only', git(builder, 'merge-base', 'HEAD', 'origin/main'),
+               'HEAD', '--', *guard.registry(builder)['covered_paths']):
+        raise ValueError('stale-proof fixture must contain covered branch content beyond main')
     guard.gate(builder)
     writer = OUT / 'writer'
     git(ROOT, 'clone', '-b', 'main', str(remote), str(writer))
