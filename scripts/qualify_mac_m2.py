@@ -8,6 +8,7 @@ No Screen Recording grant is requested. Never retries a failed recording.
 from __future__ import annotations
 
 import argparse
+import ctypes
 import hashlib
 import json
 import os
@@ -30,6 +31,13 @@ HYPOTHESIS = ('Retained slot-events.txt shows the target already exited normally
               'less unrelated global log material may avoid finalization failure while preserving the '
               'independent displayed-surfaces-interval table. Success requires readable TOC and actual '
               'app/window swaps within deadlines. Failure rejects this configuration; no unchanged retry.')
+OS_LOG_HYPOTHESIS = ('The first 11 November probe finalized and exported pan signposts and built-in display '
+                    'identity, but both raw display-surface-swap/VSync and derived displayed-surfaces-interval '
+                    'contained zero events with excludeOSLogs=true. Test excludeOSLogs=false on the same '
+                    'Game Performance template and capture-OFF release assembly, retaining the absence of a '
+                    'desktop recorder. OS-log exclusion may have removed the required display event source. '
+                    'Success requires fresh app/window-attributed swaps and bounded finalization. Empty swaps '
+                    'or another finalization failure rejects this hypothesis and exhausts the commission.')
 
 
 def save(path, value):
@@ -91,17 +99,46 @@ def bounded(command, log, seconds, environment=None, observe=None, finalization_
                 except subprocess.TimeoutExpired:
                     pass
             raise subprocess.TimeoutExpired(command, seconds)
-        except subprocess.TimeoutExpired:
-            os.killpg(process.pid, signal.SIGTERM)
-            try:
-                process.wait(timeout=3)
-            except subprocess.TimeoutExpired:
-                os.killpg(process.pid, signal.SIGKILL)
-                process.wait(timeout=3)
-            raise RuntimeError(f'owned process deadline ({seconds}s): {log}')
+        except subprocess.TimeoutExpired as error:
+            raise RuntimeError(f'owned process deadline ({seconds}s): {log}') from error
+        finally:
+            if process.poll() is None:
+                os.killpg(process.pid, signal.SIGTERM)
+                try:
+                    process.wait(timeout=3)
+                except subprocess.TimeoutExpired:
+                    os.killpg(process.pid, signal.SIGKILL)
+                    process.wait(timeout=3)
 
 
-def collect(args, output, name, tap, replace=False, grid=False, traced=False):
+def panel_witness(output):
+    panel = ctypes.CDLL('/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics')
+    if panel is not None:
+        for function in ('CGDisplayIsActive', 'CGDisplayIsAsleep', 'CGDisplayIsBuiltin'):
+            getattr(panel, function).argtypes = [ctypes.c_uint32]
+            getattr(panel, function).restype = ctypes.c_uint32
+        panel.CGMainDisplayID.restype = ctypes.c_uint32
+    last_panel_observation = 0.0
+    def observe():
+        nonlocal last_panel_observation
+        if panel is not None and time.monotonic() - last_panel_observation >= 0.5:
+            last_panel_observation = time.monotonic()
+            raw = subprocess.check_output(['/usr/sbin/ioreg', '-n', 'Root', '-d1'], text=True, timeout=2)
+            locked = re.search(r'^\s*"IOConsoleLocked"\s*=\s*(Yes|No)\s*$', raw, re.MULTILINE)
+            display = panel.CGMainDisplayID()
+            state = {'unix_ns': time.time_ns(), 'display_id': display,
+                     'console_locked': locked[1] == 'Yes' if locked else None,
+                     'builtin': bool(panel.CGDisplayIsBuiltin(display)),
+                     'active': bool(panel.CGDisplayIsActive(display)),
+                     'asleep': bool(panel.CGDisplayIsAsleep(display))}
+            with (output / 'panel-witness.jsonl').open('a') as witness:
+                witness.write(json.dumps(state) + '\n')
+            if state['console_locked'] is not False or not state['builtin'] or not state['active'] or state['asleep']:
+                raise RuntimeError('BLOCKED: local console unlock and awake active built-in panel required; owned recording stopped')
+    return observe
+
+
+def collect(args, output, name, tap, replace=False, grid=False, traced=False, include_os_logs=False):
     if shutil.disk_usage(output).free < 16 * 1024**3:
         raise RuntimeError('less than 16 GiB free before this arm; no attempt consumed')
     arm = output / name
@@ -122,13 +159,14 @@ def collect(args, output, name, tap, replace=False, grid=False, traced=False):
         if len(ledger['attempts']) >= 2:
             raise RuntimeError('BLOCKED: two-attempt trace allowance exhausted; scoped re-plan required')
         # Durable before launching, including failures or interruption.
-        ledger['attempts'].append({'arm': str(arm), 'unix_ns': time.time_ns(), 'hypothesis': HYPOTHESIS, 'status': 'started'})
+        hypothesis = OS_LOG_HYPOTHESIS if include_os_logs else HYPOTHESIS
+        ledger['attempts'].append({'arm': str(arm), 'unix_ns': time.time_ns(), 'hypothesis': hypothesis, 'status': 'started'})
         LEDGER.parent.mkdir(parents=True, exist_ok=True)
         save(LEDGER, ledger)
         with LEDGER.open('r+') as journal:
             journal.flush()
             os.fsync(journal.fileno())
-        save(arm / 'recording-options.json', {'Points of Interest': {'excludeOSLogs': True}})
+        save(arm / 'recording-options.json', {'Points of Interest': {'excludeOSLogs': not include_os_logs}})
         command = ['xcrun', 'xctrace', 'record', '--no-prompt', '--template', 'Game Performance',
                    '--recording-options', str(arm / 'recording-options.json'),
                    '--time-limit', '16s', '--output', str(arm / 'pan.trace'),
@@ -138,11 +176,15 @@ def collect(args, output, name, tap, replace=False, grid=False, traced=False):
                 command += ['--env', f'{key}={value}']
         command += ['--launch', '--', str(args.binary.resolve())]
     save(arm / 'invocation.json', {'command': command, 'record_limit_s': 16 if traced else None,
-                                 'finalization_limit_s': 75 if traced else None})
+                                 'finalization_limit_s': 75 if traced else None,
+                                 'collector_sha256': digest(Path(__file__)),
+                                 'panel_observation_period_s': 0.5})
     load = LoadRecord(arm)
     begin = time.monotonic_ns()
     observations = set()
+    observe_panel = panel_witness(arm)
     def inspect_window():
+        observe_panel()
         if not replace or 'screen_recording_preflight=true' not in (output / 'display.txt').read_text():
             return
         elapsed = (time.monotonic_ns() - begin) / 1e9
@@ -159,7 +201,7 @@ def collect(args, output, name, tap, replace=False, grid=False, traced=False):
                     'scope': 'separate attended OS-window observation with existing grant'})
     try:
         code = bounded(command, arm / 'process.log', 91 if traced else 30, env,
-                       inspect_window if replace else None, finalization_seconds=75 if traced else None)
+                       inspect_window, finalization_seconds=75 if traced else None)
         if code:
             raise RuntimeError(f'{name} exited {code}; see process.log')
         if not (arm / 'surface.tsv').exists():
@@ -169,7 +211,8 @@ def collect(args, output, name, tap, replace=False, grid=False, traced=False):
                     '/trace-toc/run/data/table[@schema="displayed-surfaces-interval"]']),
                     ('signposts.xml', ['--xpath', "/trace-toc/run/data/table[contains(@schema, 'signpost')]"])]:
                 code = bounded(['xcrun', 'xctrace', 'export', '--input', str(arm / 'pan.trace'),
-                                '--output', str(arm / filename)] + extra, arm / (filename + '.log'), 30)
+                                '--output', str(arm / filename)] + extra, arm / (filename + '.log'), 30,
+                               observe=inspect_window)
                 if code or not (arm / filename).exists():
                     raise RuntimeError(f'unreadable {filename}; keep cadence open')
             ledger['attempts'][-1]['status'] = 'exported; attribution and full-pan join unjudged'
@@ -191,6 +234,8 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--binary', type=Path, default=ROOT / 'target/release/v1-game')
     parser.add_argument('--store', type=Path, default=ROOT / 'tmp/mac-m2/valley')
+    parser.add_argument('--diagnostic-with-os-logs', action='store_true',
+                        help='use the remaining diagnostic attempt for OFF with OS logs after the empty-display probe')
     args = parser.parse_args()
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
@@ -215,7 +260,8 @@ def main():
         for name, tap, replace, grid in [('grid-replacement', 'on', True, True),
                                          ('valley-replacement', 'on', True, False),
                                          ('on-untraced', 'on', False, False),
-                                         ('off-probe', 'off', False, False)]:
+                                         ('off-probe', 'off', False, False),
+                                         ('on-untraced-current', 'on', False, False)]:
             arm = output / name
             if not arm.exists():
                 collect(args, output, name, tap, replace, grid)
@@ -229,7 +275,30 @@ def main():
         proof = json.loads(acceptance.read_text())
         if proof.get('binary_sha256') != identity['binary_sha256'] or proof.get('M2.3') != 'pass' or not proof.get('evidence'):
             raise RuntimeError('M2.3 evidence gate missing same-build pass/evidence')
+        if args.diagnostic_with_os_logs:
+            probe = output / 'on-traced'
+            if not (probe / 'collection.json').exists() or not json.loads((probe / 'collection.json').read_text()).get('collected'):
+                raise RuntimeError('inspect the retained first diagnostic before the OS-log diagnostic')
+            collect(args, output, 'off-traced', 'off', traced=True, include_os_logs=True)
+            print('Second diagnostic collected; fresh attribution and clock alignment remain unjudged.')
+            return 0
         for name, tap in [('on-traced', 'on'), ('off-traced', 'off')]:
+            if name == 'off-traced':
+                # Preserve the lock while the builder judges the fresh probe's
+                # actual app/window swaps before spending the second attempt.
+                tooling = output / 'tooling-acceptance.json'
+                deadline = time.monotonic() + 120
+                observe_probe = panel_witness(output / 'on-traced')
+                while not tooling.exists() and time.monotonic() < deadline:
+                    observe_probe()
+                    time.sleep(0.5)
+                if not tooling.exists():
+                    raise RuntimeError('M2.4 probe collected; inspect fresh TOC/app/window swaps and record '
+                                       'tooling-acceptance.json before the OFF trace; no second attempt consumed')
+                proof = json.loads(tooling.read_text())
+                if proof.get('binary_sha256') != identity['binary_sha256'] or proof.get('M2.4') != 'pass' or not proof.get('evidence'):
+                    raise RuntimeError('M2.4 fresh attributed-swap proof required before the OFF trace')
+                preflight(output)
             arm = output / name
             if not arm.exists():
                 collect(args, output, name, tap, traced=True)
