@@ -60,7 +60,12 @@
         const cooked = probe.has("assets");
         const game = probe.has("field")
           ? await create_field_game(canvas, probe.get("culling") ?? "frustum")
-          : await create_browser_game(canvas, cooked && probe.get("stars") !== "off");
+          : await create_browser_game(canvas, cooked && probe.get("stars") !== "off", probe.has("diagnostic-clouds"));
+        if (probe.has("diagnostic-clouds")) {
+          const label = document.createElement("p");
+          label.textContent = "Diagnostic cloud-shade stand-in, drifting at 160 m/s east and 40 m/s south.";
+          canvas.after(label);
+        }
         // ?assets=<thrum-cook watch --serve origin> draws the cooked valley; ?stars=off is a visual control.
         if (cooked) {
           status.textContent = "Fetching the cooked valley…";

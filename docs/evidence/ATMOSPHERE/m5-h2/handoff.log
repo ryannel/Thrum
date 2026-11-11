@@ -1,0 +1,32 @@
+   Compiling thrum-render v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/atmosphere/crates/thrum-render)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.40s
+     Running unittests src/lib.rs (target/debug/deps/thrum_render-c73689980e4000a2)
+
+running 5 tests
+H2 precision target AdapterInfo { name: "Apple M3 Max", vendor: 0, device: 0, device_type: IntegratedGpu, device_pci_bus_id: "", driver: "", driver_info: "", backend: Metal, subgroup_min_size: 4, subgroup_max_size: 64, transient_saves_memory: Some(true), limit_bucket: None }; texture Rgba16Float; linear sampler; 257 positions across one texel interval
+
+thread 'atmosphere::products::tests::filtered::metal_h2_filtered_decode_rejects_each_wrong_lookup_on_every_known_field_query' (166443384) panicked at crates/thrum-render/src/atmosphere/products/tests/filtered.rs:265:17:
+H2 live Sun 45, query [-0.9998477, 0.017452406, 1.2244602e-16, 0.0], actual [0.06829834, 0.08666992, 0.09643555, 1.0], uv [1.0, 0.5575060970502904], expected ([0.06829803330722706, 0.0866538115912727, 0.09640673228620461], [7.31787109375e-5, 1.2313232421875e-5, 2.38543701171875e-5])
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test atmosphere::products::tests::filtered::metal_h2_filtered_decode_rejects_each_wrong_lookup_on_every_known_field_query ... FAILED
+high-contrast: base=0 step=1; distinct returned values=257; outside unchanged H2 bound=0/257; maximum GPU/f64 address error in texels=0.000006814
+weight=0.25: actual=2.441406250000e-4, f64=2.441403981040e-4, allowance=3.052734375000e-5, f64 at observed GPU address=2.441410906613e-4
+weight=0.50: actual=4.882812500000e-4, f64=4.882809612967e-4, allowance=3.052734375000e-5, f64 at observed GPU address=4.882807843387e-4
+weight=0.75: actual=7.324218750000e-4, f64=7.324217636591e-4, allowance=3.052734375000e-5, f64 at observed GPU address=7.324204780161e-4
+low-contrast: base=64 step=0.0625; distinct returned values=2; outside unchanged H2 bound=235/257; maximum GPU/f64 address error in texels=0.000006814
+weight=0.25: actual=6.250000000000e-2, f64=6.251525877488e-2, allowance=2.532958984375e-6, f64 at observed GPU address=6.251525881817e-2
+weight=0.50: actual=6.256103515625e-2, f64=6.253051756008e-2, allowance=2.532958984375e-6, f64 at observed GPU address=6.253051754902e-2
+weight=0.75: actual=6.256103515625e-2, f64=6.254577636023e-2, allowance=2.532958984375e-6, f64 at observed GPU address=6.254577627988e-2
+test atmosphere::products::tests::filtered::metal_h2_sampler_precision_report ... ok
+test atmosphere::products::tests::sun::metal_h1_lent_sun_meets_low_altitude_f64_quadrature ... ok
+test atmosphere::products::tests::metal_contribution_compiles_all_lent_operations_and_observes_environment_replacement ... ok
+test atmosphere::products::tests::filtered::metal_h4_filtered_decode_rejects_each_wrong_lookup_on_every_known_field_query ... ok
+
+failures:
+
+failures:
+    atmosphere::products::tests::filtered::metal_h2_filtered_decode_rejects_each_wrong_lookup_on_every_known_field_query
+
+test result: FAILED. 4 passed; 1 failed; 0 ignored; 0 measured; 217 filtered out; finished in 2.35s
+
+error: test failed, to rerun pass `-p thrum-render --lib`

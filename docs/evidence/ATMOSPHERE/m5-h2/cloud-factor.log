@@ -1,0 +1,16 @@
+   Compiling thrum-render v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/atmosphere/crates/thrum-render)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.34s
+     Running unittests src/lib.rs (target/debug/deps/thrum_render-c73689980e4000a2)
+
+running 1 test
+Metal cloud-factor qualification, device sampled-texture limit 16
+zero optical depth: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+uniform ln2: [0.49989393, 0.49989393, 1.0, 1.0, 1.0, 1.0, 0.49989393, 0.49989393]
+two points: [1.0, 0.24989393, 1.0, 1.0, 1.0, 1.0, 1.0, 0.49989393]
+project each height: [0.24989393, 1.0, 1.0, 1.0, 1.0, 1.0, 0.49989393, 0.24989393]
+advected field: [1.0, 0.49989393, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+invalid sample: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+unsupported Sun: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+test synthetic::tests::cloud::metal_cloud_factor_uses_receiver_ray_and_returns_exact_clear_support ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 221 filtered out; finished in 0.95s

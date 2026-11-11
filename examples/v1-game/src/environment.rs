@@ -14,6 +14,7 @@ pub(crate) struct SunSample {
     pub top_illuminance_lux: f32,
     pub colour: [f32; 3],
     pub profile_epoch: u64,
+    pub simulation_time_seconds: f64,
 }
 
 impl DayCycle {
@@ -87,6 +88,11 @@ impl DayCycle {
             top_illuminance_lux: 127_000.0,
             colour: [1.0; 3],
             profile_epoch: 1,
+            simulation_time_seconds: if tick == 0 {
+                0.0
+            } else {
+                (tick.saturating_sub(1) as f64 + f64::from(alpha.clamp(0.0, 1.0))) / 60.0
+            },
         }
     }
 }
@@ -164,6 +170,14 @@ mod tests {
             DayCycle::time_of_day(0, 0.0)
         );
         let direction = DayCycle::sample(tick, alpha, offset).toward_sun;
+        assert_eq!(
+            DayCycle::sample(tick, alpha, offset).simulation_time_seconds,
+            0.25 / 60.0
+        );
+        assert_eq!(
+            DayCycle::sample(0, alpha, offset).simulation_time_seconds,
+            0.0
+        );
         let offset_at_rendered = DayCycle::offset_for_time(0, rendered).expect("rendered time");
         let resampled = DayCycle::sample(0, 0.0, offset_at_rendered).toward_sun;
         assert!(

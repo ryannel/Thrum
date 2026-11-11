@@ -37,6 +37,8 @@ pub(crate) type Runtime = runtime::FrameHost<WorldPort, GameScene>;
 /// Content and camera culling chosen when the host is prepared.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct GameSetup {
+    /// Opt-in analytic Sun-path optical depth, a diagnostic cloud-shade stand-in.
+    pub diagnostic_clouds: bool,
     /// The grid or the dense flythrough field.
     pub content: GameContent,
     /// How the camera's opaque draw is culled; Direct draws every instance.
@@ -55,6 +57,7 @@ pub struct GameSetup {
 impl Default for GameSetup {
     fn default() -> Self {
         Self {
+            diagnostic_clouds: false,
             content: GameContent::Grid,
             camera_culling: CullMode::Direct,
             valley_stars: false,

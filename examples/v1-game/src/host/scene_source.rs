@@ -1,5 +1,6 @@
 //! V1 fixture, camera and lighting policy for the engine frame runtime.
 
+mod cloud;
 mod star_catalogue;
 
 use crate::{
@@ -37,7 +38,9 @@ fn atmosphere_lighting(
         sun.profile_epoch,
     )
     .expect("checked game camera and day cycle produce a valid atmosphere frame")
-    .with_nightglow();
+    .with_nightglow()
+    .with_simulation_time(sun.simulation_time_seconds)
+    .expect("the sampled game clock is finite");
     FrameLighting::Atmosphere(frame)
 }
 
@@ -365,6 +368,9 @@ impl GameScene {
             GameContent::Field => field_scene(extent, setup.field_meshes)?,
         };
         scene.camera_culling = setup.camera_culling;
+        if setup.diagnostic_clouds {
+            scene.sun_optical_depth = Some(cloud::diagnostic()?);
+        }
         if setup.route_overlay != scene::RouteOverlay::Off {
             if setup.content != GameContent::Grid {
                 return Err("the route overlay needs grid content".to_owned());

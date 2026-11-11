@@ -3,6 +3,18 @@
 
 use super::air_shadow;
 
+pub(super) fn compose_with_cloud(atmosphere: bool, air_shadow: bool, cloud: bool) -> String {
+    let source = compose(atmosphere, air_shadow);
+    if !cloud {
+        return source;
+    }
+    let shaded = source.replace(
+        "sun_irradiance(input.world_position)*sun_factor",
+        "sun_irradiance(input.world_position)*sun_factor*cloud_factor(input.world_position)",
+    );
+    format!("{shaded}\n{}", include_str!("../atmosphere/cloud.wgsl"))
+}
+
 /// The forward WGSL for a scene with or without the atmosphere and its aerial shadow.
 pub(super) fn compose(atmosphere: bool, air_shadow: bool) -> String {
     format!(

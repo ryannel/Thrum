@@ -29,7 +29,7 @@
           "ask": "Read the referee tests. Does the contribution use only the lent layout and library, with no private chart, mip or storage-gain knowledge? Does each of H1-H5 assert the bound its row names against the reference its row names, and never against the forward pass's own output? For H2 and H4, is the expected value an f64 filtered decode written apart from the library's code, on the live product and on the known field, and does the test fail if a single-texel or single-slice lookup passes? Is their allowance the design's C/32 + 1e-5 M + Q, with Q one stored half-float step and nothing wider, on a known field whose neighbouring texels differ by at least 32 stored steps? Is one case of each row repeated at a non-unit exposure scale? Does H5 vary direction, roughness, the raw Sun's illuminance, the night term and a rewritten sky? Are the preserved referees P1-P11 unchanged in reference, cases and bound?",
           "target": "mac-metal",
           "status": "open",
-          "evidence": "",
+          "evidence": "docs/evidence/ATMOSPHERE/m5-h2-blocker.md",
           "verdict": "",
           "review": ""
         },
@@ -76,7 +76,7 @@
           "ask": "Do GPU tests show a uniform tau of ln 2 halving the direct term, and only the direct term, on each receiver kind including the cooked volume; a field that differs between two world points giving each receiver, and each volume march sample, its own point's factor; and tau of zero, a receiver above the plane and a read outside the region all matching no provider? Is exp(-tau) one shared cloud-factor function that the direct-Sun term and the volume's march both call, never a per-receiver patch or a darkening of final colour?",
           "target": "mac-metal",
           "status": "open",
-          "evidence": "",
+          "evidence": "docs/evidence/ATMOSPHERE/m5-h2-blocker.md",
           "verdict": "",
           "review": ""
         },

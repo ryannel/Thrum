@@ -144,6 +144,7 @@ pub(super) async fn run(output: PathBuf) -> Result<(), String> {
         "adapter": capabilities.adapter().name,
         "extent":EXTENT,
         "scene":std::env::var("THRUM_SCENE").unwrap_or_else(|_| "diagnostic".to_owned()),
+        "cloud_shade": if setup.diagnostic_clouds { "diagnostic stand-in, plane 2000 m, XZ drift [160,40] m/s" } else { "off" },
     });
     if !route_only {
         capture_diagnostics(&mut host, &output, &mut manifest)?;

@@ -96,6 +96,7 @@ fn fly(field_meshes: bool) {
                     &capabilities,
                     FrameConfig::default(),
                     GameSetup {
+                        diagnostic_clouds: false,
                         content: GameContent::Field,
                         camera_culling,
                         valley_stars: false,

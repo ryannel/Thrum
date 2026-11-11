@@ -101,6 +101,7 @@ pub struct BrowserGame {
 
 /// Prepare the existing V1 simulation and renderer for a WebGPU canvas.
 /// `valley_stars` selects the star catalogue before attaching the cooked valley.
+/// `diagnostic_clouds` opts into the labelled analytic cloud-shade stand-in.
 ///
 /// # Errors
 /// Returns a JavaScript error when no compatible adapter, surface format or GPU resource exists.
@@ -108,10 +109,12 @@ pub struct BrowserGame {
 pub async fn create_browser_game(
     canvas: HtmlCanvasElement,
     valley_stars: Option<bool>,
+    diagnostic_clouds: Option<bool>,
 ) -> Result<BrowserGame, JsValue> {
     create_game(
         canvas,
         crate::GameSetup {
+            diagnostic_clouds: diagnostic_clouds.unwrap_or(false),
             valley_stars: valley_stars.unwrap_or(false),
             field_meshes: false,
             ..crate::GameSetup::default()
@@ -143,6 +146,7 @@ pub async fn create_field_game(
         canvas,
         crate::GameSetup {
             content: crate::GameContent::Field,
+            diagnostic_clouds: false,
             camera_culling,
             valley_stars: false,
             route_overlay: crate::RouteOverlay::Off,
