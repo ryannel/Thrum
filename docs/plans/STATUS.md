@@ -4,7 +4,7 @@ The orchestrate script writes this page from the plan files and records after ea
 
 ## Overview
 
-3 of 21 modules done · 6 in progress · 12 to come
+3 of 21 modules done · 7 in progress · 11 to come
 
 ### Waiting on you
 
@@ -47,7 +47,6 @@ The orchestrate script writes this page from the plan files and records after ea
 - Depth, motion, reactive and exposure are stored for reconstruction, and history advances only with submitted frames (APPLE-PRESENTATION M2): Not Started · [plan](APPLE-PRESENTATION/PLAN.md)
 - A change that alters a registered exact image, on the Mac or in Chrome, is refused before it reaches main (BASELINE-GUARD M1): Ready for Review · [plan](BASELINE-GUARD/PLAN.md)
 - On the mixed-mesh field, Occlusion draws only what Direct shows, pixel for pixel (CULLING M1): Not Started · [plan](CULLING/PLAN.md)
-- An engine module can declare volume, cube and mipped-array textures in the frame, and wrong declarations are refused (EFFECT-GRAPH M1): Not Started · [plan](EFFECT-GRAPH/PLAN.md)
 
 ### Recently done
 
@@ -75,7 +74,7 @@ The orchestrate script writes this page from the plan files and records after ea
 | 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads | APPLE-PRESENTATION M3 | Waiting on APPLE-PRESENTATION:M3 |
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is refused before it reaches main |  | M1 of 1 · Ready for Review |
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE M2, BASELINE-GUARD M1 | M1 of 3 · Not Started |
-| 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame | APPLE-TILE M2 and M3, APPLE-PRESENTATION M2, BASELINE-GUARD M1 | M1 of 3 · Not Started |
+| 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame | APPLE-TILE M2 and M3, APPLE-PRESENTATION M2, BASELINE-GUARD M1 | M1 of 3 · Blocked |
 | 12 | CONTENT-LOOP | Edited meshes, textures and volumes appear in the running game without a stall | APPLE-PRESENTATION M2 | Not planned yet |
 | 13 | SHOWCASE | The V1 exit: the showcase valley on Mac and in Chrome, reviewed, with its closing record | The last milestone of modules 1 to 10 and 12 | Not planned yet |
 | 14 | SEA | An open sea from waterline to horizon, with floating bodies, wakes and foam | ATMOSPHERE M5, EFFECT-GRAPH, APPLE-TILE M3, APPLE-PRESENTATION M3 and M7, CONTENT-LOOP; the owner's port timing | Not planned yet |
