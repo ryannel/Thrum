@@ -1,9 +1,10 @@
 //! Compiles and binds the prepared scene and capture graph.
 
 use super::{
-    AUX_BYTES, CONTRIBUTION_UPLOAD, DEPTH_FORMAT, DisplayPrepared, ExposureResolve, LIGHT_BYTES,
-    MOTION_FORMAT, PreparedSynthetic, RenderError, SCENE_FORMAT, SceneFamily, SceneGraphs,
-    TargetResources, VIEW_BYTES, air_shadow, camera_culling, exposure, history_gpu, shadow,
+    AUX_BYTES, CONTRIBUTION_UPLOAD, CaptureSource, DEPTH_FORMAT, DisplayPrepared, ExposureResolve,
+    LIGHT_BYTES, MOTION_FORMAT, PreparedSynthetic, RenderError, SCENE_FORMAT, SceneFamily,
+    SceneGraphs, TargetResources, VIEW_BYTES, air_shadow, camera_culling, exposure, history_gpu,
+    shadow,
 };
 use crate::graph::{
     Access, AccessKind, CompiledGraph, FrameGraph, GraphError, Pass, PassKind, PassScope,
@@ -25,10 +26,11 @@ impl SceneGraphs<CompiledGraph> {
         readback: Pass,
         generation: u64,
         keys: &BTreeSet<PipelineKey>,
+        producer: Option<usize>,
     ) -> Result<Self, GraphError> {
         Ok(Self {
             scene: graph.compile(generation, keys)?,
-            readback: graph.compile_with_terminal_pass(readback, generation, keys)?,
+            readback: graph.compile_with_terminal_pass(readback, generation, keys, producer)?,
         })
     }
 
@@ -58,6 +60,7 @@ impl PreparedSynthetic {
         format: wgpu::TextureFormat,
         role: AttachmentUse,
         sampled_depth: bool,
+        capture_source: CaptureSource,
     ) -> Result<ResourceId, RenderError> {
         let usage = match role {
             AttachmentUse::Depth => {
@@ -69,7 +72,13 @@ impl PreparedSynthetic {
                 }
             }
             AttachmentUse::Scene => {
-                wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING
+                wgpu::TextureUsages::RENDER_ATTACHMENT
+                    | wgpu::TextureUsages::TEXTURE_BINDING
+                    | if capture_source == CaptureSource::SceneLinear {
+                        wgpu::TextureUsages::COPY_SRC
+                    } else {
+                        wgpu::TextureUsages::empty()
+                    }
             }
             AttachmentUse::Motion => {
                 wgpu::TextureUsages::RENDER_ATTACHMENT
@@ -173,6 +182,7 @@ impl PreparedSynthetic {
         width: u32,
         height: u32,
         row_bytes: u32,
+        capture_source: CaptureSource,
     ) -> Result<CompiledScene, RenderError> {
         let mut graph = FrameGraph::default();
         let material = graph.resource(
@@ -258,13 +268,25 @@ impl PreparedSynthetic {
             DEPTH_FORMAT,
             AttachmentUse::Depth,
             self.stars.is_some(),
+            capture_source,
         )?;
         self.append_material_textures(&mut graph, &mut accesses)?;
         let attachment = (width, height, &mut graph, &mut accesses);
-        let scene = Self::view_attachment(attachment, SCENE_FORMAT, AttachmentUse::Scene, false)?;
+        let scene = Self::view_attachment(
+            attachment,
+            SCENE_FORMAT,
+            AttachmentUse::Scene,
+            false,
+            capture_source,
+        )?;
         let attachment = (width, height, &mut graph, &mut accesses);
-        let motion =
-            Self::view_attachment(attachment, MOTION_FORMAT, AttachmentUse::Motion, false)?;
+        let motion = Self::view_attachment(
+            attachment,
+            MOTION_FORMAT,
+            AttachmentUse::Motion,
+            false,
+            capture_source,
+        )?;
         let camera = self.append_camera_visibility(
             &mut graph,
             (view, &instance, &mesh, &route),
@@ -308,9 +330,20 @@ impl PreparedSynthetic {
             width,
             height,
         )?;
-        let readback = Self::readback_pass(&mut graph, &output, height, row_bytes)?;
+        let source = match capture_source {
+            CaptureSource::Sdr => &output,
+            CaptureSource::SceneLinear => &scene,
+        };
+        let readback =
+            Self::readback_pass(&mut graph, source, &exposure_sample, height, row_bytes)?;
         let generation = self.key.device_generation;
-        let day = SceneGraphs::compile(&mut graph, readback.clone(), generation, &prepared_keys)?;
+        let day = SceneGraphs::compile(
+            &mut graph,
+            readback.clone(),
+            generation,
+            &prepared_keys,
+            (capture_source == CaptureSource::SceneLinear).then_some(forward),
+        )?;
         let stars = if let Some((transmittance, observer)) = &atmosphere_inputs {
             self.append_stars(
                 &mut graph,
@@ -329,6 +362,7 @@ impl PreparedSynthetic {
                 readback,
                 generation,
                 &prepared_keys,
+                (capture_source == CaptureSource::SceneLinear).then_some(stars),
             )?)
         } else {
             None
@@ -452,10 +486,11 @@ impl PreparedSynthetic {
     fn readback_pass(
         graph: &mut FrameGraph,
         output: &ResourceId,
+        exposure: &ResourceId,
         height: u32,
         row_bytes: u32,
     ) -> Result<Pass, RenderError> {
-        let bytes = u64::from(row_bytes) * u64::from(height);
+        let bytes = u64::from(row_bytes) * u64::from(height) + exposure::SAMPLE_BYTES;
         let destination = graph.resource(
             ResourceDescriptor::Buffer {
                 bytes,
@@ -468,6 +503,12 @@ impl PreparedSynthetic {
             scope: PassScope::View(1),
             pipeline: None,
             accesses: vec![
+                Access {
+                    resource: exposure.clone(),
+                    range: 0..exposure::SAMPLE_BYTES,
+                    kind: AccessKind::CopyRead,
+                    store: true,
+                },
                 Access {
                     resource: output.clone(),
                     range: 0..1,

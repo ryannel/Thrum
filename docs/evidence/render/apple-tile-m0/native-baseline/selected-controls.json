@@ -1,0 +1,24 @@
+{
+  "full_present_controls": "mirror-light.surface-bgra8.gz in both letterbox directories",
+  "source_rgba": "sdr-1 PNGs, all source bytes verified identical",
+  "omitted_duplicate_artifacts": [
+    "docs/evidence/render/apple-tile-m0/native-baseline/letterbox-bgra8-1/post-cut.png",
+    "docs/evidence/render/apple-tile-m0/native-baseline/letterbox-bgra8-1/mirror-light.png",
+    "docs/evidence/render/apple-tile-m0/native-baseline/letterbox-bgra8-1/approach.png",
+    "docs/evidence/render/apple-tile-m0/native-baseline/letterbox-bgra8-1/pre-cut.png",
+    "docs/evidence/render/apple-tile-m0/native-baseline/letterbox-bgra8-1/near-plane.png",
+    "docs/evidence/render/apple-tile-m0/native-baseline/letterbox-bgra8-1/near-plane.surface-bgra8.gz",
+    "docs/evidence/render/apple-tile-m0/native-baseline/letterbox-bgra8-1/approach.surface-bgra8.gz",
+    "docs/evidence/render/apple-tile-m0/native-baseline/letterbox-bgra8-1/post-cut.surface-bgra8.gz",
+    "docs/evidence/render/apple-tile-m0/native-baseline/letterbox-bgra8-1/pre-cut.surface-bgra8.gz",
+    "docs/evidence/render/apple-tile-m0/native-baseline/letterbox-bgra8-srgb-1/post-cut.png",
+    "docs/evidence/render/apple-tile-m0/native-baseline/letterbox-bgra8-srgb-1/mirror-light.png",
+    "docs/evidence/render/apple-tile-m0/native-baseline/letterbox-bgra8-srgb-1/approach.png",
+    "docs/evidence/render/apple-tile-m0/native-baseline/letterbox-bgra8-srgb-1/pre-cut.png",
+    "docs/evidence/render/apple-tile-m0/native-baseline/letterbox-bgra8-srgb-1/near-plane.png",
+    "docs/evidence/render/apple-tile-m0/native-baseline/letterbox-bgra8-srgb-1/near-plane.surface-bgra8.gz",
+    "docs/evidence/render/apple-tile-m0/native-baseline/letterbox-bgra8-srgb-1/approach.surface-bgra8.gz",
+    "docs/evidence/render/apple-tile-m0/native-baseline/letterbox-bgra8-srgb-1/post-cut.surface-bgra8.gz",
+    "docs/evidence/render/apple-tile-m0/native-baseline/letterbox-bgra8-srgb-1/pre-cut.surface-bgra8.gz"
+  ]
+}

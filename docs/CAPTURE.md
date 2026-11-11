@@ -51,6 +51,18 @@ Additional cases use the same binary:
 - `--case input-stall`: diagnostic 250 ms dispatch delay before semantic handling; renders continue with held controls. Intermediate edits are coalesced to the newest value; requested/start coincide at diagnostic activation.
 - `--case writer-slow`: running-world slow output, delaying 4 MiB writer calls 500 ms. Use `THRUM_CAPTURE_ENCODING=raw` for the saturation/refusal control; the compressed diagnostic grid can fit the finite encoded reserve and finish successfully.
 - `--case off`: matched pan with capture disabled; no tap buffers or writer queue.
+- `--case variants`: semantic noon/night/noon edits at one and three seconds, using the prepared star variants.
+- `--case route --route examples/v1-game/routes/moving-v1.json`: validates the cooked root and runs the checked route on the resident world lane. Use a route copy with a 1920×1080 render extent for this full-resolution driver. The initial hold precedes normal world resume, and the final hold follows the last authored tick.
+
+`--params PATH` selects a checked parameter file before warmup. `--source scene-linear` captures the existing
+RGBA16Float scene colour after its last writer, including stars at night. It preserves all eight stored bytes
+without float conversion. This source uses 32 CPU buffers and verification-only packaging. The default
+`--source sdr` retains the submitted RGBA8 output and ordinary PNG/movie packaging. Both sources include the
+actual GPU exposure packet as eight raw u32 words in each image's provenance. Its fields are storage scale,
+inverse gain, EV100, lux, flags, submission serial low/high and display selector.
+
+The complete APPLE-TILE M0 command, its fixed controls and retained sources are documented in
+[the M0 evidence](evidence/render/apple-tile-m0/README.md).
 
 Ordinary pan/running/off schedules contain no diagnostic actions.
 
@@ -70,7 +82,7 @@ capability record and shaders. Native controls and OS composition are excluded.
 
 The graph copies the actual final SDR engine texture in the ordinary submission, retaining temporal history.
 There is no endpoint redraw, extra scene render, second queue or drawable acquisition/lease extension. Six GPU
-slots and 96 reusable CPU buffers use 846,028,800 pixel bytes within a 1 GiB allowance. This is a bounded
+slots and 96 reusable CPU buffers use 846,028,800 pixel bytes plus 192 GPU staging bytes for exposure within a 1 GiB allowance. This is a bounded
 0.8-second CPU burst reserve at 120 records/s, not the four-second session in RAM. Earlier raw-spool
 profiles overflowed on this normally 94–97%-full volume. The current writer hashes each original RGBA record,
 XORs it with its predecessor, then uses Zstd level 1 with two workers and a 4 MiB window. It preserves every
@@ -88,7 +100,7 @@ Sessions are limited to 1024 full-size records. Raw encoding remains an explicit
 
 Each arm records host load averages, a background-process snapshot and one-second `iostat -d -C -U` CPU/disk
 samples (first data row averages since boot; default devices include spool disk0). The engine image record's
-`readback_copy_gpu_bracket_ns` measures a GPU upper bracket around the texture-to-buffer copy. Real compute
+`readback_copy_gpu_bracket_ns` measures a GPU upper bracket around the texture-to-buffer and 32-byte exposure copies. Real compute
 markers read the staging buffer before and after its blit write, forcing WAR/RAW dependencies; stage-boundary
 counters measure before-marker end to after-marker end. The bracket includes the after-marker and encoder
 transitions; it excludes mapping, CPU row unpacking and timestamp-resolution cost. It uses enabled native

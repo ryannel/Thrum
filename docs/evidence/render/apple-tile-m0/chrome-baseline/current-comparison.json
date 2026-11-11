@@ -1,0 +1,22 @@
+{
+  "equal": true,
+  "images": 481,
+  "identity_fields": [
+    "alpha",
+    "device_generation",
+    "history_epoch",
+    "presenter_generation",
+    "source_epoch",
+    "source_tick",
+    "submission_id",
+    "surface_presented",
+    "tick",
+    "timeline",
+    "ordinal"
+  ],
+  "reference_manifest_sha256": "297bffe197dd413b9ca828ea415d6690c87edf2b636f482eefd546d50b8bc414",
+  "candidate_manifest_sha256": "ea0a9a49a41ace153359c07a64e9ff6b2ce2ee077105c9eb479ea523702d17d3",
+  "all_decoded_candidate_hashes_verified": true,
+  "reference": "tmp/g3t-m0/prechange-chrome-fixed",
+  "candidate": "tmp/g3t-m0/current-chrome-fixed"
+}

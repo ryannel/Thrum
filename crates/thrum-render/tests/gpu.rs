@@ -182,7 +182,11 @@ fn prepared_scene_pixels_timestamps_and_disabled_path() {
         ));
         let graph = prepared.graph(&target, true).unwrap();
         assert_eq!(graph.transient_slots, 4);
-        assert_eq!(graph.dependencies, [(0, 1), (0, 3), (1, 2), (1, 3), (3, 4)]);
+        // The capture terminal reads both final colour and resolved exposure.
+        assert_eq!(
+            graph.dependencies,
+            [(0, 1), (0, 3), (0, 4), (1, 2), (1, 3), (3, 4)]
+        );
         assert_eq!(
             prepared.graph(&target, false).unwrap().dependencies,
             [(0, 1), (0, 3), (1, 2), (1, 3)]
@@ -519,7 +523,7 @@ fn prepared_scene_pixels_timestamps_and_disabled_path() {
                 let resized = OffscreenTarget::new(&device, &prepared, width, height).unwrap();
                 assert_eq!(
                     prepared.graph(&resized, true).unwrap().dependencies,
-                    [(0, 1), (0, 3), (1, 2), (1, 3), (3, 4)]
+                    [(0, 1), (0, 3), (0, 4), (1, 2), (1, 3), (3, 4)]
                 );
                 let rgba = render_pixels(&device, &queue, &prepared, &resized);
                 assert_eq!(rgba.len(), width as usize * height as usize * 4);

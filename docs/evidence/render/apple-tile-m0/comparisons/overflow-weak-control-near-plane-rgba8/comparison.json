@@ -1,0 +1,36 @@
+{
+  "reference": {
+    "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m0/qualification-2/overflow/checkpoints/near-plane.rgba8",
+    "file_sha256": "21e3b94451543b71f474088a881f4f8cd315545877c93fe65b4ac760f1bbd3f1",
+    "pixels_sha256": "21e3b94451543b71f474088a881f4f8cd315545877c93fe65b4ac760f1bbd3f1",
+    "extent": [
+      1280,
+      720
+    ],
+    "bytes_per_pixel": 4,
+    "encoding": "rgba8"
+  },
+  "candidate": {
+    "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m0/qualification-2/weak-control/checkpoints/near-plane.rgba8",
+    "file_sha256": "1ea46a380a3df927c1f6fee8a279b7064bb39c484f2013d986d1833451ef8e1c",
+    "pixels_sha256": "1ea46a380a3df927c1f6fee8a279b7064bb39c484f2013d986d1833451ef8e1c",
+    "extent": [
+      1280,
+      720
+    ],
+    "bytes_per_pixel": 4,
+    "encoding": "rgba8"
+  },
+  "equal": false,
+  "scope": "exact stored pixel bytes only; target/sample/exposure/history identity must be established by the caller",
+  "changed_pixels": 5843,
+  "changed_bytes": 6522,
+  "bounds_xyxy_exclusive": [
+    0,
+    0,
+    1280,
+    349
+  ],
+  "mask_sha256": "890ea9df86c3b96eeb0413880b6f197fcee4a41a9dcc60acf483da13c31acde9",
+  "crop_sha256": "88b14f8f1530c223a51d5c99e96b48ef5f4d4c17c2e6855bd71ac79d81306612"
+}

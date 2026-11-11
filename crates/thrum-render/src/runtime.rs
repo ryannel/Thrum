@@ -1204,6 +1204,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             &mut self.submitted_capture,
             self.generation,
             self.render_extent,
+            slot.target.capture_source(),
         );
         let capture_slot = capture.as_ref().map(|(index, _)| *index);
         if let Err(error) = self.prepared.encode_contributed(

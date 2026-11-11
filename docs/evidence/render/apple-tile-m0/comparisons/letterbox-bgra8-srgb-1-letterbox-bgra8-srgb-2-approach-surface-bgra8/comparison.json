@@ -1,0 +1,29 @@
+{
+  "reference": {
+    "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m0/qualification-2/letterbox-bgra8-srgb-1/checkpoints/approach.surface-bgra8",
+    "file_sha256": "09264740ea216ec7e45320fdbba4569bcdee4a09104d6a1193c47b7671686cfe",
+    "pixels_sha256": "09264740ea216ec7e45320fdbba4569bcdee4a09104d6a1193c47b7671686cfe",
+    "extent": [
+      1000,
+      800
+    ],
+    "bytes_per_pixel": 4,
+    "encoding": "bgra8"
+  },
+  "candidate": {
+    "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m0/qualification-2/letterbox-bgra8-srgb-2/checkpoints/approach.surface-bgra8",
+    "file_sha256": "09264740ea216ec7e45320fdbba4569bcdee4a09104d6a1193c47b7671686cfe",
+    "pixels_sha256": "09264740ea216ec7e45320fdbba4569bcdee4a09104d6a1193c47b7671686cfe",
+    "extent": [
+      1000,
+      800
+    ],
+    "bytes_per_pixel": 4,
+    "encoding": "bgra8"
+  },
+  "equal": true,
+  "scope": "exact stored pixel bytes only; target/sample/exposure/history identity must be established by the caller",
+  "changed_pixels": 0,
+  "changed_bytes": 0,
+  "bounds_xyxy_exclusive": null
+}

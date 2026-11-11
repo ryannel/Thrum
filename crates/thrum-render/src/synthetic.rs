@@ -46,7 +46,7 @@ mod shadow;
 mod stars;
 mod upload;
 mod view;
-pub use readback::PixelReadback;
+pub use readback::{CaptureSource, PixelReadback};
 
 pub(crate) use air_shadow::AIR_SHADOW_PASS;
 
@@ -833,7 +833,11 @@ impl SceneContext<'_> {
         self.readback
             .as_deref_mut()
             .ok_or(RenderError::GraphPassMismatch)?
-            .copy_into(self.encoder, self.target)
+            .copy_into(
+                self.encoder,
+                self.target,
+                Some(&self.prepared.exposure.samples[self.exposure_side]),
+            )
     }
 }
 
@@ -2146,6 +2150,7 @@ struct SceneGraphs<G> {
 /// Generation-bound offscreen target. Retain while encoded/submitted work uses
 /// it; actual old/new allocation retirement belongs to the executor's fences.
 pub struct OffscreenTarget {
+    capture_source: CaptureSource,
     device: wgpu::Device,
     prepared_owner: Arc<()>,
     day_graphs: SceneGraphs<ExecutableGraph<SceneFamily>>,
@@ -2184,6 +2189,20 @@ impl OffscreenTarget {
         width: u32,
         height: u32,
     ) -> Result<Self, RenderError> {
+        Self::with_capture_source(device, prepared, width, height, CaptureSource::Sdr)
+    }
+
+    /// Prepare a target whose capture graph reads the declared engine stage.
+    /// Normal targets retain the SDR graph and texture usage.
+    /// # Errors
+    /// Refuses invalid extents or a foreign device, as [`Self::new`].
+    pub fn with_capture_source(
+        device: &wgpu::Device,
+        prepared: &PreparedSynthetic,
+        width: u32,
+        height: u32,
+        capture_source: CaptureSource,
+    ) -> Result<Self, RenderError> {
         if !prepared.capabilities.matches(device) {
             return Err(RenderError::StaleTarget);
         }
@@ -2197,15 +2216,19 @@ impl OffscreenTarget {
             return Err(RenderError::TargetExtent);
         }
         let row_bytes = width
-            .checked_mul(4)
+            .checked_mul(capture_source.bytes_per_pixel())
             .and_then(|value| value.checked_add(255))
             .map(|value| value / 256 * 256)
             .ok_or(RenderError::TargetExtent)?;
-        if u64::from(row_bytes) * u64::from(height) > limits.max_buffer_size {
+        if u64::from(row_bytes)
+            .checked_mul(u64::from(height))
+            .and_then(|bytes| bytes.checked_add(exposure::SAMPLE_BYTES))
+            .is_none_or(|bytes| bytes > limits.max_buffer_size)
+        {
             return Err(RenderError::TargetExtent);
         }
         let scene_graph::CompiledScene { day, night, ids } =
-            prepared.compile_graph(width, height, row_bytes)?;
+            prepared.compile_graph(width, height, row_bytes, capture_source)?;
         // The night capture adds buffer inputs and extends depth, scene and output lifetimes.
         let textures = GraphTextures::new(device, &night.as_ref().unwrap_or(&day).readback);
         let view = textures
@@ -2346,6 +2369,7 @@ impl OffscreenTarget {
         let day_graphs = day.bind(prepared)?;
         let night_graphs = night.map(|graphs| graphs.bind(prepared)).transpose()?;
         Ok(Self {
+            capture_source,
             device: device.clone(),
             prepared_owner: Arc::clone(&prepared.owner),
             day_graphs,
@@ -2393,6 +2417,10 @@ impl OffscreenTarget {
         }
     }
 
+    pub(crate) fn capture_source(&self) -> CaptureSource {
+        self.capture_source
+    }
+
     /// Target extent in pixels.
     pub fn extent(&self) -> [u32; 2] {
         [self.width, self.height]
@@ -2432,9 +2460,12 @@ impl OffscreenTarget {
     /// Allocate one bounded CPU readback slot for this exact generation/grid.
     pub fn readback(&self, device: &wgpu::Device) -> PixelReadback {
         PixelReadback {
+            source: self.capture_source,
+            exposure_words: None,
+            has_exposure: false,
             buffer: device.create_buffer(&wgpu::BufferDescriptor {
                 label: Some("synthetic pixel readback"),
-                size: self.readback_bytes(),
+                size: self.readback_bytes() + exposure::SAMPLE_BYTES,
                 usage: wgpu::BufferUsages::COPY_DST
                     | wgpu::BufferUsages::MAP_READ
                     | if device

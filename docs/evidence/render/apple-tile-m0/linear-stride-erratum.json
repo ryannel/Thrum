@@ -1,0 +1,26 @@
+{
+  "scope": "Captured linear manifest row_stride metadata retained its old SDR constant. Stored bytes, bytes_per_pixel, decoder frame size and exact comparisons already use eight bytes per pixel. Source archives and original manifests remain pinned. Future captures use the corrected source-derived row_stride.",
+  "captures": [
+    {
+      "file": "tmp/g3t-m0/qualification-2/sun-linear/manifest.json",
+      "original_sha256": "274b7e3478d7253d1fa325d77d7c8fe64737e1593b1f573299593a2f58b57619",
+      "captured_row_stride_metadata": 7680,
+      "actual_tightly_packed_row_stride": 15360,
+      "actual_pixel_bytes": 16588800
+    },
+    {
+      "file": "tmp/g3t-m0/qualification-2/night-linear/manifest.json",
+      "original_sha256": "c9d05a4786ab61cf49a2473d5ba74f1926585d35c75bc942244a16eca4843e03",
+      "captured_row_stride_metadata": 7680,
+      "actual_tightly_packed_row_stride": 15360,
+      "actual_pixel_bytes": 16588800
+    },
+    {
+      "file": "tmp/g3t-m0/qualification-2/night-linear-off/manifest.json",
+      "original_sha256": "3820cc14cdd5a87b18570f254710f25a1d54c1cb58b0dd62da9a99490108758c",
+      "captured_row_stride_metadata": 7680,
+      "actual_tightly_packed_row_stride": 15360,
+      "actual_pixel_bytes": 16588800
+    }
+  ]
+}

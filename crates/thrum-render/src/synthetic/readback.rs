@@ -5,9 +5,33 @@ use std::sync::mpsc::{self, Receiver, TryRecvError};
 use super::{OffscreenTarget, RenderError};
 mod copy_timing;
 
-/// One bounded asynchronous sRGB-encoded SDR RGBA8 readback slot, reusable
-/// after collection. Each pixel retains four bytes including opaque alpha.
+/// Prepared engine texture copied by the submitted-image tap.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub enum CaptureSource {
+    /// Final tone-mapped, sRGB-encoded RGBA8 engine output.
+    #[default]
+    Sdr,
+    /// Pre-tone scene-linear RGBA16Float, including the prepared star composite.
+    SceneLinear,
+}
+
+impl CaptureSource {
+    /// Stored bytes per pixel, including alpha.
+    #[must_use]
+    pub const fn bytes_per_pixel(self) -> u32 {
+        match self {
+            Self::Sdr => 4,
+            Self::SceneLinear => 8,
+        }
+    }
+}
+
+/// One bounded asynchronous raw pixel readback slot, reusable after collection.
+/// The prepared source determines the stored format and bytes per pixel.
 pub struct PixelReadback {
+    pub(super) source: CaptureSource,
+    pub(super) exposure_words: Option<[u32; 8]>,
+    pub(super) has_exposure: bool,
     pub(super) buffer: wgpu::Buffer,
     pub(super) generation: u64,
     pub(super) extent: [u32; 2],
@@ -17,6 +41,10 @@ pub struct PixelReadback {
     pub(super) pending: Option<Receiver<Result<(), wgpu::BufferAsyncError>>>,
 }
 impl PixelReadback {
+    pub(crate) fn exposure_gpu_words(&self) -> Option<[u32; 8]> {
+        self.exposure_words
+    }
+
     pub(crate) fn cancel_unsubmitted(&mut self) {
         // The caller has dropped the unsubmitted encoder. Its deferred map
         // action never ran, so there is no GPU mapping to unmap or wait for.
@@ -29,7 +57,10 @@ impl PixelReadback {
         if self.pending.is_some() {
             return Err(RenderError::Readback);
         }
-        if self.generation != target.generation || self.extent != target.extent() {
+        if self.generation != target.generation
+            || self.extent != target.extent()
+            || self.source != target.capture_source
+        {
             return Err(RenderError::StaleTarget);
         }
         Ok(())
@@ -39,6 +70,7 @@ impl PixelReadback {
         &mut self,
         encoder: &mut wgpu::CommandEncoder,
         target: &OffscreenTarget,
+        exposure: Option<&wgpu::Buffer>,
     ) -> Result<(), RenderError> {
         if let Some(timer) = &mut self.copy_timing {
             timer.marker(self.generation, encoder, false)?;
@@ -47,7 +79,10 @@ impl PixelReadback {
             wgpu::TexelCopyTextureInfo {
                 texture: target
                     .textures
-                    .texture(&target.ids.output)
+                    .texture(match self.source {
+                        CaptureSource::Sdr => &target.ids.output,
+                        CaptureSource::SceneLinear => &target.ids.scene,
+                    })
                     .ok_or(RenderError::GraphPassMismatch)?,
                 mip_level: 0,
                 origin: wgpu::Origin3d::ZERO,
@@ -67,6 +102,23 @@ impl PixelReadback {
                 depth_or_array_layers: 1,
             },
         );
+        let pixel_bytes = u64::from(self.row_bytes) * u64::from(self.extent[1]);
+        self.has_exposure = exposure.is_some();
+        if let Some(exposure) = exposure {
+            encoder.copy_buffer_to_buffer(
+                exposure,
+                0,
+                &self.buffer,
+                pixel_bytes,
+                super::exposure::SAMPLE_BYTES,
+            );
+        } else {
+            encoder.clear_buffer(
+                &self.buffer,
+                pixel_bytes,
+                Some(super::exposure::SAMPLE_BYTES),
+            );
+        }
         if let Some(timer) = &mut self.copy_timing {
             timer.marker(self.generation, encoder, true)?;
         }
@@ -157,9 +209,26 @@ impl PixelReadback {
             .get_mapped_range()
             .map_err(|_| RenderError::Readback)?;
         pixels.clear();
-        pixels.reserve(self.extent[0] as usize * self.extent[1] as usize * 4);
-        for row in mapped.chunks_exact(self.row_bytes as usize) {
-            pixels.extend_from_slice(&row[..self.extent[0] as usize * 4]);
+        pixels.reserve(
+            self.extent[0] as usize
+                * self.extent[1] as usize
+                * self.source.bytes_per_pixel() as usize,
+        );
+        let pixel_bytes = self.row_bytes as usize * self.extent[1] as usize;
+        self.exposure_words = self.has_exposure.then(|| {
+            std::array::from_fn(|index| {
+                let offset = pixel_bytes + index * 4;
+                u32::from_le_bytes(
+                    mapped[offset..offset + 4]
+                        .try_into()
+                        .expect("complete exposure word"),
+                )
+            })
+        });
+        for row in mapped[..pixel_bytes].chunks_exact(self.row_bytes as usize) {
+            pixels.extend_from_slice(
+                &row[..self.extent[0] as usize * self.source.bytes_per_pixel() as usize],
+            );
         }
         drop(mapped);
         self.buffer.unmap();

@@ -1,0 +1,29 @@
+{
+  "reference": {
+    "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m0/prechange-mac-still/png/000232.png",
+    "file_sha256": "afd01f719bc9c2ddb83a2d57ccadddfa67280e5daec122e5b113adef15b08489",
+    "pixels_sha256": "a865b1e6fc6765f6d4dec2190328d70f12d3d0ba9a6018f724659934c8ebb588",
+    "extent": [
+      1920,
+      1080
+    ],
+    "bytes_per_pixel": 4,
+    "encoding": "png"
+  },
+  "candidate": {
+    "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m0/extended-sdr-still/png/000237.png",
+    "file_sha256": "afd01f719bc9c2ddb83a2d57ccadddfa67280e5daec122e5b113adef15b08489",
+    "pixels_sha256": "a865b1e6fc6765f6d4dec2190328d70f12d3d0ba9a6018f724659934c8ebb588",
+    "extent": [
+      1920,
+      1080
+    ],
+    "bytes_per_pixel": 4,
+    "encoding": "png"
+  },
+  "equal": true,
+  "scope": "exact stored pixel bytes only; target/sample/exposure/history identity must be established by the caller",
+  "changed_pixels": 0,
+  "changed_bytes": 0,
+  "bounds_xyxy_exclusive": null
+}

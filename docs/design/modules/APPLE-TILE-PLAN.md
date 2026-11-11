@@ -5,9 +5,9 @@ Done when: [APPLE-TILE-DONE.json](APPLE-TILE-DONE.json) owns criteria and proof 
 [Boundary](../decisions/G3T-METAL-BOUNDARY.md) and C04/C06/C07/C08/C12 govern.
 Reviews: [design review 2 at `224b58a1`](../../evidence/APPLE-TILE/design-review-2.md): DESIGN CHANGES (7 findings); independent review of this scoped re-plan is owed to the lead/loop.
 Milestone: M0 A repeatable offscreen valley proves the comparison path (open)
-Now: D0.3/D0.4 pass. The exact pixel comparator is implemented and exercised on all ten retained endpoint repeats, with one-byte rejection and native-size difference crops.
-Next: retain native and Chrome pre-change T2 baselines, implement the M0 scene-linear comparison/controls and qualify the complete route.
-Blocked: the runtime capture command refused its 16 GiB free-space preflight on this volume (14 GiB initially, 13 GiB during builds). D0.1/D0.2/D0.5 remain open. M2/M3/final attended rows and M12's COOKED-DRAW dependency retain their existing requirements.
+Now: D0.1/D0.3/D0.4/D0.5 pass. Exact Mac SDR/linear repeats, all omission controls, realtime route/variant sources and 481 pre-change/current Chrome submitted images are retained.
+Next: resolve D0.2’s present-tense native witness wording against the M10-first fixture plan. Ordinary Mac/Chrome proof and retained baselines are complete.
+Blocked: D0.2 describes a native copy/select witness, while D10.1 assigns its first implementation to M10. Scope clarification is pending. The owner resolved the earlier disk preflight refusal. M2/M3/final attended rows and M12’s COOKED-DRAW dependency retain their existing requirements.
 
 ## Sequence and dependencies
 
@@ -96,7 +96,7 @@ Physical replay counters may remain unmeasured, and physical iPhone/cadence qual
 
 Outcome criteria: D0.1–D0.5 in the done-when file.
 
-- [ ] Extend T2 linear comparison and full-resolution controls; retain pre-change sources and rerun creation diagnostics.
+- [x] Extend T2 linear comparison and full-resolution controls; retain pre-change sources and rerun creation diagnostics.
 - [ ] Retain actual target proof and run scoped checks plus `./dev check` before claiming.
 
 ## M1 The valley selects a recipe and stores only actual future inputs: open
@@ -152,6 +152,8 @@ Mac critical path. Judge whether all proofs reject omitted work. No owner-only d
 re-plan. Approval, unpark and milestone acceptance belong to the loop; this planner claims none of them.
 
 ## Log
+
+- 2026-11-11 Resumed after owner storage cleanup. Implemented the shared T2 scene-linear tap, actual exposure-word provenance, cooked runtime route, prepared variant case and one-command M0 qualification. The successful command records exact Mac repeats, complete source verification, present/letterbox controls and all omission failures. Actual Chrome retains 481 exact pre-change/current submitted frames. D0.1/D0.5 pass alongside D0.3/D0.4. D0.2’s ordinary proof is complete, while its native witness wording conflicts with D10.1’s first-fixture assignment. The named milestone checks and full repository check pass. Requested scope clarification and kept M0/D0.2 open. See [the M0 record](../../evidence/render/apple-tile-m0/README.md). No native provider was added ahead of M10.
 
 - 2026-11-11 Continued M0 implementation despite the capture storage refusal. Added the exact pixel comparator
   for existing PNG/PPM checkpoints and raw RGBA8/RGBA16F exports. All ten retained endpoint repeat comparisons

@@ -1,0 +1,138 @@
+{
+  "complete": true,
+  "frames": 481,
+  "sample_identity_fields": [
+    "alpha",
+    "device_generation",
+    "history_epoch",
+    "presenter_generation",
+    "source_epoch",
+    "source_tick",
+    "tick",
+    "timeline"
+  ],
+  "all_rgba_hashes_equal": true,
+  "first_manifest_sha256": "297bffe197dd413b9ca828ea415d6690c87edf2b636f482eefd546d50b8bc414",
+  "repeat_manifest_sha256": "79682c9ebc2c938a012e5abb46618d16e11cee84b17d6edbccfc62c5a9b2b7ca",
+  "source_revision": "e09bf32e87eb169e4965e92a49b154e7a006fff7",
+  "source_files_equal": true,
+  "baseline_source_directory": "tmp/g3t-m0/prechange-chrome-fixed",
+  "duplicate_cleanup": "repeat frame directory removed after independent capture-driver verification and complete sample/hash equality",
+  "checkpoints": [
+    {
+      "name": "approach",
+      "requested_g7_tick": 225,
+      "selection": "nearest recorded T2 fixed sample; exact actual identity below",
+      "record": {
+        "alpha": 1,
+        "device_generation": 1,
+        "history_epoch": 1,
+        "presenter_generation": 1,
+        "session": 1,
+        "source_epoch": "1",
+        "source_tick": 225,
+        "submission_id": 285,
+        "submit_ms": 2625.1,
+        "surface_presented": true,
+        "tick": 225,
+        "timeline": 0,
+        "ordinal": 106,
+        "file": "frames/000106.rgba.gz",
+        "rgba_sha256": "b77a7786850ad771a37d1ef19ce41a63b60a7cb23875878ce5ebb5d6e878e18d",
+        "bytes": 1403055
+      }
+    },
+    {
+      "name": "mirror-light",
+      "requested_g7_tick": 350,
+      "selection": "nearest recorded T2 fixed sample; exact actual identity below",
+      "record": {
+        "alpha": 0,
+        "device_generation": 1,
+        "history_epoch": 1,
+        "presenter_generation": 1,
+        "session": 1,
+        "source_epoch": "1",
+        "source_tick": 350,
+        "submission_id": 409,
+        "submit_ms": 5880.200000000001,
+        "surface_presented": true,
+        "tick": 350,
+        "timeline": 0,
+        "ordinal": 230,
+        "file": "frames/000230.rgba.gz",
+        "rgba_sha256": "c148872b692e6f36580d48c4d250d1b72aaf6994d42cb8962cc3c8121e7a4084",
+        "bytes": 1391895
+      }
+    },
+    {
+      "name": "pre-cut",
+      "requested_g7_tick": 376,
+      "selection": "nearest recorded T2 fixed sample; exact actual identity below",
+      "record": {
+        "alpha": 1,
+        "device_generation": 1,
+        "history_epoch": 1,
+        "presenter_generation": 1,
+        "session": 1,
+        "source_epoch": "1",
+        "source_tick": 375,
+        "submission_id": 435,
+        "submit_ms": 6582.5,
+        "surface_presented": true,
+        "tick": 375,
+        "timeline": 0,
+        "ordinal": 256,
+        "file": "frames/000256.rgba.gz",
+        "rgba_sha256": "00283f51363bdbc8d4f0f73d6a0b3099e5ca28402c2840c027ef352ec14226bf",
+        "bytes": 1365165
+      }
+    },
+    {
+      "name": "post-cut",
+      "requested_g7_tick": 386,
+      "selection": "nearest recorded T2 fixed sample; exact actual identity below",
+      "record": {
+        "alpha": 0,
+        "device_generation": 1,
+        "history_epoch": 2,
+        "presenter_generation": 1,
+        "session": 1,
+        "source_epoch": "1",
+        "source_tick": 386,
+        "submission_id": 445,
+        "submit_ms": 6854.599999999999,
+        "surface_presented": true,
+        "tick": 386,
+        "timeline": 0,
+        "ordinal": 266,
+        "file": "frames/000266.rgba.gz",
+        "rgba_sha256": "08c98f09c8a3eb93ff72741fc77aec1ea3397e0f9bf181d32d81525453c93138",
+        "bytes": 1263831
+      }
+    },
+    {
+      "name": "near-plane",
+      "requested_g7_tick": 530,
+      "selection": "nearest recorded T2 fixed sample; exact actual identity below",
+      "record": {
+        "alpha": 0,
+        "device_generation": 1,
+        "history_epoch": 2,
+        "presenter_generation": 1,
+        "session": 1,
+        "source_epoch": "1",
+        "source_tick": 530,
+        "submission_id": 589,
+        "submit_ms": 10401.1,
+        "surface_presented": true,
+        "tick": 530,
+        "timeline": 0,
+        "ordinal": 410,
+        "file": "frames/000410.rgba.gz",
+        "rgba_sha256": "eacf3ef62de46bc7279c8ae8eac5b0e6661981501401d5de3b5b67cb18a06be6",
+        "bytes": 1003872
+      }
+    }
+  ]
+}

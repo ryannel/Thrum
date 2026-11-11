@@ -3,7 +3,7 @@
 use super::Instant;
 use super::{FrameError, FrameHost, FrameSample, FrameWorld, SceneSource};
 use crate::extract::SourceTick;
-use crate::synthetic::PixelReadback;
+use crate::synthetic::{CaptureSource, PixelReadback};
 
 /// Operational capture working-set policy, validated before allocation.
 #[derive(Clone, Copy, Debug)]
@@ -33,8 +33,15 @@ pub struct SubmittedImage {
     pub sample: FrameSample,
     /// Actual source grid of this submitted image.
     pub extent: [u32; 2],
-    /// Tightly packed SDR RGBA8, with the host's render extent.
+    /// Tightly packed stored channel bytes, with the host's render extent.
+    /// SDR is RGBA8; scene-linear is little-endian RGBA16Float.
     pub rgba: Vec<u8>,
+    /// Engine stage and stored pixel format of `rgba`.
+    pub pixel_source: CaptureSource,
+    /// Exact GPU-resolved exposure words from the same submission, before float decoding.
+    /// Values encode storage scale, inverse gain, EV100, incident lux, flags,
+    /// submitted serial lo/hi and display selectors.
+    pub exposure_gpu_words: Option<[u32; 8]>,
     /// Capture session selected by the caller.
     pub session: u64,
     /// Exact committed publication sampled by extraction.
@@ -83,6 +90,7 @@ struct Slot {
 }
 
 pub(super) struct Tap {
+    source: CaptureSource,
     owner: std::sync::Arc<()>,
     session: u64,
     generation: u64,
@@ -99,8 +107,10 @@ pub(super) fn reserve(
     tap: &mut Option<Tap>,
     generation: u64,
     extent: [u32; 2],
+    source: CaptureSource,
 ) -> Option<(usize, &mut PixelReadback)> {
-    tap.as_mut().and_then(|tap| tap.reserve(generation, extent))
+    tap.as_mut()
+        .and_then(|tap| tap.reserve(generation, extent, source))
 }
 
 impl Tap {
@@ -108,11 +118,12 @@ impl Tap {
         &mut self,
         generation: u64,
         extent: [u32; 2],
+        source: CaptureSource,
     ) -> Option<(usize, &mut PixelReadback)> {
         if !self.accepting {
             return None;
         }
-        if self.generation != generation || self.extent != extent {
+        if self.generation != generation || self.extent != extent || self.source != source {
             self.omitted = self.omitted.saturating_add(1);
             return None;
         }
@@ -173,16 +184,34 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         session: u64,
         limits: CaptureLimits,
     ) -> Result<(), FrameError> {
+        self.enable_submitted_capture_from(session, limits, CaptureSource::Sdr)
+    }
+
+    /// Enable the existing tap at a prepared engine stage. Stage changes prepare
+    /// and publish replacement targets only after all ordinary frames retire.
+    /// A subsequent visual/extent replacement that changes the target stage
+    /// refuses capture admission and increments omissions, while rendering continues.
+    /// # Errors
+    /// Refuses active sessions, pending frames during a stage change, invalid
+    /// capacities, allowance overflow or target preparation failure.
+    pub fn enable_submitted_capture_from(
+        &mut self,
+        session: u64,
+        limits: CaptureLimits,
+        source: CaptureSource,
+    ) -> Result<(), FrameError> {
         if self.submitted_capture.is_some() {
             return Err(FrameError::InvalidState("capture session already enabled"));
         }
-        let row_bytes = (u64::from(self.render_extent[0]) * 4).div_ceil(256) * 256;
+        let pixel_bytes = u64::from(source.bytes_per_pixel());
+        let row_bytes = (u64::from(self.render_extent[0]) * pixel_bytes).div_ceil(256) * 256;
         let staging_bytes = row_bytes
             .checked_mul(u64::from(self.render_extent[1]))
+            .and_then(|bytes| bytes.checked_add(32))
             .and_then(|bytes| bytes.checked_mul(u64::try_from(limits.staging_slots).ok()?));
         let cpu_bytes = u64::from(self.render_extent[0])
             .checked_mul(u64::from(self.render_extent[1]))
-            .and_then(|bytes| bytes.checked_mul(4))
+            .and_then(|bytes| bytes.checked_mul(pixel_bytes))
             .and_then(|bytes| bytes.checked_mul(u64::try_from(limits.cpu_buffers).ok()?));
         let bytes = staging_bytes
             .zip(cpu_bytes)
@@ -195,9 +224,35 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 "capture pixel-byte allowance exhausted",
             ));
         }
+        let _region = self
+            .creations
+            .region(super::CreationPhase::Transition, "capture-stage");
+        let replacement = if self.slots[0].target.capture_source() == source {
+            None
+        } else {
+            if self.pending_frames() != 0 {
+                return Err(FrameError::InvalidState(
+                    "capture stage change requires retired frames",
+                ));
+            }
+            let mut slots = super::preparation::prepare_capture_slots(
+                &self.prepared,
+                &self.queue,
+                self.render_extent,
+                self.presenter.is_some(),
+                source,
+            )?;
+            super::preparation::bind_presenter(
+                &self.prepared,
+                &mut slots,
+                self.presenter.as_ref(),
+            )?;
+            Some(slots)
+        };
+        let target = &replacement.as_ref().unwrap_or(&self.slots)[0].target;
         let slots = (0..limits.staging_slots)
             .map(|_| {
-                let mut readback = self.slots[0].target.readback(&self.device);
+                let mut readback = target.readback(&self.device);
                 readback
                     .enable_copy_timing(self.prepared.capabilities(), &self.queue)
                     .map_err(|e| FrameError::Gpu(format!("copy timing prepare: {e:?}")))?;
@@ -211,7 +266,12 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 })
             })
             .collect::<Result<Vec<_>, FrameError>>()?;
+        if let Some(slots) = replacement {
+            self.slots = slots;
+            self.presenter_generation += 1;
+        }
         self.submitted_capture = Some(Tap {
+            source,
             owner: std::sync::Arc::new(()),
             session,
             generation: self.generation,
@@ -224,7 +284,9 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             free_cpu: (0..limits.cpu_buffers)
                 .map(|_| {
                     Vec::with_capacity(
-                        self.render_extent[0] as usize * self.render_extent[1] as usize * 4,
+                        self.render_extent[0] as usize
+                            * self.render_extent[1] as usize
+                            * source.bytes_per_pixel() as usize,
                     )
                 })
                 .collect(),
@@ -311,6 +373,8 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 extent: tap.extent,
                 sample: stamp.sample,
                 rgba,
+                pixel_source: tap.source,
+                exposure_gpu_words: slot.readback.exposure_gpu_words(),
                 session: tap.session,
                 source: stamp.source,
                 history_epoch: stamp.history_epoch,
@@ -335,7 +399,9 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             && tap.generation == self.generation
             && tap.free_cpu.len() < tap.cpu_capacity
             && image.rgba.capacity()
-                <= self.render_extent[0] as usize * self.render_extent[1] as usize * 4
+                <= self.render_extent[0] as usize
+                    * self.render_extent[1] as usize
+                    * tap.source.bytes_per_pixel() as usize
         {
             tap.free_cpu.push(image.rgba);
         }

@@ -10,7 +10,7 @@ use thrum_render::{
     capabilities::DeviceCapabilities,
     present::SurfaceProfile,
     runtime::{CaptureLimits, DriveReport, FrameHost, FrameSample, SubmittedImage, SurfaceOutput},
-    synthetic::OUTPUT_FORMAT,
+    synthetic::{CaptureSource, OUTPUT_FORMAT},
 };
 
 use crate::{Game, Gpu};
@@ -156,6 +156,21 @@ impl<G: Game> Offscreen<G> {
         self.host
             .enable_submitted_capture_with_limits(session, limits)
             .map_err(|e| e.to_string())
+    }
+
+    /// Enable the same submitted-image tap at a declared prepared engine stage.
+    /// # Errors
+    /// Refuses pending frames during a stage change, invalid capture capacities
+    /// or preparation failure. Drain ordinary frames before changing stages.
+    pub fn enable_capture_from(
+        &mut self,
+        session: u64,
+        limits: CaptureLimits,
+        source: CaptureSource,
+    ) -> Result<(), String> {
+        self.host
+            .enable_submitted_capture_from(session, limits, source)
+            .map_err(|error| error.to_string())
     }
 
     /// Submit from actual elapsed host time through the ordinary surface gate.

@@ -1,0 +1,36 @@
+{
+  "reference": {
+    "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m0/qualification-2/sdr-1/checkpoints/mirror-light.rgba8",
+    "file_sha256": "719ef93e987a6dedf9b74e17f0d878fa0dc2647cc40cce681033fc2a85c3b213",
+    "pixels_sha256": "719ef93e987a6dedf9b74e17f0d878fa0dc2647cc40cce681033fc2a85c3b213",
+    "extent": [
+      1280,
+      720
+    ],
+    "bytes_per_pixel": 4,
+    "encoding": "rgba8"
+  },
+  "candidate": {
+    "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m0/qualification-2/phase-control/checkpoints/mirror-light.rgba8",
+    "file_sha256": "3b59743e6799ba41d8ca2801cf971eb173f2d0fd41d6de898692bf1e1ce079e1",
+    "pixels_sha256": "3b59743e6799ba41d8ca2801cf971eb173f2d0fd41d6de898692bf1e1ce079e1",
+    "extent": [
+      1280,
+      720
+    ],
+    "bytes_per_pixel": 4,
+    "encoding": "rgba8"
+  },
+  "equal": false,
+  "scope": "exact stored pixel bytes only; target/sample/exposure/history identity must be established by the caller",
+  "changed_pixels": 696207,
+  "changed_bytes": 1694209,
+  "bounds_xyxy_exclusive": [
+    0,
+    0,
+    1280,
+    720
+  ],
+  "mask_sha256": "c6525585de5e6f3229410c5a9c9342ed5a5e093486fdc5b1180187e0662d64a7",
+  "crop_sha256": "c6525585de5e6f3229410c5a9c9342ed5a5e093486fdc5b1180187e0662d64a7"
+}
