@@ -1,0 +1,15 @@
+{
+  "adapter": {
+    "vendor": "apple",
+    "architecture": "metal-3",
+    "description": "",
+    "isFallbackAdapter": false
+  },
+  "s1_drawn": "Cooked generation 1 drawn.  || problems: ",
+  "s2_drag": "0.0° model=0",
+  "s3_malformed": "Cooked generation 1 drawn.  || problems: ",
+  "s3b_restored": "Cooked generation 1 drawn.  || problems: ",
+  "s4_refused": "Cooked generation 1 drawn. Generation 1 stays drawn. mesh meshes/rock with texture textures/white: generation 2: malformed cooked product: asset unavailable in the requested profiles; fix the named asset and save it again || problems: ",
+  "s5_after_fix": "Cooked generation 3 drawn. Generation 1 stays drawn. mesh meshes/rock with texture textures/white: generation 2: malformed cooked product: asset unavailable in the requested profiles; fix the named asset and save it again || problems: ",
+  "s6_store_gone": "Cooked generation 3 drawn. asset store http://127.0.0.1:65532: fetch request did not complete; check the store URL and restart the scene command || problems: "
+}
