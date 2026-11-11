@@ -44,7 +44,7 @@ def main():
     if not proof['passed'] or proof['content_key'] != guard.content_key(ROOT):
         raise ValueError('a genuine source verifier proof is required')
     remote = OUT / 'remote.git'
-    git(ROOT, 'clone', '--bare', '--no-hardlinks', str(ROOT), str(remote))
+    git(ROOT, 'clone', '--bare', str(ROOT), str(remote))
     git(ROOT, '--git-dir', str(remote), 'update-ref', 'refs/heads/main', base)
     git(ROOT, '--git-dir', str(remote), 'symbolic-ref', 'HEAD', 'refs/heads/main')
     builder = OUT / 'builder'
