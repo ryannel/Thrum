@@ -172,7 +172,27 @@
           "at": "2026-11-11T10:16:52Z",
           "item": "D2.5"
         }
-      ]
+      ],
+      "claim": {
+        "commit": "a6101020a94c50e386bc33ce7f41743a84937957",
+        "checked": "a6101020a94c50e386bc33ce7f41743a84937957",
+        "at": "2026-11-11T11:12:02Z",
+        "host": "codex",
+        "model": "gpt-6.1-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.1-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.167.0-alpha.3.2",
+        "path": "visible",
+        "usage": {
+          "incomplete_turns": 1
+        },
+        "session_usage": {
+          "incomplete_turns": 1
+        }
+      }
     },
     "M3": {
       "definitions": "86357d5a6768e94ec85bc01fb527be8a0a29ca1d74bf0ca4c9dd32d5854edae7",
