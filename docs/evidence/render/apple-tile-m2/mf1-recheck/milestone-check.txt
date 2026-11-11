@@ -1,0 +1,8 @@
+APPLE-TILE M2 in /Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0: 1 pass
+  D2.1  no check (ask)
+  D2.2  no check (ask)
+  D2.3  no check (inspect)
+  D2.4  no check (ask)
+  D2.5  no check (inspect, ask, attended)
+  Check  pass  ./dev check
+Everything, with each check's full output tail, as JSON: add --json.

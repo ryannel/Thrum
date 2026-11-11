@@ -1,0 +1,7 @@
+D2.3 recheck inspection list
+- Exact M0 SDR and scene-linear route, portable repeat, Sun/night and exposure/sample identity, both recipes.
+- Exact 1000x800 letterbox in Bgra8Unorm and sRGB, both recipes.
+- Fresh full frames and native-size details for Sun, night stars, terrain/shadows, mirror and local-light witness.
+- Fresh realtime route cut-adjacent sources for both recipes, inspect content and reset continuity.
+- Fresh realtime render-stall contact/endpoint sources for both recipes, verify accepted history, 30 skipped opportunities, source hashes and zero writer/ring omissions.
+- Retain the previously passed attended 1x playback and D2.5 evidence as requested by the owner.

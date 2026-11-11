@@ -25,7 +25,7 @@ Criteria: D1.1–D1.5 in the done-when file.
 
 Criteria: D2.1–D2.5 in the done-when file.
 
-- [ ] Resolve review MF1 by rerunning both exact matrices on the jitter-gated release build, retaining revision, clean-diff and binary identity with unchanged M0 baselines.
+- [x] Resolve review MF1 by rerunning both exact matrices on the jitter-gated release build, retaining revision, clean-diff and binary identity with unchanged M0 baselines.
 - [x] Merge graph and late surface binding; preserve refusal/loss/background/history rules. Complete attended OS-window matched-state reference comparisons and functional recovery.
 - [x] Retain actual target proof and run scoped checks plus `./dev check` before claiming.
 

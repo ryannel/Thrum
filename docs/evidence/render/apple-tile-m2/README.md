@@ -1,5 +1,8 @@
 # APPLE-TILE M2 evidence
 
+The fresh jitter-gated build requalification for review MF1 is in [MF1-recheck.md](MF1-recheck.md).
+It supersedes the earlier D2.3 exactness/build qualification below. The passed attended records are retained.
+
 M2 implements one prepared scene/surface graph per host day/night and capture variant. The existing host encodes its
 pre-acquire prefix, then supplies an execute-time surface binding for the final present pass. Both recipes retain
 the tone shader, Rgba8Unorm intermediate, present shader, formats, draw order and quantization boundary.
