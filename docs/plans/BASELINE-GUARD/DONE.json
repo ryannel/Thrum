@@ -47,8 +47,8 @@
           "statement": "The loop's own `land`, run in a scratch clone against a local bare remote, refuses three regressions and leaves that remote's main unmoved: jitter on the game's default views, a night-only change and a Chrome-only change. Each fails the verifier by name, so no proof is written. A proved change rebased onto a covered-path commit is refused the same way.",
           "ask": "Do the retained patches, base revision, commands and logs let you reproduce each refusal? Does each verifier failure name the baseline, its owner and the comparison, and tell a changed image from a reference file that cannot be read? Was the real remote never pushed to?",
           "target": "mac-metal",
-          "status": "open",
-          "evidence": "",
+          "status": "pass",
+          "evidence": "docs/evidence/BASELINE-GUARD/M1.md",
           "verdict": "",
           "review": ""
         },

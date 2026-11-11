@@ -1,0 +1,103 @@
+{
+  "base": "c054cae76c9c11349672e42426ff1268f198396b",
+  "remote": "/Users/ryannel/Workspace/thrum/.claude/worktrees/baseline-guard/tmp/baseline-guard/refusals/remote.git",
+  "source_remote_used": false,
+  "cases": {
+    "jitter": {
+      "revision": "6054175d7ddb4a0a58ae037ba47ea427484cb942",
+      "verify": {
+        "command": [
+          "python3",
+          "scripts/exact_baselines.py",
+          "verify"
+        ],
+        "exit": 1,
+        "seconds": 22.7510452917777
+      },
+      "failure": "baseline apple-tile-native owner APPLE-TILE: comparison/stage apple_tile_m1 failed (exit 1): {\"passed\": false, \"failures\": [\"exact retained comparison failed: portable-sdr-approach\"]}\n",
+      "land": {
+        "command": [
+          "python3",
+          "/Users/ryannel/.claude/plugins/cache/ryannel-skills/orchestrate/1.7.1/skills/orchestration/build/scripts/agent_loop.py",
+          "land",
+          "--worktree",
+          "."
+        ],
+        "exit": 1,
+        "seconds": 1.0704398746602237
+      },
+      "remote_before": "c054cae76c9c11349672e42426ff1268f198396b",
+      "remote_after": "c054cae76c9c11349672e42426ff1268f198396b"
+    },
+    "night-only": {
+      "revision": "2542e4604d2acde944471bacb52a591977da2a29",
+      "verify": {
+        "command": [
+          "python3",
+          "scripts/exact_baselines.py",
+          "verify"
+        ],
+        "exit": 1,
+        "seconds": 34.987627916038036
+      },
+      "failure": "baseline apple-tile-native owner APPLE-TILE: comparison/stage apple_tile_m1 failed (exit 1): {\"passed\": false, \"failures\": [\"exact retained comparison failed: portable-night-sdr\"]}\n",
+      "land": {
+        "command": [
+          "python3",
+          "/Users/ryannel/.claude/plugins/cache/ryannel-skills/orchestrate/1.7.1/skills/orchestration/build/scripts/agent_loop.py",
+          "land",
+          "--worktree",
+          "."
+        ],
+        "exit": 1,
+        "seconds": 0.5935389995574951
+      },
+      "remote_before": "c054cae76c9c11349672e42426ff1268f198396b",
+      "remote_after": "c054cae76c9c11349672e42426ff1268f198396b"
+    },
+    "chrome-only": {
+      "revision": "ea79bae297d290d1876ec3d784692253067edbc3",
+      "verify": {
+        "command": [
+          "python3",
+          "scripts/exact_baselines.py",
+          "verify"
+        ],
+        "exit": 1,
+        "seconds": 796.0591642498039
+      },
+      "failure": "baseline chrome-day-sdr owner APPLE-TILE: comparison/stage chrome-day-sdr-compare failed (exit 1): Traceback (most recent call last):\n  File \"/Users/ryannel/Workspace/thrum/.claude/worktrees/baseline-guard/tmp/baseline-guard/refusals/builder/scripts/apple_tile_m1_compare_browser.py\", line 98, in <module>\n    comparison(args.reference, args.candidate, args.output, args.linear)\n    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/ryannel/Workspace/thrum/.claude/worktrees/baseline-guard/tmp/baseline-guard/refusals/builder/scripts/apple_tile_m1_compare_browser.py\", line 78, in compare_digest\n    raise ValueError(f'decoded image changed at ordinal {left[\"ordinal\"]}: {left[\"rgba_sha256\"]} != {digest}')\nValueError: decoded image changed at ordinal 0: 78e3a11ea0abb90063669cb9018112050bad7c2abd5b5148a01b15093850d176 != 2c613a980ea06106cadef878cb39cef0cd44d0af83eceeb0ba8fd0935ec9cc79\n",
+      "land": {
+        "command": [
+          "python3",
+          "/Users/ryannel/.claude/plugins/cache/ryannel-skills/orchestrate/1.7.1/skills/orchestration/build/scripts/agent_loop.py",
+          "land",
+          "--worktree",
+          "."
+        ],
+        "exit": 1,
+        "seconds": 0.711040458176285
+      },
+      "remote_before": "1d35b9a6136a4f040fd3fb73d3d48af654732ccb",
+      "remote_after": "1d35b9a6136a4f040fd3fb73d3d48af654732ccb"
+    },
+    "stale-proof": {
+      "old_content_key": "f6b5c8fa282dbbe27b2b26b863a151911e4fa52154b3fc58a52e14e5f2aad35b",
+      "remote_before": "f4522fbf4380ea52eb9e86f2676e7c8775cfb9f4",
+      "land": {
+        "command": [
+          "python3",
+          "/Users/ryannel/.claude/plugins/cache/ryannel-skills/orchestrate/1.7.1/skills/orchestration/build/scripts/agent_loop.py",
+          "land",
+          "--worktree",
+          "."
+        ],
+        "exit": 1,
+        "seconds": 1.0764385838992894
+      },
+      "new_content_key": "e4427d17617f1cca025f5119392a41ec4933675e85db5a895262c8a1a6c8419a",
+      "remote_after": "f4522fbf4380ea52eb9e86f2676e7c8775cfb9f4"
+    }
+  },
+  "passed": true
+}

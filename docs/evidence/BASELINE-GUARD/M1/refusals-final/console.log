@@ -1,0 +1,9 @@
+jitter-verify 1 22.750992541667074
+jitter-land 1 1.070399624761194
+night-only-verify 1 34.98750100005418
+night-only-land 1 0.593488082755357
+chrome-only-verify 1 796.0591340828687
+chrome-only-land 1 0.7110138749703765
+PASS exact-baseline gate: proof tmp/baseline-guard/proofs/f6b5c8fa282dbbe27b2b26b863a151911e4fa52154b3fc58a52e14e5f2aad35b.json
+stale-proof-land 1 1.0764067089185119
+PASS all four land refusals; local remote main unchanged after each refusal

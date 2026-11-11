@@ -1,0 +1,17 @@
+RUN native-build
+RUN cooker-build
+RUN web-build
+RUN cook
+RUN apple_tile_m1
+RUN apple_tile_m2
+RUN chrome-day-sdr
+RUN chrome-day-sdr-compare
+FAIL baseline chrome-day-sdr owner APPLE-TILE: comparison/stage chrome-day-sdr-compare failed (exit 1): Traceback (most recent call last):
+  File "/Users/ryannel/Workspace/thrum/.claude/worktrees/baseline-guard/tmp/baseline-guard/refusals/builder/scripts/apple_tile_m1_compare_browser.py", line 98, in <module>
+    comparison(args.reference, args.candidate, args.output, args.linear)
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/ryannel/Workspace/thrum/.claude/worktrees/baseline-guard/tmp/baseline-guard/refusals/builder/scripts/apple_tile_m1_compare_browser.py", line 78, in compare_digest
+    raise ValueError(f'decoded image changed at ordinal {left["ordinal"]}: {left["rgba_sha256"]} != {digest}')
+ValueError: decoded image changed at ordinal 0: 78e3a11ea0abb90063669cb9018112050bad7c2abd5b5148a01b15093850d176 != 2c613a980ea06106cadef878cb39cef0cd44d0af83eceeb0ba8fd0935ec9cc79
+
+Record: /Users/ryannel/Workspace/thrum/.claude/worktrees/baseline-guard/tmp/baseline-guard/refusals/builder/tmp/baseline-guard/verify-20261111T183352.216161Z/record.json

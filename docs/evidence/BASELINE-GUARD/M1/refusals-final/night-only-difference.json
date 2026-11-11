@@ -1,0 +1,36 @@
+{
+  "reference": {
+    "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/baseline-guard/tmp/baseline-guard/refusals/builder/tmp/baseline-guard/verify-20261111T183316.487306Z/apple_tile_m1/portable-night-sdr.reference",
+    "file_sha256": "b1e45c6ebe8e76cbe0942cc3ffb419abf4dc964e0f4c141ca0c887a48a1610a8",
+    "pixels_sha256": "b1e45c6ebe8e76cbe0942cc3ffb419abf4dc964e0f4c141ca0c887a48a1610a8",
+    "extent": [
+      1920,
+      1080
+    ],
+    "bytes_per_pixel": 4,
+    "encoding": "rgba8"
+  },
+  "candidate": {
+    "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/baseline-guard/tmp/baseline-guard/refusals/builder/tmp/baseline-guard/verify-20261111T183316.487306Z/apple_tile_m1/portable-night-sdr/checkpoint-0.rgba8",
+    "file_sha256": "ab12ee5530a4b35acf7cf21fd92dd628c28471211bf6a378b01ef79a8a9dbd68",
+    "pixels_sha256": "ab12ee5530a4b35acf7cf21fd92dd628c28471211bf6a378b01ef79a8a9dbd68",
+    "extent": [
+      1920,
+      1080
+    ],
+    "bytes_per_pixel": 4,
+    "encoding": "rgba8"
+  },
+  "equal": false,
+  "scope": "exact stored pixel bytes only; target/sample/exposure/history identity must be established by the caller",
+  "changed_pixels": 2073600,
+  "changed_bytes": 6220793,
+  "bounds_xyxy_exclusive": [
+    0,
+    0,
+    1920,
+    1080
+  ],
+  "mask_sha256": "598ddbfa658eaf70a2e0c50fa12f914c28a4496bbb150a21d6d77d73b0d8c55d",
+  "crop_sha256": "598ddbfa658eaf70a2e0c50fa12f914c28a4496bbb150a21d6d77d73b0d8c55d"
+}
