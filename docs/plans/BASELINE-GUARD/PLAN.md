@@ -14,10 +14,10 @@ A change that alters another module's exact reference images is refused before i
 
 Criteria: M1.1–M1.5 in the done-when file.
 
-- [ ] First, run the comparisons on untouched main: the native matrices, and the four Chrome `fixed` captures against the retained digests. If any fails there, end `BLOCKED` with the comparison.
-- [ ] Add the registry file and the verifier: both builds, the fresh cook, the owners' native matrices, the Chrome captures and their comparison, the record, and the proof on a full pass.
-- [ ] Add the reference-by-digest mode to `scripts/apple_tile_m1_compare_browser.py`, leaving its byte mode as it is.
-- [ ] Add the gate to `./dev check`, with a test that drives fetch, rebase, gate and push against a throwaway remote.
+- [x] First, run the comparisons on untouched main: the native matrices, and the four Chrome `fixed` captures against the retained digests. If any fails there, end `BLOCKED` with the comparison.
+- [x] Add the registry file and the verifier: both builds, the fresh cook, the owners' native matrices, the Chrome captures and their comparison, the record, and the proof on a full pass.
+- [x] Add the reference-by-digest mode to `scripts/apple_tile_m1_compare_browser.py`, leaving its byte mode as it is.
+- [x] Add the gate to `./dev check`, with a test that drives fetch, rebase, gate and push against a throwaway remote.
 - [ ] Run the three mutants and the stale-proof case through the loop's `land` in a scratch clone with a local bare remote. Keep the patches, the base revision, the commands and the logs.
 - [ ] Record the verifier's and the gate's run times from three runs each. Describe the gate and the verifier in CONTRIBUTING and `./dev help`.
 

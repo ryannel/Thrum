@@ -16,8 +16,8 @@
           "lock": "gpu",
           "ask": "Does the verifier take every input from the checkout and its own fresh outputs, reading nothing from another task's scratch such as tmp/g3t-m0? Does its record hold the revision, the content key, the native binary's hash, the Wasm artefact hashes and the cooked root? Do its registry and the table in ARCHITECTURE.md list the same baselines, owners and covered paths?",
           "target": "mac-metal",
-          "status": "open",
-          "evidence": "",
+          "status": "pass",
+          "evidence": "docs/evidence/BASELINE-GUARD/M1.md",
           "verdict": "",
           "review": ""
         },
@@ -26,8 +26,8 @@
           "statement": "The Chrome comparison covers all 481 records of each of the four retained sets (day and night, submitted SDR and scene-linear): the identity fields are equal, and each fresh frame's decoded bytes hash to the retained digest. Every retained reference file is unchanged, and the owner's byte comparison behaves as before.",
           "ask": "Read the comparison and one verifier record. Is each fresh frame's hash computed again from its bytes, not copied from the candidate's manifest? Are all four sets and all 481 records of each compared? Did this milestone's diff leave every file under the registered baselines byte-identical?",
           "target": "chrome-webgpu",
-          "status": "open",
-          "evidence": "",
+          "status": "pass",
+          "evidence": "docs/evidence/BASELINE-GUARD/M1.md",
           "verdict": "",
           "review": ""
         },
@@ -37,8 +37,8 @@
           "check": "python3 scripts/test_exact_baselines.py",
           "ask": "Read the test and the gate. Does the test drive fetch, rebase, gate and push against a throwaway remote, and show that remote's main unmoved after each refusal? Does `./dev check` run the gate, with no flag or environment variable that skips it?",
           "target": "mac-metal",
-          "status": "open",
-          "evidence": "",
+          "status": "pass",
+          "evidence": "docs/evidence/BASELINE-GUARD/M1.md",
           "verdict": "",
           "review": ""
         },
