@@ -26,7 +26,42 @@
   "milestones": {
     "M1": {
       "definitions": "725f33df97a7d80dbf172e590547323279b37838dda8db48034cbe08fab9756f",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "40319eafb334754d9753706283e9655c94bf3eb6",
+          "review": "docs/evidence/APPLE-PRESENTATION/M1-review.md",
+          "items": {
+            "D1.1": "pass",
+            "D1.2": "pass",
+            "D1.3": "pass",
+            "D1.4": "pass",
+            "D1.5": "pass"
+          },
+          "findings": [
+            {
+              "name": "jitter-presented-without-reconstruction",
+              "repeat": false
+            }
+          ],
+          "host": "claude",
+          "model": "claude-opus-5-5",
+          "effort": "high",
+          "observed": {
+            "model": "claude-opus-5-5"
+          },
+          "cli": "2.1.319 (Claude Code)",
+          "path": "headless",
+          "usage": {
+            "input": 227186,
+            "cached": 12138799,
+            "output": 54897,
+            "cost_usd": 5.342556,
+            "turns": 1
+          },
+          "at": "2026-11-11T10:32:11Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Plan the rest of Thrum's road to delivering the engine, as a project-level plan that brings water and clouds into it.",

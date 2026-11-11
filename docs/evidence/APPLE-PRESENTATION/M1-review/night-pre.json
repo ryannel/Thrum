@@ -1,0 +1,265 @@
+{
+ "format": "thrum-v1-moving-route",
+ "version": 1,
+ "cooked_root": "70d2baf823d09d85574f7cdfce7102648754544dd7d68659e9bd92dd5f30e21d",
+ "cooked_generation": 1,
+ "tick_hz": 60,
+ "phase": [
+  1,
+  2
+ ],
+ "origin_tick": 180,
+ "start": {
+  "solar_hours": 23.5
+ },
+ "render_extent": [
+  1920,
+  1080
+ ],
+ "keys": [
+  {
+   "tick": 0,
+   "eye": [
+    0.0,
+    244.9226672381398,
+    16.0
+   ],
+   "yaw_degrees": 0,
+   "pitch_degrees": -3.0127875041833403
+  },
+  {
+   "tick": 20,
+   "eye": [
+    0.0,
+    244.9226672381398,
+    16.0
+   ],
+   "yaw_degrees": 0,
+   "pitch_degrees": 12
+  },
+  {
+   "tick": 60,
+   "eye": [
+    0.0,
+    244.9226672381398,
+    16.0
+   ],
+   "yaw_degrees": 40,
+   "pitch_degrees": 12
+  },
+  {
+   "tick": 60,
+   "eye": [
+    0.0,
+    243.0,
+    0.0
+   ],
+   "yaw_degrees": 180,
+   "pitch_degrees": 5
+  },
+  {
+   "tick": 100,
+   "eye": [
+    0.0,
+    243.0,
+    -6.0
+   ],
+   "yaw_degrees": 160,
+   "pitch_degrees": 5
+  }
+ ],
+ "cuts": [
+  60
+ ],
+ "checkpoints": [
+  {
+   "tick": 10,
+   "name": "frame-0010"
+  },
+  {
+   "tick": 11,
+   "name": "frame-0011"
+  },
+  {
+   "tick": 12,
+   "name": "frame-0012"
+  },
+  {
+   "tick": 13,
+   "name": "frame-0013"
+  },
+  {
+   "tick": 14,
+   "name": "frame-0014"
+  },
+  {
+   "tick": 15,
+   "name": "frame-0015"
+  },
+  {
+   "tick": 16,
+   "name": "frame-0016"
+  },
+  {
+   "tick": 17,
+   "name": "frame-0017"
+  },
+  {
+   "tick": 18,
+   "name": "frame-0018"
+  },
+  {
+   "tick": 19,
+   "name": "frame-0019"
+  },
+  {
+   "tick": 20,
+   "name": "frame-0020"
+  },
+  {
+   "tick": 21,
+   "name": "frame-0021"
+  },
+  {
+   "tick": 22,
+   "name": "frame-0022"
+  },
+  {
+   "tick": 23,
+   "name": "frame-0023"
+  },
+  {
+   "tick": 24,
+   "name": "frame-0024"
+  },
+  {
+   "tick": 25,
+   "name": "frame-0025"
+  },
+  {
+   "tick": 26,
+   "name": "frame-0026"
+  },
+  {
+   "tick": 27,
+   "name": "frame-0027"
+  },
+  {
+   "tick": 28,
+   "name": "frame-0028"
+  },
+  {
+   "tick": 29,
+   "name": "frame-0029"
+  },
+  {
+   "tick": 30,
+   "name": "frame-0030"
+  },
+  {
+   "tick": 31,
+   "name": "frame-0031"
+  },
+  {
+   "tick": 32,
+   "name": "frame-0032"
+  },
+  {
+   "tick": 33,
+   "name": "frame-0033"
+  },
+  {
+   "tick": 34,
+   "name": "frame-0034"
+  },
+  {
+   "tick": 35,
+   "name": "frame-0035"
+  },
+  {
+   "tick": 36,
+   "name": "frame-0036"
+  },
+  {
+   "tick": 37,
+   "name": "frame-0037"
+  },
+  {
+   "tick": 38,
+   "name": "frame-0038"
+  },
+  {
+   "tick": 39,
+   "name": "frame-0039"
+  },
+  {
+   "tick": 40,
+   "name": "frame-0040"
+  },
+  {
+   "tick": 41,
+   "name": "frame-0041"
+  },
+  {
+   "tick": 42,
+   "name": "frame-0042"
+  },
+  {
+   "tick": 43,
+   "name": "frame-0043"
+  },
+  {
+   "tick": 44,
+   "name": "frame-0044"
+  },
+  {
+   "tick": 45,
+   "name": "frame-0045"
+  },
+  {
+   "tick": 46,
+   "name": "frame-0046"
+  },
+  {
+   "tick": 47,
+   "name": "frame-0047"
+  },
+  {
+   "tick": 48,
+   "name": "frame-0048"
+  },
+  {
+   "tick": 49,
+   "name": "frame-0049"
+  },
+  {
+   "tick": 50,
+   "name": "frame-0050"
+  },
+  {
+   "tick": 51,
+   "name": "frame-0051"
+  },
+  {
+   "tick": 52,
+   "name": "frame-0052"
+  },
+  {
+   "tick": 53,
+   "name": "frame-0053"
+  },
+  {
+   "tick": 54,
+   "name": "frame-0054"
+  },
+  {
+   "tick": 55,
+   "name": "frame-0055"
+  },
+  {
+   "tick": 56,
+   "name": "frame-0056"
+  }
+ ],
+ "overlay": "motion"
+}
