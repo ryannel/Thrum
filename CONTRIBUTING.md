@@ -99,3 +99,21 @@ Keep compact reproducible evidence with exact source/build/fixture identity. Do 
 build trees, transcripts, every rejected asset or bulk captures. [Storage rules](docs/ASSET-LIFECYCLE.md)
 cover promotion and closeout. There is no remote or release configuration implied by this scaffold;
 package publication is disabled pending a deliberate distribution and licensing decision.
+
+## Exact image baselines before integration
+
+For a covered-path change, commit the work, then hold the repository's `gpu` lock and run
+`python3 scripts/exact_baselines.py verify` outside the Codex sandbox. It requires a clean checkout,
+this Mac's Metal device, Chrome and at least 16 GiB free. It builds release native and Wasm outputs,
+cooks fresh content, and compares both native matrices and all four Chrome sets exactly. A mismatch
+names the baseline and its owner; only that owner can refresh retained references under
+[the baseline rules](docs/plans/ARCHITECTURE.md#exact-baselines).
+
+The [registry](.config/exact-baselines.json) lists references and covered paths. A full pass writes
+an untracked proof in `tmp/baseline-guard/proofs/`, keyed to Git objects for those paths. Compact
+records retain revision, binary/Wasm hashes, cooked root, comparisons and elapsed time; successful
+bulk frames are removed after their complete manifests are archived. Failed captures remain for diagnosis.
+`./dev check` always runs the CPU-only proof gate. Changes outside covered paths need no proof.
+If integration rebases onto a covered change, the gate refuses the stale proof: verify the rebased
+commit and land again. A rebase that changes only other paths preserves the content key.
+There is no gate bypass option. Never use `land --no-check` or plain push for a covered change.

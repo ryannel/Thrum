@@ -289,7 +289,7 @@ fn main() -> TaskResult {
     }
     match args.first().map_or("help", String::as_str) {
         "help" | "--help" | "-h" => println!(
-            "Thrum contributor commands:\n  check                  Repository guard, guard tests, fmt, Clippy, Rust tests (including Mac Metal), game Wasm Clippy\n  check-docs             Links, metadata, design hashes and crate policy\n  baseline-inventory     Run G0 fixed budget baselines and list absent consumers on the M-series Mac\n  check-web              Lint/compile the V1 game and starter for wasm32-unknown-unknown\n  check-mobile-core      Compile the portable core for ARM64 iOS, iOS simulator and Android\n  fmt                    Apply rustfmt\n  scene <folder> [--web]  Build a scene package, cook and watch its assets/ and open its window (macOS)\n  starter [--web]        The same for examples/starter; --web serves Chrome\n  refresh-design-hashes  Refresh current digests after reviewing design changes"
+            "Thrum contributor commands:\n  check                  Exact-baseline proof gate, repository guards, fmt, Clippy, Rust tests (including Mac Metal), game Wasm Clippy\n  Exact image verification (hold gpu lock): python3 scripts/exact_baselines.py verify\n  check-docs             Links, metadata, design hashes and crate policy\n  baseline-inventory     Run G0 fixed budget baselines and list absent consumers on the M-series Mac\n  check-web              Lint/compile the V1 game and starter for wasm32-unknown-unknown\n  check-mobile-core      Compile the portable core for ARM64 iOS, iOS simulator and Android\n  fmt                    Apply rustfmt\n  scene <folder> [--web]  Build a scene package, cook and watch its assets/ and open its window (macOS)\n  starter [--web]        The same for examples/starter; --web serves Chrome\n  refresh-design-hashes  Refresh current digests after reviewing design changes"
         ),
         "check-docs" => python(&["scripts/repo_check.py"])?,
         "baseline-inventory" => baseline_inventory()?,
@@ -340,6 +340,8 @@ fn main() -> TaskResult {
             }
         }
         "check" => {
+            python(&["scripts/exact_baselines.py", "gate"])?;
+            python(&["scripts/test_exact_baselines.py"])?;
             python(&["scripts/repo_check.py"])?;
             python(&[
                 "-m",
