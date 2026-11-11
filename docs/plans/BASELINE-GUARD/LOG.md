@@ -59,3 +59,8 @@
   archives completed captures synchronously after its original report publisher returns. Owner source files,
   comparisons, preflights and return codes are preserved. Nine focused tests pass, including immediate-next-capture
   release and failed-source preservation. [Failure record](../../evidence/BASELINE-GUARD/M1/disk-repair/loop-failure.json).
+
+- 2026-11-11 The repaired M1.1 passes all 42 native comparisons and 1,924 Chrome records. Nine focused tests
+  pass. The repository Check hit its one-hour timeout after repeated device waits from the per-binary Cargo
+  runner used by this builder. Changed that verification runner to one GPU lease around the complete xtask
+  Check, with the inner runner removed to prevent recursive locking. Resuming the failed full profile Check.
