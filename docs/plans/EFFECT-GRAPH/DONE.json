@@ -19,8 +19,8 @@
           "lock": "gpu",
           "ask": "Read the tests this check runs. Is every texel of each kind, every mip included, read back and compared exactly, and are the persistent and history cases rebuilt and compared again after device replacement?",
           "target": "mac-metal",
-          "status": "open",
-          "evidence": "",
+          "status": "pass",
+          "evidence": "docs/evidence/EFFECT-GRAPH/M1-proof.md",
           "verdict": "",
           "review": ""
         },
@@ -31,8 +31,8 @@
           "lock": "gpu",
           "ask": "Is there one refusal test for each misuse in the design's list, each asserting a named error, and a test that two transients that differ only in dimension never share an allocation?",
           "target": "mac-metal",
-          "status": "open",
-          "evidence": "",
+          "status": "pass",
+          "evidence": "docs/evidence/EFFECT-GRAPH/M1-proof.md",
           "verdict": "",
           "review": ""
         },
@@ -43,8 +43,8 @@
           "lock": "gpu",
           "ask": "Does validation read only the capability record, with no device query in a pass? Does the evidence record the storage formats, storage-texture count and 3D extent that Chrome's record reports on this Mac?",
           "target": "mac-metal",
-          "status": "open",
-          "evidence": "",
+          "status": "pass",
+          "evidence": "docs/evidence/EFFECT-GRAPH/M1-proof.md",
           "verdict": "",
           "review": ""
         },
@@ -55,8 +55,8 @@
           "lock": "gpu",
           "ask": "Which test pins the compiled pass names, order and attachment storage of the day, night and capture variants, and did any of them change in this milestone's diff?",
           "target": "mac-metal",
-          "status": "open",
-          "evidence": "",
+          "status": "pass",
+          "evidence": "docs/evidence/EFFECT-GRAPH/M1-proof.md",
           "verdict": "",
           "review": ""
         },
@@ -67,7 +67,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "status": "open",
-          "evidence": "",
+          "evidence": "docs/evidence/EFFECT-GRAPH/M1-proof.md",
           "verdict": "",
           "review": ""
         }

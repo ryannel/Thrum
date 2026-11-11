@@ -29,3 +29,10 @@
   producer run twice in a frame; a same-generation `rebuild` keeps state unless the effect's descriptors changed.
   Exact baselines, from `BASELINE-GUARD`'s review: M2 gained `BASELINE-GUARD:M1` in `needs`, M2 and M3 carry the
   verifier, and M1 keeps the native matrix and does not wait (an assumption in the plan).
+- 2026-11-11 M1 implementation checkpoint `3d56bf21`: explicit 2D/volume/cube descriptors, natural or declared
+  binding views, exact-dimension transient allocation and capability-record validation. Existing declarations keep
+  their 2D kind. [Partial proof](../../evidence/EFFECT-GRAPH/M1-proof.md): all 14 Metal tests and the Chrome
+  capability recorder pass; pre-M1 day/night/capture compilation is pinned unchanged. Clippy and check-docs pass.
+  M1.5 tried its named release/cook/native matrix command and refused before capture with less than 16 GiB free
+  (about 9.4 GiB available). The full repository check refuses the missing exact-baseline proof. M1 remains open,
+  unclaimed and unintegrated; free disk with build/capture headroom, then rerun exact proofs and required checks.
