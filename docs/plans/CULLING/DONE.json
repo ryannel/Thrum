@@ -30,8 +30,8 @@
           "check": "THRUM_FIELD_FULL_PATH=1 cargo test --locked --offline --release -p v1-game --test field_occlusion_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "status": "open",
-          "evidence": "",
+          "status": "pass",
+          "evidence": "docs/evidence/CULLING/M1.md",
           "verdict": "",
           "review": ""
         },
