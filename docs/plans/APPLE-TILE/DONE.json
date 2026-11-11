@@ -138,7 +138,7 @@
     {
       "id": "M2",
       "name": "The existing frame lifecycle runs through one split graph",
-      "state": "blocked",
+      "state": "open",
       "fails": 0,
       "replans": 3,
       "bar": "A production renderer boundary: one owner, prepared fallback, deterministic visible semantics and explicit adverse-case evidence, as in the public wgpu/Metal lifecycle model.",
@@ -198,8 +198,7 @@
       ],
       "needs": [
         "PLATFORM-RUNTIME-MAC:M1"
-      ],
-      "blocked": "D2.3 needs approved 1\u00d7 playback access; attended D2.5 needs an unlocked active session and OS-window capture permission. The setup request is pending; M2 remains open. [Evidence](docs/evidence/render/apple-tile-m2/README.md)."
+      ]
     },
     {
       "id": "M3",
