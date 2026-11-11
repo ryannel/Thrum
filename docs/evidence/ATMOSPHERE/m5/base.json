@@ -1,5 +1,5 @@
 {
-  "base_commit": "ba9549f5f67b0084325e24f10a3badf293da2d16",
+  "base_commit": "e0956ee65b4222ccf2bda6860351f490d7c19155",
   "shader_sources": {
     "crates/thrum-render/src/synthetic/scene_source.rs": "d93123ffe2623407a8feff1b588a998c2632c3b716d46cc5b233b8f0494b73fe",
     "crates/thrum-render/src/synthetic.wgsl": "c460971be7831a74290466a8bfe2166b1784e7eef2e949d8d15149953dbe8adc",
@@ -14,6 +14,6 @@
     "cooked_volume_atmosphere_shadowed": 8
   },
   "counts_scope": "Source layout census only. Adapter limits and pipeline creation still require target execution.",
-  "rebased_from": "a471fe5d83beb926bdd1cf49e123696090d4e262",
-  "reason": "Refresh both parity arms after the concurrent APPLE-PRESENTATION M1 motion-input changes landed, preserving the initial base record separately."
+  "rebased_from": "ba9549f5f67b0084325e24f10a3badf293da2d16",
+  "reason": "Both parity arms include the integrated APPLE-PRESENTATION M1 MF1 raster-projection fix. Prior ba9549f5 and initial a471fe5d records remain preserved."
 }

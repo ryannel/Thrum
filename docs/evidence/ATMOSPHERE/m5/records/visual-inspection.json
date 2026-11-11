@@ -1,154 +1,1382 @@
 {
   "date": "2026-11-11",
-  "state": "partial",
+  "qualified_source_commit": "9080eed122455cb38561d50e5e52d90bd48b8acf",
+  "state": "complete",
   "static_inspections": [
     {
       "target": "mac-metal",
       "scene": "noon",
-      "source_pairs": [
+      "samples": [
         {
-          "directory": "tmp/atmosphere-m5/metal-noon-off-realtime-06",
-          "manifest_sha256": "c826c88c5d8a63f3cfece91082fa98bdda820c06cfdce04ee8f02895cc26b407"
+          "provider": "off",
+          "requested_seconds": 1.25,
+          "reviewed_source": "tmp/atmosphere-m5/metal-noon-off-realtime-09/png/000406.png",
+          "versioned_source": "docs/evidence/ATMOSPHERE/m5/images/metal-noon-off-realtime-09-1.25.png",
+          "source_sha256": "71c579b3b2cbcf845c63c9bc92732e4a270801917b61b5bcc8553acbe1f21f86",
+          "source_record": {
+            "alpha": 1.0,
+            "current_endpoint_tick": 193,
+            "device_generation": 1,
+            "epoch": 1,
+            "exposure_gpu_words": [
+              981467136,
+              1192782227,
+              1097847330,
+              1201587028,
+              0,
+              407,
+              0,
+              1
+            ],
+            "history_epoch": 1,
+            "map_observed_ns": 1269718417,
+            "pixel_source": "Sdr",
+            "presentation_lead_ns": 6896916,
+            "previous_endpoint_tick": 192,
+            "readback_copy_gpu_bracket_ns": 1836375.0,
+            "submission_id": 406,
+            "submit_ns": 1252269000,
+            "surface_generation": 1,
+            "tick": 193,
+            "timeline": 0,
+            "visual_revision": null
+          },
+          "crop": "tmp/atmosphere-m5/mf1-static-preview/metal-noon-off-realtime-09-1.25.png",
+          "crop_box_xywh": [
+            940,
+            500,
+            720,
+            480
+          ],
+          "crop_sha256": "f945dfd7f6821f2cd6931c92b08be363372912f0d86351f03fc464aa04ec7224",
+          "manifest_sha256": "3a5d8ccd38ef6b2555d63491b5834b982dc42fe84e98a83027d917b3bf50f7d0"
         },
         {
-          "directory": "tmp/atmosphere-m5/metal-noon-on-realtime-06",
-          "manifest_sha256": "f56956b7f3209d59151c314447f3a3818c1f9fef2dca0fe8ceb70978f158597e"
+          "provider": "off",
+          "requested_seconds": 3.25,
+          "reviewed_source": "tmp/atmosphere-m5/metal-noon-off-realtime-09/png/000646.png",
+          "versioned_source": "docs/evidence/ATMOSPHERE/m5/images/metal-noon-off-realtime-09-3.25.png",
+          "source_sha256": "ed7342644860badbe61f0eb42e75b636b03e28da6a6ac56e9061c905154b0520",
+          "source_record": {
+            "alpha": 1.0,
+            "current_endpoint_tick": 313,
+            "device_generation": 1,
+            "epoch": 1,
+            "exposure_gpu_words": [
+              981467136,
+              1192770567,
+              1097845563,
+              1201574878,
+              0,
+              647,
+              0,
+              1
+            ],
+            "history_epoch": 1,
+            "map_observed_ns": 3268810709,
+            "pixel_source": "Sdr",
+            "presentation_lead_ns": 6907541,
+            "previous_endpoint_tick": 312,
+            "readback_copy_gpu_bracket_ns": 2430416.0,
+            "submission_id": 646,
+            "submit_ns": 3252512834,
+            "surface_generation": 1,
+            "tick": 313,
+            "timeline": 0,
+            "visual_revision": null
+          },
+          "crop": "tmp/atmosphere-m5/mf1-static-preview/metal-noon-off-realtime-09-3.25.png",
+          "crop_box_xywh": [
+            1190,
+            190,
+            720,
+            640
+          ],
+          "crop_sha256": "4355c145a3255e954f5a3fadb967552bd1e42a4dc608f4a70b807990b77e0167",
+          "manifest_sha256": "3a5d8ccd38ef6b2555d63491b5834b982dc42fe84e98a83027d917b3bf50f7d0"
+        },
+        {
+          "provider": "on",
+          "requested_seconds": 1.25,
+          "reviewed_source": "tmp/atmosphere-m5/metal-noon-on-realtime-09/png/000409.png",
+          "versioned_source": "docs/evidence/ATMOSPHERE/m5/images/metal-noon-on-realtime-09-1.25.png",
+          "source_sha256": "9f72eca31e2a3aca00556e283f44a76297899b73de78e70e0ba6c21564981dcf",
+          "source_record": {
+            "alpha": 0.49259740114212036,
+            "current_endpoint_tick": 194,
+            "device_generation": 1,
+            "epoch": 1,
+            "exposure_gpu_words": [
+              981467136,
+              1192782207,
+              1097847327,
+              1201587008,
+              0,
+              410,
+              0,
+              1
+            ],
+            "history_epoch": 1,
+            "map_observed_ns": 1269743625,
+            "pixel_source": "Sdr",
+            "presentation_lead_ns": 7271874,
+            "previous_endpoint_tick": 193,
+            "readback_copy_gpu_bracket_ns": 1382000.0,
+            "submission_id": 409,
+            "submit_ns": 1252105584,
+            "surface_generation": 1,
+            "tick": 194,
+            "timeline": 0,
+            "visual_revision": null
+          },
+          "crop": "tmp/atmosphere-m5/mf1-static-preview/metal-noon-on-realtime-09-1.25.png",
+          "crop_box_xywh": [
+            940,
+            500,
+            720,
+            480
+          ],
+          "crop_sha256": "9e5536bf97a350eb972cd767c354cf2264049605a1f5b14b6eccd0777f1b44cd",
+          "manifest_sha256": "dd938c4df139439696a0a79d9f06a5cf394a61fd2edf44b9c452c705ce947bcb"
+        },
+        {
+          "provider": "on",
+          "requested_seconds": 3.25,
+          "reviewed_source": "tmp/atmosphere-m5/metal-noon-on-realtime-09/png/000649.png",
+          "versioned_source": "docs/evidence/ATMOSPHERE/m5/images/metal-noon-on-realtime-09-3.25.png",
+          "source_sha256": "cb18943965399cda10d2a21521ea8f28459c42f7867a6e466169c93c17c66308",
+          "source_record": {
+            "alpha": 1.0,
+            "current_endpoint_tick": 313,
+            "device_generation": 1,
+            "epoch": 1,
+            "exposure_gpu_words": [
+              981467136,
+              1192770567,
+              1097845563,
+              1201574878,
+              0,
+              650,
+              0,
+              1
+            ],
+            "history_epoch": 1,
+            "map_observed_ns": 3268710750,
+            "pixel_source": "Sdr",
+            "presentation_lead_ns": 7299249,
+            "previous_endpoint_tick": 312,
+            "readback_copy_gpu_bracket_ns": 1586500.0,
+            "submission_id": 649,
+            "submit_ns": 3251722542,
+            "surface_generation": 1,
+            "tick": 313,
+            "timeline": 0,
+            "visual_revision": null
+          },
+          "crop": "tmp/atmosphere-m5/mf1-static-preview/metal-noon-on-realtime-09-3.25.png",
+          "crop_box_xywh": [
+            1190,
+            190,
+            720,
+            640
+          ],
+          "crop_sha256": "76c509d7d7ae0e94428d3db89df4ec58671af50da0cb83e5c295712aab33dd2a",
+          "manifest_sha256": "dd938c4df139439696a0a79d9f06a5cf394a61fd2edf44b9c452c705ce947bcb"
         }
       ],
-      "inspection": "Whole frames and native-size cooked-rock/ground crops at approximately 1.25 and 3.25 seconds",
-      "observation": "Cloud shade crosses the lit hills. Ground and directly lit rock surfaces dim together while sky-facing reflections and geometric-shadow regions retain light."
+      "inspection": "Whole provider-on frames and native-size off/on rock/ground crops near 1.25 and 3.25 seconds.",
+      "observation": "The lit rock top and neighbouring ground dim together as the diagnostic patch changes phase over two seconds. The shadowed rock face and ground shadow retain sky light; the sphere retains its sky reflection. No detached terrain/mesh shade boundary appeared."
     },
     {
       "target": "chrome-webgpu",
       "scene": "noon",
-      "source_pairs": [
+      "samples": [
         {
-          "directory": "tmp/atmosphere-m5/chrome-noon-off-fixed-06",
-          "manifest_sha256": "7c5c0a9afb9fcf9004edc756acc0d329531043a397466a4e39e6df16add9778d"
+          "provider": "off",
+          "requested_seconds": 1.25,
+          "reviewed_source": "tmp/atmosphere-m5/chrome-noon-off-fixed-09/png/000254.png",
+          "versioned_source": "docs/evidence/ATMOSPHERE/m5/images/chrome-noon-off-fixed-09-1.25.png",
+          "source_sha256": "b8eef9e98fcbcae70873e0cbfd16890d67c02de09685152551317363a4140202",
+          "source_record": {
+            "alpha": 0.9999999403953552,
+            "device_generation": 1,
+            "exposure_gpu_words": [
+              981467136,
+              1192782207,
+              1097847327,
+              1201587005,
+              0,
+              255,
+              0,
+              1
+            ],
+            "history_epoch": 1,
+            "pixel_source": "Sdr",
+            "presenter_generation": 1,
+            "session": 1,
+            "source_epoch": "1",
+            "source_tick": 194,
+            "submission_id": 254,
+            "submit_ms": 1857.1,
+            "surface_presented": true,
+            "tick": 194,
+            "timeline": 0,
+            "ordinal": 75,
+            "file": "frames/000075.rgba.gz",
+            "rgba_sha256": "ff5580003536b572707be3decbf1599d96db8a7da2cc19e5e36a33fb83387e4e",
+            "bytes": 1217922
+          },
+          "crop": "tmp/atmosphere-m5/mf1-static-preview/chrome-noon-off-fixed-09-1.25.png",
+          "crop_box_xywh": [
+            626,
+            333,
+            480,
+            320
+          ],
+          "crop_sha256": "89df8408ece1b87c650a590d9ab017f563e5048b9d937b2fa65e1d71a4369e3f",
+          "manifest_sha256": "f333d1f4381efc3520ca200e71c40c2414ae48a0394ed3e72f734bc9ad74ba84"
         },
         {
-          "directory": "tmp/atmosphere-m5/chrome-noon-on-fixed-06",
-          "manifest_sha256": "528d4e8aaa94fd05604dd9da19eb582b0372002fdbe00a0ef02901b444f500d1"
-        }
-      ],
-      "inspection": "Whole frames and native-size cooked-rock/ground crops at approximately 1.25 and 3.25 seconds",
-      "observation": "Cloud shade crosses the lit hills. Ground and directly lit rock surfaces dim together while sky-facing reflections and geometric-shadow regions retain light."
-    },
-    {
-      "target": "chrome-webgpu",
-      "scene": "low-sun",
-      "source_pairs": [
-        {
-          "directory": "tmp/atmosphere-m5/chrome-low-sun-off-fixed-06",
-          "manifest_sha256": "590ca01585adedbc3a2ee8b328d79cfeece5e88d4f3e90a472641119342f9782"
+          "provider": "off",
+          "requested_seconds": 3.25,
+          "reviewed_source": "tmp/atmosphere-m5/chrome-noon-off-fixed-09/png/000374.png",
+          "versioned_source": "docs/evidence/ATMOSPHERE/m5/images/chrome-noon-off-fixed-09-3.25.png",
+          "source_sha256": "6d0229d7460c466c94601ade4f30ad54dbd054431d2e9ecb181dcfa39b753470",
+          "source_record": {
+            "alpha": 0.9999999403953552,
+            "device_generation": 1,
+            "exposure_gpu_words": [
+              981467136,
+              1192770362,
+              1097845532,
+              1201574669,
+              0,
+              375,
+              0,
+              1
+            ],
+            "history_epoch": 1,
+            "pixel_source": "Sdr",
+            "presenter_generation": 1,
+            "session": 1,
+            "source_epoch": "1",
+            "source_tick": 314,
+            "submission_id": 374,
+            "submit_ms": 5482.3,
+            "surface_presented": true,
+            "tick": 314,
+            "timeline": 0,
+            "ordinal": 195,
+            "file": "frames/000195.rgba.gz",
+            "rgba_sha256": "04e7502fa5d2d9287e7146a6932ee1e5eb944718d811a911098429ec21cde55b",
+            "bytes": 1277847
+          },
+          "crop": "tmp/atmosphere-m5/mf1-static-preview/chrome-noon-off-fixed-09-3.25.png",
+          "crop_box_xywh": [
+            793,
+            126,
+            480,
+            427
+          ],
+          "crop_sha256": "4c7b130b377c855896d5467f8c465f5929fa7f56d405255b5889faea9e463903",
+          "manifest_sha256": "f333d1f4381efc3520ca200e71c40c2414ae48a0394ed3e72f734bc9ad74ba84"
         },
         {
-          "directory": "tmp/atmosphere-m5/chrome-low-sun-on-fixed-06",
-          "manifest_sha256": "b2f684b63a589b3008e0cab80c46798750bfeccf1b0e1f0bf5b4a5ebc2c93669"
+          "provider": "on",
+          "requested_seconds": 1.25,
+          "reviewed_source": "tmp/atmosphere-m5/chrome-noon-on-fixed-09/png/000254.png",
+          "versioned_source": "docs/evidence/ATMOSPHERE/m5/images/chrome-noon-on-fixed-09-1.25.png",
+          "source_sha256": "8e0551580e36d164c33927d510e57d99121a6b04af83551d30f10f4864936316",
+          "source_record": {
+            "alpha": 0.9999999403953552,
+            "device_generation": 1,
+            "exposure_gpu_words": [
+              981467136,
+              1192782207,
+              1097847327,
+              1201587005,
+              0,
+              255,
+              0,
+              1
+            ],
+            "history_epoch": 1,
+            "pixel_source": "Sdr",
+            "presenter_generation": 1,
+            "session": 1,
+            "source_epoch": "1",
+            "source_tick": 194,
+            "submission_id": 254,
+            "submit_ms": 1797.1,
+            "surface_presented": true,
+            "tick": 194,
+            "timeline": 0,
+            "ordinal": 75,
+            "file": "frames/000075.rgba.gz",
+            "rgba_sha256": "8ffe55f5d9eebb8337010319467c58f4b05ade2cf28d8d4e203a84fd08c33d84",
+            "bytes": 1243557
+          },
+          "crop": "tmp/atmosphere-m5/mf1-static-preview/chrome-noon-on-fixed-09-1.25.png",
+          "crop_box_xywh": [
+            626,
+            333,
+            480,
+            320
+          ],
+          "crop_sha256": "f5cf98510e2aa7240a14d30f40229c29eeedfc3ff432b65429a652f99c8fdc28",
+          "manifest_sha256": "89b267673432beb5496d980edba68e25c56d6201d59b04f142e253776b00a5da"
+        },
+        {
+          "provider": "on",
+          "requested_seconds": 3.25,
+          "reviewed_source": "tmp/atmosphere-m5/chrome-noon-on-fixed-09/png/000374.png",
+          "versioned_source": "docs/evidence/ATMOSPHERE/m5/images/chrome-noon-on-fixed-09-3.25.png",
+          "source_sha256": "250e2d69e1f7a4207ea29ebea3c9e19d9a56a6346b7ebbbc601e236ee5da29cf",
+          "source_record": {
+            "alpha": 0.9999999403953552,
+            "device_generation": 1,
+            "exposure_gpu_words": [
+              981467136,
+              1192770362,
+              1097845532,
+              1201574669,
+              0,
+              375,
+              0,
+              1
+            ],
+            "history_epoch": 1,
+            "pixel_source": "Sdr",
+            "presenter_generation": 1,
+            "session": 1,
+            "source_epoch": "1",
+            "source_tick": 314,
+            "submission_id": 374,
+            "submit_ms": 4794.1,
+            "surface_presented": true,
+            "tick": 314,
+            "timeline": 0,
+            "ordinal": 195,
+            "file": "frames/000195.rgba.gz",
+            "rgba_sha256": "43ea19ae4a1ab02c9532950256d3035faaea6db1132d7330335564ed03bfd1b4",
+            "bytes": 1213484
+          },
+          "crop": "tmp/atmosphere-m5/mf1-static-preview/chrome-noon-on-fixed-09-3.25.png",
+          "crop_box_xywh": [
+            793,
+            126,
+            480,
+            427
+          ],
+          "crop_sha256": "e5cdcd4ccc36df16dcc875af539ae022dad37dfd486c99190bdd25b79c5483cc",
+          "manifest_sha256": "89b267673432beb5496d980edba68e25c56d6201d59b04f142e253776b00a5da"
         }
       ],
-      "inspection": "Whole frames and native-size cooked-rock/ground crops at approximately 1.25 and 3.25 seconds",
-      "observation": "Cloud shade crosses the lit hills. Ground and directly lit rock surfaces dim together while sky-facing reflections and geometric-shadow regions retain light."
+      "inspection": "Whole provider-on frames and native-size off/on rock/ground crops near 1.25 and 3.25 seconds.",
+      "observation": "The lit rock top and neighbouring ground dim together as the diagnostic patch changes phase over two seconds. The shadowed rock face and ground shadow retain sky light; the sphere retains its sky reflection. No detached terrain/mesh shade boundary appeared.",
+      "comparison_with_mac": "Same shade placement and depth, within the recorded camera/tick phase and texture-profile differences."
     },
     {
       "target": "mac-metal",
       "scene": "low-sun",
-      "source_pairs": [
+      "samples": [
         {
-          "directory": "tmp/atmosphere-m5/metal-low-sun-off-realtime-06",
-          "manifest_sha256": "ad33a7655ed788c1433284c9f84bdf4918cb02ec3e5307fd99ece38fe33682b8"
+          "provider": "off",
+          "requested_seconds": 1.25,
+          "reviewed_source": "tmp/atmosphere-m5/metal-low-sun-off-realtime-09/png/000409.png",
+          "versioned_source": "docs/evidence/ATMOSPHERE/m5/images/metal-low-sun-off-realtime-09-1.25.png",
+          "source_sha256": "2be7671f0f0e9f66eebdfcceeb2ed0fb4a040aa215205982b12d3ce5f1fc65de",
+          "source_record": {
+            "alpha": 1.0,
+            "current_endpoint_tick": 193,
+            "device_generation": 1,
+            "epoch": 1,
+            "exposure_gpu_words": [
+              981467136,
+              1167416867,
+              1094671076,
+              1176213349,
+              0,
+              410,
+              0,
+              1
+            ],
+            "history_epoch": 1,
+            "map_observed_ns": 1268975584,
+            "pixel_source": "Sdr",
+            "presentation_lead_ns": 6452374,
+            "previous_endpoint_tick": 192,
+            "readback_copy_gpu_bracket_ns": 1766291.0,
+            "submission_id": 409,
+            "submit_ns": 1252810750,
+            "surface_generation": 1,
+            "tick": 193,
+            "timeline": 0,
+            "visual_revision": null
+          },
+          "crop": "tmp/atmosphere-m5/mf1-static-preview/metal-low-sun-off-realtime-09-1.25.png",
+          "crop_box_xywh": [
+            940,
+            500,
+            720,
+            480
+          ],
+          "crop_sha256": "0d1715de52c47f8a5aadf3e050c65553fce5ae050d6f3f34b146e45017287e0c",
+          "manifest_sha256": "43281a309a753544ebb9b4fabc95ce0b0a34c7f93047d317f2c8901e87d81b87"
         },
         {
-          "directory": "tmp/atmosphere-m5/metal-low-sun-on-realtime-06",
-          "manifest_sha256": "0dd685961ed638f4c545d1113aab2149b9f317725f0d30c09b0226d11f93b629"
+          "provider": "off",
+          "requested_seconds": 3.25,
+          "reviewed_source": "tmp/atmosphere-m5/metal-low-sun-off-realtime-09/png/000649.png",
+          "versioned_source": "docs/evidence/ATMOSPHERE/m5/images/metal-low-sun-off-realtime-09-3.25.png",
+          "source_sha256": "19055c88977ad1eb0fd23e20fb4f7e005e6959148b4e1d96314c2a925db4903f",
+          "source_record": {
+            "alpha": 1.0,
+            "current_endpoint_tick": 313,
+            "device_generation": 1,
+            "epoch": 1,
+            "exposure_gpu_words": [
+              981467136,
+              1163185485,
+              1094157948,
+              1172155185,
+              0,
+              650,
+              0,
+              1
+            ],
+            "history_epoch": 1,
+            "map_observed_ns": 3269823667,
+            "pixel_source": "Sdr",
+            "presentation_lead_ns": 6040166,
+            "previous_endpoint_tick": 312,
+            "readback_copy_gpu_bracket_ns": 2872000.0,
+            "submission_id": 649,
+            "submit_ns": 3253279792,
+            "surface_generation": 1,
+            "tick": 313,
+            "timeline": 0,
+            "visual_revision": null
+          },
+          "crop": "tmp/atmosphere-m5/mf1-static-preview/metal-low-sun-off-realtime-09-3.25.png",
+          "crop_box_xywh": [
+            1190,
+            190,
+            720,
+            640
+          ],
+          "crop_sha256": "f276bbbdb80b0def94c2ead165941903a84e789effd2848acc520d4bad0d897d",
+          "manifest_sha256": "43281a309a753544ebb9b4fabc95ce0b0a34c7f93047d317f2c8901e87d81b87"
+        },
+        {
+          "provider": "on",
+          "requested_seconds": 1.25,
+          "reviewed_source": "tmp/atmosphere-m5/metal-low-sun-on-realtime-09/png/000405.png",
+          "versioned_source": "docs/evidence/ATMOSPHERE/m5/images/metal-low-sun-on-realtime-09-1.25.png",
+          "source_sha256": "fd6193107ee8243644445a201cc337f50153d6f6535159089052edab8a5283cc",
+          "source_record": {
+            "alpha": 1.0,
+            "current_endpoint_tick": 193,
+            "device_generation": 1,
+            "epoch": 1,
+            "exposure_gpu_words": [
+              981467136,
+              1167416867,
+              1094671076,
+              1176213349,
+              0,
+              406,
+              0,
+              1
+            ],
+            "history_epoch": 1,
+            "map_observed_ns": 1269674750,
+            "pixel_source": "Sdr",
+            "presentation_lead_ns": 7061666,
+            "previous_endpoint_tick": 192,
+            "readback_copy_gpu_bracket_ns": 2757834.0,
+            "submission_id": 405,
+            "submit_ns": 1253313792,
+            "surface_generation": 1,
+            "tick": 193,
+            "timeline": 0,
+            "visual_revision": null
+          },
+          "crop": "tmp/atmosphere-m5/mf1-static-preview/metal-low-sun-on-realtime-09-1.25.png",
+          "crop_box_xywh": [
+            940,
+            500,
+            720,
+            480
+          ],
+          "crop_sha256": "9d8b2c5a593fa05b452da687c69ba9f7702c6c3f66feeaabb57b4e77ac46ab92",
+          "manifest_sha256": "2e18509fce8883ea73400496de493e00e89bc68a3b562fa9167057c77a492ac5"
+        },
+        {
+          "provider": "on",
+          "requested_seconds": 3.25,
+          "reviewed_source": "tmp/atmosphere-m5/metal-low-sun-on-realtime-09/png/000620.png",
+          "versioned_source": "docs/evidence/ATMOSPHERE/m5/images/metal-low-sun-on-realtime-09-3.25.png",
+          "source_sha256": "dcc26741566b328c409588c68fba68b30c39ac61b563874a9540dc195fbcc3c9",
+          "source_record": {
+            "alpha": 1.0,
+            "current_endpoint_tick": 313,
+            "device_generation": 1,
+            "epoch": 1,
+            "exposure_gpu_words": [
+              981467136,
+              1163185485,
+              1094157948,
+              1172155185,
+              0,
+              621,
+              0,
+              1
+            ],
+            "history_epoch": 1,
+            "map_observed_ns": 3271863875,
+            "pixel_source": "Sdr",
+            "presentation_lead_ns": 7259499,
+            "previous_endpoint_tick": 312,
+            "readback_copy_gpu_bracket_ns": 2768000.0,
+            "submission_id": 620,
+            "submit_ns": 3253384917,
+            "surface_generation": 1,
+            "tick": 313,
+            "timeline": 0,
+            "visual_revision": null
+          },
+          "crop": "tmp/atmosphere-m5/mf1-static-preview/metal-low-sun-on-realtime-09-3.25.png",
+          "crop_box_xywh": [
+            1190,
+            190,
+            720,
+            640
+          ],
+          "crop_sha256": "487b3e89d4652a1bb0bbf34cb7bf59335f375a8058ccd084044904bd9a209093",
+          "manifest_sha256": "2e18509fce8883ea73400496de493e00e89bc68a3b562fa9167057c77a492ac5"
         }
       ],
-      "inspection": "Whole frame and native-size cooked-rock/ground crops near 1.25 and 3.25 seconds.",
-      "observation": "The cloud pattern is visible over lit terrain. The shaded side of the cooked rock and the long geometric ground shadows remain sky-lit; no blackening appears."
+      "inspection": "Whole provider-on frames and native-size off/on cooked-rock/ground crops near 1.25 and 3.25 seconds.",
+      "observation": "The cloud bands change phase on lit slopes and foreground. The cooked rock direct-lit face follows the local ground shade; its blue shadowed face and the long blue geometric shadows retain light. No additional blackening appears within geometric shadow."
+    },
+    {
+      "target": "chrome-webgpu",
+      "scene": "low-sun",
+      "samples": [
+        {
+          "provider": "off",
+          "requested_seconds": 1.25,
+          "reviewed_source": "tmp/atmosphere-m5/chrome-low-sun-off-fixed-09/png/000254.png",
+          "versioned_source": "docs/evidence/ATMOSPHERE/m5/images/chrome-low-sun-off-fixed-09-1.25.png",
+          "source_sha256": "2315de76fb831e344780f1f072316277d7f47338b7db532416278912e44ebffa",
+          "source_record": {
+            "alpha": 0.9999999403953552,
+            "device_generation": 1,
+            "exposure_gpu_words": [
+              981467136,
+              1167392386,
+              1094667288,
+              1176187850,
+              0,
+              255,
+              0,
+              1
+            ],
+            "history_epoch": 1,
+            "pixel_source": "Sdr",
+            "presenter_generation": 1,
+            "session": 1,
+            "source_epoch": "1",
+            "source_tick": 194,
+            "submission_id": 254,
+            "submit_ms": 2268,
+            "surface_presented": true,
+            "tick": 194,
+            "timeline": 0,
+            "ordinal": 75,
+            "file": "frames/000075.rgba.gz",
+            "rgba_sha256": "3403d6b13b11d83a3e8ae6f1ddec94d780fd1c3a100ee9fa8452fa3a5a8883b2",
+            "bytes": 1363387
+          },
+          "crop": "tmp/atmosphere-m5/mf1-static-preview/chrome-low-sun-off-fixed-09-1.25.png",
+          "crop_box_xywh": [
+            626,
+            333,
+            480,
+            320
+          ],
+          "crop_sha256": "9d1a6d4a486963f88bc46e9a4a1e1b9a67ba2793e342bebe516d14feb208574f",
+          "manifest_sha256": "3867baaf54fe7bcda71a9f1f6dc612f4194093c8889eee4a6920a83aa241e82a"
+        },
+        {
+          "provider": "off",
+          "requested_seconds": 3.25,
+          "reviewed_source": "tmp/atmosphere-m5/chrome-low-sun-off-fixed-09/png/000374.png",
+          "versioned_source": "docs/evidence/ATMOSPHERE/m5/images/chrome-low-sun-off-fixed-09-3.25.png",
+          "source_sha256": "52dd2ef3c0cd15a5737426830e74af894bbca41facb61e546824e8d700672cd0",
+          "source_record": {
+            "alpha": 0.9999999403953552,
+            "device_generation": 1,
+            "exposure_gpu_words": [
+              981467136,
+              1163141093,
+              1094153125,
+              1172108947,
+              0,
+              375,
+              0,
+              1
+            ],
+            "history_epoch": 1,
+            "pixel_source": "Sdr",
+            "presenter_generation": 1,
+            "session": 1,
+            "source_epoch": "1",
+            "source_tick": 314,
+            "submission_id": 374,
+            "submit_ms": 5968.7,
+            "surface_presented": true,
+            "tick": 314,
+            "timeline": 0,
+            "ordinal": 195,
+            "file": "frames/000195.rgba.gz",
+            "rgba_sha256": "c151ba1bc8841eb8189d6debae8c3fe05d71c968e8f752958c53b0af21973e92",
+            "bytes": 1407555
+          },
+          "crop": "tmp/atmosphere-m5/mf1-static-preview/chrome-low-sun-off-fixed-09-3.25.png",
+          "crop_box_xywh": [
+            793,
+            126,
+            480,
+            427
+          ],
+          "crop_sha256": "1b0c2db507ae1db28d857a1082961c6dc355773d0b0d0efe5da08ec6aa26129a",
+          "manifest_sha256": "3867baaf54fe7bcda71a9f1f6dc612f4194093c8889eee4a6920a83aa241e82a"
+        },
+        {
+          "provider": "on",
+          "requested_seconds": 1.25,
+          "reviewed_source": "tmp/atmosphere-m5/chrome-low-sun-on-fixed-09/png/000254.png",
+          "versioned_source": "docs/evidence/ATMOSPHERE/m5/images/chrome-low-sun-on-fixed-09-1.25.png",
+          "source_sha256": "47b04304170ab30687bcd84279c6ce68b342ea503c8755c03f29616b5616c33b",
+          "source_record": {
+            "alpha": 0.9999999403953552,
+            "device_generation": 1,
+            "exposure_gpu_words": [
+              981467136,
+              1167392386,
+              1094667288,
+              1176187850,
+              0,
+              255,
+              0,
+              1
+            ],
+            "history_epoch": 1,
+            "pixel_source": "Sdr",
+            "presenter_generation": 1,
+            "session": 1,
+            "source_epoch": "1",
+            "source_tick": 194,
+            "submission_id": 254,
+            "submit_ms": 2289.7,
+            "surface_presented": true,
+            "tick": 194,
+            "timeline": 0,
+            "ordinal": 75,
+            "file": "frames/000075.rgba.gz",
+            "rgba_sha256": "9678e8c5e2c5fae67c2ae6bc9d99cb24e1230201860a12ccd5f41da999d0cb68",
+            "bytes": 1367752
+          },
+          "crop": "tmp/atmosphere-m5/mf1-static-preview/chrome-low-sun-on-fixed-09-1.25.png",
+          "crop_box_xywh": [
+            626,
+            333,
+            480,
+            320
+          ],
+          "crop_sha256": "f4c06cfec10357e569b8c44f3f35c6f678fe2183b077153543c9d55c99d9ec6b",
+          "manifest_sha256": "eaa6ce88bea3af9d627172b47c1f32f7ab14c60492717ad767498feed0ef4b97"
+        },
+        {
+          "provider": "on",
+          "requested_seconds": 3.25,
+          "reviewed_source": "tmp/atmosphere-m5/chrome-low-sun-on-fixed-09/png/000374.png",
+          "versioned_source": "docs/evidence/ATMOSPHERE/m5/images/chrome-low-sun-on-fixed-09-3.25.png",
+          "source_sha256": "36deb84af0bb61cfdad70acdf6c251bb488fc5863923627c31921e2e0aa8a0d5",
+          "source_record": {
+            "alpha": 0.9999999403953552,
+            "device_generation": 1,
+            "exposure_gpu_words": [
+              981467136,
+              1163141093,
+              1094153125,
+              1172108947,
+              0,
+              375,
+              0,
+              1
+            ],
+            "history_epoch": 1,
+            "pixel_source": "Sdr",
+            "presenter_generation": 1,
+            "session": 1,
+            "source_epoch": "1",
+            "source_tick": 314,
+            "submission_id": 374,
+            "submit_ms": 6520.900000000001,
+            "surface_presented": true,
+            "tick": 314,
+            "timeline": 0,
+            "ordinal": 195,
+            "file": "frames/000195.rgba.gz",
+            "rgba_sha256": "c7079989c93da337e1086669450a99bc2ee30f77261621b98778ac1517e38348",
+            "bytes": 1399144
+          },
+          "crop": "tmp/atmosphere-m5/mf1-static-preview/chrome-low-sun-on-fixed-09-3.25.png",
+          "crop_box_xywh": [
+            793,
+            126,
+            480,
+            427
+          ],
+          "crop_sha256": "bf77acdc4ea52a33dbae47b5fd2462ca66a57b9afd29c06736aa536647fd0778",
+          "manifest_sha256": "eaa6ce88bea3af9d627172b47c1f32f7ab14c60492717ad767498feed0ef4b97"
+        }
+      ],
+      "inspection": "Whole provider-on frames and native-size off/on cooked-rock/ground crops near 1.25 and 3.25 seconds.",
+      "observation": "The cloud bands change phase on lit slopes and foreground. The cooked rock direct-lit face follows the local ground shade; its blue shadowed face and the long blue geometric shadows retain light. No additional blackening appears within geometric shadow.",
+      "comparison_with_mac": "Same relative shade placement and depth across both checkpoints; receiver boundaries agree."
+    },
+    {
+      "target": "mac-metal",
+      "scene": "west",
+      "samples": [
+        {
+          "provider": "off",
+          "requested_seconds": 2.0,
+          "reviewed_source": "tmp/atmosphere-m5/metal-west-off-realtime-09/png/000520.png",
+          "versioned_source": "docs/evidence/ATMOSPHERE/m5/images/metal-west-off-realtime-09-2.00.png",
+          "source_sha256": "36646f77f59296a4b8ca2b9e746e09d07e23bbe0e8fcab5ced38f4151dcd0f9f",
+          "source_record": {
+            "alpha": 1.0,
+            "current_endpoint_tick": 238,
+            "device_generation": 1,
+            "epoch": 1,
+            "exposure_gpu_words": [
+              981467136,
+              1166331346,
+              1094493269,
+              1175082600,
+              0,
+              521,
+              0,
+              1
+            ],
+            "history_epoch": 1,
+            "map_observed_ns": 2018561000,
+            "pixel_source": "Sdr",
+            "presentation_lead_ns": 6851666,
+            "previous_endpoint_tick": 237,
+            "readback_copy_gpu_bracket_ns": 2315083.0,
+            "submission_id": 520,
+            "submit_ns": 2002793500,
+            "surface_generation": 1,
+            "tick": 238,
+            "timeline": 0,
+            "visual_revision": null
+          },
+          "crop": "tmp/atmosphere-m5/mf1-static-preview/metal-west-off-realtime-09-2.00.png",
+          "crop_box_xywh": [
+            300,
+            260,
+            1200,
+            420
+          ],
+          "crop_sha256": "f4ee0d199bb219cdaac5fb39dc28866caeaed197457a3e422da0052a9c14348b",
+          "manifest_sha256": "679e2dc7b4a7a40acde3961dfb24085c00cd6dbf31bbcce711fa5facee722465"
+        },
+        {
+          "provider": "off",
+          "requested_seconds": 4.0,
+          "reviewed_source": "tmp/atmosphere-m5/metal-west-off-realtime-09/png/000743.png",
+          "versioned_source": "docs/evidence/ATMOSPHERE/m5/images/metal-west-off-realtime-09-4.00.png",
+          "source_sha256": "b3d8adc891e3ad6eb59cd4a4d568ebff2242b7ec748768d77c2803b0d307e58a",
+          "source_record": {
+            "alpha": 1.0,
+            "current_endpoint_tick": 358,
+            "device_generation": 1,
+            "epoch": 1,
+            "exposure_gpu_words": [
+              981467136,
+              1161235628,
+              1093930116,
+              1170124088,
+              0,
+              744,
+              0,
+              1
+            ],
+            "history_epoch": 1,
+            "map_observed_ns": 4019782000,
+            "pixel_source": "Sdr",
+            "presentation_lead_ns": 8009208,
+            "previous_endpoint_tick": 357,
+            "readback_copy_gpu_bracket_ns": 2451500.0,
+            "submission_id": 743,
+            "submit_ns": 4001929209,
+            "surface_generation": 1,
+            "tick": 358,
+            "timeline": 0,
+            "visual_revision": null
+          },
+          "crop": "tmp/atmosphere-m5/mf1-static-preview/metal-west-off-realtime-09-4.00.png",
+          "crop_box_xywh": [
+            300,
+            260,
+            1200,
+            420
+          ],
+          "crop_sha256": "82c26e01261a7eb2b8126a540e160bd3e2ea225b1d966099fe747c51c52ad3d9",
+          "manifest_sha256": "679e2dc7b4a7a40acde3961dfb24085c00cd6dbf31bbcce711fa5facee722465"
+        },
+        {
+          "provider": "on",
+          "requested_seconds": 2.0,
+          "reviewed_source": "tmp/atmosphere-m5/metal-west-on-realtime-09/png/000528.png",
+          "versioned_source": "docs/evidence/ATMOSPHERE/m5/images/metal-west-on-realtime-09-2.00.png",
+          "source_sha256": "f47f9874a8789d2dba6c99c85f9b6e729faadeff4b8a36a595e0811f48325801",
+          "source_record": {
+            "alpha": 1.0,
+            "current_endpoint_tick": 238,
+            "device_generation": 1,
+            "epoch": 1,
+            "exposure_gpu_words": [
+              981467136,
+              1166331346,
+              1094493269,
+              1175082600,
+              0,
+              529,
+              0,
+              1
+            ],
+            "history_epoch": 1,
+            "map_observed_ns": 2019192792,
+            "pixel_source": "Sdr",
+            "presentation_lead_ns": 6795874,
+            "previous_endpoint_tick": 237,
+            "readback_copy_gpu_bracket_ns": 1463250.0,
+            "submission_id": 528,
+            "submit_ns": 2002252834,
+            "surface_generation": 1,
+            "tick": 238,
+            "timeline": 0,
+            "visual_revision": null
+          },
+          "crop": "tmp/atmosphere-m5/mf1-static-preview/metal-west-on-realtime-09-2.00.png",
+          "crop_box_xywh": [
+            300,
+            260,
+            1200,
+            420
+          ],
+          "crop_sha256": "9c5eaebcd226ae82800439532ca4d7cf63037790f981fd12868a8ceca97661d5",
+          "manifest_sha256": "c5ce6951098c3672e94f4c9a040906516dfdeb72dc4bbb7c986f4b9218b90bbe"
+        },
+        {
+          "provider": "on",
+          "requested_seconds": 4.0,
+          "reviewed_source": "tmp/atmosphere-m5/metal-west-on-realtime-09/png/000768.png",
+          "versioned_source": "docs/evidence/ATMOSPHERE/m5/images/metal-west-on-realtime-09-4.00.png",
+          "source_sha256": "6c9101ca49d3fe1b888563a118a65e93b3c537439feb5f34ee52af8ce5d59aba",
+          "source_record": {
+            "alpha": 0.497282475233078,
+            "current_endpoint_tick": 359,
+            "device_generation": 1,
+            "epoch": 1,
+            "exposure_gpu_words": [
+              981467136,
+              1161214616,
+              1093927464,
+              1170102200,
+              0,
+              769,
+              0,
+              1
+            ],
+            "history_epoch": 1,
+            "map_observed_ns": 4019096542,
+            "pixel_source": "Sdr",
+            "presentation_lead_ns": 7000791,
+            "previous_endpoint_tick": 358,
+            "readback_copy_gpu_bracket_ns": 2387541.0,
+            "submission_id": 768,
+            "submit_ns": 4002282417,
+            "surface_generation": 1,
+            "tick": 359,
+            "timeline": 0,
+            "visual_revision": null
+          },
+          "crop": "tmp/atmosphere-m5/mf1-static-preview/metal-west-on-realtime-09-4.00.png",
+          "crop_box_xywh": [
+            300,
+            260,
+            1200,
+            420
+          ],
+          "crop_sha256": "81c3fb17f673b50d7cffc563f1a6c49c0bc4bc1aa887fa4f84cf18ae4acce9b9",
+          "manifest_sha256": "c5ce6951098c3672e94f4c9a040906516dfdeb72dc4bbb7c986f4b9218b90bbe"
+        }
+      ],
+      "inspection": "Whole provider-on frames and native-size off/on ridge/ground crops near 2 and 4 seconds, inside the authored slow pan after preposition.",
+      "observation": "Cloud bands change phase across the lit valley floor over two seconds. The broad ridge shadow retains its sky-lit colour and depth in off/on controls as bands pass its boundary. The bright terrain lip is already present with the provider off."
     },
     {
       "target": "chrome-webgpu",
       "scene": "west",
-      "source_pairs": [
+      "samples": [
         {
-          "directory": "tmp/atmosphere-m5/chrome-west-off-fixed-06",
-          "manifest_sha256": "7ac7d0d498830d1a50843a82678adf737bbef9fa8a945098683111df8b025cbc"
+          "provider": "off",
+          "requested_seconds": 2.0,
+          "reviewed_source": "tmp/atmosphere-m5/chrome-west-off-fixed-09/png/000299.png",
+          "versioned_source": "docs/evidence/ATMOSPHERE/m5/images/chrome-west-off-fixed-09-2.00.png",
+          "source_sha256": "1a8a9447dc1e87b4ba6163053c0fd24e4f1593c4a3146630b62b7bfb3ed8942d",
+          "source_record": {
+            "alpha": 0.9999999403953552,
+            "device_generation": 1,
+            "exposure_gpu_words": [
+              981467136,
+              1166307548,
+              1094489127,
+              1175057812,
+              0,
+              300,
+              0,
+              1
+            ],
+            "history_epoch": 1,
+            "pixel_source": "Sdr",
+            "presenter_generation": 1,
+            "session": 1,
+            "source_epoch": "1",
+            "source_tick": 239,
+            "submission_id": 299,
+            "submit_ms": 3088.7000000000003,
+            "surface_presented": true,
+            "tick": 239,
+            "timeline": 0,
+            "ordinal": 120,
+            "file": "frames/000120.rgba.gz",
+            "rgba_sha256": "9b8b1c5533eeacf6d448640a00d0cd64edd5263ea7590405dc397349120e92e2",
+            "bytes": 1300622
+          },
+          "crop": "tmp/atmosphere-m5/mf1-static-preview/chrome-west-off-fixed-09-2.00.png",
+          "crop_box_xywh": [
+            200,
+            173,
+            800,
+            280
+          ],
+          "crop_sha256": "be6b1700f8bfa6edb166d9a778821147493404b02f18021598f8478e2ffec526",
+          "manifest_sha256": "bb8c86ade9b1e22cd2e4cfd7cdf5bc932e2bf8e920779ad8217e79c0cd36244c"
         },
         {
-          "directory": "tmp/atmosphere-m5/chrome-west-on-fixed-06",
-          "manifest_sha256": "2b981261990afac4f383f25f3c43379bb5febdb99394a25074df4959ab7aded6"
+          "provider": "off",
+          "requested_seconds": 4.0,
+          "reviewed_source": "tmp/atmosphere-m5/chrome-west-off-fixed-09/png/000419.png",
+          "versioned_source": "docs/evidence/ATMOSPHERE/m5/images/chrome-west-off-fixed-09-4.00.png",
+          "source_sha256": "80574113504fb0d051317547a4950a4ecfbb3928c4721e52d11fd58e11c71ec6",
+          "source_record": {
+            "alpha": 0.9999999403953552,
+            "device_generation": 1,
+            "exposure_gpu_words": [
+              981467136,
+              1161193333,
+              1093924773,
+              1170080026,
+              0,
+              420,
+              0,
+              1
+            ],
+            "history_epoch": 1,
+            "pixel_source": "Sdr",
+            "presenter_generation": 1,
+            "session": 1,
+            "source_epoch": "1",
+            "source_tick": 359,
+            "submission_id": 419,
+            "submit_ms": 6205.4,
+            "surface_presented": true,
+            "tick": 359,
+            "timeline": 0,
+            "ordinal": 240,
+            "file": "frames/000240.rgba.gz",
+            "rgba_sha256": "1bcb97c0eb0876eb3c9b1c0450e24922d8c88961d1d1ed61b0fda857c4c73c55",
+            "bytes": 1326173
+          },
+          "crop": "tmp/atmosphere-m5/mf1-static-preview/chrome-west-off-fixed-09-4.00.png",
+          "crop_box_xywh": [
+            200,
+            173,
+            800,
+            280
+          ],
+          "crop_sha256": "2c79642730f150923e637077636dd22e6e02b28015aa702bf77eaf21aab2c9f8",
+          "manifest_sha256": "bb8c86ade9b1e22cd2e4cfd7cdf5bc932e2bf8e920779ad8217e79c0cd36244c"
+        },
+        {
+          "provider": "on",
+          "requested_seconds": 2.0,
+          "reviewed_source": "tmp/atmosphere-m5/chrome-west-on-fixed-09/png/000299.png",
+          "versioned_source": "docs/evidence/ATMOSPHERE/m5/images/chrome-west-on-fixed-09-2.00.png",
+          "source_sha256": "9c3445ef1d965634744fcb37d850b47e3add3f57f349d02a430f3b904389cd00",
+          "source_record": {
+            "alpha": 0.9999999403953552,
+            "device_generation": 1,
+            "exposure_gpu_words": [
+              981467136,
+              1166307548,
+              1094489127,
+              1175057812,
+              0,
+              300,
+              0,
+              1
+            ],
+            "history_epoch": 1,
+            "pixel_source": "Sdr",
+            "presenter_generation": 1,
+            "session": 1,
+            "source_epoch": "1",
+            "source_tick": 239,
+            "submission_id": 299,
+            "submit_ms": 3037.4,
+            "surface_presented": true,
+            "tick": 239,
+            "timeline": 0,
+            "ordinal": 120,
+            "file": "frames/000120.rgba.gz",
+            "rgba_sha256": "684b7fb199f129115fbd21208ba0ab57a5c6fe89294e81515529fe596ca9d7ee",
+            "bytes": 1313717
+          },
+          "crop": "tmp/atmosphere-m5/mf1-static-preview/chrome-west-on-fixed-09-2.00.png",
+          "crop_box_xywh": [
+            200,
+            173,
+            800,
+            280
+          ],
+          "crop_sha256": "a0abe27c3d9e9bffe690054ce545ab8219949bbc10d198784da8c144e5e60b9c",
+          "manifest_sha256": "2d022319d323b856e5017ec9cde989bf85008b2625d0efc54f3ad29644a9b8d8"
+        },
+        {
+          "provider": "on",
+          "requested_seconds": 4.0,
+          "reviewed_source": "tmp/atmosphere-m5/chrome-west-on-fixed-09/png/000419.png",
+          "versioned_source": "docs/evidence/ATMOSPHERE/m5/images/chrome-west-on-fixed-09-4.00.png",
+          "source_sha256": "7326fdefb8a1e85a00891b0f14bdafad6e8f116d8277b983df7a8a5b2497e9a0",
+          "source_record": {
+            "alpha": 0.9999999403953552,
+            "device_generation": 1,
+            "exposure_gpu_words": [
+              981467136,
+              1161193333,
+              1093924773,
+              1170080026,
+              0,
+              420,
+              0,
+              1
+            ],
+            "history_epoch": 1,
+            "pixel_source": "Sdr",
+            "presenter_generation": 1,
+            "session": 1,
+            "source_epoch": "1",
+            "source_tick": 359,
+            "submission_id": 419,
+            "submit_ms": 6145.3,
+            "surface_presented": true,
+            "tick": 359,
+            "timeline": 0,
+            "ordinal": 240,
+            "file": "frames/000240.rgba.gz",
+            "rgba_sha256": "626f03be9f2156d4f1b35856b9a15fd4fbc5208c97392012c910c92c0e03707f",
+            "bytes": 1334993
+          },
+          "crop": "tmp/atmosphere-m5/mf1-static-preview/chrome-west-on-fixed-09-4.00.png",
+          "crop_box_xywh": [
+            200,
+            173,
+            800,
+            280
+          ],
+          "crop_sha256": "1d7eba47d91bfbac159ca6cb5683febe295a037f6436b6090d6f8ba3bc2dfc70",
+          "manifest_sha256": "2d022319d323b856e5017ec9cde989bf85008b2625d0efc54f3ad29644a9b8d8"
         }
       ],
-      "inspection": "Whole frame and native-size ridge/ground crops at fixed ordinals 75 and 195 (two simulation seconds apart).",
-      "observation": "The diagnostic bands darken lit slopes and ground while the broad blue ridge shadow remains sky-lit. The provider-on pattern changes phase over two seconds. The reflective sphere retains its sky response."
+      "inspection": "Whole provider-on frames and native-size off/on ridge/ground crops near 2 and 4 seconds, inside the authored slow pan after preposition.",
+      "observation": "Cloud bands change phase across the lit valley floor over two seconds. The broad ridge shadow retains its sky-lit colour and depth in off/on controls as bands pass its boundary. The bright terrain lip is already present with the provider off.",
+      "comparison_with_mac": "Band placement/depth and unchanged ridge-shadow response agree with the Mac."
     }
   ],
   "motion_1x": [
     {
       "target": "mac-metal",
-      "scenes": [
-        "noon",
-        "low-sun"
-      ],
-      "date_utc": "2026-11-11",
-      "viewer": "IINA 1.5.0; Playback Speed: 1x verified before and after",
-      "viewing_aid": "tmp/atmosphere-m5/review-videos/native-four-1x.mp4",
-      "sha256": "9681d8ab4a334de5a4e49e2e838680f84cdaf323435a4ea7431479f87f2e0347",
-      "layout": "Top: noon off/on. Bottom: low-Sun off/on. Each source starts at its own first PTS, elapsed timing unchanged; 640x360 per panel before half-size player view.",
-      "source_command": "tmp/atmosphere-m5/review-four-command.json",
+      "scene": "noon",
+      "provider": "off",
+      "mode": "realtime",
+      "directory": "tmp/atmosphere-m5/metal-noon-off-realtime-09",
+      "file": "tmp/atmosphere-m5/review-original-mf1/mac-metal/metal-noon-off-realtime-09.mp4",
+      "sha256": "2bfa38ba3119bdb871cdb51e8ebce8b2c67f99e58f3244103c5a33f0ed1602cc",
+      "scope": "Byte-identical original full-resolution VFR sequence. No temporal resampling.",
+      "viewer": "IINA 1.5.0; original full-resolution VFR clip; Video Half Size; Playback Speed 1x verified before each replay",
+      "speed": 1,
       "observed_elapsed_ms": [
-        0,
-        2446,
-        4911,
-        7369
+        250,
+        1251,
+        3251,
+        7251
       ],
-      "observation": "Across the walk and pan, the provider-on pattern moves across the hills and ground while the cooked rock receives the same local shade. The rock underside and long geometric shadows retain sky light. The off controls retain steady direct light. No receiver-specific boundary detachment or black shade appeared. The authored route cut occurs in all four arms.",
-      "source_command_arguments": [
-        "ffmpeg",
-        "-v",
-        "error",
-        "-y",
-        "-i",
-        "tmp/atmosphere-m5/metal-noon-off-realtime-06/preview-1x.mp4",
-        "-i",
-        "tmp/atmosphere-m5/metal-noon-on-realtime-06/preview-1x.mp4",
-        "-i",
-        "tmp/atmosphere-m5/metal-low-sun-off-realtime-06/preview-1x.mp4",
-        "-i",
-        "tmp/atmosphere-m5/metal-low-sun-on-realtime-06/preview-1x.mp4",
-        "-filter_complex",
-        "[0:v]setpts=PTS-STARTPTS,scale=640:360,pad=640:384:0:24:black[v0];[1:v]setpts=PTS-STARTPTS,scale=640:360,pad=640:384:0:24:black[v1];[2:v]setpts=PTS-STARTPTS,scale=640:360,pad=640:384:0:24:black[v2];[3:v]setpts=PTS-STARTPTS,scale=640:360,pad=640:384:0:24:black[v3];[v0][v1][v2][v3]xstack=inputs=4:layout=0_0|640_0|0_384|640_384:shortest=1[out]",
-        "-map",
-        "[out]",
-        "-c:v",
-        "libx264",
-        "-crf",
-        "20",
-        "-pix_fmt",
-        "yuv420p",
-        "-fps_mode",
-        "vfr",
-        "tmp/atmosphere-m5/review-videos/native-four-1x.mp4"
+      "clock_origin": "After Resume AX observation",
+      "observation": "No diagnostic bands occur in the control; rock and ground shadows retain sky light through the walk and authored cut."
+    },
+    {
+      "target": "mac-metal",
+      "scene": "noon",
+      "provider": "on",
+      "mode": "realtime",
+      "directory": "tmp/atmosphere-m5/metal-noon-on-realtime-09",
+      "file": "tmp/atmosphere-m5/review-original-mf1/mac-metal/metal-noon-on-realtime-09.mp4",
+      "sha256": "79a0dbc14c19899e7cfac827328dc18d7a2ee65aec6cd0a72eb45ab65d52e436",
+      "scope": "Byte-identical original full-resolution VFR sequence. No temporal resampling.",
+      "viewer": "IINA 1.5.0; original full-resolution VFR clip; Video Half Size; Playback Speed 1x verified before each replay",
+      "speed": 1,
+      "observed_elapsed_ms": [
+        809,
+        1251,
+        3251,
+        7251
       ],
-      "sources": [
-        {
-          "file": "tmp/atmosphere-m5/metal-noon-off-realtime-06/preview-1x.mp4",
-          "sha256": "696f892658ac17d5ea0dd78ded73f74dc9ae7e46ce26150256123dc1103b22ba"
-        },
-        {
-          "file": "tmp/atmosphere-m5/metal-noon-on-realtime-06/preview-1x.mp4",
-          "sha256": "555e395ae83336c593274dc05493d9cf91ddbb53a3760a628c63c2addf6a4e3f"
-        },
-        {
-          "file": "tmp/atmosphere-m5/metal-low-sun-off-realtime-06/preview-1x.mp4",
-          "sha256": "aa154ffe82ea4bd2dbd5cfa606995247551320bd0bc96e0050ef85babf6552fe"
-        },
-        {
-          "file": "tmp/atmosphere-m5/metal-low-sun-on-realtime-06/preview-1x.mp4",
-          "sha256": "51740aa21ee3360b7e735988ecae0abbc94a167cd0445df9a8b464803ec888cb"
-        }
-      ]
+      "clock_origin": "Before Resume keypress; UI latency included",
+      "observation": "Bands cross the hills and ground while the lit rock top dims coherently. The blue shadowed face, ground shadow and sky reflection remain lit."
+    },
+    {
+      "target": "mac-metal",
+      "scene": "low-sun",
+      "provider": "off",
+      "mode": "realtime",
+      "directory": "tmp/atmosphere-m5/metal-low-sun-off-realtime-09",
+      "file": "tmp/atmosphere-m5/review-original-mf1/mac-metal/metal-low-sun-off-realtime-09.mp4",
+      "sha256": "88510f2082e5d82aacd2c92a49d347d96e73e0e661b4a11783bac565a964db57",
+      "scope": "Byte-identical original full-resolution VFR sequence. No temporal resampling.",
+      "viewer": "IINA 1.5.0; original full-resolution VFR clip; Video Half Size; Playback Speed 1x verified before each replay",
+      "speed": 1,
+      "observed_elapsed_ms": [
+        801,
+        1251,
+        3251,
+        7252
+      ],
+      "clock_origin": "Before Resume keypress; UI latency included",
+      "observation": "Unpatterned lit ground and rock face, with long sky-lit geometric shadows."
+    },
+    {
+      "target": "mac-metal",
+      "scene": "low-sun",
+      "provider": "on",
+      "mode": "realtime",
+      "directory": "tmp/atmosphere-m5/metal-low-sun-on-realtime-09",
+      "file": "tmp/atmosphere-m5/review-original-mf1/mac-metal/metal-low-sun-on-realtime-09.mp4",
+      "sha256": "fabe3ee12fb1a56bb1dde98d0b61e1054b2b2639249997856b6041843ca39b1a",
+      "scope": "Byte-identical original full-resolution VFR sequence. No temporal resampling.",
+      "viewer": "IINA 1.5.0; original full-resolution VFR clip; Video Half Size; Playback Speed 1x verified before each replay",
+      "speed": 1,
+      "observed_elapsed_ms": [
+        817,
+        1251,
+        3251,
+        7252
+      ],
+      "clock_origin": "Before Resume keypress; UI latency included",
+      "observation": "The patch dims and clears the local ground and lit rock face together. Long blue geometric shadows and sky reflection retain light; no detached receiver boundary appears."
+    },
+    {
+      "target": "mac-metal",
+      "scene": "west",
+      "provider": "off",
+      "mode": "realtime",
+      "directory": "tmp/atmosphere-m5/metal-west-off-realtime-09",
+      "file": "tmp/atmosphere-m5/review-original-mf1/mac-metal/metal-west-off-realtime-09.mp4",
+      "sha256": "fe975b74f7970f1cb0a58b65c9f2daa768e39f596e0eafa9f500ed81b906819c",
+      "scope": "Byte-identical original full-resolution VFR sequence. No temporal resampling.",
+      "viewer": "IINA 1.5.0; original full-resolution VFR clip; Video Half Size; Playback Speed 1x verified before each replay",
+      "speed": 1,
+      "observed_elapsed_ms": [
+        802,
+        2001,
+        4001,
+        7251
+      ],
+      "clock_origin": "Before Resume keypress; UI latency included",
+      "observation": "The preposition leads into a slow pan across the broad ridge shadow. The existing bright terrain lip is also present in this control."
+    },
+    {
+      "target": "mac-metal",
+      "scene": "west",
+      "provider": "on",
+      "mode": "realtime",
+      "directory": "tmp/atmosphere-m5/metal-west-on-realtime-09",
+      "file": "tmp/atmosphere-m5/review-original-mf1/mac-metal/metal-west-on-realtime-09.mp4",
+      "sha256": "5386cf887f6e42738872f3c89e685fd0bcb8e24cf6255c3a7228b10290eb9edc",
+      "scope": "Byte-identical original full-resolution VFR sequence. No temporal resampling.",
+      "viewer": "IINA 1.5.0; original full-resolution VFR clip; Video Half Size; Playback Speed 1x verified before each replay",
+      "speed": 1,
+      "observed_elapsed_ms": [
+        804,
+        2002,
+        4001,
+        7250
+      ],
+      "clock_origin": "Before Resume keypress; UI latency included",
+      "observation": "During the slow pan the cloud bands move across lit ground while the broad ridge shadow retains its sky-lit depth. No second darkening appears inside it."
+    },
+    {
+      "target": "chrome-webgpu",
+      "scene": "noon",
+      "provider": "off",
+      "mode": "realtime",
+      "directory": "tmp/atmosphere-m5/chrome-noon-off-realtime-09",
+      "file": "tmp/atmosphere-m5/review-original-mf1/chrome-webgpu/chrome-noon-off-realtime-09.mp4",
+      "sha256": "8edbe46f829123c7071a96d6a09386e44a7ee6625bbce04a4adc5f858b3e7f3a",
+      "scope": "Byte-identical original full-resolution VFR sequence. No temporal resampling.",
+      "viewer": "IINA 1.5.0; original full-resolution VFR clip; Video Half Size; Playback Speed 1x verified before each replay",
+      "speed": 1,
+      "observed_elapsed_ms": [
+        470,
+        1251,
+        3252,
+        7251
+      ],
+      "clock_origin": "Before Resume keypress; UI latency included",
+      "observation": "The control has no moving diagnostic bands. Rock and ground shadows retain sky light, matching the native control."
+    },
+    {
+      "target": "chrome-webgpu",
+      "scene": "noon",
+      "provider": "on",
+      "mode": "realtime",
+      "directory": "tmp/atmosphere-m5/chrome-noon-on-realtime-10",
+      "file": "tmp/atmosphere-m5/review-original-mf1/chrome-webgpu/chrome-noon-on-realtime-10.mp4",
+      "sha256": "b6e7d7b8cb74d1bcaed9d29cb2c6f1a7c15d699f3c52754a412f42964a6a4c02",
+      "scope": "Byte-identical original full-resolution VFR sequence. No temporal resampling.",
+      "viewer": "IINA 1.5.0; original full-resolution VFR clip; Video Half Size; Playback Speed 1x verified before each replay",
+      "speed": 1,
+      "observed_elapsed_ms": [
+        475,
+        1251,
+        3251,
+        7250
+      ],
+      "clock_origin": "Before Resume keypress; UI latency included",
+      "observation": "Bands move over hills and ground while the rock top responds coherently; sky reflection and geometric shadows remain lit. Placement and depth agree with Metal."
+    },
+    {
+      "target": "chrome-webgpu",
+      "scene": "low-sun",
+      "provider": "off",
+      "mode": "realtime",
+      "directory": "tmp/atmosphere-m5/chrome-low-sun-off-realtime-09",
+      "file": "tmp/atmosphere-m5/review-original-mf1/chrome-webgpu/chrome-low-sun-off-realtime-09.mp4",
+      "sha256": "75cbb1e0d832d9fa9135c58423831b5599fd0d1a22292777d766d5bca20688b1",
+      "scope": "Byte-identical original full-resolution VFR sequence. No temporal resampling.",
+      "viewer": "IINA 1.5.0; original full-resolution VFR clip; Video Half Size; Playback Speed 1x verified before each replay",
+      "speed": 1,
+      "observed_elapsed_ms": [
+        478,
+        1252,
+        3251,
+        7250
+      ],
+      "clock_origin": "Before Resume keypress; UI latency included",
+      "observation": "The unpatterned low-Sun control retains a lit rock face and long blue geometric shadows, matching Metal."
+    },
+    {
+      "target": "chrome-webgpu",
+      "scene": "low-sun",
+      "provider": "on",
+      "mode": "realtime",
+      "directory": "tmp/atmosphere-m5/chrome-low-sun-on-realtime-09",
+      "file": "tmp/atmosphere-m5/review-original-mf1/chrome-webgpu/chrome-low-sun-on-realtime-09.mp4",
+      "sha256": "e4b5d32f8bcb1f71a2734a68a694ed20504485d9464d7b7bd3849a817bc828f2",
+      "scope": "Byte-identical original full-resolution VFR sequence. No temporal resampling.",
+      "viewer": "IINA 1.5.0; original full-resolution VFR clip; Video Half Size; Playback Speed 1x verified before each replay",
+      "speed": 1,
+      "observed_elapsed_ms": [
+        474,
+        1251,
+        3251,
+        7250
+      ],
+      "clock_origin": "Before Resume keypress; UI latency included",
+      "observation": "The patch dims and clears the local ground and rock face together. Long geometric shadows stay sky-lit; no receiver-specific boundary detaches. The result agrees with Metal."
+    },
+    {
+      "target": "chrome-webgpu",
+      "scene": "west",
+      "provider": "off",
+      "mode": "realtime",
+      "directory": "tmp/atmosphere-m5/chrome-west-off-realtime-09",
+      "file": "tmp/atmosphere-m5/review-original-mf1/chrome-webgpu/chrome-west-off-realtime-09.mp4",
+      "sha256": "dba06e14e4072c332a758a7340f2e5f61a2921e895411ba5b225fd9a9e81642b",
+      "scope": "Byte-identical original full-resolution VFR sequence. No temporal resampling.",
+      "viewer": "IINA 1.5.0; original full-resolution VFR clip; Video Half Size; Playback Speed 1x verified before each replay",
+      "speed": 1,
+      "observed_elapsed_ms": [
+        480,
+        2001,
+        4001,
+        7251
+      ],
+      "clock_origin": "Before Resume keypress; UI latency included",
+      "observation": "After preposition the slow pan shows the broad ridge shadow and the existing bright terrain lip; no diagnostic bands occur."
+    },
+    {
+      "target": "chrome-webgpu",
+      "scene": "west",
+      "provider": "on",
+      "mode": "realtime",
+      "directory": "tmp/atmosphere-m5/chrome-west-on-realtime-09",
+      "file": "tmp/atmosphere-m5/review-original-mf1/chrome-webgpu/chrome-west-on-realtime-09.mp4",
+      "sha256": "00bdb25d6b79b2e0302661bf55d643a8a5813886396a6a65b269434c9f4b6652",
+      "scope": "Byte-identical original full-resolution VFR sequence. No temporal resampling.",
+      "viewer": "IINA 1.5.0; original full-resolution VFR clip; Video Half Size; Playback Speed 1x verified before each replay",
+      "speed": 1,
+      "observed_elapsed_ms": [
+        466,
+        2001,
+        4001,
+        7251
+      ],
+      "clock_origin": "Before Resume keypress; UI latency included",
+      "observation": "Bands cross the lit valley floor through the slow pan while the broad ridge shadow retains sky light. No second darkening appears in that shadow; placement/depth agree with Metal."
     }
   ],
-  "remaining": "Complete all target sequences and review at 1x under the shared GPU lock."
+  "scope": "Whole frames/native-size crops and original full-resolution VFR clips at verified 1x. Movie PTS are not physical display cadence.",
+  "limits": [
+    "The diagnostic shape and softness are stand-ins.",
+    "The authored preposition/route cut is separate from the judged slow pan.",
+    "Existing terrain brightness steps and low-Sun shadow faceting are present in off controls; this review qualifies the cloud-light interaction, not the deferred M6 terrain/sky defects.",
+    "Engine capture/movie timing does not qualify physical display cadence."
+  ],
+  "access": "Console unlocked during this review; approved IINA used. All owned playback was stopped after review.",
+  "rejected_attempts": [
+    {
+      "directory": "tmp/atmosphere-m5/chrome-noon-on-realtime-09",
+      "reason": "Official completeness failed (renderer=0/export=1; 480 submitted images). Retained but not selected; the complete retry is attempt10."
+    }
+  ]
 }

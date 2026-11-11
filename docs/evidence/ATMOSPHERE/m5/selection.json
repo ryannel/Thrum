@@ -1,0 +1,1646 @@
+[
+  {
+    "target": "mac-metal",
+    "scene": "noon",
+    "provider": "off",
+    "mode": "realtime",
+    "directory": "tmp/atmosphere-m5/metal-noon-off-realtime-09",
+    "manifest_sha256": "3a5d8ccd38ef6b2555d63491b5834b982dc42fe84e98a83027d917b3bf50f7d0",
+    "runtime_sha256": "7402eefdf46007a36fb9ae62047924cc81ad62a2c74e39ad3406f29d48992d55",
+    "selected": [
+      {
+        "requested_seconds": 1.25,
+        "actual_seconds": 1.252269,
+        "image": "docs/evidence/ATMOSPHERE/m5/images/metal-noon-off-realtime-09-1.25.png",
+        "sha256": "71c579b3b2cbcf845c63c9bc92732e4a270801917b61b5bcc8553acbe1f21f86",
+        "source": {
+          "alpha": 1.0,
+          "current_endpoint_tick": 193,
+          "device_generation": 1,
+          "epoch": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1192782227,
+            1097847330,
+            1201587028,
+            0,
+            407,
+            0,
+            1
+          ],
+          "history_epoch": 1,
+          "map_observed_ns": 1269718417,
+          "pixel_source": "Sdr",
+          "presentation_lead_ns": 6896916,
+          "previous_endpoint_tick": 192,
+          "readback_copy_gpu_bracket_ns": 1836375.0,
+          "submission_id": 406,
+          "submit_ns": 1252269000,
+          "surface_generation": 1,
+          "tick": 193,
+          "timeline": 0,
+          "visual_revision": null
+        }
+      },
+      {
+        "requested_seconds": 3.25,
+        "actual_seconds": 3.252512834,
+        "image": "docs/evidence/ATMOSPHERE/m5/images/metal-noon-off-realtime-09-3.25.png",
+        "sha256": "ed7342644860badbe61f0eb42e75b636b03e28da6a6ac56e9061c905154b0520",
+        "source": {
+          "alpha": 1.0,
+          "current_endpoint_tick": 313,
+          "device_generation": 1,
+          "epoch": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1192770567,
+            1097845563,
+            1201574878,
+            0,
+            647,
+            0,
+            1
+          ],
+          "history_epoch": 1,
+          "map_observed_ns": 3268810709,
+          "pixel_source": "Sdr",
+          "presentation_lead_ns": 6907541,
+          "previous_endpoint_tick": 312,
+          "readback_copy_gpu_bracket_ns": 2430416.0,
+          "submission_id": 646,
+          "submit_ns": 3252512834,
+          "surface_generation": 1,
+          "tick": 313,
+          "timeline": 0,
+          "visual_revision": null
+        }
+      }
+    ],
+    "clip": {
+      "file": "docs/evidence/ATMOSPHERE/m5/motion/metal-noon-off-realtime-09.mp4",
+      "sha256": "355d355afeececf34c3115f3c247004ae75b097cd0a10c20a20ea24986717a2d",
+      "source_start_seconds": 0,
+      "duration_seconds": 8.03671,
+      "scope": "720p 1x viewing aid. Native PNGs and verified complete local source retain exact pixels."
+    },
+    "changed_build_inputs_since_capture": [],
+    "visual_review": {
+      "inspection_record": "docs/evidence/ATMOSPHERE/m5/records/visual-inspection.json",
+      "static_inspected": true,
+      "motion_1x_reviewed": true
+    }
+  },
+  {
+    "target": "mac-metal",
+    "scene": "noon",
+    "provider": "on",
+    "mode": "realtime",
+    "directory": "tmp/atmosphere-m5/metal-noon-on-realtime-09",
+    "manifest_sha256": "dd938c4df139439696a0a79d9f06a5cf394a61fd2edf44b9c452c705ce947bcb",
+    "runtime_sha256": "e53dd777b053f1d0fc83ec32dec7c85a240769516cffb77d9b2b3ad8b6458e44",
+    "selected": [
+      {
+        "requested_seconds": 1.25,
+        "actual_seconds": 1.252105584,
+        "image": "docs/evidence/ATMOSPHERE/m5/images/metal-noon-on-realtime-09-1.25.png",
+        "sha256": "9f72eca31e2a3aca00556e283f44a76297899b73de78e70e0ba6c21564981dcf",
+        "source": {
+          "alpha": 0.49259740114212036,
+          "current_endpoint_tick": 194,
+          "device_generation": 1,
+          "epoch": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1192782207,
+            1097847327,
+            1201587008,
+            0,
+            410,
+            0,
+            1
+          ],
+          "history_epoch": 1,
+          "map_observed_ns": 1269743625,
+          "pixel_source": "Sdr",
+          "presentation_lead_ns": 7271874,
+          "previous_endpoint_tick": 193,
+          "readback_copy_gpu_bracket_ns": 1382000.0,
+          "submission_id": 409,
+          "submit_ns": 1252105584,
+          "surface_generation": 1,
+          "tick": 194,
+          "timeline": 0,
+          "visual_revision": null
+        }
+      },
+      {
+        "requested_seconds": 3.25,
+        "actual_seconds": 3.251722542,
+        "image": "docs/evidence/ATMOSPHERE/m5/images/metal-noon-on-realtime-09-3.25.png",
+        "sha256": "cb18943965399cda10d2a21521ea8f28459c42f7867a6e466169c93c17c66308",
+        "source": {
+          "alpha": 1.0,
+          "current_endpoint_tick": 313,
+          "device_generation": 1,
+          "epoch": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1192770567,
+            1097845563,
+            1201574878,
+            0,
+            650,
+            0,
+            1
+          ],
+          "history_epoch": 1,
+          "map_observed_ns": 3268710750,
+          "pixel_source": "Sdr",
+          "presentation_lead_ns": 7299249,
+          "previous_endpoint_tick": 312,
+          "readback_copy_gpu_bracket_ns": 1586500.0,
+          "submission_id": 649,
+          "submit_ns": 3251722542,
+          "surface_generation": 1,
+          "tick": 313,
+          "timeline": 0,
+          "visual_revision": null
+        }
+      }
+    ],
+    "clip": {
+      "file": "docs/evidence/ATMOSPHERE/m5/motion/metal-noon-on-realtime-09.mp4",
+      "sha256": "c8f9b0787293722c07c8fb22081b5c30c5fc995bdfd7b8f14916f569db7b995a",
+      "source_start_seconds": 0,
+      "duration_seconds": 8.030021,
+      "scope": "720p 1x viewing aid. Native PNGs and verified complete local source retain exact pixels."
+    },
+    "changed_build_inputs_since_capture": [],
+    "visual_review": {
+      "inspection_record": "docs/evidence/ATMOSPHERE/m5/records/visual-inspection.json",
+      "static_inspected": true,
+      "motion_1x_reviewed": true
+    }
+  },
+  {
+    "target": "mac-metal",
+    "scene": "low-sun",
+    "provider": "off",
+    "mode": "realtime",
+    "directory": "tmp/atmosphere-m5/metal-low-sun-off-realtime-09",
+    "manifest_sha256": "43281a309a753544ebb9b4fabc95ce0b0a34c7f93047d317f2c8901e87d81b87",
+    "runtime_sha256": "4aa8ee579cb20f14da0937ebed61093a2b260f93ea71b438bd714689f57bb45f",
+    "selected": [
+      {
+        "requested_seconds": 1.25,
+        "actual_seconds": 1.25281075,
+        "image": "docs/evidence/ATMOSPHERE/m5/images/metal-low-sun-off-realtime-09-1.25.png",
+        "sha256": "2be7671f0f0e9f66eebdfcceeb2ed0fb4a040aa215205982b12d3ce5f1fc65de",
+        "source": {
+          "alpha": 1.0,
+          "current_endpoint_tick": 193,
+          "device_generation": 1,
+          "epoch": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1167416867,
+            1094671076,
+            1176213349,
+            0,
+            410,
+            0,
+            1
+          ],
+          "history_epoch": 1,
+          "map_observed_ns": 1268975584,
+          "pixel_source": "Sdr",
+          "presentation_lead_ns": 6452374,
+          "previous_endpoint_tick": 192,
+          "readback_copy_gpu_bracket_ns": 1766291.0,
+          "submission_id": 409,
+          "submit_ns": 1252810750,
+          "surface_generation": 1,
+          "tick": 193,
+          "timeline": 0,
+          "visual_revision": null
+        }
+      },
+      {
+        "requested_seconds": 3.25,
+        "actual_seconds": 3.253279792,
+        "image": "docs/evidence/ATMOSPHERE/m5/images/metal-low-sun-off-realtime-09-3.25.png",
+        "sha256": "19055c88977ad1eb0fd23e20fb4f7e005e6959148b4e1d96314c2a925db4903f",
+        "source": {
+          "alpha": 1.0,
+          "current_endpoint_tick": 313,
+          "device_generation": 1,
+          "epoch": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1163185485,
+            1094157948,
+            1172155185,
+            0,
+            650,
+            0,
+            1
+          ],
+          "history_epoch": 1,
+          "map_observed_ns": 3269823667,
+          "pixel_source": "Sdr",
+          "presentation_lead_ns": 6040166,
+          "previous_endpoint_tick": 312,
+          "readback_copy_gpu_bracket_ns": 2872000.0,
+          "submission_id": 649,
+          "submit_ns": 3253279792,
+          "surface_generation": 1,
+          "tick": 313,
+          "timeline": 0,
+          "visual_revision": null
+        }
+      }
+    ],
+    "clip": {
+      "file": "docs/evidence/ATMOSPHERE/m5/motion/metal-low-sun-off-realtime-09.mp4",
+      "sha256": "b6bbe964f3e35c38bf682e00f1b3042b52107309c54544972d498cbd6e8b00c4",
+      "source_start_seconds": 0,
+      "duration_seconds": 8.039441,
+      "scope": "720p 1x viewing aid. Native PNGs and verified complete local source retain exact pixels."
+    },
+    "changed_build_inputs_since_capture": [],
+    "visual_review": {
+      "inspection_record": "docs/evidence/ATMOSPHERE/m5/records/visual-inspection.json",
+      "static_inspected": true,
+      "motion_1x_reviewed": true
+    }
+  },
+  {
+    "target": "mac-metal",
+    "scene": "low-sun",
+    "provider": "on",
+    "mode": "realtime",
+    "directory": "tmp/atmosphere-m5/metal-low-sun-on-realtime-09",
+    "manifest_sha256": "2e18509fce8883ea73400496de493e00e89bc68a3b562fa9167057c77a492ac5",
+    "runtime_sha256": "b8ed1e7cce7ebf986dade3c5b0a097abdb49d75d5261628997bf7bdff29819ab",
+    "selected": [
+      {
+        "requested_seconds": 1.25,
+        "actual_seconds": 1.253313792,
+        "image": "docs/evidence/ATMOSPHERE/m5/images/metal-low-sun-on-realtime-09-1.25.png",
+        "sha256": "fd6193107ee8243644445a201cc337f50153d6f6535159089052edab8a5283cc",
+        "source": {
+          "alpha": 1.0,
+          "current_endpoint_tick": 193,
+          "device_generation": 1,
+          "epoch": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1167416867,
+            1094671076,
+            1176213349,
+            0,
+            406,
+            0,
+            1
+          ],
+          "history_epoch": 1,
+          "map_observed_ns": 1269674750,
+          "pixel_source": "Sdr",
+          "presentation_lead_ns": 7061666,
+          "previous_endpoint_tick": 192,
+          "readback_copy_gpu_bracket_ns": 2757834.0,
+          "submission_id": 405,
+          "submit_ns": 1253313792,
+          "surface_generation": 1,
+          "tick": 193,
+          "timeline": 0,
+          "visual_revision": null
+        }
+      },
+      {
+        "requested_seconds": 3.25,
+        "actual_seconds": 3.253384917,
+        "image": "docs/evidence/ATMOSPHERE/m5/images/metal-low-sun-on-realtime-09-3.25.png",
+        "sha256": "dcc26741566b328c409588c68fba68b30c39ac61b563874a9540dc195fbcc3c9",
+        "source": {
+          "alpha": 1.0,
+          "current_endpoint_tick": 313,
+          "device_generation": 1,
+          "epoch": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1163185485,
+            1094157948,
+            1172155185,
+            0,
+            621,
+            0,
+            1
+          ],
+          "history_epoch": 1,
+          "map_observed_ns": 3271863875,
+          "pixel_source": "Sdr",
+          "presentation_lead_ns": 7259499,
+          "previous_endpoint_tick": 312,
+          "readback_copy_gpu_bracket_ns": 2768000.0,
+          "submission_id": 620,
+          "submit_ns": 3253384917,
+          "surface_generation": 1,
+          "tick": 313,
+          "timeline": 0,
+          "visual_revision": null
+        }
+      }
+    ],
+    "clip": {
+      "file": "docs/evidence/ATMOSPHERE/m5/motion/metal-low-sun-on-realtime-09.mp4",
+      "sha256": "749e1ab02af74baf7ce5afad6f666be6941ad523127b848cfeb547a3d13cfcfb",
+      "source_start_seconds": 0,
+      "duration_seconds": 8.044192,
+      "scope": "720p 1x viewing aid. Native PNGs and verified complete local source retain exact pixels."
+    },
+    "changed_build_inputs_since_capture": [],
+    "visual_review": {
+      "inspection_record": "docs/evidence/ATMOSPHERE/m5/records/visual-inspection.json",
+      "static_inspected": true,
+      "motion_1x_reviewed": true
+    }
+  },
+  {
+    "target": "mac-metal",
+    "scene": "west",
+    "provider": "off",
+    "mode": "realtime",
+    "directory": "tmp/atmosphere-m5/metal-west-off-realtime-09",
+    "manifest_sha256": "679e2dc7b4a7a40acde3961dfb24085c00cd6dbf31bbcce711fa5facee722465",
+    "runtime_sha256": "7741d32d3ff08a7f94650c089944fd1b9c4e6387f97889cb33daca95c57cf323",
+    "selected": [
+      {
+        "requested_seconds": 2.0,
+        "actual_seconds": 2.0027935,
+        "image": "docs/evidence/ATMOSPHERE/m5/images/metal-west-off-realtime-09-2.00.png",
+        "sha256": "36646f77f59296a4b8ca2b9e746e09d07e23bbe0e8fcab5ced38f4151dcd0f9f",
+        "source": {
+          "alpha": 1.0,
+          "current_endpoint_tick": 238,
+          "device_generation": 1,
+          "epoch": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1166331346,
+            1094493269,
+            1175082600,
+            0,
+            521,
+            0,
+            1
+          ],
+          "history_epoch": 1,
+          "map_observed_ns": 2018561000,
+          "pixel_source": "Sdr",
+          "presentation_lead_ns": 6851666,
+          "previous_endpoint_tick": 237,
+          "readback_copy_gpu_bracket_ns": 2315083.0,
+          "submission_id": 520,
+          "submit_ns": 2002793500,
+          "surface_generation": 1,
+          "tick": 238,
+          "timeline": 0,
+          "visual_revision": null
+        }
+      },
+      {
+        "requested_seconds": 4.0,
+        "actual_seconds": 4.001929209,
+        "image": "docs/evidence/ATMOSPHERE/m5/images/metal-west-off-realtime-09-4.00.png",
+        "sha256": "b3d8adc891e3ad6eb59cd4a4d568ebff2242b7ec748768d77c2803b0d307e58a",
+        "source": {
+          "alpha": 1.0,
+          "current_endpoint_tick": 358,
+          "device_generation": 1,
+          "epoch": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1161235628,
+            1093930116,
+            1170124088,
+            0,
+            744,
+            0,
+            1
+          ],
+          "history_epoch": 1,
+          "map_observed_ns": 4019782000,
+          "pixel_source": "Sdr",
+          "presentation_lead_ns": 8009208,
+          "previous_endpoint_tick": 357,
+          "readback_copy_gpu_bracket_ns": 2451500.0,
+          "submission_id": 743,
+          "submit_ns": 4001929209,
+          "surface_generation": 1,
+          "tick": 358,
+          "timeline": 0,
+          "visual_revision": null
+        }
+      }
+    ],
+    "clip": {
+      "file": "docs/evidence/ATMOSPHERE/m5/motion/metal-west-off-realtime-09.mp4",
+      "sha256": "69b1e04a2eaa0326c4174ced94be98d81910f6b99a07fb130e539722ea90da80",
+      "source_start_seconds": 0,
+      "duration_seconds": 8.041667,
+      "scope": "720p 1x viewing aid. Native PNGs and verified complete local source retain exact pixels."
+    },
+    "changed_build_inputs_since_capture": [],
+    "visual_review": {
+      "inspection_record": "docs/evidence/ATMOSPHERE/m5/records/visual-inspection.json",
+      "static_inspected": true,
+      "motion_1x_reviewed": true
+    }
+  },
+  {
+    "target": "mac-metal",
+    "scene": "west",
+    "provider": "on",
+    "mode": "realtime",
+    "directory": "tmp/atmosphere-m5/metal-west-on-realtime-09",
+    "manifest_sha256": "c5ce6951098c3672e94f4c9a040906516dfdeb72dc4bbb7c986f4b9218b90bbe",
+    "runtime_sha256": "2d7e6ab1513caad984cbb1d638291eb51c8c959c3c28dabae48d2f74079f65ae",
+    "selected": [
+      {
+        "requested_seconds": 2.0,
+        "actual_seconds": 2.002252834,
+        "image": "docs/evidence/ATMOSPHERE/m5/images/metal-west-on-realtime-09-2.00.png",
+        "sha256": "f47f9874a8789d2dba6c99c85f9b6e729faadeff4b8a36a595e0811f48325801",
+        "source": {
+          "alpha": 1.0,
+          "current_endpoint_tick": 238,
+          "device_generation": 1,
+          "epoch": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1166331346,
+            1094493269,
+            1175082600,
+            0,
+            529,
+            0,
+            1
+          ],
+          "history_epoch": 1,
+          "map_observed_ns": 2019192792,
+          "pixel_source": "Sdr",
+          "presentation_lead_ns": 6795874,
+          "previous_endpoint_tick": 237,
+          "readback_copy_gpu_bracket_ns": 1463250.0,
+          "submission_id": 528,
+          "submit_ns": 2002252834,
+          "surface_generation": 1,
+          "tick": 238,
+          "timeline": 0,
+          "visual_revision": null
+        }
+      },
+      {
+        "requested_seconds": 4.0,
+        "actual_seconds": 4.002282417,
+        "image": "docs/evidence/ATMOSPHERE/m5/images/metal-west-on-realtime-09-4.00.png",
+        "sha256": "6c9101ca49d3fe1b888563a118a65e93b3c537439feb5f34ee52af8ce5d59aba",
+        "source": {
+          "alpha": 0.497282475233078,
+          "current_endpoint_tick": 359,
+          "device_generation": 1,
+          "epoch": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1161214616,
+            1093927464,
+            1170102200,
+            0,
+            769,
+            0,
+            1
+          ],
+          "history_epoch": 1,
+          "map_observed_ns": 4019096542,
+          "pixel_source": "Sdr",
+          "presentation_lead_ns": 7000791,
+          "previous_endpoint_tick": 358,
+          "readback_copy_gpu_bracket_ns": 2387541.0,
+          "submission_id": 768,
+          "submit_ns": 4002282417,
+          "surface_generation": 1,
+          "tick": 359,
+          "timeline": 0,
+          "visual_revision": null
+        }
+      }
+    ],
+    "clip": {
+      "file": "docs/evidence/ATMOSPHERE/m5/motion/metal-west-on-realtime-09.mp4",
+      "sha256": "0f8fdae94197c323f5706873bb50296dea8d24022bc8101d6b30cf5dc837a7e7",
+      "source_start_seconds": 0,
+      "duration_seconds": 8.041667,
+      "scope": "720p 1x viewing aid. Native PNGs and verified complete local source retain exact pixels."
+    },
+    "changed_build_inputs_since_capture": [],
+    "visual_review": {
+      "inspection_record": "docs/evidence/ATMOSPHERE/m5/records/visual-inspection.json",
+      "static_inspected": true,
+      "motion_1x_reviewed": true
+    }
+  },
+  {
+    "target": "chrome-webgpu",
+    "scene": "noon",
+    "provider": "off",
+    "mode": "fixed",
+    "directory": "tmp/atmosphere-m5/chrome-noon-off-fixed-09",
+    "manifest_sha256": "f333d1f4381efc3520ca200e71c40c2414ae48a0394ed3e72f734bc9ad74ba84",
+    "runtime_sha256": "e30f733c692bcbd8f8c933352c49e0e7101c1869661210456906e916cb468bbc",
+    "selected": [
+      {
+        "requested_seconds": 1.25,
+        "actual_seconds": 1.25,
+        "image": "docs/evidence/ATMOSPHERE/m5/images/chrome-noon-off-fixed-09-1.25.png",
+        "sha256": "b8eef9e98fcbcae70873e0cbfd16890d67c02de09685152551317363a4140202",
+        "source": {
+          "alpha": 0.9999999403953552,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1192782207,
+            1097847327,
+            1201587005,
+            0,
+            255,
+            0,
+            1
+          ],
+          "history_epoch": 1,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 194,
+          "submission_id": 254,
+          "submit_ms": 1857.1,
+          "surface_presented": true,
+          "tick": 194,
+          "timeline": 0,
+          "ordinal": 75,
+          "file": "frames/000075.rgba.gz",
+          "rgba_sha256": "ff5580003536b572707be3decbf1599d96db8a7da2cc19e5e36a33fb83387e4e",
+          "bytes": 1217922
+        }
+      },
+      {
+        "requested_seconds": 3.25,
+        "actual_seconds": 3.25,
+        "image": "docs/evidence/ATMOSPHERE/m5/images/chrome-noon-off-fixed-09-3.25.png",
+        "sha256": "6d0229d7460c466c94601ade4f30ad54dbd054431d2e9ecb181dcfa39b753470",
+        "source": {
+          "alpha": 0.9999999403953552,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1192770362,
+            1097845532,
+            1201574669,
+            0,
+            375,
+            0,
+            1
+          ],
+          "history_epoch": 1,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 314,
+          "submission_id": 374,
+          "submit_ms": 5482.3,
+          "surface_presented": true,
+          "tick": 314,
+          "timeline": 0,
+          "ordinal": 195,
+          "file": "frames/000195.rgba.gz",
+          "rgba_sha256": "04e7502fa5d2d9287e7146a6932ee1e5eb944718d811a911098429ec21cde55b",
+          "bytes": 1277847
+        }
+      }
+    ],
+    "clip": null,
+    "changed_build_inputs_since_capture": [],
+    "visual_review": {
+      "inspection_record": "docs/evidence/ATMOSPHERE/m5/records/visual-inspection.json",
+      "static_inspected": true,
+      "motion_1x_reviewed": false
+    }
+  },
+  {
+    "target": "chrome-webgpu",
+    "scene": "noon",
+    "provider": "on",
+    "mode": "fixed",
+    "directory": "tmp/atmosphere-m5/chrome-noon-on-fixed-09",
+    "manifest_sha256": "89b267673432beb5496d980edba68e25c56d6201d59b04f142e253776b00a5da",
+    "runtime_sha256": "2e6ee0cda68e33cfe869016ca6bc647a790f2ddb6f25496f130a5d1f75a069ac",
+    "selected": [
+      {
+        "requested_seconds": 1.25,
+        "actual_seconds": 1.25,
+        "image": "docs/evidence/ATMOSPHERE/m5/images/chrome-noon-on-fixed-09-1.25.png",
+        "sha256": "8e0551580e36d164c33927d510e57d99121a6b04af83551d30f10f4864936316",
+        "source": {
+          "alpha": 0.9999999403953552,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1192782207,
+            1097847327,
+            1201587005,
+            0,
+            255,
+            0,
+            1
+          ],
+          "history_epoch": 1,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 194,
+          "submission_id": 254,
+          "submit_ms": 1797.1,
+          "surface_presented": true,
+          "tick": 194,
+          "timeline": 0,
+          "ordinal": 75,
+          "file": "frames/000075.rgba.gz",
+          "rgba_sha256": "8ffe55f5d9eebb8337010319467c58f4b05ade2cf28d8d4e203a84fd08c33d84",
+          "bytes": 1243557
+        }
+      },
+      {
+        "requested_seconds": 3.25,
+        "actual_seconds": 3.25,
+        "image": "docs/evidence/ATMOSPHERE/m5/images/chrome-noon-on-fixed-09-3.25.png",
+        "sha256": "250e2d69e1f7a4207ea29ebea3c9e19d9a56a6346b7ebbbc601e236ee5da29cf",
+        "source": {
+          "alpha": 0.9999999403953552,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1192770362,
+            1097845532,
+            1201574669,
+            0,
+            375,
+            0,
+            1
+          ],
+          "history_epoch": 1,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 314,
+          "submission_id": 374,
+          "submit_ms": 4794.1,
+          "surface_presented": true,
+          "tick": 314,
+          "timeline": 0,
+          "ordinal": 195,
+          "file": "frames/000195.rgba.gz",
+          "rgba_sha256": "43ea19ae4a1ab02c9532950256d3035faaea6db1132d7330335564ed03bfd1b4",
+          "bytes": 1213484
+        }
+      }
+    ],
+    "clip": null,
+    "changed_build_inputs_since_capture": [],
+    "visual_review": {
+      "inspection_record": "docs/evidence/ATMOSPHERE/m5/records/visual-inspection.json",
+      "static_inspected": true,
+      "motion_1x_reviewed": false
+    }
+  },
+  {
+    "target": "chrome-webgpu",
+    "scene": "low-sun",
+    "provider": "off",
+    "mode": "fixed",
+    "directory": "tmp/atmosphere-m5/chrome-low-sun-off-fixed-09",
+    "manifest_sha256": "3867baaf54fe7bcda71a9f1f6dc612f4194093c8889eee4a6920a83aa241e82a",
+    "runtime_sha256": "a1e221fefafdbec9e88e222a0798710a82ee7ac5f6ba5be660c629f177c1e57a",
+    "selected": [
+      {
+        "requested_seconds": 1.25,
+        "actual_seconds": 1.25,
+        "image": "docs/evidence/ATMOSPHERE/m5/images/chrome-low-sun-off-fixed-09-1.25.png",
+        "sha256": "2315de76fb831e344780f1f072316277d7f47338b7db532416278912e44ebffa",
+        "source": {
+          "alpha": 0.9999999403953552,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1167392386,
+            1094667288,
+            1176187850,
+            0,
+            255,
+            0,
+            1
+          ],
+          "history_epoch": 1,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 194,
+          "submission_id": 254,
+          "submit_ms": 2268,
+          "surface_presented": true,
+          "tick": 194,
+          "timeline": 0,
+          "ordinal": 75,
+          "file": "frames/000075.rgba.gz",
+          "rgba_sha256": "3403d6b13b11d83a3e8ae6f1ddec94d780fd1c3a100ee9fa8452fa3a5a8883b2",
+          "bytes": 1363387
+        }
+      },
+      {
+        "requested_seconds": 3.25,
+        "actual_seconds": 3.25,
+        "image": "docs/evidence/ATMOSPHERE/m5/images/chrome-low-sun-off-fixed-09-3.25.png",
+        "sha256": "52dd2ef3c0cd15a5737426830e74af894bbca41facb61e546824e8d700672cd0",
+        "source": {
+          "alpha": 0.9999999403953552,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1163141093,
+            1094153125,
+            1172108947,
+            0,
+            375,
+            0,
+            1
+          ],
+          "history_epoch": 1,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 314,
+          "submission_id": 374,
+          "submit_ms": 5968.7,
+          "surface_presented": true,
+          "tick": 314,
+          "timeline": 0,
+          "ordinal": 195,
+          "file": "frames/000195.rgba.gz",
+          "rgba_sha256": "c151ba1bc8841eb8189d6debae8c3fe05d71c968e8f752958c53b0af21973e92",
+          "bytes": 1407555
+        }
+      }
+    ],
+    "clip": null,
+    "changed_build_inputs_since_capture": [],
+    "visual_review": {
+      "inspection_record": "docs/evidence/ATMOSPHERE/m5/records/visual-inspection.json",
+      "static_inspected": true,
+      "motion_1x_reviewed": false
+    }
+  },
+  {
+    "target": "chrome-webgpu",
+    "scene": "low-sun",
+    "provider": "on",
+    "mode": "fixed",
+    "directory": "tmp/atmosphere-m5/chrome-low-sun-on-fixed-09",
+    "manifest_sha256": "eaa6ce88bea3af9d627172b47c1f32f7ab14c60492717ad767498feed0ef4b97",
+    "runtime_sha256": "264d1d64e9a389ee8a7d60356985bb70cc5e8177bd9faa275edc1b00e9ca6f10",
+    "selected": [
+      {
+        "requested_seconds": 1.25,
+        "actual_seconds": 1.25,
+        "image": "docs/evidence/ATMOSPHERE/m5/images/chrome-low-sun-on-fixed-09-1.25.png",
+        "sha256": "47b04304170ab30687bcd84279c6ce68b342ea503c8755c03f29616b5616c33b",
+        "source": {
+          "alpha": 0.9999999403953552,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1167392386,
+            1094667288,
+            1176187850,
+            0,
+            255,
+            0,
+            1
+          ],
+          "history_epoch": 1,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 194,
+          "submission_id": 254,
+          "submit_ms": 2289.7,
+          "surface_presented": true,
+          "tick": 194,
+          "timeline": 0,
+          "ordinal": 75,
+          "file": "frames/000075.rgba.gz",
+          "rgba_sha256": "9678e8c5e2c5fae67c2ae6bc9d99cb24e1230201860a12ccd5f41da999d0cb68",
+          "bytes": 1367752
+        }
+      },
+      {
+        "requested_seconds": 3.25,
+        "actual_seconds": 3.25,
+        "image": "docs/evidence/ATMOSPHERE/m5/images/chrome-low-sun-on-fixed-09-3.25.png",
+        "sha256": "36deb84af0bb61cfdad70acdf6c251bb488fc5863923627c31921e2e0aa8a0d5",
+        "source": {
+          "alpha": 0.9999999403953552,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1163141093,
+            1094153125,
+            1172108947,
+            0,
+            375,
+            0,
+            1
+          ],
+          "history_epoch": 1,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 314,
+          "submission_id": 374,
+          "submit_ms": 6520.900000000001,
+          "surface_presented": true,
+          "tick": 314,
+          "timeline": 0,
+          "ordinal": 195,
+          "file": "frames/000195.rgba.gz",
+          "rgba_sha256": "c7079989c93da337e1086669450a99bc2ee30f77261621b98778ac1517e38348",
+          "bytes": 1399144
+        }
+      }
+    ],
+    "clip": null,
+    "changed_build_inputs_since_capture": [],
+    "visual_review": {
+      "inspection_record": "docs/evidence/ATMOSPHERE/m5/records/visual-inspection.json",
+      "static_inspected": true,
+      "motion_1x_reviewed": false
+    }
+  },
+  {
+    "target": "chrome-webgpu",
+    "scene": "west",
+    "provider": "off",
+    "mode": "fixed",
+    "directory": "tmp/atmosphere-m5/chrome-west-off-fixed-09",
+    "manifest_sha256": "bb8c86ade9b1e22cd2e4cfd7cdf5bc932e2bf8e920779ad8217e79c0cd36244c",
+    "runtime_sha256": "a5ae31acec7c27833402c540aa3bccaa4be2f7fe0c76c61fa26fa826e47eb0f5",
+    "selected": [
+      {
+        "requested_seconds": 2.0,
+        "actual_seconds": 2.0,
+        "image": "docs/evidence/ATMOSPHERE/m5/images/chrome-west-off-fixed-09-2.00.png",
+        "sha256": "1a8a9447dc1e87b4ba6163053c0fd24e4f1593c4a3146630b62b7bfb3ed8942d",
+        "source": {
+          "alpha": 0.9999999403953552,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1166307548,
+            1094489127,
+            1175057812,
+            0,
+            300,
+            0,
+            1
+          ],
+          "history_epoch": 1,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 239,
+          "submission_id": 299,
+          "submit_ms": 3088.7000000000003,
+          "surface_presented": true,
+          "tick": 239,
+          "timeline": 0,
+          "ordinal": 120,
+          "file": "frames/000120.rgba.gz",
+          "rgba_sha256": "9b8b1c5533eeacf6d448640a00d0cd64edd5263ea7590405dc397349120e92e2",
+          "bytes": 1300622
+        }
+      },
+      {
+        "requested_seconds": 4.0,
+        "actual_seconds": 4.0,
+        "image": "docs/evidence/ATMOSPHERE/m5/images/chrome-west-off-fixed-09-4.00.png",
+        "sha256": "80574113504fb0d051317547a4950a4ecfbb3928c4721e52d11fd58e11c71ec6",
+        "source": {
+          "alpha": 0.9999999403953552,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1161193333,
+            1093924773,
+            1170080026,
+            0,
+            420,
+            0,
+            1
+          ],
+          "history_epoch": 1,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 359,
+          "submission_id": 419,
+          "submit_ms": 6205.4,
+          "surface_presented": true,
+          "tick": 359,
+          "timeline": 0,
+          "ordinal": 240,
+          "file": "frames/000240.rgba.gz",
+          "rgba_sha256": "1bcb97c0eb0876eb3c9b1c0450e24922d8c88961d1d1ed61b0fda857c4c73c55",
+          "bytes": 1326173
+        }
+      }
+    ],
+    "clip": null,
+    "changed_build_inputs_since_capture": [],
+    "visual_review": {
+      "inspection_record": "docs/evidence/ATMOSPHERE/m5/records/visual-inspection.json",
+      "static_inspected": true,
+      "motion_1x_reviewed": false
+    }
+  },
+  {
+    "target": "chrome-webgpu",
+    "scene": "west",
+    "provider": "on",
+    "mode": "fixed",
+    "directory": "tmp/atmosphere-m5/chrome-west-on-fixed-09",
+    "manifest_sha256": "2d022319d323b856e5017ec9cde989bf85008b2625d0efc54f3ad29644a9b8d8",
+    "runtime_sha256": "4fe694c35cc92c61583eb4af8cc3d6bed960b37047ebd345056f0d38ae139d15",
+    "selected": [
+      {
+        "requested_seconds": 2.0,
+        "actual_seconds": 2.0,
+        "image": "docs/evidence/ATMOSPHERE/m5/images/chrome-west-on-fixed-09-2.00.png",
+        "sha256": "9c3445ef1d965634744fcb37d850b47e3add3f57f349d02a430f3b904389cd00",
+        "source": {
+          "alpha": 0.9999999403953552,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1166307548,
+            1094489127,
+            1175057812,
+            0,
+            300,
+            0,
+            1
+          ],
+          "history_epoch": 1,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 239,
+          "submission_id": 299,
+          "submit_ms": 3037.4,
+          "surface_presented": true,
+          "tick": 239,
+          "timeline": 0,
+          "ordinal": 120,
+          "file": "frames/000120.rgba.gz",
+          "rgba_sha256": "684b7fb199f129115fbd21208ba0ab57a5c6fe89294e81515529fe596ca9d7ee",
+          "bytes": 1313717
+        }
+      },
+      {
+        "requested_seconds": 4.0,
+        "actual_seconds": 4.0,
+        "image": "docs/evidence/ATMOSPHERE/m5/images/chrome-west-on-fixed-09-4.00.png",
+        "sha256": "7326fdefb8a1e85a00891b0f14bdafad6e8f116d8277b983df7a8a5b2497e9a0",
+        "source": {
+          "alpha": 0.9999999403953552,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1161193333,
+            1093924773,
+            1170080026,
+            0,
+            420,
+            0,
+            1
+          ],
+          "history_epoch": 1,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 359,
+          "submission_id": 419,
+          "submit_ms": 6145.3,
+          "surface_presented": true,
+          "tick": 359,
+          "timeline": 0,
+          "ordinal": 240,
+          "file": "frames/000240.rgba.gz",
+          "rgba_sha256": "626f03be9f2156d4f1b35856b9a15fd4fbc5208c97392012c910c92c0e03707f",
+          "bytes": 1334993
+        }
+      }
+    ],
+    "clip": null,
+    "changed_build_inputs_since_capture": [],
+    "visual_review": {
+      "inspection_record": "docs/evidence/ATMOSPHERE/m5/records/visual-inspection.json",
+      "static_inspected": true,
+      "motion_1x_reviewed": false
+    }
+  },
+  {
+    "target": "chrome-webgpu",
+    "scene": "noon",
+    "provider": "off",
+    "mode": "realtime",
+    "directory": "tmp/atmosphere-m5/chrome-noon-off-realtime-09",
+    "manifest_sha256": "c8afdae2df7cc94183b409c7caefa3a2c0ea22c78d962b944f4308f24d53ceeb",
+    "runtime_sha256": "ee9f0d76f55a50ab4aad026842e0b5d4aa8f28a48fc49f1ad3fff4df5496918c",
+    "selected": [
+      {
+        "requested_seconds": 1.25,
+        "actual_seconds": 1.2535000000000003,
+        "image": "docs/evidence/ATMOSPHERE/m5/images/chrome-noon-off-realtime-09-1.25.png",
+        "sha256": "5262fa8524514853afb34c43a758979ad74dac2044c24305aa7fabd8824d4771",
+        "source": {
+          "alpha": 0.11999999731779099,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1192782227,
+            1097847330,
+            1201587025,
+            0,
+            255,
+            0,
+            1
+          ],
+          "history_epoch": 1,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 194,
+          "submission_id": 254,
+          "submit_ms": 1255.1000000000001,
+          "surface_presented": true,
+          "tick": 194,
+          "timeline": 0,
+          "ordinal": 75,
+          "file": "frames/000075.rgba.gz",
+          "rgba_sha256": "6fb7d7e79f32a5904b63a7d8567541fe95ee9f491cdacedba9729c4e90cd2c2c",
+          "bytes": 1216042
+        }
+      },
+      {
+        "requested_seconds": 3.25,
+        "actual_seconds": 3.2506000000000004,
+        "image": "docs/evidence/ATMOSPHERE/m5/images/chrome-noon-off-realtime-09-3.25.png",
+        "sha256": "b665bdc093bd3699cc5f3e93f35a71cd7e36f76d4151bc03a136e82788f07655",
+        "source": {
+          "alpha": 0.9519999623298645,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1192770573,
+            1097845564,
+            1201574887,
+            0,
+            375,
+            0,
+            1
+          ],
+          "history_epoch": 1,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 313,
+          "submission_id": 374,
+          "submit_ms": 3252.2000000000003,
+          "surface_presented": true,
+          "tick": 313,
+          "timeline": 0,
+          "ordinal": 195,
+          "file": "frames/000195.rgba.gz",
+          "rgba_sha256": "6e3381ac24f27756a9c43b7d430461f7229722ab3c1b665caab11b6b89ec57f3",
+          "bytes": 1278476
+        }
+      }
+    ],
+    "clip": {
+      "file": "docs/evidence/ATMOSPHERE/m5/motion/chrome-noon-off-realtime-09.mp4",
+      "sha256": "eef59d9f8aee87c7c7cb8d03cd90fdcf5f78aec7d951447f72ed72e81f2c3689",
+      "source_start_seconds": 0,
+      "duration_seconds": 8.033333,
+      "scope": "720p 1x viewing aid. Native PNGs and verified complete local source retain exact pixels."
+    },
+    "changed_build_inputs_since_capture": [],
+    "visual_review": {
+      "inspection_record": "docs/evidence/ATMOSPHERE/m5/records/visual-inspection.json",
+      "static_inspected": true,
+      "motion_1x_reviewed": true
+    }
+  },
+  {
+    "target": "chrome-webgpu",
+    "scene": "noon",
+    "provider": "on",
+    "mode": "realtime",
+    "directory": "tmp/atmosphere-m5/chrome-noon-on-realtime-10",
+    "manifest_sha256": "e37383e3f29f4fa782a794594ffa63427e51fdb602a8b9b113a69dc015ede02c",
+    "runtime_sha256": "41f9b0baa77ac32420e5c81b21d6cbbce92759e64e15754abd5335b780784f9b",
+    "selected": [
+      {
+        "requested_seconds": 1.25,
+        "actual_seconds": 1.2512,
+        "image": "docs/evidence/ATMOSPHERE/m5/images/chrome-noon-on-realtime-10-1.25.png",
+        "sha256": "4fede510afdfd1d877575f9cad6ab9b802d737943be10dc24705f759f27453a0",
+        "source": {
+          "alpha": 0.8560000061988831,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1192782234,
+            1097847331,
+            1201587031,
+            0,
+            255,
+            0,
+            1
+          ],
+          "history_epoch": 1,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 193,
+          "submission_id": 254,
+          "submit_ms": 1253.6000000000001,
+          "surface_presented": true,
+          "tick": 193,
+          "timeline": 0,
+          "ordinal": 75,
+          "file": "frames/000075.rgba.gz",
+          "rgba_sha256": "4513bfbbd377ede6796e1fea15c8322103b9ee471cc68e48cb0c1acc690b659e",
+          "bytes": 1241162
+        }
+      },
+      {
+        "requested_seconds": 3.25,
+        "actual_seconds": 3.2502000000000004,
+        "image": "docs/evidence/ATMOSPHERE/m5/images/chrome-noon-on-realtime-10-3.25.png",
+        "sha256": "088b3eda53811824ba0a603457e01c6dc11947bc54e1d6f62f96d055aeb8a7b6",
+        "source": {
+          "alpha": 0.8619999885559082,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1192770593,
+            1097845567,
+            1201574904,
+            0,
+            375,
+            0,
+            1
+          ],
+          "history_epoch": 1,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 313,
+          "submission_id": 374,
+          "submit_ms": 3252.6000000000004,
+          "surface_presented": true,
+          "tick": 313,
+          "timeline": 0,
+          "ordinal": 195,
+          "file": "frames/000195.rgba.gz",
+          "rgba_sha256": "10b0ce78885f28e611463aa30b984841135b0a375e71bb52f9d490233fc66cdb",
+          "bytes": 1214964
+        }
+      }
+    ],
+    "clip": {
+      "file": "docs/evidence/ATMOSPHERE/m5/motion/chrome-noon-on-realtime-10.mp4",
+      "sha256": "83601c77e9bd01375835ffa11e8ceeacc3c1851dad63cb0c4054097c51b9e4eb",
+      "source_start_seconds": 0,
+      "duration_seconds": 8.05805,
+      "scope": "720p 1x viewing aid. Native PNGs and verified complete local source retain exact pixels."
+    },
+    "changed_build_inputs_since_capture": [],
+    "visual_review": {
+      "inspection_record": "docs/evidence/ATMOSPHERE/m5/records/visual-inspection.json",
+      "static_inspected": true,
+      "motion_1x_reviewed": true
+    }
+  },
+  {
+    "target": "chrome-webgpu",
+    "scene": "low-sun",
+    "provider": "off",
+    "mode": "realtime",
+    "directory": "tmp/atmosphere-m5/chrome-low-sun-off-realtime-09",
+    "manifest_sha256": "f8f9db3dfa727392dfe3089f80dfcce1096e05325d09a57a0376a91c29315879",
+    "runtime_sha256": "6146de1a92049812a067667370fe21ddf90f33f5962aec44f94b30c0508d3d33",
+    "selected": [
+      {
+        "requested_seconds": 1.25,
+        "actual_seconds": 1.2532999999999999,
+        "image": "docs/evidence/ATMOSPHERE/m5/images/chrome-low-sun-off-realtime-09-1.25.png",
+        "sha256": "8ac5bf57a92ff9865c1706f4e03294df21c69e81257c7f656a9f540d2e034b7d",
+        "source": {
+          "alpha": 0.11999999731779099,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1167413943,
+            1094670624,
+            1176210302,
+            0,
+            255,
+            0,
+            1
+          ],
+          "history_epoch": 1,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 194,
+          "submission_id": 254,
+          "submit_ms": 1254.6,
+          "surface_presented": true,
+          "tick": 194,
+          "timeline": 0,
+          "ordinal": 75,
+          "file": "frames/000075.rgba.gz",
+          "rgba_sha256": "b45e21d3e8a783f83144a35bc932d78dfe74e8d72666ca0f1843f7699f0c7223",
+          "bytes": 1362534
+        }
+      },
+      {
+        "requested_seconds": 3.25,
+        "actual_seconds": 3.2506,
+        "image": "docs/evidence/ATMOSPHERE/m5/images/chrome-low-sun-off-realtime-09-3.25.png",
+        "sha256": "f16c1f8b2e301e599cdc1ccb25a6b74c77138f10e2ab5c2dbb736e80af027d98",
+        "source": {
+          "alpha": 0.9580000042915344,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1163187329,
+            1094158148,
+            1172157113,
+            0,
+            375,
+            0,
+            1
+          ],
+          "history_epoch": 1,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 313,
+          "submission_id": 374,
+          "submit_ms": 3251.9,
+          "surface_presented": true,
+          "tick": 313,
+          "timeline": 0,
+          "ordinal": 195,
+          "file": "frames/000195.rgba.gz",
+          "rgba_sha256": "8f6a360b75c079d59cc71c59503eca464ca873f14008ea7dfbeff3dc282f7558",
+          "bytes": 1409374
+        }
+      }
+    ],
+    "clip": {
+      "file": "docs/evidence/ATMOSPHERE/m5/motion/chrome-low-sun-off-realtime-09.mp4",
+      "sha256": "a84e1565ff0f038c03715d77611c9b62b31c15b484ce4ef5aee037bbf4e0c96c",
+      "source_start_seconds": 0,
+      "duration_seconds": 8.041367,
+      "scope": "720p 1x viewing aid. Native PNGs and verified complete local source retain exact pixels."
+    },
+    "changed_build_inputs_since_capture": [],
+    "visual_review": {
+      "inspection_record": "docs/evidence/ATMOSPHERE/m5/records/visual-inspection.json",
+      "static_inspected": true,
+      "motion_1x_reviewed": true
+    }
+  },
+  {
+    "target": "chrome-webgpu",
+    "scene": "low-sun",
+    "provider": "on",
+    "mode": "realtime",
+    "directory": "tmp/atmosphere-m5/chrome-low-sun-on-realtime-09",
+    "manifest_sha256": "b56802e4b082563abf8328dfbf3c4f1046f428e3cc22969d2ef79e6487e44bfe",
+    "runtime_sha256": "0904f6031904720f651d84f069b9b00064e70f25843dfd6b87ffbcbed3cc6ff9",
+    "selected": [
+      {
+        "requested_seconds": 1.25,
+        "actual_seconds": 1.2497,
+        "image": "docs/evidence/ATMOSPHERE/m5/images/chrome-low-sun-on-realtime-09-1.25.png",
+        "sha256": "30ea1178377a689f3ffd3c8f52f054428ead5d17cdb4728749ed42c7c4b0ea63",
+        "source": {
+          "alpha": 0.9219999313354492,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1167418821,
+            1094671378,
+            1176215386,
+            0,
+            255,
+            0,
+            1
+          ],
+          "history_epoch": 1,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 193,
+          "submission_id": 254,
+          "submit_ms": 1252.2,
+          "surface_presented": true,
+          "tick": 193,
+          "timeline": 0,
+          "ordinal": 75,
+          "file": "frames/000075.rgba.gz",
+          "rgba_sha256": "cd9d049638d43c3eeda83e770c67e5ebbffb1317098e3bf9572bf35c2360a9f9",
+          "bytes": 1365973
+        }
+      },
+      {
+        "requested_seconds": 3.25,
+        "actual_seconds": 3.2495,
+        "image": "docs/evidence/ATMOSPHERE/m5/images/chrome-low-sun-on-realtime-09-3.25.png",
+        "sha256": "bd6b49de0399c42576ae181994f02c4b8ddbcc2c32cc65c48a0d750ca491a530",
+        "source": {
+          "alpha": 0.9160000085830688,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1163189265,
+            1094158358,
+            1172159128,
+            0,
+            375,
+            0,
+            1
+          ],
+          "history_epoch": 1,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 313,
+          "submission_id": 374,
+          "submit_ms": 3252,
+          "surface_presented": true,
+          "tick": 313,
+          "timeline": 0,
+          "ordinal": 195,
+          "file": "frames/000195.rgba.gz",
+          "rgba_sha256": "241988deb9b994089986ed87e6676b16c83eecdb2210dd5a21cb64ccf81a4915",
+          "bytes": 1390722
+        }
+      }
+    ],
+    "clip": {
+      "file": "docs/evidence/ATMOSPHERE/m5/motion/chrome-low-sun-on-realtime-09.mp4",
+      "sha256": "59188ce8fcef1278fc50f5a014f9c02c4479d392e694908140139288fd8ce4b1",
+      "source_start_seconds": 0,
+      "duration_seconds": 8.041367,
+      "scope": "720p 1x viewing aid. Native PNGs and verified complete local source retain exact pixels."
+    },
+    "changed_build_inputs_since_capture": [],
+    "visual_review": {
+      "inspection_record": "docs/evidence/ATMOSPHERE/m5/records/visual-inspection.json",
+      "static_inspected": true,
+      "motion_1x_reviewed": true
+    }
+  },
+  {
+    "target": "chrome-webgpu",
+    "scene": "west",
+    "provider": "off",
+    "mode": "realtime",
+    "directory": "tmp/atmosphere-m5/chrome-west-off-realtime-09",
+    "manifest_sha256": "0978779b906d22c803b9fd3fdb4489d6b565f93a1dd08c6b59e95d2c0d57b913",
+    "runtime_sha256": "0b34a539d90b20b7814d8d9922b0c0443e0406b88bdbff366d7bda72eeb540fd",
+    "selected": [
+      {
+        "requested_seconds": 2.0,
+        "actual_seconds": 2.0039000000000002,
+        "image": "docs/evidence/ATMOSPHERE/m5/images/chrome-west-off-realtime-09-2.00.png",
+        "sha256": "f0a02310089a4954ee09eec108eef7aa3d2998dce14e9f8624f62db2b0a21ed2",
+        "source": {
+          "alpha": 0.15600000321865082,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1166327555,
+            1094492610,
+            1175078649,
+            0,
+            300,
+            0,
+            1
+          ],
+          "history_epoch": 1,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 239,
+          "submission_id": 299,
+          "submit_ms": 2005,
+          "surface_presented": true,
+          "tick": 239,
+          "timeline": 0,
+          "ordinal": 120,
+          "file": "frames/000120.rgba.gz",
+          "rgba_sha256": "b86397bc1c334b40bebf8b10eb03b69da8787e116a8a9a38d8001809318addaa",
+          "bytes": 1300349
+        }
+      },
+      {
+        "requested_seconds": 4.0,
+        "actual_seconds": 4.0007,
+        "image": "docs/evidence/ATMOSPHERE/m5/images/chrome-west-off-realtime-09-4.00.png",
+        "sha256": "a4c9ba8f2d3358892c20f8aed2b55e052ae329718f42f1a0597e7cee901cafde",
+        "source": {
+          "alpha": 0.9580000042915344,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1161237397,
+            1093930339,
+            1170125930,
+            0,
+            420,
+            0,
+            1
+          ],
+          "history_epoch": 1,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 358,
+          "submission_id": 419,
+          "submit_ms": 4001.8,
+          "surface_presented": true,
+          "tick": 358,
+          "timeline": 0,
+          "ordinal": 240,
+          "file": "frames/000240.rgba.gz",
+          "rgba_sha256": "f5c1c0a6c3bc792353253601097783a9fe4d2781c4c691fbb126408992ff8a46",
+          "bytes": 1325313
+        }
+      }
+    ],
+    "clip": {
+      "file": "docs/evidence/ATMOSPHERE/m5/motion/chrome-west-off-realtime-09.mp4",
+      "sha256": "5e45a4a27a3ca0cfc93f39e9b6da784cc459368aad93ab503cc789f57794e76e",
+      "source_start_seconds": 0,
+      "duration_seconds": 8.033333,
+      "scope": "720p 1x viewing aid. Native PNGs and verified complete local source retain exact pixels."
+    },
+    "changed_build_inputs_since_capture": [],
+    "visual_review": {
+      "inspection_record": "docs/evidence/ATMOSPHERE/m5/records/visual-inspection.json",
+      "static_inspected": true,
+      "motion_1x_reviewed": true
+    }
+  },
+  {
+    "target": "chrome-webgpu",
+    "scene": "west",
+    "provider": "on",
+    "mode": "realtime",
+    "directory": "tmp/atmosphere-m5/chrome-west-on-realtime-09",
+    "manifest_sha256": "82bb8e7c80063916f4d0f4353357d915a3919c2501e96bce9ec3755a904b748f",
+    "runtime_sha256": "76637d9974f048ac5286556b13334bc13a426a9fb1632b27310ca80d21b7d9dd",
+    "selected": [
+      {
+        "requested_seconds": 2.0,
+        "actual_seconds": 2.001,
+        "image": "docs/evidence/ATMOSPHERE/m5/images/chrome-west-on-realtime-09-2.00.png",
+        "sha256": "3ce3780f2728f84a6418c479a614a60acaa239162e1112511d66bb6e0f491f28",
+        "source": {
+          "alpha": 0.9399999976158142,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1166332796,
+            1094493521,
+            1175084108,
+            0,
+            300,
+            0,
+            1
+          ],
+          "history_epoch": 1,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 238,
+          "submission_id": 299,
+          "submit_ms": 2002.4,
+          "surface_presented": true,
+          "tick": 238,
+          "timeline": 0,
+          "ordinal": 120,
+          "file": "frames/000120.rgba.gz",
+          "rgba_sha256": "51a0347d019615ce3de904fed97defbfac6a874a1076de50ac1e40f1af4ef857",
+          "bytes": 1312250
+        }
+      },
+      {
+        "requested_seconds": 4.0,
+        "actual_seconds": 4.005999999999999,
+        "image": "docs/evidence/ATMOSPHERE/m5/images/chrome-west-on-realtime-09-4.00.png",
+        "sha256": "532479797d8bd90bd23f65d998b9f586a24a83c19c7aec68fefe98c796306716",
+        "source": {
+          "alpha": 0.23399999737739563,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1161225704,
+            1093928864,
+            1170113753,
+            0,
+            420,
+            0,
+            1
+          ],
+          "history_epoch": 1,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 359,
+          "submission_id": 419,
+          "submit_ms": 4007.3999999999996,
+          "surface_presented": true,
+          "tick": 359,
+          "timeline": 0,
+          "ordinal": 240,
+          "file": "frames/000240.rgba.gz",
+          "rgba_sha256": "c427ce9d634ecd0f0e74fc616c90753b42a8e8d3ceb0388cecdae7c23a27a0d4",
+          "bytes": 1333074
+        }
+      }
+    ],
+    "clip": {
+      "file": "docs/evidence/ATMOSPHERE/m5/motion/chrome-west-on-realtime-09.mp4",
+      "sha256": "54f8c939d7d371e71bec11ee3397f64531137253505f2425b70f1b9368b910b5",
+      "source_start_seconds": 0,
+      "duration_seconds": 8.05,
+      "scope": "720p 1x viewing aid. Native PNGs and verified complete local source retain exact pixels."
+    },
+    "changed_build_inputs_since_capture": [],
+    "visual_review": {
+      "inspection_record": "docs/evidence/ATMOSPHERE/m5/records/visual-inspection.json",
+      "static_inspected": true,
+      "motion_1x_reviewed": true
+    }
+  }
+]

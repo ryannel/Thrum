@@ -75,7 +75,7 @@ Read [Environment identity and products](DESIGN.md#environment-identity-and-prod
 - [x] GPU tests for M5.6 on every receiver kind, including a field that differs between two world points.
 - [x] `scripts/environment_products.py`: the off-parity arm against the base on Mac and Chrome, and the paired
       cost arm on Mac and Chrome.
-- [ ] The labelled diagnostic provider in `examples/v1-game`, opt-in, and its captures at noon and low Sun.
+- [x] The labelled diagnostic provider in `examples/v1-game`, opt-in, and its captures at noon and low Sun.
 
 The light group and forward pipelines are also edited by `APPLE-PRESENTATION:M2` (the third forward target).
 Whichever lands second rebases; neither waits on the other.
