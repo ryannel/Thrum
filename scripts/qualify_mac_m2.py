@@ -143,6 +143,8 @@ def collect(args, output, name, tap, replace=False, grid=False, traced=False, in
     ledger_path = ROOT / 'tmp/mac-m2/presented-commission-20261111.json' if presented else LEDGER
     allowance = 6 if presented else 2
     hypothesis = ('The full Game Performance 16s window retained the full marked interval but exceeded its bounded process deadline. Use only Metal Application, Display and Points of Interest to reduce unrelated system-wide event and finalization volume, keeping the same 16s window and game. Require complete markers, drawable joins and bounded completion.' if args.presented_minimal else 'Explicit --window 16s replaces the template 5s ring buffer; retained ca-client-presented-handler rows must span both Whole markers. Empty display tables are recorded, not a failure.') if presented else OS_LOG_HYPOTHESIS if include_os_logs else HYPOTHESIS
+    if presented and args.presented_deferred:
+        hypothesis = 'The three-instrument 16s ring window finalized within bounds but retained only the final 1.075s of drawable events. Remove --window entirely and use the installed Blank template with windowLimit=0 (non-windowed default), retaining the same Metal Application/Display/Points of Interest instruments and game. Require both Whole markers inside retained presented times and bounded completion.'
     if traced:
         ledger = json.loads(ledger_path.read_text()) if ledger_path.exists() else {'commission': '11-November-2026-presented-time-ab66bca5' if presented else '9-November-2026', 'attempts': []}
         if len(ledger['attempts']) >= allowance:
@@ -176,7 +178,8 @@ def collect(args, output, name, tap, replace=False, grid=False, traced=False, in
                    '--time-limit', '16s', '--output', str(arm / 'pan.trace'),
                    '--target-stdout', str(arm / 'game.log')]
         if presented:
-            command += ['--window', '16s']
+            if not args.presented_deferred:
+                command += ['--window', '16s']
             if args.presented_minimal:
                 command[command.index('Game Performance')] = '/Applications/Xcode.app/Contents/Applications/Instruments.app/Contents/Packages/Base.instrdst/Contents/Templates/Blank.tracetemplate'
                 command += ['--instrument', 'Metal Application', '--instrument', 'Display', '--instrument', 'Points of Interest']
@@ -251,6 +254,7 @@ def main():
     parser.add_argument('--store', type=Path, default=ROOT / 'tmp/mac-m2/valley')
     parser.add_argument('--diagnostic-with-os-logs', action='store_true',
                         help='use the remaining diagnostic attempt for OFF with OS logs after the empty-display probe')
+    parser.add_argument('--presented-deferred', action='store_true', help='omit --window; installed Blank template has windowLimit=0')
     parser.add_argument('--presented-minimal', action='store_true', help='Blank template plus Metal Application, Display and Points of Interest; fewer system-wide sources')
     parser.add_argument('--presented-arm', choices=['on-traced', 'off-traced', 'on-untraced'], help='11 November reviewed presented-time commission; one arm per invocation')
     args = parser.parse_args()
