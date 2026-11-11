@@ -1,0 +1,23 @@
+{
+  "passed": true,
+  "content_key": "3d0e464e78f6c6260a94671d971c1ff1cf3fc73eee2272385719ba4aaad94046",
+  "item_checks": {
+    "M1.1": {
+      "command": "python3 scripts/exact_baselines.py verify",
+      "exit": 0,
+      "result": "pass"
+    },
+    "M1.3": {
+      "command": "python3 scripts/test_exact_baselines.py",
+      "exit": 0,
+      "result": "pass"
+    }
+  },
+  "profile_check": {
+    "command": "./dev check",
+    "exit": 0,
+    "log": "profile-check.log",
+    "resource": "one GPU lock around the complete Check"
+  },
+  "note": "The completed M1.1 and M1.3 results are retained from the milestone command. Its profile Check timed out in repeated per-binary GPU waits. The full profile Check was rerun to completion under one GPU lock. Covered source content was identical for these successful checks."
+}

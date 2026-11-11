@@ -1,0 +1,56 @@
+{
+  "module": "BASELINE-GUARD",
+  "milestone": "M1",
+  "tree": "/Users/ryannel/Workspace/thrum/.claude/worktrees/baseline-guard",
+  "plan": "/Users/ryannel/Workspace/thrum/.claude/worktrees/baseline-guard/docs/plans/BASELINE-GUARD/DONE.json",
+  "pass": 2,
+  "fail": 0,
+  "error": 0,
+  "timeout": 1,
+  "items": [
+    {
+      "id": "M1.1",
+      "check": "python3 scripts/exact_baselines.py verify",
+      "lock": "gpu",
+      "exit": 0,
+      "result": "pass",
+      "output": "RUN native-build\nRUN cooker-build\nRUN web-build\nRUN cook\nRUN apple_tile_m1\nRUN apple_tile_m2\nRUN chrome-day-sdr\nRUN chrome-day-sdr-compare\nRUN chrome-day-scene-linear\nRUN chrome-day-scene-linear-compare\nRUN chrome-night-sdr\nRUN chrome-night-sdr-compare\nRUN chrome-night-scene-linear\nRUN chrome-night-scene-linear-compare\nPASS exact baselines; proof tmp/baseline-guard/proofs/3d0e464e78f6c6260a94671d971c1ff1cf3fc73eee2272385719ba4aaad94046.json; 1021.79s"
+    },
+    {
+      "id": "M1.2",
+      "result": "no check",
+      "proof": [
+        "ask"
+      ]
+    },
+    {
+      "id": "M1.3",
+      "check": "python3 scripts/test_exact_baselines.py",
+      "exit": 0,
+      "result": "pass",
+      "output": "test_digest_and_byte_modes_and_failures (__main__.ChromeTests.test_digest_and_byte_modes_and_failures) ... ok\ntest_covered_change_refuses_until_exact_proof (__main__.GateTests.test_covered_change_refuses_until_exact_proof) ... ok\ntest_covered_rebase_invalidates_proof (__main__.GateTests.test_covered_rebase_invalidates_proof) ... ok\ntest_missing_base_and_dirty_inputs_fail_closed (__main__.GateTests.test_missing_base_and_dirty_inputs_fail_closed) ... fatal: Not a valid object name refs/remotes/origin/main\nok\ntest_no_covered_change_passes_without_proof (__main__.GateTests.test_no_covered_change_passes_without_proof) ... ok\ntest_uncovered_rebase_preserves_proof (__main__.GateTests.test_uncovered_rebase_preserves_proof) ... ok\ntest_failed_capture_and_owner_exit_are_preserved (__main__.NativePublicationTests.test_failed_capture_and_owner_exit_are_preserved) ... ok\ntest_next_capture_observes_completed_capture_release (__main__.NativePublicationTests.test_next_capture_observes_completed_capture_release) ... ok\ntest_only_published_successful_captures_are_released (__main__.RetentionTests.test_only_published_successful_captures_are_released) ... ok\n\n----------------------------------------------------------------------\nRan 9 tests in 2.511s\n\nOK"
+    },
+    {
+      "id": "M1.4",
+      "result": "no check",
+      "proof": [
+        "ask"
+      ]
+    },
+    {
+      "id": "M1.5",
+      "result": "no check",
+      "proof": [
+        "ask"
+      ]
+    },
+    {
+      "id": "Check",
+      "check": "./dev check",
+      "exit": 124,
+      "result": "timeout",
+      "why": "still running after 3600 s",
+      "output": "ug/deps/input_batch-61f4b852aac30443)\n     Running tests/state_ack.rs (target/debug/deps/state_ack-85d79d8e515416fc)\n     Running tests/state_delta.rs (target/debug/deps/state_delta-f5d0821cbbc39249)\n     Running unittests src/lib.rs (target/debug/deps/thrum_render-245c907cad00ed4d)\n     Running tests/contracts.rs (target/debug/deps/contracts-531163e374ef6418)\n     Running tests/extract.rs (target/debug/deps/extract-b3a1117fcc64cf9d)\n     Running tests/gpu.rs (target/debug/deps/gpu-6ab49adfbe8f2e84)\n     Running tests/upload_gpu.rs (target/debug/deps/upload_gpu-10a0ce6f56e20b1f)\n     Running tests/visibility.rs (target/debug/deps/visibility-0d3e1a089c48640a)\n     Running unittests src/main.rs (target/debug/deps/thrum_starter-337b61400317fec9)\n     Running unittests src/main.rs (target/debug/deps/thrum_stones-3c9e07bc4e284fe8)\n     Running unittests src/lib.rs (target/debug/deps/v1_game-582a9f4f47e5dc02)\n     Running unittests src/bin/apple_tile_residency.rs (target/debug/deps/apple_tile_residency-3579e22b0295f714)\n     Running unittests src/main.rs (target/debug/deps/v1_game-72d74b43fbfcf2a3)\n     Running tests/cooked_assets_gpu.rs (target/debug/deps/cooked_assets_gpu-9a6e4e62ce3c1370)\n     Running tests/cooked_material_gpu.rs (target/debug/deps/cooked_material_gpu-97c20e93c4feb515)\n     Running tests/cooked_texture_quality.rs (target/debug/deps/cooked_texture_quality-13c9b098aeb71ea1)\n     Running tests/field_gpu.rs (target/debug/deps/field_gpu-ec6a696c55657cb9)\n\n(timed out)"
+    }
+  ]
+}

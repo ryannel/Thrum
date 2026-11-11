@@ -1,0 +1,70 @@
+   Compiling unicode-ident v1.0.27
+   Compiling proc-macro2 v1.0.107
+   Compiling quote v1.0.47
+   Compiling wasm-bindgen-shared v0.2.129
+   Compiling rustversion v1.0.23
+   Compiling cfg-if v1.0.5
+   Compiling bumpalo v3.20.3
+   Compiling slab v0.4.12
+   Compiling pin-project-lite v0.2.17
+   Compiling futures-task v0.3.34
+   Compiling futures-core v0.3.34
+   Compiling once_cell v1.21.4
+   Compiling shlex v2.0.1
+   Compiling find-msvc-tools v0.1.15
+   Compiling thiserror v2.0.21
+   Compiling foldhash v0.2.0
+   Compiling equivalent v1.0.3
+   Compiling rustc-hash v1.1.0
+   Compiling cfg_aliases v0.2.2
+   Compiling arrayvec v0.7.8
+   Compiling zerocopy v0.8.63
+   Compiling futures-util v0.3.34
+   Compiling cc v1.10.0
+   Compiling hashbrown v0.17.1
+   Compiling serde_core v1.0.229
+   Compiling wgpu v30.0.1
+   Compiling static_assertions v1.1.0
+   Compiling raw-window-handle v0.6.2
+   Compiling log v0.4.34
+   Compiling litrs v1.0.1
+   Compiling bitflags v2.13.2
+   Compiling zmij v1.0.23
+   Compiling indexmap v2.14.2
+   Compiling profiling v1.0.18
+   Compiling constant_time_eq v0.4.2
+   Compiling document-features v0.2.12
+   Compiling smallvec v1.16.4
+   Compiling serde_json v1.0.154
+   Compiling glam v0.33.12
+   Compiling memchr v2.8.3
+   Compiling blake3 v1.8.7
+   Compiling wasm-bindgen v0.2.129
+   Compiling itoa v1.0.18
+   Compiling thrum-app v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/baseline-guard/crates/thrum-app)
+   Compiling serde v1.0.229
+   Compiling syn v3.0.9
+   Compiling syn v2.0.119
+   Compiling pollster v1.0.1
+   Compiling zerocopy-derive v0.8.63
+   Compiling wasm-bindgen-macro-support v0.2.129
+   Compiling thiserror-impl v2.0.21
+   Compiling bytemuck_derive v1.12.1
+   Compiling serde_derive v1.0.229
+   Compiling bytemuck v1.25.2
+   Compiling thrum-controls v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/baseline-guard/crates/thrum-controls)
+   Compiling wasm-bindgen-macro v0.2.129
+   Compiling naga-types v30.0.1
+   Compiling half v2.7.1
+   Compiling js-sys v0.3.106
+   Compiling web-sys v0.3.106
+   Compiling wasm-bindgen-futures v0.4.79
+   Compiling web-time v1.1.0
+   Compiling thrum-asset v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/baseline-guard/crates/thrum-asset)
+   Compiling thrum-core v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/baseline-guard/crates/thrum-core)
+   Compiling wgpu-types v30.0.1
+   Compiling thrum-render v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/baseline-guard/crates/thrum-render)
+   Compiling thrum-asset-gpu v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/baseline-guard/crates/thrum-asset-gpu)
+   Compiling v1-game v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/baseline-guard/examples/v1-game)
+    Finished `release` profile [optimized] target(s) in 25.88s
+Run: python3 -m http.server 8765 --bind 127.0.0.1 --directory "target/v1-game-web"

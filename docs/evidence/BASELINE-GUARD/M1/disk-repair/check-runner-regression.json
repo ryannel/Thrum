@@ -1,0 +1,15 @@
+[
+  {
+    "program": "python3",
+    "args": [
+      "python3",
+      "/Users/ryannel/.claude/plugins/cache/ryannel-skills/orchestrate/1.7.1/skills/orchestration/build/scripts/agent_loop.py",
+      "lock",
+      "gpu",
+      "--",
+      "/target/debug/xtask",
+      "check"
+    ],
+    "recursive_runner_removed": true
+  }
+]
