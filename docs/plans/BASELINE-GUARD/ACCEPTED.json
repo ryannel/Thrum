@@ -1,0 +1,25 @@
+{
+  "module": "BASELINE-GUARD",
+  "design": null,
+  "milestones": {
+    "M1": {
+      "definitions": "75a65f7d9603ccbb55c5b4050412d868de114833388b701d4cedda1789eb0fa9",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan the modules CULLING and EFFECT-GRAPH from docs/plans/ARCHITECTURE.md: write each one's DESIGN, PLAN and done-when f",
+        "at": "2026-11-11T15:19:29Z"
+      }
+    }
+  },
+  "briefs": [
+    {
+      "task": "Plan the modules CULLING and EFFECT-GRAPH from docs/plans/ARCHITECTURE.md: write each one's DESIGN, PLAN and done-when file. Both depend on APPLE-TILE M2, which is in its second review now, so builders can start them once it passes. Everything else is waiting on APPLE-TILE M2 or M3, so these are the next work. Keep each first milestone small enough to start right after APPLE-TILE M2 lands. Also: APPLE-PRESENTATION M1's jitter change broke APPLE-TILE's exact baseline comparisons, and nothing caught it before it merged (docs/evidence/APPLE-TILE/M2-review.md MF1). Say in ARCHITECTURE.md or the affected designs how a module's change that alters another module's exact baselines gets caught before landing.",
+      "at": "2026-11-11T15:19:29Z"
+    }
+  ],
+  "planner": {
+    "host": "claude",
+    "at": "2026-11-11T15:19:29Z"
+  }
+}
