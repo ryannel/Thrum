@@ -1,0 +1,712 @@
+{
+ "portable": {
+  "pid": 2116,
+  "binary_sha256": "54bc5e92f49c1e7be3ad9b271d616ae90ad1f4ab737a41f11f362f169a56dd4f",
+  "environment": {
+   "THRUM_RECIPE": "portable",
+   "THRUM_ASSET_STORE": "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/tmp/review-m2/valley",
+   "THRUM_SCENE": "valley",
+   "THRUM_ROUTE_OVERLAY": "proof",
+   "THRUM_STARS": "on",
+   "THRUM_CULLING": "direct",
+   "THRUM_PARAMS": "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/tmp/review-m2/window/portable/controls.json",
+   "THRUM_V1_FRAMES": "100000",
+   "THRUM_REPORT": "1"
+  },
+  "keys": [
+   {
+    "key": 14,
+    "unix_ns": 1794397705185525000,
+    "out": "key 14"
+   },
+   {
+    "key": 14,
+    "unix_ns": 1794397705932350000,
+    "out": "key 14"
+   },
+   {
+    "key": 14,
+    "unix_ns": 1794397706667780000,
+    "out": "key 14"
+   },
+   {
+    "key": 14,
+    "unix_ns": 1794397707407723000,
+    "out": "key 14"
+   },
+   {
+    "key": 12,
+    "unix_ns": 1794397708155239000,
+    "out": "key 12"
+   },
+   {
+    "key": 12,
+    "unix_ns": 1794397708887074000,
+    "out": "key 12"
+   }
+  ],
+  "observations": [
+   {
+    "name": "sun-settled",
+    "unix_ns": 1794397696726337000,
+    "window_number": 46083,
+    "bounds_points": {
+     "X": 384,
+     "Height": 572,
+     "Y": 146,
+     "Width": 960
+    },
+    "title": "Thrum V1 | Paused (P) | tick 2 (0 updates, view age 0) | CPU tick 0.000, extract 0.000, upload 0.324, encode 0.691 ms | GPU shadow near/far 0.051/0.376, cluster 0.006, forward 1.375, history 0.056, display 0.062, atmosphere compute 0.000, present 0.067 ms | Direct culling",
+    "controls": {
+     "world.paused": true,
+     "sky.solar_time": 17.4,
+     "camera.yaw": -90,
+     "camera.pitch": 0
+    }
+   },
+   {
+    "name": "night-settled",
+    "unix_ns": 1794397699418982000,
+    "window_number": 46083,
+    "bounds_points": {
+     "X": 384,
+     "Height": 572,
+     "Y": 146,
+     "Width": 960
+    },
+    "title": "Thrum V1 | Paused (P) | tick 2 (0 updates, view age 0) | CPU tick 0.000, extract 0.000, upload 0.388, encode 0.760 ms | GPU shadow near/far 0.052/0.393, cluster 0.089, forward 1.421, history 0.007, display 0.128, atmosphere compute 0.000, present 0.070 ms | Direct culling",
+    "controls": {
+     "world.paused": true,
+     "sky.solar_time": 0,
+     "camera.yaw": 0,
+     "camera.pitch": 7
+    }
+   },
+   {
+    "name": "noon-settled",
+    "unix_ns": 1794397702164566000,
+    "window_number": 46083,
+    "bounds_points": {
+     "X": 384,
+     "Height": 572,
+     "Y": 146,
+     "Width": 960
+    },
+    "title": "Thrum V1 | Paused (P) | tick 2 (0 updates, view age 0) | CPU tick 0.000, extract 0.000, upload 0.365, encode 0.764 ms | GPU shadow near/far 0.050/0.271, cluster 0.058, forward 1.268, history 0.168, display 1.244, atmosphere compute 0.000, present 1.206 ms | Direct culling",
+    "controls": {
+     "world.paused": true,
+     "sky.solar_time": 12,
+     "camera.yaw": 0,
+     "camera.pitch": 0
+    }
+   },
+   {
+    "name": "held-0",
+    "unix_ns": 1794397702367662000,
+    "window_number": 46083,
+    "bounds_points": {
+     "X": 384,
+     "Height": 572,
+     "Y": 146,
+     "Width": 960
+    },
+    "title": "Thrum V1 | Paused (P) | tick 2 (0 updates, view age 0) | CPU tick 0.000, extract 0.000, upload 0.365, encode 0.764 ms | GPU shadow near/far 0.050/0.271, cluster 0.058, forward 1.268, history 0.168, display 1.244, atmosphere compute 0.000, present 1.206 ms | Direct culling",
+    "controls": {
+     "world.paused": true,
+     "sky.solar_time": 12,
+     "camera.yaw": 0,
+     "camera.pitch": 0
+    }
+   },
+   {
+    "name": "held-1",
+    "unix_ns": 1794397702737874000,
+    "window_number": 46083,
+    "bounds_points": {
+     "X": 384,
+     "Height": 572,
+     "Y": 146,
+     "Width": 960
+    },
+    "title": "Thrum V1 | Paused (P) | tick 2 (0 updates, view age 0) | CPU tick 0.000, extract 0.000, upload 0.184, encode 0.374 ms | GPU shadow near/far 0.050/0.273, cluster 0.007, forward 1.186, history 0.030, display 1.208, atmosphere compute 0.000, present 1.176 ms | Direct culling",
+    "controls": {
+     "world.paused": true,
+     "sky.solar_time": 12,
+     "camera.yaw": 0,
+     "camera.pitch": 0
+    }
+   },
+   {
+    "name": "held-2",
+    "unix_ns": 1794397703103311000,
+    "window_number": 46083,
+    "bounds_points": {
+     "X": 384,
+     "Height": 572,
+     "Y": 146,
+     "Width": 960
+    },
+    "title": "Thrum V1 | Paused (P) | tick 2 (0 updates, view age 0) | CPU tick 0.000, extract 0.000, upload 0.354, encode 0.579 ms | GPU shadow near/far 0.050/0.270, cluster 0.073, forward 1.216, history 0.007, display 1.228, atmosphere compute 0.000, present 1.206 ms | Direct culling",
+    "controls": {
+     "world.paused": true,
+     "sky.solar_time": 12,
+     "camera.yaw": 0,
+     "camera.pitch": 0
+    }
+   },
+   {
+    "name": "held-3",
+    "unix_ns": 1794397703470258000,
+    "window_number": 46083,
+    "bounds_points": {
+     "X": 384,
+     "Height": 572,
+     "Y": 146,
+     "Width": 960
+    },
+    "title": "Thrum V1 | Paused (P) | tick 2 (0 updates, view age 0) | CPU tick 0.000, extract 0.000, upload 0.354, encode 0.579 ms | GPU shadow near/far 0.050/0.270, cluster 0.073, forward 1.216, history 0.007, display 1.228, atmosphere compute 0.000, present 1.206 ms | Direct culling",
+    "controls": {
+     "world.paused": true,
+     "sky.solar_time": 12,
+     "camera.yaw": 0,
+     "camera.pitch": 0
+    }
+   },
+   {
+    "name": "after-keys",
+    "unix_ns": 1794397711195294000,
+    "window_number": 46083,
+    "bounds_points": {
+     "X": 384,
+     "Height": 572,
+     "Y": 146,
+     "Width": 960
+    },
+    "title": "Thrum V1 | Paused (P) | tick 2 (0 updates, view age 0) | CPU tick 0.000, extract 0.001, upload 0.382, encode 0.832 ms | GPU shadow near/far 0.050/0.309, cluster 0.005, forward 1.249, history 0.014, display 1.160, atmosphere compute 0.000, present 1.129 ms | Direct culling",
+    "controls": {
+     "world.paused": true,
+     "sky.solar_time": 12,
+     "camera.yaw": 0,
+     "camera.pitch": 0
+    }
+   },
+   {
+    "name": "before-resize",
+    "unix_ns": 1794397713936899000,
+    "window_number": 46083,
+    "bounds_points": {
+     "X": 384,
+     "Height": 572,
+     "Y": 146,
+     "Width": 960
+    },
+    "title": "Thrum V1 | Paused (P) | tick 2 (0 updates, view age 0) | CPU tick 0.000, extract 0.000, upload 0.257, encode 0.547 ms | GPU shadow near/far 0.057/0.276, cluster 0.004, forward 1.163, history 0.043, display 1.133, atmosphere compute 0.000, present 1.134 ms | Direct culling",
+    "controls": {
+     "world.paused": true,
+     "sky.solar_time": 12,
+     "camera.yaw": 0,
+     "camera.pitch": 0
+    }
+   },
+   {
+    "name": "resized",
+    "unix_ns": 1794397716706170000,
+    "window_number": 46083,
+    "bounds_points": {
+     "X": 384,
+     "Height": 472,
+     "Y": 146,
+     "Width": 760
+    },
+    "title": "Thrum V1 | Paused (P) | tick 2 (0 updates, view age 0) | CPU tick 0.000, extract 0.000, upload 0.395, encode 0.616 ms | GPU shadow near/far 0.050/0.266, cluster 0.076, forward 1.159, history 0.007, display 1.149, atmosphere compute 0.000, present 1.128 ms | Direct culling",
+    "controls": {
+     "world.paused": true,
+     "sky.solar_time": 12,
+     "camera.yaw": 0,
+     "camera.pitch": 0
+    }
+   },
+   {
+    "name": "resized-narrow",
+    "unix_ns": 1794397719442496000,
+    "window_number": 46083,
+    "bounds_points": {
+     "X": 384,
+     "Height": 572,
+     "Y": 146,
+     "Width": 700
+    },
+    "title": "Thrum V1 | Paused (P) | tick 2 (0 updates, view age 0) | CPU tick 0.000, extract 0.000, upload 0.323, encode 0.606 ms | GPU shadow near/far 0.049/0.271, cluster 0.005, forward 1.161, history 0.097, display 1.163, atmosphere compute 0.000, present 1.120 ms | Direct culling",
+    "controls": {
+     "world.paused": true,
+     "sky.solar_time": 12,
+     "camera.yaw": 0,
+     "camera.pitch": 0
+    }
+   },
+   {
+    "name": "restored",
+    "unix_ns": 1794397722205896000,
+    "window_number": 46083,
+    "bounds_points": {
+     "X": 384,
+     "Height": 572,
+     "Y": 146,
+     "Width": 960
+    },
+    "title": "Thrum V1 | Paused (P) | tick 2 (0 updates, view age 0) | CPU tick 0.000, extract 0.001, upload 0.360, encode 0.779 ms | GPU shadow near/far 0.050/0.266, cluster 0.046, forward 1.293, history 0.529, display 0.493, atmosphere compute 0.000, present 0.469 ms | Direct culling",
+    "controls": {
+     "world.paused": true,
+     "sky.solar_time": 12,
+     "camera.yaw": 0,
+     "camera.pitch": 0
+    }
+   }
+  ],
+  "letterbox_content_pixels": [
+   {
+    "image": "tmp/review-m2/window/portable/before-resize.png",
+    "extent": [
+     1920,
+     1144
+    ],
+    "content": [
+     1920,
+     1080
+    ],
+    "black_top": 0,
+    "black_bottom": 0,
+    "black_cols": 0,
+    "image_rows": 1080,
+    "expected_16x9_rows": 1080
+   },
+   {
+    "image": "tmp/review-m2/window/portable/resized.png",
+    "extent": [
+     1520,
+     944
+    ],
+    "content": [
+     1520,
+     880
+    ],
+    "black_top": 12,
+    "black_bottom": 13,
+    "black_cols": 0,
+    "image_rows": 855,
+    "expected_16x9_rows": 855
+   },
+   {
+    "image": "tmp/review-m2/window/portable/resized-narrow.png",
+    "extent": [
+     1400,
+     1144
+    ],
+    "content": [
+     1400,
+     1080
+    ],
+    "black_top": 146,
+    "black_bottom": 147,
+    "black_cols": 0,
+    "image_rows": 787,
+    "expected_16x9_rows": 788
+   },
+   {
+    "image": "tmp/review-m2/window/portable/restored.png",
+    "extent": [
+     1920,
+     1144
+    ],
+    "content": [
+     1920,
+     1080
+    ],
+    "black_top": 0,
+    "black_bottom": 0,
+    "black_cols": 0,
+    "image_rows": 1080,
+    "expected_16x9_rows": 1080
+   }
+  ],
+  "replacement": {
+   "pid": 2909,
+   "env": {
+    "THRUM_RECIPE": "portable",
+    "THRUM_MAC_QUALIFY": "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/tmp/review-m2/recovery/portable",
+    "THRUM_MAC_TAP": "on",
+    "THRUM_MAC_REPLACE": "1",
+    "THRUM_V1_FRAMES": "10000",
+    "THRUM_SCENE": "valley",
+    "THRUM_ASSET_STORE": "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/tmp/review-m2/valley",
+    "THRUM_ROUTE_OVERLAY": "proof",
+    "THRUM_STARS": "on",
+    "THRUM_CULLING": "direct",
+    "THRUM_PARAMS": "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/examples/v1-game/params/showcase-noon.params.json"
+   },
+   "record_start_unix_ns": 1794397903290974000,
+   "game_exit": 0,
+   "recorder_exit": 0
+  }
+ },
+ "apple-tile": {
+  "pid": 2191,
+  "binary_sha256": "54bc5e92f49c1e7be3ad9b271d616ae90ad1f4ab737a41f11f362f169a56dd4f",
+  "environment": {
+   "THRUM_RECIPE": "apple-tile",
+   "THRUM_ASSET_STORE": "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/tmp/review-m2/valley",
+   "THRUM_SCENE": "valley",
+   "THRUM_ROUTE_OVERLAY": "proof",
+   "THRUM_STARS": "on",
+   "THRUM_CULLING": "direct",
+   "THRUM_PARAMS": "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/tmp/review-m2/window/apple-tile/controls.json",
+   "THRUM_V1_FRAMES": "100000",
+   "THRUM_REPORT": "1"
+  },
+  "keys": [
+   {
+    "key": 14,
+    "unix_ns": 1794397737884231000,
+    "out": "key 14"
+   },
+   {
+    "key": 14,
+    "unix_ns": 1794397738620448000,
+    "out": "key 14"
+   },
+   {
+    "key": 14,
+    "unix_ns": 1794397739363710000,
+    "out": "key 14"
+   },
+   {
+    "key": 14,
+    "unix_ns": 1794397740098406000,
+    "out": "key 14"
+   },
+   {
+    "key": 12,
+    "unix_ns": 1794397740841994000,
+    "out": "key 12"
+   },
+   {
+    "key": 12,
+    "unix_ns": 1794397741569692000,
+    "out": "key 12"
+   }
+  ],
+  "observations": [
+   {
+    "name": "sun-settled",
+    "unix_ns": 1794397729378412000,
+    "window_number": 46105,
+    "bounds_points": {
+     "X": 384,
+     "Height": 572,
+     "Y": 146,
+     "Width": 960
+    },
+    "title": "Thrum V1 | Paused (P) | tick 3 (0 updates, view age 0) | CPU tick 0.000, extract 0.000, upload 0.371, encode 0.628 ms | GPU shadow near/far 0.050/0.374, cluster 0.118, forward 1.312, history 0.056, display 0.104, atmosphere compute 0.000, present 0.063 ms | Direct culling",
+    "controls": {
+     "world.paused": true,
+     "sky.solar_time": 17.4,
+     "camera.yaw": -90,
+     "camera.pitch": 0
+    }
+   },
+   {
+    "name": "night-settled",
+    "unix_ns": 1794397732103932000,
+    "window_number": 46105,
+    "bounds_points": {
+     "X": 384,
+     "Height": 572,
+     "Y": 146,
+     "Width": 960
+    },
+    "title": "Thrum V1 | Paused (P) | tick 3 (0 updates, view age 0) | CPU tick 0.000, extract 0.000, upload 0.186, encode 0.403 ms | GPU shadow near/far 0.050/0.392, cluster 0.004, forward 1.307, history 0.070, display 0.064, atmosphere compute 0.000, present 0.069 ms | Direct culling",
+    "controls": {
+     "world.paused": true,
+     "sky.solar_time": 0,
+     "camera.yaw": 0,
+     "camera.pitch": 7
+    }
+   },
+   {
+    "name": "noon-settled",
+    "unix_ns": 1794397734840350000,
+    "window_number": 46105,
+    "bounds_points": {
+     "X": 384,
+     "Height": 572,
+     "Y": 146,
+     "Width": 960
+    },
+    "title": "Thrum V1 | Paused (P) | tick 3 (0 updates, view age 0) | CPU tick 0.000, extract 0.000, upload 0.509, encode 0.719 ms | GPU shadow near/far 0.050/0.274, cluster 0.082, forward 1.203, history 0.007, display 1.173, atmosphere compute 0.000, present 1.137 ms | Direct culling",
+    "controls": {
+     "world.paused": true,
+     "sky.solar_time": 12,
+     "camera.yaw": 0,
+     "camera.pitch": 0
+    }
+   },
+   {
+    "name": "held-0",
+    "unix_ns": 1794397735041603000,
+    "window_number": 46105,
+    "bounds_points": {
+     "X": 384,
+     "Height": 572,
+     "Y": 146,
+     "Width": 960
+    },
+    "title": "Thrum V1 | Paused (P) | tick 3 (0 updates, view age 0) | CPU tick 0.000, extract 0.000, upload 0.509, encode 0.719 ms | GPU shadow near/far 0.050/0.274, cluster 0.082, forward 1.203, history 0.007, display 1.173, atmosphere compute 0.000, present 1.137 ms | Direct culling",
+    "controls": {
+     "world.paused": true,
+     "sky.solar_time": 12,
+     "camera.yaw": 0,
+     "camera.pitch": 0
+    }
+   },
+   {
+    "name": "held-1",
+    "unix_ns": 1794397735424339000,
+    "window_number": 46105,
+    "bounds_points": {
+     "X": 384,
+     "Height": 572,
+     "Y": 146,
+     "Width": 960
+    },
+    "title": "Thrum V1 | Paused (P) | tick 3 (0 updates, view age 0) | CPU tick 0.000, extract 0.000, upload 0.164, encode 0.393 ms | GPU shadow near/far 0.051/0.285, cluster 0.004, forward 1.211, history 0.032, display 1.178, atmosphere compute 0.000, present 1.199 ms | Direct culling",
+    "controls": {
+     "world.paused": true,
+     "sky.solar_time": 12,
+     "camera.yaw": 0,
+     "camera.pitch": 0
+    }
+   },
+   {
+    "name": "held-2",
+    "unix_ns": 1794397735792715000,
+    "window_number": 46105,
+    "bounds_points": {
+     "X": 384,
+     "Height": 572,
+     "Y": 146,
+     "Width": 960
+    },
+    "title": "Thrum V1 | Paused (P) | tick 3 (0 updates, view age 0) | CPU tick 0.000, extract 0.000, upload 0.208, encode 0.429 ms | GPU shadow near/far 0.050/0.277, cluster 0.004, forward 1.196, history 0.073, display 1.208, atmosphere compute 0.000, present 1.168 ms | Direct culling",
+    "controls": {
+     "world.paused": true,
+     "sky.solar_time": 12,
+     "camera.yaw": 0,
+     "camera.pitch": 0
+    }
+   },
+   {
+    "name": "held-3",
+    "unix_ns": 1794397736169592000,
+    "window_number": 46105,
+    "bounds_points": {
+     "X": 384,
+     "Height": 572,
+     "Y": 146,
+     "Width": 960
+    },
+    "title": "Thrum V1 | Paused (P) | tick 3 (0 updates, view age 0) | CPU tick 0.000, extract 0.000, upload 0.208, encode 0.429 ms | GPU shadow near/far 0.050/0.277, cluster 0.004, forward 1.196, history 0.073, display 1.208, atmosphere compute 0.000, present 1.168 ms | Direct culling",
+    "controls": {
+     "world.paused": true,
+     "sky.solar_time": 12,
+     "camera.yaw": 0,
+     "camera.pitch": 0
+    }
+   },
+   {
+    "name": "after-keys",
+    "unix_ns": 1794397743891139000,
+    "window_number": 46105,
+    "bounds_points": {
+     "X": 384,
+     "Height": 572,
+     "Y": 146,
+     "Width": 960
+    },
+    "title": "Thrum V1 | Paused (P) | tick 3 (0 updates, view age 0) | CPU tick 0.000, extract 0.000, upload 0.205, encode 0.534 ms | GPU shadow near/far 0.051/0.282, cluster 0.004, forward 1.258, history 0.030, display 1.226, atmosphere compute 0.000, present 1.233 ms | Direct culling",
+    "controls": {
+     "world.paused": true,
+     "sky.solar_time": 12,
+     "camera.yaw": 0,
+     "camera.pitch": 0
+    }
+   },
+   {
+    "name": "before-resize",
+    "unix_ns": 1794397746632872000,
+    "window_number": 46105,
+    "bounds_points": {
+     "X": 384,
+     "Height": 572,
+     "Y": 146,
+     "Width": 960
+    },
+    "title": "Thrum V1 | Paused (P) | tick 3 (0 updates, view age 0) | CPU tick 0.000, extract 0.001, upload 0.372, encode 0.806 ms | GPU shadow near/far 0.051/0.268, cluster 0.074, forward 1.201, history 0.007, display 1.193, atmosphere compute 0.000, present 1.178 ms | Direct culling",
+    "controls": {
+     "world.paused": true,
+     "sky.solar_time": 12,
+     "camera.yaw": 0,
+     "camera.pitch": 0
+    }
+   },
+   {
+    "name": "resized",
+    "unix_ns": 1794397749395827000,
+    "window_number": 46105,
+    "bounds_points": {
+     "X": 384,
+     "Height": 472,
+     "Y": 146,
+     "Width": 760
+    },
+    "title": "Thrum V1 | Paused (P) | tick 3 (0 updates, view age 0) | CPU tick 0.000, extract 0.001, upload 0.279, encode 0.679 ms | GPU shadow near/far 0.051/0.274, cluster 0.089, forward 1.179, history 0.007, display 1.202, atmosphere compute 0.000, present 1.148 ms | Direct culling",
+    "controls": {
+     "world.paused": true,
+     "sky.solar_time": 12,
+     "camera.yaw": 0,
+     "camera.pitch": 0
+    }
+   },
+   {
+    "name": "resized-narrow",
+    "unix_ns": 1794397752132129000,
+    "window_number": 46105,
+    "bounds_points": {
+     "X": 384,
+     "Height": 572,
+     "Y": 146,
+     "Width": 700
+    },
+    "title": "Thrum V1 | Paused (P) | tick 3 (0 updates, view age 0) | CPU tick 0.000, extract 0.000, upload 0.181, encode 0.377 ms | GPU shadow near/far 0.051/0.288, cluster 0.005, forward 1.165, history 0.020, display 1.131, atmosphere compute 0.000, present 1.130 ms | Direct culling",
+    "controls": {
+     "world.paused": true,
+     "sky.solar_time": 12,
+     "camera.yaw": 0,
+     "camera.pitch": 0
+    }
+   },
+   {
+    "name": "restored",
+    "unix_ns": 1794397754901254000,
+    "window_number": 46105,
+    "bounds_points": {
+     "X": 384,
+     "Height": 572,
+     "Y": 146,
+     "Width": 960
+    },
+    "title": "Thrum V1 | Paused (P) | tick 3 (0 updates, view age 0) | CPU tick 0.000, extract 0.000, upload 0.399, encode 0.862 ms | GPU shadow near/far 0.050/0.275, cluster 0.056, forward 1.253, history 0.103, display 1.264, atmosphere compute 0.000, present 1.197 ms | Direct culling",
+    "controls": {
+     "world.paused": true,
+     "sky.solar_time": 12,
+     "camera.yaw": 0,
+     "camera.pitch": 0
+    }
+   }
+  ],
+  "letterbox_content_pixels": [
+   {
+    "image": "tmp/review-m2/window/apple-tile/before-resize.png",
+    "extent": [
+     1920,
+     1144
+    ],
+    "content": [
+     1920,
+     1080
+    ],
+    "black_top": 0,
+    "black_bottom": 0,
+    "black_cols": 0,
+    "image_rows": 1080,
+    "expected_16x9_rows": 1080
+   },
+   {
+    "image": "tmp/review-m2/window/apple-tile/resized.png",
+    "extent": [
+     1520,
+     944
+    ],
+    "content": [
+     1520,
+     880
+    ],
+    "black_top": 12,
+    "black_bottom": 13,
+    "black_cols": 0,
+    "image_rows": 855,
+    "expected_16x9_rows": 855
+   },
+   {
+    "image": "tmp/review-m2/window/apple-tile/resized-narrow.png",
+    "extent": [
+     1400,
+     1144
+    ],
+    "content": [
+     1400,
+     1080
+    ],
+    "black_top": 146,
+    "black_bottom": 147,
+    "black_cols": 0,
+    "image_rows": 787,
+    "expected_16x9_rows": 788
+   },
+   {
+    "image": "tmp/review-m2/window/apple-tile/restored.png",
+    "extent": [
+     1920,
+     1144
+    ],
+    "content": [
+     1920,
+     1080
+    ],
+    "black_top": 0,
+    "black_bottom": 0,
+    "black_cols": 0,
+    "image_rows": 1080,
+    "expected_16x9_rows": 1080
+   }
+  ],
+  "replacement": {
+   "pid": 2949,
+   "env": {
+    "THRUM_RECIPE": "apple-tile",
+    "THRUM_MAC_QUALIFY": "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/tmp/review-m2/recovery/apple-tile",
+    "THRUM_MAC_TAP": "on",
+    "THRUM_MAC_REPLACE": "1",
+    "THRUM_V1_FRAMES": "10000",
+    "THRUM_SCENE": "valley",
+    "THRUM_ASSET_STORE": "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/tmp/review-m2/valley",
+    "THRUM_ROUTE_OVERLAY": "proof",
+    "THRUM_STARS": "on",
+    "THRUM_CULLING": "direct",
+    "THRUM_PARAMS": "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/examples/v1-game/params/showcase-noon.params.json"
+   },
+   "record_start_unix_ns": 1794397910820713000,
+   "game_exit": 0,
+   "recorder_exit": 0
+  }
+ },
+ "observer": {
+  "tool": "/usr/sbin/screencapture (-l window, -v video)",
+  "os": "ProductName:\t\tmacOS\nProductVersion:\t\t26.6.2\nBuildVersion:\t\t25G83\n",
+  "backing_scale": 2,
+  "permission_preflight": "CGPreflightScreenCaptureAccess() == true in the reviewer process; no grant requested or changed",
+  "console": "kCGSSessionOnConsoleKey=1, not locked",
+  "resize": "AXUIElementSetAttributeValue(kAXSizeAttribute) on the game window (process already AX-trusted; no prompt)",
+  "keys": "CGEvent postToPid, E=14 x4 then Q=12 x2",
+  "clock": "time.time_ns / time.monotonic_ns host time"
+ }
+}

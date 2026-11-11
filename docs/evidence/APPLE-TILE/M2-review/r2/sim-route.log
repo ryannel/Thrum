@@ -1,0 +1,23 @@
+simulator: Thrum APPLE-TILE M1 owned 2A09ECAA-B20B-47FD-ACBD-BE9A2B8474B1 type=com.apple.CoreSimulator.SimDeviceType.iPhone-18-Pro runtime=com.apple.CoreSimulator.SimRuntime.iOS-27-2 state=Booted
+startup: presented=838 completed=836 callbacks=854 pending<=2 threads display/prepare/frame/world=main/thrum-v1-ios-render/thrum-v1-ios-render/thrum-world
+step 16:16:17: command stall-render (file drop #1)
+stall: 8 s inside the lease section; callbacks during stall=481, world ticks during stall=481, UIKit max during stall=485 us
+step 16:16:27: command hide-view (file drop #2)
+step 16:16:33: command show-view (file drop #3)
+denied: 120 denied, 0 acquired, 0 presented, 120 world ticks while hidden; missing stays 0
+step 16:16:35: command replace-surface (file drop #4)
+replacement: epoch 2 -> 4, presented on epoch 4, same pid 70958, live detached windows 0
+step 16:16:37: command stall-render (file drop #5)
+step 16:16:37: command replace-surface (file drop #6)
+stalled replacement: deferred=1 stale_dropped=1 completed releases=1; presents resumed on epoch 6
+step 16:16:47: command stall-present (file drop #7)
+step 16:16:47: command replace-surface (file drop #8)
+raced present: one admitted present after revocation (raced_presents=1), deferred=2, old window detached after release; presents resumed on epoch 8
+step 16:16:57: xcrun simctl launch 2A09ECAA-B20B-47FD-ACBD-BE9A2B8474B1 com.apple.Preferences
+step 16:16:59: xcrun simctl launch 2A09ECAA-B20B-47FD-ACBD-BE9A2B8474B1 org.thrum.v1
+m1-background: pid 70958, world epoch 1 at tick 3267 paused and resumed at tick 3267; surface epoch 8 -> 10; deferred releases 2
+step 16:17:04: command stall-render (file drop #9)
+step 16:17:04: xcrun simctl launch 2A09ECAA-B20B-47FD-ACBD-BE9A2B8474B1 com.apple.Preferences
+step 16:17:06: xcrun simctl launch 2A09ECAA-B20B-47FD-ACBD-BE9A2B8474B1 org.thrum.v1
+m1-background-stall: pid 70958, world epoch 1 at tick 3424 paused and resumed at tick 3424; surface epoch 10 -> 12; deferred releases 3
+{"passed": true, "error": null}

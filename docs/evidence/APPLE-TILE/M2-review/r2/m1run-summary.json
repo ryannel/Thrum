@@ -1,0 +1,239 @@
+{
+ "script": "scripts/apple_tile_m1.py",
+ "passed": true,
+ "revision": "b74cae87a34e92a1db5095b20dd3f1ea0322377e",
+ "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+ "binary_sha256": "8b4178416ea8039ef5672ba6651ad902f79c23de2aed3edad03aac537a2a8468",
+ "route_sha256": "7cedae789b8f04470c46ed94c13bc13094d97dfbe1e32cc83b8f70457115a094",
+ "failures": [],
+ "comparisons": {
+  "portable-sdr-approach": {
+   "equal": true,
+   "changed_pixels": 0,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/sdr-1/approach.png",
+   "retained_sha256": "153e5b4e7f114b592cc86bdccfd6b8055cd4b42ca5644b93f10569b181d24743"
+  },
+  "portable-sdr-mirror-light": {
+   "equal": true,
+   "changed_pixels": 0,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/sdr-1/mirror-light.png",
+   "retained_sha256": "a480f9ca8f2031b0d147b54ba2b301615936f67721b116ac61537d54ea19cd0b"
+  },
+  "portable-sdr-pre-cut": {
+   "equal": true,
+   "changed_pixels": 0,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/sdr-1/pre-cut.png",
+   "retained_sha256": "bd92dc5dde08473ae688d8d15577750960e5fd2bd4fc59528fc58a2122aafb2c"
+  },
+  "portable-sdr-post-cut": {
+   "equal": true,
+   "changed_pixels": 0,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/sdr-1/post-cut.png",
+   "retained_sha256": "fd5213dedae57f3d3d05369e1cec6545cf5baced0dd7ba9302ead03a8697e06a"
+  },
+  "portable-sdr-near-plane": {
+   "equal": true,
+   "changed_pixels": 0,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/sdr-1/near-plane.png",
+   "retained_sha256": "194ad2fe5f16ee5def9f08256d338913a854f96bdc5eab2dd22501185364d9fc"
+  },
+  "portable-scene-linear-approach": {
+   "equal": true,
+   "changed_pixels": 0,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/scene-linear-1/approach.rgba16f.gz",
+   "retained_sha256": "98dbdcff38512ecbdeaf5586a52186ac9f094defddf5a53ed2fdf3429a06260f"
+  },
+  "portable-scene-linear-mirror-light": {
+   "equal": true,
+   "changed_pixels": 0,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/scene-linear-1/mirror-light.rgba16f.gz",
+   "retained_sha256": "d645388e164f5fd90e3561eab51bf4a1748fe3ce26a9c4d60cd0cc5415b8317a"
+  },
+  "portable-scene-linear-pre-cut": {
+   "equal": true,
+   "changed_pixels": 0,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/scene-linear-1/pre-cut.rgba16f.gz",
+   "retained_sha256": "73133597b4ab1fc397fdbad34d3c64f4b32cd0de95a96d3f456a4d9f55848ae8"
+  },
+  "portable-scene-linear-post-cut": {
+   "equal": true,
+   "changed_pixels": 0,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/scene-linear-1/post-cut.rgba16f.gz",
+   "retained_sha256": "c1cb22dbb95b2c61adb5db2ed7b0aa91bbaa44b9d987376a7ddcc4ccf00c638a"
+  },
+  "portable-scene-linear-near-plane": {
+   "equal": true,
+   "changed_pixels": 0,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/scene-linear-1/near-plane.rgba16f.gz",
+   "retained_sha256": "579ade4ee355a0b78eed5bf9191d4c7e4f2f1df3d470fff116ef943e43b0a40d"
+  },
+  "apple-tile-sdr-approach": {
+   "equal": true,
+   "changed_pixels": 0,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/sdr-1/approach.png",
+   "retained_sha256": "153e5b4e7f114b592cc86bdccfd6b8055cd4b42ca5644b93f10569b181d24743"
+  },
+  "apple-tile-sdr-mirror-light": {
+   "equal": true,
+   "changed_pixels": 0,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/sdr-1/mirror-light.png",
+   "retained_sha256": "a480f9ca8f2031b0d147b54ba2b301615936f67721b116ac61537d54ea19cd0b"
+  },
+  "apple-tile-sdr-pre-cut": {
+   "equal": true,
+   "changed_pixels": 0,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/sdr-1/pre-cut.png",
+   "retained_sha256": "bd92dc5dde08473ae688d8d15577750960e5fd2bd4fc59528fc58a2122aafb2c"
+  },
+  "apple-tile-sdr-post-cut": {
+   "equal": true,
+   "changed_pixels": 0,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/sdr-1/post-cut.png",
+   "retained_sha256": "fd5213dedae57f3d3d05369e1cec6545cf5baced0dd7ba9302ead03a8697e06a"
+  },
+  "apple-tile-sdr-near-plane": {
+   "equal": true,
+   "changed_pixels": 0,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/sdr-1/near-plane.png",
+   "retained_sha256": "194ad2fe5f16ee5def9f08256d338913a854f96bdc5eab2dd22501185364d9fc"
+  },
+  "apple-tile-scene-linear-approach": {
+   "equal": true,
+   "changed_pixels": 0,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/scene-linear-1/approach.rgba16f.gz",
+   "retained_sha256": "98dbdcff38512ecbdeaf5586a52186ac9f094defddf5a53ed2fdf3429a06260f"
+  },
+  "apple-tile-scene-linear-mirror-light": {
+   "equal": true,
+   "changed_pixels": 0,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/scene-linear-1/mirror-light.rgba16f.gz",
+   "retained_sha256": "d645388e164f5fd90e3561eab51bf4a1748fe3ce26a9c4d60cd0cc5415b8317a"
+  },
+  "apple-tile-scene-linear-pre-cut": {
+   "equal": true,
+   "changed_pixels": 0,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/scene-linear-1/pre-cut.rgba16f.gz",
+   "retained_sha256": "73133597b4ab1fc397fdbad34d3c64f4b32cd0de95a96d3f456a4d9f55848ae8"
+  },
+  "apple-tile-scene-linear-post-cut": {
+   "equal": true,
+   "changed_pixels": 0,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/scene-linear-1/post-cut.rgba16f.gz",
+   "retained_sha256": "c1cb22dbb95b2c61adb5db2ed7b0aa91bbaa44b9d987376a7ddcc4ccf00c638a"
+  },
+  "apple-tile-scene-linear-near-plane": {
+   "equal": true,
+   "changed_pixels": 0,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/scene-linear-1/near-plane.rgba16f.gz",
+   "retained_sha256": "579ade4ee355a0b78eed5bf9191d4c7e4f2f1df3d470fff116ef943e43b0a40d"
+  },
+  "portable-sdr-repeat-approach": {
+   "equal": true,
+   "changed_pixels": 0,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/sdr-1/approach.png",
+   "retained_sha256": "153e5b4e7f114b592cc86bdccfd6b8055cd4b42ca5644b93f10569b181d24743"
+  },
+  "portable-sdr-repeat-mirror-light": {
+   "equal": true,
+   "changed_pixels": 0,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/sdr-1/mirror-light.png",
+   "retained_sha256": "a480f9ca8f2031b0d147b54ba2b301615936f67721b116ac61537d54ea19cd0b"
+  },
+  "portable-sdr-repeat-pre-cut": {
+   "equal": true,
+   "changed_pixels": 0,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/sdr-1/pre-cut.png",
+   "retained_sha256": "bd92dc5dde08473ae688d8d15577750960e5fd2bd4fc59528fc58a2122aafb2c"
+  },
+  "portable-sdr-repeat-post-cut": {
+   "equal": true,
+   "changed_pixels": 0,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/sdr-1/post-cut.png",
+   "retained_sha256": "fd5213dedae57f3d3d05369e1cec6545cf5baced0dd7ba9302ead03a8697e06a"
+  },
+  "portable-sdr-repeat-near-plane": {
+   "equal": true,
+   "changed_pixels": 0,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/sdr-1/near-plane.png",
+   "retained_sha256": "194ad2fe5f16ee5def9f08256d338913a854f96bdc5eab2dd22501185364d9fc"
+  },
+  "portable-scene-linear-repeat-approach": {
+   "equal": true,
+   "changed_pixels": 0,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/scene-linear-1/approach.rgba16f.gz",
+   "retained_sha256": "98dbdcff38512ecbdeaf5586a52186ac9f094defddf5a53ed2fdf3429a06260f"
+  },
+  "portable-scene-linear-repeat-mirror-light": {
+   "equal": true,
+   "changed_pixels": 0,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/scene-linear-1/mirror-light.rgba16f.gz",
+   "retained_sha256": "d645388e164f5fd90e3561eab51bf4a1748fe3ce26a9c4d60cd0cc5415b8317a"
+  },
+  "portable-scene-linear-repeat-pre-cut": {
+   "equal": true,
+   "changed_pixels": 0,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/scene-linear-1/pre-cut.rgba16f.gz",
+   "retained_sha256": "73133597b4ab1fc397fdbad34d3c64f4b32cd0de95a96d3f456a4d9f55848ae8"
+  },
+  "portable-scene-linear-repeat-post-cut": {
+   "equal": true,
+   "changed_pixels": 0,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/scene-linear-1/post-cut.rgba16f.gz",
+   "retained_sha256": "c1cb22dbb95b2c61adb5db2ed7b0aa91bbaa44b9d987376a7ddcc4ccf00c638a"
+  },
+  "portable-scene-linear-repeat-near-plane": {
+   "equal": true,
+   "changed_pixels": 0,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/scene-linear-1/near-plane.rgba16f.gz",
+   "retained_sha256": "579ade4ee355a0b78eed5bf9191d4c7e4f2f1df3d470fff116ef943e43b0a40d"
+  },
+  "portable-sun-sdr": {
+   "equal": true,
+   "changed_pixels": 0,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/sun-sdr/checkpoint-0.png",
+   "retained_sha256": "e80f23e985f393392e6c5e7b3b8c334ea6cebcfea45e2fd0c870bc8bcc092b65"
+  },
+  "portable-sun-linear": {
+   "equal": true,
+   "changed_pixels": 0,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/sun-linear/checkpoint-0.rgba16f.gz",
+   "retained_sha256": "64724d54cc6c24362f2c3a87e8c893dbdf23c7b0b2fa0fd2678638a1ff5cf09c"
+  },
+  "portable-night-sdr": {
+   "equal": true,
+   "changed_pixels": 0,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/night-sdr/checkpoint-0.png",
+   "retained_sha256": "5725a4c543c47957e66510b0fd16884b51e63ebb3a06d70be301a24d1bead4af"
+  },
+  "portable-night-linear": {
+   "equal": true,
+   "changed_pixels": 0,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/night-linear/checkpoint-0.rgba16f.gz",
+   "retained_sha256": "eb70fa5ad17acd15bcbacf2377e4879f6c2d6f10caf61024d9c5cddd821db3f5"
+  },
+  "apple-tile-sun-sdr": {
+   "equal": true,
+   "changed_pixels": 0,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/sun-sdr/checkpoint-0.png",
+   "retained_sha256": "e80f23e985f393392e6c5e7b3b8c334ea6cebcfea45e2fd0c870bc8bcc092b65"
+  },
+  "apple-tile-sun-linear": {
+   "equal": true,
+   "changed_pixels": 0,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/sun-linear/checkpoint-0.rgba16f.gz",
+   "retained_sha256": "64724d54cc6c24362f2c3a87e8c893dbdf23c7b0b2fa0fd2678638a1ff5cf09c"
+  },
+  "apple-tile-night-sdr": {
+   "equal": true,
+   "changed_pixels": 0,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/night-sdr/checkpoint-0.png",
+   "retained_sha256": "5725a4c543c47957e66510b0fd16884b51e63ebb3a06d70be301a24d1bead4af"
+  },
+  "apple-tile-night-linear": {
+   "equal": true,
+   "changed_pixels": 0,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/night-linear/checkpoint-0.rgba16f.gz",
+   "retained_sha256": "eb70fa5ad17acd15bcbacf2377e4879f6c2d6f10caf61024d9c5cddd821db3f5"
+  }
+ }
+}

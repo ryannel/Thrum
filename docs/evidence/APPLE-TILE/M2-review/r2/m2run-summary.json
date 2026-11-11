@@ -1,0 +1,137 @@
+{
+ "script": "scripts/apple_tile_m2.py",
+ "passed": true,
+ "revision": "b74cae87a34e92a1db5095b20dd3f1ea0322377e",
+ "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+ "binary_sha256": "8b4178416ea8039ef5672ba6651ad902f79c23de2aed3edad03aac537a2a8468",
+ "route_sha256": "7cedae789b8f04470c46ed94c13bc13094d97dfbe1e32cc83b8f70457115a094",
+ "failures": [],
+ "comparisons": {
+  "portable-bgra8-mirror-light": {
+   "equal": true,
+   "changed_pixels": 0,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/letterbox-bgra8-1/mirror-light.surface-bgra8.gz",
+   "retained_sha256": "d56a9e7aaaa5ddf6046153dbd0253a4cd6db5fc6fe2736dfee6d70c2e77bee4d"
+  },
+  "portable-bgra8-srgb-mirror-light": {
+   "equal": true,
+   "changed_pixels": 0,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/letterbox-bgra8-srgb-1/mirror-light.surface-bgra8.gz",
+   "retained_sha256": "d56a9e7aaaa5ddf6046153dbd0253a4cd6db5fc6fe2736dfee6d70c2e77bee4d"
+  },
+  "apple-tile-bgra8-mirror-light": {
+   "equal": true,
+   "changed_pixels": 0,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/letterbox-bgra8-1/mirror-light.surface-bgra8.gz",
+   "retained_sha256": "d56a9e7aaaa5ddf6046153dbd0253a4cd6db5fc6fe2736dfee6d70c2e77bee4d"
+  },
+  "apple-tile-bgra8-srgb-mirror-light": {
+   "equal": true,
+   "changed_pixels": 0,
+   "retained_reference": "docs/evidence/render/apple-tile-m0/native-baseline/letterbox-bgra8-srgb-1/mirror-light.surface-bgra8.gz",
+   "retained_sha256": "d56a9e7aaaa5ddf6046153dbd0253a4cd6db5fc6fe2736dfee6d70c2e77bee4d"
+  }
+ },
+ "motion": {
+  "portable-route": {
+   "complete": true,
+   "images": 964,
+   "opportunities": 964,
+   "submitted": 964,
+   "skipped_before_total": 0,
+   "skips": [],
+   "dropped_views": 0,
+   "ring_omissions": 0,
+   "history_epochs": [
+    1,
+    2
+   ],
+   "epoch_change_at_image": [
+    524
+   ],
+   "max_submit_gap_ms": 10.4,
+   "final_accepted_yaw": 0.0,
+   "diagnostic_actions": []
+  },
+  "portable-render-stall": {
+   "complete": true,
+   "images": 451,
+   "opportunities": 451,
+   "submitted": 451,
+   "skipped_before_total": 30,
+   "skips": [
+    [
+     247,
+     30,
+     19.049999237060547
+    ]
+   ],
+   "dropped_views": 0,
+   "ring_omissions": 0,
+   "history_epochs": [
+    0
+   ],
+   "epoch_change_at_image": [],
+   "max_submit_gap_ms": 259.38,
+   "final_accepted_yaw": 35.9999885559082,
+   "diagnostic_actions": [
+    {
+     "end_ns": 2051691209,
+     "kind": "render-owner-before-ordinary-step",
+     "requested_ns": 1800195417,
+     "start_ns": 1800195417
+    }
+   ]
+  },
+  "apple-tile-route": {
+   "complete": true,
+   "images": 964,
+   "opportunities": 964,
+   "submitted": 964,
+   "skipped_before_total": 0,
+   "skips": [],
+   "dropped_views": 0,
+   "ring_omissions": 0,
+   "history_epochs": [
+    1,
+    2
+   ],
+   "epoch_change_at_image": [
+    524
+   ],
+   "max_submit_gap_ms": 10.51,
+   "final_accepted_yaw": 0.0,
+   "diagnostic_actions": []
+  },
+  "apple-tile-render-stall": {
+   "complete": true,
+   "images": 451,
+   "opportunities": 451,
+   "submitted": 451,
+   "skipped_before_total": 30,
+   "skips": [
+    [
+     247,
+     30,
+     19.049999237060547
+    ]
+   ],
+   "dropped_views": 0,
+   "ring_omissions": 0,
+   "history_epochs": [
+    0
+   ],
+   "epoch_change_at_image": [],
+   "max_submit_gap_ms": 259.34,
+   "final_accepted_yaw": 35.9999885559082,
+   "diagnostic_actions": [
+    {
+     "end_ns": 2051612375,
+     "kind": "render-owner-before-ordinary-step",
+     "requested_ns": 1801444666,
+     "start_ns": 1801444666
+    }
+   ]
+  }
+ }
+}

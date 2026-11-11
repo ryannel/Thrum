@@ -1,99 +1,97 @@
 # APPLE-TILE M2 review: The existing frame lifecycle runs through one split graph
 
-- **Reviewer:** Claude Opus 5.5 (high), independent of the builder. Review date: 11 November 2026.
-- **Commit judged:** `a6101020a94c50e386bc33ce7f41743a84937957`, in a clean checkout. From it I built:
-  - release `v1-game` with `draw-probe,thrum-render/creation-counters` (SHA-256 `54bc5e92…`);
-  - `thrum-cook`, and a fresh valley store, root `70d2baf8…e21d`, which matches `moving-v1.json`;
-  - the iOS simulator app.
-- **Attribution build:** for attribution only, I also built the parent `3870a021` (see
-  [parent-3870a021-m2-matrix.json](M2-review/parent-3870a021-m2-matrix.json)). Its SHA-256 is `1b55ef38…`, which is
-  byte-identical to the builder's evidence binary. It contains the M2 code but not
-  APPLE-PRESENTATION M1 (`5258d963`).
-- **Result: FAIL.** D2.1, D2.2, D2.4 and D2.5 pass. D2.3 fails with one Must Fix.
-- **First review:** `fails` was 0, so there was no earlier review to follow up.
+- **Reviewer:** Claude Opus 5.5 (high), independent of the builder. Review date: 11 November 2026. Round 2.
+- **Commit judged:** `b74cae87a34e92a1db5095b20dd3f1ea0322377e`, in a clean checkout (`git status` clean apart from
+  this review). From it I built:
+  - release `v1-game` with `draw-probe,thrum-render/creation-counters`. Its SHA-256 is `8b417841…a8468`, the same as
+    the builder's evidence binary. The only commits after the builder's matrix revision `9af8664f` change
+    documentation and `scripts/*mac_m2*`, so its source is the source I built;
+  - the iOS simulator app (`examples/v1-game-ios/ios/build-simulator.sh`).
+- **Cooked store:** I reused the valley store I cooked in round 1 (`tmp/review-m2/valley`). Both scripts'
+  `validate_store` accepted it against `moving-v1.json`.
+- **Result: PASS.** All five items pass. Round 1's Must Fix is fixed and no new Must Fix was found.
 
-Captures and summaries are in [M2-review/](M2-review/). Bulk sources, such as T2 spools, OS videos and simulator
-records, stay in my scratch folder `tmp/review-m2/`. Every GPU and window run held the orchestrate `gpu` lock.
+Selected captures and summaries for this round are in [M2-review/r2/](M2-review/r2/). Round 1's files are in
+[M2-review/](M2-review/). Bulk sources, such as T2 spools, OS videos and simulator records, stay in my scratch folder
+`tmp/review-m2-r2/`. Every GPU, window and simulator run held the orchestrate `gpu` lock.
+
+## Round 1 Must Fix
+
+### MF1 `d23-exactness-broken-at-claimed-commit` (D2.3): fixed, verified
+
+**Round 1.** At `a6101020`, APPLE-PRESENTATION M1 had made every game view rasterise with a jittered projection. As
+a result:
+- the exact M0 comparisons failed;
+- a held window crawled;
+- the builder's evidence came from an older binary.
+
+**The fix.** It came from APPLE-PRESENTATION's own fix, `ae0cc8fa`:
+- The game now calls `with_jitter_sequence`, which keeps the sample metadata without the raster jitter
+  (`examples/v1-game/src/host/scene_source.rs`).
+- `SyntheticView::raster_projection` returns the unjittered `view_proj` unless `with_jitter_phase` has been selected
+  explicitly (`crates/thrum-render/src/synthetic/view.rs`).
+- The tests were tightened, not weakened:
+  - `threaded_pause_keeps_pixels_still…` now requires all 31 consecutive paused frames to be identical;
+  - the recovery tests now compare against the single pre-loss frame instead of the closest of 32 jitter phases.
+
+**My verification at `b74cae87`:**
+- **`scripts/apple_tile_m1.py`:** 38/38 exact comparisons, 0 changed pixels
+  ([summary](M2-review/r2/m1run-summary.json)). This covers:
+  - both recipes;
+  - SDR and scene-linear, at 5 route checkpoints;
+  - the portable repeats;
+  - Sun and night.
+
+  The script also checks that each checkpoint's sample and exposure identity equals the retained M0 identity.
+- **`scripts/apple_tile_m2.py`:** 4/4 exact letterbox comparisons, 0 changed pixels (both recipes, Bgra8Unorm and
+  sRGB), plus complete realtime route and stall runs ([summary](M2-review/r2/m2run-summary.json)).
+- **Provenance:** both manifests now record revision `b74cae87`, the empty-diff hash `e3b0c442…` and binary
+  `8b417841…`. Round 1's Suggestion S3 is done.
+- **Baselines:** the M0 baseline folder `docs/evidence/render/apple-tile-m0/native-baseline` was last changed in the M0
+  commit `03bc878a`. It was not refreshed.
+- **Held window:** with the camera held and the world paused, four consecutive OS captures per recipe are
+  byte-identical, with 0 of 2,073,600 content pixels changed
+  ([window-observations.json](M2-review/r2/window-observations.json), `held_vs_first`). In round 1 this was 874k–1.05M
+  pixels.
 
 ## What I ran
 
 | Run | Result |
 |---|---|
-| `scripts/apple_tile_m2.py` on `a6101020` | **Fails at the first exact comparison.** `portable-bgra8-mirror-light`: 316,181 of 800,000 letterbox pixels differ from the M0 baseline. [comparison](M2-review/a6101020-mirror-light-letterbox-comparison.json), [difference map](M2-review/a6101020-mirror-light-letterbox-diff.png), [manifest](M2-review/a6101020-m2-matrix.json) |
-| `scripts/apple_tile_m1.py` (the M0 exact matrix) on `a6101020` | **Fails at the first comparison.** `portable-sdr-approach`: 472,377 pixels differ. [comparison](M2-review/a6101020-sdr-approach-comparison.json) |
-| `scripts/apple_tile_m2.py` with the parent `3870a021` binary | Passes. The letterbox is exact for both recipes and both surface formats (4/4 comparisons, 0 changed pixels), and the realtime route and stall runs complete. [manifest](M2-review/parent-3870a021-m2-matrix.json) |
-| Graph and executor unit tests (`graph_record`) | 5/5 pass |
-| `./dev check` on `a6101020` | Exit 0. This includes the split tests, `lost_encoded_frame_abandons_staging_without_a_queue_submit` and the Metal test `metal_both_recipes_prepare_one_graph_and_reuse_scene_textures_on_surface_resize`. |
-| `scripts/apple_tile_m1_sim.py` (iPhone 18 Pro simulator, iOS 27.2) | Passes. [route log](M2-review/sim-route.log), [final endpoint](M2-review/sim-m1-final.png) |
-| My own OS-window observer on `a6101020`, both recipes | Covered settled sun, night and noon; the held camera; key response; resize to 760×472 and to 700×572 points, then restore; and same-PID surface replacement with OS video. [window-observations.json](M2-review/window-observations.json) |
-| The same held-camera observer with the parent binary | All four held captures are byte-identical. [held-window-stability.json](M2-review/held-window-stability.json) |
+| `scripts/apple_tile_m1.py` | Pass: 38/38 exact |
+| `scripts/apple_tile_m2.py` | Pass: 4/4 exact letterbox, plus realtime route/cut and stall for both recipes |
+| My own paired-recipe comparison over the m1 outputs, portable against Apple tile | 0 differing files: every SDR/scene-linear checkpoint's pixels, surface bytes and identity JSON, and the Sun/night spools ([paired-recipes.json](M2-review/r2/paired-recipes.json)) |
+| T2 `still` references at `b74cae87`, Sun, night and noon, both recipes, proof overlay, stars, direct culling | Captured, `capture_complete` true |
+| My OS-window observer, both recipes | Settled states; held camera; key response; resize to 760×472 and 700×572 points, then restore |
+| Same-PID surface replacement with OS video, both recipes | Generation 2→3; every row presented |
+| `scripts/apple_tile_m1_sim.py` (iPhone 18 Pro simulator, iOS 27.2) | Pass ([log](M2-review/r2/sim-route.log)) |
+| `./dev check` | Exit 0. Includes the split-graph, executor, loss, recovery and paused-stability tests named below |
 
-**Window setup.** I ran the window observations attended, with these conditions:
-- `CGPreflightScreenCaptureAccess()` returned true for my process. The console was on and not locked.
-- My process was already AX-trusted, and no grant was requested or changed.
+**Window setup (attended).**
+- `CGPreflightScreenCaptureAccess()` returned true for my process, and `IOConsoleLocked` was false. No grant was
+  requested or changed.
 - The observer was `/usr/sbin/screencapture` on macOS 26.6.2 (25G83), at backing scale 2, on host clocks (`time_ns`
   and `monotonic_ns`).
+- PIDs, window IDs, bounds and build hashes are in [window-observations.json](M2-review/r2/window-observations.json).
 
-**Edge conditions run.**
-- mac-metal:
-  - Low sun: yes, with the sunset-clear-sun state.
-  - Fast camera: yes, with key turns and the qualifier's post-replacement pan.
-  - Distance: partly, through route checkpoints on the parent only.
-  - Storm: not run, because the valley scene has no storm state.
-  - Full refresh: not run. Cadence is out of scope and owned by Mac M2/M3.
-- ios-sim:
-  - Background and foreground: yes.
-  - Rotation: not run, because the route has no rotation step.
-
-**Owner answers.** The three entries the builder quotes match `ACCEPTED.json` `milestones.M2.owner_answers` verbatim:
+**Owner answers.** The builder cites `ACCEPTED.json` `milestones.M2.owner_answers`. The three entries there are:
 - D2.5 at 08:37:37Z;
 - D2.3 at 08:37:44Z;
 - D2.5 "Show it in Codex" at 10:16:52Z.
 
-My D2.5 judgement rests on my own observations, not on the builder's Computer Use session.
+They grant the attended setup (Screen Recording on, IINA allowed) and direct how the remaining checks are shown. My
+D2.5 and D2.3 judgements rest on my own runs, which used that existing grant.
 
-## Must Fix
-
-### MF1 `d23-exactness-broken-at-claimed-commit` (D2.3, verified)
-
-- **What I did.** I ran the milestone's own reproduction commands, `scripts/apple_tile_m2.py` and
-  `scripts/apple_tile_m1.py`, with a release binary built from the claimed commit `a6101020`.
-- **What happened.**
-  - The exact M0 comparisons fail on the first checkpoint each script tries:
-    - the 1000×800 letterbox `mirror-light` image differs in 316,181 pixels;
-    - the SDR `approach` image differs in 472,377 pixels.
-  - [The difference map](M2-review/a6101020-mirror-light-letterbox-diff.png) shows the signature of a sub-pixel
-    projection offset. The analytic sky is unchanged, and every rasterised surface (terrain, sphere, rock, cubes)
-    differs.
-  - The same script with the parent `3870a021` binary, which has the M2 code but not APPLE-PRESENTATION M1, passes
-    4/4 exactly.
-  - In the real window at the claimed commit, the camera is held and the world paused, yet consecutive OS captures
-    differ in 874k–1.05M of 2.07M content pixels, with a maximum difference of 210 codes. The parent binary gives
-    byte-identical held captures.
-  - Evidence: [four held captures ×2](M2-review/a6101020-apple-tile-held-window-4-captures-x2.png), compared with
-    [the parent](M2-review/parent-3870a021-portable-held-window-2-captures-x2.png), and
-    [the numbers](M2-review/held-window-stability.json).
-- **Why.** APPLE-PRESENTATION M1 (`5258d963`, 09:16) landed after M2's code commit (`0393bc45`, 07:42) and before
-  M2's claim. It applies `.with_jitter_phase(0, [640, 360])` to every game view, including route captures, at
-  `examples/v1-game/src/host/scene_source.rs:513`. `PreparedSynthetic::update_frame` (`crates/thrum-render/src/synthetic.rs:1776`)
-  then rasterises every submitted frame with a jittered projection.
-  - The builder's D2.3 and D2.5 evidence all uses binary `1b55ef38…`. My build of the pre-APPLE-PRESENTATION parent
-    `3870a021` reproduces that hash exactly. The simulator identity records commit `2b9943bb`, which also predates
-    `5258d963`.
-  - The evidence README says "the retained final binary is unchanged". So the claimed commit was never qualified,
-    and none of the builder's records detects the break.
-  - APPLE-PRESENTATION's own M1 review already holds the root defect as its MF1
-    (`jitter-presented-without-reconstruction`).
-- **What should happen.** At the commit claimed for M2, same-target scene-linear and submitted SDR bytes are exact
-  against M0 and the paired recipe (D2.3), and a held view is deterministic (the milestone bar).
-  - The likely fix is APPLE-PRESENTATION's fix: the presented frame stays unjittered until a reconstructor consumes
-    the jitter. M2's code itself is not at fault.
-  - After that lands, rerun `apple_tile_m1.py` and `apple_tile_m2.py`, including the realtime cut and stall
-    sequences, with a binary built from the commit being claimed. Record that commit's revision and clean diff
-    alongside the binary hash in the manifests.
-  - Do not refresh or widen the M0 baseline.
-- **Proposed item** that would have caught it: "Every exact or visual proof in this milestone records the git revision,
-  clean-diff hash and binary hash of the build it ran, and that revision is the claimed commit."
+**Edge conditions run.**
+- mac-metal:
+  - Low sun: yes, the sunset-clear-sun state, in the window and in T2.
+  - Fast camera: yes, the key turns, the route cut, the stall's elapsed-time catch-up, and the post-replacement pan.
+  - Distance: yes, the route checkpoints out to the far terrain.
+  - Storm: not run, because the valley scene has no storm state.
+  - Full refresh: not judged. Cadence is out of scope and owned by Mac M2/M3.
+- ios-sim:
+  - Background and foreground: yes, twice, one of them during a render stall.
+  - Rotation: not run, because the route has no rotation step.
 
 ## Items
 
@@ -104,147 +102,164 @@ My D2.5 judgement rests on my own observations, not on the builder's Computer Us
 - Require the surface binding only for phase two, and prove graph order.
 - Keep the tone intermediate and leave arithmetic, formats and draw order unchanged.
 
-**Answer.** Yes, on both sides of the boundary:
-- **Graph side** (`graph.rs`, `compile_surface_variant` and `compile_late_surface`):
-  - Each day, night and capture variant compiles once with the surface pass appended.
-  - Every live scene pass gets an explicit edge to the present pass.
-  - The post-acquire set must equal the surface consumer plus its descendants, and it must be a contiguous suffix of
-    the original schedule. Otherwise compilation returns `GraphError::SurfacePhase`.
-  - `split_tests.rs` rejects three cases: an unrelated pass declared post-acquire, a scene pass depending on the
-    surface, and an empty post set.
-- **Executor side** (`graph_record.rs`):
-  - `execute_before_acquire` and `execute_after_acquire` slice the same prepared recorder list at
-    `pre_acquire_passes`, so there is no per-frame lookup.
-  - The executor test shows that phase one runs without a surface, phase two refuses without one, and the final order
-    is [scene, present].
-- **Host side:** `encode_scene_only` runs only the prefix. `finish_encoded` runs the suffix with an execute-time
-  `LateSurface`.
-- **Real Metal:** the split-graph test asserts, for both recipes and for capture on and off, that the suffix is exactly
-  `PRESENT_PASS` and that "synthetic tone encode" sits before the boundary. It also asserts that scene textures are
-  reused across a surface-only resize.
-- **Code that did not change:** no `.wgsl` changed in `0393bc45`. The tone intermediate (Rgba8Unorm) and present
-  shader are the same pass the standalone `SurfacePresenter` declares, now shared through `present::surface_pass`.
-  APPLE-PRESENTATION later changed `synthetic_display.wgsl`, adding a motion-view branch that is off by default.
-- **Capture readback:** it reads the scene output, not the drawable, so placing it before acquisition is consistent
-  with the design.
+**Answer.** Yes. Round 1 read the M2 code in full. Since then:
+- `graph.rs`, `graph_record.rs`, `present.rs`, `runtime.rs` and `thrum-app` are unchanged.
+- The jitter gate and ATMOSPHERE M5's opt-in cloud shade both changed `synthetic.rs`:
+  - The cloud shade appends its reads to the same per-variant scene graph (`scene_graph.rs`, `cloud.append_reads`).
+  - It adds bindings only when `sun_optical_depth` is present, and that defaults to `None`, with
+    `GameSetup::diagnostic_clouds` false.
+  - So it does not move any scene work behind acquisition.
+- These tests pass in my `./dev check`:
+  - `split_tests::late_surface_requires_only_phase_two_binding_and_preserves_order`;
+  - `split_tests::unrelated_scene_cannot_be_declared_post_acquire_or_depend_on_surface`;
+  - the three `graph_record` binder and order tests;
+  - the Metal test `split_graph::metal_both_recipes_prepare_one_graph_and_reuse_scene_textures_on_surface_resize`.
+- The exact M0 matrix confirms that arithmetic, the tone intermediate and quantization are unchanged at this commit.
 
 ### D2.2 Refusal, loss and replacement under the merged graph: pass
 
-- **Healthy refusal.** `EncodedFrame::skip` and its `Drop` discard the recording and timing reservation, then flush
-  staging with one empty submit. No scene is submitted and no history is committed, because `commit_frame` runs only
-  in `finish_encoded`.
-- **Loss before acquire.** `lost_encoded_frame_abandons_staging_without_a_queue_submit` (Metal) covers both cases in
-  one test. The healthy skip makes +1 flush attempt. The loss makes 0 queue calls, leaves source and history unchanged
-  and keeps the history reset pending.
-- **Loss after acquire.** On the Mac this is `check_encoded_device` after `get_current_texture`
-  (`render_actor.rs:317`), which calls `abandon_lost_device`. On iOS, `render.rs` checks `is_lost()` after
-  `AfterAcquire`.
-- **Successful submit.** The "missing binding degrades" test covers both the late and the direct path, and
-  `./dev check` covers the replacement and recovery GPU tests.
-- **Resize.** `resize_surface` now rebinds the merged graph per slot. `GraphTextures::rebind` refuses any descriptor,
-  slot or storage change, and the Metal test proves that surface-only resize reuses the allocation.
-- **Stale generations.** The replacement tests in `./dev check` pass, and so does my OS-observed same-PID replacement:
-  generation 2→3, all 845/847 rows presented, maximum row gap 27 ms, one retirement with outstanding work retained
-  (`stale-recycle Some((1, 1))`).
+- **Code:** the healthy-refusal, loss and successful-submit paths read in round 1 are unchanged.
+- **Tests:** these pass in `./dev check`:
+  - `lost_encoded_frame_abandons_staging_without_a_queue_submit`, which covers healthy skip (+1 flush) and loss (0
+    queue calls, history reset pending);
+  - the device-replacement tests (`gpu_device_replacement_abandons_slots_and_isolates_old_candidates_and_callbacks`
+    and others);
+  - `culled_modes_survive_surface_resize_and_device_replacement`;
+  - the four `host::tests::recovery_gpu` tests. These are now stricter: consecutive replacement frames must be
+    identical and within 1 code of the pre-loss frame.
+- **Surface bytes and letterbox:** exact, from `apple_tile_m2.py`, as above.
+- **My OS-observed same-PID replacement:**
+  - portable: generation 2 ran 360/360 rows and generation 3 ran 476/476, all presented, with a maximum row gap of
+    27.0 ms;
+  - Apple tile: 360/360, then 485/485, with a maximum gap of 26.9 ms;
+  - both runs had one retirement with outstanding work retained (`stale-recycle Some((1, 1))`), `surface_faults=0`
+    and `device_losses=0`.
 
-One coverage gap here is a Suggestion (S2).
+  Contact sheets: [portable](M2-review/r2/portable-replacement-contact.png),
+  [Apple tile](M2-review/r2/apple-tile-replacement-contact.png).
 
-### D2.3 Complete image and motion, exact against M0 and paired recipes: fail
+Round 1's Suggestion S2, a token-level Mac test for loss after acquisition, is still open.
 
-**Inspection list:**
-1. M0 exact SDR and scene-linear bytes on route checkpoints, both recipes.
-2. Letterbox bytes for Bgra8Unorm and sRGB.
-3. Paired-recipe exactness.
-4. Sample and exposure identity.
-5. Realtime route with cut, and realtime render stall at 1x.
-6. Full frames and native crops of the Sun, stars, mirror and local lights.
+### D2.3 Complete image and motion, exact against M0 and paired recipes: pass
+
+**Inspection list (written before looking):**
+1. M0 exact SDR and scene-linear bytes on all route checkpoints, both recipes, with sample and exposure identity.
+2. Letterbox bytes for Bgra8Unorm and sRGB, both recipes.
+3. Paired-recipe exactness, portable against Apple tile, including identity.
+4. The realtime route cut: history epoch change, intact content either side of the cut.
+5. The realtime render stall at 1x elapsed time: deliberate skipped opportunities, then camera motion resuming at
+   the elapsed-time position, not where it paused.
+6. Full frames and native detail of the Sun disk and glow, the stars, the mirror, local lights, terrain and shadows.
 
 **Results:**
-- At `a6101020`, entries 1 and 2 fail (MF1).
-- Entries 3–5 could not be completed at the claimed commit, because both scripts stop at the first exact failure.
-- On the parent, entries 2 and 5 pass, but the parent is not the claimed commit.
-- Entry 6, at the claimed commit:
-  - the [OS-window states](M2-review/apple-tile-night-os-vs-t2.png) show complete content: Sun, stars, local lights,
-    mirror and shadows;
-  - the image is jittered, so it is not exact.
+1. **M0 exactness:** 38/38 exact. The retained identities match.
+2. **Letterbox:** 4/4 exact.
+3. **Paired recipes:** every checkpoint pixel file, surface file and identity file is byte-equal across the recipes
+   ([paired-recipes.json](M2-review/r2/paired-recipes.json)). The OS-captured windows of the two recipes are also
+   byte-identical in every state I captured (Sun, night, noon, held, after keys, narrow resize).
+4. **Route cut.** Both recipes complete with:
+   - 964/964 opportunities submitted;
+   - 0 ring omissions and 0 dropped views;
+   - history epochs 1→2 at image 524, with a maximum submit gap of 10.4–10.5 ms.
+
+   The cut-adjacent full-resolution sources (Apple tile 797–800,
+   [composite](M2-review/r2/apple-tile-cut-adjacent.png)) switch from the sphere-and-cubes view to the rock view with
+   no blend, smear or missing geometry.
+5. **Render stall.** Both recipes run 451/451 opportunities with one deliberate 30-opportunity skip at opportunity 247
+   (`render-owner-before-ordinary-step`, about 251 ms) and a 259.3–259.4 ms submit gap. The accepted yaw jumps
+   from 14.45° to 19.05° across the gap, which matches the elapsed time at the route's rate, then continues to 36.0°.
+   So motion follows elapsed time and is not paused-and-resumed.
+
+   The contact sheets ([Apple tile](M2-review/r2/apple-tile-render-stall-contact.png),
+   [portable](M2-review/r2/portable-render-stall-contact.png)) show a steady pan with the scene intact throughout.
+
+   I judged 1x continuity from the original-time records and the time-spaced contact sheets, not by watching the
+   movie.
+6. **Content.**
+   - The settled OS window and the T2 `still` reference at `b74cae87` differ only in about 570 pixels, which are the
+     window's rounded corners: [Apple tile Sun](M2-review/r2/apple-tile-sun.png),
+     [Apple tile night](M2-review/r2/apple-tile-night.png), [portable noon](M2-review/r2/portable-noon.png),
+     [portable night](M2-review/r2/portable-night.png).
+   - The Sun disk and glow, the stars (including the cluster), terrain, shadows, the mirror sphere and the
+     local-light cubes are all present.
+   - The night local-light pool is still blown out. That look is inherited and is not an M2 change.
 
 ### D2.4 iOS lease and background race under merged execution: pass
 
-I ran the simulator route on an owned iPhone 18 Pro (iOS 27.2) with the app built from `a6101020`:
-- Hidden view: 120 denied, 0 acquired, 0 presented, while the world ticked.
-- Replacement: epoch 2→4, same PID, no live detached windows.
-- Stalled replacement: deferred 1, `stale_dropped` 1, then recovery.
-- Raced present: the one designed in-section present after revocation, then the old window detaches on release.
-- Background and foreground, twice, one of them during a render stall: the world paused and resumed at the same tick,
-  the surface epoch advanced, and releases were deferred.
-
-**Code.** `ios/render.rs` checks `lease.is_current(epoch)` after acquisition and before `encoded.submit`. A stale lease
-gives `skip`, which flushes without a scene and keeps history uncommitted. Loss gives `abandon`. So no background
-submit, old-generation publication or stale resume is possible on this path. The lease unit tests run in
-`./dev check`.
-
-**Limits.** This is function only, with no cooked draw or runtime-motion claim. Rotation was not exercised.
+- **Code:** `thrum-app` and the iOS shell are unchanged since round 1. The renderer changes (jitter gate, opt-in
+  cloud) don't touch the lease path. I reran the route with the app built from `b74cae87`
+  ([log](M2-review/r2/sim-route.log), [final endpoint](M2-review/r2/sim-final.png)).
+- **Hidden view:** 120 denied, 0 acquired, 0 presented, with 120 world ticks.
+- **Replacement:** epoch 2→4, same PID, 0 live detached windows.
+- **Stalled replacement:** deferred=1, stale_dropped=1, then presents resumed.
+- **Raced present:** exactly the one designed admitted present after revocation, then the old window detached after
+  release.
+- **Background and foreground, twice (once during a stall):** the world paused and resumed at the same tick (3267,
+  then 3424), and the surface epoch advanced (8→10, then 10→12).
+- **Limits:** this is function only. Rotation was not exercised.
 
 ### D2.5 Real Mac game window, both recipes: pass (attended setup present)
 
-**Inspection list:**
-1. Settled Sun, night and noon against T2 `still` references at the same paused controls, with the proof overlay,
-   stars and direct culling.
-2. Sun disk and glow, sky and stars, terrain, local lights, mirror sphere, cubes and shadows.
-3. Ordinary key input.
-4. Resize: letterbox geometry in content pixels, for both letterbox and the taller pillar case, then restore.
-5. Surface replacement with OS video and lifecycle logs.
+**Inspection list (written before looking):**
+1. Settled Sun, night and noon against T2 `still` references at the same paused controls.
+2. Sun, sky and stars, geometry, local lights and mirror.
+3. A held camera is stable.
+4. Ordinary key input.
+5. Resize letterbox geometry in content pixels, then restore.
+6. Surface replacement in OS video with lifecycle logs.
 
 **Results:**
-1. **Settled states.** Sun, night and noon match their T2 references in content for both recipes: [portable
-   noon](M2-review/portable-noon-os-vs-t2.png), [Apple tile sun](M2-review/apple-tile-sun-os-vs-t2.png), [Apple tile
-   night](M2-review/apple-tile-night-os-vs-t2.png), [portable night](M2-review/portable-night-os-vs-t2.png). These
-   are matched states, not the same submission.
-2. **Content.** Everything on the list is present, including the Sun disk and stars at night. The night local-light
-   pool is blown out in both the window and the reference. That look is inherited, not an M2 change.
-3. **Keys.** E×4 and then Q×2, posted to the PID, turned the camera visibly in the OS video:
-   [Apple tile](M2-review/apple-tile-key-response-os-contact.png), [portable](M2-review/portable-key-response-os-contact.png).
-4. **Resize.** I measured the letterbox in content pixels:
-   - 1520×880 gives 12/13 black rows around an 855-row image;
+1. **Matched states:** they match, as listed under D2.3 entry 6. These are matched states, not the same submission.
+2. **Content:** everything on the list is present.
+3. **Held camera:** byte-stable on both recipes. This was round 1's crawl, now gone.
+4. **Keys:** E×4 and then Q×2, posted to the PID, turn the camera visibly in the OS video
+   ([portable](M2-review/r2/portable-key-contact.png)). The after-key frame differs from the held frame in 2.03M
+   pixels.
+5. **Resize:**
+   - 1520×880 gives 12/13 black rows around an 855-row image (855 expected);
    - 1400×1080 gives 146/147 rows around a 787-row image (788 expected after rounding);
-   - restoring gives a full 1920×1080 with no black rows.
-   - Images: [Apple tile 1520×880](M2-review/apple-tile-window-resized.png), [Apple tile 1400×1080](M2-review/apple-tile-window-resized-narrow.png),
-     [portable 1400×1080](M2-review/portable-window-resized-narrow.png); portable's 1520×880 numbers are in
-     [window-observations.json](M2-review/window-observations.json).
-5. **Replacement.** The same-PID surface replacement in OS video spans generation 2→3 with the scene intact, then the
-   qualifier's pan to 36° follows: [portable](M2-review/portable-replacement-os-contact.png), [Apple
-   tile](M2-review/apple-tile-replacement-os-contact.png).
+   - restoring gives a full 1920×1080 with no black rows;
+   - the result is identical on both recipes ([Apple tile narrow](M2-review/r2/apple-tile-window-resized-narrow.png),
+     [portable wide](M2-review/r2/portable-window-resized.png)).
+6. **Replacement:** as listed under D2.2.
 
-**Judgement.** The changed surface path functions in the real window. The held window crawls, which breaks the bar's
-"deterministic visible semantics". That crawl has the same root as MF1 and is recorded there, not counted twice.
+**Ask.** This item adds no reverse Mac dependency or panel claim. The ordering is unchanged since round 1:
+- Mac M2 owns cadence;
+- Mac M3 depends on this milestone by module order.
 
 ## Read-through of changed code
 
-I read every changed line of `0393bc45` in `graph.rs`, `graph_record.rs`, `present.rs`, `runtime.rs`,
-`preparation.rs`, `synthetic.rs`, `camera_culling.rs`, `scene_graph.rs`, the new tests and `scripts/apple_tile_m2.py`.
-I also read the evidence-only commits `23442056` and `a6101020`, and the APPLE-PRESENTATION code that landed in
-between.
+I read every source change between round 1's commit `a6101020` and `b74cae87` that touches the renderer or game:
+- the jitter gate `ae0cc8fa` (`view.rs`, `synthetic.rs`, `stars.rs`, `contributed.rs`, `scene_source.rs` and the two
+  host test files);
+- ATMOSPHERE M5's cloud-shade plumbing (`synthetic.rs`, `scene_graph.rs`, `host.rs`, `scene_source.rs`);
+- the M2 evidence commits `af69ba7d`, `9af8664f` and `b74cae87`.
 
-I found none of the signs of fake work: no hard-coded results, no test-only branches, no weakened M2 tests and no
-silenced lints. The one `storage_tests.rs` change is a call rename. The M2 evidence binaries and images are captured
-outputs, not computed stand-ins. The `camera_culling.rs` change routes the prepass depth ID through `target.ids`, so a
-rebind keeps it current.
+The two `scripts/*mac_m2*` files belong to PLATFORM-RUNTIME-MAC.
+
+I found none of the signs of fake work:
+- The cloud shade is off by default, behind `diagnostic_clouds`, and is checked at prepare and update time.
+- No test was weakened. The two recovery tests and the paused test now assert exact consecutive frames instead of
+  "closest of 32 phases".
+- The M0 baselines are untouched.
+- The builder's done-when edits are only D2.3's `status` and `evidence` and the milestone's `state`.
+- The builder's evidence binary hash reproduces from the claimed commit.
 
 ## Suggestions
 
-- **S1 (verified) `rebind` misreports its error.** `GraphTextures::rebind` returns `GraphError::SurfacePhase` for a
-  transient descriptor, slot or storage mismatch (`crates/thrum-render/src/graph.rs`, `rebind`). That mismatch is an
-  allocation-compatibility failure, not a phase error. A distinct variant would make a failed surface-resize rebind
-  diagnosable.
-- **S2 (verified) no token-level loss-after-acquire test.** No token-level Mac test separates "loss after acquisition,
-  before submit" from "loss before acquisition". Both reach `abandon_lost_device`. The Mac case relies on
-  `render_actor.rs:317` plus the iOS route. A test that acquires a texture (or a stand-in), destroys the device and
-  then abandons would make D2.2's separate cases explicit.
-- **S3 (verified) evidence provenance.** The native T2 and matrix manifests record a binary hash but no git revision,
-  while the simulator script records both. Adding `git rev-parse HEAD` and the diff hash to `apple_tile_m0/m1/m2.py`
-  manifests would have exposed MF1 at claim time.
-- **S4 (suspected) the claim-time rebase.** The milestone was claimed after rebasing onto another module's
-  rendering change without rerunning its exact matrix. The build-milestone handoff should require rerunning exact and
-  visual proofs whenever the rebase brings in rendering changes.
+- **S1 (verified, carried from round 1) `rebind` misreports its error.** `GraphTextures::rebind` still returns
+  `GraphError::SurfacePhase` for a descriptor, slot or storage mismatch (`crates/thrum-render/src/graph.rs`, about
+  lines 636 and 641). A distinct allocation-compatibility variant would make a failed resize rebind diagnosable.
+- **S2 (verified, carried from round 1) no token-level loss-after-acquire test on the Mac.** It is covered only through
+  `render_actor.rs` and the iOS route.
+- **S3 (suspected) pacing counter.** For Mac M2 to look at:
+  - In my replacement runs `late_target_evaluations` was 112 (portable) and 822 (Apple tile). In round 1 it was 0 and
+    0 on the same script.
+  - `thrum-app` is unchanged, and every row was still presented with gaps of 27 ms or less. So this is probably
+    machine load during my session, not an M2 defect.
+  - I did not judge cadence. Mac M2's capture-OFF cadence runs should confirm it.
+- **S4 (verified) evidence wording.** `MF1-recheck.md` reports 960/712 route images and 32/30 skipped stall
+  opportunities. My run gives 964/964 and 30/30. Realtime counts vary with load, so this is not a defect. The README
+  could say that these counts are per-session observations, not fixed expectations.
 
-FAIL M2: 1 fail, 0 cant_tell, 0 outside the items
+PASS M2

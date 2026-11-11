@@ -1,0 +1,493 @@
+{
+ "portable": {
+  "pid": 69275,
+  "binary_sha256": "8b4178416ea8039ef5672ba6651ad902f79c23de2aed3edad03aac537a2a8468",
+  "environment": {
+   "THRUM_RECIPE": "portable",
+   "THRUM_ASSET_STORE": "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/tmp/review-m2/valley",
+   "THRUM_SCENE": "valley",
+   "THRUM_ROUTE_OVERLAY": "proof",
+   "THRUM_STARS": "on",
+   "THRUM_CULLING": "direct",
+   "THRUM_PARAMS": "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/tmp/review-m2-r2/window/portable/controls.json",
+   "THRUM_V1_FRAMES": "100000",
+   "THRUM_REPORT": "1"
+  },
+  "window_at_first_observation": {
+   "kCGWindowName": "Thrum V1 | Paused (P) | tick 2 (0 updates, view age 0) | CPU tick 0.000, extract 0.000, upload 0.257, encode 0.582 ms | GPU shadow near/far 0.050/0.386, cluster 0.099, forward 1.680, history 0.077, display 0.131, atmosphere compute 0.000, present 0.068 ms | Direct culling",
+   "kCGWindowStoreType": 1,
+   "kCGWindowNumber": 46641,
+   "kCGWindowBounds": {
+    "X": 384,
+    "Height": 572,
+    "Y": 146,
+    "Width": 960
+   },
+   "kCGWindowAlpha": 1,
+   "kCGWindowIsOnscreen": true,
+   "kCGWindowLayer": 0,
+   "kCGWindowOwnerPID": 69275,
+   "kCGWindowSharingState": 1,
+   "kCGWindowMemoryUsage": 2368,
+   "kCGWindowOwnerName": "v1-game-b74cae87"
+  },
+  "observations": [
+   {
+    "name": "sun-settled",
+    "unix_ns": 1794409938177685000,
+    "monotonic_ns": 2924919678022250
+   },
+   {
+    "name": "night-settled",
+    "unix_ns": 1794409940890068000,
+    "monotonic_ns": 2924922390383291
+   },
+   {
+    "name": "noon-settled",
+    "unix_ns": 1794409943616607000,
+    "monotonic_ns": 2924925116903500
+   },
+   {
+    "name": "held-0",
+    "unix_ns": 1794409943825015000,
+    "monotonic_ns": 2924925325309916
+   },
+   {
+    "name": "held-1",
+    "unix_ns": 1794409944197734000,
+    "monotonic_ns": 2924925698025958
+   },
+   {
+    "name": "held-2",
+    "unix_ns": 1794409944563249000,
+    "monotonic_ns": 2924926063538833
+   },
+   {
+    "name": "held-3",
+    "unix_ns": 1794409944929723000,
+    "monotonic_ns": 2924926430010083
+   },
+   {
+    "name": "after-keys",
+    "unix_ns": 1794409952672902000,
+    "monotonic_ns": 2924934173134875
+   },
+   {
+    "name": "before-resize",
+    "unix_ns": 1794409955405931000,
+    "monotonic_ns": 2924936906144083
+   },
+   {
+    "name": "resized",
+    "unix_ns": 1794409958157987000,
+    "monotonic_ns": 2924939658180583
+   },
+   {
+    "name": "resized-narrow",
+    "unix_ns": 1794409960887236000,
+    "monotonic_ns": 2924942387409958
+   },
+   {
+    "name": "restored",
+    "unix_ns": 1794409963649047000,
+    "monotonic_ns": 2924945149201291
+   }
+  ],
+  "keys": [
+   {
+    "key": 14,
+    "unix_ns": 1794409946642340000,
+    "out": "key 14"
+   },
+   {
+    "key": 14,
+    "unix_ns": 1794409947391032000,
+    "out": "key 14"
+   },
+   {
+    "key": 14,
+    "unix_ns": 1794409948134020000,
+    "out": "key 14"
+   },
+   {
+    "key": 14,
+    "unix_ns": 1794409948871954000,
+    "out": "key 14"
+   },
+   {
+    "key": 12,
+    "unix_ns": 1794409949612510000,
+    "out": "key 12"
+   },
+   {
+    "key": 12,
+    "unix_ns": 1794409950360220000,
+    "out": "key 12"
+   }
+  ],
+  "resize": [
+   "resize 0",
+   "resize 0",
+   "resize 0"
+  ],
+  "held_vs_first": [
+   {
+    "a": "tmp/review-m2-r2/window/portable/held-0.png",
+    "b": "tmp/review-m2-r2/window/portable/held-1.png",
+    "content_pixels": 2073600,
+    "changed": 0,
+    "over24": 0,
+    "max": 0
+   },
+   {
+    "a": "tmp/review-m2-r2/window/portable/held-0.png",
+    "b": "tmp/review-m2-r2/window/portable/held-2.png",
+    "content_pixels": 2073600,
+    "changed": 0,
+    "over24": 0,
+    "max": 0
+   },
+   {
+    "a": "tmp/review-m2-r2/window/portable/held-0.png",
+    "b": "tmp/review-m2-r2/window/portable/held-3.png",
+    "content_pixels": 2073600,
+    "changed": 0,
+    "over24": 0,
+    "max": 0
+   }
+  ],
+  "letterbox": [
+   {
+    "image": "tmp/review-m2-r2/window/portable/resized.png",
+    "extent": [
+     1520,
+     944
+    ],
+    "content": [
+     1520,
+     880
+    ],
+    "black_top": 12,
+    "black_bottom": 13,
+    "black_cols": 0,
+    "image_rows": 855,
+    "expected_16x9_rows": 855
+   },
+   {
+    "image": "tmp/review-m2-r2/window/portable/resized-narrow.png",
+    "extent": [
+     1400,
+     1144
+    ],
+    "content": [
+     1400,
+     1080
+    ],
+    "black_top": 146,
+    "black_bottom": 147,
+    "black_cols": 0,
+    "image_rows": 787,
+    "expected_16x9_rows": 788
+   },
+   {
+    "image": "tmp/review-m2-r2/window/portable/restored.png",
+    "extent": [
+     1920,
+     1144
+    ],
+    "content": [
+     1920,
+     1080
+    ],
+    "black_top": 0,
+    "black_bottom": 0,
+    "black_cols": 0,
+    "image_rows": 1080,
+    "expected_16x9_rows": 1080
+   }
+  ],
+  "replacement": {
+   "generations": {
+    "2": {
+     "rows": 360,
+     "presented": 360
+    },
+    "3": {
+     "rows": 476,
+     "presented": 476
+    }
+   },
+   "max_row_gap_ms": 27.0,
+   "stale_recycle": "Some((1, 1))",
+   "observer": {
+    "pid": 69923,
+    "env": {
+     "THRUM_RECIPE": "portable",
+     "THRUM_MAC_QUALIFY": "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/tmp/review-m2-r2/recovery/portable",
+     "THRUM_MAC_TAP": "on",
+     "THRUM_MAC_REPLACE": "1",
+     "THRUM_V1_FRAMES": "10000",
+     "THRUM_SCENE": "valley",
+     "THRUM_ASSET_STORE": "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/tmp/review-m2/valley",
+     "THRUM_ROUTE_OVERLAY": "proof",
+     "THRUM_STARS": "on",
+     "THRUM_CULLING": "direct",
+     "THRUM_PARAMS": "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/examples/v1-game/params/showcase-noon.params.json"
+    },
+    "record_start_unix_ns": 1794409997276007000,
+    "game_exit": 0,
+    "recorder_exit": 0
+   },
+   "game_summary": "adapter=Apple M3 Max; surface=Bgra8Unorm 1920x1080; presented=836; callbacks=842; display_link_callbacks=842; late_target_evaluations=112; invalid_target_evaluations=0; clamped_target_evaluations=0; committed_ticks=2; unavailable=2; occluded=0; surface_faults=0; dropped_surface=0; dropped_views=0; dropped_stale_views=0; dropped_reports=0; callback wall p50/p95=0.001/0.013 ms; render-worker wall p50/p95=1.306/1.601 ms; drawable-acquire wall p50/p95=0.026/0.432 ms; tick CPU p50/p95=0.000/0.000 us; live-view CPU p50/p95=188.167/239.584 us; upload CPU p50/p95=201.834/274.500 us; encode CPU p50/p95=510.083/640.667 us; upload+encode CPU p50/p95=721.166/887.833 us; scene GPU p50/p95=2.731/3.236 ms; forward GPU p50/p95=1.170/1.267 ms; surface GPU p50/p95=1.155/1.652 ms; culling=Direct with no counts; device_losses=0; world_overloads=0; overload_refused_ticks=0; final_drain_device_lost=false; retained_presented_profiles=836; missing_presented_profiles=0; profiles describe retained samples"
+  }
+ },
+ "apple-tile": {
+  "pid": 69828,
+  "binary_sha256": "8b4178416ea8039ef5672ba6651ad902f79c23de2aed3edad03aac537a2a8468",
+  "environment": {
+   "THRUM_RECIPE": "apple-tile",
+   "THRUM_ASSET_STORE": "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/tmp/review-m2/valley",
+   "THRUM_SCENE": "valley",
+   "THRUM_ROUTE_OVERLAY": "proof",
+   "THRUM_STARS": "on",
+   "THRUM_CULLING": "direct",
+   "THRUM_PARAMS": "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/tmp/review-m2-r2/window/apple-tile/controls.json",
+   "THRUM_V1_FRAMES": "100000",
+   "THRUM_REPORT": "1"
+  },
+  "window_at_first_observation": {
+   "kCGWindowBounds": {
+    "X": 384,
+    "Height": 572,
+    "Y": 146,
+    "Width": 960
+   },
+   "kCGWindowOwnerPID": 69828,
+   "kCGWindowIsOnscreen": true,
+   "kCGWindowNumber": 46663,
+   "kCGWindowMemoryUsage": 2368,
+   "kCGWindowAlpha": 1,
+   "kCGWindowLayer": 0,
+   "kCGWindowSharingState": 1,
+   "kCGWindowStoreType": 1,
+   "kCGWindowName": "Thrum V1 | Paused (P) | tick 2 (0 updates, view age 0) | CPU tick 0.000, extract 0.000, upload 0.412, encode 0.971 ms | GPU shadow near/far 0.050/0.385, cluster 0.111, forward 1.897, history 0.068, display 0.085, atmosphere compute 0.000, present 0.076 ms | Direct culling",
+   "kCGWindowOwnerName": "v1-game-b74cae87"
+  },
+  "observations": [
+   {
+    "name": "sun-settled",
+    "unix_ns": 1794409970799513000,
+    "monotonic_ns": 2924952299620958
+   },
+   {
+    "name": "night-settled",
+    "unix_ns": 1794409973501356000,
+    "monotonic_ns": 2924955001442250
+   },
+   {
+    "name": "noon-settled",
+    "unix_ns": 1794409976222979000,
+    "monotonic_ns": 2924957723044833
+   },
+   {
+    "name": "held-0",
+    "unix_ns": 1794409976439835000,
+    "monotonic_ns": 2924957939899708
+   },
+   {
+    "name": "held-1",
+    "unix_ns": 1794409976814583000,
+    "monotonic_ns": 2924958314645291
+   },
+   {
+    "name": "held-2",
+    "unix_ns": 1794409977184068000,
+    "monotonic_ns": 2924958684127291
+   },
+   {
+    "name": "held-3",
+    "unix_ns": 1794409977557246000,
+    "monotonic_ns": 2924959057302708
+   },
+   {
+    "name": "after-keys",
+    "unix_ns": 1794409985258083000,
+    "monotonic_ns": 2924966758086041
+   },
+   {
+    "name": "before-resize",
+    "unix_ns": 1794409987989503000,
+    "monotonic_ns": 2924969489486250
+   },
+   {
+    "name": "resized",
+    "unix_ns": 1794409990741512000,
+    "monotonic_ns": 2924972241475250
+   },
+   {
+    "name": "resized-narrow",
+    "unix_ns": 1794409993471589000,
+    "monotonic_ns": 2924974971533791
+   },
+   {
+    "name": "restored",
+    "unix_ns": 1794409996232227000,
+    "monotonic_ns": 2924977732152583
+   }
+  ],
+  "keys": [
+   {
+    "key": 14,
+    "unix_ns": 1794409979267323000,
+    "out": "key 14"
+   },
+   {
+    "key": 14,
+    "unix_ns": 1794409980005500000,
+    "out": "key 14"
+   },
+   {
+    "key": 14,
+    "unix_ns": 1794409980747685000,
+    "out": "key 14"
+   },
+   {
+    "key": 14,
+    "unix_ns": 1794409981490694000,
+    "out": "key 14"
+   },
+   {
+    "key": 12,
+    "unix_ns": 1794409982230507000,
+    "out": "key 12"
+   },
+   {
+    "key": 12,
+    "unix_ns": 1794409982973818000,
+    "out": "key 12"
+   }
+  ],
+  "resize": [
+   "resize 0",
+   "resize 0",
+   "resize 0"
+  ],
+  "held_vs_first": [
+   {
+    "a": "tmp/review-m2-r2/window/apple-tile/held-0.png",
+    "b": "tmp/review-m2-r2/window/apple-tile/held-1.png",
+    "content_pixels": 2073600,
+    "changed": 0,
+    "over24": 0,
+    "max": 0
+   },
+   {
+    "a": "tmp/review-m2-r2/window/apple-tile/held-0.png",
+    "b": "tmp/review-m2-r2/window/apple-tile/held-2.png",
+    "content_pixels": 2073600,
+    "changed": 0,
+    "over24": 0,
+    "max": 0
+   },
+   {
+    "a": "tmp/review-m2-r2/window/apple-tile/held-0.png",
+    "b": "tmp/review-m2-r2/window/apple-tile/held-3.png",
+    "content_pixels": 2073600,
+    "changed": 0,
+    "over24": 0,
+    "max": 0
+   }
+  ],
+  "letterbox": [
+   {
+    "image": "tmp/review-m2-r2/window/apple-tile/resized.png",
+    "extent": [
+     1520,
+     944
+    ],
+    "content": [
+     1520,
+     880
+    ],
+    "black_top": 12,
+    "black_bottom": 13,
+    "black_cols": 0,
+    "image_rows": 855,
+    "expected_16x9_rows": 855
+   },
+   {
+    "image": "tmp/review-m2-r2/window/apple-tile/resized-narrow.png",
+    "extent": [
+     1400,
+     1144
+    ],
+    "content": [
+     1400,
+     1080
+    ],
+    "black_top": 146,
+    "black_bottom": 147,
+    "black_cols": 0,
+    "image_rows": 787,
+    "expected_16x9_rows": 788
+   },
+   {
+    "image": "tmp/review-m2-r2/window/apple-tile/restored.png",
+    "extent": [
+     1920,
+     1144
+    ],
+    "content": [
+     1920,
+     1080
+    ],
+    "black_top": 0,
+    "black_bottom": 0,
+    "black_cols": 0,
+    "image_rows": 1080,
+    "expected_16x9_rows": 1080
+   }
+  ],
+  "replacement": {
+   "generations": {
+    "2": {
+     "rows": 360,
+     "presented": 360
+    },
+    "3": {
+     "rows": 485,
+     "presented": 485
+    }
+   },
+   "max_row_gap_ms": 26.9,
+   "stale_recycle": "Some((1, 1))",
+   "observer": {
+    "pid": 69943,
+    "env": {
+     "THRUM_RECIPE": "apple-tile",
+     "THRUM_MAC_QUALIFY": "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/tmp/review-m2-r2/recovery/apple-tile",
+     "THRUM_MAC_TAP": "on",
+     "THRUM_MAC_REPLACE": "1",
+     "THRUM_V1_FRAMES": "10000",
+     "THRUM_SCENE": "valley",
+     "THRUM_ASSET_STORE": "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/tmp/review-m2/valley",
+     "THRUM_ROUTE_OVERLAY": "proof",
+     "THRUM_STARS": "on",
+     "THRUM_CULLING": "direct",
+     "THRUM_PARAMS": "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/examples/v1-game/params/showcase-noon.params.json"
+    },
+    "record_start_unix_ns": 1794410004742067000,
+    "game_exit": 0,
+    "recorder_exit": 0
+   },
+   "game_summary": "adapter=Apple M3 Max; surface=Bgra8Unorm 1920x1080; presented=845; callbacks=849; display_link_callbacks=849; late_target_evaluations=822; invalid_target_evaluations=0; clamped_target_evaluations=0; committed_ticks=2; unavailable=2; occluded=0; surface_faults=0; dropped_surface=0; dropped_views=0; dropped_stale_views=0; dropped_reports=0; callback wall p50/p95=0.001/0.013 ms; render-worker wall p50/p95=1.263/1.610 ms; drawable-acquire wall p50/p95=0.023/0.434 ms; tick CPU p50/p95=0.000/0.000 us; live-view CPU p50/p95=187.667/239.167 us; upload CPU p50/p95=202.500/271.958 us; encode CPU p50/p95=509.250/617.500 us; upload+encode CPU p50/p95=722.000/867.458 us; scene GPU p50/p95=2.718/3.169 ms; forward GPU p50/p95=1.169/1.259 ms; surface GPU p50/p95=1.153/1.611 ms; culling=Direct with no counts; device_losses=0; world_overloads=0; overload_refused_ticks=0; final_drain_device_lost=false; retained_presented_profiles=845; missing_presented_profiles=0; profiles describe retained samples"
+  }
+ },
+ "observer": {
+  "tool": "/usr/sbin/screencapture",
+  "os": "macOS 26.6.2 (25G83)",
+  "backing_scale": 2,
+  "clock": "time_ns and monotonic_ns",
+  "preflight": "CGPreflightScreenCaptureAccess() true; IOConsoleLocked false; no grant requested or changed"
+ }
+}

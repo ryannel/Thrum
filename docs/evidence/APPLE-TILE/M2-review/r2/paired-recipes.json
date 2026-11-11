@@ -1,0 +1,102 @@
+{
+ "pairs": [
+  {
+   "kind": "sdr",
+   "key": "approach",
+   "approach.identity.json": "equal",
+   "approach.rgba8": "equal",
+   "approach.surface-bgra8": "equal"
+  },
+  {
+   "kind": "sdr",
+   "key": "mirror-light",
+   "mirror-light.identity.json": "equal",
+   "mirror-light.rgba8": "equal",
+   "mirror-light.surface-bgra8": "equal"
+  },
+  {
+   "kind": "sdr",
+   "key": "pre-cut",
+   "pre-cut.identity.json": "equal",
+   "pre-cut.rgba8": "equal",
+   "pre-cut.surface-bgra8": "equal"
+  },
+  {
+   "kind": "sdr",
+   "key": "post-cut",
+   "post-cut.identity.json": "equal",
+   "post-cut.rgba8": "equal",
+   "post-cut.surface-bgra8": "equal"
+  },
+  {
+   "kind": "sdr",
+   "key": "near-plane",
+   "near-plane.identity.json": "equal",
+   "near-plane.rgba8": "equal",
+   "near-plane.surface-bgra8": "equal"
+  },
+  {
+   "kind": "scene-linear",
+   "key": "approach",
+   "approach.identity.json": "equal",
+   "approach.rgba16f": "equal",
+   "approach.surface-bgra8": "equal"
+  },
+  {
+   "kind": "scene-linear",
+   "key": "mirror-light",
+   "mirror-light.identity.json": "equal",
+   "mirror-light.rgba16f": "equal",
+   "mirror-light.surface-bgra8": "equal"
+  },
+  {
+   "kind": "scene-linear",
+   "key": "pre-cut",
+   "pre-cut.identity.json": "equal",
+   "pre-cut.rgba16f": "equal",
+   "pre-cut.surface-bgra8": "equal"
+  },
+  {
+   "kind": "scene-linear",
+   "key": "post-cut",
+   "post-cut.identity.json": "equal",
+   "post-cut.rgba16f": "equal",
+   "post-cut.surface-bgra8": "equal"
+  },
+  {
+   "kind": "scene-linear",
+   "key": "near-plane",
+   "near-plane.identity.json": "equal",
+   "near-plane.rgba16f": "equal",
+   "near-plane.surface-bgra8": "equal"
+  },
+  {
+   "kind": "sun-sdr",
+   "files": {
+    "checkpoint-0.rgba8": "equal",
+    "frames.zst": "equal"
+   }
+  },
+  {
+   "kind": "sun-linear",
+   "files": {
+    "checkpoint-0.rgba16f": "equal",
+    "frames.zst": "equal"
+   }
+  },
+  {
+   "kind": "night-sdr",
+   "files": {
+    "checkpoint-0.rgba8": "equal",
+    "frames.zst": "equal"
+   }
+  },
+  {
+   "kind": "night-linear",
+   "files": {
+    "checkpoint-0.rgba16f": "equal",
+    "frames.zst": "equal"
+   }
+  }
+ ]
+}

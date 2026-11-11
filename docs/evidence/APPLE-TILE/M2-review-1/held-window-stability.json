@@ -1,0 +1,74 @@
+{
+ "a6101020-portable-held-0-vs-1": {
+  "a": "tmp/review-m2/window/portable/held-0.png",
+  "b": "tmp/review-m2/window/portable/held-1.png",
+  "content_pixels": 2073600,
+  "changed": 1033572,
+  "over24": 2098,
+  "max": 210
+ },
+ "a6101020-portable-held-0-vs-2": {
+  "a": "tmp/review-m2/window/portable/held-0.png",
+  "b": "tmp/review-m2/window/portable/held-2.png",
+  "content_pixels": 2073600,
+  "changed": 984092,
+  "over24": 1530,
+  "max": 210
+ },
+ "a6101020-portable-held-0-vs-3": {
+  "a": "tmp/review-m2/window/portable/held-0.png",
+  "b": "tmp/review-m2/window/portable/held-3.png",
+  "content_pixels": 2073600,
+  "changed": 874008,
+  "over24": 781,
+  "max": 210
+ },
+ "a6101020-apple-tile-held-0-vs-1": {
+  "a": "tmp/review-m2/window/apple-tile/held-0.png",
+  "b": "tmp/review-m2/window/apple-tile/held-1.png",
+  "content_pixels": 2073600,
+  "changed": 1078868,
+  "over24": 3109,
+  "max": 210
+ },
+ "a6101020-apple-tile-held-0-vs-2": {
+  "a": "tmp/review-m2/window/apple-tile/held-0.png",
+  "b": "tmp/review-m2/window/apple-tile/held-2.png",
+  "content_pixels": 2073600,
+  "changed": 1114089,
+  "over24": 5222,
+  "max": 210
+ },
+ "a6101020-apple-tile-held-0-vs-3": {
+  "a": "tmp/review-m2/window/apple-tile/held-0.png",
+  "b": "tmp/review-m2/window/apple-tile/held-3.png",
+  "content_pixels": 2073600,
+  "changed": 1114351,
+  "over24": 5177,
+  "max": 210
+ },
+ "parent-3870a021-portable-held-0-vs-1": {
+  "a": "tmp/review-m2/window-pre-ap/portable/held-0.png",
+  "b": "tmp/review-m2/window-pre-ap/portable/held-1.png",
+  "content_pixels": 2073600,
+  "changed": 0,
+  "over24": 0,
+  "max": 0
+ },
+ "parent-3870a021-portable-held-0-vs-2": {
+  "a": "tmp/review-m2/window-pre-ap/portable/held-0.png",
+  "b": "tmp/review-m2/window-pre-ap/portable/held-2.png",
+  "content_pixels": 2073600,
+  "changed": 0,
+  "over24": 0,
+  "max": 0
+ },
+ "parent-3870a021-portable-held-0-vs-3": {
+  "a": "tmp/review-m2/window-pre-ap/portable/held-0.png",
+  "b": "tmp/review-m2/window-pre-ap/portable/held-3.png",
+  "content_pixels": 2073600,
+  "changed": 0,
+  "over24": 0,
+  "max": 0
+ }
+}
