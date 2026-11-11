@@ -1,111 +1,146 @@
 # PLATFORM-RUNTIME-MAC design review
 
-11 November 2026. Reviewed integrated tip `3e5be4a760190434acd2655d43d7cf92c549ee8e` using the
-review-milestone skill's “Reviewing a design” procedure and Thrum's engineering review rules.
+11 November 2026. Reviewed integrated tip `4af24b81f803bbc055fad6b72ac6fc5e87b85fb7` using
+review-milestone's “Reviewing a design” procedure and Thrum's engineering review rules.
 
-No Must Fix findings or Suggestions.
+No Must Fix findings. Two Suggestions below. The revised qualification design is suitable to build;
+this verdict does not qualify current motion or panel cadence.
 
-## Previous round
+## Previous round and request
 
-The previous review, dated 10 November against `9d6c6f6fcdd0b7ad533cce994a01f9567ab33887`, ended
-`DESIGN OK` with no blocking or advisory findings. There are no outstanding Must Fix findings to resolve.
-I compared the current definitions with that revision and with the pre-reshape checkout `42fdce97`,
-then read every current item and the relocated protocol. This is a review of the existing qualification
-design and its reshape, not a new technique-selection or implementation review.
+The previous review at `3e5be4a760190434acd2655d43d7cf92c549ee8e` ended `DESIGN OK`, with no
+Must Fix findings or Suggestions. There are no outstanding findings to resolve. Its approval concerned
+the earlier swap-table protocol and does not establish the replacement witness's implementation.
 
-## Request and required outcome
+I read both complete tasks in [ACCEPTED.json](../../plans/PLATFORM-RUNTIME-MAC/ACCEPTED.json), oldest
+first, and [the project brief](../../plans/BRIEF.md). The first task authorized a format-only reshape.
+The second explicitly authorizes a scoped re-plan after readable attended traces contained no display
+events: diagnose the evidence, provide a working display-event source or another authoritative cadence
+witness, and identify any necessary owner action. That later task permits this witness change; the
+reshape's earlier prohibition on scope changes does not forbid the commissioned re-plan.
 
-I read the complete `briefs` array in [ACCEPTED.json](../../plans/PLATFORM-RUNTIME-MAC/ACCEPTED.json)
-and [the project brief](../../plans/BRIEF.md) before assessing the design. The array contains one task:
-reshape the migrated plans into orchestrate 1.7.0 form, retaining milestone scope and done-when items,
-moving detailed designs and review briefs to their appropriate files, shortening done milestones to
-headings and review links, and repairing moved links. It does not commission a new runtime mechanism.
+The required outcome remains a recoverable Mac game with independently observed presentation cadence
+on the built-in ProMotion display, complete elapsed-time motion evidence, and fresh qualification after
+the Apple tile change. Engine image times, requested opportunities and callback times cannot substitute
+for observed presentation. The revised plan explicitly records its witness choice as an assumption for
+the owner; it does not silently narrow the request or require an additional approval before building.
 
-For this module, the project brief's G3b and the module-list entry require recovery of the same Mac game
-and qualification of motion on the built-in ProMotion display. The existing contracts require one
-world clock, platform-owned surface/device lifetime, renderer-owned GPU submission and history, and
-separate evidence for engine images, elapsed-time motion and independently attributed presentation.
-The post-Apple-tile assembly must be qualified afresh. Numeric timings remain observations; visual
-hitches require investigation. Browser, iOS, G4 and physical input-to-photon qualification keep their
-separate scopes.
+## Findings
 
-## Reshape and mechanism assessment
+### S1 — Suggestion, verified: narrow the authorization diagnosis
 
-The module's [plan](../../plans/PLATFORM-RUNTIME-MAC/PLAN.md) now has short outcome-named milestones.
-M0/M1 consist of headings and links to retained records, which lead to their historical verdicts.
-Detailed M2/M3 protocols moved into [the design](../../plans/PLATFORM-RUNTIME-MAC/DESIGN.md#m2-and-m3-qualification-protocol).
-Review briefs and the console-witness commission are retained under this evidence folder and linked
-from the log. The plan still links the attended runbook. The project brief and module list retain G3b
-and its owning module.
+[The diagnosis](m2-display-event-diagnosis.md), lines 31–38, and
+[PLAN.md](../../plans/PLATFORM-RUNTIME-MAC/PLAN.md), lines 24–26, say authorization is not the cause
+of the missing display events. The supplied evidence establishes that system-wide kernel tracing
+worked and that this particular source was silent. That rules out a blanket refusal of kernel tracing;
+it does not establish every source-specific cause. The diagnosis itself correctly says the cause is
+unknown in its next paragraph.
 
-The comparison against `42fdce97` found only milestone-name and relocated evidence/review-pointer
-changes in `DONE.json`. No statement, inspection, reviewer question, automated check, target, quality
-bar, dependency or acceptance state changed in the reshape. Compared with the previous reviewed tip,
-there are also intervening builder status/evidence updates; those are not new acceptance definitions
-or independently awarded milestone passes. The legacy `docs/BUILD-PLAN.md` wording remains in the
-closed M0 question; its successor G3b link is in `docs/plans/BRIEF.md`. This historical wording does
-not make an open item unjudgeable or warrant changing the preserved criterion.
+Keep the conclusion at that supported scope: there is no demonstrated need to change Developer mode,
+and the alternative witness already emitted data under the existing setup. This is a wording correction,
+not a request for another recording, a security-setting change or an owner decision. It does not block
+the selected mechanism, which no longer depends on repairing the silent display source.
 
-The design's ownership and recovery sequence remain consistent with C02/C06/C07 and the shared
-platform/frame-host designs: close old-device admission, abandon lost encoded work without queue
-flush or history publication, retain authority and controls, then prepare and publish a fresh
-validated generation. Surface and device epochs remain distinct. The same-binary control, paused
-image oracle and running/paused loss rows distinguish recovery from a restart or frozen screenshot.
+### S2 — Suggestion, verified: reconcile the shared descriptions of the replaced proof
 
-The relocated protocol preserves C12 and T2's capture boundaries. Actual elapsed time and ordinary
-semantic controls drive unattended motion, including while authority is paused. Complete submitted
-images and control/submission identities expose omissions and holds. Console observations accept
-both states and transitions; denied attributed permission preflights establish the separate
-capture-independence claim. The real-window tap must share the presented producer, reject stale
-readback after replacement, and leave the disabled direct path free of capture work.
+[C12](../../design/CONTRACTS.md#unattended-visual-and-motion-evidence--planned-t2-capture-extension),
+lines 609–612, still calls M2.2 a built-in-panel “swap proof”, while the
+[shared platform design](../../design/modules/PLATFORM-RUNTIME.md#g3b-world-and-presentation-lifecycle--selected-partial-implementation),
+lines 87–92, still assigns M2.4 trace-finalization diagnosis. The revised module instead assigns M2.4
+the presented-time command and M2.5 full-interval recording, and explicitly leaves kernel swaps unmeasured.
 
-The cost model is inherited from T2's bounded staging, CPU buffers and writer queues, with explicit
-incomplete outcomes instead of blocking the renderer. Matched ON/OFF and traced/untraced arms measure
-observer costs. Only the capture-OFF arm qualifies shipping cadence, through fresh attributed swaps
-and a calibrated full-interval clock join. A requested 120 Hz workload or movie timestamps cannot
-stand in for those observations.
+Update those cross-references on the planner's next turn so a reader following the shared documents
+reaches the current witness and item responsibilities. The accepted re-plan expressly permits an
+alternative witness, and the external OS observation, capture-OFF requirement and ownership invariants
+remain intact. This is stale descriptive wording, not a new producer/consumer API conflict or a reason
+to restore the retired table requirement.
 
-The unresolved trace-finalization mechanism remains an explicit bounded investigation. A changed
-hypothesis precedes recording; the two-attempt allowance is not renewed by the reshape or M3.
-Unreadable exports, ambiguous attribution or exhausted attempts leave the relevant items open.
-The linked runbook accounts for both traced arms within the allowance and requires usable exports,
-not merely a trace directory. This is a judgeable experiment, not an unsupported promise of success.
+## Witness assessment
 
-M2 needs T2 M0 and has no Apple-tile delivery dependency. M2.3/M2.4 precede final M2.2 qualification.
-M3 follows Mac M2 and Apple-tile M3, revalidating motion, window capture and cadence on the changed
-assembly. The T2 and Apple-tile dependency records preserve this ordering without a cycle.
+I inspected the retained OFF and ON TSV tables directly. With the diagnosis's stated difference
+conversion, `diff(requested_time_raw) * 3 / 125` nanoseconds, they contain:
+
+| Arm | Rows / drawable IDs | Two-refresh intervals |
+| --- | --- | --- |
+| OFF | 349 / 496–844 | 526→527: 16.665250 ms; 544→545: 16.666625 ms |
+| ON | 343 / 505–847 | 558→559: 16.665416 ms |
+
+All retained statuses are 2 and the ordinal ranges contain no holes. Ordinary intervals range from
+8.327709 to 8.338958 ms across the two tables. Independently subtracting the `media_seconds` values
+for submissions 544 and 545 in the retained OFF surface log gives 15.470792 ms, matching the proposed
+known-answer case. These calculations reproduce the fixture observations; they do not validate absolute
+presented time, the complete interval, or the original TSV extraction's PID attribution.
+
+The export's “Requested Time” label deserved checking rather than assuming it meant presentation.
+Apple's installed Instruments model provides supporting primary evidence. Under
+`/Applications/Xcode.app/Contents/Applications/Instruments.app/Contents/Packages/GPU.instrdst/Contents/Extensions/`,
+`com.apple.metalsystrace-common.dtac/modeling-rules/rules-0002.clp`, lines 545–552, reads
+`CA_CLIENT_METAL_PRESENTED_HANDLER`, including a separate present-time value, drawable ID, status and PID.
+Lines 893–916 write that present-time value into `ca-client-presented-handler.at-time` after conversion,
+and write the event timestamp separately. This supports using that field instead of handler time or
+`delta`; the table name and regular-looking intervals alone would not have done so.
+
+Apple's [presentedTime documentation](https://developer.apple.com/documentation/metal/mtldrawable/presentedtime)
+defines an OS-provided onscreen time and a zero result for an unpresented or dropped drawable. Its
+[Metal performance guide](https://developer.apple.com/documentation/xcode/analyzing-the-performance-of-your-metal-app)
+also distinguishes app activity from display observations. The installed model and the retained values
+support the proposed alternative as a design choice. They do not establish a direct measurement of
+scan-out or photons, and the revised design correctly excludes those claims.
+
+Absolute conversion and fresh-run attribution remain required implementation proofs. The retained raw
+values are not usable as trace-relative nanoseconds directly. M2.4/M2.5 require derived conversion,
+marker validation and stated error, instead of simply fitting an offset to make the pan appear covered.
+The command must also preserve missing/invalid observations rather than treating ordinal continuity as
+proof of presentation. M2.2's statement requires an observed interval for every submission; reporting
+unmatched samples is diagnostic disclosure, not permission to qualify an uncovered interval.
 
 ## Acceptance-item audit
 
-Design inspection covered retained scope, state ownership, failure ordering, clock distinctions,
-complete motion coverage, permission/console handling, window-producer correspondence, stale work,
-disabled observer cost, bounded investigation, attribution and post-change requalification.
-No runtime image or motion inspection was performed in this design review.
+I compared the done-when definitions with `3e5be4a76019` and read every current item. The changed
+acceptance fields are exactly M2.2, M2.4, new M2.5 and M3.2; status/evidence resets are not new criteria.
+The previous review's boundaries remain relevant even though it had no findings.
 
-| Item | Judgeability and plausible false proof excluded |
+| Item | Design judgement and false proof excluded |
 | --- | --- |
-| M0.1 | Historical ownership and instrumentation review has retained records and a current G3b link. No new runtime claim is inferred from it. |
-| M1.1 | Same-binary control and loss rows, queue-call audit, retained PID/window, acknowledgements and tick ordering distinguish retained authority from restart, hidden pause or old-queue work. |
-| M1.2 | Complete RGBA equality plus composited post-replacement input response distinguishes intact recovery from a matching frozen endpoint. |
-| M2.1 | Full elapsed-time sources, endpoint holds, yaw/submission joins and denied attributed preflights are observable after T2 M0. Fixed-time animation, static parity and missing frames cannot pass. |
-| M2.2 | Fresh numeric swaps, unique app/window/display attribution, matched observer arms and a bounded-error join cover the full pan and holds. Capture-ON or historical swaps cannot qualify shipping cadence. Unavailable evidence keeps the item open. |
-| M2.3 | Code tracing, real-Metal checks and a live-window pattern/replacement scenario jointly test producer correspondence, drawable lifetime, stale-readback refusal and the OFF path. Offscreen-only proof cannot pass. |
-| M2.4 | The hypothesis, attempt journal, deadlines, fresh exports and reusable command make success or failure observable within M2. Tool completion without attributable swaps cannot pass. |
-| M3.1 | Incorporates every M2.1 requirement on the post-Apple-tile build with fresh source/shader/content/recipe identity. An earlier verdict cannot qualify changed output. |
-| M3.2 | Incorporates the complete M2.2 protocol and revalidates M2.3/M2.4 on that assembly. Earlier traces, window-function logs and renewed diagnostic retries cannot substitute. |
+| M0.1 | Unchanged historical ownership review. No new implementation claim is inferred from its carried pass. |
+| M1.1 | Unchanged same-binary loss/control rows, retained authority and queue audit distinguish recovery from restart or old-device work. |
+| M1.2 | Unchanged complete paused-image equality and composited response after replacement distinguish recovery from a frozen matching endpoint. |
+| M2.1 | Unchanged complete elapsed-time motion, control/image joins and denied attributed preflights remain independent of panel setup. Fixed-step motion and missing submitted images cannot qualify it. |
+| M2.2 | Revised witness remains fresh, release-build-specific and capture OFF, with three matched arms, the full pan and holds, built-in display attribution and investigated long intervals. Callback timing, historical fixtures, ON-arm cadence and merely listing missing rows cannot satisfy its statement. The design retains observer comparisons and host-load reporting. |
+| M2.3 | Unchanged actual-window producer correspondence, lease lifetime, pending-readback replacement and disabled direct-path proof remain prerequisites. Offscreen equality alone cannot pass. |
+| M2.4 | Offline parser work is judgeable within M2 from retained known-answer tables, source inspection and refusal tests. It must find the three gaps and the surface-log join while rejecting those partial traces as whole-interval qualification. A script that merely prints the expected three answers would fail command inspection and cannot supply M2.5's fresh result. |
+| M2.5 | Fresh recording must establish retained coverage of both whole-interval markers, per-submission joins, validated conversion, display identity and recording count. A readable trace directory, presence of markers alone or the old truncated stream cannot pass. |
+| M3.1 | Unchanged complete M2.1 rerun on the post-APPLE-TILE-M3 assembly prevents extending an earlier visual verdict to changed output. |
+| M3.2 | Revised witness is rerun with all M2.2 arms and M2.3 window proofs on M3.1's build. Full coverage, conversion/error and attribution remain required; earlier traces and functional window logs cannot qualify the changed path. |
+
+M2.4 needs no recording. M2.5 explicitly addresses the observed ring-buffer truncation through a changed
+recording configuration whose retained coverage must be demonstrated. The exact successful configuration
+is build work with an observable stop condition, not an assumption that the old template now works.
+The six-recording allowance is explicit in this scoped re-plan, bounded by recording/finalization/export
+limits and the GPU lock; unchanged unsuccessful configurations are not repeated. M3 grants only its two
+traced qualification arms, with another re-plan required for diagnostic work.
+
+M2 depends on T2 M0 and does not wait for APPLE-TILE. Final M2.2 follows M2.3/M2.4/M2.5; reusing a qualifying
+M2.5 OFF recording requires all OFF-arm conditions. M3 follows Mac M2 and APPLE-TILE M3. No new dependency
+cycle, clock owner, submission owner or capture producer is introduced. C02/C06/C07 lifetime and authority
+rules remain unchanged; C12's substantive separation of images, device observation and observer cost remains.
+The module retains bounded capture resources and investigates hitches without introducing a numerical
+performance acceptance threshold.
 
 ## Verification and limits
 
-Read the full module design, plan and all nine acceptance items; the saved request and previous review;
-the reshape diff and moved records; C02/C06/C07/C12; the shared platform and bounded-frame-host designs;
-T2's relevant ownership, frame flow, cost and rollout sections; the dependency records; and the current
-attended runbook. The project and skill calibration examples informed the review.
+Read both accepted briefs, the project brief/module entry, previous review, full current module design,
+plan and ten acceptance items, the revised definition/design diffs, current diagnosis and attended evidence,
+relevant shared platform/frame-host and C02/C06/C07/C12 sections, and the project/skill calibration examples.
+Read the module log after forming the item assessment. Used prompting-agents guidance for actionable findings.
 
-`./dev check-docs` passed: 663 Markdown files, 3,193 local links, 30 module records, crate policy and
-current design hashes. `git diff --check` passed after writing this review.
+Direct Python/CSV calculations over the two retained compressed tables and OFF surface log reproduced the
+counts and intervals above. Read Apple's installed Instruments event model and current primary documentation.
+No runtime image or motion inspection, GPU work, trace recording, permission change or other agent was launched.
+This review approves design and proof sufficiency only; all open milestone proofs remain owed.
 
-This verdict assesses design and proof sufficiency, not implementation correctness, current motion
-quality or panel cadence. No runtime/GPU capture, trace attempt, permission change or other agent
-was launched. Only this review file was changed; no milestone verdicts were edited.
+`./dev check-docs` passed: 677 Markdown files, 3,379 local links, 30 module records, crate policy and
+current design hashes. `git diff --check` passed. Only this review file was changed; no captures or milestone
+verdicts were written.
 
 DESIGN OK
