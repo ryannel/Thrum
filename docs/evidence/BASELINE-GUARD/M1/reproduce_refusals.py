@@ -49,7 +49,12 @@ def main():
     git(ROOT, '--git-dir', str(remote), 'symbolic-ref', 'HEAD', 'refs/heads/main')
     builder = OUT / 'builder'
     git(ROOT, 'clone', '-b', 'main', str(remote), str(builder))
+    git(builder, 'sparse-checkout', 'set', '--cone', 'crates', 'examples', 'scripts', 'tools', '.config', '.cargo',
+        'docs/evidence/render/apple-tile-m0/native-baseline',
+        'docs/evidence/render/apple-tile-m0/chrome-baseline', 'docs/evidence/render/apple-tile-m1/chrome')
     git(builder, 'checkout', '-b', 'build/mutants')
+    with (builder / '.git/info/exclude').open('a') as stream:
+        stream.write('\n/target\n')
     (builder / 'target').symlink_to(ROOT / 'target', target_is_directory=True)
     report = {'base': base, 'remote': str(remote), 'source_remote_used': False, 'cases': {}}
     scene = 'examples/v1-game/src/host/scene_source.rs'
@@ -78,6 +83,9 @@ def main():
         guard.save(OUT / (name + '-verifier-record.json'), verifier_record)
         if 'baseline ' not in verifier_record['error'] or 'owner APPLE-TILE' not in verifier_record['error']:
             raise ValueError('mutant failure did not name the baseline and owner')
+        if not any(message in verifier_record['error'] for message in
+                   ['exact retained comparison failed', 'identity mismatch', 'identity differs', 'decoded image changed']):
+            raise ValueError('mutant failed infrastructure rather than the image comparison')
         case['failure'] = verifier_record['error']
         for compact in records[-1].parent.glob('*.gz'):
             shutil.copyfile(compact, OUT / (name + '-' + compact.name))
@@ -104,6 +112,7 @@ def main():
     guard.gate(builder)
     writer = OUT / 'writer'
     git(ROOT, 'clone', '-b', 'main', str(remote), str(writer))
+    git(writer, 'sparse-checkout', 'set', '--cone', 'scripts')
     (writer / 'scripts/upstream-covered.txt').write_text('Independent upstream covered content.\n')
     git(writer, 'add', 'scripts/upstream-covered.txt')
     git(writer, 'commit', '-m', 'scratch independent covered change')
