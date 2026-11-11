@@ -137,13 +137,18 @@ def panel_witness(output):
     return observe
 
 
-def collect(args, output, name, tap, replace=False, grid=False, traced=False, include_os_logs=False):
+def collect(args, output, name, tap, replace=False, grid=False, traced=False, include_os_logs=False, presented=False):
     if shutil.disk_usage(output).free < 16 * 1024**3:
         raise RuntimeError('less than 16 GiB free before this arm; no attempt consumed')
+    ledger_path = ROOT / 'tmp/mac-m2/presented-commission-20261111.json' if presented else LEDGER
+    allowance = 6 if presented else 2
+    hypothesis = ('The full Game Performance 16s window retained the full marked interval but exceeded its bounded process deadline. Use only Metal Application, Display and Points of Interest to reduce unrelated system-wide event and finalization volume, keeping the same 16s window and game. Require complete markers, drawable joins and bounded completion.' if args.presented_minimal else 'Explicit --window 16s replaces the template 5s ring buffer; retained ca-client-presented-handler rows must span both Whole markers. Empty display tables are recorded, not a failure.') if presented else OS_LOG_HYPOTHESIS if include_os_logs else HYPOTHESIS
     if traced:
-        ledger = json.loads(LEDGER.read_text()) if LEDGER.exists() else {'commission': '9-November-2026', 'attempts': []}
-        if len(ledger['attempts']) >= 2:
-            raise RuntimeError('BLOCKED: two-attempt trace allowance exhausted; scoped re-plan required')
+        ledger = json.loads(ledger_path.read_text()) if ledger_path.exists() else {'commission': '11-November-2026-presented-time-ab66bca5' if presented else '9-November-2026', 'attempts': []}
+        if len(ledger['attempts']) >= allowance:
+            raise RuntimeError(f'BLOCKED: {allowance}-attempt trace allowance exhausted; scoped re-plan required')
+        if presented and any(a['hypothesis'] == hypothesis and a['status'].startswith('failed') for a in ledger['attempts']):
+            raise RuntimeError('BLOCKED: unchanged failed recording configuration; change it before another attempt')
     arm = output / name
     arm.mkdir()
     env = {key: value for key, value in os.environ.items() if not key.startswith('THRUM_')}
@@ -159,11 +164,10 @@ def collect(args, output, name, tap, replace=False, grid=False, traced=False, in
     command = [str(args.binary.resolve())]
     if traced:
         # Durable before launching, including failures or interruption.
-        hypothesis = OS_LOG_HYPOTHESIS if include_os_logs else HYPOTHESIS
         ledger['attempts'].append({'arm': str(arm), 'unix_ns': time.time_ns(), 'hypothesis': hypothesis, 'status': 'started'})
-        LEDGER.parent.mkdir(parents=True, exist_ok=True)
-        save(LEDGER, ledger)
-        with LEDGER.open('r+') as journal:
+        ledger_path.parent.mkdir(parents=True, exist_ok=True)
+        save(ledger_path, ledger)
+        with ledger_path.open('r+') as journal:
             journal.flush()
             os.fsync(journal.fileno())
         save(arm / 'recording-options.json', {'Points of Interest': {'excludeOSLogs': not include_os_logs}})
@@ -171,13 +175,19 @@ def collect(args, output, name, tap, replace=False, grid=False, traced=False, in
                    '--recording-options', str(arm / 'recording-options.json'),
                    '--time-limit', '16s', '--output', str(arm / 'pan.trace'),
                    '--target-stdout', str(arm / 'game.log')]
+        if presented:
+            command += ['--window', '16s']
+            if args.presented_minimal:
+                command[command.index('Game Performance')] = '/Applications/Xcode.app/Contents/Applications/Instruments.app/Contents/Packages/Base.instrdst/Contents/Templates/Blank.tracetemplate'
+                command += ['--instrument', 'Metal Application', '--instrument', 'Display', '--instrument', 'Points of Interest']
         for key, value in env.items():
             if key.startswith('THRUM_'):
                 command += ['--env', f'{key}={value}']
         command += ['--launch', '--', str(args.binary.resolve())]
+    (arm / 'collector.py').write_bytes(Path(__file__).read_bytes())
     save(arm / 'invocation.json', {'command': command, 'record_limit_s': 16 if traced else None,
                                  'finalization_limit_s': 75 if traced else None,
-                                 'collector_sha256': digest(Path(__file__)),
+                                 'collector_sha256': digest(arm / 'collector.py'),
                                  'panel_observation_period_s': 0.5})
     load = LoadRecord(arm)
     begin = time.monotonic_ns()
@@ -215,6 +225,11 @@ def collect(args, output, name, tap, replace=False, grid=False, traced=False, in
                                observe=inspect_window)
                 if code or not (arm / filename).exists():
                     raise RuntimeError(f'unreadable {filename}; keep cadence open')
+            if presented:
+                for filename, schema in [('presented.xml', 'ca-client-presented-handler'), ('displays.xml', 'device-display-info'), ('raw-displays.xml', 'display-surface-swap" or @schema="display-vsyncs-interval" or @schema="display-surface-queue')]:
+                    code = bounded(['xcrun', 'xctrace', 'export', '--input', str(arm / 'pan.trace'), '--output', str(arm / filename), '--xpath', f'/trace-toc/run/data/table[@schema="{schema}"]'], arm / (filename + '.log'), 30, observe=inspect_window)
+                    if code:
+                        raise RuntimeError(f'failed {filename}')
             ledger['attempts'][-1]['status'] = 'exported; attribution and full-pan join unjudged'
         save(arm / 'collection.json', {'elapsed_ns': time.monotonic_ns() - begin,
                                       'collected': True, 'qualified': False})
@@ -226,7 +241,7 @@ def collect(args, output, name, tap, replace=False, grid=False, traced=False, in
     finally:
         save(arm / 'load.json', load.finish())
         if traced:
-            save(LEDGER, ledger)
+            save(ledger_path, ledger)
 
 
 def main():
@@ -236,10 +251,25 @@ def main():
     parser.add_argument('--store', type=Path, default=ROOT / 'tmp/mac-m2/valley')
     parser.add_argument('--diagnostic-with-os-logs', action='store_true',
                         help='use the remaining diagnostic attempt for OFF with OS logs after the empty-display probe')
+    parser.add_argument('--presented-minimal', action='store_true', help='Blank template plus Metal Application, Display and Points of Interest; fewer system-wide sources')
+    parser.add_argument('--presented-arm', choices=['on-traced', 'off-traced', 'on-untraced'], help='11 November reviewed presented-time commission; one arm per invocation')
     args = parser.parse_args()
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
     try:
+        if args.presented_arm:
+            panel_witness(output)()
+            retained = json.loads((ROOT / 'tmp/mac-m2/final-window-20261110/identity.json').read_text())
+            if digest(args.binary) != retained['binary_sha256']:
+                raise RuntimeError('retained M2.1 binary changed')
+            if digest(ROOT / 'examples/v1-game/params/showcase-noon.params.json') != retained['preset_sha256']:
+                raise RuntimeError('retained preset changed')
+            actual = {str(p.relative_to(args.store)): digest(p) for p in sorted(args.store.rglob('*')) if p.is_file()}
+            if actual != retained['cooked_hashes']:
+                raise RuntimeError('retained cooked content changed')
+            save(output / 'identity.json', retained)
+            collect(args, output, args.presented_arm, 'off' if args.presented_arm == 'off-traced' else 'on', traced=args.presented_arm != 'on-untraced', presented=True)
+            return 0
         preflight(output)
         if shutil.disk_usage(output).free < 16 * 1024**3:
             raise RuntimeError('less than 16 GiB free; reclaim only owned reconstructible outputs first')
