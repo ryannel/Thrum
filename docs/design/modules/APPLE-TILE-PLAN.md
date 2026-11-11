@@ -3,11 +3,11 @@
 Design: [APPLE-TILE.md](APPLE-TILE.md) · [Brief](APPLE-TILE-BRIEF.md) ·
 Done when: [APPLE-TILE-DONE.json](APPLE-TILE-DONE.json) owns criteria and proof status.
 [Boundary](../decisions/G3T-METAL-BOUNDARY.md) and C04/C06/C07/C08/C12 govern.
-Reviews: [design review 2 at `224b58a1`](../../evidence/APPLE-TILE/design-review-2.md): DESIGN CHANGES (7 findings); independent review of this scoped re-plan is owed to the lead/loop.
-Milestone: M0 A repeatable offscreen valley proves the comparison path (open)
-Now: D0.1/D0.3/D0.4/D0.5 pass. Exact Mac SDR/linear repeats, all omission controls, realtime route/variant sources and 481 pre-change/current Chrome submitted images are retained.
-Next: resolve D0.2’s present-tense native witness wording against the M10-first fixture plan. Ordinary Mac/Chrome proof and retained baselines are complete.
-Blocked: D0.2 describes a native copy/select witness, while D10.1 assigns its first implementation to M10. Scope clarification is pending. The owner resolved the earlier disk preflight refusal. M2/M3/final attended rows and M12’s COOKED-DRAW dependency retain their existing requirements.
+Reviews: [design review at `2514d824`](../../evidence/APPLE-TILE/design-review.md): DESIGN OK (two advisory findings). The design text is unchanged since, so that approval stands.
+Milestone: M0 A repeatable offscreen valley proves the comparison path (blocked until the lead runs `unblock`)
+Now: D0.2 no longer names the native witness; M10 alone owns it (since 2026-11-11). M0's ordinary Mac/Chrome proof is retained at `03bc878a`.
+Next: the lead unblocks M0; the builder re-records D0.1–D0.5 against the retained record, reruns the milestone checks and claims.
+Blocked: none in the plan. M0's `blocked` state waits only for the lead's `unblock`. M2/M3/final attended rows and M12’s COOKED-DRAW dependency retain their existing requirements.
 
 ## Sequence and dependencies
 
@@ -50,14 +50,22 @@ G5's affected parity/history witnesses. G4 seam 3 handles later forward target c
 
 ## Carried work and state
 
-- D0.3 creation diagnostics remain implemented at `be252c0d` in renderer creation/runtime/capabilities and the cooked
-  consumer, but its status stays open with empty evidence until its current-revision command is rerun.
-- D0.4 alone retains its builder pass and [traffic-probe evidence](../../evidence/render/G3T-TRAFFIC-PROBE-2026-11-08.md).
-  It establishes a per-encoder replay method, not a current physical-traffic gain. Missing original bulk scratch is
+- **Who owns the native witness.** M0 proves the ordinary comparison path only: portable repeats, retained pre-change
+  baselines, present/letterbox controls and omission controls. The native copy/select witness and its stateful twin
+  belong to M10. D10.1 makes the small same-submit fixture M10's first step, D10.2 proves it exact through route,
+  reset and replacement, and D11.2/D12.3 keep it labelled and exact afterwards. No native provider is built before
+  M10, because D10.1 requires independent review of C06 and the boundary first.
+- **M0's proof after this revision.** Changing D0.2's statement changes M0's definitions, so the loop clears the
+  status and evidence of all five M0 items when it authorises this plan. D0.1/D0.3/D0.4/D0.5 and D0.2's `ask` are
+  unchanged word for word, and [the M0 record](../../evidence/render/apple-tile-m0/README.md) at `03bc878a` already
+  addresses each. The builder re-records them against that record and reruns the milestone checks at the claiming
+  revision. A recapture is needed only if renderer, shader, capture or cooked inputs changed since `03bc878a`.
+- D0.3 creation diagnostics are implemented at `be252c0d`. D0.4's [traffic probe](../../evidence/render/G3T-TRAFFIC-PROBE-2026-11-08.md)
+  establishes a per-encoder replay method, not a current physical-traffic gain. Missing original bulk scratch is
   not recreated or treated as proof.
-- M0 remains `parked`; all other retained milestone states remain `open`, with zero `fails`. Each retained definition
-  revision increments `replans` once: M0/M2/M3/M12 to 3, M1 to 2, M10/M11 to 1. Removed M4–M9 have no successor
-  acceptance claim. No `*-ACCEPTED.json` is edited; the loop records definitions/proof invalidation and settles unpark.
+- M0 is `blocked` until the lead's `unblock`; all other retained milestones are `open`, with zero `fails`. This
+  revision follows a builder's scope question, not failed reviews, so no `replans` counter changes: M0/M2/M3/M12
+  stay at 3, M1 at 2, M10/M11 at 1. Removed M4–M9 have no successor acceptance claim. No `*-ACCEPTED.json` is edited.
 
 ## Proof and builder handoff
 
@@ -92,12 +100,13 @@ Physical replay counters may remain unmeasured, and physical iPhone/cadence qual
 
 <a id="m0-proof-route-counters-and-capture-probe-pending"></a>
 
-## M0 A repeatable offscreen valley proves the comparison path: open
+## M0 A repeatable offscreen valley proves the comparison path: blocked until unblocked
 
-Outcome criteria: D0.1–D0.5 in the done-when file.
+Outcome criteria: D0.1–D0.5 in the done-when file. No native witness, provider or twin is part of M0.
 
 - [x] Extend T2 linear comparison and full-resolution controls; retain pre-change sources and rerun creation diagnostics.
-- [ ] Retain actual target proof and run scoped checks plus `./dev check` before claiming.
+- [ ] Re-record D0.1–D0.5 against the retained M0 record, and replace that record's opening scope-conflict paragraph with the settled scope.
+- [ ] Run the milestone checks plus `./dev check` at the claiming revision, then claim.
 
 ## M1 The valley selects a recipe and stores only actual future inputs: open
 
@@ -143,7 +152,9 @@ Outcome criteria: D12.1–D12.6 in the done-when file.
 
 ## Design review handoff
 
-Fresh independent review is owed to the loop; no agents can be launched in this turn. Start from
+The design was approved at `2514d824` and its text has not changed, so the loop owes no design review for the
+11 November D0.2 correction. That correction matches the approved review's own reading: it lists D0.1/D0.2 as
+ordinary controls and D10.1/D10.2 as the native fixture and twin. For any later design revision, start from
 [the revised brief](APPLE-TILE-BRIEF.md), derive its capabilities, then read design/JSON and actual consumers.
 Check each disposition above, unchanged shader/quantization assumptions, exact native copy/select feasibility,
 C06 whole-encoder ordering/initialization, prepared resource/twin cost and discard/reset/loss rules. Check the G4
@@ -152,6 +163,16 @@ Mac critical path. Judge whether all proofs reject omitted work. No owner-only d
 re-plan. Approval, unpark and milestone acceptance belong to the loop; this planner claims none of them.
 
 ## Log
+
+- 2026-11-11 Planner settled the M0 builder's scope question (the `blocked` note at `21ad4609`). D0.2's statement
+  claimed the native copy/select witness was exact against its twin, while the approved design, D10.1 and D10.2
+  give that witness to M10. Building it in M0 would put native boundary work ahead of the C06 review D10.1
+  requires and ahead of M1–M3. So D0.2 now states only the ordinary repeats and baselines and names M10 as the
+  witness's owner. Its `ask`, every other M0 item and all of M10–M12 are unchanged, and nothing V1 needs is
+  dropped: D10.1/D10.2/D11.2/D12.3 still require the fixture, the exact twin and the labelled diagnostic. The
+  design file is untouched, so its approval stands. The loop clears M0's item statuses on a definition change;
+  the builder re-records them against the retained record. No `replans` counter changes and no owner decision
+  is needed. The lead runs `unblock` for M0.
 
 - 2026-11-11 Resumed after owner storage cleanup. Implemented the shared T2 scene-linear tap, actual exposure-word provenance, cooked runtime route, prepared variant case and one-command M0 qualification. The successful command records exact Mac repeats, complete source verification, present/letterbox controls and all omission failures. Actual Chrome retains 481 exact pre-change/current submitted frames. D0.1/D0.5 pass alongside D0.3/D0.4. D0.2’s ordinary proof is complete, while its native witness wording conflicts with D10.1’s first-fixture assignment. The named milestone checks and full repository check pass. Requested scope clarification and kept M0/D0.2 open. See [the M0 record](../../evidence/render/apple-tile-m0/README.md). No native provider was added ahead of M10.
 
