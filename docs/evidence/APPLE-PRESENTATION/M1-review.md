@@ -1,236 +1,225 @@
-# APPLE-PRESENTATION M1 review
+# APPLE-PRESENTATION M1 review (round 2)
 
 Reviewer: Claude Opus 5.5 (high), independent of the builder. 11 November 2026.
-Commit judged: `40319eafb334754d9753706283e9655c94bf3eb6`, built from a clean checkout. Target: mac-metal (Apple M3 Max,
-portable recipe). Release `v1-game` built with toolchain 1.99.1 (binary SHA-256 prefix `231598ce8836bfc2`). Showcase
-store cooked from `examples/v1-game/assets/showcase`, root `70d2baf8…e21d`, which matches the routes.
+Commit judged: `e0956ee65b4222ccf2bda6860351f490d7c19155`, built from a clean checkout (every capture manifest records
+the empty-diff hash `e3b0c442…`). Target: mac-metal (Apple M3 Max, portable recipe). Release `v1-game` built with
+rustc 1.99.1, binary SHA-256 prefix `7be1636e00b70e3f`. Showcase store cooked by me from
+`examples/v1-game/assets/showcase`, root `70d2baf8…e21d`, which matches every route.
 
-**Result: FAIL.** All five items pass. One Must Fix lies outside the items: the shipped game now presents jittered
-frames with no reconstructor, so a held camera shows every edge crawling. That worked before this milestone.
+**Result: PASS.** Round 1's only Must Fix, `jitter-presented-without-reconstruction`, is fixed. All five items pass
+again on this commit. Nothing new rises to a Must Fix. Round 1's evidence and images stay in [M1-review/](M1-review/);
+this round's are in [M1-review/r2/](M1-review/r2/).
 
 | Item | Verdict | Basis |
 |---|---|---|
-| D1.1 | pass | `./dev check` run by me (exit 0); layout/Halton test read; RENDER-SPEC and hash checked |
-| D1.2 | pass | `./dev check`; Metal readback tests read; my colour-vs-motion cross-check |
-| D1.3 | pass | `./dev check`; independent CPU projection in the test; atmosphere diff read |
-| D1.4 | pass | All four cases traced through the code on both sides; Suggestions S2 and S3 |
-| D1.5 | pass | My own fixed-time engine captures, watched as ordered sequences, with native crops and decoded values |
+| D1.1 | pass | `./dev check` run by me (exit 0); new selection test read; RENDER-SPEC text and hash checked |
+| D1.2 | pass | `./dev check`; Metal readback test read, now with a colour positive control under explicit jitter |
+| D1.3 | pass | `./dev check`; unchanged since round 1 except the star jitter gate, which is read |
+| D1.4 | pass | Re-traced: the repair changes only which matrix is packed at offset 0; no mark moved |
+| D1.5 | pass | My own fixed-time engine captures of this commit, watched as ordered sequences, with decoded values |
 
-## Must Fix (outside the items)
+## Round 1 Must Fix
 
-### MF1 `jitter-presented-without-reconstruction`: the game's presented image jitters with no reconstructor (verified)
+### `jitter-presented-without-reconstruction`: fixed (verified)
 
-- **What I did.** I captured the valley route with the camera held and the display overlay off (`held-day-640.json`,
-  640×360, the game's real render extent; and the same at 1080p), through the submitted engine tap
-  (`scripts/apple_presentation_m1.py capture --overlay off`). Then I compared consecutive submitted frames.
-- **What happened.** The camera doesn't move, yet consecutive frames differ on every silhouette, the skyline, the
-  terrain ridges, the shadow edges and the ground texture. At 640×360, 950–1,900 pixels per frame pair change by more
-  than 24 codes, with a maximum of 208. See:
-  - [the difference image ×4](M1-review/held-640-consecutive-diff-x4.png);
-  - [four consecutive frames of the sphere at native size ×4](M1-review/held-640-sphere-4-consecutive-frames-x4.png),
-    where the silhouette and highlight step by about a pixel from frame to frame;
-  - [the skyline over the same four frames](M1-review/held-640-skyline-4-consecutive-frames-x4.png).
+**The change.** `SyntheticView` now has two selectors:
 
-  In the window, the 640×360 image is scaled up about 4.7× on the built-in panel. So a jitter step of up to about one
-  render pixel (consecutive Halton offsets differ by up to 0.97 px) moves edges by several display pixels at the frame
-  rate. That is visible edge crawl and shimmer on a held view.
-- **Why.** `examples/v1-game/src/host/scene_source.rs:513` enables jitter on every game view
-  (`.with_jitter_phase(0, [640, 360])`). `PreparedSynthetic::update_frame` (`crates/thrum-render/src/synthetic.rs:1776`)
-  then rasterises with the jittered projection on every submitted frame. No reconstructor exists until M3, so nothing
-  resolves the jitter. The builder changed two existing tests to absorb this:
-  - `examples/v1-game/src/host/tests/lifecycle_gpu.rs:59` now waits a full 32-phase cycle before comparing paused
-    frames;
-  - `recovery_gpu.rs` (`closest_phase`) accepts the closest of 32 earlier frames.
+- `with_jitter_sequence` keeps the Halton phase and offsets but rasterises unjittered;
+- `with_jitter_phase` also turns on raster jitter, for a temporal consumer or an explicit witness.
 
-  Before M1, a paused or held view gave identical frames, and those tests asserted that.
-- **What should happen.** M1's bar judges motion "on the current portable output, before any reconstruction exists".
-  Nothing in the design or plan asks for the presented image to be jittered before TAAU, and no shipped game presents
-  jittered frames without temporal resolve. Fix this at the selection point, not cosmetically:
-  - the presented frame stays unjittered until a reconstructor consumes the jitter (M3), or under an explicit
-    temporal mode that tests and the M1 witnesses select;
-  - the view record still carries the phase and offsets, and the phase still advances on submission.
-- **Proposed item** that would have caught it: "With no temporal reconstructor active, the game's submitted frame is
-  unjittered: with the world paused and the camera held, consecutive submitted frames are byte-identical on
-  mac-metal, and the existing lifecycle and recovery tests compare consecutive frames exactly again."
+`raster_projection()` (`crates/thrum-render/src/synthetic/view.rs:346`) chooses the matrix, and the following all use
+that one choice:
+
+- `pack_view` offset 0, which feeds geometry, the cooked draws and visibility;
+- `contribution_frame`, for contribution culling (`contributed.rs:152`);
+- the star raster offset (`stars.rs:243`).
+
+The game selects `with_jitter_sequence` (`examples/v1-game/src/host/scene_source.rs:513`), and
+`PreparedSynthetic::update_frame` uses `at_jitter_phase`, which keeps the view's selection
+(`synthetic.rs:1779`). I grepped every use of `jittered_projection`, `raster_projection` and `with_jitter_*` in
+`crates/` and `examples/`. No other raster path reads the jittered matrix. The sky was already unjittered, because
+`pack_aux` inverts `view_proj`.
+
+**What I did.** I repeated round 1's held-camera capture at 640×360 (the game's render extent, overlay off). I added
+two held views: a night view pitched up 12° into the star field, and a low-sun view (18.2 h, facing west). I then
+compared every consecutive pair of the 70 pairs in each, with my own comparison script, not the builder's.
+
+| Held view, 70 consecutive pairs | Pixels > 24 codes per pair | Where they are | Round 1 |
+|---|---|---|---|
+| Day, noon | 70–96 | only the moving cube, its shadow and the sphere's shadow edge (bbox x 212–476, y 220–279) | 950–1,900 over every silhouette, skyline and texture |
+| Night, stars | 2–25 | short horizontal star streaks from sidereal motion | not run |
+| Low sun | 0 (peak delta 1 code) | everywhere, from solar time advancing | not run |
+
+- In the [day change map](M1-review/r2/held-day-640-union-change-map.png), red marks any pixel that changed over
+  all 70 pairs. Only the cube, the shadows and the sphere's shadow ring are red; the sphere silhouette, skyline,
+  ridges and ground texture are not. The shadow movement is real: this route runs the world at about 288× solar time
+  (12.013 → 12.106 h in 70 ticks), so the Sun moves visibly.
+- Four consecutive native frames, ×4: the [sphere](M1-review/r2/held-day-640-sphere-4-consecutive-x4.png) and the
+  [skyline](M1-review/r2/held-day-640-skyline-4-consecutive-x4.png) don't move. Compare round 1's
+  [sphere](M1-review/held-640-sphere-4-consecutive-frames-x4.png).
+- In the [night change map](M1-review/r2/held-night-640-union-change-map.png), stars trace consistent short horizontal
+  streaks, which is sky rotation, not random crawl. Four consecutive native frames of the
+  [star field ×4](M1-review/r2/held-night-640-stars-4-consecutive-x4.png) show steady stars.
+- The [low-sun map](M1-review/r2/held-lowsun-640-union-change-map.png) changes everywhere, but by at most one code.
+
+**Restored regressions.** I read the restored tests:
+
+- `lifecycle_gpu.rs:67` now requires 31 consecutive paused frames to equal `before` byte for byte;
+- `recovery_gpu.rs` drops `closest_phase` and requires the first replacement frame to be within one code of its
+  single pre-loss frame, and a consecutive replacement frame to be byte-identical;
+- `mixed_mesh_field_keeps_its_meshes_through_gpu_replacement` compares against its single `before` frame.
+
+All of them ran and passed in my `./dev check`. Round 1's proposed item would now pass.
+
+**The jittered path is still proved.** `metal_static_jitter_…` (`motion/tests.rs:120-169`) keeps the 35-phase
+zero-motion test under explicit raster jitter. It adds a positive control: under that jitter the submitted colour must
+change at least once. It then switches to `with_jitter_sequence` and asserts four things on each of 35 submissions:
+the phase advances, the offsets are nonzero, offset 0 equals offset 160, and the colour is byte-identical.
+
+## Must Fix
+
+None.
 
 ## Suggestions
 
-- **S1 The motion view saturates at ±8 px, and saturated motion uses the invalid colour (verified).**
-  `synthetic_display.wgsl:101-105` maps `0.5 + v/16`, clamped, with blue as `|v|/16`. Saturated motion right and up
-  with magnitude ≥ 16 px gives (1,0,1), the same magenta that marks invalid correspondence.
-  - In my moving-route capture, up to 222,576 texels per frame are exactly (255,0,255), from fast near-ground
-    translation. I can't tell from the view whether any are invalid. See the bottom-left of the later frames in
-    [the moving sheet](M1-review/moving-motion-sheet.png).
-  - In the 3°/tick pan, the whole frame clamps to −8 px. Centre-to-edge growth is invisible there; see
-    [the fast pan sheet](M1-review/fast-lowsun-sheet.png).
+S1–S5 are carried over from round 1. Each was checked again on this commit.
 
-  Use a distinct invalid colour that can't be reached otherwise (for example a checker pattern), and a log or
-  selectable scale.
-- **S2 Sky and stars ignore cuts and missing history (verified by code reading).** The bar asks for "marked invalid
-  where there is no history rather than fabricated".
-  - `atmosphere/gpu.rs:248` uses `submitted_sky.unwrap_or((*view, sun))`. So on the first frame, and after device
-    replacement (a new `AtmospherePrepared`, while `inherit_submitted_view` copies only the synthetic view), the sky
-    writes exactly zero motion.
-  - On a camera cut, the sky and stars write a reprojection to the pre-cut camera.
-
-  The frame's reset flag covers every reconstructor, and D1.4 names objects and the forward drawers, not the sky, so
-  this is not a fail. M2's reactive work should still mark the sky and stars, or write the sentinel, when
-  `history_reset` is set or there is no submitted sky. Carrying `submitted_sky` across replacement is the matching fix.
-- **S3 The cooked volume invalidates everything it covers (suspected).** `cooked.wgsl` now writes `(65504,65504)`
-  with the motion write mask `ALL` (`draw.rs:305`) wherever alpha > 0. The terrain behind a faint volume has valid
-  history, yet loses it. This conflicts with the design's W3, where reactive equals the volume's alpha. The showcase
-  route has no volume, so I saw no effect.
-- **S4 Mip bias is a constant.** `view.rs` `pack_view` writes `-1.0` at byte 224. That is correct at native scale
-  only. M5 (dynamic scale) must derive it from `log2(render/output) − 1`.
-- **S5 Cut frames can't be captured.** The route tool refuses checkpoints within 4 ticks of a cut ("checkpoint …
-  must be … 4 ticks after the origin and each cut"), and the builder's moving window ends at tick 196, before its cut
-  at 200. So the cut onset was never seen in engine capture. The Metal test covers the sentinel on a cut for synthetic
-  geometry. M3's D3.4 will need that window.
-- **S6 Clusters and shadows use the unjittered view, but rasterisation is jittered (suspected, minor).** At a
-  half-pixel scale this should not matter, but light-tile edges could misassign by one pixel.
+- **S1 The motion view still saturates at ±8 px, and saturated motion reuses the invalid colour (verified again).**
+  - In the moving route at tick 196, the bottom-left corner decodes as (255,0,255), the invalid magenta, but it comes
+    from saturation (x ≥ 8, y ≤ −8). See the bottom row of
+    [the moving sheet](M1-review/r2/moving-motion-sheet.png).
+  - The 3°/tick pan clamps the whole frame to x = −8 ([fast low-sun sheet](M1-review/r2/fast-lowsun-motion-sheet.png)).
+  - The fix is still a distinct invalid pattern and a selectable or logarithmic scale.
+- **S2 Sky and stars ignore cuts and missing history.** `atmosphere/gpu.rs:248` is unchanged
+  (`submitted_sky.unwrap_or((*view, sun))`). M2's reactive work should cover it.
+- **S3 The cooked volume invalidates everything it covers (suspected).** Unchanged.
+- **S4 Mip bias is a constant −1.** Unchanged. It is correct at native scale, but M5 must derive it.
+- **S5 Cut frames can't be captured.** The route tool still refuses checkpoints within 4 ticks of a cut, so I again
+  couldn't capture the cut onset. M3's D3.4 needs that window.
+- **S6 is resolved for the shipped path.** Spatial output now uses the same unjittered matrix as clusters and shadows.
+  The mismatch now exists only under explicit raster jitter, and M3 should recheck it there.
+- **S7 (new; verified, probably harmless) Daytime stars write motion.** In the day pan after the camera stops (tick
+  150, noon), about 24,000 texels are nonzero. They are the moving cube plus 3×3 star footprints across the sky, with
+  x up to +0.6 px of sidereal motion, although the stars are invisible in daylight
+  ([crop ×4](M1-review/r2/daypan-t150-sky-dot.png)). The sky gradient around them reads exactly 0.
+  - A reconstructor would reproject those texels by under a pixel over smooth sky, which does no visible harm.
+  - Still, `stars.wgsl` could also discard where the star's contribution is below one display code, so the motion
+    target matches what's on screen. M2's reactive rule for stars should use the same threshold.
+- **S8 (new) D1.1's wording against the repair.** D1.1 says the record carries "jittered and unjittered matrices". In
+  the shipped spatial mode, offset 0 now holds the unjittered matrix. The jittered matrix is packed only when a
+  temporal consumer selects it.
+  - I pass D1.1 because round 1 asked for exactly this split, and because RENDER-SPEC now defines offset 0 as the
+    selected raster matrix.
+  - A planner should still reword D1.1 and the design's record list (DESIGN.md ~410) to "the selected raster matrix
+    (jittered when a temporal consumer is active)", so the written item matches the contract.
 
 ## Items
 
 ### D1.1: pass
 
-- I ran `./dev check` on the clean checkout. It exited 0, with 63 test groups OK, including
-  `synthetic::view::temporal_tests::continuous_halton_values_and_exact_record_layout`.
-- The test holds the expected values as hard-coded literals, independent of the implementation:
-  - all 32 Halton(2,3) values across three cycles, with `assert_ne!(sample, [0.0; 2])`;
-  - all 240 bytes of a packed record (jittered matrix at 0, previous at 64, unjittered at 160, jitter at 152/156,
-    mip bias −1 at 224, phase at 228);
-  - the Naga member offsets and span of `ViewRecord` (240) and `ViewAuxRecord` (144), and the subrectangle at aux
-    128–144.
-- Index 1..32 never gives (0,0), because the base-2 term is 0 only at index 1, where the base-3 term is −1/6.
-- RENDER-SPEC §8 states the same layout. Its SHA-256 `a2e43a39…` matches all 11 ledger entries in `maturity.json`,
-  and no old hash remains.
-- The previous matrices come from the last submitted frame:
-  - `commit_frame` is called only after `queue.submit` (`runtime.rs:1354`), and the capture path never calls it;
-  - `pack_view(&self.view_sample, …)` packs `view_sample`, which `commit_frame` alone sets;
-  - the abandoned-encoder case in `metal_sky_pan_…` asserts this, and the phase advances only there.
+- My `./dev check` exited 0, with 63 test groups OK. That includes
+  `temporal_tests::continuous_halton_values_and_exact_record_layout`, which is unchanged since round 1: the literal
+  Halton values, `(0,0)` never occurring, all 240 bytes, and the Naga offsets.
+- It also includes the new `spatial_output_retains_the_sequence_and_both_matrices`. Over 96 phases it checks that:
+  - spatial and temporal records agree from byte 64 onwards;
+  - spatial offset 0 equals offset 160, while temporal offset 0 differs;
+  - the offsets are nonzero and the phase is `phase % 32`;
+  - the selection survives `at_jitter_phase`.
+- RENDER-SPEC §8 states the new selection rule, with the layout unchanged. Its SHA-256 `fcc5ed87…72ae` matches all 11
+  `RENDER-SPEC.md` entries in `maturity.json`.
+- Previous matrices still come from the last submitted frame: `commit_frame` runs after `queue.submit`, and the
+  abandoned-view case still asserts this (`metal_sky_pan_…` printed `after abandoned view, first nonzero texels: []`).
 
 ### D1.2: pass
 
-- In `synthetic/motion/tests.rs`, the real `Rg16Float` motion attachment is copied to a buffer after the real
-  forward pass, and every texel is decoded.
-  - `metal_static_jitter_…` covers 35 jitter phases, failing on any nonzero bit. Its control moves the instance by
-    0.1 and requires x < −1 px. Spawn and cut require the sentinel.
-  - `metal_perspective_geometry_sky_and_stars_…` covers perspective geometry, sky and a star over 35 jittered phases,
-    all exact zero.
-  - Both passed in my run.
-- The shader forms the clip delta before projection (`synthetic.wgsl` `vertex_at`/`motion_vector`) from
-  `unjittered_view_proj`. The algebra is correct: `(c+d)/(w+dw) − c/w`.
-- My independent check on real content: I matched 48×48 colour patches between consecutive submitted day-pan frames
-  and compared the image displacement with the decoded motion view at the same pixel, over 16 frame pairs.
-  - Sign and magnitude agree, for example 6.56 px at the centre against 6.5–7.4 px from the image.
-  - The residual swings ±0.9 px with the Halton phase and averages 0.3 px over a partial cycle. That is the jitter
-    difference, as expected for unjittered motion.
+- The real `Rg16Float` attachment is read back after the forward pass, across 35 explicitly jittered phases, and every
+  texel must be exactly zero.
+- The moving control must reach x < −1 px, and the spawn must write the sentinel.
+- The new colour control proves that the test really jitters. Without it, the selector change could have silently
+  turned jitter off in the test as well.
+- The shader still derives motion from `unjittered_view_proj` (`synthetic.wgsl:134,149`; `cooked.wgsl:30,41`).
+- On real content, with no camera motion after the pan, sky and terrain decode as exactly 0, code 128
+  (`day-pan` ticks 122–240).
 
 ### D1.3: pass
 
-- The expected sky motion is a CPU ray from the focal length and yaw, not the shader's inverse. At 5,5, 32,32 and
-  58,58 the error is below 0.001 px (tolerance 0.05).
-- The camera-still steps are each asserted: sidereal-only (star moves 0.586 px, sky exactly 0), solar 0.01 rad
-  (disk −0.585 px) and solar 0.0001 rad (−0.00586 px against −0.00586 px).
-- On the seam 4 ruling: the `sky.wgsl` diff only adds `infinity_motion` and the motion output, with radiance
-  untouched. `stars.wgsl` adds motion, a `discard` where the weight is 0 (which adds nothing to colour), and
-  `centre + jitter`. That last change is part of the jittered frame contract, not the atmosphere's look.
-- On real content, during a pure-yaw pan the motion is continuous across the skyline: 0 codes of difference above
-  against below at 8 of 9 columns, and 1 code (0.06 px) at the ninth. That means sky motion at infinity agrees with
-  the geometry's projection. See [motion crop](M1-review/day-pan-t60-skyline-motion-crop-x2.png) and
-  [colour crop](M1-review/day-pan-t60-skyline-colour-crop-x2.png).
+The sky and star motion code is unchanged since round 1. The only atmosphere-side change is that `stars.rs:243`
+writes the raster jitter offset only under raster jitter, which still touches only the star's raster centre, not its
+radiance or its motion. The Metal test passed in my run, matching the independent CPU projection: at 5,5 the GPU gave
+1.3984 against 1.3988 px, the sidereal-only step gave 0.5859 against 0.5861, and the solar step gave −0.5854 against
+−0.5858. All are well within 0.05 px.
 
 ### D1.4: pass
 
-Where each mark is set and cleared:
-
-- **Spawn.** `synthetic.wgsl:141-146`: `valid` requires a nonzero previous serial and a matching identity, generation
-  and serial. Otherwise `motion_vector` returns `(65504,65504)` (line 571). It clears on the next frame, after
-  `commit_frame` → `history.submitted()`.
-- **Camera cut.** `history_gpu.rs:179` writes `read_serial = 0` for the reset sample, so every synthetic and
-  contributed instance is invalid for one sample. Cooked uses `draw.rs:619`
-  (`continued && !frame.history_reset`), and the history byte is rewritten on both paths. The Metal test asserts the
-  cut sentinel.
-- **Device replacement.** `runtime.rs:705` resets history on the replacement view, and the new `PreparedSynthetic`
-  has fresh GPU history. `inherit_submitted_view` copies only CPU camera metadata and phase. A new cooked `Bound`
-  starts `continued = false` (`draw.rs:612`).
-- **Cooked asset swap.** The new `Bound` starts with `continued = false`. `lib.rs:931` sets it only after a frame
-  with `history_advanced`, and captures reset it (line 945).
-- **Can any forward drawer emit zero for geometry with no previous position?**
-  - Synthetic and contribution draws share `vertex_at`.
-  - Cooked direct and indirect share `cooked_vertex` and its fragment, with the sentinel.
-  - The cooked volume always writes the sentinel (S3).
-
-  None writes zero for invalid geometry. The sky and stars are outside the item's list; see S2.
+- The repair changes only the matrix at offset 0 and the culling matrix.
+- The spawn, cut, device-replacement and cooked-swap marks traced in round 1 are untouched: `synthetic.wgsl`
+  `valid`/sentinel, `history_gpu.rs` `read_serial = 0`, `draw.rs` `continued && !frame.history_reset`, and fresh
+  `Bound` and `PreparedSynthetic` on replacement.
+- The Metal test still asserts the spawn and cut sentinels and the replacement path (`motion/tests.rs:170-188`).
+- No forward drawer gained a zero-motion path.
 
 ### D1.5: pass
 
-**Inspection list, written before looking:**
+**Inspection list, written before looking** (as in round 1, re-run on this build):
 
-1. Whole-frame pan (noon and night): direction is history minus current, and magnitude grows from centre to the
-   horizontal edges.
-2. Skyline at native size during a pan: no band of zero or invalid motion where terrain meets the sky.
-3. Near object against far terrain during translation: parallax, with a crisp boundary at the silhouette.
-4. Star field at night, held and panning: stars carry the pan plus a small sidereal term, with no holes.
-5. Moving object with the camera held: only the mover (and stars) nonzero, in the mover's direction.
-6. Onset and stop of a pan: motion starts and stops on the right ticks, with no lingering.
-7. Edge conditions: fast camera (3°/tick), low sun (18.2 h), distance (far ridges), a cut.
+1. Whole-frame pan, noon and night: direction is history minus current, and magnitude grows from the centre to the
+   edges.
+2. Skyline during a pan: no band of zero or invalid motion.
+3. Near object against far terrain during translation: parallax and a crisp silhouette.
+4. Star field at night: stars carry the pan plus a small sidereal term, with no holes.
+5. Moving object with the camera held: only the mover (and stars) nonzero.
+6. Onset and stop of a pan: no lingering.
+7. Edge conditions: fast camera, low sun, distance, a cut.
 
-**What I captured** (all mine, from this commit; fixed-time submitted engine output, 60 samples/s; captures and PNGs
-in `tmp/m1-review/cap/`):
-- the builder's day, night and moving routes with the motion view;
-- my [fast low-sun pan](M1-review/fast-lowsun.json), in motion and in colour;
-- a night pitch-up and pan, then a cut ([pre](M1-review/night-pre.json), [post](M1-review/night-post.json));
-- day pan colour;
-- the held views at [640×360](M1-review/held-day-640.json) and 1080p.
+**What I captured** (all mine, from this commit; fixed-time submitted engine output, 60 samples/s, motion view on):
 
-**I watched motion** as ordered frame sequences (contact sheets at chosen ticks, consecutive native frames, and
-values decoded per tick), not by playing video on a display.
+- the builder's day, night and moving routes (`docs/evidence/APPLE-PRESENTATION/m1/*-route.json`);
+- round 1's [fast low-sun pan](M1-review/fast-lowsun.json).
 
-1. **Pan.** On the noon pan, x is +6.6 px at the centre, rising to ≥ 7.6 px at the third points and clamped at 8 at
-   the edges. Every sampled row shows the same, with y symmetric about the centre. The camera turns right, so the
-   history lies to the right (positive x). The colour-patch match confirms this. Night is the same, plus the pitch
-   term. Pass.
-2. **Skyline.** Continuous within 0.06 px (see D1.3). Pass.
-3. **Near and far.** At tick 150 of the moving route, the sphere has a crisp motion silhouette, distinct from the
-   terrain behind it, and the motion changes smoothly with depth down the ground plane
-   ([crop](M1-review/moving-t150-near-far-native-crop.png), [sheet](M1-review/moving-motion-sheet.png)). Pass.
-4. **Stars.** In the night hold, about 22,600 star texels carry x 0.35–0.66 px and y +0.16 px of sidereal motion
-   while the sky reads exactly 0 ([×20 amplified](M1-review/night-hold-stars-motion-crop-x4-amplified20.png)). In the
-   pan, stars sit within a few codes of the sky's pan motion ([crop](M1-review/night-pan-stars-motion-crop-x4.png)).
-   No holes. Pass.
-5. **Mover.** In the held day view, the cube (3 m/s, moving right) reads x ≈ −2.4 px as a clean silhouette, and
-   stationary terrain and sky read exactly 0 ([colour against motion, two ticks](M1-review/day-hold-mover-colour-vs-motion-t160-t204.png)).
-   Pass.
-6. **Onset and stop.**
-   - Noon pan: the centre reads a constant 6.62 px through the pan, 3.29 px at tick 121 (the half-tick sample as the
-     pan ends) and 0 from tick 122.
-   - Fast pan: motion starts at tick 31 and stops at tick 62, matching keys 30 and 60 with the ½ phase.
-   - No lingering. Pass.
+Raw captures are in `tmp/m1-review-r2/cap/` (about 10 GB, not committed). I watched motion as ordered sequences:
+contact sheets every 24 ticks ([day](M1-review/r2/day-pan-motion-sheet.png),
+[night](M1-review/r2/night-pan-motion-sheet.png), [moving](M1-review/r2/moving-motion-sheet.png)), every 8 ticks for
+the fast pan, and values decoded at a 7×5 grid per tick.
+
+1. **Pan.** The noon pan turns right, so history lies to the right and x is positive. At tick 60, x is +6.62 at the
+   centre, +7.06–7.18 at the third points and clamped at +8 at the edges, on every row. y is antisymmetric about the
+   centre (+1.35 at the top-left, −1.41 at the top-right). The night pan shows the same. Pass.
+2. **Skyline.** In a pure-yaw pan, the motion field is smooth across the horizon: no seam is visible in the sheets,
+   and decoded rows don't step at the skyline. Pass.
+3. **Near and far.** The moving route at tick 150 has a crisp sphere silhouette. Sky (teal), terrain (green) and the
+   sphere are each distinct, and the motion changes smoothly down the ground plane
+   ([native crop](M1-review/r2/moving-t150-near-far-native-crop.png)). Pass.
+4. **Stars.** In the night route after the pan, 26,800 nonzero texels range from x 0.03 to 0.66 px, y up to 0.35
+   px. These are the stars' sidereal term; the only negative x is the moving cube (−2.7 px). Sky texels read 0. No
+   magenta. Pass.
+5. **Mover.** With the camera held after the pan, the cube is the only geometry with nonzero motion: x −2.2 to −2.7
+   px against a zero background. Pass.
+6. **Onset and stop.** In the noon pan, the centre reads 6.62 px through the pan, 3.29 px at tick 121 (the half-tick
+   sample) and 0 from tick 122. No lingering. Pass.
 7. **Edge conditions run:**
-   - fast camera: direction is right, but the view saturates (S1);
-   - low sun: the sky was correct, but the Sun disk was not in frame, so the solar term rests on the Metal test;
-   - distance: far ridges continuous;
-   - cut: frames from tick 64 onwards are correct; frames 60–63 can't be captured (S5).
+   - fast camera: x clamped at −8 for a left turn, which is the correct direction, but saturated (S1);
+   - low sun: the fast pan at 18.2 h, plus the held low-sun colour view under MF1;
+   - distance: far ridges are continuous in the pan;
+   - night: stars;
+   - cut: not capturable (S5); the Metal test covers the cut sentinel.
 
-   Not run: storm (the route format has no weather control), and full refresh (this item is fixed-time motion
-   correctness; no cadence is claimed).
-
-The view's ±8 px saturation and the invalid colour that saturation also reaches (S1) weaken the view as a tool. But
-on every entry above, direction and growth were judged from unsaturated regions and decoded values, so the item's
-statement holds.
+   Not run: storm (the route format has no weather control), and full refresh (this item claims no cadence).
 
 ## Builder evidence
 
-I read it only after forming the verdicts above. It agrees with what I saw. One caveat: its D1.5 says magenta marks
-invalid geometry, but in the moving route magenta is mostly saturation (S1). Its moving window stops before the cut
-(S5).
+I read [the repair evidence](m1-mf1/README.md) after forming the verdicts above. Its held-view numbers (70–96 pixels
+over 24 codes at 640×360; skyline, ground and sphere silhouette at 0) match my independent run exactly. The night and
+low-sun held views are my additions.
 
 ## Checks run
 
-- `./dev check` at `40319eaf`: exit 0 (log at `tmp/m1-review/dev-check.log`, not committed).
-- Release build of `thrum-cook` and `v1-game`; `thrum-cook cook` gave the route's root.
-- 11 engine captures, packaged by `scripts/apple_presentation_m1.py`. Each validated its submission, tick, phase,
-  history and exposure identities.
+- `./dev check` at `e0956ee6`: exit 0, 63 groups OK. The log is at `tmp/m1-review-r2/dev-check.log` (not committed).
+  It includes every Metal motion test, `threaded_pause_keeps_pixels_still…`, and all four `recovery_gpu` tests.
+- `cargo build --release -p v1-game -p thrum-cook`; `thrum-cook cook` gave the route's root.
+- 7 engine captures (3 held with the overlay off, 4 with the motion view), each packaged and validated by
+  `scripts/apple_presentation_m1.py package`: 71, 71, 71, 237, 237, 193 and 71 frames, all complete.
+- My held-view comparison and crop scripts were throwaway, kept outside the repository. The routes I wrote are in
+  [M1-review/r2/](M1-review/r2/): [held day](M1-review/r2/held-day-640.json),
+  [held night](M1-review/r2/held-night-640.json) and [held low sun](M1-review/r2/held-lowsun-640.json).
 
-FAIL M1: 0 fail, 0 cant_tell, 1 outside the items
+PASS M1

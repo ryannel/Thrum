@@ -1,0 +1,225 @@
+{
+ "format": "thrum-v1-moving-route",
+ "version": 1,
+ "cooked_root": "70d2baf823d09d85574f7cdfce7102648754544dd7d68659e9bd92dd5f30e21d",
+ "cooked_generation": 1,
+ "tick_hz": 60,
+ "phase": [
+  1,
+  2
+ ],
+ "origin_tick": 180,
+ "start": {
+  "solar_hours": 23.5
+ },
+ "render_extent": [
+  1920,
+  1080
+ ],
+ "keys": [
+  {
+   "tick": 0,
+   "eye": [
+    0.0,
+    244.9226672381398,
+    16.0
+   ],
+   "yaw_degrees": 0,
+   "pitch_degrees": -3.0127875041833403
+  },
+  {
+   "tick": 20,
+   "eye": [
+    0.0,
+    244.9226672381398,
+    16.0
+   ],
+   "yaw_degrees": 0,
+   "pitch_degrees": 12
+  },
+  {
+   "tick": 60,
+   "eye": [
+    0.0,
+    244.9226672381398,
+    16.0
+   ],
+   "yaw_degrees": 40,
+   "pitch_degrees": 12
+  },
+  {
+   "tick": 60,
+   "eye": [
+    0.0,
+    243.0,
+    0.0
+   ],
+   "yaw_degrees": 180,
+   "pitch_degrees": 5
+  },
+  {
+   "tick": 100,
+   "eye": [
+    0.0,
+    243.0,
+    -6.0
+   ],
+   "yaw_degrees": 160,
+   "pitch_degrees": 5
+  }
+ ],
+ "cuts": [
+  60
+ ],
+ "checkpoints": [
+  {
+   "tick": 64,
+   "name": "frame-0064"
+  },
+  {
+   "tick": 65,
+   "name": "frame-0065"
+  },
+  {
+   "tick": 66,
+   "name": "frame-0066"
+  },
+  {
+   "tick": 67,
+   "name": "frame-0067"
+  },
+  {
+   "tick": 68,
+   "name": "frame-0068"
+  },
+  {
+   "tick": 69,
+   "name": "frame-0069"
+  },
+  {
+   "tick": 70,
+   "name": "frame-0070"
+  },
+  {
+   "tick": 71,
+   "name": "frame-0071"
+  },
+  {
+   "tick": 72,
+   "name": "frame-0072"
+  },
+  {
+   "tick": 73,
+   "name": "frame-0073"
+  },
+  {
+   "tick": 74,
+   "name": "frame-0074"
+  },
+  {
+   "tick": 75,
+   "name": "frame-0075"
+  },
+  {
+   "tick": 76,
+   "name": "frame-0076"
+  },
+  {
+   "tick": 77,
+   "name": "frame-0077"
+  },
+  {
+   "tick": 78,
+   "name": "frame-0078"
+  },
+  {
+   "tick": 79,
+   "name": "frame-0079"
+  },
+  {
+   "tick": 80,
+   "name": "frame-0080"
+  },
+  {
+   "tick": 81,
+   "name": "frame-0081"
+  },
+  {
+   "tick": 82,
+   "name": "frame-0082"
+  },
+  {
+   "tick": 83,
+   "name": "frame-0083"
+  },
+  {
+   "tick": 84,
+   "name": "frame-0084"
+  },
+  {
+   "tick": 85,
+   "name": "frame-0085"
+  },
+  {
+   "tick": 86,
+   "name": "frame-0086"
+  },
+  {
+   "tick": 87,
+   "name": "frame-0087"
+  },
+  {
+   "tick": 88,
+   "name": "frame-0088"
+  },
+  {
+   "tick": 89,
+   "name": "frame-0089"
+  },
+  {
+   "tick": 90,
+   "name": "frame-0090"
+  },
+  {
+   "tick": 91,
+   "name": "frame-0091"
+  },
+  {
+   "tick": 92,
+   "name": "frame-0092"
+  },
+  {
+   "tick": 93,
+   "name": "frame-0093"
+  },
+  {
+   "tick": 94,
+   "name": "frame-0094"
+  },
+  {
+   "tick": 95,
+   "name": "frame-0095"
+  },
+  {
+   "tick": 96,
+   "name": "frame-0096"
+  },
+  {
+   "tick": 97,
+   "name": "frame-0097"
+  },
+  {
+   "tick": 98,
+   "name": "frame-0098"
+  },
+  {
+   "tick": 99,
+   "name": "frame-0099"
+  },
+  {
+   "tick": 100,
+   "name": "frame-0100"
+  }
+ ],
+ "overlay": "motion"
+}

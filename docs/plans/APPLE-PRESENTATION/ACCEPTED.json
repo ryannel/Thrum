@@ -30,7 +30,7 @@
         {
           "verdict": "fail",
           "commit": "40319eafb334754d9753706283e9655c94bf3eb6",
-          "review": "docs/evidence/APPLE-PRESENTATION/M1-review.md",
+          "review": "docs/evidence/APPLE-PRESENTATION/M1-review-1.md",
           "items": {
             "D1.1": "pass",
             "D1.2": "pass",
@@ -60,6 +60,34 @@
             "turns": 1
           },
           "at": "2026-11-11T10:32:11Z"
+        },
+        {
+          "verdict": "pass",
+          "commit": "e0956ee65b4222ccf2bda6860351f490d7c19155",
+          "review": "docs/evidence/APPLE-PRESENTATION/M1-review.md",
+          "items": {
+            "D1.1": "pass",
+            "D1.2": "pass",
+            "D1.3": "pass",
+            "D1.4": "pass",
+            "D1.5": "pass"
+          },
+          "host": "claude",
+          "model": "claude-opus-5-5",
+          "effort": "high",
+          "observed": {
+            "model": "claude-opus-5-5"
+          },
+          "cli": "2.1.319 (Claude Code)",
+          "path": "headless",
+          "usage": {
+            "input": 135917,
+            "cached": 4621009,
+            "output": 31723,
+            "cost_usd": 2.645574,
+            "turns": 1
+          },
+          "at": "2026-11-11T13:30:12Z"
         }
       ],
       "authorised": {
@@ -94,6 +122,13 @@
           "turns": 3,
           "incomplete_turns": 1
         }
+      },
+      "accepted": {
+        "by": "review",
+        "commit": "e0956ee65b4222ccf2bda6860351f490d7c19155",
+        "review": "docs/evidence/APPLE-PRESENTATION/M1-review.md",
+        "checked": "ba9549f5f67b0084325e24f10a3badf293da2d16",
+        "at": "2026-11-11T13:30:12Z"
       }
     },
     "M2": {
