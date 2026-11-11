@@ -31,7 +31,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "status": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M1.3",
@@ -64,7 +66,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "status": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         }
       ],
       "rounds": 0
@@ -99,7 +103,9 @@
           "lock": "gpu",
           "target": "ios-sim",
           "status": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M2.3",
@@ -108,7 +114,9 @@
           "lock": "gpu",
           "target": "chrome-webgpu",
           "status": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M2.4",
@@ -127,7 +135,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "status": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         }
       ],
       "rounds": 0
@@ -147,7 +157,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "status": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M3.2",
@@ -156,7 +168,9 @@
           "lock": "gpu",
           "target": "chrome-webgpu",
           "status": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M3.3",
@@ -175,7 +189,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "status": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M3.5",
@@ -184,7 +200,9 @@
           "lock": "gpu",
           "target": "chrome-webgpu",
           "status": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M3.6",
@@ -193,7 +211,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "status": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M3.7",
@@ -232,7 +252,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "status": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         }
       ],
       "rounds": 0
