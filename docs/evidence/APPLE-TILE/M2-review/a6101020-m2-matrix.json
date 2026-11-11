@@ -1,0 +1,8 @@
+{
+ "binary": "reviewed commit a6101020",
+ "binary_sha256": "54bc5e92f49c1e7be3ad9b271d616ae90ad1f4ab737a41f11f362f169a56dd4f",
+ "passed": false,
+ "failures": [
+  "exact retained comparison failed: portable-bgra8-mirror-light"
+ ]
+}

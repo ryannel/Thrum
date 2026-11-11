@@ -1,0 +1,36 @@
+{
+  "reference": {
+    "file": "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/tmp/review-m2/m1run/portable-sdr-approach.reference",
+    "file_sha256": "168a804e069d23d94a01d3ce413aa947a13f5d34a5e02ad8f34a1cec97e1b084",
+    "pixels_sha256": "168a804e069d23d94a01d3ce413aa947a13f5d34a5e02ad8f34a1cec97e1b084",
+    "extent": [
+      1280,
+      720
+    ],
+    "bytes_per_pixel": 4,
+    "encoding": "rgba8"
+  },
+  "candidate": {
+    "file": "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/tmp/review-m2/m1run/portable-sdr/checkpoints/approach.rgba8",
+    "file_sha256": "514d501440706d7e36516fe7beb0d6e08c89b57398aeb7a2013bb4581840a2cb",
+    "pixels_sha256": "514d501440706d7e36516fe7beb0d6e08c89b57398aeb7a2013bb4581840a2cb",
+    "extent": [
+      1280,
+      720
+    ],
+    "bytes_per_pixel": 4,
+    "encoding": "rgba8"
+  },
+  "equal": false,
+  "scope": "exact stored pixel bytes only; target/sample/exposure/history identity must be established by the caller",
+  "changed_pixels": 472377,
+  "changed_bytes": 933899,
+  "bounds_xyxy_exclusive": [
+    0,
+    169,
+    1280,
+    720
+  ],
+  "mask_sha256": "1e68dccda207ffb3ee63eebd2e2df689c163e68deb9e027cfe0db2d71a00eaa1",
+  "crop_sha256": "95b573ae9cddfcfd84a469ea1c47c9297d5a6d35de6e2f43b0563feed070feab"
+}

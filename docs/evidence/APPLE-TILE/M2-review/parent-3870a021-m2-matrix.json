@@ -1,0 +1,24 @@
+{
+ "binary": "parent 3870a021 (M2 code, before APPLE-PRESENTATION M1)",
+ "binary_sha256": "1b55ef3843ff7a5afe3b219864450b56f77b7b050f299f445fb29b6253f5ccfa",
+ "passed": true,
+ "failures": [],
+ "comparisons": {
+  "portable-bgra8-mirror-light": {
+   "equal": true,
+   "changed_pixels": 0
+  },
+  "portable-bgra8-srgb-mirror-light": {
+   "equal": true,
+   "changed_pixels": 0
+  },
+  "apple-tile-bgra8-mirror-light": {
+   "equal": true,
+   "changed_pixels": 0
+  },
+  "apple-tile-bgra8-srgb-mirror-light": {
+   "equal": true,
+   "changed_pixels": 0
+  }
+ }
+}

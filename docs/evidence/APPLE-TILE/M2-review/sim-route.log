@@ -1,0 +1,22 @@
+simulator: Thrum APPLE-TILE M1 owned AC9579FB-E696-4F23-A31C-FD053085FE2F type=com.apple.CoreSimulator.SimDeviceType.iPhone-18-Pro runtime=com.apple.CoreSimulator.SimRuntime.iOS-27-2 state=Booted
+startup: presented=720 completed=719 callbacks=798 pending<=2 threads display/prepare/frame/world=main/thrum-v1-ios-render/thrum-v1-ios-render/thrum-world
+step 12:53:16: command stall-render (file drop #1)
+stall: 8 s inside the lease section; callbacks during stall=480, world ticks during stall=481, UIKit max during stall=405 us
+step 12:53:25: command hide-view (file drop #2)
+step 12:53:32: command show-view (file drop #3)
+denied: 120 denied, 0 acquired, 0 presented, 120 world ticks while hidden; missing stays 0
+step 12:53:35: command replace-surface (file drop #4)
+replacement: epoch 2 -> 4, presented on epoch 4, same pid 3764, live detached windows 0
+step 12:53:38: command stall-render (file drop #5)
+step 12:53:38: command replace-surface (file drop #6)
+stalled replacement: deferred=1 stale_dropped=1 completed releases=1; presents resumed on epoch 6
+step 12:53:47: command stall-present (file drop #7)
+step 12:53:47: command replace-surface (file drop #8)
+raced present: one admitted present after revocation (raced_presents=1), deferred=2, old window detached after release; presents resumed on epoch 8
+step 12:53:57: xcrun simctl launch AC9579FB-E696-4F23-A31C-FD053085FE2F com.apple.Preferences
+step 12:54:00: xcrun simctl launch AC9579FB-E696-4F23-A31C-FD053085FE2F org.thrum.v1
+m1-background: pid 3764, world epoch 1 at tick 3331 paused and resumed at tick 3331; surface epoch 8 -> 10; deferred releases 2
+step 12:54:03: command stall-render (file drop #9)
+step 12:54:03: xcrun simctl launch AC9579FB-E696-4F23-A31C-FD053085FE2F com.apple.Preferences
+step 12:54:06: xcrun simctl launch AC9579FB-E696-4F23-A31C-FD053085FE2F org.thrum.v1
+m1-background-stall: pid 3764, world epoch 1 at tick 3487 paused and resumed at tick 3487; surface epoch 10 -> 12; deferred releases 3

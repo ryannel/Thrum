@@ -138,7 +138,7 @@
     {
       "id": "M2",
       "name": "The existing frame lifecycle runs through one split graph",
-      "state": "claimed",
+      "state": "in_progress",
       "fails": 0,
       "replans": 3,
       "bar": "A production renderer boundary: one owner, prepared fallback, deterministic visible semantics and explicit adverse-case evidence, as in the public wgpu/Metal lifecycle model.",
@@ -150,8 +150,8 @@
           "status": "pass",
           "evidence": "docs/evidence/render/apple-tile-m2/README.md",
           "ask": "Inspect graph/executor tests that reject scene work behind acquisition without a surface dependency, require the surface binding only for phase two and prove graph order. At this milestone retain the tone intermediate to isolate the lifecycle change. Keep the same shader arithmetic, tone intermediate, draw order, graph resource formats and quantization boundary; no deferred optimization is hidden in this scheduling step.",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/APPLE-TILE/M2-review.md"
         },
         {
           "id": "D2.2",
@@ -160,18 +160,18 @@
           "status": "pass",
           "evidence": "docs/evidence/render/apple-tile-m2/README.md",
           "ask": "Run unchanged-behavior FrameHost/token and real Metal queue-attempt regression witnesses, plus surface byte/letterbox and resize-preparation tests under the merged graph. Require separate healthy refusal, loss-before/after-acquire and successful-submit cases.",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/APPLE-TILE/M2-review.md"
         },
         {
           "id": "D2.3",
           "statement": "The merged graph preserves complete image and motion on both native recipes. Same-target scene-linear and submitted SDR bytes remain exact against M0 and paired recipes.",
           "target": "mac-metal",
-          "status": "pass",
-          "evidence": "docs/evidence/render/apple-tile-m2/README.md",
+          "status": "open",
+          "evidence": "",
           "inspect": "Use T2 still/fixed exact scene-linear/submitted SDR comparisons against M0 and paired recipes, with deterministic sample/history identity; review separate T2 realtime cut/skipped-view sequences at 1x for elapsed-time continuity and accepted history.",
-          "verdict": "",
-          "review": ""
+          "verdict": "fail",
+          "review": "docs/evidence/APPLE-TILE/M2-review.md"
         },
         {
           "id": "D2.4",
@@ -180,8 +180,8 @@
           "status": "pass",
           "evidence": "docs/evidence/render/apple-tile-m2/README.md",
           "ask": "Run the platform lease/background race regression under merged execution, then drive the diagnostic simulator foreground/background and surface replacement. Use simctl endpoint/function images and lifecycle/queue logs with coverage/timing limits. No background submit, old-generation callback publication or stale resume is allowed. No cooked draw or submitted/runtime-motion claim is required; T2 M2 retains those stronger proofs.",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/APPLE-TILE/M2-review.md"
         },
         {
           "id": "D2.5",
@@ -191,14 +191,22 @@
           "evidence": "docs/evidence/render/apple-tile-m2/README.md",
           "inspect": "ATTENDED SETUP: record OS window capture tool/version and permission preflight, PID/window ID, content bounds, backing scale, clock and build/recipe. Under both recipes compare settled OS-captured game-window frames against T2 still/fixed references at the same paused-world controls, camera/content and scene extent. Inspect intact Sun, sky/stars, geometry, local lights, mirrors and post-resize letterbox geometry in content-pixel coordinates. Record settled-state identity; references are matched states, not the same submission. Use host-time OS window video for ordinary control response and surface/device replacement recovery with lifecycle logs. Engine images/logs alone cannot prove window presentation; the final compositor observation is judged for function, not exact renderer-byte equality or panel swaps. Mac M2.3 owns separate windowed-tap integration/submission correspondence; this observer neither depends on nor qualifies it. Missing session/grant keeps this item open.",
           "ask": "Mac M2 qualifies the current path after T2 M0 independently. Mac M3 needs Mac M2 by module order and APPLE-TILE M3 (T2 M0/M1 then G3t M0-M3, including these attended window proofs); it reruns full motion/capture-OFF cadence plus windowed-tap/tooling preflight. T2 M0/M1 are done; neither T2 simulator M2 nor COOKED-DRAW is on this chain. No reverse Mac dependency or panel claim is added here.",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/APPLE-TILE/M2-review.md",
           "attended": "Unlocked active Mac session and Screen Recording permission already granted to the OS-window-capture process; owner supplies setup, agent runs and reviews. No automation changes grants."
         }
       ],
       "needs": [
         "PLATFORM-RUNTIME-MAC:M1"
-      ]
+      ],
+      "findings": [
+        {
+          "name": "d23-exactness-broken-at-claimed-commit",
+          "item": "D2.3",
+          "repeat": false
+        }
+      ],
+      "rounds": 1
     },
     {
       "id": "M3",
