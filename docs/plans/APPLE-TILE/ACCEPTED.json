@@ -210,9 +210,9 @@
         }
       ],
       "claim": {
-        "commit": "a6101020a94c50e386bc33ce7f41743a84937957",
-        "checked": "a6101020a94c50e386bc33ce7f41743a84937957",
-        "at": "2026-11-11T11:12:02Z",
+        "commit": "b74cae87a34e92a1db5095b20dd3f1ea0322377e",
+        "checked": "22850993580103eafe7d63166484e3f51151fae2",
+        "at": "2026-11-11T14:52:06Z",
         "host": "codex",
         "model": "gpt-6.1-sol",
         "effort": "medium",
@@ -221,12 +221,20 @@
           "effort": "medium"
         },
         "cli": "codex-cli 0.167.0-alpha.3.2",
-        "path": "visible",
+        "path": "headless",
         "usage": {
-          "incomplete_turns": 1
+          "incomplete_turns": 1,
+          "input": 193484,
+          "cached": 33184128,
+          "output": 35399,
+          "turns": 1
         },
         "session_usage": {
-          "incomplete_turns": 1
+          "incomplete_turns": 1,
+          "input": 193484,
+          "cached": 33184128,
+          "output": 35399,
+          "turns": 1
         }
       }
     },
