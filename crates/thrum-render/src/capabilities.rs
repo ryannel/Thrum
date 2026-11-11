@@ -2,6 +2,10 @@
 //! Render preparation consumes this record; pass recording never probes a device.
 
 use crate::runtime::DeviceSite;
+mod recipe;
+pub use recipe::{Recipe, RecipeError};
+#[cfg(any(target_os = "macos", target_os = "ios"))]
+pub(crate) mod apple;
 
 /// Enabled GPU capabilities and identity for one device generation.
 #[derive(Clone, Debug)]
@@ -14,6 +18,8 @@ pub struct DeviceCapabilities {
     features: wgpu::Features,
     limits: wgpu::Limits,
     downlevel: Option<wgpu::DownlevelFlags>,
+    unified_memory: Option<bool>,
+    recipe: Result<Recipe, RecipeError>,
 }
 
 impl DeviceCapabilities {
@@ -38,12 +44,18 @@ impl DeviceCapabilities {
     #[must_use]
     pub fn capture(adapter: &wgpu::Adapter, device: &wgpu::Device, generation: u64) -> Self {
         let site = DeviceSite::mint(device, generation);
-        Self::from_info(
+        let mut record = Self::from_info(
             site,
             generation,
             adapter.get_info(),
             Some(adapter.get_downlevel_capabilities().flags),
-        )
+        );
+        #[cfg(any(target_os = "macos", target_os = "ios"))]
+        {
+            record.unified_memory = apple::unified_memory(adapter);
+        }
+        record.resolve_environment();
+        record
     }
 
     /// Capture from a device when the adapter handle is no longer retained.
@@ -53,7 +65,9 @@ impl DeviceCapabilities {
     #[must_use]
     pub fn capture_device(device: &wgpu::Device, generation: u64) -> Self {
         let site = DeviceSite::untracked(device.clone());
-        Self::from_info(site, generation, device.adapter_info(), None)
+        let mut record = Self::from_info(site, generation, device.adapter_info(), None);
+        record.resolve_environment();
+        record
     }
 
     fn from_info(
@@ -65,11 +79,100 @@ impl DeviceCapabilities {
         let device: &wgpu::Device = &site;
         Self {
             downlevel,
+            unified_memory: None,
+            recipe: Ok(Recipe::Portable),
             features: device.features(),
             limits: device.limits(),
             site,
             generation,
             adapter,
+        }
+    }
+
+    fn resolve_environment(&mut self) {
+        #[cfg(target_arch = "wasm32")]
+        let requested: Option<String> = None;
+        #[cfg(not(target_arch = "wasm32"))]
+        let requested = match std::env::var("THRUM_RECIPE") {
+            Ok(value) => Some(value),
+            Err(std::env::VarError::NotPresent) => None,
+            Err(std::env::VarError::NotUnicode(_)) => {
+                self.recipe = Err(RecipeError::InvalidOverride);
+                return;
+            }
+        };
+        self.recipe = self.resolve_override(requested.as_deref());
+    }
+
+    fn resolve_override(&self, requested: Option<&str>) -> Result<Recipe, RecipeError> {
+        recipe::resolve(
+            self.adapter.backend,
+            self.unified_memory,
+            self.adapter.transient_saves_memory,
+            requested,
+        )
+    }
+
+    /// Select an explicit diagnostic recipe before constructing any targets.
+    /// A whole recipe change requires preparing and publishing a new generation.
+    /// # Errors
+    /// Refuses invalid requests and Apple selection with unsupported/unknown facts.
+    pub fn with_recipe_override(mut self, requested: &str) -> Result<Self, RecipeError> {
+        self.recipe = Ok(self.resolve_override(Some(requested))?);
+        Ok(self)
+    }
+
+    /// Resolved recipe, or a rejected diagnostic request. Preparation checks this
+    /// before allocating GPU resources.
+    /// # Errors
+    /// Returns the invalid or unsupported request captured at platform creation.
+    pub fn recipe(&self) -> Result<Recipe, RecipeError> {
+        self.recipe
+    }
+
+    /// Actual native unified-memory fact, unknown without a retained native adapter.
+    #[must_use]
+    pub fn unified_memory(&self) -> Option<bool> {
+        self.unified_memory
+    }
+
+    /// Stable diagnostic digest of this generation's identity and enabled facts.
+    /// Offered features and platform display state are deliberately excluded.
+    #[must_use]
+    pub fn registry_digest(&self) -> String {
+        let identity = format!(
+            "{:?}|{:?}|{:?}|{:?}|{:?}|{:?}|{:?}",
+            self.adapter,
+            self.features,
+            self.limits,
+            self.downlevel,
+            self.unified_memory,
+            self.recipe,
+            self.generation
+        );
+        let hash = identity
+            .bytes()
+            .fold(0xcbf2_9ce4_8422_2325_u64, |hash, byte| {
+                (hash ^ u64::from(byte)).wrapping_mul(0x100_0000_01b3)
+            });
+        format!("{hash:016x}")
+    }
+
+    /// Complete driver-reported Metal resource residency, including shared assets,
+    /// buffers, prepared variants and any simultaneously retained generations.
+    /// An explicit diagnostic read, outside pass recording. Other backends return unknown.
+    #[must_use]
+    pub fn resident_device_bytes(&self) -> Option<u64> {
+        if self.adapter.backend != wgpu::Backend::Metal {
+            return None;
+        }
+        #[cfg(any(target_os = "macos", target_os = "ios"))]
+        {
+            apple::resident_bytes(&self.site)
+        }
+        #[cfg(not(any(target_os = "macos", target_os = "ios")))]
+        {
+            None
         }
     }
 

@@ -44,6 +44,7 @@ mod scene_graph;
 mod scene_source;
 mod shadow;
 mod stars;
+mod target_storage;
 mod upload;
 mod view;
 pub use readback::{CaptureSource, PixelReadback};
@@ -474,6 +475,8 @@ fn packed_light_direction(data: &[u8; LIGHT_BYTES]) -> Vec3 {
 /// Expected failures before a view can be encoded or published ready.
 #[derive(Debug)]
 pub enum RenderError {
+    /// Requested hardware recipe is invalid or unsupported.
+    Recipe(crate::capabilities::RecipeError),
     /// ABI validation failed.
     Abi(AbiError),
     /// Typed graph failed validation.
@@ -953,6 +956,7 @@ impl PreparedSynthetic {
         exposure: f32,
         internal: Option<MeshSelection>,
     ) -> Result<Self, RenderError> {
+        capabilities.recipe().map_err(RenderError::Recipe)?;
         let device = capabilities.device();
         // Admit the whole selection before GPU work. Occlusion's history is
         // keyed by member index, which a bucket layout change reassigns; it
@@ -2171,6 +2175,7 @@ pub struct OffscreenTarget {
     culling_stats: Option<camera_culling::CullingStats>,
     stars: Option<StarTarget>,
     depth: wgpu::TextureView,
+    day_depth: Option<(wgpu::Texture, wgpu::TextureView)>,
     width: u32,
     height: u32,
     generation: u64,
@@ -2227,10 +2232,19 @@ impl OffscreenTarget {
         {
             return Err(RenderError::TargetExtent);
         }
-        let scene_graph::CompiledScene { day, night, ids } =
-            prepared.compile_graph(width, height, row_bytes, capture_source)?;
+        let compiled = prepared.compile_graph(width, height, row_bytes, capture_source)?;
+        let recipe = prepared
+            .capabilities
+            .recipe()
+            .map_err(RenderError::Recipe)?;
+        let day_depth = compiled.prepare_day_depth(device, recipe, width, height);
+        let scene_graph::CompiledScene { day, night, ids } = compiled;
         // The night capture adds buffer inputs and extends depth, scene and output lifetimes.
-        let textures = GraphTextures::new(device, &night.as_ref().unwrap_or(&day).readback);
+        let recipe = prepared
+            .capabilities
+            .recipe()
+            .map_err(RenderError::Recipe)?;
+        let textures = GraphTextures::new(device, &night.as_ref().unwrap_or(&day).readback, recipe);
         let view = textures
             .texture(&ids.output)
             .ok_or(RenderError::GraphPassMismatch)?
@@ -2247,24 +2261,7 @@ impl OffscreenTarget {
             .texture(&ids.motion)
             .ok_or(RenderError::GraphPassMismatch)?
             .create_view(&wgpu::TextureViewDescriptor::default());
-        let initial_view = prepared
-            .pending_view
-            .as_ref()
-            .unwrap_or(&prepared.view_sample);
-        let (stars, draw_stars) = prepared
-            .stars
-            .as_ref()
-            .zip(prepared.atmosphere.as_ref())
-            .map_or((None, false), |(stars, atmosphere)| {
-                let (binding, draw) = stars.target(
-                    device,
-                    &depth,
-                    atmosphere,
-                    &prepared.exposure.samples,
-                    (initial_view, [width, height]),
-                );
-                (Some(binding), draw)
-            });
+        let (stars, draw_stars) = prepared.prepare_star_target(device, &depth, [width, height]);
         let display = prepared
             .display
             .target(device, &scene_view, &prepared.exposure.samples);
@@ -2397,6 +2394,7 @@ impl OffscreenTarget {
             ),
             stars,
             depth,
+            day_depth,
             width,
             height,
             generation: prepared.key.device_generation,
@@ -2426,7 +2424,12 @@ impl OffscreenTarget {
         [self.width, self.height]
     }
     pub(crate) fn texture_allocation(&self) -> (u32, u64) {
-        self.textures.allocation()
+        let (count, bytes) = self.textures.allocation();
+        let extra = u64::from(self.day_depth.is_some());
+        (
+            count + u32::from(self.day_depth.is_some()),
+            bytes + extra * u64::from(self.width) * u64::from(self.height) * 4,
+        )
     }
 
     /// Actual depth, scene, motion and output texture dimensions for diagnostics.

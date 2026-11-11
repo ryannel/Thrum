@@ -5,6 +5,10 @@ window.thrumCapture = record;
 const query = new URL(location.href).searchParams;
 const mode = query.get('mode');
 const control = query.get('control');
+const source = query.get('source') ?? 'sdr';
+const scene = query.get('scene') ?? 'day';
+if (!['day', 'night'].includes(scene)) throw new Error('Unknown route scene');
+if (!['sdr', 'scene-linear'].includes(source)) throw new Error('Unknown capture source');
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 let hidden = document.hidden;
 document.addEventListener('visibilitychange', () => { hidden ||= document.hidden; });
@@ -37,8 +41,14 @@ try {
   if (!['fixed', 'realtime'].includes(mode)) fail('mode must be fixed or realtime');
   if (hidden) fail('capture page started hidden');
   await init();
-  const text = await (await fetch('/moving-v1.json')).text();
+  let text = await (await fetch('/moving-v1.json')).text();
   const route = JSON.parse(text);
+  if (scene === 'night') {
+    route.start.solar_hours = 0;
+    text = JSON.stringify(route);
+  }
+  record.effective_route = route;
+  record.scene = scene;
   game = await create_route_game(document.querySelector('canvas'), text);
   window.captureGame = game;
   game.attach_cooked_valley(await fetch_cooked_valley(query.get('assets')));
@@ -54,7 +64,20 @@ try {
   game.set_paused(true, base);
   record.initial_report = JSON.parse(game.route_report(0));
   record.start_before_ms = performance.now();
-  if (control !== 'off') game.begin_submitted_capture(1);
+  if (control !== 'off') {
+    if (source === 'scene-linear') {
+      const deadline = performance.now() + 15000;
+      for (;;) {
+        try { game.begin_linear_capture(1); break; }
+        catch (error) {
+          if (!String(error).includes('capture stage change requires retired frames') || performance.now() >= deadline) throw error;
+          await wait(2);
+        }
+      }
+    }
+    else game.begin_submitted_capture(1);
+  }
+  record.pixel_source = source;
   record.start_after_ms = performance.now();
   record.base_world_ms = base;
   record.mode = mode;
@@ -137,7 +160,7 @@ try {
       record.hold_release = { page_ms: performance.now(), frame_ms: timestamp };
       released = true;
     }
-    if (performance.now() - start > 20000) fail('scenario deadline');
+    if (performance.now() - start > (mode === 'fixed' ? 120000 : 20000)) fail('scenario deadline');
     game.frame(timestamp);
     record.opportunities.push({ ordinal, requested_ms: requested, frame_ms: timestamp, returned_ms: performance.now(), tick: game.committed_tick() });
     ordinal++;

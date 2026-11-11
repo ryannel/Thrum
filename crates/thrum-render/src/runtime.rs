@@ -774,6 +774,17 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.dropped_surface
     }
 
+    /// Inspect prepared ordinary slot texture storage without allocating GPU objects.
+    #[must_use]
+    pub fn storage_report(&self) -> String {
+        self.slots
+            .iter()
+            .enumerate()
+            .map(|(index, slot)| format!("slot={index}\n{}", slot.target.storage_report()))
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+
     /// GPU object creations on the current device generation by thread and
     /// phase, with any pipeline built in play after readiness. Native-object
     /// sites are reported absent; an uninstrumented backend reports so.

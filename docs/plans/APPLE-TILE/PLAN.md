@@ -18,7 +18,7 @@ as deferred work. Read [Sequence and dependencies](DESIGN.md#sequence-and-depend
 
 Criteria: D1.1–D1.5 in the done-when file.
 
-- [ ] Add truthful registry/override, per-variant storage and ready fallback; preserve COOKED-DRAW facts/selection. Prove Mac/Chrome exact bytes and simulator diagnostic function.
+- [x] Add truthful registry/override, per-variant storage and ready fallback; preserve COOKED-DRAW facts/selection. Prove Mac/Chrome exact bytes and simulator diagnostic function.
 - [ ] Retain actual target proof and run scoped checks plus `./dev check` before claiming.
 
 ## M2 The existing frame lifecycle runs through one split graph

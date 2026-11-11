@@ -422,6 +422,8 @@ pub struct CompiledGraph {
     pub lifetimes: Vec<Lifetime>,
     /// Number of transient slots after exact-descriptor reuse.
     pub transient_slots: usize,
+    /// Per-live-texture storage decision derived from this variant's live uses.
+    pub attachment_storage: Vec<AttachmentStorage>,
     /// Declaration indices in actual execution order.
     pub pass_order: Vec<usize>,
     /// Passes removed because no output consumes them.
@@ -430,6 +432,15 @@ pub struct CompiledGraph {
     passes: Vec<CompiledPass>,
     resources: Vec<Resource>,
     owner: Arc<()>,
+}
+
+/// Preparation-time eligibility for one texture in a compiled variant.
+#[derive(Clone, Debug)]
+pub struct AttachmentStorage {
+    /// Graph-local texture identity.
+    pub resource: ResourceId,
+    /// `eligible` means clear/discard in one render pass with no future input.
+    pub reason: &'static str,
 }
 
 /// One closed pass handed to an encoder callback in compiled order.
@@ -592,7 +603,11 @@ pub(crate) struct GraphTextures {
 }
 
 impl GraphTextures {
-    pub(crate) fn new(device: &wgpu::Device, graph: &CompiledGraph) -> Self {
+    pub(crate) fn new(
+        device: &wgpu::Device,
+        graph: &CompiledGraph,
+        recipe: crate::capabilities::Recipe,
+    ) -> Self {
         let mut slots: Vec<Option<wgpu::Texture>> =
             (0..graph.transient_slots).map(|_| None).collect();
         let mut resource_slots = vec![None; graph.resources.len()];
@@ -614,6 +629,19 @@ impl GraphTextures {
             };
             resource_slots[lifetime.resource.index] = Some(slot);
             if slots[slot].is_none() {
+                // Every resource sharing this allocation must admit transient storage.
+                let memoryless = recipe == crate::capabilities::Recipe::AppleTile
+                    && graph
+                        .lifetimes
+                        .iter()
+                        .filter(|life| life.transient_slot == Some(slot))
+                        .all(|life| graph.memoryless_eligible(&life.resource));
+                let usage = if memoryless {
+                    wgpu::TextureUsages::RENDER_ATTACHMENT
+                        | wgpu::TextureUsages::TRANSIENT_ATTACHMENT
+                } else {
+                    usage
+                };
                 slots[slot] = Some(device.create_texture(&wgpu::TextureDescriptor {
                     label: Some("thrum graph transient"),
                     size: wgpu::Extent3d {
@@ -667,6 +695,14 @@ impl GraphTextures {
 }
 
 impl CompiledGraph {
+    /// Whether this exact variant can discard a render-only texture.
+    #[must_use]
+    pub fn memoryless_eligible(&self, resource: &ResourceId) -> bool {
+        self.attachment_storage
+            .iter()
+            .any(|item| item.resource == *resource && item.reason == "eligible")
+    }
+
     /// Visit live passes and their stable declaration identities in execution order.
     pub(crate) fn pass_bindings(&self) -> impl Iterator<Item = (usize, &CompiledPass)> {
         self.pass_order.iter().copied().zip(&self.passes)
@@ -767,6 +803,61 @@ impl FrameGraph {
         self.explicit_dependencies.push((before, after));
         Ok(())
     }
+    fn attachment_storage(&self, order: &[usize]) -> Vec<AttachmentStorage> {
+        self.resources
+            .iter()
+            .enumerate()
+            .filter_map(|(index, resource)| {
+                if !matches!(resource.descriptor, ResourceDescriptor::Texture { .. }) {
+                    return None;
+                }
+                let uses: Vec<_> = order
+                    .iter()
+                    .flat_map(|&pass| &self.passes[pass].accesses)
+                    .filter(|access| access.resource.index == index)
+                    .collect();
+                if uses.is_empty() {
+                    return None;
+                }
+                let descriptor_supported = matches!(
+                    resource.descriptor,
+                    ResourceDescriptor::Texture {
+                        layers: 1,
+                        mips: 1,
+                        ..
+                    }
+                );
+                let reason = if !descriptor_supported {
+                    "transient descriptor requires one layer and mip"
+                } else if resource.scope != ResourceScope::Transient {
+                    "retained/imported/history"
+                } else if uses.iter().any(|access| {
+                    !matches!(
+                        access.kind,
+                        AccessKind::AttachmentClear | AccessKind::AttachmentLoad
+                    )
+                }) {
+                    "sampled/copied/native/storage input"
+                } else if uses.iter().any(|access| access.store) {
+                    "explicit store"
+                } else if uses.len() != 1 {
+                    "later attachment use"
+                } else if uses[0].kind != AccessKind::AttachmentClear {
+                    "attachment load"
+                } else {
+                    "eligible"
+                };
+                Some(AttachmentStorage {
+                    resource: ResourceId {
+                        index,
+                        owner: Arc::clone(&self.owner),
+                    },
+                    reason,
+                })
+            })
+            .collect()
+    }
+
     /// Inspect the exact allocation properties for an identity from this graph.
     /// A foreign identity returns None even when its numeric slot matches.
     pub fn descriptor(&self, resource: &ResourceId) -> Option<&ResourceDescriptor> {
@@ -1200,6 +1291,7 @@ impl FrameGraph {
             hazards,
             lifetimes,
             transient_slots: slots.len(),
+            attachment_storage: self.attachment_storage(&order),
             pass_order: order.clone(),
             culled_passes: self.passes.len() - order.len(),
             pipeline_pass_count: order
@@ -1782,3 +1874,7 @@ mod tests {
         assert_eq!(compiled.pass_order, [0, 2, 1]);
     }
 }
+
+#[cfg(test)]
+#[path = "graph/storage_tests.rs"]
+mod storage_tests;

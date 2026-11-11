@@ -378,6 +378,12 @@ impl ThreadedFrameHost {
 }
 
 impl FrameHost {
+    /// Inspect the renderer's prepared variant storage and resident texture bytes.
+    #[must_use]
+    pub fn storage_report(&self) -> String {
+        self.inner.storage_report()
+    }
+
     /// Maximum submitted scene packets retained by the engine.
     pub const MAX_IN_FLIGHT: usize = Runtime::MAX_IN_FLIGHT;
     /// Initial generation for simple callers; live platforms own later generations.

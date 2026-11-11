@@ -97,6 +97,8 @@ pub(super) fn record(
         &mut log,
         &serde_json::json!({
             "target": "native", "backend":format!("{:?}",capabilities.adapter().backend), "adapter":capabilities.adapter().name, "image_label": if source == CaptureSource::Sdr { "native submitted SDR output" } else { "native submitted scene-linear RGBA16Float output" },
+            "recipe":format!("{:?}",capabilities.recipe()), "registry_digest":capabilities.registry_digest(), "resident_device_bytes":capabilities.resident_device_bytes(),
+            "unified_memory":capabilities.unified_memory(), "storage_report":host.storage_report(),
             "capture_source": format!("{source:?}"), "draw_probe_enabled":cfg!(feature="draw-probe"), "bytes_per_pixel": source.bytes_per_pixel(), "mode":"fixed",
             "render_extent": route.render_extent, "window": "n/a, offscreen",
             "surface_format":format!("{:?}",profile.format), "surface_extent":profile.extent,

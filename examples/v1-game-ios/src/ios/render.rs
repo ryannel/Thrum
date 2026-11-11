@@ -457,9 +457,12 @@ impl Owner {
         let cooked_view = super::cooked_view::View::prepare(&mut host)?;
         let (host, controls) = host.into_threaded(self.origin, world_advanced)?;
         let name = format!(
-            "{:?}; downlevel={:?}",
+            "{:?}; downlevel={:?}; recipe={:?}; registry={}; unified_memory={:?}",
             capabilities.adapter(),
-            capabilities.downlevel()
+            capabilities.downlevel(),
+            capabilities.recipe(),
+            capabilities.registry_digest(),
+            capabilities.unified_memory()
         );
         self.gpu = Some(Gpu {
             adapter,
