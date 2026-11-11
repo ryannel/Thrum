@@ -1,9 +1,9 @@
 # APPLE-TILE M0 evidence, 11 November 2026
 
-D0.1, D0.3, D0.4 and D0.5 have target evidence. D0.2's ordinary-image proof is complete.
-Its native copy/select witness remains unimplemented. D10.1 and the plan assign the first native fixture
-and prepared stateful twin to M10. D0.2 nevertheless describes that witness in the present tense.
-M0 stays open pending a scope clarification. The builder has preserved that definition.
+M0 proves the ordinary portable comparison path. The planner settled D0.2 on 11 November, assigning the
+native copy/select fixture and its stateful twin to M10. The retained Mac/Chrome proof from `03bc878a`
+covers the corrected M0 scope. All five items pass, and M0 is claimed for lead review. [The resumption audit](resumed-proof-audit.json) verifies the retained delivery
+and records the intervening source changes. Renderer, shaders, V1 scene and capture runtime are unchanged.
 
 ## Reproduce the Mac proof
 
@@ -98,6 +98,10 @@ pass. The first full check exposed an old graph assertion that omitted the new e
 That capture-only assertion was corrected. The required milestone gate passes all three executable checks, including the full repository gate.
 [Final check record](checks/milestone-check-final.json.gz) and [current moving smoke](checks/moving-current-run.json.gz)
 retain their target results. Earlier failing assertion logs remain in [checks](checks).
+
+The resumed milestone gate passes the current Metal creation command, actual Chrome moving-route command
+and full repository check. [Resumed gate](checks/resumed-milestone-check.json.gz),
+[current route record](checks/resumed-moving-run.json.gz). The corrected D0.2 scope is the basis for this claim.
 
 ## Retention
 

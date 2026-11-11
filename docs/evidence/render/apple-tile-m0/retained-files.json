@@ -1,7 +1,7 @@
 {
   "README.md": {
-    "bytes": 8682,
-    "sha256": "fc6186ebc649e1f88bf0bb1ec9fc8f347e0da23dbf211297d08b3d2a4155fefa"
+    "bytes": 9085,
+    "sha256": "d6f1f7cb5ab25442bf75286fa012f6cb548019158d4723be9ec79e99f17c0143"
   },
   "capture-preflight.log.gz": {
     "bytes": 243,
@@ -58,6 +58,14 @@
   "checks/refuse-missing-store.log.gz": {
     "bytes": 49,
     "sha256": "8d63641aabaffcfcde28d64f2e6963b6d48b38ef085fcc0abceb2fae02b135fd"
+  },
+  "checks/resumed-milestone-check.json.gz": {
+    "bytes": 1359,
+    "sha256": "b3ff5912ce27236126331a350600dd627459cb5454d6660fe01eb6740e675b52"
+  },
+  "checks/resumed-moving-run.json.gz": {
+    "bytes": 2348,
+    "sha256": "9a8dde658159f9fdfa11ab665646e40d1d45152546cab997ca9baef269382901"
   },
   "checks/scoped-clippy-final.log.gz": {
     "bytes": 162,
@@ -842,5 +850,9 @@
   "qualification.json.gz": {
     "bytes": 411709,
     "sha256": "937df2dc2892dc30d09c03041c70c0765e9964ee1ea44974a35f049c3b789569"
+  },
+  "resumed-proof-audit.json": {
+    "bytes": 1593,
+    "sha256": "9be988f626eee2286c1f20174666e9b0acd07b93a4bc577a66108af8cec86d85"
   }
 }

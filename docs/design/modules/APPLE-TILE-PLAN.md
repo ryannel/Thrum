@@ -4,10 +4,10 @@ Design: [APPLE-TILE.md](APPLE-TILE.md) · [Brief](APPLE-TILE-BRIEF.md) ·
 Done when: [APPLE-TILE-DONE.json](APPLE-TILE-DONE.json) owns criteria and proof status.
 [Boundary](../decisions/G3T-METAL-BOUNDARY.md) and C04/C06/C07/C08/C12 govern.
 Reviews: [design review at `2514d824`](../../evidence/APPLE-TILE/design-review.md): DESIGN OK (two advisory findings). The design text is unchanged since, so that approval stands.
-Milestone: M0 A repeatable offscreen valley proves the comparison path (blocked until the lead runs `unblock`)
-Now: D0.2 no longer names the native witness; M10 alone owns it (since 2026-11-11). M0's ordinary Mac/Chrome proof is retained at `03bc878a`.
-Next: the lead unblocks M0; the builder re-records D0.1–D0.5 against the retained record, reruns the milestone checks and claims.
-Blocked: none in the plan. M0's `blocked` state waits only for the lead's `unblock`. M2/M3/final attended rows and M12’s COOKED-DRAW dependency retain their existing requirements.
+Milestone: M0 A repeatable offscreen valley proves the comparison path (claimed)
+Now: D0.1–D0.5 pass against the retained Mac/Chrome record and corrected D0.2 scope. The current milestone gate and full repository check pass; M0 is claimed for lead review.
+Next: lead review of M0.
+Blocked: none for M0. M2/M3/final attended rows and M12’s COOKED-DRAW dependency retain their existing requirements.
 
 ## Sequence and dependencies
 
@@ -100,13 +100,13 @@ Physical replay counters may remain unmeasured, and physical iPhone/cadence qual
 
 <a id="m0-proof-route-counters-and-capture-probe-pending"></a>
 
-## M0 A repeatable offscreen valley proves the comparison path: blocked until unblocked
+## M0 A repeatable offscreen valley proves the comparison path: claimed
 
 Outcome criteria: D0.1–D0.5 in the done-when file. No native witness, provider or twin is part of M0.
 
 - [x] Extend T2 linear comparison and full-resolution controls; retain pre-change sources and rerun creation diagnostics.
-- [ ] Re-record D0.1–D0.5 against the retained M0 record, and replace that record's opening scope-conflict paragraph with the settled scope.
-- [ ] Run the milestone checks plus `./dev check` at the claiming revision, then claim.
+- [x] Re-record D0.1–D0.5 against the retained M0 record, and replace that record's opening scope-conflict paragraph with the settled scope.
+- [x] Run the milestone checks plus `./dev check` at the claiming revision, then claim.
 
 ## M1 The valley selects a recipe and stores only actual future inputs: open
 
@@ -163,6 +163,8 @@ Mac critical path. Judge whether all proofs reject omitted work. No owner-only d
 re-plan. Approval, unpark and milestone acceptance belong to the loop; this planner claims none of them.
 
 ## Log
+
+- 2026-11-11 Resumed after the planner's D0.2 correction and lead unblock. Re-audited the retained `03bc878a` Mac/Chrome proof, all promoted hashes, fixed repeats, omission failures and complete realtime source accounting. Renderer/shaders/capture/cooked inputs are unchanged; the intervening app Config move is verbatim and Creator SkyGame changes use a separate consumer. The current named Metal creation check, actual Chrome moving command and full repository check pass. Re-recorded D0.1–D0.5 as pass and claimed M0 for lead review. The earlier linear-stride metadata erratum remains explicit in [the evidence](../../evidence/render/apple-tile-m0/README.md).
 
 - 2026-11-11 Planner settled the M0 builder's scope question (the `blocked` note at `21ad4609`). D0.2's statement
   claimed the native copy/select witness was exact against its twin, while the approved design, D10.1 and D10.2

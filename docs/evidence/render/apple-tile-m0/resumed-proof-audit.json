@@ -1,0 +1,40 @@
+{
+  "revision": "9711e964b1405c062ea24559209d6663394273c4",
+  "reference_capture_commit": "03bc878a",
+  "qualification_passed": true,
+  "retained_files_hashes_verified": true,
+  "config_move_verbatim": true,
+  "production_render_and_shader_sources": "unchanged from captured source",
+  "intervening_app_changes": "Config moved verbatim to config.rs. Creator SkyGame browser path is separate from V1 WindowGame/FrameHost. Cargo changes add existing locked workspace dependencies for that path.",
+  "recording_script_change": "row_stride metadata derives from source bytes_per_pixel, as the existing erratum records",
+  "current_checks": "checks/resumed-milestone-check.json.gz",
+  "changes_since_integrated_capture_proof": [
+    "Cargo.lock",
+    "crates/thrum-app/Cargo.toml",
+    "crates/thrum-app/src/config.rs",
+    "crates/thrum-app/src/game.rs",
+    "crates/thrum-app/src/lib.rs",
+    "crates/thrum-app/src/sky.rs",
+    "crates/thrum-app/src/sky/browser.rs",
+    "crates/thrum-app/web/index.html",
+    "crates/thrum-app/web/scene.js"
+  ],
+  "unchanged_capture_inputs": [
+    "crates/thrum-render/src",
+    "crates/thrum-core/src",
+    "crates/thrum-asset/src",
+    "crates/thrum-asset-gpu/src",
+    "examples/v1-game",
+    "scripts/apple_tile_m0.py",
+    "scripts/capture_v1_runtime.py",
+    "scripts/compare_v1_pixels.py"
+  ],
+  "current_app_config_sha256": "9ed78d96fa963f4f6ec6e23db39e79dc463233423841089797c452c4de497db4",
+  "current_check_result": {
+    "pass": 3,
+    "fail": 0,
+    "error": 0,
+    "timeout": 0
+  },
+  "current_moving_record": "checks/resumed-moving-run.json.gz"
+}
