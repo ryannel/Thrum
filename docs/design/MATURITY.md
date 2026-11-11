@@ -1,6 +1,6 @@
 # Engine maturity and evidence
 
-Thrum repository setup is tracked separately in the ledger’s `repository_setup` record. Current design digests are checked by `./dev check-docs`; imported review hashes refer to original source bytes, as explained in [provenance](../provenance/IMPORT.md). A compilable scaffold is not an implemented engine module. The [build plan](../BUILD-PLAN.md) owns current sequencing; the dated sections below are history.
+Thrum repository setup is tracked separately in the ledger’s `repository_setup` record. Current design digests are checked by `./dev check-docs`; imported review hashes refer to original source bytes, as explained in [provenance](../provenance/IMPORT.md). A compilable scaffold is not an implemented engine module. The [build plan](../plans/BRIEF.md) owns current sequencing; the dated sections below are history.
 
 The machine-readable [maturity ledger](maturity.json) tracks the **new target architecture**. It is not a claim that
 the repository has no existing implementations. Prior code and demonstrations are unassessed reuse candidates until
@@ -184,7 +184,7 @@ recipe including result-rich resync and concrete portable boot/transition estima
 and failure mechanisms, not measured performance. G01/G02 now select file-first native admission, restart-first edits
 and checkpoint/drain/retire/load recovery for bounded initial worlds; full browser authoring and live whole-world
 replacement are not baseline prerequisites. C4 placed I2n alongside the small game; since 5 November 2026 the
-[build plan](../BUILD-PLAN.md) parks transport until after V1 and G2S proves multiplayer fitness headless.
+[build plan](../plans/BRIEF.md) parks transport until after V1 and G2S proves multiplayer fitness headless.
 
 The `reconciliation` ledger record retains the prior C3 evidence and exact C4 hashes, affected owners, requirements,
 selected finding dispositions and validation scope. N1's initial design is detailed and reconciled; broader family

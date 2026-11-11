@@ -8,7 +8,7 @@ thrum-render owns generic `FrameHost<W,V>`: two GPU slots, extraction handoff, s
 
 Only observed monotonic time advances authority; display targets select bounded interpolation. Exact page epoch/tick/timeline accompanies extraction on every target. A busy GPU ring sheds an optional view. Platform owns display timing and surface generation, checks acquisition invalidation and drains old GPU uses before resize. Window close stops new work and invalidates the surface lease. Bounded-run cancellation uses the worker’s bounded drop path. A normal finish can wait for its bounded final-frame and GPU-drain replies before detaching. Replay and visual replacement reset history; cooked candidates remain host-bound. The Mac actor encodes before late acquisition, invalidates stale leases and serializes device reconstruction. Held-drawable retry and detached replacement pass on Metal; live-window recovery and physical cadence remain open. Portable split submission stays parked; mixed raw/wgpu recording remains unsupported.
 
-The [Mac plan](../modules/PLATFORM-RUNTIME-MAC-PLAN.md) owns live
+The [Mac plan](../../plans/PLATFORM-RUNTIME-MAC/PLAN.md) owns live
 qualification. Record complete 10k/1080p CPU, GPU and allocation rows
 as baselines and investigate visible stutter or comparable regressions.
 Display-link targets, submit times and GPU samples are independent of

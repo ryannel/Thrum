@@ -1,15 +1,9 @@
 # PLATFORM-RUNTIME-IOS log
 
-- 2026-11-09 Built M7. Shared scene/surface resize prepares a replacement ring and presenter, validates the
-  current epoch before publication, drains pending frames, reuses identical extents and preserves fixed-render
-  surface-only callers. Device candidates refit scene and presenter, then refresh current camera/lighting at
-  publication. Contributions retain size-independent pipelines and receive C07 history reset with the new matrix.
-  Full pre-change and final fresh-simulator routes passed. Final rotation has two-reply gaps, unchanged identities,
-  zero old-extent presents, matrix-derived 65° vertical FOV, and matching actual targets/drawables in both orientations.
-  Inspected native whole images/crops and both 60-frame strips. Resource overlap includes recovery's third ring.
-  Evidence and limits are in [the M7 record](../../evidence/render/ios-extent/README.md).
-  Initial native regression-test setup used an entry point that could skip unchanged publication; corrected it
-  to the serial encoded-token submission used by iOS. The final gate covers that correction. Claim awaits lead review.
+- 2026-11-09 Built M7. Shared scene/surface resize prepares a replacement ring and presenter, validates the current
+  epoch before publication, drains pending frames, reuses identical extents and preserves fixed-render surface-only
+  callers. Device candidates refit scene and presenter, then refresh current camera/lighting at publication.
+  [Full entry](../../evidence/PLATFORM-RUNTIME-IOS/log-entries.md#entry-1).
 
 - 2026-11-09 Planned M7 from COOKED-DRAW M1.10's extent blocker at local checkpoint `b0dae34c`.
   Read the layout/source record, README and landscape/portrait screenshots with `git show`. G3b owns the current
@@ -29,16 +23,9 @@
   and a revocation posted straight after `stall-render` landed before the stall held (`route-full2`). The held touch
   is now 30 s and the route checks the finger was still down at the replacement; the stall is 8 s and the route waits
   for the owner to report the held section before posting the revocation.
-- 2026-11-08 M6 development runs (`tmp/g3b-ios-rotation/m6-dev1..6`). In dev run 1 the held-frame loss faulted
-  the surface: wgpu-core's `discard` checks device validity before clearing the acquired texture, so the surface
-  stays acquired for any device. A loss that held a drawable now replaces the surface (walk step 6). Three route
-  defects followed:
-  - the recovery hold sat before preparation, so the rotation never forced a refit;
-  - the 90 s hold expired before a 109 s XCUITest rotation at load ~190;
-  - the background row counted the designed resume reinstall as a replacement.
-  The hold now sits after preparation with a 300 s cap. The route also gained the `stale-wake` row. Dev run 6 passed
-  every device row: generations 1→2→3, stale wake and request refused, refit to 2622x1206, one publication after
-  resume, and a swipe after recovery moved the actor 9.6 m.
+- 2026-11-08 M6 development runs (`tmp/g3b-ios-rotation/m6-dev1..6`). In dev run 1 the held-frame loss faulted the
+  surface: wgpu-core's `discard` checks device validity before clearing the acquired texture, so the surface stays
+  acquired for any device. [Full entry](../../evidence/PLATFORM-RUNTIME-IOS/log-entries.md#entry-2).
 - 2026-11-08 Full route `route-full5` (load 455 at start) failed M5's "zero presents on a resize-revoked epoch":
   one section that passed its checks before `Resized` presented once after it, at the old extent. That is the
   revocation race bound, which UIKit cannot close without waiting. The strip shows a rigid, aspect-preserved
@@ -72,3 +59,8 @@
   drains it before resume. The disposition is logged with each run, and these runs make no physical-device timing claim.
   One display-target callback took 1.6 s in `route-fresh-8` outside any stall, also host descheduling; it is reported
   and not gated.
+
+- 2026-11-11 Plan reshaped for orchestrate 1.7.0. `Shell design`, its scope and `Seams for Thrum Core` moved to
+  the design. The M1–M7 sections, review answers, root conditions and follow-ups moved to
+  [records](../../evidence/PLATFORM-RUNTIME-IOS/M1-M7-records.md). M1–M6 were renamed for what someone can see.
+  No item or scope changed.

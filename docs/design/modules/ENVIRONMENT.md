@@ -10,7 +10,7 @@ while carrying the wider interaction, connected-transfer, whitewater and optics 
 or family-wide qualification follows from that alignment. The [sea and cloud port decision](../decisions/SEA-AND-CLOUD-PORT.md)
 selects the spectral sea profile and weather-map volumetric clouds over the E1 cloud source, mapped from the Broadsides
 Rust work, with hardware and frame-contract obligations; implementation follows V1. The only V1 environment work is
-the [G3s](../../BUILD-PLAN.md#active-gate-order-and-budgets) physical sky, sun and aerial perspective under a time-of-day control.
+the [G3s](../../plans/BRIEF.md#active-gate-order-and-budgets) physical sky, sun and aerial perspective under a time-of-day control.
 
 ## Required outcomes and separation
 

@@ -16,4 +16,4 @@ The store uses a versioned schema, 4096-byte pages, incremental auto-vacuum, WAL
 
 ## Remaining gates
 
-The selected disk-planning work still needs measured high-water and sustained reader-blocked behavior on the production path, plus host-volume fault recovery. The first cook consumer must read only this pinned revision and produce an independently verified `BuildRevision`; run and save remain separate authorities. Wider F3 schemas, external roots, coordinated editor application, collector deletion, host power-loss tests and target hardware qualification remain open in the [build plan](../../BUILD-PLAN.md).
+The selected disk-planning work still needs measured high-water and sustained reader-blocked behavior on the production path, plus host-volume fault recovery. The first cook consumer must read only this pinned revision and produce an independently verified `BuildRevision`; run and save remain separate authorities. Wider F3 schemas, external roots, coordinated editor application, collector deletion, host power-loss tests and target hardware qualification remain open in the [build plan](../../plans/BRIEF.md).

@@ -1,6 +1,6 @@
 # Measurement contract for AI-led engine optimization
 
-1 November 2026. Design handoff only; no benchmark, runtime, or device qualification exists. Applies to the proposed custom Rust/wgpu host across macOS, Windows, browser, iOS, and Android. The architecture owner retains C12 and the whole-scene budget; T2 supplies the measurement path. This refines [C12](../../../design/CONTRACTS.md), [T2](../../../design/modules/TOOLS-DELIVERY.md), the [construction plan](../../../design/CONSTRUCTION-PLAN.md), and the [AI development design](../../../design/AI-DEVELOPMENT.md). A01–A05 stay open.
+1 November 2026. Design handoff only; no benchmark, runtime, or device qualification exists. Applies to the proposed custom Rust/wgpu host across macOS, Windows, browser, iOS, and Android. The architecture owner retains C12 and the whole-scene budget; T2 supplies the measurement path. This refines [C12](../../../design/CONTRACTS.md), [T2](../../../design/modules/TOOLS-DELIVERY.md), the [construction plan](../../../design/CONSTRUCTION-PACKAGES.md), and the [AI development design](../../../design/AI-DEVELOPMENT.md). A01–A05 stay open.
 
 ## Decision rule
 

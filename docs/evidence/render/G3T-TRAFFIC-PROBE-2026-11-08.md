@@ -1,7 +1,7 @@
 # G3t traffic probe (D0.4), 8 Nov 2026
 
 This was a single Xcode replay-and-profile pass over two saved one-frame Metal captures. It answers D0.4 in the
-[Apple tile plan](../../design/modules/APPLE-TILE-PLAN.md): a per-encoder byte counter **is available** on this device.
+[Apple tile plan](../../plans/APPLE-TILE/PLAN.md): a per-encoder byte counter **is available** on this device.
 That counter is Xcode's "Bytes Read From / Written To Device Memory", read per encoder from Profile › Counters › Memory.
 The traffic rows in the G3t plans now use this method, and any row that wasn't captured keeps the *unmeasured* label.
 
@@ -97,7 +97,7 @@ In the GPU-command list, the `(wgpu internal) Pre Pass` staging groups appear as
 
 ## Consumers
 
-- **G3t, the [Apple tile plan](../../design/modules/APPLE-TILE-PLAN.md).** D0.4 is done with this method. D1.3's
+- **G3t, the [Apple tile plan](../../plans/APPLE-TILE/PLAN.md).** D0.4 is done with this method. D1.3's
   storage-mode log and M12's traffic rows should report physical per-encoder bytes beside the logical cost model.
 - **G3s, M3's "physical bandwidth replay".**
   - The `atmosphere stars` encoder costs 601.88 KiB read and 1.22 MiB written per frame at 1920×1080 on M3 Max.

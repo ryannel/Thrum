@@ -134,4 +134,4 @@ schema API should remain the same whichever internal path wins.
    verifies only the selected event-free result shape with healthy immediate
    ACKs during timing; lifecycle/event maxima and WSS remain open.
 
-This candidate leaves the [build-plan N1 item](../../BUILD-PLAN.md) open.
+This candidate leaves the [build-plan N1 item](../../plans/BRIEF.md) open.

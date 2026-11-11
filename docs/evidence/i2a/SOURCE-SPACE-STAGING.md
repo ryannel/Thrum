@@ -1,4 +1,4 @@
-# Configurable native staging space plan
+# Configurable native staging space
 
 2 November 2026. **Partial implementation of the selected disk-planning policy.** The user chose configurable planning limits and explicit space-fault recovery rather than hard native disk caps. [C10](../../design/CONTRACTS.md#c10-persistence-reproducibility-and-authored-operations--p7f3t1) and the [Foundation specification](../../design/FOUNDATION-SPEC.md#4-working-files-crash-recovery-and-gc) now assign the default 52 GiB main, 2 GiB WAL, 2 GiB managed temporary and 8 GiB observed free-space values as targets. Only the *provisional source stage* is configurable in code so far.
 

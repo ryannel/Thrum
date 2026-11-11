@@ -14,4 +14,4 @@ This is repository/tooling evidence only. CI is configured but has not run remot
 browser runtime, iOS and Android have not been exercised; no gameplay, networking, rendering,
 performance or visual quality is qualified. The PowerShell launcher has not been executed here.
 
-Next implementation scope is [I1 in the build plan](../BUILD-PLAN.md).
+Next implementation scope is [I1 in the build plan](../plans/BRIEF.md).

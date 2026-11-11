@@ -1,7 +1,7 @@
 # G7 decision: local showcase launch and fixed review route
 
 7 November 2026. This is the governing design for a bounded slice of build-plan item G7. It covers local launch
-and one review route for the cooked valley on Mac and in Chrome. Plan: [G7-SHOWCASE-ROUTE-PLAN](G7-SHOWCASE-ROUTE-PLAN.md).
+and one review route for the cooked valley on Mac and in Chrome. The finished slice's plan and log: [route slice record](../../evidence/SHOWCASE/ROUTE-SLICE-RECORD.md).
 
 **Status.** M1 and M2 built and on main, with both shared seams approved by root. Before this slice, the cooked
 valley already ran natively and in Chrome

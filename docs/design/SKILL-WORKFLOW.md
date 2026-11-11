@@ -96,7 +96,7 @@ focused additions in the engine-module-design research, review and implementatio
 
 Thrum's existing performance guidance remains authoritative: choose representations with an analytical cost account,
 including repeated cheap work, data movement and creator workload. The new creator journey should follow C04/C05's
-provider and F4 product authorities, C10's authored operations, and the current `docs/BUILD-PLAN.md`. Describe
+provider and F4 product authorities, C10's authored operations, and the current `docs/plans/BRIEF.md`. Describe
 not-yet-implemented tools as proposals; `./dev help` is the source for real commands. A documentation walkthrough
 does not advance the maturity ledger or qualify a rendered scene.
 

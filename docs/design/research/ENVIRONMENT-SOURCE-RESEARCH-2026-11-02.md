@@ -1,6 +1,6 @@
 # Shared environmental source research — 2 November 2026
 
-Status: research recommendation for E1; no implementation, numerical, image or device qualification. This study proposes changes to the canonical [environment family](../modules/ENVIRONMENT.md), [C08/C09 contracts](../CONTRACTS.md), [render specification](../RENDER-SPEC.md) and [build plan](../../BUILD-PLAN.md); it does not supersede those authorities. It follows the module-design blue-sky, performance and review workflows. Source research and analytical deductions below are distinct from executable proof.
+Status: research recommendation for E1; no implementation, numerical, image or device qualification. This study proposes changes to the canonical [environment family](../modules/ENVIRONMENT.md), [C08/C09 contracts](../CONTRACTS.md), [render specification](../RENDER-SPEC.md) and [build plan](../../plans/BRIEF.md); it does not supersede those authorities. It follows the module-design blue-sky, performance and review workflows. Source research and analytical deductions below are distinct from executable proof.
 
 ## Independent target, recorded before reconciliation
 

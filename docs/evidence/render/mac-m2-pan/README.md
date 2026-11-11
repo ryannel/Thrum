@@ -3,8 +3,8 @@
 ## Current disposition — 9 November unattended-evidence re-plan
 
 This page retains historical observations and failed attempts, not a pass for a new build or the new capture path.
-[Mac M2](../../../design/modules/PLATFORM-RUNTIME-MAC-PLAN.md) now depends on
-[T2-CAPTURE M0](../../../design/modules/T2-CAPTURE-PLAN.md). Engine-owned submitted-image capture will supply
+[Mac M2](../../../plans/PLATFORM-RUNTIME-MAC/PLAN.md) now depends on
+[T2-CAPTURE M0](../../../plans/T2-CAPTURE/PLAN.md). Engine-owned submitted-image capture will supply
 fresh elapsed-time runtime motion without Screen Recording access or an unlocked console once implemented and
 proved. Three-view parity and a fixed-step movie cannot supply that live-runtime proof. The previous motion verdict
 stays historical; changed M2.1 is open for fresh evidence.

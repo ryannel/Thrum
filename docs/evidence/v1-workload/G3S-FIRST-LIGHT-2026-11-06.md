@@ -1,7 +1,7 @@
 # G3s first light — native valley and portable Sky
 
 **Partial.** The native valley uses eight-wavelength transport for Sky, Sun and aerial in-scatter. Chrome uses
-the same atmosphere and shadow shaders in the diagnostic scene. [Build plan](../../BUILD-PLAN.md).
+the same atmosphere and shadow shaders in the diagnostic scene. [Build plan](../../plans/BRIEF.md).
 
 | Check | Result and limit |
 | --- | --- |

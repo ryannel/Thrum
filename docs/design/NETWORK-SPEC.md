@@ -2,7 +2,7 @@
 
 1 November 2026. **Historical I2n protocol recipe, retained for its reviewed authority, result and
 replica-admission analysis.** The whole transport track is parked until after V1
-([build plan](../BUILD-PLAN.md#parked-retained-in-git-history)); V1 proves the C13 authority, admission,
+([build plan](../plans/BRIEF.md#parked-retained-in-git-history)); V1 proves the C13 authority, admission,
 rollback and replay contracts headless in G2S, and the first local game needs no transport. When the track
 reopens, the [A0 N1 decision](decisions/A0-N1-TRANSPORT-CODEC.md) supersedes this document's WebSocket-first
 transport, fixed full-record StateGroups, fixed eight-input batch and fixed future-window choices, with the

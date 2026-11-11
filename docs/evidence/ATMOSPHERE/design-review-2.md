@@ -9,7 +9,7 @@ M5–M6 design and acceptance definitions, not implementation or completion of a
 
 ## Request and inspection scope
 
-Read both entries in [the accepted planner briefs](../../design/modules/ATMOSPHERE-ACCEPTED.json), whole
+Read both entries in [the accepted planner briefs](../../plans/ATMOSPHERE/ACCEPTED.json), whole
 and in order: the project commission to plan the remaining V1 road and finish/consolidate water and clouds,
 then the request to revise ATMOSPHERE against the previous review. The governing module obligations remain:
 
@@ -25,7 +25,7 @@ check every changed item's reference, quantity, cases and bounds; trace the refl
 consumers; challenge the new handoff checks with incorrect lookups; retain both targets, off-parity controls,
 the held sunset stop and Ground E pan; distinguish fresh paired measurements from historical records.
 
-The [build-plan exit](../../BUILD-PLAN.md), architecture brief, module list, C08 and the SEA/CLOUDS briefs
+The [build-plan exit](../../plans/BRIEF.md), architecture brief, module list, C08 and the SEA/CLOUDS briefs
 support this scope. The diagnostic provider remains justified foundation work. The explicitly recorded
 deferral of broad solar transport accuracy is consistent with the previous review's requested distinction
 between preservation and new qualification; this review does not demand an all-orders accuracy campaign.
@@ -45,7 +45,7 @@ between preservation and new qualification; this review does not demand an all-o
 ### 1. Must Fix — the new texel-range rule accepts a wrong aerial lookup
 
 **Verified by the acceptance predicate and the existing fixture; not a claim of a current runtime defect.**
-[The revised numerical table](../../design/modules/ATMOSPHERE.md#numerical-acceptance), lines 333–340,
+[The revised numerical table](../../plans/ATMOSPHERE/DESIGN.md#numerical-acceptance), lines 333–340,
 makes H2/H4 accept any result between the minimum and maximum of the relevant texels, widened by a storage
 step. It then claims wrong mappings fail. Being inside that interval is necessary for interpolation, but does
 not establish the requested interpolation at the requested point.
@@ -82,7 +82,7 @@ can stay unchanged.
 
 ### 2. Suggestion — correct the handoff's pre-exposure wording
 
-**Verified documentation inconsistency.** The new text in [the lent-products section](../../design/modules/ATMOSPHERE.md#mechanism),
+**Verified documentation inconsistency.** The new text in [the lent-products section](../../plans/ATMOSPHERE/DESIGN.md#mechanism),
 lines 225–230, says the existing functions return values “pre-exposed like the forward pass's.” Those
 lighting functions actually return physical scene-linear quantities. The forward
 [shade function](../../../crates/thrum-render/src/synthetic.wgsl), lines 539–550, combines direct, indirect,

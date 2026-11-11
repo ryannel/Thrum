@@ -2,7 +2,7 @@
 // cc -std=c17 -O3 scripts/generate_earth_night.c -lm -o /tmp/thrum-earth-night
 // /tmp/thrum-earth-night crates/thrum-render/src/atmosphere/night/earth.rg16f
 //
-// Thrum's spherical first-scatter model. See docs/design/modules/ATMOSPHERE.md.
+// Thrum's spherical first-scatter model. See docs/plans/ATMOSPHERE/DESIGN.md.
 // The stored RG16Float channels are terminal luminance and local source density.
 #include <math.h>
 #include <stdbool.h>

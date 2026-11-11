@@ -1,9 +1,9 @@
 # APPLE-TILE (G3t) design review 2
 
 9 November 2026. This is the second independent `/review-milestone` design review, of revision `224b58a1` ("Replan Apple
-tile against the nine design findings"). It covers the [brief](../../design/modules/APPLE-TILE-BRIEF.md), the
-[design](../../design/modules/APPLE-TILE.md), the [plan](../../design/modules/APPLE-TILE-PLAN.md), the
-[done-when file](../../design/modules/APPLE-TILE-DONE.json) and the companion edits in the same commit (C07 in
+tile against the nine design findings"). It covers the [brief](../../plans/APPLE-TILE/BRIEF.md), the
+[design](../../plans/APPLE-TILE/DESIGN.md), the [plan](../../plans/APPLE-TILE/PLAN.md), the
+[done-when file](../../plans/APPLE-TILE/DONE.json) and the companion edits in the same commit (C07 in
 CONTRACTS, RENDERING, PLATFORM-RUNTIME-MAC, BUILD-PLAN and maturity). Reviewer: Claude Opus 5.5. No milestone is judged,
 so the done-when file is unchanged. Nothing was built or run on a GPU. I read the documents, the current
 `thrum-render` sources and the locked wgpu-hal 30.0.1 sources, and ran `./dev check-docs` on the reviewed commit. It
@@ -134,7 +134,7 @@ prevents a fake pass, but it means M3 or M8 could stop mid-module on a premise t
 **What I found.**
 - Both items exclude the engine tap and offscreen sequences as proof of window presentation, which is right. But
   they don't say what does prove it.
-- [T2-CAPTURE](../../design/modules/T2-CAPTURE.md) line 126 says OS window capture requires Screen Recording
+- [T2-CAPTURE](../../plans/T2-CAPTURE/DESIGN.md) line 126 says OS window capture requires Screen Recording
   permission. Its windowed tap captures engine output, not the window.
 - The profile requires native and compositor checks to "name their own attended reason". D2.5 and D3.5 name only "an
   unlocked active Mac display".

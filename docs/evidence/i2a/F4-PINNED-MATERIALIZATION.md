@@ -43,4 +43,4 @@ writes away from the copied source, retain and verify executable/product bytes,
 and publish a trusted target manifest before a `BuildRevision` or run can be
 called ready. Large trees, concurrent same-user interference with a nonprivate
 destination, physical write faults and end-to-end edit-to-ready latency remain
-unqualified. The parent [build-plan task](../../BUILD-PLAN.md) stays open.
+unqualified. The parent [build-plan task](../../plans/BRIEF.md) stays open.

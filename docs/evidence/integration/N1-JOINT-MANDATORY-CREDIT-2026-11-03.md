@@ -1,6 +1,6 @@
 # N1 joint mandatory identity credit
 
-3 November 2026. The [production N1 gate](../../BUILD-PLAN.md) requires a
+3 November 2026. The [production N1 gate](../../plans/BRIEF.md) requires a
 per-peer owner to preserve accepted mandatory output under burst and slow-ACK
 pressure. The [structural pressure test](../HISTORICAL-SOURCE.md)
 uses the actual `OrdinaryPeer`, its unsent queue and sent-frame ledger. Its

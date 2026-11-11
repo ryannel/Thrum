@@ -1,7 +1,7 @@
 # G6 creator experience — 7 November 2026
 
 Governing guide: [creator experience](../../design/ENGINE-EXPERIENCE.md). Build-plan item: G6 in the
-[build plan](../../BUILD-PLAN.md). Work runs on an Apple M3 Max (macOS 26.6, Metal) and headless Chrome 156 WebGPU on the
+[build plan](../../plans/BRIEF.md). Work runs on an Apple M3 Max (macOS 26.6, Metal) and headless Chrome 156 WebGPU on the
 same machine, which other agents were also using. Slices 1 and 2 make no timing claims; slice 3's reload timings are
 contended observations, not budgets.
 

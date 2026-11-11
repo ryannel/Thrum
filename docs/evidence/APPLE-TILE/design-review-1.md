@@ -7,7 +7,7 @@ performance, milestone completion or unpark. The loop owns those transitions.
 
 ## Scope and requirements
 
-I read the [brief](../../design/modules/APPLE-TILE-BRIEF.md) before comparing the design and criteria. Its required
+I read the [brief](../../plans/APPLE-TILE/BRIEF.md) before comparing the design and criteria. Its required
 capabilities are:
 
 1. Preserve the complete cooked scene, lighting, mirrors and temporal behavior through movement, cuts, skipped views,
@@ -25,9 +25,9 @@ capabilities are:
 7. Retain the creator's cook/contribution seam, preserve shared G5 work and resolve prerequisites without a reverse
    dependency on G4 or Mac cadence.
 
-The review covers the complete [design](../../design/modules/APPLE-TILE.md),
-[plan](../../design/modules/APPLE-TILE-PLAN.md) and all 33 items in the
-[done-when file](../../design/modules/APPLE-TILE-DONE.json), C04/C06/C07/C08/C12, the Metal boundary and hardware-native
+The review covers the complete [design](../../plans/APPLE-TILE/DESIGN.md),
+[plan](../../plans/APPLE-TILE/PLAN.md) and all 33 items in the
+[done-when file](../../plans/APPLE-TILE/DONE.json), C04/C06/C07/C08/C12, the Metal boundary and hardware-native
 decisions, and relevant G4, Mac, T2 and COOKED-DRAW consumer definitions. I also inspected the current capability
 record, graph recording, scene declarations, tone/present shaders and bindings, FrameHost and cancellation tokens,
 the moving-route tool, capture runbook and locked wgpu 30.0.1 core/HAL sources. This is a reconciliation review with

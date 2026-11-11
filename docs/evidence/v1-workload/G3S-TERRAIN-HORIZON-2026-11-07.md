@@ -2,7 +2,7 @@
 
 Receivers past the Sun cascades' 512 m reach now take Sun visibility from a horizon marched over a top-down
 caster height map. Before this, the distant valley at sunset stayed sunlit while ray truth had it in shadow. It
-follows [the finite-Sun penumbra](G3S-SOLAR-PENUMBRA-2026-11-07.md) in [the build plan](../../BUILD-PLAN.md)'s
+follows [the finite-Sun penumbra](G3S-SOLAR-PENUMBRA-2026-11-07.md) in [the build plan](../../plans/BRIEF.md)'s
 G3s item.
 
 ![Top: solar frame 30, main then candidate. Bottom: the 17.9 h sunset view, main then

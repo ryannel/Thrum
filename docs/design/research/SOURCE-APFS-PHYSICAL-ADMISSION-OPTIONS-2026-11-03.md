@@ -1,6 +1,6 @@
 # APFS physical admission options for native source
 
-3 November 2026. Bounded research for F3's [physical admission gate](../../BUILD-PLAN.md) and [Foundation §4](../FOUNDATION-SPEC.md#4-working-files-crash-recovery-and-gc). This note owns no contract change, production implementation or capability promotion. It follows the [checkpoint overlap counterexample](../../evidence/i2a/SOURCE-PHYSICAL-ENVELOPE-2026-11-03.md), [reservation alternatives](SOURCE-PHYSICAL-RESERVATION-OPTIONS-2026-11-03.md) and [requested-I/O fence](SOURCE-REQUESTED-IO-FENCE-2026-11-03.md). The author read those designs before this study; this is not blind independent discovery. Independent adversarial review is separate.
+3 November 2026. Bounded research for F3's [physical admission gate](../../plans/BRIEF.md) and [Foundation §4](../FOUNDATION-SPEC.md#4-working-files-crash-recovery-and-gc). This note owns no contract change, production implementation or capability promotion. It follows the [checkpoint overlap counterexample](../../evidence/i2a/SOURCE-PHYSICAL-ENVELOPE-2026-11-03.md), [reservation alternatives](SOURCE-PHYSICAL-RESERVATION-OPTIONS-2026-11-03.md) and [requested-I/O fence](SOURCE-REQUESTED-IO-FENCE-2026-11-03.md). The author read those designs before this study; this is not blind independent discovery. Independent adversarial review is separate.
 
 **Decision update:** The user had already selected configurable disk planning
 limits with explicit space-fault recovery for the first native profile; see the

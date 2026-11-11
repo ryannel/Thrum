@@ -28,4 +28,4 @@ must bind the exact executable bytes, toolchain/dependency closure, target and
 product manifest to `BuildRevision`, retain/load the closure, then start a fresh
 world epoch from that build. The test's `create_host` call is a scoped integration
 fixture, not that ready-build API. Save/restore and clean recipient rebuild remain
-open in the [build plan](../../BUILD-PLAN.md).
+open in the [build plan](../../plans/BRIEF.md).

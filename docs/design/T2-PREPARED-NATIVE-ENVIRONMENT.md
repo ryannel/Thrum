@@ -428,6 +428,6 @@ Prove in order:
    Measure cold preparation, warm edit-to-ready tail and peak RSS separately.
 
 These gates, including the retained-root proofs, are parked until after V1 under the
-[build plan](../BUILD-PLAN.md#parked-retained-in-git-history). Rendering, environment, water and
+[build plan](../plans/BRIEF.md#parked-retained-in-git-history). Rendering, environment, water and
 cloud providers consume only a ready source/product/build boundary; this T2
 selection does not add a renderer or alter their scene contracts.

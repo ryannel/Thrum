@@ -1,6 +1,6 @@
 # G3b loss gates and witnesses on the V1 browser facade (8 November)
 
-First work item of the [web shell plan](../../design/modules/PLATFORM-RUNTIME-WEB-PLAN.md#m1-engine-web-shell-carries-the-v1-page-unchanged-done).
+First work item of the [web shell plan](../PLATFORM-RUNTIME-WEB/M1-record.md#m1-engine-web-shell-carries-the-v1-page-unchanged-done).
 Before the engine extraction, the V1 browser facade stops making GPU calls on a lost device. The Chrome checker gains
 witnesses that the extraction must then pass unchanged.
 

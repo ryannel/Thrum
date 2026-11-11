@@ -1,6 +1,6 @@
 # AI-driven engine optimization: search design challenge
 
-1 November 2026. Research handoff, not a selected architecture or an implemented optimizer. Applies to the proposed custom Rust/wgpu engine for Mac, Windows, browser and mobile. It challenges the search scope of [AI development](../../../design/AI-DEVELOPMENT.md), [system design](../../../design/SYSTEM-DESIGN.md), [composition](../../../design/COMPOSITION.md) and [construction plan](../../../design/CONSTRUCTION-PLAN.md). A01–A05 remain open; no performance or quality result is claimed here.
+1 November 2026. Research handoff, not a selected architecture or an implemented optimizer. Applies to the proposed custom Rust/wgpu engine for Mac, Windows, browser and mobile. It challenges the search scope of [AI development](../../../design/AI-DEVELOPMENT.md), [system design](../../../design/SYSTEM-DESIGN.md), [composition](../../../design/COMPOSITION.md) and [construction plan](../../../design/CONSTRUCTION-PACKAGES.md). A01–A05 remain open; no performance or quality result is claimed here.
 
 ## Recommendation
 

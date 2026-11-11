@@ -23,7 +23,7 @@ strategy, accurate multidimensional maturity tracking and a dependency-ordered c
 claim implementation, performance or visual acceptance from design work, and do not begin a runtime rewrite in this
 design commission.
 
-The design commission is recorded here for rationale and future coordinated work. Current construction scope is in [the build plan](../BUILD-PLAN.md); repository setup does not establish runtime maturity.
+The design commission is recorded here for rationale and future coordinated work. Current construction scope is in [the build plan](../plans/BRIEF.md); repository setup does not establish runtime maturity.
 
 ## Outcome and scope
 

@@ -1,10 +1,10 @@
 # T2-CAPTURE design review 2 (with the Mac M2 re-plan)
 
 9 November 2026. Independent `/review-milestone` design re-review of revision `6317102f`: the
-[brief](../../design/modules/T2-CAPTURE-BRIEF.md), [design](../../design/modules/T2-CAPTURE.md),
-[plan](../../design/modules/T2-CAPTURE-PLAN.md) and [done-when file](../../design/modules/T2-CAPTURE-DONE.json),
-plus the same commit's re-plan of [Mac M2](../../design/modules/PLATFORM-RUNTIME-MAC-PLAN.md)
-([criteria](../../design/modules/PLATFORM-RUNTIME-MAC-DONE.json)) and its consumer edits (ORCHESTRATE, BUILD-PLAN,
+[brief](../../plans/T2-CAPTURE/BRIEF.md), [design](../../plans/T2-CAPTURE/DESIGN.md),
+[plan](../../plans/T2-CAPTURE/PLAN.md) and [done-when file](../../plans/T2-CAPTURE/DONE.json),
+plus the same commit's re-plan of [Mac M2](../../plans/PLATFORM-RUNTIME-MAC/PLAN.md)
+([criteria](../../plans/PLATFORM-RUNTIME-MAC/DONE.json)) and its consumer edits (ORCHESTRATE, BUILD-PLAN,
 AI-DEVELOPMENT, C12, PLATFORM-RUNTIME, maturity ledger, Mac M2 evidence page). The first review is
 [design-review.md](design-review.md). Reviewer: Claude Opus 5.5. No milestone is judged, so no done-when file is
 changed. Nothing was built or run on a GPU. This is a read of the documents and the source, plus

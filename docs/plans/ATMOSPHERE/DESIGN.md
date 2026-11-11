@@ -1,15 +1,15 @@
 # Atmosphere for the V1 outdoor scene
 
-[Rendering contract](../RENDER-SPEC.md#5-initial-atmosphere-fog-and-transport-operator) ·
-[Environment source](ENVIRONMENT.md) · [Milestones](ATMOSPHERE-PLAN.md) · [Done when](ATMOSPHERE-DONE.json) ·
-[Module list](ARCHITECTURE.md)
+[Rendering contract](../../design/RENDER-SPEC.md#5-initial-atmosphere-fog-and-transport-operator) ·
+[Environment source](../../design/modules/ENVIRONMENT.md) · [Milestones](PLAN.md) · [Done when](DONE.json) ·
+[Module list](../ARCHITECTURE.md)
 
 **The owner's request** for the work added on 10 November (M5 and M6), word for word from that day's planning
 task: "The owner wants work lined up continuously toward the V1 exit in docs/BUILD-PLAN.md, so builders always
 have a next milestone, and wants water and clouds finished and consolidated ... Decide, with reasons ... where in
 the build order the port's readiness conditions are met." The exit clause this module closes is "physical sky, Sun
 and aerial perspective with time controls". The readiness condition it meets, from
-[the port decision](../decisions/SEA-AND-CLOUD-PORT.md#readiness-6-november), is "G3s: finish and qualify the one
+[the port decision](../../design/decisions/SEA-AND-CLOUD-PORT.md#readiness-6-november), is "G3s: finish and qualify the one
 shared sky, Sun, light-transmittance and environment-reflection products."
 
 The sections below through [Frame and cost](#frame-and-cost) are the design M1–M4 were built from and are
@@ -183,7 +183,7 @@ day variant retains today's depth discard where no other consumer needs it.
 Select it only on a profile range where the brightest star is shown to be
 subvisible. Record logical attachment area, named GPU intervals, full-frame cost and motion on Mac and Chrome.
 Physical tile traffic at night and through the transition is queued with
-[Apple tile M0.4](APPLE-TILE-PLAN.md#m0-proof-route-counters-and-capture-probe-pending).
+[Apple tile M0.4](../APPLE-TILE/PLAN.md#m0-proof-route-counters-and-capture-probe-pending).
 Investigate visible hitches
 and comparable regressions over the build plan tripwire.
 
@@ -199,7 +199,7 @@ model checks. Packed GPU transport and visible night remain open.
 ## Environment identity and products
 
 M5. Other engine modules read the one sky and Sun instead of bringing their own, and one cloud optical depth
-dims direct sunlight once. `SEA` and `CLOUDS` are the consumers ([module list](ARCHITECTURE.md#interfaces)); the
+dims direct sunlight once. `SEA` and `CLOUDS` are the consumers ([module list](../ARCHITECTURE.md#interfaces)); the
 forward pass and cooked draws already are.
 
 ### Cues
@@ -219,7 +219,7 @@ applied; and, kept apart, the apparent surface light the forward pass uses today
 the sky model, the air profile or a LUT generation changes. A LUT generation is a replacement of the resources
 or of the model behind them: a new device, a changed chart size or format. Recomputing a chart's contents as
 time advances is not a generation, so a time scrub never moves the epoch. This is
-[C08](../CONTRACTS.md#c08-light-materials-and-transport--v3-with-e1-and-v4)'s light handoff made concrete.
+[C08](../../design/CONTRACTS.md#c08-light-materials-and-transport--v3-with-e1-and-v4)'s light handoff made concrete.
 The true Sun is separate because the apparent light changes quickly as the last surface light disappears, and a
 medium lit from it flickers; the Broadsides cloud work found and repaired exactly this.
 
@@ -240,13 +240,13 @@ aerial `(T,S)`. The forward pass does the same in the last line of its shading.
 | Sun light at a world position | RGB illuminance on a plane facing the Sun, from the true Sun through the air only; no geometric shadow, no cloud factor | Any world position. Above the 100 km top the light is unattenuated unless the ray enters the shell. Below the first chart row (6.15 m) the altitude clamps, a known approximation that reaches 1.2% in blue at sea level with the Sun on the horizon. A Sun behind the planet at that point returns exactly zero |
 | Sky radiance along a direction | RGB radiance of the sky without the Sun's disk: the solar part and the night part, already summed | The active camera's observer altitude only; any direction, including the ground side below the horizon. The night part exists for 0–15 km observer altitude; outside that the result is Sun-only and the fallback is reported, as today |
 | Incident diffuse on a normal | RGB irradiance from the sky, never negative | One answer per frame at the camera's location, for any normal. It does not vary with world position |
-| Aerial `(T,S)` to a point | RGB transmittance and in-scattered radiance, night included, accumulated **from the active camera** to a point in its view | The active view only, addressed by the point's screen position and its distance from the camera. Beyond 32 km it returns the 32 km value. A segment that starts anywhere but the camera, and any second camera, is not offered in M5; a consumer that needs one proposes it through [the module list](ARCHITECTURE.md#interfaces) |
+| Aerial `(T,S)` to a point | RGB transmittance and in-scattered radiance, night included, accumulated **from the active camera** to a point in its view | The active view only, addressed by the point's screen position and its distance from the camera. Beyond 32 km it returns the 32 km value. A segment that starts anywhere but the camera, and any second camera, is not offered in M5; a consumer that needs one proposes it through [the module list](../ARCHITECTURE.md#interfaces) |
 | Environment reflection | RGB radiance of the disk-free sky filtered to a GGX lobe around a direction at a roughness, solar and night parts decoded and summed; and the split-sum pair `(scale, bias)` for a view cosine and the same roughness | One cube per frame at the camera's location, no parallax. Roughness is the material roughness the forward pass uses, clamped to 0.045–1. View cosine 0–1. The library maps roughness to its filtered level; a contribution never names a mip |
 
 The reflection operation is the one `SEA` uses as the fallback under its screen-space reflection. It returns the
 filtered radiance and the pair separately, so a consumer can apply its own Fresnel term.
 
-**One Sun-path optical depth.** C08 and [ENVIRONMENT](ENVIRONMENT.md) already say that a cloud source supplies
+**One Sun-path optical depth.** C08 and [ENVIRONMENT](../../design/modules/ENVIRONMENT.md) already say that a cloud source supplies
 path optical depth `tau` toward the Sun and that V3 applies `exp(-tau)` at most once. A provider registers one
 product: a 2D field of `tau` along the current true Sun direction for receivers below a declared plane, with its
 world mapping, advection displacement, validity region, lowest valid Sun elevation and source epoch. A receiver
@@ -423,7 +423,7 @@ scene with a volume is on the route.
 - Whether aerial in-scatter should also be shaded by cloud. Settled in `CLOUDS`, with a joint integrator or a
   declared approximation as C08 requires.
 - Whether the field needs more than one height band. The diagnostic uses one plane; `CLOUDS` may propose more
-  through [the module list](ARCHITECTURE.md#interfaces).
+  through [the module list](../ARCHITECTURE.md#interfaces).
 - Whether a consumer needs aerial transport for a segment that does not start at the camera, or for a second
   camera. Neither is offered in M5; `CLOUDS` or `SEA` proposes it the same way.
 
@@ -433,7 +433,7 @@ M6. The gate closes when the valley's sky and sunlight pass a clean-context revi
 It runs after TAAU is in the game (`APPLE-PRESENTATION:M3`), because reconstruction changes every edge and
 gradient a reviewer judges.
 
-**What is reviewed.** The fixed six-stop route of [the route decision](../decisions/G7-SHOWCASE-ROUTE.md) and one
+**What is reviewed.** The fixed six-stop route of [the route decision](../../design/decisions/G7-SHOWCASE-ROUTE.md) and one
 continuous scrub from dawn through noon, sunset and twilight to night, with slow pans, captured from the running
 game with the engine tap. The inspection list is the set of defects earlier reviews recorded: a horizontal
 brightness step across the ground; a flat near ridge with a hard bright rim at low Sun; a ridge lit warm when the

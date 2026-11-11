@@ -9,7 +9,7 @@ new implementation claims. No other agents were launched.
 
 ## Request and scope
 
-I read the complete sole entry in [the accepted planner briefs](../../design/modules/ATMOSPHERE-ACCEPTED.json),
+I read the complete sole entry in [the accepted planner briefs](../../plans/ATMOSPHERE/ACCEPTED.json),
 then the build-plan purpose and exit, architecture brief and module list before comparing the proposed work.
 The commission requires a buildable road to the existing V1 exit and foundations for finishing sea and clouds
 in Thrum. For ATMOSPHERE this means:
@@ -29,10 +29,10 @@ in the plan log, not hidden omissions; this review does not turn either parked o
 
 ### 1. Must Fix — numerical acceptance refers to a contract that is not defined for the claimed products
 
-**Verified.** [M5.2–M5.3 and M6.3](../../design/modules/ATMOSPHERE-DONE.json), lines 24–35 and 135–138,
+**Verified.** [M5.2–M5.3 and M6.3](../../plans/ATMOSPHERE/DONE.json), lines 24–35 and 135–138,
 require matches to an independent f64 reference within “the tolerance the M1 referees already use” or “the
 tolerances this design declares.” The design does not declare a product-by-product acceptance rule for these
-claims. M1's criteria in [the plan](../../design/modules/ATMOSPHERE-PLAN.md), lines 16–17, qualify the
+claims. M1's criteria in [the plan](../../plans/ATMOSPHERE/PLAN.md), lines 16–17, qualify the
 moonless component: 5% horizontal irradiance and 10% selected night rays and finite night in-scatter. Those
 are not a specification for solar sky radiance, general aerial `(T,S)`, or twilight colour.
 
@@ -61,11 +61,11 @@ reports disagreement must not stand in for that obligation.
 
 ### 2. Must Fix — the independent-consumer proof omits environment reflection
 
-**Verified.** [The design](../../design/modules/ATMOSPHERE.md), lines 219–224, promises to lend reflection
+**Verified.** [The design](../../plans/ATMOSPHERE/DESIGN.md), lines 219–224, promises to lend reflection
 products but enumerates only four lookups: Sun transmittance, sky radiance, incident diffuse and aerial transport.
 M5.2 enumerates exactly those four, M5.3 repeats them, and no remaining item tests the reflection handoff.
-Yet [the readiness table](../../design/modules/ARCHITECTURE.md#where-the-ports-readiness-conditions-are-met)
-assigns qualification of environment-reflection products to M5, and [SEA S5](../../design/modules/SEA-BRIEF.md),
+Yet [the readiness table](../../plans/ARCHITECTURE.md#where-the-ports-readiness-conditions-are-met)
+assigns qualification of environment-reflection products to M5, and [SEA S5](../../plans/SEA/BRIEF.md),
 line 49, requires that product as the screen-space-reflection fallback.
 
 The distinction matters in the current implementation. [The forward environment shader](../../../crates/thrum-render/src/synthetic_environment.wgsl),

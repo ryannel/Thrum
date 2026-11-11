@@ -9,7 +9,7 @@ criteria, not implementation, visual quality or completion of M5/M6. No other ag
 
 ## Request and inspection scope
 
-Read all three entries in [the accepted planner briefs](../../design/modules/ATMOSPHERE-ACCEPTED.json),
+Read all three entries in [the accepted planner briefs](../../plans/ATMOSPHERE/ACCEPTED.json),
 whole and oldest first: the project commission to plan the remaining V1 road and consolidate water and
 clouds, followed by both requests to revise ATMOSPHERE against its design review. For this module that means
 one shared sky, true Sun, light-transmittance and reflection handoff for independent consumers; cloud optical
@@ -39,7 +39,7 @@ use a fresh paired starting-commit run. This revision does not narrow those requ
 
 ## Why the replacement rule closes the blocker
 
-The [filtered-decode rule](../../design/modules/ATMOSPHERE.md#numerical-acceptance), lines 344–379,
+The [filtered-decode rule](../../plans/ATMOSPHERE/DESIGN.md#numerical-acceptance), lines 344–379,
 defines a single expected value and the per-channel allowance `C/32 + 1e-5 × M`. The expected evaluation is
 written independently of the lent library. The sky reference respects each horizon half; the aerial reference
 blends in screen position and then by physical distance between the selected depth slices, with the 32 km

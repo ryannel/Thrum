@@ -1,30 +1,13 @@
 # COOKED-DRAW log
 
-- 2026-11-09 Builder applied planner revision `58c3414e`. Removed every console admission/refusal and manual
-  setup wait across all simulator modes. Console observations retain actual raw output or an unavailable reason.
-  A fresh LaunchServices app parents each real Python harness and records read-only Screen Recording preflights
-  before and after. Identity and parent/child PID checks reject unrelated proof. Eight capture tests accept every
-  console state and reject missing/failed/granted preflight evidence and failed routes. Exact standalone function
-  and lifecycle checks pass on fresh owned simulators. Rotation and held visual modes also pass. Every fresh
-  preflight is denied and every console witness happened to be locked, with no setup gate. Six native still pairs
-  and sixteen pan samples were re-inspected. Only restored-portrait compositor UI changes between held pairs.
-  Maximum sample-start gap is 1.125629 seconds, retaining the sampled-only claim. Prior manual-lock evidence is
-  preserved in history. Unchanged native/browser renderer sources support reuse of the existing oracle,
-  preservation and cost records. Plain `./dev check` passes 666 Rust tests under the GPU lock, and
-  documentation checks pass. The lead owns independent review.
+- 2026-11-09 Builder applied planner revision `58c3414e`. Removed every console admission/refusal and manual setup
+  wait across all simulator modes. Console observations retain actual raw output or an unavailable reason.
+  [Full entry](../../evidence/COOKED-DRAW/log-entries.md#entry-1).
 
 - 2026-11-09 Owner corrected console locking from a run precondition to a recorded capability witness. Overnight
   locked runs established that the route could work without desktop capture; requiring that setup on every check
-  blocked verification during normal Mac use without strengthening the proof. Revised M1.7/M1.8 to accept either
-  console state and use denied, attributed Screen Recording preflights for capture independence. M1.9 now refers
-  to those engine-state proofs without requiring lock. Named the simulator harness and regression changes above,
-  with code left to the builder. The live claim stopped before review, so both standalone passes must be rerun
-  under the new wording, then verified by the loop before review. Prior lock evidence remains history. No owner
-  decision is outstanding; no acceptance record or implementation changed. The loop commits and integrates this
-  planning scope correction and records the new definitions. `./dev check-docs` and `git diff --check` pass.
-  Audited all module done-when files for console-lock preconditions. The other affected unaccepted rows are
-  T2-CAPTURE M2.1/M2.2 and PLATFORM-RUNTIME-MAC M2.1/M3.1, revised in their own plans. Remaining required locked
-  runs belong to accepted T2 M0/M1 history. Accepted items, proof fields and failure/re-plan counters are unchanged.
+  blocked verification during normal Mac use without strengthening the proof.
+  [Full entry](../../evidence/COOKED-DRAW/log-entries.md#entry-2).
 
 - 2026-11-09 Replanned dependency after builder checkpoint `b0dae34c` blocked M1.10. Its README and
   `rotation/layout-failure.json` show the source stays 640×360 while surface/presented extents rotate. G3b now owns
@@ -39,37 +22,17 @@
   - M1.10 fails its current-extent fill requirement. Observed presenter viewports are portrait `[0,972,1206,678]` inside `1206×2622` and landscape `[239,0,2144,1206]` inside `2622×1206`. **Owner dependency** is G3b iOS/render runtime support for matching scene/internal render aspect to current oriented extent on the same process, window, lease and generation. `resize_surface` updates the presenter and retains the internal source extent. This builder leaves that owning-runtime work for its owner, as build-milestone requires.
   - M1.4/M1.5 base comparisons, M1.6 cost/tripwires, the rest of M1.10 and M1.11 pan proof remain unfinished. M1.7/M1.8 stand as the owner directed. T2-CAPTURE M2 remains gated on M1 acceptance. Acceptance definitions remain unchanged. No reviewer launched.
 
-- 2026-11-09 Re-planned M1.3 at the owner's request after blocked checkpoint `9c230ff4`. The first valley view's
-  1,506 differing pixels / max delta 18 persisted with all meshlets kept; one full-range indirect command matched
-  direct exactly. This isolates draw partitioning for that view, not the low-level cause. Primitive-order equivalence
-  did not justify the old cross-partition exact-byte requirement.
-  - Selected exact production-direct versus probe-only full-range indirect parity at matching partitions, preserving
-    every named view, final submitted-output tap and exact same-arm repeats. Added independent reference argument
-    validation and a D-only visibly missing-mesh negative control with restored equality to catch a real draw defect.
-    Selected meshlet indirect remains captured and inspected with full differences, without a fitted threshold or
-    ignored edges. Scene geometry/culling defects and visible quality failures still block.
-  - Cause identification is not a prerequisite; derivative/quad or ordering explanations remain unverified. A
-    partition-invariant shader change is not worthwhile or commissioned: it risks changing supported indirect output,
-    material semantics and cost. Indirect selection, production output/work, M1.1/M1.2 and M1.4–M1.12 are unchanged.
-  - No owner decision is required within this scope. Changing selection or preserved indirect pixels would require a
-    separate decision. Independent design review is owed to the lead/loop; the owner forbids launching other agents.
-    M1 returns to open, fails stays 0, replans becomes 1; the loop records new definitions and invalidates old proof.
-    No `*-ACCEPTED.json` edited. Documentation and diff checks passed; no GPU or new-oracle pass is claimed.
+- 2026-11-09 Re-planned M1.3 at the owner's request after blocked checkpoint `9c230ff4`. The first valley view's 1,506
+  differing pixels / max delta 18 persisted with all meshlets kept; one full-range indirect command matched direct
+  exactly. This isolates draw partitioning for that view, not the low-level cause.
+  [Full entry](../../evidence/COOKED-DRAW/log-entries.md#entry-3).
 
 - 2026-11-09 Builder checkpoint, following the fresh DESIGN OK and building against the proposed additive interfaces as permitted above. The capability record lends known/unknown downlevel flags; unknown selects direct. Direct draws allocate no cull/indirect/count/readback resources; history writes run on both paths. Cooked GPU cases run on adapter-backed and masked records; the bench retains an adapter-backed indirect record. The ordinary iOS selection attaches cooked content and exposes drawn-device generation. The initial simulator feature risk is cleared; no additional unsupported feature surfaced. M1.7/M1.8 pass on the final source: locked-console advancing counters, background hold/resume and a drawn-device witness on generation 2.
   - M1.3 is blocked: 1,506 final submitted pixels differ in the noon valley view, despite exact same-path repeats. Scratch controls disprove a rejected-meshlet explanation and isolate command partitioning. **Proposal to planner:** investigate partition-invariant output, or explicitly reconsider the whole-range strategy or exact oracle. Do not alter the production indirect path or weaken equality within this build.
   - Remaining views, base/Chrome parity, cost/tripwire work, rotation/pan and full visual qualification are unfinished. The parity command refuses incomplete modes. T2-CAPTURE M2 remains gated on acceptance. See the evidence README for actual checks and simulator records. `./dev check` passes (651 tests, including all 13 cooked GPU cases on both paths); documentation checks pass. No reviewer launched, acceptance definitions unchanged, no milestone claim.
 
 - 2026-11-09 Answered the [design review](../../evidence/COOKED-DRAW/design-review.md).
-  - F1 (blocking): adapter-less `capture_device` records now hold unknown downlevel facts, and unknown never selects
-    indirect. The public `FrameHost::new` → `attach_cooked_scene` route draws through the always-valid direct path.
-    Refusing the attach was rejected. M1.1 now requires a test of that route showing no indirect-usage buffer. The
-    indirect test arm and the `cooked_edit` bench move to adapter-backed records and record their path (M1.2, M1.6).
-  - F2: the simulator pan (M1.11) now claims continuity only within its recorded sample coverage. Proof over every
-    submitted frame stays with T2-CAPTURE M2. M1.7 and M1.8 require advancing presented and cooked submitted-frame
-    counts.
-  - F3: new M1.9 is the cooked rotation row, reusing the route's existing XCUITest `rotation` row. M1.10 adds rotated
-    stills. Any attended gesture reason stays separate from the locked engine-state rows.
+  [Full entry](../../evidence/COOKED-DRAW/log-entries.md#entry-4).
 
   Items were renumbered (stills M1.10, pan M1.11, docs M1.12). No proof existed, `fails` and `replans` stay 0, and a
   fresh design review is owed.
@@ -90,3 +53,7 @@
 - 2026-11-09 Fixed the loop's plain Check failure. The original launcher inherited the user Cargo configuration's sccache wrapper and exited 2 with empty output. A non-quiet Cargo diagnostic reported Operation not permitted. Earlier successful checks supplied RUSTC_WRAPPER= externally. The launcher now supplies that default itself and preserves explicit caller values. The regression fixture covers unset, empty and explicit wrappers, and rejects the original launcher in the unset case. Plain ./dev check passes 666 Rust tests and all twelve repository Python tests under the GPU lock with the caller environment unmodified. Renderer and target proof remain valid. Only M1 item evidence changes in the done-when record. The correction goes through the required land gate.
 
 - 2026-11-09 Requalified the exact M1.7 and M1.8 commands after the owner manually locked the Mac. The loop failure was the real unlocked-host precondition, confirmed by IOConsoleLocked=No. The harness now allows a bounded 120-second manual setup wait at startup and records lock observations, while missing lock evidence still fails. Seven capture tests cover immediate locked admission, a manual-lock transition and timeout refusal. Exact fresh function proof records twelve advancing observations over 22.1 seconds. Exact fresh lifecycle proof holds background counters and redraws Direct on device generation 2. Both runs have true before/after lock witnesses and deleted their owned simulators. The owner retains manual console setup through loop verification. Acceptance definitions and reviewer fields are preserved.
+
+- 2026-11-11 Plan reshaped for orchestrate 1.7.0: status lines and M1's finished work list removed (git keeps
+  them), `Ownership and agreements` moved to the design, and the console witness handoff moved to
+  [evidence](../../evidence/COOKED-DRAW/console-witness-handoff.md). No item or scope changed.

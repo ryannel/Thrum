@@ -1,7 +1,7 @@
 # Thrum — contributor instructions
 
 Thrum is a native-first, reusable Rust 3D engine and a showcase of AI-driven engineering. Start at
-[README](README.md), then the purpose and relevant item in [the build plan](docs/BUILD-PLAN.md). A provisional simulation and synthetic renderer run in the
+[README](README.md), then the purpose in [the brief](docs/plans/BRIEF.md) and your module in [the module list](docs/plans/ARCHITECTURE.md). A provisional simulation and synthetic renderer run in the
 V1 test game, but no general engine runtime exists yet; examples of future SDK commands in design documents are proposals, not commands to execute.
 
 - Work follows the orchestrate skills, configured by [ORCHESTRATE.md](ORCHESTRATE.md): `plan-module` to plan,

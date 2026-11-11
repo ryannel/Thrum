@@ -2,7 +2,7 @@
 
 The dawn and twilight valley read flat and bright against the CC0 Kiara dusk photograph. The colour was right:
 blue upper sky and a warm horizon. The camera was the problem. The incident meter scaled every illuminance back
-to mid-grey, so a 10 lux twilight floor rendered as bright as noon. This is [the build plan](../../BUILD-PLAN.md)'s
+to mid-grey, so a 10 lux twilight floor rendered as bright as noon. This is [the build plan](../../plans/BRIEF.md)'s
 G3s twilight item.
 
 ![Top: main at dawn, sunset, twilight and noon. Bottom: with the low-light key](g3s-first-light/low-light-key-compare.png)

@@ -32,4 +32,4 @@ Reproduce with `RUSTC_WRAPPER= cargo test -p thrum-source --release --lib measur
 
 ## Remaining work
 
-Measure the production path under prolonged reader-blocked checkpointing, larger new/reused source overlap and actual host-volume free-space change; record main/WAL/managed-temporary allocated blocks and transient high-water without assuming the planning estimate is a hard cap. Test host I/O faults and platform VFS/power-loss conditions separately. Collector deletion and transitive owner pins remain a later gate. See the [build plan](../../BUILD-PLAN.md).
+Measure the production path under prolonged reader-blocked checkpointing, larger new/reused source overlap and actual host-volume free-space change; record main/WAL/managed-temporary allocated blocks and transient high-water without assuming the planning estimate is a hard cap. Test host I/O faults and platform VFS/power-loss conditions separately. Collector deletion and transitive owner pins remain a later gate. See the [build plan](../../plans/BRIEF.md).

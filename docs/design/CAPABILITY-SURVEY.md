@@ -2,9 +2,9 @@
 
 1 November 2026. Official feature pages and selected manuals for twelve engines were inspected by the coordinator
 and three fresh Sol High agents. This updates the **recommended design inventory**, not implemented capabilities.
-The [brief](ARCHITECTURE-BRIEF.md) remains the module map; [construction](CONSTRUCTION-PLAN.md) remains the ordered plan.
+The [brief](ARCHITECTURE-BRIEF.md) remains the module map; [construction](CONSTRUCTION-PACKAGES.md) remains the ordered plan.
 Custom host, 3D, Mac/PC, browser demos and native mobile remain the target. A01–A05 remain open. The
-[build plan](../BUILD-PLAN.md) now owns V1 scope; engine comparisons inform the inventory but are not quality gates.
+[build plan](../plans/BRIEF.md) now owns V1 scope; engine comparisons inform the inventory but are not quality gates.
 
 The strongest lesson is to describe complete creator outcomes alongside runtime responsibilities. We already cover
 most broad engine systems. Several apparent omissions disappear when reading the owner designs, particularly

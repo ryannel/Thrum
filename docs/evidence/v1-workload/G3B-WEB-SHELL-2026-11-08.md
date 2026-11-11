@@ -1,6 +1,6 @@
 # G3b engine web shell: V1 page parity, 8 November 2026
 
-Plan: [PLATFORM-RUNTIME-WEB-PLAN.md](../../design/modules/PLATFORM-RUNTIME-WEB-PLAN.md), milestone M1. The browser
+Plan: [PLATFORM-RUNTIME-WEB-PLAN.md](../../plans/PLATFORM-RUNTIME-WEB/PLAN.md), milestone M1. The browser
 platform runtime moved from `examples/v1-game/src/browser.rs` and `browser/recovery.rs` into `thrum_app::web`
 (987a3ac3, review fixes c1e03736). Reference is the witness commit a66352e3 (the loss gates on today's facade), built
 in a separate worktree. Both sides ran on this M3 Max, Chrome through `scripts/check_v1_browser.mjs` with the release

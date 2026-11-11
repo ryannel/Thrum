@@ -12,7 +12,7 @@ game. It is a learning and craft project and a showcase of how far AI-driven eng
 and visual quality. Its first outlet is interactive teaching demos with public source on the owner's website, such as
 physically simulated cloud formation or a water sandbox. A game is a later project. Results should not look homemade.
 Use cutting-edge research where it is useful, record techniques by name and leave room for original advances supported
-by evidence. [The build plan](../BUILD-PLAN.md#purpose) owns the purpose and current exit.
+by evidence. [The build plan](../plans/BRIEF.md#purpose) owns the purpose and current exit.
 
 **Goal:** a modern, exceptionally fast engine that makes full use of the hardware each device provides: GPU family
 features, tile and unified memory, reconstruction and ray-tracing hardware, CPU core classes and vector units, display,
@@ -64,8 +64,8 @@ engine to one game, one camera, one art style, a water demo or a browser-only pr
 | E02/E03/E20: modular features, bring a provider, no visible sky with retained light/shadows, multiple physical models | [Composition](COMPOSITION.md), C04/C08/C09, [environment](modules/ENVIRONMENT.md); static selection and qualified replacements, no arbitrary universal renderer/live-swap promise |
 | E04/E05/E10/E14/E21: modern research, visual ambition, full hardware use, selective open-source ideas/reuse, custom host | [Engine research](ENGINE-STRUCTURE-RESEARCH.md), [capability survey](CAPABILITY-SURVEY.md), [decisions](ARCHITECTURE-DECISIONS.md), [programme](DESIGN-PROGRAMME.md); primary papers/production sources and math before construction, explicit novelty/provenance limits |
 | E08/E13: ordinary multiplayer first-class, no initial MMO or pure-2D engine | C13 and [NETWORK-SPEC](NETWORK-SPEC.md); same local/server rules, headless rollback/replay fitness in V1 with transport after V1, semantic-compatible heterogeneous clients, explicit result/reconnect/replica behavior |
-| E22/E23: teaching demos with controls; continuous agent work with asynchronous owner steer | [Build plan](../BUILD-PLAN.md) G3s/G6/G7, U1 UI, [visual review and human steering](AI-DEVELOPMENT.md#visual-review-and-human-steering) |
-| E09/E11: Mac/PC, scalable browser demos, native mobile stores | [Baseline](BASELINE-SPEC.md), [runtime](modules/PLATFORM-RUNTIME.md), [construction](CONSTRUCTION-PLAN.md); native authoring first is independent of player-platform support, device/store evidence still required |
+| E22/E23: teaching demos with controls; continuous agent work with asynchronous owner steer | [Build plan](../plans/BRIEF.md) G3s/G6/G7, U1 UI, [visual review and human steering](AI-DEVELOPMENT.md#visual-review-and-human-steering) |
+| E09/E11: Mac/PC, scalable browser demos, native mobile stores | [Baseline](BASELINE-SPEC.md), [runtime](modules/PLATFORM-RUNTIME.md), [construction](CONSTRUCTION-PACKAGES.md); native authoring first is independent of player-platform support, device/store evidence still required |
 | E12/E15/E19: AI engine and game contribution, clear skills, deterministic checks, active coordination | [AI development](AI-DEVELOPMENT.md), [skill rationale](SKILL-WORKFLOW.md), [programme](DESIGN-PROGRAMME.md), [maturity](MATURITY.md); focused Astra-aligned guidance, scoped checks, public commands and reviewed combined revisions |
 | E16/E19: teachable core, newcomer/veteran, from scratch/custom code/art styles and artists | [Creator guide](ENGINE-EXPERIENCE.md), [first use](FIRST-USE-WALKTHROUGHS.md), [empty-project journeys](FROM-SCRATCH-WALKTHROUGHS.md); project/world/target/run, ordinary files, source admission, restart, import/reimport and recipient export |
 | E17: ambitious optimization that improves the engine, not only a benchmark | [AI performance](AI-PERFORMANCE.md), [campaign walkthroughs](PERFORMANCE-WALKTHROUGHS.md); independent evaluator, simultaneous consumer/resource/quality budgets, fair baseline and integrated evidence |
@@ -108,7 +108,7 @@ This selects a development strategy, not a measured advantage, specific algorith
 
 The broad 3D camera/platform range and future multiplayer requirement are selected. [The baseline register](BASELINE-SPEC.md)
 now records G01–G10 decisions for source/recovery, world/transforms, shaders/light/media, play/water, networking and
-reference targets. [The build plan](../BUILD-PLAN.md) now orders construction: a single-player showcase scene first, with multiplayer
+reference targets. [The build plan](../plans/BRIEF.md) now orders construction: a single-player showcase scene first, with multiplayer
 fitness proven headless and transport after V1. Larger worlds, richer fluids/media and additional device families retain their explicit
 extension/qualification obligations; no architecture decision or numerical target is a running support claim.
 
@@ -199,7 +199,7 @@ advances. Use direct explicit contracts where possible; no universal service con
 | ID / module | Owns and provides | Boundary |
 | --- | --- | --- |
 | T1 Authoring and automation | Inspector, scene/prefab editing, undo/redo, content/animation/style preview, declared edit/restart support, extensible controls and CLI/API | Shared schemas and operations support human and programmatic use; editor-only dependencies stay out of the game |
-| T2 Diagnostics and delivery | CPU/GPU/memory attribution, [unattended frame evidence](modules/T2-CAPTURE.md), debug views, regression scenes, source-stored build configurations, package inclusion/size diagnosis and export provenance | Separate authoring/build/player support and startup/offline/residency promises; qualify profiles and reproducible demos |
+| T2 Diagnostics and delivery | CPU/GPU/memory attribution, [unattended frame evidence](../plans/T2-CAPTURE/DESIGN.md), debug views, regression scenes, source-stored build configurations, package inclusion/size diagnosis and export provenance | Separate authoring/build/player support and startup/offline/residency promises; qualify profiles and reproducible demos |
 
 ### Environmental decomposition
 
@@ -253,7 +253,7 @@ build time; load-time selection chooses providers; only explicitly supported set
 ## Design and construction order
 
 The [integrated system design](SYSTEM-DESIGN.md), [shared contracts](CONTRACTS.md) and
-[construction plan](CONSTRUCTION-PLAN.md) now develop this responsibility map into a cohesive recommendation.
+[construction plan](CONSTRUCTION-PACKAGES.md) now develop this responsibility map into a cohesive recommendation.
 
 1. Establish supported profiles and representative scene/device constraints; provisional numerical envelopes live
    only in the runtime design until target hardware and workload are selected.
@@ -279,5 +279,5 @@ and repository rules, so this is a fresh requirements exercise, not a claim of b
 
 Current stage: 3D and desktop/Mac/browser/mobile scope recorded; custom host selected; coordinated research/design
 produced an integrated high-level recommendation and independently challenged contracts. Full hardware use is a
-selected goal (E21). On 5 November the owner redirected V1 to a single-player showcase scene; see [the build plan](../BUILD-PLAN.md). The [maturity ledger](MATURITY.md) keeps detailed mechanism choices,
+selected goal (E21). On 5 November the owner redirected V1 to a single-player showcase scene; see [the build plan](../plans/BRIEF.md). The [maturity ledger](MATURITY.md) keeps detailed mechanism choices,
 minimum devices/budgets, implementation, visual acceptance and platform qualification explicitly unfinished.

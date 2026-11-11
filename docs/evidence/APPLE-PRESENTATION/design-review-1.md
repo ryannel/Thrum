@@ -8,7 +8,7 @@ Reviewed integrated commit `4bbe44a433598650be47c1753c57da79f5d1df93` on 10 Nove
 
 ### 1. Must Fix — D2.5's existing browser cases cannot prove reactive values or temporal-history behavior
 
-**Verified proof gap; no faulty implementation is alleged or experimentally injected.** Location: [APPLE-PRESENTATION-DONE.json](../../design/modules/APPLE-PRESENTATION-DONE.json), D2.5, lines 117–123; [plan migration log](../../design/modules/APPLE-PRESENTATION-PLAN.md), lines 398–403.
+**Verified proof gap; no faulty implementation is alleged or experimentally injected.** Location: [APPLE-PRESENTATION-DONE.json](../../plans/APPLE-PRESENTATION/DONE.json), D2.5, lines 117–123; [plan migration log](../../plans/APPLE-PRESENTATION/PLAN.md), lines 398–403.
 
 The statement promises that “the reactive target and the history rules behave the same in Chrome,” but its sole proof is `node scripts/check_v1_browser.mjs --case all`, explicitly using the checker's existing cases. There is no `ask` or inspection of these temporal results. The migration log describes this addition as proving Chrome as its own target.
 
@@ -20,7 +20,7 @@ An ordinary wrong implementation can therefore declare a valid third attachment 
 
 ### 2. Suggestion — Make the reconstruction reference and tolerance reproducible before collecting the first result
 
-**Verified specification ambiguity.** Location: [plan](../../design/modules/APPLE-PRESENTATION-PLAN.md), lines 37–40 and 407–408; D3.2.
+**Verified specification ambiguity.** Location: [plan](../../plans/APPLE-PRESENTATION/PLAN.md), lines 37–40 and 407–408; D3.2.
 
 The separate accumulator, full-frame comparison, no-AA comparator and broken-history control are good protections. Clarify the color domain and precise ΔE definition, require the complete scene/time/exposure state to remain fixed during accumulation, and state how the provisional tolerance can be revised through review. “Restated after M3's first run” should not become permission to relax the bound merely because the candidate missed it.
 
@@ -28,19 +28,19 @@ Also, 64 frames using the continuous 32-phase sequence repeat the same 32 offset
 
 ### 3. Suggestion — Include positive reactive-value checks in the shared M2 fixture
 
-**Verified opportunity to sharpen proof.** Location: D2.2 and [design](../../design/modules/APPLE-PRESENTATION.md), lines 123–145 and 442–449.
+**Verified opportunity to sharpen proof.** Location: D2.2 and [design](../../plans/APPLE-PRESENTATION/DESIGN.md), lines 123–145 and 442–449.
 
 D2.2's statement specifies useful values, while its reviewer question emphasizes target declarations, the steady-star zero case and the contribution seam. When adding the witness required by finding 1, reuse it on Mac to check invalid-history geometry, volume alpha and a celestial phase edit as positive cases. Include the separate star pass, not only the opaque forward pass. The current star implementation declares and attaches color alone in [synthetic/stars.rs](../../../crates/thrum-render/src/synthetic/stars.rs), lines 238–325, so its graph accesses and attachments need to follow its new shader outputs. The design already commissions this behavior; this suggestion makes the evidence more direct.
 
 ### 4. Suggestion — Keep the later planning boundary explicit in the next approval record
 
-**Verified scope limitation, safely deferred.** Location: design lines 19–21; plan lines 9–15; [module list](../../design/modules/ARCHITECTURE.md), lines 159–169 and 215–221.
+**Verified scope limitation, safely deferred.** Location: design lines 19–21; plan lines 9–15; [module list](../../plans/ARCHITECTURE.md), lines 159–169 and 215–221.
 
 M4–M11 and seams 5–9 are expressly awaiting planning and reconciliation. Preserve that restriction when recording a future approval of M1–M3. In particular, review the final EDR transform, normalized MetalFX fallback's output/exposure handoff, generation-build lifecycle and archive mechanism when those designs are made concrete. The prose is useful direction, not qualification of those unsettled interfaces. No further planning of these later milestones is required to resolve this review's blocker.
 
 ## Request, scope and previous reviews
 
-I read the sole `briefs` entry in [APPLE-PRESENTATION-ACCEPTED.json](../../design/modules/APPLE-PRESENTATION-ACCEPTED.json) in full before comparing the design. It commissions the remaining project road to V1 plus water and clouds, with module ownership, build order, contracts and briefs, and buildable plans for the next work. It protects the concurrent PLATFORM-RUNTIME-MAC M2 and APPLE-TILE definitions and leaves owner decisions explicit.
+I read the sole `briefs` entry in [APPLE-PRESENTATION-ACCEPTED.json](../../plans/APPLE-PRESENTATION/ACCEPTED.json) in full before comparing the design. It commissions the remaining project road to V1 plus water and clouds, with module ownership, build order, contracts and briefs, and buildable plans for the next work. It protects the concurrent PLATFORM-RUNTIME-MAC M2 and APPLE-TILE definitions and leaves owner decisions explicit.
 
 For this module, the resulting obligations are temporal inputs and reconstruction for the shared frame, followed by extent/transitions, MetalFX, EDR, governor and pipeline preparation. Sea/cloud consumers need the same temporal inputs and later quality knobs; this module must not introduce another simulation authority or a private effect reconstructor. The module map assigns those responsibilities and the design preserves them. The later work is named and explicitly deferred, rather than silently removed from V1. This review does not judge the separate sea/cloud finishing decisions or authorize their port timing.
 

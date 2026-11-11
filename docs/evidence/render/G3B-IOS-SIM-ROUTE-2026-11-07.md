@@ -3,7 +3,7 @@
 7 November 2026, revision `5e3bb208` (code) / `ccce4402` (main, comments and docs only after it). Xcode 27.2, fresh
 iPhone 18 Pro / iOS 27.2 simulator created and deleted by `examples/v1-game-ios/ios/check-simulator.sh`, Apple M3 Max
 host shared with other sessions. **Simulator function evidence only.** Wall times are host-scheduled and carry no
-device timing claim. Plan: [PLATFORM-RUNTIME-IOS-PLAN](../../design/modules/PLATFORM-RUNTIME-IOS-PLAN.md).
+device timing claim. Plan: [PLATFORM-RUNTIME-IOS-PLAN](../../plans/PLATFORM-RUNTIME-IOS/PLAN.md).
 Raw: `tmp/g3b-ios-lifecycle/route-fresh-8/` (also `route-fresh-7/`, `dev-run9/`, `dev-run10/`).
 
 ## How it runs

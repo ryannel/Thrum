@@ -6,7 +6,7 @@ quality/performance qualification.** Read with the separate [render](RENDER-RESE
 [terrain](TERRAIN-SURFACE-RESEARCH-2026-11-02.md) studies. The owning
 [contracts](../CONTRACTS.md), [baseline](../BASELINE-SPEC.md),
 [render specification](../RENDER-SPEC.md), [water designs](../modules/WATER.md)
-and [build plan](../../BUILD-PLAN.md) remain authoritative. Broadsides was
+and [build plan](../../plans/BRIEF.md) remain authoritative. Broadsides was
 inspected read-only as a candidate and source of counterexamples; it is not a
 Thrum dependency or a transferred qualification.
 

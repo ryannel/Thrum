@@ -8,7 +8,7 @@ Reviewed integrated commit `9f83a70ea4ef2e38fd0837ab9c391184777cb262` on 10 Nove
 
 ### 1. Must Fix — Chrome temporal semantics lacked a discriminating proof: resolved
 
-The previous D2.5 relied on existing browser cases that did not observe reactive values or temporal predecessors. Revised [D2.5](../../design/modules/APPLE-PRESENTATION-DONE.json), lines 125–134, commissions a new `temporal` case and a reviewer question that binds its observations to the actual submitted browser frame path. The [design's witness](../../design/modules/APPLE-PRESENTATION.md), lines 176–214, defines seven rows and explicitly fails unavailable observations rather than skipping them.
+The previous D2.5 relied on existing browser cases that did not observe reactive values or temporal predecessors. Revised [D2.5](../../plans/APPLE-PRESENTATION/DONE.json), lines 125–134, commissions a new `temporal` case and a reviewer question that binds its observations to the actual submitted browser frame path. The [design's witness](../../plans/APPLE-PRESENTATION/DESIGN.md), lines 176–214, defines seven rows and explicitly fails unavailable observations rather than skipping them.
 
 The new proof distinguishes the ordinary wrong implementations identified last time:
 
@@ -23,7 +23,7 @@ The [browser submitted-capture export](../../../examples/v1-game/src/browser/sub
 
 ### 2. Suggestion — Reproducible reconstruction reference and tolerance: resolved
 
-[Design lines 247–268](../../design/modules/APPLE-PRESENTATION.md) now specify scene-linear accumulation before the common SDR transform, all held state, two identical 32-phase cycles, the separately accumulated reference, the 64-frame TAAU settling interval and the unjittered no-AA comparator. They accurately call the result a 32-sample reference rather than claiming convergence or 64 distinct samples.
+[Design lines 247–268](../../plans/APPLE-PRESENTATION/DESIGN.md) now specify scene-linear accumulation before the common SDR transform, all held state, two identical 32-phase cycles, the separately accumulated reference, the 64-frame TAAU settling interval and the unjittered no-AA comparator. They accurately call the result a 32-sample reference rather than claiming convergence or 64 distinct samples.
 
 The metric is whole-frame CIEDE2000 on decoded SDR sRGB with D65 white. The p99 bound remains at most 3 and strictly below the no-AA result. A miss is a failure; revising the bound requires evidence, a plan revision and design review. D3.2 retains its broken-history negative control. The revision removes ambiguity without relaxing the acceptance bound.
 
@@ -35,19 +35,19 @@ This addresses the concrete integration risk: [stars.rs](../../../crates/thrum-r
 
 ### 4. Suggestion — Preserve the later planning boundary: resolved
 
-[Design lines 25–33](../../design/modules/APPLE-PRESENTATION.md) and [plan lines 9–15](../../design/modules/APPLE-PRESENTATION-PLAN.md) explicitly limit approval to M1–M3 and seams 1–4. They retain the later review obligations for the EDR transform, normalized MetalFX output/exposure handoff, generation-build lifecycle and archive mechanism. This review preserves that limit.
+[Design lines 25–33](../../plans/APPLE-PRESENTATION/DESIGN.md) and [plan lines 9–15](../../plans/APPLE-PRESENTATION/PLAN.md) explicitly limit approval to M1–M3 and seams 1–4. They retain the later review obligations for the EDR transform, normalized MetalFX output/exposure handoff, generation-build lifecycle and archive mechanism. This review preserves that limit.
 
 ## New findings
 
 ### Suggestion — Align the cost-table milestone label with D3.5
 
-**Verified documentation inconsistency; nonblocking.** The [design cost table](../../design/modules/APPLE-PRESENTATION.md), line 470, still places “Both are measured (M3, M8)” in the TAAU-at-1080p row. Revised D3.5 and design lines 546–547 correctly separate M3's 640×360 result from the 1080p estimate, which awaits M4's surface extent.
+**Verified documentation inconsistency; nonblocking.** The [design cost table](../../plans/APPLE-PRESENTATION/DESIGN.md), line 470, still places “Both are measured (M3, M8)” in the TAAU-at-1080p row. Revised D3.5 and design lines 546–547 correctly separate M3's 640×360 result from the 1080p estimate, which awaits M4's surface extent.
 
 Update that table's milestone label during the next planning edit so readers do not mistake the M3 record for a 1080p measurement. The authoritative item and explicit open-question text already prevent that interpretation from passing review, so this does not hold up M1–M3.
 
 ## Request and inspection scope
 
-I read both `briefs` entries in [APPLE-PRESENTATION-ACCEPTED.json](../../design/modules/APPLE-PRESENTATION-ACCEPTED.json), oldest first and in full. The original task commissions the remaining road to the V1 exit plus water and clouds, continuous buildable work, module ownership/contracts, protection of concurrent PLATFORM-RUNTIME-MAC M2 and APPLE-TILE definitions, and explicit owner decisions. The second task commissions the revisions requested by the previous review; it does not narrow the original obligations.
+I read both `briefs` entries in [APPLE-PRESENTATION-ACCEPTED.json](../../plans/APPLE-PRESENTATION/ACCEPTED.json), oldest first and in full. The original task commissions the remaining road to the V1 exit plus water and clouds, continuous buildable work, module ownership/contracts, protection of concurrent PLATFORM-RUNTIME-MAC M2 and APPLE-TILE definitions, and explicit owner decisions. The second task commissions the revisions requested by the previous review; it does not narrow the original obligations.
 
 For this module the request requires shared temporal inputs and reconstruction, followed by the named display, governor and preparation work. Sea/cloud consumers must use those shared contracts. M1–M3 supply the early foundation; the remaining work stays explicitly assigned and deferred for further planning. No revised criterion changes simulation authority, silently drops a later V1 requirement, or edits a concurrent producer's definition.
 

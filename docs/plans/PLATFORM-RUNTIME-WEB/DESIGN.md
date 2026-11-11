@@ -1,21 +1,14 @@
-# Platform runtime web shell plan (G3b)
+# Web shell: the engine carries the browser platform runtime (G3b)
 
-Design: [PLATFORM-RUNTIME.md](PLATFORM-RUNTIME.md#g3b-world-and-presentation-lifecycle--selected-partial-implementation),
-contracts [C02](../CONTRACTS.md#c02-time-and-committed-state--f1-coordinator-w1-world),
-[C06](../CONTRACTS.md#c06-gpu-execution-and-lifetime--v1) and
-[C11](../CONTRACTS.md#c11-input-audio-and-ui-lifecycle--p1a1u1-with-f1). Sibling: the
-[iOS shell plan](PLATFORM-RUNTIME-IOS-PLAN.md).
+8 November 2026. Moved from the web shell plan on 11 November 2026, when the plans took the orchestrate 1.7.0 shape. The web shell was designed, built and reviewed before the loop, so this module has no done-when file; [the record](../../evidence/PLATFORM-RUNTIME-WEB/M1-record.md) holds what was accepted and [the log](LOG.md) the reviews. The sections below are unchanged.
+
+Family design: [PLATFORM-RUNTIME.md](../../design/modules/PLATFORM-RUNTIME.md#g3b-world-and-presentation-lifecycle--selected-partial-implementation),
+contracts [C02](../../design/CONTRACTS.md#c02-time-and-committed-state--f1-coordinator-w1-world),
+[C06](../../design/CONTRACTS.md#c06-gpu-execution-and-lifetime--v1) and
+[C11](../../design/CONTRACTS.md#c11-input-audio-and-ui-lifecycle--p1a1u1-with-f1). Sibling: the
+[iOS shell](../PLATFORM-RUNTIME-IOS/PLAN.md).
 Commission: Thrum Core's routing of daily-review finding D-M3, 8 November (`tmp/g6-boundary/NOTES.md`, "Root routing
 for the 8 November daily review"). Design and plan go to Thrum Core before any code.
-Reviews: design and plan at 12d4c81d, REVISE: pause/resume are game-owned, so the shell cannot be generic over the
-runtime alone; material reload does GPU work while lost. Brief `tmp/g3b-web-shell/review-brief-design.md`, report
-`tmp/g3b-web-shell/review-design.md` (Opus 5.5, 8 November). Recheck at 14fb0b8a: APPROVE WITH CHANGES (R1–R7, same
-report), all taken in this revision. Extraction code at 987a3ac3: APPROVE WITH CHANGES (brief
-`tmp/g3b-web-shell/review-brief-extraction.md`, report `tmp/g3b-web-shell/review-extraction.md`, Opus 5.5), all taken.
-Milestone: M1 Engine web shell carries the V1 page unchanged · Updated: 2026-11-08
-Now: M1 closed. Loss gates on main at 0a9009c1; the extraction landed at 15934fe7 on Thrum Core's clearance ([evidence](../../evidence/v1-workload/G3B-WEB-SHELL-2026-11-08.md))
-Next: none in this plan. The single-device-authority follow-up waits for G3t's `DeviceSite`; the second-game reuse proof is parked
-Blocked: none
 
 ## Problem
 
@@ -225,107 +218,9 @@ step is kept.
 4. When the page reports `Running`, recover through the real restore button. Require the valley drawn on the
    replacement device, with one swap and frames submitted.
 
-## M1 Engine web shell carries the V1 page unchanged: done
+## Follow-ups
 
-Done when:
-- [x] `thrum_app::web` owns the instance, surface, device request, loss signal, reconstruction, clock policy, frame
-      step, loss gates, status and samples. The facade holds a `WebShell` and no runtime, so the runtime's GPU methods
-      are unreachable from it except through the shell's gates. This command prints nothing:
-      `rg -n 'wgpu::Instance|set_device_lost_callback|get_current_texture|\.present\(|FrameHost|Runtime\b|\.host\.' examples/v1-game/src/browser.rs examples/v1-game/src/browser/`
-- [x] A camera and time changed during loss are retained, and the recovered device both renders and presents them:
-      the retained-view witness passes, first on today's facade and then on the extracted shell.
-- [x] While lost, material reload is refused and attach is deferred, then drawn on recovery: the two new witnesses
-      pass, first on today's facade and then on the extracted shell.
-- [x] Capture stays refused while lost, and input, pause, visibility, overload and solar time stay usable while lost.
-      These are the existing loss and recovery cases. Camera yaw is covered by the retained-view witness. Camera pitch,
-      parameter files and overlay go through the same CPU edit path, but no case exercises them while lost, and this
-      plan claims nothing for them.
-- [x] The Chrome checker passes: `check_v1_browser.mjs --case all`, which includes every case but `material` (and
-      now `valley-late-attach`), plus
-      `--case material` on the development page. The checker is not edited after the witness commit.
-- [x] The G7 route check passes against the committed baseline. The pre-change work item records two runs of the
-      witness commit's route and checker images. If those two are byte-identical, the post-change images must be
-      byte-identical to them. Otherwise, the post-change route grid difference against the pre-change run must be
-      zero at the route check's own cell grid.
-      The route stops are byte-identical before and after. The check failed on the reference too until Thrum Core
-      refreshed the night baseline (73fdca0c); on that baseline it passes with the extraction (0.003 / 0.004 / 0.005).
-- [x] `report()` text keeps its field names, order and number formatting. The default-page Wasm size, before and
-      after, is recorded.
-- [x] `./dev check` passes, and an independent review agrees. Its brief and verdict go on the Reviews line.
+Neither is planned; each needs its own commission.
 
-Work:
-- [x] Loss gates and witnesses on today's facade, in one change: the material refusal, the deferred attach, and the
-      three checker witnesses. Run on the base commit plus this change, then posted to Thrum Core as a seam diff with
-      its evidence and landed first. Serves the witness items.
-- [x] Pre-change reference: two runs of the full checker and the route check on the witness commit, recorded under
-      `tmp/g3b-web-shell/`. Serves the checker, route and report items.
-- [x] `thrum_app::web` with the shell, recovery, loss signal and gates moved from the game, `WebWorld`, and native
-      unit tests of `web_clock` (origin, refusal, clamp, visibility ∘ pause, a play change moving the last time).
-      Overload recovery is the shell calling `pause` then `resume_after_drain` on `WebWorld`; it has no clock state. Serves the ownership, witness and checker items.
-- [x] The v1-game facade rewritten over `WebShell`; `recovery.rs` moved into the shell; the `rg` check prints
-      nothing. Both wasm feature sets and `thrum-app` lint clean. Serves the ownership item.
-- [x] Checker, route and Wasm-size runs; review brief and review. Serves the remaining items.
-
-## Reuse follow-up: a second game in Chrome (parked)
-
-Parked by Thrum Core's ruling, not part of this plan. The proof that the shell is reusable is a game other than
-v1-game drawing in Chrome through `thrum_app::web` alone. The candidate is `examples/starter`, whose macOS build already
-uses `thrum-app`. It gets its own commission.
-
-## Log
-
-- 2026-11-08 Plan drafted from Thrum Core's D-M3 routing, docs only. It was submitted with the shared-file seam and two
-  open questions before any code.
-- 2026-11-08 Revised to Thrum Core's ruling. Placement is the wasm-only `thrum_app::web` module; report text stays in
-  the game facade over typed shell counters and samples; the second starter page is parked as a reuse follow-up. The
-  blanket `host_mut` refusal is withdrawn: it would have refused solar time, camera and input edits that today's facade
-  intentionally keeps usable while lost. The loss policy now classifies each operation, the shell gates only capture
-  start, and M1 gains a retained-view checker addition, landed first on today's facade, proving the recovered device
-  presents a camera and time changed during loss.
-- 2026-11-08 Revised for the independent design review (REVISE).
-  - H1: pause and resume are game-owned. The shell now drives them through a shell-side `WebWorld` trait, and the
-    drain state stays in the game's `WorldDriver`. This changes no `thrum-render` API and touches neither native world.
-  - H2: material reload is now refused while lost.
-  - M1: attach is deferred to publication.
-  - M2: `host_mut` is replaced by CPU-only mutators and gated GPU methods.
-  - M3: the `rg` command is named with its file scope.
-  - M4 and M5: the witness separates the camera control from the time control, reads both back from the game, compares
-    presented screenshots as well as captures, and adds repeat controls.
-  - M6: the report fields are listed.
-  - M7: the seam now covers the host wrapper, xtask, the dependency text and a native test route for the clock policy.
-  - L1–L7: corrected.
-  - The material and attach rows change today's behaviour, so they land first with witnesses on today's facade.
-- 2026-11-08 Recheck at 14fb0b8a approved with changes, all taken. Game edits compare through `host()` before one
-  mutable borrow, so unchanged edits reset no history (R1). Both gate witnesses count GPU calls on the lost device, and
-  attach-after-loss gets its own navigation (R2). A deferred attach that is refused ends the attempt in
-  `recovery_error`, and a later attach replaces a held one (R3). Each witness state converges before its images, and
-  either repeat failing withdraws the screenshot claim (R4). The route reference is the witness commit (R5). The panic
-  hook moves without a new crate (R6). `web::clock` is a pure state machine (R7).
-- 2026-11-08 First work item built. The attach-after-loss witness is a separate `valley-late-attach` case, since it needs
-  the cooked requests held before navigation. A deferred attach refused on the replacement device is reported in
-  `cooked_status` errors, the page's existing home for cooked failures, rather than `recovery_error`, which would offer
-  a retry for a healthy device.
-- 2026-11-08 Extraction built (987a3ac3). Independent code review (brief `tmp/g3b-web-shell/review-brief-extraction.md`,
-  report `tmp/g3b-web-shell/review-extraction.md`, Opus 5.5): APPROVE WITH CHANGES, all taken. The play state is now
-  recorded only after the world applies it; plan text says `web_clock` and puts overload in the shell (the R7 entry
-  above predates the rename); doc nits. The seam-table row for the game host changed: `host/web.rs` is new and the
-  native wrapper is not cfg-gated. Thrum Core sees it in the extraction seam diff.
-- 2026-11-08 M1 runs: reference (a66352e3) and after (c1e03736) both 30/30 twice and material twice; route images
-  byte-identical at the route stops; Wasm +10,414 B; `./dev check` passes. The route check's baseline item is held:
-  it fails on the reference with the same night-upslope drift.
-- 2026-11-08 Loss gates with Thrum Core's retained-view correction landed on main at 0a9009c1. The extraction's route
-  check passes on Thrum Core's refreshed night baseline (73fdca0c).
-- 2026-11-08 Thrum Core cleared the extraction at 68423c0a with one cleanup, taken: the console panic hook stays in V1's
-  `create_game`, thrum-app drops its direct `wasm-bindgen` dependency and `web-sys` `console` feature, and `WebGpu`'s
-  doc says the `FrameHost` keeps generation-bound handles while the game keeps none of its own.
-- 2026-11-08 M1 closed. Thrum Core cleared the extraction at 68423c0a on one condition: keep V1's console panic hook in
-  `create_game`, drop thrum-app's unused wasm-bindgen import and console feature, and clarify the `WebGpu` handle doc.
-  All three are done. Rebased over Thrum Core's contribution-recovery change (000ffcdb) and G5's cooked mesh witness.
-  Reruns all pass:
-  - on 000ffcdb: the five Chrome recovery and loss cases, `material` on the development page and `./dev check`;
-  - on 50d33835: `--case all` 30/30 and `./dev check`;
-  - on the docs-only head: the repository checks.
-  Landed as a fast-forward at 15934fe7.
-- 2026-11-08 Follow-up agreed with G3t, not yet built. When `SceneSurface.device` becomes `&DeviceSite`, the shell drops
-  its raw `wgpu::Device` fields (`WebGpu`, `WebShell`, `GraphicsDevice`) and reads the device through the published
-  capabilities' site, so the facade keeps one device authority. That diff goes as its own seam.
+- **A second game in Chrome.** Parked by Thrum Core's ruling, not part of this plan. The proof that the shell is reusable is a game other than v1-game drawing in Chrome through `thrum_app::web` alone. The candidate is `examples/starter`, whose macOS build already uses `thrum-app`. It gets its own commission.
+- **One device authority.** Agreed with G3t and not built: when `SceneSurface.device` becomes `&DeviceSite`, the shell drops its raw `wgpu::Device` fields and reads the device through the published capabilities' site. [The log](LOG.md) has the entry.

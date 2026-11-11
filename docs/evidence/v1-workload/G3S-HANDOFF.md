@@ -1,7 +1,7 @@
 # Thrum V1 handoff
 
 Updated 8 November 2026. Start from remote `main` and
-[the build plan](../../BUILD-PLAN.md). The older three-band baseline is `7236b38`. This file
+[the build plan](../../plans/BRIEF.md). The older three-band baseline is `7236b38`. This file
 travels with the candidate, so use its enclosing commit to identify the exact tested source.
 The Codex goal remains active. Its attachment is
 `/Users/ryannel/.codex/attachments/86327eba-9dfd-4eff-965e-5bb0a2134938/goal-objective.md`.
@@ -20,7 +20,7 @@ The Codex goal remains active. Its attachment is
   route baseline. The independent scope review confirms that
   the shipped Ground E terrain lip and the authored spur's
   in-cascade flash remain separate open motion findings.
-  [Scope review](../../design/modules/ATMOSPHERE-PLAN.md#m3-scope-review-brief).
+  [Scope review](../ATMOSPHERE/review-briefs.md#m3-scope-review-brief).
 
 - Stock control baseline over `66d6a9dd`. Hardware Chrome at
   16:45 swaps to the doubled-height rock in one publication.
@@ -80,7 +80,7 @@ The Codex goal remains active. Its attachment is
   flag. Physical traffic for the parked graph is unmeasured.
   Clips, frame logs, per-run load, p99 and guard audit are under
   `tmp/g3s-sunset-lip/graph/production-pcss/opaque-winner/`.
-  [Independent motion review](../../design/modules/ATMOSPHERE-PLAN.md#m3-frozen-resolve-motion-review-brief).
+  [Independent motion review](../ATMOSPHERE/review-briefs.md#m3-frozen-resolve-motion-review-brief).
 
 - The one-ULP guard at `77e84128` passes `./dev check` and Chrome
   recovery after two deliberate device destructions. It is on
@@ -103,7 +103,7 @@ The Codex goal remains active. Its attachment is
   This does not establish whole-view material-hook fallback or
   motion quality. The fixture scripts, compressed stills and raw
   depth planes are in the M3 opaque-winner scratch folder.
-  [Independent review](../../design/modules/ATMOSPHERE-PLAN.md#m3-live-tie-and-fallback-review-brief).
+  [Independent review](../ATMOSPHERE/review-briefs.md#m3-live-tie-and-fallback-review-brief).
 
 - Integrated Metal depth on `d7738029`: the receiver and forward
   stored D32 planes are byte-identical at submissions 0 and 225–227.
@@ -121,7 +121,7 @@ The Codex goal remains active. Its attachment is
   in the existing forward pass. These samples use the exact guard
   before the one-ULP change. `live-named-times`, `live-depth-crossing`,
   `live-one-ulp-crossing` and the probe patches are next to the smoke.
-  [Independent review](../../design/modules/ATMOSPHERE-PLAN.md#m3-live-depth-guard-review-brief).
+  [Independent review](../ATMOSPHERE/review-briefs.md#m3-live-depth-guard-review-brief).
 
 - The first opt-in live graph is saved at `d7738029` in
   `tmp/g3s-live-receiver`. Native Metal cooked-valley smoke
@@ -137,7 +137,7 @@ The Codex goal remains active. Its attachment is
   per-frame timings, exact patch, `run-live-smoke.sh` and
   `live-witness-next.md` are in
   `tmp/g3s-sunset-lip/graph/production-pcss/opaque-winner/`.
-  [Code review](../../design/modules/ATMOSPHERE-PLAN.md#m3-live-receiver-review-brief).
+  [Code review](../ATMOSPHERE/review-briefs.md#m3-live-receiver-review-brief).
 
 - The fixed packed GPU resolve over `81f55ef2` reproduces the
   CPU oracle on the held caster, crossing and extinction crops.
@@ -155,7 +155,7 @@ The Codex goal remains active. Its attachment is
   GPU cost remain open. The shader, negative run, raw rows and
   `rerun.sh /absolute/new-output-directory` are in
   `tmp/g3s-sunset-lip/graph/production-pcss/receiver-resolve-gpu/`.
-  [Independent review](../../design/modules/ATMOSPHERE-PLAN.md#m3-packed-gpu-resolve-review-brief).
+  [Independent review](../ATMOSPHERE/review-briefs.md#m3-packed-gpu-resolve-review-brief).
 
 - The isolated Metal opaque-winner diagnostic over `25ebe50c`
   uses the unchanged production Direct, Compacted and cooked
@@ -175,7 +175,7 @@ The Codex goal remains active. Its attachment is
   the input digests and `live-seam-review.md`. The live graph,
   per-fragment depth guard, cooked generation and hook fallback,
   Chrome and cost still need proof.
-  [Independent review](../../design/modules/ATMOSPHERE-PLAN.md#m3-opaque-winner-review-brief).
+  [Independent review](../ATMOSPHERE/review-briefs.md#m3-opaque-winner-review-brief).
 
 - The held 160 m caster passes offline 3×3 preservation over
   `d5768222`. All 73 submission identities match across the four
@@ -195,7 +195,7 @@ The Codex goal remains active. Its attachment is
   are unchanged. See `record_preservation.sh`, `resolve-positive.cpp`
   and `preservation-scores.json` in
   `tmp/g3s-sunset-lip/graph/production-pcss/receiver-diagnostic/`.
-  [Independent review](../../design/modules/ATMOSPHERE-PLAN.md#m3-offline-preservation-review-brief).
+  [Independent review](../ATMOSPHERE/review-briefs.md#m3-offline-preservation-review-brief).
 
 - M3's 160 m stock caster control on `b4ec6eac` is positive.
   In the old fit the 24×55 cm plate projects to 0.204×0.467
@@ -214,7 +214,7 @@ The Codex goal remains active. Its attachment is
   `tmp/g3s-sunset-lip/graph/production-pcss/receiver-diagnostic/`
   holds the frozen recipes, `record_resolvable.sh`,
   `resolvable-qualification.json` and `resolvable-pair.png`.
-  [Control review](../../design/modules/ATMOSPHERE-PLAN.md#m3-resolvable-caster-review-brief).
+  [Control review](../ATMOSPHERE/review-briefs.md#m3-resolvable-caster-review-brief).
 
 - M3 caster trace on `bded4d69` captured the same frame 72 with
   the valley and its authored 2.4 m × 1.8 m positive caster. The
@@ -240,7 +240,7 @@ The Codex goal remains active. Its attachment is
   `tmp/g3s-sunset-lip/graph/production-pcss/receiver-diagnostic/`.
   `caster-maps.sh` records the raw depth and fit, and
   `trace_caster.py` projects the exact authored triangles.
-  [Resolve review](../../design/modules/ATMOSPHERE-PLAN.md#m3-current-frame-visibility-review-brief).
+  [Resolve review](../ATMOSPHERE/review-briefs.md#m3-current-frame-visibility-review-brief).
 
 - M3 raw receiver diagnostic on `5984ca51` replayed the exact 230
   crossing and 95 extinction submission identities on Metal. It
@@ -269,7 +269,7 @@ The Codex goal remains active. Its attachment is
   scratch with `build.sh`, rerun `record.sh` with `crossing` or
   `extinction` and a new output directory, and score with `resolve`
   and `score.py`. `compact-authored.sh` repeats the fixture controls.
-  [Design and review](../../design/modules/ATMOSPHERE-PLAN.md#m3-current-frame-visibility-review-brief).
+  [Design and review](../ATMOSPHERE/review-briefs.md#m3-current-frame-visibility-review-brief).
 
 - M3's current-frame resolve design is in
   `tmp/g3s-sunset-lip/graph/production-pcss/spatial-resolve-review.md`
@@ -282,7 +282,7 @@ The Codex goal remains active. Its attachment is
   confined to the prepared variant. Exact coplanar synthetic/cooked
   winner, compact-caster preservation and cooked seam review remain
   open. The diagnostic is next. No new capture ran in this checkpoint.
-  [Review brief](../../design/modules/ATMOSPHERE-PLAN.md#m3-current-frame-visibility-review-brief).
+  [Review brief](../ATMOSPHERE/review-briefs.md#m3-current-frame-visibility-review-brief).
 
 - M3's first matched production PCSS screen fails D1 at source
   `efa82534`. At row 665 across x=480–1200, stock, fixed and rotated
@@ -313,7 +313,7 @@ The Codex goal remains active. Its attachment is
   −110° to −70°. These are offscreen motion records. Physical
   display cadence, route and control requalification, cooked
   replacement and discard equality were outside this rejected
-  filter screen. [Reviewed screen protocol](../../design/modules/ATMOSPHERE-PLAN.md#m3-production-pcss-review-brief).
+  filter screen. [Reviewed screen protocol](../ATMOSPHERE/review-briefs.md#m3-production-pcss-review-brief).
 
 - M2 orientation, source `9c1021bb`: the CPU witness matches 30
   named-star projections within 2.020e-7 direction error. All 18,000
@@ -347,7 +347,7 @@ The Codex goal remains active. Its attachment is
   rejected the first SMRT design before implementation. Sixteen binary
   rays resolve only 6.25 pp steps. All eight stored-field rows resolve
   below that in the dense PCSS control. The shipped shader is unchanged.
-  See the [current milestone plan](../../design/modules/ATMOSPHERE-PLAN.md#m3-sunset-crossing).
+  See the [current milestone plan](../../plans/ATMOSPHERE/PLAN.md#m3-sunset-crossing).
 
 - Contour-area PCSS recovers the row-665 limb on all eight saved D32
   receivers. The literal query refused all eight at 16 intersecting
@@ -642,7 +642,7 @@ The Codex goal remains active. Its attachment is
   The central magnitude 3/6 SDR control yields 207/58, 211/74 and 212/86
   green codes at matched exposure. The game basis keeps known equatorial
   directions and matches the slider wrap. Chrome's cooked valley build
-  `b870c1ee` rendered 00:00 and 24:00 byte-identically. [Review brief](../../design/modules/ATMOSPHERE-PLAN.md#production-star-optics-review-brief).
+  `b870c1ee` rendered 00:00 and 24:00 byte-identically. [Review brief](../ATMOSPHERE/review-briefs.md#production-star-optics-review-brief).
   Raw tests and rerun commands are in `tmp/g3s-star-catalog/current-main/`
   and `tmp/g3s-star-catalog/NOTES.md`.
 
@@ -939,7 +939,7 @@ The Codex goal remains active. Its attachment is
   changed the sampled SDR sky by at most one code. Baseline midnight was
   entirely black. Capture and scoring scripts, matched frames and source hash
   are in `tmp/g3s-showcase/sky-contours/`.
-- The first [M1 night checkpoint](../../design/modules/ATMOSPHERE-PLAN.md)
+- The first [M1 night checkpoint](../../plans/ATMOSPHERE/PLAN.md)
   lights the cooked valley at midnight in Metal and Chrome. On Metal, the prior
   black frame becomes a sky of RGB code 63–68 in the top 130 rows. The sampled
   foreground rectangle reads 20–29. Dawn, noon, sunset, twilight and the held Sun
@@ -1187,7 +1187,7 @@ shadow probes one level up. Run its `build.sh`, `capture.sh` and `compare.py`
 from the repository root to reproduce. These are offscreen visual comparisons.
 
 - **Night and EV floor remain open with G3s.** The reviewed
-  [night milestones](../../design/modules/ATMOSPHERE-PLAN.md) pair the key and
+  [night milestones](../../plans/ATMOSPHERE/PLAN.md) pair the key and
   storage correction with moonless light and then stars. The current renderer
   remains Sun-only. Lunar illumination and mesopic colour remain open.
 - **G3t/G4 own HDR.** G3t owns storage and the native boundary. G4 owns the shared display

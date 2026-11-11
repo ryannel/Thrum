@@ -8,8 +8,9 @@
 | `scripts/` | Small repository/document validation tools |
 | `.config/architecture.toml` | Registered workspace packages and allowed dependency edges |
 | `.agents/skills/` | Focused engine-design and repository workflows |
+| `docs/plans/` | The orchestrate plans: the status page, the brief, the module list, and a folder per module with its design, plan, log and done-when file |
 | `docs/design/` | Canonical engine requirements, contracts, specifications and maturity |
-| `docs/evidence/` | Compact dated research/review and implementation evidence |
+| `docs/evidence/` | Compact dated research/review and implementation evidence; `docs/evidence/<MODULE>/` holds a module's reviews, review briefs and records |
 | `docs/provenance/` | Import origins and historical context, not working dependencies |
 | `tmp/<task>/` | Ignored, owned disposable work with a bounded lifetime |
 | `target/` | Ignored reproducible Cargo output |

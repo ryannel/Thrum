@@ -141,4 +141,4 @@ closure. The failed B build's receipts are now audited; interrupted or timed-out
 builds still lack complete receipt/child-closure proof. The wrapper executable itself is not part of a reviewed release
 selection. The candidate has no reviewed release manifest, retained output
 manifest, durable ready publication or game-run handoff. These gates remain in
-the unchecked native compiler-adapter item of the [build plan](../../BUILD-PLAN.md).
+the unchecked native compiler-adapter item of the [build plan](../../plans/BRIEF.md).

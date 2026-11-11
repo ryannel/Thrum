@@ -27,4 +27,4 @@ are membership fixtures only, not qualified dependency/toolchain declarations.
 The [selected build profile](../../design/F4-FIRST-HEADLESS-BUILD.md) specifies
 the remaining compiler isolation, complete dependency closure, retained binary
 and product bytes, trusted target manifest, `BuildRevision`, fresh run and
-private save proof. The parent [build-plan item](../../BUILD-PLAN.md) stays open.
+private save proof. The parent [build-plan item](../../plans/BRIEF.md) stays open.

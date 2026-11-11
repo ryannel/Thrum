@@ -86,7 +86,7 @@ Keep selection status (proposed, provisional, selected, superseded) separate fro
 
 Each module brief supplies the requirement set, external contracts, budget, key interactions, open decisions,
 research depth and completion criteria. Include the relevant creator journey and content source when either could
-change the module boundary or its proof. Write it to `docs/design/modules/<MODULE>-BRIEF.md` (or a section of the
+change the module boundary or its proof. Write it to `docs/plans/<MODULE>/BRIEF.md` (or a section of the
 architecture brief), then `/plan-module` does the research, design and milestones. Child research may expose a missing owner or contract; integrate that finding across affected
 consumers before treating the module design as settled. The architecture owner retains the shared contract and
 whole-scene budget, even when module studies run independently.

@@ -1,6 +1,12 @@
-# G7 showcase route plan
+# G7 showcase route slice: record
 
-Design: [G7-SHOWCASE-ROUTE](G7-SHOWCASE-ROUTE.md)
+The plan for the first G7 slice, the local launch and six-stop review route, as it stood when its four milestones
+closed on 7 November 2026. It was `docs/design/decisions/G7-SHOWCASE-ROUTE-PLAN.md` until 11 November 2026, when the
+plans took the orchestrate 1.7.0 shape; it is kept as the record of work finished before the loop, and nothing
+below is open. What final G7 still owes is planned as `SHOWCASE` in
+[the module list](../../plans/ARCHITECTURE.md#showcase-g7). The text below is unchanged apart from this heading.
+
+Design: [G7-SHOWCASE-ROUTE](../../design/decisions/G7-SHOWCASE-ROUTE.md)
 Reviews: design and plan @ first draft, brief `tmp/g7-showcase/review/DESIGN-REVIEW-BRIEF.md` (local, not checked in), accept
 with changes. Nine findings, all taken: the target texture profiles, a max-cell metric with a positive control, a fixed
 calibration rule, the real native fallback guard, explicit checker inputs with a Wasm identity check, paused presets,
@@ -115,7 +121,7 @@ Work:
 
 ## M4 Continuous valley ground material: done
 Commission: root, `tmp/g7-boundary/NOTES.md` "Root commission after G7 M3: continuous valley ground material"; the
-look item in the [atmosphere plan](../modules/ATMOSPHERE-PLAN.md). Chrome and offscreen Metal only; the owner-screen
+look item in the [atmosphere plan](../../plans/ATMOSPHERE/PLAN.md). Chrome and offscreen Metal only; the owner-screen
 walk stays separate. Root owns camera, terrain geometry, shadows, exposure, sky, shaders, sampler, the checker and the
 shared scene; the 17.4 h brightness step and the shadow findings are root's and are kept apart from material
 boundaries.

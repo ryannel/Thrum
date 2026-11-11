@@ -1,26 +1,26 @@
 # Reconstruction, display and quality governor (G4)
 
-[Boundary decision](../decisions/G3T-METAL-BOUNDARY.md) ·
-[Hardware-native engine](../decisions/HARDWARE-NATIVE-ENGINE.md) ·
-[C04](../CONTRACTS.md#c04-feature-composition-and-quality--f2) ·
-[C06](../CONTRACTS.md#c06-gpu-execution-and-lifetime--v1) ·
-[C07](../CONTRACTS.md#c07-render-scene-views-and-temporal-data--v2-with-p4v3v4) ·
-[C12](../CONTRACTS.md#c12-budgets-evidence-and-acceptance--t2-with-all-owners) ·
-[Render spec](../RENDER-SPEC.md) · [Apple tile (G3t)](APPLE-TILE.md) · [Milestones](APPLE-PRESENTATION-PLAN.md)
+[Boundary decision](../../design/decisions/G3T-METAL-BOUNDARY.md) ·
+[Hardware-native engine](../../design/decisions/HARDWARE-NATIVE-ENGINE.md) ·
+[C04](../../design/CONTRACTS.md#c04-feature-composition-and-quality--f2) ·
+[C06](../../design/CONTRACTS.md#c06-gpu-execution-and-lifetime--v1) ·
+[C07](../../design/CONTRACTS.md#c07-render-scene-views-and-temporal-data--v2-with-p4v3v4) ·
+[C12](../../design/CONTRACTS.md#c12-budgets-evidence-and-acceptance--t2-with-all-owners) ·
+[Render spec](../../design/RENDER-SPEC.md) · [Apple tile (G3t)](../APPLE-TILE/DESIGN.md) · [Milestones](PLAN.md)
 
 Revision 3 for Thrum Core review, 7 November 2026; G3t handoffs reconciled 9 November. Revised 10 November after
 [the loop's design review](../../evidence/APPLE-PRESENTATION/design-review.md) at `4bbe44a4` (changes requested); a
 fresh design review of this revision is owed. It answers the three independent reviews of revision 1
-(`86ec3b6b`) and the re-reviews of revision 2 (`c507ad3d`) recorded in the plan. Interface and path names below are
+(`86ec3b6b`) and the re-reviews of revision 2 (`c507ad3d`) recorded in [the log](LOG.md). Interface and path names below are
 proposals.
 
-**The owner's request.** The V1 exit in [the build plan](../../BUILD-PLAN.md#goal-and-exit-rule) asks for "MetalFX,
+**The owner's request.** The V1 exit in [the build plan](../BRIEF.md#goal-and-exit-rule) asks for "MetalFX,
 EDR and a quality governor" and gate G4 for "No pipeline compilation during play." The 10 November planning task
 that put this module on the loop says, word for word: "The owner wants work lined up continuously toward the V1
 exit in docs/BUILD-PLAN.md, so builders always have a next milestone". The task for this revision says, word for
 word: "Revise APPLE-PRESENTATION's design and plan as docs/evidence/APPLE-PRESENTATION/design-review.md asks".
-[The module list](ARCHITECTURE.md) places this module and accepts seams 1–4 below as proposed; M1–M3 are in
-[the done-when file](APPLE-PRESENTATION-DONE.json) and M4–M11 are migrated next, when seams 5–9 are settled.
+[The module list](../ARCHITECTURE.md) places this module and accepts seams 1–4 below as proposed; M1–M3 are in
+[the done-when file](DONE.json) and M4–M11 are migrated next, when seams 5–9 are settled.
 
 **What a design approval covers.** A Design Approved result for this revision approves M1–M3 and seams 1–4, and
 nothing later. Everything this page says about M4–M11 and seams 5–9 is direction for the plan run that migrates
@@ -48,7 +48,7 @@ G4 adds:
 - native pipeline preparation through G3t's backend boundary.
 
 Consumers are the V1 game on macOS and in Chrome, the iOS shell (function only in the simulator), G7's showcase route
-and evidence. G4 consumes, from [APPLE-TILE](APPLE-TILE.md):
+and evidence. G4 consumes, from [APPLE-TILE](../APPLE-TILE/DESIGN.md):
 - G3t's proof tooling (route, counters, reference image);
 - the replaceable pre-tone scene-linear colour/exposure input, with the existing SDR tone/intermediate/present path;
 - the execute-time surface binding;
@@ -546,3 +546,104 @@ Mac rows standing in for iPhone are labelled proxy. iPhone EDR and timing are ow
 - Is the TAAU 1080p estimate right? M3 records TAAU's time at its own 640×360 extent, kept apart from this
   estimate; the 1080p figure is settled when M4 gives the surface extent.
 - Does MetalFX's history track a GPU-written exposure texture under a changing storage scale? Settled by M8.
+
+## Game outcomes
+
+Moved from the module plan on 11 November 2026, when the plans took the orchestrate 1.7.0 shape.
+
+In the V1 game on this M3 Max:
+- the valley fills the window at full backing resolution;
+- MetalFX temporal reconstructs it on Apple tile, and TAAU on portable and in Chrome;
+- stars, the Sun and reveals are stable;
+- EDR highlights appear on the built-in XDR display within its headroom;
+- the governor holds the display rate under forced load without oscillation;
+- the simulation is unchanged;
+- scale, headroom and cut changes create nothing during play;
+- resizes and backing-scale changes keep presenting while the new generation builds off the render thread.
+
+The paired proof compares Apple tile + MetalFX + EDR with portable + TAAU. The iOS simulator shows reconstruction and
+the SDR path for function only. iPhone EDR and timing are owed.
+
+## Evidence conventions
+
+Moved from the module plan on 11 November 2026, when the plans took the orchestrate 1.7.0 shape.
+
+As in [G3t's conventions](../APPLE-TILE/DESIGN.md#proof-and-builder-handoff): fixed-step route, reference image, counters,
+noise threshold and labels. Additions:
+- **Reconstruction reference and tolerance.** [The design](DESIGN.md#techniques-and-evidence) defines
+  both, under *Reconstruction reference and tolerance*: a 32-sample reference averaged in scene-linear colour with
+  the scene, time and exposure held and checked; CIEDE2000 on the submitted SDR output over the whole frame; p99 at
+  most 3 (provisional, changed only by a plan revision) and lower than the no-AA frame's.
+- **Temporal-input witness.** [The design](DESIGN.md#techniques-and-evidence) defines rows W1–W7 under
+  *The temporal-input witness*: one fixture read by the Mac tests and the Chrome case, with values taken from
+  submitted frames.
+- **Motion review.** Pans, translating lights, reveals behind a moving prop, a spawn, a time-of-day scrub and a cut,
+  recorded as sequences and judged by agent review. Each review states that it watched motion.
+- **Display overrides.** The only display is the built-in XDR panel (3456×2234, potential headroom 16). Rows for SDR
+  displays, refresh changes and display moves use forced overrides of the display record, labelled as such. A
+  physical external-display row is owed.
+- **Sim identity.** World-state hash and tick count at route end, with the governor on and off.
+
+## Ownership, call sites and review order
+
+Moved from the module plan on 11 November 2026, when the plans took the orchestrate 1.7.0 shape.
+
+| Area | Owner after approval | Files | Shared call sites |
+|---|---|---|---|
+| Jitter, matrices, motion, subrectangle | G4, with the C07 and RENDER-SPEC owners' review | `synthetic/view.rs`, `synthetic.wgsl`, `synthetic.rs` (`pack_aux`) | G3c visibility (view record), atmosphere |
+| Sky and star motion at infinity | Atmosphere owner, by G4 request (seam 4) | `atmosphere/sky.wgsl`, star pass | Atmosphere plan |
+| Third forward target and mip bias | G4, with the G5, asset and atmosphere owners' review (seam 3) | `synthetic.rs` forward targets, `contribution.rs:56`, `thrum-asset-gpu/src/draw.rs`, `material.rs`, `atmosphere/gpu.rs` | All forward contributors |
+| History protocol | G4, with the C07 owner's review (seam 1) | `history.rs`, `runtime.rs` | The existing drop contract; G3t M10–M11 for native frames |
+| Reconstruction | G4 | new `reconstruction/{mod,taau,jitter,exposure,reference}.rs`, `taau.wgsl` | Pre-tone linear input (G3t M3) |
+| Render extent and transitions | G4, with the frame-runtime and G3b owners' review (seam 5) | `runtime.rs:39`, `runtime/preparation.rs`, `render_actor.rs`, `examples/v1-game-ios/src/ios/render.rs:24` | G3t M11 provider rebuild |
+| EDR present | G4 | `present.rs`, `present.wgsl` | G3t M3 pre-tone input; G4 owns EDR display math |
+| Platform display record, EDR layer, thermal | G4, with the platform owner's review (seam 6) | `thrum-app/src/app/device.rs`, `app.rs`, `display_link.rs`; iOS `ios.rs`, `ios/render.rs` | G3b lease (untouched) |
+| Governor and missed ticks | G4 (seam 7) | new `governor.rs`; `runtime.rs` (missed-tick count, value commit) | C04 |
+| MetalFX provider | G4 | new `apple_tile/metalfx.rs` | G3t `apple_tile/segment.rs` |
+| Pipeline preparation and archives | G4, with the asset-pipeline owner's review for the cook | metallib cook step, passthrough loader, wgpu-hal Metal `PipelineCache` patch | G4 M10 pipeline preparation; every pipeline site |
+
+Review order:
+1. History protocol.
+2. Jitter, matrices and motion.
+3. Forward contributors.
+4. TAAU.
+5. Extent and transitions.
+6. Scale.
+7. EDR and display record.
+8. Governor.
+9. MetalFX.
+10. Offline metallibs and archives.
+
+## Parallel work and dependencies on G3t
+
+Moved from the module plan on 11 November 2026, when the plans took the orchestrate 1.7.0 shape.
+
+| G4 milestone | Can start when | Runs in parallel with |
+|---|---|---|
+| M1 jitter, matrices, motion | G3t M0, atmosphere checkpoint, seams 2 and 4 | G3t M1–M3 |
+| M2 temporal inputs, history protocol | M1, G3t M1 (eligibility report), G3t M2 (shares `runtime.rs`), seams 1 and 3 | G3t M3/M10–M11 (sequential integration for shared files) |
+| M3 TAAU at native scale | M2, **G3t M3** (TAAU output feeds the retained pre-tone input) | G3t M10–M11 |
+| M4 surface extent and transitions | M3, **G3t M3**, seam 5 | G3t M10–M11 |
+| M5 dynamic scale | M4 | M6 |
+| M6 EDR on macOS | **G3t M3**, seam 6 | M5 |
+| M7 governor | M5, seam 7 | M6 |
+| M8 MetalFX temporal | **G3t M11**, seam 8, M5 | M9 |
+| M9 launch-to-ready split, prepared paths | D9.1 after G3t M0; the rest after M4–M8 | G3t M12 |
+| M10 offline metallibs, pre-warm, local archive | D9.1 | M2–M9 (own files) |
+| M11 paired proof | M1–M10, G3t M12 | none |
+
+**Handoffs from G3t**, with their contracts in [G3t's plan](../APPLE-TILE/DESIGN.md#sequence-and-dependencies):
+- *G3t M0 → all checks.*
+- *G3t M1 → M2.*
+- *G3t M3 → M3/M4/M6.* One replaceable pre-tone scene-linear input carries matching exposure, extent and
+  sample/generation identity. The existing SDR tone-to-Rgba8Unorm-to-present path and nearest mapping remain.
+  G4 inserts TAAU/MetalFX there and owns the qualified EDR branch, headroom transform and transition filtering.
+  The surface is bound at execute time; no fused-shader feasibility or traffic saving is inherited from G3t.
+- *G3t M11 → M8.* The first native handoff, unlocked by G3t D10.1–D11.3.
+
+G3t M11 proves replacement with bounded provider fixtures; M12 records current readers and fixed extents. Neither
+waits for G4. G4's paired proof reruns eligibility with M2's real reconstruction readers and traffic with M5's actual
+scale steps; these are G4 integration obligations, not backward G3t prerequisites.
+
+M1–M3 are the early in-game work on portable through public interfaces. They need G3t's proof tooling and graph
+milestones, not the boundary ruling.

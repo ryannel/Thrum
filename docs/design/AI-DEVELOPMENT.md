@@ -174,7 +174,7 @@ a checkpoint, and a report never pauses building.
 | Evaluator | A clean-context `/review-milestone` agent inspects frame sequences and contact sheets captured offscreen from the exact build on the named target, judges each item against the list and bar, and records `agent_reviewed`. | Yes, the milestone closes on its pass |
 | Owner steer | The daily report carries new inspection lists, verdicts and contact sheets. The owner adjusts a bar or overturns a verdict; an overturned verdict becomes a graded example for the evaluator. | Never |
 
-Every later visual milestone plans evidence through [T2 capture](modules/T2-CAPTURE.md): exact submitted engine
+Every later visual milestone plans evidence through [T2 capture](../plans/T2-CAPTURE/DESIGN.md): exact submitted engine
 images by default, full-resolution source sequences plus review artifacts, and explicit fixed-time versus real-time
 claims. Runtime/live-motion criteria need elapsed-time capture that preserves stalls; a smooth offline movie is
 insufficient. List included/excluded surfaces and required target capability (`T2-CAPTURE:M0` Mac, `M1` Chrome,
@@ -257,7 +257,7 @@ from a long chat. Failed, skipped or outdated evidence cannot promote maturity a
 
 ## Delivery order and behavioral qualification
 
-The [build plan](../BUILD-PLAN.md) owns current sequencing; G6 delivers the first game-authoring loop. The stages below
+The [build plan](../plans/BRIEF.md) owns current sequencing; G6 delivers the first game-authoring loop. The stages below
 describe what the tooling needs, not an order of work.
 
 | Stage | Deliver the smallest useful part | Completion boundary |

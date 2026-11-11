@@ -3,7 +3,7 @@
 The fixed valley camera no longer shows a one-frame foreground shadow jump as the Sun sets behind the ridge. The
 two Sun cascades now filter a finite solar disk: a percentage-closer soft-shadow (PCSS) search for the nearest
 upstream blocker, then a disk filter. A receiver-bending bound stops terrain creases from shadowing their own
-receiver at low Sun. [Build plan](../../BUILD-PLAN.md), [first-light evidence](G3S-FIRST-LIGHT-2026-11-06.md).
+receiver at low Sun. [Build plan](../../plans/BRIEF.md), [first-light evidence](G3S-FIRST-LIGHT-2026-11-06.md).
 
 ![Top: main at solar frames 34 and 35. Middle: candidate at 34 and 35. Bottom, contrast ×3: the earlier PCSS
 draft and the candidate at solar frame 30](g3s-first-light/solar-penumbra-compare.png)

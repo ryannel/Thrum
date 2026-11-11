@@ -4,7 +4,7 @@
 fresh iPhone 18 Pro / iOS 27.2 simulator through `examples/v1-game-ios/ios/check-simulator.sh`. The Apple M3 Max
 host was shared with four other sessions; its load average was 110–237 during the passing run and up to 455 in an
 earlier one. **Simulator function evidence only.** Wall times are host-scheduled and carry no device timing claim.
-Plan: [PLATFORM-RUNTIME-IOS-PLAN](../../design/modules/PLATFORM-RUNTIME-IOS-PLAN.md) M5 and M6. Earlier rows:
+Plan: [PLATFORM-RUNTIME-IOS-PLAN](../../plans/PLATFORM-RUNTIME-IOS/PLAN.md) M5 and M6. Earlier rows:
 [G3B-IOS-SIM-ROUTE-2026-11-07](G3B-IOS-SIM-ROUTE-2026-11-07.md).
 Raw data:
 - the passing full route after the close review, `tmp/g3b-ios-rotation/route-full7/` (log `tmp/g3b-ios-route-full7.log`);

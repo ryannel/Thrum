@@ -1,9 +1,9 @@
 # Unattended frame evidence — T2 capture
 
 Status: Mac M0 passed its third milestone review. Chrome M1 is implemented and claimed for lead review,
-9 November 2026. Simulator M2 remains open. See the [plan](T2-CAPTURE-PLAN.md) for current proof.
-[Brief](T2-CAPTURE-BRIEF.md) · [plan](T2-CAPTURE-PLAN.md) · [criteria](T2-CAPTURE-DONE.json).
-This is a child of [Diagnostics and delivery](TOOLS-DELIVERY.md), not a new engine subsystem or package.
+9 November 2026. Simulator M2 remains open. See the [plan](PLAN.md) for current proof.
+[Brief](BRIEF.md) · [plan](PLAN.md) · [criteria](DONE.json).
+This is a child of [Diagnostics and delivery](../../design/modules/TOOLS-DELIVERY.md), not a new engine subsystem or package.
 The author inspected current capture code before completing this design; this is not a blind study.
 
 ## Outcome and proof boundaries
@@ -224,3 +224,42 @@ The locked-console experiment establishes feasibility on a named configuration, 
 sleep, power loss or arbitrary OS GPU suspension. An unavailable GPU/tool returns unavailable, never a success or
 an instruction to weaken system security. A newly discovered attended exception names the exact failed preflight,
 required observation and why an engine/tool adapter cannot supply it; it does not halt other visual work.
+
+## Ownership and sequence
+
+Moved from the module plan on 11 November 2026, when the plans took the orchestrate 1.7.0 shape.
+
+T2 owns this child work of TOOLS-DELIVERY; no new crate. Build sequentially. Existing committed pages/world lane,
+FrameHost, cooked content, platform loss/lease and scene/controls are available now. M0 must preserve
+`PLATFORM-RUNTIME-MAC:M1` (done). M1/M2 here follow M0; no dependency on G3t/G4 or Mac qualification M2.
+Mac qualification M2 needs only `T2-CAPTURE:M0`; Mac M3 separately needs `APPLE-TILE:M3` for post-change requalification.
+Later visual milestones use M0 on Mac,
+M1 on Chrome and M2 on the simulator at the first proof requiring this tooling. Existing completed evidence is not
+invalidated. Captures cannot close an attended panel item.
+Mac M2.3 commissions and proves integration of the shared tap on a real CAMetalLayer window; Mac M2.4 owns bounded
+trace-finalization diagnosis. Neither task is hidden inside unattended M0, and neither adds a reverse dependency.
+Before Chrome M1/simulator M2, existing canvas endpoint images may prove fixed-time endpoint/oracle claims and
+`simctl` captures may prove simulator function/UI/lifecycle within their recorded limits. New submitted-temporal or
+elapsed-time engine-motion claims still need the target's T2 milestone.
+
+Implementation ownership: `thrum-render` owns graph tap, targets, staging, fences and generation cancellation;
+`thrum-app` owns headless/windowed scheduling and normal control dispatch; core keeps its existing world clock;
+existing scripts own manifests, lossless/movie packaging and validation. V1 keeps only authored scenarios, presets,
+content and bindings. G3t owns linear recipe comparison and G4 owns output-provider/EDR qualification; both use this
+capture service rather than copying it. Follow CONTRIBUTING and the architecture registry if dependencies change.
+
+## Proof, retention and review handoff
+
+Moved from the module plan on 11 November 2026, when the plans took the orchestrate 1.7.0 shape.
+
+Run `./dev check` for implementation, focused real-device/lifecycle and negative-control checks under `gpu`, and the
+new documented scenario commands. Checks must fail on unavailable required hardware. This planning revision uses
+`./dev check-docs`. Exact source images, sample logs and decisive failure controls live in `tmp/t2-capture-<milestone>/`
+with a storage record, byte allowance and closeout condition. Promote compact reproducible proof and selected excerpts
+to `docs/evidence/render/` under ASSET-LIFECYCLE; ignored scratch alone is not durable selected evidence.
+The default four-second SDR session allowance is 16 GiB including raw/packaged coexistence; run bulk sessions
+serially and verify retained selected roots before reusing their space. Longer/HDR sessions declare their own cap.
+
+The design reviewer starts with the brief and independently derives coverage before reading the design/JSON. Check
+single ownership, final submitted-image correspondence, real-time versus synthetic clocks, output-stage/UI limits,
+nonblocking bounded readback and the attended Mac cadence boundary. No proof item is passed by this plan.

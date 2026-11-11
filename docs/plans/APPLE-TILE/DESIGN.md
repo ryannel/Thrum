@@ -1,17 +1,17 @@
 # Apple tile recipe and backend dataflow (G3t)
 
 9 November 2026. Planned, unbuilt except the carried creation-counter and traffic-probe work.
-[Brief](APPLE-TILE-BRIEF.md) · [Plan](APPLE-TILE-PLAN.md) · [Done when](APPLE-TILE-DONE.json) ·
-[Boundary](../decisions/G3T-METAL-BOUNDARY.md) · [G4 consumer](APPLE-PRESENTATION.md).
-C04/C06/C07/C08/C12 in [CONTRACTS](../CONTRACTS.md) govern.
+[Brief](BRIEF.md) · [Plan](PLAN.md) · [Done when](DONE.json) ·
+[Boundary](../../design/decisions/G3T-METAL-BOUNDARY.md) · [G4 consumer](../APPLE-PRESENTATION/DESIGN.md).
+C04/C06/C07/C08/C12 in [CONTRACTS](../../design/CONTRACTS.md) govern.
 The lead commissioned this scoped re-plan on 9 November after the [second design review](../../evidence/APPLE-TILE/design-review-2.md)
-returned seven findings at `224b58a1`. The findings are answered in the plan's disposition table. Independent design
+returned seven findings at `224b58a1`. The findings are answered in [the disposition table](../../evidence/APPLE-TILE/replan-handoff-2026-11-11.md#disposition-of-second-review-findings). Independent design
 approval is owed to the loop; M0 remains parked and no implementation, qualification or unpark is claimed.
 This reconciles current sources rather than claiming a blind design.
 
-[T2 capture](T2-CAPTURE.md) M0 (Mac) and M1 (Chrome) are done. Consume that renderer-owned submitted-output tap;
+[T2 capture](../T2-CAPTURE/DESIGN.md) M0 (Mac) and M1 (Chrome) are done. Consume that renderer-owned submitted-output tap;
 add scene-linear comparison stages there, never a second recorder. T2 M2's simulator engine capture remains blocked
-on [COOKED-DRAW M1](COOKED-DRAW-PLAN.md). It is not on the Mac M3 or G4 native-boundary critical path.
+on [COOKED-DRAW M1](../COOKED-DRAW/PLAN.md). It is not on the Mac M3 or G4 native-boundary critical path.
 
 ## Purpose, range and cues
 
@@ -314,3 +314,67 @@ win with preserved quality; inconclusive candidates remain unpromoted with prepa
   none is supplied by docs checks. Functional real-window runs at M2/M3 cannot be replaced by offscreen output;
   without an unlocked active-display slot those items stay open. M12 records cadence/physical-device rows still owed,
   and Mac M3 must qualify the post-G3t-M3 surface path rather than inherit old results.
+
+## Sequence and dependencies
+
+Moved from the module plan on 11 November 2026, when the plans took the orchestrate 1.7.0 shape.
+
+Retained sequence: **M0 → M1 → M2 → M3 → M10 → M11 → M12**. IDs are kept for consumers. Removed M4–M9
+are deferred work, not completed milestones. One builder integrates sequentially; this task launches no agents.
+M0 consumes accepted `T2-CAPTURE:M0`; M1 consumes accepted `T2-CAPTURE:M1`. G3t adds scene-linear checkpoints
+through the shared tap. M2 also names delivered `PLATFORM-RUNTIME-MAC:M1`. Before M1 changes rendering, retain
+Mac and Chrome same-target portable baselines using their qualified target taps and pinned source/cooked inputs.
+
+Mac M2 qualifies the current path after T2 M0 independently. Mac M3 needs Mac M2 by module order and
+`APPLE-TILE:M3`: T2 M0/M1, then G3t M0–M3, including attended D2.5/D3.5 and simulator diagnostic
+function checks. **Neither COOKED-DRAW M1 nor T2 simulator M2 is on that chain.** Mac M3 reruns its complete
+runtime-motion and capture-OFF built-in-panel cadence protocols plus real-window tap/tooling preflight on the changed
+build. G3t never waits back on Mac M2/M3; old results qualify only their recorded builds.
+
+G4 receives M0 proof tools, M1 eligibility, M3 pre-tone linear input/exposure binding and M11 native
+provider lifetime/reset/timing. G4 reconstruction inserts before the retained SDR tone stage; G4 owns the later EDR
+branch and its display semantics. M11 bounded extent fixtures and M12 fixed extents/current readers do not wait for
+G4; G4 later reruns actual reconstruction-reader/scale-transition proofs. Full G4 JSON migration remains its own commission.
+
+M12 alone needs `COOKED-DRAW:M1` for cooked simulator endpoint/function evidence. Earlier simulator rows use the
+existing diagnostic scene and `simctl` interim observations, with no submitted/runtime-motion claim. This preserves
+T2 rollout rather than waiting on or implementing its M2. G5 owns cooked residency/draw and COOKED-DRAW's
+changes to `DeviceCapabilities`, `SceneSurface` and `thrum-asset-gpu/src/draw.rs`. Extend the same registry, preserve
+selected direct/indirect paths and path-independent history. No draw.rs classifier/layout/target refactor is
+commissioned here; keep any mechanical execution/creation-site adaptation narrow, merge sequentially and rerun
+G5's affected parity/history witnesses. G4 seam 3 handles later forward target changes in that file.
+
+## Proof and builder handoff
+
+Moved from the module plan on 11 November 2026, when the plans took the orchestrate 1.7.0 shape.
+
+Use [the capture runbook](../../CAPTURE.md) and implemented T2 target adapters. Mac selects `still` or `fixed`
+for exact submitted checkpoints; Chrome selects `fixed` (its adapter has no `still` switch). Both select `realtime`
+for host-time elapsed engine motion. Add the linear comparison stage
+through the same tap. Retain native/Chrome pre-change sources, compiler/shader/content/route/sample/exposure/format
+identities and exact full-resolution images. Never silently refresh a baseline. Compare deterministic matching samples;
+realtime scheduling alone does not supply byte-matched frame identities. Existing
+`python3 scripts/run_v1_showcase.py moving` remains endpoint/no-history route smoke only.
+
+Simulator uses `simctl` endpoint/function capture with recorded coverage and timing limits. No row in this plan
+claims simulator exact submitted output or elapsed-time engine motion; those stay with T2 M2. M12's cooked scene
+must wait on its owner COOKED-DRAW, never build a substitute. New commands are documented only when implemented.
+Run GPU work under `gpu` exclusivity; no GPU or screen automation is part of this planning turn.
+
+D2.5/D3.5/D12.3 declare **attended setup** in JSON: unlocked active Mac session and Screen Recording permission for
+the chosen OS capture process. Record actual window/PID/tool and compare settled OS
+window evidence to T2 `still`/`fixed` reference images at matching paused-world controls/content/extent. Inspect content
+and letterbox in content-pixel coordinates; these are matched states, not the same submission. Mac M2.3 owns separate
+windowed-tap integration/correspondence, which this observer does not require or qualify. Dynamic OS video with controls
+proves response only. Agent runs/reviews after setup; do not automate grant changes. Missing setup leaves these rows open
+while unblocked work proceeds. Mac M3 separately owns attended Instruments/panel qualification with capture OFF.
+
+Use `tmp/g3t-<milestone>/` for scratch and selected `docs/evidence/render/` records under the storage rules. Retain
+lossless sources, provenance, exact diffs and 1x views; inspect full frames and native-size crops for Sun, stars,
+local lights, shadows, mirrors, cut/skip/history and replacement. Exact bytes do not replace visual review.
+Performance baselines use capture OFF, paired capture ON observer-cost arms, A/A and alternating recipes. Any
+promotion needs a measured complete-frame win with full fallback/validation/resident costs and comparable sustained
+thermal records (at least ten minutes per recipe after warmup, a measurement method rather than an invented budget).
+Physical replay counters may remain unmeasured, and physical iPhone/cadence qualifications remain separate.
+
+<a id="m0-proof-route-counters-and-capture-probe-pending"></a>
