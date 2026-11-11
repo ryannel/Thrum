@@ -140,3 +140,10 @@
   recovery movies added. Owner setup and latest direction are cited verbatim from ACCEPTED.json M2 owner_answers.
   The milestone check and full `./dev check` pass. All five items pass; M2 is claimed for lead review. No panel
   cadence, performance or physical-device claim. [Evidence](../../evidence/render/apple-tile-m2/README.md).
+
+- 2026-11-11 M2 review MF1 requalification uses a fresh release build with the integrated APPLE-PRESENTATION
+  jitter gate ae0cc8fa. Both scripts pass all 42 exact M0 comparisons, and 10 direct paired route comparisons
+  pass. Fresh realtime cut/stall source verification and image inspection pass. The required milestone check
+  and full repository gate pass. D2.1/D2.2/D2.4/D2.5 and attended playback evidence are retained as directed.
+  Only D2.3 status/evidence and M2 state change in DONE.json. M2 is reclaimed for lead review.
+  [Fresh evidence and provenance](../../evidence/render/apple-tile-m2/MF1-recheck.md).

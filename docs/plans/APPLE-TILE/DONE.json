@@ -138,7 +138,7 @@
     {
       "id": "M2",
       "name": "The existing frame lifecycle runs through one split graph",
-      "state": "in_progress",
+      "state": "claimed",
       "fails": 0,
       "replans": 3,
       "bar": "A production renderer boundary: one owner, prepared fallback, deterministic visible semantics and explicit adverse-case evidence, as in the public wgpu/Metal lifecycle model.",
@@ -167,8 +167,8 @@
           "id": "D2.3",
           "statement": "The merged graph preserves complete image and motion on both native recipes. Same-target scene-linear and submitted SDR bytes remain exact against M0 and paired recipes.",
           "target": "mac-metal",
-          "status": "open",
-          "evidence": "",
+          "status": "pass",
+          "evidence": "docs/evidence/render/apple-tile-m2/MF1-recheck.md",
           "inspect": "Use T2 still/fixed exact scene-linear/submitted SDR comparisons against M0 and paired recipes, with deterministic sample/history identity; review separate T2 realtime cut/skipped-view sequences at 1x for elapsed-time continuity and accepted history.",
           "verdict": "fail",
           "review": "docs/evidence/APPLE-TILE/M2-review.md"
