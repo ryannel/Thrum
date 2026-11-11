@@ -1,0 +1,6 @@
+{
+  "start_monotonic_s": 2944921.117763666,
+  "recording_stop_observed_monotonic_s": 2944932.015306583,
+  "deadline_monotonic_s": 2945007.015306583,
+  "finalization_limit_s": 75
+}

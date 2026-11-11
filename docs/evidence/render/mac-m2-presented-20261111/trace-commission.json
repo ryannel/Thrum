@@ -12,6 +12,12 @@
       "unix_ns": 1794404475534565000,
       "hypothesis": "The full Game Performance 16s window retained the full marked interval but exceeded its bounded process deadline. Use only Metal Application, Display and Points of Interest to reduce unrelated system-wide event and finalization volume, keeping the same 16s window and game. Require complete markers, drawable joins and bounded completion.",
       "status": "failed qualification: bounded completion but ca-client-presented-handler retains only final 1.075s, missing Whole begin and pan"
+    },
+    {
+      "arm": "/Users/ryannel/Workspace/thrum/.claude/worktrees/mac-m2/tmp/mac-m2/presented-deferred-20261111/off-traced",
+      "unix_ns": 1794429939592426000,
+      "hypothesis": "The three-instrument 16s ring window finalized within bounds but retained only the final 1.075s of drawable events. Remove --window entirely and use the installed Blank template with windowLimit=0 (non-windowed default), retaining the same Metal Application/Display/Points of Interest instruments and game. Require both Whole markers inside retained presented times and bounded completion.",
+      "status": "exported; attribution and full-pan join unjudged"
     }
   ]
 }

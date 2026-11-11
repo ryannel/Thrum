@@ -1,5 +1,15 @@
 # PLATFORM-RUNTIME-MAC log
 
+
+11 November resumed attended sitting. The non-windowed Deferred OFF trace completes within bounds and spans
+both Whole markers, joining all 491 marked submissions with no affected unmatched sample. Same-process marker
+conversion validates with an 8.5 ns presented-value error bound; only built-in display 1 is listed. M2.5 has
+builder proof. Every strict over-period interval is retained; two Whole two-refresh intervals are being
+investigated with the matched ON arms. The untraced ON arm verifies all 850 originals without omissions;
+traced ON is queued under GPU. Three of six trace recordings consumed. M2.2 and M2 remain open. The panel
+remains awake/unlocked; no security setting changed. Fourteen targeted tests and documentation checks pass.
+[Fresh witness and sitting evidence](../../evidence/render/mac-m2-presented-20261111/README.md#resumed-attended-sitting-full-interval-off-witness).
+
 11 November attended stop. While attempt 3 was still waiting for GPU, the 0.5-second guard observed the
 built-in main display inactive/asleep with the console still unlocked, at 14:10:01 UTC. It cancelled only the
 owned queued request before acquisition or recording. Two of the new six recordings are used; four remain.

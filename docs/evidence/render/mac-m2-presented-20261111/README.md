@@ -1,7 +1,7 @@
 # Mac M2 presented-time qualification, 11 November
 
-**M2 remains open. M2.1, M2.3 and M2.4 have builder proof; M2.2 and M2.5 are blocked on an awake built-in panel
-and an available GPU slot.** At 14:10:01 UTC the continuous queue guard observed display 1 inactive/asleep while
+**M2 remains open. M2.1, M2.3, M2.4 and M2.5 have builder proof. M2.2 is collecting its matched ON arms
+on the resumed awake-panel sitting; the traced ON arm is queued for GPU.** The earlier stop remains history: At 14:10:01 UTC the continuous queue guard observed display 1 inactive/asleep while
 the console stayed unlocked. It cancelled only the owned request before GPU acquisition or recording.
 [Stop record](deferred-queue/queue-blocked.json), [panel witnesses](deferred-queue/panel-witness.jsonl.gz),
 [guard source](deferred-queue/guard.py) and [queued-request exit](deferred-queue/collector.log).
@@ -74,3 +74,20 @@ physical iPhone timing remain unmeasured.
 Local full traces remain under `tmp/mac-m2/{presented,presented-minimal}-20261111/off-traced/pan.trace`, with no
 durable backup. Selected exports are in Git. Integration uses the mandated land command, which rebases, runs
 `./dev check` under the external GPU lock and pushes normally. Independent lead review remains owed.
+
+
+## Resumed attended sitting: full-interval OFF witness
+
+Attempt 3 uses Deferred recording (no ring window), PID 14537/window 47455 on the sole built-in display 1,
+3456×2234 at 120 Hz, with 1920×1080 engine output. Recording lasts 8.352237 s; collection and finite exports
+complete in 81.590 s within the recording/finalization/export bounds. All panel observations remain unlocked,
+active and awake. [TOC](attempt-3-off/toc.xml.gz), [display](attempt-3-off/displays.xml.gz),
+[collection](attempt-3-off/collection.json), [panel](attempt-3-off/panel-witness.jsonl.gz).
+
+M2.5 has builder proof: all 491 Whole submissions join, 846 total drawable rows join, no unmatched sample affects
+Whole, and retained handler rows span 1.255477–8.330502 s around Whole 4.219185–8.319542 s.
+Same-process marker offset width is 625 ns; converted presented-value error is 8.5 ns.
+[Witness](attempt-3-off/witness.json.gz) and [row counts](attempt-3-off/row-counts.json) retain the complete result.
+Raw/derived display tables remain empty and are not the witness. OFF has zero images and no capture spool.
+Two Whole two-refresh intervals, 547→548 and 548→549, remain for M2.2 investigation beside the matched ON arms.
+Three of six recordings are consumed. ON arms and final M2.2 judgment follow this prerequisite pass.
