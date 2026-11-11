@@ -113,15 +113,14 @@ def bounded(command, log, seconds, environment=None, observe=None, finalization_
 
 def panel_witness(output):
     panel = ctypes.CDLL('/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics')
-    if panel is not None:
-        for function in ('CGDisplayIsActive', 'CGDisplayIsAsleep', 'CGDisplayIsBuiltin'):
-            getattr(panel, function).argtypes = [ctypes.c_uint32]
-            getattr(panel, function).restype = ctypes.c_uint32
-        panel.CGMainDisplayID.restype = ctypes.c_uint32
+    for function in ('CGDisplayIsActive', 'CGDisplayIsAsleep', 'CGDisplayIsBuiltin'):
+        getattr(panel, function).argtypes = [ctypes.c_uint32]
+        getattr(panel, function).restype = ctypes.c_uint32
+    panel.CGMainDisplayID.restype = ctypes.c_uint32
     last_panel_observation = 0.0
     def observe():
         nonlocal last_panel_observation
-        if panel is not None and time.monotonic() - last_panel_observation >= 0.5:
+        if time.monotonic() - last_panel_observation >= 0.5:
             last_panel_observation = time.monotonic()
             raw = subprocess.check_output(['/usr/sbin/ioreg', '-n', 'Root', '-d1'], text=True, timeout=2)
             locked = re.search(r'^\s*"IOConsoleLocked"\s*=\s*(Yes|No)\s*$', raw, re.MULTILINE)
@@ -141,6 +140,10 @@ def panel_witness(output):
 def collect(args, output, name, tap, replace=False, grid=False, traced=False, include_os_logs=False):
     if shutil.disk_usage(output).free < 16 * 1024**3:
         raise RuntimeError('less than 16 GiB free before this arm; no attempt consumed')
+    if traced:
+        ledger = json.loads(LEDGER.read_text()) if LEDGER.exists() else {'commission': '9-November-2026', 'attempts': []}
+        if len(ledger['attempts']) >= 2:
+            raise RuntimeError('BLOCKED: two-attempt trace allowance exhausted; scoped re-plan required')
     arm = output / name
     arm.mkdir()
     env = {key: value for key, value in os.environ.items() if not key.startswith('THRUM_')}
@@ -155,9 +158,6 @@ def collect(args, output, name, tap, replace=False, grid=False, traced=False, in
     save(arm / 'environment.json', {key: value for key, value in env.items() if key.startswith('THRUM_')})
     command = [str(args.binary.resolve())]
     if traced:
-        ledger = json.loads(LEDGER.read_text()) if LEDGER.exists() else {'commission': '9-November-2026', 'attempts': []}
-        if len(ledger['attempts']) >= 2:
-            raise RuntimeError('BLOCKED: two-attempt trace allowance exhausted; scoped re-plan required')
         # Durable before launching, including failures or interruption.
         hypothesis = OS_LOG_HYPOTHESIS if include_os_logs else HYPOTHESIS
         ledger['attempts'].append({'arm': str(arm), 'unix_ns': time.time_ns(), 'hypothesis': hypothesis, 'status': 'started'})
