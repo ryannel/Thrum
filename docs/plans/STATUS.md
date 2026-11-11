@@ -8,7 +8,6 @@ The orchestrate script writes this page from the plan files and records after ea
 
 ### Waiting on you
 
-- APPLE-TILE M2 The existing frame lifecycle runs through one split graph: D2.5 needs you: ATTENDED SETUP: the changed surface path functions in a real Mac game window under both native recipes, including moving input, resize and replacement. This is required functional proof, separate from Mac M2 cadence.
 - CREATOR assumes: the starter gets a Chrome form now. The G6 decision left it as an owner question and recommended deferring it to G7's page; website demos, and the sea and cloud demo scenes, need a creator's scene in Chrome. ([plan](CREATOR/PLAN.md))
 - CREATOR assumes: "profiler" in the V1 exit is met by readouts in the demo UI on both targets, fed by the frame host's completed samples and the shells' callback records, not by a separate tool. ([plan](CREATOR/PLAN.md))
 - CREATOR assumes: the profiler is built after `APPLE-TILE:M3` and not beside it, so it waits on that module's attended items. The other order has the readouts built now on the positional GPU slots, with the switch added later. ([plan](CREATOR/PLAN.md))
@@ -29,6 +28,7 @@ The orchestrate script writes this page from the plan files and records after ea
 
 ### Now and next
 
+- The existing frame lifecycle runs through one split graph (APPLE-TILE M2): Not Started · [plan](APPLE-TILE/PLAN.md)
 - Every pixel of the valley carries correct motion under jitter, including the sky and stars (APPLE-PRESENTATION M1): Not Started · [plan](APPLE-PRESENTATION/PLAN.md)
 - Other modules read the one sky and Sun, and one cloud optical depth dims direct sunlight once (ATMOSPHERE M5): Not Started · [plan](ATMOSPHERE/PLAN.md)
 
@@ -49,7 +49,7 @@ The orchestrate script writes this page from the plan files and records after ea
 | 2 | PLATFORM-RUNTIME-MAC | The game recovers from graphics loss on the Mac, and its motion is proved smooth on the built-in 120 Hz display | T2-CAPTURE M0, APPLE-TILE M3 | M2 of 4 · Blocked |
 | 3 | T2-CAPTURE | Agents record exactly what the engine drew, as stills and motion, with nobody at the screen | PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | Done 10 Nov |
 | 4 | COOKED-DRAW | Cooked scenes draw on devices that cannot run GPU-driven draws, such as the iPhone simulator | PLATFORM-RUNTIME-IOS M7 | Done 9 Nov |
-| 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE M0 and M1, PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | M2 of 7 · Needs Human Feedback |
+| 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE M0 and M1, PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | M2 of 7 · Not Started |
 | 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE M3 | Waiting on APPLE-TILE:M3 |
 | 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE M0, M2, M3, M11 and M12 | M1 of 3 · Not Started |
 | 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads | APPLE-PRESENTATION M3 | M5 of 2 · Not Started |
