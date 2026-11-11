@@ -157,6 +157,9 @@ class ChromeTests(unittest.TestCase):
                 guard.save(candidate / 'manifest.json', manifest)
                 with self.assertRaisesRegex(ValueError, 'identity changed'):
                     compare_digest(retained, candidate, root / 'out.json', True)
+                retained.write_bytes(b'not a gzip stream')
+                with self.assertRaisesRegex(ValueError, 'unreadable retained reference'):
+                    compare_digest(retained, candidate, root / 'out.json', False)
                 retained.unlink()
                 with self.assertRaisesRegex(ValueError, 'unreadable retained reference'):
                     compare_digest(retained, candidate, root / 'out.json', False)
