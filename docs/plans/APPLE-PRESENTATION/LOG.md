@@ -75,3 +75,6 @@
   submitted valley sequences and native crops were inspected, including a real simulation mover. Repository
   gate and milestone checks are recorded separately from visual self-review; no performance or G4 closure
   is claimed. [Builder evidence](../../evidence/APPLE-PRESENTATION/m1/README.md); lead review remains owed.
+  Integration recheck: the first land gate stopped at the final cooked draw-probe check; the identical pinned
+  binary passed all 13 isolated cases without changes. The final land gate serializes test cases, with every
+  assertion and explicit concurrency witness enabled; details are retained with the builder evidence.
