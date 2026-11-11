@@ -52,3 +52,10 @@
   source patch from published checkpoint `9a29a8c9` to reconstruct the refusal experiment's covered content,
   because its recorded commit was rebased. An isolated index reproduced key `f6b5c8fa` exactly.
   [Recovery record](../../evidence/BASELINE-GUARD/M1/refusals-final/base-source.json).
+
+- 2026-11-11 Claim-time M1.1 failed in the loop checkout. M2 published a completed
+  portable route with 14.8 GiB free and immediately ran its next 16 GiB preflight before the polling reaper.
+  Reopened M1.1 pending requalification. Added a verifier-owned adapter that calls the owner's run function and
+  archives completed captures synchronously after its original report publisher returns. Owner source files,
+  comparisons, preflights and return codes are preserved. Nine focused tests pass, including immediate-next-capture
+  release and failed-source preservation. [Failure record](../../evidence/BASELINE-GUARD/M1/disk-repair/loop-failure.json).

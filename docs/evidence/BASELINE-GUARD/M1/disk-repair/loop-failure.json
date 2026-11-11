@@ -1,0 +1,191 @@
+{
+  "passed": false,
+  "revision": "699d00aad1c947007b9da0f43fc496dc879a6a21",
+  "content_key": "7e7c9a3cdee311cc3cc11a759b0dd1421bf55290754065ea7c71d2f53245ee19",
+  "target": "mac-metal + chrome-webgpu",
+  "commands": [
+    {
+      "name": "native-build",
+      "command": [
+        "rustup",
+        "run",
+        "1.99.1",
+        "cargo",
+        "build",
+        "--release",
+        "--locked",
+        "--offline",
+        "-p",
+        "v1-game",
+        "--features",
+        "draw-probe,thrum-render/creation-counters"
+      ],
+      "exit": 0,
+      "seconds": 22.70643191691488,
+      "log": "tmp/baseline-guard/verify-20261111T203022.505817Z/native-build.log"
+    },
+    {
+      "name": "cooker-build",
+      "command": [
+        "rustup",
+        "run",
+        "1.99.1",
+        "cargo",
+        "build",
+        "--release",
+        "--locked",
+        "--offline",
+        "-p",
+        "thrum-cook"
+      ],
+      "exit": 0,
+      "seconds": 15.418921999633312,
+      "log": "tmp/baseline-guard/verify-20261111T203022.505817Z/cooker-build.log"
+    },
+    {
+      "name": "web-build",
+      "command": [
+        "sh",
+        "examples/v1-game/web/build.sh"
+      ],
+      "exit": 0,
+      "seconds": 22.5802711667493,
+      "log": "tmp/baseline-guard/verify-20261111T203022.505817Z/web-build.log"
+    },
+    {
+      "name": "cook",
+      "command": [
+        "target/release/thrum-cook",
+        "cook",
+        "examples/v1-game/assets/showcase",
+        "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/BASELINE-GUARD/tmp/baseline-guard/verify-20261111T203022.505817Z/valley"
+      ],
+      "exit": 0,
+      "seconds": 0.3410697500221431,
+      "log": "tmp/baseline-guard/verify-20261111T203022.505817Z/cook.log"
+    },
+    {
+      "name": "apple_tile_m1",
+      "command": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "scripts/apple_tile_m1.py",
+        "--store",
+        "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/BASELINE-GUARD/tmp/baseline-guard/verify-20261111T203022.505817Z/valley",
+        "--output",
+        "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/BASELINE-GUARD/tmp/baseline-guard/verify-20261111T203022.505817Z/apple_tile_m1"
+      ],
+      "exit": 0,
+      "seconds": 429.2142558749765,
+      "log": "tmp/baseline-guard/verify-20261111T203022.505817Z/apple_tile_m1.log"
+    },
+    {
+      "name": "apple_tile_m2",
+      "command": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "scripts/apple_tile_m2.py",
+        "--store",
+        "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/BASELINE-GUARD/tmp/baseline-guard/verify-20261111T203022.505817Z/valley",
+        "--output",
+        "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/BASELINE-GUARD/tmp/baseline-guard/verify-20261111T203022.505817Z/apple_tile_m2"
+      ],
+      "exit": 1,
+      "seconds": 189.35584491724148,
+      "log": "tmp/baseline-guard/verify-20261111T203022.505817Z/apple_tile_m2.log"
+    }
+  ],
+  "comparisons": {
+    "apple_tile_m1": {
+      "passed": true,
+      "comparisons": 38
+    }
+  },
+  "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "load": [
+    3.06982421875,
+    3.82666015625,
+    3.71826171875
+  ],
+  "disk_free_before_bytes": 24618803200,
+  "references": {
+    "docs/evidence/render/apple-tile-m0/native-baseline/letterbox-bgra8-1/approach.identity.json": "ea824cc0f2c469aeedf4f362120d292de8b48199eca4ed57bfde09c9d7286326",
+    "docs/evidence/render/apple-tile-m0/native-baseline/letterbox-bgra8-1/mirror-light-present.png": "731bddc83b641f701c455a0d6dc9bb86c3d3201fc02f4b8f65ef3229b4cf1460",
+    "docs/evidence/render/apple-tile-m0/native-baseline/letterbox-bgra8-1/mirror-light.identity.json": "9284de11d67d09d118a775456b280ace140f0c5145ea466b86b25382e1f70cfb",
+    "docs/evidence/render/apple-tile-m0/native-baseline/letterbox-bgra8-1/mirror-light.surface-bgra8.gz": "d56a9e7aaaa5ddf6046153dbd0253a4cd6db5fc6fe2736dfee6d70c2e77bee4d",
+    "docs/evidence/render/apple-tile-m0/native-baseline/letterbox-bgra8-1/near-plane.identity.json": "487b00f865a48b35d751ee609c0d59d2705d51a77f00fb5873ae5a2697f4fc65",
+    "docs/evidence/render/apple-tile-m0/native-baseline/letterbox-bgra8-1/post-cut.identity.json": "5f3937fd4664b9b9dd7d644284e219b743fc6a7c5c05f57426e845bee144a021",
+    "docs/evidence/render/apple-tile-m0/native-baseline/letterbox-bgra8-1/pre-cut.identity.json": "5dceff4a0f8acf0b3f87ab4ba183ffe5f529ff4ee4f9a488819e460aaaef6290",
+    "docs/evidence/render/apple-tile-m0/native-baseline/letterbox-bgra8-srgb-1/approach.identity.json": "ea824cc0f2c469aeedf4f362120d292de8b48199eca4ed57bfde09c9d7286326",
+    "docs/evidence/render/apple-tile-m0/native-baseline/letterbox-bgra8-srgb-1/mirror-light-present.png": "731bddc83b641f701c455a0d6dc9bb86c3d3201fc02f4b8f65ef3229b4cf1460",
+    "docs/evidence/render/apple-tile-m0/native-baseline/letterbox-bgra8-srgb-1/mirror-light.identity.json": "9284de11d67d09d118a775456b280ace140f0c5145ea466b86b25382e1f70cfb",
+    "docs/evidence/render/apple-tile-m0/native-baseline/letterbox-bgra8-srgb-1/mirror-light.surface-bgra8.gz": "d56a9e7aaaa5ddf6046153dbd0253a4cd6db5fc6fe2736dfee6d70c2e77bee4d",
+    "docs/evidence/render/apple-tile-m0/native-baseline/letterbox-bgra8-srgb-1/near-plane.identity.json": "487b00f865a48b35d751ee609c0d59d2705d51a77f00fb5873ae5a2697f4fc65",
+    "docs/evidence/render/apple-tile-m0/native-baseline/letterbox-bgra8-srgb-1/post-cut.identity.json": "5f3937fd4664b9b9dd7d644284e219b743fc6a7c5c05f57426e845bee144a021",
+    "docs/evidence/render/apple-tile-m0/native-baseline/letterbox-bgra8-srgb-1/pre-cut.identity.json": "5dceff4a0f8acf0b3f87ab4ba183ffe5f529ff4ee4f9a488819e460aaaef6290",
+    "docs/evidence/render/apple-tile-m0/native-baseline/night-linear-off/checkpoint-0.rgba16f.gz": "196f42feb0a65f8e155bb39546afcc4d6574c71c5fdd661636c67743df19e443",
+    "docs/evidence/render/apple-tile-m0/native-baseline/night-linear/checkpoint-0.rgba16f.gz": "eb70fa5ad17acd15bcbacf2377e4879f6c2d6f10caf61024d9c5cddd821db3f5",
+    "docs/evidence/render/apple-tile-m0/native-baseline/night-sdr-off/checkpoint-0.png": "1d419e4339899cf52ce80a61ef88c5aabd2349f728ed1e69a24383a371442a6f",
+    "docs/evidence/render/apple-tile-m0/native-baseline/night-sdr/checkpoint-0.png": "5725a4c543c47957e66510b0fd16884b51e63ebb3a06d70be301a24d1bead4af",
+    "docs/evidence/render/apple-tile-m0/native-baseline/scene-linear-1/approach.identity.json": "29ea72bbf8a01937e4ec164062f254c59fb74bd9491e0d8975eebc35b88516db",
+    "docs/evidence/render/apple-tile-m0/native-baseline/scene-linear-1/approach.rgba16f.gz": "98dbdcff38512ecbdeaf5586a52186ac9f094defddf5a53ed2fdf3429a06260f",
+    "docs/evidence/render/apple-tile-m0/native-baseline/scene-linear-1/approach.surface-bgra8.gz": "0fef38634770b19c2db7b821e8dfc2c28eabc0cee2e05129d0897709451b9925",
+    "docs/evidence/render/apple-tile-m0/native-baseline/scene-linear-1/mirror-light.identity.json": "d1e565a5bcfd2703769e37d9e0cdd0840836a9d53e3ae1aed1945561eb2e56e8",
+    "docs/evidence/render/apple-tile-m0/native-baseline/scene-linear-1/mirror-light.rgba16f.gz": "d645388e164f5fd90e3561eab51bf4a1748fe3ce26a9c4d60cd0cc5415b8317a",
+    "docs/evidence/render/apple-tile-m0/native-baseline/scene-linear-1/mirror-light.surface-bgra8.gz": "60758c88fd0ca1d81e23edf5be5dfa02aea750c83d6abda727b64e3d549b4907",
+    "docs/evidence/render/apple-tile-m0/native-baseline/scene-linear-1/near-plane.identity.json": "cf44849fb755d3ad864a4efe7d0b4fbebd7264eb09b12a8d7c8d0b9b92a469fc",
+    "docs/evidence/render/apple-tile-m0/native-baseline/scene-linear-1/near-plane.rgba16f.gz": "579ade4ee355a0b78eed5bf9191d4c7e4f2f1df3d470fff116ef943e43b0a40d",
+    "docs/evidence/render/apple-tile-m0/native-baseline/scene-linear-1/near-plane.surface-bgra8.gz": "19ad4b71e2b0261c6d4141384a294452be61bdc9734172af90894516d12b2adb",
+    "docs/evidence/render/apple-tile-m0/native-baseline/scene-linear-1/post-cut.identity.json": "3fa309ae42b2ebaf3c9886fce3bbbf7aaf19fc883bb18e95fa83d122dc01fd10",
+    "docs/evidence/render/apple-tile-m0/native-baseline/scene-linear-1/post-cut.rgba16f.gz": "c1cb22dbb95b2c61adb5db2ed7b0aa91bbaa44b9d987376a7ddcc4ccf00c638a",
+    "docs/evidence/render/apple-tile-m0/native-baseline/scene-linear-1/post-cut.surface-bgra8.gz": "82b340daf33420462a6120f22226a7c53124d2d66961641978faca2b26399d55",
+    "docs/evidence/render/apple-tile-m0/native-baseline/scene-linear-1/pre-cut.identity.json": "aee600cc3f072ff05324ff21a8435c33a71f4f90fdf2f744bafd041d2bcd6a9d",
+    "docs/evidence/render/apple-tile-m0/native-baseline/scene-linear-1/pre-cut.rgba16f.gz": "73133597b4ab1fc397fdbad34d3c64f4b32cd0de95a96d3f456a4d9f55848ae8",
+    "docs/evidence/render/apple-tile-m0/native-baseline/scene-linear-1/pre-cut.surface-bgra8.gz": "25cad579d02c3afc9e6d838bab31278213bdb365d3d4a5a7d61fc5518ed2b87f",
+    "docs/evidence/render/apple-tile-m0/native-baseline/sdr-1/approach.identity.json": "ea824cc0f2c469aeedf4f362120d292de8b48199eca4ed57bfde09c9d7286326",
+    "docs/evidence/render/apple-tile-m0/native-baseline/sdr-1/approach.png": "153e5b4e7f114b592cc86bdccfd6b8055cd4b42ca5644b93f10569b181d24743",
+    "docs/evidence/render/apple-tile-m0/native-baseline/sdr-1/approach.surface-bgra8.gz": "0fef38634770b19c2db7b821e8dfc2c28eabc0cee2e05129d0897709451b9925",
+    "docs/evidence/render/apple-tile-m0/native-baseline/sdr-1/mirror-light.identity.json": "9284de11d67d09d118a775456b280ace140f0c5145ea466b86b25382e1f70cfb",
+    "docs/evidence/render/apple-tile-m0/native-baseline/sdr-1/mirror-light.png": "a480f9ca8f2031b0d147b54ba2b301615936f67721b116ac61537d54ea19cd0b",
+    "docs/evidence/render/apple-tile-m0/native-baseline/sdr-1/mirror-light.surface-bgra8.gz": "60758c88fd0ca1d81e23edf5be5dfa02aea750c83d6abda727b64e3d549b4907",
+    "docs/evidence/render/apple-tile-m0/native-baseline/sdr-1/near-plane.identity.json": "487b00f865a48b35d751ee609c0d59d2705d51a77f00fb5873ae5a2697f4fc65",
+    "docs/evidence/render/apple-tile-m0/native-baseline/sdr-1/near-plane.png": "194ad2fe5f16ee5def9f08256d338913a854f96bdc5eab2dd22501185364d9fc",
+    "docs/evidence/render/apple-tile-m0/native-baseline/sdr-1/near-plane.surface-bgra8.gz": "19ad4b71e2b0261c6d4141384a294452be61bdc9734172af90894516d12b2adb",
+    "docs/evidence/render/apple-tile-m0/native-baseline/sdr-1/post-cut.identity.json": "5f3937fd4664b9b9dd7d644284e219b743fc6a7c5c05f57426e845bee144a021",
+    "docs/evidence/render/apple-tile-m0/native-baseline/sdr-1/post-cut.png": "fd5213dedae57f3d3d05369e1cec6545cf5baced0dd7ba9302ead03a8697e06a",
+    "docs/evidence/render/apple-tile-m0/native-baseline/sdr-1/post-cut.surface-bgra8.gz": "82b340daf33420462a6120f22226a7c53124d2d66961641978faca2b26399d55",
+    "docs/evidence/render/apple-tile-m0/native-baseline/sdr-1/pre-cut.identity.json": "5dceff4a0f8acf0b3f87ab4ba183ffe5f529ff4ee4f9a488819e460aaaef6290",
+    "docs/evidence/render/apple-tile-m0/native-baseline/sdr-1/pre-cut.png": "bd92dc5dde08473ae688d8d15577750960e5fd2bd4fc59528fc58a2122aafb2c",
+    "docs/evidence/render/apple-tile-m0/native-baseline/sdr-1/pre-cut.surface-bgra8.gz": "25cad579d02c3afc9e6d838bab31278213bdb365d3d4a5a7d61fc5518ed2b87f",
+    "docs/evidence/render/apple-tile-m0/native-baseline/selected-controls.json": "8788867928936c980ae34e2d9cf8621692dba47509d0c79e36aa81e6abb8ed3f",
+    "docs/evidence/render/apple-tile-m0/native-baseline/sun-linear/checkpoint-0.rgba16f.gz": "64724d54cc6c24362f2c3a87e8c893dbdf23c7b0b2fa0fd2678638a1ff5cf09c",
+    "docs/evidence/render/apple-tile-m0/native-baseline/sun-sdr/checkpoint-0.png": "e80f23e985f393392e6c5e7b3b8c334ea6cebcfea45e2fd0c870bc8bcc092b65",
+    "docs/evidence/render/apple-tile-m0/chrome-baseline/prechange-chrome-fixed-manifest.json.gz": "1aaad66d4beb26aef9f2c605c92390a4330e5236290ee3673b7a0e9de1a7f296",
+    "docs/evidence/render/apple-tile-m1/chrome/chrome-prechange-linear-3/manifest.json.gz": "78d95bb28d09d0b4826dc7456a14ba936ef12bc8925bde914656857f4818bc42",
+    "docs/evidence/render/apple-tile-m1/chrome/chrome-prechange-night-sdr/manifest.json.gz": "b741ba60d9eb54cf8838f276cc4eee3ba7c02a58c32e21723c0adc05184363da",
+    "docs/evidence/render/apple-tile-m1/chrome/chrome-prechange-night-linear/manifest.json.gz": "b67c799c5178e4079de901240618c73a2505aa7fe6734d09218e8c51e7f1138a"
+  },
+  "native_binary_sha256": "be33c9c3ef2a111e41b4fad7adc64adbb9859690e64485cb9685760b79daf9e9",
+  "wasm_artifact_hashes": {
+    "capture.html": "476d43e17bcb1a1139981e099c023ede9b8e039313a4d23167f7e2c9bbf158af",
+    "capture.mjs": "a11c3ccaa7b14909f78ed66cf4989b46a1a12f3677f4f62c0488937b38762ec4",
+    "index.html": "883b363c7a05d0e2d1d7786ae2d713f338e40b7d6136b4b5851eb74530f6a017",
+    "moving-v1.json": "7cedae789b8f04470c46ed94c13bc13094d97dfbe1e32cc83b8f70457115a094",
+    "route.html": "512bbdb36739ef0e9aebc93756fe429b629216fc349551a97f374d21f4f6668d",
+    "showcase-night-upslope.params.json": "d82c127624c2459475162ab0aa7661f2748af1b301fcd42583bc08502fea74cb",
+    "showcase-noon.params.json": "9c1f03df9fc1461d92e60fafa06ee58889aa41130ea7547475b5ba4a99506455",
+    "showcase-sunrise.params.json": "0385806ec0b7cdc39a5eb1a3f0c3feb6dd0ba3f56bbc5e3d5245835f929dc19c",
+    "showcase-sunset-clear-sun.params.json": "67325d0302e8eb85bf8ab51e698b462b94321fca7bfee05bf4d16e068111409a",
+    "showcase-sunset-sun.params.json": "5be8c5d33aefaa85f444818a3ae5e82f10c6b1e3a150924b001cda9ded940d02",
+    "showcase-twilight.params.json": "ce952be9a2eeabcce9fad5d0147fb3c5f8ca2a4156b28349fa73cc7171705194",
+    "sunset.params.json": "468d2fc2c7a4fd6ea9d9912b19f21333883ad976efd988d4fd014acd03c4957b",
+    "thrum-controls.js": "77615aef41a06e6ab1bf4783ca1e08772b39736ace640644c29e15739761c1b7",
+    "v1_game.d.ts": "02816c8a26ba688b4f32efb307c6119ab8fb4d95f29368b5e8ff7ff7b04c208e",
+    "v1_game.js": "e1a8e5c0ebdb4830183b2408a7d09c6da4930a81b4fdce3e4ee4c3e646fe2eb3",
+    "v1_game_bg.wasm": "04a62be750ab4f4d9a8bf528bae29f8e521e43eaaa365efe75f1ab7f7ba8df9f",
+    "v1_game_bg.wasm.d.ts": "0a2f66ba6356d46d5d00deb312271b942636df138b0b955c354f5e2ce7a9e693"
+  },
+  "cooked_root": "70d2baf823d09d85574f7cdfce7102648754544dd7d68659e9bd92dd5f30e21d",
+  "compiler": "rustc 1.99.1 (58cf8f9c3 2026-10-13)\nbinary: rustc\ncommit-hash: 58cf8f9c35b355199727627d07ae34a4e2846d67\ncommit-date: 2026-10-13\nhost: aarch64-apple-darwin\nrelease: 1.99.1\nLLVM version: 23.1.1",
+  "host": "ProductName:\t\tmacOS\nProductVersion:\t\t26.6.2\nBuildVersion:\t\t25G83",
+  "error": "baseline apple-tile-native owner APPLE-TILE: comparison/stage apple_tile_m2 failed (exit 1): {\"passed\": false, \"failures\": [\"less than 16 GiB free before capture\"]}\n",
+  "seconds": 680.4802587502636
+}

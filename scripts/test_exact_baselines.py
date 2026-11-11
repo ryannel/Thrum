@@ -11,8 +11,11 @@ import shutil
 import subprocess
 import tempfile
 import unittest
+from types import SimpleNamespace
+from unittest.mock import patch
 
 import exact_baselines as guard
+from exact_baselines_native import run_matrix
 from apple_tile_m1_compare_browser import IDENTITY, compare, compare_digest
 
 
@@ -141,6 +144,64 @@ class RetentionTests(unittest.TestCase):
             guard.save(matrix / 'manifest.json', report)
             guard.archive_completed_runs(matrix, output)
             self.assertTrue((matrix / 'in-progress/pixels').exists())
+
+
+class NativePublicationTests(unittest.TestCase):
+    def test_next_capture_observes_completed_capture_release(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            matrix, records = root / 'matrix', root / 'records'
+            records.mkdir()
+            published = []
+            owner = SimpleNamespace()
+
+            def save(path, value):
+                guard.save(path, value)
+                published.append(json.loads(path.read_text()))
+
+            def run(args):
+                self.assertEqual(args.binary, root / 'binary')
+                self.assertEqual(args.store, root / 'store')
+                args.output.mkdir()
+                capture = args.output / 'route-motion'
+                capture.mkdir()
+                guard.save(capture / 'manifest.json', {'complete': True})
+                (capture / 'spool').write_bytes(b'completed capture')
+                report = {'failures': [], 'runs': {'route-motion': {'complete': True}}, 'comparisons': {}}
+                owner.save(args.output / 'manifest.json', report)
+                # The next owner's preflight runs immediately, without a polling interval.
+                self.assertFalse(capture.exists())
+                self.assertEqual(published, [report])
+                self.assertTrue((records / 'matrix-route-motion-records.json.gz').is_file())
+                return 0
+
+            owner.save, owner.run = save, run
+            with patch('exact_baselines_native.importlib.import_module', return_value=owner):
+                self.assertEqual(run_matrix('apple_tile_m2', root / 'binary', root / 'store', matrix, records), 0)
+            self.assertIs(owner.save, save)
+
+    def test_failed_capture_and_owner_exit_are_preserved(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            matrix, records = root / 'matrix', root / 'records'
+            records.mkdir()
+            owner = SimpleNamespace(save=guard.save)
+
+            def run(args):
+                args.output.mkdir()
+                capture = args.output / 'failed'
+                capture.mkdir()
+                (capture / 'pixels').write_bytes(b'diagnostic source')
+                report = {'failures': ['exact image changed'], 'runs': {'failed': {'complete': True}},
+                          'comparisons': {'failed': {'equal': False}}}
+                owner.save(args.output / 'manifest.json', report)
+                self.assertTrue((capture / 'pixels').exists())
+                return 1
+
+            owner.run = run
+            with patch('exact_baselines_native.importlib.import_module', return_value=owner):
+                self.assertEqual(run_matrix('apple_tile_m1', root / 'binary', root / 'store', matrix, records), 1)
+            self.assertIs(owner.save, guard.save)
 
 
 class ChromeTests(unittest.TestCase):
