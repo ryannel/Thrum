@@ -14,7 +14,11 @@ M1.1–M1.4 pass on this Mac's Metal device. M1.5 remains open; the milestone is
 Commands actually run: `cargo test --locked --offline -p thrum-render --test graph_kinds -- --nocapture`
 (pinned Rust 1.99.1, `RUSTC_WRAPPER` empty, outside the sandbox under `agent_loop.py lock gpu`), the Chrome
 recorder under the same lease, Clippy for all `thrum-render` targets with warnings denied, and `./dev check-docs`.
+The clean-checkout registered verifier also [refuses](M1/exact-verify.log) with
+`LOW_DISK_SPACE: verifier requires 16 GiB free`, after reclaiming this task's debug build outputs.
 `./dev check` [refuses](M1/check.log) the missing exact-baseline proof before its later checks; it does not pass.
+
+Owned build outputs were cleaned at blocked closeout; rebuild before continuing.
 
 Unblock by making at least 16 GiB available **after builds**, with additional rebuild/capture headroom. Then rerun
 M1.5, the registered exact verifier, milestone `check`, and `land` under their required locks. Any rebase requires

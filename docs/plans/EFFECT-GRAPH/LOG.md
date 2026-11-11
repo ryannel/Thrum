@@ -36,3 +36,7 @@
   M1.5 tried its named release/cook/native matrix command and refused before capture with less than 16 GiB free
   (about 9.4 GiB available). The full repository check refuses the missing exact-baseline proof. M1 remains open,
   unclaimed and unintegrated; free disk with build/capture headroom, then rerun exact proofs and required checks.
+- 2026-11-11 The clean-checkout registered exact verifier was also attempted under the GPU lock and refused
+  `LOW_DISK_SPACE: verifier requires 16 GiB free`, even after removing owned debug outputs. Saved its refusal
+  with the M1 proof and cleaned the remaining owned build products. No integration was attempted without the
+  required exact proof; M1.5 stays open.
