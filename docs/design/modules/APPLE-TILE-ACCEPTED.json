@@ -29,6 +29,26 @@
         "by": "plan",
         "task": "Resolve APPLE-TILE M0's scope conflict: the builder blocked because done-when item D0.2 requires a native witness that t",
         "at": "2026-11-11T01:45:14Z"
+      },
+      "claim": {
+        "commit": "c2b6e42e2102b79e5a7a0339c08283e23376ebcc",
+        "checked": "cffd8ddc6a620b483cd42d95d964a72aaeb96a70",
+        "at": "2026-11-11T03:23:46Z",
+        "host": "codex",
+        "model": "gpt-6.1-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.1-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.167.0-alpha.3.2",
+        "path": "visible",
+        "usage": {
+          "incomplete_turns": 3
+        },
+        "session_usage": {
+          "incomplete_turns": 3
+        }
       }
     },
     "M1": {
