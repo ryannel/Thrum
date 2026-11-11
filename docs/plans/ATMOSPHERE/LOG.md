@@ -205,3 +205,7 @@
   [records](../../evidence/ATMOSPHERE/M1-M4-records.md) and the review briefs to
   [review briefs](../../evidence/ATMOSPHERE/review-briefs.md). M3's and M4's open criteria stay in the plan. The
   open assumptions moved from this log to the plan's `Open for the owner`. No item or scope changed.
+- 11 November plan change for M5's blocker: H2 missed its filtered-decode bound on Metal. The planner's decision:
+  the lookups stay one hardware-filtered read, and the bound of H2 and H4 gains one stored half-float step `Q`.
+  M5.2's question names it. The design needs a new review before M5 resumes.
+  [Full entry](../../evidence/ATMOSPHERE/log-entries.md#entry-3).
