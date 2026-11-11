@@ -54,7 +54,7 @@ Work left:
 Read [Environment identity and products](DESIGN.md#environment-identity-and-products) first. This is the first of [the port's readiness conditions](../ARCHITECTURE.md#where-the-ports-readiness-conditions-are-met).
 
 - [x] Record the base commit and the per-pipeline sampled-texture counts before changing the light group.
-      [Base record](../../evidence/ATMOSPHERE/m5-h2/base.json).
+      [Rebased base record](../../evidence/ATMOSPHERE/m5/base.json).
 - [x] The environment identity, with the true Sun kept apart from the apparent surface light, lent to
       contributions each frame.
 - [x] The lent layout and WGSL library with the five operations, reflection included, each documented with the

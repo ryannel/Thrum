@@ -50,7 +50,8 @@ fn samples(
             input.position=vec4(0.5,0.5,0.0,1.0);
             input.uv=vec2(0.5);input.material=0u;input.normal=vec3(0.0,1.0,0.0);
             input.world_position=CLOUD_TEST_POINTS[selected[index/2u]];
-            input.previous_clip=vec4(0.0);input.history_valid=0u;
+            input.clip_delta=vec4(0.0);input.current_clip=vec4(0.0,0.0,0.0,1.0);
+            input.history_valid=0u;
             return shade(input,f32(index%2u),true);
         ",
         )
