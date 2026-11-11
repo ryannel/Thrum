@@ -409,7 +409,7 @@ fn fixture_half(value: f64) -> [u8; 2] {
         .to_le_bytes()
 }
 
-fn analytic_sky(sun_azimuth: f64) -> Vec<u8> {
+pub(in crate::atmosphere) fn analytic_sky(sun_azimuth: f64) -> Vec<u8> {
     let mapping = crate::atmosphere::model::sky_mapping(2.0).map(f64::from);
     let mut bytes = Vec::with_capacity(192 * 108 * 8);
     for row in 0..108_u32 {
@@ -435,7 +435,7 @@ fn analytic_sky(sun_azimuth: f64) -> Vec<u8> {
     bytes
 }
 
-fn probe_groups() -> Vec<Vec<[f32; 3]>> {
+pub(in crate::atmosphere) fn probe_groups() -> Vec<Vec<[f32; 3]>> {
     let mut groups = Vec::new();
     for axis in 0..3 {
         for sign in [-1.0, 1.0] {
@@ -593,7 +593,7 @@ fn legendre(order: u32) -> Vec<(f64, f64)> {
         .collect()
 }
 
-fn dfg_reference(no_v: f64, roughness: f64, order: u32) -> [f64; 2] {
+pub(in crate::atmosphere) fn dfg_reference(no_v: f64, roughness: f64, order: u32) -> [f64; 2] {
     let alpha_squared = roughness.powi(4);
     let view_radial = (1.0 - no_v * no_v).sqrt();
     let quadrature = legendre(order);

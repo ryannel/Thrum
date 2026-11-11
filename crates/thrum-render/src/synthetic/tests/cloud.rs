@@ -22,10 +22,45 @@ const CLOUD_TEST_POINTS=array<vec3<f32>,8>(
 ";
 
 fn factors(device: &wgpu::Device, queue: &wgpu::Queue, prepared: &PreparedSynthetic) -> Vec<f32> {
+    samples(device, queue, prepared, false)
+        .iter()
+        .map(|v| v[0])
+        .collect()
+}
+
+fn samples(
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    prepared: &PreparedSynthetic,
+    shade: bool,
+) -> Vec<[f32; 4]> {
+    let target = crate::synthetic::OffscreenTarget::new(device, prepared, 8, 1).unwrap();
+    let mut integration = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+    prepared
+        .encode(&mut integration, 151, &target, None)
+        .unwrap();
+    queue.submit([integration.finish()]);
+    let probe = if shade {
+        PROBE.replace(
+            "return vec4(cloud_factor(CLOUD_TEST_POINTS[u32(pixel.x)]));",
+            r"
+            let index=u32(pixel.x);
+            let selected=array<u32,4>(0u,1u,3u,5u);
+            var input:VertexOutput;
+            input.position=vec4(0.5,0.5,0.0,1.0);
+            input.uv=vec2(0.5);input.material=0u;input.normal=vec3(0.0,1.0,0.0);
+            input.world_position=CLOUD_TEST_POINTS[selected[index/2u]];
+            input.previous_clip=vec4(0.0);input.history_valid=0u;
+            return shade(input,f32(index%2u),true);
+        ",
+        )
+    } else {
+        PROBE.into()
+    };
     let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
         label: Some("production cloud-factor observer"),
         source: wgpu::ShaderSource::Wgsl(
-            format!("{}\n{PROBE}", prepared.surface.shader_source).into(),
+            format!("{}\n{probe}", prepared.surface.shader_source).into(),
         ),
     });
     let empty = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -39,7 +74,11 @@ fn factors(device: &wgpu::Device, queue: &wgpu::Queue, prepared: &PreparedSynthe
     });
     let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
         label: Some("shared cloud lookup in fragment pipeline"),
-        layout: Some(&layout),
+        layout: Some(if shade {
+            &prepared.surface.pipeline_layout
+        } else {
+            &layout
+        }),
         vertex: wgpu::VertexState {
             module: &shader,
             entry_point: Some("cloud_test_vertex"),
@@ -104,8 +143,18 @@ fn factors(device: &wgpu::Device, queue: &wgpu::Queue, prepared: &PreparedSynthe
             ..Default::default()
         });
         pass.set_pipeline(&pipeline);
-        pass.set_bind_group(0, &group, &[]);
-        pass.set_bind_group(1, &prepared.light[0], &[]);
+        if shade {
+            pass.set_bind_group(0, &target.view_bind_group, &[0]);
+            pass.set_bind_group(2, &prepared.materials, &[]);
+            pass.set_bind_group(3, prepared.history.read_group(), &[]);
+        } else {
+            pass.set_bind_group(0, &group, &[]);
+        }
+        pass.set_bind_group(
+            1,
+            &prepared.light[prepared.contribution_frame().exposure_side],
+            &[],
+        );
         pass.draw(0..3, 0..1);
     }
     encoder.copy_texture_to_buffer(
@@ -142,7 +191,11 @@ fn factors(device: &wgpu::Device, queue: &wgpu::Queue, prepared: &PreparedSynthe
         .as_chunks::<16>()
         .0
         .iter()
-        .map(|pixel| f32::from_le_bytes(pixel[..4].try_into().expect("factor channel")))
+        .map(|pixel| {
+            std::array::from_fn(|i| {
+                f32::from_le_bytes(pixel[i * 4..i * 4 + 4].try_into().expect("sample channel"))
+            })
+        })
         .collect()
 }
 
@@ -251,6 +304,99 @@ fn metal_cloud_factor_uses_receiver_ray_and_returns_exact_clear_support() {
                         "{label} receiver {index}: {actual} expected {expected}"
                     );
                 }
+            }
+        }
+    });
+}
+
+#[test]
+fn metal_production_surface_shade_dims_only_direct_sun_once_at_each_receiver() {
+    pollster::block_on(async {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let adapter = instance
+            .request_adapter(&wgpu::RequestAdapterOptions::default())
+            .await
+            .unwrap();
+        assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
+        let (device, queue) = adapter
+            .request_device(&wgpu::DeviceDescriptor::default())
+            .await
+            .unwrap();
+        let caps = DeviceCapabilities::capture(&adapter, &device, 151);
+        let frame = AtmosphereFrame::new([0.0, 1.0, 0.0], 127_000.0, [1.0; 3], 2.0, 1).unwrap();
+        let make = |values: &[f32]| {
+            SunOpticalDepth::new([2, 2], values, 1.0, [-1.0, -1.0, 1.0, 1.0], 0.01, 1).unwrap()
+        };
+        let mut baseline = None;
+        for (name, field, expected) in [
+            ("absent", None, [1.0; 4]),
+            ("zero", Some(make(&[0.0; 4])), [1.0; 4]),
+            (
+                "ln2",
+                Some(make(&[std::f32::consts::LN_2; 4])),
+                [0.5, 0.5, 1.0, 1.0],
+            ),
+            (
+                "spatial",
+                Some(make(&[
+                    0.0,
+                    2.0 * std::f32::consts::LN_2,
+                    0.0,
+                    2.0 * std::f32::consts::LN_2,
+                ])),
+                [1.0, 0.25, 1.0, 1.0],
+            ),
+        ] {
+            let mut scene = SyntheticScene::grid(1).unwrap();
+            scene.materials[0].emissive_cutoff = [2_000.0, 1_000.0, 500.0, 0.0];
+            scene.view = crate::synthetic::SyntheticView::perspective(
+                [0.0, 2.0, 4.0],
+                [0.0, 0.0, 0.0],
+                [0.0, 1.0, 0.0],
+                1.0,
+                8.0,
+                0.1,
+                32_000.0,
+            )
+            .unwrap();
+            scene.sun_optical_depth = field;
+            let prepared = PreparedSynthetic::prepare_with_capabilities(
+                &caps,
+                &queue,
+                &scene,
+                FrameLighting::Atmosphere(frame),
+                1.0,
+            )
+            .await
+            .unwrap();
+            let actual = samples(&device, &queue, &prepared, true);
+            if let Some(base) = &baseline {
+                let base: &Vec<[f32; 4]> = base;
+                for (receiver, factor) in expected.iter().enumerate() {
+                    for c in 0..3 {
+                        let ambient = base[receiver * 2][c];
+                        assert!(ambient > 1e-5, "positive sky and emission witness");
+                        let direct = base[receiver * 2 + 1][c] - ambient;
+                        assert!(
+                            direct > 1e-8,
+                            "positive direct witness {receiver} {c} baseline {base:?}"
+                        );
+                        assert!(
+                            (actual[receiver * 2][c] - ambient).abs()
+                                <= 4.0 * f32::EPSILON * ambient.max(1e-8),
+                            "{name} changed geometric-shadow/sky/emission receiver {receiver}"
+                        );
+                        let wanted = ambient + direct * factor;
+                        assert!(
+                            (actual[receiver * 2 + 1][c] - wanted).abs()
+                                <= 0.001 * direct.abs() + 4.0 * f32::EPSILON * wanted.abs(),
+                            "{name} receiver {receiver} channel {c} actual {} expected {wanted}",
+                            actual[receiver * 2 + 1][c]
+                        );
+                    }
+                }
+            } else {
+                baseline = Some(actual);
             }
         }
     });

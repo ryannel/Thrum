@@ -13,7 +13,7 @@ use super::{
 };
 
 #[cfg(all(test, not(target_arch = "wasm32")))]
-mod tests;
+pub(in crate::atmosphere) mod tests;
 
 pub(super) const EXTENTS: [[u32; 2]; 4] = [[256, 64], [512, 32], [192, 108], [128, 1]];
 const LUT_PLANES: [u32; 4] = [3, 2, 1, 2];

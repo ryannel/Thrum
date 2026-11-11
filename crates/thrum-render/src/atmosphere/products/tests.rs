@@ -1,7 +1,10 @@
 //! Contribution-side compilation and generation lifecycle on the shipping path.
 
+mod diffuse;
 mod filtered;
+mod night;
 mod observer;
+mod reflection;
 mod sun;
 use crate::{
     atmosphere::AtmosphereFrame,
@@ -149,6 +152,19 @@ fn metal_contribution_compiles_all_lent_operations_and_observes_environment_repl
         }
         assert!(words[12..15].iter().all(|x| (0.0..=1.0).contains(x)));
         assert!(words[24] > 0.0 && words[25] >= 0.0 && words[24] + words[25] <= 1.001);
+        let alternate = filtered::exposure_two(&prepared, &queue);
+        let scale = observer::sample(
+            &device,
+            &queue,
+            &alternate,
+            "vec4(environment_storage_scale())",
+            &[[0.0; 4]],
+            0,
+        );
+        assert_eq!(
+            scale[0][0], 2.0,
+            "non-unit exposure fixture reaches the lent layout"
+        );
         prepared.commit_frame();
         prepared
             .update_frame(

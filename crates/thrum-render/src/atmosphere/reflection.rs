@@ -262,4 +262,4 @@ fn pipeline(
 }
 
 #[cfg(all(test, not(target_arch = "wasm32")))]
-mod tests;
+pub(in crate::atmosphere) mod tests;

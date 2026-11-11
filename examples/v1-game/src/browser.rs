@@ -3,6 +3,7 @@
 //! The shell owns the canvas surface, the device, loss and replacement, and the frame step; this
 //! facade keeps the game's controls, cooked valley, material reloads, capture slot and report.
 
+mod environment;
 mod submitted_capture;
 
 use std::{
@@ -291,6 +292,7 @@ impl BrowserGame {
 /// extent, and the game is built with the route's overlay and the valley's stars.
 /// The page attaches the cooked valley and installs the route with
 /// [`BrowserGame::install_route`]; nothing here admits the overlay without its route.
+/// `diagnostic_clouds` selects the same opt-in shade stand-in as the ordinary page.
 ///
 /// # Errors
 /// Refuses a file that is not a route, or the same failures as [`create_browser_game`].
@@ -298,6 +300,7 @@ impl BrowserGame {
 pub async fn create_route_game(
     canvas: HtmlCanvasElement,
     route: String,
+    diagnostic_clouds: Option<bool>,
 ) -> Result<BrowserGame, JsValue> {
     let (extent, overlay) = crate::CameraRoute::declared(&route).map_err(js_error)?;
     canvas.set_width(extent[0]);
@@ -307,6 +310,7 @@ pub async fn create_route_game(
         crate::GameSetup {
             valley_stars: true,
             route_overlay: overlay,
+            diagnostic_clouds: diagnostic_clouds.unwrap_or(false),
             ..crate::GameSetup::default()
         },
     )

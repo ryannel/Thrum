@@ -1,5 +1,5 @@
 mod aerial;
-mod diffuse;
+pub(in crate::atmosphere) mod diffuse;
 mod ground;
 mod mapping;
 mod multiple_interpolation;

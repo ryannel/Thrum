@@ -7,7 +7,7 @@ const mode = query.get('mode');
 const control = query.get('control');
 const source = query.get('source') ?? 'sdr';
 const scene = query.get('scene') ?? 'day';
-if (!['day', 'night'].includes(scene)) throw new Error('Unknown route scene');
+if (!['day', 'night', 'noon'].includes(scene)) throw new Error('Unknown route scene');
 if (!['sdr', 'scene-linear'].includes(source)) throw new Error('Unknown capture source');
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 let hidden = document.hidden;
@@ -41,15 +41,17 @@ try {
   if (!['fixed', 'realtime'].includes(mode)) fail('mode must be fixed or realtime');
   if (hidden) fail('capture page started hidden');
   await init();
-  let text = await (await fetch('/moving-v1.json')).text();
+  let text = await (await fetch('/'+(query.get('route') ?? 'moving-v1.json'))).text();
   const route = JSON.parse(text);
-  if (scene === 'night') {
-    route.start.solar_hours = 0;
+  if (scene === 'night' || scene === 'noon') {
+    route.start.solar_hours = scene === 'night' ? 0 : 12;
     text = JSON.stringify(route);
   }
+  if (query.get('overlay') === 'off') { route.overlay = 'off'; text = JSON.stringify(route); }
   record.effective_route = route;
   record.scene = scene;
-  game = await create_route_game(document.querySelector('canvas'), text);
+  record.diagnostic_clouds = query.get('diagnostic-clouds') === 'on';
+  game = await create_route_game(document.querySelector('canvas'), text, query.get('diagnostic-clouds') === 'on');
   window.captureGame = game;
   game.attach_cooked_valley(await fetch_cooked_valley(query.get('assets')));
   game.set_visible(true, 0);

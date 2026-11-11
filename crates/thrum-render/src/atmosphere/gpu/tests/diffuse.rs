@@ -247,7 +247,7 @@ impl Gpu {
 fn dot(a: [f64; 3], b: [f64; 3]) -> f64 {
     a.into_iter().zip(b).map(|(x, y)| x * y).sum()
 }
-fn normal(i: usize) -> [f64; 3] {
+pub(in crate::atmosphere) fn normal(i: usize) -> [f64; 3] {
     let n = NORMALS[i];
     let r = dot(n, n).sqrt();
     n.map(|v| v / r)
@@ -420,12 +420,17 @@ fn sample(pixels: &[[f64; 3]], n: [f64; 3], sun_phi: f64) -> [f64; 3] {
     })
 }
 
-struct Integral {
-    coefficients: [[f64; 3]; 9],
-    direct: [[f64; 3]; 14],
-    mass: [f64; 3],
+pub(in crate::atmosphere) struct Integral {
+    pub(in crate::atmosphere) coefficients: [[f64; 3]; 9],
+    pub(in crate::atmosphere) direct: [[f64; 3]; 14],
+    pub(in crate::atmosphere) mass: [f64; 3],
 }
-fn integrate(pixels: &[[f64; 3]], sun_phi: f64, solar: [f64; 3], resolution: u32) -> Integral {
+pub(in crate::atmosphere) fn integrate(
+    pixels: &[[f64; 3]],
+    sun_phi: f64,
+    solar: [f64; 3],
+    resolution: u32,
+) -> Integral {
     let mut result = Integral {
         coefficients: [[0.0; 3]; 9],
         direct: [[0.0; 3]; 14],

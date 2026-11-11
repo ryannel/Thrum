@@ -1,15 +1,16 @@
 #!/usr/bin/env node
 // Actual built-game qualification, not display cadence or a performance measurement.
 import fs from 'node:fs/promises';
+import { qualifyEnvironment, qualifyEnvironmentParity, qualifyEnvironmentCost } from './check_environment_browser.mjs';
 import { createServer } from 'node:http';
-import { spawn } from 'node:child_process';
+import { spawn, execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import zlib from 'node:zlib';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
-const cases = ['normal', 'pause', 'resize', 'overload', 'input', 'controls', 'tabs', 'params', 'device-loss', 'late-device-loss', 'device-recovery', 'device-recovery-retry', 'sky-reflections', 'valley', 'valley-recovery', 'valley-late-attach', 'material', 'material-disabled', 'field', 'field-direct', 'field-occlusion', 'field-oracle', 'route', 'moving-route', 'moving-route-controls'];
+const cases = ['environment-off-parity', 'environment-cost', 'environment', 'normal', 'pause', 'resize', 'overload', 'input', 'controls', 'tabs', 'params', 'device-loss', 'late-device-loss', 'device-recovery', 'device-recovery-retry', 'sky-reflections', 'valley', 'valley-recovery', 'valley-late-attach', 'material', 'material-disabled', 'field', 'field-direct', 'field-occlusion', 'field-oracle', 'route', 'moving-route', 'moving-route-controls'];
 const configureFailureSentinel = 'THRUM_G3B_CONFIGURE_ONCE';
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -1836,8 +1837,10 @@ async function main() {
   const args = options(process.argv.slice(2));
   if (!args) { console.log('node scripts/check_v1_browser.mjs [--case all|normal|pause|resize|overload|input|controls|tabs|params|device-loss|late-device-loss|device-recovery|device-recovery-retry|sky-reflections|valley|valley-recovery|valley-late-attach|material|material-disabled|field|field-direct|field-occlusion|field-oracle|route|moving-route|moving-route-controls] [--web-root target/v1-game-web] [--cook target/debug/thrum-cook] [--assets-source examples/v1-game/assets/showcase] [--chrome /path/to/Chrome] [--output tmp/new-run] [--timeout-ms 90000]\nRequires Node 24+, an already-built game, and this Mac\'s Apple M3 Max/Metal Chrome. Controls checks manual pause with ongoing RAF; tabs switches real Chrome tabs and checks authority, input release and manual pause; params applies, explains and reloads a parameter file; visibility checks use the explicit hook, not tab hiding. Recovery uses the real restore button; retry injects exactly one standard canvas configure failure. Sky reflections saves nine paused phases and 24 camera/Sun samples; valley repeats them on the cooked valley served by thrum-cook; valley-recovery runs device recovery with that valley attached; valley-late-attach holds the valley requests until the device is lost, then proves the attach made no GPU call on the lost device and the valley draws on the replacement; material reloads a WGSL hook on that valley (valid, refused, and outstanding across a destroyed device) and records contended frame intervals around the valid reload; it needs the development page (web/build.sh --dev), so all leaves it out. material-disabled loads the default page with ?material and proves it starts no material work. Field qualifies the 100,513-instance flythrough with Frustum camera culling; field-direct and field-occlusion qualify it with Direct and Occlusion for a paired comparison; field-oracle pauses three fresh pages and compares Frustum and Occlusion captures with Direct byte for byte. Route launches one fresh page per checked-in examples/v1-game/params/showcase-*.params.json preset with the cooked valley, after requiring the web root to ship each byte for byte and no others; it proves the preset applied and the valley drew, brackets navigation to the first observed cooked draw on the page clock, and captures the paused canvas. Moving-route (not in all) loads route.html with the checked-in examples/v1-game/routes/moving-v1.json against the served cooked store it names, captures the presented canvas at each checkpoint hold and saves the page\'s per-tick record; moving-route-controls runs its negative controls, one fresh page each: hidden at start, hidden mid-route, a clamped timestamp, refused edits plus a performance-stamped frame, a canvas resize, an undeclared second cooked generation (each must end in its named refusal), and phase 0.1 for the comparator. The other cases make no timing claim.'); return; }
   if (Number(process.versions.node.split('.')[0]) < 24 || typeof WebSocket !== 'function') throw new Error('Node 24+ with builtin WebSocket is required');
+  if (args.case === 'environment') execFileSync('sh', ['examples/v1-game/web/build.sh'], { cwd: repo, env: { ...process.env, RUSTC_WRAPPER: '' }, stdio: 'inherit' });
   const directory = await fs.realpath(path.resolve(repo, args['web-root']));
   const files = await assets(directory);
+  if (args.case.startsWith('environment-')) await routeStops(files, directory);
   // The params case's file: two valid entries and one typo; the case rewrites it to test reload.
   const caseParams = Buffer.from('{"world.paused": true, "sky.solar_time": 17.9, "camera.yw": 10}');
   files.set('/case.params.json', { bytes: caseParams, type: 'application/json', sha256: sha(caseParams) });
@@ -1884,14 +1887,24 @@ async function main() {
     // `all` checks the default page; `material` needs the development page, so it runs on its own.
     const modes = [];
     // The moving route is its own run: it needs route.html and makes a separate evidence record.
-    for (const mode of args.case === 'all' ? cases.filter(mode => mode !== 'material' && !mode.startsWith('moving-route')) : [args.case]) {
+    for (const mode of args.case === 'all' ? cases.filter(mode => mode !== 'material' && !mode.startsWith('moving-route') && !mode.startsWith('environment-')) : [args.case]) {
       modes.push(...(mode === 'moving-route-controls' ? Object.keys(movingControls).map(control => `moving-route-${control}`) : mode === 'field-oracle' ? ['field-oracle-direct', 'field-oracle-frustum', 'field-oracle-occlusion'] : mode === 'route' ? await routeStops(files, directory) : [mode]));
     }
     if (modes.some(mode => mode.startsWith('moving-route'))) await movingRouteFiles(files, directory);
     let assetsOrigin;
     let assetsSource;
-    if (modes.some(mode => ['valley', 'valley-recovery', 'valley-late-attach', 'params', 'material', 'material-disabled'].includes(mode) || mode.startsWith('route-') || mode.startsWith('moving-route'))) ({ cook, origin: assetsOrigin, source: assetsSource } = await serveCooked(args, output));
-    for (const mode of modes) results.push(await qualify(cdp, mode, serving.origin, output, directory, files.get('/v1_game_bg.wasm'), args['timeout-ms'], assetsOrigin, assetsSource, files));
+    if (modes.some(mode => mode.startsWith('environment-') || ['valley', 'valley-recovery', 'valley-late-attach', 'params', 'material', 'material-disabled'].includes(mode) || mode.startsWith('route-') || mode.startsWith('moving-route'))) ({ cook, origin: assetsOrigin, source: assetsSource } = await serveCooked(args, output));
+    for (const mode of modes) {
+      if (mode === 'environment-off-parity') {
+        const baseDirectory = path.resolve(process.env.THRUM_ENVIRONMENT_BASE_WEB);
+        const baseFiles = await assets(baseDirectory);
+        await routeStops(baseFiles, baseDirectory);
+        results.push(await qualifyEnvironmentParity(cdp, serving.origin, output, args['timeout-ms'], assetsOrigin, baseFiles, serve, waitFor, existingGame));
+      } else if (mode === 'environment-cost') {
+        results.push(await qualifyEnvironmentCost(cdp, serving.origin, output, args['timeout-ms'], assetsOrigin, waitFor, existingGame));
+      } else if (mode === 'environment') results.push(await qualifyEnvironment(cdp, serving.origin, output, args['timeout-ms'], waitFor, existingGame));
+      else results.push(await qualify(cdp, mode, serving.origin, output, directory, files.get('/v1_game_bg.wasm'), args['timeout-ms'], assetsOrigin, assetsSource, files));
+    }
     if (modes.includes('field-oracle-direct')) results.push(await compareFieldOracle(output, results));
   } catch (error) { failure = error; }
   finally {

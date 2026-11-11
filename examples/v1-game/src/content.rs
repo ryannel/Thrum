@@ -42,14 +42,14 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
             scene.as_deref(),
             std::env::var("THRUM_ROUTE_OVERLAY").as_deref(),
         ) {
-            (_, Err(std::env::VarError::NotPresent)) => crate::RouteOverlay::Off,
+            (_, Err(std::env::VarError::NotPresent) | Ok("off")) => crate::RouteOverlay::Off,
             (Ok("valley"), Ok("proof")) => crate::RouteOverlay::Proof,
             (Ok("valley"), Ok("motion")) => crate::RouteOverlay::Motion,
             (Ok("valley"), Ok("unmirrored")) => crate::RouteOverlay::Unmirrored,
             (Ok("valley"), Ok("light-off")) => crate::RouteOverlay::LightOff,
             _ => {
                 return Err(
-                    "THRUM_ROUTE_OVERLAY must be proof, motion, unmirrored or light-off, with THRUM_SCENE=valley"
+                    "THRUM_ROUTE_OVERLAY must be off, proof, motion, unmirrored or light-off, with THRUM_SCENE=valley"
                         .to_owned(),
                 );
             }
