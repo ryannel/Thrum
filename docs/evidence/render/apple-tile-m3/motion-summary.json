@@ -1,0 +1,78 @@
+{
+  "portable-render-stall-motion": {
+    "images": 450,
+    "history_epochs": [
+      0
+    ],
+    "skipped_opportunities": 31,
+    "maximum_submission_gap_ns": 269662375,
+    "diagnostic_actions": [
+      {
+        "end_ns": 2062109333,
+        "kind": "render-owner-before-ordinary-step",
+        "requested_ns": 1802089833,
+        "start_ns": 1802089833
+      }
+    ],
+    "recipe": "Ok(Portable)",
+    "registry_digest": "f8fa043b9369e8dc",
+    "ring_omissions": 0,
+    "writer_omissions": 0,
+    "binary_sha256": "be33c9c3ef2a111e41b4fad7adc64adbb9859690e64485cb9685760b79daf9e9",
+    "preview_pts_max_error_seconds": 5.00000000069889e-07
+  },
+  "portable-route-motion": {
+    "images": 963,
+    "history_epochs": [
+      1,
+      2
+    ],
+    "skipped_opportunities": 0,
+    "maximum_submission_gap_ns": 12212208,
+    "diagnostic_actions": [],
+    "recipe": "Ok(Portable)",
+    "registry_digest": "f8fa043b9369e8dc",
+    "ring_omissions": 0,
+    "writer_omissions": 0,
+    "binary_sha256": "be33c9c3ef2a111e41b4fad7adc64adbb9859690e64485cb9685760b79daf9e9",
+    "preview_pts_max_error_seconds": 5.000000005139782e-07
+  },
+  "apple-tile-render-stall-motion": {
+    "images": 450,
+    "history_epochs": [
+      0
+    ],
+    "skipped_opportunities": 31,
+    "maximum_submission_gap_ns": 263437917,
+    "diagnostic_actions": [
+      {
+        "end_ns": 2057611833,
+        "kind": "render-owner-before-ordinary-step",
+        "requested_ns": 1802378167,
+        "start_ns": 1802378167
+      }
+    ],
+    "recipe": "Ok(AppleTile)",
+    "registry_digest": "efbee560684e6cdf",
+    "ring_omissions": 0,
+    "writer_omissions": 0,
+    "binary_sha256": "be33c9c3ef2a111e41b4fad7adc64adbb9859690e64485cb9685760b79daf9e9",
+    "preview_pts_max_error_seconds": 5.00000000069889e-07
+  },
+  "apple-tile-route-motion": {
+    "images": 963,
+    "history_epochs": [
+      1,
+      2
+    ],
+    "skipped_opportunities": 0,
+    "maximum_submission_gap_ns": 12607875,
+    "diagnostic_actions": [],
+    "recipe": "Ok(AppleTile)",
+    "registry_digest": "efbee560684e6cdf",
+    "ring_omissions": 0,
+    "writer_omissions": 0,
+    "binary_sha256": "be33c9c3ef2a111e41b4fad7adc64adbb9859690e64485cb9685760b79daf9e9",
+    "preview_pts_max_error_seconds": 5.000000005139782e-07
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "module": "APPLE-TILE",
+  "milestone": "M3",
+  "tree": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0",
+  "plan": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/docs/plans/APPLE-TILE/DONE.json",
+  "pass": 1,
+  "fail": 0,
+  "error": 0,
+  "timeout": 1,
+  "items": [
+    {
+      "id": "D3.1",
+      "result": "no check",
+      "proof": [
+        "ask"
+      ]
+    },
+    {
+      "id": "D3.2",
+      "result": "no check",
+      "proof": [
+        "inspect",
+        "ask"
+      ]
+    },
+    {
+      "id": "D3.3",
+      "result": "no check",
+      "proof": [
+        "ask"
+      ]
+    },
+    {
+      "id": "D3.4",
+      "check": "python3 scripts/run_v1_showcase.py moving",
+      "lock": "gpu",
+      "exit": 0,
+      "result": "pass",
+      "output": "PASS: /Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g7-showcase/runs/moving-20261111-173925/run.json"
+    },
+    {
+      "id": "D3.5",
+      "result": "no check",
+      "proof": [
+        "inspect",
+        "ask",
+        "attended"
+      ]
+    },
+    {
+      "id": "Check",
+      "check": "./dev check",
+      "exit": 124,
+      "result": "timeout",
+      "why": "still running after 1800 s",
+      "output": "162218d7c)\n     Running tests/a1_schedule.rs (target/debug/deps/a1_schedule-eb0d33d6cf7be034)\n     Running tests/clock.rs (target/debug/deps/clock-8c5586e4173348fe)\n     Running tests/g2_edit_ownership.rs (target/debug/deps/g2_edit_ownership-e681e6c866f657a6)\n     Running tests/g2_runtime.rs (target/debug/deps/g2_runtime-2749f8991bddb676)\n     Running tests/g2s_chunked_kernel.rs (target/debug/deps/g2s_chunked_kernel-9b7a22e01203c687)\n     Running tests/v1_workload.rs (target/debug/deps/v1_workload-f984206f2f97f7be)\n     Running unittests src/main.rs (target/debug/deps/thrum_lighthouse-b160457b25cf0b24)\n     Running unittests src/lib.rs (target/debug/deps/thrum_network-2689954c99ef1c53)\n     Running tests/envelope.rs (target/debug/deps/envelope-9d8a7ebd13fe651e)\n     Running tests/future_input.rs (target/debug/deps/future_input-3b733d9465884fd1)\n     Running tests/input_batch.rs (target/debug/deps/input_batch-61f4b852aac30443)\n     Running tests/state_ack.rs (target/debug/deps/state_ack-85d79d8e515416fc)\n     Running tests/state_delta.rs (target/debug/deps/state_delta-f5d0821cbbc39249)\n     Running unittests src/lib.rs (target/debug/deps/thrum_render-245c907cad00ed4d)\n     Running tests/contracts.rs (target/debug/deps/contracts-531163e374ef6418)\n     Running tests/extract.rs (target/debug/deps/extract-b3a1117fcc64cf9d)\n     Running tests/gpu.rs (target/debug/deps/gpu-6ab49adfbe8f2e84)\n     Running tests/upload_gpu.rs (target/debug/deps/upload_gpu-10a0ce6f56e20b1f)\n\n(timed out)"
+    }
+  ]
+}

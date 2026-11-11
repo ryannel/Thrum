@@ -1,0 +1,33 @@
+{
+  "qualified_revision": "7ffff46fcda5fa8cc04cc6cb38e4a7152a080d0c",
+  "rebased_implementation_revision": "cc578b2b29c40f3211d3ce6e2a69dee34a02dc97",
+  "qualified_source_file_count": 564,
+  "unchanged_source_file_count": 562,
+  "all_engine_game_shader_and_build_inputs_match": true,
+  "existing_browser_byte_comparator_and_identity_ast_unchanged": true,
+  "differences": [
+    {
+      "file": "scripts/apple_tile_m1_compare_browser.py",
+      "qualified_sha256": "e599a48499db1bc5edbbce6ad90f54377dd0a9ad590bc117043fc3be5ab3dff3",
+      "current_sha256": "b9918a0f6c03eef61345fb0ca59b4ecef8ef4af7e6282445e22f337c60aa0b28"
+    },
+    {
+      "file": "scripts/check_v1_browser.mjs",
+      "qualified_sha256": "c3b6c3e6792959db8babda73f4f7f1a8201cd613bc95acfde42ca5d0192a28e2",
+      "current_sha256": "79c3c8d4ba192207315bf10fc218acca5694907c4459f00aa0606fc1af7f777b"
+    }
+  ],
+  "additional_contributor_gate_changes": [
+    "tools/xtask/src/main.rs"
+  ],
+  "new_verification_only_files": [
+    ".config/exact-baselines.json",
+    "scripts/exact_baselines.py",
+    "scripts/test_exact_baselines.py"
+  ],
+  "scope": "Only verification tooling differs: browser-checker scratch setup, an additional opt-in digest comparator, and contributor check admission through the content-bound baseline gate. Existing byte-comparison semantics and all engine/game/shader/build inputs match. Qualified binary remains the pinned pre-rebase build; this is code equivalence, not a new binary, device or performance qualification.",
+  "verified_native_binary_sha256": "be33c9c3ef2a111e41b4fad7adc64adbb9859690e64485cb9685760b79daf9e9",
+  "qualified_native_binary_unchanged": true,
+  "qualified_browser_js_and_wasm_unchanged": true,
+  "registered_exact_content_key": "79a979077e8967b66684e1e3a63798eb76238af04a9b1a3f2022d3cbdca67137"
+}

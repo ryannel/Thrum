@@ -1,0 +1,12 @@
+{
+  "passed": true,
+  "runs": [
+    "chrome-day-sdr",
+    "chrome-day-scene-linear",
+    "chrome-day-realtime",
+    "chrome-night-sdr",
+    "chrome-night-scene-linear",
+    "chrome-night-realtime",
+    "chrome-resize"
+  ]
+}

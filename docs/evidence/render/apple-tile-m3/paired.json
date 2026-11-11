@@ -1,0 +1,295 @@
+{
+  "passed": true,
+  "comparisons": [
+    {
+      "source": "sdr",
+      "checkpoint": "approach",
+      "equal": true,
+      "changed_bytes": 0,
+      "sha256": "168a804e069d23d94a01d3ce413aa947a13f5d34a5e02ad8f34a1cec97e1b084",
+      "identity": {
+        "alpha_bits": 1056964607,
+        "capture_source": "Sdr",
+        "device_generation": 1,
+        "epoch": 1,
+        "exposure_gpu_words": [
+          981467136,
+          1166652782,
+          1094548132,
+          1175417432,
+          0,
+          225,
+          0,
+          1
+        ],
+        "headroom": 1,
+        "history_epoch": 1,
+        "presenter_generation": 1,
+        "source_tick": 225,
+        "submission_id": 224,
+        "timeline": 0
+      }
+    },
+    {
+      "source": "sdr",
+      "checkpoint": "pre-cut",
+      "equal": true,
+      "changed_bytes": 0,
+      "sha256": "8fd76e0c80846c02c8c97fd504fea90aa3e255a5d8fc079e035108071f553879",
+      "identity": {
+        "alpha_bits": 1056964608,
+        "capture_source": "Sdr",
+        "device_generation": 1,
+        "epoch": 1,
+        "exposure_gpu_words": [
+          981467136,
+          1160504886,
+          1093835041,
+          1169362896,
+          0,
+          376,
+          0,
+          1
+        ],
+        "headroom": 1,
+        "history_epoch": 1,
+        "presenter_generation": 1,
+        "source_tick": 376,
+        "submission_id": 375,
+        "timeline": 0
+      }
+    },
+    {
+      "source": "sdr",
+      "checkpoint": "post-cut",
+      "equal": true,
+      "changed_bytes": 0,
+      "sha256": "9d09e38d9a27f1b41434bc3bc4198e686896e7ed8fdca8f1fbccb21ab93a744c",
+      "identity": {
+        "alpha_bits": 1056964609,
+        "capture_source": "Sdr",
+        "device_generation": 1,
+        "epoch": 1,
+        "exposure_gpu_words": [
+          981467136,
+          1160096642,
+          1093779203,
+          1168937646,
+          0,
+          386,
+          0,
+          1
+        ],
+        "headroom": 1,
+        "history_epoch": 2,
+        "presenter_generation": 1,
+        "source_tick": 386,
+        "submission_id": 385,
+        "timeline": 0
+      }
+    },
+    {
+      "source": "sdr",
+      "checkpoint": "near-plane",
+      "equal": true,
+      "changed_bytes": 0,
+      "sha256": "302094d02247a3f2a217fd57c4a91a5542f8a05e450d76252abbb170142cab3b",
+      "identity": {
+        "alpha_bits": 1056964609,
+        "capture_source": "Sdr",
+        "device_generation": 1,
+        "epoch": 1,
+        "exposure_gpu_words": [
+          981467136,
+          1152353134,
+          1092817941,
+          1161221016,
+          0,
+          530,
+          0,
+          1
+        ],
+        "headroom": 1,
+        "history_epoch": 2,
+        "presenter_generation": 1,
+        "source_tick": 530,
+        "submission_id": 529,
+        "timeline": 0
+      }
+    },
+    {
+      "source": "sdr",
+      "checkpoint": "mirror-light",
+      "equal": true,
+      "changed_bytes": 0,
+      "sha256": "719ef93e987a6dedf9b74e17f0d878fa0dc2647cc40cce681033fc2a85c3b213",
+      "identity": {
+        "alpha_bits": 1056964609,
+        "capture_source": "Sdr",
+        "device_generation": 1,
+        "epoch": 1,
+        "exposure_gpu_words": [
+          981467136,
+          1161595503,
+          1093974830,
+          1170498953,
+          0,
+          350,
+          0,
+          1
+        ],
+        "headroom": 1,
+        "history_epoch": 1,
+        "presenter_generation": 1,
+        "source_tick": 350,
+        "submission_id": 349,
+        "timeline": 0
+      }
+    },
+    {
+      "source": "scene-linear",
+      "checkpoint": "approach",
+      "equal": true,
+      "changed_bytes": 0,
+      "sha256": "e506413f84ef4445df7241d6f29d74ad37fe945cf8b7c94707246bd2f553778a",
+      "identity": {
+        "alpha_bits": 1056964607,
+        "capture_source": "SceneLinear",
+        "device_generation": 1,
+        "epoch": 1,
+        "exposure_gpu_words": [
+          981467136,
+          1166652782,
+          1094548132,
+          1175417432,
+          0,
+          225,
+          0,
+          1
+        ],
+        "headroom": 1,
+        "history_epoch": 1,
+        "presenter_generation": 2,
+        "source_tick": 225,
+        "submission_id": 224,
+        "timeline": 0
+      }
+    },
+    {
+      "source": "scene-linear",
+      "checkpoint": "pre-cut",
+      "equal": true,
+      "changed_bytes": 0,
+      "sha256": "0464181e03b9b55b0ca824dd19ad0229b539864eeea4d7535b3e25492a5b01ec",
+      "identity": {
+        "alpha_bits": 1056964608,
+        "capture_source": "SceneLinear",
+        "device_generation": 1,
+        "epoch": 1,
+        "exposure_gpu_words": [
+          981467136,
+          1160504886,
+          1093835041,
+          1169362896,
+          0,
+          376,
+          0,
+          1
+        ],
+        "headroom": 1,
+        "history_epoch": 1,
+        "presenter_generation": 2,
+        "source_tick": 376,
+        "submission_id": 375,
+        "timeline": 0
+      }
+    },
+    {
+      "source": "scene-linear",
+      "checkpoint": "post-cut",
+      "equal": true,
+      "changed_bytes": 0,
+      "sha256": "e6cec37fa59ee447ef4ecd69a2e7c516e21a19804914849beb4e14bf1644858d",
+      "identity": {
+        "alpha_bits": 1056964609,
+        "capture_source": "SceneLinear",
+        "device_generation": 1,
+        "epoch": 1,
+        "exposure_gpu_words": [
+          981467136,
+          1160096642,
+          1093779203,
+          1168937646,
+          0,
+          386,
+          0,
+          1
+        ],
+        "headroom": 1,
+        "history_epoch": 2,
+        "presenter_generation": 2,
+        "source_tick": 386,
+        "submission_id": 385,
+        "timeline": 0
+      }
+    },
+    {
+      "source": "scene-linear",
+      "checkpoint": "near-plane",
+      "equal": true,
+      "changed_bytes": 0,
+      "sha256": "15c237b6e2953c02c66fef86666b503d82d2b02f4d5f2f5008930cfa4b8c554b",
+      "identity": {
+        "alpha_bits": 1056964609,
+        "capture_source": "SceneLinear",
+        "device_generation": 1,
+        "epoch": 1,
+        "exposure_gpu_words": [
+          981467136,
+          1152353134,
+          1092817941,
+          1161221016,
+          0,
+          530,
+          0,
+          1
+        ],
+        "headroom": 1,
+        "history_epoch": 2,
+        "presenter_generation": 2,
+        "source_tick": 530,
+        "submission_id": 529,
+        "timeline": 0
+      }
+    },
+    {
+      "source": "scene-linear",
+      "checkpoint": "mirror-light",
+      "equal": true,
+      "changed_bytes": 0,
+      "sha256": "bd895bc0bd5d8b8777620f576c577b94775c97a9f2193bfeaf366f14a81d3e73",
+      "identity": {
+        "alpha_bits": 1056964609,
+        "capture_source": "SceneLinear",
+        "device_generation": 1,
+        "epoch": 1,
+        "exposure_gpu_words": [
+          981467136,
+          1161595503,
+          1093974830,
+          1170498953,
+          0,
+          350,
+          0,
+          1
+        ],
+        "headroom": 1,
+        "history_epoch": 1,
+        "presenter_generation": 2,
+        "source_tick": 350,
+        "submission_id": 349,
+        "timeline": 0
+      }
+    }
+  ]
+}

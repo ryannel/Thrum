@@ -1,0 +1,290 @@
+{
+  "portable-sun": {
+    "directory": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m3/window-references/portable-sun",
+    "capture_complete": true,
+    "options": {
+      "mode": "still",
+      "params": "examples/v1-game/params/showcase-sunset-clear-sun.params.json"
+    },
+    "stars": "on",
+    "disk_free_after_bytes": 38773411840,
+    "complete": true,
+    "manifest_sha256": "a2dc2e7074cc3cf2b0a644bc49dbbe74e7dc80918bd8f5c9d633942dff8f11cc",
+    "images": 1,
+    "selected": [
+      {
+        "file": "checkpoint-0.rgba8",
+        "sha256": "48567e05345d833b5cd35e64473ee0d063d1bd2aaf8414b9b362707395f73513",
+        "image": {
+          "alpha": 1.0,
+          "current_endpoint_tick": 0,
+          "device_generation": 1,
+          "epoch": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1165844497,
+            1094421942,
+            1174665056,
+            0,
+            267,
+            0,
+            1
+          ],
+          "history_epoch": 0,
+          "map_observed_ns": 4606458,
+          "pixel_source": "Sdr",
+          "presentation_lead_ns": 0,
+          "previous_endpoint_tick": null,
+          "readback_copy_gpu_bracket_ns": 1290500.0,
+          "submission_id": 266,
+          "submit_ns": 0,
+          "surface_generation": 1,
+          "tick": 0,
+          "timeline": 0,
+          "visual_revision": null
+        }
+      }
+    ],
+    "exposure_packets": 1
+  },
+  "portable-night": {
+    "directory": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m3/window-references/portable-night",
+    "capture_complete": true,
+    "options": {
+      "mode": "still",
+      "params": "examples/v1-game/params/showcase-night-upslope.params.json"
+    },
+    "stars": "on",
+    "disk_free_after_bytes": 38762311680,
+    "complete": true,
+    "manifest_sha256": "95acd276ceda196835105dbaa22968d0b8abe99eca93e99503eff23f32f13f93",
+    "images": 1,
+    "selected": [
+      {
+        "file": "checkpoint-0.rgba8",
+        "sha256": "cb565f9d71a8d703bab346414a63c464d473075d05ed03ebc9f5d03b9634db4d",
+        "image": {
+          "alpha": 1.0,
+          "current_endpoint_tick": 0,
+          "device_generation": 1,
+          "epoch": 1,
+          "exposure_gpu_words": [
+            1111085850,
+            1010206234,
+            3235383541,
+            976275536,
+            0,
+            288,
+            0,
+            1
+          ],
+          "history_epoch": 0,
+          "map_observed_ns": 4374625,
+          "pixel_source": "Sdr",
+          "presentation_lead_ns": 0,
+          "previous_endpoint_tick": null,
+          "readback_copy_gpu_bracket_ns": 1422917.0,
+          "submission_id": 287,
+          "submit_ns": 0,
+          "surface_generation": 1,
+          "tick": 0,
+          "timeline": 0,
+          "visual_revision": null
+        }
+      }
+    ],
+    "exposure_packets": 1
+  },
+  "portable-noon": {
+    "directory": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m3/window-references/portable-noon",
+    "capture_complete": true,
+    "options": {
+      "mode": "still",
+      "params": "examples/v1-game/params/showcase-noon.params.json"
+    },
+    "stars": "on",
+    "disk_free_after_bytes": 38748844032,
+    "complete": true,
+    "manifest_sha256": "59065636975c93a64899f1546296e686cfcfafac010927ab33fa5a0f1e3e6222",
+    "images": 1,
+    "selected": [
+      {
+        "file": "checkpoint-0.rgba8",
+        "sha256": "8e560bd41f708de335f3958c50b19f365ae752e60d4d9bdad6cfde21f6fb74b4",
+        "image": {
+          "alpha": 1.0,
+          "current_endpoint_tick": 0,
+          "device_generation": 1,
+          "epoch": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1192782339,
+            1097847347,
+            1201587145,
+            0,
+            296,
+            0,
+            1
+          ],
+          "history_epoch": 0,
+          "map_observed_ns": 4157333,
+          "pixel_source": "Sdr",
+          "presentation_lead_ns": 0,
+          "previous_endpoint_tick": null,
+          "readback_copy_gpu_bracket_ns": 1180083.0,
+          "submission_id": 295,
+          "submit_ns": 0,
+          "surface_generation": 1,
+          "tick": 0,
+          "timeline": 0,
+          "visual_revision": null
+        }
+      }
+    ],
+    "exposure_packets": 1
+  },
+  "apple-tile-sun": {
+    "directory": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m3/window-references/apple-tile-sun",
+    "capture_complete": true,
+    "options": {
+      "mode": "still",
+      "params": "examples/v1-game/params/showcase-sunset-clear-sun.params.json"
+    },
+    "stars": "on",
+    "disk_free_after_bytes": 38735122432,
+    "complete": true,
+    "manifest_sha256": "805f58419f59e66e2a44fce5c6c8d67ce4aaf6587c4b7b73e5c057196525052e",
+    "images": 1,
+    "selected": [
+      {
+        "file": "checkpoint-0.rgba8",
+        "sha256": "48567e05345d833b5cd35e64473ee0d063d1bd2aaf8414b9b362707395f73513",
+        "image": {
+          "alpha": 1.0,
+          "current_endpoint_tick": 0,
+          "device_generation": 1,
+          "epoch": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1165844497,
+            1094421942,
+            1174665056,
+            0,
+            266,
+            0,
+            1
+          ],
+          "history_epoch": 0,
+          "map_observed_ns": 5500041,
+          "pixel_source": "Sdr",
+          "presentation_lead_ns": 0,
+          "previous_endpoint_tick": null,
+          "readback_copy_gpu_bracket_ns": 1295083.0,
+          "submission_id": 265,
+          "submit_ns": 0,
+          "surface_generation": 1,
+          "tick": 0,
+          "timeline": 0,
+          "visual_revision": null
+        }
+      }
+    ],
+    "exposure_packets": 1
+  },
+  "apple-tile-night": {
+    "directory": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m3/window-references/apple-tile-night",
+    "capture_complete": true,
+    "options": {
+      "mode": "still",
+      "params": "examples/v1-game/params/showcase-night-upslope.params.json"
+    },
+    "stars": "on",
+    "disk_free_after_bytes": 38723993600,
+    "complete": true,
+    "manifest_sha256": "a21504539c965db2927e39a804395e47d13e8438ce0b4b40bf857c3fa94d5b1a",
+    "images": 1,
+    "selected": [
+      {
+        "file": "checkpoint-0.rgba8",
+        "sha256": "cb565f9d71a8d703bab346414a63c464d473075d05ed03ebc9f5d03b9634db4d",
+        "image": {
+          "alpha": 1.0,
+          "current_endpoint_tick": 0,
+          "device_generation": 1,
+          "epoch": 1,
+          "exposure_gpu_words": [
+            1111085850,
+            1010206234,
+            3235383541,
+            976275536,
+            0,
+            289,
+            0,
+            1
+          ],
+          "history_epoch": 0,
+          "map_observed_ns": 5280250,
+          "pixel_source": "Sdr",
+          "presentation_lead_ns": 0,
+          "previous_endpoint_tick": null,
+          "readback_copy_gpu_bracket_ns": 1075458.0,
+          "submission_id": 288,
+          "submit_ns": 0,
+          "surface_generation": 1,
+          "tick": 0,
+          "timeline": 0,
+          "visual_revision": null
+        }
+      }
+    ],
+    "exposure_packets": 1
+  },
+  "apple-tile-noon": {
+    "directory": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m3/window-references/apple-tile-noon",
+    "capture_complete": true,
+    "options": {
+      "mode": "still",
+      "params": "examples/v1-game/params/showcase-noon.params.json"
+    },
+    "stars": "on",
+    "disk_free_after_bytes": 38710562816,
+    "complete": true,
+    "manifest_sha256": "05acebc5fab887d6c6f61354e9993c169111c4ad27603566ec8c4afbe6ef8d02",
+    "images": 1,
+    "selected": [
+      {
+        "file": "checkpoint-0.rgba8",
+        "sha256": "8e560bd41f708de335f3958c50b19f365ae752e60d4d9bdad6cfde21f6fb74b4",
+        "image": {
+          "alpha": 1.0,
+          "current_endpoint_tick": 0,
+          "device_generation": 1,
+          "epoch": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1192782339,
+            1097847347,
+            1201587145,
+            0,
+            275,
+            0,
+            1
+          ],
+          "history_epoch": 0,
+          "map_observed_ns": 5904083,
+          "pixel_source": "Sdr",
+          "presentation_lead_ns": 0,
+          "previous_endpoint_tick": null,
+          "readback_copy_gpu_bracket_ns": 1172083.0,
+          "submission_id": 274,
+          "submit_ns": 0,
+          "surface_generation": 1,
+          "tick": 0,
+          "timeline": 0,
+          "visual_revision": null
+        }
+      }
+    ],
+    "exposure_packets": 1
+  }
+}

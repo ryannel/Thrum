@@ -1,0 +1,60 @@
+{
+  "module": "APPLE-TILE",
+  "milestone": "M3",
+  "tree": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0",
+  "plan": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/docs/plans/APPLE-TILE/DONE.json",
+  "pass": 0,
+  "fail": 2,
+  "error": 0,
+  "timeout": 0,
+  "items": [
+    {
+      "id": "D3.1",
+      "result": "no check",
+      "proof": [
+        "ask"
+      ]
+    },
+    {
+      "id": "D3.2",
+      "result": "no check",
+      "proof": [
+        "inspect",
+        "ask"
+      ]
+    },
+    {
+      "id": "D3.3",
+      "result": "no check",
+      "proof": [
+        "ask"
+      ]
+    },
+    {
+      "id": "D3.4",
+      "check": "python3 scripts/run_v1_showcase.py moving",
+      "lock": "gpu",
+      "exit": 1,
+      "result": "fail",
+      "why": "the check ran and failed, as it should before the work exists; the output says whether that's the reason",
+      "output": "FAIL: /Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g7-showcase/runs/moving-20261111-173228/run.json\n  native moving route refused or failed (exit 1; see /Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g7-showcase/runs/moving-20261111-173228/native-1.log)"
+    },
+    {
+      "id": "D3.5",
+      "result": "no check",
+      "proof": [
+        "inspect",
+        "ask",
+        "attended"
+      ]
+    },
+    {
+      "id": "Check",
+      "check": "./dev check",
+      "exit": 1,
+      "result": "fail",
+      "why": "the check ran and failed, as it should before the work exists; the output says whether that's the reason",
+      "output": "_ispc.o)', assuming: macOS\n         ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/target/debug/deps/libintel_tex_2-ad87d7835ed898ef.rlib[6](kernel_astc_ispc.o)', assuming: macOS\n  |\n  = note: `#[warn(linker_messages)]` on by default\n\nwarning: `thrum-cook` (lib test) generated 1 warning\nwarning: `thrum-cook` (test \"serve_and_watch\") generated 1 warning (1 duplicate)\nwarning: `thrum-cook` (bin \"thrum-cook\") generated 1 warning (1 duplicate)\nwarning: `v1-game` (test \"cooked_material_gpu\") generated 1 warning (1 duplicate)\nwarning: `thrum-cook` (test \"hostile_products\") generated 1 warning (1 duplicate)\nwarning: `v1-game` (test \"cooked_assets_gpu\") generated 1 warning (1 duplicate)\nwarning: `thrum-cook` (test \"edit_to_visible\") generated 1 warning (1 duplicate)\nwarning: `thrum-cook` (test \"cook_loop\") generated 1 warning (1 duplicate)\nwarning: `v1-game` (test \"cooked_texture_quality\") generated 1 warning (1 duplicate)\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.26s\n     Running unittests src/lib.rs (target/debug/deps/asset_loop-dfdda71a33b0a3eb)\n     Running unittests src/main.rs (target/debug/deps/asset_loop-3960902f927aa0c6)\n     Running unittests src/lib.rs (target/debug/deps/thrum_app-bfab80055db16375)\nerror: test failed, to rerun pass `-p thrum-app --lib`\nError: \"/Users/ryannel/.rustup/toolchains/1.99.1-aarch64-apple-darwin/bin/cargo test --locked --offline --workspace failed (exit status: 101)\""
+    }
+  ]
+}

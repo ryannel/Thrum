@@ -1,0 +1,111 @@
+{
+  "pid": 93631,
+  "recipe": "portable",
+  "binary_sha256": "be33c9c3ef2a111e41b4fad7adc64adbb9859690e64485cb9685760b79daf9e9",
+  "environment": {
+    "THRUM_RECIPE": "portable",
+    "THRUM_ASSET_STORE": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m0/valley",
+    "THRUM_SCENE": "valley",
+    "THRUM_ROUTE_OVERLAY": "proof",
+    "THRUM_STARS": "on",
+    "THRUM_CULLING": "direct",
+    "THRUM_V1_FRAMES": "10000",
+    "THRUM_REPORT": "1",
+    "THRUM_PARAMS": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m3/window/portable/controls.json"
+  },
+  "observer": "/usr/sbin/screencapture",
+  "observations": [
+    {
+      "state": "sun",
+      "unix_ns": 1794413403743586000,
+      "monotonic_before_ns": 2928385067881750,
+      "monotonic_after_ns": 2928385248643250,
+      "window": {
+        "kCGWindowAlpha": 1,
+        "kCGWindowBounds": {
+          "Height": 572,
+          "Width": 960,
+          "X": 384,
+          "Y": 146
+        },
+        "kCGWindowIsOnscreen": true,
+        "kCGWindowLayer": 0,
+        "kCGWindowMemoryUsage": 2368,
+        "kCGWindowName": "Thrum V1 | Paused (P) | tick 3 (0 updates, view age 0) | CPU tick 0.000, extract 0.001, upload 0.685, encode 0.936 ms | GPU shadow near/far 0.050/0.375, cluster 0.005, forward 1.398, history 0.011, display 0.058, atmosphere compute -0.000, present 0.063 ms | Direct culling",
+        "kCGWindowNumber": 46814,
+        "kCGWindowOwnerName": "v1-game",
+        "kCGWindowOwnerPID": 93631,
+        "kCGWindowSharingState": 1,
+        "kCGWindowStoreType": 1
+      },
+      "controls": {
+        "world.paused": true,
+        "sky.solar_time": 17.4,
+        "camera.yaw": -90,
+        "camera.pitch": 0
+      }
+    },
+    {
+      "state": "night",
+      "unix_ns": 1794413405958161000,
+      "monotonic_before_ns": 2928387309342291,
+      "monotonic_after_ns": 2928387463198166,
+      "window": {
+        "kCGWindowAlpha": 1,
+        "kCGWindowBounds": {
+          "Height": 572,
+          "Width": 960,
+          "X": 384,
+          "Y": 146
+        },
+        "kCGWindowIsOnscreen": true,
+        "kCGWindowLayer": 0,
+        "kCGWindowMemoryUsage": 2368,
+        "kCGWindowName": "Thrum V1 | Paused (P) | tick 3 (0 updates, view age 0) | CPU tick 0.000, extract 0.001, upload 0.431, encode 0.985 ms | GPU shadow near/far 0.050/0.394, cluster 0.106, forward 1.638, history 0.076, display 0.301, atmosphere compute -0.000, present 0.347 ms | Direct culling",
+        "kCGWindowNumber": 46814,
+        "kCGWindowOwnerName": "v1-game",
+        "kCGWindowOwnerPID": 93631,
+        "kCGWindowSharingState": 1,
+        "kCGWindowStoreType": 1
+      },
+      "controls": {
+        "world.paused": true,
+        "sky.solar_time": 0,
+        "camera.yaw": 0,
+        "camera.pitch": 7
+      }
+    },
+    {
+      "state": "noon",
+      "unix_ns": 1794413408186483000,
+      "monotonic_before_ns": 2928389519861000,
+      "monotonic_after_ns": 2928389691500458,
+      "window": {
+        "kCGWindowAlpha": 1,
+        "kCGWindowBounds": {
+          "Height": 572,
+          "Width": 960,
+          "X": 384,
+          "Y": 146
+        },
+        "kCGWindowIsOnscreen": true,
+        "kCGWindowLayer": 0,
+        "kCGWindowMemoryUsage": 2368,
+        "kCGWindowName": "Thrum V1 | Paused (P) | tick 3 (0 updates, view age 0) | CPU tick 0.000, extract 0.000, upload 0.443, encode 0.983 ms | GPU shadow near/far 0.133/0.286, cluster 0.008, forward 1.266, history 0.013, display 1.157, atmosphere compute -0.000, present 1.166 ms | Direct culling",
+        "kCGWindowNumber": 46814,
+        "kCGWindowOwnerName": "v1-game",
+        "kCGWindowOwnerPID": 93631,
+        "kCGWindowSharingState": 1,
+        "kCGWindowStoreType": 1
+      },
+      "controls": {
+        "world.paused": true,
+        "sky.solar_time": 12,
+        "camera.yaw": 0,
+        "camera.pitch": 0
+      }
+    }
+  ],
+  "video_exit": 0,
+  "game_exit": -15
+}

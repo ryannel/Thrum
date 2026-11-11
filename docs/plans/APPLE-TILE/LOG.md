@@ -159,3 +159,13 @@
   transfer/query counters and named profiler summaries across native, browser and capture consumers. Renderer
   tests, workspace Clippy and the simulator app build pass. Full cooked-target and window proofs follow; M3
   and all its items remain open at this checkpoint. No shader arithmetic, panel or performance claim changes.
+
+- 2026-11-11 M3 claimed for lead review. Clean source 7ffff46f / release be33c9c3 passes 38 retained
+  native route/linear/SDR comparisons, four surface-format/letterbox comparisons, ten direct recipe pairs
+  and 1,924 exact Chrome day/night SDR/linear frames. Builder inspected full images/details and 1x native,
+  Chrome and OS motion. Existing Screen Recording grant and unlocked setup enabled actual-window matched
+  paused-state, controls, CUA resize/restore and generation 2→3 replacement/pan proofs under both recipes.
+  Simulator diagnostic lifecycle passes; no physical-device or runtime-motion qualification is inferred.
+  Required milestone checks pass outside the sandbox after a GPU-lock timeout and sandbox no-adapter refusal. Evidence:
+  [M3 record](../../evidence/render/apple-tile-m3/README.md). Pass-name counters retain untimed work as
+  unavailable; no traffic, speed, panel cadence or EDR/native-provider promotion. Independent review owed.

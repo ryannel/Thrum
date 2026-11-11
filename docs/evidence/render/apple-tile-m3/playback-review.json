@@ -1,0 +1,75 @@
+{
+  "viewer": "IINA 1.5.0",
+  "speed": 1,
+  "method": "Native UI playback with per-file replay and screenshot observations; menu confirmed Pause and Speed 1x. Playback stopped and temporary loop disabled after review.",
+  "files": [
+    {
+      "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m3/native-m2/portable-route-motion/preview-1x.mp4",
+      "sha256": "efd8c608f8c3ecdb5bee3ef10b976ebcc1fbda3d900cedd73a8514eb80ee3311",
+      "selected_evidence": "motion/portable-route-motion/preview-1x.mp4"
+    },
+    {
+      "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m3/native-m2/portable-render-stall-motion/preview-1x.mp4",
+      "sha256": "b90bac06d2b94632b0069cbf493b5ef434579f8f7628c4f6c10fce4d8228c5ff",
+      "selected_evidence": "motion/portable-render-stall-motion/preview-1x.mp4"
+    },
+    {
+      "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m3/native-m1/portable-variants-motion/preview-1x.mp4",
+      "sha256": "cba9a5e9e64c20c5c665ca2084c4bec1a942db42ea1d6ea905450cbf7d921f6c",
+      "selected_evidence": "motion/portable-variants-motion/preview-1x.mp4"
+    },
+    {
+      "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m3/native-m2/apple-tile-route-motion/preview-1x.mp4",
+      "sha256": "e3e2e6b419b7918ec0b1315c820dc1c3c233e63dfd58a7c3952594f32bc499db",
+      "selected_evidence": "motion/apple-tile-route-motion/preview-1x.mp4"
+    },
+    {
+      "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m3/native-m2/apple-tile-render-stall-motion/preview-1x.mp4",
+      "sha256": "1661d894d5534033e926a909e5309a9f4c5f036075ffcd5a0640f8c189305429",
+      "selected_evidence": "motion/apple-tile-render-stall-motion/preview-1x.mp4"
+    },
+    {
+      "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m3/native-m1/apple-tile-variants-motion/preview-1x.mp4",
+      "sha256": "002b3d47b5105aa1dd6be338422f61052f71dae06dd5711de1550f14ade3704f",
+      "selected_evidence": "motion/apple-tile-variants-motion/preview-1x.mp4"
+    },
+    {
+      "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m3/chrome-day-realtime/preview-1x.mp4",
+      "sha256": "a860151737c68e2a4f859382cfc59e4d8fa3f5a5852f2e4d70e01c0ac4e97372",
+      "selected_evidence": "chrome/chrome-day-realtime/preview-1x.mp4"
+    },
+    {
+      "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m3/chrome-night-realtime/preview-1x.mp4",
+      "sha256": "b370ba8289266ea5746a750408b044a18a72f51bc0b815128f259d440539d966",
+      "selected_evidence": "chrome/chrome-night-realtime/preview-1x.mp4"
+    },
+    {
+      "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m3/window/portable/control-response.mov",
+      "sha256": "97df5994c3d2f1fce504338cb3e94c216cf2c87c563a79804db312ef99db0920",
+      "selected_evidence": "window/portable/control-response.mov"
+    },
+    {
+      "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m3/window/portable-recovery-settled-video/window-response.mov",
+      "sha256": "5b08e51c74bdc91487aab134868f0f41238f25ea91964124683a4186d097c286",
+      "selected_evidence": "window/portable-recovery/window-response.mov"
+    },
+    {
+      "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m3/window/apple-tile/control-response.mov",
+      "sha256": "a1d3b28aa72d5421f533cdd66ed9cc36b331abf68fd1a7102d63617332f5f86c",
+      "selected_evidence": "window/apple-tile/control-response.mov"
+    },
+    {
+      "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m3/window/apple-tile-recovery-settled-video/window-response.mov",
+      "sha256": "df340166cc789b827c526be2f890881d94ec1aa80b47d093f3306372d9de0558",
+      "selected_evidence": "window/apple-tile-recovery/window-response.mov"
+    }
+  ],
+  "observations": [
+    "Native both recipes: route approach and cut retain mirror/cubes/terrain and shadow geometry.",
+    "Injected stall: held output then resumed pan; source manifests distinguish skipped views from omitted archive images.",
+    "Prepared day/night variants retain stars and geometry.",
+    "Chrome day/night route and cut retain baseline content; night saturation is inherited and exact to baseline.",
+    "OS controls change Sun/night/noon; recovery keeps intact scene and accepted pan is corroborated by lifecycle and 3.7s movie frames."
+  ],
+  "qualification": "Builder visual function review only. Independent lead review owed; no display cadence or speed qualification."
+}

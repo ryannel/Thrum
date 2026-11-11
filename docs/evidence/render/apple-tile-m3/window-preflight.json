@@ -1,0 +1,13 @@
+{
+  "unix_ns": 1794411566586728000,
+  "observer": "/usr/sbin/screencapture",
+  "permission_preflight": {
+    "api": "CGPreflightScreenCaptureAccess",
+    "granted": true,
+    "probe_pid": 85168,
+    "probe_executable": "/opt/homebrew/opt/python@3.15/bin/python3.15"
+  },
+  "console_locked": false,
+  "os": "ProductName:\t\tmacOS\nProductVersion:\t\t26.6.2\nBuildVersion:\t\t25G83\n",
+  "grant_requested": false
+}

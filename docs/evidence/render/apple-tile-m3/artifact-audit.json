@@ -1,0 +1,22 @@
+{
+  "native-m1.json.gz": {
+    "comparisons": 38,
+    "current_file_hashes_verified": 76,
+    "all_pixel_hashes_equal": true,
+    "qualified_binary": "be33c9c3ef2a111e41b4fad7adc64adbb9859690e64485cb9685760b79daf9e9"
+  },
+  "native-m2.json.gz": {
+    "comparisons": 4,
+    "current_file_hashes_verified": 8,
+    "all_pixel_hashes_equal": true,
+    "qualified_binary": "be33c9c3ef2a111e41b4fad7adc64adbb9859690e64485cb9685760b79daf9e9"
+  },
+  "both_window_recipe_resize_and_replacement_witnesses": true,
+  "qualified_binary_match": true,
+  "qualified_engine_game_shader_build_inputs_match": true,
+  "verification_script_differences": [
+    "scripts/apple_tile_m1_compare_browser.py",
+    "scripts/check_v1_browser.mjs"
+  ],
+  "source_audit": "integration-source-audit.json"
+}

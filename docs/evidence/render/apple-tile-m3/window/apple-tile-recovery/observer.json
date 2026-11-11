@@ -1,0 +1,21 @@
+{
+  "pid": 93703,
+  "environment": {
+    "THRUM_RECIPE": "apple-tile",
+    "THRUM_MAC_QUALIFY": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m3/window/apple-tile-recovery-settled-video",
+    "THRUM_MAC_TAP": "on",
+    "THRUM_MAC_REPLACE": "1",
+    "THRUM_V1_FRAMES": "10000",
+    "THRUM_SCENE": "valley",
+    "THRUM_ASSET_STORE": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m0/valley",
+    "THRUM_ROUTE_OVERLAY": "proof",
+    "THRUM_STARS": "on",
+    "THRUM_CULLING": "direct",
+    "THRUM_PARAMS": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/examples/v1-game/params/showcase-noon.params.json"
+  },
+  "clock": "time.monotonic_ns / time.time_ns",
+  "captures": [],
+  "record_start_unix_ns": 1794413430606054000,
+  "game_exit": 0,
+  "recorder_exit": 0
+}

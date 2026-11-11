@@ -1,0 +1,58 @@
+{
+  "module": "APPLE-TILE",
+  "milestone": "M3",
+  "tree": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0",
+  "plan": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/docs/plans/APPLE-TILE/DONE.json",
+  "pass": 2,
+  "fail": 0,
+  "error": 0,
+  "timeout": 0,
+  "items": [
+    {
+      "id": "D3.1",
+      "result": "no check",
+      "proof": [
+        "ask"
+      ]
+    },
+    {
+      "id": "D3.2",
+      "result": "no check",
+      "proof": [
+        "inspect",
+        "ask"
+      ]
+    },
+    {
+      "id": "D3.3",
+      "result": "no check",
+      "proof": [
+        "ask"
+      ]
+    },
+    {
+      "id": "D3.4",
+      "check": "python3 scripts/run_v1_showcase.py moving",
+      "lock": "gpu",
+      "exit": 0,
+      "result": "pass",
+      "output": "PASS: /Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g7-showcase/runs/moving-20261111-182301/run.json"
+    },
+    {
+      "id": "D3.5",
+      "result": "no check",
+      "proof": [
+        "inspect",
+        "ask",
+        "attended"
+      ]
+    },
+    {
+      "id": "Check",
+      "check": "./dev check",
+      "exit": 0,
+      "result": "pass",
+      "output": "ad8f9)\n     Running unittests src/main.rs (target/debug/deps/xtask-fd887e56201bb2d6)\n   Doc-tests asset_loop\n   Doc-tests thrum_app\nWARNING: No rustdoc doctest environment variable provided so doctests will be run in the same process\n   Doc-tests thrum_asset\n   Doc-tests thrum_asset_gpu\nWARNING: No rustdoc doctest environment variable provided so doctests will be run in the same process\n   Doc-tests thrum_content_runtime\n   Doc-tests thrum_controls\nWARNING: No rustdoc doctest environment variable provided so doctests will be run in the same process\n   Doc-tests thrum_cook\n   Doc-tests thrum_core\n   Doc-tests thrum_network\n   Doc-tests thrum_render\n   Doc-tests v1_game\n   Compiling v1-game v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/examples/v1-game)\nwarning: linker stderr: ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/target/debug/deps/libintel_tex_2-ad87d7835ed898ef.rlib[5](kernel_ispc.o)', assuming: macOS\n         ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/target/debug/deps/libintel_tex_2-ad87d7835ed898ef.rlib[6](kernel_astc_ispc.o)', assuming: macOS\n  |\n  = note: `#[warn(linker_messages)]` on by default\n\nwarning: `v1-game` (test \"cooked_assets_gpu\") generated 1 warning\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.16s\n     Running tests/cooked_assets_gpu.rs (target/debug/deps/cooked_assets_gpu-df1f129eb280c7bf)"
+    }
+  ]
+}

@@ -33,8 +33,8 @@ Criteria: D2.1–D2.5 in the done-when file.
 
 Criteria: D3.1–D3.5 in the done-when file.
 
-- [ ] Expose one colour/exposure input with exact identity substitution; keep tone/intermediate/present arithmetic. Migrate pass-name timing and prove attended window function.
-- [ ] Retain actual target proof and run scoped checks plus `./dev check` before claiming.
+- [x] Expose one colour/exposure input with exact identity substitution; keep tone/intermediate/present arithmetic. Migrate pass-name timing and prove attended window function.
+- [x] Retain actual target proof and run scoped checks plus `./dev check` before claiming.
 
 ## M10 A stateful native segment composes inside one submission
 

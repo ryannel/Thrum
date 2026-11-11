@@ -1,0 +1,47 @@
+{
+  "unix_ns": 1794413912842726000,
+  "monotonic_before_ns": 2928894115225750,
+  "monotonic_after_ns": 2928894343321666,
+  "recipe": "apple-tile",
+  "observed_process_recipe": "apple-tile",
+  "window": {
+    "kCGWindowAlpha": 1,
+    "kCGWindowBounds": {
+      "Height": 572,
+      "Width": 960,
+      "X": 384,
+      "Y": 146
+    },
+    "kCGWindowIsOnscreen": true,
+    "kCGWindowLayer": 0,
+    "kCGWindowMemoryUsage": 2368,
+    "kCGWindowName": "Thrum V1 | Paused (P) | tick 2 (0 updates, view age 0) | CPU tick 0.000, extract 0.000, upload 0.488, encode 1.129 ms | GPU shadow near/far 0.050/0.282, cluster 0.050, forward 1.168, history 0.011, display 1.153, atmosphere compute -0.000, present 1.140 ms | Direct culling",
+    "kCGWindowNumber": 46932,
+    "kCGWindowOwnerName": "ThrumM2",
+    "kCGWindowOwnerPID": 99236,
+    "kCGWindowSharingState": 1,
+    "kCGWindowStoreType": 1
+  },
+  "pid": 99236,
+  "loaded_executable_path": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m3/ThrumM2.app/Contents/MacOS/v1-game",
+  "binary_sha256": "be33c9c3ef2a111e41b4fad7adc64adbb9859690e64485cb9685760b79daf9e9",
+  "controls": {
+    "world.paused": true,
+    "sky.solar_time": 12,
+    "camera.yaw": 0,
+    "camera.pitch": 0
+  },
+  "image_extent": [
+    1920,
+    1144
+  ],
+  "backing_scale": 2,
+  "content_bounds_pixels": [
+    0,
+    64,
+    1920,
+    1144
+  ],
+  "reference": "window-references/apple-tile-noon/checkpoint-0.png",
+  "scope": "Matched paused controls/content/grid, not the same submission or exact compositor bytes"
+}

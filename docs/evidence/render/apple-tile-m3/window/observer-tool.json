@@ -1,0 +1,8 @@
+{
+  "tool": "/usr/sbin/screencapture",
+  "version": "OS-bundled; no independent tool version flag",
+  "sha256": "9b667dfe132c550e6e77304092401aadfa2764af47d49c6785bf36083f44d12b",
+  "os": "ProductName:\t\tmacOS\nProductVersion:\t\t26.6.2\nBuildVersion:\t\t25G83\n",
+  "observed_preflight": "preflight.json",
+  "permission_changed": false
+}

@@ -1,0 +1,10 @@
+{
+  "recorder_start_unix_ns": 1794413430606054000,
+  "duration_seconds": 4,
+  "replacement_seconds": 2.165024,
+  "pan_seconds": 3.154519,
+  "generations": [
+    "2",
+    "3"
+  ]
+}
