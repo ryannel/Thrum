@@ -4,7 +4,7 @@
     {
       "id": "M0",
       "name": "A repeatable offscreen valley proves the comparison path",
-      "state": "open",
+      "state": "blocked",
       "fails": 0,
       "replans": 3,
       "bar": "The same complete cooked valley as portable, with stable lighting, silhouettes, shadows and motion expected of a shipped high-end game; matched full-resolution stills and normal-speed sequences must expose omitted work.",
@@ -67,7 +67,8 @@
       ],
       "needs": [
         "T2-CAPTURE:M0"
-      ]
+      ],
+      "blocked": "D0.2 requires a native witness assigned to M10. Clarifying or correcting that scope conflict would unblock M0\u2019s claim."
     },
     {
       "id": "M1",
