@@ -28,6 +28,7 @@ The orchestrate script writes this page from the plan files and records after ea
 
 ### Now and next
 
+- The cooked valley presents smoothly on built-in ProMotion (PLATFORM-RUNTIME-MAC M2): Not Started · [plan](PLATFORM-RUNTIME-MAC/PLAN.md)
 - The existing frame lifecycle runs through one split graph (APPLE-TILE M2): Not Started · [plan](APPLE-TILE/PLAN.md)
 - Every pixel of the valley carries correct motion under jitter, including the sky and stars (APPLE-PRESENTATION M1): Ready for Review · [plan](APPLE-PRESENTATION/PLAN.md)
 - Other modules read the one sky and Sun, and one cloud optical depth dims direct sunlight once (ATMOSPHERE M5): Not Started · [plan](ATMOSPHERE/PLAN.md)
@@ -46,7 +47,7 @@ The orchestrate script writes this page from the plan files and records after ea
 | # | Module | What it's for | Needs | Status |
 |---|---|---|---|---|
 | 1 | PLATFORM-RUNTIME-IOS | The game runs on the iPhone simulator, through touch, rotation, backgrounding and graphics loss |  | Done 9 Nov |
-| 2 | PLATFORM-RUNTIME-MAC | The game recovers from graphics loss on the Mac, and its motion is proved smooth on the built-in 120 Hz display | T2-CAPTURE M0, APPLE-TILE M3 | M2 of 4 · Blocked |
+| 2 | PLATFORM-RUNTIME-MAC | The game recovers from graphics loss on the Mac, and its motion is proved smooth on the built-in 120 Hz display | T2-CAPTURE M0, APPLE-TILE M3 | M2 of 4 · Not Started |
 | 3 | T2-CAPTURE | Agents record exactly what the engine drew, as stills and motion, with nobody at the screen | PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | Done 10 Nov |
 | 4 | COOKED-DRAW | Cooked scenes draw on devices that cannot run GPU-driven draws, such as the iPhone simulator | PLATFORM-RUNTIME-IOS M7 | Done 9 Nov |
 | 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE M0 and M1, PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | M2 of 7 · Not Started |
