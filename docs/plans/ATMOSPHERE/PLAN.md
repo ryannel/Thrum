@@ -9,6 +9,7 @@ Closes gate G3s. [Design](DESIGN.md) · [done-when file](DONE.json), which holds
 - Assumption: G3s closes with the west-lookout crossing (M3) still parked and named as a known defect, and with M4 deferred; neither is judged in M6.
 - Assumption: the sky's closing review waits for TAAU, so it is judged once on the image the exit will show.
 - Assumption: solar sky radiance and solar aerial transport stay unqualified against an all-orders reference when G3s closes. M5 and M6 prove that the lent lookups return the stored products in the right units and that the existing bounded referees still pass; the ledger names the gap. A full accuracy campaign would be a separate plan.
+- Assumption: the lent sky and aerial lookups stay one hardware-filtered read, and their handoff bound allows one stored half-float step (at most 0.1% of the value), because Metal returns filtered half-float reads at that precision. Blending exact texels in the shader for float32 results was rejected: it costs every sky pixel and lit fragment more reads and changes every scene's image for no visible gain.
 - Assumption: the terrain lip on the shipped Ground E pan is judged in M6.1 as a brightness step, and the held 17.4 h stop is judged; only the moving spur edge of the parked M3 crossing is left out.
 
 ## M1 The valley remains legible at moonless midnight: done
@@ -60,7 +61,9 @@ Read [Environment identity and products](DESIGN.md#environment-identity-and-prod
 - [ ] The handoff referees H1–H5 of [the numerical acceptance](DESIGN.md#numerical-acceptance) on Metal, run
       from a contribution's own pipeline; the preserved referees P1–P11 untouched.
 - [ ] For H2 and H4, the f64 filtered decode written apart from the library, its live and known-field arms, and
-      the wrong lookups that must fail; one case of each row repeated at a non-unit exposure scale.
+      the wrong lookups that must fail; one case of each row repeated at a non-unit exposure scale. The bound
+      carries the stored-step term `Q`; the known fields step by at least 32 stored steps; the Metal run keeps
+      the 257-position precision record.
 - [ ] The browser page and the `environment` case of `scripts/check_v1_browser.mjs` that run H1–H5 in Chrome,
       with the same filtered decode, wrong lookups and exposure control.
 - [ ] The Sun-path optical-depth product, the one cloud-factor function, and the shader variant in which the

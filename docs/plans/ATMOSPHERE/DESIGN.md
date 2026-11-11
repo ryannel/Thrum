@@ -20,7 +20,10 @@ product by product, environment reflection is a lent and tested operation, and t
 and of the cloud field are stated. They were revised again on 11 November after
 [the second review](../../evidence/ATMOSPHERE/design-review.md): the sky and aerial handoff rows H2 and H4 now
 compare against an independently evaluated filtered decode, with wrong lookups that must fail, and the lent
-values are stated to be free of pre-exposure.
+values are stated to be free of pre-exposure. A third revision the same day follows M5's builder measuring that
+Metal returns a filtered half-float read at the stored format's precision
+([entry 3](../../evidence/ATMOSPHERE/log-entries.md#entry-3)): the filtered-decode bound gains one stored step,
+the known field's steps are sized against it, and each lookup stays one hardware-filtered read.
 
 The V1 valley uses one Earth sky from noon through astronomical night. The shipped
 Hillaire transport owns sunlight, the sky-view and aerial LUTs, and the shared diffuse
@@ -235,6 +238,11 @@ The exposure scale is lent beside them and the library never applies it. A contr
 colour by that scale once, as it writes to the scene target, after it has combined its lighting and composed
 aerial `(T,S)`. The forward pass does the same in the last line of its shading.
 
+Each chart lookup is one hardware-filtered read per chart layer of a half-float chart, as the forward pass reads
+it today. A GPU may return a filtered half-float read at the stored format's precision, and the M3 Max does. So a
+lent sky, aerial or reflection value is resolved to one stored step, at most 0.1% of the value, and not to
+float32 precision. The stored texels are already rounded to that step.
+
 | Operation | Returns | Support, and what happens outside it |
 |---|---|---|
 | Sun light at a world position | RGB illuminance on a plane facing the Sun, from the true Sun through the air only; no geometric shadow, no cloud factor | Any world position. Above the 100 km top the light is unattenuated unless the ray enters the shell. Below the first chart row (6.15 m) the altitude clamps, a known approximation that reaches 1.2% in blue at sea level with the Sun on the horizon. A Sun behind the planet at that point returns exactly zero |
@@ -287,6 +295,13 @@ below the low-Sun views M5 captures. It exists to prove the path; `CLOUDS` repla
   feature it does not use, against the engine's rule that off removes the work.
 - **Let each module sample the LUTs through its own private copies of the lookup code.** Two decoders drift; one
   library keeps aerial perspective applied once.
+- **Blend exact texels in the shader, to get float32 results.** Four texel loads replace the sky's one filtered
+  read, and sixteen replace the aerial volume's four, on every sky pixel and lit fragment. The forward pass shares
+  these functions, so its shader text and every scene's image would change. The stored texels are already rounded
+  to the same half-float step, so the product would be no more accurate, only smoother below 0.1% of the value.
+  M6 judges sky and twilight banding by eye, and a visible step there reopens this.
+- **Float32 charts.** Filtering a 32-bit float texture is an optional WebGPU feature (`float32-filterable`), so
+  the portable recipe could not rely on it, and the charts' memory and bandwidth would double.
 
 ### Check that it can work
 
@@ -352,18 +367,33 @@ with the one value a correct lookup returns at that point.
   point's screen position inside a depth slice, then a linear blend by distance between the two adjacent slices
   at their square-root spacing, held at 32 km. This evaluation is written in the test. It does not call, include
   or translate the lent library's code.
-- **Bound.** Per channel, the result is within `C/32 + 1e-5 × M` of the expected value. `C` is the largest
+- **Bound.** Per channel, the result is within `C/32 + 1e-5 × M + Q` of the expected value. `C` is the largest
   minus the smallest of the decoded texels the blend reads there, and `M` is the largest of them. `C/32` allows
   each sampler axis a weight error of 1/64, four times the 1/256 step of the 8-bit weights GPU samplers commonly
-  keep. `1e-5 × M` is P10's decode allowance for float32 arithmetic. The read-back texels are exact, so no
-  storage step is added. If a correct lookup misses this bound on a target, the builder records that target's
-  measured weight resolution and brings it back as a plan change. The bound is not widened during the build.
+  keep. `1e-5 × M` is P10's decode allowance for float32 arithmetic. `Q` is one stored step: the spacing of
+  half-float values at the largest stored magnitude among the texels the blend reads, taken per stored channel
+  and carried through the same decode scale as the value. Where a decode sums two stored channels, as the solar
+  part and the night term are summed, each adds its own step.
+- **Why `Q`.** The read-back texels are exact, but the filter's result is not. On the M3 Max, Metal returns a
+  filtered `RGBA16Float` read rounded to the nearest half-float. Across 257 positions between two texels, a pair
+  far apart returns 257 distinct values inside the old bound, and a pair one stored step apart returns only
+  those two values. The live sky chart missed the old bound by this rounding and by nothing else: addressing
+  agreed with the f64 evaluation to 0.000007 texels. WebGPU and Metal do not specify the precision or rounding
+  of a filtered result, so `Q` is a whole step, which covers a filter that rounds to nearest and one that
+  truncates. The Metal run keeps this 257-position measurement and prints, for both pairs, the count of distinct
+  values and the largest error in stored steps. That is a record of the target; the bound is the gate.
+- **A further miss.** If a correct lookup misses this bound on a target, the builder records that target's
+  measured weight and result resolution and brings it back as a plan change. The bound is not widened during
+  the build.
 - **Live arm.** The production chart or volume, at the row's named cases. It shows that the lookup reads the
   right resource with the right gain and mapping on real contents. For aerial `S` the fixture path has no
   geometric shadow, so the result equals the stored in-scatter.
 - **Known-field arm.** The fixture writes a field through the lent layout, as P10's fixed-texel fixture does.
   Its value differs between neighbouring texels by a comparable step along every blended axis (both chart axes
-  for the sky; both screen axes and depth for the volume) and differs between channels. Queries sit a quarter,
+  for the sky; both screen axes and depth for the volume) and differs between channels. Around every query that
+  step is at least 32 stored steps on each blended axis and in each channel, so `Q` cannot hide a wrong lookup;
+  the wrong lookups below are the proof. A plain ramp loses that ratio away from the chart's origin, because the
+  stored step grows with the value; a repeating pattern keeps it. Queries sit a quarter,
   a half and three quarters of the way between texel centres on every axis at once. For the sky they cover
   both halves of the chart, the row beside the horizon split and two Sun azimuths. For the volume they cover
   the first, a middle and the last pair of slices, and one point beyond 32 km that must return the 32 km value.
