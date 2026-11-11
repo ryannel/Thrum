@@ -74,7 +74,7 @@
     {
       "id": "M2",
       "name": "Depth, motion, reactive and exposure are stored for reconstruction, and history advances only with submitted frames",
-      "state": "open",
+      "state": "blocked",
       "fails": 0,
       "replans": 0,
       "needs": [
@@ -165,7 +165,8 @@
           "verdict": "",
           "review": ""
         }
-      ]
+      ],
+      "blocked": "Free at least 5.76 GiB to run exact verification, complete D2.1\u2013D2.4 and D2.6, and integrate M2."
     },
     {
       "id": "M3",
