@@ -4,7 +4,7 @@ The orchestrate script writes this page from the plan files and records after ea
 
 ## Overview
 
-3 of 20 modules done · 5 in progress · 12 to come
+3 of 21 modules done · 5 in progress · 13 to come
 
 ### Waiting on you
 
@@ -28,11 +28,23 @@ The orchestrate script writes this page from the plan files and records after ea
 - ATMOSPHERE assumes: solar sky radiance and solar aerial transport stay unqualified against an all-orders reference when G3s closes. M5 and M6 prove that the lent lookups return the stored products in the right units and that the existing bounded referees still pass; the ledger names the gap. A full accuracy campaign would be a separate plan. ([plan](ATMOSPHERE/PLAN.md))
 - ATMOSPHERE assumes: the lent sky and aerial lookups stay one hardware-filtered read, and their handoff bound allows one stored half-float step (at most 0.1% of the value), because Metal returns filtered half-float reads at that precision. Blending exact texels in the shader for float32 results was rejected: it costs every sky pixel and lit fragment more reads and changes every scene's image for no visible gain. ([plan](ATMOSPHERE/PLAN.md))
 - ATMOSPHERE assumes: the terrain lip on the shipped Ground E pan is judged in M6.1 as a brightness step, and the held 17.4 h stop is judged; only the moving spur edge of the parked M3 crossing is left out. ([plan](ATMOSPHERE/PLAN.md))
+- BASELINE-GUARD assumes: the guard is its own one-milestone module, not an item added to `APPLE-TILE` M3, so it does not sit on the critical path or wait behind that milestone's attended items. It needs nothing and can be built first. ([plan](BASELINE-GUARD/PLAN.md))
+- BASELINE-GUARD assumes: every merge on the Mac pays the guard's run time in `./dev check`; the time is recorded, not budgeted. ([plan](BASELINE-GUARD/PLAN.md))
+- BASELINE-GUARD assumes: the gate guards the Mac only. Chrome's exact baseline is checked at the claim, by the items that the module list's rule 3 adds. ([plan](BASELINE-GUARD/PLAN.md))
+- CULLING assumes: G3c closes on the scenes that exist, the mixed-mesh field and the valley as it stands, before `SHOWCASE` assembles the exit scene. `SHOWCASE` reruns the same equivalence and cost commands there, and the default mode may change then by the same rule. ([plan](CULLING/PLAN.md))
+- CULLING assumes: "GPU culling" in the V1 exit is met by Frustum as the default with Occlusion selectable, if the measured rows do not favour Occlusion on any shipped scene. The gate's Hi-Z clause is met by Occlusion running, equal to Direct, on Mac and Chrome. ([plan](CULLING/PLAN.md))
+- CULLING assumes: the native-only culling recipes (subgroup compaction, first-instance draws) are not built for V1. They stay candidates for the performance phase the brief puts after the exit. ([plan](CULLING/PLAN.md))
+- EFFECT-GRAPH assumes: this foundation is built now, ahead of the owner's decision on when the sea and cloud port starts; the port decision says to keep the foundation converging on readiness, and no sea or cloud pass is built here. ([plan](EFFECT-GRAPH/PLAN.md))
+- EFFECT-GRAPH assumes: the atmosphere's existing passes and textures are not moved onto the new seam or the new texture kinds. They keep their exact output, and move later only for a measured reason. ([plan](EFFECT-GRAPH/PLAN.md))
+- EFFECT-GRAPH assumes: the diagnostic effect stays in the V1 game example behind a selection that is off by default, as a test fixture; it is never part of the showcase. ([plan](EFFECT-GRAPH/PLAN.md))
 
 ### Now and next
 
 - The existing frame lifecycle runs through one split graph (APPLE-TILE M2): Ready for Review · [plan](APPLE-TILE/PLAN.md) · [latest review](../evidence/APPLE-TILE/M2-review.md)
 - Other modules read the one sky and Sun, and one cloud optical depth dims direct sunlight once (ATMOSPHERE M5): Ready for Review · [plan](ATMOSPHERE/PLAN.md)
+- BASELINE-GUARD's design: Design Ready for Review · [design](BASELINE-GUARD/DESIGN.md) · [plan](BASELINE-GUARD/PLAN.md)
+- CULLING's design: Design Ready for Review · [design](CULLING/DESIGN.md) · [plan](CULLING/PLAN.md)
+- EFFECT-GRAPH's design: Design Ready for Review · [design](EFFECT-GRAPH/DESIGN.md) · [plan](EFFECT-GRAPH/PLAN.md)
 
 ### Recently done
 
@@ -56,15 +68,16 @@ The orchestrate script writes this page from the plan files and records after ea
 | 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE M3 | Waiting on APPLE-TILE:M3 |
 | 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE M0, M2, M3, M11 and M12 | Waiting on APPLE-TILE:M2 |
 | 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads | APPLE-PRESENTATION M3 | M5 of 2 · Ready for Review |
-| 9 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE M2 | Not planned yet |
-| 10 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame | APPLE-TILE M2 | Not planned yet |
-| 11 | CONTENT-LOOP | Edited meshes, textures and volumes appear in the running game without a stall | APPLE-PRESENTATION M2 | Not planned yet |
-| 12 | SHOWCASE | The V1 exit: the showcase valley on Mac and in Chrome, reviewed, with its closing record | The last milestone of modules 1 to 9 and 11 | Not planned yet |
-| 13 | SEA | An open sea from waterline to horizon, with floating bodies, wakes and foam | ATMOSPHERE M5, EFFECT-GRAPH, APPLE-TILE M3, APPLE-PRESENTATION M3 and M7, CONTENT-LOOP; the owner's port timing | Not planned yet |
-| 14 | CLOUDS | A weather-driven sky from clear to overcast, with placed cloud volumes that shade the world | ATMOSPHERE M5, EFFECT-GRAPH, APPLE-TILE M3, APPLE-PRESENTATION M3 and M7, CONTENT-LOOP; the owner's port timing | Not planned yet |
-| 15 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply | SHOWCASE | Not planned yet |
-| 16 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser | SHOWCASE | Not planned yet |
-| 17 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | SHOWCASE, APPLE-TILE, CONTENT-LOOP | Not planned yet |
-| 18 | SESSION | Two to four players share one run and keep seeing the same crowd | SIM-2D, TRANSPORT | Not planned yet |
-| 19 | GAME-UI | Health bars, timers, menus and a join screen drawn in the game's own frame | RENDER-2D | Not planned yet |
-| 20 | SWARM | The swarm-survival game itself: its name, rules, characters and art | SIM-2D, RENDER-2D, GAME-UI, TRANSPORT, SESSION | Not planned yet |
+| 9 | BASELINE-GUARD | A change that alters another module's exact reference images is refused before it reaches main |  | Design Ready for Review |
+| 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE M2 | Design Ready for Review |
+| 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame | APPLE-TILE M2 and M3, APPLE-PRESENTATION M2 | Design Ready for Review |
+| 12 | CONTENT-LOOP | Edited meshes, textures and volumes appear in the running game without a stall | APPLE-PRESENTATION M2 | Not planned yet |
+| 13 | SHOWCASE | The V1 exit: the showcase valley on Mac and in Chrome, reviewed, with its closing record | The last milestone of modules 1 to 10 and 12 | Not planned yet |
+| 14 | SEA | An open sea from waterline to horizon, with floating bodies, wakes and foam | ATMOSPHERE M5, EFFECT-GRAPH, APPLE-TILE M3, APPLE-PRESENTATION M3 and M7, CONTENT-LOOP; the owner's port timing | Not planned yet |
+| 15 | CLOUDS | A weather-driven sky from clear to overcast, with placed cloud volumes that shade the world | ATMOSPHERE M5, EFFECT-GRAPH, APPLE-TILE M3, APPLE-PRESENTATION M3 and M7, CONTENT-LOOP; the owner's port timing | Not planned yet |
+| 16 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply | SHOWCASE | Not planned yet |
+| 17 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser | SHOWCASE | Not planned yet |
+| 18 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | SHOWCASE, APPLE-TILE, CONTENT-LOOP | Not planned yet |
+| 19 | SESSION | Two to four players share one run and keep seeing the same crowd | SIM-2D, TRANSPORT | Not planned yet |
+| 20 | GAME-UI | Health bars, timers, menus and a join screen drawn in the game's own frame | RENDER-2D | Not planned yet |
+| 21 | SWARM | The swarm-survival game itself: its name, rules, characters and art | SIM-2D, RENDER-2D, GAME-UI, TRANSPORT, SESSION | Not planned yet |
