@@ -8,6 +8,7 @@ source repository's remote. The one scratch builder reuses this task's target
 sequentially; the source's next verifier rebuilds its own artifacts.
 """
 import json
+import gzip
 import os
 from pathlib import Path
 import shutil
@@ -94,6 +95,13 @@ def main():
         case['failure'] = verifier_record['error']
         for compact in records[-1].parent.glob('*.gz'):
             shutil.copyfile(compact, OUT / (name + '-' + compact.name))
+        for manifest in records[-1].parent.glob('*/manifest.json'):
+            (OUT / (name + '-' + manifest.parent.name + '-failed-manifest.json.gz')).write_bytes(
+                gzip.compress(manifest.read_bytes(), mtime=0))
+        for comparison in records[-1].parent.rglob('comparison.json'):
+            difference = json.loads(comparison.read_text())
+            if difference.get('equal') is False:
+                guard.save(OUT / (name + '-difference.json'), difference)
         previous = git(ROOT, '--git-dir', str(remote), 'rev-parse', 'main')
         case['land'] = run(builder, name + '-land', ['python3', LOOP, 'land', '--worktree', '.'])
         log = (OUT / (name + '-land.log')).read_text()

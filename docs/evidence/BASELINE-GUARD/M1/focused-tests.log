@@ -5,8 +5,9 @@ test_missing_base_and_dirty_inputs_fail_closed (__main__.GateTests.test_missing_
 ok
 test_no_covered_change_passes_without_proof (__main__.GateTests.test_no_covered_change_passes_without_proof) ... ok
 test_uncovered_rebase_preserves_proof (__main__.GateTests.test_uncovered_rebase_preserves_proof) ... ok
+test_only_published_successful_captures_are_released (__main__.RetentionTests.test_only_published_successful_captures_are_released) ... ok
 
 ----------------------------------------------------------------------
-Ran 6 tests in 2.352s
+Ran 7 tests in 2.170s
 
 OK

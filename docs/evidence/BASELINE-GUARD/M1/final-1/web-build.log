@@ -1,0 +1,4 @@
+   Compiling thrum-app v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/baseline-guard/crates/thrum-app)
+   Compiling v1-game v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/baseline-guard/examples/v1-game)
+    Finished `release` profile [optimized] target(s) in 4.26s
+Run: python3 -m http.server 8765 --bind 127.0.0.1 --directory "target/v1-game-web"
