@@ -40,7 +40,8 @@ The orchestrate script writes this page from the plan files and records after ea
 
 ### Now and next
 
-- The existing frame lifecycle runs through one split graph (APPLE-TILE M2): Ready for Review · [plan](APPLE-TILE/PLAN.md) · [latest review](../evidence/APPLE-TILE/M2-review.md)
+- G4 can replace the pre-tone linear input without changing SDR output (APPLE-TILE M3): Not Started · [plan](APPLE-TILE/PLAN.md)
+- Depth, motion, reactive and exposure are stored for reconstruction, and history advances only with submitted frames (APPLE-PRESENTATION M2): Not Started · [plan](APPLE-PRESENTATION/PLAN.md)
 - Other modules read the one sky and Sun, and one cloud optical depth dims direct sunlight once (ATMOSPHERE M5): Ready for Review · [plan](ATMOSPHERE/PLAN.md)
 - BASELINE-GUARD's design: Design Changes Requested · [design](BASELINE-GUARD/DESIGN.md) · [plan](BASELINE-GUARD/PLAN.md)
 - CULLING's design: Design Ready for Review · [design](CULLING/DESIGN.md) · [plan](CULLING/PLAN.md)
@@ -48,6 +49,7 @@ The orchestrate script writes this page from the plan files and records after ea
 
 ### Recently done
 
+- The existing frame lifecycle runs through one split graph (APPLE-TILE M2), 11 Nov · [review](../evidence/APPLE-TILE/M2-review.md)
 - Every pixel of the valley carries correct motion under jitter, including the sky and stars (APPLE-PRESENTATION M1), 11 Nov · [review](../evidence/APPLE-PRESENTATION/M1-review.md)
 - The valley selects a recipe and stores only actual future inputs (APPLE-TILE M1), 11 Nov · [review](../evidence/APPLE-TILE/M1-review.md)
 - The starter scene runs in Chrome from one command, with its controls and live asset edits (CREATOR M1), 11 Nov · [review](../evidence/CREATOR/M1-review.md)
@@ -64,9 +66,9 @@ The orchestrate script writes this page from the plan files and records after ea
 | 2 | PLATFORM-RUNTIME-MAC | The game recovers from graphics loss on the Mac, and its motion is proved smooth on the built-in 120 Hz display | T2-CAPTURE M0, APPLE-TILE M3 | M2 of 4 · Needs Human Feedback |
 | 3 | T2-CAPTURE | Agents record exactly what the engine drew, as stills and motion, with nobody at the screen | PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | Done 10 Nov |
 | 4 | COOKED-DRAW | Cooked scenes draw on devices that cannot run GPU-driven draws, such as the iPhone simulator | PLATFORM-RUNTIME-IOS M7 | Done 9 Nov |
-| 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE M0 and M1, PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | M2 of 7 · Ready for Review |
+| 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE M0 and M1, PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | M3 of 7 · Not Started |
 | 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE M3 | Waiting on APPLE-TILE:M3 |
-| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE M0, M2, M3, M11 and M12 | Waiting on APPLE-TILE:M2 |
+| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE M0, M2, M3, M11 and M12 | M2 of 3 · Not Started |
 | 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads | APPLE-PRESENTATION M3 | M5 of 2 · Ready for Review |
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is refused before it reaches main |  | Design Changes Requested |
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE M2 | Design Ready for Review |
