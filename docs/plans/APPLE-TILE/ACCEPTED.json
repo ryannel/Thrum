@@ -4,8 +4,8 @@
   "design": {
     "verdict": "ok",
     "review": "docs/evidence/APPLE-TILE/design-review.md",
-    "commit": "019f849d519ba0978f31971d55da1780888023bb",
-    "hash": "d90de51acfddeb2fda00e9b763dc5b13be3d0f5ddedff520a78f24e069bc1e4f",
+    "commit": "8d8bf889ed704befbea47ec5393ae0238c68f08c",
+    "hash": "062dea2d6dd62734467d48c202f10523e348f62830d7a24ac3f2f16df1c73be5",
     "by": "review",
     "host": "codex",
     "model": "gpt-6-astra",
@@ -15,11 +15,14 @@
       "effort": "high"
     },
     "cli": "codex-cli 0.167.0-alpha.3.2",
-    "path": "visible",
+    "path": "headless",
     "usage": {
-      "incomplete_turns": 1
+      "input": 96739,
+      "cached": 917376,
+      "output": 6254,
+      "turns": 1
     },
-    "at": "2026-11-11T01:48:14Z"
+    "at": "2026-11-11T05:56:59Z"
   },
   "milestones": {
     "M0": {
@@ -226,6 +229,26 @@
       "cli": "codex-cli 0.167.0-alpha.3.2",
       "path": "visible",
       "at": "2026-11-09T14:07:58Z"
+    },
+    {
+      "verdict": "ok",
+      "review": "docs/evidence/APPLE-TILE/design-review-3.md",
+      "commit": "019f849d519ba0978f31971d55da1780888023bb",
+      "hash": "d90de51acfddeb2fda00e9b763dc5b13be3d0f5ddedff520a78f24e069bc1e4f",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.167.0-alpha.3.2",
+      "path": "visible",
+      "usage": {
+        "incomplete_turns": 1
+      },
+      "at": "2026-11-11T01:48:14Z"
     }
   ]
 }
