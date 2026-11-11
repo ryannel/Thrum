@@ -1,0 +1,38 @@
+{
+  "on-traced": {
+    "path": "tmp/mac-m2/final-window-20261110/on-traced/pan.trace/Trace1.run/RunIssues.storedata",
+    "sha256": "c6799df1067d531188daa4c914ffb66827b8259e1afa4a34b1262c1bd3531d5f",
+    "issues": [
+      {
+        "Z_PK": 1,
+        "Z_ENT": 1,
+        "Z_OPT": 1,
+        "ZCOUNT": 1,
+        "ZRELATIVETIMESTAMP": 0,
+        "ZSUBTYPE": 0,
+        "ZTYPE": 2,
+        "ZPARENT": null,
+        "Z_FOK_PARENT": null,
+        "ZMESSAGE": "Data stream: Time Mapping"
+      }
+    ]
+  },
+  "off-traced": {
+    "path": "tmp/mac-m2/final-window-20261110/off-traced/pan.trace/Trace1.run/RunIssues.storedata",
+    "sha256": "1dc1c8194c018702b67114236957b02544ff90743b6b9e7d0c2979625a15d855",
+    "issues": [
+      {
+        "Z_PK": 1,
+        "Z_ENT": 1,
+        "Z_OPT": 1,
+        "ZCOUNT": 1,
+        "ZRELATIVETIMESTAMP": 0,
+        "ZSUBTYPE": 0,
+        "ZTYPE": 2,
+        "ZPARENT": null,
+        "Z_FOK_PARENT": null,
+        "ZMESSAGE": "Data stream: Time Mapping"
+      }
+    ]
+  }
+}

@@ -1,5 +1,5 @@
 {
-  "recorded_unix_ns": 1794397282602769000,
+  "recorded_unix_ns": 1794397907430531000,
   "python_refusal_tests": {
     "passed": 6
   },
@@ -17,6 +17,16 @@
     "log_sha256": "404a9a5799414aadadb9823393be7765900c9f93c25736b355ee266c78d3f076"
   },
   "timed_movie_review": "not completed; finite review request cancelled while still waiting for the shared GPU lock (exit 130 before acquisition); native frames/crops and all original hashes verified",
-  "integration": "pending required land command",
+  "integration": {
+    "state": "not integrated",
+    "exit": 130,
+    "phase": "waiting for GPU lock; land never started",
+    "wait_over_s": 540,
+    "observed_other_holder_pid": 96702,
+    "observed_other_holder_child_pid": 99015,
+    "observed_other_holder_child": "tmp/review-m2/hold.py",
+    "other_processes_changed": false,
+    "log": "integration-wait.log.gz"
+  },
   "diagnostic_budget": "exhausted; both recorded traces have zero raw swap/VSync and derived display-surface rows"
 }

@@ -82,4 +82,19 @@ with the fresh baseline in `on-untraced-current`. Exact executed collector sourc
 collectors/. Selected evidence lives here in Git. Ignored local archives have no durable backup. The
 [runbook](../mac-m2-20261110/RUNBOOK.md) records the tested commands and exhausted allowance. The CPU test-binary build, six Python refusal controls, documentation check and full `./dev check` passed.
 The full check ran under the GPU lock; its [compressed log](check.log.gz) and hash are recorded in
-[verification state](verification.json). Timed playback remains unverified. Integration uses the required land command, whose own check reruns under the GPU lock. Independent lead review remains owed.
+[verification state](verification.json). Timed playback remains unverified. The required integration command was attempted under the GPU lock, but
+waited over nine minutes behind another builder’s review hold (PID 96702, child 99015). The queued request was
+cancelled with exit 130 before GPU acquisition, so land never started, no rebase/check/push occurred, and the
+checkpoint remains committed locally. Other builders’ processes were untouched.
+[Integration wait](integration-wait.log.gz). Independent lead review remains owed.
+
+Read-only inspection of both saved Run Issues databases found only `Data stream: Time Mapping`, with no
+authorization diagnosis. [Exact issue rows and source hashes](run-issues.json).
+
+When the GPU is free, integrate this checkpoint with:
+
+```sh
+env RUSTC_WRAPPER= python3 /Users/ryannel/.claude/plugins/cache/ryannel-skills/orchestrate/1.7.1/skills/orchestration/build/scripts/agent_loop.py lock gpu --worktree . -- python3 /Users/ryannel/.claude/plugins/cache/ryannel-skills/orchestrate/1.7.1/skills/orchestration/build/scripts/agent_loop.py land --worktree .
+```
+
+This integrates evidence with M2 still open. Further diagnostic recording requires the scoped re-plan above.

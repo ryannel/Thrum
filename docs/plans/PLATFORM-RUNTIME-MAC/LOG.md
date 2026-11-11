@@ -9,7 +9,9 @@ The two diagnostic attempts are exhausted. M2.2/M2.4 stay open and M2 stays open
 missing display-event source before further recording. The full `./dev check` passed under the GPU lock, as did
 the six Python refusal controls, test-binary compilation and documentation check. Timed source playback was
 deferred after cancelling its queued review request before GPU acquisition; full-resolution source inspection is
-complete. Integration of this checkpoint continues; no additional diagnostic recording is authorized.
+complete. Integration was attempted with the required land command under GPU, but cancelled after over nine minutes
+waiting for another builder’s review hold, before acquisition/rebase/check/push. This checkpoint remains local;
+no additional diagnostic recording is authorized. The evidence page records the integration resume command.
 [Both hypotheses, raw evidence and source inspection](../../evidence/render/mac-m2-20261111/README.md).
 
 11 November attended checkpoint. The GPU-locked fresh baseline and ON/Game Performance probe completed while the
