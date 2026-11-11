@@ -20,12 +20,12 @@
   },
   "milestones": {
     "M0": {
-      "definitions": "726ef4423172ce4b7d425fdce54e24643b1254a2ad86581ef1053120841805a9",
+      "definitions": "2e5589327aafa45baba4a5f1acbcf6d22e8665fccc092bd822ac1b77ff58251b",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Re-plan APPLE-TILE (G3t, tile dataflow and Metal boundary) so it can pass design review and unpark. It was parked after two failed design reviews; docs/evidence/APPLE-TILE/design-review-2.md lists sev",
-        "at": "2026-11-09T14:02:56Z"
+        "task": "Resolve APPLE-TILE M0's scope conflict: the builder blocked because done-when item D0.2 requires a native witness that t",
+        "at": "2026-11-11T01:45:14Z"
       }
     },
     "M1": {
@@ -90,5 +90,15 @@
       "words": "Owner instructed in chat (10 Nov 2026): the scoped re-plan passed design review at e3cce53a",
       "at": "2026-11-10T21:46:34Z"
     }
-  ]
+  ],
+  "briefs": [
+    {
+      "task": "Resolve APPLE-TILE M0's scope conflict: the builder blocked because done-when item D0.2 requires a native witness that the plan assigns to M10 (see the M0 blocked note and docs/evidence/render/apple-tile-m0/README.md at 03bc878a). Make M0's criteria and M10's consistent so M0 can be claimed on what it can prove, without weakening what V1 needs.",
+      "at": "2026-11-11T01:45:14Z"
+    }
+  ],
+  "planner": {
+    "host": "claude",
+    "at": "2026-11-11T01:45:14Z"
+  }
 }
