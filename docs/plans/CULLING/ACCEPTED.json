@@ -1,6 +1,28 @@
 {
   "module": "CULLING",
-  "design": null,
+  "design": {
+    "verdict": "changes",
+    "review": "docs/evidence/CULLING/design-review.md",
+    "commit": "d90f66ac1638407b9821fee3868c060cd361bdca",
+    "hash": "a662555c5cb4a91c46963bb4c774b311d6ed4eb51afcb16a4e748fe66bc124b3",
+    "by": "review",
+    "host": "codex",
+    "model": "gpt-6-astra",
+    "effort": "high",
+    "observed": {
+      "model": "gpt-6-astra",
+      "effort": "high"
+    },
+    "cli": "codex-cli 0.167.0-alpha.3.2",
+    "path": "headless",
+    "usage": {
+      "input": 99451,
+      "cached": 1118592,
+      "output": 6863,
+      "turns": 1
+    },
+    "at": "2026-11-11T15:27:51Z"
+  },
   "milestones": {
     "M1": {
       "definitions": "1ecede9d1e71763d45c3652fcb1ac904194b40c4b1e1f8dc0c7f93df8913a0c4",
