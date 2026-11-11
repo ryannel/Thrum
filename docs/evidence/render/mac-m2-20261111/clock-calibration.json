@@ -1,0 +1,46 @@
+{
+  "pid": 49285,
+  "duplicate_schema_events_deduplicated": true,
+  "anchors": [
+    {
+      "stage": 0,
+      "name": "MacM2Whole",
+      "kind": "Begin",
+      "trace_ns": 4461663625,
+      "offset_low_s": 2903093.440690959,
+      "offset_high_s": 2903093.4406965
+    },
+    {
+      "stage": 1,
+      "name": "MacM2Pan",
+      "kind": "Begin",
+      "trace_ns": 5461666625,
+      "offset_low_s": 2903093.440695417,
+      "offset_high_s": 2903093.440696501
+    },
+    {
+      "stage": 2,
+      "name": "MacM2Pan",
+      "kind": "End",
+      "trace_ns": 7462238083,
+      "offset_low_s": 2903093.440695793,
+      "offset_high_s": 2903093.4406965007
+    },
+    {
+      "stage": 3,
+      "name": "MacM2Whole",
+      "kind": "End",
+      "trace_ns": 8562038000,
+      "offset_low_s": 2903093.440695751,
+      "offset_high_s": 2903093.440696459
+    }
+  ],
+  "offset_intersection_s": [
+    2903093.440695793,
+    2903093.440696459
+  ],
+  "offset_bound_us": 0.6658956408500671,
+  "consistent": true,
+  "swap_rows": 0,
+  "shipping_cadence_qualified": false
+}

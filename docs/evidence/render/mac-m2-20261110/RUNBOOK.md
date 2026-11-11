@@ -1,5 +1,19 @@
 # Attended Mac M2 continuation
 
+11 November continuation. The first diagnostic saved a readable trace and calibrated pan signposts, but raw
+swap/VSync and derived displayed-surface exports have zero rows. M2.4 and M2.2 stay open. One diagnostic attempt
+remains. The second was queued and stopped before recording when the built-in panel went asleep. The console
+was still unlocked. [Fresh diagnosis](../mac-m2-20261111/README.md) retains the raw exports and load records.
+After the owner wakes the built-in panel, the remaining changed-hypothesis diagnostic uses this command.
+
+```sh
+python3 /Users/ryannel/.claude/plugins/cache/ryannel-skills/orchestrate/1.7.1/skills/orchestration/build/scripts/agent_loop.py lock gpu --worktree . -- python3 scripts/qualify_mac_m2.py --output tmp/mac-m2/final-window-20261110 --diagnostic-with-os-logs
+```
+
+It restores OS-log collection after the empty-display-event result, with capture OFF and the desktop recorder
+absent. The hypothesis is written into the durable attempt journal before launch. Inspect its fresh raw and
+derived swap exports before any pass. The remaining instructions document the original two-arm route.
+
 Run from `/Users/ryannel/Workspace/thrum/.claude/worktrees/mac-m2`, on its retained release binary and `tmp/mac-m2/valley` cooked store.
 The retained binary hash is `aa1591522962933b55ec1f347cc538880f5eb14b7ea227bf4adcb7f00b585507`.
 Its source map is in the current evidence manifest. Rebuilds require fresh matching motion/window evidence.
@@ -9,10 +23,14 @@ The owner only needs to unlock and activate the **built-in panel**, and arrange 
 requires it. The builder drives AppKit controls and judges evidence. No Screen Recording grant, gameplay,
 automatic unlocking or physical iPhone is involved.
 
-One resumable command under the exclusive GPU lock follows. Existing untraced arms and the same-build M2.3 acceptance record are reused.
+One resumable command holds the exclusive GPU lock across the fresh baseline, both recordings and probe inspection.
+The existing window proofs are reused. The collector takes a fresh `on-untraced-current` baseline for the current
+background load, then `on-traced` and `off-traced`. Each arm records iostat interval CPU/disk samples, load averages,
+and a process snapshot. A read-only panel witness samples every 0.5 seconds, with a two-second I/O Registry query
+timeout. A locked console, inactive/asleep panel or unavailable witness stops the collector's owned process group.
 
 ```sh
-python3 /Users/ryannel/.claude/plugins/cache/ryannel-skills/orchestrate/1.4.0/skills/orchestration/build/scripts/agent_loop.py lock gpu --worktree . -- python3 scripts/qualify_mac_m2.py --output tmp/mac-m2/final-window-20261110
+python3 /Users/ryannel/.claude/plugins/cache/ryannel-skills/orchestrate/1.7.1/skills/orchestration/build/scripts/agent_loop.py lock gpu --worktree . -- python3 scripts/qualify_mac_m2.py --output tmp/mac-m2/final-window-20261110
 ```
 
 The four untraced window arms are already retained on the current binary and M2.3 has builder proof. Reuse this exact command after attended setup. Keep at least 16 GiB free before each arm. The command checks this before consuming a recording attempt. The owned development build directory can be reconstructed with `./dev check`; inspect it for active work before using `env RUSTC_WRAPPER= cargo clean --profile dev`. Preserve `target/release/v1-game`, the cooked store, source archives and the attempt journal. Do not compile/cook or run disk-heavy work alongside it. It observes active built-in displays and records
@@ -40,12 +58,17 @@ The command refuses changed binary/content pins, failed arms and unchanged trace
    pre-encoding hashes. Finish this review before writing `window-acceptance.json` in the attended directory:
    `{"M2.3":"pass","binary_sha256":"<identity.json value>","evidence":"<actual proof record>"}`.
    This is a builder evidence record, not a request for owner approval. Resume the same command.
-3. The resumed command collects ON/Game Performance, then OFF/Game Performance. These two recordings conservatively
-   consume the **entire two-attempt 9 November commission**. The first is also the tooling probe; the second runs
-   only if its trace and exports finish. The durable local journal is `tmp/mac-m2/trace-commission.json`; retain it
-   across restarts and worktree handoffs. No deletion, new output name or Mac M3 split renews the allowance.
-   Any failure stops immediately. A second *diagnostic* after a failed first needs a distinct written falsifiable
-   hypothesis; this command deliberately refuses that retry. Exhaustion needs a scoped re-plan.
+3. The resumed command collects ON/Game Performance as the first tooling probe. After its exports, it holds the GPU
+   lock for at most 120 seconds while the builder resolves the fresh TOC and actual app/window swap records.
+   Only after that proof passes, write `tooling-acceptance.json` with
+   `{"M2.4":"pass","binary_sha256":"<identity.json value>","evidence":"<fresh attributed swap evidence>"}`.
+   This is the builder's evidence judgement. The collector then takes OFF/Game Performance for cadence. If the
+   inspection wait expires, resume the same command after saving the proof. A failed probe requires diagnosis
+   and a distinct falsifiable hypothesis before another diagnostic recording. The durable attempt journal is
+   `tmp/mac-m2/trace-commission.json`. The two recordings consume the entire two-attempt 9 November commission.
+   Retain the journal across restarts and worktree handoffs. A new output name or the Mac M3 split grants no new
+   diagnostic attempt. Exhaustion needs a scoped re-plan.
+
 4. After both recordings, collect full raw exports and inspect them before changing statuses. Each recording is
    bounded to 16 s plus at most 75 s finalization; TOC, `displayed-surfaces-interval` and signpost exports each have a 30 s
    timeout. Only the runner's owned process group is terminated at a deadline; never kill unrelated Instruments/

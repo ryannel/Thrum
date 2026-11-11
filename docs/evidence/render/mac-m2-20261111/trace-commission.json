@@ -1,0 +1,12 @@
+{
+  "commission": "9-November-2026",
+  "attempts": [
+    {
+      "arm": "/Users/ryannel/Workspace/thrum/.claude/worktrees/mac-m2/tmp/mac-m2/final-window-20261110/on-traced",
+      "unix_ns": 1794388110275935000,
+      "hypothesis": "Retained slot-events.txt shows the target already exited normally, then Game Performance hung saving and export reported Document Missing Template Error. Therefore target exit is not a new hypothesis. The current template exposes Points of Interest excludeOSLogs=false. Test the same Game Performance template with excludeOSLogs=true and no desktop recorder: less unrelated global log material may avoid finalization failure while preserving the independent displayed-surfaces-interval table. Success requires readable TOC and actual app/window swaps within deadlines. Failure rejects this configuration; no unchanged retry.",
+      "status": "failed qualification: trace finalized, but raw swaps, VSync and derived displayed-surface tables have zero rows",
+      "evidence": "tmp/mac-m2/final-window-20261110/on-traced/raw-displays.xml"
+    }
+  ]
+}

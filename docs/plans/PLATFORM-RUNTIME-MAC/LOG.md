@@ -1,5 +1,13 @@
 # PLATFORM-RUNTIME-MAC log
 
+11 November attended checkpoint. The GPU-locked fresh baseline and ON/Game Performance probe completed while the
+built-in panel was active. The probe finalized and exported readable data in 70.185 seconds, but both raw swap/
+VSync and derived displayed-surface tables have zero rows. Four same-process markers give a consistent clock
+join bounded to 0.666 microseconds. M2.4/M2.2 stay open. Load records and panel guards are retained. The remaining
+changed-hypothesis diagnostic restores OS logs. It was queued and stopped before recording when the panel became
+inactive/asleep, with the console still unlocked. One diagnostic attempt remains. Resume after the owner wakes
+the built-in panel and the shared GPU is available. [Evidence and command](../../evidence/render/mac-m2-20261111/README.md).
+
 10 November builder checkpoint. Replaced the M2.1 harness lock gate with witness-only console observations and
 strict before/after launcher/driver permission attribution. Fresh current-release pan has 480 originals, 1.002243 /
 1.000102 s endpoint holds, 11.869208 ms maximum source gap and zero capture omissions. Real CAMetalLayer channel/

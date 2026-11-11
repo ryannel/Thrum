@@ -1,0 +1,44 @@
+{
+  "unix_ns": 1794388979951343000,
+  "trace_attempts_used": 1,
+  "trace_attempts_remaining": 1,
+  "first_probe": {
+    "saved": true,
+    "exported": true,
+    "app_pid": 49285,
+    "window_number": 45393,
+    "derived_swap_rows": 0,
+    "raw_swap_rows": 0,
+    "raw_vsync_rows": 0,
+    "display_identity_rows": 1,
+    "distinct_same_process_markers": 4,
+    "tooling_pass": false
+  },
+  "pan_clock_offset_bound_us": 0.6658956408500671,
+  "last_panel_witness": {
+    "unix_ns": 1794388813358720000,
+    "display_id": 1,
+    "console_locked": false,
+    "builtin": true,
+    "active": false,
+    "asleep": true
+  },
+  "second_diagnostic": {
+    "started": false,
+    "queued_process": 50554,
+    "stopped_signal": "SIGTERM",
+    "terminal_exit": 143
+  },
+  "counts": {
+    "on-untraced-current": {
+      "surface.tsv": 851,
+      "images.tsv": 851
+    },
+    "on-traced": {
+      "surface.tsv": 848,
+      "images.tsv": 848
+    }
+  },
+  "source_archive_location": "tmp/mac-m2/final-window-20261110/on-traced/frames.zst",
+  "source_hash_verification": "packaging pending; no new content quality pass claimed"
+}

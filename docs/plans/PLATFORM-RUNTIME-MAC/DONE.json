@@ -77,7 +77,7 @@
           "ask": "Does the evidence distinguish callback target, opportunity, actor acquisition/submit, GPU completion, engine image/sample time, movie PTS, VSync and attributed compositor Swap Time? Is there independent OS attribution for this run/pan rather than the historical 5 November trace? Does attended setup name unlocked-display and any Instruments authorization needs without requiring the owner to play or grant Screen Recording for engine pixels? Engine pixels exclude native widgets/final compositor appearance: are those limits explicit, with any essential additional OS/physical observation separately attended and justified? Are input-to-photon and physical iPhone timing unmeasured, all interval figures observations, and the historical motion pass preserved without extending it to a new build? Is the qualified swap stream from capture OFF, with ON cadence labelled under capture and ordinary direct presentation preserved? Are the untraced/traced content and capture OFF traced roles distinguished?",
           "target": "mac-metal",
           "status": "open",
-          "evidence": "docs/evidence/render/mac-m2-20261110/README.md#attended-continuation-and-retention",
+          "evidence": "docs/evidence/render/mac-m2-20261111/README.md",
           "verdict": "",
           "review": ""
         },
@@ -99,7 +99,7 @@
           "statement": "The Mac qualification builder resolves trace finalization in a bounded investigation and retains a readable fresh Game Performance trace/export on the active built-in panel.",
           "target": "mac-metal",
           "status": "open",
-          "evidence": "docs/evidence/render/mac-m2-20261110/README.md#attended-continuation-and-retention",
+          "evidence": "docs/evidence/render/mac-m2-20261111/README.md",
           "ask": "After this re-plan passes independent design review and T2-CAPTURE M0 is done, without waiting for APPLE-TILE, the Mac M2 builder owns the resumed investigation. Inspect retained failed bundles/logs first and write a changed, falsifiable hypothesis before recording. With unlocked active display and existing Instruments authorization, allow at most two new diagnostic record attempts total under the 9 November tooling commission, each 16 seconds plus at most 75 seconds finalization. This dependency re-plan and the Mac M3 split do not renew that allowance. Then export TOC and displayed-surfaces-interval with finite recorded timeouts. Stop only owned tool/game processes at the deadline; never retry an unchanged failed hypothesis or kill unrelated processes. A successful probe must export actual app/window-attributed swaps and leave a reusable documented command. If no justified hypothesis exists, authorization is unavailable, or the attempt budget exhausts, record the cause and M2.2/M2.4 blocked in status/build-plan; keep both open and continue unrelated work. No success from a trace directory existing, historical swaps or a substitute capture timestamp.",
           "verdict": "",
           "review": ""
