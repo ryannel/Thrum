@@ -72,7 +72,7 @@
     {
       "id": "M1",
       "name": "The valley selects a recipe and stores only actual future inputs",
-      "state": "claimed",
+      "state": "done",
       "fails": 0,
       "replans": 2,
       "bar": "The same complete cooked valley as portable, with stable lighting, silhouettes, shadows and motion expected of a shipped high-end game; matched full-resolution stills and normal-speed sequences must expose omitted work.",
@@ -84,8 +84,8 @@
           "status": "pass",
           "evidence": "docs/evidence/render/apple-tile-m1/README.md",
           "ask": "Inspect selection tests for eligible/ineligible/unknown facts, forced portable, unsupported forced Apple and invalid override. Are enabled facts distinguished from offered features and display facts kept with the platform?",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/APPLE-TILE/M1-review.md"
         },
         {
           "id": "D1.2",
@@ -94,8 +94,8 @@
           "status": "pass",
           "evidence": "docs/evidence/render/apple-tile-m1/README.md",
           "ask": "Run graph mutation tests: add a reader, explicit store, history/persistent use and capture-only read; verify only the affected variant changes and no normal-path usage is widened. Inspect a Texture::as_hal storage-mode log for Memoryless vs Private under both recipes. Report unique resident allocations/bytes under both recipes, including all prepared day/star/capture variants, fallback-only resources and old/new generation overlap. Verify no stored twin exists solely for a memoryless-only attachment override; whole-recipe changes prepare a new generation before publication.",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/APPLE-TILE/M1-review.md"
         },
         {
           "id": "D1.3",
@@ -104,8 +104,8 @@
           "status": "pass",
           "evidence": "docs/evidence/render/apple-tile-m1/README.md",
           "inspect": "Compare matched day/night frames and full-resolution motion sequences against portable, checking Sun, sky, stars, shadows, mirror and local light. Inspect creation events through a variant switch and the per-variant storage report. Reconcile the resident total and fallback-only bytes under both recipes with D1.2; simultaneous stored and memoryless variants count as separate allocations. A traffic reduction alone cannot establish a resident-memory saving. Use T2 still/fixed exact scene-linear and submitted SDR checkpoints plus separate T2 realtime host-time motion; match deterministic samples, not realtime frame indices.",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/APPLE-TILE/M1-review.md"
         },
         {
           "id": "D1.4",
@@ -117,8 +117,8 @@
           "lock": "gpu",
           "ask": "Trace the actual wasm dependency tree and cfg/feature boundaries, excluding native Apple/Metal crates and apple_tile implementation. Through accepted T2 M1 retain the Chrome pre-change fixed submitted SDR baseline and scene-linear extension, then compare complete full-resolution output with exact matching source/content/sample/exposure/format identity. Use T2 realtime separately for elapsed-time motion. The existing moving command is only endpoint smoke; native-vs-Chrome coarse grids cannot prove unchanged output.",
           "inspect": "Review full-resolution Chrome day/night route frames and 1x motion for Sun, stars, geometry, shadows, mirrors and local lights against its pre-change portable baseline. Native-vs-Chrome coarse-grid agreement alone cannot pass.",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/APPLE-TILE/M1-review.md"
         },
         {
           "id": "D1.5",
@@ -127,8 +127,8 @@
           "status": "pass",
           "evidence": "docs/evidence/render/apple-tile-m1/README.md",
           "inspect": "Use simctl endpoint screenshots of the diagnostic scene and recipe/digest logs on the iPhone 18 Pro simulator. This is function-only interim evidence under T2 rollout rules, with recorded timing/coverage; no cooked scene, exact submitted output, runtime-motion or physical-iPhone claim. T2 M2 and COOKED-DRAW are not prerequisites of this row.",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/APPLE-TILE/M1-review.md"
         }
       ],
       "needs": [
