@@ -613,6 +613,18 @@
           "ios": "simulator_diagnostic_function_only_no_physical_device_or_runtime_motion_claim"
         },
         "evidence": "../evidence/render/apple-tile-m2/README.md"
+      },
+      "M3": {
+        "implementation": "graph_bound_pre_tone_input_prepared_SDR_stage_and_named_graph_timing_consumers_implemented",
+        "functional_validation": "Metal_identity_and_distinct_copy_input_exact_tests_38_M0_route_4_surface_10_paired_comparisons_Chrome_1924_exact_frames_OS_window_controls_resize_and_replacement_both_recipes_simulator_diagnostic_lifecycle_pass; registered_content_bound_exact_baseline_gate_pass_42_native_1924_Chrome_same_native_JS_Wasm_artifacts",
+        "experienced_quality": "builder_reviewed_full_frames_native_details_and_1x_motion_lead_review_owed",
+        "real_window_function": "granted_preflight_actual_PID_build_recipe_and_matched_paused_T2_states_CUA_resize_restore_OS_control_and_replacement_videos_pass",
+        "platform_performance": {
+          "mac": "unmeasured_no_cadence_traffic_or_speed_promotion",
+          "browser": "unmeasured_exact_portable_output_and_motion_function_only",
+          "ios": "simulator_diagnostic_function_only_no_physical_device_or_runtime_motion_claim"
+        },
+        "evidence": "../evidence/render/apple-tile-m3/README.md"
       }
     },
     "G4_apple_presentation": {
