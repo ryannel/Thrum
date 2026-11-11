@@ -1,6 +1,6 @@
 {
   "date": "2026-11-11",
-  "status": "blocked",
+  "status": "resolved",
   "required": "Builder review of the complete target sequences at 1x through an approved visible player or browser",
   "attempts": [
     {
@@ -30,8 +30,13 @@
     {
       "action": "cua.getApp com.mitchellh.ghostty",
       "result": "Computer Use is not allowed to use the app 'com.mitchellh.ghostty' for safety reasons."
+    },
+    {
+      "action": "cua.getApp com.colliderli.iina in resumed session",
+      "result": "Success. IINA welcome window with Open controls and playback menu."
     }
   ],
   "unblock": "Enable IINA in Computer Use, restore its browser host, or provide a visible approved Chrome window.",
-  "capture_scope": "Console lock is an observation. Deferred native sources with capture_complete=true and runtime.complete=true proceed to normal hash-verified finalization."
+  "capture_scope": "Console lock is an observation. Deferred native sources with capture_complete=true and runtime.complete=true proceed to normal hash-verified finalization.",
+  "resolution": "The resumed session successfully selected the running IINA app and received its welcome-window controls. Motion review is queued under the shared GPU lock."
 }

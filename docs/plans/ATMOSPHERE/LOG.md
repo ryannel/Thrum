@@ -243,3 +243,13 @@ continues. M5.7 and M5.8 await the required 1× review because Computer Use's br
 unavailable and IINA access was rejected. M5 stays open. Newly integrated APPLE-PRESENTATION
 changes to shared shaders require reconciliation and fresh affected proofs before the claim.
 [Target evidence](../../evidence/ATMOSPHERE/m5-claim.md).
+
+
+## 11 November 2026 — M5 rebased proofs and resumed motion review
+
+All nine milestone check commands pass on the reconciled source, including Metal and hardware Chrome
+handoff rows, byte-identical no-provider controls and paired cost observations. The recorded parity
+base includes the concurrently integrated motion inputs, with the initial base preserved. The resumed
+session can access IINA. Three native and four Chrome source packages are hash-verified while the
+remaining captures and 1× review queue for the shared GPU. M5.7 and M5.8 remain open.
+[Current evidence](../../evidence/ATMOSPHERE/m5-claim.md).

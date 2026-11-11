@@ -1,6 +1,6 @@
 # M5 target evidence
 
-11 November 2026. M5.1–M5.6 and M5.9–M5.10 pass on the reconciled source `1948d7ab`. M5 remains open while M5.7–M5.8 await the required 1× motion review. Computer Use reports its browser host unavailable, Chrome has no visible window, and IINA access is unapproved. [Access attempts](m5/records/review-access.json).
+11 November 2026. M5.1–M5.6 and M5.9–M5.10 pass on the reconciled source `1948d7ab`. M5 remains open while M5.7–M5.8 await the required 1× motion review. IINA access is confirmed in the resumed session, and the motion review is queued under the shared GPU lock. [Access record](m5/records/review-access.json).
 
 | Item | Target proof |
 |---|---|
