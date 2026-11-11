@@ -10,7 +10,7 @@ is built in the shared display pass. The clipping field is held, and the shadow 
 
 **Disclosure.** The controls and parameter slices were built before this record was written. The design was agreed
 in the G6 boundary notes with the root agent first, and an independent review of the landed code prompted this record.
-It sits under the [creator guide](../ENGINE-EXPERIENCE.md) and the [build plan](../../BUILD-PLAN.md), with ownership as in
+It sits under the [creator guide](../ENGINE-EXPERIENCE.md) and the [build plan](../../plans/BRIEF.md), with ownership as in
 [TOOLS-DELIVERY](../modules/TOOLS-DELIVERY.md) and [PLATFORM-RUNTIME](../modules/PLATFORM-RUNTIME.md). Evidence:
 [G6 report](../../evidence/integration/G6-CREATOR-EXPERIENCE-2026-11-07.md).
 

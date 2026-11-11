@@ -52,7 +52,7 @@ clock sample; zero-tick acknowledgements wake observers. Refused/faulted/stopped
 Mac P ignores repeat and retains intent. Browser pause/visibility compose; observed GPU loss takes the same world through authority-only advance/drain, without GPU calls. Inline calls remain synchronous; mode misuse returns an
 error. Surface loss/occlusion never implicitly pauses authority. Camera controls remain usable while the world pauses;
 pause alone changes neither world epoch/timeline nor submitted transform history.
-The browser adapter is engine code, `thrum_app::web` ([plan](PLATFORM-RUNTIME-WEB-PLAN.md)): it owns the canvas surface,
+The browser adapter is engine code, `thrum_app::web` ([plan](../../plans/PLATFORM-RUNTIME-WEB/PLAN.md)): it owns the canvas surface,
 device, loss gating, replacement and page clock policy, while the page keeps its animation-frame loop and DOM events.
 
 Device recovery rebuilds presentation from retained scene/cooked inputs. The platform owns fresh adapter/device
@@ -65,14 +65,14 @@ survive. Mac serializes reconstruction/configuration on its render actor, checks
 stale work. Browser uses one weak detached mailbox and fresh adapter per attempt; zero canvas defers activation.
 On the browser, candidate presenter resize and a real surface lease precede publication. Failed configuration enables explicit retry. Its UI retains restoration status until a new present call, and its samples restart per generation while authority counters continue. The Mac configures a current nonzero surface or defers configuration, publishes the prepared device and acquires on a later frame. The Mac recovery reply updates status before a new present. Its report can retain samples across generations. Failure leaves the world alive. Surface/device epochs differ.
 
-The [iOS runtime child](PLATFORM-RUNTIME-IOS.md) and [M7 plan](PLATFORM-RUNTIME-IOS-PLAN.md) assign
+The [iOS runtime child](../../plans/PLATFORM-RUNTIME-IOS/DESIGN.md) and [M7 plan](../../plans/PLATFORM-RUNTIME-IOS/PLAN.md) assign
 current-oriented-extent scene sizing to G3b: UIKit publishes full-bounds pixel extent and epoch; the render owner
 coherently prepares scene targets, projection, history reset and presenter for that extent. Rotation and recovery
 use the same policy. This native-resolution correction precedes G4 reconstruction/governor work and preserves
 explicit fixed-render-extent callers. `COOKED-DRAW:M1` needs `PLATFORM-RUNTIME-IOS:M7`; the extent milestone uses
 the diagnostic scene independently, and cooked visual acceptance stays with G5's unchanged items.
 
-The [Mac qualification plan](PLATFORM-RUNTIME-MAC-PLAN.md) uses the existing
+The [Mac qualification plan](../../plans/PLATFORM-RUNTIME-MAC/PLAN.md) uses the existing
 `thrum-app` window and actor. AppKit owns the view and display-link event
 delivery. Its target timestamp provides interpolation lead, while the
 independent world lane owns tick admission. The render actor owns surface
@@ -82,7 +82,7 @@ held-drawable configuration refusal once, then leaves an unavailable
 surface recoverable. A present call and GPU completion do not identify
 physical presentation. Use OS instrumentation on the built-in display
 to qualify that step. Held-drawable live-window recovery passed (Mac M1); physical cadence remains open.
-The [T2 capture plan](T2-CAPTURE.md) adds an offscreen opportunity/output adapter over the shared world/render
+The [T2 capture plan](../../plans/T2-CAPTURE/DESIGN.md) adds an offscreen opportunity/output adapter over the shared world/render
 paths for unattended runtime motion. It does not qualify AppKit callbacks or replace the active-panel swap row.
 Mac M2 separates that unattended image proof from attended display/tool setup; Screen Recording is not needed
 for engine pixels.

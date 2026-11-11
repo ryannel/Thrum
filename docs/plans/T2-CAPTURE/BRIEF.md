@@ -6,7 +6,7 @@ possible. Mark genuinely attended proof with its reason. This is evidence toolin
 The request concerns **milestone M2 on the M3 Max**, not an Apple M2 device.
 
 T2 Diagnostics and delivery owns scenarios, evidence artifacts and provenance under
-[TOOLS-DELIVERY](TOOLS-DELIVERY.md) and the [architecture map](../ARCHITECTURE-BRIEF.md#creation-and-delivery).
+[TOOLS-DELIVERY](../../design/modules/TOOLS-DELIVERY.md) and the [architecture map](../../design/ARCHITECTURE-BRIEF.md#creation-and-delivery).
 This child plan adds no crate or second rendering authority. V1/V4 (`thrum-render`) own image production/readback;
 F1 (`thrum-app` and core) owns scheduling and platform lifetime; games own scenes and control bindings.
 C02/C06/C07/C11/C12 and [storage rules](../../ASSET-LIFECYCLE.md) apply.

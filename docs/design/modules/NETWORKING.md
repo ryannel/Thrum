@@ -1,6 +1,6 @@
 # Network sessions and replication — N1
 
-**Sequencing (5 November 2026):** V1 proves multiplayer fitness headless in [G2S](../../BUILD-PLAN.md#active-gate-order-and-budgets)
+**Sequencing (5 November 2026):** V1 proves multiplayer fitness headless in [G2S](../../plans/BRIEF.md#active-gate-order-and-budgets)
 (authority, admission validation, rollback and replay); all transport work is parked until the post-V1 network track.
 For that track, [the A0 transport/codec decision](../decisions/A0-N1-TRANSPORT-CODEC.md)
 selects QUIC/WebTransport and acknowledged state deltas, and [the A5 timing decision](../decisions/A5-INPUT-TIMING-RECONCILIATION.md)

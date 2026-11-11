@@ -1,7 +1,7 @@
 # AI-driven performance engineering
 
 1 November 2026. Selected performance-development direction, extending [AI development](AI-DEVELOPMENT.md), the
-[construction plan](CONSTRUCTION-PLAN.md) and C12. This is a design for future optimization campaigns, not an
+[construction plan](CONSTRUCTION-PACKAGES.md) and C12. This is a design for future optimization campaigns, not an
 implemented harness, running campaign or measured speedup. No hardware/cloud spend or overnight automation is started.
 The target remains the complete custom 3D engine, with no required runtime AI service. A01–A05 now have selected architectural resolutions in [the decision record](ARCHITECTURE-DECISIONS.md); their detailed implementations remain unqualified.
 
@@ -318,7 +318,7 @@ whole protocol in every agent's mandatory context. Mechanical rules cannot prove
 
 ## Delivery order and evidence
 
-The [build plan](../BUILD-PLAN.md) owns current sequencing; these stages describe how campaign tooling grows.
+The [build plan](../plans/BRIEF.md) owns current sequencing; these stages describe how campaign tooling grows.
 
 - **D0:** select first representative workload/device and the cost-versus-quality objective; identify honest budgets.
 - **D1/I1:** specify campaign/result records and trusted evaluation boundary; implement one local CPU/headless path,

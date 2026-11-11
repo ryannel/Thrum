@@ -1,6 +1,6 @@
 # Building a game with this engine
 
-Creator guide, updated 7 November 2026. [G6](../BUILD-PLAN.md#active-gate-order-and-budgets) built and tested its
+Creator guide, updated 7 November 2026. [G6](../plans/BRIEF.md#active-gate-order-and-budgets) built and tested its
 first slice; [What G6 built](#what-g6-built) says what runs today. Everything else here is design intent, not a
 working SDK or settled syntax. The
 [scenario](SCENARIO-WALKTHROUGHS.md), [first-use](FIRST-USE-WALKTHROUGHS.md) and [from-scratch](FROM-SCRATCH-WALKTHROUGHS.md)

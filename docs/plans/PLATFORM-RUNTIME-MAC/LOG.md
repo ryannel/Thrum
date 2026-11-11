@@ -17,15 +17,9 @@ with zero new trace attempts consumed. [Evidence and one-command runbook](../../
   consolidated design is owed to the lead/loop. No owner decision is needed. `./dev check-docs` and
   `git diff --check` pass.
 
-- 2026-11-09 Owner scope correction makes console state witness metadata for unaccepted M2.1 and open M3.1.
-  Denied Screen Recording preflights establish capture independence; the lock requirement added no proof and held
-  verification behind owner setup. Named the launcher/runtime summary gate above for the builder to fix, with
-  implementation left to that builder. The earlier M2.1 pass is retained as historical evidence; fresh harness
-  qualification and motion proof are owed under the revised definition before review. M2 remains blocked on its
-  real attended active-panel/Instruments requirements. M2.2/M2.3/M2.4, M3.2, accepted M0/M1, dependencies, counters
-  and trace-attempt allowances are preserved. Independent review of revised definitions is owed to the lead/loop.
-  No agents launched, no acceptance record edited and no owner decision remains. `./dev check-docs` and
-  `git diff --check` pass.
+- 2026-11-09 Owner scope correction makes console state witness metadata for unaccepted M2.1 and open M3.1. Denied
+  Screen Recording preflights establish capture independence; the lock requirement added no proof and held
+  verification behind owner setup. [Full entry](../../evidence/PLATFORM-RUNTIME-MAC/log-entries.md#entry-1).
 
 - 9 November, Mac M2 builder. T2 M0 and design review 3 prerequisites are satisfied. Added opt-in real-window shared-tap collection, normal AppKit target/action elapsed pan, renderer submission/lease/clock markers and pending-readback surface-retirement diagnostics. The capture-OFF arm keeps the ordinary direct path and creates no tap/writer. Full `./dev check` under `gpu` passes; the new evidence-join refusal controls pass. Actual-window output/retirement/pattern qualification remains attended and unpassed. The resumable collector refused the locked console before launching; nonrecording Instruments options discovery succeeds outside the sandbox. Retained historical logs reject “make the target exit” as a new hypothesis; the bounded changed probe excludes unrelated OS logs while retaining Game Performance and independent swaps. No diagnostic attempt consumed. [Runbook](../../evidence/render/mac-m2-current/RUNBOOK.md).
 
@@ -65,11 +59,11 @@ with zero new trace attempts consumed. [Evidence and one-command runbook](../../
 - 9 November, resumed M2. Under the GPU lock, the retained `474b4306` diagnostic produced byte-identical 0°/18°/36° noon PPMs against `framing.mKC7g4`; static parity is verified, live motion is not extended. Fresh trace export exits 10 (`Document Missing Template Error`), and console probes report locked. No live capture launched and no claim made. [Evidence](../../evidence/render/mac-m2-pan/README.md#9-november-blocker-probe).
 
 - 9 November. Migrated the prose criteria to `PLATFORM-RUNTIME-MAC-DONE.json` without changing the design or acceptance scope. Carried M0/M1 completion and M2's reviewed motion pass; cadence stays open. M2 remains `in_progress` with runtime work paused; only Instruments trace finalization is parked. Initialized `fails` and `replans` to zero: the trace attempts and partial reviews were not failed reviews of a claimed whole milestone. Independent review of this migration is owed; no other agent was launched, as instructed by the owner.
-- 8 November. M0 design and plan over `3049433d`, approved plan SHA-256 prefix `0f467bcb`: initial hold resolved and approved. [Review brief](#design-and-plan-review-brief). This is the carried M0 verdict, not a review of the JSON migration.
-- 8 November. First M1 abandon seam over `f79e3434`: approved for observed post-encode loss. [Review brief](#lost-frame-review-brief).
-- 8 November. M1 injected input over `43e1d488`: approved after separating capture cutoff from finalization. [Review brief](#injected-input-review-brief).
+- 8 November. M0 design and plan over `3049433d`, approved plan SHA-256 prefix `0f467bcb`: initial hold resolved and approved. [Review brief](../../evidence/PLATFORM-RUNTIME-MAC/review-briefs.md#design-and-plan-review-brief). This is the carried M0 verdict, not a review of the JSON migration.
+- 8 November. First M1 abandon seam over `f79e3434`: approved for observed post-encode loss. [Review brief](../../evidence/PLATFORM-RUNTIME-MAC/review-briefs.md#lost-frame-review-brief).
+- 8 November. M1 injected input over `43e1d488`: approved after separating capture cutoff from finalization. [Review brief](../../evidence/PLATFORM-RUNTIME-MAC/review-briefs.md#injected-input-review-brief).
 - 8 November. M1 live slot `slot-04.0qL58y`, diagnostic `0c9a32dc`: both done-when items passed. [Independent review](../../evidence/render/mac-m1-recovery/README.md#independent-review).
-- 8 November. M2 pan plan over `aeb43fbc`, reviewed SHA-256 prefix `10e7730e`: approved after refining slider steps, recording brackets and trace attribution. [Review brief](#m2-pan-plan-review-brief).
+- 8 November. M2 pan plan over `aeb43fbc`, reviewed SHA-256 prefix `10e7730e`: approved after refining slider steps, recording brackets and trace attribution. [Review brief](../../evidence/PLATFORM-RUNTIME-MAC/review-briefs.md#m2-pan-plan-review-brief).
 - 8 November. The owner superseded same-turn goal chaining after the successor record was lost. At M0 close, mark the goal complete and end the turn. The owner starts M1 separately.
 - 8 November. The overseer removed human key presses from M1. The diagnostic sends P/E to the app's shared key handler so the same lifecycle and camera commands run without requiring a person at the keyboard. The live composited observation and independent motion review remain required.
 - 8 November. Used the arm-disabled run of the exact diagnostic binary as the uninterrupted window control. This keeps the same build, render path and fixed endpoint for the pixel comparison.
@@ -79,3 +73,10 @@ with zero new trace attempts consumed. [Evidence and one-command runbook](../../
 - 8 November, 18:26 CET. The granted slot's fresh preflight (`slot.tAxImE`) reported a locked console. Neither live row launched. The overseer's standing grant applies once the console is unlocked. M2 remains active for work that needs no screen.
 - 8 November, 19:30 CET. Slot `slot.mQNT7T` recorded both full live sweeps and closed both game windows. Independent 1× review passed motion with short holds recorded. The trace process exceeded its finalization cap and export refused the bundle. Park Instruments trace finalization after the two headless attempts and this live attempt. Leave the physical cadence criterion unchanged.
 - 8 November, 19:40 CET. Owner requested a pause for workflow review. The post-G3c diagnostic build finished. Its visual corroboration is the first resume step.
+
+11 November plan reshape for orchestrate 1.7.0. Status lines removed. The M0 and M1 sections moved to
+[records](../../evidence/PLATFORM-RUNTIME-MAC/M0-M1-records.md), the review briefs to
+[review briefs](../../evidence/PLATFORM-RUNTIME-MAC/review-briefs.md), the console witness commission to
+[evidence](../../evidence/PLATFORM-RUNTIME-MAC/console-witness-correction.md), and the M2 and M3 protocol detail to
+[the design](DESIGN.md#m2-and-m3-qualification-protocol). M0 and M3 were renamed for what someone can see. No item
+or scope changed.

@@ -28,7 +28,7 @@ hardware fully. Apple silicon Mac and Windows are the desktop interpretations, W
 portable recipe at showcase quality, iOS/iPadOS and Android the mobile interpretation. Linux/Intel coverage is
 deferred, not a claim of impossibility. Authoring OS, build host and player support are separate. Native mobile
 packaging uses its required SDK/toolchain; browser demos do not substitute for app-store delivery. V1 proves on this
-M3 Max, the iOS simulator and Chrome under [the build plan](../BUILD-PLAN.md#goal-and-exit-rule); the other named
+M3 Max, the iOS simulator and Chrome under [the build plan](../plans/BRIEF.md#goal-and-exit-rule); the other named
 candidates in [the baseline specification](BASELINE-SPEC.md) follow on rented hardware. No minimum device or OS is
 certified by this document, and the [single budget table](modules/PLATFORM-RUNTIME.md#whole-scene-budget-proposal--all-unmeasured)
 remains an unmeasured engineering envelope; do not turn a candidate into a certified hardware floor.

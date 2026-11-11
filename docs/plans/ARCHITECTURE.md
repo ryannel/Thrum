@@ -1,12 +1,41 @@
-# Thrum module list: the road to the V1 exit, with sea and clouds, and the goal after V1
+# Thrum module list
 
-10 November 2026. This is the project plan the orchestrate loop builds from: the modules, what each owns, the build
-order, the interfaces between them and a brief for each. [The build plan](../../BUILD-PLAN.md) owns the purpose and
-the V1 exit. [The architecture brief](../ARCHITECTURE-BRIEF.md) owns the engine-wide responsibility map (F1–T2) and
-[CONTRACTS](../CONTRACTS.md) owns shared invariants. A module here is a unit of build ownership: one builder can
-work on it without touching the others, and each kind of state has exactly one module in charge of it.
-The goal after V1, a swarm-survival game with 2D and online multiplayer, is
-[track 3](#track-3-the-swarm-survival-game-after-v1). It was added the same day from a second request, quoted there.
+| # | Module | What it's for | Needs |
+|---|---|---|---|
+| 1 | PLATFORM-RUNTIME-IOS | The game runs on the iPhone simulator, through touch, rotation, backgrounding and graphics loss | |
+| 2 | PLATFORM-RUNTIME-MAC | The game recovers from graphics loss on the Mac, and its motion is proved smooth on the built-in 120 Hz display | T2-CAPTURE M0, APPLE-TILE M3 |
+| 3 | T2-CAPTURE | Agents record exactly what the engine drew, as stills and motion, with nobody at the screen | PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 |
+| 4 | COOKED-DRAW | Cooked scenes draw on devices that cannot run GPU-driven draws, such as the iPhone simulator | PLATFORM-RUNTIME-IOS M7 |
+| 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE M0 and M1, PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 |
+| 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE M3 |
+| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE M0, M2, M3, M11 and M12 |
+| 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads | APPLE-PRESENTATION M3 |
+| 9 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE M2 |
+| 10 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame | APPLE-TILE M2 |
+| 11 | CONTENT-LOOP | Edited meshes, textures and volumes appear in the running game without a stall | APPLE-PRESENTATION M2 |
+| 12 | SHOWCASE | The V1 exit: the showcase valley on Mac and in Chrome, reviewed, with its closing record | The last milestone of modules 1 to 9 and 11 |
+| 13 | SEA | An open sea from waterline to horizon, with floating bodies, wakes and foam | ATMOSPHERE M5, EFFECT-GRAPH, APPLE-TILE M3, APPLE-PRESENTATION M3 and M7, CONTENT-LOOP; the owner's port timing |
+| 14 | CLOUDS | A weather-driven sky from clear to overcast, with placed cloud volumes that shade the world | ATMOSPHERE M5, EFFECT-GRAPH, APPLE-TILE M3, APPLE-PRESENTATION M3 and M7, CONTENT-LOOP; the owner's port timing |
+| 15 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply | SHOWCASE |
+| 16 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser | SHOWCASE |
+| 17 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | SHOWCASE, APPLE-TILE, CONTENT-LOOP |
+| 18 | SESSION | Two to four players share one run and keep seeing the same crowd | SIM-2D, TRANSPORT |
+| 19 | GAME-UI | Health bars, timers, menus and a join screen drawn in the game's own frame | RENDER-2D |
+| 20 | SWARM | The swarm-survival game itself: its name, rules, characters and art | SIM-2D, RENDER-2D, GAME-UI, TRANSPORT, SESSION |
+
+Modules are in build order. Rows 1 to 12 are the road to the V1 exit, 13 and 14 are sea and clouds, and 15 to 20 are
+the goal after V1. `Needs` names the milestones a module waits on in other modules; each milestone's `needs` in
+its done-when file is the authority. Where each module stands is on [the status page](STATUS.md), which the
+loop writes.
+
+This is the project plan the orchestrate loop builds from: the modules, what each owns, the build order, the
+interfaces between them and a brief for each module not yet planned. First written 10 November 2026.
+[The brief](BRIEF.md) owns the purpose and the V1 exit. [The architecture brief](../design/ARCHITECTURE-BRIEF.md)
+owns the engine-wide responsibility map (F1–T2) and [CONTRACTS](../design/CONTRACTS.md) owns shared invariants. A
+module here is a unit of build ownership: one builder can work on it without touching the others, and each kind of
+state has exactly one module in charge of it. The goal after V1, a swarm-survival game with 2D and online
+multiplayer, is [track 3](#track-3-the-swarm-survival-game-after-v1). It was added the same day from a second
+request, quoted there.
 
 ## The owner's request
 
@@ -39,8 +68,8 @@ Quoted word for word from the 10 November planning task:
 
 ## Three tracks
 
-**Track 1, the V1 exit.** Unchanged. Its remaining gates are G3b, G3s, G3t, G3c, G4, G5, G6 and G7. Nothing in
-track 2 gates it.
+**Track 1, the V1 exit.** Unchanged. Its gates from here are G3b, G3s, G3t, G3c, G4, G5, G6 and G7; G0, G2S and G3a
+closed before the loop. Nothing in track 2 gates it.
 
 **Track 2, sea and clouds.** Two engine modules, `SEA` and `CLOUDS`, built in Thrum on the foundation track 1
 lays. They are finished here, not in Broadsides; [the reasons](#where-sea-and-clouds-are-finished) are below.
@@ -48,30 +77,34 @@ Track 2 adds one foundation module, `EFFECT-GRAPH`, and asks track 1 for three t
 build. When builders start track 2 is the owner's decision; this plan only fixes the order.
 
 **Track 3, the goal after V1.** An original swarm-survival game that proves 2D and online multiplayer, set by the
-owner in [the brief](../NEXT-GOAL-SWARM-GAME.md). Six new modules, none of which starts before the exit or gates
+owner in [the brief](../design/NEXT-GOAL-SWARM-GAME.md). Six new modules, none of which starts before the exit or gates
 it. They are listed in [their own section](#track-3-the-swarm-survival-game-after-v1), so the tables below stay
 the road to the exit.
 
 ## Modules and what each owns
 
-| Module | Gate | Owns (state and code) | Status on 10 November |
+| Module | Gate | Owns (state and code) | Design or brief |
 |---|---|---|---|
-| `PLATFORM-RUNTIME-MAC` | G3b | Qualification of the Mac surface, present and cadence path | M2 building; M3 waits on `APPLE-TILE:M3` |
-| `PLATFORM-RUNTIME-IOS`, `PLATFORM-RUNTIME-WEB`, `T2-CAPTURE`, `COOKED-DRAW` | G3b, T2, G5 | iOS and web shells, engine capture, the direct cooked draw path | Done |
-| `APPLE-TILE` | G3t | Recipe selection from the capability registry, the frame lifecycle and its one split scene/output graph, the pre-tone scene-linear input, the native Metal segment | M0 ready; M0–M3, M10–M12 open |
-| `APPLE-PRESENTATION` | G4 | The view record (jitter, matrices), motion and reactive targets, history keys and acceptance, reconstruction, render extent and generation transitions, exposure retention, EDR present, the display record, the quality governor, pipeline preparation | Design exists; M1–M3 are now in its done-when file; M4–M11 await migration |
-| `ATMOSPHERE` | G3s | The one sky, Sun, aerial perspective, night and stars; the environment identity; the direct-Sun path to receivers | M1–M2 done, M3 parked, M4 deferred; M5 ready, M6 waits on `APPLE-PRESENTATION:M3` |
-| `CULLING` | G3c | Instance visibility lists, occlusion history, the mesh-bucket route and Sun-caster culling | Frustum and occlusion run on the field; plan owed |
-| `CONTENT-LOOP` | G5 | Cooked products, the manifest, runtime mapping and GPU residency of cooked meshes, textures and volumes | Native loop complete; closing milestone and plan owed |
-| `CREATOR` | G6 | The typed controls model and its views, parameter files, the app runner, sky kit and starter, the creator docs, the profile window and profiler rows | Mac built; M1 ready; M2 waits on `APPLE-TILE:M3` |
-| `SHOWCASE` | G7 | The exit scene and route in `examples/v1-game`, the V1 exit record | Route slice built; plan owed, last in order |
-| `EFFECT-GRAPH` | track 2 | Graph resource kinds and cadence that simulated effects need; how an engine module declares its own passes | Not started; plan owed |
-| `SEA` | track 2 | Sea state on the GPU (spectral cascades, wake fields, foam material), the body-query ring, sea optics | [Brief](SEA-BRIEF.md); plan owed |
-| `CLOUDS` | track 2 | The weather field, cloud density and lighting caches, the cloud optical-depth product, placed cloud volumes | [Brief](CLOUDS-BRIEF.md); plan owed |
+| `PLATFORM-RUNTIME-IOS` | G3b | The iOS shell: the UIKit lifecycle, touch, the render owner and its surface lease, rotation, device-loss recovery, and the scene extent that follows the oriented surface | [Design](PLATFORM-RUNTIME-IOS/DESIGN.md) |
+| `PLATFORM-RUNTIME-MAC` | G3b | Qualification of the Mac surface, present and cadence path | [Design](PLATFORM-RUNTIME-MAC/DESIGN.md) |
+| `T2-CAPTURE` | T2 | Engine capture: the submitted-output tap, its readback and writer, the capture modes and their evidence | [Design](T2-CAPTURE/DESIGN.md) |
+| `COOKED-DRAW` | G5 | The direct cooked draw path and the selection between it and the indirect path | [Design](COOKED-DRAW/DESIGN.md) |
+| `APPLE-TILE` | G3t | Recipe selection from the capability registry, the frame lifecycle and its one split scene/output graph, the pre-tone scene-linear input, the native Metal segment | [Design](APPLE-TILE/DESIGN.md) |
+| `APPLE-PRESENTATION` | G4 | The view record (jitter, matrices), motion and reactive targets, history keys and acceptance, reconstruction, render extent and generation transitions, exposure retention, EDR present, the display record, the quality governor, pipeline preparation | [Design](APPLE-PRESENTATION/DESIGN.md); [brief for M4–M11](#apple-presentation-m4m11-g4) |
+| `ATMOSPHERE` | G3s | The one sky, Sun, aerial perspective, night and stars; the environment identity; the direct-Sun path to receivers | [Design](ATMOSPHERE/DESIGN.md) |
+| `CULLING` | G3c | Instance visibility lists, occlusion history, the mesh-bucket route and Sun-caster culling | [Brief](#culling-g3c) |
+| `CONTENT-LOOP` | G5 | Cooked products, the manifest, runtime mapping and GPU residency of cooked meshes, textures and volumes | [Brief](#content-loop-g5) |
+| `CREATOR` | G6 | The typed controls model and its views, parameter files, the app runner, sky kit and starter, the creator docs, the profile window and profiler rows | [Design](CREATOR/DESIGN.md) |
+| `SHOWCASE` | G7 | The exit scene and route in `examples/v1-game`, the V1 exit record | [Brief](#showcase-g7) |
+| `EFFECT-GRAPH` | track 2 | Graph resource kinds and cadence that simulated effects need; how an engine module declares its own passes | [Brief](#effect-graph-track-2-foundation) |
+| `SEA` | track 2 | Sea state on the GPU (spectral cascades, wake fields, foam material), the body-query ring, sea optics | [Brief](SEA/BRIEF.md) |
+| `CLOUDS` | track 2 | The weather field, cloud density and lighting caches, the cloud optical-depth product, placed cloud volumes | [Brief](CLOUDS/BRIEF.md) |
 
 State that no module above owns stays where it is: committed world state and the tick page in `thrum-core`
-(G1/G2S, done), input and replay in `thrum-network` and core (done for V1), and game content (the valley, presets,
-hull data, cloud genus tables, looks) in `examples/` and never in engine crates.
+(G1 and G2S), input and replay in `thrum-network` and core, and game content (the valley, presets, hull data,
+cloud genus tables, looks) in `examples/` and never in engine crates. The browser shell in `thrum_app::web` was
+built before the loop and has [a design](PLATFORM-RUNTIME-WEB/DESIGN.md) and no done-when file; it joins the table
+above as `PLATFORM-RUNTIME-WEB` when work on it is next planned.
 [Track 3's modules](#modules-and-what-each-owns-track-3) are in their own table.
 
 ## Coverage of the V1 exit
@@ -81,26 +114,24 @@ hull data, cloud genus tables, looks) in `examples/` and never in engine crates.
 | One engine powers `examples/v1-game` on this M3 Max and its 120 Hz display, and the same scene in Chrome | `SHOWCASE`; `PLATFORM-RUNTIME-MAC` M2 and M3 |
 | Physical sky, Sun and aerial perspective with time controls | `ATMOSPHERE` M6 |
 | Cooked meshes and textures; hot reload | `CONTENT-LOOP` close; `CREATOR` |
-| Live camera, lights and cascaded shadows | G3a (done); shadow quality on the route in `ATMOSPHERE` M6 |
+| Live camera, lights and cascaded shadows | G3a, closed before the loop; shadow quality on the route in `ATMOSPHERE` M6 |
 | GPU culling | `CULLING` |
 | MetalFX, EDR and a quality governor; no pipeline compilation during play | `APPLE-TILE` M10–M12; `APPLE-PRESENTATION` M4–M11 |
-| Display-link interpolation | G3b (function done); Mac cadence in `PLATFORM-RUNTIME-MAC` |
+| Display-link interpolation | G3b's function rows, closed before the loop; Mac cadence in `PLATFORM-RUNTIME-MAC` |
 | Profiler and native/browser demo UI | `CREATOR` M1 and M2 |
 | 10,000 entities and 1,000–2,000 movers as the representative scene | `SHOWCASE`, with `CULLING` and `CONTENT-LOOP` |
-| Headless corrected-run replay | G2S (done) |
+| Headless corrected-run replay | G2S, closed before the loop |
 | A fresh agent builds a small scene from public docs alone | `CREATOR` M3 |
 | Outstanding physical-device runs reported | `SHOWCASE` |
 
 ## Build order
 
 Riskiest and most depended-on first. A milestone's `needs` in its done-when file is the authority; this is the
-reasoning behind those entries. The profile allows one Codex builder, so the lanes below say what is safe to run
-beside `APPLE-TILE` if the owner allows a second builder, and what a lone builder picks up while `APPLE-TILE` or the
-Mac qualification waits on an attended session.
+reasoning behind those entries. The project settings allow one Codex builder, so the lanes below say what is safe to run beside `APPLE-TILE` if the owner allows a second builder, and what a lone builder picks up while `APPLE-TILE` or the Mac qualification waits on an attended session.
 
-1. **In flight.** `PLATFORM-RUNTIME-MAC` M2. `APPLE-TILE` M0, then M1–M3. `APPLE-TILE` is first because everything
+1. **First.** `PLATFORM-RUNTIME-MAC` M2. `APPLE-TILE` M0, then M1–M3. `APPLE-TILE` is first because everything
    after it reads its graph, its recipe selection or its pre-tone input.
-2. **Ready now, in other files.** `CREATOR` M1 (`thrum-app`, `thrum-controls`, `examples/starter`, docs).
+2. **Beside them, in other files.** `CREATOR` M1 (`thrum-app`, `thrum-controls`, `examples/starter`, docs).
    `ATMOSPHERE` M5 (`thrum-render/src/atmosphere`, the forward light group, the contribution seam).
 3. **After `APPLE-TILE:M0`.** `APPLE-PRESENTATION` M1 (jitter, matrices and motion), which runs on the current
    portable output and needs only M0's proof tools.
@@ -117,27 +148,23 @@ Mac qualification waits on an attended session.
    renderer. Their GPU milestones start where [the readiness conditions](#where-the-ports-readiness-conditions-are-met)
    are met. Their closing milestones need the governor.
 
-**Plans owed before a builder reaches them**, in this order, each a `plan-module` run from its brief below:
-`APPLE-PRESENTATION` M4–M11 (migration of the existing prose plan), `CULLING`, `EFFECT-GRAPH`, `CONTENT-LOOP`,
-`SEA`, `CLOUDS`, `SHOWCASE`. None can start today: each waits on `APPLE-TILE`, on a milestone that itself waits on
-`APPLE-TILE`, or on the owner's port timing, so no ready work is unplanned.
-
-**Design reviews owed.** `CREATOR`, `ATMOSPHERE` (its 10 November revision) and `APPLE-PRESENTATION` are new to
-the loop, so each needs `agent_loop.py review --module <M> --milestone design` to return Design Approved before
-its builder starts.
+**The order in which the remaining modules are planned**, each a `plan-module` run from its brief below:
+`APPLE-PRESENTATION` M4–M11 (migration of [the drafted milestones](../evidence/APPLE-PRESENTATION/M4-M11-milestone-drafts.md)),
+`CULLING`, `EFFECT-GRAPH`, `CONTENT-LOOP`, `SEA`, `CLOUDS`, `SHOWCASE`. Each waits on `APPLE-TILE`, on a milestone
+that itself waits on `APPLE-TILE`, or on the owner's port timing, so each is planned before a builder could reach it.
 
 ## Where the port's readiness conditions are met
 
-[The port decision](../decisions/SEA-AND-CLOUD-PORT.md#readiness-6-november) lists five conditions. Each is met at
+[The port decision](../design/decisions/SEA-AND-CLOUD-PORT.md#readiness-6-november) lists five conditions. Each is met at
 a named milestone.
 
-| Condition (6 November) | Met by | State |
-|---|---|---|
-| G3s: one shared sky, Sun, light-transmittance and environment-reflection products | `ATMOSPHERE:M5` (identity, lent products, the one cloud optical-depth path) | Ready to build |
-| Graph: 3D and cube resources, cadence; async-compute eligibility as a declared seam | `EFFECT-GRAPH:M1`, after `APPLE-TILE:M2` | Plan owed |
-| Frame and V4: effects supply motion, reactivity and reset epochs; reconstruction | `APPLE-PRESENTATION:M2` (third forward target, history protocol) and `M3` (TAAU) | In the done-when file, waiting on `APPLE-TILE` |
-| G5: cook and map 3D-volume products; cloud volumes loaded | `CONTENT-LOOP` (density volume product, R8 portable and BC4 desktop) | Plan owed; volumes already cook and one draws |
-| Recipes and governor: resource and quality selection, history-safe cadence | `APPLE-TILE:M1` (recipe selection), `APPLE-PRESENTATION:M7` (governor), `M8` for the Apple reconstructor | Planned |
+| Condition (6 November) | Met by |
+|---|---|
+| G3s: one shared sky, Sun, light-transmittance and environment-reflection products | `ATMOSPHERE:M5` (identity, lent products, the one cloud optical-depth path) |
+| Graph: 3D and cube resources, cadence; async-compute eligibility as a declared seam | `EFFECT-GRAPH:M1`, after `APPLE-TILE:M2` |
+| Frame and V4: effects supply motion, reactivity and reset epochs; reconstruction | `APPLE-PRESENTATION:M2` (third forward target, history protocol) and `M3` (TAAU) |
+| G5: cook and map 3D-volume products; cloud volumes loaded | `CONTENT-LOOP` (density volume product, R8 portable and BC4 desktop) |
+| Recipes and governor: resource and quality selection, history-safe cadence | `APPLE-TILE:M1` (recipe selection), `APPLE-PRESENTATION:M7` (governor), `M8` for the Apple reconstructor |
 
 So a first sea or cloud frame can be built in Thrum once `APPLE-TILE:M3`, `APPLE-PRESENTATION:M3`,
 `ATMOSPHERE:M5` and `EFFECT-GRAPH:M1` are Done. That point falls at step 5–6 of the build order, before G7. The
@@ -147,25 +174,25 @@ ports close after `APPLE-PRESENTATION:M7`. Demo scenes in Chrome also need `CREA
 
 Existing contracts are named by number. New interfaces are named here and defined in the design of the module
 that provides them; they are provisional until that module's design review passes. A module does not change an
-interface by itself: a builder writes a proposal in its plan's log and a planner settles it here.
+interface by itself: a builder writes a proposal in its module's log and a planner settles it here.
 
 | Interface | Provider → consumers | Defined in |
 |---|---|---|
 | Tick page, committed and previous endpoints, tick-derived time | core → every simulated effect | C02 |
-| Capability registry, recipes, quality values | `APPLE-TILE` (selection), `APPLE-PRESENTATION` (governor) → all GPU modules | C04, [hardware-native decision](../decisions/HARDWARE-NATIVE-ENGINE.md) |
-| Graph declaration, GPU lifetime, device generations | `APPLE-TILE` → all GPU modules | C06, [graph decision](../decisions/G3-EXECUTING-RENDER-GRAPH.md) |
-| **Effect passes and resources**: a module declares its own compute and render passes at named frame stages, with 3D, cube and mipped storage-array textures, persistent and wrapping history resources, and a cadence | `EFFECT-GRAPH` → `SEA`, `CLOUDS`, `ATMOSPHERE` | `EFFECT-GRAPH.md` (owed) |
-| Pre-tone scene-linear input with matching exposure, extent and sample identity | `APPLE-TILE:M3` → `APPLE-PRESENTATION` | [APPLE-TILE](APPLE-TILE.md) |
-| **Temporal contribution**: every drawer writes motion from unjittered positions, marks invalid history, writes the reactive target, and honours the frame's reset flag | `APPLE-PRESENTATION` M1–M2 → `ATMOSPHERE`, `CONTENT-LOOP`, `CULLING`, `SEA`, `CLOUDS` | C07, [APPLE-PRESENTATION](APPLE-PRESENTATION.md#seams-for-thrum-core-proposals) seams 1–4 |
-| **Environment identity and products**: source epoch and time, the true Sun (direction, raw illuminance, radius), and read-only sky, transmittance, aerial and reflection products with their WGSL lookups | `ATMOSPHERE:M5` → forward contributors, `SEA`, `CLOUDS` | [ATMOSPHERE](ATMOSPHERE.md#environment-identity-and-products), C08 |
-| **Sun-path optical depth**: one provider's `tau` toward the Sun; V3 applies `exp(-tau)` once on each direct-Sun receiver | `CLOUDS` (a diagnostic stand-in in `ATMOSPHERE:M5`) → `ATMOSPHERE` receivers, `SEA` | C08, [ENVIRONMENT](ENVIRONMENT.md), [ATMOSPHERE](ATMOSPHERE.md#environment-identity-and-products) |
+| Capability registry, recipes, quality values | `APPLE-TILE` (selection), `APPLE-PRESENTATION` (governor) → all GPU modules | C04, [hardware-native decision](../design/decisions/HARDWARE-NATIVE-ENGINE.md) |
+| Graph declaration, GPU lifetime, device generations | `APPLE-TILE` → all GPU modules | C06, [graph decision](../design/decisions/G3-EXECUTING-RENDER-GRAPH.md) |
+| **Effect passes and resources**: a module declares its own compute and render passes at named frame stages, with 3D, cube and mipped storage-array textures, persistent and wrapping history resources, and a cadence | `EFFECT-GRAPH` → `SEA`, `CLOUDS`, `ATMOSPHERE` | `EFFECT-GRAPH`'s design |
+| Pre-tone scene-linear input with matching exposure, extent and sample identity | `APPLE-TILE:M3` → `APPLE-PRESENTATION` | [APPLE-TILE](APPLE-TILE/DESIGN.md) |
+| **Temporal contribution**: every drawer writes motion from unjittered positions, marks invalid history, writes the reactive target, and honours the frame's reset flag | `APPLE-PRESENTATION` M1–M2 → `ATMOSPHERE`, `CONTENT-LOOP`, `CULLING`, `SEA`, `CLOUDS` | C07, [APPLE-PRESENTATION](APPLE-PRESENTATION/DESIGN.md#seams-for-thrum-core-proposals) seams 1–4 |
+| **Environment identity and products**: source epoch and time, the true Sun (direction, raw illuminance, radius), and read-only sky, transmittance, aerial and reflection products with their WGSL lookups | `ATMOSPHERE:M5` → forward contributors, `SEA`, `CLOUDS` | [ATMOSPHERE](ATMOSPHERE/DESIGN.md#environment-identity-and-products), C08 |
+| **Sun-path optical depth**: one provider's `tau` toward the Sun; V3 applies `exp(-tau)` once on each direct-Sun receiver | `CLOUDS` (a diagnostic stand-in in `ATMOSPHERE:M5`) → `ATMOSPHERE` receivers, `SEA` | C08, [ENVIRONMENT](../design/modules/ENVIRONMENT.md), [ATMOSPHERE](ATMOSPHERE/DESIGN.md#environment-identity-and-products) |
 | Ordered medium segments `(T,S)` and the reflection provider | `SEA`, `CLOUDS` → V3 composition in `ATMOSPHERE` and the forward pass | C08 |
-| Cooked products, including density volumes | `CONTENT-LOOP` → `CLOUDS`, `SEA` (foam atlas), games | C05, [G5 decision](../decisions/G5-CONTENT-ADDRESSED-LOOP.md) |
-| **Body query**: one batched asynchronous GPU query, one to two ticks late, with support and age | `SEA` → games and P3 | [E1 water decision](../decisions/E1-GPU-WATER.md), C09; `SEA.md` (owed) |
+| Cooked products, including density volumes | `CONTENT-LOOP` → `CLOUDS`, `SEA` (foam atlas), games | C05, [G5 decision](../design/decisions/G5-CONTENT-ADDRESSED-LOOP.md) |
+| **Body query**: one batched asynchronous GPU query, one to two ticks late, with support and age | `SEA` → games and P3 | [E1 water decision](../design/decisions/E1-GPU-WATER.md), C09; `SEA`'s design |
 | **Quality knobs**: each cadence and step budget is a runtime value with a declared history invalidation | `SEA`, `CLOUDS`, `ATMOSPHERE` → the governor in `APPLE-PRESENTATION:M7` | C04, port decision |
-| Typed controls, parameter files, the scene shell on Mac and web | `CREATOR` → `SHOWCASE`, demo scenes for `SEA` and `CLOUDS` | C11, [G6 decision](../decisions/G6-CREATOR-EXPERIENCE.md), [CREATOR](CREATOR.md) |
-| **Frame timing feed**: completed frame samples with pass-name GPU timing, and one timing-demand switch on the frame host (on by default; off writes no timestamps and the sample says GPU time was not requested) | The frame runtime (`APPLE-TILE:M3` for pass names; the switch by the ruling below) → `CREATOR`'s profiler, frames reports, Mac qualification, capture | C12, [CREATOR](CREATOR.md#the-frame-timing-feed) |
-| Engine capture modes and evidence | `T2-CAPTURE` → every visual milestone | C12, [T2 capture](T2-CAPTURE.md) |
+| Typed controls, parameter files, the scene shell on Mac and web | `CREATOR` → `SHOWCASE`, demo scenes for `SEA` and `CLOUDS` | C11, [G6 decision](../design/decisions/G6-CREATOR-EXPERIENCE.md), [CREATOR](CREATOR/DESIGN.md) |
+| **Frame timing feed**: completed frame samples with pass-name GPU timing, and one timing-demand switch on the frame host (on by default; off writes no timestamps and the sample says GPU time was not requested) | The frame runtime (`APPLE-TILE:M3` for pass names; the switch by the ruling below) → `CREATOR`'s profiler, frames reports, Mac qualification, capture | C12, [CREATOR](CREATOR/DESIGN.md#the-frame-timing-feed) |
+| Engine capture modes and evidence | `T2-CAPTURE` → every visual milestone | C12, [T2 capture](T2-CAPTURE/DESIGN.md) |
 
 **Seam rulings for `APPLE-PRESENTATION` M1–M3.** Its design proposed nine seams to Thrum Core. Under the loop the
 module list settles them. Seams 1–4 are accepted as written there:
@@ -182,7 +209,7 @@ Seams 5–9 are settled when M4–M11 are migrated.
 **Seam ruling for `CREATOR` M2.** The profiler needs the frame host to stop timing frames while it is off, which
 no interface offered. The timing-demand switch and the "not requested" reason are built in `thrum-render`'s
 runtime and timing files by the `CREATOR` M2 builder, after `APPLE-TILE:M3` is Done, with the behaviour
-[CREATOR](CREATOR.md#the-frame-timing-feed) defines. `APPLE-TILE`'s items do not change. Once built, the switch
+[CREATOR](CREATOR/DESIGN.md#the-frame-timing-feed) defines. `APPLE-TILE`'s items do not change. Once built, the switch
 belongs to the frame runtime: later work there (`APPLE-TILE` M10–M12, `APPLE-PRESENTATION`, `EFFECT-GRAPH`) keeps
 its tests passing, and any timing it adds, a native segment's included, is not gathered while the switch is off.
 
@@ -197,7 +224,7 @@ branches are frozen references at the commits the briefs pin. Reasons:
    second at 1440p, with or without clouds, and its sea pass alone takes about 21 ms of GPU time. Its fair-weather
    cloud preset added about 289 ms a frame in a paired run on 6 November. Looks finished at those costs are
    references, not products
-   ([performance rules](../../../.agents/skills/thrum-engineering/references/performance.md)). Shipped engines
+   ([performance rules](../../.agents/skills/thrum-engineering/references/performance.md)). Shipped engines
    reach comparable cues in a few milliseconds, so the mechanisms have to be re-costed before they are lifted.
 2. **Light.** G3s is the only sky. Broadsides clouds and water are lit by their own sky, exposure and temporal
    path, and none of that is ported. Every visual verdict passed there has to be earned again under Thrum's light,
@@ -215,7 +242,7 @@ branches are frozen references at the commits the briefs pin. Reasons:
    growth track, and the weather field. The briefs list each with its commit.
 
 **What finished means** is defined in each brief as a short list of cues with ranges, judged in a Thrum scene on
-`mac-metal` and `chrome-webgpu`: [SEA](SEA-BRIEF.md#what-finished-means), [CLOUDS](CLOUDS-BRIEF.md#what-finished-means).
+`mac-metal` and `chrome-webgpu`: [SEA](SEA/BRIEF.md#what-finished-means), [CLOUDS](CLOUDS/BRIEF.md#what-finished-means).
 In one line each:
 - **Sea:** an open sea from waterline to horizon across calm to gale, bodies that float on it through one
   asynchronous query, a wake that persists and moves another body, transported foam from breaking waves and hull
@@ -230,11 +257,11 @@ library supplies placed volumes under the same optical contract.
 
 ## Module briefs
 
-Briefs for modules whose plan is owed. Modules with a design are linked from the table above.
+Briefs for the modules not yet planned. Modules with a design are linked from the table above.
 
 ### APPLE-PRESENTATION M4–M11 (G4)
 
-Migrate the existing [prose milestones](APPLE-PRESENTATION-PLAN.md) into the done-when file as written: extent
+Migrate [the drafted milestones](../evidence/APPLE-PRESENTATION/M4-M11-milestone-drafts.md) into the done-when file as written: extent
 and generation transitions, dynamic scale, EDR, the governor, MetalFX, launch-to-ready, offline metallibs and the
 paired proof. Settle seams 5–9 here with the frame-runtime, platform and asset owners. `needs`: M4 and M6 on
 `APPLE-TILE:M3`, M8 on `APPLE-TILE:M11`, M11 on `APPLE-TILE:M12`. The governor (M7) must accept the quality-knob
@@ -245,7 +272,7 @@ restate the sizing after M3's first measurements.
 
 Close the gate on the exit scene. Built and on main: GPU frustum compaction and selectable occlusion on the
 instance field, the mesh-bucket route in Direct and Frustum, and per-light Sun-caster culling
-([evidence](../../evidence/render/G3C-OCCLUSION-M3A-2026-11-07.md)). Remaining: occlusion on realistic meshes with
+([evidence](../evidence/render/G3C-OCCLUSION-M3A-2026-11-07.md)). Remaining: occlusion on realistic meshes with
 the mesh tie witness and the widened-rectangle proof that evidence owes; the default decided from paired rows on
 the exit scene, with Frustum kept unless Occlusion wins there; a live toggle; and the iOS direct fallback rows.
 Open decision for its planner, with `CONTENT-LOOP`: how the exit scene's 10,000 entities draw cooked meshes. Two
@@ -257,7 +284,7 @@ costs recorded as tripwires.
 ### CONTENT-LOOP (G5)
 
 Close the gate and serve track 2. The native loop, the Wasm client and both cooked draw paths are built
-([evidence](../../evidence/integration/G5-CONTENT-ADDRESSED-LOOP-2026-11-06.md)). Remaining for V1: the untested
+([evidence](../evidence/integration/G5-CONTENT-ADDRESSED-LOOP-2026-11-06.md)). Remaining for V1: the untested
 staging-fill failure path, an independent closing review of code and evidence, and current maturity rows. For
 track 2: a density-volume product a module can map and sample (R8 on the portable recipe, BC4 on desktop, the
 iPhone encoding recorded as owed), with placement, identity and history invalidation as explicit inputs, as the
@@ -268,8 +295,7 @@ shape the exit ships.
 
 ### SHOWCASE (G7)
 
-Assemble the exit scene and close V1. The local launch and the six-stop review route are built under
-[the route decision](../decisions/G7-SHOWCASE-ROUTE.md), which lists what final G7 still owes. Remaining: the
+Assemble the exit scene and close V1. The local launch and the six-stop review route are built under [the route decision](../design/decisions/G7-SHOWCASE-ROUTE.md), which lists what final G7 still owes; [the route slice's record](../evidence/SHOWCASE/ROUTE-SLICE-RECORD.md) holds its four finished milestones and their log. Remaining: the
 valley holding 10,000 entities with 1,000–2,000 movers drawn as cooked meshes through GPU culling; the route on
 Mac Apple tile and portable and on Chrome portable, sharing scene and controls; correctness and a clean-context
 visual review; whole-frame records with visible stutter, startup and hitches investigated; the visual digest,
@@ -287,19 +313,18 @@ histories; time-sliced and epoch-skipped passes whose cadence is a runtime value
 the fragment passes that read them; module passes after opaque geometry that read scene depth and a refraction
 source, and before the pre-tone input; and a declared async-compute eligibility that changes nothing yet. Keep
 it to what `SEA`, `CLOUDS` and `ATMOSPHERE` will use; this is not a general plugin framework. Contracts: C06,
-C07, the [graph decision](../decisions/G3-EXECUTING-RENDER-GRAPH.md), which already names 3D and cube
+C07, the [graph decision](../design/decisions/G3-EXECUTING-RENDER-GRAPH.md), which already names 3D and cube
 descriptors. `needs`: `APPLE-TILE:M2`. Completion: a diagnostic module exercising each kind passes graph
 validation, recovers across device replacement, costs nothing when absent, and runs on Mac and Chrome.
 
 ### SEA and CLOUDS
 
-[SEA brief](SEA-BRIEF.md) and [CLOUDS brief](CLOUDS-BRIEF.md).
+[SEA brief](SEA/BRIEF.md) and [CLOUDS brief](CLOUDS/BRIEF.md).
 
 ## Track 3: the swarm-survival game, after V1
 
-Added 10 November 2026. [The brief](../NEXT-GOAL-SWARM-GAME.md) is the owner's page; this section turns it into
-modules. Nothing here starts before the V1 exit, changes a V1 module's plan or gates the exit. No module below has
-a design, a plan or a done-when file, so no builder can start one.
+Added 10 November 2026. [The brief](../design/NEXT-GOAL-SWARM-GAME.md) is the owner's page; this section turns it into
+modules. Nothing here starts before the V1 exit, changes a V1 module's plan or gates the exit.
 
 ### The owner's request (track 3)
 
@@ -346,15 +371,15 @@ ticks and sends each peer the frames it admitted. In steady play no per-enemy st
 digest of its committed state, and a peer whose digest differs is repaired with a full image.
 
 - *Why not replicate the crowd.* The parked wire design packs a moving actor into about 18 bytes and proposes 64
-  kbit/s down to each client at 20 Hz ([A0](../decisions/A0-N1-TRANSPORT-CODEC.md),
-  [A5](../decisions/A5-STATE-DELTA-SESSION.md)). A 2D pose could shrink to about 6 bytes. 3,000 movers × 6 bytes ×
+  kbit/s down to each client at 20 Hz ([A0](../design/decisions/A0-N1-TRANSPORT-CODEC.md),
+  [A5](../design/decisions/A5-STATE-DELTA-SESSION.md)). A 2D pose could shrink to about 6 bytes. 3,000 movers × 6 bytes ×
   20 Hz is 2.9 Mbit/s for each client, 45 times that target, and a crowd that chases the players changes every
   tick, so deltas against a baseline save little. Vampire Survivors' own online co-op met the same wall with
   hundreds of enemies: each client simulates the crowd locally and takes position corrections at 1 Hz, because
   full sync for each enemy "likely wouldn't scale"
   ([coherence case study](https://coherence.io/blog/tradecraft/vampire-survivors-online-coop-case-study)).
 - *What travels.* An input frame is about 31 bytes for each player and tick
-  ([input wire](../decisions/A5-INPUT-WIRE.md)), which does not grow with the crowd. A peer that joins gets a
+  ([input wire](../design/decisions/A5-INPUT-WIRE.md)), which does not grow with the crowd. A peer that joins gets a
   baseline and catches up from the inputs that followed, as Factorio's joining clients do
   ([Friday Facts 149](https://www.factorio.com/blog/post/fff-149)).
 - *What it rests on.* The game's rules must give the same bytes on Mac arm64, Chrome's wasm32 and the iOS
@@ -369,7 +394,7 @@ digest of its committed state, and a peer whose digest differs is repaired with 
   replay. `SESSION`'s planner chooses between the two from `SIM-2D`'s measured costs.
 - *If the profile cannot be held.* The fallback is Vampire Survivors' own method: local simulation with corrections
   through the acknowledged deltas of A5, at a rate the byte budget allows.
-- *Precedent in Thrum.* C13 already shares water by causes, and [NETWORKING](NETWORKING.md) leaves room for a game
+- *Precedent in Thrum.* C13 already shares water by causes, and [NETWORKING](../design/modules/NETWORKING.md) leaves room for a game
   to "supply a qualified specialist protocol". The acknowledged-delta design stays selected for games whose state
   must travel. This game uses it for the baseline and for repair.
 
@@ -388,7 +413,7 @@ C13. Chrome and the iOS simulator join as clients.
 
 ### Modules and what each owns (track 3)
 
-The responsibility column names the row of [the architecture brief](../ARCHITECTURE-BRIEF.md#proposed-module-map)
+The responsibility column names the row of [the architecture brief](../design/ARCHITECTURE-BRIEF.md#proposed-module-map)
 that the module builds. The code home is where the planner is expected to put it; the planner confirms it and
 registers any new crate in `.config/architecture.toml`. Each module is built by the profile's builder.
 
@@ -431,27 +456,27 @@ review passes. Changes to a numbered contract are settled with its producers and
 
 | Interface | Provider → consumers | Defined in |
 |---|---|---|
-| Tick page, committed and previous endpoints, rewind and replay | core → `SIM-2D`, `RENDER-2D`, `SESSION` | C02, [G2 decision](../decisions/G2-GENERIC-SIMULATION.md); unchanged |
-| **Deterministic rules profile**: what a rule may compute with and in what order, so one input trace gives one result on every target | `SIM-2D` → `SWARM` (its rules), `SESSION` | `SIM-2D.md` (owed); C02 |
-| **World digest**: one value for each committed tick over all authority state | `SIM-2D` → `SESSION` | `SIM-2D.md` (owed) |
-| **2D queries**: overlap, nearest and neighbours, with results in a fixed order | `SIM-2D` → `SWARM` | `SIM-2D.md` (owed); C03 |
-| **Sprite rows**: a game's read-model components map to sheet frame, layer, tint and transform, interpolated between tick endpoints on the GPU | `RENDER-2D` → `SWARM`, any 2D game | `RENDER-2D.md` (owed); C07 |
-| **2D scene half**: passes declared through the one graph, writing the pre-tone scene-linear input | `APPLE-TILE` → `RENDER-2D` | [APPLE-TILE](APPLE-TILE.md), C06; `RENDER-2D.md` (owed) |
+| Tick page, committed and previous endpoints, rewind and replay | core → `SIM-2D`, `RENDER-2D`, `SESSION` | C02, [G2 decision](../design/decisions/G2-GENERIC-SIMULATION.md); unchanged |
+| **Deterministic rules profile**: what a rule may compute with and in what order, so one input trace gives one result on every target | `SIM-2D` → `SWARM` (its rules), `SESSION` | `SIM-2D`'s design; C02 |
+| **World digest**: one value for each committed tick over all authority state | `SIM-2D` → `SESSION` | `SIM-2D`'s design |
+| **2D queries**: overlap, nearest and neighbours, with results in a fixed order | `SIM-2D` → `SWARM` | `SIM-2D`'s design; C03 |
+| **Sprite rows**: a game's read-model components map to sheet frame, layer, tint and transform, interpolated between tick endpoints on the GPU | `RENDER-2D` → `SWARM`, any 2D game | `RENDER-2D`'s design; C07 |
+| **2D scene half**: passes declared through the one graph, writing the pre-tone scene-linear input | `APPLE-TILE` → `RENDER-2D` | [APPLE-TILE](APPLE-TILE/DESIGN.md), C06; `RENDER-2D`'s design |
 | Sprite-sheet and font products | `CONTENT-LOOP` → `RENDER-2D`, `GAME-UI`, games | C05 |
-| **Interface stage**: a paint list drawn at output extent after reconstruction | `APPLE-TILE` and `APPLE-PRESENTATION` → `GAME-UI` | C06, C07; `GAME-UI.md` (owed) |
+| **Interface stage**: a paint list drawn at output extent after reconstruction | `APPLE-TILE` and `APPLE-PRESENTATION` → `GAME-UI` | C06, C07; `GAME-UI`'s design |
 | **Event routing**: the interface consumes an event or passes it on as a game action | shells → `GAME-UI` → the game | C11 |
-| **Message link**: a reliable ordered stream, datagrams with a stated size limit, backpressure and lifecycle events, the same on every adapter | `TRANSPORT` → `SESSION` | `TRANSPORT.md` (owed); [NETWORKING](NETWORKING.md#transport-and-overload), A0 |
-| **Session**: join and leave, the admitted input frames of every player for each tick, the baseline, the confirmed tick, the prediction branch, and connection state a screen can show | `SESSION` → `SWARM` | `SESSION.md` (owed); C13, A0 and the A5 decisions |
-| **Rule set in the gameplay manifest**: a match names its deterministic rule set and build, and refuses a peer that differs. A proposed addition to C13 | `SESSION`, with `SIM-2D`, core and the game | `SESSION.md` (owed) |
+| **Message link**: a reliable ordered stream, datagrams with a stated size limit, backpressure and lifecycle events, the same on every adapter | `TRANSPORT` → `SESSION` | `TRANSPORT`'s design; [NETWORKING](../design/modules/NETWORKING.md#transport-and-overload), A0 |
+| **Session**: join and leave, the admitted input frames of every player for each tick, the baseline, the confirmed tick, the prediction branch, and connection state a screen can show | `SESSION` → `SWARM` | `SESSION`'s design; C13, A0 and the A5 decisions |
+| **Rule set in the gameplay manifest**: a match names its deterministic rule set and build, and refuses a peer that differs. A proposed addition to C13 | `SESSION`, with `SIM-2D`, core and the game | `SESSION`'s design |
 | Quality knobs | `RENDER-2D` → the governor | C04; the interface above, unchanged |
-| The app runner and typed controls | `CREATOR` → `SWARM` | C11, [CREATOR](CREATOR.md) |
-| Engine capture, one for each peer process | `T2-CAPTURE` → every visual milestone | C12, [T2 capture](T2-CAPTURE.md); unchanged |
+| The app runner and typed controls | `CREATOR` → `SWARM` | C11, [CREATOR](CREATOR/DESIGN.md) |
+| Engine capture, one for each peer process | `T2-CAPTURE` → every visual milestone | C12, [T2 capture](T2-CAPTURE/DESIGN.md); unchanged |
 
 ### Build order after the V1 exit
 
 Track 3 starts when `SHOWCASE` is Done. Whether it runs before, after or beside track 2 is the owner's decision.
 Each module needs a `plan-module` run from its brief and a design review that returns Design Approved before a
-builder starts it. Plans are owed in the order below.
+builder starts it. The modules are planned in the order below.
 
 1. **The two proofs that can overturn the plan.** `SIM-2D`, first milestone: one input trace gives equal digests
    on Mac, in Chrome and on the iOS simulator at the brief's crowd size, with tick, rewind and replay costs
@@ -530,7 +555,7 @@ no budget below is a gate. The quality bar is a shipped game, named for each mil
 - **Cues.** A health bar, timer and counters readable at every window size, at 1× and 2× density and inside the
   iOS safe area. A modal choice of three or four upgrades worked by key, pointer and touch. A join screen. An event
   the interface consumes never moves the player.
-- **Built already.** [The U1 design](AUDIO-UI.md#u1-operating-model), which is wider than this game. Typed demo
+- **Built already.** [The U1 design](../design/modules/AUDIO-UI.md#u1-operating-model), which is wider than this game. Typed demo
   controls in `thrum-controls`, which stay for demos and the profiler and are not replaced.
 - **To build.** The smallest slice of U1 that this game uses: Latin text from one font product, a retained tree
   with simple layout, focus, the paint list, event routing under C11.
@@ -552,7 +577,7 @@ no budget below is a gate. The quality bar is a shipped game, named for each mil
 - **To build.** The message link on three adapters: Quinn (Mac, the host and the iOS simulator), WebTransport in
   Wasm, and the in-memory conditioned link the A5 fixtures use. A host identity that Chrome accepts on a local
   machine. Counters for bytes, loss and queue age.
-- **Contracts.** C11 (a suspended app has lost its socket), C12, C13, [NETWORKING](NETWORKING.md#transport-and-overload).
+- **Contracts.** C11 (a suspended app has lost its socket), C12, C13, [NETWORKING](../design/modules/NETWORKING.md#transport-and-overload).
 - **Open for its planner.** The WebTransport crate, after an audit of licence, datagram support, the Wasm client
   and upkeep (`wtransport`, `web-transport-quinn`, `webtrans`). The async runtime Quinn brings and where its
   thread sits beside the world lane. Whether the WebSocket fallback of A0 is built; the default is no.
@@ -604,10 +629,10 @@ no budget below is a gate. The quality bar is a shipped game, named for each mil
 
 Nothing below is decided by this plan.
 
-1. **Port timing.** [The water decision](../decisions/E1-GPU-WATER.md) says implementation follows G7, and the
+1. **Port timing.** [The water decision](../design/decisions/E1-GPU-WATER.md) says implementation follows G7, and the
    port decision says the owner schedules it. The readiness conditions are met before G7, so the owner can start
    `SEA` and `CLOUDS` builders at their CPU milestones now, at their GPU milestones at step 5–6, or after G7.
-   Until the owner says, those modules have briefs and no done-when file, so no builder can start them.
+   Until the owner says, those modules are planned no further than their briefs.
 2. **Licence.** Broadsides code is marked `UNLICENSED` and its cloud library carries an owner-only licence.
    Thrum's demos are meant to have public source. Lifting either into this repository needs the owner's licence
    for it first.
@@ -633,29 +658,20 @@ For [track 3](#track-3-the-swarm-survival-game-after-v1):
     The choices are a request for each run as today, `Codex sandbox: danger-full-access`, or a Claude builder for
     those modules.
 12. **Sound.** The brief does not ask for it and no audio module is planned. A1 stays a design.
-13. **The purpose line.** The build plan still says "3D engine" and requirement E08 of the architecture brief
+13. **The purpose line.** The brief still says "3D engine" and requirement E08 of the architecture brief
     still puts pure 2D outside scope. The 10 November goal overrides both; rewording them is the owner's page.
 14. **What finishes the goal.** [The proposal](#what-finished-means-track-3) stands in for an exit the owner has
     not written.
 15. **Builders.** Steps 1 and 2 of track 3's order hold three lanes that share no files.
 
-## Log
+## Assumptions for modules not yet planned
 
-- 2026-11-10 First module list. Planned from the owner's request above. `CREATOR`, `ATMOSPHERE` M5–M6 and
-  `APPLE-PRESENTATION` M1–M3 gained done-when files; the other modules gained briefs. Assumptions that belong to
-  a planned module are in that module's plan log. The two below belong to modules without a plan yet.
-- 2026-11-11 `CREATOR` revised after its design review. Its profiler could not be built as a reader of the
-  existing timing interfaces, so the frame timing feed and its seam ruling were added above, and `CREATOR` M2
-  moved from step 2 to step 5 of the build order, behind `APPLE-TILE:M3`. No other module's plan changed.
+Each stands until the owner overturns it, and moves to its module's plan, under `Open for the owner`, when that module is planned.
+
 - Assumption: finished sea excludes inland water, coasts and surf, and the three cues the 10 November spikes left
   open (spray release at chase distance, the attached sheet, a visibly rising gas cloud); they are parked spikes.
 - Assumption: finished clouds excludes the ten-genera, squall and warm-front scope of the Broadsides game, and
   the consolidation the owner asked for is the port decision's hybrid of weather layers and placed volumes.
-- 2026-11-10 Track 3 added from the owner's second request, quoted in its section: six modules with briefs, the
-  asks of existing modules, interfaces and a build order after the exit. No V1 module's plan, no done-when file
-  and no part of the exit changed. The brief's three defaults are unchanged. Researched: Vampire Survivors' online
-  co-op, Factorio's join, WebTransport's browser state and the 2D paths of Bevy, Godot and Unity. The readings
-  below stand until the owner overturns them; each moves to its module's plan log when that module is planned.
 - Assumption: "2D support in the engine" means a reusable sprite path (sprites, layers, a 2D camera, text and
   interface) that a second 2D game can build on. 2D lights, tile-map tools, skeletal 2D animation and 2D rigid
   bodies are not built.
@@ -668,3 +684,20 @@ For [track 3](#track-3-the-swarm-survival-game-after-v1):
   is not built for this game.
 - Assumption: no sound, and no gamepad: keys, pointer and touch only.
 - Assumption: the iOS simulator proves function for the game, never speed, as in V1.
+
+## Log
+
+- 2026-11-10 First module list. Planned from the owner's request above. `CREATOR`, `ATMOSPHERE` M5–M6 and
+  `APPLE-PRESENTATION` M1–M3 gained done-when files; the other modules gained briefs. Assumptions that belong to a planned module are in that module's plan, under `Open for the owner`; those for modules not yet planned are above.
+- 2026-11-11 `CREATOR` revised after its design review. Its profiler could not be built as a reader of the
+  existing timing interfaces, so the frame timing feed and its seam ruling were added above, and `CREATOR` M2
+  moved from step 2 to step 5 of the build order, behind `APPLE-TILE:M3`. No other module's plan changed.
+- 2026-11-10 Track 3 added from the owner's second request, quoted in its section: six modules with briefs, the
+  asks of existing modules, interfaces and a build order after the exit. No V1 module's plan, no done-when file
+  and no part of the exit changed. The brief's three defaults are unchanged. Researched: Vampire Survivors' online
+  co-op, Factorio's join, WebTransport's browser state and the 2D paths of Bevy, Godot and Unity. Its readings are listed above and stand until the owner overturns them.
+- 2026-11-11 Reshaped for orchestrate 1.7.0. The module table now opens the page, in build order and without
+  status; the status column, the readiness table's state column and the paragraphs on what was ready or owed are
+  gone, since [the status page](STATUS.md) reports them. The capability designs the migration had carried into the
+  plans folder went back to `docs/design/modules/`, and the build plan was folded into [the brief](BRIEF.md). No
+  module's ownership, interface, build order or done-when item changed.

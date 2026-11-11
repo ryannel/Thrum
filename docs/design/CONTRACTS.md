@@ -4,7 +4,7 @@ Revision C4, 1 November 2026. Reconciled source, iteration and multiplayer basel
 [Decision record](ARCHITECTURE-DECISIONS.md) resolves A01–A05/J01–J04 and integrates the whole-plan review.
 All domain authors read this contract set and the [brief](ARCHITECTURE-BRIEF.md). Propose changes with affected owners;
 do not create a private alternative. The coordinating owner (`/plan-module` at project level, per [ORCHESTRATE.md](../../ORCHESTRATE.md)) reconciles both producer and consumers before accepting a change.
-[The build plan](../BUILD-PLAN.md) sets functional gates and recorded baselines; [the baseline specification](BASELINE-SPEC.md) fixes the initial admitted implementations and post-V1 envelopes.
+[The build plan](../plans/BRIEF.md) sets functional gates and recorded baselines; [the baseline specification](BASELINE-SPEC.md) fixes the initial admitted implementations and post-V1 envelopes.
 This document owns cross-module invariants; the five baseline specifications own selected algorithms and adapter
 policies; module designs own responsibility and consumer consequences. These are responsibilities, not
 a demand for separate crates or a universal messaging framework.
@@ -246,7 +246,7 @@ before submission resets provider-internal history before reuse; it does not cha
 Observed loss abandons without old-queue work, and the iOS foreground lease still forbids background submission.
 Generation-tagged native errors enter the platform loss path; optional rejection selects a prepared portable twin.
 This is a planned contract, not implementation qualification; independent review of the
-[G3t design](modules/APPLE-TILE.md) and its stateful stand-in proof is owed before implementation.
+[G3t design](../plans/APPLE-TILE/DESIGN.md) and its stateful stand-in proof is owed before implementation.
 
 ## C07 Render scene, views and temporal data — V2 with P4/V3/V4
 
@@ -595,7 +595,7 @@ wait for numeric tuning; the [6 November owner decision](decisions/PERFORMANCE-P
 
 T2 owns scenario/artifact provenance and completeness; V1/V4 own submitted-image capture, GPU resources and colour
 stage; F1 owns driver/world-clock and platform lease policy. Games provide scene/control bindings. The
-[T2 capture design](modules/T2-CAPTURE.md) specifies the handoffs and modes. Sequence capture uses the ordinary submitted
+[T2 capture design](../plans/T2-CAPTURE/DESIGN.md) specifies the handoffs and modes. Sequence capture uses the ordinary submitted
 render/temporal path with bounded asynchronous readback under the one executor; it cannot privately redraw an
 endpoint, acquire a surface, submit a rival queue or advance authority. Endpoint still capture keeps its separate
 no-history semantics. Disabled sequence capture adds no copy/readback work.

@@ -1,9 +1,9 @@
 # Sea module brief (E1.water)
 
-10 November 2026. Brief for the `SEA` module in [the module list](ARCHITECTURE.md). A `plan-module` run turns it
-into `SEA.md`, a plan and a done-when file. It finishes the Broadsides Rust sea in Thrum under
-[the port decision](../decisions/SEA-AND-CLOUD-PORT.md) and [the water decision](../decisions/E1-GPU-WATER.md).
-It does not replace [WATER.md](WATER.md), which keeps the wider inland designs.
+10 November 2026. Brief for the `SEA` module in [the module list](../ARCHITECTURE.md). A `plan-module` run turns it
+into this folder's `DESIGN.md`, `PLAN.md` and done-when file. It finishes the Broadsides Rust sea in Thrum under
+[the port decision](../../design/decisions/SEA-AND-CLOUD-PORT.md) and [the water decision](../../design/decisions/E1-GPU-WATER.md).
+It does not replace [WATER.md](../../design/modules/WATER.md), which keeps the wider inland designs.
 
 The owner's request, from the 10 November planning task: "wants water and clouds finished and consolidated ...
 Decide, with reasons, what finished means for each, whether that finishing happens in Broadsides first or as Thrum
@@ -12,7 +12,7 @@ modules, and where in the build order the port's readiness conditions are met."
 ## Where it is finished
 
 In Thrum. The reasons common to sea and clouds are in
-[the module list](ARCHITECTURE.md#where-sea-and-clouds-are-finished). For water in particular:
+[the module list](../ARCHITECTURE.md#where-sea-and-clouds-are-finished). For water in particular:
 
 - The Broadsides sea pass measures about 21 ms of GPU time at 1440p on this Mac, and a three-cascade control
   measured 42 ms. Published FFT oceans run in 1–4 ms
@@ -60,7 +60,7 @@ this Mac at the showcase extent, with paired records and tripwires rather than a
   cloud. Four earlier trials and the 10 November ribbon failed the first; the waterline spike failed the other
   two. They are parked spikes that re-enter only with a reviewed, costed mechanism.
 - Inland water (puddles, streams, rivers, lakes), coasts, shoaling, surf and tides. They stay with
-  [WATER.md](WATER.md) and the Broadsides design as later profiles of the same contracts.
+  [WATER.md](../../design/modules/WATER.md) and the Broadsides design as later profiles of the same contracts.
 - Planing trim calibrated to tow-tank data, fleets, and ray-traced reflection.
 - Multiplayer water. The water decision's seams (causes on the wire, no water state) are kept; nothing is built.
 
@@ -114,5 +114,5 @@ shipped and published practice for FFT cascades, wake solvers and foam at this f
 
 ## Owner decisions
 
-- When builders start this module ([port timing](ARCHITECTURE.md#owner-decisions)).
+- When builders start this module ([port timing](../ARCHITECTURE.md#owner-decisions)).
 - A licence for lifting Broadsides code and content into this repository.

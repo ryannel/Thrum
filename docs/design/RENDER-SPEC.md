@@ -454,7 +454,7 @@ cosine hemisphere integral. One GPU resolve after diffuse lighting computes
 and `e=2^(-EV100)/1.2`. The optional low-light key uses actual measured lux.
 The cooked valley authors compensation 0 and bounds −12 to +18 EV100. A valid
 incident sample chooses `p=clamp(e/4,1/1024,64)`. All scene-colour writers and
-the display read the same sample for that view. [Night design](modules/ATMOSPHERE.md)
+the display read the same sample for that view. [Night design](../plans/ATMOSPHERE/DESIGN.md)
 This flat-receptor calibration follows [Filament's camera model](https://google.github.io/filament/main/filament.html#imagingpipeline/physicallybasedcamera)
 and [illuminance conversion](https://github.com/google/filament/blob/main/filament/src/Exposure.cpp); no implementation is copied.
 The separate GPU sample carries `p`, inverse gain, actual unfloored lux, EV, flags and submitted identity. Fixed mode

@@ -3,7 +3,7 @@
   "milestones": [
     {
       "id": "M0",
-      "name": "Reviewed Mac qualification plan",
+      "name": "The Mac qualification plan passes independent review",
       "state": "done",
       "fails": 0,
       "replans": 0,
@@ -15,9 +15,9 @@
           "ask": "Do the shared platform design, bounded-frame-host decision and Mac plan preserve one world clock, platform surface/device ownership and FrameHost submission/history ownership? Do the held-drawable recovery and slow-pan proofs distinguish authority, queue calls, GPU completion, display refresh and app-attributed presentation, without claiming unmeasured input-to-photon timing or taking over G3t/G4 or sibling platform work? Is this plan linked from G3b in docs/BUILD-PLAN.md?",
           "target": "mac-metal",
           "status": "pass",
-          "evidence": "docs/design/modules/PLATFORM-RUNTIME-MAC-PLAN.md#design-and-plan-review-brief",
+          "evidence": "docs/evidence/PLATFORM-RUNTIME-MAC/review-briefs.md#design-and-plan-review-brief",
           "verdict": "pass",
-          "review": "docs/design/modules/PLATFORM-RUNTIME-MAC-PLAN.md#log"
+          "review": "docs/plans/PLATFORM-RUNTIME-MAC/LOG.md"
         }
       ]
     },
@@ -112,7 +112,7 @@
     },
     {
       "id": "M3",
-      "name": "The post-G3t Mac surface path requalifies runtime motion and built-in cadence",
+      "name": "After the Apple tile change, the cooked valley still moves and presents smoothly on built-in ProMotion",
       "state": "open",
       "fails": 0,
       "replans": 4,

@@ -192,7 +192,7 @@ list. J03's standalone-library evaluation remains detailed design; no library wa
 
 ## Next genuine dogfood
 
-The first running dogfood is G6 in the [build plan](../BUILD-PLAN.md#active-gate-order-and-budgets): a fresh agent
+The first running dogfood is G6 in the [build plan](../plans/BRIEF.md#active-gate-order-and-budgets): a fresh agent
 with only public docs builds a new small scene and logs its friction. After that, use S01 for the smallest complete create/change/play/build path, S05 to expose
 gameplay-versus-visual quality mistakes, and S09 to expose source/target/asset/shader problems. Use S06 when alternative
 media integration is implemented. Those are complementary running checks, not permission to discover missing

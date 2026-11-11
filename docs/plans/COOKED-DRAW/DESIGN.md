@@ -2,15 +2,15 @@
 
 9 November 2026. **M1 claimed; all twelve items pass, independent lead review owed.**
 The revised Mac oracle, Mac/Chrome BASE preservation, simulator function/lifecycle/rotation with attributed denied permission preflights and sampled
-cooked visual proof are recorded in the [plan](COOKED-DRAW-PLAN.md) and
+cooked visual proof are recorded in the [plan](PLAN.md) and
 [evidence](../../evidence/render/cooked-draw/README.md). PLATFORM-RUNTIME-IOS M7 supplies oriented scene sizing.
 This is a child design of
-[the G5 decision](../decisions/G5-CONTENT-ADDRESSED-LOOP.md), owned by G5 (`thrum-asset-gpu`). It sits under
-[C04](../CONTRACTS.md#c04-feature-composition-and-quality--f2), [C06](../CONTRACTS.md#c06-gpu-execution-and-lifetime--v1),
-[C07](../CONTRACTS.md#c07-render-scene-views-and-temporal-data--v2-with-p4v3v4),
-[C12](../CONTRACTS.md#c12-budgets-evidence-and-acceptance--t2-with-all-owners) and
-[the hardware-native decision](../decisions/HARDWARE-NATIVE-ENGINE.md). Brief: [COOKED-DRAW-BRIEF.md](COOKED-DRAW-BRIEF.md).
-Plan: [COOKED-DRAW-PLAN.md](COOKED-DRAW-PLAN.md). Done when: [COOKED-DRAW-DONE.json](COOKED-DRAW-DONE.json).
+[the G5 decision](../../design/decisions/G5-CONTENT-ADDRESSED-LOOP.md), owned by G5 (`thrum-asset-gpu`). It sits under
+[C04](../../design/CONTRACTS.md#c04-feature-composition-and-quality--f2), [C06](../../design/CONTRACTS.md#c06-gpu-execution-and-lifetime--v1),
+[C07](../../design/CONTRACTS.md#c07-render-scene-views-and-temporal-data--v2-with-p4v3v4),
+[C12](../../design/CONTRACTS.md#c12-budgets-evidence-and-acceptance--t2-with-all-owners) and
+[the hardware-native decision](../../design/decisions/HARDWARE-NATIVE-ENGINE.md). Brief: [brief](BRIEF.md).
+Plan: [plan](PLAN.md). Done when: [done-when file](DONE.json).
 
 ## Purpose and scope
 
@@ -279,10 +279,10 @@ and C06 lifetime keep their meaning on both paths.
 | `DeviceCapabilities` records adapter downlevel flags. `capture_device` records them as unknown, and unknown never selects indirect. | `thrum-render` `capabilities.rs` (V1 graphics execution; implements F2's C04 registry) | Call sites need no signature change: `thrum-app` device creation, web recovery, sky capture, `v1-game-ios` render, `asset-loop`, benches. Readers: `thrum-asset-gpu` now, and later G3c culling | Render/registry owner (Thrum Core) |
 | `SceneSurface` lends the downlevel fact | `thrum-render` contribution seam (V1) | `thrum-asset-gpu` | Render owner |
 | C04 wording, proposed: "features, limits and downlevel execution facts" in the registry list | C04 owner (F2) | All registry readers | C04 owner; the text only clarifies the existing rule |
-| `CookedStats` gains the draw path. `visible_meshlets` is documented as `None` on the direct path | `thrum-asset-gpu` | V1 cooked tests, the [G6 creator note](../decisions/G6-CREATOR-EXPERIENCE.md), T2 evidence | G5 (this module) |
+| `CookedStats` gains the draw path. `visible_meshlets` is documented as `None` on the direct path | `thrum-asset-gpu` | V1 cooked tests, the [G6 creator note](../../design/decisions/G6-CREATOR-EXPERIENCE.md), T2 evidence | G5 (this module) |
 | The iOS route attaches cooked content via `attach_cooked_scene` | V1 game, iOS route (`examples/v1-game-ios`) | T2-CAPTURE M2 | V1 game and G3b iOS shell owners |
 
-**Overlap with G4 seam 3.** [APPLE-PRESENTATION-PLAN](APPLE-PRESENTATION-PLAN.md) seam 3 adds a reactive forward
+**Overlap with G4 seam 3.** [APPLE-PRESENTATION-PLAN](../APPLE-PRESENTATION/PLAN.md) seam 3 adds a reactive forward
 target and a mip bias to the pipelines in `draw.rs` and `material.rs`. Both cooked paths share one mesh pipeline, so
 G4 changes it once. G4's "invalid-history objects" reactive write reads the history flag, which this design keeps
 identical on both paths. Neither work blocks the other. The only overlap is the shared file, which needs a merge.
@@ -362,3 +362,26 @@ from the same record fact.
   commissioned, because Chrome always selects indirect.
 - Should the Mac selection change after M1's paired figures? That needs a separate decision and a measured win. This
   module does not change it.
+
+## Ownership and agreements
+
+Moved from the module plan on 11 November 2026, when the plans took the orchestrate 1.7.0 shape.
+
+- **G5** owns `thrum-asset-gpu`: path selection, the direct draw, path-independent history, stats, and the cooked
+  tests and parity harness.
+- **The render owner (Thrum Core, V1 graphics execution; implements F2's C04 registry)** must agree to two additive
+  changes, recorded in the design's contracts table:
+  - `DeviceCapabilities` records the adapter's downlevel flags;
+  - `SceneSurface` lends them.
+
+  Neither changes any signature that call sites use.
+- **The V1 game and G3b iOS shell owners** must agree that the iOS route attaches cooked content through
+  `attach_cooked_scene`.
+- **G3b / PLATFORM-RUNTIME-IOS M7** owns current-oriented-extent scene sizing, including shared host/prepared-device
+  changes. M1 needs its acceptance. Diagnostic-scene M7 proof does not accept M1.10; G5 reruns cooked visuals after
+  integration. G4 reconstruction/governor work is not needed for this baseline correction.
+- **G4 seam 3** shares `draw.rs`. There is no sequencing dependency. Merge with care.
+
+Ask for these agreements before the builder starts. The builder may build against them as proposed. If an owner
+objects, the change returns here as a re-plan. The builder never redesigns another owner's interface inside this
+milestone.

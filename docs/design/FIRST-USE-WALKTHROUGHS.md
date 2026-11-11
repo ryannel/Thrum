@@ -154,7 +154,7 @@ usable. A minimum workbench is a constrained client of existing operations, not 
 
 ## Definition of a credible first-use path
 
-G6 in the [build plan](../BUILD-PLAN.md#active-gate-order-and-budgets) runs the first slice of this path with a fresh
+G6 in the [build plan](../plans/BRIEF.md#active-gate-order-and-budgets) runs the first slice of this path with a fresh
 agent and public docs. As targets and tools ship, qualify one complete path before multiplying templates:
 
 1. On a clean supported host, discover prerequisites and run the named starter using version-matched instructions.

@@ -1,6 +1,6 @@
 # Asset promotion, build storage and retention
 
-Recommended design, 1 November 2026. This extends the [construction plan](CONSTRUCTION-PLAN.md),
+Recommended design, 1 November 2026. This extends the [construction plan](CONSTRUCTION-PACKAGES.md),
 [AI performance campaigns](AI-PERFORMANCE.md) and existing [asset contract](../ASSET-LIFECYCLE.md).
 It adds no runtime module. No cleanup, remote restore, asset promotion or storage tooling was executed in this review.
 

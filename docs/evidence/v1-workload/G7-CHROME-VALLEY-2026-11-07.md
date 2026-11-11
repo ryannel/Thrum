@@ -1,7 +1,7 @@
 # G7 cooked valley in Chrome — 7 November 2026
 
 Chrome now draws the authored cooked valley, not only the diagnostic scene. This is the first slice of
-[the build plan](../../BUILD-PLAN.md)'s G7 item: native and web share the scene. The page fetches one
+[the build plan](../../plans/BRIEF.md)'s G7 item: native and web share the scene. The page fetches one
 publication from the G5 dev server and draws it with the same placements, camera, sky, shadows and exposure as
 native. Chrome fetches Portable products. The native store can select compressed variants.
 

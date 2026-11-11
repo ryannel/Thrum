@@ -1,11 +1,11 @@
 # Creator experience: closing G6
 
 10 November 2026, revised 11 November after
-[the design review](../../evidence/CREATOR/design-review.md). Design for the `CREATOR` module in [the module list](ARCHITECTURE.md).
-[Plan](CREATOR-PLAN.md) · [Done when](CREATOR-DONE.json) ·
-[G6 decision](../decisions/G6-CREATOR-EXPERIENCE.md) · [Creator guide](../ENGINE-EXPERIENCE.md) ·
-[C11](../CONTRACTS.md#c11-input-audio-and-ui-lifecycle--p1a1u1-with-f1) ·
-[C12](../CONTRACTS.md#c12-budgets-evidence-and-acceptance--t2-with-all-owners)
+[the design review](../../evidence/CREATOR/design-review.md). Design for the `CREATOR` module in [the module list](../ARCHITECTURE.md).
+[Plan](PLAN.md) · [Done when](DONE.json) ·
+[G6 decision](../../design/decisions/G6-CREATOR-EXPERIENCE.md) · [Creator guide](../../design/ENGINE-EXPERIENCE.md) ·
+[C11](../../design/CONTRACTS.md#c11-input-audio-and-ui-lifecycle--p1a1u1-with-f1) ·
+[C12](../../design/CONTRACTS.md#c12-budgets-evidence-and-acceptance--t2-with-all-owners)
 
 ## The owner's request
 
@@ -13,7 +13,7 @@ From the 10 November planning task, word for word: "The owner wants work lined u
 in docs/BUILD-PLAN.md, so builders always have a next milestone ... each module that can start next has its
 design, plan and done-when file, so a builder can start it".
 
-The V1 exit this module serves, from [the build plan](../../BUILD-PLAN.md#goal-and-exit-rule): "hot reload,
+The V1 exit this module serves, from [the build plan](../BRIEF.md#goal-and-exit-rule): "hot reload,
 profiler and native/browser demo UI" and "A fresh agent builds a small scene from public docs alone." Gate G6
 adds: "One command produces a lit scene, sky, cooked mesh, camera and slider ... Keep that scene to about 100 game
 lines, report game lines and zero engine game types."
@@ -56,7 +56,7 @@ they stay so.
 
 **Mechanism.** The sky kit (`thrum_app::sky`) gains a web runner on the engine's web shell (`thrum_app::web`),
 which already carries the V1 page: canvas surface and device, loss gating and reconstruction, clock policy and
-the frame step ([web shell plan](PLATFORM-RUNTIME-WEB-PLAN.md#boundary)). That plan parked "a second game in
+the frame step ([web shell plan](../PLATFORM-RUNTIME-WEB/DESIGN.md#boundary)). That plan parked "a second game in
 Chrome" with the starter as its candidate; this is that commission.
 
 - **The kit is the embedding application.** The web shell's boundary leaves the `wasm-bindgen` facade, the page,
@@ -119,7 +119,7 @@ or a parameter file is refused by key as for a readout.
 #### The frame timing feed
 
 The review found three things the existing interfaces cannot do. Each is settled here; the interface is also in
-[the module list](ARCHITECTURE.md#interfaces).
+[the module list](../ARCHITECTURE.md#interfaces).
 
 1. **Fresh samples.** The web shell keeps only the first 600 completed samples of a device generation, for the V1
    page's report and its capture records; the Mac shell keeps a run history. Both keep those meanings. At the
@@ -252,3 +252,17 @@ first cooked draw) is recorded as a tripwire.
 - Whether the profiler should also report memory. Left until a consumer asks.
 - Whether the V1 page should write its 600-sample report only on request, so its default run is untimed.
   `SHOWCASE` settles it when it plans the exit route.
+
+## Ownership
+
+Moved from the module plan on 11 November 2026, unchanged.
+
+This module owns `crates/thrum-controls`, the kit, runners, page, profile window and file reload in
+`crates/thrum-app`, `examples/starter`, the `scene` and `starter` commands, and the creator docs (`README.md`,
+`docs/design/ENGINE-EXPERIENCE.md`, `examples/starter/README.md`). It uses the web shell's frame, clock and loss
+policy unchanged.
+
+It reads frame samples from `thrum-render`. In M2 only, under
+[the seam ruling](../ARCHITECTURE.md#interfaces), its builder adds the timing-demand switch and the "not requested"
+reason to the frame runtime, and one call in `examples/v1-game` that declares the profiler group. Any other change
+to the frame runtime, the shells' policy or the V1 game goes in the log as a proposal for the module list.

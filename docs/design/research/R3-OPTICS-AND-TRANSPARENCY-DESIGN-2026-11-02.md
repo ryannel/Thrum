@@ -9,7 +9,7 @@ complete illumination, and conserving the photons that happened to be emitted ca
 bound unsampled caustic energy.
 
 The commission is the remaining R3 gap in the
-[build plan](../../BUILD-PLAN.md), [render implementor walk](RENDER-IMPLEMENTOR-DOGFOOD-2026-11-02.md)
+[build plan](../../plans/BRIEF.md), [render implementor walk](RENDER-IMPLEMENTOR-DOGFOOD-2026-11-02.md)
 and [joint readiness report](RENDER-ENVIRONMENT-TERRAIN-IMPLEMENTOR-READINESS-2026-11-02.md).
 Owning designs remain [RENDER-SPEC](../RENDER-SPEC.md),
 [water optics](../modules/WATER-OPTICS.md), [play/environment](../PLAY-ENVIRONMENT-SPEC.md)

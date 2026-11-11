@@ -17,7 +17,7 @@ runtime qualification remains unrun. This document's findings describe the froze
 | SR03 | Two exact identities: gameplay semantic manifest and wire/protocol schema; client visuals and tool-only schemas are independent — [NETWORK-SPEC](NETWORK-SPEC.md), C13 |
 | SR04 | Proposed patch → coordinated file application → immutable admission; internal native recovery store, no automatic mirror or first-SDK browser editor — [FOUNDATION-SPEC](FOUNDATION-SPEC.md), C10 |
 | SR05 | Substantive edits restart; bounded initial worlds preload; stopped player transitions checkpoint, drain/retire, load/publish, and recover the old pinned checkpoint on failure — [FOUNDATION-SPEC](FOUNDATION-SPEC.md) |
-| SR06 | I2a minimal source/save path → small I3a plus real I2n; thin mobile shells early, I2b broader content/artist work later — [CONSTRUCTION-PLAN](CONSTRUCTION-PLAN.md) |
+| SR06 | I2a minimal source/save path → small I3a plus real I2n; thin mobile shells early, I2b broader content/artist work later — [CONSTRUCTION-PLAN](CONSTRUCTION-PACKAGES.md) |
 | SR07 | R4 full groups selected after concrete encoded actions/state/results/events/baseline and resync arithmetic; playable/degraded timing explicit. Portable peak and browser boot estimates scoped — [NETWORK-SPEC](NETWORK-SPEC.md), [BASELINE-SPEC](BASELINE-SPEC.md) |
 | SR08 | C4 owns invariants, five specs own algorithms/adapters, modules own consequences, creator guide owns tasks, ledger owns status; duplicate source protocol removed and newcomer index shortened |
 

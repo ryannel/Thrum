@@ -18,7 +18,7 @@ The local macOS 27.2 SDK exposes memoryless textures, `MTLBinaryArchive` and Met
 
 ## Planned native-feature segment (9 November)
 
-The [G3t design](../modules/APPLE-TILE.md) selects a narrower native-feature handoff for G4, subject to independent
+The [G3t design](../../plans/APPLE-TILE/DESIGN.md) selects a narrower native-feature handoff for G4, subject to independent
 design review before implementation. End the producing wgpu encoder, use a separate wgpu-owned encoder entirely
 through its raw API, then resume a fresh wgpu encoder. Submit the ordered encoder list once on the coordinator's
 queue. This does not permit mixed recording, raw drawable writes or a second queue. Public wgpu remains the path for

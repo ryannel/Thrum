@@ -8,7 +8,7 @@ multiplayer play share the same authoritative rules.
 
 **Status:** the V1 game runs a provisional 10,000-entity simulation on macOS and Chrome WebGPU, plus a thin
 iPhone simulator shell. An optional native cooked valley shares the physical sky and frame host; Chrome still uses
-the diagnostic scene. The showcase and creator experience remain unfinished. See [the build plan](docs/BUILD-PLAN.md).
+the diagnostic scene. The showcase and creator experience remain unfinished. See [the brief](docs/plans/BRIEF.md) and [the status page](docs/plans/STATUS.md).
 
 **Make your first scene.** On a Mac, after the setup below, `./dev starter` opens a cooked rock on lit ground
 under a physically based sky, with Sun sliders and asset hot reload, in about 40 lines of game code. The
@@ -37,7 +37,7 @@ On Windows, use Git Bash for `./dev`, or run
 `./dev.ps1 check` from PowerShell. Set `THRUM_PYTHON=python`
 if Python is not installed as `python3`. Fetch the locked Rust dependencies once before the offline checks on a clean copy.
 
-- [Central work list](docs/BUILD-PLAN.md): checked-off slices, next actions and milestone status.
+- [Project brief](docs/plans/BRIEF.md), [module list](docs/plans/ARCHITECTURE.md) and [status](docs/plans/STATUS.md): the purpose and V1 exit, the modules in build order, and where each stands.
 - [Engine design](docs/design/README.md): requirements, architecture, modules and research.
 - [Contributing](CONTRIBUTING.md): commands, conventions and review evidence.
 - [Repository layout](docs/REPOSITORY.md): where work belongs and how it is retained.

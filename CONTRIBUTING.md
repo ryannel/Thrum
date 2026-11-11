@@ -35,7 +35,7 @@ owned `CARGO_TARGET_DIR`. `cargo clean` affects that build directory; inspect ow
 
 ## Change the smallest complete interaction
 
-Start from the active [build plan](docs/BUILD-PLAN.md), the owning specification and affected contracts.
+Start from [the brief](docs/plans/BRIEF.md), your module in [the module list](docs/plans/ARCHITECTURE.md), the owning specification and affected contracts.
 Describe the behavior, its state owner and observable result before adding APIs. Keep simulation rules
 independent of rendering, transport and platform I/O. Local and remote inputs use the same validation
 and authority; transport does not become a second gameplay implementation.

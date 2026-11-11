@@ -32,7 +32,7 @@ F3 owns stable IDs, units, schema registry and compatibility rules. F4 owns sour
 
 ## Commissioned capture child
 
-[T2-CAPTURE](T2-CAPTURE.md), [plan](T2-CAPTURE-PLAN.md) and [criteria](T2-CAPTURE-DONE.json) commission
+[T2-CAPTURE](../../plans/T2-CAPTURE/DESIGN.md), [plan](../../plans/T2-CAPTURE/PLAN.md) and [criteria](../../plans/T2-CAPTURE/DONE.json) commission
 unattended engine-image and elapsed-time motion evidence. T2 owns scenarios/artifacts; V1/V4 own submitted-output
 readback and F1 owns scheduling/platform lifetime. No new crate or competing render/clock owner is selected.
 Mac capture M0 precedes fresh Mac qualification M2 and G3t M0; Chrome and simulator consumers qualify separately.

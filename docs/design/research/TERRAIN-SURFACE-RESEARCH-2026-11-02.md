@@ -1,6 +1,6 @@
 # Terrain and surface research — 2 November 2026
 
-**Status:** research recommendation for W2 geometry and E1 surface identity/response; no implementation, numerical, visual or device proof. This supporting record proposes changes to the owning [world/content](../modules/WORLD-CONTENT.md), [environment](../modules/ENVIRONMENT.md) and [water](../modules/WATER.md) designs, under [C01/C02/C05/C07–C10](../CONTRACTS.md). It does not replace those authorities or promote maturity. Scope follows the [architecture brief](../ARCHITECTURE-BRIEF.md), [baseline](../BASELINE-SPEC.md) and [build plan](../../BUILD-PLAN.md).
+**Status:** research recommendation for W2 geometry and E1 surface identity/response; no implementation, numerical, visual or device proof. This supporting record proposes changes to the owning [world/content](../modules/WORLD-CONTENT.md), [environment](../modules/ENVIRONMENT.md) and [water](../modules/WATER.md) designs, under [C01/C02/C05/C07–C10](../CONTRACTS.md). It does not replace those authorities or promote maturity. Scope follows the [architecture brief](../ARCHITECTURE-BRIEF.md), [baseline](../BASELINE-SPEC.md) and [build plan](../../plans/BRIEF.md).
 
 ## Independent target recorded before historical code inspection
 

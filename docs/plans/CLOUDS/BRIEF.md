@@ -1,9 +1,9 @@
 # Clouds module brief (E1.clouds)
 
-10 November 2026. Brief for the `CLOUDS` module in [the module list](ARCHITECTURE.md). A `plan-module` run turns
-it into a rewritten [CLOUDS.md](CLOUDS.md), a plan and a done-when file. It consolidates the two Broadsides cloud
-paths into one Thrum provider under [the port decision](../decisions/SEA-AND-CLOUD-PORT.md). The optical rules and
-Python references already in [CLOUDS.md](CLOUDS.md) stay in force.
+10 November 2026. Brief for the `CLOUDS` module in [the module list](../ARCHITECTURE.md). A `plan-module` run turns
+it into this folder's `DESIGN.md`, which rewrites [CLOUDS.md](../../design/modules/CLOUDS.md), with a `PLAN.md` and a done-when file. It consolidates the two Broadsides cloud
+paths into one Thrum provider under [the port decision](../../design/decisions/SEA-AND-CLOUD-PORT.md). The optical rules and
+Python references already in [CLOUDS.md](../../design/modules/CLOUDS.md) stay in force.
 
 The owner's request, from the 10 November planning task: "Two cloud paths, a baked library and a procedural one,
 were built by separate Codex agents in Broadsides ... The owner has now asked for both to be finished and
@@ -13,7 +13,7 @@ first or as Thrum modules, and where in the build order the port's readiness con
 ## Where it is finished
 
 In Thrum, as one module. The reasons common to sea and clouds are in
-[the module list](ARCHITECTURE.md#where-sea-and-clouds-are-finished). For clouds in particular:
+[the module list](../ARCHITECTURE.md#where-sea-and-clouds-are-finished). For clouds in particular:
 
 - **Cost.** The procedural path's own 6 November matrix records a median paired cost of 289 ms a frame for its
   fair preset and 88 ms for overcast at 1440p. Guerrilla's Nubis clouds cost about 2 ms on a PlayStation 4
@@ -63,7 +63,7 @@ showcase extent, with texture memory recorded, by paired records and tripwires r
 
 **Not part of finished**, with the reason:
 - The ten cloud genera, cumulonimbus with anvil and rain shafts, the warm-front sequence and high ice layers.
-  They are the Broadsides game's scope ([ENVIRONMENT](ENVIRONMENT.md) says so) and the procedural path has three
+  They are the Broadsides game's scope ([ENVIRONMENT](../../design/modules/ENVIRONMENT.md) says so) and the procedural path has three
   genera built after its whole run.
 - The baked path's two-layer maritime decks from large-eddy simulation, their rectangular layer contract and
   fine-page-miss continuity. They are open research there, and decks in finished clouds come from the weather
@@ -126,6 +126,6 @@ practice for weather-map and voxel clouds at this frame rate, before selecting.
 
 ## Owner decisions
 
-- When builders start this module ([port timing](ARCHITECTURE.md#owner-decisions)).
+- When builders start this module ([port timing](../ARCHITECTURE.md#owner-decisions)).
 - A licence for lifting Broadsides code and the cloud library into this repository. The library's licence file
   reserves it to the owner and grants no rights to third parties.

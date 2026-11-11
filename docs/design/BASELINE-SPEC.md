@@ -1,7 +1,7 @@
 # Baseline decisions and closure register
 
 1 November 2026, re-scoped 5 November. This register chose a concrete first specification for each design gap and
-the engine-wide workloads and budgets. **V1 qualifies against the [build plan](../BUILD-PLAN.md#goal-and-exit-rule)
+the engine-wide workloads and budgets. **V1 qualifies against the [build plan](../plans/BRIEF.md#goal-and-exit-rule)
 targets, gate budgets and exit, not against the candidates, workloads and envelopes below**; those apply after V1 and
 to the designs that cite them. The register distinguishes **selected and specified** from **built and qualified**:
 unmeasured hardware support, appearance and timings cannot be closed by writing a specification. The larger engine

@@ -70,7 +70,7 @@ or mandate general affine support. Add scaled/rotated ancestry to the transform 
 
 **New sequencing clarification; high delivery value; coordinator/F1/F2/T1/T2 and selected render/input owners.**
 
-The [construction plan](CONSTRUCTION-PLAN.md) already includes an I1 headless game and I3 first interaction/empty-project
+The [construction plan](CONSTRUCTION-PACKAGES.md) already includes an I1 headless game and I3 first interaction/empty-project
 paths. It explicitly says the two-region animated reference scene is an integration workload. Therefore the initial
 claim that small games *must contain* animation, audio and environment is rejected. The remaining issue is that the
 package table gives broad I3/I4 gates without separately naming the small rendered/exported result and its required
