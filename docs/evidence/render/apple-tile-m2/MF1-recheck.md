@@ -1,7 +1,7 @@
 # M2 MF1 requalification
 
 11 November 2026, mac-metal on this Apple M3 Max. This record closes the exactness failure in
-[review MF1](../../APPLE-TILE/M2-review.md#mf1-d23-exactness-broken-at-claimed-commit-d23-verified).
+[review MF1](../../APPLE-TILE/M2-review.md#mf1-d23-exactness-broken-at-claimed-commit-d23-fixed-verified).
 The fresh release build contains APPLE-PRESENTATION's jitter gate `ae0cc8fa` and ATMOSPHERE M5 `7f020ca1`.
 Both matrices ran from clean
 revision `9af8664f63b95c18e7d3b8e5432288c066204aac`, with binary SHA-256
