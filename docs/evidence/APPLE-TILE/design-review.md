@@ -1,130 +1,160 @@
-# APPLE-TILE design review: D0.2 scope correction
+# APPLE-TILE design review
 
-11 November 2026. Reviewed integrated revision `019f849d519ba0978f31971d55da1780888023bb` using
-`orchestrate:review-milestone` 1.6.2, “Reviewing a design”, and Thrum's engineering review rules.
-**No blocking findings.** D0.2 now assigns the native witness to M10 without weakening its exactness or M0's
-ordinary-image proof. This is approval of the revised design criteria, not acceptance of M0, its captures, or
-any implementation, visual or performance claim. The loop owns approval records and unblock transitions.
+11 November 2026. Reviewed integrated revision `8d8bf889ed704befbea47ec5393ae0238c68f08c`
+using `orchestrate:review-milestone` 1.7.1, “Reviewing a design”, and the Thrum engineering
+review rules. **No blocking findings.** The M0/M10 scope correction remains sound, and the
+subsequent document migration preserves the reviewed mechanisms and all 33 item definitions.
+This approves the design; it does not independently accept implementation, images, performance
+or the already recorded M0/M1 milestone results.
 
-## Commission and review scope
+## Previous review and findings
 
-I read the previous review of `2514d8240876` first. It contained **no Must Fix findings** and two Suggestions;
-both remain open as described below. Its approval did not notice that D0.2's statement required the native
-witness before its first implementation in M10. This review explicitly checks that conflict.
+The previous `design-review.md` reviewed `019f849d519ba0978f31971d55da1780888023bb` and
+contained no Must Fix findings. Its three Suggestions have these dispositions:
 
-The accepted record's `briefs` array contains one task, read in full:
+- **Exemption from review of changed criteria:** removed from the active plan. The incorrect
+  sentence survives at `docs/evidence/APPLE-TILE/replan-handoff-2026-11-11.md:38`, inside an
+  explicitly historical handoff. The prior review and this review actually inspect the criteria.
+  It supplies no exemption for future definition changes. The active-plan concern is resolved;
+  a historical correction would still be useful.
+- **D12.5 misnames the native handoff:** still present; carried below.
+- **Frame-runtime maturity scope names an obsolete simulator dependency:** still present;
+  carried below.
+
+### 1. Suggestion, verified: D12.5 still misnames the native handoff
+
+**Location:** `docs/plans/APPLE-TILE/DONE.json:420`, D12.5's `ask`;
+`docs/plans/APPLE-PRESENTATION/PLAN.md:76` and `:92`.
+
+D12.5 says “G4 M11 native handoff” must not transitively need APPLE-TILE's final cooked
+simulator item. The actual native handoff is **APPLE-TILE M11 → APPLE-PRESENTATION M8**.
+APPLE-PRESENTATION M11 is the final paired proof and deliberately depends on APPLE-TILE M12.
+Correct the name in the question while preserving that final dependency. Otherwise a literal
+reading asks the reviewer to disprove an intended dependency.
+
+This remains advisory: the producer design, consumer plan and module list agree on the actual
+sequence, and the item is judgeable using that sequence. No dependency changed in this revision.
+
+### 2. Suggestion, verified: the frame-runtime maturity scope retains an obsolete dependency
+
+**Location:** `docs/design/maturity.json:528`; compare
+`docs/plans/APPLE-TILE/DESIGN.md:328` and the G3t scope at `docs/design/maturity.json:590`.
+
+The frame-runtime summary still makes Mac M3 transitively dependent on T2 “Chrome M1/simulator
+M2”. The design explicitly excludes T2 simulator M2 and COOKED-DRAW M1 from that chain.
+Reconcile the summary with the active dependency definitions, retaining the final cooked
+simulator work in APPLE-TILE M12 and T2 M2's separate submitted-motion qualification.
+
+This is an inconsistent status summary, not a cycle in the design. Related historical claims
+that APPLE-TILE remains parked/unbuilt should not override the loop's acceptance records.
+No implementation or device promotion follows from correcting those descriptions.
+
+## Request and scope
+
+I read every entry in `docs/plans/APPLE-TILE/ACCEPTED.json` under `briefs`, oldest first.
+There is one entry, dated 11 November 2026:
 
 > Resolve APPLE-TILE M0's scope conflict: the builder blocked because done-when item D0.2 requires a native witness that the plan assigns to M10 (see the M0 blocked note and docs/evidence/render/apple-tile-m0/README.md at 03bc878a). Make M0's criteria and M10's consistent so M0 can be claimed on what it can prove, without weakening what V1 needs.
 
-I also read the module brief and relevant project-purpose, architecture and consumer definitions. The required
-outcome of this revision is a usable ordinary comparison baseline before renderer changes, followed by a real,
-exact native/twin composition proof at the native boundary milestone. It must preserve ordinary scene content,
-lighting, mirrors, history and fallback/lifecycle behavior, with separate target and performance qualifications.
-It does not commission a new rendering mechanism or an early native provider.
+I derived the required result from this request, the project brief's V1 exit/G3t boundary and
+the module brief before evaluating the design: M0 must establish the ordinary renderer's
+comparison baseline without requiring an unbuilt native provider; M10 must still establish
+real native composition and history behavior before G4 consumes it. The wider module must
+preserve the cooked scene, lighting, mirrors, accepted history, lifecycle and portable fallback,
+while deriving storage from actual readers and providing one generation-owned native boundary.
+Hardware performance and physical-display qualifications remain separate from functional proof.
 
-Inspection checklist for this revision:
+The review covers the complete current design and plan, all 33 done-when items, C04/C06/C07/C08/C12,
+the Metal boundary and hardware-native decisions, and the relevant architecture and G4/CREATOR
+consumer sections. There is no plans glossary. I read the project's review calibration and the
+skill's starting graded examples. I used prompting-agents for actionable finding text, and
+launched no agents.
 
-1. Compare every changed item field against the previously reviewed definitions; check for weakened proof or removed items.
-2. Trace M0's retained baseline, identity, present and omission requirements through later ordinary-image comparisons.
-3. Trace the excluded native witness to a mandatory later item, including first-fixture feasibility, actual native writes,
-   exact history/twin comparisons, negative controls and adverse lifecycle cases.
-4. Check the revised plan's ordering and G4 handoff for a missing prerequisite or new dependency cycle.
-5. Revisit both previous Suggestions and distinguish design approval from builder evidence and loop state.
+## Revision comparison
 
-A structured comparison of the two done-when files found no added or removed items and exactly one changed item
-field: **D0.2.statement**. Its `ask` and every other item's fields are unchanged. M0's state/block reason also
-differ from the prior revision; these are loop records, not new proof requirements. I read the entire plan diff,
-the relevant unchanged design mechanisms/comparison contract, D0.1–D0.5, M10–M12's retained obligations, the native
-boundary decision and G4's consumer sequence. The module design and brief are byte-for-byte unchanged. This is
-an incremental design review, not a renewed implementation audit of all intervening source changes. I read the
-M0 evidence README as context for the scope conflict; I did not independently validate its claimed results.
+A structured comparison against the previously reviewed revision's
+`docs/design/modules/APPLE-TILE-DONE.json` found **no definition changes**: no items added or
+removed, and no changes to statements, questions, inspections, commands, targets, quality bars,
+attended requirements or dependencies. Status, evidence and review records were excluded from
+that comparison because they record milestone execution rather than criteria.
 
-## Findings, ranked
+The design's original mechanism text differs only in links and the reference to the relocated
+handoff. Its appended “Sequence and dependencies” and “Proof and builder handoff” sections were
+compared with the old plan: migration notices, links and removal of historical status words
+change; mechanisms, sequence and proof obligations do not. The new plan is a compact work list
+that points back to those sections and to DONE.json. Approval therefore does not rely merely on
+an unchanged design hash or on an earlier verdict.
 
-### 1. Suggestion, verified: the plan incorrectly exempts changed criteria from design review
+## Design and proof assessment
 
-**Location:** `docs/design/modules/APPLE-TILE-PLAN.md:6` and `:155–157`.
+Before inspecting the design, I used this checklist: preserve the full ordinary comparison;
+make the native proof achievable at its own milestone; reject omitted work and false native
+production; preserve single ownership through refusal/loss/replacement; and trace downstream
+consumers without a dependency cycle.
 
-The plan says no review is owed for the D0.2 correction because the design text is unchanged. The changed
-criterion is part of the reviewable design: its old statement required a native witness in M0, and its new
-statement explicitly excludes that work. The review skill requires changed items to be checked even when the
-mechanism document is unchanged.
+**The requested correction is complete.** D0.2 expressly excludes the native witness and names
+D10.1/D10.2 as its owner. It still requires exact same-target portable repeats and retained
+full-resolution scene-linear/submitted SDR baselines. Its question retains build/compiler,
+shader, cooked-content, sample, exposure, format and H=1 identity, both surface-format branches,
+non-1:1 extents and letterboxing. Phase mismatch and omitted contribution, overflowing-cluster
+light, mirror and night stars must fail the comparison. M0 cannot pass on coarse image grids
+or silently replaced baselines.
 
-Replace that exemption with this review's revision and outcome, leaving milestone acceptance and unblock with
-the loop. This is a Suggestion because the loop did commission this independent review and the revised criterion
-is sound; the erroneous process sentence has not removed a required behavior or bypassed this actual check.
-It should not become precedent for skipping review of later criterion changes.
+**Native work remains mandatory.** D10.1 makes the small same-submit copy/select fixture the
+first implementation step, before route integration. D10.2 requires actual native writes,
+exact output/history readbacks against the prepared twin, distinct initialized history textures,
+submission-selected state and reset/replacement proof. No-op work, hidden WGSL production,
+stale history/input and omitted reset must fail. D10.3/D10.4 and M11 add held-resource,
+discard/failure, loss, iOS lease and replacement proofs. Ordinary runs disable the diagnostic
+and retain the pre-change baseline; its altered crop never becomes the ordinary reference.
 
-### 2. Suggestion, verified, carried forward: D12.5 still misnames the native handoff
+**The mechanism respects the boundary.** Separate whole raw and wgpu encoders share one ordered
+coordinator submission; native work cannot touch the surface or own a queue. C06 and the design
+agree on graph-declared accesses, initialization, retention and reset. I checked the installed,
+locked wgpu 30.0.1 source: `wgpu/src/api/command_encoder.rs:270` forbids ending the raw command
+buffer or overlapping access, and `wgpu-core/src/command/mod.rs:543` rejects mixing Raw/Wgpu
+recording on one encoder. The design respects those restrictions. Actual native ordering and
+copy/storage correctness remain the explicit M10 feasibility proof, not a claim established
+by this document review.
 
-**Location:** `docs/design/modules/APPLE-TILE-DONE.json:421`; compare
-`docs/design/modules/APPLE-PRESENTATION-PLAN.md:90–102`.
+Each group of items can be judged with its predecessors and stated external prerequisites:
 
-D12.5 still asks whether “G4 M11 native handoff” avoids the final cooked-simulator dependency. The consumer
-identifies **G3t M11 → G4 M8** as the native handoff; G4 M11 is the final paired proof and deliberately needs
-G3t M12. Correct the name without removing that final qualification dependency. As in the previous review,
-this is advisory: the actual sequence and producer handoff agree, and D0.2 does not alter them.
-
-### 3. Suggestion, verified, carried forward: the frame-runtime maturity scope retains an obsolete dependency
-
-**Location:** `docs/design/maturity.json:528`; compare its G3t scope at `:588` and
-`docs/design/modules/APPLE-TILE-PLAN.md:20–33`.
-
-The frame-runtime scope still describes Mac M3 as transitively blocked on T2 “Chrome M1/simulator M2”. The
-active G3t chain uses delivered T2 M0/M1 and diagnostic simulator function before M12, without T2 simulator M2.
-Align the summary with the active dependency chain while preserving COOKED-DRAW's final cooked-simulator
-ownership and T2 M2's stronger capture qualification. This remains an advisory status inconsistency, not a new
-cycle or a missing prerequisite introduced by this revision.
-
-## Assessment of the correction
-
-**M0 remains judgeable and discriminating.** D0.2 at lines 25–29 retains byte-identical same-target portable
-repeats and full-resolution pre-change scene-linear/submitted SDR baselines. Its unchanged question still requires
-build/compiler/shader/content/sample/exposure/format identity, H=1, both SDR/sRGB present controls, non-1:1 extents
-and letterboxing. Phase mismatch, missing contribution, a nonzero weak light in an overflowing cluster, mirror
-slot 5060 and missing night stars must each fail exact comparison with native-size differences. A coarse-grid
-comparison, silently refreshed baseline, widened tolerance or CPU float oracle cannot satisfy it. D0.1 still
-requires actual route/cut/variant coverage and separate realtime host-time motion. Removing the native witness
-from M0 does not remove any of these ordinary-path requirements.
-
-**The native proof is deferred to its existing owner, not deleted.** D10.1 still requires the small same-submit
-native copy/select fixture versus the prepared twin as the first implementation step, before route integration,
-and returns failures to boundary design review. D10.2 still requires exact RGBA16F output/history bytes through
-route, reset and replacement; distinct preinitialized histories; submission-selected state; and actual native
-writes. No-op native work, concealed WGSL production, stale source/history and omitted reset must fail. D10.3 and
-D10.4 retain completion, discard/loss and iOS lease/background proofs. D11.2 retains exact diagnostic recovery
-against its twin, and D12.3 retains the separately labelled final diagnostic. A build that never implements the
-native witness can finish M0, but cannot finish M10 or the module.
-
-**Ordinary and diagnostic comparisons remain separate throughout.** The unchanged design at
-`APPLE-TILE.md:244–270` requires later ordinary paths to match both paired recipes and the retained pre-change
-portable baseline; diagnostic output matches its own stateful twin. D10.2 explicitly disables the diagnostic in
-ordinary runs. The correction therefore cannot legitimize a new ordinary baseline or an omitted scene contribution.
-It also preserves the prior review's resolution of the unsupported CPU/GPU arithmetic premise.
-
-**Ordering is consistent.** The plan retains M0 → M1 → M2 → M3 → M10 → M11 → M12, with M0 creating the
-ordinary controls, M10 first building the native fixture and M11 completing its provider handoff. G4's native
-consumer still waits for G3t M11. M0 no longer needs a capability that its own successors must build. No new
-reverse dependency, native-provider requirement before M10, or loss of final qualification follows from the edit.
-The existing M0 `blocked` reason describes the now-corrected conflict; changing that loop state is outside this review.
-
-The plan's proposal to reuse retained evidence does not itself accept it. The builder must establish applicable
-source/input identity and rerun required claiming checks; the milestone reviewer must independently judge the
-proof under the review skill. This design verdict supplies no inherited pass for those observations.
-
-## Revision and verification record
-
-| Artifact | SHA-256 |
+| Items read | Judgeability and resistance to false success |
 | --- | --- |
-| APPLE-TILE.md | `d90de51acfddeb2fda00e9b763dc5b13be3d0f5ddedff520a78f24e069bc1e4f` |
-| APPLE-TILE-BRIEF.md | `f8b69b720d1d1729627eda41600a29eac58a866d726e8664f741116fef11a8a7` |
-| APPLE-TILE-PLAN.md | `9fc8365c1c705786c820bffc7c4e3f5299694cbecdb1d346061af80445e1eb68` |
-| APPLE-TILE-DONE.json | `04867f495f07c2f62856d3e1529eca94a13caf4a217d15fad803632b9e86782a` |
-| APPLE-TILE-ACCEPTED.json | `a18e52ff1e7bae4eb153d5886bbf9603348ae463b04f9ef8d5810b66e373a7cc` |
+| D0.1–D0.5 | Existing cooked route and T2 Mac capture support the baseline; ordinary omission controls and creation attribution discriminate; the traffic probe is explicitly historical method evidence; Chrome endpoint smoke is not allowed to stand in for submitted motion. No native implementation is required here. |
+| D1.1–D1.5 | Registry refusal tests, actual Metal storage inspection and later-reader mutations distinguish genuine eligibility from a recipe label. Paired and retained baselines catch shared regressions. Chrome uses T2 M1; simulator function needs neither cooked draw nor T2 M2. |
+| D2.1–D2.5 | Graph order and phase binding, healthy refusal versus loss, stale-generation retirement, exact images, iOS lease races and actual OS-window function cover the scheduling change. Attended window setup is explicit and does not depend back on Mac M3. |
+| D3.1–D3.5 | Resource/identity tracing and exact identity substitution test the pre-tone seam while retaining both shaders and the SDR intermediate. Optional-pass tests and consumer tracing discriminate pass-name timing from positional relabeling. Chrome and real-window checks remain required. |
+| D10.1–D10.4 | The first native fixture and exact stateful twin precede route integration. Negative controls, held completion, discarded work and background races reject a fake native path or premature history publication. |
+| D11.1–D11.3 | Bounded provider extents make replacement, preparation failure and stale completion testable before G4 live scaling. Recovery is compared with uninterrupted controls; native timing requires a real completed row and explicit clock treatment. |
+| D12.1–D12.6 | Integrated paired workloads include resident twins, validation/overflow costs, thermal duration, capture-OFF timing and observer arms. Final Mac window, Chrome omission controls and cooked simulator lifecycle remain mandatory. Missing speed evidence leaves a candidate unpromoted; it does not erase functional requirements. The D12.5 naming correction is advisory as explained above. |
 
-`RUSTC_WRAPPER= ./dev check-docs` passed before and after writing the report. The wrapper override avoids the
-external compiler cache; it skips no repository check. No GPU, browser, simulator, OS-window, motion or performance
-proof was run, and no images or video were judged. No agents were launched. Only this review file was changed;
-no captures were needed, no definitions/status records were edited, and no commit was made.
+**Consumer order remains consistent.** G4 receives pre-tone input at APPLE-TILE M3 and native
+providers at M11. Its M8 consumes the latter; its final M11 waits for APPLE-TILE M12. Mac M3
+waits for APPLE-TILE M3 and its own M2, with no reverse edge. Only APPLE-TILE M12 adds the cooked
+simulator prerequisite. CREATOR's profiler consumes M3 pass names; the architecture explicitly
+assigns its later timing-demand switch to CREATOR M2 without changing APPLE-TILE's criteria.
+The 2D scene/interface asks are explicitly future milestones when track 3 starts
+(`docs/plans/ARCHITECTURE.md:434`), not omissions from this V1 commission.
+
+The cost account preserves the SDR intermediate, upload layout and existing CPU light overflow;
+it counts selected/fallback resources and generation overlap. Deferred fusion, pointer uploads,
+compact rows, expanded GPU ranking and range consolidation are neither required nor claimed.
+Performance promotion requires comparable whole-frame and sustained thermal evidence. This
+preserves the brief's distinction between functional delivery and a measured hardware win.
+
+## Verification and limits
+
+`RUSTC_WRAPPER= ./dev check-docs` passed: 666 Markdown files, 3220 local links, 30 module records,
+crate policy and current design hashes. It passed both before and after writing this report.
+Repository checks validate documentation consistency, not GPU behavior.
+
+No GPU, browser, simulator, OS-window or performance run was performed, and no images or motion
+were judged. This is a design review, not a re-review of M0/M1 implementation. No captures were
+needed. Only `docs/evidence/APPLE-TILE/design-review.md` was edited; DONE.json, acceptance records
+and source files remain untouched. No commit was made; integration belongs to the loop.
+
+Reviewed design SHA-256: `062dea2d6dd62734467d48c202f10523e348f62830d7a24ac3f2f16df1c73be5`.
+Reviewed DONE.json SHA-256: `789d5573be075b79831ca5e6d6c3c7e8a6f664314c61996799db272b3c852233`.
 
 DESIGN OK
