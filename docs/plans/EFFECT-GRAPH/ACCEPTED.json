@@ -1,10 +1,10 @@
 {
   "module": "EFFECT-GRAPH",
   "design": {
-    "verdict": "changes",
+    "verdict": "ok",
     "review": "docs/evidence/EFFECT-GRAPH/design-review.md",
-    "commit": "c9dd6cd0d58617e5b269054e9b9b5a564095ced9",
-    "hash": "efcef49432f4c83ff2d08cc23df4e7c4bbc622e384b69152a80a79e872f1faef",
+    "commit": "ae64c2bd9801c3d8699f4c53d00151b5b0620bbf",
+    "hash": "5c25a58e9ac08bd05a7d660220eec7ae9c035570181edae57e35226ba1f3b56d",
     "by": "review",
     "host": "codex",
     "model": "gpt-6-astra",
@@ -16,12 +16,12 @@
     "cli": "codex-cli 0.167.0-alpha.3.2",
     "path": "headless",
     "usage": {
-      "input": 93221,
-      "cached": 1073664,
-      "output": 6906,
+      "input": 100126,
+      "cached": 1302912,
+      "output": 6086,
       "turns": 1
     },
-    "at": "2026-11-11T15:37:47Z"
+    "at": "2026-11-11T16:07:29Z"
   },
   "milestones": {
     "M1": {
@@ -65,5 +65,30 @@
   "planner": {
     "host": "claude",
     "at": "2026-11-11T15:55:43Z"
-  }
+  },
+  "design_history": [
+    {
+      "verdict": "changes",
+      "review": "docs/evidence/EFFECT-GRAPH/design-review-1.md",
+      "commit": "c9dd6cd0d58617e5b269054e9b9b5a564095ced9",
+      "hash": "efcef49432f4c83ff2d08cc23df4e7c4bbc622e384b69152a80a79e872f1faef",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.167.0-alpha.3.2",
+      "path": "headless",
+      "usage": {
+        "input": 93221,
+        "cached": 1073664,
+        "output": 6906,
+        "turns": 1
+      },
+      "at": "2026-11-11T15:37:47Z"
+    }
+  ]
 }
