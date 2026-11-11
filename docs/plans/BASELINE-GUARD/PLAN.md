@@ -19,7 +19,7 @@ Criteria: M1.1–M1.5 in the done-when file.
 - [x] Add the reference-by-digest mode to `scripts/apple_tile_m1_compare_browser.py`, leaving its byte mode as it is.
 - [x] Add the gate to `./dev check`, with a test that drives fetch, rebase, gate and push against a throwaway remote.
 - [x] Run the three mutants and the stale-proof case through the loop's `land` in a scratch clone with a local bare remote. Keep the patches, the base revision, the commands and the logs.
-- [ ] Record the verifier's and the gate's run times from three runs each. Describe the gate and the verifier in CONTRIBUTING and `./dev help`.
+- [x] Record the verifier's and the gate's run times from three runs each. Describe the gate and the verifier in CONTRIBUTING and `./dev help`.
 
 Stop rules:
 - Never refresh, regenerate or edit a file under a registered baseline. If a baseline does not match on untouched main, end `BLOCKED` with the comparison; the refresh is its owner's.
