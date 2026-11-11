@@ -1,0 +1,13 @@
+{
+  "reason": "proved guard implementation must remain a covered branch change for stale-proof test",
+  "command": [
+    "git",
+    "--git-dir",
+    "/Users/ryannel/Workspace/thrum/.claude/worktrees/baseline-guard/tmp/baseline-guard/refusals/remote.git",
+    "update-ref",
+    "refs/heads/main",
+    "1d35b9a6136a4f040fd3fb73d3d48af654732ccb"
+  ],
+  "before": "6da0648147a0673e424bf7201437c41601ceb27d",
+  "after": "1d35b9a6136a4f040fd3fb73d3d48af654732ccb"
+}

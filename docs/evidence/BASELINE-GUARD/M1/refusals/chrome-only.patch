@@ -1,0 +1,13 @@
+diff --git a/examples/v1-game/src/host/scene_source.rs b/examples/v1-game/src/host/scene_source.rs
+index daa4ab10..7c58c023 100644
+--- a/examples/v1-game/src/host/scene_source.rs
++++ b/examples/v1-game/src/host/scene_source.rs
+@@ -517,6 +517,8 @@ impl SceneSource<PublishedPage> for GameScene {
+         }
+         .with_display_overlay(self.display_overlay)
+         .with_jitter_sequence(0, [640, 360]);
++        #[cfg(target_arch = "wasm32")]
++        let view = view.with_jitter_phase(0, [640, 360]);
+         // The diagnostic fixture's local Y zero is a two-metre reference datum.
+         // Authored scene and field coordinates already measure altitude above sea level.
+         let camera_altitude_m = view.camera_position()[1]

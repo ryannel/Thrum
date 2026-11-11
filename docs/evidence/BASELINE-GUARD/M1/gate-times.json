@@ -1,0 +1,38 @@
+[
+  {
+    "run": 1,
+    "seconds_including_python_startup": 0.08226583292707801,
+    "load": [
+      4.412109375,
+      3.05126953125,
+      3.1591796875
+    ],
+    "exit": 0,
+    "stdout": "PASS exact-baseline gate: proof tmp/baseline-guard/proofs/38e006bbfa332a563f84cacfc1e065d60922757436bae31e74d94e6a346179d4.json\nGate seconds: 0.044584; load: (4.412109375, 3.05126953125, 3.1591796875)\n",
+    "stderr": ""
+  },
+  {
+    "run": 2,
+    "seconds_including_python_startup": 0.0826484588906169,
+    "load": [
+      4.412109375,
+      3.05126953125,
+      3.1591796875
+    ],
+    "exit": 0,
+    "stdout": "PASS exact-baseline gate: proof tmp/baseline-guard/proofs/38e006bbfa332a563f84cacfc1e065d60922757436bae31e74d94e6a346179d4.json\nGate seconds: 0.044497; load: (4.412109375, 3.05126953125, 3.1591796875)\n",
+    "stderr": ""
+  },
+  {
+    "run": 3,
+    "seconds_including_python_startup": 0.07891958393156528,
+    "load": [
+      4.412109375,
+      3.05126953125,
+      3.1591796875
+    ],
+    "exit": 0,
+    "stdout": "PASS exact-baseline gate: proof tmp/baseline-guard/proofs/38e006bbfa332a563f84cacfc1e065d60922757436bae31e74d94e6a346179d4.json\nGate seconds: 0.042271; load: (4.412109375, 3.05126953125, 3.1591796875)\n",
+    "stderr": ""
+  }
+]

@@ -1,0 +1,12 @@
+test_digest_and_byte_modes_and_failures (__main__.ChromeTests.test_digest_and_byte_modes_and_failures) ... ok
+test_covered_change_refuses_until_exact_proof (__main__.GateTests.test_covered_change_refuses_until_exact_proof) ... ok
+test_covered_rebase_invalidates_proof (__main__.GateTests.test_covered_rebase_invalidates_proof) ... ok
+test_missing_base_and_dirty_inputs_fail_closed (__main__.GateTests.test_missing_base_and_dirty_inputs_fail_closed) ... fatal: Not a valid object name refs/remotes/origin/main
+ok
+test_no_covered_change_passes_without_proof (__main__.GateTests.test_no_covered_change_passes_without_proof) ... ok
+test_uncovered_rebase_preserves_proof (__main__.GateTests.test_uncovered_rebase_preserves_proof) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 2.352s
+
+OK

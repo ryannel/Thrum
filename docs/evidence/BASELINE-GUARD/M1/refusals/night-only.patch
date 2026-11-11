@@ -1,0 +1,12 @@
+diff --git a/examples/v1-game/params/showcase-night-upslope.params.json b/examples/v1-game/params/showcase-night-upslope.params.json
+index 800b1f55..41042e31 100644
+--- a/examples/v1-game/params/showcase-night-upslope.params.json
++++ b/examples/v1-game/params/showcase-night-upslope.params.json
+@@ -1,6 +1,6 @@
+ {
+   "world.paused": true,
+-  "sky.solar_time": 0,
++  "sky.solar_time": 6,
+   "camera.yaw": 0,
+   "camera.pitch": 7
+ }
