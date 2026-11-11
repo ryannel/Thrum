@@ -1,0 +1,22 @@
+{
+  "alpha_bits": 1056964609,
+  "capture_source": "SceneLinear",
+  "device_generation": 1,
+  "epoch": 1,
+  "exposure_gpu_words": [
+    981467136,
+    1161595503,
+    1093974830,
+    1170498953,
+    0,
+    350,
+    0,
+    1
+  ],
+  "headroom": 1,
+  "history_epoch": 1,
+  "presenter_generation": 2,
+  "source_tick": 350,
+  "submission_id": 349,
+  "timeline": 0
+}

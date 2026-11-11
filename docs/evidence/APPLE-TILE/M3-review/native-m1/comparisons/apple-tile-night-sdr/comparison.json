@@ -1,0 +1,29 @@
+{
+  "reference": {
+    "file": "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/docs/evidence/APPLE-TILE/M3-review/native-m1/apple-tile-night-sdr.reference",
+    "file_sha256": "b1e45c6ebe8e76cbe0942cc3ffb419abf4dc964e0f4c141ca0c887a48a1610a8",
+    "pixels_sha256": "b1e45c6ebe8e76cbe0942cc3ffb419abf4dc964e0f4c141ca0c887a48a1610a8",
+    "extent": [
+      1920,
+      1080
+    ],
+    "bytes_per_pixel": 4,
+    "encoding": "rgba8"
+  },
+  "candidate": {
+    "file": "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/docs/evidence/APPLE-TILE/M3-review/native-m1/apple-tile-night-sdr/checkpoint-0.rgba8",
+    "file_sha256": "b1e45c6ebe8e76cbe0942cc3ffb419abf4dc964e0f4c141ca0c887a48a1610a8",
+    "pixels_sha256": "b1e45c6ebe8e76cbe0942cc3ffb419abf4dc964e0f4c141ca0c887a48a1610a8",
+    "extent": [
+      1920,
+      1080
+    ],
+    "bytes_per_pixel": 4,
+    "encoding": "rgba8"
+  },
+  "equal": true,
+  "scope": "exact stored pixel bytes only; target/sample/exposure/history identity must be established by the caller",
+  "changed_pixels": 0,
+  "changed_bytes": 0,
+  "bounds_xyxy_exclusive": null
+}

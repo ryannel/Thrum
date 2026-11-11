@@ -1,0 +1,226 @@
+[
+  {
+    "name": "approach",
+    "record": {
+      "alpha": 0.004000000189989805,
+      "device_generation": 1,
+      "exposure_gpu_words": [
+        981467136,
+        1166640752,
+        1094546114,
+        1175404899,
+        0,
+        287,
+        0,
+        1
+      ],
+      "history_epoch": 1,
+      "pixel_source": "Sdr",
+      "presenter_generation": 1,
+      "session": 1,
+      "source_epoch": "1",
+      "source_tick": 226,
+      "submission_id": 286,
+      "submit_ms": 1790.8,
+      "surface_presented": true,
+      "tick": 226,
+      "timeline": 0,
+      "ordinal": 107,
+      "file": "frames/000107.rgba.gz",
+      "rgba_sha256": "d0b89562fbe72648fb40aebdb058e6c5d7b5246eaa3092ebae500cd14fce6015",
+      "bytes": 1402382
+    }
+  },
+  {
+    "name": "mirror-light",
+    "record": {
+      "alpha": 0.9300000071525574,
+      "device_generation": 1,
+      "exposure_gpu_words": [
+        981467136,
+        1161577196,
+        1093972587,
+        1170479886,
+        0,
+        412,
+        0,
+        1
+      ],
+      "history_epoch": 1,
+      "pixel_source": "Sdr",
+      "presenter_generation": 1,
+      "session": 1,
+      "source_epoch": "1",
+      "source_tick": 350,
+      "submission_id": 411,
+      "submit_ms": 3871.2999999999997,
+      "surface_presented": true,
+      "tick": 350,
+      "timeline": 0,
+      "ordinal": 232,
+      "file": "frames/000232.rgba.gz",
+      "rgba_sha256": "31d1d44327d56ace4a36672b247af5da86cb61b17bc9bf43a24d2884d9afa7f7",
+      "bytes": 1392147
+    }
+  },
+  {
+    "name": "pre-cut",
+    "record": {
+      "alpha": 0.8080000877380371,
+      "device_generation": 1,
+      "exposure_gpu_words": [
+        981467136,
+        1160492144,
+        1093833329,
+        1169349624,
+        0,
+        438,
+        0,
+        1
+      ],
+      "history_epoch": 1,
+      "pixel_source": "Sdr",
+      "presenter_generation": 1,
+      "session": 1,
+      "source_epoch": "1",
+      "source_tick": 376,
+      "submission_id": 437,
+      "submit_ms": 4303.7,
+      "surface_presented": true,
+      "tick": 376,
+      "timeline": 0,
+      "ordinal": 258,
+      "file": "frames/000258.rgba.gz",
+      "rgba_sha256": "2105aeb851f4b2324b438d91dc7d8cc0707ff3df8f12ab9182b3f950dfd08090",
+      "bytes": 1365722
+    }
+  },
+  {
+    "name": "post-cut",
+    "record": {
+      "alpha": 0.906000018119812,
+      "device_generation": 1,
+      "exposure_gpu_words": [
+        981467136,
+        1160080248,
+        1093776917,
+        1168920566,
+        0,
+        448,
+        0,
+        1
+      ],
+      "history_epoch": 2,
+      "pixel_source": "Sdr",
+      "presenter_generation": 1,
+      "session": 1,
+      "source_epoch": "1",
+      "source_tick": 386,
+      "submission_id": 447,
+      "submit_ms": 4471.099999999999,
+      "surface_presented": true,
+      "tick": 386,
+      "timeline": 0,
+      "ordinal": 268,
+      "file": "frames/000268.rgba.gz",
+      "rgba_sha256": "9c13c60e0cab096b6e992e7f0423de6228d5653c70eab212a21d7ae95dcd8ee5",
+      "bytes": 1264635
+    }
+  },
+  {
+    "name": "near-plane",
+    "record": {
+      "alpha": 0.7860000133514404,
+      "device_generation": 1,
+      "exposure_gpu_words": [
+        981467136,
+        1152336221,
+        1092815715,
+        1161203395,
+        0,
+        592,
+        0,
+        1
+      ],
+      "history_epoch": 2,
+      "pixel_source": "Sdr",
+      "presenter_generation": 1,
+      "session": 1,
+      "source_epoch": "1",
+      "source_tick": 530,
+      "submission_id": 591,
+      "submit_ms": 6869.099999999999,
+      "surface_presented": true,
+      "tick": 530,
+      "timeline": 0,
+      "ordinal": 412,
+      "file": "frames/000412.rgba.gz",
+      "rgba_sha256": "7b5b3960c1092cdad2c21fbcfff1b16858f805b3c319a6b49ab95adfaee50265",
+      "bytes": 1003726
+    }
+  },
+  {
+    "name": "first",
+    "record": {
+      "alpha": 1,
+      "device_generation": 1,
+      "exposure_gpu_words": [
+        981467136,
+        1167762785,
+        1094723611,
+        1176573685,
+        0,
+        180,
+        0,
+        1
+      ],
+      "history_epoch": 1,
+      "pixel_source": "Sdr",
+      "presenter_generation": 1,
+      "session": 1,
+      "source_epoch": "1",
+      "source_tick": 179,
+      "submission_id": 179,
+      "submit_ms": 2.1,
+      "surface_presented": true,
+      "tick": 179,
+      "timeline": 0,
+      "ordinal": 0,
+      "file": "frames/000000.rgba.gz",
+      "rgba_sha256": "78e3a11ea0abb90063669cb9018112050bad7c2abd5b5148a01b15093850d176",
+      "bytes": 1350896
+    }
+  },
+  {
+    "name": "last",
+    "record": {
+      "alpha": 0.7799999713897705,
+      "device_generation": 1,
+      "exposure_gpu_words": [
+        981467136,
+        1148148874,
+        1092238718,
+        1157191098,
+        0,
+        661,
+        0,
+        1
+      ],
+      "history_epoch": 2,
+      "pixel_source": "Sdr",
+      "presenter_generation": 1,
+      "session": 1,
+      "source_epoch": "1",
+      "source_tick": 599,
+      "submission_id": 660,
+      "submit_ms": 8018.8,
+      "surface_presented": true,
+      "tick": 599,
+      "timeline": 0,
+      "ordinal": 481,
+      "file": "frames/000481.rgba.gz",
+      "rgba_sha256": "b31fe34945020cb95a7cea40efa4aa19805ff372e7d7b86c2dc115cdfec87dc2",
+      "bytes": 1015642
+    }
+  }
+]

@@ -1,0 +1,29 @@
+{
+  "reference": {
+    "file": "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/docs/evidence/APPLE-TILE/M3-review/native-m2/apple-tile-bgra8-mirror-light.reference",
+    "file_sha256": "47b36b1ccce1f0e73547d7ed53eebf34572af01fa59405765ed36d5f47dc1ca1",
+    "pixels_sha256": "47b36b1ccce1f0e73547d7ed53eebf34572af01fa59405765ed36d5f47dc1ca1",
+    "extent": [
+      1000,
+      800
+    ],
+    "bytes_per_pixel": 4,
+    "encoding": "bgra8"
+  },
+  "candidate": {
+    "file": "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/docs/evidence/APPLE-TILE/M3-review/native-m2/apple-tile-bgra8/checkpoints/mirror-light.surface-bgra8",
+    "file_sha256": "47b36b1ccce1f0e73547d7ed53eebf34572af01fa59405765ed36d5f47dc1ca1",
+    "pixels_sha256": "47b36b1ccce1f0e73547d7ed53eebf34572af01fa59405765ed36d5f47dc1ca1",
+    "extent": [
+      1000,
+      800
+    ],
+    "bytes_per_pixel": 4,
+    "encoding": "bgra8"
+  },
+  "equal": true,
+  "scope": "exact stored pixel bytes only; target/sample/exposure/history identity must be established by the caller",
+  "changed_pixels": 0,
+  "changed_bytes": 0,
+  "bounds_xyxy_exclusive": null
+}

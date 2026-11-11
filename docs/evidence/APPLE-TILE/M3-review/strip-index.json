@@ -1,0 +1,62 @@
+[
+  {
+    "source": "native-m1/apple-tile-route-motion/preview-1x.mp4",
+    "sheets": [
+      "strips/native-m1-apple-tile-route-motion-01.png",
+      "strips/native-m1-apple-tile-route-motion-02.png"
+    ],
+    "sampling": "10 fps, row-major, 40 frames / sheet, original elapsed-time movie"
+  },
+  {
+    "source": "native-m1/portable-variants-motion/preview-1x.mp4",
+    "sheets": [
+      "strips/native-m1-portable-variants-motion-01.png"
+    ],
+    "sampling": "10 fps, row-major, 40 frames / sheet, original elapsed-time movie"
+  },
+  {
+    "source": "native-m1/apple-tile-variants-motion/preview-1x.mp4",
+    "sheets": [
+      "strips/native-m1-apple-tile-variants-motion-01.png"
+    ],
+    "sampling": "10 fps, row-major, 40 frames / sheet, original elapsed-time movie"
+  },
+  {
+    "source": "native-m1/portable-route-motion/preview-1x.mp4",
+    "sheets": [
+      "strips/native-m1-portable-route-motion-01.png",
+      "strips/native-m1-portable-route-motion-02.png"
+    ],
+    "sampling": "10 fps, row-major, 40 frames / sheet, original elapsed-time movie"
+  },
+  {
+    "source": "native-m2/apple-tile-route-motion/preview-1x.mp4",
+    "sheets": [
+      "strips/native-m2-apple-tile-route-motion-01.png",
+      "strips/native-m2-apple-tile-route-motion-02.png"
+    ],
+    "sampling": "10 fps, row-major, 40 frames / sheet, original elapsed-time movie"
+  },
+  {
+    "source": "native-m2/portable-render-stall-motion/preview-1x.mp4",
+    "sheets": [
+      "strips/native-m2-portable-render-stall-motion-01.png"
+    ],
+    "sampling": "10 fps, row-major, 40 frames / sheet, original elapsed-time movie"
+  },
+  {
+    "source": "native-m2/portable-route-motion/preview-1x.mp4",
+    "sheets": [
+      "strips/native-m2-portable-route-motion-01.png",
+      "strips/native-m2-portable-route-motion-02.png"
+    ],
+    "sampling": "10 fps, row-major, 40 frames / sheet, original elapsed-time movie"
+  },
+  {
+    "source": "native-m2/apple-tile-render-stall-motion/preview-1x.mp4",
+    "sheets": [
+      "strips/native-m2-apple-tile-render-stall-motion-01.png"
+    ],
+    "sampling": "10 fps, row-major, 40 frames / sheet, original elapsed-time movie"
+  }
+]

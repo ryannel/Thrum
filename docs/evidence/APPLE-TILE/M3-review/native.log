@@ -1,0 +1,6 @@
+RUN ['target/release/thrum-cook', 'cook', 'examples/v1-game/assets/showcase', '/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/docs/evidence/APPLE-TILE/M3-review/valley']
+scan 1.013625ms (reused 0 hashed 10 unstable 0), cooked 9 reused 0 in 35.130041ms, publish 362.209µs -> generation 1
+RUN ['python3', 'scripts/apple_tile_m1.py', '--store', '/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/docs/evidence/APPLE-TILE/M3-review/valley', '--output', '/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/docs/evidence/APPLE-TILE/M3-review/native-m1']
+{"passed": true, "failures": []}
+RUN ['python3', 'scripts/apple_tile_m2.py', '--store', '/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/docs/evidence/APPLE-TILE/M3-review/valley', '--output', '/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/docs/evidence/APPLE-TILE/M3-review/native-m2']
+{"passed": true, "failures": []}

@@ -1,0 +1,18 @@
+[
+  {
+    "id": "chrome-day-sdr",
+    "exit": 0
+  },
+  {
+    "id": "chrome-day-scene-linear",
+    "exit": 0
+  },
+  {
+    "id": "chrome-night-sdr",
+    "exit": 0
+  },
+  {
+    "id": "chrome-night-scene-linear",
+    "exit": 0
+  }
+]

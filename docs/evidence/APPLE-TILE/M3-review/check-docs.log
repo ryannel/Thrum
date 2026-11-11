@@ -1,0 +1,9 @@
+note: crates/thrum-app/src/app.rs: 1321 code lines; check it still holds one responsibility
+note: crates/thrum-core/src/sim/publication.rs: 1378 code lines; check it still holds one responsibility
+note: crates/thrum-core/src/sim/registered_world.rs: 1814 code lines; check it still holds one responsibility
+note: crates/thrum-core/src/sim/runtime.rs: 1730 code lines; check it still holds one responsibility
+note: crates/thrum-render/src/graph.rs: 1261 code lines; check it still holds one responsibility
+note: crates/thrum-render/src/runtime/tests/device.rs: 1307 code lines; check it still holds one responsibility
+note: crates/thrum-render/src/runtime.rs: 1382 code lines; check it still holds one responsibility
+note: crates/thrum-render/src/synthetic.rs: 2408 code lines; check it still holds one responsibility
+Repository checks passed: 708 Markdown files, 3965 local links, 30 module records, crate policy and current design hashes.

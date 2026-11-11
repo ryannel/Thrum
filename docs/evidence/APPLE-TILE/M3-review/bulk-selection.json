@@ -1,0 +1,85 @@
+{
+  "reason": "verified source archives reduced to selected lossless checkpoints, timing/identity manifests and original-time previews; recapture with retained runner to reproduce full source",
+  "removed": [
+    {
+      "path": "native-m1/portable-sun-sdr/frames.zst",
+      "sha256": "3dbedfdb358688f26445c10f92b3a7f5db2394478cfc31e2be9babae32daa069",
+      "bytes": 2648732
+    },
+    {
+      "path": "native-m1/apple-tile-route-motion/frames.zst",
+      "sha256": "1fc0dae3d523f72c6a62ef889e4a5cd45122187a9111c44fc84ad4c23300625c",
+      "bytes": 1688841589
+    },
+    {
+      "path": "native-m1/portable-night-sdr/frames.zst",
+      "sha256": "58a32ab8fc9daddecc9172615eca528ed8224829e4de576faab8a34f48ebb4fc",
+      "bytes": 1237424
+    },
+    {
+      "path": "native-m1/portable-variants-motion/frames.zst",
+      "sha256": "5e0e59c78246fc85203de3ac8c413d76c3e0b57e25e326f0ecc5ad03ac6d7480",
+      "bytes": 322975363
+    },
+    {
+      "path": "native-m1/apple-tile-sun-linear/frames.zst",
+      "sha256": "66f46f5550858529551981a53c53bf62843810659180a1f8f0b4ccb8c49c1aec",
+      "bytes": 8874005
+    },
+    {
+      "path": "native-m1/apple-tile-variants-motion/frames.zst",
+      "sha256": "10324d47eef32fa8cbcbae7f6c464448486e460a842541df61ccde7d5b098c7c",
+      "bytes": 322858210
+    },
+    {
+      "path": "native-m1/portable-sun-linear/frames.zst",
+      "sha256": "66f46f5550858529551981a53c53bf62843810659180a1f8f0b4ccb8c49c1aec",
+      "bytes": 8874005
+    },
+    {
+      "path": "native-m1/portable-route-motion/frames.zst",
+      "sha256": "1d8fef44c6e14e740556a6a37b7de608d0510620d1ec4804ed24bbcfc7789e00",
+      "bytes": 1695797281
+    },
+    {
+      "path": "native-m1/apple-tile-night-sdr/frames.zst",
+      "sha256": "58a32ab8fc9daddecc9172615eca528ed8224829e4de576faab8a34f48ebb4fc",
+      "bytes": 1237424
+    },
+    {
+      "path": "native-m1/portable-night-linear/frames.zst",
+      "sha256": "c3274a22bfef0b5925edb55524bf7ddee3169d5d1e80270ed7eebf555774d56a",
+      "bytes": 5082726
+    },
+    {
+      "path": "native-m1/apple-tile-sun-sdr/frames.zst",
+      "sha256": "3dbedfdb358688f26445c10f92b3a7f5db2394478cfc31e2be9babae32daa069",
+      "bytes": 2648732
+    },
+    {
+      "path": "native-m1/apple-tile-night-linear/frames.zst",
+      "sha256": "c3274a22bfef0b5925edb55524bf7ddee3169d5d1e80270ed7eebf555774d56a",
+      "bytes": 5082726
+    },
+    {
+      "path": "native-m2/apple-tile-route-motion/frames.zst",
+      "sha256": "a2d924d6b8ab1e723d0a55eb305e8287072b4b6b98fe52f5fc8e85b89ce950eb",
+      "bytes": 1694284899
+    },
+    {
+      "path": "native-m2/portable-render-stall-motion/frames.zst",
+      "sha256": "7a8e5fde29d2893e9e7866357acdb11036c08d4393f0666f6833c8e98f2c999e",
+      "bytes": 509494194
+    },
+    {
+      "path": "native-m2/portable-route-motion/frames.zst",
+      "sha256": "a2966b32845b0c1a322923b666108732587cc33f31c29ecf9e9c1f048bae3ca8",
+      "bytes": 1679161827
+    },
+    {
+      "path": "native-m2/apple-tile-render-stall-motion/frames.zst",
+      "sha256": "6a5e620db522bd15f0bd8e2f7ba5d45619a0f84ef6f7573eba0d6211a7afffe9",
+      "bytes": 505861477
+    }
+  ]
+}

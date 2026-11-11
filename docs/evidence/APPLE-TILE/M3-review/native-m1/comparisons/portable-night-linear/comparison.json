@@ -1,0 +1,29 @@
+{
+  "reference": {
+    "file": "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/docs/evidence/APPLE-TILE/M3-review/native-m1/portable-night-linear.reference",
+    "file_sha256": "7f2be0f560c6bba5c7227553d78243fa5c1ec3c01579151223ca84dfe1dedb5e",
+    "pixels_sha256": "7f2be0f560c6bba5c7227553d78243fa5c1ec3c01579151223ca84dfe1dedb5e",
+    "extent": [
+      1920,
+      1080
+    ],
+    "bytes_per_pixel": 8,
+    "encoding": "rgba16f"
+  },
+  "candidate": {
+    "file": "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/docs/evidence/APPLE-TILE/M3-review/native-m1/portable-night-linear/checkpoint-0.rgba16f",
+    "file_sha256": "7f2be0f560c6bba5c7227553d78243fa5c1ec3c01579151223ca84dfe1dedb5e",
+    "pixels_sha256": "7f2be0f560c6bba5c7227553d78243fa5c1ec3c01579151223ca84dfe1dedb5e",
+    "extent": [
+      1920,
+      1080
+    ],
+    "bytes_per_pixel": 8,
+    "encoding": "rgba16f"
+  },
+  "equal": true,
+  "scope": "exact stored pixel bytes only; target/sample/exposure/history identity must be established by the caller",
+  "changed_pixels": 0,
+  "changed_bytes": 0,
+  "bounds_xyxy_exclusive": null
+}

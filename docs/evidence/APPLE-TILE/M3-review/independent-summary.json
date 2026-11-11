@@ -1,0 +1,168 @@
+{
+  "native-m1": {
+    "passed": true,
+    "comparisons": 38,
+    "failures": [],
+    "binary_sha256": "e2eef29ba2a10f572088e56ad9ea3fbf8a4e6b76f7e0925cd22de9dbb68d32f0"
+  },
+  "native-m2": {
+    "passed": true,
+    "comparisons": 4,
+    "failures": [],
+    "binary_sha256": "e2eef29ba2a10f572088e56ad9ea3fbf8a4e6b76f7e0925cd22de9dbb68d32f0"
+  },
+  "native-m1/apple-tile-route-motion": {
+    "images": 964,
+    "history_epochs": [
+      1,
+      2
+    ],
+    "stalls": [],
+    "complete": true,
+    "gpu_samples": 963,
+    "elapsed_seconds": 8.028549875,
+    "named_timing_samples": 963,
+    "stars_present": 963,
+    "untimed_names": [
+      "contribution upload",
+      "output readback",
+      "timestamp query resolve/readback"
+    ]
+  },
+  "native-m1/portable-variants-motion": {
+    "images": 481,
+    "history_epochs": [
+      0
+    ],
+    "stalls": [],
+    "complete": true,
+    "gpu_samples": 480,
+    "elapsed_seconds": 4.003053459,
+    "named_timing_samples": 480,
+    "stars_present": 240,
+    "untimed_names": [
+      "contribution upload",
+      "output readback",
+      "timestamp query resolve/readback"
+    ]
+  },
+  "native-m1/apple-tile-variants-motion": {
+    "images": 480,
+    "history_epochs": [
+      0
+    ],
+    "stalls": [],
+    "complete": true,
+    "gpu_samples": 479,
+    "elapsed_seconds": 3.992798708,
+    "named_timing_samples": 479,
+    "stars_present": 240,
+    "untimed_names": [
+      "contribution upload",
+      "output readback",
+      "timestamp query resolve/readback"
+    ]
+  },
+  "native-m1/portable-route-motion": {
+    "images": 963,
+    "history_epochs": [
+      1,
+      2
+    ],
+    "stalls": [],
+    "complete": true,
+    "gpu_samples": 962,
+    "elapsed_seconds": 8.028323709,
+    "named_timing_samples": 962,
+    "stars_present": 962,
+    "untimed_names": [
+      "contribution upload",
+      "output readback",
+      "timestamp query resolve/readback"
+    ]
+  },
+  "native-m2/apple-tile-route-motion": {
+    "images": 964,
+    "history_epochs": [
+      1,
+      2
+    ],
+    "stalls": [],
+    "complete": true,
+    "gpu_samples": 963,
+    "elapsed_seconds": 8.027711666,
+    "named_timing_samples": 963,
+    "stars_present": 963,
+    "untimed_names": [
+      "contribution upload",
+      "output readback",
+      "timestamp query resolve/readback"
+    ]
+  },
+  "native-m2/portable-render-stall-motion": {
+    "images": 451,
+    "history_epochs": [
+      0
+    ],
+    "stalls": [
+      {
+        "end_ns": 2051247292,
+        "kind": "render-owner-before-ordinary-step",
+        "requested_ns": 1801208958,
+        "start_ns": 1801208958
+      }
+    ],
+    "complete": true,
+    "gpu_samples": 450,
+    "elapsed_seconds": 4.003055208,
+    "named_timing_samples": 450,
+    "stars_present": 0,
+    "untimed_names": [
+      "contribution upload",
+      "output readback",
+      "timestamp query resolve/readback"
+    ]
+  },
+  "native-m2/portable-route-motion": {
+    "images": 956,
+    "history_epochs": [
+      1,
+      2
+    ],
+    "stalls": [],
+    "complete": true,
+    "gpu_samples": 955,
+    "elapsed_seconds": 8.027164792,
+    "named_timing_samples": 955,
+    "stars_present": 955,
+    "untimed_names": [
+      "contribution upload",
+      "output readback",
+      "timestamp query resolve/readback"
+    ]
+  },
+  "native-m2/apple-tile-render-stall-motion": {
+    "images": 450,
+    "history_epochs": [
+      0
+    ],
+    "stalls": [
+      {
+        "end_ns": 2061086833,
+        "kind": "render-owner-before-ordinary-step",
+        "requested_ns": 1801059708,
+        "start_ns": 1801059708
+      }
+    ],
+    "complete": true,
+    "gpu_samples": 449,
+    "elapsed_seconds": 4.000637791,
+    "named_timing_samples": 449,
+    "stars_present": 0,
+    "untimed_names": [
+      "contribution upload",
+      "output readback",
+      "timestamp query resolve/readback"
+    ]
+  }
+}

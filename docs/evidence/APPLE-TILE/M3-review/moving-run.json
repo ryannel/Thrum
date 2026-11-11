@@ -1,0 +1,221 @@
+{
+  "command": "moving",
+  "route": "examples/v1-game/routes/moving-v1.json",
+  "route_sha256": "7cedae789b8f04470c46ed94c13bc13094d97dfbe1e32cc83b8f70457115a094",
+  "comparator": 2,
+  "passed": true,
+  "failures": [],
+  "labels": {
+    "native": "native submitted SDR output",
+    "chrome": "Chrome presented canvas"
+  },
+  "build_seconds": 5.618235333822668,
+  "builds": {
+    "commit": "e2129272a95335ae94aeb680668dc553c60b61d4",
+    "main_base": "e2129272a95335ae94aeb680668dc553c60b61d4",
+    "origin_main_at_run": "1f478d13363f04d2cbcab958b533756017a28e64",
+    "dirty": true,
+    "built_by_this_run": true,
+    "thrum_cook_sha256": "cf7f98bd5238aecaf0c567f400fb30de16ddcad6e432a123d88554e7b3206689",
+    "v1_game_sha256": "3c8710f9f35b7e5418067cd0f8d895efb47dc3889f0f4004cfbd6726d626f26b",
+    "wasm_sha256": "04a62be750ab4f4d9a8bf528bae29f8e521e43eaaa365efe75f1ab7f7ba8df9f"
+  },
+  "generation_1_root": "70d2baf823d09d85574f7cdfce7102648754544dd7d68659e9bd92dd5f30e21d",
+  "chrome_slot_waits": {
+    "chrome-1": {
+      "waits": 1,
+      "max_ms": 5.599999904632568
+    },
+    "chrome-2": {
+      "waits": 2,
+      "max_ms": 2.9000000953674316
+    }
+  },
+  "controls": {
+    "moving-route-hidden-start": "Error: the page started hidden",
+    "moving-route-hidden": "Error: the page was hidden during the route",
+    "moving-route-clamp": "Error: step at tick 226 clamped, overloaded or dropped: {\"tick\":226,\"callbacks\":2,\"presented\":2,\"timestamp_clamps\":1,\"overload_events\":0,\"dropped_reports\":0,\"dropped_views\":0,\"generation\":1,\"extent\":[1280,720],\"committed_solar_hours\":17.361331939697266,\"committed_solar_bits\":1099621378,\"slot_waits\":0,\"slot_wait_ms\":0}",
+    "moving-route-edit": "Error: step at tick 225 clamped, overloaded or dropped: {\"tick\":225,\"callbacks\":2,\"presented\":1,\"timestamp_clamps\":1,\"overload_events\":1,\"dropped_reports\":0,\"dropped_views\":0,\"generation\":1,\"extent\":[1280,720],\"committed_solar_hours\":17.35999870300293,\"committed_solar_bits\":1099620679,\"slot_waits\":0,\"slot_wait_ms\":0}",
+    "moving-route-skip": "Error: step at tick 226 clamped, overloaded or dropped: {\"tick\":226,\"callbacks\":1,\"presented\":0,\"timestamp_clamps\":0,\"overload_events\":0,\"dropped_reports\":0,\"dropped_views\":1,\"generation\":1,\"extent\":[1280,720],\"committed_solar_hours\":17.361331939697266,\"committed_solar_bits\":1099621378,\"slot_waits\":0,\"slot_wait_ms\":0}",
+    "moving-route-phi": "header phase [0.1, 1]; alpha rejected at 361 of 361 ticks",
+    "moving-route-generation": "cooked generation Some(2) has not drawn as the route's 1",
+    "moving-route-phi-images": {
+      "approach": [
+        0.17520833333333505,
+        1.0000000000000284,
+        2.3227083333332907
+      ],
+      "mirror-light": [
+        0.23520833333335153,
+        1.4529166666666953,
+        4.086875000000006
+      ],
+      "pre-cut": [
+        0.3697916666666525,
+        2.0602083333333403,
+        7.212916666666662
+      ],
+      "post-cut": [
+        0.1485416666666879,
+        0.9529166666666811,
+        3.560208333333326
+      ],
+      "near-plane": [
+        0.04312499999999867,
+        0.24729166666665967,
+        0.8783333333333351
+      ]
+    },
+    "native-generation": "capture failed: cooked generation Some(1) is not the route's 2",
+    "native-frame-cap": "capture failed: route needs 784 frames, over the 560-frame cap",
+    "native-yaw-step": "capture failed: yaw step over \u03c0 between ticks 0 and 90"
+  },
+  "identity_mismatches": {},
+  "identity": {
+    "fields": [
+      "alpha_bits",
+      "rendered_solar_bits",
+      "committed_solar_bits",
+      "eye",
+      "yaw",
+      "pitch",
+      "epoch",
+      "submission"
+    ],
+    "ticks": 361,
+    "targets": [
+      "chrome-1",
+      "chrome-2",
+      "native-1",
+      "native-2"
+    ]
+  },
+  "checkpoints": {
+    "approach": {
+      "native-1": {
+        "file": "native-1/checkpoints/approach.ppm",
+        "sha256": "124d5fbea2ad6c48e5274918301067b02950eb4e3ee67b00bf72f65ad356f752"
+      },
+      "native-2": {
+        "file": "native-2/checkpoints/approach.ppm",
+        "sha256": "124d5fbea2ad6c48e5274918301067b02950eb4e3ee67b00bf72f65ad356f752"
+      },
+      "chrome-1": {
+        "file": "chrome-1/moving-route-checkpoints/approach.png",
+        "sha256": "affe5f904c7c8730caf1166234abf7716db1a5068f1230a0c617c0bc60e156f6"
+      },
+      "chrome-2": {
+        "file": "chrome-2/moving-route-checkpoints/approach.png",
+        "sha256": "affe5f904c7c8730caf1166234abf7716db1a5068f1230a0c617c0bc60e156f6"
+      },
+      "native_repeat_identical": true,
+      "chrome_repeat_identical": true,
+      "chrome_vs_native": [
+        0.013750000000020654,
+        0.05229166666668542,
+        0.12812500000003033
+      ]
+    },
+    "mirror-light": {
+      "native-1": {
+        "file": "native-1/checkpoints/mirror-light.ppm",
+        "sha256": "fc182c378b1a60cba4efc97a7e5b819ea7b0ec63041313cc65fc80b77ceb1fa4"
+      },
+      "native-2": {
+        "file": "native-2/checkpoints/mirror-light.ppm",
+        "sha256": "fc182c378b1a60cba4efc97a7e5b819ea7b0ec63041313cc65fc80b77ceb1fa4"
+      },
+      "chrome-1": {
+        "file": "chrome-1/moving-route-checkpoints/mirror-light.png",
+        "sha256": "e78b29bf66fa556c46fde812c136d5d2dd54ac7ea2c3d52471c1b2b485e1aea3"
+      },
+      "chrome-2": {
+        "file": "chrome-2/moving-route-checkpoints/mirror-light.png",
+        "sha256": "e78b29bf66fa556c46fde812c136d5d2dd54ac7ea2c3d52471c1b2b485e1aea3"
+      },
+      "native_repeat_identical": true,
+      "chrome_repeat_identical": true,
+      "chrome_vs_native": [
+        0.02249999999995585,
+        0.19937499999999395,
+        0.43625000000002956
+      ]
+    },
+    "pre-cut": {
+      "native-1": {
+        "file": "native-1/checkpoints/pre-cut.ppm",
+        "sha256": "c65a9a4ba73f442cd2082d405b7ed35f82e583d22d1ea506b130be081d69ac55"
+      },
+      "native-2": {
+        "file": "native-2/checkpoints/pre-cut.ppm",
+        "sha256": "c65a9a4ba73f442cd2082d405b7ed35f82e583d22d1ea506b130be081d69ac55"
+      },
+      "chrome-1": {
+        "file": "chrome-1/moving-route-checkpoints/pre-cut.png",
+        "sha256": "9e66de117e4e23cdf45d372662475bf56b49e9a0dbffc624847cea678d6e0a38"
+      },
+      "chrome-2": {
+        "file": "chrome-2/moving-route-checkpoints/pre-cut.png",
+        "sha256": "9e66de117e4e23cdf45d372662475bf56b49e9a0dbffc624847cea678d6e0a38"
+      },
+      "native_repeat_identical": true,
+      "chrome_repeat_identical": true,
+      "chrome_vs_native": [
+        0.038333333333350574,
+        0.23083333333335077,
+        0.46708333333333957
+      ]
+    },
+    "post-cut": {
+      "native-1": {
+        "file": "native-1/checkpoints/post-cut.ppm",
+        "sha256": "5b2a3dfe7e27cad9b828d64c013dca00540c796d68731e6e2ba2505190ad09eb"
+      },
+      "native-2": {
+        "file": "native-2/checkpoints/post-cut.ppm",
+        "sha256": "5b2a3dfe7e27cad9b828d64c013dca00540c796d68731e6e2ba2505190ad09eb"
+      },
+      "chrome-1": {
+        "file": "chrome-1/moving-route-checkpoints/post-cut.png",
+        "sha256": "9d9744e12bccb17b92f451ded3cfb79dc159876152f9b97dd7faf592b5d846e6"
+      },
+      "chrome-2": {
+        "file": "chrome-2/moving-route-checkpoints/post-cut.png",
+        "sha256": "9d9744e12bccb17b92f451ded3cfb79dc159876152f9b97dd7faf592b5d846e6"
+      },
+      "native_repeat_identical": true,
+      "chrome_repeat_identical": true,
+      "chrome_vs_native": [
+        0.011249999999999242,
+        0.21020833333335057,
+        0.594583333333342
+      ]
+    },
+    "near-plane": {
+      "native-1": {
+        "file": "native-1/checkpoints/near-plane.ppm",
+        "sha256": "5f63d0eda7b09c466c727dbe3bdcbedb3266a0b9b7e04147c45572cb0fd7446b"
+      },
+      "native-2": {
+        "file": "native-2/checkpoints/near-plane.ppm",
+        "sha256": "5f63d0eda7b09c466c727dbe3bdcbedb3266a0b9b7e04147c45572cb0fd7446b"
+      },
+      "chrome-1": {
+        "file": "chrome-1/moving-route-checkpoints/near-plane.png",
+        "sha256": "73304ff5312d51f3a7caa76add8a98f19ae4a8cea146a4c4177b65b0ce0611e2"
+      },
+      "chrome-2": {
+        "file": "chrome-2/moving-route-checkpoints/near-plane.png",
+        "sha256": "73304ff5312d51f3a7caa76add8a98f19ae4a8cea146a4c4177b65b0ce0611e2"
+      },
+      "native_repeat_identical": true,
+      "chrome_repeat_identical": true,
+      "chrome_vs_native": [
+        0.0,
+        0.2499999999999858,
+        0.8879166666666597
+      ]
+    }
+  },
+  "scope": "Moving proof route on the cooked valley: per-tick identity of the actual authored camera, phase and solar hour on both targets, and checkpoint images under their actual labels. Chrome images are compositor captures of the presented canvas, not the submitted pre-display image. No timing, cadence or display claim."
+}

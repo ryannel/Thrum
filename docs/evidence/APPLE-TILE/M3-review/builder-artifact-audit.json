@@ -1,0 +1,21 @@
+{
+  "retained_files_checked": 279,
+  "hash_mismatches": [],
+  "source_files_checked": 564,
+  "source_differences": [
+    "scripts/apple_tile_m1_compare_browser.py",
+    "scripts/check_v1_browser.mjs"
+  ],
+  "native_comparisons": {
+    "native-m1.json.gz": {
+      "passed": true,
+      "count": 38,
+      "failures": []
+    },
+    "native-m2.json.gz": {
+      "passed": true,
+      "count": 4,
+      "failures": []
+    }
+  }
+}
