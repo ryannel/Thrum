@@ -29,3 +29,7 @@
   preparation; all three required mutations fail pixel equality, including the mesh tie with zero tolerance.
   The footprint reference search found no witness in 8,640 valid poses. Full flythrough, exact images, Check
   and integration remain unverified; no speed or new motion-quality claim.
+- 2026-11-11 Initial release full-path check failed at tick 866 (Frustum versus Direct, two pixels).
+  The unchanged rendering code subsequently passed isolated endpoint, 66-frame lead-in and full-prefix
+  replay through 866; the first failure remains unexplained and retained in the evidence. Full qualification
+  is being repeated with failure capture. Renderer regressions passed 242+9+8 tests. M1 remains open.
