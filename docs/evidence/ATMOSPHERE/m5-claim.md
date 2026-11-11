@@ -1,6 +1,6 @@
 # M5 target evidence
 
-11 November 2026. All ten M5 items pass on the MF1-rebased build. All eighteen target/mode/provider capture arms are complete; their build-input hashes match the claim. Whole frames and native-size crops cover noon, low Sun and the west-facing ridge on both targets. The twelve original real-time off/on sequences were inspected at verified 1× playback under the shared GPU lock. [Selection and hashes](m5/selection.json), [inspection observations](m5/records/visual-inspection.json).
+11 November 2026. All ten M5 items pass on the MF1-rebased build. All eighteen target/mode/provider capture arms are complete; their renderer inputs match the claim. The Chrome provenance list records the later scratch-directory bootstrap fix separately; capture helpers and renderer code are unchanged. Whole frames and native-size crops cover noon, low Sun and the west-facing ridge on both targets. The twelve original real-time off/on sequences were inspected at verified 1× playback under the shared GPU lock. [Selection and hashes](m5/selection.json), [inspection observations](m5/records/visual-inspection.json).
 
 | Item | Target proof |
 |---|---|
@@ -20,3 +20,5 @@ All nine installed milestone-check commands pass. Costs are observations on this
 The parity base is `e0956ee6`, so both arms include the concurrently integrated APPLE-PRESENTATION M1 MF1 raster-projection fix. The previous `ba9549f5` and initial `a471fe5d` records remain history. [Current base](m5/base.json), [previous base](m5/records/pre-mf1-base.json), [initial base](m5-h2/base.json).
 
 The opt-in diagnostic is a 1024² fp16 field on a 2000 m plane with `[160,40]` m/s world drift. Its analytic shape and softness are stand-ins. A westward pan supplements the noon and 17.3 h routes for the ridge-shadow view. [West route](m5/west-route.json).
+
+The clean-verifier M5.3 failure was the absent ignored `tmp/` root. The checker now creates it before `realpath`. The exact environment command passes H1–H5 on hardware Chrome from a fresh source archive with no `tmp/`; output confinement and existing-directory rejection also pass. [Regression setup/result](m5/records/clean-start/regression.json), [check log](m5/records/clean-start/check.log.gz), [rows](m5/records/clean-start/environment.json.gz), [hardware](m5/records/clean-start/browser-gpu.json.gz).

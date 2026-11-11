@@ -1,0 +1,28 @@
+{
+  "exit_code": 0,
+  "started_unix": 1794410506.914419,
+  "completed_unix": 1794410605.738635,
+  "tmp_absent_before": true,
+  "tmp_created": true,
+  "command": "node scripts/check_v1_browser.mjs --case environment",
+  "source_base": "7f020ca1549120181179f07becbe833f265a0690",
+  "checker_sha256": "79c3c8d4ba192207315bf10fc218acca5694907c4459f00aa0606fc1af7f777b",
+  "output_guards": [
+    {
+      "case": "outside",
+      "exit_code": 1,
+      "expected_error": "--output must name a new directory"
+    },
+    {
+      "case": "existing",
+      "exit_code": 1,
+      "expected_error": "--output must name a new directory"
+    },
+    {
+      "case": "existing-output-directory",
+      "exit_code": 1,
+      "expected_error": "EEXIST"
+    }
+  ],
+  "fixture": "git archive HEAD plus the two-line scratch-root fix; no tmp/ at process start; target/ shares this worktree build cache"
+}

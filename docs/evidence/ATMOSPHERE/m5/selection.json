@@ -632,11 +632,19 @@
       }
     ],
     "clip": null,
-    "changed_build_inputs_since_capture": [],
+    "changed_build_inputs_since_capture": [
+      "scripts/check_v1_browser.mjs"
+    ],
     "visual_review": {
       "inspection_record": "docs/evidence/ATMOSPHERE/m5/records/visual-inspection.json",
       "static_inspected": true,
       "motion_1x_reviewed": false
+    },
+    "non_rendering_harness_change": {
+      "path": "scripts/check_v1_browser.mjs",
+      "captured_sha256": "c3b6c3e6792959db8babda73f4f7f1a8201cd613bc95acfde42ca5d0192a28e2",
+      "current_sha256": "79c3c8d4ba192207315bf10fc218acca5694907c4459f00aa0606fc1af7f777b",
+      "scope": "main() creates the ignored tmp/ root before realpath; exported capture helpers and renderer inputs unchanged"
     }
   },
   {
@@ -720,11 +728,19 @@
       }
     ],
     "clip": null,
-    "changed_build_inputs_since_capture": [],
+    "changed_build_inputs_since_capture": [
+      "scripts/check_v1_browser.mjs"
+    ],
     "visual_review": {
       "inspection_record": "docs/evidence/ATMOSPHERE/m5/records/visual-inspection.json",
       "static_inspected": true,
       "motion_1x_reviewed": false
+    },
+    "non_rendering_harness_change": {
+      "path": "scripts/check_v1_browser.mjs",
+      "captured_sha256": "c3b6c3e6792959db8babda73f4f7f1a8201cd613bc95acfde42ca5d0192a28e2",
+      "current_sha256": "79c3c8d4ba192207315bf10fc218acca5694907c4459f00aa0606fc1af7f777b",
+      "scope": "main() creates the ignored tmp/ root before realpath; exported capture helpers and renderer inputs unchanged"
     }
   },
   {
@@ -808,11 +824,19 @@
       }
     ],
     "clip": null,
-    "changed_build_inputs_since_capture": [],
+    "changed_build_inputs_since_capture": [
+      "scripts/check_v1_browser.mjs"
+    ],
     "visual_review": {
       "inspection_record": "docs/evidence/ATMOSPHERE/m5/records/visual-inspection.json",
       "static_inspected": true,
       "motion_1x_reviewed": false
+    },
+    "non_rendering_harness_change": {
+      "path": "scripts/check_v1_browser.mjs",
+      "captured_sha256": "c3b6c3e6792959db8babda73f4f7f1a8201cd613bc95acfde42ca5d0192a28e2",
+      "current_sha256": "79c3c8d4ba192207315bf10fc218acca5694907c4459f00aa0606fc1af7f777b",
+      "scope": "main() creates the ignored tmp/ root before realpath; exported capture helpers and renderer inputs unchanged"
     }
   },
   {
@@ -896,11 +920,19 @@
       }
     ],
     "clip": null,
-    "changed_build_inputs_since_capture": [],
+    "changed_build_inputs_since_capture": [
+      "scripts/check_v1_browser.mjs"
+    ],
     "visual_review": {
       "inspection_record": "docs/evidence/ATMOSPHERE/m5/records/visual-inspection.json",
       "static_inspected": true,
       "motion_1x_reviewed": false
+    },
+    "non_rendering_harness_change": {
+      "path": "scripts/check_v1_browser.mjs",
+      "captured_sha256": "c3b6c3e6792959db8babda73f4f7f1a8201cd613bc95acfde42ca5d0192a28e2",
+      "current_sha256": "79c3c8d4ba192207315bf10fc218acca5694907c4459f00aa0606fc1af7f777b",
+      "scope": "main() creates the ignored tmp/ root before realpath; exported capture helpers and renderer inputs unchanged"
     }
   },
   {
@@ -984,11 +1016,19 @@
       }
     ],
     "clip": null,
-    "changed_build_inputs_since_capture": [],
+    "changed_build_inputs_since_capture": [
+      "scripts/check_v1_browser.mjs"
+    ],
     "visual_review": {
       "inspection_record": "docs/evidence/ATMOSPHERE/m5/records/visual-inspection.json",
       "static_inspected": true,
       "motion_1x_reviewed": false
+    },
+    "non_rendering_harness_change": {
+      "path": "scripts/check_v1_browser.mjs",
+      "captured_sha256": "c3b6c3e6792959db8babda73f4f7f1a8201cd613bc95acfde42ca5d0192a28e2",
+      "current_sha256": "79c3c8d4ba192207315bf10fc218acca5694907c4459f00aa0606fc1af7f777b",
+      "scope": "main() creates the ignored tmp/ root before realpath; exported capture helpers and renderer inputs unchanged"
     }
   },
   {
@@ -1072,11 +1112,19 @@
       }
     ],
     "clip": null,
-    "changed_build_inputs_since_capture": [],
+    "changed_build_inputs_since_capture": [
+      "scripts/check_v1_browser.mjs"
+    ],
     "visual_review": {
       "inspection_record": "docs/evidence/ATMOSPHERE/m5/records/visual-inspection.json",
       "static_inspected": true,
       "motion_1x_reviewed": false
+    },
+    "non_rendering_harness_change": {
+      "path": "scripts/check_v1_browser.mjs",
+      "captured_sha256": "c3b6c3e6792959db8babda73f4f7f1a8201cd613bc95acfde42ca5d0192a28e2",
+      "current_sha256": "79c3c8d4ba192207315bf10fc218acca5694907c4459f00aa0606fc1af7f777b",
+      "scope": "main() creates the ignored tmp/ root before realpath; exported capture helpers and renderer inputs unchanged"
     }
   },
   {
@@ -1166,11 +1214,19 @@
       "duration_seconds": 8.033333,
       "scope": "720p 1x viewing aid. Native PNGs and verified complete local source retain exact pixels."
     },
-    "changed_build_inputs_since_capture": [],
+    "changed_build_inputs_since_capture": [
+      "scripts/check_v1_browser.mjs"
+    ],
     "visual_review": {
       "inspection_record": "docs/evidence/ATMOSPHERE/m5/records/visual-inspection.json",
       "static_inspected": true,
       "motion_1x_reviewed": true
+    },
+    "non_rendering_harness_change": {
+      "path": "scripts/check_v1_browser.mjs",
+      "captured_sha256": "c3b6c3e6792959db8babda73f4f7f1a8201cd613bc95acfde42ca5d0192a28e2",
+      "current_sha256": "79c3c8d4ba192207315bf10fc218acca5694907c4459f00aa0606fc1af7f777b",
+      "scope": "main() creates the ignored tmp/ root before realpath; exported capture helpers and renderer inputs unchanged"
     }
   },
   {
@@ -1260,11 +1316,19 @@
       "duration_seconds": 8.05805,
       "scope": "720p 1x viewing aid. Native PNGs and verified complete local source retain exact pixels."
     },
-    "changed_build_inputs_since_capture": [],
+    "changed_build_inputs_since_capture": [
+      "scripts/check_v1_browser.mjs"
+    ],
     "visual_review": {
       "inspection_record": "docs/evidence/ATMOSPHERE/m5/records/visual-inspection.json",
       "static_inspected": true,
       "motion_1x_reviewed": true
+    },
+    "non_rendering_harness_change": {
+      "path": "scripts/check_v1_browser.mjs",
+      "captured_sha256": "c3b6c3e6792959db8babda73f4f7f1a8201cd613bc95acfde42ca5d0192a28e2",
+      "current_sha256": "79c3c8d4ba192207315bf10fc218acca5694907c4459f00aa0606fc1af7f777b",
+      "scope": "main() creates the ignored tmp/ root before realpath; exported capture helpers and renderer inputs unchanged"
     }
   },
   {
@@ -1354,11 +1418,19 @@
       "duration_seconds": 8.041367,
       "scope": "720p 1x viewing aid. Native PNGs and verified complete local source retain exact pixels."
     },
-    "changed_build_inputs_since_capture": [],
+    "changed_build_inputs_since_capture": [
+      "scripts/check_v1_browser.mjs"
+    ],
     "visual_review": {
       "inspection_record": "docs/evidence/ATMOSPHERE/m5/records/visual-inspection.json",
       "static_inspected": true,
       "motion_1x_reviewed": true
+    },
+    "non_rendering_harness_change": {
+      "path": "scripts/check_v1_browser.mjs",
+      "captured_sha256": "c3b6c3e6792959db8babda73f4f7f1a8201cd613bc95acfde42ca5d0192a28e2",
+      "current_sha256": "79c3c8d4ba192207315bf10fc218acca5694907c4459f00aa0606fc1af7f777b",
+      "scope": "main() creates the ignored tmp/ root before realpath; exported capture helpers and renderer inputs unchanged"
     }
   },
   {
@@ -1448,11 +1520,19 @@
       "duration_seconds": 8.041367,
       "scope": "720p 1x viewing aid. Native PNGs and verified complete local source retain exact pixels."
     },
-    "changed_build_inputs_since_capture": [],
+    "changed_build_inputs_since_capture": [
+      "scripts/check_v1_browser.mjs"
+    ],
     "visual_review": {
       "inspection_record": "docs/evidence/ATMOSPHERE/m5/records/visual-inspection.json",
       "static_inspected": true,
       "motion_1x_reviewed": true
+    },
+    "non_rendering_harness_change": {
+      "path": "scripts/check_v1_browser.mjs",
+      "captured_sha256": "c3b6c3e6792959db8babda73f4f7f1a8201cd613bc95acfde42ca5d0192a28e2",
+      "current_sha256": "79c3c8d4ba192207315bf10fc218acca5694907c4459f00aa0606fc1af7f777b",
+      "scope": "main() creates the ignored tmp/ root before realpath; exported capture helpers and renderer inputs unchanged"
     }
   },
   {
@@ -1542,11 +1622,19 @@
       "duration_seconds": 8.033333,
       "scope": "720p 1x viewing aid. Native PNGs and verified complete local source retain exact pixels."
     },
-    "changed_build_inputs_since_capture": [],
+    "changed_build_inputs_since_capture": [
+      "scripts/check_v1_browser.mjs"
+    ],
     "visual_review": {
       "inspection_record": "docs/evidence/ATMOSPHERE/m5/records/visual-inspection.json",
       "static_inspected": true,
       "motion_1x_reviewed": true
+    },
+    "non_rendering_harness_change": {
+      "path": "scripts/check_v1_browser.mjs",
+      "captured_sha256": "c3b6c3e6792959db8babda73f4f7f1a8201cd613bc95acfde42ca5d0192a28e2",
+      "current_sha256": "79c3c8d4ba192207315bf10fc218acca5694907c4459f00aa0606fc1af7f777b",
+      "scope": "main() creates the ignored tmp/ root before realpath; exported capture helpers and renderer inputs unchanged"
     }
   },
   {
@@ -1636,11 +1724,19 @@
       "duration_seconds": 8.05,
       "scope": "720p 1x viewing aid. Native PNGs and verified complete local source retain exact pixels."
     },
-    "changed_build_inputs_since_capture": [],
+    "changed_build_inputs_since_capture": [
+      "scripts/check_v1_browser.mjs"
+    ],
     "visual_review": {
       "inspection_record": "docs/evidence/ATMOSPHERE/m5/records/visual-inspection.json",
       "static_inspected": true,
       "motion_1x_reviewed": true
+    },
+    "non_rendering_harness_change": {
+      "path": "scripts/check_v1_browser.mjs",
+      "captured_sha256": "c3b6c3e6792959db8babda73f4f7f1a8201cd613bc95acfde42ca5d0192a28e2",
+      "current_sha256": "79c3c8d4ba192207315bf10fc218acca5694907c4459f00aa0606fc1af7f777b",
+      "scope": "main() creates the ignored tmp/ root before realpath; exported capture helpers and renderer inputs unchanged"
     }
   }
 ]

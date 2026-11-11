@@ -1851,6 +1851,8 @@ async function main() {
   const caseMaterial = Buffer.from(materialHooks.identity);
   files.set('/case.material.wgsl', { bytes: caseMaterial, type: 'text/plain; charset=utf-8', sha256: sha(caseMaterial) });
   const output = path.resolve(repo, args.output ?? `tmp/v1-browser-${Date.now()}`);
+  // The ignored scratch root is absent in a fresh verifier checkout.
+  await fs.mkdir(path.join(repo, 'tmp'), { recursive: true });
   const temp = await fs.realpath(path.join(repo, 'tmp'));
   if (!output.startsWith(temp + path.sep)) throw new Error('--output must name a new directory under repository tmp/');
   const parent = await fs.realpath(path.dirname(output));

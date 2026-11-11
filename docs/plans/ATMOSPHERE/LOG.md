@@ -290,3 +290,12 @@ packages are verified. Whole/native-size inspections and original 1× playback c
 noon/low Sun and the west-facing ridge, off/on. Shade moves coherently between receivers while
 geometric-shadow regions retain sky light. Claim M5 for lead review; the diagnostic shape/softness
 and physical display cadence remain unqualified. [Evidence](../../evidence/ATMOSPHERE/m5-claim.md).
+
+
+## 11 November 2026 — M5 clean-verifier bootstrap fix
+
+M5.3 assumed the ignored scratch root already existed. Create it before canonicalising output paths.
+The exact environment command now passes on hardware Chrome from a fresh source archive lacking
+`tmp/`; output confinement and existing-directory refusal still pass. Renderer inputs and capture
+helpers are unchanged, and the saved selection records the harness-only hash change.
+[Regression evidence](../../evidence/ATMOSPHERE/m5-claim.md).
