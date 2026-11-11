@@ -33,3 +33,8 @@
   The unchanged rendering code subsequently passed isolated endpoint, 66-frame lead-in and full-prefix
   replay through 866; the first failure remains unexplained and retained in the evidence. Full qualification
   is being repeated with failure capture. Renderer regressions passed 242+9+8 tests. M1 remains open.
+- 2026-11-11 Complete release target subsequently passed all 1,930 ticks on `bb3fe56c`; both culled modes
+  equal Direct, no missing counts, Occlusion never exceeds Frustum and halves it on 1,918 ticks. The initial
+  nonrepeatable two-pixel failure remains explicitly retained, not explained or erased. The real baseline
+  verifier refused before capture: requires 16 GiB free, about 12 GiB available. Milestone check remains running;
+  native exact proof, profile Check and integration are unqualified.
