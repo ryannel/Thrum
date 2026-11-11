@@ -47,7 +47,7 @@ The orchestrate script writes this page from the plan files and records after ea
 - G4 can replace the pre-tone linear input without changing SDR output (APPLE-TILE M3): Not Started · [plan](APPLE-TILE/PLAN.md)
 - Depth, motion, reactive and exposure are stored for reconstruction, and history advances only with submitted frames (APPLE-PRESENTATION M2): Not Started · [plan](APPLE-PRESENTATION/PLAN.md)
 - Other modules read the one sky and Sun, and one cloud optical depth dims direct sunlight once (ATMOSPHERE M5): Ready for Review · [plan](ATMOSPHERE/PLAN.md)
-- BASELINE-GUARD's design: Design Changes Requested · [design](BASELINE-GUARD/DESIGN.md) · [plan](BASELINE-GUARD/PLAN.md)
+- A change that alters a registered exact image, on the Mac or in Chrome, is refused before it reaches main (BASELINE-GUARD M1): Not Started · [plan](BASELINE-GUARD/PLAN.md)
 - CULLING's design: Design Changes Requested · [design](CULLING/DESIGN.md) · [plan](CULLING/PLAN.md)
 - EFFECT-GRAPH's design: Design Changes Requested · [design](EFFECT-GRAPH/DESIGN.md) · [plan](EFFECT-GRAPH/PLAN.md)
 
@@ -74,7 +74,7 @@ The orchestrate script writes this page from the plan files and records after ea
 | 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE M3 | Waiting on APPLE-TILE:M3 |
 | 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE M0, M2, M3, M11 and M12 | M2 of 3 · Not Started |
 | 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads | APPLE-PRESENTATION M3 | M5 of 2 · Ready for Review |
-| 9 | BASELINE-GUARD | A change that alters another module's exact reference images is refused before it reaches main |  | Design Changes Requested |
+| 9 | BASELINE-GUARD | A change that alters another module's exact reference images is refused before it reaches main |  | M1 of 1 · Not Started |
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE M2, BASELINE-GUARD M1 | Design Changes Requested |
 | 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame | APPLE-TILE M2 and M3, APPLE-PRESENTATION M2, BASELINE-GUARD M1 | Design Changes Requested |
 | 12 | CONTENT-LOOP | Edited meshes, textures and volumes appear in the running game without a stall | APPLE-PRESENTATION M2 | Not planned yet |
