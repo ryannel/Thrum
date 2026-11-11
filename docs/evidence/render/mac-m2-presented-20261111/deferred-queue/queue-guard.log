@@ -1,0 +1,7 @@
+Traceback (most recent call last):
+  File "/Users/ryannel/Workspace/thrum/.claude/worktrees/mac-m2/tmp/mac-m2/presented-deferred-queue-guard.py", line 10, in <module>
+    observe()
+    ~~~~~~~^^
+  File "/Users/ryannel/Workspace/thrum/.claude/worktrees/mac-m2/scripts/qualify_mac_m2.py", line 136, in observe
+    raise RuntimeError('BLOCKED: local console unlock and awake active built-in panel required; owned recording stopped')
+RuntimeError: BLOCKED: local console unlock and awake active built-in panel required; owned recording stopped

@@ -1,68 +1,76 @@
 # Mac M2 presented-time qualification, 11 November
 
-Re-plan `ab66bca5` replaces the silent kernel display tables with OS-reported presented time per game drawable.
-The new six-recording commission is distinct from the exhausted 9 November commission; both journals are retained.
+**M2 remains open. M2.1, M2.3 and M2.4 have builder proof; M2.2 and M2.5 are blocked on an awake built-in panel
+and an available GPU slot.** At 14:10:01 UTC the continuous queue guard observed display 1 inactive/asleep while
+the console stayed unlocked. It cancelled only the owned request before GPU acquisition or recording.
+[Stop record](deferred-queue/queue-blocked.json), [panel witnesses](deferred-queue/panel-witness.jsonl.gz),
+[guard source](deferred-queue/guard.py) and [queued-request exit](deferred-queue/collector.log).
 
-The [witness command](../../../../scripts/mac_m2_presented.py) resolves XML references and filters the game PID,
-uses the `at-time` field, and joins drawable ordinals to game submissions. It never uses handler callback time
-or `delta` as presented time. Same-process signpost brackets give trace-origin offset; this Mac reports mach
-timebase numer/denom 125/3. Undo the export’s scaling and origin subtraction with
-`presented_media_ns = (raw_at_time + marker_offset_ns) * 3 / 125`. Each converted value is validated between its
-joined game opportunity and OS handler, against that independently bracketed origin. The marker-offset and
-converted-value error bounds are reported separately. [Apple documents the underlying property](https://developer.apple.com/documentation/metal/mtldrawable/presentedtime)
-as onscreen host time, with zero for unpresented/dropped frames. The export-unit inversion above is an observed
-quirk validated on this Mac. Values are OS witnesses, not kernel swaps or photons.
+Two of the six recordings granted by reviewed re-plan `ab66bca5` are used; four remain. The exhausted 9 November
+commission is separate history. No Developer mode, Instruments authorization or Screen Recording change is needed.
+[Commission](trace-commission.json) · [one-command attended runbook](RUNBOOK.md).
 
-All unmatched rows remain listed. Only neighboring valid OS presented rows can bound an unmatched ordinal
-entirely before or after the marked interval; an unbounded/internal missing row prevents qualification. Both
-handler and converted presented rows must span the whole markers. No missing value is filled from engine time.
+## Unattended witness command: M2.4
 
-The known-answer command finds OFF 526→527 (16.665250176 ms), OFF 544→545 (16.666624896 ms), and ON 558→559
-(16.665415680 ms). OFF 544→545 joins the 15.470792 ms game present-call gap. The command refuses both historical
-traces for full-interval cadence because their retained rows start after the pan began.
-[OFF analysis](retained-off-witness.json.gz), [ON analysis](retained-on-witness.json.gz), [targeted tests](tests.log).
+The [command](../../../../scripts/mac_m2_presented.py) resolves XML references, filters the game PID and uses
+`ca-client-presented-handler.at-time`. Same-process marker brackets and the independently read mach timebase
+125/3 invert the observed export units:
+`presented_media_ns = (raw_at_time + marker_offset_ns) * 3 / 125`. Results state origin and converted-value
+uncertainty separately. Converted times must fall between game opportunity and OS handler.
+[Apple’s property](https://developer.apple.com/documentation/metal/mtldrawable/presentedtime) is onscreen host
+time; the export inversion is validated here. Callback time and `delta` are never presented time.
+
+| Retained known-answer interval | OS interval | Game post-present record gap |
+| --- | ---: | ---: |
+| OFF 526→527 | 16.665250176 ms | 8.303958 ms |
+| OFF 544→545 | 16.666624896 ms | 15.470792 ms |
+| ON 558→559 | 16.665415680 ms | 8.772792 ms |
+
+Both historical traces are refused because retained rows start after the pan began.
+[OFF result](retained-off-witness.json.gz), [ON result](retained-on-witness.json.gz), [14 targeted tests](tests.log),
+[CPU-only build](test-build.log.gz). Tests cover known misses, coverage, conversion, XML/PID references, invalid
+rows, unmatched scope and finalization deadline. Unmatched rows stay listed; only valid OS neighbors can bound
+one outside Whole. Internal/unbounded missing rows refuse qualification. No engine time fills missing OS data.
 
 ```sh
 python3 scripts/mac_m2_presented.py --input docs/evidence/PLATFORM-RUNTIME-MAC/m2-presented-off-traced.tsv.gz --arm docs/evidence/render/mac-m2-20261111/off-traced --output tmp/mac-m2/retained-off-witness.json
 python3 scripts/mac_m2_presented.py --input docs/evidence/PLATFORM-RUNTIME-MAC/m2-presented-on-traced.tsv.gz --arm docs/evidence/render/mac-m2-20261111 --output tmp/mac-m2/retained-on-witness.json
-python3 -m unittest discover -s scripts -p test_mac_m2_presented.py -v
+python3 -m unittest discover -s scripts -p 'test_mac_m2*.py' -v
 ```
 
-The first two commands intentionally exit 2 with `coverage: false`; their interval findings remain readable.
-Tests cover known misses, truncated coverage, zero/absent time, unfamiliar status, missing/duplicate ordinal,
-incorrect conversion, and XML reference/PID attribution. A complete synthetic interval is accepted as a control.
+The first two commands intentionally exit 2 (`coverage: false`). For a fresh trace, use `--input <arm>/pan.trace`
+and `--arm <arm>` with retained game/marker records. Export has a 30-second timeout.
 
-The first explicit-window recording retained both markers but hit its process deadline. Its data is diagnostic
-evidence, not a bounded-completion pass. The changed configuration uses the installed Blank template plus Metal
-Application, Display and Points of Interest. It is pending the shared GPU lock. The collector pins the retained M2.1 release binary,
-preset and cooked-store hashes and uses explicit `--window 16s`, a 16-second record cap, 75-second finalization
-cap and 30-second export deadlines. Each arm records iostat, process/load snapshots and continuous panel witnesses.
-A locked or sleeping panel stops the owned work. No security setting or Screen Recording grant is requested.
+## Fresh attempts: M2.5 and M2.2 stay open
 
-Kernel display swaps, scan-out, photons, input-to-photon and physical iPhone timing remain unmeasured.
+| Attempt | Configuration | Outcome |
+| --- | --- | --- |
+| 1, OFF | Game Performance, explicit 16 s window | Full marked coverage, 840 handler rows / 842 game records; process hit 91 s deadline. Diagnostic only. |
+| 2, OFF | Blank + Metal Application, Display, Points of Interest; explicit 16 s window | Bounded completion/exports in 44.663 s, but only 130 handler rows spanning 7.582904–8.657917 s against Whole 4.544904–8.645149 s. Refused. |
+| Queued next, unconsumed | Same smaller set, omit `--window`; installed Blank declares `windowLimit=0` | Cancelled on panel sleep before launch. Configuration remains untested. |
 
-[Attended collection and inspection commands](RUNBOOK.md).
+[Attempt 1 invocation](attempt-1-off/invocation.json), [failure](attempt-1-off/collection.json),
+[witness](attempt-1-off/witness.json.gz), [display counts](attempt-1-off/row-counts.json), [load](attempt-1-off/load.json).
+Attempt 1 reports unfamiliar status at drawable 1 and missing terminal drawable 841 outside the marked OS
+interval. Five two-refresh intervals exist, three overlapping Whole. Its deadline failure prevents acceptance.
+[Attempt 2 invocation](attempt-2-off/invocation.json), [coverage refusal](attempt-2-off/witness.json.gz),
+[display counts](attempt-2-off/row-counts.json), [load](attempt-2-off/load.json). All 360 unjoined Whole submissions
+are reported. Both recordings identify only built-in display 1 and retain unlocked/awake panel witnesses.
 
-The first explicit-window attempt recorded 8.704884 seconds, PID 21493, 842 game submissions and 840 OS handler
-rows. Both converted presented times and handler rows span the four markers. Status 1 at drawable 1 and missing
-terminal drawable 841 are reported, bounded outside the marked presented interval by neighboring valid OS rows.
-The whole interval has 491 game submissions and five two-refresh intervals in the complete run (three overlap
-the marked interval). The trace is diagnostic only because its process exceeded the 91-second overall cap.
-Background one-minute load was 3.245→4.697 over collection/finalization; the retained iostat and lifetime process
-snapshot are host observations, not evidence for any specific cause.
-[First attempt](attempt-1-off/invocation.json), [bounded failure](attempt-1-off/collection.json),
-[converted witness](attempt-1-off/witness.json.gz), [row counts](attempt-1-off/row-counts.json),
-[load](attempt-1-off/load.json) and [commission](trace-commission.json).
+GPU covered each recording/export batch. Per-arm iostat, load and lifetime process snapshots are retained.
+[CPU/GPU samples and miss investigations](attempt-1-costs.json.gz) are reproduced by [the script](analyse-arms.py).
+Every strict over-period interval is listed; two-refresh intervals are identified separately.
+[OS request comparison](attempt-1-request-comparison.json) has 842 requests versus 842 game records, with median
+0.522 ms lag. It is neither presented time nor raw drawable identity. No isolated causal overhead is claimed.
 
-[First-attempt marked CPU/GPU samples and miss investigations](attempt-1-costs.json.gz) are reproducible with
-`python3 docs/evidence/render/mac-m2-presented-20261111/analyse-arms.py --root tmp/mac-m2/presented-20261111 --output tmp/mac-m2/attempt1-costs.json`.
-These are diagnostic observations. Host render-method elapsed durations include waits; GPU query intervals
-do not locate display presentation. All strict over-one-period values remain in the witness, while
-nearest-grid two-refresh intervals are listed separately. No numeric performance threshold is a gate.
+The pinned binary `aa1591522962933b55ec1f347cc538880f5eb14b7ea227bf4adcb7f00b585507`, preset and cooked store
+match [M2.1 motion](../mac-m2-20261110/README.md#runtime-motion) and
+[M2.3 window proof](../mac-m2-20261110/README.md#real-cametallayer-tap). Exact collector sources/hashes are retained.
+Mac M3 owns post-APPLE-TILE requalification. Fresh ON arms and 1× review remain owed. Callback targets, game
+records, GPU queries/completion observations, image time, movie PTS and OS presented time are distinct.
+Acquisition has no separate absolute timestamp here. Kernel swaps, scan-out, photons, input-to-photon and
+physical iPhone timing remain unmeasured.
 
-Attempt 2 completed collection and exports in 44.663 seconds but kept only 130 handler rows, from 7.582904 to
-8.657917 trace seconds, while Whole spans 4.544904–8.645149 seconds. It is refused for incomplete coverage.
-All 360 unjoined whole-interval submissions remain listed. The panel stayed unlocked/awake.
-[Attempt 2](attempt-2-off/invocation.json), [coverage refusal](attempt-2-off/witness.json.gz),
-[display counts](attempt-2-off/row-counts.json) and [load](attempt-2-off/load.json).
-The next changed hypothesis removes `--window` entirely while retaining the smaller instrument set.
+Local full traces remain under `tmp/mac-m2/{presented,presented-minimal}-20261111/off-traced/pan.trace`, with no
+durable backup. Selected exports are in Git. Integration uses the mandated land command, which rebases, runs
+`./dev check` under the external GPU lock and pushes normally. Independent lead review remains owed.

@@ -1,0 +1,16 @@
+{
+  "pid": 21493,
+  "os_present_request_rows": 842,
+  "game_surface_rows": 842,
+  "request_timestamp_minus_game_post_present_record_ms": {
+    "median": 0.521604,
+    "min": 0.239312,
+    "max": 41.693937
+  },
+  "rotating_request_surface_ids": [
+    "177",
+    "181",
+    "187"
+  ],
+  "scope": "Ordered count comparison, not a raw drawable identity proof. Request surface-id is a separate rotating field, not handler drawable-id. OS request timestamps lag game post-present records and are not onscreen presented times. Presented-handler ordinal join follows the approved M2 protocol."
+}

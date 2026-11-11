@@ -77,7 +77,7 @@
           "ask": "Does the evidence keep callback target, opportunity, acquisition/submit, GPU completion, engine image time, movie PTS and OS-reported presented time as separate measurements, with ON-arm intervals labelled under capture? Is cadence claimed only from this build's capture-OFF arm, never from handler callback times, engine records or an earlier trace? Are kernel display swaps, scan-out, input-to-photon and physical iPhone timing stated as unmeasured?",
           "target": "mac-metal",
           "status": "open",
-          "evidence": "",
+          "evidence": "docs/evidence/render/mac-m2-presented-20261111/README.md",
           "verdict": "",
           "review": "",
           "attended": "Unlock the Mac, wake the built-in panel and keep it awake for the sitting. No Developer mode change, Instruments authorization, Screen Recording grant or play is needed."
@@ -110,7 +110,7 @@
           "statement": "ATTENDED SETUP: a fresh recording of the release game on the active built-in panel yields the presented-time witness for the whole marked hold, pan and hold, with its time conversion validated.",
           "target": "mac-metal",
           "status": "open",
-          "evidence": "",
+          "evidence": "docs/evidence/render/mac-m2-presented-20261111/README.md",
           "ask": "In the fresh trace, do the TOC recording mode and the first and last retained rows show coverage of both MacM2Whole markers? Does every game submission in that interval join by ordinal to one presented row, or appear as unmatched? Is the presented-time conversion validated against the same-process markers with a stated error? Does the display identity list the built-in panel as the only display, or is the window's display identified separately? Are the display tables' row counts recorded, and the recordings used counted against the six granted on 11 November?",
           "verdict": "",
           "review": "",

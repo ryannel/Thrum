@@ -1,0 +1,16 @@
+Traceback (most recent call last):
+  File "/Users/ryannel/.claude/plugins/cache/ryannel-skills/orchestrate/1.7.1/skills/orchestration/build/scripts/agent_loop.py", line 7243, in <module>
+    main()
+    ~~~~^^
+  File "/Users/ryannel/.claude/plugins/cache/ryannel-skills/orchestrate/1.7.1/skills/orchestration/build/scripts/agent_loop.py", line 7221, in main
+    args.func(args)
+    ~~~~~~~~~^^^^^^
+  File "/Users/ryannel/.claude/plugins/cache/ryannel-skills/orchestrate/1.7.1/skills/orchestration/build/scripts/agent_loop.py", line 5673, in cmd_lock
+    with held(a.name, where):
+         ~~~~^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/lib/python3.15/contextlib.py", line 203, in __enter__
+    return next(self.gen)
+  File "/Users/ryannel/.claude/plugins/cache/ryannel-skills/orchestrate/1.7.1/skills/orchestration/build/scripts/agent_loop.py", line 2059, in held
+    fcntl.flock(handle, fcntl.LOCK_EX)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt
