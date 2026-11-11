@@ -65,7 +65,7 @@ attached shadows, the sphere's authored leftward sweep and exit, and settled 0°
 navigation sheets retain the three-second warm-up, initial hold, pan and final hold. No exact repeated image bytes
 occur inside either sweep. Largest source-image gaps were 17.438/27.879 ms, both during warm-up. The traced sweep
 has local gaps of 15.715 and 13.088 ms, recorded with their source IDs/yaws in its manifest. These are source-image
-observations. Ground E supplies scene/framing context. Timed movie inspection is queued under the shared GPU lock; source-image inspection is complete.
+observations. Ground E supplies scene/framing context. Timed movie inspection was not completed: the review request was cancelled while still waiting for the shared GPU lock, before acquisition. Source-image inspection is complete.
 [Untraced selected sources](on-untraced-current/selected.json), [traced selected sources](on-traced/selected.json),
 [untraced 1× movie](on-untraced-current/pan-1x.mp4) and [traced 1× movie](on-traced/pan-1x.mp4).
 
@@ -82,4 +82,4 @@ with the fresh baseline in `on-untraced-current`. Exact executed collector sourc
 collectors/. Selected evidence lives here in Git. Ignored local archives have no durable backup. The
 [runbook](../mac-m2-20261110/RUNBOOK.md) records the tested commands and exhausted allowance. The CPU test-binary build, six Python refusal controls, documentation check and full `./dev check` passed.
 The full check ran under the GPU lock; its [compressed log](check.log.gz) and hash are recorded in
-[verification state](verification.json). Timed playback and integration remain pending. Independent lead review remains owed.
+[verification state](verification.json). Timed playback remains unverified. Integration uses the required land command, whose own check reruns under the GPU lock. Independent lead review remains owed.
