@@ -10,7 +10,7 @@
 | M5.4 | Six Metal route stills match base/current/rerun byte for byte. Forward and cooked-volume source text match the base. The identical comparator rejects a one-byte image perturbation. [Metal parity](m5/records/rebased/metal-parity.json.gz) |
 | M5.5 | Six Chrome engine-tap views match base/current/rerun in one browser process and cooked store. A rendered wrong-camera control differs. [Chrome parity](m5/records/rebased/chrome-parity.json.gz) |
 | M5.6 | The shared production surface shade and cooked march pass zero, ln2, spatial and clear-support cases. Positive sky/emission and geometric shadow remain intact. The volume reference evaluates each march sample’s own world point. [Repository check](m5/records/rebased/check-05.log.gz) |
-| M5.7–M5.8 | Capture integrity, whole-frame/native-size inspection and 1× review are being completed on Metal and Chrome. These items remain open. |
+| M5.7–M5.8 | Whole-frame and native-size inspections are recorded for the completed views. The remaining captures and 1× review are queued. These items remain open. [Inspection record](m5/records/visual-inspection.json) |
 | M5.9 | Mac OFF/ON/ON/OFF forward GPU medians are 1.1599, 1.2041, 1.2011 and 1.1740 ms. Whole-frame GPU medians including the optional surface blit are 3.8604, 3.9946, 3.9592 and 4.3120 ms. [Samples, builds and load](m5/records/rebased/metal-cost.json.gz), [CPU wall and submission intervals](m5/records/rebased/metal-cost-summary.json) |
 | M5.10 | Chrome’s same-order RAF medians are 16.7 ms in each arm. Created synthetic/cooked-mesh/volume pipelines use 11/11/8 sampled textures off and 12/12/9 on, within the enabled limit of 16 on both targets. [Chrome costs and census](m5/records/rebased/chrome-cost.json.gz) |
 

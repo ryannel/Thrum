@@ -1,0 +1,72 @@
+{
+  "date": "2026-11-11",
+  "state": "partial",
+  "static_inspections": [
+    {
+      "target": "mac-metal",
+      "scene": "noon",
+      "source_pairs": [
+        {
+          "directory": "tmp/atmosphere-m5/metal-noon-off-realtime-06",
+          "manifest_sha256": "c826c88c5d8a63f3cfece91082fa98bdda820c06cfdce04ee8f02895cc26b407"
+        },
+        {
+          "directory": "tmp/atmosphere-m5/metal-noon-on-realtime-06",
+          "manifest_sha256": "f56956b7f3209d59151c314447f3a3818c1f9fef2dca0fe8ceb70978f158597e"
+        }
+      ],
+      "inspection": "Whole frames and native-size cooked-rock/ground crops at approximately 1.25 and 3.25 seconds",
+      "observation": "Cloud shade crosses the lit hills. Ground and directly lit rock surfaces dim together while sky-facing reflections and geometric-shadow regions retain light."
+    },
+    {
+      "target": "chrome-webgpu",
+      "scene": "noon",
+      "source_pairs": [
+        {
+          "directory": "tmp/atmosphere-m5/chrome-noon-off-fixed-06",
+          "manifest_sha256": "7c5c0a9afb9fcf9004edc756acc0d329531043a397466a4e39e6df16add9778d"
+        },
+        {
+          "directory": "tmp/atmosphere-m5/chrome-noon-on-fixed-06",
+          "manifest_sha256": "528d4e8aaa94fd05604dd9da19eb582b0372002fdbe00a0ef02901b444f500d1"
+        }
+      ],
+      "inspection": "Whole frames and native-size cooked-rock/ground crops at approximately 1.25 and 3.25 seconds",
+      "observation": "Cloud shade crosses the lit hills. Ground and directly lit rock surfaces dim together while sky-facing reflections and geometric-shadow regions retain light."
+    },
+    {
+      "target": "chrome-webgpu",
+      "scene": "low-sun",
+      "source_pairs": [
+        {
+          "directory": "tmp/atmosphere-m5/chrome-low-sun-off-fixed-06",
+          "manifest_sha256": "590ca01585adedbc3a2ee8b328d79cfeece5e88d4f3e90a472641119342f9782"
+        },
+        {
+          "directory": "tmp/atmosphere-m5/chrome-low-sun-on-fixed-06",
+          "manifest_sha256": "b2f684b63a589b3008e0cab80c46798750bfeccf1b0e1f0bf5b4a5ebc2c93669"
+        }
+      ],
+      "inspection": "Whole frames and native-size cooked-rock/ground crops at approximately 1.25 and 3.25 seconds",
+      "observation": "Cloud shade crosses the lit hills. Ground and directly lit rock surfaces dim together while sky-facing reflections and geometric-shadow regions retain light."
+    },
+    {
+      "target": "mac-metal",
+      "scene": "low-sun",
+      "source_pairs": [
+        {
+          "directory": "tmp/atmosphere-m5/metal-low-sun-off-realtime-06",
+          "manifest_sha256": "ad33a7655ed788c1433284c9f84bdf4918cb02ec3e5307fd99ece38fe33682b8"
+        },
+        {
+          "directory": "tmp/atmosphere-m5/metal-low-sun-on-realtime-06",
+          "manifest_sha256": "0dd685961ed638f4c545d1113aab2149b9f317725f0d30c09b0226d11f93b629"
+        }
+      ],
+      "inspection": "Whole frame and native-size cooked-rock/ground crops near 1.25 and 3.25 seconds.",
+      "observation": "The cloud pattern is visible over lit terrain. The shaded side of the cooked rock and the long geometric ground shadows remain sky-lit; no blackening appears."
+    }
+  ],
+  "motion_1x": [],
+  "remaining": "Complete all target sequences and review at 1x under the shared GPU lock."
+}
