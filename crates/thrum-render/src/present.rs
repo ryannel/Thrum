@@ -85,13 +85,21 @@ struct PresentContext<'a> {
     timings: Option<&'a mut GpuTimings>,
 }
 
+fn record_present(
+    frame: &mut PresentContext<'_>,
+    compiled: &CompiledPass,
+) -> Result<(), PresentError> {
+    record_present_resource(frame, compiled, &frame.presenter.surface_resource)
+}
+
 #[expect(
     clippy::cast_precision_loss,
     reason = "validated GPU texture dimensions fit exactly in f32 viewport coordinates on supported devices"
 )]
-fn record_present(
+fn record_present_resource(
     frame: &mut PresentContext<'_>,
     compiled: &CompiledPass,
+    surface_resource: &ResourceId,
 ) -> Result<(), PresentError> {
     let presenter = frame.presenter;
     let viewport = letterbox(presenter.source_extent, frame.surface_extent);
@@ -99,7 +107,7 @@ fn record_present(
         .begin_render(
             frame.encoder,
             [Some(GraphColorAttachment {
-                resource: &presenter.surface_resource,
+                resource: surface_resource,
                 range: 0..1,
                 view: frame.surface_view,
                 clear: wgpu::Color::BLACK,
@@ -126,6 +134,37 @@ fn record_present(
 }
 
 impl SurfacePresenter {
+    pub(crate) fn profile(&self) -> SurfaceProfile {
+        self.profile
+    }
+
+    pub(crate) fn encode_compiled(
+        &self,
+        encoder: &mut wgpu::CommandEncoder,
+        binding: &PresentationBinding,
+        surface_view: &wgpu::TextureView,
+        surface_extent: [u32; 2],
+        timings: Option<&mut GpuTimings>,
+        compiled: &CompiledPass,
+        surface_resource: &ResourceId,
+    ) -> Result<(), PresentError> {
+        if !Arc::ptr_eq(&self.owner, &binding.owner) {
+            return Err(PresentError::StaleTarget);
+        }
+        if surface_extent != self.profile.extent {
+            return Err(PresentError::Extent);
+        }
+        let mut frame = PresentContext {
+            presenter: self,
+            binding,
+            surface_view,
+            surface_extent,
+            encoder,
+            timings,
+        };
+        record_present_resource(&mut frame, compiled, surface_resource)
+    }
+
     /// Prepare the pipeline and graph before the first surface draw.
     /// # Errors
     /// Refuses unsupported formats/extents, invalid graph closure or GPU validation.
@@ -351,16 +390,63 @@ fn check_extent(limit: u32, extent: [u32; 2]) -> Result<(), PresentError> {
     }
 }
 
+pub(crate) fn pipeline_key(generation: u64) -> PipelineKey {
+    PipelineKey {
+        device_generation: generation,
+        revision: REVISION,
+        role: ROLE,
+    }
+}
+
+/// Declare the unchanged SDR surface consumer in either the standalone utility
+/// or the host's complete graph. Surface binding is supplied only at execution.
+pub(crate) fn surface_pass(
+    graph: &mut FrameGraph,
+    source: &ResourceId,
+    profile: SurfaceProfile,
+    generation: u64,
+) -> Result<(ResourceId, Pass), GraphError> {
+    let surface = graph.resource(
+        ResourceDescriptor::Texture {
+            width: profile.extent[0],
+            height: profile.extent[1],
+            layers: 1,
+            mips: 1,
+            samples: 1,
+            format: profile.format,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+        },
+        ResourceScope::Imported { initialized: false },
+    )?;
+    let pass = Pass {
+        name: PASS_NAME.into(),
+        scope: PassScope::View(1),
+        pipeline: Some(pipeline_key(generation)),
+        accesses: vec![
+            Access {
+                resource: source.clone(),
+                range: 0..1,
+                kind: AccessKind::SampledRead,
+                store: true,
+            },
+            Access {
+                resource: surface.clone(),
+                range: 0..1,
+                kind: AccessKind::AttachmentClear,
+                store: true,
+            },
+        ],
+        external_side_effect: true,
+    };
+    Ok((surface, pass))
+}
+
 fn compile_plan(
     generation: u64,
     source_extent: [u32; 2],
     profile: SurfaceProfile,
 ) -> Result<(ExecutableGraph<PresentFamily>, ResourceId), PresentError> {
-    let key = PipelineKey {
-        device_generation: generation,
-        revision: REVISION,
-        role: ROLE,
-    };
+    let key = pipeline_key(generation);
     let mut graph = FrameGraph::default();
     let source = graph
         .resource(
@@ -378,40 +464,9 @@ fn compile_plan(
             ResourceScope::Imported { initialized: true },
         )
         .map_err(PresentError::Graph)?;
-    let surface = graph
-        .resource(
-            ResourceDescriptor::Texture {
-                width: profile.extent[0],
-                height: profile.extent[1],
-                layers: 1,
-                mips: 1,
-                samples: 1,
-                format: profile.format,
-                usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-            },
-            ResourceScope::Imported { initialized: false },
-        )
-        .map_err(PresentError::Graph)?;
-    let present_pass = graph.pass(Pass {
-        name: PASS_NAME.into(),
-        scope: PassScope::View(1),
-        pipeline: Some(key),
-        accesses: vec![
-            Access {
-                resource: source,
-                range: 0..1,
-                kind: AccessKind::SampledRead,
-                store: true,
-            },
-            Access {
-                resource: surface.clone(),
-                range: 0..1,
-                kind: AccessKind::AttachmentClear,
-                store: true,
-            },
-        ],
-        external_side_effect: true,
-    });
+    let (surface, pass) =
+        surface_pass(&mut graph, &source, profile, generation).map_err(PresentError::Graph)?;
+    let present_pass = graph.pass(pass);
     let plan = graph
         .compile(generation, &BTreeSet::from([key]))
         .map_err(PresentError::Graph)?;

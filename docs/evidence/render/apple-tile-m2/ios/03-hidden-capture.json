@@ -1,0 +1,134 @@
+{
+  "before": {
+    "attachments": [
+      [
+        1206,
+        2622
+      ],
+      [
+        1206,
+        2622
+      ],
+      [
+        1206,
+        2622
+      ],
+      [
+        1206,
+        2622
+      ]
+    ],
+    "drawable": [
+      1206,
+      2622
+    ],
+    "source": [
+      1206,
+      2622
+    ],
+    "destination": [
+      1206,
+      2622
+    ],
+    "viewport": [
+      0,
+      0,
+      1206,
+      2622
+    ],
+    "projection_columns": [
+      3.4117565,
+      -0.00014088767,
+      -0.00011811483,
+      0.023504745,
+      0.0,
+      1.569674,
+      -1.9188921e-05,
+      0.0038185779,
+      0.08021521,
+      0.00599231,
+      0.0050237235,
+      -0.99971646,
+      0.0,
+      0.0,
+      0.09044936,
+      2.0005674
+    ],
+    "aspect": 0.45995421232850325,
+    "vertical_fov_degrees": 65.0000043953119,
+    "submission": 842,
+    "revision": 1,
+    "epoch": 2,
+    "generation": 1,
+    "presented": 843,
+    "textures_per_slot": 6,
+    "texture_bytes_per_slot": 77922704
+  },
+  "after": {
+    "attachments": [
+      [
+        1206,
+        2622
+      ],
+      [
+        1206,
+        2622
+      ],
+      [
+        1206,
+        2622
+      ],
+      [
+        1206,
+        2622
+      ]
+    ],
+    "drawable": [
+      1206,
+      2622
+    ],
+    "source": [
+      1206,
+      2622
+    ],
+    "destination": [
+      1206,
+      2622
+    ],
+    "viewport": [
+      0,
+      0,
+      1206,
+      2622
+    ],
+    "projection_columns": [
+      3.4117565,
+      -0.00014088767,
+      -0.00011811483,
+      0.023504745,
+      0.0,
+      1.569674,
+      -1.9188921e-05,
+      0.0038185779,
+      0.08021521,
+      0.00599231,
+      0.0050237235,
+      -0.99971646,
+      0.0,
+      0.0,
+      0.09044936,
+      2.0005674
+    ],
+    "aspect": 0.45995421232850325,
+    "vertical_fov_degrees": 65.0000043953119,
+    "submission": 842,
+    "revision": 1,
+    "epoch": 2,
+    "generation": 1,
+    "presented": 843,
+    "textures_per_slot": 6,
+    "texture_bytes_per_slot": 77922704
+  },
+  "capture_wall_seconds": 0.40360754216089845,
+  "scope": "simctl settled-state bracket, compositor frame identity unavailable"
+}

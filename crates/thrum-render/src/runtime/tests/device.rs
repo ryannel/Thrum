@@ -1365,3 +1365,5 @@ fn a_refused_contribution_keeps_the_prepared_replacement_usable() {
         );
     });
 }
+
+mod split_graph;

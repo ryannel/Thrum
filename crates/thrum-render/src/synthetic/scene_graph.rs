@@ -27,10 +27,14 @@ impl SceneGraphs<CompiledGraph> {
         generation: u64,
         keys: &BTreeSet<PipelineKey>,
         producer: Option<usize>,
+        surface: Option<&(ResourceId, Pass)>,
     ) -> Result<Self, GraphError> {
+        let mut compile = |readback: Option<Pass>| {
+            graph.compile_surface_variant(readback, generation, keys, producer, surface.cloned())
+        };
         Ok(Self {
-            scene: graph.compile(generation, keys)?,
-            readback: graph.compile_with_terminal_pass(readback, generation, keys, producer)?,
+            scene: compile(None)?,
+            readback: compile(Some(readback))?,
         })
     }
 
@@ -183,6 +187,7 @@ impl PreparedSynthetic {
         height: u32,
         row_bytes: u32,
         capture_source: CaptureSource,
+        profile: Option<crate::present::SurfaceProfile>,
     ) -> Result<CompiledScene, RenderError> {
         let mut graph = FrameGraph::default();
         let material = graph.resource(
@@ -337,12 +342,15 @@ impl PreparedSynthetic {
         let readback =
             Self::readback_pass(&mut graph, source, &exposure_sample, height, row_bytes)?;
         let generation = self.key.device_generation;
+        let surface =
+            Self::surface_pass(&mut graph, &output, generation, &mut prepared_keys, profile)?;
         let day = SceneGraphs::compile(
             &mut graph,
             readback.clone(),
             generation,
             &prepared_keys,
             (capture_source == CaptureSource::SceneLinear).then_some(forward),
+            surface.as_ref(),
         )?;
         let stars = if let Some((transmittance, observer)) = &atmosphere_inputs {
             self.append_stars(
@@ -363,6 +371,7 @@ impl PreparedSynthetic {
                 generation,
                 &prepared_keys,
                 (capture_source == CaptureSource::SceneLinear).then_some(stars),
+                surface.as_ref(),
             )?)
         } else {
             None
@@ -380,6 +389,21 @@ impl PreparedSynthetic {
                 prepass_depth: camera.prepass_depth,
             },
         })
+    }
+
+    fn surface_pass(
+        graph: &mut FrameGraph,
+        output: &ResourceId,
+        generation: u64,
+        prepared_keys: &mut BTreeSet<PipelineKey>,
+        profile: Option<crate::present::SurfaceProfile>,
+    ) -> Result<Option<(ResourceId, Pass)>, GraphError> {
+        profile
+            .map(|profile| {
+                prepared_keys.insert(crate::present::pipeline_key(generation));
+                crate::present::surface_pass(graph, output, profile, generation)
+            })
+            .transpose()
     }
 
     fn append_frame_uniform_reads(
@@ -801,6 +825,26 @@ impl PreparedSynthetic {
         let mut bindings = Vec::with_capacity(graph.pass_order.len());
         for (id, pass) in graph.pass_bindings() {
             let binding = match pass.pipeline {
+                Some(key) if key == crate::present::pipeline_key(self.key.device_generation) => {
+                    let surface = graph
+                        .surface_resource()
+                        .ok_or(RenderError::GraphPassMismatch)?;
+                    RecordBinding::<SceneFamily>::new(id, PassKind::Render, move |frame, pass| {
+                        let (presenter, binding, view, extent) =
+                            frame.surface.ok_or(RenderError::GraphPassMismatch)?;
+                        presenter
+                            .encode_compiled(
+                                frame.encoder,
+                                binding,
+                                view,
+                                extent,
+                                frame.timings.as_deref_mut(),
+                                pass,
+                                &surface,
+                            )
+                            .map_err(RenderError::Present)
+                    })
+                }
                 Some(key)
                     if self
                         .atmosphere

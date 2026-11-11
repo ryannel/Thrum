@@ -1,0 +1,12 @@
+{
+  "unix_ns": 1794379181436498000,
+  "completed": false,
+  "required": "D2.3 normal-speed 1x playback inspection",
+  "attempt": {
+    "tool": "mcp__cua_repl.js",
+    "action": "cua.getApp('IINA')",
+    "result": "Computer Use was not approved to use IINA"
+  },
+  "scope_completed": "Final full frames and native-size Sun/stars/mirror/local-light/near-plane/letterbox detail inspected. Exact source/PTS coverage verified. Contact sheets and cut-adjacent source frames are inspectable; no completed 1x playback claim.",
+  "unblock": "Allow access to a local video playback surface for the retained 1x movies."
+}

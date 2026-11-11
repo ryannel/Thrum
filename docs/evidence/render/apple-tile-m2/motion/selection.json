@@ -1,0 +1,70 @@
+{
+  "portable-render-stall-motion": {
+    "retained": [
+      {
+        "file": "000727.png",
+        "sha256": "5df466e13be254637f72531013b29e3ae8025201e4974de443329f82516dad42"
+      },
+      {
+        "file": "000277.png",
+        "sha256": "afd01f719bc9c2ddb83a2d57ccadddfa67280e5daec122e5b113adef15b08489"
+      }
+    ],
+    "lossless_source": "tmp/g3t-m2/source-final-surface/portable-render-stall-motion/frames.zst"
+  },
+  "portable-route-motion": {
+    "retained": [
+      {
+        "file": "000787.png",
+        "sha256": "4e91e378789ce2f7512bce40793a67dff76ec3efbb5f69dd0ffa36a7984e713d"
+      },
+      {
+        "file": "001227.png",
+        "sha256": "7fd700637159d59b9fceb39129b1d46526e81e30142f26bbf01359be1dbc6c7b"
+      },
+      {
+        "file": "000264.png",
+        "sha256": "c6a04dfa73d5f4c5f30a69e784eb8b3ee8dd31b3ff8f33f314a5bfcd1ec480a9"
+      },
+      {
+        "file": "000788.png",
+        "sha256": "763d9738108d7bb732700353578e82a546039adbe75b2246b242b168fab1d5b6"
+      }
+    ],
+    "lossless_source": "tmp/g3t-m2/source-final-surface/portable-route-motion/frames.zst"
+  },
+  "apple-tile-render-stall-motion": {
+    "retained": [
+      {
+        "file": "000742.png",
+        "sha256": "5df466e13be254637f72531013b29e3ae8025201e4974de443329f82516dad42"
+      },
+      {
+        "file": "000292.png",
+        "sha256": "afd01f719bc9c2ddb83a2d57ccadddfa67280e5daec122e5b113adef15b08489"
+      }
+    ],
+    "lossless_source": "tmp/g3t-m2/source-final-surface/apple-tile-render-stall-motion/frames.zst"
+  },
+  "apple-tile-route-motion": {
+    "retained": [
+      {
+        "file": "000813.png",
+        "sha256": "b1c0dc59d4bed9561b422f767a6cd79f52a4b024b2a8644e3467069ec5ed4a1f"
+      },
+      {
+        "file": "000814.png",
+        "sha256": "763d9738108d7bb732700353578e82a546039adbe75b2246b242b168fab1d5b6"
+      },
+      {
+        "file": "000291.png",
+        "sha256": "c6a04dfa73d5f4c5f30a69e784eb8b3ee8dd31b3ff8f33f314a5bfcd1ec480a9"
+      },
+      {
+        "file": "001253.png",
+        "sha256": "fead08bb7724bf1967fb3662ae105cdd982e810597ed5f9ba2103dff8f120ad0"
+      }
+    ],
+    "lossless_source": "tmp/g3t-m2/source-final-surface/apple-tile-route-motion/frames.zst"
+  }
+}

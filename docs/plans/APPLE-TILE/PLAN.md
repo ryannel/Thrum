@@ -26,7 +26,7 @@ Criteria: D1.1–D1.5 in the done-when file.
 Criteria: D2.1–D2.5 in the done-when file.
 
 - [ ] Merge graph and late surface binding; preserve refusal/loss/background/history rules. Complete attended OS-window matched-state reference comparisons and functional recovery.
-- [ ] Retain actual target proof and run scoped checks plus `./dev check` before claiming.
+- [x] Retain actual target proof and run scoped checks plus `./dev check` before claiming.
 
 ## M3 G4 can replace the pre-tone linear input without changing SDR output
 

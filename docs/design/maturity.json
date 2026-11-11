@@ -599,6 +599,18 @@
           "ios": "simulator_function_only_unified_memory_false_portable_physical_device_unqualified"
         },
         "evidence": "../evidence/render/apple-tile-m1/README.md"
+      },
+      "M2": {
+        "implementation": "split_scene_surface_graph_and_late_binding_in_builder_checkpoint",
+        "functional_validation": "Metal_graph_lifecycle_and_32_final_retained_exact_comparisons_pass_simulator_background_and_surface_replacement_pass_full_repository_gate_pass",
+        "experienced_quality": "not_reviewed",
+        "builder_observation": "Full frames, native crops, contact sheets and cut-adjacent samples inspected. D2.3 remains open: Computer Use rejected IINA access, so 1x playback inspection is incomplete.",
+        "real_window_function": "D2.5_open_OS_observer_Screen_Recording_preflight_denied_console_unlocked_no_grant_requested_or_changed",
+        "platform_performance": {
+          "mac": "unmeasured_no_promotion_or_panel_claim",
+          "ios": "simulator_diagnostic_function_only_no_physical_device_or_runtime_motion_claim"
+        },
+        "evidence": "../evidence/render/apple-tile-m2/README.md"
       }
     }
   },
