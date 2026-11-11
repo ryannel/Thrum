@@ -477,6 +477,8 @@ fn packed_light_direction(data: &[u8; LIGHT_BYTES]) -> Vec3 {
 pub enum RenderError {
     /// Requested hardware recipe is invalid or unsupported.
     Recipe(crate::capabilities::RecipeError),
+    /// Surface binding or recording was rejected.
+    Present(crate::present::PresentError),
     /// ABI validation failed.
     Abi(AbiError),
     /// Typed graph failed validation.
@@ -616,7 +618,15 @@ impl RecordFamily for SceneFamily {
     type Error = RenderError;
 }
 
+type LateSurface<'a> = (
+    &'a crate::present::SurfacePresenter,
+    &'a crate::present::PresentationBinding,
+    &'a wgpu::TextureView,
+    [u32; 2],
+);
+
 struct SceneContext<'a> {
+    surface: Option<LateSurface<'a>>,
     prepared: &'a PreparedSynthetic,
     target: &'a OffscreenTarget,
     encoder: &'a mut wgpu::CommandEncoder,
@@ -2035,6 +2045,32 @@ impl PreparedSynthetic {
         self.encode_inner(encoder, generation, target, timings, Some(readback), None)
     }
 
+    pub(crate) fn encode_surface(
+        &self,
+        target: &OffscreenTarget,
+        encoder: &mut wgpu::CommandEncoder,
+        surface: LateSurface<'_>,
+        timings: &mut GpuTimings,
+        readback: bool,
+    ) -> Result<(), RenderError> {
+        self.check_target(target)?;
+        target
+            .graph(readback)
+            .execute_after_acquire(&mut SceneContext {
+                surface: Some(surface),
+                prepared: self,
+                target,
+                encoder,
+                timings: Some(timings),
+                generation: self.key.device_generation,
+                readback: None,
+                contribution: None,
+                contribution_frame: self.contribution_frame(),
+                cooked_shadow_fit: None,
+                exposure_side: self.history.write_side(),
+            })
+    }
+
     fn encode_inner<'a>(
         &'a self,
         encoder: &'a mut wgpu::CommandEncoder,
@@ -2057,7 +2093,8 @@ impl PreparedSynthetic {
                 .map_err(|_| RenderError::GraphPassMismatch)?;
             timings.check_passes(generation, count)?;
         }
-        graph.execute(&mut SceneContext {
+        graph.execute_before_acquire(&mut SceneContext {
+            surface: None,
             prepared: self,
             target,
             encoder,
@@ -2183,6 +2220,37 @@ pub struct OffscreenTarget {
     frame_revision: u64,
 }
 impl OffscreenTarget {
+    pub(crate) fn bind_surface_graph(
+        &mut self,
+        prepared: &PreparedSynthetic,
+        profile: crate::present::SurfaceProfile,
+    ) -> Result<(), RenderError> {
+        let compiled = prepared.compile_graph(
+            self.width,
+            self.height,
+            self.row_bytes,
+            self.capture_source,
+            Some(profile),
+        )?;
+        self.textures
+            .rebind(
+                self.night_graphs
+                    .as_ref()
+                    .unwrap_or(&self.day_graphs)
+                    .readback
+                    .plan(),
+                &compiled.night.as_ref().unwrap_or(&compiled.day).readback,
+            )
+            .map_err(RenderError::Graph)?;
+        self.ids = compiled.ids;
+        self.day_graphs = compiled.day.bind(prepared)?;
+        self.night_graphs = compiled
+            .night
+            .map(|graphs| graphs.bind(prepared))
+            .transpose()?;
+        Ok(())
+    }
+
     /// Allocate a nonempty bounded target and display bind group from
     /// one prepared view's generation, on the executor's device. The
     /// prepared view retains both pipelines across resize and additional targets.
@@ -2232,7 +2300,7 @@ impl OffscreenTarget {
         {
             return Err(RenderError::TargetExtent);
         }
-        let compiled = prepared.compile_graph(width, height, row_bytes, capture_source)?;
+        let compiled = prepared.compile_graph(width, height, row_bytes, capture_source, None)?;
         let recipe = prepared
             .capabilities
             .recipe()

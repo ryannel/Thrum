@@ -313,6 +313,8 @@ pub struct FrameGraph {
 /// Why a declaration cannot execute safely.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum GraphError {
+    /// A declared acquisition phase disagrees with surface dependencies.
+    SurfacePhase,
     /// A zero extent/capacity or invalid texture descriptor.
     EmptyResource,
     /// A retained identity names more than one independent resource.
@@ -412,6 +414,8 @@ pub struct Lifetime {
 /// Validated execution order, hazards and logical allocation plan.
 #[derive(Clone, Debug)]
 pub struct CompiledGraph {
+    pub(crate) pre_acquire_passes: Option<usize>,
+    surface_resource: Option<ResourceId>,
     /// Device generation used to validate the closure. Recompile after loss.
     pub device_generation: u64,
     /// Unique live pass dependencies, using declaration indices.
@@ -603,6 +607,43 @@ pub(crate) struct GraphTextures {
 }
 
 impl GraphTextures {
+    /// Transfer allocation lookup to a recompiled graph only when every retained
+    /// transient resource keeps its descriptor and slot. Imported surface changes
+    /// allocate no texture here.
+    pub(crate) fn rebind(
+        &mut self,
+        old: &CompiledGraph,
+        new: &CompiledGraph,
+    ) -> Result<(), GraphError> {
+        for life in &old.lifetimes {
+            if let Some(slot) = life.transient_slot {
+                let index = life.resource.index;
+                if new
+                    .resources
+                    .get(index)
+                    .is_none_or(|r| r.descriptor != old.resources[index].descriptor)
+                    || old.memoryless_eligible(&life.resource)
+                        != new.memoryless_eligible(&ResourceId {
+                            index,
+                            owner: Arc::clone(&new.owner),
+                        })
+                    || new
+                        .lifetimes
+                        .iter()
+                        .find(|l| l.resource.index == index)
+                        .is_none_or(|l| l.transient_slot != Some(slot))
+                {
+                    return Err(GraphError::SurfacePhase);
+                }
+            }
+        }
+        if old.transient_slots != new.transient_slots {
+            return Err(GraphError::SurfacePhase);
+        }
+        self.owner = Arc::clone(&new.owner);
+        self.resource_slots.resize(new.resources.len(), None);
+        Ok(())
+    }
     pub(crate) fn new(
         device: &wgpu::Device,
         graph: &CompiledGraph,
@@ -695,6 +736,9 @@ impl GraphTextures {
 }
 
 impl CompiledGraph {
+    pub(crate) fn surface_resource(&self) -> Option<ResourceId> {
+        self.surface_resource.clone()
+    }
     /// Whether this exact variant can discard a render-only texture.
     #[must_use]
     pub fn memoryless_eligible(&self, resource: &ResourceId) -> bool {
@@ -715,6 +759,91 @@ impl CompiledGraph {
 }
 
 impl FrameGraph {
+    pub(crate) fn compile_surface_variant(
+        &mut self,
+        readback: Option<Pass>,
+        generation: u64,
+        prepared: &BTreeSet<PipelineKey>,
+        producer: Option<usize>,
+        surface: Option<(ResourceId, Pass)>,
+    ) -> Result<CompiledGraph, GraphError> {
+        let pass_count = self.passes.len();
+        let dependency_count = self.explicit_dependencies.len();
+        let result = (|| {
+            if let Some(readback) = readback {
+                let terminal = self.pass(readback);
+                if let Some(producer) = producer {
+                    self.dependency(producer, terminal)?;
+                }
+            }
+            if let Some((surface, pass)) = surface {
+                let live_scene = self.compile(generation, prepared)?.pass_order;
+                let present = self.pass(pass);
+                // All pre-acquire work, including independent copy epilogues,
+                // must precede the only surface consumer.
+                for scene in live_scene {
+                    self.dependency(scene, present)?;
+                }
+                self.compile_late_surface(
+                    generation,
+                    prepared,
+                    &surface,
+                    &BTreeSet::from([present]),
+                )
+            } else {
+                self.compile(generation, prepared)
+            }
+        })();
+        self.passes.truncate(pass_count);
+        self.explicit_dependencies.truncate(dependency_count);
+        result
+    }
+
+    /// Compile one graph and partition only the surface consumer and its
+    /// descendants after acquisition. Explicit phase declarations must agree
+    /// with resource/dependency reachability; unrelated scene work cannot hide
+    /// behind acquisition.
+    pub(crate) fn compile_late_surface(
+        &self,
+        generation: u64,
+        prepared: &BTreeSet<PipelineKey>,
+        surface: &ResourceId,
+        post: &BTreeSet<usize>,
+    ) -> Result<CompiledGraph, GraphError> {
+        let mut plan = self.compile(generation, prepared)?;
+        let mut dependent = BTreeSet::new();
+        for &id in &plan.pass_order {
+            if self.passes[id]
+                .accesses
+                .iter()
+                .any(|a| a.resource == *surface)
+                || plan
+                    .dependencies
+                    .iter()
+                    .any(|&(from, to)| to == id && dependent.contains(&from))
+            {
+                dependent.insert(id);
+            }
+        }
+        if dependent.is_empty() || dependent != *post {
+            return Err(GraphError::SurfacePhase);
+        }
+        // Keep the original schedule and allocation lifetimes: only a contiguous
+        // suffix can wait for acquisition.
+        let boundary = plan.pass_order.len() - dependent.len();
+        if plan.pass_order[..boundary]
+            .iter()
+            .any(|id| dependent.contains(id))
+            || plan.pass_order[boundary..]
+                .iter()
+                .any(|id| !dependent.contains(id))
+        {
+            return Err(GraphError::SurfacePhase);
+        }
+        plan.pre_acquire_passes = Some(boundary);
+        plan.surface_resource = Some(surface.clone());
+        Ok(plan)
+    }
     fn attachment_store(&self, order: &[usize], position: usize, access: &Access) -> bool {
         if (self.passes[order[position]].external_side_effect && access.store)
             || matches!(
@@ -1141,27 +1270,6 @@ impl FrameGraph {
             edges: edges.into_iter().collect(),
         })
     }
-    /// Compile a variant with one terminal pass while preserving shared declaration IDs.
-    pub(crate) fn compile_with_terminal_pass(
-        &mut self,
-        pass: Pass,
-        generation: u64,
-        prepared: &BTreeSet<PipelineKey>,
-        producer: Option<usize>,
-    ) -> Result<CompiledGraph, GraphError> {
-        let dependencies = self.explicit_dependencies.len();
-        let terminal = self.pass(pass);
-        let compiled = (|| {
-            if let Some(producer) = producer {
-                self.dependency(producer, terminal)?;
-            }
-            self.compile(generation, prepared)
-        })();
-        self.explicit_dependencies.truncate(dependencies);
-        drop(self.passes.pop());
-        compiled
-    }
-
     /// Validate closure and initialization, derive hazards and reuse. This is
     /// preparation work (quadratic in declared accesses), never per-instance work.
     ///
@@ -1286,6 +1394,8 @@ impl FrameGraph {
             }
         }
         Ok(CompiledGraph {
+            pre_acquire_passes: None,
+            surface_resource: None,
             device_generation: generation,
             dependencies: edges.into_iter().collect(),
             hazards,

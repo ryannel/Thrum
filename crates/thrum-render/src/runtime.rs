@@ -813,6 +813,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             .ok_or_else(|| "host has no surface presenter".to_owned())?
             .resize(&self.device, extent)
             .map_err(|error| FrameError::Gpu(format!("surface resize: {error:?}")))?;
+        preparation::bind_presenter(&self.prepared, &mut self.slots, self.presenter.as_ref())?;
         self.presenter_generation += 1;
         Ok(())
     }
@@ -1273,13 +1274,13 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             .zip(slot.presentation.as_ref())
             .zip(surface)
             .is_some_and(|((presenter, binding), surface)| {
-                presenter
-                    .encode(
+                self.prepared
+                    .encode_surface(
+                        &slot.target,
                         &mut encoder,
-                        binding,
-                        surface.view,
-                        surface.extent,
-                        Some(&mut slot.timings),
+                        (presenter, binding, surface.view, surface.extent),
+                        &mut slot.timings,
+                        capture_slot.is_some(),
                     )
                     .is_ok()
             });

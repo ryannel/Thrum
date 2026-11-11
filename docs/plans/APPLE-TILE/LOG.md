@@ -125,3 +125,11 @@
   frame comparisons and simulator diagnostic/lifecycle checks pass. [Evidence](../../evidence/render/apple-tile-m1/README.md)
   records residency/overlap and limits. The initial migration gate failed. Rebase onto repaired main preserved
   the planner updates, and the milestone command plus full `./dev check` now pass. M1 is claimed for lead review.
+
+- 2026-11-11 M2 implements one scene/surface graph with checked pre-/post-acquire execution, preserving the
+  existing host loss/refusal/history contract and SDR intermediate. Metal lifecycle, both-recipe graph/resize,
+  32 final exact M0 comparisons, complete cut/stall source accounting, final diagnostic simulator lease/replacement
+  checks and the full repository gate pass. Full frames/crops/contact and cut-adjacent samples were inspected.
+  D2.1/D2.2/D2.4 pass; D2.3 remains open because Computer Use rejected IINA playback access, and D2.5 remains open
+  after a denied OS-observer Screen Recording preflight (console unlocked; no grant request/change).
+  M2 stays open, with no claim or performance/panel promotion. [Evidence and unblock steps](../../evidence/render/apple-tile-m2/README.md).

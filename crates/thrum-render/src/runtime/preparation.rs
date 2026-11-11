@@ -34,6 +34,11 @@ pub(super) fn bind_presenter(
 ) -> Result<(), FrameError> {
     let device = prepared.capabilities().device();
     for slot in slots {
+        if let Some(presenter) = presenter {
+            slot.target
+                .bind_surface_graph(prepared, presenter.profile())
+                .map_err(|error| FrameError::Gpu(format!("merged surface graph: {error:?}")))?;
+        }
         slot.presentation = presenter
             .map(|presenter| presenter.bind_target(device, &slot.target))
             .transpose()

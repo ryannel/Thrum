@@ -50,7 +50,6 @@ const DEPTH_PREPASS_ROLE: u32 = 0x4450;
 pub(super) struct PrepassCulling {
     target: OcclusionTarget,
     view_bind_group: wgpu::BindGroup,
-    depth_id: ResourceId,
     depth: wgpu::TextureView,
 }
 
@@ -164,7 +163,7 @@ pub(super) fn prepass_view_group(
     target: Option<OcclusionTarget>,
     depth: Option<(ResourceId, wgpu::TextureView)>,
 ) -> Option<PrepassCulling> {
-    let (target, (depth_id, depth)) = target.zip(depth)?;
+    let (target, (_, depth)) = target.zip(depth)?;
     let entries: Vec<_> = entries
         .iter()
         .map(|entry| match entry.binding {
@@ -183,7 +182,6 @@ pub(super) fn prepass_view_group(
     Some(PrepassCulling {
         target,
         view_bind_group,
-        depth_id,
         depth,
     })
 }
@@ -377,7 +375,11 @@ impl PreparedSynthetic {
                 encoder,
                 no_color,
                 Some(GraphDepthAttachment {
-                    resource: &prepass.depth_id,
+                    resource: target
+                        .ids
+                        .prepass_depth
+                        .as_ref()
+                        .ok_or(RenderError::GraphPassMismatch)?,
                     range: 0..1,
                     view: &prepass.depth,
                     clear: 0.0,

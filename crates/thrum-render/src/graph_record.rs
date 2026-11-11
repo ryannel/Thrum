@@ -92,6 +92,21 @@ impl CompiledGraph {
 }
 
 impl<F: RecordFamily> ExecutableGraph<F> {
+    pub(crate) fn execute_before_acquire(&self, frame: &mut F::Frame<'_>) -> Result<(), F::Error> {
+        let end = self.plan.pre_acquire_passes.unwrap_or(self.recorders.len());
+        for (pass, record) in self.plan.pass_bindings().zip(&self.recorders).take(end) {
+            record(frame, pass.1)?;
+        }
+        Ok(())
+    }
+
+    pub(crate) fn execute_after_acquire(&self, frame: &mut F::Frame<'_>) -> Result<(), F::Error> {
+        let start = self.plan.pre_acquire_passes.unwrap_or(self.recorders.len());
+        for (pass, record) in self.plan.pass_bindings().zip(&self.recorders).skip(start) {
+            record(frame, pass.1)?;
+        }
+        Ok(())
+    }
     /// Run already bound closures in the plan's topological order.
     pub(crate) fn execute(&self, frame: &mut F::Frame<'_>) -> Result<(), F::Error> {
         for (pass, record) in self.plan.pass_bindings().zip(&self.recorders) {
@@ -117,10 +132,13 @@ mod tests {
 
     use super::{RecordBinding, RecordFamily};
 
+    mod split_tests;
+
     struct TestFamily;
 
     #[derive(Default)]
     struct Frame {
+        surface_bound: bool,
         order: [usize; 2],
         written: usize,
     }

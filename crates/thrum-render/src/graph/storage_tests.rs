@@ -70,7 +70,7 @@ fn only_live_variant_uses_determine_attachment_storage() {
                     external_side_effect: true,
                 };
                 let capture = graph
-                    .compile_with_terminal_pass(readback, 1, &BTreeSet::new(), None)
+                    .compile_surface_variant(Some(readback), 1, &BTreeSet::new(), None, None)
                     .unwrap();
                 assert!(!capture.memoryless_eligible(&depth));
                 assert_eq!(
