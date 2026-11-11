@@ -36,7 +36,7 @@ built-in panel, and nothing else. Verdicts on `0d53d3aa` qualify only that build
 - [x] M2.4, unattended: one reusable command that turns a trace's `ca-client-presented-handler` rows into
       presented intervals per drawable. On the retained 11 November tables it finds the three known two-refresh
       intervals and joins drawable 545's to the game's own present-call gap. No recording is needed.
-- [ ] M2.5, attended setup: a fresh recording of the release game whose retained rows span both `MacM2Whole`
+- [x] M2.5, attended setup: a fresh recording of the release game whose retained rows span both `MacM2Whole`
       markers, with every submission joined, the time conversion validated against the markers and the display
       tables' row counts recorded.
 - [ ] M2.2, attended setup: after M2.3, M2.4 and M2.5, three matched arms on M2.1's build, with the normal
