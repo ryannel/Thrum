@@ -4,7 +4,7 @@ The orchestrate script writes this page from the plan files and records after ea
 
 ## Overview
 
-3 of 20 modules done · 3 in progress · 14 to come
+3 of 20 modules done · 4 in progress · 13 to come
 
 ### Waiting on you
 
@@ -29,7 +29,6 @@ The orchestrate script writes this page from the plan files and records after ea
 ### Now and next
 
 - The existing frame lifecycle runs through one split graph (APPLE-TILE M2): Not Started · [plan](APPLE-TILE/PLAN.md)
-- Every pixel of the valley carries correct motion under jitter, including the sky and stars (APPLE-PRESENTATION M1): Not Started · [plan](APPLE-PRESENTATION/PLAN.md)
 - Other modules read the one sky and Sun, and one cloud optical depth dims direct sunlight once (ATMOSPHERE M5): Not Started · [plan](ATMOSPHERE/PLAN.md)
 
 ### Recently done
@@ -51,7 +50,7 @@ The orchestrate script writes this page from the plan files and records after ea
 | 4 | COOKED-DRAW | Cooked scenes draw on devices that cannot run GPU-driven draws, such as the iPhone simulator | PLATFORM-RUNTIME-IOS M7 | Done 9 Nov |
 | 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE M0 and M1, PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | M2 of 7 · Not Started |
 | 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE M3 | Waiting on APPLE-TILE:M3 |
-| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE M0, M2, M3, M11 and M12 | M1 of 3 · Not Started |
+| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE M0, M2, M3, M11 and M12 | M1 of 3 · Blocked |
 | 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads | APPLE-PRESENTATION M3 | M5 of 2 · Not Started |
 | 9 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE M2 | Not planned yet |
 | 10 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame | APPLE-TILE M2 | Not planned yet |
