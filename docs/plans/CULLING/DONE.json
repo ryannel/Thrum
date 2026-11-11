@@ -1,0 +1,256 @@
+{
+  "module": "CULLING",
+  "milestones": [
+    {
+      "id": "M1",
+      "name": "On the mixed-mesh field, Occlusion draws only what Direct shows, pixel for pixel",
+      "state": "open",
+      "fails": 0,
+      "replans": 0,
+      "needs": [
+        "APPLE-TILE:M2"
+      ],
+      "bar": "Culling as in a shipped GPU-driven renderer, where nothing visible ever disappears or pops; held here to byte equality with drawing everything, on meshes of a few hundred to a few thousand triangles.",
+      "items": [
+        {
+          "id": "M1.1",
+          "statement": "A scene that selects meshes runs Occlusion: preparation no longer refuses it, and every frame is byte-equal to bucket-ordered Direct while the bucket layout churns behind cover (class flips, deactivation, compaction).",
+          "check": "cargo test --locked --offline -p thrum-render --test visibility_buckets",
+          "lock": "gpu",
+          "ask": "Read the tests this check runs. Do they compare every frame with bucket-ordered Direct, assert that Occlusion is the resolved mode and hides at least one slot, and fail under each mutant the design names: a two-sided prepass on a back-culled open mesh, and the final draw reading the prepass list?",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.2",
+          "statement": "Along the mixed-mesh field flythrough, Occlusion is byte-equal to bucket-ordered Direct at every tick through the first cut, never draws more than Frustum, and hides at least half of Frustum's list on some counted tick.",
+          "check": "THRUM_FIELD_FULL_PATH=1 cargo test --locked --offline --release -p v1-game --test field_occlusion_gpu",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M1.3",
+          "statement": "A mesh whose face lies on its own bounds, flush with a prepass occluder at a rounded far pose, keeps every tied pixel under the derived tolerance and the widened footprint; a zero-tolerance cull loses pixels there.",
+          "check": "cargo test --locked --offline -p thrum-render --test visibility_buckets",
+          "lock": "gpu",
+          "ask": "Does the tie witness use a mesh face lying on its bounds at the far, turned pose, and does the evidence hold the zero-tolerance mutant's failure? On cubes that mutant passed, so a cube witness does not answer this.",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.4",
+          "statement": "After a surface resize and after device replacement, with slots hidden behind cover on the mixed-mesh field, Occlusion still equals bucket-ordered Direct and still hides slots.",
+          "check": "cargo test --locked --offline -p thrum-render --test visibility_buckets",
+          "lock": "gpu",
+          "ask": "Does a test in this target resize the surface and replace the device while slots are hidden, and compare the next frames with the oracle?",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.5",
+          "statement": "APPLE-TILE's M0 exact matrix passes on a release build of the claimed commit: this milestone moved no retained image.",
+          "check": "cargo build --locked --offline --release -p v1-game --features draw-probe,thrum-render/creation-counters && cargo build --locked --offline --release -p thrum-cook && rm -rf tmp/exact-m0 && mkdir -p tmp/exact-m0 && target/release/thrum-cook cook examples/v1-game/assets/showcase tmp/exact-m0/valley && python3 scripts/apple_tile_m1.py --store tmp/exact-m0/valley --output tmp/exact-m0/m1 && python3 scripts/apple_tile_m2.py --store tmp/exact-m0/valley --output tmp/exact-m0/m2",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": ""
+        }
+      ]
+    },
+    {
+      "id": "M2",
+      "name": "The culling mode follows the device and the measurements, and switches while the game runs",
+      "state": "open",
+      "fails": 0,
+      "replans": 0,
+      "bar": "A renderer that picks its path from device facts and says which one ran, as Unreal's mobile path and Unity's fallback do; and a debug switch as quiet as the view-mode switch in a shipped engine's editor, with no stall and no changed pixel.",
+      "items": [
+        {
+          "id": "M2.1",
+          "statement": "A requested culled mode resolves to Direct when the capability record lacks adapter-read indirect execution or its facts are unknown. The resolved mode and the reason are reported, and no pass queries the device.",
+          "check": "cargo test --locked --offline -p thrum-render --test culling_selection",
+          "lock": "gpu",
+          "ask": "Trace the mode from the request to the prepared pipelines. Is the capability record its only input, and do the existing equality tests assert the resolved mode, so a fallback cannot pass as culling?",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M2.2",
+          "statement": "On the iPhone simulator the game runs with a culled mode requested, reports Direct with the capability reason, and draws the complete scene. Function only.",
+          "check": "python3 scripts/culling_sim.py",
+          "lock": "gpu",
+          "target": "ios-sim",
+          "status": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M2.3",
+          "statement": "In Chrome, Frustum and Occlusion on the mixed-mesh field are each byte-equal to Chrome's bucket-ordered Direct at the 16 oracle views, and Occlusion draws fewer than Frustum at a view behind cover.",
+          "check": "node scripts/check_v1_browser.mjs --case field-mixed-oracle",
+          "lock": "gpu",
+          "target": "chrome-webgpu",
+          "status": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M2.4",
+          "statement": "The mixed-mesh field's default mode follows the design's rule: paired whole-GPU rows for Direct, Frustum and Occlusion at 1920x1080, behind cover and in the open, from two separate runs, are recorded with their load, and the default is Occlusion only if it wins in both.",
+          "ask": "Do the two retained run logs support the default the code sets, by the design's rule? Does the bench assert that Occlusion's prepass is non-empty and that it hides slots, so a row cannot repeat the fault that withdrew the rows of 8 November?",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M2.5",
+          "statement": "On the Mac a typed control switches between Direct, Frustum and Occlusion while the game runs: frames keep presenting during preparation, no pipeline is created on the frame path, and the frames on both sides of the swap equal Direct.",
+          "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test culling_switch_gpu",
+          "lock": "gpu",
+          "ask": "Read the switch test. Does it count pipeline creations on the frame path, compare the frames on both sides of the swap with Direct, and start the new mode with empty visibility history?",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M2.6",
+          "statement": "In Chrome the same control switches the mode while the page runs, and the canvas before and after the swap equals Chrome's Direct.",
+          "check": "node scripts/check_v1_browser.mjs --case culling-switch",
+          "lock": "gpu",
+          "target": "chrome-webgpu",
+          "status": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M2.7",
+          "statement": "APPLE-TILE's M0 exact matrix passes on a release build of the claimed commit: this milestone moved no retained image.",
+          "check": "cargo build --locked --offline --release -p v1-game --features draw-probe,thrum-render/creation-counters && cargo build --locked --offline --release -p thrum-cook && rm -rf tmp/exact-m0 && mkdir -p tmp/exact-m0 && target/release/thrum-cook cook examples/v1-game/assets/showcase tmp/exact-m0/valley && python3 scripts/apple_tile_m1.py --store tmp/exact-m0/valley --output tmp/exact-m0/m1 && python3 scripts/apple_tile_m2.py --store tmp/exact-m0/valley --output tmp/exact-m0/m2",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": ""
+        }
+      ]
+    },
+    {
+      "id": "M3",
+      "name": "The valley's 10,000 entities are culled by default with no pixel changed, on Mac and in Chrome",
+      "state": "open",
+      "fails": 0,
+      "replans": 0,
+      "bar": "Culling as in a shipped open-world game such as Horizon Forbidden West: the player never sees it work. Flying the valley and the field, nothing pops at a screen edge or at an occluder's silhouette, smooth at the display's full refresh.",
+      "items": [
+        {
+          "id": "M3.1",
+          "statement": "With the valley's default culling mode, every submitted frame of the moving route equals the same route drawn Direct, on both native recipes.",
+          "check": "python3 scripts/run_v1_showcase.py culling --target mac-metal",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M3.2",
+          "statement": "In Chrome, with the valley's default culling mode, every checkpoint of the moving route equals the same route drawn Direct.",
+          "check": "python3 scripts/run_v1_showcase.py culling --target chrome-webgpu",
+          "lock": "gpu",
+          "target": "chrome-webgpu",
+          "status": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M3.3",
+          "statement": "The valley's default mode is set by the design's rule from paired rows on the moving route, recorded with their load and the reason.",
+          "ask": "Do the retained rows support the valley's default mode by the design's rule, and does the game report that mode on the Mac and in Chrome?",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M3.4",
+          "statement": "With meshes selected for the valley's entities, Frustum and Occlusion on the bucket route, with Sun-caster culling, equal bucket-ordered Direct along the moving route on the Mac.",
+          "check": "python3 scripts/run_v1_showcase.py culling --meshes --target mac-metal",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M3.5",
+          "statement": "In Chrome, with meshes selected for the valley's entities, Frustum and Occlusion equal bucket-ordered Direct at the moving route's checkpoints.",
+          "check": "python3 scripts/run_v1_showcase.py culling --meshes --target chrome-webgpu",
+          "lock": "gpu",
+          "target": "chrome-webgpu",
+          "status": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M3.6",
+          "statement": "With temporal sampling selected, Frustum and Occlusion stay byte-equal to Direct over a full jitter cycle.",
+          "check": "cargo test --locked --offline -p thrum-render --test culling_temporal",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M3.7",
+          "statement": "In real time on the Mac, with the default mode, nothing pops, flickers or goes missing at the frame edges during a fast yaw or at occluder silhouettes when stepping out of cover.",
+          "inspect": "Capture the valley with T2 engine capture: `fixed` stills at the moving route's checkpoints and a `realtime` pan with fast yaw. Add the mixed-mesh field's retained per-tick frames through cover and back out, which are fixed-time readback, not elapsed-time motion. Judge whole frames and native-size crops at the frame edges, the ridge line and around walls and props, as consecutive frames at 1x.",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M3.8",
+          "statement": "In real time in Chrome, with the default mode, nothing pops, flickers or goes missing at the frame edges or at occluder silhouettes on the valley route.",
+          "inspect": "Capture the valley in Chrome with T2 engine capture: `fixed` at the moving route's checkpoints and a `realtime` pan. Judge whole frames and native-size crops at the frame edges and the ridge line, as consecutive frames at 1x.",
+          "target": "chrome-webgpu",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M3.9",
+          "statement": "Gate G3c holds as the brief words it, and the maturity ledger says what was and was not proved.",
+          "ask": "Does each clause of gate G3c in the brief hold on main, with evidence linked from docs/evidence/CULLING/: compute frustum and Hi-Z culling; GPU-written indirect instance counts; one indexed indirect draw per mesh and pipeline bucket; stable mesh offsets; a material table that compute can read; visibility and image equivalence; full- and partial-visibility costs recorded as tripwires? Is the ledger's G3c row current, with implementation, correctness, visuals and device results kept apart?",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M3.10",
+          "statement": "APPLE-TILE's M0 exact matrix passes on a release build of the claimed commit: this milestone moved no retained image.",
+          "check": "cargo build --locked --offline --release -p v1-game --features draw-probe,thrum-render/creation-counters && cargo build --locked --offline --release -p thrum-cook && rm -rf tmp/exact-m0 && mkdir -p tmp/exact-m0 && target/release/thrum-cook cook examples/v1-game/assets/showcase tmp/exact-m0/valley && python3 scripts/apple_tile_m1.py --store tmp/exact-m0/valley --output tmp/exact-m0/m1 && python3 scripts/apple_tile_m2.py --store tmp/exact-m0/valley --output tmp/exact-m0/m2",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": ""
+        }
+      ]
+    }
+  ]
+}

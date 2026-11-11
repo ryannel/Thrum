@@ -94,7 +94,7 @@ Proposed shape for the planner, riskiest first:
    Needs nothing.
 2. **First sea frame at cost.** One preset in a Thrum scene under G3s at full refresh, written to the frame
    contract. This settles whether the re-costed cascade design holds; it is the riskiest step. Needs
-   `APPLE-TILE:M3`, `APPLE-PRESENTATION:M3`, `ATMOSPHERE:M5`, `EFFECT-GRAPH:M1`.
+   `APPLE-TILE:M3`, `APPLE-PRESENTATION:M3`, `ATMOSPHERE:M5`, `EFFECT-GRAPH:M3`.
 3. **Bodies and the query**, then **wake**, then **foam**, then **optics and the range of presets**.
 4. **Recipes, knobs, Chrome and close.** Needs `APPLE-PRESENTATION:M7` and `CREATOR:M1`.
 
