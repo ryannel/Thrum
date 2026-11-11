@@ -32,6 +32,9 @@ pub enum DisplayOverlay {
     /// Exposed luminance in one-stop false-colour bands, from -6 to +6 stops relative to
     /// an 18% grey Lambertian card lit at the metered illuminance with zero compensation.
     ExposureZones = 1,
+    /// Motion in render pixels: red is right, green is down, blue is magnitude.
+    /// Magenta marks invalid correspondence; olive is stationary.
+    Motion = 2,
 }
 
 /// Word 7 of the exposure policy and sample: the tone map in bits 0–7 and the
@@ -62,6 +65,16 @@ impl DisplayPrepared {
             entries: &[
                 wgpu::BindGroupLayoutEntry {
                     binding: 0,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Texture {
+                        sample_type: wgpu::TextureSampleType::Float { filterable: false },
+                        view_dimension: wgpu::TextureViewDimension::D2,
+                        multisampled: false,
+                    },
+                    count: None,
+                },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 2,
                     visibility: wgpu::ShaderStages::FRAGMENT,
                     ty: wgpu::BindingType::Texture {
                         sample_type: wgpu::TextureSampleType::Float { filterable: false },
@@ -134,11 +147,12 @@ impl DisplayPrepared {
         &self,
         device: &wgpu::Device,
         scene: &wgpu::TextureView,
+        motion: &wgpu::TextureView,
         samples: &[wgpu::Buffer; 2],
     ) -> DisplayTarget {
         DisplayTarget {
             groups: std::array::from_fn(|side| {
-                prepare_group(device, &self.layout, scene, &samples[side])
+                prepare_group(device, &self.layout, scene, motion, &samples[side])
             }),
         }
     }
@@ -147,6 +161,7 @@ impl DisplayPrepared {
         graph: &mut FrameGraph,
         key: PipelineKey,
         scene: &ResourceId,
+        motion: &ResourceId,
         exposure: &ResourceId,
         width: u32,
         height: u32,
@@ -170,6 +185,12 @@ impl DisplayPrepared {
             scope: PassScope::View(1),
             pipeline: Some(key),
             accesses: vec![
+                Access {
+                    resource: motion.clone(),
+                    range: 0..1,
+                    kind: AccessKind::SampledRead,
+                    store: true,
+                },
                 Access {
                     resource: scene.clone(),
                     range: 0..1,
@@ -228,12 +249,17 @@ fn prepare_group(
     device: &wgpu::Device,
     layout: &wgpu::BindGroupLayout,
     scene: &wgpu::TextureView,
+    motion: &wgpu::TextureView,
     exposure: &wgpu::Buffer,
 ) -> wgpu::BindGroup {
     device.create_bind_group(&wgpu::BindGroupDescriptor {
         label: Some("synthetic display inputs"),
         layout,
         entries: &[
+            wgpu::BindGroupEntry {
+                binding: 2,
+                resource: wgpu::BindingResource::TextureView(motion),
+            },
             wgpu::BindGroupEntry {
                 binding: 0,
                 resource: wgpu::BindingResource::TextureView(scene),

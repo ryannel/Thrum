@@ -68,3 +68,10 @@
   and `Parallel work and dependencies on G3t` moved to the design. The M4–M11, U1 and sizing sections moved to
   [drafts](../../evidence/APPLE-PRESENTATION/M4-M11-milestone-drafts.md); the plan keeps a heading for each, renamed
   for what someone can see. Open assumptions moved from this log to the plan. No item or scope changed.
+
+- 2026-11-11 M1 builder implementation and mac-metal proof completed: continuous submitted 32-phase jitter,
+  unjittered geometry/infinity motion, explicit invalid correspondence and the existing-pass motion view.
+  Real Metal attachment tests prove exact static zero and independent pan/solar/sidereal values. Fixed-time
+  submitted valley sequences and native crops were inspected, including a real simulation mover. Repository
+  gate and milestone checks are recorded separately from visual self-review; no performance or G4 closure
+  is claimed. [Builder evidence](../../evidence/APPLE-PRESENTATION/m1/README.md); lead review remains owed.

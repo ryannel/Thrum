@@ -17,7 +17,7 @@ fn policy_preserves_fixed_reciprocal_and_leaves_metered_value_gpu_owned() {
     assert_eq!(&packed[..4], &(1.0_f32 / (1.0 / 16_000.0)).to_le_bytes());
     assert_eq!(&packed[16..20], &1_u32.to_le_bytes());
     let legacy = view.pack_view(&view, 0.5);
-    assert_eq!(legacy.len(), 160);
+    assert_eq!(legacy.len(), 240);
     assert_eq!(&legacy[148..152], &0.0_f32.to_le_bytes());
     assert_eq!(
         &legacy[152..160],

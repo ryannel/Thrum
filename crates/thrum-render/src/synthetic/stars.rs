@@ -18,7 +18,7 @@ use super::{
 mod daylight;
 
 pub(super) const PASS_NAME: &str = "atmosphere stars";
-const UNIFORM_LEN: usize = 96;
+const UNIFORM_LEN: usize = 176;
 const UNIFORM_BYTES: u64 = UNIFORM_LEN as u64;
 const SHADER: &str = concat!(
     include_str!("../atmosphere/geometry.wgsl"),
@@ -101,14 +101,21 @@ impl StarPrepared {
                 module: &shader,
                 entry_point: Some("fragment"),
                 compilation_options: wgpu::PipelineCompilationOptions::default(),
-                targets: &[Some(wgpu::ColorTargetState {
-                    format: SCENE_FORMAT,
-                    blend: Some(wgpu::BlendState {
-                        color: blend,
-                        alpha: wgpu::BlendComponent::REPLACE,
+                targets: &[
+                    Some(wgpu::ColorTargetState {
+                        format: SCENE_FORMAT,
+                        blend: Some(wgpu::BlendState {
+                            color: blend,
+                            alpha: wgpu::BlendComponent::REPLACE,
+                        }),
+                        write_mask: wgpu::ColorWrites::COLOR,
                     }),
-                    write_mask: wgpu::ColorWrites::COLOR,
-                })],
+                    Some(wgpu::ColorTargetState {
+                        format: super::MOTION_FORMAT,
+                        blend: None,
+                        write_mask: wgpu::ColorWrites::ALL,
+                    }),
+                ],
             }),
             multiview_mask: None,
             cache: None,
@@ -138,7 +145,7 @@ impl StarPrepared {
         exposure_samples: &[wgpu::Buffer; 2],
         (view, extent): (&SyntheticView, [u32; 2]),
     ) -> (StarTarget, bool) {
-        let view_bytes = self.view_bytes(view, extent);
+        let view_bytes = self.view_bytes(view, view, extent);
         let uniform = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("star view"),
             contents: &view_bytes.unwrap_or([0; UNIFORM_LEN]),
@@ -190,18 +197,24 @@ impl StarPrepared {
         queue: &wgpu::Queue,
         target: &StarTarget,
         view: &SyntheticView,
+        previous: &SyntheticView,
         extent: [u32; 2],
         light: &[u8; LIGHT_BYTES],
     ) -> bool {
         self.daylight.update(light);
-        let Some(bytes) = self.view_bytes(view, extent) else {
+        let Some(bytes) = self.view_bytes(view, previous, extent) else {
             return false;
         };
         queue.write_buffer(&target.uniform, 0, &bytes);
         true
     }
 
-    fn view_bytes(&self, view: &SyntheticView, extent: [u32; 2]) -> Option<[u8; UNIFORM_LEN]> {
+    fn view_bytes(
+        &self,
+        view: &SyntheticView,
+        previous: &SyntheticView,
+        extent: [u32; 2],
+    ) -> Option<[u8; UNIFORM_LEN]> {
         let Projection::Perspective { fx, fy, .. } = view.projection() else {
             return None;
         };
@@ -212,6 +225,9 @@ impl StarPrepared {
         }
         let transform =
             Mat4::from_cols_array_2d(&view.view_proj_columns()) * Mat4::from_mat3(rotation);
+        let prior = Mat4::from_cols_array_2d(&previous.view_proj_columns())
+            * Mat4::from_mat3(previous.celestial_basis().unwrap_or(rotation));
+        let jitter = view.pack_view(previous, 1.0);
         let up = rotation.row(1);
         let mut bytes = [0; UNIFORM_LEN];
         for (destination, value) in bytes.as_chunks_mut::<4>().0.iter_mut().zip(
@@ -219,10 +235,12 @@ impl StarPrepared {
                 .to_cols_array()
                 .into_iter()
                 .chain([extent[0] as f32, extent[1] as f32, fx.recip(), fy.recip()])
-                .chain([up.x, up.y, up.z, strength]),
+                .chain([up.x, up.y, up.z, strength])
+                .chain((prior - transform).to_cols_array()),
         ) {
             destination.copy_from_slice(&value.to_le_bytes());
         }
+        bytes[160..168].copy_from_slice(&jitter[152..160]);
         Some(bytes)
     }
 }
@@ -240,7 +258,8 @@ impl PreparedSynthetic {
         graph: &mut FrameGraph,
         keys: &mut BTreeSet<PipelineKey>,
         opaque: usize,
-        (depth, scene, exposure, transmittance, observer): (
+        (depth, scene, motion, exposure, transmittance, observer): (
+            &ResourceId,
             &ResourceId,
             &ResourceId,
             &ResourceId,
@@ -284,6 +303,7 @@ impl PreparedSynthetic {
                 (observer.clone(), 80, AccessKind::UniformRead),
                 (depth.clone(), 1, AccessKind::SampledRead),
                 (scene.clone(), 1, AccessKind::AttachmentLoad),
+                (motion.clone(), 1, AccessKind::AttachmentLoad),
             ]
             .into_iter()
             .map(|(resource, end, kind)| Access {
@@ -311,12 +331,20 @@ impl SceneContext<'_> {
         let mut pass = compiled
             .begin_render(
                 self.encoder,
-                [Some(GraphColorAttachment {
-                    resource: &self.target.ids.scene,
-                    range: 0..1,
-                    view: &self.target.scene_view,
-                    clear: self.prepared.background,
-                })],
+                [
+                    Some(GraphColorAttachment {
+                        resource: &self.target.ids.scene,
+                        range: 0..1,
+                        view: &self.target.scene_view,
+                        clear: self.prepared.background,
+                    }),
+                    Some(GraphColorAttachment {
+                        resource: &self.target.ids.motion,
+                        range: 0..1,
+                        view: &self.target.motion_view,
+                        clear: wgpu::Color::BLACK,
+                    }),
+                ],
                 None,
                 self.generation,
                 self.timings.as_deref_mut(),

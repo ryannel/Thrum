@@ -197,7 +197,7 @@ fn gpu_sdr_ramps_match_f64_and_legacy_pixels_across_checked_gain_range() {
                 contents: words.map(u32::to_le_bytes).as_flattened(),
                 usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
             });
-            let group = prepare_group(&device, &display.layout, &view, &sample);
+            let group = prepare_group(&device, &display.layout, &view, &view, &sample);
             let expected_legacy = render(&device, &queue, &original, &group, width);
             let actual_legacy = render(&device, &queue, &display.pipeline, &group, width);
             // The display adds a fixed one-step triangular dither; the legacy reference has none.
@@ -342,7 +342,7 @@ fn gpu_exposure_zones_band_exposed_luminance_for_every_tone_map_and_gain() {
                 contents: words.map(u32::to_le_bytes).as_flattened(),
                 usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
             });
-            let group = prepare_group(&device, &display.layout, &view, &sample);
+            let group = prepare_group(&device, &display.layout, &view, &view, &sample);
             let mut outputs = Vec::new();
             for tone_map in [SdrToneMap::Reinhard, SdrToneMap::NeutralHighlights] {
                 words[7] = display_selectors(tone_map, DisplayOverlay::ExposureZones);

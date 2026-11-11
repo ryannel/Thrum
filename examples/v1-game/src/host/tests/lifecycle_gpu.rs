@@ -56,6 +56,13 @@ fn threaded_pause_keeps_pixels_still_camera_live_and_resume_advances_the_same_wo
         assert_eq!(sample.tick, paused.id.tick);
         assert_eq!(sample.presentation_alpha, 1.0);
         std::thread::sleep(Duration::from_millis(40));
+        // M1 advances jitter even while the world is paused. Compare the same
+        // phase after a complete cycle, asserting every intervening world tick.
+        for _ in 0..31 {
+            let (_, sample) = draw(&mut host, origin, &device, &queue, &target);
+            assert_eq!(sample.tick, paused.id.tick);
+            assert_eq!(sample.completed_ticks, 0);
+        }
         let (still, sample) = draw(&mut host, origin, &device, &queue, &target);
         assert_eq!(sample.tick, paused.id.tick);
         assert_eq!(sample.completed_ticks, 0);

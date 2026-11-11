@@ -128,7 +128,7 @@ fn shipping_atmosphere_shader_layouts_keep_mapping_and_view_aux_separate() {
                 let wgpu::naga::TypeInner::Struct { span, .. } = ty.inner else {
                     panic!("view struct");
                 };
-                assert_eq!(span, 160);
+                assert_eq!(span, 240);
             }
         }
     }

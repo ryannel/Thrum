@@ -227,6 +227,12 @@ fn apply_route_overlay(scene: &mut SyntheticScene, overlay: scene::RouteOverlay)
         instance.current[3][..3].copy_from_slice(&position);
         instance.previous[3][..3].copy_from_slice(&position);
     }
+    if overlay == scene::RouteOverlay::Motion {
+        let instance = &mut scene.instances[scene::MOTION_SUBJECT_SLOT];
+        scale_basis(instance, 0.35);
+        instance.current[3][..3].copy_from_slice(&scene::MOTION_SUBJECT_POSITION);
+        instance.previous[3][..3].copy_from_slice(&scene::MOTION_SUBJECT_POSITION);
+    }
     if overlay != scene::RouteOverlay::Unmirrored {
         let mirrored = &mut scene.instances[scene::ROUTE_OVERLAY_MIRRORED_SLOT];
         for component in 0..3 {
@@ -503,7 +509,8 @@ impl SceneSource<PublishedPage> for GameScene {
                 self.camera,
             )?
         }
-        .with_display_overlay(self.display_overlay);
+        .with_display_overlay(self.display_overlay)
+        .with_jitter_phase(0, [640, 360]);
         // The diagnostic fixture's local Y zero is a two-metre reference datum.
         // Authored scene and field coordinates already measure altitude above sea level.
         let camera_altitude_m = view.camera_position()[1]

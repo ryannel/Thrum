@@ -50,8 +50,8 @@ fn tone_choice_changes_only_reserved_policy_word_for_fixed_and_incident_views() 
         let reset = selected.with_history_reset(true);
         assert_eq!(reset.exposure_policy(1.0, true), new);
         assert_eq!(
-            &reset.pack_aux(128, 64)[112..],
-            &selected.pack_aux(256, 128)[112..]
+            &reset.pack_aux(128, 64)[112..128],
+            &selected.pack_aux(256, 128)[112..128]
         );
     }
 }

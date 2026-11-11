@@ -31,6 +31,7 @@ impl AtmospherePrepared {
             },
             ResourceScope::Imported { initialized: true },
         )?;
+        append_motion_read(graph, forward_accesses)?;
         let night_reads = self.night.graph_reads(graph)?;
         let resources = self
             .textures
@@ -339,4 +340,24 @@ impl AtmospherePrepared {
         }
         Ok(())
     }
+}
+
+fn append_motion_read(
+    graph: &mut FrameGraph,
+    forward_accesses: &mut Vec<Access>,
+) -> Result<(), GraphError> {
+    let motion = graph.resource(
+        ResourceDescriptor::Buffer {
+            bytes: 208,
+            usage: wgpu::BufferUsages::UNIFORM,
+        },
+        ResourceScope::Imported { initialized: true },
+    )?;
+    forward_accesses.push(Access {
+        resource: motion,
+        range: 0..208,
+        kind: AccessKind::UniformRead,
+        store: true,
+    });
+    Ok(())
 }

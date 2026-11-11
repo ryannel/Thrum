@@ -8,6 +8,10 @@ struct ViewRecord {
     previous_view_proj: mat4x4<f32>,
     camera_xyz_time: vec4<f32>,
     pre_exposure_inv_exposure_jitter: vec4<f32>,
+    unjittered_view_proj: mat4x4<f32>,
+    mip_bias: f32,
+    jitter_phase: u32,
+    padding: vec2<u32>,
 }
 struct ViewAuxRecord {
     inverse_view_proj: mat4x4<f32>,
@@ -15,6 +19,7 @@ struct ViewAuxRecord {
     near_far: vec4<f32>,
     time: vec4<f32>,
     flags: vec4<u32>,
+    subrectangle: vec4<f32>,
 }
 struct DirectionalSource {
     direction_to_light: vec4<f32>,
@@ -103,8 +108,9 @@ struct VertexOutput {
     @location(1) @interpolate(flat) material: u32,
     @location(2) normal: vec3<f32>,
     @location(3) world_position: vec3<f32>,
-    @location(4) previous_clip: vec4<f32>,
+    @location(4) clip_delta: vec4<f32>,
     @location(5) @interpolate(flat) history_valid: u32,
+    @location(6) current_clip: vec4<f32>,
 }
 // Direct draws read the physical slot; compacted draws fetch it from the
 // camera-visible list. History always uses the physical slot.
@@ -125,6 +131,7 @@ fn vertex_at(vertex_index: u32, slot: u32) -> VertexOutput {
     model[3] = vec4(mix(instance.previous[3].xyz, instance.current[3].xyz, serials.presentation_alpha), instance.current[3].w);
     let world = model * vec4(local,1.0);
     output.position = view.view_proj * world;
+    output.current_clip = view.unjittered_view_proj * world;
     if instance.ids.w == 0u { output.position = vec4(2.0, 2.0, 2.0, 1.0); }
     output.world_position = world.xyz;
     output.normal = mat3x3(instance.normal0.xyz,instance.normal1.xyz,instance.normal2.xyz) * n;
@@ -137,8 +144,12 @@ fn vertex_at(vertex_index: u32, slot: u32) -> VertexOutput {
         && prior.identity.z == serials.previous_lo
         && prior.identity.w == serials.previous_hi;
     output.history_valid = select(0u, 1u, valid);
-    output.previous_clip = select(output.position,
-        view.previous_view_proj * prior.current * vec4(local, 1.0), valid);
+    // Form the difference before projection/interpolation. Identical submitted
+    // camera and pose give exact zero without subtracting two rounded clips.
+    let camera_delta = view.previous_view_proj - view.unjittered_view_proj;
+    let world_delta = (prior.current - model) * vec4(local, 1.0);
+    output.clip_delta = select(vec4(0.0),
+        camera_delta * world + view.previous_view_proj * world_delta, valid);
     return output;
 }
 fn direct_brdf(base: vec3<f32>, metalness: f32, roughness: f32, n: vec3<f32>,
@@ -554,15 +565,16 @@ struct FragmentOutput {
     @location(1) motion: vec2<f32>,
 }
 fn motion_vector(input: VertexOutput) -> vec2<f32> {
-    if input.history_valid == 0u || input.previous_clip.w <= 0.0 {
-        return vec2(0.0);
+    let current = input.current_clip;
+    let delta = input.clip_delta;
+    let previous_w = current.w + delta.w;
+    if input.history_valid == 0u || current.w <= 0.0 || previous_w <= 0.0 {
+        return vec2(65504.0);
     }
-    let previous_ndc = input.previous_clip.xy / input.previous_clip.w;
-    let extent = view_aux.viewport_inv_viewport.xy;
-    let previous_pixel = vec2(
-        (previous_ndc.x * 0.5 + 0.5) * extent.x,
-        (0.5 - previous_ndc.y * 0.5) * extent.y);
-    return clamp(previous_pixel - input.position.xy, vec2(-65504.0), vec2(65504.0));
+    let difference = (delta.xy * current.w - current.xy * delta.w)
+        / (current.w * previous_w);
+    return clamp(difference * vec2(0.5, -0.5) * view_aux.viewport_inv_viewport.xy,
+        vec2(-65504.0), vec2(65504.0));
 }
 @fragment fn fragment(input:VertexOutput, @builtin(front_facing) front_facing: bool)->FragmentOutput {
     return FragmentOutput(shade(input,1.0,front_facing), motion_vector(input));

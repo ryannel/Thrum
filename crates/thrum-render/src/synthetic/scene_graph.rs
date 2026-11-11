@@ -331,6 +331,7 @@ impl PreparedSynthetic {
             &mut graph,
             self.display_key(),
             &scene,
+            &motion,
             &exposure_sample,
             width,
             height,
@@ -352,16 +353,13 @@ impl PreparedSynthetic {
             (capture_source == CaptureSource::SceneLinear).then_some(forward),
             surface.as_ref(),
         )?;
-        let stars = if let Some((transmittance, observer)) = &atmosphere_inputs {
-            self.append_stars(
-                &mut graph,
-                &mut prepared_keys,
-                forward,
-                (&depth, &scene, &exposure_sample, transmittance, observer),
-            )?
-        } else {
-            None
-        };
+        let stars = self.append_optional_stars(
+            &mut graph,
+            &mut prepared_keys,
+            forward,
+            atmosphere_inputs.as_ref(),
+            (&depth, &scene, &motion, &exposure_sample),
+        )?;
         let night = if let Some(stars) = stars {
             // Display reads the composite, even though its declaration precedes it.
             graph.dependency(stars, display_pass)?;
@@ -404,6 +402,26 @@ impl PreparedSynthetic {
                 crate::present::surface_pass(graph, output, profile, generation)
             })
             .transpose()
+    }
+
+    fn append_optional_stars(
+        &self,
+        graph: &mut FrameGraph,
+        keys: &mut BTreeSet<PipelineKey>,
+        forward: usize,
+        atmosphere: Option<&(ResourceId, ResourceId)>,
+        (depth, scene, motion, exposure): (&ResourceId, &ResourceId, &ResourceId, &ResourceId),
+    ) -> Result<Option<usize>, RenderError> {
+        if let Some((transmittance, observer)) = atmosphere {
+            self.append_stars(
+                graph,
+                keys,
+                forward,
+                (depth, scene, motion, exposure, transmittance, observer),
+            )
+        } else {
+            Ok(None)
+        }
     }
 
     fn append_frame_uniform_reads(

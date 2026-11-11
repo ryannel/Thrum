@@ -305,7 +305,7 @@ impl Pipelines {
                     Some(wgpu::ColorTargetState {
                         format: surface.color_formats[1],
                         blend: None,
-                        write_mask: wgpu::ColorWrites::empty(),
+                        write_mask: wgpu::ColorWrites::ALL,
                     }),
                 ],
             }),

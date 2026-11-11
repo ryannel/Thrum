@@ -34,6 +34,9 @@ pub(crate) const ROUTE_OVERLAY: [(usize, [f32; 3]); 11] = [
 ];
 /// The overlay slot whose cold basis mirrors local x (a negative determinant).
 pub(crate) const ROUTE_OVERLAY_MIRRORED_SLOT: usize = 5060;
+/// M1's visible moving subject uses an existing automatic mover, not a render-only animation.
+pub(crate) const MOTION_SUBJECT_SLOT: usize = MOVING_COUNT - 1;
+pub(crate) const MOTION_SUBJECT_POSITION: [f32; 3] = [-6.0, 240.6, -5.0];
 
 fn route_overlay_position(index: usize) -> Option<[f32; 3]> {
     ROUTE_OVERLAY
@@ -87,6 +90,8 @@ pub enum RouteOverlay {
     Off,
     /// Reseeded valley instances, one mirrored basis and the retuned light.
     Proof,
+    /// M1 proof: the same static overlay plus one visible automatic mover.
+    Motion,
     /// The same instances and light with no mirrored basis (one-sided pipelines).
     Unmirrored,
     /// The proof overlay with the retuned light at zero intensity.
@@ -115,7 +120,7 @@ pub(crate) fn simulation(
 ) -> Result<Simulation, String> {
     let overlay = route_overlay != RouteOverlay::Off;
     match (content, overlay) {
-        (GameContent::Grid, _) => grid_simulation(ENTITY_COUNT, overlay),
+        (GameContent::Grid, _) => grid_simulation(ENTITY_COUNT, route_overlay),
         (GameContent::Field, false) => field_simulation(),
         (GameContent::Field, true) => Err("the route overlay needs grid content".to_owned()),
     }
@@ -184,10 +189,10 @@ fn field_simulation() -> Result<Simulation, String> {
 ///
 /// Returns fixture setup or seeding failure.
 pub fn simulation_with_count(entity_count: usize) -> Result<Simulation, String> {
-    grid_simulation(entity_count, false)
+    grid_simulation(entity_count, RouteOverlay::Off)
 }
 
-fn grid_simulation(entity_count: usize, route_overlay: bool) -> Result<Simulation, String> {
+fn grid_simulation(entity_count: usize, route_overlay: RouteOverlay) -> Result<Simulation, String> {
     if entity_count < PEER_COUNT || entity_count > u32::MAX as usize {
         return Err("fixture entity count is outside the physical slot range".into());
     }
@@ -199,20 +204,34 @@ fn grid_simulation(entity_count: usize, route_overlay: bool) -> Result<Simulatio
         let y = -0.9 + (index / 100) as f64 * 0.018 + 0.009;
         let reflection_subject = entity_count == ENTITY_COUNT && index == REFLECTION_SUBJECT_SLOT;
         let ownership = peer_ownership(entity_count, index)?;
-        let overlay = route_overlay
+        let overlay = (route_overlay != RouteOverlay::Off)
             .then(|| route_overlay_position(index))
             .flatten()
             .filter(|_| entity_count == ENTITY_COUNT);
         sim.seed(ComponentEntity {
             id: StableId(index as u128),
-            position: Position(if let Some(position) = overlay {
-                position.map(f64::from)
-            } else if reflection_subject {
-                REFLECTION_SUBJECT_POSITION.map(f64::from)
-            } else {
-                [x, y, 0.5]
-            }),
-            velocity: Velocity([if index < moving_count { 0.05 } else { 0.0 }, 0.0, 0.0]),
+            position: Position(
+                if route_overlay == RouteOverlay::Motion && index == MOTION_SUBJECT_SLOT {
+                    MOTION_SUBJECT_POSITION.map(f64::from)
+                } else if let Some(position) = overlay {
+                    position.map(f64::from)
+                } else if reflection_subject {
+                    REFLECTION_SUBJECT_POSITION.map(f64::from)
+                } else {
+                    [x, y, 0.5]
+                },
+            ),
+            velocity: Velocity([
+                if route_overlay == RouteOverlay::Motion && index == MOTION_SUBJECT_SLOT {
+                    3.0
+                } else if index < moving_count {
+                    0.05
+                } else {
+                    0.0
+                },
+                0.0,
+                0.0,
+            ]),
             health: 100,
             ownership,
             visual: Some(if reflection_subject {
@@ -644,6 +663,54 @@ mod tests {
             .position
             .0;
         assert!((second[1] - initial[1][1] - 0.2).abs() < 1e-9);
+    }
+
+    #[test]
+    fn motion_witness_moves_in_the_real_world_and_leaves_the_old_proof_alone() {
+        let proof = simulation(super::GameContent::Grid, super::RouteOverlay::Proof)
+            .expect("existing proof");
+        let mut motion =
+            simulation(super::GameContent::Grid, super::RouteOverlay::Motion).expect("M1 proof");
+        for index in 0..ENTITY_COUNT {
+            let id = StableId(index as u128);
+            let before = proof
+                .get(proof.handle(id).expect("proof entity"))
+                .expect("proof state");
+            let after = motion
+                .get(motion.handle(id).expect("motion entity"))
+                .expect("motion state");
+            if index == super::MOTION_SUBJECT_SLOT {
+                assert_eq!(
+                    after.position.0,
+                    super::MOTION_SUBJECT_POSITION.map(f64::from)
+                );
+                assert_eq!(after.velocity.0, [3.0, 0.0, 0.0]);
+            } else {
+                assert_eq!(
+                    format!("{before:?}"),
+                    format!("{after:?}"),
+                    "unrelated slot {index}"
+                );
+            }
+        }
+        for _ in 0..180 {
+            motion.step(&[]).expect("ordinary fixed world tick");
+        }
+        let id = StableId(super::MOTION_SUBJECT_SLOT as u128);
+        let subject = motion
+            .get(motion.handle(id).expect("moving subject"))
+            .expect("state");
+        assert!(
+            (subject.position.0[0] - 3.0).abs() < 1e-9,
+            "subject reaches the visible valley at route origin"
+        );
+        assert_eq!(
+            &subject.position.0[1..],
+            &super::MOTION_SUBJECT_POSITION[1..]
+                .iter()
+                .map(|v| f64::from(*v))
+                .collect::<Vec<_>>()
+        );
     }
 
     #[test]

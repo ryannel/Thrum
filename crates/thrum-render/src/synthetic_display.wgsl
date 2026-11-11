@@ -4,6 +4,7 @@ struct ExposureSample {
     values: vec4<f32>, // Storage p, inverse camera gain, EV100, actual lux.
     metadata: vec4<u32>,
 }
+@group(0) @binding(2) var motion: texture_2d<f32>;
 @group(0) @binding(0) var scene: texture_2d<f32>;
 @group(0) @binding(1) var<uniform> exposure: ExposureSample;
 @vertex fn vertex(@builtin(vertex_index) index: u32) -> @builtin(position) vec4<f32> {
@@ -66,6 +67,12 @@ fn exposure_zone(stored: vec3<f32>, storage_inverse_gain: f32) -> vec3<f32> {
     return palette[zone] / 255.0;
 }
 @fragment fn fragment(@builtin(position) position: vec4<f32>) -> @location(0) vec4<f32> {
+    if (exposure.metadata.w >> 8u) == 2u {
+        let velocity = textureLoad(motion, vec2<i32>(position.xy), 0).xy;
+        if any(abs(velocity) >= vec2(65504.0)) { return vec4(1.0, 0.0, 1.0, 1.0); }
+        return vec4(clamp(vec2(0.5) + velocity / 16.0, vec2(0.0), vec2(1.0)),
+            clamp(length(velocity) / 16.0, 0.0, 1.0), 1.0);
+    }
     let stored = textureLoad(scene,vec2<i32>(position.xy),0).rgb;
     let selectors = exposure.metadata.w;
     // The overlay reads the exposed scene before any tone scale and is written undithered.
