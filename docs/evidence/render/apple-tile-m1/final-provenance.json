@@ -545,5 +545,8 @@
     "target/v1-game-web/v1_game_bg.wasm": "c9b7cba9bb6e8f6c84fc1c88d00eea6a4ddfaaba5884e8da23d16043bccc3b7a",
     "target/v1-game-ios-sim/ThrumV1.app/ThrumV1": "dc42e23540f94848366cb7cbfd7f8e3a09ec167e8df0d8bf1afe52bda21123e8"
   },
-  "limits": "Target capture manifests preserve their own exact source/build records. Subsequent scoped changes add the complete residency inspector/CLI, cfg lint fix and single-mip/layer eligibility guard. Final native probe rechecks unchanged route bytes. No shader, content, tone or ABI change. Chrome Wasm and simulator binaries predate those final diagnostics and the eligibility descriptor check, whose allocation effect is limited to Apple transient attachments, with final Wasm/scoped compilation and graph mutation tests retained."
+  "limits": "Target capture manifests preserve their own exact source/build records. Subsequent scoped changes add the complete residency inspector/CLI, cfg lint fix and single-mip/layer eligibility guard. Final native probe rechecks unchanged route bytes. No shader, content, tone or ABI change. Chrome Wasm and simulator binaries predate those final diagnostics and the eligibility descriptor check, whose allocation effect is limited to Apple transient attachments, with final Wasm/scoped compilation and graph mutation tests retained.",
+  "rebased_main_revision": "8a4d4f0c",
+  "rebased_gate_revision": "2c9d77eeeb90cd53063cd8a8c9a687b3675eb698",
+  "rebase_scope": "Documentation migration and comment links. No renderer, shader or game input changes. M1 planner/reviewer fields preserved."
 }

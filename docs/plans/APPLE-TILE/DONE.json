@@ -72,7 +72,7 @@
     {
       "id": "M1",
       "name": "The valley selects a recipe and stores only actual future inputs",
-      "state": "open",
+      "state": "claimed",
       "fails": 0,
       "replans": 2,
       "bar": "The same complete cooked valley as portable, with stable lighting, silhouettes, shadows and motion expected of a shipped high-end game; matched full-resolution stills and normal-speed sequences must expose omitted work.",

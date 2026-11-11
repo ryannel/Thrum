@@ -54,5 +54,7 @@ Reproduce native runs with `scripts/apple_tile_m1.py` and simulator function wit
 lock. The manifests preserve arguments. Bulk lossless sources, qualified binaries and pre-change Wasm remain in
 owned `tmp/g3t-m1` through review, without remote backup. [Retained-file hashes](retained-files.json).
 
-M1 stays open. The required repository gate fails after migration `42fdce97` with 540 missing links, 45 anchors
-and eight missing design paths. Claim and integration require repair of that shared migration and a passing gate.
+M1 is claimed for lead review. The initial migration gate failure was resolved by rebasing onto repaired main
+`8a4d4f0c`, preserving planner changes. Both the named moving command and the complete `./dev check` pass in the
+rebased milestone check with zero failures. The intervening main changes leave renderer/shader/game inputs and M1
+criteria unchanged. [Final milestone check](checks/rebased-milestone-check.json.gz).
