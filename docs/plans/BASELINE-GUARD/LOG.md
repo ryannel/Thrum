@@ -35,3 +35,8 @@
   passes 42 native comparisons and 1,924 Chrome records at covered key `f6b5c8fa`; all seven focused tests pass.
   Successful owner-published captures are archived incrementally after disk space dropped during shared work.
   Final-version mutant refusals, the third timing and the milestone check remain in progress.
+
+- 2026-11-11 M1.4 passes on the final verifier with incremental capture archiving. The actual loop refuses all
+  four scratch cases, with a fixed local remote after each refusal. Native difference metrics, failed manifests,
+  patches, base, commands and logs are [retained](../../evidence/BASELINE-GUARD/M1/refusals-final/report.json).
+  M1.5 and the complete milestone check remain.
