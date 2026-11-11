@@ -2352,6 +2352,7 @@ version = "0.1.0"
 dependencies = [
  "divan",
  "glam",
+ "objc2-metal 0.3.2",
  "pollster",
  "thrum-core",
  "web-time",

@@ -285,3 +285,9 @@ requirement = "=1.10.0"
 license = "MIT OR Apache-2.0"
 purpose = "Compile the macOS qualification signpost bridge through public SDK macros for a same-process Instruments clock anchor"
 target_cost = "Build dependency of thrum-app. One small C object on macOS only, using the existing locked compiler helper. Four signpost boundary calls per opt-in qualification run, no ordinary frame calls or GPU work."
+
+[external_dependencies.objc2-metal]
+requirement = "=0.3.2"
+license = "MIT OR Apache-2.0 OR Zlib"
+purpose = "Read generation Metal unified-memory facts and inspect prepared texture storage modes for APPLE-TILE"
+target_cost = "Apple-only binding already in locked wgpu Metal closure; read-only preparation queries, no frame work"

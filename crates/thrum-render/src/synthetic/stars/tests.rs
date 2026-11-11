@@ -31,79 +31,103 @@ fn opaque_depth_store_and_star_pass_follow_the_current_target_view() {
         let night = day
             .with_celestial_basis(glam::Mat3::IDENTITY.to_cols_array_2d())
             .expect("celestial basis");
-        for source in [CaptureSource::Sdr, CaptureSource::SceneLinear] {
-            for mode in [CullMode::Frustum, CullMode::Occlusion] {
-                scene.camera_culling = mode;
-                scene.view = day;
-                let mut prepared = PreparedSynthetic::prepare_with_capabilities(
-                    &capabilities,
-                    &queue,
-                    &scene,
-                    lighting,
-                    1.0,
-                )
-                .await
-                .expect("star scene preparation");
-                let mut target =
-                    OffscreenTarget::with_capture_source(&device, &prepared, 65, 33, source)
-                        .expect("target");
-                assert_variant(&target, false);
-                for (view, stars) in [(night, true), (day, false)] {
-                    scene.view = view;
-                    prepared
-                        .update_frame(&queue, &mut target, &scene, lighting, 1.0)
-                        .expect("update existing target");
-                    assert_variant(&target, stars);
-                    target.arm_culling_stats();
-                    let mut timings =
-                        GpuTimings::new(&capabilities, &queue, prepared.scene_pass_count())
-                            .expect("prepare timestamp capacity");
-                    assert!(timings.is_enabled(), "Metal timestamps are required");
-                    let mut readback = target.readback(&device);
-                    let mut encoder =
-                        device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-                    prepared
-                        .encode_with_readback(
-                            &mut encoder,
-                            41,
-                            &target,
-                            Some(&mut timings),
-                            &mut readback,
-                        )
-                        .expect("execute the selected graph and capture");
-                    timings
-                        .finish_render(41, &encoder)
-                        .expect("close timestamp batch");
-                    let submission = queue.submit([encoder.finish()]);
-                    target.map_culling_stats(
-                        prepared.camera_culling(),
-                        prepared.active_instance_count(),
-                    );
-                    wait(&device, submission);
-                    assert_eq!(
-                        readback.try_collect(41).unwrap().unwrap().len(),
-                        65 * 33 * source.bytes_per_pixel() as usize
-                    );
-                    let counts = target
-                        .take_culling_counts()
-                        .expect("submitted culling count");
-                    assert_eq!(counts.mode, mode);
-                    assert_eq!((counts.active, counts.drawn), (1, 1));
-                    assert_eq!(
-                        counts.prepass,
-                        u32::from(mode == CullMode::Occlusion && !stars)
-                    );
-                    let mut resolve =
-                        device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-                    assert!(timings.resolve_if_ready(41, &mut resolve).expect("resolve"));
-                    wait(&device, queue.submit([resolve.finish()]));
-                    let passes = timings.try_collect(41).unwrap().unwrap();
-                    assert!(
-                        frame_stats::pass_durations(passes, false, (&prepared, &target).into())
-                            .is_some(),
-                        "all selected culling and star timestamps resolve"
-                    );
-                    prepared.commit_frame();
+        for recipe in ["portable", "apple-tile"] {
+            let capabilities = capabilities
+                .clone()
+                .with_recipe_override(recipe)
+                .expect("supported recipe");
+            for source in [CaptureSource::Sdr, CaptureSource::SceneLinear] {
+                for mode in [CullMode::Frustum, CullMode::Occlusion] {
+                    scene.camera_culling = mode;
+                    scene.view = day;
+                    let mut prepared = PreparedSynthetic::prepare_with_capabilities(
+                        &capabilities,
+                        &queue,
+                        &scene,
+                        lighting,
+                        1.0,
+                    )
+                    .await
+                    .expect("star scene preparation");
+                    let mut target =
+                        OffscreenTarget::with_capture_source(&device, &prepared, 65, 33, source)
+                            .expect("target");
+                    assert_variant(&target, false);
+                    let report = target.storage_report();
+                    println!("recipe={recipe} mode={mode:?} source={source:?}\n{report}");
+                    assert_eq!(target.day_depth.is_some(), recipe == "apple-tile");
+                    if recipe == "apple-tile" {
+                        assert!(report.contains("Memoryless"));
+                        assert!(report.contains("Private"));
+                    }
+                    for (view, stars) in [(night, true), (day, false)] {
+                        scene.view = view;
+                        let before = device.get_internal_counters().hal;
+                        prepared
+                            .update_frame(&queue, &mut target, &scene, lighting, 1.0)
+                            .expect("update existing target");
+                        assert_variant(&target, stars);
+                        let after = device.get_internal_counters().hal;
+                        assert_eq!(before.textures.read(), after.textures.read());
+                        assert_eq!(
+                            before.render_pipelines.read(),
+                            after.render_pipelines.read()
+                        );
+                        assert_eq!(
+                            before.compute_pipelines.read(),
+                            after.compute_pipelines.read()
+                        );
+                        target.arm_culling_stats();
+                        let mut timings =
+                            GpuTimings::new(&capabilities, &queue, prepared.scene_pass_count())
+                                .expect("prepare timestamp capacity");
+                        assert!(timings.is_enabled(), "Metal timestamps are required");
+                        let mut readback = target.readback(&device);
+                        let mut encoder = device
+                            .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+                        prepared
+                            .encode_with_readback(
+                                &mut encoder,
+                                41,
+                                &target,
+                                Some(&mut timings),
+                                &mut readback,
+                            )
+                            .expect("execute the selected graph and capture");
+                        timings
+                            .finish_render(41, &encoder)
+                            .expect("close timestamp batch");
+                        let submission = queue.submit([encoder.finish()]);
+                        target.map_culling_stats(
+                            prepared.camera_culling(),
+                            prepared.active_instance_count(),
+                        );
+                        wait(&device, submission);
+                        assert_eq!(
+                            readback.try_collect(41).unwrap().unwrap().len(),
+                            65 * 33 * source.bytes_per_pixel() as usize
+                        );
+                        let counts = target
+                            .take_culling_counts()
+                            .expect("submitted culling count");
+                        assert_eq!(counts.mode, mode);
+                        assert_eq!((counts.active, counts.drawn), (1, 1));
+                        assert_eq!(
+                            counts.prepass,
+                            u32::from(mode == CullMode::Occlusion && !stars)
+                        );
+                        let mut resolve = device
+                            .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+                        assert!(timings.resolve_if_ready(41, &mut resolve).expect("resolve"));
+                        wait(&device, queue.submit([resolve.finish()]));
+                        let passes = timings.try_collect(41).unwrap().unwrap();
+                        assert!(
+                            frame_stats::pass_durations(passes, false, (&prepared, &target).into())
+                                .is_some(),
+                            "all selected culling and star timestamps resolve"
+                        );
+                        prepared.commit_frame();
+                    }
                 }
             }
         }

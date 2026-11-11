@@ -587,7 +587,19 @@
       "integration_review": "last_verdict_design_changes_7_findings_replan_review_owed",
       "review": "../evidence/APPLE-TILE/design-review-2.md",
       "reviewed_revision": "224b58a1",
-      "scope": "Planning status only. Lead commissioned the scoped re-plan answering all seven findings; independent review/unpark through the loop remains owed and M0 stays parked. Retain M0-M3/M10-M12; defer fused SDR present, pointer uploads/slot duplicates, scratch sharing, compact rows, GPU light expansion and mirror consolidation. Existing SDR arithmetic/intermediate and transport semantics remain. No implementation, correctness, visual or device promotion. T2 M0/M1 are delivered, not a restart. Mac M2 qualifies independently; Mac M3 needs G3t M3 with no simulator cooked/capture chain. G4 consumes the pre-tone input and native boundary; final M12 cooked simulator function alone needs COOKED-DRAW M1."
+      "scope": "Planning status only. Lead commissioned the scoped re-plan answering all seven findings; independent review/unpark through the loop remains owed and M0 stays parked. Retain M0-M3/M10-M12; defer fused SDR present, pointer uploads/slot duplicates, scratch sharing, compact rows, GPU light expansion and mirror consolidation. Existing SDR arithmetic/intermediate and transport semantics remain. No implementation, correctness, visual or device promotion. T2 M0/M1 are delivered, not a restart. Mac M2 qualifies independently; Mac M3 needs G3t M3 with no simulator cooked/capture chain. G4 consumes the pre-tone input and native boundary; final M12 cooked simulator function alone needs COOKED-DRAW M1.",
+      "M1": {
+        "implementation": "partial_generation_registry_and_graph_qualified_attachments_in_builder_checkpoint",
+        "functional_validation": "Mac_exact_retained_and_paired_SDR_linear_pass_Chrome_1924_full_frames_exact_simulator_diagnostic_lifecycle_pass_workspace_tests_pass_required_repository_gate_blocked_by_plan_migration",
+        "experienced_quality": "not_reviewed",
+        "builder_observation": "Full frames, crops and recorded motion sequences inspected. Lead review is owed. Existing midnight route local-light saturation is byte-identical before and after.",
+        "platform_performance": {
+          "mac": "unmeasured_no_promotion_driver_residency_and_storage_modes_recorded",
+          "browser": "unmeasured_portable_function_and_output_only",
+          "ios": "simulator_function_only_unified_memory_false_portable_physical_device_unqualified"
+        },
+        "evidence": "../evidence/render/apple-tile-m1/README.md"
+      }
     }
   },
   "user_selected": [

@@ -64,7 +64,11 @@ impl PreparedSynthetic {
                 Some(GraphDepthAttachment {
                     resource: &target.ids.depth,
                     range: 0..1,
-                    view: &target.depth,
+                    view: target
+                        .day_depth
+                        .as_ref()
+                        .filter(|_| !target.draw_stars)
+                        .map_or(&target.depth, |(_, view)| view),
                     clear: 0.0,
                 }),
                 self.key.device_generation,

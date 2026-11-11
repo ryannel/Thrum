@@ -15,6 +15,23 @@ impl<W: WebWorld, V: SceneSource<W::Page>> WebShell<W, V> {
             .map_err(|e| e.to_string())
     }
 
+    /// Begin scene-linear capture through the same bounded submitted-image tap.
+    /// # Errors
+    /// Refuses loss, an active session or resources that cannot be prepared.
+    pub fn begin_linear_capture(&mut self, session: u64) -> Result<(), String> {
+        if self.graphics.is_lost() {
+            return Err("graphics device is lost".to_owned());
+        }
+        self.collect_completed()?;
+        self.host
+            .enable_submitted_capture_from(
+                session,
+                thrum_render::runtime::CaptureLimits::default(),
+                thrum_render::synthetic::CaptureSource::SceneLinear,
+            )
+            .map_err(|e| e.to_string())
+    }
+
     /// Poll one exact submitted image without advancing time or redrawing.
     /// # Errors
     /// Refuses loss, a retired generation or a failed mapping.

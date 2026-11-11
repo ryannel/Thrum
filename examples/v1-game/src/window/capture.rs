@@ -546,7 +546,7 @@ async fn record(output: &Path, scenario: &str) -> Result<(), String> {
         "scenario":scenario,"adapter":adapter.get_info().name,"backend":"Metal","mode":mode,
         "presentation_lead_policy":"engine clock next opportunity target, shared display_target_lead at consumption; untargeted prime/warmup zero",
         "surface_generation_scope":"engine presenter incarnation: prepare, resize, device publish; not OS surface lease",
-        "recipe":"current portable wgpu Metal offscreen ordinary presenter","enabled_features":format!("{:?}",capabilities.features()),
+        "recipe":format!("{:?}",capabilities.recipe()),"registry_digest":capabilities.registry_digest(),"unified_memory":capabilities.unified_memory(),"enabled_features":format!("{:?}",capabilities.features()),
         "extent":[1920,1080],"requested_hz":120,"interval_end_ns":interval_end_ns,
         "last_scenario_ns":last_sample_time.as_nanos(),"duration_including_drain_ns":origin.elapsed().as_nanos(),
         "world_origin_before_run_ns":origin.saturating_duration_since(driver.origin()).as_nanos(),

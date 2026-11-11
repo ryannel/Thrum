@@ -13,6 +13,15 @@ impl BrowserGame {
             .map_err(super::js_error)
     }
 
+    /// Capture scene-linear RGBA16Float through the same submitted-output tap.
+    /// # Errors
+    /// Refuses loss, an active session or preparation failure.
+    pub fn begin_linear_capture(&mut self, session: u32) -> Result<(), JsValue> {
+        self.shell
+            .begin_linear_capture(u64::from(session))
+            .map_err(super::js_error)
+    }
+
     /// Export one image and its immutable submission identity without a redraw.
     /// The JS typed array owns a copy, so the renderer lease returns immediately.
     /// # Errors
@@ -23,6 +32,8 @@ impl BrowserGame {
         };
         let metadata = serde_json::json!({
             "session": image.session,
+            "pixel_source": format!("{:?}", image.pixel_source),
+            "exposure_gpu_words": image.exposure_gpu_words,
             "submission_id": image.sample.submission_order,
             "tick": image.sample.tick,
             "source_tick": image.source.tick,
