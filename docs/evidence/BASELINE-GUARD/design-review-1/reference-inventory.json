@@ -1,0 +1,30 @@
+{
+  "revision": "9619c1370075b6b03f9d436f12af454f6020197c",
+  "method": "Read committed gzip manifests and test whether each record file exists relative to its manifest directory; no capture, rebuild or baseline mutation. These are the reference directories the design registers or its owner documents.",
+  "results": [
+    {
+      "manifest": "docs/evidence/render/apple-tile-m0/chrome-baseline/prechange-chrome-fixed-manifest.json.gz",
+      "records": 481,
+      "missing_reference_files_beside_manifest": 481,
+      "first_missing": "frames/000000.rgba.gz"
+    },
+    {
+      "manifest": "docs/evidence/render/apple-tile-m1/chrome/chrome-prechange-linear-3/manifest.json.gz",
+      "records": 481,
+      "missing_reference_files_beside_manifest": 481,
+      "first_missing": "frames/000000.rgba.gz"
+    },
+    {
+      "manifest": "docs/evidence/render/apple-tile-m1/chrome/chrome-prechange-night-linear/manifest.json.gz",
+      "records": 481,
+      "missing_reference_files_beside_manifest": 481,
+      "first_missing": "frames/000000.rgba.gz"
+    },
+    {
+      "manifest": "docs/evidence/render/apple-tile-m1/chrome/chrome-prechange-night-sdr/manifest.json.gz",
+      "records": 481,
+      "missing_reference_files_beside_manifest": 481,
+      "first_missing": "frames/000000.rgba.gz"
+    }
+  ]
+}

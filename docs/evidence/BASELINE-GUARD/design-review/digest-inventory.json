@@ -1,0 +1,106 @@
+{
+  "revision": "4a1e0aeaf5a5d8ae028b4f803b4f9e4d5c3faf94",
+  "method": "Read the four committed gzip manifests and validate record counts, digest syntax and identity fields required by the existing Chrome comparator. No build, capture, image comparison or baseline change. This establishes reference availability, not current candidate equality.",
+  "sets": [
+    {
+      "set": "day-sdr",
+      "manifest": "docs/evidence/render/apple-tile-m0/chrome-baseline/prechange-chrome-fixed-manifest.json.gz",
+      "manifest_sha256": "1aaad66d4beb26aef9f2c605c92390a4330e5236290ee3673b7a0e9de1a7f296",
+      "complete": true,
+      "mode": "fixed",
+      "records": 481,
+      "all_digests_valid_hex_sha256": true,
+      "all_required_identity_fields_present": true,
+      "linear_exposure_words_valid": null,
+      "identity_keys": [
+        "session",
+        "submission_id",
+        "tick",
+        "source_tick",
+        "source_epoch",
+        "timeline",
+        "alpha",
+        "history_epoch",
+        "device_generation",
+        "presenter_generation",
+        "surface_presented"
+      ]
+    },
+    {
+      "set": "day-linear",
+      "manifest": "docs/evidence/render/apple-tile-m1/chrome/chrome-prechange-linear-3/manifest.json.gz",
+      "manifest_sha256": "78d95bb28d09d0b4826dc7456a14ba936ef12bc8925bde914656857f4818bc42",
+      "complete": true,
+      "mode": "fixed",
+      "records": 481,
+      "all_digests_valid_hex_sha256": true,
+      "all_required_identity_fields_present": true,
+      "linear_exposure_words_valid": true,
+      "identity_keys": [
+        "session",
+        "submission_id",
+        "tick",
+        "source_tick",
+        "source_epoch",
+        "timeline",
+        "alpha",
+        "history_epoch",
+        "device_generation",
+        "presenter_generation",
+        "surface_presented",
+        "pixel_source",
+        "exposure_gpu_words"
+      ]
+    },
+    {
+      "set": "night-sdr",
+      "manifest": "docs/evidence/render/apple-tile-m1/chrome/chrome-prechange-night-sdr/manifest.json.gz",
+      "manifest_sha256": "b741ba60d9eb54cf8838f276cc4eee3ba7c02a58c32e21723c0adc05184363da",
+      "complete": true,
+      "mode": "fixed",
+      "records": 481,
+      "all_digests_valid_hex_sha256": true,
+      "all_required_identity_fields_present": true,
+      "linear_exposure_words_valid": null,
+      "identity_keys": [
+        "session",
+        "submission_id",
+        "tick",
+        "source_tick",
+        "source_epoch",
+        "timeline",
+        "alpha",
+        "history_epoch",
+        "device_generation",
+        "presenter_generation",
+        "surface_presented"
+      ]
+    },
+    {
+      "set": "night-linear",
+      "manifest": "docs/evidence/render/apple-tile-m1/chrome/chrome-prechange-night-linear/manifest.json.gz",
+      "manifest_sha256": "b67c799c5178e4079de901240618c73a2505aa7fe6734d09218e8c51e7f1138a",
+      "complete": true,
+      "mode": "fixed",
+      "records": 481,
+      "all_digests_valid_hex_sha256": true,
+      "all_required_identity_fields_present": true,
+      "linear_exposure_words_valid": true,
+      "identity_keys": [
+        "session",
+        "submission_id",
+        "tick",
+        "source_tick",
+        "source_epoch",
+        "timeline",
+        "alpha",
+        "history_epoch",
+        "device_generation",
+        "presenter_generation",
+        "surface_presented",
+        "pixel_source",
+        "exposure_gpu_words"
+      ]
+    }
+  ]
+}
