@@ -4,6 +4,9 @@ from decimal import Decimal as D
 from pathlib import Path
 import unittest
 import tempfile
+import json
+import sys
+from qualify_mac_m2 import bounded
 import mac_m2_presented as witness
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -86,6 +89,16 @@ class PresentedWitness(unittest.TestCase):
             rows=witness.presented_rows(path,7)
             self.assertEqual([r['drawable_id'] for r in rows],['4','5'])
             self.assertEqual(rows[1]['status'],'2')
+
+    def test_finalization_cap_starts_at_recording_stop(self):
+        with tempfile.TemporaryDirectory() as directory:
+            log=Path(directory)/'process.log'
+            command=[sys.executable,'-c',"import time; print('Target app exited, ending recording...',flush=True); time.sleep(30)"]
+            with self.assertRaises(RuntimeError):
+                bounded(command,log,2,finalization_seconds=.2)
+            timing=json.loads(log.with_suffix('.timing.json').read_text())
+            self.assertAlmostEqual(timing['deadline_monotonic_s']-timing['recording_stop_observed_monotonic_s'],.2,places=5)
+            self.assertLess(timing['deadline_monotonic_s']-timing['start_monotonic_s'],2)
 
     def test_complete_synthetic_interval_is_accepted(self):
         args=list(self.retained('off'))
