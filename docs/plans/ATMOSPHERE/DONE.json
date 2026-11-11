@@ -4,7 +4,7 @@
     {
       "id": "M5",
       "name": "Other modules read the one sky and Sun, and one cloud optical depth dims direct sunlight once",
-      "state": "blocked",
+      "state": "open",
       "fails": 0,
       "replans": 0,
       "bar": "Cloud shade crossing a landscape as in Red Dead Redemption 2 or Horizon Forbidden West: the patch dims direct sunlight only, moves in world space, agrees on every lit surface and leaves the shaded ground sky-lit, never black. The diagnostic pattern is a stand-in, so its shape and softness are not judged here. With no cloud source the scene and its cost are exactly what they were.",
@@ -123,8 +123,7 @@
           "verdict": "",
           "review": ""
         }
-      ],
-      "blocked": "the Codex goal is blocked"
+      ]
     },
     {
       "id": "M6",
