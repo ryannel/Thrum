@@ -34,3 +34,12 @@ A qualified bounded OFF probe can serve M2.2’s OFF arm. After M2.3/M2.4/M2.5 p
 `--presented-arm on-untraced` and `--presented-arm on-traced` with the same output root/configuration under GPU.
 Retain and inspect complete native ON originals, crops and host-time 1× movies. No claim from movie PTS or
 callback intervals. A locked/asleep panel stops the sitting immediately; unattended analysis can continue.
+
+
+Resume after the second sitting: M2.5 now has builder proof from attempt 3; three of six traces are used.
+The `on-untraced` arm exists and all 850 originals verify. Preserve its measured interval brackets (including
+1.992085 s between sweep markers) for final qualification. `on-traced` does not exist: its disk preflight refused
+below 16 GiB, before launch or attempt consumption. Restore at least 16 GiB of shared-volume headroom, keep the
+built-in panel awake/unlocked, then run the same command above with `--presented-arm on-traced` and the same output
+root under GPU. Do not overwrite completed arms. Complete its witness/source review and observer comparison;
+recheck all ON brackets before passing M2.2.

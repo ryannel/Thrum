@@ -1,6 +1,16 @@
 # PLATFORM-RUNTIME-MAC log
 
 
+11 November resumed sitting disk stop. M2.5 passes the fresh Deferred OFF witness; all 491 marked submissions
+join and both markers are covered. The ON/untraced run verifies all 850 originals, with 1× playback/native-source
+inspection and measured marker durations retained. The final ON/traced collector acquired GPU but refused its
+16 GiB disk preflight before launch, consuming no recording. About 9–13 GiB remained as shared jobs continued.
+Only verified reconstructible PNGs were reclaimed; source masters and other workers' files were preserved.
+M2.2 stays open, with three of six recordings unused. It needs restored disk headroom, the traced ON arm,
+interval-bracket verification and the complete observer-cost comparison. The panel remained awake/unlocked.
+[Evidence and resume blocker](../../evidence/render/mac-m2-presented-20261111/README.md#remaining-m22-blocker-shared-disk-headroom).
+
+
 11 November resumed attended sitting. The non-windowed Deferred OFF trace completes within bounds and spans
 both Whole markers, joining all 491 marked submissions with no affected unmatched sample. Same-process marker
 conversion validates with an 8.5 ns presented-value error bound; only built-in display 1 is listed. M2.5 has

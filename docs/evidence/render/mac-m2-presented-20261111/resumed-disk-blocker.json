@@ -1,0 +1,22 @@
+{
+  "observed_unix_ns": 1794432688167375000,
+  "free_bytes": 10062282752,
+  "required_free_bytes": 17179869184,
+  "commands_refused": [
+    {
+      "arm": "off-traced",
+      "result": "less than 16 GiB free before this arm; no attempt consumed",
+      "exit": 2,
+      "recovered": "Verified compressed sources before reclaiming expanded PNGs; successful fresh OFF followed."
+    },
+    {
+      "arm": "on-traced",
+      "result": "less than 16 GiB free before this arm; no attempt consumed",
+      "exit": 2,
+      "remaining": "Free at least 16 GiB on shared volume, keep panel awake/unlocked, rerun the same untested ON-traced command under GPU."
+    }
+  ],
+  "trace_recordings_used": 3,
+  "trace_allowance": 6,
+  "scope": "Read-only disk preflight refusals, not trace failures. No additional attempt consumed. Reclaimed only verified reconstructible PNGs owned by this sitting."
+}

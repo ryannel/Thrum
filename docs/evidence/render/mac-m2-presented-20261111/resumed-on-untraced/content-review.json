@@ -1,0 +1,31 @@
+{
+  "verified_originals": 850,
+  "missing_submissions": [],
+  "continuous": true,
+  "max_source_submit_gap_ms": 17.017875,
+  "marked_host_media_brackets": [
+    {
+      "stage": "0",
+      "media_before": "2945302.871291250",
+      "media_after": "2945302.871303292"
+    },
+    {
+      "stage": "1",
+      "media_before": "2945303.871249625",
+      "media_after": "2945303.871250417"
+    },
+    {
+      "stage": "2",
+      "media_before": "2945305.863334459",
+      "media_after": "2945305.863335417"
+    },
+    {
+      "stage": "3",
+      "media_before": "2945306.963275000",
+      "media_after": "2945306.963275709"
+    }
+  ],
+  "window_identity": "pid=50364\nwindow_number=47577\nadapter=Apple M3 Max\nformat=Bgra8Unorm\nextent=1920x1080\nmonitor=Some((Some(\"Monitor #41041\"), PhysicalSize { width: 3456, height: 2234 }, Some(120000)))\nposition=Ok(PhysicalPosition { x: 768, y: 292 })\nscale=2\n",
+  "review": "Native Chrome local host-time movie played to ended=true at rate 1 under gpu; Screenshots sampled over 7.5 seconds, plus full-resolution yaw18 source and native crops at yaw0/9/18/27/36. Rock/ridge placement stays coherent, sphere sweeps left and exits, settled endpoints follow yaw. No gross cut/snap/reversal observed. Source intervals and local holds are retained measurements; browser playback is not panel cadence.",
+  "limits": "AppKit stage markers span 0.999958 s initial hold, 1.992085 s sweep and 1.099941 s final hold; these are measured markers, not an assertion of an exact two-second sweep. M2.2 remains open."
+}

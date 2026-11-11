@@ -1,0 +1,9 @@
+{
+  "command": [
+    "/Users/ryannel/Workspace/thrum/.claude/worktrees/mac-m2/target/release/v1-game"
+  ],
+  "record_limit_s": null,
+  "finalization_limit_s": null,
+  "collector_sha256": "35e38aa07b2e0e0d65a0d309f0daa82ac71b3254be693152ab91523aadc51a2d",
+  "panel_observation_period_s": 0.5
+}

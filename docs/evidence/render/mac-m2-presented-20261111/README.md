@@ -1,12 +1,13 @@
 # Mac M2 presented-time qualification, 11 November
 
-**M2 remains open. M2.1, M2.3, M2.4 and M2.5 have builder proof. M2.2 is collecting its matched ON arms
-on the resumed awake-panel sitting; the traced ON arm is queued for GPU.** The earlier stop remains history: At 14:10:01 UTC the continuous queue guard observed display 1 inactive/asleep while
+**M2 remains open. M2.1, M2.3, M2.4 and M2.5 have builder proof. M2.2 is blocked on disk headroom:
+the capture-ON traced collector refused below its 16 GiB minimum before launching or consuming an attempt.** The earlier stop remains history: At 14:10:01 UTC the continuous queue guard observed display 1 inactive/asleep while
 the console stayed unlocked. It cancelled only the owned request before GPU acquisition or recording.
 [Stop record](deferred-queue/queue-blocked.json), [panel witnesses](deferred-queue/panel-witness.jsonl.gz),
 [guard source](deferred-queue/guard.py) and [queued-request exit](deferred-queue/collector.log).
 
-Two of the six recordings granted by reviewed re-plan `ab66bca5` are used; four remain. The exhausted 9 November
+Before this resumed sitting, two of the six recordings granted by reviewed re-plan `ab66bca5` were used.
+Attempt 3 now passes M2.5; three recordings remain. The exhausted 9 November
 commission is separate history. No Developer mode, Instruments authorization or Screen Recording change is needed.
 [Commission](trace-commission.json) · [one-command attended runbook](RUNBOOK.md).
 
@@ -41,7 +42,7 @@ python3 -m unittest discover -s scripts -p 'test_mac_m2*.py' -v
 The first two commands intentionally exit 2 (`coverage: false`). For a fresh trace, use `--input <arm>/pan.trace`
 and `--arm <arm>` with retained game/marker records. Export has a 30-second timeout.
 
-## Fresh attempts: M2.5 and M2.2 stay open
+## Earlier attempts: retained failures before M2.5 passed
 
 | Attempt | Configuration | Outcome |
 | --- | --- | --- |
@@ -66,7 +67,7 @@ Every strict over-period interval is listed; two-refresh intervals are identifie
 The pinned binary `aa1591522962933b55ec1f347cc538880f5eb14b7ea227bf4adcb7f00b585507`, preset and cooked store
 match [M2.1 motion](../mac-m2-20261110/README.md#runtime-motion) and
 [M2.3 window proof](../mac-m2-20261110/README.md#real-cametallayer-tap). Exact collector sources/hashes are retained.
-Mac M3 owns post-APPLE-TILE requalification. Fresh ON arms and 1× review remain owed. Callback targets, game
+Mac M3 owns post-APPLE-TILE requalification. The resumed ON/untraced proof is below; ON/traced and the complete comparison remain owed. Callback targets, game
 records, GPU queries/completion observations, image time, movie PTS and OS presented time are distinct.
 Acquisition has no separate absolute timestamp here. Kernel swaps, scan-out, photons, input-to-photon and
 physical iPhone timing remain unmeasured.
@@ -91,3 +92,33 @@ Same-process marker offset width is 625 ns; converted presented-value error is 8
 Raw/derived display tables remain empty and are not the witness. OFF has zero images and no capture spool.
 Two Whole two-refresh intervals, 547→548 and 548→549, remain for M2.2 investigation beside the matched ON arms.
 Three of six recordings are consumed. ON arms and final M2.2 judgment follow this prerequisite pass.
+
+
+## Remaining M2.2 blocker: shared disk headroom
+
+The matched ON/untraced arm ran after M2.5 passed, using the pinned binary/content/preset. All 850 originals
+verify with zero omissions. [Source joins](resumed-on-untraced/window-manifest.json.gz),
+[host-time 1× movie](resumed-on-untraced/preview-1x.mp4), [native view](resumed-on-untraced/native-yaw18.png),
+[crops and sweep](resumed-on-untraced/content-contact.png), [review and measured brackets](resumed-on-untraced/content-review.json),
+[retained source identity](resumed-on-untraced/retention.json). The movie was reviewed to its endpoint at rate 1
+in native Chrome under GPU, with full-resolution sources and crops: coherent rock/ridges, authored sphere exit,
+yaw-consistent endpoints, no gross cut/snap/reversal. Markers span 0.999958 s initial hold, 1.992085 s sweep and
+1.099941 s final hold; no exact two-second claim is made for this arm. It remains partial M2.2 evidence.
+
+[Every strict OFF over-period interval](resumed-off-over-period-investigations.json.gz) includes drawable,
+time, yaw, both game records and load references. There are 236 overlapping Whole; non-miss grid excess is at most
+5.501 µs. Two whole missed refreshes are 547→548 (16.665250 ms, 8.315917 ms game gap) and 548→549
+(16.666667 ms, 12.193708 ms game gap). The first has ordinary host/GPU neighbors; the second coincides with
+4.612 ms host render work. GPU scene queries stay near 2.6–2.7 ms. This is correlation, not isolated causal
+attribution; host-wide load is 4.72 before / 5.76 after and other builders' CPU work continues.
+[Per-frame comparisons and load](resumed-arm-costs.json.gz).
+
+The ON/traced collector acquired GPU but refused disk preflight before launch. [Refusal record](resumed-disk-blocker.json).
+No attempt was consumed: three of six remain. Verified reconstructible PNG expansions were reclaimed; selected
+native views, complete compressed originals and their hashes remain. Other workers' files were untouched.
+M2.2 is open; free at least 16 GiB on the shared volume before resuming its traced ON arm under GPU, then verify
+its full sources/witness, finish the matched observer-cost comparison and recheck the ON interval brackets.
+The panel stayed unlocked and awake throughout collection and review. Fourteen [targeted tests](resumed-tests.log) pass.
+Callback target/opportunity, submission, GPU queries, engine image time, movie PTS and OS presented time stay
+separate. Acquisition has no separate absolute timestamp here. Kernel swaps, scan-out, photons, input-to-photon
+and physical iPhone timing remain unmeasured. There is no complete ON/traced versus ON/untraced/OFF comparison yet.
