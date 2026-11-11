@@ -1,0 +1,18 @@
+test_callback_time_and_delta_are_not_presented_time (test_mac_m2_presented.PresentedWitness.test_callback_time_and_delta_are_not_presented_time) ... ok
+test_complete_synthetic_interval_is_accepted (test_mac_m2_presented.PresentedWitness.test_complete_synthetic_interval_is_accepted) ... ok
+test_known_missed_refreshes_and_truncated_refusal (test_mac_m2_presented.PresentedWitness.test_known_missed_refreshes_and_truncated_refusal) ... ok
+test_missing_ordinal_and_wrong_conversion_refused (test_mac_m2_presented.PresentedWitness.test_missing_ordinal_and_wrong_conversion_refused) ... ok
+test_unmatched_scope_uses_os_presented_bounds (test_mac_m2_presented.PresentedWitness.test_unmatched_scope_uses_os_presented_bounds) ... ok
+test_xml_references_and_pid_attribution (test_mac_m2_presented.PresentedWitness.test_xml_references_and_pid_attribution) ... ok
+test_zero_absent_unknown_and_duplicate_are_unmatched (test_mac_m2_presented.PresentedWitness.test_zero_absent_unknown_and_duplicate_are_unmatched) ... ok
+test_console_witness_does_not_affect_denied_permission_proof (test_mac_m2_window.PermissionEvidenceTests.test_console_witness_does_not_affect_denied_permission_proof) ... ok
+test_permission_observations_must_belong_to_the_actual_driver_and_parent (test_mac_m2_window.PermissionEvidenceTests.test_permission_observations_must_belong_to_the_actual_driver_and_parent) ... ok
+test_image_is_bound_to_actual_surface_submission_and_normal_request (test_mac_m2_window.WindowEvidenceTests.test_image_is_bound_to_actual_surface_submission_and_normal_request) ... ok
+test_occlusion_or_unmatched_image_or_input_cannot_pass (test_mac_m2_window.WindowEvidenceTests.test_occlusion_or_unmatched_image_or_input_cannot_pass) ... ok
+test_source_order_cannot_be_rewritten_as_movie_time (test_mac_m2_window.WindowEvidenceTests.test_source_order_cannot_be_rewritten_as_movie_time) ... ok
+test_surface_retirement_remains_an_explicit_missing_image (test_mac_m2_window.WindowEvidenceTests.test_surface_retirement_remains_an_explicit_missing_image) ... ok
+
+----------------------------------------------------------------------
+Ran 13 tests in 2.727s
+
+OK

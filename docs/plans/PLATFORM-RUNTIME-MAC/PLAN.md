@@ -33,7 +33,7 @@ built-in panel, and nothing else. Verdicts on `0d53d3aa` qualify only that build
       one-second holds, with denied Screen Recording preflights and console state recorded as a witness only.
 - [x] M2.3, attended setup: the shared T2 tap on the real CAMetalLayer window, with output correspondence,
       lease, replacement, stale-generation refusal and capture-OFF direct-path proofs.
-- [ ] M2.4, unattended: one reusable command that turns a trace's `ca-client-presented-handler` rows into
+- [x] M2.4, unattended: one reusable command that turns a trace's `ca-client-presented-handler` rows into
       presented intervals per drawable. On the retained 11 November tables it finds the three known two-refresh
       intervals and joins drawable 545's to the game's own present-call gap. No recording is needed.
 - [ ] M2.5, attended setup: a fresh recording of the release game whose retained rows span both `MacM2Whole`
