@@ -616,15 +616,15 @@
     },
     "G4_apple_presentation": {
       "M1": {
-        "implementation": "view_abi_continuous_32_phase_jitter_unjittered_geometry_and_infinity_motion_invalid_history_marker_and_existing_pass_motion_view",
-        "functional_validation": "builder_verified_on_mac_metal_Apple_M3_Max_real_motion_attachment_static_exact_zero_over_35_phases_and_independent_pan_solar_sidereal_projection_checks",
-        "experienced_quality": "builder_inspected_fixed_time_submitted_day_night_and_moving_object_sequences_independent_review_owed",
+        "implementation": "view_abi_continuous_32_phase_metadata_explicit_temporal_raster_sampling_spatial_game_output_unjittered_geometry_and_infinity_motion_invalid_history_marker_and_existing_pass_motion_view",
+        "functional_validation": "builder_verified_on_mac_metal_Apple_M3_Max_real_motion_attachment_static_exact_zero_over_35_jitter_phases_independent_pan_solar_sidereal_projection_checks_spatial_colour_byte_equal_with_advancing_phase_and_jittered_positive_control_consecutive_pause_and_recovery_regressions",
+        "experienced_quality": "builder_inspected_current_day_night_and_moving_object_motion_sequences_and_reviewer_held_camera_comparisons_at_640x360_and_1920x1080_stable_sphere_skyline_and_ground_edges_independent_re_review_owed",
         "platform_performance": {
           "mac": "not_measured_no_cadence_or_speed_claim",
           "browser": "compile_and_regression_checks_only_no_M1_target_claim",
           "ios": "not_qualified"
         },
-        "evidence": "../evidence/APPLE-PRESENTATION/m1/README.md",
+        "evidence": "../evidence/APPLE-PRESENTATION/m1-mf1/README.md",
         "scope": "M1 motion inputs only. No temporal reconstruction, reactive target, MetalFX, EDR, governor or G4 closure."
       }
     }
