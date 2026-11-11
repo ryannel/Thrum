@@ -24,6 +24,7 @@ fn split_plan(
             scope: PassScope::Shared,
             pipeline: None,
             accesses: vec![Access {
+                view: None,
                 resource,
                 range: 0..8,
                 kind: AccessKind::CopyWrite,

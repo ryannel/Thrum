@@ -22,6 +22,7 @@ fn only_live_variant_uses_determine_attachment_storage() {
             let depth = graph
                 .resource(
                     ResourceDescriptor::Texture {
+                        dimension: TextureKind::D2,
                         width: 4,
                         height: 4,
                         layers: 1,
@@ -40,6 +41,7 @@ fn only_live_variant_uses_determine_attachment_storage() {
                 scope: PassScope::View(1),
                 pipeline: None,
                 accesses: vec![Access {
+                    view: None,
                     resource: depth.clone(),
                     range: 0..1,
                     kind: AccessKind::AttachmentClear,
@@ -62,6 +64,7 @@ fn only_live_variant_uses_determine_attachment_storage() {
                     scope: PassScope::View(1),
                     pipeline: None,
                     accesses: vec![Access {
+                        view: None,
                         resource: depth.clone(),
                         range: 0..1,
                         kind: reader,
@@ -89,6 +92,7 @@ fn transient_storage_respects_locked_wgpu_layer_and_mip_restrictions() {
         let depth = graph
             .resource(
                 ResourceDescriptor::Texture {
+                    dimension: TextureKind::D2,
                     width: 4,
                     height: 4,
                     layers,
@@ -105,6 +109,7 @@ fn transient_storage_respects_locked_wgpu_layer_and_mip_restrictions() {
             scope: PassScope::View(1),
             pipeline: None,
             accesses: vec![Access {
+                view: None,
                 resource: depth.clone(),
                 range: 0..1,
                 kind: AccessKind::AttachmentClear,

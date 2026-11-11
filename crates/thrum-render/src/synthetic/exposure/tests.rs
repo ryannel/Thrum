@@ -102,6 +102,7 @@ fn policy_graph_reads_the_actual_diffuse_write_before_tone() {
         scope: PassScope::View(1),
         pipeline: None,
         accesses: vec![Access {
+            view: None,
             resource: directional.clone(),
             range: 48..64,
             kind: AccessKind::StorageWrite,
@@ -120,6 +121,7 @@ fn policy_graph_reads_the_actual_diffuse_write_before_tone() {
         scope: PassScope::View(1),
         pipeline: None,
         accesses: vec![Access {
+            view: None,
             resource: sample,
             range: 0..SAMPLE_BYTES,
             kind: AccessKind::UniformRead,

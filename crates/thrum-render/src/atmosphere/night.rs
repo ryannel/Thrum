@@ -69,6 +69,7 @@ impl NightProfile {
     pub(super) fn graph_reads(&self, graph: &mut FrameGraph) -> Result<[Access; 2], GraphError> {
         let night_profile = graph.resource(
             ResourceDescriptor::Texture {
+                dimension: crate::graph::TextureKind::D2,
                 width: self.texture.width(),
                 height: self.texture.height(),
                 layers: 1,
@@ -88,12 +89,14 @@ impl NightProfile {
         )?;
         Ok([
             Access {
+                view: None,
                 resource: night_profile,
                 range: 0..1,
                 kind: AccessKind::SampledRead,
                 store: true,
             },
             Access {
+                view: None,
                 resource: night_control,
                 range: 0..CONTROL_BYTES,
                 kind: AccessKind::UniformRead,

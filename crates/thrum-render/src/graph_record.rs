@@ -178,6 +178,7 @@ mod tests {
                 scope: PassScope::Shared,
                 pipeline: None,
                 accesses: vec![Access {
+                    view: None,
                     resource,
                     range: 0..8,
                     kind,

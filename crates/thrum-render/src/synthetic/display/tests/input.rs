@@ -118,6 +118,7 @@ fn prepared_reconstruction_texture_uses_declared_copy_to_tone_hazard_and_same_sd
         let stage = prepared.sdr_tone_stage();
         let mut graph = FrameGraph::default();
         let descriptor = |format, usage| ResourceDescriptor::Texture {
+            dimension: crate::graph::TextureKind::D2,
             width: 65,
             height: 37,
             layers: 1,
@@ -167,18 +168,8 @@ fn prepared_reconstruction_texture_uses_declared_copy_to_tone_hazard_and_same_sd
             scope: PassScope::View(1),
             pipeline: None,
             accesses: vec![
-                Access {
-                    resource: source,
-                    range: 0..1,
-                    kind: AccessKind::CopyRead,
-                    store: true,
-                },
-                Access {
-                    resource: colour.clone(),
-                    range: 0..1,
-                    kind: AccessKind::CopyWrite,
-                    store: true,
-                },
+                Access::new(source, 0..1, AccessKind::CopyRead),
+                Access::new(colour.clone(), 0..1, AccessKind::CopyWrite),
             ],
             external_side_effect: false,
         });

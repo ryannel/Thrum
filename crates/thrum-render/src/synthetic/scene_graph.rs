@@ -92,6 +92,7 @@ impl PreparedSynthetic {
         };
         let resource = graph.resource(
             ResourceDescriptor::Texture {
+                dimension: crate::graph::TextureKind::D2,
                 width,
                 height,
                 layers: 1,
@@ -103,6 +104,7 @@ impl PreparedSynthetic {
             ResourceScope::Transient,
         )?;
         accesses.push(Access {
+            view: None,
             resource: resource.clone(),
             range: 0..1,
             kind: AccessKind::AttachmentClear,
@@ -125,12 +127,7 @@ impl PreparedSynthetic {
                     ResourceDescriptor::Buffer { bytes, usage },
                     ResourceScope::Imported { initialized: true },
                 )
-                .map(|resource| Access {
-                    resource,
-                    range: 0..bytes,
-                    kind,
-                    store: true,
-                })
+                .map(|resource| Access::new(resource, 0..bytes, kind))
         };
         Ok([
             read(
@@ -171,12 +168,7 @@ impl PreparedSynthetic {
                 ResourceDescriptor::Buffer { bytes, usage },
                 ResourceScope::Imported { initialized: true },
             )?;
-            Ok(Access {
-                resource,
-                range: 0..bytes,
-                kind,
-                store: true,
-            })
+            Ok(Access::new(resource, 0..bytes, kind))
         })
         .collect()
     }
@@ -208,24 +200,13 @@ impl PreparedSynthetic {
         let mesh = self.mesh_arena_reads(&mut graph)?;
         let route = self.bucket_route_reads(&mut graph)?;
         let mut accesses = vec![
-            Access {
-                resource: material,
-                range: 0..self.material_bytes,
-                kind: AccessKind::StorageRead,
-                store: true,
-            },
-            Access {
-                resource: instance.clone(),
-                range: 0..self.instance_bytes,
-                kind: AccessKind::StorageRead,
-                store: true,
-            },
-            Access {
-                resource: history_read,
-                range: 0..history_bytes,
-                kind: AccessKind::StorageRead,
-                store: true,
-            },
+            Access::new(material, 0..self.material_bytes, AccessKind::StorageRead),
+            Access::new(
+                instance.clone(),
+                0..self.instance_bytes,
+                AccessKind::StorageRead,
+            ),
+            Access::new(history_read, 0..history_bytes, AccessKind::StorageRead),
         ];
         accesses.extend_from_slice(&mesh);
         // Direct's bucket draws read the member list; the culled draws read
@@ -304,12 +285,11 @@ impl PreparedSynthetic {
         )?;
         let exposure_sample =
             ExposureResolve::append_graph(&mut graph, self.exposure_key(), directional)?;
-        accesses.push(Access {
-            resource: exposure_sample.clone(),
-            range: 0..exposure::SAMPLE_BYTES,
-            kind: AccessKind::UniformRead,
-            store: true,
-        });
+        accesses.push(Access::new(
+            exposure_sample.clone(),
+            0..exposure::SAMPLE_BYTES,
+            AccessKind::UniformRead,
+        ));
         let forward = graph.pass(Pass {
             name: "synthetic forward opaque".into(),
             scope: PassScope::View(1),
@@ -346,6 +326,7 @@ impl PreparedSynthetic {
         let generation = self.key.device_generation;
         let surface =
             Self::surface_pass(&mut graph, &output, generation, &mut prepared_keys, profile)?;
+        graph.validate_capabilities(&self.capabilities)?;
         let day = SceneGraphs::compile(
             &mut graph,
             readback.clone(),
@@ -364,6 +345,7 @@ impl PreparedSynthetic {
         let night = if let Some(stars) = stars {
             // Display reads the composite, even though its declaration precedes it.
             graph.dependency(stars, display_pass)?;
+            graph.validate_capabilities(&self.capabilities)?;
             Some(SceneGraphs::compile(
                 &mut graph,
                 readback,
@@ -437,12 +419,11 @@ impl PreparedSynthetic {
             },
             ResourceScope::Imported { initialized: true },
         )?;
-        accesses.push(Access {
-            resource: directional.clone(),
-            range: 0..LIGHT_BYTES as u64,
-            kind: AccessKind::UniformRead,
-            store: true,
-        });
+        accesses.push(Access::new(
+            directional.clone(),
+            0..LIGHT_BYTES as u64,
+            AccessKind::UniformRead,
+        ));
         let view = graph.resource(
             ResourceDescriptor::Buffer {
                 bytes: VIEW_BYTES as u64,
@@ -450,12 +431,11 @@ impl PreparedSynthetic {
             },
             ResourceScope::Imported { initialized: true },
         )?;
-        accesses.push(Access {
-            resource: view.clone(),
-            range: 0..VIEW_BYTES as u64,
-            kind: AccessKind::UniformRead,
-            store: true,
-        });
+        accesses.push(Access::new(
+            view.clone(),
+            0..VIEW_BYTES as u64,
+            AccessKind::UniformRead,
+        ));
         let aux = graph.resource(
             ResourceDescriptor::Buffer {
                 bytes: AUX_BYTES as u64,
@@ -463,12 +443,11 @@ impl PreparedSynthetic {
             },
             ResourceScope::Imported { initialized: true },
         )?;
-        accesses.push(Access {
-            resource: aux,
-            range: 0..AUX_BYTES as u64,
-            kind: AccessKind::UniformRead,
-            store: true,
-        });
+        accesses.push(Access::new(
+            aux,
+            0..AUX_BYTES as u64,
+            AccessKind::UniformRead,
+        ));
         Ok((directional, view))
     }
 
@@ -508,18 +487,8 @@ impl PreparedSynthetic {
             scope: PassScope::View(1),
             pipeline: Some(self.history_key()),
             accesses: vec![
-                Access {
-                    resource: instance,
-                    range: 0..self.instance_bytes,
-                    kind: AccessKind::StorageRead,
-                    store: true,
-                },
-                Access {
-                    resource: history_write,
-                    range: 0..history_bytes,
-                    kind: AccessKind::StorageWrite,
-                    store: true,
-                },
+                Access::new(instance, 0..self.instance_bytes, AccessKind::StorageRead),
+                Access::new(history_write, 0..history_bytes, AccessKind::StorageWrite),
             ],
             external_side_effect: false,
         });
@@ -547,24 +516,13 @@ impl PreparedSynthetic {
             scope: PassScope::View(1),
             pipeline: None,
             accesses: vec![
-                Access {
-                    resource: exposure.clone(),
-                    range: 0..exposure::SAMPLE_BYTES,
-                    kind: AccessKind::CopyRead,
-                    store: true,
-                },
-                Access {
-                    resource: output.clone(),
-                    range: 0..1,
-                    kind: AccessKind::CopyRead,
-                    store: true,
-                },
-                Access {
-                    resource: destination,
-                    range: 0..bytes,
-                    kind: AccessKind::CopyWrite,
-                    store: true,
-                },
+                Access::new(
+                    exposure.clone(),
+                    0..exposure::SAMPLE_BYTES,
+                    AccessKind::CopyRead,
+                ),
+                Access::new(output.clone(), 0..1, AccessKind::CopyRead),
+                Access::new(destination, 0..bytes, AccessKind::CopyWrite),
             ],
             external_side_effect: true,
         })
@@ -578,6 +536,7 @@ impl PreparedSynthetic {
         for class in self.classes.arrays() {
             let texture = graph.resource(
                 ResourceDescriptor::Texture {
+                    dimension: crate::graph::TextureKind::D2,
                     width: 1,
                     height: 1,
                     layers: 1,
@@ -588,12 +547,7 @@ impl PreparedSynthetic {
                 },
                 ResourceScope::Imported { initialized: true },
             )?;
-            accesses.push(Access {
-                resource: texture,
-                range: 0..1,
-                kind: AccessKind::SampledRead,
-                store: true,
-            });
+            accesses.push(Access::new(texture, 0..1, AccessKind::SampledRead));
         }
         Ok(())
     }
@@ -613,6 +567,7 @@ impl PreparedSynthetic {
 
         let maps = graph.resource(
             ResourceDescriptor::Texture {
+                dimension: crate::graph::TextureKind::D2,
                 width: shadow::SIZE,
                 height: shadow::SIZE,
                 layers: shadow::LAYERS,
@@ -645,23 +600,19 @@ impl PreparedSynthetic {
                 )
             })
             .collect::<Result<Vec<_>, _>>()?;
-        let uniform = |resource: &ResourceId, bytes| Access {
-            resource: resource.clone(),
-            range: 0..bytes,
-            kind: AccessKind::UniformRead,
-            store: true,
+        let uniform = |resource: &ResourceId, bytes| {
+            Access::new(resource.clone(), 0..bytes, AccessKind::UniformRead)
         };
         // Culled camera modes on the bucket route: one compaction lists each
         // pass's casters against that pass's own view, which it reads.
         let lists = match &self.caster_culling {
             Some((culling, _)) => {
                 let mut cull = vec![
-                    Access {
-                        resource: instance.clone(),
-                        range: 0..self.instance_bytes,
-                        kind: AccessKind::StorageRead,
-                        store: true,
-                    },
+                    Access::new(
+                        instance.clone(),
+                        0..self.instance_bytes,
+                        AccessKind::StorageRead,
+                    ),
                     uniform(&serials, history_gpu::SERIAL_BYTES),
                 ];
                 cull.extend(
@@ -712,30 +663,26 @@ impl PreparedSynthetic {
                 scope: PassScope::View(1),
                 pipeline: Some(key),
                 accesses: [
-                    Access {
-                        resource: instance.clone(),
-                        range: 0..self.instance_bytes,
-                        kind: AccessKind::StorageRead,
-                        store: true,
-                    },
-                    Access {
-                        resource: matrix,
-                        range: 0..shadow::CASTER_VIEW_RANGE,
-                        kind: AccessKind::UniformRead,
-                        store: true,
-                    },
-                    Access {
-                        resource: serials.clone(),
-                        range: 0..history_gpu::SERIAL_BYTES,
-                        kind: AccessKind::UniformRead,
-                        store: true,
-                    },
-                    Access {
-                        resource: maps.clone(),
-                        range: u64::from(index)..u64::from(index + 1),
-                        kind: AccessKind::AttachmentClear,
-                        store: true,
-                    },
+                    Access::new(
+                        instance.clone(),
+                        0..self.instance_bytes,
+                        AccessKind::StorageRead,
+                    ),
+                    Access::new(
+                        matrix,
+                        0..shadow::CASTER_VIEW_RANGE,
+                        AccessKind::UniformRead,
+                    ),
+                    Access::new(
+                        serials.clone(),
+                        0..history_gpu::SERIAL_BYTES,
+                        AccessKind::UniformRead,
+                    ),
+                    Access::new(
+                        maps.clone(),
+                        u64::from(index)..u64::from(index + 1),
+                        AccessKind::AttachmentClear,
+                    ),
                 ]
                 .into_iter()
                 .chain(caster_reads)
@@ -751,18 +698,16 @@ impl PreparedSynthetic {
             },
             ResourceScope::Imported { initialized: true },
         )?;
-        accesses.push(Access {
-            resource: sample,
-            range: 0..shadow::SAMPLE_BYTES as u64,
-            kind: AccessKind::UniformRead,
-            store: true,
-        });
-        accesses.push(Access {
-            resource: maps.clone(),
-            range: 0..u64::from(shadow::LAYERS),
-            kind: AccessKind::SampledRead,
-            store: true,
-        });
+        accesses.push(Access::new(
+            sample,
+            0..shadow::SAMPLE_BYTES as u64,
+            AccessKind::UniformRead,
+        ));
+        accesses.push(Access::new(
+            maps.clone(),
+            0..u64::from(shadow::LAYERS),
+            AccessKind::SampledRead,
+        ));
         Ok(Some(maps))
     }
     fn append_cluster_reads(
@@ -789,12 +734,11 @@ impl PreparedSynthetic {
                     initialized: index == 0 || self.cluster_compute.is_none(),
                 },
             )?;
-            accesses.push(Access {
-                resource: storage.clone(),
-                range: 0..bytes,
-                kind: AccessKind::StorageRead,
-                store: true,
-            });
+            accesses.push(Access::new(
+                storage.clone(),
+                0..bytes,
+                AccessKind::StorageRead,
+            ));
             resources.push(storage);
         }
         if self.cluster_compute.is_some() {
@@ -813,24 +757,23 @@ impl PreparedSynthetic {
                 pipeline: Some(self.cluster_key()),
                 accesses: vec![
                     Access {
+                        view: None,
                         resource: bounds,
                         range: 0..u64::try_from(self.clusters.bounds.len())
                             .map_err(|_| RenderError::SceneCapacity)?,
                         kind: AccessKind::StorageRead,
                         store: true,
                     },
-                    Access {
-                        resource: resources[1].clone(),
-                        range: 0..self.cluster_head_bytes,
-                        kind: AccessKind::StorageWrite,
-                        store: true,
-                    },
-                    Access {
-                        resource: resources[2].clone(),
-                        range: 0..self.cluster_index_bytes,
-                        kind: AccessKind::StorageWrite,
-                        store: true,
-                    },
+                    Access::new(
+                        resources[1].clone(),
+                        0..self.cluster_head_bytes,
+                        AccessKind::StorageWrite,
+                    ),
+                    Access::new(
+                        resources[2].clone(),
+                        0..self.cluster_index_bytes,
+                        AccessKind::StorageWrite,
+                    ),
                 ],
                 external_side_effect: false,
             });

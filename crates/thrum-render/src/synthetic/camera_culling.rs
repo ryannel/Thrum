@@ -225,18 +225,21 @@ impl PreparedSynthetic {
         )?;
         let reads = vec![
             Access {
+                view: None,
                 resource: view,
                 range: 0..VIEW_BYTES as u64,
                 kind: AccessKind::UniformRead,
                 store: true,
             },
             Access {
+                view: None,
                 resource: instance.clone(),
                 range: 0..self.instance_bytes,
                 kind: AccessKind::StorageRead,
                 store: true,
             },
             Access {
+                view: None,
                 resource: serials,
                 range: 0..history_gpu::SERIAL_BYTES,
                 kind: AccessKind::UniformRead,
@@ -256,6 +259,7 @@ impl PreparedSynthetic {
         }
         let depth = graph.resource(
             ResourceDescriptor::Texture {
+                dimension: crate::graph::TextureKind::D2,
                 width: extent[0],
                 height: extent[1],
                 layers: 1,
@@ -271,6 +275,7 @@ impl PreparedSynthetic {
         prepass.extend(list_reads(prepared, &first));
         prepass.extend_from_slice(mesh);
         prepass.push(Access {
+            view: None,
             resource: depth.clone(),
             range: 0..1,
             kind: AccessKind::AttachmentClear,
@@ -428,12 +433,14 @@ impl PreparedSynthetic {
 fn list_reads(prepared: &VisibilityPrepared, ids: &VisibilityIds) -> [Access; 2] {
     [
         Access {
+            view: None,
             resource: ids.visible.clone(),
             range: 0..prepared.visible_bytes(),
             kind: AccessKind::StorageRead,
             store: true,
         },
         Access {
+            view: None,
             resource: ids.args.clone(),
             range: 0..prepared.args_bytes(),
             kind: AccessKind::IndirectRead,
