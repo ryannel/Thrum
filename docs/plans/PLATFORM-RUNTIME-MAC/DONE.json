@@ -72,14 +72,15 @@
         },
         {
           "id": "M2.2",
-          "statement": "ATTENDED SETUP: the current capture-disabled build has independently attributable displayed frame intervals on the active built-in panel for the full pan. An unlocked active display and any OS Instruments authorization are needed; engine content taps require no Screen Recording grant. Without fresh attributable swaps, cadence and the whole milestone remain open. Current-path qualification follows the windowed-tap/tooling proofs M2.3/M2.4, without waiting for APPLE-TILE. Mac M3 owns requalification after APPLE-TILE M3 changes the path.",
-          "inspect": "After M2.3/M2.4, run three matched release/noon/fixed-store arms on the unlocked built-in panel: capture ON/untraced for content, capture ON/Game Performance for observer comparison, and capture OFF/Game Performance for the shipping cadence claim. Keep build, content, recipe, extent and AppKit slider target/action sweep identical, with one-second settled start/end holds and the full two-second pan. Keep normal frame markers in all arms, with no capture targets/copies/readbacks/workers in the OFF arm. Review original host-time-preserving 1x ON sequences and local holds; any swaps from ON are labelled under capture. Require the same build/content as M2.1 or rerun it. In the OFF arm require a readable trace and displayed-surfaces-interval export: unique game window/PID/built-in display, resolved XML references and rotating surfaces into one app-labelled stream. Use numeric Swap Time, not frame-label continuity. Align the full pan using same-process markers or a calibrated monotonic join with correlated anchor and stated error. Record intervals, gaps/unmatched samples, display mode, build/recipe, run order/load and CPU/GPU rows; compare the matched ON/OFF traced arms for capture overhead and ON traced/untraced arms for tracing overhead. Leave cadence open if export, attribution or alignment is ambiguous.",
-          "ask": "Does the evidence distinguish callback target, opportunity, actor acquisition/submit, GPU completion, engine image/sample time, movie PTS, VSync and attributed compositor Swap Time? Is there independent OS attribution for this run/pan rather than the historical 5 November trace? Does attended setup name unlocked-display and any Instruments authorization needs without requiring the owner to play or grant Screen Recording for engine pixels? Engine pixels exclude native widgets/final compositor appearance: are those limits explicit, with any essential additional OS/physical observation separately attended and justified? Are input-to-photon and physical iPhone timing unmeasured, all interval figures observations, and the historical motion pass preserved without extending it to a new build? Is the qualified swap stream from capture OFF, with ON cadence labelled under capture and ordinary direct presentation preserved? Are the untraced/traced content and capture OFF traced roles distinguished?",
+          "statement": "ATTENDED SETUP: on the active built-in panel, the capture-disabled release build has an OS-reported presented interval for every submission across the full pan and both holds, with each missed refresh listed and investigated. Matched capture-ON arms show content and observer cost.",
+          "inspect": "After M2.3, M2.4 and M2.5, run three matched arms on M2.1's build, content, recipe, extent and AppKit slider sweep, or rerun M2.1: capture ON untraced, capture ON traced, capture OFF traced. Review the original host-time 1x ON sequences and local holds against M2.1's worded list. For the OFF arm review the witness result: retained rows spanning both MacM2Whole markers, every submission joined or reported unmatched, intervals in refresh periods, and each interval over one period with its drawable, time, yaw, the game's present-call record and host load. The OFF arm creates no capture targets, copies, readbacks or workers.",
+          "ask": "Does the evidence keep callback target, opportunity, acquisition/submit, GPU completion, engine image time, movie PTS and OS-reported presented time as separate measurements, with ON-arm intervals labelled under capture? Is cadence claimed only from this build's capture-OFF arm, never from handler callback times, engine records or an earlier trace? Are kernel display swaps, scan-out, input-to-photon and physical iPhone timing stated as unmeasured?",
           "target": "mac-metal",
           "status": "open",
           "evidence": "docs/evidence/render/mac-m2-20261111/README.md",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "attended": "Unlock the Mac, wake the built-in panel and keep it awake for the sitting. No Developer mode change, Instruments authorization, Screen Recording grant or play is needed."
         },
         {
           "id": "M2.3",
@@ -96,13 +97,24 @@
         },
         {
           "id": "M2.4",
-          "statement": "The Mac qualification builder resolves trace finalization in a bounded investigation and retains a readable fresh Game Performance trace/export on the active built-in panel.",
+          "statement": "One reusable command turns an Instruments trace of the game into OS-reported presented intervals per drawable, and it finds the known missed refreshes in the retained 11 November tables.",
           "target": "mac-metal",
           "status": "open",
           "evidence": "docs/evidence/render/mac-m2-20261111/README.md",
-          "ask": "After this re-plan passes independent design review and T2-CAPTURE M0 is done, without waiting for APPLE-TILE, the Mac M2 builder owns the resumed investigation. Inspect retained failed bundles/logs first and write a changed, falsifiable hypothesis before recording. With unlocked active display and existing Instruments authorization, allow at most two new diagnostic record attempts total under the 9 November tooling commission, each 16 seconds plus at most 75 seconds finalization. This dependency re-plan and the Mac M3 split do not renew that allowance. Then export TOC and displayed-surfaces-interval with finite recorded timeouts. Stop only owned tool/game processes at the deadline; never retry an unchanged failed hypothesis or kill unrelated processes. A successful probe must export actual app/window-attributed swaps and leave a reusable documented command. If no justified hypothesis exists, authorization is unavailable, or the attempt budget exhausts, record the cause and M2.2/M2.4 blocked in status/build-plan; keep both open and continue unrelated work. No success from a trace directory existing, historical swaps or a substitute capture timestamp.",
+          "ask": "Read the command and its tests, and run it on docs/evidence/PLATFORM-RUNTIME-MAC/m2-presented-off-traced.tsv.gz and m2-presented-on-traced.tsv.gz. Does it take presented time only from the game PID's ca-client-presented-handler rows, never from handler callback time or the delta column? Does it find the two-refresh intervals at drawables 526 to 527 and 544 to 545 (capture OFF) and 558 to 559 (capture ON), and join 544 to 545 to the 15.47 ms present-call gap in docs/evidence/render/mac-m2-20261111/off-traced/surface.tsv.gz? Does it refuse a trace whose retained rows do not span both MacM2Whole markers, and report a missing ordinal, a zero or absent presented time and an unfamiliar status as unmatched?",
           "verdict": "",
           "review": ""
+        },
+        {
+          "id": "M2.5",
+          "statement": "ATTENDED SETUP: a fresh recording of the release game on the active built-in panel yields the presented-time witness for the whole marked hold, pan and hold, with its time conversion validated.",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "ask": "In the fresh trace, do the TOC recording mode and the first and last retained rows show coverage of both MacM2Whole markers? Does every game submission in that interval join by ordinal to one presented row, or appear as unmatched? Is the presented-time conversion validated against the same-process markers with a stated error? Does the display identity list the built-in panel as the only display, or is the window's display identified separately? Are the display tables' row counts recorded, and the recordings used counted against the six granted on 11 November?",
+          "verdict": "",
+          "review": "",
+          "attended": "Unlock the Mac, wake the built-in panel and keep it awake for the sitting. No Developer mode change, Instruments authorization, Screen Recording grant or play is needed."
         }
       ],
       "needs": [
@@ -138,8 +150,8 @@
           "target": "mac-metal",
           "status": "open",
           "evidence": "",
-          "inspect": "On the unlocked active built-in panel with Instruments authorization, rerun all three M2.2 arms on the same post-G3t build/content/recipe/extent as M3.1: ON untraced, ON traced and OFF traced. Require the complete pan and holds, normal AppKit controls, fresh readable app/window-attributed numeric Swap Time and a calibrated join with stated error. Review full-resolution ON sequences at 1x; cadence comes only from OFF. Apply every M2.2 attribution, completeness, overhead and clock-separation criterion. No earlier trace or functional-window-only run can pass.",
-          "ask": "Revalidate the M2.3 known-pattern correspondence, lease, pending-readback loss and capture-OFF direct-path proofs on the changed graph/present path. Rerun the M2.4 qualified trace/export command; no new diagnostic-attempt allowance is granted by M3. If trace tooling regresses, record it blocked and require a scoped re-plan before further diagnostic attempts. Does fresh M3.1 motion match this build, and are both post-change items independently reviewed before claiming final Mac qualification for V1?",
+          "inspect": "On the unlocked active built-in panel, rerun all three M2.2 arms on the same post-G3t build/content/recipe/extent as M3.1: ON untraced, ON traced and OFF traced. Require the complete pan and holds, normal AppKit controls and fresh presented times from Mac M2's qualified witness, covering the full interval with the validated conversion and stated error. Review full-resolution ON sequences at 1x; cadence comes only from OFF. Apply every M2.2 attribution, completeness, overhead and clock-separation criterion. No earlier trace or functional-window-only run can pass.",
+          "ask": "Revalidate the M2.3 known-pattern correspondence, lease, pending-readback loss and capture-OFF direct-path proofs on the changed graph/present path. Rerun Mac M2's qualified recording configuration and witness command; M3 grants one recording per traced arm and no diagnostic recordings. If trace tooling regresses, record it blocked and require a scoped re-plan before further diagnostic attempts. Does fresh M3.1 motion match this build, and are both post-change items independently reviewed before claiming final Mac qualification for V1?",
           "verdict": "",
           "review": ""
         }
