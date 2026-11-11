@@ -120,7 +120,7 @@ async fn run() -> Result<(), String> {
             })
             .map_err(|e| e.to_string())?;
         while let Some(sample) = host.poll_completed()? {
-            timing_samples.push(serde_json::json!({"submission": sample.submission_order, "encode_ns": sample.encode_cpu.as_nanos(), "forward_ns": sample.gpu_pass_ns.map(|times| times[3]), "contribution_ns":sample.gpu_contribution_ns}));
+            timing_samples.push(serde_json::json!({"submission": sample.submission_order, "encode_ns": sample.encode_cpu.as_nanos(), "forward_ns": sample.gpu_pass_ns.as_ref().map(thrum_render::timing::SceneGpuTimings::forward), "contribution_ns":sample.gpu_contribution_ns}));
         }
         let stats = stats.lock().map_err(|e| e.to_string())?;
         if !stats.errors.is_empty() {
@@ -153,7 +153,7 @@ async fn run() -> Result<(), String> {
             })
             .map_err(|e| e.to_string())?;
         while let Some(sample) = host.poll_completed()? {
-            timing_samples.push(serde_json::json!({"submission":sample.submission_order,"encode_ns":sample.encode_cpu.as_nanos(),"forward_ns":sample.gpu_pass_ns.map(|times| times[3]),"contribution_ns":sample.gpu_contribution_ns}));
+            timing_samples.push(serde_json::json!({"submission":sample.submission_order,"encode_ns":sample.encode_cpu.as_nanos(),"forward_ns":sample.gpu_pass_ns.as_ref().map(thrum_render::timing::SceneGpuTimings::forward),"contribution_ns":sample.gpu_contribution_ns}));
         }
     }
     host.enable_submitted_capture(1)?;
@@ -171,11 +171,11 @@ async fn run() -> Result<(), String> {
         device
             .poll(wgpu::PollType::Poll)
             .map_err(|e| e.to_string())?;
-        let _ = host.poll_completed()?;
+        drop(host.poll_completed()?);
         if let Some(image) = host.try_submitted_image()? {
             std::fs::write(output.join("output.rgba"), &image.rgba).map_err(|e| e.to_string())?;
             let stats = stats.lock().map_err(|e| e.to_string())?;
-            let report = serde_json::json!({"adapter":format!("{:?}", capabilities.adapter()), "flags":format!("{:?}",capabilities.downlevel()), "adapter_flags":format!("{captured_flags:?}"), "masked":masked, "diagnostic_mode":mode, "adapter_less_host":adapter_less, "reference_commands":reference, "encoded_commands": stats.probe_commands, "resource_observation":stats.probe_resources, "mesh_placements":names, "timing_samples":timing_samples, "path":format!("{:?}", stats.draw_path), "drawn":stats.drawn, "visible":stats.visible_meshlets, "extent":extent, "yaw":yaw, "solar":solar, "submission":image.sample.submission_order, "tick":image.sample.tick, "encode_ns":image.sample.encode_cpu.as_nanos(), "gpu_pass_ns":image.sample.gpu_pass_ns});
+            let report = serde_json::json!({"adapter":format!("{:?}", capabilities.adapter()), "flags":format!("{:?}",capabilities.downlevel()), "adapter_flags":format!("{captured_flags:?}"), "masked":masked, "diagnostic_mode":mode, "adapter_less_host":adapter_less, "reference_commands":reference, "encoded_commands": stats.probe_commands, "resource_observation":stats.probe_resources, "mesh_placements":names, "timing_samples":timing_samples, "path":format!("{:?}", stats.draw_path), "drawn":stats.drawn, "visible":stats.visible_meshlets, "extent":extent, "yaw":yaw, "solar":solar, "submission":image.sample.submission_order, "tick":image.sample.tick, "encode_ns":image.sample.encode_cpu.as_nanos(), "gpu_pass_ns":image.sample.gpu_pass_ns.as_ref().map(thrum_render::timing::SceneGpuTimings::values)});
             std::fs::write(
                 output.join("report.json"),
                 serde_json::to_vec_pretty(&report).map_err(|e| e.to_string())?,

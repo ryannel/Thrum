@@ -109,6 +109,7 @@ pub(super) fn prepare_capture_slots(
             )
             .map_err(|error| FrameError::Gpu(format!("scene timings: {error:?}")))?,
             timing_layout,
+            timing_readback: false,
             render_done: Arc::new(AtomicBool::new(false)),
             state: SlotState::Free,
         });

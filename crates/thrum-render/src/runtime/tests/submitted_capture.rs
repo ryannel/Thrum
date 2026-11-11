@@ -163,7 +163,7 @@ fn image(host: &mut FrameHost<StaticWorld, StaticScene>) -> super::super::Submit
         if let Some(image) = host.try_submitted_image().unwrap() {
             return image;
         }
-        let _ = host.poll_completed().unwrap();
+        drop(host.poll_completed().unwrap());
         assert!(Instant::now() < deadline);
     }
 }
@@ -443,7 +443,7 @@ fn pending_scene_grid_pixels_keep_their_identity_across_surface_viewport_resize(
         host.recycle_submitted_image(old);
         host.resize_surface([65, 37]).unwrap();
         while host.pending_frames() > 0 {
-            let _ = host.poll_completed().unwrap();
+            drop(host.poll_completed().unwrap());
         }
         submit(&mut host, &output);
         let fresh = image(&mut host);

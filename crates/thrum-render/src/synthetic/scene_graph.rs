@@ -1,8 +1,8 @@
 //! Compiles and binds the prepared scene and capture graph.
 
 use super::{
-    AUX_BYTES, CONTRIBUTION_UPLOAD, CaptureSource, DEPTH_FORMAT, DisplayPrepared, ExposureResolve,
-    LIGHT_BYTES, MOTION_FORMAT, PreparedSynthetic, RenderError, SCENE_FORMAT, SceneFamily,
+    AUX_BYTES, CONTRIBUTION_UPLOAD, CaptureSource, DEPTH_FORMAT, ExposureResolve, LIGHT_BYTES,
+    MOTION_FORMAT, PreToneInput, PreparedSynthetic, RenderError, SCENE_FORMAT, SceneFamily,
     SceneGraphs, TargetResources, VIEW_BYTES, air_shadow, camera_culling, exposure, history_gpu,
     shadow,
 };
@@ -330,15 +330,13 @@ impl PreparedSynthetic {
             history_write,
             history_bytes,
         )?;
-        let (output, display_pass) = DisplayPrepared::append_graph(
-            &mut graph,
-            self.display_key(),
-            &scene,
-            &motion,
-            &exposure_sample,
-            width,
-            height,
-        )?;
+        let pre_tone = PreToneInput {
+            colour: scene.clone(),
+            motion: motion.clone(),
+            exposure: exposure_sample.clone(),
+            extent: [width, height],
+        };
+        let (output, display_pass) = self.display.append_graph(&mut graph, &pre_tone)?;
         let source = match capture_source {
             CaptureSource::Sdr => &output,
             CaptureSource::SceneLinear => &scene,
@@ -381,6 +379,7 @@ impl PreparedSynthetic {
             day,
             night,
             ids: TargetResources {
+                pre_tone,
                 depth,
                 scene,
                 motion,

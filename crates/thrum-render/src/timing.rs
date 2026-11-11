@@ -18,6 +18,142 @@ pub struct PassTiming {
     pub nanoseconds: f64,
 }
 
+/// Completed scene timestamps keyed by the graph's pass names. Missing optional
+/// passes are absent; unsupported or faulted batches are `None` in `FrameSample`.
+/// Summaries below explicitly name their members; no ordinal carries semantics.
+#[derive(Clone, Debug, PartialEq)]
+pub struct SceneGpuTimings {
+    passes: Vec<PassTiming>,
+    unmeasured: Vec<String>,
+}
+
+impl SceneGpuTimings {
+    pub(crate) fn new(passes: &[PassTiming]) -> Self {
+        Self {
+            passes: passes.to_vec(),
+            unmeasured: Vec::new(),
+        }
+    }
+
+    pub(crate) fn unmeasured(&mut self, names: impl Iterator<Item = String>) {
+        self.unmeasured.extend(names);
+        self.unmeasured
+            .push("timestamp query resolve/readback".to_owned());
+    }
+
+    /// Actual executed, timed graph passes (including the surface consumer).
+    pub fn passes(&self) -> &[PassTiming] {
+        &self.passes
+    }
+
+    /// A measured pass, or `None` when absent. Zero is a valid measured delta.
+    pub fn get(&self, name: &str) -> Option<f64> {
+        self.passes
+            .iter()
+            .find(|p| p.name.as_ref() == name)
+            .map(|p| p.nanoseconds)
+    }
+
+    /// Scene pass sum; surface is reported separately. Untimed transfer and
+    /// query-readback commands are outside this sum, never inferred as zero.
+    pub fn sum(&self) -> f64 {
+        self.passes
+            .iter()
+            .filter(|p| p.name.as_ref() != crate::present::PASS_NAME)
+            .map(|p| p.nanoseconds)
+            .sum()
+    }
+
+    fn sum_matching(&self, predicate: impl Fn(&str) -> bool) -> f64 {
+        self.passes
+            .iter()
+            .filter(|p| predicate(&p.name))
+            .map(|p| p.nanoseconds)
+            .sum()
+    }
+
+    /// Near shadow map and its optional caster-list build.
+    pub fn shadow_near(&self) -> f64 {
+        self.sum_matching(|n| {
+            matches!(n, "synthetic Sun shadow near") || n == crate::visibility::casters::PASS
+        })
+    }
+    /// Far shadow map, horizon heights and atmospheric shadow heights.
+    pub fn shadow_far(&self) -> f64 {
+        self.sum_matching(|n| {
+            matches!(
+                n,
+                "synthetic Sun shadow far" | "synthetic Sun horizon heights"
+            ) || n == crate::synthetic::AIR_SHADOW_PASS
+        })
+    }
+    /// Local-light cluster build, zero when not executed.
+    pub fn clusters(&self) -> f64 {
+        self.get("synthetic cluster build").unwrap_or(0.0)
+    }
+    /// Opaque-phase work including contribution, stars and camera culling.
+    pub fn forward(&self) -> f64 {
+        self.sum_matching(|n| {
+            matches!(n, "synthetic forward opaque")
+                || n == crate::synthetic::CONTRIBUTION_COMPUTE
+                || n == crate::synthetic::stars::PASS_NAME
+                || crate::synthetic::frame_stats::CULLING_PASSES.contains(&n)
+        })
+    }
+    /// Transform history publication, zero for an empty prefix.
+    pub fn history(&self) -> f64 {
+        self.get("synthetic transform history").unwrap_or(0.0)
+    }
+    /// Exposure resolve and SDR tone stage.
+    pub fn tone(&self) -> f64 {
+        self.sum_matching(|n| matches!(n, "synthetic exposure resolve" | "synthetic tone encode"))
+    }
+    /// All executed atmosphere preparation stages.
+    pub fn atmosphere(&self) -> f64 {
+        self.sum_matching(|n| {
+            n.starts_with("atmosphere ") && n != crate::synthetic::stars::PASS_NAME
+        })
+    }
+    /// Atmospheric transmittance preparation.
+    pub fn transmittance(&self) -> f64 {
+        self.get("atmosphere transmittance").unwrap_or(0.0)
+    }
+    /// Multiple scattering and ground irradiance preparation.
+    pub fn multiple_ground(&self) -> f64 {
+        self.sum_matching(|n| {
+            matches!(
+                n,
+                "atmosphere multiple scattering" | "atmosphere ground irradiance"
+            )
+        })
+    }
+    /// Sky-view and reflection preparation.
+    pub fn sky(&self) -> f64 {
+        self.sum_matching(|n| {
+            n.starts_with("atmosphere sky ")
+                || n.starts_with("atmosphere reflection ")
+                || n == "atmosphere DFG integration"
+        })
+    }
+    /// Diffuse irradiance preparation.
+    pub fn diffuse(&self) -> f64 {
+        self.get("atmosphere diffuse irradiance").unwrap_or(0.0)
+    }
+    /// Aerial perspective preparation.
+    pub fn aerial(&self) -> f64 {
+        self.get("atmosphere aerial perspective").unwrap_or(0.0)
+    }
+    /// Named values for serializers, without imposing a serialization dependency.
+    /// Executed transfers and query resolution without counters have `None` values.
+    pub fn values(&self) -> std::collections::BTreeMap<&str, Option<f64>> {
+        self.passes
+            .iter()
+            .map(|p| (p.name.as_ref(), Some(p.nanoseconds)))
+            .chain(self.unmeasured.iter().map(|n| (n.as_str(), None)))
+            .collect()
+    }
+}
+
 /// Expected timing admission or lifecycle failures.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum TimingError {

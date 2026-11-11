@@ -42,8 +42,21 @@ fn cold_and_cached_ground_queries_keep_the_report_shape_and_profile_bucket() {
         "atmosphere aerial perspective",
     ]);
     let (values, present, _) = pass_durations(&cold, false, TRANSFORMS).unwrap();
-    assert_eq!(&values[6..], &[1.0, 2.0, 1.0, 1.0, 1.0]);
-    assert_eq!(values[5], 2.0, "exposure resolve remains in display bucket");
+    assert_eq!(
+        &[
+            values.transmittance(),
+            values.multiple_ground(),
+            values.sky(),
+            values.diffuse(),
+            values.aerial()
+        ],
+        &[1.0, 2.0, 1.0, 1.0, 1.0]
+    );
+    assert_eq!(
+        values.tone(),
+        2.0,
+        "exposure resolve remains in display bucket"
+    );
     assert!(present.is_none());
     let cached = timings(&[
         "atmosphere sky view",
@@ -51,10 +64,28 @@ fn cold_and_cached_ground_queries_keep_the_report_shape_and_profile_bucket() {
         "atmosphere aerial perspective",
     ]);
     let (values, _, _) = pass_durations(&cached, false, TRANSFORMS).unwrap();
-    assert_eq!(&values[6..], &[0.0, 0.0, 1.0, 1.0, 1.0]);
+    assert_eq!(
+        &[
+            values.transmittance(),
+            values.multiple_ground(),
+            values.sky(),
+            values.diffuse(),
+            values.aerial()
+        ],
+        &[0.0, 0.0, 1.0, 1.0, 1.0]
+    );
     let ground_only = timings(&["atmosphere ground irradiance"]);
     let (values, _, _) = pass_durations(&ground_only, false, TRANSFORMS).unwrap();
-    assert_eq!(&values[6..], &[0.0, 1.0, 0.0, 0.0, 0.0]);
+    assert_eq!(
+        &[
+            values.transmittance(),
+            values.multiple_ground(),
+            values.sky(),
+            values.diffuse(),
+            values.aerial()
+        ],
+        &[0.0, 1.0, 0.0, 0.0, 0.0]
+    );
 }
 
 #[test]
@@ -63,10 +94,28 @@ fn reflection_queries_keep_raw_identity_and_the_existing_sky_bucket() {
         crate::atmosphere::TIMING_ORDER.map(|(stage, _)| crate::atmosphere::STAGE_NAMES[stage]);
     let cold = timings(&names);
     let (values, _, _) = pass_durations(&cold, false, TRANSFORMS).unwrap();
-    assert_eq!(&values[6..], &[1.0, 2.0, 9.0, 1.0, 1.0]);
+    assert_eq!(
+        &[
+            values.transmittance(),
+            values.multiple_ground(),
+            values.sky(),
+            values.diffuse(),
+            values.aerial()
+        ],
+        &[1.0, 2.0, 9.0, 1.0, 1.0]
+    );
     let cached = timings(&names[7..]);
     let (values, _, _) = pass_durations(&cached, false, TRANSFORMS).unwrap();
-    assert_eq!(&values[6..], &[0.0, 0.0, 7.0, 0.0, 0.0]);
+    assert_eq!(
+        &[
+            values.transmittance(),
+            values.multiple_ground(),
+            values.sky(),
+            values.diffuse(),
+            values.aerial()
+        ],
+        &[0.0, 0.0, 7.0, 0.0, 0.0]
+    );
     let unexpected = timings(&["atmosphere reflection mip 99"]);
     assert!(pass_durations(&unexpected, false, TRANSFORMS).is_none());
 }
@@ -84,7 +133,8 @@ fn a_contribution_compute_pass_is_reported_apart_from_the_scene_sequence() {
     let (values, _, contribution) = pass_durations(&passes, false, TRANSFORMS).unwrap();
     assert_eq!(contribution, Some(3.0));
     assert_eq!(
-        values[3], 4.0,
+        values.forward(),
+        4.0,
         "forward includes the contribution so totals do"
     );
     let (_, _, none) = pass_durations(&timings(&[]), false, TRANSFORMS).unwrap();
@@ -109,7 +159,7 @@ fn the_horizon_height_pass_reports_in_the_far_shadow_bucket() {
         },
     )
     .unwrap();
-    assert_eq!(&values[..2], &[1.0, 2.0]);
+    assert_eq!(&[values.shadow_near(), values.shadow_far()], &[1.0, 2.0]);
     let missing = timings(&["synthetic Sun shadow near", "synthetic Sun shadow far"]);
     assert!(
         pass_durations(
@@ -135,7 +185,7 @@ fn camera_visibility_is_required_by_the_culled_layout_and_counted_in_forward() {
         },
     );
     let (values, _, contribution) = pass_durations(&passes, false, CULLED).unwrap();
-    assert_eq!(values[3], 3.0, "forward includes camera visibility");
+    assert_eq!(values.forward(), 3.0, "forward includes camera visibility");
     assert!(contribution.is_none());
     // The pass is exact to the slot layout: absent when culled, present when direct, or twice.
     assert!(pass_durations(&timings(&["atmosphere sky view"]), false, CULLED).is_none());
@@ -167,7 +217,11 @@ fn occlusion_passes_are_required_once_each_and_counted_in_forward() {
         );
     }
     let (values, _, _) = pass_durations(&passes, false, OCCLUDED).unwrap();
-    assert_eq!(values[3], 9.0, "forward includes all four culling passes");
+    assert_eq!(
+        values.forward(),
+        9.0,
+        "forward includes all four culling passes"
+    );
     // Exact to the layout: refused under Frustum or Direct, with one missing, or with a repeat.
     assert!(pass_durations(&passes, false, CULLED).is_none());
     assert!(pass_durations(&passes, false, TRANSFORMS).is_none());
@@ -183,7 +237,7 @@ fn occlusion_passes_are_required_once_each_and_counted_in_forward() {
     assert!(pass_durations(&night, false, OCCLUDED).is_none());
     assert!(pass_durations(&passes, false, night_layout).is_none());
     let (values, _, _) = pass_durations(&night, false, night_layout).unwrap();
-    assert_eq!(values[3], 12.0, "forward includes culling and stars");
+    assert_eq!(values.forward(), 12.0, "forward includes culling and stars");
 
     let mut missing = passes.clone();
     assert_eq!(
@@ -223,9 +277,9 @@ fn the_caster_cull_is_required_once_and_counted_in_the_near_shadow_bucket() {
     let mut passes = vec![crate::visibility::casters::PASS, crate::visibility::PASS];
     passes.extend(scene);
     let (values, _, _) = pass_durations(&named(&passes), false, layout).unwrap();
-    assert_eq!(values[0], 2.0, "the cull joins the near map");
-    assert_eq!(values[1], 2.0);
-    assert_eq!(values[3], 2.0, "camera visibility stays in forward");
+    assert_eq!(values.shadow_near(), 2.0, "the cull joins the near map");
+    assert_eq!(values.shadow_far(), 2.0);
+    assert_eq!(values.forward(), 2.0, "camera visibility stays in forward");
     let mut missing = vec![crate::visibility::PASS];
     missing.extend(scene);
     assert!(pass_durations(&named(&missing), false, layout).is_none());

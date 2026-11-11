@@ -79,7 +79,8 @@ pub(super) fn record(
             ));
         }
         let sample = completed_sample(host, index, frame.tick)?;
-        let (Some(pass_ns), Some(blit_ns)) = (sample.gpu_pass_ns, sample.gpu_present_ns) else {
+        let (Some(pass_ns), Some(blit_ns)) = (sample.gpu_pass_ns.as_ref(), sample.gpu_present_ns)
+        else {
             return Err(format!("motion frame {index} lacks GPU timestamps"));
         };
         target.write_pixels(host, sample.submission_order, &mut pixels)?;
@@ -90,8 +91,8 @@ pub(super) fn record(
                 "simulation_ns": time.as_nanos(), "alpha": sample.presentation_alpha,
                 "committed_solar_hours": host.time_of_day() * 24.0,
                 "rendered_solar_hours": host.rendered_time_of_day(sample.presentation_alpha) * 24.0,
-                "camera_yaw_radians": host.camera_orientation()[1], "gpu_pass_ns": pass_ns,
-                "gpu_blit_ns": blit_ns, "gpu_pass_sum_ns": pass_ns.iter().sum::<f64>() + blit_ns,
+                "camera_yaw_radians": host.camera_orientation()[1], "gpu_pass_ns": pass_ns.values(),
+                "gpu_blit_ns": blit_ns, "gpu_pass_sum_ns": pass_ns.sum() + blit_ns,
                 "visual_revision": sample.visual_revision,
             }),
         )?;
@@ -343,7 +344,7 @@ impl CaptureTarget {
                 }
                 return Ok(image);
             }
-            let _ = host.poll_completed()?;
+            drop(host.poll_completed()?);
             if Instant::now() >= deadline {
                 return Err("fixed-time submitted image deadline".to_owned());
             }

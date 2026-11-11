@@ -62,7 +62,7 @@ fn reused_source_ticks_do_not_hide_earlier_completed_submissions() {
     first.submission_order = 7;
     let mut second = sample(1);
     second.submission_order = 8;
-    retain_sample(&mut queue, &mut dropped, first);
+    retain_sample(&mut queue, &mut dropped, first.clone());
     assert_eq!(
         pop_report_before_pending(&mut queue, Some(second.submission_order))
             .expect("earlier completed submission")
@@ -70,7 +70,7 @@ fn reused_source_ticks_do_not_hide_earlier_completed_submissions() {
         first.submission_order
     );
     assert!(queue.is_empty());
-    retain_sample(&mut queue, &mut dropped, second);
+    retain_sample(&mut queue, &mut dropped, second.clone());
     assert!(pop_report_before_pending(&mut queue, Some(7)).is_none());
     assert_eq!(
         pop_report_before_pending(&mut queue, None)

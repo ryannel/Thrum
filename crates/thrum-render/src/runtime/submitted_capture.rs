@@ -69,7 +69,7 @@ impl AsRef<[u8]> for SubmittedImage {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub(super) struct Stamp {
     pub sample: FrameSample,
     pub source: SourceTick,
@@ -144,7 +144,7 @@ impl Tap {
     }
 
     pub(super) fn submitted(&mut self, index: usize, stamp: &Stamp) {
-        self.slots[index].sample = Some(*stamp);
+        self.slots[index].sample = Some(stamp.clone());
     }
 
     pub(super) fn finish_timing(
@@ -335,7 +335,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             .slots
             .iter()
             .enumerate()
-            .filter_map(|(i, slot)| slot.sample.map(|stamp| (i, stamp)))
+            .filter_map(|(i, slot)| slot.sample.as_ref().map(|stamp| (i, stamp.clone())))
             .min_by_key(|(_, stamp)| stamp.sample.submission_order);
         if let Some((index, stamp)) = oldest {
             let slot = &mut tap.slots[index];

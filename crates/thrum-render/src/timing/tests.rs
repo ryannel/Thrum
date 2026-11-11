@@ -1,4 +1,4 @@
-use super::{Completion, PassNames, TimingError};
+use super::{Completion, PassNames, PassTiming, SceneGpuTimings, TimingError};
 use std::sync::Arc;
 
 #[test]
@@ -73,4 +73,39 @@ fn pass_names_reuse_slots_across_batches_and_replace_changed_roles() {
     assert_eq!(names.push("shadow"), 0);
     assert!(!Arc::ptr_eq(&first, &names.slots[0]));
     assert_eq!(names.slots[1].as_ref(), "forward");
+}
+
+#[test]
+fn named_scene_timings_preserve_optional_pass_identity_and_unavailable_transfers() {
+    let passes = [
+        PassTiming {
+            name: "synthetic forward opaque".into(),
+            nanoseconds: 7.0,
+        },
+        PassTiming {
+            name: "atmosphere stars".into(),
+            nanoseconds: 3.0,
+        },
+        PassTiming {
+            name: "synthetic tone encode".into(),
+            nanoseconds: 0.0,
+        },
+        PassTiming {
+            name: crate::present::PASS_NAME.into(),
+            nanoseconds: 2.0,
+        },
+    ];
+    let mut named = SceneGpuTimings::new(&passes);
+    named.unmeasured(["contribution upload".to_owned()].into_iter());
+    assert_eq!(named.get("synthetic tone encode"), Some(0.0));
+    assert_eq!(named.get("synthetic cluster build"), None);
+    assert_eq!(named.forward(), 10.0);
+    assert_eq!(named.atmosphere(), 0.0, "stars belong to opaque work once");
+    assert_eq!(named.sum(), 10.0, "surface stays separate");
+    assert_eq!(named.values()["contribution upload"], None);
+    assert_eq!(named.values()["timestamp query resolve/readback"], None);
+    let mut reordered = passes.to_vec();
+    reordered.reverse();
+    assert_eq!(SceneGpuTimings::new(&reordered).forward(), named.forward());
+    assert_eq!(SceneGpuTimings::new(&[]).get("atmosphere stars"), None);
 }

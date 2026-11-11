@@ -839,10 +839,18 @@ impl<G: Game + 'static> App<G> {
             .all(|sample| sample.gpu_present_ns.is_some())
         {
             let scene = percentile(&presented, |sample| {
-                sample.gpu_pass_ns.unwrap_or([0.0; 11]).iter().sum::<f64>() / 1e6
+                sample
+                    .gpu_pass_ns
+                    .as_ref()
+                    .map_or(0.0, thrum_render::timing::SceneGpuTimings::sum)
+                    / 1e6
             });
             let forward = percentile(&presented, |sample| {
-                sample.gpu_pass_ns.map_or(0.0, |passes| passes[3]) / 1e6
+                sample
+                    .gpu_pass_ns
+                    .as_ref()
+                    .map_or(0.0, thrum_render::timing::SceneGpuTimings::forward)
+                    / 1e6
             });
             let present = percentile(&presented, |sample| {
                 sample.gpu_present_ns.unwrap_or(0.0) / 1e6
@@ -997,19 +1005,19 @@ fn profiler_title(
     world_status: &str,
     gpu_status: &str,
 ) -> String {
-    let gpu = sample.gpu_pass_ns.map_or_else(
+    let gpu = sample.gpu_pass_ns.as_ref().map_or_else(
         || "GPU timestamps unavailable".to_owned(),
         |passes| {
             let present = sample.gpu_present_ns.unwrap_or(0.0) / 1e6;
             format!(
                 "GPU shadow near/far {:.3}/{:.3}, cluster {:.3}, forward {:.3}, history {:.3}, display {:.3}, atmosphere compute {:.3}, present {:.3} ms",
-                passes[0] / 1e6,
-                passes[1] / 1e6,
-                passes[2] / 1e6,
-                passes[3] / 1e6,
-                passes[4] / 1e6,
-                passes[5] / 1e6,
-                passes[6..].iter().sum::<f64>() / 1e6,
+                passes.shadow_near() / 1e6,
+                passes.shadow_far() / 1e6,
+                passes.clusters() / 1e6,
+                passes.forward() / 1e6,
+                passes.history() / 1e6,
+                passes.tone() / 1e6,
+                passes.atmosphere() / 1e6,
                 present,
             )
         },

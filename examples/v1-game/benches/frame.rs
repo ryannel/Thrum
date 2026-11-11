@@ -481,8 +481,8 @@ fn measure(
                     })
                     .expect("GPU completion");
             };
+            divan::black_box(&complete);
             samples.push(complete);
-            divan::black_box(complete);
         }
     };
     if let Some(bencher) = bencher {
@@ -682,25 +682,66 @@ fn report_frame_cpu(
         "V1 frame uploads rows={uploaded_rows} bytes={uploaded_bytes} zero-upload-frames={zero_upload_frames}"
     );
     if gpu_timestamps {
-        let scene_gpu =
-            percentile(|sample| sample.gpu_pass_ns.unwrap_or([0.0; 11]).iter().sum::<f64>() / 1e6);
+        let scene_gpu = percentile(|sample| {
+            sample
+                .gpu_pass_ns
+                .as_ref()
+                .map_or(0.0, thrum_render::timing::SceneGpuTimings::sum)
+                / 1e6
+        });
         eprintln!(
             "V1 scene GPU pass-sum p50/p95/p99={:.3}/{:.3}/{:.3} ms",
             scene_gpu.0, scene_gpu.1, scene_gpu.2
         );
         let shadow = percentile(|sample| {
-            let passes = sample.gpu_pass_ns.unwrap_or([0.0; 11]);
-            (passes[0] + passes[1]) / 1e6
+            let passes = sample
+                .gpu_pass_ns
+                .as_ref()
+                .expect("timestamp samples checked");
+            (passes.shadow_near() + passes.shadow_far()) / 1e6
         });
-        let cluster = percentile(|sample| sample.gpu_pass_ns.unwrap_or([0.0; 11])[2] / 1e6);
-        let forward = percentile(|sample| sample.gpu_pass_ns.unwrap_or([0.0; 11])[3] / 1e6);
-        let history = percentile(|sample| sample.gpu_pass_ns.unwrap_or([0.0; 11])[4] / 1e6);
-        let tone = percentile(|sample| sample.gpu_pass_ns.unwrap_or([0.0; 11])[5] / 1e6);
+        let cluster = percentile(|sample| {
+            sample
+                .gpu_pass_ns
+                .as_ref()
+                .map_or(0.0, thrum_render::timing::SceneGpuTimings::clusters)
+                / 1e6
+        });
+        let forward = percentile(|sample| {
+            sample
+                .gpu_pass_ns
+                .as_ref()
+                .map_or(0.0, thrum_render::timing::SceneGpuTimings::forward)
+                / 1e6
+        });
+        let history = percentile(|sample| {
+            sample
+                .gpu_pass_ns
+                .as_ref()
+                .map_or(0.0, thrum_render::timing::SceneGpuTimings::history)
+                / 1e6
+        });
+        let tone = percentile(|sample| {
+            sample
+                .gpu_pass_ns
+                .as_ref()
+                .map_or(0.0, thrum_render::timing::SceneGpuTimings::tone)
+                / 1e6
+        });
         let atmosphere = percentile(|sample| {
-            let passes = sample.gpu_pass_ns.unwrap_or([0.0; 11]);
-            passes[6..].iter().sum::<f64>() / 1e6
+            let passes = sample
+                .gpu_pass_ns
+                .as_ref()
+                .expect("timestamp samples checked");
+            passes.atmosphere() / 1e6
         });
-        let aerial = percentile(|sample| sample.gpu_pass_ns.unwrap_or([0.0; 11])[10] / 1e6);
+        let aerial = percentile(|sample| {
+            sample
+                .gpu_pass_ns
+                .as_ref()
+                .map_or(0.0, thrum_render::timing::SceneGpuTimings::aerial)
+                / 1e6
+        });
         eprintln!(
             "V1 GPU p50/p95 ms shadow={:.3}/{:.3} cluster={:.3}/{:.3} forward+sky={:.3}/{:.3} history={:.3}/{:.3} tone={:.3}/{:.3} atmosphere-compute={:.3}/{:.3} aerial={:.3}/{:.3}",
             shadow.0,

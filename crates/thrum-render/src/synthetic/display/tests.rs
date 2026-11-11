@@ -114,3 +114,6 @@ fn tone_reference_has_identity_shadows_continuous_knee_and_bounded_highlights() 
 
 #[cfg(not(target_arch = "wasm32"))]
 mod gpu;
+
+#[cfg(target_os = "macos")]
+mod input;

@@ -152,3 +152,10 @@
   9af8664f and reran both complete matrices under the GPU lock. All 42 M0 and 10 direct paired comparisons
   pass again, with complete cut/stall source verification and fresh frame/contact inspection. Updated the
   D2.3 evidence to binary 8b417841 and this integrated source. Retained passed attended evidence.
+
+- 2026-11-11 M3 implementation checkpoint prepares one graph-bound pre-tone colour/motion/exposure input
+  and the retained SDR stage; an identity rebind and a distinct copy-produced reconstruction texture retain
+  exact diagnostic pixels on Metal. FrameSample now retains graph pass names, with explicit unavailable
+  transfer/query counters and named profiler summaries across native, browser and capture consumers. Renderer
+  tests, workspace Clippy and the simulator app build pass. Full cooked-target and window proofs follow; M3
+  and all its items remain open at this checkpoint. No shader arithmetic, panel or performance claim changes.

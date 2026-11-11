@@ -1,7 +1,7 @@
 //! Prepared SDR display transform, binding and recording ownership. Camera
 //! exposure is resolved separately; output remains relative to display white.
 
-use super::{OUTPUT_FORMAT, OffscreenTarget, RenderError, exposure};
+use super::{OUTPUT_FORMAT, RenderError, exposure};
 use crate::graph::{
     Access, AccessKind, CompiledPass, FrameGraph, GraphColorAttachment, Pass, PassScope,
     PipelineKey, ResourceDescriptor, ResourceId, ResourceScope,
@@ -49,17 +49,87 @@ pub(super) const SHADER: &str = concat!(
     include_str!("../synthetic_display.wgsl"),
 );
 
-pub(super) struct DisplayPrepared {
+pub(crate) struct SdrToneStage {
+    key: PipelineKey,
     pipeline: wgpu::RenderPipeline,
     layout: wgpu::BindGroupLayout,
 }
 
-pub(super) struct DisplayTarget {
-    groups: [wgpu::BindGroup; 2],
+/// Graph-bound colour, motion and matching exposure for the retained SDR stage.
+/// Colour is pre-exposed scene-linear RGBA16F at `extent`, with the existing
+/// source-pixel coordinate convention. Motion shares that grid. The exposure
+/// sample carries its GPU-resolved submitted/sample identity (C07).
+#[derive(Clone, Debug)]
+pub(crate) struct PreToneInput {
+    /// Scene-linear forward composition or a prepared reconstruction output.
+    pub colour: ResourceId,
+    /// Motion for the diagnostic overlay, in current source pixels.
+    pub motion: ResourceId,
+    /// Matching resolved exposure sample; never an independently derived gain.
+    pub exposure: ResourceId,
+    /// Source/output grid for this identity-preserving SDR stage.
+    pub extent: [u32; 2],
 }
 
-impl DisplayPrepared {
-    pub(super) fn new(device: &crate::runtime::DeviceSite) -> Self {
+/// Physical views for one admitted pre-tone choice, prepared before readiness.
+/// The graph IDs in `PreToneInput` must name these exact resources. Both exposure
+/// sides follow the forward/history write side; retained/skipped inputs must
+/// retain their matching exposure rather than borrow a newer sample.
+#[derive(Clone, Copy)]
+pub(crate) struct PreToneViews<'a> {
+    /// Colour on the declared source grid.
+    pub colour: &'a wgpu::TextureView,
+    /// Motion on that grid.
+    pub motion: &'a wgpu::TextureView,
+    /// Resolved exposure buffers, selected by the submitted frame's write side.
+    pub exposure: &'a [wgpu::Buffer; 2],
+}
+
+/// Prepared input bindings retain the source resources for their GPU lifetime.
+/// Replacing a binding requires a graph compiled with that binding's resources.
+pub(crate) struct PreparedPreToneInput {
+    groups: [wgpu::BindGroup; 2],
+    input: PreToneInput,
+    generation: u64,
+}
+
+/// Execute-time output of the SDR stage. Surface acquisition remains later.
+#[derive(Clone, Copy)]
+pub(crate) struct ToneOutput<'a> {
+    /// Declared Rgba8Unorm intermediate, retained until presentation/capture.
+    pub resource: &'a ResourceId,
+    /// Physical view of that intermediate.
+    pub view: &'a wgpu::TextureView,
+    /// Current submitted forward/history write side (0 or 1).
+    pub exposure_side: usize,
+}
+
+impl PreparedPreToneInput {
+    /// Declared source identity for this binding; unchanged by surface resize.
+    pub(crate) fn input(&self) -> &PreToneInput {
+        &self.input
+    }
+
+    fn check_pass(&self, pass: &CompiledPass) -> Result<(), RenderError> {
+        for (resource, kind) in [
+            (&self.input.colour, AccessKind::SampledRead),
+            (&self.input.motion, AccessKind::SampledRead),
+            (&self.input.exposure, AccessKind::UniformRead),
+        ] {
+            if !pass
+                .reads
+                .iter()
+                .any(|a| &a.resource == resource && a.kind == kind)
+            {
+                return Err(RenderError::GraphPassMismatch);
+            }
+        }
+        Ok(())
+    }
+}
+
+impl SdrToneStage {
+    pub(super) fn new(device: &crate::runtime::DeviceSite, key: PipelineKey) -> Self {
         let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("synthetic display layout"),
             entries: &[
@@ -140,32 +210,80 @@ impl DisplayPrepared {
             multiview_mask: None,
             cache: None,
         });
-        Self { pipeline, layout }
-    }
-
-    pub(super) fn target(
-        &self,
-        device: &wgpu::Device,
-        scene: &wgpu::TextureView,
-        motion: &wgpu::TextureView,
-        samples: &[wgpu::Buffer; 2],
-    ) -> DisplayTarget {
-        DisplayTarget {
-            groups: std::array::from_fn(|side| {
-                prepare_group(device, &self.layout, scene, motion, &samples[side])
-            }),
+        Self {
+            key,
+            pipeline,
+            layout,
         }
     }
 
-    pub(super) fn append_graph(
+    /// Prepare an admitted input without compiling shaders or changing arithmetic.
+    /// # Errors
+    /// Refuses incompatible extents, formats, usages or exposure capacity.
+    pub(crate) fn prepare_input(
+        &self,
+        device: &wgpu::Device,
+        input: PreToneInput,
+        views: PreToneViews<'_>,
+    ) -> Result<PreparedPreToneInput, RenderError> {
+        for (view, format) in [
+            (views.colour, super::SCENE_FORMAT),
+            (views.motion, super::MOTION_FORMAT),
+        ] {
+            let texture = view.texture();
+            if [texture.width(), texture.height()] != input.extent
+                || texture.format() != format
+                || texture.sample_count() != 1
+                || !texture
+                    .usage()
+                    .contains(wgpu::TextureUsages::TEXTURE_BINDING)
+            {
+                return Err(RenderError::TargetExtent);
+            }
+        }
+        if views.exposure.iter().any(|b| {
+            b.size() < exposure::SAMPLE_BYTES || !b.usage().contains(wgpu::BufferUsages::UNIFORM)
+        }) {
+            return Err(RenderError::GraphPassMismatch);
+        }
+        Ok(PreparedPreToneInput {
+            groups: std::array::from_fn(|side| {
+                prepare_group(
+                    device,
+                    &self.layout,
+                    views.colour,
+                    views.motion,
+                    &views.exposure[side],
+                )
+            }),
+            input,
+            generation: self.key.device_generation,
+        })
+    }
+
+    /// Declare all tone inputs, including optional motion-overlay reads. A
+    /// reconstruction producer writes `input.colour` before this consumer.
+    /// # Errors
+    /// Refuses foreign IDs or descriptors incompatible with the SDR source grid.
+    pub(crate) fn append_graph(
+        &self,
         graph: &mut FrameGraph,
-        key: PipelineKey,
-        scene: &ResourceId,
-        motion: &ResourceId,
-        exposure: &ResourceId,
-        width: u32,
-        height: u32,
+        input: &PreToneInput,
     ) -> Result<(ResourceId, usize), RenderError> {
+        let [width, height] = input.extent;
+        for (id, format) in [
+            (&input.colour, super::SCENE_FORMAT),
+            (&input.motion, super::MOTION_FORMAT),
+        ] {
+            if !matches!(graph.descriptor(id), Some(ResourceDescriptor::Texture { width: w, height: h, layers: 1, mips: 1, samples: 1, format: f, usage }) if *w == width && *h == height && *f == format && usage.contains(wgpu::TextureUsages::TEXTURE_BINDING))
+            {
+                return Err(RenderError::GraphPassMismatch);
+            }
+        }
+        if !matches!(graph.descriptor(&input.exposure), Some(ResourceDescriptor::Buffer { bytes, usage }) if *bytes >= exposure::SAMPLE_BYTES && usage.contains(wgpu::BufferUsages::UNIFORM))
+        {
+            return Err(RenderError::GraphPassMismatch);
+        }
         let output = graph.resource(
             ResourceDescriptor::Texture {
                 width,
@@ -183,22 +301,22 @@ impl DisplayPrepared {
         let pass = graph.pass(Pass {
             name: "synthetic tone encode".into(),
             scope: PassScope::View(1),
-            pipeline: Some(key),
+            pipeline: Some(self.key),
             accesses: vec![
                 Access {
-                    resource: motion.clone(),
+                    resource: input.motion.clone(),
                     range: 0..1,
                     kind: AccessKind::SampledRead,
                     store: true,
                 },
                 Access {
-                    resource: scene.clone(),
+                    resource: input.colour.clone(),
                     range: 0..1,
                     kind: AccessKind::SampledRead,
                     store: true,
                 },
                 Access {
-                    resource: exposure.clone(),
+                    resource: input.exposure.clone(),
                     range: 0..exposure::SAMPLE_BYTES,
                     kind: AccessKind::UniformRead,
                     store: true,
@@ -215,22 +333,42 @@ impl DisplayPrepared {
         Ok((output, pass))
     }
 
-    pub(super) fn encode(
+    /// Encode the retained SDR shader against one prepared graph-bound input.
+    /// # Errors
+    /// Refuses stale generations, wrong exposure sides or mismatched graph reads.
+    pub(crate) fn encode(
         &self,
         encoder: &mut wgpu::CommandEncoder,
         generation: u64,
-        target: &OffscreenTarget,
+        input: &PreparedPreToneInput,
         compiled: &CompiledPass,
-        write_side: usize,
+        output: ToneOutput<'_>,
         timings: Option<&mut GpuTimings>,
     ) -> Result<(), RenderError> {
+        if generation != input.generation
+            || generation != self.key.device_generation
+            || output.exposure_side > 1
+        {
+            return Err(RenderError::StaleTarget);
+        }
+        if compiled.pipeline != Some(self.key) {
+            return Err(RenderError::GraphPassMismatch);
+        }
+        input.check_pass(compiled)?;
+        if [
+            output.view.texture().width(),
+            output.view.texture().height(),
+        ] != input.input().extent
+        {
+            return Err(RenderError::TargetExtent);
+        }
         let mut pass = compiled
             .begin_render(
                 encoder,
                 [Some(GraphColorAttachment {
-                    resource: &target.ids.output,
+                    resource: output.resource,
                     range: 0..1,
-                    view: &target.view,
+                    view: output.view,
                     clear: wgpu::Color::BLACK,
                 })],
                 None,
@@ -239,7 +377,7 @@ impl DisplayPrepared {
             )?
             .ok_or(RenderError::GraphPassMismatch)?;
         pass.set_pipeline(&self.pipeline);
-        pass.set_bind_group(0, &target.display.groups[write_side], &[]);
+        pass.set_bind_group(0, &input.groups[output.exposure_side], &[]);
         pass.draw(0..3, 0..1);
         Ok(())
     }
