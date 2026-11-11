@@ -112,7 +112,8 @@ names the baseline and its owner; only that owner can refresh retained reference
 The [registry](.config/exact-baselines.json) lists references and covered paths. A full pass writes
 an untracked proof in `tmp/baseline-guard/proofs/`, keyed to Git objects for those paths. Compact
 records retain revision, binary/Wasm hashes, cooked root, comparisons and elapsed time; successful
-bulk frames are removed after their complete manifests are archived. Failed captures remain for diagnosis.
+bulk frames are removed after the owner publishes their comparisons or complete motion verification;
+source manifests and sample identities are archived first. Failed captures remain for diagnosis.
 `./dev check` always runs the CPU-only proof gate. Changes outside covered paths need no proof.
 If integration rebases onto a covered change, the gate refuses the stale proof: verify the rebased
 commit and land again. A rebase that changes only other paths preserves the content key.

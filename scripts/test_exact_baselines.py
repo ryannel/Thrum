@@ -117,6 +117,32 @@ class GateTests(unittest.TestCase):
             guard.verify(self.builder)
 
 
+class RetentionTests(unittest.TestCase):
+    def test_only_published_successful_captures_are_released(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            matrix, output = root / 'matrix', root / 'records'
+            matrix.mkdir(); output.mkdir()
+            for name in ['compared', 'motion', 'in-progress']:
+                (matrix / name).mkdir()
+                guard.save(matrix / name / 'manifest.json', {'source_hashes': ['original']})
+                (matrix / name / 'pixels').write_bytes(b'reconstructible')
+            report = {'failures': [], 'runs': {'compared': {}, 'motion': {'complete': True}, 'in-progress': {}},
+                      'comparisons': {'compared-checkpoint': {'equal': True}}}
+            guard.save(matrix / 'manifest.json', report)
+            guard.archive_completed_runs(matrix, output)
+            self.assertFalse((matrix / 'compared').exists())
+            self.assertFalse((matrix / 'motion').exists())
+            self.assertTrue((matrix / 'in-progress/pixels').exists())
+            archived = json.loads(gzip.decompress((output / 'matrix-motion-records.json.gz').read_bytes()))
+            self.assertEqual(archived['manifest.json']['source_hashes'], ['original'])
+            report['runs']['in-progress']['complete'] = True
+            report['failures'] = ['comparison failed']
+            guard.save(matrix / 'manifest.json', report)
+            guard.archive_completed_runs(matrix, output)
+            self.assertTrue((matrix / 'in-progress/pixels').exists())
+
+
 class ChromeTests(unittest.TestCase):
     def test_digest_and_byte_modes_and_failures(self):
         with tempfile.TemporaryDirectory() as temp:
