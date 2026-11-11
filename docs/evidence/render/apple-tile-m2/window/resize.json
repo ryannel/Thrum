@@ -1,0 +1,154 @@
+{
+  "portable": {
+    "observations": [
+      {
+        "name": "before",
+        "image_extent": [
+          1920,
+          1144
+        ],
+        "content_extent": [
+          1920,
+          1080
+        ],
+        "center_black_rows": [],
+        "metadata": "portable/before.json"
+      },
+      {
+        "name": "resized",
+        "image_extent": [
+          1520,
+          944
+        ],
+        "content_extent": [
+          1520,
+          880
+        ],
+        "center_black_rows": [
+          64,
+          65,
+          66,
+          67,
+          68,
+          69,
+          70,
+          71,
+          72,
+          73,
+          74,
+          75,
+          931,
+          932,
+          933,
+          934,
+          935,
+          936,
+          937,
+          938,
+          939,
+          940,
+          941,
+          942,
+          943
+        ],
+        "metadata": "portable/resized.json"
+      },
+      {
+        "name": "restored",
+        "image_extent": [
+          1920,
+          1144
+        ],
+        "content_extent": [
+          1920,
+          1080
+        ],
+        "center_black_rows": [],
+        "metadata": "portable/restored.json"
+      }
+    ],
+    "scene_extent": [
+      1920,
+      1080
+    ],
+    "backing_scale": 2,
+    "resize_UI": "Computer Use drag bottom-right [1916,1138] -> [1516,938], then reverse; app screenshot pixels",
+    "inspection": "Centered scene preserved mirror sphere, cube arrangement, rock, shadows and terrain; both recipes restored original full view. At 1520x880 content, a 1520x855 16:9 scene has 12/13 black rows."
+  },
+  "apple-tile": {
+    "observations": [
+      {
+        "name": "before",
+        "image_extent": [
+          1920,
+          1144
+        ],
+        "content_extent": [
+          1920,
+          1080
+        ],
+        "center_black_rows": [],
+        "metadata": "apple-tile/before.json"
+      },
+      {
+        "name": "resized",
+        "image_extent": [
+          1520,
+          944
+        ],
+        "content_extent": [
+          1520,
+          880
+        ],
+        "center_black_rows": [
+          64,
+          65,
+          66,
+          67,
+          68,
+          69,
+          70,
+          71,
+          72,
+          73,
+          74,
+          75,
+          931,
+          932,
+          933,
+          934,
+          935,
+          936,
+          937,
+          938,
+          939,
+          940,
+          941,
+          942,
+          943
+        ],
+        "metadata": "apple-tile/resized.json"
+      },
+      {
+        "name": "restored",
+        "image_extent": [
+          1920,
+          1144
+        ],
+        "content_extent": [
+          1920,
+          1080
+        ],
+        "center_black_rows": [],
+        "metadata": "apple-tile/restored.json"
+      }
+    ],
+    "scene_extent": [
+      1920,
+      1080
+    ],
+    "backing_scale": 2,
+    "resize_UI": "Computer Use drag bottom-right [1916,1138] -> [1516,938], then reverse; app screenshot pixels",
+    "inspection": "Centered scene preserved mirror sphere, cube arrangement, rock, shadows and terrain; both recipes restored original full view. At 1520x880 content, a 1520x855 16:9 scene has 12/13 black rows."
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "module": "APPLE-TILE",
+  "milestone": "M2",
+  "tree": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0",
+  "plan": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/docs/plans/APPLE-TILE/DONE.json",
+  "pass": 1,
+  "fail": 0,
+  "error": 0,
+  "timeout": 0,
+  "items": [
+    {
+      "id": "D2.1",
+      "result": "no check",
+      "proof": [
+        "ask"
+      ]
+    },
+    {
+      "id": "D2.2",
+      "result": "no check",
+      "proof": [
+        "ask"
+      ]
+    },
+    {
+      "id": "D2.3",
+      "result": "no check",
+      "proof": [
+        "inspect"
+      ]
+    },
+    {
+      "id": "D2.4",
+      "result": "no check",
+      "proof": [
+        "ask"
+      ]
+    },
+    {
+      "id": "D2.5",
+      "result": "no check",
+      "proof": [
+        "inspect",
+        "ask",
+        "attended"
+      ]
+    },
+    {
+      "id": "Check",
+      "check": "./dev check",
+      "exit": 0,
+      "result": "pass",
+      "output": " src/bin/rustc_receipt.rs (target/debug/deps/rustc_receipt-3960b95387bad8f9)\n     Running unittests src/main.rs (target/debug/deps/xtask-fd887e56201bb2d6)\n   Doc-tests asset_loop\n   Doc-tests thrum_app\n   Doc-tests thrum_asset\n   Doc-tests thrum_asset_gpu\n   Doc-tests thrum_content_runtime\n   Doc-tests thrum_controls\n   Doc-tests thrum_cook\n   Doc-tests thrum_core\n   Doc-tests thrum_network\n   Doc-tests thrum_render\n   Doc-tests v1_game\n   Compiling thrum-asset-gpu v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/crates/thrum-asset-gpu)\n   Compiling thrum-app v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/crates/thrum-app)\n   Compiling v1-game v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/examples/v1-game)\nwarning: linker stderr: ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/target/debug/deps/libintel_tex_2-ad87d7835ed898ef.rlib[5](kernel_ispc.o)', assuming: macOS\n         ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/target/debug/deps/libintel_tex_2-ad87d7835ed898ef.rlib[6](kernel_astc_ispc.o)', assuming: macOS\n  |\n  = note: `#[warn(linker_messages)]` on by default\n\nwarning: `v1-game` (test \"cooked_assets_gpu\") generated 1 warning\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.62s\n     Running tests/cooked_assets_gpu.rs (target/debug/deps/cooked_assets_gpu-e0660e84a3e781da)"
+    }
+  ]
+}

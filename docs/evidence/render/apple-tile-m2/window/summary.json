@@ -1,0 +1,98 @@
+{
+  "owner_record": "docs/plans/APPLE-TILE/ACCEPTED.json:milestones.M2.owner_answers",
+  "owner_answers": [
+    {
+      "text": "I'm at the Mac now. [Asked to switch on Screen Recording for Claude and ChatGPT and allow IINA in Codex Computer Use:] Done",
+      "at": "2026-11-11T08:37:37Z",
+      "item": "D2.5"
+    },
+    {
+      "text": "I'm at the Mac now. [Asked to switch on Screen Recording for Claude and ChatGPT and allow IINA in Codex Computer Use:] Done",
+      "at": "2026-11-11T08:37:44Z",
+      "item": "D2.3"
+    },
+    {
+      "text": "[Asked how to finish the resize and 1x playback checks, given Codex Computer Use calls Thrum M2 and IINA not approved:] Show it in Codex",
+      "at": "2026-11-11T10:16:52Z",
+      "item": "D2.5"
+    }
+  ],
+  "binary_sha256": "1b55ef3843ff7a5afe3b219864450b56f77b7b050f299f445fb29b6253f5ccfa",
+  "observer": "/usr/sbin/screencapture",
+  "observer_sha256": "9b667dfe132c550e6e77304092401aadfa2764af47d49c6785bf36083f44d12b",
+  "observer_version_os_build": "ProductName:\t\tmacOS\nProductVersion:\t\t26.6.2\nBuildVersion:\t\t25G83\n",
+  "function_scope": "OS/compositor window observations only; no panel cadence, photons, or exact same-submission correspondence",
+  "replacement": {
+    "portable": {
+      "pid": 46389,
+      "surface_generations": [
+        "2",
+        "3"
+      ],
+      "presented_rows": 842,
+      "all_presented": true,
+      "first_yaw": "0.000000000",
+      "last_yaw": "35.999988556",
+      "OS_endpoints": [
+        "window-2s.png",
+        "window-6s.png"
+      ],
+      "OS_replacement_video": "unavailable: bounded qualifier closed its window before recorder finalization; do not claim a replacement video"
+    },
+    "apple-tile": {
+      "pid": 46551,
+      "surface_generations": [
+        "2",
+        "3"
+      ],
+      "presented_rows": 844,
+      "all_presented": true,
+      "first_yaw": "0.000000000",
+      "last_yaw": "35.999988556",
+      "OS_endpoints": [
+        "window-2s.png",
+        "window-6s.png"
+      ],
+      "OS_replacement_video": "unavailable: bounded qualifier closed its window before recorder finalization; do not claim a replacement video"
+    }
+  },
+  "remaining": [],
+  "computer_use": "2026-11-11 visible Codex session: cua.getApp(com.colliderli.iina) and cua.getApp(ThrumM2.app) succeeded; game access preflight opened a window briefly before GPU lock, immediately closed; no observation claimed from that preflight.",
+  "selected_video": "Each window-response-1x.mp4 is the first eight seconds of the retained 65-second host-time OS recording, reencoded at original timestamps with libx264 CRF18; full source remains in tmp/g3t-m2/attended.",
+  "resize": "resize.json and per-recipe before/resized/restored captures",
+  "visual_review": "Sun/night/noon settled OS frames compared to matching paused T2 references under both recipes. Sun disk, sky/stars, terrain, local lights and mirror present. These are matched states, not the same submission; no OS byte equality claimed.",
+  "recovery_video": {
+    "portable": {
+      "pid": 77425,
+      "recorder_exit": 0,
+      "video": "portable/recovery-video/recovery-1x.mp4",
+      "duration_seconds": 3.993333,
+      "first_generation_3_seconds_after_recorder_launch": 2.128012,
+      "all_presented": true,
+      "generations": [
+        "2",
+        "3"
+      ],
+      "clock_limit": "Recorder launch is host time, not calibrated movie frame correspondence; video starts after asynchronous recorder initialization. No exact submission/compositor correlation."
+    },
+    "apple-tile": {
+      "pid": 77473,
+      "recorder_exit": 0,
+      "video": "apple-tile/recovery-video/recovery-1x.mp4",
+      "duration_seconds": 4.008333,
+      "first_generation_3_seconds_after_recorder_launch": 2.132021,
+      "all_presented": true,
+      "generations": [
+        "2",
+        "3"
+      ],
+      "clock_limit": "Recorder launch is host time, not calibrated movie frame correspondence; video starts after asynchronous recorder initialization. No exact submission/compositor correlation."
+    }
+  },
+  "visible_postflight": "visible-postflight.json",
+  "supplemental_video_failures": [
+    "First visible-session portable attempt started before the window settled, recorder exit 1 and no movie; excluded. Delaying recorder start one second and limiting it to four seconds succeeded for both recipes."
+  ],
+  "recovery_video_encoding": "Four-second original-time OS movies reencoded with libx264 CRF18, yuv420p; original .mov files retained in tmp/g3t-m2/attended/visible/<recipe>-recovery-settled-video.",
+  "reference_identity": "Per-recipe <state>-t2-manifest.json.gz and <state>-t2-runtime.json.gz, plus t2-reference-records.json.gz. World paused, sunset yaw -90/solar 17.4; night yaw 0/pitch 7/solar 0; noon yaw/pitch 0/solar 12; source scene extent 1920x1080."
+}

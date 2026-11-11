@@ -1,0 +1,93 @@
+{
+  "pid": 45868,
+  "recipe": "apple-tile",
+  "binary_sha256": "1b55ef3843ff7a5afe3b219864450b56f77b7b050f299f445fb29b6253f5ccfa",
+  "observations": [
+    {
+      "name": "sun-settled",
+      "unix_ns": 1794387105190241000,
+      "window": {
+        "kCGWindowAlpha": 1,
+        "kCGWindowBounds": {
+          "Height": 572,
+          "Width": 960,
+          "X": 384,
+          "Y": 146
+        },
+        "kCGWindowIsOnscreen": true,
+        "kCGWindowLayer": 0,
+        "kCGWindowMemoryUsage": 2368,
+        "kCGWindowName": "Thrum V1 | Paused (P) | tick 2 (0 updates, view age 0) | CPU tick 0.000, extract 0.001, upload 0.482, encode 0.709 ms | GPU shadow near/far 0.050/0.368, cluster 0.069, forward 1.204, history 0.007, display 0.117, atmosphere compute 0.000, present 0.071 ms | Direct culling",
+        "kCGWindowNumber": 45299,
+        "kCGWindowOwnerName": "v1-game",
+        "kCGWindowOwnerPID": 45868,
+        "kCGWindowSharingState": 1,
+        "kCGWindowStoreType": 1
+      },
+      "controls": {
+        "world.paused": true,
+        "sky.solar_time": 17.4,
+        "camera.yaw": -90,
+        "camera.pitch": 0
+      }
+    },
+    {
+      "name": "night-settled",
+      "unix_ns": 1794387107412461000,
+      "window": {
+        "kCGWindowAlpha": 1,
+        "kCGWindowBounds": {
+          "Height": 572,
+          "Width": 960,
+          "X": 384,
+          "Y": 146
+        },
+        "kCGWindowIsOnscreen": true,
+        "kCGWindowLayer": 0,
+        "kCGWindowMemoryUsage": 2368,
+        "kCGWindowName": "Thrum V1 | Paused (P) | tick 2 (0 updates, view age 0) | CPU tick 0.000, extract 0.000, upload 0.430, encode 0.972 ms | GPU shadow near/far 0.050/0.532, cluster 0.062, forward 1.334, history 0.103, display 0.116, atmosphere compute 0.000, present 0.065 ms | Direct culling",
+        "kCGWindowNumber": 45299,
+        "kCGWindowOwnerName": "v1-game",
+        "kCGWindowOwnerPID": 45868,
+        "kCGWindowSharingState": 1,
+        "kCGWindowStoreType": 1
+      },
+      "controls": {
+        "world.paused": true,
+        "sky.solar_time": 0,
+        "camera.yaw": 0,
+        "camera.pitch": 7
+      }
+    },
+    {
+      "name": "noon-settled",
+      "unix_ns": 1794387109640403000,
+      "window": {
+        "kCGWindowAlpha": 1,
+        "kCGWindowBounds": {
+          "Height": 572,
+          "Width": 960,
+          "X": 384,
+          "Y": 146
+        },
+        "kCGWindowIsOnscreen": true,
+        "kCGWindowLayer": 0,
+        "kCGWindowMemoryUsage": 2368,
+        "kCGWindowName": "Thrum V1 | Paused (P) | tick 2 (0 updates, view age 0) | CPU tick 0.000, extract 0.000, upload 0.207, encode 0.540 ms | GPU shadow near/far 0.050/0.275, cluster 0.090, forward 1.242, history 0.007, display 1.271, atmosphere compute 0.000, present 1.233 ms | Direct culling",
+        "kCGWindowNumber": 45299,
+        "kCGWindowOwnerName": "v1-game",
+        "kCGWindowOwnerPID": 45868,
+        "kCGWindowSharingState": 1,
+        "kCGWindowStoreType": 1
+      },
+      "controls": {
+        "world.paused": true,
+        "sky.solar_time": 12,
+        "camera.yaw": 0,
+        "camera.pitch": 0
+      }
+    }
+  ],
+  "window_changes": 0,
+  "video_exit": 0
+}

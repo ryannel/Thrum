@@ -1,0 +1,15 @@
+{
+  "pid": 45868,
+  "unix_ns": 1794387084551313000,
+  "environment": {
+    "THRUM_RECIPE": "apple-tile",
+    "THRUM_ASSET_STORE": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m0/valley",
+    "THRUM_SCENE": "valley",
+    "THRUM_ROUTE_OVERLAY": "proof",
+    "THRUM_STARS": "on",
+    "THRUM_CULLING": "direct",
+    "THRUM_PARAMS": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m2/attended/apple-tile/controls.json",
+    "THRUM_V1_FRAMES": "10000",
+    "THRUM_REPORT": "1"
+  }
+}

@@ -10,9 +10,9 @@ SurfacePresenter utility remains available; FrameHost uses the combined graph ra
 | --- | --- |
 | D2.1 | Graph/executor phase tests reject an unrelated post-acquire scene and a scene depending on the surface. Missing late binding stops phase two without preventing phase one. Real Metal tests inspect both recipes' merged plans and retained output texture identity through surface resize. |
 | D2.2 | FrameHost/token, actual Metal staging-submit-attempt, history/cut, surface bytes, resize and replacement regressions pass. Healthy skip flushes staging; lost-device abandon performs no extra queue call. Existing Mac loss checks remain before and after acquisition. |
-| D2.3 | **Open.** Exact M0/paired comparisons, source coverage, native frames/crops and contact sequences pass. Required 1x playback inspection is incomplete: Computer Use rejected IINA access as not approved. The final-build movies and host-time identities are retained. |
+| D2.3 | Exact M0/paired comparisons and complete source accounting pass. Visible-session IINA 1.5.0 playback at 1x was inspected for both recipes' route/cut and skipped-view sequences; scene content and recovery remain intact. [Review](playback-review.json). |
 | D2.4 | The iPhone 18 Pro simulator diagnostic route passes hidden/replaced surfaces, stalled replacement, raced presentation and foreground/background lease recovery. Endpoint images and queue/lifecycle logs prove function only. |
-| D2.5 | **Open.** The proposed shell-launched OS observer's read-only Screen Recording preflight is denied. The console was unlocked. No grant was requested or changed, and no OS game-window capture was started. |
+| D2.5 | Both recipes have settled OS Sun/night/noon captures against matched T2 references, ordinary control-response movies, deliberate resize/restoration with correct letterbox, and same-PID surface-replacement movies/logs. [Window records](window/summary.json), [resize](window/resize.json). |
 
 The initial native matrix passes 38 exact M0 comparisons (30 route/repeat and eight Sun/night SDR/linear).
 The final checkpoint probe and surface controls pin the final diagnostic binary and retain exact sample/exposure
@@ -26,10 +26,11 @@ skips 30 opportunities on each recipe; observed image gaps are 259.14 / 260.13 m
 Every source hash verifies, with zero ring/writer omissions. These are injected-gap observations, not cadence or speed
 qualification. [Selected lossless frames, original-time 1x movies and records](motion).
 
-The builder inspected full frames, native details, contact sheets and cut-adjacent samples for Sun, sky/stars,
-terrain, shadows, mirror/local lights and recovery. [Playback refusal](playback-review.json) keeps the separate 1x
-inspection open. The inherited valley presentation and local-light fixture remain unchanged.
-Independent lead review is owed. [Simulator records](ios), [window permission preflight](window-preflight.json).
+The builder inspected full frames, native details, contact sheets, cut-adjacent sources and IINA 1x playback for
+Sun, stars, terrain, shadows, mirror/local lights, cut and recovery. The inherited valley presentation remains.
+The earlier [denied preflight](window-preflight.json) and playback refusal are history; the attended
+[passing preflight](window/preflight-after.json) records no automated grant change. Independent lead review is owed.
+[Simulator records](ios) prove diagnostic function only.
 
 Preparation recompiles and binds the small variant plans; checked texture-slot/descriptor/storage correspondence
 reuses existing scene allocations across surface-only resize. Frame execution walks prepared recorder slices,
@@ -44,6 +45,14 @@ Build the simulator with `examples/v1-game-ios/ios/build-simulator.sh`, then run
 Bulk lossless sources and qualified binaries remain in owned `tmp/g3t-m2` through lead review; no remote backup is
 claimed. [Selected-file hashes](retained-files.json) permit verification before scratch closeout.
 
-M2 remains open. D2.3 needs approved video playback access and completed 1x inspection. D2.5 needs the owner's
-attended OS-observer setup, followed by both-recipe window/input, resize/replacement and matched-state reference
-observations. Engine images cannot pass D2.5. The milestone check and complete repository gate pass.
+Owner setup/direction is recorded verbatim in [ACCEPTED.json](../../../plans/APPLE-TILE/ACCEPTED.json),
+`milestones.M2.owner_answers`; the latest D2.5 entry is authoritative. [Selected record](window/summary.json)
+preserves those exact entries. Computer Use succeeded in this visible Codex session.
+OS observations use `/usr/sbin/screencapture` on macOS 26.6.2/25G83, with PID/window/bounds, scale 2, host clock and
+final binary hash retained. At 1520×880 content, the unchanged 1920×1080 scene fits 1520×855 with 12/13 black rows;
+both windows restore to 1920×1080. Sun/night/noon OS images match T2 content at the same paused controls, not the
+same submission or exact compositor bytes. Short host-time recovery videos supplement the retained replacement
+records: both span surface generation 2→3 and native AppKit yaw response, with all lifecycle rows presented.
+Earlier failed recorder attempts remain labelled failures; no replacement video is inferred from engine images.
+M2 is claimed for lead review. The [milestone check](checks/visible-milestone-check.json) and full repository gate
+pass; no panel-cadence, speed or physical-device promotion.

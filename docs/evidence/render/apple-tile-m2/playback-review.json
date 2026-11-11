@@ -1,12 +1,33 @@
 {
-  "unix_ns": 1794379181436498000,
-  "completed": false,
-  "required": "D2.3 normal-speed 1x playback inspection",
-  "attempt": {
-    "tool": "mcp__cua_repl.js",
-    "action": "cua.getApp('IINA')",
-    "result": "Computer Use was not approved to use IINA"
+  "completed": true,
+  "unix_ns": 1794393793314444000,
+  "player": "IINA 1.5.0",
+  "observer": "Codex Computer Use native AX and screenshots; Playback menu repeatedly reports Speed: 1x",
+  "owner_record": "docs/plans/APPLE-TILE/ACCEPTED.json:milestones.M2.owner_answers",
+  "binary_sha256": "1b55ef3843ff7a5afe3b219864450b56f77b7b050f299f445fb29b6253f5ccfa",
+  "method": "Played retained original-time movies at 1x; inspected sampled live player views, full frames and source cut-adjacent images. This is visual function review, not an every-displayed-frame or panel-cadence measurement. Local aliases resolve to retained movies; the first portable route was a hash-verified copy. File Loop was enabled for repeated inspection, then restored off.",
+  "movies": {
+    "motion/apple-tile-render-stall-motion/preview-1x.mp4": {
+      "sha256": "b8c94cafe2cc9f23b79d8abf77d1d9d4e4d2925abf68b69d69e3c96753929972",
+      "reviewed_at_speed": 1
+    },
+    "motion/apple-tile-route-motion/preview-1x.mp4": {
+      "sha256": "bef57c65af4d75a93e1ff1c0a8b45b5cf358157784b3e97ba0bb5488dae8f641",
+      "reviewed_at_speed": 1
+    },
+    "motion/portable-render-stall-motion/preview-1x.mp4": {
+      "sha256": "ed537df8a677f65d41c8c59d426b47251730d736d028ac675f67215c3ad9d64e",
+      "reviewed_at_speed": 1
+    },
+    "motion/portable-route-motion/preview-1x.mp4": {
+      "sha256": "1c2195e9570cc1ac89300a047c805f969790671d395c3a712c23b03fdb5a543b",
+      "reviewed_at_speed": 1
+    }
   },
-  "scope_completed": "Final full frames and native-size Sun/stars/mirror/local-light/near-plane/letterbox detail inspected. Exact source/PTS coverage verified. Contact sheets and cut-adjacent source frames are inspectable; no completed 1x playback claim.",
-  "unblock": "Allow access to a local video playback surface for the retained 1x movies."
+  "observations": {
+    "route": "Both recipes retain sky, terrain, shadow, mirror sphere and cube/light fixture through approach, the deliberate camera cut and close/near-plane views. No blank output or stale pre-cut view was seen in inspected playback. Inherited faceted terrain and near-plane clipping remain visible; no artistic upgrade claimed.",
+    "render_stall": "Both retain sky/terrain, mirror sphere, rock and shadows through the deliberate interruption, then camera movement continues. The short hold/gap is intentional: source records retain 30 skipped opportunities and ~259/260 ms submission gaps. No smooth-cadence claim follows.",
+    "window": "Both ordinary response movies show night/stars/local-light then noon/mirror/shadows after parameter edits. Supplemental recovery movies span same-PID surface generation 2 -> 3 and ensuing native AppKit pan; rendered scene remains present."
+  },
+  "earlier_refusal": "Earlier session access refusal remains history; visible session successfully selected IINA and ThrumM2. File chooser special-key actions reset to /; selectText plus typeText newline resolved it."
 }

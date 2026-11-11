@@ -1,0 +1,16 @@
+{
+  "binary": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m2/attended/ThrumM2.app/Contents/MacOS/v1-game",
+  "recipe": "portable",
+  "asset_store": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m0/valley",
+  "scene": "valley",
+  "overlay": "proof",
+  "stars": "on",
+  "culling": "direct",
+  "params": {
+    "world.paused": true,
+    "sky.solar_time": 12,
+    "camera.yaw": 0,
+    "camera.pitch": 0
+  },
+  "note": "Only launcher recipe/params/log destination changed between runs; executable hash is in each observation."
+}

@@ -1,0 +1,21 @@
+{
+  "unix_ns": 1794393458249478000,
+  "window": {
+    "kCGWindowAlpha": 1,
+    "kCGWindowBounds": {
+      "Height": 432,
+      "Width": 768,
+      "X": 224,
+      "Y": 185
+    },
+    "kCGWindowIsOnscreen": true,
+    "kCGWindowLayer": 0,
+    "kCGWindowMemoryUsage": 2368,
+    "kCGWindowName": "m2-portable-render-stall.mp4",
+    "kCGWindowNumber": 45610,
+    "kCGWindowOwnerName": "IINA",
+    "kCGWindowOwnerPID": 69383,
+    "kCGWindowSharingState": 1,
+    "kCGWindowStoreType": 1
+  }
+}

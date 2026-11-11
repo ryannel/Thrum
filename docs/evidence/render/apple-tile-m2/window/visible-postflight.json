@@ -1,0 +1,20 @@
+{
+  "unix_ns": 1794393929515482000,
+  "permission_preflight": {
+    "denied": false,
+    "probe_pid": 82698,
+    "command": [
+      "/usr/bin/swift",
+      "-e",
+      "import CoreGraphics; import Foundation; print(CGPreflightScreenCaptureAccess()); print(ProcessInfo.processInfo.processIdentifier)"
+    ],
+    "api": "CGPreflightScreenCaptureAccess",
+    "error": null
+  },
+  "console": {
+    "locked": false
+  },
+  "permission_requested": false,
+  "grant_changed": false,
+  "purpose": "Visible-session postflight for attended M2 OS-window observer; historical passing preflight is retained separately."
+}

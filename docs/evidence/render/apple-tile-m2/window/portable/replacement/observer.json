@@ -1,0 +1,105 @@
+{
+  "pid": 46389,
+  "environment": {
+    "THRUM_RECIPE": "portable",
+    "THRUM_MAC_QUALIFY": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m2/attended/portable-replacement",
+    "THRUM_MAC_TAP": "on",
+    "THRUM_MAC_REPLACE": "1",
+    "THRUM_V1_FRAMES": "10000",
+    "THRUM_SCENE": "valley",
+    "THRUM_ASSET_STORE": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m0/valley",
+    "THRUM_ROUTE_OVERLAY": "proof",
+    "THRUM_STARS": "on",
+    "THRUM_CULLING": "direct",
+    "THRUM_PARAMS": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/examples/v1-game/params/showcase-noon.params.json"
+  },
+  "clock": "time.monotonic_ns / time.time_ns",
+  "captures": [
+    {
+      "name": "window-2s.png",
+      "unix_ns": 1794387332746254000,
+      "windows": [
+        {
+          "kCGWindowAlpha": 1,
+          "kCGWindowBounds": {
+            "Height": 255,
+            "Width": 400,
+            "X": 1308,
+            "Y": 53
+          },
+          "kCGWindowIsOnscreen": true,
+          "kCGWindowLayer": 3,
+          "kCGWindowMemoryUsage": 2368,
+          "kCGWindowName": "Thrum demo",
+          "kCGWindowNumber": 45316,
+          "kCGWindowOwnerName": "v1-game",
+          "kCGWindowOwnerPID": 46389,
+          "kCGWindowSharingState": 1,
+          "kCGWindowStoreType": 1
+        },
+        {
+          "kCGWindowAlpha": 1,
+          "kCGWindowBounds": {
+            "Height": 572,
+            "Width": 960,
+            "X": 384,
+            "Y": 146
+          },
+          "kCGWindowIsOnscreen": true,
+          "kCGWindowLayer": 0,
+          "kCGWindowMemoryUsage": 2368,
+          "kCGWindowName": "Thrum V1 | Paused (P) | tick 3 (0 updates, view age 0) | CPU tick 0.000, extract 0.000, upload 0.178, encode 0.417 ms | GPU shadow near/far 0.050/0.276, cluster 0.004, forward 1.136, history 0.048, display 1.115, atmosphere compute 0.000, present 1.137 ms | Direct culling",
+          "kCGWindowNumber": 45315,
+          "kCGWindowOwnerName": "v1-game",
+          "kCGWindowOwnerPID": 46389,
+          "kCGWindowSharingState": 1,
+          "kCGWindowStoreType": 1
+        }
+      ]
+    },
+    {
+      "name": "window-6s.png",
+      "unix_ns": 1794387336755786000,
+      "windows": [
+        {
+          "kCGWindowAlpha": 1,
+          "kCGWindowBounds": {
+            "Height": 255,
+            "Width": 400,
+            "X": 1308,
+            "Y": 53
+          },
+          "kCGWindowIsOnscreen": true,
+          "kCGWindowLayer": 3,
+          "kCGWindowMemoryUsage": 2368,
+          "kCGWindowName": "Thrum demo",
+          "kCGWindowNumber": 45316,
+          "kCGWindowOwnerName": "v1-game",
+          "kCGWindowOwnerPID": 46389,
+          "kCGWindowSharingState": 1,
+          "kCGWindowStoreType": 1
+        },
+        {
+          "kCGWindowAlpha": 1,
+          "kCGWindowBounds": {
+            "Height": 572,
+            "Width": 960,
+            "X": 384,
+            "Y": 146
+          },
+          "kCGWindowIsOnscreen": true,
+          "kCGWindowLayer": 0,
+          "kCGWindowMemoryUsage": 2368,
+          "kCGWindowName": "Thrum V1 | Paused (P) | tick 3 (0 updates, view age 0) | CPU tick 0.000, extract 0.109, upload 0.263, encode 0.612 ms | GPU shadow near/far 0.050/0.271, cluster 0.129, forward 1.169, history 0.012, display 1.250, atmosphere compute 0.088, present 1.184 ms | Direct culling",
+          "kCGWindowNumber": 45315,
+          "kCGWindowOwnerName": "v1-game",
+          "kCGWindowOwnerPID": 46389,
+          "kCGWindowSharingState": 1,
+          "kCGWindowStoreType": 1
+        }
+      ]
+    }
+  ],
+  "game_exit": 0,
+  "recorder_exit": 1
+}

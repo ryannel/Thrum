@@ -1,0 +1,30 @@
+{
+  "unix_ns": 1794392850537539000,
+  "monotonic_ns": 2907832145963208,
+  "recipe": "apple-tile",
+  "window": {
+    "kCGWindowAlpha": 1,
+    "kCGWindowBounds": {
+      "Height": 572,
+      "Width": 960,
+      "X": 384,
+      "Y": 146
+    },
+    "kCGWindowIsOnscreen": true,
+    "kCGWindowLayer": 0,
+    "kCGWindowMemoryUsage": 2368,
+    "kCGWindowName": "Thrum V1 | Paused (P) | tick 2 (0 updates, view age 0) | CPU tick 0.000, extract 0.000, upload 0.543, encode 1.113 ms | GPU shadow near/far 0.050/0.291, cluster 0.089, forward 1.155, history 0.007, display 1.173, atmosphere compute 0.000, present 1.134 ms | Direct culling",
+    "kCGWindowNumber": 45524,
+    "kCGWindowOwnerName": "ThrumM2",
+    "kCGWindowOwnerPID": 74985,
+    "kCGWindowSharingState": 1,
+    "kCGWindowStoreType": 1
+  },
+  "binary_sha256": "1b55ef3843ff7a5afe3b219864450b56f77b7b050f299f445fb29b6253f5ccfa",
+  "controls": {
+    "world.paused": true,
+    "sky.solar_time": 12,
+    "camera.yaw": 0,
+    "camera.pitch": 0
+  }
+}
