@@ -1,0 +1,47 @@
+[
+  {
+    "command": "./dev check",
+    "exit": 0,
+    "log": "00.log.gz"
+  },
+  {
+    "command": "./dev check",
+    "exit": 0,
+    "log": "01.log.gz"
+  },
+  {
+    "command": "node scripts/check_v1_browser.mjs --case environment",
+    "exit": 0,
+    "log": "02.log.gz"
+  },
+  {
+    "command": "python3 scripts/environment_products.py off-parity --target mac-metal",
+    "exit": 0,
+    "log": "03.log.gz"
+  },
+  {
+    "command": "python3 scripts/environment_products.py off-parity --target chrome-webgpu",
+    "exit": 0,
+    "log": "04.log.gz"
+  },
+  {
+    "command": "./dev check",
+    "exit": 0,
+    "log": "05.log.gz"
+  },
+  {
+    "command": "python3 scripts/environment_products.py cost --target mac-metal",
+    "exit": 0,
+    "log": "06.log.gz"
+  },
+  {
+    "command": "python3 scripts/environment_products.py cost --target chrome-webgpu",
+    "exit": 0,
+    "log": "07.log.gz"
+  },
+  {
+    "command": "./dev check",
+    "exit": 0,
+    "log": "08.log.gz"
+  }
+]

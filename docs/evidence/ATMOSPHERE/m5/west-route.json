@@ -1,0 +1,77 @@
+{
+  "format": "thrum-v1-moving-route",
+  "version": 1,
+  "cooked_root": "70d2baf823d09d85574f7cdfce7102648754544dd7d68659e9bd92dd5f30e21d",
+  "cooked_generation": 1,
+  "tick_hz": 60,
+  "phase": [
+    1,
+    2
+  ],
+  "origin_tick": 180,
+  "start": {
+    "solar_hours": 17.3
+  },
+  "render_extent": [
+    1280,
+    720
+  ],
+  "keys": [
+    {
+      "tick": 0,
+      "eye": [
+        0.0,
+        244.9226672381398,
+        16.0
+      ],
+      "yaw_degrees": 0.0,
+      "pitch_degrees": -3.0127875041833403
+    },
+    {
+      "tick": 45,
+      "eye": [
+        0.0,
+        244.9226672381398,
+        16.0
+      ],
+      "yaw_degrees": -90.0,
+      "pitch_degrees": -5.0
+    },
+    {
+      "tick": 225,
+      "eye": [
+        0.0,
+        244.9226672381398,
+        16.0
+      ],
+      "yaw_degrees": -80.0,
+      "pitch_degrees": -5.0
+    },
+    {
+      "tick": 360,
+      "eye": [
+        0.0,
+        244.9226672381398,
+        16.0
+      ],
+      "yaw_degrees": -80.0,
+      "pitch_degrees": -5.0
+    }
+  ],
+  "cuts": [],
+  "checkpoints": [
+    {
+      "tick": 60,
+      "name": "ridge-shadow"
+    },
+    {
+      "tick": 180,
+      "name": "drift-two-seconds"
+    },
+    {
+      "tick": 350,
+      "name": "final-hold"
+    }
+  ],
+  "overlay": "off"
+}

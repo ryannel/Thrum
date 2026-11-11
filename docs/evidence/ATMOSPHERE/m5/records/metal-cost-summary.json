@@ -1,0 +1,38 @@
+[
+  {
+    "order": 0,
+    "provider": "off",
+    "forward_gpu_median_ms": 1.131749,
+    "gpu_pass_sum_median_ms": 2.666458,
+    "whole_frame_gpu_including_surface_blit_median_ms": 3.78096,
+    "drive_call_cpu_wall_median_ms": 0.644125,
+    "engine_submit_interval_median_ms": 8.288875
+  },
+  {
+    "order": 1,
+    "provider": "on",
+    "forward_gpu_median_ms": 1.1788755,
+    "gpu_pass_sum_median_ms": 2.7550825,
+    "whole_frame_gpu_including_surface_blit_median_ms": 3.920813,
+    "drive_call_cpu_wall_median_ms": 0.6354585,
+    "engine_submit_interval_median_ms": 8.313271
+  },
+  {
+    "order": 2,
+    "provider": "on",
+    "forward_gpu_median_ms": 1.177291,
+    "gpu_pass_sum_median_ms": 2.759417,
+    "whole_frame_gpu_including_surface_blit_median_ms": 3.91202,
+    "drive_call_cpu_wall_median_ms": 0.6566665,
+    "engine_submit_interval_median_ms": 8.321417
+  },
+  {
+    "order": 3,
+    "provider": "off",
+    "forward_gpu_median_ms": 1.131667,
+    "gpu_pass_sum_median_ms": 2.666915,
+    "whole_frame_gpu_including_surface_blit_median_ms": 3.777249,
+    "drive_call_cpu_wall_median_ms": 0.620792,
+    "engine_submit_interval_median_ms": 8.289584
+  }
+]
