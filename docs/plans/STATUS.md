@@ -45,7 +45,7 @@ The orchestrate script writes this page from the plan files and records after ea
 - Other modules read the one sky and Sun, and one cloud optical depth dims direct sunlight once (ATMOSPHERE M5): Ready for Review · [plan](ATMOSPHERE/PLAN.md)
 - BASELINE-GUARD's design: Design Changes Requested · [design](BASELINE-GUARD/DESIGN.md) · [plan](BASELINE-GUARD/PLAN.md)
 - CULLING's design: Design Changes Requested · [design](CULLING/DESIGN.md) · [plan](CULLING/PLAN.md)
-- EFFECT-GRAPH's design: Design Ready for Review · [design](EFFECT-GRAPH/DESIGN.md) · [plan](EFFECT-GRAPH/PLAN.md)
+- EFFECT-GRAPH's design: Design Changes Requested · [design](EFFECT-GRAPH/DESIGN.md) · [plan](EFFECT-GRAPH/PLAN.md)
 
 ### Recently done
 
@@ -72,7 +72,7 @@ The orchestrate script writes this page from the plan files and records after ea
 | 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads | APPLE-PRESENTATION M3 | M5 of 2 · Ready for Review |
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is refused before it reaches main |  | Design Changes Requested |
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE M2 | Design Changes Requested |
-| 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame | APPLE-TILE M2 and M3, APPLE-PRESENTATION M2 | Design Ready for Review |
+| 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame | APPLE-TILE M2 and M3, APPLE-PRESENTATION M2 | Design Changes Requested |
 | 12 | CONTENT-LOOP | Edited meshes, textures and volumes appear in the running game without a stall | APPLE-PRESENTATION M2 | Not planned yet |
 | 13 | SHOWCASE | The V1 exit: the showcase valley on Mac and in Chrome, reviewed, with its closing record | The last milestone of modules 1 to 10 and 12 | Not planned yet |
 | 14 | SEA | An open sea from waterline to horizon, with floating bodies, wakes and foam | ATMOSPHERE M5, EFFECT-GRAPH, APPLE-TILE M3, APPLE-PRESENTATION M3 and M7, CONTENT-LOOP; the owner's port timing | Not planned yet |
