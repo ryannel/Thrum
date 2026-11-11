@@ -11,7 +11,7 @@ import tarfile
 import time
 
 ROOT = Path(__file__).resolve().parents[1]
-BASE = json.loads((ROOT / 'docs/evidence/ATMOSPHERE/m5-h2/base.json').read_text())['base_commit']
+BASE = json.loads((ROOT / 'docs/evidence/ATMOSPHERE/m5/base.json').read_text())['base_commit']
 TASK = ROOT / 'tmp/atmosphere-m5'
 
 
@@ -24,7 +24,7 @@ def digest(path):
 
 
 def build_base():
-    source = TASK / 'base'
+    source = TASK / f'base-{BASE[:12]}'
     if not source.exists():
         source.mkdir(parents=True)
         archive = subprocess.check_output(['git', 'archive', BASE], cwd=ROOT)
@@ -120,7 +120,7 @@ def cost(target, output):
         if not runtime['complete'] or runtime['diagnostic_clouds'] != (provider == 'on'):
             raise RuntimeError('Incomplete or wrongly configured cost arm')
         limit = runtime['max_sampled_textures_per_shader_stage']
-        counts = {name: count + (provider == 'on') for name, count in json.loads((ROOT / 'docs/evidence/ATMOSPHERE/m5-h2/base.json').read_text())['sampled_texture_counts'].items()}
+        counts = {name: count + (provider == 'on') for name, count in json.loads((ROOT / 'docs/evidence/ATMOSPHERE/m5/base.json').read_text())['sampled_texture_counts'].items()}
         if any(count > limit for count in counts.values()):
             raise RuntimeError('Forward pipeline exceeds recorded device texture limit')
         arms.append({'provider': provider, 'order': index, 'manifest': manifest, 'gpu': runtime['gpu'],

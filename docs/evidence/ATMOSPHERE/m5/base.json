@@ -1,0 +1,19 @@
+{
+  "base_commit": "ba9549f5f67b0084325e24f10a3badf293da2d16",
+  "shader_sources": {
+    "crates/thrum-render/src/synthetic/scene_source.rs": "d93123ffe2623407a8feff1b588a998c2632c3b716d46cc5b233b8f0494b73fe",
+    "crates/thrum-render/src/synthetic.wgsl": "c460971be7831a74290466a8bfe2166b1784e7eef2e949d8d15149953dbe8adc",
+    "crates/thrum-render/src/synthetic_sun.wgsl": "ef34e9f4faace4ef44f6219a661623aab9dd2b777ed018f17a00bacce83978f0",
+    "crates/thrum-render/src/synthetic_aerial.wgsl": "732989ed232f8d974d374d4c7f57430c042f0246d524daa50f32679c8a1878e4",
+    "crates/thrum-render/src/synthetic_environment.wgsl": "247049789ff08c28c950785d493cbb73f8dfbb506c0cb3d5e233d9d701451a48",
+    "crates/thrum-asset-gpu/src/cooked.wgsl": "9ad4780d16b2f0663d11e1635f980514dd1698f170423e26b8200064dea8b31b"
+  },
+  "sampled_texture_counts": {
+    "synthetic_forward_atmosphere_shadowed": 11,
+    "cooked_mesh_atmosphere_shadowed": 11,
+    "cooked_volume_atmosphere_shadowed": 8
+  },
+  "counts_scope": "Source layout census only. Adapter limits and pipeline creation still require target execution.",
+  "rebased_from": "a471fe5d83beb926bdd1cf49e123696090d4e262",
+  "reason": "Refresh both parity arms after the concurrent APPLE-PRESENTATION M1 motion-input changes landed, preserving the initial base record separately."
+}

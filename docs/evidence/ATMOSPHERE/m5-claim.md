@@ -1,6 +1,6 @@
 # M5 target evidence
 
-11 November 2026. Eight numerical, identity, parity and cost items pass. M5.7 and M5.8 remain open pending the required 1× motion review. Computer Use reports its browser host unavailable, Chrome has no visible window, and IINA is unapproved. The saved captures are being packaged while access is requested.
+11 November 2026. The pre-rebase checkpoint passes eight numerical, identity, parity and cost items. Fresh qualification is pending after integration with main’s APPLE-PRESENTATION M1 changes, so the current items remain open. M5.7 and M5.8 remain open pending the required 1× motion review. Computer Use reports its browser host unavailable, Chrome has no visible window, and IINA is unapproved. The saved captures are being packaged while access is requested.
 
 | Items | Target proof |
 |---|---|
@@ -17,3 +17,5 @@ The cost figures are observations on this M3 Max. The Mac arms include the engin
 
 
 The implementation checkpoint is `a466ceaf`, following the WIP cherry-pick `b8ce4f76`. The latter preserves main’s Metal dependency and the WIP half-float dependency. The diagnostic provider uses a 1024² fp16 field on a 2000 m plane, world drift `[160,40]` m/s and the declared support. Its analytic pattern is a stand-in. A westward pan supplements the noon and 17.3 h routes for the ridge-shadow view.
+
+The integration rebase preserves main’s jittered contribution matrix, motion overlay, motion fields and cooked-volume correspondence. Both parity arms now use recorded base `ba9549f5`, which already contains APPLE-PRESENTATION M1. The initial base remains in [the initial record](m5-h2/base.json). The original `a471fe5d` parity results below describe the pre-rebase checkpoint.

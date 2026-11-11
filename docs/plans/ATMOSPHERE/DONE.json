@@ -16,7 +16,7 @@
           "lock": "gpu",
           "ask": "Do tests in ./dev check cover an epoch change on profile change and on device replacement, no change across a time scrub, and the true Sun staying continuous through sunset while the apparent surface light fades? Is the identity produced in one place and only read elsewhere?",
           "target": "mac-metal",
-          "status": "pass",
+          "status": "open",
           "evidence": "docs/evidence/ATMOSPHERE/m5-claim.md",
           "verdict": "",
           "review": ""
@@ -28,7 +28,7 @@
           "lock": "gpu",
           "ask": "Read the referee tests. Does the contribution use only the lent layout and library, with no private chart, mip or storage-gain knowledge? Does each of H1-H5 assert the bound its row names against the reference its row names, and never against the forward pass's own output? For H2 and H4, is the expected value an f64 filtered decode written apart from the library's code, on the live product and on the known field, and does the test fail if a single-texel or single-slice lookup passes? Is their allowance the design's C/32 + 1e-5 M + Q, with Q one stored half-float step and nothing wider, on a known field whose neighbouring texels differ by at least 32 stored steps? Is one case of each row repeated at a non-unit exposure scale? Does H5 vary direction, roughness, the raw Sun's illuminance, the night term and a rewritten sky? Are the preserved referees P1-P11 unchanged in reference, cases and bound?",
           "target": "mac-metal",
-          "status": "pass",
+          "status": "open",
           "evidence": "docs/evidence/ATMOSPHERE/m5-claim.md",
           "verdict": "",
           "review": ""
@@ -40,7 +40,7 @@
           "lock": "gpu",
           "ask": "Read the environment case. Does it run the lent operations in a real hardware Chrome session, apply the H1-H5 bounds itself, including the filtered decode of H2 and H4, and fail on a missing or unresolved row or on a wrong lookup that passes?",
           "target": "chrome-webgpu",
-          "status": "pass",
+          "status": "open",
           "evidence": "docs/evidence/ATMOSPHERE/m5-claim.md",
           "verdict": "",
           "review": ""
@@ -52,7 +52,7 @@
           "lock": "gpu",
           "ask": "Read scripts/environment_products.py. Does off-parity render the base commit and the claimed commit from one cooked store through the engine tap, compare bytes with no tolerance or mask, and include a same-build rerun control and a negative control that must fail?",
           "target": "mac-metal",
-          "status": "pass",
+          "status": "open",
           "evidence": "docs/evidence/ATMOSPHERE/m5-claim.md",
           "verdict": "",
           "review": ""
@@ -63,7 +63,7 @@
           "check": "python3 scripts/environment_products.py off-parity --target chrome-webgpu",
           "lock": "gpu",
           "target": "chrome-webgpu",
-          "status": "pass",
+          "status": "open",
           "evidence": "docs/evidence/ATMOSPHERE/m5-claim.md",
           "verdict": "",
           "review": ""
@@ -75,7 +75,7 @@
           "lock": "gpu",
           "ask": "Do GPU tests show a uniform tau of ln 2 halving the direct term, and only the direct term, on each receiver kind including the cooked volume; a field that differs between two world points giving each receiver, and each volume march sample, its own point's factor; and tau of zero, a receiver above the plane and a read outside the region all matching no provider? Is exp(-tau) one shared cloud-factor function that the direct-Sun term and the volume's march both call, never a per-receiver patch or a darkening of final colour?",
           "target": "mac-metal",
-          "status": "pass",
+          "status": "open",
           "evidence": "docs/evidence/ATMOSPHERE/m5-claim.md",
           "verdict": "",
           "review": ""
@@ -107,7 +107,7 @@
           "lock": "gpu",
           "ask": "Are the paired figures recorded with build, load class and order and labelled as observations? Is every forward pipeline within the sampled-texture limit read from the capability record, with the count stated?",
           "target": "mac-metal",
-          "status": "pass",
+          "status": "open",
           "evidence": "docs/evidence/ATMOSPHERE/m5-claim.md",
           "verdict": "",
           "review": ""
@@ -118,7 +118,7 @@
           "check": "python3 scripts/environment_products.py cost --target chrome-webgpu",
           "lock": "gpu",
           "target": "chrome-webgpu",
-          "status": "pass",
+          "status": "open",
           "evidence": "docs/evidence/ATMOSPHERE/m5-claim.md",
           "verdict": "",
           "review": ""
