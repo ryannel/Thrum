@@ -1,0 +1,92 @@
+{
+  "portable-controls": {
+    "source": "tmp/g3t-m3-mf1/window/portable/control-response.mov",
+    "fps": 10,
+    "layout": [
+      5,
+      10
+    ],
+    "reading_order": "left to right then top to bottom",
+    "seconds_per_full_sheet": 5.0,
+    "sheets": [
+      "strips/portable-controls-01.png",
+      "strips/portable-controls-02.png"
+    ],
+    "scope": "Complete movie sampled in OS host time; not playback or panel cadence"
+  },
+  "portable-recovery": {
+    "source": "tmp/g3t-m3-mf1/window/portable-recovery-settled-video/window-response.mov",
+    "fps": 10,
+    "layout": [
+      5,
+      10
+    ],
+    "reading_order": "left to right then top to bottom",
+    "seconds_per_full_sheet": 5.0,
+    "sheets": [
+      "strips/portable-recovery-01.png"
+    ],
+    "scope": "Complete movie sampled in OS host time; not playback or panel cadence"
+  },
+  "portable-interactive": {
+    "source": "tmp/g3t-m3-mf1/portable-interactive.mov",
+    "fps": 2,
+    "layout": [
+      5,
+      10
+    ],
+    "reading_order": "left to right then top to bottom",
+    "seconds_per_full_sheet": 25.0,
+    "sheets": [
+      "strips/portable-interactive-01.png",
+      "strips/portable-interactive-02.png",
+      "strips/portable-interactive-03.png"
+    ],
+    "scope": "Complete movie sampled in OS host time; not playback or panel cadence"
+  },
+  "apple-tile-controls": {
+    "source": "tmp/g3t-m3-mf1/window/apple-tile/control-response.mov",
+    "fps": 10,
+    "layout": [
+      5,
+      10
+    ],
+    "reading_order": "left to right then top to bottom",
+    "seconds_per_full_sheet": 5.0,
+    "sheets": [
+      "strips/apple-tile-controls-01.png",
+      "strips/apple-tile-controls-02.png"
+    ],
+    "scope": "Complete movie sampled in OS host time; not playback or panel cadence"
+  },
+  "apple-tile-recovery": {
+    "source": "tmp/g3t-m3-mf1/window/apple-tile-recovery-settled-video/window-response.mov",
+    "fps": 10,
+    "layout": [
+      5,
+      10
+    ],
+    "reading_order": "left to right then top to bottom",
+    "seconds_per_full_sheet": 5.0,
+    "sheets": [
+      "strips/apple-tile-recovery-01.png"
+    ],
+    "scope": "Complete movie sampled in OS host time; not playback or panel cadence"
+  },
+  "apple-tile-interactive": {
+    "source": "tmp/g3t-m3-mf1/apple-tile-interactive.mov",
+    "fps": 2,
+    "layout": [
+      5,
+      10
+    ],
+    "reading_order": "left to right then top to bottom",
+    "seconds_per_full_sheet": 25.0,
+    "sheets": [
+      "strips/apple-tile-interactive-01.png",
+      "strips/apple-tile-interactive-02.png",
+      "strips/apple-tile-interactive-03.png"
+    ],
+    "scope": "Complete movie sampled in OS host time; not playback or panel cadence"
+  }
+}

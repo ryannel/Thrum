@@ -1,0 +1,28 @@
+{
+  "unix_ns": 1794430041826116000,
+  "purpose": "Free reconstructible PNG caches only; preserve lossless compressed sources and selected evidence",
+  "runs": {
+    "chrome-day-realtime": {
+      "verified_frames": 482,
+      "png_bytes": 607410378,
+      "source_retained": "tmp/g3t-m3/chrome-day-realtime/frames",
+      "reproduce": [
+        "python3",
+        "scripts/package_v1_browser.py",
+        "--output",
+        "tmp/g3t-m3/chrome-day-realtime"
+      ]
+    },
+    "chrome-night-realtime": {
+      "verified_frames": 482,
+      "png_bytes": 363955378,
+      "source_retained": "tmp/g3t-m3/chrome-night-realtime/frames",
+      "reproduce": [
+        "python3",
+        "scripts/package_v1_browser.py",
+        "--output",
+        "tmp/g3t-m3/chrome-night-realtime"
+      ]
+    }
+  }
+}

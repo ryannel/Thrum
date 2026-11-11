@@ -1,0 +1,22 @@
+{
+  "unix_ns": 1794432280401753000,
+  "item": "D3.5",
+  "builder_result": "pass",
+  "target": "mac-metal / Apple M3 Max",
+  "binary_sha256": "e2eef29ba2a10f572088e56ad9ea3fbf8a4e6b76f7e0925cd22de9dbb68d32f0",
+  "live_observation": "Both recipes: full paused OS states versus fresh matched T2 stills; CUA E/Q pan and reversal, resize and restoration; intact scene and centered letterboxing under the same PID.",
+  "playback": {
+    "tool": "IINA 1.5.0",
+    "speed": "1x (Playback menu observed)",
+    "sources": "Both control-response, replacement and interactive original OS movies opened and played; CUA snapshots observed phases, supplemented by complete sampled strips. This is sampled observation, not a claim of continuous frame-by-frame playback inspection.",
+    "coverage": "Portable interactive playback snapshots include resized and restored states; Apple tile playback snapshots include pan/resize; restoration was observed live and in full-resolution captures and strips."
+  },
+  "complete_sequence_inspection": {
+    "controls_and_recovery_fps": 10,
+    "interactive_fps": 2,
+    "all_sheets": "strip-index.json",
+    "result": "Night-to-noon change, coherent pan/reversal, centered resize and original-view restoration; generation replacement retains intact scene and accepts pan. No new missing geometry or stale recovered view observed."
+  },
+  "still_inspection": "Both recipes: Sun disk/horizon/terrain; night stars and silhouette; noon mirror, cube arrangement, rock and shadows. Existing saturated night local light agrees with its T2 reference. Full frames inspected separately from reduced strips.",
+  "limits": "Function only. No panel cadence, photons, latency or exact compositor-byte claim. Mac M2 tap correspondence and Mac M3 cadence stay separate."
+}

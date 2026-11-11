@@ -33,6 +33,7 @@ Criteria: D2.1–D2.5 in the done-when file.
 
 Criteria: D3.1–D3.5 in the done-when file.
 
+- [x] Settle review MF1 with fresh both-recipe OS-window observations on the exact reviewed binary in an unlocked session, retaining matched paused references, input, resize and replacement recovery.
 - [x] Expose one colour/exposure input with exact identity substitution; keep tone/intermediate/present arithmetic. Migrate pass-name timing and prove attended window function.
 - [x] Retain actual target proof and run scoped checks plus `./dev check` before claiming.
 

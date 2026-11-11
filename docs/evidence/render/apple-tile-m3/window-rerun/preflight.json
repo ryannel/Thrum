@@ -1,0 +1,9 @@
+{
+  "console_locked": false,
+  "screen_recording_granted": true,
+  "grant_requested": false,
+  "unix_ns": 1794429320249694000,
+  "monotonic_ns": 2944301693027458,
+  "pid": 1862,
+  "executable": "/opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/bin/python3.15"
+}

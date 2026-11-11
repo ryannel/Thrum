@@ -169,3 +169,11 @@
   Required milestone checks pass outside the sandbox after a GPU-lock timeout and sandbox no-adapter refusal. Evidence:
   [M3 record](../../evidence/render/apple-tile-m3/README.md). Pass-name counters retain untimed work as
   unavailable; no traffic, speed, panel cadence or EDR/native-provider promotion. Independent review owed.
+
+- **2026-11-11 — M3 MF1 window follow-up.** Repeated D3.5 on the exact reviewer executable
+  (`e2eef29b…`, reviewed commit `e2129272`) with an unlocked console and existing observer grant.
+  Verified both recipes' matched paused T2/OS states, ordinary keyboard response, CUA resize/letterbox/restore
+  and generation 2→3 recovery with post-replacement pan. [Fresh evidence](../../evidence/render/apple-tile-m3/window-rerun/README.md)
+  retains tool/PID/window/scale/clocks, original-time OS video packets and lifecycle logs. The required M3
+  check passes the moving command and full repository gate. No engine code or grants changed; no panel,
+  cadence, photon or performance qualification is inferred. M3 is reclaimed for the lead's review.

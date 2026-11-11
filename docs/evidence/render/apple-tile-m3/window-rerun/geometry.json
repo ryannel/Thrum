@@ -1,0 +1,186 @@
+{
+  "portable": {
+    "observations": [
+      {
+        "state": "before",
+        "image_extent": [
+          1920,
+          1144
+        ],
+        "content_extent": [
+          1920,
+          1080
+        ],
+        "center_black_content_rows": [],
+        "pid": 79186,
+        "unix_ns": 1794431506399003000
+      },
+      {
+        "state": "key-pan",
+        "image_extent": [
+          1920,
+          1144
+        ],
+        "content_extent": [
+          1920,
+          1080
+        ],
+        "center_black_content_rows": [],
+        "pid": 79186,
+        "unix_ns": 1794431524840686000
+      },
+      {
+        "state": "resized",
+        "image_extent": [
+          1520,
+          944
+        ],
+        "content_extent": [
+          1520,
+          880
+        ],
+        "center_black_content_rows": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          867,
+          868,
+          869,
+          870,
+          871,
+          872,
+          873,
+          874,
+          875,
+          876,
+          877,
+          878,
+          879
+        ],
+        "pid": 79186,
+        "unix_ns": 1794431538640603000
+      },
+      {
+        "state": "restored",
+        "image_extent": [
+          1920,
+          1144
+        ],
+        "content_extent": [
+          1920,
+          1080
+        ],
+        "center_black_content_rows": [],
+        "pid": 79186,
+        "unix_ns": 1794431553003701000
+      }
+    ],
+    "backing_scale": 2,
+    "scene_extent": [
+      1920,
+      1080
+    ],
+    "content_bounds_convention": "[left,top,right,bottom] in OS image pixels; 64-pixel title bar excluded"
+  },
+  "apple-tile": {
+    "observations": [
+      {
+        "state": "before",
+        "image_extent": [
+          1920,
+          1144
+        ],
+        "content_extent": [
+          1920,
+          1080
+        ],
+        "center_black_content_rows": [],
+        "pid": 84342,
+        "unix_ns": 1794431619781818000
+      },
+      {
+        "state": "key-pan",
+        "image_extent": [
+          1920,
+          1144
+        ],
+        "content_extent": [
+          1920,
+          1080
+        ],
+        "center_black_content_rows": [],
+        "pid": 84342,
+        "unix_ns": 1794431634180912000
+      },
+      {
+        "state": "resized",
+        "image_extent": [
+          1520,
+          944
+        ],
+        "content_extent": [
+          1520,
+          880
+        ],
+        "center_black_content_rows": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          867,
+          868,
+          869,
+          870,
+          871,
+          872,
+          873,
+          874,
+          875,
+          876,
+          877,
+          878,
+          879
+        ],
+        "pid": 84342,
+        "unix_ns": 1794431647978833000
+      },
+      {
+        "state": "restored",
+        "image_extent": [
+          1920,
+          1144
+        ],
+        "content_extent": [
+          1920,
+          1080
+        ],
+        "center_black_content_rows": [],
+        "pid": 84342,
+        "unix_ns": 1794431661408844000
+      }
+    ],
+    "backing_scale": 2,
+    "scene_extent": [
+      1920,
+      1080
+    ],
+    "content_bounds_convention": "[left,top,right,bottom] in OS image pixels; 64-pixel title bar excluded"
+  }
+}

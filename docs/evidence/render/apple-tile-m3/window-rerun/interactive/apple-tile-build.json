@@ -1,0 +1,6 @@
+{
+  "recipe": "apple-tile",
+  "bundle": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m3-mf1/ThrumM2.app",
+  "binary_sha256": "e2eef29ba2a10f572088e56ad9ea3fbf8a4e6b76f7e0925cd22de9dbb68d32f0",
+  "scope": "Existing game test-host bundle identity; original M2 bundle is preserved. Current M3 binary and controls."
+}

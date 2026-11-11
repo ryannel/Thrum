@@ -1,0 +1,62 @@
+{
+  "binary_sha256": "e2eef29ba2a10f572088e56ad9ea3fbf8a4e6b76f7e0925cd22de9dbb68d32f0",
+  "backing_scale": 2,
+  "pid": 36477,
+  "environment": {
+    "THRUM_RECIPE": "apple-tile",
+    "THRUM_MAC_QUALIFY": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m3-mf1/window/apple-tile-recovery-settled-video",
+    "THRUM_MAC_TAP": "on",
+    "THRUM_MAC_REPLACE": "1",
+    "THRUM_V1_FRAMES": "10000",
+    "THRUM_SCENE": "valley",
+    "THRUM_ASSET_STORE": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/g3t-m0/valley",
+    "THRUM_ROUTE_OVERLAY": "proof",
+    "THRUM_STARS": "on",
+    "THRUM_CULLING": "direct",
+    "THRUM_PARAMS": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/examples/v1-game/params/showcase-noon.params.json"
+  },
+  "clock": "time.monotonic_ns / time.time_ns",
+  "captures": [],
+  "record_start_unix_ns": 1794430169927116000,
+  "record_start_monotonic_ns": 2945151393226333,
+  "windows": [
+    {
+      "kCGWindowAlpha": 1,
+      "kCGWindowBounds": {
+        "Height": 277,
+        "Width": 400,
+        "X": 1308,
+        "Y": 53
+      },
+      "kCGWindowIsOnscreen": true,
+      "kCGWindowLayer": 3,
+      "kCGWindowMemoryUsage": 2368,
+      "kCGWindowName": "Thrum demo",
+      "kCGWindowNumber": 47514,
+      "kCGWindowOwnerName": "v1-game",
+      "kCGWindowOwnerPID": 36477,
+      "kCGWindowSharingState": 1,
+      "kCGWindowStoreType": 1
+    },
+    {
+      "kCGWindowAlpha": 1,
+      "kCGWindowBounds": {
+        "Height": 572,
+        "Width": 960,
+        "X": 384,
+        "Y": 146
+      },
+      "kCGWindowIsOnscreen": true,
+      "kCGWindowLayer": 0,
+      "kCGWindowMemoryUsage": 2368,
+      "kCGWindowName": "Thrum V1 | Paused (P) | tick 2 (0 updates, view age 0) | CPU tick 0.000, extract 0.000, upload 0.197, encode 0.643 ms | GPU shadow near/far 0.050/0.277, cluster 0.004, forward 1.167, history 0.026, display 1.181, atmosphere compute -0.000, present 1.154 ms | Direct culling",
+      "kCGWindowNumber": 47513,
+      "kCGWindowOwnerName": "v1-game",
+      "kCGWindowOwnerPID": 36477,
+      "kCGWindowSharingState": 1,
+      "kCGWindowStoreType": 1
+    }
+  ],
+  "game_exit": 0,
+  "recorder_exit": 0
+}

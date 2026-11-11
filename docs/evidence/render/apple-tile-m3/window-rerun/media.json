@@ -1,0 +1,214 @@
+{
+  "portable": {
+    "source": "tmp/g3t-m3-mf1/portable-interactive.mov",
+    "source_sha256": "767b38c3d067019f6fbc88b1d87f4957dd8de582fd7540c6742974a6686204af",
+    "source_bytes": 102865752,
+    "retained": "interactive/portable.mov",
+    "retained_sha256": "46c3b4fc7a566d9ec21fda9033cada522da811f18d30974dea7d782fe73607c6",
+    "retained_bytes": 65538633,
+    "source_streams": [
+      {
+        "codec_name": "h264",
+        "width": 2144,
+        "height": 1368,
+        "time_base": "1/600",
+        "disposition": {
+          "default": 1,
+          "dub": 0,
+          "original": 0,
+          "comment": 0,
+          "lyrics": 0,
+          "karaoke": 0,
+          "forced": 0,
+          "hearing_impaired": 0,
+          "visual_impaired": 0,
+          "clean_effects": 0,
+          "attached_pic": 0,
+          "timed_thumbnails": 0,
+          "non_diegetic": 0,
+          "captions": 0,
+          "descriptions": 0,
+          "metadata": 0,
+          "dependent": 0,
+          "still_image": 0,
+          "multilayer": 0
+        },
+        "tags": {
+          "creation_time": "2026-11-11T21:11:46.000000Z",
+          "language": "und",
+          "handler_name": "Core Media Video",
+          "vendor_id": "[0][0][0][0]",
+          "encoder": "H.264"
+        }
+      }
+    ],
+    "retained_streams": [
+      {
+        "codec_name": "h264",
+        "width": 2144,
+        "height": 1368,
+        "time_base": "1/600",
+        "disposition": {
+          "default": 1,
+          "dub": 0,
+          "original": 0,
+          "comment": 0,
+          "lyrics": 0,
+          "karaoke": 0,
+          "forced": 0,
+          "hearing_impaired": 0,
+          "visual_impaired": 0,
+          "clean_effects": 0,
+          "attached_pic": 0,
+          "timed_thumbnails": 0,
+          "non_diegetic": 0,
+          "captions": 0,
+          "descriptions": 0,
+          "metadata": 0,
+          "dependent": 0,
+          "still_image": 0,
+          "multilayer": 0
+        },
+        "tags": {
+          "handler_name": "Core Media Video",
+          "vendor_id": "FFMP",
+          "encoder": "H.264"
+        }
+      }
+    ],
+    "source_duration": "75.041667",
+    "retained_duration": "49.100000",
+    "source_packets": 4037,
+    "retained_packets": 2667,
+    "all_retained_packets_equal_source_prefix": true,
+    "requested_excerpt_end_seconds": 49,
+    "restored_observation_seconds_from_start_signal": 46.587037408,
+    "command": [
+      "ffmpeg",
+      "-v",
+      "error",
+      "-y",
+      "-copyts",
+      "-i",
+      "tmp/g3t-m3-mf1/portable-interactive.mov",
+      "-t",
+      "49",
+      "-map",
+      "0:v:0",
+      "-c",
+      "copy",
+      "-avoid_negative_ts",
+      "disabled",
+      "-video_track_timescale",
+      "600",
+      "docs/evidence/render/apple-tile-m3/window-rerun/interactive/portable.mov"
+    ],
+    "scope": "Original-time prefix covering all input/resize/restoration, no video reencode; full OS original remains in scratch. Packet SHA-256 and PTS match the source prefix exactly."
+  },
+  "apple-tile": {
+    "source": "tmp/g3t-m3-mf1/apple-tile-interactive.mov",
+    "source_sha256": "de1f36d8fa4448bb4dab71afe4de7b4e8eacf4c935e48dac79ca2b94215c9f2d",
+    "source_bytes": 105636582,
+    "retained": "interactive/apple-tile.mov",
+    "retained_sha256": "07a4d60653a8cc1112e6a164ae9e2389b145d912e724f3d6221d0f2c0456c8eb",
+    "retained_bytes": 59199440,
+    "source_streams": [
+      {
+        "codec_name": "h264",
+        "width": 2144,
+        "height": 1368,
+        "time_base": "1/600",
+        "disposition": {
+          "default": 1,
+          "dub": 0,
+          "original": 0,
+          "comment": 0,
+          "lyrics": 0,
+          "karaoke": 0,
+          "forced": 0,
+          "hearing_impaired": 0,
+          "visual_impaired": 0,
+          "clean_effects": 0,
+          "attached_pic": 0,
+          "timed_thumbnails": 0,
+          "non_diegetic": 0,
+          "captions": 0,
+          "descriptions": 0,
+          "metadata": 0,
+          "dependent": 0,
+          "still_image": 0,
+          "multilayer": 0
+        },
+        "tags": {
+          "creation_time": "2026-11-11T21:13:40.000000Z",
+          "language": "und",
+          "handler_name": "Core Media Video",
+          "vendor_id": "[0][0][0][0]",
+          "encoder": "H.264"
+        }
+      }
+    ],
+    "retained_streams": [
+      {
+        "codec_name": "h264",
+        "width": 2144,
+        "height": 1368,
+        "time_base": "1/600",
+        "disposition": {
+          "default": 1,
+          "dub": 0,
+          "original": 0,
+          "comment": 0,
+          "lyrics": 0,
+          "karaoke": 0,
+          "forced": 0,
+          "hearing_impaired": 0,
+          "visual_impaired": 0,
+          "clean_effects": 0,
+          "attached_pic": 0,
+          "timed_thumbnails": 0,
+          "non_diegetic": 0,
+          "captions": 0,
+          "descriptions": 0,
+          "metadata": 0,
+          "dependent": 0,
+          "still_image": 0,
+          "multilayer": 0
+        },
+        "tags": {
+          "handler_name": "Core Media Video",
+          "vendor_id": "FFMP",
+          "encoder": "H.264"
+        }
+      }
+    ],
+    "source_duration": "75.015000",
+    "retained_duration": "44.058333",
+    "source_packets": 4143,
+    "retained_packets": 2440,
+    "all_retained_packets_equal_source_prefix": true,
+    "requested_excerpt_end_seconds": 44,
+    "restored_observation_seconds_from_start_signal": 41.61063973,
+    "command": [
+      "ffmpeg",
+      "-v",
+      "error",
+      "-y",
+      "-copyts",
+      "-i",
+      "tmp/g3t-m3-mf1/apple-tile-interactive.mov",
+      "-t",
+      "44",
+      "-map",
+      "0:v:0",
+      "-c",
+      "copy",
+      "-avoid_negative_ts",
+      "disabled",
+      "-video_track_timescale",
+      "600",
+      "docs/evidence/render/apple-tile-m3/window-rerun/interactive/apple-tile.mov"
+    ],
+    "scope": "Original-time prefix covering all input/resize/restoration, no video reencode; full OS original remains in scratch. Packet SHA-256 and PTS match the source prefix exactly."
+  }
+}

@@ -1,0 +1,5 @@
+{
+  "t2_admission": "Two attempts refused with less than the declared 16 GiB free space, before creating their missing capture. Completed references were retained and resumed; no guard or setting changed.",
+  "interactive_recorder": "Initial SIGINT termination discarded its movie. Repeated both recipes with a 75-second natural recorder exit; only completed originals/excerpts are evidence.",
+  "preview": "An attempted CRF18 transcode quantized source VFR timestamps. Discarded; retained MOV excerpts copy original video packets and PTS exactly, as media.json checks."
+}
