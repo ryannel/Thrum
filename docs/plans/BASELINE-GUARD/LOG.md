@@ -47,3 +47,8 @@
   design's one-hour allowance after the standalone command's 600-second default interrupted an earlier run.
   [M1 evidence](../../evidence/BASELINE-GUARD/M1.md) records all four final-version land refusals, three full
   verifier timings with load, three gate timings, preserved references and byte-mode semantics. Lead review remains.
+
+- 2026-11-11 The claim landed as `232d27dc` through the checked integration command. Retained a 7,811-byte
+  source patch from published checkpoint `9a29a8c9` to reconstruct the refusal experiment's covered content,
+  because its recorded commit was rebased. An isolated index reproduced key `f6b5c8fa` exactly.
+  [Recovery record](../../evidence/BASELINE-GUARD/M1/refusals-final/base-source.json).

@@ -1,0 +1,26 @@
+{
+  "published_anchor": "9a29a8c94c2157ddb4fea093394a0e1edc516c5f",
+  "recorded_experiment_base": "c054cae76c9c11349672e42426ff1268f198396b",
+  "recorded_content_key": "f6b5c8fa282dbbe27b2b26b863a151911e4fa52154b3fc58a52e14e5f2aad35b",
+  "reconstructed_tree": "5c243ac34e5141ef620faf2d6ed7c48a729404ed",
+  "reconstructed_content_key": "f6b5c8fa282dbbe27b2b26b863a151911e4fa52154b3fc58a52e14e5f2aad35b",
+  "patch_sha256": "a017447607a4686b5f97ec6b978b7f00539942a7db8618cbf69810e512fcb054",
+  "covered_paths": [
+    "crates/",
+    "examples/v1-game/",
+    "scripts/",
+    "tools/",
+    ".cargo/",
+    "Cargo.toml",
+    "Cargo.lock",
+    "rust-toolchain.toml",
+    ".config/exact-baselines.json",
+    "docs/evidence/render/apple-tile-m0/native-baseline/",
+    "docs/evidence/render/apple-tile-m0/chrome-baseline/prechange-chrome-fixed-manifest.json.gz",
+    "docs/evidence/render/apple-tile-m1/chrome/chrome-prechange-linear-3/manifest.json.gz",
+    "docs/evidence/render/apple-tile-m1/chrome/chrome-prechange-night-sdr/manifest.json.gz",
+    "docs/evidence/render/apple-tile-m1/chrome/chrome-prechange-night-linear/manifest.json.gz"
+  ],
+  "recipe": "In a scratch clone, apply this patch to the published anchor, copy the delivered reproduce_refusals.py into its original repository path, and commit. Verify the content key, run the full verifier under the GPU lock, then run the reproducer under the GPU lock.",
+  "covered_source_patch": "base-source.patch"
+}
