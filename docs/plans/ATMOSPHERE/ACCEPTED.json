@@ -22,12 +22,12 @@
   },
   "milestones": {
     "M5": {
-      "definitions": "462cc70d0d96c9476c5df44631a9601eb2e99ad982ce940fc6aff87d5a9aa5ae",
+      "definitions": "f83a2045b8ddc289ffb8525b1ef027a2b98bac932d85fa7706ce52d9b447f2b8",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Revise ATMOSPHERE's design and plan as docs/evidence/ATMOSPHERE/design-review.md asks",
-        "at": "2026-11-10T23:39:35Z"
+        "task": "Unblock ATMOSPHERE M5: H2 fails its Metal precision bound. Current main retains the design instruction requiring a plann",
+        "at": "2026-11-11T06:03:17Z"
       }
     },
     "M6": {
@@ -52,11 +52,15 @@
     {
       "task": "Revise ATMOSPHERE's design and plan as docs/evidence/ATMOSPHERE/design-review.md asks",
       "at": "2026-11-10T23:39:35Z"
+    },
+    {
+      "task": "Unblock ATMOSPHERE M5: H2 fails its Metal precision bound. Current main retains the design instruction requiring a planner decision on this measured miss. Evidence: docs/evidence/ATMOSPHERE/m5-h2-blocker.md",
+      "at": "2026-11-11T06:03:17Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-10T23:39:35Z"
+    "at": "2026-11-11T06:03:17Z"
   },
   "design_history": [
     {
