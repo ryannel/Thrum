@@ -1,170 +1,153 @@
 # EFFECT-GRAPH design review
 
-Reviewed 11 November 2026 at integrated commit `c9dd6cd0d58617e5b269054e9b9b5a564095ced9`.
-Result: **changes requested — four Must Fix findings**.
+Reviewed 11 November 2026 at integrated commit `ae64c2bd9801c3d8699f4c53d00151b5b0620bbf`.
+Result: **design approved — no Must Fix findings; one wording suggestion**.
 
-This is the first design-review round; no previous `design-review.md` was present. I read the sole task in
-`ACCEPTED.json.briefs` in full, the project brief and module-list interfaces, then the complete EFFECT-GRAPH
-design, plan and all 21 done-when items. The request calls for a small resource milestone immediately after
-APPLE-TILE M2, followed by the graph foundation sea and clouds need, and a way to catch changes to another
-module's exact images before landing. It does not commission the sea or cloud implementations themselves.
+This is the second design-review round, against the review at `c9dd6cd0d58617e5b269054e9b9b5a564095ced9`.
+I read both tasks in [ACCEPTED.json](../../plans/EFFECT-GRAPH/ACCEPTED.json) under `briefs`, whole and in order,
+the project brief, the module-list scope and interfaces, the previous review, the complete current design and
+plan, and all 21 done-when items. I compared the design, plan and criteria with the previous reviewed revision.
+The commission remains a small resource milestone after APPLE-TILE M2, followed by the graph foundation for
+sea and clouds, with protection against changing another module's exact baselines. It does not commission the
+sea/cloud implementations or require this foundation to qualify their reconstructed appearance.
 
-## Must Fix findings
+## Previous Must Fix findings
 
-### MF1 — Repeated ticks reset persistent simulation
+### MF1 — Repeated ticks reset persistent simulation — resolved
 
-**Must Fix; verified contradiction.** Location: [DESIGN.md](../../plans/EFFECT-GRAPH/DESIGN.md), lines 144–148;
-affected proofs: M2.2, M2.5 and M2.6.
+**Verified by design and proof inspection.** [DESIGN.md](../../plans/EFFECT-GRAPH/DESIGN.md), lines 151–179,
+now separates equal, forward and backward ticks, changed timelines and the first frame of an epoch. Equal ticks
+retain committed state exactly, including pause; backward ticks and changed timelines reset. Forward progress
+has an explicit bound and dropped-tick count. Submission commits state; discard does not.
 
-The time rule first says that several display frames within one tick step once, then says that a tick which is
-“not ahead” resets the effect. Equality is not ahead. After submitting a nonempty trail at tick 10, presenting
-tick 10 again resets it. At 120 Hz presentation with the ordinary 60 Hz world clock, this is a normal frame,
-not a rare discontinuity. A paused world repeats the same problem. This contradicts N2 and the M2 quality bar.
+M2.2 now requires a nonempty field before repeated ticks and pause, unchanged contents afterward, and declared
+reset contents after both discontinuities. Its Reviewer Question requires expectations derived independently
+from the state table, so CPU/GPU agreement on the original wrong rule cannot satisfy it. M2's bar names retention
+explicitly, and M2.5 carries the same expectations to Chrome. The original ordinary 120 Hz/60 Hz contradiction
+is removed.
 
-Distinguish equal tick, forward tick, backward tick and changed timeline explicitly. An equal tick must retain
-the committed simulation state; define reset for the actual discontinuities. Make the oracle assert retention
-of an already nonempty field across repeated ticks and pause, rather than merely reproduce the same erroneous
-reset rule on CPU and GPU. Include backward-tick and timeline-change expectations in that same state table.
+### MF2 — Cadence does not define which history result readers receive — resolved
 
-### MF2 — Cadence does not define which history result readers receive
+**Verified by mechanism walkthrough and proof inspection.** [DESIGN.md](../../plans/EFFECT-GRAPH/DESIGN.md),
+lines 181–243, now defines a committed side per pair and distinct `previous`, `next` and `result` bindings.
+A downstream consumer reads `next` when its producer ran and the committed side when it skipped. Only pairs
+whose producers ran flip on submission. Discard flips nothing; independently scheduled pairs retain independent
+sides. Bindings for both sides are prepared before frame recording.
 
-**Must Fix; verified mechanism gap.** Location: [DESIGN.md](../../plans/EFFECT-GRAPH/DESIGN.md), lines 149–175
-and the frame walkthrough at lines 225–230; affected proofs: M2.2–M2.5.
+Walking the original counterexample through these rules: after A/step 4 advances to B/step 5 and submits, a
+skipped update leaves consumers on B and commits no flip. A discarded update to A cannot publish step 6; a later
+retry starts from B. The exclusive mutable host borrow in `runtime/tokens.rs` supports the claimed single pending
+encoded-frame assumption, and `runtime.rs` invokes the contribution's submission callback after queue submission.
+The existing graph's history scope alone does not implement this feature; the revised plan explicitly builds
+the additional per-pair binding and publication protocol.
 
-The design allows a skippable writer to target a history pair, says the executor binds the last submitted side
-for reads and the other side for writes, and commits the effect's side on submission. It concludes that
-persistence alone makes skipped readers see the last result. That conclusion does not follow for ping-pong.
+Time-sliced writes are confined to in-place persistent resources. First-epoch and reset frames cover the entire
+output from seed/reset state, irrespective of cadence; a discarded full frame remains unseeded for the retry.
+M2.3 requires two differently scheduled histories, readback of their consumer's output at run/skip boundaries
+and after discard, full-output readback at initialization/reset, compiler refusals, and creation counters.
+An always-running history plus a skipped in-place texture no longer satisfies the witness. S4 below concerns
+phrasing of the item, not a missing mechanism.
 
-For example, let A contain step 4 and let a submitted update write step 5 into B. In the next frame the writer
-skips. A downstream reader still bound to that frame's nominal output side A sees step 4. Publishing A because
-the frame submitted also makes the next update start from step 4. Keeping the side unchanged at submission is
-necessary but does not itself redirect the skipped frame's downstream reader. The existing `ResourceScope::History`
-declaration in `crates/thrum-render/src/graph.rs` tracks the physical resources; it does not supply this new
-conditional binding/publication mechanism.
+### MF3 — No refraction request incorrectly requires no stored depth — resolved
 
-Define the tentative output and committed output for each independently updated history, including downstream
-reads in run and skip frames, publication only when its producer actually writes, and discard/capture behavior.
-Also settle initialization for time-sliced writes: running a pass once over a subset does not initialize every
-texel a later pass may read. This matters on the first epoch and after reset. The resolution can constrain legal
-declarations or define the bindings and initialization, but cannot rely solely on the persistent scope.
+**Verified against both owners.** [DESIGN.md](../../plans/EFFECT-GRAPH/DESIGN.md), “After opaque,” and M3.1 now
+separate depth demand from the refraction copy. Depth storage follows the union of declared readers; no effect
+adds nothing beyond other readers' needs. This agrees with C06 and APPLE-PRESENTATION M2's D2.1.
 
-Require the cadence witness to read the consumer's result on each run/skip boundary, including two histories
-with different cadences and a discarded update. One always-running history plus a skippable in-place texture
-would not exercise the missing composition.
+M3.1 asks for four compiled cases: no effect with reconstruction disabled, no effect with its depth input enabled,
+a depth-only effect, and a refracting effect. Its moving-occluder witness still tests this frame's depth.
+Removing refraction can no longer satisfy the item by wrongly removing another reader's stored depth.
 
-### MF3 — No refraction request incorrectly requires no stored depth
+### MF4 — M3 cannot prove its reconstruction quality bar — resolved
 
-**Must Fix; verified interface conflict.** Location: [DONE.json](../../plans/EFFECT-GRAPH/DONE.json), M3.1,
-lines 183–186; [DESIGN.md](../../plans/EFFECT-GRAPH/DESIGN.md), lines 183–194.
+**Verified against prerequisites and consumer ownership.** M3's name, bar and M3.2 now qualify composition and
+reconstruction inputs. They do not claim that a reconstructed effect is free of shimmer or ghosting.
+APPLE-TILE M3 supplies the pre-tone seam and named timing schema; APPLE-PRESENTATION M2 supplies the temporal
+inputs. Those are the stated prerequisites. APPLE-PRESENTATION M3's TAAU is no longer needed to judge this bar.
 
-M3.1 requires that without a refraction request neither the copy nor stored depth exists, and asks the reviewer
-to confirm that toggling refraction changes both. But depth and refraction are independent inputs in the design.
-A non-refracting volume still needs this frame's depth to stop at terrain. Removing the colour-copy request
-must not remove that depth reader's storage.
+The design and [module list](../../plans/ARCHITECTURE.md) assign reconstructed effect appearance
+to SEA/CLOUDS on the reconstructor. The remaining fixed stills judge crossings, refraction and sky/star
+composition; submitted motion/reactive/reset readbacks judge the input seam. This is the explicit scope option
+the previous review proposed, and it preserves the commissioned foundation.
 
-There is also another owner: APPLE-PRESENTATION M2's D2.1 requires stored, sampleable depth when reconstruction
-is enabled, whether any effect requests refraction or not. C06 derives storage from all readers. EFFECT-GRAPH
-M3 explicitly depends on that milestone and tests temporal sampling.
+## Previous Suggestions
 
-Separate colour-copy demand from depth demand. State that an absent effect introduces no additional storage;
-do not require removal of storage another consumer needs. Make M3.1 cover a depth-only effect, a refracting
-effect, and reconstruction's depth reader with no effect request. The expected graph must follow the union
-of the actual accesses.
+- **S1 — Make the portable resource proof explicit — resolved.** M2.5 now names cube, every volume texel and
+  every array mip in the Chrome readback, through loss and recovery.
+- **S2 — Settle when named timing becomes available — resolved.** M2.7 and the design use the executor's existing
+  named `PassTiming` values through a test or bench. They explicitly leave the host's frame-sample schema to
+  APPLE-TILE M3. The latter is a prerequisite of EFFECT-GRAPH M3's shared timing proof.
+- **S3 — Do not imply that list order establishes medium validity — resolved.** The after-opaque section now
+  distinguishes execution order from C08's admission and transport rules. SEA/CLOUDS and V3 retain the obligation
+  to provide disjoint segments or an explicit joint/approximate composition policy.
 
-### MF4 — M3 cannot prove its reconstruction quality bar
+## New findings
 
-**Must Fix; verified dependency/proof gap.** Location: [DONE.json](../../plans/EFFECT-GRAPH/DONE.json), M3
-`needs` and `bar` at lines 175–179, M3.2, M3.5 and M3.6.
+### S4 — Distinguish tentative results from committed results in M2.3
 
-M3 promises stability under reconstruction, with no edge shimmer or ghost on a cut. Its dependencies provide
-the replaceable pre-tone input and temporal inputs, not a running reconstructor. APPLE-PRESENTATION M3 builds
-TAAU; M2 explicitly proves inputs before reconstruction exists. That module's M3 is not a dependency here.
+**Suggestion; verified wording ambiguity.** Location: [DONE.json](../../plans/EFFECT-GRAPH/DONE.json), M2.3,
+line 114. The sentence calls every consumer value the “newest submitted result,” then correctly includes a
+producer's tentative output. Its “committed side again after a frame whose update was discarded” also leaves
+implicit whether the next frame skips or retries the producer.
 
-The motion/reactive readback is a useful input proof, but can pass while a reconstructed effect shimmers or
-ghosts. The only M3 visual proofs are fixed stills, which cannot reveal those temporal failures even if a
-reconstructor happened to have landed first.
+The design's four-frame example settles the mechanism: discard preserves B, but when frame 4 retries the update,
+its downstream consumer reads the freshly written A. Clarify that a post-discard skip reads committed B, while
+a post-discard retry computes from B and exposes tentative A. Use “result for this frame” for the encompassing
+term. This is a wording refinement: the explicit binding rules and existing run/skip/discard witness already
+make the intended proof judgeable, so it does not hold up the build.
 
-Align the bar with what this foundation is commissioned to supply: either qualify the temporal input seam
-here and explicitly leave reconstructed visual acceptance to the named reconstruction/SEA/CLOUDS milestones,
-or add the required reconstruction dependency and elapsed-time motion/cut inspections. Do not let incidental
-build order decide whether a reviewer can judge the written bar.
+## Changed criteria and prerequisite assessment
 
-## Suggestions
+“Judgeable” means the planned proof can be assessed at its milestone, not that implementation has passed.
 
-- **S1 — Make the portable resource proof explicit (verified coverage ambiguity).** N1 promises exact
-  readback of every texel of every kind in Chrome as well as Metal. M1.1 is Metal-only; M2.5 names the same
-  scripted state run but does not explicitly enumerate the cube, all volume texels and all array mips. Name
-  those comparisons in the Chrome witness so its meaning is unambiguous. This sharpens the intended proof;
-  the diagnostic already carries every kind.
-- **S2 — Settle when named timing becomes available (verified sequencing ambiguity).** M2.7 asks for per-pass
-  times on the valley route, while the design assigns pass-name timing to APPLE-TILE M3, required only by
-  EFFECT-GRAPH M3. The current low-level `GpuTimings` does have named `PassTiming` values, so a scoped M2 proof
-  is possible; the host currently reduces them to fixed fields (`runtime.rs:1578–1586`). Say which existing
-  observation M2 uses, or move the shared host-schema proof behind its provider, to avoid competing migrations.
-- **S3 — Do not imply that list order establishes medium validity (verified wording issue).** At design
-  lines 185–186 the contribution order is described as C08's medium-segment order. It is an execution order;
-  C08 additionally requires ordered disjoint segments or an explicit joint/approximate integration policy.
-  Clarify that SEA/CLOUDS and V3 retain that admission/composition obligation. This foundation need not build
-  their integrator.
-
-## Item-by-item proof assessment
-
-“Judgeable” below means that the planned proof can be assessed when built, not that it has passed now.
-
-| Item | Design-review assessment |
+| Changed definition | Assessment against the previous review |
 |---|---|
-| M1.1 | Judgeable: GPU writes/readback, every mip, resize and replacement; S1 concerns the later Chrome counterpart. |
-| M1.2 | Judgeable: named refusal cases and non-aliasing distinguish descriptor support from acceptance-only stubs. |
-| M1.3 | Judgeable: capability-based refusal plus an actual Chrome capability record. |
-| M1.4 | Judgeable: pin existing variant pass order, storage and transient allocations against the pre-change graph. |
-| M1.5 | Judgeable: release build and existing retained-byte matrix, not newly generated expected images. |
-| M2.1 | Judgeable: external public-seam consumer beside the cooked contribution. |
-| M2.2 | Resolve MF1 and MF2 before defining the CPU oracle; GPU/CPU agreement alone can preserve a shared mistake. |
-| M2.3 | Resolve MF2 for history readers and first-epoch initialization. |
-| M2.4 | Judgeable replacement test once the reset/publication rules in MF2 are settled. |
-| M2.5 | Judgeable browser state/loss proof once MF1/MF2 are settled; clarify S1. |
-| M2.6 | Appropriate realtime inspection of trail persistence and wrapping; MF1 currently contradicts it. |
-| M2.7 | Judgeable with a stated timing observation; S2. |
-| M2.8 | Judgeable retained-byte regression check. |
-| M3.1 | Rewrite the conflicting storage expectation; MF3. |
-| M3.2 | Judgeable motion/reactive/reset input witness, not reconstructed output proof; MF4. |
-| M3.3 | Judgeable eligibility/refusal and unchanged-order check; it claims no overlap speedup. |
-| M3.4 | Judgeable knob, invalidation and skipped-timing check after its named providers. |
-| M3.5 | Browser check plus still inspection can prove composition and input behavior; cannot establish the temporal bar. |
-| M3.6 | Noon/night stills on both recipes can prove crossings and background composition; cannot establish the temporal bar. |
-| M3.7 | Judgeable documentation, paired cost and separated maturity evidence. |
-| M3.8 | Judgeable retained-byte regression check. |
+| M1.5 | Judgeable. The native matrix and release-build command are unchanged. The claim now accurately names Mac-only coverage. The temporary Chrome deferral is explicit in the design, plan assumptions and module list. |
+| M2 bar / needs | Judgeable. Retention on repeated ticks and pause resolves MF1. The new BASELINE-GUARD M1 prerequisite supplies the verifier needed by M2.8. |
+| M2.2 | Judgeable. Nonempty retention, independent expectations and explicit backward/timeline resets address MF1; discard and anchor checks support MF2. |
+| M2.3 | Judgeable under the design's binding rules; S4 sharpens wording. Two histories, consumer readback, initialization/reset coverage and refusal checks address MF2. |
+| M2.5 | Judgeable. Same state expectations plus explicit portable resource readbacks resolve the browser part of MF1/MF2 and S1. |
+| M2.7 | Judgeable with existing executor timings; S2 is resolved without depending on the later host-schema migration. |
+| M2.8 | Judgeable after BASELINE-GUARD M1. The new command covers registered Mac and Chrome baselines, rather than only the native matrix. |
+| M3 bar / needs | Judgeable. The bar now matches the supplied inputs and composition witnesses; MF4 is resolved. The APPLE-TILE M3 and APPLE-PRESENTATION M2 prerequisites are unchanged. |
+| M3.1 | Judgeable. Four demand cases and the current-frame occluder witness resolve MF3. |
+| M3.2 | Judgeable as submitted motion/reactive/reset input proof, explicitly excluding reconstructed output; MF4 is resolved. |
+| M3.8 | Judgeable. The verifier is available through the preceding M2's prerequisite. It retains the Mac/Chrome baseline requirement. |
 
-## Scope, evidence and calibration
+The unchanged items remain judgeable in this sequence: M1.1–M1.4 cover resource allocation/readback, refusals,
+capabilities and unchanged compiled graphs; M2.1 supplies the external consumer beside the cooked contribution;
+M2.4 tests generation replacement; M2.6 inspects elapsed-time trail persistence and wrapping. M3.3 proves only
+declared async eligibility, M3.4 proves knobs and skipped-pass timing after its provider, M3.5–M3.6 inspect
+composition on the named targets, and M3.7 records public documentation, paired cost and separate maturity facts.
+The revised bar no longer requires these still inspections to establish temporal reconstruction quality.
 
-The small first milestone is appropriately confined to resource descriptors, validation and allocation after
-APPLE-TILE M2. Extending the existing contribution seam, keeping async eligibility declarative, and leaving
-atmosphere migration and real sea/cloud implementations out are consistent with the request. No new package
-or speculative rendering framework is required. Costs are recorded as tripwires rather than invented gates.
+## Scope, boundaries and evidence
 
-The baseline request is addressed by the module list's ownership rules, the planned BASELINE-GUARD land gate,
-and an explicit retained-image check in every milestone. The interim gap before BASELINE-GUARD lands is disclosed;
-builders are instructed to run these checks after rebasing and before landing. I read the matrix scripts:
-`apple_tile_m1.py` compares against retained M0 bytes and records revision, diff and binary identity; the second
-script adds the split-frame checks. No baseline refresh is authorized here.
+M1 remains small enough to begin after APPLE-TILE M2. The extension uses the existing contribution seam and one
+executor, without a new rendering framework or private submission path. Its multi-tick update rule is explicitly
+bounded; a future consumer requiring globally synchronized substeps must reopen the design as its risk section
+says. Preserving same-generation effect state is distinguished from device replacement and descriptor changes.
+No new performance threshold has been made an acceptance gate.
 
-Boundary inspection included the existing contribution callbacks, graph history declarations/tests, host
-submission and capture callbacks, timing collection, C02/C04/C06/C07/C08/C12, the port decision, SEA/CLOUDS
-briefs and the relevant APPLE-TILE/APPLE-PRESENTATION plans and items. This is a design review informed by the
-existing implementation, not a blind technique study. No other agents were launched.
+The exact-baseline change strengthens later milestones: BASELINE-GUARD M1's planned verifier builds fresh native
+and Wasm outputs and compares all registered native and Chrome references. M2 now waits for it, and M3 follows
+M2. M1 retains the disclosed interim limitation: it can land before that gate, with native matrices rerun before
+landing and Chrome first rechecked by the guard's builder. This review does not certify that the future gate
+exists or that M1 proves Chrome baseline preservation. That limitation was already disclosed in the previous
+review and is now explicitly listed as an assumption for the owner.
 
-I also checked the cited primary references. External-resource lifetime is supported by
-[Unreal RDG's external-resource documentation](https://dev.epicgames.com/documentation/en-us/unreal-engine/render-dependency-graph-in-unreal-engine#externalresources)
-and [Unity's render-graph documentation](https://docs.unity3d.com/Packages/com.unity.render-pipelines.core@14.0/manual/render-graph-fundamentals.html).
-The [WebGPU specification](https://www.w3.org/TR/webgpu/#limits) defines device limits, including storage
-texture bindings; using the enabled generation's capabilities is appropriate. These precedents do not establish
-the design's particular skipped-history publication rule.
+Boundary inspection covered C02/C04/C06/C07/C08/C12; `contribution.rs`; the history scope and history-pair test in
+`graph.rs`; `runtime/tokens.rs`; ordinary submission and endpoint-capture paths in `runtime.rs`; the contribution
+frame in `synthetic/contributed.rs`; `PassTiming` and host timing collection; and the relevant APPLE-TILE,
+APPLE-PRESENTATION and BASELINE-GUARD criteria. This is a design review informed by existing code, not a blind
+technique study. I used the project review calibration and the skill's starting graded examples; no plans glossary
+was present. No other agents were launched.
 
-No implementation or visual milestone is claimed, so I did not run the proposed GPU checks or create captures.
-No running effect, motion quality or performance result is inferred from this review. The done-when file and
-all other project files are unchanged.
+No implementation, visual quality or device performance result is claimed. I did not run the proposed GPU/browser
+milestone checks or make captures. Only this review file was changed; DONE.json and all other project records
+remain untouched.
 
-Validation: `./dev check-docs` passed (697 Markdown files, 3,625 local links, 30 module records, crate policy
-and current design hashes). `git diff --check` passed; the only added file is this review.
+Validation: `./dev check-docs` passed (699 Markdown files, 3,651 local links, 30 module records, crate policy
+and current design hashes). `git diff --check` passed. The sole changed path is this review.
 
-DESIGN CHANGES: 4 blocking findings
+DESIGN OK
