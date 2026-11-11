@@ -48,7 +48,7 @@ The orchestrate script writes this page from the plan files and records after ea
 - Depth, motion, reactive and exposure are stored for reconstruction, and history advances only with submitted frames (APPLE-PRESENTATION M2): Not Started · [plan](APPLE-PRESENTATION/PLAN.md)
 - Other modules read the one sky and Sun, and one cloud optical depth dims direct sunlight once (ATMOSPHERE M5): Ready for Review · [plan](ATMOSPHERE/PLAN.md)
 - A change that alters a registered exact image, on the Mac or in Chrome, is refused before it reaches main (BASELINE-GUARD M1): Not Started · [plan](BASELINE-GUARD/PLAN.md)
-- CULLING's design: Design Changes Requested · [design](CULLING/DESIGN.md) · [plan](CULLING/PLAN.md)
+- On the mixed-mesh field, Occlusion draws only what Direct shows, pixel for pixel (CULLING M1): Not Started · [plan](CULLING/PLAN.md)
 - EFFECT-GRAPH's design: Design Changes Requested · [design](EFFECT-GRAPH/DESIGN.md) · [plan](EFFECT-GRAPH/PLAN.md)
 
 ### Recently done
@@ -75,7 +75,7 @@ The orchestrate script writes this page from the plan files and records after ea
 | 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE M0, M2, M3, M11 and M12 | M2 of 3 · Not Started |
 | 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads | APPLE-PRESENTATION M3 | M5 of 2 · Ready for Review |
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is refused before it reaches main |  | M1 of 1 · Not Started |
-| 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE M2, BASELINE-GUARD M1 | Design Changes Requested |
+| 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE M2, BASELINE-GUARD M1 | M1 of 3 · Not Started |
 | 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame | APPLE-TILE M2 and M3, APPLE-PRESENTATION M2, BASELINE-GUARD M1 | Design Changes Requested |
 | 12 | CONTENT-LOOP | Edited meshes, textures and volumes appear in the running game without a stall | APPLE-PRESENTATION M2 | Not planned yet |
 | 13 | SHOWCASE | The V1 exit: the showcase valley on Mac and in Chrome, reviewed, with its closing record | The last milestone of modules 1 to 10 and 12 | Not planned yet |
