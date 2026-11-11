@@ -1,0 +1,5 @@
+{
+  "a_start_broken": "Asset load failed: mesh meshes/rock with texture textures/white: generation 1: malformed cooked product: asset unavailable in the requested profiles; fix the asset and save again.  ",
+  "b_after_fix": "Cooked generation 2 drawn.  ",
+  "reloads": 1
+}

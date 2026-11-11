@@ -1,0 +1,19 @@
+{
+  "url": "http://127.0.0.1:52641/",
+  "a_drawn": "Cooked generation 1 drawn.  ",
+  "a_pix": "2656612032:2073600",
+  "texture": "white.png",
+  "b_refused": "Cooked generation 1 drawn. Generation 1 stays drawn. mesh meshes/rock with texture textures/white: generation 2: malformed cooked product: asset unavailable in the requested profiles; fix the named asset and save it again ",
+  "b_pix": "2656612032:2073600",
+  "c_second_save": "Cooked generation 1 drawn. Generation 1 stays drawn. mesh meshes/rock with texture textures/white: generation 2: malformed cooked product: asset unavailable in the requested profiles; fix the named asset and save it again ",
+  "d_fixed": "Cooked generation 3 drawn.  ",
+  "d_pix": "2656612032:2073600",
+  "e_refused_again": "Cooked generation 3 drawn. Generation 3 stays drawn. mesh meshes/rock with texture textures/white: generation 4: malformed cooked product: asset unavailable in the requested profiles; fix the named asset and save it again ",
+  "e_narrow_overflow": false,
+  "f_fixed_again": "Cooked generation 5 drawn.  ",
+  "f_pix": "2656612032:2073600",
+  "g_malformed": "Cooked generation 5 drawn.  ",
+  "g_restored": "Cooked generation 5 drawn.  ",
+  "h_store_gone": "Cooked generation 5 drawn.  asset store http://127.0.0.1:52640: fetch request did not complete; check the store URL and restart the scene command",
+  "h_pix": "2656612032:2073600"
+}

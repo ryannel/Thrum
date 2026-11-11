@@ -4,7 +4,7 @@
     {
       "id": "M1",
       "name": "The starter scene runs in Chrome from one command, with its controls and live asset edits",
-      "state": "claimed",
+      "state": "done",
       "fails": 1,
       "replans": 0,
       "bar": "As direct as serving a Bevy example with trunk or opening a three.js example: one command, one URL, the scene and its controls, with every failure named by object, cause and next step. Function and legibility only; render quality belongs to the render gates.",
@@ -41,7 +41,7 @@
           "target": "chrome-webgpu",
           "status": "pass",
           "evidence": "docs/evidence/CREATOR/M1-r1.md and docs/evidence/CREATOR/m1-r1/edit-run.json",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": "docs/evidence/CREATOR/M1-review.md"
         },
         {

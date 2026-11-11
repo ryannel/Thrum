@@ -1,0 +1,250 @@
+{
+ "scene": {
+  "mode": "scene",
+  "command": "./dev starter --web",
+  "output": "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CREATOR/tmp/creator-m1/scene-1794370674104",
+  "url": "http://127.0.0.1:52409/",
+  "build": {
+   "revision": "42fdce97856de3d10a9cd71a911463cbf24603ea",
+   "files": {
+    "web/scene_bg.wasm": "540f85074d6168644e95bc19780862f871d6a9ac872d32408625361bfe70fb67",
+    "web/page.js": "fbd9e6c0fd3e35bfab92ac520392a8b9241fdefb70e6ce2c67bbabee2bd6c975",
+    "web/thrum-controls.js": "77615aef41a06e6ab1bf4783ca1e08772b39736ace640644c29e15739761c1b7",
+    "store/HEAD": "8ab5017aebc63694334d51e9e035b2efefa63dea9b8525f8ab44c3035da64fea"
+   }
+  },
+  "gameSource": "49e3d90e37dbdd3453e30add1e82b22d76a55b3b3595d5ff4533c531f64c539a",
+  "captureScope": "Fixed still-scene checkpoints from the renderer submitted-output tap; DOM screenshots separately. Hardware WebGPU function only.",
+  "browser": {
+   "protocolVersion": "1.3",
+   "product": "Chrome/157.0.8103.40",
+   "revision": "@6f75a8afa26ce5537c82b4887f152dfdc7183e05",
+   "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/157.0.0.0 Safari/537.36",
+   "jsVersion": "15.7.112.23"
+  },
+  "drawnStatus": "Cooked generation 1 drawn.  ",
+  "pageAdapter": {
+   "vendor": "apple",
+   "architecture": "metal-3",
+   "isFallbackAdapter": false
+  },
+  "title": "Thrum starter",
+  "drawn": {
+   "sha256": "23bad43689740345aebd4971afb986e9fe81a450f63c730f8f010aa542956c18",
+   "identity": "session=1 submission=5 presented=true source=SourceTick { epoch: 1, tick: 0, timeline: 0 } history=0 device=1 elapsed=3.4ms"
+  },
+  "sun-edit": {
+   "sha256": "43e77adafef31ba23058106622232e31755ac2524271169953ab401877a3ed66",
+   "identity": "session=1 submission=62 presented=true source=SourceTick { epoch: 1, tick: 0, timeline: 0 } history=0 device=1 elapsed=1.5ms"
+  },
+  "changedPixels": 517929,
+  "edited": "Cooked generation 2 drawn.  ",
+  "asset-edit": {
+   "sha256": "77e9236fbc9b38e05a75a3f674934413b7b3fcb2547751a1436bd2ebe937251b",
+   "identity": "session=1 submission=117 presented=true source=SourceTick { epoch: 1, tick: 0, timeline: 0 } history=0 device=1 elapsed=9.2ms"
+  },
+  "texture": "Cooked generation 3 drawn.  ",
+  "texture-edit": {
+   "sha256": "32397d332b7733ea05ce89d8f10ce3b8f57f62ebc585a73c3ff0bcfca970a653",
+   "identity": "session=1 submission=139 presented=true source=SourceTick { epoch: 1, tick: 0, timeline: 0 } history=0 device=1 elapsed=6.1ms"
+  },
+  "refused": "Cooked generation 3 drawn. Generation 3 stays drawn. mesh meshes/rock with texture textures/white: generation 4: malformed cooked product: asset unavailable in the requested profiles; fix the named asset and save it again ",
+  "asset-refused": {
+   "sha256": "32397d332b7733ea05ce89d8f10ce3b8f57f62ebc585a73c3ff0bcfca970a653",
+   "identity": "session=1 submission=161 presented=true source=SourceTick { epoch: 1, tick: 0, timeline: 0 } history=0 device=1 elapsed=2.7ms"
+  },
+  "samePageAndScene": true,
+  "restored": "Cooked generation 5 drawn.  ",
+  "asset-restored": {
+   "sha256": "32397d332b7733ea05ce89d8f10ce3b8f57f62ebc585a73c3ff0bcfca970a653",
+   "identity": "session=1 submission=194 presented=true source=SourceTick { epoch: 1, tick: 0, timeline: 0 } history=0 device=1 elapsed=13.3ms"
+  },
+  "passed": true
+ },
+ "controls": {
+  "mode": "controls",
+  "command": "./dev starter --web",
+  "output": "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CREATOR/tmp/creator-m1/controls-1794370680298",
+  "url": "http://127.0.0.1:52453/",
+  "build": {
+   "revision": "42fdce97856de3d10a9cd71a911463cbf24603ea",
+   "files": {
+    "web/scene_bg.wasm": "540f85074d6168644e95bc19780862f871d6a9ac872d32408625361bfe70fb67",
+    "web/page.js": "fbd9e6c0fd3e35bfab92ac520392a8b9241fdefb70e6ce2c67bbabee2bd6c975",
+    "web/thrum-controls.js": "77615aef41a06e6ab1bf4783ca1e08772b39736ace640644c29e15739761c1b7",
+    "store/HEAD": "e8177a2891227e63e0a4fc181e165807850c6f0428f80f6d499b2b6115a3d39d"
+   }
+  },
+  "gameSource": "49e3d90e37dbdd3453e30add1e82b22d76a55b3b3595d5ff4533c531f64c539a",
+  "captureScope": "Fixed still-scene checkpoints from the renderer submitted-output tap; DOM screenshots separately. Hardware WebGPU function only.",
+  "browser": {
+   "protocolVersion": "1.3",
+   "product": "Chrome/157.0.8103.40",
+   "revision": "@6f75a8afa26ce5537c82b4887f152dfdc7183e05",
+   "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/157.0.0.0 Safari/537.36",
+   "jsVersion": "15.7.112.23"
+  },
+  "drawnStatus": "Cooked generation 1 drawn.  ",
+  "pageAdapter": {
+   "vendor": "apple",
+   "architecture": "metal-3",
+   "isFallbackAdapter": false
+  },
+  "title": "Thrum starter",
+  "drawn": {
+   "sha256": "23bad43689740345aebd4971afb986e9fe81a450f63c730f8f010aa542956c18",
+   "identity": "session=1 submission=1 presented=true source=SourceTick { epoch: 1, tick: 0, timeline: 0 } history=0 device=1 elapsed=4.3ms"
+  },
+  "model": {
+   "controls": [
+    {
+     "display": {
+      "clock": false,
+      "decimals": 1,
+      "scale": 1,
+      "unit": "\u00b0"
+     },
+     "group": "sun",
+     "key": "sun.elevation",
+     "kind": "slider",
+     "label": "Sun elevation",
+     "max": 60,
+     "min": -8,
+     "step": 0.5,
+     "text": "25.0\u00b0",
+     "value": 25
+    },
+    {
+     "display": {
+      "clock": false,
+      "decimals": 0,
+      "scale": 1,
+      "unit": "\u00b0"
+     },
+     "group": "sun",
+     "key": "sun.azimuth",
+     "kind": "slider",
+     "label": "Sun azimuth",
+     "max": 360,
+     "min": 0,
+     "step": 1,
+     "text": "150\u00b0",
+     "value": 150
+    },
+    {
+     "group": "display",
+     "key": "display.exposure_zones",
+     "kind": "toggle",
+     "label": "Exposure zones",
+     "text": "Off",
+     "value": false
+    }
+   ],
+   "revision": 0
+  },
+  "refusals": "control \"sun.azimuth\": 9999 is outside 0\u2013360 (display units); choose a value in that range\nno control is named \"sun.elevaton\"; did you mean \"sun.elevation\"?",
+  "params": "check.params.json: no control is named \"sun.elevaton\"; did you mean \"sun.elevation\"?",
+  "passed": true
+ },
+ "edit": {
+  "mode": "edit",
+  "command": "./dev starter --web",
+  "output": "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CREATOR/tmp/creator-m1/edit-1794370682893",
+  "url": "http://127.0.0.1:52496/",
+  "build": {
+   "revision": "42fdce97856de3d10a9cd71a911463cbf24603ea",
+   "files": {
+    "web/scene_bg.wasm": "540f85074d6168644e95bc19780862f871d6a9ac872d32408625361bfe70fb67",
+    "web/page.js": "fbd9e6c0fd3e35bfab92ac520392a8b9241fdefb70e6ce2c67bbabee2bd6c975",
+    "web/thrum-controls.js": "77615aef41a06e6ab1bf4783ca1e08772b39736ace640644c29e15739761c1b7",
+    "store/HEAD": "b2842c18e836cb5b36297fb0e364ddbaeb04027131401d6a7bdd595f7069bb03"
+   }
+  },
+  "gameSource": "49e3d90e37dbdd3453e30add1e82b22d76a55b3b3595d5ff4533c531f64c539a",
+  "captureScope": "Fixed still-scene checkpoints from the renderer submitted-output tap; DOM screenshots separately. Hardware WebGPU function only.",
+  "browser": {
+   "protocolVersion": "1.3",
+   "product": "Chrome/157.0.8103.40",
+   "revision": "@6f75a8afa26ce5537c82b4887f152dfdc7183e05",
+   "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/157.0.0.0 Safari/537.36",
+   "jsVersion": "15.7.112.23"
+  },
+  "drawnStatus": "Cooked generation 1 drawn.  ",
+  "pageAdapter": {
+   "vendor": "apple",
+   "architecture": "metal-3",
+   "isFallbackAdapter": false
+  },
+  "title": "Thrum starter",
+  "drawn": {
+   "sha256": "23bad43689740345aebd4971afb986e9fe81a450f63c730f8f010aa542956c18",
+   "identity": "session=1 submission=6 presented=true source=SourceTick { epoch: 1, tick: 0, timeline: 0 } history=0 device=1 elapsed=16.2ms"
+  },
+  "edited": "Cooked generation 2 drawn.  ",
+  "asset-edit": {
+   "sha256": "77e9236fbc9b38e05a75a3f674934413b7b3fcb2547751a1436bd2ebe937251b",
+   "identity": "session=1 submission=38 presented=true source=SourceTick { epoch: 1, tick: 0, timeline: 0 } history=0 device=1 elapsed=1.8ms"
+  },
+  "texture": "Cooked generation 3 drawn.  ",
+  "texture-edit": {
+   "sha256": "32397d332b7733ea05ce89d8f10ce3b8f57f62ebc585a73c3ff0bcfca970a653",
+   "identity": "session=1 submission=62 presented=true source=SourceTick { epoch: 1, tick: 0, timeline: 0 } history=0 device=1 elapsed=17.1ms"
+  },
+  "refused": "Cooked generation 3 drawn. Generation 3 stays drawn. mesh meshes/rock with texture textures/white: generation 4: malformed cooked product: asset unavailable in the requested profiles; fix the named asset and save it again ",
+  "asset-refused": {
+   "sha256": "32397d332b7733ea05ce89d8f10ce3b8f57f62ebc585a73c3ff0bcfca970a653",
+   "identity": "session=1 submission=85 presented=true source=SourceTick { epoch: 1, tick: 0, timeline: 0 } history=0 device=1 elapsed=14.6ms"
+  },
+  "samePageAndScene": true,
+  "restored": "Cooked generation 5 drawn.  ",
+  "asset-restored": {
+   "sha256": "32397d332b7733ea05ce89d8f10ce3b8f57f62ebc585a73c3ff0bcfca970a653",
+   "identity": "session=1 submission=119 presented=true source=SourceTick { epoch: 1, tick: 0, timeline: 0 } history=0 device=1 elapsed=9.4ms"
+  },
+  "passed": true
+ },
+ "journey": {
+  "mode": "journey",
+  "command": "./dev starter --web",
+  "output": "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CREATOR/tmp/creator-m1/journey-1794370687219",
+  "url": "http://127.0.0.1:52543/",
+  "build": {
+   "revision": "42fdce97856de3d10a9cd71a911463cbf24603ea",
+   "files": {
+    "web/scene_bg.wasm": "540f85074d6168644e95bc19780862f871d6a9ac872d32408625361bfe70fb67",
+    "web/page.js": "fbd9e6c0fd3e35bfab92ac520392a8b9241fdefb70e6ce2c67bbabee2bd6c975",
+    "web/thrum-controls.js": "77615aef41a06e6ab1bf4783ca1e08772b39736ace640644c29e15739761c1b7",
+    "store/HEAD": "d33e0fe68ae2872aaa32b6084f6bf6d66879072419c64cf265a2a6616206facf"
+   }
+  },
+  "gameSource": "49e3d90e37dbdd3453e30add1e82b22d76a55b3b3595d5ff4533c531f64c539a",
+  "captureScope": "Fixed still-scene checkpoints from the renderer submitted-output tap; DOM screenshots separately. Hardware WebGPU function only.",
+  "browser": {
+   "protocolVersion": "1.3",
+   "product": "Chrome/157.0.8103.40",
+   "revision": "@6f75a8afa26ce5537c82b4887f152dfdc7183e05",
+   "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/157.0.0.0 Safari/537.36",
+   "jsVersion": "15.7.112.23"
+  },
+  "drawnStatus": "Cooked generation 1 drawn.  ",
+  "pageAdapter": {
+   "vendor": "apple",
+   "architecture": "metal-3",
+   "isFallbackAdapter": false
+  },
+  "title": "Thrum starter",
+  "drawn": {
+   "sha256": "23bad43689740345aebd4971afb986e9fe81a450f63c730f8f010aa542956c18",
+   "identity": "session=1 submission=6 presented=true source=SourceTick { epoch: 1, tick: 0, timeline: 0 } history=0 device=1 elapsed=6.2ms"
+  },
+  "tabVisibility": [
+   true,
+   false
+  ],
+  "tab-return-canvas": {
+   "sha256": "23bad43689740345aebd4971afb986e9fe81a450f63c730f8f010aa542956c18",
+   "identity": "session=1 submission=44 presented=true source=SourceTick { epoch: 1, tick: 0, timeline: 0 } history=0 device=1 elapsed=6.9ms"
+  },
+  "passed": true
+ }
+}

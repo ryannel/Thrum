@@ -1,0 +1,125 @@
+{
+  "scene": {
+    "passed": true,
+    "command": "./dev starter --web",
+    "url": "http://127.0.0.1:65075/",
+    "build": {
+      "revision": "00f37d8d2a948e4fc209d7711f78de952b1a8337",
+      "files": {
+        "web/scene_bg.wasm": "bfdae61b1a2729332908cf62ed6ad32bb6ebf8b75157a63252b67eebcf858366",
+        "web/page.js": "eb93bab03700cc6cdacf3b3d256bddcc16d7c8fe829481aff9cd86f517b8fa66",
+        "web/thrum-controls.js": "77615aef41a06e6ab1bf4783ca1e08772b39736ace640644c29e15739761c1b7",
+        "store/HEAD": "c3d44a1bc35353189e5b3104f21479c9cb142d4dd047ed6a358ae3fc21665044"
+      }
+    },
+    "gameSource": "5cf723ffe39bb404fdaa514f3645456d2295d1c7820957c4f0b403465360a6a6",
+    "drawnStatus": "Cooked generation 1 drawn. ",
+    "changedPixels": 517929,
+    "edited": "Cooked generation 2 drawn. ",
+    "texture": "Cooked generation 3 drawn. ",
+    "refused": "Cooked generation 3 drawn. Generation 3 stays drawn. mesh meshes/rock with texture textures/white: generation 4: malformed cooked product: asset unavailable in the requested profiles; fix the named asset and save it again",
+    "samePageAndScene": true,
+    "refusals": null,
+    "params": null,
+    "tabVisibility": null,
+    "error": null,
+    "browser": "Chrome/157.0.8103.40",
+    "webgpuStatus": "enabled",
+    "gpuDevices": [
+      "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Max, Version 26.6.2 (Build 25G83))"
+    ]
+  },
+  "controls": {
+    "passed": true,
+    "command": "./dev starter --web",
+    "url": "http://127.0.0.1:65214/",
+    "build": {
+      "revision": "00f37d8d2a948e4fc209d7711f78de952b1a8337",
+      "files": {
+        "web/scene_bg.wasm": "bfdae61b1a2729332908cf62ed6ad32bb6ebf8b75157a63252b67eebcf858366",
+        "web/page.js": "eb93bab03700cc6cdacf3b3d256bddcc16d7c8fe829481aff9cd86f517b8fa66",
+        "web/thrum-controls.js": "77615aef41a06e6ab1bf4783ca1e08772b39736ace640644c29e15739761c1b7",
+        "store/HEAD": "027dc887ecb53806f20d022aa51b66c6a79063e2759cae574f4c31ac1ee418f9"
+      }
+    },
+    "gameSource": "5cf723ffe39bb404fdaa514f3645456d2295d1c7820957c4f0b403465360a6a6",
+    "drawnStatus": "Cooked generation 1 drawn. ",
+    "changedPixels": null,
+    "edited": null,
+    "texture": null,
+    "refused": null,
+    "samePageAndScene": null,
+    "refusals": "control \"sun.azimuth\": 9999 is outside 0\u2013360 (display units); choose a value in that range\nno control is named \"sun.elevaton\"; did you mean \"sun.elevation\"?",
+    "params": "check.params.json: no control is named \"sun.elevaton\"; did you mean \"sun.elevation\"?",
+    "tabVisibility": null,
+    "error": null,
+    "browser": "Chrome/157.0.8103.40",
+    "webgpuStatus": "enabled",
+    "gpuDevices": [
+      "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Max, Version 26.6.2 (Build 25G83))"
+    ]
+  },
+  "edit": {
+    "passed": true,
+    "command": "./dev starter --web",
+    "url": "http://127.0.0.1:65260/",
+    "build": {
+      "revision": "00f37d8d2a948e4fc209d7711f78de952b1a8337",
+      "files": {
+        "web/scene_bg.wasm": "bfdae61b1a2729332908cf62ed6ad32bb6ebf8b75157a63252b67eebcf858366",
+        "web/page.js": "eb93bab03700cc6cdacf3b3d256bddcc16d7c8fe829481aff9cd86f517b8fa66",
+        "web/thrum-controls.js": "77615aef41a06e6ab1bf4783ca1e08772b39736ace640644c29e15739761c1b7",
+        "store/HEAD": "b69b63e071f9034d4c617b27c2d7d7b7179b9d2d6925eb620272f687f024f646"
+      }
+    },
+    "gameSource": "5cf723ffe39bb404fdaa514f3645456d2295d1c7820957c4f0b403465360a6a6",
+    "drawnStatus": "Cooked generation 1 drawn. ",
+    "changedPixels": null,
+    "edited": "Cooked generation 2 drawn. ",
+    "texture": "Cooked generation 3 drawn. ",
+    "refused": "Cooked generation 3 drawn. Generation 3 stays drawn. mesh meshes/rock with texture textures/white: generation 4: malformed cooked product: asset unavailable in the requested profiles; fix the named asset and save it again",
+    "samePageAndScene": true,
+    "refusals": null,
+    "params": null,
+    "tabVisibility": null,
+    "error": null,
+    "browser": "Chrome/157.0.8103.40",
+    "webgpuStatus": "enabled",
+    "gpuDevices": [
+      "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Max, Version 26.6.2 (Build 25G83))"
+    ]
+  },
+  "journey": {
+    "passed": true,
+    "command": "./dev starter --web",
+    "url": "http://127.0.0.1:65326/",
+    "build": {
+      "revision": "00f37d8d2a948e4fc209d7711f78de952b1a8337",
+      "files": {
+        "web/scene_bg.wasm": "bfdae61b1a2729332908cf62ed6ad32bb6ebf8b75157a63252b67eebcf858366",
+        "web/page.js": "eb93bab03700cc6cdacf3b3d256bddcc16d7c8fe829481aff9cd86f517b8fa66",
+        "web/thrum-controls.js": "77615aef41a06e6ab1bf4783ca1e08772b39736ace640644c29e15739761c1b7",
+        "store/HEAD": "3f3d0f526351a71986c6affc41de80457714f666cb3ce345faaed1a5d50e77d5"
+      }
+    },
+    "gameSource": "5cf723ffe39bb404fdaa514f3645456d2295d1c7820957c4f0b403465360a6a6",
+    "drawnStatus": "Cooked generation 1 drawn. ",
+    "changedPixels": null,
+    "edited": null,
+    "texture": null,
+    "refused": null,
+    "samePageAndScene": null,
+    "refusals": null,
+    "params": null,
+    "tabVisibility": [
+      true,
+      false
+    ],
+    "error": null,
+    "browser": "Chrome/157.0.8103.40",
+    "webgpuStatus": "enabled",
+    "gpuDevices": [
+      "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Max, Version 26.6.2 (Build 25G83))"
+    ]
+  }
+}
