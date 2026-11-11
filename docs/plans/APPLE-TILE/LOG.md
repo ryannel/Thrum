@@ -147,3 +147,8 @@
   and full repository gate pass. D2.1/D2.2/D2.4/D2.5 and attended playback evidence are retained as directed.
   Only D2.3 status/evidence and M2 state change in DONE.json. M2 is reclaimed for lead review.
   [Fresh evidence and provenance](../../evidence/render/apple-tile-m2/MF1-recheck.md).
+
+- 2026-11-11 The claim-time integration brought in ATMOSPHERE M5 (7f020ca1). Rebuilt release at integrated
+  9af8664f and reran both complete matrices under the GPU lock. All 42 M0 and 10 direct paired comparisons
+  pass again, with complete cut/stall source verification and fresh frame/contact inspection. Updated the
+  D2.3 evidence to binary 8b417841 and this integrated source. Retained passed attended evidence.
