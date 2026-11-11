@@ -1,0 +1,124 @@
+{
+  "day-skyline.png": {
+    "source": "day",
+    "ticks_left_to_right": [
+      30,
+      60,
+      90
+    ],
+    "crop_xywh": [
+      450,
+      300,
+      450,
+      240
+    ],
+    "scale": 1
+  },
+  "day-near-far.png": {
+    "source": "day",
+    "ticks_left_to_right": [
+      30,
+      60,
+      90
+    ],
+    "crop_xywh": [
+      200,
+      600,
+      450,
+      350
+    ],
+    "scale": 1
+  },
+  "day-hold-mover.png": {
+    "source": "day",
+    "ticks_left_to_right": [
+      130,
+      160,
+      200,
+      230
+    ],
+    "crop_xywh": [
+      500,
+      600,
+      450,
+      260
+    ],
+    "scale": 1
+  },
+  "day-stars-pan.png": {
+    "source": "day",
+    "ticks_left_to_right": [
+      30,
+      60,
+      90
+    ],
+    "crop_xywh": [
+      700,
+      50,
+      450,
+      240
+    ],
+    "scale": 1
+  },
+  "night-skyline.png": {
+    "source": "night",
+    "ticks_left_to_right": [
+      30,
+      60,
+      90
+    ],
+    "crop_xywh": [
+      450,
+      300,
+      450,
+      240
+    ],
+    "scale": 1
+  },
+  "night-near-far.png": {
+    "source": "night",
+    "ticks_left_to_right": [
+      30,
+      60,
+      90
+    ],
+    "crop_xywh": [
+      200,
+      600,
+      450,
+      350
+    ],
+    "scale": 1
+  },
+  "night-hold-mover.png": {
+    "source": "night",
+    "ticks_left_to_right": [
+      130,
+      160,
+      200,
+      230
+    ],
+    "crop_xywh": [
+      500,
+      600,
+      450,
+      260
+    ],
+    "scale": 1
+  },
+  "night-stars-pan.png": {
+    "source": "night",
+    "ticks_left_to_right": [
+      30,
+      60,
+      90
+    ],
+    "crop_xywh": [
+      700,
+      50,
+      450,
+      240
+    ],
+    "scale": 1
+  }
+}

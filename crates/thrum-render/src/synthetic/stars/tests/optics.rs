@@ -159,7 +159,7 @@ impl Probe {
         .expect("rotation basis");
         let view = self
             .stars
-            .view_bytes(&view, target.extent)
+            .view_bytes(&view, &view, target.extent)
             .expect("star view");
         let view = device.create_buffer_init(&gpu::util::BufferInitDescriptor {
             label: None,
@@ -210,15 +210,26 @@ impl Probe {
         }
         {
             let mut pass = encoder.begin_render_pass(&gpu::RenderPassDescriptor {
-                color_attachments: &[Some(gpu::RenderPassColorAttachment {
-                    view: &target.colour_view,
-                    depth_slice: None,
-                    resolve_target: None,
-                    ops: gpu::Operations {
-                        load: gpu::LoadOp::Clear(gpu::Color::BLACK),
-                        store: gpu::StoreOp::Store,
-                    },
-                })],
+                color_attachments: &[
+                    Some(gpu::RenderPassColorAttachment {
+                        view: &target.colour_view,
+                        depth_slice: None,
+                        resolve_target: None,
+                        ops: gpu::Operations {
+                            load: gpu::LoadOp::Clear(gpu::Color::BLACK),
+                            store: gpu::StoreOp::Store,
+                        },
+                    }),
+                    Some(gpu::RenderPassColorAttachment {
+                        view: &target.motion_view,
+                        depth_slice: None,
+                        resolve_target: None,
+                        ops: gpu::Operations {
+                            load: gpu::LoadOp::Clear(gpu::Color::BLACK),
+                            store: gpu::StoreOp::Store,
+                        },
+                    }),
+                ],
                 ..Default::default()
             });
             pass.set_pipeline(&self.stars.pipeline);
@@ -234,6 +245,7 @@ struct Target {
     tan_fov: [f32; 2],
     colour: gpu::Texture,
     colour_view: gpu::TextureView,
+    motion_view: gpu::TextureView,
     depth: gpu::TextureView,
     readback: gpu::Buffer,
 }
@@ -248,8 +260,16 @@ impl Target {
             SCENE_FORMAT,
             gpu::TextureUsages::RENDER_ATTACHMENT | gpu::TextureUsages::COPY_SRC,
         );
+        let motion_view = texture(
+            device,
+            extent,
+            super::super::super::MOTION_FORMAT,
+            gpu::TextureUsages::RENDER_ATTACHMENT,
+        )
+        .create_view(&gpu::TextureViewDescriptor::default());
         Self {
             extent,
+            motion_view,
             tan_fov: [tx, ty],
             colour_view: colour.create_view(&gpu::TextureViewDescriptor::default()),
             colour,

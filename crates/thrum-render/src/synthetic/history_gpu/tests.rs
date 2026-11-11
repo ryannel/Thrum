@@ -179,9 +179,10 @@ fn metal_motion_history_follows_submitted_frames_and_resets() {
             .expect("scene pipeline");
         let mut target = OffscreenTarget::new(&device, &prepared, 64, 64).expect("target");
         prepared.synchronize_history(&queue, 1, 0);
-        assert!(
-            submitted_motion_x(&device, &queue, &mut prepared, &mut target, &scene, &[], 32).abs()
-                < 0.1
+        assert_eq!(
+            submitted_motion_x(&device, &queue, &mut prepared, &mut target, &scene, &[], 32)
+                .to_bits(),
+            65504.0_f32.to_bits()
         );
         scene.instances[0].current[3][0] = 0.2;
         let moved = submitted_motion_x(
@@ -244,13 +245,16 @@ fn metal_motion_history_follows_submitted_frames_and_resets() {
             50,
         );
         assert!(
-            reused.abs() < 0.1,
+            reused.to_bits() == 65504.0_f32.to_bits(),
             "reused generation resets motion: {reused}"
         );
         prepared.synchronize_history(&queue, 2, 0);
         let reset =
             submitted_motion_x(&device, &queue, &mut prepared, &mut target, &scene, &[], 50);
-        assert!(reset.abs() < 0.1, "world epoch resets motion: {reset}");
+        assert!(
+            reset.to_bits() == 65504.0_f32.to_bits(),
+            "world epoch resets motion: {reset}"
+        );
         scene.instances[0].current[3][0] = 0.7;
         scene.view = SyntheticView::default().with_history_reset(true);
         let cut = submitted_motion_x(
@@ -262,7 +266,10 @@ fn metal_motion_history_follows_submitted_frames_and_resets() {
             &[0],
             54,
         );
-        assert!(cut.abs() < 0.1, "camera cut resets motion: {cut}");
+        assert!(
+            cut.to_bits() == 65504.0_f32.to_bits(),
+            "camera cut resets motion: {cut}"
+        );
 
         let mut compacted_scene = SyntheticScene::grid(2).expect("two instances");
         for instance in &mut compacted_scene.instances {
@@ -294,7 +301,7 @@ fn metal_motion_history_follows_submitted_frames_and_resets() {
             46,
         );
         assert!(
-            after_compaction.abs() < 0.1,
+            after_compaction.to_bits() == 65504.0_f32.to_bits(),
             "physical-slot compaction resets motion: {after_compaction}"
         );
     });

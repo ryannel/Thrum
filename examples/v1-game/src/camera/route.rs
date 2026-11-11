@@ -298,6 +298,7 @@ fn overlay(name: &str) -> Result<RouteOverlay, String> {
     match name {
         "off" => Ok(RouteOverlay::Off),
         "proof" => Ok(RouteOverlay::Proof),
+        "motion" => Ok(RouteOverlay::Motion),
         "unmirrored" => Ok(RouteOverlay::Unmirrored),
         "light-off" => Ok(RouteOverlay::LightOff),
         _ => Err("route overlay must be off, proof, unmirrored or light-off".to_owned()),

@@ -3,6 +3,8 @@ struct StarView {
     clip_from_catalogue: mat4x4<f32>,
     extent_and_tan_half_fov: vec4<f32>,
     catalogue_zenith_and_strength: vec4<f32>,
+    delta_clip_from_catalogue: mat4x4<f32>,
+    jitter: vec4<f32>,
 }
 struct ExposureSample {
     values: vec4<f32>,
@@ -25,10 +27,11 @@ struct VertexOut {
     @location(0) @interpolate(flat) centre: vec2<f32>,
     @location(1) @interpolate(flat) sigma: f32,
     @location(2) @interpolate(flat) scale: vec3<f32>,
+    @location(3) @interpolate(flat) motion: vec2<f32>,
 }
 
 fn rejected() -> VertexOut {
-    return VertexOut(vec4(2.0, 2.0, 0.0, 1.0), vec2(0.0), 1.0, vec3(0.0));
+    return VertexOut(vec4(2.0, 2.0, 0.0, 1.0), vec2(0.0), 1.0, vec3(0.0), vec2(0.0));
 }
 
 @vertex
@@ -43,7 +46,7 @@ fn vertex(@builtin(vertex_index) index: u32, @builtin(instance_index) star: u32)
     if blocked(altitude_m, mu) { return rejected(); }
     let extent = view.extent_and_tan_half_fov.xy;
     let tan_half_fov = view.extent_and_tan_half_fov.zw;
-    let centre = (centre_ndc * vec2(0.5, -0.5) + 0.5) * extent;
+    let centre = (centre_ndc * vec2(0.5, -0.5) + 0.5) * extent + view.jitter.xy;
     // Gnomonic pixel solid angle at the source centre. This keeps integrated
     // flux constant as pixel density and perspective distortion change.
     let slopes = centre_ndc * tan_half_fov;
@@ -64,7 +67,14 @@ fn vertex(@builtin(vertex_index) index: u32, @builtin(instance_index) star: u32)
     let position = point / extent * vec2(2.0, -2.0) + vec2(-1.0, 1.0);
     let transmission = sample_sun_transmittance(altitude_m, mu, transmittance, lut_sampler);
     let scale = transmission * (source.w * view.catalogue_zenith_and_strength.w * exposure.values.x / omega);
-    return VertexOut(vec4(position, 0.0, 1.0), centre, sigma, scale);
+    let delta = view.delta_clip_from_catalogue * vec4(source.xyz, 0.0);
+    let previous_w = clip.w + delta.w;
+    var motion = vec2(65504.0);
+    if previous_w > 0.0 {
+        motion = (delta.xy * clip.w - clip.xy * delta.w) / (clip.w * previous_w)
+            * vec2(0.5, -0.5) * extent;
+    }
+    return VertexOut(vec4(position, 0.0, 1.0), centre, sigma, scale, motion);
 }
 
 // Normal CDF via Abramowitz and Stegun 7.1.26.
@@ -76,10 +86,12 @@ fn normal_cdf(t: vec2<f32>) -> vec2<f32> {
     return select(tail, 1.0 - tail, t >= vec2(0.0));
 }
 
+struct StarOutput { @location(0) colour: vec4<f32>, @location(1) motion: vec2<f32> }
 @fragment
-fn fragment(input: VertexOut) -> @location(0) vec4<f32> {
+fn fragment(input: VertexOut) -> StarOutput {
     if textureLoad(depth, vec2<i32>(input.position.xy), 0) > 0.0 { discard; }
     let offset = input.position.xy - input.centre;
     let weight = max(normal_cdf((offset + PIXEL_HALF_WIDTH) / input.sigma) - normal_cdf((offset - PIXEL_HALF_WIDTH) / input.sigma), vec2(0.0));
-    return vec4(input.scale * weight.x * weight.y, 0.0);
+    if weight.x * weight.y <= 0.0 { discard; }
+    return StarOutput(vec4(input.scale * weight.x * weight.y, 0.0), input.motion);
 }

@@ -59,6 +59,9 @@ pub(crate) struct AtmospherePrepared {
     uniform: wgpu::Buffer,
     compute: [wgpu::ComputePipeline; 4],
     groups: [wgpu::BindGroup; 4],
+    sky_motion: wgpu::Buffer,
+    submitted_sky: Option<(SyntheticView, [f32; 3])>,
+    pending_sky: Option<(SyntheticView, [f32; 3])>,
     sky_pipeline: wgpu::RenderPipeline,
     sky_groups: [wgpu::BindGroup; 2],
     diffuse_pipeline: wgpu::ComputePipeline,
@@ -160,8 +163,20 @@ impl AtmospherePrepared {
                 prepare_compute(device, index, &uniform, &views, &sampler, &shader, &night)
             });
         let [first, second, third, ground] = prepared;
-        let (sky_pipeline, sky_groups) =
-            prepare_sky(device, &uniform, &views, &sampler, exposure_samples);
+        let sky_motion = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("sky submitted motion"),
+            size: 208,
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+        let (sky_pipeline, sky_groups) = prepare_sky(
+            device,
+            &uniform,
+            &sky_motion,
+            &views,
+            &sampler,
+            exposure_samples,
+        );
         let (diffuse_pipeline, diffuse_group) =
             prepare_diffuse(device, &uniform, &views[2], &sampler, directional);
         let (aerial_pipeline, aerial_group) =
@@ -179,6 +194,9 @@ impl AtmospherePrepared {
             uniform,
             compute: [first.0, second.0, third.0, ground.0],
             groups: [first.1, second.1, third.1, ground.1],
+            sky_motion,
+            submitted_sky: None,
+            pending_sky: None,
             sky_pipeline,
             sky_groups,
             diffuse_pipeline,
@@ -227,6 +245,23 @@ impl AtmospherePrepared {
             self.validity &= !DIFFUSE_VALID;
             self.diffuse_dependencies = diffuse_dependencies;
         }
+        let (previous, sun) = self.submitted_sky.unwrap_or((*view, frame.toward_sun));
+        let prior = glam::Mat4::from_cols_array_2d(&previous.view_proj_columns());
+        let current = glam::Mat4::from_cols_array_2d(&view.view_proj_columns());
+        let rotation = solar_rotation(frame.toward_sun, sun);
+        let mut motion = [0_u8; 208];
+        for (destination, value) in motion.as_chunks_mut::<4>().0.iter_mut().zip(
+            (prior - current)
+                .to_cols_array()
+                .into_iter()
+                .chain(current.to_cols_array())
+                .chain([extent[0] as f32, extent[1] as f32, 0.0, 0.0])
+                .chain((prior * rotation - current).to_cols_array()),
+        ) {
+            destination.copy_from_slice(&value.to_le_bytes());
+        }
+        queue.write_buffer(&self.sky_motion, 0, &motion);
+        self.pending_sky = Some((*view, frame.toward_sun));
         let mut bytes = [0_u8; UNIFORM_LEN];
         let aux = view.pack_aux(extent[0], extent[1]);
         bytes[..64].copy_from_slice(&aux[..64]);
@@ -260,6 +295,7 @@ impl AtmospherePrepared {
     }
 
     pub(crate) fn commit(&mut self) {
+        self.submitted_sky = self.pending_sky.take();
         self.validity = TRANSPORT_VALID
             | SKY_VALID
             | DIFFUSE_VALID
@@ -683,9 +719,36 @@ fn prepare_compute(
     (pipeline, group)
 }
 
+// The direction pair is checked by AtmosphereFrame. Resolve the arc angle from
+// its cross product in f64: f32 dot-threshold arc helpers discard subpixel solar
+// steps. The existing f32 quaternion/matrix still owns the GPU representation.
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "unit axis and bounded angle enter the f32 GPU record"
+)]
+fn solar_rotation(from: [f32; 3], to: [f32; 3]) -> glam::Mat4 {
+    let a = from.map(f64::from);
+    let b = to.map(f64::from);
+    let cross = [
+        a[1] * b[2] - a[2] * b[1],
+        a[2] * b[0] - a[0] * b[2],
+        a[0] * b[1] - a[1] * b[0],
+    ];
+    let sine = cross.iter().map(|v| v * v).sum::<f64>().sqrt();
+    let rotation = if sine > 0.0 {
+        let axis = glam::Vec3::from_array(cross.map(|v| (v / sine) as f32));
+        let cosine = a.into_iter().zip(b).map(|(x, y)| x * y).sum::<f64>();
+        glam::Quat::from_axis_angle(axis, sine.atan2(cosine) as f32)
+    } else {
+        glam::Quat::from_rotation_arc(glam::Vec3::from_array(from), glam::Vec3::from_array(to))
+    };
+    glam::Mat4::from_quat(rotation)
+}
+
 fn prepare_sky(
     device: &crate::runtime::DeviceSite,
     uniform: &wgpu::Buffer,
+    motion: &wgpu::Buffer,
     views: &[wgpu::TextureView; 4],
     sampler: &wgpu::Sampler,
     exposure_samples: &[wgpu::Buffer; 2],
@@ -705,6 +768,16 @@ fn prepare_sky(
                     ty: wgpu::BufferBindingType::Uniform,
                     has_dynamic_offset: false,
                     min_binding_size: wgpu::BufferSize::new(16),
+                },
+                count: None,
+            },
+            wgpu::BindGroupLayoutEntry {
+                binding: 5,
+                visibility,
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Uniform,
+                    has_dynamic_offset: false,
+                    min_binding_size: wgpu::BufferSize::new(208),
                 },
                 count: None,
             },
@@ -777,6 +850,10 @@ fn prepare_sky(
             label: Some("atmosphere sky inputs"),
             layout: &layout,
             entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 5,
+                    resource: motion.as_entire_binding(),
+                },
                 wgpu::BindGroupEntry {
                     binding: 0,
                     resource: uniform.as_entire_binding(),

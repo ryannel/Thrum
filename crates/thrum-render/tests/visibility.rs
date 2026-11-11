@@ -68,9 +68,9 @@ async fn render(
         .expect("mapped pixels")
 }
 
-fn scene(view: SyntheticView, culling: CullMode, shadows: bool, hidden: usize) -> SyntheticScene {
+fn scene(view: &SyntheticView, culling: CullMode, shadows: bool, hidden: usize) -> SyntheticScene {
     let mut scene = SyntheticScene::grid(10_000).expect("grid");
-    scene.view = view;
+    scene.view = *view;
     scene.camera_culling = culling;
     scene.sun_shadows = shadows;
     for (index, instance) in scene.instances.iter_mut().enumerate() {
@@ -105,7 +105,7 @@ fn differing(a: &[u8], b: &[u8]) -> usize {
         .count()
 }
 
-fn equivalent(view: SyntheticView, shadows: bool) -> usize {
+fn equivalent(view: &SyntheticView, shadows: bool) -> usize {
     pollster::block_on(async {
         let (adapter, device, queue) = device().await;
         let capabilities = DeviceCapabilities::capture(&adapter, &device, 41);
@@ -141,7 +141,7 @@ fn equivalent(view: SyntheticView, shadows: bool) -> usize {
 /// Instances wholly outside one clip plane at both motion endpoints, and
 /// instances whose centre is strictly inside the frustum at both. Proves a
 /// view really exercises culling rather than trivially keeping everything.
-fn split(view: SyntheticView) -> (usize, usize) {
+fn split(view: &SyntheticView) -> (usize, usize) {
     let m = view.view_proj_columns();
     let clip = |p: [f32; 3]| -> [f32; 4] {
         std::array::from_fn(|row| {
@@ -194,37 +194,40 @@ fn view(camera: [f32; 3], target: [f32; 3]) -> SyntheticView {
 
 #[test]
 fn partial_visibility_matches_direct_draw() {
-    let (outside, inside) = split(view([0.4, 0.1, 0.9], [0.7, 0.0, 0.5]));
+    let (outside, inside) = split(&view([0.4, 0.1, 0.9], [0.7, 0.0, 0.5]));
     assert!(
         outside > 1_000 && inside > 100,
         "culls {outside}, keeps {inside}"
     );
-    let covered = equivalent(view([0.4, 0.1, 0.9], [0.7, 0.0, 0.5]), false);
+    let covered = equivalent(&view([0.4, 0.1, 0.9], [0.7, 0.0, 0.5]), false);
     assert!(covered > 1_000, "scene draws: {covered} pixels");
 }
 
 #[test]
 fn full_and_empty_visibility_match_direct_draw() {
-    assert!(equivalent(view([0.0, 0.0, 3.0], [0.0, 0.0, 0.5]), false) > 1_000);
-    assert_eq!(equivalent(view([0.0, 0.0, 3.0], [0.0, 0.0, 6.0]), false), 0);
+    assert!(equivalent(&view([0.0, 0.0, 3.0], [0.0, 0.0, 0.5]), false) > 1_000);
+    assert_eq!(
+        equivalent(&view([0.0, 0.0, 3.0], [0.0, 0.0, 6.0]), false),
+        0
+    );
 }
 
 #[test]
 fn near_plane_crossings_match_direct_draw() {
     // The camera sits inside the cube layer, so the near plane cuts through
     // instances beside it while the grid recedes at a grazing angle.
-    let (outside, inside) = split(view([-0.2, -0.1, 0.503], [0.6, 0.3, 0.497]));
+    let (outside, inside) = split(&view([-0.2, -0.1, 0.503], [0.6, 0.3, 0.497]));
     assert!(
         outside > 1_000 && inside > 100,
         "culls {outside}, keeps {inside}"
     );
-    let covered = equivalent(view([-0.2, -0.1, 0.503], [0.6, 0.3, 0.497]), false);
+    let covered = equivalent(&view([-0.2, -0.1, 0.503], [0.6, 0.3, 0.497]), false);
     assert!(covered > 1_000, "scene draws: {covered} pixels");
 }
 
 #[test]
 fn offscreen_sun_casters_still_shadow_visible_receivers() {
-    let covered = equivalent(view([0.4, 0.1, 0.9], [0.7, 0.0, 0.5]), true);
+    let covered = equivalent(&view([0.4, 0.1, 0.9], [0.7, 0.0, 0.5]), true);
     assert!(covered > 1_000, "scene draws: {covered} pixels");
 }
 
@@ -250,7 +253,7 @@ fn frustum_pass_is_timed_within_the_scene_pass_budget() {
             let prepared = PreparedSynthetic::prepare_with_capabilities(
                 &capabilities,
                 &queue,
-                &scene(view, culling, true, 37),
+                &scene(&view, culling, true, 37),
                 FrameLighting::Diagnostic(SyntheticLight::default()),
                 1.0,
             )
@@ -416,13 +419,13 @@ fn occlusion_matches_direct_draw_through_cuts_recycled_rows_and_a_dropped_frame(
             grazing,
             grazing,
         ];
-        let base = walled(scene(grazing, CullMode::Direct, false, 37));
+        let base = walled(scene(&grazing, CullMode::Direct, false, 37));
         let mut direct = Sequence::new(&capabilities, &device, &queue, &base).await;
         let mut occluded = Sequence::new(
             &capabilities,
             &device,
             &queue,
-            &walled(scene(grazing, CullMode::Occlusion, false, 37)),
+            &walled(scene(&grazing, CullMode::Occlusion, false, 37)),
         )
         .await;
         assert_eq!(occluded.prepared.camera_culling(), CullMode::Occlusion);
@@ -473,7 +476,7 @@ fn occlusion_matches_direct_draw_through_cuts_recycled_rows_and_a_dropped_frame(
             &capabilities,
             &device,
             &queue,
-            &scene(grazing, CullMode::Direct, false, 1),
+            &scene(&grazing, CullMode::Direct, false, 1),
         )
         .await;
         assert!(

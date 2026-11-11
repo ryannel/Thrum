@@ -704,6 +704,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             .map_err(FrameError::Scene)?;
         let view = frame.view.with_history_reset(true);
         let previous = std::mem::replace(&mut self.scene.view, view);
+        replacement.prepared.inherit_submitted_view(&self.prepared);
         let refreshed: Result<(), FrameError> = (|| {
             replacement
                 .prepared
@@ -1101,7 +1102,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.restore_upload_slots()?;
         self.last_extracted = frame.extracted;
         let lighting = frame_scene.lighting;
-        self.scene.view = self.view_with_history_reset(frame_scene.view);
+        self.scene.view = self.view_with_history_reset(&frame_scene.view);
         self.prepared
             .synchronize_history(&self.queue, authority.epoch, authority.timeline);
         let view_update_start = Instant::now();
@@ -1177,7 +1178,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         }))
     }
 
-    fn view_with_history_reset(&self, view: SyntheticView) -> SyntheticView {
+    fn view_with_history_reset(&self, view: &SyntheticView) -> SyntheticView {
         view.with_history_reset(
             view.history_reset()
                 || self.history_reset_pending
@@ -1415,7 +1416,9 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             )
             .map_err(FrameError::Scene)?;
         let lighting = frame_scene.lighting;
-        self.scene.view = self.view_with_history_reset(frame_scene.view);
+        self.scene.view = self
+            .view_with_history_reset(&frame_scene.view)
+            .without_jitter();
         let applied = self
             .scene
             .apply_render_columns(self.extractor.frame(), &mut self.changed_slots);

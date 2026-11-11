@@ -2,7 +2,10 @@
 //! acquired-format texture. A real window/swapchain is exercised separately.
 #![cfg(not(target_arch = "wasm32"))]
 
-use std::{sync::mpsc, time::Duration};
+use std::{
+    sync::mpsc,
+    time::{Duration, Instant},
+};
 
 use thrum_render::present::SurfaceProfile;
 use v1_game::{FrameHost, SurfaceOutput};
@@ -85,8 +88,11 @@ async fn render_surface(
     )
     .await
     .expect("prepared scene passes");
-    // Sample immediately before the second tick so interpolation reaches the
-    // first committed endpoint used by the diagnostic capture below.
+    // Compare the surface with the actual submitted source, including its
+    // jitter sample, rather than a separate unjittered endpoint redraw.
+    host.enable_submitted_capture_from(1, thrum_render::synthetic::CaptureSource::Sdr)
+        .expect("submitted source tap");
+    // Sample immediately before the second tick, as on the ordinary frame path.
     let advanced = host
         .advance(Duration::from_nanos(33_333_333))
         .expect("world advances before surface acquisition");
@@ -182,10 +188,25 @@ async fn render_surface(
         assert!(completed.gpu_present_ns.is_some());
     }
     assert!(!completed.timing_fault);
-    (
-        bytes,
-        host.capture_pixels().expect("source diagnostic capture"),
-    )
+    let deadline = Instant::now() + Duration::from_secs(10);
+    let source = loop {
+        if let Some(image) = host
+            .try_submitted_image()
+            .expect("submitted source progress")
+        {
+            assert_eq!(image.sample.submission_order, completed.submission_order);
+            assert!(image.sample.surface_presented);
+            let pixels = image.rgba.clone();
+            host.recycle_submitted_image(image);
+            break pixels;
+        }
+        assert!(Instant::now() < deadline, "submitted source readback");
+        device
+            .poll(wgpu::PollType::wait_indefinitely())
+            .expect("source copy completion");
+    };
+    assert_eq!(source.len(), 640 * 360 * 4);
+    (bytes, source)
 }
 
 #[test]

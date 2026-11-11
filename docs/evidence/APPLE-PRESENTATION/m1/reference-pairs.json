@@ -1,0 +1,26 @@
+[
+  {
+    "route": "day",
+    "tick": 90,
+    "identity_equal_except_display_selector": true,
+    "exposure_words_0_to_6_equal": true,
+    "motion_selector_word_7": 513,
+    "colour_selector_word_7": 1
+  },
+  {
+    "route": "night",
+    "tick": 180,
+    "identity_equal_except_display_selector": true,
+    "exposure_words_0_to_6_equal": true,
+    "motion_selector_word_7": 513,
+    "colour_selector_word_7": 1
+  },
+  {
+    "route": "moving",
+    "tick": 60,
+    "identity_equal_except_display_selector": true,
+    "exposure_words_0_to_6_equal": true,
+    "motion_selector_word_7": 513,
+    "colour_selector_word_7": 1
+  }
+]

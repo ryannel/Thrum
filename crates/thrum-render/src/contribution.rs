@@ -162,7 +162,9 @@ impl ShadowBounds {
 /// Per-frame camera facts a contribution may need on the CPU (for example to cull).
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct ContributionFrame {
-    /// Column-major reverse-Z view-projection of the frame being encoded.
+    /// Column-major jittered reverse-Z view-projection of the frame being encoded.
+    /// Culling uses the same raster frustum as the forward vertices; motion uses
+    /// the separately bound unjittered matrices.
     pub view_proj: [[f32; 4]; 4],
     /// World-space camera position.
     pub camera: [f32; 3],

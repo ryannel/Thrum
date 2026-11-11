@@ -30,6 +30,8 @@ pub struct ControlEdits {
     pub paused: Option<bool>,
     /// Whether exposure zones replace the tone-mapped scene.
     pub exposure_zones: Option<bool>,
+    /// Whether motion replaces the tone-mapped scene.
+    pub motion_view: Option<bool>,
 }
 
 impl ControlEdits {
@@ -42,6 +44,12 @@ impl ControlEdits {
     /// The display overlay the exposure-zones edit selects, if it changed.
     #[must_use]
     pub fn display_overlay(&self) -> Option<DisplayOverlay> {
+        if self.motion_view == Some(true) {
+            return Some(DisplayOverlay::Motion);
+        }
+        if self.motion_view == Some(false) && self.exposure_zones.is_none() {
+            return Some(DisplayOverlay::Off);
+        }
         self.exposure_zones.map(|on| {
             if on {
                 DisplayOverlay::ExposureZones
@@ -68,10 +76,11 @@ pub struct GameControls {
     pitch: Slider,
     paused: Toggle,
     exposure_zones: Toggle,
+    motion_view: Toggle,
     sun_elevation: Readout,
     /// Per input control: the model revision last applied to or observed from the game.
     /// A control whose revision is newer holds a pending edit.
-    settled: [u64; 5],
+    settled: [u64; 6],
     /// Solar time the Sun elevation readout was computed for.
     sun_for: f32,
 }
@@ -106,6 +115,7 @@ impl GameControls {
             .add()?;
         let paused = model.toggle("world.paused", "Pause world", false)?;
         let exposure_zones = model.toggle("display.exposure_zones", "Exposure zones", false)?;
+        let motion_view = model.toggle("display.motion", "Motion view", false)?;
         let sun_elevation =
             model.readout("sky.sun_elevation", "Sun elevation", Display::degrees())?;
         let mut controls = Self {
@@ -115,8 +125,9 @@ impl GameControls {
             pitch,
             paused,
             exposure_zones,
+            motion_view,
             sun_elevation,
-            settled: [0; 5],
+            settled: [0; 6],
             sun_for: f32::NAN,
         };
         controls.show_sun(0.5);
@@ -173,8 +184,11 @@ impl GameControls {
         if self.pending(3, self.paused.id()) {
             edits.paused = Some(self.model.is_on(self.paused));
         }
-        if self.pending(4, self.exposure_zones.id()) {
+        let zones_changed = self.pending(4, self.exposure_zones.id());
+        let motion_changed = self.pending(5, self.motion_view.id());
+        if zones_changed || motion_changed {
             edits.exposure_zones = Some(self.model.is_on(self.exposure_zones));
+            edits.motion_view = Some(self.model.is_on(self.motion_view));
         }
         self.show_sun(self.model.get(self.solar_time));
         edits
@@ -190,6 +204,7 @@ impl GameControls {
             camera_yaw: Some(self.model.get(self.yaw)),
             paused: None,
             exposure_zones: Some(self.model.is_on(self.exposure_zones)),
+            motion_view: Some(self.model.is_on(self.motion_view)),
         }
     }
 
@@ -296,6 +311,7 @@ impl GameControls {
             self.pitch.id(),
             self.paused.id(),
             self.exposure_zones.id(),
+            self.motion_view.id(),
         ];
         for (slot, id) in ids.into_iter().enumerate() {
             self.settled[slot] = self.model.revision_of(id);

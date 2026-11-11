@@ -1,0 +1,1003 @@
+{
+  "format": "thrum-v1-moving-route",
+  "version": 1,
+  "cooked_root": "70d2baf823d09d85574f7cdfce7102648754544dd7d68659e9bd92dd5f30e21d",
+  "cooked_generation": 1,
+  "tick_hz": 60,
+  "phase": [
+    1,
+    2
+  ],
+  "origin_tick": 180,
+  "start": {
+    "solar_hours": 0
+  },
+  "render_extent": [
+    1920,
+    1080
+  ],
+  "keys": [
+    {
+      "tick": 0,
+      "eye": [
+        0.0,
+        244.9226672381398,
+        16.0
+      ],
+      "yaw_degrees": 0,
+      "pitch_degrees": -3.0127875041833403
+    },
+    {
+      "tick": 120,
+      "eye": [
+        0.0,
+        244.9226672381398,
+        16.0
+      ],
+      "yaw_degrees": 36,
+      "pitch_degrees": 7
+    },
+    {
+      "tick": 240,
+      "eye": [
+        0.0,
+        244.9226672381398,
+        16.0
+      ],
+      "yaw_degrees": 36,
+      "pitch_degrees": 7
+    }
+  ],
+  "cuts": [],
+  "checkpoints": [
+    {
+      "tick": 4,
+      "name": "frame-0004"
+    },
+    {
+      "tick": 5,
+      "name": "frame-0005"
+    },
+    {
+      "tick": 6,
+      "name": "frame-0006"
+    },
+    {
+      "tick": 7,
+      "name": "frame-0007"
+    },
+    {
+      "tick": 8,
+      "name": "frame-0008"
+    },
+    {
+      "tick": 9,
+      "name": "frame-0009"
+    },
+    {
+      "tick": 10,
+      "name": "frame-0010"
+    },
+    {
+      "tick": 11,
+      "name": "frame-0011"
+    },
+    {
+      "tick": 12,
+      "name": "frame-0012"
+    },
+    {
+      "tick": 13,
+      "name": "frame-0013"
+    },
+    {
+      "tick": 14,
+      "name": "frame-0014"
+    },
+    {
+      "tick": 15,
+      "name": "frame-0015"
+    },
+    {
+      "tick": 16,
+      "name": "frame-0016"
+    },
+    {
+      "tick": 17,
+      "name": "frame-0017"
+    },
+    {
+      "tick": 18,
+      "name": "frame-0018"
+    },
+    {
+      "tick": 19,
+      "name": "frame-0019"
+    },
+    {
+      "tick": 20,
+      "name": "frame-0020"
+    },
+    {
+      "tick": 21,
+      "name": "frame-0021"
+    },
+    {
+      "tick": 22,
+      "name": "frame-0022"
+    },
+    {
+      "tick": 23,
+      "name": "frame-0023"
+    },
+    {
+      "tick": 24,
+      "name": "frame-0024"
+    },
+    {
+      "tick": 25,
+      "name": "frame-0025"
+    },
+    {
+      "tick": 26,
+      "name": "frame-0026"
+    },
+    {
+      "tick": 27,
+      "name": "frame-0027"
+    },
+    {
+      "tick": 28,
+      "name": "frame-0028"
+    },
+    {
+      "tick": 29,
+      "name": "frame-0029"
+    },
+    {
+      "tick": 30,
+      "name": "frame-0030"
+    },
+    {
+      "tick": 31,
+      "name": "frame-0031"
+    },
+    {
+      "tick": 32,
+      "name": "frame-0032"
+    },
+    {
+      "tick": 33,
+      "name": "frame-0033"
+    },
+    {
+      "tick": 34,
+      "name": "frame-0034"
+    },
+    {
+      "tick": 35,
+      "name": "frame-0035"
+    },
+    {
+      "tick": 36,
+      "name": "frame-0036"
+    },
+    {
+      "tick": 37,
+      "name": "frame-0037"
+    },
+    {
+      "tick": 38,
+      "name": "frame-0038"
+    },
+    {
+      "tick": 39,
+      "name": "frame-0039"
+    },
+    {
+      "tick": 40,
+      "name": "frame-0040"
+    },
+    {
+      "tick": 41,
+      "name": "frame-0041"
+    },
+    {
+      "tick": 42,
+      "name": "frame-0042"
+    },
+    {
+      "tick": 43,
+      "name": "frame-0043"
+    },
+    {
+      "tick": 44,
+      "name": "frame-0044"
+    },
+    {
+      "tick": 45,
+      "name": "frame-0045"
+    },
+    {
+      "tick": 46,
+      "name": "frame-0046"
+    },
+    {
+      "tick": 47,
+      "name": "frame-0047"
+    },
+    {
+      "tick": 48,
+      "name": "frame-0048"
+    },
+    {
+      "tick": 49,
+      "name": "frame-0049"
+    },
+    {
+      "tick": 50,
+      "name": "frame-0050"
+    },
+    {
+      "tick": 51,
+      "name": "frame-0051"
+    },
+    {
+      "tick": 52,
+      "name": "frame-0052"
+    },
+    {
+      "tick": 53,
+      "name": "frame-0053"
+    },
+    {
+      "tick": 54,
+      "name": "frame-0054"
+    },
+    {
+      "tick": 55,
+      "name": "frame-0055"
+    },
+    {
+      "tick": 56,
+      "name": "frame-0056"
+    },
+    {
+      "tick": 57,
+      "name": "frame-0057"
+    },
+    {
+      "tick": 58,
+      "name": "frame-0058"
+    },
+    {
+      "tick": 59,
+      "name": "frame-0059"
+    },
+    {
+      "tick": 60,
+      "name": "frame-0060"
+    },
+    {
+      "tick": 61,
+      "name": "frame-0061"
+    },
+    {
+      "tick": 62,
+      "name": "frame-0062"
+    },
+    {
+      "tick": 63,
+      "name": "frame-0063"
+    },
+    {
+      "tick": 64,
+      "name": "frame-0064"
+    },
+    {
+      "tick": 65,
+      "name": "frame-0065"
+    },
+    {
+      "tick": 66,
+      "name": "frame-0066"
+    },
+    {
+      "tick": 67,
+      "name": "frame-0067"
+    },
+    {
+      "tick": 68,
+      "name": "frame-0068"
+    },
+    {
+      "tick": 69,
+      "name": "frame-0069"
+    },
+    {
+      "tick": 70,
+      "name": "frame-0070"
+    },
+    {
+      "tick": 71,
+      "name": "frame-0071"
+    },
+    {
+      "tick": 72,
+      "name": "frame-0072"
+    },
+    {
+      "tick": 73,
+      "name": "frame-0073"
+    },
+    {
+      "tick": 74,
+      "name": "frame-0074"
+    },
+    {
+      "tick": 75,
+      "name": "frame-0075"
+    },
+    {
+      "tick": 76,
+      "name": "frame-0076"
+    },
+    {
+      "tick": 77,
+      "name": "frame-0077"
+    },
+    {
+      "tick": 78,
+      "name": "frame-0078"
+    },
+    {
+      "tick": 79,
+      "name": "frame-0079"
+    },
+    {
+      "tick": 80,
+      "name": "frame-0080"
+    },
+    {
+      "tick": 81,
+      "name": "frame-0081"
+    },
+    {
+      "tick": 82,
+      "name": "frame-0082"
+    },
+    {
+      "tick": 83,
+      "name": "frame-0083"
+    },
+    {
+      "tick": 84,
+      "name": "frame-0084"
+    },
+    {
+      "tick": 85,
+      "name": "frame-0085"
+    },
+    {
+      "tick": 86,
+      "name": "frame-0086"
+    },
+    {
+      "tick": 87,
+      "name": "frame-0087"
+    },
+    {
+      "tick": 88,
+      "name": "frame-0088"
+    },
+    {
+      "tick": 89,
+      "name": "frame-0089"
+    },
+    {
+      "tick": 90,
+      "name": "frame-0090"
+    },
+    {
+      "tick": 91,
+      "name": "frame-0091"
+    },
+    {
+      "tick": 92,
+      "name": "frame-0092"
+    },
+    {
+      "tick": 93,
+      "name": "frame-0093"
+    },
+    {
+      "tick": 94,
+      "name": "frame-0094"
+    },
+    {
+      "tick": 95,
+      "name": "frame-0095"
+    },
+    {
+      "tick": 96,
+      "name": "frame-0096"
+    },
+    {
+      "tick": 97,
+      "name": "frame-0097"
+    },
+    {
+      "tick": 98,
+      "name": "frame-0098"
+    },
+    {
+      "tick": 99,
+      "name": "frame-0099"
+    },
+    {
+      "tick": 100,
+      "name": "frame-0100"
+    },
+    {
+      "tick": 101,
+      "name": "frame-0101"
+    },
+    {
+      "tick": 102,
+      "name": "frame-0102"
+    },
+    {
+      "tick": 103,
+      "name": "frame-0103"
+    },
+    {
+      "tick": 104,
+      "name": "frame-0104"
+    },
+    {
+      "tick": 105,
+      "name": "frame-0105"
+    },
+    {
+      "tick": 106,
+      "name": "frame-0106"
+    },
+    {
+      "tick": 107,
+      "name": "frame-0107"
+    },
+    {
+      "tick": 108,
+      "name": "frame-0108"
+    },
+    {
+      "tick": 109,
+      "name": "frame-0109"
+    },
+    {
+      "tick": 110,
+      "name": "frame-0110"
+    },
+    {
+      "tick": 111,
+      "name": "frame-0111"
+    },
+    {
+      "tick": 112,
+      "name": "frame-0112"
+    },
+    {
+      "tick": 113,
+      "name": "frame-0113"
+    },
+    {
+      "tick": 114,
+      "name": "frame-0114"
+    },
+    {
+      "tick": 115,
+      "name": "frame-0115"
+    },
+    {
+      "tick": 116,
+      "name": "frame-0116"
+    },
+    {
+      "tick": 117,
+      "name": "frame-0117"
+    },
+    {
+      "tick": 118,
+      "name": "frame-0118"
+    },
+    {
+      "tick": 119,
+      "name": "frame-0119"
+    },
+    {
+      "tick": 120,
+      "name": "frame-0120"
+    },
+    {
+      "tick": 121,
+      "name": "frame-0121"
+    },
+    {
+      "tick": 122,
+      "name": "frame-0122"
+    },
+    {
+      "tick": 123,
+      "name": "frame-0123"
+    },
+    {
+      "tick": 124,
+      "name": "frame-0124"
+    },
+    {
+      "tick": 125,
+      "name": "frame-0125"
+    },
+    {
+      "tick": 126,
+      "name": "frame-0126"
+    },
+    {
+      "tick": 127,
+      "name": "frame-0127"
+    },
+    {
+      "tick": 128,
+      "name": "frame-0128"
+    },
+    {
+      "tick": 129,
+      "name": "frame-0129"
+    },
+    {
+      "tick": 130,
+      "name": "frame-0130"
+    },
+    {
+      "tick": 131,
+      "name": "frame-0131"
+    },
+    {
+      "tick": 132,
+      "name": "frame-0132"
+    },
+    {
+      "tick": 133,
+      "name": "frame-0133"
+    },
+    {
+      "tick": 134,
+      "name": "frame-0134"
+    },
+    {
+      "tick": 135,
+      "name": "frame-0135"
+    },
+    {
+      "tick": 136,
+      "name": "frame-0136"
+    },
+    {
+      "tick": 137,
+      "name": "frame-0137"
+    },
+    {
+      "tick": 138,
+      "name": "frame-0138"
+    },
+    {
+      "tick": 139,
+      "name": "frame-0139"
+    },
+    {
+      "tick": 140,
+      "name": "frame-0140"
+    },
+    {
+      "tick": 141,
+      "name": "frame-0141"
+    },
+    {
+      "tick": 142,
+      "name": "frame-0142"
+    },
+    {
+      "tick": 143,
+      "name": "frame-0143"
+    },
+    {
+      "tick": 144,
+      "name": "frame-0144"
+    },
+    {
+      "tick": 145,
+      "name": "frame-0145"
+    },
+    {
+      "tick": 146,
+      "name": "frame-0146"
+    },
+    {
+      "tick": 147,
+      "name": "frame-0147"
+    },
+    {
+      "tick": 148,
+      "name": "frame-0148"
+    },
+    {
+      "tick": 149,
+      "name": "frame-0149"
+    },
+    {
+      "tick": 150,
+      "name": "frame-0150"
+    },
+    {
+      "tick": 151,
+      "name": "frame-0151"
+    },
+    {
+      "tick": 152,
+      "name": "frame-0152"
+    },
+    {
+      "tick": 153,
+      "name": "frame-0153"
+    },
+    {
+      "tick": 154,
+      "name": "frame-0154"
+    },
+    {
+      "tick": 155,
+      "name": "frame-0155"
+    },
+    {
+      "tick": 156,
+      "name": "frame-0156"
+    },
+    {
+      "tick": 157,
+      "name": "frame-0157"
+    },
+    {
+      "tick": 158,
+      "name": "frame-0158"
+    },
+    {
+      "tick": 159,
+      "name": "frame-0159"
+    },
+    {
+      "tick": 160,
+      "name": "frame-0160"
+    },
+    {
+      "tick": 161,
+      "name": "frame-0161"
+    },
+    {
+      "tick": 162,
+      "name": "frame-0162"
+    },
+    {
+      "tick": 163,
+      "name": "frame-0163"
+    },
+    {
+      "tick": 164,
+      "name": "frame-0164"
+    },
+    {
+      "tick": 165,
+      "name": "frame-0165"
+    },
+    {
+      "tick": 166,
+      "name": "frame-0166"
+    },
+    {
+      "tick": 167,
+      "name": "frame-0167"
+    },
+    {
+      "tick": 168,
+      "name": "frame-0168"
+    },
+    {
+      "tick": 169,
+      "name": "frame-0169"
+    },
+    {
+      "tick": 170,
+      "name": "frame-0170"
+    },
+    {
+      "tick": 171,
+      "name": "frame-0171"
+    },
+    {
+      "tick": 172,
+      "name": "frame-0172"
+    },
+    {
+      "tick": 173,
+      "name": "frame-0173"
+    },
+    {
+      "tick": 174,
+      "name": "frame-0174"
+    },
+    {
+      "tick": 175,
+      "name": "frame-0175"
+    },
+    {
+      "tick": 176,
+      "name": "frame-0176"
+    },
+    {
+      "tick": 177,
+      "name": "frame-0177"
+    },
+    {
+      "tick": 178,
+      "name": "frame-0178"
+    },
+    {
+      "tick": 179,
+      "name": "frame-0179"
+    },
+    {
+      "tick": 180,
+      "name": "frame-0180"
+    },
+    {
+      "tick": 181,
+      "name": "frame-0181"
+    },
+    {
+      "tick": 182,
+      "name": "frame-0182"
+    },
+    {
+      "tick": 183,
+      "name": "frame-0183"
+    },
+    {
+      "tick": 184,
+      "name": "frame-0184"
+    },
+    {
+      "tick": 185,
+      "name": "frame-0185"
+    },
+    {
+      "tick": 186,
+      "name": "frame-0186"
+    },
+    {
+      "tick": 187,
+      "name": "frame-0187"
+    },
+    {
+      "tick": 188,
+      "name": "frame-0188"
+    },
+    {
+      "tick": 189,
+      "name": "frame-0189"
+    },
+    {
+      "tick": 190,
+      "name": "frame-0190"
+    },
+    {
+      "tick": 191,
+      "name": "frame-0191"
+    },
+    {
+      "tick": 192,
+      "name": "frame-0192"
+    },
+    {
+      "tick": 193,
+      "name": "frame-0193"
+    },
+    {
+      "tick": 194,
+      "name": "frame-0194"
+    },
+    {
+      "tick": 195,
+      "name": "frame-0195"
+    },
+    {
+      "tick": 196,
+      "name": "frame-0196"
+    },
+    {
+      "tick": 197,
+      "name": "frame-0197"
+    },
+    {
+      "tick": 198,
+      "name": "frame-0198"
+    },
+    {
+      "tick": 199,
+      "name": "frame-0199"
+    },
+    {
+      "tick": 200,
+      "name": "frame-0200"
+    },
+    {
+      "tick": 201,
+      "name": "frame-0201"
+    },
+    {
+      "tick": 202,
+      "name": "frame-0202"
+    },
+    {
+      "tick": 203,
+      "name": "frame-0203"
+    },
+    {
+      "tick": 204,
+      "name": "frame-0204"
+    },
+    {
+      "tick": 205,
+      "name": "frame-0205"
+    },
+    {
+      "tick": 206,
+      "name": "frame-0206"
+    },
+    {
+      "tick": 207,
+      "name": "frame-0207"
+    },
+    {
+      "tick": 208,
+      "name": "frame-0208"
+    },
+    {
+      "tick": 209,
+      "name": "frame-0209"
+    },
+    {
+      "tick": 210,
+      "name": "frame-0210"
+    },
+    {
+      "tick": 211,
+      "name": "frame-0211"
+    },
+    {
+      "tick": 212,
+      "name": "frame-0212"
+    },
+    {
+      "tick": 213,
+      "name": "frame-0213"
+    },
+    {
+      "tick": 214,
+      "name": "frame-0214"
+    },
+    {
+      "tick": 215,
+      "name": "frame-0215"
+    },
+    {
+      "tick": 216,
+      "name": "frame-0216"
+    },
+    {
+      "tick": 217,
+      "name": "frame-0217"
+    },
+    {
+      "tick": 218,
+      "name": "frame-0218"
+    },
+    {
+      "tick": 219,
+      "name": "frame-0219"
+    },
+    {
+      "tick": 220,
+      "name": "frame-0220"
+    },
+    {
+      "tick": 221,
+      "name": "frame-0221"
+    },
+    {
+      "tick": 222,
+      "name": "frame-0222"
+    },
+    {
+      "tick": 223,
+      "name": "frame-0223"
+    },
+    {
+      "tick": 224,
+      "name": "frame-0224"
+    },
+    {
+      "tick": 225,
+      "name": "frame-0225"
+    },
+    {
+      "tick": 226,
+      "name": "frame-0226"
+    },
+    {
+      "tick": 227,
+      "name": "frame-0227"
+    },
+    {
+      "tick": 228,
+      "name": "frame-0228"
+    },
+    {
+      "tick": 229,
+      "name": "frame-0229"
+    },
+    {
+      "tick": 230,
+      "name": "frame-0230"
+    },
+    {
+      "tick": 231,
+      "name": "frame-0231"
+    },
+    {
+      "tick": 232,
+      "name": "frame-0232"
+    },
+    {
+      "tick": 233,
+      "name": "frame-0233"
+    },
+    {
+      "tick": 234,
+      "name": "frame-0234"
+    },
+    {
+      "tick": 235,
+      "name": "frame-0235"
+    },
+    {
+      "tick": 236,
+      "name": "frame-0236"
+    },
+    {
+      "tick": 237,
+      "name": "frame-0237"
+    },
+    {
+      "tick": 238,
+      "name": "frame-0238"
+    },
+    {
+      "tick": 239,
+      "name": "frame-0239"
+    },
+    {
+      "tick": 240,
+      "name": "frame-0240"
+    }
+  ],
+  "overlay": "motion"
+}

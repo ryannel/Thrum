@@ -72,10 +72,10 @@ pub use view::SyntheticView;
 use view::{AUX_BYTES, Projection};
 
 /// Synthetic source revision; not a substitute for an F4 product identity.
-pub const SYNTHETIC_REVISION: u64 = 16;
+pub const SYNTHETIC_REVISION: u64 = 17;
 /// Portable reversed-Z opaque depth, sampled by the optional star composite.
 pub const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
-const VIEW_BYTES: usize = 160;
+const VIEW_BYTES: usize = view::VIEW_BYTES;
 const VIEW_SLOTS: u32 = 2;
 pub(crate) const LIGHT_BYTES: usize = 208;
 pub(crate) const PRE_EXPOSURE: f32 = 1.0 / 1024.0;
@@ -576,6 +576,7 @@ pub struct PreparedSynthetic {
     view_buffer: wgpu::Buffer,
     view_stride: u32,
     view_sample: SyntheticView,
+    jitter_phase: u32,
     pending_view: Option<SyntheticView>,
     frame_revision: u64,
     directional_buffer: wgpu::Buffer,
@@ -1657,6 +1658,7 @@ impl PreparedSynthetic {
             view_buffer,
             view_stride,
             view_sample: scene.view,
+            jitter_phase: 0,
             pending_view: None,
             frame_revision: 0,
             directional_buffer: directional,
@@ -1771,6 +1773,13 @@ impl PreparedSynthetic {
         presentation_alpha: f32,
     ) -> Result<(), RenderError> {
         self.check_owner(target)?;
+        let view = if scene.view.jitter_enabled() {
+            scene
+                .view
+                .with_jitter_phase(self.jitter_phase, target.extent())
+        } else {
+            scene.view
+        };
         if self.atmosphere.is_some() != matches!(lighting, FrameLighting::Atmosphere(_)) {
             return Err(RenderError::InvalidLighting);
         }
@@ -1781,9 +1790,9 @@ impl PreparedSynthetic {
         }
         let (mut light_data, background, clamps) = pack_frame_lighting(lighting)?;
         if self.cluster_compute.is_some() {
-            self.clusters.repack_gpu(&scene.local_lights, &scene.view)?;
+            self.clusters.repack_gpu(&scene.local_lights, &view)?;
         } else {
-            self.clusters.rebuild(&scene.local_lights, &scene.view)?;
+            self.clusters.rebuild(&scene.local_lights, &view)?;
         }
         if [
             (self.clusters.lights.len(), self.local_light_bytes),
@@ -1799,34 +1808,39 @@ impl PreparedSynthetic {
         light_data[12..16].copy_from_slice(&has_local_lights.to_le_bytes());
         if let Some(shadow) = self.shadow.as_mut() {
             shadow.update(
-                &scene.view,
+                &view,
                 (&scene.instances, self.caster_boxes.as_deref()),
                 packed_light_direction(&light_data),
             )?;
         }
         self.history.set_extent(queue, target.extent());
         self.history
-            .prepare_sample(queue, presentation_alpha, scene.view.history_reset());
+            .prepare_sample(queue, presentation_alpha, view.history_reset());
         let next_revision = self.frame_revision.wrapping_add(1);
         let view_offset = self.view_stride * u32::from(next_revision & 1 != 0);
         queue.write_buffer(
             &self.view_buffer,
             u64::from(view_offset),
-            &scene
-                .view
-                .pack_view(&self.view_sample, f32::from_bits(self.exposure_bits)),
+            &view.pack_view(&self.view_sample, f32::from_bits(self.exposure_bits)),
         );
         queue.write_buffer(
             &target.aux_buffer,
             0,
-            &scene.view.pack_aux(target.width, target.height),
+            &view.pack_aux(target.width, target.height),
         );
         target.draw_stars =
             self.stars
                 .as_mut()
                 .zip(target.stars.as_ref())
                 .is_some_and(|(stars, binding)| {
-                    stars.update_target(queue, binding, &scene.view, target.extent(), &light_data)
+                    stars.update_target(
+                        queue,
+                        binding,
+                        &view,
+                        &self.view_sample,
+                        target.extent(),
+                        &light_data,
+                    )
                 });
         // Atmosphere owns the ambient tail on GPU; preserve its cached value.
         let cpu_light_bytes = if self.atmosphere.is_some() {
@@ -1848,19 +1862,27 @@ impl PreparedSynthetic {
         if let (Some(atmosphere), FrameLighting::Atmosphere(frame)) =
             (&mut self.atmosphere, lighting)
         {
-            atmosphere.update(queue, frame, &scene.view, target.extent());
+            atmosphere.update(queue, frame, &view, target.extent());
         }
         self.exposure.update(
             queue,
-            scene.view.exposure_policy(
+            view.exposure_policy(
                 f32::from_bits(self.exposure_bits),
                 self.atmosphere.is_some(),
             ),
         );
-        self.pending_view = Some(scene.view);
+        self.pending_view = Some(view);
         self.frame_revision = next_revision;
         target.frame_revision = self.frame_revision;
         Ok(())
+    }
+
+    /// Carry submitted CPU view metadata across GPU-resource replacement. The
+    /// new GPU history stays invalid, but a prepared view never becomes the prior
+    /// submitted camera. Publication copies the live cursor, not a worker snapshot.
+    pub(crate) fn inherit_submitted_view(&mut self, previous: &Self) {
+        self.jitter_phase = previous.jitter_phase;
+        self.view_sample = previous.view_sample;
     }
 
     /// Advance previous-view history after the host submits the encoded frame.
@@ -1870,6 +1892,7 @@ impl PreparedSynthetic {
         }
         if let Some(view) = self.pending_view.take() {
             self.view_sample = view;
+            self.jitter_phase = (self.jitter_phase + 1) % 32;
             self.history.submitted();
         }
     }
@@ -2330,9 +2353,12 @@ impl OffscreenTarget {
             .ok_or(RenderError::GraphPassMismatch)?
             .create_view(&wgpu::TextureViewDescriptor::default());
         let (stars, draw_stars) = prepared.prepare_star_target(device, &depth, [width, height]);
-        let display = prepared
-            .display
-            .target(device, &scene_view, &prepared.exposure.samples);
+        let display = prepared.display.target(
+            device,
+            &scene_view,
+            &motion_view,
+            &prepared.exposure.samples,
+        );
         let aux = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("synthetic target view aux"),
             contents: &prepared
@@ -2693,3 +2719,7 @@ mod tests {
         );
     }
 }
+
+#[cfg(all(test, target_os = "macos"))]
+#[path = "synthetic/motion/tests.rs"]
+mod motion_tests;

@@ -120,6 +120,13 @@ pub(super) async fn run(output: PathBuf) -> Result<(), String> {
     };
     std::fs::create_dir_all(&output).map_err(|error| error.to_string())?;
     if let Some((text, _, _)) = &moving_route {
+        let overlay = match std::env::var("THRUM_CAPTURE_DISPLAY_OVERLAY").as_deref() {
+            Err(_) | Ok("off") => DisplayOverlay::Off,
+            Ok("motion") => DisplayOverlay::Motion,
+            Ok("exposure-zones") => DisplayOverlay::ExposureZones,
+            _ => return Err("unknown route display overlay".to_owned()),
+        };
+        host.set_display_overlay(overlay);
         return route::record(
             &capabilities,
             &queue,

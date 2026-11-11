@@ -1,0 +1,24 @@
+   Compiling thrum-render v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/crates/thrum-render)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.11s
+     Running unittests src/lib.rs (target/debug/deps/thrum_render-d67caa5a0e68fcf3)
+
+running 3 tests
+M1 static infinity target mac-metal: AdapterInfo { name: "Apple M3 Max", vendor: 0, device: 0, device_type: IntegratedGpu, device_pci_bus_id: "", driver: "", driver_info: "", backend: Metal, subgroup_min_size: 4, subgroup_max_size: 64, transient_saves_memory: Some(true), limit_bucket: None }
+M1 target mac-metal: AdapterInfo { name: "Apple M3 Max", vendor: 0, device: 0, device_type: IntegratedGpu, device_pci_bus_id: "", driver: "", driver_info: "", backend: Metal, subgroup_min_size: 4, subgroup_max_size: 64, transient_saves_memory: Some(true), limit_bucket: None }
+M1 target mac-metal: AdapterInfo { name: "Apple M3 Max", vendor: 0, device: 0, device_type: IntegratedGpu, device_pci_bus_id: "", driver: "", driver_info: "", backend: Metal, subgroup_min_size: 4, subgroup_max_size: 64, transient_saves_memory: Some(true), limit_bucket: None }
+M1 sky pan 5,5: GPU [1.3984375, 0.2322998], independent CPU [1.3988175431048298, 0.23240356960871722]
+M1 sky pan 32,32: GPU [1.171875, 0.00018537045], independent CPU [1.171953841746136, 0.00018541947548611493]
+M1 sky pan 58,58: GPU [1.4238281, 0.24731445], independent CPU [1.4243654907751804, 0.24734676118847077]
+M1 static: 35 jitter phases, all 4096 texels numerically exact zero per frame
+M1 after abandoned view, first nonzero texels: []
+M1 sidereal phase only: GPU [0.5859375, 0.0022220612], CPU [0.5861273, 0.0022230148]
+M1 steady sky during sidereal phase edit: [0.0, -0.0]
+M1 solar phase only: GPU [-0.5854492, 1.7642975e-5], independent CPU [-0.5857682755275799, 1.767875392505447e-5]
+M1 small solar phase: GPU [-0.0058555603, 4.172325e-7], CPU [-0.005857982527466665, 4.2429845947822287e-7]
+test synthetic::motion_tests::metal_sky_pan_and_solar_sidereal_phase_match_independent_projection ... ok
+test synthetic::motion_tests::metal_static_jitter_is_zero_at_every_texel_and_motion_control_is_nonzero ... ok
+M1 static perspective: geometry, sky and stars, 35 phases, all 4096 texels exact zero
+test synthetic::motion_tests::metal_perspective_geometry_sky_and_stars_are_zero_under_static_jitter ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 215 filtered out; finished in 0.56s
+

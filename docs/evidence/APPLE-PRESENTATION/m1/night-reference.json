@@ -1,0 +1,59 @@
+{
+  "format": "thrum-v1-moving-route",
+  "version": 1,
+  "cooked_root": "70d2baf823d09d85574f7cdfce7102648754544dd7d68659e9bd92dd5f30e21d",
+  "cooked_generation": 1,
+  "tick_hz": 60,
+  "phase": [
+    1,
+    2
+  ],
+  "origin_tick": 180,
+  "start": {
+    "solar_hours": 0
+  },
+  "render_extent": [
+    1920,
+    1080
+  ],
+  "keys": [
+    {
+      "tick": 0,
+      "eye": [
+        0.0,
+        244.9226672381398,
+        16.0
+      ],
+      "yaw_degrees": 0,
+      "pitch_degrees": -3.0127875041833403
+    },
+    {
+      "tick": 120,
+      "eye": [
+        0.0,
+        244.9226672381398,
+        16.0
+      ],
+      "yaw_degrees": 36,
+      "pitch_degrees": 7
+    },
+    {
+      "tick": 240,
+      "eye": [
+        0.0,
+        244.9226672381398,
+        16.0
+      ],
+      "yaw_degrees": 36,
+      "pitch_degrees": 7
+    }
+  ],
+  "cuts": [],
+  "checkpoints": [
+    {
+      "tick": 180,
+      "name": "frame-0180"
+    }
+  ],
+  "overlay": "motion"
+}

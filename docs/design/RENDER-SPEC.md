@@ -162,7 +162,8 @@ groups, 16 sampled textures and 256-byte dynamic uniform offset alignment.
 Matrices are column-major. A `ViewRecord` contains `viewProj` and
 `previousViewProj` at byte offsets 0 and 64 (64 bytes each), then
 `cameraXYZ_time` at 128 and `preExposure_invExposure_jitterXY` at 144; 160-byte
-record, 256-byte dynamic-uniform stride. A `MaterialRecord` has four 16-byte
+legacy spatial record, 256-byte dynamic-uniform stride. APPLE-PRESENTATION M1
+extends the view to 240 bytes as specified in section 8, keeping that stride. A `MaterialRecord` has four 16-byte
 vectors at offsets 0/16/32/48: base RGBA, emissive RGB+alpha cutoff,
 `(occlusionStrength,roughnessFactor,metallicFactor,normalScale)`, and four
 `u32` semantic flags/IDs; the fifth `vec4<u32>` at 64 names base, normal,
@@ -407,11 +408,24 @@ temporal proof resets history whenever acceptance is unknown to the CPU;
 retaining history across delayed GPU acceptance requires an explicit GPU-owned
 metadata path or bounded delayed lease protocol. Submission completion alone
 does not certify an accepted sample.
-Retain the 160-byte `ViewRecord` above. Group 0 binding 1 adds a versioned
-128-byte `ViewAuxRecord`: unjittered inverse view-projection at 0, viewport
+APPLE-PRESENTATION M1 extends group 0 binding 0 to a 240-byte `ViewRecord`:
+current jittered view-projection at 0, previous submitted unjittered view-projection
+at 64, camera XYZ/time at 128, storage scale/inverse fixed gain/jitter XY at 144,
+current unjittered view-projection at 160, and mip bias (f32), phase (u32), two
+reserved zero words at 224. Jitter is in render pixels, X right/Y down; the
+raster projection adds `(2*jitter.x/width, -2*jitter.y/height)*clip.w`.
+The continuous Halton(2,3) cycle uses indices 1 through 32, centred by subtracting
+0.5, and advances only on submission, independently of extent changes. It is
+explicitly selected by a temporal view; diagnostic spatial fixtures may disable it.
+At native scale the mip-bias field is -1. The material/instance ABI stays revision 2.
+Motion compares interpolated unjittered current and previous clips, then converts
+the NDC difference to render pixels. Invalid correspondence is the finite fp16
+sentinel `(65504,65504)`, distinct from stationary zero, until M2 consumes validity
+in its reactive target. Both cooked draw paths share this forward shader.
+Group 0 binding 1 adds a versioned 144-byte `ViewAuxRecord`: unjittered inverse view-projection at 0, viewport
 size/inverse size at 64, finite near/far plus view scale/storage ratio at 80,
 split current/prior presentation times at 96, and u32 camera/history/source
-flags at 112. Its byte layout and the existing records are checked against
+flags at 112, and XY origin/WH render subrectangle at 128 (currently origin zero). Its byte layout and the existing records are checked against
 Naga reflection; CPU packers write checked scalar offsets into zeroed storage.
 Use right-handed Y-up world, camera forward −Z, WebGPU clip depth [0,1],
 finite reverse-Z depth (clear 0, greater comparison) and unjittered matrices
@@ -461,8 +475,7 @@ The separate GPU sample carries `p`, inverse gain, actual unfloored lux, EV, fla
 is flagged unmetered; invalid physical input uses the prepared fixed fallback. Resolve every encoded view, including
 cached atmosphere views. Forward and tone declare reads of this resource. Policy and physical-light inputs are declared graph
 reads. Two sample sides follow submitted-transform history, never prepared-view parity; cancellation/capture cannot
-advance history. Future reconstruction retains the sample with its accepted image. The 160-byte view ABI and reserved
-jitter fields are unchanged; its legacy inverse gain is fixed-request compatibility data, not a resolved meter value.
+advance history. Future reconstruction retains the sample with its accepted image. The legacy fixed-gain field at 148 remains compatibility data in the extended view ABI; its legacy inverse gain is fixed-request compatibility data, not a resolved meter value.
 Display selection is independent of metering. Default `Reinhard` preserves `C_e=e*L`,
 `C_t=C_e/(1+Y(C_e))`, `C_d=C_t/max(1,max(C_t.r,C_t.g,C_t.b))` and existing diagnostic pixels.
 The game selects `NeutralHighlights`: identity below peak `K=0.76`; above it, with `P=max(C_e)`,

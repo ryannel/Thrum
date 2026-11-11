@@ -27,6 +27,7 @@ fn cooked_octahedral(e: vec2<f32>) -> vec3<f32> {
     let world = model * vec4(input.position, 1.0);
     var output: VertexOutput;
     output.position = view.view_proj * world;
+    output.current_clip = view.unjittered_view_proj * world;
     output.world_position = world.xyz;
     // Placements are rigid with uniform scale, so the model matrix transforms normals.
     output.normal = normalize((model * vec4(cooked_octahedral(input.normal_oct), 0.0)).xyz);
@@ -36,7 +37,8 @@ fn cooked_octahedral(e: vec2<f32>) -> vec3<f32> {
     // geometry existed last frame.
     let valid = input.history != 0u;
     output.history_valid = select(0u, 1u, valid);
-    output.previous_clip = select(output.position, view.previous_view_proj * world, valid);
+    output.clip_delta = select(vec4(0.0),
+        (view.previous_view_proj - view.unjittered_view_proj) * world, valid);
     return output;
 }
 
@@ -125,11 +127,14 @@ fn cooked_box_exit(origin: vec3<f32>, direction: vec3<f32>) -> vec2<f32> {
         if transmittance < 0.003 { break; }
     }
     let alpha = 1.0 - transmittance;
+    // Empty rays contribute neither colour nor correspondence. Occupied rays
+    // have no retained volume sample and explicitly invalidate their motion.
+    if alpha <= 0.0 { discard; }
     var colour = vec3(0.0);
     if alpha > 0.0001 {
         let entry = (cooked_volume.model * vec4(origin + direction * span.x, 1.0)).xyz;
         colour = aerial_colour(radiance / alpha, entry, input.position) * alpha;
     }
     let exposed = clamp(colour * scene_storage_scale(), vec3(0.0), vec3(65504.0));
-    return FragmentOutput(vec4(exposed, alpha), vec2(0.0));
+    return FragmentOutput(vec4(exposed, alpha), vec2(65504.0));
 }

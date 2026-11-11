@@ -1,0 +1,57 @@
+{
+  "module": "APPLE-PRESENTATION",
+  "milestone": "M1",
+  "tree": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation",
+  "plan": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/docs/plans/APPLE-PRESENTATION/DONE.json",
+  "pass": 4,
+  "fail": 0,
+  "error": 0,
+  "timeout": 0,
+  "items": [
+    {
+      "id": "D1.1",
+      "check": "./dev check",
+      "lock": "gpu",
+      "exit": 0,
+      "result": "pass",
+      "output": "eps/simulation-e8294c330ad544c3)\n     Running tests/surface_gpu.rs (target/debug/deps/surface_gpu-aafb6fab578677df)\n     Running unittests src/lib.rs (target/debug/deps/v1_game_ios-9792c93d3eedd866)\n     Running unittests src/bin/rustc_receipt.rs (target/debug/deps/rustc_receipt-3960b95387bad8f9)\n     Running unittests src/main.rs (target/debug/deps/xtask-fd887e56201bb2d6)\n   Doc-tests asset_loop\n   Doc-tests thrum_app\n   Doc-tests thrum_asset\n   Doc-tests thrum_asset_gpu\n   Doc-tests thrum_content_runtime\n   Doc-tests thrum_controls\n   Doc-tests thrum_cook\n   Doc-tests thrum_core\n   Doc-tests thrum_network\n   Doc-tests thrum_render\n   Doc-tests v1_game\n   Compiling v1-game v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/examples/v1-game)\nwarning: linker stderr: ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/target/debug/deps/libintel_tex_2-ad87d7835ed898ef.rlib[5](kernel_ispc.o)', assuming: macOS\n         ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/target/debug/deps/libintel_tex_2-ad87d7835ed898ef.rlib[6](kernel_astc_ispc.o)', assuming: macOS\n  |\n  = note: `#[warn(linker_messages)]` on by default\n\nwarning: `v1-game` (test \"cooked_assets_gpu\") generated 1 warning\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.06s\n     Running tests/cooked_assets_gpu.rs (target/debug/deps/cooked_assets_gpu-e0660e84a3e781da)"
+    },
+    {
+      "id": "D1.2",
+      "check": "./dev check",
+      "lock": "gpu",
+      "exit": 0,
+      "result": "pass",
+      "output": "eps/simulation-e8294c330ad544c3)\n     Running tests/surface_gpu.rs (target/debug/deps/surface_gpu-aafb6fab578677df)\n     Running unittests src/lib.rs (target/debug/deps/v1_game_ios-9792c93d3eedd866)\n     Running unittests src/bin/rustc_receipt.rs (target/debug/deps/rustc_receipt-3960b95387bad8f9)\n     Running unittests src/main.rs (target/debug/deps/xtask-fd887e56201bb2d6)\n   Doc-tests asset_loop\n   Doc-tests thrum_app\n   Doc-tests thrum_asset\n   Doc-tests thrum_asset_gpu\n   Doc-tests thrum_content_runtime\n   Doc-tests thrum_controls\n   Doc-tests thrum_cook\n   Doc-tests thrum_core\n   Doc-tests thrum_network\n   Doc-tests thrum_render\n   Doc-tests v1_game\n   Compiling v1-game v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/examples/v1-game)\nwarning: linker stderr: ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/target/debug/deps/libintel_tex_2-ad87d7835ed898ef.rlib[5](kernel_ispc.o)', assuming: macOS\n         ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/target/debug/deps/libintel_tex_2-ad87d7835ed898ef.rlib[6](kernel_astc_ispc.o)', assuming: macOS\n  |\n  = note: `#[warn(linker_messages)]` on by default\n\nwarning: `v1-game` (test \"cooked_assets_gpu\") generated 1 warning\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.60s\n     Running tests/cooked_assets_gpu.rs (target/debug/deps/cooked_assets_gpu-e0660e84a3e781da)"
+    },
+    {
+      "id": "D1.3",
+      "check": "./dev check",
+      "lock": "gpu",
+      "exit": 0,
+      "result": "pass",
+      "output": "eps/simulation-e8294c330ad544c3)\n     Running tests/surface_gpu.rs (target/debug/deps/surface_gpu-aafb6fab578677df)\n     Running unittests src/lib.rs (target/debug/deps/v1_game_ios-9792c93d3eedd866)\n     Running unittests src/bin/rustc_receipt.rs (target/debug/deps/rustc_receipt-3960b95387bad8f9)\n     Running unittests src/main.rs (target/debug/deps/xtask-fd887e56201bb2d6)\n   Doc-tests asset_loop\n   Doc-tests thrum_app\n   Doc-tests thrum_asset\n   Doc-tests thrum_asset_gpu\n   Doc-tests thrum_content_runtime\n   Doc-tests thrum_controls\n   Doc-tests thrum_cook\n   Doc-tests thrum_core\n   Doc-tests thrum_network\n   Doc-tests thrum_render\n   Doc-tests v1_game\n   Compiling v1-game v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/examples/v1-game)\nwarning: linker stderr: ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/target/debug/deps/libintel_tex_2-ad87d7835ed898ef.rlib[5](kernel_ispc.o)', assuming: macOS\n         ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/target/debug/deps/libintel_tex_2-ad87d7835ed898ef.rlib[6](kernel_astc_ispc.o)', assuming: macOS\n  |\n  = note: `#[warn(linker_messages)]` on by default\n\nwarning: `v1-game` (test \"cooked_assets_gpu\") generated 1 warning\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.55s\n     Running tests/cooked_assets_gpu.rs (target/debug/deps/cooked_assets_gpu-e0660e84a3e781da)"
+    },
+    {
+      "id": "D1.4",
+      "result": "no check",
+      "proof": [
+        "ask"
+      ]
+    },
+    {
+      "id": "D1.5",
+      "result": "no check",
+      "proof": [
+        "inspect"
+      ]
+    },
+    {
+      "id": "Check",
+      "check": "./dev check",
+      "exit": 0,
+      "result": "pass",
+      "output": "eps/simulation-e8294c330ad544c3)\n     Running tests/surface_gpu.rs (target/debug/deps/surface_gpu-aafb6fab578677df)\n     Running unittests src/lib.rs (target/debug/deps/v1_game_ios-9792c93d3eedd866)\n     Running unittests src/bin/rustc_receipt.rs (target/debug/deps/rustc_receipt-3960b95387bad8f9)\n     Running unittests src/main.rs (target/debug/deps/xtask-fd887e56201bb2d6)\n   Doc-tests asset_loop\n   Doc-tests thrum_app\n   Doc-tests thrum_asset\n   Doc-tests thrum_asset_gpu\n   Doc-tests thrum_content_runtime\n   Doc-tests thrum_controls\n   Doc-tests thrum_cook\n   Doc-tests thrum_core\n   Doc-tests thrum_network\n   Doc-tests thrum_render\n   Doc-tests v1_game\n   Compiling v1-game v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/examples/v1-game)\nwarning: linker stderr: ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/target/debug/deps/libintel_tex_2-ad87d7835ed898ef.rlib[5](kernel_ispc.o)', assuming: macOS\n         ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/target/debug/deps/libintel_tex_2-ad87d7835ed898ef.rlib[6](kernel_astc_ispc.o)', assuming: macOS\n  |\n  = note: `#[warn(linker_messages)]` on by default\n\nwarning: `v1-game` (test \"cooked_assets_gpu\") generated 1 warning\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.96s\n     Running tests/cooked_assets_gpu.rs (target/debug/deps/cooked_assets_gpu-e0660e84a3e781da)"
+    }
+  ]
+}

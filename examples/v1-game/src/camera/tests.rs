@@ -13,7 +13,7 @@ fn camera() -> SceneCamera {
     .expect("authored valley camera is valid")
 }
 
-fn project(view: SyntheticView, position: [f32; 3]) -> Vec3 {
+fn project(view: &SyntheticView, position: [f32; 3]) -> Vec3 {
     let matrix = Mat4::from_cols_array_2d(&view.view_proj_columns());
     let clip = matrix * Vec3::from_array(position).extend(1.0);
     clip.truncate() / clip.w
@@ -25,7 +25,7 @@ fn authored_pose_keeps_target_centred_and_reverse_depth_interval() {
     let [pitch, yaw] = camera.orientation();
     let view = camera.view([1920, 1080], pitch, yaw).unwrap();
     assert_eq!(view.camera_position(), [0.0, 127.114_25, 16.0]);
-    let target = project(view, [8.0, 123.114_25, -60.0]);
+    let target = project(&view, [8.0, 123.114_25, -60.0]);
     assert!(target.x.abs() < 1e-5 && target.y.abs() < 1e-5);
     let inverse = Mat4::from_cols_array_2d(&view.view_proj_columns()).inverse();
     for (depth, expected_distance) in [(1.0, 0.1), (0.0, 30_000.0)] {
@@ -43,8 +43,8 @@ fn resizing_changes_horizontal_field_while_preserving_eye_and_vertical_field() {
     let narrow = camera.view([900, 1600], pitch, yaw).unwrap();
     assert_eq!(wide.camera_position(), narrow.camera_position());
     let point = [10.0, 130.0, -60.0];
-    let a = project(wide, point);
-    let b = project(narrow, point);
+    let a = project(&wide, point);
+    let b = project(&narrow, point);
     assert!((a.y - b.y).abs() < 1e-6);
     assert!((b.x / a.x - (1600.0_f32 / 900.0).powi(2)).abs() < 1e-5);
     let turned = camera.view([1600, 900], 0.15, 0.2).unwrap();

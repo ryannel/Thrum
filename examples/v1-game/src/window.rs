@@ -286,6 +286,7 @@ impl Edits for ControlEdits {
             camera_yaw: newer.camera_yaw.or(self.camera_yaw),
             paused: newer.paused.or(self.paused),
             exposure_zones: newer.exposure_zones.or(self.exposure_zones),
+            motion_view: newer.motion_view.or(self.motion_view),
         }
     }
 
