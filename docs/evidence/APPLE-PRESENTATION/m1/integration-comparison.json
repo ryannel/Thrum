@@ -1,0 +1,44 @@
+[
+  {
+    "arm": "day",
+    "frames": 237,
+    "changed_rgba_ticks_from_pre_rebase": [],
+    "captured_source_matches_final_Rust_WGSL": true,
+    "binary_sha256": "e662eb045442bdb6c25dca4c9cfd70b0b0b940781fa0ae2377a2385a745362f1"
+  },
+  {
+    "arm": "night",
+    "frames": 237,
+    "changed_rgba_ticks_from_pre_rebase": [],
+    "captured_source_matches_final_Rust_WGSL": true,
+    "binary_sha256": "e662eb045442bdb6c25dca4c9cfd70b0b0b940781fa0ae2377a2385a745362f1"
+  },
+  {
+    "arm": "moving",
+    "frames": 193,
+    "changed_rgba_ticks_from_pre_rebase": [],
+    "captured_source_matches_final_Rust_WGSL": true,
+    "binary_sha256": "e662eb045442bdb6c25dca4c9cfd70b0b0b940781fa0ae2377a2385a745362f1"
+  },
+  {
+    "arm": "day-ref",
+    "frames": 1,
+    "changed_rgba_ticks_from_pre_rebase": [],
+    "captured_source_matches_final_Rust_WGSL": true,
+    "binary_sha256": "e662eb045442bdb6c25dca4c9cfd70b0b0b940781fa0ae2377a2385a745362f1"
+  },
+  {
+    "arm": "night-ref",
+    "frames": 1,
+    "changed_rgba_ticks_from_pre_rebase": [],
+    "captured_source_matches_final_Rust_WGSL": true,
+    "binary_sha256": "e662eb045442bdb6c25dca4c9cfd70b0b0b940781fa0ae2377a2385a745362f1"
+  },
+  {
+    "arm": "moving-ref",
+    "frames": 1,
+    "changed_rgba_ticks_from_pre_rebase": [],
+    "captured_source_matches_final_Rust_WGSL": true,
+    "binary_sha256": "e662eb045442bdb6c25dca4c9cfd70b0b0b940781fa0ae2377a2385a745362f1"
+  }
+]

@@ -15,20 +15,21 @@ The [prewritten inspection list](inspection.md) defines the visual checks.
 correctness and regressions, not visual acceptance or performance. No reconstruction, reactive target, MetalFX,
 EDR, governor, panel cadence or elapsed-time motion is claimed.
 
+[Rebase comparison](integration-comparison.json): every one of the 667 motion frames and three colour references is byte-identical before/after the surface-graph integration. The refreshed Metal tests also pass.
+
 [Colour/motion identities](reference-pairs.json) agree exactly except the display selector; exposure words 0–6 are equal.
 
 Capture provenance: each directory's `manifest.json` retains exact binary SHA-256, every Rust/WGSL source hash,
-route, cooked root, target/adapter, extent, source identity and original/PNG hashes. Source revision is the base
-commit plus the recorded working changes; final Rust/WGSL files match those hashes. Binary SHA-256 is
-`fc0b82a9528a477958a0b05f5a8c8c736fd272aa619e60d2a1dc32bb8d579788`.
+route, cooked root, target/adapter, extent, source identity and original/PNG hashes. The captures were refreshed after rebasing the implementation onto APPLE-TILE’s surface-graph changes; final Rust/WGSL files match their source hashes. Binary SHA-256 is
+`e662eb045442bdb6c25dca4c9cfd70b0b0b940781fa0ae2377a2385a745362f1`.
 [Capture/package tool](../../../../scripts/apple_presentation_m1.py) uses the existing native submitted engine tap,
 checks every submission/tick/phase/history/exposure identity, independently decodes each lossless PNG, then verifies
 movie frame count. The first four post-cut ticks are excluded; the moving window ends before the authored cut.
-The `Motion` route fixture adds one real simulation mover (3 m/s, slot 1499) while preserving ordinary Proof/Off.
+The authored store is cooked from `examples/v1-game/assets/showcase` through the generation-1 path in `run_v1_showcase.py`. The `Motion` route fixture adds one real simulation mover (3 m/s, slot 1499) while preserving ordinary Proof/Off.
 Raw duplicates and unselected PNGs are reconstructible scratch; selected native frames, crops, complete movies,
 identities, recipes and hashes are retained here. Movies preserve fixed sample timing; no physical display viewing
 is inferred. The GPU lock was queued normally throughout.
 
 Cost account: reuse the existing motion target and display pass; +80 view bytes, +16 auxiliary bytes, a 208-byte
-sky correspondence record and +80 star-view bytes per frame. Matrix deltas are per view. No new steady-frame
+sky correspondence record and +80 star-view bytes per frame. Geometry adds four interpolated components; stars add two flat motion components. Matrix deltas are per view; covered fragments evaluate a homogeneous difference and divide, and sky rays project camera/solar correspondence. No new steady-frame
 allocation or pass is introduced; debug sampling requires attachment storage. Device cost remains unmeasured.
