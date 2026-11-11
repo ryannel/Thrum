@@ -118,6 +118,7 @@ impl PreparedSynthetic {
         let mut accesses: Vec<Access> = lists
             .iter()
             .map(|args| Access {
+                view: None,
                 resource: args.clone(),
                 range: 0..args_bytes,
                 kind: AccessKind::CopyRead,
@@ -125,6 +126,7 @@ impl PreparedSynthetic {
             })
             .collect();
         accesses.push(Access {
+            view: None,
             resource: destination,
             range: 0..bytes,
             kind: AccessKind::CopyWrite,

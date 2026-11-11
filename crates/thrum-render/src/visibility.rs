@@ -620,6 +620,7 @@ impl VisibilityPrepared {
             .then(|| self.history_ids(graph))
             .transpose()?;
         reads.extend(history.iter().map(|history| Access {
+            view: None,
             resource: history.committed.clone(),
             range: 0..bits_bytes(self.capacity),
             kind: AccessKind::StorageRead,
@@ -686,6 +687,7 @@ impl VisibilityPrepared {
         let mips = size[0].max(size[1]).ilog2() + 1;
         let texture = graph.resource(
             ResourceDescriptor::Texture {
+                dimension: crate::graph::TextureKind::D2,
                 width: size[0],
                 height: size[1],
                 layers: 1,
@@ -702,12 +704,14 @@ impl VisibilityPrepared {
             pipeline: Some(self.pyramid_key()),
             accesses: vec![
                 Access {
+                    view: None,
                     resource: depth.clone(),
                     range: 0..1,
                     kind: AccessKind::SampledRead,
                     store: true,
                 },
                 Access {
+                    view: None,
                     resource: texture.clone(),
                     range: 0..u64::from(mips),
                     kind: AccessKind::StorageWrite,
@@ -718,12 +722,14 @@ impl VisibilityPrepared {
         });
         reads.extend([
             Access {
+                view: None,
                 resource: texture,
                 range: 0..u64::from(mips),
                 kind: AccessKind::SampledRead,
                 store: true,
             },
             Access {
+                view: None,
                 resource: history.committed.clone(),
                 range: 0..bits_bytes(self.capacity),
                 kind: AccessKind::StorageRead,
@@ -731,6 +737,7 @@ impl VisibilityPrepared {
             },
             // The dispatched words and the cleared tail define every word.
             Access {
+                view: None,
                 resource: history.next.clone(),
                 range: 0..bits_bytes(self.capacity),
                 kind: AccessKind::StorageWrite,
@@ -776,12 +783,14 @@ impl VisibilityPrepared {
         )?;
         reads.extend([
             Access {
+                view: None,
                 resource: visible.clone(),
                 range: 0..visible_bytes,
                 kind: AccessKind::StorageWrite,
                 store: true,
             },
             Access {
+                view: None,
                 resource: args.clone(),
                 range: 0..self.args_bytes(),
                 kind: AccessKind::StorageWrite,

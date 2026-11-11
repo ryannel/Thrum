@@ -209,6 +209,7 @@ impl ExposureResolve {
                 ResourceScope::Imported { initialized: true },
             )?;
             accesses.push(Access {
+                view: None,
                 resource,
                 range: 0..bytes,
                 kind: AccessKind::UniformRead,
@@ -216,6 +217,7 @@ impl ExposureResolve {
             });
         }
         accesses.push(Access {
+            view: None,
             resource: directional,
             range: 0..64,
             kind: AccessKind::UniformRead,
@@ -235,6 +237,7 @@ impl ExposureResolve {
             },
         )?;
         accesses.push(Access {
+            view: None,
             resource: sample.clone(),
             range: 0..SAMPLE_BYTES,
             kind: AccessKind::StorageWrite,

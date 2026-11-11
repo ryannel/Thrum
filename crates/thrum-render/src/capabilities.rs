@@ -209,6 +209,13 @@ impl DeviceCapabilities {
         self
     }
 
+    /// Format guarantees derived from this generation's enabled features. The
+    /// engine uses the portable format contract, even when an adapter offers more.
+    #[must_use]
+    pub fn texture_format(&self, format: wgpu::TextureFormat) -> wgpu::TextureFormatFeatures {
+        format.guaranteed_format_features(self.features)
+    }
+
     /// Limits enabled on this device.
     #[must_use]
     pub fn limits(&self) -> &wgpu::Limits {

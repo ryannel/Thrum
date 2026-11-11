@@ -275,7 +275,7 @@ impl SdrToneStage {
             (&input.colour, super::SCENE_FORMAT),
             (&input.motion, super::MOTION_FORMAT),
         ] {
-            if !matches!(graph.descriptor(id), Some(ResourceDescriptor::Texture { width: w, height: h, layers: 1, mips: 1, samples: 1, format: f, usage }) if *w == width && *h == height && *f == format && usage.contains(wgpu::TextureUsages::TEXTURE_BINDING))
+            if !matches!(graph.descriptor(id), Some(ResourceDescriptor::Texture { dimension: crate::graph::TextureKind::D2, width: w, height: h, layers: 1, mips: 1, samples: 1, format: f, usage }) if *w == width && *h == height && *f == format && usage.contains(wgpu::TextureUsages::TEXTURE_BINDING))
             {
                 return Err(RenderError::GraphPassMismatch);
             }
@@ -286,6 +286,7 @@ impl SdrToneStage {
         }
         let output = graph.resource(
             ResourceDescriptor::Texture {
+                dimension: crate::graph::TextureKind::D2,
                 width,
                 height,
                 layers: 1,
@@ -304,24 +305,28 @@ impl SdrToneStage {
             pipeline: Some(self.key),
             accesses: vec![
                 Access {
+                    view: None,
                     resource: input.motion.clone(),
                     range: 0..1,
                     kind: AccessKind::SampledRead,
                     store: true,
                 },
                 Access {
+                    view: None,
                     resource: input.colour.clone(),
                     range: 0..1,
                     kind: AccessKind::SampledRead,
                     store: true,
                 },
                 Access {
+                    view: None,
                     resource: input.exposure.clone(),
                     range: 0..exposure::SAMPLE_BYTES,
                     kind: AccessKind::UniformRead,
                     store: true,
                 },
                 Access {
+                    view: None,
                     resource: output.clone(),
                     range: 0..1,
                     kind: AccessKind::AttachmentClear,

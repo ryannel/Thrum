@@ -25,6 +25,9 @@ impl PartialEq for ResourceId {
 }
 impl Eq for ResourceId {}
 
+mod texture;
+pub use texture::TextureKind;
+
 /// Immutable physical properties required to reuse a transient allocation.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ResourceDescriptor {
@@ -35,9 +38,11 @@ pub enum ResourceDescriptor {
         /// All permitted uses, including copy operations.
         usage: wgpu::BufferUsages,
     },
-    /// A 2D texture. Ranges flatten `(mip * layers + layer)`; one unit is
+    /// A texture. Ranges flatten `(mip * layers + layer)`; one unit is
     /// a complete mip/layer. Depth/stencil aspects are conservatively unified.
     Texture {
+        /// Physical kind; a volume's depth is not an array layer count.
+        dimension: TextureKind,
         /// Base level extent.
         width: u32,
         /// Base level extent.
@@ -65,13 +70,14 @@ impl ResourceDescriptor {
                 width,
                 height,
                 samples,
+                dimension,
                 ..
             } => {
                 if *width == 0
                     || *height == 0
                     || *mips == 0
                     || !matches!(samples, 1 | 2 | 4 | 8 | 16)
-                    || *mips > 32 - width.max(height).leading_zeros()
+                    || *mips > 32 - (*width).max(*height).max(dimension.depth()).leading_zeros()
                     || (*samples != 1 && (*mips != 1 || *layers != 1))
                 {
                     0
@@ -208,6 +214,10 @@ impl AccessKind {
 /// partial buffer updates must declare only their actually written byte range.
 #[derive(Clone, Debug)]
 pub struct Access {
+    /// Texture view used by this binding. `None` selects the descriptor's natural
+    /// view (cube for cubes). Cube storage must explicitly select `D2Array`.
+    /// Ignored for copies; buffers must leave this unset.
+    pub view: Option<wgpu::TextureViewDimension>,
     /// Resource from the same graph.
     pub resource: ResourceId,
     /// Half-open bytes or flattened mip/layers.
@@ -217,6 +227,21 @@ pub struct Access {
     /// Retain a published attachment on an external pass; otherwise attachment
     /// store is derived from later readers and persistent/history scope.
     pub store: bool,
+}
+
+impl Access {
+    /// Declare a full write or retained read using the resource's natural view.
+    /// Set `view` explicitly for cube face writes and `store` for publication rules.
+    #[must_use]
+    pub fn new(resource: ResourceId, range: Range<u64>, kind: AccessKind) -> Self {
+        Self {
+            resource,
+            range,
+            kind,
+            store: true,
+            view: None,
+        }
+    }
 }
 
 /// Device-local prepared pipeline identity. The producer's revision is explicit.
@@ -313,6 +338,37 @@ pub struct FrameGraph {
 /// Why a declaration cannot execute safely.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum GraphError {
+    /// A volume has array layers or multisampling.
+    InvalidVolume,
+    /// A cube must have six square, single-sampled faces.
+    InvalidCube,
+    /// Binding view is incompatible with the resource or selected range.
+    InvalidTextureView {
+        /// Offending pass.
+        pass: usize,
+    },
+    /// Storage bindings cannot select a cube view.
+    CubeStorageView {
+        /// Offending pass.
+        pass: usize,
+    },
+    /// Volume textures cannot be render attachments.
+    VolumeAttachment {
+        /// Offending pass.
+        pass: usize,
+    },
+    /// Texture extent exceeds the generation's enabled limits.
+    TextureExtentLimit,
+    /// Format does not permit the requested storage access on this generation.
+    StorageFormat {
+        /// Offending pass.
+        pass: usize,
+    },
+    /// A pass exceeds the generation's storage-texture binding limit.
+    StorageTextureLimit {
+        /// Offending pass.
+        pass: usize,
+    },
     /// A declared acquisition phase disagrees with surface dependencies.
     SurfacePhase,
     /// A zero extent/capacity or invalid texture descriptor.
@@ -602,7 +658,7 @@ impl CompiledPass {
 
 /// Textures allocated once for the compiled graph's exact transient slots.
 /// The target retains this lease across its frames and GPU submissions.
-pub(crate) struct GraphTextures {
+pub struct GraphTextures {
     owner: Arc<()>,
     slots: Vec<Option<wgpu::Texture>>,
     resource_slots: Vec<Option<usize>>,
@@ -646,7 +702,9 @@ impl GraphTextures {
         self.resource_slots.resize(new.resources.len(), None);
         Ok(())
     }
-    pub(crate) fn new(
+    /// Allocate the compiled transient texture slots once during preparation.
+    #[must_use]
+    pub fn new(
         device: &wgpu::Device,
         graph: &CompiledGraph,
         recipe: crate::capabilities::Recipe,
@@ -659,6 +717,7 @@ impl GraphTextures {
                 continue;
             };
             let ResourceDescriptor::Texture {
+                dimension,
                 width,
                 height,
                 layers,
@@ -690,11 +749,17 @@ impl GraphTextures {
                     size: wgpu::Extent3d {
                         width,
                         height,
-                        depth_or_array_layers: layers,
+                        depth_or_array_layers: if dimension == TextureKind::D2
+                            || dimension == TextureKind::Cube
+                        {
+                            layers
+                        } else {
+                            dimension.depth()
+                        },
                     },
                     mip_level_count: mips,
                     sample_count: samples,
-                    dimension: wgpu::TextureDimension::D2,
+                    dimension: dimension.physical(),
                     format,
                     usage,
                     view_formats: &[],
@@ -719,7 +784,11 @@ impl GraphTextures {
             for mip in 0..texture.mip_level_count() {
                 bytes += u64::from((texture.width() >> mip).max(1).div_ceil(bw))
                     * u64::from((texture.height() >> mip).max(1).div_ceil(bh))
-                    * u64::from(texture.depth_or_array_layers())
+                    * u64::from(if texture.dimension() == wgpu::TextureDimension::D3 {
+                        (texture.depth_or_array_layers() >> mip).max(1)
+                    } else {
+                        texture.depth_or_array_layers()
+                    })
                     * u64::from(texture.sample_count())
                     * block_bytes;
             }
@@ -727,7 +796,9 @@ impl GraphTextures {
         (count, bytes)
     }
 
-    pub(crate) fn texture(&self, resource: &ResourceId) -> Option<&wgpu::Texture> {
+    /// Resolve a transient texture; foreign identities and non-transients return `None`.
+    #[must_use]
+    pub fn texture(&self, resource: &ResourceId) -> Option<&wgpu::Texture> {
         if !Arc::ptr_eq(&self.owner, &resource.owner) {
             return None;
         }
@@ -752,6 +823,11 @@ impl CompiledGraph {
     /// Visit live passes and their stable declaration identities in execution order.
     pub(crate) fn pass_bindings(&self) -> impl Iterator<Item = (usize, &CompiledPass)> {
         self.pass_order.iter().copied().zip(&self.passes)
+    }
+
+    /// Live diagnostic pass names in execution order.
+    pub fn pass_names(&self) -> impl Iterator<Item = &str> {
+        self.passes.iter().map(|pass| pass.name.as_str())
     }
 
     /// Number of render or compute pipelines requiring timestamp slots.
@@ -886,6 +962,7 @@ impl FrameGraph {
         descriptor: ResourceDescriptor,
         scope: ResourceScope,
     ) -> Result<ResourceId, GraphError> {
+        texture::validate_descriptor(&descriptor)?;
         if descriptor.units() == 0 {
             return Err(GraphError::EmptyResource);
         }
@@ -1137,6 +1214,7 @@ impl FrameGraph {
                 {
                     return Err(GraphError::InvalidRange { pass: index });
                 }
+                texture::validate_access(&resource.descriptor, access, index)?;
                 if !resource.descriptor.supports(access.kind) {
                     return Err(GraphError::UsageMismatch { pass: index });
                 }
@@ -1494,6 +1572,7 @@ mod tests {
         let texture = graph
             .resource(
                 ResourceDescriptor::Texture {
+                    dimension: crate::graph::TextureKind::D2,
                     width: 4,
                     height: 4,
                     layers: 1,
@@ -1516,6 +1595,7 @@ mod tests {
                 scope: PassScope::View(1),
                 pipeline: None,
                 accesses: vec![Access {
+                    view: None,
                     resource: texture.clone(),
                     range: 0..1,
                     kind,
@@ -1564,6 +1644,7 @@ mod tests {
                 scope: PassScope::View(1),
                 pipeline: None,
                 accesses: vec![Access {
+                    view: None,
                     resource: buffer.clone(),
                     range: 0..16,
                     kind,
@@ -1604,6 +1685,7 @@ mod tests {
                 scope: PassScope::View(1),
                 pipeline: None,
                 accesses: vec![Access {
+                    view: None,
                     resource: buffer.clone(),
                     range: 0..16,
                     kind,
@@ -1648,6 +1730,7 @@ mod tests {
             scope: PassScope::View(1),
             pipeline: None,
             accesses: vec![Access {
+                view: None,
                 resource: resource.clone(),
                 range: 0..16,
                 kind: AccessKind::CopyWrite,
@@ -1660,6 +1743,7 @@ mod tests {
             scope: PassScope::View(1),
             pipeline: None,
             accesses: vec![Access {
+                view: None,
                 resource: resource.clone(),
                 range: 0..16,
                 kind: AccessKind::CopyRead,
@@ -1711,12 +1795,14 @@ mod tests {
                 pipeline: None,
                 accesses: vec![
                     Access {
+                        view: None,
                         resource: read.clone(),
                         range: 0..16,
                         kind: AccessKind::CopyRead,
                         store: true,
                     },
                     Access {
+                        view: None,
                         resource: write.clone(),
                         range: 0..16,
                         kind: AccessKind::CopyWrite,
@@ -1773,6 +1859,7 @@ mod tests {
         let history = graph
             .resource(
                 ResourceDescriptor::Texture {
+                    dimension: crate::graph::TextureKind::D2,
                     width: 4,
                     height: 4,
                     layers: 1,
@@ -1793,6 +1880,7 @@ mod tests {
             scope: PassScope::View(1),
             pipeline: None,
             accesses: vec![Access {
+                view: None,
                 resource: history.clone(),
                 range: 0..1,
                 kind: AccessKind::AttachmentClear,
@@ -1834,6 +1922,7 @@ mod tests {
             scope: PassScope::View(1),
             pipeline: None,
             accesses: vec![Access {
+                view: None,
                 resource: prior.clone(),
                 range: 0..80,
                 kind: AccessKind::StorageRead,
@@ -1846,6 +1935,7 @@ mod tests {
             scope: PassScope::View(1),
             pipeline: None,
             accesses: vec![Access {
+                view: None,
                 resource: next.clone(),
                 range: 0..80,
                 kind: AccessKind::StorageWrite,
@@ -1874,6 +1964,7 @@ mod tests {
             graph
                 .resource(
                     ResourceDescriptor::Texture {
+                        dimension: crate::graph::TextureKind::D2,
                         width: 4,
                         height: 4,
                         layers: 1,
@@ -1894,6 +1985,7 @@ mod tests {
             pipeline: None,
             accesses: [(&motion, true), (&depth, false)]
                 .map(|(resource, store)| Access {
+                    view: None,
                     resource: resource.clone(),
                     range: 0..1,
                     kind: AccessKind::AttachmentClear,
@@ -1969,6 +2061,7 @@ mod tests {
                 scope: PassScope::View(1),
                 pipeline: None,
                 accesses: vec![Access {
+                    view: None,
                     resource: buffer.clone(),
                     range: 0..16,
                     kind,

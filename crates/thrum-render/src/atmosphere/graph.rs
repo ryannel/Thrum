@@ -40,6 +40,7 @@ impl AtmospherePrepared {
             .map(|(index, texture)| {
                 graph.resource(
                     ResourceDescriptor::Texture {
+                        dimension: crate::graph::TextureKind::D2,
                         width: texture.width(),
                         height: texture.height(),
                         layers: 1,
@@ -59,12 +60,11 @@ impl AtmospherePrepared {
         // Resource indices remain T=0,M=1,Sky=2; GroundE=3 is appended. Its
         // producer runs before Sky and has no dependency on the camera sky.
         for index in [0_usize, 1, 3, 2] {
-            let mut accesses = vec![Access {
-                resource: uniform.clone(),
-                range: 0..UNIFORM_BYTES,
-                kind: AccessKind::UniformRead,
-                store: true,
-            }];
+            let mut accesses = vec![Access::new(
+                uniform.clone(),
+                0..UNIFORM_BYTES,
+                AccessKind::UniformRead,
+            )];
             let inputs: &[usize] = match index {
                 0 => &[],
                 1 => &[0],
@@ -72,22 +72,20 @@ impl AtmospherePrepared {
                 _ => &[0, 1],
             };
             for &input in inputs {
-                accesses.push(Access {
-                    resource: resources[input].clone(),
-                    range: 0..1,
-                    kind: AccessKind::SampledRead,
-                    store: true,
-                });
+                accesses.push(Access::new(
+                    resources[input].clone(),
+                    0..1,
+                    AccessKind::SampledRead,
+                ));
             }
             if index == 2 {
                 accesses.extend(night_reads.iter().cloned());
             }
-            accesses.push(Access {
-                resource: resources[index].clone(),
-                range: 0..1,
-                kind: AccessKind::StorageWrite,
-                store: true,
-            });
+            accesses.push(Access::new(
+                resources[index].clone(),
+                0..1,
+                AccessKind::StorageWrite,
+            ));
             let role = if index == 3 {
                 5
             } else {
@@ -110,24 +108,13 @@ impl AtmospherePrepared {
             scope: PassScope::View(1),
             pipeline: Some(diffuse_key),
             accesses: vec![
-                Access {
-                    resource: uniform.clone(),
-                    range: 0..UNIFORM_BYTES,
-                    kind: AccessKind::UniformRead,
-                    store: true,
-                },
-                Access {
-                    resource: resources[2].clone(),
-                    range: 0..1,
-                    kind: AccessKind::SampledRead,
-                    store: true,
-                },
-                Access {
-                    resource: directional,
-                    range: 48..crate::synthetic::LIGHT_BYTES as u64,
-                    kind: AccessKind::StorageWrite,
-                    store: true,
-                },
+                Access::new(uniform.clone(), 0..UNIFORM_BYTES, AccessKind::UniformRead),
+                Access::new(resources[2].clone(), 0..1, AccessKind::SampledRead),
+                Access::new(
+                    directional,
+                    48..crate::synthetic::LIGHT_BYTES as u64,
+                    AccessKind::StorageWrite,
+                ),
             ],
             external_side_effect: false,
         });
@@ -138,6 +125,7 @@ impl AtmospherePrepared {
             .map(|(index, texture)| {
                 graph.resource(
                     ResourceDescriptor::Texture {
+                        dimension: crate::graph::TextureKind::D2,
                         width: AERIAL_EXTENT[0],
                         height: AERIAL_EXTENT[1],
                         layers: AERIAL_EXTENT[2],
@@ -161,36 +149,19 @@ impl AtmospherePrepared {
             scope: PassScope::View(1),
             pipeline: Some(aerial_key),
             accesses: [
-                Access {
-                    resource: uniform.clone(),
-                    range: 0..UNIFORM_BYTES,
-                    kind: AccessKind::UniformRead,
-                    store: true,
-                },
-                Access {
-                    resource: resources[0].clone(),
-                    range: 0..1,
-                    kind: AccessKind::SampledRead,
-                    store: true,
-                },
-                Access {
-                    resource: resources[1].clone(),
-                    range: 0..1,
-                    kind: AccessKind::SampledRead,
-                    store: true,
-                },
-                Access {
-                    resource: aerial[0].clone(),
-                    range: 0..u64::from(AERIAL_EXTENT[2]),
-                    kind: AccessKind::StorageWrite,
-                    store: true,
-                },
-                Access {
-                    resource: aerial[1].clone(),
-                    range: 0..u64::from(AERIAL_EXTENT[2]),
-                    kind: AccessKind::StorageWrite,
-                    store: true,
-                },
+                Access::new(uniform.clone(), 0..UNIFORM_BYTES, AccessKind::UniformRead),
+                Access::new(resources[0].clone(), 0..1, AccessKind::SampledRead),
+                Access::new(resources[1].clone(), 0..1, AccessKind::SampledRead),
+                Access::new(
+                    aerial[0].clone(),
+                    0..u64::from(AERIAL_EXTENT[2]),
+                    AccessKind::StorageWrite,
+                ),
+                Access::new(
+                    aerial[1].clone(),
+                    0..u64::from(AERIAL_EXTENT[2]),
+                    AccessKind::StorageWrite,
+                ),
             ]
             .into_iter()
             .chain(night_reads)
@@ -198,27 +169,24 @@ impl AtmospherePrepared {
             external_side_effect: false,
         });
         self.append_reflection(graph, keys, &uniform, &resources[2], forward_accesses)?;
-        forward_accesses.push(Access {
-            resource: uniform.clone(),
-            range: 0..UNIFORM_BYTES,
-            kind: AccessKind::UniformRead,
-            store: true,
-        });
+        forward_accesses.push(Access::new(
+            uniform.clone(),
+            0..UNIFORM_BYTES,
+            AccessKind::UniformRead,
+        ));
         for index in [0, 2] {
-            forward_accesses.push(Access {
-                resource: resources[index].clone(),
-                range: 0..1,
-                kind: AccessKind::SampledRead,
-                store: true,
-            });
+            forward_accesses.push(Access::new(
+                resources[index].clone(),
+                0..1,
+                AccessKind::SampledRead,
+            ));
         }
         for resource in aerial {
-            forward_accesses.push(Access {
+            forward_accesses.push(Access::new(
                 resource,
-                range: 0..u64::from(AERIAL_EXTENT[2]),
-                kind: AccessKind::SampledRead,
-                store: true,
-            });
+                0..u64::from(AERIAL_EXTENT[2]),
+                AccessKind::SampledRead,
+            ));
         }
         Ok((resources[0].clone(), uniform))
     }
@@ -240,6 +208,7 @@ impl AtmospherePrepared {
         .map(|(index, (texture, size, layers, mips, epoch))| {
             graph.resource(
                 ResourceDescriptor::Texture {
+                    dimension: crate::graph::TextureKind::D2,
                     width: size,
                     height: size,
                     layers,
@@ -274,18 +243,8 @@ impl AtmospherePrepared {
             scope: PassScope::View(1),
             pipeline: Some(dfg_key),
             accesses: vec![
-                Access {
-                    resource: resources[0].clone(),
-                    range: 0..1,
-                    kind: AccessKind::StorageWrite,
-                    store: true,
-                },
-                Access {
-                    resource: samples.clone(),
-                    range: 0..SAMPLE_BYTES,
-                    kind: AccessKind::StorageWrite,
-                    store: true,
-                },
+                Access::new(resources[0].clone(), 0..1, AccessKind::StorageWrite),
+                Access::new(samples.clone(), 0..SAMPLE_BYTES, AccessKind::StorageWrite),
             ],
             external_side_effect: false,
         });
@@ -299,30 +258,14 @@ impl AtmospherePrepared {
                 scope: PassScope::View(1),
                 pipeline: Some(key),
                 accesses: vec![
-                    Access {
-                        resource: samples.clone(),
-                        range: 0..SAMPLE_BYTES,
-                        kind: AccessKind::StorageRead,
-                        store: true,
-                    },
-                    Access {
-                        resource: uniform.clone(),
-                        range: 0..UNIFORM_BYTES,
-                        kind: AccessKind::UniformRead,
-                        store: true,
-                    },
-                    Access {
-                        resource: sky.clone(),
-                        range: 0..1,
-                        kind: AccessKind::SampledRead,
-                        store: true,
-                    },
-                    Access {
-                        resource: resources[1].clone(),
-                        range: u64::from(mip * 6)..u64::from((mip + 1) * 6),
-                        kind: AccessKind::StorageWrite,
-                        store: true,
-                    },
+                    Access::new(samples.clone(), 0..SAMPLE_BYTES, AccessKind::StorageRead),
+                    Access::new(uniform.clone(), 0..UNIFORM_BYTES, AccessKind::UniformRead),
+                    Access::new(sky.clone(), 0..1, AccessKind::SampledRead),
+                    Access::new(
+                        resources[1].clone(),
+                        u64::from(mip * 6)..u64::from((mip + 1) * 6),
+                        AccessKind::StorageWrite,
+                    ),
                 ],
                 external_side_effect: false,
             });
@@ -331,12 +274,7 @@ impl AtmospherePrepared {
             (resources[0].clone(), 1),
             (resources[1].clone(), u64::from(MIP_COUNT * 6)),
         ] {
-            forward.push(Access {
-                resource,
-                range: 0..end,
-                kind: AccessKind::SampledRead,
-                store: true,
-            });
+            forward.push(Access::new(resource, 0..end, AccessKind::SampledRead));
         }
         Ok(())
     }
@@ -353,11 +291,6 @@ fn append_motion_read(
         },
         ResourceScope::Imported { initialized: true },
     )?;
-    forward_accesses.push(Access {
-        resource: motion,
-        range: 0..208,
-        kind: AccessKind::UniformRead,
-        store: true,
-    });
+    forward_accesses.push(Access::new(motion, 0..208, AccessKind::UniformRead));
     Ok(())
 }

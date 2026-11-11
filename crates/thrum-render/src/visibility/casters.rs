@@ -230,12 +230,14 @@ impl CasterCulling {
             )?;
             accesses.extend([
                 Access {
+                    view: None,
                     resource: visible.clone(),
                     range: 0..self.visible_bytes(),
                     kind: AccessKind::StorageWrite,
                     store: true,
                 },
                 Access {
+                    view: None,
                     resource: args.clone(),
                     range: 0..self.args_bytes(),
                     kind: AccessKind::StorageWrite,
@@ -251,12 +253,14 @@ impl CasterCulling {
     pub(crate) fn list_reads(&self, (visible, args): &(ResourceId, ResourceId)) -> [Access; 2] {
         [
             Access {
+                view: None,
                 resource: visible.clone(),
                 range: 0..self.visible_bytes(),
                 kind: AccessKind::StorageRead,
                 store: true,
             },
             Access {
+                view: None,
                 resource: args.clone(),
                 range: 0..self.args_bytes(),
                 kind: AccessKind::IndirectRead,

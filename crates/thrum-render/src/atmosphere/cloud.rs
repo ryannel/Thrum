@@ -163,6 +163,7 @@ impl CloudPrepared {
         use crate::graph::{Access, AccessKind, ResourceDescriptor, ResourceScope};
         let texture = graph.resource(
             ResourceDescriptor::Texture {
+                dimension: crate::graph::TextureKind::D2,
                 width: self.texture.width(),
                 height: self.texture.height(),
                 layers: 1,
@@ -182,12 +183,14 @@ impl CloudPrepared {
         )?;
         accesses.extend([
             Access {
+                view: None,
                 resource: texture,
                 range: 0..1,
                 kind: AccessKind::SampledRead,
                 store: true,
             },
             Access {
+                view: None,
                 resource: uniform,
                 range: 0..48,
                 kind: AccessKind::UniformRead,

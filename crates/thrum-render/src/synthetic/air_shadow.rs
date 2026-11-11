@@ -79,6 +79,7 @@ pub(super) fn append_graph(
     )?;
     let heights = graph.resource(
         ResourceDescriptor::Texture {
+            dimension: crate::graph::TextureKind::D2,
             width: SIZE,
             height: SIZE,
             layers: 1,
@@ -90,6 +91,7 @@ pub(super) fn append_graph(
         ResourceScope::Transient,
     )?;
     let read = |resource, range, kind| Access {
+        view: None,
         resource,
         range,
         kind,

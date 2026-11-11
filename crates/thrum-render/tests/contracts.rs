@@ -28,6 +28,7 @@ fn pass(graph: &mut FrameGraph, accesses: Vec<Access>) {
 }
 fn access(resource: &ResourceId, range: std::ops::Range<u64>, kind: AccessKind) -> Access {
     Access {
+        view: None,
         resource: resource.clone(),
         range,
         kind,
@@ -210,6 +211,7 @@ fn separate_pass_buffer_hazards_and_same_pass_texture_usage_keep_ranges() {
     let texture = graph
         .resource(
             ResourceDescriptor::Texture {
+                dimension: TextureKind::D2,
                 width: 16,
                 height: 16,
                 layers: 2,
@@ -296,6 +298,7 @@ fn texture_subresources_require_their_own_producer() {
     let texture = graph
         .resource(
             ResourceDescriptor::Texture {
+                dimension: TextureKind::D2,
                 width: 64,
                 height: 64,
                 layers: 2,

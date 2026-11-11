@@ -408,6 +408,7 @@ pub(crate) fn surface_pass(
 ) -> Result<(ResourceId, Pass), GraphError> {
     let surface = graph.resource(
         ResourceDescriptor::Texture {
+            dimension: crate::graph::TextureKind::D2,
             width: profile.extent[0],
             height: profile.extent[1],
             layers: 1,
@@ -424,12 +425,14 @@ pub(crate) fn surface_pass(
         pipeline: Some(pipeline_key(generation)),
         accesses: vec![
             Access {
+                view: None,
                 resource: source.clone(),
                 range: 0..1,
                 kind: AccessKind::SampledRead,
                 store: true,
             },
             Access {
+                view: None,
                 resource: surface.clone(),
                 range: 0..1,
                 kind: AccessKind::AttachmentClear,
@@ -451,6 +454,7 @@ fn compile_plan(
     let source = graph
         .resource(
             ResourceDescriptor::Texture {
+                dimension: crate::graph::TextureKind::D2,
                 width: source_extent[0],
                 height: source_extent[1],
                 layers: 1,

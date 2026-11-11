@@ -309,6 +309,7 @@ impl PreparedSynthetic {
             ]
             .into_iter()
             .map(|(resource, end, kind)| Access {
+                view: None,
                 resource,
                 range: 0..end,
                 kind,

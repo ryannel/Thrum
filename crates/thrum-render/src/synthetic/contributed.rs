@@ -67,6 +67,7 @@ impl PreparedSynthetic {
                 scope: PassScope::View(1),
                 pipeline: None,
                 accesses: vec![Access {
+                    view: None,
                     resource: products.clone(),
                     range: 0..CONTRIBUTION_TOKEN_BYTES,
                     kind: AccessKind::CopyWrite,
@@ -75,6 +76,7 @@ impl PreparedSynthetic {
                 external_side_effect: false,
             });
             accesses.push(Access {
+                view: None,
                 resource: products.clone(),
                 range: 0..CONTRIBUTION_TOKEN_BYTES,
                 kind: AccessKind::StorageRead,
@@ -90,6 +92,7 @@ impl PreparedSynthetic {
                 wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::INDIRECT,
             )?;
             let mut compute = vec![Access {
+                view: None,
                 resource: draws.clone(),
                 range: 0..CONTRIBUTION_TOKEN_BYTES,
                 kind: AccessKind::StorageWrite,
@@ -97,6 +100,7 @@ impl PreparedSynthetic {
             }];
             if let Some(products) = products {
                 compute.push(Access {
+                    view: None,
                     resource: products,
                     range: 0..CONTRIBUTION_TOKEN_BYTES,
                     kind: AccessKind::StorageRead,
@@ -112,6 +116,7 @@ impl PreparedSynthetic {
                 external_side_effect: false,
             });
             accesses.push(Access {
+                view: None,
                 resource: draws,
                 range: 0..CONTRIBUTION_TOKEN_BYTES,
                 kind: AccessKind::IndirectRead,
