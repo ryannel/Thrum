@@ -1,0 +1,372 @@
+{
+  "target": "mac-metal",
+  "scope": "executor named GPU pass intervals; capture ON in both arms; opaque diagnostic draw shares forward time; no speedup attribution",
+  "resource_bytes": {
+    "history_pairs": 16384,
+    "consumer": 4096,
+    "volume": 1024,
+    "mipped_array": 672,
+    "cube": 1536,
+    "uniforms": 128,
+    "total": 23840
+  },
+  "arms": {
+    "diagnostic": {
+      "source_revision": "41357d2f9831227252e98190907db2b395ae0293",
+      "binary_sha256": "71f2ca00beb7ebc1aa5b1582679b03961b3b97cec8e56a9cc710c40ec57111c1",
+      "adapter": "Apple M3 Max",
+      "backend": "Metal",
+      "recipe": "Ok(Portable)",
+      "registry_digest": "f8fa043b9369e8dc",
+      "mode": "realtime",
+      "extent": [
+        1920,
+        1080
+      ],
+      "images": 963,
+      "gpu_samples": 962,
+      "ring_omissions": 0,
+      "writer_omissions": 0,
+      "passes": {
+        "V1 surface present": {
+          "samples": 962,
+          "median_ns": 635250.5,
+          "p95_ns": 1081833.0
+        },
+        "atmosphere aerial perspective": {
+          "samples": 834,
+          "median_ns": 47895.5,
+          "p95_ns": 82375.0
+        },
+        "atmosphere diffuse irradiance": {
+          "samples": 834,
+          "median_ns": 246042.0,
+          "p95_ns": 249959.0
+        },
+        "atmosphere reflection mip 0": {
+          "samples": 834,
+          "median_ns": 17500.0,
+          "p95_ns": 25292.0
+        },
+        "atmosphere reflection mip 1": {
+          "samples": 834,
+          "median_ns": 116875.0,
+          "p95_ns": 159083.0
+        },
+        "atmosphere reflection mip 2": {
+          "samples": 834,
+          "median_ns": 206271.0,
+          "p95_ns": 260458.0
+        },
+        "atmosphere reflection mip 3": {
+          "samples": 834,
+          "median_ns": 97666.5,
+          "p95_ns": 164750.0
+        },
+        "atmosphere reflection mip 4": {
+          "samples": 834,
+          "median_ns": 90333.0,
+          "p95_ns": 122500.0
+        },
+        "atmosphere reflection mip 5": {
+          "samples": 834,
+          "median_ns": 85042.0,
+          "p95_ns": 87250.0
+        },
+        "atmosphere reflection mip 6": {
+          "samples": 834,
+          "median_ns": 79417.0,
+          "p95_ns": 81125.0
+        },
+        "atmosphere sky view": {
+          "samples": 834,
+          "median_ns": 66458.0,
+          "p95_ns": 67750.0
+        },
+        "contribution compute": {
+          "samples": 962,
+          "median_ns": 10625.0,
+          "p95_ns": 13416.0
+        },
+        "effect 0: effect 1: trail": {
+          "samples": 419,
+          "median_ns": 6291.0,
+          "p95_ns": 6833.0
+        },
+        "effect 1: effect 1: derived": {
+          "samples": 134,
+          "median_ns": 3666.0,
+          "p95_ns": 3917.0
+        },
+        "effect 2: effect 1: consumer": {
+          "samples": 962,
+          "median_ns": 4375.0,
+          "p95_ns": 5541.0
+        },
+        "effect 3: effect 1: volume": {
+          "samples": 962,
+          "median_ns": 2667.0,
+          "p95_ns": 3000.0
+        },
+        "effect 4: effect 1: array mip 0": {
+          "samples": 134,
+          "median_ns": 2958.0,
+          "p95_ns": 4375.0
+        },
+        "effect 5: effect 1: array mip 1": {
+          "samples": 134,
+          "median_ns": 3000.0,
+          "p95_ns": 6834.0
+        },
+        "effect 6: effect 1: array mip 2": {
+          "samples": 134,
+          "median_ns": 2792.0,
+          "p95_ns": 5667.0
+        },
+        "effect 7: effect 1: cube": {
+          "samples": 419,
+          "median_ns": 2958.0,
+          "p95_ns": 4041.0
+        },
+        "synthetic Sun air shadow heights": {
+          "samples": 962,
+          "median_ns": 193000.0,
+          "p95_ns": 244500.0
+        },
+        "synthetic Sun horizon heights": {
+          "samples": 962,
+          "median_ns": 53937.5,
+          "p95_ns": 55708.0
+        },
+        "synthetic Sun shadow far": {
+          "samples": 962,
+          "median_ns": 48541.0,
+          "p95_ns": 50125.0
+        },
+        "synthetic Sun shadow near": {
+          "samples": 962,
+          "median_ns": 49125.0,
+          "p95_ns": 50584.0
+        },
+        "synthetic cluster build": {
+          "samples": 962,
+          "median_ns": 4375.0,
+          "p95_ns": 125917.0
+        },
+        "synthetic exposure resolve": {
+          "samples": 962,
+          "median_ns": 3791.0,
+          "p95_ns": 35625.0
+        },
+        "synthetic forward opaque": {
+          "samples": 962,
+          "median_ns": 931208.5,
+          "p95_ns": 1445875.0
+        },
+        "synthetic tone encode": {
+          "samples": 962,
+          "median_ns": 840771.0,
+          "p95_ns": 1365333.0
+        },
+        "synthetic transform history": {
+          "samples": 962,
+          "median_ns": 16354.5,
+          "p95_ns": 255959.0
+        }
+      },
+      "load_before_1_5_15": [
+        3.7001953125,
+        2.77294921875,
+        2.71044921875
+      ],
+      "load_after_1_5_15": [
+        3.60498046875,
+        2.7802734375,
+        2.71337890625
+      ],
+      "engine_process_usage": {
+        "peak_rss_bytes": 316817408,
+        "user_seconds": 10.060585,
+        "system_seconds": 1.669071,
+        "input_blocks": 0,
+        "output_blocks": 0,
+        "voluntary_switches": 851,
+        "involuntary_switches": 74504
+      },
+      "source_archive": {
+        "file": "frames.zst",
+        "sha256": "0db3d795b32d9c9b496c6712818702f33ef6417393f1ad268d64d7a4d97d757c",
+        "bytes": 861375728,
+        "encoding": "ZstdDelta",
+        "decoded_frames_verified": 963,
+        "timebase": "ordinal; use submission records",
+        "equality": "independent zstd CLI + XOR reconstruction equals each original pre-encoding writer SHA-256"
+      },
+      "preview_pts_max_error_seconds": 5.000000005139782e-07,
+      "effect_passes": [
+        "effect 2: effect 1: consumer",
+        "effect 3: effect 1: volume",
+        "effect 0: effect 1: trail",
+        "effect 1: effect 1: derived",
+        "effect 4: effect 1: array mip 0",
+        "effect 5: effect 1: array mip 1",
+        "effect 6: effect 1: array mip 2",
+        "effect 7: effect 1: cube"
+      ]
+    },
+    "no_effect": {
+      "source_revision": "41357d2f9831227252e98190907db2b395ae0293",
+      "binary_sha256": "71f2ca00beb7ebc1aa5b1582679b03961b3b97cec8e56a9cc710c40ec57111c1",
+      "adapter": "Apple M3 Max",
+      "backend": "Metal",
+      "recipe": "Ok(Portable)",
+      "registry_digest": "f8fa043b9369e8dc",
+      "mode": "realtime",
+      "extent": [
+        1920,
+        1080
+      ],
+      "images": 964,
+      "gpu_samples": 963,
+      "ring_omissions": 0,
+      "writer_omissions": 0,
+      "passes": {
+        "V1 surface present": {
+          "samples": 963,
+          "median_ns": 2007625.0,
+          "p95_ns": 2047041.0
+        },
+        "atmosphere aerial perspective": {
+          "samples": 824,
+          "median_ns": 48687.5,
+          "p95_ns": 83542.0
+        },
+        "atmosphere diffuse irradiance": {
+          "samples": 824,
+          "median_ns": 247458.0,
+          "p95_ns": 249125.0
+        },
+        "atmosphere reflection mip 0": {
+          "samples": 824,
+          "median_ns": 18792.0,
+          "p95_ns": 159625.0
+        },
+        "atmosphere reflection mip 1": {
+          "samples": 824,
+          "median_ns": 126208.0,
+          "p95_ns": 256125.0
+        },
+        "atmosphere reflection mip 2": {
+          "samples": 824,
+          "median_ns": 188812.5,
+          "p95_ns": 260000.0
+        },
+        "atmosphere reflection mip 3": {
+          "samples": 824,
+          "median_ns": 95542.0,
+          "p95_ns": 98042.0
+        },
+        "atmosphere reflection mip 4": {
+          "samples": 824,
+          "median_ns": 91042.0,
+          "p95_ns": 92541.0
+        },
+        "atmosphere reflection mip 5": {
+          "samples": 824,
+          "median_ns": 85750.0,
+          "p95_ns": 87584.0
+        },
+        "atmosphere reflection mip 6": {
+          "samples": 824,
+          "median_ns": 79834.0,
+          "p95_ns": 81792.0
+        },
+        "atmosphere sky view": {
+          "samples": 824,
+          "median_ns": 66500.0,
+          "p95_ns": 68042.0
+        },
+        "contribution compute": {
+          "samples": 963,
+          "median_ns": 11417.0,
+          "p95_ns": 13625.0
+        },
+        "synthetic Sun air shadow heights": {
+          "samples": 963,
+          "median_ns": 187125.0,
+          "p95_ns": 278917.0
+        },
+        "synthetic Sun horizon heights": {
+          "samples": 963,
+          "median_ns": 54084.0,
+          "p95_ns": 55875.0
+        },
+        "synthetic Sun shadow far": {
+          "samples": 963,
+          "median_ns": 48583.0,
+          "p95_ns": 49500.0
+        },
+        "synthetic Sun shadow near": {
+          "samples": 963,
+          "median_ns": 48917.0,
+          "p95_ns": 50292.0
+        },
+        "synthetic cluster build": {
+          "samples": 963,
+          "median_ns": 58250.0,
+          "p95_ns": 149041.0
+        },
+        "synthetic exposure resolve": {
+          "samples": 963,
+          "median_ns": 3709.0,
+          "p95_ns": 20208.0
+        },
+        "synthetic forward opaque": {
+          "samples": 963,
+          "median_ns": 2210167.0,
+          "p95_ns": 2380708.0
+        },
+        "synthetic tone encode": {
+          "samples": 963,
+          "median_ns": 2186416.0,
+          "p95_ns": 2353584.0
+        },
+        "synthetic transform history": {
+          "samples": 963,
+          "median_ns": 12000.0,
+          "p95_ns": 257792.0
+        }
+      },
+      "load_before_1_5_15": [
+        2.75,
+        2.603515625,
+        2.642578125
+      ],
+      "load_after_1_5_15": [
+        2.97705078125,
+        2.65576171875,
+        2.66015625
+      ],
+      "engine_process_usage": {
+        "peak_rss_bytes": 411320320,
+        "user_seconds": 13.79612,
+        "system_seconds": 1.715318,
+        "input_blocks": 0,
+        "output_blocks": 0,
+        "voluntary_switches": 1844,
+        "involuntary_switches": 68366
+      },
+      "source_archive": {
+        "file": "frames.zst",
+        "sha256": "9a196949cc293f10781df07bb0f0d1568a700690c1ed2692db3b1faa510a93e8",
+        "bytes": 1809396951,
+        "encoding": "ZstdDelta",
+        "decoded_frames_verified": 964,
+        "timebase": "ordinal; use submission records",
+        "equality": "independent zstd CLI + XOR reconstruction equals each original pre-encoding writer SHA-256"
+      },
+      "preview_pts_max_error_seconds": 5.000000005139782e-07,
+      "effect_passes": []
+    }
+  }
+}
