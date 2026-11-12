@@ -51,8 +51,8 @@
           "lock": "gpu",
           "ask": "Does a test in this target resize the surface and replace the device while slots are hidden, and compare the next frames with the oracle?",
           "target": "mac-metal",
-          "status": "open",
-          "evidence": "",
+          "status": "pass",
+          "evidence": "docs/evidence/CULLING/M1.md",
           "verdict": "fail",
           "review": "docs/evidence/CULLING/M1-review.md"
         },
