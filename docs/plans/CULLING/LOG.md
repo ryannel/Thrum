@@ -58,3 +58,7 @@
 - 2026-11-12 Final aggregate qualification passes all five pinned M1 commands and the profile Check;
   the raw native matrices pass 38+4 exact comparisons. Compact reports and source identity are
   retained in [M1 evidence](../../evidence/CULLING/M1.md#final-mandatory-qualification). M1 is claimed for lead review.
+
+- 2026-11-12 Reopened M1/M1.2 after the loop's clean-copy target exited101 at integrated b2d6ad8f.
+  The supplied stderr tail omits the panic, so replaying its exact executable with full output and
+  failure capture. Earlier passes remain historical, not a repair for this new rejection.
