@@ -1,0 +1,82 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Submitted temporal-input witness</title></head>
+<body><canvas width="640" height="360"></canvas><pre id="status">Preparing</pre>
+<script type="module">
+import init, {create_browser_game,fetch_cooked_valley} from './v1_game.js';
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+const record={done:false,rows:{},frames:[]}; window.thrumTemporal=record;
+try {
+  await init();
+  const fixture=await (await fetch('temporal-witness.json')).json();
+  const game=await create_browser_game(document.querySelector('canvas'),true,false,true);
+  window.temporalGame=game;
+  game.set_visible(true,0); game.set_paused(true,0);
+  game.begin_submitted_capture(1);
+  let now=0,starPixels;
+  const collect=async()=>{
+    const deadline=performance.now()+15000;
+    let image;
+    while(!(image=game.next_submitted_image())) {
+      if(performance.now()>deadline)throw Error('submitted readback timeout');
+      game.route_slot_ready(); await wait(4);
+    }
+    game.route_slot_ready();
+    const metadata=JSON.parse(image.metadata),p=image.pixels;
+    let identity;
+    while(!(identity=JSON.parse(game.route_report(0)).samples.find(s=>s.submission===metadata.submission_id))){
+      if(performance.now()>deadline)throw Error('no frame-host history identity for capture');
+      game.route_slot_ready(); await wait(4);
+    }
+    let zero=0,one=0,partial=0,skyReactive=0,geometryMotion=0;
+    for(let i=0;i<p.length;i+=4){
+      if(p[i]===0)zero++;else if(p[i]===255)one++;else partial++;
+      if(p[i]>0 && p[i+1]===0)skyReactive++;
+      if(p[i]===0 && p[i+1]>0 && p[i+2]>0)geometryMotion++;
+    }
+    if(metadata.tick===fixture.star_edit_tick)starPixels=p.slice();
+    let starCleared=0;
+    if(metadata.tick===fixture.star_edit_tick+1 && starPixels)for(let i=0;i<p.length;i+=4)if(starPixels[i]===255 && p[i]===0 && p[i+1]===0)starCleared++;
+    const at=(fixture.sun_probe[1]*fixture.extent[0]+fixture.sun_probe[0])*4;
+    const result={metadata,identity,zero,one,partial,skyReactive,geometryMotion,starCleared,sun_probe:Array.from(p.slice(at,at+4))};
+    record.frames.push(result);return result;
+  };
+  const frame=async(time=now)=>{game.frame(time);return await collect();};
+  record.rows.W1=await frame(); record.rows.W2=await frame();
+  const valley=await fetch_cooked_valley(new URL(location.href).searchParams.get('assets'));
+  game.attach_cooked_valley(valley);
+  for(let i=0;i<40;i++){
+    await frame();
+    if(JSON.parse(game.cooked_status()).drawn>=1)break;
+    await wait(10);
+  }
+  await frame(); record.rows.W3=await frame();
+  game.set_camera_yaw(fixture.sun_yaw); game.set_camera_pitch(0);
+  game.set_time_of_day(fixture.sun_hours/24);
+  record.rows.W4sun=await frame(); record.rows.W5sun=await frame();
+  game.set_camera_yaw(0); game.set_camera_pitch(7*Math.PI/180);
+  game.set_time_of_day(0.0); await frame(); await frame();
+  game.set_paused(false,now);
+  while(game.committed_tick()<fixture.pan_tick-1){
+    now=game.route_step_ms(0.5);
+    const f=await frame(now);
+    if(f.metadata.tick===fixture.star_edit_tick)record.rows.W4stars=f;
+    if(f.metadata.tick===fixture.star_edit_tick+1)record.rows.W5stars=f;
+  }
+  const A=record.frames.at(-1);
+  const original=GPUCanvasContext.prototype.getCurrentTexture;
+  let failures=0;
+  GPUCanvasContext.prototype.getCurrentTexture=function(){
+    failures++;GPUCanvasContext.prototype.getCurrentTexture=original;
+    throw Error('THRUM_TEMPORAL_ACQUIRE_ONCE');
+  };
+  now=game.route_step_ms(0.5);game.frame(now);
+  const abandoned=JSON.parse(game.route_report(0));
+  await wait(10);game.route_slot_ready();
+  const C=await frame(now);
+  record.rows.W6={A,C,failures,abandoned_tick:abandoned.tick,trigger:'GPUCanvasContext.getCurrentTexture threw once after encode_scene'};
+  record.rows.W7=C;
+  record.omissions=game.submitted_capture_omissions();
+  record.cooked=JSON.parse(game.cooked_status());
+  game.end_submitted_capture();
+  record.done=true;document.querySelector('#status').textContent='Complete';
+}catch(e){record.error=String(e);document.querySelector('#status').textContent=record.error;}
+</script></body></html>

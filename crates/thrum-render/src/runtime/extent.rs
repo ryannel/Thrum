@@ -13,6 +13,8 @@ pub struct FrameExtent {
     pub target_bytes: u64,
     /// Matrix packed for the scene's vertex shader, column major.
     pub view_projection: [[f32; 4]; 4],
+    /// Previous unjittered matrix, from the same submitted state used for packing.
+    pub previous_view_projection: [[f32; 4]; 4],
     /// Presenter source grid.
     pub source: [u32; 2],
     /// Presenter destination grid.

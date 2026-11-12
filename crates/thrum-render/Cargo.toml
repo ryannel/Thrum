@@ -32,6 +32,7 @@ web-time = "=1.1.0"
 wgpu = { version = "=30.0.1", default-features = false, features = ["webgpu"] }
 
 [dev-dependencies]
+serde_json = "=1.0.154"
 divan = "=0.1.21"
 pollster = "=1.0.1"
 

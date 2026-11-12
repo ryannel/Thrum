@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Actual built-game qualification, not display cadence or a performance measurement.
 import fs from 'node:fs/promises';
+import { qualifyTemporal } from './check_temporal_browser.mjs';
 import { qualifyEnvironment, qualifyEnvironmentParity, qualifyEnvironmentCost } from './check_environment_browser.mjs';
 import { createServer } from 'node:http';
 import { spawn, execFileSync } from 'node:child_process';
@@ -10,7 +11,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
-const cases = ['environment-off-parity', 'environment-cost', 'environment', 'normal', 'pause', 'resize', 'overload', 'input', 'controls', 'tabs', 'params', 'device-loss', 'late-device-loss', 'device-recovery', 'device-recovery-retry', 'sky-reflections', 'valley', 'valley-recovery', 'valley-late-attach', 'material', 'material-disabled', 'field', 'field-direct', 'field-occlusion', 'field-oracle', 'route', 'moving-route', 'moving-route-controls'];
+const cases = ['temporal','environment-off-parity', 'environment-cost', 'environment', 'normal', 'pause', 'resize', 'overload', 'input', 'controls', 'tabs', 'params', 'device-loss', 'late-device-loss', 'device-recovery', 'device-recovery-retry', 'sky-reflections', 'valley', 'valley-recovery', 'valley-late-attach', 'material', 'material-disabled', 'field', 'field-direct', 'field-occlusion', 'field-oracle', 'route', 'moving-route', 'moving-route-controls'];
 const configureFailureSentinel = 'THRUM_G3B_CONFIGURE_ONCE';
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -127,11 +128,17 @@ function solidPng(rgb) {
 }
 
 // Cook the valley into a fresh store under the run directory and serve it with the G5 dev server.
-async function serveCooked(args, output) {
+async function serveCooked(args, output, temporal = false) {
   const log = await fs.open(path.join(output, 'cook.log'), 'a');
   // Watch a copy, so the live-edit step never touches repository sources.
   const source = path.join(output, 'source');
   await fs.cp(path.resolve(repo, args['assets-source']), source, { recursive: true });
+  if (temporal) {
+    const fixture=JSON.parse(await fs.readFile(path.join(repo,'crates/thrum-render/src/synthetic/temporal/witness.json'),'utf8'));
+    const v=fixture.volume, bytes=Buffer.alloc(16+v.extent.reduce((a,b)=>a*b,1),v.density);
+    bytes.write('TVOL',0,'ascii');v.extent.forEach((n,i)=>bytes.writeUInt32LE(n,4+i*4));
+    await fs.writeFile(path.join(source,`${v.name}.tvol`),bytes);
+  }
   const cook = spawn(path.resolve(repo, args.cook), ['watch', source, path.join(output, 'store'), '--serve', '127.0.0.1:0'], { stdio: ['ignore', log.fd, log.fd] });
   await log.close();
   let exited = false;
@@ -314,10 +321,11 @@ async function qualifyControls(cdp, sessionId, poll, timeout) {
   await hold('pauseWithPresentation', firstPause, true, 12, 600);
   await evaluate('document.querySelector("[data-sky=sunrise]").click();const solar=document.querySelector("#solar-time");solar.value=18.48;solar.dispatchEvent(new Event("input",{bubbles:true}));document.querySelector("#camera-yaw").focus()');
   const before = await evaluate('Number(document.querySelector("#camera-yaw").value)');
+  const yawStep = await evaluate('Number(document.querySelector("#camera-yaw").step)');
   for (const type of ['keyDown', 'keyUp']) await cdp.call('Input.dispatchKeyEvent', { type, key: 'ArrowRight', code: 'ArrowRight', windowsVirtualKeyCode: 39 }, sessionId);
   const after = await evaluate('Number(document.querySelector("#camera-yaw").value)');
   const edited = await hold('edited', firstPause, true, 24, 350);
-  if (after !== before + 1 || !Number.isFinite(edited.time) || Math.abs(edited.time - 18.48 / 24) > 1e-6) throw new Error('Paused camera/solar controls did not apply');
+  if (!Number.isFinite(yawStep) || yawStep <= 0 || Math.abs(after - before - yawStep) > 1e-6 || !Number.isFinite(edited.time) || Math.abs(edited.time - 18.48 / 24) > 1e-6) throw new Error(`Paused camera/solar controls did not apply: yaw ${before} -> ${after}; expected ${before + yawStep}; solar ${edited.time}; expected ${18.48 / 24}`);
   await game.setVisible(false);
   await hold('hiddenPaused', firstPause, true, 0, 350);
   await game.setVisible(true);
@@ -1895,9 +1903,10 @@ async function main() {
     if (modes.some(mode => mode.startsWith('moving-route'))) await movingRouteFiles(files, directory);
     let assetsOrigin;
     let assetsSource;
-    if (modes.some(mode => mode.startsWith('environment-') || ['valley', 'valley-recovery', 'valley-late-attach', 'params', 'material', 'material-disabled'].includes(mode) || mode.startsWith('route-') || mode.startsWith('moving-route'))) ({ cook, origin: assetsOrigin, source: assetsSource } = await serveCooked(args, output));
+    if (modes.some(mode => mode.startsWith('environment-') || ['temporal', 'valley', 'valley-recovery', 'valley-late-attach', 'params', 'material', 'material-disabled'].includes(mode) || mode.startsWith('route-') || mode.startsWith('moving-route'))) ({ cook, origin: assetsOrigin, source: assetsSource } = await serveCooked(args, output, modes.includes('temporal')));
     for (const mode of modes) {
-      if (mode === 'environment-off-parity') {
+      if (mode === 'temporal') results.push(await qualifyTemporal(cdp, serving.origin, output, args['timeout-ms'], assetsOrigin, waitFor, files, directory));
+      else if (mode === 'environment-off-parity') {
         const baseDirectory = path.resolve(process.env.THRUM_ENVIRONMENT_BASE_WEB);
         const baseFiles = await assets(baseDirectory);
         await routeStops(baseFiles, baseDirectory);

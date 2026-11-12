@@ -8,7 +8,7 @@ pub struct HistoryKey {
     pub view: u64,
     /// Effect/geometry history provider.
     pub provider: u64,
-    /// Target pixel grid.
+    /// Output pixel grid; render scale alone does not invalidate history.
     pub extent: [u32; 2],
     /// Device generation.
     pub device_generation: u64,
@@ -33,7 +33,7 @@ pub struct Sample {
     pub committed_endpoint: u64,
 }
 
-/// Tracks CPU-known submission and explicit GPU/provider acceptance separately.
+/// Tracks successful single-queue submission-order acceptance.
 #[derive(Clone, Debug)]
 pub struct ViewHistory {
     key: HistoryKey,
@@ -68,9 +68,9 @@ impl ViewHistory {
             return false;
         }
         self.submitted = Some(sample);
-        // Until explicitly accepted, a successor cannot assume this sample is a
-        // valid image. This is the contract's conservative first temporal policy.
-        self.accepted = None;
+        // A single queue orders this history write before its successor's read.
+        // Delayed execution faults reset the entire device generation.
+        self.accepted = Some(sample);
         true
     }
     /// Accept only the latest exact submitted sample. Queue completion alone

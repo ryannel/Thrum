@@ -243,7 +243,8 @@ fn list_depth(
     let depth = texture(DEPTH_FORMAT, "parity depth");
     let scene = texture(super::super::SCENE_FORMAT, "parity scene");
     let motion = texture(super::super::MOTION_FORMAT, "parity motion");
-    let [depth_view, scene_view, motion_view] = [&depth, &scene, &motion]
+    let reactive = texture(super::super::REACTIVE_FORMAT, "parity reactive");
+    let [depth_view, scene_view, motion_view, reactive_view] = [&depth, &scene, &motion, &reactive]
         .map(|texture| texture.create_view(&wgpu::TextureViewDescriptor::default()));
     let color = |view| {
         Some(wgpu::RenderPassColorAttachment {
@@ -259,7 +260,11 @@ fn list_depth(
     let colors = if depth_only {
         Vec::new()
     } else {
-        vec![color(&scene_view), color(&motion_view)]
+        vec![
+            color(&scene_view),
+            color(&motion_view),
+            color(&reactive_view),
+        ]
     };
     let prepass = target.occlusion.as_ref().expect("occlusion");
     let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
@@ -571,9 +576,9 @@ const VEIL: &str = "
         let corners = array(vec2f(-0.8, -0.8), vec2f(0.8, -0.8), vec2f(0.0, 0.8));
         return vec4f(corners[index], 0.99, 1.0);
     }
-    struct Targets { @location(0) colour: vec4f, @location(1) motion: vec4f }
+    struct Targets { @location(0) colour: vec4f, @location(1) motion: vec4f, @location(2) reactive: f32 }
     @fragment fn veil_fragment() -> Targets {
-        return Targets(vec4f(0.2, 0.6, 1.0, 0.5), vec4f(0.0));
+        return Targets(vec4f(0.2, 0.6, 1.0, 0.5), vec4f(0.0), 0.5);
     }";
 
 impl SceneContribution for Veil {
@@ -624,6 +629,11 @@ impl SceneContribution for Veil {
                             format: surface.color_formats[1],
                             blend: None,
                             write_mask: wgpu::ColorWrites::empty(),
+                        }),
+                        Some(wgpu::ColorTargetState {
+                            format: surface.color_formats[2],
+                            blend: None,
+                            write_mask: wgpu::ColorWrites::ALL,
                         }),
                     ],
                 }),

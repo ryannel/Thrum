@@ -483,7 +483,7 @@ fn histories_advance_only_for_exact_submitted_and_accepted_samples() {
     };
     assert!(!history.accept(key, first));
     assert!(history.submitted(key, first));
-    assert_eq!(history.accepted(), None);
+    assert_eq!(history.accepted(), Some(first));
     assert!(history.accept(key, first));
     let next = Sample {
         serial: 12,
@@ -492,7 +492,7 @@ fn histories_advance_only_for_exact_submitted_and_accepted_samples() {
     };
     assert!(history.submitted(key, next));
     assert_eq!(history.last_submitted(), Some(next));
-    assert_eq!(history.accepted(), None);
+    assert_eq!(history.accepted(), Some(next));
     assert!(!history.accept(key, first));
     assert!(!history.submitted(key, first));
     assert!(history.accept(key, next));

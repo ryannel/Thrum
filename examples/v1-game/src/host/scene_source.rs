@@ -275,6 +275,9 @@ pub(crate) struct GameScene {
     pub(super) camera_pitch: f32,
     pub(super) camera_yaw: f32,
     pub(super) display_overlay: DisplayOverlay,
+    temporal_inputs: bool,
+    temporal_pan: (u64, f32),
+    temporal_star_edit: u64,
     camera: Option<SceneCamera>,
     route_overlay: scene::RouteOverlay,
     route: Option<CameraRoute>,
@@ -342,13 +345,30 @@ impl GameScene {
     }
 
     pub(super) fn new(setup: GameSetup) -> Self {
+        let temporal: Option<serde_json::Value> =
+            (setup.display_overlay == DisplayOverlay::TemporalInputs).then(|| {
+                serde_json::from_str(include_str!(
+                    "../../../../crates/thrum-render/src/synthetic/temporal/witness.json"
+                ))
+                .expect("checked-in temporal fixture")
+            });
         Self {
             content: setup.content,
             valley_stars: setup.content == GameContent::Grid && setup.valley_stars,
             day_phase_offset: 0.0,
             camera_pitch: 0.0,
             camera_yaw: 0.0,
-            display_overlay: DisplayOverlay::Off,
+            display_overlay: setup.display_overlay,
+            temporal_inputs: temporal.is_some(),
+            temporal_star_edit: temporal.as_ref().map_or(u64::MAX, |f| {
+                f["star_edit_tick"].as_u64().expect("fixture star tick")
+            }),
+            temporal_pan: temporal.as_ref().map_or((u64::MAX, 0.0), |f| {
+                (
+                    f["pan_tick"].as_u64().expect("fixture pan tick"),
+                    serde_json::from_value(f["pan_yaw"].clone()).expect("fixture pan yaw"),
+                )
+            }),
             camera: None,
             route_overlay: setup.route_overlay,
             route: None,
@@ -367,6 +387,10 @@ impl GameScene {
             }
             GameContent::Field => field_scene(extent, setup.field_meshes)?,
         };
+        scene.view = scene
+            .view
+            .with_temporal_inputs(setup.display_overlay == DisplayOverlay::TemporalInputs)
+            .with_display_overlay(setup.display_overlay);
         scene.camera_culling = setup.camera_culling;
         if setup.diagnostic_clouds {
             scene.sun_optical_depth = Some(cloud::diagnostic()?);
@@ -488,6 +512,11 @@ impl SceneSource<PublishedPage> for GameScene {
         extent: [u32; 2],
         lighting: Option<FrameLighting>,
     ) -> Result<SceneFrame, String> {
+        let temporal_yaw = if self.temporal_inputs && source.tick >= self.temporal_pan.0 {
+            self.temporal_pan.1
+        } else {
+            self.camera_yaw
+        };
         let field = self.content == GameContent::Field && self.camera.is_none();
         let routed = self.route.as_ref().zip(self.camera);
         let view = if let Some((route, camera)) = routed {
@@ -498,23 +527,18 @@ impl SceneSource<PublishedPage> for GameScene {
                 .with_sdr_tone_map(SdrToneMap::NeutralHighlights)
                 .with_history_epoch(pose.epoch)
         } else if field {
-            field_view(
-                source.tick,
-                alpha,
-                extent,
-                self.camera_pitch,
-                self.camera_yaw,
-            )?
+            field_view(source.tick, alpha, extent, self.camera_pitch, temporal_yaw)?
         } else {
             frame_view(
                 source.tick,
                 alpha,
                 extent,
                 self.camera_pitch,
-                self.camera_yaw,
+                temporal_yaw,
                 self.camera,
             )?
         }
+        .with_temporal_inputs(self.temporal_inputs)
         .with_display_overlay(self.display_overlay)
         .with_jitter_sequence(0, [640, 360]);
         // The diagnostic fixture's local Y zero is a two-metre reference datum.
@@ -531,8 +555,11 @@ impl SceneSource<PublishedPage> for GameScene {
             && self.camera.is_some()
             && matches!(lighting, FrameLighting::Atmosphere(_))
         {
-            view.with_celestial_basis(sun.equatorial_to_world)
-                .map_err(|error| format!("celestial view: {error:?}"))?
+            view.with_celestial_epoch(u64::from(
+                self.temporal_inputs && source.tick >= self.temporal_star_edit,
+            ))
+            .with_celestial_basis(sun.equatorial_to_world)
+            .map_err(|error| format!("celestial view: {error:?}"))?
         } else {
             view
         };
@@ -739,6 +766,9 @@ mod tests {
             camera_pitch,
             camera_yaw,
             display_overlay: DisplayOverlay::Off,
+            temporal_inputs: false,
+            temporal_pan: (30, -0.05),
+            temporal_star_edit: 15,
             camera: Some(camera),
             route_overlay: scene::RouteOverlay::Off,
             route: None,

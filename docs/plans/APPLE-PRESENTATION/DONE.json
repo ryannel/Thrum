@@ -74,7 +74,7 @@
     {
       "id": "M2",
       "name": "Depth, motion, reactive and exposure are stored for reconstruction, and history advances only with submitted frames",
-      "state": "not_started",
+      "state": "ready_for_review",
       "fails": 0,
       "replans": 0,
       "bar": "The temporal inputs and acceptance rules a shipped reconstructor relies on: history that never includes a frame the display did not get, and reactive marking wherever history cannot be trusted. Correctness only; nothing visible changes yet.",
@@ -86,8 +86,8 @@
           "lock": "gpu",
           "ask": "Does the eligibility report from APPLE-TILE M1 list depth and motion as stored only when a reader exists, and is the disabled path's attachment storage unchanged from before this milestone?",
           "target": "mac-metal",
-          "status": "open",
-          "evidence": "",
+          "status": "pass",
+          "evidence": "docs/evidence/APPLE-PRESENTATION/m2/README.md",
           "verdict": "",
           "review": ""
         },
@@ -98,8 +98,8 @@
           "lock": "gpu",
           "ask": "Does every forward drawer declare the third target, including the cooked direct and indirect paths with their COOKED-DRAW selection and history rules intact, and does the star pass attach and declare access to every target its shader writes? Does a contribution get the target through the contribution seam rather than a private binding?",
           "target": "mac-metal",
-          "status": "open",
-          "evidence": "",
+          "status": "pass",
+          "evidence": "docs/evidence/APPLE-PRESENTATION/m2/README.md",
           "verdict": "",
           "review": ""
         },
@@ -110,8 +110,8 @@
           "lock": "gpu",
           "ask": "Does a test change the storage scale between two frames and show the history sample rescaled correctly rather than reinterpreted?",
           "target": "mac-metal",
-          "status": "open",
-          "evidence": "",
+          "status": "pass",
+          "evidence": "docs/evidence/APPLE-PRESENTATION/m2/README.md",
           "verdict": "",
           "review": ""
         },
@@ -122,8 +122,8 @@
           "lock": "gpu",
           "ask": "Read the pipelined tests. Is each of the six clauses asserted separately on the real frame host, are the cancelled-acquisition and background-drop cases counted in the proof log, and does the existing presentation-drop contract behave as before?",
           "target": "mac-metal",
-          "status": "open",
-          "evidence": "",
+          "status": "pass",
+          "evidence": "docs/evidence/APPLE-PRESENTATION/m2/README.md",
           "verdict": "",
           "review": ""
         },
@@ -134,8 +134,8 @@
           "lock": "gpu",
           "ask": "Read the temporal case. Are the reactive and motion values taken from frames the page submitted, not from a side render or a declaration? Is the unsubmitted view abandoned at the latest point the browser frame path allows, with the predecessor identity read from the state the previous matrices are packed from? Would a reactive target that is never written, and history advanced before submission, each fail a row?",
           "target": "chrome-webgpu",
-          "status": "open",
-          "evidence": "",
+          "status": "pass",
+          "evidence": "docs/evidence/APPLE-PRESENTATION/m2/README.md",
           "verdict": "",
           "review": ""
         },
@@ -146,8 +146,8 @@
           "lock": "gpu",
           "ask": "Do GPU tests drive the witness fixture through the real forward and star passes, read the reactive target back, and assert each of W1-W5 against the expected values in the fixture definition that the Chrome case also reads?",
           "target": "mac-metal",
-          "status": "open",
-          "evidence": "",
+          "status": "pass",
+          "evidence": "docs/evidence/APPLE-PRESENTATION/m2/README.md",
           "verdict": "",
           "review": ""
         },
@@ -157,8 +157,8 @@
           "check": "node scripts/check_v1_browser.mjs --case all",
           "lock": "gpu",
           "target": "chrome-webgpu",
-          "status": "open",
-          "evidence": "",
+          "status": "pass",
+          "evidence": "docs/evidence/APPLE-PRESENTATION/m2/README.md",
           "verdict": "",
           "review": ""
         }

@@ -177,6 +177,8 @@ pub struct FrameSample {
     pub tick: u64,
     /// GPU submission order; independent of the visual source tick.
     pub submission_order: u64,
+    /// Candidate and predecessor serials packed from the submitted transform state.
+    pub history_identity: [u64; 2],
     /// Committed updates served in this host call, including catch-up work.
     pub completed_ticks: u32,
     /// Due updates still queued after this call.
@@ -1135,6 +1137,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 tick: frame.source.tick,
                 presentation_alpha: frame.presentation_alpha,
                 submission_order: 0,
+                history_identity: self.prepared.history_identity(),
                 completed_ticks: frame.completed_ticks,
                 queued_ticks: frame.queued_ticks,
                 tick_cpu: frame.tick_cpu,
@@ -1182,6 +1185,11 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             view.history_reset()
                 || self.history_reset_pending
                 || view.history_epoch() != self.submitted_view_history_epoch,
+        )
+        .with_output_extent(
+            self.presenter
+                .as_ref()
+                .map_or(self.render_extent, SurfacePresenter::extent),
         )
     }
 
@@ -1254,6 +1262,20 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         surface: Option<&SurfaceOutput<'_>>,
         wall_start: Instant,
     ) -> Result<(), FrameError> {
+        self.finish_encoded_with(recorded, report, surface, wall_start, || Ok(()))
+    }
+
+    // A platform/queue admission fault must be observed before committing history.
+    // The ordinary queue API is infallible; explicit refusal and device-loss
+    // adapters can reject here without manufacturing a submitted sample.
+    fn finish_encoded_with(
+        &mut self,
+        recorded: RecordedScene,
+        report: &mut DriveReport,
+        surface: Option<&SurfaceOutput<'_>>,
+        wall_start: Instant,
+        admit: impl FnOnce() -> Result<(), FrameError>,
+    ) -> Result<(), FrameError> {
         let RecordedScene {
             slot_index,
             capture_slot,
@@ -1268,6 +1290,20 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         } = prepared;
         let finish_start = Instant::now();
         let slot = &mut self.slots[slot_index];
+        if let Err(error) = admit() {
+            drop(encoder);
+            if let Some(index) = capture_slot
+                && let Some(tap) = self.submitted_capture.as_mut()
+            {
+                tap.abandon(index);
+            }
+            slot.timings
+                .discard_unsubmitted(self.generation)
+                .map_err(|e| FrameError::Gpu(format!("submission discard: {e:?}")))?;
+            self.history_reset_pending = true;
+            return Err(error);
+        }
+
         let surface_presented = self
             .presenter
             .as_ref()

@@ -40,7 +40,7 @@ fn packed_rows_put_active_slots_first_without_changing_logical_identity() {
     assert_eq!(packed.physical_to_slot, [0, 2, 1, 3]);
     assert_eq!(packed.slot_to_physical, [0, 2, 1, 3]);
     let (rows, remainder) = packed.bytes.as_chunks::<{ abi::INSTANCE_BYTES }>();
-    assert_eq!(remainder, []);
+    assert_eq!(remainder, [0_u8; 0]);
     for (row, &logical) in rows.iter().zip(&packed.physical_to_slot) {
         assert_eq!(
             *row,

@@ -12,7 +12,7 @@ const aerial_frame=Aerial(vec4(0.0,1.0,0.0,1.0));
 fn ambient_irradiance(n:vec3<f32>)->vec3<f32>{return light.ambient.rgb;}
 fn aerial_colour(colour:vec3<f32>,world:vec3<f32>,pixel:vec4<f32>)->vec3<f32>{return colour;}
 fn scene_storage_scale()->f32{return 1.0;}
-struct FragmentOutput { @location(0) colour:vec4<f32>, @location(1) motion:vec2<f32> }
+struct FragmentOutput { @location(0) colour:vec4<f32>, @location(1) motion:vec2<f32>, @location(2) reactive:f32 }
 @vertex fn fixture_vertex(@builtin(vertex_index) index:u32)->CookedVolumeOutput {
     let positions=array<vec2<f32>,3>(vec2(-1.0,-1.0),vec2(3.0,-1.0),vec2(-1.0,3.0));
     return CookedVolumeOutput(vec4(positions[index],0.0,1.0),view.camera_xyz_time.xyz+vec3(3.0,0.0,0.0));
@@ -66,18 +66,13 @@ fn metal_cooked_march_uses_each_world_sample_and_preserves_sky() {
             min_filter: wgpu::FilterMode::Linear,
             ..Default::default()
         });
-        let output = texture(
-            &device,
+        let [output, motion, reactive] = [
             wgpu::TextureFormat::Rgba32Float,
-            wgpu::TextureDimension::D2,
-            [1, 1, 1],
-        );
-        let motion = texture(
-            &device,
             wgpu::TextureFormat::Rg32Float,
-            wgpu::TextureDimension::D2,
-            [1, 1, 1],
-        );
+            wgpu::TextureFormat::R8Unorm,
+        ]
+        .map(|format| texture(&device, format, wgpu::TextureDimension::D2, [1, 1, 1]));
+        let reactive_view = reactive.create_view(&wgpu::TextureViewDescriptor::default());
         let views = [
             density.create_view(&wgpu::TextureViewDescriptor::default()),
             tau.create_view(&wgpu::TextureViewDescriptor::default()),
@@ -174,8 +169,9 @@ fn metal_cooked_march_uses_each_world_sample_and_preserves_sky() {
                     &queue,
                     &pipeline,
                     [&first, &second, &third],
-                    [&views[2], &views[3]],
+                    [&views[2], &views[3], &reactive_view],
                     &output,
+                    &reactive,
                 ));
             }
             let actual = observed[1][0] - observed[0][0];
@@ -248,7 +244,9 @@ fn texture(
         | wgpu::TextureUsages::COPY_SRC;
     if matches!(
         format,
-        wgpu::TextureFormat::Rgba32Float | wgpu::TextureFormat::Rg32Float
+        wgpu::TextureFormat::Rgba32Float
+            | wgpu::TextureFormat::Rg32Float
+            | wgpu::TextureFormat::R8Unorm
     ) {
         usage |= wgpu::TextureUsages::RENDER_ATTACHMENT;
     }
@@ -268,17 +266,22 @@ fn texture(
     })
 }
 
+#[expect(
+    clippy::print_stdout,
+    reason = "the M2 proof log records cooked alpha and actual reactive bytes"
+)]
 fn draw(
     device: &wgpu::Device,
     queue: &wgpu::Queue,
     pipeline: &wgpu::RenderPipeline,
     groups: [&wgpu::BindGroup; 3],
-    views: [&wgpu::TextureView; 2],
+    views: [&wgpu::TextureView; 3],
     output: &wgpu::Texture,
+    reactive: &wgpu::Texture,
 ) -> [f32; 4] {
     let readback = device.create_buffer(&wgpu::BufferDescriptor {
         label: None,
-        size: 256,
+        size: 512,
         usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
         mapped_at_creation: false,
     });
@@ -321,6 +324,18 @@ fn draw(
         },
         output.size(),
     );
+    encoder.copy_texture_to_buffer(
+        reactive.as_image_copy(),
+        wgpu::TexelCopyBufferInfo {
+            buffer: &readback,
+            layout: wgpu::TexelCopyBufferLayout {
+                offset: 256,
+                bytes_per_row: Some(256),
+                rows_per_image: Some(1),
+            },
+        },
+        reactive.size(),
+    );
     let (send, receive) = std::sync::mpsc::channel();
     encoder.map_buffer_on_submit(&readback, wgpu::MapMode::Read, .., move |result| {
         send.send(result)
@@ -341,6 +356,23 @@ fn draw(
         .slice(..)
         .get_mapped_range()
         .expect("valid Metal qualification fixture");
+    let alpha = f32::from_le_bytes(bytes[12..16].try_into().expect("alpha bytes"));
+    let definition: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../thrum-render/src/synthetic/temporal/witness.json"
+    ))
+    .expect("shared temporal definition");
+    assert_eq!(definition["rows"]["W3"]["reactive"], "volume alpha");
+    assert_eq!(
+        u64::from(bytes[256]),
+        definition["volume"]["expected_central_byte"]
+            .as_u64()
+            .expect("fixture reactive byte")
+    );
+    assert!(
+        (f32::from(bytes[256]) / 255.0 - alpha).abs() <= 1.0 / 255.0,
+        "W3 cooked reactive must equal volume alpha"
+    );
+    println!("M2 W3 cooked alpha={alpha} reactive={}", bytes[256]);
     std::array::from_fn(|i| {
         f32::from_le_bytes(
             bytes[i * 4..i * 4 + 4]
@@ -378,6 +410,11 @@ fn pipeline(device: &wgpu::Device, cloud: &str, volume: &str) -> wgpu::RenderPip
                 }),
                 Some(wgpu::ColorTargetState {
                     format: wgpu::TextureFormat::Rg32Float,
+                    blend: None,
+                    write_mask: wgpu::ColorWrites::ALL,
+                }),
+                Some(wgpu::ColorTargetState {
+                    format: wgpu::TextureFormat::R8Unorm,
                     blend: None,
                     write_mask: wgpu::ColorWrites::ALL,
                 }),

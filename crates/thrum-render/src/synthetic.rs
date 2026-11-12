@@ -45,6 +45,7 @@ mod scene_source;
 mod shadow;
 pub(crate) mod stars;
 mod target_storage;
+mod temporal;
 mod upload;
 mod view;
 pub use readback::{CaptureSource, PixelReadback};
@@ -549,6 +550,8 @@ pub struct InstanceUploadReport {
 /// Fully prepared opaque/static forward and SDR display roles. Both pipelines
 /// finish creation before this object is returned; encode never builds them.
 pub struct PreparedSynthetic {
+    temporal_inputs: bool,
+    temporal: temporal::TemporalInputs,
     cloud: Option<CloudPrepared>,
     capabilities: DeviceCapabilities,
     classes: TextureClasses,
@@ -1576,6 +1579,11 @@ impl PreparedSynthetic {
                             blend: None,
                             write_mask: wgpu::ColorWrites::ALL,
                         }),
+                        Some(wgpu::ColorTargetState {
+                            format: REACTIVE_FORMAT,
+                            blend: None,
+                            write_mask: wgpu::ColorWrites::ALL,
+                        }),
                     ],
                 }),
                 multiview_mask: None,
@@ -1705,10 +1713,13 @@ impl PreparedSynthetic {
         } else {
             None
         };
+        let temporal = temporal::TemporalInputs::new(device);
         if let Some(error) = scope.pop().await {
             return Err(RenderError::Validation(error.to_string()));
         }
         Ok(Self {
+            temporal_inputs: scene.view.temporal_inputs(),
+            temporal,
             capabilities: capabilities.clone(),
             classes,
             owner: Arc::new(()),
@@ -1796,7 +1807,8 @@ impl PreparedSynthetic {
     }
     /// Number of prepared GPU scene passes for this scene's shadow recipe.
     pub fn scene_pass_count(&self) -> u32 {
-        4 + u32::from(self.shadow.is_some()) * shadow::LAYERS
+        5 + u32::from(self.temporal_inputs)
+            + u32::from(self.shadow.is_some()) * shadow::LAYERS
             + u32::from(self.caster_culling.is_some())
             + camera_culling::pass_count(self.camera_culling())
             + u32::from(self.stars.is_some())
@@ -1892,7 +1904,16 @@ impl PreparedSynthetic {
                 packed_light_direction(&light_data),
             )?;
         }
-        self.history.set_extent(queue, target.extent());
+        self.history.synchronize_key(crate::history::HistoryKey {
+            view: 1,
+            provider: 0,
+            extent: view.output_extent(target.extent()),
+            device_generation: self.key.device_generation,
+            content_epoch: 0,
+            profile_epoch: 0,
+            origin_epoch: 0,
+            correspondence_epoch: view.history_epoch(),
+        });
         self.history
             .prepare_sample(queue, presentation_alpha, view.history_reset());
         let next_revision = self.frame_revision.wrapping_add(1);
@@ -1966,6 +1987,33 @@ impl PreparedSynthetic {
         Ok(())
     }
 
+    fn prepare_target_display(
+        &self,
+        device: &wgpu::Device,
+        ids: &TargetResources,
+        scene: &wgpu::TextureView,
+        motion: &wgpu::TextureView,
+        temporal: &temporal::TemporalTarget,
+    ) -> Result<PreparedPreToneInput, RenderError> {
+        self.sdr_tone_stage().prepare_input(
+            device,
+            ids.pre_tone.clone(),
+            PreToneViews {
+                colour: if ids.temporal.witness.as_ref() == Some(&ids.pre_tone.colour) {
+                    &temporal
+                        .witness
+                        .as_ref()
+                        .ok_or(RenderError::GraphPassMismatch)?
+                        .0
+                } else {
+                    scene
+                },
+                motion,
+                exposure: &self.exposure.samples,
+            },
+        )
+    }
+
     /// Carry submitted CPU view metadata across GPU-resource replacement. The
     /// new GPU history stays invalid, but a prepared view never becomes the prior
     /// submitted camera. Publication copies the live cursor, not a worker snapshot.
@@ -1974,7 +2022,26 @@ impl PreparedSynthetic {
         self.view_sample = previous.view_sample;
     }
 
-    /// Advance previous-view history after the host submits the encoded frame.
+    pub(crate) fn submitted_view_projection(&self) -> [[f32; 4]; 4] {
+        self.view_sample.view_proj_columns()
+    }
+
+    /// History validity key used by the GPU transform samples. Its extent is
+    /// the output grid even when the render grid changes.
+    pub fn temporal_history_key(&self) -> Option<crate::history::HistoryKey> {
+        self.history.key()
+    }
+
+    /// Candidate and predecessor serials packed for this frame; zero predecessor is invalid.
+    pub fn history_identity(&self) -> [u64; 2] {
+        self.history.candidate_identity(
+            self.pending_view
+                .as_ref()
+                .is_some_and(SyntheticView::history_reset),
+        )
+    }
+
+    /// Advance retained camera, transform and exposure sides after successful submission.
     pub fn commit_frame(&mut self) {
         if let Some(atmosphere) = self.atmosphere.as_mut() {
             atmosphere.commit();
@@ -2284,11 +2351,15 @@ fn storage_buffer(
     buffer
 }
 
+const REACTIVE_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::R8Unorm;
+
 struct TargetResources {
     pre_tone: PreToneInput,
+    temporal: temporal::TemporalResources,
     depth: ResourceId,
     scene: ResourceId,
     motion: ResourceId,
+    reactive: ResourceId,
     output: ResourceId,
     shadow: Option<ResourceId>,
     air_shadow: Option<ResourceId>,
@@ -2315,6 +2386,8 @@ pub struct OffscreenTarget {
     view: wgpu::TextureView,
     scene_view: wgpu::TextureView,
     motion_view: wgpu::TextureView,
+    reactive_view: wgpu::TextureView,
+    temporal: temporal::TemporalTarget,
     display: PreparedPreToneInput,
     view_bind_group: wgpu::BindGroup,
     aux_buffer: wgpu::Buffer,
@@ -2376,7 +2449,18 @@ impl OffscreenTarget {
             &self.device,
             compiled.ids.pre_tone.clone(),
             PreToneViews {
-                colour: &self.scene_view,
+                colour: if compiled.ids.temporal.witness.as_ref()
+                    == Some(&compiled.ids.pre_tone.colour)
+                {
+                    &self
+                        .temporal
+                        .witness
+                        .as_ref()
+                        .ok_or(RenderError::GraphPassMismatch)?
+                        .0
+                } else {
+                    &self.scene_view
+                },
                 motion: &self.motion_view,
                 exposure: &prepared.exposure.samples,
             },
@@ -2452,32 +2536,27 @@ impl OffscreenTarget {
             .recipe()
             .map_err(RenderError::Recipe)?;
         let textures = GraphTextures::new(device, &night.as_ref().unwrap_or(&day).readback, recipe);
-        let view = textures
-            .texture(&ids.output)
-            .ok_or(RenderError::GraphPassMismatch)?
-            .create_view(&wgpu::TextureViewDescriptor::default());
-        let depth = textures
-            .texture(&ids.depth)
-            .ok_or(RenderError::GraphPassMismatch)?
-            .create_view(&wgpu::TextureViewDescriptor::default());
-        let scene_view = textures
-            .texture(&ids.scene)
-            .ok_or(RenderError::GraphPassMismatch)?
-            .create_view(&wgpu::TextureViewDescriptor::default());
-        let motion_view = textures
-            .texture(&ids.motion)
-            .ok_or(RenderError::GraphPassMismatch)?
-            .create_view(&wgpu::TextureViewDescriptor::default());
-        let (stars, draw_stars) = prepared.prepare_star_target(device, &depth, [width, height]);
-        let display = prepared.sdr_tone_stage().prepare_input(
+        let texture_view = |id: &ResourceId| {
+            textures
+                .texture(id)
+                .ok_or(RenderError::GraphPassMismatch)
+                .map(|t| t.create_view(&wgpu::TextureViewDescriptor::default()))
+        };
+        let view = texture_view(&ids.output)?;
+        let depth = texture_view(&ids.depth)?;
+        let scene_view = texture_view(&ids.scene)?;
+        let motion_view = texture_view(&ids.motion)?;
+        let reactive_view = texture_view(&ids.reactive)?;
+        let temporal = prepared.temporal.target(
             device,
-            ids.pre_tone.clone(),
-            PreToneViews {
-                colour: &scene_view,
-                motion: &motion_view,
-                exposure: &prepared.exposure.samples,
-            },
+            &textures,
+            &ids.temporal,
+            [&depth, &motion_view, &reactive_view],
+            &prepared.exposure.samples,
         )?;
+        let (stars, draw_stars) = prepared.prepare_star_target(device, &depth, [width, height]);
+        let display =
+            prepared.prepare_target_display(device, &ids, &scene_view, &motion_view, &temporal)?;
         let aux = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("synthetic target view aux"),
             contents: &prepared
@@ -2590,6 +2669,8 @@ impl OffscreenTarget {
             view,
             scene_view,
             motion_view,
+            reactive_view,
+            temporal,
             display,
             view_bind_group,
             aux_buffer: aux,

@@ -82,6 +82,7 @@ impl CookedValley {
 /// One browser canvas running the V1 game through the engine's web shell.
 #[wasm_bindgen]
 pub struct BrowserGame {
+    temporal_inputs: bool,
     shell: Shell,
     cooked: Option<Arc<Mutex<CookedStats>>>,
     /// Facts from the first adapter-backed record, for fixed-view qualification.
@@ -111,10 +112,16 @@ pub async fn create_browser_game(
     canvas: HtmlCanvasElement,
     valley_stars: Option<bool>,
     diagnostic_clouds: Option<bool>,
+    temporal_inputs: Option<bool>,
 ) -> Result<BrowserGame, JsValue> {
     create_game(
         canvas,
         crate::GameSetup {
+            display_overlay: if temporal_inputs.unwrap_or(false) {
+                thrum_render::synthetic::DisplayOverlay::TemporalInputs
+            } else {
+                thrum_render::synthetic::DisplayOverlay::Off
+            },
             diagnostic_clouds: diagnostic_clouds.unwrap_or(false),
             valley_stars: valley_stars.unwrap_or(false),
             field_meshes: false,
@@ -146,6 +153,7 @@ pub async fn create_field_game(
     create_game(
         canvas,
         crate::GameSetup {
+            display_overlay: thrum_render::synthetic::DisplayOverlay::Off,
             content: crate::GameContent::Field,
             diagnostic_clouds: false,
             camera_culling,
@@ -175,6 +183,8 @@ async fn create_game(
     demo.observe_camera(game::camera_orientation(&shell));
     demo.observe_time(game::time_of_day(&shell));
     Ok(BrowserGame {
+        temporal_inputs: setup.display_overlay
+            == thrum_render::synthetic::DisplayOverlay::TemporalInputs,
         shell,
         cooked: None,
         initial_downlevel,
@@ -379,9 +389,13 @@ impl BrowserGame {
     /// # Errors
     /// Returns an invalid embedded recipe or the scene's refusal of the contribution.
     pub fn attach_cooked_valley(&mut self, valley: &CookedValley) -> Result<(), JsValue> {
-        let (camera, assets) =
-            crate::showcase::prepare_showcase(CookedSource::Remote(valley.feed.clone()))
-                .map_err(js_error)?;
+        let source = CookedSource::Remote(valley.feed.clone());
+        let (camera, assets) = if self.temporal_inputs {
+            crate::showcase::prepare_temporal_showcase(source)
+        } else {
+            crate::showcase::prepare_showcase(source)
+        }
+        .map_err(js_error)?;
         let stats = assets.stats();
         #[cfg(feature = "dev-material")]
         let material = assets.material();

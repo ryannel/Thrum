@@ -37,6 +37,8 @@ pub(crate) type Runtime = runtime::FrameHost<WorldPort, GameScene>;
 /// Content and camera culling chosen when the host is prepared.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct GameSetup {
+    /// Initial display diagnostic; TemporalInputs also prepares stored reconstruction inputs.
+    pub display_overlay: DisplayOverlay,
     /// Opt-in analytic Sun-path optical depth, a diagnostic cloud-shade stand-in.
     pub diagnostic_clouds: bool,
     /// The grid or the dense flythrough field.
@@ -57,6 +59,7 @@ pub struct GameSetup {
 impl Default for GameSetup {
     fn default() -> Self {
         Self {
+            display_overlay: DisplayOverlay::Off,
             diagnostic_clouds: false,
             content: GameContent::Grid,
             camera_culling: CullMode::Direct,
@@ -114,6 +117,11 @@ impl EncodedFrame<'_> {
     pub fn skip(self) -> DriveReport {
         self.0.skip()
     }
+    /// Cancel after foreground lease revocation, without queue work, and reset history.
+    pub fn cancel_background(self) -> DriveReport {
+        self.0.cancel_background()
+    }
+
     /// Discard the view after the platform observes loss of its device,
     /// without the empty queue submit a healthy skip makes.
     pub fn abandon_lost_device(self) {

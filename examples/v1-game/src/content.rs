@@ -33,6 +33,7 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
         _ => return Err("THRUM_CULLING must be direct, frustum or occlusion".to_owned()),
     };
     Ok(crate::GameSetup {
+        display_overlay: thrum_render::synthetic::DisplayOverlay::Off,
         diagnostic_clouds: std::env::var("THRUM_DIAGNOSTIC_CLOUDS").as_deref() == Ok("on"),
         content,
         camera_culling,

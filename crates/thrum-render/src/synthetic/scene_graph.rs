@@ -55,6 +55,7 @@ enum AttachmentUse {
     Depth,
     Scene,
     Motion,
+    Reactive,
 }
 
 impl PreparedSynthetic {
@@ -84,6 +85,14 @@ impl PreparedSynthetic {
                         wgpu::TextureUsages::empty()
                     }
             }
+            AttachmentUse::Reactive => {
+                wgpu::TextureUsages::RENDER_ATTACHMENT
+                    | if sampled_depth {
+                        wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_SRC
+                    } else {
+                        wgpu::TextureUsages::empty()
+                    }
+            }
             AttachmentUse::Motion => {
                 wgpu::TextureUsages::RENDER_ATTACHMENT
                     | wgpu::TextureUsages::TEXTURE_BINDING
@@ -108,7 +117,7 @@ impl PreparedSynthetic {
             resource: resource.clone(),
             range: 0..1,
             kind: AccessKind::AttachmentClear,
-            store: !matches!(role, AttachmentUse::Depth),
+            store: !matches!(role, AttachmentUse::Depth | AttachmentUse::Reactive),
         });
         Ok(resource)
     }
@@ -251,31 +260,9 @@ impl PreparedSynthetic {
             })
             .transpose()?;
         self.append_cluster_reads(&mut graph, &mut accesses, &mut prepared_keys)?;
-        let attachment = (width, height, &mut graph, &mut accesses);
-        let depth = Self::view_attachment(
-            attachment,
-            DEPTH_FORMAT,
-            AttachmentUse::Depth,
-            self.stars.is_some(),
-            capture_source,
-        )?;
         self.append_material_textures(&mut graph, &mut accesses)?;
-        let attachment = (width, height, &mut graph, &mut accesses);
-        let scene = Self::view_attachment(
-            attachment,
-            SCENE_FORMAT,
-            AttachmentUse::Scene,
-            false,
-            capture_source,
-        )?;
-        let attachment = (width, height, &mut graph, &mut accesses);
-        let motion = Self::view_attachment(
-            attachment,
-            MOTION_FORMAT,
-            AttachmentUse::Motion,
-            false,
-            capture_source,
-        )?;
+        let [depth, scene, motion, reactive] =
+            self.forward_attachments(&mut graph, &mut accesses, [width, height], capture_source)?;
         let camera = self.append_camera_visibility(
             &mut graph,
             (view, &instance, &mesh, &route),
@@ -310,8 +297,26 @@ impl PreparedSynthetic {
             history_write,
             history_bytes,
         )?;
+        let temporal = self.append_temporal(
+            &mut graph,
+            &mut prepared_keys,
+            [&depth, &motion, &reactive],
+            &exposure_sample,
+            [width, height],
+        )?;
         let pre_tone = PreToneInput {
-            colour: scene.clone(),
+            colour: if self
+                .pending_view
+                .unwrap_or(self.view_sample)
+                .temporal_diagnostic()
+            {
+                temporal
+                    .witness
+                    .clone()
+                    .ok_or(RenderError::GraphPassMismatch)?
+            } else {
+                scene.clone()
+            },
             motion: motion.clone(),
             exposure: exposure_sample.clone(),
             extent: [width, height],
@@ -340,11 +345,14 @@ impl PreparedSynthetic {
             &mut prepared_keys,
             forward,
             atmosphere_inputs.as_ref(),
-            (&depth, &scene, &motion, &exposure_sample),
+            (&depth, &scene, &motion, &reactive, &exposure_sample),
         )?;
         let night = if let Some(stars) = stars {
             // Display reads the composite, even though its declaration precedes it.
             graph.dependency(stars, display_pass)?;
+            if let Some(pass) = temporal.witness_pass {
+                graph.dependency(stars, pass)?;
+            }
             graph.validate_capabilities(&self.capabilities)?;
             Some(SceneGraphs::compile(
                 &mut graph,
@@ -362,15 +370,49 @@ impl PreparedSynthetic {
             night,
             ids: TargetResources {
                 pre_tone,
+                temporal,
                 depth,
                 scene,
                 motion,
+                reactive,
                 output,
                 shadow,
                 air_shadow,
                 prepass_depth: camera.prepass_depth,
             },
         })
+    }
+
+    fn forward_attachments(
+        &self,
+        graph: &mut FrameGraph,
+        accesses: &mut Vec<Access>,
+        [width, height]: [u32; 2],
+        source: CaptureSource,
+    ) -> Result<[ResourceId; 4], RenderError> {
+        let mut attachment = |format, role, sampled| {
+            Self::view_attachment(
+                (width, height, graph, accesses),
+                format,
+                role,
+                sampled,
+                source,
+            )
+        };
+        Ok([
+            attachment(
+                DEPTH_FORMAT,
+                AttachmentUse::Depth,
+                self.stars.is_some() || self.temporal_inputs,
+            )?,
+            attachment(SCENE_FORMAT, AttachmentUse::Scene, false)?,
+            attachment(MOTION_FORMAT, AttachmentUse::Motion, false)?,
+            attachment(
+                super::REACTIVE_FORMAT,
+                AttachmentUse::Reactive,
+                self.temporal_inputs,
+            )?,
+        ])
     }
 
     fn surface_pass(
@@ -394,14 +436,28 @@ impl PreparedSynthetic {
         keys: &mut BTreeSet<PipelineKey>,
         forward: usize,
         atmosphere: Option<&(ResourceId, ResourceId)>,
-        (depth, scene, motion, exposure): (&ResourceId, &ResourceId, &ResourceId, &ResourceId),
+        (depth, scene, motion, reactive, exposure): (
+            &ResourceId,
+            &ResourceId,
+            &ResourceId,
+            &ResourceId,
+            &ResourceId,
+        ),
     ) -> Result<Option<usize>, RenderError> {
         if let Some((transmittance, observer)) = atmosphere {
             self.append_stars(
                 graph,
                 keys,
                 forward,
-                (depth, scene, motion, exposure, transmittance, observer),
+                (
+                    depth,
+                    scene,
+                    motion,
+                    reactive,
+                    exposure,
+                    transmittance,
+                    observer,
+                ),
             )
         } else {
             Ok(None)
@@ -883,6 +939,12 @@ impl PreparedSynthetic {
                 Some(key) if key == self.history_key() => {
                     RecordBinding::<SceneFamily>::new(id, PassKind::Compute, |frame, pass| {
                         frame.publish_history(pass)
+                    })
+                }
+                Some(key) if key == self.temporal_key(false) || key == self.temporal_key(true) => {
+                    let witness = key == self.temporal_key(true);
+                    RecordBinding::<SceneFamily>::new(id, PassKind::Render, move |frame, pass| {
+                        frame.temporal(pass, witness)
                     })
                 }
                 Some(key) if key == self.exposure_key() => {

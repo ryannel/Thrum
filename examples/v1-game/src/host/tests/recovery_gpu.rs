@@ -283,6 +283,7 @@ fn prove_paused_recovery(phase: f32, midnight: bool, overlay: DisplayOverlay) {
             "held input reached the controlled actor after GPU replacement"
         );
         let label = match (midnight, overlay) {
+            (_, DisplayOverlay::TemporalInputs) => "recovery-temporal",
             (_, DisplayOverlay::ExposureZones) => "recovery-zones",
             (_, DisplayOverlay::Motion) => "recovery-motion",
             (true, DisplayOverlay::Off) => "recovery-midnight",
@@ -377,6 +378,7 @@ fn mixed_mesh_field_keeps_its_meshes_through_gpu_replacement() {
                 ..FrameConfig::default()
             },
             crate::GameSetup {
+                display_overlay: DisplayOverlay::Off,
                 diagnostic_clouds: false,
                 content: crate::GameContent::Field,
                 camera_culling: thrum_render::synthetic::CullMode::Frustum,

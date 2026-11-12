@@ -60,6 +60,12 @@ impl PreparedSynthetic {
                         view: &target.motion_view,
                         clear: wgpu::Color::TRANSPARENT,
                     }),
+                    Some(GraphColorAttachment {
+                        resource: &target.ids.reactive,
+                        range: 0..1,
+                        view: &target.reactive_view,
+                        clear: wgpu::Color::TRANSPARENT,
+                    }),
                 ],
                 Some(GraphDepthAttachment {
                     resource: &target.ids.depth,

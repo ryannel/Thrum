@@ -115,6 +115,11 @@ impl StarPrepared {
                         blend: None,
                         write_mask: wgpu::ColorWrites::ALL,
                     }),
+                    Some(wgpu::ColorTargetState {
+                        format: super::REACTIVE_FORMAT,
+                        blend: None,
+                        write_mask: wgpu::ColorWrites::ALL,
+                    }),
                 ],
             }),
             multiview_mask: None,
@@ -243,6 +248,12 @@ impl StarPrepared {
         if view.raster_jitter_enabled() {
             bytes[160..168].copy_from_slice(&jitter[152..160]);
         }
+        bytes[168..172].copy_from_slice(
+            &f32::from(
+                view.history_reset() || view.celestial_epoch() != previous.celestial_epoch(),
+            )
+            .to_le_bytes(),
+        );
         Some(bytes)
     }
 }
@@ -260,7 +271,8 @@ impl PreparedSynthetic {
         graph: &mut FrameGraph,
         keys: &mut BTreeSet<PipelineKey>,
         opaque: usize,
-        (depth, scene, motion, exposure, transmittance, observer): (
+        (depth, scene, motion, reactive, exposure, transmittance, observer): (
+            &ResourceId,
             &ResourceId,
             &ResourceId,
             &ResourceId,
@@ -306,14 +318,26 @@ impl PreparedSynthetic {
                 (depth.clone(), 1, AccessKind::SampledRead),
                 (scene.clone(), 1, AccessKind::AttachmentLoad),
                 (motion.clone(), 1, AccessKind::AttachmentLoad),
+                (
+                    reactive.clone(),
+                    1,
+                    if self.temporal_inputs {
+                        AccessKind::AttachmentLoad
+                    } else {
+                        AccessKind::AttachmentClear
+                    },
+                ),
             ]
             .into_iter()
-            .map(|(resource, end, kind)| Access {
-                view: None,
-                resource,
-                range: 0..end,
-                kind,
-                store: true,
+            .map(|(resource, end, kind)| {
+                let store = resource != *reactive || self.temporal_inputs;
+                Access {
+                    view: None,
+                    resource,
+                    range: 0..end,
+                    kind,
+                    store,
+                }
             })
             .collect(),
             external_side_effect: false,
@@ -345,6 +369,12 @@ impl SceneContext<'_> {
                         resource: &self.target.ids.motion,
                         range: 0..1,
                         view: &self.target.motion_view,
+                        clear: wgpu::Color::BLACK,
+                    }),
+                    Some(GraphColorAttachment {
+                        resource: &self.target.ids.reactive,
+                        range: 0..1,
+                        view: &self.target.reactive_view,
                         clear: wgpu::Color::BLACK,
                     }),
                 ],

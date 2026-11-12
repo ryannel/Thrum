@@ -84,3 +84,25 @@
   Held-camera comparisons at 640×360 and 1920×1080 show stable sphere, skyline and ground edges. Current
   motion sequences were inspected. Independent re-review and performance qualification remain owed.
   [Repair evidence](../../evidence/APPLE-PRESENTATION/m1-mf1/README.md).
+
+- 2026-11-11 M2 implementation checkpoint: added the third forward reactive target, opt-in stored temporal inputs,
+  GPU exposure texture and submitted-frame diagnostics; acceptance identities and output-grid keys now follow
+  submitted frames. Metal attachment, exposure, populated-host history and cooked alpha proofs pass; Chrome,
+  exact baselines and integration remain pending. The iOS simulator shell compiles with background cancellation
+  resetting history. [Builder evidence](../../evidence/APPLE-PRESENTATION/m2/README.md). No M2 claim yet.
+
+- 2026-11-11 M2 target qualification passes all 249 renderer tests on Metal and all 32 Chrome cases,
+  including W1–W7 and the existing controls regression. Updated culling contribution fixtures for the
+  third target and the controls check for the declared 0.05-degree step. D2.5 and D2.7 pass.
+  The required checks for D2.1–D2.4 and D2.6 stop at the exact-baseline gate after the fixture repair.
+  Its verifier was attempted and refused with LOW_DISK_SPACE (16 GiB required, about 10 GiB free after
+  owned cache cleanup). M2 remains open and integration is blocked until a current proof can be made.
+  [Target results and blocker](../../evidence/APPLE-PRESENTATION/m2/README.md).
+
+- 2026-11-12 M2 resumed after disk recovery. Exact verification at `57590699`, rebased onto current main,
+  passes 42 native comparisons and all four 481-record Chrome sets under the GPU lock (1,966 exact matches).
+  References are unchanged; no device timing qualification is claimed. Documentation checks pass.
+  The required milestone checker remains live; D2.1–D2.4 and D2.6 stay open until its result is available.
+  [Current proof and target evidence](../../evidence/APPLE-PRESENTATION/m2/README.md).
+
+- 2026-11-12 M2 builder verification completed on source `c506b2a6`. Resolved the main merge, retained CULLING's shared flythrough, supplied explicit graph descriptor fields and reconciled the temporal attachment snapshot. All seven item commands and the repository gate pass on Metal and hardware Chrome; exact verification passes all 1,966 comparisons. M2 is ready for independent review. Device performance qualification remains owed. [Current evidence](../../evidence/APPLE-PRESENTATION/m2/README.md).

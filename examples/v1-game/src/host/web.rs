@@ -190,6 +190,7 @@ pub(crate) fn route_report(shell: &Shell, from_tick: u64) -> serde_json::Value {
             serde_json::json!({
                 "tick": sample.tick, "alpha": alpha, "alpha_bits": alpha.to_bits(),
                 "submission": sample.submission_order,
+                "history_sample": sample.history_identity[0], "history_predecessor": sample.history_identity[1],
                 "rendered_solar_hours": rendered, "rendered_solar_bits": rendered.to_bits(),
                 "eye": pose.map(|pose| pose.eye), "yaw": pose.map(|pose| pose.yaw),
                 "pitch": pose.map(|pose| pose.pitch), "epoch": pose.map(|pose| pose.epoch),

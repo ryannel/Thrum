@@ -111,8 +111,8 @@ pub struct SceneSurface<'a> {
     pub material_layout: &'a wgpu::BindGroupLayout,
     /// The fragment entry the scene uses (`fragment` or `shadowed_fragment`).
     pub fragment_entry: &'static str,
-    /// Colour attachments of the forward pass: scene radiance and motion.
-    pub color_formats: [wgpu::TextureFormat; 2],
+    /// Colour attachments of the forward pass: scene radiance, motion and reactive.
+    pub color_formats: [wgpu::TextureFormat; 3],
     /// Reverse-Z depth attachment (compare `Greater`, cleared to zero).
     pub depth_format: wgpu::TextureFormat,
     /// The existing Sun depth pass, when shadows are enabled for the scene.

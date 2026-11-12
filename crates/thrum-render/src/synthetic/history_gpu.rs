@@ -20,7 +20,8 @@ pub(super) struct TransformHistory {
     next_serial: u64,
     submitted_serial: u64,
     presentation_alpha: f32,
-    extent: Option<[u32; 2]>,
+    key: Option<crate::history::HistoryKey>,
+    pending_key: Option<crate::history::HistoryKey>,
 }
 
 impl TransformHistory {
@@ -134,10 +135,22 @@ impl TransformHistory {
             next_serial: 1,
             submitted_serial: 0,
             presentation_alpha: 1.0,
-            extent: None,
+            key: None,
+            pending_key: None,
         };
         history.write_serials(queue, false);
         history
+    }
+
+    pub(super) fn candidate_identity(&self, reset: bool) -> [u64; 2] {
+        [
+            self.next_serial,
+            if reset || self.pending_key != self.key {
+                0
+            } else {
+                self.submitted_serial
+            },
+        ]
     }
 
     pub(super) fn write_side(&self) -> usize {
@@ -157,11 +170,14 @@ impl TransformHistory {
         self.write_serials(queue, false);
     }
 
-    pub(super) fn set_extent(&mut self, queue: &wgpu::Queue, extent: [u32; 2]) {
-        if self.extent != Some(extent) {
-            self.extent = Some(extent);
-            self.reset(queue);
-        }
+    pub(super) fn key(&self) -> Option<crate::history::HistoryKey> {
+        self.pending_key.or(self.key)
+    }
+
+    pub(super) fn synchronize_key(&mut self, key: crate::history::HistoryKey) {
+        // Preparation can be abandoned: only submission replaces the key of
+        // the retained GPU sample, just as it replaces the previous matrices.
+        self.pending_key = Some(key);
     }
 
     pub(super) fn prepare_sample(&mut self, queue: &wgpu::Queue, alpha: f32, reset: bool) {
@@ -176,7 +192,11 @@ impl TransformHistory {
     fn write_serials(&self, queue: &wgpu::Queue, reset: bool) {
         // A prepared cut hides previous transforms for this sample alone.
         // A capture or abandoned encoder cannot retire the submitted serial.
-        let read_serial = if reset { 0 } else { self.submitted_serial };
+        let read_serial = if reset || self.pending_key != self.key {
+            0
+        } else {
+            self.submitted_serial
+        };
         let words = [
             u32::try_from(read_serial & u64::from(u32::MAX)).expect("masked serial fits u32"),
             u32::try_from(read_serial >> 32).expect("high serial word fits u32"),
@@ -213,6 +233,7 @@ impl TransformHistory {
     }
 
     pub(super) fn submitted(&mut self) {
+        self.key = self.pending_key;
         self.read_side = 1 - self.read_side;
         self.submitted_serial = self.next_serial;
         self.next_serial = self.next_serial.wrapping_add(1).max(1);

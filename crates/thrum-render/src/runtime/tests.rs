@@ -25,6 +25,7 @@ fn sample(tick: u64) -> FrameSample {
     FrameSample {
         tick,
         presentation_alpha: 1.0,
+        history_identity: [0; 2],
         submission_order: tick,
         completed_ticks: 1,
         queued_ticks: 0,
