@@ -1,0 +1,73 @@
+{
+  "module": "CULLING",
+  "milestone": "M1",
+  "tree": "/Users/ryannel/Workspace/thrum/.claude/worktrees/culling",
+  "plan": "/Users/ryannel/Workspace/thrum/.claude/worktrees/culling/docs/plans/CULLING/DONE.json",
+  "pass": 6,
+  "fail": 0,
+  "error": 0,
+  "timeout": 0,
+  "items": [
+    {
+      "id": "M1.1",
+      "check": "cargo test --locked --offline -p thrum-render --test visibility_buckets",
+      "lock": "gpu",
+      "exit": 0,
+      "result": "pass",
+      "output": "d::tests::flythrough_turns_and_cuts_are_flagged ... ok\ntest reference::tests::previous_pow2_keeps_exact_powers ... ok\ntest field::tests::layout_is_deterministic_and_spans_far_beyond_the_view ... ok\ntest environment::tests::equatorial_basis_follows_sun_and_preserves_the_pole_across_wrap ... ok\ntest environment::tests::rendered_solar_time_uses_the_same_previous_to_current_interval_as_lighting ... ok\ntest environment::tests::committed_day_has_continuous_sunrise_noon_sunset_and_night ... ok\ntest reference::tests::a_misaligned_rectangle_reads_its_whole_footprint ... ok\ntest reference::tests::equality_and_the_near_plane_stay_visible ... ok\ntest field_meshes::tests::closed_meshes_wind_outward ... ok\ntest field_meshes::tests::meshes_have_realistic_counts_and_stay_in_the_unit_box ... ok\ntest reference_search_for_a_footprint_widening_witness ... ok\ntest reference::tests::never_hides_a_visible_box ... ok\ntest mesh_face_on_its_bounds_keeps_flush_ties_at_rounded_far_poses ... ok\ntest churn_reveal_resize_and_device_replacement_keep_bucket_direct ... ok\ntest reference::tests::every_texel_is_the_min_of_its_footprint ... ok\ntest mixed_field_host::mixed_field_host_surface_resize_and_device_publication_keep_occlusion_hidden ... ok\n\ntest result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 12.72s\n\n\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.23s\n     Running tests/visibility_buckets.rs (target/debug/deps/visibility_buckets-80eb60d150a89052)",
+      "stdout": "/Users/ryannel/Workspace/thrum/.git/orchestrate/checks/e70bb4ed6d127893881860c7-634baf93e4b3c7b7.stdout",
+      "stderr": "/Users/ryannel/Workspace/thrum/.git/orchestrate/checks/e70bb4ed6d127893881860c7-634baf93e4b3c7b7.stderr"
+    },
+    {
+      "id": "M1.2",
+      "check": "THRUM_FIELD_FULL_PATH=1 cargo test --locked --offline --release -p v1-game --test field_occlusion_gpu",
+      "lock": "gpu",
+      "exit": 0,
+      "result": "pass",
+      "output": "running 1 test\ntest mixed_mesh_occlusion_matches_bucket_direct_through_first_cut has been running for over 60 seconds\ntest mixed_mesh_occlusion_matches_bucket_direct_through_first_cut ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1002.80s\n\n\n   Compiling v1-game v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/culling/examples/v1-game)\n    Finished `release` profile [optimized] target(s) in 5.37s\n     Running tests/field_occlusion_gpu.rs (target/release/deps/field_occlusion_gpu-8c946c96fc500c53)",
+      "stdout": "/Users/ryannel/Workspace/thrum/.git/orchestrate/checks/e70bb4ed6d127893881860c7-3160c60358216d2a.stdout",
+      "stderr": "/Users/ryannel/Workspace/thrum/.git/orchestrate/checks/e70bb4ed6d127893881860c7-3160c60358216d2a.stderr"
+    },
+    {
+      "id": "M1.3",
+      "check": "cargo test --locked --offline -p thrum-render --test visibility_buckets",
+      "lock": "gpu",
+      "exit": 0,
+      "result": "pass",
+      "output": "d::tests::layout_is_deterministic_and_spans_far_beyond_the_view ... ok\ntest reference::tests::previous_pow2_keeps_exact_powers ... ok\ntest field::tests::flythrough_turns_and_cuts_are_flagged ... ok\ntest environment::tests::committed_day_has_continuous_sunrise_noon_sunset_and_night ... ok\ntest environment::tests::rendered_solar_time_uses_the_same_previous_to_current_interval_as_lighting ... ok\ntest environment::tests::equatorial_basis_follows_sun_and_preserves_the_pole_across_wrap ... ok\ntest reference::tests::a_misaligned_rectangle_reads_its_whole_footprint ... ok\ntest reference::tests::equality_and_the_near_plane_stay_visible ... ok\ntest field_meshes::tests::closed_meshes_wind_outward ... ok\ntest field_meshes::tests::meshes_have_realistic_counts_and_stay_in_the_unit_box ... ok\ntest reference_search_for_a_footprint_widening_witness ... ok\ntest reference::tests::never_hides_a_visible_box ... ok\ntest mesh_face_on_its_bounds_keeps_flush_ties_at_rounded_far_poses ... ok\ntest churn_reveal_resize_and_device_replacement_keep_bucket_direct ... ok\ntest reference::tests::every_texel_is_the_min_of_its_footprint ... ok\ntest mixed_field_host::mixed_field_host_surface_resize_and_device_publication_keep_occlusion_hidden ... ok\n\ntest result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 12.26s\n\n\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.16s\n     Running tests/visibility_buckets.rs (target/debug/deps/visibility_buckets-80eb60d150a89052)",
+      "stdout": "/Users/ryannel/Workspace/thrum/.git/orchestrate/checks/fb693f4ee9a4750a5c79fe7d-634baf93e4b3c7b7.stdout",
+      "stderr": "/Users/ryannel/Workspace/thrum/.git/orchestrate/checks/fb693f4ee9a4750a5c79fe7d-634baf93e4b3c7b7.stderr"
+    },
+    {
+      "id": "M1.4",
+      "check": "cargo test --locked --offline -p thrum-render --test visibility_buckets",
+      "lock": "gpu",
+      "exit": 0,
+      "result": "pass",
+      "reused": "2026-11-12T23:21:31Z",
+      "stdout": "/Users/ryannel/Workspace/thrum/.git/orchestrate/checks/fb693f4ee9a4750a5c79fe7d-634baf93e4b3c7b7.stdout",
+      "stderr": "/Users/ryannel/Workspace/thrum/.git/orchestrate/checks/fb693f4ee9a4750a5c79fe7d-634baf93e4b3c7b7.stderr",
+      "output": "(not run again: it passed on these same files before)"
+    },
+    {
+      "id": "M1.5",
+      "check": "cargo build --locked --offline --release -p v1-game --features draw-probe,thrum-render/creation-counters && cargo build --locked --offline --release -p thrum-cook && rm -rf tmp/exact-m0 && mkdir -p tmp/exact-m0 && target/release/thrum-cook cook examples/v1-game/assets/showcase tmp/exact-m0/valley && python3 scripts/apple_tile_m1.py --store tmp/exact-m0/valley --output tmp/exact-m0/m1 && python3 scripts/apple_tile_m2.py --store tmp/exact-m0/valley --output tmp/exact-m0/m2",
+      "lock": "gpu",
+      "exit": 0,
+      "result": "pass",
+      "output": "scan 1.80975ms (reused 0 hashed 10 unstable 0), cooked 9 reused 0 in 45.576709ms, publish 369.709\u00b5s -> generation 1\n{\"passed\": true, \"failures\": []}\n{\"passed\": true, \"failures\": []}\n\n   Compiling v1-game v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/culling/examples/v1-game)\n    Finished `release` profile [optimized] target(s) in 5.57s\nwarning: linker stderr: ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.claude/worktrees/culling/target/release/deps/libintel_tex_2-109965a54605b5eb.rlib[5](kernel_ispc.o)', assuming: macOS\n         ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.claude/worktrees/culling/target/release/deps/libintel_tex_2-109965a54605b5eb.rlib[6](kernel_astc_ispc.o)', assuming: macOS\n  |\n  = note: `#[warn(linker_messages)]` on by default\n\nwarning: `thrum-cook` (bin \"thrum-cook\") generated 1 warning\n    Finished `release` profile [optimized] target(s) in 0.09s",
+      "stdout": "/Users/ryannel/Workspace/thrum/.git/orchestrate/checks/fb693f4ee9a4750a5c79fe7d-447dea896a7f1ca2.stdout",
+      "stderr": "/Users/ryannel/Workspace/thrum/.git/orchestrate/checks/fb693f4ee9a4750a5c79fe7d-447dea896a7f1ca2.stderr"
+    },
+    {
+      "id": "Test command",
+      "check": "./dev check",
+      "exit": 0,
+      "result": "pass",
+      "reused": "2026-11-12T23:21:18Z",
+      "stdout": "/Users/ryannel/Workspace/thrum/.git/orchestrate/checks/fb693f4ee9a4750a5c79fe7d-97fbad59fed9d769.stdout",
+      "stderr": "/Users/ryannel/Workspace/thrum/.git/orchestrate/checks/fb693f4ee9a4750a5c79fe7d-97fbad59fed9d769.stderr",
+      "output": "(not run again: it passed on these same files before)"
+    }
+  ]
+}

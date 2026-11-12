@@ -101,3 +101,11 @@
 
 - 2026-11-12 Set M1 ready_for_review once all five items pass, with committed evidence for each item.
   Mandatory aggregate verification remains live and integration will run the checked merge.
+
+- 2026-11-13 Resumed under orchestrate 2.1.0 and restored M1 to `in_progress`, preserving reviewer fields.
+  Fresh rebased qualification passes all five literal M1 checks and `./dev check`; the full release field test
+  passes in 1,002.80 seconds, the bucket target passes 17 tests and the native matrices pass 38+4 comparisons.
+  The full verifier also passes all four Chrome sets of 481 records each, with retained references unchanged.
+  [Reports, source identity and complete compressed logs](../../evidence/CULLING/M1.md#orchestrate-210-continuation)
+  separate these target results from the initial sandbox adapter failure. Required mutation production files
+  remain unchanged; no new speed or elapsed-time motion claim. The script owns the post-merge state and the lead owns review.

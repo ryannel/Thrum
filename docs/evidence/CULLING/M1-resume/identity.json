@@ -16,5 +16,70 @@
     78801,
     77656,
     76727
-  ]
+  ],
+  "aggregate_completion_revision": "e52a3b8eb20f952ec0fa381ef69de7c4d8b7928e",
+  "changes_during_qualification": "Evidence documentation only; engine, game and scripts unchanged.",
+  "retained_logs": {
+    "M1.1": {
+      "stdout": {
+        "path": "docs/evidence/CULLING/M1-resume/M1.1.stdout.gz",
+        "sha256": "bff2bca81b1a5f9ac4ea093f400ac33cc8d8a233a304e12b096bc96c0b65fae3"
+      },
+      "stderr": {
+        "path": "docs/evidence/CULLING/M1-resume/M1.1.stderr.gz",
+        "sha256": "f2467d7a1249decfb680d0a8733bee90f02fa630d6ae362bb256057c4b3d96f9"
+      }
+    },
+    "M1.2": {
+      "stdout": {
+        "path": "docs/evidence/CULLING/M1-resume/M1.2.stdout.gz",
+        "sha256": "f2e307de7b1556695a3264b698d38497c882b01c38c532d80ea9566081996330"
+      },
+      "stderr": {
+        "path": "docs/evidence/CULLING/M1-resume/M1.2.stderr.gz",
+        "sha256": "faa3415593e08299872d3b654acd966549f0a17243ad63c0099b6b067ac008da"
+      }
+    },
+    "M1.3": {
+      "stdout": {
+        "path": "docs/evidence/CULLING/M1-resume/M1.3.stdout.gz",
+        "sha256": "02d3691ec0dee25519893511e2477ea1211c6cff5e88f732b2a5742f055e185f"
+      },
+      "stderr": {
+        "path": "docs/evidence/CULLING/M1-resume/M1.3.stderr.gz",
+        "sha256": "3f9eabb28e9598a65454e677eec2c6acb19960ac91cd10b7174d2227bbe9cb20"
+      }
+    },
+    "M1.4": {
+      "stdout": {
+        "path": "docs/evidence/CULLING/M1-resume/M1.4.stdout.gz",
+        "sha256": "02d3691ec0dee25519893511e2477ea1211c6cff5e88f732b2a5742f055e185f"
+      },
+      "stderr": {
+        "path": "docs/evidence/CULLING/M1-resume/M1.4.stderr.gz",
+        "sha256": "3f9eabb28e9598a65454e677eec2c6acb19960ac91cd10b7174d2227bbe9cb20"
+      }
+    },
+    "M1.5": {
+      "stdout": {
+        "path": "docs/evidence/CULLING/M1-resume/M1.5.stdout.gz",
+        "sha256": "6edff26475814087478b57562b87935475c3b9053da57e5af2a2c4aab7e3efbd"
+      },
+      "stderr": {
+        "path": "docs/evidence/CULLING/M1-resume/M1.5.stderr.gz",
+        "sha256": "463f50f2996fb1a1c0fe7dd70510b3cb660147a8163a469059a3f081ce53ce9e"
+      }
+    },
+    "Test command": {
+      "stdout": {
+        "path": "docs/evidence/CULLING/M1-resume/Test-command.stdout.gz",
+        "sha256": "cfd1e6f58a086533b02fc07ce25212b1b808e991693ee3ee4bbaddc0f018c5f6"
+      },
+      "stderr": {
+        "path": "docs/evidence/CULLING/M1-resume/Test-command.stderr.gz",
+        "sha256": "852ba1da4d053a16e03fd9bebaeeac289faed983af13739b758736c5f472c90b"
+      }
+    }
+  },
+  "mutation_production_files_unchanged_from": "f7533d443b30a88196b2c41b0934d37515dafea4"
 }
