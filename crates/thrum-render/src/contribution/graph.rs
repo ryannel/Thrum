@@ -57,6 +57,15 @@ impl EffectGraph {
     /// # Errors
     /// Returns a named preparation error for a cadence, producer or binding misuse.
     pub fn validate(&self) -> Result<(), String> {
+        let mut owners = BTreeSet::new();
+        for (_, scope) in &self.resources {
+            if let ResourceScope::Persistent { owner, .. } | ResourceScope::History { owner, .. } =
+                scope
+                && !owners.insert(*owner)
+            {
+                return Err("DuplicateEffectOwner".into());
+            }
+        }
         let mut names = BTreeSet::new();
         let mut producers = vec![None; self.resources.len()];
         for (index, pass) in self.passes.iter().enumerate() {

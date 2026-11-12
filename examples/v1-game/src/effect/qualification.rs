@@ -1,5 +1,7 @@
 //! Scripted target qualification shared by the native runner and browser case.
 use super::{DiagnosticEffect, EffectHandle, SIZE};
+mod oracle;
+use oracle::{Expected, seeded_kinds};
 use std::{
     sync::{Arc, Mutex},
     task::Poll,
@@ -222,31 +224,44 @@ async fn fields(
     Ok(result)
 }
 
+async fn check_kinds(
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    handle: &EffectHandle,
+    expected: &[Vec<Vec<u32>>],
+) -> Result<(), String> {
+    let textures = handle.lock().map_err(error)?.textures.clone();
+    for (resource, (sides, mips)) in textures.iter().skip(3).zip(expected).enumerate() {
+        if sides[0].mip_level_count() as usize != mips.len() {
+            return Err(format!("kind {resource}: mip count differs"));
+        }
+        for (mip, expected) in mips.iter().enumerate() {
+            let got =
+                read_texture(device, queue, &sides[0], u32::try_from(mip).map_err(error)?).await?;
+            if got != *expected {
+                let at = got
+                    .iter()
+                    .zip(expected)
+                    .position(|(a, b)| a != b)
+                    .unwrap_or(0);
+                return Err(format!(
+                    "kind resource {} mip {mip} texel {at}: got {:?} expected {:?}",
+                    resource + 3,
+                    got.get(at),
+                    expected.get(at)
+                ));
+            }
+        }
+    }
+    Ok(())
+}
+
 async fn reset_kinds(
     device: &wgpu::Device,
     queue: &wgpu::Queue,
     handle: &EffectHandle,
 ) -> Result<(), String> {
-    let textures = handle.lock().map_err(error)?.textures.clone();
-    for (resource, sides) in textures.iter().enumerate().skip(3) {
-        for mip in 0..sides[0].mip_level_count() {
-            let texture = &sides[0];
-            let width = (texture.width() >> mip).max(1);
-            let height = (texture.height() >> mip).max(1);
-            let got = read_texture(device, queue, texture, mip).await?;
-            for (at, value) in got.into_iter().enumerate() {
-                let at = u32::try_from(at).map_err(error)?;
-                let expected =
-                    at % width + 16 * ((at / width) % height) + 256 * (at / (width * height));
-                if value != expected {
-                    return Err(format!(
-                        "kind resource {resource} mip {mip} texel {at}: got {value} expected {expected}"
-                    ));
-                }
-            }
-        }
-    }
-    Ok(())
+    check_kinds(device, queue, handle, &seeded_kinds()).await
 }
 
 async fn replace_device(
@@ -336,9 +351,7 @@ pub async fn run(
     .map_err(error)?;
     let (effect, handle) = DiagnosticEffect::new();
     host.set_scene_contribution(Box::new(effect))?;
-    let mut a = vec![0; 1024];
-    let mut b = a.clone();
-    let mut committed = 10;
+    let mut expected = Expected::new();
     // Literal table rows: seed, later, equal, pause, discard, retry, capture,
     // bounded stall, backward, later, new timeline, resize with an equal tick.
     let script = [
@@ -424,25 +437,12 @@ pub async fn run(
             }
             // Readback below is queue ordered after this scene, and gives it time to retire.
         }
-        if matches!(kind, "seed" | "backward" | "timeline") {
-            a.fill(0);
-            b.fill(0);
-            committed = tick;
-        } else if !matches!(
-            kind,
-            "equal" | "pause" | "discard" | "after-discard-skip" | "capture" | "resize"
-        ) {
-            let source_on = handle.lock().map_err(error)?.controls.source;
-            a = advance(&a, committed, tick, source_on);
-            committed = tick;
-            if tick.is_multiple_of(handle.lock().map_err(error)?.controls.cadence) {
-                b = a.iter().map(|value| value * 3).collect();
-            }
-        }
+        let controls = handle.lock().map_err(error)?.controls;
+        expected.apply(kind, tick, controls)?;
         let actual = fields(device, queue, &handle).await?;
-        if matches!(kind, "seed" | "backward" | "timeline") {
-            reset_kinds(device, queue, &handle).await?;
-        }
+        check_kinds(device, queue, &handle, &expected.kinds)
+            .await
+            .map_err(|error| format!("frame {index} {kind}: {error}"))?;
         if matches!(kind, "discard" | "after-discard-skip")
             && handle.lock().map_err(error)?.state.anchor() != [0, 0]
         {
@@ -456,9 +456,14 @@ pub async fn run(
         for (resource, (got, expected)) in actual
             .iter()
             .zip([
-                a.clone(),
-                b.clone(),
-                a.iter().zip(&b).map(|(a, b)| a + 1024 * b).collect(),
+                expected.trail.clone(),
+                expected.derived.clone(),
+                expected
+                    .trail
+                    .iter()
+                    .zip(&expected.derived)
+                    .map(|(a, b)| a + 1024 * b)
+                    .collect(),
             ])
             .enumerate()
         {
@@ -474,7 +479,7 @@ pub async fn run(
                 ));
             }
         }
-        if kind == "later" && matches!(tick, 11 | 100) && !a.iter().any(|v| *v > 0) {
+        if kind == "later" && matches!(tick, 11 | 100) && !expected.trail.iter().any(|v| *v > 0) {
             return Err("repeated-tick witness was empty".into());
         }
         drop(host.poll_completed().map_err(error)?);
