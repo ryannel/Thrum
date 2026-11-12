@@ -6,10 +6,15 @@ The orchestrate script writes this page from the plan files and record files aft
 
 4 of 21 modules done · 7 in progress · 10 to come
 
-### Waiting on you
+### Needs you now
+
+- Nothing.
+
+### Choices made for you
+
+A planner or the lead chose each of these where your words left it open. Each stands until you say otherwise.
 
 - PLATFORM-RUNTIME-MAC assumes: the OS-reported presented time of each game drawable is an acceptable witness for built-in ProMotion ([plan](PLATFORM-RUNTIME-MAC/PLAN.md))
-- PLATFORM-RUNTIME-MAC M2 The cooked valley presents smoothly on built-in ProMotion: Blocked: Needs Context: paused for the orchestrate upgrade; the next lead runs unblock and then run to carry on from the handoff
 - CREATOR assumes: the starter gets a Chrome form now. The G6 decision left it as an owner question and recommended deferring it to G7's page; website demos, and the sea and cloud demo scenes, need a creator's scene in Chrome. ([plan](CREATOR/PLAN.md))
 - CREATOR assumes: "profiler" in the V1 exit is met by readouts in the demo UI on both targets, fed by the frame host's completed samples and the shells' callback records, not by a separate tool. ([plan](CREATOR/PLAN.md))
 - CREATOR assumes: the profiler is built after `APPLE-TILE:M3` and not beside it, so it waits on that module's attended items. The other order has the readouts built now on the positional GPU slots, with the switch added later. ([plan](CREATOR/PLAN.md))
@@ -40,13 +45,14 @@ The orchestrate script writes this page from the plan files and record files aft
 - EFFECT-GRAPH assumes: the diagnostic effect stays in the V1 game example behind a selection that is off by default, as a test fixture; it is never part of the showcase. ([plan](EFFECT-GRAPH/PLAN.md))
 - EFFECT-GRAPH assumes: M1 starts as soon as this design passes and does not wait for `BASELINE-GUARD` M1. Until that gate exists, M1's own check covers the Mac baseline only and Chrome's is rechecked when the gate's builder first runs the verifier on main. The other choice is to add `BASELINE-GUARD:M1` to M1's `needs`, which holds M1 until the gate is built. M2 and M3 do wait for it. ([plan](EFFECT-GRAPH/PLAN.md))
 - EFFECT-GRAPH assumes: this foundation proves that an effect's motion, reactive coverage and reset reach reconstruction's inputs, and does not wait for TAAU. How an effect looks after reconstruction is judged in `SEA`'s and `CLOUDS`' own milestones. ([plan](EFFECT-GRAPH/PLAN.md))
-- EFFECT-GRAPH M2 A test effect keeps its simulation in step with the world through dropped frames, pauses and a replaced device, on Mac and in Chrome: Blocked: Needs Context: stopped for the orchestrate upgrade; the next lead runs unblock and then run to carry on from the handoff
 
 ### Now and next
 
+- PLATFORM-RUNTIME-MAC M2 The cooked valley presents smoothly on built-in ProMotion: Blocked: Needs Context: paused for the orchestrate upgrade; the next lead runs unblock and then run to carry on from the handoff. The lead finds the missing fact, or asks you for it
 - G4 can replace the pre-tone linear input without changing SDR output (APPLE-TILE M3): Ready for Review · [plan](APPLE-TILE/PLAN.md) · [latest review](../evidence/APPLE-TILE/M3-review.md)
-- Depth, motion, reactive and exposure are stored for reconstruction, and history advances only with submitted frames (APPLE-PRESENTATION M2): Ready for Review · [plan](APPLE-PRESENTATION/PLAN.md)
+- Depth, motion, reactive and exposure are stored for reconstruction, and history advances only with submitted frames (APPLE-PRESENTATION M2): In Progress · [plan](APPLE-PRESENTATION/PLAN.md)
 - On the mixed-mesh field, Occlusion draws only what Direct shows, pixel for pixel (CULLING M1): In Progress · [plan](CULLING/PLAN.md) · [latest review](../evidence/CULLING/M1-review.md)
+- EFFECT-GRAPH M2 A test effect keeps its simulation in step with the world through dropped frames, pauses and a replaced device, on Mac and in Chrome: Blocked: Needs Context: stopped for the orchestrate upgrade; the next lead runs unblock and then run to carry on from the handoff. The lead finds the missing fact, or asks you for it
 
 ### Recently done
 
@@ -72,7 +78,7 @@ The orchestrate script writes this page from the plan files and record files aft
 | 4 | COOKED-DRAW | Cooked scenes draw on devices that cannot run GPU-driven draws, such as the iPhone simulator | PLATFORM-RUNTIME-IOS M7 | Done 9 Nov |
 | 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE M0 and M1, PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | M3 of 7 · Ready for Review |
 | 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE M3 | Waiting: On Dependency, APPLE-TILE:M3 |
-| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE M0, M2, M3, M11 and M12 | M2 of 3 · Ready for Review |
+| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE M0, M2, M3, M11 and M12 | M2 of 3 · In Progress |
 | 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads | APPLE-PRESENTATION M3 | Waiting: On Dependency, APPLE-PRESENTATION:M3 |
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is refused before it reaches main |  | Done 12 Nov |
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE M2, BASELINE-GUARD M1 | M1 of 3 · In Progress |
