@@ -1,0 +1,37 @@
+[
+  {
+    "name": "named-target",
+    "exit": 0,
+    "seconds": 776.7503255000338,
+    "command": [
+      "python3",
+      "/Users/ryannel/.codex/plugins/cache/ryannel-skills/orchestrate/2.0.0/skills/orchestration/build/scripts/agent_loop.py",
+      "lock",
+      "gpu",
+      "--",
+      "cargo",
+      "test",
+      "--locked",
+      "--offline",
+      "-p",
+      "thrum-render",
+      "--test",
+      "visibility_buckets"
+    ]
+  },
+  {
+    "name": "exact",
+    "exit": 0,
+    "seconds": 1672.168744625058,
+    "command": [
+      "python3",
+      "/Users/ryannel/.codex/plugins/cache/ryannel-skills/orchestrate/2.0.0/skills/orchestration/build/scripts/agent_loop.py",
+      "lock",
+      "gpu",
+      "--",
+      "python3",
+      "scripts/exact_baselines.py",
+      "verify"
+    ]
+  }
+]

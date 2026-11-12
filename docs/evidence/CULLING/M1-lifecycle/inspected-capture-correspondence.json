@@ -1,0 +1,92 @@
+[
+  {
+    "name": "before-0-Direct.ppm",
+    "sha256": "a9a58ae9751d81200aa4c9a7f229eb419c21f262c18782994d5c93ac54d59071",
+    "equal_to_inspected_focused_capture": true
+  },
+  {
+    "name": "before-0-Frustum.ppm",
+    "sha256": "a9a58ae9751d81200aa4c9a7f229eb419c21f262c18782994d5c93ac54d59071",
+    "equal_to_inspected_focused_capture": true
+  },
+  {
+    "name": "before-0-Occlusion.ppm",
+    "sha256": "a9a58ae9751d81200aa4c9a7f229eb419c21f262c18782994d5c93ac54d59071",
+    "equal_to_inspected_focused_capture": true
+  },
+  {
+    "name": "before-3-Direct.ppm",
+    "sha256": "a9a58ae9751d81200aa4c9a7f229eb419c21f262c18782994d5c93ac54d59071",
+    "equal_to_inspected_focused_capture": true
+  },
+  {
+    "name": "before-3-Frustum.ppm",
+    "sha256": "a9a58ae9751d81200aa4c9a7f229eb419c21f262c18782994d5c93ac54d59071",
+    "equal_to_inspected_focused_capture": true
+  },
+  {
+    "name": "before-3-Occlusion.ppm",
+    "sha256": "a9a58ae9751d81200aa4c9a7f229eb419c21f262c18782994d5c93ac54d59071",
+    "equal_to_inspected_focused_capture": true
+  },
+  {
+    "name": "replaced-0-Direct.ppm",
+    "sha256": "bde346628ce7dfef7bd5278ecf408b4c44d845373540d80f7b74c9168e19da3c",
+    "equal_to_inspected_focused_capture": true
+  },
+  {
+    "name": "replaced-0-Frustum.ppm",
+    "sha256": "bde346628ce7dfef7bd5278ecf408b4c44d845373540d80f7b74c9168e19da3c",
+    "equal_to_inspected_focused_capture": true
+  },
+  {
+    "name": "replaced-0-Occlusion.ppm",
+    "sha256": "bde346628ce7dfef7bd5278ecf408b4c44d845373540d80f7b74c9168e19da3c",
+    "equal_to_inspected_focused_capture": true
+  },
+  {
+    "name": "replaced-3-Direct.ppm",
+    "sha256": "bde346628ce7dfef7bd5278ecf408b4c44d845373540d80f7b74c9168e19da3c",
+    "equal_to_inspected_focused_capture": true
+  },
+  {
+    "name": "replaced-3-Frustum.ppm",
+    "sha256": "bde346628ce7dfef7bd5278ecf408b4c44d845373540d80f7b74c9168e19da3c",
+    "equal_to_inspected_focused_capture": true
+  },
+  {
+    "name": "replaced-3-Occlusion.ppm",
+    "sha256": "bde346628ce7dfef7bd5278ecf408b4c44d845373540d80f7b74c9168e19da3c",
+    "equal_to_inspected_focused_capture": true
+  },
+  {
+    "name": "resized-0-Direct.ppm",
+    "sha256": "89bce1c4a39ab5952814efabb0e12d8585833690b790077da465be4407c0d9f6",
+    "equal_to_inspected_focused_capture": true
+  },
+  {
+    "name": "resized-0-Frustum.ppm",
+    "sha256": "89bce1c4a39ab5952814efabb0e12d8585833690b790077da465be4407c0d9f6",
+    "equal_to_inspected_focused_capture": true
+  },
+  {
+    "name": "resized-0-Occlusion.ppm",
+    "sha256": "89bce1c4a39ab5952814efabb0e12d8585833690b790077da465be4407c0d9f6",
+    "equal_to_inspected_focused_capture": true
+  },
+  {
+    "name": "resized-3-Direct.ppm",
+    "sha256": "89bce1c4a39ab5952814efabb0e12d8585833690b790077da465be4407c0d9f6",
+    "equal_to_inspected_focused_capture": true
+  },
+  {
+    "name": "resized-3-Frustum.ppm",
+    "sha256": "89bce1c4a39ab5952814efabb0e12d8585833690b790077da465be4407c0d9f6",
+    "equal_to_inspected_focused_capture": true
+  },
+  {
+    "name": "resized-3-Occlusion.ppm",
+    "sha256": "89bce1c4a39ab5952814efabb0e12d8585833690b790077da465be4407c0d9f6",
+    "equal_to_inspected_focused_capture": true
+  }
+]

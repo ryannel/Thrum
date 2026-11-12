@@ -91,3 +91,10 @@
   Focused Metal execution compares all next surface frames with independently prepared Direct;
   hiding renews after replacement and authority advances while the candidate awaits publication.
   Full committed-source qualification and reachable evidence are next.
+
+- 2026-11-12 M1.4 now passes with fresh named-target Metal evidence from daylight source f7533d44.
+  All 17 tests pass and the full exact verifier passes native 38+4 and four Chrome sets of 481 records.
+  The running host retains the mixed field, mode and current authority through surface resize and device
+  publication, with all 12 next frames equal to independent Direct and renewed hiding. Reachable logs,
+  image hashes and native-size PNGs are retained in [M1 evidence](../../evidence/CULLING/M1.md#review-round-1-repair--mf1-host-lifecycle).
+  Aggregate qualification and integration continue with M1 in progress.

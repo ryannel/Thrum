@@ -1,0 +1,223 @@
+{
+  "revision": "f7533d443b30a88196b2c41b0934d37515dafea4",
+  "scope": "RGB previews of actual runtime surface-presenter output textures; tests compare all RGBA8 bytes on all 12 frames. No OS-window, physical-display or elapsed-time motion claim.",
+  "conversion": "ffmpeg P6 to PNG; independently decoded RGB equals input RGB for all 18 files.",
+  "images": [
+    {
+      "file": "docs/evidence/CULLING/M1-lifecycle/before-0-Direct.png",
+      "phase": "before",
+      "frame": 0,
+      "mode": "Direct",
+      "extent": [
+        320,
+        180
+      ],
+      "rgb_sha256": "98535160fd67959197a11cb5a02965b658ec0eacccdecc216c9254470b79002a",
+      "png_sha256": "266ad72137a9844e28da19946893bbbfe03b28d261845345cfeb886156a469a6"
+    },
+    {
+      "file": "docs/evidence/CULLING/M1-lifecycle/before-0-Frustum.png",
+      "phase": "before",
+      "frame": 0,
+      "mode": "Frustum",
+      "extent": [
+        320,
+        180
+      ],
+      "rgb_sha256": "98535160fd67959197a11cb5a02965b658ec0eacccdecc216c9254470b79002a",
+      "png_sha256": "266ad72137a9844e28da19946893bbbfe03b28d261845345cfeb886156a469a6"
+    },
+    {
+      "file": "docs/evidence/CULLING/M1-lifecycle/before-0-Occlusion.png",
+      "phase": "before",
+      "frame": 0,
+      "mode": "Occlusion",
+      "extent": [
+        320,
+        180
+      ],
+      "rgb_sha256": "98535160fd67959197a11cb5a02965b658ec0eacccdecc216c9254470b79002a",
+      "png_sha256": "266ad72137a9844e28da19946893bbbfe03b28d261845345cfeb886156a469a6"
+    },
+    {
+      "file": "docs/evidence/CULLING/M1-lifecycle/before-3-Direct.png",
+      "phase": "before",
+      "frame": 3,
+      "mode": "Direct",
+      "extent": [
+        320,
+        180
+      ],
+      "rgb_sha256": "98535160fd67959197a11cb5a02965b658ec0eacccdecc216c9254470b79002a",
+      "png_sha256": "266ad72137a9844e28da19946893bbbfe03b28d261845345cfeb886156a469a6"
+    },
+    {
+      "file": "docs/evidence/CULLING/M1-lifecycle/before-3-Frustum.png",
+      "phase": "before",
+      "frame": 3,
+      "mode": "Frustum",
+      "extent": [
+        320,
+        180
+      ],
+      "rgb_sha256": "98535160fd67959197a11cb5a02965b658ec0eacccdecc216c9254470b79002a",
+      "png_sha256": "266ad72137a9844e28da19946893bbbfe03b28d261845345cfeb886156a469a6"
+    },
+    {
+      "file": "docs/evidence/CULLING/M1-lifecycle/before-3-Occlusion.png",
+      "phase": "before",
+      "frame": 3,
+      "mode": "Occlusion",
+      "extent": [
+        320,
+        180
+      ],
+      "rgb_sha256": "98535160fd67959197a11cb5a02965b658ec0eacccdecc216c9254470b79002a",
+      "png_sha256": "266ad72137a9844e28da19946893bbbfe03b28d261845345cfeb886156a469a6"
+    },
+    {
+      "file": "docs/evidence/CULLING/M1-lifecycle/replaced-0-Direct.png",
+      "phase": "replaced",
+      "frame": 0,
+      "mode": "Direct",
+      "extent": [
+        481,
+        271
+      ],
+      "rgb_sha256": "d8260b44e3ceb914b7de1273f1813a7e2d5d84e81a66afd90fe89f80e94fd514",
+      "png_sha256": "2cfb6628826719a564e31d59da988130eb5f130d8df9f6108e78291eca20a7e1"
+    },
+    {
+      "file": "docs/evidence/CULLING/M1-lifecycle/replaced-0-Frustum.png",
+      "phase": "replaced",
+      "frame": 0,
+      "mode": "Frustum",
+      "extent": [
+        481,
+        271
+      ],
+      "rgb_sha256": "d8260b44e3ceb914b7de1273f1813a7e2d5d84e81a66afd90fe89f80e94fd514",
+      "png_sha256": "2cfb6628826719a564e31d59da988130eb5f130d8df9f6108e78291eca20a7e1"
+    },
+    {
+      "file": "docs/evidence/CULLING/M1-lifecycle/replaced-0-Occlusion.png",
+      "phase": "replaced",
+      "frame": 0,
+      "mode": "Occlusion",
+      "extent": [
+        481,
+        271
+      ],
+      "rgb_sha256": "d8260b44e3ceb914b7de1273f1813a7e2d5d84e81a66afd90fe89f80e94fd514",
+      "png_sha256": "2cfb6628826719a564e31d59da988130eb5f130d8df9f6108e78291eca20a7e1"
+    },
+    {
+      "file": "docs/evidence/CULLING/M1-lifecycle/replaced-3-Direct.png",
+      "phase": "replaced",
+      "frame": 3,
+      "mode": "Direct",
+      "extent": [
+        481,
+        271
+      ],
+      "rgb_sha256": "d8260b44e3ceb914b7de1273f1813a7e2d5d84e81a66afd90fe89f80e94fd514",
+      "png_sha256": "2cfb6628826719a564e31d59da988130eb5f130d8df9f6108e78291eca20a7e1"
+    },
+    {
+      "file": "docs/evidence/CULLING/M1-lifecycle/replaced-3-Frustum.png",
+      "phase": "replaced",
+      "frame": 3,
+      "mode": "Frustum",
+      "extent": [
+        481,
+        271
+      ],
+      "rgb_sha256": "d8260b44e3ceb914b7de1273f1813a7e2d5d84e81a66afd90fe89f80e94fd514",
+      "png_sha256": "2cfb6628826719a564e31d59da988130eb5f130d8df9f6108e78291eca20a7e1"
+    },
+    {
+      "file": "docs/evidence/CULLING/M1-lifecycle/replaced-3-Occlusion.png",
+      "phase": "replaced",
+      "frame": 3,
+      "mode": "Occlusion",
+      "extent": [
+        481,
+        271
+      ],
+      "rgb_sha256": "d8260b44e3ceb914b7de1273f1813a7e2d5d84e81a66afd90fe89f80e94fd514",
+      "png_sha256": "2cfb6628826719a564e31d59da988130eb5f130d8df9f6108e78291eca20a7e1"
+    },
+    {
+      "file": "docs/evidence/CULLING/M1-lifecycle/resized-0-Direct.png",
+      "phase": "resized",
+      "frame": 0,
+      "mode": "Direct",
+      "extent": [
+        481,
+        271
+      ],
+      "rgb_sha256": "93ea249d4a1702fc37d5a4cf27b304a36df69a0826194768e6566667086681a5",
+      "png_sha256": "257edea96af946036d164215dded5942d54b0de45c0d09f95380d49334d73d8e"
+    },
+    {
+      "file": "docs/evidence/CULLING/M1-lifecycle/resized-0-Frustum.png",
+      "phase": "resized",
+      "frame": 0,
+      "mode": "Frustum",
+      "extent": [
+        481,
+        271
+      ],
+      "rgb_sha256": "93ea249d4a1702fc37d5a4cf27b304a36df69a0826194768e6566667086681a5",
+      "png_sha256": "257edea96af946036d164215dded5942d54b0de45c0d09f95380d49334d73d8e"
+    },
+    {
+      "file": "docs/evidence/CULLING/M1-lifecycle/resized-0-Occlusion.png",
+      "phase": "resized",
+      "frame": 0,
+      "mode": "Occlusion",
+      "extent": [
+        481,
+        271
+      ],
+      "rgb_sha256": "93ea249d4a1702fc37d5a4cf27b304a36df69a0826194768e6566667086681a5",
+      "png_sha256": "257edea96af946036d164215dded5942d54b0de45c0d09f95380d49334d73d8e"
+    },
+    {
+      "file": "docs/evidence/CULLING/M1-lifecycle/resized-3-Direct.png",
+      "phase": "resized",
+      "frame": 3,
+      "mode": "Direct",
+      "extent": [
+        481,
+        271
+      ],
+      "rgb_sha256": "93ea249d4a1702fc37d5a4cf27b304a36df69a0826194768e6566667086681a5",
+      "png_sha256": "257edea96af946036d164215dded5942d54b0de45c0d09f95380d49334d73d8e"
+    },
+    {
+      "file": "docs/evidence/CULLING/M1-lifecycle/resized-3-Frustum.png",
+      "phase": "resized",
+      "frame": 3,
+      "mode": "Frustum",
+      "extent": [
+        481,
+        271
+      ],
+      "rgb_sha256": "93ea249d4a1702fc37d5a4cf27b304a36df69a0826194768e6566667086681a5",
+      "png_sha256": "257edea96af946036d164215dded5942d54b0de45c0d09f95380d49334d73d8e"
+    },
+    {
+      "file": "docs/evidence/CULLING/M1-lifecycle/resized-3-Occlusion.png",
+      "phase": "resized",
+      "frame": 3,
+      "mode": "Occlusion",
+      "extent": [
+        481,
+        271
+      ],
+      "rgb_sha256": "93ea249d4a1702fc37d5a4cf27b304a36df69a0826194768e6566667086681a5",
+      "png_sha256": "257edea96af946036d164215dded5942d54b0de45c0d09f95380d49334d73d8e"
+    }
+  ]
+}

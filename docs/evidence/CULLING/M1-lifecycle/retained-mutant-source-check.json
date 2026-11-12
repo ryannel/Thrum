@@ -1,0 +1,14 @@
+[
+  {
+    "path": "crates/thrum-render/src/synthetic/mesh_route.rs",
+    "matches_restored_source": true
+  },
+  {
+    "path": "crates/thrum-render/src/synthetic/camera_culling.rs",
+    "matches_restored_source": true
+  },
+  {
+    "path": "crates/thrum-render/src/visibility/occlusion.wgsl",
+    "matches_restored_source": true
+  }
+]

@@ -1,0 +1,59 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.15s
+     Running tests/visibility_buckets.rs (target/debug/deps/visibility_buckets-3c6f6fdfddbbf965)
+
+running 17 tests
+test field::tests::walls_stand_halfway_between_static_prop_lines ... ok
+test field::tests::flythrough_turns_and_cuts_are_flagged ... ok
+test reference::tests::previous_pow2_keeps_exact_powers ... ok
+test reference::tests::equality_and_the_near_plane_stay_visible ... ok
+test reference::tests::a_misaligned_rectangle_reads_its_whole_footprint ... ok
+test environment::tests::rendered_solar_time_uses_the_same_previous_to_current_interval_as_lighting ... ok
+test environment::tests::equatorial_basis_follows_sun_and_preserves_the_pole_across_wrap ... ok
+test environment::tests::committed_day_has_continuous_sunrise_noon_sunset_and_night ... ok
+test field::tests::layout_is_deterministic_and_spans_far_beyond_the_view ... ok
+test field_meshes::tests::closed_meshes_wind_outward ... ok
+test field_meshes::tests::meshes_have_realistic_counts_and_stay_in_the_unit_box ... ok
+footprint reference search: 8640 valid poses; 3796 request widening; 0 vertex coverage candidates beyond the unwidened rectangle
+test reference_search_for_a_footprint_widening_witness ... ok
+test reference::tests::never_hides_a_visible_box ... ok
+mesh tie origin [-400.37, 1.13, 400.71] yaw 0: 6724 winning pixels
+generation 61 frame 0: Frustum Some(900), Occlusion Some(900), equal
+generation 61 frame 1: Frustum Some(900), Occlusion Some(420), equal
+generation 61 frame 2: Frustum Some(900), Occlusion Some(420), equal
+generation 61 frame 3: Frustum Some(900), Occlusion Some(420), equal
+generation 61 frame 4: Frustum Some(302), Occlusion Some(122), equal
+mesh tie origin [-400.37, 1.13, 400.71] yaw 0.3: 6744 winning pixels
+generation 61 frame 5: Frustum Some(900), Occlusion Some(420), equal
+generation 61 frame 6: Frustum Some(900), Occlusion Some(421), equal
+generation 61 frame 7: Frustum Some(900), Occlusion Some(421), equal
+generation 61 frame 8: Frustum Some(900), Occlusion Some(421), equal
+mesh tie origin [4000.37, 1.13, -4000.71] yaw 0: 6724 winning pixels
+generation 62 frame 0: Frustum Some(900), Occlusion Some(900), equal
+mesh tie origin [4000.37, 1.13, -4000.71] yaw 0.3: 6745 winning pixels
+generation 62 frame 1: Frustum Some(900), Occlusion Some(421), equal
+test mesh_face_on_its_bounds_keeps_flush_ties_at_rounded_far_poses ... ok
+generation 62 frame 2: Frustum Some(900), Occlusion Some(421), equal
+generation 62 frame 3: Frustum Some(900), Occlusion Some(421), equal
+generation 62 frame 4: Frustum Some(302), Occlusion Some(123), equal
+generation 62 frame 5: Frustum Some(900), Occlusion Some(421), equal
+generation 62 frame 6: Frustum Some(900), Occlusion Some(421), equal
+generation 62 frame 7: Frustum Some(900), Occlusion Some(421), equal
+generation 62 frame 8: Frustum Some(900), Occlusion Some(421), equal
+test churn_reveal_resize_and_device_replacement_keep_bucket_direct ... ok
+host before frame 0: device 71, source SourceTick { epoch: 47, tick: 1, timeline: 3 }, surface [320, 180], Frustum 21930, Occlusion 21930, equal to fresh mixed-field Direct
+test reference::tests::every_texel_is_the_min_of_its_footprint ... ok
+host before frame 1: device 71, source SourceTick { epoch: 47, tick: 1, timeline: 3 }, surface [320, 180], Frustum 21930, Occlusion 3186, equal to fresh mixed-field Direct
+host before frame 2: device 71, source SourceTick { epoch: 47, tick: 1, timeline: 3 }, surface [320, 180], Frustum 21930, Occlusion 3186, equal to fresh mixed-field Direct
+host before frame 3: device 71, source SourceTick { epoch: 47, tick: 1, timeline: 3 }, surface [320, 180], Frustum 21930, Occlusion 3186, equal to fresh mixed-field Direct
+host resized frame 0: device 71, source SourceTick { epoch: 47, tick: 1, timeline: 3 }, surface [481, 271], Frustum 21930, Occlusion 3186, equal to fresh mixed-field Direct
+host resized frame 1: device 71, source SourceTick { epoch: 47, tick: 1, timeline: 3 }, surface [481, 271], Frustum 21930, Occlusion 3186, equal to fresh mixed-field Direct
+host resized frame 2: device 71, source SourceTick { epoch: 47, tick: 1, timeline: 3 }, surface [481, 271], Frustum 21930, Occlusion 3186, equal to fresh mixed-field Direct
+host resized frame 3: device 71, source SourceTick { epoch: 47, tick: 1, timeline: 3 }, surface [481, 271], Frustum 21930, Occlusion 3186, equal to fresh mixed-field Direct
+host replaced frame 0: device 72, source SourceTick { epoch: 47, tick: 61, timeline: 3 }, surface [481, 271], Frustum 22215, Occlusion 22215, equal to fresh mixed-field Direct
+host replaced frame 1: device 72, source SourceTick { epoch: 47, tick: 61, timeline: 3 }, surface [481, 271], Frustum 22215, Occlusion 1145, equal to fresh mixed-field Direct
+host replaced frame 2: device 72, source SourceTick { epoch: 47, tick: 61, timeline: 3 }, surface [481, 271], Frustum 22215, Occlusion 1145, equal to fresh mixed-field Direct
+host replaced frame 3: device 72, source SourceTick { epoch: 47, tick: 61, timeline: 3 }, surface [481, 271], Frustum 22215, Occlusion 1145, equal to fresh mixed-field Direct
+test mixed_field_host::mixed_field_host_surface_resize_and_device_publication_keep_occlusion_hidden ... ok
+
+test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 12.44s
+
