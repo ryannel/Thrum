@@ -24,7 +24,7 @@ Criteria: M1.1–M1.5 in the done-when file.
 - [x] Add a depth-only twin of each bucket class pipeline and draw the prepass per bucket from the prepass list.
 - [x] Witness equality with bucket-ordered Direct: layout churn, the release flythrough, resize and device replacement, and the mesh tie at the far turned pose, with the design's mutants recorded as failing.
 - [x] Search the reference for a pose that needs the footprint widening. Record the witness and its failing no-widening mutant, or the poses searched.
-- [ ] Rerun `APPLE-TILE`'s M0 matrix on a release build of the commit to be claimed.
+- [x] Rerun `APPLE-TILE`'s M0 matrix on a release build of the commit to be claimed.
 
 ## M2 The game picks its culling mode from the device and the measurements, and says which mode ran
 

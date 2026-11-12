@@ -1,0 +1,15 @@
+RUN native-build
+RUN cooker-build
+RUN web-build
+RUN cook
+RUN apple_tile_m1
+RUN apple_tile_m2
+RUN chrome-day-sdr
+RUN chrome-day-sdr-compare
+RUN chrome-day-scene-linear
+RUN chrome-day-scene-linear-compare
+RUN chrome-night-sdr
+RUN chrome-night-sdr-compare
+RUN chrome-night-scene-linear
+RUN chrome-night-scene-linear-compare
+PASS exact baselines; proof tmp/baseline-guard/proofs/95a6b2c533401ec9b25d15cbd9f8571368d0c181d8109d34e4ac0a744b15fd43.json; 941.37s
