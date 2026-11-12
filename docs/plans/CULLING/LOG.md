@@ -68,3 +68,8 @@
   build and the first current-source full-path stress trial all pass; none proves a rendering repair.
   The full-route CPU plane reference found no vertex crossing in its 25 rounding candidates.
   Investigation and limitations: [M1 evidence](../../evidence/CULLING/M1.md#clean-copy-rejection-12-november).
+
+- 2026-11-12 Bounded repair candidate: the shadow caster position lacked WGSL's invariance
+  guarantee, while the forward position already requests it. Both caster entry points now request
+  invariant position arithmetic. This closes that guarantee gap; the uncaptured historical failures
+  are not attributed to it. Accept only with unchanged exact baselines and fresh named-target proof.
