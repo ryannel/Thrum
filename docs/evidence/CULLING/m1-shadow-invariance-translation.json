@@ -1,0 +1,21 @@
+{
+  "candidate_revision": "4fc581cf",
+  "compiler": "Naga 30.0.1, WGSL validator + Metal2.4 translation",
+  "purpose": "Compiler diagnostic only; fake_missing_bindings retains stage outputs, not a runnable pipeline",
+  "before": {
+    "vertex_invariant": false,
+    "member_vertex_invariant": false
+  },
+  "candidate": {
+    "vertex_invariant": true,
+    "member_vertex_invariant": true
+  },
+  "metal_output_change": "Both stage output position attributes acquire invariant; generated arithmetic text is unchanged",
+  "files": {
+    "shadow-before.wgsl": "b8a8841113666c2f9e701659009da7c6f4126c578918332a777fef5c1e957c7c",
+    "shadow-before.msl": "46bf17a631a2be14f67a16397c49c6143f4c3b1a1af5d4fb9940b8023f21ed2b",
+    "shadow-invariant.msl": "793c414813076f1ed88a9367c44c22915328ec3e73e8970c26f1830642f36106",
+    "shadow-translation.rs": "1542672b75ec87104c1457e3366122f15dec5f0310f2fa7570cff6aaef101c59"
+  },
+  "limits": "Does not attribute uncaptured failures or prove device output/baseline equality"
+}

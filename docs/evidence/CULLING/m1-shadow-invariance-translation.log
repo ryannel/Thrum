@@ -1,0 +1,6 @@
+tmp/culling-m1-repair/shadow-before.wgsl
+vertex: Some(BuiltIn(Position { invariant: false }))
+member_vertex: Some(BuiltIn(Position { invariant: false }))
+crates/thrum-render/src/synthetic/shadow.wgsl
+vertex: Some(BuiltIn(Position { invariant: true }))
+member_vertex: Some(BuiltIn(Position { invariant: true }))
