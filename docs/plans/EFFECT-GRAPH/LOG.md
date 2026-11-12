@@ -70,3 +70,7 @@
   its stored temporal inputs, history and browser case, and combined both modules' named-timing exclusions.
   M2 is temporarily reopened while target checks, realtime costs and exact baselines are refreshed on the combined
   source. Earlier evidence remains historical proof of the pre-rebase source, not a claim about the combined build.
+- 2026-11-12 The first rebased Chrome run caught the diagnostic shader's missing third opaque output after
+  APPLE-PRESENTATION added reactive coverage. Added its reactive output and the declared invalid-motion sentinel;
+  this diagnostic does not claim M3 motion correctness. Stopped the obsolete verifier before changing source.
+  The failed Chrome report is retained in scratch; all final proofs will run again on the corrected source.
