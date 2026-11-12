@@ -1,0 +1,20 @@
+{
+  "passed": true,
+  "results": [
+    {
+      "case": "effect-state",
+      "target": "chrome-webgpu",
+      "exact": "adapter=AdapterInfo { name: \"\", vendor: 0, device: 0, device_type: Other, device_pci_bus_id: \"\", driver: \"\", driver_info: \"\", backend: BrowserWebGpu, subgroup_min_size: 32, subgroup_max_size: 32, transient_saves_memory: None, limit_bucket: None }; generation=1; recipe=Ok(Portable); seed:10:exact; later:11:exact; equal:11:exact; pause:11:exact; discard:12:exact; after-discard-skip:11:exact; retry:12:exact; cadence-skip:13:exact; cadence-run:14:exact; cadence-skip:15:exact; cadence-run:16:exact; capture:100:exact; stall:100:exact; backward:99:exact; later:100:exact; timeline:100:exact; resize:100:exact; destroyed-device:recovered:exact; cadence pipeline count=None; texture bytes=23712; uniforms=128; all cube faces, volume texels and array mips exact; width=32"
+    }
+  ],
+  "artifacts": {
+    "/index.html": "883b363c7a05d0e2d1d7786ae2d713f338e40b7d6136b4b5851eb74530f6a017",
+    "/v1_game.js": "4d8a640dc29df5e21e30bf90c23351d25ddce9cf14ccbdb7b0dd3892b72ff2b9",
+    "/v1_game_bg.wasm": "9c74649f6823035ca752695124974a2285c992f8229c052aba5498eb8abfae6e",
+    "/thrum-controls.js": "77615aef41a06e6ab1bf4783ca1e08772b39736ace640644c29e15739761c1b7",
+    "/case.params.json": "df28be15b243af7c8432bd66fed3b812e1127f0a978c89ab85df18f48e765c15",
+    "/field-oracle.params.json": "cfb0db911fb7a822f546ba39fa2168a53f348ce7b3608ab7432c9b26d5ef3b47",
+    "/case.material.wgsl": "a7c41c1931d0f038587c404ee543a2742222c8873a113a280a6dbd8caf899a78"
+  },
+  "scope": "Actual built game; headless Apple M3 Max/Metal WebGPU function only; no timing/cadence claim"
+}

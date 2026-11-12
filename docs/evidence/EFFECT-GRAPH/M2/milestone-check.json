@@ -1,0 +1,74 @@
+{
+  "module": "EFFECT-GRAPH",
+  "milestone": "M2",
+  "tree": "/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph",
+  "plan": "/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/docs/plans/EFFECT-GRAPH/DONE.json",
+  "pass": 6,
+  "fail": 0,
+  "error": 0,
+  "timeout": 0,
+  "items": [
+    {
+      "id": "M2.1",
+      "check": "cargo test --locked --offline -p thrum-render --test effect_state",
+      "lock": "gpu",
+      "exit": 0,
+      "result": "pass",
+      "output": "running 5 tests\ntest a_second_declaration_cannot_hide_a_second_producer_of_the_same_pair ... ok\ntest cadence_refuses_transients_imports_and_loaded_attachments ... ok\ntest state_table_and_independent_history_submission ... ok\ntest history_refuses_partial_updates_duplicate_producers_and_early_result ... ok\ntest absent_effect_preserves_day_night_capture_graphs_exactly ... ok\n\ntest result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.34s\n\n\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.39s\n     Running tests/effect_state.rs (target/debug/deps/effect_state-db45f89663619257)"
+    },
+    {
+      "id": "M2.2",
+      "check": "cargo test --locked --offline -p v1-game --test effect_state_gpu",
+      "lock": "gpu",
+      "exit": 0,
+      "result": "pass",
+      "output": "running 1 test\ntest effect_state_script_matches_literal_table ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.44s\n\n\n   Compiling v1-game v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/examples/v1-game)\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.42s\n     Running tests/effect_state_gpu.rs (target/debug/deps/effect_state_gpu-4614f79870b57b7c)"
+    },
+    {
+      "id": "M2.3",
+      "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test effect_cadence_gpu",
+      "lock": "gpu",
+      "exit": 0,
+      "result": "pass",
+      "output": "running 1 test\ntest both_history_consumers_follow_runtime_cadence_and_discard ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.48s\n\n\n   Compiling v1-game v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/examples/v1-game)\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.39s\n     Running tests/effect_cadence_gpu.rs (target/debug/deps/effect_cadence_gpu-5520cc3821329347)"
+    },
+    {
+      "id": "M2.4",
+      "check": "cargo test --locked --offline -p v1-game --test effect_state_gpu",
+      "lock": "gpu",
+      "exit": 0,
+      "result": "pass",
+      "output": "running 1 test\ntest effect_state_script_matches_literal_table ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.47s\n\n\n   Compiling v1-game v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/examples/v1-game)\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.27s\n     Running tests/effect_state_gpu.rs (target/debug/deps/effect_state_gpu-4614f79870b57b7c)"
+    },
+    {
+      "id": "M2.5",
+      "check": "node scripts/check_v1_browser.mjs --case effect-state",
+      "lock": "gpu",
+      "exit": 0,
+      "result": "pass",
+      "output": "Run: python3 -m http.server 8765 --bind 127.0.0.1 --directory \"target/v1-game-web\"\nPASS 1 case(s); artifacts: /Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/tmp/v1-browser-1794502447193\n\n   Compiling thrum-render v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/crates/thrum-render)\n   Compiling thrum-asset-gpu v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/crates/thrum-asset-gpu)\n   Compiling thrum-app v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/crates/thrum-app)\n   Compiling v1-game v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/examples/v1-game)\n    Finished `release` profile [optimized] target(s) in 6.03s"
+    },
+    {
+      "id": "M2.6",
+      "result": "no check",
+      "proof": [
+        "inspect"
+      ]
+    },
+    {
+      "id": "M2.7",
+      "result": "no check",
+      "proof": [
+        "ask"
+      ]
+    },
+    {
+      "id": "M2.8",
+      "check": "python3 scripts/exact_baselines.py verify",
+      "lock": "gpu",
+      "exit": 0,
+      "result": "pass",
+      "output": "RUN native-build\nRUN cooker-build\nRUN web-build\nRUN cook\nRUN apple_tile_m1\nRUN apple_tile_m2\nRUN chrome-day-sdr\nRUN chrome-day-sdr-compare\nRUN chrome-day-scene-linear\nRUN chrome-day-scene-linear-compare\nRUN chrome-night-sdr\nRUN chrome-night-sdr-compare\nRUN chrome-night-scene-linear\nRUN chrome-night-scene-linear-compare\nPASS exact baselines; proof tmp/baseline-guard/proofs/1dc7f16689cc4d10fb46a812e57ecd751f3a9e2a9aadc14d9bebfdbad7fdd1ee.json; 819.42s"
+    }
+  ]
+}
