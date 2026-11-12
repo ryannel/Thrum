@@ -30,7 +30,7 @@ Criteria: M1.1–M1.5 in the done-when file.
 
 - [x] Exercise a running `runtime::FrameHost` with the game's full mixed-mesh field, a surface presenter and hidden slots in the named `visibility_buckets` target.
 - [x] Call the host's surface resize and replacement-device preparation/publication APIs, compare every next frame with bucket-ordered Direct, and assert resolved Occlusion, retained scene identity and renewed hiding.
-- [ ] Retain fresh Metal output and source identity for M1.4, re-verify affected checks and merge the repaired milestone for review.
+- [x] Retain fresh Metal output and source identity for M1.4, re-verify affected checks and merge the repaired milestone for review.
 
 ## M2 The game picks its culling mode from the device and the measurements, and says which mode ran
 
