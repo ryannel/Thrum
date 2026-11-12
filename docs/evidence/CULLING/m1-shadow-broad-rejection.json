@@ -1,0 +1,82 @@
+{
+  "revision": "6680cbd70ac6e6940efb073c8e05e258d46a5176",
+  "content_key": "650c4bc266db83670fa936d6a5d3b2c8970dc3fbb1e810c180eb3d8fb375be5a",
+  "passed": false,
+  "failure": "baseline apple-tile-native owner APPLE-TILE: comparison/stage apple_tile_m1 failed (exit 1): {\"passed\": false, \"failures\": [\"exact retained comparison failed: portable-sdr-mirror-light\"]}\n",
+  "native_binary_sha256": "f3d134da37475c55ea1310c0d0efe7bfc1fc098b827e9363f61f31d22382fd39",
+  "comparison": {
+    "reference": {
+      "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/culling/tmp/baseline-guard/verify-20261112T120911.450122Z/apple_tile_m1/portable-sdr-mirror-light.reference",
+      "file_sha256": "719ef93e987a6dedf9b74e17f0d878fa0dc2647cc40cce681033fc2a85c3b213",
+      "pixels_sha256": "719ef93e987a6dedf9b74e17f0d878fa0dc2647cc40cce681033fc2a85c3b213",
+      "extent": [
+        1280,
+        720
+      ],
+      "bytes_per_pixel": 4,
+      "encoding": "rgba8"
+    },
+    "candidate": {
+      "file": "/Users/ryannel/Workspace/thrum/.claude/worktrees/culling/tmp/baseline-guard/verify-20261112T120911.450122Z/apple_tile_m1/portable-sdr/checkpoints/mirror-light.rgba8",
+      "file_sha256": "2ffa807f0bbe7dadd10dd764bbee653e98566c0843b22275eed06743a07dfb6d",
+      "pixels_sha256": "2ffa807f0bbe7dadd10dd764bbee653e98566c0843b22275eed06743a07dfb6d",
+      "extent": [
+        1280,
+        720
+      ],
+      "bytes_per_pixel": 4,
+      "encoding": "rgba8"
+    },
+    "equal": false,
+    "scope": "exact stored pixel bytes only; target/sample/exposure/history identity must be established by the caller",
+    "changed_pixels": 2,
+    "changed_bytes": 6,
+    "bounds_xyxy_exclusive": [
+      799,
+      304,
+      854,
+      325
+    ],
+    "mask_sha256": "08d9da7cff31e9f8ed7d286d9fa981743a684453d2fa441a136a155f445a3f64",
+    "crop_sha256": "3a015ddc0dc36fb098255ee33ae3ea47c628df4cf4bc1882ad05b3f2e9414ccd"
+  },
+  "changed_pixel_values": [
+    {
+      "xy": [
+        853,
+        304
+      ],
+      "reference": [
+        89,
+        97,
+        99,
+        255
+      ],
+      "broad_invariant": [
+        82,
+        94,
+        98,
+        255
+      ]
+    },
+    {
+      "xy": [
+        799,
+        324
+      ],
+      "reference": [
+        101,
+        102,
+        99,
+        255
+      ],
+      "broad_invariant": [
+        82,
+        93,
+        96,
+        255
+      ]
+    }
+  ],
+  "disposition": "Rejected broad candidate; references unchanged; next candidate scopes invariance to the mesh-member entry point."
+}

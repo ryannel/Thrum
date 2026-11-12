@@ -1,0 +1,13 @@
+{
+  "scoped_revision": "3d278c89e7438f5dae723ca476b4cd4c580aa4d5",
+  "old_vs_scoped_flat_msl_equal": true,
+  "broad_vs_scoped_member_msl_equal": true,
+  "hashes": {
+    "old-flat.msl": "108da39bd75f08367f3e5994c4ffcddce801e4942985c6cd62d32e0cfbf372fd",
+    "scoped-flat.msl": "108da39bd75f08367f3e5994c4ffcddce801e4942985c6cd62d32e0cfbf372fd",
+    "broad-member.msl": "b90a24fb5f7660cb9d1739daf810d7bfeb865a0da95f9032cd4b282e8447e6b8",
+    "scoped-member.msl": "b90a24fb5f7660cb9d1739daf810d7bfeb865a0da95f9032cd4b282e8447e6b8",
+    "shadow-translation-selected.rs": "c99aeacc95a58cc8014bd507f8ef7194a0c5db1ed1e553a1958679e5b1df64be"
+  },
+  "scope": "Naga30.0.1 selected entry-point translation, placeholder resource bindings; no device-output or original-cause claim"
+}
