@@ -867,7 +867,9 @@ pub async fn qualify_effect_state() -> Result<String, JsValue> {
         .await
         .map_err(js_error)?;
     let caps = thrum_render::capabilities::DeviceCapabilities::capture(&adapter, &device, 1);
-    Box::pin(crate::effect::qualification::run(&device, &queue, &caps))
-        .await
-        .map_err(js_error)
+    Box::pin(crate::effect::qualification::run(
+        &device, &queue, &caps, &instance,
+    ))
+    .await
+    .map_err(js_error)
 }
