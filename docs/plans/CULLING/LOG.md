@@ -84,3 +84,10 @@
   1,918 halved-list ticks; exact native/surface and four Chrome baseline sets pass unchanged.
   Fresh required mutants fail at pixel equality and the restored eight-test target passes.
   M1.2 passes and M1 is claimed for lead review. [Current evidence](../../evidence/CULLING/M1.md#current-repair-and-qualification).
+
+- 2026-11-12 Review round 1 MF1 reopens M1.4: the old target-resize/fresh-device fixture did not
+  exercise a running host. Added explicit plan work and a named-target witness using the actual
+  100,513-instance authored mixed field, surface presenter, host resize and device publication.
+  Focused Metal execution compares all next surface frames with independently prepared Direct;
+  hiding renews after replacement and authority advances while the candidate awaits publication.
+  Full committed-source qualification and reachable evidence are next.
