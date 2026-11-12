@@ -4,7 +4,7 @@
     {
       "id": "M1",
       "name": "On the mixed-mesh field, Occlusion draws only what Direct shows, pixel for pixel",
-      "state": "open",
+      "state": "blocked",
       "fails": 0,
       "replans": 0,
       "needs": [
@@ -71,7 +71,8 @@
           "review": ""
         }
       ],
-      "rounds": 0
+      "rounds": 0,
+      "blocked": "M1.5 needs the shared GPU lease released so validation and integration can proceed."
     },
     {
       "id": "M2",
