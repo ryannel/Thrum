@@ -40,3 +40,7 @@
   `LOW_DISK_SPACE: verifier requires 16 GiB free`, even after removing owned debug outputs. Saved its refusal
   with the M1 proof and cleaned the remaining owned build products. No integration was attempted without the
   required exact proof; M1.5 stays open.
+- 2026-11-12 Resumed M1 with disk headroom and rebased onto main. Both native exact matrices pass
+  (38 plus four comparisons), and all four Chrome baseline sets pass (481 records each), under the GPU lock.
+  [Target proof](../../evidence/EFFECT-GRAPH/M1-proof.md) records the source and artifact identities. All five
+  items pass; M1 is claimed for review. The required milestone check remains live before integration.

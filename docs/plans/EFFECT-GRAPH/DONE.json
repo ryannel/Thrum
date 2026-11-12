@@ -4,7 +4,7 @@
     {
       "id": "M1",
       "name": "An engine module can declare volume, cube and mipped-array textures in the frame, and wrong declarations are refused",
-      "state": "open",
+      "state": "claimed",
       "fails": 0,
       "replans": 0,
       "needs": [

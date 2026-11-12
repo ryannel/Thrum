@@ -1,7 +1,7 @@
 # EFFECT-GRAPH M1 — target proof
 
 12 November 2026. Rebased source: `5455a4d0881ccb7a8c092b75287cf9da18cf72ad`, clean at exact-verifier execution.
-M1.1–M1.5 have target proof. The required milestone check is running before claim and integration.
+M1.1–M1.5 pass with target proof; M1 is claimed for review. The required milestone check is running before integration.
 
 | Item | Saved proof and builder inspection |
 | --- | --- |
@@ -18,7 +18,7 @@ The record includes the compiler, host, native binary and Wasm hashes, cooked ro
 
 M1.1–M1.4's saved Metal log and Chrome limits record came from the implementation checkpoint before rebasing.
 The same witnesses compiled after rebasing; the required milestone check now reruns their commands, M1.5's full
-named release/cook/native command and `./dev check`. Claim and integration await that result.
+named release/cook/native command and `./dev check`. Integration awaits that result.
 
 The earlier [disk refusal](M1/native-matrix-refusal.json) remains historical evidence. Current verification ran
 with sufficient disk. Exact comparisons qualify image identity; device timing and display cadence are unqualified.
