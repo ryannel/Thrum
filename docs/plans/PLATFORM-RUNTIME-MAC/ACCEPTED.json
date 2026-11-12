@@ -47,7 +47,53 @@
     },
     "M2": {
       "definitions": "845c9341372a0d7af5474df13466398a8ea72262f369798c8c76c8727b124d27",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "53137ce1506a37ec27c04082701d0e9ac1061bd9",
+          "review": "docs/evidence/PLATFORM-RUNTIME-MAC/M2-review.md",
+          "items": {
+            "M2.1": "cant_tell",
+            "M2.2": "cant_tell",
+            "M2.3": "cant_tell",
+            "M2.4": "pass",
+            "M2.5": "pass"
+          },
+          "findings": [
+            {
+              "name": "current-release-motion-unverified",
+              "item": "M2.1",
+              "repeat": false
+            },
+            {
+              "name": "current-build-matched-arms-unverified",
+              "item": "M2.2",
+              "repeat": false
+            },
+            {
+              "name": "current-live-window-proof-unavailable",
+              "item": "M2.3",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.167.0-alpha.4.1",
+          "path": "headless",
+          "usage": {
+            "input": 157905,
+            "cached": 6361344,
+            "output": 17575,
+            "turns": 1
+          },
+          "at": "2026-11-12T10:59:48Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Scoped re-plan of PLATFORM-RUNTIME-MAC M2: the attended Instruments Game Performance traces (owner present, console unlo",
