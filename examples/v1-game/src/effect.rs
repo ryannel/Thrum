@@ -60,6 +60,7 @@ pub struct DiagnosticEffect {
     step: EffectStep,
     runs: [bool; 7],
     scripted: bool,
+    generation: u64,
 }
 
 struct Prepared {
@@ -100,6 +101,7 @@ impl DiagnosticEffect {
                 step: EffectStep::Keep,
                 runs: [false; 7],
                 scripted: false,
+                generation: 0,
             },
             witness,
         )
@@ -154,7 +156,7 @@ impl SceneContribution for DiagnosticEffect {
                 field.clone(),
                 S::History {
                     owner: 0,
-                    epoch: 1,
+                    epoch: self.generation,
                     initialized: true,
                 },
             ),
@@ -162,7 +164,7 @@ impl SceneContribution for DiagnosticEffect {
                 field.clone(),
                 S::History {
                     owner: 1,
-                    epoch: 1,
+                    epoch: self.generation,
                     initialized: true,
                 },
             ),
@@ -170,7 +172,7 @@ impl SceneContribution for DiagnosticEffect {
                 field,
                 S::Persistent {
                     owner: 2,
-                    epoch: 1,
+                    epoch: self.generation,
                     initialized: true,
                 },
             ),
@@ -178,7 +180,7 @@ impl SceneContribution for DiagnosticEffect {
                 descriptor(K::D3 { depth: 4 }, 8, 1),
                 S::Persistent {
                     owner: 3,
-                    epoch: 1,
+                    epoch: self.generation,
                     initialized: true,
                 },
             ),
@@ -186,7 +188,7 @@ impl SceneContribution for DiagnosticEffect {
                 descriptor(K::D2, 8, 3),
                 S::Persistent {
                     owner: 4,
-                    epoch: 1,
+                    epoch: self.generation,
                     initialized: true,
                 },
             ),
@@ -194,7 +196,7 @@ impl SceneContribution for DiagnosticEffect {
                 descriptor(K::Cube, 8, 1),
                 S::Persistent {
                     owner: 5,
-                    epoch: 1,
+                    epoch: self.generation,
                     initialized: true,
                 },
             ),
@@ -304,6 +306,7 @@ impl SceneContribution for DiagnosticEffect {
         if witness.generation == surface.generation {
             return Ok(());
         }
+        self.generation = surface.generation;
         let graph = self.effect_graph();
         let textures = graph.resources[..6]
             .iter()

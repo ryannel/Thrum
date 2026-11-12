@@ -6,7 +6,8 @@
 //!
 //! 1. [`SceneContribution::rebuild`] whenever a scene is prepared or replaced (visual
 //!    republication or device reconstruction), with a read-only [`SceneSurface`]. Generation-bound
-//!    resources and history restart here.
+//!    resources restart on a new generation. Effects retain owned state on a same-generation
+//!    rebuild unless their descriptors changed.
 //! 2. `contribution upload`, a graph Copy pass before forward, calls
 //!    [`SceneContribution::encode_upload`] for bounded staged copies in the frame's encoder.
 //! 3. `contribution compute`, a timed graph Compute pass after the upload and before forward,
@@ -27,6 +28,23 @@
 //! The source and layouts are an internal, versioned module seam, not a stable WGSL ABI.
 //!
 //! Opaque casters can contribute bounds and draws to the scene’s existing Sun cascades.
+//!
+//! [`SceneContributions`] composes members in game-selected order without changing the legacy
+//! upload, compute, shadow or opaque callbacks. An effect additionally returns an [`EffectGraph`]
+//! of real resource descriptors and named simulate passes. Resource owner identities are local to
+//! each member. The graph validates the declarations against the prepared generation's capability
+//! record; physical resources and both sides' bind groups are created by the member in `rebuild`.
+//! Each named simulate pass calls [`SceneContribution::encode_effect`] before the Sun and opaque
+//! passes, under its own executor timing name. A runtime skip creates no graph or pipeline.
+//!
+//! [`EffectState`] implements the tentative protocol for an effect's clock, anchor and independent
+//! history sides. Start each upload with `begin`; a reset is a full write of every producer and
+//! time-sliced output. Mark a pair `produced` only after recording its whole-output producer.
+//! Consumers resolve [`HistoryBinding::Result`] after the producer, including on skipped frames.
+//! Call `submitted` only from the contribution's submission callback. A discarded encoder must
+//! leave this bookkeeping alone; the next `begin` replaces its tentative recording. Captures use
+//! [`EffectTime::capture`] and run no state producer. Physical ping-pong addressing remains the
+//! effect's shader responsibility; the diagnostic uses a world-addressed periodic integer field.
 
 mod graph;
 mod list;
@@ -241,7 +259,9 @@ pub trait SceneContribution: wgpu::WasmNotSend {
     /// The graph passes this contribution records into; constant for its lifetime.
     fn passes(&self) -> ContributionPasses;
 
-    /// (Re)create generation-bound pipelines and resources for `surface`, and restart history.
+    /// (Re)create generation-bound pipelines and resources for `surface`.
+    /// Effects keep their epoch and state on a same-generation rebuild when their own descriptors
+    /// are unchanged; device replacement starts a fresh epoch.
     ///
     /// # Errors
     /// A description of why this contribution cannot draw into the surface; the host then
