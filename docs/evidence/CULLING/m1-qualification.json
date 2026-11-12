@@ -1,0 +1,59 @@
+{
+  "module": "CULLING",
+  "milestone": "M1",
+  "tree": "/Users/ryannel/Workspace/thrum/.claude/worktrees/culling",
+  "plan": "/Users/ryannel/Workspace/thrum/.claude/worktrees/culling/docs/plans/CULLING/DONE.json",
+  "pass": 6,
+  "fail": 0,
+  "error": 0,
+  "timeout": 0,
+  "items": [
+    {
+      "id": "M1.1",
+      "check": "cargo test --locked --offline -p thrum-render --test visibility_buckets",
+      "lock": "gpu",
+      "exit": 0,
+      "result": "pass",
+      "output": "-400.37, 1.13, 400.71] yaw 0: 6724 winning pixels\ngeneration 61 frame 0: Frustum Some(900), Occlusion Some(900), equal\ngeneration 61 frame 1: Frustum Some(900), Occlusion Some(420), equal\ngeneration 61 frame 2: Frustum Some(900), Occlusion Some(420), equal\ngeneration 61 frame 3: Frustum Some(900), Occlusion Some(420), equal\ngeneration 61 frame 4: Frustum Some(302), Occlusion Some(122), equal\nmesh tie origin [-400.37, 1.13, 400.71] yaw 0.3: 6744 winning pixels\ngeneration 61 frame 5: Frustum Some(900), Occlusion Some(420), equal\ngeneration 61 frame 6: Frustum Some(900), Occlusion Some(421), equal\ngeneration 61 frame 7: Frustum Some(900), Occlusion Some(421), equal\ngeneration 61 frame 8: Frustum Some(900), Occlusion Some(421), equal\nmesh tie origin [4000.37, 1.13, -4000.71] yaw 0: 6724 winning pixels\ngeneration 62 frame 0: Frustum Some(900), Occlusion Some(900), equal\ngeneration 62 frame 1: Frustum Some(900), Occlusion Some(421), equal\nmesh tie origin [4000.37, 1.13, -4000.71] yaw 0.3: 6745 winning pixels\ngeneration 62 frame 2: Frustum Some(900), Occlusion Some(421), equal\ngeneration 62 frame 3: Frustum Some(900), Occlusion Some(421), equal\ngeneration 62 frame 4: Frustum Some(302), Occlusion Some(123), equal\ngeneration 62 frame 5: Frustum Some(900), Occlusion Some(421), equal\ngeneration 62 frame 6: Frustum Some(900), Occlusion Some(421), equal\ngeneration 62 frame 7: Frustum Some(900), Occlusion Some(421), equal\ngeneration 62 frame 8: Frustum Some(900), Occlusion Some(421), equal"
+    },
+    {
+      "id": "M1.2",
+      "check": "THRUM_FIELD_FULL_PATH=1 cargo test --locked --offline --release -p v1-game --test field_occlusion_gpu",
+      "lock": "gpu",
+      "exit": 0,
+      "result": "pass",
+      "output": "running 1 test\ntest mixed_mesh_occlusion_matches_bucket_direct_through_first_cut has been running for over 60 seconds\ntest mixed_mesh_occlusion_matches_bucket_direct_through_first_cut ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 986.76s\n\n\n   Compiling thrum-render v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/culling/crates/thrum-render)\n   Compiling thrum-asset-gpu v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/culling/crates/thrum-asset-gpu)\n   Compiling thrum-app v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/culling/crates/thrum-app)\n   Compiling v1-game v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/culling/examples/v1-game)\n    Finished `release` profile [optimized] target(s) in 9.52s\n     Running tests/field_occlusion_gpu.rs (target/release/deps/field_occlusion_gpu-8c946c96fc500c53)\n1930 frames compared; Frustum drew 21737 of 100513 at its fewest; 0 culled frames retired before their count; Occlusion drew at most half of Frustum on 1918 of 1930 paired ticks"
+    },
+    {
+      "id": "M1.3",
+      "check": "cargo test --locked --offline -p thrum-render --test visibility_buckets",
+      "lock": "gpu",
+      "exit": 0,
+      "result": "pass",
+      "output": "-400.37, 1.13, 400.71] yaw 0: 6724 winning pixels\ngeneration 61 frame 0: Frustum Some(900), Occlusion Some(900), equal\ngeneration 61 frame 1: Frustum Some(900), Occlusion Some(420), equal\ngeneration 61 frame 2: Frustum Some(900), Occlusion Some(420), equal\ngeneration 61 frame 3: Frustum Some(900), Occlusion Some(420), equal\ngeneration 61 frame 4: Frustum Some(302), Occlusion Some(122), equal\nmesh tie origin [-400.37, 1.13, 400.71] yaw 0.3: 6744 winning pixels\ngeneration 61 frame 5: Frustum Some(900), Occlusion Some(420), equal\ngeneration 61 frame 6: Frustum Some(900), Occlusion Some(421), equal\ngeneration 61 frame 7: Frustum Some(900), Occlusion Some(421), equal\ngeneration 61 frame 8: Frustum Some(900), Occlusion Some(421), equal\nmesh tie origin [4000.37, 1.13, -4000.71] yaw 0: 6724 winning pixels\ngeneration 62 frame 0: Frustum Some(900), Occlusion Some(900), equal\ngeneration 62 frame 1: Frustum Some(900), Occlusion Some(421), equal\nmesh tie origin [4000.37, 1.13, -4000.71] yaw 0.3: 6745 winning pixels\ngeneration 62 frame 2: Frustum Some(900), Occlusion Some(421), equal\ngeneration 62 frame 3: Frustum Some(900), Occlusion Some(421), equal\ngeneration 62 frame 4: Frustum Some(302), Occlusion Some(123), equal\ngeneration 62 frame 5: Frustum Some(900), Occlusion Some(421), equal\ngeneration 62 frame 6: Frustum Some(900), Occlusion Some(421), equal\ngeneration 62 frame 7: Frustum Some(900), Occlusion Some(421), equal\ngeneration 62 frame 8: Frustum Some(900), Occlusion Some(421), equal"
+    },
+    {
+      "id": "M1.4",
+      "check": "cargo test --locked --offline -p thrum-render --test visibility_buckets",
+      "lock": "gpu",
+      "exit": 0,
+      "result": "pass",
+      "output": "-400.37, 1.13, 400.71] yaw 0: 6724 winning pixels\ngeneration 61 frame 0: Frustum Some(900), Occlusion Some(900), equal\ngeneration 61 frame 1: Frustum Some(900), Occlusion Some(420), equal\ngeneration 61 frame 2: Frustum Some(900), Occlusion Some(420), equal\ngeneration 61 frame 3: Frustum Some(900), Occlusion Some(420), equal\ngeneration 61 frame 4: Frustum Some(302), Occlusion Some(122), equal\nmesh tie origin [-400.37, 1.13, 400.71] yaw 0.3: 6744 winning pixels\ngeneration 61 frame 5: Frustum Some(900), Occlusion Some(420), equal\ngeneration 61 frame 6: Frustum Some(900), Occlusion Some(421), equal\ngeneration 61 frame 7: Frustum Some(900), Occlusion Some(421), equal\ngeneration 61 frame 8: Frustum Some(900), Occlusion Some(421), equal\nmesh tie origin [4000.37, 1.13, -4000.71] yaw 0: 6724 winning pixels\ngeneration 62 frame 0: Frustum Some(900), Occlusion Some(900), equal\ngeneration 62 frame 1: Frustum Some(900), Occlusion Some(421), equal\nmesh tie origin [4000.37, 1.13, -4000.71] yaw 0.3: 6745 winning pixels\ngeneration 62 frame 2: Frustum Some(900), Occlusion Some(421), equal\ngeneration 62 frame 3: Frustum Some(900), Occlusion Some(421), equal\ngeneration 62 frame 4: Frustum Some(302), Occlusion Some(123), equal\ngeneration 62 frame 5: Frustum Some(900), Occlusion Some(421), equal\ngeneration 62 frame 6: Frustum Some(900), Occlusion Some(421), equal\ngeneration 62 frame 7: Frustum Some(900), Occlusion Some(421), equal\ngeneration 62 frame 8: Frustum Some(900), Occlusion Some(421), equal"
+    },
+    {
+      "id": "M1.5",
+      "check": "cargo build --locked --offline --release -p v1-game --features draw-probe,thrum-render/creation-counters && cargo build --locked --offline --release -p thrum-cook && rm -rf tmp/exact-m0 && mkdir -p tmp/exact-m0 && target/release/thrum-cook cook examples/v1-game/assets/showcase tmp/exact-m0/valley && python3 scripts/apple_tile_m1.py --store tmp/exact-m0/valley --output tmp/exact-m0/m1 && python3 scripts/apple_tile_m2.py --store tmp/exact-m0/valley --output tmp/exact-m0/m2",
+      "lock": "gpu",
+      "exit": 0,
+      "result": "pass",
+      "output": "scan 1.644917ms (reused 0 hashed 10 unstable 0), cooked 9 reused 0 in 35.24825ms, publish 379.458\u00b5s -> generation 1\n{\"passed\": true, \"failures\": []}\n{\"passed\": true, \"failures\": []}\n\n   Compiling thrum-render v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/culling/crates/thrum-render)\n   Compiling thrum-asset-gpu v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/culling/crates/thrum-asset-gpu)\n   Compiling thrum-app v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/culling/crates/thrum-app)\n   Compiling v1-game v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/culling/examples/v1-game)\n    Finished `release` profile [optimized] target(s) in 7.97s\nwarning: linker stderr: ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.claude/worktrees/culling/target/release/deps/libintel_tex_2-109965a54605b5eb.rlib[5](kernel_ispc.o)', assuming: macOS\n         ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.claude/worktrees/culling/target/release/deps/libintel_tex_2-109965a54605b5eb.rlib[6](kernel_astc_ispc.o)', assuming: macOS\n  |\n  = note: `#[warn(linker_messages)]` on by default\n\nwarning: `thrum-cook` (bin \"thrum-cook\") generated 1 warning\n    Finished `release` profile [optimized] target(s) in 0.14s"
+    },
+    {
+      "id": "Check",
+      "check": "./dev check",
+      "exit": 0,
+      "result": "pass",
+      "output": "  Doc-tests thrum_content_runtime\n   Doc-tests thrum_controls\n   Doc-tests thrum_cook\n   Doc-tests thrum_core\nerror[E0608]: cannot index into a value of type `&mut EditWriter<'_, C>`\n  --> crates/thrum-core/src/sim/transaction.rs:40:11\n   |\n40 |     writer[0] = edit;\n   |           ^^^\n\nerror: aborting due to 1 previous error\n\nFor more information about this error, try `rustc --explain E0608`.\n   Doc-tests thrum_network\n   Doc-tests thrum_render\n   Doc-tests v1_game\n   Compiling thrum-asset-gpu v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/culling/crates/thrum-asset-gpu)\n   Compiling thrum-app v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/culling/crates/thrum-app)\n   Compiling v1-game v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/culling/examples/v1-game)\nwarning: linker stderr: ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.claude/worktrees/culling/target/debug/deps/libintel_tex_2-ad87d7835ed898ef.rlib[5](kernel_ispc.o)', assuming: macOS\n         ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.claude/worktrees/culling/target/debug/deps/libintel_tex_2-ad87d7835ed898ef.rlib[6](kernel_astc_ispc.o)', assuming: macOS\n  |\n  = note: `#[warn(linker_messages)]` on by default\n\nwarning: `v1-game` (test \"cooked_assets_gpu\") generated 1 warning\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.89s\n     Running tests/cooked_assets_gpu.rs (target/debug/deps/cooked_assets_gpu-df1f129eb280c7bf)"
+    }
+  ]
+}

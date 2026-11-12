@@ -1,0 +1,18 @@
+{
+  "revision": "d213cd9c192c43a9bd0b24f28ac84e12127adde6",
+  "content_key": "95a6b2c533401ec9b25d15cbd9f8571368d0c181d8109d34e4ac0a744b15fd43",
+  "target": "mac-metal",
+  "items": [
+    "M1.1",
+    "M1.2",
+    "M1.3",
+    "M1.4",
+    "M1.5",
+    "Check"
+  ],
+  "report_sha256": "ac9d14415dba11a976191292165e63481438ad8ec6ac1f575df7718e0723b3de",
+  "native_comparisons": [
+    38,
+    4
+  ]
+}
