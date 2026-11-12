@@ -1,5 +1,13 @@
 //! Bucket-ordered Direct is the oracle at every submitted frame, including
 //! stale history, class churn, physical compaction and resource replacement.
+// Reuse the game's authored layout/meshes without adding a reverse crate dependency.
+#[path = "../../../examples/v1-game/src/field.rs"]
+mod field;
+#[path = "../../../examples/v1-game/src/field_meshes.rs"]
+mod field_meshes;
+#[path = "support/mixed_field_host.rs"]
+mod mixed_field_host;
+
 use std::{sync::Arc, time::Duration};
 use thrum_render::{
     abi::InstanceRecord,
@@ -18,6 +26,9 @@ struct Gpu {
 impl Gpu {
     async fn new(generation: u64) -> Self {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        Self::from_instance(&instance, generation).await
+    }
+    async fn from_instance(instance: &wgpu::Instance, generation: u64) -> Self {
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions::default())
             .await

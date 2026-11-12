@@ -209,4 +209,5 @@ pub(crate) fn camera(tick: u64, alpha: f32) -> FieldCamera {
 }
 
 #[cfg(test)]
+#[path = "field/tests.rs"]
 mod tests;

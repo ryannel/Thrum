@@ -26,6 +26,12 @@ Criteria: M1.1–M1.5 in the done-when file.
 - [x] Search the reference for a pose that needs the footprint widening. Record the witness and its failing no-widening mutant, or the poses searched.
 - [x] Rerun `APPLE-TILE`'s M0 matrix on a release build of the commit to be claimed.
 
+### Review round 1 — MF1, mixed-mesh host lifecycle (M1.4)
+
+- [ ] Exercise a running `runtime::FrameHost` with the game's full mixed-mesh field, a surface presenter and hidden slots in the named `visibility_buckets` target.
+- [ ] Call the host's surface resize and replacement-device preparation/publication APIs, compare every next frame with bucket-ordered Direct, and assert resolved Occlusion, retained scene identity and renewed hiding.
+- [ ] Retain fresh Metal output and source identity for M1.4, re-verify affected checks and merge the repaired milestone for review.
+
 ## M2 The game picks its culling mode from the device and the measurements, and says which mode ran
 
 Criteria: M2.1–M2.5 in the done-when file.
