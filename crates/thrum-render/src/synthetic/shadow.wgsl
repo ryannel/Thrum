@@ -37,12 +37,12 @@ struct MeshVertex {
 @group(1) @binding(3) var<storage, read> mesh_vertices: array<MeshVertex>;
 @group(2) @binding(0) var<storage, read> members: array<u32>;
 
-// Direct and compacted caster lists must rasterize the same positions.
-// Keep the transform invariant across independently prepared pipelines.
 @vertex fn vertex(@builtin(vertex_index) vertex_index: u32,
-                  @builtin(instance_index) instance_index: u32) -> @builtin(position) @invariant vec4<f32> {
+                  @builtin(instance_index) instance_index: u32) -> @builtin(position) vec4<f32> {
     return caster_at(vertex_index, instance_index);
 }
+// Bucket-ordered Direct and compacted casters must rasterize the same
+// positions across independently prepared mesh pipelines.
 @vertex fn member_vertex(@builtin(vertex_index) vertex_index: u32,
                          @builtin(instance_index) instance_index: u32) -> @builtin(position) @invariant vec4<f32> {
     return caster_at(vertex_index, members[instance_index]);
