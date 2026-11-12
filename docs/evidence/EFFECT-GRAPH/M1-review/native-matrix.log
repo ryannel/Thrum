@@ -1,0 +1,11 @@
+    Finished `release` profile [optimized] target(s) in 0.11s
+warning: linker stderr: ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/EFFECT-GRAPH/target/release/deps/libintel_tex_2-109965a54605b5eb.rlib[5](kernel_ispc.o)', assuming: macOS
+         ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/EFFECT-GRAPH/target/release/deps/libintel_tex_2-109965a54605b5eb.rlib[6](kernel_astc_ispc.o)', assuming: macOS
+  |
+  = note: `#[warn(linker_messages)]` on by default
+
+warning: `thrum-cook` (bin "thrum-cook") generated 1 warning
+    Finished `release` profile [optimized] target(s) in 0.09s
+scan 1.401458ms (reused 0 hashed 10 unstable 0), cooked 9 reused 0 in 33.67075ms, publish 351.75µs -> generation 1
+{"passed": true, "failures": []}
+{"passed": true, "failures": []}

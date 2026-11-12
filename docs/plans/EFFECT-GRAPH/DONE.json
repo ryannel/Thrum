@@ -4,7 +4,7 @@
     {
       "id": "M1",
       "name": "An engine module can declare volume, cube and mipped-array textures in the frame, and wrong declarations are refused",
-      "state": "claimed",
+      "state": "done",
       "fails": 0,
       "replans": 0,
       "needs": [
@@ -21,8 +21,8 @@
           "target": "mac-metal",
           "status": "pass",
           "evidence": "docs/evidence/EFFECT-GRAPH/M1-proof.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/EFFECT-GRAPH/M1-review.md"
         },
         {
           "id": "M1.2",
@@ -33,8 +33,8 @@
           "target": "mac-metal",
           "status": "pass",
           "evidence": "docs/evidence/EFFECT-GRAPH/M1-proof.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/EFFECT-GRAPH/M1-review.md"
         },
         {
           "id": "M1.3",
@@ -45,8 +45,8 @@
           "target": "mac-metal",
           "status": "pass",
           "evidence": "docs/evidence/EFFECT-GRAPH/M1-proof.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/EFFECT-GRAPH/M1-review.md"
         },
         {
           "id": "M1.4",
@@ -57,8 +57,8 @@
           "target": "mac-metal",
           "status": "pass",
           "evidence": "docs/evidence/EFFECT-GRAPH/M1-proof.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/EFFECT-GRAPH/M1-review.md"
         },
         {
           "id": "M1.5",
@@ -68,8 +68,8 @@
           "target": "mac-metal",
           "status": "pass",
           "evidence": "docs/evidence/EFFECT-GRAPH/M1-proof.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/EFFECT-GRAPH/M1-review.md"
         }
       ],
       "rounds": 0

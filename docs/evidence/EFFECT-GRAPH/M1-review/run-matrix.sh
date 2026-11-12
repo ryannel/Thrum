@@ -1,0 +1,3 @@
+#!/bin/sh
+set -eu
+cargo build --locked --offline --release -p v1-game --features draw-probe,thrum-render/creation-counters && cargo build --locked --offline --release -p thrum-cook && rm -rf tmp/effect-graph-m1-review-exact && mkdir -p tmp/effect-graph-m1-review-exact && target/release/thrum-cook cook examples/v1-game/assets/showcase tmp/effect-graph-m1-review-exact/valley && python3 scripts/apple_tile_m1.py --store tmp/effect-graph-m1-review-exact/valley --output tmp/effect-graph-m1-review-exact/m1 && python3 scripts/apple_tile_m2.py --store tmp/effect-graph-m1-review-exact/valley --output tmp/effect-graph-m1-review-exact/m2

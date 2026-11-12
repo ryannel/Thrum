@@ -1,0 +1,15 @@
+[
+  "rustc",
+  "--edition=2024",
+  "docs/evidence/EFFECT-GRAPH/M1-review/exact-bits.rs",
+  "-L",
+  "dependency=target/debug/deps",
+  "--extern",
+  "thrum_render=target/debug/deps/libthrum_render-643bf8dd21938149.rlib",
+  "--extern",
+  "wgpu=target/debug/deps/libwgpu-0b41800ab7c193ae.rlib",
+  "--extern",
+  "pollster=target/debug/deps/libpollster-ac82c4eb645418cd.rlib",
+  "-o",
+  "/private/tmp/effect-graph-m1-exact-bits"
+]

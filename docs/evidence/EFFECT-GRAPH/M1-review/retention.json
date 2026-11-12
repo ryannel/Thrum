@@ -1,0 +1,18 @@
+{
+  "revision": "120c73087da6b84d80ec3eb4ee2a9e887b19687b",
+  "native_m1_comparisons": 38,
+  "native_m2_comparisons": 4,
+  "capture_records": 84,
+  "retained_sha256": {
+    "apple-tile-sun-sdr.png": "e80f23e985f393392e6c5e7b3b8c334ea6cebcfea45e2fd0c870bc8bcc092b65",
+    "portable-night-sdr.png": "5725a4c543c47957e66510b0fd16884b51e63ebb3a06d70be301a24d1bead4af",
+    "apple-tile-night-sdr.png": "5725a4c543c47957e66510b0fd16884b51e63ebb3a06d70be301a24d1bead4af",
+    "portable-sun-sdr.png": "e80f23e985f393392e6c5e7b3b8c334ea6cebcfea45e2fd0c870bc8bcc092b65"
+  },
+  "archives_sha256": {
+    "native-m1.json.gz": "043f13585f5dc1bdd9ba9189f446ad678d4e1ef4cd6e5d41064da5c39e1048ee",
+    "capture-records.json.gz": "2b3aa830db7bf0bf49eb160540e1efe6d9b73f2f1e8b99691234790d27e2d00d",
+    "native-m2.json.gz": "9d9c20d47883c824e1872eb48e1aaeef1ddb14b1f23cd245be8be3e5be870bd2"
+  },
+  "cleanup": "Removed only tmp/effect-graph-m1-review-exact after matrix exit 0 and retained archive/image verification; preserved target and tmp/exact-m0."
+}

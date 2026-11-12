@@ -1,0 +1,12 @@
+EFFECT-GRAPH M1, commit 120c73087da6b84d80ec3eb4ee2a9e887b19687b
+Written before inspecting reviewer-captured product images.
+
+M1 has no Reviewer Inspection proof; its image gate is exact comparison.
+Supplementary product inspection: view independently captured whole frames from
+portable and Apple tile recipes at low sun and night; check actual terrain/props,
+lighting and stars, and that captures are real rendered frames rather than blank
+or error output. Check route checkpoint identities and exact byte comparisons.
+Do not infer full-refresh display cadence from an engine tap or still images.
+Required functional edges: all kinds/scopes/mips, changed extent, replacement
+device, named descriptor/access refusals, excessive capability counts/extents,
+transient dimension isolation, and day/night/capture graph variants.
