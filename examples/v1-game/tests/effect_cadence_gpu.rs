@@ -22,7 +22,9 @@ fn both_history_consumers_follow_runtime_cadence_and_discard() {
             record.contains("cadence-run:14:exact"),
             "runtime cadence boundary was exercised"
         );
-        std::fs::create_dir_all("tmp/effect-graph-m2").expect("directory");
-        std::fs::write("tmp/effect-graph-m2/cadence-record.txt", record).expect("target record");
+        let output =
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tmp/effect-graph-m2");
+        std::fs::create_dir_all(&output).expect("directory");
+        std::fs::write(output.join("cadence-record.txt"), record).expect("target record");
     });
 }
