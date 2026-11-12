@@ -46,16 +46,16 @@
       }
     },
     "M2": {
-      "definitions": "845c9341372a0d7af5474df13466398a8ea72262f369798c8c76c8727b124d27",
+      "definitions": "92d1b95f8b080c4196750ca0ad09c32d9e6b1e43b2313a71ae8adb0ce7a1b9ba",
       "reviews": [
         {
           "verdict": "fail",
           "commit": "53137ce1506a37ec27c04082701d0e9ac1061bd9",
           "review": "docs/evidence/PLATFORM-RUNTIME-MAC/M2-review.md",
           "items": {
-            "M2.1": "cant_tell",
-            "M2.2": "cant_tell",
-            "M2.3": "cant_tell",
+            "M2.1": "could_not_judge",
+            "M2.2": "could_not_judge",
+            "M2.3": "could_not_judge",
             "M2.4": "pass",
             "M2.5": "pass"
           },
@@ -99,16 +99,22 @@
         "task": "Scoped re-plan of PLATFORM-RUNTIME-MAC M2: the attended Instruments Game Performance traces (owner present, console unlo",
         "at": "2026-11-11T12:41:29Z"
       },
-      "owner_answers": [
+      "human_feedback": [
         {
-          "text": "The screen is unlocked if you need it",
-          "at": "2026-11-12T06:57:44Z",
-          "item": "M2.2"
+          "asked": null,
+          "said": "The screen is unlocked if you need it",
+          "items": [
+            "M2.2"
+          ],
+          "at": "2026-11-12T06:57:44Z"
         },
         {
-          "text": "The screen is unlocked if you need it",
-          "at": "2026-11-12T06:57:53Z",
-          "item": "M2.5"
+          "asked": null,
+          "said": "The screen is unlocked if you need it",
+          "items": [
+            "M2.5"
+          ],
+          "at": "2026-11-12T06:57:53Z"
         }
       ]
     },

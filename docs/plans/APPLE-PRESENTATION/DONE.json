@@ -7,9 +7,6 @@
       "state": "done",
       "fails": 0,
       "replans": 0,
-      "needs": [
-        "APPLE-TILE:M0"
-      ],
       "bar": "Motion fit to drive a shipped temporal reconstructor such as MetalFX or Unreal's TSR: zero for a static scene under jitter, exact at infinity for the sky, Sun and stars, and marked invalid where there is no history rather than fabricated. Judged on the current portable output, before any reconstruction exists.",
       "items": [
         {
@@ -69,17 +66,17 @@
           "review": "docs/evidence/APPLE-PRESENTATION/M1-review.md"
         }
       ],
-      "rounds": 1
+      "rounds": 1,
+      "depends_on": [
+        "APPLE-TILE:M0"
+      ]
     },
     {
       "id": "M2",
       "name": "Depth, motion, reactive and exposure are stored for reconstruction, and history advances only with submitted frames",
-      "state": "open",
+      "state": "not_started",
       "fails": 0,
       "replans": 0,
-      "needs": [
-        "APPLE-TILE:M2"
-      ],
       "bar": "The temporal inputs and acceptance rules a shipped reconstructor relies on: history that never includes a frame the display did not get, and reactive marking wherever history cannot be trusted. Correctness only; nothing visible changes yet.",
       "items": [
         {
@@ -165,17 +162,17 @@
           "verdict": "",
           "review": ""
         }
+      ],
+      "depends_on": [
+        "APPLE-TILE:M2"
       ]
     },
     {
       "id": "M3",
       "name": "TAAU reconstructs the valley at native scale in the game, on the Mac and in Chrome",
-      "state": "open",
+      "state": "not_started",
       "fails": 0,
       "replans": 0,
-      "needs": [
-        "APPLE-TILE:M3"
-      ],
       "bar": "Antialiasing as stable as a shipped game's temporal AA at native scale: clean edges and thin features on the held route, no ghosting behind moving things, no crawl on stars or foliage-thin geometry, no brightness lag as time of day changes. Judged in motion from the running game on portable, in words.",
       "items": [
         {
@@ -244,6 +241,9 @@
           "verdict": "",
           "review": ""
         }
+      ],
+      "depends_on": [
+        "APPLE-TILE:M3"
       ]
     }
   ]

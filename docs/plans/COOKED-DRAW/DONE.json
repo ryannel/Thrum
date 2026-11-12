@@ -147,7 +147,7 @@
           "review": "docs/evidence/COOKED-DRAW/M1-review.md"
         }
       ],
-      "needs": [
+      "depends_on": [
         "PLATFORM-RUNTIME-IOS:M7"
       ]
     }

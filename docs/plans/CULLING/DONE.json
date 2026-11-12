@@ -4,12 +4,9 @@
     {
       "id": "M1",
       "name": "On the mixed-mesh field, Occlusion draws only what Direct shows, pixel for pixel",
-      "state": "claimed",
+      "state": "ready_for_review",
       "fails": 0,
       "replans": 0,
-      "needs": [
-        "APPLE-TILE:M2"
-      ],
       "bar": "Culling as in a shipped GPU-driven renderer, where nothing visible ever disappears or pops; held here to byte equality with drawing everything, on meshes of a few hundred to a few thousand triangles.",
       "items": [
         {
@@ -71,17 +68,17 @@
           "review": ""
         }
       ],
-      "rounds": 0
+      "rounds": 0,
+      "depends_on": [
+        "APPLE-TILE:M2"
+      ]
     },
     {
       "id": "M2",
       "name": "The game picks its culling mode from the device and the measurements, and says which mode ran",
-      "state": "open",
+      "state": "not_started",
       "fails": 0,
       "replans": 0,
-      "needs": [
-        "BASELINE-GUARD:M1"
-      ],
       "bar": "A renderer that picks its path from device facts and says which one ran, as Unreal's mobile path and Unity's fallback do: a device that cannot run a culled mode still draws the whole scene, and a default is never set on a guess.",
       "items": [
         {
@@ -140,12 +137,15 @@
           "review": ""
         }
       ],
-      "rounds": 0
+      "rounds": 0,
+      "depends_on": [
+        "BASELINE-GUARD:M1"
+      ]
     },
     {
       "id": "M3",
       "name": "The valley's 10,000 entities are culled by default with no pixel changed, on Mac and in Chrome",
-      "state": "open",
+      "state": "not_started",
       "fails": 0,
       "replans": 0,
       "bar": "Culling as in a shipped open-world game such as Horizon Forbidden West: the player never sees it work. Flying the valley and the field, nothing pops at a screen edge or at an occluder's silhouette, smooth at the display's full refresh.",
