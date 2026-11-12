@@ -4,7 +4,7 @@
     {
       "id": "M1",
       "name": "On the mixed-mesh field, Occlusion draws only what Direct shows, pixel for pixel",
-      "state": "open",
+      "state": "claimed",
       "fails": 0,
       "replans": 0,
       "needs": [
@@ -30,7 +30,7 @@
           "check": "THRUM_FIELD_FULL_PATH=1 cargo test --locked --offline --release -p v1-game --test field_occlusion_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "status": "open",
+          "status": "pass",
           "evidence": "docs/evidence/CULLING/M1.md",
           "verdict": "",
           "review": ""

@@ -1,0 +1,9 @@
+{
+  "qualification_command_default_timeout_seconds": 600,
+  "required_long_job_timeout_seconds": 3600,
+  "aggregate_terminal_exit": -15,
+  "disposition": "Interrupted non-qualifying wrapper run; root source unchanged; full exact proof remains valid",
+  "relocated_from": "tmp/exact-m0",
+  "relocated_to": "tmp/culling-m1-repair/wrong-timeout-exact-m0",
+  "reason": "Preserve partially packaged M1.5 output before the pinned command clears tmp/exact-m0 again"
+}

@@ -1,0 +1,32 @@
+{
+  "revision": "a935334e9c1026b7578799cc71131e3c872f84dd",
+  "clean_before_exit": 0,
+  "mutants": [
+    {
+      "mutant": "two-sided-prepass",
+      "path": "crates/thrum-render/src/synthetic/mesh_route.rs",
+      "exit": 101,
+      "pixel_assertion_failed": true,
+      "source_sha256": "712d18e36e9a2bbbc66ed4568327ed9dd6208fd207dbe76821571c17a8468a00",
+      "restored_sha256": "6aba7c16633519d4d5e2974747382edbd921cdb5e17ed1a5007785a293ed588c"
+    },
+    {
+      "mutant": "final-reads-prepass",
+      "path": "crates/thrum-render/src/synthetic/camera_culling.rs",
+      "exit": 101,
+      "pixel_assertion_failed": true,
+      "source_sha256": "d4296d5e5096251de2b7466567516b369d5a401497fbb2f55c080d53ed3cdb00",
+      "restored_sha256": "510df25e6c3b3cddf8362614c08bcb33562f2e437bd71c8950bfc1f5bfb6ce17"
+    },
+    {
+      "mutant": "zero-depth-tolerance",
+      "path": "crates/thrum-render/src/visibility/occlusion.wgsl",
+      "exit": 101,
+      "pixel_assertion_failed": true,
+      "source_sha256": "aca4dd13a84a86f09da48a50f0698e5b7823a2a27ed5db213b5f8ecd1004b75c",
+      "restored_sha256": "ae506c29a826a23611dea927f7f6ec1a75fdfaa5d5ed38ef6517a8a128bc6fa8"
+    }
+  ],
+  "clean_after_exit": 0,
+  "passed": true
+}

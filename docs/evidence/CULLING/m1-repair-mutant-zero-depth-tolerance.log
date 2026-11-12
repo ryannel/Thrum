@@ -1,0 +1,22 @@
+   Compiling thrum-render v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/culling/tmp/culling-m1-repair/current-mutant-source/crates/thrum-render)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.02s
+     Running tests/visibility_buckets.rs (target/debug/deps/visibility_buckets-3c6f6fdfddbbf965)
+
+running 1 test
+mesh tie origin [-400.37, 1.13, 400.71] yaw 0: 6724 winning pixels
+
+thread 'mesh_face_on_its_bounds_keeps_flush_ties_at_rounded_far_poses' (174492525) panicked at crates/thrum-render/tests/visibility_buckets.rs:212:5:
+assertion `left == right` failed: mesh flush tie: pixels changed
+  left: 6724
+ right: 0
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test mesh_face_on_its_bounds_keeps_flush_ties_at_rounded_far_poses ... FAILED
+
+failures:
+
+failures:
+    mesh_face_on_its_bounds_keeps_flush_ties_at_rounded_far_poses
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.38s
+
+error: test failed, to rerun pass `-p thrum-render --test visibility_buckets`

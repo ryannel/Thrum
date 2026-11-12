@@ -1,0 +1,20 @@
+{
+  "revision": "a935334e9c1026b7578799cc71131e3c872f84dd",
+  "shader_sha256": "b3c148105eeb4ac5f8e44dd5c04e7597cddbbc8c96427e62ed7bd9c69dde61b0",
+  "command": [
+    "python3",
+    "/Users/ryannel/.claude/plugins/cache/ryannel-skills/orchestrate/1.7.1/skills/orchestration/build/scripts/agent_loop.py",
+    "check",
+    "--module",
+    "CULLING",
+    "--milestone",
+    "M1",
+    "--worktree",
+    ".",
+    "--timeout",
+    "3600",
+    "--json"
+  ],
+  "started_at": "2026-11-12T13:10:59.140300+00:00",
+  "exact_proof_key": "845dd21d862cb2fddec0639330ce3b9d025b59e2e655edc6fab76108ec4ba62f"
+}

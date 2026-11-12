@@ -78,3 +78,9 @@
   rejected by M1.5. Traced that valley overlay to Grid/flat casters and scoped the guarantee to the
   mesh `member_vertex` required by M1. The scoped candidate must pass a fresh exact matrix; no
   retained image or oracle changes. Broad-candidate evidence is preserved.
+
+- 2026-11-12 Scoped mesh-caster invariance is qualified at source a935334e/key845dd21d:
+  all five pinned M1 commands and ./dev check pass; the full 1,930-tick field is equal with
+  1,918 halved-list ticks; exact native/surface and four Chrome baseline sets pass unchanged.
+  Fresh required mutants fail at pixel equality and the restored eight-test target passes.
+  M1.2 passes and M1 is claimed for lead review. [Current evidence](../../evidence/CULLING/M1.md#current-repair-and-qualification).
