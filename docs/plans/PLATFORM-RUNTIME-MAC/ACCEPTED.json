@@ -52,7 +52,14 @@
         "by": "plan",
         "task": "Scoped re-plan of PLATFORM-RUNTIME-MAC M2: the attended Instruments Game Performance traces (owner present, console unlo",
         "at": "2026-11-11T12:41:29Z"
-      }
+      },
+      "owner_answers": [
+        {
+          "text": "The screen is unlocked if you need it",
+          "at": "2026-11-12T06:57:44Z",
+          "item": "M2.2"
+        }
+      ]
     },
     "M3": {
       "definitions": "742bfebb2f59cb54f3d52f68ef886a3d526f06a26691edaeb4ce22b84f2e0331",
@@ -118,6 +125,15 @@
         "turns": 1
       },
       "at": "2026-11-11T04:50:25Z"
+    }
+  ],
+  "decisions": [
+    {
+      "action": "answer",
+      "milestone": "M2",
+      "words": "The screen is unlocked if you need it",
+      "at": "2026-11-12T06:57:44Z",
+      "item": "M2.2"
     }
   ]
 }
