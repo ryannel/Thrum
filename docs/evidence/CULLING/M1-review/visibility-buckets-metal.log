@@ -1,0 +1,38 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.06s
+     Running tests/visibility_buckets.rs (target/debug/deps/visibility_buckets-3c6f6fdfddbbf965)
+
+running 8 tests
+test reference::tests::equality_and_the_near_plane_stay_visible ... ok
+test reference::tests::previous_pow2_keeps_exact_powers ... ok
+test reference::tests::a_misaligned_rectangle_reads_its_whole_footprint ... ok
+footprint reference search: 8640 valid poses; 3796 request widening; 0 vertex coverage candidates beyond the unwidened rectangle
+test reference_search_for_a_footprint_widening_witness ... ok
+test reference::tests::never_hides_a_visible_box ... ok
+mesh tie origin [-400.37, 1.13, 400.71] yaw 0: 6724 winning pixels
+generation 61 frame 0: Frustum Some(900), Occlusion Some(900), equal
+generation 61 frame 1: Frustum Some(900), Occlusion Some(420), equal
+generation 61 frame 2: Frustum Some(900), Occlusion Some(420), equal
+generation 61 frame 3: Frustum Some(900), Occlusion Some(420), equal
+generation 61 frame 4: Frustum Some(302), Occlusion Some(122), equal
+mesh tie origin [-400.37, 1.13, 400.71] yaw 0.3: 6744 winning pixels
+generation 61 frame 5: Frustum Some(900), Occlusion Some(420), equal
+generation 61 frame 6: Frustum Some(900), Occlusion Some(421), equal
+generation 61 frame 7: Frustum Some(900), Occlusion Some(421), equal
+generation 61 frame 8: Frustum Some(900), Occlusion Some(421), equal
+mesh tie origin [4000.37, 1.13, -4000.71] yaw 0: 6724 winning pixels
+generation 62 frame 0: Frustum Some(900), Occlusion Some(900), equal
+generation 62 frame 1: Frustum Some(900), Occlusion Some(421), equal
+mesh tie origin [4000.37, 1.13, -4000.71] yaw 0.3: 6745 winning pixels
+test mesh_face_on_its_bounds_keeps_flush_ties_at_rounded_far_poses ... ok
+generation 62 frame 2: Frustum Some(900), Occlusion Some(421), equal
+generation 62 frame 3: Frustum Some(900), Occlusion Some(421), equal
+generation 62 frame 4: Frustum Some(302), Occlusion Some(123), equal
+generation 62 frame 5: Frustum Some(900), Occlusion Some(421), equal
+generation 62 frame 6: Frustum Some(900), Occlusion Some(421), equal
+generation 62 frame 7: Frustum Some(900), Occlusion Some(421), equal
+generation 62 frame 8: Frustum Some(900), Occlusion Some(421), equal
+test churn_reveal_resize_and_device_replacement_keep_bucket_direct ... ok
+test reference::tests::every_texel_is_the_min_of_its_footprint ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.11s
+

@@ -4,7 +4,7 @@
     {
       "id": "M1",
       "name": "On the mixed-mesh field, Occlusion draws only what Direct shows, pixel for pixel",
-      "state": "ready_for_review",
+      "state": "in_progress",
       "fails": 0,
       "replans": 0,
       "bar": "Culling as in a shipped GPU-driven renderer, where nothing visible ever disappears or pops; held here to byte equality with drawing everything, on meshes of a few hundred to a few thousand triangles.",
@@ -18,8 +18,8 @@
           "target": "mac-metal",
           "status": "pass",
           "evidence": "docs/evidence/CULLING/M1.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/CULLING/M1-review.md"
         },
         {
           "id": "M1.2",
@@ -29,8 +29,8 @@
           "target": "mac-metal",
           "status": "pass",
           "evidence": "docs/evidence/CULLING/M1.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/CULLING/M1-review.md"
         },
         {
           "id": "M1.3",
@@ -41,8 +41,8 @@
           "target": "mac-metal",
           "status": "pass",
           "evidence": "docs/evidence/CULLING/M1.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/CULLING/M1-review.md"
         },
         {
           "id": "M1.4",
@@ -51,10 +51,10 @@
           "lock": "gpu",
           "ask": "Does a test in this target resize the surface and replace the device while slots are hidden, and compare the next frames with the oracle?",
           "target": "mac-metal",
-          "status": "pass",
-          "evidence": "docs/evidence/CULLING/M1.md",
-          "verdict": "",
-          "review": ""
+          "status": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": "docs/evidence/CULLING/M1-review.md"
         },
         {
           "id": "M1.5",
@@ -64,13 +64,20 @@
           "target": "mac-metal",
           "status": "pass",
           "evidence": "docs/evidence/CULLING/M1.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/CULLING/M1-review.md"
         }
       ],
-      "rounds": 0,
+      "rounds": 1,
       "depends_on": [
         "APPLE-TILE:M2"
+      ],
+      "findings": [
+        {
+          "name": "mixed_mesh_host_lifecycle_not_exercised",
+          "item": "M1.4",
+          "repeat": false
+        }
       ]
     },
     {

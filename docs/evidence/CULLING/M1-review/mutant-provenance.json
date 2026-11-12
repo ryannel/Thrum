@@ -1,0 +1,26 @@
+[
+  {
+    "mutant": "two-sided-prepass",
+    "source_path": "crates/thrum-render/src/synthetic/mesh_route.rs",
+    "replacement_occurrences": 1,
+    "restored_matches": true,
+    "mutated_matches": true,
+    "retained_exit": 101
+  },
+  {
+    "mutant": "final-reads-prepass",
+    "source_path": "crates/thrum-render/src/synthetic/camera_culling.rs",
+    "replacement_occurrences": 1,
+    "restored_matches": true,
+    "mutated_matches": true,
+    "retained_exit": 101
+  },
+  {
+    "mutant": "zero-depth-tolerance",
+    "source_path": "crates/thrum-render/src/visibility/occlusion.wgsl",
+    "replacement_occurrences": 1,
+    "restored_matches": true,
+    "mutated_matches": true,
+    "retained_exit": 101
+  }
+]
