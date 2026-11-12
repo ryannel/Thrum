@@ -211,3 +211,6 @@ impl EffectGraph {
         Ok(reads)
     }
 }
+
+#[cfg(test)]
+mod tests;

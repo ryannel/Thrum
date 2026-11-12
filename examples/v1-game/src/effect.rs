@@ -421,7 +421,7 @@ impl SceneContribution for DiagnosticEffect {
             pipelines.push(pipeline);
             groups.push(variants);
         }
-        let visual = visual::Visual::new(surface, &params, &textures[0]);
+        let visual = visual::Visual::new(surface, &params, &textures[0], &textures[1]);
         witness.generation = surface.generation;
         witness.textures = textures;
         witness.state.rebuild(surface.generation, 1);
@@ -459,7 +459,7 @@ impl SceneContribution for DiagnosticEffect {
             _ => 0,
         };
         let values = [
-            u32::try_from(frame.time.tick % u64::from(u32::MAX)).unwrap_or(0),
+            u32::try_from(frame.time.tick & u64::from(u32::MAX)).unwrap_or(0),
             u32::try_from(ticks).unwrap_or(0),
             u32::from(full),
             u32::from(controls.source),
@@ -540,7 +540,10 @@ impl SceneContribution for DiagnosticEffect {
     fn draw(&self, pass: &mut wgpu::RenderPass<'_>) {
         if let Some(gpu) = &self.gpu {
             let witness = self.witness.lock().expect("diagnostic witness");
-            gpu.visual.draw(pass, witness.state.side(0, H::Result));
+            gpu.visual.draw(
+                pass,
+                witness.state.side(0, H::Result) * 2 + witness.state.side(1, H::Result),
+            );
         }
     }
     fn submitted(&mut self, history_advanced: bool) {
@@ -560,8 +563,8 @@ fn shader(index: usize) -> String {
         0 => {
             r"@group(0) @binding(1) var previous:texture_2d<u32>; @group(0) @binding(2) var next:texture_storage_2d<r32uint,write>;
         @compute @workgroup_size(8,8) fn main(@builtin(global_invocation_id) id:vec3<u32>) { let q=vec2<i32>(id.xy); if(any(id.xy>=vec2<u32>(32))){return;} var v=0u;
-        if(p.reset==0u){let n=i32(p.ticks); for(var y=-n;y<=n;y++){for(var x=-n;x<=n;x++){if(abs(x)+abs(y)<=n){let old=textureLoad(previous,(q+vec2<i32>(x,y)+vec2<i32>(64))%vec2<i32>(32),0).x; v=max(v,old-min(old,p.ticks*2u));}}}
-        if(p.source!=0u){for(var age=0u;age<p.ticks;age++){let sx=i32((p.tick-age)%32u); let dx=min(abs(q.x-sx),32-abs(q.x-sx)); let dy=min(abs(q.y-16),32-abs(q.y-16)); if(u32(dx+dy)<=age){v=max(v,255u-age*2u);}}}}
+        if(p.reset==0u){let n=i32(p.ticks); for(var y=-n;y<=n;y++){for(var x=-n;x<=n;x++){if(abs(x)+abs(y)<=n){let old=textureLoad(previous,(q+vec2<i32>(x,y)+vec2<i32>(64))%vec2<i32>(32),0).x; v=max(v,old-min(old,p.ticks*2u+u32(abs(x)+abs(y))*30u));}}}
+        if(p.source!=0u){for(var age=0u;age<p.ticks;age++){let sx=i32(((p.tick-age)/3u)%32u); let dx=min(abs(q.x-sx),32-abs(q.x-sx)); let dy=min(abs(q.y-16),32-abs(q.y-16)); if(u32(dx+dy)<=age){v=max(v,255u-age*2u-u32(dx+dy)*30u);}}}}
         textureStore(next,q,vec4<u32>(v)); }"
         }
         1 => {

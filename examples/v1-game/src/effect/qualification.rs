@@ -33,7 +33,7 @@ impl FrameWorld for World {
         Ok(WorldAdvance {
             tick: self.0.tick,
             overload: None,
-            completed_ticks: 1,
+            completed_ticks: 0,
             queued_ticks: 0,
             projected_changes: 0,
             projection_lost_ticks: 0,
@@ -175,21 +175,22 @@ fn advance(previous: &[u32], from: u64, to: u64, source: bool) -> Vec<u32> {
         field = vec![0; 1024];
         for y in 0..32usize {
             for x in 0..32usize {
-                field[y * 32 + x] = [
-                    (x, y),
-                    ((x + 31) % 32, y),
-                    ((x + 1) % 32, y),
-                    (x, (y + 31) % 32),
-                    (x, (y + 1) % 32),
-                ]
-                .iter()
-                .map(|&(a, b)| old[b * 32 + a].saturating_sub(2))
-                .max()
-                .unwrap_or(0);
+                field[y * 32 + x] = old[y * 32 + x].saturating_sub(2).max(
+                    [
+                        ((x + 31) % 32, y),
+                        ((x + 1) % 32, y),
+                        (x, (y + 31) % 32),
+                        (x, (y + 1) % 32),
+                    ]
+                    .iter()
+                    .map(|&(a, b)| old[b * 32 + a].saturating_sub(32))
+                    .max()
+                    .unwrap_or(0),
+                );
             }
         }
         if source {
-            field[16 * 32 + (tick % 32) as usize] = 255;
+            field[16 * 32 + ((tick / 3) % 32) as usize] = 255;
         }
     }
     field
@@ -245,6 +246,57 @@ async fn reset_kinds(
             }
         }
     }
+    Ok(())
+}
+
+async fn replace_device(
+    host: &mut FrameHost<World, Scene>,
+    adapter: &wgpu::Adapter,
+    device: &wgpu::Device,
+    generation: u64,
+    handle: &EffectHandle,
+) -> Result<(), String> {
+    let inputs = host.device_prepare_inputs().map_err(error)?;
+    let (replacement, replacement_queue) = adapter
+        .request_device(&wgpu::DeviceDescriptor::default())
+        .await
+        .map_err(error)?;
+    let next_caps = DeviceCapabilities::capture(adapter, &replacement, generation + 1);
+    let mut prepared = inputs
+        .prepare(
+            &next_caps,
+            &replacement_queue,
+            Some(SurfaceProfile {
+                format: wgpu::TextureFormat::Bgra8Unorm,
+                extent: [80, 64],
+            }),
+        )
+        .await
+        .map_err(error)?;
+    device.destroy();
+    host.publish_device(&mut prepared).map_err(error)?;
+    host.world_mut().0.tick = 101;
+    let report = host
+        .advance(Duration::from_secs(20))
+        .map_err(error)?
+        .encode_scene()
+        .map_err(error)?
+        .submit(None)
+        .map_err(error)?;
+    if !report.submitted {
+        return Err("replacement frame was not submitted".into());
+    }
+    let reset = fields(&replacement, &replacement_queue, handle).await?;
+    if reset
+        .iter()
+        .any(|field| field.iter().any(|value| *value != 0))
+    {
+        return Err("replacement did not seed the exact declared reset".into());
+    }
+    if handle.lock().map_err(error)?.generation != next_caps.generation() {
+        return Err("old generation remained attached".into());
+    }
+    reset_kinds(&replacement, &replacement_queue, handle).await?;
     Ok(())
 }
 
@@ -328,7 +380,7 @@ pub async fn run(
             return Err("runtime cadence created a pipeline".into());
         }
         if kind == "resize" {
-            host.resize_surface([80, 64]).map_err(error)?;
+            host.resize_scene_surface([80, 64]).map_err(error)?;
         }
         if kind == "pause" {
             handle.lock().map_err(error)?.controls.source = false;
@@ -347,7 +399,11 @@ pub async fn run(
             let _capture = host.begin_capture().map_err(error)?;
         } else {
             let report = host
-                .drive(Duration::from_secs(index as u64), None)
+                .advance(Duration::from_secs(index as u64))
+                .map_err(error)?
+                .encode_scene()
+                .map_err(error)?
+                .submit(None)
                 .map_err(error)?;
             if !report.submitted {
                 return Err(format!("{kind}: no submission"));
@@ -410,41 +466,14 @@ pub async fn run(
     }
     // The last frame reset at tick 100. Every texel of all kinds has a literal expected value.
     reset_kinds(device, queue, &handle).await?;
-    let inputs = host.device_prepare_inputs().map_err(error)?;
-    let (replacement, replacement_queue) = adapter
-        .request_device(&wgpu::DeviceDescriptor::default())
-        .await
-        .map_err(error)?;
-    let next_caps = DeviceCapabilities::capture(adapter, &replacement, caps.generation() + 1);
-    let mut prepared = inputs
-        .prepare(
-            &next_caps,
-            &replacement_queue,
-            Some(SurfaceProfile {
-                format: wgpu::TextureFormat::Bgra8Unorm,
-                extent: [80, 64],
-            }),
-        )
-        .await
-        .map_err(error)?;
-    device.destroy();
-    host.publish_device(&mut prepared).map_err(error)?;
-    host.world_mut().0.tick = 101;
-    let report = host.drive(Duration::from_secs(20), None).map_err(error)?;
-    if !report.submitted {
-        return Err("replacement frame was not submitted".into());
-    }
-    let reset = fields(&replacement, &replacement_queue, &handle).await?;
-    if reset
-        .iter()
-        .any(|field| field.iter().any(|value| *value != 0))
-    {
-        return Err("replacement did not seed the exact declared reset".into());
-    }
-    if handle.lock().map_err(error)?.generation != next_caps.generation() {
-        return Err("old generation remained attached".into());
-    }
-    reset_kinds(&replacement, &replacement_queue, &handle).await?;
+    Box::pin(replace_device(
+        &mut host,
+        adapter,
+        device,
+        caps.generation(),
+        &handle,
+    ))
+    .await?;
     records.push("destroyed-device:recovered:exact".into());
     records.push(format!(
         "cadence pipeline count={pipeline_count:?}; resource bytes=23712"
