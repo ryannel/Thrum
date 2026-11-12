@@ -1,0 +1,9 @@
+    Finished `release` profile [optimized] target(s) in 0.34s
+     Running tests/field_occlusion_gpu.rs (target/release/deps/field_occlusion_gpu-8c946c96fc500c53)
+
+running 1 test
+test mixed_mesh_occlusion_matches_bucket_direct_through_first_cut has been running for over 60 seconds
+test mixed_mesh_occlusion_matches_bucket_direct_through_first_cut ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1020.80s
+

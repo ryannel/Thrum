@@ -1,0 +1,33 @@
+{
+  "repair_checkpoint": "cbe685ece09f2b88bec9fdacfbcd7e4bf32dab0f",
+  "rejected_revision": "b2d6ad8f5c60d9f556e46f6e820c35bd4e1714a6",
+  "rejected_binary_sha256": "1be322f6de9011b7cd17b01e9e126c8b1f284d0b88db6b5418589dfdf76bd3a5",
+  "actual_rejection_panic": "not retained by loop; tick, mode and assertion unknown",
+  "renderer_change": false,
+  "oracle_change": false,
+  "diagnostic_only": true,
+  "sources": {
+    "examples/v1-game/src/field.rs": "a9d14aa9396f0de3edbabfd9731087eea02ff7cb9de7df7458cb0c4acca34265",
+    "examples/v1-game/src/field_meshes.rs": "4d8761db2b954e13d0ed0d70c6e4a9e089c8a942f998bdde7c1c21a69a1f18b9",
+    "examples/v1-game/tests/support/field_fly.rs": "25c7f625ea94c9c17de3a941bc6cdf0b987f371bfa7419d1ac1c12e43324bb4d",
+    "examples/v1-game/tests/support/field_oracle_failure.rs": "92686464d0568245a346e4a4aa02b6612e56646f38f8497c9c89cd9c95943609"
+  },
+  "cpu_reference": {
+    "ticks": [
+      1,
+      1930
+    ],
+    "box_rejections": 151146839,
+    "inside_broad_rounding_allowance": 25,
+    "actual_vertex_cases": 25,
+    "any_tested_actual_vertex_crosses_rejecting_plane": false,
+    "scope": "Endpoint-alpha CPU diagnostic; ordinary/FMA world and projection combinations, not GPU execution or shader equivalence proof"
+  },
+  "artifacts": {
+    "m1-frustum-route-reference.rs": "76dae534927ff5d6a1ca4ca841c62674bddea7d6ddcd3f8b06670559761baac8",
+    "m1-frustum-route-reference.log": "2d178dbc5d6c6b0b6ba4cc3f6f072dbd4e687be38f55d657365e3d88da6a27ec",
+    "m1-clean-rejected-binary-replay.log": "0bec84a467c040d7069ffdd6602383b2bf91a117aabb4ecbc1a83538b2863832",
+    "m1-fresh-diagnostic-replay.log": "af3093c5a05c37d59c047a1c71d1394289e6a1831b34926e3e8726b2a14398e8",
+    "m1-failure-recorder-probe.log": "f3a8a6d0f0b436db6ecbd6578968bf6404518f368802ea7b28e8bc8261f31bf9"
+  }
+}

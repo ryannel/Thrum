@@ -1,0 +1,11 @@
+ry: Os { code: 20, kind: NotADirectory, message: "Not a directory" }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    mixed_mesh_occlusion_matches_bucket_direct_through_first_cut
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+FIELD_ORACLE_FAILURE tick=0: sequence directory: Os { code: 20, kind: NotADirectory, message: "Not a directory" }
+record=/Users/ryannel/Workspace/thrum/.claude/worktrees/culling/tmp/culling-m1-repair/diagnostic-probe/87749/meshes-true-occlusion-true-0-panic.json saved=Ok(())

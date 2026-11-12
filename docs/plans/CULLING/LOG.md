@@ -62,3 +62,9 @@
 - 2026-11-12 Reopened M1/M1.2 after the loop's clean-copy target exited101 at integrated b2d6ad8f.
   The supplied stderr tail omits the panic, so replaying its exact executable with full output and
   failure capture. Earlier passes remain historical, not a repair for this new rejection.
+
+- 2026-11-12 Diagnostic checkpoint cbe685ec preserves failed oracle pixels, repeat captures,
+  frame context and uncaptured stderr panic summaries. The formerly rejected executable, a fresh
+  build and the first current-source full-path stress trial all pass; none proves a rendering repair.
+  The full-route CPU plane reference found no vertex crossing in its 25 rounding candidates.
+  Investigation and limitations: [M1 evidence](../../evidence/CULLING/M1.md#clean-copy-rejection-12-november).
